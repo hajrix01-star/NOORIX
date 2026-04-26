@@ -11,26 +11,26 @@ import Drawer from './Drawer';
 /** عرض أقصى (بكسل) يُعتبر «ضيقاً» → Drawer */
 export const ADAPTIVE_SHEET_BREAKPOINT_PX = 900;
 
-function subscribeNarrow(breakpointPx, onStoreChange) {
+function subscribeNarrow(breakpointPx: any, onStoreChange: any) {
   const mq = window.matchMedia(`(max-width: ${breakpointPx}px)`);
   mq.addEventListener('change', onStoreChange);
   return () => mq.removeEventListener('change', onStoreChange);
 }
 
-function getNarrowSnapshot(breakpointPx) {
+function getNarrowSnapshot(breakpointPx: any) {
   return window.matchMedia(`(max-width: ${breakpointPx}px)`).matches;
 }
 
 /** خطاف اختياري إن احتجت منطقاً مشروطاً خارج المكوّن */
-export function useAdaptiveSheetNarrow(breakpointPx = ADAPTIVE_SHEET_BREAKPOINT_PX) {
+export function useAdaptiveSheetNarrow(breakpointPx: any = ADAPTIVE_SHEET_BREAKPOINT_PX) {
   return useSyncExternalStore(
-    (cb) => subscribeNarrow(breakpointPx, cb),
+    (cb: any) => subscribeNarrow(breakpointPx, cb),
     () => getNarrowSnapshot(breakpointPx),
     () => false,
   );
 }
 
-function drawerSizeFromProp(size) {
+function drawerSizeFromProp(size: any) {
   if (size === '2xl') return 'xl';
   return size;
 }

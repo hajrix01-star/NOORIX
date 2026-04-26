@@ -27,23 +27,23 @@ export const DEFAULT_PACKAGING = [
 const STORAGE_KEY_SIZES = 'noorix_order_sizes';
 const STORAGE_KEY_PACKAGING = 'noorix_order_packaging';
 
-function loadCustom(companyId, key) {
+function loadCustom(companyId: any, key: any) {
   const parsed = readJsonStorage(`${key}_${companyId}`, null);
   return Array.isArray(parsed) ? parsed : [];
 }
 
-function saveCustom(companyId, key, items) {
+function saveCustom(companyId: any, key: any, items: any) {
   if (!writeJsonStorage(`${key}_${companyId}`, items)) {
     console.warn('Failed to save order defaults to localStorage');
   }
 }
 
-export function getSizesOptions(companyId) {
+export function getSizesOptions(companyId: any) {
   const custom = loadCustom(companyId, STORAGE_KEY_SIZES);
-  const defaults = DEFAULT_SIZES.map((d) => ({ ar: d.ar, en: d.en, isDefault: true }));
-  const customMapped = custom.map((c) => ({ ar: c.ar, en: c.en || '', isDefault: false }));
+  const defaults = DEFAULT_SIZES.map((d: any) => ({ ar: d.ar, en: d.en, isDefault: true }));
+  const customMapped = custom.map((c: any) => ({ ar: c.ar, en: c.en || '', isDefault: false }));
   const seen = new Set();
-  return [...defaults, ...customMapped].filter((x) => {
+  return [...defaults, ...customMapped].filter((x: any) => {
     const k = (x.ar || '').trim().toLowerCase();
     if (!k || seen.has(k)) return false;
     seen.add(k);
@@ -51,12 +51,12 @@ export function getSizesOptions(companyId) {
   });
 }
 
-export function getPackagingOptions(companyId) {
+export function getPackagingOptions(companyId: any) {
   const custom = loadCustom(companyId, STORAGE_KEY_PACKAGING);
-  const defaults = DEFAULT_PACKAGING.map((d) => ({ ar: d.ar, en: d.en, isDefault: true }));
-  const customMapped = custom.map((c) => ({ ar: c.ar, en: c.en || '', isDefault: false }));
+  const defaults = DEFAULT_PACKAGING.map((d: any) => ({ ar: d.ar, en: d.en, isDefault: true }));
+  const customMapped = custom.map((c: any) => ({ ar: c.ar, en: c.en || '', isDefault: false }));
   const seen = new Set();
-  return [...defaults, ...customMapped].filter((x) => {
+  return [...defaults, ...customMapped].filter((x: any) => {
     const k = (x.ar || '').trim().toLowerCase();
     if (!k || seen.has(k)) return false;
     seen.add(k);
@@ -64,20 +64,20 @@ export function getPackagingOptions(companyId) {
   });
 }
 
-export function addCustomSize(companyId, ar, en) {
+export function addCustomSize(companyId: any, ar: any, en: any) {
   const custom = loadCustom(companyId, STORAGE_KEY_SIZES);
   const trimmed = (ar || '').trim();
   if (!trimmed) return;
-  if (custom.some((c) => (c.ar || '').toLowerCase() === trimmed.toLowerCase())) return;
+  if (custom.some((c: any) => (c.ar || '').toLowerCase() === trimmed.toLowerCase())) return;
   custom.push({ ar: trimmed, en: (en || '').trim() });
   saveCustom(companyId, STORAGE_KEY_SIZES, custom);
 }
 
-export function addCustomPackaging(companyId, ar, en) {
+export function addCustomPackaging(companyId: any, ar: any, en: any) {
   const custom = loadCustom(companyId, STORAGE_KEY_PACKAGING);
   const trimmed = (ar || '').trim();
   if (!trimmed) return;
-  if (custom.some((c) => (c.ar || '').toLowerCase() === trimmed.toLowerCase())) return;
+  if (custom.some((c: any) => (c.ar || '').toLowerCase() === trimmed.toLowerCase())) return;
   custom.push({ ar: trimmed, en: (en || '').trim() });
   saveCustom(companyId, STORAGE_KEY_PACKAGING, custom);
 }

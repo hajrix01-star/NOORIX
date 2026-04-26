@@ -5,7 +5,7 @@ import { Badge } from '../../../../ui';
 import { ProfileInfoRow } from './ProfileInfoRow';
 import { getInitials } from './employeeProfileModel';
 
-export function EmployeeProfileBasicInfoCard({ employee, lang, empStatusMap, t }) {
+export function EmployeeProfileBasicInfoCard({ employee, lang, empStatusMap, t }: any) {
   return (
     <div className="noorix-surface-card p-4 md:p-6">
       <div className="flex items-start gap-4 mb-5">
@@ -40,7 +40,7 @@ export function EmployeeProfileBasicInfoCard({ employee, lang, empStatusMap, t }
   );
 }
 
-export function EmployeeProfileSalaryCard({ t, salaryRows, total }) {
+export function EmployeeProfileSalaryCard({ t, salaryRows, total }: any) {
   return (
     <div className="noorix-surface-card p-4 md:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 mb-4">
@@ -52,8 +52,8 @@ export function EmployeeProfileSalaryCard({ t, salaryRows, total }) {
       </div>
       <div className="border border-noorix-border rounded-xl overflow-hidden">
         {salaryRows
-          .filter((r) => !r.total)
-          .map((row, idx) => (
+          .filter((r: any) => !r.total)
+          .map((row: any, idx: any) => (
             <div key={`${row.label}-${idx}`} className="employee-profile-salary-row">
               <div
                 className={

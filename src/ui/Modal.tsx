@@ -60,7 +60,7 @@ export default function Modal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId   = useId();
 
-  const handleEscape = useCallback((e) => {
+  const handleEscape = useCallback((e: any) => {
     if (e.key === 'Escape') onClose?.();
   }, [onClose]);
 
@@ -113,11 +113,11 @@ export default function Modal({
           'max-h-[min(92vh,860px)]',
           'nx-modal-animate',
           'focus:outline-none',
-          SIZE_MAX[size] ?? SIZE_MAX.md,
+          SIZE_MAX[size as keyof typeof SIZE_MAX] ?? SIZE_MAX.md,
           className,
         )}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => { if (e.key === 'Tab') trapFocusIn(dialogRef.current as HTMLElement | null, e); }}
+        onClick={(e: any) => e.stopPropagation()}
+        onKeyDown={(e: any) => { if (e.key === 'Tab') trapFocusIn(dialogRef.current as HTMLElement | null, e); }}
       >
         {/* رأس النافذة */}
         {(title || !hideClose) && (

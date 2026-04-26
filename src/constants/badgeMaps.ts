@@ -2,21 +2,21 @@
  * بنّاءات خرائط الشارات — تُمرَّر إلى Badge.fromStatus(map)
  */
 
-export function buildActiveCancelledStatusMap(t) {
+export function buildActiveCancelledStatusMap(t: any) {
   return {
     active: { color: 'green', label: t('statusActive') },
     cancelled: { color: 'red', label: t('statusCancelled') },
   };
 }
 
-export function buildActiveCancelledPartialStatusMap(t) {
+export function buildActiveCancelledPartialStatusMap(t: any) {
   return {
     ...buildActiveCancelledStatusMap(t),
     partial: { color: 'amber', label: t('statusPartial') || 'جزئي' },
   };
 }
 
-export function buildInvoiceKindBadgeMap(t) {
+export function buildInvoiceKindBadgeMap(t: any) {
   return {
     purchase: { color: 'blue', label: t('categoryTypes') },
     expense: { color: 'amber', label: t('categoryTypeExpense') },
@@ -29,14 +29,14 @@ export function buildInvoiceKindBadgeMap(t) {
 }
 
 /** نوع سطر مصروف (ثابت / متغير) */
-export function buildExpenseLineKindBadgeMap(t) {
+export function buildExpenseLineKindBadgeMap(t: any) {
   return {
     fixed_expense: { color: 'gray', label: t('fixedExpenseType') || 'ثابت' },
     expense: { color: 'amber', label: t('categoryTypeExpense') || 'متغير' },
   };
 }
 
-export function buildEmployeeHrStatusMap(t) {
+export function buildEmployeeHrStatusMap(t: any) {
   return {
     active: { color: 'green', label: t('statusActive') },
     on_leave: { color: 'amber', label: t('statusOnLeave') },
@@ -46,7 +46,7 @@ export function buildEmployeeHrStatusMap(t) {
 }
 
 /** طلبات الإجازة — تبويب الإجازات + ملف الموظف */
-export function buildLeaveRequestStatusMap(t) {
+export function buildLeaveRequestStatusMap(t: any) {
   return {
     pending: { color: 'amber', label: t('statusPending') },
     approved: { color: 'green', label: t('statusApproved') },
@@ -55,7 +55,7 @@ export function buildLeaveRequestStatusMap(t) {
 }
 
 /** مسيرات الرواتب */
-export function buildPayrollRunStatusMap(t) {
+export function buildPayrollRunStatusMap(t: any) {
   return {
     draft: { color: 'gray', label: t('payrollDraft') },
     /** Approved run; treasury disbursement is separate (salary invoice on batchId). */
@@ -64,7 +64,7 @@ export function buildPayrollRunStatusMap(t) {
 }
 
 /** سجل الإقامة — expired / renewed / active */
-export function buildResidencyRecordStatusMap(t) {
+export function buildResidencyRecordStatusMap(t: any) {
   return {
     expired: { color: 'red', label: t('statusExpired') },
     renewed: { color: 'green', label: t('statusRenewed') },
@@ -73,7 +73,7 @@ export function buildResidencyRecordStatusMap(t) {
 }
 
 /** تسوية السلفية — تبويب السلف */
-export function buildAdvanceSettlementStatusMap(t) {
+export function buildAdvanceSettlementStatusMap(t: any) {
   return {
     cancelled: { color: 'gray', label: t('cancelled') },
     settled: { color: 'red', label: t('advanceSettled') },

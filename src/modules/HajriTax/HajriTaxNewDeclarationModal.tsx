@@ -11,7 +11,7 @@ export default function HajriTaxNewDeclarationModal({
   companies,
   lang,
   t,
-}) {
+}: any) {
   const currentYear = new Date().getFullYear();
   const years = useMemo(() => [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4], [currentYear]);
 
@@ -54,7 +54,7 @@ export default function HajriTaxNewDeclarationModal({
         <div>
           <p className="mb-2 text-[13px] font-semibold text-noorix-text">{t('vatFilterCompany')}</p>
           <div className="flex flex-wrap gap-2">
-            {(companies || []).map((c) => {
+            {(companies || []).map((c: any) => {
               const nm = lang === 'en' ? (c.nameEn || c.nameAr) : c.nameAr;
               const active = companyId === c.id;
               return (
@@ -74,7 +74,7 @@ export default function HajriTaxNewDeclarationModal({
         <div>
           <p className="mb-2 text-[13px] font-semibold text-noorix-text">{t('reportYear')}</p>
           <div className="flex flex-wrap gap-2">
-            {years.map((y) => (
+            {years.map((y: any) => (
               <button key={y} type="button" onClick={() => setYear(y)} className={year === y ? chipActive : chipIdle}>
                 {y}
               </button>
@@ -85,7 +85,7 @@ export default function HajriTaxNewDeclarationModal({
         <div>
           <p className="mb-2 text-[13px] font-semibold text-noorix-text">{t('vatQuarter')}</p>
           <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4].map((q) => (
+            {[1, 2, 3, 4].map((q: any) => (
               <button
                 key={q}
                 type="button"

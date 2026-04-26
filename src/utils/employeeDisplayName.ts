@@ -2,7 +2,7 @@
  * عرض اسم الموظف حسب لغة الواجهة.
  * القاعدة: الحقل `name` في النظام هو الاسم الأساسي (عادة عربي)، `nameEn` اختياري.
  */
-export function employeeDisplayName(entity, lang, fallback = '—') {
+export function employeeDisplayName(entity: any, lang: any, fallback: any = '—') {
   if (entity == null) return fallback;
   const name = String(entity.name ?? '').trim();
   const nameAr = String(entity.nameAr ?? '').trim();

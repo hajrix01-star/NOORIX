@@ -12,7 +12,7 @@ export function OcrImagePreviewColumn({
   onResetAll,
   onExtract,
   onSave,
-}) {
+}: any) {
   return (
     <div className="noorix-surface-card flex-[1_1_280px] min-w-0 p-4">
       <div className="flex items-center justify-between mb-3">

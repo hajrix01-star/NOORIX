@@ -37,7 +37,7 @@ import { SupplierSelect } from '../../components/common/SupplierSelect';
 
 const ASSET_SECTION_TAB_IDS = ['register', 'queue'];
 
-function formatDate(iso) {
+function formatDate(iso: any) {
   if (!iso) return '—';
   const s = String(iso).slice(0, 10);
   return s || '—';
@@ -83,10 +83,10 @@ export default function AssetsRegisterScreen() {
   const sumAll = data?.sumAcquisitionCostAll ?? '0';
 
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [assetSectionTab, setAssetSectionTab] = useTabSearchParam(ASSET_SECTION_TAB_IDS, 'register');
-  const [pendingInvoiceForComplete, setPendingInvoiceForComplete] = useState(null);
+  const [pendingInvoiceForComplete, setPendingInvoiceForComplete] = useState<any>(null);
   const [completeSaving, setCompleteSaving] = useState(false);
 
   const { data: pendingRows = [], isLoading: pendingLoading } = useQuery({
@@ -104,7 +104,7 @@ export default function AssetsRegisterScreen() {
     setSheetOpen(true);
   }, []);
 
-  const openEdit = useCallback((row) => {
+  const openEdit = useCallback((row: any) => {
     setEditing(row);
     setSheetOpen(true);
   }, []);
@@ -123,7 +123,7 @@ export default function AssetsRegisterScreen() {
   }, [queryClient, showToast, t]);
 
   const handleDelete = useCallback(
-    async (row) => {
+    async (row: any) => {
       if (!canDelete) return;
       if (!confirm(t('assetDeleteConfirm'))) return;
       try {
@@ -131,7 +131,7 @@ export default function AssetsRegisterScreen() {
         assertApiOk(res, t('delete'));
         queryClient.invalidateQueries({ queryKey: ['company-assets'] });
         showToast(t('savedSuccessfully') || 'تم الحذف');
-      } catch (e) {
+      } catch (e: any) {
         showToast(e?.message || t('loadingError'), 'error');
       }
     },
@@ -153,7 +153,7 @@ export default function AssetsRegisterScreen() {
       {
         key: 'nameAr',
         header: t('assetName'),
-        render: (_, row) => (
+        render: (_: any, row: any) => (
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="font-semibold text-noorix-text truncate">{row.nameAr}</span>
             {row.nameEn ? <span className="text-[12px] text-noorix-muted truncate">{row.nameEn}</span> : null}
@@ -163,18 +163,18 @@ export default function AssetsRegisterScreen() {
       {
         key: 'serialNumber',
         header: t('assetSerial'),
-        render: (_, row) => <span className="text-[13px] ltr inline-block">{row.serialNumber || '—'}</span>,
+        render: (_: any, row: any) => <span className="text-[13px] ltr inline-block">{row.serialNumber || '—'}</span>,
       },
       {
         key: 'purchaseDate',
         header: t('assetPurchaseDate'),
-        render: (_, row) => <span className="text-[13px] ltr">{formatDate(row.purchaseDate)}</span>,
+        render: (_: any, row: any) => <span className="text-[13px] ltr">{formatDate(row.purchaseDate)}</span>,
       },
       {
         key: 'acquisitionCost',
         header: t('assetAcquisitionCost'),
         numeric: true,
-        render: (_, row) =>
+        render: (_: any, row: any) =>
           row.acquisitionCost != null ? (
             <span className="ltr">
               {fmt(Number(row.acquisitionCost))} <span className="nx-sar">SR</span>
@@ -186,7 +186,7 @@ export default function AssetsRegisterScreen() {
       {
         key: 'supplier',
         header: t('assetSupplier'),
-        render: (_, row) => (
+        render: (_: any, row: any) => (
           <span className="text-[13px] truncate max-w-[140px] inline-block">
             {row.supplier
               ? lang === 'en'
@@ -199,13 +199,13 @@ export default function AssetsRegisterScreen() {
       {
         key: 'warrantyEndDate',
         header: t('assetWarrantyEnd'),
-        render: (_, row) => <span className="text-[13px] ltr">{formatDate(row.warrantyEndDate)}</span>,
+        render: (_: any, row: any) => <span className="text-[13px] ltr">{formatDate(row.warrantyEndDate)}</span>,
       },
       {
         key: 'warrantyStatus',
         header: t('assetWarrantyFilter'),
-        render: (_, row) => {
-          const b = warrantyBadgeMap[row.warrantyStatus] || warrantyBadgeMap.none;
+        render: (_: any, row: any) => {
+          const b = (warrantyBadgeMap as Record<string, (typeof warrantyBadgeMap)['none']>)[String(row.warrantyStatus)] || warrantyBadgeMap.none;
           return <Badge color={b.color} size="sm">{b.label}</Badge>;
         },
       },
@@ -213,7 +213,7 @@ export default function AssetsRegisterScreen() {
         key: 'daysToWarrantyEnd',
         header: t('assetDaysToEnd'),
         numeric: true,
-        render: (_, row) =>
+        render: (_: any, row: any) =>
           row.daysToWarrantyEnd != null ? (
             <span className="ltr font-medium">{row.daysToWarrantyEnd}</span>
           ) : (
@@ -225,7 +225,7 @@ export default function AssetsRegisterScreen() {
             {
               key: 'actions',
               header: '',
-              render: (_, row) => (
+              render: (_: any, row: any) => (
                 <KebabMenu
                   ariaLabel={t('edit')}
                   items={[
@@ -273,7 +273,7 @@ export default function AssetsRegisterScreen() {
   );
 
   const renderMobileCard = useCallback(
-    (row) => (
+    (row: any) => (
       <div className="flex flex-col gap-2 nx-mc__root">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -343,14 +343,14 @@ export default function AssetsRegisterScreen() {
       {
         key: 'invoiceNumber',
         header: t('invoiceNumber'),
-        render: (_, row) => (
+        render: (_: any, row: any) => (
           <span className="font-bold text-noorix-blue ltr nx-font-numbers">{row.invoiceNumber}</span>
         ),
       },
       {
         key: 'kind',
         header: t('type'),
-        render: (_, row) => {
+        render: (_: any, row: any) => {
           const kindLabel =
             row.kind === 'purchase'
               ? t('purchaseType')
@@ -365,14 +365,14 @@ export default function AssetsRegisterScreen() {
       {
         key: 'supplierInvoiceNumber',
         header: t('supplierInvoiceNumber'),
-        render: (_, row) => (
+        render: (_: any, row: any) => (
           <span className="text-[13px] ltr nx-font-numbers">{row.supplierInvoiceNumber || '—'}</span>
         ),
       },
       {
         key: 'supplier',
         header: t('assetSupplier'),
-        render: (_, row) => (
+        render: (_: any, row: any) => (
           <div className="flex flex-col gap-0.5 min-w-0 max-w-[200px]">
             <span className="text-[13px] truncate">
               {row.supplier
@@ -394,7 +394,7 @@ export default function AssetsRegisterScreen() {
       {
         key: 'transactionDate',
         header: t('transactionDate'),
-        render: (_, row) => (
+        render: (_: any, row: any) => (
           <span className="text-[13px] text-noorix-muted ltr">{formatSaudiDate(row.transactionDate)}</span>
         ),
       },
@@ -402,7 +402,7 @@ export default function AssetsRegisterScreen() {
         key: 'totalAmount',
         header: t('total'),
         numeric: true,
-        render: (_, row) => (
+        render: (_: any, row: any) => (
           <span className="ltr font-semibold">
             {fmt(Number(row.totalAmount))} <span className="nx-sar">SR</span>
           </span>
@@ -413,7 +413,7 @@ export default function AssetsRegisterScreen() {
             {
               key: 'actions',
               header: '',
-              render: (_, row) => (
+              render: (_: any, row: any) => (
                 <Button size="sm" variant="primary" onClick={() => setPendingInvoiceForComplete(row)}>
                   {t('warrantyQueueComplete')}
                 </Button>
@@ -426,7 +426,7 @@ export default function AssetsRegisterScreen() {
   );
 
   const renderPendingMobileCard = useCallback(
-    (row) => (
+    (row: any) => (
       <div className="flex flex-col gap-2 nx-mc__root">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -515,7 +515,7 @@ export default function AssetsRegisterScreen() {
                 size="sm"
                 className="max-w-md"
                 value={search}
-                onChange={(e) => {
+                onChange={(e: any) => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
@@ -526,7 +526,7 @@ export default function AssetsRegisterScreen() {
                 size="sm"
                 className="w-full sm:w-[220px]"
                 value={warrantyFilter}
-                onChange={(e) => {
+                onChange={(e: any) => {
                   setWarrantyFilter(e.target.value);
                   setPage(1);
                 }}
@@ -628,7 +628,7 @@ function WarrantyCompleteFromInvoiceSheet({
   canWrite,
   t,
   lang,
-}) {
+}: any) {
   const [err, setErr] = useState('');
   const [form, setForm] = useState({
     nameAr: '',
@@ -680,7 +680,7 @@ function WarrantyCompleteFromInvoiceSheet({
       : invoice.supplier.nameAr || invoice.supplier.nameEn;
   }, [invoice, lang]);
 
-  const submit = async (e) => {
+  const submit = async (e: any) => {
     e.preventDefault();
     if (!canWrite) return;
     setErr('');
@@ -690,8 +690,8 @@ function WarrantyCompleteFromInvoiceSheet({
       return;
     }
     const warrantyLines = lines
-      .filter((l) => l.nameAr?.trim())
-      .map((l) => ({
+      .filter((l: any) => l.nameAr?.trim())
+      .map((l: any) => ({
         nameAr: l.nameAr.trim(),
         nameEn: l.nameEn?.trim() || undefined,
         quantity:
@@ -735,7 +735,7 @@ function WarrantyCompleteFromInvoiceSheet({
       const res = await completeCompanyAssetFromInvoice(body);
       assertApiOk(res, t('loadingError'));
       onSaved();
-    } catch (e2) {
+    } catch (e2: any) {
       setErr(e2?.message || t('loadingError'));
     } finally {
       setSaving(false);
@@ -743,11 +743,11 @@ function WarrantyCompleteFromInvoiceSheet({
   };
 
   const addLine = () =>
-    setLines((p) => [
+    setLines((p: any) => [
       ...p,
       { key: `${Date.now()}-${p.length}`, nameAr: '', nameEn: '', quantity: '', notes: '' },
     ]);
-  const removeLine = (i) => setLines((p) => (p.length <= 1 ? p : p.filter((_, idx) => idx !== i)));
+  const removeLine = (i: any) => setLines((p: any) => (p.length <= 1 ? p : p.filter((_: any, idx: any) => idx !== i)));
 
   return (
     <AdaptiveSheet
@@ -785,25 +785,25 @@ function WarrantyCompleteFromInvoiceSheet({
         <Input
           label={t('assetName')}
           value={form.nameAr}
-          onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))}
           required
         />
         <Input
           label={t('assetNameEn')}
           value={form.nameEn}
-          onChange={(e) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, nameEn: e.target.value }))}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label={t('assetSerial')}
             value={form.serialNumber}
-            onChange={(e) => setForm((p) => ({ ...p, serialNumber: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, serialNumber: e.target.value }))}
             className="ltr"
           />
           <Input
             label={t('assetLocation')}
             value={form.location}
-            onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, location: e.target.value }))}
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -811,47 +811,47 @@ function WarrantyCompleteFromInvoiceSheet({
             type="date"
             label={t('assetPurchaseDate')}
             value={form.purchaseDate}
-            onChange={(e) => setForm((p) => ({ ...p, purchaseDate: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, purchaseDate: e.target.value }))}
           />
           <Input
             type="number"
             label={t('assetAcquisitionCost')}
             value={form.acquisitionCost}
-            onChange={(e) => setForm((p) => ({ ...p, acquisitionCost: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, acquisitionCost: e.target.value }))}
             className="ltr"
           />
         </div>
         <Input
           label={t('assetWarrantyDescription')}
           value={form.warrantyDescription}
-          onChange={(e) => setForm((p) => ({ ...p, warrantyDescription: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyDescription: e.target.value }))}
         />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Input
             type="number"
             label={t('assetWarrantyMonths')}
             value={form.warrantyMonths}
-            onChange={(e) => setForm((p) => ({ ...p, warrantyMonths: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyMonths: e.target.value }))}
             className="ltr"
           />
           <Input
             type="date"
             label={t('assetWarrantyStart')}
             value={form.warrantyStartDate}
-            onChange={(e) => setForm((p) => ({ ...p, warrantyStartDate: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyStartDate: e.target.value }))}
           />
           <Input
             type="date"
             label={t('assetWarrantyEnd')}
             value={form.warrantyEndDate}
-            onChange={(e) => setForm((p) => ({ ...p, warrantyEndDate: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyEndDate: e.target.value }))}
           />
         </div>
         <p className="text-[11px] text-noorix-muted m-0">{t('assetWarrantyEndHint')}</p>
         <Input
           label={t('assetNotes')}
           value={form.notes}
-          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, notes: e.target.value }))}
         />
 
         <div className="border-t border-noorix-border pt-3 mt-1">
@@ -862,7 +862,7 @@ function WarrantyCompleteFromInvoiceSheet({
             </Button>
           </div>
           <div className="flex flex-col gap-3">
-            {lines.map((line, idx) => (
+            {lines.map((line: any, idx: any) => (
               <div
                 key={line.key}
                 className="rounded-lg border border-noorix-border bg-noorix-surface p-3 grid grid-cols-1 sm:grid-cols-12 gap-2 items-end"
@@ -871,9 +871,9 @@ function WarrantyCompleteFromInvoiceSheet({
                   <Input
                     label={t('warrantyLineName')}
                     value={line.nameAr}
-                    onChange={(e) =>
-                      setLines((prev) =>
-                        prev.map((x, i) => (i === idx ? { ...x, nameAr: e.target.value } : x)),
+                    onChange={(e: any) =>
+                      setLines((prev: any) =>
+                        prev.map((x: any, i: any) => (i === idx ? { ...x, nameAr: e.target.value } : x)),
                       )
                     }
                   />
@@ -882,9 +882,9 @@ function WarrantyCompleteFromInvoiceSheet({
                   <Input
                     label={t('assetNameEn')}
                     value={line.nameEn}
-                    onChange={(e) =>
-                      setLines((prev) =>
-                        prev.map((x, i) => (i === idx ? { ...x, nameEn: e.target.value } : x)),
+                    onChange={(e: any) =>
+                      setLines((prev: any) =>
+                        prev.map((x: any, i: any) => (i === idx ? { ...x, nameEn: e.target.value } : x)),
                       )
                     }
                   />
@@ -894,9 +894,9 @@ function WarrantyCompleteFromInvoiceSheet({
                     type="number"
                     label={t('warrantyLineQty')}
                     value={line.quantity}
-                    onChange={(e) =>
-                      setLines((prev) =>
-                        prev.map((x, i) => (i === idx ? { ...x, quantity: e.target.value } : x)),
+                    onChange={(e: any) =>
+                      setLines((prev: any) =>
+                        prev.map((x: any, i: any) => (i === idx ? { ...x, quantity: e.target.value } : x)),
                       )
                     }
                     className="ltr"
@@ -920,9 +920,9 @@ function WarrantyCompleteFromInvoiceSheet({
                   <Input
                     label={t('notes')}
                     value={line.notes}
-                    onChange={(e) =>
-                      setLines((prev) =>
-                        prev.map((x, i) => (i === idx ? { ...x, notes: e.target.value } : x)),
+                    onChange={(e: any) =>
+                      setLines((prev: any) =>
+                        prev.map((x: any, i: any) => (i === idx ? { ...x, notes: e.target.value } : x)),
                       )
                     }
                   />
@@ -946,7 +946,7 @@ function AssetFormSheet({
   setSaving,
   canWrite,
   t,
-}) {
+}: any) {
   const isEdit = Boolean(initial?.id);
   const [err, setErr] = useState('');
   const [form, setForm] = useState(() => ({
@@ -964,7 +964,7 @@ function AssetFormSheet({
     notes: initial?.notes ?? '',
   }));
 
-  const submit = async (e) => {
+  const submit = async (e: any) => {
     e.preventDefault();
     if (!canWrite) return;
     setErr('');
@@ -1012,7 +1012,7 @@ function AssetFormSheet({
         assertApiOk(res, t('loadingError'));
       }
       onSaved();
-    } catch (e2) {
+    } catch (e2: any) {
       setErr(e2?.message || t('loadingError'));
     } finally {
       setSaving(false);
@@ -1045,25 +1045,25 @@ function AssetFormSheet({
         <Input
           label={t('assetName')}
           value={form.nameAr}
-          onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))}
           required
         />
         <Input
           label={t('assetNameEn')}
           value={form.nameEn}
-          onChange={(e) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, nameEn: e.target.value }))}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
             label={t('assetSerial')}
             value={form.serialNumber}
-            onChange={(e) => setForm((p) => ({ ...p, serialNumber: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, serialNumber: e.target.value }))}
             className="ltr"
           />
           <Input
             label={t('assetLocation')}
             value={form.location}
-            onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, location: e.target.value }))}
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1071,13 +1071,13 @@ function AssetFormSheet({
             type="date"
             label={t('assetPurchaseDate')}
             value={form.purchaseDate}
-            onChange={(e) => setForm((p) => ({ ...p, purchaseDate: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, purchaseDate: e.target.value }))}
           />
           <Input
             type="number"
             label={t('assetAcquisitionCost')}
             value={form.acquisitionCost}
-            onChange={(e) => setForm((p) => ({ ...p, acquisitionCost: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, acquisitionCost: e.target.value }))}
             className="ltr"
           />
         </div>
@@ -1086,41 +1086,41 @@ function AssetFormSheet({
           <SupplierSelect
             suppliers={suppliers}
             value={form.supplierId}
-            onChange={(id) => setForm((p) => ({ ...p, supplierId: id }))}
+            onChange={(id: any) => setForm((p: any) => ({ ...p, supplierId: id }))}
             placeholder="—"
           />
         </div>
         <Input
           label={t('assetWarrantyDescription')}
           value={form.warrantyDescription}
-          onChange={(e) => setForm((p) => ({ ...p, warrantyDescription: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyDescription: e.target.value }))}
         />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Input
             type="number"
             label={t('assetWarrantyMonths')}
             value={form.warrantyMonths}
-            onChange={(e) => setForm((p) => ({ ...p, warrantyMonths: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyMonths: e.target.value }))}
             className="ltr"
           />
           <Input
             type="date"
             label={t('assetWarrantyStart')}
             value={form.warrantyStartDate}
-            onChange={(e) => setForm((p) => ({ ...p, warrantyStartDate: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyStartDate: e.target.value }))}
           />
           <Input
             type="date"
             label={t('assetWarrantyEnd')}
             value={form.warrantyEndDate}
-            onChange={(e) => setForm((p) => ({ ...p, warrantyEndDate: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyEndDate: e.target.value }))}
           />
         </div>
         <p className="text-[11px] text-noorix-muted m-0">{t('assetWarrantyEndHint')}</p>
         <Input
           label={t('assetNotes')}
           value={form.notes}
-          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, notes: e.target.value }))}
         />
       </form>
     </AdaptiveSheet>

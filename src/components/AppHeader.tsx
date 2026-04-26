@@ -45,7 +45,7 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const { t, lang } = useTranslation();
 
-  const activeCo = companies.find((c) => c.id === activeCompanyId) || activeCompany || null;
+  const activeCo = companies.find((c: any) => c.id === activeCompanyId) || activeCompany || null;
   const coName = activeCo
     ? (lang === 'en'
         ? (activeCo.nameEn || activeCo.nameAr || '')
@@ -57,7 +57,7 @@ export default function AppHeader({
   /* ── Dropdown الشركة ── */
   /* ── تأكيد تبديل الشركة ── */
   const [pendingCompany, setPendingCompany] = useState<string | null>(null);
-  const pendingCo   = pendingCompany ? companies.find((c) => c.id === pendingCompany) : null;
+  const pendingCo   = pendingCompany ? companies.find((c: any) => c.id === pendingCompany) : null;
   const pendingName = pendingCo
     ? (lang === 'en' ? pendingCo.nameEn || pendingCo.nameAr : pendingCo.nameAr || pendingCo.nameEn) || '—'
     : '';
@@ -154,7 +154,7 @@ export default function AppHeader({
                 ref={coDropBtnRef}
                 variant="raw"
                 size="auto"
-                onClick={showCompanySwitcher ? () => { updateCoDropPos(); setCoDropOpen((v) => !v); } : undefined}
+                onClick={showCompanySwitcher ? () => { updateCoDropPos(); setCoDropOpen((v: any) => !v); } : undefined}
                 className="flex items-center gap-2 px-3 h-9 rounded-lg transition-colors max-w-[260px]"
                 style={{
                   background: coDropOpen ? 'var(--noorix-bg-muted)' : 'transparent',
@@ -210,7 +210,7 @@ export default function AppHeader({
                     boxShadow: '0 8px 32px rgba(10,31,68,0.16)',
                   }}
                 >
-                  {companies.map((c) => {
+                  {companies.map((c: any) => {
                     const cName = lang === 'en' ? (c.nameEn || c.nameAr) : (c.nameAr || c.nameEn) || c.id;
                     const isActive = c.id === activeCompanyId;
                     const initial = cName?.[0] || '?';

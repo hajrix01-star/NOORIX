@@ -12,7 +12,7 @@ import { Button, AdaptiveSheet, Input } from '../../../ui';
 
 const INSTALLMENT_INTERVALS = [1, 2, 3, 4, 6, 12];
 
-export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }) {
+export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }: any) {
   const { lang, t } = useTranslation();
   const [form, setForm] = useState({
     nameAr: '',
@@ -77,28 +77,28 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
 
   const { categories = [] } = useCategories(companyId);
   const { suppliers = [] } = useSuppliers(companyId);
-  const expenseCategoriesGrouped = categories.filter((c) => c.type === 'expense');
+  const expenseCategoriesGrouped = categories.filter((c: any) => c.type === 'expense');
 
   const createMutation = useApiMutation({
-    mutationFn: (body) => createExpenseLine(body),
+    mutationFn: (body: any) => createExpenseLine(body),
     showErrorToast: false,
     onSuccess: () => onSaved?.(),
-    onError: (err) => setError(err?.message || 'حدث خطأ'),
+    onError: (err: any) => setError(err?.message || 'حدث خطأ'),
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }) => updateExpenseLine(id, body, companyId),
+    mutationFn: ({ id, body }: any) => updateExpenseLine(id, body, companyId),
     showErrorToast: false,
     onSuccess: () => onSaved?.(),
-    onError: (err) => setError(err?.message || 'حدث خطأ'),
+    onError: (err: any) => setError(err?.message || 'حدث خطأ'),
   });
 
   const applySuggestedReference = () => {
     if (suggestedPerPayment == null) return;
-    setForm((p) => ({ ...p, referenceAmount: String(suggestedPerPayment) }));
+    setForm((p: any) => ({ ...p, referenceAmount: String(suggestedPerPayment) }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     setError('');
     if (!form.nameAr?.trim()) {
@@ -115,7 +115,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
     }
     const isFixed = form.kind === 'fixed_expense';
     const refParsed = form.referenceAmount?.trim() ? Number(form.referenceAmount) : null;
-    if (isFixed && form.referenceAmount?.trim() && (Number.isNaN(refParsed) || refParsed < 0)) {
+    if (isFixed && form.referenceAmount?.trim() && (refParsed == null || Number.isNaN(refParsed) || refParsed < 0)) {
       setError(t('validationInvalidAmount') || 'مبلغ غير صالح');
       return;
     }
@@ -211,7 +211,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           type="text"
           label="اسم البند (عربي) *"
           value={form.nameAr}
-          onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))}
           placeholder="مثال: هاتف رقم 1، كهرباء الفرع 1"
           required
         />
@@ -220,7 +220,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           type="select"
           label="النوع *"
           value={form.kind}
-          onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, kind: e.target.value }))}
         >
           <option value="expense">متغير</option>
           <option value="fixed_expense">ثابت</option>
@@ -234,7 +234,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
               step="0.01"
               min="0"
               value={form.annualTotalAmount}
-              onChange={(e) => setForm((p) => ({ ...p, annualTotalAmount: e.target.value }))}
+              onChange={(e: any) => setForm((p: any) => ({ ...p, annualTotalAmount: e.target.value }))}
               placeholder="120000"
               className="ltr"
             />
@@ -244,10 +244,10 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
               type="select"
               label={t('expenseLineInstallmentInterval')}
               value={form.installmentIntervalMonths}
-              onChange={(e) => setForm((p) => ({ ...p, installmentIntervalMonths: e.target.value }))}
+              onChange={(e: any) => setForm((p: any) => ({ ...p, installmentIntervalMonths: e.target.value }))}
             >
               <option value="">—</option>
-              {INSTALLMENT_INTERVALS.map((n) => (
+              {INSTALLMENT_INTERVALS.map((n: any) => (
                 <option key={n} value={n}>
                   {n} {lang === 'en' ? 'months' : 'أشهر'}
                 </option>
@@ -273,7 +273,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
               step="0.01"
               min="0"
               value={form.referenceAmount}
-              onChange={(e) => setForm((p) => ({ ...p, referenceAmount: e.target.value }))}
+              onChange={(e: any) => setForm((p: any) => ({ ...p, referenceAmount: e.target.value }))}
               placeholder="30000"
               className="ltr"
             />
@@ -283,7 +283,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
                 type="checkbox"
                 className="mt-0.5 shrink-0"
                 checked={form.allowPaymentAmountOverride}
-                onChange={(e) => setForm((p) => ({ ...p, allowPaymentAmountOverride: e.target.checked }))}
+                onChange={(e: any) => setForm((p: any) => ({ ...p, allowPaymentAmountOverride: e.target.checked }))}
               />
               <span>
                 <span className="font-medium">{t('expenseLineAllowPaymentAmountOverride')}</span>
@@ -297,14 +297,14 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           type="select"
           label="الفئة *"
           value={form.categoryId}
-          onChange={(e) => setForm((p) => ({ ...p, categoryId: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, categoryId: e.target.value }))}
           required
         >
           <option value="">— اختر الفئة —</option>
-          {expenseCategoriesGrouped.map((parent) => (
+          {expenseCategoriesGrouped.map((parent: any) => (
             <optgroup key={parent.id} label={`${parent.nameAr || parent.nameEn || '—'} (فئة رئيسية)`}>
               <option value={parent.id}>{parent.nameAr || parent.nameEn} — رئيسية</option>
-              {(parent.children || []).map((child) => (
+              {(parent.children || []).map((child: any) => (
                 <option key={child.id} value={child.id}>↳ {child.nameAr || child.nameEn} — فرعية</option>
               ))}
             </optgroup>
@@ -315,11 +315,11 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           type="select"
           label="المورد *"
           value={form.supplierId}
-          onChange={(e) => setForm((p) => ({ ...p, supplierId: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, supplierId: e.target.value }))}
           required
         >
           <option value="">— اختر المورد —</option>
-          {suppliers.map((s) => (
+          {suppliers.map((s: any) => (
             <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}</option>
           ))}
         </Input>
@@ -328,7 +328,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           type="text"
           label="رقم الخدمة / العداد"
           value={form.serviceNumber}
-          onChange={(e) => setForm((p) => ({ ...p, serviceNumber: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, serviceNumber: e.target.value }))}
           placeholder="اختياري"
         />
 
@@ -336,7 +336,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           multiline
           label="ملاحظات"
           value={form.notes}
-          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, notes: e.target.value }))}
           placeholder={form.kind === 'fixed_expense' ? t('expenseLineNotesPlaceholderFixed') : 'اختياري'}
           rows={3}
         />

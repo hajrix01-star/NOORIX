@@ -26,13 +26,13 @@ import { useState, useMemo, useCallback } from 'react';
  * @param {'asc'|'desc'} [opts.defaultSortDir='asc']
  * @param {string[]} [opts.dateKeys]  - حقول التاريخ (مقارنة timestamp)
  */
-export function useTableFilter(data = [], {
+export function useTableFilter(data: any = [], {
   searchKeys        = [],
   pageSize          = 50,
   defaultSortKey    = null,
   defaultSortDir    = 'asc',
   dateKeys          = [],
-} = {}) {
+}: any = {}) {
   const [searchText, setSearch]  = useState('');
   const [page, setPage]          = useState(1);
   const [sortKey, setSortKey]    = useState(defaultSortKey);
@@ -42,8 +42,8 @@ export function useTableFilter(data = [], {
   const searched = useMemo(() => {
     const q = (searchText || '').trim().toLowerCase();
     if (!q || searchKeys.length === 0) return data;
-    return data.filter((row) =>
-      searchKeys.some((key) => {
+    return data.filter((row: any) =>
+      searchKeys.some((key: any) => {
         const val = row[key];
         return val != null && String(val).toLowerCase().includes(q);
       }),
@@ -53,7 +53,7 @@ export function useTableFilter(data = [], {
   // ── الترتيب ───────────────────────────────────────────────
   const sorted = useMemo(() => {
     if (!sortKey) return searched;
-    return [...searched].sort((a, b) => {
+    return [...searched].sort((a: any, b: any) => {
       const av = a[sortKey];
       const bv = b[sortKey];
       let cmp;
@@ -81,9 +81,9 @@ export function useTableFilter(data = [], {
   );
 
   // ── تبديل الترتيب ─────────────────────────────────────────
-  const toggleSort = useCallback((key) => {
-    setSortKey((prev) => {
-      if (prev === key) { setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); return key; }
+  const toggleSort = useCallback((key: any) => {
+    setSortKey((prev: any) => {
+      if (prev === key) { setSortDir((d: any) => (d === 'asc' ? 'desc' : 'asc')); return key; }
       setSortDir('asc');
       return key;
     });
@@ -91,7 +91,7 @@ export function useTableFilter(data = [], {
   }, []);
 
   // ── تغيير البحث ───────────────────────────────────────────
-  const handleSearch = useCallback((val) => {
+  const handleSearch = useCallback((val: any) => {
     setSearch(val);
     setPage(1);
   }, []);

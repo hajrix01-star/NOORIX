@@ -15,7 +15,7 @@ import {
 } from './BatchRowParts';
 import { isWarrantyFollowUpKind } from '../utils/batchRowModel';
 
-function dateErrorStyle(maxInvoiceDate, invoiceDate) {
+function dateErrorStyle(maxInvoiceDate: any, invoiceDate: any) {
   return maxInvoiceDate && invoiceDate > maxInvoiceDate
     ? { borderColor: 'var(--noorix-accent-red)', background: 'var(--noorix-red-8, #fef2f2)' }
     : {};
@@ -58,7 +58,7 @@ function BatchRowTable(props: Record<string, any>) {
       <td style={cp}>
         <Input
           value={row.invoiceNumber}
-          onChange={(e) => onUpdate(index, 'invoiceNumber', e.target.value)}
+          onChange={(e: any) => onUpdate(index, 'invoiceNumber', e.target.value)}
           placeholder={t('invoiceNumberPlaceholder')}
           className="text-center w-full"
           style={inputSm}
@@ -72,7 +72,7 @@ function BatchRowTable(props: Record<string, any>) {
           min="0"
           step="0.1"
           value={row.totalInclusive}
-          onChange={(e) => onUpdate(index, 'totalInclusive', e.target.value)}
+          onChange={(e: any) => onUpdate(index, 'totalInclusive', e.target.value)}
           placeholder={t('amountPlaceholderZero')}
           className="font-bold text-[13px] w-full"
           style={{ ...inputSm, textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)' }}
@@ -90,7 +90,7 @@ function BatchRowTable(props: Record<string, any>) {
           dir="ltr"
           value={row.invoiceDate}
           max={maxInvoiceDate || undefined}
-          onChange={(e) => {
+          onChange={(e: any) => {
             const v = e.target.value;
             if (maxInvoiceDate && v > maxInvoiceDate) {
               onUpdate(index, 'invoiceDate', maxInvoiceDate);
@@ -112,7 +112,7 @@ function BatchRowTable(props: Record<string, any>) {
         <Input
           type="select"
           value={row.kind}
-          onChange={(e) => {
+          onChange={(e: any) => {
             const kind = e.target.value;
             onUpdate(index, {
               kind,
@@ -133,7 +133,7 @@ function BatchRowTable(props: Record<string, any>) {
             <input
               type="checkbox"
               checked={!!row.warrantyFollowUp}
-              onChange={(e) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
+              onChange={(e: any) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
               className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
               aria-label={`${t('warrantyFollowUpCol')} — ${t('batchRowLineAriaLabel', index + 1)}`}
             />
@@ -148,14 +148,14 @@ function BatchRowTable(props: Record<string, any>) {
         <Input
           type="select"
           value={row.categoryId || ''}
-          onChange={(e) => {
-            const cat = categoryOptions.find((c) => c.id === e.target.value);
+          onChange={(e: any) => {
+            const cat = categoryOptions.find((c: any) => c.id === e.target.value);
             handleCategoryChange(cat || null);
           }}
           aria-label={`${t('category')} — ${t('batchRowLineAriaLabel', index + 1)}`}
         >
           <option value="">{t('categoryPlaceholder')}</option>
-          {categoryOptions.map((c) => (
+          {categoryOptions.map((c: any) => (
             <option key={c.id} value={c.id}>
               {(c.icon || '')} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
             </option>
@@ -170,7 +170,7 @@ function BatchRowTable(props: Record<string, any>) {
       <td style={cp}>
         <Input
           value={row.notes || ''}
-          onChange={(e) => onUpdate(index, 'notes', e.target.value)}
+          onChange={(e: any) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
           className="w-full"
           style={inputSm}
@@ -191,7 +191,7 @@ function BatchRowTable(props: Record<string, any>) {
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
             className="w-full max-w-[96px] text-[9px] file:mr-1"
             aria-label={`${t('invoiceReceiptAttachment')} — ${t('batchRowLineAriaLabel', index + 1)}`}
-            onChange={(e) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+            onChange={(e: any) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
           />
         </div>
       </td>
@@ -284,7 +284,7 @@ function BatchRowStack(props: Record<string, any>) {
             label={t('supplierInvoiceNumber')}
             size="sm"
             value={row.invoiceNumber}
-            onChange={(e) => onUpdate(index, 'invoiceNumber', e.target.value)}
+            onChange={(e: any) => onUpdate(index, 'invoiceNumber', e.target.value)}
             placeholder={t('invoiceNumberPlaceholder')}
             className="w-full"
           />
@@ -296,7 +296,7 @@ function BatchRowStack(props: Record<string, any>) {
             step="0.1"
             size="sm"
             value={row.totalInclusive}
-            onChange={(e) => onUpdate(index, 'totalInclusive', e.target.value)}
+            onChange={(e: any) => onUpdate(index, 'totalInclusive', e.target.value)}
             placeholder={t('amountPlaceholderZero')}
             className="font-bold w-full nx-font-numbers"
           />
@@ -311,7 +311,7 @@ function BatchRowStack(props: Record<string, any>) {
           size="sm"
           value={row.invoiceDate}
           max={maxInvoiceDate || undefined}
-          onChange={(e) => {
+          onChange={(e: any) => {
             const v = e.target.value;
             if (maxInvoiceDate && v > maxInvoiceDate) {
               onUpdate(index, 'invoiceDate', maxInvoiceDate);
@@ -332,7 +332,7 @@ function BatchRowStack(props: Record<string, any>) {
           type="select"
           size="sm"
           value={row.kind}
-          onChange={(e) => {
+          onChange={(e: any) => {
             const kind = e.target.value;
             onUpdate(index, {
               kind,
@@ -350,7 +350,7 @@ function BatchRowStack(props: Record<string, any>) {
             <input
               type="checkbox"
               checked={!!row.warrantyFollowUp}
-              onChange={(e) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
+              onChange={(e: any) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
               className="h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
             />
             <span>{t('warrantyFollowUpStack')}</span>
@@ -363,13 +363,13 @@ function BatchRowStack(props: Record<string, any>) {
           type="select"
           size="sm"
           value={row.categoryId || ''}
-          onChange={(e) => {
-            const cat = categoryOptions.find((c) => c.id === e.target.value);
+          onChange={(e: any) => {
+            const cat = categoryOptions.find((c: any) => c.id === e.target.value);
             handleCategoryChange(cat || null);
           }}
         >
           <option value="">{t('categoryPlaceholder')}</option>
-          {categoryOptions.map((c) => (
+          {categoryOptions.map((c: any) => (
             <option key={c.id} value={c.id}>
               {(c.icon || '')} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
             </option>
@@ -383,7 +383,7 @@ function BatchRowStack(props: Record<string, any>) {
           label={t('notes')}
           size="sm"
           value={row.notes || ''}
-          onChange={(e) => onUpdate(index, 'notes', e.target.value)}
+          onChange={(e: any) => onUpdate(index, 'notes', e.target.value)}
           placeholder={(row.kind === 'fixed_expense' || !row.supplierId) ? t('batchNotesPlaceholderServiceName') : t('batchNotesPlaceholderEllipsis')}
           className="w-full"
           title={!row.supplierId ? (t('notesRequiredForNoSupplier') || '') : ''}
@@ -395,7 +395,7 @@ function BatchRowStack(props: Record<string, any>) {
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
             className="text-[12px] max-w-full"
-            onChange={(e) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+            onChange={(e: any) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
           />
           {row.attachmentFile ? (
             <span className="text-[10px] text-noorix-muted truncate block mt-1" title={row.attachmentFile.name}>

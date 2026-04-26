@@ -22,19 +22,19 @@ const SAMPLE_ROWS = [
 ];
 
 /* ─── أدوات CSV ─────────────────────────────────────────────────────── */
-function escapeCell(val) {
+function escapeCell(val: any) {
   const s = String(val ?? '');
   return s.includes(',') || s.includes('"') || s.includes('\n')
     ? `"${s.replace(/"/g, '""')}"`
     : s;
 }
 
-function buildCsv(rows) {
-  const lines = rows.map((r) => r.map(escapeCell).join(','));
+function buildCsv(rows: any) {
+  const lines = rows.map((r: any) => r.map(escapeCell).join(','));
   return lines.join('\r\n');
 }
 
-function downloadCsv(content, filename) {
+function downloadCsv(content: any, filename: any) {
   const bom = '\uFEFF'; // BOM لدعم Excel العربي
   const blob = new Blob([bom + content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -45,10 +45,10 @@ function downloadCsv(content, filename) {
   URL.revokeObjectURL(url);
 }
 
-function parseCsv(text) {
+function parseCsv(text: any) {
   // إزالة BOM
   const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = clean.split('\n').filter((l) => l.trim());
+  const lines = clean.split('\n').filter((l: any) => l.trim());
   if (lines.length < 2) return [];
 
   // السطر الأول رؤوس — نتحقق إن كانت عربية أو إنجليزية
@@ -57,7 +57,7 @@ function parseCsv(text) {
 
   const dataLines = isArabicHeader ? lines.slice(1) : lines; // إن لم تكن رؤوس نبدأ من 0
 
-  return dataLines.map((line) => {
+  return dataLines.map((line: any) => {
     // تحليل CSV بسيط مع دعم الخلايا بين علامات اقتباس
     const cells = [];
     let cur = '', inQ = false;
@@ -77,14 +77,14 @@ function parseCsv(text) {
     const supplierType = rawType.includes('expense') ? 'expenses' : 'purchases';
 
     return { nameAr, nameEn, taxNumber, phone, supplierType };
-  }).filter((r) => r.nameAr.trim()); // تجاهل الصفوف الفارغة أو بدون اسم عربي
+  }).filter((r: any) => r.nameAr.trim()); // تجاهل الصفوف الفارغة أو بدون اسم عربي
 }
 
 /* ─── المكون الرئيسي ────────────────────────────────────────────────── */
-export default function SupplierImportExport({ companyId, suppliers = [], onImport }) {
-  const fileRef = useRef(null);
+export default function SupplierImportExport({ companyId, suppliers = [], onImport }: any) {
+  const fileRef = useRef<any>(null);
   const [importing, setImporting] = useState(false);
-  const [result, setResult]       = useState(null); // { success, failed, errors }
+  const [result, setResult]       = useState<any>(null); // { success, failed, errors }
 
   /* تنزيل التامبلت */
   function handleDownloadTemplate() {
@@ -97,7 +97,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
     if (!suppliers.length) return;
     const rows = [
       CSV_HEADERS_AR,
-      ...suppliers.map((s) => [
+      ...suppliers.map((s: any) => [
         s.nameAr || '',
         s.nameEn || '',
         s.taxNumber || '',
@@ -109,7 +109,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
   }
 
   /* قراءة ملف الاستيراد */
-  async function handleFileChange(e) {
+  async function handleFileChange(e: any) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
@@ -132,7 +132,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
       try {
         await onImport({ ...row, companyId });
         success++;
-      } catch (err) {
+      } catch (err: any) {
         errors.push(`"${row.nameAr}": ${err?.message || 'خطأ غير معروف'}`);
       }
     }
@@ -182,7 +182,7 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
           </div>
           {result.errors.length > 0 && (
             <ul className="m-0 text-[12px] max-h-[120px] overflow-y-auto ps-5 text-noorix-red list-disc">
-              {result.errors.map((e, i) => <li key={i}>{e}</li>)}
+              {result.errors.map((e: any, i: any) => <li key={i}>{e}</li>)}
             </ul>
           )}
           <Button

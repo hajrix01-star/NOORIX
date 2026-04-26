@@ -15,39 +15,39 @@ import { hrFmt } from '../utils/hrFmt';
 import { overtimePay, sumCustomAllowancesForEmployee } from '../utils/employeeSalaryMath';
 import { Button, Input, FmtNum } from '../../../ui';
 
-function esc(v) {
+function esc(v: any) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function n(v) {
+function n(v: any) {
   const x = parseFloat(String(v).replace(/,/g, ''));
   return Number.isFinite(x) ? x : 0;
 }
 
-function defaultPeriodLabel(lang) {
+function defaultPeriodLabel(lang: any) {
   return new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', { month: 'long', year: 'numeric' });
 }
 
-function monthNameAr(m1to12) {
+function monthNameAr(m1to12: any) {
   return new Date(2000, m1to12 - 1, 1).toLocaleDateString('ar-SA', { month: 'long' });
 }
-function monthNameEn(m1to12) {
+function monthNameEn(m1to12: any) {
   return new Date(2000, m1to12 - 1, 1).toLocaleDateString('en-US', { month: 'long' });
 }
 
-function parseYmd(d) {
+function parseYmd(d: any) {
   if (!d || typeof d !== 'string') return null;
   const x = new Date(`${d.slice(0, 10)}T12:00:00`);
   return Number.isNaN(x.getTime()) ? null : x;
 }
 
-function formatDateLocale(d, loc) {
+function formatDateLocale(d: any, loc: any) {
   const p = parseYmd(d);
   if (!p) return 'ظ¤';
   return p.toLocaleDateString(loc, { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
-function serviceDurationArEn(startStr, endStr) {
+function serviceDurationArEn(startStr: any, endStr: any) {
   const a = parseYmd(startStr);
   const b = parseYmd(endStr);
   if (!a || !b || b < a) return { ar: 'ظ¤', en: 'ظ¤' };
@@ -57,10 +57,10 @@ function serviceDurationArEn(startStr, endStr) {
   return { ar: `${mo} ╪┤┘ç╪▒ ┘ê ${da} ┘è┘ê┘à`, en: `${mo} month(s) and ${da} day(s)` };
 }
 
-function firstLastActiveMonthRange(monthOn, year) {
+function firstLastActiveMonthRange(monthOn: any, year: any) {
   let fi = -1;
   let li = -1;
-  monthOn.forEach((on, i) => {
+  monthOn.forEach((on: any, i: any) => {
     if (on) {
       if (fi < 0) fi = i;
       li = i;
@@ -268,7 +268,7 @@ const HR_GEN_PRINT_CSS = `
 }
 `.trim();
 
-function wrapHrPrintBody(innerHtml, landscape) {
+function wrapHrPrintBody(innerHtml: any, landscape: any) {
   const cls = landscape ? 'hr-sheet gen-print hr-sheet--landscape' : 'hr-sheet gen-print hr-sheet--portrait';
   return `
 <div class="${cls}">
@@ -280,20 +280,20 @@ ${innerHtml}
 </div>`;
 }
 
-function safeImgSrc(url) {
+function safeImgSrc(url: any) {
   const u = String(url || '').trim();
   if (!u) return '';
   return u.replace(/"/g, '%22').replace(/'/g, '%27');
 }
 
-function buildGenLogoInner(logoUrl) {
+function buildGenLogoInner(logoUrl: any) {
   const u = safeImgSrc(logoUrl);
   if (u.startsWith('http') || u.startsWith('data:image'))
     return `<img src="${u}" alt="" />`;
   return `<div class="gen-logo-placeholder">╪┤╪╣╪د╪▒<br/><span style="font-size:9px">Logo</span></div>`;
 }
 
-function buildGenHeader({ logoUrl, companyAr, companyEn, titleAr, titleEn, subtitleAr, subtitleEn }) {
+function buildGenHeader({ logoUrl, companyAr, companyEn, titleAr, titleEn, subtitleAr, subtitleEn }: any) {
   const enLine =
     companyEn && String(companyEn).trim()
       ? `<div class="doc-company-en" dir="ltr">${esc(companyEn)}</div>`
@@ -315,7 +315,7 @@ function buildGenHeader({ logoUrl, companyAr, companyEn, titleAr, titleEn, subti
   </header>`;
 }
 
-function buildGenEmployeeStrip(displayName, iqama, jobTitle) {
+function buildGenEmployeeStrip(displayName: any, iqama: any, jobTitle: any) {
   const n = esc(String(displayName || '').trim() || 'ظ¤');
   const i = esc(String(iqama || '').trim() || 'ظ¤');
   const j = esc(String(jobTitle || '').trim() || 'ظ¤');
@@ -328,10 +328,10 @@ function buildGenEmployeeStrip(displayName, iqama, jobTitle) {
   </div>`;
 }
 
-function buildGenContractGrid(rows) {
+function buildGenContractGrid(rows: any) {
   const cells = rows
     .map(
-      (r) => `<div class="doc-info-cell">
+      (r: any) => `<div class="doc-info-cell">
       <span class="doc-info-label">${esc(r.labelAr)}<br/><span style="font-size:9px;font-weight:600;color:#94a3b8">${esc(r.labelEn)}</span></span>
       <span class="doc-info-value ${r.ltr ? 'v-ltr' : ''}" ${r.ltr ? 'dir="ltr"' : 'dir="rtl"'}>${esc(r.value)}</span>
     </div>`,
@@ -340,13 +340,13 @@ function buildGenContractGrid(rows) {
   return `<div class="doc-info-grid">${cells}</div>`;
 }
 
-function buildGenContractBlock(titleAr, titleEn, rows) {
+function buildGenContractBlock(titleAr: any, titleEn: any, rows: any) {
   return `
   <div class="doc-section-title"><span>${esc(titleAr)}</span><span class="doc-section-title-en">${esc(titleEn)}</span></div>
   ${buildGenContractGrid(rows)}`;
 }
 
-function buildGenDeclarationBlock(arText, enText) {
+function buildGenDeclarationBlock(arText: any, enText: any) {
   const a = String(arText || '').trim();
   const e = String(enText || '').trim();
   if (!a && !e) return '';
@@ -359,7 +359,7 @@ function buildGenDeclarationBlock(arText, enText) {
 }
 
 /** ╪ح┘é╪▒╪د╪▒ ╪د┘┘à╪«╪د┘╪╡╪ر: ╪د┘╪╣╪▒╪ذ┘è╪ر ┘ê╪د┘╪ح┘╪ش┘┘è╪▓┘è╪ر ┘┘è ┘â╪ز┘╪ر ┘ê╪د╪ص╪»╪ر ╪ذ┘┘╪│ ╪ث╪│┘┘ê╪ذ ╪ز╪│┘à┘è╪د╪ز ╪د┘╪╣┘é╪» */
-function buildGenSettlementDeclarationBlock(arText, enText) {
+function buildGenSettlementDeclarationBlock(arText: any, enText: any) {
   const a = String(arText || '').trim();
   const e = String(enText || '').trim();
   if (!a && !e) return '';
@@ -383,7 +383,7 @@ function buildGenSettlementDeclarationBlock(arText, enText) {
   </div>`;
 }
 
-function buildGenSignaturesBlock(empName, companyAr) {
+function buildGenSignaturesBlock(empName: any, companyAr: any) {
   const e = esc(String(empName || '').trim() || 'ظ¤');
   const c = esc(String(companyAr || '').trim() || 'ظ¤');
   return `
@@ -408,7 +408,7 @@ function buildGenSignaturesBlock(empName, companyAr) {
   </div>`;
 }
 
-function buildGenFooter(issueDateStr, langIsAr) {
+function buildGenFooter(issueDateStr: any, langIsAr: any) {
   const left = langIsAr
     ? '┘ç╪░╪د ╪د┘╪«╪╖╪د╪ذ ┘ê╪س┘è┘é╪ر ┘┘╪د╪╖┘╪د╪╣ ┘ê╪د┘╪ز┘ê┘é┘è╪╣ ┘ê┘┘é ┘╪╕╪د┘à ╪د┘╪╣┘à┘ ╪د┘╪│╪╣┘ê╪»┘è (┘à╪▒╪│┘ê┘à ┘à/51).'
     : 'Signature document under Saudi Labor Law (Royal Decree M/51).';
@@ -436,7 +436,7 @@ function emptyPayrollDraft() {
     transport: '',
     other: '',
     overtime: '',
-    customRows: [],
+    customRows: [] as any[],
     showBreakdown: true,
     notes: '',
     letterStartDate: '',
@@ -480,7 +480,7 @@ function composeHrPrintDocument({
   annualSum,
   eosWageTotal,
   t,
-}) {
+}: any) {
   const issueDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', {
     year: 'numeric',
     month: 'short',
@@ -493,7 +493,7 @@ function composeHrPrintDocument({
     const nameDisp = [eos.nameEn, eos.nameAr].filter(Boolean).join(' / ') || 'ظ¤';
     const dur = serviceDurationArEn(eos.joinDate, eos.endDate);
     const customLines = (eos.customRows || [])
-      .map((r) => `${r.label || 'ظ¤'}: ${hrFmt(n(r.amount))} SR`)
+      .map((r: any) => `${r.label || 'ظ¤'}: ${hrFmt(n(r.amount))} SR`)
       .join('╪ؤ ');
     const wageExtra = customLines ? ` (${customLines})` : '';
     const contractRows = [
@@ -618,9 +618,9 @@ function composeHrPrintDocument({
     return { inner, err: null, title: 'Salary receipt letter / ╪«╪╖╪د╪ذ ╪د╪│╪ز┘╪د┘à ╪د┘╪▒┘ê╪د╪ز╪ذ' };
   }
 
-  const rowsAr = [];
-  const rowsEn = [];
-  const push = (ar, en, val) => {
+  const rowsAr: string[] = [];
+  const rowsEn: string[] = [];
+  const push = (ar: any, en: any, val: any) => {
     rowsAr.push(`<tr><td>${esc(ar)}</td><td class="td-num">${esc(hrFmt(val))} SR</td></tr>`);
     rowsEn.push(`<tr><td class="td-en">${esc(en)}</td><td class="td-num">${esc(hrFmt(val))} SR</td></tr>`);
   };
@@ -630,9 +630,9 @@ function composeHrPrintDocument({
   push(t('otherAllowance'), LABEL_PAYROLL_EN.other, n(payroll.other));
   push('╪ز┘é╪»┘è╪▒ ╪د┘╪ث┘ê┘╪▒ ╪ز╪د┘è┘à (╪┤┘ç╪▒┘è)', LABEL_PAYROLL_EN.overtime, n(payroll.overtime));
   if (payroll.showBreakdown) {
-    (payroll.customRows || []).forEach((r) => push(r.label || 'ظ¤', r.label || LABEL_PAYROLL_EN.custom, n(r.amount)));
+    (payroll.customRows || []).forEach((r: any) => push(r.label || 'ظ¤', r.label || LABEL_PAYROLL_EN.custom, n(r.amount)));
   } else {
-    const csum = (payroll.customRows || []).reduce((s, r) => s + n(r.amount), 0);
+    const csum = (payroll.customRows || []).reduce((s: any, r: any) => s + n(r.amount), 0);
     if (csum > 0) push(t('customAllowances'), LABEL_PAYROLL_EN.custom, csum);
   }
   const notesAr = payroll.notes?.trim() ? `<div class="doc-note" dir="rtl">${esc(payroll.notes)}</div>` : '';
@@ -706,7 +706,7 @@ export default function HrPrintDocumentsTab() {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
   const companyId = activeCompanyId ?? '';
-  const company = companies?.find((c) => c.id === companyId);
+  const company = companies?.find((c: any) => c.id === companyId);
   const companyNameArDefault = company?.nameAr || company?.name || '';
   const companyNameEnDefault = company?.nameEn || company?.nameAr || company?.name || '';
   const companyLogoUrl = String(company?.logoUrl || getBrandLogo() || '').trim();
@@ -722,7 +722,7 @@ export default function HrPrintDocumentsTab() {
   const { employees } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: !!companyId });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
 
-  const emp = useMemo(() => employees.find((e) => e.id === employeeId), [employees, employeeId]);
+  const emp = useMemo(() => employees.find((e: any) => e.id === employeeId), [employees, employeeId]);
 
   const customTotal = useMemo(() => {
     if (!emp) return 0;
@@ -731,13 +731,13 @@ export default function HrPrintDocumentsTab() {
 
   const payrollTotal = useMemo(() => {
     let sum = n(payroll.basic) + n(payroll.housing) + n(payroll.transport) + n(payroll.other) + n(payroll.overtime);
-    (payroll.customRows || []).forEach((r) => { sum += n(r.amount); });
+    (payroll.customRows || []).forEach((r: any) => { sum += n(r.amount); });
     return sum;
   }, [payroll]);
 
   const annualSum = useMemo(() => {
     let s = 0;
-    annual.monthOn.forEach((on, i) => {
+    annual.monthOn.forEach((on: any, i: any) => {
       if (on) s += n(annual.amounts[i]);
     });
     return s;
@@ -745,17 +745,17 @@ export default function HrPrintDocumentsTab() {
 
   const eosWageTotal =
     n(eos.basic) + n(eos.housing) + n(eos.transport) + n(eos.other) +
-    (eos.customRows || []).reduce((s, r) => s + n(r.amount), 0);
+    (eos.customRows || []).reduce((s: any, r: any) => s + n(r.amount), 0);
 
   const importPayroll = useCallback(() => {
     if (!emp) return;
     const customRows = customAllowances
-      .filter((a) => a.employeeId === emp.id)
-      .map((a) => ({ key: a.id, label: a.nameAr || t('customAllowanceName'), amount: String(n(a.amount)) }));
+      .filter((a: any) => a.employeeId === emp.id)
+      .map((a: any) => ({ key: a.id, label: a.nameAr || t('customAllowanceName'), amount: String(n(a.amount)) }));
     const tot =
       n(emp.basicSalary) + n(emp.housingAllowance) + n(emp.transportAllowance) + n(emp.otherAllowance) +
       overtimePay(emp, sumCustomAllowancesForEmployee(customAllowances, emp.id)) +
-      customRows.reduce((a, r) => a + n(r.amount), 0);
+      customRows.reduce((a: any, r: any) => a + n(r.amount), 0);
     const totStr = String(Math.round(tot * 100) / 100);
     setPayroll({
       ...emptyPayrollDraft(),
@@ -781,7 +781,7 @@ export default function HrPrintDocumentsTab() {
       customRows,
       showBreakdown: true,
     });
-    setAnnual((a) => ({
+    setAnnual((a: any) => ({
       year: a.year,
       monthOn: Array(12).fill(true),
       amounts: Array(12).fill(totStr),
@@ -792,8 +792,8 @@ export default function HrPrintDocumentsTab() {
   const importEos = useCallback(() => {
     if (!emp) return;
     const customRows = customAllowances
-      .filter((a) => a.employeeId === emp.id)
-      .map((a) => ({ key: a.id, label: a.nameAr || t('customAllowanceName'), amount: String(n(a.amount)) }));
+      .filter((a: any) => a.employeeId === emp.id)
+      .map((a: any) => ({ key: a.id, label: a.nameAr || t('customAllowanceName'), amount: String(n(a.amount)) }));
     const ct = sumCustomAllowancesForEmployee(customAllowances, emp.id);
     setEos({
       ...emptyEosDraft(),
@@ -819,10 +819,10 @@ export default function HrPrintDocumentsTab() {
 
   const fillAnnualWithMonthlyTotal = () => {
     const s = String(Math.round(payrollTotal * 100) / 100);
-    setAnnual((a) => ({
+    setAnnual((a: any) => ({
       ...a,
       perMonthGross: s,
-      amounts: a.amounts.map((_, i) => (a.monthOn[i] ? s : '')),
+      amounts: a.amounts.map((_: any, i: any) => (a.monthOn[i] ? s : '')),
     }));
   };
 
@@ -884,17 +884,17 @@ export default function HrPrintDocumentsTab() {
     });
   };
 
-  const updatePayroll = (patch) => setPayroll((p) => ({ ...p, ...patch }));
-  const updateEos = (patch) => setEos((p) => ({ ...p, ...patch }));
+  const updatePayroll = (patch: any) => setPayroll((p: any) => ({ ...p, ...patch }));
+  const updateEos = (patch: any) => setEos((p: any) => ({ ...p, ...patch }));
 
   const addCustomRowPayroll = () => {
-    setPayroll((p) => ({
+    setPayroll((p: any) => ({
       ...p,
       customRows: [...(p.customRows || []), { key: `n-${Date.now()}`, label: '', amount: '' }],
     }));
   };
   const addCustomRowEos = () => {
-    setEos((p) => ({
+    setEos((p: any) => ({
       ...p,
       customRows: [...(p.customRows || []), { key: `n-${Date.now()}`, label: '', amount: '' }],
     }));
@@ -941,9 +941,9 @@ export default function HrPrintDocumentsTab() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <Input type="select" label={t('selectEmployee')} value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
+            <Input type="select" label={t('selectEmployee')} value={employeeId} onChange={(e: any) => setEmployeeId(e.target.value)}>
               <option value="">ظ¤</option>
-              {employees.map((e) => (
+              {employees.map((e: any) => (
                 <option key={e.id} value={e.id}>{employeeDisplayName(e, lang, e.id)}</option>
               ))}
             </Input>
@@ -970,30 +970,30 @@ export default function HrPrintDocumentsTab() {
           <div className="space-y-3 rounded-lg border border-noorix-border/80 bg-noorix-bg-muted/15 p-3 sm:p-4">
             <p className="m-0 text-[11px] font-bold uppercase tracking-wide text-noorix-muted">{t('hrPrintSectionDocParty')}</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Input type="text" label={t('hrPrintCompanyName')} value={payroll.companyName} onChange={(e) => updatePayroll({ companyName: e.target.value })} />
-              <Input type="text" label={t('hrPrintCompanyNameEn')} value={payroll.companyNameEn} onChange={(e) => updatePayroll({ companyNameEn: e.target.value })} />
-              <Input type="text" label={t('hrPrintNameAr')} value={payroll.nameAr} onChange={(e) => updatePayroll({ nameAr: e.target.value })} />
-              <Input type="text" label={t('hrPrintNameEn')} value={payroll.nameEn} onChange={(e) => updatePayroll({ nameEn: e.target.value })} />
-              <Input type="text" label={t('employeeSerial')} value={payroll.employeeSerial} onChange={(e) => updatePayroll({ employeeSerial: e.target.value })} />
-              <Input type="text" label={t('jobTitle')} value={payroll.jobTitle} onChange={(e) => updatePayroll({ jobTitle: e.target.value })} />
-              <Input type="text" label={t('iqamaNumber')} value={payroll.iqama} onChange={(e) => updatePayroll({ iqama: e.target.value })} />
-              <Input type="date" label={t('joinDate')} value={payroll.joinDate} onChange={(e) => updatePayroll({ joinDate: e.target.value })} />
+              <Input type="text" label={t('hrPrintCompanyName')} value={payroll.companyName} onChange={(e: any) => updatePayroll({ companyName: e.target.value })} />
+              <Input type="text" label={t('hrPrintCompanyNameEn')} value={payroll.companyNameEn} onChange={(e: any) => updatePayroll({ companyNameEn: e.target.value })} />
+              <Input type="text" label={t('hrPrintNameAr')} value={payroll.nameAr} onChange={(e: any) => updatePayroll({ nameAr: e.target.value })} />
+              <Input type="text" label={t('hrPrintNameEn')} value={payroll.nameEn} onChange={(e: any) => updatePayroll({ nameEn: e.target.value })} />
+              <Input type="text" label={t('employeeSerial')} value={payroll.employeeSerial} onChange={(e: any) => updatePayroll({ employeeSerial: e.target.value })} />
+              <Input type="text" label={t('jobTitle')} value={payroll.jobTitle} onChange={(e: any) => updatePayroll({ jobTitle: e.target.value })} />
+              <Input type="text" label={t('iqamaNumber')} value={payroll.iqama} onChange={(e: any) => updatePayroll({ iqama: e.target.value })} />
+              <Input type="date" label={t('joinDate')} value={payroll.joinDate} onChange={(e: any) => updatePayroll({ joinDate: e.target.value })} />
             </div>
           </div>
 
           {(payroll.payrollFormat === 'single' || payroll.payrollFormat === 'salaryLetter') && (
             <div className="space-y-3 rounded-lg border border-noorix-border/80 bg-noorix-bg-muted/15 p-3 sm:p-4">
               <p className="m-0 text-[11px] font-bold uppercase tracking-wide text-noorix-muted">{t('hrPrintSectionPayPackage')}</p>
-              <Input type="text" label={t('hrPrintPeriodLabel')} value={payroll.periodLabel} onChange={(e) => updatePayroll({ periodLabel: e.target.value })} />
+              <Input type="text" label={t('hrPrintPeriodLabel')} value={payroll.periodLabel} onChange={(e: any) => updatePayroll({ periodLabel: e.target.value })} />
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <Input type="text" inputMode="decimal" label={t('basicSalary')} value={payroll.basic} onChange={(e) => updatePayroll({ basic: e.target.value })} />
-                <Input type="text" inputMode="decimal" label={t('housingAllowance')} value={payroll.housing} onChange={(e) => updatePayroll({ housing: e.target.value })} />
-                <Input type="text" inputMode="decimal" label={t('transportAllowance')} value={payroll.transport} onChange={(e) => updatePayroll({ transport: e.target.value })} />
-                <Input type="text" inputMode="decimal" label={t('otherAllowance')} value={payroll.other} onChange={(e) => updatePayroll({ other: e.target.value })} />
-                <Input type="text" inputMode="decimal" label={lang === 'ar' ? '╪ث┘ê┘╪▒ ╪ز╪د┘è┘à (╪ز┘é╪»┘è╪▒ ╪┤┘ç╪▒┘è)' : 'Overtime (monthly est.)'} value={payroll.overtime} onChange={(e) => updatePayroll({ overtime: e.target.value })} />
+                <Input type="text" inputMode="decimal" label={t('basicSalary')} value={payroll.basic} onChange={(e: any) => updatePayroll({ basic: e.target.value })} />
+                <Input type="text" inputMode="decimal" label={t('housingAllowance')} value={payroll.housing} onChange={(e: any) => updatePayroll({ housing: e.target.value })} />
+                <Input type="text" inputMode="decimal" label={t('transportAllowance')} value={payroll.transport} onChange={(e: any) => updatePayroll({ transport: e.target.value })} />
+                <Input type="text" inputMode="decimal" label={t('otherAllowance')} value={payroll.other} onChange={(e: any) => updatePayroll({ other: e.target.value })} />
+                <Input type="text" inputMode="decimal" label={lang === 'ar' ? '╪ث┘ê┘╪▒ ╪ز╪د┘è┘à (╪ز┘é╪»┘è╪▒ ╪┤┘ç╪▒┘è)' : 'Overtime (monthly est.)'} value={payroll.overtime} onChange={(e: any) => updatePayroll({ overtime: e.target.value })} />
               </div>
               <label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium">
-                <input type="checkbox" checked={payroll.showBreakdown} onChange={(e) => updatePayroll({ showBreakdown: e.target.checked })} className="h-4 w-4 accent-noorix-blue" />
+                <input type="checkbox" checked={payroll.showBreakdown} onChange={(e: any) => updatePayroll({ showBreakdown: e.target.checked })} className="h-4 w-4 accent-noorix-blue" />
                 {t('hrPrintShowAllowanceDetail')}
               </label>
               <div className="space-y-2">
@@ -1001,25 +1001,25 @@ export default function HrPrintDocumentsTab() {
                   <span className="text-[13px] font-semibold">{t('customAllowances')}</span>
                   <Button type="button" size="sm" variant="ghost" onClick={addCustomRowPayroll}>{t('addCustomAllowance')}</Button>
                 </div>
-                {(payroll.customRows || []).map((row, idx) => (
+                {(payroll.customRows || []).map((row: any, idx: any) => (
                   <div key={row.key} className="grid gap-2 sm:grid-cols-[1fr_120px_auto] sm:items-center">
-                    <Input type="text" label={t('customAllowanceName')} value={row.label} onChange={(e) => {
-                      const next = [...payroll.customRows];
+                    <Input type="text" label={t('customAllowanceName')} value={row.label} onChange={(e: any) => {
+                      const next = [...(payroll.customRows || [])];
                       next[idx] = { ...row, label: e.target.value };
                       updatePayroll({ customRows: next });
                     }}
                     />
-                    <Input type="text" inputMode="decimal" label={t('customAllowanceAmount')} value={row.amount} onChange={(e) => {
-                      const next = [...payroll.customRows];
+                    <Input type="text" inputMode="decimal" label={t('customAllowanceAmount')} value={row.amount} onChange={(e: any) => {
+                      const next = [...(payroll.customRows || [])];
                       next[idx] = { ...row, amount: e.target.value };
                       updatePayroll({ customRows: next });
                     }}
                     />
-                    <Button type="button" size="sm" variant="danger" onClick={() => updatePayroll({ customRows: payroll.customRows.filter((_, i) => i !== idx) })}>{t('delete')}</Button>
+                    <Button type="button" size="sm" variant="danger" onClick={() => updatePayroll({ customRows: payroll.customRows.filter((_: any, i: any) => i !== idx) })}>{t('delete')}</Button>
                   </div>
                 ))}
               </div>
-              <Input multiline rows={3} label={t('note')} value={payroll.notes} onChange={(e) => updatePayroll({ notes: e.target.value })} />
+              <Input multiline rows={3} label={t('note')} value={payroll.notes} onChange={(e: any) => updatePayroll({ notes: e.target.value })} />
               <div className="flex items-center justify-between rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2">
                 <span className="text-[13px] font-semibold">{t('totalSalary')}</span>
                 <span className="nx-font-numbers text-[16px] font-bold"><FmtNum n={payrollTotal} /> <span className="nx-sar">SR</span></span>
@@ -1028,11 +1028,11 @@ export default function HrPrintDocumentsTab() {
                 <div className="space-y-3 rounded-lg border border-dashed border-noorix-blue/30 bg-noorix-bg-muted/20 p-3 sm:p-4">
                   <p className="m-0 text-[12px] font-semibold text-noorix-text">{t('hrPrintFormatSalaryLetter')}</p>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Input type="date" label={t('hrPrintLetterStart')} value={payroll.letterStartDate} onChange={(e) => updatePayroll({ letterStartDate: e.target.value })} />
-                    <Input type="date" label={t('hrPrintLetterEnd')} value={payroll.letterEndDate} onChange={(e) => updatePayroll({ letterEndDate: e.target.value })} />
+                    <Input type="date" label={t('hrPrintLetterStart')} value={payroll.letterStartDate} onChange={(e: any) => updatePayroll({ letterStartDate: e.target.value })} />
+                    <Input type="date" label={t('hrPrintLetterEnd')} value={payroll.letterEndDate} onChange={(e: any) => updatePayroll({ letterEndDate: e.target.value })} />
                   </div>
-                  <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclAr')} value={payroll.declarationSalariesAr} onChange={(e) => updatePayroll({ declarationSalariesAr: e.target.value })} />
-                  <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclEn')} value={payroll.declarationSalariesEn} onChange={(e) => updatePayroll({ declarationSalariesEn: e.target.value })} />
+                  <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclAr')} value={payroll.declarationSalariesAr} onChange={(e: any) => updatePayroll({ declarationSalariesAr: e.target.value })} />
+                  <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclEn')} value={payroll.declarationSalariesEn} onChange={(e: any) => updatePayroll({ declarationSalariesEn: e.target.value })} />
                 </div>
               )}
             </div>
@@ -1042,25 +1042,25 @@ export default function HrPrintDocumentsTab() {
             <div className="space-y-3 rounded-lg border border-noorix-border/80 bg-noorix-bg-muted/15 p-3 sm:p-4">
               <p className="m-0 text-[13px] font-semibold text-noorix-text">{t('hrPrintAnnualSection')}</p>
               <div className="flex flex-wrap items-end gap-3">
-                <Input type="number" label={t('hrPrintYear')} min={2000} max={2100} step={1} value={annual.year} onChange={(e) => setAnnual((a) => ({ ...a, year: Number(e.target.value) || a.year }))} className="w-[120px]" />
+                <Input type="number" label={t('hrPrintYear')} min={2000} max={2100} step={1} value={annual.year} onChange={(e: any) => setAnnual((a: any) => ({ ...a, year: Number(e.target.value) || a.year }))} className="w-[120px]" />
                 <Button type="button" size="sm" variant="ghost" onClick={fillAnnualWithMonthlyTotal}>{t('hrPrintFillAllMonths')}</Button>
               </div>
               <p className="m-0 text-[11px] leading-relaxed text-noorix-muted">{t('hrPrintAnnualHint')}</p>
               <div>
                 <p className="m-0 mb-2 text-[11px] font-bold uppercase tracking-wide text-noorix-muted">{t('hrPrintAnnualMonthsOnly')}</p>
                 <div className="grid grid-cols-3 gap-x-2 gap-y-2 sm:grid-cols-4 md:grid-cols-6">
-                  {monthShortAr.map((label, i) => (
+                  {monthShortAr.map((label: any, i: any) => (
                     <label key={label} className="flex cursor-pointer items-center gap-2 rounded-md border border-noorix-border/60 bg-white/80 px-2 py-1.5 text-[12px] shadow-sm">
                       <input
                         type="checkbox"
                         checked={annual.monthOn[i]}
-                        onChange={(e) => {
+                        onChange={(e: any) => {
                           const checked = e.target.checked;
-                          setAnnual((a) => {
+                          setAnnual((a: any) => {
                             const monthOn = [...a.monthOn];
                             monthOn[i] = checked;
                             const g = String(a.perMonthGross ?? '').trim();
-                            const amounts = a.amounts.map((amt, j) => {
+                            const amounts = a.amounts.map((amt: any, j: any) => {
                               if (!monthOn[j]) return '';
                               return g !== '' ? g : amt;
                             });
@@ -1079,12 +1079,12 @@ export default function HrPrintDocumentsTab() {
                 inputMode="decimal"
                 label={t('hrPrintAnnualPerMonthGross')}
                 value={annual.perMonthGross ?? ''}
-                onChange={(e) => {
+                onChange={(e: any) => {
                   const v = e.target.value;
-                  setAnnual((a) => ({
+                  setAnnual((a: any) => ({
                     ...a,
                     perMonthGross: v,
-                    amounts: a.monthOn.map((on) => (on ? v : '')),
+                    amounts: a.monthOn.map((on: any) => (on ? v : '')),
                   }));
                 }}
               />
@@ -1102,54 +1102,54 @@ export default function HrPrintDocumentsTab() {
           <p className="m-0 text-[12px] font-semibold text-noorix-blue">{t('hrPrintEosSection')}</p>
           <p className="m-0 text-[11px] text-noorix-muted">{t('hrPrintEosLetterTitleHint')}</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input type="text" label={t('hrPrintCompanyName')} value={eos.companyName} onChange={(e) => updateEos({ companyName: e.target.value })} />
-            <Input type="text" label={t('hrPrintCompanyNameEn')} value={eos.companyNameEn} onChange={(e) => updateEos({ companyNameEn: e.target.value })} />
-            <Input type="text" label={t('hrPrintNameAr')} value={eos.nameAr} onChange={(e) => updateEos({ nameAr: e.target.value })} />
-            <Input type="text" label={t('hrPrintNameEn')} value={eos.nameEn} onChange={(e) => updateEos({ nameEn: e.target.value })} />
-            <Input type="text" label={t('employeeSerial')} value={eos.employeeSerial} onChange={(e) => updateEos({ employeeSerial: e.target.value })} />
-            <Input type="text" label={t('jobTitle')} value={eos.jobTitle} onChange={(e) => updateEos({ jobTitle: e.target.value })} />
-            <Input type="text" label={t('iqamaNumber')} value={eos.iqama} onChange={(e) => updateEos({ iqama: e.target.value })} />
-            <Input type="date" label={t('joinDate')} value={eos.joinDate} onChange={(e) => updateEos({ joinDate: e.target.value })} />
-            <Input type="date" label={lang === 'ar' ? '╪ز╪د╪▒┘è╪« ┘┘ç╪د┘è╪ر ╪د┘╪«╪»┘à╪ر' : 'End of service date'} value={eos.endDate} onChange={(e) => updateEos({ endDate: e.target.value })} />
+            <Input type="text" label={t('hrPrintCompanyName')} value={eos.companyName} onChange={(e: any) => updateEos({ companyName: e.target.value })} />
+            <Input type="text" label={t('hrPrintCompanyNameEn')} value={eos.companyNameEn} onChange={(e: any) => updateEos({ companyNameEn: e.target.value })} />
+            <Input type="text" label={t('hrPrintNameAr')} value={eos.nameAr} onChange={(e: any) => updateEos({ nameAr: e.target.value })} />
+            <Input type="text" label={t('hrPrintNameEn')} value={eos.nameEn} onChange={(e: any) => updateEos({ nameEn: e.target.value })} />
+            <Input type="text" label={t('employeeSerial')} value={eos.employeeSerial} onChange={(e: any) => updateEos({ employeeSerial: e.target.value })} />
+            <Input type="text" label={t('jobTitle')} value={eos.jobTitle} onChange={(e: any) => updateEos({ jobTitle: e.target.value })} />
+            <Input type="text" label={t('iqamaNumber')} value={eos.iqama} onChange={(e: any) => updateEos({ iqama: e.target.value })} />
+            <Input type="date" label={t('joinDate')} value={eos.joinDate} onChange={(e: any) => updateEos({ joinDate: e.target.value })} />
+            <Input type="date" label={lang === 'ar' ? '╪ز╪د╪▒┘è╪« ┘┘ç╪د┘è╪ر ╪د┘╪«╪»┘à╪ر' : 'End of service date'} value={eos.endDate} onChange={(e: any) => updateEos({ endDate: e.target.value })} />
           </div>
           <p className="m-0 text-[11px] text-noorix-muted">{t('hrPrintEosWageHint')}</p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Input type="text" inputMode="decimal" label={t('basicSalary')} value={eos.basic} onChange={(e) => updateEos({ basic: e.target.value })} />
-            <Input type="text" inputMode="decimal" label={t('housingAllowance')} value={eos.housing} onChange={(e) => updateEos({ housing: e.target.value })} />
-            <Input type="text" inputMode="decimal" label={t('transportAllowance')} value={eos.transport} onChange={(e) => updateEos({ transport: e.target.value })} />
-            <Input type="text" inputMode="decimal" label={t('otherAllowance')} value={eos.other} onChange={(e) => updateEos({ other: e.target.value })} />
+            <Input type="text" inputMode="decimal" label={t('basicSalary')} value={eos.basic} onChange={(e: any) => updateEos({ basic: e.target.value })} />
+            <Input type="text" inputMode="decimal" label={t('housingAllowance')} value={eos.housing} onChange={(e: any) => updateEos({ housing: e.target.value })} />
+            <Input type="text" inputMode="decimal" label={t('transportAllowance')} value={eos.transport} onChange={(e: any) => updateEos({ transport: e.target.value })} />
+            <Input type="text" inputMode="decimal" label={t('otherAllowance')} value={eos.other} onChange={(e: any) => updateEos({ other: e.target.value })} />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-semibold">{t('customAllowances')}</span>
               <Button type="button" size="sm" variant="ghost" onClick={addCustomRowEos}>{t('addCustomAllowance')}</Button>
             </div>
-            {(eos.customRows || []).map((row, idx) => (
+            {(eos.customRows || []).map((row: any, idx: any) => (
               <div key={row.key} className="grid gap-2 sm:grid-cols-[1fr_120px_auto] sm:items-center">
-                <Input type="text" value={row.label} onChange={(e) => {
-                  const next = [...eos.customRows];
+                <Input type="text" value={row.label} onChange={(e: any) => {
+                  const next = [...(eos.customRows || [])] as any[];
                   next[idx] = { ...row, label: e.target.value };
                   updateEos({ customRows: next });
                 }}
                 />
-                <Input type="text" inputMode="decimal" value={row.amount} onChange={(e) => {
-                  const next = [...eos.customRows];
+                <Input type="text" inputMode="decimal" value={row.amount} onChange={(e: any) => {
+                  const next = [...(eos.customRows || [])] as any[];
                   next[idx] = { ...row, amount: e.target.value };
                   updateEos({ customRows: next });
                 }}
                 />
-                <Button type="button" size="sm" variant="danger" onClick={() => updateEos({ customRows: eos.customRows.filter((_, i) => i !== idx) })}>{t('delete')}</Button>
+                <Button type="button" size="sm" variant="danger" onClick={() => updateEos({ customRows: eos.customRows.filter((_: any, i: any) => i !== idx) })}>{t('delete')}</Button>
               </div>
             ))}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input type="text" inputMode="decimal" label={t('hrPrintEosAmount')} value={eos.eosAmount} onChange={(e) => updateEos({ eosAmount: e.target.value })} />
-            <Input type="text" inputMode="decimal" label={t('hrPrintOtherDues')} value={eos.otherAccrued} onChange={(e) => updateEos({ otherAccrued: e.target.value })} />
-            <Input type="text" inputMode="decimal" label={t('hrPrintDeductions')} value={eos.deductions} onChange={(e) => updateEos({ deductions: e.target.value })} />
-            <Input type="text" inputMode="decimal" label={t('hrPrintNetPayable')} value={eos.netPayable} onChange={(e) => updateEos({ netPayable: e.target.value })} />
+            <Input type="text" inputMode="decimal" label={t('hrPrintEosAmount')} value={eos.eosAmount} onChange={(e: any) => updateEos({ eosAmount: e.target.value })} />
+            <Input type="text" inputMode="decimal" label={t('hrPrintOtherDues')} value={eos.otherAccrued} onChange={(e: any) => updateEos({ otherAccrued: e.target.value })} />
+            <Input type="text" inputMode="decimal" label={t('hrPrintDeductions')} value={eos.deductions} onChange={(e: any) => updateEos({ deductions: e.target.value })} />
+            <Input type="text" inputMode="decimal" label={t('hrPrintNetPayable')} value={eos.netPayable} onChange={(e: any) => updateEos({ netPayable: e.target.value })} />
           </div>
-          <Input multiline rows={4} label={t('hrPrintSettlementTextAr')} value={eos.settlementNotesAr} onChange={(e) => updateEos({ settlementNotesAr: e.target.value })} />
-          <Input multiline rows={4} label={t('hrPrintSettlementTextEn')} value={eos.settlementNotesEn} onChange={(e) => updateEos({ settlementNotesEn: e.target.value })} />
+          <Input multiline rows={4} label={t('hrPrintSettlementTextAr')} value={eos.settlementNotesAr} onChange={(e: any) => updateEos({ settlementNotesAr: e.target.value })} />
+          <Input multiline rows={4} label={t('hrPrintSettlementTextEn')} value={eos.settlementNotesEn} onChange={(e: any) => updateEos({ settlementNotesEn: e.target.value })} />
           <div className="text-[12px] text-noorix-muted">
             {t('hrPrintPackageTotal')}: <FmtNum n={eosWageTotal} /> SR
           </div>

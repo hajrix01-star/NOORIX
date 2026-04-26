@@ -28,14 +28,14 @@ export default function HajriTaxQuarterOverview() {
 
   useEffect(() => {
     if (!companies?.length) return;
-    if (companyId && companies.some((c) => c.id === companyId)) return;
+    if (companyId && companies.some((c: any) => c.id === companyId)) return;
     setCompanyId(companies[0].id);
   }, [companies, companyId]);
 
   const years = useMemo(() => [currentYear, currentYear - 1, currentYear - 2, currentYear - 3], [currentYear]);
 
   const quarterResults = useQueries({
-    queries: [1, 2, 3, 4].map((q) => ({
+    queries: [1, 2, 3, 4].map((q: any) => ({
       queryKey: ['vat-planning', year, q, companyId],
       queryFn: async () => {
         if (!companyId) return null;
@@ -48,10 +48,10 @@ export default function HajriTaxQuarterOverview() {
     })),
   });
 
-  const loading = quarterResults.some((r) => r.isLoading);
+  const loading = quarterResults.some((r: any) => r.isLoading);
 
   const companyName = useMemo(() => {
-    const c = companies?.find((x) => x.id === companyId);
+    const c = companies?.find((x: any) => x.id === companyId);
     if (!c) return '';
     return lang === 'en' ? (c.nameEn || c.nameAr || '') : (c.nameAr || c.nameEn || '');
   }, [companies, companyId, lang]);
@@ -76,7 +76,7 @@ export default function HajriTaxQuarterOverview() {
       <div>
         <p className="text-[13px] font-semibold text-noorix-text mb-2">{t('vatFilterCompany')}</p>
         <div className="flex flex-wrap gap-2">
-          {companies.map((c) => {
+          {companies.map((c: any) => {
             const nm = lang === 'en' ? (c.nameEn || c.nameAr) : c.nameAr;
             const active = companyId === c.id;
             return (
@@ -100,7 +100,7 @@ export default function HajriTaxQuarterOverview() {
       <div>
         <p className="text-[13px] font-semibold text-noorix-text mb-2">{t('reportYear')}</p>
         <div className="flex flex-wrap gap-2">
-          {years.map((y) => (
+          {years.map((y: any) => (
             <button
               key={y}
               type="button"
@@ -129,7 +129,7 @@ export default function HajriTaxQuarterOverview() {
         <div className="text-noorix-muted text-[14px]">{t('loading')}</div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {[1, 2, 3, 4].map((q, idx) => {
+          {[1, 2, 3, 4].map((q: any, idx: any) => {
             const qr = quarterResults[idx];
             const rec = qr?.data;
             const payload =
@@ -151,7 +151,7 @@ export default function HajriTaxQuarterOverview() {
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
                       <div className="text-[15px] font-bold text-noorix-text">Q{q}</div>
-                      <div className="text-[12px] text-noorix-muted mt-0.5">{QUARTER_LABEL_AR[q]}</div>
+                      <div className="text-[12px] text-noorix-muted mt-0.5">{QUARTER_LABEL_AR[q as keyof typeof QUARTER_LABEL_AR]}</div>
                     </div>
                     {hasRecord ? (
                       <span className="text-[11px] font-semibold uppercase tracking-wide text-noorix-green">

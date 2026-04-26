@@ -8,7 +8,7 @@ import { Input, Button } from '../../../ui';
 /** زر اختصار المورد — مضغوط (جدول) أو لمس (بطاقة) */
 export function BatchSupplierBookmarkButton({
   row, bookmarkedIds, onBookmark, t, size = 'compact',
-}) {
+}: any) {
   if (!row.supplierId) return null;
   const isOn = bookmarkedIds.includes(row.supplierId);
   const title = isOn ? t('removeFromShortcuts') : t('addToShortcuts');
@@ -83,7 +83,7 @@ export function BatchSupplierPickInner({
 }
 
 /** عرض صافي / ضريبة للقراءة فقط */
-export function BatchNetTaxReadonly({ net, tax, variant = 'table', t }) {
+export function BatchNetTaxReadonly({ net, tax, variant = 'table', t }: any) {
   if (variant === 'stack') {
     return (
       <div className="grid grid-cols-2 gap-2 rounded-lg bg-noorix-bg py-2 px-2.5">
@@ -111,7 +111,7 @@ export function BatchNetTaxReadonly({ net, tax, variant = 'table', t }) {
 }
 
 /** زر تبديل الضريبة 15% / إعفاء — نصوص من i18n */
-export function BatchTaxToggleButton({ row, index, onUpdate, t, density = 'table' }) {
+export function BatchTaxToggleButton({ row, index, onUpdate, t, density = 'table' }: any) {
   const active = row.isTaxable !== false;
   const title = active ? t('batchRowTaxToggleTitleOn') : t('batchRowTaxToggleTitleOff');
   const label = active ? t('batchRowTaxIncludeVat') : t('batchRowTaxExemptShort');
@@ -161,7 +161,7 @@ export function BatchTaxToggleButton({ row, index, onUpdate, t, density = 'table
 }
 
 /** خيارات نوع السطر — مشتركة بين الجدول والبطاقة */
-export function BatchKindOptions({ t }) {
+export function BatchKindOptions({ t }: any) {
   return (
     <>
       <option value="purchase">{t('purchaseType')}</option>

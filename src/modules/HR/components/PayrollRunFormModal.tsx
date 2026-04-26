@@ -30,17 +30,17 @@ import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, AdaptiveSheet, Input, cn , FmtNum } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 
-function parseDeferredMonth(notes) {
+function parseDeferredMonth(notes: any) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
   return m ? m[1] : '';
 }
 
-function extractAdvanceDates(notes) {
+function extractAdvanceDates(notes: any) {
   return String(notes || '').replace('تواريخ السلف:', '').trim();
 }
 
 /** إزالة وسم تأجيل خصم السلف من ملاحظات سطر المسيرة (للعرض/الحفظ) */
-function stripPayrollAdvDeferSegment(notes) {
+function stripPayrollAdvDeferSegment(notes: any) {
   return String(notes || '')
     .replace(/\s*\[ADV_DEFER\]\s*\d{4}-\d{2}\s*/g, '')
     .replace(/^\s*\|\s*/g, '')
@@ -49,7 +49,7 @@ function stripPayrollAdvDeferSegment(notes) {
     .trim();
 }
 
-function withPayrollAdvDeferSegment(notes, monthYm) {
+function withPayrollAdvDeferSegment(notes: any, monthYm: any) {
   const base = stripPayrollAdvDeferSegment(notes);
   const tag = `[ADV_DEFER] ${monthYm}`;
   if (!base) return tag;
@@ -63,7 +63,7 @@ function getDefaultPayrollMonth() {
   return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
-function monthRange(dateStr) {
+function monthRange(dateStr: any) {
   const start = new Date(dateStr);
   start.setDate(1);
   start.setHours(0, 0, 0, 0);
@@ -74,11 +74,11 @@ function monthRange(dateStr) {
   return { start, end };
 }
 
-function ceilAmount(value) {
+function ceilAmount(value: any) {
   return Math.max(0, Math.ceil(Number(value) || 0));
 }
 
-export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose }) {
+export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose }: any) {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
@@ -88,7 +88,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   const [payrollMonth, setPayrollMonth] = useState(defaultMonth);
   const [notes, setNotes] = useState('');
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -140,7 +140,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   const { data: advances = [] } = useQuery({
     queryKey: ['invoices', cid, 'advance', monthStr],
     queryFn: async () => {
-      const res = await getInvoices(cid, null, null, 1, 1000, null, null, 'advance');
+      const res = await getInvoices(cid, undefined, undefined, 1, 1000, null, null, 'advance');
       if (!res?.success) return [];
       return res.data?.items ?? [];
     },
@@ -177,7 +177,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   const existingMonthSet = useMemo(() => {
     const set = new Set();
-    (existingRuns || []).forEach((r) => {
+    (existingRuns || []).forEach((r: any) => {
       if (runId && r.id === runId) return;
       const m = r.payrollMonth ? new Date(r.payrollMonth) : null;
       if (m) set.add(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`);
@@ -185,10 +185,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     return set;
   }, [existingRuns, runId]);
 
-  const alreadyExists = monthStr && existingMonthSet.has(monthStr);
+  const alreadyExists = Boolean(monthStr && existingMonthSet.has(monthStr));
 
   const activeEmployees = useMemo(() => {
-    return (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
+    return (employees || []).filter((e: any) => e.status !== 'terminated' && e.status !== 'archived');
   }, [employees]);
 
   /** أيام الإجازة غير المدفوعة المعتمدة فقط (تُخصم من الراتب) */
@@ -217,7 +217,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   const eligibleEmployees = useMemo(() => {
     const pm = payrollMonth || defaultMonth;
-    return activeEmployees.filter((e) => {
+    return activeEmployees.filter((e: any) => {
       if (leaveSettledEmployeeIds.has(e.id)) return false;
       return getEmploymentProrationInMonth(e, pm).factor > 0;
     });
@@ -225,17 +225,17 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   const displayEmployees = useMemo(() => {
     const map = new Map();
-    eligibleEmployees.forEach((emp) => map.set(emp.id, emp));
-    items.forEach((item) => {
+    eligibleEmployees.forEach((emp: any) => map.set(emp.id, emp));
+    items.forEach((item: any) => {
       if (!item.employeeId || map.has(item.employeeId)) return;
-      const fromList = (employees || []).find((e) => e.id === item.employeeId);
+      const fromList = (employees || []).find((e: any) => e.id === item.employeeId);
       map.set(item.employeeId, fromList || { id: item.employeeId, name: item.employeeName, nameAr: item.employeeName });
     });
     return Array.from(map.values());
   }, [eligibleEmployees, items, employees]);
 
   const totalNet = useMemo(
-    () => items.reduce((s, i) => s + (i.netSalary ?? 0), 0),
+    () => items.reduce((s: any, i: any) => s + (i.netSalary ?? 0), 0),
     [items],
   );
 
@@ -267,11 +267,11 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     return map;
   }, [advances, monthStr]);
 
-  function getAdvanceMetaForEmployee(empId) {
+  function getAdvanceMetaForEmployee(empId: any) {
     const rows = advancesByEmployee.get(empId) || [];
-    const dueRows = rows.filter((r) => !r.isDeferred);
-    const dueAmount = dueRows.reduce((s, r) => s + r.remaining, 0);
-    const datesLabel = dueRows.map((r) => formatSaudiDate(r.transactionDate)).join(' ، ');
+    const dueRows = rows.filter((r: any) => !r.isDeferred);
+    const dueAmount = dueRows.reduce((s: any, r: any) => s + r.remaining, 0);
+    const datesLabel = dueRows.map((r: any) => formatSaudiDate(r.transactionDate)).join(' ، ');
     return {
       dueAmount,
       datesLabel,
@@ -279,7 +279,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   }
 
   const buildLineForEmployee = React.useCallback(
-    (emp) => {
+    (emp: any) => {
       const customSum = allowanceTotals.get(emp.id) || 0;
       const fullGross = totalSalary(emp, customSum);
       const pr = getEmploymentProrationInMonth(emp, payrollMonth || defaultMonth);
@@ -297,10 +297,10 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
         ? Math.min(grossProrated, ceilAmount((grossProrated * appliedUnpaid) / workDays))
         : 0;
       const advRows = advancesByEmployee.get(emp.id) || [];
-      const dueAdv = advRows.filter((r) => !r.isDeferred);
-      const advancesDeduct = dueAdv.reduce((s, r) => s + r.remaining, 0);
+      const dueAdv = advRows.filter((r: any) => !r.isDeferred);
+      const advancesDeduct = dueAdv.reduce((s: any, r: any) => s + r.remaining, 0);
       const advanceDatesLabel = dueAdv
-        .map((r) => {
+        .map((r: any) => {
           const dateStr = formatSaudiDate(r.transactionDate);
           if (r.installmentAmount && r.installmentCount) {
             const paidCount = r.installmentCount - Math.ceil(r.fullRemaining / r.installmentAmount);
@@ -345,7 +345,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     const loadedMonth = editingRun.payrollMonth ? `${String(editingRun.payrollMonth).slice(0, 10)}` : defaultMonth;
     setPayrollMonth(loadedMonth);
     setNotes(editingRun.notes || '');
-    const loadedItems = (editingRun.items || []).map((row) => {
+    const loadedItems = (editingRun.items || []).map((row: any) => {
       const employeeId = row.employeeId || row.employee?.id || '';
       const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
       const advanceDates = extractAdvanceDates(row.notes);
@@ -388,9 +388,9 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     loadEditingItems();
   }, [isEditMode, editingRun, loadEditingItems]);
 
-  const updateItem = (idx, field, value) => {
+  const updateItem = (idx: any, field: any, value: any) => {
     const num = parseFloat(value) || 0;
-    setItems((prev) => {
+    setItems((prev: any) => {
       const next = [...prev];
       next[idx] = { ...next[idx], [field]: num };
       const g = next[idx].grossSalary ?? 0;
@@ -402,9 +402,9 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     });
   };
 
-  const toggleDefer = (employeeId) => {
-    setItems((prev) =>
-      prev.map((row) => {
+  const toggleDefer = (employeeId: any) => {
+    setItems((prev: any) =>
+      prev.map((row: any) => {
         if (row.employeeId !== employeeId) return row;
         const nextRow = { ...row };
         const turningOn = !nextRow.deferAdvances;
@@ -428,17 +428,17 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     );
   };
 
-  const toggleInclude = (emp) => {
-    const idx = items.findIndex((i) => i.employeeId === emp.id);
+  const toggleInclude = (emp: any) => {
+    const idx = items.findIndex((i: any) => i.employeeId === emp.id);
     if (idx >= 0) {
-      setItems((prev) => prev.filter((_, i) => i !== idx));
+      setItems((prev: any) => prev.filter((_: any, i: any) => i !== idx));
     } else {
-      const resolved = (employees || []).find((e) => e.id === emp.id) || emp;
-      setItems((prev) => [...prev, buildLineForEmployee(resolved)]);
+      const resolved = (employees || []).find((e: any) => e.id === emp.id) || emp;
+      setItems((prev: any) => [...prev, buildLineForEmployee(resolved)]);
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e?.preventDefault?.();
     setError('');
     if (items.length === 0) {
@@ -451,7 +451,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
     }
     setSubmitting(true);
     try {
-      const itemsPayload = items.map((i) => ({
+      const itemsPayload = items.map((i: any) => ({
         employeeId: i.employeeId,
         grossSalary: i.grossSalary,
         allowancesAdd: i.allowancesAdd,
@@ -477,14 +477,14 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
       rejectIfApiFailed(res, t('saveFailed'));
       onCreate?.();
       onClose?.();
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || t('saveFailed'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const selectInput = (e) => {
+  const selectInput = (e: any) => {
     try {
       e.target.select();
     } catch {
@@ -543,7 +543,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 type="month"
                 className="prfm-modal-field"
                 value={payrollMonth ? payrollMonth.slice(0, 7) : ''}
-                onChange={(e) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
+                onChange={(e: any) => setPayrollMonth(e.target.value ? `${e.target.value}-01` : defaultMonth)}
               />
               {alreadyExists && (
                 <span className="text-[12px] font-semibold mt-1.5 block text-noorix-amber">
@@ -557,7 +557,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                 type="text"
                 className="prfm-modal-field"
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e: any) => setNotes(e.target.value)}
                 placeholder={t('notes')}
               />
             </div>
@@ -592,8 +592,8 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
               </tr>
             </thead>
             <tbody>
-              {displayEmployees.map((emp) => {
-                const idx = items.findIndex((i) => i.employeeId === emp.id);
+              {displayEmployees.map((emp: any) => {
+                const idx = items.findIndex((i: any) => i.employeeId === emp.id);
                 const included = idx >= 0;
                 return (
                   <tr key={emp.id}>
@@ -633,7 +633,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             size="sm"
                             className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                             value={items[idx].allowancesAdd ?? 0}
-                            onChange={(e) => updateItem(idx, 'allowancesAdd', e.target.value)}
+                            onChange={(e: any) => updateItem(idx, 'allowancesAdd', e.target.value)}
                             onFocus={selectInput}
                             aria-label={t('payrollAllowances')}
                           />
@@ -647,7 +647,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             size="sm"
                             className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                             value={items[idx].deductions ?? 0}
-                            onChange={(e) => updateItem(idx, 'deductions', e.target.value)}
+                            onChange={(e: any) => updateItem(idx, 'deductions', e.target.value)}
                             onFocus={selectInput}
                             aria-label={t('payrollDeductions')}
                           />
@@ -661,7 +661,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
                             size="sm"
                             className="max-w-[4.5rem] mx-auto tabular-nums text-center !py-1 !px-2"
                             value={items[idx].advancesDeduct ?? 0}
-                            onChange={(e) => updateItem(idx, 'advancesDeduct', e.target.value)}
+                            onChange={(e: any) => updateItem(idx, 'advancesDeduct', e.target.value)}
                             disabled={items[idx].deferAdvances}
                             onFocus={selectInput}
                             aria-label={t('payrollAdvances')}

@@ -3,7 +3,7 @@
  */
 import { formatSaudiDate, formatSaudiDateTime } from '../../../../utils/saudiDate';
 
-export function formatBackupDate(iso) {
+export function formatBackupDate(iso: any) {
   if (!iso) return '—';
   try {
     return formatSaudiDateTime(iso);
@@ -12,7 +12,7 @@ export function formatBackupDate(iso) {
   }
 }
 
-export function formatFileSize(bytes) {
+export function formatFileSize(bytes: any) {
   const n = Number(bytes);
   if (!Number.isFinite(n) || n < 0) return '';
   if (n < 1024) return `${Math.round(n)} B`;
@@ -22,7 +22,7 @@ export function formatFileSize(bytes) {
 }
 
 /** اسم افتراضي للاستيراد: شركة — تاريخ النسخة — #رقم */
-export function defaultImportCompanyName(j, t, _lang) {
+export function defaultImportCompanyName(j: any, t: any, _lang: any) {
   const co = j.company?.nameAr || t('backupImportDefaultCo');
   const raw = j.completedAt || j.createdAt;
   let dateStr = '—';
@@ -37,25 +37,25 @@ export function defaultImportCompanyName(j, t, _lang) {
   return `${co} — ${dateStr}${ord}`;
 }
 
-export function statLabel(t, key) {
+export function statLabel(t: any, key: any) {
   const k = `backupStat_${key}`;
   const txt = t(k);
   return txt === k ? key : txt;
 }
 
-export function sortedCountEntries(counts) {
+export function sortedCountEntries(counts: any) {
   if (!counts || typeof counts !== 'object') return [];
-  return Object.entries(counts).sort(([a], [b]) => a.localeCompare(b));
+  return Object.entries(counts).sort(([a]: any, [b]: any) => a.localeCompare(b));
 }
 
-export function scopeLabel(scope, t) {
+export function scopeLabel(scope: any, t: any) {
   if (scope === 'company_logical') return t('backupScopeCompany');
   if (scope === 'database_full') return t('backupScopeFullDb');
   if (scope === 'system_full') return t('backupScopeSystemFull');
   return scope;
 }
 
-export function statusLabel(s, t) {
+export function statusLabel(s: any, t: any) {
   const m = {
     pending: t('backupStatusPending'),
     running: t('backupStatusRunning'),
@@ -63,10 +63,10 @@ export function statusLabel(s, t) {
     failed: t('backupStatusFailed'),
     skipped_duplicate: t('backupStatusSkippedDup'),
   };
-  return m[s] || s;
+  return (m as Record<string, string>)[String(s)] || s;
 }
 
-export function statusBadgeColor(status) {
+export function statusBadgeColor(status: any) {
   const m = {
     completed: 'green',
     running: 'blue',
@@ -74,5 +74,5 @@ export function statusBadgeColor(status) {
     failed: 'red',
     skipped_duplicate: 'gray',
   };
-  return m[status] || 'gray';
+  return (m as Record<string, string>)[String(status)] || 'gray';
 }

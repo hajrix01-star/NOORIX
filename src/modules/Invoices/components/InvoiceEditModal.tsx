@@ -23,7 +23,7 @@ const NO_SUPPLIER_KINDS = new Set(['salary', 'advance']);
 // مورد اختياري (مصاريف ثابتة وHR)
 const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
 
-export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }) {
+export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const [form, setForm] = useState({
@@ -55,13 +55,13 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
   const isMultiVault = (invoice?.vaultAllocations?.length || 0) > 1;
 
   const saveMutation = useApiMutation({
-    mutationFn: ({ id, body }) => updateInvoice(id, body, companyId),
+    mutationFn: ({ id, body }: any) => updateInvoice(id, body, companyId),
     showErrorToast: false,
     onSuccess: () => {
       onSaved?.();
       onClose?.();
     },
-    onError: (e) => setError(e?.message || t('saveFailed')),
+    onError: (e: any) => setError(e?.message || t('saveFailed')),
   });
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     });
   }, [invoice]);
 
-  async function handleAttachmentFileChange(e) {
+  async function handleAttachmentFileChange(e: any) {
     const file = e.target.files?.[0];
     if (!file || !invoice?.id || !companyId) return;
     setAttachmentBusy(true);
@@ -108,7 +108,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       });
       showToast(t('documentUploaded'), 'success');
       onSaved?.();
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || t('saveFailed'), 'error');
     } finally {
       setAttachmentBusy(false);
@@ -125,7 +125,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       setAttachMeta({ has: false, name: null });
       showToast(t('invoiceReceiptRemoved'), 'success');
       onSaved?.();
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || t('saveFailed'), 'error');
     } finally {
       setAttachmentBusy(false);
@@ -136,18 +136,18 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     if (!invoice?.id || !companyId) return;
     try {
       await downloadInvoiceAttachment(invoice.id, companyId);
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || t('saveFailed'), 'error');
     }
   }
 
-  function updateField(field, value) {
-    setForm((p) => ({ ...p, [field]: value }));
+  function updateField(field: any, value: any) {
+    setForm((p: any) => ({ ...p, [field]: value }));
     if (field === 'totalAmount' && value) {
       const v = parseFloat(value);
       if (!isNaN(v) && v > 0) {
         const { net, tax } = splitTaxFromTotalAsNumbers(v, true);
-        setForm((p) => ({ ...p, netAmount: net.toFixed(2), taxAmount: tax.toFixed(2) }));
+        setForm((p: any) => ({ ...p, netAmount: net.toFixed(2), taxAmount: tax.toFixed(2) }));
       }
     }
   }
@@ -259,7 +259,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
               <SupplierSelect
                 suppliers={suppliers}
                 value={form.supplierId}
-                onChange={(v) => updateField('supplierId', v)}
+                onChange={(v: any) => updateField('supplierId', v)}
                 bookmarkedIds={[]}
                 placeholder={t('selectSupplier')}
               />
@@ -268,7 +268,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             <Input
               label={supplierRequired ? `${t('supplierInvoiceNumber')} *` : t('supplierInvoiceNumber')}
               value={form.supplierInvoiceNumber}
-              onChange={(e) => updateField('supplierInvoiceNumber', e.target.value)}
+              onChange={(e: any) => updateField('supplierInvoiceNumber', e.target.value)}
               placeholder={t('invoiceNumberPlaceholder')}
             />
 
@@ -277,7 +277,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
                 type="select"
                 label={t('kind')}
                 value={form.kind}
-                onChange={(e) => updateField('kind', e.target.value)}
+                onChange={(e: any) => updateField('kind', e.target.value)}
               >
                 <option value="purchase">{t('purchaseType')}</option>
                 <option value="expense">{t('expenseType')}</option>
@@ -293,7 +293,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             step="0.01"
             label={t('totalAmountInclTax') || 'الإجمالي (شامل الضريبة) *'}
             value={form.totalAmount}
-            onChange={(e) => updateField('totalAmount', e.target.value)}
+            onChange={(e: any) => updateField('totalAmount', e.target.value)}
             style={{ fontFamily: 'var(--noorix-font-numbers)' }}
           />
           {hasSupplier && form.totalAmount && parseFloat(form.totalAmount) > 0 && (
@@ -307,7 +307,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
           type="date"
           label={t('transactionDateLabel')}
           value={form.transactionDate}
-          onChange={(e) => updateField('transactionDate', e.target.value)}
+          onChange={(e: any) => updateField('transactionDate', e.target.value)}
         />
 
         {vaultsList.length > 0 && (
@@ -316,10 +316,10 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
               type="select"
               label={t('invoiceVaultColumn')}
               value={form.vaultId}
-              onChange={(e) => updateField('vaultId', e.target.value)}
+              onChange={(e: any) => updateField('vaultId', e.target.value)}
             >
               <option value="">{t('selectVault')}</option>
-              {vaultsList.map((v) => (
+              {vaultsList.map((v: any) => (
                 <option key={v.id} value={v.id}>{vaultDisplayName(v, lang) || v.id}</option>
               ))}
             </Input>
@@ -334,7 +334,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
         <Input
           label={t('notesLabel')}
           value={form.notes}
-          onChange={(e) => updateField('notes', e.target.value)}
+          onChange={(e: any) => updateField('notes', e.target.value)}
           placeholder={t('invoiceNotesPlaceholder')}
         />
       </div>

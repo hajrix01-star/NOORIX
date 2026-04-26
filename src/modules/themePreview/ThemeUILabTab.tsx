@@ -15,7 +15,7 @@ import {
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import { useTranslation } from '../../i18n/useTranslation';
 
-function LabBlock({ num, title, hint, children }) {
+function LabBlock({ num, title, hint, children }: any) {
   return (
     <section
       id={`ui-lab-${num}`}
@@ -64,12 +64,12 @@ export default function ThemeUILabTab() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const demoTabItems = useMemo(
-    () => LAB3_DEMO_TAB_DEFS.map((row) => ({ id: row.id, label: t(row.labelKey) })),
+    () => LAB3_DEMO_TAB_DEFS.map((row: any) => ({ id: row.id, label: t(row.labelKey) })),
     [t],
   );
 
   const lab3ContentKey = useMemo(() => {
-    const row = LAB3_DEMO_TAB_DEFS.find((x) => x.id === demoTab);
+    const row = LAB3_DEMO_TAB_DEFS.find((x: any) => x.id === demoTab);
     return row?.contentKey ?? 'themePreviewLab3ContentA';
   }, [demoTab]);
 

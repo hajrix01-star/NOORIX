@@ -18,7 +18,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
   supplier, flatCategories = [], onSave, onClose, isSaving,
 }: SupplierEditModalProps) {
   const { t, lang } = useTranslation();
-  const catLabel = (c) => (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || '';
+  const catLabel = (c: any) => (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || '';
   const SUPPLIER_TYPES = [
     { value: 'purchases', label: t('supplierTypePurchases') },
     { value: 'expenses',  label: t('supplierTypeExpenses') },
@@ -42,15 +42,15 @@ export const SupplierEditModal = memo(function SupplierEditModal({
     }
   }, [supplier]);
 
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const set = (k: any, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
-  const filteredCategories = flatCategories.filter((c) => {
+  const filteredCategories = flatCategories.filter((c: any) => {
     if (form.supplierType === 'purchases') return c.type === 'purchase';
     if (form.supplierType === 'expenses') return c.type === 'expense';
     return true;
   });
 
-  function handleSubmit(e) {
+  function handleSubmit(e: any) {
     e.preventDefault();
     if (!form.nameAr.trim()) return;
     onSave({
@@ -71,7 +71,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
           <Input
             label={t('nameAr')}
             value={form.nameAr}
-            onChange={(e) => set('nameAr', e.target.value)}
+            onChange={(e: any) => set('nameAr', e.target.value)}
             placeholder={t('nameArPlaceholder')}
             required
             autoComplete="off"
@@ -79,37 +79,37 @@ export const SupplierEditModal = memo(function SupplierEditModal({
           <Input
             label={t('nameEn')}
             value={form.nameEn}
-            onChange={(e) => set('nameEn', e.target.value)}
+            onChange={(e: any) => set('nameEn', e.target.value)}
             placeholder={t('nameEnPlaceholder')}
           />
           <Input
             label={t('taxNumber')}
             value={form.taxNumber}
-            onChange={(e) => set('taxNumber', e.target.value)}
+            onChange={(e: any) => set('taxNumber', e.target.value)}
             placeholder="300000000000003"
           />
           <Input
             label={t('phone')}
             value={form.phone}
-            onChange={(e) => set('phone', e.target.value)}
+            onChange={(e: any) => set('phone', e.target.value)}
             placeholder="05xxxxxxxx"
           />
           <Input
             type="select"
             label={t('supplierType')}
             value={form.supplierType}
-            onChange={(e) => set('supplierType', e.target.value)}
+            onChange={(e: any) => set('supplierType', e.target.value)}
           >
-            {SUPPLIER_TYPES.map((st) => <option key={st.value} value={st.value}>{st.label}</option>)}
+            {SUPPLIER_TYPES.map((st: any) => <option key={st.value} value={st.value}>{st.label}</option>)}
           </Input>
           <Input
             type="select"
             label={t('category')}
             value={form.supplierCategoryId}
-            onChange={(e) => set('supplierCategoryId', e.target.value)}
+            onChange={(e: any) => set('supplierCategoryId', e.target.value)}
           >
             <option value="">{t('noCategory')}</option>
-            {filteredCategories.map((c) => {
+            {filteredCategories.map((c: any) => {
               const icon = c.icon || c.account?.icon || '';
               const displayCode = c.code || c.account?.code || '';
               const code = displayCode ? ` [${displayCode}]` : '';
@@ -126,7 +126,7 @@ export const SupplierEditModal = memo(function SupplierEditModal({
           <input
             type="checkbox"
             checked={form.isTaxRegistered}
-            onChange={(e) => set('isTaxRegistered', e.target.checked)}
+            onChange={(e: any) => set('isTaxRegistered', e.target.checked)}
             className="w-[18px] h-[18px]"
           />
           <span>

@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { AppTestProviders } from '../../test/appTestProviders';
 import { useInvoicesListScreen } from './useInvoicesListScreen';
 
-function TestProviders({ children }) {
+function TestProviders({ children }: any) {
   return <AppTestProviders initialEntries={['/invoices']}>{children}</AppTestProviders>;
 }
 

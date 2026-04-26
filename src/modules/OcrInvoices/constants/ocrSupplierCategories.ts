@@ -14,9 +14,9 @@ export const OCR_SUPPLIER_CATEGORY_OPTIONS = [
 ];
 
 /** تسمية التصنيف للعرض في القوائم */
-export function ocrSupplierCategoryLabel(value, t) {
+export function ocrSupplierCategoryLabel(value: any, t: any) {
   const v = value == null ? '' : String(value);
-  const row = OCR_SUPPLIER_CATEGORY_OPTIONS.find((o) => o.value === v);
+  const row = OCR_SUPPLIER_CATEGORY_OPTIONS.find((o: any) => o.value === v);
   if (row?.labelKey) return t(row.labelKey);
   return v || '—';
 }

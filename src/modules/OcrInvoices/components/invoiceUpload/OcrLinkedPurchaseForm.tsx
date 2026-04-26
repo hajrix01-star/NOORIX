@@ -25,7 +25,7 @@ export function OcrLinkedPurchaseForm({
   extracted,
   isPurchaseTaxable,
   onIsPurchaseTaxableChange,
-}) {
+}: any) {
   if (!finalizeOcrId) return null;
 
   return (
@@ -47,10 +47,10 @@ export function OcrLinkedPurchaseForm({
               <select
                 className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
                 value={accountingSupplierId}
-                onChange={(e) => onAccountingSupplierIdChange(e.target.value)}
+                onChange={(e: any) => onAccountingSupplierIdChange(e.target.value)}
               >
                 <option value="">{t('ocrSelectAccountingSupplier')}</option>
-                {accSuggestions.map((s) => (
+                {accSuggestions.map((s: any) => (
                   <option key={s.id} value={s.id}>
                     {(s.nameAr || s.nameEn || '') + (s.taxNumber ? ` — ${s.taxNumber}` : '')}
                   </option>
@@ -77,7 +77,7 @@ export function OcrLinkedPurchaseForm({
             </Button>
           </div>
           <label className="flex items-center gap-2 text-[13px] mb-3 cursor-pointer">
-            <input type="checkbox" checked={createLinkedPurchase} onChange={(e) => onCreateLinkedPurchaseChange(e.target.checked)} />
+            <input type="checkbox" checked={createLinkedPurchase} onChange={(e: any) => onCreateLinkedPurchaseChange(e.target.checked)} />
             <span>{t('ocrCreateLinkedPurchase')}</span>
           </label>
           {createLinkedPurchase && (
@@ -87,7 +87,7 @@ export function OcrLinkedPurchaseForm({
                 <Input
                   type="date"
                   value={transactionDate?.slice(0, 10) || ''}
-                  onChange={(e) => onTransactionDateChange(e.target.value)}
+                  onChange={(e: any) => onTransactionDateChange(e.target.value)}
                 />
               </label>
               <label className="flex flex-col gap-1 text-[12px]">
@@ -95,10 +95,10 @@ export function OcrLinkedPurchaseForm({
                 <select
                   className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
                   value={vaultId}
-                  onChange={(e) => onVaultIdChange(e.target.value)}
+                  onChange={(e: any) => onVaultIdChange(e.target.value)}
                 >
                   <option value="">{t('ocrSelectVault')}</option>
-                  {vaultRows.map((v) => (
+                  {vaultRows.map((v: any) => (
                     <option key={v.id} value={v.id}>
                       {v.nameAr || v.nameEn || v.id}
                     </option>
@@ -109,12 +109,12 @@ export function OcrLinkedPurchaseForm({
                 <span className="text-noorix-muted">{t('ocrSupplierInvoiceNo')}</span>
                 <Input
                   value={purchaseSupplierInvoiceNumber}
-                  onChange={(e) => onPurchaseSupplierInvoiceNumberChange(e.target.value)}
+                  onChange={(e: any) => onPurchaseSupplierInvoiceNumberChange(e.target.value)}
                   placeholder={String(extracted.invoiceNumber?.value || '')}
                 />
               </label>
               <label className="flex items-center gap-2 text-[12px] cursor-pointer">
-                <input type="checkbox" checked={isPurchaseTaxable} onChange={(e) => onIsPurchaseTaxableChange(e.target.checked)} />
+                <input type="checkbox" checked={isPurchaseTaxable} onChange={(e: any) => onIsPurchaseTaxableChange(e.target.checked)} />
                 <span>{t('ocrPurchaseTaxable')}</span>
               </label>
             </div>

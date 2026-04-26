@@ -24,12 +24,12 @@ const STATUS_OPTIONS = [
   { value: 'rejected', labelKey: 'statusRejected' },
 ];
 
-function sliceYmd(iso) {
+function sliceYmd(iso: any) {
   return String(iso || '').slice(0, 10);
 }
 
 /** تغيير يتطلب إلغاء تسوية الراتب (المسار الخلفي يفرّق عن تعديل الملاحظات فقط) */
-function leaveHasStructuralChange(editLeave, state) {
+function leaveHasStructuralChange(editLeave: any, state: any) {
   if (!editLeave) return false;
   return (
     state.leaveType !== (editLeave.leaveType || 'annual') ||
@@ -48,7 +48,7 @@ export function LeaveFormModal({
   lockEmployeeSelector = false,
   onSuccess,
   onClose,
-}) {
+}: any) {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
@@ -98,9 +98,9 @@ export function LeaveFormModal({
     enabled: !!cid,
   });
 
-  const activeEmployees = (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
+  const activeEmployees = (employees || []).filter((e: any) => e.status !== 'terminated' && e.status !== 'archived');
 
-  const handleStartEndChange = (field, value) => {
+  const handleStartEndChange = (field: any, value: any) => {
     if (field === 'startDate') {
       setStartDate(value);
       if (endDate && value > endDate) setEndDate(value);
@@ -173,14 +173,14 @@ export function LeaveFormModal({
       }
       onSuccess?.();
       onClose?.();
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || t('saveFailed'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: any) => {
     e?.preventDefault?.();
     void runSave();
   };
@@ -214,12 +214,12 @@ export function LeaveFormModal({
             type="select"
             label={t('selectEmployee')}
             value={employeeId}
-            onChange={(e) => setEmployeeId(e.target.value)}
+            onChange={(e: any) => setEmployeeId(e.target.value)}
             required
             disabled={lockEmployeeSelector}
           >
             <option value="">—</option>
-            {activeEmployees.map((emp) => (
+            {activeEmployees.map((emp: any) => (
               <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
             ))}
           </Input>
@@ -228,10 +228,10 @@ export function LeaveFormModal({
             type="select"
             label={t('leaveType')}
             value={leaveType}
-            onChange={(e) => setLeaveType(e.target.value)}
+            onChange={(e: any) => setLeaveType(e.target.value)}
           >
-            {Object.keys(TYPE_MAP).map((k) => (
-              <option key={k} value={k}>{t(TYPE_MAP[k])}</option>
+            {Object.keys(TYPE_MAP).map((k: any) => (
+              <option key={k} value={k}>{t((TYPE_MAP as Record<string, string>)[String(k)])}</option>
             ))}
           </Input>
 
@@ -240,14 +240,14 @@ export function LeaveFormModal({
               type="date"
               label={t('startDate')}
               value={startDate}
-              onChange={(e) => handleStartEndChange('startDate', e.target.value)}
+              onChange={(e: any) => handleStartEndChange('startDate', e.target.value)}
               required
             />
             <Input
               type="date"
               label={t('endDate')}
               value={endDate}
-              onChange={(e) => handleStartEndChange('endDate', e.target.value)}
+              onChange={(e: any) => handleStartEndChange('endDate', e.target.value)}
               required
             />
           </div>
@@ -257,7 +257,7 @@ export function LeaveFormModal({
             min="1"
             label={t('daysCount')}
             value={daysCount}
-            onChange={(e) => setDaysCount(e.target.value)}
+            onChange={(e: any) => setDaysCount(e.target.value)}
             placeholder="0"
           />
 
@@ -265,9 +265,9 @@ export function LeaveFormModal({
             type="select"
             label={t('status')}
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e: any) => setStatus(e.target.value)}
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {STATUS_OPTIONS.map((opt: any) => (
               <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
             ))}
           </Input>
@@ -275,7 +275,7 @@ export function LeaveFormModal({
           <Input
             label={t('notes')}
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e: any) => setNotes(e.target.value)}
             placeholder={t('notes')}
           />
 

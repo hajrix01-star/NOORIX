@@ -12,7 +12,7 @@ const HEADER_FILL = { patternType: 'solid', fgColor: { rgb: HEADER_BG } };
 const HEADER_ALIGN_R = { horizontal: 'right', vertical: 'center', wrapText: false };
 
 /** @param {import('xlsx-js-style').default} XLSX */
-function applySheetView(XLSX, ws, ySplit) {
+function applySheetView(XLSX: any, ws: any, ySplit: any) {
   if (!ws['!views']) ws['!views'] = [{}];
   ws['!views'][0].rightToLeft = true;
   if (ySplit > 0) {
@@ -24,7 +24,7 @@ function applySheetView(XLSX, ws, ySplit) {
 }
 
 /** @param {import('xlsx-js-style').default} XLSX */
-function styleHeaderRow(XLSX, ws, rowIdx, colCount) {
+function styleHeaderRow(XLSX: any, ws: any, rowIdx: any, colCount: any) {
   for (let ci = 0; ci < colCount; ci++) {
     const addr = XLSX.utils.encode_cell({ r: rowIdx, c: ci });
     if (!ws[addr]) continue;
@@ -36,13 +36,13 @@ function styleHeaderRow(XLSX, ws, rowIdx, colCount) {
   }
 }
 
-function styleTitleCell(XLSX, ws, rowIdx) {
+function styleTitleCell(XLSX: any, ws: any, rowIdx: any) {
   const addr = XLSX.utils.encode_cell({ r: rowIdx, c: 0 });
   if (!ws[addr]) return;
   ws[addr].s = { font: { bold: true, sz: 13, color: { rgb: '1E3A5F' } } };
 }
 
-function styleSummaryCell(XLSX, ws, rowIdx, colCount) {
+function styleSummaryCell(XLSX: any, ws: any, rowIdx: any, colCount: any) {
   for (let ci = 0; ci < colCount; ci++) {
     const addr = XLSX.utils.encode_cell({ r: rowIdx, c: ci });
     if (!ws[addr]) continue;
@@ -63,7 +63,7 @@ export async function exportBankStatementExcel({
   filteredTransactions,
   columnTotals,
   summaryByCategory,
-}) {
+}: any) {
   if (!statement) return;
   const { default: XLSX } = await import('xlsx-js-style');
 
@@ -74,7 +74,7 @@ export async function exportBankStatementExcel({
   const COLS = 9;
   const DATA_ROW_START = 7;
 
-  const dataAoA = filteredTransactions.map((tx, idx) => [
+  const dataAoA = filteredTransactions.map((tx: any, idx: any) => [
     idx + 1,
     tx.txDate || '',
     tx.description || '',
@@ -118,14 +118,14 @@ export async function exportBankStatementExcel({
 
   // ─── ورقة ملخص التصنيفات ─────────────────────────────────────────────────
   const catRows = Object.entries(summaryByCategory)
-    .map(([name, d]) => ({
+    .map(([name, d]: any) => ({
       التصنيف: name,
       العدد: d.count,
       'إجمالي مدين': d.totalDebit,
       'إجمالي دائن': d.totalCredit,
       الصافي: d.totalCredit - d.totalDebit,
     }))
-    .sort((a, b) => b['إجمالي مدين'] - a['إجمالي مدين']);
+    .sort((a: any, b: any) => b['إجمالي مدين'] - a['إجمالي مدين']);
 
   const ws2 = XLSX.utils.aoa_to_sheet([
     [companyName || '—'],
@@ -152,12 +152,12 @@ export function printBankStatement({
   companyName,
   filteredTransactions,
   columnTotals,
-}) {
+}: any) {
   if (!statement) return;
   const period = `${statement.startDate?.slice(0, 10) || ''} — ${statement.endDate?.slice(0, 10) || ''}`;
   const rows = filteredTransactions
     .map(
-      (tx) => `<tr>
+      (tx: any) => `<tr>
       <td>${tx.txDate || ''}</td>
       <td>${(tx.description || '').replace(/</g, '&lt;')}</td>
       <td>${tx.category?.nameAr || tx.category?.nameEn || '—'}</td>

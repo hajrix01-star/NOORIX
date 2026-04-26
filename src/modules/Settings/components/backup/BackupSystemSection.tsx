@@ -26,7 +26,7 @@ export function BackupSystemSection({
   restoreMut,
   setRestorePhrase,
   setRestoreModal,
-}) {
+}: any) {
   return (
     <section className="min-w-0 flex flex-col gap-0" aria-labelledby="backup-system-title">
       <Card padding="sm" className="flex flex-col gap-4 min-w-0 border-l-[3px] border-l-nx-profit">
@@ -40,7 +40,7 @@ export function BackupSystemSection({
           <input
             type="checkbox"
             checked={sysForm.enabled}
-            onChange={(e) => setSysForm((p) => ({ ...p, enabled: e.target.checked }))}
+            onChange={(e: any) => setSysForm((p: any) => ({ ...p, enabled: e.target.checked }))}
           />
           <span>{t('backupSystemEnabled')}</span>
         </label>
@@ -56,8 +56,8 @@ export function BackupSystemSection({
               max={23}
               className="noorix-bank-filter"
               value={sysForm.scheduleHour}
-              onChange={(e) =>
-                setSysForm((p) => ({
+              onChange={(e: any) =>
+                setSysForm((p: any) => ({
                   ...p,
                   scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
                 }))
@@ -75,8 +75,8 @@ export function BackupSystemSection({
               max={59}
               className="noorix-bank-filter"
               value={sysForm.scheduleMinute}
-              onChange={(e) =>
-                setSysForm((p) => ({
+              onChange={(e: any) =>
+                setSysForm((p: any) => ({
                   ...p,
                   scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)),
                 }))
@@ -94,8 +94,8 @@ export function BackupSystemSection({
               max={50}
               className="noorix-bank-filter"
               value={sysForm.retentionCount}
-              onChange={(e) =>
-                setSysForm((p) => ({
+              onChange={(e: any) =>
+                setSysForm((p: any) => ({
                   ...p,
                   retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 10)),
                 }))
@@ -117,7 +117,7 @@ export function BackupSystemSection({
             type="text"
             label={t('backupGdriveScriptUrlLabel')}
             value={sysForm.gdriveScriptUrl}
-            onChange={(e) => setSysForm((p) => ({ ...p, gdriveScriptUrl: e.target.value }))}
+            onChange={(e: any) => setSysForm((p: any) => ({ ...p, gdriveScriptUrl: e.target.value }))}
             placeholder="https://script.google.com/macros/s/…/exec"
             className="nx-ltr text-left"
             dir="ltr"
@@ -127,7 +127,7 @@ export function BackupSystemSection({
             type="text"
             label={t('backupGdriveFolderLabel')}
             value={sysForm.gdriveFolderId}
-            onChange={(e) => setSysForm((p) => ({ ...p, gdriveFolderId: e.target.value }))}
+            onChange={(e: any) => setSysForm((p: any) => ({ ...p, gdriveFolderId: e.target.value }))}
             placeholder="folderId أو رابط المجلد"
             className="nx-ltr text-left"
             dir="ltr"
@@ -177,7 +177,7 @@ export function BackupSystemSection({
             accept=".tar.gz,.tgz,application/gzip"
             className="sr-only"
             aria-label={t('backupSystemImportFromPc')}
-            onChange={(e) => {
+            onChange={(e: any) => {
               const f = e.target.files?.[0];
               e.target.value = '';
               if (f) uploadSysArchiveMut.mutate(f);
@@ -189,7 +189,7 @@ export function BackupSystemSection({
             accept=".tar.gz,.tgz,application/gzip"
             className="sr-only"
             aria-label={t('backupSystemRestoreFromPc')}
-            onChange={(e) => {
+            onChange={(e: any) => {
               const f = e.target.files?.[0];
               e.target.value = '';
               if (f) {
@@ -230,7 +230,7 @@ export function BackupSystemSection({
               <p className="text-[12px] text-noorix-muted m-0">{t('backupSystemNoJobs')}</p>
             )}
           <div className="flex flex-col gap-2 max-h-[min(50vh,360px)] overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y pr-0.5 -mr-0.5 min-w-0">
-            {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj) => (
+            {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj: any) => (
               <div
                 key={sj.id}
                 className="flex flex-col gap-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-3 min-[520px]:flex-row min-[520px]:items-stretch min-[520px]:justify-between"

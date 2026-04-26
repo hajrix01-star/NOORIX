@@ -52,8 +52,8 @@ export async function getDailySalesSummaries(
   companyId: string,
   startDate?: string,
   endDate?: string,
-  page = 1,
-  pageSize = 50,
+  page: any = 1,
+  pageSize: any = 50,
   q?: string,
   sortBy?: string,
   sortDir?: string,
@@ -93,9 +93,9 @@ export async function fetchAllSalesSummariesForExport(
   startDate: string | undefined,
   endDate: string | undefined,
   q: string | undefined,
-  sortBy = 'transactionDate',
-  sortDir = 'desc',
-  includeCancelled = true,
+  sortBy: any = 'transactionDate',
+  sortDir: any = 'desc',
+  includeCancelled: any = true,
 ): Promise<unknown[]> {
   const pageSize = 150;
   let page = 1;

@@ -11,7 +11,7 @@ import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, throwIfAp
  * @param {string} companyId
  * @param {{ pageSize?: number; q?: string }} [opts]
  */
-export function useSuppliers(companyId, { pageSize = 200, q }: { pageSize?: number; q?: string } = {}) {
+export function useSuppliers(companyId: any, { pageSize = 200, q }: { pageSize?: number; q?: string } = {}) {
   const { data: raw = [], isLoading, isError, error } = useQuery({
     queryKey: ['suppliers', companyId, pageSize, q || ''],
     queryFn: async () => {
@@ -23,7 +23,7 @@ export function useSuppliers(companyId, { pageSize = 200, q }: { pageSize?: numb
     enabled: !!companyId,
   });
 
-  const suppliers = useMemo(() => raw.filter((s) => !s.isDeleted), [raw]);
+  const suppliers = useMemo(() => raw.filter((s: any) => !s.isDeleted), [raw]);
 
   const createMutation = useApiMutation({
     mutationFn: createSupplier,
@@ -32,7 +32,7 @@ export function useSuppliers(companyId, { pageSize = 200, q }: { pageSize?: numb
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }) => updateSupplier(id, body),
+    mutationFn: ({ id, body }: any) => updateSupplier(id, body),
     invalidateQueries: [['suppliers', companyId]],
     showErrorToast: false,
   });

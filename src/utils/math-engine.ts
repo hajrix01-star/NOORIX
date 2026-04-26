@@ -14,7 +14,7 @@ export const TAX_RATE = 0.15;
  * @param {number} [dp=2]
  * @returns {Decimal}
  */
-export function roundAmount(value, dp = 2) {
+export function roundAmount(value: any, dp: any = 2) {
   try {
     return new Decimal(value ?? 0).toDecimalPlaces(dp, Decimal.ROUND_HALF_UP);
   } catch {
@@ -28,9 +28,9 @@ export function roundAmount(value, dp = 2) {
  * @param {string} field - اسم الحقل (totalAmount, netAmount, balance, ...)
  * @returns {Decimal}
  */
-export function sumAmounts(items, field) {
+export function sumAmounts(items: any, field: any) {
   if (!Array.isArray(items) || items.length === 0) return new Decimal(0);
-  return items.reduce((acc, item) => {
+  return items.reduce((acc: any, item: any) => {
     try {
       return acc.plus(new Decimal(item?.[field] ?? 0));
     } catch {
@@ -46,7 +46,7 @@ export function sumAmounts(items, field) {
  * @param {number} [rate=TAX_RATE]
  * @returns {{ net: Decimal, tax: Decimal }}
  */
-export function splitTaxFromTotal(totalInclusive, isTaxable = true, rate = TAX_RATE) {
+export function splitTaxFromTotal(totalInclusive: any, isTaxable: any = true, rate: any = TAX_RATE) {
   let t;
   try {
     t = new Decimal(totalInclusive ?? 0);
@@ -64,7 +64,7 @@ export function splitTaxFromTotal(totalInclusive, isTaxable = true, rate = TAX_R
  * استخراج الصافي والضريبة كأرقام مقرّبة (للحفظ في الحالة أو API).
  * النتائج مقرّبة إلى رقمين عشريين (HALF_UP) لضمان: net + tax = total.
  */
-export function splitTaxFromTotalAsNumbers(totalInclusive, isTaxable = true, rate = TAX_RATE) {
+export function splitTaxFromTotalAsNumbers(totalInclusive: any, isTaxable: any = true, rate: any = TAX_RATE) {
   const { net, tax } = splitTaxFromTotal(totalInclusive, isTaxable, rate);
   const roundedNet = roundAmount(net).toNumber();
   const roundedTax = roundAmount(tax).toNumber();
@@ -78,7 +78,7 @@ export function splitTaxFromTotalAsNumbers(totalInclusive, isTaxable = true, rat
  */
 export function sumObjectValues(obj: Record<string, unknown> | null | undefined) {
   if (!obj || typeof obj !== 'object') return new Decimal(0);
-  return Object.values(obj).reduce<Decimal>((acc, v) => {
+  return Object.values(obj).reduce<Decimal>((acc: any, v: any) => {
     try {
       return acc.plus(new Decimal((v as string | number | Decimal) ?? 0));
     } catch {

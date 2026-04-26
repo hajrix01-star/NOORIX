@@ -8,14 +8,14 @@ type CompressOpts = { maxDim?: number; quality?: number };
 
 export function compressImageFileToJpegDataUrl(file: File, opts: CompressOpts = {}) {
   const { maxDim = 1600, quality = 0.82 } = opts;
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve: any, reject: any) => {
     if (!file?.type?.startsWith('image/')) {
       reject(new Error('Expected an image file'));
       return;
     }
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('read failed'));
-    reader.onload = (ev) => {
+    reader.onload = (ev: any) => {
       const src = ev.target?.result;
       if (typeof src !== 'string') {
         reject(new Error('read failed'));

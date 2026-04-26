@@ -24,7 +24,7 @@ export function BackupJobsHistory({
   setImportNameAr,
   setImportConfirmed,
   setImportModal,
-}) {
+}: any) {
   return (
     <section className="flex flex-col gap-3 min-w-0 w-full" aria-labelledby="backup-log-title">
       <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
@@ -42,7 +42,7 @@ export function BackupJobsHistory({
       {isLoading && <p className="text-[12px] text-noorix-muted m-0">{t('loading')}</p>}
       {!isLoading && jobs.length === 0 && <p className="text-[12px] text-noorix-muted m-0">{t('backupNoJobs')}</p>}
       <div className="flex flex-col gap-2 overflow-x-auto min-w-0 -mx-0.5 px-0.5">
-        {jobs.map((j) => {
+        {jobs.map((j: any) => {
           const metaParts = [
             formatSaudiDateTime(j.createdAt),
             j.sizeBytes != null ? formatFileSize(j.sizeBytes) : '',

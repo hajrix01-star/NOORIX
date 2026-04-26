@@ -9,11 +9,11 @@ import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Badge, Input, AdaptiveSheet, ScreenShell, SmartTable } from '../../../ui';
 
-export default function UsersTab({ userRole, activeCompanies = [] }) {
+export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState<{ password: string; nameAr: string; roleName: string; preferredLang: string; companyIds: string[] }>({ password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -34,19 +34,19 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
   const createMutation = useApiMutation({
     mutationFn: createUser,
     invalidateQueries: [['users']],
-    successToast: (res) => {
+    successToast: (res: any) => {
       const email = res?.data?.email;
       return email ? t('userAddedWithEmail', email) : t('userAdded');
     },
-    errorToast: (e) => e?.message || t('addFailed'),
+    errorToast: (e: any) => e?.message || t('addFailed'),
     onSuccess: () => { setShowForm(false); },
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }) => updateUser(id, body),
+    mutationFn: ({ id, body }: any) => updateUser(id, body),
     invalidateQueries: [['users']],
     successToast: () => t('updateSuccess'),
-    errorToast: (e) => e?.message || t('updateFailed'),
+    errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
   });
 
@@ -54,7 +54,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
     mutationFn: archiveUser,
     invalidateQueries: [['users']],
     successToast: () => t('userArchived'),
-    errorToast: (e) => e?.message || t('updateFailed'),
+    errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
   });
 
@@ -62,11 +62,11 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
     mutationFn: restoreUser,
     invalidateQueries: [['users']],
     successToast: () => t('userRestored'),
-    errorToast: (e) => e?.message || t('updateFailed'),
+    errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
   });
 
-  function openEdit(u) {
+  function openEdit(u: any) {
     setEditing({
       id: u.id,
       email: u.email,
@@ -74,19 +74,19 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       nameEn: u.nameEn || '',
       preferredLang: u.preferredLang || 'ar',
       roleName: u.role?.name || '',
-      companyIds: (u.userCompanies || []).map((uc) => uc.companyId),
+      companyIds: (u.userCompanies || []).map((uc: any) => uc.companyId),
       isActive: u.isActive !== false,
     });
   }
 
   const columns = [
-    { key: 'email', label: t('email'), render: (v) => <span className="font-semibold">{v || '—'}</span> },
-    { key: 'nameAr', label: t('nameAr'), render: (v, row) => <span>{v || row.nameEn || '—'}</span> },
-    { key: 'preferredLang', label: t('preferredLang'), render: (v) => <Badge color={v === 'en' ? 'blue' : 'violet'} size="sm">{v === 'en' ? t('langEn') : t('langAr')}</Badge> },
-    { key: 'role', label: t('role'), render: (_, row) => <span>{row.role?.nameAr || row.role?.name || '—'}</span> },
-    { key: 'companies', label: t('companies'), render: (_, row) => <span className="nx-cell-muted">{(row.userCompanies || []).map((uc) => uc.company?.nameAr).filter(Boolean).join(', ') || '—'}</span> },
-    { key: 'status', label: t('status'), render: (_, row) => <Badge color={row.isActive ? 'green' : 'red'} size="sm">{row.isActive ? t('active') : t('archived')}</Badge> },
-    { key: 'actions', label: t('actions'), render: (_, row) => <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button> },
+    { key: 'email', label: t('email'), render: (v: any) => <span className="font-semibold">{v || '—'}</span> },
+    { key: 'nameAr', label: t('nameAr'), render: (v: any, row: any) => <span>{v || row.nameEn || '—'}</span> },
+    { key: 'preferredLang', label: t('preferredLang'), render: (v: any) => <Badge color={v === 'en' ? 'blue' : 'violet'} size="sm">{v === 'en' ? t('langEn') : t('langAr')}</Badge> },
+    { key: 'role', label: t('role'), render: (_: any, row: any) => <span>{row.role?.nameAr || row.role?.name || '—'}</span> },
+    { key: 'companies', label: t('companies'), render: (_: any, row: any) => <span className="nx-cell-muted">{(row.userCompanies || []).map((uc: any) => uc.company?.nameAr).filter(Boolean).join(', ') || '—'}</span> },
+    { key: 'status', label: t('status'), render: (_: any, row: any) => <Badge color={row.isActive ? 'green' : 'red'} size="sm">{row.isActive ? t('active') : t('archived')}</Badge> },
+    { key: 'actions', label: t('actions'), render: (_: any, row: any) => <Button size="sm" onClick={() => openEdit(row)}>{t('edit')}</Button> },
   ];
 
   return (
@@ -104,23 +104,23 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
       {showForm && (
         <div className="noorix-surface-card p-5">
           <h4 className="text-[14px] m-0 mb-4">{t('newUser')}</h4>
-          <form onSubmit={(e) => { e.preventDefault(); if (!form.nameAr?.trim() || !form.password?.trim()) return; createMutation.mutate({ password: form.password, nameAr: form.nameAr.trim(), preferredLang: form.preferredLang, roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c) => c.id) }); }}>
+          <form onSubmit={(e: any) => { e.preventDefault(); if (!form.nameAr?.trim() || !form.password?.trim()) return; createMutation.mutate({ password: form.password, nameAr: form.nameAr.trim(), preferredLang: form.preferredLang, roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c: any) => c.id) }); }}>
             <div className="grid w-full min-w-0 max-w-[400px] gap-3 mb-[14px]">
-              <Input type="text" label={t('userCreateNameLabel')} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} required />
+              <Input type="text" label={t('userCreateNameLabel')} value={form.nameAr} onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))} required />
               <p className="text-[11px] text-noorix-muted m-0 -mt-2">{t('userEmailAutoHint')}</p>
-              <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} required />
-              <Input type="select" label={t('preferredLang')} value={form.preferredLang} onChange={(e) => setForm((p) => ({ ...p, preferredLang: e.target.value }))}>
+              <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e: any) => setForm((p: any) => ({ ...p, password: e.target.value }))} required />
+              <Input type="select" label={t('preferredLang')} value={form.preferredLang} onChange={(e: any) => setForm((p: any) => ({ ...p, preferredLang: e.target.value }))}>
                 <option value="ar">{t('langAr')}</option>
                 <option value="en">{t('langEn')}</option>
               </Input>
-              <Input type="select" label={t('role')} value={form.roleName} onChange={(e) => setForm((p) => ({ ...p, roleName: e.target.value }))}>
-                {roles.map((r) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
+              <Input type="select" label={t('role')} value={form.roleName} onChange={(e: any) => setForm((p: any) => ({ ...p, roleName: e.target.value }))}>
+                {roles.map((r: any) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
               </Input>
               <div><label className="text-[12px] font-semibold mb-1 block">{t('companies')}</label>
                 <div className="flex flex-col gap-1.5">
-                  {activeCompanies.map((c) => (
+                  {activeCompanies.map((c: any) => (
                     <label key={c.id} className="nx-checkbox">
-                      <input type="checkbox" checked={form.companyIds.includes(c.id)} onChange={(e) => setForm((p) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id) => id !== c.id) }))} />
+                      <input type="checkbox" checked={form.companyIds.includes(c.id)} onChange={(e: any) => setForm((p: any) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id: any) => id !== c.id) }))} />
                       {c.nameAr}
                     </label>
                   ))}
@@ -144,21 +144,21 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
         className="users-edit-drawer"
       >
         {editing && (
-          <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), preferredLang: editing.preferredLang, roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
+          <form onSubmit={(e: any) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), preferredLang: editing.preferredLang, roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
             <div className="grid gap-3 mb-[14px]">
               <Input type="email" label={t('email')} value={editing.email} disabled />
-              <Input type="text" label={t('nameAr')} value={editing.nameAr} onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))} />
-              <Input type="select" label={t('preferredLang')} value={editing.preferredLang} onChange={(e) => setEditing((p) => ({ ...p, preferredLang: e.target.value }))}>
+              <Input type="text" label={t('nameAr')} value={editing.nameAr} onChange={(e: any) => setEditing((p: any) => ({ ...p, nameAr: e.target.value }))} />
+              <Input type="select" label={t('preferredLang')} value={editing.preferredLang} onChange={(e: any) => setEditing((p: any) => ({ ...p, preferredLang: e.target.value }))}>
                 <option value="ar">{t('langAr')}</option>
                 <option value="en">{t('langEn')}</option>
               </Input>
-              <Input type="select" label={t('role')} value={editing.roleName} onChange={(e) => setEditing((p) => ({ ...p, roleName: e.target.value }))}>
-                {roles.map((r) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
+              <Input type="select" label={t('role')} value={editing.roleName} onChange={(e: any) => setEditing((p: any) => ({ ...p, roleName: e.target.value }))}>
+                {roles.map((r: any) => <option key={r.id} value={r.name}>{r.nameAr || r.name}</option>)}
               </Input>
               <div><label className="text-[12px] font-semibold mb-1 block">{t('companies')}</label>
-                {activeCompanies.map((c) => (
+                {activeCompanies.map((c: any) => (
                   <label key={c.id} className="nx-checkbox mb-1">
-                    <input type="checkbox" checked={editing.companyIds.includes(c.id)} onChange={(e) => setEditing((p) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id) => id !== c.id) }))} />
+                    <input type="checkbox" checked={editing.companyIds.includes(c.id)} onChange={(e: any) => setEditing((p: any) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id: any) => id !== c.id) }))} />
                     {c.nameAr}
                   </label>
                 ))}
@@ -189,7 +189,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }) {
           isLoading={isLoading}
           title={t('usersTab')}
           emptyMessage={t('noUsers')}
-          renderMobileCard={(row) => (
+          renderMobileCard={(row: any) => (
             <div className="grid gap-2 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <span className="font-bold text-[14px] text-noorix-text min-w-0 break-words">{row.nameAr || row.nameEn || row.email || '—'}</span>

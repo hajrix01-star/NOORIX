@@ -14,7 +14,7 @@ const TABS = [
   { id: 'suppliers',  labelKey: 'suppliersTab'  },
   { id: 'categories', labelKey: 'categoriesTab' },
 ];
-const SUPPLIER_TAB_IDS = TABS.map((tab) => tab.id);
+const SUPPLIER_TAB_IDS = TABS.map((tab: any) => tab.id);
 
 export default function SuppliersScreen() {
   const { activeCompanyId } = useApp();
@@ -23,7 +23,7 @@ export default function SuppliersScreen() {
   const [activeTab, setActiveTab] = useTabSearchParam(SUPPLIER_TAB_IDS, 'suppliers');
 
   const supplierTabItems = useMemo(
-    () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
+    () => TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) })),
     [t],
   );
 

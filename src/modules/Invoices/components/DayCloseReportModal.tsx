@@ -11,7 +11,7 @@ import { formatSaudiDateISO, getSaudiToday } from '../../../utils/saudiDate';
 import { Button, Modal, Input, cn } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 
-function SectionTitle({ children }) {
+function SectionTitle({ children }: any) {
   return (
     <div className="dc-section-title">
       {children}
@@ -21,12 +21,12 @@ function SectionTitle({ children }) {
 
 const MAX_DAY_CLOSE_RANGE_DAYS = 31;
 
-function pad2(n) {
+function pad2(n: any) {
   return String(n).padStart(2, '0');
 }
 
 /** عرض اسم مزدوج حسب لغة الواجهة */
-function pickBilingual(lang, nameAr, nameEn) {
+function pickBilingual(lang: any, nameAr: any, nameEn: any) {
   const ar = nameAr != null && String(nameAr).trim() !== '' ? String(nameAr).trim() : '';
   const en = nameEn != null && String(nameEn).trim() !== '' ? String(nameEn).trim() : '';
   if (lang === 'en') return en || ar || '—';
@@ -34,7 +34,7 @@ function pickBilingual(lang, nameAr, nameEn) {
 }
 
 /** تواريخ YYYY-MM-DD من البداية إلى النهاية (شاملة)، UTC تقويمية */
-function enumerateYmdDates(startStr, endStr) {
+function enumerateYmdDates(startStr: any, endStr: any) {
   const [sy, sm, sd] = startStr.split('-').map(Number);
   const [ey, em, ed] = endStr.split('-').map(Number);
   const start = new Date(Date.UTC(sy, sm - 1, sd));
@@ -47,7 +47,7 @@ function enumerateYmdDates(startStr, endStr) {
   return out;
 }
 
-function counterpartyLabel(op, lang) {
+function counterpartyLabel(op: any, lang: any) {
   const sup = pickBilingual(lang, op.supplierNameAr ?? op.supplierName, op.supplierNameEn);
   if (sup !== '—') return sup;
   if (op.employeeName) return op.employeeName;
@@ -56,7 +56,7 @@ function counterpartyLabel(op, lang) {
   return op.notes || '—';
 }
 
-function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact = false }) {
+function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact = false }: any) {
   return (
     <div className="grid gap-3.5">
       <div className="day-close-screen-only flex gap-2 justify-between items-baseline flex-wrap pb-2 border-b border-noorix-border">
@@ -172,7 +172,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
               {(data.byKind || []).length === 0 ? (
                 <tr><td colSpan={3} className="dc-empty">—</td></tr>
               ) : (
-                (data.byKind || []).map((row) => (
+                (data.byKind || []).map((row: any) => (
                   <tr key={row.kind}>
                     <td>{kindLabel[row.kind] || row.kind}</td>
                     <td className="dc-num">{row.count}</td>
@@ -197,7 +197,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
               {(data.outflowByPaymentMethod || []).length === 0 ? (
                 <tr><td colSpan={2} className="dc-empty">—</td></tr>
               ) : (
-                (data.outflowByPaymentMethod || []).map((row, i) => (
+                (data.outflowByPaymentMethod || []).map((row: any, i: any) => (
                   <tr key={row.vaultId ?? `${row.nameAr ?? row.label}-${i}`}>
                     <td>{pickBilingual(lang, row.nameAr ?? row.label, row.nameEn)}</td>
                     <td className="dc-num">{fmt(Number(row.total))}</td>
@@ -223,7 +223,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
               </tr>
             </thead>
             <tbody>
-              {(data.salesSummaries || []).map((s) => (
+              {(data.salesSummaries || []).map((s: any) => (
                 <tr key={s.id}>
                   <td className="font-bold">{s.summaryNumber}</td>
                   <td className="dc-num">{s.customerCount}</td>
@@ -231,7 +231,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
                   <td className="dc-num">{fmt(Number(s.totalAmount))}</td>
                   {!compact && (
                     <td className="dc-muted text-[10px]">
-                      {(s.channels || []).map((c) => `${pickBilingual(lang, c.vaultNameAr ?? c.vaultName, c.vaultNameEn)}: ${fmt(Number(c.amount))}`).join(' · ') || '—'}
+                      {(s.channels || []).map((c: any) => `${pickBilingual(lang, c.vaultNameAr ?? c.vaultName, c.vaultNameEn)}: ${fmt(Number(c.amount))}`).join(' · ') || '—'}
                     </td>
                   )}
                 </tr>
@@ -256,7 +256,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
             {(data.vaults?.movementOnDayByVault || []).length === 0 ? (
               <tr><td colSpan={4} className="dc-empty">—</td></tr>
             ) : (
-              (data.vaults?.movementOnDayByVault || []).map((v) => (
+              (data.vaults?.movementOnDayByVault || []).map((v: any) => (
                 <tr key={v.id}>
                   <td>{pickBilingual(lang, v.nameAr, v.nameEn)} <span className="dc-muted">({v.type})</span></td>
                   <td className="dc-num">{fmt(Number(v.totalIn))}</td>
@@ -287,7 +287,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
               {(data.operations || []).length === 0 && (
                 <tr><td colSpan={6} className="dc-empty">—</td></tr>
               )}
-              {(data.operations || []).map((op) => (
+              {(data.operations || []).map((op: any) => (
                 <tr key={op.id} style={{ opacity: op.status === 'cancelled' ? 0.55 : 1 }}>
                   <td className="font-bold">{op.invoiceNumber}</td>
                   <td>{kindLabel[op.kind] || op.kind}</td>
@@ -307,14 +307,14 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
   );
 }
 
-export default function DayCloseReportModal({ companyId, isOpen, onClose, defaultDateYmd, compact = false }) {
+export default function DayCloseReportModal({ companyId, isOpen, onClose, defaultDateYmd, compact = false }: any) {
   const { t, lang } = useTranslation();
   const reportTitle = compact ? t('dayCloseTitleV2') : t('dayCloseTitle');
   const { companies, activeCompanyId } = useApp();
   const [dateStr, setDateStr] = useState(() => defaultDateYmd || getSaudiToday());
 
   const companyName = useMemo(() => {
-    const c = companies?.find((x) => x.id === (activeCompanyId || companyId));
+    const c = companies?.find((x: any) => x.id === (activeCompanyId || companyId));
     if (!c) return '';
     return lang === 'en'
       ? (c.nameEn || c.nameAr || c.name || '')
@@ -357,7 +357,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
   const [rangeFrom, setRangeFrom] = useState(() => defaultDateYmd || getSaudiToday());
   const [rangeTo, setRangeTo] = useState(() => defaultDateYmd || getSaudiToday());
   const [rangePrintLoading, setRangePrintLoading] = useState(false);
-  const [multiDayPrint, setMultiDayPrint] = useState(null);
+  const [multiDayPrint, setMultiDayPrint] = useState<any>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -389,9 +389,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
         rows.push({ date: d, data: res.data });
       }
       setMultiDayPrint(rows);
-      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)));
+      await new Promise((r: any) => requestAnimationFrame(() => setTimeout(r, 50)));
       window.print();
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('dayCloseLoadFailed'), 'error');
       setMultiDayPrint(null);
     } finally {
@@ -561,7 +561,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                   <Input
                     type="date"
                     value={dateStr}
-                    onChange={(e) => setDateStr(e.target.value)}
+                    onChange={(e: any) => setDateStr(e.target.value)}
                     className="rounded-lg py-1 px-2 border border-noorix-border"
                   />
                 </label>
@@ -591,7 +591,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 <Input
                   type="date"
                   value={rangeFrom}
-                  onChange={(e) => setRangeFrom(e.target.value)}
+                  onChange={(e: any) => setRangeFrom(e.target.value)}
                   className="rounded-lg py-1 px-2 border border-noorix-border"
                 />
               </label>
@@ -600,7 +600,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 <Input
                   type="date"
                   value={rangeTo}
-                  onChange={(e) => setRangeTo(e.target.value)}
+                  onChange={(e: any) => setRangeTo(e.target.value)}
                   className="rounded-lg py-1 px-2 border border-noorix-border"
                 />
               </label>
@@ -639,7 +639,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
           {multiDayPrint && multiDayPrint.length > 0 && (
             <div className="day-close-multi-print" aria-hidden>
-              {multiDayPrint.map((item, idx) => (
+              {multiDayPrint.map((item: any, idx: any) => (
                 <div
                   key={item.date}
                   className={cn(idx > 0 && 'day-close-multi-day--break')}

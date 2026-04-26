@@ -8,7 +8,7 @@ import { Button, Modal, FmtNum } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 
-export function BatchPrintSheet({ batch, onClose }) {
+export function BatchPrintSheet({ batch, onClose }: any) {
   const { t, lang } = useTranslation();
   useEffect(() => {
     const timer = setTimeout(() => window.print(), 300);
@@ -16,7 +16,7 @@ export function BatchPrintSheet({ batch, onClose }) {
   }, []);
 
   const invList = batch?.invoices || [];
-  const activeInvoices = invList.filter((i) => i.status !== 'cancelled');
+  const activeInvoices = invList.filter((i: any) => i.status !== 'cancelled');
   const net = sumAmounts(activeInvoices, 'netAmount');
   const tax = sumAmounts(activeInvoices, 'taxAmount');
   const total = sumAmounts(activeInvoices, 'totalAmount');
@@ -75,7 +75,7 @@ export function BatchPrintSheet({ batch, onClose }) {
               </tr>
             </thead>
             <tbody>
-              {activeInvoices.map((inv, i) => (
+              {activeInvoices.map((inv: any, i: any) => (
                 <tr key={inv.id}>
                   <td style={{ textAlign: 'center' }}>{i + 1}</td>
                   <td style={{ fontWeight: 600 }}>{inv.invoiceNumber}</td>

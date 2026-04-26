@@ -15,12 +15,12 @@ export const TRANSACTION_SIDES = [
   { value: 'credit', labelKey: 'bankRuleSideCredit', icon: 'IN' },
 ];
 
-export function getTransactionTypeInfo(value, t) {
-  const row = TRANSACTION_TYPES.find((x) => x.value === value);
+export function getTransactionTypeInfo(value: any, t: any) {
+  const row = TRANSACTION_TYPES.find((x: any) => x.value === value);
   if (!row) return { label: value || '—', color: 'rgba(75,85,99,0.12)', colorText: '#374151', icon: 'GEN' };
   return { ...row, label: t(row.labelKey) };
 }
 
-export function getTransactionSideInfo(value, t) {
-  return TRANSACTION_SIDES.find((s) => s.value === (value || 'any')) || TRANSACTION_SIDES[0];
+export function getTransactionSideInfo(value: any, t: any) {
+  return TRANSACTION_SIDES.find((s: any) => s.value === (value || 'any')) || TRANSACTION_SIDES[0];
 }

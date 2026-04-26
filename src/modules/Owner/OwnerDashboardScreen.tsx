@@ -34,29 +34,29 @@ const METRIC_COLORS = {
 };
 
 /** يُعيد مصفوفة 12 قيمة شهرية لمؤشر معين من تقرير شركة */
-function getCompanyMonthlyArr(report, metric) {
+function getCompanyMonthlyArr(report: any, metric: any) {
   if (!report) return Array(12).fill(0);
   if (metric === 'netProfit') {
-    const row = report.summaryRows?.find((r) => r.key === 'netProfit');
-    return Array.from({ length: 12 }, (_, i) => Number(row?.months?.[i] || 0));
+    const row = report.summaryRows?.find((r: any) => r.key === 'netProfit');
+    return Array.from({ length: 12 }, (_: any, i: any) => Number(row?.months?.[i] || 0));
   }
-  const group = report.groups?.find((r) => r.key === metric);
-  return Array.from({ length: 12 }, (_, i) => Number(group?.months?.[i] || 0));
+  const group = report.groups?.find((r: any) => r.key === metric);
+  return Array.from({ length: 12 }, (_: any, i: any) => Number(group?.months?.[i] || 0));
 }
 
-function fmtAxis(n) {
+function fmtAxis(n: any) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
   if (n >= 1e3) return `${(n / 1e3).toFixed(0)}K`;
   return String(Math.round(n));
 }
 
-function ChartTooltip({ active, payload, label, companyList, lang }) {
+function ChartTooltip({ active, payload, label, companyList, lang }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: 6, padding: '8px 12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: 12, minWidth: 140 }}>
       <div style={{ fontWeight: 700, marginBottom: 5, color: 'var(--noorix-text)', fontSize: 11 }}>{label}</div>
-      {payload.map((p) => {
-        const company = (companyList || []).find((c) => c.id === p.dataKey);
+      {payload.map((p: any) => {
+        const company = (companyList || []).find((c: any) => c.id === p.dataKey);
         const name = company
           ? (lang === 'ar' ? company.nameAr || company.nameEn : company.nameEn || company.nameAr)
           : p.name;
@@ -78,13 +78,13 @@ export default function OwnerDashboardScreen() {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState('');
-  const [selectedCompanyIds, setSelectedCompanyIds] = useState(() => new Set(companies?.map((c) => c.id) || []));
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState(() => new Set(companies?.map((c: any) => c.id) || []));
   const [chartGrain, setChartGrain] = useState('monthly');
   const [metricFilter, setMetricFilter] = useState(new Set(['sales']));
   const [comparisonMetric, setComparisonMetric] = useState('sales');
 
-  const toggleMetric = (key) => {
-    setMetricFilter((prev) => {
+  const toggleMetric = (key: any) => {
+    setMetricFilter((prev: any) => {
       const next = new Set(prev);
       if (next.has(key)) {
         if (next.size === 1) return prev; // لا يُسمح بإلغاء الكل
@@ -96,7 +96,7 @@ export default function OwnerDashboardScreen() {
     });
   };
 
-  const companyList = companies?.filter((c) => !c.isArchived) || [];
+  const companyList = companies?.filter((c: any) => !c.isArchived) || [];
   const isMobile = useIsNarrow700();
   const allSelected = selectedCompanyIds.size === companyList.length && companyList.length > 0;
   const idsToFetch = [...selectedCompanyIds];
@@ -115,8 +115,8 @@ export default function OwnerDashboardScreen() {
     enabled: chartGrain === 'daily',
   });
 
-  const toggleCompany = (id) => {
-    setSelectedCompanyIds((prev) => {
+  const toggleCompany = (id: any) => {
+    setSelectedCompanyIds((prev: any) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -124,10 +124,10 @@ export default function OwnerDashboardScreen() {
     });
   };
 
-  const selectAll = () => setSelectedCompanyIds(new Set(companyList.map((c) => c.id)));
+  const selectAll = () => setSelectedCompanyIds(new Set(companyList.map((c: any) => c.id)));
   const selectNone = () => setSelectedCompanyIds(new Set());
 
-  const getMonthValue = (report, key, monthIdx) => {
+  const getMonthValue = (report: any, key: any, monthIdx: any) => {
     if (!report) return 0;
     if (monthIdx == null) {
       if (key === 'sales' || key === 'purchases' || key === 'expenses') return Number(report?.cards?.[key] || 0);
@@ -135,10 +135,10 @@ export default function OwnerDashboardScreen() {
       return 0;
     }
     if (key === 'netProfit') {
-      const row = report?.summaryRows?.find((r) => r.key === 'netProfit');
+      const row = report?.summaryRows?.find((r: any) => r.key === 'netProfit');
       return Number(row?.months?.[monthIdx] || 0);
     }
-    const group = report?.groups?.find((r) => r.key === key);
+    const group = report?.groups?.find((r: any) => r.key === key);
     return Number(group?.months?.[monthIdx] || 0);
   };
 
@@ -146,14 +146,14 @@ export default function OwnerDashboardScreen() {
     const m = selectedMonthNum != null ? selectedMonthNum - 1 : null;
     let totalSales = 0, totalPurchases = 0, totalExpenses = 0, totalNetProfit = 0;
     const byCompany = [];
-    Object.entries(reportsByCompany).forEach(([companyId, report]) => {
+    Object.entries(reportsByCompany).forEach(([companyId, report]: any) => {
       const sales = getMonthValue(report, 'sales', m);
       const purchases = getMonthValue(report, 'purchases', m);
       const expenses = getMonthValue(report, 'expenses', m);
       const netProfit = getMonthValue(report, 'netProfit', m);
       totalSales += sales; totalPurchases += purchases;
       totalExpenses += expenses; totalNetProfit += netProfit;
-      const company = companyList.find((c) => c.id === companyId);
+      const company = companyList.find((c: any) => c.id === companyId);
       const name = lang === 'ar' ? (company?.nameAr || company?.nameEn || companyId) : (company?.nameEn || company?.nameAr || companyId);
       byCompany.push({ companyId, name, sales, purchases, expenses, netProfit });
     });
@@ -162,11 +162,11 @@ export default function OwnerDashboardScreen() {
 
   const aggregatedMonthly = useMemo(() => {
     const months = Array.from({ length: 12 }, () => ({ sales: 0, purchases: 0, expenses: 0, netProfit: 0 }));
-    Object.values(reportsByCompany).forEach((report) => {
-      const salesG = report?.groups?.find((r) => r.key === 'sales');
-      const purchG = report?.groups?.find((r) => r.key === 'purchases');
-      const expG   = report?.groups?.find((r) => r.key === 'expenses');
-      const netRow = report?.summaryRows?.find((r) => r.key === 'netProfit');
+    Object.values(reportsByCompany).forEach((report: any) => {
+      const salesG = report?.groups?.find((r: any) => r.key === 'sales');
+      const purchG = report?.groups?.find((r: any) => r.key === 'purchases');
+      const expG   = report?.groups?.find((r: any) => r.key === 'expenses');
+      const netRow = report?.summaryRows?.find((r: any) => r.key === 'netProfit');
       for (let i = 0; i < 12; i++) {
         months[i].sales     += Number(salesG?.months?.[i] || 0);
         months[i].purchases += Number(purchG?.months?.[i] || 0);
@@ -179,52 +179,52 @@ export default function OwnerDashboardScreen() {
 
   /* ── بيانات جدول المقارنة الشهرية ── */
   const companyMonthlyData = useMemo(() =>
-    idsToFetch.map((cid, i) => {
+    idsToFetch.map((cid: any, i: any) => {
       const report = reportsByCompany[cid];
-      const company = companyList.find((c) => c.id === cid);
+      const company = companyList.find((c: any) => c.id === cid);
       const name = lang === 'ar' ? company?.nameAr || company?.nameEn || cid : company?.nameEn || company?.nameAr || cid;
       const months = getCompanyMonthlyArr(report, comparisonMetric);
-      const total = months.reduce((a, b) => a + b, 0);
+      const total = months.reduce((a: any, b: any) => a + b, 0);
       return { cid, name, months, total, color: COLORS[i % COLORS.length] };
     }),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   [idsToFetch.join(','), reportsByCompany, comparisonMetric, companyList, lang]);
 
   const grandMonthlyTotals = useMemo(() =>
-    Array.from({ length: 12 }, (_, i) =>
-      companyMonthlyData.reduce((a, c) => a + (c.months[i] || 0), 0),
+    Array.from({ length: 12 }, (_: any, i: any) =>
+      companyMonthlyData.reduce((a: any, c: any) => a + (c.months[i] || 0), 0),
     ),
   [companyMonthlyData]);
 
-  const grandTotal = grandMonthlyTotals.reduce((a, b) => a + b, 0);
+  const grandTotal = grandMonthlyTotals.reduce((a: any, b: any) => a + b, 0);
 
   /* ── بيانات الرسم البياني الموحّد ── */
   const performanceData = useMemo(() => {
     if (chartGrain === 'daily') {
       const { itemsByCompanyId } = dailySalesQuery;
       const lastDay = new Date(year, chartMonthForDaily, 0).getDate();
-      const pad = (n) => String(n).padStart(2, '0');
-      return Array.from({ length: lastDay }, (_, idx) => {
+      const pad = (n: any) => String(n).padStart(2, '0');
+      return Array.from({ length: lastDay }, (_: any, idx: any) => {
         const day = idx + 1;
         const dateStr = `${year}-${pad(chartMonthForDaily)}-${pad(day)}`;
         const entry = { label: String(day) };
-        idsToFetch.forEach((cid) => {
+        idsToFetch.forEach((cid: any) => {
           const list = itemsByCompanyId[cid] || [];
           entry[cid] = list
-            .filter((s) => (s.transactionDate || '').slice(0, 10) === dateStr && s.status !== 'cancelled')
-            .reduce((a, s) => a + Number(s.totalAmount || 0), 0);
+            .filter((s: any) => (s.transactionDate || '').slice(0, 10) === dateStr && s.status !== 'cancelled')
+            .reduce((a: any, s: any) => a + Number(s.totalAmount || 0), 0);
         });
         return entry;
       });
     }
     /* Monthly — دائماً 12 شهراً للسياق، مجموع المؤشرات المختارة */
-    const activeMetrics = ['sales', 'purchases', 'expenses'].filter((k) => metricFilter.has(k));
-    return Array.from({ length: 12 }, (_, i) => {
+    const activeMetrics = ['sales', 'purchases', 'expenses'].filter((k: any) => metricFilter.has(k));
+    return Array.from({ length: 12 }, (_: any, i: any) => {
       const entry = { label: lang === 'ar' ? MONTH_NAMES_AR[i] : EN_MONTHS[i] };
-      idsToFetch.forEach((cid) => {
+      idsToFetch.forEach((cid: any) => {
         const report = reportsByCompany[cid];
-        entry[cid] = activeMetrics.reduce((sum, key) => {
-          const g = report?.groups?.find((r) => r.key === key);
+        entry[cid] = activeMetrics.reduce((sum: any, key: any) => {
+          const g = report?.groups?.find((r: any) => r.key === key);
           return sum + Number(g?.months?.[i] || 0);
         }, 0);
       });
@@ -234,8 +234,8 @@ export default function OwnerDashboardScreen() {
   }, [chartGrain, dailySalesQuery.dataStamp, year, chartMonthForDaily, idsToFetch.join(','), selectedMonthNum, reportsByCompany, [...metricFilter].join(','), lang]);
 
   const companySeries = useMemo(() =>
-    idsToFetch.map((cid, i) => {
-      const c = companyList.find((x) => x.id === cid);
+    idsToFetch.map((cid: any, i: any) => {
+      const c = companyList.find((x: any) => x.id === cid);
       return {
         key: cid,
         label: lang === 'ar' ? c?.nameAr || c?.nameEn || cid : c?.nameEn || c?.nameAr || cid,
@@ -264,7 +264,7 @@ export default function OwnerDashboardScreen() {
         [lang === 'ar' ? 'نسبة المصروفات' : 'Expenses %']: aggregated.totalSales > 0 ? fmt((aggregated.totalExpenses / aggregated.totalSales) * 100, 1) + '%' : '—',
         [lang === 'ar' ? 'صافي الربح' : 'Net profit']: fmt(aggregated.totalNetProfit),
       },
-      ...aggregated.byCompany.map((x) => ({
+      ...aggregated.byCompany.map((x: any) => ({
         [lang === 'ar' ? 'الشركة' : 'Company']: x.name,
         [lang === 'ar' ? 'المبيعات' : 'Sales']: fmt(x.sales),
         [lang === 'ar' ? 'نسبة المشتريات' : 'Purchases %']: x.sales > 0 ? fmt((x.purchases / x.sales) * 100, 1) + '%' : '—',
@@ -277,7 +277,7 @@ export default function OwnerDashboardScreen() {
 
   const handleExportPdf = () => {
     const cols = [lang === 'ar' ? 'الشركة' : 'Company', lang === 'ar' ? 'المبيعات' : 'Sales', lang === 'ar' ? 'نسبة المشتريات' : 'Purchases %', lang === 'ar' ? 'صافي الربح' : 'Net profit'];
-    const data = aggregated.byCompany.map((x) => [x.name, fmt(x.sales), x.sales > 0 ? fmt((x.purchases / x.sales) * 100, 1) + '%' : '—', fmt(x.netProfit)]);
+    const data = aggregated.byCompany.map((x: any) => [x.name, fmt(x.sales), x.sales > 0 ? fmt((x.purchases / x.sales) * 100, 1) + '%' : '—', fmt(x.netProfit)]);
     data.unshift([lang === 'ar' ? 'الإجمالي' : 'Total', fmt(aggregated.totalSales), aggregated.totalSales > 0 ? fmt((aggregated.totalPurchases / aggregated.totalSales) * 100, 1) + '%' : '—', fmt(aggregated.totalNetProfit)]);
     exportTableToPdf({ title: `${t('ownerDashboard')} — ${year}`, filename: `owner-dashboard-${year}.pdf`, columns: cols, data });
   };
@@ -301,14 +301,14 @@ export default function OwnerDashboardScreen() {
           <p className="text-[13px] text-noorix-muted m-0">{t('ownerDashboardDesc')}</p>
         </div>
         <div className="nx-toolbar">
-          <Input type="select" value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
+          <Input type="select" value={year} onChange={(e: any) => setYear(Number(e.target.value))}>
+            {[currentYear, currentYear - 1, currentYear - 2].map((y: any) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </Input>
-          <Input type="select" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+          <Input type="select" value={selectedMonth} onChange={(e: any) => setSelectedMonth(e.target.value)}>
             <option value="">{t('allMonths')}</option>
-            {EN_MONTHS.map((m, i) => (
+            {EN_MONTHS.map((m: any, i: any) => (
               <option key={i} value={i + 1}>{m}</option>
             ))}
           </Input>
@@ -323,7 +323,7 @@ export default function OwnerDashboardScreen() {
         <div className="flex items-center flex flex-wrap gap-2">
           <Button onClick={selectAll} size="sm">{t('ownerAllCompanies')}</Button>
           <Button onClick={selectNone} size="sm">{lang === 'ar' ? 'إخفاء الكل' : 'Hide all'}</Button>
-          {companyList.map((c, i) => {
+          {companyList.map((c: any, i: any) => {
             const isVisible = allSelected ? true : selectedCompanyIds.has(c.id);
             return (
               <Button
@@ -366,7 +366,7 @@ export default function OwnerDashboardScreen() {
               { key: 'purchases', label: t('annualPurchases'),     value: aggregated.totalPurchases },
               { key: 'expenses',  label: t('annualExpenses'),      value: aggregated.totalExpenses },
               { key: 'netProfit', label: t('ownerTotalNetProfit'), value: aggregated.totalNetProfit },
-            ].map((card) => {
+            ].map((card: any) => {
               const pctNum = card.key !== 'sales' && aggregated.totalSales > 0
                 ? Number(((card.value / aggregated.totalSales) * 100).toFixed(1))
                 : null;
@@ -380,7 +380,7 @@ export default function OwnerDashboardScreen() {
                 <MetricCard key={card.key} color={accentColor} className="min-h-[168px]">
                   <MetricCard.Header label={card.label} />
                   <MetricCard.Value value={card.value} currency="SR" />
-                  <MetricCard.Spark data={aggregatedMonthly.map((m) => m[card.key])} color={accentColor} grow />
+                  <MetricCard.Spark data={aggregatedMonthly.map((m: any) => m[card.key])} color={accentColor} grow />
                   <MetricCard.Footer className="mt-3 border-t border-noorix-border pt-3 pb-3">
                     <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">
                       {year}{selectedMonthNum ? ` — ${EN_MONTHS[selectedMonthNum - 1]}` : ''}
@@ -447,8 +447,8 @@ export default function OwnerDashboardScreen() {
 
                 {/* فلاتر المؤشرات — الكل + مبيعات/مشتريات/مصروفات (متعدد الاختيار) */}
                 {chartGrain === 'monthly' && (() => {
-                  const allKeys = METRIC_FILTERS.map((f) => f.key);
-                  const isAllActive = allKeys.every((k) => metricFilter.has(k));
+                  const allKeys = METRIC_FILTERS.map((f: any) => f.key);
+                  const isAllActive = allKeys.every((k: any) => metricFilter.has(k));
                   return (
                     <button
                       onClick={() => setMetricFilter(isAllActive ? new Set(['sales']) : new Set(allKeys))}
@@ -463,7 +463,7 @@ export default function OwnerDashboardScreen() {
                     </button>
                   );
                 })()}
-                {METRIC_FILTERS.map((f) => {
+                {METRIC_FILTERS.map((f: any) => {
                   const disabled = chartGrain === 'daily' && f.key !== 'sales';
                   const active   = !disabled && metricFilter.has(f.key);
                   return (
@@ -505,7 +505,7 @@ export default function OwnerDashboardScreen() {
               <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={performanceData} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
                   <defs>
-                    {companySeries.map((s) => (
+                    {companySeries.map((s: any) => (
                       <linearGradient key={s.gradId} id={s.gradId} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%"  stopColor={s.color} stopOpacity={0.22} />
                         <stop offset="95%" stopColor={s.color} stopOpacity={0.02} />
@@ -523,8 +523,8 @@ export default function OwnerDashboardScreen() {
                     tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
                     axisLine={false} tickLine={false} width={46}
                   />
-                  <Tooltip content={(props) => <ChartTooltip {...props} companyList={companyList} lang={lang} />} />
-                  {companySeries.map((s) => (
+                  <Tooltip content={(props: any) => <ChartTooltip {...props} companyList={companyList} lang={lang} />} />
+                  {companySeries.map((s: any) => (
                     <Area
                       key={s.key}
                       type="monotone"
@@ -543,7 +543,7 @@ export default function OwnerDashboardScreen() {
 
             {/* مفتاح الألوان */}
             <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">
-              {companySeries.map((s) => (
+              {companySeries.map((s: any) => (
                 <div key={s.key} className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: s.color }} />
                   <span className="text-[12px]">{s.label}</span>
@@ -563,10 +563,10 @@ export default function OwnerDashboardScreen() {
               { key: 'netProfit', label: t('ownerTotalNetProfit') },
             ];
             const monthAbbr = lang === 'ar'
-              ? MONTH_NAMES_AR.map((m) => m.slice(0, 3))
-              : EN_MONTHS.map((m) => m.slice(0, 3));
+              ? MONTH_NAMES_AR.map((m: any) => m.slice(0, 3))
+              : EN_MONTHS.map((m: any) => m.slice(0, 3));
 
-            const valColor = (val) => {
+            const valColor = (val: any) => {
               if (!isNetProfit) return undefined;
               return val < 0 ? 'var(--noorix-accent-red)' : val > 0 ? 'var(--noorix-accent-green)' : undefined;
             };
@@ -582,7 +582,7 @@ export default function OwnerDashboardScreen() {
                     <div className="text-[12px] text-noorix-muted mt-0.5">{year}</div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {COMPARISON_METRICS.map((m) => {
+                    {COMPARISON_METRICS.map((m: any) => {
                       const active = comparisonMetric === m.key;
                       const color  = METRIC_COLORS[m.key];
                       return (
@@ -615,7 +615,7 @@ export default function OwnerDashboardScreen() {
                         <th className="text-start py-2 px-3 text-[11px] text-noorix-muted font-semibold w-36 border-b border-noorix-border">
                           {lang === 'ar' ? 'الشركة' : 'Company'}
                         </th>
-                        {monthAbbr.map((m, i) => (
+                        {monthAbbr.map((m: any, i: any) => (
                           <th key={i} className="text-end py-2 px-1.5 text-[10px] text-noorix-muted font-semibold min-w-[56px] border-b border-noorix-border">
                             {m}
                           </th>
@@ -627,7 +627,7 @@ export default function OwnerDashboardScreen() {
                       </tr>
                     </thead>
                     <tbody>
-                      {companyMonthlyData.map(({ cid, name, months, total, color }) => {
+                      {companyMonthlyData.map(({ cid, name, months, total, color }: any) => {
                         const pct = Math.abs(grandTotal) > 0 ? (total / Math.abs(grandTotal)) * 100 : 0;
                         const bestMonth = Math.max(...months);
                         return (
@@ -638,7 +638,7 @@ export default function OwnerDashboardScreen() {
                                 <span className="font-semibold text-noorix-text truncate max-w-[110px]">{name}</span>
                               </div>
                             </td>
-                            {months.map((val, mi) => (
+                            {months.map((val: any, mi: any) => (
                               <td
                                 key={mi}
                                 className="py-2.5 px-1.5 text-end tabular-nums"
@@ -670,7 +670,7 @@ export default function OwnerDashboardScreen() {
                         <td className="py-3 px-3 font-bold text-noorix-text text-[12px]">
                           {lang === 'ar' ? 'الإجمالي' : 'Total'}
                         </td>
-                        {grandMonthlyTotals.map((val, mi) => (
+                        {grandMonthlyTotals.map((val: any, mi: any) => (
                           <td key={mi} className="py-3 px-1.5 text-end font-bold tabular-nums"
                             style={{ color: valColor(val) || 'var(--noorix-text)' }}
                           >

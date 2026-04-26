@@ -32,10 +32,10 @@ import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
 const PAGE_SIZE = 50;
 
 /** عرض قنوات البيع في الجدول والجوال — شرائح واضحة بدل نص مفصول بـ | */
-function SalesChannelsChips({ channels, lang }) {
+function SalesChannelsChips({ channels, lang }: any) {
   const list = Array.isArray(channels)
     ? [...channels].sort(
-        (a, b) =>
+        (a: any, b: any) =>
           (a.vault?.sortOrder ?? 0) - (b.vault?.sortOrder ?? 0) ||
           String(a.vault?.nameAr || '').localeCompare(String(b.vault?.nameAr || ''), 'ar'),
       )
@@ -45,7 +45,7 @@ function SalesChannelsChips({ channels, lang }) {
   }
   return (
     <div className="flex flex-wrap gap-1.5 justify-end">
-      {list.map((ch, i) => {
+      {list.map((ch: any, i: any) => {
         const vid = ch.vaultId ?? ch.vault?.id ?? i;
         const label = vaultDisplayName(ch.vault, lang);
         return (
@@ -68,8 +68,8 @@ function SalesChannelsChips({ channels, lang }) {
   );
 }
 
-function addCalendarDaysYmd(ymd, delta) {
-  const [y, m, d] = ymd.split('-').map((x) => parseInt(x, 10));
+function addCalendarDaysYmd(ymd: any, delta: any) {
+  const [y, m, d] = ymd.split('-').map((x: any) => parseInt(x, 10));
   if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return ymd;
   const dt = new Date(Date.UTC(y, m - 1, d + delta));
   if (isNaN(dt.getTime())) return ymd;
@@ -85,14 +85,14 @@ export default function DailySalesScreen() {
   const urlDrillKeyRef = useRef('');
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
-  const activeCo = companies?.find((c) => c.id === activeCompanyId);
+  const activeCo = companies?.find((c: any) => c.id === activeCompanyId);
   const companyName = (lang === 'en' ? (activeCo?.nameEn || activeCo?.nameAr) : (activeCo?.nameAr || activeCo?.nameEn)) || '';
   const logoUrl = activeCo?.logoUrl || '';
 
   // ── كل الـ Hooks في أعلى المكوّن ──
   const { showToast } = useToast();
   const [showEntryModal, setShowEntryModal] = useState(false);
-  const [editingSummary, setEditingSummary] = useState(null);
+  const [editingSummary, setEditingSummary] = useState<any>(null);
   const [listPage, setListPage] = useState(1);
   const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
   const [searchInput, setSearchInput] = useState(qInit);
@@ -144,7 +144,7 @@ export default function DailySalesScreen() {
   useEffect(() => {
     if (!salesFullHistory) return;
     const keys = ['from', 'to', 'q'];
-    const parts = keys.map((k) => searchParams.get(k) || '');
+    const parts = keys.map((k: any) => searchParams.get(k) || '');
     const drillKey = parts.join('\u001f');
     if (!parts.some(Boolean)) {
       urlDrillKeyRef.current = '';
@@ -217,7 +217,7 @@ export default function DailySalesScreen() {
   const vatRate = companyData?.vatRatePercent != null ? Number(companyData.vatRatePercent) / 100 : 0.15;
 
   // ── حسابات ──
-  function buildWhatsAppText(s) {
+  function buildWhatsAppText(s: any) {
     const cc = s.customerCount || 0;
     const total = Number(s.totalAmount || 0);
     const avg = cc > 0 ? (total / cc) : 0;
@@ -238,7 +238,7 @@ export default function DailySalesScreen() {
 
     const chList = s.channels || [];
     if (chList.length > 0) {
-      chList.forEach((ch) => {
+      chList.forEach((ch: any) => {
         lines.push(`• ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)} SR`);
       });
     } else {
@@ -261,11 +261,11 @@ export default function DailySalesScreen() {
     return lines.join('\n');
   }
 
-  function openWhatsApp(s) {
+  function openWhatsApp(s: any) {
     window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(s))}`, '_blank');
   }
 
-  async function handleEditSave(body) {
+  async function handleEditSave(body: any) {
     if (!editingSummary || !companyId) return;
     const res = await updateSummary.mutateAsync({
       id: editingSummary.id,
@@ -279,13 +279,13 @@ export default function DailySalesScreen() {
     setEditingSummary(null);
   }
 
-  const handleDeleteSummary = useCallback((s) => {
+  const handleDeleteSummary = useCallback((s: any) => {
     if (!companyId || !window.confirm(t('deleteSummaryConfirm', s.summaryNumber))) return;
     deleteSummary.mutate(
       { id: s.id, companyId },
       {
         onSuccess: () => showToast(t('summaryDeleted'), 'success'),
-        onError: (e) => showToast(e?.message || t('deleteFailed'), 'error'),
+        onError: (e: any) => showToast(e?.message || t('deleteFailed'), 'error'),
       },
     );
   }, [companyId, deleteSummary, t, showToast]);
@@ -295,10 +295,10 @@ export default function DailySalesScreen() {
   // ── بيانات الجدول ──
   const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
 
-  const tableData = useMemo(() => pagedSummaries.map((s) => {
+  const tableData = useMemo(() => pagedSummaries.map((s: any) => {
     const total = Number(s.totalAmount || 0);
     const cc = s.customerCount || 0;
-    const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
+    const channelsText = (s.channels || []).map((ch: any) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
     return {
       ...s,
       channelsText,
@@ -307,11 +307,11 @@ export default function DailySalesScreen() {
   }), [pagedSummaries, lang]);
 
   const allowedSort = useMemo(() => new Set(['summaryNumber', 'transactionDate', 'totalAmount', 'customerCount']), []);
-  const toggleSort = useCallback((key) => {
+  const toggleSort = useCallback((key: any) => {
     if (!allowedSort.has(key)) return;
-    setSortKey((prev) => {
+    setSortKey((prev: any) => {
       if (prev === key) {
-        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        setSortDir((d: any) => (d === 'asc' ? 'desc' : 'asc'));
         return key;
       }
       setSortDir('desc');
@@ -320,28 +320,28 @@ export default function DailySalesScreen() {
     setListPage(1);
   }, [allowedSort]);
 
-  const activeOnly = tableData.filter((s) => s.status !== 'cancelled');
+  const activeOnly = tableData.filter((s: any) => s.status !== 'cancelled');
   const displayedTotal = listTotal;
   const totalAmountSum = sumAmounts(activeOnly, 'totalAmount');
-  const totalCustomers = activeOnly.reduce((sum, s) => sum + (s.customerCount || 0), 0);
+  const totalCustomers = activeOnly.reduce((sum: any, s: any) => sum + (s.customerCount || 0), 0);
 
   const columns = useMemo(() => [
     { key: 'summaryNumber', label: t('summaryNumber'), sortable: true, width: '10%',
-      render: (v) => <span className="nx-cell-num nx-cell-accent">{v}</span> },
+      render: (v: any) => <span className="nx-cell-num nx-cell-accent">{v}</span> },
     { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '10%',
-      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'channelsText', label: t('salesChannels'), sortable: false, width: '38%',
-      render: (_, row) => <SalesChannelsChips channels={row.channels} lang={lang} /> },
+      render: (_: any, row: any) => <SalesChannelsChips channels={row.channels} lang={lang} /> },
     { key: 'customerCount', label: t('customers'), numeric: true, sortable: true, width: '7%',
-      render: (v) => <span className="nx-cell-num nx-cell-num--blue">{v ?? 0}</span> },
+      render: (v: any) => <span className="nx-cell-num nx-cell-num--blue">{v ?? 0}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '10%',
-      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green nx-cell-bold" /> },
+      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green nx-cell-bold" /> },
     { key: 'avgPerCustomer', label: t('avgPerOrder'), numeric: true, sortable: false, width: '7%',
-      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--violet" /> },
+      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', label: t('statusLabel'), width: '8%',
-      render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
+      render: (v: any) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '8%',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <SalesActionsCell
           summary={row}
           userRole={userRole}
@@ -380,11 +380,11 @@ export default function DailySalesScreen() {
     { key: 'status', label: t('statusLabel') },
   ];
 
-  function mapSummariesToExportRows(rows) {
-    return rows.map((s) => {
+  function mapSummariesToExportRows(rows: any) {
+    return rows.map((s: any) => {
       const total = Number(s.totalAmount || 0);
       const cc = s.customerCount || 0;
-      const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
+      const channelsText = (s.channels || []).map((ch: any) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
       return {
         summaryNumber: s.summaryNumber,
         transactionDate: formatSaudiDate(s.transactionDate),
@@ -419,7 +419,7 @@ export default function DailySalesScreen() {
         title: `${t('salesDailySummary')} — ${dateFilter.label}`,
         logoUrl,
       });
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('saveFailed'), 'error');
     } finally {
       setExportBusy(false);
@@ -448,7 +448,7 @@ export default function DailySalesScreen() {
         title: `${t('salesDailySummary')} — ${dateFilter.label}`,
         logoUrl,
       });
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('saveFailed'), 'error');
     } finally {
       setExportBusy(false);
@@ -469,15 +469,15 @@ export default function DailySalesScreen() {
         sortDir,
         showCancelledSales,
       );
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('saveFailed'), 'error');
       setExportBusy(false);
       return;
     } finally {
       setExportBusy(false);
     }
-    const channelsRows = allFilteredData.map((s) => {
-      const ch = (s.channels || []).map((c) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
+    const channelsRows = allFilteredData.map((s: any) => {
+      const ch = (s.channels || []).map((c: any) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
       const total = Number(s.totalAmount || 0);
       const cc = s.customerCount || 0;
       return `<tr><td>${(s.summaryNumber || '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total)}</td><td>${cc > 0 ? fmt(total / cc) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
@@ -491,7 +491,7 @@ export default function DailySalesScreen() {
     });
   }
 
-  const renderMobileCard = useCallback((row) => (
+  const renderMobileCard = useCallback((row: any) => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-noorix-blue ltr">#{row.summaryNumber}</span>
@@ -549,8 +549,8 @@ export default function DailySalesScreen() {
           vatEnabled={vatEnabled}
           vatRate={vatRate}
           createSummary={createSummary}
-          onSuccess={(summary) => showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success')}
-          onError={(msg) => showToast(msg || t('saveFailed'), 'error')}
+          onSuccess={(summary: any) => showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success')}
+          onError={(msg: any) => showToast(msg || t('saveFailed'), 'error')}
           onClose={() => setShowEntryModal(false)}
           onWhatsApp={openWhatsApp}
           autoCloseOnSuccess={false}
@@ -572,7 +572,7 @@ export default function DailySalesScreen() {
             sortDir,
             showCancelledSales,
           );
-          return list.map(formatSalesForExport);
+          return (list as Record<string, unknown>[]).map(formatSalesForExport);
         }}
         onImportSuccess={() => {
           invalidateOnFinancialMutation(queryClient);
@@ -589,7 +589,7 @@ export default function DailySalesScreen() {
               size="sm"
               variant={showCancelledSales ? 'primary' : 'default'}
               aria-pressed={showCancelledSales}
-              onClick={() => setShowCancelledSales((v) => !v)}
+              onClick={() => setShowCancelledSales((v: any) => !v)}
             >
               {showCancelledSales ? t('hideCancelledSummaries') : t('showCancelledSummaries')}
             </Button>

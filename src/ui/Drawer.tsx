@@ -58,7 +58,7 @@ export default function Drawer({
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId  = useId();
 
-  const handleEscape = useCallback((e) => {
+  const handleEscape = useCallback((e: any) => {
     if (e.key === 'Escape') onClose?.();
   }, [onClose]);
 
@@ -108,14 +108,14 @@ export default function Drawer({
           'bg-white border border-noorix-border',
           'shadow-[0_0_40px_rgba(10,31,68,0.2)]',
           'focus:outline-none',
-          SIZE_WIDTH[size] ?? SIZE_WIDTH.md,
+          SIZE_WIDTH[size as keyof typeof SIZE_WIDTH] ?? SIZE_WIDTH.md,
           posClass,
           slideClass,
           'nx-drawer-panel',
           className,
         )}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => { if (e.key === 'Tab') trapFocusIn(panelRef.current as HTMLElement | null, e); }}
+        onClick={(e: any) => e.stopPropagation()}
+        onKeyDown={(e: any) => { if (e.key === 'Tab') trapFocusIn(panelRef.current as HTMLElement | null, e); }}
       >
         {/* رأس اللوح */}
         {(title || !hideClose) && (

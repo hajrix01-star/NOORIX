@@ -28,10 +28,10 @@ import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref'
 const PAGE_SIZE = 50;
 
 /** آخر يوم تقويمي من شهر المسيرة نفسه (YYYY-MM-DD) — مثال: مسيرة مارس → 31 مارس */
-function lastDayOfPayrollMonth(monthRaw) {
+function lastDayOfPayrollMonth(monthRaw: any) {
   if (!monthRaw) return null;
   const s = String(monthRaw).slice(0, 10);
-  const [y, m] = s.split('-').map((x) => parseInt(x, 10));
+  const [y, m] = s.split('-').map((x: any) => parseInt(x, 10));
   if (!y || !m || m < 1 || m > 12) return null;
   const last = new Date(Date.UTC(y, m, 0));
   const dd = String(last.getUTCDate()).padStart(2, '0');
@@ -45,14 +45,14 @@ export default function PayrollTab() {
   const effectiveRole = resolveUserRole(user?.role ?? userRole);
   const canDeletePayroll = canDeletePayrollRunRole(effectiveRole);
   const companyId = activeCompanyId ?? '';
-  const activeCompany = companies?.find((c) => c.id === companyId);
+  const activeCompany = companies?.find((c: any) => c.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
   const [year, setYear] = useState(new Date().getFullYear());
   const [showCreate, setShowCreate] = useState(false);
-  const [editingRunId, setEditingRunId] = useState(null);
-  const [detailRunId, setDetailRunId] = useState(null);
-  const [payModalRun, setPayModalRun] = useState(null);
+  const [editingRunId, setEditingRunId] = useState<any>(null);
+  const [detailRunId, setDetailRunId] = useState<any>(null);
+  const [payModalRun, setPayModalRun] = useState<any>(null);
   const [payTransactionDate, setPayTransactionDate] = useState(() => getSaudiToday());
   const [payVaultId, setPayVaultId] = useState('');
   const [paySecondVaultId, setPaySecondVaultId] = useState('');
@@ -69,9 +69,9 @@ export default function PayrollTab() {
       const res = await getPayrollRuns(companyId, year);
       if (!res?.success) return [];
       const raw = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
-      return raw.map((run) => {
+      return raw.map((run: any) => {
         const grossTotal = Array.isArray(run.items)
-          ? run.items.reduce((s, i) => s + Number(i?.grossSalary ?? 0), 0)
+          ? run.items.reduce((s: any, i: any) => s + Number(i?.grossSalary ?? 0), 0)
           : Number(run.totalAmount ?? 0);
         return {
           id: run.id,
@@ -90,21 +90,21 @@ export default function PayrollTab() {
   });
 
   const updateStatusMutation = useApiMutation({
-    mutationFn: ({ id, status }) => updatePayrollRunStatus(id, companyId, status),
+    mutationFn: ({ id, status }: any) => updatePayrollRunStatus(id, companyId, status),
     successToast: () => t('payrollCreated'),
-    errorToast: (e) => e?.message || t('saveFailed'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
   });
 
   const issuePaymentMutation = useApiMutation({
-    mutationFn: ({ id, transactionDate, vaultSplits }) =>
+    mutationFn: ({ id, transactionDate, vaultSplits }: any) =>
       issuePayrollPayment({
         payrollRunId: id,
         transactionDate: transactionDate || getSaudiToday(),
         vaultSplits: vaultSplits?.length ? vaultSplits : undefined,
       }),
     successToast: () => t('payrollPaidSuccess') || 'تم صرف المسيرة بنجاح',
-    errorToast: (e) => e?.message || t('saveFailed'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
       setPayModalRun(null);
@@ -116,7 +116,7 @@ export default function PayrollTab() {
     },
   });
 
-  const openPayModal = useCallback((row) => {
+  const openPayModal = useCallback((row: any) => {
     setPayModalRun({
       id: row.id,
       runNumber: row.runNumber,
@@ -132,13 +132,13 @@ export default function PayrollTab() {
   }, []);
 
   const deleteRunMutation = useApiMutation({
-    mutationFn: ({ id }) => deletePayrollRun(id, companyId),
+    mutationFn: ({ id }: any) => deletePayrollRun(id, companyId),
     successToast: () => t('payrollDeleted') || t('deletedSuccessfully'),
-    errorToast: (e) => e?.message || t('saveFailed'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
   });
 
-  const handleDeletePayrollRun = useCallback((row) => {
+  const handleDeletePayrollRun = useCallback((row: any) => {
     const st = String(row?.status || '').toLowerCase();
     const msg =
       st === 'draft'
@@ -152,7 +152,7 @@ export default function PayrollTab() {
   const payrollStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
 
   const payrollRunBadgeProps = useCallback(
-    (row) => {
+    (row: any) => {
       const st = String(row?.status || '').toLowerCase();
       if (st === 'completed' && row?.issuedInvoiceNumber) {
         return { color: 'green', children: t('payrollPaid') };
@@ -163,11 +163,11 @@ export default function PayrollTab() {
   );
 
   const payrollRunExportStatusLabel = useCallback(
-    (row) => {
+    (row: any) => {
       const st = String(row?.status || '').toLowerCase();
       if (st === 'completed' && row?.issuedInvoiceNumber) return t('payrollPaid');
       if (st === 'completed') return t('payrollApproved');
-      return payrollStatusMap[row.status]?.label ?? row.status ?? '';
+      return (payrollStatusMap as Record<string, { label?: string }>)[row.status]?.label ?? row.status ?? '';
     },
     [t, payrollStatusMap],
   );
@@ -181,19 +181,19 @@ export default function PayrollTab() {
       dateKeys: ['monthRaw'],
     });
 
-  const totalNet = allFilteredData.reduce((s, r) => s + (r.netTotal ?? 0), 0);
+  const totalNet = allFilteredData.reduce((s: any, r: any) => s + (r.netTotal ?? 0), 0);
 
   const columns = useMemo(() => [
     { key: 'runNumber', label: t('payrollRunNumber'), sortable: true, width: 150, minWidth: 140,
-      render: (v) => <span className="nx-cell-num nx-cell-accent text-[13px] whitespace-nowrap">{v || '—'}</span> },
+      render: (v: any) => <span className="nx-cell-num nx-cell-accent text-[13px] whitespace-nowrap">{v || '—'}</span> },
     { key: 'month', label: t('payrollMonth'), sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span className="text-[13px]">{v || '—'}</span> },
+      render: (v: any) => <span className="text-[13px]">{v || '—'}</span> },
     { key: 'grossTotal', label: t('payrollGross'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v) => <FmtNum n={v} className="nx-cell-num text-[13px]" /> },
+      render: (v: any) => <FmtNum n={v} className="nx-cell-num text-[13px]" /> },
     { key: 'netTotal', label: t('payrollNet'), numeric: true, sortable: true, width: 130, minWidth: 120,
-      render: (v) => <FmtNum n={v} className="nx-cell-num font-bold text-[13px]" /> },
+      render: (v: any) => <FmtNum n={v} className="nx-cell-num font-bold text-[13px]" /> },
     { key: 'status', label: t('payrollStatus'), width: 120, minWidth: 110,
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <Badge {...payrollRunBadgeProps(row)} size="sm" />
       ) },
     {
@@ -202,7 +202,7 @@ export default function PayrollTab() {
       width: 140,
       minWidth: 120,
       shrink: true,
-      render: (v, row) => (
+      render: (v: any, row: any) => (
         v ? (
           <Link
             to={payrollSalaryInvoiceListHref(row.id, row.monthRaw)}
@@ -218,7 +218,7 @@ export default function PayrollTab() {
       ),
     },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
-      render: (_, row) => {
+      render: (_: any, row: any) => {
         const st = String(row.status || '').toLowerCase();
         const canPay = st === 'completed' && !row.issuedInvoiceNumber;
         return (
@@ -238,13 +238,13 @@ export default function PayrollTab() {
   const footerCells = (
     <>
       <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">{t('payrollTotal')} ({allFilteredData.length})</td>
-      <td className="text-[13px] text-end py-1.5 px-3 nx-font-numbers">{hrFmt(allFilteredData.reduce((s, r) => s + (r.grossTotal ?? 0), 0))}</td>
+      <td className="text-[13px] text-end py-1.5 px-3 nx-font-numbers">{hrFmt(allFilteredData.reduce((s: any, r: any) => s + (r.grossTotal ?? 0), 0))}</td>
       <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers">{hrFmt(totalNet)}</td>
       <td colSpan={3} />
     </>
   );
 
-  const exportData = allFilteredData.map((r) => ({
+  const exportData = allFilteredData.map((r: any) => ({
     runNumber: r.runNumber,
     month: r.month,
     grossTotal: hrFmt(r.grossTotal),
@@ -253,7 +253,7 @@ export default function PayrollTab() {
     issuedInvoiceNumber: r.issuedInvoiceNumber || '—',
   }));
 
-  const renderMobileCard = useCallback((row) => {
+  const renderMobileCard = useCallback((row: any) => {
     return (
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
@@ -303,7 +303,7 @@ export default function PayrollTab() {
   }
 
   function handlePrint() {
-    const rows = allFilteredData.map((r) =>
+    const rows = allFilteredData.map((r: any) =>
       `<tr><td>${(r.runNumber || '').replace(/</g, '&lt;')}</td><td>${(r.month || '').replace(/</g, '&lt;')}</td><td>${hrFmt(r.grossTotal)}</td><td>${hrFmt(r.netTotal)}</td><td>${String(payrollRunExportStatusLabel(r)).replace(/</g, '&lt;')}</td><td>${String(r.issuedInvoiceNumber || '—').replace(/</g, '&lt;')}</td></tr>`
     ).join('');
     openPrintWindow({
@@ -319,8 +319,8 @@ export default function PayrollTab() {
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>
-          <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
-            {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
+          <Input type="select" value={year} onChange={(e: any) => setYear(parseInt(e.target.value, 10))}>
+            {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y: any) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </Input>
@@ -330,7 +330,7 @@ export default function PayrollTab() {
         <Input
           type="search"
           value={searchText}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: any) => setSearch(e.target.value)}
           placeholder={t('searchPlaceholder')}
           size="sm"
           className="w-full min-w-0 lg:max-w-xs lg:flex-1"
@@ -432,7 +432,7 @@ export default function PayrollTab() {
                 if (!payModalRun || !payTransactionDate) return;
                 setPayVaultError('');
                 const netTotal = payModalRun.netTotal ?? 0;
-                let vaultSplits = [];
+                let vaultSplits: { vaultId: string; amount: number }[] = [];
                 if (paySecondEnabled) {
                   const v1 = payVaultId.trim();
                   const v2 = paySecondVaultId.trim();
@@ -485,7 +485,7 @@ export default function PayrollTab() {
               id="payroll-issue-date"
               type="date"
               value={payTransactionDate}
-              onChange={(e) => setPayTransactionDate(e.target.value)}
+              onChange={(e: any) => setPayTransactionDate(e.target.value)}
             />
           </div>
 
@@ -495,10 +495,10 @@ export default function PayrollTab() {
               type="select"
               label={t('payrollPayVaultCol')}
               value={payVaultId}
-              onChange={(e) => setPayVaultId(e.target.value)}
+              onChange={(e: any) => setPayVaultId(e.target.value)}
             >
               <option value="">{t('payrollPayVaultDefault')}</option>
-              {paymentVaults.map((v) => (
+              {paymentVaults.map((v: any) => (
                 <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
               ))}
             </Input>
@@ -512,10 +512,10 @@ export default function PayrollTab() {
                   type="select"
                   label={t('secondVaultSelectLabel')}
                   value={paySecondVaultId}
-                  onChange={(e) => setPaySecondVaultId(e.target.value)}
+                  onChange={(e: any) => setPaySecondVaultId(e.target.value)}
                 >
                   <option value="">—</option>
-                  {paymentVaults.map((v) => (
+                  {paymentVaults.map((v: any) => (
                     <option key={v.id} value={v.id} disabled={v.id === payVaultId}>
                       {v.nameAr || v.nameEn || v.id}
                     </option>
@@ -528,7 +528,7 @@ export default function PayrollTab() {
                   min="0.01"
                   label={t('payrollSecondVaultAmountShort')}
                   value={paySecondAmount}
-                  onChange={(e) => setPaySecondAmount(e.target.value)}
+                  onChange={(e: any) => setPaySecondAmount(e.target.value)}
                 />
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   {paySecondAmount && payVaultId && (

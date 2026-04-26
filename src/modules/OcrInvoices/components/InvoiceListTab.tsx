@@ -12,23 +12,23 @@ const STATUS = {
   rejected:  { bgCls: 'status--rejected',  ar: 'مرفوضة',           en: 'Rejected' },
 };
 
-const fmt    = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
-const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
+const fmt    = (n: any) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+const fmtDate = (d: any) => (d ? formatSaudiDate(d) : '—');
 
 /* ═══════════════════════════════════════════════════════════════════════
    عارض الصورة الاحترافي — تكبير + تصغير متعدد + تدوير + سحب
    ═══════════════════════════════════════════════════════════════════════ */
-function ImageLightbox({ src, onClose }) {
+function ImageLightbox({ src, onClose }: any) {
   const [scale,    setScale]    = useState(1);
   const [rotation, setRotation] = useState(0);
   const [pan,      setPan]      = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
-  const dragStart  = useRef(null);
-  const imgRef     = useRef(null);
+  const dragStart  = useRef<any>(null);
+  const imgRef     = useRef<any>(null);
 
   /* ── لوحة المفاتيح ── */
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: any) => {
       if (e.key === 'Escape')   onClose();
       if (e.key === '+'  || e.key === '=') zoomIn();
       if (e.key === '-')        zoomOut();
@@ -39,24 +39,24 @@ function ImageLightbox({ src, onClose }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const zoomIn  = () => setScale((s) => Math.min(s + 0.25, 5));
-  const zoomOut = () => setScale((s) => { const n = Math.max(s - 0.25, 0.25); if (n === 1) setPan({ x:0, y:0 }); return n; });
-  const rotate  = () => setRotation((r) => (r + 90) % 360);
+  const zoomIn  = () => setScale((s: any) => Math.min(s + 0.25, 5));
+  const zoomOut = () => setScale((s: any) => { const n = Math.max(s - 0.25, 0.25); if (n === 1) setPan({ x:0, y:0 }); return n; });
+  const rotate  = () => setRotation((r: any) => (r + 90) % 360);
   const reset   = () => { setScale(1); setRotation(0); setPan({ x:0, y:0 }); };
 
   /* ── عجلة الماوس ── */
-  const onWheel = useCallback((e) => {
+  const onWheel = useCallback((e: any) => {
     e.preventDefault();
     e.deltaY < 0 ? zoomIn() : zoomOut();
   }, []);
 
   /* ── سحب ── */
-  const onMouseDown = (e) => {
+  const onMouseDown = (e: any) => {
     if (scale <= 1) return;
     setDragging(true);
     dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
   };
-  const onMouseMove = (e) => {
+  const onMouseMove = (e: any) => {
     if (!dragging || !dragStart.current) return;
     setPan({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y });
   };
@@ -65,7 +65,7 @@ function ImageLightbox({ src, onClose }) {
   const scaleLabel = `${Math.round(scale * 100)}%`;
 
   return createPortal(
-    <div className="lb-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="lb-overlay" onClick={(e: any) => e.target === e.currentTarget && onClose()}>
       <div className="lb-box">
 
         {/* ── شريط أعلى ── */}
@@ -110,9 +110,9 @@ function ImageLightbox({ src, onClose }) {
                         : 'اسحب للتنقل · العجلة للتكبير/التصغير · 0 لإعادة التعيين'}
           </div>
           <div className="lb-zoom-strip">
-            {[0.5, 1, 1.5, 2, 3, 4].map((z) => (
+            {[0.5, 1, 1.5, 2, 3, 4].map((z: any) => (
               <Button key={z} className={`lb-zoom-dot${scale === z ? ' lb-zoom-dot--active' : ''}`}
-                onClick={(e) => { e.stopPropagation(); setScale(z); if (z === 1) setPan({x:0,y:0}); }}>
+                onClick={(e: any) => { e.stopPropagation(); setScale(z); if (z === 1) setPan({x:0,y:0}); }}>
                 {z === 1 ? '1×' : `${z}×`}
               </Button>
             ))}
@@ -127,10 +127,10 @@ function ImageLightbox({ src, onClose }) {
 /* ═══════════════════════════════════════════════════════════════════════
    نافذة تفاصيل الفاتورة
    ═══════════════════════════════════════════════════════════════════════ */
-function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
+function InvoiceDetailModal({ invoice, language, onClose, onLightbox }: any) {
   const isAr     = language === 'ar';
   const dir      = isAr ? 'rtl' : 'ltr';
-  const statusInfo = STATUS[invoice.status] || STATUS.pending;
+  const statusInfo = (STATUS as Record<string, (typeof STATUS)['pending']>)[String(invoice.status)] || STATUS.pending;
   const supplierName = isAr
     ? (invoice.supplier?.nameAr || '—')
     : (invoice.supplier?.nameEn || invoice.supplier?.nameAr || '—');
@@ -171,7 +171,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
               { label: isAr ? 'المجموع قبل الضريبة' : 'Subtotal', value: invoice.subtotalAmount ? `${fmt(invoice.subtotalAmount)} SR` : '—' },
               { label: isAr ? 'الضريبة'        : 'VAT',           value: invoice.vatAmount    ? `${fmt(invoice.vatAmount)} SR` : '—' },
               { label: isAr ? 'الإجمالي شامل الضريبة' : 'Total',  value: invoice.totalAmount  ? `${fmt(invoice.totalAmount)} SR` : '—', highlight: true },
-            ].map(({ label, value, highlight }) => (
+            ].map(({ label, value, highlight }: any) => (
               <div key={label} className={`inv-meta-cell${highlight ? ' inv-meta-cell--hl' : ''}`}>
                 <div className="inv-meta-label">{label}</div>
                 <div className="inv-meta-value">{value}</div>
@@ -192,7 +192,7 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
                   <span className="text-center">{isAr ? 'السعر' : 'Price'}</span>
                   <span className="text-center">{isAr ? 'الإجمالي' : 'Total'}</span>
                 </div>
-                {invoice.lines.map((line, i) => (
+                {invoice.lines.map((line: any, i: any) => (
                   <div key={i} className="inv-lines-row">
                     <div className="inv-line-name">
                       {line.nameAr || line.item?.nameAr || line.rawName}
@@ -220,9 +220,9 @@ function InvoiceDetailModal({ invoice, language, onClose, onLightbox }) {
 /* ═══════════════════════════════════════════════════════════════════════
    بطاقة الفاتورة
    ═══════════════════════════════════════════════════════════════════════ */
-function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLightbox }) {
+function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLightbox }: any) {
   const isAr = language === 'ar';
-  const statusInfo = STATUS[invoice.status] || STATUS.pending;
+  const statusInfo = (STATUS as Record<string, (typeof STATUS)['pending']>)[String(invoice.status)] || STATUS.pending;
   const supplierName = isAr
     ? (invoice.supplier?.nameAr || (isAr ? 'مورد غير محدد' : 'Unknown'))
     : (invoice.supplier?.nameEn || invoice.supplier?.nameAr || 'Unknown');
@@ -240,12 +240,12 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
           <div className="inv-card-no-img">—</div>
         )}
         {invoice.imageUrl && (
-          <div className="inv-card-img-hover" onClick={(e) => { e.stopPropagation(); onLightbox(invoice.imageUrl); }}>
+          <div className="inv-card-img-hover" onClick={(e: any) => { e.stopPropagation(); onLightbox(invoice.imageUrl); }}>
             <span className="inv-card-zoom-icon">⊕</span>
           </div>
         )}
         {/* checkbox */}
-        <label className="nx-checkbox inv-card-checkbox-wrap" onClick={(e) => e.stopPropagation()}>
+        <label className="nx-checkbox inv-card-checkbox-wrap" onClick={(e: any) => e.stopPropagation()}>
           <input
             type="checkbox" checked={isSelected}
             onChange={() => onSelect(invoice.id)}
@@ -281,45 +281,45 @@ function InvoiceCard({ invoice, language, isSelected, onSelect, onClick, onLight
 /* ═══════════════════════════════════════════════════════════════════════
    التبويب الرئيسي
    ═══════════════════════════════════════════════════════════════════════ */
-export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
+export default function InvoiceListTab({ invoices = [], loading, onRefresh }: any) {
   const { lang: language } = useTranslation();
   const isAr = language === 'ar';
   const dir  = isAr ? 'rtl' : 'ltr';
 
   const [search,    setSearch]    = useState('');
   const [selected,  setSelected]  = useState(new Set());
-  const [viewing,   setViewing]   = useState(null);
-  const [lightbox,  setLightbox]  = useState(null);   // URL الصورة المكبرة
+  const [viewing,   setViewing]   = useState<any>(null);
+  const [lightbox,  setLightbox]  = useState<any>(null);   // URL الصورة المكبرة
   const [deleting,  setDeleting]  = useState(false);
   const [sortBy,    setSortBy]    = useState('date-desc');
 
   /* ── فلترة وترتيب ── */
   const filtered = (() => {
     const q = search.toLowerCase();
-    let list = invoices.filter((inv) =>
+    let list = invoices.filter((inv: any) =>
       !q ||
       inv.supplier?.nameAr?.toLowerCase().includes(q) ||
       inv.supplier?.nameEn?.toLowerCase().includes(q) ||
       inv.invoiceNumber?.toLowerCase().includes(q)
     );
     if (sortBy === 'date-desc') {
-      list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      list = [...list].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     if (sortBy === 'date-asc') {
-      list = [...list].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      list = [...list].sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
-    if (sortBy === 'amount')    list = [...list].sort((a, b) => Number(b.totalAmount || 0) - Number(a.totalAmount || 0));
-    if (sortBy === 'supplier')  list = [...list].sort((a, b) => (a.supplier?.nameAr || '').localeCompare(b.supplier?.nameAr || '', 'ar'));
+    if (sortBy === 'amount')    list = [...list].sort((a: any, b: any) => Number(b.totalAmount || 0) - Number(a.totalAmount || 0));
+    if (sortBy === 'supplier')  list = [...list].sort((a: any, b: any) => (a.supplier?.nameAr || '').localeCompare(b.supplier?.nameAr || '', 'ar'));
     return list;
   })();
 
   /* ── تحديد ── */
-  const toggleSelect = (id) => setSelected((prev) => {
+  const toggleSelect = (id: any) => setSelected((prev: any) => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
   });
-  const selectAll  = () => setSelected(new Set(filtered.map((inv) => inv.id)));
+  const selectAll  = () => setSelected(new Set(filtered.map((inv: any) => inv.id)));
   const clearAll   = () => setSelected(new Set());
-  const allChecked = filtered.length > 0 && filtered.every((inv) => selected.has(inv.id));
+  const allChecked = filtered.length > 0 && filtered.every((inv: any) => selected.has(inv.id));
 
   /* ── حذف ── */
   const handleBulkDelete = async () => {
@@ -365,7 +365,7 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
           <Input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e: any) => setSearch(e.target.value)}
             placeholder={isAr ? 'بحث بالمورد أو رقم الفاتورة...' : 'Search supplier or invoice #...'}
             className="inv-search-input"
           />
@@ -373,7 +373,7 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
         </div>
 
         {/* ترتيب */}
-        <Input type="select" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
+        <Input type="select" value={sortBy} onChange={(e: any) => setSortBy(e.target.value)} className="inv-sort-select">
           <option value="date-desc">{isAr ? 'الأحدث أولاً' : 'Newest first'}</option>
           <option value="date-asc">{isAr ? 'الأقدم أولاً' : 'Oldest first'}</option>
           <option value="amount">{isAr ? 'أعلى مبلغ' : 'Highest amount'}</option>
@@ -396,7 +396,7 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
         </div>
       ) : (
         <div className="inv-grid">
-          {filtered.map((inv) => (
+          {filtered.map((inv: any) => (
             <InvoiceCard
               key={inv.id}
               invoice={inv}
@@ -404,7 +404,7 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
               isSelected={selected.has(inv.id)}
               onSelect={toggleSelect}
               onClick={() => setViewing(inv)}
-              onLightbox={(src) => { if (src) setLightbox(src); }}
+              onLightbox={(src: any) => { if (src) setLightbox(src); }}
             />
           ))}
         </div>
@@ -416,7 +416,7 @@ export default function InvoiceListTab({ invoices = [], loading, onRefresh }) {
           invoice={viewing}
           language={language}
           onClose={() => setViewing(null)}
-          onLightbox={(src) => { if (src) setLightbox(src); }}
+          onLightbox={(src: any) => { if (src) setLightbox(src); }}
         />
       )}
 

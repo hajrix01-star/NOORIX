@@ -21,7 +21,7 @@ const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
 };
 
-export function PayrollRunDetailModal({ runId, companyId, companyName, companyNameEn, companyLogo, onClose }) {
+export function PayrollRunDetailModal({ runId, companyId, companyName, companyNameEn, companyLogo, onClose }: any) {
   const { t, lang } = useTranslation();
   const [slipModalOpen, setSlipModalOpen] = useState(false);
   const [slipNetOnly, setSlipNetOnly] = useState(false);
@@ -38,7 +38,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
 
   /** يجب أن يبقى فوق أي return مبكر — قواعد الـ Hooks */
   const buildSlipLabels = useCallback(
-    (runForPrint) => ({
+    (runForPrint: any) => ({
       windowTitle: `${t('payrollSlipBatchPrint')} — ${runForPrint.runNumber || ''}`,
       legalRefAr: getText('payrollSlipLegalRefAr', 'ar'),
       legalRefEn: getText('payrollSlipLegalRefEn', 'en'),
@@ -96,14 +96,14 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       ? { labelKey: 'payrollPaid', badgeColor: 'green' }
       : st === 'completed'
         ? { labelKey: 'payrollApproved', badgeColor: 'blue' }
-        : STATUS_MAP[st] || STATUS_MAP.draft;
+        : (STATUS_MAP as Record<string, (typeof STATUS_MAP)['draft']>)[st] || STATUS_MAP.draft;
   const totalNet = new Decimal(run.totalAmount ?? 0);
-  const totalBeforeDeduction = items.reduce((s, row) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
-  const totalDeductions      = items.reduce((s, row) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
+  const totalBeforeDeduction = items.reduce((s: any, row: any) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
+  const totalDeductions      = items.reduce((s: any, row: any) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
 
   const handlePrint = () => {
     const monthLabel = formatSaudiDate(run.payrollMonth);
-    const rowsHtml = items.map((row, idx) => {
+    const rowsHtml = items.map((row: any, idx: any) => {
       const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
       const advanceDates = String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—';
       const before = Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0);
@@ -179,15 +179,15 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
   };
 
   const columns = [
-    { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_, row) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
-    { key: 'advanceDates', label: t('payrollAdvanceDates'), width: '16%', minWidth: 120, render: (_, row) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
-    { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '9%', minWidth: 84, render: (v) => hrFmt(v) },
-    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: '11%', minWidth: 96, render: (_, row) => hrFmt(Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0)) },
-    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: '8%', minWidth: 76, render: (v) => hrFmt(v ?? 0) },
-    { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: '8%', minWidth: 76, render: (v) => hrFmt(v ?? 0) },
-    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '8%', minWidth: 76, render: (v) => hrFmt(v ?? 0) },
-    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: '11%', minWidth: 96, render: (_, row) => hrFmt(Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0)) },
-    { key: 'netSalary', label: t('netSalary'), numeric: true, width: '11%', minWidth: 90, render: (v) => hrFmt(v) },
+    { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_: any, row: any) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
+    { key: 'advanceDates', label: t('payrollAdvanceDates'), width: '16%', minWidth: 120, render: (_: any, row: any) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
+    { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '9%', minWidth: 84, render: (v: any) => hrFmt(v) },
+    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: '11%', minWidth: 96, render: (_: any, row: any) => hrFmt(Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0)) },
+    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
+    { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
+    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
+    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: '11%', minWidth: 96, render: (_: any, row: any) => hrFmt(Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0)) },
+    { key: 'netSalary', label: t('netSalary'), numeric: true, width: '11%', minWidth: 90, render: (v: any) => hrFmt(v) },
     {
       key: 'employeeSignature',
       label: t('payrollEmployeeSignature'),
@@ -280,7 +280,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
             type="checkbox"
             className="mt-1 h-4 w-4 shrink-0 rounded border-noorix-border"
             checked={slipNetOnly}
-            onChange={(e) => setSlipNetOnly(e.target.checked)}
+            onChange={(e: any) => setSlipNetOnly(e.target.checked)}
           />
           <span>
             <span className="font-semibold block">{t('payrollSlipNetOnlyOption')}</span>

@@ -41,19 +41,19 @@ export default function BankStatementTransactionsFullTab({
   newCategoryName,
   setNewCategoryName,
   onCreateCategory,
-}) {
+}: any) {
   const { t } = useTranslation();
 
   /* التصنيفات: من القاعدة أولاً، ثم القواعد الافتراضية */
   const allCategoryOptions = React.useMemo(() => {
-    const fromDb = (categories || []).map((c) => ({ id: c.id, label: c.nameAr || c.nameEn }));
+    const fromDb = (categories || []).map((c: any) => ({ id: c.id, label: c.nameAr || c.nameEn }));
     if (fromDb.length > 0) return fromDb;
-    return FALLBACK_CATEGORIES.map((name) => ({ id: name, label: name }));
+    return FALLBACK_CATEGORIES.map((name: any) => ({ id: name, label: name }));
   }, [categories]);
 
   const allSelected =
     filteredTransactions.length > 0 &&
-    filteredTransactions.every((tx) => selectedTxIds.has(getTxKey(tx)));
+    filteredTransactions.every((tx: any) => selectedTxIds.has(getTxKey(tx)));
 
   return (
     <div className="grid gap-3.5">
@@ -83,7 +83,7 @@ export default function BankStatementTransactionsFullTab({
             type="search"
             placeholder={t('bankSearchTransactions')}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e: any) => setSearchTerm(e.target.value)}
             style={{
               width: '100%',
               padding: '8px 12px 8px 32px',
@@ -100,10 +100,10 @@ export default function BankStatementTransactionsFullTab({
         <Input
           type="select"
           value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
+          onChange={(e: any) => setCategoryFilter(e.target.value)}
         >
           <option value="all">{t('bankFilterAllCategories')}</option>
-          {categoryNames.map((n) => (
+          {categoryNames.map((n: any) => (
             <option key={n} value={n}>{n}</option>
           ))}
         </Input>
@@ -112,7 +112,7 @@ export default function BankStatementTransactionsFullTab({
         <Input
           type="select"
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
+          onChange={(e: any) => setTypeFilter(e.target.value)}
         >
           <option value="all">{t('bankTypeAll')}</option>
           <option value="debit">{t('bankTypeWithdrawals')}</option>
@@ -141,7 +141,7 @@ export default function BankStatementTransactionsFullTab({
         </span>
         <Input
           value={newCategoryName}
-          onChange={(e) => setNewCategoryName(e.target.value)}
+          onChange={(e: any) => setNewCategoryName(e.target.value)}
           placeholder={t('bankStatementCategoryName')}
           style={{
             padding: '6px 10px',
@@ -173,7 +173,7 @@ export default function BankStatementTransactionsFullTab({
                 />
               </label>
             ),
-            render: (_, tx) => (
+            render: (_: any, tx: any) => (
               <label className="nx-checkbox">
                 <input
                   type="checkbox"
@@ -188,29 +188,29 @@ export default function BankStatementTransactionsFullTab({
             label: t('bankStatementDate'),
             shrink: true,
             sortable: true,
-            render: (v) => <span className="whitespace-nowrap text-noorix-muted text-[11px]">{v}</span>,
+            render: (v: any) => <span className="whitespace-nowrap text-noorix-muted text-[11px]">{v}</span>,
           },
           {
             key: 'description',
             label: t('bankStatementDescription'),
             sortable: true,
-            render: (v) => (
+            render: (v: any) => (
               <div className="max-w-[280px] truncate text-[12px]" title={v}>{v}</div>
             ),
           },
           {
             key: 'categoryId',
             label: t('bankStatementCategories'),
-            render: (catId, tx) =>
+            render: (catId: any, tx: any) =>
               editingTxId === tx.id ? (
                 <div className="flex flex-col gap-1">
                   <Input
                     type="select"
                     value={editingCategory}
-                    onChange={(e) => setEditingCategory(e.target.value)}
+                    onChange={(e: any) => setEditingCategory(e.target.value)}
                   >
                     <option value="">{t('uncategorized')}</option>
-                    {allCategoryOptions.map((c) => (
+                    {allCategoryOptions.map((c: any) => (
                       <option key={c.id} value={c.id}>{c.label}</option>
                     ))}
                   </Input>
@@ -241,7 +241,7 @@ export default function BankStatementTransactionsFullTab({
             label: t('bankStatementColDebit'),
             sortable: true,
             numeric: true,
-            render: (v) => Number(v) > 0 ? (
+            render: (v: any) => Number(v) > 0 ? (
               <span className="nx-ltr inline-block font-bold text-noorix-red px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-red-7)]">
                 <FmtNum n={Number(v)} />
               </span>
@@ -252,7 +252,7 @@ export default function BankStatementTransactionsFullTab({
             label: t('bankStatementColCredit'),
             sortable: true,
             numeric: true,
-            render: (v) => Number(v) > 0 ? (
+            render: (v: any) => Number(v) > 0 ? (
               <span className="nx-ltr inline-block font-bold text-noorix-green px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-green-7)]">
                 <FmtNum n={Number(v)} />
               </span>
@@ -263,7 +263,7 @@ export default function BankStatementTransactionsFullTab({
             label: t('bankStatementBalance'),
             sortable: true,
             numeric: true,
-            render: (v) => (
+            render: (v: any) => (
               <span className="nx-ltr text-[12px] text-noorix-muted">
                 {v != null && Number(v) !== 0 ? fmt(Number(v)) : '—'}
               </span>
@@ -272,12 +272,12 @@ export default function BankStatementTransactionsFullTab({
           {
             key: 'note',
             label: t('bankStatementAddNote'),
-            render: (v, tx) =>
+            render: (v: any, tx: any) =>
               editingNoteId === tx.id ? (
                 <div className="flex flex-col gap-1">
                   <Input
                     value={editingNote}
-                    onChange={(e) => setEditingNote(e.target.value)}
+                    onChange={(e: any) => setEditingNote(e.target.value)}
                     style={{ fontSize: 11, padding: '4px 6px', borderRadius: 6, border: '1px solid var(--noorix-border)', width: 150 }}
                   />
                   <div className="flex gap-1">
@@ -304,7 +304,7 @@ export default function BankStatementTransactionsFullTab({
         sortDir={sortConfig.direction}
         onSort={handleSort}
         emptyMessage="لا توجد عمليات تطابق الفلاتر المحددة."
-        getRowStyle={(tx) =>
+        getRowStyle={(tx: any) =>
           selectedTxIds.has(getTxKey(tx))
             ? { background: 'var(--noorix-blue-6)', transition: 'background 0.15s' }
             : undefined

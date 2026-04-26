@@ -28,19 +28,19 @@ const DOW_LABELS = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri',
 const DOW_LABELS_AR = { 0: 'أحد', 1: 'إثنين', 2: 'ثلاثاء', 3: 'أربعاء', 4: 'خميس', 5: 'جمعة', 6: 'سبت' };
 const DEFAULT_COLORS = ['var(--color-noorix-amber)', '#eab308', '#84cc16', 'var(--noorix-accent-green)', '#8b5cf6'];
 
-function lastDayOfMonth(year, month) {
+function lastDayOfMonth(year: any, month: any) {
   return new Date(year, month, 0).getDate();
 }
 
-function ymd(y, m, d) {
+function ymd(y: any, m: any, d: any) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
-function getDayOfWeek(year, month, day) {
+function getDayOfWeek(year: any, month: any, day: any) {
   return new Date(year, month - 1, day).getDay();
 }
 
-function dateInRange(dateStr, fromDate, toDate) {
+function dateInRange(dateStr: any, fromDate: any, toDate: any) {
   if (!fromDate || !toDate) return false;
   return dateStr >= fromDate && dateStr <= toDate;
 }
@@ -53,14 +53,14 @@ const ACHIEVEMENT_BG = {
   blue:   'color-mix(in srgb, var(--color-nx-sales) 32%, transparent)',
 };
 
-function achievementBandFromRatio(ratio) {
+function achievementBandFromRatio(ratio: any) {
   if (ratio >= 1.2) return 'blue';
   if (ratio >= 1) return 'green';
   if (ratio >= 0.8) return 'yellow';
   return 'red';
 }
 
-function hexToRgba(hex, alpha) {
+function hexToRgba(hex: any, alpha: any) {
   const h = String(hex).replace('#', '');
   if (h.length !== 6) return `rgba(0,0,0,${alpha})`;
   const r = parseInt(h.slice(0, 2), 16);
@@ -69,7 +69,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function achievementBgForPrint(band) {
+function achievementBgForPrint(band: any) {
   const a = 0.38;
   switch (band) {
     case 'blue':   return hexToRgba(KPI_RECHARTS_COLORS.sales, a);
@@ -80,7 +80,7 @@ function achievementBgForPrint(band) {
   }
 }
 
-export default function DashboardCalendarTab({ companyId, year, selectedMonth, filter }) {
+export default function DashboardCalendarTab({ companyId, year, selectedMonth, filter }: any) {
   const { t, lang } = useTranslation();
   const { companies } = useApp();
   const now = getSaudiNow();
@@ -96,10 +96,10 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   const [editingTarget, setEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState('');
   const [showTargetsPanel, setShowTargetsPanel] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedDay, setSelectedDay] = useState<any>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState(new Set());
-  const [lastClickedDate, setLastClickedDate] = useState(null);
+  const [lastClickedDate, setLastClickedDate] = useState<any>(null);
   const [specialDaysVersion, setSpecialDaysVersion] = useState(0);
   const [dayNotesVersion, setDayNotesVersion] = useState(0);
   const [showAddSpecialModal, setShowAddSpecialModal] = useState(false);
@@ -116,7 +116,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
 
   const dailySales = useMemo(() => {
     const map = new Map();
-    (summaries || []).forEach((s) => {
+    (summaries || []).forEach((s: any) => {
       const d = String(s.transactionDate || '').slice(0, 10);
       const amt = Number(s.totalAmount || 0);
       map.set(d, (map.get(d) || 0) + amt);
@@ -144,7 +144,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       const dateStr = ymd(year, month, d);
       const dow = getDayOfWeek(year, month, d);
       const dayTarget = targets.byDow[dow] != null ? Number(targets.byDow[dow]) : targets.overall;
-      const special = specialDaysList.find((sp) => dateInRange(dateStr, sp.fromDate, sp.toDate));
+      const special = specialDaysList.find((sp: any) => dateInRange(dateStr, sp.fromDate, sp.toDate));
       days.push({
         day: d,
         dateStr,
@@ -159,10 +159,10 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
 
   const maxAmount = useMemo(() => {
     const maxFromTargets = Math.max(0, ...Object.values(targets.byDow).filter(Boolean), targets.overall || 0);
-    return Math.max(1, ...daysInMonth.map((d) => d.amount), maxFromTargets);
+    return Math.max(1, ...daysInMonth.map((d: any) => d.amount), maxFromTargets);
   }, [daysInMonth, targets]);
 
-  const company = companies?.find((c) => c.id === companyId);
+  const company = companies?.find((c: any) => c.id === companyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
 
   const handleSaveOverallTarget = useCallback(() => {
@@ -173,12 +173,12 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       if (setStoredTargets(companyId, year, month, data)) {
         setTargetInput('');
         setEditingTarget(false);
-        setTargetsVersion((v) => v + 1);
+        setTargetsVersion((v: any) => v + 1);
       }
     }
   }, [companyId, year, month, targetInput]);
 
-  const handleSaveDowTarget = useCallback((dow, value) => {
+  const handleSaveDowTarget = useCallback((dow: any, value: any) => {
     const str = String(value || '').trim();
     const v = str === '' ? null : parseFloat(str.replace(/,/g, ''));
     if (v === null || (!Number.isNaN(v) && v >= 0)) {
@@ -187,28 +187,28 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       if (v === null) delete data.byDow[dow];
       else data.byDow[dow] = v;
       if (setStoredTargets(companyId, year, month, data)) {
-        setTargetsVersion((prev) => prev + 1);
+        setTargetsVersion((prev: any) => prev + 1);
       }
     }
   }, [companyId, year, month]);
 
-  const handleSaveDayNote = useCallback((dateStr, note) => {
+  const handleSaveDayNote = useCallback((dateStr: any, note: any) => {
     const notes = getStoredDayNotes(companyId, year, month);
     if (note) notes[dateStr] = note;
     else delete notes[dateStr];
     if (setStoredDayNotes(companyId, year, month, notes)) {
-      setDayNotesVersion((v) => v + 1);
+      setDayNotesVersion((v: any) => v + 1);
     }
   }, [companyId, year, month]);
 
-  const handleDayClick = useCallback((item, isShift) => {
+  const handleDayClick = useCallback((item: any, isShift: any) => {
     const dateStr = item.dateStr;
     setSelectedDay(item);
     if (!isSelectionMode) {
       return;
     }
     if (isShift && lastClickedDate) {
-      const dates = [...daysInMonth.map((d) => d.dateStr)];
+      const dates = [...daysInMonth.map((d: any) => d.dateStr)];
       const i1 = dates.indexOf(lastClickedDate);
       const i2 = dates.indexOf(dateStr);
       if (i1 >= 0 && i2 >= 0) {
@@ -220,7 +220,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       }
     }
     setLastClickedDate(dateStr);
-    setSelectedDates((prev) => {
+    setSelectedDates((prev: any) => {
       const next = new Set(prev);
       if (next.has(dateStr)) next.delete(dateStr);
       else next.add(dateStr);
@@ -229,7 +229,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   }, [isSelectionMode, lastClickedDate, daysInMonth]);
 
   const handleAddSelectedAsSpecial = useCallback(() => {
-    const sorted = [...selectedDates].filter((d) => d >= startDate && d <= endDate).sort();
+    const sorted = [...selectedDates].filter((d: any) => d >= startDate && d <= endDate).sort();
     if (sorted.length === 0) return;
     const from = sorted[0];
     const to = sorted[sorted.length - 1];
@@ -239,16 +239,16 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     const color = DEFAULT_COLORS[list.length % DEFAULT_COLORS.length];
     list.push({ id, name, fromDate: from, toDate: to, color });
     if (setStoredSpecialDays(companyId, year, month, list)) {
-      setSpecialDaysVersion((v) => v + 1);
+      setSpecialDaysVersion((v: any) => v + 1);
       setSelectedDates(new Set());
       setShowAddSpecialModal(false);
       setNewSpecialName('');
     }
   }, [companyId, year, month, selectedDates, startDate, endDate, newSpecialName, t]);
 
-  const handlePrintDayDetails = useCallback((dateStr, dayTarget, daySummaries, totalAmount, achieved) => {
-    const rows = daySummaries.map((s) => {
-      const chText = (s.channels || []).map((ch) => `${ch.vault?.nameAr || ch.vault?.nameEn || '—'}: ${fmt(ch.amount || 0)}`).join(' | ');
+  const handlePrintDayDetails = useCallback((dateStr: any, dayTarget: any, daySummaries: any, totalAmount: any, achieved: any) => {
+    const rows = daySummaries.map((s: any) => {
+      const chText = (s.channels || []).map((ch: any) => `${ch.vault?.nameAr || ch.vault?.nameEn || '—'}: ${fmt(ch.amount || 0)}`).join(' | ');
       return `<tr><td>${(s.summaryNumber || '—').replace(/</g, '&lt;')}</td><td>${chText.replace(/</g, '&lt;')}</td><td>${s.customerCount ?? 0}</td><td>${fmt(Number(s.totalAmount || 0))}</td></tr>`;
     }).join('');
     const targetInfo = `<div style="background:#eff6ff;padding:12px;border-radius:8px;margin:12px 0;font-size:13px">
@@ -266,7 +266,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   const monthLabel = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month - 1];
 
   const handlePrintCalendar = useCallback(() => {
-    const cells = daysInMonth.map((item) => {
+    const cells = daysInMonth.map((item: any) => {
       const { day, dateStr, amount, dayTarget, special } = item;
       const ratio = dayTarget != null && dayTarget > 0 ? amount / dayTarget : 0;
       const achieved = dayTarget != null && amount >= dayTarget;
@@ -290,13 +290,13 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     const blanks = Array(firstDow).fill('<td></td>').join('');
     const rows = [];
     let row = blanks;
-    cells.forEach((cell, i) => {
+    cells.forEach((cell: any, i: any) => {
       row += cell;
       if ((firstDow + i + 1) % 7 === 0) { rows.push(`<tr>${row}</tr>`); row = ''; }
     });
     if (row) rows.push(`<tr>${row}</tr>`);
     const dowHeader = (lang === 'ar' ? DOW_LABELS_AR : DOW_LABELS);
-    const headerRow = `<tr>${[0,1,2,3,4,5,6].map((d) => `<th>${dowHeader[d]}</th>`).join('')}</tr>`;
+    const headerRow = `<tr>${[0,1,2,3,4,5,6].map((d: any) => `<th>${dowHeader[d]}</th>`).join('')}</tr>`;
     openPrintWindow({
       title: t('dashboardCalendar'),
       companyName: companyName || '',
@@ -305,7 +305,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     });
   }, [daysInMonth, year, month, monthLabel, companyName, t, lang, maxAmount]);
 
-  const selectedDatesSorted = useMemo(() => [...selectedDates].filter((d) => d >= startDate && d <= endDate).sort(), [selectedDates, startDate, endDate]);
+  const selectedDatesSorted = useMemo(() => [...selectedDates].filter((d: any) => d >= startDate && d <= endDate).sort(), [selectedDates, startDate, endDate]);
 
   if (!companyId) {
     return (
@@ -329,7 +329,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             <Button
               size="sm"
               variant={isSelectionMode ? 'primary' : undefined}
-              onClick={() => { setIsSelectionMode((p) => !p); if (isSelectionMode) setSelectedDates(new Set()); }}
+              onClick={() => { setIsSelectionMode((p: any) => !p); if (isSelectionMode) setSelectedDates(new Set()); }}
             >
               {isSelectionMode ? '✓ ' + t('dashboardSelectDaysModeOff') : '☑ ' + t('dashboardSelectDaysMode')}
             </Button>
@@ -357,7 +357,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                   min="0"
                   step="0.01"
                   value={targetInput}
-                  onChange={(e) => setTargetInput(e.target.value)}
+                  onChange={(e: any) => setTargetInput(e.target.value)}
                   placeholder={t('dashboardSalesTarget')}
                   className="w-[120px]"
                 />
@@ -372,7 +372,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             )}
             <div className="font-bold mb-1.5">{t('dashboardTargetByDay')}</div>
             <div className="flex flex-wrap gap-2" key={`targets-${targetsVersion}`}>
-              {DOW_KEYS.map((dow) => (
+              {DOW_KEYS.map((dow: any) => (
                 <div key={dow} className="flex items-center gap-4">
                   <span className="text-[11px] min-w-[50px]">{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
                   <Input
@@ -381,7 +381,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     step="0.01"
                     placeholder="—"
                     defaultValue={targets.byDow[dow] ?? ''}
-                    onBlur={(e) => handleSaveDowTarget(dow, e.target.value)}
+                    onBlur={(e: any) => handleSaveDowTarget(dow, e.target.value)}
                     className="w-[70px]"
                   />
                 </div>
@@ -400,14 +400,14 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           <div className="noorix-calendar-grid-scroll">
             <div className="noorix-calendar-grid-scroll-inner">
           <div className="grid gap-1.5 grid-cols-7">
-            {[0,1,2,3,4,5,6].map((d) => (
+            {[0,1,2,3,4,5,6].map((d: any) => (
               <div key={d} className="text-[12px] font-bold text-noorix-muted text-center py-1.5">{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
             ))}
             {(() => {
               const firstDow = new Date(year, month - 1, 1).getDay();
               const blanks = Array(firstDow).fill(null);
               const cells = [...blanks, ...daysInMonth];
-              return cells.map((item, i) => {
+              return cells.map((item: any, i: any) => {
                 if (!item) return <div key={`b-${i}`} />;
                 const { day, dateStr, amount, dayTarget, special } = item;
                 const isSelected = isSelectionMode && selectedDates.has(dateStr);
@@ -447,8 +447,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
                     key={dateStr}
                     role="button"
                     tabIndex={0}
-                    onClick={(e) => handleDayClick(item, e.shiftKey)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleDayClick(item, e.shiftKey); }}
+                    onClick={(e: any) => handleDayClick(item, e.shiftKey)}
+                    onKeyDown={(e: any) => { if (e.key === 'Enter' || e.key === ' ') handleDayClick(item, e.shiftKey); }}
                     className="aspect-square rounded-md flex flex-col items-center justify-center p-[2px] min-h-12 cursor-pointer relative"
                     style={{
                       background: bg,
@@ -564,10 +564,10 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             companyId={companyId}
             companyName={companyName}
             dayNote={dayNotes[selectedDay.dateStr]}
-            onSaveNote={(note) => handleSaveDayNote(selectedDay.dateStr, note)}
+            onSaveNote={(note: any) => handleSaveDayNote(selectedDay.dateStr, note)}
             onPrint={() => {
-              const daySummaries = (summaries || []).filter((s) => String(s.transactionDate || '').slice(0, 10) === selectedDay.dateStr);
-              const totalAmount = daySummaries.reduce((s, x) => s + Number(x.totalAmount || 0), 0);
+              const daySummaries = (summaries || []).filter((s: any) => String(s.transactionDate || '').slice(0, 10) === selectedDay.dateStr);
+              const totalAmount = daySummaries.reduce((s: any, x: any) => s + Number(x.totalAmount || 0), 0);
               const achieved = selectedDay.dayTarget != null && totalAmount >= selectedDay.dayTarget;
               handlePrintDayDetails(selectedDay.dateStr, selectedDay.dayTarget, daySummaries, totalAmount, achieved);
             }}
@@ -588,7 +588,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           </p>
           <Input
             value={newSpecialName}
-            onChange={(e) => setNewSpecialName(e.target.value)}
+            onChange={(e: any) => setNewSpecialName(e.target.value)}
             placeholder={t('dashboardSpecialDayName')}
           />
           <div className="flex items-center justify-end gap-2 mt-4">

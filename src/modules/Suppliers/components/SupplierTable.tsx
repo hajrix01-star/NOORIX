@@ -8,25 +8,25 @@ import React, { memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Badge, Button, SmartTable, KebabMenu } from '../../../ui';
 
-const sName = (s, lang) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
+const sName = (s: any, lang: any) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
 
 /* ── بادج نوع المورد ── */
-function TypeBadge({ type }) {
-  const colorMap = {
+function TypeBadge({ type }: any) {
+  const colorMap: Record<string, string> = {
     purchase:  'blue',
     purchases: 'blue',
     expense:   'amber',
     expenses:  'amber',
   };
-  const labelMap = {
+  const labelMap: Record<string, string> = {
     purchase:  'categoryTypes',
     purchases: 'categoryTypes',
     expense:   'categoryTypeExpense',
     expenses:  'categoryTypeExpense',
   };
   const { t } = useTranslation();
-  const color = colorMap[type] || 'gray';
-  const labelKey = labelMap[type];
+  const color = colorMap[String(type)] || 'gray';
+  const labelKey = labelMap[String(type)];
   return (
     <Badge color={color} size="sm">
       {labelKey ? t(labelKey) : type}
@@ -35,14 +35,14 @@ function TypeBadge({ type }) {
 }
 
 /* ── checkbox مُنسَّق ── */
-function CB({ checked, indeterminate, onChange, ariaLabel }) {
+function CB({ checked, indeterminate, onChange, ariaLabel }: any) {
   return (
     <label className="nx-checkbox nx-checkbox--hit-36 nx-checkbox--accent-green p-1">
       <input
         type="checkbox"
         checked={checked}
-        ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
-        onChange={(e) => onChange(e.target.checked)}
+        ref={(el: any) => { if (el) el.indeterminate = !!indeterminate; }}
+        onChange={(e: any) => onChange(e.target.checked)}
         aria-label={ariaLabel}
         className="cursor-pointer"
       />
@@ -96,15 +96,15 @@ export const SupplierTable = memo(function SupplierTable({
         <CB
           checked={allSelected}
           indeterminate={someSelected}
-          onChange={(v) => onSelectAll?.(v)}
+          onChange={(v: any) => onSelectAll?.(v)}
           ariaLabel="تحديد الكل"
         />
       ),
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <CB
           checked={selectedIds.has(row.id)}
           indeterminate={false}
-          onChange={(v) => onSelectChange?.(row.id, v)}
+          onChange={(v: any) => onSelectChange?.(row.id, v)}
           ariaLabel={`تحديد ${row.nameAr}`}
         />
       ),
@@ -113,13 +113,13 @@ export const SupplierTable = memo(function SupplierTable({
       key: 'nameAr',
       label: t('name'),
       minWidth: 160,
-      render: (_, row) => <span className="font-bold">{sName(row, lang)}</span>,
+      render: (_: any, row: any) => <span className="font-bold">{sName(row, lang)}</span>,
     },
     {
       key: 'nameEn',
       label: t('nameEnCol'),
       minWidth: 140,
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <span className="nx-cell-muted">
           {lang === 'en' ? (row.nameAr || '—') : (row.nameEn || '—')}
         </span>
@@ -132,7 +132,7 @@ export const SupplierTable = memo(function SupplierTable({
       align: 'center',
       shrink: true,
       minWidth: 145,
-      render: (v) => <span className="nx-cell-num whitespace-nowrap">{v || '—'}</span>,
+      render: (v: any) => <span className="nx-cell-num whitespace-nowrap">{v || '—'}</span>,
     },
     {
       key: 'phone',
@@ -140,15 +140,15 @@ export const SupplierTable = memo(function SupplierTable({
       align: 'center',
       shrink: true,
       minWidth: 110,
-      render: (v) => <span className="nx-cell-muted whitespace-nowrap">{v || '—'}</span>,
+      render: (v: any) => <span className="nx-cell-muted whitespace-nowrap">{v || '—'}</span>,
     },
     {
       key: 'supplierCategoryId',
       label: t('category'),
       align: 'center',
       shrink: true,
-      render: (_, row) => {
-        const cat  = flatCategories.find((c) => c.id === row.supplierCategoryId);
+      render: (_: any, row: any) => {
+        const cat  = flatCategories.find((c: any) => c.id === row.supplierCategoryId);
         if (!cat) return <span className="nx-cell-muted">—</span>;
         const icon    = cat?.icon || cat?.account?.icon || '';
         const catName = lang === 'en' ? cat.nameEn || cat.nameAr : cat.nameAr || cat.nameEn;
@@ -168,7 +168,7 @@ export const SupplierTable = memo(function SupplierTable({
       label: t('taxRegisteredCol'),
       align: 'center',
       shrink: true,
-      render: (_, row) =>
+      render: (_: any, row: any) =>
         row.isTaxRegistered == null ? (
           <span className="nx-cell-muted text-[12px]">—</span>
         ) : row.isTaxRegistered ? (
@@ -182,7 +182,7 @@ export const SupplierTable = memo(function SupplierTable({
       label: t('type'),
       align: 'center',
       shrink: true,
-      render: (_, row) => <TypeBadge type={row.supplierType || 'purchases'} />,
+      render: (_: any, row: any) => <TypeBadge type={row.supplierType || 'purchases'} />,
     },
     {
       key: 'actions',
@@ -190,7 +190,7 @@ export const SupplierTable = memo(function SupplierTable({
       align: 'center',
       shrink: true,
       width: '1%',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <KebabMenu
           ariaLabel={t('actions')}
           items={[
@@ -224,11 +224,11 @@ export const SupplierTable = memo(function SupplierTable({
       stickyActionColumn={false}
       tableMinWidth={860}
       innerPadding={0}
-      getRowStyle={(row) =>
+      getRowStyle={(row: any) =>
         selectedIds.has(row.id) ? { background: 'var(--noorix-green-4)' } : undefined
       }
-      renderMobileCard={(row) => {
-        const cat     = flatCategories.find((c) => c.id === row.supplierCategoryId);
+      renderMobileCard={(row: any) => {
+        const cat     = flatCategories.find((c: any) => c.id === row.supplierCategoryId);
         const icon    = cat?.icon || cat?.account?.icon || '';
         const checked = selectedIds.has(row.id);
         return (
@@ -243,7 +243,7 @@ export const SupplierTable = memo(function SupplierTable({
               <CB
                 checked={checked}
                 indeterminate={false}
-                onChange={(v) => onSelectChange?.(row.id, v)}
+                onChange={(v: any) => onSelectChange?.(row.id, v)}
                 ariaLabel={`تحديد ${row.nameAr}`}
               />
               <div className="flex-1 min-w-0">

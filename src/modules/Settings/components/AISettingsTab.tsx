@@ -15,7 +15,7 @@ const STATUS_OFFLINE = 'offline';
 export default function AISettingsTab() {
   const { lang } = useTranslation();
   const queryClient = useQueryClient();
-  const [lastTestResult, setLastTestResult] = useState(null);
+  const [lastTestResult, setLastTestResult] = useState<any>(null);
 
   const { data: healthData, isLoading: healthLoading, refetch: refetchHealth } = useQuery({
     queryKey: ['health', 'ai-settings'],
@@ -33,7 +33,7 @@ export default function AISettingsTab() {
     invalidateQueries: [['health', 'ai-settings']],
     showErrorToast: false,
     rejectOnApiFailure: false,
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       setLastTestResult(res);
     },
     onError: () => {

@@ -11,7 +11,7 @@ import { sumAmounts, splitTaxFromTotal } from '../utils/math-engine';
  * @param {Array<object>} rows - صفوف الإدخال (كل صف: totalInclusive, supplierId, invoiceNumber, isTaxable)
  * @returns {{ net: Decimal, tax: Decimal, total: Decimal, count: number }}
  */
-export function useBatchSummary(rows) {
+export function useBatchSummary(rows: any) {
   return useMemo(() => {
     let net = new Decimal(0);
     let tax = new Decimal(0);

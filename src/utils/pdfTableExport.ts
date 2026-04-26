@@ -43,14 +43,14 @@ export function exportTableToPdf({
     colKeys = [];
   }
 
-  const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  const headRow = `<tr>${colLabels.map((l) => `<th>${esc(l)}</th>`).join('')}</tr>`;
+  const headRow = `<tr>${colLabels.map((l: any) => `<th>${esc(l)}</th>`).join('')}</tr>`;
   const bodyRows = data.length
-    ? data.map((row) => {
+    ? data.map((row: any) => {
         const cells = Array.isArray(row)
-          ? row.map((c) => `<td>${esc(c)}</td>`).join('')
-          : colKeys.map((k) => `<td>${esc(row[k])}</td>`).join('');
+          ? row.map((c: any) => `<td>${esc(c)}</td>`).join('')
+          : colKeys.map((k: any) => `<td>${esc(row[k])}</td>`).join('');
         return `<tr>${cells}</tr>`;
       }).join('')
     : `<tr><td colspan="${colLabels.length || 1}" style="text-align:center;color:#888">لا توجد بيانات</td></tr>`;
@@ -69,7 +69,7 @@ export function exportTableToPdf({
 
 export function exportToPdf(
   opts: string | Omit<ExportTableToPdfOpts, 'columns'> & { columns?: unknown },
-  filename = 'export.pdf',
+  filename: any = 'export.pdf',
 ) {
   if (typeof opts === 'string') {
     exportTableToPdf({ columns: undefined, data: [], title: opts, filename });

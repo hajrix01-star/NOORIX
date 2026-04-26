@@ -9,10 +9,10 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, FmtNum } from '../../../ui';
 
-export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, summaries, companyId, companyName, onPrint, dayNote, onSaveNote }) {
+export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, summaries, companyId, companyName, onPrint, dayNote, onSaveNote }: any) {
   const { t, lang } = useTranslation();
   const { companies } = useApp();
-  const company = companies?.find((c) => c.id === (companyId || summaries?.[0]?.companyId));
+  const company = companies?.find((c: any) => c.id === (companyId || summaries?.[0]?.companyId));
   const name = lang === 'en' ? (company?.nameEn || company?.nameAr || companyName || '') : (company?.nameAr || company?.nameEn || companyName || '');
 
   const [noteInput, setNoteInput] = useState(dayNote || '');
@@ -22,8 +22,8 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
     setNoteInput(dayNote || '');
   }, [dateStr, dayNote]);
 
-  const daySummaries = (summaries || []).filter((s) => String(s.transactionDate || '').slice(0, 10) === dateStr);
-  const totalAmount = daySummaries.reduce((s, x) => s + Number(x.totalAmount || 0), 0);
+  const daySummaries = (summaries || []).filter((s: any) => String(s.transactionDate || '').slice(0, 10) === dateStr);
+  const totalAmount = daySummaries.reduce((s: any, x: any) => s + Number(x.totalAmount || 0), 0);
   const achieved = dayTarget != null && totalAmount >= dayTarget;
 
   const handleBlurNote = () => {
@@ -67,7 +67,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
           multiline
           label={t('dashboardDayNote')}
           value={noteInput}
-          onChange={(e) => setNoteInput(e.target.value)}
+          onChange={(e: any) => setNoteInput(e.target.value)}
           onBlur={handleBlurNote}
           placeholder={t('dashboardDayNotePlaceholder')}
           rows={2}
@@ -89,8 +89,8 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
           <tbody>
             {daySummaries.length === 0 ? (
               <tr><td colSpan={4} className="p-4 text-center text-noorix-muted text-[11px]">{t('noDataInPeriod')}</td></tr>
-            ) : daySummaries.map((s) => {
-              const chText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0)}`).join(' | ');
+            ) : daySummaries.map((s: any) => {
+              const chText = (s.channels || []).map((ch: any) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0)}`).join(' | ');
               return (
                 <tr key={s.id} className="border-t border-noorix-border">
                   <td className="py-1.5 px-2">{s.summaryNumber || '—'}</td>

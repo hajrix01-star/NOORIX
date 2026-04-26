@@ -1,4 +1,4 @@
-export const CONFIDENCE_COLOR = (c) => {
+export const CONFIDENCE_COLOR = (c: any) => {
   if (c >= 0.9) return 'var(--noorix-accent-green)';
   if (c >= 0.7) return 'var(--noorix-accent-amber)';
   return 'var(--noorix-accent-red)';
@@ -10,7 +10,7 @@ export const STATUS_BADGE = {
   new: { bg: '#fee2e2', color: 'var(--noorix-accent-red)', label: { ar: 'جديد', en: 'New' } },
 };
 
-export function revokePreviewUrl(url) {
+export function revokePreviewUrl(url: any) {
   if (url && String(url).startsWith('blob:')) {
     try {
       URL.revokeObjectURL(url);

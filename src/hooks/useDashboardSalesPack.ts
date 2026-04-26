@@ -16,7 +16,7 @@ import { getDashboardSalesPack, throwIfApiFailed } from '../services/api';
  *   enabled?: boolean,
  * }} p
  */
-export function useDashboardSalesPack(p) {
+export function useDashboardSalesPack(p: any) {
   const {
     companyId,
     yearStart,

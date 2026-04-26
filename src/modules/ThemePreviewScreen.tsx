@@ -9,7 +9,7 @@ import { CARD_STYLES, CARD_STYLE_KEY } from '../constants/cardStyles';
 import { ScreenShell, ScreenTitle, ScreenTabs } from '../ui';
 import ThemeUILabTab from './themePreview/ThemeUILabTab';
 
-function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSelect, lang }) {
+function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSelect, lang }: any) {
   const name = lang === 'ar' ? nameAr : nameEn;
   const desc = lang === 'ar' ? descAr : descEn;
 
@@ -26,7 +26,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
     10: { borderRadius: 12, border: '2px solid var(--noorix-border)', boxShadow: 'inset 0 0 0 1px var(--noorix-border-muted)' },
   };
 
-  const s = previewStyles[styleId] || previewStyles[1];
+  const s = (previewStyles as Record<number, (typeof previewStyles)[1]>)[Number(styleId)] || previewStyles[1];
 
   return (
     <div
@@ -40,7 +40,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
       onClick={() => onSelect(styleId)}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(styleId); }}
+      onKeyDown={(e: any) => { if (e.key === 'Enter' || e.key === ' ') onSelect(styleId); }}
     >
       <div>
         <div className="text-[11px] font-bold text-noorix-muted mb-1 tracking-[0.05em]">#{styleId}</div>
@@ -71,11 +71,11 @@ export default function ThemePreviewScreen() {
     [t],
   );
 
-  const handleSelect = (id) => {
+  const handleSelect = (id: any) => {
     setCardStyle(id);
     try {
       localStorage.setItem(CARD_STYLE_KEY, String(id));
-    } catch (_) {}
+    } catch (_: any) {}
   };
 
   return (
@@ -95,7 +95,7 @@ export default function ThemePreviewScreen() {
           <div className="flex flex-col gap-5">
             <p className="text-[14px] text-noorix-muted m-0">{t('themePreviewCardsIntro')}</p>
             <div className="grid gap-5 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
-              {CARD_STYLES.map((item) => (
+              {CARD_STYLES.map((item: any) => (
                 <CardPreview
                   key={item.id}
                   styleId={item.id}

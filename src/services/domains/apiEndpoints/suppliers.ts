@@ -4,8 +4,8 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 // ——— الموردون ———
 export async function getSuppliers(
   companyId: string,
-  page = 1,
-  pageSize = 50,
+  page: any = 1,
+  pageSize: any = 50,
   q?: string,
 ): Promise<ApiParsedResult> {
   const params: Record<string, string> = {

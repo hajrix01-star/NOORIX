@@ -8,15 +8,15 @@ import { Button, Input } from '../../../ui';
 
 const DEFAULT_COLORS = ['var(--color-noorix-amber)', '#eab308', '#84cc16', 'var(--noorix-accent-green)', '#8b5cf6'];
 
-function lastDayOfMonth(year, month) {
+function lastDayOfMonth(year: any, month: any) {
   return new Date(year, month, 0).getDate();
 }
 
-function ymd(y, m, d) {
+function ymd(y: any, m: any, d: any) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
-export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth }) {
+export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth }: any) {
   const { t } = useTranslation();
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
@@ -30,7 +30,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const [newFrom, setNewFrom] = useState(startDate);
   const [newTo, setNewTo] = useState(endDate);
   const [newName, setNewName] = useState('');
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<any>(null);
   const [editingName, setEditingName] = useState('');
 
   const specialDaysList = useMemo(() => getStoredSpecialDays(companyId, year, month), [companyId, year, month, specialDaysVersion]);
@@ -46,29 +46,29 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
     const color = DEFAULT_COLORS[list.length % DEFAULT_COLORS.length];
     list.push({ id, name, fromDate: from, toDate: to, color });
     setStoredSpecialDays(companyId, year, month, list);
-    setSpecialDaysVersion((v) => v + 1);
+    setSpecialDaysVersion((v: any) => v + 1);
     setNewFrom(startDate);
     setNewTo(endDate);
     setNewName('');
     setShowForm(false);
   }, [companyId, year, month, newFrom, newTo, newName, startDate, endDate, t]);
 
-  const handleUpdate = useCallback((id, updates) => {
+  const handleUpdate = useCallback((id: any, updates: any) => {
     const list = getStoredSpecialDays(companyId, year, month);
-    const idx = list.findIndex((x) => x.id === id);
+    const idx = list.findIndex((x: any) => x.id === id);
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...updates };
       setStoredSpecialDays(companyId, year, month, list);
-      setSpecialDaysVersion((v) => v + 1);
+      setSpecialDaysVersion((v: any) => v + 1);
       setEditingId(null);
     }
   }, [companyId, year, month]);
 
-  const handleRemove = useCallback((id) => {
+  const handleRemove = useCallback((id: any) => {
     if (!window.confirm(t('confirmDelete'))) return;
-    const list = getStoredSpecialDays(companyId, year, month).filter((x) => x.id !== id);
+    const list = getStoredSpecialDays(companyId, year, month).filter((x: any) => x.id !== id);
     setStoredSpecialDays(companyId, year, month, list);
-    setSpecialDaysVersion((v) => v + 1);
+    setSpecialDaysVersion((v: any) => v + 1);
   }, [companyId, year, month, t]);
 
   const monthLabel = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month - 1];
@@ -94,16 +94,16 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
           <div className="flex flex flex-col gap-3">
             <div className="flex flex-wrap gap-3 items-start">
               <div className="flex-1 min-w-[140px]">
-                <Input type="date" label={t('dateFilterFrom')} value={newFrom} onChange={(e) => setNewFrom(e.target.value)} />
+                <Input type="date" label={t('dateFilterFrom')} value={newFrom} onChange={(e: any) => setNewFrom(e.target.value)} />
               </div>
               <div className="flex-1 min-w-[140px]">
-                <Input type="date" label={t('dateFilterTo')} value={newTo} onChange={(e) => setNewTo(e.target.value)} />
+                <Input type="date" label={t('dateFilterTo')} value={newTo} onChange={(e: any) => setNewTo(e.target.value)} />
               </div>
             </div>
             <Input
               label={t('dashboardSpecialDayName')}
               value={newName}
-              onChange={(e) => setNewName(e.target.value)}
+              onChange={(e: any) => setNewName(e.target.value)}
               placeholder={t('dashboardSpecialDayName')}
             />
             <div className="flex gap-2">
@@ -121,15 +121,15 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
       )}
 
       <div className="flex flex flex-col gap-2.5">
-        {specialDaysList.map((sp) => (
+        {specialDaysList.map((sp: any) => (
           <div key={sp.id} className="noorix-surface-card flex items-center gap-12 p-3.5">
             <div className="w-3 h-3 rounded-md shrink-0" style={{ background: sp.color || '#8b5cf6' }} />
             {editingId === sp.id ? (
               <>
                 <Input
                   value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { handleUpdate(sp.id, { name: editingName.trim() || sp.name }); } }}
+                  onChange={(e: any) => setEditingName(e.target.value)}
+                  onKeyDown={(e: any) => { if (e.key === 'Enter') { handleUpdate(sp.id, { name: editingName.trim() || sp.name }); } }}
                   autoFocus
                   className="flex-1 min-w-0"
                 />

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildInvoiceExportColumnDefs, invoiceToExportRow } from './invoicesListExportModel';
 
-const t = (k, ...args) => {
+const t = (k: any, ...args: any[]) => {
   if (k === 'invoicesExportVaultSlotName') return `vaultName${args[0]}`;
   if (k === 'invoicesExportVaultSlotType') return `vaultType${args[0]}`;
   if (k === 'invoicesExportVaultSlotAmount') return `vaultAmt${args[0]}`;
@@ -14,9 +14,9 @@ const statusMap = { posted: { label: 'مرحّل' } };
 describe('invoicesListExportModel', () => {
   it('buildInvoiceExportColumnDefs includes vault slot keys', () => {
     const cols = buildInvoiceExportColumnDefs(t);
-    expect(cols.some((c) => c.key === 'vault1Name')).toBe(true);
-    expect(cols.some((c) => c.key === 'vault5Amount')).toBe(true);
-    expect(cols.find((c) => c.key === 'invoiceNumber')?.label).toBe('documentNumber');
+    expect(cols.some((c: any) => c.key === 'vault1Name')).toBe(true);
+    expect(cols.some((c: any) => c.key === 'vault5Amount')).toBe(true);
+    expect(cols.find((c: any) => c.key === 'invoiceNumber')?.label).toBe('documentNumber');
   });
 
   it('invoiceToExportRow maps amounts and vault slots', () => {

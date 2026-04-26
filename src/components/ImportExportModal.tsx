@@ -189,7 +189,7 @@ function appendEmployeesBatchErrors(
       const m = err.match(/^([^:]+):\s*(.+)$/s);
       const empName = m ? m[1].trim() : '';
       const msg = m ? m[2].trim() : err;
-      const rowEntry = slice.find((x) => String(x.payload?.name ?? '').trim() === empName);
+      const rowEntry = slice.find((x: any) => String(x.payload?.name ?? '').trim() === empName);
       errors.push({ rowNum: rowEntry?.rowNum ?? '?', message: msg });
     }
   }
@@ -237,7 +237,7 @@ function ImportPhaseSteps({
 
   return (
     <div className="flex items-center gap-6 rounded-xl flex-wrap border border-noorix-border py-3 px-[14px] bg-noorix-bg mb-1">
-      {steps.map((s, i) => (
+      {steps.map((s: any, i: any) => (
         <React.Fragment key={s.n}>
           {i > 0 && <span className="text-noorix-muted text-[12px] select-none">{t('importStepSep')}</span>}
           <span className="text-[12px] rounded-lg whitespace-nowrap" style={{
@@ -285,13 +285,13 @@ function EmployeeImportPreviewTable({
         <table className="w-full text-[12px] border-collapse">
           <thead>
             <tr className="bg-noorix-surface sticky top-0 z-[1]">
-              {headers.map((h) => (
+              {headers.map((h: any) => (
                 <th key={h} className="border-b border-noorix-border whitespace-nowrap py-2 px-2.5 text-right">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {slice.map((r) => {
+            {slice.map((r: any) => {
               const raw = parsedRows[r.rowNum - 2] || {};
               const nameStr = String(raw['الاسم بالعربية'] ?? raw['الاسم بالإنجليزية'] ?? raw.name ?? '').trim();
               const name = String((r.payload?.name ?? nameStr) || '—');
@@ -406,7 +406,7 @@ export default function ImportExportModal({
       );
     }
     Promise.all(promises)
-      .then((results) => {
+      .then((results: any) => {
         const vaultsRes = results[0] as unknown;
         const suppliersRes = results[1] as unknown;
         const categoriesRes = results[2] as unknown;
@@ -503,7 +503,7 @@ export default function ImportExportModal({
   }
 
   async function handleImport() {
-    const validResults = validationResults.filter((r) => r.valid);
+    const validResults = validationResults.filter((r: any) => r.valid);
     if (!validResults.length) return;
 
     abortRef.current = false;
@@ -522,9 +522,9 @@ export default function ImportExportModal({
         if (abortRef.current) break;
         const slice = validResults.slice(i, i + batchSize);
         const results = await Promise.allSettled(
-          slice.map((r) => createInvoice({ ...r.payload, companyId })),
+          slice.map((r: any) => createInvoice({ ...r.payload, companyId })),
         );
-        results.forEach((res, idx) => {
+        results.forEach((res: any, idx: any) => {
           const rowNum = slice[idx].rowNum;
           if (res.status === 'fulfilled') {
             try {
@@ -555,7 +555,7 @@ export default function ImportExportModal({
         try {
           res = await createEmployeesBatch({
             companyId,
-            items: slice.map((r) => ({ ...r.payload, companyId })),
+            items: slice.map((r: any) => ({ ...r.payload, companyId })),
           });
         } catch (err: unknown) {
           res = {
@@ -621,31 +621,31 @@ export default function ImportExportModal({
   }
 
   async function handleDownloadErrorReport() {
-    const rows = progress.errors.map((e) => ({ row: e.rowNum, message: e.message }));
+    const rows = progress.errors.map((e: any) => ({ row: e.rowNum, message: e.message }));
     await exportToExcel(rows, 'import-errors.xlsx');
   }
 
   async function handleDownloadWarningsReport() {
     const list = progress.warnings || [];
-    const rows = list.map((w) => ({ row: w.rowNum, message: w.message }));
+    const rows = list.map((w: any) => ({ row: w.rowNum, message: w.message }));
     await exportToExcel(rows, 'import-warnings.xlsx');
   }
 
   async function handleDownloadValidationErrors() {
     const rows = validationResults
-      .filter((r) => !r.valid || r.warnings.length > 0)
-      .flatMap((r) => [
-        ...r.errors.map((msg) => ({ row: r.rowNum, level: 'error', message: msg })),
-        ...r.warnings.map((msg) => ({ row: r.rowNum, level: 'warning', message: msg })),
+      .filter((r: any) => !r.valid || r.warnings.length > 0)
+      .flatMap((r: any) => [
+        ...r.errors.map((msg: any) => ({ row: r.rowNum, level: 'error', message: msg })),
+        ...r.warnings.map((msg: any) => ({ row: r.rowNum, level: 'warning', message: msg })),
       ]);
     await exportToExcel(rows, 'validation-errors.xlsx');
   }
 
-  const validCount = validationResults.filter((r) => r.valid).length;
-  const errorCount = validationResults.filter((r) => !r.valid).length;
-  const warnCount = validationResults.filter((r) => r.valid && r.warnings.length > 0).length;
+  const validCount = validationResults.filter((r: any) => r.valid).length;
+  const errorCount = validationResults.filter((r: any) => !r.valid).length;
+  const warnCount = validationResults.filter((r: any) => r.valid && r.warnings.length > 0).length;
   const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
-  const errorsToShow = showAllErrors ? validationResults.filter((r) => !r.valid || r.warnings.length > 0) : validationResults.filter((r) => !r.valid || r.warnings.length > 0).slice(0, 10);
+  const errorsToShow = showAllErrors ? validationResults.filter((r: any) => !r.valid || r.warnings.length > 0) : validationResults.filter((r: any) => !r.valid || r.warnings.length > 0).slice(0, 10);
 
   return (
     <AdaptiveSheet
@@ -720,7 +720,7 @@ export default function ImportExportModal({
               <div
                 style={S.dropzone(dragging)}
                 onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragOver={(e: any) => { e.preventDefault(); setDragging(true); }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={handleDrop}
               >
@@ -735,7 +735,7 @@ export default function ImportExportModal({
                 type="file"
                 accept=".xlsx,.xls,.csv"
                 className="hidden"
-                onChange={(e) => handleFile(e.target.files?.[0])}
+                onChange={(e: any) => handleFile(e.target.files?.[0])}
               />
               {parsedRows.length > 0 && (
                 <div className="text-[13px] text-noorix-muted">
@@ -765,15 +765,15 @@ export default function ImportExportModal({
 
               {(errorCount > 0 || warnCount > 0) && (
                 <div className="flex flex-col gap-1.5 max-h-[280px] overflow-y-auto">
-                  {errorsToShow.map((r) => (
+                  {errorsToShow.map((r: any) => (
                     <div key={r.rowNum}>
-                      {r.errors.map((msg, j) => (
+                      {r.errors.map((msg: any, j: any) => (
                         <div key={j} className="grid gap-2 rounded-lg text-[13px] grid-cols-[56px_1fr] items-start py-1.5 px-2.5 bg-[var(--noorix-red-7)]">
                           <span className="font-bold text-noorix-red">{t('importValidationRowPrefix')} {r.rowNum}</span>
                           <span className="text-noorix-red">{msg}</span>
                         </div>
                       ))}
-                      {r.warnings.map((msg, j) => (
+                      {r.warnings.map((msg: any, j: any) => (
                         <div key={`w${j}`} className="grid gap-2 rounded-lg text-[12px] grid-cols-[56px_1fr] items-start py-[5px] px-[10px] bg-[var(--noorix-yellow-7)]">
                           <span className="font-bold text-noorix-amber">{t('importValidationRowPrefix')} {r.rowNum}</span>
                           <span style={{ color: 'var(--noorix-accent-amber)' }}>{msg}</span>
@@ -781,11 +781,11 @@ export default function ImportExportModal({
                       ))}
                     </div>
                   ))}
-                  {validationResults.filter((r) => !r.valid || r.warnings.length > 0).length > 10 && (
+                  {validationResults.filter((r: any) => !r.valid || r.warnings.length > 0).length > 10 && (
                     <Button variant="ghost" size="sm" className="self-start" onClick={() => setShowAllErrors(!showAllErrors)}>
                       {showAllErrors
                         ? t('importShowLess')
-                        : t('importShowAll', { count: validationResults.filter((r) => !r.valid || r.warnings.length > 0).length })}
+                        : t('importShowAll', { count: validationResults.filter((r: any) => !r.valid || r.warnings.length > 0).length })}
                     </Button>
                   )}
                   <Button variant="ghost" size="sm" className="self-start" onClick={handleDownloadValidationErrors}>
@@ -841,7 +841,7 @@ export default function ImportExportModal({
 
               {(progress.warnings || []).length > 0 && (
                 <div className="flex flex-col mt-2 gap-[5px] max-h-[200px] overflow-y-auto">
-                  {(progress.warnings || []).slice(0, 20).map((w, i) => (
+                  {(progress.warnings || []).slice(0, 20).map((w: any, i: any) => (
                     <div key={i} className="grid gap-2 rounded-lg text-[12px] grid-cols-[56px_1fr] items-start py-[5px] px-2.5 bg-[var(--noorix-yellow-7)]">
                       <span className="font-bold text-noorix-amber">{t('importValidationRowPrefix')} {w.rowNum}</span>
                       <span style={{ color: 'var(--noorix-accent-amber)' }}>{w.message}</span>
@@ -860,7 +860,7 @@ export default function ImportExportModal({
 
               {progress.errors.length > 0 && (
                 <div className="flex flex-col gap-[5px] max-h-[200px] overflow-y-auto">
-                  {progress.errors.slice(0, 20).map((e, i) => (
+                  {progress.errors.slice(0, 20).map((e: any, i: any) => (
                     <div key={i} className="grid gap-2 rounded-lg text-[13px] grid-cols-[56px_1fr] items-start py-1.5 px-2.5 bg-[var(--noorix-red-7)]">
                       <span className="font-bold text-noorix-red">{t('importValidationRowPrefix')} {e.rowNum}</span>
                       <span className="text-noorix-red">{e.message}</span>

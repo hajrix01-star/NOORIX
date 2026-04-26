@@ -5,13 +5,13 @@ export const PAGE_SIZE = 50;
 /** أقصى عدد أعمدة خزائن في تصدير Excel (اسم + نوع + مبلغ لكل خزينة) */
 export const MAX_VAULT_SLOTS = 5;
 
-export function vaultTypeLabelForExport(type, t) {
-  const map = { cash: 'vaultTypeCash', bank: 'vaultTypeBank', app: 'vaultTypeApp' };
-  const k = map[type];
+export function vaultTypeLabelForExport(type: any, t: any) {
+  const map: Record<string, string> = { cash: 'vaultTypeCash', bank: 'vaultTypeBank', app: 'vaultTypeApp' };
+  const k = map[String(type)];
   return k ? t(k) : type ? String(type) : '—';
 }
 
-export function getAllocationsForExport(inv, lang, t) {
+export function getAllocationsForExport(inv: any, lang: any, t: any) {
   const out = [];
   const a = inv.vaultAllocations;
   if (Array.isArray(a) && a.length > 0) {

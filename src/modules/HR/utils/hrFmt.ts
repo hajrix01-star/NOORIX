@@ -3,6 +3,6 @@
  */
 import { fmt } from '../../../utils/format';
 
-export function hrFmt(n) {
+export function hrFmt(n: any) {
   return fmt(n);
 }

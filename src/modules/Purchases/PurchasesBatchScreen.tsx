@@ -59,7 +59,7 @@ const EMPTY_ROW = () => ({
 });
 
 /* ظ¤ظ¤ ╪ز╪ذ┘ê┘è╪ذ╪د╪ز ╪د┘╪┤╪د╪┤╪ر ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ */
-function getTabs(t) {
+function getTabs(t: any) {
   return [
     { id: 'entry',  label: t('tabNewBatch'), icon: '' },
     { id: 'history', label: t('tabSavedBatches'), icon: '' },
@@ -85,15 +85,15 @@ export default function PurchasesBatchScreen() {
   /** ╪ز┘╪╖╪ذ┘ّ┘┘é ╪╣┘┘ë ┘â┘ ┘╪د╪ز┘ê╪▒╪ر ┘┘è ╪د┘╪»┘╪╣╪ر ╪ذ╪╣╪» ┘à┘╪د╪ص╪╕╪ر ╪د┘╪│╪╖╪▒╪î ┘à┘╪╡┘ê┘╪د┘ï ╪ذ┘ ┬س + ┬╗ */
   const [batchNotes, setBatchNotes] = useState('');
   const [rows, setRows]           = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
-  const [editingBatch, setEditingBatch] = useState(null);
-  const [printingBatch, setPrintingBatch] = useState(null);
-  const [batchActionLoading, setBatchActionLoading] = useState(null);
+  const [editingBatch, setEditingBatch] = useState<any>(null);
+  const [printingBatch, setPrintingBatch] = useState<any>(null);
+  const [batchActionLoading, setBatchActionLoading] = useState<any>(null);
 
   const { suppliers } = useSuppliers(companyId);
 
   /* ظ¤ظ¤ ┘à┘╪╢┘╪ر ╪د┘┘à┘ê╪▒╪»┘è┘ ظ¤ ┘à╪┤╪ز┘é╪ر ┘à┘ ┘é╪د╪╣╪»╪ر ╪د┘╪ذ┘è╪د┘╪د╪ز ظ¤ظ¤ */
   const bookmarks = useMemo(
-    () => suppliers.filter((s) => s.isBookmarked).map((s) => s.id),
+    () => suppliers.filter((s: any) => s.isBookmarked).map((s: any) => s.id),
     [suppliers],
   );
   const { flatCategories = [] } = useCategories(companyId);
@@ -104,7 +104,7 @@ export default function PurchasesBatchScreen() {
   }, [companyId]);
 
   useEffect(() => {
-    if (batchVaultId && !activeVaults.some((v) => v.id === batchVaultId)) setBatchVaultId('');
+    if (batchVaultId && !activeVaults.some((v: any) => v.id === batchVaultId)) setBatchVaultId('');
   }, [activeVaults, batchVaultId]);
 
   const [batchSearchInput, setBatchSearchInput] = useState('');
@@ -126,7 +126,7 @@ export default function PurchasesBatchScreen() {
 
   const batchesTableData = useMemo(() => {
     const list = batchSummaryData?.batches || [];
-    return list.map((b) => ({
+    return list.map((b: any) => ({
       batchId: b.batchId,
       invoices: [],
       transactionDate: b.transactionDate,
@@ -143,7 +143,7 @@ export default function PurchasesBatchScreen() {
   /** ╪د┘╪ز╪▒╪د╪╢┘è╪د┘ï ╪ح╪«┘╪د╪ة ╪د┘╪»┘╪╣╪د╪ز ╪د┘┘à┘╪║╪د╪ر ظ¤ ╪▓╪▒ ┘╪ح╪╕┘ç╪د╪▒┘ç╪د */
   const batchesForTable = useMemo(() => {
     if (showCancelledBatches) return batchesTableData;
-    return batchesTableData.filter((b) => b.status !== 'cancelled');
+    return batchesTableData.filter((b: any) => b.status !== 'cancelled');
   }, [batchesTableData, showCancelledBatches]);
 
   const { filteredData, allFilteredData, page, setPage, sortKey, sortDir, toggleSort } =
@@ -158,31 +158,31 @@ export default function PurchasesBatchScreen() {
     setPage(1);
   }, [debouncedBatchQ, showCancelledBatches, setPage]);
 
-  const activeOnly = allFilteredData.filter((b) => b.status !== 'cancelled');
+  const activeOnly = allFilteredData.filter((b: any) => b.status !== 'cancelled');
   const displayedTotal = allFilteredData.length;
-  const totalNet    = activeOnly.reduce((s, b) => s.plus(b.netAmount),    new Decimal(0));
-  const totalTax    = activeOnly.reduce((s, b) => s.plus(b.taxAmount),    new Decimal(0));
-  const totalAmount = activeOnly.reduce((s, b) => s.plus(b.totalAmount),  new Decimal(0));
+  const totalNet    = activeOnly.reduce((s: any, b: any) => s.plus(b.netAmount),    new Decimal(0));
+  const totalTax    = activeOnly.reduce((s: any, b: any) => s.plus(b.taxAmount),    new Decimal(0));
+  const totalAmount = activeOnly.reduce((s: any, b: any) => s.plus(b.totalAmount),  new Decimal(0));
 
-  const openBatchWithInvoices = useCallback(async (row, setter) => {
+  const openBatchWithInvoices = useCallback(async (row: any, setter: any) => {
     if (!companyId || !row?.batchId) return;
     setBatchActionLoading(row.batchId);
     try {
       const invoices = await fetchAllInvoicesForBatch(companyId, row.batchId, dateFilter.startDate, dateFilter.endDate);
       setter({ ...row, batchId: row.batchId, invoices });
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('loadDataFailed'), 'error');
     } finally {
       setBatchActionLoading(null);
     }
   }, [companyId, dateFilter.startDate, dateFilter.endDate, t, showToast]);
 
-  const handleCancelBatch = useCallback(async (batch) => {
+  const handleCancelBatch = useCallback(async (batch: any) => {
     let invoices = batch.invoices;
     if (!invoices?.length) {
       try {
         invoices = await fetchAllInvoicesForBatch(companyId, batch.batchId, dateFilter.startDate, dateFilter.endDate);
-      } catch (e) {
+      } catch (e: any) {
         showToast(e?.message || t('loadDataFailed'), 'error');
         return;
       }
@@ -198,22 +198,22 @@ export default function PurchasesBatchScreen() {
       invalidateOnFinancialMutation(queryClient);
       showToast(t('batchCancelled'), 'success');
       setEditingBatch(null);
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('cancelFailed'), 'error');
     }
   }, [companyId, dateFilter.startDate, dateFilter.endDate, queryClient, t, showToast]);
 
   const batchesColumns = useMemo(() => [
     { key: 'batchId', label: t('batchId'), sortable: true, width: '10%',
-      render: (v) => (
+      render: (v: any) => (
         <span className="font-bold nx-cell-ellipsis" style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}>{v}</span>
       )},
     { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '8%',
-      render: (v) => (
+      render: (v: any) => (
         <span className="text-[12px] text-noorix-muted" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{formatSaudiDate(v)}</span>
       )},
     { key: 'invoiceCount', label: t('invoicesColHeader'), numeric: true, sortable: true, width: '6%',
-      render: (v, row) => {
+      render: (v: any, row: any) => {
         const n = v ?? 0;
         const from = String(dateFilter.startDate || '').slice(0, 10);
         const to = String(dateFilter.endDate || '').slice(0, 10);
@@ -233,23 +233,23 @@ export default function PurchasesBatchScreen() {
         );
       }},
     { key: 'supplierNames', label: t('supplier'), sortable: true, width: '20%',
-      render: (v) => (
+      render: (v: any) => (
         <span className="nx-cell-ellipsis block">{v || 'ظ¤'}</span>
       )},
     { key: 'vaultName', label: t('vault'), sortable: true, width: '13%',
-      render: (v) => (
+      render: (v: any) => (
         <span className="nx-cell-ellipsis block">{v || 'ظ¤'}</span>
       )},
     { key: 'netAmount', label: t('net'), numeric: true, sortable: true, width: '8%',
-      render: (v) => <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      render: (v: any) => <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
     { key: 'taxAmount', label: t('tax'), numeric: true, sortable: true, width: '7%',
-      render: (v) => <span className="text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      render: (v: any) => <span className="text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '8%',
-      render: (v) => <span className="font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
+      render: (v: any) => <span className="font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
     { key: 'status', label: t('statusLabel'), width: '8%',
-      render: (v) => <Badge {...Badge.fromStatus(v, statusBadgeMap)} size="sm" /> },
+      render: (v: any) => <Badge {...Badge.fromStatus(v, statusBadgeMap)} size="sm" /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '12%',
-      render: (_, row) => {
+      render: (_: any, row: any) => {
         const canCancel = row.status === 'active' || row.status === 'partial';
         return (
           <div className="noorix-actions-row flex flex-wrap justify-center max-w-[280px]">
@@ -268,7 +268,7 @@ export default function PurchasesBatchScreen() {
     },
   ], [t, statusBadgeMap, batchActionLoading, openBatchWithInvoices, handleCancelBatch, dateFilter.startDate, dateFilter.endDate]);
 
-  const renderBatchMobileCard = useCallback((row) => {
+  const renderBatchMobileCard = useCallback((row: any) => {
     const canCancel = row.status === 'active' || row.status === 'partial';
     return (
       <div>
@@ -346,7 +346,7 @@ export default function PurchasesBatchScreen() {
   const saveMutation = useApiMutation({
     mutationFn: async () => {
       const batchPart = batchNotes.trim();
-      const valid = rows.filter((r) => {
+      const valid = rows.filter((r: any) => {
         try {
           if (!r.invoiceNumber || new Decimal(r.totalInclusive || 0).lte(0)) return false;
           if (r.supplierId) return true;
@@ -362,7 +362,7 @@ export default function PurchasesBatchScreen() {
         vaultId: batchVaultId || undefined,
         batchNotes: batchPart || undefined,
         idempotencyKey,
-        items: valid.map((r) => {
+        items: valid.map((r: any) => {
           let notes = r.notes?.trim();
           if (r.kind === 'fixed_expense') {
             notes = notes ? `${t('fixedExpenseType')} ظ¤ ${notes}` : t('fixedExpenseType');
@@ -388,9 +388,9 @@ export default function PurchasesBatchScreen() {
       const payload = res.data ?? { batchId: 'B-' + Date.now(), count: valid.length };
       return { payload, uploadRows: valid };
     },
-    successToast: (data) => t('savedInvoicesCount', data.payload.count, data.payload.batchId),
-    errorToast: (e) => e?.message || t('saveFailed'),
-    onSuccess: async (data) => {
+    successToast: (data: any) => t('savedInvoicesCount', data.payload.count, data.payload.batchId),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
+    onSuccess: async (data: any) => {
       const invoices = data.payload?.invoices || [];
       const rowsWithFiles = data.uploadRows || [];
       for (let i = 0; i < rowsWithFiles.length; i++) {
@@ -412,16 +412,16 @@ export default function PurchasesBatchScreen() {
     },
   });
 
-  const updateRow = (i, f, v) => {
+  const updateRow = (i: any, f: any, v: any) => {
     if (typeof f === 'object' && f !== null) {
-      setRows((p) => p.map((r, idx) => (idx === i ? { ...r, ...f } : r)));
+      setRows((p: any) => p.map((r: any, idx: any) => (idx === i ? { ...r, ...f } : r)));
     } else {
-      setRows((p) => p.map((r, idx) => (idx === i ? { ...r, [f]: v } : r)));
+      setRows((p: any) => p.map((r: any, idx: any) => (idx === i ? { ...r, [f]: v } : r)));
     }
   };
-  const addRow         = ()         => setRows((p) => [...p, EMPTY_ROW()]);
-  const removeRow      = (i)        => setRows((p) => p.length <= 1 ? [EMPTY_ROW()] : p.filter((_, idx) => idx !== i));
-  const toggleBookmark = useCallback(async (id) => {
+  const addRow         = ()         => setRows((p: any) => [...p, EMPTY_ROW()]);
+  const removeRow      = (i: any)        => setRows((p: any) => p.length <= 1 ? [EMPTY_ROW()] : p.filter((_: any, idx: any) => idx !== i));
+  const toggleBookmark = useCallback(async (id: any) => {
     const current = bookmarks.includes(id);
     try {
       await setSupplierBookmark(id, !current);
@@ -431,7 +431,7 @@ export default function PurchasesBatchScreen() {
     }
   }, [bookmarks, companyId, queryClient, showToast]);
 
-  async function saveInvoiceEdit(inv) {
+  async function saveInvoiceEdit(inv: any) {
     const payload = {
       supplierId: inv.supplierId,
       supplierInvoiceNumber: inv.supplierInvoiceNumber ?? inv.invoiceNumber,
@@ -447,7 +447,7 @@ export default function PurchasesBatchScreen() {
   const hasCompany = !!companyId;
 
   const purchaseBatchTabItems = useMemo(
-    () => getTabs(t).map((tab) => ({ id: tab.id, label: tab.icon ? <>{tab.icon} {tab.label}</> : tab.label })),
+    () => getTabs(t).map((tab: any) => ({ id: tab.id, label: tab.icon ? <>{tab.icon} {tab.label}</> : tab.label })),
     [t],
   );
 
@@ -484,13 +484,13 @@ export default function PurchasesBatchScreen() {
                 id="batch-purchase-date"
                 type="date"
                 value={batchDate}
-                onChange={(e) => {
+                onChange={(e: any) => {
                   const newDate = e.target.value;
                   const prevOp = prevBatchDateRef.current;
                   setBatchDate(newDate);
                   if (!newDate) return;
-                  setRows((prevRows) =>
-                    prevRows.map((r) => {
+                  setRows((prevRows: any) =>
+                    prevRows.map((r: any) => {
                       let inv = r.invoiceDate;
                       if (prevOp && newDate !== prevOp) {
                         if (newDate < prevOp) {
@@ -513,10 +513,10 @@ export default function PurchasesBatchScreen() {
                 id="batch-purchase-vault"
                 type="select"
                 value={batchVaultId}
-                onChange={(e) => setBatchVaultId(e.target.value)}
+                onChange={(e: any) => setBatchVaultId(e.target.value)}
               >
                 <option value="">{t('batchPurchasesVaultPlaceholder')}</option>
-                {activeVaults.map((v) => (
+                {activeVaults.map((v: any) => (
                   <option key={v.id} value={v.id}>{vaultDisplayName(v, language)}</option>
                 ))}
               </Input>
@@ -529,7 +529,7 @@ export default function PurchasesBatchScreen() {
                 multiline
                 rows={2}
                 value={batchNotes}
-                onChange={(e) => setBatchNotes(e.target.value)}
+                onChange={(e: any) => setBatchNotes(e.target.value)}
                 className="w-full min-w-0"
               />
             </div>
@@ -545,7 +545,7 @@ export default function PurchasesBatchScreen() {
           <div className="px-3 pb-4">
             {batchEntryNarrow ? (
               <div className="flex flex-col gap-3 min-w-0">
-                {rows.map((r, i) => (
+                {rows.map((r: any, i: any) => (
                   <BatchRow
                     key={r.key}
                     layout="stack"
@@ -581,13 +581,13 @@ export default function PurchasesBatchScreen() {
                         { label: t('notes'), align: 'right' },
                         { label: t('invoiceReceiptCol'), align: 'center', title: t('invoiceReceiptAttachment') },
                         { label: '', align: 'center' },
-                      ].map(({ label, align, title }, i) => (
+                      ].map(({ label, align, title }: any, i: any) => (
                         <th key={i} title={title} className="text-[11px] font-bold text-noorix-muted overflow-hidden whitespace-nowrap py-2 px-1.5" style={{ textAlign: (align || 'center') as React.CSSProperties['textAlign'] }}>{label}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((r, i) => (
+                    {rows.map((r: any, i: any) => (
                       <BatchRow
                         key={r.key}
                         layout="table"
@@ -655,7 +655,7 @@ export default function PurchasesBatchScreen() {
               size="sm"
               variant={showCancelledBatches ? 'primary' : 'ghost'}
               aria-pressed={showCancelledBatches}
-              onClick={() => setShowCancelledBatches((v) => !v)}
+              onClick={() => setShowCancelledBatches((v: any) => !v)}
               className="shrink-0"
             >
               {showCancelledBatches ? t('hideCancelledBatches') : t('showCancelledBatches')}
@@ -687,7 +687,7 @@ export default function PurchasesBatchScreen() {
               </>
             }
             searchValue={batchSearchInput}
-            onSearchChange={(v) => { setBatchSearchInput(v); setPage(1); }}
+            onSearchChange={(v: any) => { setBatchSearchInput(v); setPage(1); }}
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={toggleSort}

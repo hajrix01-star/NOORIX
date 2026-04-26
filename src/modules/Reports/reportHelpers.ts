@@ -5,13 +5,13 @@ export const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'
 
 export const PERCENT_COLOR = '#0d9488';
 
-export function isEmptyMetric(value) {
+export function isEmptyMetric(value: any) {
   if (value == null || value === '') return true;
   const num = Number(value);
   return !Number.isFinite(num) || Math.abs(num) < 0.0000001;
 }
 
-export function formatSmartNumber(value, decimals = 1) {
+export function formatSmartNumber(value: any, decimals: any = 1) {
   if (isEmptyMetric(value)) return '-';
   return Number(value).toLocaleString('en', {
     minimumFractionDigits: 0,
@@ -19,44 +19,44 @@ export function formatSmartNumber(value, decimals = 1) {
   });
 }
 
-export function amountText(value) {
+export function amountText(value: any) {
   return formatSmartNumber(value, 1);
 }
 
-export function moneyText(value) {
+export function moneyText(value: any) {
   const text = amountText(value);
   return text === '-' ? '-' : `${text} SAR`;
 }
 
 /** قيمة لـ MetricCard.Value (رقم أو '-' للعرض كنص) — العملة تُمرَّر عبر currency="SR" */
-export function metricCardAmountValue(value) {
+export function metricCardAmountValue(value: any) {
   if (isEmptyMetric(value)) return '-';
   return Number(value);
 }
 
-export function percentText(value) {
+export function percentText(value: any) {
   return isEmptyMetric(value) ? '-' : `${formatSmartNumber(value, 1)}%`;
 }
 
-export function truncateText(value, max = 42) {
+export function truncateText(value: any, max: any = 42) {
   const text = String(value || '').trim();
   if (!text) return '—';
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
-export function displayLabel(row, lang) {
+export function displayLabel(row: any, lang: any) {
   return lang === 'en' ? (row.labelEn || row.labelAr || '—') : (row.labelAr || row.labelEn || '—');
 }
 
-export function getContextAmount(row, selectedMonth) {
+export function getContextAmount(row: any, selectedMonth: any) {
   return selectedMonth ? row?.months?.[selectedMonth - 1] : row?.total;
 }
 
-export function getContextPercent(row, selectedMonth) {
+export function getContextPercent(row: any, selectedMonth: any) {
   return selectedMonth ? row?.percentOfSalesMonths?.[selectedMonth - 1] : row?.percentOfSalesYear;
 }
 
-export function getRowTone(row) {
+export function getRowTone(row: any) {
   if (row.rowType === 'summary') {
     const val = Number(row?.total || 0);
     const accent = val >= 0 ? '#2563eb' : '#dc2626';
@@ -76,13 +76,13 @@ export function getRowTone(row) {
   return { bg: 'transparent', stickyBg: 'var(--noorix-bg-surface)', accent: 'var(--noorix-text)', isSummary: false };
 }
 
-function flattenExpenseTree(items, groupKey, collapsedGroups, depth = 0) {
-  const rows = [];
+function flattenExpenseTree(items: any, groupKey: any, collapsedGroups: any, depth: any = 0): any[] {
+  const rows: any[] = [];
   for (const node of items || []) {
     const hasChildren = Array.isArray(node.children) && node.children.length > 0;
     const isCategory = node.key?.startsWith('category:');
     const collapseKey = isCategory ? node.key : null;
-    const isCollapsed = collapseKey && collapsedGroups[collapseKey];
+    const isCollapsed = !!(collapseKey && (collapsedGroups as Record<string, any>)[collapseKey]);
     rows.push({
       ...node,
       rowType: hasChildren ? 'category' : 'item',
@@ -98,11 +98,11 @@ function flattenExpenseTree(items, groupKey, collapsedGroups, depth = 0) {
   return rows;
 }
 
-export function buildFlatRows(report, collapsedGroups = {}) {
-  const rows = [];
+export function buildFlatRows(report: any, collapsedGroups: any = {}): any[] {
+  const rows: any[] = [];
   for (const group of report?.groups || []) {
     rows.push({ ...group, rowType: 'group', groupKey: group.key, itemKey: null });
-    if (Array.isArray(group.items) && group.items.some((i) => i.children)) {
+    if (Array.isArray(group.items) && group.items.some((i: any) => i.children)) {
       rows.push(...flattenExpenseTree(group.items, group.key, collapsedGroups));
     } else {
       for (const item of group.items || []) {
@@ -116,25 +116,25 @@ export function buildFlatRows(report, collapsedGroups = {}) {
   return rows;
 }
 
-export function buildVisibleRows(rows, collapsedGroups) {
-  return rows.filter((row) => {
+export function buildVisibleRows(rows: any, collapsedGroups: any) {
+  return rows.filter((row: any) => {
     if (row.rowType !== 'item' && row.rowType !== 'category') return true;
     return !collapsedGroups[row.groupKey];
   });
 }
 
-export function buildExportRows(report, lang, t, selectedMonth) {
+export function buildExportRows(report: any, lang: any, t: any, selectedMonth: any) {
   const rows = buildFlatRows(report, {});
-  return rows.map((row) => {
+  return rows.map((row: any) => {
     const indent = '  '.repeat(row.depth || 0) + (row.rowType === 'item' ? '  ' : '');
-    const base = {
+    const base: Record<string, any> = {
       [t('reportItem')]: `${indent}${displayLabel(row, lang)}`,
     };
     if (selectedMonth) {
       base[t('selectedMonth')] = amountText(getContextAmount(row, selectedMonth));
       base[t('reportSalesShare')] = percentText(getContextPercent(row, selectedMonth));
     }
-    EN_MONTHS.forEach((month, index) => {
+    EN_MONTHS.forEach((month: any, index: any) => {
       base[month] = amountText(row?.months?.[index]);
     });
     base[t('reportAnnualTotal')] = amountText(row?.total);

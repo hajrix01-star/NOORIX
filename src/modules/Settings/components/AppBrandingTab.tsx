@@ -21,13 +21,13 @@ export default function AppBrandingTab() {
   const [color,       setColor]       = useState(getBrandColor);
   const [loginDomain, setLoginDomain] = useState(getLoginDomain);
   const [saved,       setSaved]       = useState(false);
-  const fileRef = useRef(null);
+  const fileRef = useRef<any>(null);
 
-  const handleFile = (e) => {
+  const handleFile = (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
     const reader = new FileReader();
-    reader.onload = (ev) => setLogoUrl(ev.target.result);
+    reader.onload = (ev: any) => setLogoUrl(ev.target.result);
     reader.readAsDataURL(file);
   };
 
@@ -104,7 +104,7 @@ export default function AppBrandingTab() {
             type="text"
             label="بالعربي"
             value={nameAr}
-            onChange={(e) => setNameAr(e.target.value)}
+            onChange={(e: any) => setNameAr(e.target.value)}
             placeholder="نووريكس"
             maxLength={40}
           />
@@ -112,7 +112,7 @@ export default function AppBrandingTab() {
             type="text"
             label="In English"
             value={nameEn}
-            onChange={(e) => setNameEn(e.target.value)}
+            onChange={(e: any) => setNameEn(e.target.value)}
             placeholder="Noorix"
             maxLength={40}
           />
@@ -130,7 +130,7 @@ export default function AppBrandingTab() {
             type="text"
             label="بالعربي"
             value={taglineAr}
-            onChange={(e) => setTaglineAr(e.target.value)}
+            onChange={(e: any) => setTaglineAr(e.target.value)}
             placeholder="نظام إدارة متكامل"
             maxLength={60}
           />
@@ -138,7 +138,7 @@ export default function AppBrandingTab() {
             type="text"
             label="In English"
             value={taglineEn}
-            onChange={(e) => setTaglineEn(e.target.value)}
+            onChange={(e: any) => setTaglineEn(e.target.value)}
             placeholder="Business Management System"
             maxLength={60}
           />
@@ -162,7 +162,7 @@ export default function AppBrandingTab() {
             <Input
               type="url"
               value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
+              onChange={(e: any) => setLogoUrl(e.target.value)}
               placeholder="https://رابط-الشعار.com/logo.png"
             />
             <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
@@ -189,7 +189,7 @@ export default function AppBrandingTab() {
           <Input
             type="text"
             value={loginDomain}
-            onChange={(e) => setLoginDomain(e.target.value.replace(/^@/, '').replace(/\s/g, ''))}
+            onChange={(e: any) => setLoginDomain(e.target.value.replace(/^@/, '').replace(/\s/g, ''))}
             placeholder="hajrix.com"
             className="rounded-e-[10px] rounded-s-none border-s-0 ltr text-left"
             maxLength={60}
@@ -207,13 +207,13 @@ export default function AppBrandingTab() {
           <Input
             type="color"
             value={color}
-            onChange={(e) => setColor(e.target.value)}
+            onChange={(e: any) => setColor(e.target.value)}
             className="cursor-pointer bg-noorix-surface w-12 h-[42px] p-[3px] rounded-[10px] border border-noorix-border shrink-0"
           />
           <Input
             type="text"
             value={color}
-            onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
+            onChange={(e: any) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
             className="text-[13px] w-full min-w-0 max-w-[7.5rem] font-mono"
             placeholder="#0a1f44"
             maxLength={7}

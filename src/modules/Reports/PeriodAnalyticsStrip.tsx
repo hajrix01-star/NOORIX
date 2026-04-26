@@ -11,7 +11,7 @@ import { Button } from '../../ui';
 
 const KIND_ORDER = ['sale', 'purchase', 'expense', 'fixed_expense', 'hr_expense', 'salary', 'advance'];
 
-function kindLabel(t, k) {
+function kindLabel(t: any, k: any) {
   const m = {
     sale: t('categoryTypeSale'),
     purchase: t('categoryTypes'),
@@ -21,10 +21,10 @@ function kindLabel(t, k) {
     salary: t('totalSalary'),
     advance: t('quickAdvance'),
   };
-  return m[k] || k;
+  return (m as Record<string, string>)[String(k)] || k;
 }
 
-export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }) {
+export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }: any) {
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const { from, to } = useMemo(() => monthDateBounds(year, month), [year, month]);
@@ -38,7 +38,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
 
   const byKindRows = useMemo(() => {
     const m = data?.totalsByKind || {};
-    return KIND_ORDER.filter((k) => m[k]?.invoiceCount > 0).map((k) => ({
+    return KIND_ORDER.filter((k: any) => m[k]?.invoiceCount > 0).map((k: any) => ({
       kind: k,
       total: Number(m[k]?.totalAmount || 0),
       count: m[k]?.invoiceCount || 0,
@@ -64,7 +64,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
             <div className="text-[12px] text-noorix-muted mb-2">{t('periodAnalyticsByKind')}</div>
             <div className="flex flex flex-col gap-1.5">
               {byKindRows.length === 0 && <span className="text-[12px] text-noorix-muted">—</span>}
-              {byKindRows.map((row) => (
+              {byKindRows.map((row: any) => (
                 <Button
                   key={row.kind}
                   onClick={() => {
@@ -88,7 +88,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
               {(!data.topSuppliers || data.topSuppliers.length === 0) && (
                 <span className="text-[12px] text-noorix-muted">—</span>
               )}
-              {(data.topSuppliers || []).map((s) => (
+              {(data.topSuppliers || []).map((s: any) => (
                 <Button
                   key={s.supplierId}
                   onClick={() =>

@@ -16,7 +16,7 @@ const CHANNEL_COLORS = {
   app:  { bg: 'var(--noorix-violet-8)', border: 'var(--noorix-accent-violet)', icon: '📱' },
 };
 
-export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }) {
+export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }: any) {
   const { lang } = useTranslation();
   const [txDate, setTxDate] = useState('');
   const [customerCount, setCustomerCount] = useState('');
@@ -28,7 +28,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
 
   useEffect(() => {
     if (!summary) return;
-    const ch = (summary.channels || []).reduce((acc, c) => {
+    const ch = (summary.channels || []).reduce((acc: any, c: any) => {
       acc[c.vaultId] = String(c.amount ?? 0);
       return acc;
     }, {});
@@ -41,10 +41,10 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
 
   const mergedSalesChannels = useMemo(() => {
     const live = Array.isArray(salesChannels) ? [...salesChannels] : [];
-    live.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.nameAr || '').localeCompare(String(b.nameAr || ''), 'ar'));
+    live.sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.nameAr || '').localeCompare(String(b.nameAr || ''), 'ar'));
     const legacy = (summary?.channels || [])
-      .filter((c) => c?.vaultId && !live.some((v) => v.id === c.vaultId))
-      .map((c) => ({
+      .filter((c: any) => c?.vaultId && !live.some((v: any) => v.id === c.vaultId))
+      .map((c: any) => ({
         id: c.vaultId,
         nameAr: c.vault?.nameAr || 'قناة سابقة',
         type: c.vault?.type || 'cash',
@@ -55,7 +55,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
   }, [salesChannels, summary]);
 
   const totalAmount = Object.values(channelAmounts).reduce(
-    (s, v) => s.plus(new Decimal(v || 0)),
+    (s: any, v: any) => s.plus(new Decimal(v || 0)),
     new Decimal(0),
   );
   const { net: totalNet, tax: totalTax } = useMemo(
@@ -68,14 +68,14 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
 
   async function handleSave() {
     setError('');
-    const blockedLegacyChannels = mergedSalesChannels.filter((v) => v.isLegacyDisabled && parseFloat(channelAmounts[v.id]) > 0);
+    const blockedLegacyChannels = mergedSalesChannels.filter((v: any) => v.isLegacyDisabled && parseFloat(channelAmounts[v.id]) > 0);
     if (blockedLegacyChannels.length > 0) {
       setError('بعض القنوات المستخدمة سابقاً لم تعد مفعلة كقنوات بيع. أعد تفعيلها من الخزائن أو وزّع المبلغ على القنوات الحالية.');
       return;
     }
     const channels = mergedSalesChannels
-      .filter((v) => parseFloat(channelAmounts[v.id]) > 0)
-      .map((v) => ({ vaultId: v.id, amount: channelAmounts[v.id] }));
+      .filter((v: any) => parseFloat(channelAmounts[v.id]) > 0)
+      .map((v: any) => ({ vaultId: v.id, amount: channelAmounts[v.id] }));
     if (channels.length === 0) {
       setError('يجب إدخال قناة بيع واحدة على الأقل');
       return;
@@ -94,7 +94,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         notes: notes.trim() || undefined,
       });
       onClose?.();
-    } catch (e) {
+    } catch (e: any) {
       setError(e?.message || 'فشل التحديث');
     } finally {
       setSaving(false);
@@ -132,9 +132,9 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       )}
 
       <div className="grid gap-3.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-        <Input type="date" label="تاريخ العملية *" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
-        <Input type="number" min="0" label="عدد العملاء" value={customerCount} onChange={(e) => setCustomerCount(e.target.value)} placeholder="0" />
-        <Input type="number" min="0" step="0.01" label="المبلغ الموجود بالصندوق" value={cashOnHand} onChange={(e) => setCashOnHand(e.target.value)} placeholder="0.00" />
+        <Input type="date" label="تاريخ العملية *" value={txDate} onChange={(e: any) => setTxDate(e.target.value)} />
+        <Input type="number" min="0" label="عدد العملاء" value={customerCount} onChange={(e: any) => setCustomerCount(e.target.value)} placeholder="0" />
+        <Input type="number" min="0" step="0.01" label="المبلغ الموجود بالصندوق" value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
       <div className="mb-4">
@@ -153,8 +153,8 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
           </div>
         ) : (
           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-            {mergedSalesChannels.map((v) => {
-              const c = CHANNEL_COLORS[v.type] || CHANNEL_COLORS.cash;
+            {mergedSalesChannels.map((v: any) => {
+              const c = (CHANNEL_COLORS as Record<string, (typeof CHANNEL_COLORS)['cash']>)[String(v.type)] || CHANNEL_COLORS.cash;
               const amt = channelAmounts[v.id] ?? '';
               return (
                 <div key={v.id} className="py-[10px] px-3 rounded-[10px]" style={{ background: c.bg, border: `1px solid ${c.border}44` }}>
@@ -174,7 +174,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
                     min="0"
                     step="0.01"
                     value={amt}
-                    onChange={(e) => setChannelAmounts((p) => ({ ...p, [v.id]: e.target.value }))}
+                    onChange={(e: any) => setChannelAmounts((p: any) => ({ ...p, [v.id]: e.target.value }))}
                     placeholder="0.00"
                     className="w-full py-1.5 px-2 rounded-[7px] text-[15px] font-extrabold text-right"
                     style={{ fontFamily: 'var(--noorix-font-numbers)', border: `1px solid ${c.border}55`, background: v.isLegacyDisabled ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}
@@ -187,7 +187,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       </div>
 
       <div className="mb-4">
-        <Input multiline label="ملاحظات" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="أي ملاحظات..." style={{ resize: 'vertical' }} />
+        <Input multiline label="ملاحظات" value={notes} onChange={(e: any) => setNotes(e.target.value)} rows={2} placeholder="أي ملاحظات..." style={{ resize: 'vertical' }} />
       </div>
 
       <div className="grid gap-2.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>

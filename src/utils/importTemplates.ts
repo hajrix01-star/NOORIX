@@ -28,7 +28,7 @@ function toRiyadhYmdOrNull(d: Date) {
 const AR_NUMS = '٠١٢٣٤٥٦٧٨٩';
 function toWesternNum(str: unknown) {
   if (str == null) return '';
-  return String(str).replace(/[٠-٩]/g, (c) => AR_NUMS.indexOf(c).toString());
+  return String(str).replace(/[٠-٩]/g, (c: any) => AR_NUMS.indexOf(c).toString());
 }
 
 /** Parse an Excel date cell (serial number, string DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY) → 'YYYY-MM-DD' | null */
@@ -71,12 +71,12 @@ function parseNumber(val: unknown) {
 function matchByName(
   list: unknown[],
   name: unknown,
-  nameArKey = 'nameAr',
-  nameEnKey = 'nameEn',
+  nameArKey: any = 'nameAr',
+  nameEnKey: any = 'nameEn',
 ): Record<string, unknown> | null {
   if (!name) return null;
   const needle = String(name).trim().toLowerCase();
-  const hit = list.find((item) => {
+  const hit = list.find((item: any) => {
     const row = item as Record<string, unknown>;
     return (
       String(row[nameArKey] ?? '').trim().toLowerCase() === needle ||
@@ -98,7 +98,7 @@ export const INVOICE_KIND_LABELS = {
 };
 
 const INVOICE_KIND_BY_LABEL = Object.fromEntries(
-  Object.entries(INVOICE_KIND_LABELS).map(([k, v]) => [v, k]),
+  Object.entries(INVOICE_KIND_LABELS).map(([k, v]: any) => [v, k]),
 );
 
 export async function downloadInvoiceTemplate() {
@@ -176,7 +176,7 @@ export async function downloadEmployeeTemplate() {
 export async function downloadSalesTemplate(vaults: unknown[] = []) {
   const vaultColumns =
     vaults.length > 0
-      ? vaults.reduce<Record<string, number>>((acc, v) => {
+      ? vaults.reduce<Record<string, number>>((acc: any, v: any) => {
           const row = v as Record<string, unknown>;
           acc[`قناة: ${String(row.nameAr ?? row.nameEn ?? row.id ?? '')}`] = 0;
           return acc;
@@ -220,7 +220,7 @@ export function validateInvoiceRows(
 ) {
   const validKinds = new Set(Object.keys(INVOICE_KIND_LABELS));
 
-  return rows.map((row, i) => {
+  return rows.map((row: any, i: any) => {
     const errors: string[] = [];
     const warnings: string[] = [];
     const rowNum = i + 2; // 1-indexed + header row
@@ -311,7 +311,7 @@ export function validateInvoiceRows(
 export function validateEmployeeRows(rows: Record<string, unknown>[]) {
   const today = getSaudiToday();
 
-  return rows.map((row, i) => {
+  return rows.map((row: any, i: any) => {
     const errors: string[] = [];
     const warnings: string[] = [];
     const rowNum = i + 2;
@@ -406,7 +406,7 @@ export function validateSalesRows(
 ) {
   const seenDates = new Set();
 
-  return rows.map((row, i) => {
+  return rows.map((row: any, i: any) => {
     const errors: string[] = [];
     const warnings: string[] = [];
     const rowNum = i + 2;
@@ -560,7 +560,7 @@ export function formatSalesForExport(summary: Record<string, unknown>) {
     'ملاحظات': summary.notes ?? '',
   };
   const chList = (summary.channels ?? []) as unknown[];
-  chList.forEach((ch) => {
+  chList.forEach((ch: any) => {
     const c = ch as Record<string, unknown>;
     const v = c.vault as Record<string, unknown> | undefined;
     const label = String(v?.nameAr ?? v?.nameEn ?? c.vaultId ?? '');

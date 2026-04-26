@@ -14,7 +14,7 @@ import { useApp } from '../../../context/AppContext';
 
 const KIND_LABELS = { fixed_expense: 'ثابت', expense: 'متغير' };
 
-function formatInvoiceCoverage(row) {
+function formatInvoiceCoverage(row: any) {
   if (row.expenseCoverageYear == null) return '—';
   const y = row.expenseCoverageYear;
   if (row.expenseCoverageQuarter != null) {
@@ -34,10 +34,10 @@ export default function ExpenseLineDetailModal({
   onClose,
   dateFilter,
   onRefresh,
-}) {
+}: any) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies = [] } = useApp();
-  const activeCompany = companies.find((c) => c.id === (companyId || activeCompanyId));
+  const activeCompany = companies.find((c: any) => c.id === (companyId || activeCompanyId));
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const [page, setPage] = useState(1);
 
@@ -64,26 +64,26 @@ export default function ExpenseLineDetailModal({
   const line = lineData?.data ?? lineData;
   const payments = paymentsData?.data?.items ?? paymentsData?.items ?? [];
   const totalPaid = (paymentsData?.data?.items ?? paymentsData?.items ?? [])
-    .reduce((s, i) => s + Number(i.totalAmount || 0), 0);
+    .reduce((s: any, i: any) => s + Number(i.totalAmount || 0), 0);
 
   const paymentColumns = [
     { key: 'invoiceNumber', label: 'رقم السند',
-      render: (_, row) => <span className="nx-cell-num font-semibold">{row.invoiceNumber || '—'}</span> },
+      render: (_: any, row: any) => <span className="nx-cell-num font-semibold">{row.invoiceNumber || '—'}</span> },
     { key: 'supplierInvoiceNumber', label: 'رقم فاتورة المورد',
-      render: (_, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '—'}</span> },
+      render: (_: any, row: any) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '—'}</span> },
     { key: 'transactionDate', label: 'التاريخ',
-      render: (v) => <span className="nx-cell-muted">{formatSaudiDate(v) || '—'}</span> },
+      render: (v: any) => <span className="nx-cell-muted">{formatSaudiDate(v) || '—'}</span> },
     { key: 'coverage', label: t('expenseCoverageColumn'),
-      render: (_, row) => <span className="nx-cell-muted ltr">{formatInvoiceCoverage(row)}</span> },
+      render: (_: any, row: any) => <span className="nx-cell-muted ltr">{formatInvoiceCoverage(row)}</span> },
     { key: 'totalAmount', label: 'المبلغ',
-      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green font-semibold" /> },
+      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green font-semibold" /> },
     { key: 'vaultName', label: 'الخزنة',
-      render: (_, row) => <span className="nx-cell-muted">{row.vaultName || row.vault?.nameAr || '—'}</span> },
+      render: (_: any, row: any) => <span className="nx-cell-muted">{row.vaultName || row.vault?.nameAr || '—'}</span> },
     { key: 'notes', label: 'ملاحظات',
-      render: (v) => <span className="nx-cell-ellipsis">{v || '—'}</span> },
+      render: (v: any) => <span className="nx-cell-ellipsis">{v || '—'}</span> },
   ];
 
-  const paymentExportData = payments.map((p) => ({
+  const paymentExportData = payments.map((p: any) => ({
     'رقم السند': p.invoiceNumber || '—',
     'رقم فاتورة المورد': p.supplierInvoiceNumber || '—',
     'التاريخ': formatSaudiDate(p.transactionDate) || '—',
@@ -94,7 +94,7 @@ export default function ExpenseLineDetailModal({
   }));
 
   function handlePrintPayments() {
-    const rows = payments.map((p) =>
+    const rows = payments.map((p: any) =>
       `<tr><td>${(p.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(p.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(formatSaudiDate(p.transactionDate) || '—').replace(/</g, '&lt;')}</td><td>${String(formatInvoiceCoverage(p)).replace(/</g, '&lt;')}</td><td>${fmt(p.totalAmount).replace(/</g, '&lt;')}</td><td>${(p.vaultName || p.vault?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(p.notes || '—').replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
     const lineName = line?.nameAr || line?.nameEn || '—';
@@ -113,7 +113,7 @@ export default function ExpenseLineDetailModal({
   return (
     <AdaptiveSheet open={true} onClose={onClose} title={modalTitle} size="xl" side="start" className="expense-line-detail-drawer">
       <div className="flex flex flex-wrap gap-3 text-[13px] text-noorix-muted mb-4">
-        <span>النوع: {KIND_LABELS[line?.kind] || line?.kind || '—'}</span>
+        <span>النوع: {(KIND_LABELS as Record<string, string>)[String(line?.kind)] || line?.kind || '—'}</span>
         <span>الفئة: {line?.category?.nameAr || '—'}</span>
         <span>المورد: {(lang === 'en' ? line?.supplier?.nameEn || line?.supplier?.nameAr : line?.supplier?.nameAr || line?.supplier?.nameEn) || '—'}</span>
         {line?.serviceNumber && <span>رقم الخدمة: {line.serviceNumber}</span>}
@@ -163,7 +163,7 @@ export default function ExpenseLineDetailModal({
         rowNumberWidth="1%"
         isLoading={paymentsLoading}
         emptyMessage="لا توجد مدفوعات لهذا البند في الفترة المحددة."
-        keyExtractor={(row) => row.id}
+        keyExtractor={(row: any) => row.id}
       />
     </AdaptiveSheet>
   );

@@ -23,7 +23,7 @@ export async function deleteCategory(id: string, companyId: string): Promise<Api
 export async function getExpenseLines(
   companyId: string,
   kind?: string | null,
-  includeInactive = false,
+  includeInactive: any = false,
 ): Promise<ApiParsedResult> {
   const params: Record<string, string> = { companyId: String(companyId) };
   if (kind) params.kind = String(kind);
@@ -39,8 +39,8 @@ export async function getExpenseLinePayments(
   companyId: string,
   startDate: string | undefined,
   endDate: string | undefined,
-  page = 1,
-  pageSize = 50,
+  page: any = 1,
+  pageSize: any = 50,
 ): Promise<ApiParsedResult> {
   const params: Record<string, string> = {
     companyId: String(companyId),

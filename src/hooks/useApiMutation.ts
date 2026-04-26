@@ -16,7 +16,7 @@ import { rejectIfApiFailed } from '../utils/apiResponse';
  * @param {string|function(error, variables): string} [options.errorToast]
  * @param {boolean} [options.rejectOnApiFailure=true] — عند false لا يُرمى خطأ عند success === false
  */
-export function useApiMutation(options) {
+export function useApiMutation(options: any) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -43,7 +43,7 @@ export function useApiMutation(options) {
   return useMutation<any, Error, any, unknown>({
     mutationFn: wrappedMutationFn,
     ...rest,
-    onSuccess: async (data, variables, context) => {
+    onSuccess: async (data: any, variables: any, context: any) => {
       if (typeof userOnSuccess === 'function') {
         await userOnSuccess(data, variables, context);
       }
@@ -59,7 +59,7 @@ export function useApiMutation(options) {
         if (msg) showToast(msg, 'success');
       }
     },
-    onError: async (error, variables, context) => {
+    onError: async (error: any, variables: any, context: any) => {
       if (typeof userOnError === 'function') {
         await userOnError(error, variables, context);
       }

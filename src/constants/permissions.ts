@@ -91,7 +91,7 @@ export const PERMISSIONS = {
  * hasPermission — يتحقق من صلاحيات DB فقط (لا fallback).
  * الأدوار النظامية تُزرع في DB عند أول تشغيل — لا حاجة لـ hardcoded defaults.
  */
-export function hasPermission(roleOrPermissions, permission, userPermissions) {
+export function hasPermission(roleOrPermissions: any, permission: any, userPermissions: any) {
   if (Array.isArray(roleOrPermissions)) {
     return roleOrPermissions.includes(permission);
   }
@@ -103,13 +103,13 @@ export function hasPermission(roleOrPermissions, permission, userPermissions) {
   return userPermissions.includes(permission);
 }
 
-export function isSuperAdmin(role) {
+export function isSuperAdmin(role: any) {
   const r = (role || '').toLowerCase();
   return r === 'super_admin' || r === 'owner';
 }
 
 /** حذف مسيرة رواتب — المالك، المشرف العام، أو دور manager (مخصّص) */
-export function canDeletePayrollRunRole(role) {
+export function canDeletePayrollRunRole(role: any) {
   const r = (role || '').toLowerCase();
   return r === 'owner' || r === 'super_admin' || r === 'manager';
 }
@@ -131,7 +131,7 @@ function decodeJwtRole() {
 }
 
 /** دور المستخدم للعرض: السياق أولاً ثم JWT. */
-export function resolveUserRole(primary) {
+export function resolveUserRole(primary: any) {
   const p = String(primary || '').toLowerCase();
   if (p) return p;
   return decodeJwtRole();
@@ -163,9 +163,9 @@ export const REDIRECT_ONLY_PATHS = new Set([
   '/', '/purchasing', '/403',
 ]);
 
-export function getRouteRequiredPermissions(pathname) {
+export function getRouteRequiredPermissions(pathname: any) {
   if (REDIRECT_ONLY_PATHS.has(pathname)) return null;
-  const direct = ROUTE_PERMISSION[pathname];
+  const direct = (ROUTE_PERMISSION as Record<string, string | string[] | undefined>)[String(pathname)];
   if (direct != null) {
     return Array.isArray(direct) ? direct : [direct];
   }

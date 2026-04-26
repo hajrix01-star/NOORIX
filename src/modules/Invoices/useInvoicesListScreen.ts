@@ -47,12 +47,12 @@ export function useInvoicesListScreen() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [exportBusy, setExportBusy] = useState(false);
-  const activeCo = companies?.find((c) => c.id === activeCompanyId);
+  const activeCo = companies?.find((c: any) => c.id === activeCompanyId);
   const companyName =
     (lang === 'en' ? activeCo?.nameEn || activeCo?.nameAr : activeCo?.nameAr || activeCo?.nameEn) || '';
   const logoUrl = activeCo?.logoUrl || '';
-  const [editingInvoice, setEditingInvoice] = useState(null);
-  const [viewingInvoice, setViewingInvoice] = useState(null);
+  const [editingInvoice, setEditingInvoice] = useState<any>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<any>(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
   const [filterCreatedByUserId, setFilterCreatedByUserId] = useState('');
@@ -100,7 +100,7 @@ export function useInvoicesListScreen() {
 
   useEffect(() => {
     const keys = ['from', 'to', 'kind', 'supplierId', 'categoryId', 'expenseLineId', 'q', 'batchId'];
-    const parts = keys.map((k) => searchParams.get(k) || '');
+    const parts = keys.map((k: any) => searchParams.get(k) || '');
     const drillKey = parts.join('\u001f');
     if (!parts.some(Boolean)) {
       urlDrillKeyRef.current = '';
@@ -124,15 +124,15 @@ export function useInvoicesListScreen() {
     if (kind) {
       if (kind.includes(',')) {
         setFilterKind('');
-        setUrlExtra((p) => ({ ...p, kind }));
+        setUrlExtra((p: any) => ({ ...p, kind }));
       } else {
         setFilterKind(kind);
-        setUrlExtra((p) => ({ ...p, kind: '' }));
+        setUrlExtra((p: any) => ({ ...p, kind: '' }));
       }
     }
     if (supplierId) setFilterSupplierId(supplierId);
-    if (categoryId) setUrlExtra((p) => ({ ...p, categoryId }));
-    if (expenseLineId) setUrlExtra((p) => ({ ...p, expenseLineId }));
+    if (categoryId) setUrlExtra((p: any) => ({ ...p, categoryId }));
+    if (expenseLineId) setUrlExtra((p: any) => ({ ...p, expenseLineId }));
     if (q) {
       setSearchText(q);
     }
@@ -143,14 +143,14 @@ export function useInvoicesListScreen() {
   const KIND_MAP = useMemo(() => buildInvoiceKindBadgeMap(t), [t]);
 
   const deleteInvoiceMut = useApiMutation({
-    mutationFn: ({ id }) => deleteInvoice(id, companyId),
+    mutationFn: ({ id }: any) => deleteInvoice(id, companyId),
     invalidateQueries: [['invoices'], ['vaults'], ['ledger']],
     successToast: () => t('invoiceDeleted'),
-    errorToast: (e) => e?.message || t('deleteFailed'),
+    errorToast: (e: any) => e?.message || t('deleteFailed'),
   });
 
   const confirmAndDeleteInvoice = useCallback(
-    (r) => {
+    (r: any) => {
       if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
       deleteInvoiceMut.mutate({ id: r.id });
     },
@@ -215,7 +215,7 @@ export function useInvoicesListScreen() {
 
   const tableData = useMemo(
     () =>
-      (items || []).map((inv) => ({
+      (items || []).map((inv: any) => ({
         ...inv,
         supplierName:
           inv.kind === 'sale'
@@ -242,7 +242,7 @@ export function useInvoicesListScreen() {
   const displayedTotal = total || 0;
 
   const toggleSort = useCallback(
-    (key) => {
+    (key: any) => {
       setPage(1);
       const next = nextInvoiceSortState(sortKey, sortDir, key);
       setSortKey(next.sortKey);
@@ -252,7 +252,7 @@ export function useInvoicesListScreen() {
   );
 
   const mapInvoiceToExportRow = useCallback(
-    (inv) => invoiceToExportRow(inv, { t, lang, kindMap: KIND_MAP, statusMap: STATUS_MAP }),
+    (inv: any) => invoiceToExportRow(inv, { t, lang, kindMap: KIND_MAP, statusMap: STATUS_MAP }),
     [KIND_MAP, STATUS_MAP, t, lang],
   );
 
@@ -292,7 +292,7 @@ export function useInvoicesListScreen() {
         rtl: true,
       });
       showToast(t('exportSuccess') || 'تم التصدير', 'success');
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('exportFailed'), 'error');
     } finally {
       setExportBusy(false);
@@ -348,14 +348,14 @@ export function useInvoicesListScreen() {
         batchId: invoiceBatchIdFromUrl || undefined,
         createdByUserId: filterCreatedByUserId || undefined,
       });
-      const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const rowsHtml = all
-        .map((inv) => {
+        .map((inv: any) => {
           const r = mapInvoiceToExportRow(inv);
-          return `<tr>${exportColumnDefs.map((c) => `<td>${esc(r[c.key])}</td>`).join('')}</tr>`;
+          return `<tr>${exportColumnDefs.map((c: any) => `<td>${esc((r as Record<string, any>)[c.key])}</td>`).join('')}</tr>`;
         })
         .join('');
-      const head = `<tr>${exportColumnDefs.map((c) => `<th>${esc(c.label)}</th>`).join('')}</tr>`;
+      const head = `<tr>${exportColumnDefs.map((c: any) => `<th>${esc(c.label)}</th>`).join('')}</tr>`;
       const nc = exportColumnDefs.length;
       const baseMetaCols = 6;
       const vaultBlockCols = MAX_VAULT_SLOTS * 3;
@@ -369,7 +369,7 @@ export function useInvoicesListScreen() {
         landscape: true,
         body: table,
       });
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('exportFailed'), 'error');
     } finally {
       setExportBusy(false);
@@ -405,7 +405,7 @@ export function useInvoicesListScreen() {
   ]);
 
   const vaultRowLabel = useCallback(
-    (row) => {
+    (row: any) => {
       if (row.unassigned) return t('invoicesSalesUnassignedVault');
       const n = lang === 'en' ? row.nameEn || row.nameAr : row.nameAr || row.nameEn;
       return n || '—';
@@ -472,7 +472,7 @@ export function useInvoicesListScreen() {
   ]);
 
   const onImportInvoicesSuccess = useCallback(
-    (count) => {
+    (count: any) => {
       invalidateOnFinancialMutation(queryClient);
       showToast(`تم استيراد ${count} فاتورة بنجاح`, 'success');
     },

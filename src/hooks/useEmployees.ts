@@ -41,7 +41,7 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }) => updateEmployee(id, body, companyId),
+    mutationFn: ({ id, body }: any) => updateEmployee(id, body, companyId),
     invalidateQueries: [
       ['employees', companyId],
       ['employees-paged', companyId],
@@ -76,7 +76,7 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
  * @param {string} id
  * @param {string} companyId
  */
-export function useEmployee(id, companyId) {
+export function useEmployee(id: any, companyId: any) {
   return useQuery({
     queryKey: ['employee', id, companyId],
     queryFn: async () => {

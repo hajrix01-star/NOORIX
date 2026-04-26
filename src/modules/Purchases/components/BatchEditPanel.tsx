@@ -10,12 +10,12 @@ import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
 import { BatchEditInvoiceLine } from './BatchEditInvoiceLine';
 
-export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSaveInvoice, onClose }) {
+export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSaveInvoice, onClose }: any) {
   const { t, lang } = useTranslation();
   const narrow = useIsNarrow700();
   const invList = batch?.invoices || batch || [];
   const [invoices, setInvoices] = useState(() =>
-    invList.map((i) => ({
+    invList.map((i: any) => ({
       ...i,
       totalAmount: Number(i.totalAmount),
       netAmount: Number(i.netAmount),
@@ -27,9 +27,9 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSave
 
   const batchId = batch?.batchId || invList[0]?.batchId;
 
-  function updateInv(idx, fieldOrObj, value) {
-    setInvoices((p) =>
-      p.map((inv, i) =>
+  function updateInv(idx: any, fieldOrObj: any, value: any) {
+    setInvoices((p: any) =>
+      p.map((inv: any, i: any) =>
         i === idx
           ? typeof fieldOrObj === 'object'
             ? { ...inv, ...fieldOrObj }
@@ -48,14 +48,14 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSave
         rejectIfApiFailed(res, t('saveFailed'));
       }
       onClose?.();
-    } catch (e) {
+    } catch (e: any) {
       setError(e?.message || 'فشل الحفظ');
     } finally {
       setSaving(false);
     }
   }
 
-  const items = invoices.filter((i) => i.status !== 'cancelled');
+  const items = invoices.filter((i: any) => i.status !== 'cancelled');
   const total = sumAmounts(items, 'totalAmount').toNumber();
 
   return (
@@ -79,7 +79,7 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSave
       )}
       {narrow ? (
         <div className="flex flex-col gap-3 min-w-0">
-          {invoices.map((inv, i) => (
+          {invoices.map((inv: any, i: any) => (
             <BatchEditInvoiceLine
               key={inv.id || i}
               inv={inv}
@@ -106,7 +106,7 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSave
               </tr>
             </thead>
             <tbody>
-              {invoices.map((inv, i) => (
+              {invoices.map((inv: any, i: any) => (
                 <BatchEditInvoiceLine
                   key={inv.id || i}
                   inv={inv}

@@ -21,7 +21,7 @@ import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 const PAGE_SIZE = 50;
 const EXPIRY_DAYS = 90;
 
-function isExpiringSoon(expiryDate) {
+function isExpiringSoon(expiryDate: any) {
   if (!expiryDate) return false;
   const exp = new Date(expiryDate);
   const now = new Date();
@@ -29,7 +29,7 @@ function isExpiringSoon(expiryDate) {
   return diff >= 0 && diff <= EXPIRY_DAYS;
 }
 
-function residencyStatusKey(v) {
+function residencyStatusKey(v: any) {
   return v === 'expired' || v === 'renewed' ? v : 'active';
 }
 
@@ -38,7 +38,7 @@ export default function ResidencyTab() {
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
   const [showAdd, setShowAdd] = useState(false);
-  const [editingResidency, setEditingResidency] = useState(null);
+  const [editingResidency, setEditingResidency] = useState<any>(null);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -55,20 +55,20 @@ export default function ResidencyTab() {
   });
 
   const deleteMutation = useApiMutation({
-    mutationFn: (id) => deleteResidency(id, companyId),
+    mutationFn: (id: any) => deleteResidency(id, companyId),
     invalidateQueries: [['residencies', companyId]],
     successToast: () => t('residencyDeleted'),
-    errorToast: (e) => e?.message || t('saveFailed'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: () => {
       setEditingResidency(null);
     },
   });
 
-  const items = useMemo(() => (data ?? []).map((r) => ({
+  const items = useMemo(() => (data ?? []).map((r: any) => ({
     ...r,
     employeeName: employeeDisplayName(r.employee || { name: r.employeeName }, lang),
   })), [data, lang]);
-  const expiringCount = items.filter((r) => isExpiringSoon(r.expiryDate)).length;
+  const expiringCount = items.filter((r: any) => isExpiringSoon(r.expiryDate)).length;
   const residencyStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
 
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
@@ -82,13 +82,13 @@ export default function ResidencyTab() {
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 170,
-      render: (v) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
+      render: (v: any) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
     { key: 'iqamaNumber', label: t('iqamaNumber'), sortable: true, width: 150, minWidth: 140,
-      render: (v) => <span className="nx-cell-num">{v || '—'}</span> },
+      render: (v: any) => <span className="nx-cell-num">{v || '—'}</span> },
     { key: 'issueDate', label: t('startDate'), sortable: true, width: 120, minWidth: 115,
-      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'expiryDate', label: t('expiryDate'), sortable: true, width: 140, minWidth: 130,
-      render: (v, row) => {
+      render: (v: any, row: any) => {
         const soon = isExpiringSoon(v);
         return (
           <span className="text-[12px] whitespace-nowrap" style={{ color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined }}>
@@ -102,11 +102,11 @@ export default function ResidencyTab() {
         );
       } },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
-      render: (v) => (
+      render: (v: any) => (
         <Badge {...Badge.fromStatus(residencyStatusKey(v), residencyStatusMap)} size="sm" />
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <HRActionsCell
           row={row}
           type="residency"
@@ -118,16 +118,16 @@ export default function ResidencyTab() {
       ) },
   ], [t, deleteMutation, residencyStatusMap]);
 
-  const exportData = allFilteredData.map((r) => ({
+  const exportData = allFilteredData.map((r: any) => ({
     employeeName: r.employeeName || '—',
     iqamaNumber: r.iqamaNumber || '—',
     issueDate: formatSaudiDate(r.issueDate),
     expiryDate: formatSaudiDate(r.expiryDate),
-    status: residencyStatusMap[residencyStatusKey(r.status)]?.label || r.status,
+    status: (residencyStatusMap as Record<string, { label?: string }>)[String(residencyStatusKey(r.status))]?.label || r.status,
     expiringSoon: isExpiringSoon(r.expiryDate) ? t('residencyExpiringSoon') : '—',
   }));
 
-  const renderMobileCard = useCallback((row) => {
+  const renderMobileCard = useCallback((row: any) => {
     const soon = isExpiringSoon(row.expiryDate);
     return (
       <div>
@@ -175,7 +175,7 @@ export default function ResidencyTab() {
         <Input
           type="search"
           value={searchText}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: any) => setSearch(e.target.value)}
           placeholder={t('searchPlaceholder')}
           size="sm"
           className="w-full min-w-0 lg:max-w-xs lg:flex-1"

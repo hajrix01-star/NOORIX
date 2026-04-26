@@ -3,14 +3,14 @@
  */
 // @ts-nocheck — بيانات كشف ديناميكية: تثبيت أنواع تدريجي
 
-export function num(v) {
+export function num(v: any) {
   if (v == null || v === '') return 0;
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
 
 /** مفتاح مستقر لعملية (للتحديد المتعدد) */
-export function getTxKey(tx) {
+export function getTxKey(tx: any) {
   if (tx?.id) return tx.id;
   return `${tx?.txDate || ''}_${(tx?.description || '').slice(0, 40)}_${num(tx?.debit)}_${num(tx?.credit)}_${num(tx?.balance)}`;
 }
@@ -53,7 +53,7 @@ export const FALLBACK_CATEGORIES = [
   'غير مصنف',
 ];
 
-export function buildSummaryByCategory(transactions, uncategorizedLabel) {
+export function buildSummaryByCategory(transactions: any, uncategorizedLabel: any) {
   const map = {};
   for (const tx of transactions || []) {
     const name =
@@ -71,12 +71,12 @@ export function buildSummaryByCategory(transactions, uncategorizedLabel) {
 /**
  * التحقق من تسلسل الأرصدة والمطابقة مع إجماليات الكشف المخزنة
  */
-export function computeBalanceVerification(statement) {
+export function computeBalanceVerification(statement: any) {
   const txs = statement?.transactions || [];
   if (!txs.length) return null;
 
-  const totalDeposits = txs.reduce((s, tx) => s + num(tx.credit), 0);
-  const totalWithdrawals = txs.reduce((s, tx) => s + num(tx.debit), 0);
+  const totalDeposits = txs.reduce((s: any, tx: any) => s + num(tx.credit), 0);
+  const totalWithdrawals = txs.reduce((s: any, tx: any) => s + num(tx.debit), 0);
 
   const stmtDeposits = num(statement.totalDeposits);
   const stmtWithdrawals = num(statement.totalWithdrawals);
@@ -127,12 +127,12 @@ export function computeBalanceVerification(statement) {
 }
 
 /** سلسلة زمنية للتدفق النقدي التراكمي */
-export function buildCashFlowSeries(transactions) {
-  const sorted = [...(transactions || [])].sort((a, b) =>
+export function buildCashFlowSeries(transactions: any) {
+  const sorted = [...(transactions || [])].sort((a: any, b: any) =>
     String(a.txDate).localeCompare(String(b.txDate)),
   );
   let cum = 0;
-  return sorted.map((tx) => {
+  return sorted.map((tx: any) => {
     cum += num(tx.credit) - num(tx.debit);
     return {
       date: tx.txDate,
@@ -145,7 +145,7 @@ export function buildCashFlowSeries(transactions) {
 /**
  * تجميع العمليات حسب التاريخ لرسم AreaChart (إيداعات + سحوبات يومياً)
  */
-export function buildDailyChartData(transactions) {
+export function buildDailyChartData(transactions: any) {
   const byDate = {};
   for (const tx of transactions || []) {
     const date = tx.txDate || '';
@@ -158,8 +158,8 @@ export function buildDailyChartData(transactions) {
     if (num(tx.balance) > 0) byDate[date].balance = num(tx.balance);
   }
   return Object.values(byDate)
-    .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-    .map((d) => ({
+    .sort((a: any, b: any) => String(a.date).localeCompare(String(b.date)))
+    .map((d: any) => ({
       ...d,
       dateLabel: d.date.length >= 8 ? d.date.slice(5) : d.date,
       net: d.deposits - d.withdrawals,
@@ -167,7 +167,7 @@ export function buildDailyChartData(transactions) {
 }
 
 /** استخراج أجهزة نقاط البيع من أوصاف العمليات */
-export function extractPosTerminals(transactions) {
+export function extractPosTerminals(transactions: any) {
   const terminals = {};
   const re = /Term\s*:?\s*(\d{8,16})/i;
   for (const tx of transactions || []) {
@@ -179,11 +179,11 @@ export function extractPosTerminals(transactions) {
       terminals[id].total += num(tx.credit);
     }
   }
-  return Object.values(terminals).sort((a, b) => b.total - a.total);
+  return Object.values(terminals).sort((a: any, b: any) => b.total - a.total);
 }
 
 /** تجميع الإيداعات حسب الفئة */
-export function buildDepositsByCategory(transactions, uncategorizedLabel = '—') {
+export function buildDepositsByCategory(transactions: any, uncategorizedLabel: any = '—') {
   const map = {};
   for (const tx of transactions || []) {
     if (num(tx.credit) <= 0) continue;
@@ -193,20 +193,20 @@ export function buildDepositsByCategory(transactions, uncategorizedLabel = '—'
     map[name].total += num(tx.credit);
   }
   return Object.entries(map)
-    .map(([name, d]) => ({ name, count: d.count, total: d.total }))
-    .sort((a, b) => b.total - a.total);
+    .map(([name, d]: any) => ({ name, count: d.count, total: d.total }))
+    .sort((a: any, b: any) => b.total - a.total);
 }
 
 /** أكبر عمليات السحب (للتنبيهات) */
-export function topDebits(transactions, n = 8) {
+export function topDebits(transactions: any, n: any = 8) {
   return [...(transactions || [])]
-    .filter((tx) => num(tx.debit) > 0)
-    .sort((a, b) => num(b.debit) - num(a.debit))
+    .filter((tx: any) => num(tx.debit) > 0)
+    .sort((a: any, b: any) => num(b.debit) - num(a.debit))
     .slice(0, n);
 }
 
 /** عدد عمليات تحتوي كلمات نقاط البيع الشائعة */
-export function countPosLikeTransactions(transactions) {
+export function countPosLikeTransactions(transactions: any) {
   const re = /مدى|mada|فوري|sadad|سداد|pos|نقاط|شبكة|visa|master/i;
-  return (transactions || []).filter((tx) => re.test(String(tx.description || ''))).length;
+  return (transactions || []).filter((tx: any) => re.test(String(tx.description || ''))).length;
 }

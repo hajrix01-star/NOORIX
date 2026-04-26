@@ -25,10 +25,10 @@ import { KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function lastDayOfMonth(year, month) { return new Date(year, month, 0).getDate(); }
+function lastDayOfMonth(year: any, month: any) { return new Date(year, month, 0).getDate(); }
 
-function ymd(y, m, d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
-function fmtAxis(n) {
+function ymd(y: any, m: any, d: any) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function fmtAxis(n: any) {
   if (n >= 1e6) return `${(n/1e6).toFixed(1)}M`;
   if (n >= 1e3) return `${(n/1e3).toFixed(0)}K`;
   return String(Math.round(n));
@@ -36,12 +36,12 @@ function fmtAxis(n) {
 
 
 /* ── Custom Recharts Tooltip ── */
-function ChartTooltip({ active, payload, label }) {
+function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background: 'var(--noorix-bg-surface)', border: '1px solid var(--noorix-border)', borderRadius: 6, padding: '8px 12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontSize: 12, minWidth: 140 }}>
       <div style={{ fontWeight: 700, marginBottom: 5, color: 'var(--noorix-text)', fontSize: 11 }}>{label}</div>
-      {payload.map((p) => (
+      {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: p.color, fontWeight: 600, marginTop: 2 }}>
           <span>{p.name}</span>
           <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(p.value, 0)} SR</span>
@@ -51,7 +51,7 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-function PieTooltip({ active, payload }) {
+function PieTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0];
   return (
@@ -76,7 +76,7 @@ const PIE_COLORS = [
   '#0891b2', '#db2777',         // تكميلية
 ];
 
-export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }) {
+export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }: any) {
   const { t, lang } = useTranslation();
   const uiDir = useUiDir();
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
@@ -121,7 +121,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const revenueDailyAvgActiveDays = useMemo(() => {
     if (!monthSalesForDailyAvg?.length) return null;
     const byDay = new Map();
-    monthSalesForDailyAvg.forEach((s) => {
+    monthSalesForDailyAvg.forEach((s: any) => {
       const d = String(s.transactionDate || '').slice(0, 10);
       byDay.set(d, (byDay.get(d) || 0) + Number(s.totalAmount || 0));
     });
@@ -146,15 +146,15 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     companyId, startDate: supplierFrom, endDate: supplierTo, enabled: !!companyId,
   });
   /* ── دوال القيم ── */
-  function getCardValue(key) {
+  function getCardValue(key: any) {
     if (!report) return '0';
     if (!selectedMonth) return report.cards?.[key] || '0';
     if (key === 'grossProfit' || key === 'netProfit')
-      return report.summaryRows?.find((r) => r.key === key)?.months?.[selectedMonth - 1] || '0';
-    return report.groups?.find((r) => r.key === key)?.months?.[selectedMonth - 1] || '0';
+      return report.summaryRows?.find((r: any) => r.key === key)?.months?.[selectedMonth - 1] || '0';
+    return report.groups?.find((r: any) => r.key === key)?.months?.[selectedMonth - 1] || '0';
   }
 
-  function getSectionPercentOfSales(key) {
+  function getSectionPercentOfSales(key: any) {
     if (!report || key === 'sales') return null;
     const sales = Number(getCardValue('sales') || 0);
     if (!sales || sales < 0.0000001) return null;
@@ -162,7 +162,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   }
 
   /** نسبة من المبيعات لكل كرت (المبيعات = 100٪ عند وجود مبيعات) */
-  function getPctStringForCard(key) {
+  function getPctStringForCard(key: any) {
     if (key === 'sales') {
       const sales = Number(getCardValue('sales') || 0);
       return sales > 0 ? (100).toFixed(1) : null;
@@ -171,11 +171,11 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   }
 
   /* ── sparkline data لكل بطاقة ── */
-  function getMonthlyData(key) {
+  function getMonthlyData(key: any) {
     if (!report) return [];
     if (key === 'grossProfit' || key === 'netProfit')
-      return report.summaryRows?.find((r) => r.key === key)?.months || [];
-    return report.groups?.find((r) => r.key === key)?.months || [];
+      return report.summaryRows?.find((r: any) => r.key === key)?.months || [];
+    return report.groups?.find((r: any) => r.key === key)?.months || [];
   }
 
   const monthName = selectedMonth
@@ -195,20 +195,20 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const performanceData = useMemo(() => {
     if (timelineGrain === 'daily') {
       const byDay = new Map();
-      (dailySummaries || []).forEach((s) => {
+      (dailySummaries || []).forEach((s: any) => {
         const d = String(s.transactionDate || '').slice(0, 10);
         const dayNum = parseInt(d.slice(8, 10), 10);
         byDay.set(dayNum, (byDay.get(dayNum) || 0) + Number(s.totalAmount || 0));
       });
-      return Array.from({ length: lastDayChart }, (_, i) => ({
+      return Array.from({ length: lastDayChart }, (_: any, i: any) => ({
         label: String(i + 1),
         [t('annualSales')]: byDay.get(i + 1) || 0,
       }));
     }
-    const sg = report?.groups?.find((r) => r.key === 'sales');
-    const pg = report?.groups?.find((r) => r.key === 'purchases');
-    const eg = report?.groups?.find((r) => r.key === 'expenses');
-    return EN_MONTHS.map((lbl, i) => ({
+    const sg = report?.groups?.find((r: any) => r.key === 'sales');
+    const pg = report?.groups?.find((r: any) => r.key === 'purchases');
+    const eg = report?.groups?.find((r: any) => r.key === 'expenses');
+    return EN_MONTHS.map((lbl: any, i: any) => ({
       label: lang === 'ar' ? MONTH_NAMES_AR[i] : lbl,
       [t('annualSales')]:     Number(sg?.months?.[i] || 0),
       [t('annualPurchases')]: Number(pg?.months?.[i] || 0),
@@ -220,30 +220,30 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const channelData = useMemo(() => {
     const src = timelineGrain === 'daily' ? (dailySummaries || []) : (yearSummaries || []);
     const map = {};
-    src.forEach((s) =>
-      (s.channels || []).forEach((ch) => {
+    src.forEach((s: any) =>
+      (s.channels || []).forEach((ch: any) => {
         const name = lang === 'ar'
           ? (ch.vault?.nameAr || ch.vault?.nameEn || '—')
           : (ch.vault?.nameEn || ch.vault?.nameAr || '—');
         map[name] = (map[name] || 0) + Number(ch.amount || 0);
       })
     );
-    const total = Object.values(map).reduce((s, v) => s + v, 0) || 1;
+    const total = Object.values(map).reduce((s: any, v: any) => s + v, 0) || 1;
     return Object.entries(map)
-      .map(([name, value]) => ({ name, value, pct: ((value / total) * 100).toFixed(1) }))
-      .sort((a, b) => b.value - a.value);
+      .map(([name, value]: any) => ({ name, value, pct: ((value / total) * 100).toFixed(1) }))
+      .sort((a: any, b: any) => b.value - a.value);
   }, [yearSummaries, dailySummaries, timelineGrain, lang]);
 
   const perfTotal = useMemo(() =>
-    performanceData.reduce((s, p) => s + Number(p[t('annualSales')] || 0), 0),
+    performanceData.reduce((s: any, p: any) => s + Number(p[t('annualSales')] || 0), 0),
     [performanceData, t]
   );
 
   /* ── بيانات رسم بياني أعلى الموردين ── */
   const topSuppliersChartData = useMemo(() => {
     const list = (periodData?.topSuppliers || []).slice(0, 8);
-    const total = list.reduce((s, x) => s + Number(x.totalAmount || 0), 0) || 1;
-    return list.map((s, i) => ({
+    const total = list.reduce((s: any, x: any) => s + Number(x.totalAmount || 0), 0) || 1;
+    return list.map((s: any, i: any) => ({
       name: (lang === 'ar' ? s.nameAr || s.nameEn : s.nameEn || s.nameAr) || '—',
       value: Number(s.totalAmount || 0),
       count: s.invoiceCount || 0,
@@ -256,8 +256,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   const purchaseCategoriesData = useMemo(() => {
     const raw = periodData?.purchaseCategoryBreakdown;
     if (!Array.isArray(raw) || raw.length === 0) return [];
-    const total = Number(periodData?.purchaseCategoryTotal) || raw.reduce((s, r) => s + Number(r.amount || 0), 0) || 1;
-    return raw.map((row, i) => {
+    const total = Number(periodData?.purchaseCategoryTotal) || raw.reduce((s: any, r: any) => s + Number(r.amount || 0), 0) || 1;
+    return raw.map((row: any, i: any) => {
       const amt = Number(row.amount || 0);
       return {
         name: lang === 'ar' ? row.nameAr : (row.nameEn || row.nameAr) || '—',
@@ -274,8 +274,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     if (purchaseCategoriesData.length <= 6) return purchaseCategoriesData;
     const top = purchaseCategoriesData.slice(0, 5);
     const rest = purchaseCategoriesData.slice(5);
-    const othersValue = rest.reduce((s, r) => s + r.value, 0);
-    const total = purchaseCategoriesData.reduce((s, r) => s + r.value, 0) || 1;
+    const othersValue = rest.reduce((s: any, r: any) => s + r.value, 0);
+    const total = purchaseCategoriesData.reduce((s: any, r: any) => s + r.value, 0) || 1;
     return [
       ...top,
       {
@@ -295,8 +295,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   /* ── حالة إخفاء/إظهار الخطوط — يجب أن تكون قبل أي return مشروط ── */
   const [hiddenSeries, setHiddenSeries] = useState(new Set());
-  const toggleSeries = useCallback((key) => {
-    setHiddenSeries((prev) => {
+  const toggleSeries = useCallback((key: any) => {
+    setHiddenSeries((prev: any) => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
@@ -323,7 +323,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       <div className="flex flex-col gap-6 p-6">
         <div className="nx-kpi-container">
           <div className="nx-kpi-grid">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3, 4, 5].map((i: any) => (
               <div
                 key={i}
                 className="noorix-surface-card relative min-h-[168px] overflow-hidden p-4 bg-[linear-gradient(110deg,var(--noorix-bg-muted)_0%,var(--noorix-bg-surface)_45%,var(--noorix-bg-muted)_90%)] bg-[length:200%_100%] animate-[shimmer_1.4s_ease_infinite]"
@@ -389,7 +389,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                     axisLine={false} tickLine={false}
                   />
                   <Tooltip
-                    content={({ active, payload }) => {
+                    content={({ active, payload }: any) => {
                       if (!active || !payload?.length) return null;
                       const d = payload[0]?.payload;
                       return (
@@ -402,13 +402,13 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                     }}
                   />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={20}>
-                    {topSuppliersChartData.map((entry, i) => (
+                    {topSuppliersChartData.map((entry: any, i: any) => (
                       <Cell key={i} fill={entry.fill} />
                     ))}
                     <LabelList
                       dataKey="value"
                       position="right"
-                      formatter={(v) => fmt(v, 0)}
+                      formatter={(v: any) => fmt(v, 0)}
                       style={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-numbers)' }}
                     />
                   </Bar>
@@ -454,7 +454,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                     paddingAngle={2}
                     dataKey="value"
                   >
-                    {purchaseCategoriesPieData.map((entry, i) => (
+                    {purchaseCategoriesPieData.map((entry: any, i: any) => (
                       <Cell key={`${entry.name}-${i}`} fill={entry.fill} />
                     ))}
                   </Pie>
@@ -462,7 +462,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
-                {purchaseCategoriesPieData.map((cat, idx) => (
+                {purchaseCategoriesPieData.map((cat: any, idx: any) => (
                   <div key={`${cat.name}-${idx}`} className="flex items-center justify-between gap-2 text-[12px]">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: cat.fill }} />
@@ -484,7 +484,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
       {/* ── كروت KPI — الغلاف يحمل container-type ── */}
       <div className="nx-kpi-container">
       <div className="nx-kpi-grid">
-        {cards.map((card) => {
+        {cards.map((card: any) => {
           const rawVal = getCardValue(card.key);
           const isProfit = card.key === 'grossProfit' || card.key === 'netProfit';
           const isSales = card.key === 'sales';
@@ -629,7 +629,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                   {t('dashboardTimelineDaily')}
                 </Button>
               </div>
-              {SERIES.map((s) => {
+              {SERIES.map((s: any) => {
                 const hidden   = hiddenSeries.has(s.key);
                 const disabled = s.disabled;
                 return (
@@ -669,7 +669,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={performanceData} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
                 <defs>
-                  {SERIES.map((s) => (
+                  {SERIES.map((s: any) => (
                     <linearGradient key={s.gradId} id={s.gradId} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%"  stopColor={s.color} stopOpacity={0.22}/>
                       <stop offset="95%" stopColor={s.color} stopOpacity={0.02}/>
@@ -688,7 +688,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                   axisLine={false} tickLine={false} width={46}
                 />
                 <Tooltip content={<ChartTooltip />} />
-                {SERIES.map((s) => (
+                {SERIES.map((s: any) => (
                   !hiddenSeries.has(s.key) && !s.disabled && (
                     <Area
                       key={s.key}
@@ -728,7 +728,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
                   paddingAngle={2}
                   dataKey="value"
                 >
-                  {channelData.map((_, i) => (
+                  {channelData.map((_: any, i: any) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
@@ -738,7 +738,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
             {/* قائمة القنوات */}
             <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
-              {channelData.slice(0, 5).map((ch, i) => (
+              {channelData.slice(0, 5).map((ch: any, i: any) => (
                 <div key={ch.name} className="flex items-center justify-between gap-2 text-[12px]">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />

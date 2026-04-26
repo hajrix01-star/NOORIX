@@ -6,30 +6,30 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Modal, Badge } from '../../../ui';
 
-export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving }) {
+export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving }: any) {
   const { t, lang } = useTranslation();
-  const [orderedIds, setOrderedIds] = useState([]);
+  const [orderedIds, setOrderedIds] = useState<any[]>([]);
 
-  const vaultById = useMemo(() => new Map(vaultsList.map((v) => [v.id, v])), [vaultsList]);
+  const vaultById = useMemo(() => new Map(vaultsList.map((v: any) => [v.id, v])), [vaultsList]);
 
   useEffect(() => {
     if (open) {
       const ids = [...vaultsList]
-        .filter((v) => v.isActive !== false && !v.isArchived)
+        .filter((v: any) => v.isActive !== false && !v.isArchived)
         .sort(
-          (a, b) =>
+          (a: any, b: any) =>
             (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
             String(a.nameAr).localeCompare(String(b.nameAr), 'ar'),
         )
-        .map((v) => v.id);
+        .map((v: any) => v.id);
       setOrderedIds(ids);
     }
   }, [open, vaultsList]);
 
-  function move(i, dir) {
+  function move(i: any, dir: any) {
     const j = i + dir;
     if (j < 0 || j >= orderedIds.length) return;
-    setOrderedIds((prev) => {
+    setOrderedIds((prev: any) => {
       const next = [...prev];
       [next[i], next[j]] = [next[j], next[i]];
       return next;
@@ -40,7 +40,7 @@ export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving
     <Modal open={open} onClose={onClose} title={t('vaultReorderTitle')} size="md">
       <p className="text-[13px] text-noorix-muted mb-3 m-0">{t('vaultReorderHint')}</p>
       <ul className="flex flex-col gap-2 max-h-[min(60vh,420px)] overflow-y-auto p-0 m-0 list-none">
-        {orderedIds.map((id, i) => {
+        {orderedIds.map((id: any, i: any) => {
           const v = vaultById.get(id);
           if (!v) return null;
           return (

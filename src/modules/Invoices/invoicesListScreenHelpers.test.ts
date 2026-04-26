@@ -6,7 +6,8 @@ import {
   getAllocationsForExport,
 } from './invoicesListScreenHelpers';
 
-const t = (k) => ({ vaultTypeCash: 'نقد', vaultTypeBank: 'بنك', vaultTypeApp: 'تطبيق' }[k] || k);
+const LABELS: Record<string, string> = { vaultTypeCash: 'نقد', vaultTypeBank: 'بنك', vaultTypeApp: 'تطبيق' };
+const t = (k: any) => LABELS[String(k)] || k;
 
 describe('invoicesListScreenHelpers', () => {
   it('exports pagination constants', () => {

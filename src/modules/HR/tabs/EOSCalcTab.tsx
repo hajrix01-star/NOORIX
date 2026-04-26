@@ -29,7 +29,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * عدد الأيام بين تاريخين (الفرق الفعلي — بدون +1).
  * مثال: من 09-Jan إلى 09-Apr = 90 يوماً فعلياً.
  */
-function calculateServiceDays(joinDate, endDate) {
+function calculateServiceDays(joinDate: any, endDate: any) {
   const start = new Date(joinDate);
   const end = new Date(endDate);
   start.setHours(0, 0, 0, 0);
@@ -41,7 +41,7 @@ function calculateServiceDays(joinDate, endDate) {
 /**
  * تفصيل مدة الخدمة بالسنوات والشهور والأيام (للعرض فقط).
  */
-function serviceComponents(joinDate, endDate) {
+function serviceComponents(joinDate: any, endDate: any) {
   const start = new Date(joinDate);
   const end = new Date(endDate);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
@@ -72,7 +72,7 @@ function serviceComponents(joinDate, endDate) {
  *   resignation > 5 و < 10 → ثلثان
  *   force_majeure / maternity → كاملة (حالات استثنائية — م85)
  */
-function getEligibilityFactor(reason, serviceYears) {
+function getEligibilityFactor(reason: any, serviceYears: any) {
   if (reason === 'article80')                          return new Decimal(0);
   if (reason === 'employer'  ||
       reason === 'article81' ||
@@ -89,7 +89,7 @@ export default function EOSCalcTab() {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
   const companyId = activeCompanyId ?? '';
-  const company = companies?.find((c) => c.id === companyId);
+  const company = companies?.find((c: any) => c.id === companyId);
   const companyName = company?.nameAr || company?.name || 'الشركة';
   const { employees } = useEmployees(companyId);
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
@@ -100,7 +100,7 @@ export default function EOSCalcTab() {
   const [lastSalary, setLastSalary] = useState('');
   const [terminationReason, setTerminationReason] = useState('employer');
 
-  const emp = employees.find((e) => e.id === selectedEmployee);
+  const emp = employees.find((e: any) => e.id === selectedEmployee);
   const allowanceTotals = useMemo(() => {
     const map = new Map();
     for (const row of customAllowances) {
@@ -116,7 +116,7 @@ export default function EOSCalcTab() {
 
   useEffect(() => {
     if (!selectedEmployee) return;
-    const em = employees.find((row) => row.id === selectedEmployee);
+    const em = employees.find((row: any) => row.id === selectedEmployee);
     if (!em) return;
     setJoinDate(em.joinDate ? em.joinDate.slice(0, 10) : '');
     const total = new Decimal(em.basicSalary || 0)
@@ -154,10 +154,10 @@ export default function EOSCalcTab() {
   function handlePrint() {
     const reportDate = getSaudiToday();
     const allowanceRowsAr = allowanceRows.length
-      ? allowanceRows.map((r) => `<tr><td class="td-ar">${r.ar}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
+      ? allowanceRows.map((r: any) => `<tr><td class="td-ar">${r.ar}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
       : '<tr><td class="td-ar" style="color:#94a3b8">لا توجد بدلات</td><td class="td-num" style="color:#94a3b8">—</td></tr>';
     const allowanceRowsEn = allowanceRows.length
-      ? allowanceRows.map((r) => `<tr><td class="td-en">${r.en}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
+      ? allowanceRows.map((r: any) => `<tr><td class="td-en">${r.en}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
       : '<tr><td class="td-en" style="color:#94a3b8">No allowances</td><td class="td-num" style="color:#94a3b8">—</td></tr>';
     const extraCss = `
           *{box-sizing:border-box;margin:0;padding:0}
@@ -297,28 +297,28 @@ export default function EOSCalcTab() {
       <h3 className="text-[18px] m-0 mb-5">{t('hrTabEOSCalc')}</h3>
 
       <div className="mb-4">
-        <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)}>
+        <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e: any) => setSelectedEmployee(e.target.value)}>
           <option value="">—</option>
-          {employees.map((e) => (
+          {employees.map((e: any) => (
             <option key={e.id} value={e.id}>{employeeDisplayName(e, lang, e.id)}</option>
           ))}
         </Input>
       </div>
 
       <div className="mb-4">
-        <Input type="date" label={t('eosCalcJoinDate')} value={jd ? jd.slice(0, 10) : ''} onChange={(e) => setJoinDate(e.target.value)} />
+        <Input type="date" label={t('eosCalcJoinDate')} value={jd ? jd.slice(0, 10) : ''} onChange={(e: any) => setJoinDate(e.target.value)} />
       </div>
 
       <div className="mb-4">
-        <Input type="date" label={t('eosCalcEndDate')} value={ed ? ed.slice(0, 10) : ''} onChange={(e) => setEndDate(e.target.value)} />
+        <Input type="date" label={t('eosCalcEndDate')} value={ed ? ed.slice(0, 10) : ''} onChange={(e: any) => setEndDate(e.target.value)} />
       </div>
 
       <div className="mb-5">
-        <Input type="number" label={t('eosCalcSalary')} min="0" step="0.01" value={lastSalary} onChange={(e) => setLastSalary(e.target.value)} />
+        <Input type="number" label={t('eosCalcSalary')} min="0" step="0.01" value={lastSalary} onChange={(e: any) => setLastSalary(e.target.value)} />
       </div>
 
       <div className="mb-5">
-        <Input type="select" label={t('eosCalcReason')} value={terminationReason} onChange={(e) => setTerminationReason(e.target.value)}>
+        <Input type="select" label={t('eosCalcReason')} value={terminationReason} onChange={(e: any) => setTerminationReason(e.target.value)}>
           <optgroup label="— إنهاء من صاحب العمل (مكافأة كاملة)">
             <option value="employer">{t('eosCalcReasonEmployer')}</option>
             <option value="article81">{t('eosCalcReasonArticle81')}</option>

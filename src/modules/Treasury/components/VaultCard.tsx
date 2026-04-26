@@ -6,7 +6,7 @@ import { VAULT_TYPE_COLORS, VAULT_TYPE_BG } from '../../../constants/kpiCardThem
 import { Badge, FmtNum, MetricCard, KebabMenu } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
-export function parseVaultType(type) {
+export function parseVaultType(type: any) {
   if (typeof type === 'string' && type.startsWith('custom:')) {
     const emoji = type.slice(7) || 'خ';
     return { isCustom: true, emoji };
@@ -41,7 +41,7 @@ export const VAULT_TYPE_SVGS = {
 };
 
 /* ── قائمة الإجراءات — KebabMenu موحّد ─────────────────────── */
-function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod, onArchive, onDelete, t }) {
+function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod, onArchive, onDelete, t }: any) {
   const isArchived = vault.isArchived;
   const paymentOn = vault.showAsPaymentMethod !== false;
 
@@ -57,7 +57,7 @@ function ActionMenu({ vault, onEdit, onToggleSalesChannel, onTogglePaymentMethod
   ];
 
   return (
-    <div onClick={(e) => e.stopPropagation()}>
+    <div onClick={(e: any) => e.stopPropagation()}>
       <KebabMenu ariaLabel={t('actions')} items={items} menuWidth={200} />
     </div>
   );
@@ -69,7 +69,9 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
   const { t, lang } = useTranslation();
 
   const { isCustom, emoji: customEmoji } = parseVaultType(vault.type);
-  const accentColor = !isCustom ? (VAULT_TYPE_COLORS[vault.type] || 'var(--noorix-text-muted)') : 'var(--noorix-text-muted)';
+  const accentColor = !isCustom
+    ? ((VAULT_TYPE_COLORS as Record<string, string>)[String(vault.type)] || 'var(--noorix-text-muted)')
+    : 'var(--noorix-text-muted)';
   const isArchived  = vault.isArchived;
   const balance     = Number(vault.balance ?? 0);
   const totalIn     = Number(vault.totalIn ?? 0);
@@ -81,8 +83,8 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
     ? [prevBalance, prevBalance + (totalIn - totalOut) * 0.4, prevBalance + (totalIn - totalOut) * 0.75, balance]
     : [];
 
-  const typeLabels  = { cash: t('vaultTypeCash'), bank: t('vaultTypeBank'), app: t('vaultTypeApp') };
-  const typeLabel   = typeLabels[vault.type] || vault.type;
+  const typeLabels: Record<string, string> = { cash: t('vaultTypeCash'), bank: t('vaultTypeBank'), app: t('vaultTypeApp') };
+  const typeLabel   = typeLabels[String(vault.type)] || vault.type;
   const displayName = vaultDisplayName(vault, lang);
   const subName     = lang === 'en' ? (vault.nameAr || typeLabel) : (vault.nameEn || typeLabel);
 
@@ -103,13 +105,13 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
           <div
             className="flex items-center justify-center w-[38px] h-[38px] rounded-[10px] shrink-0"
             style={{
-              background: isArchived ? 'var(--noorix-bg-muted)' : (VAULT_TYPE_BG[vault.type] || 'var(--noorix-bg-muted)'),
+              background: isArchived ? 'var(--noorix-bg-muted)' : ((VAULT_TYPE_BG as Record<string, string>)[String(vault.type)] || 'var(--noorix-bg-muted)'),
               color: isArchived ? 'var(--noorix-text-muted)' : accentColor,
             }}
           >
             {isCustom
               ? <span className="text-[20px] leading-none">{customEmoji}</span>
-              : (VAULT_TYPE_SVGS[vault.type] || VAULT_TYPE_SVGS.bank)}
+              : ((VAULT_TYPE_SVGS as Record<string, (typeof VAULT_TYPE_SVGS)['bank']>)[String(vault.type)] || VAULT_TYPE_SVGS.bank)}
           </div>
         }
         actions={
@@ -176,7 +178,7 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
             <Badge color="amber" size="sm">{t('paymentMethodHiddenBadge')}</Badge>
           )}
           {vault.isSalesChannel && vault.paymentMethod && (() => {
-            const pm = PAYMENT_METHODS.find((m) => m.value === vault.paymentMethod);
+            const pm = PAYMENT_METHODS.find((m: any) => m.value === vault.paymentMethod);
             const pmLabel = pm?.labelKey ? t(pm.labelKey) : vault.paymentMethod;
             return <Badge color="gray" size="sm">{pmLabel}</Badge>;
           })()}

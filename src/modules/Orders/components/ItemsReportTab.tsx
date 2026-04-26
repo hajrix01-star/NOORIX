@@ -14,12 +14,12 @@ import { Button, Input, AdaptiveSheet, SmartTable, FmtNum, MetricCard } from '..
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
-function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-accent-blue)' }) {
+function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-accent-blue)' }: any) {
   const m = maxVal > 0 ? maxVal : 1;
-  const getLabel = (r) => r[labelKey] || r.productNameEn || r.categoryNameEn || '—';
+  const getLabel = (r: any) => r[labelKey] || r.productNameEn || r.categoryNameEn || '—';
   return (
     <div className="flex flex-col gap-1.5">
-      {data.slice(0, 10).map((r, i) => (
+      {data.slice(0, 10).map((r: any, i: any) => (
         <div key={i} className="flex items-center gap-8">
           <span className="text-[12px] truncate min-w-[80px]" title={getLabel(r)}>
             {getLabel(r)}
@@ -44,7 +44,7 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
   );
 }
 
-function PurchaseHistoryModal({ companyId, year, month, product, category, onClose, t }) {
+function PurchaseHistoryModal({ companyId, year, month, product, category, onClose, t }: any) {
   const isProduct = !!product;
   const productId = product?.id ?? product?.productId;
   const categoryId = category?.id;
@@ -86,7 +86,7 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
             </tr>
           </thead>
           <tbody>
-            {history.map((h, i) => (
+            {history.map((h: any, i: any) => (
               <tr key={i} className="border-b border-noorix-border">
                 <td className="py-2 px-[10px]">{h.orderNumber}</td>
                 <td className="py-2 px-[10px]">{formatSaudiDate(h.orderDate)}</td>
@@ -122,28 +122,28 @@ export function ItemsReportTab({
   const { showToast } = useToast();
   const [filterMode, setFilterMode] = useState('all'); // all | top | bottom
   const [filterCount, setFilterCount] = useState(10);
-  const [historyModal, setHistoryModal] = useState(null); // { product } or { category }
+  const [historyModal, setHistoryModal] = useState<any>(null); // { product } or { category }
 
   const { data: report = [], isLoading } = useOrdersItemsReport(companyId, year, month);
 
   const filtered = useMemo(() => {
     if (filterMode === 'all') return report;
-    const sorted = [...report].sort((a, b) => (b.orderCount ?? 0) - (a.orderCount ?? 0));
+    const sorted = [...report].sort((a: any, b: any) => (b.orderCount ?? 0) - (a.orderCount ?? 0));
     if (filterMode === 'top') return sorted.slice(0, filterCount);
     return sorted.slice(-filterCount).reverse();
   }, [report, filterMode, filterCount]);
 
   const totals = useMemo(() => {
-    const qty = filtered.reduce((s, r) => s + Number(r.quantity ?? 0), 0);
-    const amt = filtered.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+    const qty = filtered.reduce((s: any, r: any) => s + Number(r.quantity ?? 0), 0);
+    const amt = filtered.reduce((s: any, r: any) => s + Number(r.amount ?? 0), 0);
     return { quantity: qty, amount: amt };
   }, [filtered]);
 
-  const maxAmount = useMemo(() => Math.max(...filtered.map((r) => Number(r.amount ?? 0)), 1), [filtered]);
+  const maxAmount = useMemo(() => Math.max(...filtered.map((r: any) => Number(r.amount ?? 0)), 1), [filtered]);
 
   const handleExportExcel = async () => {
     try {
-      const rows = filtered.map((r) => ({
+      const rows = filtered.map((r: any) => ({
         [t('product')]: r.productNameAr || r.productNameEn || '—',
         [t('category')]: r.categoryNameAr || r.categoryNameEn || '—',
         [t('unit')]: r.unit || '—',
@@ -153,7 +153,7 @@ export function ItemsReportTab({
       }));
       await exportToExcel(rows, `orders-items-report-${year}-${month}.xlsx`);
       showToast(t('exportSuccess'), 'success');
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('exportFailed'), 'error');
     }
   };
@@ -161,7 +161,7 @@ export function ItemsReportTab({
   const handleExportPdf = async () => {
     try {
       const cols = [t('product'), t('category'), t('quantity'), t('total'), t('ordersOrderCount')];
-      const data = filtered.map((r) => ({
+      const data = filtered.map((r: any) => ({
         [t('product')]: r.productNameAr || r.productNameEn || '—',
         [t('category')]: r.categoryNameAr || r.categoryNameEn || '—',
         [t('quantity')]: fmt(r.quantity ?? 0),
@@ -170,7 +170,7 @@ export function ItemsReportTab({
       }));
       await exportTableToPdf({ columns: cols, data, title: `${t('ordersItemsReportTab')} — ${year}/${month}`, filename: `orders-items-${year}-${month}.pdf` });
       showToast(t('exportSuccess'), 'success');
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('exportFailed'), 'error');
     }
   };
@@ -183,7 +183,7 @@ export function ItemsReportTab({
           <Input
             type="select"
             value={filterMode}
-            onChange={(e) => setFilterMode(e.target.value)}
+            onChange={(e: any) => setFilterMode(e.target.value)}
           >
             <option value="all">{t('ordersFilterAll')}</option>
             <option value="top">{t('ordersFilterTop')}</option>
@@ -195,7 +195,7 @@ export function ItemsReportTab({
               min={1}
               max={50}
               value={filterCount}
-              onChange={(e) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))}
+              onChange={(e: any) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))}
               className="w-[80px]"
             />
           )}
@@ -234,7 +234,7 @@ export function ItemsReportTab({
             </div>
             <div>
               <div className="text-[12px] mb-2 text-noorix-muted">{t('ordersChartByOrders')}</div>
-              <BarChart data={filtered} maxVal={Math.max(...filtered.map((r) => r.orderCount ?? 0), 1)} labelKey="productNameAr" valueKey="orderCount" color="#16a34a" />
+              <BarChart data={filtered} maxVal={Math.max(...filtered.map((r: any) => r.orderCount ?? 0), 1)} labelKey="productNameAr" valueKey="orderCount" color="#16a34a" />
             </div>
           </div>
         </div>
@@ -246,7 +246,7 @@ export function ItemsReportTab({
           {
             key: 'productNameAr',
             label: t('product'),
-            render: (_, r) => (
+            render: (_: any, r: any) => (
               <Button
                 variant="ghost"
                 type="button"
@@ -260,7 +260,7 @@ export function ItemsReportTab({
           {
             key: 'categoryNameAr',
             label: t('category'),
-            render: (_, r) => r.categoryId ? (
+            render: (_: any, r: any) => r.categoryId ? (
               <Button
                 variant="ghost"
                 type="button"
@@ -271,15 +271,15 @@ export function ItemsReportTab({
               </Button>
             ) : <span className="nx-cell-muted">—</span>,
           },
-          { key: 'unit', label: t('unit'), render: (v) => <span className="nx-cell-muted">{v || '—'}</span> },
-          { key: 'quantity', label: t('quantity'), numeric: true, render: (v) => fmt(v ?? 0) },
+          { key: 'unit', label: t('unit'), render: (v: any) => <span className="nx-cell-muted">{v || '—'}</span> },
+          { key: 'quantity', label: t('quantity'), numeric: true, render: (v: any) => fmt(v ?? 0) },
           {
             key: 'amount',
             label: t('total'),
             numeric: true,
-            render: (v) => <span className="nx-cell-num--green"><FmtNum n={v ?? 0} /> SR</span>,
+            render: (v: any) => <span className="nx-cell-num--green"><FmtNum n={v ?? 0} /> SR</span>,
           },
-          { key: 'orderCount', label: t('ordersOrderCount'), numeric: true, render: (v) => v ?? 0 },
+          { key: 'orderCount', label: t('ordersOrderCount'), numeric: true, render: (v: any) => v ?? 0 },
         ]}
         data={filtered}
         isLoading={isLoading}
@@ -292,7 +292,7 @@ export function ItemsReportTab({
             <td style={{ padding: '8px 12px' }} />
           </>
         ) : null}
-        renderMobileCard={(r) => (
+        renderMobileCard={(r: any) => (
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-2">
               <Button variant="ghost" type="button" onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })} className="font-bold text-noorix-blue underline text-[13px]">

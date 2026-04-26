@@ -94,7 +94,7 @@ export async function issueLeaveSalarySettlement(
   return apiPost(`/api/v1/hr/leaves/${id}/salary-settlement?companyId=${companyId}`, payload);
 }
 
-export async function deleteLeave(id: string, companyId: string, voidSettlement = false): Promise<ApiParsedResult> {
+export async function deleteLeave(id: string, companyId: string, voidSettlement: any = false): Promise<ApiParsedResult> {
   let q = `companyId=${encodeURIComponent(companyId)}`;
   if (voidSettlement) q += '&voidSettlement=true';
   return apiDelete(`/api/v1/hr/leaves/${encodeURIComponent(id)}?${q}`);

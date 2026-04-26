@@ -11,7 +11,7 @@ export function InvoicesListExecutiveCards({
   inflowByVault,
   outflowSummary,
   vaultRowLabel,
-}) {
+}: any) {
   return (
     <div className="noorix-exec-card-grid">
       <div className="noorix-exec-card noorix-exec-card--inbound flex flex-col">
@@ -41,7 +41,7 @@ export function InvoicesListExecutiveCards({
             {!inflowByVault?.length ? (
               <div className="col-span-full rounded-lg border border-dashed border-noorix-border/60 py-2 text-center text-[12px] text-noorix-muted">—</div>
             ) : (
-              inflowByVault.map((row) => {
+              inflowByVault.map((row: any) => {
                 const outNum = Number(row.outflow ?? 0);
                 const remNum = Number(row.remainder ?? 0);
                 return (

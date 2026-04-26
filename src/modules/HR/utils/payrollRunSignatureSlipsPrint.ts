@@ -6,17 +6,17 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 
-function esc(v) {
+function esc(v: any) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function safeImgSrc(url) {
+function safeImgSrc(url: any) {
   const u = String(url || '').trim();
   if (!u) return '';
   return u.replace(/"/g, '%22').replace(/'/g, '%27');
 }
 
-function buildLogoInner(logoUrl) {
+function buildLogoInner(logoUrl: any) {
   const u = safeImgSrc(logoUrl);
   if (u.startsWith('http') || u.startsWith('data:image')) return `<img src="${u}" alt="" />`;
   return `<div class="ps-logo-ph">شعار<br/><span>Logo</span></div>`;
@@ -116,7 +116,7 @@ export function openPayrollRunEmployeeSlipsPrint({
   lang,
   labels,
   netOnly,
-}) {
+}: any) {
   const items = Array.isArray(run?.items) ? run.items : [];
   if (!items.length) return;
 
@@ -132,7 +132,7 @@ export function openPayrollRunEmployeeSlipsPrint({
   const enLine = coEn ? `<div class="ps-co-en">${coEn}</div>` : '';
 
   const pages = items
-    .map((row) => {
+    .map((row: any) => {
       const emp = row.employee;
       const displayName = employeeDisplayName(emp || { name: row.employeeName }, lang);
       const iqama = esc(emp?.iqamaNumber || '—');

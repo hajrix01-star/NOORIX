@@ -23,7 +23,7 @@ import {
   throwIfApiFailed,
 } from '../services/api';
 
-export function useOrders(companyId, year, month) {
+export function useOrders(companyId: any, year: any, month: any) {
   return useQuery({
     queryKey: ['orders', companyId, year, month],
     queryFn: async () => {
@@ -39,36 +39,36 @@ export function useCreateOrderMutation() {
   return useApiMutation({
     mutationFn: createOrder,
     invalidateQueries: [
-      { predicate: (q) => q.queryKey[0] === 'orders' },
-      { predicate: (q) => q.queryKey[0] === 'orders-summary' },
+      { predicate: (q: any) => q.queryKey[0] === 'orders' },
+      { predicate: (q: any) => q.queryKey[0] === 'orders-summary' },
     ],
     showErrorToast: false,
   });
 }
 
-export function useUpdateOrderMutation(companyId) {
+export function useUpdateOrderMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: ({ id, body }) => updateOrder(id, body, companyId),
+    mutationFn: ({ id, body }: any) => updateOrder(id, body, companyId),
     invalidateQueries: [
-      { predicate: (q) => q.queryKey[0] === 'orders' },
-      { predicate: (q) => q.queryKey[0] === 'orders-summary' },
+      { predicate: (q: any) => q.queryKey[0] === 'orders' },
+      { predicate: (q: any) => q.queryKey[0] === 'orders-summary' },
     ],
     showErrorToast: false,
   });
 }
 
-export function useCancelOrderMutation(companyId) {
+export function useCancelOrderMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: (id) => cancelOrder(id, companyId),
+    mutationFn: (id: any) => cancelOrder(id, companyId),
     invalidateQueries: [
-      { predicate: (q) => q.queryKey[0] === 'orders' },
-      { predicate: (q) => q.queryKey[0] === 'orders-summary' },
+      { predicate: (q: any) => q.queryKey[0] === 'orders' },
+      { predicate: (q: any) => q.queryKey[0] === 'orders-summary' },
     ],
     showErrorToast: false,
   });
 }
 
-export function useOrdersSummary(companyId, year, month) {
+export function useOrdersSummary(companyId: any, year: any, month: any) {
   return useQuery({
     queryKey: ['orders-summary', companyId, year, month],
     queryFn: async () => {
@@ -80,7 +80,7 @@ export function useOrdersSummary(companyId, year, month) {
   });
 }
 
-export function useOrderProducts(companyId) {
+export function useOrderProducts(companyId: any) {
   return useQuery({
     queryKey: ['order-products', companyId],
     queryFn: async () => {
@@ -92,7 +92,7 @@ export function useOrderProducts(companyId) {
   });
 }
 
-export function useOrderCategories(companyId) {
+export function useOrderCategories(companyId: any) {
   return useQuery({
     queryKey: ['order-categories', companyId],
     queryFn: async () => {
@@ -104,7 +104,7 @@ export function useOrderCategories(companyId) {
   });
 }
 
-export function useProductPurchaseHistory(companyId, productId, year, month, enabled = true) {
+export function useProductPurchaseHistory(companyId: any, productId: any, year: any, month: any, enabled: any = true) {
   return useQuery({
     queryKey: ['product-purchase-history', companyId, productId, year, month],
     queryFn: async () => {
@@ -116,7 +116,7 @@ export function useProductPurchaseHistory(companyId, productId, year, month, ena
   });
 }
 
-export function useCategoryPurchaseHistory(companyId, categoryId, year, month, enabled = true) {
+export function useCategoryPurchaseHistory(companyId: any, categoryId: any, year: any, month: any, enabled: any = true) {
   return useQuery({
     queryKey: ['category-purchase-history', companyId, categoryId, year, month],
     queryFn: async () => {
@@ -128,7 +128,7 @@ export function useCategoryPurchaseHistory(companyId, categoryId, year, month, e
   });
 }
 
-export function useOrdersItemsReport(companyId, year, month) {
+export function useOrdersItemsReport(companyId: any, year: any, month: any) {
   return useQuery({
     queryKey: ['orders-items-report', companyId, year, month],
     queryFn: async () => {
@@ -140,7 +140,7 @@ export function useOrdersItemsReport(companyId, year, month) {
   });
 }
 
-export function useCreateOrderProductMutation(companyId) {
+export function useCreateOrderProductMutation(companyId: any) {
   return useApiMutation({
     mutationFn: createOrderProduct,
     invalidateQueries: [['order-products', companyId]],
@@ -148,31 +148,31 @@ export function useCreateOrderProductMutation(companyId) {
   });
 }
 
-export function useCreateOrderProductsBatchMutation(companyId) {
+export function useCreateOrderProductsBatchMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: (products) => createOrderProductsBatch(companyId, products),
+    mutationFn: (products: any) => createOrderProductsBatch(companyId, products),
     invalidateQueries: [['order-products', companyId]],
     showErrorToast: false,
   });
 }
 
-export function useCreateOrderCategoriesBatchMutation(companyId) {
+export function useCreateOrderCategoriesBatchMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: (categories) => createOrderCategoriesBatch(companyId, categories),
+    mutationFn: (categories: any) => createOrderCategoriesBatch(companyId, categories),
     invalidateQueries: [['order-categories', companyId]],
     showErrorToast: false,
   });
 }
 
-export function useUpdateOrderProductMutation(companyId) {
+export function useUpdateOrderProductMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: ({ id, body }) => updateOrderProduct(id, body, companyId),
+    mutationFn: ({ id, body }: any) => updateOrderProduct(id, body, companyId),
     invalidateQueries: [['order-products', companyId]],
     showErrorToast: false,
   });
 }
 
-export function useCreateOrderCategoryMutation(companyId) {
+export function useCreateOrderCategoryMutation(companyId: any) {
   return useApiMutation({
     mutationFn: createOrderCategory,
     invalidateQueries: [['order-categories', companyId]],
@@ -180,9 +180,9 @@ export function useCreateOrderCategoryMutation(companyId) {
   });
 }
 
-export function useUpdateOrderCategoryMutation(companyId) {
+export function useUpdateOrderCategoryMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: ({ id, body }) => updateOrderCategory(id, body, companyId),
+    mutationFn: ({ id, body }: any) => updateOrderCategory(id, body, companyId),
     invalidateQueries: [['order-categories', companyId]],
     showErrorToast: false,
   });

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getVatPlanningList, getVatPlanningRegistry, upsertVatPlanning, throwIfApiFailed } from '../services/api';
 
-export function useVatPlanningList(year, quarter, companyId, enabled = true) {
+export function useVatPlanningList(year: any, quarter: any, companyId: any, enabled: any = true) {
   return useQuery({
     queryKey: ['vat-planning', year, quarter, companyId ?? ''],
     queryFn: async () => {
@@ -15,7 +15,7 @@ export function useVatPlanningList(year, quarter, companyId, enabled = true) {
 }
 
 /** قائمة الإقرارات المسجّلة (فلاتر اختيارية) */
-export function useVatPlanningRegistry(filters, enabled = true) {
+export function useVatPlanningRegistry(filters: any, enabled: any = true) {
   return useQuery({
     queryKey: ['vat-planning', 'registry', filters?.year ?? '', filters?.quarter ?? '', filters?.companyId ?? ''],
     queryFn: async () => {
@@ -31,7 +31,7 @@ export function useVatPlanningRegistry(filters, enabled = true) {
 export function useUpsertVatPlanning() {
   const qc = useQueryClient();
   return useMutation<any, Error, Record<string, unknown>>({
-    mutationFn: async (body) => {
+    mutationFn: async (body: any) => {
       const res = await upsertVatPlanning(body);
       throwIfApiFailed(res, 'فشل حفظ السجل الضريبي');
       return res.data;

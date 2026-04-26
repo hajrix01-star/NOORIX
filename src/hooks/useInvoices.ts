@@ -54,7 +54,7 @@ export function useInvoices({
       throwIfApiFailed(res, 'فشل تحميل الفواتير');
       return res.data;
     },
-    placeholderData: (previousData, previousQuery) => {
+    placeholderData: (previousData: any, previousQuery: any) => {
       const prevCompany = previousQuery?.queryKey?.[1];
       if (prevCompany !== companyId) return undefined;
       return previousData;

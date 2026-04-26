@@ -26,24 +26,24 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 
 const labelMuted = { fontSize: 12, color: 'var(--noorix-text-muted)' };
 
-function normParentKeywords(v) {
+function normParentKeywords(v: any) {
   if (!v) return [];
-  return Array.isArray(v) ? v.map((x) => String(x).toLowerCase()) : [];
+  return Array.isArray(v) ? v.map((x: any) => String(x).toLowerCase()) : [];
 }
 
-function normClassifications(raw) {
+function normClassifications(raw: any) {
   if (!Array.isArray(raw)) return [];
-  return raw.map((c) => ({
+  return raw.map((c: any) => ({
     name: String(c?.name || ''),
-    keywords: Array.isArray(c?.keywords) ? c.keywords.map((k) => String(k).toLowerCase().trim()).filter(Boolean) : [],
+    keywords: Array.isArray(c?.keywords) ? c.keywords.map((k: any) => String(k).toLowerCase().trim()).filter(Boolean) : [],
   }));
 }
 
-function CategoryFormModal({ open, onClose, category, existingCategories, companyId, t }) {
+function CategoryFormModal({ open, onClose, category, existingCategories, companyId, t }: any) {
   const { showToast } = useToast();
   const EMPTY = { name: '', keywords: [] };
   const [name, setName] = useState('');
-  const [parentKeywords, setParentKeywords] = useState([]);
+  const [parentKeywords, setParentKeywords] = useState<any[]>([]);
   const [newParentKeyword, setNewParentKeyword] = useState('');
   const [transactionType, setTransactionType] = useState('expense');
   const [transactionSide, setTransactionSide] = useState('any');
@@ -63,7 +63,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
       const cls = normClassifications(category.classifications);
       setClassifications(cls.length ? cls : [{ ...EMPTY }]);
     } else {
-      const maxOrder = (existingCategories || []).reduce((m, c) => Math.max(m, c.sortOrder ?? 0), 0);
+      const maxOrder = (existingCategories || []).reduce((m: any, c: any) => Math.max(m, c.sortOrder ?? 0), 0);
       setName('');
       setParentKeywords([]);
       setTransactionType('expense');
@@ -77,18 +77,18 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
   }, [open, category, existingCategories]);
 
   const createMut = useApiMutation({
-    mutationFn: (body) => bankStatementTreeCategoryCreate(body),
+    mutationFn: (body: any) => bankStatementTreeCategoryCreate(body),
     invalidateQueries: [['bank-tree-categories', companyId]],
     successToast: () => t('savedSuccessfully'),
-    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    errorToast: (e: any) => e?.message || t('apiRequestFailed'),
     onSuccess: () => onClose(),
   });
 
   const updateMut = useApiMutation({
-    mutationFn: ({ id, patch }) => bankStatementTreeCategoryUpdate(companyId, id, patch),
+    mutationFn: ({ id, patch }: any) => bankStatementTreeCategoryUpdate(companyId, id, patch),
     invalidateQueries: [['bank-tree-categories', companyId]],
     successToast: () => t('savedSuccessfully'),
-    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    errorToast: (e: any) => e?.message || t('apiRequestFailed'),
     onSuccess: () => onClose(),
   });
 
@@ -98,12 +98,12 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
       return;
     }
     const cleanClassifications = classifications
-      .filter((c) => c.name?.trim() || (c.keywords && c.keywords.length))
-      .map((c) => ({
+      .filter((c: any) => c.name?.trim() || (c.keywords && c.keywords.length))
+      .map((c: any) => ({
         name: (c.name || '').trim() || t('bankTreeUnnamedClassification'),
         keywords: (c.keywords || []).filter(Boolean),
       }));
-    if (!cleanClassifications.length || cleanClassifications.every((c) => !c.keywords.length)) {
+    if (!cleanClassifications.length || cleanClassifications.every((c: any) => !c.keywords.length)) {
       showToast(t('bankTreeClassificationKeywordsRequired'), 'error');
       return;
     }
@@ -126,11 +126,11 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
   const addParentKw = () => {
     const kw = newParentKeyword.trim().toLowerCase();
     if (!kw || parentKeywords.includes(kw)) return;
-    setParentKeywords((p) => [...p, kw]);
+    setParentKeywords((p: any) => [...p, kw]);
     setNewParentKeyword('');
   };
 
-  const addKw = (classIdx) => {
+  const addKw = (classIdx: any) => {
     const kw = newKeyword.trim().toLowerCase();
     if (!kw) return;
     const cl = classifications[classIdx];
@@ -138,8 +138,8 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
       showToast(t('bankTreeDuplicateKeyword'), 'error');
       return;
     }
-    setClassifications((prev) =>
-      prev.map((c, i) => (i === classIdx ? { ...c, keywords: [...(c.keywords || []), kw] } : c)),
+    setClassifications((prev: any) =>
+      prev.map((c: any, i: any) => (i === classIdx ? { ...c, keywords: [...(c.keywords || []), kw] } : c)),
     );
     setNewKeyword('');
   };
@@ -163,19 +163,19 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
     >
       <div className="grid gap-3.5">
         <div className="grid gap-2.5 grid-cols-[1fr_100px]">
-          <Input type="text" label={`${t('bankTreeCategoryName')} *`} value={name} onChange={(e) => setName(e.target.value)} />
-          <Input type="number" label={t('bankTreeSortOrder')} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} min={1} />
+          <Input type="text" label={`${t('bankTreeCategoryName')} *`} value={name} onChange={(e: any) => setName(e.target.value)} />
+          <Input type="number" label={t('bankTreeSortOrder')} value={sortOrder} onChange={(e: any) => setSortOrder(e.target.value)} min={1} />
         </div>
         <div className="grid grid-cols-2 gap-2.5">
-          <Input type="select" label={t('bankTreeTransactionType')} value={transactionType} onChange={(e) => setTransactionType(e.target.value)}>
-            {TRANSACTION_TYPES.map((x) => (
+          <Input type="select" label={t('bankTreeTransactionType')} value={transactionType} onChange={(e: any) => setTransactionType(e.target.value)}>
+            {TRANSACTION_TYPES.map((x: any) => (
               <option key={x.value} value={x.value}>
                 {x.icon} {t(x.labelKey)}
               </option>
             ))}
           </Input>
-          <Input type="select" label={t('bankTreeTransactionSide')} value={transactionSide} onChange={(e) => setTransactionSide(e.target.value)}>
-            {TRANSACTION_SIDES.map((s) => (
+          <Input type="select" label={t('bankTreeTransactionSide')} value={transactionSide} onChange={(e: any) => setTransactionSide(e.target.value)}>
+            {TRANSACTION_SIDES.map((s: any) => (
               <option key={s.value} value={s.value}>
                 {s.icon} {t(s.labelKey)}
               </option>
@@ -187,10 +187,10 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
           <div className="text-[13px] font-semibold mb-1.5">{t('bankTreeParentKeywords')}</div>
           <p className="text-[11px] text-noorix-muted mb-2">{t('bankTreeParentKeywordsHint')}</p>
           <div className="flex flex-wrap gap-1.5 mb-2">
-            {parentKeywords.map((kw, idx) => (
+            {parentKeywords.map((kw: any, idx: any) => (
               <span key={idx} className="text-[11px] px-2 py-[2px] rounded-[6px] bg-noorix-surface border border-noorix-border">
                 {kw}
-                <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))} className="ms-1.5 text-noorix-red px-1" style={{ minHeight: 'auto' }}>
+                <Button variant="ghost" size="sm" onClick={() => setParentKeywords((p: any) => p.filter((_: any, i: any) => i !== idx))} className="ms-1.5 text-noorix-red px-1" style={{ minHeight: 'auto' }}>
                   ×
                 </Button>
               </span>
@@ -198,7 +198,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
           </div>
           <div className="flex gap-1.5">
             <div className="flex-1 min-w-0">
-              <Input type="text" value={newParentKeyword} onChange={(e) => setNewParentKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addParentKw())} placeholder="…" />
+              <Input type="text" value={newParentKeyword} onChange={(e: any) => setNewParentKeyword(e.target.value)} onKeyDown={(e: any) => e.key === 'Enter' && (e.preventDefault(), addParentKw())} placeholder="…" />
             </div>
             <Button onClick={addParentKw}>+</Button>
           </div>
@@ -209,14 +209,14 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
             <span className="font-semibold">{t('bankTreeSubClassifications')}</span>
             <Button
               onClick={() => {
-                setClassifications((p) => [...p, { ...EMPTY }]);
+                setClassifications((p: any) => [...p, { ...EMPTY }]);
                 setActiveClassIdx(classifications.length);
               }}
             >
               + {t('bankTreeAddSub')}
             </Button>
           </div>
-          {classifications.map((cl, idx) => (
+          {classifications.map((cl: any, idx: any) => (
             <div
               key={idx}
               onClick={() => setActiveClassIdx(idx)}
@@ -233,7 +233,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                   <Input
                     type="text"
                     value={cl.name}
-                    onChange={(e) => setClassifications((p) => p.map((c, i) => (i === idx ? { ...c, name: e.target.value } : c)))}
+                    onChange={(e: any) => setClassifications((p: any) => p.map((c: any, i: any) => (i === idx ? { ...c, name: e.target.value } : c)))}
                     placeholder={t('bankTreeSubNamePlaceholder')}
                   />
                 </div>
@@ -241,9 +241,9 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                   <Button
                     variant="danger"
                     size="sm"
-                    onClick={(e) => {
+                    onClick={(e: any) => {
                       e.stopPropagation();
-                      setClassifications((p) => p.filter((_, i) => i !== idx));
+                      setClassifications((p: any) => p.filter((_: any, i: any) => i !== idx));
                       setActiveClassIdx(0);
                     }}
                   >
@@ -252,16 +252,16 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                 ) : null}
               </div>
               <div className="flex flex-wrap gap-1.5 mb-2">
-                {(cl.keywords || []).map((kw, kwIdx) => (
+                {(cl.keywords || []).map((kw: any, kwIdx: any) => (
                   <span key={kwIdx} className="text-[11px] font-mono px-2 py-[2px] rounded-[6px] bg-noorix-surface border border-noorix-border">
                     {kw}
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => {
+                      onClick={(e: any) => {
                         e.stopPropagation();
-                        setClassifications((p) =>
-                          p.map((c, i) => (i === idx ? { ...c, keywords: c.keywords.filter((_, ki) => ki !== kwIdx) } : c)),
+                        setClassifications((p: any) =>
+                          p.map((c: any, i: any) => (i === idx ? { ...c, keywords: c.keywords.filter((_: any, ki: any) => ki !== kwIdx) } : c)),
                         );
                       }}
                       className="ms-1 px-1" style={{ minHeight: 'auto' }}
@@ -277,8 +277,8 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
                     <Input
                       type="text"
                       value={newKeyword}
-                      onChange={(e) => setNewKeyword(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKw(idx))}
+                      onChange={(e: any) => setNewKeyword(e.target.value)}
+                      onKeyDown={(e: any) => e.key === 'Enter' && (e.preventDefault(), addKw(idx))}
                       placeholder={t('bankTreeAddKeywordPlaceholder')}
                     />
                   </div>
@@ -293,12 +293,12 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
   );
 }
 
-function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
+function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }: any) {
   const typeInfo = getTransactionTypeInfo(category.transactionType, t);
   const sideInfo = getTransactionSideInfo(category.transactionSide, t);
   const classifications = normClassifications(category.classifications);
   const parentKeywords = normParentKeywords(category.parentKeywords);
-  const totalKw = classifications.reduce((s, c) => s + (c.keywords?.length || 0), 0);
+  const totalKw = classifications.reduce((s: any, c: any) => s + (c.keywords?.length || 0), 0);
   const active = category.isActive !== false;
 
   return (
@@ -345,11 +345,11 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
           ) : null}
           {classifications.length > 0 ? (
             <div className="grid gap-1.5">
-              {classifications.map((cl, idx) => (
+              {classifications.map((cl: any, idx: any) => (
                 <div key={idx} className="text-[12px] pl-2 border-l-2 border-noorix-border">
                   <strong>{cl.name}</strong>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {(cl.keywords || []).map((kw, ki) => (
+                    {(cl.keywords || []).map((kw: any, ki: any) => (
                       <code key={ki} className="text-[10px] px-1.5 py-[2px] rounded bg-noorix-bg-muted">
                         {kw}
                       </code>
@@ -373,24 +373,24 @@ function CategoryCardRow({ category, index, t, onEdit, onDelete, onToggle }) {
   );
 }
 
-export default function BankCategoryTreePanel({ companyId, companies = [] }) {
+export default function BankCategoryTreePanel({ companyId, companies = [] }: any) {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [editing, setEditing] = useState<any>(null);
   const [showMigrate, setShowMigrate] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importSource, setImportSource] = useState('company');
   const [importMode, setImportMode] = useState('merge');
   const [importSourceCompanyId, setImportSourceCompanyId] = useState('');
-  const [importFile, setImportFile] = useState(null);
+  const [importFile, setImportFile] = useState<any>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
 
   const otherCompanies = useMemo(
-    () => (companies || []).filter((c) => c.id && c.id !== companyId),
+    () => (companies || []).filter((c: any) => c.id && c.id !== companyId),
     [companies, companyId],
   );
 
@@ -415,47 +415,47 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
     enabled: !!companyId,
   });
 
-  const activeFlat = useMemo(() => (flatRules || []).filter((r) => r.isActive !== false), [flatRules]);
+  const activeFlat = useMemo(() => (flatRules || []).filter((r: any) => r.isActive !== false), [flatRules]);
 
   const sortedCategories = useMemo(
-    () => [...categories].filter((c) => c.isActive !== false).sort((a, b) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100)),
+    () => [...categories].filter((c: any) => c.isActive !== false).sort((a: any, b: any) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100)),
     [categories],
   );
-  const inactiveCategories = useMemo(() => categories.filter((c) => c.isActive === false), [categories]);
+  const inactiveCategories = useMemo(() => categories.filter((c: any) => c.isActive === false), [categories]);
 
   const totalKeywords = useMemo(() => {
-    return categories.reduce((sum, c) => {
+    return categories.reduce((sum: any, c: any) => {
       const cls = normClassifications(c.classifications);
-      return sum + cls.reduce((s, cl) => s + (cl.keywords?.length || 0), 0);
+      return sum + cls.reduce((s: any, cl: any) => s + (cl.keywords?.length || 0), 0);
     }, 0);
   }, [categories]);
   const totalClassifications = useMemo(() => {
-    return categories.reduce((sum, c) => sum + normClassifications(c.classifications).length, 0);
+    return categories.reduce((sum: any, c: any) => sum + normClassifications(c.classifications).length, 0);
   }, [categories]);
 
   const deleteMut = useApiMutation({
-    mutationFn: (id) => bankStatementTreeCategoryDelete(companyId, id),
+    mutationFn: (id: any) => bankStatementTreeCategoryDelete(companyId, id),
     invalidateQueries: [qKey],
     successToast: () => t('deletedSuccessfully'),
-    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    errorToast: (e: any) => e?.message || t('apiRequestFailed'),
   });
 
   const updateMut = useApiMutation({
-    mutationFn: ({ id, patch }) => bankStatementTreeCategoryUpdate(companyId, id, patch),
+    mutationFn: ({ id, patch }: any) => bankStatementTreeCategoryUpdate(companyId, id, patch),
     invalidateQueries: [qKey],
     showErrorToast: true,
-    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    errorToast: (e: any) => e?.message || t('apiRequestFailed'),
   });
 
   const seedDefaultsMut = useApiMutation({
     mutationFn: () => bankStatementTreeCategoriesSeedDefaults(companyId),
     invalidateQueries: [qKey],
-    successToast: (res) => {
+    successToast: (res: any) => {
       const inner = res?.data ?? res;
       const n = inner?.created ?? 8;
       return t('bankTreeSeedDefaultsDone', String(n));
     },
-    errorToast: (e) => e?.message || t('bankTreeSeedDefaultsError'),
+    errorToast: (e: any) => e?.message || t('bankTreeSeedDefaultsError'),
   });
 
   const groupedForMigrate = useMemo(() => {
@@ -497,7 +497,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
       await qc.invalidateQueries({ queryKey: ['bank-classification-rules', companyId] });
       showToast(t('bankTreeMigrateDone', String(groupedForMigrate.length)));
       setShowMigrate(false);
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || 'Error', 'error');
     } finally {
       setMigrating(false);
@@ -508,7 +508,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
     setEditing(null);
     setShowForm(true);
   }, []);
-  const openEdit = useCallback((cat) => {
+  const openEdit = useCallback((cat: any) => {
     setEditing(cat);
     setShowForm(true);
   }, []);
@@ -534,7 +534,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       showToast(t('bankRulesExportDone'));
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || 'Error', 'error');
     } finally {
       setExportBusy(false);
@@ -589,7 +589,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
       setShowImportModal(false);
       setImportFile(null);
       invalidateRulesQueries();
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || 'Error', 'error');
     } finally {
       setImportBusy(false);
@@ -650,7 +650,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
       ) : null}
 
       <div className="grid gap-2.5">
-        {sortedCategories.map((cat, idx) => (
+        {sortedCategories.map((cat: any, idx: any) => (
           <CategoryCardRow
             key={cat.id}
             category={cat}
@@ -669,7 +669,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
         <div className="mt-5">
           <h4 className="text-[13px] text-noorix-muted">{t('bankTreeInactiveSection', String(inactiveCategories.length))}</h4>
           <div className="grid gap-2.5 mt-2.5">
-            {inactiveCategories.map((cat) => (
+            {inactiveCategories.map((cat: any) => (
               <CategoryCardRow
                 key={cat.id}
                 category={cat}
@@ -716,7 +716,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
       >
         <p className="text-[13px] text-noorix-muted">{t('bankTreeMigrateBody', String(activeFlat.length), String(groupedForMigrate.length))}</p>
         <div className="overflow-auto grid gap-2 mt-3 rounded-lg max-h-[200px]">
-          {groupedForMigrate.map((g, i) => (
+          {groupedForMigrate.map((g: any, i: any) => (
             <div key={i} className="p-2 rounded-lg bg-noorix-bg-muted text-[12px]">
               <strong>{g.categoryName}</strong> — {g.keywords.slice(0, 6).join(', ')}
               {g.keywords.length > 6 ? '…' : ''}
@@ -759,10 +759,10 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
             <Input
               type="select"
               value={importSourceCompanyId}
-              onChange={(e) => setImportSourceCompanyId(e.target.value)}
+              onChange={(e: any) => setImportSourceCompanyId(e.target.value)}
             >
               <option value="">{t('bankRulesSelectCompany')}</option>
-              {otherCompanies.map((c) => (
+              {otherCompanies.map((c: any) => (
                 <option key={c.id} value={c.id}>
                   {c.nameAr || c.nameEn || c.name || c.id}
                 </option>
@@ -775,7 +775,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }) {
                 <input
                   type="file"
                   accept="application/json,.json"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  onChange={(e: any) => setImportFile(e.target.files?.[0] || null)}
                 />
                 {importFile ? importFile.name : (t('bankRulesChooseFile') || 'اختر ملف JSON')}
               </label>

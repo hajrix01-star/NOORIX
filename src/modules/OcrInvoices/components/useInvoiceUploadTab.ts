@@ -20,39 +20,39 @@ import { revokePreviewUrl } from './invoiceUpload/ocrInvoiceUploadUtils';
 /**
  * منطق تبويب رفع/استخراج فاتورة OCR (منفصل عن العرض)
  */
-export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsumed }) {
+export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsumed }: any) {
   const { t, lang: language } = useTranslation();
   const { activeCompanyId } = useApp();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [dragging, setDragging] = useState(false);
-  const [preview, setPreview] = useState(null);
-  const [imageBase64, setBase64] = useState(null);
+  const [preview, setPreview] = useState<any>(null);
+  const [imageBase64, setBase64] = useState<any>(null);
   const [mimeType, setMimeType] = useState('image/jpeg');
-  const [extracted, setExtracted] = useState(null);
-  const [editItems, setEditItems] = useState(null);
+  const [extracted, setExtracted] = useState<any>(null);
+  const [editItems, setEditItems] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<any>(null);
   const [success, setSuccess] = useState(false);
-  const [finalizeOcrId, setFinalizeOcrId] = useState(null);
-  const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState(null);
+  const [finalizeOcrId, setFinalizeOcrId] = useState<any>(null);
+  const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState<any>(null);
   const [createLinkedPurchase, setCreateLinkedPurchase] = useState(false);
   const [transactionDate, setTransactionDate] = useState(() => getSaudiToday());
   const [accountingSupplierId, setAccountingSupplierId] = useState('');
   const [vaultId, setVaultId] = useState('');
   const [purchaseSupplierInvoiceNumber, setPurchaseSupplierInvoiceNumber] = useState('');
   const [isPurchaseTaxable, setIsPurchaseTaxable] = useState(true);
-  const [prefillLinkedPurchase, setPrefillLinkedPurchase] = useState(null);
-  const [postSaveLinkedPurchase, setPostSaveLinkedPurchase] = useState(null);
+  const [prefillLinkedPurchase, setPrefillLinkedPurchase] = useState<any>(null);
+  const [postSaveLinkedPurchase, setPostSaveLinkedPurchase] = useState<any>(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
-  const fileRef = useRef();
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const userTouchedAccountingRef = useRef(false);
   const [newOcrSupplierOpen, setNewOcrSupplierOpen] = useState(false);
   const [newOcrNameAr, setNewOcrNameAr] = useState('');
   const [newOcrTax, setNewOcrTax] = useState('');
   const [newOcrSaving, setNewOcrSaving] = useState(false);
-  const [newOcrError, setNewOcrError] = useState(null);
+  const [newOcrError, setNewOcrError] = useState<any>(null);
 
   const canCreatePurchase = useMemo(() => {
     const role = user?.role;
@@ -173,11 +173,11 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
         try {
           const blob = await queryClient.ensureQueryData({
             queryKey: ocrInvoiceImageQueryKey(activeCompanyId, prefillInvoiceId),
-            queryFn: ({ signal }) => fetchOcrInvoiceImageBlob(prefillInvoiceId, signal),
+            queryFn: ({ signal }: any) => fetchOcrInvoiceImageBlob(prefillInvoiceId, signal),
             staleTime: 5 * 60 * 1000,
           });
           if (cancelled) return;
-          setPreview((prev) => {
+          setPreview((prev: any) => {
             revokePreviewUrl(prev);
             return URL.createObjectURL(blob);
           });
@@ -205,14 +205,14 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const warningCount = useMemo(() => {
     let n = 0;
     if (extracted?.invoiceTotalWarning) n++;
-    activeItems.forEach((item) => {
+    activeItems.forEach((item: any) => {
       if (item.mathWarning) n++;
       if (item.priceWarning) n++;
     });
     return n;
   }, [extracted?.invoiceTotalWarning, activeItems]);
 
-  const updateItem = (index, field, value) => {
+  const updateItem = (index: any, field: any, value: any) => {
     const num = parseFloat(value);
     const updated = [...activeItems];
     updated[index] = { ...updated[index], [field]: isNaN(num) ? value : num };
@@ -230,7 +230,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setEditItems(updated);
   };
 
-  const applyMathSuggestion = (index) => {
+  const applyMathSuggestion = (index: any) => {
     const item = activeItems[index];
     if (!item.mathWarning) return;
     const updated = [...activeItems];
@@ -242,11 +242,11 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setEditItems(updated);
   };
 
-  const readFile = useCallback((file) => {
+  const readFile = useCallback((file: any) => {
     if (!file || !file.type.startsWith('image/')) return;
     void compressImageFileToJpegDataUrl(file, { maxDim: 1600, quality: 0.82 })
-      .then((compressed) => {
-        setPreview((prev) => {
+      .then((compressed: any) => {
+        setPreview((prev: any) => {
           revokePreviewUrl(prev);
           return compressed;
         });
@@ -265,14 +265,14 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
         setError(null);
         setSuccess(false);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         setError(err?.message || 'تعذّر قراءة الصورة');
         setSuccess(false);
       });
   }, []);
 
   const handleDrop = useCallback(
-    (e) => {
+    (e: any) => {
       e.preventDefault();
       setDragging(false);
       const file = e.dataTransfer.files[0];
@@ -342,7 +342,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setSaving(true);
     setError(null);
     try {
-      const lines = activeItems.map((item) => ({
+      const lines = activeItems.map((item: any) => ({
         rawName: item.name || '',
         nameAr: item.nameAr || null,
         nameEn: item.nameEn || null,
@@ -392,7 +392,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
         setPostSaveLinkedPurchase(lp?.id ? lp : null);
         const delayMs = hasLedgerLink ? 7000 : 2000;
         setTimeout(() => {
-          setPreview((prev) => {
+          setPreview((prev: any) => {
             revokePreviewUrl(prev);
             return null;
           });
@@ -450,7 +450,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       queryClient.invalidateQueries({ queryKey: ['ocr-suppliers', activeCompanyId] });
       queryClient.invalidateQueries({ queryKey: ['ocr-accounting-supplier-suggestions', activeCompanyId] });
       const row = r.data;
-      setExtracted((ex) =>
+      setExtracted((ex: any) =>
         ex ? { ...ex, supplierMatch: { id: row.id, nameAr: row.nameAr, score: 1, status: 'new' } } : null,
       );
       setPrefillOcrSupplierId(row.id);
@@ -464,7 +464,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   };
 
   const handleResetImageColumn = useCallback(() => {
-    setPreview((prev) => {
+    setPreview((prev: any) => {
       revokePreviewUrl(prev);
       return null;
     });
@@ -483,7 +483,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setTransactionDate(getSaudiToday());
   }, []);
 
-  const onAccountingSupplierIdChange = useCallback((v) => {
+  const onAccountingSupplierIdChange = useCallback((v: any) => {
     userTouchedAccountingRef.current = true;
     setAccountingSupplierId(v);
   }, []);

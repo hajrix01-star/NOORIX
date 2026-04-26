@@ -24,11 +24,11 @@ import {
   getRowValue,
 } from '../../constants/taxDisclosure';
 
-function taxReportStorageKey(companyId, period) {
+function taxReportStorageKey(companyId: any, period: any) {
   return `${TAX_REPORT_STORAGE_PREFIX}_${companyId}_${period}`;
 }
 
-function loadStoredData(companyId, period) {
+function loadStoredData(companyId: any, period: any) {
   const parsed = readJsonStorage(taxReportStorageKey(companyId, period), null);
   if (parsed && typeof parsed === 'object') {
     return { ...defaultDisclosureData(), ...parsed };
@@ -36,7 +36,7 @@ function loadStoredData(companyId, period) {
   return defaultDisclosureData();
 }
 
-function saveStoredData(companyId, period, data) {
+function saveStoredData(companyId: any, period: any, data: any) {
   writeJsonStorage(taxReportStorageKey(companyId, period), data);
 }
 
@@ -60,7 +60,7 @@ export default function TaxReportTab() {
     enabled: !!activeCompanyId,
   });
 
-  const company = companies?.find((c) => c.id === activeCompanyId);
+  const company = companies?.find((c: any) => c.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
   const periodOptions = useMemo(() => {
     const opts = [];
@@ -70,14 +70,14 @@ export default function TaxReportTab() {
   }, [lang]);
 
   useEffect(() => {
-    setData((prev) => {
+    setData((prev: any) => {
       const stored = loadStoredData(activeCompanyId || '', periodKey);
       return mergeImportedDisclosure(stored, importedData);
     });
   }, [activeCompanyId, periodKey, importedData]);
 
   const handleImportFromSystem = () => {
-    refetchTax().then((result) => {
+    refetchTax().then((result: any) => {
       const imported = result?.data;
       if (imported) {
         const stored = loadStoredData(activeCompanyId || '', periodKey);
@@ -96,13 +96,13 @@ export default function TaxReportTab() {
   const netVat = outputTotal - inputTotal;
 
   const handlePrint = () => {
-    const label = (r) => (lang === 'ar' ? r.labelAr : r.labelEn);
-    const outRows = OUTPUT_ROWS.map((r) => {
+    const label = (r: any) => (lang === 'ar' ? r.labelAr : r.labelEn);
+    const outRows = OUTPUT_ROWS.map((r: any) => {
       const amt = r.isTotal ? outputTotal : getRowValue(data, r.key, 'amount');
       const vat = r.isTotal ? outputTotal : getRowValue(data, r.key, 'vat');
       return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtTax(amt)}</td><td>${r.isTotal ? '—' : fmtTax(getRowValue(data, r.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
     }).join('');
-    const inRows = INPUT_ROWS.map((r) => {
+    const inRows = INPUT_ROWS.map((r: any) => {
       const amt = r.isTotal ? inputTotal : getRowValue(data, r.key, 'amount');
       const vat = r.isTotal ? inputTotal : getRowValue(data, r.key, 'vat');
       return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtTax(amt)}</td><td>${r.isTotal ? '—' : fmtTax(getRowValue(data, r.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
@@ -126,11 +126,11 @@ export default function TaxReportTab() {
     });
   };
 
-  const updateRow = (key, field, value) => {
+  const updateRow = (key: any, field: any, value: any) => {
     const num = parseFloat(String(value).replace(/,/g, '')) || 0;
-    setData((prev) => {
+    setData((prev: any) => {
       const next = { ...prev };
-      const isSummaryField = !field || SUMMARY_ROWS.some((r) => r.key === key);
+      const isSummaryField = !field || SUMMARY_ROWS.some((r: any) => r.key === key);
       if (isSummaryField) {
         next[key] = num;
       } else {
@@ -141,28 +141,28 @@ export default function TaxReportTab() {
     });
   };
 
-  const renderEditableCell = (key, field) => (
+  const renderEditableCell = (key: any, field: any) => (
     <Input
       type="text"
       inputMode="decimal"
       value={getRowValue(data, key, field) || ''}
-      onChange={(e) => updateRow(key, field, e.target.value)}
+      onChange={(e: any) => updateRow(key, field, e.target.value)}
       placeholder="0"
     />
   );
 
   const exportData = useMemo(() => {
     const rows = [];
-    const label = (r) => (lang === 'ar' ? r.labelAr : r.labelEn);
-    OUTPUT_ROWS.forEach((r) => {
+    const label = (r: any) => (lang === 'ar' ? r.labelAr : r.labelEn);
+    OUTPUT_ROWS.forEach((r: any) => {
       if (r.isTotal) rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: outputTotal, [lang === 'ar' ? 'الضريبة' : 'VAT']: outputTotal });
       else rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: getRowValue(data, r.key, 'amount'), [lang === 'ar' ? 'الضريبة' : 'VAT']: getRowValue(data, r.key, 'vat') });
     });
-    INPUT_ROWS.forEach((r) => {
+    INPUT_ROWS.forEach((r: any) => {
       if (r.isTotal) rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: inputTotal, [lang === 'ar' ? 'الضريبة' : 'VAT']: inputTotal });
       else rows.push({ [t('reportItem')]: label(r), [lang === 'ar' ? 'المبلغ' : 'Amount']: getRowValue(data, r.key, 'amount'), [lang === 'ar' ? 'الضريبة' : 'VAT']: getRowValue(data, r.key, 'vat') });
     });
-    rows.push({ [t('reportItem')]: label(SUMMARY_ROWS.find((r) => r.key === 'net_payable_refund')), [lang === 'ar' ? 'المبلغ' : 'Amount']: netPayable });
+    rows.push({ [t('reportItem')]: label(SUMMARY_ROWS.find((r: any) => r.key === 'net_payable_refund')), [lang === 'ar' ? 'المبلغ' : 'Amount']: netPayable });
     return rows;
   }, [data, outputTotal, inputTotal, netPayable, lang, t]);
 
@@ -185,18 +185,18 @@ export default function TaxReportTab() {
               type="checkbox"
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
               checked={salesAmountIncludesVat}
-              onChange={(e) => setSalesAmountIncludesVat(e.target.checked)}
+              onChange={(e: any) => setSalesAmountIncludesVat(e.target.checked)}
             />
             <span>
               <span className="font-semibold">{t('taxImportSalesInclusiveLabel')}</span>
               <span className="block text-noorix-muted mt-0.5">{t('taxImportSalesInclusiveHint')}</span>
             </span>
           </label>
-          <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {[currentYear, currentYear - 1, currentYear - 2].map((y) => <option key={y} value={y}>{y}</option>)}
+          <Input type="select" label={t('reportYear')} value={year} onChange={(e: any) => setYear(Number(e.target.value))}>
+            {[currentYear, currentYear - 1, currentYear - 2].map((y: any) => <option key={y} value={y}>{y}</option>)}
           </Input>
-          <Input type="select" label={lang === 'ar' ? 'الفترة' : 'Period'} value={period} onChange={(e) => setPeriod(e.target.value)}>
-            {periodOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <Input type="select" label={lang === 'ar' ? 'الفترة' : 'Period'} value={period} onChange={(e: any) => setPeriod(e.target.value)}>
+            {periodOptions.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </Input>
           <Button size="sm" onClick={handleImportFromSystem} disabled={!activeCompanyId || importLoading}>
             {importLoading ? t('loading') : (lang === 'ar' ? 'استيراد من النظام' : 'Import from system')}
@@ -243,7 +243,7 @@ export default function TaxReportTab() {
                     {lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)'}
                   </td>
                 </tr>
-                {OUTPUT_ROWS.map((r) => (
+                {OUTPUT_ROWS.map((r: any) => (
                   <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
                     <td className="border-b border-noorix-border py-[10px] px-3" style={{ fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
@@ -264,7 +264,7 @@ export default function TaxReportTab() {
                     {lang === 'ar' ? 'ضريبة المشتريات والمصروفات (ما سُجّلت ضريبته فقط)' : 'Purchases & expenses VAT (tax lines only)'}
                   </td>
                 </tr>
-                {INPUT_ROWS.map((r) => (
+                {INPUT_ROWS.map((r: any) => (
                   <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
                     <td className="border-b border-noorix-border py-[10px] px-3" style={{ fontWeight: r.isTotal ? 700 : 500 }}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
@@ -300,13 +300,13 @@ export default function TaxReportTab() {
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td>
                   <td colSpan={3} className="border-b border-noorix-border text-center py-2 px-3">
-                    <Input type="text" inputMode="decimal" value={priorAdj || ''} onChange={(e) => updateRow('prior_adjustments', null, e.target.value)} placeholder="0" />
+                    <Input type="text" inputMode="decimal" value={priorAdj || ''} onChange={(e: any) => updateRow('prior_adjustments', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
                 <tr>
                   <td className="border-b border-noorix-border py-[10px] px-3">{lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td>
                   <td colSpan={3} className="border-b border-noorix-border text-center py-2 px-3">
-                    <Input type="text" inputMode="decimal" value={balanceCarried || ''} onChange={(e) => updateRow('balance_carried', null, e.target.value)} placeholder="0" />
+                    <Input type="text" inputMode="decimal" value={balanceCarried || ''} onChange={(e: any) => updateRow('balance_carried', null, e.target.value)} placeholder="0" />
                   </td>
                 </tr>
                 <tr className="bg-[var(--noorix-blue-8)] border-t-2 border-noorix-blue">

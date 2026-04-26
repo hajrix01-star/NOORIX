@@ -6,7 +6,7 @@ import {
   defaultImportCompanyName,
 } from './backupTabHelpers';
 
-const t = (key) => key;
+const t = (key: any) => key;
 
 describe('backupTabHelpers', () => {
   it('formatFileSize handles common ranges', () => {

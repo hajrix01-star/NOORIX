@@ -12,7 +12,7 @@ import { Button, Input, cn } from '../../ui';
 function getLang() {
   return (typeof document !== 'undefined' && document.documentElement?.lang === 'en') ? 'en' : 'ar';
 }
-function t(key) { return getText(key, getLang()); }
+function t(key: any) { return getText(key, getLang()); }
 
 export default function LoginScreen() {
   const { setToken, setUser } = useAuth();
@@ -32,7 +32,7 @@ export default function LoginScreen() {
   const loginDomain  = getLoginDomain();
 
   /** بريد كامل أو اسم مستخدم + نطاق الهوية (نفس السجل في قاعدة البيانات كبريد). */
-  const resolveLoginIdentifier = (raw) => {
+  const resolveLoginIdentifier = (raw: any) => {
     const s = raw.trim();
     if (!s) return s;
     if (s.includes('@')) return s;
@@ -40,7 +40,7 @@ export default function LoginScreen() {
     return domain ? `${s}@${domain}` : s;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setError('');
     if (!email.trim() || !password) { setError(t('invalidCredentials')); return; }
@@ -56,7 +56,7 @@ export default function LoginScreen() {
       setToken(access_token);
       setUser(user);
       navigate('/sales', { replace: true });
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || t('serverConnectionError'));
     } finally {
       setLoading(false);
@@ -126,7 +126,7 @@ export default function LoginScreen() {
                   type="text"
                   size="lg"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e: any) => setEmail(e.target.value)}
                   autoComplete="username"
                   dir="ltr"
                   className="text-left"
@@ -143,7 +143,7 @@ export default function LoginScreen() {
                     type={showPassword ? 'text' : 'password'}
                     size="lg"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e: any) => setPassword(e.target.value)}
                     autoComplete="current-password"
                     dir="ltr"
                     className={cn('pe-20 text-left')}
@@ -152,7 +152,7 @@ export default function LoginScreen() {
                     type="button"
                     variant="raw"
                     size="sm"
-                    onClick={() => setShowPassword((v) => !v)}
+                    onClick={() => setShowPassword((v: any) => !v)}
                     className="absolute end-2.5 top-1/2 -translate-y-1/2 px-2 font-bold text-noorix-muted hover:text-noorix-text hover:bg-noorix-bg-muted"
                   >
                     {showPassword ? t('hidePassword') : t('showPassword')}

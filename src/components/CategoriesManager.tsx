@@ -89,13 +89,13 @@ export const CategoriesManager = memo(function CategoriesManager({
 
   const { categories, isLoading, create, update, remove } = useCategories(companyId);
   const roots = useMemo(
-    () => (categories as CategoryNode[]).filter((c) => !c.parentId),
+    () => (categories as CategoryNode[]).filter((c: any) => !c.parentId),
     [categories],
   );
 
   const handleParentChange = (parentId: string) => {
-    const parent = roots.find((c) => c.id === parentId);
-    setForm((p) => ({
+    const parent = roots.find((c: any) => c.id === parentId);
+    setForm((p: any) => ({
       ...p,
       parentId: parentId || '',
       type: (parent?.type as CategoryKind) || p.type,
@@ -306,19 +306,19 @@ export const CategoriesManager = memo(function CategoriesManager({
                 type="text"
                 label={`${t('nameAr')} *`}
                 value={form.nameAr}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))}
               />
               <Input
                 type="text"
                 label={t('nameEnCol')}
                 value={form.nameEn}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p: any) => ({ ...p, nameEn: e.target.value }))}
               />
               <Input
                 type="select"
                 label={t('type')}
                 value={form.type}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm((p) => ({ ...p, type: e.target.value as CategoryKind }))}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm((p: any) => ({ ...p, type: e.target.value as CategoryKind }))}
               >
                 <option value="purchase">{t('categoryTypes')}</option>
                 <option value="expense">{t('categoryTypeExpense')}</option>
@@ -328,7 +328,7 @@ export const CategoriesManager = memo(function CategoriesManager({
                 type="text"
                 label={t('icon')}
                 value={form.icon}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, icon: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p: any) => ({ ...p, icon: e.target.value }))}
                 placeholder=""
               />
             </FormRow>
@@ -341,8 +341,8 @@ export const CategoriesManager = memo(function CategoriesManager({
               >
                 <option value="">— تصنيف رئيسي —</option>
                 {roots
-                  .filter((c) => c.id !== editing?.id)
-                  .map((c) => (
+                  .filter((c: any) => c.id !== editing?.id)
+                  .map((c: any) => (
                     <option key={c.id} value={c.id}>
                       {c.icon || ''} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
                       {c.code || c.account?.code ? ` [${c.code || c.account?.code}]` : ''}

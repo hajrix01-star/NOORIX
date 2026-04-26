@@ -31,15 +31,15 @@ export default function ExpenseLineList({
   onLineClick,
   onEditLine,
   onDeleteLine,
-}) {
+}: any) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies = [] } = useApp();
-  const activeCompany = companies.find((c) => c.id === activeCompanyId);
+  const activeCompany = companies.find((c: any) => c.id === activeCompanyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
 
   /** نوع البند (ثابت/متغير) + اسم الفئة المختارة عند العرض */
-  const formatKindWithCategory = useCallback((kind, categoryName) => {
+  const formatKindWithCategory = useCallback((kind: any, categoryName: any) => {
     const cat = categoryName && categoryName !== '—' ? String(categoryName).trim() : '';
     if (kind === 'fixed_expense') {
       const base = t('fixedExpenseType');
@@ -58,7 +58,7 @@ export default function ExpenseLineList({
       label: 'اسم البند',
       sortable: true,
       width: '18%',
-      render: (v, row) => (
+      render: (v: any, row: any) => (
         <Button
           variant="raw"
           size="auto"
@@ -74,7 +74,7 @@ export default function ExpenseLineList({
       label: 'النوع',
       sortable: true,
       width: '22%',
-      render: (v, row) => {
+      render: (v: any, row: any) => {
         const { color } = Badge.fromStatus(v, kindBadgeMap);
         return (
           <Badge color={color} size="sm" className="max-w-[min(100%,14rem)] whitespace-normal text-start leading-snug">
@@ -88,38 +88,38 @@ export default function ExpenseLineList({
       label: 'الفئة',
       sortable: true,
       width: '14%',
-      render: (v) => <span className="block min-w-0 truncate text-[13px]" title={v || ''}>{v || '—'}</span>,
+      render: (v: any) => <span className="block min-w-0 truncate text-[13px]" title={v || ''}>{v || '—'}</span>,
     },
     {
       key: 'supplierName',
       label: 'المورد',
       sortable: true,
       width: '14%',
-      render: (v) => <span className="block min-w-0 truncate text-[13px]" title={v || ''}>{v || '—'}</span>,
+      render: (v: any) => <span className="block min-w-0 truncate text-[13px]" title={v || ''}>{v || '—'}</span>,
     },
     {
       key: 'serviceNumber',
       label: 'رقم الخدمة',
       width: '10%',
       align: 'center',
-      render: (v) => <span className="nx-cell-num text-[13px]">{v || '—'}</span>,
+      render: (v: any) => <span className="nx-cell-num text-[13px]">{v || '—'}</span>,
     },
     {
       key: 'actions',
       label: t('actions'),
       width: '14%',
       align: 'center',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <div className="noorix-actions-row flex flex-wrap justify-center gap-1.5">
-          <Button size="sm" onClick={(e) => { e.stopPropagation(); onEditLine?.(row); }}>{t('edit')}</Button>
-          <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); onDeleteLine?.(row); }}>{t('delete')}</Button>
+          <Button size="sm" onClick={(e: any) => { e.stopPropagation(); onEditLine?.(row); }}>{t('edit')}</Button>
+          <Button size="sm" variant="danger" onClick={(e: any) => { e.stopPropagation(); onDeleteLine?.(row); }}>{t('delete')}</Button>
         </div>
       ),
     },
   ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, formatKindWithCategory]);
 
   const tableData = useMemo(() =>
-    expenseLines.map((line) => ({
+    expenseLines.map((line: any) => ({
       ...line,
       categoryName:
         (lang === 'en'
@@ -130,7 +130,7 @@ export default function ExpenseLineList({
   [expenseLines, lang]);
 
   const exportData = useMemo(() =>
-    tableData.map((r) => ({
+    tableData.map((r: any) => ({
       'اسم البند': r.nameAr || r.nameEn || '—',
       'النوع': formatKindWithCategory(r.kind, r.categoryName),
       'المورد': r.supplierName,
@@ -138,7 +138,7 @@ export default function ExpenseLineList({
     })),
   [tableData, formatKindWithCategory]);
 
-  const renderMobileCard = useCallback((row) => (
+  const renderMobileCard = useCallback((row: any) => (
     <div>
       <div className="flex justify-between items-start mb-2">
         <Button
@@ -170,7 +170,7 @@ export default function ExpenseLineList({
   ), [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, formatKindWithCategory]);
 
   function handlePrint() {
-    const rows = tableData.map((r) =>
+    const rows = tableData.map((r: any) =>
       `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${formatKindWithCategory(r.kind, r.categoryName).replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
     ).join('');
     const printTitle = t('expenseLinesPrintTitle') || 'بنود المصاريف';
@@ -196,7 +196,7 @@ export default function ExpenseLineList({
               type="select"
               size="sm"
               value={filterKind}
-              onChange={(e) => onFilterKindChange(e.target.value)}
+              onChange={(e: any) => onFilterKindChange(e.target.value)}
               className="w-full"
               aria-label={t('allTypes')}
             >
@@ -240,7 +240,7 @@ export default function ExpenseLineList({
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{tableData.length}</span>}
         showSearchInHeader={false}
         emptyMessage={t('expenseLinesEmptyState')}
-        keyExtractor={(row) => row.id}
+        keyExtractor={(row: any) => row.id}
         renderMobileCard={renderMobileCard}
         tableId="expense-lines"
         tableLayout="fixed"

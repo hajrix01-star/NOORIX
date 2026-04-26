@@ -31,12 +31,12 @@ export function FieldRow({ label, value, confidence, match }: { label: any; valu
   );
 }
 
-function EditableNumber({ value, onChange, warn }) {
+function EditableNumber({ value, onChange, warn }: any) {
   return (
     <Input
       type="number"
       value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e: any) => onChange(e.target.value)}
       step="any"
       className="w-[72px] py-[3px] px-1.5 rounded-md text-[13px] font-bold text-center"
       style={{
@@ -50,9 +50,11 @@ function EditableNumber({ value, onChange, warn }) {
   );
 }
 
-export function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
+export function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }: any) {
   const match = item.itemMatch;
-  const statusInfo = match ? STATUS_BADGE[match.status] : STATUS_BADGE.new;
+  const statusInfo = match
+    ? (STATUS_BADGE as Record<string, (typeof STATUS_BADGE)['new']>)[String(match.status)]
+    : STATUS_BADGE.new;
   const hasMathWarn = !!item.mathWarning;
   const hasPriceWarn = !!item.priceWarning;
 
@@ -104,7 +106,7 @@ export function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion 
           <EditableNumber
             value={item.quantity}
             warn={hasMathWarn}
-            onChange={(v) => onUpdate(index, 'quantity', v)}
+            onChange={(v: any) => onUpdate(index, 'quantity', v)}
           />
         </div>
         <span className="text-noorix-muted text-[13px] self-end mb-1">×</span>
@@ -113,7 +115,7 @@ export function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion 
           <EditableNumber
             value={item.unitPrice}
             warn={hasMathWarn}
-            onChange={(v) => onUpdate(index, 'unitPrice', v)}
+            onChange={(v: any) => onUpdate(index, 'unitPrice', v)}
           />
         </div>
         <span className="text-noorix-muted text-[13px] self-end mb-1">=</span>
@@ -122,7 +124,7 @@ export function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion 
           <EditableNumber
             value={item.totalPrice}
             warn={hasMathWarn}
-            onChange={(v) => onUpdate(index, 'totalPrice', v)}
+            onChange={(v: any) => onUpdate(index, 'totalPrice', v)}
           />
         </div>
         {item.confidence != null && (

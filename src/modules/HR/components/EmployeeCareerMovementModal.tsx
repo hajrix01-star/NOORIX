@@ -25,7 +25,7 @@ export function EmployeeCareerMovementModal({
   customAllowanceTotal = 0,
   onClose,
   onSuccess,
-}) {
+}: any) {
   const { t } = useTranslation();
   const [effectiveDate, setEffectiveDate] = useState(getSaudiToday());
   const [prevJobTitle, setPrevJobTitle] = useState('');
@@ -73,7 +73,7 @@ export function EmployeeCareerMovementModal({
     };
   }, [kind, employee, customTotal, raiseIncrement, currentTotalAllIn]);
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: any) {
     e?.preventDefault?.();
     if (!employee?.id || !companyId || saving) return;
     setFormError('');
@@ -101,7 +101,7 @@ export function EmployeeCareerMovementModal({
         rejectIfApiFailed(mov, t('saveFailed'));
         onSuccess?.();
         onClose?.();
-      } catch (err) {
+      } catch (err: any) {
         setFormError(err?.message || t('saveFailed'));
       } finally {
         setSaving(false);
@@ -151,7 +151,7 @@ export function EmployeeCareerMovementModal({
       rejectIfApiFailed(mov, t('saveFailed'));
       onSuccess?.();
       onClose?.();
-    } catch (err) {
+    } catch (err: any) {
       setFormError(err?.message || t('saveFailed'));
     } finally {
       setSaving(false);
@@ -191,7 +191,7 @@ export function EmployeeCareerMovementModal({
           type="date"
           label={t('careerEffectiveDate')}
           value={effectiveDate}
-          onChange={(e) => setEffectiveDate(e.target.value)}
+          onChange={(e: any) => setEffectiveDate(e.target.value)}
           lang="en"
         />
 
@@ -201,14 +201,14 @@ export function EmployeeCareerMovementModal({
               type="text"
               label={t('careerPreviousJobTitle')}
               value={prevJobTitle}
-              onChange={(e) => setPrevJobTitle(e.target.value)}
+              onChange={(e: any) => setPrevJobTitle(e.target.value)}
               placeholder={t('jobTitlePlaceholder')}
             />
             <Input
               type="text"
               label={t('careerNewJobTitle')}
               value={newJobTitle}
-              onChange={(e) => setNewJobTitle(e.target.value)}
+              onChange={(e: any) => setNewJobTitle(e.target.value)}
               placeholder={t('jobTitlePlaceholder')}
               required
             />
@@ -228,7 +228,7 @@ export function EmployeeCareerMovementModal({
               step="0.01"
               label={t('careerRaiseIncrementOnTotal')}
               value={raiseIncrement}
-              onChange={(e) => setRaiseIncrement(e.target.value)}
+              onChange={(e: any) => setRaiseIncrement(e.target.value)}
               placeholder="0"
             />
             {raisePreview?.invalidTarget ? (
@@ -245,7 +245,7 @@ export function EmployeeCareerMovementModal({
                 </div>
                 <div className="text-[12px] text-noorix-muted">
                   {t('careerRaiseImpliedBasic')}:{' '}
-                  <FmtNum n={raisePreview.basic} className="font-medium text-noorix-text ltr" />
+                  <FmtNum n={raisePreview.basic ?? 0} className="font-medium text-noorix-text ltr" />
                 </div>
               </div>
             ) : null}
@@ -256,7 +256,7 @@ export function EmployeeCareerMovementModal({
           type="text"
           label={t('notes')}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e: any) => setNotes(e.target.value)}
           placeholder={t('notes')}
         />
       </form>

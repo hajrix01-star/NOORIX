@@ -21,7 +21,7 @@ const ROLE_COLORS = {
 };
 
 /** أيقونة مستخدم (رأس + أكتاف) — بدون أحرف */
-function UserSilhouetteIcon({ className = '' }) {
+function UserSilhouetteIcon({ className = '' }: any) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
@@ -32,15 +32,15 @@ function UserSilhouetteIcon({ className = '' }) {
 const MENU_WIDTH  = 240;
 const VIEWPORT_GAP = 8;
 
-export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
+export default function UserMenu({ user, onLogout, language, toggleLanguage }: any) {
   const { t, lang } = useTranslation();
   const showAppearance = typeof toggleLanguage === 'function';
   const [open, setOpen]                       = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const { showToast } = useToast();
   const [pos, setPos]                         = useState<{ top: number; left: number; maxMenuH?: number }>({ top: 0, left: 0 });
-  const btnRef  = useRef(null);
-  const menuRef = useRef(null);
+  const btnRef  = useRef<any>(null);
+  const menuRef = useRef<any>(null);
 
   const recalcPos = useCallback(() => {
     if (!btnRef.current) return;
@@ -65,7 +65,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
 
   useEffect(() => {
     if (!open) return;
-    const close = (e) => {
+    const close = (e: any) => {
       if (
         btnRef.current  && !btnRef.current.contains(e.target) &&
         menuRef.current && !menuRef.current.contains(e.target)
@@ -83,16 +83,19 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
 
   useEffect(() => {
     if (!open) return;
-    const handleKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    const handleKey = (e: any) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [open]);
 
   const isMobileLayout = useIsNarrow768();
 
-  const role         = (user?.role || '').toLowerCase();
-  const roleLabel    = ROLE_KEYS[role] ? t(ROLE_KEYS[role]) : role;
-  const roleColor    = ROLE_COLORS[role] || 'var(--noorix-accent-green)';
+  const role = (user?.role || '').toLowerCase();
+  const roleKey = role as keyof typeof ROLE_KEYS;
+  const roleLabel = roleKey in ROLE_KEYS ? t(ROLE_KEYS[roleKey]) : role;
+  const roleColor =
+    (roleKey in ROLE_COLORS ? ROLE_COLORS[roleKey as keyof typeof ROLE_COLORS] : undefined) ||
+    'var(--noorix-accent-green)';
   const displayName  = user?.nameAr || user?.nameEn || user?.email || t('userDefault');
   const email        = user?.email || '';
   /* ── القائمة المنسدلة ── */
@@ -197,7 +200,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
         variant="raw"
         type="button"
         className="um-trigger flex items-center gap-2 px-2.5 h-9 rounded-lg transition-colors hover:bg-noorix-bg-muted"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen((v: any) => !v)}
         title={displayName}
         aria-expanded={open}
         aria-haspopup="menu"
@@ -235,7 +238,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
       {showChangePassword && (
         <ChangePasswordModal
           onClose={() => setShowChangePassword(false)}
-          onSuccess={(msg) => {
+          onSuccess={(msg: any) => {
             setShowChangePassword(false);
             showToast(msg, 'success');
           }}

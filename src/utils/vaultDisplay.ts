@@ -8,7 +8,7 @@
  * @param {string} lang - 'ar' | 'en'
  * @returns {string}
  */
-export function vaultDisplayName(vault, lang) {
+export function vaultDisplayName(vault: any, lang: any) {
   if (!vault) return '—';
   return lang === 'en' ? (vault.nameEn || vault.nameAr || '—') : (vault.nameAr || vault.nameEn || '—');
 }

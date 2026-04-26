@@ -24,7 +24,7 @@ export type SupplierOptionRow = {
   taxNumber?: string | null;
 };
 
-function supplierLabel(supplier: SupplierOptionRow | null | undefined, lang = 'ar') {
+function supplierLabel(supplier: SupplierOptionRow | null | undefined, lang: any = 'ar') {
   if (lang === 'en') return supplier?.nameEn || supplier?.nameAr || supplier?.id || '';
   return supplier?.nameAr || supplier?.nameEn || supplier?.id || '';
 }
@@ -88,7 +88,7 @@ export function SupplierSelect({
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 280, maxHeight: 320 });
 
   const selectedSupplier = useMemo(
-    () => suppliers.find((s) => s.id === value) || null,
+    () => suppliers.find((s: any) => s.id === value) || null,
     [suppliers, value],
   );
 
@@ -120,13 +120,13 @@ export function SupplierSelect({
       }
     }
 
-    favorites.sort((a, b) =>
+    favorites.sort((a: any, b: any) =>
       supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), localeOpts),
     );
-    mostUsed.sort((a, b) =>
+    mostUsed.sort((a: any, b: any) =>
       Number(usage[b.id] || 0) - Number(usage[a.id] || 0),
     );
-    regular.sort((a, b) =>
+    regular.sort((a: any, b: any) =>
       supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), localeOpts),
     );
 
@@ -202,7 +202,7 @@ export function SupplierSelect({
     setQuery(supplierLabel(supplier));
     setOpen(false);
     trackSupplierUsage(supplier.id);
-    setUsageVersion((v) => v + 1);
+    setUsageVersion((v: any) => v + 1);
   }
 
   const ph = placeholder && placeholder !== '—' ? placeholder : t('supplierSelectSearchPlaceholder');
@@ -228,12 +228,12 @@ export function SupplierSelect({
               <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-amber bg-noorix-bg border-b border-noorix-border">
                 ★ المفضلة
               </div>
-              {favoritesSection.map((s) => (
+              {favoritesSection.map((s: any) => (
                 <Button
                   key={`fav-${s.id}`}
                   role="option"
                   aria-selected={s.id === value}
-                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseDown={(e: any) => e.preventDefault()}
                   onClick={() => selectSupplier(s)}
                   className="nx-supplier-option"
                   style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}
@@ -253,12 +253,12 @@ export function SupplierSelect({
               <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-muted bg-noorix-bg border-b border-noorix-border">
                 الأكثر استخداماً
               </div>
-              {mostUsedSection.map((s) => (
+              {mostUsedSection.map((s: any) => (
                 <Button
                   key={`used-${s.id}`}
                   role="option"
                   aria-selected={s.id === value}
-                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseDown={(e: any) => e.preventDefault()}
                   onClick={() => selectSupplier(s)}
                   className="nx-supplier-option"
                   style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}
@@ -280,12 +280,12 @@ export function SupplierSelect({
                   جميع الموردين
                 </div>
               )}
-              {regularSection.map((s) => (
+              {regularSection.map((s: any) => (
                 <Button
                   key={s.id}
                   role="option"
                   aria-selected={s.id === value}
-                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseDown={(e: any) => e.preventDefault()}
                   onClick={() => selectSupplier(s)}
                   className="nx-supplier-option"
                   style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}

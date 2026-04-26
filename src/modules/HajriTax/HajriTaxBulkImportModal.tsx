@@ -27,7 +27,7 @@ export const HAJRI_BULK_TEMPLATE_COLUMNS = [
   { key: 'notes', label: 'notes' },
 ];
 
-function parseQuarter(val) {
+function parseQuarter(val: any) {
   if (val === '' || val === null || val === undefined) return NaN;
   const n = Number(val);
   if ([1, 2, 3, 4].includes(n)) return n;
@@ -36,22 +36,22 @@ function parseQuarter(val) {
   return m ? Number(m[1]) : NaN;
 }
 
-function num(row, key) {
+function num(row: any, key: any) {
   const v = row[key];
   if (v === '' || v === null || v === undefined) return 0;
   const x = parseFloat(String(v).replace(/,/g, '').trim());
   return Number.isFinite(x) ? x : 0;
 }
 
-function resolveCompanyId(companies, row) {
+function resolveCompanyId(companies: any, row: any) {
   const cid = String(row.company_id ?? row.companyId ?? '').trim();
-  if (cid && companies.some((c) => c.id === cid)) return cid;
+  if (cid && companies.some((c: any) => c.id === cid)) return cid;
 
   const nameHint = String(row.company_name_ar ?? '').trim();
   if (!nameHint) return null;
 
   return (
-    companies.find((c) => {
+    companies.find((c: any) => {
       const ar = (c.nameAr || '').trim();
       const en = (c.nameEn || '').trim().toLowerCase();
       const h = nameHint.toLowerCase();
@@ -60,7 +60,7 @@ function resolveCompanyId(companies, row) {
   );
 }
 
-function rowToVals(row) {
+function rowToVals(row: any) {
   return {
     sales_amount: num(row, 'sales_amount'),
     sales_vat: num(row, 'sales_vat'),
@@ -73,11 +73,11 @@ function rowToVals(row) {
   };
 }
 
-export default function HajriTaxBulkImportModal({ open, onClose, companies, lang, t, onImported }) {
+export default function HajriTaxBulkImportModal({ open, onClose, companies, lang, t, onImported }: any) {
   const qc = useQueryClient();
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
-  const fileRef = React.useRef(null);
+  const fileRef = React.useRef<any>(null);
 
   const downloadTemplate = useCallback(async () => {
     const y = new Date().getFullYear();
@@ -109,7 +109,7 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
   }, [lang, t]);
 
   const processFile = useCallback(
-    async (file) => {
+    async (file: any) => {
       if (!file) return;
       setBusy(true);
       const errors = [];
@@ -162,7 +162,7 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
           try {
             throwIfApiFailed(res, 'upsert');
             ok += 1;
-          } catch (e) {
+          } catch (e: any) {
             errors.push(`${t('hajriTaxBulkImportRow')} ${i + 2}: ${e?.message || 'error'}`);
           }
         }
@@ -220,7 +220,7 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
         type="file"
         accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         className="hidden"
-        onChange={(e) => {
+        onChange={(e: any) => {
           const f = e.target.files?.[0];
           void processFile(f);
         }}

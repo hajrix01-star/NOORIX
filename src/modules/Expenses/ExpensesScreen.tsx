@@ -25,7 +25,7 @@ const TABS = [
   { id: 'batch', labelKey: 'expenseBatchTab' },
   { id: 'payments', labelKey: 'paymentHistoryTab' },
 ];
-const EXPENSE_TAB_IDS = TABS.map((tab) => tab.id);
+const EXPENSE_TAB_IDS = TABS.map((tab: any) => tab.id);
 
 export default function ExpensesScreen() {
   const { activeCompanyId } = useApp();
@@ -36,9 +36,9 @@ export default function ExpensesScreen() {
 
   const [activeTab, setActiveTab] = useTabSearchParam(EXPENSE_TAB_IDS, 'lines');
   const { showToast } = useToast();
-  const [selectedLineId, setSelectedLineId] = useState(null);
+  const [selectedLineId, setSelectedLineId] = useState<any>(null);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [editingLine, setEditingLine] = useState(null);
+  const [editingLine, setEditingLine] = useState<any>(null);
   const [filterKind, setFilterKind] = useState('');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
 
@@ -51,14 +51,14 @@ export default function ExpensesScreen() {
     enabled: !!companyId,
   });
 
-  const handleLineClick = (line) => setSelectedLineId(line?.id ?? null);
+  const handleLineClick = (line: any) => setSelectedLineId(line?.id ?? null);
   const handleCloseDetail = () => setSelectedLineId(null);
 
   const handleCreateLine = () => {
     setEditingLine(null);
     setShowFormModal(true);
   };
-  const handleEditLine = (line) => {
+  const handleEditLine = (line: any) => {
     setEditingLine(line);
     setShowFormModal(true);
   };
@@ -67,14 +67,14 @@ export default function ExpensesScreen() {
     setEditingLine(null);
   };
 
-  const handleDeleteLine = (line) => {
+  const handleDeleteLine = (line: any) => {
     if (!confirm(`هل تريد إلغاء تفعيل بند المصروف "${line.nameAr || line.nameEn}"؟\n(لن يُحذف حذفاً نهائياً، بل سيُستبعد من القوائم النشطة)`)) return;
     deactivateExpenseLine(line.id, companyId)
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
         showToast(t('savedSuccessfully') || 'تم إلغاء التفعيل بنجاح');
       })
-      .catch((err) => showToast(err?.message || 'فشل', 'error'));
+      .catch((err: any) => showToast(err?.message || 'فشل', 'error'));
   };
 
   const handleFormSaved = () => {
@@ -85,7 +85,7 @@ export default function ExpensesScreen() {
   };
 
   const expenseTabItems = useMemo(
-    () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
+    () => TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) })),
     [t],
   );
 

@@ -8,11 +8,11 @@
  * @param {Array<object>} categories
  * @returns {object} كائن التحديث الكامل للصف
  */
-export function patchForSupplierChange(supplierId, suppliers, categories) {
+export function patchForSupplierChange(supplierId: any, suppliers: any, categories: any) {
   if (!supplierId) {
     return { supplierId: '', categoryId: '', debitAccountId: '', kind: 'purchase' };
   }
-  const supplier = suppliers.find((s) => s.id === supplierId);
+  const supplier = suppliers.find((s: any) => s.id === supplierId);
   if (!supplier) {
     return {
       supplierId,
@@ -24,7 +24,7 @@ export function patchForSupplierChange(supplierId, suppliers, categories) {
   }
   const cat =
     supplier?.supplierCategory ??
-    (supplier?.supplierCategoryId ? categories.find((c) => c.id === supplier.supplierCategoryId) : null);
+    (supplier?.supplierCategoryId ? categories.find((c: any) => c.id === supplier.supplierCategoryId) : null);
   const kind = cat?.type === 'expense' ? 'expense' : 'purchase';
   const isTaxable = supplier?.isTaxRegistered !== false;
 
@@ -42,7 +42,7 @@ export function patchForSupplierChange(supplierId, suppliers, categories) {
  * @param {object} row صف الفاتورة الحالي
  * @returns {object}
  */
-export function patchForCategoryChange(cat, row) {
+export function patchForCategoryChange(cat: any, row: any) {
   if (!cat) {
     return { categoryId: '', debitAccountId: '' };
   }
@@ -57,6 +57,6 @@ export function patchForCategoryChange(cat, row) {
 }
 
 /** أنواع السطر التي تدعم «متابعة ضمان» في دفعة الموردين (مشتريات / مصروفات / مصروف ثابت) */
-export function isWarrantyFollowUpKind(kind) {
+export function isWarrantyFollowUpKind(kind: any) {
   return kind === 'purchase' || kind === 'expense' || kind === 'fixed_expense';
 }

@@ -13,7 +13,7 @@ import { OcrLinkedPurchaseForm } from './invoiceUpload/OcrLinkedPurchaseForm';
 import { OcrLineItemsList, OcrWarningStrip } from './invoiceUpload/OcrLineItemsAndWarnings';
 import { OcrNewSupplierModal } from './invoiceUpload/OcrNewSupplierModal';
 
-export default function InvoiceUploadTab(props) {
+export default function InvoiceUploadTab(props: any) {
   const o = useInvoiceUploadTab(props);
 
   return (
@@ -33,7 +33,7 @@ export default function InvoiceUploadTab(props) {
           onDragOver={() => o.setDragging(true)}
           onDragLeave={() => o.setDragging(false)}
           onDrop={o.handleDrop}
-          onClickPick={() => { (o.fileRef?.current as HTMLInputElement | null)?.click(); }}
+          onClickPick={() => { o.fileRef.current?.click(); }}
           fileRef={o.fileRef}
           onFileInputChange={o.readFile}
         />

@@ -18,7 +18,7 @@ const DASHBOARD_TABS = [
   { id: 'specialDays', labelKey: 'dashboardSpecialDays'  },
   { id: 'appSales',    labelKey: 'dashboardAppSales'     },
 ];
-const DASHBOARD_TAB_IDS = DASHBOARD_TABS.map((tab) => tab.id);
+const DASHBOARD_TAB_IDS = DASHBOARD_TABS.map((tab: any) => tab.id);
 
 const MONTH_NAMES_EN = [
   'January','February','March','April','May','June',
@@ -43,7 +43,7 @@ export default function DashboardScreen() {
   }), [year, selectedMonthNumber]);
 
   const dashboardTabItems = useMemo(
-    () => DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
+    () => DASHBOARD_TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) })),
     [t],
   );
 
@@ -57,15 +57,15 @@ export default function DashboardScreen() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[12px] text-noorix-muted">{t('reportYear')}</span>
-          <Input type="select" size="sm" value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {[now.year, now.year - 1, now.year - 2].map((y) => (
+          <Input type="select" size="sm" value={year} onChange={(e: any) => setYear(Number(e.target.value))}>
+            {[now.year, now.year - 1, now.year - 2].map((y: any) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </Input>
           <span className="text-[12px] text-noorix-muted">{t('reportMonth')}</span>
-          <Input type="select" size="sm" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+          <Input type="select" size="sm" value={selectedMonth} onChange={(e: any) => setSelectedMonth(e.target.value)}>
             <option value="">{t('allMonths')}</option>
-            {MONTH_NAMES_EN.map((m, i) => (
+            {MONTH_NAMES_EN.map((m: any, i: any) => (
               <option key={i} value={i + 1}>{m}</option>
             ))}
           </Input>

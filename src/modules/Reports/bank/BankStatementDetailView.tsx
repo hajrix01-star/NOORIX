@@ -23,7 +23,7 @@ export default function BankStatementDetailView({
   createCategory,
   showToast,
   onRefresh,
-}) {
+}: any) {
   const { t } = useTranslation();
   const vm = useBankStatementView(statementId, companyId, t);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -90,7 +90,7 @@ export default function BankStatementDetailView({
       setNewCategoryName('');
       onRefresh?.();
       showToast(t('savedSuccessfully') || 'OK');
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || 'Error', 'error');
     }
   };
@@ -107,7 +107,7 @@ export default function BankStatementDetailView({
             onClick={() => {
               vm.reclassifyMutation.mutate(undefined, {
                 onSuccess: () => showToast?.(t('bankReclassifyDone') || 'تم إعادة التصنيف'),
-                onError: (e) => showToast?.(e?.message || 'Error', 'error'),
+                onError: (e: any) => showToast?.(e?.message || 'Error', 'error'),
               });
             }}
           >
@@ -124,7 +124,7 @@ export default function BankStatementDetailView({
                   columnTotals: vm.columnTotals,
                   summaryByCategory: vm.summaryByCategory,
                 });
-              } catch (e) {
+              } catch (e: any) {
                 showToast?.(e?.message || 'Error', 'error');
               }
             }}
@@ -181,7 +181,7 @@ export default function BankStatementDetailView({
               setActiveTab={vm.setActiveTab}
               categories={categories}
               showToast={showToast}
-              onSaveTxCategory={async (txId, categoryId) => {
+              onSaveTxCategory={async (txId: any, categoryId: any) => {
                 await vm.updateCategoryMutation.mutateAsync({ txId, categoryId });
                 await vm.refetch();
               }}

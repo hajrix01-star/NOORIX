@@ -6,14 +6,14 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { FmtNum, MetricCard } from '../../../ui';
 
-export default function BankStatementSalesCompareTab({ statement, reconciliationStats, reconLoading }) {
+export default function BankStatementSalesCompareTab({ statement, reconciliationStats, reconLoading }: any) {
   const { t } = useTranslation();
   const start = statement?.startDate?.slice(0, 10);
   const end = statement?.endDate?.slice(0, 10);
 
   const bankCredits = useMemo(() => {
     const txs = statement?.transactions || [];
-    return txs.reduce((s, tx) => s + (Number(tx.credit) || 0), 0);
+    return txs.reduce((s: any, tx: any) => s + (Number(tx.credit) || 0), 0);
   }, [statement]);
 
   if (!start || !end) {

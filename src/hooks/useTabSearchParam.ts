@@ -6,7 +6,7 @@ export function pickTabFromSearchParams(
   searchParams: URLSearchParams,
   allowedIds: readonly string[],
   defaultId: string,
-  paramName = 'tab',
+  paramName: any = 'tab',
   legacyParamName?: string | null,
 ) {
   const get = (k: string) => searchParams.get(k)?.trim();
@@ -35,7 +35,7 @@ export function pickTabFromSearchParams(
 export function useTabSearchParam(
   allowedIds: readonly string[],
   defaultId: string,
-  paramName = 'tab',
+  paramName: any = 'tab',
   legacyParamName?: string | null,
 ) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,7 +53,7 @@ export function useTabSearchParam(
         : (allowedIds.includes(defaultId) ? defaultId : allowedIds[0]);
       if (!nextId) return;
       setSearchParams(
-        (prev) => {
+        (prev: any) => {
           const next = new URLSearchParams(prev);
           if (legacyParamName) next.delete(legacyParamName);
           if (nextId === defaultId) next.delete(paramName);
@@ -77,7 +77,7 @@ export function useTabSearchParam(
       !allowedIds.includes(leg);
     if (!badPrimary && !badLegacy) return;
     setSearchParams(
-      (prev) => {
+      (prev: any) => {
         const next = new URLSearchParams(prev);
         if (badPrimary) next.delete(paramName);
         if (badLegacy) next.delete(legacyParamName);

@@ -18,19 +18,19 @@ export type SupplierFormProps = {
 
 export const SupplierForm = memo(function SupplierForm({ companyId, flatCategories = [], onSave, isSaving, onCancel }: SupplierFormProps) {
   const { t, lang } = useTranslation();
-  const catLabel = (c) => (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || '';
+  const catLabel = (c: any) => (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || '';
   const [form, setForm] = useState(EMPTY);
 
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const set = (k: any, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
   // فلترة الفئات حسب نوع المورد: مشتريات → purchase، مصروفات → expense
-  const filteredCategories = flatCategories.filter((c) => {
+  const filteredCategories = flatCategories.filter((c: any) => {
     if (form.supplierType === 'purchases') return c.type === 'purchase';
     if (form.supplierType === 'expenses') return c.type === 'expense';
     return true;
   });
 
-  function handleSubmit(e) {
+  function handleSubmit(e: any) {
     e.preventDefault();
     if (!form.nameAr.trim()) return;
     onSave({
@@ -53,33 +53,33 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
           <Input
             label={t('nameAr')}
             value={form.nameAr}
-            onChange={(e) => set('nameAr', e.target.value)}
+            onChange={(e: any) => set('nameAr', e.target.value)}
             placeholder={t('nameArPlaceholder')}
             required
           />
           <Input
             label={t('nameEn')}
             value={form.nameEn}
-            onChange={(e) => set('nameEn', e.target.value)}
+            onChange={(e: any) => set('nameEn', e.target.value)}
             placeholder={t('nameEnPlaceholder')}
           />
           <Input
             label={t('taxNumber')}
             value={form.taxNumber}
-            onChange={(e) => set('taxNumber', e.target.value)}
+            onChange={(e: any) => set('taxNumber', e.target.value)}
             placeholder="300000000000003"
           />
           <Input
             label={t('phone')}
             value={form.phone}
-            onChange={(e) => set('phone', e.target.value)}
+            onChange={(e: any) => set('phone', e.target.value)}
             placeholder="05xxxxxxxx"
           />
           <Input
             type="select"
             label={t('supplierType')}
             value={form.supplierType}
-            onChange={(e) => set('supplierType', e.target.value)}
+            onChange={(e: any) => set('supplierType', e.target.value)}
           >
             <option value="purchases">{t('supplierTypePurchases')}</option>
             <option value="expenses">{t('supplierTypeExpenses')}</option>
@@ -88,10 +88,10 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
             type="select"
             label={t('categoryLinked')}
             value={form.supplierCategoryId}
-            onChange={(e) => set('supplierCategoryId', e.target.value)}
+            onChange={(e: any) => set('supplierCategoryId', e.target.value)}
           >
             <option value="">{t('noCategory')}</option>
-            {filteredCategories.map((c) => {
+            {filteredCategories.map((c: any) => {
               const icon = c.icon || c.account?.icon || '';
               const displayCode = c.code || c.account?.code || '';
               const code = displayCode ? ` [${displayCode}]` : '';
@@ -108,7 +108,7 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
           <input
             type="checkbox"
             checked={form.isTaxRegistered}
-            onChange={(e) => set('isTaxRegistered', e.target.checked)}
+            onChange={(e: any) => set('isTaxRegistered', e.target.checked)}
             className="w-[18px] h-[18px]"
           />
           <span>

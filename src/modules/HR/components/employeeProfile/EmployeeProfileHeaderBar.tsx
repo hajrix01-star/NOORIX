@@ -10,7 +10,7 @@ export function EmployeeProfileHeaderBar({
   onPermanentDelete,
   canDelete,
   canPayAdvance,
-}) {
+}: any) {
   return (
     <div className="nx-page-header employee-profile-header-bar">
       <Button size="sm" onClick={onBack}>

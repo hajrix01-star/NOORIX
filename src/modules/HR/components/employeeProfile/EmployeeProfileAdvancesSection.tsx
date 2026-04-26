@@ -2,7 +2,7 @@ import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { hrFmt } from '../../utils/hrFmt';
 import { Badge, FmtNum, SmartTable } from '../../../../ui';
 
-export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }) {
+export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }: any) {
   return (
     <div className="noorix-surface-card overflow-hidden">
       <div className="nx-section-header">
@@ -19,19 +19,19 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
             label: t('advanceAmount'),
             numeric: true,
             width: '18%',
-            render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" />,
+            render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" />,
           },
           {
             key: 'transactionDate',
             label: t('transactionDate'),
             width: '16%',
-            render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
           },
           {
             key: 'installmentCount',
             label: t('installmentInfo'),
             width: '20%',
-            render: (_, row) => {
+            render: (_: any, row: any) => {
               if (!row.installmentCount || row.installmentCount <= 1) {
                 return <span className="nx-cell-muted-sm">—</span>;
               }
@@ -46,13 +46,13 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
             key: 'status',
             label: t('status'),
             width: '16%',
-            render: (v) => <Badge {...Badge.fromStatus(v, advanceStatusMap)} size="sm" />,
+            render: (v: any) => <Badge {...Badge.fromStatus(v, advanceStatusMap)} size="sm" />,
           },
           {
             key: 'notes',
             label: t('invoiceNotesColumn'),
             width: '30%',
-            render: (v) => (
+            render: (v: any) => (
               <span className="nx-cell-ellipsis" title={v || ''}>
                 {v || '—'}
               </span>
@@ -64,7 +64,7 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderMobileCard={(row) => (
+        renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[15px] font-bold text-noorix-green ltr">

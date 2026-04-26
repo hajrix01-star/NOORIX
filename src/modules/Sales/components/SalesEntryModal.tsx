@@ -26,14 +26,14 @@ export function SalesEntryModal({
   onClose,
   onWhatsApp,
   autoCloseOnSuccess = true,
-}) {
+}: any) {
   const { t, lang } = useTranslation();
   const [txDate, setTxDate] = useState(getSaudiToday());
   const [customerCount, setCustomerCount] = useState('');
   const [cashOnHand, setCashOnHand] = useState('');
   const [notes, setNotes] = useState('');
-  const [channelAmounts, setChannelAmounts] = useState({});
-  const [savedSummary, setSavedSummary] = useState(null);
+  const [channelAmounts, setChannelAmounts] = useState<Record<string, string>>({});
+  const [savedSummary, setSavedSummary] = useState<any>(null);
 
   useEffect(() => {
     setTxDate(getSaudiToday());
@@ -65,8 +65,8 @@ export function SalesEntryModal({
     const cc = parseInt(customerCount, 10) || 0;
     if (cc <= 0) return;
     const channels = salesChannels
-      .filter((v) => parseFloat(channelAmounts[v.id]) > 0)
-      .map((v) => ({ vaultId: v.id, amount: channelAmounts[v.id] }));
+      .filter((v: any) => parseFloat(channelAmounts[v.id]) > 0)
+      .map((v: any) => ({ vaultId: v.id, amount: channelAmounts[v.id] }));
     const idempotencyKey = `sales-${companyId}-${txDate}-${Date.now()}`;
     createSummary.mutate(
       {
@@ -79,7 +79,7 @@ export function SalesEntryModal({
         idempotencyKey,
       },
       {
-        onSuccess: (res) => {
+        onSuccess: (res: any) => {
           const data = res?.data ?? res;
           const summary = data?.summary ?? data;
           if (autoCloseOnSuccess) {
@@ -90,7 +90,7 @@ export function SalesEntryModal({
             onSuccess?.(summary);
           }
         },
-        onError: (e) => onError?.(e?.message),
+        onError: (e: any) => onError?.(e?.message),
       },
     );
   }
@@ -138,8 +138,8 @@ export function SalesEntryModal({
             onClick={() => {
               /* الـ API لا يعيد channels مع الملخص بعد الإنشاء — نبنيها من النموذج حتى تظهر في واتساب */
               const fromForm = salesChannels
-                .filter((v) => parseFloat(channelAmounts[v.id]) > 0)
-                .map((v) => ({ vaultId: v.id, amount: channelAmounts[v.id], vault: v }));
+                .filter((v: any) => parseFloat(channelAmounts[v.id]) > 0)
+                .map((v: any) => ({ vaultId: v.id, amount: channelAmounts[v.id], vault: v }));
               onWhatsApp?.({
                 ...savedSummary,
                 channels: fromForm.length ? fromForm : (savedSummary.channels || []),
@@ -176,9 +176,9 @@ export function SalesEntryModal({
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
-        <Input type="date" label={t('transactionDate')} value={txDate} onChange={(e) => setTxDate(e.target.value)} />
-        <Input type="number" min="0" label={t('customerCount')} required value={customerCount} onChange={(e) => setCustomerCount(e.target.value)} placeholder="0" />
-        <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e) => setCashOnHand(e.target.value)} placeholder="0.00" />
+        <Input type="date" label={t('transactionDate')} value={txDate} onChange={(e: any) => setTxDate(e.target.value)} />
+        <Input type="number" min="0" label={t('customerCount')} required value={customerCount} onChange={(e: any) => setCustomerCount(e.target.value)} placeholder="0" />
+        <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
       <div className="mb-4">
@@ -197,7 +197,7 @@ export function SalesEntryModal({
           </div>
         ) : (
           <div className="sales-channels-grid grid gap-2">
-            {salesChannels.map((v) => {
+            {salesChannels.map((v: any) => {
               const amt = channelAmounts[v.id] || '';
               return (
                 <div key={v.id} className="flex flex-col gap-1">
@@ -207,7 +207,7 @@ export function SalesEntryModal({
                     min="0"
                     step="0.01"
                     value={amt}
-                    onChange={(e) => setChannelAmounts((p) => ({ ...p, [v.id]: e.target.value }))}
+                    onChange={(e: any) => setChannelAmounts((p: any) => ({ ...p, [v.id]: e.target.value }))}
                     placeholder="0.00"
                     style={{ fontFamily: 'var(--noorix-font-numbers)' }}
                   />
@@ -219,7 +219,7 @@ export function SalesEntryModal({
       </div>
 
       <div className="mb-4">
-        <Input multiline label={t('notes')} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder={t('notesPlaceholder')} style={{ resize: 'vertical' }} />
+        <Input multiline label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} rows={2} placeholder={t('notesPlaceholder')} style={{ resize: 'vertical' }} />
       </div>
 
       <div className={`noorix-summary-bar noorix-summary-bar--${vatEnabled && totalAmount.gt(0) ? '5' : '3'} mb-2`}>

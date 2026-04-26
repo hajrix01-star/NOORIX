@@ -8,7 +8,7 @@ export function EmployeeProfileDocumentsSection({
   onFileChange,
   onPickFile,
   onDownload,
-}) {
+}: any) {
   return (
     <div className="noorix-surface-card overflow-hidden">
       <div className="nx-section-header">
@@ -36,7 +36,7 @@ export function EmployeeProfileDocumentsSection({
             key: 'fileName',
             label: t('documentType') || 'المستند',
             width: '75%',
-            render: (v, row) => (
+            render: (v: any, row: any) => (
               <span className="nx-cell-ellipsis" title={row.fileName || row.documentType || ''}>
                 {row.fileName || row.documentType || 'مستند'}
               </span>
@@ -47,7 +47,7 @@ export function EmployeeProfileDocumentsSection({
             label: t('actions'),
             width: '24%',
             align: 'center',
-            render: (_, row) => (
+            render: (_: any, row: any) => (
               <Button size="sm" onClick={() => onDownload(row.id)}>
                 {t('download')}
               </Button>
@@ -59,7 +59,7 @@ export function EmployeeProfileDocumentsSection({
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderMobileCard={(row) => (
+        renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div>
               <div className="nx-mc__stat-label">{t('documentType')}</div>

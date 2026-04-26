@@ -14,11 +14,11 @@ function safeStorage() {
   }
 }
 
-function key(companyId) {
+function key(companyId: any) {
   return `${PREFIX}${companyId || ''}`;
 }
 
-export function loadChat(companyId) {
+export function loadChat(companyId: any) {
   const storage = safeStorage();
   if (!storage || !companyId) return null;
   try {
@@ -27,7 +27,7 @@ export function loadChat(companyId) {
     const data = JSON.parse(raw);
     if (!data || !Array.isArray(data.messages)) return null;
     const fallbackDate = data.updatedAt || new Date().toISOString();
-    data.messages = data.messages.map((m) => (m.createdAt ? m : { ...m, createdAt: fallbackDate }));
+    data.messages = data.messages.map((m: any) => (m.createdAt ? m : { ...m, createdAt: fallbackDate }));
     if (data.messages.length > MAX_MESSAGES) {
       data.messages = data.messages.slice(-MAX_MESSAGES);
     }
@@ -37,7 +37,7 @@ export function loadChat(companyId) {
   }
 }
 
-export function saveChat(companyId, { creatorName, creatorId, messages }) {
+export function saveChat(companyId: any, { creatorName, creatorId, messages }: any) {
   const storage = safeStorage();
   if (!storage || !companyId) return;
   try {
@@ -49,13 +49,13 @@ export function saveChat(companyId, { creatorName, creatorId, messages }) {
       messages: trimmed,
     };
     storage.setItem(key(companyId), JSON.stringify(data));
-  } catch (_) {}
+  } catch (_: any) {}
 }
 
-export function filterByDate(messages, dateStr) {
+export function filterByDate(messages: any, dateStr: any) {
   if (!dateStr || !messages?.length) return messages;
   const target = dateStr.slice(0, 10);
-  return messages.filter((m) => {
+  return messages.filter((m: any) => {
     const d = m.createdAt ? String(m.createdAt).slice(0, 10) : '';
     return d === target;
   });

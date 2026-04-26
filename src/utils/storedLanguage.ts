@@ -25,7 +25,7 @@ export function readStoredLanguage() {
   return null;
 }
 
-export function writeStoredLanguage(lang) {
+export function writeStoredLanguage(lang: any) {
   if (lang !== 'ar' && lang !== 'en') return;
   try {
     localStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);

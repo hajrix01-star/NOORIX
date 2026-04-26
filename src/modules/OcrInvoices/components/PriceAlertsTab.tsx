@@ -6,10 +6,10 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { OCR_DISMISSED_ALERTS_KEY } from '../../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage, removeJsonStorage } from '../../../utils/jsonStorage';
 
-const fmtNum  = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
-const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
+const fmtNum  = (n: any) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+const fmtDate = (d: any) => (d ? formatSaudiDate(d) : '—');
 
-function MiniImageViewer({ src }) {
+function MiniImageViewer({ src }: any) {
   const [rotation, setRotation] = useState(0);
   const [zoomed,   setZoomed]   = useState(false);
   if (!src) return (
@@ -21,17 +21,17 @@ function MiniImageViewer({ src }) {
     <div className="bg-noorix-bg-muted rounded-lg overflow-hidden border border-noorix-border">
       <div style={{ maxHeight: zoomed ? 360 : 140, overflow: zoomed ? 'auto' : 'hidden', transition: 'max-height 0.3s' }}>
         <img src={src} alt="" className="w-full cursor-pointer" style={{ objectFit: 'contain', display: 'block', transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s' }}
-          onClick={() => setZoomed((z) => !z)} />
+          onClick={() => setZoomed((z: any) => !z)} />
       </div>
       <div className="flex gap-1 py-[5px] px-2 border-t border-noorix-border">
-        <Button className="lb-btn" onClick={() => setRotation((r) => (r + 90) % 360)}>↺</Button>
-        <Button className="lb-btn" onClick={() => setZoomed((z) => !z)}>{zoomed ? '−' : '+'}</Button>
+        <Button className="lb-btn" onClick={() => setRotation((r: any) => (r + 90) % 360)}>↺</Button>
+        <Button className="lb-btn" onClick={() => setZoomed((z: any) => !z)}>{zoomed ? '−' : '+'}</Button>
       </div>
     </div>
   );
 }
 
-function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
+function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }: any) {
   const saving = (alert.latestPrice - alert.lowestPrice).toFixed(2);
   return (
     <AdaptiveSheet open={true} onClose={onClose} size="xl" side="start" title={alert.itemName} className="price-compare-drawer">
@@ -91,10 +91,10 @@ function CompareModal({ alert, latestInvoice, lowestInvoice, onClose, isAr }) {
   );
 }
 
-export default function PriceAlertsTab({ alerts = [], loading, invoices = [], onRefresh }) {
+export default function PriceAlertsTab({ alerts = [], loading, invoices = [], onRefresh }: any) {
   const { lang: language } = useTranslation();
   const isAr = language === 'ar';
-  const [comparing, setComparing]   = useState(null);
+  const [comparing, setComparing]   = useState<any>(null);
   const [selected,  setSelected]    = useState(new Set());
   const [deleting,  setDeleting]    = useState(false);
   const [dismissed, setDismissed]   = useState(() => new Set(readJsonStorage(OCR_DISMISSED_ALERTS_KEY, [])));
@@ -103,18 +103,18 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
   const dir = isAr ? 'rtl' : 'ltr';
 
   const visibleAlerts = useMemo(() => {
-    let list = alerts.filter((a) => !dismissed.has(a.itemId));
+    let list = alerts.filter((a: any) => !dismissed.has(a.itemId));
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter((a) => a.itemName?.toLowerCase().includes(q) || a.latestSupplier?.toLowerCase().includes(q));
+      list = list.filter((a: any) => a.itemName?.toLowerCase().includes(q) || a.latestSupplier?.toLowerCase().includes(q));
     }
-    if (sortBy === 'pct')     list = [...list].sort((a, b) => b.priceIncreasePercent - a.priceIncreasePercent);
-    if (sortBy === 'savings') list = [...list].sort((a, b) => (b.latestPrice - b.lowestPrice) - (a.latestPrice - a.lowestPrice));
-    if (sortBy === 'name')    list = [...list].sort((a, b) => a.itemName.localeCompare(b.itemName, 'ar'));
+    if (sortBy === 'pct')     list = [...list].sort((a: any, b: any) => b.priceIncreasePercent - a.priceIncreasePercent);
+    if (sortBy === 'savings') list = [...list].sort((a: any, b: any) => (b.latestPrice - b.lowestPrice) - (a.latestPrice - a.lowestPrice));
+    if (sortBy === 'name')    list = [...list].sort((a: any, b: any) => a.itemName.localeCompare(b.itemName, 'ar'));
     return list;
   }, [alerts, dismissed, search, sortBy]);
 
-  const toggleSelect = (id) => setSelected((prev) => {
+  const toggleSelect = (id: any) => setSelected((prev: any) => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
   });
 
@@ -135,9 +135,9 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
     onRefresh?.();
   };
 
-  const avgIncrease  = visibleAlerts.length ? Math.round(visibleAlerts.reduce((s, a) => s + a.priceIncreasePercent, 0) / visibleAlerts.length) : 0;
-  const totalSavings = visibleAlerts.reduce((s, a) => s + (a.latestPrice - a.lowestPrice), 0);
-  const allChecked   = visibleAlerts.length > 0 && visibleAlerts.every((a) => selected.has(a.itemId));
+  const avgIncrease  = visibleAlerts.length ? Math.round(visibleAlerts.reduce((s: any, a: any) => s + a.priceIncreasePercent, 0) / visibleAlerts.length) : 0;
+  const totalSavings = visibleAlerts.reduce((s: any, a: any) => s + (a.latestPrice - a.lowestPrice), 0);
+  const allChecked   = visibleAlerts.length > 0 && visibleAlerts.every((a: any) => selected.has(a.itemId));
 
   if (loading) return (
     <div className="ocr-loading">
@@ -177,7 +177,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
       <div className="inv-toolbar">
         <label className="nx-checkbox inv-select-all-wrap">
           <input type="checkbox" checked={allChecked}
-            onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(visibleAlerts.map(a => a.itemId)))}
+            onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(visibleAlerts.map((a: any) => a.itemId)))}
             className="inv-toolbar-checkbox" />
           <span className="inv-select-all-label">
             {selected.size > 0 ? (isAr ? `${selected.size} محدد` : `${selected.size} selected`) : (isAr ? 'تحديد الكل' : 'Select all')}
@@ -186,13 +186,13 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
 
         <div className="inv-search-wrap">
           <span className="inv-search-icon">⌕</span>
-          <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+          <Input type="text" value={search} onChange={(e: any) => setSearch(e.target.value)}
             placeholder={isAr ? 'بحث بالصنف أو المورد...' : 'Search item or supplier...'}
             className="inv-search-input" />
           {search && <Button className="inv-search-clear" onClick={() => setSearch('')}>✕</Button>}
         </div>
 
-        <Input type="select" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
+        <Input type="select" value={sortBy} onChange={(e: any) => setSortBy(e.target.value)} className="inv-sort-select">
           <option value="pct">{isAr ? 'أعلى نسبة' : 'Highest %'}</option>
           <option value="savings">{isAr ? 'أكبر توفير' : 'Highest savings'}</option>
           <option value="name">{isAr ? 'الاسم' : 'Name'}</option>
@@ -218,9 +218,9 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {visibleAlerts.map((alert, i) => {
-            const latestInvoice = invoices.find((inv) => inv.id === alert.latestInvoiceId);
-            const lowestInvoice = invoices.find((inv) => inv.id === alert.lowestInvoiceId);
+          {visibleAlerts.map((alert: any, i: any) => {
+            const latestInvoice = invoices.find((inv: any) => inv.id === alert.latestInvoiceId);
+            const lowestInvoice = invoices.find((inv: any) => inv.id === alert.lowestInvoiceId);
             const isSelected = selected.has(alert.itemId);
             const savingNum = Number(alert.latestPrice) - Number(alert.lowestPrice);
             const saving = savingNum.toFixed(2);
@@ -233,7 +233,7 @@ export default function PriceAlertsTab({ alerts = [], loading, invoices = [], on
                 <label className="nx-checkbox">
                   <input type="checkbox" checked={isSelected}
                     onChange={() => toggleSelect(alert.itemId)}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e: any) => e.stopPropagation()}
                     className="ocr-catalog-checkbox" />
                 </label>
 

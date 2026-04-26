@@ -24,11 +24,11 @@ export default function ReportsLayout() {
 
       <div className="noorix-surface-card p-0 overflow-hidden">
         <div className="noorix-tab-bar flex gap-0 border-b border-noorix-border overflow-x-auto [-webkit-overflow-scrolling:touch]">
-          {REPORT_SUB_LINKS.map((link) => (
+          {REPORT_SUB_LINKS.map((link: any) => (
             <NavLink
               key={link.to}
               to={link.to}
-              className={({ isActive }) =>
+              className={({ isActive }: any) =>
                 cn(
                   'm-0 shrink-0 whitespace-nowrap rounded-none border-0 border-b-2 px-[18px] py-3 text-[14px] no-underline transition-colors',
                   isActive

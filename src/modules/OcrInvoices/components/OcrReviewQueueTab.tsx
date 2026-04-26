@@ -12,7 +12,7 @@ const STATUS_LABEL = {
   extraction_failed: { ar: 'فشل الاستخراج', en: 'Extraction failed' },
 };
 
-export default function OcrReviewQueueTab({ onOpenInvoice }) {
+export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
   const { lang, t } = useTranslation();
   const isAr = lang === 'ar';
   const { activeCompanyId } = useApp();
@@ -24,10 +24,10 @@ export default function OcrReviewQueueTab({ onOpenInvoice }) {
       const r = await getOcrReviewQueue();
       return r.success ? (r.data || []) : [];
     },
-    refetchInterval: (query) => {
+    refetchInterval: (query: any) => {
       const rows = query.state.data;
       if (!Array.isArray(rows)) return 8000;
-      const busy = rows.some((x) => x.status === 'queued' || x.status === 'extracting');
+      const busy = rows.some((x: any) => x.status === 'queued' || x.status === 'extracting');
       return busy ? 4000 : 12000;
     },
   });
@@ -68,13 +68,13 @@ export default function OcrReviewQueueTab({ onOpenInvoice }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((inv) => (
+              {rows.map((inv: any) => (
                 <tr key={inv.id} className="border-b border-noorix-border last:border-b-0">
                   <td className="p-2 w-20">
                     <OcrInvoiceThumb invoiceId={inv.id} className="w-16 h-16" />
                   </td>
                   <td className="p-2">
-                    {(STATUS_LABEL[inv.status] || { ar: inv.status, en: inv.status })[isAr ? 'ar' : 'en']}
+                    {((STATUS_LABEL as Record<string, { ar: string; en: string }>)[String(inv.status)] || { ar: inv.status, en: inv.status })[isAr ? 'ar' : 'en']}
                     {inv.extractionError && (
                       <div className="text-noorix-red text-[11px] mt-1 max-w-[240px] truncate" title={inv.extractionError}>
                         {inv.extractionError}

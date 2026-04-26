@@ -16,8 +16,8 @@ export default function BankStatementPieDrilldownModal({
   t,
   onSaveTxCategory,
   showToast,
-}) {
-  const [editingTxId, setEditingTxId] = useState(null);
+}: any) {
+  const [editingTxId, setEditingTxId] = useState<any>(null);
   const [editingCategoryId, setEditingCategoryId] = useState('');
 
   useEffect(() => {
@@ -29,16 +29,16 @@ export default function BankStatementPieDrilldownModal({
 
   const rows = useMemo(() => {
     if (!categoryName || !transactions?.length) return [];
-    return transactions.filter((tx) => {
+    return transactions.filter((tx: any) => {
       const n = tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel;
       return n === categoryName;
     });
   }, [transactions, categoryName, uncategorizedLabel]);
 
   const allCategoryOptions = useMemo(() => {
-    const fromDb = (categories || []).map((c) => ({ id: c.id, label: c.nameAr || c.nameEn }));
+    const fromDb = (categories || []).map((c: any) => ({ id: c.id, label: c.nameAr || c.nameEn }));
     if (fromDb.length > 0) return fromDb;
-    return FALLBACK_CATEGORIES.map((name) => ({ id: name, label: name }));
+    return FALLBACK_CATEGORIES.map((name: any) => ({ id: name, label: name }));
   }, [categories]);
 
   const totals = useMemo(() => {
@@ -80,33 +80,33 @@ export default function BankStatementPieDrilldownModal({
         <SmartTable
           columns={[
             { key: 'txDate', label: t('bankStatementDate'),
-              render: (v) => <span className="whitespace-nowrap text-noorix-muted text-[12px]">{v}</span> },
+              render: (v: any) => <span className="whitespace-nowrap text-noorix-muted text-[12px]">{v}</span> },
             { key: 'description', label: t('bankStatementDescription'),
-              render: (v) => <div className="truncate text-noorix-text" title={v}>{v}</div> },
+              render: (v: any) => <div className="truncate text-noorix-text" title={v}>{v}</div> },
             { key: 'debit', label: t('bankStatementColDebit'), numeric: true,
-              render: (v) => (
+              render: (v: any) => (
                 <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)' }}>
                   {Number(v) > 0 ? fmt(Number(v)) : '—'}
                 </span>
               ) },
             { key: 'credit', label: t('bankStatementColCredit'), numeric: true,
-              render: (v) => (
+              render: (v: any) => (
                 <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>
                   {Number(v) > 0 ? fmt(Number(v)) : '—'}
                 </span>
               ) },
             { key: 'category', label: t('bankStatementCategories'),
-              render: (_, tx) => {
+              render: (_: any, tx: any) => {
                 const catId = tx.categoryId || '';
                 return editingTxId === tx.id ? (
                   <div className="flex flex-col gap-1.5">
                     <Input
                       type="select"
                       value={editingCategoryId}
-                      onChange={(e) => setEditingCategoryId(e.target.value)}
+                      onChange={(e: any) => setEditingCategoryId(e.target.value)}
                     >
                       <option value="">{uncategorizedLabel}</option>
-                      {allCategoryOptions.map((c) => (
+                      {allCategoryOptions.map((c: any) => (
                         <option key={c.id} value={c.id}>{c.label}</option>
                       ))}
                     </Input>
@@ -119,7 +119,7 @@ export default function BankStatementPieDrilldownModal({
                             await onSaveTxCategory(tx.id, editingCategoryId || null);
                             setEditingTxId(null);
                             showToast?.(t('savedSuccessfully') || 'OK');
-                          } catch (e) {
+                          } catch (e: any) {
                             showToast?.(e?.message || 'Error', 'error');
                           }
                         }}
@@ -140,7 +140,7 @@ export default function BankStatementPieDrilldownModal({
               } },
           ]}
           data={rows}
-          keyExtractor={(tx) => getTxKey(tx)}
+          keyExtractor={(tx: any) => getTxKey(tx)}
           emptyMessage={t('bankPieDrilldownEmpty')}
         />
       </div>

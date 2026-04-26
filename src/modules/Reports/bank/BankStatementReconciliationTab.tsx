@@ -6,7 +6,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { FmtNum } from '../../../ui';
 
-export default function BankStatementReconciliationTab({ balanceVerification, reconciliationStats, reconLoading }) {
+export default function BankStatementReconciliationTab({ balanceVerification, reconciliationStats, reconLoading }: any) {
   const { t } = useTranslation();
   if (!balanceVerification) {
     return (
@@ -77,7 +77,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
         </p>
         {!okSeq && balanceVerification.balanceErrors?.length ? (
           <ul className="text-[12px] mt-2">
-            {balanceVerification.balanceErrors.map((e, i) => (
+            {balanceVerification.balanceErrors.map((e: any, i: any) => (
               <li key={i}>
                 {e.date}: {t('bankReconExpected')} <FmtNum n={e.expected} /> / {t('bankReconActual')} <FmtNum n={e.actual} />
               </li>

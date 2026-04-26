@@ -9,7 +9,7 @@ import { useItemsManageTab } from '../hooks/useItemsManageTab';
 import { ItemsManageTabProductsSection } from './ItemsManageTabProductsSection';
 import { ItemsManageTabCategoriesSection } from './ItemsManageTabCategoriesSection';
 
-export function ItemsManageTab({ companyId }) {
+export function ItemsManageTab({ companyId }: any) {
   const ctrl = useItemsManageTab(companyId);
   const { t, activeSubTab, setActiveSubTab, addSizeModal, setAddSizeModal, newSize, setNewSize, handleAddSize, addPackagingModal, setAddPackagingModal, newPackaging, setNewPackaging, handleAddPackaging } = ctrl;
 

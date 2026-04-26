@@ -26,7 +26,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
   const [showForm,        setShowForm]        = useState(false);
   const [search,          setSearch]          = useState('');
   const debouncedQ = useDebouncedValue(search.trim(), 300);
-  const [editingSupplier, setEditingSupplier] = useState(null);
+  const [editingSupplier, setEditingSupplier] = useState<any>(null);
   const [selectedIds,     setSelectedIds]     = useState(new Set());
   const { showToast } = useToast();
 
@@ -35,37 +35,37 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
   const { flatCategories } = useCategories(companyId);
 
   /* ظ¤ظ¤ ┘à╪│╪د╪╣╪» toast ظ¤ظ¤ */
-  const notify = useCallback((message, type = 'success') => {
+  const notify = useCallback((message: any, type: any = 'success') => {
     showToast(message, type);
   }, [showToast]);
 
   /* ظ¤ظ¤ ╪ح╪╢╪د┘╪ر ┘à┘ê╪▒╪» ظ¤ظ¤ */
-  function handleSave(body) {
+  function handleSave(body: any) {
     if (!companyId) { notify(t('pleaseSelectCompanyFirst'), 'error'); return; }
     create.mutate(body, {
       onSuccess: () => { notify(t('supplierAdded')); setShowForm(false); },
-      onError:   (e) => notify(e?.message || t('addFailed'), 'error'),
+      onError:   (e: any) => notify(e?.message || t('addFailed'), 'error'),
     });
   }
 
   /* ظ¤ظ¤ ╪ز╪╣╪»┘è┘ ظ¤ظ¤ */
-  function handleEditSave(body) {
+  function handleEditSave(body: any) {
     if (!editingSupplier?.id) return;
     update.mutate({ id: editingSupplier.id, body }, {
       onSuccess: () => { notify(t('supplierUpdated')); setEditingSupplier(null); },
-      onError:   (e) => notify(e?.message || t('updateFailed'), 'error'),
+      onError:   (e: any) => notify(e?.message || t('updateFailed'), 'error'),
     });
   }
 
   /* ظ¤ظ¤ ╪ص╪░┘ ┘╪▒╪»┘è ظ¤ظ¤ */
-  function handleDelete(supplier) {
+  function handleDelete(supplier: any) {
     if (!confirm(t('deleteSupplierConfirm', supplier.nameAr))) return;
     remove.mutate(supplier.id, {
       onSuccess: () => {
-        setSelectedIds((prev) => { const n = new Set(prev); n.delete(supplier.id); return n; });
+        setSelectedIds((prev: any) => { const n = new Set(prev); n.delete(supplier.id); return n; });
         notify(t('supplierDeleted'));
       },
-      onError: (e) => notify(e?.message || t('deleteFailed'), 'error'),
+      onError: (e: any) => notify(e?.message || t('deleteFailed'), 'error'),
     });
   }
 
@@ -78,31 +78,31 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
     const ids = [...selectedIds];
     for (const id of ids) {
       try {
-        await new Promise((res, rej) =>
+        await new Promise((res: any, rej: any) =>
           remove.mutate(id, { onSuccess: res, onError: rej }),
         );
         done++;
-      } catch (_) {}
+      } catch (_: any) {}
     }
     setSelectedIds(new Set());
     notify(`╪ز┘à ╪ص╪░┘ ${done} ┘à┘ ╪ث╪╡┘ ${ids.length} ┘à┘ê╪▒╪»`);
   }
 
   /* ظ¤ظ¤ ╪ز╪ص╪»┘è╪» / ╪ح┘╪║╪د╪ة ╪ز╪ص╪»┘è╪» ظ¤ظ¤ */
-  const handleSelectChange = useCallback((id, checked) => {
-    setSelectedIds((prev) => {
+  const handleSelectChange = useCallback((id: any, checked: any) => {
+    setSelectedIds((prev: any) => {
       const n = new Set(prev);
       checked ? n.add(id) : n.delete(id);
       return n;
     });
   }, []);
 
-  const handleSelectAll = useCallback((checked) => {
-    setSelectedIds(checked ? new Set(suppliers.map((s) => s.id)) : new Set());
+  const handleSelectAll = useCallback((checked: any) => {
+    setSelectedIds(checked ? new Set(suppliers.map((s: any) => s.id)) : new Set());
   }, [suppliers]);
 
   /* ظ¤ظ¤ ╪د╪│╪ز┘è╪▒╪د╪» ┘à┘ê╪▒╪» ┘ê╪د╪ص╪» (┘è┘╪│╪ز╪»╪╣┘ë ┘à┘ ImportExport) ظ¤ظ¤ */
-  async function handleImportOne(body) {
+  async function handleImportOne(body: any) {
     const res = await createSupplier(body);
     rejectIfApiFailed(res, t('addFailed'));
     return res.data;
@@ -117,12 +117,12 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
           size="sm"
           className="suppliers-tab-search"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: any) => setSearch(e.target.value)}
           placeholder={t('searchByNameOrTax')}
         />
         <Button
           variant={showForm ? 'default' : 'primary'}
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => setShowForm((v: any) => !v)}
         >
           {showForm ? t('cancel') : t('addSupplier')}
         </Button>
@@ -161,7 +161,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
           <SupplierTable
             suppliers={suppliers}
             flatCategories={flatCategories}
-            onEdit={(s) => setEditingSupplier(s)}
+            onEdit={(s: any) => setEditingSupplier(s)}
             onDelete={handleDelete}
             selectedIds={selectedIds}
             onSelectChange={handleSelectChange}

@@ -22,22 +22,22 @@ import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, Modal, FmtNum, Input } from '../../../ui';
 
-function payrollMonthFirstDay(terminationYmd) {
+function payrollMonthFirstDay(terminationYmd: any) {
   const s = String(terminationYmd || '').slice(0, 10);
   if (s.length < 7) return null;
   return `${s.slice(0, 7)}-01`;
 }
 
-function esc(v) {
+function esc(v: any) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function effectiveEndYmd(pr, fallbackYmd) {
+function effectiveEndYmd(pr: any, fallbackYmd: any) {
   if (pr?.effectiveEnd) return toLocalDayKey(new Date(pr.effectiveEnd));
   return String(fallbackYmd || '').slice(0, 10);
 }
 
-function lastDayOfMonthYmd(monthFirstYmd) {
+function lastDayOfMonthYmd(monthFirstYmd: any) {
   const s = String(monthFirstYmd || '').slice(0, 10);
   const parts = s.split('-');
   const y = Number(parts[0]);
@@ -47,12 +47,12 @@ function lastDayOfMonthYmd(monthFirstYmd) {
 }
 
 /** وسم في ملاحظة الفاتورة لمنع أكثر من تسوية إنهاء لنفس الموظف ونفس شهر المسيرة */
-function terminationSalaryInvoiceTag(employeeId, monthFirstYmd) {
+function terminationSalaryInvoiceTag(employeeId: any, monthFirstYmd: any) {
   const ym = String(monthFirstYmd || '').slice(0, 7);
   return `[NOORIX_TERM_SALARY:${employeeId}:${ym}]`;
 }
 
-async function findTerminationSalaryInvoiceThisMonth(companyId, employeeId, monthFirstYmd, tag) {
+async function findTerminationSalaryInvoiceThisMonth(companyId: any, employeeId: any, monthFirstYmd: any, tag: any) {
   const from = String(monthFirstYmd).slice(0, 10);
   const to = lastDayOfMonthYmd(from);
   const res = await getInvoices(companyId, from, to, 1, 100, null, employeeId, 'salary');
@@ -60,7 +60,7 @@ async function findTerminationSalaryInvoiceThisMonth(companyId, employeeId, mont
   const items = res.data?.items ?? [];
   return (
     items.find(
-      (inv) =>
+      (inv: any) =>
         inv.kind === 'salary' &&
         inv.status !== 'cancelled' &&
         String(inv.notes || '').includes(tag),
@@ -68,13 +68,13 @@ async function findTerminationSalaryInvoiceThisMonth(companyId, employeeId, mont
   );
 }
 
-async function hasTerminationMovementForInvoiceNumber(companyId, employeeId, invoiceNumber) {
+async function hasTerminationMovementForInvoiceNumber(companyId: any, employeeId: any, invoiceNumber: any) {
   if (!invoiceNumber) return false;
   const res = await getMovements(companyId, employeeId);
   if (!res?.success) return false;
   const list = Array.isArray(res.data) ? res.data : [];
   const marker = `صرف راتب إنهاء خدمة — ${invoiceNumber}`;
-  return list.some((m) => String(m.notes || '').includes(marker));
+  return list.some((m: any) => String(m.notes || '').includes(marker));
 }
 
 export default function TerminationSettlementModal({
@@ -84,19 +84,19 @@ export default function TerminationSettlementModal({
   employee,
   companyId,
   companyName = '',
-}) {
+}: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { userPermissions = [] } = useApp();
   const queryClient = useQueryClient();
-  const fileRef = useRef(null);
+  const fileRef = useRef<any>(null);
   const issuingLockRef = useRef(false);
   const [uploading, setUploading] = useState(false);
   const [vaultId, setVaultId] = useState('');
   const [payoutAmountStr, setPayoutAmountStr] = useState('');
   const [txDateStr, setTxDateStr] = useState('');
   const [issuing, setIssuing] = useState(false);
-  const [issuedInvoice, setIssuedInvoice] = useState(null);
+  const [issuedInvoice, setIssuedInvoice] = useState<any>(null);
 
   const canIssueInvoice =
     Array.isArray(userPermissions) &&
@@ -114,17 +114,17 @@ export default function TerminationSettlementModal({
   const { allowances: customRows = [] } = useCustomAllowances(companyId, empId);
 
   const customSum = useMemo(
-    () => roundMoney2(customRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)),
+    () => roundMoney2(customRows.reduce((s: any, r: any) => s + (Number(r.amount) || 0), 0)),
     [customRows],
   );
 
   const { data: advanceInvoices = [] } = useQuery({
     queryKey: ['termination-settlement-advances', companyId, empId],
     queryFn: async () => {
-      const res = await getInvoices(companyId, null, null, 1, 100, null, empId, 'advance');
+      const res = await getInvoices(companyId, undefined, undefined, 1, 100, null, empId, 'advance');
       if (!res?.success) return [];
       const items = res.data?.items ?? [];
-      return items.filter((inv) => inv.kind === 'advance' && inv.status !== 'cancelled');
+      return items.filter((inv: any) => inv.kind === 'advance' && inv.status !== 'cancelled');
     },
     enabled: open && !!companyId && !!empId,
     staleTime: 60 * 1000,
@@ -214,7 +214,7 @@ export default function TerminationSettlementModal({
         <p style="font-size:13px;margin:0 0 8px"><strong>${esc(t('terminationSettlementCompany'))}:</strong> ${co}</p>
         <table style="width:100%;border-collapse:collapse;font-size:13px">
           <tbody>
-            ${rows.map(([a, b]) => `<tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;width:42%">${a}</td><td style="border:1px solid #ddd;padding:8px">${b}</td></tr>`).join('')}
+            ${rows.map(([a, b]: any) => `<tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;width:42%">${a}</td><td style="border:1px solid #ddd;padding:8px">${b}</td></tr>`).join('')}
           </tbody>
         </table>
       </div>`;
@@ -225,7 +225,7 @@ export default function TerminationSettlementModal({
     });
   }, [employee, preview, advancesRemaining, companyName, lang, t, monthFirst, terminationYmd]);
 
-  const handleFile = async (e) => {
+  const handleFile = async (e: any) => {
     const file = e?.target?.files?.[0];
     if (!file || !empId || !companyId) return;
     setUploading(true);
@@ -240,7 +240,7 @@ export default function TerminationSettlementModal({
       queryClient.invalidateQueries({ queryKey: ['documents', companyId, empId] });
       queryClient.invalidateQueries({ queryKey: ['employee', empId, companyId] });
       showToast(t('documentUploaded'), 'success');
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || t('saveFailed'), 'error');
     } finally {
       setUploading(false);
@@ -331,7 +331,7 @@ export default function TerminationSettlementModal({
             });
             assertApiOk(movRes, t('saveFailed'));
             movementOk = true;
-          } catch (me) {
+          } catch (me: any) {
             movementErrMsg = me?.message || t('saveFailed');
           }
         }
@@ -354,7 +354,7 @@ export default function TerminationSettlementModal({
           'success',
         );
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || t('saveFailed'), 'error');
     } finally {
       issuingLockRef.current = false;
@@ -440,10 +440,10 @@ export default function TerminationSettlementModal({
                 type="select"
                 label={t('terminationSettlementSelectVault')}
                 value={vaultId}
-                onChange={(e) => setVaultId(e.target.value)}
+                onChange={(e: any) => setVaultId(e.target.value)}
               >
                 <option value="">—</option>
-                {paymentVaults.map((v) => (
+                {paymentVaults.map((v: any) => (
                   <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.name || v.id}</option>
                 ))}
               </Input>
@@ -451,7 +451,7 @@ export default function TerminationSettlementModal({
                 type="date"
                 label={t('terminationSettlementTransactionDate')}
                 value={txDateStr.slice(0, 10)}
-                onChange={(e) => setTxDateStr(e.target.value)}
+                onChange={(e: any) => setTxDateStr(e.target.value)}
               />
               <Input
                 type="number"
@@ -459,7 +459,7 @@ export default function TerminationSettlementModal({
                 min="0.01"
                 label={t('terminationSettlementPayoutAmount')}
                 value={payoutAmountStr}
-                onChange={(e) => setPayoutAmountStr(e.target.value)}
+                onChange={(e: any) => setPayoutAmountStr(e.target.value)}
               />
               <Button
                 type="button"

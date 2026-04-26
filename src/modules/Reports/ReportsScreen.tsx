@@ -34,13 +34,13 @@ export default function ReportsScreen() {
   const currentYear = new Date().getUTCFullYear();
   const [year, setYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState('');
-  const [detailState, setDetailState] = useState(null);
+  const [detailState, setDetailState] = useState<any>(null);
   const [collapsedGroups, setCollapsedGroups] = useState({
     sales: false,
     purchases: false,
     expenses: false,
   });
-  const company = companies?.find((item) => item.id === activeCompanyId);
+  const company = companies?.find((item: any) => item.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
 
   const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
@@ -51,33 +51,33 @@ export default function ReportsScreen() {
   const flatRows = useMemo(() => buildFlatRows(report, collapsedGroups), [report, collapsedGroups]);
   const visibleRows = useMemo(() => buildVisibleRows(flatRows, collapsedGroups), [flatRows, collapsedGroups]);
   const exportRows = useMemo(() => buildExportRows(report, lang, t, selectedMonth ? Number(selectedMonth) : null), [report, lang, t, selectedMonth]);
-  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear]);
+  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_: any, index: any) => currentYear - index), [currentYear]);
   const selectedMonthNumber = selectedMonth ? Number(selectedMonth) : null;
 
   const mobileMonthTabItems = useMemo(() => {
     const names = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
     return [
       { id: '', label: t('allMonths') },
-      ...names.map((name, i) => ({ id: String(i + 1), label: name })),
+      ...names.map((name: any, i: any) => ({ id: String(i + 1), label: name })),
     ];
   }, [t, lang]);
 
   const isMobile = useIsNarrow700();
 
-  function toggleGroup(collapseKey) {
-    setCollapsedGroups((prev) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
+  function toggleGroup(collapseKey: any) {
+    setCollapsedGroups((prev: any) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
   }
 
-  function getCardValue(key) {
+  function getCardValue(key: any) {
     if (!report) return '0';
     if (!selectedMonthNumber) return report.cards[key] || '0';
     if (key === 'grossProfit' || key === 'netProfit') {
-      return report.summaryRows.find((row) => row.key === key)?.months[selectedMonthNumber - 1] || '0';
+      return report.summaryRows.find((row: any) => row.key === key)?.months[selectedMonthNumber - 1] || '0';
     }
-    return report.groups.find((row) => row.key === key)?.months[selectedMonthNumber - 1] || '0';
+    return report.groups.find((row: any) => row.key === key)?.months[selectedMonthNumber - 1] || '0';
   }
 
-  function getCardProfitPercent(key) {
+  function getCardProfitPercent(key: any) {
     if (!report || (key !== 'grossProfit' && key !== 'netProfit')) return null;
     const sales = Number(getCardValue('sales') || 0);
     if (!sales || sales < 0.0000001) return null;
@@ -101,11 +101,11 @@ export default function ReportsScreen() {
 
   function handlePrint() {
     const printRows = buildFlatRows(report, {});
-    const head = `${selectedMonthNumber ? `<th>${(t('selectedMonth') || '').replace(/</g, '&lt;')}</th><th>${(t('reportSalesShare') || '').replace(/</g, '&lt;')}</th>` : ''}${EN_MONTHS.map((month) => `<th>${month}</th>`).join('')}<th>${(t('reportAnnualTotal') || '').replace(/</g, '&lt;')}</th><th>${(t('reportSalesShare') || '').replace(/</g, '&lt;')}</th>`;
-    const bodyRows = printRows.map((row) => {
+    const head = `${selectedMonthNumber ? `<th>${(t('selectedMonth') || '').replace(/</g, '&lt;')}</th><th>${(t('reportSalesShare') || '').replace(/</g, '&lt;')}</th>` : ''}${EN_MONTHS.map((month: any) => `<th>${month}</th>`).join('')}<th>${(t('reportAnnualTotal') || '').replace(/</g, '&lt;')}</th><th>${(t('reportSalesShare') || '').replace(/</g, '&lt;')}</th>`;
+    const bodyRows = printRows.map((row: any) => {
       const firstCell = (displayLabel(row, lang) || '').replace(/</g, '&lt;');
       const contextCells = selectedMonthNumber ? `<td>${amountText(getContextAmount(row, selectedMonthNumber))}</td><td>${percentText(getContextPercent(row, selectedMonthNumber))}</td>` : '';
-      const monthsCells = (row.months ?? []).map((value) => `<td>${amountText(value)}</td>`).join('');
+      const monthsCells = (row.months ?? []).map((value: any) => `<td>${amountText(value)}</td>`).join('');
       return `<tr><td>${firstCell}</td>${contextCells}${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
     }).join('');
     const subtitle = `${t('reportGeneral')} — ${year}${selectedMonthNumber ? ` — ${EN_MONTHS[selectedMonthNumber - 1]}` : ''}`;
@@ -128,13 +128,13 @@ export default function ReportsScreen() {
           <h2 className="font-bold m-0 text-[18px]">{t('reportGeneral')}</h2>
         </div>
         <div className="flex items-end flex-wrap gap-2 flex-[0_1_auto]">
-          <Input type="select" label={t('reportYear')} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-            {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+          <Input type="select" label={t('reportYear')} value={year} onChange={(e: any) => setYear(Number(e.target.value))}>
+            {yearOptions.map((option: any) => <option key={option} value={option}>{option}</option>)}
           </Input>
           {!isMobile && (
-            <Input type="select" label={t('reportMonth')} value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+            <Input type="select" label={t('reportMonth')} value={selectedMonth} onChange={(e: any) => setSelectedMonth(e.target.value)}>
               <option value="">{t('allMonths')}</option>
-              {EN_MONTHS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}
+              {EN_MONTHS.map((month: any, index: any) => <option key={month} value={index + 1}>{month}</option>)}
             </Input>
           )}
           <div className="nx-toolbar">
@@ -172,11 +172,12 @@ export default function ReportsScreen() {
                   { key: 'expenses', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('expensesGroup')}` : t('annualExpenses') },
                   { key: 'grossProfit', label: t('annualGrossProfit') },
                   { key: 'netProfit', label: t('annualNetProfit') },
-                ].map((card) => {
+                ].map((card: any) => {
                   const profitPct = (card.key === 'grossProfit' || card.key === 'netProfit') ? getCardProfitPercent(card.key) : null;
                   const val = Number(getCardValue(card.key) || 0);
                   const isProfitCard = card.key === 'grossProfit' || card.key === 'netProfit';
-                  const accentColor = KPI_CARD_SPARKLINE_COLORS[card.key] || KPI_CARD_SPARKLINE_COLORS.sales;
+                  const accentColor =
+                    (KPI_CARD_SPARKLINE_COLORS as Record<string, string>)[String(card.key)] || KPI_CARD_SPARKLINE_COLORS.sales;
                   const periodLabel = selectedMonthNumber
                     ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} · ${year}`
                     : String(year);
@@ -251,7 +252,7 @@ export default function ReportsScreen() {
                     <colgroup>
                       <col style={{ width: isMobile ? 130 : 220 }} />
                       {selectedMonthNumber && <col style={{ width: isMobile ? undefined : 76 }} />}
-                      {!isMobile && (report?.months ?? []).map((m) => <col key={m.index} style={{ width: 66 }} />)}
+                      {!isMobile && (report?.months ?? []).map((m: any) => <col key={m.index} style={{ width: 66 }} />)}
                       <col style={{ width: isMobile ? 100 : 100 }} />
                     </colgroup>
                     <thead>
@@ -260,20 +261,20 @@ export default function ReportsScreen() {
                         {selectedMonthNumber && (
                           <th style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-blue-6)', fontSize: 13, fontWeight: 700 }}>{(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}</th>
                         )}
-                        {!isMobile && (report?.months ?? []).map((month) => (
+                        {!isMobile && (report?.months ?? []).map((month: any) => (
                           <th key={month.index} style={{ textAlign: 'center', padding: '8px 4px', borderBottom: '2px solid var(--noorix-border)', whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, background: selectedMonthNumber === month.index ? 'var(--noorix-blue-10)' : undefined }}>{month.label}</th>
                         ))}
                         <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-table-header-bg)', borderInlineStart: '2px solid var(--noorix-navy-12)', fontWeight: 800, fontSize: 13 }}>{t('reportAnnualTotal')}</th>
                       </tr>
                     </thead>
                   <tbody>
-                    {visibleRows.map((row) => {
+                    {visibleRows.map((row: any) => {
                       const isGroup = row.rowType === 'group';
                       const isCategory = row.rowType === 'category';
                       const isSummary = row.rowType === 'summary';
                       const canOpenItem = row.rowType === 'item';
                       const collapseKey = isGroup ? row.groupKey : row.collapseKey;
-                      const isCollapsed = !!collapseKey && !!collapsedGroups[collapseKey];
+                      const isCollapsed = !!collapseKey && !!(collapsedGroups as Record<string, boolean>)[String(collapseKey)];
                       const canCollapse = isGroup || isCategory;
                       const indent = (row.depth || 0) * 22;
                       const rowTone = getRowTone(row);
@@ -353,7 +354,7 @@ export default function ReportsScreen() {
                             </td>
                           )}
 
-                          {!isMobile && (row.months ?? []).map((value, index) => (
+                          {!isMobile && (row.months ?? []).map((value: any, index: any) => (
                             <td key={`${row.groupKey}-${index}`} style={{ padding: `${rowPaddingV} 4px`, borderBottom: '1px solid var(--noorix-border)', textAlign: 'center', background: selectedMonthNumber === index + 1 ? 'var(--noorix-blue-6)' : undefined }}>
                               <Button
                                 onClick={() => setDetailState({ month: index + 1, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: row.rowType === 'item' })}

@@ -91,7 +91,7 @@ export function ProductSearchInput({
   const filtered = useMemo(() => {
     const q = normalizeForSearch(debouncedQuery);
     if (!q) return products;
-    return products.filter((p) => matchesSearch(p, q));
+    return products.filter((p: any) => matchesSearch(p, q));
   }, [products, debouncedQuery]);
 
   function updateDropdownPosition() {
@@ -164,10 +164,10 @@ export function ProductSearchInput({
       return;
     }
     if (e.key === 'ArrowDown') {
-      setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1));
+      setHighlightIdx((i: any) => Math.min(i + 1, filtered.length - 1));
       e.preventDefault();
     } else if (e.key === 'ArrowUp') {
-      setHighlightIdx((i) => Math.max(i - 1, 0));
+      setHighlightIdx((i: any) => Math.max(i - 1, 0));
       e.preventDefault();
     } else if (e.key === 'Enter' && filtered[highlightIdx]) {
       selectProduct(filtered[highlightIdx]);
@@ -221,7 +221,7 @@ export function ProductSearchInput({
                 {t('ordersNoSearchResults') || 'لا توجد نتائج'}
               </div>
             ) : (
-              filtered.map((p, i) => {
+              filtered.map((p: any, i: any) => {
                 const variants = Array.isArray(p?.variants) ? p.variants : [];
                 const first = variants[0];
                 const lastPrice = first?.lastPrice ?? p?.lastPrice ?? 0;
@@ -233,7 +233,7 @@ export function ProductSearchInput({
                     role="option"
                     aria-selected={isHighlight}
                     onMouseEnter={() => setHighlightIdx(i)}
-                    onMouseDown={(ev) => {
+                    onMouseDown={(ev: any) => {
                       ev.preventDefault();
                       selectProduct(p);
                     }}

@@ -14,7 +14,7 @@ export type OrdersSummaryMetrics = {
   delegateBalance?: number;
 };
 
-function SectionBlock({ title, received, spent, result, receivedLabel, spentLabel, resultLabel, accentColor }) {
+function SectionBlock({ title, received, spent, result, receivedLabel, spentLabel, resultLabel, accentColor }: any) {
   const resNum = Number(result ?? 0);
   return (
     <div className="noorix-surface-card flex min-w-0 flex-col overflow-hidden">

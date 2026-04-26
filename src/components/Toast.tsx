@@ -25,7 +25,7 @@ const TYPE_STYLES = {
  * يختفي تلقائياً بعد 4 ثوانٍ، وقابل للإغلاق يدوياً.
  * يظهر في الزاوية الصحيحة حسب اتجاه المستند (RTL/LTR).
  */
-export default function Toast({ message, type = 'success', visible, onDismiss }) {
+export default function Toast({ message, type = 'success', visible, onDismiss }: any) {
   useEffect(() => {
     if (!visible || !message) return;
     const timer = setTimeout(() => onDismiss?.(), 4000);
@@ -34,7 +34,7 @@ export default function Toast({ message, type = 'success', visible, onDismiss })
 
   if (!visible || !message) return null;
 
-  const style = TYPE_STYLES[type] ?? TYPE_STYLES.info;
+  const style = TYPE_STYLES[type as keyof typeof TYPE_STYLES] ?? TYPE_STYLES.info;
 
   return (
     <div

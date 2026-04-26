@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useOcrInvoiceImageBlob } from '../hooks/useOcrInvoiceImageBlob';
 
 /** صورة مصغّرة مع مصادقة — جلب عبر React Query (كاش مشترك مع تبويب الرفع) */
-export default function OcrInvoiceThumb({ invoiceId, className = '' }) {
+export default function OcrInvoiceThumb({ invoiceId, className = '' }: any) {
   const { data: blob, isSuccess } = useOcrInvoiceImageBlob(invoiceId, true);
-  const [src, setSrc] = useState(null);
+  const [src, setSrc] = useState<any>(null);
 
   useEffect(() => {
     let objectUrl = null;

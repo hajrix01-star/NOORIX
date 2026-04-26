@@ -72,7 +72,7 @@ export function ExecCard({ stripe = 'blue', title, subtitle, value, icon, footer
       <span
         className={cn(
           'pointer-events-none absolute inset-x-0 top-0 z-[1] h-1',
-          STRIPE_TOP[stripe] ?? STRIPE_TOP.blue,
+          STRIPE_TOP[stripe as keyof typeof STRIPE_TOP] ?? STRIPE_TOP.blue,
         )}
         aria-hidden
       />
@@ -104,7 +104,7 @@ export type StatCardProps = {
 } & Record<string, unknown>;
 
 export function StatCard({ color = 'blue', label, value, delta, icon, className = '', children, ...rest }: StatCardProps) {
-  const palette = STAT_COLOR[color] ?? STAT_COLOR.blue;
+  const palette = STAT_COLOR[color as keyof typeof STAT_COLOR] ?? STAT_COLOR.blue;
   return (
     <div
       className={cn('noorix-stat-card p-4', className)}

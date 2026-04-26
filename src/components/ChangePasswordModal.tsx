@@ -102,7 +102,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }: ChangePasswo
             {newPassword && (
               <div className="mt-2">
                 <div className="flex gap-1 mb-1">
-                  {[1, 2, 3, 4].map((level) => (
+                  {[1, 2, 3, 4].map((level: any) => (
                     <div
                       key={level}
                       className="flex-1 h-1 rounded transition-[background] duration-200"

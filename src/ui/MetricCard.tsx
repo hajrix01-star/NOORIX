@@ -153,7 +153,7 @@ MetricCard.Value = function MetricCardValue({
         style={{ color: color || undefined, fontFamily: 'var(--noorix-font-numbers)' }}
       >
         {prefix}
-        {isNum ? <FmtNum n={absVal} /> : strDisplay}
+        {isNum ? <FmtNum n={Number(value)} /> : strDisplay}
         {currency && <span className="nx-sar">{currency}</span>}
       </div>
     </div>

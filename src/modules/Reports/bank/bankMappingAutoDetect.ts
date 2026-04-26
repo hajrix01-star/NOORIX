@@ -31,10 +31,10 @@ const BANK_NAME_BLACKLIST = [
  * يرجع true إذا كانت القيمة تطابق أحد عناوين الوثائق المعروفة ولا يُعتبر اسماً لبنك.
  * @param {string} value
  */
-export function isBankNameBlacklisted(value) {
+export function isBankNameBlacklisted(value: any) {
   if (!value) return false;
   const normalized = value.trim().toLowerCase().replace(/\s+/g, ' ');
-  return BANK_NAME_BLACKLIST.some((phrase) => normalized === phrase.toLowerCase() || normalized === phrase.toLowerCase().replace(/\s+/g, ' '));
+  return BANK_NAME_BLACKLIST.some((phrase: any) => normalized === phrase.toLowerCase() || normalized === phrase.toLowerCase().replace(/\s+/g, ' '));
 }
 
 /**
@@ -45,7 +45,7 @@ export function isBankNameBlacklisted(value) {
  * @param {string} value
  * @returns {string}
  */
-export function sanitizeBankName(value) {
+export function sanitizeBankName(value: any) {
   if (!value || typeof value !== 'string') return '';
   const trimmed = value.trim();
   if (!trimmed) return '';
@@ -61,7 +61,7 @@ export function sanitizeBankName(value) {
  * - يرفض أسماء البنوك المعروفة
  * @param {string} value
  */
-export function sanitizeCustomerName(value) {
+export function sanitizeCustomerName(value: any) {
   if (!value || typeof value !== 'string') return '';
   const trimmed = value.trim();
   if (!trimmed) return '';
@@ -70,7 +70,7 @@ export function sanitizeCustomerName(value) {
   return trimmed;
 }
 
-export function extractDateFromCell(val) {
+export function extractDateFromCell(val: any) {
   if (!val) return '';
   if (val instanceof Date) {
     return formatSaudiDateISO(val);
@@ -91,7 +91,7 @@ export function extractDateFromCell(val) {
  * @param {unknown[][]} sheetData
  * @returns {{ headerRow: number, dataStartRow: number, bankName: string, customerName: string, periodFrom: string, periodTo: string }}
  */
-export function autoDetectRows(sheetData) {
+export function autoDetectRows(sheetData: any) {
   let headerRow = 0;
   let dataStartRow = 1;
   let bankName = '';
@@ -164,14 +164,14 @@ export function autoDetectRows(sheetData) {
   for (let i = 0; i < Math.min(sheetData.length, 30); i++) {
     const row = sheetData[i];
     if (!row) continue;
-    const rowText = row.map((c) => String(c || '').toLowerCase()).join(' ');
+    const rowText = row.map((c: any) => String(c || '').toLowerCase()).join(' ');
 
     if (i < 15 && !customerName) {
       for (const ck of customerNameKeywords) {
         if (rowText.includes(ck)) {
           for (let j = 0; j < row.length; j++) {
             const cellText = String(row[j] || '').toLowerCase().trim();
-            if (customerNameKeywords.some((k) => cellText.includes(k))) {
+            if (customerNameKeywords.some((k: any) => cellText.includes(k))) {
               if (j + 1 < row.length && row[j + 1]) {
                 customerName = String(row[j + 1]).trim();
                 break;
@@ -246,7 +246,7 @@ export function autoDetectRows(sheetData) {
       for (let j = 0; j < row.length; j++) {
         const cellText = String(row[j] || '').trim();
         const cellLower = cellText.toLowerCase();
-        if (bankLabelKeywords.some((lk) => cellLower === lk.toLowerCase() || cellLower.startsWith(lk.toLowerCase() + ':') || cellLower.startsWith(lk.toLowerCase() + '：'))) {
+        if (bankLabelKeywords.some((lk: any) => cellLower === lk.toLowerCase() || cellLower.startsWith(lk.toLowerCase() + ':') || cellLower.startsWith(lk.toLowerCase() + '：'))) {
           // القيمة قد تكون في نفس الخلية بعد ":"  أو في الخلية التالية
           const parts = cellText.split(/[:：]/);
           if (parts.length > 1 && parts[1].trim()) {
@@ -263,9 +263,9 @@ export function autoDetectRows(sheetData) {
       if (!bankName) {
         for (const bk of bankKeywords) {
           if (rowText.includes(bk.toLowerCase())) {
-            const found = row.find((c) => {
+            const found = row.find((c: any) => {
               const s = String(c || '').toLowerCase();
-              return bankKeywords.some((k) => s.includes(k.toLowerCase()));
+              return bankKeywords.some((k: any) => s.includes(k.toLowerCase()));
             });
             if (found) {
               const candidate = sanitizeBankName(String(found));
@@ -296,11 +296,11 @@ export function autoDetectRows(sheetData) {
  * @param {number} dataStartRow
  * @returns {Record<string, number>} keys: date, description, debit, credit, balance, reference, notes
  */
-export function autoDetectColumns(sheetData, headerRow, dataStartRow) {
+export function autoDetectColumns(sheetData: any, headerRow: any, dataStartRow: any) {
   const detected: Record<string, number> = {};
   if (!sheetData || !sheetData[headerRow]) return detected;
 
-  const headers = sheetData[headerRow].map((h) => String(h || '').trim().toLowerCase());
+  const headers = sheetData[headerRow].map((h: any) => String(h || '').trim().toLowerCase());
 
   const dateKeywords = ['تاريخ', 'date', 'التاريخ', 'تاريخ العملية', 'transaction date', 'تاريخ القيد'];
   const descKeywords = ['وصف', 'بيان', 'description', 'الوصف', 'البيان', 'تفاصيل', 'details'];
@@ -310,7 +310,7 @@ export function autoDetectColumns(sheetData, headerRow, dataStartRow) {
   const refKeywords = ['مرجع', 'reference', 'المرجع', 'رقم المرجع', 'ref'];
   const notesKeywords = ['ملاحظات', 'notes', 'ملاحظة', 'تعليق'];
 
-  const matchHeader = (keywords) => {
+  const matchHeader = (keywords: any) => {
     for (let i = 0; i < headers.length; i++) {
       for (const kw of keywords) {
         if (headers[i].includes(kw)) return i;
@@ -343,7 +343,7 @@ export function autoDetectColumns(sheetData, headerRow, dataStartRow) {
  * @param {unknown[][]} sheetData
  * @param {number} dataStartRow
  */
-export function countDataRowsFrom(sheetData, dataStartRow) {
+export function countDataRowsFrom(sheetData: any, dataStartRow: any) {
   if (!sheetData) return 0;
-  return sheetData.slice(dataStartRow).filter((r) => r && r.some((c) => c !== '' && c != null)).length;
+  return sheetData.slice(dataStartRow).filter((r: any) => r && r.some((c: any) => c !== '' && c != null)).length;
 }

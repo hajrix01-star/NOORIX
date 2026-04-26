@@ -18,7 +18,7 @@ import {
 /**
  * @param {{ companyId: string, includeArchived?: boolean, startDate?: string|null, endDate?: string|null }} params
  */
-export function useVaults({ companyId, includeArchived = false, startDate = null, endDate = null }) {
+export function useVaults({ companyId, includeArchived = false, startDate = null, endDate = null }: any) {
   const queryClient = useQueryClient();
 
   const { data: vaultsList = [], isLoading, isFetching, isError } = useQuery({
@@ -56,31 +56,31 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
     ]);
 
   const createMutation = useApiMutation({
-    mutationFn: (body) => createVault({ ...body, companyId }),
+    mutationFn: (body: any) => createVault({ ...body, companyId }),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }) => updateVault(id, body),
+    mutationFn: ({ id, body }: any) => updateVault(id, body),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const archiveMutation = useApiMutation({
-    mutationFn: (id) => archiveVault(id),
+    mutationFn: (id: any) => archiveVault(id),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const deleteMutation = useApiMutation({
-    mutationFn: (id) => deleteVault(id),
+    mutationFn: (id: any) => deleteVault(id),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const reorderMutation = useApiMutation({
-    mutationFn: (vaultIds) => reorderVaults(vaultIds),
+    mutationFn: (vaultIds: any) => reorderVaults(vaultIds),
     onSuccess: invalidate,
     showErrorToast: false,
   });

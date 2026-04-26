@@ -2,7 +2,7 @@ import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { hrFmt } from '../../utils/hrFmt';
 import { Badge, FmtNum, SmartTable } from '../../../../ui';
 
-export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatusMap }) {
+export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatusMap }: any) {
   return (
     <div className="noorix-surface-card overflow-hidden employee-profile-layout__wide">
       <div className="nx-section-header">
@@ -18,7 +18,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             key: 'payrollRun.runNumber',
             label: t('payrollRunNumber'),
             width: '14%',
-            render: (_, row) => (
+            render: (_: any, row: any) => (
               <span className="nx-cell-num nx-cell-accent text-[12px]">{row.payrollRun?.runNumber || '—'}</span>
             ),
           },
@@ -26,7 +26,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             key: 'payrollRun.payrollMonth',
             label: t('payrollMonth'),
             width: '14%',
-            render: (_, row) => (
+            render: (_: any, row: any) => (
               <span className="nx-cell-muted-sm">{formatSaudiDate(row.payrollRun?.payrollMonth)}</span>
             ),
           },
@@ -35,14 +35,14 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             label: t('grossSalary'),
             numeric: true,
             width: '12%',
-            render: (v) => <FmtNum n={v} className="nx-cell-num" />,
+            render: (v: any) => <FmtNum n={v} className="nx-cell-num" />,
           },
           {
             key: 'deductions',
             label: t('payrollDeductions'),
             numeric: true,
             width: '11%',
-            render: (v) => (
+            render: (v: any) => (
               <span
                 className="nx-cell-num"
                 style={{ color: Number(v) > 0 ? 'var(--noorix-accent-red)' : undefined }}
@@ -56,7 +56,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             label: t('payrollAdvances'),
             numeric: true,
             width: '11%',
-            render: (v) => (
+            render: (v: any) => (
               <span
                 className="nx-cell-num"
                 style={{ color: Number(v) > 0 ? 'var(--color-noorix-amber)' : undefined }}
@@ -70,13 +70,13 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             label: t('netSalary'),
             numeric: true,
             width: '12%',
-            render: (v) => <FmtNum n={v} className="nx-cell-num font-bold text-noorix-green" />,
+            render: (v: any) => <FmtNum n={v} className="nx-cell-num font-bold text-noorix-green" />,
           },
           {
             key: 'payrollRun.status',
             label: t('payrollStatus'),
             width: '12%',
-            render: (_, row) => {
+            render: (_: any, row: any) => {
               const pr = row.payrollRun;
               const st = String(pr?.status || '').toLowerCase();
               const badgeProps =
@@ -90,7 +90,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             key: 'notes',
             label: t('invoiceNotesColumn'),
             width: '14%',
-            render: (v) => (
+            render: (v: any) => (
               <span className="nx-cell-ellipsis text-[11px]" title={v || ''}>
                 {v || '—'}
               </span>
@@ -102,7 +102,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderMobileCard={(row) => {
+        renderMobileCard={(row: any) => {
           const pr = row.payrollRun;
           const stPr = String(pr?.status || '').toLowerCase();
           const payrollBadgeProps =

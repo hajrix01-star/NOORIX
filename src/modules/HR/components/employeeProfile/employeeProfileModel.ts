@@ -2,20 +2,20 @@ import { hrFmt } from '../../utils/hrFmt';
 
 export const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
-export function getInitials(name) {
+export function getInitials(name: any) {
   if (!name) return '?';
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] || '') + (parts[1][0] || '');
   return (parts[0] || '').slice(0, 2) || '?';
 }
 
-export function buildCareerTableRows(movements, t) {
-  const labelFor = (mt) => {
+export function buildCareerTableRows(movements: any, t: any) {
+  const labelFor = (mt: any) => {
     if (mt === 'promotion') return t('movementTypePromotion');
     if (mt === 'raise') return t('movementTypeRaise');
     return t('movementTypeOther');
   };
-  return movements.map((m) => {
+  return movements.map((m: any) => {
     let changeSummary = '—';
     if (m.movementType === 'promotion') {
       const a = m.previousValue || '—';
@@ -51,9 +51,9 @@ export function buildCareerTableRows(movements, t) {
   });
 }
 
-export function buildFinancialRecords(hrInvoicesData, deductions, t) {
+export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: any) {
   const recs = [];
-  const hrInvs = (hrInvoicesData?.items ?? []).filter((i) => i.status !== 'cancelled');
+  const hrInvs = (hrInvoicesData?.items ?? []).filter((i: any) => i.status !== 'cancelled');
   for (const inv of hrInvs) {
     const dt = inv.transactionDate
       ? inv.transactionDate.slice
@@ -103,11 +103,11 @@ export function buildFinancialRecords(hrInvoicesData, deductions, t) {
       deductionType: d.deductionType,
     });
   }
-  recs.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  recs.sort((a: any, b: any) => (b.date || '').localeCompare(a.date || ''));
   return recs;
 }
 
-export function buildSalaryRows(employee, customAllowances, overtimeTotal, total, overtimeHoursPerDay, t) {
+export function buildSalaryRows(employee: any, customAllowances: any, overtimeTotal: any, total: any, overtimeHoursPerDay: any, t: any) {
   type SalaryRow = { label: any; amount: number; strong?: boolean; total?: boolean };
   const rows: SalaryRow[] = [{ label: t('basicSalary'), amount: Number(employee.basicSalary ?? 0), strong: true }];
   if (Number(employee.housingAllowance ?? 0) > 0) {

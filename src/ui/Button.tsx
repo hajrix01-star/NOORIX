@@ -50,8 +50,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
     className = '',
     children,
     ...rest
-  },
-  ref,
+  }: any,
+  ref: any,
 ) {
   return (
     <button
@@ -59,8 +59,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
       type={type}
       className={cn(
         BASE,
-        VARIANT[variant] ?? VARIANT.default,
-        SIZE[size]       ?? SIZE.md,
+        VARIANT[variant as keyof typeof VARIANT] ?? VARIANT.default,
+        SIZE[size as keyof typeof SIZE]       ?? SIZE.md,
         fullWidth && 'w-full',
         loading   && 'relative opacity-75 pointer-events-none',
         className,

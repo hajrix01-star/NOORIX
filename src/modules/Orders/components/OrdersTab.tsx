@@ -24,8 +24,8 @@ import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu, FmtNum } from '../../../ui';
 
-function buildWhatsAppText(order, t) {
-  const lines = (order.items || []).map((it) => {
+function buildWhatsAppText(order: any, t: any) {
+  const lines = (order.items || []).map((it: any) => {
     const name = it.product?.nameAr || it.product?.nameEn || '—';
     const parts = [it.size, it.packaging, it.unit].filter(Boolean);
     const variantPart = parts.length > 0 ? ` (${parts.join(' / ')})` : '';
@@ -35,9 +35,9 @@ function buildWhatsAppText(order, t) {
   return `طلب ${order.orderNumber}\nالتاريخ: ${formatSaudiDate(order.orderDate)}\nالنوع: ${order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}\n\n${lines}\n\nالإجمالي: ${total} SR`;
 }
 
-function buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate) {
+function buildOrderPrintHtml(order: any, companyName: any, t: any, fmt: any, formatSaudiDate: any) {
   const items = order.items ?? [];
-  const rows = items.map((it) => {
+  const rows = items.map((it: any) => {
     const parts = [it.size, it.packaging, it.unit].filter(Boolean);
     const name = (it.product?.nameAr || it.product?.nameEn || '—') + (parts.length > 0 ? ` (${parts.join(' / ')})` : '');
     return `<tr><td>${name}</td><td style="text-align:center">${it.quantity}</td><td>${fmt(it.unitPrice ?? 0)} SR</td><td><strong>${fmt(it.amount ?? 0)} SR</strong></td></tr>`;
@@ -77,10 +77,10 @@ export function OrdersTab({
   const { t } = useTranslation();
   const { companies = [] } = useApp();
   const [showModal, setShowModal] = useState(false);
-  const [editingOrder, setEditingOrder] = useState(null);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
   const { showToast } = useToast();
   const [orderTypeFilter, setOrderTypeFilter] = useState('all'); // 'all' | 'external' | 'internal'
-  const [viewingOrder, setViewingOrder] = useState(null);
+  const [viewingOrder, setViewingOrder] = useState<any>(null);
 
   const { data: orders = [], isLoading, error: ordersError } = useOrders(companyId, year, month);
   const { data: products = [] } = useOrderProducts(companyId);
@@ -110,9 +110,9 @@ export function OrdersTab({
   /** نقد المحل: مبيعات قناة النقد فقط (خزائن type=cash)، لا إجمالي كل القنوات */
   const cashSalesTotal = useMemo(() => {
     const items = salesData?.items ?? [];
-    return items.reduce((sum, summary) => {
+    return items.reduce((sum: any, summary: any) => {
       const channels = summary.channels ?? [];
-      const cashOnly = channels.reduce((acc, ch) => {
+      const cashOnly = channels.reduce((acc: any, ch: any) => {
         if (ch?.vault?.type !== 'cash') return acc;
         return acc + Number(ch.amount ?? 0);
       }, 0);
@@ -124,7 +124,7 @@ export function OrdersTab({
     const sd = (startDate || '').split('T')[0] || startDate;
     const ed = (endDate || '').split('T')[0] || endDate;
     if (!sd || !ed) return orders;
-    return orders.filter((o) => {
+    return orders.filter((o: any) => {
       const od = (o.orderDate || '').split('T')[0] || o.orderDate || '';
       return od >= sd && od <= ed;
     });
@@ -132,11 +132,11 @@ export function OrdersTab({
 
   const filteredOrders = useMemo(() => {
     if (orderTypeFilter === 'all') return dateFilteredOrders;
-    return dateFilteredOrders.filter((o) => o.orderType === orderTypeFilter);
+    return dateFilteredOrders.filter((o: any) => o.orderType === orderTypeFilter);
   }, [dateFilteredOrders, orderTypeFilter]);
 
   const filteredTotal = useMemo(() => {
-    return filteredOrders.reduce((s, o) => s + Number(o.totalAmount ?? 0), 0);
+    return filteredOrders.reduce((s: any, o: any) => s + Number(o.totalAmount ?? 0), 0);
   }, [filteredOrders]);
 
   const summary = useMemo(() => {
@@ -147,20 +147,20 @@ export function OrdersTab({
     const fullMonthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastD).padStart(2, '0')}`;
     const isFullMonth = sd === fullMonthStart && ed === fullMonthEnd;
     if (isFullMonth) return summaryFromApi;
-    const ext = dateFilteredOrders.filter((o) => o.orderType === 'external');
-    const pettyCash = ext.reduce((s, o) => s + Number(o.pettyCashAmount ?? 0), 0);
-    const delegatePurchases = ext.reduce((s, o) => s + Number(o.totalAmount ?? 0), 0);
+    const ext = dateFilteredOrders.filter((o: any) => o.orderType === 'external');
+    const pettyCash = ext.reduce((s: any, o: any) => s + Number(o.pettyCashAmount ?? 0), 0);
+    const delegatePurchases = ext.reduce((s: any, o: any) => s + Number(o.totalAmount ?? 0), 0);
     return {
       pettyCashTotal: pettyCash,
       delegatePurchasesTotal: delegatePurchases,
       delegateBalance: pettyCash - delegatePurchases,
-      localPurchasesTotal: dateFilteredOrders.filter((o) => o.orderType === 'internal').reduce((s, o) => s + Number(o.totalAmount ?? 0), 0),
+      localPurchasesTotal: dateFilteredOrders.filter((o: any) => o.orderType === 'internal').reduce((s: any, o: any) => s + Number(o.totalAmount ?? 0), 0),
     };
   }, [summaryFromApi, dateFilteredOrders, startDate, endDate, year, month]);
 
   const cumulativeRemainingByOrderId = useMemo(() => {
     const sorted = [...dateFilteredOrders].sort(
-      (a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime(),
+      (a: any, b: any) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime(),
     );
     const map = new Map();
     let cumPetty = 0;
@@ -183,21 +183,21 @@ export function OrdersTab({
         minWidth: 100,
         align: 'center',
         shrink: true,
-        render: (v) => <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{v}</span>,
+        render: (v: any) => <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap">{v}</span>,
       },
       {
         key: 'orderDate',
         label: t('orderDate'),
         minWidth: 115,
         align: 'center',
-        render: (v) => <span className="whitespace-nowrap">{formatSaudiDate(v)}</span>,
+        render: (v: any) => <span className="whitespace-nowrap">{formatSaudiDate(v)}</span>,
       },
       {
         key: 'orderType',
         label: t('orderType'),
         align: 'center',
         shrink: true,
-        render: (v) => {
+        render: (v: any) => {
           const isExt = v === 'external';
           return (
             <Badge color={isExt ? 'blue' : 'green'} size="sm">
@@ -212,14 +212,14 @@ export function OrdersTab({
         numeric: true,
         align: 'center',
         shrink: true,
-        render: (items) => (items ?? []).length,
+        render: (items: any) => (items ?? []).length,
       },
       {
         key: 'pettyCashAmount',
         label: t('ordersPettyCashGiven'),
         align: 'center',
         shrink: true,
-        render: (v, o) =>
+        render: (v: any, o: any) =>
           o.orderType === 'external' && v != null ? (
             <span className="nx-cell-num nx-cell-num--blue whitespace-nowrap"><FmtNum n={Number(v)} /> SR</span>
           ) : (
@@ -232,14 +232,14 @@ export function OrdersTab({
         numeric: true,
         align: 'center',
         shrink: true,
-        render: (v) => <span className="nx-cell-num font-bold whitespace-nowrap"><FmtNum n={Number(v ?? 0)} /> SR</span>,
+        render: (v: any) => <span className="nx-cell-num font-bold whitespace-nowrap"><FmtNum n={Number(v ?? 0)} /> SR</span>,
       },
       {
         key: 'id',
         label: t('ordersCumulativeRemaining'),
         align: 'center',
         shrink: true,
-        render: (_, o) => {
+        render: (_: any, o: any) => {
           const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
           if (cumRem == null) return <span className="nx-cell-muted">—</span>;
           return (
@@ -256,7 +256,7 @@ export function OrdersTab({
         align: 'center',
         width: '1%',
         shrink: true,
-        render: (_, o) => (
+        render: (_: any, o: any) => (
           <KebabMenu
             ariaLabel={t('actions')}
             menuMaxHeight={320}
@@ -290,7 +290,7 @@ export function OrdersTab({
   );
 
   const ordersRenderMobileCard = useCallback(
-    (o) => {
+    (o: any) => {
       const pettyGiven = o.orderType === 'external' ? Number(o.pettyCashAmount ?? 0) : null;
       const cumRem = o.orderType === 'external' ? cumulativeRemainingByOrderId.get(o.id) : null;
       const isExt = o.orderType === 'external';
@@ -348,32 +348,32 @@ export function OrdersTab({
     [t, fmt, formatSaudiDate, cumulativeRemainingByOrderId],
   );
 
-  function handleWhatsApp(order) {
+  function handleWhatsApp(order: any) {
     const text = encodeURIComponent(buildWhatsAppText(order, t));
     window.open(`https://wa.me/?text=${text}`, '_blank');
   }
 
-  function handleEdit(order) {
+  function handleEdit(order: any) {
     setEditingOrder(order);
     setShowModal(true);
   }
 
-  function handleDelete(order) {
+  function handleDelete(order: any) {
     if (!window.confirm(t('ordersDeleteConfirm', order.orderNumber))) return;
     cancelOrder.mutate(order.id, {
       onSuccess: () => showToast(t('ordersOrderCancelled'), 'success'),
-      onError: (e) => showToast(e?.message || t('deleteFailed'), 'error'),
+      onError: (e: any) => showToast(e?.message || t('deleteFailed'), 'error'),
     });
   }
 
-  function handleView(order) {
+  function handleView(order: any) {
     setViewingOrder(order);
   }
 
-  const handleExportSingleOrder = async (order) => {
+  const handleExportSingleOrder = async (order: any) => {
     try {
       const items = order.items ?? [];
-      const rows = items.map((it) => ({
+      const rows = items.map((it: any) => ({
         [t('orderNumber')]: order.orderNumber,
         [t('orderDate')]: formatSaudiDate(order.orderDate),
         [t('orderType')]: order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal'),
@@ -414,12 +414,12 @@ export function OrdersTab({
       }
       await exportToExcel(rows, `order-${order.orderNumber}.xlsx`);
       showToast(t('exportSuccess'), 'success');
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('exportFailed'), 'error');
     }
   };
 
-  const handlePrintOrder = (order) => {
+  const handlePrintOrder = (order: any) => {
     const bodyHtml = buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate);
     openPrintWindow({
       title: `${t('ordersPrintOrder')} — ${order.orderNumber}`,
@@ -434,7 +434,7 @@ export function OrdersTab({
     setEditingOrder(null);
   }
 
-  const companyName = companies.find((c) => c.id === companyId)?.nameAr || companies.find((c) => c.id === companyId)?.nameEn || '';
+  const companyName = companies.find((c: any) => c.id === companyId)?.nameAr || companies.find((c: any) => c.id === companyId)?.nameEn || '';
   const printDate = `${year}/${String(month).padStart(2, '0')}`;
 
   return (
@@ -482,7 +482,7 @@ export function OrdersTab({
           <div className="noorix-print-hide flex flex-wrap items-center gap-2 w-full min-w-0">
             <span className="text-[13px] font-semibold text-noorix-muted shrink-0">{t('ordersFilterByType')}:</span>
             <div className="nx-toolbar flex-wrap">
-              {['all', 'external', 'internal'].map((v) => (
+              {['all', 'external', 'internal'].map((v: any) => (
                 <Button
                   key={v}
                   type="button"
@@ -509,7 +509,7 @@ export function OrdersTab({
           createOrder={createOrder}
           updateOrder={updateOrder}
           onSuccess={() => showToast(editingOrder ? t('ordersOrderUpdated') : t('orderSaved'), 'success')}
-          onError={(msg) => showToast(msg || t('saveFailed'), 'error')}
+          onError={(msg: any) => showToast(msg || t('saveFailed'), 'error')}
           onClose={closeModal}
           onWhatsApp={handleWhatsApp}
         />
@@ -558,11 +558,11 @@ export function OrdersTab({
           <div className="text-[16px] font-bold mb-3">{t('orderItems')}</div>
           <SmartTable
             columns={[
-              { key: '_idx', label: '#', shrink: true, render: (_, _row, i) => <span className="nx-cell-muted">{i + 1}</span> },
+              { key: '_idx', label: '#', shrink: true, render: (_: any, _row: any, i: any) => <span className="nx-cell-muted">{i + 1}</span> },
               {
                 key: 'product',
                 label: t('product'),
-                render: (_, it) => (
+                render: (_: any, it: any) => (
                   <>
                     {it.product?.nameAr || it.product?.nameEn || '—'}
                     {[it.size, it.packaging, it.unit].filter(Boolean).length > 0 && (
@@ -572,8 +572,8 @@ export function OrdersTab({
                 ),
               },
               { key: 'quantity', label: t('quantity'), numeric: true, align: 'center' },
-              { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (v) => `${fmt(v ?? 0)} SR` },
-              { key: 'amount',    label: t('total'),    numeric: true, render: (v) => <span className="font-semibold"><FmtNum n={v ?? 0} /> SR</span> },
+              { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (v: any) => `${fmt(v ?? 0)} SR` },
+              { key: 'amount',    label: t('total'),    numeric: true, render: (v: any) => <span className="font-semibold"><FmtNum n={v ?? 0} /> SR</span> },
             ]}
             data={viewingOrder.items ?? []}
             tableMinWidth={480}

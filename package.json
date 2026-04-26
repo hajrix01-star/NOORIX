@@ -33,15 +33,16 @@
     "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^22.10.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@testing-library/react": "^16.3.2",
     "@vitejs/plugin-react": "^4.0.0",
     "happy-dom": "^20.9.0",
+    "ts-morph": "^28.0.0",
+    "typescript": "^5.7.2",
     "vite": "^5.0.0",
     "vite-plugin-pwa": "^1.2.0",
-    "typescript": "^5.7.2",
     "vitest": "^2.0.0",
     "workbox-window": "^7.4.0"
   }

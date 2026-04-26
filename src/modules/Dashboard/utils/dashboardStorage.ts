@@ -8,11 +8,11 @@ const TARGET_KEY = 'noorix-dashboard-sales-target';
 const SPECIAL_DAYS_KEY = 'noorix-dashboard-special-days';
 const DAY_NOTES_KEY = 'noorix-dashboard-day-notes';
 
-function key(prefix, companyId, year, month) {
+function key(prefix: any, companyId: any, year: any, month: any) {
   return `${prefix}-${companyId}-${year}-${month}`;
 }
 
-export function getStoredTargets(companyId, year, month) {
+export function getStoredTargets(companyId: any, year: any, month: any) {
   const parsed = readJsonStorage(key(TARGET_KEY, companyId, year, month), null);
   if (!parsed || typeof parsed !== 'object') return { overall: null, byDow: {} };
   return {
@@ -21,14 +21,14 @@ export function getStoredTargets(companyId, year, month) {
   };
 }
 
-export function setStoredTargets(companyId, year, month, data) {
+export function setStoredTargets(companyId: any, year: any, month: any, data: any) {
   return writeJsonStorage(key(TARGET_KEY, companyId, year, month), data);
 }
 
-export function getStoredSpecialDays(companyId, year, month) {
+export function getStoredSpecialDays(companyId: any, year: any, month: any) {
   const list = readJsonStorage(key(SPECIAL_DAYS_KEY, companyId, year, month), null);
   if (!Array.isArray(list)) return [];
-  return list.map((item) => {
+  return list.map((item: any) => {
     if (item.fromDate && item.toDate) return item;
     if (item.dateStr) {
       return {
@@ -43,15 +43,15 @@ export function getStoredSpecialDays(companyId, year, month) {
   });
 }
 
-export function setStoredSpecialDays(companyId, year, month, days) {
+export function setStoredSpecialDays(companyId: any, year: any, month: any, days: any) {
   return writeJsonStorage(key(SPECIAL_DAYS_KEY, companyId, year, month), days);
 }
 
-export function getStoredDayNotes(companyId, year, month) {
+export function getStoredDayNotes(companyId: any, year: any, month: any) {
   const parsed = readJsonStorage(key(DAY_NOTES_KEY, companyId, year, month), null);
   return parsed && typeof parsed === 'object' ? parsed : {};
 }
 
-export function setStoredDayNotes(companyId, year, month, notes) {
+export function setStoredDayNotes(companyId: any, year: any, month: any, notes: any) {
   return writeJsonStorage(key(DAY_NOTES_KEY, companyId, year, month), notes);
 }

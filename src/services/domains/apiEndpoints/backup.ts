@@ -20,7 +20,7 @@ export async function backupTriggerCompany(companyId: string): Promise<ApiParsed
   return apiPost('/api/v1/backup/trigger', { scope: 'company', companyId }, { timeout: 180000 });
 }
 
-export async function backupListJobs(limit = 40): Promise<ApiParsedResult> {
+export async function backupListJobs(limit: any = 40): Promise<ApiParsedResult> {
   return apiGet('/api/v1/backup/jobs', { limit: String(limit) });
 }
 
@@ -76,7 +76,7 @@ export async function backupPatchSystemConfig(body: unknown): Promise<ApiParsedR
   return apiPatch('/api/v1/backup/system/config', body);
 }
 
-export async function backupListSystemJobs(limit = 20): Promise<ApiParsedResult> {
+export async function backupListSystemJobs(limit: any = 20): Promise<ApiParsedResult> {
   return apiGet('/api/v1/backup/system/jobs', { limit: String(limit) });
 }
 

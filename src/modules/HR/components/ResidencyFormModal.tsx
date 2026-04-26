@@ -58,9 +58,9 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
     enabled: !!cid,
   });
 
-  const activeEmployees = (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
+  const activeEmployees = (employees || []).filter((e: any) => e.status !== 'terminated' && e.status !== 'archived');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e?.preventDefault?.();
     setError('');
     if (!employeeId || !iqamaNumber || !expiryDate) {
@@ -97,7 +97,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
             setSubmitting(false);
             return;
           }
-          const emp = activeEmployees.find((e) => e.id === employeeId);
+          const emp = activeEmployees.find((e: any) => e.id === employeeId);
           const empName = emp ? employeeDisplayName(emp, 'ar', '') : '';
           const serviceLabel = residencyServiceType === 'renewal' ? (t('opResidencyRenewal') || 'تجديد إقامة') : (t('residencyNew') || 'إقامة جديدة');
           const notes = `${serviceLabel} موظف ${empName}`.trim() || `إقامة - ${iqamaNumber}`;
@@ -118,7 +118,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
       }
       onSuccess?.();
       onClose?.();
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || t('saveFailed'));
     } finally {
       setSubmitting(false);
@@ -147,12 +147,12 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
           type="select"
           label={t('selectEmployee')}
           value={employeeId}
-          onChange={(e) => setEmployeeId(e.target.value)}
+          onChange={(e: any) => setEmployeeId(e.target.value)}
           required
           disabled={isEdit}
         >
           <option value="">—</option>
-          {activeEmployees.map((emp) => (
+          {activeEmployees.map((emp: any) => (
             <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
           ))}
         </Input>
@@ -160,7 +160,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
         <Input
           label={t('iqamaNumber')}
           value={iqamaNumber}
-          onChange={(e) => setIqamaNumber(e.target.value)}
+          onChange={(e: any) => setIqamaNumber(e.target.value)}
           required
           placeholder="1234567890"
         />
@@ -170,13 +170,13 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
             type="date"
             label={t('startDate')}
             value={issueDate}
-            onChange={(e) => setIssueDate(e.target.value)}
+            onChange={(e: any) => setIssueDate(e.target.value)}
           />
           <Input
             type="date"
             label={t('expiryDate')}
             value={expiryDate}
-            onChange={(e) => setExpiryDate(e.target.value)}
+            onChange={(e: any) => setExpiryDate(e.target.value)}
             required
           />
         </div>
@@ -187,7 +187,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
               <input
                 type="checkbox"
                 checked={createInvoiceForResidency}
-                onChange={(e) => setCreateInvoiceForResidency(e.target.checked)}
+                onChange={(e: any) => setCreateInvoiceForResidency(e.target.checked)}
               />
               {t('residencyIssueInvoice') || 'إصدار فاتورة إقامة'}
             </label>
@@ -197,7 +197,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
                   type="select"
                   label={t('residencyServiceType') || 'نوع الخدمة'}
                   value={residencyServiceType}
-                  onChange={(e) => setResidencyServiceType(e.target.value)}
+                  onChange={(e: any) => setResidencyServiceType(e.target.value)}
                 >
                   <option value="renewal">{t('opResidencyRenewal') || 'تجديد إقامة'}</option>
                   <option value="new">{t('residencyNew') || 'إقامة جديدة'}</option>
@@ -209,18 +209,18 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
                     min="0"
                     label={t('advanceAmount')}
                     value={invoiceAmount}
-                    onChange={(e) => setInvoiceAmount(e.target.value)}
+                    onChange={(e: any) => setInvoiceAmount(e.target.value)}
                     placeholder="0"
                   />
                   <Input
                     type="select"
                     label={t('selectVault')}
                     value={vaultId}
-                    onChange={(e) => setVaultId(e.target.value)}
+                    onChange={(e: any) => setVaultId(e.target.value)}
                     required
                   >
                     <option value="">— اختر الخزينة —</option>
-                    {vaults.map((v) => (
+                    {vaults.map((v: any) => (
                       <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
                     ))}
                   </Input>
@@ -235,9 +235,9 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
             type="select"
             label={t('status')}
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e: any) => setStatus(e.target.value)}
           >
-            {STATUS_OPTIONS.map((o) => (
+            {STATUS_OPTIONS.map((o: any) => (
               <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
             ))}
           </Input>
@@ -246,7 +246,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
         <Input
           label={t('notes')}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e: any) => setNotes(e.target.value)}
           placeholder={t('notes')}
         />
 

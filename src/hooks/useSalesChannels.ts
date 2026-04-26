@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getSalesChannels, throwIfApiFailed } from '../services/api';
 
-export function useSalesChannels(companyId) {
+export function useSalesChannels(companyId: any) {
   const query = useQuery({
     queryKey: ['sales-channels', companyId],
     queryFn: async () => {

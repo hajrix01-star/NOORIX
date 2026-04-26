@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const dismiss = useCallback(() => {
-    setState((s) => ({ ...s, visible: false }));
+    setState((s: any) => ({ ...s, visible: false }));
   }, []);
 
   const value = useMemo<ToastContextValue>(() => ({ showToast, dismiss }), [showToast, dismiss]);

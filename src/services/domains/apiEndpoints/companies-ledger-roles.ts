@@ -2,7 +2,7 @@ import type { ApiParsedResult } from '../../../types/api';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
 // ——— موارد ———
-export async function getCompanies(includeArchived = false): Promise<ApiParsedResult> {
+export async function getCompanies(includeArchived: any = false): Promise<ApiParsedResult> {
   return apiGet('/api/v1/companies', includeArchived ? { includeArchived: 'true' } : {});
 }
 
@@ -87,8 +87,8 @@ export async function getLedgerEntries(
   companyId: string,
   fromDate: string,
   toDate: string,
-  page = 1,
-  pageSize = 50,
+  page: any = 1,
+  pageSize: any = 50,
   q?: string,
 ): Promise<ApiParsedResult> {
   const params: Record<string, string> = {

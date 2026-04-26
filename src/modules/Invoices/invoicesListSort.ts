@@ -4,7 +4,7 @@
  * @param {'asc'|'desc'} sortDir
  * @param {string} clickedKey عمود تم النقر عليه
  */
-export function nextInvoiceSortState(sortKey, sortDir, clickedKey) {
+export function nextInvoiceSortState(sortKey: any, sortDir: any, clickedKey: any) {
   if (sortKey === clickedKey) {
     return { sortKey, sortDir: sortDir === 'desc' ? 'asc' : 'desc' };
   }

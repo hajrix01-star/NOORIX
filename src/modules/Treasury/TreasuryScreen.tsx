@@ -21,8 +21,8 @@ export default function TreasuryScreen() {
 
   const { showToast } = useToast();
   const [includeArchived, setIncludeArchived] = useState(false);
-  const [selectedVault,   setSelectedVault]  = useState(null);
-  const [editVault,       setEditVault]      = useState(null);
+  const [selectedVault,   setSelectedVault]  = useState<any>(null);
+  const [editVault,       setEditVault]      = useState<any>(null);
   const [showAddForm,     setShowAddForm]    = useState(false);
   const [showTransfer,    setShowTransfer]   = useState(false);
   const [showReorder,     setShowReorder]    = useState(false);
@@ -32,7 +32,7 @@ export default function TreasuryScreen() {
   const startDate = dateFilter?.startDate || null;
   const endDate = dateFilter?.endDate || null;
 
-  const notify = (message, type = 'success') => showToast(message, type);
+  const notify = (message: any, type: any = 'success') => showToast(message, type);
 
   const {
     vaultsList = [],
@@ -55,65 +55,65 @@ export default function TreasuryScreen() {
   }, [companyId]);
 
   const toggleSalesMutation = useApiMutation({
-    mutationFn: (v) => updateVault(v.id, { isSalesChannel: !v.isSalesChannel }),
+    mutationFn: (v: any) => updateVault(v.id, { isSalesChannel: !v.isSalesChannel }),
     invalidateQueries: [['vaults', companyId]],
     successToast: () => t('salesChannelUpdated'),
-    errorToast: (e) => e?.message || t('updateFailed'),
+    errorToast: (e: any) => e?.message || t('updateFailed'),
   });
 
   const togglePaymentMethodMutation = useApiMutation({
-    mutationFn: (v) => updateVault(v.id, { showAsPaymentMethod: !(v.showAsPaymentMethod !== false) }),
+    mutationFn: (v: any) => updateVault(v.id, { showAsPaymentMethod: !(v.showAsPaymentMethod !== false) }),
     invalidateQueries: [['vaults', companyId]],
     successToast: () => t('paymentMethodVisibilityUpdated'),
-    errorToast: (e) => e?.message || t('updateFailed'),
+    errorToast: (e: any) => e?.message || t('updateFailed'),
   });
 
-  const handleDelete = (v) => {
+  const handleDelete = (v: any) => {
     if (!window.confirm(t('deleteVaultConfirm', v.nameAr))) return;
     removeMut.mutate(v.id, {
       onSuccess: () => notify(t('vaultDeleted')),
-      onError: (e) => notify(e?.message || t('cannotDeleteVaultWithMovements'), 'error'),
+      onError: (e: any) => notify(e?.message || t('cannotDeleteVaultWithMovements'), 'error'),
     });
   };
 
-  const cmpVaultOrder = (a, b) =>
+  const cmpVaultOrder = (a: any, b: any) =>
     (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.nameAr).localeCompare(String(b.nameAr), 'ar');
   const salesChannels  = useMemo(
-    () => vaultsList.filter((v) => v.isActive !== false && v.isSalesChannel && !v.isArchived).sort(cmpVaultOrder),
+    () => vaultsList.filter((v: any) => v.isActive !== false && v.isSalesChannel && !v.isArchived).sort(cmpVaultOrder),
     [vaultsList],
   );
   const otherVaults    = useMemo(
-    () => vaultsList.filter((v) => v.isActive !== false && !v.isSalesChannel && !v.isArchived).sort(cmpVaultOrder),
+    () => vaultsList.filter((v: any) => v.isActive !== false && !v.isSalesChannel && !v.isArchived).sort(cmpVaultOrder),
     [vaultsList],
   );
   const archivedVaults = useMemo(
-    () => includeArchived ? vaultsList.filter((v) => v.isActive !== false && v.isArchived) : [],
+    () => includeArchived ? vaultsList.filter((v: any) => v.isActive !== false && v.isArchived) : [],
     [vaultsList, includeArchived],
   );
   const totalBalance   = useMemo(
-    () => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'balance').toNumber(),
+    () => sumAmounts(vaultsList.filter((v: any) => v.isActive !== false && !v.isArchived), 'balance').toNumber(),
     [vaultsList],
   );
 
-  const cardHandlers = (vault) => ({
-    onEdit:               (x) => { setEditVault(x); setSaveError(''); },
-    onToggleSalesChannel: (x) => toggleSalesMutation.mutate(x),
-    onTogglePaymentMethod: (x) => togglePaymentMethodMutation.mutate(x),
-    onArchive:            (x) => archiveMut.mutate(x.id, {
+  const cardHandlers = (vault: any) => ({
+    onEdit:               (x: any) => { setEditVault(x); setSaveError(''); },
+    onToggleSalesChannel: (x: any) => toggleSalesMutation.mutate(x),
+    onTogglePaymentMethod: (x: any) => togglePaymentMethodMutation.mutate(x),
+    onArchive:            (x: any) => archiveMut.mutate(x.id, {
       onSuccess: () => notify(x?.isArchived ? t('vaultRestored') : t('vaultArchived')),
-      onError: (e) => notify(e?.message || t('operationFailed'), 'error'),
+      onError: (e: any) => notify(e?.message || t('operationFailed'), 'error'),
     }),
     onDelete:             handleDelete,
-    onClick:              (x) => setSelectedVault(x),
+    onClick:              (x: any) => setSelectedVault(x),
   });
 
   const hasCompany = !!companyId;
 
   /* الإجمالي الكلي وارد/صادر */
-  const totalIn  = useMemo(() => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'totalIn').toNumber(),  [vaultsList]);
-  const totalOut = useMemo(() => sumAmounts(vaultsList.filter((v) => v.isActive !== false && !v.isArchived), 'totalOut').toNumber(), [vaultsList]);
+  const totalIn  = useMemo(() => sumAmounts(vaultsList.filter((v: any) => v.isActive !== false && !v.isArchived), 'totalIn').toNumber(),  [vaultsList]);
+  const totalOut = useMemo(() => sumAmounts(vaultsList.filter((v: any) => v.isActive !== false && !v.isArchived), 'totalOut').toNumber(), [vaultsList]);
 
-  const SectionLabel = ({ label }) => (
+  const SectionLabel = ({ label }: any) => (
     <div className="text-[11px] font-bold text-noorix-muted uppercase tracking-[0.06em] mb-2.5">
       {label}
     </div>
@@ -133,7 +133,7 @@ export default function TreasuryScreen() {
         </div>
         <div className="nx-toolbar">
           <label className="nx-checkbox text-noorix-muted">
-            <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
+            <input type="checkbox" checked={includeArchived} onChange={(e: any) => setIncludeArchived(e.target.checked)} />
             {t('showArchived')}
           </label>
           <Button variant="ghost" size="sm" onClick={() => setShowReorder(true)} disabled={!hasCompany}>
@@ -174,7 +174,7 @@ export default function TreasuryScreen() {
                 { label: t('totalBalance'), value: totalBalance, color: totalBalance < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)', sign: totalBalance < 0 ? '−' : '' },
                 { label: t('inbound'),      value: totalIn,      color: 'var(--noorix-accent-green)', sign: '' },
                 { label: t('outbound'),     value: totalOut,     color: 'var(--noorix-text)', sign: '' },
-              ].map(({ label, value, color, sign }, i) => (
+              ].map(({ label, value, color, sign }: any, i: any) => (
                 <div key={label} className="text-center p-4" style={{ borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>
                   <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
                   <div dir="ltr" className="font-extrabold text-[20px] nx-font-numbers" style={{ color }}>
@@ -191,7 +191,7 @@ export default function TreasuryScreen() {
             <section>
               <SectionLabel label={t('salesChannelsEnabled', salesChannels.length)} />
               <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-                {salesChannels.map((v) => (
+                {salesChannels.map((v: any) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
               </div>
@@ -203,7 +203,7 @@ export default function TreasuryScreen() {
             <section>
               <SectionLabel label={t('otherVaults', otherVaults.length)} />
               <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-                {otherVaults.map((v) => (
+                {otherVaults.map((v: any) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
               </div>
@@ -215,7 +215,7 @@ export default function TreasuryScreen() {
             <section>
               <SectionLabel label={t('archivedVaults', archivedVaults.length)} />
               <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-                {archivedVaults.map((v) => (
+                {archivedVaults.map((v: any) => (
                   <VaultCard key={v.id} vault={v} {...cardHandlers(v)} />
                 ))}
               </div>
@@ -265,13 +265,13 @@ export default function TreasuryScreen() {
           onClose={() => setShowReorder(false)}
           vaultsList={vaultsList}
           isSaving={reorderMut.isPending}
-          onApply={(vaultIds) => {
+          onApply={(vaultIds: any) => {
             reorderMut.mutate(vaultIds, {
               onSuccess: () => {
                 setShowReorder(false);
                 notify(t('vaultReorderSuccess'));
               },
-              onError: (e) => notify(e?.message || t('updateFailed'), 'error'),
+              onError: (e: any) => notify(e?.message || t('updateFailed'), 'error'),
             });
           }}
         />
@@ -280,11 +280,11 @@ export default function TreasuryScreen() {
       {showAddForm && (
         <VaultFormModal initial={null}
           onClose={() => { setShowAddForm(false); setSaveError(''); }}
-          onSave={(form) => createMut.mutate(
+          onSave={(form: any) => createMut.mutate(
             form,
             {
               onSuccess: () => { setShowAddForm(false); setSaveError(''); notify(t('vaultAdded')); },
-              onError: (e) => setSaveError(e?.message || t('addFailed')),
+              onError: (e: any) => setSaveError(e?.message || t('addFailed')),
             },
           )}
           isSaving={createMut.isPending} saveError={saveError} />
@@ -293,11 +293,11 @@ export default function TreasuryScreen() {
       {editVault && (
         <VaultFormModal initial={editVault}
           onClose={() => { setEditVault(null); setSaveError(''); }}
-          onSave={(form) => updateMut.mutate(
+          onSave={(form: any) => updateMut.mutate(
             { id: editVault.id, body: form },
             {
               onSuccess: () => { setEditVault(null); setSaveError(''); notify(t('editSuccess')); },
-              onError: (e) => setSaveError(e?.message || t('updateFailed')),
+              onError: (e: any) => setSaveError(e?.message || t('updateFailed')),
             },
           )}
           isSaving={updateMut.isPending} saveError={saveError} />

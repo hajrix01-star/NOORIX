@@ -16,13 +16,13 @@ const MONTH_NAMES_EN = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-function ymd(y, m, d) {
+function ymd(y: any, m: any, d: any) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
 // ——— مكوّن الواجهة ———
 
-export default function DateFilterBar({ filter }) {
+export default function DateFilterBar({ filter }: any) {
   const { t, lang } = useTranslation();
   const MODES = [
     { id: 'all',   label: t('dateFilterAll') },
@@ -49,7 +49,7 @@ export default function DateFilterBar({ filter }) {
     <div className="noorix-date-filter-bar" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* مجموعة أزرار الوضع — raw لتفادي حدود/زوايا nx-btn فوق بعضها */}
       <div className="ndfb-mode-group">
-        {MODES.map((m) => (
+        {MODES.map((m: any) => (
           <Button
             key={m.id}
             variant="raw"
@@ -69,9 +69,9 @@ export default function DateFilterBar({ filter }) {
             type="select"
             className="ndfb-year-select"
             value={selYear}
-            onChange={(e) => setSelYear(Number(e.target.value))}
+            onChange={(e: any) => setSelYear(Number(e.target.value))}
           >
-            {years.map((y) => (
+            {years.map((y: any) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </Input>
@@ -79,9 +79,9 @@ export default function DateFilterBar({ filter }) {
             type="select"
             className="ndfb-month-select"
             value={selMonth}
-            onChange={(e) => setSelMonth(Number(e.target.value))}
+            onChange={(e: any) => setSelMonth(Number(e.target.value))}
           >
-            {MONTH_NAMES_EN.map((name, i) => (
+            {MONTH_NAMES_EN.map((name: any, i: any) => (
               <option key={i + 1} value={i + 1}>{name}</option>
             ))}
           </Input>
@@ -96,7 +96,7 @@ export default function DateFilterBar({ filter }) {
             type="date"
             value={selDay}
             max={ymd(now.year, now.month, now.day)}
-            onChange={(e) => setSelDay(e.target.value)}
+            onChange={(e: any) => setSelDay(e.target.value)}
           />
         )}
 
@@ -107,7 +107,7 @@ export default function DateFilterBar({ filter }) {
               <Input
                 type="date"
                 value={rangeStart}
-                onChange={(e) => setRangeStart(e.target.value)}
+                onChange={(e: any) => setRangeStart(e.target.value)}
               />
             </div>
             <div className="flex flex items-center gap-1.5">
@@ -116,7 +116,7 @@ export default function DateFilterBar({ filter }) {
                 type="date"
                 value={rangeEnd}
                 min={rangeStart}
-                onChange={(e) => setRangeEnd(e.target.value)}
+                onChange={(e: any) => setRangeEnd(e.target.value)}
               />
             </div>
           </>

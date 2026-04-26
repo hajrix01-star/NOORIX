@@ -13,13 +13,13 @@ import { cn } from './cn';
 const ALIGN_MAP = { right: 'right', left: 'left', center: 'center', start: 'start', end: 'end' };
 
 /** عنوان العمود — يدعم `label` أو `header` (متوافق مع شاشات تستخدم header فقط) */
-function columnLabel(col) {
+function columnLabel(col: any) {
   if (col == null) return '';
   return col.label ?? col.header ?? '';
 }
 
-function getAlign(col) {
-  if (col.align) return ALIGN_MAP[col.align] || 'start';
+function getAlign(col: any) {
+  if (col.align) return (ALIGN_MAP as Record<string, string>)[String(col.align)] || 'start';
   if (col.numeric) return 'right';
   return 'start';
 }
@@ -32,7 +32,7 @@ function getAlign(col) {
  * في colSpan الخلية المرئية التالية (وهي 0-عرض أصلاً فلا تأثير بصري).
  * هذا يضمن عدم تسرّب المحتوى أو ظهور حدود طفيلية في أي متصفح.
  */
-function buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad }) {
+function buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad }: any) {
   const cells = [];
 
   if (showRowNumbers) {
@@ -43,7 +43,7 @@ function buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowN
 
   // بناء خريطة: أول مفتاح في الشريحة → الشريحة
   const segByFirstKey = new Map();
-  footerRow.forEach((seg) => {
+  footerRow.forEach((seg: any) => {
     if (seg.keys?.length) segByFirstKey.set(seg.keys[0], seg);
   });
 
@@ -54,7 +54,7 @@ function buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowN
     const col = columns[i];
     const seg = segByFirstKey.get(col.key);
     if (seg) {
-      const allHidden = seg.keys.every((k) => hiddenCols.has(k));
+      const allHidden = seg.keys.every((k: any) => hiddenCols.has(k));
       items.push({ key: col.key, span: seg.keys.length, hidden: allHidden, content: seg.content, className: seg.className });
       i += seg.keys.length;
     } else {
@@ -100,7 +100,7 @@ type PaginationBarProps = {
 };
 
 const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t }: PaginationBarProps) {
-  const go = useCallback((p) => { if (p >= 1 && p <= totalPages) onPageChange(p); }, [totalPages, onPageChange]);
+  const go = useCallback((p: any) => { if (p >= 1 && p <= totalPages) onPageChange(p); }, [totalPages, onPageChange]);
   if (totalPages <= 1) return null;
   return (
     <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-noorix-border">
@@ -164,7 +164,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
   const dir = useUiDir();
 
   // ── Column Resize ──────────────────────────────────────────────
-  const resizingRef = useRef(null);
+  const resizingRef = useRef<any>(null);
   const [colWidths, setColWidths] = useState(() => {
     if (!tableId) return {};
     try {
@@ -173,7 +173,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
     } catch { return {}; }
   });
 
-  const handleResizeStart = useCallback((e, colKey, startW) => {
+  const handleResizeStart = useCallback((e: any, colKey: any, startW: any) => {
     e.preventDefault();
     e.stopPropagation();
     const dirMult = dir === 'rtl' ? -1 : 1;
@@ -181,18 +181,18 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
 
-    const onMove = (ev) => {
+    const onMove = (ev: any) => {
       if (!resizingRef.current) return;
       const delta = (ev.clientX - resizingRef.current.startX) * dirMult;
       const newW = Math.max(40, resizingRef.current.startW + delta);
-      setColWidths((prev) => ({ ...prev, [colKey]: Math.round(newW) }));
+      setColWidths((prev: any) => ({ ...prev, [colKey]: Math.round(newW) }));
     };
 
     const onUp = () => {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       if (tableId) {
-        setColWidths((prev) => {
+        setColWidths((prev: any) => {
           try { localStorage.setItem(`nx-col-widths:${tableId}`, JSON.stringify(prev)); } catch { /* noop */ }
           return prev;
         });
@@ -208,8 +208,8 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
 
   // ── Column Visibility ──────────────────────────────────────────
   const [showColPanel, setShowColPanel] = useState(false);
-  const colBtnRef  = useRef(null);
-  const colPanelRef = useRef(null);
+  const colBtnRef  = useRef<any>(null);
+  const colPanelRef = useRef<any>(null);
 
   const [hiddenCols, setHiddenCols] = useState(() => {
     if (!tableId) return new Set();
@@ -221,7 +221,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
 
   useEffect(() => {
     if (!showColPanel) return;
-    const handler = (e) => {
+    const handler = (e: any) => {
       if (!colPanelRef.current?.contains(e.target) && !colBtnRef.current?.contains(e.target)) {
         setShowColPanel(false);
       }
@@ -230,8 +230,8 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
     return () => document.removeEventListener('mousedown', handler);
   }, [showColPanel]);
 
-  const toggleColVis = useCallback((colKey) => {
-    setHiddenCols((prev) => {
+  const toggleColVis = useCallback((colKey: any) => {
+    setHiddenCols((prev: any) => {
       const next = new Set(prev);
       if (next.has(colKey)) next.delete(colKey); else next.add(colKey);
       if (tableId) {
@@ -264,7 +264,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
   const showTableHeaderRow = Boolean(title || badge || (onSearchChange && showSearchInHeader) || tableId);
-  const hideableCols = columns.filter((c) => c.key !== 'actions');
+  const hideableCols = columns.filter((c: any) => c.key !== 'actions');
 
   return (
     <div
@@ -283,7 +283,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
               <Input
                 type="search"
                 value={searchValue ?? ''}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={(e: any) => onSearchChange(e.target.value)}
                 placeholder={t('searchPlaceholder')}
                 size="sm"
                 className="noorix-table-search"
@@ -297,7 +297,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
                   className={`nx-col-vis-btn${hiddenCols.size > 0 ? ' nx-col-vis-btn--active' : ''}`}
                   title="إظهار / إخفاء الأعمدة"
                   aria-label="إظهار / إخفاء الأعمدة"
-                  onClick={() => setShowColPanel((v) => !v)}
+                  onClick={() => setShowColPanel((v: any) => !v)}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -316,7 +316,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
                         <button className="nx-col-vis-reset" onClick={resetColVis}>إعادة تعيين</button>
                       )}
                     </div>
-                    {hideableCols.map((col) => (
+                    {hideableCols.map((col: any) => (
                       <label key={col.key} className="nx-col-vis-item">
                         <input
                           type="checkbox"
@@ -352,7 +352,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
             <span className="text-noorix-muted text-[14px] font-medium">{t('loading')}</span>
           </div>
           <div className="flex flex-col gap-2">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3, 4, 5].map((i: any) => (
               <div
                 key={i}
                 className="rounded-lg h-11"
@@ -374,7 +374,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
             <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
               {emptyMsg}
             </div>
-          ) : data.map((row, i) => (
+          ) : data.map((row: any, i: any) => (
             <div
               key={row.id ?? i}
               className={cn(
@@ -402,7 +402,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
                 {showRowNumbers && (
                   <th style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36, textAlign: 'center' }}>#</th>
                 )}
-                {columns.map((col) => {
+                {columns.map((col: any) => {
                   const isHidden = hiddenCols.has(col.key);
                   if (isHidden) {
                     return <th key={col.key} aria-hidden="true" style={{ width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' }} />;
@@ -423,7 +423,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
                       key={col.key}
                       className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-th-shrink' : ''}${shouldTruncate ? ' noorix-cell-truncate' : ''}`}
                       style={{
-                        padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: align,
+                        padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: align as React.CSSProperties['textAlign'],
                         position: resizableCol ? 'relative' : undefined,
                         width: effectiveWidth,
                         minWidth: layout === 'fixed' ? undefined : col.minWidth,
@@ -444,7 +444,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
                       {resizableCol && (
                         <div
                           className="nx-col-resize-handle"
-                          onMouseDown={(e) => {
+                          onMouseDown={(e: any) => {
                             const th = e.currentTarget.parentElement;
                             handleResizeStart(e, col.key, th.offsetWidth);
                           }}
@@ -465,7 +465,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
                     {emptyMsg}
                   </td>
                 </tr>
-              ) : data.map((row, i) => (
+              ) : data.map((row: any, i: any) => (
                 <tr
                   key={row.id ?? i}
                   className={`border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
@@ -476,7 +476,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
                       {(page - 1) * safePageSize + i + 1}
                     </td>
                   )}
-                  {columns.map((col) => {
+                  {columns.map((col: any) => {
                     if (hiddenCols.has(col.key)) {
                       return <td key={col.key} aria-hidden="true" style={{ width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' }} />;
                     }
@@ -494,7 +494,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
                         style={{
                           padding: cellPad.td,
                           fontSize: cellFs,
-                          textAlign: align,
+                          textAlign: align as React.CSSProperties['textAlign'],
                           fontFamily: family,
                           width: tdEffectiveWidth,
                           minWidth: layout === 'fixed' ? undefined : col.minWidth,

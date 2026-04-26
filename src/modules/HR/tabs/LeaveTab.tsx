@@ -33,12 +33,12 @@ const TYPE_MAP = {
   other: 'leaveOther',
 };
 
-function sliceYmd(iso) {
+function sliceYmd(iso: any) {
   return String(iso || '').slice(0, 10);
 }
 
 /** اليوم (سعودي) ضمن فترة إجازة معتمدة — لعرض زر العودة */
-function canShowLeaveReturnRow(row) {
+function canShowLeaveReturnRow(row: any) {
   if (row.status !== 'approved') return false;
   const t = getSaudiToday();
   const s = sliceYmd(row.startDate);
@@ -47,12 +47,12 @@ function canShowLeaveReturnRow(row) {
 }
 
 
-function canShowSalarySettlement(row) {
+function canShowSalarySettlement(row: any) {
   return row.status === 'approved' && row.leaveType === 'annual' && !row.salarySettlement;
 }
 
 /** بعد حفظ إجازة من الـ modal: قوائم الإجازات/التسويات/الموظفين + إبطال الطبقة المالية */
-function invalidateAfterLeaveFormModalSuccess(queryClient, companyId, year) {
+function invalidateAfterLeaveFormModalSuccess(queryClient: any, companyId: any, year: any) {
   if (!queryClient || !companyId) return;
   queryClient.invalidateQueries({ queryKey: ['leaves', companyId] });
   queryClient.invalidateQueries({ queryKey: ['leaves', companyId, year] });
@@ -68,10 +68,10 @@ export default function LeaveTab() {
   const companyId = activeCompanyId ?? '';
   const [year, setYear] = useState(new Date().getFullYear());
   const [showAdd, setShowAdd] = useState(false);
-  const [editLeave, setEditLeave] = useState(null);
-  const [returnRow, setReturnRow] = useState(null);
+  const [editLeave, setEditLeave] = useState<any>(null);
+  const [returnRow, setReturnRow] = useState<any>(null);
   const [returnDate, setReturnDate] = useState('');
-  const [settlementRow, setSettlementRow] = useState(null);
+  const [settlementRow, setSettlementRow] = useState<any>(null);
   const [settlementAmount, setSettlementAmount] = useState('');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -79,7 +79,7 @@ export default function LeaveTab() {
   const { data, isLoading } = useQuery({
     queryKey: ['leaves', companyId, year],
     queryFn: async () => {
-      const res = await getLeaves(companyId, null, year);
+      const res = await getLeaves(companyId, undefined, year);
       if (!res?.success) return [];
       const d = res.data;
       const arr = Array.isArray(d) ? d : (d?.items ?? []);
@@ -89,7 +89,7 @@ export default function LeaveTab() {
   });
 
   const returnMutation = useApiMutation({
-    mutationFn: async ({ id, actualReturnDate }) => {
+    mutationFn: async ({ id, actualReturnDate }: any) => {
       const res = await returnFromLeave(id, companyId, actualReturnDate);
       rejectIfApiFailed(res, t('saveFailed'));
       return res;
@@ -103,7 +103,7 @@ export default function LeaveTab() {
       ['employees', companyId],
     ],
     successToast: () => t('leaveReturnedOk'),
-    errorToast: (e) => e?.message || t('saveFailed'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
   });
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function LeaveTab() {
   }, [settlementPreview]);
 
   const deleteLeaveMutation = useApiMutation({
-    mutationFn: async (payload) => {
+    mutationFn: async (payload: any) => {
       const id = typeof payload === 'string' ? payload : payload.id;
       const voidSettlement = typeof payload === 'object' && payload.voidSettlement;
       const res = await deleteLeave(id, companyId, voidSettlement);
@@ -154,11 +154,11 @@ export default function LeaveTab() {
     ],
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
     successToast: () => t('leaveDeleted'),
-    errorToast: (e) => e?.message || t('saveFailed'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
   });
 
   const issueSettlementMutation = useApiMutation({
-    mutationFn: async ({ id, grossAmount }) => {
+    mutationFn: async ({ id, grossAmount }: any) => {
       const raw = String(grossAmount ?? '').replace(/,/g, '').trim();
       const n = parseFloat(raw);
       if (!Number.isFinite(n) || n < 0.01) {
@@ -177,10 +177,10 @@ export default function LeaveTab() {
     ],
     onSuccess: () => invalidateOnFinancialMutation(queryClient),
     successToast: () => t('leaveSalarySettlementSaved'),
-    errorToast: (e) => e?.message || t('saveFailed'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
   });
 
-  const items = useMemo(() => (data ?? []).map((l) => ({
+  const items = useMemo(() => (data ?? []).map((l: any) => ({
     ...l,
     employeeName: employeeDisplayName(l.employee || { name: l.employeeName }, lang),
   })), [data, lang]);
@@ -195,17 +195,20 @@ export default function LeaveTab() {
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
-      render: (v) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
+      render: (v: any) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
     { key: 'leaveType', label: t('leaveType'), sortable: true, width: 130, minWidth: 120,
-      render: (v) => <span className="text-[13px]">{t(TYPE_MAP[v] || 'leaveOther')}</span> },
+      render: (v: any) => (
+        <span className="text-[13px]">{t(TYPE_MAP[v as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
+      ),
+    },
     { key: 'startDate', label: t('startDate'), sortable: true, width: 120, minWidth: 115,
-      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'endDate', label: t('endDate'), sortable: true, width: 120, minWidth: 115,
-      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'daysCount', label: t('daysCount'), numeric: true, sortable: true, width: 90, minWidth: 85,
-      render: (v) => <span className="nx-cell-num">{v ?? '—'}</span> },
+      render: (v: any) => <span className="nx-cell-num">{v ?? '—'}</span> },
     { key: 'salarySettlement', label: t('leaveSalarySettlement'), width: 120, minWidth: 100,
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         row.salarySettlement ? (
           <span className="text-[11px] font-semibold text-noorix-green whitespace-nowrap">
             {t('leaveSalarySettledBadge')}
@@ -215,7 +218,7 @@ export default function LeaveTab() {
         )
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <HRActionsCell
           row={row}
           type="leave"
@@ -231,23 +234,23 @@ export default function LeaveTab() {
       ) },
   ], [t, deleteLeaveMutation]);
 
-  const exportData = allFilteredData.map((r) => ({
+  const exportData = allFilteredData.map((r: any) => ({
     employeeName: r.employeeName || '—',
-    leaveType: t(TYPE_MAP[r.leaveType] || 'leaveOther'),
+    leaveType: t(TYPE_MAP[r.leaveType as keyof typeof TYPE_MAP] || 'leaveOther'),
     startDate: formatSaudiDate(r.startDate),
     endDate: formatSaudiDate(r.endDate),
     daysCount: r.daysCount ?? '—',
     salarySettlement: r.salarySettlement ? t('leaveSalarySettledBadge') : '—',
   }));
 
-  const renderMobileCard = useCallback((row) => {
+  const renderMobileCard = useCallback((row: any) => {
     return (
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
           <span className="font-bold text-[14px]">{row.employeeName}</span>
         </div>
         <div className="text-[13px] text-noorix-muted mb-2 text-end">
-          {t(TYPE_MAP[row.leaveType] || 'leaveOther')}
+          {t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}
         </div>
         {row.salarySettlement && (
           <div className="text-[11px] font-semibold text-noorix-green text-end mb-1">{t('leaveSalarySettledBadge')}</div>
@@ -300,8 +303,8 @@ export default function LeaveTab() {
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>
-          <Input type="select" value={year} onChange={(e) => setYear(parseInt(e.target.value, 10))}>
-            {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y) => (
+          <Input type="select" value={year} onChange={(e: any) => setYear(parseInt(e.target.value, 10))}>
+            {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y: any) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </Input>
@@ -310,7 +313,7 @@ export default function LeaveTab() {
         <Input
           type="search"
           value={searchText}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: any) => setSearch(e.target.value)}
           placeholder={t('searchPlaceholder')}
           size="sm"
           className="w-full min-w-0 lg:max-w-xs lg:flex-1"
@@ -433,7 +436,7 @@ export default function LeaveTab() {
               min="0.01"
               label={t('leaveSalarySettlementAmountLabel')}
               value={settlementAmount}
-              onChange={(e) => setSettlementAmount(e.target.value)}
+              onChange={(e: any) => setSettlementAmount(e.target.value)}
               className="ltr"
             />
           </>
@@ -474,7 +477,7 @@ export default function LeaveTab() {
             value={returnDate}
             min={sliceYmd(returnRow.startDate)}
             max={sliceYmd(returnRow.endDate)}
-            onChange={(e) => setReturnDate(e.target.value)}
+            onChange={(e: any) => setReturnDate(e.target.value)}
           />
         )}
       </Modal>

@@ -45,7 +45,7 @@ export const HRActionsCell = memo(function HRActionsCell(props: HRActionsCellPro
     { key: 'permdelete', label: t('deleteEmployeePermanent'), hidden: !onPermanentDelete, style: { color: 'var(--noorix-accent-red-dark)' }, onClick: () => onPermanentDelete?.(row) },
   ], [row, t, onView, onEdit, onApprove, onReject, onReturnFromLeave, onLeaveSalarySettlement, onPay, onAdvance, onSettle, onTerminate, onArchive, onRestore, onDelete, onPermanentDelete]);
 
-  const hasAny = items.some((x) => !x.hidden);
+  const hasAny = items.some((x: any) => !x.hidden);
   if (!hasAny) return <span className="text-[12px] text-noorix-muted">—</span>;
 
   return (

@@ -41,9 +41,9 @@ const FINANCIAL_QUERY_PREFIXES = [
  *
  * @param {QueryClient} queryClient
  */
-export function invalidateOnFinancialMutation(queryClient) {
+export function invalidateOnFinancialMutation(queryClient: any) {
   if (!queryClient) return;
-  FINANCIAL_QUERY_PREFIXES.forEach((queryKey) => {
+  FINANCIAL_QUERY_PREFIXES.forEach((queryKey: any) => {
     queryClient.invalidateQueries({ queryKey });
   });
 }

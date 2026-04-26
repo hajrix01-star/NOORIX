@@ -9,13 +9,13 @@ import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } fr
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
-function Cb({ checked, indeterminate, onChange, disabled }) {
+function Cb({ checked, indeterminate, onChange, disabled }: any) {
   return (
     <label className="nx-checkbox">
       <input
         type="checkbox"
         checked={checked}
-        ref={(el) => { if (el) el.indeterminate = !!indeterminate; }}
+        ref={(el: any) => { if (el) el.indeterminate = !!indeterminate; }}
         onChange={onChange}
         disabled={disabled}
         className={disabled ? undefined : 'cursor-pointer'}
@@ -24,40 +24,40 @@ function Cb({ checked, indeterminate, onChange, disabled }) {
   );
 }
 
-function PermissionMatrix({ modules, levels, permissions, onChange, disabled, language }) {
+function PermissionMatrix({ modules, levels, permissions, onChange, disabled, language }: any) {
   const isAr = language === 'ar';
   const levelKeys = Object.keys(levels);
 
-  const isChecked = (perm) => permissions.includes(perm);
+  const isChecked = (perm: any) => permissions.includes(perm);
 
-  const togglePerm = (perm) => {
+  const togglePerm = (perm: any) => {
     if (disabled) return;
     onChange(isChecked(perm)
-      ? permissions.filter((p) => p !== perm)
+      ? permissions.filter((p: any) => p !== perm)
       : [...permissions, perm]);
   };
 
-  const toggleModule = (mod, checked) => {
+  const toggleModule = (mod: any, checked: any) => {
     if (disabled) return;
     const modPerms = Object.values(mod.permissions);
     onChange(checked
       ? [...new Set([...permissions, ...modPerms])]
-      : permissions.filter((p) => !modPerms.includes(p)));
+      : permissions.filter((p: any) => !modPerms.includes(p)));
   };
 
-  const isModuleFull    = (mod) => Object.values(mod.permissions).every((p) => permissions.includes(p));
-  const isModulePartial = (mod) => {
+  const isModuleFull    = (mod: any) => Object.values(mod.permissions).every((p: any) => permissions.includes(p));
+  const isModulePartial = (mod: any) => {
     const vals = Object.values(mod.permissions);
-    const n = vals.filter((p) => permissions.includes(p)).length;
+    const n = vals.filter((p: any) => permissions.includes(p)).length;
     return n > 0 && n < vals.length;
   };
 
   const allChecked = modules.every(isModuleFull);
-  const totalPerms = modules.flatMap((m) => Object.values(m.permissions)).length;
+  const totalPerms = modules.flatMap((m: any) => Object.values(m.permissions)).length;
 
   const toggleAll = () => {
     if (disabled) return;
-    onChange(allChecked ? [] : [...new Set(modules.flatMap((m) => Object.values(m.permissions)))]);
+    onChange(allChecked ? [] : [...new Set(modules.flatMap((m: any) => Object.values(m.permissions)))]);
   };
 
   return (
@@ -93,7 +93,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
                 background: 'var(--noorix-blue-7)', borderInline: '1px solid var(--noorix-border)' }}>
                 {isAr ? 'الكل' : 'All'}
               </th>
-              {levelKeys.map((lvl) => (
+              {levelKeys.map((lvl: any) => (
                 <th key={lvl} style={{ ...thStyle, textAlign: 'center', minWidth: 76 }}>
                   {isAr ? levels[lvl].ar : levels[lvl].en}
                 </th>
@@ -101,7 +101,7 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
             </tr>
           </thead>
           <tbody>
-            {modules.map((mod, idx) => {
+            {modules.map((mod: any, idx: any) => {
               const full    = isModuleFull(mod);
               const partial = isModulePartial(mod);
               return (
@@ -127,12 +127,12 @@ function PermissionMatrix({ modules, levels, permissions, onChange, disabled, la
                     <Cb
                       checked={full}
                       indeterminate={partial}
-                      onChange={(e) => toggleModule(mod, e.target.checked)}
+                      onChange={(e: any) => toggleModule(mod, e.target.checked)}
                       disabled={disabled}
                     />
                   </td>
 
-                  {levelKeys.map((lvl) => {
+                  {levelKeys.map((lvl: any) => {
                     const perm = mod.permissions[lvl];
                     if (!perm) return (
                       <td key={lvl} style={{ ...tdStyle, textAlign: 'center', color: 'var(--noorix-border)', fontSize: 16 }}>·</td>
@@ -177,10 +177,10 @@ const labelStyle = {
   display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4,
 };
 
-export default function RolesTab({ userRole, language }) {
+export default function RolesTab({ userRole, language }: any) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', nameAr: '', description: '', permissions: [] });
 
   // ── جلب المصفوفة من Backend (مصدر الحقيقة الوحيد) ──
@@ -208,7 +208,7 @@ export default function RolesTab({ userRole, language }) {
     mutationFn: createRole,
     invalidateQueries: [['roles']],
     successToast: () => t('roleAdded'),
-    errorToast: (e) => e?.message || t('addFailed'),
+    errorToast: (e: any) => e?.message || t('addFailed'),
     onSuccess: () => {
       setShowForm(false);
       setForm({ name: '', nameAr: '', description: '', permissions: [] });
@@ -216,10 +216,10 @@ export default function RolesTab({ userRole, language }) {
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }) => updateRole(id, body),
+    mutationFn: ({ id, body }: any) => updateRole(id, body),
     invalidateQueries: [['roles'], ['me']],
     successToast: () => t('updateSuccess'),
-    errorToast: (e) => e?.message || t('updateFailed'),
+    errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
   });
 
@@ -227,11 +227,11 @@ export default function RolesTab({ userRole, language }) {
     mutationFn: deleteRole,
     invalidateQueries: [['roles']],
     successToast: () => t('roleDeleted'),
-    errorToast: (e) => e?.message || t('deleteFailed'),
+    errorToast: (e: any) => e?.message || t('deleteFailed'),
     onSuccess: () => { setEditing(null); },
   });
 
-  function openEdit(r) {
+  function openEdit(r: any) {
     setEditing({
       id: r.id,
       name: r.name,
@@ -243,26 +243,26 @@ export default function RolesTab({ userRole, language }) {
   }
 
   const isAr = language === 'ar';
-  const allPermCount = modules.flatMap((m) => Object.values(m.permissions)).length;
+  const allPermCount = modules.flatMap((m: any) => Object.values(m.permissions)).length;
 
-  function renderPermissionSummary(perms) {
+  function renderPermissionSummary(perms: any) {
     if (!Array.isArray(perms)) return '0';
     return `${perms.length} / ${allPermCount}`;
   }
 
-  function renderPermissionBadges(perms) {
+  function renderPermissionBadges(perms: any) {
     if (!Array.isArray(perms) || perms.length === 0) {
       return <span className="text-[11px]" style={{ color: 'var(--noorix-text-danger)' }}>{isAr ? 'بدون صلاحيات' : 'No permissions'}</span>;
     }
     if (perms.length >= allPermCount && allPermCount > 0) {
       return <span className="text-[11px] font-bold" style={{ color: 'var(--noorix-accent)' }}>{isAr ? 'كل الصلاحيات' : 'Full access'}</span>;
     }
-    const activeModules = modules.filter((m) =>
-      Object.values(m.permissions).some((p) => perms.includes(p))
+    const activeModules = modules.filter((m: any) =>
+      Object.values(m.permissions).some((p: any) => perms.includes(p))
     );
     return (
       <div className="flex flex-wrap gap-1">
-        {activeModules.slice(0, 5).map((m) => (
+        {activeModules.slice(0, 5).map((m: any) => (
           <span key={m.key} className="rounded-xl font-semibold py-px px-2 text-[10px] whitespace-nowrap" style={{
             background: 'var(--noorix-accent-soft, var(--noorix-blue-10))',
             color: 'var(--noorix-accent)',
@@ -308,7 +308,7 @@ export default function RolesTab({ userRole, language }) {
         </div>
       ) : (
         <div className="grid gap-3">
-          {roles.map((role) => (
+          {roles.map((role: any) => (
             <div
               key={role.id}
               className="noorix-surface-card cursor-pointer p-4 min-w-0 transition-[box-shadow] duration-150 hover:[box-shadow:var(--noorix-card-shadow-hover)]"
@@ -366,7 +366,7 @@ export default function RolesTab({ userRole, language }) {
         side="start"
         className="roles-create-drawer"
       >
-        <form onSubmit={(e) => {
+        <form onSubmit={(e: any) => {
           e.preventDefault();
           if (!form.name?.trim()) return;
           createMutation.mutate({
@@ -378,10 +378,10 @@ export default function RolesTab({ userRole, language }) {
         }}>
           <div className="grid gap-3 mb-4">
             <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
-              <Input type="text" label={isAr ? 'اسم الدور (إنجليزي) *' : 'Role Name (EN) *'} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="warehouse_manager" required />
-              <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={form.nameAr} onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))} placeholder="مدير المستودع" />
+              <Input type="text" label={isAr ? 'اسم الدور (إنجليزي) *' : 'Role Name (EN) *'} value={form.name} onChange={(e: any) => setForm((p: any) => ({ ...p, name: e.target.value }))} placeholder="warehouse_manager" required />
+              <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={form.nameAr} onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))} placeholder="مدير المستودع" />
             </div>
-            <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+            <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={form.description} onChange={(e: any) => setForm((p: any) => ({ ...p, description: e.target.value }))} />
           </div>
 
           <h4 className="text-[14px] font-bold m-0 mb-3">
@@ -391,7 +391,7 @@ export default function RolesTab({ userRole, language }) {
             modules={modules}
             levels={levels}
             permissions={form.permissions}
-            onChange={(perms) => setForm((p) => ({ ...p, permissions: perms }))}
+            onChange={(perms: any) => setForm((p: any) => ({ ...p, permissions: perms }))}
             disabled={false}
             language={language}
           />
@@ -417,7 +417,7 @@ export default function RolesTab({ userRole, language }) {
         className="roles-edit-drawer"
       >
         {editing && (
-          <form onSubmit={(e) => {
+          <form onSubmit={(e: any) => {
             e.preventDefault();
             updateMutation.mutate({
               id: editing.id,
@@ -439,8 +439,8 @@ export default function RolesTab({ userRole, language }) {
             )}
             <div className="grid gap-3 mb-4">
               <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
-                <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={editing.nameAr} onChange={(e) => setEditing((p) => ({ ...p, nameAr: e.target.value }))} />
-                <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={editing.description} onChange={(e) => setEditing((p) => ({ ...p, description: e.target.value }))} />
+                <Input type="text" label={isAr ? 'اسم الدور (عربي)' : 'Role Name (AR)'} value={editing.nameAr} onChange={(e: any) => setEditing((p: any) => ({ ...p, nameAr: e.target.value }))} />
+                <Input type="text" label={isAr ? 'الوصف' : 'Description'} value={editing.description} onChange={(e: any) => setEditing((p: any) => ({ ...p, description: e.target.value }))} />
               </div>
             </div>
 
@@ -451,7 +451,7 @@ export default function RolesTab({ userRole, language }) {
               modules={modules}
               levels={levels}
               permissions={editing.permissions}
-              onChange={(perms) => setEditing((p) => ({ ...p, permissions: perms }))}
+              onChange={(perms: any) => setEditing((p: any) => ({ ...p, permissions: perms }))}
               disabled={false}
               language={language}
             />

@@ -1,6 +1,6 @@
 import { ItemRow } from './OcrFieldRowItemParts';
 
-export function OcrWarningStrip({ warningCount, extracted, isAr }) {
+export function OcrWarningStrip({ warningCount, extracted, isAr }: any) {
   if (warningCount <= 0) return null;
   return (
     <div
@@ -24,7 +24,7 @@ export function OcrWarningStrip({ warningCount, extracted, isAr }) {
   );
 }
 
-export function OcrLineItemsList({ t, language, activeItems, onUpdateItem, onApplySuggestion }) {
+export function OcrLineItemsList({ t, language, activeItems, onUpdateItem, onApplySuggestion }: any) {
   if (activeItems.length === 0) return null;
   return (
     <div className="noorix-surface-card p-4">
@@ -32,7 +32,7 @@ export function OcrLineItemsList({ t, language, activeItems, onUpdateItem, onApp
         {t('ocrItems')} ({activeItems.length})
       </div>
       <div className="flex flex-col gap-2">
-        {activeItems.map((item, i) => (
+        {activeItems.map((item: any, i: any) => (
           <ItemRow
             key={i}
             item={item}

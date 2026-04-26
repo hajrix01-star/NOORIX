@@ -23,7 +23,7 @@ export default function HajriTaxRegistryList({
   onViewRow,
   onEditRow,
   jsonToolbar,
-}) {
+}: any) {
   const yearOptions = useMemo(
     () => ['', currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4],
     [currentYear],
@@ -48,11 +48,11 @@ export default function HajriTaxRegistryList({
             type="select"
             label={t('vatFilterCompany')}
             value={filterCompanyId}
-            onChange={(e) => setFilterCompanyId(e.target.value)}
+            onChange={(e: any) => setFilterCompanyId(e.target.value)}
             className="min-w-[200px]"
           >
             <option value="">{t('vatAllCompanies')}</option>
-            {(companies || []).map((c) => (
+            {(companies || []).map((c: any) => (
               <option key={c.id} value={c.id}>
                 {lang === 'en' ? (c.nameEn || c.nameAr) : c.nameAr}
               </option>
@@ -62,14 +62,14 @@ export default function HajriTaxRegistryList({
             type="select"
             label={t('reportYear')}
             value={filterYear === '' ? '' : String(filterYear)}
-            onChange={(e) => {
+            onChange={(e: any) => {
               const v = e.target.value;
               setFilterYear(v === '' ? '' : Number(v));
             }}
             className="min-w-[120px]"
           >
             <option value="">{t('hajriTaxFilterAllYears')}</option>
-            {yearOptions.filter((y) => y !== '').map((y) => (
+            {yearOptions.filter((y: any) => y !== '').map((y: any) => (
               <option key={y} value={y}>
                 {y}
               </option>
@@ -79,14 +79,14 @@ export default function HajriTaxRegistryList({
             type="select"
             label={t('vatQuarter')}
             value={filterQuarter === '' ? '' : String(filterQuarter)}
-            onChange={(e) => {
+            onChange={(e: any) => {
               const v = e.target.value;
               setFilterQuarter(v === '' ? '' : Number(v));
             }}
             className="min-w-[120px]"
           >
             <option value="">{t('hajriTaxFilterAllQuarters')}</option>
-            {[1, 2, 3, 4].map((q) => (
+            {[1, 2, 3, 4].map((q: any) => (
               <option key={q} value={q}>
                 {lang === 'ar' ? `الربع ${q}` : `Q${q}`}
               </option>
@@ -131,7 +131,7 @@ export default function HajriTaxRegistryList({
                 </tr>
               </thead>
               <tbody>
-                {registryRows.map((row) => {
+                {registryRows.map((row: any) => {
                   const nm =
                     lang === 'en'
                       ? row.company?.nameEn || row.company?.nameAr

@@ -6,16 +6,16 @@
 import { useState, useMemo, useCallback } from 'react';
 import { getSaudiNow } from '../utils/saudiDate';
 
-function saudiDayStart(dateStr) {
+function saudiDayStart(dateStr: any) {
   return `${dateStr}T00:00:00+03:00`;
 }
-function saudiDayEnd(dateStr) {
+function saudiDayEnd(dateStr: any) {
   return `${dateStr}T23:59:59+03:00`;
 }
-function ymd(y, m, d) {
+function ymd(y: any, m: any, d: any) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
-function lastDayOfMonth(year, month) {
+function lastDayOfMonth(year: any, month: any) {
   return new Date(year, month, 0).getDate();
 }
 
@@ -24,7 +24,7 @@ const MONTH_NAMES_EN = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-function buildLabel(mode, selYear, selMonth, selDay, rangeStart, rangeEnd) {
+function buildLabel(mode: any, selYear: any, selMonth: any, selDay: any, rangeStart: any, rangeEnd: any) {
   if (mode === 'all')   return '—';
   if (mode === 'month') return `${MONTH_NAMES_EN[selMonth - 1]} ${selYear}`;
   if (mode === 'day')   return selDay.split('-').reverse().join('-');

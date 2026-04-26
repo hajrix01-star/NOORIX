@@ -4,9 +4,9 @@
 import { useQueries } from '@tanstack/react-query';
 import { getGeneralProfitLossReport, throwIfApiFailed } from '../services/api';
 
-export function useOwnerReports({ companyIds, year }) {
+export function useOwnerReports({ companyIds, year }: any) {
   const queries = useQueries({
-    queries: (companyIds || []).map((companyId) => ({
+    queries: (companyIds || []).map((companyId: any) => ({
       queryKey: ['reports', 'general-profit-loss', 'owner', companyId, year],
       queryFn: async () => {
         const res = await getGeneralProfitLossReport(companyId, year);
@@ -17,12 +17,12 @@ export function useOwnerReports({ companyIds, year }) {
     })),
   });
 
-  const isLoading = queries.some((q) => q.isLoading);
-  const isError = queries.some((q) => q.isError);
-  const error = queries.find((q) => q.error)?.error;
+  const isLoading = queries.some((q: any) => q.isLoading);
+  const isError = queries.some((q: any) => q.isError);
+  const error = queries.find((q: any) => q.error)?.error;
   const reportsByCompany = queries
-    .filter((q) => q.data)
-    .reduce<Record<string, unknown>>((acc, q) => {
+    .filter((q: any) => q.data)
+    .reduce<Record<string, unknown>>((acc: any, q: any) => {
       const row = q.data as { companyId: string; data: unknown };
       acc[row.companyId] = row.data;
       return acc;

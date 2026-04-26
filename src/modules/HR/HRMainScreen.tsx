@@ -35,7 +35,7 @@ const TABS = [
 
 const EXPIRY_DAYS = 90;
 const CURRENT_YEAR = new Date().getFullYear();
-const HR_TAB_IDS = TABS.map((tab) => tab.id);
+const HR_TAB_IDS = TABS.map((tab: any) => tab.id);
 
 export default function HRMainScreen() {
   const { t } = useTranslation();
@@ -71,7 +71,7 @@ export default function HRMainScreen() {
   const { data: leavesData = [] } = useQuery({
     queryKey: ['leaves', companyId, CURRENT_YEAR],
     queryFn: async () => {
-      const res = await getLeaves(companyId, null, CURRENT_YEAR);
+      const res = await getLeaves(companyId, undefined, CURRENT_YEAR);
       if (!res?.success) return [];
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
@@ -83,10 +83,10 @@ export default function HRMainScreen() {
   const { data: advancesData = [] } = useQuery({
     queryKey: ['invoices', companyId, 'advance'],
     queryFn: async () => {
-      const res = await getInvoices(companyId, null, null, 1, 500);
+      const res = await getInvoices(companyId, undefined, undefined, 1, 500);
       if (!res?.success) return [];
       const items = res.data?.items ?? [];
-      return items.filter((inv) => inv.kind === 'advance').map((i) => ({
+      return items.filter((inv: any) => inv.kind === 'advance').map((i: any) => ({
         ...i,
         settlementStatus:
           i.status === 'cancelled'
@@ -101,22 +101,22 @@ export default function HRMainScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const activeEmployees = employees.filter((e) => e.status === 'active');
-  const terminatedCount = employees.filter((e) => e.status === 'terminated').length;
+  const activeEmployees = employees.filter((e: any) => e.status === 'active');
+  const terminatedCount = employees.filter((e: any) => e.status === 'terminated').length;
   const activeCount = activeEmployees.length;
 
   /** مطابق لعمود «إجمالي الراتب» في قائمة الموظفين: أساسي + بدلات + مخصصة + تقدير الأوفر تايم */
   const monthlyPayrollTotal = useMemo(
     () => roundMoney2(
       activeEmployees.reduce(
-        (sum, emp) => sum + totalSalary(emp, allowanceTotals.get(emp.id) || 0),
+        (sum: any, emp: any) => sum + totalSalary(emp, allowanceTotals.get(emp.id) || 0),
         0,
       ),
     ),
     [activeEmployees, allowanceTotals],
   );
 
-  const expiringCount = residencies.filter((r) => {
+  const expiringCount = residencies.filter((r: any) => {
     const exp = new Date(r.expiryDate);
     const now = new Date();
     const diff = (exp.getTime() - now.getTime()) / (24 * 60 * 60 * 1000);
@@ -126,13 +126,13 @@ export default function HRMainScreen() {
   const registeredLeavesCount = leavesData.length;
 
   const outstandingAdvances = advancesData.filter(
-    (a) => a.status !== 'cancelled' && a.settlementStatus !== 'settled',
+    (a: any) => a.status !== 'cancelled' && a.settlementStatus !== 'settled',
   );
   const outstandingAdvancesCount = outstandingAdvances.length;
-  const outstandingAdvancesAmount = outstandingAdvances.reduce((s, a) => s + a.remainingAmount, 0);
+  const outstandingAdvancesAmount = outstandingAdvances.reduce((s: any, a: any) => s + a.remainingAmount, 0);
 
   const hrTabItems = useMemo(
-    () => TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) })),
+    () => TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) })),
     [t],
   );
 

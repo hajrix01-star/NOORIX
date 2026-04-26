@@ -5,7 +5,7 @@ import { MAX_VAULT_SLOTS, getAllocationsForExport } from './invoicesListScreenHe
  * أعمدة تصدير/طباعة Excel للفواتير — منطق خالص من InvoicesListScreen
  */
 
-export function buildInvoiceExportColumnDefs(t) {
+export function buildInvoiceExportColumnDefs(t: any) {
   const vaultCols = [];
   for (let s = 1; s <= MAX_VAULT_SLOTS; s++) {
     vaultCols.push(
@@ -34,7 +34,7 @@ export function buildInvoiceExportColumnDefs(t) {
  * @param {object} inv — فاتورة خام من الـ API
  * @param {{ t: Function, lang: string, kindMap: object, statusMap: object }} ctx
  */
-export function invoiceToExportRow(inv, { t, lang, kindMap, statusMap }) {
+export function invoiceToExportRow(inv: any, { t, lang, kindMap, statusMap }: any) {
   const supplierName =
     inv.kind === 'sale'
       ? t('categoryTypeSale') || 'مبيعات'
@@ -49,7 +49,7 @@ export function invoiceToExportRow(inv, { t, lang, kindMap, statusMap }) {
   const kindLabel = kindMap[inv.kind]?.label ?? inv.kind ?? '—';
   const statusLabel = statusMap[inv.status]?.label ?? inv.status ?? '—';
   const allocs = getAllocationsForExport(inv, lang, t);
-  const row = {
+  const row: Record<string, any> = {
     invoiceNumber: inv.invoiceNumber ?? '',
     supplierInvoiceNumber: inv.supplierInvoiceNumber ?? '',
     supplierName: supplierName || '—',

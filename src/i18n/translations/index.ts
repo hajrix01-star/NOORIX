@@ -38,7 +38,7 @@ const t = Object.assign(
  *   - وإلا → استبدال ترتيبي:               t('key', lang, 'أحمد', 3)    → {0} {1}
  * @returns {string}
  */
-export function getText(key, lang = 'ar', ...replacements) {
+export function getText(key: any, lang: any = 'ar', ...replacements: any[]) {
   const entry = t[key];
   let text = entry ? (entry[lang] ?? entry.ar ?? String(key)) : String(key);
 
@@ -49,9 +49,9 @@ export function getText(key, lang = 'ar', ...replacements) {
     !Array.isArray(replacements[0])
   ) {
     const vars = replacements[0];
-    text = text.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));
+    text = text.replace(/\{(\w+)\}/g, (_: any, k: any) => String(vars[k] ?? ''));
   } else {
-    replacements.forEach((val, i) => {
+    replacements.forEach((val: any, i: any) => {
       text = text.replace(new RegExp(`\\{${i}\\}`, 'g'), String(val ?? ''));
     });
   }

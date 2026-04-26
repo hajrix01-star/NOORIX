@@ -12,7 +12,7 @@ export function OcrNewSupplierModal({
   error,
   onClose,
   onSubmit,
-}) {
+}: any) {
   if (!open) return null;
 
   return (
@@ -27,7 +27,7 @@ export function OcrNewSupplierModal({
       <div
         className="noorix-surface-card max-w-md w-full p-4 shadow-xl border border-noorix-border"
         dir={dir}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: any) => e.stopPropagation()}
       >
         <div id="ocr-new-supplier-title" className="font-semibold text-[15px] mb-1">
           {t('ocrNewOcrSupplierModalTitle')}
@@ -36,11 +36,11 @@ export function OcrNewSupplierModal({
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-[12px]">
             <span className="text-noorix-muted">{t('ocrSupplierNameAr')}</span>
-            <Input value={nameAr} onChange={(e) => onNameArChange(e.target.value)} disabled={isSaving} />
+            <Input value={nameAr} onChange={(e: any) => onNameArChange(e.target.value)} disabled={isSaving} />
           </label>
           <label className="flex flex-col gap-1 text-[12px]">
             <span className="text-noorix-muted">{t('ocrSupplierTax')}</span>
-            <Input value={tax} onChange={(e) => onTaxChange(e.target.value)} disabled={isSaving} />
+            <Input value={tax} onChange={(e: any) => onTaxChange(e.target.value)} disabled={isSaving} />
           </label>
           {error && <div className="text-[12px] text-noorix-accent-red">{error}</div>}
           <div className="flex gap-2 justify-end mt-1">

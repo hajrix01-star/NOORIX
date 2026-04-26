@@ -6,7 +6,7 @@
  */
 
 /** @param {{ isTaxRegistered?: boolean } | null | undefined} supplier */
-export function supplierAppliesVat(supplier) {
+export function supplierAppliesVat(supplier: any) {
   if (!supplier) return true;
   return supplier.isTaxRegistered !== false;
 }
@@ -15,7 +15,7 @@ export function supplierAppliesVat(supplier) {
  * @param {{ category?: { account?: { taxExempt?: boolean } } | null }; supplier?: { isTaxRegistered?: boolean } | null } | null | undefined} line
  * @param {boolean} exemptThisPayment — إعفاء استثنائي لهذه الدفعة فقط
  */
-export function isExpensePaymentTaxable(line, exemptThisPayment) {
+export function isExpensePaymentTaxable(line: any, exemptThisPayment: any) {
   if (!line) return false;
   if (line.category?.account?.taxExempt) return false;
   if (!supplierAppliesVat(line.supplier)) return false;
@@ -24,7 +24,7 @@ export function isExpensePaymentTaxable(line, exemptThisPayment) {
 }
 
 /** هل يُعرض خيار «إعفاء هذه الدفعة» (لا معنى له إن كان المورد غير مسجّل أو الحساب معفى). */
-export function canExemptThisExpensePayment(line) {
+export function canExemptThisExpensePayment(line: any) {
   if (!line) return false;
   if (line.category?.account?.taxExempt) return false;
   return supplierAppliesVat(line.supplier);

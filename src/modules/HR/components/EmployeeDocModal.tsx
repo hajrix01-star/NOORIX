@@ -40,7 +40,7 @@ const ALLOWANCE_NAME_EN_MAP = {
   'بدل اضافي': 'Additional Allowance',
 };
 
-function translateAllowanceToEnglish(nameAr = '') {
+function translateAllowanceToEnglish(nameAr: any = '') {
   const normalized = String(nameAr || '').trim();
   if (!normalized) return 'Allowance';
   if (ALLOWANCE_NAME_EN_MAP[normalized]) return ALLOWANCE_NAME_EN_MAP[normalized];
@@ -49,13 +49,13 @@ function translateAllowanceToEnglish(nameAr = '') {
   return 'Custom Allowance';
 }
 
-function isMostlyArabicScript(text) {
+function isMostlyArabicScript(text: any) {
   if (!text || typeof text !== 'string') return false;
   return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
 }
 
 /** عمود إنجليزي: إن كان المسمى عربياً فقط نعرض — حتى لا يتكرر العربي في العمود الإنجليزي */
-function displayJobTitleEn(employee) {
+function displayJobTitleEn(employee: any) {
   const jt = String(employee?.jobTitle || '').trim();
   if (!jt) return '—';
   return isMostlyArabicScript(jt) ? '—' : jt;
@@ -113,7 +113,7 @@ const DOC_H3 = {
 
 const SETTLE_SECTION = { padding: '10px 14px', borderBottom: '1px solid var(--noorix-border)' };
 
-function calculateServiceDays(joinDate, endDate) {
+function calculateServiceDays(joinDate: any, endDate: any) {
   const start = new Date(joinDate);
   const end = new Date(endDate);
   start.setHours(0, 0, 0, 0);
@@ -122,7 +122,7 @@ function calculateServiceDays(joinDate, endDate) {
   return Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
 }
 
-function getEligibilityFactor(reason, serviceYears) {
+function getEligibilityFactor(reason: any, serviceYears: any) {
   if (reason === 'article80') return new Decimal(0);
   if (reason === 'employer' || reason === 'article81') return new Decimal(1);
   if (serviceYears < 2) return new Decimal(0);
@@ -131,7 +131,7 @@ function getEligibilityFactor(reason, serviceYears) {
   return new Decimal(1);
 }
 
-function mapReasonByMeta(reasonText = '', clause = '') {
+function mapReasonByMeta(reasonText: any = '', clause: any = '') {
   const reason = String(reasonText || '').toLowerCase();
   const legalClause = String(clause || '').toLowerCase();
   if (legalClause.includes('80') || reason.includes('80')) return 'article80';
@@ -140,7 +140,7 @@ function mapReasonByMeta(reasonText = '', clause = '') {
   return 'employer';
 }
 
-function buildSalaryRows(employee, customAllowances = []) {
+function buildSalaryRows(employee: any, customAllowances: any = []) {
   const rows = [];
   const basic = new Decimal(employee?.basicSalary ?? 0);
   const housing = new Decimal(employee?.housingAllowance ?? 0);
@@ -160,13 +160,13 @@ function buildSalaryRows(employee, customAllowances = []) {
       });
     }
   }
-  const customTotal = customAllowances.reduce((s, row) => s + (Number(row.amount) || 0), 0);
+  const customTotal = customAllowances.reduce((s: any, row: any) => s + (Number(row.amount) || 0), 0);
   const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
   if (overtimeHoursPerDay > 0) {
     const overtimeAmount = overtimePay(employee, customTotal);
     rows.push({ ar: `مقابل الأوفر تايم (${hrFmt(overtimeHoursPerDay)} ساعة/يوم)`, en: `Overtime Pay (${hrFmt(overtimeHoursPerDay)} hr/day)`, amount: overtimeAmount });
   }
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  const total = rows.reduce((sum: any, row: any) => sum + row.amount, 0);
   return { rows, total };
 }
 
@@ -194,7 +194,7 @@ const EMPLOYEE_DOC_EXTRA_CSS = `
   @media print{.doc{border:none;border-radius:0}}
 `;
 
-async function renderPdfFileFromElement(element, fileBaseName) {
+async function renderPdfFileFromElement(element: any, fileBaseName: any) {
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
     import('html2canvas'),
     import('jspdf'),
@@ -224,13 +224,13 @@ async function renderPdfFileFromElement(element, fileBaseName) {
   return new File([blob], `${fileBaseName}.pdf`, { type: 'application/pdf' });
 }
 
-function buildPrintWindow(title, html) {
+function buildPrintWindow(title: any, html: any) {
   openPrintWindow({ title, body: html, extraCss: EMPLOYEE_DOC_EXTRA_CSS });
   // أعيد كائناً وهمياً ليتجاهل الكود المُستدعي onload/print (openPrintWindow تتولاها داخلياً)
   return { onload: null, onafterprint: null, print: () => {}, close: () => {} };
 }
 
-function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {
+function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }: any) {
   return (
     <AdaptiveSheet
       open={true}
@@ -254,7 +254,7 @@ function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }) {
   );
 }
 
-function DocumentFrame({ companyName, companyLogo, arabicTitle, englishTitle, children, compact = false }) {
+function DocumentFrame({ companyName, companyLogo, arabicTitle, englishTitle, children, compact = false }: any) {
   const pad = compact ? '10px 14px' : '18px 22px';
   const logoH = compact ? 40 : 56;
   const nameFs = compact ? 15 : 20;
@@ -281,7 +281,7 @@ function DocumentFrame({ companyName, companyLogo, arabicTitle, englishTitle, ch
   );
 }
 
-function EmployeeInfoTable({ employee, workHoursValue = '', contractEnd = '' }) {
+function EmployeeInfoTable({ employee, workHoursValue = '', contractEnd = '' }: any) {
   const wh = workHoursValue || employee?.workHours || '8';
   const baseRows = [
     {
@@ -336,7 +336,7 @@ function EmployeeInfoTable({ employee, workHoursValue = '', contractEnd = '' }) 
           </tr>
         </thead>
         <tbody>
-          {infoRows.map((row) => (
+          {infoRows.map((row: any) => (
             <tr key={row.enLabel}>
               <td style={{ ...DOC_TD, textAlign: 'left', direction: 'ltr' }}>{row.enLabel}</td>
               <td style={{ ...DOC_TD, textAlign: 'left', direction: 'ltr' }}>{row.enVal}</td>
@@ -353,7 +353,7 @@ function EmployeeInfoTable({ employee, workHoursValue = '', contractEnd = '' }) 
           </tr>
         </thead>
         <tbody>
-          {infoRows.map((row) => (
+          {infoRows.map((row: any) => (
             <tr key={row.arLabel}>
               <td style={{ ...DOC_TD, textAlign: 'right' }}>{row.arLabel}</td>
               <td style={{ ...DOC_TD, textAlign: 'right' }}>{row.arVal}</td>
@@ -365,7 +365,7 @@ function EmployeeInfoTable({ employee, workHoursValue = '', contractEnd = '' }) 
   );
 }
 
-function SalaryBreakdownTable({ rows, total }) {
+function SalaryBreakdownTable({ rows, total }: any) {
   return (
     <div className="bilingual" style={DOC_GRID}>
       <table style={{ ...DOC_TABLE_BASE, direction: 'ltr' }}>
@@ -376,7 +376,7 @@ function SalaryBreakdownTable({ rows, total }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, idx) => (
+          {rows.map((row: any, idx: any) => (
             <tr key={`en-${row.en}-${idx}`}>
               <td style={{ ...DOC_TD, textAlign: 'left' }}>{row.en}</td>
               <td style={{ ...DOC_TD, textAlign: 'right', direction: 'ltr', fontVariantNumeric: 'tabular-nums' }}>{hrFmt(row.amount)}</td>
@@ -397,7 +397,7 @@ function SalaryBreakdownTable({ rows, total }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, idx) => (
+          {rows.map((row: any, idx: any) => (
             <tr key={`ar-${row.ar}-${idx}`}>
               <td style={{ ...DOC_TD, textAlign: 'right' }}>{row.ar}</td>
               <td style={{ ...DOC_TD, textAlign: 'center', direction: 'ltr', fontVariantNumeric: 'tabular-nums' }}>{hrFmt(row.amount)}</td>
@@ -413,7 +413,7 @@ function SalaryBreakdownTable({ rows, total }) {
   );
 }
 
-async function uploadRenderedDocument({ companyId, employeeId, documentType, fileBaseName, html }) {
+async function uploadRenderedDocument({ companyId, employeeId, documentType, fileBaseName, html }: any) {
   const temp = document.createElement('div');
   temp.style.position = 'fixed';
   temp.style.left = '-100000px';
@@ -436,7 +436,7 @@ async function uploadRenderedDocument({ companyId, employeeId, documentType, fil
   });
 }
 
-function buildDocFileBaseName(prefix, employee) {
+function buildDocFileBaseName(prefix: any, employee: any) {
   const employeeName = employee?.name || employee?.nameAr || 'employee';
   const datePart = formatSaudiDate(new Date()).replace(/\//g, '-');
   const now = new Date();
@@ -446,7 +446,7 @@ function buildDocFileBaseName(prefix, employee) {
   return `${prefix}-${employeeName}-${datePart}-${hh}-${mm}-${ss}`;
 }
 
-function getTerminationSummary(employee) {
+function getTerminationSummary(employee: any) {
   const status = String(employee?.status || '').toLowerCase();
   const parsed = parseEmployeeNotesMeta(employee?.notes);
   const meta = parsed.meta || {};
@@ -475,7 +475,7 @@ function getTerminationSummary(employee) {
 }
 
 /** إزالة صياغة التعويض / م77 من نصوص الإقرار عند المخالصة بدون نهاية خدمة */
-function stripArt77CompensationPhrases(text) {
+function stripArt77CompensationPhrases(text: any) {
   if (text == null || typeof text !== 'string') return text;
   let s = text;
   s = s.replace(/\s*مع\s+تعويض\s*\(\s*مادة\s*77\s*\)/gi, '');
@@ -486,10 +486,10 @@ function stripArt77CompensationPhrases(text) {
   return s;
 }
 
-export function SalaryCertificateModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }) {
+export function SalaryCertificateModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }: any) {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const printRef = useRef(null);
+  const printRef = useRef<any>(null);
   const [saving, setSaving] = useState(false);
   const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
 
@@ -520,7 +520,7 @@ export function SalaryCertificateModal({ employee, customAllowances = [], compan
       assertApiOk(res, t('saveFailed'));
       onSaved?.();
       onClose?.();
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || 'فشل حفظ المستند', 'error');
     } finally {
       setSaving(false);
@@ -571,10 +571,10 @@ export function SalaryCertificateModal({ employee, customAllowances = [], compan
   );
 }
 
-export function ContractModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }) {
+export function ContractModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }: any) {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const printRef = useRef(null);
+  const printRef = useRef<any>(null);
   const [saving, setSaving] = useState(false);
   const [contractEnd, setContractEnd] = useState(employee?.contractEndDate?.slice(0, 10) || '');
   const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
@@ -606,7 +606,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
       assertApiOk(res, t('saveFailed'));
       onSaved?.();
       onClose?.();
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || 'فشل حفظ المستند', 'error');
     } finally {
       setSaving(false);
@@ -620,7 +620,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
           type="date"
           label="تاريخ انتهاء العقد (اختياري)"
           value={contractEnd}
-          onChange={(e) => setContractEnd(e.target.value)}
+          onChange={(e: any) => setContractEnd(e.target.value)}
         />
         {contractEnd && (
           <Button type="button" variant="ghost" onClick={() => setContractEnd('')} style={{ fontSize: 11, color: 'var(--noorix-accent-red)' }}>✕ إزالة</Button>
@@ -673,10 +673,10 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
   );
 }
 
-export function FinalSettlementModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }) {
+export function FinalSettlementModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }: any) {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const printRef = useRef(null);
+  const printRef = useRef<any>(null);
   const [saving, setSaving] = useState(false);
   const [includeEos, setIncludeEos] = useState(true);
   const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
@@ -772,7 +772,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
       assertApiOk(res, t('saveFailed'));
       onSaved?.();
       onClose?.();
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || 'فشل حفظ المستند', 'error');
     } finally {
       setSaving(false);
@@ -785,7 +785,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
         <DocumentFrame compact companyName={companyName} companyLogo={companyLogo} arabicTitle="مخالصة وتسوية نهائية" englishTitle="Final Settlement & Clearance">
           <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--noorix-border)', background: '#f8fafc' }}>
             <label className="nx-checkbox">
-              <input type="checkbox" checked={includeEos} onChange={(e) => setIncludeEos(e.target.checked)} />
+              <input type="checkbox" checked={includeEos} onChange={(e: any) => setIncludeEos(e.target.checked)} />
               {includeEos ? t('includeEosInSettlement') : t('excludeEosInSettlement')}
             </label>
           </div>
@@ -793,10 +793,10 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
             <div className="font-bold mb-2">حاسبة نهاية الخدمة (تفصيل قبل الطباعة) / EOS Calculator (before print)</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
               <div>
-                <Input type="date" label="تاريخ نهاية الخدمة" value={eosEndDate} onChange={(e) => setEosEndDate(e.target.value)} />
+                <Input type="date" label="تاريخ نهاية الخدمة" value={eosEndDate} onChange={(e: any) => setEosEndDate(e.target.value)} />
               </div>
               <div>
-                <Input type="select" label="سبب الانتهاء" value={eosReason} onChange={(e) => setEosReason(e.target.value)}>
+                <Input type="select" label="سبب الانتهاء" value={eosReason} onChange={(e: any) => setEosReason(e.target.value)}>
                   <option value="employer">{t('eosCalcReasonEmployer')}</option>
                   <option value="resignation">{t('eosCalcReasonResignation')}</option>
                   <option value="article81">{t('eosCalcReasonArticle81')}</option>
@@ -810,7 +810,7 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
                   min="0"
                   step="0.01"
                   value={eosSalary}
-                  onChange={(e) => setEosSalary(e.target.value)}
+                  onChange={(e: any) => setEosSalary(e.target.value)}
                   onBlur={() => setEosSalary(new Decimal(eosSalary || 0).toDecimalPlaces(2).toString())}
                 />
               </div>

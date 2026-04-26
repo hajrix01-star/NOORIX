@@ -15,7 +15,7 @@ describe('rejectIfApiFailed', () => {
     expect(() => rejectIfApiFailed({ success: false, error: 'X' }, 'fb')).toThrow('X');
     try {
       rejectIfApiFailed({ success: false, message: 'Y' });
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toBe('Y');
       expect(e.apiResult).toEqual({ success: false, message: 'Y' });
     }

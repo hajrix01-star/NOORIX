@@ -9,13 +9,13 @@ export function getDeleteCode() {
   try   { return localStorage.getItem(DELETE_CODE_KEY) || DEFAULT_DELETE_CODE; }
   catch { return DEFAULT_DELETE_CODE; }
 }
-export function setDeleteCode(value) {
+export function setDeleteCode(value: any) {
   try { localStorage.setItem(DELETE_CODE_KEY, value || DEFAULT_DELETE_CODE); }
-  catch (_) {}
+  catch (_: any) {}
 }
 
-export function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
+export function fileToDataUrl(file: any) {
+  return new Promise((resolve: any, reject: any) => {
     const reader = new FileReader();
     reader.onload  = () => resolve(reader.result);
     reader.onerror = reject;

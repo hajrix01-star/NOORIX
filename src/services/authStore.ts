@@ -110,7 +110,7 @@ export function getStoredUser(): AuthSessionUser | null {
       const raw = storage.getItem(USER_KEY);
       if (raw) return JSON.parse(raw) as AuthSessionUser;
     }
-  } catch (_) {}
+  } catch (_: any) {}
   return null;
 }
 

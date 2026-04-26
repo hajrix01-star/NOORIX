@@ -21,20 +21,20 @@ const COL_LABEL_KEYS = {
   amount: 'bankTplColAmount',
 };
 
-function columnsToBadges(columnsJson, t) {
+function columnsToBadges(columnsJson: any, t: any) {
   if (!columnsJson || typeof columnsJson !== 'object') return [];
   return Object.entries(columnsJson)
-    .filter(([, val]) => val && typeof val.index === 'number' && val.index >= 0)
-    .map(([key, val]) => ({
+    .filter(([, val]: any) => val && typeof val.index === 'number' && val.index >= 0)
+    .map(([key, val]: any) => ({
       key,
       label: t(COL_LABEL_KEYS[key] || key),
       index: val.index,
     }));
 }
 
-export default function BankStatementTemplatesPanel({ companyId }) {
+export default function BankStatementTemplatesPanel({ companyId }: any) {
   const { t, lang } = useTranslation();
-  const [deleteId, setDeleteId] = useState(null);
+  const [deleteId, setDeleteId] = useState<any>(null);
 
   const { data: list = [], isLoading } = useQuery({
     queryKey: ['bank-statement-templates', companyId],
@@ -47,21 +47,21 @@ export default function BankStatementTemplatesPanel({ companyId }) {
   });
 
   const toggleMut = useApiMutation({
-    mutationFn: async ({ id, isActive }) => bankStatementTemplateSetActive(companyId, id, isActive),
+    mutationFn: async ({ id, isActive }: any) => bankStatementTemplateSetActive(companyId, id, isActive),
     invalidateQueries: [['bank-statement-templates', companyId]],
     successToast: () => t('bankTemplatesUpdated'),
-    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    errorToast: (e: any) => e?.message || t('apiRequestFailed'),
   });
 
   const deleteMut = useApiMutation({
-    mutationFn: async (id) => bankStatementTemplateDelete(companyId, id),
+    mutationFn: async (id: any) => bankStatementTemplateDelete(companyId, id),
     invalidateQueries: [['bank-statement-templates', companyId]],
     successToast: () => t('bankTemplatesDeleted'),
-    errorToast: (e) => e?.message || t('apiRequestFailed'),
+    errorToast: (e: any) => e?.message || t('apiRequestFailed'),
     onSuccess: () => { setDeleteId(null); },
   });
 
-  const sorted = useMemo(() => [...list].sort((a, b) => (b.isActive === a.isActive ? 0 : a.isActive ? -1 : 1)), [list]);
+  const sorted = useMemo(() => [...list].sort((a: any, b: any) => (b.isActive === a.isActive ? 0 : a.isActive ? -1 : 1)), [list]);
 
   if (!companyId) return null;
 
@@ -89,7 +89,7 @@ export default function BankStatementTemplatesPanel({ companyId }) {
       ) : null}
 
       <div className="grid gap-3">
-        {sorted.map((tpl) => {
+        {sorted.map((tpl: any) => {
           const cols = columnsToBadges(tpl.columnsJson, t);
           const lastUsed = tpl.lastUsedAt ? formatSaudiDate(tpl.lastUsedAt) : null;
           return (
@@ -133,7 +133,7 @@ export default function BankStatementTemplatesPanel({ companyId }) {
                     {cols.length > 0 ? (
                     <div className="flex items-center flex flex-wrap gap-1.5">
                       <span className="text-[12px] text-noorix-muted">{t('bankTemplatesColumns')}:</span>
-                      {cols.map((c) => (
+                      {cols.map((c: any) => (
                         <span
                           key={c.key}
                           className="text-[11px] py-px px-2 rounded-md bg-noorix-bg-muted border border-noorix-border"

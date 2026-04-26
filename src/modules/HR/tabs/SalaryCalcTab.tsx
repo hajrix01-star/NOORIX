@@ -33,12 +33,12 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, FormRow, FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
 
-function toDecimal(value) {
+function toDecimal(value: any) {
   return new Decimal(value || 0);
 }
 
 /** صف نتيجة موحّد */
-function ResultRow({ label, value, highlight = false, muted = false, divider = false }) {
+function ResultRow({ label, value, highlight = false, muted = false, divider = false }: any) {
   return (
     <div
       className={[
@@ -67,7 +67,7 @@ export default function SalaryCalcTab() {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
   const companyId = activeCompanyId ?? '';
-  const company   = companies?.find((c) => c.id === companyId);
+  const company   = companies?.find((c: any) => c.id === companyId);
   const companyName = company?.nameAr || company?.name || 'الشركة';
   const queryClient = useQueryClient();
   const { employees } = useEmployees(companyId);
@@ -82,7 +82,7 @@ export default function SalaryCalcTab() {
   const [otherAllowance,   setOtherAllowance]   = useState('0');
   const [selectedEmployee, setSelectedEmployee] = useState('');
 
-  const emp = employees.find((e) => e.id === selectedEmployee);
+  const emp = employees.find((e: any) => e.id === selectedEmployee);
 
   const allowanceTotals = useMemo(() => {
     const map = new Map();
@@ -95,7 +95,7 @@ export default function SalaryCalcTab() {
   }, [customAllowances]);
 
   /** حساب الإجمالي من بيانات الموظف الحالية (للعرض في القائمة المنسدلة) */
-  function computeTargetFromEmployee(employee, customTotal, hoursVal, workDaysVal) {
+  function computeTargetFromEmployee(employee: any, customTotal: any, hoursVal: any, workDaysVal: any) {
     const basic  = toDecimal(employee?.basicSalary || 0);
     const alloc  = toDecimal(employee?.housingAllowance || 0)
       .plus(employee?.transportAllowance || 0)
@@ -116,7 +116,7 @@ export default function SalaryCalcTab() {
 
   useEffect(() => {
     if (!selectedEmployee) return;
-    const e = employees.find((x) => x.id === selectedEmployee);
+    const e = employees.find((x: any) => x.id === selectedEmployee);
     if (!e) return;
     const dailyHours = parseWorkHours(e.workHours);
     const wd         = parseOvertimeWorkDaysPerMonth(e);
@@ -189,11 +189,11 @@ export default function SalaryCalcTab() {
 
   // ── تحديث الموظف ─────────────────────────────────────────
   const updateMutation = useApiMutation({
-    mutationFn: async ({ id, body }) => updateEmployee(id, body, companyId),
+    mutationFn: async ({ id, body }: any) => updateEmployee(id, body, companyId),
     invalidateQueries: [['employees']],
     successToast: () => t('salaryCalcUpdated') || 'تم تحديث الراتب بنجاح',
-    errorToast: (e) => e?.message || t('saveFailed'),
-    onSuccess: (data, variables) => {
+    errorToast: (e: any) => e?.message || t('saveFailed'),
+    onSuccess: (data: any, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['employee', variables.id, companyId] });
       queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
     },
@@ -221,8 +221,8 @@ export default function SalaryCalcTab() {
     if (transport.gt(0)) rows.push({ label: t('transportAllowance'), amount: transport.toNumber() });
     if (other.gt(0))     rows.push({ label: t('otherAllowance'),     amount: other.toNumber() });
     const customRows = customAllowances
-      .filter((row) => row.employeeId === emp.id && Number(row.amount) > 0)
-      .map((row) => ({ label: row.nameAr || t('customAllowanceName'), amount: Number(row.amount) || 0 }));
+      .filter((row: any) => row.employeeId === emp.id && Number(row.amount) > 0)
+      .map((row: any) => ({ label: row.nameAr || t('customAllowanceName'), amount: Number(row.amount) || 0 }));
     return [...rows, ...customRows];
   }, [emp, housing, transport, other, customAllowances, t]);
 
@@ -233,7 +233,7 @@ export default function SalaryCalcTab() {
     const nameEnPrint = emp ? employeeDisplayName(emp, 'en') : '—';
     const allowanceRowsHtml = employeeAllowanceRows.length
       ? employeeAllowanceRows
-          .map((row) => `<tr><td>${row.label}</td><td class="num">${hrFmt(row.amount)}</td></tr>`)
+          .map((row: any) => `<tr><td>${row.label}</td><td class="num">${hrFmt(row.amount)}</td></tr>`)
           .join('')
       : `<tr><td>لا توجد بدلات مخصصة</td><td class="num">0</td></tr>`;
 
@@ -368,9 +368,9 @@ export default function SalaryCalcTab() {
           <h3 className="text-[17px] font-bold text-noorix-text m-0">{t('hrTabSalaryCalc')}</h3>
 
           {/* اختيار الموظف */}
-          <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)}>
+          <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e: any) => setSelectedEmployee(e.target.value)}>
             <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
-            {employees.map((e) => {
+            {employees.map((e: any) => {
               const customTotal = new Decimal(allowanceTotals.get(e.id) || 0);
               const est = computeTargetFromEmployee(e, customTotal, parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e));
               return (
@@ -389,7 +389,7 @@ export default function SalaryCalcTab() {
             min="0"
             step="0.01"
             value={targetTotal}
-            onChange={(e) => setTargetTotal(e.target.value)}
+            onChange={(e: any) => setTargetTotal(e.target.value)}
           />
 
           {/* ساعات/يوم + أيام/شهر */}
@@ -399,7 +399,7 @@ export default function SalaryCalcTab() {
               label={t('salaryCalcHoursPerDay')}
               min="1" max="12" step="0.5"
               value={hoursPerDay}
-              onChange={(e) => setHoursPerDay(e.target.value)}
+              onChange={(e: any) => setHoursPerDay(e.target.value)}
             />
             <div>
               <Input
@@ -407,7 +407,7 @@ export default function SalaryCalcTab() {
                 label={t('salaryCalcDaysPerMonth')}
                 min="1" max="31"
                 value={daysPerMonth}
-                onChange={(e) => setDaysPerMonth(e.target.value)}
+                onChange={(e: any) => setDaysPerMonth(e.target.value)}
               />
               <div className="text-[11px] text-noorix-muted mt-1.5 leading-[1.45]">
                 أيام العمل الفعلية شهرياً (26 عادية + أيام الراحة إن وُجدت)
@@ -417,14 +417,14 @@ export default function SalaryCalcTab() {
 
           {/* البدلات */}
           <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
-            <Input type="number" step="0.01" min="0" label={t('housingAllowance')}   value={housingAllowance}   onChange={(e) => setHousingAllowance(e.target.value)} />
-            <Input type="number" step="0.01" min="0" label={t('transportAllowance')} value={transportAllowance} onChange={(e) => setTransportAllowance(e.target.value)} />
-            <Input type="number" step="0.01" min="0" label={t('otherAllowance')}     value={otherAllowance}     onChange={(e) => setOtherAllowance(e.target.value)} />
+            <Input type="number" step="0.01" min="0" label={t('housingAllowance')}   value={housingAllowance}   onChange={(e: any) => setHousingAllowance(e.target.value)} />
+            <Input type="number" step="0.01" min="0" label={t('transportAllowance')} value={transportAllowance} onChange={(e: any) => setTransportAllowance(e.target.value)} />
+            <Input type="number" step="0.01" min="0" label={t('otherAllowance')}     value={otherAllowance}     onChange={(e: any) => setOtherAllowance(e.target.value)} />
           </div>
 
           {/* أيام الإجازة + ساعات OT (للعرض) */}
           <FormRow>
-            <Input type="number" min="0" label={t('salaryCalcVacationDays')} value={vacationDays} onChange={(e) => setVacationDays(e.target.value)} />
+            <Input type="number" min="0" label={t('salaryCalcVacationDays')} value={vacationDays} onChange={(e: any) => setVacationDays(e.target.value)} />
             <Input type="number" label="ساعات الأوفر تايم اليومية" value={overtimeHoursPerDay} readOnly className="bg-noorix-bg-muted" />
           </FormRow>
 
@@ -441,7 +441,7 @@ export default function SalaryCalcTab() {
               <div className="border-b border-noorix-border font-bold py-2.5 px-3 text-[13px]">
                 تفاصيل بدلات الموظف
               </div>
-              {employeeAllowanceRows.map((row, idx) => (
+              {employeeAllowanceRows.map((row: any, idx: any) => (
                 <div
                   key={`${row.label}-${idx}`}
                   className="grid gap-3 py-2.5 px-3 text-[12px] [grid-template-columns:1.2fr_1fr]"

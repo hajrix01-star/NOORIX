@@ -25,33 +25,33 @@ export function useBatchRowLogic({
   categories = [],
   onUpdate,
   maxInvoiceDate,
-}) {
+}: any) {
   const { t, lang } = useTranslation();
   const { net, tax } = calcReverseVat(row.totalInclusive, row.isTaxable !== false);
 
   const accountCategories = categories.filter(
-    (c) => (c.accountId || c.account) && (c.type === 'expense' || c.type === 'purchase'),
+    (c: any) => (c.accountId || c.account) && (c.type === 'expense' || c.type === 'purchase'),
   );
   const filteredByKind = accountCategories.filter(
-    (c) =>
+    (c: any) =>
       (row.kind === 'purchase' && c.type === 'purchase') ||
       ((row.kind === 'expense' || row.kind === 'fixed_expense') && c.type === 'expense'),
   );
 
   const categoryOptions = useMemo(() => {
     const opts = [...filteredByKind];
-    if (row.categoryId && !opts.some((c) => c.id === row.categoryId)) {
-      const extra = categories.find((c) => c.id === row.categoryId);
+    if (row.categoryId && !opts.some((c: any) => c.id === row.categoryId)) {
+      const extra = categories.find((c: any) => c.id === row.categoryId);
       if (extra) opts.unshift(extra);
     }
     return opts;
   }, [filteredByKind, row.categoryId, categories]);
 
-  function handleCategoryChange(cat) {
+  function handleCategoryChange(cat: any) {
     onUpdate(index, patchForCategoryChange(cat, row));
   }
 
-  function handleSupplierChange(supplierId) {
+  function handleSupplierChange(supplierId: any) {
     onUpdate(index, patchForSupplierChange(supplierId, suppliers, categories));
   }
 

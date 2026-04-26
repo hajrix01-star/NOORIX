@@ -8,7 +8,7 @@
 import React from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 
-export default function LoadingFallback({ fullScreen = false }) {
+export default function LoadingFallback({ fullScreen = false }: any) {
   const { t } = useTranslation();
 
   return (

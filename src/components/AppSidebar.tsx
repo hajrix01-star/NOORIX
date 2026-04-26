@@ -69,12 +69,12 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
   const navigate = useNavigate();
   const navLinkClass = ({ isActive }: NavLinkRenderProps) =>
     `app-nav-link${isActive ? ' app-nav-link--active' : ''}`;
-  const visibleLinks = SIDEBAR_LINKS.filter((link) => {
+  const visibleLinks = SIDEBAR_LINKS.filter((link: any) => {
     if ((link as { ownerOnly?: boolean }).ownerOnly && String(userRole || '').toLowerCase() !== 'owner') return false;
     return hasPermission(userRole, link.permission, userPermissions);
   });
 
-  const isReportsExpanded = visibleLinks.some((l) => l.to === '/reports' && l.children?.some((c) => location.pathname.startsWith(c.to)));
+  const isReportsExpanded = visibleLinks.some((l: any) => l.to === '/reports' && l.children?.some((c: any) => location.pathname.startsWith(c.to)));
   const [reportsOpen, setReportsOpen] = useState(isReportsExpanded);
   useEffect(() => {
     if (isReportsExpanded) setReportsOpen(true);
@@ -142,7 +142,7 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
 
         <div className="app-sidebar__nav">
           <ul className="app-nav-list">
-            {visibleLinks.map((link) =>
+            {visibleLinks.map((link: any) =>
               link.children && link.to === '/reports' ? (
                 <li key={link.to} className="app-nav-item app-nav-item--has-children">
                   <Button
@@ -158,7 +158,7 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
                   </Button>
                   {reportsOpen && (
                     <ul className="app-nav-list app-nav-list--nested">
-                      {link.children.map((child) => (
+                      {link.children.map((child: any) => (
                         <li key={child.to} className="app-nav-item">
                           <NavLink
                             to={child.to}

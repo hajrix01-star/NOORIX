@@ -15,17 +15,17 @@ const STEPS = [
   { id: 'save', labelKey: 'bankStatementStepSave' },
 ];
 
-export default function BankStatementUploadModal({ companyId, onClose, onComplete, importFile, showToast }) {
+export default function BankStatementUploadModal({ companyId, onClose, onComplete, importFile, showToast }: any) {
   const { t } = useTranslation();
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<any>(null);
   const [step, setStep] = useState(0);
-  const [file, setFile] = useState(null);
-  const [raw, setRaw] = useState(null);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [file, setFile] = useState<any>(null);
+  const [raw, setRaw] = useState<any>(null);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleSelectFile = async (selectedFile) => {
+  const handleSelectFile = async (selectedFile: any) => {
     if (!selectedFile) return;
     const ext = (selectedFile.name || '').toLowerCase().split('.').pop();
     if (!['xlsx', 'xls', 'csv'].includes(ext)) {
@@ -57,26 +57,26 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
       const stmt = res?.data ?? res;
       setResult(stmt);
       onComplete(stmt, rows);
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || 'فشل الرفع');
     }
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: any) => {
     e.preventDefault();
     setIsDragging(false);
     const f = e.dataTransfer?.files?.[0];
     if (f) handleSelectFile(f);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: any) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
   const handleDragLeave = () => setIsDragging(false);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: any) => {
     const f = e.target?.files?.[0];
     if (f) handleSelectFile(f);
     e.target.value = '';
@@ -105,7 +105,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
     >
       {/* خطوات التقدم */}
       <div className="flex gap-1 mb-5">
-        {STEPS.map((s, i) => (
+        {STEPS.map((s: any, i: any) => (
           <div
             key={s.id}
             className="flex-1 min-w-0 h-1 rounded-sm"

@@ -4,7 +4,7 @@ import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
 import { Button, Input } from '../../../ui';
 
 /** Products sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
-export function ItemsManageTabProductsSection({ ctrl }) {
+export function ItemsManageTabProductsSection({ ctrl }: any) {
   const {
     t,
     companyId,
@@ -70,23 +70,23 @@ export function ItemsManageTabProductsSection({ ctrl }) {
             <Input
               label={`${t('productNameAr')} *`}
               value={newProduct.nameAr}
-              onChange={(e) => setNewProduct((p) => ({ ...p, nameAr: e.target.value }))}
+              onChange={(e: any) => setNewProduct((p: any) => ({ ...p, nameAr: e.target.value }))}
               placeholder={t('productNameAr')}
             />
             <Input
               label={t('productNameEn')}
               value={newProduct.nameEn}
-              onChange={(e) => setNewProduct((p) => ({ ...p, nameEn: e.target.value }))}
+              onChange={(e: any) => setNewProduct((p: any) => ({ ...p, nameEn: e.target.value }))}
               placeholder={t('productNameEn')}
             />
             <Input
               type="select"
               label={t('category')}
               value={newProduct.categoryId}
-              onChange={(e) => setNewProduct((p) => ({ ...p, categoryId: e.target.value }))}
+              onChange={(e: any) => setNewProduct((p: any) => ({ ...p, categoryId: e.target.value }))}
             >
               <option value="">—</option>
-              {categories.map((c) => (
+              {categories.map((c: any) => (
                 <option key={c.id} value={c.id}>
                   {c.nameAr || c.nameEn || c.id}
                 </option>
@@ -112,13 +112,13 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {(newProduct.variants || []).map((v, idx) => (
+                  {(newProduct.variants || []).map((v: any, idx: any) => (
                     <tr key={idx} className="border-b border-noorix-border">
                       <td className="py-1.5 px-2">
                         <div className="flex gap-1">
-                          <Input type="select" value={v.size} onChange={(e) => updateNewProductVariant(idx, 'size', e.target.value)} className="flex-1 min-w-0">
+                          <Input type="select" value={v.size} onChange={(e: any) => updateNewProductVariant(idx, 'size', e.target.value)} className="flex-1 min-w-0">
                             <option value="">—</option>
-                            {sizesOptions.map((s) => (
+                            {sizesOptions.map((s: any) => (
                               <option key={s.ar} value={s.ar}>
                                 {s.ar}
                               </option>
@@ -131,9 +131,9 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                       </td>
                       <td className="py-1.5 px-2">
                         <div className="flex gap-1">
-                          <Input type="select" value={v.packaging} onChange={(e) => updateNewProductVariant(idx, 'packaging', e.target.value)} className="flex-1 min-w-0">
+                          <Input type="select" value={v.packaging} onChange={(e: any) => updateNewProductVariant(idx, 'packaging', e.target.value)} className="flex-1 min-w-0">
                             <option value="">—</option>
-                            {packagingOptions.map((s) => (
+                            {packagingOptions.map((s: any) => (
                               <option key={s.ar} value={s.ar}>
                                 {s.ar}
                               </option>
@@ -145,7 +145,7 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                         </div>
                       </td>
                       <td className="py-1.5 px-2">
-                        <Input type="select" value={v.unit} onChange={(e) => updateNewProductVariant(idx, 'unit', e.target.value)}>
+                        <Input type="select" value={v.unit} onChange={(e: any) => updateNewProductVariant(idx, 'unit', e.target.value)}>
                           <option value="piece">{t('ordersUnitPiece')}</option>
                           <option value="kg">{t('ordersUnitKg')}</option>
                           <option value="box">{t('ordersUnitBox')}</option>
@@ -153,7 +153,7 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                         </Input>
                       </td>
                       <td className="py-1.5 px-2">
-                        <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateNewProductVariant(idx, 'lastPrice', e.target.value)} placeholder="0" className="w-20" />
+                        <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e: any) => updateNewProductVariant(idx, 'lastPrice', e.target.value)} placeholder="0" className="w-20" />
                       </td>
                       <td className="py-1.5 px-1">
                         <Button size="sm" variant="danger" onClick={() => removeNewProductVariant(idx)}>
@@ -179,7 +179,7 @@ export function ItemsManageTabProductsSection({ ctrl }) {
           <Input
             type="search"
             value={productSearchQuery}
-            onChange={(e) => setProductSearchQuery(e.target.value)}
+            onChange={(e: any) => setProductSearchQuery(e.target.value)}
             placeholder={t('ordersSearchProducts')}
             aria-label={t('ordersSearchProducts')}
             className="max-w-[320px]"
@@ -196,11 +196,11 @@ export function ItemsManageTabProductsSection({ ctrl }) {
             </tr>
           </thead>
           <tbody>
-            {filteredProducts.map((p) => {
+            {filteredProducts.map((p: any) => {
               const variants = Array.isArray(p.variants) ? p.variants : [];
               const variantsSummary =
                 variants.length > 0
-                  ? variants.map((v) => `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0)}`).join(' | ')
+                  ? variants.map((v: any) => `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0)}`).join(' | ')
                   : p.lastPrice
                     ? String(fmt(p.lastPrice))
                     : '';
@@ -213,17 +213,17 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                           <div className="flex flex-wrap gap-3">
                             <div className="min-w-[140px]">
                               <label className="text-[11px] text-noorix-muted">{t('productNameAr')}</label>
-                              <Input type="text" value={editingProduct.nameAr} onChange={(e) => setEditingProduct((x) => ({ ...x, nameAr: e.target.value }))} />
+                              <Input type="text" value={editingProduct.nameAr} onChange={(e: any) => setEditingProduct((x: any) => ({ ...x, nameAr: e.target.value }))} />
                             </div>
                             <div className="min-w-[140px]">
                               <label className="text-[11px] text-noorix-muted">{t('productNameEn')}</label>
-                              <Input type="text" value={editingProduct.nameEn || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, nameEn: e.target.value }))} />
+                              <Input type="text" value={editingProduct.nameEn || ''} onChange={(e: any) => setEditingProduct((x: any) => ({ ...x, nameEn: e.target.value }))} />
                             </div>
                             <div className="min-w-[120px]">
                               <label className="text-[11px] text-noorix-muted">{t('category')}</label>
-                              <Input type="select" value={editingProduct.categoryId || ''} onChange={(e) => setEditingProduct((x) => ({ ...x, categoryId: e.target.value }))}>
+                              <Input type="select" value={editingProduct.categoryId || ''} onChange={(e: any) => setEditingProduct((x: any) => ({ ...x, categoryId: e.target.value }))}>
                                 <option value="">—</option>
-                                {categories.map((c) => (
+                                {categories.map((c: any) => (
                                   <option key={c.id} value={c.id}>
                                     {c.nameAr || c.nameEn}
                                   </option>
@@ -237,7 +237,7 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                               <Button
                                 size="sm"
                                 onClick={() =>
-                                  setEditingProduct((x) => ({
+                                  setEditingProduct((x: any) => ({
                                     ...x,
                                     variants: [...(x.variants || []), { size: '', packaging: '', unit: 'piece', lastPrice: '' }],
                                   }))
@@ -258,12 +258,12 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {(editingProduct.variants || []).map((v, idx) => (
+                                  {(editingProduct.variants || []).map((v: any, idx: any) => (
                                     <tr key={idx}>
                                       <td className="py-1 px-1.5">
-                                        <Input type="select" value={v.size} onChange={(e) => updateEditingVariant(idx, 'size', e.target.value)}>
+                                        <Input type="select" value={v.size} onChange={(e: any) => updateEditingVariant(idx, 'size', e.target.value)}>
                                           <option value="">—</option>
-                                          {sizesOptions.map((s) => (
+                                          {sizesOptions.map((s: any) => (
                                             <option key={s.ar} value={s.ar}>
                                               {s.ar}
                                             </option>
@@ -271,9 +271,9 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                                         </Input>
                                       </td>
                                       <td className="py-1 px-1.5">
-                                        <Input type="select" value={v.packaging} onChange={(e) => updateEditingVariant(idx, 'packaging', e.target.value)}>
+                                        <Input type="select" value={v.packaging} onChange={(e: any) => updateEditingVariant(idx, 'packaging', e.target.value)}>
                                           <option value="">—</option>
-                                          {packagingOptions.map((s) => (
+                                          {packagingOptions.map((s: any) => (
                                             <option key={s.ar} value={s.ar}>
                                               {s.ar}
                                             </option>
@@ -281,7 +281,7 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                                         </Input>
                                       </td>
                                       <td className="py-1 px-1.5">
-                                        <Input type="select" value={v.unit} onChange={(e) => updateEditingVariant(idx, 'unit', e.target.value)}>
+                                        <Input type="select" value={v.unit} onChange={(e: any) => updateEditingVariant(idx, 'unit', e.target.value)}>
                                           <option value="piece">{t('ordersUnitPiece')}</option>
                                           <option value="kg">{t('ordersUnitKg')}</option>
                                           <option value="box">{t('ordersUnitBox')}</option>
@@ -289,7 +289,7 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                                         </Input>
                                       </td>
                                       <td className="py-1 px-1.5">
-                                        <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e) => updateEditingVariant(idx, 'lastPrice', e.target.value)} className="w-[70px]" />
+                                        <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e: any) => updateEditingVariant(idx, 'lastPrice', e.target.value)} className="w-[70px]" />
                                       </td>
                                       <td className="p-1">
                                         <Button size="sm" variant="danger" onClick={() => removeEditingVariant(idx)}>
@@ -332,7 +332,7 @@ export function ItemsManageTabProductsSection({ ctrl }) {
                               categoryId: p.categoryId || '',
                               variants:
                                 variants.length > 0
-                                  ? variants.map((v) => ({
+                                  ? variants.map((v: any) => ({
                                       size: v.size || '',
                                       packaging: v.packaging || '',
                                       unit: v.unit || 'piece',

@@ -4,10 +4,10 @@
  */
 
 /** @param {string|Date|null|undefined} payrollMonth — أول يوم الشهر أو ISO */
-export function payrollMonthBoundsForInvoiceLink(payrollMonth) {
+export function payrollMonthBoundsForInvoiceLink(payrollMonth: any) {
   if (!payrollMonth) return null;
   const s = String(payrollMonth).slice(0, 10);
-  const [y, m] = s.split('-').map((x) => parseInt(x, 10));
+  const [y, m] = s.split('-').map((x: any) => parseInt(x, 10));
   if (!y || !m || m < 1 || m > 12) return null;
   const from = `${y}-${String(m).padStart(2, '0')}-01`;
   const last = new Date(Date.UTC(y, m, 0));
@@ -21,7 +21,7 @@ export function payrollMonthBoundsForInvoiceLink(payrollMonth) {
  * @param {string} payrollRunId
  * @param {string|Date|null|undefined} [payrollMonth] — شهر المسيرة لضبط نطاق التاريخ في الرابط
  */
-export function payrollSalaryInvoiceListHref(payrollRunId, payrollMonth) {
+export function payrollSalaryInvoiceListHref(payrollRunId: any, payrollMonth: any) {
   if (!payrollRunId) return '/invoices';
   const q = new URLSearchParams({ batchId: String(payrollRunId), kind: 'salary' });
   const range = payrollMonthBoundsForInvoiceLink(payrollMonth);

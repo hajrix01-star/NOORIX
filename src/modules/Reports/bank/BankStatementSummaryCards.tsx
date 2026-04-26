@@ -2,7 +2,7 @@
 import { fmt } from '../../../utils/format';
 import { MetricCard } from '../../../ui';
 
-export default function BankStatementSummaryCards({ statement, t }) {
+export default function BankStatementSummaryCards({ statement, t }: any) {
   if (!statement) return null;
 
   const dep = Number(statement.totalDeposits)    || 0;
@@ -51,7 +51,7 @@ export default function BankStatementSummaryCards({ statement, t }) {
 
   return (
     <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
-      {cards.map((c, i) => (
+      {cards.map((c: any, i: any) => (
         <MetricCard key={i} color={c.color}>
           <MetricCard.Header label={c.title} />
           <MetricCard.Value value={c.value} />

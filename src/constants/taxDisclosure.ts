@@ -37,40 +37,40 @@ export const SUMMARY_ROWS = [
 ];
 
 export function defaultDisclosureData() {
-  const rows = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r) => !r.isTotal);
-  const obj = {};
-  rows.forEach((r) => {
+  const rows = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r: any) => !r.isTotal);
+  const obj: Record<string, any> = {};
+  rows.forEach((r: any) => {
     obj[r.key] = { amount: 0, adjustment: 0, vat: 0 };
   });
-  SUMMARY_ROWS.forEach((r) => {
+  SUMMARY_ROWS.forEach((r: any) => {
     obj[r.key] = 0;
   });
   return obj;
 }
 
-export function getRowValue(data, key, field) {
+export function getRowValue(data: any, key: any, field: any) {
   const v = data[key];
   if (v && typeof v === 'object') return v[field] ?? 0;
   return typeof v === 'number' ? v : 0;
 }
 
-export function computeOutputTotal(data) {
+export function computeOutputTotal(data: any) {
   let sum = 0;
-  OUTPUT_ROWS.filter((r) => !r.isTotal).forEach((r) => {
+  OUTPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
     sum += getRowValue(data, r.key, 'vat');
   });
   return sum;
 }
 
-export function computeInputTotal(data) {
+export function computeInputTotal(data: any) {
   let sum = 0;
-  INPUT_ROWS.filter((r) => !r.isTotal).forEach((r) => {
+  INPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
     sum += getRowValue(data, r.key, 'vat');
   });
   return sum;
 }
 
-export function computeNetPayable(data) {
+export function computeNetPayable(data: any) {
   const outputTotal = computeOutputTotal(data);
   const inputTotal = computeInputTotal(data);
   const netVat = outputTotal - inputTotal;
@@ -80,17 +80,17 @@ export function computeNetPayable(data) {
 }
 
 /** تقريب مالي إلى منزلتين عشريتين (عرض وتخزين الحقول الضريبية). */
-export function roundMoney2(n) {
+export function roundMoney2(n: any) {
   const x = Number(n);
   if (!Number.isFinite(x)) return 0;
   return Math.round(x * 100) / 100;
 }
 
 /** يطبّق منزلتين على كل المبالغ في نموذج الإفصاح بعد الاستيراد أو التعديل. */
-export function normalizeDisclosureDecimals(data) {
+export function normalizeDisclosureDecimals(data: any) {
   if (!data || typeof data !== 'object') return defaultDisclosureData();
   const next = JSON.parse(JSON.stringify(data));
-  [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r) => !r.isTotal).forEach((r) => {
+  [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r: any) => !r.isTotal).forEach((r: any) => {
     const k = r.key;
     if (!next[k] || typeof next[k] !== 'object') {
       next[k] = { amount: 0, adjustment: 0, vat: 0 };
@@ -99,7 +99,7 @@ export function normalizeDisclosureDecimals(data) {
     next[k].vat = roundMoney2(next[k].vat);
     next[k].adjustment = roundMoney2(next[k].adjustment);
   });
-  SUMMARY_ROWS.forEach((r) => {
+  SUMMARY_ROWS.forEach((r: any) => {
     next[r.key] = roundMoney2(next[r.key]);
   });
   return next;
@@ -108,12 +108,12 @@ export function normalizeDisclosureDecimals(data) {
 /**
  * دمج أرقام مستوردة من تقرير الضريبة في النظام (نفس شكل API tax-vat).
  */
-export function mergeImportedDisclosure(stored, imported) {
+export function mergeImportedDisclosure(stored: any, imported: any) {
   if (!imported || typeof imported !== 'object') {
     return normalizeDisclosureDecimals(stored ? { ...stored } : defaultDisclosureData());
   }
   const next = { ...(stored || defaultDisclosureData()) };
-  const rowKeys = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r) => !r.isTotal).map((r) => r.key);
+  const rowKeys = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r: any) => !r.isTotal).map((r: any) => r.key);
   for (const key of rowKeys) {
     if (imported[key] && typeof imported[key] === 'object') {
       next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), ...imported[key] };
@@ -126,7 +126,7 @@ export function mergeImportedDisclosure(stored, imported) {
  * ضبط مدخلات الضريبة (الخارج) لتتوافق مع صافي مستهدف = مبلغ الدفع المرغوب.
  * netPayable = output - input + prior + balance  →  input' = output + prior + balance - netPayableTarget
  */
-export function scaleInputVatForPaymentTarget(data, paymentTarget) {
+export function scaleInputVatForPaymentTarget(data: any, paymentTarget: any) {
   const target = Number(paymentTarget);
   if (!Number.isFinite(target)) return normalizeDisclosureDecimals({ ...data });
 
@@ -139,7 +139,7 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
 
   if (desiredInput < 0) {
     const next = JSON.parse(JSON.stringify(data));
-    INPUT_ROWS.filter((r) => !r.isTotal).forEach((r) => {
+    INPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
       if (next[r.key] && typeof next[r.key] === 'object') {
         next[r.key] = { ...next[r.key], vat: 0, amount: 0 };
       }
@@ -149,7 +149,7 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
 
   if (desiredInput === 0) {
     const next = JSON.parse(JSON.stringify(data));
-    INPUT_ROWS.filter((r) => !r.isTotal).forEach((r) => {
+    INPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
       if (next[r.key] && typeof next[r.key] === 'object') {
         next[r.key] = { ...next[r.key], vat: 0, amount: 0 };
       }
@@ -173,7 +173,7 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
 
   const factor = desiredInput / currentInput;
   const next = JSON.parse(JSON.stringify(data));
-  INPUT_ROWS.filter((r) => !r.isTotal).forEach((r) => {
+  INPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
     const row = next[r.key];
     if (!row || typeof row !== 'object') return;
     const oldVat = Number(row.vat) || 0;
@@ -187,7 +187,7 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
 }
 
 /** بناء payload إفصاح من صف استيراد Excel (أعمدة بالإنجليزية من القالب). */
-export function disclosureFromBulkFlatRow(vals) {
+export function disclosureFromBulkFlatRow(vals: any) {
   const salesAmt = roundMoney2(vals.sales_amount ?? 0);
   const salesVat = roundMoney2(vals.sales_vat ?? 0);
   const purAmt = roundMoney2(vals.purchases_amount ?? 0);
@@ -211,6 +211,6 @@ export function disclosureFromBulkFlatRow(vals) {
   });
 }
 
-export function periodKeyFromQuarter(year, quarter) {
+export function periodKeyFromQuarter(year: any, quarter: any) {
   return `${year}-Q${quarter}`;
 }

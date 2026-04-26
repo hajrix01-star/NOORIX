@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { invoicesHrefForLinkedPurchase } from '../../utils/ledgerInvoiceLink';
 
-export function OcrUploadPrefillBanner({ t, prefillLoading }) {
+export function OcrUploadPrefillBanner({ t, prefillLoading }: any) {
   if (!prefillLoading) return null;
   return (
     <div className="text-[13px] text-noorix-muted rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2">
@@ -10,7 +10,7 @@ export function OcrUploadPrefillBanner({ t, prefillLoading }) {
   );
 }
 
-export function OcrPrefillLinkedPurchaseBanner({ t, prefillLinkedPurchase }) {
+export function OcrPrefillLinkedPurchaseBanner({ t, prefillLinkedPurchase }: any) {
   if (!prefillLinkedPurchase?.id) return null;
   return (
     <div className="text-[13px] rounded-lg border border-noorix-blue/30 bg-noorix-blue/5 px-3 py-2 flex flex-wrap items-center gap-2">
@@ -25,7 +25,7 @@ export function OcrPrefillLinkedPurchaseBanner({ t, prefillLinkedPurchase }) {
   );
 }
 
-export function OcrPostSaveLinkedBanner({ t, success, postSaveLinkedPurchase }) {
+export function OcrPostSaveLinkedBanner({ t, success, postSaveLinkedPurchase }: any) {
   if (!success || !postSaveLinkedPurchase?.id) return null;
   return (
     <div className="text-[13px] rounded-lg border border-noorix-accent-green/40 bg-green-50 dark:bg-green-950/25 px-3 py-2 flex flex-wrap items-center gap-2">
@@ -40,11 +40,11 @@ export function OcrPostSaveLinkedBanner({ t, success, postSaveLinkedPurchase }) 
   );
 }
 
-export function OcrEmptyImageDropzone({ t, dragging, onDragOver, onDragLeave, onDrop, onClickPick, fileRef, onFileInputChange }) {
+export function OcrEmptyImageDropzone({ t, dragging, onDragOver, onDragLeave, onDrop, onClickPick, fileRef, onFileInputChange }: any) {
   return (
     <div
       className={`ocr-upload-zone${dragging ? ' ocr-upload-zone--active' : ''}`}
-      onDragOver={(e) => {
+      onDragOver={(e: any) => {
         e.preventDefault();
         onDragOver();
       }}
@@ -60,13 +60,13 @@ export function OcrEmptyImageDropzone({ t, dragging, onDragOver, onDragLeave, on
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => onFileInputChange(e.target.files[0])}
+        onChange={(e: any) => onFileInputChange(e.target.files[0])}
       />
     </div>
   );
 }
 
-export function OcrErrorBanner({ error }) {
+export function OcrErrorBanner({ error }: any) {
   if (!error) return null;
   return (
     <div

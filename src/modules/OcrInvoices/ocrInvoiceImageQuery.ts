@@ -2,11 +2,11 @@ import { getAuthToken, getActiveCompanyId } from '../../services/authStore';
 import { getApiBaseUrl } from '../../services/api';
 
 /** مفتاح موحّد لصورة فاتورة OCR — يُشارك بين المصغّر وprefill الرفع لتفادي طلبات /image مكررة */
-export function ocrInvoiceImageQueryKey(companyId, invoiceId) {
+export function ocrInvoiceImageQueryKey(companyId: any, invoiceId: any) {
   return ['ocr-invoice-image', String(companyId ?? ''), String(invoiceId ?? '')];
 }
 
-export async function fetchOcrInvoiceImageBlob(invoiceId, signal) {
+export async function fetchOcrInvoiceImageBlob(invoiceId: any, signal: any) {
   const url = new URL(`/api/v1/ocr/invoices/${encodeURIComponent(invoiceId)}/image`, getApiBaseUrl());
   const res = await fetch(url.toString(), {
     signal,

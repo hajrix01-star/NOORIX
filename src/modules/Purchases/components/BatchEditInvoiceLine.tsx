@@ -15,7 +15,7 @@ export function BatchEditInvoiceLine({
   t,
   updateInv,
   variant,
-}) {
+}: any) {
   const ids = useBatchRowFieldIds();
   const cancelled = inv.status === 'cancelled';
 
@@ -56,7 +56,7 @@ export function BatchEditInvoiceLine({
                 id={ids.supplier}
                 suppliers={suppliers}
                 value={inv.supplierId || ''}
-                onChange={(v) => updateInv(i, 'supplierId', v)}
+                onChange={(v: any) => updateInv(i, 'supplierId', v)}
                 bookmarkedIds={[]}
                 placeholder={t('selectSupplierPlaceholder')}
               />
@@ -82,7 +82,7 @@ export function BatchEditInvoiceLine({
                   label={t('supplierInvoiceNumber')}
                   size="sm"
                   value={inv.supplierInvoiceNumber ?? inv.invoiceNumber ?? ''}
-                  onChange={(e) => updateInv(i, 'supplierInvoiceNumber', e.target.value)}
+                  onChange={(e: any) => updateInv(i, 'supplierInvoiceNumber', e.target.value)}
                 />
                 <Input
                   id={ids.totalInclusive}
@@ -92,7 +92,7 @@ export function BatchEditInvoiceLine({
                   step="0.1"
                   size="sm"
                   value={inv.totalAmount ?? ''}
-                  onChange={(e) => {
+                  onChange={(e: any) => {
                     const v = parseFloat(e.target.value);
                     if (!Number.isNaN(v) && v > 0) {
                       const { net, tax } = splitTaxFromTotalAsNumbers(v, true);
@@ -117,7 +117,7 @@ export function BatchEditInvoiceLine({
               type="select"
               size="sm"
               value={inv.kind || 'purchase'}
-              onChange={(e) => updateInv(i, 'kind', e.target.value)}
+              onChange={(e: any) => updateInv(i, 'kind', e.target.value)}
             >
               <option value="purchase">{t('purchaseType')}</option>
               <option value="expense">{t('expenseType')}</option>
@@ -141,7 +141,7 @@ export function BatchEditInvoiceLine({
           <SupplierSelect
             suppliers={suppliers}
             value={inv.supplierId || ''}
-            onChange={(v) => updateInv(i, 'supplierId', v)}
+            onChange={(v: any) => updateInv(i, 'supplierId', v)}
             bookmarkedIds={[]}
             placeholder={t('selectSupplierPlaceholder')}
           />
@@ -154,7 +154,7 @@ export function BatchEditInvoiceLine({
           <Input
             size="sm"
             value={inv.supplierInvoiceNumber ?? inv.invoiceNumber ?? ''}
-            onChange={(e) => updateInv(i, 'supplierInvoiceNumber', e.target.value)}
+            onChange={(e: any) => updateInv(i, 'supplierInvoiceNumber', e.target.value)}
             className="w-full"
             aria-label={`${t('supplierInvoiceNumber')} — ${t('batchRowLineAriaLabel', i + 1)}`}
           />
@@ -170,7 +170,7 @@ export function BatchEditInvoiceLine({
             step="0.1"
             size="sm"
             value={inv.totalAmount ?? ''}
-            onChange={(e) => {
+            onChange={(e: any) => {
               const v = parseFloat(e.target.value);
               if (!Number.isNaN(v) && v > 0) {
                 const { net, tax } = splitTaxFromTotalAsNumbers(v, true);
@@ -190,7 +190,7 @@ export function BatchEditInvoiceLine({
             type="select"
             size="sm"
             value={inv.kind || 'purchase'}
-            onChange={(e) => updateInv(i, 'kind', e.target.value)}
+            onChange={(e: any) => updateInv(i, 'kind', e.target.value)}
             className="w-full"
             aria-label={`${t('kind')} — ${t('batchRowLineAriaLabel', i + 1)}`}
           >

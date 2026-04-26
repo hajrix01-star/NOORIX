@@ -30,7 +30,7 @@ export default function SettingsScreen() {
     ? appContext.setActiveCompany : () => {};
 
   const isMobile = useIsMobile640();
-  const tabBarRef = useRef(null);
+  const tabBarRef = useRef<any>(null);
 
   const TABS_BASE = useMemo(() => [
     { id: 'companies', label: t('companiesTab') },
@@ -43,15 +43,15 @@ export default function SettingsScreen() {
   ], [t]);
 
   const TABS = useMemo(
-    () => TABS_BASE.filter((tab) => !tab.permission || hasPermission(userRole, tab.permission, userPermissions)),
+    () => TABS_BASE.filter((tab: any) => !tab.permission || hasPermission(userRole, tab.permission, userPermissions)),
     [userRole, userPermissions, TABS_BASE],
   );
 
-  const allowedTabIds = useMemo(() => TABS.map((tab) => tab.id), [TABS]);
+  const allowedTabIds = useMemo(() => TABS.map((tab: any) => tab.id), [TABS]);
   const [activeTab, setActiveTab] = useTabSearchParam(allowedTabIds, 'companies');
 
   const tabItems = useMemo(
-    () => TABS.map((tab) => ({ id: tab.id, label: tab.label })),
+    () => TABS.map((tab: any) => ({ id: tab.id, label: tab.label })),
     [TABS],
   );
 
@@ -70,12 +70,12 @@ export default function SettingsScreen() {
     placeholderData: [],
     retry:           false,
   });
-  const activeCompanies = companiesData.filter((c) => !c.isArchived);
-  const activeLabel = TABS.find((x) => x.id === activeTab)?.label || '';
+  const activeCompanies = companiesData.filter((c: any) => !c.isArchived);
+  const activeLabel = TABS.find((x: any) => x.id === activeTab)?.label || '';
 
   const tabPanels = (
     <>
-      {activeTab === 'companies' && <CompaniesTab onCompanyCreated={(id) => setActiveCompany(id)} />}
+      {activeTab === 'companies' && <CompaniesTab onCompanyCreated={(id: any) => setActiveCompany(id)} />}
       {activeTab === 'tax'       && <TaxSettingsTab />}
       {activeTab === 'users'     && <UsersTab userRole={userRole} activeCompanies={activeCompanies} />}
       {activeTab === 'roles'     && <RolesTab userRole={userRole} language={language} />}
@@ -103,10 +103,10 @@ export default function SettingsScreen() {
             <Input
               type="select"
               value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value)}
+              onChange={(e: any) => setActiveTab(e.target.value)}
               className="noorix-settings-mobile-nav__select"
             >
-              {TABS.map((tab) => (
+              {TABS.map((tab: any) => (
                 <option key={tab.id} value={tab.id}>{tab.label}</option>
               ))}
             </Input>

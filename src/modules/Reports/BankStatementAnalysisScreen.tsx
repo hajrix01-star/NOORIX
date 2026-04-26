@@ -29,7 +29,7 @@ const TABS = [
   { id: 'rules', labelKey: 'bankStatementTabRules' },
   { id: 'templates', labelKey: 'bankStatementTabTemplates' },
 ];
-const BANK_STATEMENT_TAB_IDS = TABS.map((tab) => tab.id);
+const BANK_STATEMENT_TAB_IDS = TABS.map((tab: any) => tab.id);
 
 const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
@@ -40,17 +40,17 @@ export default function BankStatementAnalysisScreen() {
   const companyId = activeCompanyId ?? '';
 
   const activeCompanyName = useMemo(() => {
-    const c = (companies || []).find((x) => x.id === companyId);
+    const c = (companies || []).find((x: any) => x.id === companyId);
     return c?.nameAr || c?.nameEn || c?.name || '';
   }, [companies, companyId]);
 
-  const [selectedStatementId, setSelectedStatementId] = useState(null);
+  const [selectedStatementId, setSelectedStatementId] = useState<any>(null);
   const [activeTab, setActiveTab] = useTabSearchParam(BANK_STATEMENT_TAB_IDS, 'statements');
   const [showUpload, setShowUpload] = useState(false);
-  const [mappingStatement, setMappingStatement] = useState(null);
+  const [mappingStatement, setMappingStatement] = useState<any>(null);
   const [filterMonth, setFilterMonth] = useState('');
   const [filterBank, setFilterBank] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<any>(null);
 
   const { showToast } = useToast();
 
@@ -88,7 +88,7 @@ export default function BankStatementAnalysisScreen() {
     queryClient.invalidateQueries({ queryKey: ['bank-statement'] });
   }, [queryClient]);
 
-  const handleUploadComplete = (stmt, fullRaw) => {
+  const handleUploadComplete = (stmt: any, fullRaw: any) => {
     setShowUpload(false);
     invalidate();
     if (stmt?.status === 'mapping') setMappingStatement({ ...stmt, _fullRaw: fullRaw });
@@ -103,7 +103,7 @@ export default function BankStatementAnalysisScreen() {
     showToast(t('bankStatementParsedCount', '0'));
   };
 
-  const handleSelectStatement = (stmt) => {
+  const handleSelectStatement = (stmt: any) => {
     if (stmt.status === 'mapping') {
       setMappingStatement(stmt);
       return;
@@ -112,9 +112,9 @@ export default function BankStatementAnalysisScreen() {
   };
 
   const deleteMutation = useApiMutation({
-    mutationFn: (id) => bankStatementDelete(companyId, id),
+    mutationFn: (id: any) => bankStatementDelete(companyId, id),
     successToast: () => t('deletedSuccessfully'),
-    errorToast: (err) => err?.message || t('saveFailedGeneric'),
+    errorToast: (err: any) => err?.message || t('saveFailedGeneric'),
     onSuccess: () => {
       invalidate();
       setDeleteConfirmId(null);
@@ -123,18 +123,18 @@ export default function BankStatementAnalysisScreen() {
   });
 
   const completedStatements = useMemo(
-    () => statements.filter((s) => s.status === 'completed'),
+    () => statements.filter((s: any) => s.status === 'completed'),
     [statements],
   );
 
   const quickStats = useMemo(() => {
-    const dep = completedStatements.reduce((s, x) => s + (Number(x.totalDeposits) || 0), 0);
-    const wdr = completedStatements.reduce((s, x) => s + (Number(x.totalWithdrawals) || 0), 0);
+    const dep = completedStatements.reduce((s: any, x: any) => s + (Number(x.totalDeposits) || 0), 0);
+    const wdr = completedStatements.reduce((s: any, x: any) => s + (Number(x.totalWithdrawals) || 0), 0);
     return { totalDeposits: dep, totalWithdrawals: wdr, netFlow: dep - wdr };
   }, [completedStatements]);
 
-  const banks = [...new Set(statements.map((s) => s.bankName).filter(Boolean))].sort() as string[];
-  const months = [...new Set(statements.map((s) => s.startDate?.slice(0, 7)).filter(Boolean))].sort().reverse() as string[];
+  const banks = [...new Set(statements.map((s: any) => s.bankName).filter(Boolean))].sort() as string[];
+  const months = [...new Set(statements.map((s: any) => s.startDate?.slice(0, 7)).filter(Boolean))].sort().reverse() as string[];
 
   if (selectedStatementId) {
     return (
@@ -146,7 +146,7 @@ export default function BankStatementAnalysisScreen() {
           categories={categories}
           onBack={() => setSelectedStatementId(null)}
           onDelete={() => setDeleteConfirmId(selectedStatementId)}
-          createCategory={(body) => bankStatementCreateCategory({ ...body, companyId })}
+          createCategory={(body: any) => bankStatementCreateCategory({ ...body, companyId })}
           showToast={showToast}
           onRefresh={invalidate}
         />
@@ -190,7 +190,7 @@ export default function BankStatementAnalysisScreen() {
             { label: t('bankStatementCardDeposits'),    value: fmt(quickStats.totalDeposits),   color: 'var(--color-nx-profit)'   },
             { label: t('bankStatementCardWithdrawals'), value: fmt(quickStats.totalWithdrawals), color: 'var(--color-nx-expenses)' },
             { label: t('bankStatementCardNetFlow'),     value: fmt(quickStats.netFlow),          color: quickStats.netFlow >= 0 ? 'var(--color-nx-profit)' : 'var(--color-nx-expenses)' },
-          ].map((c, i) => (
+          ].map((c: any, i: any) => (
             <MetricCard key={i} color={c.color}>
               <MetricCard.Header label={c.label} />
               <MetricCard.Value value={c.value} />
@@ -205,8 +205,8 @@ export default function BankStatementAnalysisScreen() {
           fadeWrap={false}
           variant="underline"
           barClassName="noorix-bank-tab-row"
-          getTabClassName={(_, active) => cn('noorix-bank-tab', active && 'noorix-bank-tab--active')}
-          items={TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }))}
+          getTabClassName={(_: any, active: any) => cn('noorix-bank-tab', active && 'noorix-bank-tab--active')}
+          items={TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) }))}
           value={activeTab}
           onChange={setActiveTab}
           buttonSize="auto"
@@ -221,11 +221,11 @@ export default function BankStatementAnalysisScreen() {
                   style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
                 >
                   {[
-                    { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.data?.statementCount ?? 0, f: (v) => String(v) },
-                    { key: 'dep', labelKey: 'bankStatementCardDeposits', value: summary?.data?.totalDeposits ?? 0, f: (v) => fmt(Number(v)) },
-                    { key: 'wdr', labelKey: 'bankStatementCardWithdrawals', value: summary?.data?.totalWithdrawals ?? 0, f: (v) => fmt(Number(v)) },
-                    { key: 'net', labelKey: 'bankStatementCardNetFlow', value: summary?.data?.netFlow ?? 0, f: (v) => fmt(Number(v)) },
-                  ].map((c) => (
+                    { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.data?.statementCount ?? 0, f: (v: any) => String(v) },
+                    { key: 'dep', labelKey: 'bankStatementCardDeposits', value: summary?.data?.totalDeposits ?? 0, f: (v: any) => fmt(Number(v)) },
+                    { key: 'wdr', labelKey: 'bankStatementCardWithdrawals', value: summary?.data?.totalWithdrawals ?? 0, f: (v: any) => fmt(Number(v)) },
+                    { key: 'net', labelKey: 'bankStatementCardNetFlow', value: summary?.data?.netFlow ?? 0, f: (v: any) => fmt(Number(v)) },
+                  ].map((c: any) => (
                     <div
                       key={c.key}
                       className="p-[14px] rounded-[10px] bg-noorix-bg-muted border border-noorix-border"
@@ -258,10 +258,10 @@ export default function BankStatementAnalysisScreen() {
                     <Input
                       type="select"
                       value={filterMonth}
-                      onChange={(e) => setFilterMonth(e.target.value)}
+                      onChange={(e: any) => setFilterMonth(e.target.value)}
                     >
                       <option value="">{t('allMonths')}</option>
-                      {months.map((m) => {
+                      {months.map((m: any) => {
                         const [y, mo] = m.split('-');
                         const label = `${AR_MONTHS[parseInt(mo, 10) - 1] || mo} ${y}`;
                         return (
@@ -274,10 +274,10 @@ export default function BankStatementAnalysisScreen() {
                     <Input
                       type="select"
                       value={filterBank}
-                      onChange={(e) => setFilterBank(e.target.value)}
+                      onChange={(e: any) => setFilterBank(e.target.value)}
                     >
                       <option value="">{t('bankStatementAllBanks')}</option>
-                      {banks.map((b) => (
+                      {banks.map((b: any) => (
                         <option key={b} value={b}>
                           {b}
                         </option>
@@ -286,7 +286,7 @@ export default function BankStatementAnalysisScreen() {
                   </div>
 
                   <div className="grid gap-2.5">
-                    {statements.map((stmt) => {
+                    {statements.map((stmt: any) => {
                       const start = stmt.startDate?.slice(0, 10);
                       const end = stmt.endDate?.slice(0, 10);
                       const statusColor = stmt.status === 'mapping' ? 'amber' : stmt.status === 'completed' ? 'green' : 'gray';
@@ -296,7 +296,7 @@ export default function BankStatementAnalysisScreen() {
                           role="button"
                           tabIndex={0}
                           onClick={() => handleSelectStatement(stmt)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSelectStatement(stmt)}
+                          onKeyDown={(e: any) => e.key === 'Enter' && handleSelectStatement(stmt)}
                           className="flex gap-4 p-3.5 border border-noorix-border rounded-lg cursor-pointer items-center"
                           style={{ background: 'var(--noorix-bg)' }}
                         >

@@ -15,7 +15,7 @@ import { fmt } from '../../../utils/format';
 import { useToast } from '../../../context/ToastContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
-export default function VaultTransferModal({ companyId, startDate = null, endDate = null, onClose }) {
+export default function VaultTransferModal({ companyId, startDate = null, endDate = null, onClose }: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -38,7 +38,7 @@ export default function VaultTransferModal({ companyId, startDate = null, endDat
   });
 
   const selectableVaults = useMemo(
-    () => (rawVaults || []).filter((v) => v.isActive !== false && !v.isArchived),
+    () => (rawVaults || []).filter((v: any) => v.isActive !== false && !v.isArchived),
     [rawVaults],
   );
 
@@ -49,16 +49,16 @@ export default function VaultTransferModal({ companyId, startDate = null, endDat
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    const list = (rawVaults || []).filter((v) => v.isActive !== false && !v.isArchived);
+    const list = (rawVaults || []).filter((v: any) => v.isActive !== false && !v.isArchived);
     if (list.length < 2) return;
     setFromId(list[0].id);
     setToId(list[1].id);
   }, [rawVaults]);
 
   const transferMut = useApiMutation({
-    mutationFn: (payload) => createVaultTransfer(payload),
+    mutationFn: (payload: any) => createVaultTransfer(payload),
     successToast: false,
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       invalidateOnFinancialMutation(queryClient);
       const data = res?.data ?? res;
       const ref = data?.referenceId ?? '';
@@ -69,11 +69,11 @@ export default function VaultTransferModal({ companyId, startDate = null, endDat
       onClose?.();
     },
     showErrorToast: true,
-    errorToast: (err) => err?.message || t('saveFailed'),
+    errorToast: (err: any) => err?.message || t('saveFailed'),
   });
 
   const handleSubmit = useCallback(
-    (e) => {
+    (e: any) => {
       e?.preventDefault?.();
       const amt = roundMoney2(amount);
       if (!companyId || !fromId || !toId || fromId === toId) return;
@@ -92,7 +92,7 @@ export default function VaultTransferModal({ companyId, startDate = null, endDat
     [companyId, fromId, toId, amount, txDate, notes, transferMut],
   );
 
-  const fromVault = selectableVaults.find((v) => v.id === fromId);
+  const fromVault = selectableVaults.find((v: any) => v.id === fromId);
 
   return (
     <AdaptiveSheet
@@ -143,11 +143,11 @@ export default function VaultTransferModal({ companyId, startDate = null, endDat
           type="select"
           label={t('vaultTransferFrom')}
           value={fromId}
-          onChange={(e) => setFromId(e.target.value)}
+          onChange={(e: any) => setFromId(e.target.value)}
           required
         >
           <option value="">—</option>
-          {selectableVaults.map((v) => (
+          {selectableVaults.map((v: any) => (
             <option key={v.id} value={v.id}>
               {vaultDisplayName(v, lang)}
               {typeof v.balance === 'number' ? ` — ${fmt(v.balance)} SR` : ''}
@@ -166,11 +166,11 @@ export default function VaultTransferModal({ companyId, startDate = null, endDat
           type="select"
           label={t('vaultTransferTo')}
           value={toId}
-          onChange={(e) => setToId(e.target.value)}
+          onChange={(e: any) => setToId(e.target.value)}
           required
         >
           <option value="">—</option>
-          {selectableVaults.map((v) => (
+          {selectableVaults.map((v: any) => (
             <option key={v.id} value={v.id} disabled={v.id === fromId}>
               {vaultDisplayName(v, lang)}
             </option>
@@ -183,18 +183,18 @@ export default function VaultTransferModal({ companyId, startDate = null, endDat
           min="0"
           label={t('amount')}
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e: any) => setAmount(e.target.value)}
           placeholder="0"
           required
         />
 
-        <Input type="date" label={t('vaultTransferDate')} value={txDate} onChange={(e) => setTxDate(e.target.value)} required />
+        <Input type="date" label={t('vaultTransferDate')} value={txDate} onChange={(e: any) => setTxDate(e.target.value)} required />
 
         <Input
           type="text"
           label={t('vaultTransferNotes')}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e: any) => setNotes(e.target.value)}
           multiline
           rows={2}
           placeholder={t('vaultTransferNotesPlaceholder')}

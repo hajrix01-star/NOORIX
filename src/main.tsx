@@ -27,7 +27,7 @@ const queryClient = new QueryClient({
       gcTime: 5 * 60 * 1000,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
-      retry(failureCount, error) {
+      retry(failureCount: any, error: any) {
         const err = error as Error & {
           code?: number;
           response?: { status?: number };
@@ -35,9 +35,9 @@ const queryClient = new QueryClient({
           isTransientServerError?: boolean;
         };
         const code = err?.code ?? err?.response?.status;
-        if ([401, 403, 404, 422, 429].includes(code)) return false;
+        if (typeof code === 'number' && [401, 403, 404, 422, 429].includes(code)) return false;
         // بوابة / سيرفر نائم — محاولتان إضافيتان بعد فشل إعادة المحاولة داخل apiGet
-        if ([502, 503, 504].includes(code)) return failureCount < 2;
+        if (typeof code === 'number' && [502, 503, 504].includes(code)) return failureCount < 2;
         if (err?.isNetworkError || err?.isTransientServerError) return failureCount < 2;
         return failureCount < 1;
       },
@@ -50,6 +50,7 @@ const queryClient = new QueryClient({
 });
 
 const container = document.getElementById('root');
+if (!container) throw new Error('Missing #root element');
 
 ReactDOM.createRoot(container).render(
   <React.StrictMode>

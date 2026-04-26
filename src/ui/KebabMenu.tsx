@@ -27,12 +27,12 @@ function KebabMenuInner({
   menuWidth = 176,
   menuMaxHeight = 280,
   emptyFallback = null,
-}) {
-  const visible = (items || []).filter((x) => x && !x.hidden);
+}: any) {
+  const visible = (items || []).filter((x: any) => x && !x.hidden);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
-  const btnRef = useRef(null);
-  const menuRef = useRef(null);
+  const btnRef = useRef<any>(null);
+  const menuRef = useRef<any>(null);
 
   useEffect(() => {
     if (!open || !btnRef.current) return;
@@ -53,7 +53,7 @@ function KebabMenuInner({
 
   useEffect(() => {
     if (!open) return;
-    const handleClickOutside = (e) => {
+    const handleClickOutside = (e: any) => {
       if (
         btnRef.current?.contains(e.target) ||
         menuRef.current?.contains(e.target)
@@ -83,7 +83,7 @@ function KebabMenuInner({
       className="nx-actions-menu"
       style={{ top: pos.top, maxHeight: menuMaxHeight, ...horizontalStyle }}
     >
-      {visible.map((it) => (
+      {visible.map((it: any) => (
         <Button
           key={it.key}
           role="menuitem"
@@ -109,7 +109,7 @@ function KebabMenuInner({
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="true"
-        onClick={() => setOpen((p) => !p)}
+        onClick={() => setOpen((p: any) => !p)}
         className={`nx-actions-kebab${open ? ' nx-actions-kebab--open' : ''}`}
       >
         <KebabIcon />

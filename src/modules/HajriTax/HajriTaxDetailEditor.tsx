@@ -43,24 +43,24 @@ export default function HajriTaxDetailEditor({
   setSalesAmountIncludesVat,
   readOnly = false,
   onSwitchToEdit,
-}) {
+}: any) {
   const dueNet = netPayableDraft >= 0;
 
   /** نفس منطق الجدول: كتابة حتى blur ثم تقريب */
-  const [summaryInline, setSummaryInline] = useState(null);
+  const [summaryInline, setSummaryInline] = useState<any>(null);
 
   useEffect(() => {
     setSummaryInline(null);
   }, [readOnly]);
 
-  const formatSummaryCommitted = (v) => {
+  const formatSummaryCommitted = (v: any) => {
     if (v === '' || v === null || v === undefined) return '';
     const x = Number(v);
     return Number.isFinite(x) ? roundMoney2(x).toFixed(2) : '';
   };
 
-  const renderSectionRows = (rows, sectionTotal, totalVatLabelKey = 'vatColumnVat') =>
-    rows.map((r) => {
+  const renderSectionRows = (rows: any, sectionTotal: any, totalVatLabelKey: any = 'vatColumnVat') =>
+    rows.map((r: any) => {
       const label = lang === 'ar' ? r.labelAr : r.labelEn;
       if (r.isTotal) {
         return (
@@ -113,7 +113,7 @@ export default function HajriTaxDetailEditor({
                 type="checkbox"
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
                 checked={salesAmountIncludesVat}
-                onChange={(e) => setSalesAmountIncludesVat(e.target.checked)}
+                onChange={(e: any) => setSalesAmountIncludesVat(e.target.checked)}
               />
               <span>
                 <span className="font-semibold">{t('taxImportSalesInclusiveLabel')}</span>
@@ -207,13 +207,13 @@ export default function HajriTaxDetailEditor({
                   });
                 }}
                 onBlur={() => {
-                  setSummaryInline((cur) => {
+                  setSummaryInline((cur: any) => {
                     if (cur?.id !== 'prior_adjustments') return cur;
                     updateRow('prior_adjustments', null, cur.text);
                     return null;
                   });
                 }}
-                onChange={(e) => {
+                onChange={(e: any) => {
                   if (readOnly) return;
                   setSummaryInline({ id: 'prior_adjustments', text: e.target.value });
                 }}
@@ -237,13 +237,13 @@ export default function HajriTaxDetailEditor({
                   });
                 }}
                 onBlur={() => {
-                  setSummaryInline((cur) => {
+                  setSummaryInline((cur: any) => {
                     if (cur?.id !== 'balance_carried') return cur;
                     updateRow('balance_carried', null, cur.text);
                     return null;
                   });
                 }}
-                onChange={(e) => {
+                onChange={(e: any) => {
                   if (readOnly) return;
                   setSummaryInline({ id: 'balance_carried', text: e.target.value });
                 }}
@@ -304,7 +304,7 @@ export default function HajriTaxDetailEditor({
                     type="checkbox"
                     className="h-4 w-4 rounded border-noorix-border"
                     checked={showSimulator}
-                    onChange={(e) => setShowSimulator(e.target.checked)}
+                    onChange={(e: any) => setShowSimulator(e.target.checked)}
                   />
                   {t('vatSimulatorToggle')}
                 </label>
@@ -318,7 +318,7 @@ export default function HajriTaxDetailEditor({
                   readOnly={readOnly}
                   label={t('vatSimulatorHint')}
                   value={paymentTargetStr}
-                  onChange={(e) => setPaymentTargetStr(e.target.value)}
+                  onChange={(e: any) => setPaymentTargetStr(e.target.value)}
                   placeholder="0"
                 />
                 {Number.isFinite(paymentTargetParsed) ? (
@@ -365,7 +365,7 @@ export default function HajriTaxDetailEditor({
             readOnly={readOnly}
             label={t('vatNotes')}
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e: any) => setNotes(e.target.value)}
           />
 
           {!readOnly ? (

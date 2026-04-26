@@ -82,7 +82,7 @@ tfoot tr td { font-weight: 700; background: #f1f5f9; }
 `.trim();
 }
 
-function escHtml(v) {
+function escHtml(v: any) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
@@ -153,6 +153,6 @@ ${body}
   if (!win) return;
   win.document.write(html);
   win.document.close();
-  win.onafterprint = () => { try { win.close(); } catch (_) {} };
+  win.onafterprint = () => { try { win.close(); } catch (_: any) {} };
   win.onload = () => setTimeout(() => win.print(), 300);
 }

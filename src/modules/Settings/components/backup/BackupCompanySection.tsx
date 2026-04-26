@@ -14,7 +14,7 @@ export function BackupCompanySection({
   coCfgRes,
   triggerMut,
   saveCoMut,
-}) {
+}: any) {
   return (
     <section className="min-w-0 flex flex-col gap-0" aria-labelledby="backup-company-title">
       <Card padding="sm" className="flex flex-col gap-4 min-w-0">
@@ -28,11 +28,11 @@ export function BackupCompanySection({
                 type="select"
                 label={t('backupCompanyPick')}
                 value={companyId}
-                onChange={(e) => setCompanyId(e.target.value)}
+                onChange={(e: any) => setCompanyId(e.target.value)}
                 disabled={!activeCompanies.length}
                 aria-label={t('backupCompanySection')}
               >
-                {activeCompanies.map((c) => (
+                {activeCompanies.map((c: any) => (
                   <option key={c.id} value={c.id}>
                     {c.nameAr || c.nameEn || c.id}
                   </option>
@@ -65,7 +65,7 @@ export function BackupCompanySection({
             <input
               type="checkbox"
               checked={coForm.enabled}
-              onChange={(e) => setCoForm((p) => ({ ...p, enabled: e.target.checked }))}
+              onChange={(e: any) => setCoForm((p: any) => ({ ...p, enabled: e.target.checked }))}
               disabled={!companyId}
             />
             <span>{t('backupCompanyDailyEnabled')}</span>
@@ -82,8 +82,8 @@ export function BackupCompanySection({
                 max={23}
                 className="noorix-bank-filter"
                 value={coForm.scheduleHour}
-                onChange={(e) =>
-                  setCoForm((p) => ({
+                onChange={(e: any) =>
+                  setCoForm((p: any) => ({
                     ...p,
                     scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
                   }))
@@ -102,8 +102,8 @@ export function BackupCompanySection({
                 max={59}
                 className="noorix-bank-filter"
                 value={coForm.scheduleMinute}
-                onChange={(e) =>
-                  setCoForm((p) => ({
+                onChange={(e: any) =>
+                  setCoForm((p: any) => ({
                     ...p,
                     scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)),
                   }))
@@ -122,8 +122,8 @@ export function BackupCompanySection({
                 max={50}
                 className="noorix-bank-filter"
                 value={coForm.retentionCount}
-                onChange={(e) =>
-                  setCoForm((p) => ({
+                onChange={(e: any) =>
+                  setCoForm((p: any) => ({
                     ...p,
                     retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 5)),
                   }))
@@ -141,7 +141,7 @@ export function BackupCompanySection({
               type="text"
               label={t('backupGdriveScriptUrlLabel')}
               value={coForm.gdriveScriptUrl}
-              onChange={(e) => setCoForm((p) => ({ ...p, gdriveScriptUrl: e.target.value }))}
+              onChange={(e: any) => setCoForm((p: any) => ({ ...p, gdriveScriptUrl: e.target.value }))}
               disabled={!companyId}
               placeholder="https://script.google.com/macros/s/…/exec"
               className="nx-ltr text-left"
@@ -152,7 +152,7 @@ export function BackupCompanySection({
               type="text"
               label={t('backupGdriveFolderLabel')}
               value={coForm.gdriveFolderId}
-              onChange={(e) => setCoForm((p) => ({ ...p, gdriveFolderId: e.target.value }))}
+              onChange={(e: any) => setCoForm((p: any) => ({ ...p, gdriveFolderId: e.target.value }))}
               disabled={!companyId}
               placeholder="folderId أو رابط المجلد"
               className="nx-ltr text-left"

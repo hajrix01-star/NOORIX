@@ -12,25 +12,25 @@ export default function OcrCashierSubmitScreen() {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const isAr = lang === 'ar';
-  const fileRef = useRef();
-  const [preview, setPreview] = useState(null);
-  const [imageBase64, setImageBase64] = useState(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [preview, setPreview] = useState<any>(null);
+  const [imageBase64, setImageBase64] = useState<any>(null);
   const [mimeType, setMimeType] = useState('image/jpeg');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [sentId, setSentId] = useState(null);
+  const [error, setError] = useState<any>(null);
+  const [sentId, setSentId] = useState<any>(null);
 
-  const readFile = useCallback((file) => {
+  const readFile = useCallback((file: any) => {
     if (!file || !file.type.startsWith('image/')) return;
     void compressImageFileToJpegDataUrl(file, { maxDim: 1600, quality: 0.82 })
-      .then((compressed) => {
+      .then((compressed: any) => {
         setPreview(compressed);
         setImageBase64(String(compressed).split(',')[1]);
         setMimeType('image/jpeg');
         setError(null);
         setSentId(null);
       })
-      .catch((err) => setError(err?.message || 'تعذّر قراءة الصورة'));
+      .catch((err: any) => setError(err?.message || 'تعذّر قراءة الصورة'));
   }, []);
 
   const handleSubmit = async () => {
@@ -46,7 +46,7 @@ export default function OcrCashierSubmitScreen() {
       } else {
         setError(res.error || (isAr ? 'فشل الإرسال' : 'Send failed'));
       }
-    } catch (e) {
+    } catch (e: any) {
       setError(e?.message || (isAr ? 'فشل الإرسال' : 'Send failed'));
     } finally {
       setLoading(false);
@@ -87,11 +87,11 @@ export default function OcrCashierSubmitScreen() {
           <button
             type="button"
             className="ocr-upload-zone border-2 border-dashed border-noorix-border rounded-xl p-8 text-center cursor-pointer bg-noorix-bg-muted/50 hover:border-noorix-blue disabled:opacity-50"
-            onClick={() => { (fileRef?.current as HTMLInputElement | null)?.click(); }}
+            onClick={() => { fileRef.current?.click(); }}
             disabled={!activeCompanyId}
           >
             <div className="text-noorix-muted text-[13px]">{t('ocrDragDrop')}</div>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files?.[0])} />
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e: any) => readFile(e.target.files?.[0])} />
           </button>
         )}
 

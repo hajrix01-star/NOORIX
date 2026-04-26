@@ -20,7 +20,7 @@ import {
   supplierAppliesVat,
 } from '../utils/expenseTax';
 
-export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
+export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const defaultYear = useMemo(() => parseInt(getSaudiToday().slice(0, 4), 10), []);
@@ -44,8 +44,8 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   const [error, setError] = useState('');
   /** ╪ح╪╣┘╪د╪ة ╪╢╪▒┘è╪ذ┘è ╪د╪│╪ز╪س┘╪د╪خ┘è ┘┘ç╪░┘ç ╪د┘╪»┘╪╣╪ر ┘┘é╪╖ */
   const [exemptThisPayment, setExemptThisPayment] = useState(false);
-  const [receiptFile, setReceiptFile] = useState(null);
-  const receiptInputRef = useRef(null);
+  const [receiptFile, setReceiptFile] = useState<any>(null);
+  const receiptInputRef = useRef<any>(null);
 
   const { data: expenseLines = [] } = useQuery({
     queryKey: ['expense-lines', companyId],
@@ -58,7 +58,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
 
   const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
 
-  const selectedLine = expenseLines.find((l) => l.id === form.expenseLineId);
+  const selectedLine = expenseLines.find((l: any) => l.id === form.expenseLineId);
 
   const isTaxable = useMemo(
     () => isExpensePaymentTaxable(selectedLine, exemptThisPayment),
@@ -82,25 +82,25 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
     setExemptThisPayment(false);
   }, [form.expenseLineId]);
 
-  const lastExpenseLineIdForPrefillRef = useRef(null);
+  const lastExpenseLineIdForPrefillRef = useRef<any>(null);
   useEffect(() => {
     if (!form.expenseLineId) {
       lastExpenseLineIdForPrefillRef.current = null;
       return;
     }
-    const line = expenseLines.find((l) => l.id === form.expenseLineId);
+    const line = expenseLines.find((l: any) => l.id === form.expenseLineId);
     if (!line) return;
     if (lastExpenseLineIdForPrefillRef.current === form.expenseLineId) return;
     lastExpenseLineIdForPrefillRef.current = form.expenseLineId;
-    setForm((p) => ({
+    setForm((p: any) => ({
       ...p,
       totalAmount: line.referenceAmount != null ? String(line.referenceAmount) : '',
     }));
   }, [form.expenseLineId, expenseLines]);
 
-  const lastCoverageLineIdRef = useRef(null);
+  const lastCoverageLineIdRef = useRef<any>(null);
   useEffect(() => {
-    const line = expenseLines.find((l) => l.id === form.expenseLineId);
+    const line = expenseLines.find((l: any) => l.id === form.expenseLineId);
     if (!line || line.kind !== 'fixed_expense') {
       lastCoverageLineIdRef.current = null;
       return;
@@ -109,7 +109,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
     const yearNum = y ? parseInt(y, 10) : parseInt(getSaudiToday().slice(0, 4), 10);
     const lineChanged = lastCoverageLineIdRef.current !== line.id;
     lastCoverageLineIdRef.current = line.id;
-    setForm((p) => ({
+    setForm((p: any) => ({
       ...p,
       expenseCoverageYear: yearNum,
       ...(lineChanged ? { expenseMonthsCovered: line.installmentIntervalMonths ?? 3 } : {}),
@@ -123,9 +123,9 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
   );
 
   const createMutation = useApiMutation({
-    mutationFn: (body) => createInvoice(body),
+    mutationFn: (body: any) => createInvoice(body),
     showErrorToast: false,
-    onSuccess: async (result) => {
+    onSuccess: async (result: any) => {
       let uploadErr = null;
       const payload = result?.data;
       const inv = payload?.invoice ?? payload;
@@ -134,7 +134,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
         try {
           const up = await uploadInvoiceAttachment(invId, companyId, receiptFile);
           rejectIfApiFailed(up);
-        } catch (e) {
+        } catch (e: any) {
           uploadErr = e?.message || t('invoiceReceiptUploadFailed');
         }
       }
@@ -143,15 +143,15 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
       if (uploadErr) showToast(uploadErr, 'error');
       onSaved?.();
     },
-    onError: (err) => setError(err?.message || '╪ص╪»╪س ╪«╪╖╪ث'),
+    onError: (err: any) => setError(err?.message || '╪ص╪»╪س ╪«╪╖╪ث'),
   });
 
   const vaultOptions = useMemo(
-    () => activeVaults.map((v) => ({ id: v.id, label: v.nameAr || v.nameEn || v.id })),
+    () => activeVaults.map((v: any) => ({ id: v.id, label: v.nameAr || v.nameEn || v.id })),
     [activeVaults],
   );
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     setError('');
     if (!form.expenseLineId) {
@@ -307,11 +307,11 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           type="select"
           label="╪ذ┘╪» ╪د┘┘à╪╡╪▒┘ê┘ *"
           value={form.expenseLineId}
-          onChange={(e) => setForm((p) => ({ ...p, expenseLineId: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, expenseLineId: e.target.value }))}
           required
         >
           <option value="">ظ¤ ╪د╪«╪ز╪▒ ╪د┘╪ذ┘╪» ظ¤</option>
-          {expenseLines.map((l) => (
+          {expenseLines.map((l: any) => (
             <option key={l.id} value={l.id}>
               {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? '╪س╪د╪ذ╪ز' : '┘à╪ز╪║┘è╪▒'})
             </option>
@@ -326,7 +326,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
               : `╪▒┘é┘à ┘╪د╪ز┘ê╪▒╪ر ╪د┘┘à┘ê╪▒╪» ${isTaxable ? '*' : '(╪د╪«╪ز┘è╪د╪▒┘è)'}`
           }
           value={form.supplierInvoiceNumber}
-          onChange={(e) => setForm((p) => ({ ...p, supplierInvoiceNumber: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, supplierInvoiceNumber: e.target.value }))}
           placeholder="╪د┘╪▒┘é┘à ╪د┘┘à┘ê╪ش┘ê╪» ╪╣┘┘ë ┘╪د╪ز┘ê╪▒╪ر ╪د┘┘à┘ê╪▒╪» (┘à╪س╪د┘: INV-2024-001)"
         />
 
@@ -345,7 +345,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
             <input
               type="checkbox"
               checked={exemptThisPayment}
-              onChange={(e) => setExemptThisPayment(e.target.checked)}
+              onChange={(e: any) => setExemptThisPayment(e.target.checked)}
               className="mt-0.5 h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
             />
             <span className="text-[13px] font-semibold text-noorix-text leading-snug">{t('expenseTaxExemptThisPayment')}</span>
@@ -358,7 +358,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           step="0.01"
           min="0.01"
           value={form.totalAmount}
-          onChange={(e) => setForm((p) => ({ ...p, totalAmount: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, totalAmount: e.target.value }))}
           placeholder="0.00"
           required
           disabled={amountLocked}
@@ -399,7 +399,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
               max={2100}
               step={1}
               value={form.expenseCoverageYear}
-              onChange={(e) => setForm((p) => ({ ...p, expenseCoverageYear: Number(e.target.value) }))}
+              onChange={(e: any) => setForm((p: any) => ({ ...p, expenseCoverageYear: Number(e.target.value) }))}
               className="ltr"
               required
             />
@@ -407,7 +407,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
               type="select"
               label={t('expenseCoverageModeLabel')}
               value={form.coverageMode}
-              onChange={(e) => setForm((p) => ({ ...p, coverageMode: e.target.value }))}
+              onChange={(e: any) => setForm((p: any) => ({ ...p, coverageMode: e.target.value }))}
             >
               <option value="quarter">{t('expenseCoverageModeQuarter')}</option>
               <option value="month_range">{t('expenseCoverageModeMonths')}</option>
@@ -417,7 +417,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
                 type="select"
                 label={t('expenseCoverageQuarter')}
                 value={String(form.expenseCoverageQuarter)}
-                onChange={(e) => setForm((p) => ({ ...p, expenseCoverageQuarter: Number(e.target.value) }))}
+                onChange={(e: any) => setForm((p: any) => ({ ...p, expenseCoverageQuarter: Number(e.target.value) }))}
               >
                 <option value="1">Q1</option>
                 <option value="2">Q2</option>
@@ -430,9 +430,9 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
                   type="select"
                   label={t('expenseCoverageMonthStart')}
                   value={String(form.expenseCoverageMonthStart)}
-                  onChange={(e) => setForm((p) => ({ ...p, expenseCoverageMonthStart: Number(e.target.value) }))}
+                  onChange={(e: any) => setForm((p: any) => ({ ...p, expenseCoverageMonthStart: Number(e.target.value) }))}
                 >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  {Array.from({ length: 12 }, (_: any, i: any) => i + 1).map((m: any) => (
                     <option key={m} value={String(m)}>{m}</option>
                   ))}
                 </Input>
@@ -440,9 +440,9 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
                   type="select"
                   label={t('expenseCoverageMonthsCount')}
                   value={String(form.expenseMonthsCovered)}
-                  onChange={(e) => setForm((p) => ({ ...p, expenseMonthsCovered: Number(e.target.value) }))}
+                  onChange={(e: any) => setForm((p: any) => ({ ...p, expenseMonthsCovered: Number(e.target.value) }))}
                 >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  {Array.from({ length: 12 }, (_: any, i: any) => i + 1).map((m: any) => (
                     <option key={m} value={String(m)}>{m}</option>
                   ))}
                 </Input>
@@ -455,7 +455,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           type="date"
           label="╪ز╪د╪▒┘è╪« ╪د┘╪╣┘à┘┘è╪ر *"
           value={form.transactionDate}
-          onChange={(e) => setForm((p) => ({ ...p, transactionDate: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, transactionDate: e.target.value }))}
           required
         />
 
@@ -465,11 +465,11 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
             type="select"
             label={t('selectVault')}
             value={form.primaryVaultId}
-            onChange={(e) => setForm((p) => ({ ...p, primaryVaultId: e.target.value }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, primaryVaultId: e.target.value }))}
             required
           >
             <option value="">ظ¤ {t('selectVault')} ظ¤</option>
-            {vaultOptions.map((v) => (
+            {vaultOptions.map((v: any) => (
               <option key={v.id} value={v.id}>{v.label}</option>
             ))}
           </Input>
@@ -494,10 +494,10 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
                 type="select"
                 label={t('secondVaultSelectLabel')}
                 value={secondVaultId}
-                onChange={(e) => setSecondVaultId(e.target.value)}
+                onChange={(e: any) => setSecondVaultId(e.target.value)}
               >
                 <option value="">ظ¤ {t('selectVault')} ظ¤</option>
-                {vaultOptions.map((v) => (
+                {vaultOptions.map((v: any) => (
                   <option key={v.id} value={v.id} disabled={v.id === form.primaryVaultId}>{v.label}</option>
                 ))}
               </Input>
@@ -507,7 +507,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
                 min="0.01"
                 label={t('secondVaultAmountLabel')}
                 value={secondAmount}
-                onChange={(e) => setSecondAmount(e.target.value)}
+                onChange={(e: any) => setSecondAmount(e.target.value)}
                 className="ltr"
               />
               <Button
@@ -532,7 +532,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           multiline
           label="┘à┘╪د╪ص╪╕╪د╪ز (┘┘╪«╪»┘à╪ر ┘ê╪▒┘é┘à┘ç╪د)"
           value={form.notes}
-          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+          onChange={(e: any) => setForm((p: any) => ({ ...p, notes: e.target.value }))}
           placeholder="┘à╪س╪د┘: ┘â┘ç╪▒╪ذ╪د╪ة - ╪╣╪»╪د╪» 12345 - 1,200 SR"
           rows={3}
         />
@@ -545,7 +545,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
             className="text-[13px] max-w-full"
-            onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+            onChange={(e: any) => setReceiptFile(e.target.files?.[0] || null)}
           />
           {receiptFile ? (
             <span className="text-[11px] text-noorix-muted truncate" title={receiptFile.name}>{receiptFile.name}</span>
@@ -556,7 +556,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }) {
           <input
             type="checkbox"
             checked={!!form.warrantyFollowUp}
-            onChange={(e) => setForm((p) => ({ ...p, warrantyFollowUp: e.target.checked }))}
+            onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyFollowUp: e.target.checked }))}
             className="mt-0.5 h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
           />
           <span className="text-[13px] font-semibold text-noorix-text leading-snug">{t('warrantyFollowUpStack')}</span>

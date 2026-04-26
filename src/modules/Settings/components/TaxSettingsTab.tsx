@@ -35,7 +35,7 @@ export default function TaxSettingsTab() {
   }, [company]);
 
   const updateMutation = useApiMutation({
-    mutationFn: (body) => updateCompany(activeCompanyId, body),
+    mutationFn: (body: any) => updateCompany(activeCompanyId, body),
     invalidateQueries: [['company', activeCompanyId], ['companies']],
     showErrorToast: false,
   });
@@ -88,7 +88,7 @@ export default function TaxSettingsTab() {
               <input
                 type="checkbox"
                 checked={vatEnabled}
-                onChange={(e) => setVatEnabled(e.target.checked)}
+                onChange={(e: any) => setVatEnabled(e.target.checked)}
               />
               <span className="text-[13px] text-noorix-muted">{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
             </label>
@@ -103,7 +103,7 @@ export default function TaxSettingsTab() {
               max={100}
               step={0.01}
               value={vatRate}
-              onChange={(e) => setVatRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+              onChange={(e: any) => setVatRate(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
             />
             <p className="text-[12px] text-noorix-muted mt-1.5 mb-0">
               القيمة الافتراضية 15% (ZATCA / السعودية)

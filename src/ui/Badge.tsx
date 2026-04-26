@@ -21,14 +21,14 @@ const SIZE_CLASS = {
   md: 'text-[12px] px-2.5 py-0.5',
 };
 
-export default function Badge({ color = 'gray', size = 'md', dot = false, className = '', children, ...rest }) {
-  const palette = BADGE_COLORS[color] ?? BADGE_COLORS.gray;
+export default function Badge({ color = 'gray', size = 'md', dot = false, className = '', children, ...rest }: any) {
+  const palette = BADGE_COLORS[color as keyof typeof BADGE_COLORS] ?? BADGE_COLORS.gray;
 
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded-full font-semibold whitespace-nowrap',
-        SIZE_CLASS[size] ?? SIZE_CLASS.md,
+        SIZE_CLASS[size as keyof typeof SIZE_CLASS] ?? SIZE_CLASS.md,
         className,
       )}
       style={{ background: palette.bg, color: palette.color }}
@@ -46,7 +46,7 @@ export default function Badge({ color = 'gray', size = 'md', dot = false, classN
   );
 }
 
-Badge.fromStatus = function fromStatus(status, map) {
+Badge.fromStatus = function fromStatus(status: any, map: any) {
   const entry = map?.[status];
   return { color: entry?.color ?? 'gray', children: entry?.label ?? status ?? '—' };
 };

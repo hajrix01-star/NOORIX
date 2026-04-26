@@ -68,16 +68,16 @@ export default function EmployeeProfileScreen() {
     Array.isArray(userPermissions) &&
     userPermissions.includes('EMPLOYEES_WRITE') &&
     userPermissions.includes('HR_WRITE');
-  const activeCompany = companies?.find((c) => c.id === companyId);
+  const activeCompany = companies?.find((c: any) => c.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
   const [showAdvance, setShowAdvance] = useState(false);
-  const [careerModal, setCareerModal] = useState(null);
-  const [docModal, setDocModal] = useState(null);
+  const [careerModal, setCareerModal] = useState<any>(null);
+  const [docModal, setDocModal] = useState<any>(null);
   const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
-  const [editProfileLeave, setEditProfileLeave] = useState(null);
-  const docFileRef = React.useRef(null);
+  const [editProfileLeave, setEditProfileLeave] = useState<any>(null);
+  const docFileRef = React.useRef<any>(null);
 
   const { data: employee, isLoading, error } = useEmployee(id, companyId);
   const { createAdvance } = useEmployees(companyId, { includeTerminated: true });
@@ -116,7 +116,7 @@ export default function EmployeeProfileScreen() {
       if (!res?.success) return [];
       const d = res.data;
       const items = Array.isArray(d) ? d : d?.items ?? [];
-      return [...items].sort((a, b) => {
+      return [...items].sort((a: any, b: any) => {
         const ad = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
         const bd = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
         return bd - ad;
@@ -128,10 +128,10 @@ export default function EmployeeProfileScreen() {
   const { data: invoicesData } = useQuery({
     queryKey: ['invoices', companyId, 'advance', id],
     queryFn: async () => {
-      const res = await getInvoices(companyId, null, null, 1, 100, null, id, 'advance');
+      const res = await getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'advance');
       if (!res?.success) return { items: [] };
       const items = res.data?.items ?? [];
-      return { items: items.filter((inv) => inv.kind === 'advance') };
+      return { items: items.filter((inv: any) => inv.kind === 'advance') };
     },
     enabled: !!companyId && !!id,
   });
@@ -140,24 +140,24 @@ export default function EmployeeProfileScreen() {
     queryKey: ['invoices', companyId, 'hr-all', id],
     queryFn: async () => {
       const [advRes, hrRes, salRes] = await Promise.all([
-        getInvoices(companyId, null, null, 1, 100, null, id, 'advance', null, null, null, null, null, null, false),
-        getInvoices(companyId, null, null, 1, 100, null, id, 'hr_expense', null, null, null, null, null, null, false),
-        getInvoices(companyId, null, null, 1, 100, null, id, 'salary', null, null, null, null, null, null, false),
+        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'advance', undefined, undefined, undefined, undefined, undefined, undefined, false),
+        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'hr_expense', undefined, undefined, undefined, undefined, undefined, undefined, false),
+        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'salary', undefined, undefined, undefined, undefined, undefined, undefined, false),
       ]);
       const items = [];
       if (advRes?.success) {
         items.push(
-          ...(advRes.data?.items ?? []).filter((i) => i.kind === 'advance' && i.status !== 'cancelled'),
+          ...(advRes.data?.items ?? []).filter((i: any) => i.kind === 'advance' && i.status !== 'cancelled'),
         );
       }
       if (hrRes?.success) {
         items.push(
-          ...(hrRes.data?.items ?? []).filter((i) => i.kind === 'hr_expense' && i.status !== 'cancelled'),
+          ...(hrRes.data?.items ?? []).filter((i: any) => i.kind === 'hr_expense' && i.status !== 'cancelled'),
         );
       }
       if (salRes?.success) {
         items.push(
-          ...(salRes.data?.items ?? []).filter((i) => i.kind === 'salary' && i.status !== 'cancelled'),
+          ...(salRes.data?.items ?? []).filter((i: any) => i.kind === 'salary' && i.status !== 'cancelled'),
         );
       }
       return { items };
@@ -190,6 +190,7 @@ export default function EmployeeProfileScreen() {
   const { data: payrollItems = [] } = useQuery({
     queryKey: ['payroll-run-items', companyId, id],
     queryFn: async () => {
+      if (!id) return [];
       const res = await getEmployeePayrollItems(companyId, id);
       if (!res?.success) return [];
       return Array.isArray(res.data) ? res.data : res.data?.items ?? [];
@@ -200,7 +201,7 @@ export default function EmployeeProfileScreen() {
   const careerTableRows = useMemo(() => buildCareerTableRows(movements, t), [movements, t]);
   const advances = invoicesData?.items ?? [];
   const customAllowanceTotal = useMemo(
-    () => customAllowances.reduce((sum, row) => sum + (Number(row.amount) || 0), 0),
+    () => customAllowances.reduce((sum: any, row: any) => sum + (Number(row.amount) || 0), 0),
     [customAllowances],
   );
 
@@ -211,9 +212,9 @@ export default function EmployeeProfileScreen() {
   const queryClient = useQueryClient();
 
   const permanentDeleteEmployeeMut = useApiMutation({
-    mutationFn: ({ empId }) => deleteEmployee(empId, companyId),
+    mutationFn: ({ empId }: any) => deleteEmployee(empId, companyId),
     successToast: () => t('employeeDeletedPermanent'),
-    errorToast: (e) => e?.message || t('updateFailed'),
+    errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee', id, companyId] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
@@ -242,7 +243,7 @@ export default function EmployeeProfileScreen() {
     queryClient.invalidateQueries({ queryKey: ['payroll-run-items', companyId, id] });
   };
 
-  const handleUploadDoc = async (e) => {
+  const handleUploadDoc = async (e: any) => {
     const file = e?.target?.files?.[0];
     if (!file || !id || !companyId) return;
     setUploading(true);
@@ -256,7 +257,7 @@ export default function EmployeeProfileScreen() {
       assertApiOk(res, t('saveFailed'));
       invalidateAll();
       showToast(t('documentUploaded'), 'success');
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || t('saveFailed'), 'error');
     } finally {
       setUploading(false);
@@ -264,10 +265,10 @@ export default function EmployeeProfileScreen() {
     }
   };
 
-  const handleDownloadDoc = async (docId) => {
+  const handleDownloadDoc = async (docId: any) => {
     try {
       await downloadDocument(docId, companyId);
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || 'فشل التحميل', 'error');
     }
   };

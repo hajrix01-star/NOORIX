@@ -13,7 +13,7 @@ export function InvoicesListPageHeader({
   displayedTotal,
   onExportExcel,
   onPrintInvoices,
-}) {
+}: any) {
   return (
     <>
       <div>

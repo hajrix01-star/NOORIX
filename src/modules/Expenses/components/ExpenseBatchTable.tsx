@@ -24,7 +24,7 @@ const EMPTY_ROW = () => ({
   exemptThisPayment: false,
 });
 
-export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
+export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any) {
   const { lang, t } = useTranslation();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
@@ -43,9 +43,9 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
   const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
 
   const validRows = useMemo(() => {
-    return rows.filter((r) => {
+    return rows.filter((r: any) => {
       if (!r.expenseLineId || Number(r.totalInclusive) <= 0) return false;
-      const line = expenseLines.find((l) => l.id === r.expenseLineId);
+      const line = expenseLines.find((l: any) => l.id === r.expenseLineId);
       const taxable = isExpensePaymentTaxable(line, r.exemptThisPayment);
       if (taxable && !r.supplierInvoiceNumber?.trim()) return false;
       return true;
@@ -57,7 +57,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     let totalTax = 0;
     let gross = 0;
     for (const r of validRows) {
-      const line = expenseLines.find((l) => l.id === r.expenseLineId);
+      const line = expenseLines.find((l: any) => l.id === r.expenseLineId);
       const taxable = isExpensePaymentTaxable(line, r.exemptThisPayment);
       const ti = parseFloat(r.totalInclusive);
       gross += Number.isFinite(ti) ? ti : 0;
@@ -79,8 +79,8 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         transactionDate: batchDate,
         vaultId,
         idempotencyKey,
-        items: validRows.map((r) => {
-          const line = expenseLines.find((l) => l.id === r.expenseLineId);
+        items: validRows.map((r: any) => {
+          const line = expenseLines.find((l: any) => l.id === r.expenseLineId);
           const lineName = line?.nameAr || line?.nameEn || line?.name || '';
           const userNote = r.notes?.trim();
           const autoNote = lineName
@@ -101,7 +101,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     },
     successToast: false,
     showErrorToast: true,
-    errorToast: (e) => e?.message || t('saveFailedGeneric'),
+    errorToast: (e: any) => e?.message || t('saveFailedGeneric'),
     onSuccess: () => {
       invalidateOnFinancialMutation(queryClient);
       setRows([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
@@ -109,9 +109,9 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     },
   });
 
-  const updateRow = (i, updates) => {
-    setRows((p) =>
-      p.map((r, idx) => {
+  const updateRow = (i: any, updates: any) => {
+    setRows((p: any) =>
+      p.map((r: any, idx: any) => {
         if (idx !== i) return r;
         const next = { ...r, ...updates };
         if (Object.prototype.hasOwnProperty.call(updates, 'expenseLineId') && updates.expenseLineId !== r.expenseLineId) {
@@ -122,11 +122,11 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     );
   };
 
-  const addRow = () => setRows((p) => [...p, EMPTY_ROW()]);
-  const removeRow = (i) => setRows((p) => (p.length <= 1 ? [EMPTY_ROW()] : p.filter((_, idx) => idx !== i)));
+  const addRow = () => setRows((p: any) => [...p, EMPTY_ROW()]);
+  const removeRow = (i: any) => setRows((p: any) => (p.length <= 1 ? [EMPTY_ROW()] : p.filter((_: any, idx: any) => idx !== i)));
 
-  const tableData = rows.map((r, i) => {
-    const line = expenseLines.find((l) => l.id === r.expenseLineId);
+  const tableData = rows.map((r: any, i: any) => {
+    const line = expenseLines.find((l: any) => l.id === r.expenseLineId);
     const taxable = isExpensePaymentTaxable(line, r.exemptThisPayment);
     const { net, tax } = splitTaxFromTotalAsNumbers(Number(r.totalInclusive), taxable);
     return {
@@ -141,9 +141,9 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
     };
   });
 
-  const renderMobileCard = (row) => {
+  const renderMobileCard = (row: any) => {
     const i = row.index - 1;
-    const line = expenseLines.find((l) => l.id === row.expenseLineId);
+    const line = expenseLines.find((l: any) => l.id === row.expenseLineId);
     const taxable = isExpensePaymentTaxable(line, row.exemptThisPayment);
     const needInv = taxable;
     const showExempt = canExemptThisExpensePayment(line);
@@ -160,10 +160,10 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
           type="select"
           size="sm"
           value={row.expenseLineId}
-          onChange={(e) => updateRow(i, { expenseLineId: e.target.value })}
+          onChange={(e: any) => updateRow(i, { expenseLineId: e.target.value })}
         >
           <option value="">— {lang === 'en' ? 'Select' : 'اختر'} —</option>
-          {expenseLines.map((l) => (
+          {expenseLines.map((l: any) => (
             <option key={l.id} value={l.id}>
               {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? (lang === 'en' ? 'Fixed' : 'ثابت') : (lang === 'en' ? 'Variable' : 'متغير')})
             </option>
@@ -184,7 +184,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
             <input
               type="checkbox"
               checked={!!row.exemptThisPayment}
-              onChange={(e) => updateRow(i, { exemptThisPayment: e.target.checked })}
+              onChange={(e: any) => updateRow(i, { exemptThisPayment: e.target.checked })}
               className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
               aria-label={t('expenseBatchTaxExemptHint')}
             />
@@ -196,7 +196,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
           type="text"
           size="sm"
           value={row.supplierInvoiceNumber}
-          onChange={(e) => updateRow(i, { supplierInvoiceNumber: e.target.value })}
+          onChange={(e: any) => updateRow(i, { supplierInvoiceNumber: e.target.value })}
           placeholder={needInv ? (lang === 'en' ? 'Required if taxable' : 'مطلوب إن خاضع') : lang === 'en' ? 'Optional' : 'اختياري'}
         />
         <Input
@@ -205,7 +205,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
           step="0.01"
           min="0"
           value={row.totalInclusive}
-          onChange={(e) => updateRow(i, { totalInclusive: e.target.value })}
+          onChange={(e: any) => updateRow(i, { totalInclusive: e.target.value })}
           placeholder="0.00"
         />
         <div className="nx-mc__grid nx-mc__grid--2">
@@ -223,14 +223,14 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
           type="text"
           size="sm"
           value={row.notes}
-          onChange={(e) => updateRow(i, { notes: e.target.value })}
+          onChange={(e: any) => updateRow(i, { notes: e.target.value })}
           placeholder={lang === 'en' ? 'Optional' : 'اختياري'}
         />
         <label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-noorix-text">
           <input
             type="checkbox"
             checked={!!row.warrantyFollowUp}
-            onChange={(e) => updateRow(i, { warrantyFollowUp: e.target.checked })}
+            onChange={(e: any) => updateRow(i, { warrantyFollowUp: e.target.checked })}
             className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
             aria-label={t('warrantyFollowUpColHint')}
           />
@@ -241,20 +241,20 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
   };
 
   const columns = [
-    { key: 'index', label: '#', shrink: true, width: '3%', align: 'center', render: (v) => <span className="nx-cell-muted">{v}</span> },
+    { key: 'index', label: '#', shrink: true, width: '3%', align: 'center', render: (v: any) => <span className="nx-cell-muted">{v}</span> },
     {
       key: 'expenseLineId',
       label: 'بند المصروف (يُملأ تلقائياً)',
       width: '17%',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <Input
           type="select"
           size="sm"
           value={row.expenseLineId}
-          onChange={(e) => updateRow(row.index - 1, { expenseLineId: e.target.value })}
+          onChange={(e: any) => updateRow(row.index - 1, { expenseLineId: e.target.value })}
         >
           <option value="">— اختر —</option>
-          {expenseLines.map((l) => (
+          {expenseLines.map((l: any) => (
             <option key={l.id} value={l.id}>
               {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? 'ثابت' : 'متغير'})
             </option>
@@ -262,15 +262,15 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         </Input>
       ),
     },
-    { key: 'categoryName', label: 'الفئة', width: '8%', render: (v) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={v}>{v}</span> },
-    { key: 'supplierName', label: 'المورد', width: '9%', render: (v) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={v}>{v}</span> },
+    { key: 'categoryName', label: 'الفئة', width: '8%', render: (v: any) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={v}>{v}</span> },
+    { key: 'supplierName', label: 'المورد', width: '9%', render: (v: any) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={v}>{v}</span> },
     {
       key: 'exemptThisPayment',
       label: t('expenseBatchTaxExemptShort'),
       width: '5%',
       align: 'center',
-      render: (_, row) => {
-        const line = expenseLines.find((l) => l.id === row.expenseLineId);
+      render: (_: any, row: any) => {
+        const line = expenseLines.find((l: any) => l.id === row.expenseLineId);
         const show = canExemptThisExpensePayment(line);
         if (!show) return <span className="nx-cell-muted text-[11px]">—</span>;
         return (
@@ -278,7 +278,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
             <input
               type="checkbox"
               checked={!!row.exemptThisPayment}
-              onChange={(e) => updateRow(row.index - 1, { exemptThisPayment: e.target.checked })}
+              onChange={(e: any) => updateRow(row.index - 1, { exemptThisPayment: e.target.checked })}
               className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
               title={t('expenseBatchTaxExemptHint')}
               aria-label={`${t('expenseBatchTaxExemptHint')} — ${row.index}`}
@@ -291,15 +291,15 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
       key: 'supplierInvoiceNumber',
       label: 'رقم فاتورة المورد',
       width: '9%',
-      render: (v, row) => {
-        const line = expenseLines.find((l) => l.id === row.expenseLineId);
+      render: (v: any, row: any) => {
+        const line = expenseLines.find((l: any) => l.id === row.expenseLineId);
         const needInv = isExpensePaymentTaxable(line, row.exemptThisPayment);
         return (
           <Input
             type="text"
             size="sm"
             value={v}
-            onChange={(e) => updateRow(row.index - 1, { supplierInvoiceNumber: e.target.value })}
+            onChange={(e: any) => updateRow(row.index - 1, { supplierInvoiceNumber: e.target.value })}
             placeholder={needInv ? (lang === 'en' ? 'Required if taxable' : 'مطلوب إن خاضع') : lang === 'en' ? 'Optional' : 'اختياري'}
           />
         );
@@ -309,29 +309,29 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
       key: 'totalInclusive',
       label: 'الإجمالي',
       width: '8%',
-      render: (v, row) => (
+      render: (v: any, row: any) => (
         <Input
           type="number"
           step="0.01"
           min="0"
           value={v}
-          onChange={(e) => updateRow(row.index - 1, { totalInclusive: e.target.value })}
+          onChange={(e: any) => updateRow(row.index - 1, { totalInclusive: e.target.value })}
           placeholder="0.00"
         />
       ),
     },
-    { key: 'net', label: 'الصافي', numeric: true, width: '7%', align: 'center', render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
-    { key: 'tax', label: 'الضريبة', numeric: true, width: '7%', align: 'center', render: (v) => <FmtNum n={v} className="nx-cell-num text-noorix-amber" /> },
+    { key: 'net', label: 'الصافي', numeric: true, width: '7%', align: 'center', render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" /> },
+    { key: 'tax', label: 'الضريبة', numeric: true, width: '7%', align: 'center', render: (v: any) => <FmtNum n={v} className="nx-cell-num text-noorix-amber" /> },
     {
       key: 'notes',
       label: 'ملاحظات',
       width: '10%',
-      render: (v, row) => (
+      render: (v: any, row: any) => (
         <Input
           type="text"
           size="sm"
           value={v}
-          onChange={(e) => updateRow(row.index - 1, { notes: e.target.value })}
+          onChange={(e: any) => updateRow(row.index - 1, { notes: e.target.value })}
           placeholder="اختياري"
         />
       ),
@@ -341,12 +341,12 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
       label: t('warrantyFollowUpCol'),
       width: '7%',
       align: 'center',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <label className="inline-flex items-center justify-center gap-1 cursor-pointer">
           <input
             type="checkbox"
             checked={!!row.warrantyFollowUp}
-            onChange={(e) => updateRow(row.index - 1, { warrantyFollowUp: e.target.checked })}
+            onChange={(e: any) => updateRow(row.index - 1, { warrantyFollowUp: e.target.checked })}
             className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
             title={t('warrantyFollowUpColHint')}
             aria-label={`${t('warrantyFollowUpCol')} — ${row.index}`}
@@ -360,7 +360,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
       label: t('actions'),
       align: 'center',
       width: '11%',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <div className="noorix-actions-row flex flex-wrap justify-center">
           <Button variant="danger" size="sm" onClick={() => removeRow(row.index - 1)}>
             حذف
@@ -387,7 +387,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
             type="date"
             size="sm"
             value={batchDate}
-            onChange={(e) => setBatchDate(e.target.value)}
+            onChange={(e: any) => setBatchDate(e.target.value)}
           />
           <div className="min-w-0 w-full sm:w-[min(100%,14rem)] sm:max-w-xs">
             <Input
@@ -395,10 +395,10 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
               type="select"
               size="sm"
               value={vaultId}
-              onChange={(e) => setVaultId(e.target.value)}
+              onChange={(e: any) => setVaultId(e.target.value)}
             >
               <option value="">— اختر الخزينة —</option>
-              {activeVaults.map((v) => (
+              {activeVaults.map((v: any) => (
                 <option key={v.id} value={v.id}>{v.nameAr || v.nameEn}</option>
               ))}
             </Input>
@@ -414,7 +414,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }) {
         innerPadding={8}
         columns={columns}
         data={tableData}
-        keyExtractor={(r) => r.key}
+        keyExtractor={(r: any) => r.key}
         title={t('expenseBatchTab')}
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{rows.length}</span>}
         showSearchInHeader={false}

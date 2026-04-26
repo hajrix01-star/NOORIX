@@ -4,8 +4,8 @@
 import { useQueries } from '@tanstack/react-query';
 import { getDailySalesSummaries, throwIfApiFailed } from '../services/api';
 
-function monthBounds(y, month1to12) {
-  const pad = (n) => String(n).padStart(2, '0');
+function monthBounds(y: any, month1to12: any) {
+  const pad = (n: any) => String(n).padStart(2, '0');
   const start = `${y}-${pad(month1to12)}-01`;
   const endD = new Date(y, month1to12, 0);
   const end = `${endD.getFullYear()}-${pad(endD.getMonth() + 1)}-${pad(endD.getDate())}`;
@@ -15,16 +15,17 @@ function monthBounds(y, month1to12) {
 /**
  * @param {{ companyIds: string[], year: number, month: number | null, enabled?: boolean }} params
  */
-export function useOwnerDailySales({ companyIds, year, month, enabled: externalEnabled = true }) {
+export function useOwnerDailySales({ companyIds, year, month, enabled: externalEnabled = true }: any) {
   const bounds = month && year ? monthBounds(year, month) : null;
 
   const ids = companyIds || [];
   const enabled = externalEnabled && !!(bounds && ids.length && month);
 
   const queries = useQueries({
-    queries: ids.map((companyId) => ({
+    queries: ids.map((companyId: any) => ({
       queryKey: ['owner-daily-sales', companyId, year, month],
       queryFn: async () => {
+        if (!bounds) throw new Error('missing month bounds');
         const { start, end } = bounds;
         const pageSize = 150;
         let page = 1;
@@ -54,16 +55,16 @@ export function useOwnerDailySales({ companyIds, year, month, enabled: externalE
     })),
   });
 
-  const isLoading = enabled && queries.some((q) => q.isLoading);
-  const isError = enabled && queries.some((q) => q.isError);
-  const error = queries.find((q) => q.error)?.error;
+  const isLoading = enabled && queries.some((q: any) => q.isLoading);
+  const isError = enabled && queries.some((q: any) => q.isError);
+  const error = queries.find((q: any) => q.error)?.error;
 
-  const itemsByCompanyId = {};
-  ids.forEach((cid, i) => {
+  const itemsByCompanyId: Record<string, any> = {};
+  ids.forEach((cid: any, i: any) => {
     itemsByCompanyId[cid] = queries[i]?.data ?? [];
   });
 
-  const dataStamp = queries.reduce((acc, q) => acc + (Number(q.dataUpdatedAt) || 0), 0);
+  const dataStamp = queries.reduce((acc: any, q: any) => acc + (Number(q.dataUpdatedAt) || 0), 0);
 
   return { itemsByCompanyId, bounds, isLoading, isError, error, enabled, dataStamp };
 }

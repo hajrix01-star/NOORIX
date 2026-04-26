@@ -4,7 +4,7 @@
  */
 
 /** تحويل نص الوحدة إلى وحدة الطلبات في الـ API */
-export function inferPresetOrderUnitEnum(unitLabel) {
+export function inferPresetOrderUnitEnum(unitLabel: any) {
   const s = String(unitLabel ?? '').trim();
   if (!s || s === '-' || s === '—') return 'piece';
   const t = s.replace(/\s+/g, ' ');
@@ -18,7 +18,7 @@ export function inferPresetOrderUnitEnum(unitLabel) {
 }
 
 /** حقول variants + lastPrice لإنشاء/تحديث الصنف */
-export function presetRowToProductPayload(row) {
+export function presetRowToProductPayload(row: any) {
   const price = Number(row.avgPrice);
   const priceStr = Number.isFinite(price) ? price.toFixed(2) : '0';
   let size = String(row.unitLabel ?? '').trim();

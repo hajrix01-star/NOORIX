@@ -31,7 +31,7 @@ const COLUMN_FIELD_DEFS = [
   { key: 'notesCol', labelKey: 'bankMapColNotes', required: false, badgeBg: 'var(--noorix-violet-15)', badgeColor: 'var(--noorix-accent-violet)' },
 ];
 
-function normalizeDateForInput(v) {
+function normalizeDateForInput(v: any) {
   if (!v) return '';
   const s = String(v).trim().slice(0, 10);
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
@@ -50,10 +50,10 @@ function emptyColumnMap() {
   };
 }
 
-export default function BankStatementMappingModal({ statement, companyId, onClose, onConfirm, showToast }) {
+export default function BankStatementMappingModal({ statement, companyId, onClose, onConfirm, showToast }: any) {
   const { t } = useTranslation();
   const hasFullRaw = Array.isArray(statement?._fullRaw) && statement._fullRaw.length > 0;
-  const headerAiFetchedRef = useRef(null);
+  const headerAiFetchedRef = useRef<any>(null);
 
   useEffect(() => {
     headerAiFetchedRef.current = null;
@@ -91,10 +91,10 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     const ar = autoDetectRows(raw);
     setHeaderRow(ar.headerRow);
     setDataStartRow(ar.dataStartRow);
-    setCompanyName((p) => (p.trim() ? p : sanitizeCustomerName(ar.customerName) || ''));
-    setBankName((p) => (p.trim() ? p : sanitizeBankName(ar.bankName) || ''));
-    setStartDate((p) => p || normalizeDateForInput(ar.periodFrom) || '');
-    setEndDate((p) => p || normalizeDateForInput(ar.periodTo) || '');
+    setCompanyName((p: any) => (p.trim() ? p : sanitizeCustomerName(ar.customerName) || ''));
+    setBankName((p: any) => (p.trim() ? p : sanitizeBankName(ar.bankName) || ''));
+    setStartDate((p: any) => p || normalizeDateForInput(ar.periodFrom) || '');
+    setEndDate((p: any) => p || normalizeDateForInput(ar.periodTo) || '');
     if (!raw[ar.headerRow]) return;
     const det = autoDetectColumns(raw, ar.headerRow, ar.dataStartRow);
     setColumnMapping({
@@ -123,19 +123,19 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     let cancelled = false;
     setAiHeaderLoading(true);
     bankStatementSuggestHeaderMetadata(companyId, raw)
-      .then((res) => {
+      .then((res: any) => {
         if (cancelled || !res?.success) return;
         const d = res.data ?? res;
         if (d.customerName) {
           const cleanCustomer = sanitizeCustomerName(d.customerName);
-          if (cleanCustomer) setCompanyName((prev) => (prev && prev.trim() ? prev : cleanCustomer));
+          if (cleanCustomer) setCompanyName((prev: any) => (prev && prev.trim() ? prev : cleanCustomer));
         }
         if (d.bankName) {
           const cleanBank = sanitizeBankName(d.bankName);
-          if (cleanBank) setBankName((prev) => (prev && prev.trim() ? prev : cleanBank));
+          if (cleanBank) setBankName((prev: any) => (prev && prev.trim() ? prev : cleanBank));
         }
-        if (d.periodFrom) setStartDate((prev) => prev || normalizeDateForInput(d.periodFrom));
-        if (d.periodTo) setEndDate((prev) => prev || normalizeDateForInput(d.periodTo));
+        if (d.periodFrom) setStartDate((prev: any) => prev || normalizeDateForInput(d.periodFrom));
+        if (d.periodTo) setEndDate((prev: any) => prev || normalizeDateForInput(d.periodTo));
       })
       .catch(() => {})
       .finally(() => {
@@ -146,10 +146,10 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     };
   }, [statement?.id, companyId, raw.length]);
 
-  const colCount = raw.length ? Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0))) : 0;
+  const colCount = raw.length ? Math.max(...raw.map((r: any) => (Array.isArray(r) ? r.length : 0))) : 0;
   const headers = useMemo(() => {
     const row = raw[headerRow] || [];
-    return Array.from({ length: colCount }, (_, i) => ({
+    return Array.from({ length: colCount }, (_: any, i: any) => ({
       index: i,
       label: String(row[i] ?? '').trim() || `${t('bankStatementColIgnore')} ${i + 1}`,
     }));
@@ -159,7 +159,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     () =>
       raw
         .slice(dataStartRow, dataStartRow + 8)
-        .filter((r) => r && r.some((c) => c !== '' && c != null)),
+        .filter((r: any) => r && r.some((c: any) => c !== '' && c != null)),
     [raw, dataStartRow],
   );
   const previewTableMinWidth = useMemo(
@@ -170,17 +170,17 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
   const totalDataRows = useMemo(() => countDataRowsFrom(raw, dataStartRow), [raw, dataStartRow]);
 
   const getColumnBadge = useCallback(
-    (colIndex) => {
+    (colIndex: any) => {
       for (const def of COLUMN_FIELD_DEFS) {
-        if (columnMapping[def.key] === colIndex) return def;
+        if ((columnMapping as Record<string, number>)[def.key] === colIndex) return def;
       }
       return null;
     },
     [columnMapping],
   );
 
-  const setCol = (key, value) =>
-    setColumnMapping((prev) => ({ ...prev, [key]: value === '' || value == null ? -1 : parseInt(value, 10) }));
+  const setCol = (key: any, value: any) =>
+    setColumnMapping((prev: any) => ({ ...prev, [key]: value === '' || value == null ? -1 : parseInt(value, 10) }));
 
   /** مطابق requiredMapped: التاريخ، الوصف، المدين، الدائن */
   const canConfirm = useMemo(() => {
@@ -221,14 +221,14 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
       } else {
         showToast(res?.error || 'فشل التأكيد', 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || 'فشل التأكيد', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const formatCell = (cell) => {
+  const formatCell = (cell: any) => {
     if (cell instanceof Date) return formatSaudiDate(cell);
     return String(cell ?? '').slice(0, 48);
   };
@@ -293,32 +293,32 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
               type="text"
               label={t('bankMapCustomerLabel')}
               value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
+              onChange={(e: any) => setCompanyName(e.target.value)}
               placeholder={t('bankMapCustomerPlaceholder')}
             />
             <Input
               type="text"
               label={t('bankMapBankLabel')}
               value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
+              onChange={(e: any) => setBankName(e.target.value)}
               placeholder={t('bankMapBankPlaceholder')}
             />
             <Input
               type="date"
               label={t('bankMapPeriodFrom')}
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e: any) => setStartDate(e.target.value)}
             />
             <Input
               type="date"
               label={t('bankMapPeriodTo')}
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e: any) => setEndDate(e.target.value)}
             />
           </div>
         </div>
 
-        {!Object.values(columnMapping).some((v) => typeof v === 'number' && v >= 0) && raw.length > 0 ? (
+        {!Object.values(columnMapping).some((v: any) => typeof v === 'number' && v >= 0) && raw.length > 0 ? (
           <div
             className="rounded-lg text-[13px] mb-3 p-[10px]"
             style={{
@@ -338,22 +338,22 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
               gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
             }}
           >
-            {COLUMN_FIELD_DEFS.map((col) => (
+            {COLUMN_FIELD_DEFS.map((col: any) => (
               <div key={col.key}>
                 <label className="flex items-center gap-6 text-[12px] font-semibold mb-1">
                   <span>
                     {t(col.labelKey)}
                     {col.required ? <span style={{ color: 'var(--noorix-error)' }}> *</span> : null}
                   </span>
-                  {columnMapping[col.key] >= 0 ? <span className="text-noorix-green">✓</span> : null}
+                  {(columnMapping as Record<string, number>)[col.key] >= 0 ? <span className="text-noorix-green">✓</span> : null}
                 </label>
                 <Input
                   type="select"
-                  value={columnMapping[col.key] >= 0 ? columnMapping[col.key] : ''}
-                  onChange={(e) => setCol(col.key, e.target.value)}
+                  value={(columnMapping as Record<string, number>)[col.key] >= 0 ? (columnMapping as Record<string, number>)[col.key] : ''}
+                  onChange={(e: any) => setCol(col.key, e.target.value)}
                 >
                   <option value="">{t('bankMapSelectColumn')}</option>
-                  {Array.from({ length: colCount }, (_, i) => (
+                  {Array.from({ length: colCount }, (_: any, i: any) => (
                     <option key={i} value={i}>
                       {headers[i]?.label?.slice(0, 55) || i + 1}
                     </option>
@@ -374,7 +374,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
               <thead>
                 <tr style={{ background: 'var(--noorix-bg-muted)' }}>
                   <th className="py-2 px-1.5 w-9">#</th>
-                  {headers.map((h) => {
+                  {headers.map((h: any) => {
                     const badge = getColumnBadge(h.index);
                     return (
                       <th key={h.index} className="py-2 px-1.5 text-start align-top min-w-[100px]">
@@ -396,10 +396,10 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
                 </tr>
               </thead>
               <tbody>
-                {previewRows.map((row, rowIdx) => (
+                {previewRows.map((row: any, rowIdx: any) => (
                   <tr key={rowIdx} style={{ borderTop: '1px solid var(--noorix-border)' }}>
                     <td className="p-1.5 text-noorix-muted">{rowIdx + 1}</td>
-                    {headers.map((h) => {
+                    {headers.map((h: any) => {
                       const badge = getColumnBadge(h.index);
                       return (
                         <td

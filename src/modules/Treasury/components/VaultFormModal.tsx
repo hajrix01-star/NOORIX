@@ -10,14 +10,14 @@ const EMPTY = {
   nameAr: '', nameEn: '', type: 'cash', isSalesChannel: false, showAsPaymentMethod: true, paymentMethod: '', notes: '',
 };
 
-function sanitizeCustomEmoji(ch) {
+function sanitizeCustomEmoji(ch: any) {
   if (ch == null || ch === '') return 'خ';
   const s = String(ch);
   if (/^\d$/u.test(s)) return 'خ';
   return s;
 }
 
-function initForm(initial) {
+function initForm(initial: any) {
   if (!initial) return { ...EMPTY };
   const { isCustom, emoji } = parseVaultType(initial.type || 'cash');
   return {
@@ -32,19 +32,19 @@ function initForm(initial) {
   };
 }
 
-export default function VaultFormModal({ initial, onClose, onSave, isSaving, saveError }) {
+export default function VaultFormModal({ initial, onClose, onSave, isSaving, saveError }: any) {
   const { t } = useTranslation();
   const isEdit = !!initial?.id;
   const [form, setForm] = useState(() => initForm(initial));
 
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-  const setShowAsPaymentMethod = (enabled) => setForm((p) => ({
+  const set = (k: any, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
+  const setShowAsPaymentMethod = (enabled: any) => setForm((p: any) => ({
     ...p,
     showAsPaymentMethod: enabled,
     paymentMethod: enabled ? p.paymentMethod : '',
   }));
 
-  const handleSave = (e) => {
+  const handleSave = (e: any) => {
     e.preventDefault();
     const saved = { ...form };
     if (saved.type === 'custom') {
@@ -74,7 +74,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             label={t('nameArLabel')}
             type="text"
             value={form.nameAr}
-            onChange={(e) => set('nameAr', e.target.value)}
+            onChange={(e: any) => set('nameAr', e.target.value)}
             required
             placeholder={t('vaultNamePlaceholder')}
           />
@@ -82,7 +82,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
             label={t('nameEnLabel')}
             type="text"
             value={form.nameEn}
-            onChange={(e) => set('nameEn', e.target.value)}
+            onChange={(e: any) => set('nameEn', e.target.value)}
             placeholder={t('vaultNameEnPlaceholder')}
           />
         </div>
@@ -91,7 +91,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         <div>
           <label className="text-[13px] font-semibold mb-1.5 block">{t('vaultType')}</label>
           <div className="grid grid-cols-4 gap-2">
-            {VAULT_TYPES.map((vt) => (
+            {VAULT_TYPES.map((vt: any) => (
               <Button
                 key={vt.value}
                 type="button"
@@ -99,13 +99,13 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                 className="flex flex-col items-center justify-center gap-1 py-2.5 px-1.5 rounded border-2 border-noorix-border text-[12px] font-semibold text-noorix-muted w-full hover:border-noorix-blue hover:text-noorix-blue transition-colors"
                 onClick={() => set('type', vt.value)}
                 style={form.type === vt.value ? {
-                  border: `2px solid ${TYPE_COLORS[vt.value]}`,
-                  background: TYPE_BG[vt.value],
-                  color: TYPE_COLORS[vt.value],
+                  border: `2px solid ${(TYPE_COLORS as Record<string, string>)[String(vt.value)]}`,
+                  background: (TYPE_BG as Record<string, string>)[String(vt.value)],
+                  color: (TYPE_COLORS as Record<string, string>)[String(vt.value)],
                 } : undefined}
               >
                 <span className="flex h-[22px] w-full items-center justify-center [&_svg]:shrink-0" aria-hidden>
-                  {VAULT_TYPE_SVGS[vt.value] ?? VAULT_TYPE_SVGS.bank}
+                  {(VAULT_TYPE_SVGS as Record<string, (typeof VAULT_TYPE_SVGS)['bank']>)[String(vt.value)] ?? VAULT_TYPE_SVGS.bank}
                 </span>
                 <span className="text-center leading-tight">{(vt.labelKey ? t(vt.labelKey) : (vt as { label?: string }).label || '').split('(')[0].split('/')[0].trim()}</span>
               </Button>
@@ -131,7 +131,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
                 اختر رمز الخزينة
               </div>
               <div className="flex flex flex-wrap gap-1">
-                {ICON_CHARS.map((ch) => (
+                {ICON_CHARS.map((ch: any) => (
                   <Button
                     key={ch}
                     className={`nx-vault-icon-btn${form.customEmoji === ch ? ' nx-vault-icon-btn--active' : ''}`}
@@ -207,11 +207,11 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
               type="select"
               label={t('paymentMethod')}
               value={form.paymentMethod}
-              onChange={(e) => set('paymentMethod', e.target.value)}
+              onChange={(e: any) => set('paymentMethod', e.target.value)}
               disabled={!form.showAsPaymentMethod}
             >
               <option value="">{t('selectPaymentMethod')}</option>
-              {PAYMENT_METHODS.map((m) => (
+              {PAYMENT_METHODS.map((m: any) => (
                 <option key={m.value} value={m.value}>{m.labelKey ? t(m.labelKey) : (m as { label?: string }).label}</option>
               ))}
             </Input>
@@ -223,7 +223,7 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
           multiline
           label={t('notes')}
           value={form.notes}
-          onChange={(e) => set('notes', e.target.value)}
+          onChange={(e: any) => set('notes', e.target.value)}
           rows={2}
           placeholder={t('notesPlaceholderVault')}
         />

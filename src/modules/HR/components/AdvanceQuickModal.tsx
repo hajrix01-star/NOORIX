@@ -14,7 +14,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 
-export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }) {
+export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { paymentVaults = [] } = useVaults({ companyId });
@@ -37,7 +37,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
     enabled: !!companyId && !initialEmployee,
   });
 
-  const activeEmployees = (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
+  const activeEmployees = (employees || []).filter((e: any) => e.status !== 'terminated' && e.status !== 'archived');
 
   useEffect(() => {
     if (initialEmployee) {
@@ -53,11 +53,11 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
     return Math.ceil((amt / parsedInstallments) * 100) / 100;
   }, [amount, parsedInstallments]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e?.preventDefault?.();
     const amt = roundMoney2(amount);
     const empId = initialEmployee ? initialEmployee.id : employeeId;
-    const selectedEmp = initialEmployee ?? activeEmployees.find((em) => em.id === empId);
+    const selectedEmp = initialEmployee ?? activeEmployees.find((em: any) => em.id === empId);
     const empName = selectedEmp ? employeeDisplayName(selectedEmp, 'ar', '') : '';
     if (!amt || amt <= 0 || !vaultId || !empId) return;
     try {
@@ -73,7 +73,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
       });
       onSuccess?.();
       onClose?.();
-    } catch (err) {
+    } catch (err: any) {
       showToast(t('errorGeneral') || 'حدث خطأ أثناء الحفظ', 'error');
     }
   };
@@ -105,11 +105,11 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
             type="select"
             label={t('selectEmployee')}
             value={employeeId}
-            onChange={(e) => setEmployeeId(e.target.value)}
+            onChange={(e: any) => setEmployeeId(e.target.value)}
             required
           >
             <option value="">—</option>
-            {activeEmployees.map((emp) => (
+            {activeEmployees.map((emp: any) => (
               <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
             ))}
           </Input>
@@ -120,18 +120,18 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           min="0"
           label={t('advanceAmount')}
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e: any) => setAmount(e.target.value)}
           placeholder="0"
         />
         <Input
           type="select"
           label={t('selectVault')}
           value={vaultId}
-          onChange={(e) => setVaultId(e.target.value)}
+          onChange={(e: any) => setVaultId(e.target.value)}
           required
         >
           <option value="">— {t('selectVault') || 'اختر الخزينة'} —</option>
-          {vaults.map((v) => (
+          {vaults.map((v: any) => (
             <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
           ))}
         </Input>
@@ -139,7 +139,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           type="date"
           label={t('transactionDate')}
           value={txDate}
-          onChange={(e) => setTxDate(e.target.value)}
+          onChange={(e: any) => setTxDate(e.target.value)}
         />
         <Input
           type="number"
@@ -148,7 +148,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           step="1"
           label={t('installmentCount') || 'عدد الدفعات'}
           value={installmentCount}
-          onChange={(e) => setInstallmentCount(e.target.value)}
+          onChange={(e: any) => setInstallmentCount(e.target.value)}
           placeholder="1"
         />
         {parsedInstallments > 1 && installmentAmt && (
@@ -162,7 +162,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
         <Input
           label={t('notes')}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e: any) => setNotes(e.target.value)}
           placeholder={t('notes')}
         />
       </form>

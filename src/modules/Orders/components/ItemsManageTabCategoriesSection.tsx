@@ -3,7 +3,7 @@ import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
 import { Button, Input } from '../../../ui';
 
 /** Categories sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
-export function ItemsManageTabCategoriesSection({ ctrl }) {
+export function ItemsManageTabCategoriesSection({ ctrl }: any) {
   const {
     t,
     companyId,
@@ -53,7 +53,7 @@ export function ItemsManageTabCategoriesSection({ ctrl }) {
             <Input
               label={`${t('categoryNameAr')} *`}
               value={newCategory.nameAr}
-              onChange={(e) => setNewCategory((p) => ({ ...p, nameAr: e.target.value }))}
+              onChange={(e: any) => setNewCategory((p: any) => ({ ...p, nameAr: e.target.value }))}
               placeholder={t('categoryNameAr')}
             />
           </div>
@@ -61,7 +61,7 @@ export function ItemsManageTabCategoriesSection({ ctrl }) {
             <Input
               label={t('categoryNameEn')}
               value={newCategory.nameEn}
-              onChange={(e) => setNewCategory((p) => ({ ...p, nameEn: e.target.value }))}
+              onChange={(e: any) => setNewCategory((p: any) => ({ ...p, nameEn: e.target.value }))}
               placeholder={t('categoryNameEn')}
             />
           </div>
@@ -76,7 +76,7 @@ export function ItemsManageTabCategoriesSection({ ctrl }) {
           <Input
             type="search"
             value={categorySearchQuery}
-            onChange={(e) => setCategorySearchQuery(e.target.value)}
+            onChange={(e: any) => setCategorySearchQuery(e.target.value)}
             placeholder={t('ordersSearchCategories')}
             aria-label={t('ordersSearchCategories')}
             className="max-w-[320px]"
@@ -91,15 +91,15 @@ export function ItemsManageTabCategoriesSection({ ctrl }) {
             </tr>
           </thead>
           <tbody>
-            {filteredCategories.map((c) => (
+            {filteredCategories.map((c: any) => (
               <tr key={c.id} className="border-b border-noorix-border">
                 {editingCategory?.id === c.id ? (
                   <>
                     <td className="py-2 px-3">
-                      <Input type="text" value={editingCategory.nameAr} onChange={(e) => setEditingCategory((x) => ({ ...x, nameAr: e.target.value }))} placeholder={t('categoryNameAr')} />
+                      <Input type="text" value={editingCategory.nameAr} onChange={(e: any) => setEditingCategory((x: any) => ({ ...x, nameAr: e.target.value }))} placeholder={t('categoryNameAr')} />
                     </td>
                     <td className="py-2 px-3">
-                      <Input type="text" value={editingCategory.nameEn || ''} onChange={(e) => setEditingCategory((x) => ({ ...x, nameEn: e.target.value }))} placeholder={t('categoryNameEn')} />
+                      <Input type="text" value={editingCategory.nameEn || ''} onChange={(e: any) => setEditingCategory((x: any) => ({ ...x, nameEn: e.target.value }))} placeholder={t('categoryNameEn')} />
                     </td>
                     <td className="text-center py-2 px-3">
                       <div className="nx-toolbar justify-center">

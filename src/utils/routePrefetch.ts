@@ -34,8 +34,8 @@ const inflight = new Map();
 /**
  * @param {string} to - قيمة `to` في NavLink (مثل '/sales' أو '/')
  */
-export function prefetchRouteChunk(to) {
-  const loader = routeLoaders[to];
+export function prefetchRouteChunk(to: any) {
+  const loader = (routeLoaders as Record<string, () => Promise<unknown>>)[String(to)];
   if (!loader || typeof window === 'undefined') return;
   if (inflight.has(to)) return inflight.get(to);
   const promise = loader()

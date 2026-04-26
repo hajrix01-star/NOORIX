@@ -25,13 +25,13 @@ export default function HRSummaryCard({
   outstandingAdvancesCount = 0,
   outstandingAdvancesAmount = 0,
   isLoading = false,
-}) {
+}: any) {
   const { t } = useTranslation();
 
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(5)].map((_: any, i: any) => (
           <div key={i} className="noorix-surface-card min-h-[110px] animate-pulse" />
         ))}
       </div>

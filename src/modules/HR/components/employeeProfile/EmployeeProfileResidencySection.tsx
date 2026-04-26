@@ -1,7 +1,7 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { Badge, SmartTable } from '../../../../ui';
 
-export function EmployeeProfileResidencySection({ t, residencies, residencyProfileStatusMap }) {
+export function EmployeeProfileResidencySection({ t, residencies, residencyProfileStatusMap }: any) {
   return (
     <div className="noorix-surface-card overflow-hidden">
       <div className="nx-section-header">
@@ -17,25 +17,25 @@ export function EmployeeProfileResidencySection({ t, residencies, residencyProfi
             key: 'iqamaNumber',
             label: t('iqamaNumber'),
             width: '25%',
-            render: (v) => <span className="nx-cell-num">{v || '—'}</span>,
+            render: (v: any) => <span className="nx-cell-num">{v || '—'}</span>,
           },
           {
             key: 'issueDate',
             label: t('startDate'),
             width: '25%',
-            render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
           },
           {
             key: 'expiryDate',
             label: t('expiryDate'),
             width: '25%',
-            render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
           },
           {
             key: 'status',
             label: t('status'),
             width: '24%',
-            render: (v) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" />,
+            render: (v: any) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" />,
           },
         ]}
         data={residencies}
@@ -43,7 +43,7 @@ export function EmployeeProfileResidencySection({ t, residencies, residencyProfi
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderMobileCard={(row) => (
+        renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="nx-cell-num text-[14px] font-bold ltr">{row.iqamaNumber || '—'}</span>

@@ -77,7 +77,7 @@ export default function ScreenTabs({
         barClassName,
       )}
     >
-      {items.map((item) => {
+      {items.map((item: any) => {
         const active = item.id === value;
         return (
           <Button

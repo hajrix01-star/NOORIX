@@ -46,7 +46,7 @@ const COLORS = [
 const RED_PIE_TINTS = ['var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--noorix-accent-red)', 'var(--color-danger-bg)', '#f87171'];
 const GREEN_PIE_TINTS = ['var(--noorix-accent-green)', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)', '#4ade80'];
 
-function pieSliceFill(mode, index, item) {
+function pieSliceFill(mode: any, index: any, item: any) {
   if (mode === 'combined') {
     const pal = (item.debit || 0) >= (item.credit || 0) ? RED_PIE_TINTS : GREEN_PIE_TINTS;
     return pal[index % pal.length];
@@ -58,23 +58,23 @@ function pieSliceFill(mode, index, item) {
 /** جداول كبيرة تبقى بعرض الصف كاملاً؛ الرسوم والبطاقات الأصغر تُوزّع عمودين */
 const ANALYSIS_CARD_FULL_WIDTH = new Set(['category_table', 'deposits_table', 'pos_terminals']);
 
-function truncateLabel(str, max = 20) {
+function truncateLabel(str: any, max: any = 20) {
   const s = String(str || '');
   if (s.length <= max) return s;
   return `${s.slice(0, max - 1)}…`;
 }
 
-function estimateYAxisWidth(labels, minW = 140, maxW = 280) {
+function estimateYAxisWidth(labels: any, minW: any = 140, maxW: any = 280) {
   if (!labels.length) return minW;
-  const longest = Math.max(...labels.map((x) => String(x).length));
+  const longest = Math.max(...labels.map((x: any) => String(x).length));
   return Math.min(maxW, Math.max(minW, 12 + Math.round(longest * 7.2)));
 }
 
 /* ── Tooltip مخصص للـ AreaChart ── */
-function DailyTooltip({ active, payload, label }) {
+function DailyTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
-  const deposits = payload.find((p) => p.dataKey === 'deposits')?.value ?? 0;
-  const withdrawals = payload.find((p) => p.dataKey === 'withdrawals')?.value ?? 0;
+  const deposits = payload.find((p: any) => p.dataKey === 'deposits')?.value ?? 0;
+  const withdrawals = payload.find((p: any) => p.dataKey === 'withdrawals')?.value ?? 0;
   return (
     <div className="text-[12px] nx-rtl nx-recharts-tooltip-shell">
       <div className="font-bold text-noorix-text mb-1.5">{label}</div>
@@ -95,7 +95,7 @@ function DailyTooltip({ active, payload, label }) {
 }
 
 /* ── Tooltip مخصص للـ PieChart ── */
-function PieTooltip({ active, payload, pieMode, t }) {
+function PieTooltip({ active, payload, pieMode, t }: any) {
   if (!active || !payload?.length) return null;
   const d = payload[0];
   const p = d.payload;
@@ -131,7 +131,7 @@ function PieTooltip({ active, payload, pieMode, t }) {
 }
 
 /* ── غلاف بطاقة موحد ── */
-function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) {
+function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }: any) {
   return (
     <div className="noorix-surface-card nx-analysis-card">
       <div className="nx-analysis-card__head">
@@ -149,7 +149,7 @@ function AnalysisCard({ cardId, title, icon, onRemove, removeLabel, children }) 
 }
 
 /* ── شريط تقدم بسيط ── */
-function ProgressBar({ value, color = 'var(--noorix-accent-blue)', max = 100 }) {
+function ProgressBar({ value, color = 'var(--noorix-accent-blue)', max = 100 }: any) {
   const pct = Math.min(100, Math.max(0, max > 0 ? (value / max) * 100 : 0));
   return (
     <div className="nx-progress-track flex-1 min-w-0">
@@ -172,12 +172,12 @@ export default function BankStatementAnalysisCardsTab({
   categories = [],
   showToast,
   onSaveTxCategory,
-}) {
+}: any) {
   const { t } = useTranslation();
   const txs = statement?.transactions || [];
   const [addOpen, setAddOpen] = useState(false);
   const [pieMode, setPieMode] = useState('combined');
-  const [pieDrilldownCategory, setPieDrilldownCategory] = useState(null);
+  const [pieDrilldownCategory, setPieDrilldownCategory] = useState<any>(null);
 
   const dailyData = useMemo(() => buildDailyChartData(txs), [txs]);
   const alerts = useMemo(() => topDebits(txs, 10), [txs]);
@@ -187,7 +187,7 @@ export default function BankStatementAnalysisCardsTab({
 
   /* بيانات PieChart — شامل / سحوبات / إيرادات */
   const pieDisplayData = useMemo(() => {
-    const entries = Object.entries(summaryByCategory).map(([name, d]) => ({
+    const entries = Object.entries(summaryByCategory).map(([name, d]: any) => ({
       name,
       debit: d.totalDebit,
       credit: d.totalCredit,
@@ -197,25 +197,25 @@ export default function BankStatementAnalysisCardsTab({
     let rows;
     if (pieMode === 'combined') {
       rows = entries
-        .map((e) => ({
+        .map((e: any) => ({
           ...e,
           value: Math.round((e.debit + e.credit) * 100) / 100,
         }))
-        .filter((x) => x.value > 0);
+        .filter((x: any) => x.value > 0);
     } else if (pieMode === 'debit') {
       rows = entries
-        .map((e) => ({ ...e, value: Math.round(e.debit * 100) / 100 }))
-        .filter((x) => x.value > 0);
+        .map((e: any) => ({ ...e, value: Math.round(e.debit * 100) / 100 }))
+        .filter((x: any) => x.value > 0);
     } else {
       rows = entries
-        .map((e) => ({ ...e, value: Math.round(e.credit * 100) / 100 }))
-        .filter((x) => x.value > 0);
+        .map((e: any) => ({ ...e, value: Math.round(e.credit * 100) / 100 }))
+        .filter((x: any) => x.value > 0);
     }
 
-    rows.sort((a, b) => b.value - a.value);
+    rows.sort((a: any, b: any) => b.value - a.value);
     rows = rows.slice(0, 10);
-    const sliceTotal = rows.reduce((s, x) => s + x.value, 0);
-    return rows.map((x) => ({
+    const sliceTotal = rows.reduce((s: any, x: any) => s + x.value, 0);
+    return rows.map((x: any) => ({
       ...x,
       percent: sliceTotal > 0 ? ((x.value / sliceTotal) * 100).toFixed(1) : '0',
     }));
@@ -223,8 +223,8 @@ export default function BankStatementAnalysisCardsTab({
 
   const pieGrandTotals = useMemo(() => {
     const entries = Object.values(summaryByCategory);
-    const totalDebit = entries.reduce((s, d) => s + d.totalDebit, 0);
-    const totalCredit = entries.reduce((s, d) => s + d.totalCredit, 0);
+    const totalDebit = entries.reduce((s: any, d: any) => s + d.totalDebit, 0);
+    const totalCredit = entries.reduce((s: any, d: any) => s + d.totalCredit, 0);
     return {
       totalDebit,
       totalCredit,
@@ -236,13 +236,13 @@ export default function BankStatementAnalysisCardsTab({
   const barRowsDebit = useMemo(
     () =>
       Object.entries(summaryByCategory)
-        .map(([name, d]) => ({
+        .map(([name, d]: any) => ({
           fullName: name,
           name: truncateLabel(name, 26),
           value: Math.round(d.totalDebit),
         }))
-        .filter((x) => x.value > 0)
-        .sort((a, b) => b.value - a.value)
+        .filter((x: any) => x.value > 0)
+        .sort((a: any, b: any) => b.value - a.value)
         .slice(0, 8),
     [summaryByCategory],
   );
@@ -250,32 +250,32 @@ export default function BankStatementAnalysisCardsTab({
   const barRowsCredit = useMemo(
     () =>
       Object.entries(summaryByCategory)
-        .map(([name, d]) => ({
+        .map(([name, d]: any) => ({
           fullName: name,
           name: truncateLabel(name, 26),
           value: Math.round(d.totalCredit),
         }))
-        .filter((x) => x.value > 0)
-        .sort((a, b) => b.value - a.value)
+        .filter((x: any) => x.value > 0)
+        .sort((a: any, b: any) => b.value - a.value)
         .slice(0, 8),
     [summaryByCategory],
   );
 
   const barDebitAxisW = useMemo(
-    () => estimateYAxisWidth(barRowsDebit.map((r) => r.name)),
+    () => estimateYAxisWidth(barRowsDebit.map((r: any) => r.name)),
     [barRowsDebit],
   );
   const barCreditAxisW = useMemo(
-    () => estimateYAxisWidth(barRowsCredit.map((r) => r.name)),
+    () => estimateYAxisWidth(barRowsCredit.map((r: any) => r.name)),
     [barRowsCredit],
   );
 
   /* جدول الفئات (للسحوبات والإيداعات) */
   const categoryRows = useMemo(() => {
-    const totalDebit = Object.values(summaryByCategory).reduce((s, d) => s + d.totalDebit, 0);
-    const totalCredit = Object.values(summaryByCategory).reduce((s, d) => s + d.totalCredit, 0);
+    const totalDebit = Object.values(summaryByCategory).reduce((s: any, d: any) => s + d.totalDebit, 0);
+    const totalCredit = Object.values(summaryByCategory).reduce((s: any, d: any) => s + d.totalCredit, 0);
     return Object.entries(summaryByCategory)
-      .map(([name, d]) => ({
+      .map(([name, d]: any) => ({
         name,
         count: d.count,
         debit: d.totalDebit,
@@ -283,13 +283,13 @@ export default function BankStatementAnalysisCardsTab({
         debitPct: totalDebit > 0 ? (d.totalDebit / totalDebit) * 100 : 0,
         creditPct: totalCredit > 0 ? (d.totalCredit / totalCredit) * 100 : 0,
       }))
-      .sort((a, b) => b.debit - a.debit);
+      .sort((a: any, b: any) => b.debit - a.debit);
   }, [summaryByCategory]);
 
-  const totalDebit = categoryRows.reduce((s, r) => s + r.debit, 0);
-  const totalCredit = categoryRows.reduce((s, r) => s + r.credit, 0);
+  const totalDebit = categoryRows.reduce((s: any, r: any) => s + r.debit, 0);
+  const totalCredit = categoryRows.reduce((s: any, r: any) => s + r.credit, 0);
 
-  const renderCard = (cardId) => {
+  const renderCard = (cardId: any) => {
     /* ── التدفق النقدي اليومي ── */
     if (cardId === 'cash_flow') {
       if (dailyData.length < 2) return null;
@@ -310,7 +310,7 @@ export default function BankStatementAnalysisCardsTab({
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" vertical={false} />
                 <XAxis dataKey="dateLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 10 }} width={60} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+                <YAxis tick={{ fontSize: 10 }} width={60} tickFormatter={(v: any) => `${Math.round(v / 1000)}k`} />
                 <Tooltip content={<DailyTooltip />} />
                 <ReferenceLine y={0} stroke="var(--noorix-text-muted-2)" strokeDasharray="4 4" />
                 <Area type="monotone" dataKey="deposits" stroke="#16a34a" strokeWidth={2} fill="url(#gradDeposits)" name="إيداعات" />
@@ -351,7 +351,7 @@ export default function BankStatementAnalysisCardsTab({
                     </tr>
                   </thead>
                   <tbody>
-                    {alerts.map((tx, i) => (
+                    {alerts.map((tx: any, i: any) => (
                       <tr key={i} className={`nx-bank-row ${i % 2 ? 'nx-bank-row--b' : 'nx-bank-row--a'}`}>
                         <td className="text-noorix-muted whitespace-nowrap nx-td-pad">{tx.txDate}</td>
                         <td className="nx-td-pad max-w-[360px]">
@@ -399,7 +399,7 @@ export default function BankStatementAnalysisCardsTab({
     /* ── دائري التصنيفات ── */
     if (cardId === 'category_pie') {
       if (Object.keys(summaryByCategory).length === 0) return null;
-      const pieTip = (props) => <PieTooltip {...props} pieMode={pieMode} t={t} />;
+      const pieTip = (props: any) => <PieTooltip {...props} pieMode={pieMode} t={t} />;
       const centerTitle =
         pieMode === 'combined'
           ? t('bankPieCenterVolume')
@@ -417,7 +417,7 @@ export default function BankStatementAnalysisCardsTab({
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardCategoryPie')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           <div className="flex items-center gap-8 flex flex-wrap mb-3.5">
             <span className="text-[12px] font-bold text-noorix-muted">{t('bankPieViewMode')}</span>
-            {(['combined', 'debit', 'credit']).map((m) => (
+            {(['combined', 'debit', 'credit']).map((m: any) => (
               <Button
                 key={m}
                 size="sm"
@@ -464,14 +464,14 @@ export default function BankStatementAnalysisCardsTab({
                       paddingAngle={2}
                       cursor="pointer"
                       isAnimationActive={false}
-                      label={({ percent }) => (percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : '')}
+                      label={({ percent }: any) => (percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : '')}
                       labelLine={{ stroke: 'var(--noorix-text-muted-2)', strokeWidth: 1 }}
-                      onClick={(_, index) => {
+                      onClick={(_: any, index: any) => {
                         const item = pieDisplayData[index];
                         if (item?.name) setPieDrilldownCategory(item.name);
                       }}
                     >
-                      {pieDisplayData.map((item, i) => (
+                      {pieDisplayData.map((item: any, i: any) => (
                         <Cell
                           key={item.name}
                           fill={pieSliceFill(pieMode, i, item)}
@@ -501,7 +501,7 @@ export default function BankStatementAnalysisCardsTab({
                     {t('bankNoCategoryData')}
                   </span>
                 ) : (
-                  pieDisplayData.map((item, i) => {
+                  pieDisplayData.map((item: any, i: any) => {
                     const dot = pieSliceFill(pieMode, i, item);
                     return (
                       <Button
@@ -546,7 +546,7 @@ export default function BankStatementAnalysisCardsTab({
     if (cardId === 'category_bar') {
       if (!barRowsDebit.length && !barRowsCredit.length) return null;
 
-      const renderBarBlock = (rows, blockTitle, color, yAxisW) => {
+      const renderBarBlock = (rows: any, blockTitle: any, color: any, yAxisW: any) => {
         if (!rows.length) return null;
         const h = Math.max(168, 52 + rows.length * 46);
         return (
@@ -561,7 +561,7 @@ export default function BankStatementAnalysisCardsTab({
                   <XAxis
                     type="number"
                     tick={{ fontSize: 11, fill: 'var(--noorix-text-muted)' }}
-                    tickFormatter={(v) => (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
+                    tickFormatter={(v: any) => (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
                   />
                   <YAxis
                     type="category"
@@ -571,8 +571,8 @@ export default function BankStatementAnalysisCardsTab({
                     interval={0}
                   />
                   <Tooltip
-                    formatter={(v) => [fmt(Number(v)), blockTitle]}
-                    labelFormatter={(_, p) => p?.[0]?.payload?.fullName || ''}
+                    formatter={(v: any) => [fmt(Number(v)), blockTitle]}
+                    labelFormatter={(_: any, p: any) => p?.[0]?.payload?.fullName || ''}
                     contentStyle={BAR_CHART_TOOLTIP_STYLE}
                   />
                   <Bar dataKey="value" fill={color} radius={[0, 6, 6, 0]} barSize={28} />
@@ -617,7 +617,7 @@ export default function BankStatementAnalysisCardsTab({
                 </tr>
               </thead>
               <tbody>
-                {categoryRows.map((row, i) => (
+                {categoryRows.map((row: any, i: any) => (
                   <tr
                     key={row.name}
                     className={`nx-bank-row nx-bank-row--click ${i % 2 === 0 ? 'nx-bank-row--a' : 'nx-bank-row--b'}`}
@@ -659,7 +659,7 @@ export default function BankStatementAnalysisCardsTab({
                 <tr className="font-extrabold bg-noorix-bg-muted border-t-2 border-noorix-border">
                   <td className="nx-td-pad-10">الإجمالي</td>
                   <td className="text-center nx-td-pad-10">
-                    {categoryRows.reduce((s, r) => s + r.count, 0)}
+                    {categoryRows.reduce((s: any, r: any) => s + r.count, 0)}
                   </td>
                   <td className="text-end nx-ltr text-noorix-red nx-td-pad-10"><FmtNum n={totalDebit} /></td>
                   <td className="text-end nx-ltr text-noorix-green nx-td-pad-10"><FmtNum n={totalCredit} /></td>
@@ -674,7 +674,7 @@ export default function BankStatementAnalysisCardsTab({
 
     /* ── جدول الإيداعات ── */
     if (cardId === 'deposits_table') {
-      const totalDep = depositsByCategory.reduce((s, r) => s + r.total, 0);
+      const totalDep = depositsByCategory.reduce((s: any, r: any) => s + r.total, 0);
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardDepositsTable')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {depositsByCategory.length === 0 ? (
@@ -692,7 +692,7 @@ export default function BankStatementAnalysisCardsTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {depositsByCategory.map((row, i) => {
+                  {depositsByCategory.map((row: any, i: any) => {
                     const pct = totalDep > 0 ? (row.total / totalDep) * 100 : 0;
                     return (
                       <tr
@@ -725,7 +725,7 @@ export default function BankStatementAnalysisCardsTab({
                 <tfoot>
                   <tr className="font-extrabold bg-noorix-bg-muted border-t-2 border-noorix-border">
                     <td colSpan={2} className="nx-td-pad-10">الإجمالي</td>
-                    <td className="text-center nx-td-pad-10">{depositsByCategory.reduce((s, r) => s + r.count, 0)}</td>
+                    <td className="text-center nx-td-pad-10">{depositsByCategory.reduce((s: any, r: any) => s + r.count, 0)}</td>
                     <td className="text-end nx-ltr text-noorix-green nx-td-pad-10"><FmtNum n={totalDep} /></td>
                     <td className="text-noorix-muted nx-td-pad-10">100%</td>
                   </tr>
@@ -739,7 +739,7 @@ export default function BankStatementAnalysisCardsTab({
 
     /* ── تحليل نقاط البيع ── */
     if (cardId === 'pos_terminals') {
-      const totalPOS = posTerminals.reduce((s, t) => s + t.total, 0);
+      const totalPOS = posTerminals.reduce((s: any, t: any) => s + t.total, 0);
       return (
         <AnalysisCard key={cardId} cardId={cardId} title={t('bankCardPosTerminals')} icon="" onRemove={setCardToDelete} removeLabel={t('bankRemoveCard')}>
           {posTerminals.length === 0 ? (
@@ -750,7 +750,7 @@ export default function BankStatementAnalysisCardsTab({
             <div className="grid gap-3">
               <div className="nx-grid-auto-fill-140">
                 <div className="bg-noorix-bg-muted border border-noorix-border rounded-xl text-center py-3 px-3.5">
-                  <div className="font-extrabold text-noorix-green text-[22px]">{posTerminals.reduce((s, t) => s + t.count, 0)}</div>
+                  <div className="font-extrabold text-noorix-green text-[22px]">{posTerminals.reduce((s: any, t: any) => s + t.count, 0)}</div>
                   <div className="text-[11px] text-noorix-muted mt-1">عدد العمليات</div>
                 </div>
                 <div className="bg-noorix-bg-muted border border-noorix-border rounded-xl text-center py-3 px-3.5">
@@ -770,7 +770,7 @@ export default function BankStatementAnalysisCardsTab({
                     </tr>
                   </thead>
                   <tbody>
-                    {posTerminals.slice(0, 8).map((term, i) => {
+                    {posTerminals.slice(0, 8).map((term: any, i: any) => {
                       const pct = totalPOS > 0 ? (term.total / totalPOS) * 100 : 0;
                       return (
                         <tr key={term.terminalId} className={`nx-bank-row ${i % 2 ? 'nx-bank-row--b' : 'nx-bank-row--a'}`}>
@@ -811,7 +811,7 @@ export default function BankStatementAnalysisCardsTab({
         <div className="nx-bank-add-wrap">
           <Button
             size="sm"
-            onClick={() => setAddOpen((v) => !v)}
+            onClick={() => setAddOpen((v: any) => !v)}
             disabled={availableToAdd.length === 0}
           >
             + {t('bankAddAnalysisCard')}
@@ -823,7 +823,7 @@ export default function BankStatementAnalysisCardsTab({
           </Button>
           {addOpen && availableToAdd.length > 0 && (
             <div className="bank-analysis-add-menu nx-bank-add-menu">
-              {availableToAdd.map((c) => (
+              {availableToAdd.map((c: any) => (
                 <Button
                   key={c.id}
                   variant="ghost"
@@ -841,7 +841,7 @@ export default function BankStatementAnalysisCardsTab({
 
       {/* البطاقات — عمودان تلقائياً عندما تسمح الشاشة (min ~400px لكل عمود) */}
       <div className="grid nx-bank-cards-grid">
-        {activeCards.map((id) => {
+        {activeCards.map((id: any) => {
           const card = renderCard(id);
           if (!card) return null;
           const fullRow = ANALYSIS_CARD_FULL_WIDTH.has(id);

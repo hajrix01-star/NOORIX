@@ -4,7 +4,7 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 // ——— الخزائن ———
 export async function getVaults(
   companyId: string,
-  includeArchived = false,
+  includeArchived: any = false,
   startDate?: string,
   endDate?: string,
 ): Promise<ApiParsedResult> {
@@ -25,8 +25,8 @@ export async function getVaultTransactions(
   companyId: string,
   startDate: string | undefined,
   endDate: string | undefined,
-  page = 1,
-  pageSize = 50,
+  page: any = 1,
+  pageSize: any = 50,
 ): Promise<ApiParsedResult> {
   const params: Record<string, string> = {
     companyId: String(companyId),

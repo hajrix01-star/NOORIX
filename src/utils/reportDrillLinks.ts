@@ -2,7 +2,7 @@
  * روابط من تقرير ربح/خسارة → شاشات التشغيل (فواتير / مبيعات) بمعاملات URL.
  */
 
-export function monthDateBounds(year, month) {
+export function monthDateBounds(year: any, month: any) {
   const y = Number(year);
   if (month != null && month >= 1 && month <= 12) {
     const m = Number(month);
@@ -17,7 +17,7 @@ export function monthDateBounds(year, month) {
 /**
  * @returns {{ path: string, query: Record<string, string> } | null}
  */
-export function buildReportDrillLink({ year, month, groupKey, itemKey }) {
+export function buildReportDrillLink({ year, month, groupKey, itemKey }: any) {
   const { from, to } = monthDateBounds(year, month);
   const invBase = { from, to };
 
@@ -67,9 +67,9 @@ export function buildReportDrillLink({ year, month, groupKey, itemKey }) {
   return { path: '/invoices', query: invBase };
 }
 
-export function drillToSearchParams(query) {
+export function drillToSearchParams(query: any) {
   const sp = new URLSearchParams();
-  Object.entries(query || {}).forEach(([k, v]) => {
+  Object.entries(query || {}).forEach(([k, v]: any) => {
     if (v != null && v !== '') sp.set(k, String(v));
   });
   return sp.toString();

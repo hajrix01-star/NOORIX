@@ -1,6 +1,6 @@
 ﻿/**
- * SmartChatScreen ظ¤ ╪د┘┘à╪ص╪د╪»╪س╪ر ╪د┘╪░┘â┘è╪ر
- * ┘╪│┘é ┘à╪▒╪ش╪╣┘è: ╪ث┘ê╪د┘à╪▒ ┘à╪ش┘à┘ّ╪╣╪ر╪î ╪ح╪»╪«╪د┘╪î ┘┘ê╪د┘╪░ ┘à╪▒┘â╪▓┘è╪ر╪î ╪ز╪«╪▓┘è┘ ┘à╪ص┘┘è ┘à╪╣ ┘┘╪ز╪▒.
+ * SmartChatScreen — المحادثة الذكية
+ * نسق مرجعي: أوامر مجمّعة، إدخال، نوافذ مركزية، تخزين محلي مع فلتر.
  */
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -36,103 +36,103 @@ const CHAT_PAGE_SIZE = 6;
 
 /** ╪ز╪▒╪ز┘è╪ذ ╪ث┘é╪│╪د┘à ┬س╪ث╪│╪خ┘╪ر ╪ش╪د┘ç╪▓╪ر┬╗ ┘┘è ╪د┘┘ Sheet */
 const FAQ_SECTION_ORDER = [
-  { id: 'reports', labelAr: '╪ز┘é╪د╪▒┘è╪▒ ┘ê┘à╪ج╪┤╪▒╪د╪ز', labelEn: 'Reports & metrics' },
-  { id: 'compare', labelAr: '┘à┘é╪د╪▒┘╪د╪ز', labelEn: 'Comparisons' },
-  { id: 'counts', labelAr: '╪ث╪╣╪»╪د╪»', labelEn: 'Counts' },
-  { id: 'other', labelAr: '╪╣╪د┘à', labelEn: 'General' },
+  { id: 'reports', labelAr: 'تقارير ومؤشرات', labelEn: 'Reports & metrics' },
+  { id: 'compare', labelAr: 'مقارنات', labelEn: 'Comparisons' },
+  { id: 'counts', labelAr: 'أعداد', labelEn: 'Counts' },
+  { id: 'other', labelAr: 'عام', labelEn: 'General' },
 ];
 
 /**
- * ar / en = ╪د┘┘╪╡ ╪د┘┘à┘╪▒╪│┘┘ ┘┘┘ API (┘à╪╖╪د╪ذ┘é╪ر ╪د┘┘à╪╣╪د┘╪ش╪د╪ز)
- * shortAr / shortEn = ╪╣┘┘ê╪د┘ ╪د┘╪▓╪▒ ┘┘è ╪د┘┘é╪د╪خ┘à╪ر (╪د╪«╪ز┘è╪د╪▒┘è)
- * section = ┘à╪ش┘à┘ê╪╣╪ر ╪د┘╪╣╪▒╪╢ ┘┘è ╪د┘┘ Sheet
+ * ar / en = النص المُرسَل للـ API (مطابقة المعالجات)
+ * shortAr / shortEn = عنوان الزر في القائمة (اختياري)
+ * section = مجموعة العرض في الـ Sheet
  */
 const PERMANENT_QUESTIONS = [
   {
     section: 'reports',
-    ar: '┘â┘à ┘à╪ذ┘è╪╣╪د╪ز ╪د┘╪│┘╪ر╪ا',
+    ar: 'كم مبيعات السنة؟',
     en: 'What are annual sales?',
-    shortAr: '┘à╪ذ┘è╪╣╪د╪ز ╪د┘╪│┘╪ر',
+    shortAr: 'مبيعات السنة',
     shortEn: 'Annual sales',
-    domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ),
+    domain: (c: any) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ),
   },
   {
     section: 'reports',
-    ar: '┘à╪د ╪ث╪▒╪╡╪»╪ر ╪د┘╪«╪▓╪د╪خ┘╪ا',
+    ar: 'ما أرصدة الخزائن؟',
     en: 'What are vault balances?',
-    shortAr: '╪ث╪▒╪╡╪»╪ر ╪د┘╪«╪▓╪د╪خ┘',
+    shortAr: 'أرصدة الخزائن',
     shortEn: 'Vault balances',
-    domain: (c) => c(PERMISSIONS.VIEW_VAULTS) || c(PERMISSIONS.VAULTS_READ),
+    domain: (c: any) => c(PERMISSIONS.VIEW_VAULTS) || c(PERMISSIONS.VAULTS_READ),
   },
   {
     section: 'reports',
-    ar: '╪ث╪╣╪╖┘┘è ┘à┘╪«╪╡ ╪د┘╪▒╪ذ╪ص ┘ê╪د┘╪«╪│╪د╪▒╪ر',
+    ar: 'أعطني ملخص الربح والخسارة',
     en: 'Give me P&L summary',
-    shortAr: '┘à┘╪«╪╡ ╪د┘╪▒╪ذ╪ص ┘ê╪د┘╪«╪│╪د╪▒╪ر',
+    shortAr: 'ملخص الربح والخسارة',
     shortEn: 'P&L summary',
-    domain: (c) => c(PERMISSIONS.VIEW_REPORTS) || c(PERMISSIONS.REPORTS_READ),
+    domain: (c: any) => c(PERMISSIONS.VIEW_REPORTS) || c(PERMISSIONS.REPORTS_READ),
   },
   {
     section: 'reports',
-    ar: '┘╪│╪ذ ╪د┘╪«╪د╪▒╪ش ╪╣┘┘ë ╪د┘┘à╪ذ┘è╪╣╪د╪ز (┘à╪┤╪ز╪▒┘è╪د╪ز╪î ┘à╪╡╪▒┘ê┘╪د╪ز╪î ╪د┘┘à╪ش┘à┘ê╪╣ ظ¤ ╪ص╪ز┘ë ╪ث┘à╪│)',
+    ar: 'نسب الخارج على المبيعات (مشتريات، مصروفات، المجموع — حتى أمس)',
     en: 'Operating load vs sales: purchases %, expenses %, combined % (MTD through yesterday).',
-    shortAr: '┘╪│╪ذ ╪د┘╪«╪د╪▒╪ش ╪╣┘┘ë ╪د┘┘à╪ذ┘è╪╣╪د╪ز',
+    shortAr: 'نسب الخارج على المبيعات',
     shortEn: 'Load vs sales (MTD)',
-    domain: (c) =>
+    domain: (c: any) =>
       (c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ)) &&
       c(PERMISSIONS.VIEW_INVOICES) &&
       c(PERMISSIONS.VIEW_VAULTS),
   },
   {
     section: 'compare',
-    ar: '┘à╪ذ┘è╪╣╪د╪ز ╪د┘╪┤┘ç╪▒ ╪د┘╪ص╪د┘┘è ┘à┘é╪د╪ذ┘ ╪د┘┘à╪د╪╢┘è (┘┘╪│ ╪د┘┘╪ز╪▒╪ر)',
+    ar: 'مبيعات الشهر الحالي مقابل الماضي (نفس الفترة)',
     en: 'This month vs last month sales (aligned partial months).',
-    shortAr: '┘à╪ذ┘è╪╣╪د╪ز: ╪د┘╪ص╪د┘┘è vs ╪د┘┘à╪د╪╢┘è',
+    shortAr: 'مبيعات: الحالي vs الماضي',
     shortEn: 'Sales: this vs last month',
-    domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ),
+    domain: (c: any) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ),
   },
   {
     section: 'counts',
-    ar: '┘â┘à ╪╣╪»╪» ╪د┘┘┘ê╪د╪ز┘è╪▒╪ا',
+    ar: 'كم عدد الفواتير؟',
     en: 'How many invoices?',
-    shortAr: '╪╣╪»╪» ╪د┘┘┘ê╪د╪ز┘è╪▒',
+    shortAr: 'عدد الفواتير',
     shortEn: 'Invoice count',
-    domain: (c) => c(PERMISSIONS.VIEW_INVOICES) || c(PERMISSIONS.INVOICES_READ),
+    domain: (c: any) => c(PERMISSIONS.VIEW_INVOICES) || c(PERMISSIONS.INVOICES_READ),
   },
   {
     section: 'counts',
-    ar: '┘â┘à ╪╣╪»╪» ╪د┘┘à┘ê╪▒╪»┘è┘╪ا',
+    ar: 'كم عدد الموردين؟',
     en: 'How many suppliers?',
-    shortAr: '╪╣╪»╪» ╪د┘┘à┘ê╪▒╪»┘è┘',
+    shortAr: 'عدد الموردين',
     shortEn: 'Supplier count',
-    domain: (c) => c(PERMISSIONS.VIEW_SUPPLIERS) || c(PERMISSIONS.SUPPLIERS_READ),
+    domain: (c: any) => c(PERMISSIONS.VIEW_SUPPLIERS) || c(PERMISSIONS.SUPPLIERS_READ),
   },
   {
     section: 'counts',
-    ar: '┘â┘à ╪╣╪»╪» ╪د┘┘à┘ê╪╕┘┘è┘╪ا',
+    ar: 'كم عدد الموظفين؟',
     en: 'How many employees?',
-    shortAr: '╪╣╪»╪» ╪د┘┘à┘ê╪╕┘┘è┘',
+    shortAr: 'عدد الموظفين',
     shortEn: 'Employee count',
-    domain: (c) => c(PERMISSIONS.VIEW_EMPLOYEES) || c(PERMISSIONS.EMPLOYEES_READ),
+    domain: (c: any) => c(PERMISSIONS.VIEW_EMPLOYEES) || c(PERMISSIONS.EMPLOYEES_READ),
   },
-  { section: 'other', ar: '┘à╪│╪د╪╣╪»╪ر', en: 'Help', domain: () => true },
+  { section: 'other', ar: 'مساعدة', en: 'Help', domain: () => true },
 ];
 
-/** ╪│╪╖╪▒ ┬س╪ز╪╣╪▒┘è┘ / Definition┬╗ ┘é╪د╪ذ┘ ┘┘╪╖┘è */
-function ReportDefinitionLine({ line, isAr }) {
+/** سطر «تعريف / Definition» قابل للطي */
+function ReportDefinitionLine({ line, isAr }: any) {
   const [open, setOpen] = useState(false);
-  const body = line.replace(/^(╪ز╪╣╪▒┘è┘|Definition):\s*/i, '').trim();
+  const body = line.replace(/^(تعريف|Definition):\s*/i, '').trim();
   return (
     <div className="noorix-chat-report-card__definition rounded-[10px] border border-noorix-border overflow-hidden bg-noorix-bg-page/60">
       <button
         type="button"
         className="w-full flex items-center justify-between gap-2 text-[13px] font-semibold text-noorix-text py-2.5 px-3 hover:bg-noorix-bg-muted/80 transition-colors"
         style={{ direction: isAr ? 'rtl' : 'ltr' }}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen((o: any) => !o)}
         aria-expanded={open}
       >
-        <span>{isAr ? '╪ز╪╣╪▒┘è┘ ╪د┘┘à╪ج╪┤╪▒╪د╪ز' : 'Indicator definition'}</span>
-        <span className="text-noorix-muted nx-ltr text-[11px]" aria-hidden>{open ? 'ظû▓' : 'ظû╝'}</span>
+        <span>{isAr ? 'تعريف المؤشرات' : 'Indicator definition'}</span>
+        <span className="text-noorix-muted nx-ltr text-[11px]" aria-hidden>{open ? '▾' : '▸'}</span>
       </button>
       {open ? (
         <div className="text-[13px] text-noorix-muted leading-[1.65] px-3 pb-3 pt-0 border-t border-noorix-border border-opacity-60">
@@ -144,23 +144,23 @@ function ReportDefinitionLine({ line, isAr }) {
 }
 
 /** ╪▒╪│┘à ╪╣┘à┘ê╪»┘è ╪ذ╪│┘è╪╖ ┘┘à┘é╪د╪▒┘╪ر ╪┤┘ç╪▒┘è┘ّ┘è┘ (╪ذ┘è╪د┘╪د╪ز ┘à┘ ╪د┘┘ API ┘┘é╪╖) */
-function ChatMiniChart({ chart, isAr }) {
+function ChatMiniChart({ chart, isAr }: any) {
   const bars = chart?.bars;
   if (!Array.isArray(bars) || bars.length < 2) return null;
-  const data = bars.map((b) => ({
+  const data = bars.map((b: any) => ({
     key: b.key,
     name: isAr ? b.labelAr : b.labelEn,
     value: Number(b.value),
   }));
-  const fmt = (v) => `${Number(v).toLocaleString('en')} ${isAr ? '╪▒.╪│' : 'SAR'}`;
+  const fmt = (v: any) => `${Number(v).toLocaleString('en')} ${isAr ? 'ر.س' : 'SAR'}`;
   return (
     <div
       className="noorix-chat-mini-chart mt-3 pt-3 border-t border-noorix-border"
       role="img"
-      aria-label={isAr ? '┘à╪«╪╖╪╖ ┘à┘é╪د╪▒┘╪ر ┘à╪ذ┘è╪╣╪د╪ز ╪د┘╪┤┘ç╪▒┘è┘' : 'Bar chart comparing the two months'}
+      aria-label={isAr ? 'مخطط مقارنة مبيعات الشهرين' : 'Bar chart comparing the two months'}
     >
       <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
-        {isAr ? '┘à┘é╪د╪▒┘╪ر ╪ذ╪╡╪▒┘è╪ر' : 'Visual comparison'}
+        {isAr ? 'مقارنة بصرية' : 'Visual comparison'}
       </div>
       <div className="nx-ltr" style={{ width: '100%', height: 132 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -169,12 +169,12 @@ function ChatMiniChart({ chart, isAr }) {
             <YAxis
               width={44}
               tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
-              tickFormatter={(v) => (v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
+              tickFormatter={(v: any) => (v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
-              formatter={(value) => [fmt(value), isAr ? '╪د┘┘à╪ذ┘╪║' : 'Amount']}
+              formatter={(value: any) => [fmt(value), isAr ? 'المبلغ' : 'Amount']}
               labelStyle={{ direction: isAr ? 'rtl' : 'ltr' }}
               contentStyle={{
                 borderRadius: 8,
@@ -183,7 +183,7 @@ function ChatMiniChart({ chart, isAr }) {
               }}
             />
             <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={42}>
-              {data.map((_, i) => (
+              {data.map((_: any, i: any) => (
                 <Cell
                   key={data[i].key}
                   fill={i === 0 ? KPI_RECHARTS_COLORS.purchases : KPI_RECHARTS_COLORS.sales}
@@ -198,30 +198,30 @@ function ChatMiniChart({ chart, isAr }) {
 }
 
 /** ╪┤╪▒┘è╪╖ ┘à┘â╪»┘ّ╪│: ┘à╪┤╪ز╪▒┘è╪د╪ز + ┘à╪╡╪▒┘ê┘╪د╪ز ┘â┘╪│╪ذ╪ر ┘à┘ ╪د┘┘à╪ذ┘è╪╣╪د╪ز (╪ذ┘è╪د┘╪د╪ز ┘à┘ ╪د┘┘ API) */
-function ChatFinanceRatiosStrip({ chart, isAr }) {
+function ChatFinanceRatiosStrip({ chart, isAr }: any) {
   const segments = chart?.segments;
   if (!Array.isArray(segments) || segments.length === 0) return null;
-  const used = segments.reduce((a, s) => a + (Number(s.pct) || 0), 0);
+  const used = segments.reduce((a: any, s: any) => a + (Number(s.pct) || 0), 0);
   const remainder = Math.max(0, 100 - used);
-  const fillFor = (key) => (key === 'purchases' ? KPI_RECHARTS_COLORS.purchases : KPI_RECHARTS_COLORS.expenses);
-  const labelFor = (key) => {
-    if (key === 'purchases') return isAr ? '┘à╪┤╪ز╪▒┘è╪د╪ز' : 'Purchases';
-    return isAr ? '┘à╪╡╪▒┘ê┘╪د╪ز' : 'Expenses';
+  const fillFor = (key: any) => (key === 'purchases' ? KPI_RECHARTS_COLORS.purchases : KPI_RECHARTS_COLORS.expenses);
+  const labelFor = (key: any) => {
+    if (key === 'purchases') return isAr ? 'مشتريات' : 'Purchases';
+    return isAr ? 'مصروفات' : 'Expenses';
   };
   return (
     <div
       className="noorix-chat-finance-ratios mt-3 pt-3 border-t border-noorix-border"
       role="img"
-      aria-label={isAr ? '╪┤╪▒┘è╪╖ ┘╪│╪ذ ╪د┘╪«╪د╪▒╪ش ╪د┘╪ز╪┤╪║┘è┘┘è ┘à┘ ╪د┘┘à╪ذ┘è╪╣╪د╪ز' : 'Operating load as share of revenue'}
+      aria-label={isAr ? 'شريط نسب الخارج التشغيلي من المبيعات' : 'Operating load as share of revenue'}
     >
       <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
-        {isAr ? '╪ز┘ê╪▓┘è╪╣ ╪د┘╪«╪د╪▒╪ش ╪د┘╪ز╪┤╪║┘è┘┘è ┘à┘ ╪د┘╪ح┘è╪▒╪د╪»' : 'Operating load vs revenue'}
+        {isAr ? 'توزيع الخارج التشغيلي من الإيراد' : 'Operating load vs revenue'}
       </div>
       <div
         className="noorix-chat-finance-ratios__track nx-ltr flex h-[10px] rounded-full overflow-hidden border border-noorix-border/80 bg-noorix-bg-muted"
         aria-hidden
       >
-        {segments.map((s) => (
+        {segments.map((s: any) => (
           <div
             key={s.key}
             className="noorix-chat-finance-ratios__seg h-full min-w-0 transition-[width] duration-300"
@@ -234,7 +234,7 @@ function ChatFinanceRatiosStrip({ chart, isAr }) {
         ) : null}
       </div>
       <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-noorix-muted list-none m-0 p-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
-        {segments.map((s) => (
+        {segments.map((s: any) => (
           <li key={s.key} className="inline-flex items-center gap-1.5">
             <span className="inline-block size-2 rounded-sm shrink-0" style={{ backgroundColor: fillFor(s.key) }} aria-hidden />
             <span>
@@ -247,22 +247,22 @@ function ChatFinanceRatiosStrip({ chart, isAr }) {
   );
 }
 
-/** ┘â╪▒╪ز ╪د┘╪▒╪» ظ¤ ╪╣┘╪د┘ê┘è┘ ## ╪î ┘┘é╪د╪╖ ظت ╪î ╪ز╪╣╪▒┘è┘ ┘é╪د╪ذ┘ ┘┘╪╖┘è ╪î ╪س┘à ╪┤╪ذ┘â╪ر ╪ز╪│┘à┘è╪ر:┘é┘è┘à╪ر */
-function ReportCard({ text, isAr, createdAt, extras }) {
+/** كرت الرد — عناوين ## ، نقاط • ، تعريف قابل للطي ، ثم شبكة تسمية:قيمة */
+function ReportCard({ text, isAr, createdAt, extras }: any) {
   const raw = String(text || '').trim();
   const lines = raw
     .split(/\n+/)
-    .map((s) => s.trim())
+    .map((s: any) => s.trim())
     .filter(Boolean);
 
-  const renderKvLine = (line, i) => {
+  const renderKvLine = (line: any, i: any) => {
     const colonIdx = line.indexOf(':');
     const hasLabel = colonIdx > 0 && colonIdx < 50;
     const label = hasLabel ? line.slice(0, colonIdx).trim() : null;
     const value = hasLabel ? line.slice(colonIdx + 1).trim() : line;
     const isNumericValue = /^\d/.test(value) || /\d{4}-\d{2}-\d{2}/.test(value);
     const valueStyle: React.CSSProperties = isNumericValue ? { direction: 'ltr', unicodeBidi: 'isolate' } : {};
-    const isPeriod = /^(╪د┘┘╪ز╪▒╪ر|Period)\s*:/i.test(line);
+    const isPeriod = /^(الفترة|Period)\s*:/i.test(line);
     return (
       <div
         key={i}
@@ -290,7 +290,7 @@ function ReportCard({ text, isAr, createdAt, extras }) {
     >
       {lines.length > 0 ? (
         <div className="flex flex-col gap-3 w-full min-w-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
-          {lines.map((line, i) => {
+          {lines.map((line: any, i: any) => {
             if (/^##\s*/.test(line)) {
               const title = line.replace(/^##\s*/, '').trim();
               return (
@@ -302,20 +302,20 @@ function ReportCard({ text, isAr, createdAt, extras }) {
                 </h3>
               );
             }
-            if (/^[ظت\-\*]\s*/.test(line)) {
-              const t = line.replace(/^[ظت\-\*]\s*/, '').trim();
-              const isSummary = /^╪د┘╪«┘╪د╪╡╪ر[:ي╝أ]/i.test(t) || /^Summary:/i.test(t);
+            if (/^[•\-\*]\s*/.test(line)) {
+              const t = line.replace(/^[•\-\*]\s*/, '').trim();
+              const isSummary = /^الخلاصة[:：]/i.test(t) || /^Summary:/i.test(t);
               return (
                 <div
                   key={i}
                   className={`noorix-chat-report-card__bullet flex gap-2 text-[14px] md:text-[15px] pe-1${isSummary ? ' noorix-chat-report-card__bullet--summary' : ''}`}
                 >
-                  <span className="text-noorix-muted shrink-0" aria-hidden>ظت</span>
+                  <span className="text-noorix-muted shrink-0" aria-hidden>•</span>
                   <span className="min-w-0">{t}</span>
                 </div>
               );
             }
-            if (/^(╪ز╪╣╪▒┘è┘|Definition):\s*/i.test(line)) {
+            if (/^(تعريف|Definition):\s*/i.test(line)) {
               return <ReportDefinitionLine key={i} line={line} isAr={isAr} />;
             }
             return renderKvLine(line, i);
@@ -342,11 +342,11 @@ const CMD_GROUPS = [
     labelEn: 'Employee management',
     icon: '',
     items: [
-      { key: 'addEmployee', labelAr: '╪ح╪╢╪د┘╪ر ┘à┘ê╪╕┘', labelEn: 'Add employee', icon: '', canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.EMPLOYEES_WRITE) },
-      { key: 'advance',   labelAr: '╪╡╪▒┘ ╪│┘┘╪ر',      labelEn: 'Pay advance',        icon: '', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_ADVANCES)   || c(PERMISSIONS.HR_WRITE) || c(PERMISSIONS.EMPLOYEES_WRITE) },
-      { key: 'increase',  labelAr: '╪▓┘è╪د╪»╪ر / ╪ذ╪»┘╪ر',  labelEn: 'Raise / Allowance',  icon: '', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_INCREASES)  || c(PERMISSIONS.HR_WRITE) },
-      { key: 'leave',     labelAr: '╪ز╪│╪ش┘è┘ ╪ح╪ش╪د╪▓╪ر',   labelEn: 'Record leave',       icon: '', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_LEAVES)     || c(PERMISSIONS.HR_WRITE) },
-      { key: 'deduction', labelAr: '╪ز╪│╪ش┘è┘ ╪«╪╡┘à',     labelEn: 'Record deduction',   icon: '', canUse: (c) => c(PERMISSIONS.CHAT_PRESET_DEDUCTIONS) || c(PERMISSIONS.HR_WRITE) },
+      { key: 'addEmployee', labelAr: 'إضافة موظف', labelEn: 'Add employee', icon: '', canUse: (c: any) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.EMPLOYEES_WRITE) },
+      { key: 'advance',   labelAr: 'صرف سلفة',      labelEn: 'Pay advance',        icon: '', canUse: (c: any) => c(PERMISSIONS.CHAT_PRESET_ADVANCES)   || c(PERMISSIONS.HR_WRITE) || c(PERMISSIONS.EMPLOYEES_WRITE) },
+      { key: 'increase',  labelAr: 'زيادة / بدل',  labelEn: 'Raise / Allowance',  icon: '', canUse: (c: any) => c(PERMISSIONS.CHAT_PRESET_INCREASES)  || c(PERMISSIONS.HR_WRITE) },
+      { key: 'leave',     labelAr: 'تسجيل إجازة',   labelEn: 'Record leave',       icon: '', canUse: (c: any) => c(PERMISSIONS.CHAT_PRESET_LEAVES)     || c(PERMISSIONS.HR_WRITE) },
+      { key: 'deduction', labelAr: 'تسجيل خصم',     labelEn: 'Record deduction',   icon: '', canUse: (c: any) => c(PERMISSIONS.CHAT_PRESET_DEDUCTIONS) || c(PERMISSIONS.HR_WRITE) },
     ],
   },
   {
@@ -355,9 +355,9 @@ const CMD_GROUPS = [
     labelEn: 'Fixed expenses',
     icon: '',
     items: [
-      { key: 'addExpenseLine', labelAr: '╪ح╪╢╪د┘╪ر ┘à╪╡╪د╪▒┘è┘ ╪س╪د╪ذ╪ز╪ر', labelEn: 'Add fixed expenses', icon: '', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
-      { key: 'payExpense', labelAr: '╪│╪»╪د╪» ┘à╪╡╪د╪▒┘è┘ ╪س╪د╪ذ╪ز╪ر', labelEn: 'Payment of fixed expenses', icon: '', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
-      { key: 'editExpenseLine', labelAr: '╪ز╪╣╪»┘è┘ ┘à╪╡╪د╪▒┘è┘ ╪س╪د╪ذ╪ز╪ر', labelEn: 'Edit fixed expenses', icon: '', canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
+      { key: 'addExpenseLine', labelAr: 'إضافة مصاريف ثابتة', labelEn: 'Add fixed expenses', icon: '', canUse: (c: any) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
+      { key: 'payExpense', labelAr: 'سداد مصاريف ثابتة', labelEn: 'Payment of fixed expenses', icon: '', canUse: (c: any) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
+      { key: 'editExpenseLine', labelAr: 'تعديل مصاريف ثابتة', labelEn: 'Edit fixed expenses', icon: '', canUse: (c: any) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE) },
     ],
   },
 ];
@@ -365,35 +365,35 @@ const CMD_GROUPS = [
 export default function SmartChatScreen() {
   const { activeCompanyId } = useApp();
   const { t, lang } = useTranslation();
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [creatorName, setCreatorName] = useState('');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
-  const [entryMode, setEntryMode] = useState(null);
+  const [entryMode, setEntryMode] = useState<any>(null);
   const [commandsOpen, setCommandsOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
-  const [expenseMode, setExpenseMode] = useState(null);
-  const [expenseEditLine, setExpenseEditLine] = useState(null);
+  const [expenseMode, setExpenseMode] = useState<any>(null);
+  const [expenseEditLine, setExpenseEditLine] = useState<any>(null);
   const { showToast } = useToast();
   const [visibleMessageCount, setVisibleMessageCount] = useState(CHAT_PAGE_SIZE);
 
-  const messagesScrollRef = useRef(null);
+  const messagesScrollRef = useRef<any>(null);
   const skipScrollToEndRef = useRef(false);
-  const inputRef = useRef(null);
-  const commandsWrapRef = useRef(null);
-  const commandsPanelRef = useRef(null);
-  const saveTimerRef = useRef(null);
+  const inputRef = useRef<any>(null);
+  const commandsWrapRef = useRef<any>(null);
+  const commandsPanelRef = useRef<any>(null);
+  const saveTimerRef = useRef<any>(null);
 
   const u = getStoredUser();
   const userName = u?.nameAr || u?.nameEn || u?.email || '';
-  const can = (p) => hasPermission(u?.role, p, u?.permissions || []);
+  const can = (p: any) => hasPermission(u?.role, p, u?.permissions || []);
   const { create } = useEmployees(activeCompanyId || '', { fetchEnabled: false });
 
   const qc = useQueryClient();
   const showFaq = can(PERMISSIONS.CHAT_PRESET_FAQ) || can(PERMISSIONS.VIEW_CHAT);
-  const visibleFaqQuestions = showFaq ? PERMANENT_QUESTIONS.filter((q) => q.domain(can)) : [];
+  const visibleFaqQuestions = showFaq ? PERMANENT_QUESTIONS.filter((q: any) => q.domain(can)) : [];
   const isAr = lang === 'ar';
 
   const { data: expenseLines = [] } = useQuery({
@@ -405,10 +405,10 @@ export default function SmartChatScreen() {
     enabled: !!activeCompanyId && (expenseMode === 'editLine' || expenseMode === 'addLine' || expenseMode === 'pay'),
   });
 
-  const filteredGroups = CMD_GROUPS.map((g) => ({
+  const filteredGroups = CMD_GROUPS.map((g: any) => ({
     ...g,
-    items: g.items.filter((it) => it.canUse(can)),
-  })).filter((g) => g.items.length > 0);
+    items: g.items.filter((it: any) => it.canUse(can)),
+  })).filter((g: any) => g.items.length > 0);
 
   const quickRowCols = filteredGroups.length > 0 && showFaq ? 2 : 1;
 
@@ -449,9 +449,9 @@ export default function SmartChatScreen() {
     }
   }, [activeCompanyId]);
 
-  const addMessage = useCallback((msg) => {
+  const addMessage = useCallback((msg: any) => {
     const withMeta = { ...msg, createdAt: msg.createdAt || new Date().toISOString() };
-    setMessages((prev) => [...prev, withMeta]);
+    setMessages((prev: any) => [...prev, withMeta]);
     if (!creatorName && userName) setCreatorName(userName);
   }, [creatorName, userName]);
 
@@ -489,7 +489,7 @@ export default function SmartChatScreen() {
     const el = messagesScrollRef.current;
     const prevScrollHeight = el?.scrollHeight ?? 0;
     skipScrollToEndRef.current = true;
-    setVisibleMessageCount((c) => c + CHAT_PAGE_SIZE);
+    setVisibleMessageCount((c: any) => c + CHAT_PAGE_SIZE);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (el) el.scrollTop += el.scrollHeight - prevScrollHeight;
@@ -499,7 +499,7 @@ export default function SmartChatScreen() {
   }, []);
 
   useEffect(() => {
-    const onDoc = (e) => {
+    const onDoc = (e: any) => {
       const inTrigger = commandsWrapRef.current?.contains(e.target);
       const inPanel   = commandsPanelRef.current?.contains(e.target);
       if (!inTrigger && !inPanel) setCommandsOpen(false);
@@ -521,18 +521,18 @@ export default function SmartChatScreen() {
     const q = (text || input || '').trim();
     if (!q || loading) return;
     if (!activeCompanyId) {
-      setMessages((prev) => [...prev, { role: 'user', text: q }, { role: 'assistant', textAr: '┘è╪▒╪ش┘ë ╪د╪«╪ز┘è╪د╪▒ ╪┤╪▒┘â╪ر ╪ث┘ê┘╪د┘ï.', textEn: 'Please select a company first.' }]);
+      setMessages((prev: any) => [...prev, { role: 'user', text: q }, { role: 'assistant', textAr: 'يرجى اختيار شركة أولاً.', textEn: 'Please select a company first.' }]);
       return;
     }
     setInput('');
-    setMessages((prev) => [...prev, { role: 'user', text: q }]);
+    setMessages((prev: any) => [...prev, { role: 'user', text: q }]);
     setLoading(true);
     setCommandsOpen(false);
     setFaqOpen(false);
     try {
       const res = await chatQuery(q);
       if (res?.success && res?.data) {
-        setMessages((prev) => [
+        setMessages((prev: any) => [
           ...prev,
           {
             role: 'assistant',
@@ -542,17 +542,17 @@ export default function SmartChatScreen() {
           },
         ]);
       } else {
-        setMessages((prev) => [...prev, { role: 'assistant', textAr: res?.error || '╪ص╪»╪س ╪«╪╖╪ث.', textEn: res?.error || 'An error occurred.' }]);
+        setMessages((prev: any) => [...prev, { role: 'assistant', textAr: res?.error || 'حدث خطأ.', textEn: res?.error || 'An error occurred.' }]);
       }
-    } catch (err) {
-      setMessages((prev) => [...prev, { role: 'assistant', textAr: '┘╪┤┘ ╪د┘╪د╪ز╪╡╪د┘.', textEn: 'Connection failed.' }]);
+    } catch (err: any) {
+      setMessages((prev: any) => [...prev, { role: 'assistant', textAr: 'فشل الاتصال.', textEn: 'Connection failed.' }]);
     } finally {
       setLoading(false);
       inputRef.current?.focus();
     }
   };
 
-  const handleCommand = (cmd) => {
+  const handleCommand = (cmd: any) => {
     setCommandsOpen(false);
     if (cmd === 'addEmployee') {
       setAddEmployeeOpen(true);
@@ -569,16 +569,16 @@ export default function SmartChatScreen() {
     }
   };
 
-  const onHrRecorded = (o) => {
+  const onHrRecorded = (o: any) => {
     if (o?.textAr || o?.textEn) {
       addMessage({ role: 'assistant', textAr: o.textAr || o.textEn, textEn: o.textEn || o.textAr });
     }
   };
 
-  const handleSaveEmployee = (payload) => {
+  const handleSaveEmployee = (payload: any) => {
     const { employeeBody, customAllowances = [] } = payload?.employeeBody ? payload : { employeeBody: payload, customAllowances: [] };
     create.mutate(employeeBody, {
-      onSuccess: async (res, empBody) => {
+      onSuccess: async (res: any, empBody: any) => {
         try {
           const empId = res?.data?.id || res?.id;
           for (const row of customAllowances) {
@@ -595,14 +595,14 @@ export default function SmartChatScreen() {
           showToast(t('employeeAdded'), 'success');
           setAddEmployeeOpen(false);
           const eb = empBody || employeeBody;
-          const empName = eb?.name || eb?.nameAr || eb?.nameEn || 'ظ¤';
+          const empName = eb?.name || eb?.nameAr || eb?.nameEn || '—';
           const salary = Number(eb?.basicSalary ?? 0);
-          addMessage({ role: 'assistant', textAr: `╪د┘┘┘ê╪╣: ╪ح╪╢╪د┘╪ر ┘à┘ê╪╕┘\n╪د┘╪د╪│┘à: ${empName}\n╪د┘┘à╪│┘à┘ë: ${eb?.jobTitle || 'ظ¤'}\n╪د┘╪▒╪د╪ز╪ذ: ${salary.toLocaleString('en')} SR`, textEn: `Type: Add employee\nName: ${empName}\nTitle: ${eb?.jobTitle || 'ظ¤'}\nSalary: ${salary.toLocaleString('en')} SAR` });
-        } catch (e) {
+          addMessage({ role: 'assistant', textAr: `النوع: إضافة موظف\nالاسم: ${empName}\nالمسمى: ${eb?.jobTitle || '—'}\nالراتب: ${salary.toLocaleString('en')} SR`, textEn: `Type: Add employee\nName: ${empName}\nTitle: ${eb?.jobTitle || '—'}\nSalary: ${salary.toLocaleString('en')} SAR` });
+        } catch (e: any) {
           showToast(e?.message || t('saveFailed'), 'error');
         }
       },
-      onError: (e) => showToast(e?.message || (isAr ? '┘╪┤┘ ╪د┘╪ح╪╢╪د┘╪ر' : 'Add failed'), 'error'),
+      onError: (e: any) => showToast(e?.message || (isAr ? 'فشل الإضافة' : 'Add failed'), 'error'),
     });
   };
 
@@ -623,11 +623,11 @@ export default function SmartChatScreen() {
             >
               {filteredGroups.length > 0 ? (
                 <div ref={commandsWrapRef} className="noorix-smart-chat-quick-cell">
-                  <Button className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o) => !o)} aria-expanded={commandsOpen}>
+                  <Button className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o: any) => !o)} aria-expanded={commandsOpen}>
                     <span className="noorix-chat-gradient-icon" aria-hidden>
                     </span>
                     <span className="truncate">{t('chatCommands')}</span>
-                    <span className="noorix-chat-chev">{commandsOpen ? 'ظû▓' : 'ظû╝'}</span>
+                    <span className="noorix-chat-chev">{commandsOpen ? '▾' : '▸'}</span>
                   </Button>
                 </div>
               ) : null}
@@ -640,7 +640,7 @@ export default function SmartChatScreen() {
                   >
                     <span className="noorix-chat-gradient-icon" aria-hidden>
                     </span>
-                    <span className="truncate">{isAr ? '╪ث╪│╪خ┘╪ر ╪ش╪د┘ç╪▓╪ر' : 'Suggested'}</span>
+                    <span className="truncate">{isAr ? 'أسئلة جاهزة' : 'Suggested'}</span>
                   </Button>
                 </div>
               ) : null}
@@ -654,9 +654,9 @@ export default function SmartChatScreen() {
                 type="date"
                 className="noorix-smart-chat-date-input"
                 value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value || '')}
+                onChange={(e: any) => setDateFilter(e.target.value || '')}
                 lang="en"
-                title={isAr ? '╪ز╪╡┘┘è╪ر ╪ذ╪د┘╪ز╪د╪▒┘è╪«' : 'Filter by date'}
+                title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
               />
               {dateFilter ? (
                 <Button size="sm" onClick={() => setDateFilter('')} className="noorix-smart-chat-filter-clear">
@@ -704,7 +704,7 @@ export default function SmartChatScreen() {
               </div>
             )
           )}
-          {displayedMessages.map((m, i) => (
+          {displayedMessages.map((m: any, i: any) => (
             <div
               key={i}
               className={`noorix-chat-msg-row noorix-chat-msg-row--${m.role === 'user' ? 'user' : 'assistant'}`}
@@ -732,7 +732,7 @@ export default function SmartChatScreen() {
                 <div className="noorix-chat-skeleton-line" />
                 <div className="noorix-chat-skeleton-line noorix-chat-skeleton-line--lg" />
               </div>
-              <div className="sr-only">{isAr ? '╪ش╪د╪▒┘è ╪د┘╪ذ╪ص╪سظخ' : 'Searchingظخ'}</div>
+              <div className="sr-only">{isAr ? 'جاري البحث…' : 'Searching…'}</div>
             </div>
           )}
         </div>
@@ -743,8 +743,8 @@ export default function SmartChatScreen() {
             type="text"
             className="noorix-chat-input-field"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), void handleSend())}
+            onChange={(e: any) => setInput(e.target.value)}
+            onKeyDown={(e: any) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), void handleSend())}
             placeholder={t('chatInputPlaceholder')}
             disabled={loading || !activeCompanyId}
             aria-label={t('chatInputPlaceholder')}
@@ -764,10 +764,10 @@ export default function SmartChatScreen() {
       )}
 
       {faqOpen && (
-        <AdaptiveSheet open={true} onClose={() => setFaqOpen(false)} title={isAr ? '╪ث╪│╪خ┘╪ر ╪ش╪د┘ç╪▓╪ر' : 'Suggested questions'} size="md" side="start" className="smartchat-faq-drawer">
+        <AdaptiveSheet open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md" side="start" className="smartchat-faq-drawer">
           <div className="flex flex-col gap-1 pb-2">
-            {FAQ_SECTION_ORDER.map((sec) => {
-              const qs = visibleFaqQuestions.filter((q) => q.section === sec.id);
+            {FAQ_SECTION_ORDER.map((sec: any) => {
+              const qs = visibleFaqQuestions.filter((q: any) => q.section === sec.id);
               if (!qs.length) return null;
               return (
                 <div key={sec.id} className="min-w-0">
@@ -778,7 +778,7 @@ export default function SmartChatScreen() {
                     {isAr ? sec.labelAr : sec.labelEn}
                   </div>
                   <div className="flex flex-col gap-2">
-                    {qs.map((q, i) => (
+                    {qs.map((q: any, i: any) => (
                       <Button
                         key={`${sec.id}-${i}`}
                         className="w-full text-[14px] md:text-[15px] justify-start py-3 px-4 font-medium leading-snug"
@@ -829,8 +829,8 @@ export default function SmartChatScreen() {
             invalidateOnFinancialMutation(qc);
             qc.invalidateQueries({ queryKey: ['expense-lines'] });
             setExpenseMode(null);
-            showToast(isAr ? '╪ز┘à╪ز ╪ح╪╢╪د┘╪ر ╪ذ┘╪» ╪د┘┘à╪╡╪▒┘ê┘' : 'Expense line added', 'success');
-            addMessage({ role: 'assistant', textAr: '╪د┘┘┘ê╪╣: ╪ح╪╢╪د┘╪ر ╪ذ┘╪» ┘à╪╡╪▒┘ê┘\n╪د┘╪ص╪د┘╪ر: ╪ز┘à╪ز ╪د┘╪ح╪╢╪د┘╪ر ╪ذ┘╪ش╪د╪ص', textEn: 'Type: Add expense line\nStatus: Added successfully' });
+            showToast(isAr ? 'تمت إضافة بند المصروف' : 'Expense line added', 'success');
+            addMessage({ role: 'assistant', textAr: 'النوع: إضافة بند مصروف\nالحالة: تمت الإضافة بنجاح', textEn: 'Type: Add expense line\nStatus: Added successfully' });
           }}
         />
       )}
@@ -842,8 +842,8 @@ export default function SmartChatScreen() {
           onSaved={() => {
             invalidateOnFinancialMutation(qc);
             setExpenseMode(null);
-            showToast(isAr ? '╪ز┘à ╪ز╪│╪ش┘è┘ ╪د┘┘à╪╡╪▒┘ê┘' : 'Expense recorded', 'success');
-            addMessage({ role: 'assistant', textAr: '╪د┘┘┘ê╪╣: ╪│╪»╪د╪» ┘à╪╡╪▒┘ê┘\n╪د┘╪ص╪د┘╪ر: ╪ز┘à ╪د┘╪ز╪│╪ش┘è┘ ╪ذ┘╪ش╪د╪ص', textEn: 'Type: Expense payment\nStatus: Recorded successfully' });
+            showToast(isAr ? 'تم تسجيل المصروف' : 'Expense recorded', 'success');
+            addMessage({ role: 'assistant', textAr: 'النوع: سداد مصروف\nالحالة: تم التسجيل بنجاح', textEn: 'Type: Expense payment\nStatus: Recorded successfully' });
           }}
         />
       )}
@@ -852,9 +852,9 @@ export default function SmartChatScreen() {
         expenseEditLine === undefined ? (
           <AdaptiveSheet open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm" side="start" className="smartchat-expense-pick-drawer">
             <div className="flex flex-col gap-2">
-              {expenseLines.filter((l) => l.isActive !== false).map((line) => (
+              {expenseLines.filter((l: any) => l.isActive !== false).map((line: any) => (
                 <Button key={line.id} className="w-full justify-start py-3 px-[14px]" style={{ textAlign: isAr ? 'right' : 'left' }} onClick={() => setExpenseEditLine(line)}>
-                  {line.nameAr || line.nameEn || line.name || 'ظ¤'}
+                  {line.nameAr || line.nameEn || line.name || '—'}
                 </Button>
               ))}
             </div>
@@ -869,8 +869,8 @@ export default function SmartChatScreen() {
               qc.invalidateQueries({ queryKey: ['expense-lines'] });
               setExpenseEditLine(undefined);
               setExpenseMode(null);
-              showToast(isAr ? '╪ز┘à ╪ز╪╣╪»┘è┘ ╪ذ┘╪» ╪د┘┘à╪╡╪▒┘ê┘' : 'Expense line updated', 'success');
-              addMessage({ role: 'assistant', textAr: '╪د┘┘┘ê╪╣: ╪ز╪╣╪»┘è┘ ╪ذ┘╪» ┘à╪╡╪▒┘ê┘\n╪د┘╪ص╪د┘╪ر: ╪ز┘à ╪د┘╪ز╪╣╪»┘è┘ ╪ذ┘╪ش╪د╪ص', textEn: 'Type: Edit expense line\nStatus: Updated successfully' });
+              showToast(isAr ? 'تم تعديل بند المصروف' : 'Expense line updated', 'success');
+              addMessage({ role: 'assistant', textAr: 'النوع: تعديل بند مصروف\nالحالة: تم التعديل بنجاح', textEn: 'Type: Edit expense line\nStatus: Updated successfully' });
             }}
           />
         )
@@ -879,13 +879,13 @@ export default function SmartChatScreen() {
       <AdaptiveSheet
         open={!!(activeCompanyId && commandsOpen && filteredGroups.length > 0)}
         onClose={() => setCommandsOpen(false)}
-        title={isAr ? '╪ث┘ê╪د┘à╪▒ ╪د┘┘à╪ص╪د╪»╪س╪ر' : 'Chat commands'}
+        title={isAr ? 'أوامر المحادثة' : 'Chat commands'}
         size="md"
         side="start"
         className="smartchat-commands-drawer"
       >
         <div ref={commandsPanelRef} className="noorix-chat-commands-panel-content" dir={isAr ? 'rtl' : 'ltr'}>
-          {filteredGroups.map((g) => (
+          {filteredGroups.map((g: any) => (
             <div key={g.id} className="noorix-chat-commands-group">
               <div className="noorix-chat-commands-group-label">
                 {g.icon} {isAr ? g.labelAr : g.labelEn}
@@ -893,7 +893,7 @@ export default function SmartChatScreen() {
               <div
                 className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}
               >
-                {g.items.map((it) => (
+                {g.items.map((it: any) => (
                   <Button
                     key={it.key}
                     className="noorix-chat-commands-item"

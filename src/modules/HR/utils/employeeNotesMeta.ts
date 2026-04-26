@@ -1,6 +1,6 @@
 const META_PREFIX = '[HR_META]';
 
-export function parseEmployeeNotesMeta(rawNotes) {
+export function parseEmployeeNotesMeta(rawNotes: any) {
   const raw = String(rawNotes || '');
   const idx = raw.lastIndexOf(META_PREFIX);
   if (idx < 0) {
@@ -26,10 +26,10 @@ export function parseEmployeeNotesMeta(rawNotes) {
   }
 }
 
-export function composeEmployeeNotes(notesText, meta = {}) {
+export function composeEmployeeNotes(notesText: any, meta: any = {}) {
   const text = String(notesText || '').trim();
   const safeMeta = Object.fromEntries(
-    Object.entries(meta || {}).filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== ''),
+    Object.entries(meta || {}).filter(([, v]: any) => v !== undefined && v !== null && String(v).trim() !== ''),
   );
   const hasMeta = Object.keys(safeMeta).length > 0;
   if (!hasMeta) return text;

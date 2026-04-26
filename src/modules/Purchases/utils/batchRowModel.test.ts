@@ -23,7 +23,7 @@ describe('patchForSupplierChange', () => {
         },
       },
     ];
-    const categories = [];
+    const categories: any[] = [];
     expect(patchForSupplierChange('s1', suppliers, categories)).toEqual({
       supplierId: 's1',
       kind: 'purchase',

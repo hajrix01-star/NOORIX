@@ -1,6 +1,6 @@
 import { FieldRow } from './OcrFieldRowItemParts';
 
-export function OcrExtractedInfoAndTotalsCard({ t, extracted, isAr }) {
+export function OcrExtractedInfoAndTotalsCard({ t, extracted, isAr }: any) {
   return (
     <div className="noorix-surface-card p-4">
       <div className="font-semibold text-[14px] mb-3">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>

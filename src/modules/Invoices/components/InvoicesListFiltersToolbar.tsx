@@ -29,7 +29,7 @@ export function InvoicesListFiltersToolbar({
   suppliers,
   creatorUsersForFilter,
   vaultsList,
-}) {
+}: any) {
   return (
     <>
       {(urlExtra.categoryId || urlExtra.expenseLineId || urlExtra.kind) && (
@@ -102,7 +102,7 @@ export function InvoicesListFiltersToolbar({
           variant={filterHasNotesOnly ? 'primary' : 'ghost'}
           aria-pressed={filterHasNotesOnly}
           onClick={() => {
-            setFilterHasNotesOnly((v) => !v);
+            setFilterHasNotesOnly((v: any) => !v);
             setPage(1);
           }}
         >
@@ -110,7 +110,7 @@ export function InvoicesListFiltersToolbar({
         </Button>
         <Button
           size="sm"
-          onClick={() => setShowCancelled((v) => !v)}
+          onClick={() => setShowCancelled((v: any) => !v)}
           style={
             showCancelled
               ? {
@@ -131,9 +131,9 @@ export function InvoicesListFiltersToolbar({
         <Input
           type="select"
           value={filterKind}
-          onChange={(e) => {
+          onChange={(e: any) => {
             setFilterKind(e.target.value);
-            setUrlExtra((p) => ({ ...p, kind: '' }));
+            setUrlExtra((p: any) => ({ ...p, kind: '' }));
             setPage(1);
           }}
           className="noorix-exec-filters__select"
@@ -150,14 +150,14 @@ export function InvoicesListFiltersToolbar({
         <Input
           type="select"
           value={filterSupplierId}
-          onChange={(e) => {
+          onChange={(e: any) => {
             setFilterSupplierId(e.target.value);
             setPage(1);
           }}
           className="noorix-exec-filters__select"
         >
           <option value="">{t('allSuppliers')}</option>
-          {(suppliers || []).map((s) => (
+          {(suppliers || []).map((s: any) => (
             <option key={s.id} value={s.id}>
               {(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id}
             </option>
@@ -172,7 +172,7 @@ export function InvoicesListFiltersToolbar({
         <Input
           type="select"
           value={filterCreatedByUserId}
-          onChange={(e) => {
+          onChange={(e: any) => {
             setFilterCreatedByUserId(e.target.value);
             setPage(1);
           }}
@@ -181,7 +181,7 @@ export function InvoicesListFiltersToolbar({
         >
           <option value="">{t('invoicesFilterCreatorAll')}</option>
           <option value="__none__">{t('invoicesFilterCreatorUnrecorded')}</option>
-          {creatorUsersForFilter.map((u) => (
+          {creatorUsersForFilter.map((u: any) => (
             <option key={u.id} value={u.id}>
               {lang === 'en' ? u.nameEn || u.nameAr || u.email : u.nameAr || u.nameEn || u.email}
             </option>
@@ -196,7 +196,7 @@ export function InvoicesListFiltersToolbar({
         <Input
           type="select"
           value={filterVaultId}
-          onChange={(e) => {
+          onChange={(e: any) => {
             setFilterVaultId(e.target.value);
             setPage(1);
           }}
@@ -204,7 +204,7 @@ export function InvoicesListFiltersToolbar({
           aria-label={t('invoiceVaultColumn')}
         >
           <option value="">{t('invoicesFilterVaultAll')}</option>
-          {vaultsList.map((v) => (
+          {vaultsList.map((v: any) => (
             <option key={v.id} value={v.id}>
               {vaultDisplayName(v, lang) || v.id}
             </option>

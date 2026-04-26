@@ -43,18 +43,18 @@ import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 
 const PAGE_SIZE = 50;
 
-export default function StaffListScreen({ embedded }) {
+export default function StaffListScreen({ embedded }: any) {
   const navigate = useNavigate();
   const { activeCompanyId, companies, userPermissions } = useApp();
-  const activeCompany = companies?.find((c) => c.id === activeCompanyId);
+  const activeCompany = companies?.find((c: any) => c.id === activeCompanyId);
   const companyNameAr = activeCompany?.nameAr || activeCompany?.name || '';
   const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const { showToast } = useToast();
   const [showForm, setShowForm] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState(null);
-  const [advanceEmployee, setAdvanceEmployee] = useState(null);
-  const [terminatingEmployee, setTerminatingEmployee] = useState(null);
+  const [editingEmployee, setEditingEmployee] = useState<any>(null);
+  const [advanceEmployee, setAdvanceEmployee] = useState<any>(null);
+  const [terminatingEmployee, setTerminatingEmployee] = useState<any>(null);
   const [viewMode, setViewMode] = useState('active');
   const [terminationForm, setTerminationForm] = useState({
     reason: '',
@@ -63,7 +63,7 @@ export default function StaffListScreen({ embedded }) {
   });
   const [showImportExport, setShowImportExport] = useState(false);
   /** ╪ذ╪╣╪» ┘╪ش╪د╪ص ╪د┘┘╪╡┘ ظ¤ ╪╣╪▒╪╢ ┘à┘╪«╪╡ ╪╡╪▒┘/╪╖╪ذ╪د╪╣╪ر/╪▒┘╪╣ ┘à╪│╪ز┘╪» */
-  const [terminationSettlementEmp, setTerminationSettlementEmp] = useState(null);
+  const [terminationSettlementEmp, setTerminationSettlementEmp] = useState<any>(null);
   const terminationReasonOptions = [
     t('terminationReasonOptionArt80'),
     t('terminationReasonOptionArt77'),
@@ -75,10 +75,10 @@ export default function StaffListScreen({ embedded }) {
   const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
 
   const permanentDeleteEmployeeMut = useApiMutation({
-    mutationFn: ({ id }) => deleteEmployee(id, companyId),
+    mutationFn: ({ id }: any) => deleteEmployee(id, companyId),
     successToast: () => t('employeeDeletedPermanent'),
-    errorToast: (e) => e?.message || t('updateFailed'),
-    onSuccess: (_data, variables) => {
+    errorToast: (e: any) => e?.message || t('updateFailed'),
+    onSuccess: (_data: any, variables: any) => {
       const id = variables.id;
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
@@ -139,7 +139,7 @@ export default function StaffListScreen({ embedded }) {
   }, [customAllowances]);
 
   const tableData = useMemo(() => {
-    return pagedItems.map((e) => {
+    return pagedItems.map((e: any) => {
       const parsed = parseEmployeeNotesMeta(e.notes);
       const meta = parsed.meta || {};
       return {
@@ -152,10 +152,10 @@ export default function StaffListScreen({ embedded }) {
     });
   }, [pagedItems, allowanceTotals]);
 
-  const toggleSort = useCallback((key) => {
-    setSortKey((prev) => {
+  const toggleSort = useCallback((key: any) => {
+    setSortKey((prev: any) => {
       if (prev === key) {
-        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        setSortDir((d: any) => (d === 'asc' ? 'desc' : 'asc'));
         return key;
       }
       setSortDir('asc');
@@ -164,7 +164,7 @@ export default function StaffListScreen({ embedded }) {
     setListPage(1);
   }, []);
 
-  const handlePermanentDelete = useCallback((row) => {
+  const handlePermanentDelete = useCallback((row: any) => {
     if (!companyId || !row?.id) return;
     if (!window.confirm(t('deleteEmployeePermanentConfirm', employeeDisplayName(row, lang, '')))) return;
     if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
@@ -173,9 +173,9 @@ export default function StaffListScreen({ embedded }) {
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120,
-      render: (v) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={v || ''}>{v || 'ظ¤'}</span> },
+      render: (v: any) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={v || ''}>{v || 'ظ¤'}</span> },
     { key: 'name', label: t('employeeName'), sortable: true, width: 200,
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <Button
           variant="raw"
           size="auto"
@@ -186,31 +186,31 @@ export default function StaffListScreen({ embedded }) {
         </Button>
       ) },
     { key: 'jobTitle', label: t('jobTitle'), sortable: true, width: 170,
-      render: (v) => <span className="nx-cell-muted">{v || 'ظ¤'}</span> },
+      render: (v: any) => <span className="nx-cell-muted">{v || 'ظ¤'}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125,
-      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140,
-      render: (_, row) => <FmtNum n={row.totalSalary} className="nx-cell-num text-[13px]" /> },
+      render: (_: any, row: any) => <FmtNum n={row.totalSalary} className="nx-cell-num text-[13px]" /> },
     { key: 'status', label: t('status'), width: 110,
-      render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
+      render: (v: any) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
       ? [
           {
             key: 'terminationReason',
             label: t('terminationReason'),
             width: 190,
-            render: (v) => <span className="nx-cell-muted">{v || 'ظ¤'}</span>,
+            render: (v: any) => <span className="nx-cell-muted">{v || 'ظ¤'}</span>,
           },
           {
             key: 'terminationClause',
             label: t('terminationClause'),
             width: 140,
-            render: (v) => <span className="nx-cell-muted">{v || 'ظ¤'}</span>,
+            render: (v: any) => <span className="nx-cell-muted">{v || 'ظ¤'}</span>,
           },
         ]
       : []),
     { key: 'actions', label: t('actions'), width: 60, align: 'center',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <HRActionsCell
           row={row}
           onEdit={() => setEditingEmployee(row)}
@@ -231,7 +231,7 @@ export default function StaffListScreen({ embedded }) {
                   },
                   {
                     onSuccess: () => showToast(t('employeeArchived'), 'success'),
-                    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
+                    onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
                   },
                 );
               }
@@ -246,7 +246,7 @@ export default function StaffListScreen({ embedded }) {
                   },
                   {
                     onSuccess: () => showToast(t('employeeRestored'), 'success'),
-                    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
+                    onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
                   },
                 );
               }
@@ -265,20 +265,20 @@ export default function StaffListScreen({ embedded }) {
         showToast(res?.error || t('saveFailed'), 'error');
         return;
       }
-      const rows = (res.data || []).map((e) => {
+      const rows = (res.data || []).map((e: any) => {
         const parsed = parseEmployeeNotesMeta(e.notes);
         const meta = parsed.meta || {};
         return {
           ...formatEmployeeForExport(e, allowanceTotals),
           '╪ز╪د╪▒┘è╪« ╪د┘╪د┘╪ز╪ص╪د┘é': formatSaudiDate(e.joinDate),
-          '╪د┘╪ص╪د┘╪ر': STATUS_MAP[e.status]?.label || e.status,
+          '╪د┘╪ص╪د┘╪ر': (STATUS_MAP as Record<string, { label?: string }>)[String(e.status)]?.label || e.status,
           '╪│╪ذ╪ذ ╪ح┘┘ç╪د╪ة ╪د┘╪«╪»┘à╪ر': meta.terminationReason || '',
           '╪د┘╪ذ┘╪»': meta.terminationClause || '',
           '╪ز╪د╪▒┘è╪« ╪ح┘┘ç╪د╪ة ╪د┘╪«╪»┘à╪ر': meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
         };
       });
       exportToExcel(rows, 'employees.xlsx', EMPLOYEE_EXCEL_EXPORT_OPTS);
-    } catch (e) {
+    } catch (e: any) {
       showToast(e?.message || t('saveFailed'), 'error');
     } finally {
       setExporting(false);
@@ -295,11 +295,11 @@ export default function StaffListScreen({ embedded }) {
     const res = await getCustomAllowances(companyId, employeeId);
     rejectIfApiFailed(res, t('loadingError'));
     const currentRows = Array.isArray(res?.data) ? res.data : (res?.data?.items ?? []);
-    const currentById = new Map(currentRows.map((row) => [row.id, row]));
-    const desiredIds = new Set(desiredRows.filter((row) => row.id).map((row) => row.id));
+    const currentById = new Map(currentRows.map((row: any) => [row.id, row]));
+    const desiredIds = new Set(desiredRows.filter((row: any) => row.id).map((row: any) => row.id));
 
     for (const currentRow of currentRows) {
-      const desiredRow = desiredRows.find((row) => row.id === currentRow.id);
+      const desiredRow = desiredRows.find((row: any) => row.id === currentRow.id);
       const changed = desiredRow
         && (desiredRow.nameAr !== currentRow.nameAr || !moneyAmountsEqual(desiredRow.amount, currentRow.amount));
       if (!desiredIds.has(currentRow.id) || changed) {
@@ -329,7 +329,7 @@ export default function StaffListScreen({ embedded }) {
     queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
   }
 
-  function handleSave(payload) {
+  function handleSave(payload: any) {
     const { employeeBody, customAllowances: customRows = [] } = payload?.employeeBody
       ? payload
       : { employeeBody: payload, customAllowances: [] };
@@ -346,31 +346,31 @@ export default function StaffListScreen({ embedded }) {
               await syncCustomAllowanceRows(editingEmployee.id, customRows);
               showToast(t('employeeUpdated'), 'success');
               setEditingEmployee(null);
-            } catch (e) {
+            } catch (e: any) {
               showToast(e?.message || t('saveFailed'), 'error');
             }
           },
-          onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
+          onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
         },
       );
     } else {
       create.mutate(employeeBody, {
-        onSuccess: async (res) => {
+        onSuccess: async (res: any) => {
           try {
             const employeeId = res?.data?.id || res?.id;
             await syncCustomAllowanceRows(employeeId, customRows);
             showToast(t('employeeAdded'), 'success');
             setShowForm(false);
-          } catch (e) {
+          } catch (e: any) {
             showToast(e?.message || t('saveFailed'), 'error');
           }
         },
-        onError: (e) => showToast(e?.message || t('addFailed'), 'error'),
+        onError: (e: any) => showToast(e?.message || t('addFailed'), 'error'),
       });
     }
   }
 
-  const renderMobileCard = useCallback((row) => (
+  const renderMobileCard = useCallback((row: any) => (
     <div>
       <div className="nx-mc__header mb-1">
         <span className="nx-cell-num nx-cell-muted-sm">{row.employeeSerial || 'ظ¤'}</span>
@@ -448,9 +448,9 @@ export default function StaffListScreen({ embedded }) {
               throwIfApiFailed(allAllow, t('loadingError'));
               const allowanceRows = Array.isArray(allAllow.data) ? allAllow.data : (allAllow.data?.items ?? []);
               const totalsMap = buildEmployeeAllowanceTotalsMap(allowanceRows);
-              return list.map((e) => formatEmployeeForExport(e, totalsMap));
+              return list.map((e: any) => formatEmployeeForExport(e, totalsMap));
             }}
-            onImportSuccess={(count) => {
+            onImportSuccess={(count: any) => {
               queryClient.invalidateQueries({ queryKey: ['employees'] });
               queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
               showToast(`╪ز┘à ╪د╪│╪ز┘è╪▒╪د╪» ${count} ┘à┘ê╪╕┘ ╪ذ┘╪ش╪د╪ص`, 'success');
@@ -474,7 +474,7 @@ export default function StaffListScreen({ embedded }) {
             <Input
               type="search"
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e: any) => setSearchInput(e.target.value)}
               placeholder={t('searchPlaceholder')}
               size="sm"
               className="w-full min-w-0 sm:max-w-xs sm:flex-1"
@@ -592,7 +592,7 @@ export default function StaffListScreen({ embedded }) {
                       });
                       setTerminatingEmployee(null);
                     },
-                    onError: (e) => showToast(e?.message || t('updateFailed'), 'error'),
+                    onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
                   },
                 );
               }}
@@ -608,10 +608,10 @@ export default function StaffListScreen({ embedded }) {
             label={t('terminationReason')}
             hint={t('terminationReasonExamples')}
             value={terminationForm.reason}
-            onChange={(e) => setTerminationForm((p) => ({ ...p, reason: e.target.value }))}
+            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, reason: e.target.value }))}
           >
             <option value="">{t('terminationReasonPlaceholder')}</option>
-            {terminationReasonOptions.map((opt) => (
+            {terminationReasonOptions.map((opt: any) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
           </Input>
@@ -620,7 +620,7 @@ export default function StaffListScreen({ embedded }) {
             type="select"
             label={t('terminationClause')}
             value={terminationForm.clause}
-            onChange={(e) => setTerminationForm((p) => ({ ...p, clause: e.target.value }))}
+            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, clause: e.target.value }))}
           >
             <option value="">{t('terminationClausePlaceholder')}</option>
             <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
@@ -633,7 +633,7 @@ export default function StaffListScreen({ embedded }) {
             type="date"
             label={t('terminationDate')}
             value={terminationForm.date}
-            onChange={(e) => setTerminationForm((p) => ({ ...p, date: e.target.value }))}
+            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, date: e.target.value }))}
           />
         </div>
       </Modal>

@@ -33,12 +33,12 @@ export const WORK_DAYS_PER_MONTH = DEFAULT_OVERTIME_WORK_DAYS;
 const NOORIX_WD_RE = /\[NOORIX_WD:(\d{1,2})\]/;
 
 /** إزالة وسوم أيام الأوفر من نص نظام الدوام (للعرض في النماذج). */
-export function stripOvertimeWorkDaysTag(schedule) {
+export function stripOvertimeWorkDaysTag(schedule: any) {
   return String(schedule || '').replace(NOORIX_WD_RE, '').replace(/\s+/g, ' ').trim();
 }
 
 /** قراءة أيام العمل الشهرية المستخدمة في ضرب الأوفر تايم (1–31). */
-export function parseOvertimeWorkDaysPerMonth(emp) {
+export function parseOvertimeWorkDaysPerMonth(emp: any) {
   const sch = String(emp?.workSchedule || '');
   const m = sch.match(NOORIX_WD_RE);
   if (m) {
@@ -51,7 +51,7 @@ export function parseOvertimeWorkDaysPerMonth(emp) {
 const MAX_SCHEDULE_LEN = 120;
 
 /** دمج نظام الدوام مع وسيم أيام الأوفر (يُستبدل الوسم السابق إن وُجد). */
-export function mergeOvertimeWorkDaysIntoSchedule(schedule, days) {
+export function mergeOvertimeWorkDaysIntoSchedule(schedule: any, days: any) {
   const d = Math.min(31, Math.max(1, Math.round(Number(days)) || DEFAULT_OVERTIME_WORK_DAYS));
   const tag = `[NOORIX_WD:${d}]`;
   let base = stripOvertimeWorkDaysTag(schedule);
@@ -62,23 +62,23 @@ export function mergeOvertimeWorkDaysIntoSchedule(schedule, days) {
   return combined.length > MAX_SCHEDULE_LEN ? combined.slice(0, MAX_SCHEDULE_LEN) : combined;
 }
 
-export function parseWorkHours(str) {
+export function parseWorkHours(str: any) {
   if (!str) return SAUDI_STANDARD_HOURS;
   const m = String(str).match(/(\d+(?:\.\d+)?)/);
   return m ? Math.max(1, Math.min(12, parseFloat(m[1]))) : SAUDI_STANDARD_HOURS;
 }
 
 /** مجموع بدلات مخصصة لموظف من قائمة الـ API. */
-export function sumCustomAllowancesForEmployee(allowanceRows, employeeId) {
+export function sumCustomAllowancesForEmployee(allowanceRows: any, employeeId: any) {
   if (!employeeId || !Array.isArray(allowanceRows)) return 0;
   const raw = allowanceRows
-    .filter((row) => row.employeeId === employeeId)
-    .reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+    .filter((row: any) => row.employeeId === employeeId)
+    .reduce((sum: any, row: any) => sum + (Number(row.amount) || 0), 0);
   return roundMoney2(raw);
 }
 
 /** أساسي + سكن + نقل + بدلات أخرى */
-export function baseSalaryComponentsDecimal(emp) {
+export function baseSalaryComponentsDecimal(emp: any) {
   return new Decimal(emp?.basicSalary ?? 0)
     .plus(emp?.housingAllowance ?? 0)
     .plus(emp?.transportAllowance ?? 0)
@@ -96,7 +96,7 @@ export function baseSalaryComponentsDecimal(emp) {
  *   - أيام عادية  (≤26): الساعات الزائدة عن 8 تُحسب OT
  *   - أيام الراحة (>26): كامل ساعاتها تُحسب OT
  */
-export function overtimePayDecimal(emp, customTotal = 0) {
+export function overtimePayDecimal(emp: any, customTotal: any = 0) {
   const workDays = parseOvertimeWorkDaysPerMonth(emp);
   const hours    = parseWorkHours(emp?.workHours);
   const basic    = new Decimal(emp?.basicSalary ?? 0);
@@ -121,18 +121,18 @@ export function overtimePayDecimal(emp, customTotal = 0) {
   return overtimeHourlyRate.times(totalOT);
 }
 
-export function overtimePay(emp, customTotal = 0) {
+export function overtimePay(emp: any, customTotal: any = 0) {
   return roundMoney2(overtimePayDecimal(emp, customTotal).toNumber());
 }
 
 /** إجمالي شهري كما في ملف الموظف (يشمل تقدير الأوفر تايم). */
-export function totalSalaryDecimal(emp, customTotal = 0) {
+export function totalSalaryDecimal(emp: any, customTotal: any = 0) {
   return baseSalaryComponentsDecimal(emp)
     .plus(customTotal || 0)
     .plus(overtimePayDecimal(emp, customTotal));
 }
 
-export function totalSalary(emp, customTotal = 0) {
+export function totalSalary(emp: any, customTotal: any = 0) {
   const d = totalSalaryDecimal(emp, customTotal).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
   return roundMoney2(d.toString());
 }
@@ -140,11 +140,11 @@ export function totalSalary(emp, customTotal = 0) {
 /**
  * حزمة بدون أوفرتايم (أساسي + بدلات + مخصصة) — للمقارنة أو تقارير.
  */
-export function fixedMonthlyPayPackageDecimal(emp, customTotal = 0) {
+export function fixedMonthlyPayPackageDecimal(emp: any, customTotal: any = 0) {
   return baseSalaryComponentsDecimal(emp).plus(customTotal || 0);
 }
 
-export function fixedMonthlyPayPackage(emp, customTotal = 0) {
+export function fixedMonthlyPayPackage(emp: any, customTotal: any = 0) {
   return roundMoney2(fixedMonthlyPayPackageDecimal(emp, customTotal).toNumber());
 }
 
@@ -159,7 +159,7 @@ export function fixedMonthlyPayPackage(emp, customTotal = 0) {
  *
  * القانون: أجر_ساعة_OT = أجر_الساعة_الفعلي + 50% × أجر_الساعة_الأساسي
  */
-export function overtimeBreakdownDecimal(emp, customTotal = 0) {
+export function overtimeBreakdownDecimal(emp: any, customTotal: any = 0) {
   const workDays = parseOvertimeWorkDaysPerMonth(emp);
   const hours    = parseWorkHours(emp?.workHours);
   const basic    = new Decimal(emp?.basicSalary ?? 0);
@@ -218,7 +218,7 @@ export function overtimeBreakdownDecimal(emp, customTotal = 0) {
  * @param {number|string|Decimal} targetTotal  الإجمالي الشهري المستهدف
  * @returns {{ basic: number, inverseWarning: boolean }}
  */
-export function basicSalaryFromTargetTotalInclusiveOvertime(emp, customTotal, targetTotal) {
+export function basicSalaryFromTargetTotalInclusiveOvertime(emp: any, customTotal: any, targetTotal: any) {
   const totalTarget = new Decimal(targetTotal || 0);
   const hours    = Math.max(1, Math.min(12, parseWorkHours(emp?.workHours)));
   const workDays = Math.max(1, parseOvertimeWorkDaysPerMonth(emp));

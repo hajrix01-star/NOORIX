@@ -32,7 +32,7 @@ const DEFAULTS = {
   loginDomain: 'hajrix.com',
 };
 
-const get = (key) => localStorage.getItem(KEYS[key]) || DEFAULTS[key];
+const get = (key: keyof typeof KEYS) => localStorage.getItem(KEYS[key]) || DEFAULTS[key];
 
 export const getBrandNameAr    = () => get('nameAr');
 export const getBrandNameEn    = () => get('nameEn');
@@ -43,11 +43,11 @@ export const getBrandColor     = () => get('color');
 export const getLoginDomain    = () => get('loginDomain');
 
 /** يُرجع الاسم أو الجملة حسب اللغة الحالية */
-export const getBrandName    = (lang = 'ar') => lang === 'en' ? getBrandNameEn()    : getBrandNameAr();
-export const getBrandTagline = (lang = 'ar') => lang === 'en' ? getBrandTaglineEn() : getBrandTaglineAr();
+export const getBrandName    = (lang: any = 'ar') => lang === 'en' ? getBrandNameEn()    : getBrandNameAr();
+export const getBrandTagline = (lang: any = 'ar') => lang === 'en' ? getBrandTaglineEn() : getBrandTaglineAr();
 
-export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, color, loginDomain }) {
-  const set = (key, val) =>
+export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, color, loginDomain }: any) {
+  const set = (key: keyof typeof KEYS, val: any) =>
     val !== undefined && (val ? localStorage.setItem(KEYS[key], val) : localStorage.removeItem(KEYS[key]));
 
   set('nameAr',      nameAr);
@@ -62,14 +62,14 @@ export function saveBranding({ nameAr, nameEn, taglineAr, taglineEn, logoUrl, co
   window.dispatchEvent(new CustomEvent('noorix:branding-changed'));
 }
 
-export function applyBranding(lang = 'ar') {
+export function applyBranding(lang: any = 'ar') {
   const name  = getBrandName(lang);
   const logo  = getBrandLogo();
   const color = getBrandColor();
 
   document.title = name;
 
-  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m: any) => {
     (m as HTMLMetaElement).content = color;
   });
 
@@ -91,12 +91,12 @@ export function applyBranding(lang = 'ar') {
  * تحديث الـ favicon — يعمل على الكمبيوتر والجوال.
  * ينشئ عناصر link جديدة بدلاً من الاكتفاء بتعديل الموجودة.
  */
-function _setFavicon(url) {
+function _setFavicon(url: any) {
   // ابنِ PNG بحجم 64×64 بالـ canvas من الصورة المخصصة
   // هذا يضمن توافق أوسع بدلاً من استخدام data: URLs الطويلة مباشرةً
-  _buildSquarePng(url, 64).then((pngUrl) => {
+  _buildSquarePng(url, 64).then((pngUrl: any) => {
     const relTypes = ['icon', 'shortcut icon', 'alternate icon'];
-    relTypes.forEach((rel) => {
+    relTypes.forEach((rel: any) => {
       // أزل العنصر القديم إن وُجد
       const old = document.querySelector(`link[rel="${rel}"]`);
       if (old) old.remove();
@@ -120,7 +120,7 @@ function _setFavicon(url) {
     // fallback: تعديل العناصر الموجودة مباشرة
     document
       .querySelectorAll('link[rel="icon"], link[rel="alternate icon"], link[rel="apple-touch-icon"]')
-      .forEach((el) => {
+      .forEach((el: any) => {
         (el as HTMLLinkElement).href = url;
       });
   });
@@ -131,7 +131,7 @@ function _setFavicon(url) {
  * يحل مشكلة أن الصور المستطيلة لا تناسب أيقونات PWA.
  */
 function _buildSquarePng(src: string, size: number): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve: any, reject: any) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -152,7 +152,7 @@ function _buildSquarePng(src: string, size: number): Promise<string> {
         const y = (size - h) / 2;
         ctx.drawImage(img, x, y, w, h);
         resolve(canvas.toDataURL('image/png'));
-      } catch (e) {
+      } catch (e: any) {
         reject(e);
       }
     };
@@ -167,7 +167,7 @@ function _buildSquarePng(src: string, size: number): Promise<string> {
  * - data: URL يعمل في Chrome Android وعدد من المتصفحات الأخرى
  * - iOS يعتمد على apple meta tags المُعيَّنة في applyBranding() وليس الـ manifest
  */
-function _injectDynamicManifest(name, shortName, logo, color, lang) {
+function _injectDynamicManifest(name: any, shortName: any, logo: any, color: any, lang: any) {
   try {
     const icons = logo
       ? [{ src: logo, sizes: 'any', type: 'image/png', purpose: 'any maskable' }]
@@ -203,7 +203,7 @@ function _injectDynamicManifest(name, shortName, logo, color, lang) {
       document.head.appendChild(link);
     }
     link.href = dataUrl;
-  } catch (_) {
+  } catch (_: any) {
     // تجاهل الأخطاء
   }
 }

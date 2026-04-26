@@ -8,7 +8,7 @@ import {
   throwIfApiFailed,
 } from '../services/api';
 
-export function useReportsGeneralProfitLoss({ companyId, year }) {
+export function useReportsGeneralProfitLoss({ companyId, year }: any) {
   return useQuery({
     queryKey: ['reports', 'general-profit-loss', companyId, year],
     queryFn: async () => {
@@ -21,7 +21,7 @@ export function useReportsGeneralProfitLoss({ companyId, year }) {
   });
 }
 
-export function useReportDetails({ companyId, year, month, groupKey, itemKey, enabled = true }) {
+export function useReportDetails({ companyId, year, month, groupKey, itemKey, enabled = true }: any) {
   return useQuery({
     queryKey: ['reports', 'general-profit-loss', 'details', companyId, year, month, groupKey, itemKey || 'all'],
     queryFn: async () => {
@@ -33,7 +33,7 @@ export function useReportDetails({ companyId, year, month, groupKey, itemKey, en
   });
 }
 
-export function useReportTrend({ companyId, year, groupKey, itemKey, enabled = true }) {
+export function useReportTrend({ companyId, year, groupKey, itemKey, enabled = true }: any) {
   return useQuery({
     queryKey: ['reports', 'general-profit-loss', 'trend', companyId, year, groupKey, itemKey || 'all'],
     queryFn: async () => {
@@ -45,7 +45,7 @@ export function useReportTrend({ companyId, year, groupKey, itemKey, enabled = t
   });
 }
 
-export function usePeriodAnalytics({ companyId, startDate, endDate, enabled = true }) {
+export function usePeriodAnalytics({ companyId, startDate, endDate, enabled = true }: any) {
   return useQuery({
     queryKey: ['reports', 'period-analytics', companyId, startDate, endDate],
     queryFn: async () => {
@@ -58,7 +58,7 @@ export function usePeriodAnalytics({ companyId, startDate, endDate, enabled = tr
   });
 }
 
-export function useTaxReport({ companyId, year, period, salesAmountIncludesVat = false, enabled = true }) {
+export function useTaxReport({ companyId, year, period, salesAmountIncludesVat = false, enabled = true }: any) {
   return useQuery({
     queryKey: ['reports', 'tax-vat', companyId, year, period, salesAmountIncludesVat],
     queryFn: async () => {

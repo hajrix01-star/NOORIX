@@ -2,12 +2,12 @@
  * SparkLine — خط بياني صغير (polyline + تعبئة شفافة)
  * بدون بيانات أو كلها صفر: خط متقطع أفقي في المنتصف
  */
-export default function SparkLine({ data = [], color = '#185FA5', height = 36 }) {
+export default function SparkLine({ data = [], color = '#185FA5', height = 36 }: any) {
   const W = 100;
   const H = height;
   const pad = 3;
-  const nums = (data || []).map((v) => Number(v || 0));
-  const empty = !nums.length || nums.every((v) => v === 0);
+  const nums = (data || []).map((v: any) => Number(v || 0));
+  const empty = !nums.length || nums.every((v: any) => v === 0);
 
   if (empty) {
     return (
@@ -28,9 +28,9 @@ export default function SparkLine({ data = [], color = '#185FA5', height = 36 })
   const min = Math.min(...nums);
   const range = Math.max(max - min, 1e-9);
   const n = nums.length;
-  const xs = nums.map((_, i) => (n === 1 ? W / 2 : pad + (i / (n - 1)) * (W - 2 * pad)));
-  const ys = nums.map((v) => pad + (1 - (v - min) / range) * (H - 2 * pad));
-  const points = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
+  const xs = nums.map((_: any, i: any) => (n === 1 ? W / 2 : pad + (i / (n - 1)) * (W - 2 * pad)));
+  const ys = nums.map((v: any) => pad + (1 - (v - min) / range) * (H - 2 * pad));
+  const points = xs.map((x: any, i: any) => `${x},${ys[i]}`).join(' ');
   const fillPoints = `${points} ${xs[n - 1]},${H} ${xs[0]},${H}`;
 
   return (

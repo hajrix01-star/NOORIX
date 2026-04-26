@@ -33,7 +33,7 @@ export function BackupSheetsAndModals({
   restorePhrase,
   setRestorePhrase,
   restoreMut,
-}) {
+}: any) {
   return (
     <>
       <AdaptiveSheet
@@ -64,14 +64,14 @@ export function BackupSheetsAndModals({
           type="text"
           label={t('backupImportNameLabel')}
           value={importNameAr}
-          onChange={(e) => setImportNameAr(e.target.value)}
+          onChange={(e: any) => setImportNameAr(e.target.value)}
         />
 
         <label className="nx-checkbox text-[13px] text-noorix-text mt-3 mb-2 leading-[1.5]">
           <input
             type="checkbox"
             checked={importConfirmed}
-            onChange={(e) => setImportConfirmed(e.target.checked)}
+            onChange={(e: any) => setImportConfirmed(e.target.checked)}
           />
           <span>
             {isAr
@@ -84,7 +84,7 @@ export function BackupSheetsAndModals({
           <input
             type="checkbox"
             checked={importStrictAlloc}
-            onChange={(e) => setImportStrictAlloc(e.target.checked)}
+            onChange={(e: any) => setImportStrictAlloc(e.target.checked)}
           />
           <span>{t('backupImportStrictAllocations')}</span>
         </label>
@@ -269,7 +269,7 @@ export function BackupSheetsAndModals({
 
               {importReportModal.summary?.sourceMeta &&
                 Object.keys(importReportModal.summary.sourceMeta).some(
-                  (k) => importReportModal.summary.sourceMeta[k] != null,
+                  (k: any) => importReportModal.summary.sourceMeta[k] != null,
                 ) && (
                   <div>
                     <div className="text-[12px] font-extrabold mb-2 text-noorix-muted">
@@ -309,7 +309,7 @@ export function BackupSheetsAndModals({
                       {t('backupReportImportWarnings')}
                     </div>
                     <ul className="text-[12px] text-noorix-text m-0 pl-4 list-disc space-y-1 leading-relaxed">
-                      {importReportModal.summary.importWarnings.map((w, i) => (
+                      {importReportModal.summary.importWarnings.map((w: any, i: any) => (
                         <li key={i} className="break-words">
                           {w}
                         </li>
@@ -368,7 +368,7 @@ export function BackupSheetsAndModals({
           type="text"
           label={t('backupSystemRestorePhraseLabel')}
           value={restorePcPhrase}
-          onChange={(e) => setRestorePcPhrase(e.target.value)}
+          onChange={(e: any) => setRestorePcPhrase(e.target.value)}
           className="nx-ltr"
           dir="ltr"
           autoComplete="off"
@@ -422,7 +422,7 @@ export function BackupSheetsAndModals({
           type="text"
           label={t('backupSystemRestorePhraseLabel')}
           value={restorePhrase}
-          onChange={(e) => setRestorePhrase(e.target.value)}
+          onChange={(e: any) => setRestorePhrase(e.target.value)}
           className="nx-ltr"
           dir="ltr"
           autoComplete="off"

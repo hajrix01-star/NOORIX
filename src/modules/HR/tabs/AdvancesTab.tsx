@@ -29,8 +29,8 @@ export default function AdvancesTab() {
   const companyId = activeCompanyId ?? '';
   const queryClient = useQueryClient();
   const [showAdvance, setShowAdvance] = useState(false);
-  const [editingAdvance, setEditingAdvance] = useState(null);
-  const [settlingAdvance, setSettlingAdvance] = useState(null);
+  const [editingAdvance, setEditingAdvance] = useState<any>(null);
+  const [settlingAdvance, setSettlingAdvance] = useState<any>(null);
   const { showToast } = useToast();
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
@@ -41,10 +41,10 @@ export default function AdvancesTab() {
   const { data: rawAdvanceRows, isLoading } = useQuery({
     queryKey: ['invoices', companyId, 'advance'],
     queryFn: async () => {
-      const res = await getInvoices(companyId, null, null, 1, 500);
+      const res = await getInvoices(companyId, undefined, undefined, 1, 500);
       if (!res?.success) return [];
       const items = res.data?.items ?? [];
-      return items.filter((inv) => inv.kind === 'advance').map((i) => ({
+      return items.filter((inv: any) => inv.kind === 'advance').map((i: any) => ({
         ...i,
         settledAmountNum: Number(i.settledAmount ?? 0),
         totalAmountNum: Number(i.totalAmount ?? 0),
@@ -62,20 +62,20 @@ export default function AdvancesTab() {
     enabled: !!companyId,
   });
 
-  const items = useMemo(() => (rawAdvanceRows ?? []).map((row) => ({
+  const items = useMemo(() => (rawAdvanceRows ?? []).map((row: any) => ({
     ...row,
     employeeName: employeeDisplayName(row.employee || { name: row.employeeName }, lang),
   })), [rawAdvanceRows, lang]);
   const employeeOptions = useMemo(
-    () => [...new Set(items.map((r) => r.employeeName).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b))),
+    () => [...new Set(items.map((r: any) => r.employeeName).filter(Boolean))].sort((a: any, b: any) => String(a).localeCompare(String(b))),
     [items],
   ) as string[];
   const monthOptions = useMemo(
-    () => [...new Set(items.map((r) => String(r.transactionDate || '').slice(0, 7)).filter((m) => /^\d{4}-\d{2}$/.test(m)))].sort().reverse(),
+    () => [...new Set(items.map((r: any) => String(r.transactionDate || '').slice(0, 7)).filter((m: any) => /^\d{4}-\d{2}$/.test(m)))].sort().reverse(),
     [items],
   ) as string[];
   const preFilteredItems = useMemo(() => {
-    return items.filter((row) => {
+    return items.filter((row: any) => {
       const byEmployee = employeeFilter ? row.employeeName === employeeFilter : true;
       const byMonth = monthFilter ? String(row.transactionDate || '').slice(0, 7) === monthFilter : true;
       const bySettlement = settlementFilter === 'all'
@@ -96,14 +96,14 @@ export default function AdvancesTab() {
       dateKeys: ['transactionDate'],
     });
 
-  const totalAmount = sumAmounts(allFilteredData.filter((r) => r.status !== 'cancelled'), 'totalAmount');
-  const outstandingCount = allFilteredData.filter((r) => r.status !== 'cancelled' && r.settlementStatus !== 'settled').length;
+  const totalAmount = sumAmounts(allFilteredData.filter((r: any) => r.status !== 'cancelled'), 'totalAmount');
+  const outstandingCount = allFilteredData.filter((r: any) => r.status !== 'cancelled' && r.settlementStatus !== 'settled').length;
 
   const settlementMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
-      render: (v, row) => (
+      render: (v: any, row: any) => (
         <span className="font-semibold text-[13px]" style={{
           color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
@@ -113,7 +113,7 @@ export default function AdvancesTab() {
         </span>
       ) },
     { key: 'totalAmount', label: t('advanceAmount'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (v, row) => (
+      render: (v: any, row: any) => (
         <span className="nx-cell-num" style={{
           color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
@@ -123,7 +123,7 @@ export default function AdvancesTab() {
         </span>
       ) },
     { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
-      render: (v, row) => (
+      render: (v: any, row: any) => (
         <span className="text-[12px] whitespace-nowrap" style={{
           color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)',
           textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
@@ -133,19 +133,19 @@ export default function AdvancesTab() {
         </span>
       ) },
     { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, width: 120, minWidth: 110,
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <span className="nx-cell-num" style={{ color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit' }}>
           {hrFmt(row.settledAmountNum || 0)}
         </span>
       ) },
     { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, width: 120, minWidth: 110,
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <span className="nx-cell-num" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
           {hrFmt(row.remainingAmount || 0)}
         </span>
       ) },
     { key: 'installmentCount', label: t('installmentInfo'), width: 110, minWidth: 100,
-      render: (_, row) => {
+      render: (_: any, row: any) => {
         if (!row.installmentCount || row.installmentCount <= 1) return <span className="nx-cell-muted-sm">—</span>;
         return (
           <span className="text-[12px] text-noorix-blue font-semibold ltr">
@@ -154,13 +154,13 @@ export default function AdvancesTab() {
         );
       } },
     { key: 'settledAt', label: t('advanceSettlementDate'), width: 125, minWidth: 120,
-      render: (v, row) => (
+      render: (v: any, row: any) => (
         <span className="nx-cell-muted-sm">
           {row.settledAt ? formatSaudiDate(row.settledAt) : '—'}
         </span>
       ) },
     { key: 'status', label: t('status'), width: 120, minWidth: 110,
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <Badge
           {...Badge.fromStatus(row.settlementStatus, settlementMap)}
           size="sm"
@@ -168,19 +168,19 @@ export default function AdvancesTab() {
         />
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <HRActionsCell
           row={row}
           onEdit={() => setEditingAdvance(row)}
           onSettle={() => setSettlingAdvance(row)}
           onDelete={() => {
             if (!window.confirm(t('deleteAdvance'))) return;
-            updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res) => {
+            updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res: any) => {
               try {
                 rejectIfApiFailed(res, t('saveFailed'));
                 invalidateOnFinancialMutation(queryClient);
                 showToast(t('advanceDeleted'), 'success');
-              } catch (e) {
+              } catch (e: any) {
                 showToast(e?.message || t('saveFailed'), 'error');
               }
             });
@@ -201,7 +201,7 @@ export default function AdvancesTab() {
     </>
   );
 
-  const exportData = allFilteredData.map((r) => ({
+  const exportData = allFilteredData.map((r: any) => ({
     employeeName: r.employeeName || '—',
     amount: hrFmt(r.totalAmount),
     transactionDate: formatSaudiDate(r.transactionDate),
@@ -219,7 +219,7 @@ export default function AdvancesTab() {
           : t('advanceOutstanding'),
   }));
 
-  const renderMobileCard = useCallback((row) => {
+  const renderMobileCard = useCallback((row: any) => {
     const settled = row.settlementStatus === 'settled';
     return (
       <div>
@@ -273,19 +273,19 @@ export default function AdvancesTab() {
     <ScreenShell>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
-          <Input type="select" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
+          <Input type="select" value={employeeFilter} onChange={(e: any) => setEmployeeFilter(e.target.value)}>
             <option value="">{t('advancesFilterEmployee')} — {t('advancesFilterAll')}</option>
-            {employeeOptions.map((name) => (
+            {employeeOptions.map((name: any) => (
               <option key={name} value={name}>{name}</option>
             ))}
           </Input>
-          <Input type="select" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}>
+          <Input type="select" value={monthFilter} onChange={(e: any) => setMonthFilter(e.target.value)}>
             <option value="">{t('advancesFilterMonth')} — {t('advancesFilterAll')}</option>
-            {monthOptions.map((month) => (
+            {monthOptions.map((month: any) => (
               <option key={month} value={month}>{month}</option>
             ))}
           </Input>
-          <Input type="select" value={settlementFilter} onChange={(e) => setSettlementFilter(e.target.value)}>
+          <Input type="select" value={settlementFilter} onChange={(e: any) => setSettlementFilter(e.target.value)}>
             <option value="all">{t('advancesFilterSettlement')} — {t('advancesFilterAll')}</option>
             <option value="outstanding">{t('advancesFilterOutstandingOnly')}</option>
             <option value="settled">{t('advancesFilterSettledOnly')}</option>
@@ -294,7 +294,7 @@ export default function AdvancesTab() {
         <Input
           type="search"
           value={searchText}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: any) => setSearch(e.target.value)}
           placeholder={t('searchPlaceholder')}
           size="sm"
           className="w-full min-w-0 lg:max-w-xs lg:flex-1"
@@ -356,7 +356,7 @@ export default function AdvancesTab() {
             showToast(t('advanceUpdated'), 'success');
             setEditingAdvance(null);
           }}
-          onError={(msg) => showToast(msg, 'error')}
+          onError={(msg: any) => showToast(msg, 'error')}
         />
       )}
       {settlingAdvance && (
@@ -370,14 +370,14 @@ export default function AdvancesTab() {
             showToast(t('advanceSettledSuccess'), 'success');
             setSettlingAdvance(null);
           }}
-          onError={(msg) => showToast(msg, 'error')}
+          onError={(msg: any) => showToast(msg, 'error')}
         />
       )}
     </ScreenShell>
   );
 }
 
-function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
+function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }: any) {
   const { t } = useTranslation();
   const [amount, setAmount] = useState(String(Number(advance?.totalAmount ?? 0)));
   const [date, setDate] = useState(String(advance?.transactionDate || '').slice(0, 10));
@@ -414,7 +414,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
       const res = await updateInvoice(advance.id, payload, companyId);
       rejectIfApiFailed(res, t('saveFailed'));
       onSaved?.();
-    } catch (e) {
+    } catch (e: any) {
       onError?.(e?.message || t('saveFailed'));
     } finally {
       setSaving(false);
@@ -437,8 +437,8 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
       }
     >
       <div className="grid gap-2.5">
-        <Input type="number" label={t('advanceAmount')} min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        <Input type="date" label={t('advanceLoanDate')} value={date} onChange={(e) => setDate(e.target.value)} />
+        <Input type="number" label={t('advanceAmount')} min="0.01" step="0.01" value={amount} onChange={(e: any) => setAmount(e.target.value)} />
+        <Input type="date" label={t('advanceLoanDate')} value={date} onChange={(e: any) => setDate(e.target.value)} />
         <Input
           type="number"
           min="1"
@@ -446,7 +446,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
           step="1"
           label={t('installmentCount')}
           value={installmentCount}
-          onChange={(e) => setInstallmentCount(e.target.value)}
+          onChange={(e: any) => setInstallmentCount(e.target.value)}
           placeholder="1"
         />
         {parsedCount > 1 && installmentAmt && (
@@ -457,13 +457,13 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }) {
             </span>
           </div>
         )}
-        <Input multiline rows={3} label={t('notes')} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <Input multiline rows={3} label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} />
       </div>
     </AdaptiveSheet>
   );
 }
 
-function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError }) {
+function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError }: any) {
   const { t } = useTranslation();
   const total = Number(advance?.totalAmount ?? 0);
   const alreadySettled = Number(advance?.settledAmount ?? 0);
@@ -514,7 +514,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
         rejectIfApiFailed(dRes, t('saveFailed'));
       }
       onSaved?.();
-    } catch (e) {
+    } catch (e: any) {
       onError?.(e?.message || t('saveFailed'));
     } finally {
       setSaving(false);
@@ -538,21 +538,21 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
     >
       <div className="text-[13px] mb-2">{t('advanceRemainingAmount')}: <strong>{hrFmt(remaining)}</strong></div>
       <div className="grid gap-2.5">
-        <Input type="select" label="نوع التسوية" value={settlementType} onChange={(e) => setSettlementType(e.target.value)}>
+        <Input type="select" label="نوع التسوية" value={settlementType} onChange={(e: any) => setSettlementType(e.target.value)}>
           <option value="full">{t('settlementFull')}</option>
           <option value="partial">{t('settlementPartial')}</option>
           <option value="defer">{t('settlementDefer')}</option>
         </Input>
         {settlementType === 'partial' && (
-          <Input type="number" label={t('advanceSettledAmount')} min="0.01" step="0.01" value={settleAmount} onChange={(e) => setSettleAmount(e.target.value)} />
+          <Input type="number" label={t('advanceSettledAmount')} min="0.01" step="0.01" value={settleAmount} onChange={(e: any) => setSettleAmount(e.target.value)} />
         )}
         {settlementType === 'defer' ? (
-          <Input type="month" label="شهر التأجيل" value={deferMonth} onChange={(e) => setDeferMonth(e.target.value)} />
+          <Input type="month" label="شهر التأجيل" value={deferMonth} onChange={(e: any) => setDeferMonth(e.target.value)} />
         ) : (
           <>
-            <Input type="date" label={t('advanceSettlementDate')} value={settleDate} onChange={(e) => setSettleDate(e.target.value)} />
+            <Input type="date" label={t('advanceSettlementDate')} value={settleDate} onChange={(e: any) => setSettleDate(e.target.value)} />
             <label className="nx-checkbox">
-              <input type="checkbox" checked={applyToSalary} onChange={(e) => setApplyToSalary(e.target.checked)} />
+              <input type="checkbox" checked={applyToSalary} onChange={(e: any) => setApplyToSalary(e.target.checked)} />
               {t('applyToSalaryDeduction')}
             </label>
           </>

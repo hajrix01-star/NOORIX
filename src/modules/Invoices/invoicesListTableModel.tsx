@@ -19,7 +19,7 @@ export function buildInvoiceListColumns({
   setViewingInvoice,
   setEditingInvoice,
   confirmAndDeleteInvoice,
-}) {
+}: any) {
   return [
     {
       key: 'invoiceNumber',
@@ -28,7 +28,7 @@ export function buildInvoiceListColumns({
       shrink: true,
       width: '12%',
       sortable: true,
-      render: (v, row) => {
+      render: (v: any, row: any) => {
         const isInbound = row.kind === 'sale';
         return (
           <span
@@ -47,7 +47,7 @@ export function buildInvoiceListColumns({
       align: 'center',
       shrink: true,
       width: '7%',
-      render: (v) => (
+      render: (v: any) => (
         <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>
           {v || '—'}
         </span>
@@ -58,7 +58,7 @@ export function buildInvoiceListColumns({
       label: t('supplier'),
       align: 'center',
       width: '7%',
-      render: (v) => (
+      render: (v: any) => (
         <span className="nx-cell-ellipsis" title={v || ''}>
           {v || '—'}
         </span>
@@ -69,7 +69,7 @@ export function buildInvoiceListColumns({
       label: t('invoiceUserColumn'),
       align: 'center',
       width: '8%',
-      render: (v) => (
+      render: (v: any) => (
         <span className="nx-cell-ellipsis" title={v || ''}>
           {v || '—'}
         </span>
@@ -80,7 +80,7 @@ export function buildInvoiceListColumns({
       label: t('invoiceNotesColumn') || 'ملاحظة',
       align: 'center',
       width: '8%',
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <span className="nx-cell-ellipsis" title={row.notes || ''}>
           {row.notes || '—'}
         </span>
@@ -92,19 +92,19 @@ export function buildInvoiceListColumns({
       align: 'center',
       shrink: true,
       width: '6%',
-      render: (v) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" />,
+      render: (v: any) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" />,
     },
     {
       key: 'vaultLabel',
       label: t('invoiceVaultColumn'),
       align: 'center',
       width: '20%',
-      render: (_, row) => {
+      render: (_: any, row: any) => {
         const a = row.vaultAllocations;
         if (a?.length > 0) {
           return (
             <div className="flex flex-nowrap gap-1.5 justify-center overflow-hidden">
-              {a.map((al) => {
+              {a.map((al: any) => {
                 const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
                 return (
                   <div
@@ -145,7 +145,7 @@ export function buildInvoiceListColumns({
       shrink: true,
       width: '7%',
       sortable: true,
-      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" />,
+      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" />,
     },
     {
       key: 'taxAmount',
@@ -154,7 +154,7 @@ export function buildInvoiceListColumns({
       numeric: true,
       shrink: true,
       width: '6%',
-      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" />,
+      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" />,
     },
     {
       key: 'totalAmount',
@@ -164,7 +164,7 @@ export function buildInvoiceListColumns({
       shrink: true,
       width: '7%',
       sortable: true,
-      render: (v) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" />,
+      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" />,
     },
     {
       key: 'transactionDate',
@@ -173,7 +173,7 @@ export function buildInvoiceListColumns({
       sortable: true,
       shrink: true,
       width: '7%',
-      render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span>,
+      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span>,
     },
     {
       key: 'status',
@@ -181,7 +181,7 @@ export function buildInvoiceListColumns({
       align: 'center',
       shrink: true,
       width: '6%',
-      render: (v) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" />,
+      render: (v: any) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" />,
     },
     {
       key: 'actions',
@@ -189,14 +189,14 @@ export function buildInvoiceListColumns({
       align: 'center',
       width: '5%',
       shrink: true,
-      render: (_, row) => (
+      render: (_: any, row: any) => (
         <InvoiceActionsCell
           row={row}
           userRole={userRole}
           companyId={companyId}
-          onView={(r) => setViewingInvoice(r)}
+          onView={(r: any) => setViewingInvoice(r)}
           onPrint={() => window.print()}
-          onEdit={(r) => setEditingInvoice(r)}
+          onEdit={(r: any) => setEditingInvoice(r)}
           onDelete={confirmAndDeleteInvoice}
         />
       ),
@@ -204,7 +204,7 @@ export function buildInvoiceListColumns({
   ];
 }
 
-export function buildInvoiceListFooterRow({ t, serverAll, total }) {
+export function buildInvoiceListFooterRow({ t, serverAll, total }: any) {
   return [
     {
       keys: ['invoiceNumber', 'supplierInvoiceNumber', 'supplierName', 'createdByDisplayName', 'notesOrEmployee', 'kind', 'vaultLabel'],
@@ -248,8 +248,8 @@ export function createInvoiceListMobileCardRenderer({
   companyId,
   setEditingInvoice,
   confirmAndDeleteInvoice,
-}) {
-  return (row) => (
+}: any) {
+  return (row: any) => (
     <div>
       <div className="nx-mc__header">
         <span className="nx-cell-num nx-cell-accent text-[14px]">{row.invoiceNumber || '—'}</span>
@@ -276,7 +276,7 @@ export function createInvoiceListMobileCardRenderer({
         <div className="text-[10px] font-bold text-noorix-muted mb-1 text-end">{t('invoiceVaultColumn')}</div>
         {row.vaultAllocations?.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
-            {row.vaultAllocations.map((al) => {
+            {row.vaultAllocations.map((al: any) => {
               const vn = lang === 'en' ? al.vault?.nameEn || al.vault?.nameAr : al.vault?.nameAr || al.vault?.nameEn;
               return (
                 <div
@@ -326,7 +326,7 @@ export function createInvoiceListMobileCardRenderer({
           userRole={userRole}
           companyId={companyId}
           onPrint={() => window.print()}
-          onEdit={(r) => setEditingInvoice(r)}
+          onEdit={(r: any) => setEditingInvoice(r)}
           onDelete={confirmAndDeleteInvoice}
         />
       </div>

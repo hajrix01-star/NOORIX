@@ -15,7 +15,7 @@ import { Button, AdaptiveSheet , FmtNum, SmartTable } from '../../../ui';
 
 const PAGE_SIZE = 50;
 
-export default function VaultTransactionsModal({ vault, companyId, onClose, dateFilter }) {
+export default function VaultTransactionsModal({ vault, companyId, onClose, dateFilter }: any) {
   const { t, lang } = useTranslation();
   const [page, setPage] = useState(1);
   const { startDate, endDate, periodLabel } = useMemo(() => {
@@ -26,7 +26,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     const y = now.getFullYear();
     const m = now.getMonth() + 1;
     const d = now.getDate();
-    const pad = (n) => String(n).padStart(2, '0');
+    const pad = (n: any) => String(n).padStart(2, '0');
     const first = `${y}-${pad(m)}-01`;
     const last = `${y}-${pad(m)}-${pad(new Date(y, m, 0).getDate())}`;
     return { startDate: `${first}T00:00:00+03:00`, endDate: `${last}T23:59:59+03:00`, periodLabel: '' };
@@ -51,7 +51,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   const accountId = vault?.accountId;
 
   const formatVaultTransactionNotes = useCallback(
-    (row) => {
+    (row: any) => {
       const parts = [];
       if (row.operationNotes) parts.push(String(row.operationNotes));
       if (row.referenceType === 'transfer' && row.transferToVaultId) {
@@ -66,7 +66,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     [t, lang],
   );
 
-  const items = (data?.items ?? []).map((row) => {
+  const items = (data?.items ?? []).map((row: any) => {
     const amt = Number(row.amount ?? 0);
     const isDebit = row.debitAccountId === accountId;
     return {
@@ -79,11 +79,11 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   const totalDebit = useMemo(() => {
     if (vault?.totalIn != null && (data?.total ?? 0) > items.length) return Number(vault.totalIn);
-    return items.reduce((s, r) => s + (r.debit ?? 0), 0);
+    return items.reduce((s: any, r: any) => s + (r.debit ?? 0), 0);
   }, [items, vault?.totalIn, data?.total]);
   const totalCredit = useMemo(() => {
     if (vault?.totalOut != null && (data?.total ?? 0) > items.length) return Number(vault.totalOut);
-    return items.reduce((s, r) => s + (r.credit ?? 0), 0);
+    return items.reduce((s: any, r: any) => s + (r.credit ?? 0), 0);
   }, [items, vault?.totalOut, data?.total]);
 
   const handleExportExcel = useCallback(async () => {
@@ -92,14 +92,14 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     const tx = res.data?.transactions;
     const allItems = tx?.items ?? [];
     const accId = vault?.accountId;
-    const mapped = allItems.map((row) => {
+    const mapped = allItems.map((row: any) => {
       const amt = Number(row.amount ?? 0);
       const isDebit = row.debitAccountId === accId;
       return { ...row, debit: isDebit ? amt : null, credit: !isDebit ? amt : null };
     });
-    const totDebit = mapped.reduce((s, r) => s + (r.debit ?? 0), 0);
-    const totCredit = mapped.reduce((s, r) => s + (r.credit ?? 0), 0);
-    const rows = mapped.map((r) => ({
+    const totDebit = mapped.reduce((s: any, r: any) => s + (r.debit ?? 0), 0);
+    const totCredit = mapped.reduce((s: any, r: any) => s + (r.credit ?? 0), 0);
+    const rows = mapped.map((r: any) => ({
       [t('documentNumber')]: r.documentNumber || r.referenceId || '—',
       [t('date')]: formatSaudiDate(r.transactionDate),
       [t('type')]: r.referenceType || '—',
@@ -121,8 +121,8 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   }, [vault?.id, vault?.accountId, vault?.nameAr, companyId, startDate, endDate, periodLabel, t, formatVaultTransactionNotes]);
 
   const handlePrintPdf = () => {
-    const esc = (s) => String(s ?? '').replace(/</g, '&lt;');
-    const rows = items.map((r) =>
+    const esc = (s: any) => String(s ?? '').replace(/</g, '&lt;');
+    const rows = items.map((r: any) =>
       `<tr><td>${esc(r.documentNumber || r.referenceId || '—')}</td><td>${esc(formatSaudiDate(r.transactionDate))}</td><td>${esc(r.referenceType === 'transfer' ? t('vaultLedgerTypeTransfer') : (r.referenceType || '—'))}</td><td>${esc(r.notesDisplay || '—')}</td><td>${r.debit != null ? fmt(r.debit) : '—'}</td><td>${r.credit != null ? fmt(r.credit) : '—'}</td></tr>`,
     ).join('');
     const totalRow = rows ? `<tr><td colspan="4">${t('total')}</td><td>${fmt(totalDebit)}</td><td>${fmt(totalCredit)}</td></tr>` : '';
@@ -136,12 +136,12 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   };
 
   const columns = [
-    { key: 'documentNumber', label: t('documentNumber'), render: (_, r) => <span className="nx-cell-num">{r.documentNumber || r.referenceId || '—'}</span> },
-    { key: 'transactionDate', label: t('date'), render: (v) => <span className="text-[12px]">{formatSaudiDate(v)}</span> },
+    { key: 'documentNumber', label: t('documentNumber'), render: (_: any, r: any) => <span className="nx-cell-num">{r.documentNumber || r.referenceId || '—'}</span> },
+    { key: 'transactionDate', label: t('date'), render: (v: any) => <span className="text-[12px]">{formatSaudiDate(v)}</span> },
     {
       key: 'referenceType',
       label: t('type'),
-      render: (v) => (
+      render: (v: any) => (
         <span className="text-[12px]">
           {v === 'transfer' ? t('vaultLedgerTypeTransfer') : (v || '—')}
         </span>
@@ -150,17 +150,17 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
     {
       key: 'notesDisplay',
       label: t('notes'),
-      render: (_, r) => (
+      render: (_: any, r: any) => (
         <span className="text-[12px] text-noorix-text max-w-[min(280px,40vw)] whitespace-normal break-words">
           {r.notesDisplay || '—'}
         </span>
       ),
     },
-    { key: 'debit', label: t('debit'), numeric: true, render: (v) => v != null ? <FmtNum n={v} className="text-noorix-green nx-font-numbers" /> : <span>—</span> },
-    { key: 'credit', label: t('credit'), numeric: true, render: (v) => v != null ? <FmtNum n={v} className="text-noorix-red nx-font-numbers" /> : <span>—</span> },
+    { key: 'debit', label: t('debit'), numeric: true, render: (v: any) => v != null ? <FmtNum n={v} className="text-noorix-green nx-font-numbers" /> : <span>—</span> },
+    { key: 'credit', label: t('credit'), numeric: true, render: (v: any) => v != null ? <FmtNum n={v} className="text-noorix-red nx-font-numbers" /> : <span>—</span> },
   ];
 
-  const renderMobileCard = useCallback((row) => (
+  const renderMobileCard = useCallback((row: any) => (
     <div>
       <div className="flex flex items-center justify-between mb-1">
         <span className="font-bold text-[13px] nx-font-numbers">{row.documentNumber || row.referenceId || '—'}</span>

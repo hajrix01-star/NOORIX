@@ -96,7 +96,7 @@ export default function App() {
   useEffect(() => {
     if (!isAuthenticated || !user || isLoginPage) return;
     const routes = ['/', '/sales', '/purchases', '/invoices'];
-    const run = () => routes.forEach((to) => prefetchRouteChunk(to));
+    const run = () => routes.forEach((to: any) => prefetchRouteChunk(to));
     let idleId: number | undefined;
     /** في المتصفح `setTimeout` يعيد رقمًا؛ أنواع Node تعيد `Timeout` */
     let timeoutId: number | undefined;
@@ -148,13 +148,13 @@ export default function App() {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_COMPANY);
       if (saved) return saved;
-    } catch (_) {}
+    } catch (_: any) {}
     return singleCompanyId || (companiesList[0]?.id ?? '');
   });
   const setActiveCompany = useCallback((id: string) => {
     startCompanyTransition(() => {
       _setActiveCompany(id);
-      try { localStorage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, id); } catch (_) {}
+      try { localStorage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, id); } catch (_: any) {}
     });
   }, [startCompanyTransition]);
   useEffect(() => {
@@ -163,10 +163,10 @@ export default function App() {
 
     const savedId = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_COMPANY); } catch { return null; } })();
 
-    if (savedId && companiesFromApi.some((c) => c.id === savedId)) {
+    if (savedId && companiesFromApi.some((c: any) => c.id === savedId)) {
       // الشركة المحفوظة صالحة في API → استعدها دائماً
       if (activeCompany !== savedId) _setActiveCompany(savedId);
-    } else if (!companiesFromApi.some((c) => c.id === activeCompany)) {
+    } else if (!companiesFromApi.some((c: any) => c.id === activeCompany)) {
       // الشركة الحالية غير موجودة في API ولا توجد قيمة محفوظة صالحة → اختر الأولى
       setActiveCompany(companiesFromApi[0].id);
     }
@@ -196,7 +196,7 @@ export default function App() {
     document.documentElement.setAttribute('data-card-style', String(cardStyle));
     try {
       localStorage.setItem(CARD_STYLE_KEY, String(cardStyle));
-    } catch (_) {}
+    } catch (_: any) {}
   }, [cardStyle]);
 
   const applyLanguage = useCallback((lang: string) => {
@@ -221,7 +221,7 @@ export default function App() {
     if (pref !== language) applyLanguage(pref);
   }, [user?.id, user?.preferredLang]);
 
-  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const toggleSidebar = () => setSidebarOpen((prev: any) => !prev);
   const navigate = useNavigate();
   const handleLogout = () => {
     queryClient.clear();
@@ -278,7 +278,7 @@ export default function App() {
     if (!queryClient || !activeCompanyId) return;
     const GLOBAL_KEYS = ['companies', 'me'];
     queryClient.invalidateQueries({
-      predicate: (query) => {
+      predicate: (query: any) => {
         const key = query.queryKey;
         if (!Array.isArray(key)) return false;
         return !GLOBAL_KEYS.includes(key[0]);
@@ -299,7 +299,7 @@ export default function App() {
   const probeConnection = useCallback(async () => {
     let { ok } = await checkApiConnection();
     if (!ok) {
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r: any) => setTimeout(r, 1000));
       if (!connectionProbeMountedRef.current) return;
       const second = await checkApiConnection();
       ok = second.ok;
@@ -353,7 +353,7 @@ export default function App() {
             isAuthenticated={isAuthenticated}
             user={user}
             onLogout={handleLogout}
-            activeCompany={companies?.find((c) => c.id === activeCompany) || null}
+            activeCompany={companies?.find((c: any) => c.id === activeCompany) || null}
             companies={companies}
             activeCompanyId={activeCompany}
             setActiveCompany={setActiveCompany}

@@ -6,9 +6,9 @@ import { Button, Modal, FmtNum } from '../../../ui';
 /**
  * نافذة عرض الفاتورة (قراءة فقط) — كانت داخل InvoicesListScreen
  */
-export function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, lang, fmt }) {
+export function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, lang, fmt }: any) {
   if (!invoice) return null;
-  const fmtDate = (d) => (d ? formatSaudiDate(d) : '—');
+  const fmtDate = (d: any) => (d ? formatSaudiDate(d) : '—');
   const supplierName =
     (lang === 'en'
       ? invoice.supplier?.nameEn || invoice.supplier?.nameAr
@@ -71,7 +71,7 @@ export function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, la
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-2.5 p-5">
-        {fields.map(({ label, value, highlight, bold }) => (
+        {fields.map(({ label, value, highlight, bold }: any) => (
           <div key={label} className="bg-noorix-bg-muted py-[10px] px-3 rounded-[10px] border border-noorix-border">
             <div className="text-noorix-muted mb-1 text-[10px] uppercase tracking-[0.05em]">{label}</div>
             <div
@@ -92,7 +92,7 @@ export function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, la
               {t('invoiceVaultSplitsDetail')}
             </div>
             <ul className="m-0 p-0 list-none flex flex-col gap-1.5">
-              {alloc.map((a) => {
+              {alloc.map((a: any) => {
                 const vn = lang === 'en' ? a.vault?.nameEn || a.vault?.nameAr : a.vault?.nameAr || a.vault?.nameEn;
                 return (
                   <li key={a.id} className="flex justify-between gap-2 text-[13px] text-noorix-text">
@@ -130,7 +130,7 @@ export function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, la
               onClick={async () => {
                 try {
                   await downloadInvoiceAttachment(invoice.id, companyId);
-                } catch (e) {
+                } catch (e: any) {
                   showToast?.(e?.message || t('saveFailed'), 'error');
                 }
               }}

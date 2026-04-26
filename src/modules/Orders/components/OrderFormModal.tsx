@@ -19,7 +19,7 @@ export function OrderFormModal({
   onError,
   onClose,
   onWhatsApp,
-}) {
+}: any) {
   const { t } = useTranslation();
   const isEdit = !!initialOrder?.id;
   const [orderDate, setOrderDate] = useState(() =>
@@ -29,7 +29,7 @@ export function OrderFormModal({
   const [notes, setNotes] = useState(initialOrder?.notes || '');
   const [items, setItems] = useState(() => {
     if (initialOrder?.items?.length) {
-      return initialOrder.items.map((it) => ({
+      return initialOrder.items.map((it: any) => ({
         productId: it.productId,
         size: it.size || '',
         quantity: String(it.quantity ?? ''),
@@ -39,16 +39,16 @@ export function OrderFormModal({
     return [];
   });
   const [addRow, setAddRow] = useState({ productId: '', variantKey: '', size: '', packaging: '', unit: '', quantity: '', unitPrice: '' });
-  const [savedOrder, setSavedOrder] = useState(null);
+  const [savedOrder, setSavedOrder] = useState<any>(null);
 
   const productsById = useMemo(() => {
     const m = new Map();
-    products.forEach((p) => m.set(p.id, p));
+    products.forEach((p: any) => m.set(p.id, p));
     return m;
   }, [products]);
 
   const enrichedItems = useMemo(() => {
-    return items.map((it) => {
+    return items.map((it: any) => {
       const p = productsById.get(it.productId);
       const qty = new Decimal(it.quantity || 0);
       const price = new Decimal(it.unitPrice || (p?.lastPrice ?? 0));
@@ -60,11 +60,11 @@ export function OrderFormModal({
     const p = productsById.get(addRow.productId);
     const v = p?.variants;
     if (!Array.isArray(v) || v.length === 0) return [];
-    return v.map((x, i) => ({ ...x, _key: `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}|${i}` }));
+    return v.map((x: any, i: any) => ({ ...x, _key: `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}|${i}` }));
   }, [addRow.productId, productsById]);
 
   const totalAmount = useMemo(() => {
-    return enrichedItems.reduce((sum, it) => sum.plus(it.amount), new Decimal(0));
+    return enrichedItems.reduce((sum: any, it: any) => sum.plus(it.amount), new Decimal(0));
   }, [enrichedItems]);
 
   function addItemFromRow() {
@@ -74,20 +74,20 @@ export function OrderFormModal({
     const variants = Array.isArray(p?.variants) ? p.variants : [];
     let price = unitPrice;
     if (!price && variants.length > 0) {
-      const v = variants.find((x) => (x.size || '') === (size || '') && (x.packaging || '') === (packaging || '') && (x.unit || 'piece') === (unit || 'piece'));
+      const v = variants.find((x: any) => (x.size || '') === (size || '') && (x.packaging || '') === (packaging || '') && (x.unit || 'piece') === (unit || 'piece'));
       price = v?.lastPrice ? String(v.lastPrice) : '';
     }
     if (!price) price = p?.lastPrice ? String(p.lastPrice) : '';
-    setItems((prev) => [...prev, { productId, size: size || '', packaging: packaging || '', unit: unit || '', quantity, unitPrice: price }]);
+    setItems((prev: any) => [...prev, { productId, size: size || '', packaging: packaging || '', unit: unit || '', quantity, unitPrice: price }]);
     setAddRow({ productId: '', variantKey: '', size: '', packaging: '', unit: '', quantity: '', unitPrice: '' });
   }
 
-  function removeItem(idx) {
-    setItems((prev) => prev.filter((_, i) => i !== idx));
+  function removeItem(idx: any) {
+    setItems((prev: any) => prev.filter((_: any, i: any) => i !== idx));
   }
 
-  function updateItem(idx, field, value) {
-    setItems((prev) => {
+  function updateItem(idx: any, field: any, value: any) {
+    setItems((prev: any) => {
       const next = [...prev];
       next[idx] = { ...next[idx], [field]: value };
       if (field === 'productId') {
@@ -104,7 +104,7 @@ export function OrderFormModal({
 
   function handleSave() {
     const validItems = items
-      .map((it) => ({
+      .map((it: any) => ({
         productId: it.productId,
         size: it.size?.trim() || undefined,
         packaging: it.packaging?.trim() || undefined,
@@ -112,7 +112,7 @@ export function OrderFormModal({
         quantity: String(it.quantity || 0),
         unitPrice: String(it.unitPrice || 0),
       }))
-      .filter((it) => it.productId && parseFloat(it.quantity) > 0);
+      .filter((it: any) => it.productId && parseFloat(it.quantity) > 0);
     if (validItems.length === 0) {
       onError?.(t('ordersAddAtLeastOneItem'));
       return;
@@ -129,12 +129,12 @@ export function OrderFormModal({
       updateOrder.mutate(
         { id: initialOrder.id, body: payload },
         {
-          onSuccess: (res) => {
+          onSuccess: (res: any) => {
             const data = res?.data ?? res ?? { ...initialOrder, ...payload };
             setSavedOrder(data);
             onSuccess?.(data);
           },
-          onError: (e) => onError?.(e?.message || t('saveFailed')),
+          onError: (e: any) => onError?.(e?.message || t('saveFailed')),
         },
       );
     } else {
@@ -142,12 +142,12 @@ export function OrderFormModal({
       createOrder.mutate(
         { companyId, ...payload },
         {
-          onSuccess: (res) => {
+          onSuccess: (res: any) => {
             const data = res?.data ?? res;
             setSavedOrder(data);
             onSuccess?.(data);
           },
-          onError: (e) => onError?.(e?.message || t('saveFailed')),
+          onError: (e: any) => onError?.(e?.message || t('saveFailed')),
         },
       );
     }
@@ -232,13 +232,13 @@ export function OrderFormModal({
           type="date"
           label={`${t('orderDate')} *`}
           value={orderDate}
-          onChange={(e) => setOrderDate(e.target.value)}
+          onChange={(e: any) => setOrderDate(e.target.value)}
         />
         <Input
           type="select"
           label={`${t('orderType')} *`}
           value={orderType}
-          onChange={(e) => setOrderType(e.target.value)}
+          onChange={(e: any) => setOrderType(e.target.value)}
         >
           <option value="external">{t('orderTypeExternal')}</option>
           <option value="internal">{t('orderTypeInternal')}</option>
@@ -250,7 +250,7 @@ export function OrderFormModal({
             min="0"
             step="0.01"
             value={pettyCashAmount}
-            onChange={(e) => setPettyCashAmount(e.target.value)}
+            onChange={(e: any) => setPettyCashAmount(e.target.value)}
             placeholder="0.00"
           />
         )}
@@ -271,8 +271,8 @@ export function OrderFormModal({
                   products={products}
                   productsById={productsById}
                   value={addRow.productId}
-                  onChange={(pid) => setAddRow((r) => ({ ...r, productId: pid }))}
-                  onSelectProduct={(sel) => setAddRow((r) => ({
+                  onChange={(pid: any) => setAddRow((r: any) => ({ ...r, productId: pid }))}
+                  onSelectProduct={(sel: any) => setAddRow((r: any) => ({
                     ...r,
                     productId: sel.productId,
                     variantKey: sel.variantKey || '',
@@ -290,14 +290,14 @@ export function OrderFormModal({
                   <Input
                     type="select"
                     value={addRow.variantKey}
-                    onChange={(e) => {
+                    onChange={(e: any) => {
                       const key = e.target.value;
-                      const v = productVariants.find((x) => x._key === key);
-                      if (v) setAddRow((r) => ({ ...r, variantKey: key, size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', unitPrice: v.lastPrice ? String(v.lastPrice) : '' }));
+                      const v = productVariants.find((x: any) => x._key === key);
+                      if (v) setAddRow((r: any) => ({ ...r, variantKey: key, size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', unitPrice: v.lastPrice ? String(v.lastPrice) : '' }));
                     }}
                   >
                     <option value="">?</option>
-                    {productVariants.map((v) => (
+                    {productVariants.map((v: any) => (
                       <option key={v._key} value={v._key}>
                         {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '?'} ? {fmt(v.lastPrice ?? 0)} ?
                       </option>
@@ -307,10 +307,10 @@ export function OrderFormModal({
                   <Input
                     type="select"
                     value={addRow.size}
-                    onChange={(e) => setAddRow((r) => ({ ...r, size: e.target.value }))}
+                    onChange={(e: any) => setAddRow((r: any) => ({ ...r, size: e.target.value }))}
                   >
                     <option value="">?</option>
-                    {(productsById.get(addRow.productId)?.sizes || '').split(/[,?]/).map((x) => x.trim()).filter(Boolean).map((s) => (
+                    {(productsById.get(addRow.productId)?.sizes || '').split(/[,?]/).map((x: any) => x.trim()).filter(Boolean).map((s: any) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </Input>
@@ -318,11 +318,11 @@ export function OrderFormModal({
               </div>
               <div>
                 <label className="text-[11px] text-noorix-muted">{t('quantity')}</label>
-                <Input type="number" min="0" step="0.01" value={addRow.quantity} onChange={(e) => setAddRow((r) => ({ ...r, quantity: e.target.value }))} placeholder="0" />
+                <Input type="number" min="0" step="0.01" value={addRow.quantity} onChange={(e: any) => setAddRow((r: any) => ({ ...r, quantity: e.target.value }))} placeholder="0" />
               </div>
               <div>
                 <label className="text-[11px] text-noorix-muted">{t('unitPrice')}</label>
-                <Input type="number" min="0" step="0.01" value={addRow.unitPrice} onChange={(e) => setAddRow((r) => ({ ...r, unitPrice: e.target.value }))} placeholder="0" />
+                <Input type="number" min="0" step="0.01" value={addRow.unitPrice} onChange={(e: any) => setAddRow((r: any) => ({ ...r, unitPrice: e.target.value }))} placeholder="0" />
               </div>
               <Button variant="primary" onClick={addItemFromRow}>+ {t('add')}</Button>
             </div>
@@ -339,10 +339,10 @@ export function OrderFormModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((it, idx) => {
+                  {items.map((it: any, idx: any) => {
                     const p = productsById.get(it.productId);
                     const variantsArr = Array.isArray(p?.variants) ? p.variants : [];
-                    const sizesArr = p?.sizes ? String(p.sizes).split(/[,?]/).map((x) => x.trim()).filter(Boolean) : [];
+                    const sizesArr = p?.sizes ? String(p.sizes).split(/[,?]/).map((x: any) => x.trim()).filter(Boolean) : [];
                     const variantLabel = [it.size, it.packaging, it.unit].filter(Boolean).join(' / ') || '?';
                     return (
                       <tr key={idx} className="border-b border-noorix-border">
@@ -351,9 +351,9 @@ export function OrderFormModal({
                             products={products}
                             productsById={productsById}
                             value={it.productId}
-                            onChange={(pid) => updateItem(idx, 'productId', pid)}
-                            onSelectProduct={(sel) => {
-                              setItems((prev) => {
+                            onChange={(pid: any) => updateItem(idx, 'productId', pid)}
+                            onSelectProduct={(sel: any) => {
+                              setItems((prev: any) => {
                                 const next = [...prev];
                                 next[idx] = {
                                   ...next[idx],
@@ -375,10 +375,10 @@ export function OrderFormModal({
                             <Input
                               type="select"
                               value={`${it.size || ''}|${it.packaging || ''}|${it.unit || ''}`}
-                              onChange={(e) => {
-                                const v = variantsArr.find((x) => `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}` === e.target.value);
+                              onChange={(e: any) => {
+                                const v = variantsArr.find((x: any) => `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}` === e.target.value);
                                 if (v) {
-                                  setItems((prev) => {
+                                  setItems((prev: any) => {
                                     const next = [...prev];
                                     next[idx] = { ...next[idx], size: v.size || '', packaging: v.packaging || '', unit: v.unit || 'piece', unitPrice: v.lastPrice ? String(v.lastPrice) : next[idx].unitPrice };
                                     return next;
@@ -386,16 +386,16 @@ export function OrderFormModal({
                                 }
                               }}
                             >
-                              {variantsArr.map((v) => (
+                              {variantsArr.map((v: any) => (
                                 <option key={`${v.size}|${v.packaging}|${v.unit}`} value={`${v.size || ''}|${v.packaging || ''}|${v.unit || ''}`}>
                                   {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '?'}
                                 </option>
                               ))}
                             </Input>
                           ) : sizesArr.length > 0 ? (
-                            <Input type="select" value={it.size} onChange={(e) => updateItem(idx, 'size', e.target.value)}>
+                            <Input type="select" value={it.size} onChange={(e: any) => updateItem(idx, 'size', e.target.value)}>
                               <option value="">?</option>
-                              {sizesArr.map((s) => (
+                              {sizesArr.map((s: any) => (
                                 <option key={s} value={s}>{s}</option>
                               ))}
                             </Input>
@@ -404,10 +404,10 @@ export function OrderFormModal({
                           )}
                         </td>
                         <td className="py-2 px-2.5">
-                          <Input type="number" min="0" step="0.01" value={it.quantity} onChange={(e) => updateItem(idx, 'quantity', e.target.value)} className="w-[70px]" />
+                          <Input type="number" min="0" step="0.01" value={it.quantity} onChange={(e: any) => updateItem(idx, 'quantity', e.target.value)} className="w-[70px]" />
                         </td>
                         <td className="py-2 px-2.5">
-                          <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)} className="w-20" />
+                          <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e: any) => updateItem(idx, 'unitPrice', e.target.value)} className="w-20" />
                         </td>
                         <td className="nx-cell-num font-semibold py-2 px-2.5"><FmtNum n={enrichedItems[idx]?.amount ?? 0} /></td>
                         <td className="py-2 px-1">
@@ -431,7 +431,7 @@ export function OrderFormModal({
           multiline
           label={t('notes')}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e: any) => setNotes(e.target.value)}
           rows={2}
           placeholder={t('notesPlaceholder')}
         />

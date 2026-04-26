@@ -10,7 +10,7 @@
  * @param {string} [fallback]
  * @returns {string}
  */
-export function getApiErrorMessage(result, fallback = 'Request failed') {
+export function getApiErrorMessage(result: any, fallback: any = 'Request failed') {
   if (!result || typeof result !== 'object') return fallback;
   const r = /** @type {{ error?: string, message?: string }} */ (result);
   return r.error || r.message || fallback;
@@ -24,7 +24,7 @@ export function getApiErrorMessage(result, fallback = 'Request failed') {
  * @param {string} [fallbackMessage]
  * @throws {Error & { apiResult?: unknown }}
  */
-export function rejectIfApiFailed(result, fallbackMessage = 'Request failed') {
+export function rejectIfApiFailed(result: any, fallbackMessage: any = 'Request failed') {
   if (
     result
     && typeof result === 'object'
@@ -46,7 +46,7 @@ export function rejectIfApiFailed(result, fallbackMessage = 'Request failed') {
  * @returns {unknown}
  * @throws {Error & { apiResult?: unknown }}
  */
-export function assertApiOk(result, fallbackMessage = 'Request failed') {
+export function assertApiOk(result: any, fallbackMessage: any = 'Request failed') {
   rejectIfApiFailed(result, fallbackMessage);
   return result;
 }

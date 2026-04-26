@@ -8,7 +8,7 @@ import { parseEmployeeNotesMeta } from './employeeNotesMeta';
 /** مفاتيح أيام الإجازة التي تُخصم من الراتب في المسيرة */
 export const LEAVE_TYPES_DEDUCT_SALARY = ['unpaid'];
 
-export function monthRangeFromPayrollMonthStr(dateStr) {
+export function monthRangeFromPayrollMonthStr(dateStr: any) {
   const start = new Date(dateStr);
   start.setDate(1);
   start.setHours(0, 0, 0, 0);
@@ -17,7 +17,7 @@ export function monthRangeFromPayrollMonthStr(dateStr) {
   return { monthStart: start, monthEndCal: endCal };
 }
 
-export function countInclusiveLocalDays(startDate, endDate) {
+export function countInclusiveLocalDays(startDate: any, endDate: any) {
   const a = new Date(startDate);
   a.setHours(0, 0, 0, 0);
   const b = new Date(endDate);
@@ -27,7 +27,7 @@ export function countInclusiveLocalDays(startDate, endDate) {
 }
 
 /** مفتاح يوم محلي YYYY-MM-DD (يتوافق مع عدّ أيام الإجازة في المسيرة) */
-export function toLocalDayKey(d) {
+export function toLocalDayKey(d: any) {
   const x = new Date(d);
   const y = x.getFullYear();
   const m = String(x.getMonth() + 1).padStart(2, '0');
@@ -39,7 +39,7 @@ export function toLocalDayKey(d) {
  * عامل التناسب = أيام العمل (تقريباً) في الشهر / أيام الشهر التقويمية.
  * يعتمد على joinDate و(إن وُجد) terminationDate للموظف المفصول.
  */
-export function getEmploymentProrationInMonth(employee, payrollMonthStr) {
+export function getEmploymentProrationInMonth(employee: any, payrollMonthStr: any) {
   const { monthStart, monthEndCal } = monthRangeFromPayrollMonthStr(payrollMonthStr);
   const daysInMonth = countInclusiveLocalDays(monthStart, monthEndCal);
   if (daysInMonth <= 0) {
@@ -88,7 +88,7 @@ export function getEmploymentProrationInMonth(employee, payrollMonthStr) {
   };
 }
 
-export function filterLeaveDaySetToEmploymentWindow(daySet, effectiveStart, effectiveEnd) {
+export function filterLeaveDaySetToEmploymentWindow(daySet: any, effectiveStart: any, effectiveEnd: any) {
   if (!effectiveStart || !effectiveEnd || effectiveStart > effectiveEnd) return new Set();
   const es = toLocalDayKey(effectiveStart);
   const ee = toLocalDayKey(effectiveEnd);

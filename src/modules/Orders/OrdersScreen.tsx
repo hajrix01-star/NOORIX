@@ -12,7 +12,7 @@ import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
 
-function parseYearMonth(dateStr) {
+function parseYearMonth(dateStr: any) {
   if (!dateStr || typeof dateStr !== 'string') return null;
   const parts = dateStr.split('-');
   if (parts.length < 2) return null;

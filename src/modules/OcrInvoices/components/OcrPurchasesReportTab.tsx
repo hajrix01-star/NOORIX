@@ -26,7 +26,7 @@ export default function OcrPurchasesReportTab() {
     },
   });
 
-  const fmt = (n) =>
+  const fmt = (n: any) =>
     typeof n === 'number' && !Number.isNaN(n)
       ? n.toLocaleString(isAr ? 'ar-SA' : 'en-US', { maximumFractionDigits: 2 })
       : '—';
@@ -39,7 +39,7 @@ export default function OcrPurchasesReportTab() {
           <input
             type="month"
             value={monthInput}
-            onChange={(e) => setMonthInput(e.target.value)}
+            onChange={(e: any) => setMonthInput(e.target.value)}
             className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
           />
         </label>
@@ -81,7 +81,7 @@ export default function OcrPurchasesReportTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.byCategory || []).map((row) => (
+                  {(data.byCategory || []).map((row: any) => (
                     <tr key={row.category} className="border-b border-noorix-border/60 last:border-0">
                       <td className="p-2">{row.category}</td>
                       <td className="p-2 text-end tabular-nums">{row.lineCount}</td>
@@ -107,7 +107,7 @@ export default function OcrPurchasesReportTab() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(data.byItem || []).map((row, idx) => (
+                    {(data.byItem || []).map((row: any, idx: any) => (
                       <tr key={`${row.itemId || row.nameAr}-${idx}`} className="border-b border-noorix-border/60 last:border-0">
                         <td className="p-2 max-w-[140px] truncate" title={row.nameAr}>{row.nameAr}</td>
                         <td className="p-2 text-noorix-muted">{row.category || '—'}</td>
@@ -137,7 +137,7 @@ export default function OcrPurchasesReportTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.invoices || []).map((inv) => (
+                  {(data.invoices || []).map((inv: any) => (
                     <tr key={inv.id} className="border-b border-noorix-border/60 last:border-0">
                       <td className="p-2 whitespace-nowrap">
                         {inv.invoiceDate

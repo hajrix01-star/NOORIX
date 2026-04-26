@@ -16,7 +16,7 @@ import { assertApiOk } from '../../../utils/apiResponse';
 import { OCR_SUPPLIER_CATEGORY_OPTIONS, ocrSupplierCategoryLabel } from '../constants/ocrSupplierCategories';
 
 /** ترتيب موردي المحاسبة حسب الاسم أو الرقم الضريبي (درجة أعلى = أقرب) */
-function scoreAccountingSupplierMatch(row, queryRaw) {
+function scoreAccountingSupplierMatch(row: any, queryRaw: any) {
   const q = queryRaw.trim().toLowerCase();
   const qDigits = queryRaw.replace(/\D/g, '');
   const ar = (row.nameAr || '').toLowerCase();
@@ -38,13 +38,13 @@ function scoreAccountingSupplierMatch(row, queryRaw) {
   return score;
 }
 
-function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
+function SupplierForm({ initial = {}, onSave, onCancel, loading }: any) {
   const { t, lang } = useTranslation();
   const isAr = lang === 'ar';
   const [form, setForm] = useState({
     nameAr: '', nameEn: '', taxNumber: '', phone: '', notes: '', supplierCategory: '', ...initial,
   });
-  const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const f = (k: any) => (e: any) => setForm((p: any) => ({ ...p, [k]: e.target.value }));
   return (
     <div className="grid gap-3">
       <Input placeholder={`${t('ocrSupplierNameAr')} *`} value={form.nameAr} onChange={f('nameAr')} />
@@ -58,7 +58,7 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
           value={form.supplierCategory || ''}
           onChange={f('supplierCategory')}
         >
-          {OCR_SUPPLIER_CATEGORY_OPTIONS.map((opt) => (
+          {OCR_SUPPLIER_CATEGORY_OPTIONS.map((opt: any) => (
             <option key={opt.value || 'none'} value={opt.value}>
               {opt.labelKey ? t(opt.labelKey) : (isAr ? '—' : '—')}
             </option>
@@ -75,14 +75,14 @@ function SupplierForm({ initial = {}, onSave, onCancel, loading }) {
   );
 }
 
-export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh }) {
+export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh }: any) {
   const { t, lang: language } = useTranslation();
   const { activeCompanyId } = useApp();
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
-  const [viewing, setViewing] = useState(null);
+  const [viewing, setViewing] = useState<any>(null);
   const [aliasInput, setAliasInput] = useState('');
   const [aliasLang, setAliasLang] = useState('ar');
   const [selected, setSelected] = useState(new Set());
@@ -138,7 +138,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     },
   });
 
-  const toggleSelect = (id) => setSelected((prev) => {
+  const toggleSelect = (id: any) => setSelected((prev: any) => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
   });
 
@@ -153,7 +153,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
 
   const displayedSuppliers = useMemo(() => {
     const q = search.toLowerCase();
-    const list = suppliers.filter((s) => {
+    const list = suppliers.filter((s: any) => {
       const okSearch =
         !q ||
         s.nameAr?.toLowerCase().includes(q) ||
@@ -162,14 +162,14 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       const okCat = !categoryFilter || (s.supplierCategory || '') === categoryFilter;
       return okSearch && okCat;
     });
-    return [...list].sort((a, b) => {
+    return [...list].sort((a: any, b: any) => {
       const ca = (a.supplierCategory || '').localeCompare(b.supplierCategory || '');
       if (ca !== 0) return ca;
       return (a.nameAr || '').localeCompare(b.nameAr || '', 'ar');
     });
   }, [suppliers, search, categoryFilter]);
 
-  const handleCreate = async (data) => {
+  const handleCreate = async (data: any) => {
     setSaving(true);
     try {
       const res = await createOcrSupplier({
@@ -179,14 +179,14 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       assertApiOk(res, t('saveFailed'));
       setAdding(false);
       onRefresh();
-    } catch (e) {
+    } catch (e: any) {
       alert(e?.message || t('saveFailed'));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleUpdate = async (data) => {
+  const handleUpdate = async (data: any) => {
     setSaving(true);
     try {
       const res = await updateOcrSupplier(editing.id, {
@@ -196,14 +196,14 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       assertApiOk(res, t('saveFailed'));
       setEditing(null);
       onRefresh();
-    } catch (e) {
+    } catch (e: any) {
       alert(e?.message || t('saveFailed'));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: any) => {
     if (!confirm('هل تريد حذف هذا المورد؟')) return;
     await deleteOcrSupplier(id);
     onRefresh();
@@ -214,11 +214,11 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
     await addSupplierAlias(viewing.id, aliasInput, aliasLang);
     setAliasInput('');
     onRefresh();
-    const updated = suppliers.find((s) => s.id === viewing.id);
+    const updated = suppliers.find((s: any) => s.id === viewing.id);
     if (updated) setViewing(updated);
   };
 
-  const openViewing = (s) => {
+  const openViewing = (s: any) => {
     setViewing(s);
     setLinkAccId(s.accountingSupplier?.id || '');
     setLinkSaveFlash(false);
@@ -237,7 +237,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       const next = res.data;
       if (next && typeof next === 'object' && next.id) setViewing(next);
       await onRefresh();
-    } catch (e) {
+    } catch (e: any) {
       alert(e?.message || t('saveFailed'));
     } finally {
       setCategorySaving(false);
@@ -260,7 +260,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       await onRefresh();
       setLinkSaveFlash(true);
       window.setTimeout(() => setLinkSaveFlash(false), 5000);
-    } catch (e) {
+    } catch (e: any) {
       alert(e?.message || t('saveFailed'));
     } finally {
       setLinkSaving(false);
@@ -268,23 +268,23 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   };
 
   const isAr = language === 'ar';
-  const allChecked = displayedSuppliers.length > 0 && displayedSuppliers.every((s) => selected.has(s.id));
+  const allChecked = displayedSuppliers.length > 0 && displayedSuppliers.every((s: any) => selected.has(s.id));
 
   const accOptions = useMemo(
-    () => [...accountingSuppliers].sort((a, b) => (a.nameAr || '').localeCompare(b.nameAr || '', 'ar')),
+    () => [...accountingSuppliers].sort((a: any, b: any) => (a.nameAr || '').localeCompare(b.nameAr || '', 'ar')),
     [accountingSuppliers],
   );
 
   const rankedAccountingForPicker = useMemo(() => {
     const q = accSearchQuery.trim();
-    const suggestOrder = new Map(accLinkSuggestions.map((s, i) => [s.id, i]));
-    const boost = (id) => {
-      const sug = accLinkSuggestions.find((x) => x.id === id);
+    const suggestOrder = new Map(accLinkSuggestions.map((s: any, i: any) => [s.id, i]));
+    const boost = (id: any) => {
+      const sug = accLinkSuggestions.find((x: any) => x.id === id);
       return (sug?.matchScore ?? 0) * 50 + (sug?.linkedFromOcr ? 500000 : 0);
     };
     if (!q) {
       return [...accOptions]
-        .sort((a, b) => {
+        .sort((a: any, b: any) => {
           const ia = suggestOrder.has(a.id) ? suggestOrder.get(a.id) : 999;
           const ib = suggestOrder.has(b.id) ? suggestOrder.get(b.id) : 999;
           if (ia !== ib) return ia - ib;
@@ -293,14 +293,14 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         .slice(0, 80);
     }
     const scored = accOptions
-      .map((row) => ({ row, score: scoreAccountingSupplierMatch(row, accSearchQuery) + boost(row.id) }))
-      .filter((x) => x.score > 0)
-      .sort((a, b) => b.score - a.score);
-    return scored.map((x) => x.row).slice(0, 50);
+      .map((row: any) => ({ row, score: scoreAccountingSupplierMatch(row, accSearchQuery) + boost(row.id) }))
+      .filter((x: any) => x.score > 0)
+      .sort((a: any, b: any) => b.score - a.score);
+    return scored.map((x: any) => x.row).slice(0, 50);
   }, [accOptions, accSearchQuery, accLinkSuggestions]);
 
   const selectedAccRow = useMemo(
-    () => accOptions.find((a) => a.id === linkAccId) || null,
+    () => accOptions.find((a: any) => a.id === linkAccId) || null,
     [accOptions, linkAccId],
   );
 
@@ -314,7 +314,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   const pendingDisplay = useMemo(
     () =>
       selectedAccRow ||
-      accLinkSuggestions.find((x) => x.id === linkAccId) ||
+      accLinkSuggestions.find((x: any) => x.id === linkAccId) ||
       null,
     [selectedAccRow, accLinkSuggestions, linkAccId],
   );
@@ -324,7 +324,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   const showLinkedBanner = !!viewing && !!linkAccId && !!displayAcc && !linkDirty;
   const showPendingBanner = !!viewing && !!linkAccId && linkDirty && !!pendingDisplay;
 
-  const copyId = (id) => {
+  const copyId = (id: any) => {
     if (!id || !navigator.clipboard?.writeText) return;
     navigator.clipboard.writeText(id).catch(() => {});
   };
@@ -341,7 +341,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
       {/* Toolbar */}
       <div className="inv-toolbar mb-4">
         <label className="nx-checkbox inv-select-all-wrap">
-          <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(displayedSuppliers.map(s => s.id)))} className="inv-toolbar-checkbox" />
+          <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(displayedSuppliers.map((s: any) => s.id)))} className="inv-toolbar-checkbox" />
           <span className="inv-select-all-label">
             {selected.size > 0 ? (isAr ? `${selected.size} محدد` : `${selected.size} selected`) : (isAr ? 'تحديد الكل' : 'Select all')}
           </span>
@@ -349,7 +349,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
 
         <div className="inv-search-wrap">
           <span className="inv-search-icon">⌕</span>
-          <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
+          <Input type="text" value={search} onChange={(e: any) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
           {search && <Button className="inv-search-clear" onClick={() => setSearch('')}>✕</Button>}
         </div>
 
@@ -358,10 +358,10 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
           <select
             className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-1.5 text-[12px] text-noorix-text max-w-[160px]"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            onChange={(e: any) => setCategoryFilter(e.target.value)}
           >
             <option value="">{t('ocrAllCategories')}</option>
-            {OCR_SUPPLIER_CATEGORY_OPTIONS.filter((o) => o.value).map((opt) => (
+            {OCR_SUPPLIER_CATEGORY_OPTIONS.filter((o: any) => o.value).map((opt: any) => (
               <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
             ))}
           </select>
@@ -390,7 +390,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         </div>
       ) : (
         <div className="ocr-catalog-list">
-          {displayedSuppliers.map((s) => (
+          {displayedSuppliers.map((s: any) => (
             <div key={s.id}>
               {editing?.id === s.id ? (
                 <div className="noorix-surface-card p-4">
@@ -399,7 +399,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
               ) : (
                 <div className={`ocr-catalog-item${selected.has(s.id) ? ' ocr-catalog-item--selected' : ''}`}>
                   <label className="nx-checkbox">
-                    <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelect(s.id)} className="ocr-catalog-checkbox" onClick={e => e.stopPropagation()} />
+                    <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelect(s.id)} className="ocr-catalog-checkbox" onClick={(e: any) => e.stopPropagation()} />
                   </label>
                   <div className="ocr-catalog-avatar">{(s.nameAr || s.nameEn || '?')[0]}</div>
                   <div className="ocr-catalog-name cursor-pointer flex-1 min-w-0" onClick={() => openViewing(s)}>
@@ -465,9 +465,9 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
               <select
                 className="flex-1 min-w-[140px] rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
                 value={supplierCategoryLocal}
-                onChange={(e) => setSupplierCategoryLocal(e.target.value)}
+                onChange={(e: any) => setSupplierCategoryLocal(e.target.value)}
               >
-                {OCR_SUPPLIER_CATEGORY_OPTIONS.map((opt) => (
+                {OCR_SUPPLIER_CATEGORY_OPTIONS.map((opt: any) => (
                   <option key={opt.value || 'none'} value={opt.value}>
                     {opt.labelKey ? t(opt.labelKey) : '—'}
                   </option>
@@ -544,7 +544,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
               <div className="mb-3">
                 <div className="text-[11px] text-noorix-muted mb-1">{t('ocrAccountingQuickSuggestions')}</div>
                 <div className="flex flex-wrap gap-1">
-                  {accLinkSuggestions.slice(0, 8).map((sug) => (
+                  {accLinkSuggestions.slice(0, 8).map((sug: any) => (
                     <button
                       key={sug.id}
                       type="button"
@@ -566,7 +566,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
             <Input
               type="text"
               value={accSearchQuery}
-              onChange={(e) => setAccSearchQuery(e.target.value)}
+              onChange={(e: any) => setAccSearchQuery(e.target.value)}
               placeholder={t('ocrAccountingSearchPlaceholder')}
               className="w-full mb-2"
             />
@@ -583,7 +583,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
               {rankedAccountingForPicker.length === 0 ? (
                 <div className="text-[12px] text-noorix-muted p-3">{t('ocrAccountingSearchNoResults')}</div>
               ) : (
-                rankedAccountingForPicker.map((row) => (
+                rankedAccountingForPicker.map((row: any) => (
                   <button
                     key={row.id}
                     type="button"
@@ -616,15 +616,15 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
               <div className="text-noorix-muted text-[13px]">{isAr ? 'لا توجد أسماء بديلة بعد' : 'No aliases yet'}</div>
             )}
             <div className="flex flex-col gap-1">
-              {(viewing?.aliases || []).map((a) => (
+              {(viewing?.aliases || []).map((a: any) => (
                 <div key={a.id} className="rounded-lg bg-noorix-bg-muted text-[13px] py-2 px-3">
                   {a.alias} <span className="text-noorix-muted text-[11px]">({a.language})</span>
                 </div>
               ))}
             </div>
             <div className="flex gap-2 mt-3">
-              <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="flex-1 min-w-0" />
-              <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
+              <Input type="text" value={aliasInput} onChange={(e: any) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="flex-1 min-w-0" />
+              <Input type="select" value={aliasLang} onChange={(e: any) => setAliasLang(e.target.value)}>
                 <option value="ar">AR</option>
                 <option value="en">EN</option>
               </Input>

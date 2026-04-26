@@ -29,7 +29,7 @@ const TABS = [
   { key: 'alerts',    labelAr: 'تنبيهات الأسعار',  labelEn: 'Alerts' },
   { key: 'purchases', labelAr: 'تقرير مشتريات',    labelEn: 'Purchases report' },
 ];
-const OCR_TAB_IDS = TABS.map((tab) => tab.key);
+const OCR_TAB_IDS = TABS.map((tab: any) => tab.key);
 
 export default function OcrInvoicesScreen() {
   const { lang, t } = useTranslation();
@@ -37,7 +37,7 @@ export default function OcrInvoicesScreen() {
   const queryClient = useQueryClient();
   /** `ocrTab` + legacy `tab` (فقط إن كانت القيمة ضمن تبويبات OCR) — يمنى تعارض ?tab= من مشتريات/إعدادات */
   const [activeTab, setActiveTab] = useTabSearchParam(OCR_TAB_IDS, 'upload', 'ocrTab', 'tab');
-  const [uploadPrefillId, setUploadPrefillId] = useState(null);
+  const [uploadPrefillId, setUploadPrefillId] = useState<any>(null);
   const isAr = lang === 'ar';
 
   const ocrEnabled = !!activeCompanyId;
@@ -72,7 +72,7 @@ export default function OcrInvoicesScreen() {
     },
   });
 
-  const handleSaved = useCallback((meta) => {
+  const handleSaved = useCallback((meta: any) => {
     queryClient.invalidateQueries({ queryKey: ['ocr-review-queue', activeCompanyId] });
     if (meta?.invalidateFinancial) {
       invalidateOnFinancialMutation(queryClient);
@@ -80,7 +80,7 @@ export default function OcrInvoicesScreen() {
     refetchInvoices(); refetchAlerts(); refetchSuppliers(); refetchItems();
   }, [queryClient, activeCompanyId, refetchInvoices, refetchAlerts, refetchSuppliers, refetchItems]);
 
-  const handleOpenFromReview = useCallback((inv) => {
+  const handleOpenFromReview = useCallback((inv: any) => {
     if (!inv?.id) return;
     setUploadPrefillId(inv.id);
     setActiveTab('upload');
@@ -93,7 +93,7 @@ export default function OcrInvoicesScreen() {
   const suppCount     = suppliersData?.length || 0;
   const itemsCount    = itemsData?.length     || 0;
   const reviewPendingCount = Array.isArray(reviewQueueData)
-    ? reviewQueueData.filter((x) => x.status === 'pending_review').length
+    ? reviewQueueData.filter((x: any) => x.status === 'pending_review').length
     : 0;
 
   const STATS = useMemo(() => [
@@ -104,7 +104,7 @@ export default function OcrInvoicesScreen() {
     { val: alertsCount,   labelAr: 'تنبيه',   labelEn: 'Alerts',   tab: 'alerts'    },
   ], [reviewPendingCount, invoicesCount, suppCount, itemsCount, alertsCount, t]);
 
-  const tabItems = useMemo(() => TABS.map((tab) => ({
+  const tabItems = useMemo(() => TABS.map((tab: any) => ({
     id: tab.key,
     label: (
       <span className="inline-flex items-center gap-1.5">
@@ -164,7 +164,7 @@ export default function OcrInvoicesScreen() {
 
       {/* ── كروت الإحصائيات ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {STATS.map((row) => (
+        {STATS.map((row: any) => (
           <button
             key={row.tab}
             type="button"

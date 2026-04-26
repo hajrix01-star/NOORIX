@@ -12,7 +12,7 @@ type EmployeesPagedOpts = {
 
 // ——— الموظفون ———
 /** قائمة كاملة (حدّ السيرفر) — للتوافق مع الشاشات التي لا ترسل page */
-export async function getEmployees(companyId: string, includeTerminated = false): Promise<ApiParsedResult> {
+export async function getEmployees(companyId: string, includeTerminated: any = false): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/employees', {
     companyId: companyId || '',
     ...(includeTerminated ? { includeTerminated: 'true' } : {}),
@@ -60,7 +60,7 @@ export async function getEmployeesPaged(
 }
 
 /** تحميل مجمّع للتصدير (حد أقصى من السيرفر) */
-export async function getEmployeesBulk(companyId: string, tab = 'active'): Promise<ApiParsedResult> {
+export async function getEmployeesBulk(companyId: string, tab: any = 'active'): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/employees', {
     companyId: companyId || '',
     bulk: '1',

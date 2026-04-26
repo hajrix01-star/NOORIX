@@ -9,15 +9,15 @@ import { fmt } from '../../../utils/format';
 import { EN_MONTHS } from '../../../modules/Reports/reportHelpers';
 import { FmtNum, MetricCard } from '../../../ui';
 
-function ymd(y, m, d) {
+function ymd(y: any, m: any, d: any) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
-function lastDayOfMonth(year, month) {
+function lastDayOfMonth(year: any, month: any) {
   return new Date(year, month, 0).getDate();
 }
 
-export default function DashboardAppSalesTab({ companyId, year, filter }) {
+export default function DashboardAppSalesTab({ companyId, year, filter }: any) {
   const { t, lang } = useTranslation();
 
   const { summaries: allSummaries, isLoading } = useSales({
@@ -29,9 +29,9 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
   const { monthlyTotal, monthlyApp, appByChannel } = useMemo(() => {
     const totalByMonth = Array(12).fill(0);
     const appByMonth = Array(12).fill(0);
-    const channelTotals = {};
+    const channelTotals: Record<string, { total: number; app: number }> = {};
 
-    (allSummaries || []).forEach((s) => {
+    (allSummaries || []).forEach((s: any) => {
       const d = String(s.transactionDate || '').slice(0, 10);
       const month = parseInt(d.slice(5, 7), 10) - 1;
       if (month < 0 || month > 11) return;
@@ -40,7 +40,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
       totalByMonth[month] += total;
 
       let appAmount = 0;
-      (s.channels || []).forEach((ch) => {
+      (s.channels || []).forEach((ch: any) => {
         const amt = Number(ch.amount || 0);
         const isApp = ch.vault?.type === 'app';
         if (isApp) appAmount += amt;
@@ -58,20 +58,20 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
       monthlyTotal: totalByMonth,
       monthlyApp: appByMonth,
       appByChannel: Object.entries(channelTotals)
-        .map(([name, v]) => {
+        .map(([name, v]: any) => {
           const agg = v as { total: number; app: number };
           return { name, ...agg };
         })
-        .filter((c) => c.app > 0),
+        .filter((c: any) => c.app > 0),
     };
   }, [allSummaries, lang]);
 
-  const yearTotal = useMemo(() => monthlyTotal.reduce((a, b) => a + b, 0), [monthlyTotal]);
-  const yearApp = useMemo(() => monthlyApp.reduce((a, b) => a + b, 0), [monthlyApp]);
+  const yearTotal = useMemo(() => monthlyTotal.reduce((a: any, b: any) => a + b, 0), [monthlyTotal]);
+  const yearApp = useMemo(() => monthlyApp.reduce((a: any, b: any) => a + b, 0), [monthlyApp]);
   const appPercent = yearTotal > 0 ? (yearApp / yearTotal) * 100 : 0;
 
   const chartData = useMemo(() => {
-    return monthlyTotal.map((total, i) => ({
+    return monthlyTotal.map((total: any, i: any) => ({
       month: i + 1,
       label: EN_MONTHS[i],
       total,
@@ -80,7 +80,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
     }));
   }, [monthlyTotal, monthlyApp]);
 
-  const maxPercent = useMemo(() => Math.max(1, ...chartData.map((d) => d.percent)), [chartData]);
+  const maxPercent = useMemo(() => Math.max(1, ...chartData.map((d: any) => d.percent)), [chartData]);
 
   if (!companyId) {
     return (
@@ -137,7 +137,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
         <div className="noorix-surface-card overflow-hidden p-5">
           <div className="text-[14px] font-bold mb-4">{t('reportChannels')} — {t('dashboardAppSales')}</div>
           <div className="flex flex flex-col gap-2.5">
-            {appByChannel.map((ch) => {
+            {appByChannel.map((ch: any) => {
               const pct = yearTotal > 0 ? (ch.app / yearTotal) * 100 : 0;
               return (
                 <div key={ch.name} className="flex items-center justify-between bg-noorix-bg-muted rounded-lg py-[10px] px-[14px]">
@@ -154,7 +154,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }) {
         <div className="text-[14px] font-bold mb-4" style={{ color: KPI_CARD_SPARKLINE_COLORS.sales }}>{t('dashboardAppSalesChart')}</div>
           <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <div className="grid gap-2 items-end min-h-[100px] min-w-[360px] [grid-template-columns:repeat(12,minmax(36px,1fr))]">
-            {chartData.map((point) => {
+            {chartData.map((point: any) => {
               const barHeight = `${Math.max(0, (point.percent / maxPercent) * 100)}%`;
               return (
                 <div key={point.month} className="flex flex-col gap-1.5 items-center">

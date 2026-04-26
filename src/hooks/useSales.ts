@@ -16,7 +16,7 @@ import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
  * @param {{ companyId: string, startDate?: string, endDate?: string, enabled?: boolean, fetchList?: boolean }} params
  * fetchList=false: لا يجلب القائمة (لشاشة المبيعات مع ترقيم منفصل) — يبقى الطفرات فقط.
  */
-export function useSales({ companyId, startDate, endDate, enabled = true, fetchList = true }) {
+export function useSales({ companyId, startDate, endDate, enabled = true, fetchList = true }: any) {
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error } = useQuery({
@@ -54,13 +54,13 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body, companyId: cid }) => updateDailySalesSummary(id, body, cid),
+    mutationFn: ({ id, body, companyId: cid }: any) => updateDailySalesSummary(id, body, cid),
     onSuccess: invalidate,
     showErrorToast: false,
   });
 
   const deleteMutation = useApiMutation({
-    mutationFn: ({ id, companyId: cid }) => deleteDailySalesSummary(id, cid),
+    mutationFn: ({ id, companyId: cid }: any) => deleteDailySalesSummary(id, cid),
     onSuccess: invalidate,
     showErrorToast: false,
   });

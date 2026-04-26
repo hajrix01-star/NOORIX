@@ -24,7 +24,7 @@ import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 /** حل وسط: عرض أكثر من 8 دون إغراق النافذة؛ التصفح على البيانات المحمّلة (حتى 500 من الخادم). */
 const DETAIL_INVOICES_PAGE_SIZE = 15;
 
-export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }) {
+export default function ReportsDetailModal({ state, onClose, companyId, year, t, lang }: any) {
   const navigate = useNavigate();
   const [invoiceListPage, setInvoiceListPage] = useState(1);
   const [activeTab, setActiveTab] = useState('summary');
@@ -61,7 +61,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
   const trendChartData = useMemo(() => {
     if (!trend?.points?.length) return [];
-    return trend.points.map((point) => {
+    return trend.points.map((point: any) => {
       const raw = Number(point.amount || 0);
       return {
         key: String(point.month),
@@ -77,12 +77,12 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
   const peakPoint = useMemo(() => {
     const points = trend?.points || [];
     if (!points.length) return null;
-    return points.reduce((best, point) => (Number(point.amount || 0) > Number(best.amount || 0) ? point : best), points[0]);
+    return points.reduce((best: any, point: any) => (Number(point.amount || 0) > Number(best.amount || 0) ? point : best), points[0]);
   }, [trend]);
 
   const trendPointForSelectedMonth = useMemo(() => {
     if (state?.month == null || !trend?.points?.length) return null;
-    return trend.points.find((p) => p.month === state.month) ?? null;
+    return trend.points.find((p: any) => p.month === state.month) ?? null;
   }, [state?.month, trend?.points]);
 
   /** يتطابق مع الخادم؛ احتياط إذا تأخّر أحد الطلبين */
@@ -125,7 +125,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
   }, [state?.groupKey, state?.itemKey, state?.month, year]);
 
   useEffect(() => {
-    const ids = new Set(tabItems.map((x) => x.id));
+    const ids = new Set(tabItems.map((x: any) => x.id));
     if (!ids.has(activeTab)) setActiveTab('summary');
   }, [tabItems, activeTab]);
 
@@ -139,9 +139,9 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
   const averageAmount = useMemo(() => {
     const points = trend?.points || [];
     if (!points.length) return '0';
-    const withData = points.filter((point) => !isEmptyMetric(point.amount));
+    const withData = points.filter((point: any) => !isEmptyMetric(point.amount));
     const slice = withData.length ? withData : points;
-    const total = slice.reduce((sum, point) => sum + Math.abs(Number(point.amount || 0)), 0);
+    const total = slice.reduce((sum: any, point: any) => sum + Math.abs(Number(point.amount || 0)), 0);
     return String(total / slice.length);
   }, [trend]);
 
@@ -287,14 +287,14 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                         />
                         <YAxis
                           tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
-                          tickFormatter={(v) => fmt(v, 0)}
+                          tickFormatter={(v: any) => fmt(v, 0)}
                           width={44}
                           axisLine={false}
                           tickLine={false}
                         />
                         <Tooltip
                           cursor={{ fill: 'color-mix(in srgb, var(--color-nx-sales) 8%, transparent)' }}
-                          content={({ active, payload }) => {
+                          content={({ active, payload }: any) => {
                             if (!active || !payload?.length) return null;
                             const d = payload[0]?.payload;
                             return (
@@ -311,7 +311,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                           }}
                         />
                         <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={52}>
-                          {trendChartData.map((entry) => (
+                          {trendChartData.map((entry: any) => (
                             <Cell
                               key={entry.key}
                               fill={entry.rawAmount >= 0 ? KPI_RECHARTS_COLORS.grossProfit : KPI_RECHARTS_COLORS.expenses}
@@ -339,7 +339,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
           {activeTab === 'breakdown' && data.kind === 'derived' && (
             <div className="reports-detail-derived-list grid gap-2.5">
-              {(data.items || []).map((item) => (
+              {(data.items || []).map((item: any) => (
                 <div
                   key={item.key}
                   className="reports-detail-derived-item flex items-center justify-between border border-noorix-border rounded-xl px-3 py-2"
@@ -384,36 +384,36 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   onPageChange={setInvoiceListPage}
                   columns={[
                     { key: 'transactionDate', label: t('transactionDate'),
-                      render: (v) => String(v || '').slice(0, 10) },
+                      render: (v: any) => String(v || '').slice(0, 10) },
                     { key: 'invoiceNumber', label: t('reportInvoiceNumber'),
-                      render: (_, item) => <span className="font-bold">{item.summaryNumber || item.invoiceNumber || '—'}</span> },
+                      render: (_: any, item: any) => <span className="font-bold">{item.summaryNumber || item.invoiceNumber || '—'}</span> },
                     { key: 'supplier', label: t('reportSourceOrSupplier'),
-                      render: (_, item) => (
+                      render: (_: any, item: any) => (
                         <div>
                           <div className="font-semibold truncate" title={(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}>
                             {(lang === 'en' ? item.supplierNameEn : item.supplierNameAr) || item.supplierNameAr || item.supplierNameEn || (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) || '—'}
                           </div>
                           {item.channelNames?.length > 0 && (
                             <div className="text-[11px] text-noorix-muted mt-1">
-                              {item.channelNames.slice(0, 2).map((channel) => lang === 'en' ? (channel.nameEn || channel.nameAr) : (channel.nameAr || channel.nameEn)).join(' | ')}
+                              {item.channelNames.slice(0, 2).map((channel: any) => lang === 'en' ? (channel.nameEn || channel.nameAr) : (channel.nameAr || channel.nameEn)).join(' | ')}
                             </div>
                           )}
                         </div>
                       ) },
                     { key: 'totalAmount', label: t('reportAmountInclTax'), numeric: true,
-                      render: (v) => (
+                      render: (v: any) => (
                         <span className="nx-font-numbers font-bold inline-flex items-baseline gap-x-1">
                           <span>{fmt(Number(v))}</span>
                           <span className="nx-sar">SR</span>
                         </span>
                       ) },
                     { key: 'percentOfSales', label: t('reportSalesShare'),
-                      render: (_, item) => <span className="nx-font-numbers text-nx-profit">{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
+                      render: (_: any, item: any) => <span className="nx-font-numbers text-nx-profit">{percentText(item.percentOfSales ?? item.percentOfTotal)}</span> },
                     { key: 'notes', label: t('notes'),
-                      render: (v) => <span className="text-noorix-muted truncate">{truncateText(v)}</span> },
+                      render: (v: any) => <span className="text-noorix-muted truncate">{truncateText(v)}</span> },
                   ]}
                   data={invoicePageRows}
-                  keyExtractor={(item) => item.id}
+                  keyExtractor={(item: any) => item.id}
                   emptyMessage={t('noDataInPeriod')}
                 />
               </div>

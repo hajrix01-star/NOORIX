@@ -22,7 +22,7 @@ export function getSaudiDateParts() {
     day: '2-digit',
   }).formatToParts(new Date());
   const m = parts.reduce<Record<string, string>>(
-    (a, p) => (p.type !== 'literal' ? { ...a, [p.type]: p.value } : a),
+    (a: any, p: any) => (p.type !== 'literal' ? { ...a, [p.type]: p.value } : a),
     {},
   );
   return {
@@ -58,13 +58,13 @@ export function getSaudiToday() {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(new Date());
-  const year = parts.find((p) => p.type === 'year')?.value;
-  const month = parts.find((p) => p.type === 'month')?.value;
-  const day = parts.find((p) => p.type === 'day')?.value;
+  const year = parts.find((p: any) => p.type === 'year')?.value;
+  const month = parts.find((p: any) => p.type === 'month')?.value;
+  const day = parts.find((p: any) => p.type === 'day')?.value;
   return `${year}-${month}-${day}`;
 }
 
-export function formatSaudiDate(value) {
+export function formatSaudiDate(value: any) {
   if (!value) return '—';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '—';
@@ -74,9 +74,9 @@ export function formatSaudiDate(value) {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(d);
-  const year  = parts.find((p) => p.type === 'year')?.value;
-  const month = parts.find((p) => p.type === 'month')?.value;
-  const day   = parts.find((p) => p.type === 'day')?.value;
+  const year  = parts.find((p: any) => p.type === 'year')?.value;
+  const month = parts.find((p: any) => p.type === 'month')?.value;
+  const day   = parts.find((p: any) => p.type === 'day')?.value;
   if (!year || !month || !day) return '—';
   return `${day}-${month}-${year}`;
 }
@@ -84,7 +84,7 @@ export function formatSaudiDate(value) {
 /**
  * اسم يوم الأسبوع (طويل) بتوقيت الرياض — للعربية أو الإنجليزية.
  */
-export function formatSaudiWeekdayName(value, lang = 'ar') {
+export function formatSaudiWeekdayName(value: any, lang: any = 'ar') {
   if (!value) return '';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '';
@@ -95,7 +95,7 @@ export function formatSaudiWeekdayName(value, lang = 'ar') {
   }).format(d);
 }
 
-export function formatSaudiDateISO(value) {
+export function formatSaudiDateISO(value: any) {
   if (!value) return '—';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '—';
@@ -105,9 +105,9 @@ export function formatSaudiDateISO(value) {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(d);
-  const year = parts.find((p) => p.type === 'year')?.value;
-  const month = parts.find((p) => p.type === 'month')?.value;
-  const day = parts.find((p) => p.type === 'day')?.value;
+  const year = parts.find((p: any) => p.type === 'year')?.value;
+  const month = parts.find((p: any) => p.type === 'month')?.value;
+  const day = parts.find((p: any) => p.type === 'day')?.value;
   if (!year || !month || !day) return '—';
   return `${year}-${month}-${day}`;
 }
@@ -115,14 +115,14 @@ export function formatSaudiDateISO(value) {
 /**
  * لـ `input type="date"`: YYYY-MM-DD بتوقيت الرياض، أو '' عند عدم التوفر/الصحة.
  */
-export function toDateInputYmd(value) {
+export function toDateInputYmd(value: any) {
   if (value == null || value === '') return '';
   const s = formatSaudiDateISO(value);
   return s === '—' ? '' : s;
 }
 
 /** تاريخ + وقت بتوقيت الرياض — عرض موحّد (يتفادى اختلاف Samsung/default locale) */
-export function formatSaudiDateTime(value) {
+export function formatSaudiDateTime(value: any) {
   if (!value) return '—';
   const d = new Date(value);
   if (isNaN(d.getTime())) return '—';
@@ -135,11 +135,11 @@ export function formatSaudiDateTime(value) {
     minute: '2-digit',
     hour12: false,
   }).formatToParts(d);
-  const year   = parts.find((p) => p.type === 'year')?.value;
-  const month  = parts.find((p) => p.type === 'month')?.value;
-  const day    = parts.find((p) => p.type === 'day')?.value;
-  const hour   = parts.find((p) => p.type === 'hour')?.value;
-  const minute = parts.find((p) => p.type === 'minute')?.value;
+  const year   = parts.find((p: any) => p.type === 'year')?.value;
+  const month  = parts.find((p: any) => p.type === 'month')?.value;
+  const day    = parts.find((p: any) => p.type === 'day')?.value;
+  const hour   = parts.find((p: any) => p.type === 'hour')?.value;
+  const minute = parts.find((p: any) => p.type === 'minute')?.value;
   if (!year || !month || !day) return '—';
   return `${day}-${month}-${year} ${hour}:${minute}`;
 }

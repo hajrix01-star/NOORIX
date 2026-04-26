@@ -1,21 +1,21 @@
 import { useSyncExternalStore } from 'react';
 
-function subscribeMediaQuery(query, onChange) {
+function subscribeMediaQuery(query: any, onChange: any) {
   const mq = window.matchMedia(query);
   mq.addEventListener('change', onChange);
   return () => mq.removeEventListener('change', onChange);
 }
 
-function getMediaQuerySnapshot(query) {
+function getMediaQuerySnapshot(query: any) {
   return window.matchMedia(query).matches;
 }
 
 /**
  * @param {string} query استعلام CSS كامل، مثل '(max-width: 700px)'
  */
-export function useMediaQuery(query) {
+export function useMediaQuery(query: any) {
   return useSyncExternalStore(
-    (cb) => subscribeMediaQuery(query, cb),
+    (cb: any) => subscribeMediaQuery(query, cb),
     () => getMediaQuerySnapshot(query),
     () => false,
   );

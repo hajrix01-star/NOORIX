@@ -4,7 +4,7 @@ const size = 20;
 const stroke = 1.8;
 const defaultColor = 'currentColor';
 
-export function IconCrown({ color = '#fbbf24', ...props }) {
+export function IconCrown({ color = '#fbbf24', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M2 17l4-7 4 5 4-5 4 7" />
@@ -13,7 +13,7 @@ export function IconCrown({ color = '#fbbf24', ...props }) {
   );
 }
 
-export function IconGrid({ color = 'var(--color-noorix-sky)', ...props }) {
+export function IconGrid({ color = 'var(--color-noorix-sky)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -24,7 +24,7 @@ export function IconGrid({ color = 'var(--color-noorix-sky)', ...props }) {
   );
 }
 
-export function IconChat({ color = 'var(--noorix-accent-green)', ...props }) {
+export function IconChat({ color = 'var(--noorix-accent-green)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
@@ -32,7 +32,7 @@ export function IconChat({ color = 'var(--noorix-accent-green)', ...props }) {
   );
 }
 
-export function IconCart({ color = 'var(--noorix-accent-green)', ...props }) {
+export function IconCart({ color = 'var(--noorix-accent-green)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <circle cx="9" cy="21" r="1" />
@@ -42,7 +42,7 @@ export function IconCart({ color = 'var(--noorix-accent-green)', ...props }) {
   );
 }
 
-export function IconDocument({ color = '#f97316', ...props }) {
+export function IconDocument({ color = '#f97316', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -54,7 +54,7 @@ export function IconDocument({ color = '#f97316', ...props }) {
   );
 }
 
-export function IconTruck({ color = 'var(--noorix-accent-violet)', ...props }) {
+export function IconTruck({ color = 'var(--noorix-accent-violet)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect x="1" y="3" width="15" height="13" />
@@ -65,7 +65,7 @@ export function IconTruck({ color = 'var(--noorix-accent-violet)', ...props }) {
   );
 }
 
-export function IconDollar({ color = '#fbbf24', ...props }) {
+export function IconDollar({ color = '#fbbf24', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <line x1="12" y1="1" x2="12" y2="23" />
@@ -74,7 +74,7 @@ export function IconDollar({ color = '#fbbf24', ...props }) {
   );
 }
 
-export function IconWallet({ color = 'var(--noorix-accent-red)', ...props }) {
+export function IconWallet({ color = 'var(--noorix-accent-red)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
@@ -84,7 +84,7 @@ export function IconWallet({ color = 'var(--noorix-accent-red)', ...props }) {
   );
 }
 
-export function IconBox({ color = 'var(--color-noorix-sky)', ...props }) {
+export function IconBox({ color = 'var(--color-noorix-sky)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
@@ -94,7 +94,7 @@ export function IconBox({ color = 'var(--color-noorix-sky)', ...props }) {
   );
 }
 
-export function IconPeople({ color = '#ec4899', ...props }) {
+export function IconPeople({ color = '#ec4899', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -105,7 +105,7 @@ export function IconPeople({ color = '#ec4899', ...props }) {
   );
 }
 
-export function IconChartBar({ color = 'var(--noorix-accent-sky)', ...props }) {
+export function IconChartBar({ color = 'var(--noorix-accent-sky)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M12 20V10" />
@@ -115,7 +115,7 @@ export function IconChartBar({ color = 'var(--noorix-accent-sky)', ...props }) {
   );
 }
 
-export function IconFileSpreadsheet({ color = 'var(--noorix-accent-sky)', ...props }) {
+export function IconFileSpreadsheet({ color = 'var(--noorix-accent-sky)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -128,7 +128,7 @@ export function IconFileSpreadsheet({ color = 'var(--noorix-accent-sky)', ...pro
   );
 }
 
-export function IconOcr({ color = '#8b5cf6', ...props }) {
+export function IconOcr({ color = '#8b5cf6', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
@@ -140,7 +140,7 @@ export function IconOcr({ color = '#8b5cf6', ...props }) {
   );
 }
 
-export function IconSettings({ color = 'var(--noorix-text-muted)', ...props }) {
+export function IconSettings({ color = 'var(--noorix-text-muted)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <circle cx="12" cy="12" r="3" />
@@ -150,7 +150,7 @@ export function IconSettings({ color = 'var(--noorix-text-muted)', ...props }) {
 }
 
 /** أجهزة / أصول مسجّلة */
-export function IconMonitor({ color = 'var(--noorix-accent-blue)', ...props }) {
+export function IconMonitor({ color = 'var(--noorix-accent-blue)', ...props }: any) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect x="2" y="3" width="20" height="14" rx="2" />

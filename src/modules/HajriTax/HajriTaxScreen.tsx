@@ -31,7 +31,7 @@ import HajriTaxRegistryList from './HajriTaxRegistryList';
 import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
 import HajriTaxBulkImportModal from './HajriTaxBulkImportModal';
 
-function clonePayload(from) {
+function clonePayload(from: any) {
   return mergeImportedDisclosure(defaultDisclosureData(), from || {});
 }
 
@@ -40,7 +40,7 @@ export default function HajriTaxScreen() {
   const { t, lang } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
-  const jsonInputRef = useRef(null);
+  const jsonInputRef = useRef<any>(null);
   const urlOpenKeyRef = useRef('');
 
   const currentYear = new Date().getFullYear();
@@ -55,18 +55,18 @@ export default function HajriTaxScreen() {
   const [regFilterCompany, setRegFilterCompany] = useState(() => searchParams.get('company') || '');
   const [regFilterYear, setRegFilterYear] = useState('');
   const [regFilterQuarter, setRegFilterQuarter] = useState('');
-  const [detailCompanyId, setDetailCompanyId] = useState(null);
+  const [detailCompanyId, setDetailCompanyId] = useState<any>(null);
   const [detailReadOnly, setDetailReadOnly] = useState(false);
   const [showNewDeclarationModal, setShowNewDeclarationModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   /** تحرير حر في خلايا الجدول — النص يُطبَّق على المسودة عند blur فقط */
-  const [cellEdit, setCellEdit] = useState(null);
+  const [cellEdit, setCellEdit] = useState<any>(null);
 
   const [draftData, setDraftData] = useState(() => defaultDisclosureData());
   const [paymentTargetStr, setPaymentTargetStr] = useState('');
   const [notes, setNotes] = useState('');
-  const [sourceSnapshot, setSourceSnapshot] = useState(null);
-  const [importIso, setImportIso] = useState(null);
+  const [sourceSnapshot, setSourceSnapshot] = useState<any>(null);
+  const [importIso, setImportIso] = useState<any>(null);
   const [saveHint, setSaveHint] = useState('');
   const [showSimulator, setShowSimulator] = useState(true);
   const [importingReport, setImportingReport] = useState(false);
@@ -102,17 +102,17 @@ export default function HajriTaxScreen() {
 
   const recordByCompany = useMemo(() => {
     const m = new Map();
-    (apiRecords || []).forEach((r) => m.set(r.companyId, r));
+    (apiRecords || []).forEach((r: any) => m.set(r.companyId, r));
     return m;
   }, [apiRecords]);
 
   const resolveRecord = useCallback(
-    (companyId) => recordByCompany.get(companyId),
+    (companyId: any) => recordByCompany.get(companyId),
     [recordByCompany],
   );
 
   const openCompanyDetail = useCallback(
-    async (companyId, forcedPeriod) => {
+    async (companyId: any, forcedPeriod: any) => {
       let rec = null;
       if (
         forcedPeriod &&
@@ -143,7 +143,7 @@ export default function HajriTaxScreen() {
     [resolveRecord],
   );
 
-  const openFromRegistryRow = useCallback((row, mode) => {
+  const openFromRegistryRow = useCallback((row: any, mode: any) => {
     setYear(row.year);
     setQuarter(row.quarter);
     setRegFilterCompany(row.companyId);
@@ -159,7 +159,7 @@ export default function HajriTaxScreen() {
   }, []);
 
   const handleNewDeclarationConfirm = useCallback(
-    async ({ companyId, year: y, quarter: q }) => {
+    async ({ companyId, year: y, quarter: q }: any) => {
       setYear(y);
       setQuarter(q);
       setRegFilterCompany(companyId);
@@ -191,7 +191,7 @@ export default function HajriTaxScreen() {
     setDetailReadOnly(false);
     refetch();
     refetchRegistry();
-    setSearchParams((sp) => {
+    setSearchParams((sp: any) => {
       const next = new URLSearchParams(sp);
       next.delete('edit');
       return next;
@@ -205,7 +205,7 @@ export default function HajriTaxScreen() {
       return;
     }
     const c = searchParams.get('company');
-    if (!c || !companies?.some((x) => x.id === c)) return;
+    if (!c || !companies?.some((x: any) => x.id === c)) return;
     const key = `${c}|${searchParams.get('year')}|${searchParams.get('quarter')}|1`;
     if (urlOpenKeyRef.current === key) return;
     urlOpenKeyRef.current = key;
@@ -222,14 +222,14 @@ export default function HajriTaxScreen() {
     setCellEdit(null);
   }, [detailCompanyId, year, quarter, detailReadOnly]);
 
-  const updateRow = useCallback((key, field, value) => {
+  const updateRow = useCallback((key: any, field: any, value: any) => {
     if (detailReadOnly) return;
     const raw = String(value).replace(/,/g, '').trim();
     const parsed = raw === '' ? 0 : parseFloat(raw);
     const num = roundMoney2(Number.isFinite(parsed) ? parsed : 0);
-    setDraftData((prev) => {
+    setDraftData((prev: any) => {
       const next = { ...prev };
-      const isSummaryField = !field || SUMMARY_ROWS.some((r) => r.key === key);
+      const isSummaryField = !field || SUMMARY_ROWS.some((r: any) => r.key === key);
       if (isSummaryField) next[key] = num;
       else next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), [field]: num };
       return next;
@@ -237,7 +237,7 @@ export default function HajriTaxScreen() {
   }, [detailReadOnly]);
 
   const renderEditableCell = useCallback(
-    (key, field) => {
+    (key: any, field: any) => {
       const cellId = `${key}:${field}`;
       const raw = getRowValue(draftData, key, field);
       const n = Number(raw);
@@ -263,13 +263,13 @@ export default function HajriTaxScreen() {
             setCellEdit({ id: cellId, text: start });
           }}
           onBlur={() => {
-            setCellEdit((cur) => {
+            setCellEdit((cur: any) => {
               if (cur?.id !== cellId) return cur;
               updateRow(key, field, cur.text);
               return null;
             });
           }}
-          onChange={(e) => {
+          onChange={(e: any) => {
             if (detailReadOnly) return;
             setCellEdit({ id: cellId, text: e.target.value });
           }}
@@ -311,7 +311,7 @@ export default function HajriTaxScreen() {
       });
       throwIfApiFailed(res, 'فشل استيراد تقرير الضريبة');
       const imported = res.data;
-      setDraftData((prev) => normalizeDisclosureDecimals(mergeImportedDisclosure(prev, imported)));
+      setDraftData((prev: any) => normalizeDisclosureDecimals(mergeImportedDisclosure(prev, imported)));
       setSourceSnapshot(imported && typeof imported === 'object' ? { ...imported } : imported);
       setImportIso(new Date().toISOString());
     } finally {
@@ -323,7 +323,7 @@ export default function HajriTaxScreen() {
     if (detailReadOnly) return;
     const target = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
     if (!Number.isFinite(target)) return;
-    setDraftData((prev) => scaleInputVatForPaymentTarget(prev, target));
+    setDraftData((prev: any) => scaleInputVatForPaymentTarget(prev, target));
   }, [paymentTargetStr, detailReadOnly]);
 
   const handleSaveDetail = useCallback(async () => {
@@ -344,8 +344,8 @@ export default function HajriTaxScreen() {
   }, [detailCompanyId, detailReadOnly, year, quarter, draftData, sourceSnapshot, paymentTargetStr, notes, importIso, upsertMutation, t]);
 
   const companyMeta = useCallback(
-    (id) => {
-      const c = companies?.find((x) => x.id === id);
+    (id: any) => {
+      const c = companies?.find((x: any) => x.id === id);
       if (!c) return { name: id, tax: '' };
       const name = lang === 'en' ? (c.nameEn || c.nameAr || '') : (c.nameAr || c.nameEn || '');
       return { name, tax: c.taxNumber || '' };
@@ -355,13 +355,13 @@ export default function HajriTaxScreen() {
 
   const printDetail = useCallback(() => {
     const { name } = companyMeta(detailCompanyId);
-    const label = (r) => (lang === 'ar' ? r.labelAr : r.labelEn);
-    const outRows = OUTPUT_ROWS.map((r) => {
+    const label = (r: any) => (lang === 'ar' ? r.labelAr : r.labelEn);
+    const outRows = OUTPUT_ROWS.map((r: any) => {
       const amt = r.isTotal ? outputTotal : getRowValue(draftData, r.key, 'amount');
       const vat = r.isTotal ? outputTotal : getRowValue(draftData, r.key, 'vat');
       return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtTax(amt)}</td><td>${r.isTotal ? '—' : fmtTax(getRowValue(draftData, r.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
     }).join('');
-    const inRows = INPUT_ROWS.map((r) => {
+    const inRows = INPUT_ROWS.map((r: any) => {
       const amt = r.isTotal ? inputTotal : getRowValue(draftData, r.key, 'amount');
       const vat = r.isTotal ? inputTotal : getRowValue(draftData, r.key, 'vat');
       return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtTax(amt)}</td><td>${r.isTotal ? '—' : fmtTax(getRowValue(draftData, r.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
@@ -380,11 +380,11 @@ export default function HajriTaxScreen() {
 
   const exportDetailExcel = useCallback(() => {
     const rows = [];
-    const label = (r) => (lang === 'ar' ? r.labelAr : r.labelEn);
-    OUTPUT_ROWS.forEach((r) => {
+    const label = (r: any) => (lang === 'ar' ? r.labelAr : r.labelEn);
+    OUTPUT_ROWS.forEach((r: any) => {
       if (!r.isTotal) rows.push({ Item: label(r), Amount: getRowValue(draftData, r.key, 'amount'), VAT: getRowValue(draftData, r.key, 'vat') });
     });
-    INPUT_ROWS.forEach((r) => {
+    INPUT_ROWS.forEach((r: any) => {
       if (!r.isTotal) rows.push({ Item: label(r), Amount: getRowValue(draftData, r.key, 'amount'), VAT: getRowValue(draftData, r.key, 'vat') });
     });
     rows.push({ Item: lang === 'ar' ? 'صافي مستحق' : 'Net payable', Amount: '', VAT: netPayableDraft });
@@ -392,7 +392,7 @@ export default function HajriTaxScreen() {
   }, [draftData, lang, detailCompanyId, netPayableDraft, periodLabel]);
 
   const exportConsolidatedExcel = useCallback(() => {
-    const rows = registryRows.map((r) => {
+    const rows = registryRows.map((r: any) => {
       const payload = r.payload && typeof r.payload === 'object' ? r.payload : defaultDisclosureData();
       const net = computeNetPayable(payload);
       const pt = r.paymentTarget != null ? parseFloat(String(r.paymentTarget)) : null;
@@ -413,7 +413,7 @@ export default function HajriTaxScreen() {
 
   const printConsolidated = useCallback(() => {
     const bodyRows = registryRows
-      .map((r) => {
+      .map((r: any) => {
         const nm = lang === 'en' ? (r.company?.nameEn || r.company?.nameAr) : r.company?.nameAr;
         const payload = r.payload && typeof r.payload === 'object' ? r.payload : defaultDisclosureData();
         const net = computeNetPayable(payload);
@@ -430,7 +430,7 @@ export default function HajriTaxScreen() {
   }, [registryRows, lang, t]);
 
   const exportJsonBundle = useCallback(() => {
-    const records = registryRows.map((r) => ({
+    const records = registryRows.map((r: any) => ({
       companyId: r.companyId,
       year: r.year,
       quarter: r.quarter,
@@ -451,7 +451,7 @@ export default function HajriTaxScreen() {
   }, [registryRows]);
 
   const onJsonImport = useCallback(
-    async (e) => {
+    async (e: any) => {
       const file = e.target.files?.[0];
       e.target.value = '';
       if (!file) return;
@@ -576,8 +576,8 @@ export default function HajriTaxScreen() {
         filterCompanyId={regFilterCompany}
         setFilterCompanyId={setRegFilterCompany}
         onNewDeclaration={() => setShowNewDeclarationModal(true)}
-        onViewRow={(row) => openFromRegistryRow(row, 'view')}
-        onEditRow={(row) => openFromRegistryRow(row, 'edit')}
+        onViewRow={(row: any) => openFromRegistryRow(row, 'view')}
+        onEditRow={(row: any) => openFromRegistryRow(row, 'edit')}
         jsonToolbar={jsonToolbar}
       />
       <HajriTaxNewDeclarationModal

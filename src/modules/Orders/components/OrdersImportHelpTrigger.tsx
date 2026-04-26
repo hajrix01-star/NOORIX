@@ -2,15 +2,15 @@
 import { Button } from '../../../ui';
 
 /** علامة ⓘ: التمرير يعرض التعليمات؛ الضغط يثبتها حتى النقر خارجها */
-export function OrdersImportHelpTrigger({ t, variant }) {
+export function OrdersImportHelpTrigger({ t, variant }: any) {
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
-  const wrapRef = useRef(null);
+  const wrapRef = useRef<any>(null);
   const visible = hover || pinned;
 
   useEffect(() => {
     if (!pinned) return undefined;
-    const onDoc = (e) => {
+    const onDoc = (e: any) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setPinned(false);
     };
     const t = setTimeout(() => document.addEventListener('mousedown', onDoc), 0);
@@ -34,9 +34,9 @@ export function OrdersImportHelpTrigger({ t, variant }) {
         aria-expanded={visible}
         aria-haspopup="dialog"
         title={t('ordersImportHelpTooltip')}
-        onClick={(e) => {
+        onClick={(e: any) => {
           e.stopPropagation();
-          setPinned((p) => !p);
+          setPinned((p: any) => !p);
         }}
         className="text-[12px] font-semibold py-1.5 px-3 rounded-full"
         style={{
@@ -60,7 +60,7 @@ export function OrdersImportHelpTrigger({ t, variant }) {
             border: '1px solid var(--noorix-border)',
             boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
           }}
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={(e: any) => e.stopPropagation()}
         >
           <div className="font-extrabold text-[13px] mb-[10px]">{title}</div>
           <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('ordersImportHelpHoverHint')}</p>

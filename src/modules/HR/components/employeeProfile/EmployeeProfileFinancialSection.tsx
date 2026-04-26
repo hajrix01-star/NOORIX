@@ -2,7 +2,7 @@ import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { hrFmt } from '../../utils/hrFmt';
 import { cn, SmartTable } from '../../../../ui';
 
-export function EmployeeProfileFinancialSection({ t, financialRecords }) {
+export function EmployeeProfileFinancialSection({ t, financialRecords }: any) {
   return (
     <div className="noorix-surface-card overflow-hidden employee-profile-layout__wide">
       <div className="nx-section-header">
@@ -18,15 +18,15 @@ export function EmployeeProfileFinancialSection({ t, financialRecords }) {
             key: 'date',
             label: t('transactionDate'),
             width: '12%',
-            render: (v) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
           },
-          { key: 'typeLabel', label: t('operationType'), width: '18%', render: (v) => v },
+          { key: 'typeLabel', label: t('operationType'), width: '18%', render: (v: any) => v },
           {
             key: 'amount',
             label: t('advanceAmount') || 'المبلغ',
             numeric: true,
             width: '15%',
-            render: (v) => (
+            render: (v: any) => (
               <span className={`nx-cell-num${v < 0 ? ' nx-cell-num--red' : ''}`}>{hrFmt(v)}</span>
             ),
           },
@@ -34,7 +34,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords }) {
             key: 'notes',
             label: t('invoiceNotesColumn'),
             width: '54%',
-            render: (v) => (
+            render: (v: any) => (
               <span className="nx-cell-ellipsis" title={v || ''}>
                 {v || '—'}
               </span>
@@ -46,7 +46,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords }) {
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderMobileCard={(row) => (
+        renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.date)}</span>

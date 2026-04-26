@@ -8,10 +8,10 @@ import {
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { assertApiOk } from '../../../utils/apiResponse';
 
-function ItemForm({ initial = {}, onSave, onCancel, loading }) {
+function ItemForm({ initial = {}, onSave, onCancel, loading }: any) {
   const { t } = useTranslation();
   const [form, setForm] = useState({ nameAr: '', nameEn: '', category: '', unitType: '', notes: '', ...initial });
-  const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const f = (k: any) => (e: any) => setForm((p: any) => ({ ...p, [k]: e.target.value }));
   return (
     <div className="grid gap-3">
       <Input placeholder={`${t('ocrItemNameAr')} *`} value={form.nameAr} onChange={f('nameAr')} />
@@ -28,28 +28,28 @@ function ItemForm({ initial = {}, onSave, onCancel, loading }) {
   );
 }
 
-export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
+export default function ItemsCatalogTab({ items = [], loading, onRefresh }: any) {
   const { t, lang: language } = useTranslation();
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
-  const [viewing, setViewing] = useState(null);
-  const [priceHistory, setPriceHistory] = useState([]);
+  const [viewing, setViewing] = useState<any>(null);
+  const [priceHistory, setPriceHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [aliasInput, setAliasInput] = useState('');
   const [aliasLang, setAliasLang] = useState('ar');
 
   // Deduplication state
-  const [dupGroups, setDupGroups] = useState(null);
+  const [dupGroups, setDupGroups] = useState<any>(null);
   const [dupLoading, setDupLoading] = useState(false);
-  const [merging, setMerging] = useState(null);
+  const [merging, setMerging] = useState<any>(null);
 
   // Bulk select
   const [selected, setSelected] = useState(new Set());
   const [deleting, setDeleting] = useState(false);
 
-  const toggleSelect = (id) => setSelected((prev) => {
+  const toggleSelect = (id: any) => setSelected((prev: any) => {
     const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
   });
 
@@ -64,12 +64,12 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
-  const filtered = items.filter((item) => {
+  const filtered = items.filter((item: any) => {
     const q = search.toLowerCase();
     return !q || item.nameAr?.toLowerCase().includes(q) || item.nameEn?.toLowerCase().includes(q) || item.category?.toLowerCase().includes(q);
   });
 
-  const handleViewItem = async (item) => {
+  const handleViewItem = async (item: any) => {
     setViewing(item);
     setHistoryLoading(true);
     const res = await getItemPriceHistory(item.id);
@@ -77,35 +77,35 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
     setHistoryLoading(false);
   };
 
-  const handleCreate = async (data) => {
+  const handleCreate = async (data: any) => {
     setSaving(true);
     try {
       const res = await createOcrItem(data);
       assertApiOk(res, t('saveFailed'));
       setAdding(false);
       onRefresh();
-    } catch (e) {
+    } catch (e: any) {
       alert(e?.message || t('saveFailed'));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleUpdate = async (data) => {
+  const handleUpdate = async (data: any) => {
     setSaving(true);
     try {
       const res = await updateOcrItem(editing.id, data);
       assertApiOk(res, t('saveFailed'));
       setEditing(null);
       onRefresh();
-    } catch (e) {
+    } catch (e: any) {
       alert(e?.message || t('saveFailed'));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: any) => {
     if (!confirm('هل تريد حذف هذا الصنف؟')) return;
     await deleteOcrItem(id);
     onRefresh();
@@ -125,7 +125,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
     setDupLoading(false);
   };
 
-  const handleMerge = async (keepId, mergeId) => {
+  const handleMerge = async (keepId: any, mergeId: any) => {
     if (!window.confirm('هل تريد دمج هذين الصنفين؟ سيتم الاحتفاظ بالصنف الأول وحذف الثاني.')) return;
     setMerging(`${keepId}-${mergeId}`);
     try {
@@ -133,17 +133,17 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       assertApiOk(res, t('saveFailed'));
       onRefresh();
       handleFindDuplicates();
-    } catch (e) {
+    } catch (e: any) {
       alert(e?.message || t('saveFailed'));
     } finally {
       setMerging(null);
     }
   };
 
-  const lowestPrice = priceHistory.length > 0 ? Math.min(...priceHistory.map((h) => Number(h.price))) : null;
+  const lowestPrice = priceHistory.length > 0 ? Math.min(...priceHistory.map((h: any) => Number(h.price))) : null;
 
   const isAr = language === 'ar';
-  const allChecked = filtered.length > 0 && filtered.every((i) => selected.has(i.id));
+  const allChecked = filtered.length > 0 && filtered.every((i: any) => selected.has(i.id));
 
   if (loading) return (
     <div className="ocr-loading">
@@ -157,7 +157,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
       {/* Toolbar */}
       <div className="inv-toolbar mb-4">
         <label className="nx-checkbox inv-select-all-wrap">
-          <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(filtered.map(i => i.id)))} className="inv-toolbar-checkbox" />
+          <input type="checkbox" checked={allChecked} onChange={allChecked ? () => setSelected(new Set()) : () => setSelected(new Set(filtered.map((i: any) => i.id)))} className="inv-toolbar-checkbox" />
           <span className="inv-select-all-label">
             {selected.size > 0 ? (isAr ? `${selected.size} محدد` : `${selected.size} selected`) : (isAr ? 'تحديد الكل' : 'Select all')}
           </span>
@@ -165,7 +165,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
 
         <div className="inv-search-wrap">
           <span className="inv-search-icon">⌕</span>
-          <Input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
+          <Input type="text" value={search} onChange={(e: any) => setSearch(e.target.value)} placeholder={t('ocrSearch')} className="inv-search-input" />
           {search && <Button className="inv-search-clear" onClick={() => setSearch('')}>✕</Button>}
         </div>
 
@@ -192,13 +192,13 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
             </div>
             <Button className="modal-close-btn w-7 h-7" onClick={() => setDupGroups(null)}>✕</Button>
           </div>
-          {dupGroups.map((group, gi) => (
+          {dupGroups.map((group: any, gi: any) => (
             <div key={gi} className="mb-2.5 rounded-lg border border-noorix-border overflow-hidden">
               <div className="bg-noorix-bg-muted text-[12px] text-noorix-muted font-semibold py-2 px-[14px]">
                 {isAr ? `تشابه ${Math.round(group.score * 100)}%` : `${Math.round(group.score * 100)}% match`}
               </div>
               <div className="flex flex flex-wrap">
-                {group.items.map((item, ii) => (
+                {group.items.map((item: any, ii: any) => (
                   <div key={item.id} className="py-3 px-[14px] flex-[1_1_200px]" style={{
                     borderInlineEnd: ii < group.items.length - 1 ? '1px solid var(--noorix-border)' : 'none',
                   }}>
@@ -207,7 +207,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                     <div className="text-[11px] text-noorix-muted mb-2">
                       {item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'} · {item._count?.lines || 0} {isAr ? 'سطر' : 'lines'}
                     </div>
-                    {group.items.filter((o) => o.id !== item.id).map((other) => (
+                    {group.items.filter((o: any) => o.id !== item.id).map((other: any) => (
                       <Button key={other.id} onClick={() => handleMerge(item.id, other.id)} disabled={!!merging}
                         variant="primary" size="sm">
                         {merging === `${item.id}-${other.id}` ? '...' : (isAr ? 'احتفظ بهذا — ادمج الآخر' : 'Keep this — merge other')}
@@ -235,7 +235,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
         </div>
       ) : (
         <div className="ocr-catalog-list">
-          {filtered.map((item) => (
+          {filtered.map((item: any) => (
             <div key={item.id}>
               {editing?.id === item.id ? (
                 <div className="noorix-surface-card p-4">
@@ -245,7 +245,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                 <div className={`ocr-catalog-item${selected.has(item.id) ? ' ocr-catalog-item--selected' : ''}`} onClick={() => handleViewItem(item)}>
                   <label className="nx-checkbox">
                     <input type="checkbox" checked={selected.has(item.id)}
-                      onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
+                      onClick={(e: any) => { e.stopPropagation(); toggleSelect(item.id); }}
                       onChange={() => {}} className="ocr-catalog-checkbox" />
                   </label>
                   <div className="ocr-catalog-avatar">{(item.nameAr || item.nameEn || '?')[0]}</div>
@@ -257,7 +257,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
                     {item.category && <span className="ocr-catalog-badge">{item.category}</span>}
                     <span className="ocr-catalog-badge">{item._count?.priceHistory || 0} {isAr ? 'سعر' : 'prices'}</span>
                   </div>
-                  <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1 shrink-0" onClick={(e: any) => e.stopPropagation()}>
                     <Button onClick={() => setEditing(item)} size="sm">{t('ocrEdit')}</Button>
                     <Button onClick={() => handleDelete(item.id)} size="sm" variant="danger">{t('ocrDelete')}</Button>
                   </div>
@@ -291,15 +291,15 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
               <div className="text-noorix-muted text-[13px]">{isAr ? 'لا توجد مرادفات بعد' : 'No aliases yet'}</div>
             )}
             <div className="flex flex flex-wrap gap-1 mb-4">
-              {(viewing?.aliases || []).map((a) => (
+              {(viewing?.aliases || []).map((a: any) => (
                 <span key={a.id} className="rounded-lg bg-noorix-bg-muted text-[12px] py-[3px] px-[10px]">
                   {a.alias} <span className="text-noorix-muted text-[10px]">({a.language})</span>
                 </span>
               ))}
             </div>
             <div className="flex gap-2 mb-4">
-              <Input type="text" value={aliasInput} onChange={(e) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="flex-1 min-w-0" />
-              <Input type="select" value={aliasLang} onChange={(e) => setAliasLang(e.target.value)}>
+              <Input type="text" value={aliasInput} onChange={(e: any) => setAliasInput(e.target.value)} placeholder={t('ocrAddAlias')} className="flex-1 min-w-0" />
+              <Input type="select" value={aliasLang} onChange={(e: any) => setAliasLang(e.target.value)}>
                 <option value="ar">AR</option>
                 <option value="en">EN</option>
               </Input>
@@ -316,7 +316,7 @@ export default function ItemsCatalogTab({ items = [], loading, onRefresh }) {
               <div className="text-noorix-muted text-[13px]">{isAr ? 'لا يوجد تاريخ أسعار بعد' : 'No price history yet'}</div>
             ) : (
               <div className="flex flex-col gap-1">
-                {priceHistory.map((h) => {
+                {priceHistory.map((h: any) => {
                   const isLowest = Number(h.price) === lowestPrice;
                   return (
                     <div key={h.id} className="flex items-center justify-between rounded-lg py-[10px] px-[14px]" style={{ background: isLowest ? 'var(--noorix-green-6)' : 'var(--noorix-bg-muted)' }}>
