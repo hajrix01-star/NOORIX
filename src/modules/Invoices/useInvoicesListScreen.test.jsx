@@ -1,49 +1,10 @@
-import React, { useState } from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
-import { AppContext } from '../../context/AppContext';
-import { ToastProvider } from '../../context/ToastContext';
+import { AppTestProviders } from '../../test/appTestProviders';
 import { useInvoicesListScreen } from './useInvoicesListScreen';
 
-const noop = () => {};
-
-const appValue = {
-  activeCompany: null,
-  activeCompanyId: '',
-  setActiveCompany: noop,
-  companies: [],
-  hasRealCompanies: false,
-  cardStyle: 'default',
-  setCardStyle: noop,
-  language: 'ar',
-  setLanguage: noop,
-  isSidebarOpen: false,
-  setSidebarOpen: noop,
-  user: { role: 'admin' },
-  userRole: 'admin',
-  userPermissions: [],
-};
-
 function TestProviders({ children }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
-        },
-      }),
-  );
-  return (
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/invoices']}>
-        <AppContext.Provider value={appValue}>
-          <ToastProvider>{children}</ToastProvider>
-        </AppContext.Provider>
-      </MemoryRouter>
-    </QueryClientProvider>
-  );
+  return <AppTestProviders initialEntries={['/invoices']}>{children}</AppTestProviders>;
 }
 
 describe('useInvoicesListScreen', () => {

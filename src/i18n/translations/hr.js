@@ -125,7 +125,7 @@ export default {
   includeEosInSettlement: { ar: 'إضافة نهاية الخدمة في المخالصة', en: 'Include EOS in settlement' },
   excludeEosInSettlement: { ar: 'عدم إضافة نهاية الخدمة (عرض الراتب فقط)', en: 'Exclude EOS (salary only)' },
   finalSettlementTotalWithEos: { ar: 'إجمالي التسوية (راتب + نهاية خدمة)', en: 'Total (salary + EOS)' },
-  finalSettlementTotalSalaryOnly: { ar: 'إجمالي التسوية (راتب وبدلات — دون نهاية خدمة)', en: 'Total settlement (salary & allowances — EOS excluded)' },
+  finalSettlementTotalSalaryOnly: { ar: 'إجمالي التسوية', en: 'Total settlement' },
   printCalc: { ar: 'طباعة الحاسبة', en: 'Print calculator' },
   quickAdvance: { ar: 'صرف سلفة', en: 'Quick advance' },
   advanceForEmployee: { ar: 'سلفة لـ {0}', en: 'Advance for {0}' },
