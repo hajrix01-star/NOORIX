@@ -22,7 +22,10 @@ export type ChatHandlerResult = {
 
 export type GeminiIntent =
   | 'sales' | 'purchases' | 'expenses' | 'reports' | 'vaults'
-  | 'invoices' | 'suppliers' | 'categories' | 'expense_lines' | 'hr' | 'orders' | 'help' | 'unknown';
+  | 'invoices' | 'suppliers' | 'categories' | 'expense_lines' | 'hr' | 'orders' | 'help'
+  | 'finance_ratios'
+  | 'sales_month_compare'
+  | 'unknown';
 
 export type ChatHandler = {
   /** أولوية التنفيذ (أقل = أولاً) */

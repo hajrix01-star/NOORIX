@@ -21,8 +21,8 @@ export const helpHandler: ChatHandler = {
       };
     }
     return {
-      answerAr: `يمكنك السؤال عن:\n• مبيعات/مشتريات/مصروفات (اليوم، أمس، هذا الأسبوع، هذا الشهر، أو السنة)\n• أرصدة الخزائن\n• تقرير الربح والخسارة\n• عدد الفواتير، آخر فاتورة، الموردين، الفئات، بنود المصروفات\n• الموظفين، أسماء الموظفين، الرواتب، آخر مسيرة، الإجازات، الإقامات\n• أصناف الطلبات والمنتجات وفئات الطلبات`,
-      answerEn: `You can ask about:\n• Sales/purchases/expenses (today, yesterday, this week, this month, or year)\n• Vault balances\n• Profit & Loss report\n• Invoice count, last invoice, suppliers, categories, expense lines\n• Employees, employee names, payroll, last payroll, leaves, residencies\n• Order products and categories`,
+      answerAr: `يمكنك السؤال عن:\n• مبيعات/مشتريات/مصروفات (اليوم، أمس، هذا الأسبوع، هذا الشهر، أو السنة)\n• نسب المشتريات أو المصروفات أو المجموع من المبيعات (شهر حتى اليوم)\n• مقارنة مبيعات الشهر الماضي بالحالي لنفس الفترة حتى اليوم\n• أرصدة الخزائن\n• تقرير الربح والخسارة\n• عدد الفواتير، آخر فاتورة، الموردين، الفئات، بنود المصروفات\n• الموظفين، أسماء الموظفين، الرواتب، آخر مسيرة، الإجازات، الإقامات\n• أصناف الطلبات والمنتجات وفئات الطلبات`,
+      answerEn: `You can ask about:\n• Sales/purchases/expenses (today, yesterday, this week, this month, or year)\n• Purchases %, expenses %, or combined % of sales (month to date)\n• Compare last month vs this month sales for the same MTD window\n• Vault balances\n• Profit & Loss report\n• Invoice count, last invoice, suppliers, categories, expense lines\n• Employees, employee names, payroll, last payroll, leaves, residencies\n• Order products and categories`,
     };
   },
 };

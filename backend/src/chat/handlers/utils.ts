@@ -79,3 +79,40 @@ export function parsePeriod(
 
   return null;
 }
+
+/** من أول الشهر الحالي حتى نهاية اليوم — مطابق لمنطق «هذا الشهر» في parsePeriod */
+export function thisMonthToDateRange(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const start = new Date(y, m, 1, 0, 0, 0, 0);
+  const end = new Date(y, m, d, 23, 59, 59, 999);
+  return {
+    start,
+    end,
+    labelAr: `من أول الشهر حتى اليوم (${m + 1}/${y})`,
+    labelEn: `Month to date (${m + 1}/${y})`,
+  };
+}
+
+/**
+ * الشهر الماضي من اليوم 1 حتى نفس رقم يوم الشهر الحالي (مقصور على طول الشهر السابق)
+ * لمقارنة عادلة مع «هذا الشهر حتى اليوم».
+ */
+export function lastMonthPartialMatchingMtd(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const daysInPrevMonth = new Date(y, m, 0).getDate();
+  const cappedDay = Math.min(d, daysInPrevMonth);
+  const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
+  const end = new Date(y, m - 1, cappedDay, 23, 59, 59, 999);
+  const pm = end.getMonth() + 1;
+  const py = end.getFullYear();
+  return {
+    start,
+    end,
+    labelAr: `الشهر الماضي (1–${cappedDay}/${pm}/${py})`,
+    labelEn: `Last month (1–${cappedDay}/${pm}/${py})`,
+  };
+}

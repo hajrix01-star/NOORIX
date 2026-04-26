@@ -7,8 +7,15 @@ export const salesHandler: ChatHandler = {
   priority: 10,
   intent: 'sales',
   matchesIntent: (intent, can) => intent === 'sales' && (can(PERMISSIONS.VIEW_SALES) || can(PERMISSIONS.SALES_READ)),
-  canHandle: (q, can) =>
-    matches(q, ['مبيعات', 'إيرادات', 'المبيعات', 'sales', 'revenue', 'كم حققنا', 'كم بيعنا', 'كم كسبنا', 'كسبنا', 'كسب', 'كم ربحنا', 'ربحنا', 'دخلنا', 'إجمالي المبيعات']) && (can(PERMISSIONS.VIEW_SALES) || can(PERMISSIONS.SALES_READ)),
+  canHandle: (q, can) => {
+    if (!(can(PERMISSIONS.VIEW_SALES) || can(PERMISSIONS.SALES_READ))) return false;
+    /* أسئلة النسب المالية تُعالج في financeRatiosHandler */
+    if (matches(q, ['نسبة']) && matches(q, ['مبيعات']) && (matches(q, ['مشتريات']) || matches(q, ['مصروفات']))) return false;
+    return matches(q, [
+      'مبيعات', 'إيرادات', 'المبيعات', 'sales', 'revenue', 'كم حققنا', 'كم بيعنا', 'كم كسبنا', 'كسبنا', 'كسب',
+      'كم ربحنا', 'ربحنا', 'دخلنا', 'إجمالي المبيعات',
+    ]);
+  },
   process: async (ctx) => {
     const { companyId, query, period, can } = ctx;
     if (!can(PERMISSIONS.VIEW_SALES) && !can(PERMISSIONS.SALES_READ)) return null;

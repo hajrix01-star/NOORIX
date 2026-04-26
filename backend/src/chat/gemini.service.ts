@@ -26,6 +26,8 @@ export type GeminiIntent =
   | 'hr'
   | 'orders'
   | 'help'
+  | 'finance_ratios'
+  | 'sales_month_compare'
   | 'unknown';
 
 export type GeminiPeriod =
@@ -62,6 +64,8 @@ const SYSTEM_PROMPT = `أنت مساعد لفهم أسئلة في نظام مح�
 - hr: موظفين، اسم الموظف، أسماء الموظفين، رواتب، إجازات، إقامات، مسيرة
 - orders: طلبات، أصناف، منتجات
 - help: مساعدة، ماذا تسأل، أسئلة، ماذا يمكن أن تفعل (طلب صريح لقائمة المساعدة)
+- finance_ratios: نسبة المشتريات من المبيعات، نسبة المصروفات من المبيعات، نسبة المشتريات والمصروفات معاً من المبيعات، نسب من الإيراد
+- sales_month_compare: قارن مبيعات الشهر الماضي بالحالي، نفس الفترة حتى اليوم، مقارنة شهر بشهر للمبيعات
 - unknown: تحيات (مرحبا، أهلا، السلام، كيف الحال)، أسئلة عامة خارج المحاسبة، أو أي سؤال لا ينطبق على القائمة
 
 الفترة (period) — اختر واحدة أو null:
@@ -118,7 +122,7 @@ export class GeminiService {
             responseJsonSchema: {
               type: 'object',
               properties: {
-                intent: { type: 'string', description: 'One of: sales, purchases, expenses, reports, vaults, invoices, suppliers, categories, expense_lines, hr, orders, help, unknown' },
+                intent: { type: 'string', description: 'One of: sales, purchases, expenses, reports, vaults, invoices, suppliers, categories, expense_lines, hr, orders, help, finance_ratios, sales_month_compare, unknown' },
                 period: { type: 'string', description: 'One of: today, yesterday, day_before_yesterday, this_week, last_week, this_month, last_month, year, or null' },
               },
               required: ['intent'],
@@ -152,7 +156,8 @@ export class GeminiService {
     const s = String(v || '').toLowerCase();
     const valid: GeminiIntent[] = [
       'sales', 'purchases', 'expenses', 'reports', 'vaults',
-      'invoices', 'suppliers', 'categories', 'expense_lines', 'hr', 'orders', 'help', 'unknown',
+      'invoices', 'suppliers', 'categories', 'expense_lines', 'hr', 'orders', 'help',
+      'finance_ratios', 'sales_month_compare', 'unknown',
     ];
     return valid.includes(s as GeminiIntent) ? (s as GeminiIntent) : 'unknown';
   }

@@ -36,6 +36,19 @@ const PERMANENT_QUESTIONS = [
   { ar: 'كم مبيعات السنة؟', en: 'What are annual sales?', domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ) },
   { ar: 'ما أرصدة الخزائن؟', en: 'What are vault balances?', domain: (c) => c(PERMISSIONS.VIEW_VAULTS) || c(PERMISSIONS.VAULTS_READ) },
   { ar: 'أعطني ملخص الربح والخسارة', en: 'Give me P&L summary', domain: (c) => c(PERMISSIONS.VIEW_REPORTS) || c(PERMISSIONS.REPORTS_READ) },
+  {
+    ar: 'كم نسبة المشتريات من المبيعات؟ وكم نسبة المصروفات من المبيعات؟ وكم نسبة المشتريات والمصروفات من المبيعات؟ (من أول هذا الشهر حتى اليوم)',
+    en: 'Purchases % of sales, expenses % of sales, and (purchases+expenses) % of sales — month to date.',
+    domain: (c) =>
+      (c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ)) &&
+      c(PERMISSIONS.VIEW_INVOICES) &&
+      c(PERMISSIONS.VIEW_VAULTS),
+  },
+  {
+    ar: 'قارن بين مبيعات الشهر الماضي بالحالي بنفس الفترة حتى اليوم',
+    en: 'Compare last month vs this month sales for the same period to date.',
+    domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ),
+  },
   { ar: 'كم عدد الفواتير؟', en: 'How many invoices?', domain: (c) => c(PERMISSIONS.VIEW_INVOICES) || c(PERMISSIONS.INVOICES_READ) },
   { ar: 'كم عدد الموردين؟', en: 'How many suppliers?', domain: (c) => c(PERMISSIONS.VIEW_SUPPLIERS) || c(PERMISSIONS.SUPPLIERS_READ) },
   { ar: 'كم عدد الموظفين؟', en: 'How many employees?', domain: (c) => c(PERMISSIONS.VIEW_EMPLOYEES) || c(PERMISSIONS.EMPLOYEES_READ) },
