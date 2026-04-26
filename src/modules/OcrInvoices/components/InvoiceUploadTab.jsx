@@ -1,5 +1,4 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
@@ -7,7 +6,6 @@ import { useAuth } from '../../../context/AuthContext';
 import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { compressImageFileToJpegDataUrl } from '../../../utils/imageUtils';
-import { Button, Input } from '../../../ui';
 import { getVaults } from '../../../services/api';
 import {
   createOcrSupplier,
@@ -16,47 +14,36 @@ import {
   getOcrInvoice,
   saveOcrInvoice,
 } from '../services/ocrApi';
-import { invoicesHrefForLinkedPurchase } from '../utils/ledgerInvoiceLink';
-import { fetchOcrInvoiceImageBlob, ocrInvoiceImageQueryKey } from '../ocrInvoiceImageQuery';
+import { ocrInvoiceImageQueryKey, fetchOcrInvoiceImageBlob } from '../ocrInvoiceImageQuery';
+import { revokePreviewUrl } from './invoiceUpload/ocrInvoiceUploadUtils';
+import {
+  OcrUploadPrefillBanner,
+  OcrPrefillLinkedPurchaseBanner,
+  OcrPostSaveLinkedBanner,
+  OcrEmptyImageDropzone,
+  OcrErrorBanner,
+} from './invoiceUpload/OcrUploadBannersAndDropzone';
+import { OcrImagePreviewColumn } from './invoiceUpload/OcrImagePreviewColumn';
+import { OcrExtractedInfoAndTotalsCard } from './invoiceUpload/OcrExtractedInfoAndTotalsCard';
+import { OcrLinkedPurchaseForm } from './invoiceUpload/OcrLinkedPurchaseForm';
+import { OcrLineItemsList, OcrWarningStrip } from './invoiceUpload/OcrLineItemsAndWarnings';
+import { OcrNewSupplierModal } from './invoiceUpload/OcrNewSupplierModal';
 
-const CONFIDENCE_COLOR = (c) => {
-  if (c >= 0.9) return 'var(--noorix-accent-green)';
-  if (c >= 0.7) return 'var(--noorix-accent-amber)';
-  return 'var(--noorix-accent-red)';
-};
-
-const STATUS_BADGE = {
-  auto:    { bg: '#dcfce7', color: 'var(--noorix-accent-green)', label: { ar: 'تلقائي', en: 'Auto' } },
-  review:  { bg: '#fef3c7', color: 'var(--noorix-accent-amber)', label: { ar: 'راجع', en: 'Review' } },
-  new:     { bg: '#fee2e2', color: 'var(--noorix-accent-red)', label: { ar: 'جديد', en: 'New' } },
-};
-
-function revokePreviewUrl(url) {
-  if (url && String(url).startsWith('blob:')) {
-    try {
-      URL.revokeObjectURL(url);
-    } catch {
-      /* ignore */
-    }
-  }
-}
-
-export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInvoiceId, onPrefillConsumed }) {
+export default function InvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsumed }) {
   const { t, lang: language } = useTranslation();
   const { activeCompanyId } = useApp();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [dragging, setDragging]   = useState(false);
-  const [preview, setPreview]     = useState(null);
-  const [imageBase64, setBase64]  = useState(null);
-  const [mimeType, setMimeType]   = useState('image/jpeg');
-  const [extracted, setExtracted]   = useState(null);
-  const [editItems, setEditItems]   = useState(null); // نسخة قابلة للتعديل من الأصناف
-  const [loading, setLoading]       = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [error, setError]           = useState(null);
-  const [success, setSuccess]       = useState(false);
-  /** عند فتح فاتورة من طابور المراجعة — يُمرَّر إلى saveOcrInvoice كـ id للاعتماد */
+  const [dragging, setDragging] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [imageBase64, setBase64] = useState(null);
+  const [mimeType, setMimeType] = useState('image/jpeg');
+  const [extracted, setExtracted] = useState(null);
+  const [editItems, setEditItems] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
   const [finalizeOcrId, setFinalizeOcrId] = useState(null);
   const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState(null);
   const [createLinkedPurchase, setCreateLinkedPurchase] = useState(false);
@@ -118,9 +105,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
       !!finalizeOcrId &&
       !!extracted &&
       canCreatePurchase &&
-      (!!prefillOcrSupplierId ||
-        supplierNameForSuggest.length >= 1 ||
-        invoiceVatDigits.length >= 9),
+      (!!prefillOcrSupplierId || supplierNameForSuggest.length >= 1 || invoiceVatDigits.length >= 9),
     queryFn: async () => {
       const q = supplierNameForSuggest.length >= 1 ? supplierNameForSuggest : undefined;
       const r = await getOcrAccountingSupplierSuggestions({
@@ -139,7 +124,6 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     userTouchedAccountingRef.current = false;
   }, [accSuggestKey]);
 
-  /** تعبئة مورد المحاسبة تلقائياً (قابلة للتعديل) من الاسم والرقم الضريبي وربط كتالوج OCR */
   useEffect(() => {
     if (userTouchedAccountingRef.current) return;
     if (!finalizeOcrId || !canCreatePurchase) return;
@@ -187,13 +171,9 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
           return;
         }
         setFinalizeOcrId(prefillInvoiceId);
-        setPrefillLinkedPurchase(
-          inv.linkedPurchaseInvoice?.id ? inv.linkedPurchaseInvoice : null,
-        );
+        setPrefillLinkedPurchase(inv.linkedPurchaseInvoice?.id ? inv.linkedPurchaseInvoice : null);
         setPrefillOcrSupplierId(inv.supplierId || null);
-        setPurchaseSupplierInvoiceNumber(
-          String(inv.invoiceNumber || raw?.invoiceNumber?.value || '').trim(),
-        );
+        setPurchaseSupplierInvoiceNumber(String(inv.invoiceNumber || raw?.invoiceNumber?.value || '').trim());
         setTransactionDate(getSaudiToday());
         setCreateLinkedPurchase(false);
         setAccountingSupplierId('');
@@ -212,7 +192,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
           });
           setMimeType(blob.type || 'image/jpeg');
         } catch {
-          /* صورة اختيارية — الكاش/الـ throttle لا يمنعان عرض بيانات الاستخراج */
+          /* optional image */
         }
         setBase64(null);
       } catch {
@@ -227,13 +207,10 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     return () => {
       cancelled = true;
     };
-    // لا تضف `t` هنا: كان غير مُثبّت ويسبب إعادة الجلب المفرط لـ getOcrInvoice (429). اللغة عبر `language` كافية.
   }, [prefillInvoiceId, onPrefillConsumed, language, activeCompanyId, queryClient]);
 
-  // الأصناف الفعلية = التعديل إن وجد أو الأصل
   const activeItems = editItems ?? extracted?.items ?? [];
 
-  // عدد التحذيرات الفعلية (تحذيرات الرياضيات وتحذيرات السعر فقط — لا الإجمالي)
   const warningCount = useMemo(() => {
     let n = 0;
     if (extracted?.invoiceTotalWarning) n++;
@@ -244,19 +221,17 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     return n;
   }, [extracted?.invoiceTotalWarning, activeItems]);
 
-  // هل المقارنة أخذت الضريبة بعين الاعتبار؟
-  const vatAdjusted = extracted?.vatAdjusted;
-
-  // تحديث صنف واحد (تعديل إنلاين)
   const updateItem = (index, field, value) => {
     const num = parseFloat(value);
     const updated = [...activeItems];
     updated[index] = { ...updated[index], [field]: isNaN(num) ? value : num };
-
-    // إعادة حساب الإجمالي تلقائياً إذا تغيرت الكمية أو السعر
     const item = updated[index];
     if ((field === 'quantity' || field === 'unitPrice') && item.quantity > 0 && item.unitPrice > 0) {
-      updated[index] = { ...updated[index], totalPrice: Math.round(item.quantity * item.unitPrice * 100) / 100, mathWarning: undefined };
+      updated[index] = {
+        ...updated[index],
+        totalPrice: Math.round(item.quantity * item.unitPrice * 100) / 100,
+        mathWarning: undefined,
+      };
     }
     if (field === 'totalPrice') {
       updated[index] = { ...updated[index], mathWarning: undefined };
@@ -264,7 +239,6 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     setEditItems(updated);
   };
 
-  // تطبيق الاقتراح التلقائي
   const applyMathSuggestion = (index) => {
     const item = activeItems[index];
     if (!item.mathWarning) return;
@@ -306,12 +280,15 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
       });
   }, []);
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files[0];
-    readFile(file);
-  }, [readFile]);
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      setDragging(false);
+      const file = e.dataTransfer.files[0];
+      readFile(file);
+    },
+    [readFile],
+  );
 
   const handleExtract = async () => {
     if (!imageBase64) return;
@@ -327,7 +304,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
           setError(`${t('ocrExtractFailed')} — تعذّر قراءة الفاتورة.\nModel: ${model}\n${detail}${rawSnippet}`);
         } else {
           setExtracted(res.data);
-          setEditItems(null); // إعادة تعيين التعديلات عند إعادة الاستخراج
+          setEditItems(null);
           if (res.data?.enrichError) {
             console.warn('OCR enrichment warning:', res.data.enrichError);
           }
@@ -375,30 +352,30 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     setError(null);
     try {
       const lines = activeItems.map((item) => ({
-        rawName:     item.name || '',
-        nameAr:      item.nameAr || null,
-        nameEn:      item.nameEn || null,
-        size:        item.size || null,
-        sizeUnit:    item.sizeUnit || null,
-        itemId:      item.itemMatch?.id || null,
-        quantity:    item.quantity || null,
-        unitPrice:   item.unitPrice || null,
-        totalPrice:  item.totalPrice || null,
-        confidence:  item.confidence || 0,
+        rawName: item.name || '',
+        nameAr: item.nameAr || null,
+        nameEn: item.nameEn || null,
+        size: item.size || null,
+        sizeUnit: item.sizeUnit || null,
+        itemId: item.itemMatch?.id || null,
+        quantity: item.quantity || null,
+        unitPrice: item.unitPrice || null,
+        totalPrice: item.totalPrice || null,
+        confidence: item.confidence || 0,
         matchStatus: item.itemMatch?.status || 'pending',
       }));
 
       const payload = {
         ...(finalizeOcrId ? { id: finalizeOcrId } : {}),
-        supplierId:     extracted.supplierMatch?.id || null,
-        supplierName:   !extracted.supplierMatch?.id ? (extracted.supplier?.name || null) : null,
-        invoiceNumber:  extracted.invoiceNumber?.value || null,
-        invoiceDate:    extracted.invoiceDate?.value || null,
+        supplierId: extracted.supplierMatch?.id || null,
+        supplierName: !extracted.supplierMatch?.id ? extracted.supplier?.name || null : null,
+        invoiceNumber: extracted.invoiceNumber?.value || null,
+        invoiceDate: extracted.invoiceDate?.value || null,
         subtotalAmount: extracted.subtotalAmount?.value || null,
-        totalAmount:    extracted.totalAmount?.value || null,
-        vatAmount:      extracted.vatAmount?.value || null,
-        imageUrl:       preview && !String(preview).startsWith('blob:') ? preview : null,
-        rawExtraction:  extracted,
+        totalAmount: extracted.totalAmount?.value || null,
+        vatAmount: extracted.vatAmount?.value || null,
+        imageUrl: preview && !String(preview).startsWith('blob:') ? preview : null,
+        rawExtraction: extracted,
         lines,
         ...(createLinkedPurchase && finalizeOcrId && canCreatePurchase
           ? {
@@ -484,10 +461,7 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
       const row = r.data;
       setExtracted((ex) =>
         ex
-          ? {
-              ...ex,
-              supplierMatch: { id: row.id, nameAr: row.nameAr, score: 1, status: 'new' },
-            }
+          ? { ...ex, supplierMatch: { id: row.id, nameAr: row.nameAr, score: 1, status: 'new' } }
           : null,
       );
       setPrefillOcrSupplierId(row.id);
@@ -500,480 +474,129 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
     }
   };
 
+  const handleResetImageColumn = useCallback(() => {
+    setPreview((prev) => {
+      revokePreviewUrl(prev);
+      return null;
+    });
+    setBase64(null);
+    setExtracted(null);
+    setError(null);
+    setEditItems(null);
+    setFinalizeOcrId(null);
+    setPrefillLinkedPurchase(null);
+    setPostSaveLinkedPurchase(null);
+    setPrefillOcrSupplierId(null);
+    setCreateLinkedPurchase(false);
+    setAccountingSupplierId('');
+    setVaultId('');
+    setPurchaseSupplierInvoiceNumber('');
+    setTransactionDate(getSaudiToday());
+  }, []);
+
   const isAr = language === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
 
   return (
     <div className="flex flex-col gap-5" dir={dir}>
+      <OcrUploadPrefillBanner t={t} prefillLoading={prefillLoading} />
+      <OcrPrefillLinkedPurchaseBanner t={t} prefillLinkedPurchase={prefillLinkedPurchase} />
+      <OcrPostSaveLinkedBanner
+        t={t}
+        success={success}
+        postSaveLinkedPurchase={postSaveLinkedPurchase}
+      />
 
-      {prefillLoading && (
-        <div className="text-[13px] text-noorix-muted rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2">
-          {t('ocrPrefillLoading')}
-        </div>
-      )}
-
-      {prefillLinkedPurchase?.id && (
-        <div className="text-[13px] rounded-lg border border-noorix-blue/30 bg-noorix-blue/5 px-3 py-2 flex flex-wrap items-center gap-2">
-          <span className="text-noorix-text">{t('ocrLinkedPurchaseAlready')}</span>
-          <Link
-            to={invoicesHrefForLinkedPurchase(prefillLinkedPurchase)}
-            className="font-semibold text-noorix-blue underline"
-          >
-            {t('ocrLinkedPurchaseOpenList')}
-          </Link>
-        </div>
-      )}
-
-      {success && postSaveLinkedPurchase?.id && (
-        <div className="text-[13px] rounded-lg border border-noorix-accent-green/40 bg-green-50 dark:bg-green-950/25 px-3 py-2 flex flex-wrap items-center gap-2">
-          <span className="text-noorix-text">{t('ocrPurchaseRecordedLinked')}</span>
-          <Link
-            to={invoicesHrefForLinkedPurchase(postSaveLinkedPurchase)}
-            className="font-semibold text-noorix-blue underline"
-          >
-            {t('ocrLinkedPurchaseOpenList')}
-          </Link>
-        </div>
-      )}
-
-      {/* Upload zone */}
       {!preview && (
-        <div
-          className={`ocr-upload-zone${dragging ? ' ocr-upload-zone--active' : ''}`}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        <OcrEmptyImageDropzone
+          t={t}
+          dragging={dragging}
+          onDragOver={() => {
+            setDragging(true);
+          }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
-          onClick={() => fileRef.current?.click()}
-        >
-          <div className="ocr-upload-icon">↑</div>
-          <div className="ocr-upload-text">{t('ocrDragDrop')}</div>
-          <div className="ocr-upload-hint">{t('ocrSupportedFormats')}</div>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files[0])} />
-        </div>
+          onClickPick={() => fileRef.current?.click()}
+          fileRef={fileRef}
+          onFileInputChange={readFile}
+        />
       )}
 
       {preview && (
         <div className="flex flex flex-wrap gap-[18px] items-start">
-          <div className="noorix-surface-card flex-[1_1_280px] min-w-0 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-semibold text-[14px]">{isAr ? 'صورة الفاتورة' : 'Invoice Image'}</span>
-              <Button className="modal-close-btn w-7 h-7"
-                onClick={() => {
-                  setPreview((prev) => {
-                    revokePreviewUrl(prev);
-                    return null;
-                  });
-                  setBase64(null);
-                  setExtracted(null);
-                  setError(null);
-                  setEditItems(null);
-                  setFinalizeOcrId(null);
-                  setPrefillLinkedPurchase(null);
-                  setPostSaveLinkedPurchase(null);
-                  setPrefillOcrSupplierId(null);
-                  setCreateLinkedPurchase(false);
-                  setAccountingSupplierId('');
-                  setVaultId('');
-                  setPurchaseSupplierInvoiceNumber('');
-                  setTransactionDate(getSaudiToday());
-                }}>✕</Button>
-            </div>
-            <img src={preview} alt="invoice" className="w-full rounded-lg max-h-[500px] object-contain" />
-            <div className="mt-3 flex gap-2 flex flex-wrap">
-              {!extracted && (
-                <Button onClick={handleExtract} disabled={loading} variant="primary" className="flex-1 min-w-0">
-                  {loading ? t('ocrExtracting') : t('ocrExtract')}
-                </Button>
-              )}
-              {extracted && (
-                <>
-                  <Button onClick={handleSave} disabled={saving || success} variant="primary" className="flex-1 min-w-0">
-                    {saving ? t('ocrSaving') : success ? t('ocrSaved') : t('ocrSaveInvoice')}
-                  </Button>
-                  {!!imageBase64 && (
-                    <Button onClick={handleExtract} disabled={loading} className="flex-1 min-w-0">
-                      {loading ? t('ocrExtracting') : (isAr ? 'إعادة استخراج' : 'Re-extract')}
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
+          <OcrImagePreviewColumn
+            t={t}
+            isAr={isAr}
+            preview={preview}
+            imageBase64={imageBase64}
+            extracted={extracted}
+            loading={loading}
+            saving={saving}
+            success={success}
+            onResetAll={handleResetImageColumn}
+            onExtract={handleExtract}
+            onSave={handleSave}
+          />
 
           {extracted && (
             <div className="flex flex-col gap-[14px] flex-[1_1_280px] min-w-0">
-
-              <div className="noorix-surface-card p-4">
-                <div className="font-semibold text-[14px] mb-3">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
-                <div className="grid gap-2">
-                  <FieldRow label={t('ocrSupplierField')} value={extracted.supplier?.name} confidence={extracted.supplier?.confidence} match={extracted.supplierMatch} />
-                  <FieldRow label={t('ocrVatNumber')} value={extracted.vatNumber?.value} confidence={extracted.vatNumber?.confidence} />
-                  <FieldRow label={t('ocrInvoiceNumber')} value={extracted.invoiceNumber?.value} confidence={extracted.invoiceNumber?.confidence} />
-                  <FieldRow label={t('ocrInvoiceDate')} value={extracted.invoiceDate?.value} confidence={extracted.invoiceDate?.confidence} />
-                </div>
-
-                {(extracted.subtotalAmount?.value || extracted.vatAmount?.value || extracted.totalAmount?.value) && (
-                  <div className="mt-3 rounded-lg overflow-hidden border border-noorix-border">
-                    {extracted.subtotalAmount?.value && (
-                      <div className="flex items-center justify-between bg-noorix-bg-muted border-b border-noorix-border py-2 px-3">
-                        <span className="text-[13px] text-noorix-muted">{isAr ? 'المجموع قبل الضريبة' : 'Subtotal'}</span>
-                        <span className="text-[13px] font-semibold">{extracted.subtotalAmount.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} <span className="nx-sar">SR</span></span>
-                      </div>
-                    )}
-                    {extracted.vatAmount?.value && (
-                      <div className="flex items-center justify-between border-b border-noorix-border py-2 px-3">
-                        <span className="text-[13px] text-noorix-muted">{isAr ? 'ضريبة القيمة المضافة' : 'VAT (15%)'}</span>
-                        <span className="text-[13px] font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>{extracted.vatAmount.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} <span className="nx-sar">SR</span></span>
-                      </div>
-                    )}
-                    {extracted.totalAmount?.value && (
-                      <div className="flex items-center justify-between bg-noorix-bg-muted py-[10px] px-3">
-                        <span className="text-[13px] font-bold">{isAr ? 'الإجمالي شامل الضريبة' : 'Total (inc. VAT)'}</span>
-                        <span className="text-[13px] font-bold">{extracted.totalAmount.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} <span className="nx-sar">SR</span></span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {finalizeOcrId && (
-                <div className="noorix-surface-card p-4 border border-noorix-blue/20">
-                  <div className="font-semibold text-[14px] mb-1">{t('ocrLinkedPurchaseTitle')}</div>
-                  <p className="text-[12px] text-noorix-muted m-0 mb-3">{t('ocrLinkedPurchaseHint')}</p>
-                  {!canCreatePurchase ? (
-                    <div className="text-[12px] text-noorix-muted">{t('ocrPurchaseNoPermission')}</div>
-                  ) : (
-                    <>
-                      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-3 mb-3 flex flex-col gap-2">
-                        <div className="text-[12px] font-semibold text-noorix-text">{t('ocrAccountingSupplierSmartTitle')}</div>
-                        <p className="text-[11px] text-noorix-muted m-0">{t('ocrAccountingSupplierSmartHint')}</p>
-                        {accSuggestionsFetching && (
-                          <span className="text-[11px] text-noorix-muted">{t('ocrAccountingSupplierSuggestLoading')}</span>
-                        )}
-                        <label className="flex flex-col gap-1 text-[12px]">
-                          <span className="text-noorix-muted">{t('ocrSelectAccountingSupplier')}</span>
-                          <select
-                            className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
-                            value={accountingSupplierId}
-                            onChange={(e) => {
-                              userTouchedAccountingRef.current = true;
-                              setAccountingSupplierId(e.target.value);
-                            }}
-                          >
-                            <option value="">{t('ocrSelectAccountingSupplier')}</option>
-                            {accSuggestions.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {(s.nameAr || s.nameEn || '') + (s.taxNumber ? ` — ${s.taxNumber}` : '')}
-                              </option>
-                            ))}
-                          </select>
-                          {accSuggestions[0] && (
-                            <span className="text-[11px] text-noorix-muted">
-                              {accSuggestions[0].linkedFromOcr
-                                ? t('ocrAccountingSupplierLinkedCatalog')
-                                : t('ocrAccountingSupplierTopScore', {
-                                    0: String(accSuggestions[0].matchScore ?? '—'),
-                                  })}
-                            </span>
-                          )}
-                          {prefillOcrSupplierId && accSuggestions.length === 0 && !prefillLoading && !accSuggestionsFetching && (
-                            <span className="text-[11px] text-noorix-muted">{t('ocrPurchaseSuggestEmpty')}</span>
-                          )}
-                          {!prefillOcrSupplierId &&
-                            supplierNameForSuggest.length < 1 &&
-                            invoiceVatDigits.length < 9 &&
-                            !accSuggestionsFetching && (
-                              <span className="text-[11px] text-noorix-muted">{t('ocrAccountingSupplierNeedNameOrVat')}</span>
-                            )}
-                        </label>
-                        <Button type="button" variant="secondary" className="self-start text-[12px]" onClick={openNewOcrSupplierModal}>
-                          {t('ocrAccountingSupplierAddOcrCatalog')}
-                        </Button>
-                      </div>
-                      <label className="flex items-center gap-2 text-[13px] mb-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={createLinkedPurchase}
-                          onChange={(e) => setCreateLinkedPurchase(e.target.checked)}
-                        />
-                        <span>{t('ocrCreateLinkedPurchase')}</span>
-                      </label>
-                      {createLinkedPurchase && (
-                        <div className="flex flex-col gap-3">
-                          <label className="flex flex-col gap-1 text-[12px]">
-                            <span className="text-noorix-muted">{t('ocrTransactionDate')}</span>
-                            <Input
-                              type="date"
-                              value={transactionDate?.slice(0, 10) || ''}
-                              onChange={(e) => setTransactionDate(e.target.value)}
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1 text-[12px]">
-                            <span className="text-noorix-muted">{t('ocrVaultSelect')}</span>
-                            <select
-                              className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
-                              value={vaultId}
-                              onChange={(e) => setVaultId(e.target.value)}
-                            >
-                              <option value="">{t('ocrSelectVault')}</option>
-                              {vaultRows.map((v) => (
-                                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
-                              ))}
-                            </select>
-                          </label>
-                          <label className="flex flex-col gap-1 text-[12px]">
-                            <span className="text-noorix-muted">{t('ocrSupplierInvoiceNo')}</span>
-                            <Input
-                              value={purchaseSupplierInvoiceNumber}
-                              onChange={(e) => setPurchaseSupplierInvoiceNumber(e.target.value)}
-                              placeholder={String(extracted.invoiceNumber?.value || '')}
-                            />
-                          </label>
-                          <label className="flex items-center gap-2 text-[12px] cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={isPurchaseTaxable}
-                              onChange={(e) => setIsPurchaseTaxable(e.target.checked)}
-                            />
-                            <span>{t('ocrPurchaseTaxable')}</span>
-                          </label>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-
-              {warningCount > 0 && (
-                <div className="flex items-center gap-8 text-[13px] rounded-lg py-[10px] px-[14px]" style={{
-                  background: 'var(--noorix-yellow-8)',
-                  border: '1px solid var(--noorix-yellow-25)',
-                }}>
-                  <div>
-                    <div className="font-semibold" style={{ color: 'var(--noorix-accent-amber)' }}>
-                      {warningCount} {isAr ? 'تحذير — راجع الأرقام قبل الحفظ' : 'warning(s) — review before saving'}
-                    </div>
-                    {extracted.invoiceTotalWarning && (
-                      <div className="text-[12px] mt-[2px]" style={{ color: 'var(--noorix-accent-amber)' }}>{extracted.invoiceTotalWarning}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeItems.length > 0 && (
-                <div className="noorix-surface-card p-4">
-                  <div className="font-semibold text-[14px] mb-3">
-                    {t('ocrItems')} ({activeItems.length})
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {activeItems.map((item, i) => (
-                      <ItemRow
-                        key={i}
-                        item={item}
-                        index={i}
-                        language={language}
-                        t={t}
-                        onUpdate={updateItem}
-                        onApplySuggestion={applyMathSuggestion}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              <OcrExtractedInfoAndTotalsCard t={t} extracted={extracted} isAr={isAr} />
+              <OcrLinkedPurchaseForm
+                t={t}
+                finalizeOcrId={finalizeOcrId}
+                canCreatePurchase={canCreatePurchase}
+                accSuggestions={accSuggestions}
+                accSuggestionsFetching={accSuggestionsFetching}
+                accountingSupplierId={accountingSupplierId}
+                onAccountingSupplierIdChange={(v) => {
+                  userTouchedAccountingRef.current = true;
+                  setAccountingSupplierId(v);
+                }}
+                onOpenNewOcrSupplier={openNewOcrSupplierModal}
+                prefillOcrSupplierId={prefillOcrSupplierId}
+                prefillLoading={prefillLoading}
+                supplierNameForSuggest={supplierNameForSuggest}
+                invoiceVatDigits={invoiceVatDigits}
+                createLinkedPurchase={createLinkedPurchase}
+                onCreateLinkedPurchaseChange={setCreateLinkedPurchase}
+                transactionDate={transactionDate}
+                onTransactionDateChange={setTransactionDate}
+                vaultId={vaultId}
+                onVaultIdChange={setVaultId}
+                vaultRows={vaultRows}
+                purchaseSupplierInvoiceNumber={purchaseSupplierInvoiceNumber}
+                onPurchaseSupplierInvoiceNumberChange={setPurchaseSupplierInvoiceNumber}
+                extracted={extracted}
+                isPurchaseTaxable={isPurchaseTaxable}
+                onIsPurchaseTaxableChange={setIsPurchaseTaxable}
+              />
+              <OcrWarningStrip warningCount={warningCount} extracted={extracted} isAr={isAr} />
+              <OcrLineItemsList
+                t={t}
+                language={language}
+                activeItems={activeItems}
+                onUpdateItem={updateItem}
+                onApplySuggestion={applyMathSuggestion}
+              />
             </div>
           )}
         </div>
       )}
 
-      {error && (
-        <div className="text-[13px] rounded-lg py-3 px-4" style={{ background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-15)', color: 'var(--noorix-accent-red)' }}>
-          {error}
-        </div>
-      )}
-
-      {newOcrSupplierOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.45)' }}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="ocr-new-supplier-title"
-          onClick={() => !newOcrSaving && setNewOcrSupplierOpen(false)}
-        >
-          <div
-            className="noorix-surface-card max-w-md w-full p-4 shadow-xl border border-noorix-border"
-            dir={dir}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div id="ocr-new-supplier-title" className="font-semibold text-[15px] mb-1">
-              {t('ocrNewOcrSupplierModalTitle')}
-            </div>
-            <p className="text-[12px] text-noorix-muted m-0 mb-3">{t('ocrNewOcrSupplierModalHint')}</p>
-            <div className="flex flex-col gap-3">
-              <label className="flex flex-col gap-1 text-[12px]">
-                <span className="text-noorix-muted">{t('ocrSupplierNameAr')}</span>
-                <Input value={newOcrNameAr} onChange={(e) => setNewOcrNameAr(e.target.value)} disabled={newOcrSaving} />
-              </label>
-              <label className="flex flex-col gap-1 text-[12px]">
-                <span className="text-noorix-muted">{t('ocrSupplierTax')}</span>
-                <Input value={newOcrTax} onChange={(e) => setNewOcrTax(e.target.value)} disabled={newOcrSaving} />
-              </label>
-              {newOcrError && (
-                <div className="text-[12px] text-noorix-accent-red">{newOcrError}</div>
-              )}
-              <div className="flex gap-2 justify-end mt-1">
-                <Button type="button" variant="secondary" disabled={newOcrSaving} onClick={() => setNewOcrSupplierOpen(false)}>
-                  {t('ocrCancel')}
-                </Button>
-                <Button type="button" variant="primary" disabled={newOcrSaving} onClick={handleSubmitNewOcrSupplier}>
-                  {newOcrSaving ? t('ocrSaving') : t('ocrSave')}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FieldRow({ label, value, confidence, match }) {
-  return (
-    <div className="flex gap-2 border-b border-noorix-border items-start py-1.5">
-      <span className="text-[13px] text-noorix-muted min-w-[100px]">{label}</span>
-      <div className="flex-1 min-w-0">
-        <span className="text-[14px] font-semibold text-noorix-text">{value || '—'}</span>
-        {match && (
-          <div className="text-[11px] mt-[2px]">
-            <span className="py-px px-1.5 rounded" style={{
-              background: match.status === 'auto' ? '#dcfce7' : '#fef3c7',
-              color: match.status === 'auto' ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-amber)',
-            }}>
-              ↳ {match.nameAr} ({Math.round(match.score * 100)}%)
-            </span>
-          </div>
-        )}
-      </div>
-      {confidence !== undefined && (
-        <span className="text-[11px] font-bold" style={{ color: CONFIDENCE_COLOR(confidence) }}>
-          {Math.round(confidence * 100)}%
-        </span>
-      )}
-    </div>
-  );
-}
-
-// ── حقل رقمي قابل للتعديل ────────────────────────────────────────────────────
-function EditableNumber({ value, onChange, warn }) {
-  return (
-    <Input
-      type="number"
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}
-      step="any"
-      className="w-[72px] py-[3px] px-1.5 rounded-md text-[13px] font-bold text-center"
-      style={{
-        border: `1px solid ${warn ? 'var(--color-noorix-amber)' : 'var(--noorix-border)'}`,
-        background: warn ? 'var(--noorix-yellow-8)' : 'var(--noorix-bg-surface)',
-        color: 'var(--noorix-text)', outline: 'none', fontFamily: 'inherit',
-      }}
-    />
-  );
-}
-
-function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }) {
-  const match = item.itemMatch;
-  const statusInfo = match ? STATUS_BADGE[match.status] : STATUS_BADGE.new;
-  const hasMathWarn = !!item.mathWarning;
-  const hasPriceWarn = !!item.priceWarning;
-
-  const displayName = [item.nameAr, item.nameEn].filter(Boolean).join(' / ') || item.name || '—';
-  const sizeLabel = item.size ? `${item.size}${item.sizeUnit || ''}` : null;
-
-  return (
-    <div className="py-[10px] px-3 rounded-[10px]" style={{
-      background: hasMathWarn ? 'var(--noorix-yellow-6)' : 'var(--noorix-bg-surface)',
-      border: `1px solid ${hasMathWarn ? 'var(--noorix-yellow-40)' : 'var(--noorix-border)'}`,
-    }}>
-      {/* رأس الصنف */}
-      <div className="flex gap-2 flex flex-wrap mb-2 justify-between items-start">
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-[14px]">{displayName}</div>
-          {sizeLabel && (
-            <span className="text-[11px] font-semibold bg-noorix-bg-muted text-noorix-muted inline-block mt-[3px] py-px px-2 rounded">
-              {sizeLabel}
-            </span>
-          )}
-          {item.name && item.name !== displayName && (
-            <div className="text-[11px] text-noorix-muted mt-[2px]">OCR: {item.name}</div>
-          )}
-          {match && (
-            <div className="text-[11px] text-noorix-muted mt-[2px]">
-              ↳ {match.nameAr}{match.nameEn ? ` / ${match.nameEn}` : ''}
-              {match.hasSizes && <span className="ms-1" style={{ color: 'var(--noorix-accent-violet)' }}>• متعدد الأحجام</span>}
-            </div>
-          )}
-        </div>
-        <span className="text-[11px] font-bold py-[3px] px-2 rounded-md shrink-0" style={{
-          background: statusInfo.bg, color: statusInfo.color,
-        }}>
-          {language === 'ar' ? statusInfo.label.ar : statusInfo.label.en}
-        </span>
-      </div>
-
-      {/* حقول الكمية والسعر والإجمالي — قابلة للتعديل */}
-      <div className="flex items-center gap-10 flex-wrap">
-        <div className="flex flex-col items-center gap-[2px]">
-          <span className="text-noorix-muted text-[10px]">الكمية</span>
-          <EditableNumber value={item.quantity} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'quantity', v)} />
-        </div>
-        <span className="text-noorix-muted text-[13px] self-end mb-1">×</span>
-        <div className="flex flex-col items-center gap-[2px]">
-          <span className="text-noorix-muted text-[10px]">السعر</span>
-          <EditableNumber value={item.unitPrice} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'unitPrice', v)} />
-        </div>
-        <span className="text-noorix-muted text-[13px] self-end mb-1">=</span>
-        <div className="flex flex-col items-center gap-[2px]">
-          <span className="text-noorix-muted text-[10px]">الإجمالي</span>
-          <EditableNumber value={item.totalPrice} warn={hasMathWarn} onChange={(v) => onUpdate(index, 'totalPrice', v)} />
-        </div>
-        {item.confidence != null && (
-          <span className="text-[11px] self-end mb-1" style={{ color: CONFIDENCE_COLOR(item.confidence) }}>
-            {Math.round(item.confidence * 100)}%
-          </span>
-        )}
-      </div>
-
-      {/* تحذير رياضي */}
-      {hasMathWarn && (
-        <div className="flex items-center justify-between gap-2 mt-2 rounded-lg py-1.5 px-[10px]" style={{
-          background: 'var(--noorix-yellow-12)', border: '1px solid var(--noorix-yellow-30)',
-        }}>
-          <div className="text-[12px]" style={{ color: 'var(--noorix-accent-amber)' }}>
-            {item.mathWarning.message}
-          </div>
-          {(item.mathWarning.suggestedQuantity !== undefined || item.mathWarning.suggestedUnitPrice !== undefined) && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => onApplySuggestion(index)}
-              className="whitespace-nowrap shrink-0"
-            >
-              تصحيح تلقائي
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* تحذير السعر */}
-      {hasPriceWarn && (
-        <div className="text-[12px] rounded-lg mt-1.5 py-1.5 px-[10px]" style={{
-          background: 'var(--noorix-blue-8)', border: '1px solid var(--noorix-blue-25)',
-          color: 'var(--noorix-accent-blue)',
-        }}>
-          السعر المعتاد في آخر 90 يوم: <strong>{item.priceWarning.avg} <span className="nx-sar">SR</span></strong> — انحراف {item.priceWarning.deviation}%
-        </div>
-      )}
+      <OcrErrorBanner error={error} />
+      <OcrNewSupplierModal
+        t={t}
+        open={newOcrSupplierOpen}
+        dir={dir}
+        isSaving={newOcrSaving}
+        nameAr={newOcrNameAr}
+        onNameArChange={setNewOcrNameAr}
+        tax={newOcrTax}
+        onTaxChange={setNewOcrTax}
+        error={newOcrError}
+        onClose={() => setNewOcrSupplierOpen(false)}
+        onSubmit={handleSubmitNewOcrSupplier}
+      />
     </div>
   );
 }
