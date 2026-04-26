@@ -75,10 +75,11 @@ const S = {
     borderRadius: 12, border: '1px solid var(--noorix-border)',
     padding: 16, background: 'var(--noorix-bg)', display: 'flex', flexDirection: 'column', gap: 12,
   },
-  dropzone: (dragging) => ({
+  dropzone: (dragging): import('react').CSSProperties => ({
     border: `2px dashed ${dragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
     borderRadius: 12, padding: '28px 20px',
-    textAlign: 'center', cursor: 'pointer',
+    textAlign: 'center',
+    cursor: 'pointer',
     background: dragging ? 'var(--noorix-blue-6)' : 'var(--noorix-bg)',
     transition: 'all 0.18s ease',
     color: 'var(--noorix-text-muted)',
@@ -304,7 +305,13 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       );
     }
     Promise.all(promises)
-      .then(([vaultsRes, suppliersRes, categoriesRes, expLinesRes]) => {
+      .then((results) => {
+        const [vaultsRes, suppliersRes, categoriesRes, expLinesRes] = results as [
+          Record<string, any>,
+          Record<string, any> | any[],
+          Record<string, any> | any[],
+          Record<string, any> | any[],
+        ];
         const rawVaults = Array.isArray(vaultsRes?.data) ? vaultsRes.data : (vaultsRes?.data?.items ?? []);
         setLookups({
           vaults: rawVaults,

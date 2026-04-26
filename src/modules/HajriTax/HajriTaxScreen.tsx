@@ -282,8 +282,8 @@ export default function HajriTaxScreen() {
   const outputTotal = useMemo(() => computeOutputTotal(draftData), [draftData]);
   const inputTotal = useMemo(() => computeInputTotal(draftData), [draftData]);
   const netPayableDraft = useMemo(() => computeNetPayable(draftData), [draftData]);
-  const priorAdj = getRowValue(draftData, 'prior_adjustments');
-  const balanceCarried = getRowValue(draftData, 'balance_carried');
+  const priorAdj = getRowValue(draftData, 'prior_adjustments', 'amount');
+  const balanceCarried = getRowValue(draftData, 'balance_carried', 'amount');
   const netVat = outputTotal - inputTotal;
 
   const paymentTargetParsed = useMemo(() => {

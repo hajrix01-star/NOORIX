@@ -38,7 +38,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
   const [open, setOpen]                       = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const { showToast } = useToast();
-  const [pos, setPos]                         = useState({ top: 0, left: 0 });
+  const [pos, setPos]                         = useState<{ top: number; left: number; maxMenuH?: number }>({ top: 0, left: 0 });
   const btnRef  = useRef(null);
   const menuRef = useRef(null);
 
@@ -202,7 +202,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }) {
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={displayName}
-        style={{ '--role-color': roleColor }}
+        style={{ ['--role-color' as string]: roleColor } as React.CSSProperties}
       >
         <span className="um-avatar" style={{ borderColor: roleColor }}>
           <UserSilhouetteIcon className="um-avatar-icon" />

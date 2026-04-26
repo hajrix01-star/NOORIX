@@ -7,4 +7,4 @@ export {
   buildInvoiceListColumns,
   buildInvoiceListFooterRow,
   createInvoiceListMobileCardRenderer,
-} from './invoicesListTableModel.jsx';
+} from './invoicesListTableModel';

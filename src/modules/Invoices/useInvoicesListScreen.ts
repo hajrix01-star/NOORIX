@@ -28,7 +28,7 @@ import {
   buildInvoiceListColumns,
   buildInvoiceListFooterRow,
   createInvoiceListMobileCardRenderer,
-} from './invoicesListTableModel.jsx';
+} from './invoicesListTableModel';
 import { nextInvoiceSortState } from './invoicesListSort';
 
 /**

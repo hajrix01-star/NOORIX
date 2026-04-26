@@ -3,7 +3,7 @@ import {
   buildInvoiceListColumns,
   buildInvoiceListFooterRow,
   createInvoiceListMobileCardRenderer,
-} from './invoicesListTableModel.jsx';
+} from './invoicesListTableModel';
 
 const noop = () => {};
 const t = (k, ...args) => (args.length ? `${k}:${args.join(',')}` : k);

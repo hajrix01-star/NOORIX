@@ -346,7 +346,6 @@ export default {
     en: 'Row containing column headers (date, description, debit, credit...)',
   },
 
-  bankStatementDateRange: { ar: 'نطاق التواريخ', en: 'Date range' },
   bankCurrencySar: { ar: 'SR', en: 'SR' },
   bankNetSurplus: { ar: 'فائض', en: 'Surplus' },
   bankNetDeficit: { ar: 'عجز', en: 'Deficit' },

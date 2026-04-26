@@ -91,8 +91,8 @@ export default function TaxReportTab() {
   const outputTotal = useMemo(() => computeOutputTotal(data), [data]);
   const inputTotal = useMemo(() => computeInputTotal(data), [data]);
   const netPayable = useMemo(() => computeNetPayable(data), [data]);
-  const priorAdj = getRowValue(data, 'prior_adjustments');
-  const balanceCarried = getRowValue(data, 'balance_carried');
+  const priorAdj = getRowValue(data, 'prior_adjustments', 'amount');
+  const balanceCarried = getRowValue(data, 'balance_carried', 'amount');
   const netVat = outputTotal - inputTotal;
 
   const handlePrint = () => {

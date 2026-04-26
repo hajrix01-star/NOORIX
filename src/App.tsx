@@ -44,10 +44,11 @@ function getInitialLanguage() {
   if (typeof window === 'undefined') return 'ar';
   const stored = readStoredLanguage();
   if (stored) return stored;
+  const nav = navigator as Navigator & { userLanguage?: string };
   const lang =
-    navigator.language ||
-    navigator.userLanguage ||
-    (Array.isArray(navigator.languages) ? navigator.languages[0] : 'ar');
+    nav.language ||
+    nav.userLanguage ||
+    (Array.isArray(nav.languages) ? nav.languages[0] : 'ar');
   return String(lang).toLowerCase().startsWith('ar') ? 'ar' : 'en';
 }
 function getInitialCardStyle() {

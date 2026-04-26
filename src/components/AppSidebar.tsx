@@ -63,7 +63,7 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
   const navLinkClass = ({ isActive }) =>
     `app-nav-link${isActive ? ' app-nav-link--active' : ''}`;
   const visibleLinks = SIDEBAR_LINKS.filter((link) => {
-    if (link.ownerOnly && String(userRole || '').toLowerCase() !== 'owner') return false;
+    if ((link as { ownerOnly?: boolean }).ownerOnly && String(userRole || '').toLowerCase() !== 'owner') return false;
     return hasPermission(userRole, link.permission, userPermissions);
   });
 

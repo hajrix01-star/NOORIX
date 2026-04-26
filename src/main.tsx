@@ -28,11 +28,17 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
       retry(failureCount, error) {
-        const code = error?.code ?? error?.response?.status;
+        const err = error as Error & {
+          code?: number;
+          response?: { status?: number };
+          isNetworkError?: boolean;
+          isTransientServerError?: boolean;
+        };
+        const code = err?.code ?? err?.response?.status;
         if ([401, 403, 404, 422, 429].includes(code)) return false;
         // بوابة / سيرفر نائم — محاولتان إضافيتان بعد فشل إعادة المحاولة داخل apiGet
         if ([502, 503, 504].includes(code)) return failureCount < 2;
-        if (error?.isNetworkError || error?.isTransientServerError) return failureCount < 2;
+        if (err?.isNetworkError || err?.isTransientServerError) return failureCount < 2;
         return failureCount < 1;
       },
       retryDelay: 3000,

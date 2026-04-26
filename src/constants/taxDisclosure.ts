@@ -74,8 +74,8 @@ export function computeNetPayable(data) {
   const outputTotal = computeOutputTotal(data);
   const inputTotal = computeInputTotal(data);
   const netVat = outputTotal - inputTotal;
-  const priorAdj = getRowValue(data, 'prior_adjustments');
-  const balanceCarried = getRowValue(data, 'balance_carried');
+  const priorAdj = getRowValue(data, 'prior_adjustments', 'amount');
+  const balanceCarried = getRowValue(data, 'balance_carried', 'amount');
   return netVat + priorAdj + balanceCarried;
 }
 
@@ -131,8 +131,8 @@ export function scaleInputVatForPaymentTarget(data, paymentTarget) {
   if (!Number.isFinite(target)) return normalizeDisclosureDecimals({ ...data });
 
   const outputTotal = computeOutputTotal(data);
-  const priorAdj = getRowValue(data, 'prior_adjustments');
-  const balanceCarried = getRowValue(data, 'balance_carried');
+  const priorAdj = getRowValue(data, 'prior_adjustments', 'amount');
+  const balanceCarried = getRowValue(data, 'balance_carried', 'amount');
   const currentInput = computeInputTotal(data);
 
   const desiredInput = outputTotal + priorAdj + balanceCarried - target;
