@@ -8,6 +8,7 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { splitTaxFromTotal } from '../../../utils/math-engine';
 import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { toDateInputYmd } from '../../../utils/saudiDate';
 
 const CHANNEL_COLORS = {
   cash: { bg: 'var(--noorix-green-8)', border: 'var(--noorix-accent-green)', icon: '💵' },
@@ -31,7 +32,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       acc[c.vaultId] = String(c.amount ?? 0);
       return acc;
     }, {});
-    setTxDate(summary.transactionDate ? new Date(summary.transactionDate).toISOString().slice(0, 10) : '');
+    setTxDate(toDateInputYmd(summary.transactionDate));
     setCustomerCount(String(summary.customerCount ?? 0));
     setCashOnHand(String(summary.cashOnHand ?? 0));
     setNotes(summary.notes || '');

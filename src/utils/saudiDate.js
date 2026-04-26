@@ -109,6 +109,15 @@ export function formatSaudiDateISO(value) {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * لـ `input type="date"`: YYYY-MM-DD بتوقيت الرياض، أو '' عند عدم التوفر/الصحة.
+ */
+export function toDateInputYmd(value) {
+  if (value == null || value === '') return '';
+  const s = formatSaudiDateISO(value);
+  return s === '—' ? '' : s;
+}
+
 /** تاريخ + وقت بتوقيت الرياض — عرض موحّد (يتفادى اختلاف Samsung/default locale) */
 export function formatSaudiDateTime(value) {
   if (!value) return '—';

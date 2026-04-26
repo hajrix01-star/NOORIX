@@ -16,6 +16,7 @@ import {
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { toDateInputYmd } from '../../../utils/saudiDate';
 
 // بلا مورد نهائياً (رواتب وسلف — فواتير نظام داخلية)
 const NO_SUPPLIER_KINDS = new Set(['salary', 'advance']);
@@ -79,7 +80,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       totalAmount: total > 0 ? String(total) : '',
       netAmount: net > 0 ? net.toFixed(2) : '',
       taxAmount: tax > 0 ? tax.toFixed(2) : '',
-      transactionDate: invoice.transactionDate ? new Date(invoice.transactionDate).toISOString().slice(0, 10) : '',
+      transactionDate: toDateInputYmd(invoice.transactionDate),
       notes: invoice.notes || '',
       vaultId: resolvedVaultId || '',
     });

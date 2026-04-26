@@ -14,7 +14,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
 import { useSalesChannels } from '../../hooks/useSalesChannels';
 import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport, throwIfApiFailed } from '../../services/api';
-import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday } from '../../utils/saudiDate';
+import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toDateInputYmd } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
@@ -70,8 +70,10 @@ function SalesChannelsChips({ channels, lang }) {
 
 function addCalendarDaysYmd(ymd, delta) {
   const [y, m, d] = ymd.split('-').map((x) => parseInt(x, 10));
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return ymd;
   const dt = new Date(Date.UTC(y, m - 1, d + delta));
-  return dt.toISOString().slice(0, 10);
+  if (isNaN(dt.getTime())) return ymd;
+  return toDateInputYmd(dt) || ymd;
 }
 
 /* ══ الشاشة الرئيسية ══════════════════════════════════════════ */
