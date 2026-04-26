@@ -3,6 +3,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
 import { Button, ScreenShell } from '../../ui';
 import { submitOcrSubmission } from './services/ocrApi';
+import { compressImageFileToJpegDataUrl } from '../../utils/imageUtils';
 
 /**
  * شاشة الكاشير — رفع صورة فاتورة مورد للاستخراج في الخلفية (بدون انتظار Gemini).
@@ -21,30 +22,15 @@ export default function OcrCashierSubmitScreen() {
 
   const readFile = useCallback((file) => {
     if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 1600;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
-          else { width = Math.round((width * MAX) / height); height = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        const compressed = canvas.toDataURL('image/jpeg', 0.82);
+    void compressImageFileToJpegDataUrl(file, { maxDim: 1600, quality: 0.82 })
+      .then((compressed) => {
         setPreview(compressed);
         setImageBase64(compressed.split(',')[1]);
         setMimeType('image/jpeg');
         setError(null);
         setSentId(null);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+      })
+      .catch((err) => setError(err?.message || 'تعذّر قراءة الصورة'));
   }, []);
 
   const handleSubmit = async () => {

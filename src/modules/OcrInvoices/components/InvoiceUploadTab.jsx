@@ -6,6 +6,7 @@ import { useApp } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
 import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
 import { getSaudiToday } from '../../../utils/saudiDate';
+import { compressImageFileToJpegDataUrl } from '../../../utils/imageUtils';
 import { Button, Input } from '../../../ui';
 import { getVaults } from '../../../services/api';
 import {
@@ -278,22 +279,8 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
 
   const readFile = useCallback((file) => {
     if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        // ضغط الصورة: حد أقصى 1600px مع جودة 0.82 — يكفي للـ OCR ويقلل الحجم >80%
-        const MAX = 1600;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
-          else                { width  = Math.round((width  * MAX) / height); height = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width  = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        const compressed = canvas.toDataURL('image/jpeg', 0.82);
+    void compressImageFileToJpegDataUrl(file, { maxDim: 1600, quality: 0.82 })
+      .then((compressed) => {
         setPreview((prev) => {
           revokePreviewUrl(prev);
           return compressed;
@@ -312,10 +299,11 @@ export default function InvoiceUploadTab({ suppliers, items, onSaved, prefillInv
         setTransactionDate(getSaudiToday());
         setError(null);
         setSuccess(false);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+      })
+      .catch((err) => {
+        setError(err?.message || 'تعذّر قراءة الصورة');
+        setSuccess(false);
+      });
   }, []);
 
   const handleDrop = useCallback((e) => {

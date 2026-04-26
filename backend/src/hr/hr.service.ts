@@ -34,6 +34,7 @@ import { toMoneyDecimal2 } from '../common/utils/money-decimal';
 import {
   computeCalendarLeaveSalarySettlement,
 } from './utils/leave-salary-settlement.util';
+import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
 
 @Injectable()
 export class HRService {
@@ -46,27 +47,6 @@ export class HRService {
   // ══════════════════════════════════════════════════════════
   // PAYROLL RUNS
   // ══════════════════════════════════════════════════════════
-
-  private async assertVaultsUsableForPayment(companyId: string, vaultIds: string[]): Promise<void> {
-    const ids = [...new Set(vaultIds.filter(Boolean))];
-    if (!ids.length) return;
-    const vaults = await this.prisma.vault.findMany({
-      where: { id: { in: ids }, companyId },
-      select: { id: true, nameAr: true, isActive: true, showAsPaymentMethod: true, isArchived: true },
-    });
-    const byId = new Map(vaults.map((v) => [v.id, v]));
-    for (const id of ids) {
-      const v = byId.get(id);
-      if (!v) throw new BadRequestException('خزنة غير موجودة أو لا تنتمي للشركة.');
-      if (v.isActive === false) throw new BadRequestException(`الخزينة «${v.nameAr}» غير نشطة.`);
-      if (v.isArchived) throw new BadRequestException(`الخزينة «${v.nameAr}» مؤرشفة.`);
-      if (v.showAsPaymentMethod === false) {
-        throw new BadRequestException(
-          `الخزينة «${v.nameAr}» غير متاحة للسداد. فعّل «الظهور كطريقة سداد» من شاشة الخزائن.`,
-        );
-      }
-    }
-  }
 
   private async generateRunNumber(companyId: string): Promise<string> {
     const now = nowSaudi();
@@ -472,7 +452,7 @@ export class HRService {
     }
 
     const splitVaultIds = (dto.vaultSplits ?? []).map((vs) => vs.vaultId);
-    await this.assertVaultsUsableForPayment(dto.companyId, splitVaultIds);
+    await assertVaultsUsableForPayment(this.prisma, dto.companyId, splitVaultIds);
     if (dto.vaultSplits?.length) {
       this.assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
     }
@@ -633,7 +613,7 @@ export class HRService {
       data.totalAmount = new Prisma.Decimal(totalAmount);
 
       const splitVaultIds = (dto.vaultSplits ?? []).map((vs) => vs.vaultId);
-      await this.assertVaultsUsableForPayment(companyId, splitVaultIds);
+      await assertVaultsUsableForPayment(this.prisma, companyId, splitVaultIds);
       if (dto.vaultSplits?.length) {
         this.assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
       }
@@ -652,7 +632,7 @@ export class HRService {
     } else if (dto.vaultSplits !== undefined) {
       const totalAmount = Number(existing.totalAmount);
       const splitVaultIds = dto.vaultSplits.map((vs) => vs.vaultId);
-      await this.assertVaultsUsableForPayment(companyId, splitVaultIds);
+      await assertVaultsUsableForPayment(this.prisma, companyId, splitVaultIds);
       if (dto.vaultSplits.length) {
         this.assertPayrollRunVaultSplitsMatchTotal(dto.vaultSplits, totalAmount);
       }
@@ -827,7 +807,7 @@ export class HRService {
     // Priority 1: vaultSplits sent from the UI at payment time
     if (dto.vaultSplits?.length) {
       const splitVaultIds = dto.vaultSplits.map((vs) => vs.vaultId);
-      await this.assertVaultsUsableForPayment(run.companyId, splitVaultIds);
+      await assertVaultsUsableForPayment(this.prisma, run.companyId, splitVaultIds);
       this.assertPayrollRunVaultSplitsMatchTotal(
         dto.vaultSplits.map((vs) => ({ vaultId: vs.vaultId, amount: vs.amount })),
         Number(totalDec),
@@ -1153,7 +1133,7 @@ export class HRService {
       }
       vaultIdToUse = v.id;
     }
-    await this.assertVaultsUsableForPayment(leave.companyId, [vaultIdToUse]);
+    await assertVaultsUsableForPayment(this.prisma, leave.companyId, [vaultIdToUse]);
 
     const txDate = this.saudiDateYmd();
     const amountStr = grossFinal.toFixed(2);

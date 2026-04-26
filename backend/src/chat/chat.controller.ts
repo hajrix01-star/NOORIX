@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  Headers,
   UseGuards,
   HttpException,
   HttpStatus,
@@ -11,6 +10,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { ChatService } from './chat.service';
 import { GeminiService } from './gemini.service';
@@ -66,12 +66,13 @@ export class ChatController {
   @RequirePermission('SMART_CHAT_READ')
   async query(
     @Body() body: { query: string },
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyIdFromRequest: string,
     @CurrentUser() user: JwtUser,
   ) {
     checkRateLimit(user.sub || user.userId || 'anon');
 
-    const companyId = headerCompanyId || (user.companyIds && user.companyIds[0]);
+    const companyId =
+      companyIdFromRequest?.trim() || (user.companyIds && user.companyIds[0]);
     if (!companyId) {
       return { success: false, error: 'يجب تحديد الشركة', code: 400 };
     }

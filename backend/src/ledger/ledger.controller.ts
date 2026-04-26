@@ -1,9 +1,9 @@
-import { Controller, Get, Headers, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
-import { preferQueryCompanyId } from '../common/utils/company-request';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { LedgerService } from './ledger.service';
 
 @Controller('ledger')
@@ -14,8 +14,7 @@ export class LedgerController {
   @Get()
   @RequirePermission('REPORTS_READ')
   async findAll(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('fromDate') fromDate?: string,
@@ -24,7 +23,6 @@ export class LedgerController {
     @Query('pageSize') pageSize?: string,
     @Query('q') q?: string,
   ) {
-    const companyId = preferQueryCompanyId(queryCompanyId, headerCompanyId);
     if (!companyId) return { items: [], total: 0, page: 1, pageSize: 50 };
 
     // دعم كلا الصيغتين: startDate/endDate و fromDate/toDate
