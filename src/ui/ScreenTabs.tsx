@@ -1,0 +1,123 @@
+/**
+ * ScreenTabs — شريط تبويبات موحّد للأقسام
+ *
+ * - **connected** (افتراضي): ينفّذ عبر `ConnectedTabStrip` — مصدر واحد للتصميم (سباركلاين، strut، إلخ).
+ * - **underline** / **segmented**: للأشرطة المخصّصة أو المدمجة في جداول/مودالات.
+ *
+ * items[].label يقبل ReactNode (نص، أيقونة، إلخ)
+ */
+import React, { type ReactNode } from 'react';
+import { useUiDir } from '../hooks/useUiDir';
+import Button, { type ButtonProps } from './Button';
+import ConnectedTabStrip from './ConnectedTabStrip';
+import { cn } from './cn';
+
+export type ScreenTabItem = { id: string; label: ReactNode };
+
+export type ScreenTabsProps = {
+  items: ScreenTabItem[];
+  value: string;
+  onChange: (id: string) => void;
+  variant?: 'connected' | 'underline' | 'segmented' | string;
+  fadeWrap?: boolean;
+  className?: string;
+  barClassName?: string;
+  buttonSize?: 'auto' | 'sm' | 'md' | 'lg' | string;
+  getTabClassName?: (item: ScreenTabItem, active: boolean) => string | undefined;
+  omitDefaultBarClasses?: boolean;
+  children?: ReactNode;
+  contentClassName?: string;
+  shellClassName?: string;
+  animateContent?: boolean;
+  tabBarEnd?: ReactNode;
+};
+
+export default function ScreenTabs({
+  items,
+  value,
+  onChange,
+  variant = 'connected',
+  fadeWrap = true,
+  className,
+  barClassName,
+  buttonSize = 'auto',
+  getTabClassName,
+  omitDefaultBarClasses = false,
+  children,
+  contentClassName,
+  shellClassName,
+  animateContent = true,
+  tabBarEnd,
+}: ScreenTabsProps) {
+  const uiDir = useUiDir();
+
+  if (variant === 'connected') {
+    return (
+      <ConnectedTabStrip
+        items={items}
+        value={value}
+        onChange={onChange}
+        animateContent={animateContent}
+        contentClassName={contentClassName}
+        shellClassName={cn(className, shellClassName)}
+        tabBarEnd={tabBarEnd}
+      >
+        {children}
+      </ConnectedTabStrip>
+    );
+  }
+
+  const bar = (
+    <div
+      role="tablist"
+      dir={uiDir}
+      className={cn(
+        variant === 'underline' && !omitDefaultBarClasses && 'nx-tab-bar',
+        variant === 'segmented' && !omitDefaultBarClasses && 'nx-segmented-tab-bar',
+        barClassName,
+      )}
+    >
+      {items.map((item) => {
+        const active = item.id === value;
+        return (
+          <Button
+            key={item.id}
+            type="button"
+            variant="raw"
+            size={(variant === 'segmented' ? 'auto' : buttonSize) as ButtonProps['size']}
+            role="tab"
+            aria-selected={active}
+            className={cn(
+              'nx-tab-btn',
+              variant === 'underline' && active && 'nx-tab-btn--active',
+              variant === 'segmented' && 'nx-tab-btn--segmented',
+              variant === 'segmented' && active && 'nx-tab-btn--segmented-active',
+              getTabClassName?.(item, active),
+            )}
+            onClick={() => {
+              if (item.id !== value) onChange(item.id);
+            }}
+            data-active={active ? 'true' : 'false'}
+          >
+            {item.label}
+          </Button>
+        );
+      })}
+    </div>
+  );
+
+  const useShell = fadeWrap || variant === 'segmented';
+  if (!useShell) {
+    return <div className={className}>{bar}</div>;
+  }
+
+  const shellClass =
+    variant === 'segmented'
+      ? cn(
+          'relative bg-noorix-surface rounded-xl border border-noorix-border p-1',
+          className,
+        )
+      : cn('relative nx-tab-bar-fade-wrap', className);
+
+  return <div className={shellClass}>{bar}</div>;
+}
