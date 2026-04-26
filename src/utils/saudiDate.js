@@ -10,6 +10,44 @@ const RIYADH_TZ = 'Asia/Riyadh';
  * ملاحظة: لا نستخدم toLocaleString() + toISOString() لأن الأخيرة
  * تُعيد UTC دائماً وتتجاهل التحويل، مما يُعطي يوماً خاطئاً عند منتصف الليل.
  */
+/**
+ * أجزاء سنة/شهر/يوم اليوم في توقيت الرياض — للواجهات (فلاتر، داشبورد).
+ * يستعمل en-CA + formatToParts (آمن مثل getSaudiToday).
+ */
+export function getSaudiDateParts() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: RIYADH_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const m = parts.reduce((a, p) => (p.type !== 'literal' ? { ...a, [p.type]: p.value } : a), {});
+  return {
+    year: parseInt(m.year, 10),
+    month: parseInt(m.month, 10),
+    day: parseInt(m.day, 10),
+  };
+}
+
+/** @returns {{ year: number, month: number, day: number }} — مثل getSaudiDateParts */
+export function getSaudiNow() {
+  return getSaudiDateParts();
+}
+
+/** السنة والشهر الحاليان (تقريباً) بتوقيت الرياض */
+export function getSaudiYearMonth() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: RIYADH_TZ,
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(new Date());
+  const o = {};
+  for (const p of parts) {
+    if (p.type !== 'literal') o[p.type] = p.value;
+  }
+  return { year: parseInt(o.year, 10), month: parseInt(o.month, 10) };
+}
+
 export function getSaudiToday() {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: RIYADH_TZ,

@@ -7,18 +7,9 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport, throwIfApiFailed } from '../../../services/api';
 import { fmt } from '../../../utils/format';
-import { formatSaudiDateISO } from '../../../utils/saudiDate';
+import { formatSaudiDateISO, getSaudiToday } from '../../../utils/saudiDate';
 import { Button, Modal, Input, cn } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
-
-function saudiTodayYmd() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Riyadh',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(new Date());
-  const m = parts.reduce((a, p) => (p.type !== 'literal' ? { ...a, [p.type]: p.value } : a), {});
-  return `${m.year}-${m.month}-${m.day}`;
-}
 
 function SectionTitle({ children }) {
   return (
@@ -320,7 +311,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
   const { t, lang } = useTranslation();
   const reportTitle = compact ? t('dayCloseTitleV2') : t('dayCloseTitle');
   const { companies, activeCompanyId } = useApp();
-  const [dateStr, setDateStr] = useState(() => defaultDateYmd || saudiTodayYmd());
+  const [dateStr, setDateStr] = useState(() => defaultDateYmd || getSaudiToday());
 
   const companyName = useMemo(() => {
     const c = companies?.find((x) => x.id === (activeCompanyId || companyId));
@@ -331,7 +322,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
   }, [companies, activeCompanyId, companyId, lang]);
 
   useEffect(() => {
-    if (isOpen) setDateStr((defaultDateYmd || saudiTodayYmd()).slice(0, 10));
+    if (isOpen) setDateStr((defaultDateYmd || getSaudiToday()).slice(0, 10));
   }, [isOpen, defaultDateYmd]);
 
   useEffect(() => {
@@ -363,8 +354,8 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
   }), [t]);
 
   const { showToast } = useToast();
-  const [rangeFrom, setRangeFrom] = useState(() => defaultDateYmd || saudiTodayYmd());
-  const [rangeTo, setRangeTo] = useState(() => defaultDateYmd || saudiTodayYmd());
+  const [rangeFrom, setRangeFrom] = useState(() => defaultDateYmd || getSaudiToday());
+  const [rangeTo, setRangeTo] = useState(() => defaultDateYmd || getSaudiToday());
   const [rangePrintLoading, setRangePrintLoading] = useState(false);
   const [multiDayPrint, setMultiDayPrint] = useState(null);
 
@@ -373,7 +364,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
       setMultiDayPrint(null);
       return;
     }
-    const base = (defaultDateYmd || saudiTodayYmd()).slice(0, 10);
+    const base = (defaultDateYmd || getSaudiToday()).slice(0, 10);
     setRangeFrom(base);
     setRangeTo(base);
   }, [isOpen, defaultDateYmd]);

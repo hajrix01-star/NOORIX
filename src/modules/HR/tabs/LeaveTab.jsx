@@ -12,7 +12,7 @@ import {
   issueLeaveSalarySettlement,
   deleteLeave,
 } from '../../../services/api';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { LeaveFormModal } from '../components/LeaveFormModal';
@@ -32,10 +32,6 @@ const TYPE_MAP = {
   other: 'leaveOther',
 };
 
-function saudiTodayYmd() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
-}
-
 function sliceYmd(iso) {
   return String(iso || '').slice(0, 10);
 }
@@ -43,7 +39,7 @@ function sliceYmd(iso) {
 /** اليوم (سعودي) ضمن فترة إجازة معتمدة — لعرض زر العودة */
 function canShowLeaveReturnRow(row) {
   if (row.status !== 'approved') return false;
-  const t = saudiTodayYmd();
+  const t = getSaudiToday();
   const s = sliceYmd(row.startDate);
   const e = sliceYmd(row.endDate);
   return t >= s && t <= e;
@@ -100,7 +96,7 @@ export default function LeaveTab() {
 
   useEffect(() => {
     if (!returnRow) return;
-    const tday = saudiTodayYmd();
+    const tday = getSaudiToday();
     const s = sliceYmd(returnRow.startDate);
     const e = sliceYmd(returnRow.endDate);
     const d = tday >= s && tday <= e ? tday : e;

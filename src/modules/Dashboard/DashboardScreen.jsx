@@ -10,6 +10,7 @@ import DashboardOverviewTab from './components/DashboardOverviewTab';
 import DashboardCalendarTab from './components/DashboardCalendarTab';
 import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
 import DashboardAppSalesTab from './components/DashboardAppSalesTab';
+import { getSaudiNow } from '../../utils/saudiDate';
 
 const DASHBOARD_TABS = [
   { id: 'overview',     labelKey: 'dashboardOverview'     },
@@ -23,14 +24,6 @@ const MONTH_NAMES_EN = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December',
 ];
-
-function getSaudiNow() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(new Date());
-  const m = parts.reduce((a, p) => (p.type !== 'literal' ? { ...a, [p.type]: p.value } : a), {});
-  return { year: parseInt(m.year, 10), month: parseInt(m.month, 10), day: parseInt(m.day, 10) };
-}
 
 export default function DashboardScreen() {
   const { t } = useTranslation();

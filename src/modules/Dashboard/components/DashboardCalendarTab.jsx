@@ -20,6 +20,7 @@ import {
   getStoredDayNotes,
   setStoredDayNotes,
 } from '../utils/dashboardStorage';
+import { getSaudiNow } from '../../../utils/saudiDate';
 
 const DOW_KEYS = [0, 1, 2, 3, 4, 5, 6];
 const DOW_LABELS = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
@@ -32,12 +33,6 @@ function lastDayOfMonth(year, month) {
 
 function ymd(y, m, d) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-}
-
-function getSaudiNow() {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
-  const m = parts.reduce((a, p) => (p.type !== 'literal' ? { ...a, [p.type]: p.value } : a), {});
-  return { year: parseInt(m.year, 10), month: parseInt(m.month, 10) };
 }
 
 function getDayOfWeek(year, month, day) {

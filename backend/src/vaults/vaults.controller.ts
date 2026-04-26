@@ -1,48 +1,34 @@
 /**
  * VaultsController — إدارة الخزائن
- *
- * الصلاحيات:
- *   GET         → VAULTS_READ   (إدارة الخزائن)
- *   GET/payment-options و GET/sales-channels → متاحة تشغيلياً للمستخدم المصادق داخل الشركة
- *   POST        → VAULTS_WRITE  (owner | super_admin | accountant)
- *   PATCH/:id   → VAULTS_WRITE  (owner | super_admin | accountant)
- *   PATCH/archive → VAULTS_WRITE
- *   DELETE/:id  → VAULTS_DELETE (owner | super_admin فقط) — ناعم: يُغلق لا يحذف
  */
 import {
   BadRequestException, Body, Controller,
-  Delete, Get, Headers, Param, Patch, Post, Query, UseGuards,
+  Delete, Get, Param, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
-import { AuthGuard }             from '@nestjs/passport';
-import { ZodError }              from 'zod';
-import { CompanyAccessGuard }    from '../auth/guards/company-access.guard';
-import { RolesGuard }            from '../auth/guards/roles.guard';
-import { CurrentUser, JwtUser }  from '../auth/decorators/current-user.decorator';
-import { RequirePermission }     from '../auth/decorators/require-permission.decorator';
+import { AuthGuard } from '@nestjs/passport';
+import { ZodError } from 'zod';
+import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
+import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { createVaultSchema, reorderVaultsSchema, updateVaultSchema } from './dto/create-vault.dto';
-import { vaultTransferSchema }   from './dto/vault-transfer.dto';
-import { VaultsService }         from './vaults.service';
-import { preferQueryCompanyId }  from '../common/utils/company-request';
+import { vaultTransferSchema } from './dto/vault-transfer.dto';
+import { VaultsService } from './vaults.service';
 
 @Controller('vaults')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class VaultsController {
   constructor(private readonly vaultsService: VaultsService) {}
 
-  private resolveCompanyId(header?: string, query?: string): string {
-    return preferQueryCompanyId(query, header);
-  }
-
   @Get()
   @RequirePermission('VAULTS_READ')
   async findAll(
-    @Query('companyId')      queryCompanyId:  string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('includeArchived') includeArchived?: string,
     @Query('startDate')      startDate?:      string,
     @Query('endDate')        endDate?:        string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     if (!companyId) return [];
     return this.vaultsService.findAll(
       companyId,
@@ -53,37 +39,24 @@ export class VaultsController {
   }
 
   @Get('sales-channels')
-  async findSalesChannels(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
-  ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+  async findSalesChannels(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.vaultsService.findSalesChannels(companyId);
   }
 
   @Get('payment-options')
-  async findPaymentOptions(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
-  ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
+  async findPaymentOptions(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.vaultsService.findPaymentOptions(companyId);
   }
 
-  /**
-   * تحويل بين خزائن (نقد/بنك/تطبيق) — قيد transfer في الدفتر؛ بدون فاتورة؛ بدون أثر على الأرباح والخسائر.
-   */
   @Post('transfer')
   @RequirePermission('VAULTS_WRITE')
   async transfer(
     @Body() body: unknown,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     try {
       const dto = vaultTransferSchema.parse({
         ...(typeof body === 'object' && body !== null ? body : {}),
@@ -104,33 +77,34 @@ export class VaultsController {
   @Get(':id/transactions')
   @RequirePermission('VAULTS_READ')
   async findTransactions(
-    @Param('id')             id:               string,
-    @Query('companyId')      queryCompanyId:   string,
-    @Headers('x-company-id') headerCompanyId:  string,
-    @Query('startDate')      startDate?:        string,
-    @Query('endDate')        endDate?:          string,
-    @Query('page')           page?:             string,
-    @Query('pageSize')       pageSize?:         string,
+    @Param('id')     id:               string,
+    @CompanyId()    companyId:        string,
+    @Query('startDate')  startDate?:  string,
+    @Query('endDate')    endDate?:    string,
+    @Query('page')       page?:      string,
+    @Query('pageSize')  pageSize?:  string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     if (!startDate || !endDate) {
       throw new BadRequestException('startDate and endDate are required for vault transactions');
     }
     const pageNum = Math.max(1, parseInt(page ?? '1', 10) || 1);
     const size = Math.min(10000, Math.max(1, parseInt(pageSize ?? '50', 10) || 50));
-    const s = startDate as string;
-    const e = endDate as string;
-    return this.vaultsService.findOneWithTransactions(id, companyId, s, e, pageNum, size);
+    return this.vaultsService.findOneWithTransactions(
+      id,
+      companyId,
+      startDate as string,
+      endDate as string,
+      pageNum,
+      size,
+    );
   }
 
   @Patch('reorder')
   @RequirePermission('VAULTS_WRITE')
   async reorderVaults(
-    @Body()                  body:             unknown,
-    @Query('companyId')      queryCompanyId:   string,
-    @Headers('x-company-id') headerCompanyId:  string,
+    @Body()         body:             unknown,
+    @CompanyId()   companyId:         string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     if (!companyId) {
       throw new BadRequestException('معرف الشركة مطلوب');
     }
@@ -165,13 +139,11 @@ export class VaultsController {
   @Patch(':id')
   @RequirePermission('VAULTS_WRITE')
   async update(
-    @Param('id')             id:               string,
-    @Query('companyId')      queryCompanyId:   string,
-    @Headers('x-company-id') headerCompanyId:  string,
-    @Body()                  body:             unknown,
-    @CurrentUser()           user:             JwtUser,
+    @Param('id')   id:       string,
+    @CompanyId()  companyId: string,
+    @Body()      body:     unknown,
+    @CurrentUser() user:   JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     try {
       const dto = updateVaultSchema.parse(body);
       return this.vaultsService.update(id, companyId, dto, user.sub);
@@ -186,25 +158,20 @@ export class VaultsController {
   @Patch(':id/archive')
   @RequirePermission('VAULTS_WRITE')
   async archive(
-    @Param('id')             id:               string,
-    @Query('companyId')      queryCompanyId:   string,
-    @Headers('x-company-id') headerCompanyId:  string,
-    @CurrentUser()           user:             JwtUser,
+    @Param('id')   id:        string,
+    @CompanyId()  companyId:  string,
+    @CurrentUser() user:     JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.vaultsService.archive(id, companyId, user.sub);
   }
 
   @Delete(':id')
   @RequirePermission('VAULTS_DELETE')
   async remove(
-    @Param('id')             id:               string,
-    @Query('companyId')      queryCompanyId:   string,
-    @Headers('x-company-id') headerCompanyId:  string,
-    @CurrentUser()           user:             JwtUser,
+    @Param('id')   id:        string,
+    @CompanyId()  companyId:  string,
+    @CurrentUser() user:     JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
-    // ناعم فقط — VaultsService.remove يتحقق من غياب القيود ويُغلق الخزنة
     return this.vaultsService.remove(id, companyId, user.sub);
   }
 }

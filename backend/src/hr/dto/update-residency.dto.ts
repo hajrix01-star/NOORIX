@@ -1,33 +1,9 @@
-import {
-  IsString,
-  IsOptional,
-  IsDateString,
-  IsIn,
-  MaxLength,
-} from 'class-validator';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
+import { CreateResidencyDto } from './create-residency.dto';
 
-const RESIDENCY_STATUSES = ['active', 'expired', 'renewed'] as const;
-
-export class UpdateResidencyDto {
-  @IsOptional()
-  @IsString()
-  iqamaNumber?: string;
-
-  @IsOptional()
-  @IsDateString()
-  issueDate?: string;
-
-  @IsOptional()
-  @IsDateString()
-  expiryDate?: string;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(RESIDENCY_STATUSES)
-  status?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
-  notes?: string;
-}
+/**
+ * تعديل إقامة — companyId/employeeId يُستخرجان من URL السياق وليس تعديلاً مباشراً هنا.
+ */
+export class UpdateResidencyDto extends PartialType(
+  OmitType(CreateResidencyDto, ['companyId', 'employeeId'] as const),
+) {}

@@ -18,6 +18,7 @@ import { exportToExcel, exportTableToPdf } from '../../utils/exportUtils';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
 import { KPI_CARD_SPARKLINE_COLORS, KPI_RECHARTS_COLORS, SERIES_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
+import { getSaudiYearMonth } from '../../utils/saudiDate';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
@@ -40,15 +41,6 @@ function getCompanyMonthlyArr(report, metric) {
   }
   const group = report.groups?.find((r) => r.key === metric);
   return Array.from({ length: 12 }, (_, i) => Number(group?.months?.[i] || 0));
-}
-
-function getSaudiYearMonth() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit',
-  }).formatToParts(new Date());
-  const m = {};
-  for (const p of parts) if (p.type !== 'literal') m[p.type] = p.value;
-  return { year: parseInt(m.year, 10), month: parseInt(m.month, 10) };
 }
 
 function fmtAxis(n) {

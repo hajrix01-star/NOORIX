@@ -4,14 +4,13 @@
  * الصلاحيات: HR_READ, HR_WRITE, HR_DELETE
  * حذف مسيرة رواتب: أدوار المالك / المشرف العام / manager فقط (@Roles PAYROLL_RUN_DELETE_ROLES).
  * مسودة: حذف مباشر. مكتملة: إلغاء فواتير الراتب المرتبطة + عكس تسويات السلف ثم حذف السجل.
- * companyId: من @Query أو @Headers('x-company-id')
+ * companyId: @CompanyId (مطابق CompanyAccessGuard)
  */
 import {
   Body,
   Controller,
   Delete,
   Get,
-  Headers,
   Param,
   Patch,
   Post,
@@ -31,7 +30,7 @@ import { RequireAnyPermission } from '../auth/decorators/require-any-permission.
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PAYROLL_RUN_DELETE_ROLES } from '../auth/constants/permissions';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
-import { preferQueryCompanyId } from '../common/utils/company-request';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { HRService } from './hr.service';
 import { CreatePayrollRunDto } from './dto/create-payroll-run.dto';
 import { UpdatePayrollRunDto, UpdatePayrollRunStatusDto } from './dto/update-payroll-run.dto';
@@ -51,10 +50,6 @@ import { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 export class HRController {
   constructor(private readonly hrService: HRService) {}
 
-  private resolveCompanyId(header?: string, query?: string): string {
-    return preferQueryCompanyId(query, header);
-  }
-
   // ══════════════════════════════════════════════════════════
   // PAYROLL RUNS
   // ══════════════════════════════════════════════════════════
@@ -62,22 +57,18 @@ export class HRController {
   @Get('payroll-run-items')
   @RequirePermission('HR_READ')
   findPayrollRunItemsByEmployee(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('employeeId') employeeId: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findPayrollRunItemsByEmployee(companyId, employeeId);
   }
 
   @Get('payroll-runs')
   @RequirePermission('HR_READ')
   findPayrollRuns(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('year') year?: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findPayrollRuns(
       companyId,
       year ? parseInt(year, 10) : undefined,
@@ -88,10 +79,8 @@ export class HRController {
   @RequirePermission('HR_READ')
   findPayrollRunById(
     @Param('id') id: string,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findPayrollRunById(id, companyId);
   }
 
@@ -109,11 +98,9 @@ export class HRController {
   updatePayrollRunStatus(
     @Param('id') id: string,
     @Body() dto: UpdatePayrollRunStatusDto,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.updatePayrollRunStatus(id, dto, companyId, user.sub);
   }
 
@@ -122,11 +109,9 @@ export class HRController {
   updatePayrollRun(
     @Param('id') id: string,
     @Body() dto: UpdatePayrollRunDto,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.updatePayrollRun(id, dto, companyId, user.sub);
   }
 
@@ -134,11 +119,9 @@ export class HRController {
   @Roles(...PAYROLL_RUN_DELETE_ROLES)
   deletePayrollRun(
     @Param('id') id: string,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.deletePayrollRun(id, companyId, user.sub);
   }
 
@@ -158,11 +141,9 @@ export class HRController {
   @Get('advances')
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findAdvances(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('year') yearStr?: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     const year = yearStr ? parseInt(yearStr, 10) : undefined;
     return this.hrService.findAdvanceInvoices(companyId, Number.isFinite(year) ? year : undefined);
   }
@@ -174,12 +155,10 @@ export class HRController {
   @Get('leaves')
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findLeaves(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('employeeId') employeeId?: string,
     @Query('year') year?: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findLeaves(
       companyId,
       employeeId,
@@ -198,11 +177,9 @@ export class HRController {
   updateLeave(
     @Param('id') id: string,
     @Body() dto: UpdateLeaveDto,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.updateLeave(id, dto, companyId, user.sub);
   }
 
@@ -211,11 +188,9 @@ export class HRController {
   updateLeaveStatus(
     @Param('id') id: string,
     @Body() dto: UpdateLeaveStatusDto,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.updateLeaveStatus(id, dto, companyId, user.sub);
   }
 
@@ -224,11 +199,9 @@ export class HRController {
   returnFromLeave(
     @Param('id') id: string,
     @Body() dto: ReturnFromLeaveDto,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.returnFromLeave(id, dto, companyId, user.sub);
   }
 
@@ -236,10 +209,8 @@ export class HRController {
   @RequirePermission('HR_READ')
   getLeaveSalarySettlementPreview(
     @Param('id') id: string,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.getLeaveSalarySettlementPreview(id, companyId);
   }
 
@@ -248,11 +219,9 @@ export class HRController {
   issueLeaveSalarySettlement(
     @Param('id') id: string,
     @Body() dto: IssueLeaveSalarySettlementDto,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.issueLeaveSalarySettlement(id, companyId, dto, user.sub);
   }
 
@@ -260,12 +229,10 @@ export class HRController {
   @RequirePermission('HR_WRITE')
   deleteLeave(
     @Param('id') id: string,
-    @Query('companyId') queryCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('voidSettlement') voidSettlement: string | undefined,
-    @Headers('x-company-id') headerCompanyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.deleteLeave(
       id,
       companyId,
@@ -277,11 +244,9 @@ export class HRController {
   @Get('leave-salary-settlements')
   @RequirePermission('HR_READ')
   findLeaveSalarySettlements(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('payrollMonth') payrollMonth: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findLeaveSalarySettlements(companyId, payrollMonth);
   }
 
@@ -292,11 +257,9 @@ export class HRController {
   @Get('residencies')
   @RequirePermission('HR_READ')
   findResidencies(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('employeeId') employeeId?: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findResidencies(companyId, employeeId);
   }
 
@@ -314,11 +277,9 @@ export class HRController {
   updateResidency(
     @Param('id') id: string,
     @Body() dto: UpdateResidencyDto,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.updateResidency(id, dto, companyId, user.sub);
   }
 
@@ -326,11 +287,9 @@ export class HRController {
   @RequirePermission('HR_DELETE')
   deleteResidency(
     @Param('id') id: string,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.deleteResidency(id, companyId, user.sub);
   }
 
@@ -341,11 +300,9 @@ export class HRController {
   @Get('documents')
   @RequirePermission('HR_READ')
   findDocuments(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('employeeId') employeeId?: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findDocuments(companyId, employeeId);
   }
 
@@ -412,11 +369,9 @@ export class HRController {
   @RequirePermission('HR_READ')
   async downloadDocument(
     @Param('id') id: string,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Res() res: Response,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     const doc = await this.hrService.findDocumentById(id, companyId);
     if (!doc.filePath) {
       return res.status(404).json({ message: 'الملف غير متوفر للتحميل.' });
@@ -428,11 +383,9 @@ export class HRController {
   @RequirePermission('HR_DELETE')
   deleteDocument(
     @Param('id') id: string,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.deleteDocument(id, companyId, user.sub);
   }
 
@@ -443,11 +396,9 @@ export class HRController {
   @Get('movements')
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findMovements(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('employeeId') employeeId?: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findMovements(companyId, employeeId);
   }
 
@@ -467,11 +418,9 @@ export class HRController {
   @Get('allowances')
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findAllowances(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('employeeId') employeeId?: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findAllowances(companyId, employeeId);
   }
 
@@ -488,11 +437,9 @@ export class HRController {
   @RequirePermission('HR_DELETE')
   deleteAllowance(
     @Param('id') id: string,
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.deleteAllowance(id, companyId, user.sub);
   }
 
@@ -503,11 +450,9 @@ export class HRController {
   @Get('deductions')
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findDeductions(
-    @Query('companyId') queryCompanyId: string,
-    @Headers('x-company-id') headerCompanyId: string,
+    @CompanyId() companyId: string,
     @Query('employeeId') employeeId?: string,
   ) {
-    const companyId = this.resolveCompanyId(headerCompanyId, queryCompanyId);
     return this.hrService.findDeductions(companyId, employeeId);
   }
 

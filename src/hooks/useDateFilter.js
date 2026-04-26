@@ -4,15 +4,7 @@
  * يستخدم توقيت المملكة (Asia/Riyadh UTC+3)
  */
 import { useState, useMemo, useCallback } from 'react';
-
-function getSaudiNow() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Riyadh',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(new Date());
-  const m = parts.reduce((a, p) => (p.type !== 'literal' ? { ...a, [p.type]: p.value } : a), {});
-  return { year: parseInt(m.year, 10), month: parseInt(m.month, 10), day: parseInt(m.day, 10) };
-}
+import { getSaudiNow } from '../utils/saudiDate';
 
 function saudiDayStart(dateStr) {
   return `${dateStr}T00:00:00+03:00`;

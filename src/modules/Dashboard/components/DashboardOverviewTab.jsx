@@ -18,6 +18,7 @@ import { fmt } from '../../../utils/format';
 import { Button, cn, FmtNum, MetricCard } from '../../../ui';
 import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import { useUiDir } from '../../../hooks/useUiDir';
+import { getSaudiYearMonth } from '../../../utils/saudiDate';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -25,17 +26,6 @@ const MONTH_NAMES_EN = ['January','February','March','April','May','June','July'
 
 function lastDayOfMonth(year, month) { return new Date(year, month, 0).getDate(); }
 
-/** شهر السنة الحالية بتوقيت السعودية (للافتراض عند «كل الأشهر» + عرض يومي) */
-function getSaudiYearMonth() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit',
-  }).formatToParts(new Date());
-  const m = {};
-  for (const p of parts) {
-    if (p.type !== 'literal') m[p.type] = p.value;
-  }
-  return { year: parseInt(m.year, 10), month: parseInt(m.month, 10) };
-}
 function ymd(y, m, d) { return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 function fmtAxis(n) {
   if (n >= 1e6) return `${(n/1e6).toFixed(1)}M`;
