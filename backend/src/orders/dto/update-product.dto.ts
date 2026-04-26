@@ -1,43 +1,20 @@
-import { IsString, IsOptional, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { IntersectionType, OmitType, PartialType } from '@nestjs/mapped-types';
+import { IsBoolean, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProductVariantDto } from './create-product.dto';
+import { CreateProductDto } from './create-product.dto';
 
-export class UpdateProductDto {
-  @IsOptional()
-  @IsString()
-  nameAr?: string;
-
-  @IsOptional()
-  @IsString()
-  nameEn?: string | null;
-
-  @IsOptional()
-  @IsString()
-  unit?: string;
-
-  @IsOptional()
-  @IsString()
-  sizes?: string | null;
-
-  @IsOptional()
-  @IsString()
-  packaging?: string | null;
-
-  @IsOptional()
-  @IsString()
-  categoryId?: string | null;
-
-  @IsOptional()
-  @IsString()
-  lastPrice?: string;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ProductVariantDto)
-  variants?: ProductVariantDto[];
-
+class UpdateProductActiveField {
   @IsOptional()
   @IsBoolean()
+  @Type(() => Boolean)
   isActive?: boolean;
 }
+
+/**
+ * تعديل صنف — كل الحقول اختيارية؛ companyId ليس جزءاً من جسم التعديل.
+ * `isActive` ليس في Create (الإنشاء يستند لافتراض قاعدة البيانات).
+ */
+export class UpdateProductDto extends IntersectionType(
+  PartialType(OmitType(CreateProductDto, ['companyId'] as const)),
+  UpdateProductActiveField,
+) {}
