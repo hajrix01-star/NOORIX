@@ -1,6 +1,5 @@
 /**
- * HttpExceptionFilter — يعيد رسالة الخطأ الفعلية للعميل عند 500.
- * يساعد في تشخيص أخطاء Prisma و Validation.
+ * HttpExceptionFilter — أخطاء تُعرض للعميل. في production لا تُرسل تفاصيل داخلية/Prisma الخام.
  */
 import {
   ExceptionFilter,
@@ -11,6 +10,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+
+const isProd = process.env.NODE_ENV === 'production';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -30,8 +31,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
         ? (errRes as { message: string | string[] }).message
         : String(errRes);
     } else if (exception instanceof Error) {
-      message = exception.message;
-      // تحويل أخطاء Prisma لرسائل مفهومة
       if (exception.name === 'PrismaClientKnownRequestError') {
         const prismaErr = exception as { code?: string; meta?: { target?: string[] } };
         if (prismaErr.code === 'P2003') {
@@ -40,7 +39,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
         } else if (prismaErr.code === 'P2002') {
           message = 'القيمة مكررة بالفعل';
           status = HttpStatus.BAD_REQUEST;
+        } else {
+          message = isProd
+            ? 'خطأ في قاعدة البيانات'
+            : exception.message;
         }
+      } else {
+        message = isProd ? 'خطأ داخلي في الخادم' : exception.message;
       }
       this.logger.error(`Unhandled: ${exception.message}`, exception.stack);
     }

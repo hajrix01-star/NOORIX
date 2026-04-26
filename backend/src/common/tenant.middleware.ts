@@ -9,6 +9,7 @@
 import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { Request, Response, NextFunction }                   from 'express';
 import { JwtService }                                        from '@nestjs/jwt';
+import { getJwtSecret }                                      from '../config/jwt.config';
 import { TenantContext }                                     from './tenant-context';
 
 @Injectable()
@@ -25,9 +26,7 @@ export class TenantMiddleware implements NestMiddleware {
 
     try {
       const token   = authHeader.slice(7);
-      // استخدم نفس fallback الذي يستخدمه JwtStrategy حتى يتطابق السلوك في بيئة التطوير
-      // (الإنتاج محمي: main.ts يخرج إذا لم يُضبط JWT_SECRET)
-      const jwtSecret = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PROD';
+      const jwtSecret = getJwtSecret();
       const payload = this.jwtService.verify<{
         sub: string;
         tenantId: string;

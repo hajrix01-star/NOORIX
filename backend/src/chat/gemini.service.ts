@@ -7,47 +7,10 @@
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { getGeminiApiKey, getGeminiModel } from '../config/gemini.config';
+import { extractJson } from '../common/utils/extract-json.util';
 
 function getGeminiUrl(): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${getGeminiModel()}:generateContent`;
-}
-
-/** استخراج JSON من نص قد يحتوي على شرح أو كود markdown */
-function extractJson<T = Record<string, unknown>>(text: string): T | null {
-  let t = (text || '').trim();
-  if (!t) return null;
-  const codeBlockMatch = t.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) t = codeBlockMatch[1].trim();
-  try {
-    return JSON.parse(t) as T;
-  } catch {
-    const start = t.indexOf('{');
-    if (start === -1) return null;
-    let depth = 0;
-    let end = -1;
-    for (let i = start; i < t.length; i++) {
-      if (t[i] === '{') depth++;
-      else if (t[i] === '}') {
-        depth--;
-        if (depth === 0) {
-          end = i;
-          break;
-        }
-      }
-    }
-    if (end === -1) return null;
-    const jsonStr = t.slice(start, end + 1);
-    try {
-      return JSON.parse(jsonStr) as T;
-    } catch {
-      const fixed = jsonStr.replace(/(\w+):\s*'([^']*)'/g, '"$1":"$2"');
-      try {
-        return JSON.parse(fixed) as T;
-      } catch {
-        return null;
-      }
-    }
-  }
 }
 
 export type GeminiIntent =

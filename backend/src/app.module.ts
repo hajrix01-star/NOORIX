@@ -37,8 +37,7 @@ import { VatPlanningModule } from './vat-planning/vat-planning.module';
 import { PermissionCacheModule } from './auth/permission-cache.service';
 import { TenantMiddleware }    from './common/tenant.middleware';
 import { JwtModule }           from '@nestjs/jwt';
-
-const JWT_SECRET = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PROD';
+import { getJwtSecret }        from './config/jwt.config';
 
 @Module({
   imports: [
@@ -79,7 +78,7 @@ const JWT_SECRET = process.env.JWT_SECRET ?? 'noorix-dev-secret-DO-NOT-USE-IN-PR
     OcrInvoicesModule,
     CompanyAssetsModule,
     VatPlanningModule,
-    JwtModule.register({ secret: JWT_SECRET }),
+    JwtModule.register({ secret: getJwtSecret() }),
   ],
   controllers: [AppController],
   providers:   [

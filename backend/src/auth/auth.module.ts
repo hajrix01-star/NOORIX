@@ -6,9 +6,10 @@ import { AuthService }       from './auth.service';
 import { CompanyAccessGuard } from './guards/company-access.guard';
 import { RolesGuard }        from './guards/roles.guard';
 import { JwtStrategy }       from './jwt.strategy';
+import { JWT_DEV_FALLBACK } from '../config/jwt.config';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
+const secretFromEnv = process.env.JWT_SECRET;
+if (!secretFromEnv) {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('❌ JWT_SECRET يجب تحديده في بيئة الإنتاج.');
   }
@@ -19,7 +20,7 @@ if (!JWT_SECRET) {
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret:      JWT_SECRET || 'noorix-dev-secret-DO-NOT-USE-IN-PROD',
+      secret:      secretFromEnv || JWT_DEV_FALLBACK,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '8h' },
     }),
   ],

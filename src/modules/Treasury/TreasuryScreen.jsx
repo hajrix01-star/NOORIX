@@ -6,7 +6,7 @@ import { useToast }       from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
-import { fmt, sumAmounts } from '../../utils/format';
+import { sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';
 import VaultFormModal     from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';

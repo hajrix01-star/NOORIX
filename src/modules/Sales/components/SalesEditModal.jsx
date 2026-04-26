@@ -4,7 +4,6 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import Decimal from 'decimal.js';
-import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { splitTaxFromTotal } from '../../../utils/math-engine';

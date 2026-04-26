@@ -115,15 +115,19 @@ export default function BankStatementDetailView({
           </Button>
           <Button
             size="sm"
-            onClick={() =>
-              exportBankStatementExcel({
-                statement: stmt,
-                companyName,
-                filteredTransactions: vm.filteredTransactions,
-                columnTotals: vm.columnTotals,
-                summaryByCategory: vm.summaryByCategory,
-              })
-            }
+            onClick={async () => {
+              try {
+                await exportBankStatementExcel({
+                  statement: stmt,
+                  companyName,
+                  filteredTransactions: vm.filteredTransactions,
+                  columnTotals: vm.columnTotals,
+                  summaryByCategory: vm.summaryByCategory,
+                });
+              } catch (e) {
+                showToast?.(e?.message || 'Error', 'error');
+              }
+            }}
           >
             {t('bankExportExcel')}
           </Button>

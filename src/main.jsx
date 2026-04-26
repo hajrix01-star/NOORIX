@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { initGlobalCacheManager } from './utils/cacheHelper';
 import { applyBranding } from './utils/appBranding';
 import { readStoredLanguage } from './utils/storedLanguage';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -11,7 +10,6 @@ import { ToastProvider } from './context/ToastContext';
 import App from './App';
 import './index.css';
 
-initGlobalCacheManager();
 // تطبيق هوية التطبيق باللغة المحفوظة قبل أي رسم
 const _storedLang = readStoredLanguage() || 'ar';
 applyBranding(_storedLang);

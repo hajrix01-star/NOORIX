@@ -7,8 +7,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { Button, Input } from '../../../ui';
-import { getAuthToken, getActiveCompanyId } from '../../../services/authStore';
-import { getApiBaseUrl, getVaults } from '../../../services/api';
+import { getVaults } from '../../../services/api';
 import {
   createOcrSupplier,
   extractInvoice,

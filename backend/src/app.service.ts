@@ -2,45 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DEFAULT_ADMIN_EMAIL } from './common/official-email';
 import { PrismaService } from './prisma/prisma.service';
 import { getGeminiApiKey, getGeminiModel, isGeminiAvailable } from './config/gemini.config';
-
-function extractJson<T = Record<string, unknown>>(text: string): T | null {
-  let t = String(text || '')
-    .replace(/^\uFEFF/, '')
-    .trim();
-  if (!t) return null;
-  // استخراج من ```json ... ``` أو ``` ... ```
-  const codeBlockMatch = t.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) t = codeBlockMatch[1].trim();
-  // استخراج أول كائن JSON من النص (لنماذج تضع شرحاً قبل أو بعد)
-  const start = t.indexOf('{');
-  if (start >= 0) {
-    let depth = 0;
-    for (let i = start; i < t.length; i++) {
-      if (t[i] === '{') depth++;
-      else if (t[i] === '}') {
-        depth--;
-        if (depth === 0) {
-          const jsonStr = t.slice(start, i + 1);
-          try {
-            return JSON.parse(jsonStr) as T;
-          } catch {
-            try {
-              const fixed = jsonStr.replace(/(\w+):\s*'([^']*)'/g, '"$1":"$2"');
-              return JSON.parse(fixed) as T;
-            } catch {
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
-  try {
-    return JSON.parse(t) as T;
-  } catch {
-    return null;
-  }
-}
+import { extractJson } from './common/utils/extract-json.util';
 
 @Injectable()
 export class AppService {

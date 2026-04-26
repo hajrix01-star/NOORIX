@@ -1,11 +1,8 @@
 /**
- * تصدير Excel وطباعة كشف الحساب
+ * تصدير Excel وطباعة كشف الحساب — تحميل xlsx-js-style فقط عند التصدير (توفير الـ bundle).
  */
-import XLSXmod from 'xlsx-js-style';
 import { fmt } from '../../../utils/format';
 import { openPrintWindow } from '../../../utils/printUtils';
-
-const XLSX = XLSXmod;
 
 /** لون رأس الأعمدة (أزرق Noorix) */
 const HEADER_BG = '185FA5';
@@ -13,8 +10,8 @@ const HEADER_FONT = { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 };
 const HEADER_FILL = { patternType: 'solid', fgColor: { rgb: HEADER_BG } };
 const HEADER_ALIGN_R = { horizontal: 'right', vertical: 'center', wrapText: false };
 
-/** تطبيق تنسيق RTL وتجميد الصفوف على ورقة */
-function applySheetView(ws, ySplit) {
+/** @param {import('xlsx-js-style').default} XLSX */
+function applySheetView(XLSX, ws, ySplit) {
   if (!ws['!views']) ws['!views'] = [{}];
   ws['!views'][0].rightToLeft = true;
   if (ySplit > 0) {
@@ -25,8 +22,8 @@ function applySheetView(ws, ySplit) {
   }
 }
 
-/** تنسيق خلايا صف رأس الأعمدة (rowIdx: 0-indexed) */
-function styleHeaderRow(ws, rowIdx, colCount) {
+/** @param {import('xlsx-js-style').default} XLSX */
+function styleHeaderRow(XLSX, ws, rowIdx, colCount) {
   for (let ci = 0; ci < colCount; ci++) {
     const addr = XLSX.utils.encode_cell({ r: rowIdx, c: ci });
     if (!ws[addr]) continue;
@@ -38,15 +35,13 @@ function styleHeaderRow(ws, rowIdx, colCount) {
   }
 }
 
-/** تنسيق صف عنوان رئيسي (كبير + غامق) */
-function styleTitleCell(ws, rowIdx) {
+function styleTitleCell(XLSX, ws, rowIdx) {
   const addr = XLSX.utils.encode_cell({ r: rowIdx, c: 0 });
   if (!ws[addr]) return;
   ws[addr].s = { font: { bold: true, sz: 13, color: { rgb: '1E3A5F' } } };
 }
 
-/** تنسيق صف ملخص/إحصاء (غامق بخلفية خفيفة) */
-function styleSummaryCell(ws, rowIdx, colCount) {
+function styleSummaryCell(XLSX, ws, rowIdx, colCount) {
   for (let ci = 0; ci < colCount; ci++) {
     const addr = XLSX.utils.encode_cell({ r: rowIdx, c: ci });
     if (!ws[addr]) continue;
@@ -58,7 +53,10 @@ function styleSummaryCell(ws, rowIdx, colCount) {
   }
 }
 
-export function exportBankStatementExcel({
+/**
+ * @returns {Promise<void>}
+ */
+export async function exportBankStatementExcel({
   statement,
   companyName,
   filteredTransactions,
@@ -66,12 +64,14 @@ export function exportBankStatementExcel({
   summaryByCategory,
 }) {
   if (!statement) return;
+  const { default: XLSX } = await import('xlsx-js-style');
+
   const wb = XLSX.utils.book_new();
   const period = `${statement.startDate?.slice(0, 10) || ''} → ${statement.endDate?.slice(0, 10) || ''}`;
 
   // ─── ورقة العمليات ───────────────────────────────────────────────────────
   const COLS = 9;
-  const DATA_ROW_START = 7; // 1-indexed (row index 6 = header)
+  const DATA_ROW_START = 7;
 
   const dataAoA = filteredTransactions.map((tx, idx) => [
     idx + 1,
@@ -86,17 +86,16 @@ export function exportBankStatementExcel({
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet([
-    [companyName || '—'],                                                               // row 0
-    [`${statement.bankName || ''} — ${statement.fileName || ''}`],                     // row 1
-    [`الفترة: ${period}`],                                                              // row 2
-    [`إجمالي إيداعات الكشف: ${fmt(Number(statement.totalDeposits) || 0)} SR`],        // row 3
-    [`إجمالي سحوبات الكشف: ${fmt(Number(statement.totalWithdrawals) || 0)} SR`],      // row 4
-    [],                                                                                  // row 5
-    ['#', 'التاريخ', 'الوصف', 'المرجع', 'التصنيف', 'مدين', 'دائن', 'الرصيد', 'ملاحظة'], // row 6 ← header
+    [companyName || '—'],
+    [`${statement.bankName || ''} — ${statement.fileName || ''}`],
+    [`الفترة: ${period}`],
+    [`إجمالي إيداعات الكشف: ${fmt(Number(statement.totalDeposits) || 0)} SR`],
+    [`إجمالي سحوبات الكشف: ${fmt(Number(statement.totalWithdrawals) || 0)} SR`],
+    [],
+    ['#', 'التاريخ', 'الوصف', 'المرجع', 'التصنيف', 'مدين', 'دائن', 'الرصيد', 'ملاحظة'],
     ...dataAoA,
   ]);
 
-  // صف المجموع
   const footerRow = DATA_ROW_START + dataAoA.length;
   XLSX.utils.sheet_add_aoa(
     ws,
@@ -109,22 +108,14 @@ export function exportBankStatementExcel({
     { wch: 13 }, { wch: 13 }, { wch: 14 }, { wch: 22 },
   ];
 
-  // RTL + تجميد الصفوف فوق رأس الأعمدة (6 صفوف معلومات + 1 رأس = 7)
-  applySheetView(ws, DATA_ROW_START);
-
-  // تنسيق صف العنوان الرئيسي
-  styleTitleCell(ws, 0);
-
-  // تنسيق صف الرأس (row index 6)
-  styleHeaderRow(ws, 6, COLS);
-
-  // تنسيق صف المجموع
-  styleSummaryCell(ws, footerRow - 1, COLS);
+  applySheetView(XLSX, ws, DATA_ROW_START);
+  styleTitleCell(XLSX, ws, 0);
+  styleHeaderRow(XLSX, ws, 6, COLS);
+  styleSummaryCell(XLSX, ws, footerRow - 1, COLS);
 
   XLSX.utils.book_append_sheet(wb, ws, 'العمليات');
 
   // ─── ورقة ملخص التصنيفات ─────────────────────────────────────────────────
-  const catHeaders = ['التصنيف', 'العدد', 'إجمالي مدين', 'إجمالي دائن', 'الصافي'];
   const catRows = Object.entries(summaryByCategory)
     .map(([name, d]) => ({
       التصنيف: name,
@@ -136,18 +127,18 @@ export function exportBankStatementExcel({
     .sort((a, b) => b['إجمالي مدين'] - a['إجمالي مدين']);
 
   const ws2 = XLSX.utils.aoa_to_sheet([
-    [companyName || '—'],        // row 0
-    ['ملخص التصنيفات'],          // row 1
-    [`الفترة: ${period}`],       // row 2
-    [],                           // row 3
+    [companyName || '—'],
+    ['ملخص التصنيفات'],
+    [`الفترة: ${period}`],
+    [],
   ]);
-  XLSX.utils.sheet_add_json(ws2, catRows, { origin: 'A5' }); // header row at row index 4
+  XLSX.utils.sheet_add_json(ws2, catRows, { origin: 'A5' });
 
   ws2['!cols'] = [{ wch: 24 }, { wch: 8 }, { wch: 16 }, { wch: 16 }, { wch: 14 }];
 
-  applySheetView(ws2, 5); // تجميد 5 صفوف (3 info + 1 فارغ + 1 رأس)
-  styleTitleCell(ws2, 0);
-  styleHeaderRow(ws2, 4, catHeaders.length); // row index 4 = A5
+  applySheetView(XLSX, ws2, 5);
+  styleTitleCell(XLSX, ws2, 0);
+  styleHeaderRow(XLSX, ws2, 4, catHeaders.length);
 
   XLSX.utils.book_append_sheet(wb, ws2, 'ملخص التصنيفات');
 

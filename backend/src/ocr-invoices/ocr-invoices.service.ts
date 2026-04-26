@@ -16,6 +16,7 @@ import { InvoiceService } from '../invoice/invoice.service';
 import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
 import { SubmitOcrInvoiceDto } from './dto/submit-ocr.dto';
 import { OcrInvoiceStatus, OCR_REVIEW_QUEUE_STATUSES } from './ocr-invoice-status';
+import { extractJsonFromOcrLlmText } from '../common/utils/ocr-llm-json.util';
 
 // ─── Math Validation ─────────────────────────────────────────────────────────
 
@@ -286,46 +287,6 @@ function getGeminiModelsToTry(): Array<{ model: string; version: string }> {
   return [{ model: configured, version }, ...chain];
 }
 
-function extractJson<T = Record<string, unknown>>(text: string): T | null {
-  const raw = (text || '').trim();
-  if (!raw) return null;
-
-  // 1. جرب البحث عن آخر كتلة JSON في النص (لأن gemini-2.5 يضع thinking أولاً)
-  const allJsonBlocks: string[] = [];
-
-  // استخرج من كتل markdown
-  const mdMatches = raw.matchAll(/```(?:json)?\s*([\s\S]*?)```/g);
-  for (const m of mdMatches) allJsonBlocks.push(m[1].trim());
-
-  // استخرج كل {} كبرى في النص
-  let i = 0;
-  while (i < raw.length) {
-    if (raw[i] === '{') {
-      let depth = 0, end = -1;
-      for (let j = i; j < raw.length; j++) {
-        if (raw[j] === '{') depth++;
-        else if (raw[j] === '}') { depth--; if (depth === 0) { end = j; break; } }
-      }
-      if (end !== -1) {
-        allJsonBlocks.push(raw.slice(i, end + 1));
-        i = end + 1;
-        continue;
-      }
-    }
-    i++;
-  }
-
-  // 2. جرّب كل كتلة — ابدأ من الأخيرة (آخر JSON هو الجواب في نماذج التفكير)
-  for (const block of [...allJsonBlocks].reverse()) {
-    try {
-      const parsed = JSON.parse(block) as T;
-      if (parsed && typeof parsed === 'object') return parsed;
-    } catch { /* جرب التالية */ }
-  }
-
-  return null;
-}
-
 interface GeminiExtractedItem {
   name?: string;       // الاسم الكامل كما في الفاتورة (Gemini يُرجع هذا فقط)
   quantity?: number;
@@ -486,7 +447,7 @@ export class OcrInvoicesService {
           continue;
         }
 
-        const extracted = extractJson<GeminiExtractedInvoice>(text);
+        const extracted = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(text);
         if (!extracted) {
           this.logger.error(`Gemini parse failed (${model}). textLen=${text.length} text(1000)=${text.substring(0, 1000)}`);
           return {
@@ -532,6 +493,19 @@ export class OcrInvoicesService {
   }
 
   private async enrichExtraction(tenantId: string, companyId: string, extracted: GeminiExtractedInvoice) {
+    const correctionRules = await this.prisma.ocrCorrectionRule.findMany({
+      where: { tenantId, companyId, status: 'confirmed' },
+    });
+
+    const applyCorrections = (raw: string): string => {
+      const trimmed = raw.trim();
+      if (!trimmed) return raw;
+      const rule = correctionRules.find(
+        (r) => r.wrongText.trim().toLowerCase() === trimmed.toLowerCase(),
+      );
+      return rule ? rule.correctText : raw;
+    };
+
     const suppliers = await this.prisma.ocrSupplier.findMany({
       where: { tenantId, companyId },
       include: { aliases: true },
@@ -558,8 +532,9 @@ export class OcrInvoicesService {
       }
 
       if (!supplierMatch) {
+        const nameForMatch = applyCorrections(supplierName);
         const result = findBestMatch(
-          supplierName,
+          nameForMatch,
           suppliers,
           (s) => s.nameAr,
           (s) => s.aliases.map((a) => a.alias),
@@ -586,8 +561,9 @@ export class OcrInvoicesService {
       (extracted.items || []).map(async (item) => {
         if (!item.name) return { ...item, itemMatch: null };
 
-        // 1. استخرج الحجم من الاسم الكامل
-        const { cleanName, size, sizeUnit } = extractSizeFromName(item.name);
+        // 1. استخرج الحجم من الاسم الكامل (بعد قواعد التصحيح المؤكّدة)
+        const itemNameForPipeline = applyCorrections(item.name);
+        const { cleanName, size, sizeUnit } = extractSizeFromName(itemNameForPipeline);
 
         // 2. قسّم الاسم إلى عربي وإنجليزي (بدون الحجم)
         const { nameAr, nameEn } = splitBilingualName(cleanName);
