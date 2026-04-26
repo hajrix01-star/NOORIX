@@ -1,37 +1,35 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsBoolean, IsInt, IsString, Max, MaxLength, Min } from 'class-validator';
 
-export class UpdateSystemBackupConfigDto {
-  @IsOptional()
+/** تعديل إعدادات نسخ النظام الافتراضية (كل الحقول اختياريّة) */
+class SystemBackupConfigBaseDto {
   @IsBoolean()
-  enabled?: boolean;
+  enabled!: boolean;
 
-  @IsOptional()
   @IsInt()
   @Min(0)
   @Max(23)
-  scheduleHour?: number;
+  scheduleHour!: number;
 
-  @IsOptional()
   @IsInt()
   @Min(0)
   @Max(59)
-  scheduleMinute?: number;
+  scheduleMinute!: number;
 
-  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(50)
-  retentionCount?: number;
+  retentionCount!: number;
 
   /** رابط تطبيق ويب Google Apps Script — فارغ لإلغاء الاعتماد على الحقل واستخدام متغير الخادم فقط */
-  @IsOptional()
   @IsString()
   @MaxLength(2048)
-  gdriveScriptUrl?: string;
+  gdriveScriptUrl!: string;
 
   /** معرّف مجلد Drive أو رابط المجلد — فارغ لإلغاء */
-  @IsOptional()
   @IsString()
   @MaxLength(512)
-  gdriveFolderId?: string;
+  gdriveFolderId!: string;
 }
+
+export class UpdateSystemBackupConfigDto extends PartialType(SystemBackupConfigBaseDto) {}
