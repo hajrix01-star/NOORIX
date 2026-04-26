@@ -126,7 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
-| 2026-04-26 | C | C1 (جزئي) + C3 + C4 | (بعد commit) | Cursor | ✓ | `PartialType` لـ `UpdateEmployeeDto` / `UpdateResidencyDto` + `@nestjs/mapped-types`؛ `CompanyId` decorator + `vaults` + `hr` controllers؛ `getSaudiDateParts`/`getSaudiNow`/`getSaudiYearMonth` في `saudiDate.js` وربط 8+ مكوّنات. **الاختبارات:** vitest + vite build + nest build |
+| 2026-04-26 | C | C1 (جزئي) + C3 + C4 | `31a487f` | Cursor | ✓ | `PartialType` لـ `UpdateEmployeeDto` / `UpdateResidencyDto` + `@nestjs/mapped-types`؛ `CompanyId` decorator + `vaults` + `hr` controllers؛ `getSaudiDateParts`/`getSaudiNow`/`getSaudiYearMonth` في `saudiDate.js` وربط 8+ مكوّنات. **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | A+B | A1–A2، B1–B7 (دفعة 1) | `4fd6a85` | Cursor | ✓ | `git rm --cached` لـ `backend/uploads/*` + `build-out.txt`، `.gitignore`، إزالة prisma من جذر الواجهة، JWT موحّد، `http-exception` production، `extractJson`+OCR util، `OcrCorrectionRule`، dynamic xlsx bank، `cacheHelper`، تنظيف imports، `Dockerfile` VOLUME. **اختبارات:** `npm run build` + `npm test` (جذر)، `npm run build` (backend) |
 | YYYY-MM-DD | A | A1 | | | | |
 | | | A2 | | | | |
