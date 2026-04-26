@@ -58,13 +58,13 @@ function ReportCard({ text, isAr, createdAt }) {
 
   return (
     <div
-      className="bg-noorix-surface text-noorix-text text-[15px] py-4 px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words min-w-[200px]"
+      className="noorix-chat-report-card bg-noorix-surface text-noorix-text text-[14px] md:text-[15px] py-3.5 px-3 md:py-4 md:px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words w-full min-w-0 max-w-full"
       style={{
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       }}
     >
       {rows.length > 0 ? (
-        <div className="grid grid-cols-[auto_1fr] gap-y-2 gap-x-4 items-baseline" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        <div className="noorix-chat-report-card__grid" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
           {rows.map((line, i) => {
             const colonIdx = line.indexOf(':');
             const hasLabel = colonIdx > 0 && colonIdx < 50;
