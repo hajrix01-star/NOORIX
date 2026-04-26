@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { getSaudiToday } from '../../../utils/saudiDate';
+import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { ProductSearchInput } from '../../../components/common/ProductSearchInput';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 
@@ -22,7 +22,8 @@ export function OrderFormModal({
 }) {
   const { t } = useTranslation();
   const isEdit = !!initialOrder?.id;
-  const [orderDate, setOrderDate] = useState(() => initialOrder?.orderDate ? new Date(initialOrder.orderDate).toISOString().slice(0, 10) : getSaudiToday());
+  const [orderDate, setOrderDate] = useState(() =>
+    (initialOrder?.orderDate ? toDateInputYmd(initialOrder.orderDate) || getSaudiToday() : getSaudiToday()));
   const [orderType, setOrderType] = useState(initialOrder?.orderType || 'external');
   const [pettyCashAmount, setPettyCashAmount] = useState(initialOrder?.pettyCashAmount ? String(initialOrder.pettyCashAmount) : '');
   const [notes, setNotes] = useState(initialOrder?.notes || '');

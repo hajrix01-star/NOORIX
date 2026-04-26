@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getSaudiToday } from '../../../utils/saudiDate';
+import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { moneyFieldString, roundMoney2 } from '../../../utils/moneyInput';
@@ -70,7 +70,7 @@ export const StaffFormModal = memo(function StaffFormModal({
         otherAllowance: moneyFieldString(employee.otherAllowance ?? 0),
         workHours: employee.workHours || '',
         workSchedule: stripOvertimeWorkDaysTag(employee.workSchedule || ''),
-        joinDate: employee.joinDate ? new Date(employee.joinDate).toISOString().slice(0, 10) : getSaudiToday(),
+        joinDate: employee.joinDate ? toDateInputYmd(employee.joinDate) || getSaudiToday() : getSaudiToday(),
         status: employee.status || 'active',
         notes: parsed.notesText || '',
         terminationReason: meta.terminationReason || '',
