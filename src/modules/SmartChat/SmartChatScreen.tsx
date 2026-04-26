@@ -387,7 +387,7 @@ export default function SmartChatScreen() {
   const saveTimerRef = useRef(null);
 
   const u = getStoredUser();
-  const userName = u?.nameAr || u?.nameEn || u?.name || u?.email || '';
+  const userName = u?.nameAr || u?.nameEn || u?.email || '';
   const can = (p) => hasPermission(u?.role, p, u?.permissions || []);
   const { create } = useEmployees(activeCompanyId || '', { fetchEnabled: false });
 

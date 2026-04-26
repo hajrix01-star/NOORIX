@@ -4,7 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCompanies, getMe, checkApiConnection } from './services/api';
 import { setActiveCompanyId } from './services/authStore';
 import { AppContext } from './context/AppContext';
+import type { AppContextValue, CompanyListItem } from './context/appTypes';
 import { useAuth } from './context/AuthContext';
+import type { AuthSessionUser } from './types/api';
 import PermissionGuard from './components/PermissionGuard';
 import Forbidden403 from './components/Forbidden403';
 import NotFound404 from './components/NotFound404';
@@ -68,8 +70,8 @@ export default function App() {
     queryFn: async () => {
       const res = await getMe();
       if (res?.success && res?.data) {
-        setUser(res.data);
-        return res.data;
+        setUser(res.data as AuthSessionUser);
+        return res.data as AuthSessionUser;
       }
       return null;
     },
@@ -95,8 +97,9 @@ export default function App() {
     if (!isAuthenticated || !user || isLoginPage) return;
     const routes = ['/', '/sales', '/purchases', '/invoices'];
     const run = () => routes.forEach((to) => prefetchRouteChunk(to));
-    let idleId;
-    let timeoutId;
+    let idleId: number | undefined;
+    /** في المتصفح `setTimeout` يعيد رقمًا؛ أنواع Node تعيد `Timeout` */
+    let timeoutId: number | undefined;
     if (typeof window.requestIdleCallback === 'function') {
       idleId = window.requestIdleCallback(run, { timeout: 3000 });
     } else {
@@ -125,13 +128,13 @@ export default function App() {
   });
 
   // لا نستخدم معرفات وهمية (noorix/riyadh…) — كانت تسبب GET /companies/noorix → 500 "No Company found"
-  const companiesList = useMemo(() => {
+  const companiesList = useMemo((): CompanyListItem[] => {
     if (Array.isArray(companiesFromApi) && companiesFromApi.length > 0) {
-      return companiesFromApi;
+      return companiesFromApi as CompanyListItem[];
     }
     const ids = user?.companyIds;
     if (Array.isArray(ids) && ids.length > 0) {
-      return ids.map((id) => ({ id, nameAr: '', nameEn: null }));
+      return ids.map((id: string) => ({ id, nameAr: '', nameEn: null }));
     }
     return [];
   }, [companiesFromApi, user?.companyIds]);
@@ -148,7 +151,7 @@ export default function App() {
     } catch (_) {}
     return singleCompanyId || (companiesList[0]?.id ?? '');
   });
-  const setActiveCompany = useCallback((id) => {
+  const setActiveCompany = useCallback((id: string) => {
     startCompanyTransition(() => {
       _setActiveCompany(id);
       try { localStorage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, id); } catch (_) {}
@@ -172,7 +175,7 @@ export default function App() {
   const [language, setLanguage] = useState(getInitialLanguage); // 'ar' | 'en'
   const [cardStyle, setCardStyle] = useState(getInitialCardStyle); // 1..10
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const appliedUserLangRef = useRef(null); // تتبع آخر userId طُبِّقت لغته — لمنع التطبيق المتكرر
+  const appliedUserLangRef = useRef<string | null>(null); // تتبع آخر userId طُبِّقت لغته — لمنع التطبيق المتكرر
   const companies = companiesList;
 
   useEffect(() => {
@@ -196,7 +199,7 @@ export default function App() {
     } catch (_) {}
   }, [cardStyle]);
 
-  const applyLanguage = useCallback((lang) => {
+  const applyLanguage = useCallback((lang: string) => {
     document.documentElement.classList.add('dir-switching');
     setLanguage(lang);
     writeStoredLanguage(lang);
@@ -232,8 +235,9 @@ export default function App() {
   // المرجع الوحيد للشركة النشطة: معرف (id) كـ string — السايدبار والجداول يعتمدونه
   const activeCompanyId = activeCompany;
 
-  const appContextValue = useMemo(
-    () => ({
+  const appContextValue = useMemo((): AppContextValue => {
+    const perms = user?.permissions;
+    return {
       activeCompany,
       activeCompanyId,
       setActiveCompany,
@@ -247,10 +251,22 @@ export default function App() {
       setSidebarOpen,
       user,
       userRole: user?.role,
-      userPermissions: user?.permissions || [],
-    }),
-    [activeCompany, activeCompanyId, companies, hasRealCompanies, cardStyle, language, isSidebarOpen, user]
-  );
+      userPermissions: Array.isArray(perms) ? perms : [],
+    };
+  }, [
+    activeCompany,
+    activeCompanyId,
+    companies,
+    hasRealCompanies,
+    cardStyle,
+    language,
+    isSidebarOpen,
+    user,
+    setActiveCompany,
+    setCardStyle,
+    setLanguage,
+    setSidebarOpen,
+  ]);
 
   // مزامنة فورية مع api.js قبل الرسم/الطلبات — يقلل خلط x-company-id مع ?companyId
   useLayoutEffect(() => {

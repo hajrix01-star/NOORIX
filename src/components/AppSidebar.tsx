@@ -2,7 +2,7 @@
  * AppSidebar — القائمة الجانبية الرئيسية
  */
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate, type NavLinkRenderProps } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
@@ -56,11 +56,18 @@ const SIDEBAR_LINKS = [
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
 ];
 
-export default function AppSidebar({ isOpen, onClose, userRole, userPermissions }) {
+export type AppSidebarProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  userRole?: string;
+  userPermissions?: string[];
+};
+
+export default function AppSidebar({ isOpen, onClose, userRole, userPermissions }: AppSidebarProps) {
   const { t, lang } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const navLinkClass = ({ isActive }) =>
+  const navLinkClass = ({ isActive }: NavLinkRenderProps) =>
     `app-nav-link${isActive ? ' app-nav-link--active' : ''}`;
   const visibleLinks = SIDEBAR_LINKS.filter((link) => {
     if ((link as { ownerOnly?: boolean }).ownerOnly && String(userRole || '').toLowerCase() !== 'owner') return false;

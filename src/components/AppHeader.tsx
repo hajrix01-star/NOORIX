@@ -4,23 +4,45 @@
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import type { CompanyListItem } from '../context/appTypes';
+import type { AuthSessionUser } from '../types/api';
 import { useTranslation } from '../i18n/useTranslation';
 import UserMenu from './UserMenu';
 import { Button, Modal } from '../ui';
 
 const MENU_WIDTH = 220;
 
+export type AppHeaderProps = {
+  toggleSidebar: () => void;
+  toggleLanguage: () => void;
+  language: string;
+  serverDown: boolean;
+  onRetryConnection: () => void | Promise<void>;
+  isAuthenticated: boolean;
+  user: AuthSessionUser | null;
+  onLogout: () => void;
+  activeCompany: CompanyListItem | null;
+  companies?: CompanyListItem[];
+  activeCompanyId: string;
+  setActiveCompany: (id: string) => void;
+  showCompanySwitcher?: boolean;
+};
+
 export default function AppHeader({
-  toggleSidebar, toggleLanguage,
-  language, serverDown, onRetryConnection,
-  isAuthenticated, user, onLogout,
+  toggleSidebar,
+  toggleLanguage,
+  language,
+  serverDown,
+  onRetryConnection,
+  isAuthenticated,
+  user,
+  onLogout,
   activeCompany,
-  /* مبدّل الشركة */
   companies = [],
   activeCompanyId,
   setActiveCompany,
   showCompanySwitcher = false,
-}) {
+}: AppHeaderProps) {
   const { t, lang } = useTranslation();
 
   const activeCo = companies.find((c) => c.id === activeCompanyId) || activeCompany || null;
@@ -34,15 +56,15 @@ export default function AppHeader({
 
   /* ── Dropdown الشركة ── */
   /* ── تأكيد تبديل الشركة ── */
-  const [pendingCompany, setPendingCompany] = useState(null);
+  const [pendingCompany, setPendingCompany] = useState<string | null>(null);
   const pendingCo   = pendingCompany ? companies.find((c) => c.id === pendingCompany) : null;
   const pendingName = pendingCo
     ? (lang === 'en' ? pendingCo.nameEn || pendingCo.nameAr : pendingCo.nameAr || pendingCo.nameEn) || '—'
     : '';
 
   const [coDropOpen, setCoDropOpen] = useState(false);
-  const coDropBtnRef  = useRef(null);
-  const coDropMenuRef = useRef(null);
+  const coDropBtnRef = useRef<HTMLButtonElement | null>(null);
+  const coDropMenuRef = useRef<HTMLDivElement | null>(null);
   const [coDropPos, setCoDropPos] = useState({ top: 0, left: 0, width: MENU_WIDTH });
 
   const updateCoDropPos = useCallback(() => {
@@ -59,11 +81,15 @@ export default function AppHeader({
   useEffect(() => {
     if (!coDropOpen) return;
     updateCoDropPos();
-    const onMouseDown = (e) => {
+    const onMouseDown = (e: MouseEvent) => {
+      const t = e.target as Node | null;
       if (
-        !coDropBtnRef.current?.contains(e.target) &&
-        !coDropMenuRef.current?.contains(e.target)
-      ) setCoDropOpen(false);
+        t &&
+        !coDropBtnRef.current?.contains(t) &&
+        !coDropMenuRef.current?.contains(t)
+      ) {
+        setCoDropOpen(false);
+      }
     };
     const close = () => setCoDropOpen(false);
     document.addEventListener('mousedown', onMouseDown);
@@ -76,7 +102,7 @@ export default function AppHeader({
     };
   }, [coDropOpen, updateCoDropPos]);
 
-  const handleCompanySelect = (id) => {
+  const handleCompanySelect = (id: string) => {
     setCoDropOpen(false);
     if (id && id !== activeCompanyId) setPendingCompany(id);
   };

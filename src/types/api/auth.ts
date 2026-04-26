@@ -9,6 +9,8 @@ export interface AuthSessionUser {
   email: string;
   nameAr: string | null;
   nameEn: string | null;
+  /** قد يوجد في بيانات قديمة مخزّنة */
+  name?: string | null;
   /** يُرسَل في login؛ قد يغيب في مسار التجديد */
   preferredLang?: string;
   role: string;
