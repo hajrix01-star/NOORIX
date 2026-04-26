@@ -1,38 +1,14 @@
-import { Type } from 'class-transformer';
-import {
-  IsOptional,
-  IsString,
-  IsIn,
-  IsArray,
-  IsDateString,
-  ValidateNested,
-  MaxLength,
-} from 'class-validator';
-import { PayrollRunItemDto, PayrollRunVaultSplitDto } from './create-payroll-run.dto';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
+import { IsIn, IsString } from 'class-validator';
+import { CreatePayrollRunDto } from './create-payroll-run.dto';
 
-export class UpdatePayrollRunDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
-  notes?: string;
-
-  @IsOptional()
-  @IsDateString()
-  payrollMonth?: string;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PayrollRunItemDto)
-  items?: PayrollRunItemDto[];
-
-  /** عند إرساله مع `items` يُحدَّث توزيع الخزائن للمسيرة؛ مصفوفة فارغة = حذف التوزيع */
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PayrollRunVaultSplitDto)
-  vaultSplits?: PayrollRunVaultSplitDto[];
-}
+/**
+ * تعديل مسيرة رواتب — كل الحقول اختيارية؛ companyId ليس جزءاً من جسم التعديل.
+ * (عند إرسال items مع vaultSplits يُحدَّث التوزيع؛ مصفوفة vaultSplits فارغة = حذف التوزيع — سلوك الخادم)
+ */
+export class UpdatePayrollRunDto extends PartialType(
+  OmitType(CreatePayrollRunDto, ['companyId'] as const),
+) {}
 
 export class UpdatePayrollRunStatusDto {
   @IsString()
