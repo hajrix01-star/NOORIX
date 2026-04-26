@@ -126,6 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
+| 2026-04-26 | C | C2 (دفعة كبيرة) | `5155015` | Cursor | ✓ | **4 ملفات:** `UpdateExpenseLineDto` = `PartialType(OmitType(Create, [companyId]))`؛ `UpdateSalesSummaryDto` = `PartialType(OmitType(Create, [companyId, idempotencyKey]))` + `SalesChannelDto`؛ `UpdateCompanyBackupConfigDto` = `companyId` + `PartialType(CompanyBackupConfigDataDto)`؛ `UpdateLeaveDto` = `PartialType(OmitType(Create, [companyId]))` + `voidSalarySettlement`. **التحقق:** vitest + vite build + nest build |
 | 2026-04-26 | C | C2 (طلبات/أصناف) | `86bcdbc` | Cursor | ✓ | `UpdateProductDto` = `IntersectionType(PartialType(OmitType(Create…, [companyId])), isActive)` — `isActive` غير معرّف في Create. **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | C | C2 (أصول + مسيرات) | `6b49e17` | Cursor | ✓ | `UpdateCompanyAssetDto` و`UpdatePayrollRunDto` = `PartialType(OmitType(Create…, [companyId]))`؛ `UpdatePayrollRunStatusDto` دون تغيير. **الاختبارات:** vitest + vite build + `backend` nest build |
 | 2026-04-26 | C | C4 (اختبارات) | `95128f9` | Cursor | ✓ | `saudiDate.test.js`: `toDateInputYmd` (فارغ، غير قابل للتحليل، UTC→يوم Riyadh) + `getSaudiToday` بصيغة YYYY-MM-DD. **الاختبارات:** vitest + vite build |
