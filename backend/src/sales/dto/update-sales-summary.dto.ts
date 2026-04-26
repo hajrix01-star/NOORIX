@@ -1,41 +1,13 @@
-import {
-  IsString, IsNumber, IsArray, IsOptional,
-  ValidateNested, Min, IsDateString, ArrayMinSize, MaxLength,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
+import { CreateSalesSummaryDto, SalesChannelDto } from './create-sales-summary.dto';
 
-export class UpdateSalesChannelDto {
-  @IsString()
-  vaultId: string;
+/**
+ * تعديل ملخّص مبيعات يومي — كل الحقول اختياريّة.
+ * `companyId` / `idempotencyKey` من Create لا يُمرَّان في PATCH.
+ * القنوات تستخدم نفس `SalesChannelDto` (مطابقة مبلغ القناة) كما في الإنشاء.
+ */
+export class UpdateSalesSummaryDto extends PartialType(
+  OmitType(CreateSalesSummaryDto, ['companyId', 'idempotencyKey'] as const),
+) {}
 
-  @IsString()
-  amount: string;
-}
-
-export class UpdateSalesSummaryDto {
-  @IsOptional()
-  @IsDateString()
-  transactionDate?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  customerCount?: number;
-
-  @IsOptional()
-  @IsString()
-  cashOnHand?: string;
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1, { message: 'يجب إدخال قناة بيع واحدة على الأقل' })
-  @ValidateNested({ each: true })
-  @Type(() => UpdateSalesChannelDto)
-  channels?: UpdateSalesChannelDto[];
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
-  notes?: string;
-}
+export { SalesChannelDto };
