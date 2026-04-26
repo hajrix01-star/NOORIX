@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { updateEmployee } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { getSaudiToday } from '../../../utils/saudiDate';
 import {
   SAUDI_STANDARD_HOURS,
   SAUDI_WORK_DAYS_STANDARD,
@@ -227,7 +228,7 @@ export default function SalaryCalcTab() {
 
   // ── طباعة ────────────────────────────────────────────────
   function handlePrint() {
-    const reportDate  = new Date().toISOString().slice(0, 10);
+    const reportDate  = getSaudiToday();
     const nameArPrint = emp ? employeeDisplayName(emp, 'ar') : '—';
     const nameEnPrint = emp ? employeeDisplayName(emp, 'en') : '—';
     const allowanceRowsHtml = employeeAllowanceRows.length

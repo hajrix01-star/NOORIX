@@ -21,6 +21,7 @@ import { parseWorkHours } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input , FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
+import { getSaudiToday } from '../../../utils/saudiDate';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -151,7 +152,7 @@ export default function EOSCalcTab() {
   }, [allowanceTotals, emp]);
 
   function handlePrint() {
-    const reportDate = new Date().toISOString().slice(0, 10);
+    const reportDate = getSaudiToday();
     const allowanceRowsAr = allowanceRows.length
       ? allowanceRows.map((r) => `<tr><td class="td-ar">${r.ar}</td><td class="td-num">${hrFmt(r.amount)}</td></tr>`).join('')
       : '<tr><td class="td-ar" style="color:#94a3b8">لا توجد بدلات</td><td class="td-num" style="color:#94a3b8">—</td></tr>';

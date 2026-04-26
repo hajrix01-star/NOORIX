@@ -9,7 +9,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { createDeduction, getInvoices, updateInvoice } from '../../../services/api';
 import { useEmployees } from '../../../hooks/useEmployees';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday } from '../../../utils/saudiDate';
 import { sumAmounts } from '../../../utils/format';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -470,7 +470,7 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
   const remaining = Math.max(0, total - alreadySettled);
   const [settlementType, setSettlementType] = useState('full');
   const [settleAmount, setSettleAmount] = useState(String(remaining));
-  const [settleDate, setSettleDate] = useState(new Date().toISOString().slice(0, 10));
+  const [settleDate, setSettleDate] = useState(getSaudiToday());
   const [deferMonth, setDeferMonth] = useState('');
   const [applyToSalary, setApplyToSalary] = useState(true);
   const [saving, setSaving] = useState(false);

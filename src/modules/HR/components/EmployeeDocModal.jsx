@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getText } from '../../../i18n/translations';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import Decimal from 'decimal.js';
 import { uploadDocumentFile } from '../../../services/api';
@@ -681,18 +681,18 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
   const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
   const lastMonthlyComp = total;
   const termination = useMemo(() => getTerminationSummary(employee), [employee]);
-  const [eosEndDate, setEosEndDate] = useState(termination.terminationDate || new Date().toISOString().slice(0, 10));
+  const [eosEndDate, setEosEndDate] = useState(termination.terminationDate || getSaudiToday());
   const [eosReason, setEosReason] = useState(termination.reasonCode || 'employer');
   const [eosSalary, setEosSalary] = useState(String(lastMonthlyComp || 0));
   const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
 
   useEffect(() => {
-    setEosEndDate(termination.terminationDate || new Date().toISOString().slice(0, 10));
+    setEosEndDate(termination.terminationDate || getSaudiToday());
     setEosReason(termination.reasonCode || 'employer');
     setEosSalary(new Decimal(lastMonthlyComp || 0).toDecimalPlaces(2).toString());
   }, [termination.terminationDate, termination.reasonCode, lastMonthlyComp]);
   const eos = useMemo(() => {
-    const endDate = eosEndDate || termination.terminationDate || new Date().toISOString().slice(0, 10);
+    const endDate = eosEndDate || termination.terminationDate || getSaudiToday();
     const serviceDays = calculateServiceDays(employee?.joinDate, endDate);
     const serviceYears = new Decimal(serviceDays).div(360);
     const firstFiveYears = Decimal.min(serviceYears, 5);
