@@ -7,6 +7,10 @@ export type ApiParsedResult<TData = any, TItems = any> = {
   data?: TData;
   /** بعض الواجهات تُرجع مصفوفة في الجذر بدل `data` */
   items?: TItems;
+  /** حقول ترقيم شائعة في جذر الاستجابة (مثل HR employees paged) */
+  total?: number;
+  page?: number;
+  pageSize?: number;
   error?: string;
   code?: number;
   isTransientServerError?: boolean;

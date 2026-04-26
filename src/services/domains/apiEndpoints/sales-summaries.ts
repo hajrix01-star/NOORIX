@@ -1,14 +1,21 @@
+import type { ApiParsedResult } from '../../../types/api';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
 // ——— ملخصات المبيعات اليومية ———
-export async function createDailySalesSummary(body) { return apiPost('/api/v1/sales/summary', body); }
-export async function updateDailySalesSummary(id, body, companyId) {
+export async function createDailySalesSummary(body: unknown): Promise<ApiParsedResult> {
+  return apiPost('/api/v1/sales/summary', body);
+}
+export async function updateDailySalesSummary(
+  id: string,
+  body: unknown,
+  companyId: string,
+): Promise<ApiParsedResult> {
   return apiPatch(`/api/v1/sales/summaries/${id}?companyId=${companyId}`, body);
 }
-export async function cancelDailySalesSummary(id, companyId) {
+export async function cancelDailySalesSummary(id: string, companyId: string): Promise<ApiParsedResult> {
   return apiDelete(`/api/v1/sales/summaries/${id}?companyId=${companyId}`);
 }
-export async function deleteDailySalesSummary(id, companyId) {
+export async function deleteDailySalesSummary(id: string, companyId: string): Promise<ApiParsedResult> {
   return apiDelete(`/api/v1/sales/summaries/${id}?companyId=${companyId}`);
 }
 /** حزمة ملخصات مبيعات للوحة التحكم — سنة + نطاق يومي + نطاق شهري في استجابة واحدة */
@@ -28,7 +35,7 @@ export async function getDashboardSalesPack({
   dailyEnd?: string;
   monthStart?: string;
   monthEnd?: string;
-}) {
+}): Promise<ApiParsedResult> {
   const params: Record<string, string> = {
     companyId: String(companyId),
     yearStart: String(yearStart).slice(0, 10),
@@ -51,7 +58,7 @@ export async function getDailySalesSummaries(
   sortBy?: string,
   sortDir?: string,
   includeCancelled?: boolean,
-) {
+): Promise<ApiParsedResult> {
   const size = Math.min(200, Math.max(1, Number(pageSize) || 50));
   const params: Record<string, string> = {
     companyId: String(companyId),
@@ -82,17 +89,17 @@ export async function getDailySalesSummaries(
 
 /** جلب كل ملخصات المبيعات في الفترة — للتصدير والطباعة */
 export async function fetchAllSalesSummariesForExport(
-  companyId,
-  startDate,
-  endDate,
-  q,
+  companyId: string,
+  startDate: string | undefined,
+  endDate: string | undefined,
+  q: string | undefined,
   sortBy = 'transactionDate',
   sortDir = 'desc',
   includeCancelled = true,
-) {
+): Promise<unknown[]> {
   const pageSize = 150;
   let page = 1;
-  const acc = [];
+  const acc: unknown[] = [];
   for (let guard = 0; guard < 80; guard++) {
     const res = await getDailySalesSummaries(
       companyId,
@@ -106,7 +113,8 @@ export async function fetchAllSalesSummariesForExport(
       includeCancelled,
     );
     if (!res?.success) break;
-    const { items = [], total = 0 } = res.data || {};
+    const pack = res.data as { items?: unknown[]; total?: number } | undefined;
+    const { items = [], total = 0 } = pack || {};
     acc.push(...items);
     const t = Number(total) || 0;
     if (acc.length >= t || items.length < pageSize) break;
@@ -122,7 +130,7 @@ export async function getPurchaseBatchSummaries(
   endDate?: string,
   q?: string,
   lang?: string,
-) {
+): Promise<ApiParsedResult> {
   const params: Record<string, string> = { companyId: String(companyId) };
   if (startDate) params.startDate = String(startDate).slice(0, 10);
   if (endDate) params.endDate = String(endDate).slice(0, 10);

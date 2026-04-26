@@ -1,8 +1,18 @@
+import type { ApiParsedResult } from '../../../types/api';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+
+type EmployeesPagedOpts = {
+  tab?: string;
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  sortBy?: string;
+  sortDir?: string;
+};
 
 // ——— الموظفون ———
 /** قائمة كاملة (حدّ السيرفر) — للتوافق مع الشاشات التي لا ترسل page */
-export async function getEmployees(companyId, includeTerminated = false) {
+export async function getEmployees(companyId: string, includeTerminated = false): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/employees', {
     companyId: companyId || '',
     ...(includeTerminated ? { includeTerminated: 'true' } : {}),
@@ -13,7 +23,7 @@ export async function getEmployees(companyId, includeTerminated = false) {
 
 /** ترقيم من السيرفر — tab: active | terminated | archived */
 export async function getEmployeesPaged(
-  companyId,
+  companyId: string,
   {
     tab = 'active',
     page = 1,
@@ -21,15 +31,8 @@ export async function getEmployeesPaged(
     q = '',
     sortBy,
     sortDir,
-  }: {
-    tab?: string;
-    page?: number;
-    pageSize?: number;
-    q?: string;
-    sortBy?: string;
-    sortDir?: string;
-  } = {},
-) {
+  }: EmployeesPagedOpts = {},
+): Promise<ApiParsedResult> {
   const params: Record<string, string> = {
     companyId: companyId || '',
     page: String(page),
@@ -43,7 +46,7 @@ export async function getEmployeesPaged(
   if (!res.success) {
     return { success: false, error: res.error, items: [], total: 0, page: 1, pageSize };
   }
-  const d = res.data;
+  const d = res.data as { items?: unknown[]; total?: number; page?: number; pageSize?: number } | undefined;
   if (d && typeof d === 'object' && Array.isArray(d.items)) {
     return {
       success: true,
@@ -57,7 +60,7 @@ export async function getEmployeesPaged(
 }
 
 /** تحميل مجمّع للتصدير (حد أقصى من السيرفر) */
-export async function getEmployeesBulk(companyId, tab = 'active') {
+export async function getEmployeesBulk(companyId: string, tab = 'active'): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/employees', {
     companyId: companyId || '',
     bulk: '1',
@@ -66,27 +69,27 @@ export async function getEmployeesBulk(companyId, tab = 'active') {
   if (!res.success) return { success: false, error: res.error, data: [] };
   return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
-export async function getEmployee(id, companyId) {
+export async function getEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiGet(`/api/v1/employees/${id}`, { companyId });
 }
-export async function createEmployee(body) {
+export async function createEmployee(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/employees', body);
 }
-export async function createEmployeesBatch(body) {
+export async function createEmployeesBatch(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/employees/batch', body);
 }
-export async function updateEmployee(id, body, companyId) {
+export async function updateEmployee(id: string, body: unknown, companyId: string): Promise<ApiParsedResult> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiPatch(`/api/v1/employees/${id}?companyId=${companyId}`, body);
 }
-export async function terminateEmployee(id, companyId) {
+export async function terminateEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiPatch(`/api/v1/employees/${id}/terminate?companyId=${companyId}`, {});
 }
 
 /** حذف الموظف نهائياً من قاعدة البيانات — يتطلب صلاحية EMPLOYEES_DELETE */
-export async function deleteEmployee(id, companyId) {
+export async function deleteEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiDelete(`/api/v1/employees/${encodeURIComponent(id)}?companyId=${encodeURIComponent(companyId)}`);
 }

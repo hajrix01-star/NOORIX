@@ -1,28 +1,51 @@
+import type { ApiParsedResult } from '../../../types/api';
 import { apiGet, apiPut, apiDelete } from '../../core/apiHttp';
 
 // ——— التقارير ———
-export async function getGeneralProfitLossReport(companyId, year) {
+export async function getGeneralProfitLossReport(
+  companyId: string,
+  year: string | number,
+): Promise<ApiParsedResult> {
   return apiGet('/api/v1/reports/general-profit-loss', { companyId, year: String(year) });
 }
-export async function getGeneralProfitLossDetails(companyId, year, month, groupKey, itemKey) {
-  const params: Record<string, string> = { companyId: String(companyId), year: String(year), groupKey: String(groupKey) };
+export async function getGeneralProfitLossDetails(
+  companyId: string,
+  year: string | number,
+  month: string | number | null | undefined,
+  groupKey: string,
+  itemKey?: string,
+): Promise<ApiParsedResult> {
+  const params: Record<string, string> = {
+    companyId: String(companyId),
+    year: String(year),
+    groupKey: String(groupKey),
+  };
   if (month != null && month !== '') params.month = String(month);
   if (itemKey) params.itemKey = itemKey;
   return apiGet('/api/v1/reports/general-profit-loss/details', params);
 }
-export async function getGeneralProfitLossTrend(companyId, year, groupKey, itemKey) {
-  const params: Record<string, string> = { companyId: String(companyId), year: String(year), groupKey: String(groupKey) };
+export async function getGeneralProfitLossTrend(
+  companyId: string,
+  year: string | number,
+  groupKey: string,
+  itemKey?: string,
+): Promise<ApiParsedResult> {
+  const params: Record<string, string> = {
+    companyId: String(companyId),
+    year: String(year),
+    groupKey: String(groupKey),
+  };
   if (itemKey) params.itemKey = itemKey;
   return apiGet('/api/v1/reports/general-profit-loss/trend', params);
 }
 
-/** @param {{ salesAmountIncludesVat?: boolean }} [opts] — عند true: المبيعات بدون ضريبة مسجّلة تُفسَّر كإجمالٍ شامل 15% */
+/** @param opts — عند salesAmountIncludesVat: true تُفسَّر المبيعات كإجمالٍ شامل 15% */
 export async function getTaxVatReport(
   companyId: string,
   year: string | number,
   period: string,
   opts: { salesAmountIncludesVat?: boolean } = {},
-) {
+): Promise<ApiParsedResult> {
   const params: Record<string, string> = {
     companyId: String(companyId),
     year: String(year),
@@ -33,7 +56,11 @@ export async function getTaxVatReport(
 }
 
 /** سجل الضريبة التخطيطي (معزول عن المحاسبة) — REPORTS_READ */
-export async function getVatPlanningList(year, quarter, companyId?: string) {
+export async function getVatPlanningList(
+  year: string | number,
+  quarter: string | number,
+  companyId?: string,
+): Promise<ApiParsedResult> {
   const params: Record<string, string> = { year: String(year), quarter: String(quarter) };
   if (companyId) params.companyId = companyId;
   return apiGet('/api/v1/vat-planning', params);
@@ -44,7 +71,7 @@ export async function getVatPlanningRegistry(filters: {
   year?: string | number;
   quarter?: string | number;
   companyId?: string;
-} = {}) {
+} = {}): Promise<ApiParsedResult> {
   const params: Record<string, string> = {};
   if (filters.year != null && filters.year !== '') params.year = String(filters.year);
   if (filters.quarter != null && filters.quarter !== '') params.quarter = String(filters.quarter);
@@ -52,17 +79,25 @@ export async function getVatPlanningRegistry(filters: {
   return apiGet('/api/v1/vat-planning/registry', params);
 }
 
-export async function upsertVatPlanning(body) {
+export async function upsertVatPlanning(body: unknown): Promise<ApiParsedResult> {
   return apiPut('/api/v1/vat-planning', body);
 }
 
-export async function deleteVatPlanning(companyId, year, quarter) {
+export async function deleteVatPlanning(
+  companyId: string,
+  year: string | number,
+  quarter: string | number,
+): Promise<ApiParsedResult> {
   const qs = `companyId=${encodeURIComponent(companyId)}&year=${encodeURIComponent(String(year))}&quarter=${encodeURIComponent(String(quarter))}`;
   return apiDelete(`/api/v1/vat-planning?${qs}`);
 }
 
 /** تحليل فترة: إجماليات حسب نوع الفاتورة + أعلى موردين — يتطلب REPORTS_READ */
-export async function getPeriodAnalytics(companyId, startDate, endDate) {
+export async function getPeriodAnalytics(
+  companyId: string,
+  startDate: unknown,
+  endDate: unknown,
+): Promise<ApiParsedResult> {
   const params: Record<string, string> = {
     companyId: String(companyId),
     startDate: String(startDate || '').slice(0, 10),
