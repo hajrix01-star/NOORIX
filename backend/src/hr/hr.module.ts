@@ -14,6 +14,10 @@ import { FinancialCoreModule } from '../financial-core/financial-core.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { HRController } from './hr.controller';
 import { HRService } from './hr.service';
+import { HrPayrollService } from './hr-payroll.service';
+import { HrLeaveService } from './hr-leave.service';
+import { HrResidencyService } from './hr-residency.service';
+import { HrDocumentService } from './hr-document.service';
 
 @Module({
   imports: [
@@ -33,7 +37,13 @@ import { HRService } from './hr.service';
     EmployeesModule,
   ],
   controllers: [HRController],
-  providers: [HRService],
+  providers: [
+    HrPayrollService,
+    HrLeaveService,
+    HrResidencyService,
+    HrDocumentService,
+    HRService,
+  ],
   exports: [HRService],
 })
 export class HRModule {}

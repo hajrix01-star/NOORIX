@@ -1,0 +1,113 @@
+/**
+ * HrDocumentService — مستندات الموظف
+ */
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { AuditLogService } from '../audit/audit-log.service';
+import { TenantContext } from '../common/tenant-context';
+import type { CreateDocumentDto } from './dto/create-document.dto';
+
+@Injectable()
+export class HrDocumentService {
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
+
+  // ══════════════════════════════════════════════════════════
+  // DOCUMENTS
+  // ══════════════════════════════════════════════════════════
+
+  async findDocuments(
+    companyId: string,
+    employeeId?: string,
+  ) {
+    const where: Prisma.EmployeeDocumentWhereInput = { companyId };
+    if (employeeId) where.employeeId = employeeId;
+    return this.prisma.employeeDocument.findMany({
+      where,
+      include: { employee: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createDocument(dto: CreateDocumentDto, userId?: string) {
+    const tenantId = TenantContext.getTenantId();
+    const doc = await this.prisma.employeeDocument.create({
+      data: {
+        tenantId,
+        companyId: dto.companyId,
+        employeeId: dto.employeeId,
+        documentType: dto.documentType,
+        fileName: dto.fileName,
+        filePath: dto.filePath,
+        fileSize: dto.fileSize,
+        notes: dto.notes,
+      },
+      include: { employee: true },
+    });
+
+    await this.audit.log({
+      companyId: dto.companyId,
+      userId,
+      action: 'create',
+      entity: 'employee_document',
+      entityId: doc.id,
+      newValue: { documentType: doc.documentType, fileName: doc.fileName },
+    });
+
+    return doc;
+  }
+
+  async uploadDocument(
+    companyId: string,
+    employeeId: string,
+    documentType: 'contract' | 'certificate' | 'iqama' | 'other',
+    fileName: string,
+    filePath: string,
+    fileSize: number,
+    userId?: string,
+  ) {
+    return this.createDocument(
+      {
+        companyId,
+        employeeId,
+        documentType,
+        fileName,
+        filePath,
+        fileSize,
+      },
+      userId,
+    );
+  }
+
+  async findDocumentById(id: string, companyId: string) {
+    const doc = await this.prisma.employeeDocument.findFirst({
+      where: { id, companyId },
+      include: { employee: true },
+    });
+    if (!doc) throw new NotFoundException(`المستند ${id} غير موجود.`);
+    return doc;
+  }
+
+  async deleteDocument(id: string, companyId: string, userId?: string) {
+    const existing = await this.prisma.employeeDocument.findFirst({
+      where: { id, companyId },
+    });
+    if (!existing) throw new NotFoundException(`المستند ${id} غير موجود.`);
+
+    await this.prisma.employeeDocument.delete({ where: { id } });
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'delete',
+      entity: 'employee_document',
+      entityId: id,
+      oldValue: { fileName: existing.fileName },
+    });
+
+    return { deleted: true, id };
+  }
+}
