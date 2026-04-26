@@ -3,6 +3,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { getText } from '../../../i18n/translations';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import Decimal from 'decimal.js';
@@ -472,6 +473,18 @@ function getTerminationSummary(employee) {
   };
 }
 
+/** إزالة صياغة التعويض / م77 من نصوص الإقرار عند المخالصة بدون نهاية خدمة */
+function stripArt77CompensationPhrases(text) {
+  if (text == null || typeof text !== 'string') return text;
+  let s = text;
+  s = s.replace(/\s*مع\s+تعويض\s*\(\s*مادة\s*77\s*\)/gi, '');
+  s = s.replace(/\s*مع\s+تعويض\s*\(\s*ماده\s*77\s*\)/gi, '');
+  s = s.replace(/\s*with\s+compensation\s*\(\s*Art\.?\s*77\s*\)/gi, '');
+  s = s.replace(/\s*with\s+compensation\s*\(\s*Article\s*77\s*\)/gi, '');
+  s = s.replace(/\s{2,}/g, ' ').trim();
+  return s;
+}
+
 export function SalaryCertificateModal({ employee, customAllowances = [], companyId, companyName, companyLogo, onClose, onSaved }) {
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -701,6 +714,36 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
     };
   }, [employee?.joinDate, eosEndDate, eosReason, eosSalary, includeEos, lastMonthlyComp, termination.terminationDate]);
 
+  const settlementDeclaration = useMemo(() => {
+    if (includeEos) {
+      return {
+        ar: termination.ar,
+        en: termination.en,
+        clauseAr: termination.clauseAr,
+        clauseEn: termination.clauseEn,
+      };
+    }
+    const ar = stripArt77CompensationPhrases(termination.ar);
+    const en = stripArt77CompensationPhrases(termination.en);
+    const clauseArRaw = String(termination.clauseAr || '').trim();
+    const clauseEnRaw = String(termination.clauseEn || '').trim();
+    const clauseArOnly77 = /^البند\s*النظامي:\s*مادة\s*77\s*$/i.test(clauseArRaw) || /^البند\s*النظامي:\s*ماده\s*77\s*$/i.test(clauseArRaw);
+    const clauseEnOnly77 =
+      /^Legal\s+clause:\s*Article\s*77\s*$/i.test(clauseEnRaw) ||
+      /^Legal\s+clause:\s*Art\.\s*77\s*$/i.test(clauseEnRaw) ||
+      /^Legal\s+clause:\s*mادة\s*77\s*$/i.test(clauseEnRaw);
+    return {
+      ar,
+      en,
+      clauseAr: clauseArOnly77
+        ? getText('finalSettlementClauseNeutralNoEos', 'ar')
+        : stripArt77CompensationPhrases(termination.clauseAr),
+      clauseEn: clauseEnOnly77
+        ? getText('finalSettlementClauseNeutralNoEos', 'en')
+        : stripArt77CompensationPhrases(termination.clauseEn),
+    };
+  }, [includeEos, termination.ar, termination.en, termination.clauseAr, termination.clauseEn]);
+
   const handlePrint = () => {
     const win = buildPrintWindow(t('finalSettlement') || 'Final Settlement', printRef.current?.innerHTML || '');
     if (!win) {
@@ -832,9 +875,9 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
                   and confirm that all company property and records in my possession have been returned unless otherwise recorded by the company.
                 </p>
                 <p style={{ lineHeight: 1.45, marginTop: 8, fontSize: 10.5 }}>
-                  <strong>Termination:</strong> {termination.en}
+                  <strong>Termination:</strong> {settlementDeclaration.en}
                   <br />
-                  <strong>{termination.clauseEn}</strong>
+                  <strong>{settlementDeclaration.clauseEn}</strong>
                 </p>
               </div>
               <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
@@ -845,9 +888,9 @@ export function FinalSettlementModal({ employee, customAllowances = [], companyI
                   وأنني قمت بتسليم ما بعهدتي من ممتلكات أو مستندات تخص الشركة، ما لم يثبت خلاف ذلك في سجل العهد أو المخالصة الداخلية.
                 </p>
                 <p style={{ lineHeight: 1.45, marginTop: 8, fontSize: 10.5 }}>
-                  <strong>بيان إنهاء الخدمة:</strong> {termination.ar}
+                  <strong>بيان إنهاء الخدمة:</strong> {settlementDeclaration.ar}
                   <br />
-                  <strong>{termination.clauseAr}</strong>
+                  <strong>{settlementDeclaration.clauseAr}</strong>
                 </p>
               </div>
             </div>

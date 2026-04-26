@@ -126,6 +126,8 @@ export default {
   excludeEosInSettlement: { ar: 'عدم إضافة نهاية الخدمة (عرض الراتب فقط)', en: 'Exclude EOS (salary only)' },
   finalSettlementTotalWithEos: { ar: 'إجمالي التسوية (راتب + نهاية خدمة)', en: 'Total (salary + EOS)' },
   finalSettlementTotalSalaryOnly: { ar: 'إجمالي التسوية', en: 'Total settlement' },
+  /** بند إقرار المخالصة عند استبعاد نهاية الخدمة والبند كان «مادة 77» فقط */
+  finalSettlementClauseNeutralNoEos: { ar: 'البند النظامي: لا ينطبق في هذه المخالصة (بدون نهاية خدمة)', en: 'Legal clause: Not applicable in this settlement (no EOS)' },
   printCalc: { ar: 'طباعة الحاسبة', en: 'Print calculator' },
   quickAdvance: { ar: 'صرف سلفة', en: 'Quick advance' },
   advanceForEmployee: { ar: 'سلفة لـ {0}', en: 'Advance for {0}' },
