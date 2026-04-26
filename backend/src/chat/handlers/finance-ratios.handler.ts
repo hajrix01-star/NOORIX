@@ -57,6 +57,12 @@ function pctOf(numer: Decimal, denom: Decimal): string {
   return `${numer.div(denom).mul(100).toDecimalPlaces(2).toString()}%`;
 }
 
+/** نسبة رقمية 0–100 للواجهة (شريط مكدّس) */
+function pctOfSalesNumber(numer: Decimal, sales: Decimal): number {
+  if (sales.lte(0)) return 0;
+  return Math.min(100, Number(numer.div(sales).mul(100).toDecimalPlaces(2)));
+}
+
 function fmtMoney(n: Decimal): string {
   return `${Number(n.toFixed(2)).toLocaleString('en')} SR`;
 }
@@ -209,6 +215,28 @@ export const financeRatiosHandler: ChatHandler = {
       linesEn.push(`• (Purchases + expenses) / sales: ${pctOf(sum, sales)} (sum: ${fmtMoney(sum).replace('SR', 'SAR')})`);
     }
 
-    return { answerAr: linesAr.join('\n'), answerEn: linesEn.join('\n') };
+    const ratioSegments: Array<{ key: 'purchases' | 'expenses'; pct: number }> = [];
+    if (showPur) ratioSegments.push({ key: 'purchases', pct: pctOfSalesNumber(purchases, sales) });
+    if (showExp) ratioSegments.push({ key: 'expenses', pct: pctOfSalesNumber(expenses, sales) });
+    let normalized = ratioSegments;
+    const segSum = ratioSegments.reduce((a, s) => a + s.pct, 0);
+    if (segSum > 100 && ratioSegments.length > 0) {
+      normalized = ratioSegments.map((s) => ({
+        ...s,
+        pct: Number(((s.pct / segSum) * 100).toFixed(2)),
+      }));
+    }
+
+    return {
+      answerAr: linesAr.join('\n'),
+      answerEn: linesEn.join('\n'),
+      ...(normalized.length > 0
+        ? {
+            extras: {
+              chart: { kind: 'financeRatios' as const, segments: normalized },
+            },
+          }
+        : {}),
+    };
   },
 };

@@ -18,30 +18,38 @@ export function ItemsManageTab({ companyId }) {
       <AddSizeModal visible={addSizeModal} onClose={() => setAddSizeModal(false)} value={newSize} onChange={setNewSize} onAdd={handleAddSize} />
       <AddPackagingModal visible={addPackagingModal} onClose={() => setAddPackagingModal(false)} value={newPackaging} onChange={setNewPackaging} onAdd={handleAddPackaging} />
 
-      <div className="flex gap-2 border-b border-noorix-border">
+      <div
+        className="inline-flex p-1 gap-0.5 rounded-xl border border-noorix-border bg-noorix-bg-muted/50"
+        role="tablist"
+        aria-label={`${t('ordersProducts')} · ${t('ordersCategories')}`}
+      >
         <Button
           type="button"
+          variant="raw"
+          size="auto"
+          role="tab"
+          aria-selected={activeSubTab === 'products'}
           onClick={() => setActiveSubTab('products')}
-          style={{
-            borderBottom: activeSubTab === 'products' ? '2px solid var(--noorix-accent-green)' : '2px solid transparent',
-            background: activeSubTab === 'products' ? 'var(--noorix-green-7)' : 'transparent',
-            fontWeight: activeSubTab === 'products' ? 700 : 500,
-            padding: '8px 16px',
-            borderRadius: 0,
-          }}
+          className={`rounded-lg px-4 py-2 text-sm transition-colors ${
+            activeSubTab === 'products'
+              ? 'bg-noorix-surface font-bold text-noorix-text shadow-sm ring-1 ring-noorix-border'
+              : 'font-medium text-noorix-muted hover:text-noorix-text hover:bg-noorix-bg-surface/60'
+          }`}
         >
           {t('ordersProducts')}
         </Button>
         <Button
           type="button"
+          variant="raw"
+          size="auto"
+          role="tab"
+          aria-selected={activeSubTab === 'categories'}
           onClick={() => setActiveSubTab('categories')}
-          style={{
-            borderBottom: activeSubTab === 'categories' ? '2px solid var(--noorix-accent-green)' : '2px solid transparent',
-            background: activeSubTab === 'categories' ? 'var(--noorix-green-7)' : 'transparent',
-            fontWeight: activeSubTab === 'categories' ? 700 : 500,
-            padding: '8px 16px',
-            borderRadius: 0,
-          }}
+          className={`rounded-lg px-4 py-2 text-sm transition-colors ${
+            activeSubTab === 'categories'
+              ? 'bg-noorix-surface font-bold text-noorix-text shadow-sm ring-1 ring-noorix-border'
+              : 'font-medium text-noorix-muted hover:text-noorix-text hover:bg-noorix-bg-surface/60'
+          }`}
         >
           {t('ordersCategories')}
         </Button>

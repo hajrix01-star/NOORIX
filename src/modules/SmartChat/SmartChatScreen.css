@@ -454,6 +454,28 @@ body.noorix-page-smart-chat .app-main__content {
   align-items: flex-start;
 }
 
+.noorix-chat-report-card__bullet--summary {
+  margin-inline: -2px;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--noorix-accent-blue) 7%, var(--noorix-bg-surface));
+  border: 1px solid color-mix(in srgb, var(--noorix-accent-blue) 18%, var(--noorix-border));
+}
+
+.dark .noorix-chat-report-card__bullet--summary {
+  background: color-mix(in srgb, var(--noorix-accent-blue) 12%, transparent);
+  border-color: color-mix(in srgb, var(--noorix-accent-blue) 28%, var(--noorix-border));
+}
+
+/* شريط نسب الطلب التشغيلي — مقاطع بعرض نسبة من المسار */
+.noorix-chat-finance-ratios__track {
+  min-height: 10px;
+}
+
+.noorix-chat-mini-chart {
+  border-radius: 0 0 4px 4px;
+}
+
 /* هيكل تحميل بسيط أثناء انتظار الرد */
 .noorix-chat-skeleton-card {
   max-width: min(80%, 620px);

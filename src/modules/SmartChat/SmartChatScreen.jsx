@@ -22,6 +22,7 @@ import { loadChat, saveChat, filterByDate } from './chatStorage';
 import './SmartChatScreen.css';
 import { Button, AdaptiveSheet, Input } from '../../ui';
 import { formatSaudiDateTime } from '../../utils/saudiDate';
+import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 
 function SendIcon() {
   return (
@@ -183,12 +184,65 @@ function ChatMiniChart({ chart, isAr }) {
             />
             <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={42}>
               {data.map((_, i) => (
-                <Cell key={data[i].key} fill={i === 0 ? 'rgba(148, 163, 184, 0.55)' : 'var(--btn-primary-bg)'} />
+                <Cell
+                  key={data[i].key}
+                  fill={i === 0 ? KPI_RECHARTS_COLORS.purchases : KPI_RECHARTS_COLORS.sales}
+                />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
+    </div>
+  );
+}
+
+/** شريط مكدّس: مشتريات + مصروفات كنسبة من المبيعات (بيانات من الـ API) */
+function ChatFinanceRatiosStrip({ chart, isAr }) {
+  const segments = chart?.segments;
+  if (!Array.isArray(segments) || segments.length === 0) return null;
+  const used = segments.reduce((a, s) => a + (Number(s.pct) || 0), 0);
+  const remainder = Math.max(0, 100 - used);
+  const fillFor = (key) => (key === 'purchases' ? KPI_RECHARTS_COLORS.purchases : KPI_RECHARTS_COLORS.expenses);
+  const labelFor = (key) => {
+    if (key === 'purchases') return isAr ? 'مشتريات' : 'Purchases';
+    return isAr ? 'مصروفات' : 'Expenses';
+  };
+  return (
+    <div
+      className="noorix-chat-finance-ratios mt-3 pt-3 border-t border-noorix-border"
+      role="img"
+      aria-label={isAr ? 'شريط نسب الطلب التشغيلي من المبيعات' : 'Operating load as share of revenue'}
+    >
+      <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        {isAr ? 'توزيع الطلب التشغيلي من الإيراد' : 'Operating load vs revenue'}
+      </div>
+      <div
+        className="noorix-chat-finance-ratios__track nx-ltr flex h-[10px] rounded-full overflow-hidden border border-noorix-border/80 bg-noorix-bg-muted"
+        aria-hidden
+      >
+        {segments.map((s) => (
+          <div
+            key={s.key}
+            className="noorix-chat-finance-ratios__seg h-full min-w-0 transition-[width] duration-300"
+            style={{ width: `${Math.max(0, Math.min(100, Number(s.pct) || 0))}%`, backgroundColor: fillFor(s.key) }}
+            title={`${labelFor(s.key)}: ${Number(s.pct).toFixed(2)}%`}
+          />
+        ))}
+        {remainder > 0.05 ? (
+          <div className="noorix-chat-finance-ratios__remainder flex-1 min-w-0 h-full bg-noorix-bg-page/90" />
+        ) : null}
+      </div>
+      <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-noorix-muted list-none m-0 p-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        {segments.map((s) => (
+          <li key={s.key} className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-2 rounded-sm shrink-0" style={{ backgroundColor: fillFor(s.key) }} aria-hidden />
+            <span>
+              {labelFor(s.key)}: <span className="font-semibold text-noorix-text nx-ltr">{Number(s.pct).toFixed(2)}%</span>
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -250,8 +304,12 @@ function ReportCard({ text, isAr, createdAt, extras }) {
             }
             if (/^[•\-\*]\s*/.test(line)) {
               const t = line.replace(/^[•\-\*]\s*/, '').trim();
+              const isSummary = /^الخلاصة[:：]/i.test(t) || /^Summary:/i.test(t);
               return (
-                <div key={i} className="noorix-chat-report-card__bullet flex gap-2 text-[14px] md:text-[15px] pe-1">
+                <div
+                  key={i}
+                  className={`noorix-chat-report-card__bullet flex gap-2 text-[14px] md:text-[15px] pe-1${isSummary ? ' noorix-chat-report-card__bullet--summary' : ''}`}
+                >
                   <span className="text-noorix-muted shrink-0" aria-hidden>•</span>
                   <span className="min-w-0">{t}</span>
                 </div>
@@ -267,6 +325,7 @@ function ReportCard({ text, isAr, createdAt, extras }) {
         <div className="whitespace-pre-wrap">{text}</div>
       )}
       {extras?.chart?.kind === 'monthCompare' ? <ChatMiniChart chart={extras.chart} isAr={isAr} /> : null}
+      {extras?.chart?.kind === 'financeRatios' ? <ChatFinanceRatiosStrip chart={extras.chart} isAr={isAr} /> : null}
       {createdAt && (
         <div className="text-[12px] text-noorix-muted border-t border-noorix-border nx-ltr mt-[14px] pt-3">
           {formatSaudiDateTime(createdAt)}
@@ -632,7 +691,11 @@ export default function SmartChatScreen() {
               </div>
             ) : (
               <div className="flex-1 min-w-0 flex flex-col text-noorix-muted text-center gap-4 justify-center items-center p-8">
-                <div className="text-[48px] opacity-25"></div>
+                <div className="text-noorix-accent-blue opacity-[0.22]" aria-hidden>
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                </div>
                 <div className="text-[15px] max-w-[360px] leading-[1.7] opacity-70">
                   {isAr
                     ? 'استخدم «الأوامر» لإدخال البيانات، أو «أسئلة جاهزة» للاستفسار، أو اكتب سؤالك مباشرة.'

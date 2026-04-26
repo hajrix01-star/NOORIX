@@ -15,12 +15,21 @@ export type ChatHandlerContext = {
   vaultsService: any;
 };
 
+/** مخطط مقارنة شهريّين (أعمدة) */
+export type ChatChartMonthCompare = {
+  kind: 'monthCompare';
+  bars: Array<{ key: string; labelAr: string; labelEn: string; value: number }>;
+};
+
+/** شريط مكدّس: نسب المشتريات/المصروفات من المبيعات */
+export type ChatChartFinanceRatios = {
+  kind: 'financeRatios';
+  segments: Array<{ key: 'purchases' | 'expenses'; pct: number }>;
+};
+
 /** بيانات اختيارية للواجهة (مثلاً رسم بسيط) — لا تُرسل لـ Gemini */
 export type ChatResponseExtras = {
-  chart?: {
-    kind: 'monthCompare';
-    bars: Array<{ key: string; labelAr: string; labelEn: string; value: number }>;
-  };
+  chart?: ChatChartMonthCompare | ChatChartFinanceRatios;
 };
 
 export type ChatHandlerResult = {
