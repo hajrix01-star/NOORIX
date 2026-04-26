@@ -1,5 +1,6 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard }          from '@nestjs/passport';
+import { CompanyId }         from '../auth/decorators/company-id.decorator';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard }         from '../auth/guards/roles.guard';
 import { RequirePermission }  from '../auth/decorators/require-permission.decorator';
@@ -12,7 +13,7 @@ export class AccountsController {
 
   @Get()
   @RequirePermission('SUPPLIERS_READ')
-  findAll(@Query('companyId') companyId: string) {
+  findAll(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.accountsService.findAll(companyId);
   }

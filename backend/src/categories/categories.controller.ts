@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard }          from '@nestjs/passport';
+import { CompanyId }         from '../auth/decorators/company-id.decorator';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard }         from '../auth/guards/roles.guard';
 import { RequirePermission }  from '../auth/decorators/require-permission.decorator';
@@ -12,7 +13,7 @@ export class CategoriesController {
 
   @Get()
   @RequirePermission('SUPPLIERS_READ')
-  findAll(@Query('companyId') companyId: string) {
+  findAll(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.categoriesService.findAll(companyId);
   }
@@ -36,7 +37,7 @@ export class CategoriesController {
   @RequirePermission('SUPPLIERS_WRITE')
   update(
     @Param('id')        id:        string,
-    @Query('companyId') companyId: string,
+    @CompanyId()        companyId: string,
     @Body()             body:      {
       companyId?: string;
       nameAr?:    string;
@@ -48,6 +49,7 @@ export class CategoriesController {
       isActive?:  boolean;
     },
   ) {
+    /** PATCH: `getCompanyIdFromHttpRequest` لا يقرأ `body.companyId` — لذلك `|| body.companyId` */
     return this.categoriesService.update(id, companyId || body.companyId || '', {
       nameAr:    body.nameAr,
       nameEn:    body.nameEn,
@@ -63,7 +65,7 @@ export class CategoriesController {
   @RequirePermission('SUPPLIERS_DELETE')
   remove(
     @Param('id')        id:        string,
-    @Query('companyId') companyId: string,
+    @CompanyId()        companyId: string,
   ) {
     return this.categoriesService.remove(id, companyId);
   }
