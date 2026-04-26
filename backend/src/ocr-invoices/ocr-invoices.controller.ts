@@ -9,18 +9,17 @@ import {
   Post,
   Put,
   Query,
-  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { AuthGuard }        from '@nestjs/passport';
 import { RolesGuard }       from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { SkipThrottle } from '@nestjs/throttler';
-import { getCompanyIdFromHttpRequest } from '../common/utils/company-request';
 import { OcrInvoicesService } from './ocr-invoices.service';
 import { ExtractInvoiceDto }    from './dto/extract-invoice.dto';
 import { CreateOcrSupplierDto } from './dto/create-ocr-supplier.dto';
@@ -33,8 +32,8 @@ import { SubmitOcrInvoiceDto }  from './dto/submit-ocr.dto';
 export class OcrInvoicesController {
   constructor(private readonly svc: OcrInvoicesService) {}
 
-  private companyIdOrThrow(req: Request): string {
-    const id = getCompanyIdFromHttpRequest(req);
+  private requireCompanyId(companyId: string): string {
+    const id = String(companyId || '').trim();
     if (!id) {
       throw new BadRequestException('يجب تحديد الشركة (companyId أو ترويسة x-company-id).');
     }
@@ -45,8 +44,12 @@ export class OcrInvoicesController {
 
   @Post('extract')
   @RequirePermission('OCR_WRITE')
-  async extract(@Body() dto: ExtractInvoiceDto, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.extractInvoice(user.tenantId!, this.companyIdOrThrow(req), dto);
+  async extract(
+    @Body() dto: ExtractInvoiceDto,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.extractInvoice(user.tenantId!, this.requireCompanyId(companyId), dto);
   }
 
   @Post('submissions')
@@ -54,11 +57,11 @@ export class OcrInvoicesController {
   async submitForExtraction(
     @Body() dto: SubmitOcrInvoiceDto,
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
     return this.svc.submitForExtraction(
       user.tenantId!,
-      this.companyIdOrThrow(req),
+      this.requireCompanyId(companyId),
       user.sub,
       dto,
     );
@@ -68,32 +71,32 @@ export class OcrInvoicesController {
 
   @Get('invoices/review-queue')
   @RequirePermission('OCR_READ')
-  async reviewQueue(@CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.getReviewQueueInvoices(user.tenantId!, this.companyIdOrThrow(req));
+  async reviewQueue(@CurrentUser() user: JwtUser, @CompanyId() companyId: string) {
+    return this.svc.getReviewQueueInvoices(user.tenantId!, this.requireCompanyId(companyId));
   }
 
   @Get('reports/purchases-by-month')
   @RequirePermission('OCR_READ')
   async purchasesByMonth(
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
     @Query('month') month?: string,
   ) {
-    return this.svc.getPurchasesMonthlyReport(user.tenantId!, this.companyIdOrThrow(req), month || '');
+    return this.svc.getPurchasesMonthlyReport(user.tenantId!, this.requireCompanyId(companyId), month || '');
   }
 
   @Get('accounting-supplier-suggestions')
   @RequirePermission('OCR_READ')
   async accountingSupplierSuggestions(
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
     @Query('ocrSupplierId') ocrSupplierId?: string,
     @Query('q') q?: string,
     @Query('invoiceVat') invoiceVat?: string,
     @Query('limit') limitRaw?: string,
   ) {
     const limit = limitRaw ? parseInt(limitRaw, 10) : undefined;
-    return this.svc.getAccountingSupplierSuggestions(user.tenantId!, this.companyIdOrThrow(req), {
+    return this.svc.getAccountingSupplierSuggestions(user.tenantId!, this.requireCompanyId(companyId), {
       ocrSupplierId: ocrSupplierId?.trim() || undefined,
       q: q?.trim() || undefined,
       invoiceVat: invoiceVat?.trim() || undefined,
@@ -108,12 +111,12 @@ export class OcrInvoicesController {
   async invoiceImage(
     @Param('id') id: string,
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
     @Res() res: Response,
   ) {
     const abs = await this.svc.assertInvoiceImagePath(
       user.tenantId!,
-      this.companyIdOrThrow(req),
+      this.requireCompanyId(companyId),
       id,
     );
     res.sendFile(abs);
@@ -125,21 +128,25 @@ export class OcrInvoicesController {
   async getInvoiceById(
     @Param('id') id: string,
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
-    return this.svc.getInvoiceById(user.tenantId!, this.companyIdOrThrow(req), id);
+    return this.svc.getInvoiceById(user.tenantId!, this.requireCompanyId(companyId), id);
   }
 
   @Get('invoices')
   @RequirePermission('OCR_READ')
-  async getInvoices(@CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.getInvoices(user.tenantId!, this.companyIdOrThrow(req));
+  async getInvoices(@CurrentUser() user: JwtUser, @CompanyId() companyId: string) {
+    return this.svc.getInvoices(user.tenantId!, this.requireCompanyId(companyId));
   }
 
   @Post('invoices')
   @RequirePermission('OCR_WRITE')
-  async saveInvoice(@Body() dto: SaveInvoiceDto, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.saveInvoice(user.tenantId!, this.companyIdOrThrow(req), dto, {
+  async saveInvoice(
+    @Body() dto: SaveInvoiceDto,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.saveInvoice(user.tenantId!, this.requireCompanyId(companyId), dto, {
       userId: user.sub,
       role: user.role,
       permissions: user.permissions,
@@ -152,47 +159,67 @@ export class OcrInvoicesController {
     @Param('id') id: string,
     @Body() body: { status: string },
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
-    return this.svc.confirmInvoice(user.tenantId!, this.companyIdOrThrow(req), id, body.status);
+    return this.svc.confirmInvoice(user.tenantId!, this.requireCompanyId(companyId), id, body.status);
   }
 
   @Post('invoices/bulk-delete')
   @RequirePermission('OCR_WRITE')
-  async bulkDeleteInvoices(@Body() body: { ids: string[] }, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.bulkDeleteInvoices(user.tenantId!, this.companyIdOrThrow(req), body.ids);
+  async bulkDeleteInvoices(
+    @Body() body: { ids: string[] },
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.bulkDeleteInvoices(user.tenantId!, this.requireCompanyId(companyId), body.ids);
   }
 
   @Post('suppliers/bulk-delete')
   @RequirePermission('OCR_WRITE')
-  async bulkDeleteSuppliers(@Body() body: { ids: string[] }, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.bulkDeleteSuppliers(user.tenantId!, this.companyIdOrThrow(req), body.ids);
+  async bulkDeleteSuppliers(
+    @Body() body: { ids: string[] },
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.bulkDeleteSuppliers(user.tenantId!, this.requireCompanyId(companyId), body.ids);
   }
 
   @Post('items/bulk-delete')
   @RequirePermission('OCR_WRITE')
-  async bulkDeleteItems(@Body() body: { ids: string[] }, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.bulkDeleteItems(user.tenantId!, this.companyIdOrThrow(req), body.ids);
+  async bulkDeleteItems(
+    @Body() body: { ids: string[] },
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.bulkDeleteItems(user.tenantId!, this.requireCompanyId(companyId), body.ids);
   }
 
   @Post('price-history/bulk-delete')
   @RequirePermission('OCR_WRITE')
-  async bulkDeletePriceHistory(@Body() body: { itemIds: string[] }, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.bulkDeletePriceHistory(user.tenantId!, this.companyIdOrThrow(req), body.itemIds);
+  async bulkDeletePriceHistory(
+    @Body() body: { itemIds: string[] },
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.bulkDeletePriceHistory(user.tenantId!, this.requireCompanyId(companyId), body.itemIds);
   }
 
   // ─── Suppliers ────────────────────────────────────────────────────────────
 
   @Get('suppliers')
   @RequirePermission('OCR_READ')
-  async getSuppliers(@CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.getSuppliers(user.tenantId!, this.companyIdOrThrow(req));
+  async getSuppliers(@CurrentUser() user: JwtUser, @CompanyId() companyId: string) {
+    return this.svc.getSuppliers(user.tenantId!, this.requireCompanyId(companyId));
   }
 
   @Post('suppliers')
   @RequirePermission('OCR_WRITE')
-  async createSupplier(@Body() dto: CreateOcrSupplierDto, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.createSupplier(user.tenantId!, this.companyIdOrThrow(req), dto);
+  async createSupplier(
+    @Body() dto: CreateOcrSupplierDto,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.createSupplier(user.tenantId!, this.requireCompanyId(companyId), dto);
   }
 
   @Put('suppliers/:id')
@@ -201,15 +228,19 @@ export class OcrInvoicesController {
     @Param('id') id: string,
     @Body() dto: Partial<CreateOcrSupplierDto>,
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
-    return this.svc.updateSupplier(user.tenantId!, this.companyIdOrThrow(req), id, dto);
+    return this.svc.updateSupplier(user.tenantId!, this.requireCompanyId(companyId), id, dto);
   }
 
   @Delete('suppliers/:id')
   @RequirePermission('OCR_WRITE')
-  async deleteSupplier(@Param('id') id: string, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.deleteSupplier(user.tenantId!, this.companyIdOrThrow(req), id);
+  async deleteSupplier(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.deleteSupplier(user.tenantId!, this.requireCompanyId(companyId), id);
   }
 
   @Post('suppliers/:id/aliases')
@@ -218,9 +249,15 @@ export class OcrInvoicesController {
     @Param('id') id: string,
     @Body() body: { alias: string; language?: string },
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
-    return this.svc.addSupplierAlias(user.tenantId!, this.companyIdOrThrow(req), id, body.alias, body.language);
+    return this.svc.addSupplierAlias(
+      user.tenantId!,
+      this.requireCompanyId(companyId),
+      id,
+      body.alias,
+      body.language,
+    );
   }
 
   // ─── Items ────────────────────────────────────────────────────────────────
@@ -228,20 +265,24 @@ export class OcrInvoicesController {
 
   @Get('items/duplicates')
   @RequirePermission('OCR_READ')
-  async findDuplicateItems(@CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.findDuplicateItems(user.tenantId!, this.companyIdOrThrow(req));
+  async findDuplicateItems(@CurrentUser() user: JwtUser, @CompanyId() companyId: string) {
+    return this.svc.findDuplicateItems(user.tenantId!, this.requireCompanyId(companyId));
   }
 
   @Get('items')
   @RequirePermission('OCR_READ')
-  async getItems(@CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.getItems(user.tenantId!, this.companyIdOrThrow(req));
+  async getItems(@CurrentUser() user: JwtUser, @CompanyId() companyId: string) {
+    return this.svc.getItems(user.tenantId!, this.requireCompanyId(companyId));
   }
 
   @Post('items')
   @RequirePermission('OCR_WRITE')
-  async createItem(@Body() dto: CreateOcrItemDto, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.createItem(user.tenantId!, this.companyIdOrThrow(req), dto);
+  async createItem(
+    @Body() dto: CreateOcrItemDto,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.createItem(user.tenantId!, this.requireCompanyId(companyId), dto);
   }
 
   @Put('items/:id')
@@ -250,21 +291,29 @@ export class OcrInvoicesController {
     @Param('id') id: string,
     @Body() dto: Partial<CreateOcrItemDto>,
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
-    return this.svc.updateItem(user.tenantId!, this.companyIdOrThrow(req), id, dto);
+    return this.svc.updateItem(user.tenantId!, this.requireCompanyId(companyId), id, dto);
   }
 
   @Delete('items/:id')
   @RequirePermission('OCR_WRITE')
-  async deleteItem(@Param('id') id: string, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.deleteItem(user.tenantId!, this.companyIdOrThrow(req), id);
+  async deleteItem(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.deleteItem(user.tenantId!, this.requireCompanyId(companyId), id);
   }
 
   @Get('items/:id/price-history')
   @RequirePermission('OCR_READ')
-  async getPriceHistory(@Param('id') id: string, @CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.getItemPriceHistory(user.tenantId!, this.companyIdOrThrow(req), id);
+  async getPriceHistory(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.getItemPriceHistory(user.tenantId!, this.requireCompanyId(companyId), id);
   }
 
   @Post('items/:id/aliases')
@@ -273,9 +322,9 @@ export class OcrInvoicesController {
     @Param('id') id: string,
     @Body() body: { alias: string; language?: string },
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
-    return this.svc.addItemAlias(user.tenantId!, this.companyIdOrThrow(req), id, body.alias, body.language);
+    return this.svc.addItemAlias(user.tenantId!, this.requireCompanyId(companyId), id, body.alias, body.language);
   }
 
   @Post('items/:keepId/merge/:mergeId')
@@ -284,25 +333,25 @@ export class OcrInvoicesController {
     @Param('keepId') keepId: string,
     @Param('mergeId') mergeId: string,
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
-    return this.svc.mergeItems(user.tenantId!, this.companyIdOrThrow(req), keepId, mergeId);
+    return this.svc.mergeItems(user.tenantId!, this.requireCompanyId(companyId), keepId, mergeId);
   }
 
   // ─── Price Alerts ─────────────────────────────────────────────────────────
 
   @Get('price-alerts')
   @RequirePermission('OCR_READ')
-  async getPriceAlerts(@CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.getPriceAlerts(user.tenantId!, this.companyIdOrThrow(req));
+  async getPriceAlerts(@CurrentUser() user: JwtUser, @CompanyId() companyId: string) {
+    return this.svc.getPriceAlerts(user.tenantId!, this.requireCompanyId(companyId));
   }
 
   // ─── Correction Rules ─────────────────────────────────────────────────────
 
   @Get('correction-rules')
   @RequirePermission('OCR_READ')
-  async getCorrectionRules(@CurrentUser() user: JwtUser, @Req() req: Request) {
-    return this.svc.getCorrectionRules(user.tenantId!, this.companyIdOrThrow(req));
+  async getCorrectionRules(@CurrentUser() user: JwtUser, @CompanyId() companyId: string) {
+    return this.svc.getCorrectionRules(user.tenantId!, this.requireCompanyId(companyId));
   }
 
   @Patch('correction-rules/:id')
@@ -311,8 +360,8 @@ export class OcrInvoicesController {
     @Param('id') id: string,
     @Body() body: { status: string },
     @CurrentUser() user: JwtUser,
-    @Req() req: Request,
+    @CompanyId() companyId: string,
   ) {
-    return this.svc.updateCorrectionRule(user.tenantId!, this.companyIdOrThrow(req), id, body.status);
+    return this.svc.updateCorrectionRule(user.tenantId!, this.requireCompanyId(companyId), id, body.status);
   }
 }
