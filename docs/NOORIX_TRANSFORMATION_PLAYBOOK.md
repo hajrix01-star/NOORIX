@@ -126,6 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
+| 2026-04-26 | C | C4 (اختبارات) | `95128f9` | Cursor | ✓ | `saudiDate.test.js`: `toDateInputYmd` (فارغ، غير قابل للتحليل، UTC→يوم Riyadh) + `getSaudiToday` بصيغة YYYY-MM-DD. **الاختبارات:** vitest + vite build |
 | 2026-04-26 | C | C4 (طلبات + موظفين) | `821e27e` | Cursor | ✓ | `OrderFormModal` (تاريخ الطلب) + `StaffFormModal` (joinDate): `toDateInputYmd` مع `|| getSaudiToday()`. **الاختبارات:** vitest + vite build |
 | 2026-04-26 | C | C4 (نماذج + مبيعات) | `ef10c4a` | Cursor | ✓ | `toDateInputYmd()` في `saudiDate.js`؛ `InvoiceEditModal` + `SalesEditModal`؛ `addCalendarDaysYmd` في `DailySalesScreen`. **الاختبارات:** vitest + vite build |
 | 2026-04-26 | C | C4 (استيراد/تصدير) | `8b8c493` | Cursor | ✓ | `importTemplates`: `getSaudiToday` + `parseDate` → `formatSaudiDateISO` (Riyadh)؛ `ImportExportModal` / `SupplierImportExport` / `BankCategoryTreePanel` — طوابع الملفات بـ `getSaudiToday()`. **الاختبارات:** vitest + vite build |
