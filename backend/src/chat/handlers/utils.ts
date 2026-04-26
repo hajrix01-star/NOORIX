@@ -29,16 +29,16 @@ export function monthToDateThroughYesterday(now: Date): { start: Date; end: Date
     return {
       start,
       end: new Date(start.getTime() - 1),
-      labelAr: `هذا الشهر حتى أمس — لم يكتمل بعد أي يوم في (${m + 1}/${y})`,
-      labelEn: `This month through yesterday — no completed day yet in (${m + 1}/${y})`,
+      labelAr: `هذا الشهر — لم يكتمل بعد أي يوم حتى أمس (${m + 1}/${y})`,
+      labelEn: `This month — no completed day through yesterday yet (${m + 1}/${y})`,
     };
   }
   const de = yesterdayEnd.getDate();
   return {
     start,
     end: yesterdayEnd,
-    labelAr: `من 1/${m + 1} إلى ${de}/${m + 1}/${y} (حتى أمس)`,
-    labelEn: `From 1/${m + 1} to ${de}/${m + 1}/${y} (through yesterday)`,
+    labelAr: `هذا الشهر (من 1 إلى ${de}/${m + 1}/${y}، حتى أمس)`,
+    labelEn: `This month (1–${de}/${m + 1}/${y}, through yesterday)`,
   };
 }
 
@@ -71,7 +71,12 @@ export function parsePeriod(
   const m = now.getMonth();
   const d = now.getDate();
 
-  // أمس
+  /* «حتى أمس» ضمن سياق الشهر — لا يُفسَّر كيوم «أمس» كامل (يُطابق نص الأسئلة الجاهزة) */
+  if (matches(q, ['حتى أمس', 'حتى امس', 'through yesterday'])) {
+    return monthToDateThroughYesterday(now);
+  }
+
+  // أمس (يوم كامل)
   if (matches(q, ['أمس', 'امس', 'yesterday'])) {
     const start = new Date(y, m, d - 1, 0, 0, 0, 0);
     const end = new Date(y, m, d - 1, 23, 59, 59, 999);
