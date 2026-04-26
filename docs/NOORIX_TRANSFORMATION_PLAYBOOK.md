@@ -126,6 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
+| 2026-04-26 | C | C3 | `9e08eaa` | Cursor | ✓ | `categories` + `accounts`: `@CompanyId()` بدل `@Query('companyId')`؛ `PATCH` للفئات يبقى `companyId` من الديكور + `body.companyId` (PATCH لا يقرأ body في util). **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | C | C3 (OCR) | `ba786a1` | Cursor | ✓ | `ocr-invoices.controller`: إزالة `@Req`/`getCompanyIdFromHttpRequest`، `@CompanyId()` + `requireCompanyId` (نفس رسالة التحقق عند غياب الشركة). **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | C | C3 + C5 + C6 | `a494eba` | Cursor | ✓ | `@CompanyId` على `suppliers` / `ledger` / `chat` (مع بقاء fallback لأول شركة في الشات)؛ `assert-vaults-for-payment.util` + `hr.service`؛ `imageUtils.compressImageFileToJpegDataUrl` وOCR تبويب الرفع. **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | C | C1 (جزئي) + C3 + C4 | `31a487f` | Cursor | ✓ | `PartialType` لـ `UpdateEmployeeDto` / `UpdateResidencyDto` + `@nestjs/mapped-types`؛ `CompanyId` decorator + `vaults` + `hr` controllers؛ `getSaudiDateParts`/`getSaudiNow`/`getSaudiYearMonth` في `saudiDate.js` وربط 8+ مكوّنات. **الاختبارات:** vitest + vite build + nest build |
