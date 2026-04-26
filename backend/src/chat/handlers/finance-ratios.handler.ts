@@ -118,6 +118,13 @@ export const financeRatiosHandler: ChatHandler = {
     const period = ctx.period ?? thisMonthToDateRange(ctx.now);
     const { start, end, labelAr, labelEn } = period;
 
+    if (end.getTime() < start.getTime()) {
+      return {
+        answerAr: `الفترة: ${labelAr}\nلا يوجد يوم مكتمل بعد في الشهر الحالي (مثلاً اليوم أول يوم في الشهر) — لا يمكن حساب «من 1 حتى أمس» بعد.`,
+        answerEn: `${labelEn}\nNo completed calendar day in the current month yet — cannot compute month-to-date through yesterday.`,
+      };
+    }
+
     const sales = await sumRevenue(ctx, start, end);
     const purchases = canPurchases(can) ? await sumPurchases(ctx, start, end) : new Decimal(0);
     const expenses = canExpenses(can) ? await sumOperatingExpenses(ctx, start, end) : new Decimal(0);

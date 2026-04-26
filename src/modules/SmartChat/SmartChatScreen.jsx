@@ -37,16 +37,16 @@ const PERMANENT_QUESTIONS = [
   { ar: 'ما أرصدة الخزائن؟', en: 'What are vault balances?', domain: (c) => c(PERMISSIONS.VIEW_VAULTS) || c(PERMISSIONS.VAULTS_READ) },
   { ar: 'أعطني ملخص الربح والخسارة', en: 'Give me P&L summary', domain: (c) => c(PERMISSIONS.VIEW_REPORTS) || c(PERMISSIONS.REPORTS_READ) },
   {
-    ar: 'كم نسبة المشتريات من المبيعات؟ وكم نسبة المصروفات من المبيعات؟ وكم نسبة المشتريات والمصروفات من المبيعات؟ (من أول هذا الشهر حتى اليوم)',
-    en: 'Purchases % of sales, expenses % of sales, and (purchases+expenses) % of sales — month to date.',
+    ar: 'كم نسبة المشتريات من المبيعات؟ وكم نسبة المصروفات من المبيعات؟ وكم نسبة المشتريات والمصروفات من المبيعات؟ (من أول هذا الشهر حتى أمس)',
+    en: 'Purchases % of sales, expenses % of sales, and (purchases+expenses) % of sales — from the 1st through yesterday (MTD completed days).',
     domain: (c) =>
       (c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ)) &&
       c(PERMISSIONS.VIEW_INVOICES) &&
       c(PERMISSIONS.VIEW_VAULTS),
   },
   {
-    ar: 'قارن بين مبيعات الشهر الماضي بالحالي بنفس الفترة حتى اليوم',
-    en: 'Compare last month vs this month sales for the same period to date.',
+    ar: 'قارن بين مبيعات الشهر الماضي بالحالي لنفس الفترة حتى أمس (من اليوم 1 حتى أمس)',
+    en: 'Compare last month vs this month sales for the same window (day 1 through yesterday).',
     domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ),
   },
   { ar: 'كم عدد الفواتير؟', en: 'How many invoices?', domain: (c) => c(PERMISSIONS.VIEW_INVOICES) || c(PERMISSIONS.INVOICES_READ) },

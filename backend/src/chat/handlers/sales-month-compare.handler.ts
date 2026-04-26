@@ -48,6 +48,13 @@ export const salesMonthCompareHandler: ChatHandler = {
     const thisP = thisMonthToDateRange(now);
     const prevP = lastMonthPartialMatchingMtd(now);
 
+    if (thisP.end.getTime() < thisP.start.getTime() || prevP.end.getTime() < prevP.start.getTime()) {
+      return {
+        answerAr: `لا يمكن المقارنة بعد: ${thisP.labelAr} أو ${prevP.labelAr}`,
+        answerEn: `Cannot compare yet: ${thisP.labelEn} or ${prevP.labelEn}`,
+      };
+    }
+
     const cur = await sumRevenue(ctx, thisP.start, thisP.end);
     const prev = await sumRevenue(ctx, prevP.start, prevP.end);
     const diff = cur.minus(prev);
@@ -56,14 +63,14 @@ export const salesMonthCompareHandler: ChatHandler = {
     const trendEn = prev.lte(0) ? '—' : diff.gt(0) ? 'Above last month' : diff.lt(0) ? 'Below last month' : 'Same as last month';
 
     const linesAr = [
-      'مقارنة عادلة: من اليوم 1 حتى نفس رقم اليوم في الشهر (مقصور على طول الشهر السابق عند الحاجة).',
+      'مقارنة عادلة: من اليوم 1 في كل شهر حتى أمس — وفي الشهر الماضي نفس عدد الأيام (مقصور على طول ذلك الشهر).',
       `هذا الشهر (${thisP.labelAr}): ${fmtMoney(cur)}`,
       `${prevP.labelAr}: ${fmtMoney(prev)}`,
       `الفرق: ${fmtMoney(diff)} (${deltaPct}% عن الشهر الماضي)`,
       `الاتجاه: ${trendAr}`,
     ];
     const linesEn = [
-      'Apples-to-apples: day 1 through the same calendar day (capped by last month length).',
+      'Apples-to-apples: from day 1 through yesterday in each month; last month uses the same number of days (capped by its length).',
       `This month (${thisP.labelEn}): ${fmtMoney(cur).replace('SR', 'SAR')}`,
       `${prevP.labelEn}: ${fmtMoney(prev).replace('SR', 'SAR')}`,
       `Difference: ${fmtMoney(diff).replace('SR', 'SAR')} (${deltaPct}% vs last month)`,

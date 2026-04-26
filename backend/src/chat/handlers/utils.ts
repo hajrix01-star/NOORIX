@@ -15,6 +15,38 @@ export function matches(q: string, patterns: string[]): boolean {
   return patterns.some((p) => lower.includes(p.toLowerCase()));
 }
 
+/**
+ * من أول الشهر الحالي حتى نهاية أمس (أيام مكتملة فقط — لا يُحسب اليوم الجاري قبل اكتماله).
+ * إن كان أمس في الشهر السابق (مثلاً يوم 1) يُرجع نطاقاً فارغاً عملياً (end قبل start) لعدم وجود يوم مكتمل في الشهر الحالي.
+ */
+export function monthToDateThroughYesterday(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const start = new Date(y, m, 1, 0, 0, 0, 0);
+  const yesterdayEnd = new Date(y, m, d - 1, 23, 59, 59, 999);
+  if (yesterdayEnd < start) {
+    return {
+      start,
+      end: new Date(start.getTime() - 1),
+      labelAr: `هذا الشهر حتى أمس — لم يكتمل بعد أي يوم في (${m + 1}/${y})`,
+      labelEn: `This month through yesterday — no completed day yet in (${m + 1}/${y})`,
+    };
+  }
+  const de = yesterdayEnd.getDate();
+  return {
+    start,
+    end: yesterdayEnd,
+    labelAr: `من 1/${m + 1} إلى ${de}/${m + 1}/${y} (حتى أمس)`,
+    labelEn: `From 1/${m + 1} to ${de}/${m + 1}/${y} (through yesterday)`,
+  };
+}
+
+/** مطابق لـ monthToDateThroughYesterday — للمعالجات التي تفترض «هذا الشهر» دون ذكر صريح */
+export function thisMonthToDateRange(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
+  return monthToDateThroughYesterday(now);
+}
+
 /** استخراج الفترة من السؤال — موسّع ليشمل أول أمس، الشهر الماضي، إلخ */
 export function parsePeriod(
   q: string,
@@ -23,13 +55,6 @@ export function parsePeriod(
   const y = now.getFullYear();
   const m = now.getMonth();
   const d = now.getDate();
-
-  // اليوم
-  if (matches(q, ['اليوم', 'today'])) {
-    const start = new Date(y, m, d, 0, 0, 0, 0);
-    const end = new Date(y, m, d, 23, 59, 59, 999);
-    return { start, end, labelAr: 'اليوم', labelEn: 'Today' };
-  }
 
   // أمس
   if (matches(q, ['أمس', 'امس', 'yesterday'])) {
@@ -63,48 +88,59 @@ export function parsePeriod(
     return { start, end, labelAr: 'الأسبوع الماضي', labelEn: 'Last week' };
   }
 
-  // هذا الشهر
-  if (matches(q, ['هذا الشهر', 'الشهر', 'هذا الشهر الحالي', 'الشهر الحالي', 'this month', 'month', 'اخر شهر', 'آخر شهر'])) {
-    const start = new Date(y, m, 1, 0, 0, 0, 0);
-    const end = new Date(y, m, d, 23, 59, 59, 999);
-    return { start, end, labelAr: `هذا الشهر (${m + 1}/${y})`, labelEn: `This month (${m + 1}/${y})` };
-  }
-
-  // الشهر الماضي
+  // الشهر الماضي — قبل «هذا الشهر» حتى لا تُطابق كلمة «الشهر» داخل «الشهر الماضي»
   if (matches(q, ['الشهر الماضي', 'الشهر السابق', 'last month', 'قبل شهر'])) {
     const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
     const end = new Date(y, m, 0, 23, 59, 59, 999);
     return { start, end, labelAr: `الشهر الماضي (${m}/${y})`, labelEn: `Last month (${m}/${y})` };
   }
 
+  // هذا الشهر — قبل «اليوم» حتى لا يُطابق «اليوم» داخل «حتى اليوم» قبل اعتبار الشهر
+  if (
+    matches(q, [
+      'هذا الشهر',
+      'هذا الشهر الحالي',
+      'الشهر الحالي',
+      'this month',
+      'month',
+      'اخر شهر',
+      'آخر شهر',
+      'الشهر',
+    ])
+  ) {
+    return monthToDateThroughYesterday(now);
+  }
+
+  // اليوم
+  if (matches(q, ['اليوم', 'today'])) {
+    const start = new Date(y, m, d, 0, 0, 0, 0);
+    const end = new Date(y, m, d, 23, 59, 59, 999);
+    return { start, end, labelAr: 'اليوم', labelEn: 'Today' };
+  }
+
   return null;
 }
 
-/** من أول الشهر الحالي حتى نهاية اليوم — مطابق لمنطق «هذا الشهر» في parsePeriod */
-export function thisMonthToDateRange(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const d = now.getDate();
-  const start = new Date(y, m, 1, 0, 0, 0, 0);
-  const end = new Date(y, m, d, 23, 59, 59, 999);
-  return {
-    start,
-    end,
-    labelAr: `من أول الشهر حتى اليوم (${m + 1}/${y})`,
-    labelEn: `Month to date (${m + 1}/${y})`,
-  };
-}
-
 /**
- * الشهر الماضي من اليوم 1 حتى نفس رقم يوم الشهر الحالي (مقصور على طول الشهر السابق)
- * لمقارنة عادلة مع «هذا الشهر حتى اليوم».
+ * الشهر الماضي من اليوم 1 حتى نفس عدد الأيام المكتملة في الشهر الحالي (حتى أمس)
+ * لمقارنة عادلة مع «هذا الشهر حتى أمس».
  */
 export function lastMonthPartialMatchingMtd(now: Date): { start: Date; end: Date; labelAr: string; labelEn: string } {
   const y = now.getFullYear();
   const m = now.getMonth();
   const d = now.getDate();
   const daysInPrevMonth = new Date(y, m, 0).getDate();
-  const cappedDay = Math.min(d, daysInPrevMonth);
+  const thruDay = d - 1;
+  if (thruDay < 1) {
+    const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
+    return {
+      start,
+      end: new Date(start.getTime() - 1),
+      labelAr: `الشهر الماضي — لا يوماً مكتملاً للمقارنة بعد في الشهر الحالي`,
+      labelEn: `Last month — no completed days yet in the current month to compare`,
+    };
+  }
+  const cappedDay = Math.min(thruDay, daysInPrevMonth);
   const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
   const end = new Date(y, m - 1, cappedDay, 23, 59, 59, 999);
   const pm = end.getMonth() + 1;
@@ -112,7 +148,7 @@ export function lastMonthPartialMatchingMtd(now: Date): { start: Date; end: Date
   return {
     start,
     end,
-    labelAr: `الشهر الماضي (1–${cappedDay}/${pm}/${py})`,
-    labelEn: `Last month (1–${cappedDay}/${pm}/${py})`,
+    labelAr: `الشهر الماضي (1–${cappedDay}/${pm}/${py}، حتى نفس عمق الشهر الحالي)`,
+    labelEn: `Last month (1–${cappedDay}/${pm}/${py}, same depth as current MTD)`,
   };
 }
