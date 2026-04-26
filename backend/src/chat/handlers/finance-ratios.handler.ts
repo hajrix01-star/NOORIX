@@ -128,8 +128,8 @@ export const financeRatiosHandler: ChatHandler = {
 
     if (!showPur && !showExp && !showSum) {
       return {
-        answerAr: 'لحساب النسب يلزم صلاحية عرض الفواتير (مشتريات) و/أو الخزائن (مصروفات) حسب السؤال.',
-        answerEn: 'Need invoice and/or vault permissions for the requested ratios.',
+        answerAr: '## مؤشرات الطلب على المبيعات\nلحساب النسب يلزم صلاحية عرض الفواتير (مشتريات) و/أو الخزائن (مصروفات) حسب السؤال.',
+        answerEn: '## Operating load vs sales\nNeed invoice and/or vault permissions for the requested ratios.',
       };
     }
 
@@ -138,8 +138,8 @@ export const financeRatiosHandler: ChatHandler = {
 
     if (end.getTime() < start.getTime()) {
       return {
-        answerAr: `الفترة: ${labelAr}\nلا يوجد يوم مكتمل بعد في الشهر الحالي (مثلاً اليوم أول يوم في الشهر) — لا يمكن حساب «من 1 حتى أمس» بعد.`,
-        answerEn: `${labelEn}\nNo completed calendar day in the current month yet — cannot compute month-to-date through yesterday.`,
+        answerAr: `## مؤشرات الطلب على المبيعات\nالفترة: ${labelAr}\nلا يوجد يوم مكتمل بعد في الشهر الحالي (مثلاً اليوم أول يوم في الشهر) — لا يمكن حساب «من 1 حتى أمس» بعد.`,
+        answerEn: `## Operating load vs sales\nPeriod: ${labelEn}\nNo completed calendar day in the current month yet — cannot compute month-to-date through yesterday.`,
       };
     }
 
@@ -149,32 +149,34 @@ export const financeRatiosHandler: ChatHandler = {
 
     const linesAr: string[] = [];
     const linesEn: string[] = [];
+    linesAr.push('## مؤشرات الطلب على المبيعات');
+    linesEn.push('## Operating load vs sales');
     linesAr.push(`الفترة: ${labelAr}`);
     linesEn.push(`Period: ${labelEn}`);
     linesAr.push(`تعريف: النسب من إجمالي المبيعات (إيراد)؛ المشتريات من حسابات PUR؛ المصروفات دون تكرار المشتريات.`);
     linesEn.push(`Definition: vs revenue; purchases = PUR*; operating expenses exclude PUR.`);
 
     if (sales.lte(0)) {
-      linesAr.push('لا توجد مبيعات في هذه الفترة — لا يمكن حساب النسب.');
-      linesEn.push('No sales in this period — ratios cannot be computed.');
+      linesAr.push('• لا توجد مبيعات في هذه الفترة — لا يمكن حساب النسب.');
+      linesEn.push('• No sales in this period — ratios cannot be computed.');
       return { answerAr: linesAr.join('\n'), answerEn: linesEn.join('\n') };
     }
 
-    linesAr.push(`إجمالي المبيعات: ${fmtMoney(sales)}`);
-    linesEn.push(`Total sales: ${fmtMoney(sales).replace('SR', 'SAR')}`);
+    linesAr.push(`• إجمالي المبيعات: ${fmtMoney(sales)}`);
+    linesEn.push(`• Total sales: ${fmtMoney(sales).replace('SR', 'SAR')}`);
 
     if (showPur) {
-      linesAr.push(`نسبة المشتريات من المبيعات: ${pctOf(purchases, sales)} (مشتريات: ${fmtMoney(purchases)})`);
-      linesEn.push(`Purchases / sales: ${pctOf(purchases, sales)} (purchases: ${fmtMoney(purchases).replace('SR', 'SAR')})`);
+      linesAr.push(`• نسبة المشتريات من المبيعات: ${pctOf(purchases, sales)} (مشتريات: ${fmtMoney(purchases)})`);
+      linesEn.push(`• Purchases / sales: ${pctOf(purchases, sales)} (purchases: ${fmtMoney(purchases).replace('SR', 'SAR')})`);
     }
     if (showExp) {
-      linesAr.push(`نسبة المصروفات من المبيعات: ${pctOf(expenses, sales)} (مصروفات: ${fmtMoney(expenses)})`);
-      linesEn.push(`Expenses / sales: ${pctOf(expenses, sales)} (expenses: ${fmtMoney(expenses).replace('SR', 'SAR')})`);
+      linesAr.push(`• نسبة المصروفات من المبيعات: ${pctOf(expenses, sales)} (مصروفات: ${fmtMoney(expenses)})`);
+      linesEn.push(`• Expenses / sales: ${pctOf(expenses, sales)} (expenses: ${fmtMoney(expenses).replace('SR', 'SAR')})`);
     }
     if (showSum) {
       const sum = purchases.plus(expenses);
-      linesAr.push(`نسبة (المشتريات + المصروفات) من المبيعات: ${pctOf(sum, sales)} (المجموع: ${fmtMoney(sum)})`);
-      linesEn.push(`(Purchases + expenses) / sales: ${pctOf(sum, sales)} (sum: ${fmtMoney(sum).replace('SR', 'SAR')})`);
+      linesAr.push(`• نسبة (المشتريات + المصروفات) من المبيعات: ${pctOf(sum, sales)} (المجموع: ${fmtMoney(sum)})`);
+      linesEn.push(`• (Purchases + expenses) / sales: ${pctOf(sum, sales)} (sum: ${fmtMoney(sum).replace('SR', 'SAR')})`);
     }
 
     return { answerAr: linesAr.join('\n'), answerEn: linesEn.join('\n') };

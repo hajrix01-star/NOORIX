@@ -32,42 +32,148 @@ function SendIcon() {
 
 const CHAT_PAGE_SIZE = 6;
 
+/** ترتيب أقسام «أسئلة جاهزة» في الـ Sheet */
+const FAQ_SECTION_ORDER = [
+  { id: 'reports', labelAr: 'تقارير ومؤشرات', labelEn: 'Reports & metrics' },
+  { id: 'compare', labelAr: 'مقارنات', labelEn: 'Comparisons' },
+  { id: 'counts', labelAr: 'أعداد', labelEn: 'Counts' },
+  { id: 'other', labelAr: 'عام', labelEn: 'General' },
+];
+
+/**
+ * ar / en = النص المُرسَل للـ API (مطابقة المعالجات)
+ * shortAr / shortEn = عنوان الزر في القائمة (اختياري)
+ * section = مجموعة العرض في الـ Sheet
+ */
 const PERMANENT_QUESTIONS = [
-  { ar: 'كم مبيعات السنة؟', en: 'What are annual sales?', domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ) },
-  { ar: 'ما أرصدة الخزائن؟', en: 'What are vault balances?', domain: (c) => c(PERMISSIONS.VIEW_VAULTS) || c(PERMISSIONS.VAULTS_READ) },
-  { ar: 'أعطني ملخص الربح والخسارة', en: 'Give me P&L summary', domain: (c) => c(PERMISSIONS.VIEW_REPORTS) || c(PERMISSIONS.REPORTS_READ) },
   {
+    section: 'reports',
+    ar: 'كم مبيعات السنة؟',
+    en: 'What are annual sales?',
+    shortAr: 'مبيعات السنة',
+    shortEn: 'Annual sales',
+    domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ),
+  },
+  {
+    section: 'reports',
+    ar: 'ما أرصدة الخزائن؟',
+    en: 'What are vault balances?',
+    shortAr: 'أرصدة الخزائن',
+    shortEn: 'Vault balances',
+    domain: (c) => c(PERMISSIONS.VIEW_VAULTS) || c(PERMISSIONS.VAULTS_READ),
+  },
+  {
+    section: 'reports',
+    ar: 'أعطني ملخص الربح والخسارة',
+    en: 'Give me P&L summary',
+    shortAr: 'ملخص الربح والخسارة',
+    shortEn: 'P&L summary',
+    domain: (c) => c(PERMISSIONS.VIEW_REPORTS) || c(PERMISSIONS.REPORTS_READ),
+  },
+  {
+    section: 'reports',
     ar: 'نسب الطلب على المبيعات (مشتريات، مصروفات، المجموع — حتى أمس)',
     en: 'Operating load vs sales: purchases %, expenses %, combined % (MTD through yesterday).',
+    shortAr: 'نسب الطلب على المبيعات',
+    shortEn: 'Load vs sales (MTD)',
     domain: (c) =>
       (c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ)) &&
       c(PERMISSIONS.VIEW_INVOICES) &&
       c(PERMISSIONS.VIEW_VAULTS),
   },
   {
+    section: 'compare',
     ar: 'مبيعات الشهر الحالي مقابل الماضي (نفس الفترة)',
     en: 'This month vs last month sales (aligned partial months).',
+    shortAr: 'مبيعات: الحالي vs الماضي',
+    shortEn: 'Sales: this vs last month',
     domain: (c) => c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ),
   },
-  { ar: 'كم عدد الفواتير؟', en: 'How many invoices?', domain: (c) => c(PERMISSIONS.VIEW_INVOICES) || c(PERMISSIONS.INVOICES_READ) },
-  { ar: 'كم عدد الموردين؟', en: 'How many suppliers?', domain: (c) => c(PERMISSIONS.VIEW_SUPPLIERS) || c(PERMISSIONS.SUPPLIERS_READ) },
-  { ar: 'كم عدد الموظفين؟', en: 'How many employees?', domain: (c) => c(PERMISSIONS.VIEW_EMPLOYEES) || c(PERMISSIONS.EMPLOYEES_READ) },
-  { ar: 'مساعدة', en: 'Help', domain: () => true },
+  {
+    section: 'counts',
+    ar: 'كم عدد الفواتير؟',
+    en: 'How many invoices?',
+    shortAr: 'عدد الفواتير',
+    shortEn: 'Invoice count',
+    domain: (c) => c(PERMISSIONS.VIEW_INVOICES) || c(PERMISSIONS.INVOICES_READ),
+  },
+  {
+    section: 'counts',
+    ar: 'كم عدد الموردين؟',
+    en: 'How many suppliers?',
+    shortAr: 'عدد الموردين',
+    shortEn: 'Supplier count',
+    domain: (c) => c(PERMISSIONS.VIEW_SUPPLIERS) || c(PERMISSIONS.SUPPLIERS_READ),
+  },
+  {
+    section: 'counts',
+    ar: 'كم عدد الموظفين؟',
+    en: 'How many employees?',
+    shortAr: 'عدد الموظفين',
+    shortEn: 'Employee count',
+    domain: (c) => c(PERMISSIONS.VIEW_EMPLOYEES) || c(PERMISSIONS.EMPLOYEES_READ),
+  },
+  { section: 'other', ar: 'مساعدة', en: 'Help', domain: () => true },
 ];
 
-/** كرت احترافي للردود والتقارير — عرض سطور منفصلة (عنوان، اسم، مبلغ، إلخ) */
+/** سطر «تعريف / Definition» قابل للطي */
+function ReportDefinitionLine({ line, isAr }) {
+  const [open, setOpen] = useState(false);
+  const body = line.replace(/^(تعريف|Definition):\s*/i, '').trim();
+  return (
+    <div className="noorix-chat-report-card__definition rounded-[10px] border border-noorix-border overflow-hidden bg-noorix-bg-page/60">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between gap-2 text-[13px] font-semibold text-noorix-text py-2.5 px-3 hover:bg-noorix-bg-muted/80 transition-colors"
+        style={{ direction: isAr ? 'rtl' : 'ltr' }}
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span>{isAr ? 'تعريف المؤشرات' : 'Indicator definition'}</span>
+        <span className="text-noorix-muted nx-ltr text-[11px]" aria-hidden>{open ? '▲' : '▼'}</span>
+      </button>
+      {open ? (
+        <div className="text-[13px] text-noorix-muted leading-[1.65] px-3 pb-3 pt-0 border-t border-noorix-border border-opacity-60">
+          {body}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** كرت الرد — عناوين ## ، نقاط • ، تعريف قابل للطي ، ثم شبكة تسمية:قيمة */
 function ReportCard({ text, isAr, createdAt }) {
   const raw = String(text || '').trim();
   const lines = raw
     .split(/\n+/)
     .map((s) => s.trim())
     .filter(Boolean);
-  const hasMultipleLines = lines.length > 1;
-  const fallbackLines = raw.includes('—')
-    ? raw.split(/\s*—\s*/).map((s) => s.trim()).filter(Boolean)
-    : lines;
 
-  const rows = hasMultipleLines ? lines : fallbackLines;
+  const renderKvLine = (line, i) => {
+    const colonIdx = line.indexOf(':');
+    const hasLabel = colonIdx > 0 && colonIdx < 50;
+    const label = hasLabel ? line.slice(0, colonIdx).trim() : null;
+    const value = hasLabel ? line.slice(colonIdx + 1).trim() : line;
+    const isNumericValue = /^\d/.test(value) || /\d{4}-\d{2}-\d{2}/.test(value);
+    const valueStyle = isNumericValue ? { direction: 'ltr', unicodeBidi: 'isolate' } : {};
+    const isPeriod = /^(الفترة|Period)\s*:/i.test(line);
+    return (
+      <div
+        key={i}
+        className={`noorix-chat-report-card__grid${isPeriod ? ' noorix-chat-report-card__grid--period' : ''}`}
+        style={{ direction: isAr ? 'rtl' : 'ltr' }}
+      >
+        {label ? (
+          <>
+            <span className="text-[13px] text-noorix-muted font-semibold">{label}:</span>
+            <span style={valueStyle}>{value}</span>
+          </>
+        ) : (
+          <span style={{ gridColumn: '1 / -1', ...valueStyle }}>{value || line}</span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -76,29 +182,33 @@ function ReportCard({ text, isAr, createdAt }) {
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       }}
     >
-      {rows.length > 0 ? (
-        <div className="noorix-chat-report-card__grid" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
-          {rows.map((line, i) => {
-            const colonIdx = line.indexOf(':');
-            const hasLabel = colonIdx > 0 && colonIdx < 50;
-            const label = hasLabel ? line.slice(0, colonIdx).trim() : null;
-            const value = hasLabel ? line.slice(colonIdx + 1).trim() : line;
-            const isNumericValue = /^\d/.test(value) || /\d{4}-\d{2}-\d{2}/.test(value);
-            const valueStyle = isNumericValue ? { direction: 'ltr', unicodeBidi: 'isolate' } : {};
-            return (
-              <React.Fragment key={i}>
-                {label ? (
-                  <>
-                    <span className="text-[13px] text-noorix-muted font-semibold">
-                      {label}:
-                    </span>
-                    <span style={valueStyle}>{value}</span>
-                  </>
-                ) : (
-                  <span style={{ gridColumn: '1 / -1', ...valueStyle }}>{value || line}</span>
-                )}
-              </React.Fragment>
-            );
+      {lines.length > 0 ? (
+        <div className="flex flex-col gap-3 w-full min-w-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+          {lines.map((line, i) => {
+            if (/^##\s*/.test(line)) {
+              const title = line.replace(/^##\s*/, '').trim();
+              return (
+                <h3
+                  key={i}
+                  className="text-[15px] md:text-[16px] font-bold text-noorix-text tracking-tight border-b border-noorix-border pb-2 mb-0"
+                >
+                  {title}
+                </h3>
+              );
+            }
+            if (/^[•\-\*]\s*/.test(line)) {
+              const t = line.replace(/^[•\-\*]\s*/, '').trim();
+              return (
+                <div key={i} className="noorix-chat-report-card__bullet flex gap-2 text-[14px] md:text-[15px] pe-1">
+                  <span className="text-noorix-muted shrink-0" aria-hidden>•</span>
+                  <span className="min-w-0">{t}</span>
+                </div>
+              );
+            }
+            if (/^(تعريف|Definition):\s*/i.test(line)) {
+              return <ReportDefinitionLine key={i} line={line} isAr={isAr} />;
+            }
+            return renderKvLine(line, i);
           })}
         </div>
       ) : (
@@ -440,7 +550,15 @@ export default function SmartChatScreen() {
 
       {activeCompanyId && (
       <div className="noorix-smart-chat-card">
-        <div className="noorix-smart-chat-messages" ref={messagesScrollRef} data-chat-scroll>
+        <div
+          className="noorix-smart-chat-messages"
+          ref={messagesScrollRef}
+          data-chat-scroll
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-busy={loading}
+        >
           {olderHiddenCount > 0 && (
             <Button className="noorix-smart-chat-load-more" onClick={handleLoadMoreMessages}>
               {t('chatLoadMoreCount', String(olderHiddenCount))}
@@ -483,11 +601,13 @@ export default function SmartChatScreen() {
             </div>
           ))}
           {loading && (
-            <div className={`noorix-chat-msg-row noorix-chat-msg-row--assistant`}>
-              <div className="bg-noorix-bg-muted text-[14px] text-noorix-muted gap-2 py-3 px-[18px] rounded-[18px] inline-flex items-center">
-                <span className="noorix-chat-spinner w-[14px] h-[14px] border-2" style={{ borderColor: 'var(--noorix-muted-30)', borderTopColor: 'var(--noorix-text-muted)' }} />
-                {isAr ? 'جاري البحث...' : 'Searching...'}
+            <div className="noorix-chat-msg-row noorix-chat-msg-row--assistant">
+              <div className="noorix-chat-skeleton-card" aria-hidden>
+                <div className="noorix-chat-skeleton-line noorix-chat-skeleton-line--sm" />
+                <div className="noorix-chat-skeleton-line" />
+                <div className="noorix-chat-skeleton-line noorix-chat-skeleton-line--lg" />
               </div>
+              <div className="sr-only">{isAr ? 'جاري البحث…' : 'Searching…'}</div>
             </div>
           )}
         </div>
@@ -520,12 +640,36 @@ export default function SmartChatScreen() {
 
       {faqOpen && (
         <AdaptiveSheet open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md" side="start" className="smartchat-faq-drawer">
-          <div className="flex flex-col gap-2">
-            {visibleFaqQuestions.map((q, i) => (
-              <Button key={i} className="w-full text-[15px] justify-start py-[14px] px-4" style={{ textAlign: isAr ? 'right' : 'left' }} onClick={() => { handleSend(isAr ? q.ar : q.en); setFaqOpen(false); }}>
-                {isAr ? q.ar : q.en}
-              </Button>
-            ))}
+          <div className="flex flex-col gap-1 pb-2">
+            {FAQ_SECTION_ORDER.map((sec) => {
+              const qs = visibleFaqQuestions.filter((q) => q.section === sec.id);
+              if (!qs.length) return null;
+              return (
+                <div key={sec.id} className="min-w-0">
+                  <div
+                    className="px-1 pt-3 pb-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-noorix-muted"
+                    style={{ textAlign: isAr ? 'right' : 'left' }}
+                  >
+                    {isAr ? sec.labelAr : sec.labelEn}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {qs.map((q, i) => (
+                      <Button
+                        key={`${sec.id}-${i}`}
+                        className="w-full text-[14px] md:text-[15px] justify-start py-3 px-4 font-medium leading-snug"
+                        style={{ textAlign: isAr ? 'right' : 'left' }}
+                        onClick={() => {
+                          handleSend(isAr ? q.ar : q.en);
+                          setFaqOpen(false);
+                        }}
+                      >
+                        {isAr ? (q.shortAr || q.ar) : (q.shortEn || q.en)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </AdaptiveSheet>
       )}

@@ -437,9 +437,64 @@ body.noorix-page-smart-chat .app-main__content {
   align-items: baseline;
 }
 
+.noorix-chat-report-card__grid--period {
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  background: var(--noorix-bg-muted);
+  border: 1px solid var(--noorix-border);
+}
+
 @media (max-width: 768px) {
   .noorix-chat-report-card__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.noorix-chat-report-card__bullet {
+  align-items: flex-start;
+}
+
+/* هيكل تحميل بسيط أثناء انتظار الرد */
+.noorix-chat-skeleton-card {
+  max-width: min(80%, 620px);
+  min-width: 0;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.noorix-chat-skeleton-line {
+  height: 11px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--noorix-bg-muted) 0%,
+    rgba(148, 163, 184, 0.22) 50%,
+    var(--noorix-bg-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: noorix-chat-skeleton-shimmer 1.1s ease-in-out infinite;
+}
+
+.noorix-chat-skeleton-line--sm {
+  width: 32%;
+}
+
+.noorix-chat-skeleton-line--lg {
+  width: 88%;
+}
+
+@keyframes noorix-chat-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
   }
 }
 
