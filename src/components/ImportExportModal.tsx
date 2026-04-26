@@ -5,7 +5,8 @@
  * Import: template → upload → validate → batch API → progress/results.
  * Export: exportFetcher() → exportToExcel with dated filename.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import type { CSSProperties } from 'react';
 import { importFromExcel, exportToExcel } from '../utils/exportUtils';
 import {
   downloadInvoiceTemplate,
@@ -28,8 +29,60 @@ import { Button, AdaptiveSheet, ScreenTabs } from '../ui';
 import { useTranslation } from '../i18n/useTranslation';
 import { rejectIfApiFailed } from '../utils/apiResponse';
 import { getSaudiToday } from '../utils/saudiDate';
+import type { ApiParsedResult } from '../types/api/http';
 
-const ENTITY_CONFIG = {
+export type ImportEntityType = 'invoices' | 'employees' | 'sales';
+
+type ImportValidationResult = {
+  valid: boolean;
+  rowNum: number;
+  payload?: Record<string, unknown>;
+  errors: string[];
+  warnings: string[];
+};
+
+type ImportProgressRow = { rowNum: number | string; message: string };
+
+type ImportProgressState = {
+  current: number;
+  total: number;
+  succeeded: number;
+  failed: number;
+  errors: ImportProgressRow[];
+  warnings: ImportProgressRow[];
+};
+
+function pickApiList(res: unknown): unknown[] {
+  if (Array.isArray(res)) return res;
+  if (res && typeof res === 'object') {
+    const o = res as Record<string, unknown>;
+    if (Array.isArray(o.data)) return o.data;
+    const inner = o.data;
+    if (inner && typeof inner === 'object' && Array.isArray((inner as Record<string, unknown>).items)) {
+      return (inner as { items: unknown[] }).items;
+    }
+    if (Array.isArray(o.items)) return o.items;
+  }
+  return [];
+}
+
+type LookupsState = {
+  suppliers: unknown[];
+  vaults: unknown[];
+  categories: unknown[];
+  expenseLines: unknown[];
+};
+
+type EntityConfig = {
+  labelKey: string;
+  downloadTemplate: (() => Promise<void>) | null;
+  validate: ((rows: Record<string, unknown>[]) => unknown) | null;
+  batchSize: number;
+  parallel: boolean;
+  exportFilename: string;
+};
+
+const ENTITY_CONFIG: Record<ImportEntityType, EntityConfig> = {
   invoices: {
     labelKey: 'importExportEntityInvoices',
     downloadTemplate: null,
@@ -41,7 +94,7 @@ const ENTITY_CONFIG = {
   employees: {
     labelKey: 'importExportEntityEmployees',
     downloadTemplate: downloadEmployeeTemplate,
-    validate: (rows) => validateEmployeeRows(rows),
+    validate: (rows: Record<string, unknown>[]) => validateEmployeeRows(rows),
     batchSize: 50,
     parallel: false,
     exportFilename: 'employees-export.xlsx',
@@ -61,7 +114,7 @@ const S = {
     display: 'flex', gap: 0, borderBottom: '1px solid var(--noorix-border)',
     marginBottom: 16,
   },
-  tab: (active) => ({
+  tab: (active: boolean): CSSProperties => ({
     padding: '10px 20px', fontSize: 14, fontWeight: active ? 700 : 500,
     color: active ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
     background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
@@ -75,7 +128,7 @@ const S = {
     borderRadius: 12, border: '1px solid var(--noorix-border)',
     padding: 16, background: 'var(--noorix-bg)', display: 'flex', flexDirection: 'column', gap: 12,
   },
-  dropzone: (dragging): import('react').CSSProperties => ({
+  dropzone: (dragging: boolean): CSSProperties => ({
     border: `2px dashed ${dragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
     borderRadius: 12, padding: '28px 20px',
     textAlign: 'center',
@@ -99,7 +152,7 @@ const S = {
 };
 
 
-function ProgressBar({ pct }) {
+function ProgressBar({ pct }: { pct: number }) {
   return (
     <div className="h-[10px] rounded-full overflow-hidden bg-noorix-border">
       <div className="nx-progress-fill" style={{ width: `${pct}%`, background: 'var(--noorix-accent-blue)' }} />
@@ -107,7 +160,7 @@ function ProgressBar({ pct }) {
   );
 }
 
-function StatBadge({ count, label, color }) {
+function StatBadge({ count, label, color }: { count: number; label: string; color: string }) {
   return (
     <div className="text-center" style={{ padding: '10px 20px', borderRadius: 10, background: color + '14', border: `1px solid ${color}30`, minWidth: 90 }}>
       <div className="text-[26px] font-black" style={{ color, fontFamily: 'var(--noorix-font-numbers)' }}>{count}</div>
@@ -116,40 +169,59 @@ function StatBadge({ count, label, color }) {
   );
 }
 
-function appendEmployeesBatchErrors(batchErrors, slice, errors, unknownMessage) {
+function appendEmployeesBatchErrors(
+  batchErrors: unknown,
+  slice: ImportValidationResult[],
+  errors: ImportProgressRow[],
+  unknownMessage?: string,
+) {
   if (!Array.isArray(batchErrors)) return;
   const fallback = unknownMessage ?? 'Unknown error';
   for (const err of batchErrors) {
-    if (err && typeof err === 'object' && typeof err.index === 'number') {
-      const rowEntry = slice[err.index];
+    if (err && typeof err === 'object' && typeof (err as { index?: unknown }).index === 'number') {
+      const e = err as { index: number; message?: string };
+      const rowEntry = slice[e.index];
       errors.push({
-        rowNum: rowEntry?.rowNum ?? err.index + 2,
-        message: err.message || fallback,
+        rowNum: rowEntry?.rowNum ?? e.index + 2,
+        message: e.message || fallback,
       });
     } else if (typeof err === 'string') {
       const m = err.match(/^([^:]+):\s*(.+)$/s);
       const empName = m ? m[1].trim() : '';
       const msg = m ? m[2].trim() : err;
-      const rowEntry = slice.find((x) => (x.payload?.name || '').trim() === empName);
+      const rowEntry = slice.find((x) => String(x.payload?.name ?? '').trim() === empName);
       errors.push({ rowNum: rowEntry?.rowNum ?? '?', message: msg });
     }
   }
 }
 
-function appendEmployeesBatchWarnings(batchWarnings, slice, warnings) {
+function appendEmployeesBatchWarnings(
+  batchWarnings: unknown,
+  slice: ImportValidationResult[],
+  warnings: ImportProgressRow[],
+) {
   if (!Array.isArray(batchWarnings)) return;
   for (const w of batchWarnings) {
-    if (w && typeof w === 'object' && typeof w.index === 'number') {
-      const rowEntry = slice[w.index];
+    if (w && typeof w === 'object' && typeof (w as { index?: unknown }).index === 'number') {
+      const o = w as { index: number; message?: string };
+      const rowEntry = slice[o.index];
       warnings.push({
-        rowNum: rowEntry?.rowNum ?? w.index + 2,
-        message: w.message || '',
+        rowNum: rowEntry?.rowNum ?? o.index + 2,
+        message: o.message || '',
       });
     }
   }
 }
 
-function ImportPhaseSteps({ phase, importing, t }) {
+function ImportPhaseSteps({
+  phase,
+  importing,
+  t,
+}: {
+  phase: string;
+  importing: boolean;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
   const steps = [
     { n: 1, label: t('importStep1Label') },
     { n: 2, label: t('importStep2Label') },
@@ -182,7 +254,15 @@ function ImportPhaseSteps({ phase, importing, t }) {
   );
 }
 
-function EmployeeImportPreviewTable({ validationResults, parsedRows, t }) {
+function EmployeeImportPreviewTable({
+  validationResults,
+  parsedRows,
+  t,
+}: {
+  validationResults: ImportValidationResult[];
+  parsedRows: Record<string, unknown>[];
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
   const maxRows = 150;
   const slice = validationResults.slice(0, maxRows);
   const headers = [
@@ -214,11 +294,14 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows, t }) {
             {slice.map((r) => {
               const raw = parsedRows[r.rowNum - 2] || {};
               const nameStr = String(raw['الاسم بالعربية'] ?? raw['الاسم بالإنجليزية'] ?? raw.name ?? '').trim();
-              const name = r.payload?.name ?? (nameStr || '—');
+              const name = String((r.payload?.name ?? nameStr) || '—');
               const jdStr = String(raw['تاريخ الالتحاق'] ?? raw.joinDate ?? '').trim();
-              const jd = r.payload?.joinDate ?? (jdStr || '—');
+              const jd = String((r.payload?.joinDate ?? jdStr) || '—');
               const salRaw = r.payload?.basicSalary ?? raw['الراتب الأساسي'] ?? raw.basicSalary;
-              const sal = salRaw === undefined || salRaw === null || salRaw === '' ? '—' : salRaw;
+              const sal =
+                salRaw === undefined || salRaw === null || salRaw === ''
+                  ? '—'
+                  : String(salRaw);
               const ok = r.valid;
               const note = ok
                 ? (r.warnings.length ? r.warnings.join('؛ ') : t('importPreviewEmptyNote'))
@@ -249,17 +332,23 @@ function EmployeeImportPreviewTable({ validationResults, parsedRows, t }) {
 }
 
 
-/**
- * @param {{
- *   isOpen: boolean,
- *   onClose: () => void,
- *   entityType: 'invoices' | 'employees' | 'sales',
- *   companyId: string,
- *   exportFetcher?: () => Promise<Object[]>,
- *   onImportSuccess?: (count: number) => void,
- * }} props
- */
-export default function ImportExportModal({ isOpen, onClose, entityType, companyId, exportFetcher, onImportSuccess }) {
+export type ImportExportModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  entityType: ImportEntityType;
+  companyId: string;
+  exportFetcher?: () => Promise<Record<string, unknown>[]>;
+  onImportSuccess?: (count: number) => void;
+};
+
+export default function ImportExportModal({
+  isOpen,
+  onClose,
+  entityType,
+  companyId,
+  exportFetcher,
+  onImportSuccess,
+}: ImportExportModalProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('import');
 
@@ -269,21 +358,33 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     return items;
   }, [exportFetcher, t]);
 
-  const [lookups, setLookups] = useState({ suppliers: [], vaults: [], categories: [], expenseLines: [] });
+  const [lookups, setLookups] = useState<LookupsState>({
+    suppliers: [],
+    vaults: [],
+    categories: [],
+    expenseLines: [],
+  });
   const [lookupsLoading, setLookupsLoading] = useState(false);
 
   const [phase, setPhase] = useState('idle');
-  const [parsedRows, setParsedRows] = useState([]);
-  const [validationResults, setValidationResults] = useState([]);
+  const [parsedRows, setParsedRows] = useState<Record<string, unknown>[]>([]);
+  const [validationResults, setValidationResults] = useState<ImportValidationResult[]>([]);
   const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0, succeeded: 0, failed: 0, errors: [], warnings: [] });
+  const [progress, setProgress] = useState<ImportProgressState>({
+    current: 0,
+    total: 0,
+    succeeded: 0,
+    failed: 0,
+    errors: [],
+    warnings: [],
+  });
   const [showAllErrors, setShowAllErrors] = useState(false);
 
   const [exporting, setExporting] = useState(false);
 
   const [dragging, setDragging] = useState(false);
-  const fileInputRef = useRef(null);
-  const abortRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<boolean>(false);
 
   const cfg = ENTITY_CONFIG[entityType] ?? ENTITY_CONFIG.invoices;
   const entityLabel = t(cfg.labelKey);
@@ -306,18 +407,15 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     }
     Promise.all(promises)
       .then((results) => {
-        const [vaultsRes, suppliersRes, categoriesRes, expLinesRes] = results as [
-          Record<string, any>,
-          Record<string, any> | any[],
-          Record<string, any> | any[],
-          Record<string, any> | any[],
-        ];
-        const rawVaults = Array.isArray(vaultsRes?.data) ? vaultsRes.data : (vaultsRes?.data?.items ?? []);
+        const vaultsRes = results[0] as unknown;
+        const suppliersRes = results[1] as unknown;
+        const categoriesRes = results[2] as unknown;
+        const expLinesRes = results[3] as unknown;
         setLookups({
-          vaults: rawVaults,
-          suppliers: Array.isArray(suppliersRes) ? suppliersRes : (suppliersRes?.items ?? []),
-          categories: Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes?.items ?? []),
-          expenseLines: Array.isArray(expLinesRes) ? expLinesRes : (expLinesRes?.items ?? []),
+          vaults: pickApiList(vaultsRes),
+          suppliers: pickApiList(suppliersRes),
+          categories: pickApiList(categoriesRes),
+          expenseLines: pickApiList(expLinesRes),
         });
       })
       .finally(() => setLookupsLoading(false));
@@ -336,9 +434,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     }
   }, [isOpen]);
 
-  const handleFile = useCallback(async (file) => {
+  const handleFile = useCallback(async (file: File | undefined) => {
     if (!file) return;
-    const ext = file.name.split('.').pop().toLowerCase();
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
     if (!['xlsx', 'xls', 'csv'].includes(ext)) {
       alert(t('importAlertWrongFile'));
       return;
@@ -346,7 +444,7 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
     setPhase('parsing');
     setValidationResults([]);
     try {
-      const rows = await importFromExcel(file);
+      const rows = (await importFromExcel(file)) as Record<string, unknown>[];
       if (!rows.length) {
         setPhase('idle');
         alert(t('importAlertEmptyRows'));
@@ -354,23 +452,24 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       }
       setParsedRows(rows);
 
-      let results;
+      let results: ImportValidationResult[];
       if (entityType === 'invoices') {
-        results = validateInvoiceRows(rows, lookups);
+        results = validateInvoiceRows(rows, lookups) as ImportValidationResult[];
       } else if (entityType === 'employees') {
-        results = validateEmployeeRows(rows);
+        results = validateEmployeeRows(rows) as ImportValidationResult[];
       } else {
-        results = validateSalesRows(rows, { vaults: lookups.vaults });
+        results = validateSalesRows(rows, { vaults: lookups.vaults }) as ImportValidationResult[];
       }
       setValidationResults(results);
       setPhase('validated');
-    } catch (err) {
+    } catch (err: unknown) {
       setPhase('idle');
-      alert(t('importAlertParseFailed', { msg: err?.message ?? t('importErrorUnknown') }));
+      const msg = err instanceof Error ? err.message : t('importErrorUnknown');
+      alert(t('importAlertParseFailed', { msg }));
     }
   }, [entityType, lookups, t]);
 
-  const handleDrop = useCallback((e) => {
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragging(false);
     handleFile(e.dataTransfer.files?.[0]);
@@ -395,8 +494,9 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       const base = String(cfg.exportFilename || 'export.xlsx').replace(/\.xlsx$/i, '');
       const excelOpts = entityType === 'employees' ? EMPLOYEE_EXCEL_EXPORT_OPTS : undefined;
       await exportToExcel(rows, `${base}-${stamp}.xlsx`, excelOpts);
-    } catch (err) {
-      alert(t('importAlertExportFailed', { msg: err?.message ?? '' }));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      alert(t('importAlertExportFailed', { msg }));
     } finally {
       setExporting(false);
     }
@@ -413,8 +513,8 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
 
     let succeeded = 0;
     let failed = 0;
-    const errors = [];
-    const importWarnings = [];
+    const errors: ImportProgressRow[] = [];
+    const importWarnings: ImportProgressRow[] = [];
 
     if (entityType === 'invoices') {
       const batchSize = 8;
@@ -430,13 +530,18 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
             try {
               rejectIfApiFailed(res.value, t('importErrorUnknown'));
               succeeded++;
-            } catch (e) {
+            } catch (e: unknown) {
               failed++;
-              errors.push({ rowNum, message: e?.message ?? t('importErrorUnknown') });
+              errors.push({
+                rowNum,
+                message: e instanceof Error ? e.message : t('importErrorUnknown'),
+              });
             }
           } else {
             failed++;
-            errors.push({ rowNum, message: res.reason?.message ?? t('importErrorUnknown') });
+            const reasonMsg =
+              res.reason instanceof Error ? res.reason.message : t('importErrorUnknown');
+            errors.push({ rowNum, message: reasonMsg });
           }
         });
         setProgress({ current: i + slice.length, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
@@ -446,14 +551,17 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
       for (let i = 0; i < validResults.length; i += batchSize) {
         if (abortRef.current) break;
         const slice = validResults.slice(i, i + batchSize);
-        let res;
+        let res: ApiParsedResult | { success: false; error?: string };
         try {
           res = await createEmployeesBatch({
             companyId,
             items: slice.map((r) => ({ ...r.payload, companyId })),
           });
-        } catch (err) {
-          res = { success: false, error: err?.message ?? t('importErrorSaveFailed') };
+        } catch (err: unknown) {
+          res = {
+            success: false,
+            error: err instanceof Error ? err.message : t('importErrorSaveFailed'),
+          };
         }
         if (res?.success) {
           const br = res.data || {};
@@ -463,12 +571,15 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           appendEmployeesBatchWarnings(br.warnings, slice, importWarnings);
         } else {
           for (const r of slice) {
-            let r2;
+            let r2: ApiParsedResult | undefined;
             try {
               r2 = await createEmployeesBatch({ companyId, items: [{ ...r.payload, companyId }] });
-            } catch (e2) {
+            } catch (e2: unknown) {
               failed += 1;
-              errors.push({ rowNum: r.rowNum, message: e2?.message ?? t('importErrorUnknown') });
+              errors.push({
+                rowNum: r.rowNum,
+                message: e2 instanceof Error ? e2.message : t('importErrorUnknown'),
+              });
               continue;
             }
             if (!r2?.success) {
@@ -493,9 +604,12 @@ export default function ImportExportModal({ isOpen, onClose, entityType, company
           const sumRes = await createDailySalesSummary({ ...r.payload, companyId });
           rejectIfApiFailed(sumRes, t('importErrorUnknown'));
           succeeded++;
-        } catch (err) {
+        } catch (err: unknown) {
           failed++;
-          errors.push({ rowNum: r.rowNum, message: err?.message ?? t('importErrorUnknown') });
+          errors.push({
+            rowNum: r.rowNum,
+            message: err instanceof Error ? err.message : t('importErrorUnknown'),
+          });
         }
         setProgress({ current: i + 1, total, succeeded, failed, errors: [...errors], warnings: [...importWarnings] });
       }

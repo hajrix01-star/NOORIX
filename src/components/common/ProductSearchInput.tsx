@@ -4,7 +4,7 @@
  * يستخدم Portal للقائمة المنسدلة لتجنب القص (overflow)
  * يدعم debounce 300ms، loading state، RTL، وجوال (font-size ≥ 16px)
  */
-import React, { useState, useRef, useEffect, useMemo, type CSSProperties } from 'react';
+import React, { useState, useRef, useEffect, useMemo, type ChangeEvent, type CSSProperties } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -185,7 +185,7 @@ export function ProductSearchInput({
         ref={inputRef}
         type="text"
         value={open ? query : displayValue}
-        onChange={(e) => {
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
           const val = e.target.value;
           setQuery(val);
           setOpen(true);

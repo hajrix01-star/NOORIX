@@ -8,6 +8,7 @@ import React, {
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -15,7 +16,15 @@ import { Input, Button } from '../../ui';
 import { SUPPLIER_USAGE_KEY } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 
-function supplierLabel(supplier, lang = 'ar') {
+export type SupplierOptionRow = {
+  id: string;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  code?: string | null;
+  taxNumber?: string | null;
+};
+
+function supplierLabel(supplier: SupplierOptionRow | null | undefined, lang = 'ar') {
   if (lang === 'en') return supplier?.nameEn || supplier?.nameAr || supplier?.id || '';
   return supplier?.nameAr || supplier?.nameEn || supplier?.id || '';
 }
@@ -25,18 +34,18 @@ function readSupplierUsage() {
   return parsed && typeof parsed === 'object' ? parsed : {};
 }
 
-function trackSupplierUsage(supplierId) {
+function trackSupplierUsage(supplierId: string) {
   if (!supplierId) return;
   const usage = readSupplierUsage();
   usage[supplierId] = Number(usage[supplierId] || 0) + 1;
   writeJsonStorage(SUPPLIER_USAGE_KEY, usage);
 }
 
-function digitsOnly(str) {
+function digitsOnly(str: unknown) {
   return String(str || '').replace(/\D/g, '');
 }
 
-function matchesQuery(s, normalized) {
+function matchesQuery(s: SupplierOptionRow, normalized: string) {
   if (!normalized) return true;
   if (
     String(s.nameAr || '').toLowerCase().includes(normalized) ||
@@ -53,10 +62,10 @@ function matchesQuery(s, normalized) {
 }
 
 export type SupplierSelectProps = {
-  suppliers?: any[];
-  value?: any;
+  suppliers?: SupplierOptionRow[];
+  value?: string;
   onChange?: (id: string) => void;
-  bookmarkedIds?: any[];
+  bookmarkedIds?: string[];
   placeholder?: string;
   /** يُمرَّر لحقل البحث الداخلي — ربط تسمية النموذج العمودي */
   id?: string;
@@ -71,8 +80,8 @@ export function SupplierSelect({
   id,
 }: SupplierSelectProps) {
   const { lang, t } = useTranslation();
-  const anchorRef = useRef(null);
-  const menuRef = useRef(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [usageVersion, setUsageVersion] = useState(0);
@@ -174,10 +183,12 @@ export function SupplierSelect({
 
   useEffect(() => {
     if (!open) return undefined;
-    const onDoc = (e) => {
+    const onDoc = (e: Event) => {
       const a = anchorRef.current;
       const m = menuRef.current;
-      if (a?.contains(e.target) || m?.contains(e.target)) return;
+      const target = e.target instanceof Node ? e.target : null;
+      if (!target) return;
+      if (a?.contains(target) || m?.contains(target)) return;
       setOpen(false);
     };
     document.addEventListener('mousedown', onDoc);
@@ -186,8 +197,8 @@ export function SupplierSelect({
 
   const showMenu = open && (totalVisible > 0 || query.trim() || suppliers.length > 0);
 
-  function selectSupplier(supplier) {
-    onChange(supplier.id);
+  function selectSupplier(supplier: SupplierOptionRow) {
+    onChange?.(supplier.id);
     setQuery(supplierLabel(supplier));
     setOpen(false);
     trackSupplierUsage(supplier.id);
@@ -305,11 +316,11 @@ export function SupplierSelect({
         value={query}
         onFocus={() => { setOpen(true); }}
         onClick={() => { setOpen(true); }}
-        onChange={(e) => {
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
           const next = e.target.value;
           setQuery(next);
           setOpen(true);
-          if (!next.trim() && value) onChange('');
+          if (!next.trim() && value) onChange?.('');
         }}
         placeholder={ph}
         autoComplete="off"

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getRouteRequiredPermissions, isSuperAdmin, hasPermission } from '../constants/permissions';
 import Forbidden403 from './Forbidden403';
@@ -14,7 +14,19 @@ import Forbidden403 from './Forbidden403';
  *
  * يعرض <Forbidden403 /> عند انعدام الصلاحية بدلاً من null لإبلاغ المستخدم.
  */
-export default function PermissionGuard({ children, userRole, userPermissions, isUserLoading }) {
+type PermissionGuardProps = {
+  children: ReactNode;
+  userRole?: string;
+  userPermissions?: string[];
+  isUserLoading?: boolean;
+};
+
+export default function PermissionGuard({
+  children,
+  userRole,
+  userPermissions,
+  isUserLoading,
+}: PermissionGuardProps) {
   const location = useLocation();
   const path = location.pathname;
 

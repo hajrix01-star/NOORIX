@@ -1,7 +1,7 @@
 ﻿/**
  * ChangePasswordModal — نافذة تغيير كلمة المرور
  */
-import React, { useState, type FormEvent } from 'react';
+import React, { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import { changePassword } from '../services/api';
 import { Button, Input, AdaptiveSheet } from '../ui';
@@ -86,7 +86,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }: ChangePasswo
             type="password"
             label={t('changePasswordCurrent') || 'كلمة المرور الحالية'}
             value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentPassword(e.target.value)}
             placeholder="••••••••"
             autoComplete="current-password"
           />
@@ -95,7 +95,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }: ChangePasswo
               type="password"
               label={t('changePasswordNew') || 'كلمة المرور الجديدة'}
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
               placeholder="••••••••"
               autoComplete="new-password"
             />
@@ -121,7 +121,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }: ChangePasswo
               type="password"
               label={t('changePasswordConfirm') || 'تأكيد كلمة المرور'}
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
               autoComplete="new-password"
             />

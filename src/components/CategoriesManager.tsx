@@ -2,7 +2,7 @@
  * CategoriesManager — مكون مشترك لإدارة التصنيفات (فئات الحسابات)
  * يُستخدم في: Suppliers/CategoriesTab (الموردين والتصنيفات)
  */
-import React, { useState, useMemo, memo, type FormEvent } from 'react';
+import React, { useState, useMemo, memo, type ChangeEvent, type FormEvent } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from '../i18n/useTranslation';
 import { useToast } from '../context/ToastContext';
@@ -306,19 +306,19 @@ export const CategoriesManager = memo(function CategoriesManager({
                 type="text"
                 label={`${t('nameAr')} *`}
                 value={form.nameAr}
-                onChange={(e) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameAr: e.target.value }))}
               />
               <Input
                 type="text"
                 label={t('nameEnCol')}
                 value={form.nameEn}
-                onChange={(e) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, nameEn: e.target.value }))}
               />
               <Input
                 type="select"
                 label={t('type')}
                 value={form.type}
-                onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as CategoryKind }))}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setForm((p) => ({ ...p, type: e.target.value as CategoryKind }))}
               >
                 <option value="purchase">{t('categoryTypes')}</option>
                 <option value="expense">{t('categoryTypeExpense')}</option>
@@ -328,7 +328,7 @@ export const CategoriesManager = memo(function CategoriesManager({
                 type="text"
                 label={t('icon')}
                 value={form.icon}
-                onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, icon: e.target.value }))}
                 placeholder=""
               />
             </FormRow>
@@ -337,7 +337,7 @@ export const CategoriesManager = memo(function CategoriesManager({
                 type="select"
                 label={t('parentCategory')}
                 value={form.parentId}
-                onChange={(e) => handleParentChange(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => handleParentChange(e.target.value)}
               >
                 <option value="">— تصنيف رئيسي —</option>
                 {roots

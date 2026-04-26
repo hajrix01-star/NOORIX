@@ -17,7 +17,7 @@ import { roundMoney2 } from './moneyInput';
 import { formatSaudiDateISO, getSaudiToday } from './saudiDate';
 
 /** @param {Date} d */
-function toRiyadhYmdOrNull(d) {
+function toRiyadhYmdOrNull(d: Date) {
   if (!d || isNaN(d.getTime())) return null;
   const y = formatSaudiDateISO(d);
   return y === '—' ? null : y;
@@ -26,13 +26,13 @@ function toRiyadhYmdOrNull(d) {
 // ─── Low-level helpers ───────────────────────────────────────────────────────
 
 const AR_NUMS = '٠١٢٣٤٥٦٧٨٩';
-function toWesternNum(str) {
+function toWesternNum(str: unknown) {
   if (str == null) return '';
   return String(str).replace(/[٠-٩]/g, (c) => AR_NUMS.indexOf(c).toString());
 }
 
 /** Parse an Excel date cell (serial number, string DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY) → 'YYYY-MM-DD' | null */
-function parseDate(val) {
+function parseDate(val: unknown) {
   if (val == null || val === '') return null;
   if (typeof val === 'number') {
     const d = new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -50,7 +50,7 @@ function parseDate(val) {
 }
 
 /** Parse boolean from Arabic/English/numeric values → true | false | null (unrecognised) */
-function parseBoolean(val) {
+function parseBoolean(val: unknown) {
   if (val === true || val === 1) return true;
   if (val === false || val === 0) return false;
   const s = String(val ?? '').trim().toLowerCase();
@@ -60,7 +60,7 @@ function parseBoolean(val) {
 }
 
 /** Parse a numeric cell; strips commas, Arabic numerals → number | null */
-function parseNumber(val) {
+function parseNumber(val: unknown) {
   if (val == null || val === '') return null;
   const s = toWesternNum(String(val).replace(/,/g, '').replace(/\s/g, '').trim());
   const n = Number(s);
@@ -68,14 +68,22 @@ function parseNumber(val) {
 }
 
 /** Find an item in a list by nameAr or nameEn (case-insensitive) */
-function matchByName(list, name, nameArKey = 'nameAr', nameEnKey = 'nameEn') {
+function matchByName(
+  list: unknown[],
+  name: unknown,
+  nameArKey = 'nameAr',
+  nameEnKey = 'nameEn',
+): Record<string, unknown> | null {
   if (!name) return null;
   const needle = String(name).trim().toLowerCase();
-  return list.find(
-    (item) =>
-      String(item[nameArKey] ?? '').trim().toLowerCase() === needle ||
-      String(item[nameEnKey] ?? '').trim().toLowerCase() === needle,
-  ) || null;
+  const hit = list.find((item) => {
+    const row = item as Record<string, unknown>;
+    return (
+      String(row[nameArKey] ?? '').trim().toLowerCase() === needle ||
+      String(row[nameEnKey] ?? '').trim().toLowerCase() === needle
+    );
+  }) as Record<string, unknown> | undefined;
+  return hit ?? null;
 }
 
 // ─── Invoice Template ────────────────────────────────────────────────────────
@@ -165,10 +173,14 @@ export async function downloadEmployeeTemplate() {
 // ─── Sales Template ──────────────────────────────────────────────────────────
 
 /** vaults: array of vault objects with nameAr/nameEn */
-export async function downloadSalesTemplate(vaults = []) {
+export async function downloadSalesTemplate(vaults: unknown[] = []) {
   const vaultColumns =
     vaults.length > 0
-      ? vaults.reduce((acc, v) => { acc[`قناة: ${v.nameAr || v.nameEn || v.id}`] = 0; return acc; }, {})
+      ? vaults.reduce<Record<string, number>>((acc, v) => {
+          const row = v as Record<string, unknown>;
+          acc[`قناة: ${String(row.nameAr ?? row.nameEn ?? row.id ?? '')}`] = 0;
+          return acc;
+        }, {})
       : { 'قناة: الصندوق الرئيسي': 5000, 'قناة: شبكة البنك': 3000 };
 
   const rows = [
@@ -192,12 +204,25 @@ export async function downloadSalesTemplate(vaults = []) {
  * @param {{ suppliers: Object[], vaults: Object[], categories: Object[], expenseLines: Object[] }} lookups
  * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
  */
-export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categories = [], expenseLines = [] } = {}) {
+export function validateInvoiceRows(
+  rows: Record<string, unknown>[],
+  {
+    suppliers = [],
+    vaults = [],
+    categories = [],
+    expenseLines = [],
+  }: {
+    suppliers?: unknown[];
+    vaults?: unknown[];
+    categories?: unknown[];
+    expenseLines?: unknown[];
+  } = {},
+) {
   const validKinds = new Set(Object.keys(INVOICE_KIND_LABELS));
 
   return rows.map((row, i) => {
-    const errors = [];
-    const warnings = [];
+    const errors: string[] = [];
+    const warnings: string[] = [];
     const rowNum = i + 2; // 1-indexed + header row
 
     // transactionDate
@@ -232,7 +257,7 @@ export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categor
     let supplierId;
     if (supplierNameRaw) {
       const found = matchByName(suppliers, supplierNameRaw);
-      if (found) supplierId = found.id;
+      if (found) supplierId = found.id as string | undefined;
       else warnings.push(`المورد "${supplierNameRaw}" غير موجود في النظام`);
     }
 
@@ -241,7 +266,7 @@ export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categor
     let vaultId;
     if (vaultNameRaw) {
       const found = matchByName(vaults, vaultNameRaw);
-      if (found) vaultId = found.id;
+      if (found) vaultId = found.id as string | undefined;
       else warnings.push(`الصندوق "${vaultNameRaw}" غير موجود في النظام`);
     }
 
@@ -250,7 +275,7 @@ export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categor
     let categoryId;
     if (catNameRaw) {
       const found = matchByName(categories, catNameRaw);
-      if (found) categoryId = found.id;
+      if (found) categoryId = found.id as string | undefined;
       else warnings.push(`الفئة "${catNameRaw}" غير موجودة في النظام`);
     }
 
@@ -259,7 +284,7 @@ export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categor
     let expenseLineId;
     if (elNameRaw) {
       const found = matchByName(expenseLines, elNameRaw);
-      if (found) expenseLineId = found.id;
+      if (found) expenseLineId = found.id as string | undefined;
       else warnings.push(`بند المصروف "${elNameRaw}" غير موجود في النظام`);
     }
 
@@ -283,12 +308,12 @@ export function validateInvoiceRows(rows, { suppliers = [], vaults = [], categor
  * @param {Object[]} rows
  * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
  */
-export function validateEmployeeRows(rows) {
+export function validateEmployeeRows(rows: Record<string, unknown>[]) {
   const today = getSaudiToday();
 
   return rows.map((row, i) => {
-    const errors = [];
-    const warnings = [];
+    const errors: string[] = [];
+    const warnings: string[] = [];
     const rowNum = i + 2;
 
     const nameAr = String(row['الاسم بالعربية'] ?? row['name'] ?? '').trim();
@@ -375,12 +400,15 @@ export function validateEmployeeRows(rows) {
  * @param {{ vaults: Object[] }} options
  * @returns {{ rowNum: number, valid: boolean, errors: string[], warnings: string[], payload: Object|null }[]}
  */
-export function validateSalesRows(rows, { vaults = [] } = {}) {
+export function validateSalesRows(
+  rows: Record<string, unknown>[],
+  { vaults = [] }: { vaults?: unknown[] } = {},
+) {
   const seenDates = new Set();
 
   return rows.map((row, i) => {
-    const errors = [];
-    const warnings = [];
+    const errors: string[] = [];
+    const warnings: string[] = [];
     const rowNum = i + 2;
 
     const dateRaw = row['تاريخ اليوم'] ?? row['transactionDate'] ?? row['التاريخ'] ?? row['date'];
@@ -398,7 +426,7 @@ export function validateSalesRows(rows, { vaults = [] } = {}) {
     const notes = String(row['ملاحظات'] ?? row['notes'] ?? '').trim() || undefined;
 
     // Extract vault channels from columns prefixed with "قناة: " or "channel: "
-    const channels = [];
+    const channels: { vaultId: string; amount: string }[] = [];
     for (const [colKey, rawAmount] of Object.entries(row)) {
       const prefix = colKey.startsWith('قناة: ') ? 'قناة: ' : colKey.startsWith('channel: ') ? 'channel: ' : null;
       if (!prefix) continue;
@@ -407,7 +435,7 @@ export function validateSalesRows(rows, { vaults = [] } = {}) {
       if (!amt || amt <= 0) continue;
       const vault = matchByName(vaults, vaultName);
       if (vault) {
-        channels.push({ vaultId: vault.id, amount: String(amt) });
+        channels.push({ vaultId: String(vault.id ?? ''), amount: String(amt) });
       } else {
         warnings.push(`الصندوق "${vaultName}" غير موجود في النظام`);
       }
@@ -433,8 +461,10 @@ export function validateSalesRows(rows, { vaults = [] } = {}) {
  * @param {Array<{ employeeId?: string, amount?: unknown }>} allowanceRows
  * @returns {Map<string, number>}
  */
-export function buildEmployeeAllowanceTotalsMap(allowanceRows) {
-  const map = new Map();
+export function buildEmployeeAllowanceTotalsMap(
+  allowanceRows: ReadonlyArray<{ employeeId?: string; amount?: unknown }> | null | undefined,
+) {
+  const map = new Map<string, number>();
   for (const row of allowanceRows || []) {
     const id = row.employeeId;
     if (!id) continue;
@@ -446,19 +476,36 @@ export function buildEmployeeAllowanceTotalsMap(allowanceRows) {
 
 // ─── Export formatters (convert API response rows to Excel-friendly objects) ──
 
-export function formatInvoiceForExport(inv) {
+type EmployeeExportSalaryRow = Parameters<typeof totalSalary>[0];
+
+export function formatInvoiceForExport(inv: Record<string, unknown>) {
+  const kindKey = String(inv.kind ?? '');
+  const labels = INVOICE_KIND_LABELS as Record<string, string>;
+  const tx = String(inv.transactionDate ?? '');
   return {
-    'تاريخ الفاتورة': inv.transactionDate?.slice(0, 10) ?? '',
-    'نوع الفاتورة': INVOICE_KIND_LABELS[inv.kind] ?? inv.kind,
+    'تاريخ الفاتورة': tx.slice(0, 10),
+    'نوع الفاتورة': labels[kindKey] ?? kindKey,
     'رقم الفاتورة': inv.invoiceNumber ?? '',
     'رقم فاتورة المورد': inv.supplierInvoiceNumber ?? '',
-    'اسم المورد': inv.supplier?.nameAr ?? inv.supplier?.nameEn ?? '',
+    'اسم المورد': (() => {
+      const s = inv.supplier as Record<string, unknown> | undefined;
+      return String(s?.nameAr ?? s?.nameEn ?? '');
+    })(),
     'المبلغ الصافي': inv.netAmount ?? '',
     'الضريبة': inv.taxAmount ?? '',
     'المبلغ الإجمالي': inv.totalAmount ?? '',
-    'اسم الصندوق': inv.vault?.nameAr ?? inv.vault?.nameEn ?? '',
-    'الفئة': inv.category?.nameAr ?? inv.category?.nameEn ?? '',
-    'بند المصروف': inv.expenseLine?.nameAr ?? inv.expenseLine?.nameEn ?? '',
+    'اسم الصندوق': (() => {
+      const v = inv.vault as Record<string, unknown> | undefined;
+      return String(v?.nameAr ?? v?.nameEn ?? '');
+    })(),
+    'الفئة': (() => {
+      const c = inv.category as Record<string, unknown> | undefined;
+      return String(c?.nameAr ?? c?.nameEn ?? '');
+    })(),
+    'بند المصروف': (() => {
+      const e = inv.expenseLine as Record<string, unknown> | undefined;
+      return String(e?.nameAr ?? e?.nameEn ?? '');
+    })(),
     'الحالة': inv.status === 'active' ? 'نشط' : 'ملغى',
     'ملاحظات': inv.notes ?? '',
   };
@@ -468,7 +515,10 @@ export function formatInvoiceForExport(inv) {
  * @param {object} emp
  * @param {Map<string, number>|null|undefined} allowanceTotalsByEmployeeId — مجموع البدلات المخصصة لكل موظف
  */
-export function formatEmployeeForExport(emp, allowanceTotalsByEmployeeId) {
+export function formatEmployeeForExport(
+  emp: EmployeeExportSalaryRow,
+  allowanceTotalsByEmployeeId: Map<string, number> | null | undefined,
+) {
   const customExtra =
     allowanceTotalsByEmployeeId instanceof Map
       ? (allowanceTotalsByEmployeeId.get(emp.id) || 0)
@@ -498,9 +548,10 @@ export function formatEmployeeForExport(emp, allowanceTotalsByEmployeeId) {
   };
 }
 
-export function formatSalesForExport(summary) {
-  const base = {
-    'تاريخ اليوم': summary.transactionDate?.slice(0, 10) ?? '',
+export function formatSalesForExport(summary: Record<string, unknown>) {
+  const tx = String(summary.transactionDate ?? '');
+  const base: Record<string, unknown> = {
+    'تاريخ اليوم': tx.slice(0, 10),
     'رقم الملخص': summary.summaryNumber ?? '',
     'عدد العملاء': summary.customerCount ?? 0,
     'إجمالي المبيعات': summary.totalAmount ?? '',
@@ -508,8 +559,12 @@ export function formatSalesForExport(summary) {
     'الحالة': summary.status === 'active' ? 'نشط' : 'ملغى',
     'ملاحظات': summary.notes ?? '',
   };
-  (summary.channels ?? []).forEach((ch) => {
-    base[`قناة: ${ch.vault?.nameAr ?? ch.vault?.nameEn ?? ch.vaultId}`] = ch.amount;
+  const chList = (summary.channels ?? []) as unknown[];
+  chList.forEach((ch) => {
+    const c = ch as Record<string, unknown>;
+    const v = c.vault as Record<string, unknown> | undefined;
+    const label = String(v?.nameAr ?? v?.nameEn ?? c.vaultId ?? '');
+    base[`قناة: ${label}`] = c.amount;
   });
   return base;
 }
