@@ -75,6 +75,7 @@ export const financeRatiosHandler: ChatHandler = {
     if (!canSales(can)) return false;
     const askRatiosBundleShort =
       matches(q, [
+        'نسب الخارج على المبيعات',
         'نسب الطلب على المبيعات',
         'النسب التشغيلية من المبيعات',
         'نسب المشتريات والمصروفات والمبيعات',
@@ -115,6 +116,7 @@ export const financeRatiosHandler: ChatHandler = {
 
     const askRatiosBundleShort =
       matches(q, [
+        'نسب الخارج على المبيعات',
         'نسب الطلب على المبيعات',
         'النسب التشغيلية من المبيعات',
         'نسب المشتريات والمصروفات والمبيعات',
@@ -135,7 +137,7 @@ export const financeRatiosHandler: ChatHandler = {
     if (!showPur && !showExp && !showSum) {
       return {
         answerAr:
-          '## مؤشرات الطلب على المبيعات\n• الخلاصة: يلزم منحك صلاحية الفواتير (مشتريات) و/أو الخزائن (مصروفات) لعرض النسب.\nلحساب النسب يلزم صلاحية عرض الفواتير (مشتريات) و/أو الخزائن (مصروفات) حسب السؤال.',
+          '## مؤشرات الخارج على المبيعات\n• الخلاصة: يلزم منحك صلاحية الفواتير (مشتريات) و/أو الخزائن (مصروفات) لعرض النسب.\nلحساب النسب يلزم صلاحية عرض الفواتير (مشتريات) و/أو الخزائن (مصروفات) حسب السؤال.',
         answerEn:
           '## Operating load vs sales\n• Summary: invoice and/or vault permissions are required to show these ratios.\nNeed invoice and/or vault permissions for the requested ratios.',
       };
@@ -146,7 +148,7 @@ export const financeRatiosHandler: ChatHandler = {
 
     if (end.getTime() < start.getTime()) {
       return {
-        answerAr: `## مؤشرات الطلب على المبيعات\nالفترة: ${labelAr}\n• الخلاصة: لا يمكن احتساب «حتى أمس» في أول يوم من الشهر — أعد السؤال غداً أو اختر فترة «الشهر الماضي» للمقارنة.\nلا يوجد يوم مكتمل بعد في الشهر الحالي (مثلاً اليوم أول يوم في الشهر) — لا يمكن حساب «من 1 حتى أمس» بعد.`,
+        answerAr: `## مؤشرات الخارج على المبيعات\nالفترة: ${labelAr}\n• الخلاصة: لا يمكن احتساب «حتى أمس» في أول يوم من الشهر — أعد السؤال غداً أو اختر فترة «الشهر الماضي» للمقارنة.\nلا يوجد يوم مكتمل بعد في الشهر الحالي (مثلاً اليوم أول يوم في الشهر) — لا يمكن حساب «من 1 حتى أمس» بعد.`,
         answerEn: `## Operating load vs sales\nPeriod: ${labelEn}\n• Summary: month-to-date through yesterday is not available on the first day of the month — try again tomorrow or pick “last month”.\nNo completed calendar day in the current month yet — cannot compute month-to-date through yesterday.`,
       };
     }
@@ -157,7 +159,7 @@ export const financeRatiosHandler: ChatHandler = {
 
     const linesAr: string[] = [];
     const linesEn: string[] = [];
-    linesAr.push('## مؤشرات الطلب على المبيعات');
+    linesAr.push('## مؤشرات الخارج على المبيعات');
     linesEn.push('## Operating load vs sales');
     linesAr.push(`الفترة: ${labelAr}`);
     linesEn.push(`Period: ${labelEn}`);
@@ -178,7 +180,7 @@ export const financeRatiosHandler: ChatHandler = {
     let summaryAr = '';
     let summaryEn = '';
     if (showSum) {
-      summaryAr = `• الخلاصة: إيراد الفترة ${fmtMoney(sales)}؛ الطلب التشغيلي (مشتريات + مصروفات) ${pctOf(sumPe, sales)} من ذلك الإيراد — التفاصيل أدناه.`;
+      summaryAr = `• الخلاصة: إيراد الفترة ${fmtMoney(sales)}؛ الخارج التشغيلي (مشتريات + مصروفات) ${pctOf(sumPe, sales)} من ذلك الإيراد — التفاصيل أدناه.`;
       summaryEn = `• Summary: revenue ${fmtMoney(sales).replace('SR', 'SAR')}; operating load (purchases + expenses) is ${pctOf(sumPe, sales)} of that — see details below.`;
     } else if (showPur && showExp) {
       summaryAr = `• الخلاصة: مبيعات ${fmtMoney(sales)}؛ المشتريات ${pctOf(purchases, sales)} والمصروفات ${pctOf(expenses, sales)} من الإيراد — التفاصيل أدناه.`;

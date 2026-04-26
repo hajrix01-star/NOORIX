@@ -74,9 +74,9 @@ const PERMANENT_QUESTIONS = [
   },
   {
     section: 'reports',
-    ar: 'نسب الطلب على المبيعات (مشتريات، مصروفات، المجموع — حتى أمس)',
+    ar: 'نسب الخارج على المبيعات (مشتريات، مصروفات، المجموع — حتى أمس)',
     en: 'Operating load vs sales: purchases %, expenses %, combined % (MTD through yesterday).',
-    shortAr: 'نسب الطلب على المبيعات',
+    shortAr: 'نسب الخارج على المبيعات',
     shortEn: 'Load vs sales (MTD)',
     domain: (c) =>
       (c(PERMISSIONS.VIEW_SALES) || c(PERMISSIONS.SALES_READ)) &&
@@ -212,10 +212,10 @@ function ChatFinanceRatiosStrip({ chart, isAr }) {
     <div
       className="noorix-chat-finance-ratios mt-3 pt-3 border-t border-noorix-border"
       role="img"
-      aria-label={isAr ? 'شريط نسب الطلب التشغيلي من المبيعات' : 'Operating load as share of revenue'}
+      aria-label={isAr ? 'شريط نسب الخارج التشغيلي من المبيعات' : 'Operating load as share of revenue'}
     >
       <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
-        {isAr ? 'توزيع الطلب التشغيلي من الإيراد' : 'Operating load vs revenue'}
+        {isAr ? 'توزيع الخارج التشغيلي من الإيراد' : 'Operating load vs revenue'}
       </div>
       <div
         className="noorix-chat-finance-ratios__track nx-ltr flex h-[10px] rounded-full overflow-hidden border border-noorix-border/80 bg-noorix-bg-muted"

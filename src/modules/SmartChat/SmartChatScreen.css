@@ -467,7 +467,7 @@ body.noorix-page-smart-chat .app-main__content {
   border-color: color-mix(in srgb, var(--noorix-accent-blue) 28%, var(--noorix-border));
 }
 
-/* شريط نسب الطلب التشغيلي — مقاطع بعرض نسبة من المسار */
+/* شريط نسب الخارج التشغيلي — مقاطع بعرض نسبة من المسار */
 .noorix-chat-finance-ratios__track {
   min-height: 10px;
 }
