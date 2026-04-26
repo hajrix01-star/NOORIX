@@ -126,6 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
+| 2026-04-26 | D | D (ملف موظف + تبويب رفع OCR) | `caa6701` | Cursor | ✓ | تقسيم `EmployeeProfileScreen` → `components/employeeProfile/*` + `employeeProfileModel`؛ `InvoiceUploadTab` → `components/invoiceUpload/*` (منطق الحالة يبقى في `InvoiceUploadTab`؛ بلا تغيير `export default`). **التحقق:** vitest + vite build |
 | 2026-04-26 | D | D (اتصال + HR) | `2c9ecfc` | Cursor | ✓ | بدل `connection-accounts-assets` + `hr-and-suppliers`: `connection-bank`، `companies-ledger-roles`، `accounts-categories-expense`، `company-assets`، `hr`، `suppliers`؛ `index.js` يعيد التصدير؛ `api.barrel.test` — `login` / `getCompanies` / `getAccounts` + `getPayrollRuns` / `getSuppliers`. **التحقق:** vitest + vite build |
 | 2026-04-26 | D | D (5 وحدات: مبيعات…موظفين) | `1fa4b89` | Cursor | ✓ | `sales-summaries` + `reports` + `orders` + `vaults` + `employees` بدل `sales-reports-orders-employees`؛ `api.barrel.test` يتوسّع لـ`upsertVatPlanning` / `getOrders` / `getVaults` / `getEmployees`. **التحقق:** vitest + vite build |
 | 2026-04-26 | D | D (invoices/backup + barrel test) | `4843a68` | Cursor | ✓ | فصل `invoices.js` + `backup.js`؛ `api.barrel.test.js` يتأكد من تصدير عيّنات من الاتصال/الفواتير/النسخ/التقارير. **التحقق:** vitest + vite build |
