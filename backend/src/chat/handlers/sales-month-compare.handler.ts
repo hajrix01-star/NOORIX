@@ -28,9 +28,25 @@ export const salesMonthCompareHandler: ChatHandler = {
     (can(PERMISSIONS.VIEW_SALES) || can(PERMISSIONS.SALES_READ)),
   canHandle: (q, can) => {
     if (!can(PERMISSIONS.VIEW_SALES) && !can(PERMISSIONS.SALES_READ)) return false;
-    const cmp = matches(q, ['قارن', 'قارنة', 'compare', 'comparison']);
+    const cmp = matches(q, [
+      'قارن',
+      'قارنة',
+      'compare',
+      'comparison',
+      'مقارنة',
+      'مقابل',
+      'versus',
+      ' vs ',
+    ]);
     const salesWord = matches(q, ['مبيعات', 'sales', 'revenue']);
-    const hasLast = matches(q, ['الشهر الماضي', 'شهر ماضي', 'آخر شهر', 'last month', 'previous month']);
+    const hasLast = matches(q, [
+      'الشهر الماضي',
+      'شهر ماضي',
+      'آخر شهر',
+      'last month',
+      'previous month',
+      'الماضي',
+    ]);
     const hasThis = matches(q, [
       'الحالي',
       'الشهر الحالي',

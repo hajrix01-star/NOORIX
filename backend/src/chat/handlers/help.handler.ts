@@ -21,8 +21,8 @@ export const helpHandler: ChatHandler = {
       };
     }
     return {
-      answerAr: `يمكنك السؤال عن:\n• مبيعات/مشتريات/مصروفات (اليوم، أمس، هذا الأسبوع، هذا الشهر، أو السنة)\n• نسب المشتريات أو المصروفات أو المجموع من المبيعات (من 1 الشهر حتى أمس)\n• مقارنة مبيعات الشهر الماضي (1→نفس تاريخ اليوم) بمبيعات الشهر الحالي (1→اليوم)\n• أرصدة الخزائن\n• تقرير الربح والخسارة\n• عدد الفواتير، آخر فاتورة، الموردين، الفئات، بنود المصروفات\n• الموظفين، أسماء الموظفين، الرواتب، آخر مسيرة، الإجازات، الإقامات\n• أصناف الطلبات والمنتجات وفئات الطلبات`,
-      answerEn: `You can ask about:\n• Sales/purchases/expenses (today, yesterday, this week, this month, or year)\n• Purchases %, expenses %, or combined % of sales (1st through yesterday)\n• Compare last month (1st–same calendar day) vs this month (1st–today)\n• Vault balances\n• Profit & Loss report\n• Invoice count, last invoice, suppliers, categories, expense lines\n• Employees, employee names, payroll, last payroll, leaves, residencies\n• Order products and categories`,
+      answerAr: `يمكنك السؤال عن:\n• مبيعات/مشتريات/مصروفات (اليوم، أمس، هذا الأسبوع، هذا الشهر، أو السنة)\n• نسب الطلب على المبيعات (مشتريات/مصروفات/مجموع — حتى أمس)\n• مبيعات الشهر الحالي مقابل الماضي (نفس الفترة)\n• أرصدة الخزائن\n• تقرير الربح والخسارة\n• عدد الفواتير، آخر فاتورة، الموردين، الفئات، بنود المصروفات\n• الموظفين، أسماء الموظفين، الرواتب، آخر مسيرة، الإجازات، الإقامات\n• أصناف الطلبات والمنتجات وفئات الطلبات`,
+      answerEn: `You can ask about:\n• Sales/purchases/expenses (today, yesterday, this week, this month, or year)\n• Operating load vs sales (purchases/expenses/total — MTD through yesterday)\n• This month vs last month sales (aligned partial)\n• Vault balances\n• Profit & Loss report\n• Invoice count, last invoice, suppliers, categories, expense lines\n• Employees, employee names, payroll, last payroll, leaves, residencies\n• Order products and categories`,
     };
   },
 };

@@ -67,6 +67,14 @@ export const financeRatiosHandler: ChatHandler = {
   matchesIntent: (intent, can) => intent === 'finance_ratios' && canSales(can),
   canHandle: (q, can) => {
     if (!canSales(can)) return false;
+    const askRatiosBundleShort =
+      matches(q, [
+        'نسب الطلب على المبيعات',
+        'النسب التشغيلية من المبيعات',
+        'نسب المشتريات والمصروفات والمبيعات',
+        'mtd operating ratios',
+        'operating ratios vs sales',
+      ]);
     const askPurVsSales =
       matches(q, ['نسبة المشتريات من المبيعات', 'نسبة مشتريات من مبيعات']) ||
       matches(q, ['purchases as % of sales', 'purchases as a percentage of sales']);
@@ -79,7 +87,7 @@ export const financeRatiosHandler: ChatHandler = {
         'نسبة مشتريات ومصروفات من المبيعات',
         'مجموع المشتريات والمصروفات من المبيعات',
       ]) || matches(q, ['purchases plus expenses', 'purchases and expenses as a share of sales']);
-    return askPurVsSales || askExpVsSales || askPurPlusExpVsSales;
+    return askRatiosBundleShort || askPurVsSales || askExpVsSales || askPurPlusExpVsSales;
   },
   process: async (ctx) => {
     const { can, query } = ctx;
@@ -99,7 +107,17 @@ export const financeRatiosHandler: ChatHandler = {
         'مجموع المشتريات والمصروفات من المبيعات',
       ]) || matches(q, ['purchases plus expenses', 'purchases and expenses as a share of sales']);
 
-    const compoundPreset = askPurVsSales && askExpVsSales && askPurPlusExpVsSales;
+    const askRatiosBundleShort =
+      matches(q, [
+        'نسب الطلب على المبيعات',
+        'النسب التشغيلية من المبيعات',
+        'نسب المشتريات والمصروفات والمبيعات',
+        'mtd operating ratios',
+        'operating ratios vs sales',
+      ]);
+
+    const compoundPreset =
+      askRatiosBundleShort || (askPurVsSales && askExpVsSales && askPurPlusExpVsSales);
 
     const showPur = canPurchases(can) && (askPurVsSales || compoundPreset);
     const showExp = canExpenses(can) && (askExpVsSales || compoundPreset);
