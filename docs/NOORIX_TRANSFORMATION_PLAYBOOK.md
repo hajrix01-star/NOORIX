@@ -126,6 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
+| 2026-04-26 | D | D (invoices/backup + barrel test) | `4843a68` | Cursor | ✓ | فصل `invoices.js` + `backup.js`؛ `api.barrel.test.js` يتأكد من تصدير عيّنات من الاتصال/الفواتير/النسخ/التقارير. **التحقق:** vitest + vite build |
 | 2026-04-26 | D | D (تقسيم apiEndpoints) | `2c09f94` | Cursor | ✓ | إزالة `apiEndpoints.js` الضخم؛ إضافة `apiEndpoints/`: `connection-accounts-assets`، `sales-reports-orders-employees`، `hr-and-suppliers`، `invoices-and-backup` (مع `fetchAllInvoices*` بعد `getInvoices`) + `index.js`؛ `import` من `../../authStore` / `../../core`؛ دون تغيير `export *` لـ`services/api.js`. **التحقق:** vitest + vite build |
 | 2026-04-26 | C | C2 (دفعة كبيرة) | `5155015` | Cursor | ✓ | **4 ملفات:** `UpdateExpenseLineDto` = `PartialType(OmitType(Create, [companyId]))`؛ `UpdateSalesSummaryDto` = `PartialType(OmitType(Create, [companyId, idempotencyKey]))` + `SalesChannelDto`؛ `UpdateCompanyBackupConfigDto` = `companyId` + `PartialType(CompanyBackupConfigDataDto)`؛ `UpdateLeaveDto` = `PartialType(OmitType(Create, [companyId]))` + `voidSalarySettlement`. **التحقق:** vitest + vite build + nest build |
 | 2026-04-26 | C | C2 (طلبات/أصناف) | `86bcdbc` | Cursor | ✓ | `UpdateProductDto` = `IntersectionType(PartialType(OmitType(Create…, [companyId])), isActive)` — `isActive` غير معرّف في Create. **الاختبارات:** vitest + vite build + nest build |
