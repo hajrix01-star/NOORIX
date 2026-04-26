@@ -126,6 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
+| 2026-04-26 | C | C1 + chore | `248edef` | Cursor | ✓ | C1: `UpdateSystemBackupConfigDto` = `PartialType(SystemBackupConfigBaseDto)`؛ إزالة `preferQueryCompanyId` (غير مستخدم). **الاختبارات:** vitest + vite build + nest build + tsc |
 | 2026-04-26 | C | C3 + تطابق | `c7eee25` | Cursor | ✓ | `getCompanyIdFromHttpRequest` + `CompanyAccessGuard`: قراءة `body.companyId` لـ **PATCH** (مثل POST/PUT)؛ تبسيط `categories` PATCH. **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | C | C3 (دفعة) | `631cd8e` | Cursor | ✓ | استبدال `@Query('companyId')` بـ `@CompanyId()` في: `vat-planning`، `company-assets`، `expense-line`، `sales`، `employees`، `orders`، `invoice`، `bank-statements`، `getCompanyBackupConfig` في `backup` — يتماشى مع `getCompanyIdFromHttpRequest` / `CompanyAccessGuard`. **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | C | C3 | `9e08eaa` | Cursor | ✓ | `categories` + `accounts`: `@CompanyId()` بدل `@Query('companyId')`؛ `PATCH` للفئات يبقى `companyId` من الديكور + `body.companyId` (PATCH لا يقرأ body في util). **الاختبارات:** vitest + vite build + nest build |
