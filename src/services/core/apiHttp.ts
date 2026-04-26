@@ -2,18 +2,9 @@
  * عميل HTTP الأساسي — Base URL، JWT، إعادة المحاولة، apiGet/Post/Patch/Put/Delete
  */
 import { getAuthToken, getActiveCompanyId, getRefreshToken, setAuthToken, setRefreshToken } from '../authStore';
+import type { ApiParsedResult, AuthLoginRefreshPayload, RefreshAuthSessionResult } from '../../types/api';
 
-/** نتيجة موحّدة لطبقة HTTP — data فضفاضة (`any`) لتجنب كسر المئات من استدعاءات الواجهة أثناء التحويل التدريجي لـ TS */
-export type ApiParsedResult = {
-  success: boolean;
-  data?: any;
-  /** بعض الواجهات تُرجع مصفوفة في الجذر بدل `data` */
-  items?: any;
-  error?: string;
-  code?: number;
-  isTransientServerError?: boolean;
-  isNetworkError?: boolean;
-};
+export type { ApiParsedResult } from '../../types/api';
 
 type ApiThrownError = Error & {
   code?: number;
@@ -102,7 +93,7 @@ async function tryRefreshToken() {
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
       if (!res.ok) return false;
-      const data = await res.json().catch(() => null);
+      const data = (await res.json().catch(() => null)) as Partial<AuthLoginRefreshPayload> | null;
       if (data?.access_token) {
         setAuthToken(data.access_token);
         if (data.refresh_token) setRefreshToken(data.refresh_token);
@@ -123,7 +114,7 @@ async function tryRefreshToken() {
  * تجديد الجلسة من refresh_token — يعيد companyIds محدّثة من قاعدة البيانات (مثلاً بعد استيراد شركة).
  * يحدّث التوكن في التخزين؛ استدعِ setToken/setUser من AuthContext لمزامنة واجهة React.
  */
-export async function refreshAuthSession() {
+export async function refreshAuthSession(): Promise<RefreshAuthSessionResult> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
     return { success: false, error: 'لا يوجد رمز تجديد' };
@@ -135,14 +126,14 @@ export async function refreshAuthSession() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
-    const data = await res.json().catch(() => ({}));
+    const raw = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const msg = Array.isArray(data?.message)
-        ? data.message.join(', ')
-        : (data?.message || data?.error || 'فشل تجديد الجلسة');
+      const msg = Array.isArray(raw?.message)
+        ? raw.message.join(', ')
+        : (raw?.message || raw?.error || 'فشل تجديد الجلسة');
       return { success: false, error: String(msg) };
     }
-    const payload = data?.data ?? data;
+    const payload = (raw?.data ?? raw) as AuthLoginRefreshPayload;
     if (payload?.access_token) {
       setAuthToken(payload.access_token);
       if (payload.refresh_token) setRefreshToken(payload.refresh_token);

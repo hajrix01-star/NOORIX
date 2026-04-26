@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "typecheck:strict": "tsc --noEmit -p tsconfig.strict.json",
     "ui:audit": "node scripts/ui-audit.mjs",
     "ui:audit:strict": "node scripts/ui-audit.mjs --strict"
   },
