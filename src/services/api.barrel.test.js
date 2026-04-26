@@ -15,8 +15,12 @@ describe('services/api barrel (apiEndpoints)', () => {
     expect(typeof api.backupGetCompanyConfig).toBe('function');
   });
 
-  it('re-exports sales and reports surface', () => {
+  it('re-exports sales, reports, orders, vaults, and employees', () => {
     expect(typeof api.getDailySalesSummaries).toBe('function');
     expect(typeof api.getGeneralProfitLossReport).toBe('function');
+    expect(typeof api.upsertVatPlanning).toBe('function');
+    expect(typeof api.getOrders).toBe('function');
+    expect(typeof api.getVaults).toBe('function');
+    expect(typeof api.getEmployees).toBe('function');
   });
 });
