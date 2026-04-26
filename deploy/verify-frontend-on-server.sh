@@ -103,6 +103,21 @@ else
   printf 'curl غير مثبت\n'
 fi
 
+section "سلوك Nginx لملف /assets/ مفقود (lazy chunks + MIME)"
+if command -v curl >/dev/null 2>&1; then
+  hdr="$(curl -sSI --max-time 12 "https://hajrix.com/assets/.noorix-probe-missing-asset.js" 2>/dev/null || true)"
+  printf '%s\n' "$hdr" | head -16
+  if printf '%s\n' "$hdr" | grep -qi '^content-type:.*text/html' && printf '%s\n' "$hdr" | grep -qE '^HTTP/[0-9.]+ 200'; then
+    printf '\n⚠️  تحذير: أصل JS مفقود يعيد 200 + text/html (غالباً try_files → index.html).\n'
+    printf '   يسبب في المتصفح: Failed to load module script / MIME type text/html للاستيراد الديناميكي.\n'
+    printf '   الحل: أضف location ^~ /assets/ { try_files $uri =404; … } من deploy/nginx-frontend-cache.example ثم nginx -t && sudo systemctl reload nginx\n'
+  else
+    printf '\n✅ طلب أصل مفقود لا يُعاد كـ index.html للواجهة (404 أو غير 200+HTML) — مناسب لتجنب خطأ MIME.\n'
+  fi
+else
+  printf 'curl غير مثبت — تخطي\n'
+fi
+
 printf '\n--- انتهى التشخيص ---\n'
 printf 'الواجهة «الحديثة» = index في %s يحتوي noorix-build ويفضّل أن يطابق git HEAD بعد آخر نشر.\n' "$ROOT"
 printf 'تذكير: إن كان Nginx يعرّف root /var/www/noorix/dist لـ hajrix.com فهذا هو المسار الفعلي للزائر (وليس مجلداً آخر).\n'

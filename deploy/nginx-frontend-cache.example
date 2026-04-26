@@ -4,6 +4,17 @@
 #   - أو سطر واحد في الملف: /etc/noorix/frontend-root (يُنشأ مرة واحدة على الـ VPS إذا كان root مختلفاً)
 # للتحقق بعد النشر: curl -s https://نطاقك/ | يجب أن يظهر <meta name="noorix-build" content="(نفس SHA في GitHub)"/>
 # الهدف: منع بقاء index.html أو service worker في كاش المتصفح/الـCDN بينما السيرفر يخدم حزماً جديدة.
+#
+# مهم — lazy chunks (مثل SuppliersScreen-*.js):
+# إذا كان location / يستخدم try_files … /index.html فطلب ملف غير موجود تحت /assets/
+# يعيد index.html بنوع text/html فيُرفض الـ import الديناميكي (خطأ MIME في المتصفح).
+# ضع كتلة /assets/ أدناه داخل نفس server { } وقبل أو بجانب location / — الأنسب نسخها كما هي.
+
+# أصول Vite: لا تسقط إلى SPA؛ الملف المفقود = 404 (وليس index.html)
+location ^~ /assets/ {
+    try_files $uri =404;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+}
 
 # SPA — غالباً موجود لديك مسبقاً
 # location / {
@@ -22,8 +33,3 @@ location = /sw.js {
 location = /manifest.webmanifest {
     add_header Cache-Control "no-cache, must-revalidate" always;
 }
-
-# الأصول ذات الهاش في /assets/ يمكن تخزينها طويلاً (اختياري — يحسّن الأداء)
-# location ^~ /assets/ {
-#     add_header Cache-Control "public, max-age=31536000, immutable" always;
-# }

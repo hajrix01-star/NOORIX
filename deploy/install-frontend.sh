@@ -105,4 +105,18 @@ if ! grep -qF "$EXPECTED_SHA" "$INDEX"; then
   exit 1
 fi
 
+log "==> التحقق من وجود ملفات /assets/ المذكورة في index.html"
+missing_assets=0
+while IFS= read -r rel; do
+  [[ -z "$rel" ]] && continue
+  if [[ ! -f "${ROOT}${rel}" ]]; then
+    log "ERROR: مفقود (مذكور في index لكن غير موجود على القرص): ${ROOT}${rel}" >&2
+    missing_assets=1
+  fi
+done < <(grep -oE '/assets/[A-Za-z0-9._-]+' "$INDEX" | sort -u)
+if [[ "$missing_assets" -ne 0 ]]; then
+  log "ERROR: أرشيف الواجهة ناقص أو ROOT غير صحيح — راجع tar ومسار Nginx." >&2
+  exit 1
+fi
+
 log "==> تم التحقق: الواجهة في $ROOT تطابق commit $EXPECTED_SHA"
