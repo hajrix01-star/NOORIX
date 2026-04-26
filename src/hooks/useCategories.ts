@@ -12,24 +12,20 @@ import {
   deleteCategory,
 } from '../services/api';
 
-/**
- * @param {string} companyId
- */
-export function useCategories(companyId) {
+export function useCategories(companyId: string | null | undefined) {
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories', companyId],
     queryFn: async () => {
-      const res = await getCategories(companyId);
+      const res = await getCategories(companyId as string);
       if (!res?.success) return [];
       return Array.isArray(res.data) ? res.data : [];
     },
     enabled: !!companyId,
   });
 
-  // قائمة مسطّحة: كل الفئات الأم + الفرعية في مصفوفة واحدة
   const flatCategories = useMemo(() => {
-    const list = [];
-    for (const cat of categories) {
+    const list: unknown[] = [];
+    for (const cat of categories as { children?: unknown[] }[]) {
       list.push(cat);
       for (const child of cat.children || []) list.push(child);
     }
@@ -43,13 +39,13 @@ export function useCategories(companyId) {
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }) => updateCategory(id, body),
+    mutationFn: ({ id, body }: { id: string; body: unknown }) => updateCategory(id, body),
     invalidateQueries: [['categories', companyId]],
     showErrorToast: false,
   });
 
   const deleteMutation = useApiMutation({
-    mutationFn: (id) => deleteCategory(id, companyId),
+    mutationFn: (id: string) => deleteCategory(id, companyId as string),
     invalidateQueries: [['categories', companyId]],
     showErrorToast: false,
   });

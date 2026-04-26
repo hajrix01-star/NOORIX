@@ -4,25 +4,61 @@
  * يستخدم Portal للقائمة المنسدلة لتجنب القص (overflow)
  * يدعم debounce 300ms، loading state، RTL، وجوال (font-size ≥ 16px)
  */
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, type CSSProperties } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fmt } from '../../utils/format';
 import { Input } from '../../ui';
 
+type ProductVariant = {
+  size?: string;
+  packaging?: string;
+  unit?: string;
+  lastPrice?: string | number;
+};
+
+export type ProductSearchItem = {
+  id: string;
+  nameAr?: string;
+  nameEn?: string;
+  lastPrice?: string | number;
+  variants?: ProductVariant[];
+};
+
+export type ProductSearchInputProps = {
+  products?: ProductSearchItem[];
+  productsById?: Map<string, ProductSearchItem>;
+  value?: string;
+  onChange?: (id: string) => void;
+  onSelectProduct?: (payload: {
+    productId: string;
+    variantKey: string;
+    size: string;
+    packaging: string;
+    unit: string;
+    unitPrice: string;
+  }) => void;
+  placeholder?: string;
+  style?: CSSProperties;
+  compact?: boolean;
+  loading?: boolean;
+};
+
+type DropdownRect = { top: number; left: number; width: number };
+
 /** تطبيع النص للبحث (إزالة التشكيل، توحيد المسافات) */
-function normalizeForSearch(text) {
+function normalizeForSearch(text: string): string {
   if (!text || typeof text !== 'string') return '';
   return text
-    .replace(/[\u064B-\u0652\u0670]/g, '') // إزالة التشكيل
+    .replace(/[\u064B-\u0652\u0670]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
 }
 
 /** فحص تطابق البحث — عربي أو إنجليزي */
-function matchesSearch(product, searchNorm) {
+function matchesSearch(product: ProductSearchItem, searchNorm: string): boolean {
   if (!searchNorm) return true;
   const ar = normalizeForSearch(product.nameAr || '');
   const en = normalizeForSearch(product.nameEn || '');
@@ -32,25 +68,25 @@ function matchesSearch(product, searchNorm) {
 export function ProductSearchInput({
   products = [],
   productsById,
-  value, // productId
+  value,
   onChange,
   onSelectProduct,
   placeholder = '— اختر الصنف —',
   style = {},
   compact = false,
   loading = false,
-}) {
+}: ProductSearchInputProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 300);
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
-  const [dropdownRect, setDropdownRect] = useState(null);
-  const containerRef = useRef(null);
-  const inputRef = useRef(null);
+  const [dropdownRect, setDropdownRect] = useState<DropdownRect | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedProduct = value ? productsById?.get(value) : null;
-  const displayValue = selectedProduct ? (selectedProduct.nameAr || selectedProduct.nameEn || '') : '';
+  const displayValue = selectedProduct ? selectedProduct.nameAr || selectedProduct.nameEn || '' : '';
 
   const filtered = useMemo(() => {
     const q = normalizeForSearch(debouncedQuery);
@@ -66,8 +102,6 @@ export function ProductSearchInput({
     const minW = 320;
     const maxW = window.innerWidth - 24;
     const w = Math.min(Math.max(rect.width, minW), maxW);
-    // RTL: محاذاة يمين القائمة مع يمين الحقل (بداية النص)
-    // LTR: محاذاة يسار القائمة مع يسار الحقل
     let left = isRtl ? rect.right - w : rect.left;
     if (left < 12) left = 12;
     if (left + w > window.innerWidth - 12) left = window.innerWidth - w - 12;
@@ -92,18 +126,19 @@ export function ProductSearchInput({
   }, [open]);
 
   useEffect(() => {
-    function handleClickOutside(e) {
+    function handleClickOutside(e: Event) {
       if (!containerRef.current) return;
-      const target = e.target;
+      const target = e.target as Node | null;
+      if (!target) return;
       if (containerRef.current.contains(target)) return;
-      if (target?.closest?.('[data-product-search-dropdown]')) return;
+      if ((target as Element).closest?.('[data-product-search-dropdown]')) return;
       setOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  function selectProduct(p) {
+  function selectProduct(p: ProductSearchItem) {
     const variants = Array.isArray(p?.variants) ? p.variants : [];
     const first = variants[0];
     onChange?.(p.id);
@@ -113,14 +148,14 @@ export function ProductSearchInput({
       size: first?.size || '',
       packaging: first?.packaging || '',
       unit: first?.unit || 'piece',
-      unitPrice: first?.lastPrice ? String(first.lastPrice) : (p?.lastPrice ? String(p.lastPrice) : ''),
+      unitPrice: first?.lastPrice ? String(first.lastPrice) : p?.lastPrice ? String(p.lastPrice) : '',
     });
     setQuery('');
     setOpen(false);
     inputRef.current?.blur();
   }
 
-  function handleKeyDown(e) {
+  function handleKeyDown(e: React.KeyboardEvent) {
     if (!open) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
         setOpen(true);
@@ -178,9 +213,7 @@ export function ProductSearchInput({
           >
             {loading ? (
               <div className="p-4 text-noorix-muted text-[13px] text-center flex items-center justify-center gap-2">
-                <span
-                  className="inline-block w-4 h-4 rounded-full shrink-0 border-2 border-noorix-border border-t-noorix-blue animate-[noorix-spin_0.8s_linear_infinite]"
-                />
+                <span className="inline-block w-4 h-4 rounded-full shrink-0 border-2 border-noorix-border border-t-noorix-blue animate-[noorix-spin_0.8s_linear_infinite]" />
                 {t('loading') || 'جاري التحميل...'}
               </div>
             ) : filtered.length === 0 ? (
@@ -200,8 +233,8 @@ export function ProductSearchInput({
                     role="option"
                     aria-selected={isHighlight}
                     onMouseEnter={() => setHighlightIdx(i)}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
+                    onMouseDown={(ev) => {
+                      ev.preventDefault();
                       selectProduct(p);
                     }}
                     className="py-[10px] px-[14px] cursor-pointer flex justify-between items-center gap-3 flex-nowrap min-w-0"
@@ -213,7 +246,7 @@ export function ProductSearchInput({
                     <span className="font-medium flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
                       {p.nameAr || p.nameEn || p.id}
                     </span>
-                    {(variantLabel || lastPrice > 0) && (
+                    {(variantLabel || Number(lastPrice) > 0) && (
                       <span className="text-[12px] shrink-0 whitespace-nowrap text-noorix-muted">
                         {variantLabel && <span>{variantLabel} — </span>}
                         <span className="nx-font-numbers">{fmt(lastPrice)} SR</span>

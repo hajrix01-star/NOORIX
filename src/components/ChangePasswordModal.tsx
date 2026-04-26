@@ -1,7 +1,7 @@
 ﻿/**
  * ChangePasswordModal — نافذة تغيير كلمة المرور
  */
-import React, { useState } from 'react';
+import React, { useState, type FormEvent } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import { changePassword } from '../services/api';
 import { Button, Input, AdaptiveSheet } from '../ui';
@@ -12,7 +12,7 @@ const MIN_LENGTH = 8;
  * يُحسب مستوى قوة كلمة المرور من 0 إلى 4.
  * المعايير: الطول، أرقام، حروف صغيرة، حروف كبيرة، رموز خاصة.
  */
-function getPasswordStrength(pwd) {
+function getPasswordStrength(pwd: string): number {
   if (!pwd) return 0;
   let score = 0;
   if (pwd.length >= MIN_LENGTH) score++;
@@ -26,7 +26,12 @@ function getPasswordStrength(pwd) {
 const STRENGTH_LABELS = ['ضعيفة جداً', 'ضعيفة', 'متوسطة', 'جيدة', 'قوية'];
 const STRENGTH_COLORS = ['var(--noorix-accent-red)', '#f97316', '#eab308', 'var(--noorix-accent-green)', 'var(--noorix-accent-green)'];
 
-export default function ChangePasswordModal({ onClose, onSuccess }) {
+export type ChangePasswordModalProps = {
+  onClose?: () => void;
+  onSuccess?: (msg: string) => void;
+};
+
+export default function ChangePasswordModal({ onClose, onSuccess }: ChangePasswordModalProps) {
   const { t } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -38,7 +43,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
   const strengthLabel = newPassword ? STRENGTH_LABELS[strength] : '';
   const strengthColor = newPassword ? STRENGTH_COLORS[strength] : 'var(--noorix-border)';
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     if (!currentPassword.trim()) {
@@ -66,8 +71,8 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
       } else {
         setError(res?.error || t('changePasswordFailed') || 'فشل تغيير كلمة المرور');
       }
-    } catch (err) {
-      setError(err?.message || t('changePasswordFailed') || 'فشل تغيير كلمة المرور');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('changePasswordFailed') || 'فشل تغيير كلمة المرور');
     } finally {
       setLoading(false);
     }

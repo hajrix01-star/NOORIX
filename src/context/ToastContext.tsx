@@ -1,7 +1,22 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import Toast from '../components/Toast';
 
-const ToastContext = createContext(null);
+export type ToastType = 'success' | 'error' | string;
+
+export type ToastContextValue = {
+  showToast: (message: unknown, type?: ToastType) => void;
+  dismiss: () => void;
+};
+
+const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 /** تجاهل تكرار نفس الرسالة ونفس النوع خلال هذه المدة (يقلّل الوميض المزدوج). */
 const DEDUPE_MS = 2200;
@@ -9,11 +24,11 @@ const DEDUPE_MS = 2200;
 /**
  * إشعارات عائمة موحّدة عبر التطبيق (بدلاً من useState + Toast في كل شاشة).
  */
-export function ToastProvider({ children }) {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState({ visible: false, message: '', type: 'success' });
   const lastRef = useRef({ key: '', at: 0 });
 
-  const showToast = useCallback((message, type = 'success') => {
+  const showToast = useCallback((message: unknown, type: ToastType = 'success') => {
     if (message == null || message === '') return;
     const msg = String(message);
     const t = type || 'success';
@@ -28,7 +43,7 @@ export function ToastProvider({ children }) {
     setState((s) => ({ ...s, visible: false }));
   }, []);
 
-  const value = useMemo(() => ({ showToast, dismiss }), [showToast, dismiss]);
+  const value = useMemo<ToastContextValue>(() => ({ showToast, dismiss }), [showToast, dismiss]);
 
   return (
     <ToastContext.Provider value={value}>
@@ -38,9 +53,9 @@ export function ToastProvider({ children }) {
   );
 }
 
-export function useToast() {
+export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
-  if (!ctx) {
+  if (ctx === undefined) {
     throw new Error('useToast must be used within ToastProvider');
   }
   return ctx;
