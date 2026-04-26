@@ -15,9 +15,18 @@ export type ChatHandlerContext = {
   vaultsService: any;
 };
 
+/** بيانات اختيارية للواجهة (مثلاً رسم بسيط) — لا تُرسل لـ Gemini */
+export type ChatResponseExtras = {
+  chart?: {
+    kind: 'monthCompare';
+    bars: Array<{ key: string; labelAr: string; labelEn: string; value: number }>;
+  };
+};
+
 export type ChatHandlerResult = {
   answerAr: string;
   answerEn: string;
+  extras?: ChatResponseExtras;
 };
 
 export type GeminiIntent =

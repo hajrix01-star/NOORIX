@@ -128,8 +128,10 @@ export const financeRatiosHandler: ChatHandler = {
 
     if (!showPur && !showExp && !showSum) {
       return {
-        answerAr: '## مؤشرات الطلب على المبيعات\nلحساب النسب يلزم صلاحية عرض الفواتير (مشتريات) و/أو الخزائن (مصروفات) حسب السؤال.',
-        answerEn: '## Operating load vs sales\nNeed invoice and/or vault permissions for the requested ratios.',
+        answerAr:
+          '## مؤشرات الطلب على المبيعات\n• الخلاصة: يلزم منحك صلاحية الفواتير (مشتريات) و/أو الخزائن (مصروفات) لعرض النسب.\nلحساب النسب يلزم صلاحية عرض الفواتير (مشتريات) و/أو الخزائن (مصروفات) حسب السؤال.',
+        answerEn:
+          '## Operating load vs sales\n• Summary: invoice and/or vault permissions are required to show these ratios.\nNeed invoice and/or vault permissions for the requested ratios.',
       };
     }
 
@@ -138,8 +140,8 @@ export const financeRatiosHandler: ChatHandler = {
 
     if (end.getTime() < start.getTime()) {
       return {
-        answerAr: `## مؤشرات الطلب على المبيعات\nالفترة: ${labelAr}\nلا يوجد يوم مكتمل بعد في الشهر الحالي (مثلاً اليوم أول يوم في الشهر) — لا يمكن حساب «من 1 حتى أمس» بعد.`,
-        answerEn: `## Operating load vs sales\nPeriod: ${labelEn}\nNo completed calendar day in the current month yet — cannot compute month-to-date through yesterday.`,
+        answerAr: `## مؤشرات الطلب على المبيعات\nالفترة: ${labelAr}\n• الخلاصة: لا يمكن احتساب «حتى أمس» في أول يوم من الشهر — أعد السؤال غداً أو اختر فترة «الشهر الماضي» للمقارنة.\nلا يوجد يوم مكتمل بعد في الشهر الحالي (مثلاً اليوم أول يوم في الشهر) — لا يمكن حساب «من 1 حتى أمس» بعد.`,
+        answerEn: `## Operating load vs sales\nPeriod: ${labelEn}\n• Summary: month-to-date through yesterday is not available on the first day of the month — try again tomorrow or pick “last month”.\nNo completed calendar day in the current month yet — cannot compute month-to-date through yesterday.`,
       };
     }
 
@@ -153,14 +155,42 @@ export const financeRatiosHandler: ChatHandler = {
     linesEn.push('## Operating load vs sales');
     linesAr.push(`الفترة: ${labelAr}`);
     linesEn.push(`Period: ${labelEn}`);
-    linesAr.push(`تعريف: النسب من إجمالي المبيعات (إيراد)؛ المشتريات من حسابات PUR؛ المصروفات دون تكرار المشتريات.`);
-    linesEn.push(`Definition: vs revenue; purchases = PUR*; operating expenses exclude PUR.`);
 
     if (sales.lte(0)) {
-      linesAr.push('• لا توجد مبيعات في هذه الفترة — لا يمكن حساب النسب.');
-      linesEn.push('• No sales in this period — ratios cannot be computed.');
+      linesAr.push(
+        '• الخلاصة: لا مبيعات في هذه الفترة؛ راجع تسجيل الإيراد أو وسّع المدى الزمني ثم أعد السؤال.',
+      );
+      linesEn.push(
+        '• Summary: no sales in this range; check revenue postings or widen the period, then ask again.',
+      );
+      linesAr.push(`تعريف: النسب من إجمالي المبيعات (إيراد)؛ المشتريات من حسابات PUR؛ المصروفات دون تكرار المشتريات.`);
+      linesEn.push(`Definition: vs revenue; purchases = PUR*; operating expenses exclude PUR.`);
       return { answerAr: linesAr.join('\n'), answerEn: linesEn.join('\n') };
     }
+
+    const sumPe = purchases.plus(expenses);
+    let summaryAr = '';
+    let summaryEn = '';
+    if (showSum) {
+      summaryAr = `• الخلاصة: إيراد الفترة ${fmtMoney(sales)}؛ الطلب التشغيلي (مشتريات + مصروفات) ${pctOf(sumPe, sales)} من ذلك الإيراد — التفاصيل أدناه.`;
+      summaryEn = `• Summary: revenue ${fmtMoney(sales).replace('SR', 'SAR')}; operating load (purchases + expenses) is ${pctOf(sumPe, sales)} of that — see details below.`;
+    } else if (showPur && showExp) {
+      summaryAr = `• الخلاصة: مبيعات ${fmtMoney(sales)}؛ المشتريات ${pctOf(purchases, sales)} والمصروفات ${pctOf(expenses, sales)} من الإيراد — التفاصيل أدناه.`;
+      summaryEn = `• Summary: sales ${fmtMoney(sales).replace('SR', 'SAR')}; purchases ${pctOf(purchases, sales)} and expenses ${pctOf(expenses, sales)} of revenue — details below.`;
+    } else if (showPur) {
+      summaryAr = `• الخلاصة: مبيعات ${fmtMoney(sales)}؛ المشتريات تمثل ${pctOf(purchases, sales)} من الإيراد في هذه الفترة.`;
+      summaryEn = `• Summary: sales ${fmtMoney(sales).replace('SR', 'SAR')}; purchases are ${pctOf(purchases, sales)} of revenue for this range.`;
+    } else if (showExp) {
+      summaryAr = `• الخلاصة: مبيعات ${fmtMoney(sales)}؛ المصروفات تمثل ${pctOf(expenses, sales)} من الإيراد في هذه الفترة.`;
+      summaryEn = `• Summary: sales ${fmtMoney(sales).replace('SR', 'SAR')}; expenses are ${pctOf(expenses, sales)} of revenue for this range.`;
+    } else {
+      summaryAr = `• الخلاصة: مبيعات الفترة ${fmtMoney(sales)} — راجع التفاصيل أدناه.`;
+      summaryEn = `• Summary: revenue for this range is ${fmtMoney(sales).replace('SR', 'SAR')} — see below.`;
+    }
+    linesAr.push(summaryAr);
+    linesEn.push(summaryEn);
+    linesAr.push(`تعريف: النسب من إجمالي المبيعات (إيراد)؛ المشتريات من حسابات PUR؛ المصروفات دون تكرار المشتريات.`);
+    linesEn.push(`Definition: vs revenue; purchases = PUR*; operating expenses exclude PUR.`);
 
     linesAr.push(`• إجمالي المبيعات: ${fmtMoney(sales)}`);
     linesEn.push(`• Total sales: ${fmtMoney(sales).replace('SR', 'SAR')}`);

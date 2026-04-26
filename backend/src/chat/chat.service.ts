@@ -10,6 +10,7 @@ import { ReportsService } from '../reports/reports.service';
 import { VaultsService } from '../vaults/vaults.service';
 import { PERMISSIONS, hasPermission } from '../auth/constants/permissions';
 import { CHAT_HANDLERS } from './handlers';
+import type { ChatResponseExtras } from './handlers/types';
 import { normalizeQuery, parsePeriod } from './handlers/utils';
 import { GeminiService } from './gemini.service';
 import { isGeminiOpenModeEnabled } from '../config/gemini.config';
@@ -28,7 +29,12 @@ export class ChatService {
     query: string,
     userRole: string,
     userPermissions?: string[],
-  ): Promise<{ answerAr: string; answerEn: string; meta?: { intentSource: 'gemini' | 'keyword'; intent?: string } }> {
+  ): Promise<{
+    answerAr: string;
+    answerEn: string;
+    meta?: { intentSource: 'gemini' | 'keyword'; intent?: string };
+    extras?: ChatResponseExtras;
+  }> {
     const q = normalizeQuery(query);
     const can = (p: string) => hasPermission(userRole, p as any, userPermissions);
 

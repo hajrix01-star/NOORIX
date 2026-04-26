@@ -71,8 +71,28 @@ export const salesMonthCompareHandler: ChatHandler = {
     const trendAr = prev.lte(0) ? '—' : diff.gt(0) ? 'أعلى من الشهر الماضي' : diff.lt(0) ? 'أقل من الشهر الماضي' : 'مساوٍ للشهر الماضي';
     const trendEn = prev.lte(0) ? '—' : diff.gt(0) ? 'Above last month' : diff.lt(0) ? 'Below last month' : 'Same as last month';
 
+    let summaryAr = '';
+    let summaryEn = '';
+    if (prev.lte(0)) {
+      summaryAr =
+        '• الخلاصة: لا بيانات مبيعات كافية في الشهر الماضي لهذه الفترة — راجع تسجيل الإيراد أو اختر شهراً أحدث للمقارنة.';
+      summaryEn =
+        '• Summary: not enough last-month revenue in this window — check postings or pick another month to compare.';
+    } else if (diff.gt(0)) {
+      summaryAr = `• الخلاصة: مبيعاتك هذا الشهر أعلى من الشهر الماضي بنحو ${deltaPct}% لنفس الفترة — جيد إن كان ذلك متوافقاً مع أهدافك.`;
+      summaryEn = `• Summary: this month is about ${deltaPct}% above last month for the same window — good if that matches your plan.`;
+    } else if (diff.lt(0)) {
+      const dropPct = diff.abs().div(prev).mul(100).toDecimalPlaces(2).toString();
+      summaryAr = `• الخلاصة: مبيعاتك هذا الشهر أدنى من الشهر الماضي بنحو ${dropPct}% لنفس الفترة — راجع الأسباب التشغيلية إن لزم.`;
+      summaryEn = `• Summary: this month is about ${dropPct}% below last month for the same window — review drivers if needed.`;
+    } else {
+      summaryAr = '• الخلاصة: مبيعات الشهرين متقاربة لنفس الفترة — استقرار نسبي.';
+      summaryEn = '• Summary: both months are close for the same window — relatively steady.';
+    }
+
     const linesAr = [
       '## مقارنة المبيعات بين الشهرين',
+      summaryAr,
       `• هذا الشهر (${thisP.labelAr}): ${fmtMoney(cur)}`,
       `• ${prevP.labelAr}: ${fmtMoney(prev)}`,
       `الفرق: ${fmtMoney(diff)} (${deltaPct}% عن الشهر الماضي)`,
@@ -81,6 +101,7 @@ export const salesMonthCompareHandler: ChatHandler = {
     ];
     const linesEn = [
       '## Month-over-month sales',
+      summaryEn,
       `• This month (${thisP.labelEn}): ${fmtMoney(cur).replace('SR', 'SAR')}`,
       `• ${prevP.labelEn}: ${fmtMoney(prev).replace('SR', 'SAR')}`,
       `Difference: ${fmtMoney(diff).replace('SR', 'SAR')} (${deltaPct}% vs last month)`,
@@ -88,6 +109,18 @@ export const salesMonthCompareHandler: ChatHandler = {
       'Definition: this month from the 1st through today; last month from the 1st through the same calendar day (capped by last month length).',
     ];
 
-    return { answerAr: linesAr.join('\n'), answerEn: linesEn.join('\n') };
+    return {
+      answerAr: linesAr.join('\n'),
+      answerEn: linesEn.join('\n'),
+      extras: {
+        chart: {
+          kind: 'monthCompare',
+          bars: [
+            { key: 'prev', labelAr: 'الشهر الماضي', labelEn: 'Last month', value: prev.toNumber() },
+            { key: 'cur', labelAr: 'الشهر الحالي', labelEn: 'This month', value: cur.toNumber() },
+          ],
+        },
+      },
+    };
   },
 };

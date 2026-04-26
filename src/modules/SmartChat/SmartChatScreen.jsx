@@ -3,6 +3,7 @@
  * نسق مرجعي: أوامر مجمّعة، إدخال، نوافذ مركزية، تخزين محلي مع فلتر.
  */
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
@@ -141,8 +142,59 @@ function ReportDefinitionLine({ line, isAr }) {
   );
 }
 
+/** رسم عمودي بسيط لمقارنة شهريّين (بيانات من الـ API فقط) */
+function ChatMiniChart({ chart, isAr }) {
+  const bars = chart?.bars;
+  if (!Array.isArray(bars) || bars.length < 2) return null;
+  const data = bars.map((b) => ({
+    key: b.key,
+    name: isAr ? b.labelAr : b.labelEn,
+    value: Number(b.value),
+  }));
+  const fmt = (v) => `${Number(v).toLocaleString('en')} ${isAr ? 'ر.س' : 'SAR'}`;
+  return (
+    <div
+      className="noorix-chat-mini-chart mt-3 pt-3 border-t border-noorix-border"
+      role="img"
+      aria-label={isAr ? 'مخطط مقارنة مبيعات الشهرين' : 'Bar chart comparing the two months'}
+    >
+      <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        {isAr ? 'مقارنة بصرية' : 'Visual comparison'}
+      </div>
+      <div className="nx-ltr" style={{ width: '100%', height: 132 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barCategoryGap="28%">
+            <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--noorix-text-muted)' }} axisLine={false} tickLine={false} />
+            <YAxis
+              width={44}
+              tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
+              tickFormatter={(v) => (v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip
+              formatter={(value) => [fmt(value), isAr ? 'المبلغ' : 'Amount']}
+              labelStyle={{ direction: isAr ? 'rtl' : 'ltr' }}
+              contentStyle={{
+                borderRadius: 8,
+                border: '1px solid var(--noorix-border)',
+                fontSize: 12,
+              }}
+            />
+            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={42}>
+              {data.map((_, i) => (
+                <Cell key={data[i].key} fill={i === 0 ? 'rgba(148, 163, 184, 0.55)' : 'var(--btn-primary-bg)'} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 /** كرت الرد — عناوين ## ، نقاط • ، تعريف قابل للطي ، ثم شبكة تسمية:قيمة */
-function ReportCard({ text, isAr, createdAt }) {
+function ReportCard({ text, isAr, createdAt, extras }) {
   const raw = String(text || '').trim();
   const lines = raw
     .split(/\n+/)
@@ -214,6 +266,7 @@ function ReportCard({ text, isAr, createdAt }) {
       ) : (
         <div className="whitespace-pre-wrap">{text}</div>
       )}
+      {extras?.chart?.kind === 'monthCompare' ? <ChatMiniChart chart={extras.chart} isAr={isAr} /> : null}
       {createdAt && (
         <div className="text-[12px] text-noorix-muted border-t border-noorix-border nx-ltr mt-[14px] pt-3">
           {formatSaudiDateTime(createdAt)}
@@ -420,7 +473,15 @@ export default function SmartChatScreen() {
     try {
       const res = await chatQuery(q);
       if (res?.success && res?.data) {
-        setMessages((prev) => [...prev, { role: 'assistant', textAr: res.data.answerAr, textEn: res.data.answerEn }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            textAr: res.data.answerAr,
+            textEn: res.data.answerEn,
+            ...(res.data.extras ? { extras: res.data.extras } : {}),
+          },
+        ]);
       } else {
         setMessages((prev) => [...prev, { role: 'assistant', textAr: res?.error || 'حدث خطأ.', textEn: res?.error || 'An error occurred.' }]);
       }
@@ -595,6 +656,7 @@ export default function SmartChatScreen() {
                     text={(isAr ? m.textAr : m.textEn) || m.textAr}
                     isAr={isAr}
                     createdAt={m.createdAt}
+                    extras={m.extras}
                   />
                 </div>
               )}
