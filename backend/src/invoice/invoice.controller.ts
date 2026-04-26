@@ -22,6 +22,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { FileInterceptor }       from '@nestjs/platform-express';
 import type { Response }         from 'express';
 import { AuthGuard }             from '@nestjs/passport';
@@ -63,7 +64,7 @@ export class InvoiceController {
   @Get('purchase-batch-summaries')
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async purchaseBatchSummaries(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate')   endDate?:   string,
     @Query('q')         q?:         string,
@@ -76,7 +77,7 @@ export class InvoiceController {
   @Get('day-close-report')
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async dayCloseReport(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('date')     date:      string,
   ) {
     if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
@@ -86,7 +87,7 @@ export class InvoiceController {
   /** مستخدمو النظام الظاهرون كمنشئين لفواتير الشركة — لفلتر القائمة */
   @Get('creator-filter-options')
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
-  async creatorFilterOptions(@Query('companyId') companyId: string) {
+  async creatorFilterOptions(@CompanyId() companyId: string) {
     return this.invoiceService.getCreatorFilterOptions(companyId);
   }
 
@@ -94,7 +95,7 @@ export class InvoiceController {
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async findAll(
     @CurrentUser()        user:        JwtUser,
-    @Query('companyId')   companyId:   string,
+    @CompanyId() companyId: string,
     @Query('page')        page?:       string,
     @Query('pageSize')    pageSize?:   string,
     @Query('startDate')   startDate?:  string,
@@ -155,7 +156,7 @@ export class InvoiceController {
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async downloadAttachment(
     @Param('id')        id:        string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Res()              res:       Response,
   ) {
     if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
@@ -167,7 +168,7 @@ export class InvoiceController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadAttachment(
     @Param('id')        id:        string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @UploadedFile()    file:       Express.Multer.File,
     @CurrentUser()      user:      JwtUser,
   ) {
@@ -179,7 +180,7 @@ export class InvoiceController {
   @RequireAnyPermission('INVOICES_WRITE', 'PURCHASES_WRITE')
   async deleteAttachment(
     @Param('id')        id:        string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser()      user:      JwtUser,
   ) {
     if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
@@ -190,7 +191,7 @@ export class InvoiceController {
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async findOne(
     @Param('id')        id:        string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
   ) {
     return this.invoiceService.findOne(id, companyId);
   }
@@ -200,7 +201,7 @@ export class InvoiceController {
   async update(
     @Param('id')        id:        string,
     @Body()             dto:       UpdateInvoiceDto,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser()      user:      JwtUser,
   ) {
     return this.invoiceService.update(id, dto, companyId, user.sub);
@@ -210,7 +211,7 @@ export class InvoiceController {
   @Roles('owner')
   async remove(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
     return this.invoiceService.update(id, { status: 'cancelled' }, companyId, user.sub);

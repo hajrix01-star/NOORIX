@@ -2,6 +2,7 @@
  * CompanyAsset — سجل أصول الشركة (ضمان، مدة، تقرير)
  */
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -19,7 +20,7 @@ export class CompanyAssetsController {
   @Get()
   @RequirePermission('EXPENSES_READ')
   findAll(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('warrantyFilter') warrantyFilter?: WarrantyFilter,
     @Query('q') q?: string,
     @Query('page') page?: string,
@@ -36,7 +37,7 @@ export class CompanyAssetsController {
 
   @Get('pending-invoices')
   @RequirePermission('EXPENSES_READ')
-  findPendingWarrantyInvoices(@Query('companyId') companyId: string) {
+  findPendingWarrantyInvoices(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.companyAssetsService.findPendingWarrantyInvoices(companyId);
   }
@@ -49,7 +50,7 @@ export class CompanyAssetsController {
 
   @Get(':id')
   @RequirePermission('EXPENSES_READ')
-  findOne(@Param('id') id: string, @Query('companyId') companyId: string) {
+  findOne(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.companyAssetsService.findOne(id, companyId);
   }
 
@@ -63,7 +64,7 @@ export class CompanyAssetsController {
   @RequirePermission('EXPENSES_WRITE')
   update(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Body() dto: UpdateCompanyAssetDto,
   ) {
     return this.companyAssetsService.update(id, companyId, dto);
@@ -71,7 +72,7 @@ export class CompanyAssetsController {
 
   @Delete(':id')
   @RequirePermission('EXPENSES_DELETE')
-  remove(@Param('id') id: string, @Query('companyId') companyId: string) {
+  remove(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.companyAssetsService.remove(id, companyId);
   }
 }

@@ -1,6 +1,7 @@
 import {
   Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard }          from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard }         from '../auth/guards/roles.guard';
@@ -25,7 +26,7 @@ export class EmployeesController {
   @Get()
   @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_INCREASES')
   findAll(
-    @Query('companyId')          companyId: string,
+    @CompanyId() companyId: string,
     @Query('includeTerminated')  inc?: string,
     @Query('page')               pageStr?: string,
     @Query('pageSize')           pageSizeStr?: string,
@@ -52,7 +53,7 @@ export class EmployeesController {
   @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_INCREASES')
   findOne(
     @Param('id')        id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
   ) {
     return this.svc.findOne(id, companyId);
   }
@@ -73,7 +74,7 @@ export class EmployeesController {
   @RequirePermission('EMPLOYEES_WRITE')
   update(
     @Param('id')        id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Body()             dto: UpdateEmployeeDto,
     @CurrentUser()      user: JwtUser,
   ) {
@@ -84,7 +85,7 @@ export class EmployeesController {
   @RequirePermission('EMPLOYEES_WRITE')
   terminate(
     @Param('id')        id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser()      user: JwtUser,
   ) {
     return this.svc.terminate(id, companyId, user.sub);
@@ -94,7 +95,7 @@ export class EmployeesController {
   @RequirePermission('EMPLOYEES_DELETE')
   remove(
     @Param('id')        id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser()      user: JwtUser,
   ) {
     return this.svc.removePermanently(id, companyId, user.sub);

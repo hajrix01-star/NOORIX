@@ -6,6 +6,7 @@
  *   GET /summaries → SALES_READ   (owner | super_admin | accountant | cashier)
  */
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard }            from '@nestjs/passport';
 import { CompanyAccessGuard }   from '../auth/guards/company-access.guard';
 import { RolesGuard }           from '../auth/guards/roles.guard';
@@ -46,7 +47,7 @@ export class SalesController {
   async updateSummary(
     @Param('id')   id:      string,
     @Body()        dto:     UpdateSalesSummaryDto,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user:   JwtUser,
   ) {
     if (!companyId) throw new Error('companyId مطلوب');
@@ -63,7 +64,7 @@ export class SalesController {
   @Roles('owner')
   async cancelSummary(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
     if (!companyId) throw new Error('companyId مطلوب');
@@ -75,7 +76,7 @@ export class SalesController {
   @RequirePermission('SALES_READ')
   async dashboardSalesPack(
     @CurrentUser() user: JwtUser,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('yearStart') yearStart: string,
     @Query('yearEnd') yearEnd: string,
     @Query('dailyStart') dailyStart?: string,
@@ -133,7 +134,7 @@ export class SalesController {
   @RequirePermission('SALES_READ')
   async findAll(
     @CurrentUser() user: JwtUser,
-    @Query('companyId') companyId:  string,
+    @CompanyId() companyId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate')   endDate?:   string,
     @Query('page')      page?:      string,

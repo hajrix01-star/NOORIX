@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Put, Query, Req, UseGuards } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -19,7 +20,7 @@ export class VatPlanningController {
   async listRegistry(
     @Query('year') yearStr: string | undefined,
     @Query('quarter') quarterStr: string | undefined,
-    @Query('companyId') companyId: string | undefined,
+    @CompanyId() companyId: string,
     @Req() req: { user: JwtUser },
   ) {
     const yearParsed = yearStr !== undefined && yearStr !== '' ? parseInt(yearStr, 10) : NaN;
@@ -38,7 +39,7 @@ export class VatPlanningController {
   async list(
     @Query('year') yearStr: string,
     @Query('quarter') quarterStr: string,
-    @Query('companyId') companyId: string | undefined,
+    @CompanyId() companyId: string,
     @Req() req: { user: JwtUser },
   ) {
     const year = parseInt(yearStr, 10);
@@ -57,7 +58,7 @@ export class VatPlanningController {
   @SkipCompanyCheck()
   @RequirePermission('REPORTS_READ')
   async remove(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('year') yearStr: string,
     @Query('quarter') quarterStr: string,
     @Req() req: { user: JwtUser },

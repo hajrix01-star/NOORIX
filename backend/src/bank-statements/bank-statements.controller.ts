@@ -12,6 +12,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import type { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
@@ -75,21 +76,21 @@ export class BankStatementsController {
 
   @Get('summary')
   @RequirePermission('REPORTS_READ')
-  async summary(@Query('companyId') companyId: string) {
+  async summary(@CompanyId() companyId: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.getSummary(companyId);
   }
 
   @Get('categories')
   @RequirePermission('REPORTS_READ')
-  async getCategories(@Query('companyId') companyId: string) {
+  async getCategories(@CompanyId() companyId: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.getCategories(companyId);
   }
 
   @Get()
   @RequirePermission('REPORTS_READ')
-  async list(@Query('companyId') companyId: string, @Query('month') month?: string, @Query('bankName') bankName?: string) {
+  async list(@CompanyId() companyId: string, @Query('month') month?: string, @Query('bankName') bankName?: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.list(companyId, { month, bankName });
   }
@@ -97,7 +98,7 @@ export class BankStatementsController {
   @Get('reconciliation-stats')
   @RequirePermission('REPORTS_READ')
   async reconciliationStats(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
@@ -109,7 +110,7 @@ export class BankStatementsController {
 
   @Get('templates')
   @RequirePermission('REPORTS_READ')
-  async listTemplates(@Query('companyId') companyId: string) {
+  async listTemplates(@CompanyId() companyId: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.listTemplates(companyId);
   }
@@ -129,14 +130,14 @@ export class BankStatementsController {
 
   @Delete('templates/:templateId')
   @RequirePermission('REPORTS_READ')
-  async deleteTemplate(@Query('companyId') companyId: string, @Param('templateId') templateId: string) {
+  async deleteTemplate(@CompanyId() companyId: string, @Param('templateId') templateId: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteTemplate(companyId, templateId);
   }
 
   @Get('tree-categories')
   @RequirePermission('REPORTS_READ')
-  async listTreeCategories(@Query('companyId') companyId: string) {
+  async listTreeCategories(@CompanyId() companyId: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.listTreeCategories(companyId);
   }
@@ -182,7 +183,7 @@ export class BankStatementsController {
 
   @Delete('tree-categories/:cid')
   @RequirePermission('REPORTS_READ')
-  async deleteTreeCategory(@Query('companyId') companyId: string, @Param('cid') cid: string) {
+  async deleteTreeCategory(@CompanyId() companyId: string, @Param('cid') cid: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteTreeCategory(companyId, cid);
   }
@@ -196,14 +197,14 @@ export class BankStatementsController {
 
   @Get('classification-rules/export-pack')
   @RequirePermission('REPORTS_READ')
-  async exportClassificationPack(@Query('companyId') companyId: string) {
+  async exportClassificationPack(@CompanyId() companyId: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.exportClassificationPack(companyId);
   }
 
   @Get('classification-rules')
   @RequirePermission('REPORTS_READ')
-  async listRules(@Query('companyId') companyId: string) {
+  async listRules(@CompanyId() companyId: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.listClassificationRules(companyId);
   }
@@ -228,7 +229,7 @@ export class BankStatementsController {
 
   @Delete('classification-rules/:rid')
   @RequirePermission('REPORTS_READ')
-  async deleteRule(@Query('companyId') companyId: string, @Param('rid') rid: string) {
+  async deleteRule(@CompanyId() companyId: string, @Param('rid') rid: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteClassificationRule(companyId, rid);
   }
@@ -263,7 +264,7 @@ export class BankStatementsController {
 
   @Get(':id')
   @RequirePermission('REPORTS_READ')
-  async findOne(@Query('companyId') companyId: string, @Param('id') id: string) {
+  async findOne(@CompanyId() companyId: string, @Param('id') id: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.findOne(companyId, id);
   }
@@ -292,7 +293,7 @@ export class BankStatementsController {
 
   @Delete(':id')
   @RequirePermission('REPORTS_READ')
-  async delete(@Query('companyId') companyId: string, @Param('id') id: string) {
+  async delete(@CompanyId() companyId: string, @Param('id') id: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.delete(companyId, id);
   }
@@ -306,7 +307,7 @@ export class BankStatementsController {
 
   @Delete('categories/:id')
   @RequirePermission('REPORTS_READ')
-  async deleteCategory(@Query('companyId') companyId: string, @Param('id') id: string) {
+  async deleteCategory(@CompanyId() companyId: string, @Param('id') id: string) {
     if (!companyId) throw new HttpException('companyId مطلوب', HttpStatus.BAD_REQUEST);
     return this.service.deleteCategory(companyId, id);
   }

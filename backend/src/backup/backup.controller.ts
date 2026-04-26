@@ -16,6 +16,7 @@ import {
   UseInterceptors,
   StreamableFile,
 } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { Response } from 'express';
 import { createReadStream, mkdirSync } from 'fs';
 import { randomBytes } from 'crypto';
@@ -249,7 +250,7 @@ export class BackupController {
 
   @Get('company/config')
   @RequirePermission('MANAGE_SETTINGS')
-  async getCompanyBackupConfig(@Query('companyId') companyId: string, @Req() req: { user?: ReqUser }) {
+  async getCompanyBackupConfig(@CompanyId() companyId: string, @Req() req: { user?: ReqUser }) {
     const u = req.user;
     if (!u?.tenantId) throw new UnauthorizedException();
     if (!companyId) throw new BadRequestException('companyId مطلوب');

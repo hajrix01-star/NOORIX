@@ -2,6 +2,7 @@
  * ExpenseLineController — بنود المصاريف الثابتة والمتغيرة
  */
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -18,7 +19,7 @@ export class ExpenseLineController {
   @Get()
   @RequirePermission('INVOICES_READ')
   findAll(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('kind') kind?: 'fixed_expense' | 'expense',
     @Query('includeInactive') includeInactive?: string,
   ) {
@@ -34,7 +35,7 @@ export class ExpenseLineController {
   @RequirePermission('INVOICES_READ')
   findOne(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
   ) {
     return this.expenseLineService.findOne(id, companyId);
   }
@@ -43,7 +44,7 @@ export class ExpenseLineController {
   @RequirePermission('INVOICES_READ')
   getPayments(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('page') page?: string,
@@ -69,7 +70,7 @@ export class ExpenseLineController {
   @RequirePermission('INVOICES_WRITE')
   update(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Body() dto: UpdateExpenseLineDto,
   ) {
     return this.expenseLineService.update(id, companyId, dto);
@@ -79,7 +80,7 @@ export class ExpenseLineController {
   @RequirePermission('INVOICES_WRITE')
   deactivate(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
   ) {
     return this.expenseLineService.deactivate(id, companyId);
   }

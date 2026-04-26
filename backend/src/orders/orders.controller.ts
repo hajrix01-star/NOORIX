@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -17,7 +18,7 @@ export class OrdersController {
   @Get()
   @RequirePermission('VIEW_SALES')
   findAll(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('year') year: string,
     @Query('month') month: string,
   ) {
@@ -31,7 +32,7 @@ export class OrdersController {
   @Get('summary')
   @RequirePermission('VIEW_SALES')
   getSummary(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('year') year: string,
     @Query('month') month: string,
   ) {
@@ -45,7 +46,7 @@ export class OrdersController {
   @Get('items-report')
   @RequirePermission('VIEW_SALES')
   getItemsReport(
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('year') year: string,
     @Query('month') month: string,
   ) {
@@ -58,7 +59,7 @@ export class OrdersController {
 
   @Get('products')
   @RequirePermission('VIEW_SALES')
-  getProducts(@Query('companyId') companyId: string) {
+  getProducts(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.ordersService.getProducts(companyId);
   }
@@ -85,7 +86,7 @@ export class OrdersController {
   @RequirePermission('VIEW_SALES')
   updateProduct(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Body() body: UpdateProductDto,
   ) {
     return this.ordersService.updateProduct(id, companyId, body);
@@ -95,7 +96,7 @@ export class OrdersController {
   @RequirePermission('VIEW_SALES')
   getProductPurchaseHistory(
     @Param('productId') productId: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
@@ -109,7 +110,7 @@ export class OrdersController {
   @RequirePermission('VIEW_SALES')
   getCategoryPurchaseHistory(
     @Param('categoryId') categoryId: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
@@ -121,7 +122,7 @@ export class OrdersController {
 
   @Get('categories')
   @RequirePermission('VIEW_SALES')
-  getCategories(@Query('companyId') companyId: string) {
+  getCategories(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.ordersService.getCategories(companyId);
   }
@@ -136,7 +137,7 @@ export class OrdersController {
   @RequirePermission('VIEW_SALES')
   updateCategory(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Body() body: { nameAr?: string; nameEn?: string | null; sortOrder?: number; isActive?: boolean },
   ) {
     return this.ordersService.updateCategory(id, companyId || '', body);
@@ -144,7 +145,7 @@ export class OrdersController {
 
   @Get(':id')
   @RequirePermission('VIEW_SALES')
-  findOne(@Param('id') id: string, @Query('companyId') companyId: string) {
+  findOne(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.ordersService.findOne(id, companyId);
   }
 
@@ -152,7 +153,7 @@ export class OrdersController {
   @RequirePermission('VIEW_SALES')
   update(
     @Param('id') id: string,
-    @Query('companyId') companyId: string,
+    @CompanyId() companyId: string,
     @Body() body: {
       orderDate?: string;
       orderType?: 'external' | 'internal';
@@ -166,7 +167,7 @@ export class OrdersController {
 
   @Delete(':id')
   @RequirePermission('VIEW_SALES')
-  cancel(@Param('id') id: string, @Query('companyId') companyId: string) {
+  cancel(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.ordersService.cancel(id, companyId);
   }
 
