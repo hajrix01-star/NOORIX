@@ -6,35 +6,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const hrDir = path.join(__dirname, '../src/hr');
 const read = (f) => fs.readFileSync(path.join(hrDir, f), 'utf8');
 
-const payrollHeader = `/**
- * HrPayrollService — مسيرات الرواتب، السلف، وحركات/بدلات/خصومات الموظف
+/**
+ * ملاحظة: hr-payroll لم يَعُد يُجمَّع من _gen — الصيانة اليدوية فقط
+ * (hr-payroll.service.ts + hr-payroll-run-*.ts + hr-payroll-ancillary + utils).
+ * انظر: hr/split-hr-services.mjs إن وُجد لحالة سابقة.
  */
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { AuditLogService } from '../audit/audit-log.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
-import { TenantContext } from '../common/tenant-context';
-import { nowSaudi } from '../common/utils/date-utils';
-import type { CreatePayrollRunDto, PayrollRunItemDto } from './dto/create-payroll-run.dto';
-import type { UpdatePayrollRunDto, UpdatePayrollRunStatusDto } from './dto/update-payroll-run.dto';
-import type { CreateMovementDto } from './dto/create-movement.dto';
-import type { CreateAllowanceDto } from './dto/create-allowance.dto';
-import type { CreateDeductionDto } from './dto/create-deduction.dto';
-import type { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
-import { toMoneyDecimal2 } from '../common/utils/money-decimal';
-import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
-import { saudiDateYmd } from './utils/hr-saudi-dates.util';
-
-@Injectable()
-export class HrPayrollService {
-  constructor(
-    private readonly prisma: TenantPrismaService,
-    private readonly audit: AuditLogService,
-    private readonly financialCore: FinancialCoreService,
-  ) {}
-
-`;
 
 const leaveHeader = `/**
  * HrLeaveService — الإجازات وتسويات راتب الإجازة
@@ -107,8 +83,6 @@ export class HrDocumentService {
 
 `;
 
-let pBody = read('_gen/hr-payroll.body.txt').replace(/this\.saudiDateYmd\(\)/g, 'saudiDateYmd()');
-
 let lBody = read('_gen/hr-leave.body.txt');
 lBody = lBody
   .replace(/this\.saudiDateYmd\(\)/g, 'saudiDateYmd()')
@@ -119,13 +93,11 @@ lBody = lBody
 const rBody = read('_gen/hr-res.body.txt').replace(/^\s*\n/, '');
 const dBody = read('_gen/hr-doc.body.txt').replace(/^\s*\n/, '');
 
-const payrollOut = payrollHeader + pBody + '\n}\n';
 const leaveOut = leaveHeader + lBody + '\n}\n';
 const resOut = resHeader + rBody + '\n}\n';
 const docOut = docHeader + dBody + '\n}\n';
 
-fs.writeFileSync(path.join(hrDir, 'hr-payroll.service.ts'), payrollOut, 'utf8');
 fs.writeFileSync(path.join(hrDir, 'hr-leave.service.ts'), leaveOut, 'utf8');
 fs.writeFileSync(path.join(hrDir, 'hr-residency.service.ts'), resOut, 'utf8');
 fs.writeFileSync(path.join(hrDir, 'hr-document.service.ts'), docOut, 'utf8');
-console.log('Wrote 4 service files');
+console.log('Wrote 3 service files (leave, residency, document) — skipped hr-payroll (modular)');

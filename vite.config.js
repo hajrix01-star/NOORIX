@@ -14,6 +14,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: false,
+    /** اختبارات الـ API في backend تُنفّذ بـ Jest (npm test --prefix backend) */
+    exclude: ['**/node_modules/**', '**/dist/**', 'backend/**'],
   },
   define: {
     __BUILD_ID__: JSON.stringify(noorixBuildId),

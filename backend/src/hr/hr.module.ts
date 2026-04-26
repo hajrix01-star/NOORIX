@@ -15,6 +15,10 @@ import { EmployeesModule } from '../employees/employees.module';
 import { HRController } from './hr.controller';
 import { HRService } from './hr.service';
 import { HrPayrollService } from './hr-payroll.service';
+import { HrPayrollRunReaderService } from './hr-payroll-run-reader.service';
+import { HrPayrollRunLifecycleService } from './hr-payroll-run-lifecycle.service';
+import { HrPayrollRunIssueService } from './hr-payroll-run-issue.service';
+import { HrPayrollAncillaryService } from './hr-payroll-ancillary.service';
 import { HrLeaveService } from './hr-leave.service';
 import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
@@ -38,6 +42,10 @@ import { HrDocumentService } from './hr-document.service';
   ],
   controllers: [HRController],
   providers: [
+    HrPayrollRunReaderService,
+    HrPayrollRunLifecycleService,
+    HrPayrollRunIssueService,
+    HrPayrollAncillaryService,
     HrPayrollService,
     HrLeaveService,
     HrResidencyService,

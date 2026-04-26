@@ -1,5 +1,6 @@
 /**
- * يبني 4 خدمات + واجهة OcrInvoicesService من ocr-invoices.service.ts (المونوليث).
+ * يبني 3 خدمات (استخراج، استقبال، كتالوج) + واجهة OcrInvoicesService.
+ * سير عمل الفواتير ocr-invoice-workflow* يُبنى ويُقسّم يدوياً — لا تُعاد توليده.
  * npm exec node scripts/assemble-ocr-invoices.mjs
  */
 import fs from 'fs';
@@ -21,9 +22,6 @@ const catA = lines.slice(1009, 1213).join('\n'); // 1010–1213
 // حتى } إغلاق addItemAlias (سطر 2125 في المونوليث ~2153) — end صارم: slice(…, 2125)
 const catB = lines.slice(2110, 2125).join('\n');
 const cat  = [catA, catB].join('\n\n');
-// 1214–2110: فواتير، تقارير، حفظ، تنبيهات، قواعد تصحيح (دون الـ aliases)
-const flow = lines.slice(1213, 2110).join('\n');
-
 const extractionHeader = `/**
  * استخراج Gemini + إثراء المطابقة وتسجيل الاستخراج/قواعد التصحيح.
  */
@@ -89,31 +87,6 @@ import { findBestItemMatch, normalizeItemForSearch } from './ocr-item-name-match
 @Injectable()
 export class OcrCatalogService {
   constructor(private readonly prisma: PrismaService) {}
-
-`;
-
-const workflowHeader = `/**
- * فواتير وتقارير وتنبيهات واعتماد المشتريات.
- */
-import { Injectable, Logger, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { SaveInvoiceDto } from './dto/save-invoice.dto';
-import { CreateInvoiceDto } from '../invoice/dto/create-invoice.dto';
-import { InvoiceService } from '../invoice/invoice.service';
-import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
-import { OcrInvoiceStatus } from './ocr-invoice-status';
-import { findBestItemMatch, normalizeItemForSearch } from './ocr-item-name-match.util';
-import type { OcrSaveInvoiceCaller } from './ocr-invoices.types';
-
-@Injectable()
-export class OcrInvoiceWorkflowService {
-  private readonly logger = new Logger(OcrInvoiceWorkflowService.name);
-
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly invoiceService: InvoiceService,
-  ) {}
 
 `;
 
@@ -263,6 +236,5 @@ export class OcrInvoicesService {
 fs.writeFileSync(path.join(ocrDir, 'ocr-extraction.service.ts'), extractionHeader + ext + '\n}\n', 'utf8');
 fs.writeFileSync(path.join(ocrDir, 'ocr-intake.service.ts'), intakeHeader + int + '\n}\n', 'utf8');
 fs.writeFileSync(path.join(ocrDir, 'ocr-catalog.service.ts'), catalogHeader + cat + '\n}\n', 'utf8');
-fs.writeFileSync(path.join(ocrDir, 'ocr-invoice-workflow.service.ts'), workflowHeader + flow + '\n}\n', 'utf8');
 fs.writeFileSync(path.join(ocrDir, 'ocr-invoices.service.ts'), facade, 'utf8');
-console.log('Wrote 4 ocr-*.service.ts + ocr-invoices.service (facade)');
+console.log('Wrote ocr-extraction, ocr-intake, ocr-catalog, ocr-invoices (facade) — skipped ocr-invoice-workflow*');
