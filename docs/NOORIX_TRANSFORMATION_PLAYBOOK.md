@@ -126,7 +126,7 @@
 
 | التاريخ | المرحلة | الـ ID | الـ commit (short hash) | المنفّذ | نتيجة الاختبار (✓/✗) | ملاحظات |
 |---------|---------|--------|-------------------------|--------|---------------------|---------|
-| 2026-04-26 | A+B | A1–A2، B1–B7 (دفعة 1) | (بعد `git commit`) | Cursor | — | `git rm --cached` لـ `backend/uploads/*` + `build-out.txt`، `.gitignore`، إزالة prisma من جذر الواجهة، JWT موحّد، `http-exception` production، `extractJson`+OCR util، `OcrCorrectionRule`، dynamic xlsx bank، `cacheHelper`، تنظيف imports، `Dockerfile` VOLUME. **اختبارات:** `npm run build` + `npm test` (جذر)، `npm run build` (backend) ✓ |
+| 2026-04-26 | A+B | A1–A2، B1–B7 (دفعة 1) | `4fd6a85` | Cursor | ✓ | `git rm --cached` لـ `backend/uploads/*` + `build-out.txt`، `.gitignore`، إزالة prisma من جذر الواجهة، JWT موحّد، `http-exception` production، `extractJson`+OCR util، `OcrCorrectionRule`، dynamic xlsx bank، `cacheHelper`، تنظيف imports، `Dockerfile` VOLUME. **اختبارات:** `npm run build` + `npm test` (جذر)، `npm run build` (backend) |
 | YYYY-MM-DD | A | A1 | | | | |
 | | | A2 | | | | |
 | | B | B1 | | | | |
