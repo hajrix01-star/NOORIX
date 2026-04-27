@@ -2,6 +2,13 @@
 
 مرجع موحّد للأوامر والميثاق بعد إغلاق صفوف P0–P3 في [NOORIX_360_REVIEW_ABRIL_2026.md](./NOORIX_360_REVIEW_ABRIL_2026.md).
 
+## تبعيات وnpm audit (ما قبل الإطلاق)
+
+- `npm audit` قد يُظهِر **ثغرات متبقية**؛ السجل المرجعي: [PRE_LAUNCH_SECURITY_RISK_REGISTER.md](./PRE_LAUNCH_SECURITY_RISK_REGISTER.md).
+- **لا** تشغيل `npm audit fix --force` قبل الإطلاق دون موافقة صريحة وخطة rollback.
+- **ترقيات major** (مثل Vite 8 أو Nest 11) تُؤجَّل إلى **PR مخصص** لترقية التبعيات بعد الإطلاق أو في نافذة صيانة مخططة.
+- استيراد الجداول في الواجهة مُقيَّد عبر **`spreadsheetUploadGuard`** (`src/utils/spreadsheetUploadGuard.ts`) مع `src/utils/excelExportImport.ts`.
+
 ---
 
 ## 1) ميثاق حجم الملفات + محرك مالي
@@ -116,4 +123,4 @@ npm run verify:git-cleanliness -- --strict
 
 ---
 
-**آخر تحديث:** 2026-04-28 — فرض CI لـ §3 و§6 (اختبارات مالية، نظافة Git، بصمة الخدمات).
+**آخر تحديث:** 2026-04-28 — فرض CI لـ §3 و§6؛ سجل مخاطر npm ما قبل الإطلاق: [PRE_LAUNCH_SECURITY_RISK_REGISTER.md](./PRE_LAUNCH_SECURITY_RISK_REGISTER.md).

@@ -1,6 +1,7 @@
 /**
  * تصدير Excel عام + استيراد Excel/CSV (كشوف، قوالب)
  */
+import { assertSpreadsheetUploadFile } from './spreadsheetUploadGuard';
 import { roundMoney2 } from './moneyInput';
 import { normalizeColumnDefs } from './exportNormalize';
 
@@ -193,6 +194,7 @@ export async function exportToExcel(
  * @returns {Promise<Object[]>}
  */
 export async function importFromExcel(file: File, opts: { headerRow?: number } = {}) {
+  assertSpreadsheetUploadFile(file);
   const XLSX = await import('xlsx');
   const data = await file.arrayBuffer();
   const wb = XLSX.read(data, { type: 'array', dateNF: 'yyyy-mm-dd' });
@@ -240,7 +242,8 @@ export async function importFromExcel(file: File, opts: { headerRow?: number } =
 /**
  * importExcelRaw — قراءة Excel كصفوف خام (مصفوفة مصفوفات) بدون افتراض عناوين
  */
-export async function importExcelRaw(file: any) {
+export async function importExcelRaw(file: File) {
+  assertSpreadsheetUploadFile(file);
   const XLSX = await import('xlsx');
   const data = await file.arrayBuffer();
   const wb = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy-mm-dd' });
@@ -268,7 +271,8 @@ export async function importExcelRaw(file: any) {
 /**
  * importBankStatementFile — قراءة Excel أو CSV كصفوف خام لتحليل الكشف
  */
-export async function importBankStatementFile(file: any) {
+export async function importBankStatementFile(file: File) {
+  assertSpreadsheetUploadFile(file);
   const ext = (file.name || '').toLowerCase().split('.').pop();
   if (ext === 'csv') {
     const text = await file.text();
