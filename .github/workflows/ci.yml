@@ -24,7 +24,11 @@ jobs:
 
       - run: npm run check:service-footprint
 
+      - run: npm run check:scripts
+
       - run: npm run build
+
+      - run: npm run build --prefix backend
 
       - run: npm run test:financial
 

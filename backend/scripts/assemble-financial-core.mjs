@@ -11,9 +11,11 @@ const fcdir = path.join(__dirname, '../src/financial-core');
 const monolithPath = path.join(fcdir, 'financial-core.service.monolith.ts');
 const fc = path.join(fcdir, 'financial-core.service.ts');
 const persistUtil = path.join(fcdir, 'financial-outflow-persist.util.ts');
+const ledgerUtil = path.join(fcdir, 'financial-outflow-ledger.util.ts');
 if (fs.existsSync(persistUtil)) {
   console.warn('[assemble-financial-core] يوجد financial-outflow-persist.util.ts — دمج create/دفعة في monolith قبل التجميع إن لزم.');
 }
+if (fs.existsSync(ledgerUtil)) {
   console.warn(
     '[assemble-financial-core] يوجد financial-outflow-ledger.util.ts — بعد التجميع من الـ monolith، أعد دمج استدعاءات replaceOutflowInvoiceLedgerAndAllocations/scaleVaultAllocationsToTotal في financial-outflow.service.ts إن لزم.',
   );

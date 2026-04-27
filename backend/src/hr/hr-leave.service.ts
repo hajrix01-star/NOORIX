@@ -10,19 +10,12 @@ import { TenantContext } from '../common/tenant-context';
 import type { CreateLeaveDto, UpdateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import type { ReturnFromLeaveDto } from './dto/return-from-leave.dto';
 import type { IssueLeaveSalarySettlementDto } from './dto/issue-leave-salary-settlement.dto';
-import {
-  saudiDateYmd,
-  dateToSaudiYmd,
-  daysInclusiveBetweenSaudiYmd,
-} from './utils/hr-saudi-dates.util';
-import { toYmd } from '../common/utils/to-ymd.util';
 import { issueLeaveSalarySettlementCore } from './hr-leave-salary-settlement-issue.util';
 import { getLeaveSalarySettlementPreviewCore } from './hr-leave-salary-settlement-preview.util';
 import { voidLeaveSalarySettlementCore } from './hr-leave-void-salary-settlement.util';
-import {
-  maybeSetEmployeeOnLeaveAfterApproval,
-  syncEmployeeLeavePresence,
-} from './hr-leave-employee-presence-sync.util';
+import { syncEmployeeLeavePresence } from './hr-leave-employee-presence-sync.util';
+import { returnFromLeaveCore } from './hr-leave-return-from-leave.util';
+import { updateLeaveStatusCore } from './hr-leave-update-leave-status.util';
 
 @Injectable()
 export class HrLeaveService {
@@ -360,87 +353,17 @@ export class HrLeaveService {
     companyId: string,
     userId?: string,
   ) {
-    const existing = await this.prisma.leave.findFirst({
-      where: { id, companyId },
-    });
-    if (!existing) throw new NotFoundException(`الإجازة ${id} غير موجودة.`);
-
-    if (dto.status === 'rejected' && existing.status === 'approved') {
-      const st = await this.prisma.leaveSalarySettlement.findUnique({
-        where: { leaveId: id },
-      });
-      if (st) {
-        if (dto.voidSalarySettlement === true) {
-          await voidLeaveSalarySettlementCore(
-            { prisma: this.prisma, financialCore: this.financialCore, audit: this.audit },
-            id,
-            companyId,
-            userId,
-            'رفض إجازة بعد تسوية راتب — إلغاء التسوية بموافقة المستخدم',
-          );
-        } else {
-          throw new BadRequestException(
-            'لا يمكن رفض إجازة تم صرف تسوية راتب لها إلا بإلغاء التسوية: أرسل voidSalarySettlement: true بعد تأكيد المستخدم.',
-          );
-        }
-      }
-    }
-
-    const transitioningToApproved =
-      dto.status === 'approved' && existing.status !== 'approved';
-
-    if (!transitioningToApproved) {
-      const updated = await this.prisma.leave.update({
-        where: { id },
-        data: { status: dto.status },
-        include: { employee: true, salarySettlement: true },
-      });
-
-      await this.audit.log({
-        companyId,
-        userId,
-        action: 'update',
-        entity: 'leave',
-        entityId: id,
-        oldValue: { status: existing.status },
-        newValue: { status: dto.status },
-      });
-
-      if (existing.status === 'approved' && dto.status === 'rejected') {
-        await syncEmployeeLeavePresence(this.prisma, existing.employeeId, companyId);
-      }
-
-      return updated;
-    }
-
-    const updated = await this.prisma.leave.update({
-      where: { id },
-      data: { status: 'approved' },
-      include: { employee: true, salarySettlement: true },
-    });
-
-    await this.audit.log({
+    return updateLeaveStatusCore(
+      {
+        prisma: this.prisma,
+        financialCore: this.financialCore,
+        audit: this.audit,
+      },
+      id,
+      dto,
       companyId,
       userId,
-      action: 'update',
-      entity: 'leave',
-      entityId: id,
-      oldValue: { status: existing.status },
-      newValue: { status: dto.status },
-    });
-
-    await maybeSetEmployeeOnLeaveAfterApproval(
-      this.prisma,
-      updated.employeeId,
-      updated.companyId,
-      updated.startDate,
-      updated.endDate,
     );
-
-    return await this.prisma.leave.findFirst({
-      where: { id },
-      include: { employee: true, salarySettlement: true },
-    });
   }
 
   /**
@@ -452,47 +375,6 @@ export class HrLeaveService {
     companyId: string,
     userId?: string,
   ) {
-    const leave = await this.prisma.leave.findFirst({
-      where: { id, companyId, status: 'approved' },
-    });
-    if (!leave) {
-      throw new NotFoundException('الإجازة غير موجودة أو ليست معتمدة.');
-    }
-
-    const actualYmd = toYmd(dto.actualReturnDate) || saudiDateYmd();
-    const startYmd = dateToSaudiYmd(leave.startDate);
-    const endYmdOriginal = dateToSaudiYmd(leave.endDate);
-
-    if (actualYmd < startYmd) {
-      throw new BadRequestException('تاريخ العودة لا يمكن أن يكون قبل بداية الإجازة.');
-    }
-    if (actualYmd > endYmdOriginal) {
-      throw new BadRequestException('تاريخ العودة لا يمكن أن يكون بعد آخر يوم مسجّل للإجازة.');
-    }
-
-    const newEnd = new Date(`${actualYmd}T00:00:00.000Z`);
-    const daysCount = daysInclusiveBetweenSaudiYmd(startYmd, actualYmd);
-
-    await this.prisma.leave.update({
-      where: { id },
-      data: { endDate: newEnd, daysCount },
-    });
-
-    await syncEmployeeLeavePresence(this.prisma, leave.employeeId, companyId);
-
-    await this.audit.log({
-      companyId,
-      userId,
-      action: 'update',
-      entity: 'leave',
-      entityId: id,
-      oldValue: { endDate: leave.endDate, daysCount: leave.daysCount },
-      newValue: { endDate: newEnd, daysCount, actualReturnYmd: actualYmd },
-    });
-
-    return this.prisma.leave.findFirst({
-      where: { id },
-      include: { employee: true, salarySettlement: true },
-    });
+    return returnFromLeaveCore(this.prisma, this.audit, id, dto, companyId, userId);
   }
 }

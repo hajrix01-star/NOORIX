@@ -9,7 +9,9 @@
  * @see docs/PERFORMANCE_AND_DATA.md
  */
 
-const FINANCIAL_QUERY_PREFIXES = [
+import type { QueryClient, QueryKey } from '@tanstack/react-query';
+
+const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   ['invoices'],
   ['invoice-creator-filter-options'],
   ['vaults'],
@@ -84,11 +86,11 @@ const FINANCIAL_QUERY_PREFIXES = [
  * إبطال جميع الاستعلامات المتأثرة بتغيير مالي (فواتير، مبيعات، مشتريات، مصروفات، حركات).
  * يُستدعى بعد أي create/update/delete/cancel للفواتير أو الحركات.
  *
- * @param {QueryClient} queryClient
+ * @param queryClient عميل React Query (يُمرَّر من المكوّن/الهوك بعد التحقق من وجوده).
  */
-export function invalidateOnFinancialMutation(queryClient: any) {
+export function invalidateOnFinancialMutation(queryClient: QueryClient | undefined | null) {
   if (!queryClient) return;
-  FINANCIAL_QUERY_PREFIXES.forEach((queryKey: any) => {
+  for (const queryKey of FINANCIAL_QUERY_PREFIXES) {
     queryClient.invalidateQueries({ queryKey });
-  });
+  }
 }
