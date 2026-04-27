@@ -1,8 +1,8 @@
 /**
  * تصدير Excel وطباعة كشف الحساب — تحميل xlsx-js-style فقط عند التصدير (توفير الـ bundle).
  */
-// @ts-nocheck — تجميعات فئات من API: تثبيت أنواع تدريجي
 import { fmt } from '../../../utils/format';
+import { toYmd } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
 
 /** لون رأس الأعمدة (أزرق Noorix) */
@@ -68,7 +68,7 @@ export async function exportBankStatementExcel({
   const { default: XLSX } = await import('xlsx-js-style');
 
   const wb = XLSX.utils.book_new();
-  const period = `${statement.startDate?.slice(0, 10) || ''} → ${statement.endDate?.slice(0, 10) || ''}`;
+  const period = `${toYmd(statement.startDate)} → ${toYmd(statement.endDate)}`;
 
   // ─── ورقة العمليات ───────────────────────────────────────────────────────
   const COLS = 9;
@@ -143,7 +143,7 @@ export async function exportBankStatementExcel({
 
   XLSX.utils.book_append_sheet(wb, ws2, 'ملخص التصنيفات');
 
-  const fname = `كشف_${(statement.bankName || 'bank').replace(/\s+/g, '_')}_${statement.startDate?.slice(0, 7) || 'export'}.xlsx`;
+  const fname = `كشف_${(statement.bankName || 'bank').replace(/\s+/g, '_')}_${toYmd(statement.startDate).slice(0, 7) || 'export'}.xlsx`;
   XLSX.writeFile(wb, fname);
 }
 
@@ -154,7 +154,7 @@ export function printBankStatement({
   columnTotals,
 }: any) {
   if (!statement) return;
-  const period = `${statement.startDate?.slice(0, 10) || ''} — ${statement.endDate?.slice(0, 10) || ''}`;
+  const period = `${toYmd(statement.startDate)} — ${toYmd(statement.endDate)}`;
   const rows = filteredTransactions
     .map(
       (tx: any) => `<tr>

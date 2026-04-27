@@ -23,24 +23,10 @@ import './SmartChatScreen.css';
 import { Button, AdaptiveSheet, Input } from '../../ui';
 import { formatSaudiDateTime } from '../../utils/saudiDate';
 import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
-
-function SendIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-    </svg>
-  );
-}
+import { SendIcon } from './SmartChatIcons';
+import { FAQ_SECTION_ORDER } from './smartChatFaq';
 
 const CHAT_PAGE_SIZE = 6;
-
-/** ╪ز╪▒╪ز┘è╪ذ ╪ث┘é╪│╪د┘à ┬س╪ث╪│╪خ┘╪ر ╪ش╪د┘ç╪▓╪ر┬╗ ┘┘è ╪د┘┘ Sheet */
-const FAQ_SECTION_ORDER = [
-  { id: 'reports', labelAr: 'تقارير ومؤشرات', labelEn: 'Reports & metrics' },
-  { id: 'compare', labelAr: 'مقارنات', labelEn: 'Comparisons' },
-  { id: 'counts', labelAr: 'أعداد', labelEn: 'Counts' },
-  { id: 'other', labelAr: 'عام', labelEn: 'General' },
-];
 
 /**
  * ar / en = النص المُرسَل للـ API (مطابقة المعالجات)
@@ -143,7 +129,7 @@ function ReportDefinitionLine({ line, isAr }: any) {
   );
 }
 
-/** ╪▒╪│┘à ╪╣┘à┘ê╪»┘è ╪ذ╪│┘è╪╖ ┘┘à┘é╪د╪▒┘╪ر ╪┤┘ç╪▒┘è┘ّ┘è┘ (╪ذ┘è╪د┘╪د╪ز ┘à┘ ╪د┘┘ API ┘┘é╪╖) */
+/** Simple bar chart comparing two months (API-driven). */
 function ChatMiniChart({ chart, isAr }: any) {
   const bars = chart?.bars;
   if (!Array.isArray(bars) || bars.length < 2) return null;
@@ -197,7 +183,7 @@ function ChatMiniChart({ chart, isAr }: any) {
   );
 }
 
-/** ╪┤╪▒┘è╪╖ ┘à┘â╪»┘ّ╪│: ┘à╪┤╪ز╪▒┘è╪د╪ز + ┘à╪╡╪▒┘ê┘╪د╪ز ┘â┘╪│╪ذ╪ر ┘à┘ ╪د┘┘à╪ذ┘è╪╣╪د╪ز (╪ذ┘è╪د┘╪د╪ز ┘à┘ ╪د┘┘ API) */
+/** KPI strip: purchases vs expenses share of sales (API-driven). */
 function ChatFinanceRatiosStrip({ chart, isAr }: any) {
   const segments = chart?.segments;
   if (!Array.isArray(segments) || segments.length === 0) return null;
@@ -338,7 +324,7 @@ function ReportCard({ text, isAr, createdAt, extras }: any) {
 const CMD_GROUPS = [
   {
     id: 'employees',
-    labelAr: '╪ح╪»╪د╪▒╪ر ╪د┘┘à┘ê╪╕┘┘è┘',
+    labelAr: 'إدارة الموظفين',
     labelEn: 'Employee management',
     icon: '',
     items: [
@@ -351,7 +337,7 @@ const CMD_GROUPS = [
   },
   {
     id: 'expenses',
-    labelAr: '╪د┘┘à╪╡╪د╪▒┘è┘ ╪د┘╪س╪د╪ذ╪ز╪ر',
+    labelAr: 'المصاريف الثابتة',
     labelEn: 'Fixed expenses',
     icon: '',
     items: [
@@ -698,7 +684,7 @@ export default function SmartChatScreen() {
                 </div>
                 <div className="text-[15px] max-w-[360px] leading-[1.7] opacity-70">
                   {isAr
-                    ? '╪د╪│╪ز╪«╪»┘à ┬س╪د┘╪ث┘ê╪د┘à╪▒┬╗ ┘╪ح╪»╪«╪د┘ ╪د┘╪ذ┘è╪د┘╪د╪ز╪î ╪ث┘ê ┬س╪ث╪│╪خ┘╪ر ╪ش╪د┘ç╪▓╪ر┬╗ ┘┘╪د╪│╪ز┘╪│╪د╪▒╪î ╪ث┘ê ╪د┘â╪ز╪ذ ╪│╪ج╪د┘┘â ┘à╪ذ╪د╪┤╪▒╪ر.'
+                    ? 'استخدم «الأوامر» لإدخال البيانات، أو «أسئلة جاهزة» للاستفسار، أو اكتب سؤالك مباشرة.'
                     : 'Use Commands to enter data, Suggested for queries, or type your question below.'}
                 </div>
               </div>
@@ -754,8 +740,8 @@ export default function SmartChatScreen() {
             className="noorix-chat-send-btn"
             onClick={() => void handleSend()}
             disabled={loading || !input.trim() || !activeCompanyId}
-            title={isAr ? '╪ح╪▒╪│╪د┘' : 'Send'}
-            aria-label={isAr ? '╪ح╪▒╪│╪د┘' : 'Send'}
+            title={isAr ? 'إرسال' : 'Send'}
+            aria-label={isAr ? 'إرسال' : 'Send'}
           >
             {loading ? <span className="noorix-chat-spinner" aria-hidden /> : <SendIcon />}
           </Button>

@@ -15,6 +15,7 @@ import { RequirePermission }    from '../auth/decorators/require-permission.deco
 import { Roles } from '../auth/decorators/roles.decorator';
 import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
 import { clampSalesSummaryDateQuery } from '../common/utils/sales-summary-date-range';
+import { toYmd } from '../common/utils/to-ymd.util';
 import { SalesService }           from './sales.service';
 import { CreateSalesSummaryDto }  from './dto/create-sales-summary.dto';
 import { UpdateSalesSummaryDto }  from './dto/update-sales-summary.dto';
@@ -93,12 +94,12 @@ export class SalesController {
     }
 
     const fullHist = hasPermission(user.role, PERMISSIONS.SALES_FULL_HISTORY, user.permissions);
-    let ys = String(yearStart ?? '').slice(0, 10);
-    let ye = String(yearEnd ?? '').slice(0, 10);
-    let ds = dailyStart ? String(dailyStart).slice(0, 10) : undefined;
-    let de = dailyEnd ? String(dailyEnd).slice(0, 10) : undefined;
-    let ms = monthStart ? String(monthStart).slice(0, 10) : undefined;
-    let me = monthEnd ? String(monthEnd).slice(0, 10) : undefined;
+    let ys = toYmd(yearStart ?? '');
+    let ye = toYmd(yearEnd ?? '');
+    let ds = dailyStart ? toYmd(dailyStart) : undefined;
+    let de = dailyEnd ? toYmd(dailyEnd) : undefined;
+    let ms = monthStart ? toYmd(monthStart) : undefined;
+    let me = monthEnd ? toYmd(monthEnd) : undefined;
 
     if (!fullHist) {
       const cy = clampSalesSummaryDateQuery(ys, ye, 7);

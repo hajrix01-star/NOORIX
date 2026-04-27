@@ -10,6 +10,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fcdir = path.join(__dirname, '../src/financial-core');
 const monolithPath = path.join(fcdir, 'financial-core.service.monolith.ts');
 const fc = path.join(fcdir, 'financial-core.service.ts');
+const persistUtil = path.join(fcdir, 'financial-outflow-persist.util.ts');
+if (fs.existsSync(persistUtil)) {
+  console.warn('[assemble-financial-core] يوجد financial-outflow-persist.util.ts — دمج create/دفعة في monolith قبل التجميع إن لزم.');
+}
+  console.warn(
+    '[assemble-financial-core] يوجد financial-outflow-ledger.util.ts — بعد التجميع من الـ monolith، أعد دمج استدعاءات replaceOutflowInvoiceLedgerAndAllocations/scaleVaultAllocationsToTotal في financial-outflow.service.ts إن لزم.',
+  );
+}
+const inflowChUtil = path.join(fcdir, 'financial-inflow-channels.util.ts');
+if (fs.existsSync(inflowChUtil)) {
+  console.warn(
+    '[assemble-financial-core] يوجد financial-inflow-channels.util.ts / financial-inflow-ledger.util.ts — أعد دمج المنطق المقابل في الـ monolith أو في الملفات المُولَّدة بعد التجميع.',
+  );
+}
 const src = fs.existsSync(monolithPath) ? monolithPath : fc;
 const L = fs.readFileSync(src, 'utf8').replace(/\r\n/g, '\n').split('\n');
 

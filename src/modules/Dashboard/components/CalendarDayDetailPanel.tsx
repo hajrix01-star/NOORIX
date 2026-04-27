@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, FmtNum } from '../../../ui';
@@ -22,7 +22,7 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
     setNoteInput(dayNote || '');
   }, [dateStr, dayNote]);
 
-  const daySummaries = (summaries || []).filter((s: any) => String(s.transactionDate || '').slice(0, 10) === dateStr);
+  const daySummaries = (summaries || []).filter((s: any) => toYmd(s.transactionDate) === dateStr);
   const totalAmount = daySummaries.reduce((s: any, x: any) => s + Number(x.totalAmount || 0), 0);
   const achieved = dayTarget != null && totalAmount >= dayTarget;
 

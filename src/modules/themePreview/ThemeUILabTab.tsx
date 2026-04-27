@@ -1,6 +1,4 @@
-﻿/**
- * ╪ز╪ذ┘ê┘è╪ذ ┘à╪╣╪▒╪╢ ╪د┘┘à┘â┘ê┘ّ┘╪د╪ز ظ¤ ┘â┘ ╪ذ┘┘ê┘â ┘┘ç ╪▒┘é┘à ╪س╪د╪ذ╪ز ┘┘┘à╪▒╪ش╪╣┘è╪ر ╪╣┘╪» ╪╖┘╪ذ ┬س┘┘┘ّ╪░ ┘à╪س┘ ╪▒┘é┘à N┬╗.
- */
+﻿/** UI lab: each block has a stable ref number for “jump to block N”. */
 import React, { useMemo, useState } from 'react';
 import {
   Badge,
@@ -42,11 +40,11 @@ function LabBlock({ num, title, hint, children }: any) {
 }
 
 const TABLE_ROWS = [
-  { id: '1', name: '╪╣┘╪╡╪▒ ╪ث', qty: 2, price: '100.00' },
-  { id: '2', name: '╪╣┘╪╡╪▒ ╪ذ', qty: 1, price: '250.50' },
+  { id: '1', name: 'عنصر أ', qty: 2, price: '100.00' },
+  { id: '2', name: 'عنصر ب', qty: 1, price: '250.50' },
 ];
 
-/** ┘à╪▒╪ش╪╣ ╪▒┘é┘à 3 ظ¤ ╪ز╪ذ┘ê┘è╪ذ╪د╪ز ╪د┘╪ز╪ش╪▒╪ذ╪ر: ┘à┘╪ز╪د╪ص ┘à╪ص╪ز┘ê┘ë ┘┘â┘ id */
+/** Lab block 3 — tabs demo: one content area per tab id */
 const LAB3_DEMO_TAB_DEFS = [
   { id: 'a', labelKey: 'themePreviewLabDemoTabA', contentKey: 'themePreviewLab3ContentA' },
   { id: 'b', labelKey: 'themePreviewLabDemoTabB', contentKey: 'themePreviewLab3ContentB' },
@@ -144,7 +142,7 @@ export default function ThemeUILabTab() {
         hint={t('themePreviewLab5Hint')}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <Input type="text" label={t('themePreviewLab5Text')} placeholder="ظخ" />
+          <Input type="text" label={t('themePreviewLab5Text')} placeholder="…" />
           <Input type="number" label={t('themePreviewLab5Number')} />
           <Input type="date" label={t('themePreviewLab5Date')} />
           <Input type="select" label={t('themePreviewLab5Select')}>

@@ -9,10 +9,14 @@ import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
 import { IdempotencyService } from '../idempotency/idempotency.service';
 import {
   assertOperationNotesLength,
-  validateJournalBalance,
-  type JsonObject,
 } from './financial-core-helpers.util';
 import { FinancialCoreSupportService } from './financial-core-support.service';
+import {
+  replaceOutflowInvoiceLedgerAndAllocations,
+  scaleVaultAllocationsToTotal,
+} from './financial-outflow-ledger.util';
+import { persistOutflowInvoiceWithLedger } from './financial-outflow-persist.util';
+import { toYmd } from '../common/utils/to-ymd.util';
 import type { OutflowDto } from './dto/financial-operation.dto';
 import type { TxClient } from './financial-core-helpers.util';
 
@@ -66,104 +70,13 @@ export class FinancialOutflowService {
     const { entryDate, txDate } = this.support.buildDates(dto.transactionDate);
 
     return this.db.withTenant(async (tx) => {
-      // السيريال يُولَّد دائماً من النظام — لا يُقبل من العميل
       const invoiceNumber = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
-      await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
-
-      const splits = await this.support.resolveOutflowVaultSplits(tx, dto.companyId, dto);
-      const debitAccountId =
-        dto.debitAccountId ?? (await this.support.getDefaultExpenseAccount(tx, dto.companyId, dto.kind));
-      /** خزنة واحدة على الفاتورة فقط عند سداد أحادي — عند التعدد null لتجنب التضليل */
-      const invoiceVaultId = splits.length === 1 ? splits[0].vaultId : null;
-
-      const referenceType =
-        dto.kind === 'salary' ? 'salary' : dto.kind === 'advance' ? 'advance' : 'invoice';
-
-      // ── [B] Create Invoice ───────────────────────────────
-      const invoice = await tx.invoice.create({
-        data: {
-          tenantId,
-          companyId:       dto.companyId,
-          supplierId:      dto.supplierId ?? null,
-          employeeId:      dto.employeeId ?? null,
-          expenseLineId:   dto.expenseLineId ?? null,
-          categoryId:      dto.categoryId ?? null,
-          invoiceNumber:         invoiceNumber,
-          supplierInvoiceNumber: dto.supplierInvoiceNumber ?? null,
-          kind:                  dto.kind,
-          totalAmount:           new Prisma.Decimal(dto.totalAmount),
-          netAmount:             new Prisma.Decimal(dto.netAmount),
-          taxAmount:             new Prisma.Decimal(dto.taxAmount),
-          transactionDate:       txDate,
-          invoiceDate:           dto.invoiceDate ? new Date(dto.invoiceDate) : null,
-          entryDate,
-          vaultId:               invoiceVaultId,
-          batchId:               dto.batchId ?? null,
-          notes:                 dto.notes ?? null,
-          installmentCount:      dto.installmentCount ?? null,
-          installmentAmount:     dto.installmentAmount ? new Prisma.Decimal(dto.installmentAmount) : null,
-          expenseCoverageYear:       dto.expenseCoverageYear ?? null,
-          expenseCoverageQuarter:    dto.expenseCoverageQuarter ?? null,
-          expenseCoverageMonthStart: dto.expenseCoverageMonthStart ?? null,
-          expenseMonthsCovered:      dto.expenseMonthsCovered ?? null,
-          warrantyFollowUp:          dto.warrantyFollowUp === true,
-          warrantyFollowUpDone:      false,
-          status:                'active',
-          createdByUserId:       userId,
-        },
-      });
-
-      // ── [C] قيود + تخصيصات خزنة (قيد لكل جزء) ───────────
-      const ledgerEntries: Awaited<ReturnType<typeof tx.ledgerEntry.create>>[] = [];
-      validateJournalBalance(
-        [{ amount: new Prisma.Decimal(String(dto.totalAmount)) }],
-        splits.map((s) => ({ amount: s.amount })),
+      const { invoice, ledgerEntries } = await persistOutflowInvoiceWithLedger(
+        tx,
+        this.support,
+        this.fiscalPeriod,
+        { tenantId, userId, dto, entryDate, txDate, invoiceNumber },
       );
-      for (const split of splits) {
-        const creditAccountId = await this.support.getVaultAccount(tx, dto.companyId, split.vaultId);
-        const ledgerEntry = await tx.ledgerEntry.create({
-          data: {
-            tenantId,
-            companyId:       dto.companyId,
-            debitAccountId,
-            creditAccountId,
-            amount:          split.amount,
-            transactionDate: txDate,
-            entryDate,
-            referenceType,
-            referenceId:     invoice.id,
-            vaultId:         split.vaultId,
-            employeeId:      dto.employeeId ?? null,
-            createdById:     userId,
-            status:          'active',
-          },
-        });
-        ledgerEntries.push(ledgerEntry);
-
-        await tx.invoiceVaultAllocation.create({
-          data: {
-            tenantId,
-            invoiceId: invoice.id,
-            vaultId:   split.vaultId,
-            amount:    split.amount,
-          },
-        });
-      }
-
-      // ── [D] Create AuditLog (بصمة المستخدم) ─────────────
-      await tx.auditLog.create({
-        data: {
-          tenantId,
-          companyId: dto.companyId,
-          userId,
-          action:    'create',
-          entity:    'invoice',
-          entityId:  invoice.id,
-          newValue:  this.support.invoiceSnapshot(invoice) as JsonObject,
-          createdAt: entryDate,
-        },
-      });
-
       return { invoice, ledgerEntry: ledgerEntries[0]!, ledgerEntries };
     });
   }
@@ -201,94 +114,12 @@ export class FinancialOutflowService {
         assertOperationNotesLength(dto.notes);
         const { entryDate, txDate } = this.support.buildDates(dto.transactionDate);
         const serial = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
-        await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
-
-        const splits = await this.support.resolveOutflowVaultSplits(tx, dto.companyId, dto);
-        const debitAccountId =
-          dto.debitAccountId ?? (await this.support.getDefaultExpenseAccount(tx, dto.companyId, dto.kind));
-        const invoiceVaultId = splits.length === 1 ? splits[0].vaultId : null;
-        const referenceType =
-          dto.kind === 'salary' ? 'salary' : dto.kind === 'advance' ? 'advance' : 'invoice';
-
-        const invoice = await tx.invoice.create({
-          data: {
-            tenantId,
-            companyId:       dto.companyId,
-            supplierId:      dto.supplierId ?? null,
-            employeeId:      dto.employeeId ?? null,
-            expenseLineId:   dto.expenseLineId ?? null,
-            categoryId:      dto.categoryId ?? null,
-            invoiceNumber:         serial,
-            supplierInvoiceNumber: dto.supplierInvoiceNumber ?? null,
-            kind:                  dto.kind,
-            totalAmount:           new Prisma.Decimal(dto.totalAmount),
-            netAmount:             new Prisma.Decimal(dto.netAmount),
-            taxAmount:             new Prisma.Decimal(dto.taxAmount),
-            transactionDate: txDate,
-            invoiceDate:     dto.invoiceDate ? new Date(dto.invoiceDate) : null,
-            entryDate,
-            vaultId:         invoiceVaultId,
-            batchId:               dto.batchId ?? null,
-            notes:                 dto.notes ?? null,
-            installmentCount:      dto.installmentCount ?? null,
-            installmentAmount:     dto.installmentAmount ? new Prisma.Decimal(dto.installmentAmount) : null,
-            expenseCoverageYear:       dto.expenseCoverageYear ?? null,
-            expenseCoverageQuarter:    dto.expenseCoverageQuarter ?? null,
-            expenseCoverageMonthStart: dto.expenseCoverageMonthStart ?? null,
-            expenseMonthsCovered:      dto.expenseMonthsCovered ?? null,
-            warrantyFollowUp:          dto.warrantyFollowUp === true,
-            warrantyFollowUpDone:      false,
-            status:                'active',
-            createdByUserId:       userId,
-          },
-        });
-
-        validateJournalBalance(
-          [{ amount: new Prisma.Decimal(String(dto.totalAmount)) }],
-          splits.map((s) => ({ amount: s.amount })),
+        const { invoice } = await persistOutflowInvoiceWithLedger(
+          tx,
+          this.support,
+          this.fiscalPeriod,
+          { tenantId, userId, dto, entryDate, txDate, invoiceNumber: serial },
         );
-        for (const split of splits) {
-          const creditAccountId = await this.support.getVaultAccount(tx, dto.companyId, split.vaultId);
-          await tx.ledgerEntry.create({
-            data: {
-              tenantId,
-              companyId:       dto.companyId,
-              debitAccountId,
-              creditAccountId,
-              amount:          split.amount,
-              transactionDate: txDate,
-              entryDate,
-              referenceType,
-              referenceId:     invoice.id,
-              vaultId:         split.vaultId,
-              employeeId:      dto.employeeId ?? null,
-              createdById:     userId,
-              status:          'active',
-            },
-          });
-          await tx.invoiceVaultAllocation.create({
-            data: {
-              tenantId,
-              invoiceId: invoice.id,
-              vaultId:   split.vaultId,
-              amount:    split.amount,
-            },
-          });
-        }
-
-        await tx.auditLog.create({
-          data: {
-            tenantId,
-            companyId: dto.companyId,
-            userId,
-            action:    'create',
-            entity:    'invoice',
-            entityId:  invoice.id,
-            newValue:  this.support.invoiceSnapshot(invoice) as JsonObject,
-            createdAt: entryDate,
-          },
-        });
-
         results.push({ invoice, ledgerEntry: null });
       }
       return results;
@@ -343,7 +174,7 @@ export class FinancialOutflowService {
       throw new BadRequestException('حدد خزنة أو توزيع خزائن لتحديث القيود.');
     }
 
-    const txDateStr = inv.transactionDate.toISOString().slice(0, 10);
+    const txDateStr = toYmd(inv.transactionDate);
     await this.fiscalPeriod.assertPeriodOpenForDate(tx, companyId, inv.transactionDate);
 
     const txDto: OutflowDto = {
@@ -385,7 +216,7 @@ export class FinancialOutflowService {
     const referenceType =
       inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
 
-    await this._replaceOutflowInvoiceLedgerAndAllocations(
+    await replaceOutflowInvoiceLedgerAndAllocations(
       tx,
       companyId,
       inv,
@@ -395,6 +226,7 @@ export class FinancialOutflowService {
       entryDate,
       referenceType,
       userId,
+      (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );
   }
 
@@ -447,7 +279,7 @@ export class FinancialOutflowService {
 
     let splits: Array<{ vaultId: string; amount: Prisma.Decimal }>;
     if (allocs.length >= 2) {
-      splits = this._scaleVaultAllocationsToTotal(
+      splits = scaleVaultAllocationsToTotal(
         allocs.map((a) => ({
           vaultId: a.vaultId,
           amount:  new Prisma.Decimal(a.amount),
@@ -457,7 +289,7 @@ export class FinancialOutflowService {
     } else if (allocs.length === 1) {
       splits = [{ vaultId: allocs[0].vaultId, amount: newTotal }];
     } else {
-      const txDateStr = inv.transactionDate.toISOString().slice(0, 10);
+      const txDateStr = toYmd(inv.transactionDate);
       const txDto: OutflowDto = {
         companyId,
         kind: inv.kind,
@@ -490,7 +322,7 @@ export class FinancialOutflowService {
     const referenceType =
       inv.kind === 'salary' ? 'salary' : inv.kind === 'advance' ? 'advance' : 'invoice';
 
-    await this._replaceOutflowInvoiceLedgerAndAllocations(
+    await replaceOutflowInvoiceLedgerAndAllocations(
       tx,
       companyId,
       inv,
@@ -500,99 +332,29 @@ export class FinancialOutflowService {
       entryDate,
       referenceType,
       userId,
+      (t, cid, vid) => this.support.getVaultAccount(t, cid, vid),
     );
   }
 
-  /** توزيع نسبي للمبالغ على الخزائن عند تعدد التخصيصات بعد تغيير إجمالي الفاتورة */
-  private _scaleVaultAllocationsToTotal(
-    rows: Array<{ vaultId: string; amount: Prisma.Decimal }>,
-    newTotal: Prisma.Decimal,
-  ): Array<{ vaultId: string; amount: Prisma.Decimal }> {
-    if (rows.length === 0) {
-      return [];
-    }
-    if (rows.length === 1) {
-      return [{ vaultId: rows[0].vaultId, amount: newTotal }];
-    }
-    const oldSum = rows.reduce((acc, r) => acc.plus(r.amount), new Prisma.Decimal(0));
-    if (oldSum.lte(0)) {
-      throw new BadRequestException('مجموع تخصيصات الخزنة السابقة غير صالح لتعديل المبلغ.');
-    }
-    const result: Array<{ vaultId: string; amount: Prisma.Decimal }> = [];
-    let acc = new Prisma.Decimal(0);
-    for (let i = 0; i < rows.length; i++) {
-      if (i === rows.length - 1) {
-        result.push({ vaultId: rows[i].vaultId, amount: newTotal.minus(acc) });
-      } else {
-        const raw = rows[i].amount.mul(newTotal).div(oldSum);
-        const rounded = new Prisma.Decimal(raw.toFixed(4));
-        result.push({ vaultId: rows[i].vaultId, amount: rounded });
-        acc = acc.plus(rounded);
-      }
-    }
-    return result;
-  }
-
-  private async _replaceOutflowInvoiceLedgerAndAllocations(
+  /**
+   * مزامنة `transaction_date` على قيود دفتر الأستاذ النشطة المرتبطة بفاتورة صرف.
+   * لا يغيّر مبالغاً — يُستدعى عند PATCH تاريخ الفاتورة فقط.
+   */
+  async syncActiveLedgerTransactionDateForOutflowInvoice(
     tx: TxClient,
     companyId: string,
-    inv: {
-      tenantId: string;
-      id: string;
-      transactionDate: Date;
-      employeeId: string | null;
-      totalAmount: Prisma.Decimal;
-    },
     invoiceId: string,
-    splits: Array<{ vaultId: string; amount: Prisma.Decimal }>,
-    debitAccountId: string,
-    entryDate: Date,
-    referenceType: string,
-    userId: string,
+    transactionDate: Date,
   ): Promise<void> {
-    await tx.invoiceVaultAllocation.deleteMany({ where: { invoiceId } });
-    await tx.ledgerEntry.deleteMany({
+    await tx.ledgerEntry.updateMany({
       where: {
         companyId,
         referenceId: invoiceId,
         referenceType: { in: ['invoice', 'salary', 'advance'] },
         status: 'active',
       },
+      data: { transactionDate },
     });
-
-    validateJournalBalance(
-      [{ amount: inv.totalAmount }],
-      splits.map((s) => ({ amount: s.amount })),
-    );
-    for (const split of splits) {
-      const creditAccountId = await this.support.getVaultAccount(tx, companyId, split.vaultId);
-      await tx.ledgerEntry.create({
-        data: {
-          tenantId: inv.tenantId,
-          companyId,
-          debitAccountId,
-          creditAccountId,
-          amount: split.amount,
-          transactionDate: inv.transactionDate,
-          entryDate,
-          referenceType,
-          referenceId: invoiceId,
-          vaultId: split.vaultId,
-          employeeId: inv.employeeId ?? null,
-          createdById: userId,
-          status: 'active',
-        },
-      });
-
-      await tx.invoiceVaultAllocation.create({
-        data: {
-          tenantId: inv.tenantId,
-          invoiceId: inv.id,
-          vaultId: split.vaultId,
-          amount: split.amount,
-        },
-      });
-    }
   }
 
   // ══════════════════════════════════════════════════════════

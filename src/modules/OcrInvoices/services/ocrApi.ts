@@ -1,21 +1,19 @@
-﻿/**
- * OCR Invoices API ظ¤ ╪«╪»┘à╪د╪ز ╪د╪│╪ز╪«╪▒╪د╪ش ╪د┘┘┘ê╪د╪ز┘è╪▒
- */
+﻿/** OCR invoices — extraction and review API helpers */
 import { apiGet, apiPost, apiPut, apiDelete, apiPatch } from '../../../services/api';
 
-// ظ¤ظ¤ظ¤ OCR Extraction ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤
+// --- OCR extraction ---
 
 export async function extractInvoice(imageBase64: any, mimeType: any = 'image/jpeg') {
-  // Gemini Vision ┘é╪» ┘è╪ث╪«╪░ ┘ê┘é╪ز╪د┘ï ظ¤ timeout 90 ╪س╪د┘┘è╪ر
+  // Vision calls can be slow — allow up to 90s
   return apiPost('/api/v1/ocr/extract', { imageBase64, mimeType }, { timeout: 90000 });
 }
 
-/** ┘â╪د╪┤┘è╪▒: ╪ح╪▒╪│╪د┘ ╪╡┘ê╪▒╪ر ┘┘╪د╪│╪ز╪«╪▒╪د╪ش ┘┘è ╪د┘╪«┘┘┘è╪ر ظ¤ ┘╪د ┘è┘╪ز╪╕╪▒ ╪د┘╪د╪│╪ز╪«╪▒╪د╪ش */
+/** Submit image for async OCR pipeline (does not wait for extraction) */
 export async function submitOcrSubmission(imageBase64: any, mimeType: any = 'image/jpeg') {
   return apiPost('/api/v1/ocr/submissions', { imageBase64, mimeType }, { timeout: 120000 });
 }
 
-// ظ¤ظ¤ظ¤ Invoices ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤
+// --- OCR invoices ---
 
 export async function getOcrReviewQueue() {
   return apiGet('/api/v1/ocr/invoices/review-queue');
@@ -29,7 +27,7 @@ export async function getOcrInvoice(id: any) {
   return apiGet(`/api/v1/ocr/invoices/${encodeURIComponent(id)}`);
 }
 
-/** ╪د┘é╪ز╪▒╪د╪ص ┘à┘ê╪▒╪»┘è ╪د┘┘à╪ص╪د╪│╪ذ╪ر ┘┘à╪╖╪د╪ذ┘é╪ر ┘à┘ê╪▒╪» OCR */
+/** Purchases-by-month report for OCR supplier matching */
 export async function getOcrPurchasesByMonth(month: any) {
   const params = new URLSearchParams();
   if (month) params.set('month', month);
@@ -56,7 +54,7 @@ export async function confirmOcrInvoice(id: any, status: any) {
   return apiPatch(`/api/v1/ocr/invoices/${id}/confirm`, { status });
 }
 
-// ظ¤ظ¤ظ¤ Suppliers ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤
+// --- OCR suppliers ---
 
 export async function getOcrSuppliers() {
   return apiGet('/api/v1/ocr/suppliers');
@@ -78,7 +76,7 @@ export async function addSupplierAlias(id: any, alias: any, language: any = 'ar'
   return apiPost(`/api/v1/ocr/suppliers/${id}/aliases`, { alias, language });
 }
 
-// ظ¤ظ¤ظ¤ Items ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤
+// --- OCR catalog items ---
 
 export async function getOcrItems() {
   return apiGet('/api/v1/ocr/items');
@@ -128,13 +126,13 @@ export async function bulkDeletePriceHistory(itemIds: any) {
   return apiPost('/api/v1/ocr/price-history/bulk-delete', { itemIds });
 }
 
-// ظ¤ظ¤ظ¤ Price Alerts ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤
+// --- OCR price alerts ---
 
 export async function getPriceAlerts() {
   return apiGet('/api/v1/ocr/price-alerts');
 }
 
-// ظ¤ظ¤ظ¤ Correction Rules ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤
+// --- OCR correction rules ---
 
 export async function getCorrectionRules() {
   return apiGet('/api/v1/ocr/correction-rules');

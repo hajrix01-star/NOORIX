@@ -1,7 +1,6 @@
 ﻿/**
  * مطابق BankTemplatesManager.jsx في Base44 — بطاقة تعريف، أعمدة، تفعيل/تعطيل، حذف نهائي
  */
-// @ts-nocheck — قوالب استيراد: تثبيت أنواع تدريجي
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
@@ -10,7 +9,7 @@ import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStateme
 import { Button, Modal } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 
-const COL_LABEL_KEYS = {
+const COL_LABEL_KEYS: Record<string, string> = {
   date: 'bankTplColDate',
   description: 'bankTplColDescription',
   notes: 'bankTplColNotes',

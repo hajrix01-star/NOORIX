@@ -2,7 +2,6 @@
  * مطابق CategoryTreeManager.jsx + CategoryCard + CategoryFormDialog في Base44
  * + تصدير/استيراد حزمة القواعد (فئات شجرية + قواعد مسطّحة) من ملف أو من شركة أخرى.
  */
-// @ts-nocheck — شجرة فئات ضخمة: تثبيت أنواع تدريجي
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
@@ -39,16 +38,18 @@ function normClassifications(raw: any) {
   }));
 }
 
+type ClassificationDraft = { name: string; keywords: string[] };
+
 function CategoryFormModal({ open, onClose, category, existingCategories, companyId, t }: any) {
   const { showToast } = useToast();
-  const EMPTY = { name: '', keywords: [] };
+  const EMPTY: ClassificationDraft = { name: '', keywords: [] };
   const [name, setName] = useState('');
-  const [parentKeywords, setParentKeywords] = useState<any[]>([]);
+  const [parentKeywords, setParentKeywords] = useState<string[]>([]);
   const [newParentKeyword, setNewParentKeyword] = useState('');
   const [transactionType, setTransactionType] = useState('expense');
   const [transactionSide, setTransactionSide] = useState('any');
   const [sortOrder, setSortOrder] = useState(100);
-  const [classifications, setClassifications] = useState([{ ...EMPTY }]);
+  const [classifications, setClassifications] = useState<ClassificationDraft[]>([{ ...EMPTY }]);
   const [newKeyword, setNewKeyword] = useState('');
   const [activeClassIdx, setActiveClassIdx] = useState(0);
 
@@ -383,7 +384,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
   const [migrating, setMigrating] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importSource, setImportSource] = useState('company');
-  const [importMode, setImportMode] = useState('merge');
+  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [importSourceCompanyId, setImportSourceCompanyId] = useState('');
   const [importFile, setImportFile] = useState<any>(null);
   const [importBusy, setImportBusy] = useState(false);
@@ -458,8 +459,15 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
     errorToast: (e: any) => e?.message || t('bankTreeSeedDefaultsError'),
   });
 
+  type MigrateGroup = {
+    categoryName: string;
+    transactionType: string | null;
+    transactionSide: string;
+    keywords: string[];
+  };
+
   const groupedForMigrate = useMemo(() => {
-    const groups = {};
+    const groups: Record<string, MigrateGroup> = {};
     for (const rule of activeFlat) {
       const cat = rule.categoryName || t('bankTreeUncategorized');
       if (!groups[cat]) {
@@ -619,7 +627,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
       <div className="nx-toolbar mb-4">
         <Button size="sm" variant="primary" onClick={openNew}>+ {t('bankTreeAddCategory')}</Button>
         {!isLoading && sortedCategories.length === 0 && inactiveCategories.length === 0 ? (
-          <Button size="sm" disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
+          <Button size="sm" disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate(undefined)}>
             {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
           </Button>
         ) : null}
@@ -642,7 +650,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
           </p>
           <div className="flex flex-wrap gap-2.5 text-center justify-center">
             <Button size="sm" variant="primary" onClick={openNew}>{t('bankTreeCreateFirst')}</Button>
-            <Button size="sm" disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate()}>
+            <Button size="sm" disabled={seedDefaultsMut.isPending} onClick={() => seedDefaultsMut.mutate(undefined)}>
               {seedDefaultsMut.isPending ? '…' : t('bankTreeSeedDefaults')}
             </Button>
           </div>

@@ -21,7 +21,7 @@ import {
 import { assertApiOk } from '../../utils/apiResponse';
 import { fmt } from '../../utils/format';
 import { hasPermission, resolveUserRole, PERMISSIONS } from '../../constants/permissions';
-import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
+import { getSaudiToday, formatSaudiDate, toYmd } from '../../utils/saudiDate';
 import {
   Button,
   ScreenShell,
@@ -34,14 +34,9 @@ import {
   KebabMenu,
 } from '../../ui';
 import { SupplierSelect } from '../../components/common/SupplierSelect';
+import { formatAssetDate } from './assetsRegisterUtils';
 
 const ASSET_SECTION_TAB_IDS = ['register', 'queue'];
-
-function formatDate(iso: any) {
-  if (!iso) return '—';
-  const s = String(iso).slice(0, 10);
-  return s || '—';
-}
 
 export default function AssetsRegisterScreen() {
   const { activeCompanyId } = useApp();
@@ -168,7 +163,7 @@ export default function AssetsRegisterScreen() {
       {
         key: 'purchaseDate',
         header: t('assetPurchaseDate'),
-        render: (_: any, row: any) => <span className="text-[13px] ltr">{formatDate(row.purchaseDate)}</span>,
+        render: (_: any, row: any) => <span className="text-[13px] ltr">{formatAssetDate(row.purchaseDate)}</span>,
       },
       {
         key: 'acquisitionCost',
@@ -199,7 +194,7 @@ export default function AssetsRegisterScreen() {
       {
         key: 'warrantyEndDate',
         header: t('assetWarrantyEnd'),
-        render: (_: any, row: any) => <span className="text-[13px] ltr">{formatDate(row.warrantyEndDate)}</span>,
+        render: (_: any, row: any) => <span className="text-[13px] ltr">{formatAssetDate(row.warrantyEndDate)}</span>,
       },
       {
         key: 'warrantyStatus',
@@ -295,11 +290,11 @@ export default function AssetsRegisterScreen() {
         <div className="grid grid-cols-2 gap-2 text-[12px]">
           <div>
             <div className="text-noorix-muted">{t('assetPurchaseDate')}</div>
-            <div className="ltr font-medium">{formatDate(row.purchaseDate)}</div>
+            <div className="ltr font-medium">{formatAssetDate(row.purchaseDate)}</div>
           </div>
           <div>
             <div className="text-noorix-muted">{t('assetWarrantyEnd')}</div>
-            <div className="ltr font-medium">{formatDate(row.warrantyEndDate)}</div>
+            <div className="ltr font-medium">{formatAssetDate(row.warrantyEndDate)}</div>
           </div>
           <div>
             <div className="text-noorix-muted">{t('assetAcquisitionCost')}</div>
@@ -649,7 +644,7 @@ function WarrantyCompleteFromInvoiceSheet({
 
   useEffect(() => {
     if (!invoice?.id) return;
-    const tx = String(invoice.transactionDate || '').slice(0, 10);
+    const tx = toYmd(invoice.transactionDate);
     const supName = invoice.supplier
       ? lang === 'en'
         ? invoice.supplier.nameEn || invoice.supplier.nameAr
@@ -954,13 +949,13 @@ function AssetFormSheet({
     nameEn: initial?.nameEn ?? '',
     serialNumber: initial?.serialNumber ?? '',
     location: initial?.location ?? '',
-    purchaseDate: initial?.purchaseDate ? String(initial.purchaseDate).slice(0, 10) : getSaudiToday(),
+    purchaseDate: initial?.purchaseDate ? toYmd(initial.purchaseDate) : getSaudiToday(),
     acquisitionCost: initial?.acquisitionCost != null ? String(initial.acquisitionCost) : '',
     supplierId: initial?.supplier?.id ?? '',
     warrantyDescription: initial?.warrantyDescription ?? '',
     warrantyMonths: initial?.warrantyMonths != null ? String(initial.warrantyMonths) : '',
-    warrantyStartDate: initial?.warrantyStartDate ? String(initial.warrantyStartDate).slice(0, 10) : '',
-    warrantyEndDate: initial?.warrantyEndDate ? String(initial.warrantyEndDate).slice(0, 10) : '',
+    warrantyStartDate: initial?.warrantyStartDate ? toYmd(initial.warrantyStartDate) : '',
+    warrantyEndDate: initial?.warrantyEndDate ? toYmd(initial.warrantyEndDate) : '',
     notes: initial?.notes ?? '',
   }));
 

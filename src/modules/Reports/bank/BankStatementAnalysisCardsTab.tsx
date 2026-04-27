@@ -1,8 +1,8 @@
 ﻿/**
  * تبويب التحليل — رسوم بيانية احترافية وبطاقات قابلة للإضافة/الحذف
  */
-// @ts-nocheck — تجميعات كشف وRecharts: تثبيت أنواع تدريجي
 import React, { useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -27,11 +27,12 @@ import {
   extractPosTerminals,
   topDebits,
   countPosLikeTransactions,
+  type BankCategoryAgg,
 } from './bankAnalysisUtils';
 import { fmt } from '../../../utils/format';
 import BankStatementPieDrilldownModal from './BankStatementPieDrilldownModal';
 
-const BAR_CHART_TOOLTIP_STYLE = {
+const BAR_CHART_TOOLTIP_STYLE: CSSProperties = {
   borderRadius: 10,
   border: '1px solid var(--noorix-border)',
   fontSize: 12,
@@ -160,7 +161,7 @@ function ProgressBar({ value, color = 'var(--noorix-accent-blue)', max = 100 }: 
 
 export default function BankStatementAnalysisCardsTab({
   statement,
-  summaryByCategory,
+  summaryByCategory: summaryByCategoryIn,
   activeCards,
   availableToAdd,
   isCardActive,
@@ -173,6 +174,7 @@ export default function BankStatementAnalysisCardsTab({
   showToast,
   onSaveTxCategory,
 }: any) {
+  const summaryByCategory = (summaryByCategoryIn ?? {}) as Record<string, BankCategoryAgg>;
   const { t } = useTranslation();
   const txs = statement?.transactions || [];
   const [addOpen, setAddOpen] = useState(false);
@@ -182,7 +184,10 @@ export default function BankStatementAnalysisCardsTab({
   const dailyData = useMemo(() => buildDailyChartData(txs), [txs]);
   const alerts = useMemo(() => topDebits(txs, 10), [txs]);
   const posCount = useMemo(() => countPosLikeTransactions(txs), [txs]);
-  const posTerminals = useMemo(() => extractPosTerminals(txs), [txs]);
+  const posTerminals = useMemo(
+    () => extractPosTerminals(txs) as Array<{ terminalId: string; count: number; total: number }>,
+    [txs],
+  );
   const depositsByCategory = useMemo(() => buildDepositsByCategory(txs, t('uncategorized')), [txs, t]);
 
   /* بيانات PieChart — شامل / سحوبات / إيرادات */

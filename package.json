@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit",
     "typecheck:strict": "tsc --noEmit -p tsconfig.strict.json",
     "ui:audit": "node scripts/ui-audit.mjs",
-    "ui:audit:strict": "node scripts/ui-audit.mjs --strict"
+    "ui:audit:strict": "node scripts/ui-audit.mjs --strict",
+    "verify:git-cleanliness": "node scripts/verify-git-cleanliness.mjs",
+    "audit:large-files": "node scripts/audit-large-files.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",

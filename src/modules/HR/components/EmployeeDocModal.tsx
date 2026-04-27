@@ -1,11 +1,11 @@
 ﻿/**
  * EmployeeDocModal — وثائق الموظف الاحترافية (ثنائية اللغة)
  */
-// @ts-nocheck — أنماط طباعة مضمّنة (CSSProperties الصارمة) تُراجع لاحقاً دون تغيير السلوك
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getText } from '../../../i18n/translations';
-import { formatSaudiDate, getSaudiToday } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import Decimal from 'decimal.js';
 import { uploadDocumentFile } from '../../../services/api';
@@ -21,7 +21,7 @@ import { openPrintWindow } from '../../../utils/printUtils';
 import { useToast } from '../../../context/ToastContext';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const ALLOWANCE_NAME_EN_MAP = {
+const ALLOWANCE_NAME_EN_MAP: Record<string, string> = {
   'بدل سكن': 'Housing Allowance',
   'السكن': 'Housing Allowance',
   'بدل مواصلات': 'Transport Allowance',
@@ -61,7 +61,7 @@ function displayJobTitleEn(employee: any) {
   return isMostlyArabicScript(jt) ? '—' : jt;
 }
 
-const DOC_GRID = {
+const DOC_GRID: CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 1fr) 1px minmax(0, 1fr)',
   columnGap: 10,
@@ -69,16 +69,16 @@ const DOC_GRID = {
   alignItems: 'stretch',
 };
 
-const DOC_SEP = { background: '#cbd5e1', borderRadius: 999, width: 1, minWidth: 1, alignSelf: 'stretch' };
+const DOC_SEP: CSSProperties = { background: '#cbd5e1', borderRadius: 999, width: 1, minWidth: 1, alignSelf: 'stretch' };
 
-const DOC_TABLE_BASE = {
+const DOC_TABLE_BASE: CSSProperties = {
   width: '100%',
   borderCollapse: 'collapse',
   fontSize: 11,
   tableLayout: 'fixed',
 };
 
-const DOC_TH = {
+const DOC_TH: CSSProperties = {
   background: '#f1f5f9',
   border: '1px solid #dbe1e8',
   padding: '5px 6px',
@@ -88,7 +88,7 @@ const DOC_TH = {
   color: '#334155',
 };
 
-const DOC_TD = {
+const DOC_TD: CSSProperties = {
   border: '1px solid #e2e8f0',
   padding: '5px 7px',
   fontSize: 11,
@@ -96,14 +96,14 @@ const DOC_TD = {
   wordBreak: 'break-word',
 };
 
-const DOC_BOX = {
+const DOC_BOX: CSSProperties = {
   padding: '8px 10px',
   border: '1px solid var(--noorix-border)',
   borderRadius: 8,
   background: '#fff',
 };
 
-const DOC_H3 = {
+const DOC_H3: CSSProperties = {
   margin: '0 0 6px',
   fontSize: 12,
   fontWeight: 800,
@@ -111,7 +111,7 @@ const DOC_H3 = {
   color: '#0f172a',
 };
 
-const SETTLE_SECTION = { padding: '10px 14px', borderBottom: '1px solid var(--noorix-border)' };
+const SETTLE_SECTION: CSSProperties = { padding: '10px 14px', borderBottom: '1px solid var(--noorix-border)' };
 
 function calculateServiceDays(joinDate: any, endDate: any) {
   const start = new Date(joinDate);
@@ -224,10 +224,22 @@ async function renderPdfFileFromElement(element: any, fileBaseName: any) {
   return new File([blob], `${fileBaseName}.pdf`, { type: 'application/pdf' });
 }
 
-function buildPrintWindow(title: any, html: any) {
+/** كائن يشبه نافذة الطباعة — الحقول قابلة للتعيين بعد `openPrintWindow` الداخلي */
+type PrintWindowStub = {
+  onload: (() => void) | null;
+  onafterprint: (() => void) | null;
+  print: () => void;
+  close: () => void;
+};
+
+function buildPrintWindow(title: any, html: any): PrintWindowStub {
   openPrintWindow({ title, body: html, extraCss: EMPLOYEE_DOC_EXTRA_CSS });
-  // أعيد كائناً وهمياً ليتجاهل الكود المُستدعي onload/print (openPrintWindow تتولاها داخلياً)
-  return { onload: null, onafterprint: null, print: () => {}, close: () => {} };
+  return {
+    onload: null,
+    onafterprint: null,
+    print: () => {},
+    close: () => {},
+  };
 }
 
 function ModalShell({ title, children, onClose, onPrint, onSave, saving, t }: any) {
@@ -576,7 +588,7 @@ export function ContractModal({ employee, customAllowances = [], companyId, comp
   const { showToast } = useToast();
   const printRef = useRef<any>(null);
   const [saving, setSaving] = useState(false);
-  const [contractEnd, setContractEnd] = useState(employee?.contractEndDate?.slice(0, 10) || '');
+  const [contractEnd, setContractEnd] = useState(toYmd(employee?.contractEndDate) || '');
   const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
 
   const handlePrint = () => {

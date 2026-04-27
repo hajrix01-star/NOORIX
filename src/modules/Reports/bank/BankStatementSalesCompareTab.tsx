@@ -4,12 +4,13 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
+import { toYmd } from '../../../utils/saudiDate';
 import { FmtNum, MetricCard } from '../../../ui';
 
 export default function BankStatementSalesCompareTab({ statement, reconciliationStats, reconLoading }: any) {
   const { t } = useTranslation();
-  const start = statement?.startDate?.slice(0, 10);
-  const end = statement?.endDate?.slice(0, 10);
+  const start = toYmd(statement?.startDate);
+  const end = toYmd(statement?.endDate);
 
   const bankCredits = useMemo(() => {
     const txs = statement?.transactions || [];

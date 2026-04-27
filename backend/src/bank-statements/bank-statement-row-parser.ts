@@ -2,6 +2,8 @@
  * استخراج حركات الكشف — مطابقة منطق applyTemplate في Base44 (analyzeBankStatement.ts)
  */
 
+import { toYmd } from '../common/utils/to-ymd.util';
+
 const AR_NUMS = '٠١٢٣٤٥٦٧٨٩';
 function toWesternNum(str: string): string {
   if (str == null) return '';
@@ -13,14 +15,14 @@ export function parseBankDateCell(rawDate: unknown): string {
   if (rawDate == null || rawDate === '') return '';
   if (rawDate instanceof Date) {
     const y = rawDate.getFullYear();
-    if (y >= 1900 && y <= 2100) return rawDate.toISOString().slice(0, 10);
+    if (y >= 1900 && y <= 2100) return toYmd(rawDate);
     return '';
   }
   if (typeof rawDate === 'number') {
     if (rawDate > 1 && rawDate < 200000) {
       const d = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
       const y = d.getFullYear();
-      if (y >= 1900 && y <= 2100) return d.toISOString().slice(0, 10);
+      if (y >= 1900 && y <= 2100) return toYmd(d);
     }
     return '';
   }
@@ -91,7 +93,7 @@ export function parseBankDateCell(rawDate: unknown): string {
   const d = new Date(str);
   if (!isNaN(d.getTime())) {
     const y = d.getFullYear();
-    if (y >= 1900 && y <= 2100) return d.toISOString().slice(0, 10);
+    if (y >= 1900 && y <= 2100) return toYmd(d);
   }
   return '';
 }
@@ -148,7 +150,7 @@ export function parseBankStatementRows(
     if (!hasData) continue;
 
     let txDate = parseBankDateCell(row[dateCol]);
-    if (!txDate && fallbackDate) txDate = String(fallbackDate).slice(0, 10);
+    if (!txDate && fallbackDate) txDate = toYmd(fallbackDate);
 
     let description = '';
     if (map.descCol != null && map.descCol >= 0) {

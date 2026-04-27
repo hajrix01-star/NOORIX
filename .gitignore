@@ -11,6 +11,7 @@ node_modules/
 dist/
 build/
 build-out.txt
+cursorrules*.txt
 
 # Runtime uploads (OCR, HR, attachments) — do not track
 backend/uploads/

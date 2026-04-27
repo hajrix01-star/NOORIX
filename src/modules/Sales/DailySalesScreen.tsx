@@ -14,7 +14,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { useSales } from '../../hooks/useSales';
 import { useSalesChannels } from '../../hooks/useSalesChannels';
 import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport, throwIfApiFailed } from '../../services/api';
-import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toDateInputYmd } from '../../utils/saudiDate';
+import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toDateInputYmd, toYmd } from '../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
@@ -157,8 +157,8 @@ export default function DailySalesScreen() {
     const q = searchParams.get('q') || '';
     if (from && to) {
       dateFilter.setMode('range');
-      dateFilter.setRangeStart(from.slice(0, 10));
-      dateFilter.setRangeEnd(to.slice(0, 10));
+      dateFilter.setRangeStart(toYmd(from));
+      dateFilter.setRangeEnd(toYmd(to));
     }
     if (q) {
       setSearchInput(q);

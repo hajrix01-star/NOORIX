@@ -2,7 +2,6 @@
  * DashboardOverviewTab — نظرة عامة: كروت KPI + رسم بياني للأداء + توزيع القنوات
  * تصميم 2026 — sparklines، Recharts AreaChart، PieChart
  */
-// @ts-nocheck — Recharts/tooltip ومجاميع ديناميكية: تثبيت أنواع تدريجي
 import React, { useMemo, useState, useCallback } from 'react';
 import {
   ResponsiveContainer, AreaChart, Area,
@@ -17,10 +16,9 @@ import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
 import { EN_MONTHS, amountText } from '../../../modules/Reports/reportHelpers';
 import { fmt } from '../../../utils/format';
 import { Button, cn, FmtNum, MetricCard } from '../../../ui';
-import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
+import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS, KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
 import { useUiDir } from '../../../hooks/useUiDir';
-import { getSaudiYearMonth } from '../../../utils/saudiDate';
-import { KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
+import { getSaudiYearMonth, toYmd } from '../../../utils/saudiDate';
 
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -122,7 +120,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     if (!monthSalesForDailyAvg?.length) return null;
     const byDay = new Map();
     monthSalesForDailyAvg.forEach((s: any) => {
-      const d = String(s.transactionDate || '').slice(0, 10);
+      const d = toYmd(s.transactionDate);
       byDay.set(d, (byDay.get(d) || 0) + Number(s.totalAmount || 0));
     });
     let sum = 0;
@@ -196,7 +194,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     if (timelineGrain === 'daily') {
       const byDay = new Map();
       (dailySummaries || []).forEach((s: any) => {
-        const d = String(s.transactionDate || '').slice(0, 10);
+        const d = toYmd(s.transactionDate);
         const dayNum = parseInt(d.slice(8, 10), 10);
         byDay.set(dayNum, (byDay.get(dayNum) || 0) + Number(s.totalAmount || 0));
       });
@@ -219,19 +217,19 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
   /* ── بيانات توزيع القنوات ── */
   const channelData = useMemo(() => {
     const src = timelineGrain === 'daily' ? (dailySummaries || []) : (yearSummaries || []);
-    const map = {};
+    const map: Record<string, number> = {};
     src.forEach((s: any) =>
       (s.channels || []).forEach((ch: any) => {
         const name = lang === 'ar'
           ? (ch.vault?.nameAr || ch.vault?.nameEn || '—')
           : (ch.vault?.nameEn || ch.vault?.nameAr || '—');
         map[name] = (map[name] || 0) + Number(ch.amount || 0);
-      })
+      }),
     );
-    const total = Object.values(map).reduce((s: any, v: any) => s + v, 0) || 1;
+    const total = Object.values(map).reduce((s, v) => s + v, 0) || 1;
     return Object.entries(map)
-      .map(([name, value]: any) => ({ name, value, pct: ((value / total) * 100).toFixed(1) }))
-      .sort((a: any, b: any) => b.value - a.value);
+      .map(([name, value]) => ({ name, value, pct: ((value / total) * 100).toFixed(1) }))
+      .sort((a, b) => b.value - a.value);
   }, [yearSummaries, dailySummaries, timelineGrain, lang]);
 
   const perfTotal = useMemo(() =>
@@ -491,7 +489,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
           const pct = getPctStringForCard(card.key);
           const pctNum = pct != null ? Number(pct) : null;
 
-          const accentColor = KPI_CARD_SPARKLINE_COLORS[card.key] || KPI_CARD_SPARKLINE_COLORS.sales;
+          const sparkColors = KPI_CARD_SPARKLINE_COLORS as Record<string, string>;
+          const accentColor = sparkColors[card.key] || sparkColors.sales;
           const sparkData = getMonthlyData(card.key);
 
           let badgeTone = 'neutral';

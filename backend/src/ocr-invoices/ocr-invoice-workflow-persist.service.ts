@@ -19,6 +19,7 @@ import {
   processOcrLinesAgainstCatalog,
   recordOcrPriceHistoryForProcessedLines,
 } from './ocr-invoice-workflow-save-helpers.util';
+import { toYmd } from '../common/utils/to-ymd.util';
 
 @Injectable()
 export class OcrInvoiceWorkflowPersistService {
@@ -271,12 +272,11 @@ export class OcrInvoiceWorkflowPersistService {
         undefined;
       let invDateStr: string | undefined;
       if (invoiceDate) {
-        invDateStr =
-          typeof invoiceDate === 'string'
-            ? invoiceDate.slice(0, 10)
-            : new Date(invoiceDate as unknown as string).toISOString().slice(0, 10);
+        invDateStr = toYmd(
+          typeof invoiceDate === 'string' ? invoiceDate : new Date(invoiceDate as unknown as string),
+        );
       } else if (existing.invoiceDate) {
-        invDateStr = existing.invoiceDate.toISOString().slice(0, 10);
+        invDateStr = toYmd(existing.invoiceDate);
       }
       const noteParts = [`OCR:${id}`, invoiceData.notes as string | undefined].filter(Boolean) as string[];
       const notesJoined = noteParts.join(' — ').slice(0, 2000);
@@ -286,7 +286,7 @@ export class OcrInvoiceWorkflowPersistService {
         supplierId: purchase.accountingSupplierId,
         kind: 'purchase',
         totalAmount: totalNum,
-        transactionDate: purchase.transactionDate.slice(0, 10),
+        transactionDate: toYmd(purchase.transactionDate),
         invoiceDate: invDateStr,
         vaultId: purchase.vaultId,
         supplierInvoiceNumber: supplierInvNo,

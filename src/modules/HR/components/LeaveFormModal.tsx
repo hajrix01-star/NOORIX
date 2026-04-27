@@ -10,6 +10,7 @@ import { getEmployees, createLeave, updateLeave } from '../../../services/api';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet, Modal } from '../../../ui';
 import { assertApiOk } from '../../../utils/apiResponse';
+import { toYmd } from '../../../utils/saudiDate';
 
 const TYPE_MAP = {
   annual: 'leaveAnnual',
@@ -24,17 +25,13 @@ const STATUS_OPTIONS = [
   { value: 'rejected', labelKey: 'statusRejected' },
 ];
 
-function sliceYmd(iso: any) {
-  return String(iso || '').slice(0, 10);
-}
-
 /** تغيير يتطلب إلغاء تسوية الراتب (المسار الخلفي يفرّق عن تعديل الملاحظات فقط) */
 function leaveHasStructuralChange(editLeave: any, state: any) {
   if (!editLeave) return false;
   return (
     state.leaveType !== (editLeave.leaveType || 'annual') ||
-    state.startDate !== sliceYmd(editLeave.startDate) ||
-    state.endDate !== sliceYmd(editLeave.endDate) ||
+    state.startDate !== toYmd(editLeave.startDate) ||
+    state.endDate !== toYmd(editLeave.endDate) ||
     String(state.daysCount || '').trim() !== String(editLeave.daysCount ?? '').trim() ||
     state.status !== (editLeave.status || 'approved') ||
     state.employeeId !== editLeave.employeeId
@@ -71,8 +68,8 @@ export function LeaveFormModal({
     if (isEdit && editLeave) {
       setEmployeeId(editLeave.employeeId || '');
       setLeaveType(editLeave.leaveType || 'annual');
-      setStartDate(sliceYmd(editLeave.startDate));
-      setEndDate(sliceYmd(editLeave.endDate));
+      setStartDate(toYmd(editLeave.startDate));
+      setEndDate(toYmd(editLeave.endDate));
       setDaysCount(editLeave.daysCount != null ? String(editLeave.daysCount) : '');
       setStatus(editLeave.status || 'approved');
       setNotes(editLeave.notes || '');

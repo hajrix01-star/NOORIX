@@ -8,43 +8,16 @@ import { TenantContext } from '../common/tenant-context';
 import { CreateCompanyAssetDto } from './dto/create-company-asset.dto';
 import { UpdateCompanyAssetDto } from './dto/update-company-asset.dto';
 import { CompleteCompanyAssetFromInvoiceDto } from './dto/complete-from-invoice.dto';
-import { WarrantyLineDto } from './dto/warranty-line.dto';
+import {
+  addDaysUtc,
+  computeWarrantyStorage,
+  parseDateOnly,
+  utcToday,
+} from './company-assets-datetime.util';
+import { mapCompanyAssetRow, type WarrantyFilter } from './company-assets-map.util';
+import { createCompanyAssetWarrantyLinesTx } from './company-assets-warranty-line-tx.util';
 
-function parseDateOnly(iso: string | undefined | null): Date | null {
-  if (!iso || typeof iso !== 'string') return null;
-  const s = iso.trim().slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
-  const d = new Date(`${s}T12:00:00.000Z`);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function addMonthsUtc(start: Date, months: number): Date {
-  const y = start.getUTCFullYear();
-  const m = start.getUTCMonth();
-  const day = start.getUTCDate();
-  const lastDayOfTarget = new Date(Date.UTC(y, m + months + 1, 0)).getUTCDate();
-  const newDay = Math.min(day, lastDayOfTarget);
-  return new Date(Date.UTC(y, m + months, newDay));
-}
-
-function utcToday(): Date {
-  const n = new Date();
-  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()));
-}
-
-function addDaysUtc(d: Date, days: number): Date {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + days));
-}
-
-function daysBetweenUtc(from: Date, to: Date): number {
-  const a = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
-  const b = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
-  return Math.round((b - a) / 86400000);
-}
-
-export type WarrantyFilter = 'all' | 'active' | 'expired' | 'expiring90' | 'none';
-
-type Tx = Prisma.TransactionClient;
+export type { WarrantyFilter };
 
 @Injectable()
 export class CompanyAssetsService {
@@ -66,121 +39,6 @@ export class CompanyAssetsService {
       select: { id: true },
     });
     if (!inv) throw new BadRequestException('الفاتورة غير موجودة أو لا تتبع هذه الشركة');
-  }
-
-  private computeWarrantyStorage(input: {
-    purchaseDate: Date | null;
-    warrantyMonths: number | null;
-    warrantyStartDate: Date | null;
-    warrantyEndDate: Date | null;
-  }): {
-    warrantyStartDate: Date | null;
-    warrantyEndDate: Date | null;
-    warrantyMonths: number | null;
-  } {
-    const monthsNum = input.warrantyMonths != null ? Number(input.warrantyMonths) : null;
-    const start = input.warrantyStartDate ?? input.purchaseDate ?? null;
-    let end = input.warrantyEndDate ?? null;
-    if (!end && start && monthsNum != null && monthsNum > 0) {
-      end = addMonthsUtc(start, monthsNum);
-    }
-    return {
-      warrantyStartDate: start,
-      warrantyEndDate: end,
-      warrantyMonths: monthsNum,
-    };
-  }
-
-  private mapWarrantyLine(l: {
-    id: string;
-    nameAr: string;
-    nameEn: string | null;
-    serialNumber: string | null;
-    quantity: Prisma.Decimal | null;
-    notes: string | null;
-    sortOrder: number;
-  }) {
-    return {
-      id: l.id,
-      nameAr: l.nameAr,
-      nameEn: l.nameEn,
-      serialNumber: l.serialNumber,
-      quantity: l.quantity != null ? l.quantity.toString() : null,
-      notes: l.notes,
-      sortOrder: l.sortOrder,
-    };
-  }
-
-  private mapRow(
-    row: {
-      id: string;
-      nameAr: string;
-      nameEn: string | null;
-      serialNumber: string | null;
-      location: string | null;
-      purchaseDate: Date | null;
-      acquisitionCost: Prisma.Decimal | null;
-      warrantyDescription: string | null;
-      warrantyMonths: number | null;
-      warrantyStartDate: Date | null;
-      warrantyEndDate: Date | null;
-      notes: string | null;
-      supplier: { id: string; nameAr: string; nameEn: string | null } | null;
-      invoice: { id: string; invoiceNumber: string; supplierInvoiceNumber: string | null } | null;
-      _count?: { warrantyLines: number };
-      warrantyLines?: Array<{
-        id: string;
-        nameAr: string;
-        nameEn: string | null;
-        serialNumber: string | null;
-        quantity: Prisma.Decimal | null;
-        notes: string | null;
-        sortOrder: number;
-      }>;
-    },
-  ) {
-    const today = utcToday();
-    const end = row.warrantyEndDate;
-    let warrantyStatus: 'none' | 'active' | 'expired' | 'expiring' = 'none';
-    let daysToWarrantyEnd: number | null = null;
-    if (end) {
-      daysToWarrantyEnd = daysBetweenUtc(today, end);
-      if (daysToWarrantyEnd < 0) warrantyStatus = 'expired';
-      else if (daysToWarrantyEnd <= 90) warrantyStatus = 'expiring';
-      else warrantyStatus = 'active';
-    }
-    const { _count, warrantyLines, ...rest } = row;
-    return {
-      ...rest,
-      acquisitionCost: row.acquisitionCost != null ? row.acquisitionCost.toString() : null,
-      warrantyStatus,
-      daysToWarrantyEnd,
-      warrantyLinesCount: _count?.warrantyLines ?? warrantyLines?.length ?? 0,
-      warrantyLines: warrantyLines?.length ? warrantyLines.map((l) => this.mapWarrantyLine(l)) : undefined,
-    };
-  }
-
-  private async createWarrantyLinesTx(
-    tx: Tx,
-    tenantId: string,
-    companyId: string,
-    companyAssetId: string,
-    lines: WarrantyLineDto[] | undefined,
-  ): Promise<void> {
-    if (!lines?.length) return;
-    await tx.companyAssetWarrantyLine.createMany({
-      data: lines.map((l, i) => ({
-        tenantId,
-        companyId,
-        companyAssetId,
-        sortOrder: i,
-        nameAr: l.nameAr.trim(),
-        nameEn: l.nameEn?.trim() || null,
-        serialNumber: l.serialNumber?.trim() || null,
-        quantity: l.quantity != null ? new Prisma.Decimal(String(l.quantity)) : null,
-        notes: l.notes?.trim() || null,
-      })),
-    });
   }
 
   async findAll(
@@ -240,7 +98,7 @@ export class CompanyAssetsService {
       }),
     ]);
 
-    const items = rows.map((r) => this.mapRow(r));
+    const items = rows.map((r) => mapCompanyAssetRow(r));
 
     return {
       items,
@@ -305,7 +163,7 @@ export class CompanyAssetsService {
       },
     });
     if (!row) throw new NotFoundException('الأصل غير موجود');
-    return this.mapRow(row);
+    return mapCompanyAssetRow(row);
   }
 
   async create(dto: CreateCompanyAssetDto) {
@@ -317,7 +175,7 @@ export class CompanyAssetsService {
     await this.assertInvoiceCompany(dto.invoiceId, dto.companyId);
 
     const purchaseDate = parseDateOnly(dto.purchaseDate);
-    const w = this.computeWarrantyStorage({
+    const w = computeWarrantyStorage({
       purchaseDate,
       warrantyMonths: dto.warrantyMonths ?? null,
       warrantyStartDate: parseDateOnly(dto.warrantyStartDate) ?? null,
@@ -353,7 +211,7 @@ export class CompanyAssetsService {
           _count: { select: { warrantyLines: true } },
         },
       });
-      await this.createWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
+      await createCompanyAssetWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
       const full = await tx.companyAsset.findFirstOrThrow({
         where: { id: asset.id },
         include: {
@@ -363,7 +221,7 @@ export class CompanyAssetsService {
           _count: { select: { warrantyLines: true } },
         },
       });
-      return this.mapRow(full);
+      return mapCompanyAssetRow(full);
     });
   }
 
@@ -390,7 +248,7 @@ export class CompanyAssetsService {
     }
 
     const purchaseDate = parseDateOnly(dto.purchaseDate) ?? inv.transactionDate;
-    const w = this.computeWarrantyStorage({
+    const w = computeWarrantyStorage({
       purchaseDate,
       warrantyMonths: dto.warrantyMonths ?? null,
       warrantyStartDate: parseDateOnly(dto.warrantyStartDate) ?? null,
@@ -427,7 +285,7 @@ export class CompanyAssetsService {
           notes: dto.notes?.trim() || null,
         },
       });
-      await this.createWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
+      await createCompanyAssetWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
       if (markDone) {
         await tx.invoice.update({
           where: { id: inv.id },
@@ -443,7 +301,7 @@ export class CompanyAssetsService {
           _count: { select: { warrantyLines: true } },
         },
       });
-      return this.mapRow(full);
+      return mapCompanyAssetRow(full);
     });
   }
 
@@ -476,7 +334,7 @@ export class CompanyAssetsService {
       warrantyMonths = 0;
     }
 
-    const w = this.computeWarrantyStorage({
+    const w = computeWarrantyStorage({
       purchaseDate,
       warrantyMonths,
       warrantyStartDate,
@@ -513,7 +371,7 @@ export class CompanyAssetsService {
 
       if (dto.warrantyLines !== undefined) {
         await tx.companyAssetWarrantyLine.deleteMany({ where: { companyAssetId: id } });
-        await this.createWarrantyLinesTx(tx, tenantId, companyId, id, dto.warrantyLines);
+        await createCompanyAssetWarrantyLinesTx(tx, tenantId, companyId, id, dto.warrantyLines);
       }
 
       const full = await tx.companyAsset.findFirstOrThrow({
@@ -525,7 +383,7 @@ export class CompanyAssetsService {
           _count: { select: { warrantyLines: true } },
         },
       });
-      return this.mapRow(full);
+      return mapCompanyAssetRow(full);
     });
   }
 

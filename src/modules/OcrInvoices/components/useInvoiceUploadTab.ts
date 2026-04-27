@@ -1,21 +1,26 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
 import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
 import { getSaudiToday } from '../../../utils/saudiDate';
-import { compressImageFileToJpegDataUrl } from '../../../utils/imageUtils';
 import { getVaults } from '../../../services/api';
 import {
   createOcrSupplier,
   extractInvoice,
   getOcrAccountingSupplierSuggestions,
-  getOcrInvoice,
   saveOcrInvoice,
 } from '../services/ocrApi';
-import { ocrInvoiceImageQueryKey, fetchOcrInvoiceImageBlob } from '../ocrInvoiceImageQuery';
 import { revokePreviewUrl } from './invoiceUpload/ocrInvoiceUploadUtils';
+import { buildOcrSavePayload, validateOcrLinkedPurchaseInput } from './invoiceUpload/ocrInvoiceUploadPayload';
+import {
+  useAutoPickTopAccountingSupplier,
+  usePrefillOcrInvoiceFromId,
+  useResetAccountingUserTouchOnSuggestKey,
+} from './invoiceUpload/useInvoiceUploadReactQueryEffects';
+import { useOcrInvoiceImagePipeline } from './invoiceUpload/useOcrInvoiceImagePipeline';
+import { useOcrInvoiceLineItems } from './invoiceUpload/useOcrInvoiceLineItems';
 
 /**
  * منطق تبويب رفع/استخراج فاتورة OCR (منفصل عن العرض)
@@ -53,6 +58,29 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [newOcrTax, setNewOcrTax] = useState('');
   const [newOcrSaving, setNewOcrSaving] = useState(false);
   const [newOcrError, setNewOcrError] = useState<any>(null);
+
+  const { activeItems, warningCount, updateItem, applyMathSuggestion } = useOcrInvoiceLineItems(
+    extracted,
+    editItems,
+    setEditItems,
+  );
+  const { readFile } = useOcrInvoiceImagePipeline(
+    setPreview,
+    setBase64,
+    setMimeType,
+    setExtracted,
+    setFinalizeOcrId,
+    setPrefillLinkedPurchase,
+    setPostSaveLinkedPurchase,
+    setPrefillOcrSupplierId,
+    setCreateLinkedPurchase,
+    setAccountingSupplierId,
+    setVaultId,
+    setPurchaseSupplierInvoiceNumber,
+    setTransactionDate,
+    setError,
+    setSuccess,
+  );
 
   const canCreatePurchase = useMemo(() => {
     const role = user?.role;
@@ -111,165 +139,39 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     },
   });
 
-  useEffect(() => {
-    userTouchedAccountingRef.current = false;
-  }, [accSuggestKey]);
-
-  useEffect(() => {
-    if (userTouchedAccountingRef.current) return;
-    if (!finalizeOcrId || !canCreatePurchase) return;
-    const top = accSuggestions[0];
-    if (!top?.id) return;
-    const topTax = String(top.taxNumber || '').replace(/\D/g, '');
-    const vatMatch = invoiceVatDigits.length >= 9 && topTax === invoiceVatDigits;
-    const ms = top.matchScore ?? 0;
-    const secondMs = accSuggestions[1]?.matchScore ?? 0;
-    const pick =
-      !!top.linkedFromOcr ||
-      vatMatch ||
-      ms >= 100 ||
-      (ms >= 72 && accSuggestions.length === 1) ||
-      (ms >= 80 && ms >= secondMs + 20);
-    if (pick) setAccountingSupplierId(top.id);
-  }, [accSuggestions, accSuggestKey, finalizeOcrId, canCreatePurchase, invoiceVatDigits]);
-
-  useEffect(() => {
-    if (!prefillInvoiceId) return;
-    let cancelled = false;
-    setPrefillLoading(true);
-    setError(null);
-    (async () => {
-      try {
-        const r = await getOcrInvoice(prefillInvoiceId);
-        if (cancelled) return;
-        if (!r.success || !r.data) {
-          setError(r.error || t('ocrExtractFailed'));
-          onPrefillConsumed?.();
-          return;
-        }
-        const inv = r.data;
-        const raw = inv.rawExtraction;
-        if (raw && typeof raw === 'object') {
-          setExtracted(raw);
-          setEditItems(null);
-        } else {
-          setError(
-            language === 'ar'
-              ? 'لا توجد بيانات استخراج محفوظة لهذه الفاتورة.'
-              : 'No saved extraction for this invoice.',
-          );
-          onPrefillConsumed?.();
-          return;
-        }
-        setFinalizeOcrId(prefillInvoiceId);
-        setPrefillLinkedPurchase(inv.linkedPurchaseInvoice?.id ? inv.linkedPurchaseInvoice : null);
-        setPrefillOcrSupplierId(inv.supplierId || null);
-        setPurchaseSupplierInvoiceNumber(String(inv.invoiceNumber || raw?.invoiceNumber?.value || '').trim());
-        setTransactionDate(getSaudiToday());
-        setCreateLinkedPurchase(false);
-        setAccountingSupplierId('');
-        setVaultId('');
-        if (cancelled) return;
-        try {
-          const blob = await queryClient.ensureQueryData({
-            queryKey: ocrInvoiceImageQueryKey(activeCompanyId, prefillInvoiceId),
-            queryFn: ({ signal }: any) => fetchOcrInvoiceImageBlob(prefillInvoiceId, signal),
-            staleTime: 5 * 60 * 1000,
-          });
-          if (cancelled) return;
-          setPreview((prev: any) => {
-            revokePreviewUrl(prev);
-            return URL.createObjectURL(blob);
-          });
-          setMimeType(blob.type || 'image/jpeg');
-        } catch {
-          /* optional image */
-        }
-        setBase64(null);
-      } catch {
-        if (!cancelled) setError(t('ocrExtractFailed'));
-      } finally {
-        if (!cancelled) {
-          setPrefillLoading(false);
-          onPrefillConsumed?.();
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [prefillInvoiceId, onPrefillConsumed, language, activeCompanyId, queryClient]);
-
-  const activeItems = editItems ?? extracted?.items ?? [];
-
-  const warningCount = useMemo(() => {
-    let n = 0;
-    if (extracted?.invoiceTotalWarning) n++;
-    activeItems.forEach((item: any) => {
-      if (item.mathWarning) n++;
-      if (item.priceWarning) n++;
-    });
-    return n;
-  }, [extracted?.invoiceTotalWarning, activeItems]);
-
-  const updateItem = (index: any, field: any, value: any) => {
-    const num = parseFloat(value);
-    const updated = [...activeItems];
-    updated[index] = { ...updated[index], [field]: isNaN(num) ? value : num };
-    const item = updated[index];
-    if ((field === 'quantity' || field === 'unitPrice') && item.quantity > 0 && item.unitPrice > 0) {
-      updated[index] = {
-        ...updated[index],
-        totalPrice: Math.round(item.quantity * item.unitPrice * 100) / 100,
-        mathWarning: undefined,
-      };
-    }
-    if (field === 'totalPrice') {
-      updated[index] = { ...updated[index], mathWarning: undefined };
-    }
-    setEditItems(updated);
-  };
-
-  const applyMathSuggestion = (index: any) => {
-    const item = activeItems[index];
-    if (!item.mathWarning) return;
-    const updated = [...activeItems];
-    if (item.mathWarning.suggestedQuantity !== undefined) {
-      updated[index] = { ...updated[index], quantity: item.mathWarning.suggestedQuantity, mathWarning: undefined };
-    } else if (item.mathWarning.suggestedUnitPrice !== undefined) {
-      updated[index] = { ...updated[index], unitPrice: item.mathWarning.suggestedUnitPrice, mathWarning: undefined };
-    }
-    setEditItems(updated);
-  };
-
-  const readFile = useCallback((file: any) => {
-    if (!file || !file.type.startsWith('image/')) return;
-    void compressImageFileToJpegDataUrl(file, { maxDim: 1600, quality: 0.82 })
-      .then((compressed: any) => {
-        setPreview((prev: any) => {
-          revokePreviewUrl(prev);
-          return compressed;
-        });
-        setBase64(String(compressed).split(',')[1]);
-        setMimeType('image/jpeg');
-        setExtracted(null);
-        setFinalizeOcrId(null);
-        setPrefillLinkedPurchase(null);
-        setPostSaveLinkedPurchase(null);
-        setPrefillOcrSupplierId(null);
-        setCreateLinkedPurchase(false);
-        setAccountingSupplierId('');
-        setVaultId('');
-        setPurchaseSupplierInvoiceNumber('');
-        setTransactionDate(getSaudiToday());
-        setError(null);
-        setSuccess(false);
-      })
-      .catch((err: any) => {
-        setError(err?.message || 'تعذّر قراءة الصورة');
-        setSuccess(false);
-      });
-  }, []);
+  useResetAccountingUserTouchOnSuggestKey(accSuggestKey, userTouchedAccountingRef);
+  useAutoPickTopAccountingSupplier({
+    accSuggestions,
+    accSuggestKey,
+    finalizeOcrId,
+    canCreatePurchase,
+    invoiceVatDigits,
+    userTouchedAccountingRef,
+    setAccountingSupplierId,
+  });
+  usePrefillOcrInvoiceFromId({
+    prefillInvoiceId,
+    onPrefillConsumed,
+    language,
+    activeCompanyId,
+    queryClient,
+    t,
+    setError,
+    setExtracted,
+    setEditItems,
+    setFinalizeOcrId,
+    setPrefillLinkedPurchase,
+    setPrefillOcrSupplierId,
+    setPurchaseSupplierInvoiceNumber,
+    setTransactionDate,
+    setCreateLinkedPurchase,
+    setAccountingSupplierId,
+    setVaultId,
+    setPreview,
+    setBase64,
+    setMimeType,
+    setPrefillLoading,
+  });
 
   const handleDrop = useCallback(
     (e: any) => {
@@ -312,77 +214,38 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
 
   const handleSave = async () => {
     if (!extracted) return;
-    if (createLinkedPurchase && finalizeOcrId && canCreatePurchase) {
-      if (!accountingSupplierId) {
-        setError(language === 'ar' ? 'اختر مورد المحاسبة.' : 'Select an accounting supplier.');
-        return;
-      }
-      if (!vaultId) {
-        setError(language === 'ar' ? 'اختر الخزنة.' : 'Select a vault.');
-        return;
-      }
-      if (!transactionDate?.trim()) {
-        setError(language === 'ar' ? 'أدخل تاريخ العملية.' : 'Enter transaction date.');
-        return;
-      }
-      if (
-        isPurchaseTaxable &&
-        !purchaseSupplierInvoiceNumber?.trim() &&
-        !extracted.invoiceNumber?.value &&
-        !extracted.invoiceNumber
-      ) {
-        setError(
-          language === 'ar'
-            ? 'رقم فاتورة المورد مطلوب للمشتريات الخاضعة للضريبة.'
-            : 'Supplier invoice number is required for taxable purchases.',
-        );
-        return;
-      }
+    const ve = validateOcrLinkedPurchaseInput({
+      language,
+      createLinkedPurchase,
+      finalizeOcrId,
+      canCreatePurchase,
+      accountingSupplierId,
+      vaultId,
+      transactionDate,
+      isPurchaseTaxable,
+      purchaseSupplierInvoiceNumber,
+      extracted,
+    });
+    if (ve) {
+      setError(ve);
+      return;
     }
     setSaving(true);
     setError(null);
     try {
-      const lines = activeItems.map((item: any) => ({
-        rawName: item.name || '',
-        nameAr: item.nameAr || null,
-        nameEn: item.nameEn || null,
-        size: item.size || null,
-        sizeUnit: item.sizeUnit || null,
-        itemId: item.itemMatch?.id || null,
-        quantity: item.quantity || null,
-        unitPrice: item.unitPrice || null,
-        totalPrice: item.totalPrice || null,
-        confidence: item.confidence || 0,
-        matchStatus: item.itemMatch?.status || 'pending',
-      }));
-
-      const payload = {
-        ...(finalizeOcrId ? { id: finalizeOcrId } : {}),
-        supplierId: extracted.supplierMatch?.id || null,
-        supplierName: !extracted.supplierMatch?.id ? extracted.supplier?.name || null : null,
-        invoiceNumber: extracted.invoiceNumber?.value || null,
-        invoiceDate: extracted.invoiceDate?.value || null,
-        subtotalAmount: extracted.subtotalAmount?.value || null,
-        totalAmount: extracted.totalAmount?.value || null,
-        vatAmount: extracted.vatAmount?.value || null,
-        imageUrl: preview && !String(preview).startsWith('blob:') ? preview : null,
-        rawExtraction: extracted,
-        lines,
-        ...(createLinkedPurchase && finalizeOcrId && canCreatePurchase
-          ? {
-              purchase: {
-                accountingSupplierId,
-                transactionDate: transactionDate.slice(0, 10),
-                vaultId,
-                isTaxable: isPurchaseTaxable,
-                ...(purchaseSupplierInvoiceNumber.trim()
-                  ? { supplierInvoiceNumber: purchaseSupplierInvoiceNumber.trim() }
-                  : {}),
-              },
-            }
-          : {}),
-      };
-
+      const payload = buildOcrSavePayload({
+        extracted,
+        activeItems,
+        preview,
+        finalizeOcrId,
+        createLinkedPurchase,
+        canCreatePurchase,
+        accountingSupplierId,
+        transactionDate,
+        vaultId,
+        isPurchaseTaxable,
+        purchaseSupplierInvoiceNumber,
+      });
       const res = await saveOcrInvoice(payload);
       if (res.success) {
         const lp = res.data?.linkedPurchaseInvoice;

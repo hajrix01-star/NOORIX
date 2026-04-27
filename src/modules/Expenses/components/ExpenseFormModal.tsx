@@ -1,6 +1,6 @@
 ﻿/**
- * ExpenseFormModal ظ¤ ┘┘à┘ê╪░╪ش ╪ز╪│╪ش┘è┘ ┘à╪╡╪▒┘ê┘ (╪ح╪╡╪»╪د╪▒ ┘╪د╪ز┘ê╪▒╪ر)
- * ╪د┘╪ز╪▒╪د╪╢┘è╪د┘ï: ╪«╪▓┘╪ر ┘ê╪د╪ص╪»╪ر ┘┘┘à╪ذ┘╪║ ┘â╪د┘à┘╪د┘ï. ╪د╪«╪ز┘è╪د╪▒┘è: ╪ح╪╢╪د┘╪ر ╪«╪▓┘╪ر ╪س╪د┘┘è╪ر ╪ذ┘à╪ذ┘╪║ ┘à╪ص╪»╪» (╪د┘╪ذ╪د┘é┘è ┘à┘ ╪د┘╪ث┘ê┘┘ë).
+ * Record an expense payment (creates an invoice). Single vault for full amount;
+ * optional second vault with split amounts.
  */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast } from '../../../context/ToastContext';
@@ -42,7 +42,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   const [secondVaultId, setSecondVaultId] = useState('');
   const [secondAmount, setSecondAmount] = useState('');
   const [error, setError] = useState('');
-  /** ╪ح╪╣┘╪د╪ة ╪╢╪▒┘è╪ذ┘è ╪د╪│╪ز╪س┘╪د╪خ┘è ┘┘ç╪░┘ç ╪د┘╪»┘╪╣╪ر ┘┘é╪╖ */
+  /** Optional VAT exemption for this payment only */
   const [exemptThisPayment, setExemptThisPayment] = useState(false);
   const [receiptFile, setReceiptFile] = useState<any>(null);
   const receiptInputRef = useRef<any>(null);
@@ -143,7 +143,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
       if (uploadErr) showToast(uploadErr, 'error');
       onSaved?.();
     },
-    onError: (err: any) => setError(err?.message || '╪ص╪»╪س ╪«╪╖╪ث'),
+    onError: (err: any) => setError(err?.message || t('saveFailed')),
   });
 
   const vaultOptions = useMemo(
@@ -155,20 +155,24 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
     e.preventDefault();
     setError('');
     if (!form.expenseLineId) {
-      setError('╪د╪«╪ز╪▒ ╪ذ┘╪» ╪د┘┘à╪╡╪▒┘ê┘');
+      setError(lang === 'en' ? 'Select an expense line' : 'اختر بند المصروف');
       return;
     }
     if (!form.totalAmount || Number(form.totalAmount) <= 0) {
-      setError('╪د┘┘à╪ذ┘╪║ ┘è╪ش╪ذ ╪ث┘ ┘è┘â┘ê┘ ╪ث┘â╪ذ╪▒ ┘à┘ ╪╡┘╪▒');
+      setError(lang === 'en' ? 'Amount must be greater than zero' : 'المبلغ يجب أن يكون أكبر من صفر');
       return;
     }
     if (!selectedLine) {
-      setError('╪ذ┘╪» ╪د┘┘à╪╡╪▒┘ê┘ ╪║┘è╪▒ ╪╡╪د┘╪ص');
+      setError(lang === 'en' ? 'Expense line is invalid' : 'بند المصروف غير صالح');
       return;
     }
 
     if (isTaxable && !form.supplierInvoiceNumber?.trim()) {
-      setError('╪▒┘é┘à ┘╪د╪ز┘ê╪▒╪ر ╪د┘┘à┘ê╪▒╪» ┘à╪╖┘┘ê╪ذ ┘┘┘┘ê╪د╪ز┘è╪▒ ╪د┘╪«╪د╪╢╪╣╪ر ┘┘╪╢╪▒┘è╪ذ╪ر');
+      setError(
+        lang === 'en'
+          ? 'Supplier invoice number is required for taxable payments'
+          : 'رقم فاتورة المورد مطلوب للفواتير الخاضعة للضريبة',
+      );
       return;
     }
 
@@ -289,13 +293,13 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
     <>
       <Button onClick={onClose}>{t('cancel')}</Button>
       <Button variant="primary" type="submit" form="expense-form-modal" disabled={createMutation.isPending}>
-        {createMutation.isPending ? t('saving') : '╪ص┘╪╕ ┘ê╪ح╪╡╪»╪د╪▒ ╪د┘┘╪د╪ز┘ê╪▒╪ر'}
+        {createMutation.isPending ? t('saving') : lang === 'en' ? 'Save and issue invoice' : 'حفظ وإصدار الفاتورة'}
       </Button>
     </>
   );
 
   return (
-    <AdaptiveSheet open={true} onClose={onClose} title="╪ز╪│╪ش┘è┘ ┘à╪╡╪▒┘ê┘" size="md" side="start" className="expense-form-drawer" footer={footer}>
+    <AdaptiveSheet open={true} onClose={onClose} title={lang === 'en' ? 'Record expense' : 'تسجيل مصروف'} size="md" side="start" className="expense-form-drawer" footer={footer}>
       <form id="expense-form-modal" onSubmit={handleSubmit} className="flex flex-col gap-3">
         {error && (
           <div className="p-3 rounded-lg text-[13px] bg-noorix-bg-muted border border-noorix-border text-noorix-red">
@@ -305,15 +309,15 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
 
         <Input
           type="select"
-          label="╪ذ┘╪» ╪د┘┘à╪╡╪▒┘ê┘ *"
+          label={lang === 'en' ? 'Expense line *' : 'بند المصروف *'}
           value={form.expenseLineId}
           onChange={(e: any) => setForm((p: any) => ({ ...p, expenseLineId: e.target.value }))}
           required
         >
-          <option value="">ظ¤ ╪د╪«╪ز╪▒ ╪د┘╪ذ┘╪» ظ¤</option>
+          <option value="">{lang === 'en' ? '— Select line —' : '— اختر البند —'}</option>
           {expenseLines.map((l: any) => (
             <option key={l.id} value={l.id}>
-              {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? '╪س╪د╪ذ╪ز' : '┘à╪ز╪║┘è╪▒'})
+              {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? (lang === 'en' ? 'Fixed' : 'ثابت') : (lang === 'en' ? 'Variable' : 'متغير')})
             </option>
           ))}
         </Input>
@@ -323,11 +327,11 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
           label={
             lang === 'en'
               ? `Supplier invoice #${isTaxable ? ' *' : ' (optional)'}`
-              : `╪▒┘é┘à ┘╪د╪ز┘ê╪▒╪ر ╪د┘┘à┘ê╪▒╪» ${isTaxable ? '*' : '(╪د╪«╪ز┘è╪د╪▒┘è)'}`
+              : `رقم فاتورة المورد ${isTaxable ? '*' : '(اختياري)'}`
           }
           value={form.supplierInvoiceNumber}
           onChange={(e: any) => setForm((p: any) => ({ ...p, supplierInvoiceNumber: e.target.value }))}
-          placeholder="╪د┘╪▒┘é┘à ╪د┘┘à┘ê╪ش┘ê╪» ╪╣┘┘ë ┘╪د╪ز┘ê╪▒╪ر ╪د┘┘à┘ê╪▒╪» (┘à╪س╪د┘: INV-2024-001)"
+          placeholder={lang === 'en' ? 'As on supplier invoice (e.g. INV-2024-001)' : 'الرقم الموجود على فاتورة المورد (مثال: INV-2024-001)'}
         />
 
         {selectedLine && taxStatusKind === 'account_exempt' && (
@@ -354,7 +358,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
 
         <Input
           type="number"
-          label={lang === 'en' ? 'Amount (VAT-inclusive) *' : '╪د┘┘à╪ذ┘╪║ (╪┤╪د┘à┘ ╪د┘╪╢╪▒┘è╪ذ╪ر) *'}
+          label={lang === 'en' ? 'Amount (VAT-inclusive) *' : 'المبلغ (شامل الضريبة) *'}
           step="0.01"
           min="0.01"
           value={form.totalAmount}
@@ -453,7 +457,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
 
         <Input
           type="date"
-          label="╪ز╪د╪▒┘è╪« ╪د┘╪╣┘à┘┘è╪ر *"
+          label={lang === 'en' ? 'Transaction date *' : 'تاريخ العملية *'}
           value={form.transactionDate}
           onChange={(e: any) => setForm((p: any) => ({ ...p, transactionDate: e.target.value }))}
           required
@@ -468,7 +472,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
             onChange={(e: any) => setForm((p: any) => ({ ...p, primaryVaultId: e.target.value }))}
             required
           >
-            <option value="">ظ¤ {t('selectVault')} ظ¤</option>
+            <option value="">— {t('selectVault')} —</option>
             {vaultOptions.map((v: any) => (
               <option key={v.id} value={v.id}>{v.label}</option>
             ))}
@@ -496,7 +500,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
                 value={secondVaultId}
                 onChange={(e: any) => setSecondVaultId(e.target.value)}
               >
-                <option value="">ظ¤ {t('selectVault')} ظ¤</option>
+                <option value="">— {t('selectVault')} —</option>
                 {vaultOptions.map((v: any) => (
                   <option key={v.id} value={v.id} disabled={v.id === form.primaryVaultId}>{v.label}</option>
                 ))}
@@ -530,10 +534,10 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
 
         <Input
           multiline
-          label="┘à┘╪د╪ص╪╕╪د╪ز (┘┘╪«╪»┘à╪ر ┘ê╪▒┘é┘à┘ç╪د)"
+          label={lang === 'en' ? 'Notes (for your reference)' : 'ملاحظات (للمرجع الداخلي)'}
           value={form.notes}
           onChange={(e: any) => setForm((p: any) => ({ ...p, notes: e.target.value }))}
-          placeholder="┘à╪س╪د┘: ┘â┘ç╪▒╪ذ╪د╪ة - ╪╣╪»╪د╪» 12345 - 1,200 SR"
+          placeholder={lang === 'en' ? 'e.g. electricity — meter 12345 — 1,200 SR' : 'مثال: كهرباء — عداد 12345 — 1,200 SR'}
           rows={3}
         />
 

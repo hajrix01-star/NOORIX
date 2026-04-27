@@ -1,7 +1,6 @@
 /**
  * أدوات مساعدة لتحليل كشوف الحساب — منطق محض بدون React
  */
-// @ts-nocheck — بيانات كشف ديناميكية: تثبيت أنواع تدريجي
 
 export function num(v: any) {
   if (v == null || v === '') return 0;
@@ -53,8 +52,10 @@ export const FALLBACK_CATEGORIES = [
   'غير مصنف',
 ];
 
+export type BankCategoryAgg = { count: number; totalDebit: number; totalCredit: number };
+
 export function buildSummaryByCategory(transactions: any, uncategorizedLabel: any) {
-  const map = {};
+  const map: Record<string, BankCategoryAgg> = {};
   for (const tx of transactions || []) {
     const name =
       tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel || '—';
@@ -145,8 +146,10 @@ export function buildCashFlowSeries(transactions: any) {
 /**
  * تجميع العمليات حسب التاريخ لرسم AreaChart (إيداعات + سحوبات يومياً)
  */
+type DailyAgg = { date: string; deposits: number; withdrawals: number; balance: number };
+
 export function buildDailyChartData(transactions: any) {
-  const byDate = {};
+  const byDate: Record<string, DailyAgg> = {};
   for (const tx of transactions || []) {
     const date = tx.txDate || '';
     if (!date) continue;
@@ -167,8 +170,10 @@ export function buildDailyChartData(transactions: any) {
 }
 
 /** استخراج أجهزة نقاط البيع من أوصاف العمليات */
+type TerminalAgg = { terminalId: string; count: number; total: number };
+
 export function extractPosTerminals(transactions: any) {
-  const terminals = {};
+  const terminals: Record<string, TerminalAgg> = {};
   const re = /Term\s*:?\s*(\d{8,16})/i;
   for (const tx of transactions || []) {
     const match = String(tx.description || '').match(re);
@@ -183,8 +188,10 @@ export function extractPosTerminals(transactions: any) {
 }
 
 /** تجميع الإيداعات حسب الفئة */
+type DepositCatAgg = { count: number; total: number };
+
 export function buildDepositsByCategory(transactions: any, uncategorizedLabel: any = '—') {
-  const map = {};
+  const map: Record<string, DepositCatAgg> = {};
   for (const tx of transactions || []) {
     if (num(tx.credit) <= 0) continue;
     const name = tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel;

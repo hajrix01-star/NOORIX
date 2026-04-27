@@ -1,142 +1,33 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-
-type GroupKey = 'sales' | 'purchases' | 'expenses';
-type ReportRowKey = GroupKey | 'grossProfit' | 'netProfit';
-
-const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const INCLUDED_KINDS = ['sale', 'purchase', 'expense', 'fixed_expense', 'hr_expense', 'salary'] as const;
-
-const KIND_TO_GROUP: Record<string, GroupKey | null> = {
-  sale: 'sales',
-  purchase: 'purchases',
-  expense: 'expenses',
-  fixed_expense: 'expenses',
-  hr_expense: 'expenses',
-  salary: 'expenses',
-  advance: null,
-};
-
-const KIND_LABELS: Record<string, { ar: string; en: string }> = {
-  sale: { ar: 'المبيعات', en: 'Sales' },
-  purchase: { ar: 'المشتريات', en: 'Purchases' },
-  expense: { ar: 'مصروفات متغيرة', en: 'Variable expenses' },
-  fixed_expense: { ar: 'مصروفات ثابتة', en: 'Fixed expenses' },
-  hr_expense: { ar: 'مصروفات الموارد البشرية', en: 'HR expenses' },
-  salary: { ar: 'الرواتب', en: 'Salaries' },
-  advance: { ar: 'سلفية', en: 'Advance' },
-  transfer: { ar: 'تحويل', en: 'Transfer' },
-};
-
-const GROUP_LABELS: Record<ReportRowKey, { ar: string; en: string }> = {
-  sales: { ar: 'المبيعات', en: 'Sales' },
-  purchases: { ar: 'المشتريات', en: 'Purchases' },
-  expenses: { ar: 'المصاريف', en: 'Expenses' },
-  grossProfit: { ar: 'الربح الإجمالي', en: 'Gross profit' },
-  netProfit: { ar: 'الربح الصافي', en: 'Net profit' },
-};
-
-type ReportInvoice = {
-  id: string;
-  invoiceNumber: string;
-  supplierInvoiceNumber: string | null;
-  kind: string;
-  totalAmount: Decimal.Value;
-  netAmount: Decimal.Value;
-  taxAmount: Decimal.Value;
-  transactionDate: Date;
-  notes: string | null;
-  categoryId: string | null;
-  supplier: {
-    nameAr?: string;
-    nameEn?: string | null;
-    /** فئة المورد — يُستخدم في P&L للمشتريات عندما تتجاوز/تكمّل فئة سطر الفاتورة */
-    supplierCategoryId?: string | null;
-  } | null;
-  expenseLine: { id: string; nameAr: string; nameEn: string | null; categoryId: string } | null;
-  dailySalesSummary: {
-    summaryNumber: string;
-    channels: Array<{
-      amount: Decimal.Value;
-      vault: { id: string; nameAr: string; nameEn: string | null };
-    }>;
-  } | null;
-};
-
-type CategoryNode = {
-  id: string;
-  nameAr: string;
-  nameEn: string | null;
-  parentId: string | null;
-  sortOrder: number;
-  type?: string;
-  accountId?: string | null;
-};
-
-type ExpenseLineNode = {
-  id: string;
-  nameAr: string;
-  nameEn: string | null;
-  categoryId: string;
-};
-
-type ItemMeta = {
-  key: string;
-  labelAr: string;
-  labelEn: string;
-  sortOrder: number;
-};
-
-type AggregatedRow = {
-  key: string;
-  labelAr: string;
-  labelEn: string;
-  months: Decimal[];
-  sortOrder: number;
-  percentOfSalesMonths: Decimal[];
-  percentOfSalesYear: Decimal;
-};
-
-type AggregatedGroup = {
-  key: GroupKey;
-  labelAr: string;
-  labelEn: string;
-  months: Decimal[];
-  items: Map<string, AggregatedRow>;
-};
-
-type GeneralRowModel = {
-  key: string;
-  labelAr: string;
-  labelEn: string;
-  months: string[];
-  total: string;
-  percentOfSalesMonths: string[];
-  percentOfSalesYear: string;
-};
-
-type ExpenseTreeNode = GeneralRowModel & { children?: ExpenseTreeNode[] };
-
-type GeneralProfitLossModel = {
-  months: Array<{ index: number; label: string }>;
-  groups: Array<GeneralRowModel & {
-    items: GeneralRowModel[] | ExpenseTreeNode[];
-  }>;
-  summaryRows: Array<GeneralRowModel>;
-  cards: {
-    sales: string;
-    purchases: string;
-    expenses: string;
-    grossProfit: string;
-    netProfit: string;
-  };
-};
+import { ReportsPeriodAnalyticsService } from './reports-period-analytics.service';
+import { ReportsTaxVatService } from './reports-tax-vat.service';
+import {
+  EN_MONTHS,
+  GROUP_LABELS,
+  type CategoryNode,
+  type ExpenseTreeNode,
+  type GeneralProfitLossModel,
+  type GeneralRowModel,
+  type GroupKey,
+  type ReportRowKey,
+} from './reports-general-profit-loss-model.util';
+import { plDec, plPercentOfSales, plSumMonths, plZeroMonths } from './reports-pl-math.util';
+import { buildPlCategoryHierarchy } from './reports-pl-category-hierarchy.util';
+import { buildPlInvoiceWhere, loadPlDetailFromLedger, loadPlDetailInvoices, sumInvoiceTotalAmountByMonth } from './reports-pl-invoice-detail.util';
+import { resolvePlDetailTitle } from './reports-pl-item-meta.util';
+import { loadAnnualLedgerAggregates } from './reports-pl-ledger-aggregates.util';
+import { createPlGroupStates } from './reports-pl-group-states.util';
+import { resolveExpenseTreeNode } from './reports-expense-tree.util';
 
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly periodAnalytics: ReportsPeriodAnalyticsService,
+    private readonly taxVat: ReportsTaxVatService,
+  ) {}
 
   async getGeneralProfitLoss(companyId: string, year: number): Promise<GeneralProfitLossModel> {
     return this.buildGeneralProfitLossModel(companyId, year);
@@ -195,7 +86,7 @@ export class ReportsService {
       select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
     });
     const categories = new Map(catRows.map((c) => [c.id, { ...c } as CategoryNode]));
-    const title = this.resolveTitle(groupKey, itemKey, categories);
+    const title = resolvePlDetailTitle(groupKey, itemKey, categories);
 
     let detailItems: Array<{
       id: string;
@@ -226,13 +117,13 @@ export class ReportsService {
     let monthAgg: { _sum: { totalAmount: unknown } } | null = null;
 
     if (itemKey?.startsWith('account:')) {
-      detailItems = await this.loadDetailFromLedger(companyId, year, month, groupKey, itemKey);
+      detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey, itemKey);
     } else {
-      const yearWhere = useInvoiceGross ? this.buildPlInvoiceWhere(companyId, year, undefined, groupKey as GroupKey, itemKey, categories) : null;
+      const yearWhere = useInvoiceGross ? buildPlInvoiceWhere(companyId, year, undefined, groupKey as GroupKey, itemKey, categories) : null;
       const monthWhere =
-        useInvoiceGross && month != null ? this.buildPlInvoiceWhere(companyId, year, month, groupKey as GroupKey, itemKey, categories) : null;
+        useInvoiceGross && month != null ? buildPlInvoiceWhere(companyId, year, month, groupKey as GroupKey, itemKey, categories) : null;
       const [detailResult, yAgg, mAgg] = await Promise.all([
-        this.loadDetailInvoices(companyId, year, month, groupKey, itemKey, categories),
+        loadPlDetailInvoices(this.prisma, companyId, year, month, groupKey, itemKey, categories),
         useInvoiceGross && yearWhere
           ? this.prisma.invoice.aggregate({ where: yearWhere, _sum: { totalAmount: true } })
           : Promise.resolve(null),
@@ -249,7 +140,7 @@ export class ReportsService {
     const selectedRow =
       itemKey && allGroup?.items
         ? groupKey === 'expenses'
-          ? this.resolveExpenseTreeNode(allGroup.items as ExpenseTreeNode[], itemKey)
+          ? resolveExpenseTreeNode(allGroup.items as ExpenseTreeNode[], itemKey)
           : (allGroup.items as GeneralRowModel[]).find((row) => row.key === itemKey)
         : allGroup;
     let contextAmount =
@@ -265,12 +156,12 @@ export class ReportsService {
 
     /** إجمالي الفاتورة (شامل الضريبة) عند تفصيل بند من الفواتير — يتوافق مع جدول التفاصيل */
     if (useInvoiceGross && yearAgg) {
-      const yVal = this.dec(String(yearAgg._sum.totalAmount ?? 0));
+      const yVal = plDec(String(yearAgg._sum.totalAmount ?? 0));
       annualAmount = yVal.toFixed(2);
       const salesYear = parseFloat(salesGroup?.total ?? '0');
       annualPercentOfSales = salesYear > 0.0001 ? yVal.div(salesYear).mul(100).toFixed(2) : '0';
       if (month != null && monthAgg) {
-        const mVal = this.dec(String(monthAgg._sum.totalAmount ?? 0));
+        const mVal = plDec(String(monthAgg._sum.totalAmount ?? 0));
         contextAmount = mVal.toFixed(2);
         const salesM = parseFloat(salesGroup?.months?.[month - 1] ?? '0');
         contextPercentOfSales = salesM > 0.0001 ? mVal.div(salesM).mul(100).toFixed(2) : '0';
@@ -331,7 +222,7 @@ export class ReportsService {
     const selectedItem =
       itemKey && group?.items
         ? groupKey === 'expenses'
-          ? this.resolveExpenseTreeNode(group.items as ExpenseTreeNode[], itemKey)
+          ? resolveExpenseTreeNode(group.items as ExpenseTreeNode[], itemKey)
           : (group.items as GeneralRowModel[]).find((entry) => entry.key === itemKey)
         : null;
 
@@ -343,7 +234,7 @@ export class ReportsService {
         select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
       });
       const categories = new Map(catRows.map((c) => [c.id, { ...c } as CategoryNode]));
-      invoiceMonths = await this.sumInvoiceTotalAmountByMonth(companyId, year, groupKey as GroupKey, itemKey, categories);
+      invoiceMonths = await sumInvoiceTotalAmountByMonth(this.prisma, companyId, year, groupKey as GroupKey, itemKey, categories);
     }
 
     const monthRow = (index: number) => {
@@ -400,8 +291,8 @@ export class ReportsService {
   }
 
   private async buildGeneralProfitLossModel(companyId: string, year: number): Promise<GeneralProfitLossModel> {
-    const { entries, categories, expenseLines } = await this.loadAnnualLedgerAggregates(companyId, year);
-    const groups = this.createGroupStates();
+    const { entries, categories, expenseLines } = await loadAnnualLedgerAggregates(this.prisma, companyId, year);
+    const groups = createPlGroupStates();
 
     for (const e of entries) {
       const { groupKey, monthIndex, amount, itemKey, labelAr, labelEn, sortOrder } = e;
@@ -414,9 +305,9 @@ export class ReportsService {
         key: itemKey,
         labelAr,
         labelEn,
-        months: this.zeroMonths(),
+        months: plZeroMonths(),
         sortOrder,
-        percentOfSalesMonths: this.zeroMonths(),
+        percentOfSalesMonths: plZeroMonths(),
         percentOfSalesYear: new Decimal(0),
       };
       currentItem.months[monthIndex] = currentItem.months[monthIndex].plus(amount);
@@ -428,17 +319,17 @@ export class ReportsService {
     const expensesMonths = groups.expenses.months;
     const grossProfitMonths = salesMonths.map((amount, index) => amount.minus(purchasesMonths[index]));
     const netProfitMonths = grossProfitMonths.map((amount, index) => amount.minus(expensesMonths[index]));
-    const totalSales = this.sumMonths(salesMonths);
+    const totalSales = plSumMonths(salesMonths);
 
     const groupRows = (Object.keys(groups) as GroupKey[]).map((groupKey) => {
       const groupState = groups[groupKey];
-      const total = this.sumMonths(groupState.months);
-      const percentOfSalesMonths = groupState.months.map((monthAmount, index) => this.percentOfSales(monthAmount, salesMonths[index]));
+      const total = plSumMonths(groupState.months);
+      const percentOfSalesMonths = groupState.months.map((monthAmount, index) => plPercentOfSales(monthAmount, salesMonths[index]));
       const flatItems = Array.from(groupState.items.values())
         .map((item) => {
-          const itemTotal = this.sumMonths(item.months);
-          const itemPercentMonths = item.months.map((monthAmount, index) => this.percentOfSales(monthAmount, salesMonths[index]));
-          const itemPercentYear = this.percentOfSales(itemTotal, totalSales);
+          const itemTotal = plSumMonths(item.months);
+          const itemPercentMonths = item.months.map((monthAmount, index) => plPercentOfSales(monthAmount, salesMonths[index]));
+          const itemPercentYear = plPercentOfSales(itemTotal, totalSales);
           return {
             key: item.key,
             labelAr: item.labelAr,
@@ -453,7 +344,7 @@ export class ReportsService {
 
       const hasCategoryItems = flatItems.some((i) => i.key.startsWith('category:') || i.key.startsWith('expense-line:'));
       const items = hasCategoryItems
-        ? this.buildCategoryHierarchy(groupKey, flatItems, categories, expenseLines, salesMonths, totalSales)
+        ? buildPlCategoryHierarchy(groupKey, flatItems, categories, expenseLines, salesMonths, totalSales)
         : flatItems
             .sort((a, b) => a.sortOrder - b.sortOrder || a.labelAr.localeCompare(b.labelAr))
             .map(({ sortOrder: _sortOrder, ...item }) => item);
@@ -465,7 +356,7 @@ export class ReportsService {
         months: groupState.months.map((month) => month.toFixed(2)),
         total: total.toFixed(2),
         percentOfSalesMonths: percentOfSalesMonths.map((value) => value.toFixed(2)),
-        percentOfSalesYear: this.percentOfSales(total, totalSales).toFixed(2),
+        percentOfSalesYear: plPercentOfSales(total, totalSales).toFixed(2),
         items,
       };
     });
@@ -479,1156 +370,40 @@ export class ReportsService {
           labelAr: GROUP_LABELS.grossProfit.ar,
           labelEn: GROUP_LABELS.grossProfit.en,
           months: grossProfitMonths.map((month) => month.toFixed(2)),
-          total: this.sumMonths(grossProfitMonths).toFixed(2),
-          percentOfSalesMonths: grossProfitMonths.map((month, index) => this.percentOfSales(month, salesMonths[index]).toFixed(2)),
-          percentOfSalesYear: this.percentOfSales(this.sumMonths(grossProfitMonths), totalSales).toFixed(2),
+          total: plSumMonths(grossProfitMonths).toFixed(2),
+          percentOfSalesMonths: grossProfitMonths.map((month, index) => plPercentOfSales(month, salesMonths[index]).toFixed(2)),
+          percentOfSalesYear: plPercentOfSales(plSumMonths(grossProfitMonths), totalSales).toFixed(2),
         },
         {
           key: 'netProfit',
           labelAr: GROUP_LABELS.netProfit.ar,
           labelEn: GROUP_LABELS.netProfit.en,
           months: netProfitMonths.map((month) => month.toFixed(2)),
-          total: this.sumMonths(netProfitMonths).toFixed(2),
-          percentOfSalesMonths: netProfitMonths.map((month, index) => this.percentOfSales(month, salesMonths[index]).toFixed(2)),
-          percentOfSalesYear: this.percentOfSales(this.sumMonths(netProfitMonths), totalSales).toFixed(2),
+          total: plSumMonths(netProfitMonths).toFixed(2),
+          percentOfSalesMonths: netProfitMonths.map((month, index) => plPercentOfSales(month, salesMonths[index]).toFixed(2)),
+          percentOfSalesYear: plPercentOfSales(plSumMonths(netProfitMonths), totalSales).toFixed(2),
         },
       ],
       cards: {
         sales: totalSales.toFixed(2),
-        purchases: this.sumMonths(purchasesMonths).toFixed(2),
-        expenses: this.sumMonths(expensesMonths).toFixed(2),
-        grossProfit: this.sumMonths(grossProfitMonths).toFixed(2),
-        netProfit: this.sumMonths(netProfitMonths).toFixed(2),
+        purchases: plSumMonths(purchasesMonths).toFixed(2),
+        expenses: plSumMonths(expensesMonths).toFixed(2),
+        grossProfit: plSumMonths(grossProfitMonths).toFixed(2),
+        netProfit: plSumMonths(netProfitMonths).toFixed(2),
       },
     };
   }
 
-  /**
-   * تجميع P&L بأسلوب مُحسَّن: استعلامان مُجمَّعان بدلاً من تحميل كل الصفوف الفردية.
-   * القيود المحاسبية (ledger) مصدر الأرقام؛ قنوات البيع مصدر التفصيل للمبيعات.
-   * النتيجة: ~100-500 صف بدلاً من عشرات الآلاف.
-   */
-  private async loadAnnualLedgerAggregates(companyId: string, year: number) {
-    const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
-
-    type LedgerAggRow = {
-      debit_type: string;
-      debit_code: string;
-      debit_account_id: string;
-      debit_name_ar: string;
-      debit_name_en: string | null;
-      credit_type: string;
-      credit_account_id: string;
-      credit_name_ar: string;
-      credit_name_en: string | null;
-      inv_kind: string | null;
-      category_id: string | null;
-      supplier_id: string | null;
-      supplier_category_id: string | null;
-      expense_line_id: string | null;
-      el_name_ar: string | null;
-      el_name_en: string | null;
-      el_category_id: string | null;
-      month: number;
-      amount: string;
-    };
-
-    type ChannelAggRow = {
-      vault_id: string;
-      vault_name_ar: string;
-      vault_name_en: string | null;
-      month: number;
-      amount: string;
-    };
-
-    const [ledgerRows, channelRows, categories, expenseLines] = await Promise.all([
-      this.prisma.$queryRaw<LedgerAggRow[]>`
-        SELECT
-          da.type            AS debit_type,
-          da.code            AS debit_code,
-          da.id              AS debit_account_id,
-          da.name_ar         AS debit_name_ar,
-          da.name_en         AS debit_name_en,
-          ca.type            AS credit_type,
-          ca.id              AS credit_account_id,
-          ca.name_ar         AS credit_name_ar,
-          ca.name_en         AS credit_name_en,
-          i.kind             AS inv_kind,
-          i.category_id,
-          i.supplier_id,
-          sup.supplier_category_id AS supplier_category_id,
-          i.expense_line_id,
-          el.name_ar         AS el_name_ar,
-          el.name_en         AS el_name_en,
-          el.category_id     AS el_category_id,
-          EXTRACT(MONTH FROM le.transaction_date)::int AS month,
-          SUM(le.amount)::text AS amount
-        FROM ledger_entries le
-        JOIN accounts da ON da.id = le.debit_account_id
-        JOIN accounts ca ON ca.id = le.credit_account_id
-        LEFT JOIN invoices i ON (
-          i.company_id = le.company_id
-          AND (
-            (le.reference_type IN ('invoice', 'salary', 'advance') AND i.id = le.reference_id)
-            OR (le.reference_type = 'sale' AND i.daily_sales_summary_id = le.reference_id)
-          )
-        )
-        LEFT JOIN suppliers sup ON sup.id = i.supplier_id AND sup.company_id = i.company_id
-        LEFT JOIN expense_lines el ON el.id = i.expense_line_id
-        WHERE le.company_id = ${companyId}
-          AND le.status = 'active'
-          AND le.transaction_date BETWEEN ${startDate} AND ${endDate}
-        GROUP BY
-          da.type, da.code, da.id, da.name_ar, da.name_en,
-          ca.type, ca.id, ca.name_ar, ca.name_en,
-          i.kind, i.category_id, i.supplier_id, sup.supplier_category_id, i.expense_line_id,
-          el.name_ar, el.name_en, el.category_id,
-          month
-      `,
-      this.prisma.$queryRaw<ChannelAggRow[]>`
-        SELECT
-          v.id        AS vault_id,
-          v.name_ar   AS vault_name_ar,
-          v.name_en   AS vault_name_en,
-          EXTRACT(MONTH FROM dss.transaction_date)::int AS month,
-          SUM(dsc.amount)::text AS amount
-        FROM daily_sales_channels dsc
-        JOIN daily_sales_summaries dss ON dsc.summary_id = dss.id
-        JOIN vaults v ON dsc.vault_id = v.id
-        WHERE dss.company_id = ${companyId}
-          AND dss.status = 'active'
-          AND dss.transaction_date BETWEEN ${startDate} AND ${endDate}
-        GROUP BY v.id, v.name_ar, v.name_en, month
-      `,
-      this.prisma.category.findMany({
-        where: { companyId, isActive: true },
-        select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true, accountId: true },
-      }),
-      this.prisma.expenseLine.findMany({
-        where: { companyId, isActive: true },
-        select: { id: true, nameAr: true, nameEn: true, categoryId: true },
-      }),
-    ]);
-
-    const catMap = new Map(categories.map((c) => [c.id, { ...c } as CategoryNode]));
-    // خريطة عكسية: accountId → فئة جذرية — لربط قيود اللدجر بدون category_id بالفئة الأم المناسبة
-    // نقتصر على الفئات الجذرية (parentId = null) لأن الفرعية ترث accountId من أبيها،
-    // فنضمن أن كل accountId يُعيّن للفئة الأب لا لفرع يُكتب عليه عشوائياً
-    const accountToCategory = new Map<string, CategoryNode>();
-    for (const cat of categories) {
-      if (cat.accountId && !cat.parentId) accountToCategory.set(cat.accountId, cat as CategoryNode);
-    }
-
-    const entries: Array<{
-      groupKey: GroupKey | null;
-      monthIndex: number;
-      amount: Decimal;
-      itemKey: string;
-      labelAr: string;
-      labelEn: string;
-      sortOrder: number;
-    }> = [];
-
-    for (const row of ledgerRows) {
-      const amount = this.dec(row.amount);
-      const monthIndex = Number(row.month) - 1; // EXTRACT returns 1-12
-
-      if (row.credit_type === 'revenue') {
-        if (row.inv_kind !== 'sale') {
-          // قيد إيراد بدون فاتورة مبيعات (نادر — إدخال يدوي)
-          entries.push({
-            groupKey: 'sales',
-            monthIndex,
-            amount,
-            itemKey: `account:${row.credit_account_id}`,
-            labelAr: row.credit_name_ar,
-            labelEn: row.credit_name_en || row.credit_name_ar,
-            sortOrder: 999,
-          });
-        }
-        // inv_kind === 'sale' → يُعالج من channelRows أدناه
-      } else if (row.debit_type === 'expense') {
-        const isPurchase = row.debit_code.startsWith('PUR');
-        const groupKey: GroupKey = isPurchase ? 'purchases' : 'expenses';
-
-        if (row.inv_kind !== null) {
-          const pseudoInvoice = {
-            kind: row.inv_kind,
-            categoryId: row.category_id,
-            expenseLine: row.expense_line_id
-              ? {
-                  id: row.expense_line_id,
-                  nameAr: row.el_name_ar || row.expense_line_id,
-                  nameEn: row.el_name_en,
-                  categoryId: row.el_category_id || '',
-                }
-              : null,
-            dailySalesSummary: null,
-            supplier: row.supplier_id
-              ? { supplierCategoryId: row.supplier_category_id ?? null }
-              : null,
-          };
-          const meta = this.resolveItemMeta(pseudoInvoice as unknown as ReportInvoice, groupKey, catMap);
-          // إذا لم يُحلَّ الحساب لفئة (fallback = kind:xxx) وكان الحساب مرتبطاً بفئة — استخدمها
-          const finalMeta =
-            meta.key.startsWith('kind:') && accountToCategory.has(row.debit_account_id)
-              ? this.resolveCategoryMeta(accountToCategory.get(row.debit_account_id)!, catMap)
-              : meta;
-          entries.push({ groupKey, monthIndex, amount, itemKey: finalMeta.key, labelAr: finalMeta.labelAr, labelEn: finalMeta.labelEn, sortOrder: finalMeta.sortOrder });
-        } else {
-          // قيد بدون فاتورة — ربط الحساب بالفئة مباشرة إن وُجدت
-          const linkedCat = accountToCategory.get(row.debit_account_id);
-          if (linkedCat) {
-            const meta = this.resolveCategoryMeta(linkedCat, catMap);
-            entries.push({ groupKey, monthIndex, amount, itemKey: meta.key, labelAr: meta.labelAr, labelEn: meta.labelEn, sortOrder: meta.sortOrder });
-          } else {
-            const sortOrder = isPurchase
-              ? row.debit_code === 'PUR-001' ? 0 : 999
-              : parseInt(row.debit_code.replace(/\D/g, '') || '999', 10);
-            entries.push({
-              groupKey,
-              monthIndex,
-              amount,
-              itemKey: `account:${row.debit_account_id}`,
-              labelAr: row.debit_name_ar,
-              labelEn: row.debit_name_en || row.debit_name_ar,
-              sortOrder,
-            });
-          }
-        }
-      }
-    }
-
-    // تفصيل المبيعات حسب قناة الدفع (خزنة)
-    for (const ch of channelRows) {
-      entries.push({
-        groupKey: 'sales',
-        monthIndex: Number(ch.month) - 1,
-        amount: this.dec(ch.amount),
-        itemKey: `sales-channel:${ch.vault_id}`,
-        labelAr: ch.vault_name_ar,
-        labelEn: ch.vault_name_en || ch.vault_name_ar,
-        sortOrder: 0,
-      });
-    }
-
-    return { entries, categories: catMap, expenseLines: expenseLines as ExpenseLineNode[] };
-  }
-
-  /**
-   * تفاصيل التقرير من Ledger — عند النقر على حساب (account:xxx)
-   */
-  private async loadDetailFromLedger(
-    companyId: string,
-    year: number,
-    month: number | undefined,
-    groupKey: GroupKey,
-    itemKey: string,
-  ) {
-    const accountId = itemKey.replace('account:', '');
-    const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
-    const monthFilter =
-      month != null
-        ? {
-            gte: new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0)),
-            lte: new Date(Date.UTC(year, month - 1, 31, 23, 59, 59, 999)),
-          }
-        : undefined;
-
-    const isSales = groupKey === 'sales';
-    const where = {
-      companyId,
-      status: 'active',
-      transactionDate: monthFilter ? monthFilter : { gte: startDate, lte: endDate },
-      ...(isSales ? { creditAccountId: accountId } : { debitAccountId: accountId }),
-    };
-
-    const entries = await this.prisma.ledgerEntry.findMany({
-      where,
-      orderBy: { transactionDate: 'desc' },
-      take: 500,
-      select: {
-        id: true,
-        amount: true,
-        transactionDate: true,
-        referenceType: true,
-        referenceId: true,
-      },
-    });
-
-    const invoiceRefIds = entries
-      .filter((e) => ['invoice', 'salary', 'advance'].includes(e.referenceType))
-      .map((e) => e.referenceId);
-    const saleSummaryIds = entries
-      .filter((e) => e.referenceType === 'sale')
-      .map((e) => e.referenceId);
-    const invoiceIds = [...new Set(invoiceRefIds)];
-    const summaryIds = [...new Set(saleSummaryIds)];
-
-    const orConditions = [
-      ...(invoiceIds.length ? [{ id: { in: invoiceIds } }] : []),
-      ...(summaryIds.length ? [{ dailySalesSummaryId: { in: summaryIds } }] : []),
-    ];
-    const invoices = await this.prisma.invoice.findMany({
-      where: {
-        companyId,
-        OR: orConditions.length ? orConditions : [{ id: { in: [] } }],
-      },
-      select: {
-        id: true,
-        dailySalesSummaryId: true,
-        invoiceNumber: true,
-        supplierInvoiceNumber: true,
-        kind: true,
-        totalAmount: true,
-        netAmount: true,
-        taxAmount: true,
-        notes: true,
-        supplier: { select: { nameAr: true, nameEn: true } },
-        expenseLine: { select: { nameAr: true, nameEn: true } },
-        dailySalesSummary: {
-          select: {
-            summaryNumber: true,
-            channels: { select: { amount: true, vault: { select: { nameAr: true, nameEn: true } } } },
-          },
-        },
-      },
-    });
-    const invMap = new Map(invoices.map((i) => [i.id, i]));
-    const invBySummaryId = new Map(
-      invoices.filter((i) => i.dailySalesSummaryId).map((i) => [i.dailySalesSummaryId!, i]),
-    );
-
-    const result: Array<{
-      id: string;
-      invoiceNumber: string;
-      supplierInvoiceNumber: string | null;
-      transactionDate: string;
-      kind: string;
-      kindLabelAr: string;
-      kindLabelEn: string;
-      categoryId: string | null;
-      itemKey: string;
-      itemLabelAr: string;
-      itemLabelEn: string;
-      supplierNameAr: string | null;
-      supplierNameEn: string | null;
-      expenseLineNameAr: string | null;
-      expenseLineNameEn: string | null;
-      summaryNumber: string | null;
-      channelNames: Array<{ nameAr: string; nameEn: string | null; amount: string }>;
-      totalAmount: string;
-      netAmount: string;
-      taxAmount: string;
-      notes: string | null;
-    }> = [];
-
-    for (const e of entries) {
-      const inv = invMap.get(e.referenceId) ?? invBySummaryId.get(e.referenceId);
-      const amt = this.dec(e.amount);
-      const kind = inv?.kind || e.referenceType || '—';
-      result.push({
-        id: e.id,
-        invoiceNumber: inv?.invoiceNumber || e.referenceId?.slice(0, 12) || '—',
-        supplierInvoiceNumber: inv?.supplierInvoiceNumber || null,
-        transactionDate: e.transactionDate.toISOString(),
-        kind,
-        kindLabelAr: KIND_LABELS[kind]?.ar || kind,
-        kindLabelEn: KIND_LABELS[kind]?.en || kind,
-        categoryId: null,
-        itemKey,
-        itemLabelAr: '',
-        itemLabelEn: '',
-        supplierNameAr: inv?.supplier?.nameAr || null,
-        supplierNameEn: inv?.supplier?.nameEn || null,
-        expenseLineNameAr: inv?.expenseLine?.nameAr || null,
-        expenseLineNameEn: inv?.expenseLine?.nameEn || null,
-        summaryNumber: inv?.dailySalesSummary?.summaryNumber || null,
-        channelNames: (inv?.dailySalesSummary?.channels || []).map((ch) => ({
-          nameAr: ch.vault.nameAr,
-          nameEn: ch.vault.nameEn,
-          amount: this.dec(ch.amount).toFixed(2),
-        })),
-        totalAmount: amt.toFixed(2),
-        netAmount: amt.toFixed(2),
-        taxAmount: '0',
-        notes: inv?.notes || null,
-      });
-    }
-
-    return result;
-  }
-
-  /**
-   * فلتر فواتير تقرير ربح وخسارة — نفس منطق التفاصيل والاتجاه (إجمالي الفاتورة شامل الضريبة).
-   */
-  private buildPlInvoiceWhere(
-    companyId: string,
-    year: number,
-    month: number | undefined,
-    groupKey: GroupKey,
-    itemKey: string | undefined,
-    categories: Map<string, CategoryNode>,
-  ): Prisma.InvoiceWhereInput {
-    const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
-
-    const kindsForGroup = (Object.entries(KIND_TO_GROUP) as Array<[string, GroupKey | null]>)
-      .filter(([, g]) => g === groupKey)
-      .map(([k]) => k);
-
-    const dateFilter =
-      month != null
-        ? {
-            gte: new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0)),
-            lte: new Date(Date.UTC(year, month - 1, 31, 23, 59, 59, 999)),
-          }
-        : { gte: startDate, lte: endDate };
-
-    let where: Prisma.InvoiceWhereInput = {
-      companyId,
-      status: 'active',
-      kind: { in: kindsForGroup },
-      transactionDate: dateFilter,
-    };
-
-    if (itemKey?.startsWith('kind:')) {
-      where = { ...where, kind: itemKey.replace('kind:', '') };
-    } else if (itemKey?.startsWith('expense-line:')) {
-      where = { ...where, expenseLineId: itemKey.replace('expense-line:', '') };
-    } else if (itemKey?.startsWith('category:')) {
-      const catIds = this.getCategoryAndDescendantIds(itemKey.replace('category:', ''), categories);
-      const categoryOr: Prisma.InvoiceWhereInput[] = [
-        { categoryId: { in: [...catIds] } },
-        { expenseLine: { categoryId: { in: [...catIds] } } },
-      ];
-      if (groupKey === 'purchases' || groupKey === 'expenses') {
-        categoryOr.push({ supplier: { supplierCategoryId: { in: [...catIds] } } });
-      }
-      where = {
-        ...where,
-        OR: categoryOr,
-      };
-    } else if (itemKey?.startsWith('sales-channel:')) {
-      where = {
-        ...where,
-        dailySalesSummary: { channels: { some: { vaultId: itemKey.replace('sales-channel:', '') } } },
-      };
-    }
-
-    return where;
-  }
-
-  /** مجموع إجمالي الفاتورة (شامل الضريبة) لكل شهر من السنة للبند */
-  private async sumInvoiceTotalAmountByMonth(
-    companyId: string,
-    year: number,
-    groupKey: GroupKey,
-    itemKey: string | undefined,
-    categories: Map<string, CategoryNode>,
-  ): Promise<Decimal[]> {
-    const where = this.buildPlInvoiceWhere(companyId, year, undefined, groupKey, itemKey, categories);
-    const rows = await this.prisma.invoice.findMany({
-      where,
-      select: { transactionDate: true, totalAmount: true },
-    });
-    const months = Array.from({ length: 12 }, () => new Decimal(0));
-    for (const r of rows) {
-      const m = r.transactionDate.getUTCMonth();
-      months[m] = months[m].plus(this.dec(r.totalAmount));
-    }
-    return months;
-  }
-
-  /**
-   * استعلام مستهدف لتفاصيل التقرير — يُفلتر في SQL بدلاً من تحميل كل الفواتير.
-   * الحد الأقصى 500 فاتورة لكل طلب تفاصيل.
-   */
-  private async loadDetailInvoices(
-    companyId: string,
-    year: number,
-    month: number | undefined,
-    groupKey: GroupKey,
-    itemKey: string | undefined,
-    categories: Map<string, CategoryNode>,
-  ) {
-    const where = this.buildPlInvoiceWhere(companyId, year, month, groupKey, itemKey, categories);
-
-    const invoices = await this.prisma.invoice.findMany({
-      where,
-      orderBy: { transactionDate: 'desc' },
-      take: 500,
-      select: {
-        id: true,
-        invoiceNumber: true,
-        supplierInvoiceNumber: true,
-        kind: true,
-        totalAmount: true,
-        netAmount: true,
-        taxAmount: true,
-        transactionDate: true,
-        notes: true,
-        categoryId: true,
-        supplier: { select: { nameAr: true, nameEn: true, supplierCategoryId: true } },
-        expenseLine: { select: { id: true, nameAr: true, nameEn: true, categoryId: true } },
-        dailySalesSummary: {
-          select: {
-            summaryNumber: true,
-            channels: {
-              select: { amount: true, vault: { select: { id: true, nameAr: true, nameEn: true } } },
-            },
-          },
-        },
-      },
-    });
-
-    return invoices.map((invoice) => {
-      const itemMeta = this.resolveItemMeta(invoice as unknown as ReportInvoice, groupKey, categories);
-      return {
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        supplierInvoiceNumber: invoice.supplierInvoiceNumber,
-        transactionDate: invoice.transactionDate.toISOString(),
-        kind: invoice.kind,
-        kindLabelAr: KIND_LABELS[invoice.kind]?.ar || invoice.kind,
-        kindLabelEn: KIND_LABELS[invoice.kind]?.en || invoice.kind,
-        categoryId: invoice.categoryId,
-        itemKey: itemMeta.key,
-        itemLabelAr: itemMeta.labelAr,
-        itemLabelEn: itemMeta.labelEn,
-        supplierNameAr: invoice.supplier?.nameAr || null,
-        supplierNameEn: invoice.supplier?.nameEn || null,
-        expenseLineNameAr: invoice.expenseLine?.nameAr || null,
-        expenseLineNameEn: invoice.expenseLine?.nameEn || null,
-        summaryNumber: invoice.dailySalesSummary?.summaryNumber || null,
-        channelNames: (invoice.dailySalesSummary?.channels || []).map((ch) => ({
-          nameAr: ch.vault.nameAr,
-          nameEn: ch.vault.nameEn,
-          amount: this.dec(ch.amount).toFixed(2),
-        })),
-        totalAmount: this.dec(invoice.totalAmount).toFixed(2),
-        netAmount: this.dec(invoice.netAmount).toFixed(2),
-        taxAmount: this.dec(invoice.taxAmount).toFixed(2),
-        notes: invoice.notes || null,
-      };
-    });
-  }
-
-  private createGroupStates(): Record<GroupKey, AggregatedGroup> {
-    return {
-      sales: {
-        key: 'sales',
-        labelAr: GROUP_LABELS.sales.ar,
-        labelEn: GROUP_LABELS.sales.en,
-        months: this.zeroMonths(),
-        items: new Map(),
-      },
-      purchases: {
-        key: 'purchases',
-        labelAr: GROUP_LABELS.purchases.ar,
-        labelEn: GROUP_LABELS.purchases.en,
-        months: this.zeroMonths(),
-        items: new Map(),
-      },
-      expenses: {
-        key: 'expenses',
-        labelAr: GROUP_LABELS.expenses.ar,
-        labelEn: GROUP_LABELS.expenses.en,
-        months: this.zeroMonths(),
-        items: new Map(),
-      },
-    };
-  }
-
-  private getCategoryAndDescendantIds(categoryId: string, categories: Map<string, CategoryNode>): Set<string> {
-    const set = new Set<string>([categoryId]);
-    for (const cat of categories.values()) {
-      if (cat.parentId === categoryId) {
-        set.add(cat.id);
-        for (const id of this.getCategoryAndDescendantIds(cat.id, categories)) set.add(id);
-      }
-    }
-    return set;
-  }
-
-  /** هل catId فرع (أو أعمق) تحت ancestorId — للمشتريات: فئة المورد الفرعية تحت فئة سطر الفاتورة */
-  private categoryIsDescendantOf(catId: string, ancestorId: string, categories: Map<string, CategoryNode>): boolean {
-    let c = categories.get(catId);
-    while (c?.parentId) {
-      if (c.parentId === ancestorId) return true;
-      c = categories.get(c.parentId);
-    }
-    return false;
-  }
-
-  private findInCategoryTree(items: ExpenseTreeNode[], key: string): ExpenseTreeNode | null {
-    for (const item of items) {
-      if (item.key === key) return item;
-      if (item.children) {
-        const found = this.findInCategoryTree(item.children, key);
-        if (found) return found;
-      }
-    }
-    return null;
-  }
-
-  /** كل عقد الفئات/البنود (للبحث عندما يفشل المسار المتداخل فقط) */
-  private flattenExpenseTreeNodes(items: ExpenseTreeNode[]): ExpenseTreeNode[] {
-    const out: ExpenseTreeNode[] = [];
-    for (const item of items) {
-      out.push(item);
-      if (item.children?.length) {
-        out.push(...this.flattenExpenseTreeNodes(item.children));
-      }
-    }
-    return out;
-  }
-
-  /** حل بند المصاريف الهرمي — نفس المفتاح قد يظهر كجذر أو فرع */
-  private resolveExpenseTreeNode(items: ExpenseTreeNode[], key: string): ExpenseTreeNode | null {
-    return this.findInCategoryTree(items, key) ?? this.flattenExpenseTreeNodes(items).find((n) => n.key === key) ?? null;
-  }
-
-  /** بناء شجرة فئات هرمية لأي مجموعة (مبيعات، مشتريات، مصاريف) */
-  private buildCategoryHierarchy(
-    groupKey: GroupKey,
-    flatItems: Array<GeneralRowModel & { sortOrder?: number }>,
-    categories: Map<string, CategoryNode>,
-    expenseLines: ExpenseLineNode[],
-    salesMonths: Decimal[],
-    totalSales: Decimal,
-  ): ExpenseTreeNode[] {
-    const itemMap = new Map(flatItems.map((item) => [item.key, item]));
-
-    // نحدد نوع الفئة حسب المجموعة
-    const catTypeByGroup: Record<GroupKey, string> = {
-      expenses: 'expense',
-      purchases: 'purchase',
-      sales: 'sale',
-    };
-    const catType = catTypeByGroup[groupKey];
-    /**
-     * فئات المجموعة: الجذر type === catType، والفرع يُدرَج إذا كان أبوه من نفس نوع المجموعة
-     * ونوع الفرع عام أو فارغ أو مطابق — حتى لا تُستبعد الفئات الفرعية (P1-1…) إذا كان
-     * type = general أو قديماً غير متزامن مع الأب، فيختفي التداخل تحت «مواد غذائية» ويبقى السطر الأب فقط.
-     */
-    const groupCats = Array.from(categories.values()).filter((c) => {
-      if (c.type === catType) return true;
-      if (!c.parentId) return false;
-      const p = categories.get(c.parentId);
-      if (!p || p.type !== catType) return false;
-      return !c.type || c.type === 'general' || c.type === catType;
-    });
-    const roots = groupCats.filter((c) => !c.parentId).sort((a, b) => a.sortOrder - b.sortOrder);
-
-    const childrenByParent = new Map<string, CategoryNode[]>();
-    for (const c of groupCats) {
-      if (c.parentId) {
-        const list = childrenByParent.get(c.parentId) ?? [];
-        list.push(c);
-        childrenByParent.set(c.parentId, list);
-      }
-    }
-    for (const list of childrenByParent.values()) {
-      list.sort((a, b) => a.sortOrder - b.sortOrder);
-    }
-
-    // بنود المصاريف (expense-lines) — خاصة بمجموعة المصاريف فقط
-    const linesByCategory = new Map<string, ExpenseLineNode[]>();
-    if (groupKey === 'expenses') {
-      for (const el of expenseLines) {
-        const list = linesByCategory.get(el.categoryId) ?? [];
-        list.push(el);
-        linesByCategory.set(el.categoryId, list);
-      }
-    }
-
-    const toNode = (key: string, labelAr: string, labelEn: string, months: string[], total: string, percentOfSalesMonths: string[], percentOfSalesYear: string): ExpenseTreeNode => ({
-      key,
-      labelAr,
-      labelEn,
-      months,
-      total,
-      percentOfSalesMonths,
-      percentOfSalesYear,
-    });
-
-    const buildCategoryNode = (cat: CategoryNode): ExpenseTreeNode | null => {
-      const key = `category:${cat.id}`;
-      const direct = itemMap.get(key);
-      const childCats = childrenByParent.get(cat.id) ?? [];
-      const lines = linesByCategory.get(cat.id) ?? [];
-      const childNodes: ExpenseTreeNode[] = [];
-      const monthsSum = direct?.months.map((v) => parseFloat(v || '0')) ?? Array(12).fill(0);
-      let totalSum = parseFloat(direct?.total || '0');
-
-      for (const child of childCats) {
-        const node = buildCategoryNode(child);
-        if (node) {
-          childNodes.push(node);
-          for (let i = 0; i < 12; i++) monthsSum[i] += parseFloat(node.months[i] || '0');
-          totalSum += parseFloat(node.total || '0');
-        }
-      }
-      for (const el of lines) {
-        const elKey = `expense-line:${el.id}`;
-        const elItem = itemMap.get(elKey);
-        if (elItem) {
-          childNodes.push(toNode(elKey, el.nameAr, el.nameEn || el.nameAr, elItem.months, elItem.total, elItem.percentOfSalesMonths, elItem.percentOfSalesYear));
-          for (let i = 0; i < 12; i++) monthsSum[i] += parseFloat(elItem.months[i] || '0');
-          totalSum += parseFloat(elItem.total || '0');
-        }
-      }
-
-      if (totalSum < 0.0001 && childNodes.length === 0) return null;
-
-      const months = monthsSum.map((v) => v.toFixed(2));
-      const total = totalSum.toFixed(2);
-      const pctMonths = monthsSum.map((v, i) => (parseFloat(salesMonths[i]?.toString() || '0') ? ((v / parseFloat(salesMonths[i].toString())) * 100).toFixed(2) : '0'));
-      const pctYear = totalSales.eq(0) ? '0' : new Decimal(total).div(totalSales).mul(100).toFixed(2);
-
-      const node: ExpenseTreeNode = toNode(key, cat.nameAr, cat.nameEn || cat.nameAr, months, total, pctMonths, pctYear);
-      if (childNodes.length > 0) node.children = childNodes;
-      return node;
-    };
-
-    const result: ExpenseTreeNode[] = [];
-    for (const root of roots) {
-      const node = buildCategoryNode(root);
-      if (node) result.push(node);
-    }
-
-    // البنود الحرة (kind:xxx / account:xxx / sales-channel:xxx) — تظهر بعد الشجرة
-    const trackedCategoryKeys = new Set(groupCats.map((c) => `category:${c.id}`));
-    const trackedLineKeys = new Set(groupKey === 'expenses' ? expenseLines.map((el) => `expense-line:${el.id}`) : []);
-    const freeItems = flatItems.filter(
-      (i) => !trackedCategoryKeys.has(i.key) && !trackedLineKeys.has(i.key),
-    );
-    for (const k of freeItems.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.labelAr.localeCompare(b.labelAr))) {
-      result.push(toNode(k.key, k.labelAr, k.labelEn, k.months, k.total, k.percentOfSalesMonths, k.percentOfSalesYear));
-    }
-
-    return result;
-  }
-
-  private resolveItemMeta(invoice: ReportInvoice, groupKey: GroupKey, categories: Map<string, CategoryNode>): ItemMeta {
-    if (groupKey === 'sales') {
-      const channel = invoice.dailySalesSummary?.channels?.[0]?.vault;
-      if (channel) {
-        return {
-          key: `sales-channel:${channel.id}`,
-          labelAr: channel.nameAr,
-          labelEn: channel.nameEn || channel.nameAr,
-          sortOrder: 0,
-        };
-      }
-      return {
-        key: 'kind:sale',
-        labelAr: 'المبيعات',
-        labelEn: 'Sales',
-        sortOrder: 0,
-      };
-    }
-
-    if (invoice.expenseLine) {
-      const lineCatId = invoice.expenseLine.categoryId;
-      const supId = invoice.supplier?.supplierCategoryId ?? null;
-      /**
-       * المصاريف: بند المصروف يحدد category للبند، لكن فئة المورد قد تكون فرعاً تحت نفس الفرع —
-       * نفس منطق المشتريات مع لوحة «فئات الموردين».
-       */
-      if (groupKey === 'expenses' && supId && lineCatId && supId !== lineCatId) {
-        const supCat = categories.get(supId);
-        if (supCat && this.categoryIsDescendantOf(supId, lineCatId, categories)) {
-          return this.resolveCategoryMeta(supCat, categories);
-        }
-      }
-      const category = categories.get(invoice.expenseLine.categoryId);
-      const parent = category?.parentId ? categories.get(category.parentId) : null;
-      return {
-        key: `expense-line:${invoice.expenseLine.id}`,
-        labelAr: parent
-          ? `${parent.nameAr} / ${invoice.expenseLine.nameAr}`
-          : invoice.expenseLine.nameAr,
-        labelEn: parent
-          ? `${parent.nameEn || parent.nameAr} / ${invoice.expenseLine.nameEn || invoice.expenseLine.nameAr}`
-          : (invoice.expenseLine.nameEn || invoice.expenseLine.nameAr),
-        sortOrder: (parent?.sortOrder ?? category?.sortOrder ?? 0) * 1000 + 10,
-      };
-    }
-
-    /**
-     * المشتريات والمصاريف (بدون بند مصروف): لوحة التحكم تُجمّع حسب فئة المورد؛ التقرير كان يعتمد
-     * على category_id على الفاتورة فقط — فيُجمَع على الجذر ولا تظهر الفروع.
-     * - فئة مورد فرعية تحت فئة سطر الفاتورة → نستخدم الفرع.
-     * - لا category_id على الفاتورة → نستخدم فئة المورد إن وُجدت.
-     */
-    if ((groupKey === 'purchases' || groupKey === 'expenses') && invoice.supplier?.supplierCategoryId != null) {
-      const invId = invoice.categoryId ?? null;
-      const supId = invoice.supplier.supplierCategoryId;
-      const supCat = categories.get(supId);
-      if (supCat) {
-        if (invId && supId !== invId && this.categoryIsDescendantOf(supId, invId, categories)) {
-          return this.resolveCategoryMeta(supCat, categories);
-        }
-        if (!invId) {
-          return this.resolveCategoryMeta(supCat, categories);
-        }
-      }
-    }
-
-    const categoryId = invoice.categoryId || null;
-    const category = categoryId ? categories.get(categoryId) : null;
-    const parent = category?.parentId ? categories.get(category.parentId) : null;
-
-    if (category) {
-      return {
-        key: `category:${category.id}`,
-        labelAr: parent ? `${parent.nameAr} / ${category.nameAr}` : category.nameAr,
-        labelEn: parent
-          ? `${parent.nameEn || parent.nameAr} / ${category.nameEn || category.nameAr}`
-          : (category.nameEn || category.nameAr),
-        sortOrder: (parent?.sortOrder ?? 0) * 1000 + category.sortOrder,
-      };
-    }
-
-    const kindLabel = KIND_LABELS[invoice.kind] || { ar: invoice.kind, en: invoice.kind };
-    return {
-      key: `kind:${invoice.kind}`,
-      labelAr: kindLabel.ar,
-      labelEn: kindLabel.en,
-      sortOrder: 999999,
-    };
-  }
-
-  /** تحويل فئة مباشرة إلى ItemMeta — لربط قيود اللدجر بالفئة عبر الحساب */
-  private resolveCategoryMeta(cat: CategoryNode, categories: Map<string, CategoryNode>): ItemMeta {
-    const parent = cat.parentId ? categories.get(cat.parentId) : null;
-    return {
-      key: `category:${cat.id}`,
-      labelAr: parent ? `${parent.nameAr} / ${cat.nameAr}` : cat.nameAr,
-      labelEn: parent
-        ? `${parent.nameEn || parent.nameAr} / ${cat.nameEn || cat.nameAr}`
-        : (cat.nameEn || cat.nameAr),
-      sortOrder: (parent?.sortOrder ?? 0) * 1000 + cat.sortOrder,
-    };
-  }
-
-  private resolveTitle(groupKey: ReportRowKey, itemKey: string | undefined, categories: Map<string, CategoryNode>) {
-    if (!itemKey) {
-      return { labelAr: GROUP_LABELS[groupKey].ar, labelEn: GROUP_LABELS[groupKey].en };
-    }
-
-    if (itemKey.startsWith('account:')) {
-      return { labelAr: 'تفاصيل الحساب', labelEn: 'Account details' };
-    }
-
-    if (itemKey.startsWith('expense-line:')) {
-      return { labelAr: 'تفاصيل البند', labelEn: 'Item details' };
-    }
-    if (itemKey.startsWith('sales-channel:')) {
-      return { labelAr: 'تفاصيل قناة البيع', labelEn: 'Sales channel details' };
-    }
-    if (itemKey.startsWith('category:')) {
-      const categoryId = itemKey.replace('category:', '');
-      const category = categories.get(categoryId);
-      const parent = category?.parentId ? categories.get(category.parentId) : null;
-      if (category) {
-        return {
-          labelAr: parent ? `${parent.nameAr} / ${category.nameAr}` : category.nameAr,
-          labelEn: parent
-            ? `${parent.nameEn || parent.nameAr} / ${category.nameEn || category.nameAr}`
-            : (category.nameEn || category.nameAr),
-        };
-      }
-    }
-    if (itemKey.startsWith('kind:')) {
-      const kind = itemKey.replace('kind:', '');
-      return { labelAr: KIND_LABELS[kind]?.ar || kind, labelEn: KIND_LABELS[kind]?.en || kind };
-    }
-
-    return { labelAr: GROUP_LABELS[groupKey].ar, labelEn: GROUP_LABELS[groupKey].en };
-  }
-
-  private zeroMonths() {
-    return Array.from({ length: 12 }, () => new Decimal(0));
-  }
-
-  private sumMonths(months: Decimal[]) {
-    return months.reduce((sum, month) => sum.plus(month), new Decimal(0));
-  }
-
-  private percentOfSales(value: Decimal, salesAmount: Decimal) {
-    if (!salesAmount || salesAmount.eq(0)) return new Decimal(0);
-    return value.div(salesAmount).mul(100);
-  }
-
-  private dec(value: Decimal.Value) {
-    return new Decimal(value || 0);
-  }
-
-  /**
-   * تقرير الضرائب — تجميع مخرجات ومدخلات ضريبة القيمة المضافة من الفواتير
-   */
   async getTaxVatReport(
     companyId: string,
     year: number,
     period: string,
     salesAmountIncludesVat = false,
   ) {
-    let startMonth: number;
-    let endMonth: number;
-    if (period.startsWith('Q')) {
-      const q = parseInt(period.slice(1), 10);
-      startMonth = (q - 1) * 3;
-      endMonth = startMonth + 2;
-    } else if (period.startsWith('M')) {
-      startMonth = endMonth = parseInt(period.slice(1), 10) - 1;
-    } else {
-      throw new BadRequestException('Invalid period');
-    }
-    const startDate = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, endMonth + 1, 0, 23, 59, 59, 999));
-
-    type VatAggRow = { kind: string; has_tax: boolean; net_sum: string; tax_sum: string };
-    const vatRows = await this.prisma.$queryRaw<VatAggRow[]>`
-      SELECT
-        kind,
-        (tax_amount > 0) AS has_tax,
-        SUM(net_amount)::text  AS net_sum,
-        SUM(tax_amount)::text  AS tax_sum
-      FROM invoices
-      WHERE company_id = ${companyId}
-        AND status = 'active'
-        AND kind = ANY(ARRAY['sale','purchase','expense','fixed_expense']::text[])
-        AND transaction_date BETWEEN ${startDate} AND ${endDate}
-      GROUP BY kind, has_tax
-    `;
-
-    const standard_sales = { amount: new Decimal(0), vat: new Decimal(0) };
-    /** لم يعد يُجمّع من المبيعات — كل المبيعات غير المعفاة منطقيًا هنا تذهب للمبيعات الخاضعة */
-    const exempt_sales = { amount: new Decimal(0), vat: new Decimal(0) };
-    const standard_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
-    const exempt_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
-
-    /** بدون ضريبة مسجّلة: إما الأساس × 15٪ أو إجمالٍ شامل ← يُقسَّم على 1.15 */
-    const VAT_STANDARD_RATE = new Decimal('0.15');
-    const VAT_INCLUSIVE_DIVISOR = new Decimal('1').plus(VAT_STANDARD_RATE);
-
-    for (const row of vatRows) {
-      const net = this.dec(row.net_sum);
-      const tax = this.dec(row.tax_sum);
-      if (row.kind === 'sale') {
-        if (row.has_tax) {
-          standard_sales.amount = standard_sales.amount.plus(net);
-          standard_sales.vat = standard_sales.vat.plus(tax);
-        } else if (net.gt(0)) {
-          if (salesAmountIncludesVat) {
-            const grossInclusive = net;
-            const baseExcl = grossInclusive.div(VAT_INCLUSIVE_DIVISOR);
-            const vatImputed = grossInclusive.minus(baseExcl);
-            standard_sales.amount = standard_sales.amount.plus(baseExcl);
-            standard_sales.vat = standard_sales.vat.plus(vatImputed);
-          } else {
-            const baseExcl = net;
-            const vatImputed = baseExcl.mul(VAT_STANDARD_RATE);
-            standard_sales.amount = standard_sales.amount.plus(baseExcl);
-            standard_sales.vat = standard_sales.vat.plus(vatImputed);
-          }
-        }
-      } else {
-        if (row.has_tax) { standard_purchases.amount = standard_purchases.amount.plus(net); standard_purchases.vat = standard_purchases.vat.plus(tax); }
-        else if (net.gt(0)) { exempt_purchases.amount = exempt_purchases.amount.plus(net); }
-      }
-    }
-
-    return {
-      success: true,
-      data: {
-        standard_sales: { amount: standard_sales.amount.toNumber(), adjustment: 0, vat: standard_sales.vat.toNumber() },
-        special_sales: { amount: 0, adjustment: 0, vat: 0 },
-        zero_rated_domestic: { amount: 0, adjustment: 0, vat: 0 },
-        exports: { amount: 0, adjustment: 0, vat: 0 },
-        exempt_sales: { amount: exempt_sales.amount.toNumber(), adjustment: 0, vat: 0 },
-        standard_purchases: { amount: standard_purchases.amount.toNumber(), adjustment: 0, vat: standard_purchases.vat.toNumber() },
-        imports_customs: { amount: 0, adjustment: 0, vat: 0 },
-        reverse_charge: { amount: 0, adjustment: 0, vat: 0 },
-        exempt_purchases: { amount: exempt_purchases.amount.toNumber(), adjustment: 0, vat: 0 },
-      },
-    };
+    return this.taxVat.getTaxVatReport(companyId, year, period, salesAmountIncludesVat);
   }
 
-  /**
-   * ملخص خفيف للفترة: إجمالي حسب نوع الفاتورة + أعلى موردين مصروف/مشتريات.
-   */
   async getPeriodAnalytics(companyId: string, startDateStr: string, endDateStr: string) {
-    const start = new Date(`${String(startDateStr).slice(0, 10)}T00:00:00.000Z`);
-    const end = new Date(`${String(endDateStr).slice(0, 10)}T23:59:59.999Z`);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      throw new BadRequestException('تواريخ غير صالحة');
-    }
-    if (start > end) {
-      throw new BadRequestException('startDate يجب أن يسبق endDate');
-    }
-
-    const baseWhere = {
-      companyId,
-      status: 'active' as const,
-      transactionDate: { gte: start, lte: end },
-    };
-
-    const byKind = await this.prisma.invoice.groupBy({
-      by: ['kind'],
-      where: baseWhere,
-      _sum: { totalAmount: true },
-      _count: { _all: true },
-    });
-
-    const totalsByKind: Record<string, { totalAmount: string; invoiceCount: number }> = {};
-    for (const row of byKind) {
-      totalsByKind[row.kind] = {
-        totalAmount: row._sum.totalAmount?.toString() ?? '0',
-        invoiceCount: row._count._all,
-      };
-    }
-
-    const outflowKinds = ['purchase', 'expense', 'fixed_expense', 'hr_expense'] as const;
-    const topGroups = await this.prisma.invoice.groupBy({
-      by: ['supplierId'],
-      where: {
-        ...baseWhere,
-        supplierId: { not: null },
-        kind: { in: [...outflowKinds] },
-      },
-      _sum: { totalAmount: true },
-      _count: { _all: true },
-      orderBy: { _sum: { totalAmount: 'desc' } },
-      take: 5,
-    });
-
-    const supplierIds = topGroups.map((g) => g.supplierId).filter((id): id is string => id != null);
-    const suppliers = supplierIds.length
-      ? await this.prisma.supplier.findMany({
-          where: { id: { in: supplierIds }, companyId, isDeleted: false },
-          select: { id: true, nameAr: true, nameEn: true },
-        })
-      : [];
-    const nameById = new Map(suppliers.map((s) => [s.id, s.nameAr || s.nameEn || s.id]));
-
-    const topSuppliers = topGroups.map((g) => ({
-      supplierId: g.supplierId as string,
-      nameAr: nameById.get(g.supplierId as string) ?? '—',
-      totalAmount: g._sum.totalAmount?.toString() ?? '0',
-      invoiceCount: g._count._all,
-    }));
-
-    /** موردون لهم فواتير صرف/مشتريات في الفترة — تجميع العدد حسب فئة المورد */
-    const distinctSupplierRows = await this.prisma.invoice.findMany({
-      where: {
-        ...baseWhere,
-        supplierId: { not: null },
-        kind: { in: [...outflowKinds] },
-      },
-      select: { supplierId: true },
-      distinct: ['supplierId'],
-    });
-    const supplierIdsInPeriod = distinctSupplierRows.map((r) => r.supplierId as string);
-
-    let supplierCategoryBreakdown: { categoryId: string | null; nameAr: string; nameEn: string | null; count: number }[] = [];
-    if (supplierIdsInPeriod.length > 0) {
-      const supsForCat = await this.prisma.supplier.findMany({
-        where: { id: { in: supplierIdsInPeriod }, companyId, isDeleted: false },
-        select: {
-          id: true,
-          supplierCategoryId: true,
-          supplierCategory: { select: { nameAr: true, nameEn: true } },
-        },
-      });
-      const countByCat = new Map<string | null, number>();
-      for (const s of supsForCat) {
-        const cid = s.supplierCategoryId;
-        countByCat.set(cid, (countByCat.get(cid) ?? 0) + 1);
-      }
-      const foundIds = new Set(supsForCat.map((s) => s.id));
-      const orphanCount = supplierIdsInPeriod.filter((id) => !foundIds.has(id)).length;
-      if (orphanCount > 0) {
-        countByCat.set(null, (countByCat.get(null) ?? 0) + orphanCount);
-      }
-      supplierCategoryBreakdown = Array.from(countByCat.entries()).map(([categoryId, count]) => {
-        if (categoryId === null) {
-          return { categoryId: null, nameAr: 'غير مصنّف', nameEn: 'Uncategorized', count };
-        }
-        const sample = supsForCat.find((x) => x.supplierCategoryId === categoryId);
-        return {
-          categoryId,
-          nameAr: sample?.supplierCategory?.nameAr ?? '—',
-          nameEn: sample?.supplierCategory?.nameEn ?? null,
-          count,
-        };
-      });
-      supplierCategoryBreakdown.sort((a, b) => b.count - a.count);
-    }
-
-    /** مشتريات حسب فئة الفاتورة (categories على فواتير kind=purchase) — نفس نطاق التواريخ */
-    const purchaseCategoryGroups = await this.prisma.invoice.groupBy({
-      by: ['categoryId'],
-      where: {
-        ...baseWhere,
-        kind: 'purchase',
-      },
-      _sum: { totalAmount: true },
-    });
-
-    const purchaseCatIds = purchaseCategoryGroups
-      .map((g) => g.categoryId)
-      .filter((id): id is string => id != null);
-    const purchaseCategoriesMeta =
-      purchaseCatIds.length > 0
-        ? await this.prisma.category.findMany({
-            where: { id: { in: purchaseCatIds }, companyId },
-            select: { id: true, nameAr: true, nameEn: true },
-          })
-        : [];
-    const purchaseCatNameById = new Map(purchaseCategoriesMeta.map((c) => [c.id, c]));
-
-    let purchaseCategoryBreakdown: { categoryId: string | null; nameAr: string; nameEn: string | null; amount: string }[] =
-      purchaseCategoryGroups.map((g) => {
-        const amtStr = g._sum.totalAmount?.toString() ?? '0';
-        if (g.categoryId == null) {
-          return {
-            categoryId: null,
-            nameAr: 'غير مصنّف',
-            nameEn: 'Uncategorized',
-            amount: new Decimal(amtStr).toFixed(4),
-          };
-        }
-        const cat = purchaseCatNameById.get(g.categoryId);
-        return {
-          categoryId: g.categoryId,
-          nameAr: cat?.nameAr ?? '—',
-          nameEn: cat?.nameEn ?? null,
-          amount: new Decimal(amtStr).toFixed(4),
-        };
-      });
-    purchaseCategoryBreakdown = purchaseCategoryBreakdown
-      .filter((row) => new Decimal(row.amount).gt(0))
-      .sort((a, b) => new Decimal(b.amount).cmp(a.amount));
-
-    const purchaseCategoryTotal = purchaseCategoryBreakdown
-      .reduce((s, row) => s.plus(new Decimal(row.amount)), new Decimal(0))
-      .toFixed(4);
-
-    return {
-      startDate: String(startDateStr).slice(0, 10),
-      endDate: String(endDateStr).slice(0, 10),
-      totalsByKind,
-      topSuppliers,
-      supplierCategoryBreakdown,
-      suppliersInPeriodCount: supplierIdsInPeriod.length,
-      purchaseCategoryBreakdown,
-      purchaseCategoryTotal,
-    };
+    return this.periodAnalytics.getPeriodAnalytics(companyId, startDateStr, endDateStr);
   }
 }

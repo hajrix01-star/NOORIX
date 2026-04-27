@@ -30,6 +30,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = typeof errRes === 'object' && errRes !== null && 'message' in errRes
         ? (errRes as { message: string | string[] }).message
         : String(errRes);
+      // لا تُرسل تفاصيل 5xx يدوية للعميل في الإنتاج — قد تحوي مسارات ملفات أو رسائل مكتبات
+      if (isProd && status >= 500) {
+        message = 'خطأ داخلي في الخادم';
+      }
     } else if (exception instanceof Error) {
       if (exception.name === 'PrismaClientKnownRequestError') {
         const prismaErr = exception as { code?: string; meta?: { target?: string[] } };

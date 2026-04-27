@@ -18,7 +18,7 @@ import {
   sanitizeBankName,
   sanitizeCustomerName,
 } from './bank/bankMappingAutoDetect';
-import { formatSaudiDate } from '../../utils/saudiDate';
+import { formatSaudiDate, toYmd } from '../../utils/saudiDate';
 
 /** مطابق COLUMN_TYPES في Base44 (بدون amount) */
 const COLUMN_FIELD_DEFS = [
@@ -33,9 +33,9 @@ const COLUMN_FIELD_DEFS = [
 
 function normalizeDateForInput(v: any) {
   if (!v) return '';
-  const s = String(v).trim().slice(0, 10);
+  const s = toYmd(v);
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  return extractDateFromCell(v).slice(0, 10) || '';
+  return toYmd(extractDateFromCell(v)) || '';
 }
 
 function emptyColumnMap() {

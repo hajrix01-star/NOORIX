@@ -5,6 +5,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getStoredSpecialDays, setStoredSpecialDays } from '../utils/dashboardStorage';
 import { Button, Input } from '../../../ui';
+import { toYmd } from '../../../utils/saudiDate';
 
 const DEFAULT_COLORS = ['var(--color-noorix-amber)', '#eab308', '#84cc16', 'var(--noorix-accent-green)', '#8b5cf6'];
 
@@ -36,8 +37,8 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const specialDaysList = useMemo(() => getStoredSpecialDays(companyId, year, month), [companyId, year, month, specialDaysVersion]);
 
   const handleAdd = useCallback(() => {
-    let from = newFrom?.trim().slice(0, 10);
-    let to = newTo?.trim().slice(0, 10) || from;
+    let from = toYmd(newFrom);
+    let to = toYmd(newTo) || from;
     const name = (newName || t('dashboardSpecialDay')).trim();
     if (!from) return;
     if (to < from) { const tmp = from; from = to; to = tmp; }

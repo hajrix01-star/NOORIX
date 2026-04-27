@@ -17,6 +17,7 @@ import {
 } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
+import { toYmd } from '../../utils/saudiDate';
 import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
@@ -287,8 +288,8 @@ export default function BankStatementAnalysisScreen() {
 
                   <div className="grid gap-2.5">
                     {statements.map((stmt: any) => {
-                      const start = stmt.startDate?.slice(0, 10);
-                      const end = stmt.endDate?.slice(0, 10);
+                      const start = toYmd(stmt.startDate);
+                      const end = toYmd(stmt.endDate);
                       const statusColor = stmt.status === 'mapping' ? 'amber' : stmt.status === 'completed' ? 'green' : 'gray';
                       return (
                         <div

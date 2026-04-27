@@ -36,5 +36,5 @@
 
 ## مراجع
 
-- إبطال البيانات المالية: `src/utils/queryInvalidation.js` و`docs/PERFORMANCE_AND_DATA.md` إن وُجد.
+- إبطال البيانات المالية: `src/utils/queryInvalidation.ts` و`docs/PERFORMANCE_AND_DATA.md` إن وُجد.
 - مكوّنات الواجهة والنوافذ: `.cursor/rules/ui-components.mdc`.

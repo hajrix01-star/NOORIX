@@ -20,6 +20,7 @@ import {
   LabelList,
 } from 'recharts';
 import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
+import { toYmd } from '../../utils/saudiDate';
 
 /** حل وسط: عرض أكثر من 8 دون إغراق النافذة؛ التصفح على البيانات المحمّلة (حتى 500 من الخادم). */
 const DETAIL_INVOICES_PAGE_SIZE = 15;
@@ -384,7 +385,7 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
                   onPageChange={setInvoiceListPage}
                   columns={[
                     { key: 'transactionDate', label: t('transactionDate'),
-                      render: (v: any) => String(v || '').slice(0, 10) },
+                      render: (v: any) => toYmd(v) },
                     { key: 'invoiceNumber', label: t('reportInvoiceNumber'),
                       render: (_: any, item: any) => <span className="font-bold">{item.summaryNumber || item.invoiceNumber || '—'}</span> },
                     { key: 'supplier', label: t('reportSourceOrSupplier'),

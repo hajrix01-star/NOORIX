@@ -1,3 +1,5 @@
+import { toYmd } from '../../utils/saudiDate';
+
 /**
  * chatStorage — تخزين المحادثات محلياً
  * المفتاح: noorix-chat-{companyId}
@@ -54,9 +56,9 @@ export function saveChat(companyId: any, { creatorName, creatorId, messages }: a
 
 export function filterByDate(messages: any, dateStr: any) {
   if (!dateStr || !messages?.length) return messages;
-  const target = dateStr.slice(0, 10);
+  const target = toYmd(dateStr);
   return messages.filter((m: any) => {
-    const d = m.createdAt ? String(m.createdAt).slice(0, 10) : '';
+    const d = m.createdAt ? toYmd(m.createdAt) : '';
     return d === target;
   });
 }

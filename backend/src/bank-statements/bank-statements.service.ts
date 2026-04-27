@@ -1,149 +1,30 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
-import { Decimal } from '@prisma/client/runtime/library';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { TenantContext } from '../common/tenant-context';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { GeminiService } from '../chat/gemini.service';
-import { classifyTransaction, type BankTreeCategoryRow, type BankRuleRow } from './bank-classification.engine';
-import { buildSummaryJsonPayload, type TxLike } from './bank-statement-summary.builder';
+import { createBankStatementAfterUploadAndStructure } from './bank-statements-upload-analyze.util';
+import { persistBankStatementConfirmMapping } from './bank-statements-confirm-mapping-persist.util';
 import {
-  columnMappingToTemplateColumns,
-  templateColumnsToMapping,
-  type TemplateColumnsJson,
-} from './bank-template-columns.util';
+  buildBankStatementListWhere,
+  formatBankStatementSummary,
+} from './bank-statements-list-summary.util';
+import { importBankClassificationPackInCompany } from './bank-classification-pack-apply.util';
+import { exportBankClassificationPackForCompany } from './bank-classification-pack-export.util';
+import { seedDefaultBankTreeCategoriesIfEmpty } from './bank-statements-seed-default-tree.util';
+import { type ColumnMapping } from './bank-statements-header-heuristic.util';
 import {
-  parseBankStatementRows,
-  countTemplateValidRows,
-  type BankRowMapping,
-} from './bank-statement-row-parser';
-import { DEFAULT_BANK_TREE_CATEGORY_SEEDS } from './default-bank-tree-categories.seed';
-import { isSuperAdmin } from '../auth/constants/permissions';
+  type BankClassificationExportPack,
+} from './bank-classification-pack.util';
+import { assertBankClassificationSourceCompanyAccessible } from './bank-classification-import-access.util';
+import { computeBankReconciliationStats } from './bank-reconciliation-stats.util';
+import { applyBankStatementClassificationAndSummary } from './apply-bank-classification-summary.util';
 
-const CLASSIFICATION_PACK_VERSION = 1;
-const IMPORT_MAX_TREE = 400;
-const IMPORT_MAX_RULES = 8000;
-
-export type BankClassificationPackRow = {
-  name: string;
-  sortOrder: number;
-  isActive: boolean;
-  transactionSide: string;
-  transactionType: string | null;
-  parentKeywords: string[];
-  classifications: { name: string; keywords: string[] }[];
-};
-
-export type BankClassificationRulePackRow = {
-  keyword: string;
-  matchType: string;
-  categoryName: string;
-  transactionSide: string;
-  transactionType: string | null;
-  isActive: boolean;
-  priority: number;
-};
-
-export type BankClassificationExportPack = {
-  version: number;
-  exportedAt: string;
-  treeCategories: BankClassificationPackRow[];
-  classificationRules: BankClassificationRulePackRow[];
-};
-
-/** مطابقة كلمات مفتاحية للعناوين الشائعة في كشوف الحساب */
-const HEADER_KEYWORDS: Record<string, string[]> = {
-  date: ['تاريخ', 'date', 'التاريخ', 'trans date', 'value date', 'قيمة', 'يوم', 'day'],
-  description: ['وصف', 'description', 'الوصف', 'بيان', 'تفاصيل', 'details', 'narration', 'مفهوم', 'البيان', 'تفاصيل الحركة'],
-  notes: ['ملاحظات', 'ملاحظة', 'note', 'notes', 'remarks', 'comment'],
-  debit: ['مدين', 'debit', 'سحب', 'خصم', 'withdraw', 'صادر', 'المدين', 'مدين'],
-  credit: ['دائن', 'credit', 'ايداع', 'إيداع', 'deposit', 'وارد', 'الدائن', 'دائن'],
-  balance: ['رصيد', 'balance', 'الرصيد', 'الباقي', 'الرصيد السابق', 'الرصيد اللاحق'],
-  amount: ['مبلغ', 'amount', 'المبلغ', 'قيمة', 'value', 'المبلغ'],
-  reference: ['مرجع', 'reference', 'ref', 'رقم العملية', 'txn'],
-};
-
-/** حد أمان لحجم JSON في قاعدة البيانات (صفوف كاملة للربط لاحقاً) */
-const RAW_DATA_MAX_ROWS = 30_000;
-
-/** أحرف تُشير لـ formula injection في Excel عند بدء الخلية بها */
-const FORMULA_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
-
-/** تنظيف قيمة نصية من formula injection */
-function sanitizeCell(val: string): string {
-  if (!val || val.length === 0) return val;
-  if (FORMULA_PREFIXES.some((p) => val.startsWith(p))) return "'" + val;
-  return val;
-}
-
-export type ColumnMapping = {
-  dateCol?: number;
-  descCol?: number;
-  notesCol?: number;
-  mergeNotesWithDescription?: boolean;
-  debitCol?: number;
-  creditCol?: number;
-  amountCol?: number; // عمود واحد: موجب=دائن، سالب=مدين
-  balanceCol?: number;
-  refCol?: number;
-};
-
-function toBankRowMapping(m: ColumnMapping): BankRowMapping | null {
-  const dateCol = m.dateCol ?? -1;
-  if (dateCol < 0) return null;
-  return {
-    dateCol,
-    descCol: m.descCol,
-    notesCol: m.notesCol,
-    mergeNotesWithDescription: m.mergeNotesWithDescription,
-    debitCol: m.debitCol,
-    creditCol: m.creditCol,
-    amountCol: m.amountCol,
-    balanceCol: m.balanceCol,
-    refCol: m.refCol,
-  };
-}
-
-function matchHeaderType(cell: string): string | null {
-  const s = String(cell ?? '').toLowerCase().trim();
-  if (!s) return null;
-  for (const [type, keywords] of Object.entries(HEADER_KEYWORDS)) {
-    if (keywords.some((k) => s.includes(k.toLowerCase()))) return type;
-  }
-  return null;
-}
-
-/** بديل عند فشل Gemini: مسح الصفوف للعثور على صف العناوين */
-function heuristicDetection(
-  raw: string[][],
-): { companyName: string; reportDate: string; headerRow: number; dataStartRow: number; dataEndRow: number; columnTypes: Record<number, string> } | null {
-  if (!raw?.length || !Array.isArray(raw[0])) return null;
-  const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
-  const dataEndRow = Math.max(1, raw.length - 1);
-  const maxScan = Math.min(15, raw.length - 1);
-
-  for (let hr = 0; hr <= maxScan; hr++) {
-    const headerCells = raw[hr] || [];
-    const columnTypes: Record<number, string> = {};
-    for (let i = 0; i < colCount; i++) {
-      const t = matchHeaderType(headerCells[i]);
-      columnTypes[i] = t || 'ignore';
-    }
-    const hasDate = Object.values(columnTypes).includes('date');
-    const hasAmount =
-      Object.values(columnTypes).some((t) => t === 'debit' || t === 'credit') ||
-      Object.values(columnTypes).includes('amount');
-    if (hasDate && hasAmount) {
-      return {
-        companyName: '',
-        reportDate: '',
-        headerRow: hr,
-        dataStartRow: hr + 1,
-        dataEndRow,
-        columnTypes,
-      };
-    }
-  }
-  return null;
-}
+export type { ColumnMapping };
+export type {
+  BankClassificationExportPack,
+  BankClassificationPackRow,
+  BankClassificationRulePackRow,
+} from './bank-classification-pack.util';
 
 @Injectable()
 export class BankStatementsService {
@@ -158,163 +39,12 @@ export class BankStatementsService {
     companyId: string,
     dto: { fileName: string; fileFormat: string; raw: string[][] },
   ) {
-    const tenantId = TenantContext.getTenantId();
-    if (!dto.raw?.length) throw new BadRequestException('الملف فارغ');
-
-    const allowedFormats = ['excel', 'xlsx', 'xls', 'csv'];
-    if (dto.fileFormat && !allowedFormats.includes(dto.fileFormat.toLowerCase())) {
-      throw new BadRequestException('صيغة الملف غير مدعومة — يُقبل xlsx وxls وcsv فقط');
-    }
-
-    const raw = dto.raw as string[][];
-    const colCount = Math.max(...raw.map((r) => (Array.isArray(r) ? r.length : 0)), 1);
-    const rawTruncated = raw.length > RAW_DATA_MAX_ROWS;
-    const rawData = (rawTruncated ? raw.slice(0, RAW_DATA_MAX_ROWS) : raw) as unknown[][];
-    if (rawTruncated) {
-      this.logger.warn(`Bank upload: truncated raw from ${raw.length} to ${RAW_DATA_MAX_ROWS} rows`);
-    }
-
-    const stmt = await this.prisma.bankStatement.create({
-      data: {
-        tenantId,
-        companyId,
-        fileName: dto.fileName || 'كشف.xlsx',
-        fileFormat: dto.fileFormat || 'excel',
-        companyName: '',
-        bankName: 'كشف الحساب',
-        status: 'mapping',
-        headerRow: 0,
-        dataStartRow: 0,
-        dataEndRow: Math.max(0, raw.length - 1),
-        rawData: rawData as object,
-      },
-    });
-
-    let skipAi = false;
-    const rawForParse = rawData as unknown[][];
-    const templates = await this.prisma.bankStatementTemplate.findMany({
-      where: { companyId, isActive: true },
-      orderBy: [{ usageCount: 'desc' }, { updatedAt: 'desc' }],
-    });
-    for (const tpl of templates) {
-      if (tpl.headerRow < 0 || tpl.headerRow >= rawForParse.length) continue;
-      const currentHeaders = (rawForParse[tpl.headerRow] || [])
-        .map((h) => String(h || '').toLowerCase().trim())
-        .filter(Boolean);
-      const saved = (Array.isArray(tpl.sampleHeaders) ? tpl.sampleHeaders : [])
-        .map((h: unknown) => String(h || '').toLowerCase().trim())
-        .filter(Boolean);
-      if (currentHeaders.length === 0 || saved.length === 0) continue;
-      const matchCount = saved.filter((h: string) => currentHeaders.includes(h)).length;
-      const pct = matchCount / saved.length;
-      if (pct < 0.85) continue;
-      const colMap = templateColumnsToMapping((tpl.columnsJson || {}) as TemplateColumnsJson);
-      const maxCol = Math.max(
-        colMap.dateCol ?? -1,
-        colMap.descCol ?? -1,
-        colMap.notesCol ?? -1,
-        colMap.debitCol ?? -1,
-        colMap.creditCol ?? -1,
-        colMap.balanceCol ?? -1,
-        colMap.amountCol ?? -1,
-        colMap.refCol ?? -1,
-      );
-      const sampleRow = rawForParse[tpl.dataStartRow];
-      if (!sampleRow || sampleRow.length <= maxCol) continue;
-
-      const dataEnd =
-        tpl.dataEndRow === -1 ? Math.max(0, rawForParse.length - 1) : Math.min(tpl.dataEndRow, rawForParse.length - 1);
-      const brm = toBankRowMapping(colMap as ColumnMapping);
-      if (brm) {
-        const parsed = parseBankStatementRows(rawForParse, brm, tpl.dataStartRow, dataEnd, null);
-        const { valid, total } = countTemplateValidRows(parsed);
-        const ratio = total > 0 ? valid / total : 0;
-        if (total < 3 || ratio < 0.5) {
-          this.logger.warn(
-            `Bank template ${tpl.bankName} poor parse: ${valid}/${total} valid — deactivating (Base44 parity)`,
-          );
-          await this.prisma.bankStatementTemplate.update({
-            where: { id: tpl.id },
-            data: { isActive: false },
-          });
-          continue;
-        }
-      }
-
-      await this.prisma.bankStatement.update({
-        where: { id: stmt.id },
-        data: {
-          companyName: tpl.customerName || '',
-          bankName: tpl.bankName || 'كشف الحساب',
-          headerRow: tpl.headerRow,
-          dataStartRow: tpl.dataStartRow,
-          dataEndRow: dataEnd,
-          columnMapping: colMap as object,
-          aiAnalysis:
-            (rawTruncated ? `تنبيه: الملف قُصّ إلى ${RAW_DATA_MAX_ROWS} صفاً. ` : '') +
-            `قالب محفوظ: ${tpl.bankName} — تطابق عناوين ${Math.round(pct * 100)}%`,
-        },
-      });
-      await this.prisma.bankStatementTemplate.update({
-        where: { id: tpl.id },
-        data: { usageCount: { increment: 1 }, lastUsedAt: new Date() },
-      });
-      skipAi = true;
-      this.logger.log(`Bank template matched: ${tpl.bankName} (${Math.round(pct * 100)}%)`);
-      break;
-    }
-
-    let suggested: {
-      companyName: string;
-      reportDate: string;
-      dataStartRow: number;
-      dataEndRow: number;
-      headerRow: number;
-      columnTypes: Record<number, string>;
-    } | null = null;
-
-    if (!skipAi && this.geminiService.isAvailable()) {
-      suggested = await this.geminiService.analyzeBankStatementStructure(rawForParse as string[][]);
-    }
-    if (!skipAi && !suggested) {
-      suggested = heuristicDetection(rawForParse as string[][]);
-      if (suggested) this.logger.log('Using heuristic fallback for column detection');
-    }
-    if (suggested) {
-      const colMap: ColumnMapping = {};
-      for (const [k, v] of Object.entries(suggested.columnTypes)) {
-        const col = parseInt(k, 10);
-        if (v === 'date') colMap.dateCol = col;
-        else if (v === 'description') colMap.descCol = col;
-        else if (v === 'notes') {
-          colMap.notesCol = col;
-          colMap.mergeNotesWithDescription = true;
-        } else if (v === 'debit') colMap.debitCol = col;
-        else if (v === 'credit') colMap.creditCol = col;
-        else if (v === 'balance') colMap.balanceCol = col;
-        else if (v === 'amount') colMap.amountCol = col;
-        else if (v === 'reference') colMap.refCol = col;
-      }
-      await this.prisma.bankStatement.update({
-        where: { id: stmt.id },
-        data: {
-          companyName: suggested.companyName || '',
-          startDate: suggested.reportDate ? `${suggested.reportDate}-01` : null,
-          endDate: suggested.reportDate ? `${suggested.reportDate}-28` : null,
-          headerRow: suggested.headerRow,
-          dataStartRow: suggested.dataStartRow,
-          dataEndRow: suggested.dataEndRow,
-          columnMapping: colMap as object,
-          ...(rawTruncated
-            ? {
-                aiAnalysis: `تنبيه: الملف قُصّ إلى ${RAW_DATA_MAX_ROWS} صفاً للتخزين.`,
-              }
-            : {}),
-        },
-      });
-    }
-
-    return this.findOne(companyId, stmt.id);
+    const id = await createBankStatementAfterUploadAndStructure(
+      { prisma: this.prisma, logger: this.logger, geminiService: this.geminiService },
+      companyId,
+      dto,
+    );
+    return this.findOne(companyId, id);
   }
 
   /** ترويسة الكشف عبر Gemini — مطابقة BankColumnMapper (Base44) */
@@ -347,129 +77,12 @@ export class BankStatementsService {
       raw: string[][];
     },
   ) {
-    const stmt = await this.prisma.bankStatement.findFirst({
-      where: { id, companyId },
-      select: { id: true, rawData: true },
-    });
-    if (!stmt) throw new BadRequestException('الكشف غير موجود');
-
-    const tenantId = TenantContext.getTenantId();
-    const raw = dto.raw || (stmt.rawData as string[][]);
-    if (!raw?.length) throw new BadRequestException('لا توجد بيانات');
-
-    const map = dto.columnMapping;
-    const dateCol = map.dateCol ?? -1;
-    const debitCol = map.debitCol ?? -1;
-    const creditCol = map.creditCol ?? -1;
-    const amountCol = map.amountCol ?? -1;
-    const balanceCol = map.balanceCol ?? -1;
-
-    const hasAmounts = debitCol >= 0 || creditCol >= 0 || amountCol >= 0 || balanceCol >= 0;
-    if (dateCol < 0 || !hasAmounts) {
-      throw new BadRequestException(
-        'يجب تحديد عمود التاريخ وعمود المدين أو الدائن أو المبلغ أو الرصيد',
-      );
-    }
-
-    const start = Math.max(0, dto.dataStartRow);
-    const end = Math.min(raw.length - 1, dto.dataEndRow);
-
-    const brm = toBankRowMapping(map);
-    if (!brm) throw new BadRequestException('تعيين عمود التاريخ غير صالح');
-
-    const parsed = parseBankStatementRows(
-      raw as unknown[][],
-      brm,
-      start,
-      end,
-      dto.startDate || null,
-    );
-
-    let totalDeposits = new Decimal(0);
-    let totalWithdrawals = new Decimal(0);
-    const transactions: Array<{
-      txDate: string;
-      description: string;
-      debit: Decimal;
-      credit: Decimal;
-      balance: Decimal | null;
-      reference: string | null;
-      sortOrder: number;
-      categoryId: string | null;
-    }> = [];
-
-    for (const p of parsed) {
-      if (p.debit > 0) totalWithdrawals = totalWithdrawals.add(p.debit);
-      if (p.credit > 0) totalDeposits = totalDeposits.add(p.credit);
-      transactions.push({
-        txDate: p.txDate,
-        description: sanitizeCell(p.description),
-        debit: new Decimal(p.debit),
-        credit: new Decimal(p.credit),
-        balance: p.balance != null ? new Decimal(p.balance) : null,
-        reference: p.reference || null,
-        sortOrder: p.sortOrder,
-        categoryId: null,
-      });
-    }
-
-    const rawToStore = (dto.raw?.length ? dto.raw : raw).slice(0, RAW_DATA_MAX_ROWS);
-
-    await this.prisma.$transaction([
-      this.prisma.bankStatementTransaction.deleteMany({ where: { statementId: id } }),
-      this.prisma.bankStatement.update({
-        where: { id },
-        data: {
-          companyName: dto.companyName || '',
-          bankName: dto.bankName || 'كشف الحساب',
-          startDate: dto.startDate || null,
-          endDate: dto.endDate || null,
-          headerRow: dto.headerRow,
-          dataStartRow: dto.dataStartRow,
-          dataEndRow: dto.dataEndRow,
-          columnMapping: dto.columnMapping as object,
-          rawData: rawToStore as object,
-          totalDeposits,
-          totalWithdrawals,
-          transactionCount: transactions.length,
-          status: 'completed',
-        },
-      }),
-    ]);
-
-    if (transactions.length > 0) {
-      await this.prisma.bankStatementTransaction.createMany({
-        data: transactions.map((t) => ({
-          statementId: id,
-          txDate: t.txDate,
-          description: t.description,
-          debit: t.debit,
-          credit: t.credit,
-          balance: t.balance,
-          reference: t.reference,
-          sortOrder: t.sortOrder,
-          categoryId: t.categoryId,
-        })),
-      });
-    }
-
-    await this.saveTemplateAfterConfirm(tenantId, companyId, id, dto, raw);
-    await this.applyClassificationAndSummary(companyId, id);
-
+    await persistBankStatementConfirmMapping(this.prisma, this.logger, companyId, id, dto);
     return this.findOne(companyId, id);
   }
 
   async list(companyId: string, filters?: { month?: string; bankName?: string }) {
-    const where: Record<string, unknown> = { companyId };
-    if (filters?.month) {
-      where.OR = [
-        { startDate: { startsWith: filters.month } },
-        { endDate: { startsWith: filters.month } },
-      ];
-    }
-    if (filters?.bankName?.trim()) {
-      where.bankName = { contains: filters.bankName.trim(), mode: 'insensitive' };
-    }
+    const where = buildBankStatementListWhere(companyId, filters);
 
     return this.prisma.bankStatement.findMany({
       where,
@@ -513,16 +126,7 @@ export class BankStatementsService {
       },
     });
 
-    const deposits = agg._sum.totalDeposits ?? new Decimal(0);
-    const withdrawals = agg._sum.totalWithdrawals ?? new Decimal(0);
-    const net = deposits.sub(withdrawals);
-
-    return {
-      statementCount: agg._count.id,
-      totalDeposits: deposits.toString(),
-      totalWithdrawals: withdrawals.toString(),
-      netFlow: net.toString(),
-    };
+    return formatBankStatementSummary(agg);
   }
 
   async updateTransactionCategory(companyId: string, statementId: string, txId: string, categoryId: string | null) {
@@ -540,7 +144,7 @@ export class BankStatementsService {
         classificationName: null,
       },
     });
-    await this.applyClassificationAndSummary(companyId, statementId);
+    await applyBankStatementClassificationAndSummary(this.prisma, companyId, statementId);
     return row;
   }
 
@@ -599,86 +203,12 @@ export class BankStatementsService {
       where: { statementId, manuallyClassified: false },
       data: { categoryId: null, matchKeyword: null, classificationName: null, transactionType: null },
     });
-    await this.applyClassificationAndSummary(companyId, statementId);
+    await applyBankStatementClassificationAndSummary(this.prisma, companyId, statementId);
     return this.findOne(companyId, statementId);
   }
 
   async getReconciliationStats(companyId: string, startDate: string, endDate: string) {
-    const start = new Date(`${startDate.slice(0, 10)}T00:00:00.000Z`);
-    const end = new Date(`${endDate.slice(0, 10)}T23:59:59.999Z`);
-
-    const vaults = await this.prisma.vault.findMany({
-      where: { companyId, isActive: true, isArchived: false },
-    });
-    const bankVaultIds = new Set(
-      vaults
-        .filter((v) => {
-          const t = (v.type || '').toLowerCase();
-          const n = `${v.nameAr} ${v.nameEn || ''}`.toLowerCase();
-          const pm = (v.paymentMethod || '').toLowerCase();
-          return (
-            t === 'bank' ||
-            t === 'app' ||
-            n.includes('بنك') ||
-            n.includes('bank') ||
-            n.includes('مدى') ||
-            n.includes('mada') ||
-            n.includes('شبكة') ||
-            pm.includes('مدى') ||
-            pm.includes('mada') ||
-            pm.includes('بنك')
-          );
-        })
-        .map((v) => v.id),
-    );
-
-    const invoices = await this.prisma.invoice.findMany({
-      where: {
-        companyId,
-        kind: 'sale',
-        status: 'active',
-        transactionDate: { gte: start, lte: end },
-      },
-      select: { totalAmount: true, vaultId: true },
-    });
-
-    let totalBankSales = new Decimal(0);
-    let saleCount = 0;
-    for (const inv of invoices) {
-      if (!inv.vaultId || !bankVaultIds.has(inv.vaultId)) continue;
-      totalBankSales = totalBankSales.add(new Decimal(inv.totalAmount?.toString() ?? '0'));
-      saleCount += 1;
-    }
-
-    // إيداعات نقدية/تحويلات إلى خزائن بنكية — مطابقة مفهوم deposit_to_bank في Base44 (LedgerEntry.transfer → vaultId = المستقبِل)
-    const bankIds = [...bankVaultIds];
-    let cashDeposits = new Decimal(0);
-    if (bankIds.length > 0) {
-      const transfers = await this.prisma.ledgerEntry.findMany({
-        where: {
-          companyId,
-          status: 'active',
-          referenceType: 'transfer',
-          transactionDate: { gte: start, lte: end },
-          vaultId: { in: bankIds },
-        },
-        select: { amount: true },
-      });
-      for (const e of transfers) {
-        cashDeposits = cashDeposits.add(new Decimal(e.amount?.toString() ?? '0'));
-      }
-    }
-
-    const expectedCredits = totalBankSales.add(cashDeposits);
-
-    return {
-      system_data: {
-        sales_bank_total: totalBankSales.toNumber(),
-        cash_deposits_total: cashDeposits.toNumber(),
-        expected_credits: expectedCredits.toNumber(),
-        sale_invoice_count: saleCount,
-      },
-    };
+    return computeBankReconciliationStats(this.prisma, companyId, startDate, endDate);
   }
 
   async listTemplates(companyId: string) {
@@ -720,30 +250,7 @@ export class BankStatementsService {
    */
   async seedDefaultTreeCategoriesIfEmpty(companyId: string): Promise<{ created: number }> {
     const tenantId = TenantContext.getTenantId();
-    const n = await this.prisma.bankTreeCategory.count({ where: { companyId } });
-    if (n > 0) {
-      throw new BadRequestException(
-        'توجد فئات تصنيف مسبقاً لهذه الشركة. احذفها أولاً أو عدّلها من الواجهة إذا أردت الاستيراد من جديد.',
-      );
-    }
-    let created = 0;
-    for (const row of DEFAULT_BANK_TREE_CATEGORY_SEEDS) {
-      await this.prisma.bankTreeCategory.create({
-        data: {
-          tenantId,
-          companyId,
-          name: row.name,
-          sortOrder: row.sortOrder,
-          isActive: row.isActive,
-          transactionSide: row.transactionSide,
-          transactionType: row.transactionType,
-          parentKeywords: row.parentKeywords as object,
-          classifications: row.classifications as object,
-        },
-      });
-      created++;
-    }
-    return { created };
+    return seedDefaultBankTreeCategoriesIfEmpty(this.prisma, companyId, tenantId);
   }
 
   async createTreeCategory(
@@ -846,128 +353,8 @@ export class BankStatementsService {
     return { success: true };
   }
 
-  private normalizeParentKeywordsJson(raw: unknown): string[] {
-    if (!Array.isArray(raw)) return [];
-    return raw.map((x) => String(x ?? '').trim()).filter(Boolean);
-  }
-
-  private normalizeClassificationsJson(raw: unknown): { name: string; keywords: string[] }[] {
-    if (!Array.isArray(raw)) return [];
-    return raw.map((c: { name?: unknown; keywords?: unknown }) => ({
-      name: String(c?.name ?? '').trim(),
-      keywords: Array.isArray(c?.keywords)
-        ? c.keywords.map((k: unknown) => String(k ?? '').toLowerCase().trim()).filter(Boolean)
-        : [],
-    }));
-  }
-
   async exportClassificationPack(companyId: string): Promise<BankClassificationExportPack> {
-    const trees = await this.listTreeCategories(companyId);
-    const rules = await this.listClassificationRules(companyId);
-    return {
-      version: CLASSIFICATION_PACK_VERSION,
-      exportedAt: new Date().toISOString(),
-      treeCategories: trees.map((t) => ({
-        name: t.name,
-        sortOrder: t.sortOrder,
-        isActive: t.isActive,
-        transactionSide: t.transactionSide,
-        transactionType: t.transactionType,
-        parentKeywords: this.normalizeParentKeywordsJson(t.parentKeywords),
-        classifications: this.normalizeClassificationsJson(t.classifications),
-      })),
-      classificationRules: rules.map((r) => ({
-        keyword: r.keyword,
-        matchType: r.matchType,
-        categoryName: r.categoryName,
-        transactionSide: r.transactionSide,
-        transactionType: r.transactionType,
-        isActive: r.isActive,
-        priority: r.priority,
-      })),
-    };
-  }
-
-  private parseClassificationPack(pack: unknown): BankClassificationExportPack {
-    if (!pack || typeof pack !== 'object') {
-      throw new BadRequestException('ملف الحزمة غير صالح.');
-    }
-    const p = pack as Record<string, unknown>;
-    if (p.version !== CLASSIFICATION_PACK_VERSION) {
-      throw new BadRequestException('إصدار حزمة التصنيف غير مدعوم (يتوقع الإصدار 1).');
-    }
-    const rawTree = Array.isArray(p.treeCategories) ? p.treeCategories : [];
-    const rawRules = Array.isArray(p.classificationRules) ? p.classificationRules : [];
-    if (rawTree.length > IMPORT_MAX_TREE) {
-      throw new BadRequestException(`عدد فئات الشجرة يتجاوز الحد (${IMPORT_MAX_TREE}).`);
-    }
-    if (rawRules.length > IMPORT_MAX_RULES) {
-      throw new BadRequestException(`عدد القواعد يتجاوز الحد (${IMPORT_MAX_RULES}).`);
-    }
-
-    const treeCategories: BankClassificationPackRow[] = [];
-    for (const row of rawTree) {
-      if (!row || typeof row !== 'object') continue;
-      const o = row as Record<string, unknown>;
-      const name = String(o.name ?? '').trim();
-      if (!name) continue;
-      const classifications = this.normalizeClassificationsJson(o.classifications);
-      if (!classifications.length || classifications.every((c) => !c.keywords.length)) {
-        throw new BadRequestException(`فئة الشجرة «${name}» بلا كلمات مفتاحية في التصنيفات.`);
-      }
-      treeCategories.push({
-        name,
-        sortOrder: Number.isFinite(Number(o.sortOrder)) ? Number(o.sortOrder) : 100,
-        isActive: o.isActive !== false,
-        transactionSide: String(o.transactionSide ?? 'any') || 'any',
-        transactionType: o.transactionType == null || o.transactionType === '' ? null : String(o.transactionType),
-        parentKeywords: Array.isArray(o.parentKeywords)
-          ? o.parentKeywords.map((x: unknown) => String(x ?? '').toLowerCase().trim()).filter(Boolean)
-          : [],
-        classifications,
-      });
-    }
-
-    const classificationRules: BankClassificationRulePackRow[] = [];
-    for (const row of rawRules) {
-      if (!row || typeof row !== 'object') continue;
-      const o = row as Record<string, unknown>;
-      const keyword = String(o.keyword ?? '').trim();
-      const categoryName = String(o.categoryName ?? '').trim();
-      if (!keyword || !categoryName) continue;
-      classificationRules.push({
-        keyword,
-        matchType: String(o.matchType ?? 'contains') || 'contains',
-        categoryName,
-        transactionSide: String(o.transactionSide ?? 'any') || 'any',
-        transactionType: o.transactionType == null || o.transactionType === '' ? null : String(o.transactionType),
-        isActive: o.isActive !== false,
-        priority: Number.isFinite(Number(o.priority)) ? Number(o.priority) : 0,
-      });
-    }
-
-    return {
-      version: CLASSIFICATION_PACK_VERSION,
-      exportedAt: typeof p.exportedAt === 'string' ? p.exportedAt : new Date().toISOString(),
-      treeCategories,
-      classificationRules,
-    };
-  }
-
-  private assertSourceCompanyAccessible(
-    sourceCompanyId: string,
-    targetCompanyId: string,
-    user: { companyIds?: string[]; role?: string },
-  ) {
-    if (sourceCompanyId === targetCompanyId) {
-      throw new BadRequestException('شركة المصدر يجب أن تختلف عن الشركة الحالية.');
-    }
-    if (!isSuperAdmin(String(user?.role || '').toLowerCase())) {
-      const ids = user?.companyIds || [];
-      if (!ids.includes(sourceCompanyId)) {
-        throw new ForbiddenException('غير مصرح لك بالوصول لشركة المصدر.');
-      }
-    }
+    return exportBankClassificationPackForCompany(this.prisma, companyId);
   }
 
   async importClassificationFromCompany(
@@ -977,7 +364,7 @@ export class BankStatementsService {
     user: { companyIds?: string[]; role?: string },
   ) {
     const tenantId = TenantContext.getTenantId();
-    this.assertSourceCompanyAccessible(sourceCompanyId, targetCompanyId, user);
+    assertBankClassificationSourceCompanyAccessible(sourceCompanyId, targetCompanyId, user);
 
     const source = await this.prisma.company.findFirst({
       where: { id: sourceCompanyId },
@@ -1006,218 +393,6 @@ export class BankStatementsService {
     rulesCreated: number;
     rulesSkipped: number;
   }> {
-    const tenantId = TenantContext.getTenantId();
-    const data = this.parseClassificationPack(pack);
-
-    if (mode === 'replace') {
-      await this.prisma.bankTreeCategory.deleteMany({ where: { companyId } });
-      await this.prisma.bankClassificationRule.deleteMany({ where: { companyId } });
-    }
-
-    let treeCreated = 0;
-    let treeSkipped = 0;
-    const existingTreeNames = new Set(
-      (await this.prisma.bankTreeCategory.findMany({ where: { companyId }, select: { name: true } })).map((x) =>
-        x.name.trim().toLowerCase(),
-      ),
-    );
-
-    for (const row of data.treeCategories) {
-      const key = row.name.trim().toLowerCase();
-      if (mode === 'merge' && existingTreeNames.has(key)) {
-        treeSkipped += 1;
-        continue;
-      }
-      existingTreeNames.add(key);
-      await this.prisma.bankTreeCategory.create({
-        data: {
-          tenantId,
-          companyId,
-          name: row.name,
-          sortOrder: row.sortOrder,
-          isActive: row.isActive,
-          transactionSide: row.transactionSide,
-          transactionType: row.transactionType,
-          parentKeywords: row.parentKeywords as object,
-          classifications: row.classifications as object,
-        },
-      });
-      treeCreated += 1;
-    }
-
-    const existingRuleKeys = new Set<string>();
-    if (mode === 'merge') {
-      const rdb = await this.prisma.bankClassificationRule.findMany({ where: { companyId } });
-      for (const r of rdb) {
-        existingRuleKeys.add(
-          `${r.keyword.toLowerCase()}|${r.categoryName.toLowerCase()}|${r.matchType}|${r.transactionSide}`,
-        );
-      }
-    }
-
-    let rulesCreated = 0;
-    let rulesSkipped = 0;
-    for (const row of data.classificationRules) {
-      const rk = `${row.keyword.toLowerCase()}|${row.categoryName.toLowerCase()}|${row.matchType}|${row.transactionSide}`;
-      if (mode === 'merge' && existingRuleKeys.has(rk)) {
-        rulesSkipped += 1;
-        continue;
-      }
-      existingRuleKeys.add(rk);
-      await this.prisma.bankClassificationRule.create({
-        data: {
-          tenantId,
-          companyId,
-          keyword: row.keyword,
-          matchType: row.matchType,
-          categoryName: row.categoryName,
-          transactionSide: row.transactionSide,
-          transactionType: row.transactionType,
-          isActive: row.isActive,
-          priority: row.priority,
-        },
-      });
-      rulesCreated += 1;
-    }
-
-    return { success: true, treeCreated, treeSkipped, rulesCreated, rulesSkipped };
-  }
-
-  // ── داخلي: قالب بعد التأكيد + تصنيف + ملخص (مطابقة تدفق Base44) ──
-
-  private async saveTemplateAfterConfirm(
-    tenantId: string,
-    companyId: string,
-    statementId: string,
-    dto: {
-      companyName: string;
-      bankName: string;
-      headerRow: number;
-      dataStartRow: number;
-      dataEndRow: number;
-      columnMapping: ColumnMapping;
-    },
-    raw: string[][],
-  ) {
-    const headers = raw[dto.headerRow]?.map((h) => String(h || '').trim()).filter(Boolean) || [];
-    if (headers.length < 2) return;
-    const cols = columnMappingToTemplateColumns(dto.columnMapping);
-    if (Object.keys(cols).length < 2) return;
-    try {
-      await this.prisma.bankStatementTemplate.create({
-        data: {
-          tenantId,
-          companyId,
-          bankName: (dto.bankName || 'غير محدد').slice(0, 200),
-          customerName: (dto.companyName || '').slice(0, 200) || null,
-          headerRow: dto.headerRow,
-          dataStartRow: dto.dataStartRow,
-          dataEndRow: dto.dataEndRow,
-          columnsJson: cols as object,
-          dateFormat: 'auto',
-          sampleHeaders: headers.slice(0, 24) as object,
-          isActive: true,
-          usageCount: 1,
-          lastUsedAt: new Date(),
-        },
-      });
-    } catch (e) {
-      this.logger.warn(`saveTemplateAfterConfirm: ${(e as Error).message}`);
-    }
-  }
-
-  private async findOrCreateStatementCategory(companyId: string, nameAr: string): Promise<string> {
-    const trimmed = nameAr.trim().slice(0, 200) || 'غير مصنف';
-    const existing = await this.prisma.bankStatementCategory.findFirst({
-      where: { companyId, nameAr: trimmed },
-    });
-    if (existing) return existing.id;
-    const c = await this.prisma.bankStatementCategory.create({
-      data: { companyId, nameAr: trimmed, nameEn: null, color: '#6366f1' },
-    });
-    return c.id;
-  }
-
-  private async applyClassificationAndSummary(companyId: string, statementId: string) {
-    const treeDb = await this.prisma.bankTreeCategory.findMany({
-      where: { companyId, isActive: true },
-      orderBy: { sortOrder: 'asc' },
-    });
-    const rulesDb = await this.prisma.bankClassificationRule.findMany({
-      where: { companyId, isActive: true },
-      orderBy: [{ priority: 'desc' }, { keyword: 'desc' }],
-    });
-
-    const treeRows: BankTreeCategoryRow[] = treeDb.map((t) => ({
-      id: t.id,
-      name: t.name,
-      isActive: t.isActive,
-      transactionSide: t.transactionSide,
-      transactionType: t.transactionType,
-      parentKeywords: t.parentKeywords,
-      classifications: t.classifications,
-    }));
-
-    const ruleRows: BankRuleRow[] = rulesDb.map((r) => ({
-      id: r.id,
-      keyword: r.keyword,
-      matchType: r.matchType,
-      categoryName: r.categoryName,
-      transactionSide: r.transactionSide,
-      transactionType: r.transactionType,
-      isActive: r.isActive,
-      priority: r.priority,
-    }));
-
-    let txs = await this.prisma.bankStatementTransaction.findMany({
-      where: { statementId },
-      orderBy: { sortOrder: 'asc' },
-    });
-
-    for (const tx of txs) {
-      if (tx.manuallyClassified) continue;
-      const isCredit = new Decimal(tx.credit).gt(0);
-      const r = classifyTransaction(tx.description, isCredit, treeRows, ruleRows);
-      const catId = await this.findOrCreateStatementCategory(companyId, r.category);
-      await this.prisma.bankStatementTransaction.update({
-        where: { id: tx.id },
-        data: {
-          categoryId: catId,
-          matchKeyword: r.matchedKeyword,
-          classificationName: r.classificationName,
-          transactionType: r.transactionType,
-        },
-      });
-    }
-
-    const txsForSummary = await this.prisma.bankStatementTransaction.findMany({
-      where: { statementId },
-      orderBy: { sortOrder: 'asc' },
-      include: { category: true },
-    });
-
-    const txLikes: TxLike[] = txsForSummary.map((tx) => ({
-      txDate: tx.txDate,
-      description: tx.description,
-      debit: new Decimal(tx.debit).toNumber(),
-      credit: new Decimal(tx.credit).toNumber(),
-      balance: tx.balance != null ? new Decimal(tx.balance).toNumber() : null,
-      categoryLabel: tx.category?.nameAr || 'غير مصنف',
-    }));
-
-    const totalDeposits = txLikes.reduce((s, t) => s + t.credit, 0);
-    const totalWithdrawals = txLikes.reduce((s, t) => s + t.debit, 0);
-    const summaryPayload = buildSummaryJsonPayload(txLikes, totalDeposits, totalWithdrawals);
-
-    await this.prisma.bankStatement.update({
-      where: { id: statementId },
-      data: {
-        summaryJson: summaryPayload as object,
-        aiAnalysis:
-          treeRows.length || ruleRows.length
-            ? `تصنيف تلقائي — ${treeRows.length} فئة شجرية، ${ruleRows.length} قاعدة`
-            : `تصنيف تلقائي (قواعد مدمجة) — ${txsForSummary.length} حركة`,
-      },
-    });
+    return importBankClassificationPackInCompany(this.prisma, companyId, pack, mode);
   }
 }

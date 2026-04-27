@@ -26,6 +26,11 @@ export function getRetryDelayMs(attempt: number): number {
   return baseDelay + jitter;
 }
 
+/**
+ * مجموع المدين يجب أن يساوي مجموع الدائن (Decimal).
+ * استدعاءات الإنتاج: `financial-outflow.service` (إنشاء/دفعة/استبدال قيود + مزامنة تاريخ القيود مع الفاتورة)،
+ * `financial-inflow.service` (تسجيل وتحديث مبيعات)، `financial-transfer.service` (تحويل 1:1).
+ */
 export function validateJournalBalance(
   debitEntries:  Array<{ amount: Prisma.Decimal | number | string }>,
   creditEntries: Array<{ amount: Prisma.Decimal | number | string }>,

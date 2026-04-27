@@ -12,7 +12,7 @@ import {
   issueLeaveSalarySettlement,
   deleteLeave,
 } from '../../../services/api';
-import { formatSaudiDate, getSaudiToday } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { LeaveFormModal } from '../components/LeaveFormModal';
@@ -33,16 +33,12 @@ const TYPE_MAP = {
   other: 'leaveOther',
 };
 
-function sliceYmd(iso: any) {
-  return String(iso || '').slice(0, 10);
-}
-
 /** اليوم (سعودي) ضمن فترة إجازة معتمدة — لعرض زر العودة */
 function canShowLeaveReturnRow(row: any) {
   if (row.status !== 'approved') return false;
   const t = getSaudiToday();
-  const s = sliceYmd(row.startDate);
-  const e = sliceYmd(row.endDate);
+  const s = toYmd(row.startDate);
+  const e = toYmd(row.endDate);
   return t >= s && t <= e;
 }
 
@@ -109,8 +105,8 @@ export default function LeaveTab() {
   useEffect(() => {
     if (!returnRow) return;
     const tday = getSaudiToday();
-    const s = sliceYmd(returnRow.startDate);
-    const e = sliceYmd(returnRow.endDate);
+    const s = toYmd(returnRow.startDate);
+    const e = toYmd(returnRow.endDate);
     const d = tday >= s && tday <= e ? tday : e;
     setReturnDate(d);
   }, [returnRow]);
@@ -475,8 +471,8 @@ export default function LeaveTab() {
             type="date"
             label={t('leaveActualReturnDate')}
             value={returnDate}
-            min={sliceYmd(returnRow.startDate)}
-            max={sliceYmd(returnRow.endDate)}
+            min={toYmd(returnRow.startDate)}
+            max={toYmd(returnRow.endDate)}
             onChange={(e: any) => setReturnDate(e.target.value)}
           />
         )}

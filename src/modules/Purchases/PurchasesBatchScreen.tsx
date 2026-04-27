@@ -1,6 +1,5 @@
 ﻿/**
- * PurchasesBatchScreen ظ¤ ╪ح╪»╪«╪د┘ ╪ش┘à╪د╪╣┘è ┘┘┘ê╪د╪ز┘è╪▒ ╪د┘┘à┘ê╪▒╪»┘è┘
- * ╪ز╪╡┘à┘è┘à ╪د╪ص╪ز╪▒╪د┘┘è ┘à╪ز┘â╪د┘à┘ ظ¤ ╪ش╪»┘ê┘ ┘à┘ê╪ص╪» ┘à╪س┘ ╪د┘┘┘ê╪د╪ز┘è╪▒╪î ╪د╪«╪ز╪╡╪د╪▒╪د╪ز ┘à╪»┘à╪ش╪ر╪î ┘à┘╪«╪╡ ┘à╪ز╪│┘é
+ * Batch entry for supplier invoices: table layout, bookmarks, compact summary.
  */
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
@@ -26,7 +25,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { useVaults } from '../../hooks/useVaults';
 import { useBatchSummary } from '../../hooks/useBatchCalculation';
 import { useTableFilter } from '../../hooks/useTableFilter';
-import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
+import { getSaudiToday, formatSaudiDate, toYmd } from '../../utils/saudiDate';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { fmt, sumAmounts } from '../../utils/format';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -43,7 +42,7 @@ import { isWarrantyFollowUpKind } from './utils/batchRowModel';
 
 const PAGE_SIZE = 50;
 
-/* ظ¤ظ¤ Row factory ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ */
+/* Row factory */
 const EMPTY_ROW = () => ({
   key: `${Date.now()}-${Math.random()}`,
   supplierId: '', invoiceNumber: '',
@@ -53,12 +52,12 @@ const EMPTY_ROW = () => ({
   isTaxable: true,
   categoryId: '', debitAccountId: '',
   notes: '',
-  /** ┘è┘╪▒╪│┘ ┘┘╪«╪د╪»┘à ╪╣┘╪» ┘à╪┤╪ز╪▒┘è╪د╪ز/┘à╪╡╪▒┘ê┘/┘à╪╡╪▒┘ê┘ ╪س╪د╪ذ╪ز */
+  /** Shown to user when purchases/warranty/fixed expense warrant follow-up */
   warrantyFollowUp: false,
   attachmentFile: null,
 });
 
-/* ظ¤ظ¤ ╪ز╪ذ┘ê┘è╪ذ╪د╪ز ╪د┘╪┤╪د╪┤╪ر ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ظ¤ */
+/* Screen tab labels */
 function getTabs(t: any) {
   return [
     { id: 'entry',  label: t('tabNewBatch'), icon: '' },
@@ -68,7 +67,7 @@ function getTabs(t: any) {
 
 const PURCHASE_TAB_IDS = ['entry', 'history'];
 
-/* ظـظـ ╪د┘╪┤╪د╪┤╪ر ╪د┘╪▒╪خ┘è╪│┘è╪ر ظ¤ ╪ز╪╡┘à┘è┘à ╪د╪ص╪ز╪▒╪د┘┘è ظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـظـ */
+/* Main screen — batch entry UI */
 export default function PurchasesBatchScreen() {
   const { activeCompanyId, language } = useApp();
   const { t, lang } = useTranslation();
@@ -79,10 +78,10 @@ export default function PurchasesBatchScreen() {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useTabSearchParam(PURCHASE_TAB_IDS, 'entry');
   const [batchDate, setBatchDate] = useState(getSaudiToday());
-  /** ╪ت╪«╪▒ ╪ز╪د╪▒┘è╪« ╪╣┘à┘┘è╪ر ┘à┘╪╖╪ذ┘ّ┘┘é ╪╣┘┘ë ╪د┘╪╡┘┘ê┘ ظ¤ ┘┘à╪▓╪د┘à┘╪ر ╪▒┘╪╣/╪«┘╪╢ ╪ز╪د╪▒┘è╪« ╪د┘┘╪د╪ز┘ê╪▒╪ر ┘à╪╣ ╪ز╪د╪▒┘è╪« ╪د┘╪╣┘à┘┘è╪ر */
+  /** Previous batch date — used to shift invoice dates when batch date changes */
   const prevBatchDateRef = useRef(batchDate);
   const [batchVaultId, setBatchVaultId] = useState('');
-  /** ╪ز┘╪╖╪ذ┘ّ┘┘é ╪╣┘┘ë ┘â┘ ┘╪د╪ز┘ê╪▒╪ر ┘┘è ╪د┘╪»┘╪╣╪ر ╪ذ╪╣╪» ┘à┘╪د╪ص╪╕╪ر ╪د┘╪│╪╖╪▒╪î ┘à┘╪╡┘ê┘╪د┘ï ╪ذ┘ ┬س + ┬╗ */
+  /** Propagate batch notes to every row after the first (joined with " + ") */
   const [batchNotes, setBatchNotes] = useState('');
   const [rows, setRows]           = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [editingBatch, setEditingBatch] = useState<any>(null);
@@ -91,7 +90,7 @@ export default function PurchasesBatchScreen() {
 
   const { suppliers } = useSuppliers(companyId);
 
-  /* ظ¤ظ¤ ┘à┘╪╢┘╪ر ╪د┘┘à┘ê╪▒╪»┘è┘ ظ¤ ┘à╪┤╪ز┘é╪ر ┘à┘ ┘é╪د╪╣╪»╪ر ╪د┘╪ذ┘è╪د┘╪د╪ز ظ¤ظ¤ */
+  /* Supplier bookmarks from server */
   const bookmarks = useMemo(
     () => suppliers.filter((s: any) => s.isBookmarked).map((s: any) => s.id),
     [suppliers],
@@ -121,7 +120,7 @@ export default function PurchasesBatchScreen() {
     enabled: !!companyId && activeTab === 'history',
   });
 
-  // ظ¤ظ¤ ╪ذ┘è╪د┘╪د╪ز ╪ش╪»┘ê┘ ╪د┘╪»┘╪╣╪د╪ز ظ¤ ┘à┘╪«╪╡ ┘à┘ ╪د┘╪│┘è╪▒┘╪▒ (┘â┘ ╪د┘╪»┘╪╣╪د╪ز ┘┘è ╪د┘┘╪ز╪▒╪ر) ظ¤ظ¤
+  // Batch list row shape — summary from server (all invoices in batch)
   const statusBadgeMap = useMemo(() => buildActiveCancelledPartialStatusMap(t), [t]);
 
   const batchesTableData = useMemo(() => {
@@ -131,8 +130,8 @@ export default function PurchasesBatchScreen() {
       invoices: [],
       transactionDate: b.transactionDate,
       invoiceCount: b.invoiceCount,
-      supplierNames: b.supplierNames || 'ظ¤',
-      vaultName: b.vaultName || 'ظ¤',
+      supplierNames: b.supplierNames || '—',
+      vaultName: b.vaultName || '—',
       netAmount: Number(b.netAmount) || 0,
       taxAmount: Number(b.taxAmount) || 0,
       totalAmount: Number(b.totalAmount) || 0,
@@ -140,7 +139,7 @@ export default function PurchasesBatchScreen() {
     }));
   }, [batchSummaryData]);
 
-  /** ╪د┘╪ز╪▒╪د╪╢┘è╪د┘ï ╪ح╪«┘╪د╪ة ╪د┘╪»┘╪╣╪د╪ز ╪د┘┘à┘╪║╪د╪ر ظ¤ ╪▓╪▒ ┘╪ح╪╕┘ç╪د╪▒┘ç╪د */
+  /** Optionally hide cancelled batches — toggle in history tab */
   const batchesForTable = useMemo(() => {
     if (showCancelledBatches) return batchesTableData;
     return batchesTableData.filter((b: any) => b.status !== 'cancelled');
@@ -215,8 +214,8 @@ export default function PurchasesBatchScreen() {
     { key: 'invoiceCount', label: t('invoicesColHeader'), numeric: true, sortable: true, width: '6%',
       render: (v: any, row: any) => {
         const n = v ?? 0;
-        const from = String(dateFilter.startDate || '').slice(0, 10);
-        const to = String(dateFilter.endDate || '').slice(0, 10);
+        const from = toYmd(dateFilter.startDate);
+        const to = toYmd(dateFilter.endDate);
         const href = `/invoices?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&batchId=${encodeURIComponent(row.batchId)}`;
         if (n <= 0) {
           return <span className="font-bold text-noorix-muted tabular-nums nx-font-numbers">{n}</span>;
@@ -234,11 +233,11 @@ export default function PurchasesBatchScreen() {
       }},
     { key: 'supplierNames', label: t('supplier'), sortable: true, width: '20%',
       render: (v: any) => (
-        <span className="nx-cell-ellipsis block">{v || 'ظ¤'}</span>
+        <span className="nx-cell-ellipsis block">{v || '—'}</span>
       )},
     { key: 'vaultName', label: t('vault'), sortable: true, width: '13%',
       render: (v: any) => (
-        <span className="nx-cell-ellipsis block">{v || 'ظ¤'}</span>
+        <span className="nx-cell-ellipsis block">{v || '—'}</span>
       )},
     { key: 'netAmount', label: t('net'), numeric: true, sortable: true, width: '8%',
       render: (v: any) => <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>{fmt(v)}</span> },
@@ -254,13 +253,13 @@ export default function PurchasesBatchScreen() {
         return (
           <div className="noorix-actions-row flex flex-wrap justify-center max-w-[280px]">
             <Button size="sm" onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId} title={t('print')}>
-              {batchActionLoading === row.batchId ? 'ظخ' : t('print')}
+              {batchActionLoading === row.batchId ? '…' : t('print')}
             </Button>
             <Button size="sm" onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId} title={t('edit')}>
-              ظ£ {batchActionLoading === row.batchId ? 'ظخ' : t('edit')}
+              ✎ {batchActionLoading === row.batchId ? '…' : t('edit')}
             </Button>
             <Button size="sm" variant="danger" onClick={() => handleCancelBatch(row)} disabled={!canCancel || batchActionLoading === row.batchId} title={t('cancel')}>
-              ├ù {t('cancel')}
+              × {t('cancel')}
             </Button>
           </div>
         );
@@ -280,7 +279,7 @@ export default function PurchasesBatchScreen() {
           <span>{formatSaudiDate(row.transactionDate)}</span>
           {row.invoiceCount > 0 && (
             <Link
-              to={`/invoices?from=${encodeURIComponent(String(dateFilter.startDate || '').slice(0, 10))}&to=${encodeURIComponent(String(dateFilter.endDate || '').slice(0, 10))}&batchId=${encodeURIComponent(row.batchId)}`}
+              to={`/invoices?from=${encodeURIComponent(toYmd(dateFilter.startDate))}&to=${encodeURIComponent(toYmd(dateFilter.endDate))}&batchId=${encodeURIComponent(row.batchId)}`}
               className="font-bold text-noorix-blue hover:underline"
             >
               {row.invoiceCount} {t('invoices')}
@@ -291,7 +290,7 @@ export default function PurchasesBatchScreen() {
           <div className="text-[13px] mb-1 text-end leading-snug break-words">{row.supplierNames}</div>
         )}
         <div className="text-[12px] mb-2 text-noorix-muted text-end break-words">
-          {t('vault')}: {row.vaultName || 'ظ¤'}
+          {t('vault')}: {row.vaultName || '—'}
         </div>
         <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
           <div>
@@ -309,19 +308,19 @@ export default function PurchasesBatchScreen() {
         </div>
         <div className="flex gap-1.5 flex-wrap justify-end">
           <Button size="sm" onClick={() => openBatchWithInvoices(row, setPrintingBatch)} disabled={batchActionLoading === row.batchId}>{t('print')}</Button>
-          <Button size="sm" onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId}>ظ£ {t('edit')}</Button>
-          {canCancel && <Button size="sm" variant="danger" onClick={() => handleCancelBatch(row)} disabled={batchActionLoading === row.batchId}>├ù {t('cancel')}</Button>}
+          <Button size="sm" onClick={() => openBatchWithInvoices(row, setEditingBatch)} disabled={batchActionLoading === row.batchId}>✎ {t('edit')}</Button>
+          {canCancel && <Button size="sm" variant="danger" onClick={() => handleCancelBatch(row)} disabled={batchActionLoading === row.batchId}>× {t('cancel')}</Button>}
         </div>
       </div>
     );
   }, [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch, dateFilter.startDate, dateFilter.endDate]);
 
-  /* ╪╡┘ ╪د┘╪ز╪░┘è┘è┘ ظ¤ ┘à╪»╪▒┘â ┘╪ح╪«┘╪د╪ة ╪د┘╪ث╪╣┘à╪»╪ر ╪╣╪ذ╪▒ footerRow */
+  /* Footer row: label cell spans first columns */
   const batchesFooterRow = useMemo(() => [
     {
       keys: ['batchId', 'transactionDate', 'invoiceCount', 'supplierNames', 'vaultName'],
       className: 'nx-tfoot-label text-[12px] text-center',
-      content: t('totalBatches', activeOnly.length) || `╪د┘╪ح╪ش┘à╪د┘┘è (${activeOnly.length} ╪»┘╪╣╪ر)`,
+      content: t('totalBatches', activeOnly.length) || `الإجمالي (${activeOnly.length} دفعة)`,
     },
     {
       keys: ['netAmount'],
@@ -365,9 +364,9 @@ export default function PurchasesBatchScreen() {
         items: valid.map((r: any) => {
           let notes = r.notes?.trim();
           if (r.kind === 'fixed_expense') {
-            notes = notes ? `${t('fixedExpenseType')} ظ¤ ${notes}` : t('fixedExpenseType');
+            notes = notes ? `${t('fixedExpenseType')} — ${notes}` : t('fixedExpenseType');
           } else if (r.kind === 'expense') {
-            notes = notes ? `${t('expenseType')} ظ¤ ${notes}` : t('expenseType');
+            notes = notes ? `${t('expenseType')} — ${notes}` : t('expenseType');
           }
           const kind = r.kind || 'purchase';
           return {
@@ -453,7 +452,7 @@ export default function PurchasesBatchScreen() {
 
   return (
     <ScreenShell className="w-full">
-      {/* ظ¤ظ¤ ╪د┘┘ç┘è╪»╪▒ ظ¤ظ¤ */}
+      {/* Page header */}
       <header className="nx-page-header">
         <div className="nx-page-header__titles">
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('batchPurchasesTitle')}</h1>
@@ -476,7 +475,7 @@ export default function PurchasesBatchScreen() {
         >
       {activeTab === 'entry' && (
         <div>
-          {/* ╪┤╪▒┘è╪╖ ╪د┘╪ث╪»┘ê╪د╪ز */}
+          {/* Entry toolbar */}
           <div className="batch-purchases-entry-toolbar border-b border-noorix-border bg-noorix-bg">
             <div className="batch-purchases-entry-toolbar__control">
               <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-date">{t('transactionDateLabel')}</label>
@@ -541,7 +540,7 @@ export default function PurchasesBatchScreen() {
             </div>
           )}
 
-          {/* ╪ش╪»┘ê┘ ╪د┘╪ح╪»╪«╪د┘ ظ¤ ╪╣┘à┘ê╪»┘è ╪ذ╪د┘╪ذ╪╖╪د┘é╪د╪ز ╪ز╪ص╪ز 700px */}
+          {/* Batch rows — stack below ~700px */}
           <div className="px-3 pb-4">
             {batchEntryNarrow ? (
               <div className="flex flex-col gap-3 min-w-0">
@@ -622,7 +621,7 @@ export default function PurchasesBatchScreen() {
               total={summary.total.toNumber()}
             />
 
-            {/* ╪ث╪▓╪▒╪د╪▒ ╪د┘╪ح╪ش╪▒╪د╪ة╪د╪ز */}
+            {/* Save / print actions */}
             <div className="nx-toolbar mt-5">
               <Button
                 size="sm"
@@ -682,7 +681,7 @@ export default function PurchasesBatchScreen() {
             title={t('tabSavedBatches')}
             badge={
               <>
-                <span className="text-[12px] text-noorix-muted">ظ¤ {dateFilter.label}</span>
+                <span className="text-[12px] text-noorix-muted">— {dateFilter.label}</span>
                 <Badge color="blue" size="sm">{t('batchCount', displayedTotal)}</Badge>
               </>
             }

@@ -1,7 +1,5 @@
 ﻿/**
- * SuppliersTab ظ¤ ╪ز╪ذ┘ê┘è╪ذ╪ر ╪د┘┘à┘ê╪▒╪»┘è┘
- * ┘è╪»╪╣┘à: ╪ح╪╢╪د┘╪ر╪î ╪ز╪╣╪»┘è┘╪î ╪ص╪░┘╪î ╪ز╪ص╪»┘è╪» ┘à╪ز╪╣╪»╪»╪î ╪ص╪░┘ ╪ش┘à╪د╪╣┘è╪î
- *        ╪د╪│╪ز┘è╪▒╪د╪» CSV╪î ╪ز╪╡╪»┘è╪▒ CSV╪î ╪ز┘╪▓┘è┘ ┘┘à┘ê╪░╪ش.
+ * Suppliers tab: list, add, edit, bulk delete, CSV import/export.
  */
 import React, { useState, memo, useCallback } from 'react';
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
@@ -22,7 +20,6 @@ export type SuppliersTabProps = { companyId: any };
 export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersTabProps) {
   const { t } = useTranslation();
 
-  /* ظ¤ظ¤ ╪ص╪د┘╪ر ظ¤ظ¤ */
   const [showForm,        setShowForm]        = useState(false);
   const [search,          setSearch]          = useState('');
   const debouncedQ = useDebouncedValue(search.trim(), 300);
@@ -30,16 +27,13 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
   const [selectedIds,     setSelectedIds]     = useState(new Set());
   const { showToast } = useToast();
 
-  /* ظ¤ظ¤ ╪ذ┘è╪د┘╪د╪ز ظ¤ظ¤ */
   const { suppliers, isLoading, isError, error, create, update, remove } = useSuppliers(companyId, { pageSize: 500, q: debouncedQ || undefined });
   const { flatCategories } = useCategories(companyId);
 
-  /* ظ¤ظ¤ ┘à╪│╪د╪╣╪» toast ظ¤ظ¤ */
   const notify = useCallback((message: any, type: any = 'success') => {
     showToast(message, type);
   }, [showToast]);
 
-  /* ظ¤ظ¤ ╪ح╪╢╪د┘╪ر ┘à┘ê╪▒╪» ظ¤ظ¤ */
   function handleSave(body: any) {
     if (!companyId) { notify(t('pleaseSelectCompanyFirst'), 'error'); return; }
     create.mutate(body, {
@@ -48,7 +42,6 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
     });
   }
 
-  /* ظ¤ظ¤ ╪ز╪╣╪»┘è┘ ظ¤ظ¤ */
   function handleEditSave(body: any) {
     if (!editingSupplier?.id) return;
     update.mutate({ id: editingSupplier.id, body }, {
@@ -57,7 +50,6 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
     });
   }
 
-  /* ظ¤ظ¤ ╪ص╪░┘ ┘╪▒╪»┘è ظ¤ظ¤ */
   function handleDelete(supplier: any) {
     if (!confirm(t('deleteSupplierConfirm', supplier.nameAr))) return;
     remove.mutate(supplier.id, {
@@ -69,10 +61,9 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
     });
   }
 
-  /* ظ¤ظ¤ ╪ص╪░┘ ╪ش┘à╪د╪╣┘è ظ¤ظ¤ */
   async function handleBulkDelete() {
     if (!selectedIds.size) return;
-    if (!confirm(`╪ص╪░┘ ${selectedIds.size} ┘à┘ê╪▒╪»/┘à┘ê╪▒╪»┘è┘╪ا ┘╪د ┘è┘à┘â┘ ╪د┘╪ز╪▒╪د╪ش╪╣.`)) return;
+    if (!confirm(t('suppliersBulkDeleteConfirm', String(selectedIds.size)))) return;
 
     let done = 0;
     const ids = [...selectedIds];
@@ -85,10 +76,9 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
       } catch (_: any) {}
     }
     setSelectedIds(new Set());
-    notify(`╪ز┘à ╪ص╪░┘ ${done} ┘à┘ ╪ث╪╡┘ ${ids.length} ┘à┘ê╪▒╪»`);
+    notify(t('suppliersBulkDeletedPartial', String(done), String(ids.length)));
   }
 
-  /* ظ¤ظ¤ ╪ز╪ص╪»┘è╪» / ╪ح┘╪║╪د╪ة ╪ز╪ص╪»┘è╪» ظ¤ظ¤ */
   const handleSelectChange = useCallback((id: any, checked: any) => {
     setSelectedIds((prev: any) => {
       const n = new Set(prev);
@@ -101,7 +91,6 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
     setSelectedIds(checked ? new Set(suppliers.map((s: any) => s.id)) : new Set());
   }, [suppliers]);
 
-  /* ظ¤ظ¤ ╪د╪│╪ز┘è╪▒╪د╪» ┘à┘ê╪▒╪» ┘ê╪د╪ص╪» (┘è┘╪│╪ز╪»╪╣┘ë ┘à┘ ImportExport) ظ¤ظ¤ */
   async function handleImportOne(body: any) {
     const res = await createSupplier(body);
     rejectIfApiFailed(res, t('addFailed'));
@@ -110,7 +99,6 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
 
   return (
     <ScreenShell>
-      {/* ظ¤ظ¤ ╪┤╪▒┘è╪╖ ╪د┘╪ذ╪ص╪س + ╪ح╪╢╪د┘╪ر ظ¤ظ¤ */}
       <div className="nx-page-header">
         <Input
           type="search"
@@ -128,14 +116,12 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
         </Button>
       </div>
 
-      {/* ظ¤ظ¤ ╪د╪│╪ز┘è╪▒╪د╪» / ╪ز╪╡╪»┘è╪▒ ظ¤ظ¤ */}
       <SupplierImportExport
         companyId={companyId}
         suppliers={suppliers}
         onImport={handleImportOne}
       />
 
-      {/* ظ¤ظ¤ ┘┘à┘ê╪░╪ش ╪د┘╪ح╪╢╪د┘╪ر ظ¤ظ¤ */}
       {showForm && (
         <SupplierForm
           companyId={companyId}
@@ -146,15 +132,14 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
         />
       )}
 
-      {/* ظ¤ظ¤ ╪د┘╪ش╪»┘ê┘ ظ¤ظ¤ */}
       {isLoading
         ? <p className="text-noorix-muted text-[13px]">{t('loading')}</p>
         : isError
         ? (
           <div className="rounded-xl border border-noorix-red p-4 text-[13px] text-noorix-red" style={{ background: 'color-mix(in srgb, var(--noorix-accent-red) 8%, transparent)' }}>
-            <strong>╪ز╪╣╪░┘ّ╪▒ ╪ز╪ص┘à┘è┘ ╪د┘┘à┘ê╪▒╪»┘è┘</strong>
+            <strong>{t('suppliersLoadFailedTitle')}</strong>
             {error?.message && <p className="m-0 mt-1 text-[12px] opacity-80">{error.message}</p>}
-            <p className="m-0 mt-1 text-[12px] opacity-70">╪ز╪ث┘â╪» ┘à┘ ╪د╪ز╪╡╪د┘┘â ╪ذ╪د┘╪ح┘╪ز╪▒┘╪ز ┘ê╪ز╪ص╪»┘è╪س ╪د┘╪╡┘╪ص╪ر.</p>
+            <p className="m-0 mt-1 text-[12px] opacity-70">{t('suppliersLoadFailedHint')}</p>
           </div>
         )
         : (
@@ -171,7 +156,6 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
         )
       }
 
-      {/* ظ¤ظ¤ ┘à┘ê╪»╪د┘ ╪د┘╪ز╪╣╪»┘è┘ ظ¤ظ¤ */}
       <SupplierEditModal
         supplier={editingSupplier}
         flatCategories={flatCategories}
@@ -182,5 +166,3 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
     </ScreenShell>
   );
 });
-
-export default SuppliersTab;

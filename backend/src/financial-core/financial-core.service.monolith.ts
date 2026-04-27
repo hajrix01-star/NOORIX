@@ -27,6 +27,7 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }        from '../common/tenant-context';
 import { nowSaudi }             from '../common/utils/date-utils';
+import { toYmd }                from '../common/utils/to-ymd.util';
 import { splitTax }             from '../common/utils/math-engine';
 import { generateInvoiceSerial } from '../common/utils/invoice-serial';
 import { FiscalPeriodService }  from '../fiscal-period/fiscal-period.service';
@@ -440,7 +441,7 @@ export class FinancialCoreService {
       throw new BadRequestException('حدد خزنة أو توزيع خزائن لتحديث القيود.');
     }
 
-    const txDateStr = inv.transactionDate.toISOString().slice(0, 10);
+    const txDateStr = toYmd(inv.transactionDate);
     await this.fiscalPeriod.assertPeriodOpenForDate(tx, companyId, inv.transactionDate);
 
     const txDto: OutflowDto = {
@@ -554,7 +555,7 @@ export class FinancialCoreService {
     } else if (allocs.length === 1) {
       splits = [{ vaultId: allocs[0].vaultId, amount: newTotal }];
     } else {
-      const txDateStr = inv.transactionDate.toISOString().slice(0, 10);
+      const txDateStr = toYmd(inv.transactionDate);
       const txDto: OutflowDto = {
         companyId,
         kind: inv.kind,

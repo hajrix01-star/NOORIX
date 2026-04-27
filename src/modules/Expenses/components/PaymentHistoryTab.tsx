@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getInvoices, throwIfApiFailed, downloadInvoiceAttachment } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import DateFilterBar, { useDateFilter } from '../../../shared/components/DateFilterBar';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
@@ -29,8 +29,8 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   const [filterKind, setFilterKind] = useState('');
   const [showAllDates, setShowAllDates] = useState(false);
 
-  const startDate = showAllDates ? undefined : (dateFilter.startDate ? String(dateFilter.startDate).slice(0, 10) : undefined);
-  const endDate = showAllDates ? undefined : (dateFilter.endDate ? String(dateFilter.endDate).slice(0, 10) : undefined);
+  const startDate = showAllDates ? undefined : (dateFilter.startDate ? toYmd(dateFilter.startDate) : undefined);
+  const endDate = showAllDates ? undefined : (dateFilter.endDate ? toYmd(dateFilter.endDate) : undefined);
   const kindParam = filterKind ? filterKind : 'expense,fixed_expense';
 
   const { data, isLoading, isError, error } = useQuery({

@@ -1,7 +1,4 @@
-﻿/**
- * SuppliersScreen ظ¤ ╪د┘┘à┘ê╪▒╪»┘è┘ ┘ê╪د┘╪ز╪╡┘┘è┘╪د╪ز
- * ╪ز╪ذ┘ê┘è╪ذ╪ز╪د┘: ┘à┘ê╪▒╪»┘è┘ | ╪ز╪╡┘┘è┘╪د╪ز
- */
+﻿/** Suppliers area: suppliers | categories */
 import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';

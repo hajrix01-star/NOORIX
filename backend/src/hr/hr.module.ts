@@ -1,13 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { mkdirSync, existsSync } from 'fs';
-import { join } from 'path';
-
-const uploadDir = join(process.cwd(), 'uploads', 'hr-documents');
-if (!existsSync(uploadDir)) {
-  mkdirSync(uploadDir, { recursive: true });
-}
+import { ensureUploadsSubdir } from '../common/uploads-root';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuditModule } from '../audit/audit.module';
 import { FinancialCoreModule } from '../financial-core/financial-core.module';
@@ -22,6 +16,8 @@ import { HrPayrollAncillaryService } from './hr-payroll-ancillary.service';
 import { HrLeaveService } from './hr-leave.service';
 import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
+
+const uploadDir = ensureUploadsSubdir('hr-documents');
 
 @Module({
   imports: [

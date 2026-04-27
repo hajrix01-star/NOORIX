@@ -1,5 +1,6 @@
 import { getAuthToken, getActiveCompanyId } from '../../authStore';
 import type { ApiParsedResult } from '../../../types/api';
+import { toYmd } from '../../../utils/saudiDate';
 import {
   apiGet,
   apiPost,
@@ -106,7 +107,7 @@ export async function returnFromLeave(
   actualReturnDate?: string,
 ): Promise<ApiParsedResult> {
   const body: Record<string, string> = {};
-  if (actualReturnDate) body.actualReturnDate = String(actualReturnDate).slice(0, 10);
+  if (actualReturnDate) body.actualReturnDate = toYmd(actualReturnDate);
   return apiPost(`/api/v1/hr/leaves/${id}/return?companyId=${companyId}`, body);
 }
 

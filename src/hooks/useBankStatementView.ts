@@ -18,6 +18,7 @@ import {
 } from '../modules/Reports/bank/bankAnalysisUtils';
 import { BANK_ANALYSIS_CARDS_KEY } from '../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../utils/jsonStorage';
+import { toYmd } from '../utils/saudiDate';
 
 export const AVAILABLE_ANALYSIS_CARDS = [
   { id: 'cash_flow', nameKey: 'bankCardCashFlow', icon: '' },
@@ -68,8 +69,8 @@ export default function useBankStatementView(statementId: any, companyId: any, t
     return d && typeof d === 'object' && d.id ? d : null;
   }, [rawRes]);
 
-  const reconStart = statement?.startDate?.slice(0, 10);
-  const reconEnd = statement?.endDate?.slice(0, 10);
+  const reconStart = toYmd(statement?.startDate);
+  const reconEnd = toYmd(statement?.endDate);
 
   const { data: reconRaw, isLoading: reconLoading } = useQuery({
     queryKey: ['bank-reconciliation-stats', companyId, reconStart, reconEnd],

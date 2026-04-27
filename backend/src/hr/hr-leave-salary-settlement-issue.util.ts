@@ -1,0 +1,160 @@
+import { BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { TenantContext } from '../common/tenant-context';
+import { toMoneyDecimal2 } from '../common/utils/money-decimal';
+import { computeCalendarLeaveSalarySettlement } from './utils/leave-salary-settlement.util';
+import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
+import { saudiDateYmd } from './utils/hr-saudi-dates.util';
+
+export type LeaveForSalarySettlement = {
+  id: string;
+  employeeId: string;
+  companyId: string;
+  leaveType: string;
+  startDate: Date;
+};
+
+/**
+ * صرف تسوية راتب تقويمي + فاتورة + حركة في ملف الموظف.
+ * idempotency: لا يُكرَّر إن وُجد سجل تسوية لنفس الإجازة.
+ */
+export async function issueLeaveSalarySettlementCore(
+  deps: { prisma: TenantPrismaService; financialCore: FinancialCoreService },
+  leave: LeaveForSalarySettlement,
+  userId: string,
+  options: { vaultId?: string; grossAmountOverride?: number },
+): Promise<void> {
+  const { prisma, financialCore } = deps;
+  const tenantId = TenantContext.getTenantId();
+  if (leave.leaveType !== 'annual') {
+    throw new BadRequestException('تسوية الراتب متاحة لإجازات سنوية فقط.');
+  }
+
+  const existingSet = await prisma.leaveSalarySettlement.findUnique({
+    where: { leaveId: leave.id },
+  });
+  if (existingSet) return;
+
+  const emp = await prisma.employee.findFirst({
+    where: { id: leave.employeeId, companyId: leave.companyId },
+    include: { customAllowances: true },
+  });
+  if (!emp) throw new BadRequestException('الموظف غير موجود.');
+  if (emp.status === 'terminated') {
+    throw new BadRequestException('لا يمكن صرف تسوية راتب لموظف منتهي الخدمة.');
+  }
+
+  const customSum = (emp.customAllowances ?? []).reduce(
+    (s, r) => s + Number(r.amount ?? 0),
+    0,
+  );
+
+  const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), customSum);
+
+  if (calc.calendarDaysPaid <= 0 || calc.grossAmount <= 0) {
+    throw new BadRequestException(
+      'لا يمكن احتساب تسوية راتب — تاريخ بداية الإجازة خارج نطاق العمل في الشهر أو المبلغ صفر.',
+    );
+  }
+
+  let grossFinal = calc.grossAmount;
+  if (options.grossAmountOverride != null) {
+    const o = Number(options.grossAmountOverride);
+    if (!Number.isFinite(o) || o < 0.01) {
+      throw new BadRequestException('المبلغ غير صالح.');
+    }
+    grossFinal = Math.round(o * 100) / 100;
+  }
+
+  const { payrollMonth, daysInMonth, calendarDaysPaid } = calc;
+
+  const dup = await prisma.leaveSalarySettlement.findFirst({
+    where: {
+      employeeId: emp.id,
+      payrollMonth,
+    },
+  });
+  if (dup) {
+    throw new BadRequestException(
+      'يوجد بالفعل تسوية راتب لنفس الموظف في نفس الشهر. لا يمكن تكرار الصرف.',
+    );
+  }
+
+  let vaultIdToUse = options.vaultId;
+  if (!vaultIdToUse) {
+    const v = await prisma.vault.findFirst({
+      where: {
+        companyId: leave.companyId,
+        isActive: true,
+        isArchived: false,
+        showAsPaymentMethod: true,
+      },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!v) {
+      throw new BadRequestException('لا توجد خزنة نشطة. يرجى إنشاء خزنة أو تمرير vaultId.');
+    }
+    vaultIdToUse = v.id;
+  }
+  await assertVaultsUsableForPayment(prisma, leave.companyId, [vaultIdToUse]);
+
+  const txDate = saudiDateYmd();
+  const amountStr = grossFinal.toFixed(2);
+  const ym = `${payrollMonth.getFullYear()}-${String(payrollMonth.getMonth() + 1).padStart(2, '0')}`;
+  const sd = new Date(leave.startDate);
+  const startStrFormatted = `${sd.getFullYear()}-${String(sd.getMonth() + 1).padStart(2, '0')}-${String(sd.getDate()).padStart(2, '0')}`;
+  const manualNote =
+    options.grossAmountOverride != null && Math.abs(grossFinal - calc.grossAmount) > 0.005
+      ? ` — معدّل يدوياً (مقترح ${calc.grossAmount.toFixed(2)})`
+      : '';
+  const notes = `تسوية راتب حتى يوم السفر — إجازة سنوية من ${startStrFormatted} (${calendarDaysPaid}/${daysInMonth} يوم تقويمي، شهر ${ym})${manualNote}`;
+
+  const { invoice } = await financialCore.processOutflow(
+    {
+      companyId: leave.companyId,
+      employeeId: emp.id,
+      kind: 'salary',
+      totalAmount: amountStr,
+      netAmount: amountStr,
+      taxAmount: '0',
+      transactionDate: txDate,
+      vaultSplits: [{ vaultId: vaultIdToUse, amount: amountStr }],
+      notes,
+      idempotencyKey: `leave-salary-settlement:${leave.id}`,
+    },
+    userId,
+  );
+
+  await prisma.leaveSalarySettlement.create({
+    data: {
+      tenantId,
+      companyId: leave.companyId,
+      leaveId: leave.id,
+      employeeId: emp.id,
+      payrollMonth,
+      invoiceId: invoice.id,
+      grossAmount: new Prisma.Decimal(amountStr),
+      netAmount: new Prisma.Decimal(amountStr),
+      calendarDaysPaid,
+      daysInMonth,
+      transactionDate: new Date(`${txDate}T00:00:00.000Z`),
+    },
+  });
+
+  await prisma.employeeMovement.create({
+    data: {
+      tenantId,
+      companyId: leave.companyId,
+      employeeId: emp.id,
+      movementType: 'other',
+      amount: toMoneyDecimal2(grossFinal),
+      previousValue: null,
+      newValue: amountStr,
+      effectiveDate: new Date(`${txDate}T00:00:00.000Z`),
+      notes: `تسوية راتب إجازة سنوية (تقويمي) — ${calendarDaysPaid}/${daysInMonth} يوم — ${invoice.invoiceNumber}${manualNote}`,
+    },
+  });
+}

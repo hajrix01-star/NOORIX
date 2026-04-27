@@ -1,4 +1,5 @@
 import type { ApiParsedResult } from '../../../types/api';
+import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
 // ——— ملخصات المبيعات اليومية ———
@@ -38,13 +39,13 @@ export async function getDashboardSalesPack({
 }): Promise<ApiParsedResult> {
   const params: Record<string, string> = {
     companyId: String(companyId),
-    yearStart: String(yearStart).slice(0, 10),
-    yearEnd: String(yearEnd).slice(0, 10),
+    yearStart: toYmd(yearStart),
+    yearEnd: toYmd(yearEnd),
   };
-  if (dailyStart) params.dailyStart = String(dailyStart).slice(0, 10);
-  if (dailyEnd) params.dailyEnd = String(dailyEnd).slice(0, 10);
-  if (monthStart) params.monthStart = String(monthStart).slice(0, 10);
-  if (monthEnd) params.monthEnd = String(monthEnd).slice(0, 10);
+  if (dailyStart) params.dailyStart = toYmd(dailyStart);
+  if (dailyEnd) params.dailyEnd = toYmd(dailyEnd);
+  if (monthStart) params.monthStart = toYmd(monthStart);
+  if (monthEnd) params.monthEnd = toYmd(monthEnd);
   return apiGet('/api/v1/sales/summaries/dashboard-pack', params);
 }
 
@@ -65,8 +66,8 @@ export async function getDailySalesSummaries(
     page: String(page),
     pageSize: String(size),
   };
-  if (startDate) params.startDate = String(startDate).slice(0, 10);
-  if (endDate) params.endDate = String(endDate).slice(0, 10);
+  if (startDate) params.startDate = toYmd(startDate);
+  if (endDate) params.endDate = toYmd(endDate);
   if (q && String(q).trim()) params.q = String(q).trim();
   if (sortBy) params.sortBy = sortBy;
   if (sortDir) params.sortDir = sortDir;
@@ -132,8 +133,8 @@ export async function getPurchaseBatchSummaries(
   lang?: string,
 ): Promise<ApiParsedResult> {
   const params: Record<string, string> = { companyId: String(companyId) };
-  if (startDate) params.startDate = String(startDate).slice(0, 10);
-  if (endDate) params.endDate = String(endDate).slice(0, 10);
+  if (startDate) params.startDate = toYmd(startDate);
+  if (endDate) params.endDate = toYmd(endDate);
   if (q && String(q).trim()) params.q = String(q).trim();
   if (lang) params.lang = lang;
   const res = await apiGet('/api/v1/invoices/purchase-batch-summaries', params);

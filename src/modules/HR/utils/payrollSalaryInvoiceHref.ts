@@ -1,3 +1,5 @@
+import { toYmd } from '../../../utils/saudiDate';
+
 /**
  * رابط شاشة الفواتير مُصفّى بمسيرة الرواتب (فاتورة الراتب تُخزَّن بـ batchId = معرف المسيرة).
  * يُضاف from/to لشهر المسيرة حتى لا يبقى فلتر الفواتير على «الشهر الحالي» فيخفي الفاتورة.
@@ -6,7 +8,7 @@
 /** @param {string|Date|null|undefined} payrollMonth — أول يوم الشهر أو ISO */
 export function payrollMonthBoundsForInvoiceLink(payrollMonth: any) {
   if (!payrollMonth) return null;
-  const s = String(payrollMonth).slice(0, 10);
+  const s = toYmd(payrollMonth);
   const [y, m] = s.split('-').map((x: any) => parseInt(x, 10));
   if (!y || !m || m < 1 || m > 12) return null;
   const from = `${y}-${String(m).padStart(2, '0')}-01`;

@@ -10,15 +10,19 @@ import { TenantContext } from '../common/tenant-context';
 import type { CreateLeaveDto, UpdateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import type { ReturnFromLeaveDto } from './dto/return-from-leave.dto';
 import type { IssueLeaveSalarySettlementDto } from './dto/issue-leave-salary-settlement.dto';
-import { toMoneyDecimal2 } from '../common/utils/money-decimal';
-import { computeCalendarLeaveSalarySettlement } from './utils/leave-salary-settlement.util';
-import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
 import {
   saudiDateYmd,
   dateToSaudiYmd,
-  isSaudiYmdInLeaveRange,
   daysInclusiveBetweenSaudiYmd,
 } from './utils/hr-saudi-dates.util';
+import { toYmd } from '../common/utils/to-ymd.util';
+import { issueLeaveSalarySettlementCore } from './hr-leave-salary-settlement-issue.util';
+import { getLeaveSalarySettlementPreviewCore } from './hr-leave-salary-settlement-preview.util';
+import { voidLeaveSalarySettlementCore } from './hr-leave-void-salary-settlement.util';
+import {
+  maybeSetEmployeeOnLeaveAfterApproval,
+  syncEmployeeLeavePresence,
+} from './hr-leave-employee-presence-sync.util';
 
 @Injectable()
 export class HrLeaveService {
@@ -27,40 +31,6 @@ export class HrLeaveService {
     private readonly audit: AuditLogService,
     private readonly financialCore: FinancialCoreService,
   ) {}
-
-  private async syncEmployeeLeavePresence(employeeId: string, companyId: string): Promise<void> {
-    const today = saudiDateYmd();
-    const leaves = await this.prisma.leave.findMany({
-      where: { employeeId, companyId, status: 'approved' },
-      select: { startDate: true, endDate: true },
-    });
-    const anyInRange = leaves.some((l) => isSaudiYmdInLeaveRange(today, l.startDate, l.endDate));
-    if (anyInRange) {
-      await this.prisma.employee.updateMany({
-        where: { id: employeeId, companyId, status: { in: ['active', 'on_leave'] } },
-        data: { status: 'on_leave' },
-      });
-    } else {
-      await this.prisma.employee.updateMany({
-        where: { id: employeeId, companyId, status: 'on_leave' },
-        data: { status: 'active' },
-      });
-    }
-  }
-
-  private async maybeSetEmployeeOnLeaveAfterApproval(
-    employeeId: string,
-    companyId: string,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<void> {
-    const today = saudiDateYmd();
-    if (!isSaudiYmdInLeaveRange(today, startDate, endDate)) return;
-    await this.prisma.employee.updateMany({
-      where: { id: employeeId, companyId, status: { in: ['active', 'on_leave'] } },
-      data: { status: 'on_leave' },
-    });
-  }
 
   // ══════════════════════════════════════════════════════════
   // LEAVES
@@ -110,46 +80,7 @@ export class HrLeaveService {
    * معاينة مبلغ تسوية الراتب التقويمي (إجازة سنوية معتمدة، بدون صرف).
    */
   async getLeaveSalarySettlementPreview(leaveId: string, companyId: string) {
-    const leave = await this.prisma.leave.findFirst({
-      where: { id: leaveId, companyId },
-      include: { salarySettlement: true },
-    });
-    if (!leave) throw new NotFoundException('الإجازة غير موجودة.');
-    if (leave.status !== 'approved') {
-      throw new BadRequestException('تسوية الراتب متاحة للإجازات المعتمدة فقط.');
-    }
-    if (leave.leaveType !== 'annual') {
-      throw new BadRequestException('تسوية الراتب متاحة لإجازات سنوية فقط.');
-    }
-    if (leave.salarySettlement) {
-      throw new BadRequestException('تم إصدار تسوية راتب لهذه الإجازة مسبقاً.');
-    }
-
-    const emp = await this.prisma.employee.findFirst({
-      where: { id: leave.employeeId, companyId },
-      include: { customAllowances: true },
-    });
-    if (!emp) throw new BadRequestException('الموظف غير موجود.');
-
-    const customSum = (emp.customAllowances ?? []).reduce(
-      (s, r) => s + Number(r.amount ?? 0),
-      0,
-    );
-
-    const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), customSum);
-
-    if (calc.calendarDaysPaid <= 0 || calc.grossAmount <= 0) {
-      throw new BadRequestException(
-        'لا يمكن احتساب تسوية راتب — تاريخ بداية الإجازة خارج نطاق العمل في الشهر أو المبلغ صفر.',
-      );
-    }
-
-    return {
-      suggestedAmount: calc.grossAmount,
-      payrollMonth: calc.payrollMonth.toISOString(),
-      calendarDaysPaid: calc.calendarDaysPaid,
-      daysInMonth: calc.daysInMonth,
-    };
+    return getLeaveSalarySettlementPreviewCore(this.prisma, leaveId, companyId);
   }
 
   /**
@@ -172,7 +103,8 @@ export class HrLeaveService {
       throw new BadRequestException('تم إصدار تسوية راتب لهذه الإجازة مسبقاً.');
     }
 
-    await this.issueLeaveSalarySettlementInternal(
+    await issueLeaveSalarySettlementCore(
+      { prisma: this.prisma, financialCore: this.financialCore },
       {
         id: leave.id,
         employeeId: leave.employeeId,
@@ -187,215 +119,6 @@ export class HrLeaveService {
     return this.prisma.leave.findFirst({
       where: { id: leaveId },
       include: { employee: true, salarySettlement: true },
-    });
-  }
-
-  /**
-   * صرف تسوية راتب تقويمي + فاتورة + حركة في ملف الموظف.
-   * idempotency: لا يُكرَّر إن وُجد سجل تسوية لنفس الإجازة.
-   */
-  private async issueLeaveSalarySettlementInternal(
-    leave: {
-      id: string;
-      employeeId: string;
-      companyId: string;
-      leaveType: string;
-      startDate: Date;
-    },
-    userId: string,
-    options: { vaultId?: string; grossAmountOverride?: number },
-  ): Promise<void> {
-    const tenantId = TenantContext.getTenantId();
-    if (leave.leaveType !== 'annual') {
-      throw new BadRequestException('تسوية الراتب متاحة لإجازات سنوية فقط.');
-    }
-
-    const existingSet = await this.prisma.leaveSalarySettlement.findUnique({
-      where: { leaveId: leave.id },
-    });
-    if (existingSet) return;
-
-    const emp = await this.prisma.employee.findFirst({
-      where: { id: leave.employeeId, companyId: leave.companyId },
-      include: { customAllowances: true },
-    });
-    if (!emp) throw new BadRequestException('الموظف غير موجود.');
-    if (emp.status === 'terminated') {
-      throw new BadRequestException('لا يمكن صرف تسوية راتب لموظف منتهي الخدمة.');
-    }
-
-    const customSum = (emp.customAllowances ?? []).reduce(
-      (s, r) => s + Number(r.amount ?? 0),
-      0,
-    );
-
-    const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), customSum);
-
-    if (calc.calendarDaysPaid <= 0 || calc.grossAmount <= 0) {
-      throw new BadRequestException(
-        'لا يمكن احتساب تسوية راتب — تاريخ بداية الإجازة خارج نطاق العمل في الشهر أو المبلغ صفر.',
-      );
-    }
-
-    let grossFinal = calc.grossAmount;
-    if (options.grossAmountOverride != null) {
-      const o = Number(options.grossAmountOverride);
-      if (!Number.isFinite(o) || o < 0.01) {
-        throw new BadRequestException('المبلغ غير صالح.');
-      }
-      grossFinal = Math.round(o * 100) / 100;
-    }
-
-    const { payrollMonth, daysInMonth, calendarDaysPaid } = calc;
-
-    const dup = await this.prisma.leaveSalarySettlement.findFirst({
-      where: {
-        employeeId: emp.id,
-        payrollMonth,
-      },
-    });
-    if (dup) {
-      throw new BadRequestException(
-        'يوجد بالفعل تسوية راتب لنفس الموظف في نفس الشهر. لا يمكن تكرار الصرف.',
-      );
-    }
-
-    let vaultIdToUse = options.vaultId;
-    if (!vaultIdToUse) {
-      const v = await this.prisma.vault.findFirst({
-        where: {
-          companyId: leave.companyId,
-          isActive: true,
-          isArchived: false,
-          showAsPaymentMethod: true,
-        },
-        select: { id: true },
-        orderBy: { createdAt: 'asc' },
-      });
-      if (!v) {
-        throw new BadRequestException(
-          'لا توجد خزنة نشطة. يرجى إنشاء خزنة أو تمرير vaultId.',
-        );
-      }
-      vaultIdToUse = v.id;
-    }
-    await assertVaultsUsableForPayment(this.prisma, leave.companyId, [vaultIdToUse]);
-
-    const txDate = saudiDateYmd();
-    const amountStr = grossFinal.toFixed(2);
-    const ym = `${payrollMonth.getFullYear()}-${String(payrollMonth.getMonth() + 1).padStart(2, '0')}`;
-    const sd = new Date(leave.startDate);
-    const startStrFormatted = `${sd.getFullYear()}-${String(sd.getMonth() + 1).padStart(2, '0')}-${String(sd.getDate()).padStart(2, '0')}`;
-    const manualNote =
-      options.grossAmountOverride != null
-        && Math.abs(grossFinal - calc.grossAmount) > 0.005
-        ? ` — معدّل يدوياً (مقترح ${calc.grossAmount.toFixed(2)})`
-        : '';
-    const notes = `تسوية راتب حتى يوم السفر — إجازة سنوية من ${startStrFormatted} (${calendarDaysPaid}/${daysInMonth} يوم تقويمي، شهر ${ym})${manualNote}`;
-
-    const { invoice } = await this.financialCore.processOutflow(
-      {
-        companyId: leave.companyId,
-        employeeId: emp.id,
-        kind: 'salary',
-        totalAmount: amountStr,
-        netAmount: amountStr,
-        taxAmount: '0',
-        transactionDate: txDate,
-        vaultSplits: [{ vaultId: vaultIdToUse, amount: amountStr }],
-        notes,
-        idempotencyKey: `leave-salary-settlement:${leave.id}`,
-      },
-      userId,
-    );
-
-    await this.prisma.leaveSalarySettlement.create({
-      data: {
-        tenantId,
-        companyId: leave.companyId,
-        leaveId: leave.id,
-        employeeId: emp.id,
-        payrollMonth,
-        invoiceId: invoice.id,
-        grossAmount: new Prisma.Decimal(amountStr),
-        netAmount: new Prisma.Decimal(amountStr),
-        calendarDaysPaid,
-        daysInMonth,
-        transactionDate: new Date(`${txDate}T00:00:00.000Z`),
-      },
-    });
-
-    await this.prisma.employeeMovement.create({
-      data: {
-        tenantId,
-        companyId: leave.companyId,
-        employeeId: emp.id,
-        movementType: 'other',
-        amount: toMoneyDecimal2(grossFinal),
-        previousValue: null,
-        newValue: amountStr,
-        effectiveDate: new Date(`${txDate}T00:00:00.000Z`),
-        notes: `تسوية راتب إجازة سنوية (تقويمي) — ${calendarDaysPaid}/${daysInMonth} يوم — ${invoice.invoiceNumber}${manualNote}`,
-      },
-    });
-  }
-
-  /**
-   * إلغاء تسوية راتب الإجازة: حذف سجل التسوية + حركة ملف الموظف المرتبطة بفاتورة الراتب، ثم إلغاء الفاتورة وعكس القيود.
-   */
-  private async voidLeaveSalarySettlementForLeave(
-    leaveId: string,
-    companyId: string,
-    userId: string | undefined,
-    reason: string,
-  ): Promise<void> {
-    const st = await this.prisma.leaveSalarySettlement.findUnique({
-      where: { leaveId },
-    });
-    if (!st) return;
-
-    const inv = await this.prisma.invoice.findFirst({
-      where: { id: st.invoiceId, companyId },
-    });
-    if (!inv) {
-      throw new BadRequestException('فاتورة تسوية الراتب غير موجودة — يتطلب مراجعة يدوية.');
-    }
-    const invoiceId = st.invoiceId;
-    const invoiceNum = inv.invoiceNumber;
-    const employeeId = st.employeeId;
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.leaveSalarySettlement.delete({ where: { leaveId } });
-      if (invoiceNum) {
-        await tx.employeeMovement.deleteMany({
-          where: {
-            companyId,
-            employeeId,
-            movementType: 'other',
-            notes: { contains: invoiceNum },
-          },
-        });
-      }
-    });
-
-    await this.financialCore.cancelOperation(
-      {
-        companyId,
-        referenceType: 'salary',
-        referenceId: invoiceId,
-        reason,
-      },
-      userId,
-    );
-
-    await this.audit.log({
-      companyId,
-      userId,
-      action: 'update',
-      entity: 'leave',
-      entityId: leaveId,
-      oldValue: { voidedSalarySettlement: true, invoiceId },
-      newValue: { reason },
     });
   }
 
@@ -415,7 +138,8 @@ export class HrLeaveService {
     });
     if (st) {
       if (voidSettlement) {
-        await this.voidLeaveSalarySettlementForLeave(
+        await voidLeaveSalarySettlementCore(
+          { prisma: this.prisma, financialCore: this.financialCore, audit: this.audit },
           id,
           companyId,
           userId,
@@ -431,7 +155,7 @@ export class HrLeaveService {
     await this.prisma.leave.delete({ where: { id } });
 
     if (existing.status === 'approved') {
-      await this.syncEmployeeLeavePresence(existing.employeeId, companyId);
+      await syncEmployeeLeavePresence(this.prisma, existing.employeeId, companyId);
     }
 
     await this.audit.log({
@@ -482,7 +206,7 @@ export class HrLeaveService {
     });
 
     if (leave.status === 'approved') {
-      await this.syncEmployeeLeavePresence(leave.employeeId, dto.companyId);
+      await syncEmployeeLeavePresence(this.prisma, leave.employeeId, dto.companyId);
     }
 
     return leave;
@@ -519,12 +243,13 @@ export class HrLeaveService {
         );
       }
       if (structural && dto.voidSalarySettlement === true) {
-        await this.voidLeaveSalarySettlementForLeave(
-          id,
-          companyId,
-          userId,
-          'تعديل إجازة بعد تسوية راتب — إلغاء التسوية بموافقة المستخدم',
-        );
+        await voidLeaveSalarySettlementCore(
+            { prisma: this.prisma, financialCore: this.financialCore, audit: this.audit },
+            id,
+            companyId,
+            userId,
+            'تعديل إجازة بعد تسوية راتب — إلغاء التسوية بموافقة المستخدم',
+          );
       }
     }
 
@@ -623,7 +348,7 @@ export class HrLeaveService {
       toSync.add(updated.employeeId);
     }
     for (const eid of toSync) {
-      await this.syncEmployeeLeavePresence(eid, companyId);
+      await syncEmployeeLeavePresence(this.prisma, eid, companyId);
     }
 
     return updated;
@@ -646,7 +371,8 @@ export class HrLeaveService {
       });
       if (st) {
         if (dto.voidSalarySettlement === true) {
-          await this.voidLeaveSalarySettlementForLeave(
+          await voidLeaveSalarySettlementCore(
+            { prisma: this.prisma, financialCore: this.financialCore, audit: this.audit },
             id,
             companyId,
             userId,
@@ -681,7 +407,7 @@ export class HrLeaveService {
       });
 
       if (existing.status === 'approved' && dto.status === 'rejected') {
-        await this.syncEmployeeLeavePresence(existing.employeeId, companyId);
+        await syncEmployeeLeavePresence(this.prisma, existing.employeeId, companyId);
       }
 
       return updated;
@@ -703,7 +429,8 @@ export class HrLeaveService {
       newValue: { status: dto.status },
     });
 
-    await this.maybeSetEmployeeOnLeaveAfterApproval(
+    await maybeSetEmployeeOnLeaveAfterApproval(
+      this.prisma,
       updated.employeeId,
       updated.companyId,
       updated.startDate,
@@ -732,7 +459,7 @@ export class HrLeaveService {
       throw new NotFoundException('الإجازة غير موجودة أو ليست معتمدة.');
     }
 
-    const actualYmd = (dto.actualReturnDate?.slice(0, 10) || saudiDateYmd()).trim();
+    const actualYmd = toYmd(dto.actualReturnDate) || saudiDateYmd();
     const startYmd = dateToSaudiYmd(leave.startDate);
     const endYmdOriginal = dateToSaudiYmd(leave.endDate);
 
@@ -751,7 +478,7 @@ export class HrLeaveService {
       data: { endDate: newEnd, daysCount },
     });
 
-    await this.syncEmployeeLeavePresence(leave.employeeId, companyId);
+    await syncEmployeeLeavePresence(this.prisma, leave.employeeId, companyId);
 
     await this.audit.log({
       companyId,

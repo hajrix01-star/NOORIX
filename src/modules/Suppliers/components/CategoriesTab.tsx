@@ -1,6 +1,4 @@
-﻿/**
- * CategoriesTab ظ¤ ╪ز╪ذ┘ê┘è╪ذ╪ر ╪ز╪╡┘┘è┘╪د╪ز ╪د┘┘à┘ê╪▒╪»┘è┘ (┘à╪┤╪ز╪▒┘è╪د╪ز / ┘à╪╡╪▒┘ê┘╪د╪ز)
- */
+﻿/** Supplier categories (purchases / expenses) */
 import React, { memo } from 'react';
 import { CategoriesManager } from '../../../components/CategoriesManager';
 

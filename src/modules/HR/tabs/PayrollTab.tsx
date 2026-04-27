@@ -9,12 +9,11 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
-import { getSaudiToday } from '../../../utils/saudiDate';
 import { PayrollRunFormModal } from '../components/PayrollRunFormModal';
 import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
@@ -30,7 +29,7 @@ const PAGE_SIZE = 50;
 /** آخر يوم تقويمي من شهر المسيرة نفسه (YYYY-MM-DD) — مثال: مسيرة مارس → 31 مارس */
 function lastDayOfPayrollMonth(monthRaw: any) {
   if (!monthRaw) return null;
-  const s = String(monthRaw).slice(0, 10);
+  const s = toYmd(monthRaw);
   const [y, m] = s.split('-').map((x: any) => parseInt(x, 10));
   if (!y || !m || m < 1 || m > 12) return null;
   const last = new Date(Date.UTC(y, m, 0));

@@ -17,7 +17,7 @@ import {
   throwIfApiFailed,
 } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { parseOvertimeWorkDaysPerMonth, totalSalary } from '../utils/employeeSalaryMath';
 import {
@@ -342,7 +342,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
 
   const loadEditingItems = React.useCallback(() => {
     if (!editingRun) return;
-    const loadedMonth = editingRun.payrollMonth ? `${String(editingRun.payrollMonth).slice(0, 10)}` : defaultMonth;
+    const loadedMonth = editingRun.payrollMonth ? toYmd(editingRun.payrollMonth) : defaultMonth;
     setPayrollMonth(loadedMonth);
     setNotes(editingRun.notes || '');
     const loadedItems = (editingRun.items || []).map((row: any) => {

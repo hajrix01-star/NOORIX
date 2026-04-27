@@ -1,7 +1,4 @@
-﻿/**
- * OrdersScreen ظ¤ ┘é╪│┘à ╪د┘╪╖┘╪ذ╪د╪ز
- * ╪ز╪ذ┘ê┘è╪ذ╪د╪ز: ╪د┘╪╖┘╪ذ╪د╪ز | ╪ز┘é╪د╪▒┘è╪▒ ╪د┘╪ث╪╡┘╪د┘ | ╪ح╪»╪د╪▒╪ر ╪د┘╪ث╪╡┘╪د┘
- */
+﻿/** Orders section: orders | product reports | product admin */
 import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';

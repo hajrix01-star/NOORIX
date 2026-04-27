@@ -1,7 +1,4 @@
-﻿/**
- * OrdersSummaryCard ظ¤ ┘â╪▒╪ز ┘à┘╪«╪╡ ┘ê╪د╪ص╪» ┘â╪ذ┘è╪▒
- * ╪ز┘╪│┘è┘é ┘ç╪▒┘à┘è: ╪د┘┘à╪│╪ز┘┘à ظْ ╪د┘┘à╪┤╪ز╪▒┘è╪د╪ز ظْ ╪«╪╖ ظْ ╪د┘┘╪ز┘è╪ش╪ر
- */
+﻿/** Large summary card: customer → products → line → totals */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';

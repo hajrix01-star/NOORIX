@@ -13,8 +13,18 @@ const { FinancialCoreService } = require('../src/financial-core/financial-core.s
 const { TenantContext } = require('../src/common/tenant-context');
 const { TenantPrismaService } = require('../src/prisma/tenant-prisma.service');
 
+/** مطابقة `toYmd` في `src/common/utils/to-ymd.util.ts` (سكربت CommonJS — بدون استيراد TS). */
+function toYmd(value) {
+  if (value == null || value === '') return '';
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return '';
+    return value.toISOString().slice(0, 10);
+  }
+  const s = String(value).trim();
+  return s ? s.slice(0, 10) : '';
+}
+
 async function main() {
-  const { AppModule } = require('../src/app.module');
   const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
 
   const prisma = app.get(TenantPrismaService);
@@ -32,7 +42,7 @@ async function main() {
   const user = await prisma.user.findFirst({ where: { tenantId: company.tenantId } });
 
   const ADVANCE_AMOUNT = '1000';
-  const txDate = new Date().toISOString().slice(0, 10);
+  const txDate = toYmd(new Date());
   const invoiceNumber = `ADV-${Date.now().toString().slice(-8)}`;
 
   const result = await new Promise((resolve, reject) => {

@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { fmt } from '../../../utils/format';
+import { toYmd } from '../../../utils/saudiDate';
 import { MetricCard } from '../../../ui';
 
 export default function BankStatementSummaryCards({ statement, t }: any) {
@@ -19,8 +20,8 @@ export default function BankStatementSummaryCards({ statement, t }: any) {
     },
     {
       title: t('bankStatementDateRange'),
-      value: statement.startDate?.slice(0, 10) || '—',
-      sub:   statement.endDate?.slice(0, 10) ? `← ${statement.endDate.slice(0, 10)}` : '',
+      value: toYmd(statement.startDate) || '—',
+      sub:   toYmd(statement.endDate) ? `← ${toYmd(statement.endDate)}` : '',
       color: 'var(--color-nx-purchases)',
     },
     {

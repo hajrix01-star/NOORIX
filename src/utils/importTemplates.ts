@@ -14,7 +14,7 @@ import {
   basicSalaryFromTargetTotalInclusiveOvertime,
 } from '../modules/HR/utils/employeeSalaryMath';
 import { roundMoney2 } from './moneyInput';
-import { formatSaudiDateISO, getSaudiToday } from './saudiDate';
+import { formatSaudiDateISO, getSaudiToday, toYmd } from './saudiDate';
 
 /** @param {Date} d */
 function toRiyadhYmdOrNull(d: Date) {
@@ -481,9 +481,8 @@ type EmployeeExportSalaryRow = Parameters<typeof totalSalary>[0];
 export function formatInvoiceForExport(inv: Record<string, unknown>) {
   const kindKey = String(inv.kind ?? '');
   const labels = INVOICE_KIND_LABELS as Record<string, string>;
-  const tx = String(inv.transactionDate ?? '');
   return {
-    'تاريخ الفاتورة': tx.slice(0, 10),
+    'تاريخ الفاتورة': toYmd(inv.transactionDate),
     'نوع الفاتورة': labels[kindKey] ?? kindKey,
     'رقم الفاتورة': inv.invoiceNumber ?? '',
     'رقم فاتورة المورد': inv.supplierInvoiceNumber ?? '',
@@ -541,7 +540,7 @@ export function formatEmployeeForExport(
     'مجموع البدلات المخصصة': customRounded,
     'مقابل الأوفر تايم (مُقدّر)': ot,
     'الراتب الإجمالي': totalRounded,
-    'تاريخ الالتحاق': emp.joinDate?.slice(0, 10) ?? '',
+    'تاريخ الالتحاق': toYmd(emp.joinDate) || '',
     'ساعات العمل': emp.workHours ?? '',
     'الحالة': emp.status === 'active' ? 'نشط' : (emp.status === 'terminated' ? 'منتهي' : emp.status),
     'ملاحظات': emp.notes ?? '',
@@ -549,9 +548,8 @@ export function formatEmployeeForExport(
 }
 
 export function formatSalesForExport(summary: Record<string, unknown>) {
-  const tx = String(summary.transactionDate ?? '');
   const base: Record<string, unknown> = {
-    'تاريخ اليوم': tx.slice(0, 10),
+    'تاريخ اليوم': toYmd(summary.transactionDate),
     'رقم الملخص': summary.summaryNumber ?? '',
     'عدد العملاء': summary.customerCount ?? 0,
     'إجمالي المبيعات': summary.totalAmount ?? '',

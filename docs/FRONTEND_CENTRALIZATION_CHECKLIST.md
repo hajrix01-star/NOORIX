@@ -66,3 +66,4 @@
 
 - [x] تحديث `.cursor/rules/ui-components.mdc` (`ScreenShell`, `ScreenTitle`, `KebabMenu`, `FilterScrollStrip`, خيارات `ScreenTabs`).
 - [x] تاريخ إكمال رسمي في [الفهرس](./FRONTEND_CENTRALIZATION_AUDIT_PLAN_CHECKLIST.md).
+- [x] **صيانة كاش مالي (2026-04-27):** أي `queryKey` جديد لبيانات مالية — أضف بادئته إلى `src/utils/queryInvalidation.ts` (`invalidateOnFinancialMutation`)؛ راجع [PERFORMANCE_AND_DATA.md](./PERFORMANCE_AND_DATA.md) و[REPOSITORY_MAINTENANCE_RUNBOOK.md](./REPOSITORY_MAINTENANCE_RUNBOOK.md) §2.

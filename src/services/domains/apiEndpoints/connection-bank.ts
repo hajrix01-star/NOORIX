@@ -1,5 +1,6 @@
 import { setRefreshToken } from '../../authStore';
 import type { ApiParsedResult, AuthLoginRefreshPayload } from '../../../types/api';
+import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete, getApiBaseUrl, getAuthHeaders } from '../../core/apiHttp';
 
 function errMsg(err: unknown): string {
@@ -156,8 +157,8 @@ export async function bankStatementReconciliationStats(
 ): Promise<ApiParsedResult> {
   return apiGet('/api/v1/bank-statements/reconciliation-stats', {
     companyId,
-    startDate: String(startDate || '').slice(0, 10),
-    endDate: String(endDate || '').slice(0, 10),
+    startDate: toYmd(startDate),
+    endDate: toYmd(endDate),
   });
 }
 

@@ -8,7 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { useVaults } from '../../../hooks/useVaults';
 import { getEmployees } from '../../../services/api';
 import { createResidency, updateResidency, createInvoice } from '../../../services/api';
-import { getSaudiToday } from '../../../utils/saudiDate';
+import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { assertApiOk } from '../../../utils/apiResponse';
@@ -34,8 +34,8 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
 
   const [employeeId, setEmployeeId] = useState(residency?.employeeId || '');
   const [iqamaNumber, setIqamaNumber] = useState(residency?.iqamaNumber || '');
-  const [issueDate, setIssueDate] = useState(residency?.issueDate ? residency.issueDate.slice(0, 10) : '');
-  const [expiryDate, setExpiryDate] = useState(residency?.expiryDate ? residency.expiryDate.slice(0, 10) : '');
+  const [issueDate, setIssueDate] = useState(toYmd(residency?.issueDate));
+  const [expiryDate, setExpiryDate] = useState(toYmd(residency?.expiryDate));
   const [status, setStatus] = useState(residency?.status || 'active');
   const [notes, setNotes] = useState(residency?.notes || '');
   const [residencyServiceType, setResidencyServiceType] = useState('renewal');

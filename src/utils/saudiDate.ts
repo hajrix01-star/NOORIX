@@ -121,6 +121,23 @@ export function toDateInputYmd(value: any) {
   return s === '—' ? '' : s;
 }
 
+/**
+ * تقصير قيمة تاريخ/ISO إلى YYYY-MM-DD لمعاملات الـ API ومفاتيح التجميع.
+ * للنصوص: أول 10 أحرف بعد trim (يفترض بادئة YMD أو ISO).
+ * لـ `Date`: جزء التاريخ UTC — مطابق لسلوك `toYmd` في الخادم (`to-ymd.util.ts`).
+ *
+ * عندما يكون اليوم التقويمي المطلوب **بتوقيت الرياض** (مثل `input type="date"`): استخدم {@link toDateInputYmd} بدلاً من تمرير `Date` إلى هذه الدالة.
+ */
+export function toYmd(value: unknown): string {
+  if (value == null || value === '') return '';
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return '';
+    return value.toISOString().slice(0, 10);
+  }
+  const s = String(value).trim();
+  return s ? s.slice(0, 10) : '';
+}
+
 /** تاريخ + وقت بتوقيت الرياض — عرض موحّد (يتفادى اختلاف Samsung/default locale) */
 export function formatSaudiDateTime(value: any) {
   if (!value) return '—';

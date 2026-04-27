@@ -1,19 +1,15 @@
 import { Module }               from '@nestjs/common';
 import { MulterModule }         from '@nestjs/platform-express';
 import { diskStorage }          from 'multer';
-import { existsSync, mkdirSync } from 'fs';
-import { join }                 from 'path';
 import { AuthModule }           from '../auth/auth.module';
 import { AuditModule }          from '../audit/audit.module';
 import { FinancialCoreModule }  from '../financial-core/financial-core.module';
 import { VaultsModule }         from '../vaults/vaults.module';
 import { InvoiceController }    from './invoice.controller';
 import { InvoiceService }       from './invoice.service';
+import { ensureUploadsSubdir } from '../common/uploads-root';
 
-const invoiceAttachDir = join(process.cwd(), 'uploads', 'invoice-attachments');
-if (!existsSync(invoiceAttachDir)) {
-  mkdirSync(invoiceAttachDir, { recursive: true });
-}
+const invoiceAttachDir = ensureUploadsSubdir('invoice-attachments');
 
 @Module({
   imports: [

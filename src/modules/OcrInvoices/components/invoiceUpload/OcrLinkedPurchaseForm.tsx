@@ -1,4 +1,5 @@
 import { Button, Input } from '../../../../ui';
+import { toYmd } from '../../../../utils/saudiDate';
 
 export function OcrLinkedPurchaseForm({
   t,
@@ -86,7 +87,7 @@ export function OcrLinkedPurchaseForm({
                 <span className="text-noorix-muted">{t('ocrTransactionDate')}</span>
                 <Input
                   type="date"
-                  value={transactionDate?.slice(0, 10) || ''}
+                  value={toYmd(transactionDate)}
                   onChange={(e: any) => onTransactionDateChange(e.target.value)}
                 />
               </label>

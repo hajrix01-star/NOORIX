@@ -9,7 +9,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { createDeduction, getInvoices, updateInvoice } from '../../../services/api';
 import { useEmployees } from '../../../hooks/useEmployees';
-import { formatSaudiDate, getSaudiToday } from '../../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { sumAmounts } from '../../../utils/format';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -380,7 +380,7 @@ export default function AdvancesTab() {
 function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }: any) {
   const { t } = useTranslation();
   const [amount, setAmount] = useState(String(Number(advance?.totalAmount ?? 0)));
-  const [date, setDate] = useState(String(advance?.transactionDate || '').slice(0, 10));
+  const [date, setDate] = useState(toYmd(advance?.transactionDate));
   const [notes, setNotes] = useState(advance?.notes || '');
   const [installmentCount, setInstallmentCount] = useState(
     advance?.installmentCount > 1 ? String(advance.installmentCount) : '',

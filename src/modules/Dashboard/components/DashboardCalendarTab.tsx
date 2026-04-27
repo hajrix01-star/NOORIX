@@ -2,11 +2,10 @@
  * DashboardCalendarTab — تقويم حراري للمبيعات
  * أهداف احترافية | تحديد أيام متعددة → إضافة كأيام خاصة | ملاحظة لكل يوم
  */
-// @ts-nocheck — بيانات تقويم وRecharts: تثبيت أنواع تدريجي
 import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
-import { useSales } from '../../../hooks/useSales';
+import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
 import { CARD_COLORS } from '../../../utils/cardStyles';
 import { KPI_RECHARTS_COLORS, AMBER_ACCENT_HEX } from '../../../constants/kpiCardTheme';
 import { fmt } from '../../../utils/format';
@@ -21,7 +20,7 @@ import {
   getStoredDayNotes,
   setStoredDayNotes,
 } from '../utils/dashboardStorage';
-import { getSaudiNow } from '../../../utils/saudiDate';
+import { getSaudiNow, toYmd } from '../../../utils/saudiDate';
 
 const DOW_KEYS = [0, 1, 2, 3, 4, 5, 6];
 const DOW_LABELS = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
@@ -90,7 +89,19 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   const startDate = ymd(year, month, 1);
   const endDate = ymd(year, month, lastDay);
 
-  const { summaries, isLoading } = useSales({ companyId, startDate, endDate });
+  const {
+    dailySummaries: summaries,
+    isLoading,
+  } = useDashboardSalesPack({
+    companyId,
+    yearStart: `${year}-01-01`,
+    yearEnd: `${year}-12-31`,
+    dailyStart: startDate,
+    dailyEnd: endDate,
+    monthStart: null,
+    monthEnd: null,
+    enabled: !!companyId,
+  });
 
   const [targetsVersion, setTargetsVersion] = useState(0);
   const [editingTarget, setEditingTarget] = useState(false);
@@ -98,7 +109,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   const [showTargetsPanel, setShowTargetsPanel] = useState(false);
   const [selectedDay, setSelectedDay] = useState<any>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedDates, setSelectedDates] = useState(new Set());
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(() => new Set<string>());
   const [lastClickedDate, setLastClickedDate] = useState<any>(null);
   const [specialDaysVersion, setSpecialDaysVersion] = useState(0);
   const [dayNotesVersion, setDayNotesVersion] = useState(0);
@@ -117,7 +128,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   const dailySales = useMemo(() => {
     const map = new Map();
     (summaries || []).forEach((s: any) => {
-      const d = String(s.transactionDate || '').slice(0, 10);
+      const d = toYmd(s.transactionDate);
       const amt = Number(s.totalAmount || 0);
       map.set(d, (map.get(d) || 0) + amt);
     });
@@ -158,7 +169,8 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
   }, [year, month, lastDay, dailySales, targets, specialDaysList]);
 
   const maxAmount = useMemo(() => {
-    const maxFromTargets = Math.max(0, ...Object.values(targets.byDow).filter(Boolean), targets.overall || 0);
+    const dowNums = Object.values(targets.byDow).map((v) => (v != null && v !== '' ? Number(v) : 0));
+    const maxFromTargets = Math.max(0, targets.overall != null ? Number(targets.overall) : 0, ...dowNums);
     return Math.max(1, ...daysInMonth.map((d: any) => d.amount), maxFromTargets);
   }, [daysInMonth, targets]);
 
@@ -213,15 +225,15 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       const i2 = dates.indexOf(dateStr);
       if (i1 >= 0 && i2 >= 0) {
         const [from, to] = i1 <= i2 ? [i1, i2] : [i2, i1];
-        const range = new Set(dates.slice(from, to + 1));
+        const range = new Set<string>(dates.slice(from, to + 1));
         setSelectedDates(range);
         setLastClickedDate(dateStr);
         return;
       }
     }
     setLastClickedDate(dateStr);
-    setSelectedDates((prev: any) => {
-      const next = new Set(prev);
+    setSelectedDates((prev) => {
+      const next = new Set<string>(prev);
       if (next.has(dateStr)) next.delete(dateStr);
       else next.add(dateStr);
       return next;
@@ -240,7 +252,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
     list.push({ id, name, fromDate: from, toDate: to, color });
     if (setStoredSpecialDays(companyId, year, month, list)) {
       setSpecialDaysVersion((v: any) => v + 1);
-      setSelectedDates(new Set());
+      setSelectedDates(new Set<string>());
       setShowAddSpecialModal(false);
       setNewSpecialName('');
     }
@@ -295,8 +307,9 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
       if ((firstDow + i + 1) % 7 === 0) { rows.push(`<tr>${row}</tr>`); row = ''; }
     });
     if (row) rows.push(`<tr>${row}</tr>`);
-    const dowHeader = (lang === 'ar' ? DOW_LABELS_AR : DOW_LABELS);
-    const headerRow = `<tr>${[0,1,2,3,4,5,6].map((d: any) => `<th>${dowHeader[d]}</th>`).join('')}</tr>`;
+    const dowHeader = lang === 'ar' ? DOW_LABELS_AR : DOW_LABELS;
+    const dowOrder = [0, 1, 2, 3, 4, 5, 6] as const;
+    const headerRow = `<tr>${dowOrder.map((d) => `<th>${dowHeader[d]}</th>`).join('')}</tr>`;
     openPrintWindow({
       title: t('dashboardCalendar'),
       companyName: companyName || '',
@@ -329,7 +342,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             <Button
               size="sm"
               variant={isSelectionMode ? 'primary' : undefined}
-              onClick={() => { setIsSelectionMode((p: any) => !p); if (isSelectionMode) setSelectedDates(new Set()); }}
+              onClick={() => { setIsSelectionMode((p: any) => !p); if (isSelectionMode) setSelectedDates(new Set<string>()); }}
             >
               {isSelectionMode ? '✓ ' + t('dashboardSelectDaysModeOff') : '☑ ' + t('dashboardSelectDaysMode')}
             </Button>
@@ -372,9 +385,9 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             )}
             <div className="font-bold mb-1.5">{t('dashboardTargetByDay')}</div>
             <div className="flex flex-wrap gap-2" key={`targets-${targetsVersion}`}>
-              {DOW_KEYS.map((dow: any) => (
+              {DOW_KEYS.map((dow) => (
                 <div key={dow} className="flex items-center gap-4">
-                  <span className="text-[11px] min-w-[50px]">{lang === 'ar' ? DOW_LABELS_AR[dow] : DOW_LABELS[dow]}:</span>
+                  <span className="text-[11px] min-w-[50px]">{lang === 'ar' ? DOW_LABELS_AR[dow as keyof typeof DOW_LABELS_AR] : DOW_LABELS[dow as keyof typeof DOW_LABELS]}:</span>
                   <Input
                     type="number"
                     min="0"
@@ -400,7 +413,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           <div className="noorix-calendar-grid-scroll">
             <div className="noorix-calendar-grid-scroll-inner">
           <div className="grid gap-1.5 grid-cols-7">
-            {[0,1,2,3,4,5,6].map((d: any) => (
+            {([0, 1, 2, 3, 4, 5, 6] as const).map((d) => (
               <div key={d} className="text-[12px] font-bold text-noorix-muted text-center py-1.5">{lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}</div>
             ))}
             {(() => {
@@ -508,7 +521,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
               <Button size="sm" variant="primary" onClick={() => setShowAddSpecialModal(true)}>
                 + {t('dashboardAddAsSpecialDays')}
               </Button>
-              <Button size="sm" onClick={() => setSelectedDates(new Set())}>{t('cancel')}</Button>
+              <Button size="sm" onClick={() => setSelectedDates(new Set<string>())}>{t('cancel')}</Button>
             </div>
           </div>
         )}
@@ -566,7 +579,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             dayNote={dayNotes[selectedDay.dateStr]}
             onSaveNote={(note: any) => handleSaveDayNote(selectedDay.dateStr, note)}
             onPrint={() => {
-              const daySummaries = (summaries || []).filter((s: any) => String(s.transactionDate || '').slice(0, 10) === selectedDay.dateStr);
+              const daySummaries = (summaries || []).filter((s: any) => toYmd(s.transactionDate) === selectedDay.dateStr);
               const totalAmount = daySummaries.reduce((s: any, x: any) => s + Number(x.totalAmount || 0), 0);
               const achieved = selectedDay.dayTarget != null && totalAmount >= selectedDay.dayTarget;
               handlePrintDayDetails(selectedDay.dateStr, selectedDay.dayTarget, daySummaries, totalAmount, achieved);

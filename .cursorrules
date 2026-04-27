@@ -39,6 +39,7 @@
 - **Numbers & Dates (STRICT)**:
     - ALL numbers MUST display in English numerals only (0-9). Use `toLocaleString('en')` or `fmt()` from utils/format.js.
     - ALL dates MUST display in English format only. Use `formatSaudiDate()` from utils/saudiDate.js (which uses 'en-GB' locale). NEVER use 'ar-SA' or 'ar' for date/number display.
+    - **API / query YMD:** use `toYmd` from `src/utils/saudiDate.ts` (frontend) and `backend/src/common/utils/to-ymd.util.ts` (Nest). For `input type="date"` in **Asia/Riyadh**, use `toDateInputYmd`, not `toYmd(Date)` when the user-facing day must follow Riyadh. Details: `.cursor/rules/date-ymd-helpers.mdc`.
 - **GLOBAL SMART ALIGNMENT (Arabic & English)**:
     - **Financial numbers**: ALWAYS `text-align: right` (decimal points align vertically). Use `fmt(v, 2)` or `fmtFinancial(v)` — two decimal places (0.00) across the system.
     - **Text columns**: Use `text-align: start` (right in Arabic, left in English) for natural reading flow.

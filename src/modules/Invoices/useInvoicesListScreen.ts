@@ -30,6 +30,7 @@ import {
   createInvoiceListMobileCardRenderer,
 } from './invoicesListTableModel';
 import { nextInvoiceSortState } from './invoicesListSort';
+import { toYmd } from '../../utils/saudiDate';
 
 /**
  * منطق شاشة قائمة الفواتير — عرض فقط يبقى في InvoicesListScreen.jsx
@@ -38,8 +39,8 @@ export function useInvoicesListScreen() {
   const { activeCompanyId, userRole, companies } = useApp();
   const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
-  const fromUrl = searchParams.get('from')?.slice(0, 10) || '';
-  const toUrl = searchParams.get('to')?.slice(0, 10) || '';
+  const fromUrl = toYmd(searchParams.get('from'));
+  const toUrl = toYmd(searchParams.get('to'));
   const invoiceBatchIdFromUrl = searchParams.get('batchId')?.trim() || '';
   const urlDrillKeyRef = useRef('');
   const companyId = activeCompanyId ?? '';
@@ -118,8 +119,8 @@ export function useInvoicesListScreen() {
     const q = searchParams.get('q') || '';
     if (from && to) {
       dateFilter.setMode('range');
-      dateFilter.setRangeStart(from.slice(0, 10));
-      dateFilter.setRangeEnd(to.slice(0, 10));
+      dateFilter.setRangeStart(toYmd(from));
+      dateFilter.setRangeEnd(toYmd(to));
     }
     if (kind) {
       if (kind.includes(',')) {
@@ -187,7 +188,7 @@ export function useInvoicesListScreen() {
   const { vaultsList = [], paymentVaults = [] } = useVaults({ companyId });
 
   const dayCloseDefaultYmd = useMemo(
-    () => (dateFilter.endDate || dateFilter.startDate || '').slice(0, 10),
+    () => toYmd(dateFilter.endDate || dateFilter.startDate),
     [dateFilter.endDate, dateFilter.startDate],
   );
 
@@ -280,8 +281,8 @@ export function useInvoicesListScreen() {
         createdByUserId: filterCreatedByUserId || undefined,
       });
       const rows = all.map(mapInvoiceToExportRow);
-      const safeStart = String(invoiceQueryStartDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'start';
-      const safeEnd = String(invoiceQueryEndDate || '').slice(0, 10).replace(/[^\d-]/g, '') || 'end';
+      const safeStart = toYmd(invoiceQueryStartDate).replace(/[^\d-]/g, '') || 'start';
+      const safeEnd = toYmd(invoiceQueryEndDate).replace(/[^\d-]/g, '') || 'end';
       await exportToExcel({
         data: rows,
         filename: `invoices-${safeStart}_${safeEnd}.xlsx`,

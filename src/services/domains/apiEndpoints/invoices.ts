@@ -10,7 +10,7 @@ import {
   getApiBaseUrl,
   throwIfApiFailed,
 } from '../../core/apiHttp';
-import { getSaudiToday } from '../../../utils/saudiDate';
+import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -194,8 +194,8 @@ export async function getInvoices(
     pageSize: String(pageSize),
   };
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
-  if (startDate) params.startDate = String(startDate).slice(0, 10);
-  if (endDate) params.endDate = String(endDate).slice(0, 10);
+  if (startDate) params.startDate = toYmd(startDate);
+  if (endDate) params.endDate = toYmd(endDate);
   if (batchId) params.batchId = batchId;
   if (employeeId) params.employeeId = employeeId;
   if (kind) params.kind = kind;
@@ -245,7 +245,7 @@ export async function getInvoices(
 export async function getInvoiceDayCloseReport(companyId: string, date: unknown): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/invoices/day-close-report', {
     companyId,
-    date: String(date || '').slice(0, 10),
+    date: toYmd(date),
   });
   if (!res.success) return res;
   const data = (res.data as { data?: unknown } | undefined)?.data ?? res.data;

@@ -1,4 +1,5 @@
 import type { ApiParsedResult } from '../../../types/api';
+import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPut, apiDelete } from '../../core/apiHttp';
 
 // ——— التقارير ———
@@ -100,8 +101,8 @@ export async function getPeriodAnalytics(
 ): Promise<ApiParsedResult> {
   const params: Record<string, string> = {
     companyId: String(companyId),
-    startDate: String(startDate || '').slice(0, 10),
-    endDate: String(endDate || '').slice(0, 10),
+    startDate: toYmd(startDate),
+    endDate: toYmd(endDate),
   };
   const res = await apiGet('/api/v1/reports/period-analytics', params);
   if (!res.success) return res;

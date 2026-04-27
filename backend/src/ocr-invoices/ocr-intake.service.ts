@@ -1,15 +1,16 @@
 /**
- * تقديم الكاشير، الاستخراج الخلفي، طابور المراجعة، ومسار صورة الفاتورة.
+ * تقديم الكاشير، الاستخراج عبر طابور Bull (Redis)، طابور المراجعة، ومسار صورة الفاتورة.
  */
-import { existsSync, mkdirSync } from 'fs';
-import { readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
+import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import type { Queue } from 'bull';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitOcrInvoiceDto } from './dto/submit-ocr.dto';
 import { OcrInvoiceStatus, OCR_REVIEW_QUEUE_STATUSES } from './ocr-invoice-status';
 import { OcrExtractionService } from './ocr-extraction.service';
+import { OcrUploadsLocalStorage } from './ocr-uploads-local.storage';
+import { OCR_EXTRACTION_QUEUE } from './ocr-queue.constants';
 
 @Injectable()
 export class OcrIntakeService {
@@ -18,6 +19,8 @@ export class OcrIntakeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly extraction: OcrExtractionService,
+    private readonly uploads: OcrUploadsLocalStorage,
+    @InjectQueue(OCR_EXTRACTION_QUEUE) private readonly extractionQueue: Queue,
   ) {}
 
   // ─── Cashier submission + background extraction ───────────────────────────
@@ -45,11 +48,7 @@ export class OcrIntakeService {
   }
 
   private relativeOcrImagePath(companyId: string, invoiceId: string, ext: string): string {
-    return join('ocr-invoices', companyId, `${invoiceId}.${ext}`);
-  }
-
-  private absoluteUploadPath(relativePath: string): string {
-    return join(process.cwd(), 'uploads', relativePath);
+    return `ocr-invoices/${companyId}/${invoiceId}.${ext}`;
   }
 
   /** كاشير: رفع صورة — يُنشئ سجلاً ثم يشغّل الاستخراج في الخلفية */
@@ -81,13 +80,11 @@ export class OcrIntakeService {
     });
 
     const rel = this.relativeOcrImagePath(companyId, inv.id, ext);
-    const abs = this.absoluteUploadPath(rel);
-    mkdirSync(join(process.cwd(), 'uploads', 'ocr-invoices', companyId), { recursive: true });
-    await writeFile(abs, buf);
+    await this.uploads.writeBuffer(rel, buf);
 
     await this.prisma.ocrInvoice.update({
       where: { id: inv.id },
-      data: { imageUrl: rel.replace(/\\/g, '/') },
+      data: { imageUrl: rel },
     });
 
     this.scheduleExtractionAfterSubmit(inv.id);
@@ -96,14 +93,24 @@ export class OcrIntakeService {
   }
 
   private scheduleExtractionAfterSubmit(invoiceId: string): void {
-    setImmediate(() => {
-      this.processExtractionForInvoice(invoiceId).catch((err) => {
-        this.logger.error(`OCR background extraction failed for ${invoiceId}: ${(err as Error).message}`);
+    void this.extractionQueue
+      .add(
+        'run-extraction',
+        { invoiceId },
+        {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 5000 },
+          removeOnComplete: 200,
+          removeOnFail: 100,
+        },
+      )
+      .catch((err) => {
+        this.logger.error(`Failed to enqueue OCR extraction for ${invoiceId}: ${(err as Error).message}`);
       });
-    });
   }
 
-  private async processExtractionForInvoice(invoiceId: string): Promise<void> {
+  /** يُستدعى من عامل Bull (تسلسل concurrency:1 على مستوى الطابور). */
+  async runExtractionForInvoice(invoiceId: string): Promise<void> {
     const inv = await this.prisma.ocrInvoice.findUnique({
       where: { id: invoiceId },
       select: { id: true, tenantId: true, companyId: true, imageUrl: true, status: true },
@@ -115,8 +122,8 @@ export class OcrIntakeService {
       data: { status: OcrInvoiceStatus.EXTRACTING, extractionError: null },
     });
 
-    const abs = this.absoluteUploadPath(inv.imageUrl);
-    if (!existsSync(abs)) {
+    const relPath = inv.imageUrl.replace(/\\/g, '/');
+    if (!this.uploads.exists(relPath)) {
       await this.prisma.ocrInvoice.update({
         where: { id: inv.id },
         data: {
@@ -129,7 +136,7 @@ export class OcrIntakeService {
 
     let buf: Buffer;
     try {
-      buf = await readFile(abs);
+      buf = await this.uploads.readBuffer(relPath);
     } catch (e) {
       await this.prisma.ocrInvoice.update({
         where: { id: inv.id },
@@ -257,8 +264,7 @@ export class OcrIntakeService {
     if (rel.includes('..') || !rel.startsWith(`ocr-invoices/${companyId}/`)) {
       throw new BadRequestException('مسار الملف غير صالح.');
     }
-    const abs = this.absoluteUploadPath(rel);
-    if (!existsSync(abs)) throw new NotFoundException('ملف الصورة غير موجود.');
-    return abs;
+    if (!this.uploads.exists(rel)) throw new NotFoundException('ملف الصورة غير موجود.');
+    return this.uploads.resolveAbsolute(rel);
   }
 }

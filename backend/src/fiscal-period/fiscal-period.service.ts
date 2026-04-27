@@ -6,6 +6,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { Prisma } from '@prisma/client';
+import { toYmd } from '../common/utils/to-ymd.util';
 
 type TxClient = Parameters<Parameters<TenantPrismaService['$transaction']>[0]>[0];
 
@@ -77,7 +78,7 @@ export class FiscalPeriodService {
     });
     if (overlap) {
       throw new BadRequestException(
-        `الفترة المالية تتقاطع مع فترة موجودة: ${overlap.nameAr} (${overlap.startDate.toISOString().slice(0, 10)} — ${overlap.endDate.toISOString().slice(0, 10)})`,
+        `الفترة المالية تتقاطع مع فترة موجودة: ${overlap.nameAr} (${toYmd(overlap.startDate)} — ${toYmd(overlap.endDate)})`,
       );
     }
   }

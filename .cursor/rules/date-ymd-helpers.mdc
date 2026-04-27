@@ -1,0 +1,31 @@
+---
+description: تواريخ YYYY-MM-DD — toYmd مقابل toDateInputYmd (واجهة وNest)
+alwaysApply: false
+globs: src/**/*.{ts,tsx},backend/src/**/*.ts
+---
+
+# Noorix — تقصير التواريخ إلى YMD
+
+## الواجهة (`src/utils/saudiDate.ts`)
+
+| الحاجة | الدالة |
+|--------|--------|
+| معاملات API، مفاتيح تجميع، قصّ بادئة `YYYY-MM-DD` أو ISO من نص | `toYmd(value)` |
+| `input type="date"` أو يوم تقويمي **بتوقيت الرياض** من طابع زمني | `toDateInputYmd(value)` |
+
+- **`toYmd` مع `instanceof Date`:** يُعاد جزء **UTC** من `toISOString().slice(0, 10)` — **مطابق** لـ `toYmd` في الخادم.
+- **لا** تمرّر `Date` إلى `toYmd` إذا كان المطلوب يوم **الرياض** لعرض/إدخال المستخدم؛ استخدم `toDateInputYmd`.
+
+## الخادم (`backend/src/common/utils/to-ymd.util.ts`)
+
+- استورد `toYmd` لبناء فلاتر `transactionDate` ولسلاسل الاستعلام بصيغة YMD.
+- حقول `Date` من Prisma تُعامل مثل الواجهة (UTC من `toISOString`).
+
+## ممنوع لغرض YMD
+
+- لا تستخدم `String(x).slice(0, 10)` أو `.substring(0, 10)` لقص تاريخ في كود منتج — استخدم `toYmd`.
+- **استثناء:** أغراض ليست تواريخاً (حد أعلى لصفوف، تقليم معرف، إلخ).
+
+## مرجع المشروع
+
+- وثيقة المراجعة: `docs/NOORIX_360_REVIEW_ABRIL_2026.md` — §1 #8 و **P2-5**.

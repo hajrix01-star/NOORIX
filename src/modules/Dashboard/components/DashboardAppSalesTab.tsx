@@ -3,11 +3,12 @@
  */
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useSales } from '../../../hooks/useSales';
+import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
 import { fmt } from '../../../utils/format';
 import { EN_MONTHS } from '../../../modules/Reports/reportHelpers';
 import { FmtNum, MetricCard } from '../../../ui';
+import { toYmd } from '../../../utils/saudiDate';
 
 function ymd(y: any, m: any, d: any) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -20,10 +21,15 @@ function lastDayOfMonth(year: any, month: any) {
 export default function DashboardAppSalesTab({ companyId, year, filter }: any) {
   const { t, lang } = useTranslation();
 
-  const { summaries: allSummaries, isLoading } = useSales({
+  const { yearSummaries: allSummaries, isLoading } = useDashboardSalesPack({
     companyId,
-    startDate: `${year}-01-01`,
-    endDate: `${year}-12-31`,
+    yearStart: `${year}-01-01`,
+    yearEnd: `${year}-12-31`,
+    dailyStart: null,
+    dailyEnd: null,
+    monthStart: null,
+    monthEnd: null,
+    enabled: !!companyId,
   });
 
   const { monthlyTotal, monthlyApp, appByChannel } = useMemo(() => {
@@ -32,7 +38,7 @@ export default function DashboardAppSalesTab({ companyId, year, filter }: any) {
     const channelTotals: Record<string, { total: number; app: number }> = {};
 
     (allSummaries || []).forEach((s: any) => {
-      const d = String(s.transactionDate || '').slice(0, 10);
+      const d = toYmd(s.transactionDate);
       const month = parseInt(d.slice(5, 7), 10) - 1;
       if (month < 0 || month > 11) return;
 

@@ -1,4 +1,5 @@
 import type { ApiParsedResult } from '../../../types/api';
+import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
 // ——— الحسابات والفئات ———
@@ -47,8 +48,8 @@ export async function getExpenseLinePayments(
     page: String(page),
     pageSize: String(pageSize),
   };
-  if (startDate) params.startDate = String(startDate).slice(0, 10);
-  if (endDate) params.endDate = String(endDate).slice(0, 10);
+  if (startDate) params.startDate = toYmd(startDate);
+  if (endDate) params.endDate = toYmd(endDate);
   return apiGet(`/api/v1/expense-lines/${id}/payments`, params);
 }
 export async function createExpenseLine(body: unknown): Promise<ApiParsedResult> {

@@ -11,6 +11,7 @@ import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-paymen
 import type { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 import { assertPayrollRunVaultSplitsMatchTotal } from './hr-payroll-assertions.util';
 import { applyPayrollAdvanceSettlements } from './hr-payroll-advance-settlement.util';
+import { toYmd } from '../common/utils/to-ymd.util';
 
 @Injectable()
 export class HrPayrollRunIssueService {
@@ -54,7 +55,7 @@ export class HrPayrollRunIssueService {
       );
     }
 
-    const txDate = dto.transactionDate.slice(0, 10);
+    const txDate = toYmd(dto.transactionDate);
     const totalStr = String(run.totalAmount);
     const totalDec = new Prisma.Decimal(run.totalAmount);
 

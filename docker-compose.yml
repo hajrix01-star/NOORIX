@@ -1,0 +1,12 @@
+# تطوير محلي: Redis لطابور Bull (استخراج OCR وغيره لاحقاً)
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - noorix-redis-data:/data
+
+volumes:
+  noorix-redis-data:

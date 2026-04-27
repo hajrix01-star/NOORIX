@@ -6,85 +6,21 @@
  * الأمان: المفتاح في backend/.env فقط — يُقرأ عبر gemini.config.ts
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { getGeminiApiKey, getGeminiModel } from '../config/gemini.config';
+import { getGeminiApiKey } from '../config/gemini.config';
 import { extractJson } from '../common/utils/extract-json.util';
+import { getGeminiChatIntentRequestUrl, GEMINI_CHAT_INTENT_SYSTEM_PROMPT } from './gemini-chat-intent-prompts.util';
+import { toYmd } from '../common/utils/to-ymd.util';
+import { normalizeGeminiIntent, normalizeGeminiPeriod } from './gemini-normalize.util';
+import { GeminiConcurrencyGate } from './gemini-concurrency.util';
+import type { GeminiParseResult } from './gemini-types';
 
-function getGeminiUrl(): string {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${getGeminiModel()}:generateContent`;
-}
-
-export type GeminiIntent =
-  | 'sales'
-  | 'purchases'
-  | 'expenses'
-  | 'reports'
-  | 'vaults'
-  | 'invoices'
-  | 'suppliers'
-  | 'categories'
-  | 'expense_lines'
-  | 'hr'
-  | 'orders'
-  | 'help'
-  | 'finance_ratios'
-  | 'sales_month_compare'
-  | 'unknown';
-
-export type GeminiPeriod =
-  | 'today'
-  | 'yesterday'
-  | 'day_before_yesterday'
-  | 'this_week'
-  | 'last_week'
-  | 'this_month'
-  | 'last_month'
-  | 'year'
-  | null;
-
-export type GeminiParseResult = {
-  intent: GeminiIntent;
-  period: GeminiPeriod;
-  rawQuery: string;
-};
-
-const SYSTEM_PROMPT = `أنت مساعد لفهم أسئلة في نظام محاسبة سعودي (نوركس).
-المهمة: استخرج من السؤال النية (intent) والفترة (period) فقط.
-أرجع JSON صحيح فقط بدون أي نص إضافي.
-
-النية (intent) — اختر واحدة فقط:
-- sales: مبيعات، إيرادات، كم حققنا، كم بيعنا، كم كسبنا، كم ربحنا، دخلنا
-- purchases: مشتريات، كم اشترينا
-- expenses: مصروفات، مصاريف، كم صرفنا
-- reports: ربح، خسارة، تقرير، ملخص
-- vaults: خزائن، أرصدة، رصيد، بنك
-- invoices: فواتير، آخر فاتورة
-- suppliers: موردين، مورد
-- categories: فئات
-- expense_lines: بنود مصروفات
-- hr: موظفين، اسم الموظف، أسماء الموظفين، رواتب، إجازات، إقامات، مسيرة
-- orders: طلبات، أصناف، منتجات
-- help: مساعدة، ماذا تسأل، أسئلة، ماذا يمكن أن تفعل (طلب صريح لقائمة المساعدة)
-- finance_ratios: نسب الخارج على المبيعات، نسب مشتريات أو مصروفات من المبيعات، نسب تشغيلية من الإيراد
-- sales_month_compare: قارن مبيعات الشهر الماضي بالحالي، من 1 الشهر الماضي إلى نفس تاريخ اليوم مقابل من 1 الحالي إلى اليوم
-- unknown: تحيات (مرحبا، أهلا، السلام، كيف الحال)، أسئلة عامة خارج المحاسبة، أو أي سؤال لا ينطبق على القائمة
-
-الفترة (period) — اختر واحدة أو null:
-- today: اليوم
-- yesterday: أمس
-- day_before_yesterday: أول أمس، قبل يومين
-- this_week: هذا الأسبوع
-- last_week: الأسبوع الماضي
-- this_month: هذا الشهر
-- last_month: الشهر الماضي
-- year: السنة (إذا لم تذكر فترة أو ذكرت السنة)
-- null: إذا لم تذكر فترة
-
-الصيغة: {"intent":"...","period":"..." أو null}
-مهم: أرجع JSON فقط بدون أي كلمات قبل أو بعد. لا تكتب "Here is" أو "النتيجة" أو أي نص آخر.`;
+export type { GeminiIntent, GeminiPeriod, GeminiParseResult } from './gemini-types';
 
 @Injectable()
 export class GeminiService {
   private readonly apiKey: string | null;
+  private readonly geminiGate = new GeminiConcurrencyGate();
+  private readonly logger = new Logger(GeminiService.name);
 
   constructor() {
     this.apiKey = getGeminiApiKey();
@@ -105,14 +41,15 @@ export class GeminiService {
     const trimmed = (query || '').trim();
     if (!trimmed || trimmed.length > 500) return null;
 
+    return this.geminiGate.with(async () => {
     try {
-      const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
+      const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [
             {
-              parts: [{ text: `${SYSTEM_PROMPT}\n\nالسؤال: "${trimmed}"` }],
+              parts: [{ text: `${GEMINI_CHAT_INTENT_SYSTEM_PROMPT}\n\nالسؤال: "${trimmed}"` }],
             },
           ],
           generationConfig: {
@@ -142,24 +79,15 @@ export class GeminiService {
 
       const parsed = extractJson<{ intent?: string; period?: string | null }>(text);
       if (!parsed) return null;
-      const intent = this.normalizeIntent(parsed?.intent);
-      const period = this.normalizePeriod(parsed?.period);
+      const intent = normalizeGeminiIntent(parsed?.intent);
+      const period = normalizeGeminiPeriod(parsed?.period);
 
       return { intent, period, rawQuery: trimmed };
     } catch (err) {
       console.warn('[GeminiService] Parse error:', err);
       return null;
     }
-  }
-
-  private normalizeIntent(v: unknown): GeminiIntent {
-    const s = String(v || '').toLowerCase();
-    const valid: GeminiIntent[] = [
-      'sales', 'purchases', 'expenses', 'reports', 'vaults',
-      'invoices', 'suppliers', 'categories', 'expense_lines', 'hr', 'orders', 'help',
-      'finance_ratios', 'sales_month_compare', 'unknown',
-    ];
-    return valid.includes(s as GeminiIntent) ? (s as GeminiIntent) : 'unknown';
+    });
   }
 
   /**
@@ -172,8 +100,9 @@ export class GeminiService {
     const trimmed = (query || '').trim();
     if (!trimmed || trimmed.length > 1200) return null;
 
+    return this.geminiGate.with(async () => {
     try {
-      const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
+      const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -224,9 +153,8 @@ export class GeminiService {
       console.warn('[GeminiService] answerGeneral error:', err);
       return null;
     }
+    });
   }
-
-  private readonly logger = new Logger(GeminiService.name);
 
   /**
    * تحليل كشف حساب — خطوة 1: استخراج البيانات الوصفية ونطاق الجدول
@@ -266,8 +194,9 @@ ${textSample}
 أرجع JSON فقط:
 {"companyName":"...","reportDate":"..." أو null,"headerRow":عدد,"dataStartRow":عدد,"dataEndRow":عدد}`;
 
+    return this.geminiGate.with(async () => {
     try {
-      const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
+      const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -324,6 +253,7 @@ ${textSample}
       this.logger.warn(`Phase1 error: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
+    });
   }
 
   /**
@@ -357,8 +287,9 @@ ${sampleRows}
 (notes = ملاحظات إضافية تُدمج مع الوصف، reference = مرجع/رقم عملية)
 أرجع JSON فقط: {"0":"نوع","1":"نوع",...}`;
 
+    return this.geminiGate.with(async () => {
     try {
-      const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
+      const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -406,6 +337,7 @@ ${sampleRows}
       this.logger.warn(`Phase2 error: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
+    });
   }
 
   /**
@@ -443,8 +375,9 @@ ${headerText}
 
 أرجع JSON فقط. إذا لم تجد معلومة اتركها فارغة "".`;
 
+    return this.geminiGate.with(async () => {
     try {
-      const response = await fetch(`${getGeminiUrl()}?key=${this.apiKey}`, {
+      const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -467,13 +400,14 @@ ${headerText}
       return {
         customerName: norm(parsed.customer_name),
         bankName: norm(parsed.bank_name),
-        periodFrom: norm(parsed.period_from).slice(0, 10),
-        periodTo: norm(parsed.period_to).slice(0, 10),
+        periodFrom: toYmd(norm(parsed.period_from)),
+        periodTo: toYmd(norm(parsed.period_to)),
       };
     } catch (err) {
       this.logger.warn(`suggestBankStatementHeaderMetadata: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
+    });
   }
 
   /** تحليل كشف حساب — الطلب الموحد (Phase1 + Phase2) */
@@ -495,13 +429,4 @@ ${headerText}
     };
   }
 
-  private normalizePeriod(v: unknown): GeminiPeriod {
-    if (v === null || v === undefined) return null;
-    const s = String(v).toLowerCase();
-    const valid: GeminiPeriod[] = [
-      'today', 'yesterday', 'day_before_yesterday',
-      'this_week', 'last_week', 'this_month', 'last_month', 'year',
-    ];
-    return valid.includes(s as GeminiPeriod) ? (s as GeminiPeriod) : null;
-  }
 }

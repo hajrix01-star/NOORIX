@@ -1,4 +1,5 @@
 import { hrFmt } from '../../utils/hrFmt';
+import { toYmd } from '../../../../utils/saudiDate';
 
 export const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -55,11 +56,7 @@ export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: a
   const recs = [];
   const hrInvs = (hrInvoicesData?.items ?? []).filter((i: any) => i.status !== 'cancelled');
   for (const inv of hrInvs) {
-    const dt = inv.transactionDate
-      ? inv.transactionDate.slice
-        ? inv.transactionDate.slice(0, 10)
-        : inv.transactionDate
-      : '';
+    const dt = toYmd(inv.transactionDate);
     let typeKey = 'opAdvance';
     let typeLabel = t('opAdvance');
     if (inv.kind === 'salary') {
@@ -87,11 +84,7 @@ export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: a
     });
   }
   for (const d of deductions) {
-    const dt = d.transactionDate
-      ? d.transactionDate.slice
-        ? d.transactionDate.slice(0, 10)
-        : d.transactionDate
-      : '';
+    const dt = toYmd(d.transactionDate);
     recs.push({
       id: d.id,
       date: dt,

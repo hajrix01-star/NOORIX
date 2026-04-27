@@ -2,6 +2,11 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
+import { utcBoundsForGregorianMonth } from './orders-month-range.util';
+import { mapDtoItemsToOrderLines, orderLinesToLastPriceInputs } from './orders-lines.util';
+import { orderGregorianDateToNumberPrefix, buildOrderNumberFromPrefix } from './orders-order-number.util';
+import { aggregateOrdersMonthSummary } from './orders-month-summary.util';
+import { aggregateOrderItemsByProductForReport } from './orders-items-report-aggregate.util';
 
 type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
 
@@ -36,8 +41,7 @@ export class OrdersService {
   }
 
   async findAll(companyId: string, year: number, month: number) {
-    const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-    const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+    const { start, end } = utcBoundsForGregorianMonth(year, month);
     const orders = await this.prisma.order.findMany({
       where: { companyId, status: 'active', orderDate: { gte: start, lte: end } },
       orderBy: [{ orderDate: 'desc' }, { orderNumber: 'desc' }],
@@ -73,22 +77,14 @@ export class OrdersService {
     const tenantId = TenantContext.getTenantId();
     if (!dto.items?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
 
-    const items = dto.items.map((i) => ({
-      productId: i.productId,
-      size: i.size?.trim() || null,
-      packaging: i.packaging?.trim() || null,
-      unit: i.unit?.trim() || null,
-      quantity: new Prisma.Decimal(i.quantity || 0),
-      unitPrice: new Prisma.Decimal(i.unitPrice || 0),
-      amount: new Prisma.Decimal(i.quantity || 0).times(new Prisma.Decimal(i.unitPrice || 0)),
-    }));
+    const items = mapDtoItemsToOrderLines(dto.items);
     const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
 
-    const dateStr = dto.orderDate.replace(/-/g, '').slice(0, 8);
+    const dateStr = orderGregorianDateToNumberPrefix(dto.orderDate);
     const existing = await this.prisma.order.count({
       where: { companyId, orderNumber: { startsWith: `ORD-${dateStr}` } },
     });
-    const orderNumber = `ORD-${dateStr}-${String(existing + 1).padStart(3, '0')}`;
+    const orderNumber = buildOrderNumberFromPrefix(dateStr, existing + 1);
 
     const order = await this.prisma.order.create({
       data: {
@@ -119,7 +115,7 @@ export class OrdersService {
       },
     });
 
-    await this.updateProductLastPrices(items);
+    await this.updateProductLastPrices(orderLinesToLastPriceInputs(items));
     return order;
   }
 
@@ -135,15 +131,7 @@ export class OrdersService {
 
     if (dto.items?.length) {
       await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
-      const items = dto.items.map((i) => ({
-        productId: i.productId,
-        size: i.size?.trim() || null,
-        packaging: i.packaging?.trim() || null,
-        unit: i.unit?.trim() || null,
-        quantity: new Prisma.Decimal(i.quantity || 0),
-        unitPrice: new Prisma.Decimal(i.unitPrice || 0),
-        amount: new Prisma.Decimal(i.quantity || 0).times(new Prisma.Decimal(i.unitPrice || 0)),
-      }));
+      const items = mapDtoItemsToOrderLines(dto.items);
       const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
       await this.prisma.orderItem.createMany({
         data: items.map((i) => ({
@@ -167,7 +155,7 @@ export class OrdersService {
           ...(dto.notes !== undefined && { notes: dto.notes?.trim() || null }),
         },
       });
-      await this.updateProductLastPrices(items);
+      await this.updateProductLastPrices(orderLinesToLastPriceInputs(items));
     } else {
       await this.prisma.order.update({
         where: { id },
@@ -191,33 +179,15 @@ export class OrdersService {
   }
 
   async getSummary(companyId: string, year: number, month: number) {
-    const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-    const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+    const { start, end } = utcBoundsForGregorianMonth(year, month);
     const orders = await this.prisma.order.findMany({
       where: { companyId, status: 'active', orderDate: { gte: start, lte: end } },
     });
-    let pettyCashTotal = new Prisma.Decimal(0);
-    let delegatePurchasesTotal = new Prisma.Decimal(0);
-    let localPurchasesTotal = new Prisma.Decimal(0);
-    for (const o of orders) {
-      if (o.orderType === 'external') {
-        pettyCashTotal = pettyCashTotal.plus(o.pettyCashAmount ?? 0);
-        delegatePurchasesTotal = delegatePurchasesTotal.plus(o.totalAmount);
-      } else {
-        localPurchasesTotal = localPurchasesTotal.plus(o.totalAmount);
-      }
-    }
-    return {
-      pettyCashTotal: pettyCashTotal.toString(),
-      delegatePurchasesTotal: delegatePurchasesTotal.toString(),
-      localPurchasesTotal: localPurchasesTotal.toString(),
-      delegateBalance: pettyCashTotal.minus(delegatePurchasesTotal).toString(),
-    };
+    return aggregateOrdersMonthSummary(orders);
   }
 
   async getItemsReport(companyId: string, year: number, month: number) {
-    const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-    const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+    const { start, end } = utcBoundsForGregorianMonth(year, month);
     const items = await this.prisma.orderItem.findMany({
       where: {
         order: { companyId, status: 'active', orderDate: { gte: start, lte: end } },
@@ -228,45 +198,13 @@ export class OrdersService {
       },
     });
 
-    const byProduct = new Map<string, { product: typeof items[0]['product']; quantity: Prisma.Decimal; amount: Prisma.Decimal; orderCount: number }>();
-    for (const it of items) {
-      const key = it.productId;
-      const existing = byProduct.get(key);
-      const qty = new Prisma.Decimal(it.quantity);
-      const amt = new Prisma.Decimal(it.amount);
-      if (existing) {
-        existing.quantity = existing.quantity.plus(qty);
-        existing.amount = existing.amount.plus(amt);
-        existing.orderCount += 1;
-      } else {
-        byProduct.set(key, {
-          product: it.product,
-          quantity: qty,
-          amount: amt,
-          orderCount: 1,
-        });
-      }
-    }
-
-    return Array.from(byProduct.values()).map((v) => ({
-      productId: v.product.id,
-      productNameAr: v.product.nameAr,
-      productNameEn: v.product.nameEn,
-      categoryId: v.product.categoryId,
-      categoryNameAr: v.product.category?.nameAr,
-      categoryNameEn: v.product.category?.nameEn,
-      unit: v.product.unit,
-      quantity: v.quantity.toString(),
-      amount: v.amount.toString(),
-      orderCount: v.orderCount,
-    }));
+    return aggregateOrderItemsByProductForReport(items);
   }
 
   async getProductPurchaseHistory(companyId: string, productId: string, year?: number, month?: number) {
     const orderWhere: Record<string, unknown> = { companyId, status: 'active' };
     if (year && month) {
-      const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-      const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+      const { start, end } = utcBoundsForGregorianMonth(year, month);
       orderWhere.orderDate = { gte: start, lte: end };
     }
     const items = await this.prisma.orderItem.findMany({
@@ -289,8 +227,7 @@ export class OrdersService {
   async getCategoryPurchaseHistory(companyId: string, categoryId: string, year?: number, month?: number) {
     const orderWhere: Record<string, unknown> = { companyId, status: 'active' };
     if (year && month) {
-      const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-      const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+      const { start, end } = utcBoundsForGregorianMonth(year, month);
       orderWhere.orderDate = { gte: start, lte: end };
     }
     const items = await this.prisma.orderItem.findMany({

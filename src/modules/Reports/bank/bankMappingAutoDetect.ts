@@ -2,7 +2,6 @@
  * اكتشاف تلقائي لصف العناوين والأعمدة — منقول من BankColumnMapper.jsx (Base44)
  * نفس الكلمات المفتاحية ونفس ترتيب المنطق.
  */
-// @ts-nocheck — صفوف استيراد ديناميكية: تثبيت أنواع تدريجي
 import { formatSaudiDateISO } from '../../../utils/saudiDate';
 
 /**

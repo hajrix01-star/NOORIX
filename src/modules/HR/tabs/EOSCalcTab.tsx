@@ -21,7 +21,7 @@ import { parseWorkHours } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input , FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
-import { getSaudiToday } from '../../../utils/saudiDate';
+import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -118,7 +118,7 @@ export default function EOSCalcTab() {
     if (!selectedEmployee) return;
     const em = employees.find((row: any) => row.id === selectedEmployee);
     if (!em) return;
-    setJoinDate(em.joinDate ? em.joinDate.slice(0, 10) : '');
+    setJoinDate(toYmd(em.joinDate));
     const total = new Decimal(em.basicSalary || 0)
       .plus(em.housingAllowance || 0)
       .plus(em.transportAllowance || 0)
@@ -306,11 +306,11 @@ export default function EOSCalcTab() {
       </div>
 
       <div className="mb-4">
-        <Input type="date" label={t('eosCalcJoinDate')} value={jd ? jd.slice(0, 10) : ''} onChange={(e: any) => setJoinDate(e.target.value)} />
+        <Input type="date" label={t('eosCalcJoinDate')} value={jd ? toYmd(jd) : ''} onChange={(e: any) => setJoinDate(e.target.value)} />
       </div>
 
       <div className="mb-4">
-        <Input type="date" label={t('eosCalcEndDate')} value={ed ? ed.slice(0, 10) : ''} onChange={(e: any) => setEndDate(e.target.value)} />
+        <Input type="date" label={t('eosCalcEndDate')} value={ed ? toYmd(ed) : ''} onChange={(e: any) => setEndDate(e.target.value)} />
       </div>
 
       <div className="mb-5">

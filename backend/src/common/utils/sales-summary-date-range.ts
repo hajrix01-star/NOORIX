@@ -2,6 +2,8 @@
  * تقييد نطاق استعلام ملخصات المبيعات إلى آخر N يوماً تقويمياً (توقيت السعودية)، شاملاً يوم النهاية.
  * يُستخدم مع مستخدمين لا يملكون SALES_FULL_HISTORY.
  */
+import { toYmd } from './to-ymd.util';
+
 function saudiTodayYmd(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Riyadh',
@@ -18,7 +20,7 @@ function saudiTodayYmd(): string {
 
 function sliceYmd(s?: string): string | undefined {
   if (!s) return undefined;
-  const t = String(s).slice(0, 10);
+  const t = toYmd(s);
   return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : undefined;
 }
 
@@ -33,7 +35,7 @@ function maxYmd(a: string, b: string): string {
 function addDaysYmd(ymd: string, delta: number): string {
   const [y, mo, d] = ymd.split('-').map((x) => parseInt(x, 10));
   const dt = new Date(Date.UTC(y, mo - 1, d + delta));
-  return dt.toISOString().slice(0, 10);
+  return toYmd(dt);
 }
 
 export function clampSalesSummaryDateQuery(

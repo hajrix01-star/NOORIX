@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toDateInputYmd, getSaudiToday } from './saudiDate';
+import { toDateInputYmd, getSaudiToday, toYmd } from './saudiDate';
 
 describe('toDateInputYmd', () => {
   it('returns empty for empty, null, and undefined', () => {
@@ -20,5 +20,26 @@ describe('toDateInputYmd', () => {
 describe('getSaudiToday', () => {
   it('returns a YYYY-MM-DD string', () => {
     expect(getSaudiToday()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe('toYmd', () => {
+  it('returns first 10 chars for ISO strings', () => {
+    expect(toYmd('2024-03-05T12:00:00.000Z')).toBe('2024-03-05');
+  });
+  it('trims surrounding whitespace', () => {
+    expect(toYmd('  2024-03-05T00:00:00Z  ')).toBe('2024-03-05');
+  });
+  it('returns empty for nullish', () => {
+    expect(toYmd(null)).toBe('');
+    expect(toYmd('')).toBe('');
+  });
+
+  it('formats Date as UTC calendar day (matches backend toYmd)', () => {
+    expect(toYmd(new Date(Date.UTC(2024, 5, 15)))).toBe('2024-06-15');
+  });
+
+  it('returns empty for invalid Date', () => {
+    expect(toYmd(new Date(NaN))).toBe('');
   });
 });

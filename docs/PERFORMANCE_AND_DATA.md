@@ -9,7 +9,7 @@
 - **React Query** هو المعيار المعتمد:
   - **البيانات المرجعية**: قوائم الموردين، الخزائن، التصنيفات — تُجلب عبر `useQuery` مع `queryKey` موحد (مثل `['suppliers', companyId]`).
   - **الإحصائيات والتجميعات**: لوحة التحكم، أرصدة الخزائن — تُجلب عبر `useQuery` مع مفاتيح مناسبة.
-- **الإبطال**: بعد أي mutation مالي استدعِ `invalidateOnFinancialMutation(queryClient)` من `utils/queryInvalidation.js` — يبطل تلقائياً: invoices, vaults, sales-summaries, ledger, reports. يضمن تحديث التقارير والقوائم مباشرة دون تحديث يدوي.
+- **الإبطال**: بعد أي mutation مالي استدعِ `invalidateOnFinancialMutation(queryClient)` من `utils/queryInvalidation.ts` — يبطل تلقائياً بادئات واسعة تشمل: invoices، vaults، **payment-vaults**، sales-summaries، **sales-channels**، ledger، reports، **categories**، **company** (كيان الشركة في الشاشات المالية)، **vat-planning**، **كشوف البنك**، **لوحة المالك** (`owner-daily-sales`)، **طلبات**، **OCR** (بما فيها عناصر/تنبيهات/طابور المراجعة واقتراحات ربط كتالوج الموردين `ocr-catalog-accounting-suggestions`)، HR المرتبط بالمال، إلخ. يضمن تحديث التقارير والقوائم مباشرة دون تحديث يدوي.
 - **الهوكات**: `useSales`, `useInvoices`, `useSuppliers`, `useVaults`, `useCategories` — كلها تستخدم React Query وتُبطل الكاش في `onSuccess`.
 
 ---

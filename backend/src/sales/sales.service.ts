@@ -8,6 +8,7 @@ import { Injectable }           from '@nestjs/common';
 import { Prisma }                from '@prisma/client';
 import { TenantPrismaService }   from '../prisma/tenant-prisma.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { toYmd } from '../common/utils/to-ymd.util';
 
 @Injectable()
 export class SalesService {
@@ -84,8 +85,8 @@ export class SalesService {
       { summaryNumber: 'asc' },
     ];
 
-    const y0 = String(ranges.yearStart).slice(0, 10);
-    const y1 = String(ranges.yearEnd).slice(0, 10);
+    const y0 = toYmd(ranges.yearStart);
+    const y1 = toYmd(ranges.yearEnd);
     const yearWhere: Prisma.DailySalesSummaryWhereInput = {
       companyId,
       ...statusFilter,
@@ -101,8 +102,8 @@ export class SalesService {
             companyId,
             ...statusFilter,
             transactionDate: {
-              gte: new Date(`${String(ranges.dailyStart).slice(0, 10)}T00:00:00.000Z`),
-              lte: new Date(`${String(ranges.dailyEnd).slice(0, 10)}T23:59:59.999Z`),
+              gte: new Date(`${toYmd(ranges.dailyStart)}T00:00:00.000Z`),
+              lte: new Date(`${toYmd(ranges.dailyEnd)}T23:59:59.999Z`),
             },
           }
         : null;
@@ -113,8 +114,8 @@ export class SalesService {
             companyId,
             ...statusFilter,
             transactionDate: {
-              gte: new Date(`${String(ranges.monthStart).slice(0, 10)}T00:00:00.000Z`),
-              lte: new Date(`${String(ranges.monthEnd).slice(0, 10)}T23:59:59.999Z`),
+              gte: new Date(`${toYmd(ranges.monthStart)}T00:00:00.000Z`),
+              lte: new Date(`${toYmd(ranges.monthEnd)}T23:59:59.999Z`),
             },
           }
         : null;
@@ -166,10 +167,10 @@ export class SalesService {
         ? {
             transactionDate: {
               ...(startDate
-                ? { gte: new Date(`${String(startDate).slice(0, 10)}T00:00:00.000Z`) }
+                ? { gte: new Date(`${toYmd(startDate)}T00:00:00.000Z`) }
                 : {}),
               ...(endDate
-                ? { lte: new Date(`${String(endDate).slice(0, 10)}T23:59:59.999Z`) }
+                ? { lte: new Date(`${toYmd(endDate)}T23:59:59.999Z`) }
                 : {}),
             },
           }
@@ -253,7 +254,7 @@ export class SalesService {
     }
 
     return this.financialCore.updateInflow(id, companyId, {
-      transactionDate: dto.transactionDate ?? summary.transactionDate.toISOString().slice(0, 10),
+      transactionDate: dto.transactionDate ?? toYmd(summary.transactionDate),
       customerCount:   dto.customerCount ?? summary.customerCount,
       cashOnHand:      dto.cashOnHand ?? String(summary.cashOnHand),
       channels:        dto.channels,

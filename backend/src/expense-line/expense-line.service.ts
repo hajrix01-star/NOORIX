@@ -5,6 +5,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
+import { toYmd } from '../common/utils/to-ymd.util';
 import { CreateExpenseLineDto } from './dto/create-expense-line.dto';
 import { UpdateExpenseLineDto } from './dto/update-expense-line.dto';
 
@@ -57,8 +58,8 @@ export class ExpenseLineService {
       startDate || endDate
         ? {
             transactionDate: {
-              ...(startDate ? { gte: new Date(`${String(startDate).slice(0, 10)}T00:00:00.000Z`) } : {}),
-              ...(endDate ? { lte: new Date(`${String(endDate).slice(0, 10)}T23:59:59.999Z`) } : {}),
+              ...(startDate ? { gte: new Date(`${toYmd(startDate)}T00:00:00.000Z`) } : {}),
+              ...(endDate ? { lte: new Date(`${toYmd(endDate)}T23:59:59.999Z`) } : {}),
             },
           }
         : {};

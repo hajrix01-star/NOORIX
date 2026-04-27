@@ -48,4 +48,10 @@ export class FinancialCoreService {
   cancelOperation(...a: Parameters<FinancialCancelService['cancelOperation']>) {
     return this.cancel.cancelOperation(...a);
   }
+
+  syncActiveLedgerTransactionDateForOutflowInvoice(
+    ...a: Parameters<FinancialOutflowService['syncActiveLedgerTransactionDateForOutflowInvoice']>
+  ) {
+    return this.outflow.syncActiveLedgerTransactionDateForOutflowInvoice(...a);
+  }
 }

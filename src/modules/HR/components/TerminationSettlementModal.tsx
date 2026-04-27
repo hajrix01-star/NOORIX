@@ -11,7 +11,7 @@ import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { useVaults } from '../../../hooks/useVaults';
 import { getInvoices, getMovements, uploadDocumentFile, createInvoice, createMovement } from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
-import { formatSaudiDate } from '../../../utils/saudiDate';
+import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { totalSalary } from '../utils/employeeSalaryMath';
@@ -23,7 +23,7 @@ import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, Modal, FmtNum, Input } from '../../../ui';
 
 function payrollMonthFirstDay(terminationYmd: any) {
-  const s = String(terminationYmd || '').slice(0, 10);
+  const s = toYmd(terminationYmd);
   if (s.length < 7) return null;
   return `${s.slice(0, 7)}-01`;
 }
@@ -34,11 +34,11 @@ function esc(v: any) {
 
 function effectiveEndYmd(pr: any, fallbackYmd: any) {
   if (pr?.effectiveEnd) return toLocalDayKey(new Date(pr.effectiveEnd));
-  return String(fallbackYmd || '').slice(0, 10);
+  return toYmd(fallbackYmd);
 }
 
 function lastDayOfMonthYmd(monthFirstYmd: any) {
-  const s = String(monthFirstYmd || '').slice(0, 10);
+  const s = toYmd(monthFirstYmd);
   const parts = s.split('-');
   const y = Number(parts[0]);
   const m = Number(parts[1]);
@@ -48,12 +48,12 @@ function lastDayOfMonthYmd(monthFirstYmd: any) {
 
 /** وسم في ملاحظة الفاتورة لمنع أكثر من تسوية إنهاء لنفس الموظف ونفس شهر المسيرة */
 function terminationSalaryInvoiceTag(employeeId: any, monthFirstYmd: any) {
-  const ym = String(monthFirstYmd || '').slice(0, 7);
+  const ym = toYmd(monthFirstYmd).slice(0, 7);
   return `[NOORIX_TERM_SALARY:${employeeId}:${ym}]`;
 }
 
 async function findTerminationSalaryInvoiceThisMonth(companyId: any, employeeId: any, monthFirstYmd: any, tag: any) {
-  const from = String(monthFirstYmd).slice(0, 10);
+  const from = toYmd(monthFirstYmd);
   const to = lastDayOfMonthYmd(from);
   const res = await getInvoices(companyId, from, to, 1, 100, null, employeeId, 'salary');
   if (!res?.success) return null;
@@ -106,7 +106,7 @@ export default function TerminationSettlementModal({
   const empId = employee?.id || '';
   const terminationYmd = useMemo(() => {
     const m = parseEmployeeNotesMeta(employee?.notes).meta?.terminationDate;
-    return m ? String(m).slice(0, 10) : '';
+    return m ? toYmd(m) : '';
   }, [employee?.notes]);
 
   const { paymentVaults = [] } = useVaults({ companyId });
@@ -263,7 +263,7 @@ export default function TerminationSettlementModal({
       showToast(t('terminationSettlementSelectVault'), 'error');
       return;
     }
-    const txDay = String(txDateStr || '').slice(0, 10);
+    const txDay = toYmd(txDateStr);
     if (txDay.length !== 10) {
       showToast(t('saveFailed'), 'error');
       return;
@@ -287,7 +287,7 @@ export default function TerminationSettlementModal({
       const nameAr = employeeDisplayName(employee, 'ar', '');
       const lw = lastWorkYmd || terminationYmd;
       const baseNotes =
-        `راتب إنهاء خدمة — ${nameAr} — آخر يوم دوام ${lw} — شهر ${String(monthFirst).slice(0, 7)} ` +
+        `راتب إنهاء خدمة — ${nameAr} — آخر يوم دوام ${lw} — شهر ${toYmd(monthFirst).slice(0, 7)} ` +
         `(متناسب تقديري ${hrFmt(preview.grossProrated)}، سلف معلقة ${hrFmt(advancesRemaining)})`;
       const tag = termSalaryTag;
       let bodyNotes = baseNotes.trim();
@@ -450,7 +450,7 @@ export default function TerminationSettlementModal({
               <Input
                 type="date"
                 label={t('terminationSettlementTransactionDate')}
-                value={txDateStr.slice(0, 10)}
+                value={toYmd(txDateStr)}
                 onChange={(e: any) => setTxDateStr(e.target.value)}
               />
               <Input

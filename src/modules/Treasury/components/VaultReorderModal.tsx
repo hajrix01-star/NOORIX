@@ -1,5 +1,5 @@
 ﻿/**
- * VaultReorderModal ظ¤ ╪ز╪▒╪ز┘è╪ذ ╪د┘╪«╪▓╪د╪خ┘ ╪د┘┘╪┤╪╖╪ر (┘è┘╪╣┘â╪│ ┘┘è ╪د┘┘à╪ذ┘è╪╣╪د╪ز ┘ê┘é┘ê╪د╪خ┘à ╪د┘╪│╪»╪د╪»)
+ * Reorder active vaults (used in sales and payment flows).)
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';

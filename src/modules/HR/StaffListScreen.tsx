@@ -1,6 +1,4 @@
-﻿/**
- * StaffListScreen ظ¤ ┘é╪د╪خ┘à╪ر ╪د┘┘à┘ê╪╕┘┘è┘ (╪د╪ص╪ز╪▒╪د┘┘è ┘â╪د┘à┘)
- */
+﻿/** Staff list: full employee directory (active, terminated, archived). */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
@@ -62,7 +60,7 @@ export default function StaffListScreen({ embedded }: any) {
     date: getSaudiToday(),
   });
   const [showImportExport, setShowImportExport] = useState(false);
-  /** ╪ذ╪╣╪» ┘╪ش╪د╪ص ╪د┘┘╪╡┘ ظ¤ ╪╣╪▒╪╢ ┘à┘╪«╪╡ ╪╡╪▒┘/╪╖╪ذ╪د╪╣╪ر/╪▒┘╪╣ ┘à╪│╪ز┘╪» */
+  /** After termination wizard — optional settlement invoice modal */
   const [terminationSettlementEmp, setTerminationSettlementEmp] = useState<any>(null);
   const terminationReasonOptions = [
     t('terminationReasonOptionArt80'),
@@ -116,7 +114,7 @@ export default function StaffListScreen({ embedded }: any) {
         sortBy: sortKey,
         sortDir,
       });
-      throwIfApiFailed(res, '┘╪┤┘ ╪ز╪ص┘à┘è┘ ╪د┘┘à┘ê╪╕┘┘è┘');
+      throwIfApiFailed(res, t('employeesLoadFailed'));
       return res;
     },
     enabled: !!companyId,
@@ -173,7 +171,7 @@ export default function StaffListScreen({ embedded }: any) {
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120,
-      render: (v: any) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={v || ''}>{v || 'ظ¤'}</span> },
+      render: (v: any) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={v || ''}>{v || '—'}</span> },
     { key: 'name', label: t('employeeName'), sortable: true, width: 200,
       render: (_: any, row: any) => (
         <Button
@@ -186,7 +184,7 @@ export default function StaffListScreen({ embedded }: any) {
         </Button>
       ) },
     { key: 'jobTitle', label: t('jobTitle'), sortable: true, width: 170,
-      render: (v: any) => <span className="nx-cell-muted">{v || 'ظ¤'}</span> },
+      render: (v: any) => <span className="nx-cell-muted">{v || '—'}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125,
       render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140,
@@ -199,13 +197,13 @@ export default function StaffListScreen({ embedded }: any) {
             key: 'terminationReason',
             label: t('terminationReason'),
             width: 190,
-            render: (v: any) => <span className="nx-cell-muted">{v || 'ظ¤'}</span>,
+            render: (v: any) => <span className="nx-cell-muted">{v || '—'}</span>,
           },
           {
             key: 'terminationClause',
             label: t('terminationClause'),
             width: 140,
-            render: (v: any) => <span className="nx-cell-muted">{v || 'ظ¤'}</span>,
+            render: (v: any) => <span className="nx-cell-muted">{v || '—'}</span>,
           },
         ]
       : []),
@@ -270,11 +268,11 @@ export default function StaffListScreen({ embedded }: any) {
         const meta = parsed.meta || {};
         return {
           ...formatEmployeeForExport(e, allowanceTotals),
-          '╪ز╪د╪▒┘è╪« ╪د┘╪د┘╪ز╪ص╪د┘é': formatSaudiDate(e.joinDate),
-          '╪د┘╪ص╪د┘╪ر': (STATUS_MAP as Record<string, { label?: string }>)[String(e.status)]?.label || e.status,
-          '╪│╪ذ╪ذ ╪ح┘┘ç╪د╪ة ╪د┘╪«╪»┘à╪ر': meta.terminationReason || '',
-          '╪د┘╪ذ┘╪»': meta.terminationClause || '',
-          '╪ز╪د╪▒┘è╪« ╪ح┘┘ç╪د╪ة ╪د┘╪«╪»┘à╪ر': meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
+          [t('employeesExcelColJoinDate')]: formatSaudiDate(e.joinDate),
+          [t('employeesExcelColStatus')]: (STATUS_MAP as Record<string, { label?: string }>)[String(e.status)]?.label || e.status,
+          [t('employeesExcelColTerminationReason')]: meta.terminationReason || '',
+          [t('employeesExcelColTerminationClause')]: meta.terminationClause || '',
+          [t('employeesExcelColTerminationDate')]: meta.terminationDate ? formatSaudiDate(meta.terminationDate) : '',
         };
       });
       exportToExcel(rows, 'employees.xlsx', EMPLOYEE_EXCEL_EXPORT_OPTS);
@@ -373,7 +371,7 @@ export default function StaffListScreen({ embedded }: any) {
   const renderMobileCard = useCallback((row: any) => (
     <div>
       <div className="nx-mc__header mb-1">
-        <span className="nx-cell-num nx-cell-muted-sm">{row.employeeSerial || 'ظ¤'}</span>
+        <span className="nx-cell-num nx-cell-muted-sm">{row.employeeSerial || '—'}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
       </div>
       <Button
@@ -414,7 +412,7 @@ export default function StaffListScreen({ embedded }: any) {
       embedded={!!embedded}
       className={cn(
         embedded &&
-          /* ┘┘╪│ ╪ح┘è┘é╪د╪╣ ╪د┘╪ز╪ذ┘ê┘è╪ذ╪د╪ز ╪د┘╪ث╪«╪▒┘ë (ScreenShell page = py-4) ╪ص╪ز┘ë ┘╪د ╪ز┘╪ز╪╡┘é ╪ث╪▓╪▒╪د╪▒ ╪د┘╪╣╪▒╪╢ ╪ذ╪┤╪▒┘è╪╖ ╪د┘╪ز╪ذ┘ê┘è╪ذ╪د╪ز */
+          /* Match other HR tabs top padding when nested under ScreenShell */
           'pt-4',
       )}
     >
@@ -453,7 +451,7 @@ export default function StaffListScreen({ embedded }: any) {
             onImportSuccess={(count: any) => {
               queryClient.invalidateQueries({ queryKey: ['employees'] });
               queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
-              showToast(`╪ز┘à ╪د╪│╪ز┘è╪▒╪د╪» ${count} ┘à┘ê╪╕┘ ╪ذ┘╪ش╪د╪ص`, 'success');
+              showToast(t('employeesImportSuccessCount', String(count)), 'success');
             }}
           />
 
@@ -498,7 +496,7 @@ export default function StaffListScreen({ embedded }: any) {
             onPageChange={setListPage}
             isLoading={isLoading}
             isError={!!employeesError}
-            errorMessage={employeesError?.message || '┘╪┤┘ ╪ز╪ص┘à┘è┘ ╪د┘┘à┘ê╪╕┘┘è┘'}
+            errorMessage={employeesError?.message || t('employeesLoadFailed')}
             title={t('employeesList')}
             badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
             searchValue={searchInput}

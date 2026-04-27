@@ -6,11 +6,18 @@
 
 **هذا المستند = خطة إصلاح/تطبيع شاملة على مستوى احترافي** بمعنى: أولويات (P0–P3)، DRY، أمان بيانات، وحدود لأحجام الملفات — مع إدراك أن “الشمول” **لا** تعني دمج كل المهام في تذكرة واحدة؛ التنفيذ **على موجات (PR) صغيرة** يحفظ جودة المراجعة.
 
+**مسار `toYmd` — مغلق (2026-04-27):** واجهة (`saudiDate.ts`) + خادم (`to-ymd.util.ts`) + اختبارات + قاعدة Cursor — [date-ymd-helpers.mdc](../.cursor/rules/date-ymd-helpers.mdc). لا تذاكر جديدة إلا عند إضافة مسار تاريخ يخرج عن القاعدة الموثّقة.
+
 **الخطوات التالية (ترتيب التنفيذ):**
 1. **إكمال P0** (انظر قسم 3) — الأمان والنظافة: عدم تتبّع `uploads/`, إخفاء تفاصيل 500 في الإنتاج, `JWT` من مصدر واحد, حذف `prisma` من واجهة `package.json` عند عدم الاستعمال, و(Volume/mount أو خطة S3) للمرفقات. هذا “السقف المؤسسي” الأدنى.
 2. **P1** — DRY وسلامة: `extract-json.util`, تفعيل `OcrCorrectionRule` في `enrichExtraction`, dynamic import لكشف البنك, مراجعة كل `validateJournalBalance`.
-3. **P2** — إزالة المكررات (تواريخ, `cacheHelper`) + `PartialType`/`CompanyId` على **دفعات** + فهارس + اختبارات ماليّة مستهدفة.
-4. **P3** — TypeScript تدريجي, BullMQ, مراقبة, object storage, حدود API — حسب البنية.
+3. **P2** — إزالة المكررات (تواريخ عبر **`toYmd`** …) + `cacheHelper` + `PartialType`/`CompanyId` + فهارس `LedgerEntry` — **مُغلق في §3** (بما فيه مسار **`toYmd`** بالكامل).
+4. **P3** — خط الأساس في الكود: طابور Bull لـ OCR، `ThrottlerModule`، حد التزامن لـ Gemini، متغيرات بيئة للمراقبة/التخزين — انظر §3 (P3-1…P3-4) و`backend/.env.example`.
+
+**ما بعد إغلاق 360 ومسار التواريخ — موجات تطوير مقترحة (ليست P0–P3):**
+1. **ميثاق حجم الملفات:** عند تغيير خدمة ثقيلة (`*.service.ts` أو ما يعادلها)، التقسيم نحو ≤450 سطر حيث ينطبق — مثال معروف: `financial-core.service.monolith.ts` (يُقسَّم عند أول تغيير جوهري، لا «حذفاً فورياً» دون حاجة).
+2. **الواجهة:** [FRONTEND_CENTRALIZATION_CHECKLIST.md](FRONTEND_CENTRALIZATION_CHECKLIST.md) — عند إضافة مفاتيح React Query مالية جديدة، وسّع `invalidateOnFinancialMutation` في `src/utils/queryInvalidation.ts` (مثال 2026-04-27: كشوف بنك + `owner-daily-sales`)؛ راجع [PERFORMANCE_AND_DATA.md](PERFORMANCE_AND_DATA.md) ودليل التشغيل [REPOSITORY_MAINTENANCE_RUNBOOK.md](REPOSITORY_MAINTENANCE_RUNBOOK.md).
+3. **اختياري (تشغيل):** `SENTRY_DSN`، تخزين مرفقات سحابي (S3/B2) — عند جاهزية البنية؛ متغيرات في `.env` دون كسر التشغيل الحالي.
 
 **ميثاق الجودة والنظافة والحجم (PR):**
 | محور | الالتزام |
@@ -33,33 +40,33 @@
 |---|--------------|------------|-------------------------|------------|
 | **نقاط القوة (إيجابي)** |
 | S1 | LedgerEntry + double entry | ممتاز | ✅ (منسجم مع `financial-core` و`validateJournalBalance`) | قاعدة منطقية قوية للتوسع. |
-| S2 | `FinancialCoreService` كمدخل | ممتاز | ⏳ | مبدأ “مدخل واحد” صحيح؛ يتطلب مراجعة أن لا يبقى أي مسار جانبي. |
+| S2 | `FinancialCoreService` كمدخل | ممتاز | ✅ إنشاء/تحديث القيود عبر `financial-core` (`processOutflow`، `processInflow`، `processTransfer`، `cancelOperation`، إعادة بناء القيود)؛ مزامنة `transaction_date` للفواتير عبر `syncActiveLedgerTransactionDateForOutflowInvoice` من `invoice.service`. **استثناء موثّق:** `backup-logical-import.service` (استيراد لقطة منطقية). | عند مسار مالي جديد يجب أن يمر بالمحرك أو يُوثَّق الاستثناء. |
 | S3 | `$transaction` ذرّي | ممتاز | ✅ (أنماط `withTenant`/`$transaction` في الملفات المعروفة) | يلزم الاستمرار في مراجعات الـ PR. |
 | S4 | Decimal.js | ممتاز | ✅ (backend + frontend `package.json`) | لا تخفف الدقة دون سبب. |
-| S5 | RLS + Auth + guards + ValidationPipe + rate limit | ممتاز مبدئياً | ⏳ (أرقام 41 جدول / 218 endpoint = تحتاج سكريبت تدقيق) | **لا تعتمد على الأرقام دون توليد تلقائي من الكود/الـ DB**. |
-| S6 | واجهة: tokens، RTL، PWA… | ممتاز كاتجاه | ⏳ | الاتساق مهم عند إضافة شاشات جديدة. |
-| S7 | طبقة OCR (جداول، gemini، تطبيع) | ممتاز كتصميم | ✅ أجزاء من `ocr-invoices.service` | مازال `enrichExtraction` بدون `OcrCorrectionRule` (انظر [12]). |
+| S5 | RLS + Auth + guards + ValidationPipe + rate limit | ممتاز مبدئياً | ✅ `prisma/rls_setup.sql` + `tenantId` على النماذج؛ `ThrottlerModule` في `app.module.ts`؛ تدقيق تلقائي: `npm run audit:http-surface` في `backend` (يُخرج عدد controllers ومسارات HTTP تقريبية وعدد نماذج Prisma). | أعد تشغيل السكربت بعد إضافة وحدات كبيرة؛ RLS يتطلب تطبيق SQL على الـ DB. |
+| S6 | واجهة: tokens، RTL، PWA… | ممتاز كاتجاه | ✅ تصميم Noorix: `src/constants/kpiCardTheme`، `src/ui`، `useUiDir`، i18n؛ شاشات جديدة — قواعد المشروع تحت `.cursor/rules/` (ألوان، استجابة، مكوّنات). | مراجعة بصرية عند تغييرات UI كبيرة. |
+| S7 | طبقة OCR (جداول، gemini، تطبيع) | ممتاز كتصميم | ✅ `ocr-extraction.service` — `applyCorrections` قبل مطابقة المورد/الأصناف | يُراجع مع كل تغيير على مسار الاستخراج. |
 | **🔴 حرجة** |
-| 1 | ملفات HR حقيقية في `git` | **يجب عدم تتبع** بيانات حقيقية | ⚠️ المسار `backend/uploads/...` **غير وُجد** في المسح هنا؛ `.gitignore` **لا** يتضمّن `uploads/**` | المبدأ حرج دائماً: أضف `uploads` للـ ignore، `git rm --cached` لأي أثر، BFG لتاريخ قديم. |
-| 2 | `uploads/` بلا VOLUME / mount | **صحيح للإنتاج** | ✅ `backend/Dockerfile` بدون `VOLUME` | الملفات داخل الـ image تُعاد بلا حجم ثابت؛ يلزم volume أو S3. |
-| 3 | `prisma` + `@prisma/client` في فرونت | **صحيح** (زائد عن الحاجة) | ✅ `package.json` (الجذر) يتضمّمها | أزل من الواجهة إن لم تُستورد فعلياً. |
-| 4 | `extractJson` مكرر ×3 | **صحيح** (DRY + BOM) | ✅ ثلاث دوال باسم واحد في `app.service` / `gemini.service` / `ocr-invoices.service` | ارفع `backend/src/common/utils/extract-json.util.ts` ووحّد (مع إزالة BOM). |
-| 5 | `HttpExceptionFilter` يكشف `Error.message` | **جزئياً صحيح** | ⚠️ P2002/P2003 مُنقّحة؛ **أي خطأ `Error` آخر** يرسل `message` كما هو | عطّل الرسالة التفصيلية لـ 500 عند `NODE_ENV=production` (مع الإبقاء في السجلات). |
+| 1 | ملفات HR حقيقية في `git` | **يجب عدم تتبع** بيانات حقيقية | ✅ `backend/uploads/` في `.gitignore`؛ لا تتبّع تحت `git ls-files` (انظر §3 P0-1) | عند تسرّب تاريخي: `filter-repo` / BFG + تدوير مفاتيح. |
+| 2 | `uploads/` بلا VOLUME / mount | **صحيح للإنتاج** | ✅ `VOLUME ["/app/uploads"]` في `Dockerfile` + توثيق النشر | الملفات داخل الـ image بدون mount تُفقد عند إعادة النشر؛ ربط volume أو S3. |
+| 3 | `prisma` + `@prisma/client` في فرونت | **صحيح** (زائد عن الحاجة) | ✅ لا `prisma` / `@prisma/client` في `package.json` جذر الواجهة (2026-04-27). | لا تُعاد إضافتهما دون استعمال فعلي في الواجهة. |
+| 4 | `extractJson` مكرر ×3 | **صحيح** (DRY + BOM) | ✅ `extract-json.util.ts` + استيراد في `app.service` / `gemini.service`؛ مسار OCR طويل عبر `ocr-llm-json.util.ts`. | أي مسار LLM جديد يعيد استخدام نفس الأدوات. |
+| 5 | `HttpExceptionFilter` يكشف `Error.message` | **جزئياً صحيح** | ✅ `http-exception.filter.ts`: في `production` — `Error` عام غير Prisma → رسالة عامة؛ Prisma غير P2002/3 → «خطأ في قاعدة البيانات»؛ التفاصيل في `logger`. | راجع أي `HttpException` يدوي لا يكشف أسراراً. |
 | **🟡 متوسطة** |
 | 6 | `cacheHelper.js` ميّت | **مرجح صحيح** | ✅ `initGlobalCacheManager` في `main.jsx` | ربط بـ RQ persister أو إزالة لتقليل تعقيد. |
-| 7 | `JWT_SECRET` مكرر ×4 | **صحيح** | ✅ نفس الـ fallback في 4 ملفات | `jwt.config.ts` مصدر واحد. |
-| 8 | `getSaudiNow` / توحيد تاريخ | **مبدأ إيجابي** | ⏳ | `saudiDate.js` موجود؛ يُفضّل استيراد موحّد. |
-| 9 | `bankStatementExportPrint` static `xlsx-js-style` | **صحيح** | ✅ `import XLSXmod from 'xlsx-js-style'` في الملف | حوّل لـ `import()` داخل دالة التصدير فقط. |
-| 10 | `validateJournalBalance` “شكلية” | **مُنقح** | ⚠️ **مسارات الصرف الحالية (215، 343، 660)** تمرّر `total` مقابل `splits` | التقرير كان لنسخة قديمة؛ **راجع** باقي الاستدعاءات (مثلاً transfer 1236 يمرّر نفس المبلغ عمداً لأنها عملية 1:1). |
+| 7 | `JWT_SECRET` مكرر ×4 | **صحيح** | ✅ `jwt.config.ts` (`getJwtSecret`، `JWT_DEV_FALLBACK`)؛ التوقيع في `AuthModule` يقرأ `JWT_DEV_FALLBACK` من نفس الملف؛ التحقق الإلزامي في prod في `main.ts` / `AuthModule`. | لا تُعرّف fallback جديداً خارج `jwt.config.ts`. |
+| 8 | `getSaudiNow` / توحيد تاريخ | **مبدأ إيجابي** | ✅ `toYmd` في الواجهة (`saudiDate.ts`) وفي الخادم (`backend/src/common/utils/to-ymd.util.ts`)؛ **`apiEndpoints`:** `sales-summaries`، `invoices`، `connection-bank`، `reports`، `accounts-categories-expense`، `hr`؛ خدمات Nest رئيسية (مبيعات، فواتير، بنك، تقارير فترة، خزائن، HR، OCR، Gemini metadata). | `toYmd` للنصوص ولمفاتيح الـ API؛ `Date` يُعامل يوم UTC (مثل الخادم). لحقول التقويم بتوقيت الرياض: `toDateInputYmd` في الواجهة. |
+| 9 | `bankStatementExportPrint` static `xlsx-js-style` | **صحيح** | ✅ `await import('xlsx-js-style')` داخل دوال التصدير (`bankStatementExportPrint.ts`). | — |
+| 10 | `validateJournalBalance` “شكلية” | **مُنقح** | ✅ تدقيق 2026-04-27: الصرف يقارن `totalAmount` بمجموع `splits`؛ الإيراد يقارن قنوات الخزنة بـ net+ضريبة لكل قناة؛ التحويل 1:1 (مدين/دائن بنفس المبلغ). | عند مسار مالي جديد أضف استدعاءً صريحاً + اختباراً إن أمكن. |
 | 11 | `nowSaudi` مع `en-CA` | **مُنقح** | ✅ `date-utils.ts` يستعمل **`sv-SE`** ويوثّق السبب | **تمت المعالجة في الكود الحالي**؛ أعد فتح البند فقط إذا وُجد مسار تاريخ آخر. |
-| 12 | `OcrCorrectionRule` لا يُقرأ في `enrichExtraction` | **صحيح** | ✅ `enrichExtraction` (من ~535) يبدأ بمورد/أصناف بدون `ocrCorrectionRule` | اقرأ `confirmed` rules وطبّق substitution قبل الـ match. |
-| 13 | `useSales` loop + الداشبورد | **مرجح صحيح مبدئياً** | ⏳ | حل: endpoint مجمّع أو تقليل الحماية/إعادة استخدام `query` واحدة. |
+| 12 | `OcrCorrectionRule` لا يُقرأ في `enrichExtraction` | **صحيح** | ✅ `applyCorrections` قبل مطابقة المورد/الأصناف (`ocr-extraction.service.ts`) | يُراجع عند إضافة قواعد أو تغيير المطابقة. |
+| 13 | `useSales` loop + الداشبورد | **مرجح صحيح مبدئياً** | ✅ `useDashboardSalesPack` + `GET .../summaries/dashboard-pack`؛ **تقويم الداشبورد** و**تبويب مبيعات التطبيقات** يستخدمان الحزمة (طلب واحد) بدل حلقة pagination من `useSales`. | `DailySalesScreen` يبقى على `useSales` (تحويلات + ترقيم). |
 | **تكرار و DTOs** |
-| T1 | `PartialType` لـ 12 DTO | **مستحسن** (Nest) | ⏳ | يكسر التكرار بشرط أن `Create*Dto` يغطي الحقول. |
-| T2 | `CompanyId` decorator | **مستحسن** | ⏳ | اختصر boilerplate الـ controller. |
-| T3 | ملفات `cursorrules*.txt`، `build-out.txt` | **صحة مبدأ النظافة** | ⏳ | احذف الفارغ/artifacts + `.gitignore`. |
-| **أداء/بنية** | تقسيم خدمات كبيرة، index على `LedgerEntry`، S3… | **اتجاه صحيح** | ⏳ / جزئي | ينفّذ تدريجياً حسب الضرورة بعد قياس. |
-| **ما يتفق مع GPT (TS، تخزين، BullMQ…)** | **متوافق مع أفضل ممارسات** | — | **لا تعارض** — أولويات لاحقة بعد الأمان/البيانات. |
+| T1 | `PartialType` لـ 12 DTO | **مستحسن** (Nest) | ✅ دفعات C1/C2 في playbook (2026-04-26)؛ `UpdateInvoiceDto` وغيره يبقى صريحاً حيث تختلف القواعد عن `Create*` (أنواع kind، `vaultSplits`، حقول ضمان…). | يكسر التكرار عندما يتطابق شكل التحديث مع الإنشاء. |
+| T2 | `CompanyId` decorator | **مستحسن** | ✅ مستخدم في مسارات متعددة (`hr`، `vaults`، `invoice`، `orders`، `ocr-invoices`، …) | أي endpoint جديد يفضّل `@CompanyId()` بدل تكرار `@Query('companyId')`. |
+| T3 | ملفات `cursorrules*.txt`، `build-out.txt` | **صحة مبدأ النظافة** | ✅ `build-out.txt` و`cursorrules*.txt` في `.gitignore` جذر المستودع (2026-04-27). | احذف أي artifact محلي ظاهر في `git status`. |
+| **أداء/بنية** | تقسيم خدمات كبيرة، index على `LedgerEntry`، S3… | **اتجاه صحيح** | ✅ فهارس `LedgerEntry` في `schema.prisma` (tenant، company+date، referenceType+referenceId، vault، employee…)؛ تقسيم الخدمات جزئي؛ S3 لاحقاً. | قياس `EXPLAIN` عند بطء تقارير محددة. |
+| **ما يتفق مع GPT (TS، تخزين، BullMQ…)** | **متوافق مع أفضل ممارسات** | ✅ طابور Bull لاستخراج OCR؛ حدود Gemini عبر `GEMINI_MAX_CONCURRENT`؛ `strict` في الواجهة؛ S3/Sentry تبقى اختيارية عبر البيئة (§3 P3). | تفعيل Sentry/Object storage عند جاهزية البنية. |
 
 ---
 
@@ -77,7 +84,7 @@
 2. `OcrCorrectionRule` داخل `enrichExtraction` (تطبيق `wrongText` → `correctText` لأسماء المورد/الأصناف قبل الـ match).
 3. `bankStatementExportPrint.js` → `import()` ديناميكي.
 4. مراجعة `HttpExceptionFilter` كاملة لـ 500s غير معروفة.
-5. **إعادة تحقق** من `validateJournalBalance` عبر **جميع** الاستدعاءات (بما فيها inflow) وليس فقط سطور التقرير.
+5. **إعادة تحقق** من `validateJournalBalance` — **مُنجَز** تدقيق 2026-04-27 (انظر §3 P1-4 + JSDoc على الدالة)؛ أعد فتحه عند تغيير `financial-core`.
 
 ### P2 — **هذا الشهر**
 1. `cacheHelper` إمّا تفعيله أو حذفه.
@@ -86,9 +93,12 @@
 4. فهارس DB حسب `EXPLAIN` الفعلي (مثال مقترح في التقرير: مركب على `LedgerEntry`).
 5. تدريجي: اختبارات `financial-core` الحرجة.
 
-### P3 — **مستقبلاً**
-- **الواجهة:** TypeScript strict مفعّل في الجذر (2026-04-27)؛ أي توسيع تدريجي يبقى تحسين أنواع دون تبديل المبدأ.
-- BullMQ لـ OCR، Sentry/Datadog، object storage، حدود استخدام Gemini.
+### P3 — **خط الأساس + اختياري لاحقاً**
+- **الواجهة:** TypeScript `strict` في الجذر (2026-04-27).
+- **OCR:** `@nestjs/bull` + Redis + `ocr-extraction.processor.ts` (طابور استخراج).
+- **حدود API:** `ThrottlerModule` (120/دقيقة لكل IP) في `app.module.ts`.
+- **Gemini:** حد التزامن `GEMINI_MAX_CONCURRENT` (افتراضي 2) في `gemini.service.ts`.
+- **اختياري:** `SENTRY_DSN`، تخزين كائنات S3/B2 — عند التشغيل أضف المتغيرات في `.env` فقط دون كسر التشغيل الحالي.
 
 **حدود الملفات (مواءمة مع “ميثاق” الأعلى)**
 - **هدف الخدمة/المكوّن الثقيل: ≤ 450 سطر**؛ **إن جاوز 600** يُعامل كمؤشر “قصّ” قريب. التقسيم: OCR (استخراج/تسعير/كتالوج)؛ HR (تفرعات)؛ مالي (outflow/inflow/transfer).
@@ -109,8 +119,16 @@
 | P1-1 | `extract-json.util.ts` + استيراد لثلاثة | ☑ | `extract-json.util.ts`؛ `app.service` + `gemini.service`؛ OCR يستخدم `ocr-llm-json.util` للنصوص الطويلة (2026-04-27). |
 | P1-2 | `OcrCorrectionRule` في `enrichExtraction` | ☑ | `ocr-extraction.service.ts` — `applyCorrections` قبل مطابقة المورد/الأصناف (2026-04-27). |
 | P1-3 | dynamic import في `bankStatementExportPrint` | ☑ | `bankStatementExportPrint.ts` — `await import('xlsx-js-style')` (2026-04-27). |
-| P1-4 | تدقيق كل `validateJournalBalance` (قراءة نصية) | ☐ | يبقى تدقيقاً دورياً عند تغيير `financial-core`؛ لا يُغلق آلياً. |
+| P1-4 | تدقيق كل `validateJournalBalance` (قراءة نصية) | ☑ | **2026-04-27:** `financial-outflow.service` (إنشاء فاتورة، دفعة، `_replaceOutflowInvoiceLedgerAndAllocations`)؛ `financial-inflow.service` (إنشاء/تحديث ملخص مبيعات)؛ `financial-transfer.service` (تحويل). JSDoc على الدالة في `financial-core-helpers.util.ts`؛ اختبارات في `financial-core-helpers.util.spec.ts`. **يُعاد** التدقيق عند أي تغيير على هذه الملفات. |
 | P2-1 | قرار `cacheHelper` (حذف أو ربط) | ☑ | لا مراجع `cacheHelper` في `src/`؛ الهجرة ضمن دفعة A+B (2026-04-26). |
+| P2-2 | فهارس `LedgerEntry` | ☑ | `backend/prisma/schema.prisma` — مركّبات على `companyId+transactionDate`، `companyId+status+transactionDate`، `referenceType+referenceId`، إلخ (2026-04-27). |
+| P2-3 | `PartialType` / `CompanyId` على دفعات | ☑ | انظر playbook §6 (C1/C2 + decorators)؛ استثناءات صريحة حيث يختلف التحقق عن `Create*Dto`. |
+| P2-4 | artifacts في `.gitignore` | ☑ | `build-out.txt`، `cursorrules*.txt` (2026-04-27). |
+| P2-5 | `toYmd` — API + واجهات + خادم | ☑ | **`apiEndpoints/`:** بلا `slice(0,10)` للتواريخ. **واجهة:** دفعة إضافية (تقارير تفصيلية، مسيرات، وثائق موظف، استيراد/تصدير، مالك، كشوف بنك، يومية، إقامة، EOS، طباعة HR، إلخ) — انظر سجل playbook 2026-04-27. **خادم:** `to-ymd.util.ts` + استبدال في `sales`/`invoice`/`bank-statements`/`reports-period-analytics`/`vaults`/`expense-line`/`company-assets`/`hr-*`/`ocr-invoice-workflow-persist`/`gemini`/`fiscal-period`/`financial-outflow` + `bank-statement-row-parser`؛ `clampSalesSummaryDateQuery` يستخدم `toYmd` في `addDaysYmd`. **اختبارات:** `to-ymd.util.spec.ts` (jest) + `saudiDate.test.ts` (vitest، `toYmd` + trim + `Date`). **تمييز:** يوم الرياض للحقول البشرية — `toDateInputYmd`؛ `toYmd(Date)` = UTC (مواءمة الخادم). |
+| P3-1 | Bull طابور OCR + Redis | ☑ | `OcrInvoicesModule` + `ocr-intake.service` + `ocr-extraction.processor`؛ `REDIS_*` في `backend/.env.example`. |
+| P3-2 | Rate limit HTTP | ☑ | `ThrottlerModule.forRoot` في `backend/src/app.module.ts`. |
+| P3-3 | حد تزامن Gemini | ☑ | `GEMINI_MAX_CONCURRENT` — `gemini.service.ts` (`withGeminiConcurrency`). |
+| P3-4 | تدقيق سطح HTTP / أرقام ديناميكية | ☑ | `npm run audit:http-surface` — `backend/scripts/audit-http-surface.mjs`. |
 
 ---
 
@@ -121,11 +139,12 @@
 | Q1 | هل بقي أي `uploads` مُتعقّب؟ | `git ls-files \| rg uploads` فارغ. |
 | Q2 | هل 500 في prod مُبهمة للعميل؟ | رسالة عامة؛ التفاصيل فقط في logs. |
 | Q3 | هل bundle الواجهة؟ | لا `@prisma/client` من الواجهة. |
-| Q4 | JSON من Gemini؟ | BOM يُتعامل معه في **دالة واحدة** مختبرة. |
+| Q4 | JSON من Gemini؟ | BOM يُتعامل معه في **دالة واحدة** (`extract-json.util.ts`) + اختبارات `extract-json.util.spec.ts`. |
 | Q5 | OCR؟ | قواعد تصحيح `confirmed` تغيّر الأسماء **قبل** الـ match. |
-| Q6 | مالي؟ | أي تغيير بـ `financial-core` يرافقه اختبار أو تدقيق سيناريو يدوي موثق. |
+| Q6 | مالي؟ | أي تغيير بـ `financial-core` يرافقه اختبار (`financial-core-helpers.util.spec.ts`) أو تدقيق سيناريو يدوي موثق. |
 | Q7 | حجم PR؟ | تقسيم حسب T1/T2: ملفات قليلة/موضوع واحد. |
+| Q8 | أرقام endpoints/جداول في التقارير؟ | `cd backend && npm run audit:http-surface` — لا تنسخ أرقاماً يدوية قديمة. |
 
 ---
 
-**آخر تحديث المستند:** 2026-04-27 — P0–P1 مُتحققة في الكود (جدول §3)؛ P1-4 مراجعة مستمرة عند المسار المالي؛ راجع [NOORIX_TRANSFORMATION_PLAYBOOK](NOORIX_TRANSFORMATION_PLAYBOOK.md) §6 للسجل التفصيلي.
+**حالة الوثيقة (2026-04-27):** **مكتملة** — جميع صفوف §1 مُحدَّثة؛ §2 متوافقة؛ §3 (P0–P3) ☑؛ §4 (Q1–Q8) معايير نجاح مغطاة في الكود أو بأدوات تلقائية؛ **مسار `toYmd` مغلق** (انظر الفقرة تحت عنوان المستند). أي تغيير لاحق على المسارات الحرجة (مالي، OCR، RLS) يُحدَّث هذا الملف أو playbook §6. راجع [NOORIX_TRANSFORMATION_PLAYBOOK](NOORIX_TRANSFORMATION_PLAYBOOK.md) §6 للسجل التفصيلي.
