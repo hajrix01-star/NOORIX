@@ -47,6 +47,56 @@ body.noorix-page-smart-chat .app-main__content {
   z-index: 50;
 }
 
+/* جدول جوال: هيدر سطر واحد + زر أدوات */
+.noorix-smart-chat-sticky--mobile-toolbar {
+  padding: 6px 10px 8px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+}
+
+.noorix-smart-chat-mobile-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.noorix-smart-chat-mobile-title {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--noorix-text);
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noorix-smart-chat-date-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text-muted);
+  border: 1px solid var(--noorix-border);
+  max-width: 5.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noorix-smart-chat-tools-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding-inline: 14px;
+}
+
 /* سطر العنوان + فلتر التاريخ */
 .noorix-smart-chat-header {
   display: flex;

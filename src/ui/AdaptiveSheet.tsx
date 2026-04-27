@@ -45,7 +45,7 @@ export type AdaptiveSheetProps = {
   closeOnBackdrop?: boolean;
   hideClose?: boolean;
   className?: string;
-  side?: 'start' | 'end' | string;
+  side?: 'start' | 'end' | 'bottom' | string;
   breakpointPx?: number;
   children?: ReactNode;
 };

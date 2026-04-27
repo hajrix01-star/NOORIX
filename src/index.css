@@ -94,6 +94,13 @@
   from { transform: translateX(-100%); opacity: 0; }
   to   { transform: translateX(0);     opacity: 1; }
 }
+@keyframes nx-drawer-in-bottom {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.nx-drawer-slide-bottom {
+  animation: nx-drawer-in-bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
 [dir="rtl"] .nx-drawer-slide-start { animation: nx-drawer-in-start 0.28s cubic-bezier(0.4,0,0.2,1); }
 [dir="rtl"] .nx-drawer-slide-end   { animation: nx-drawer-in-end   0.28s cubic-bezier(0.4,0,0.2,1); }
 [dir="ltr"] .nx-drawer-slide-start { animation: nx-drawer-in-end   0.28s cubic-bezier(0.4,0,0.2,1); }

@@ -576,6 +576,8 @@ export default {
   chatQuickCommandsTitle: { ar: 'اختر إجراء الإدخال', en: 'Choose an action' },
   chatCommands: { ar: 'أوامر', en: 'Commands' },
   chatFilterByDate: { ar: 'تصفية بالتاريخ', en: 'Filter by date' },
+  chatToolsMenu: { ar: 'أدوات', en: 'Tools' },
+  chatToolsSheetTitle: { ar: 'أدوات المحادثة', en: 'Chat tools' },
   chatClearFilter: { ar: 'إزالة الفلتر', en: 'Clear filter' },
   chatLoadMore: { ar: 'تحميل المزيد', en: 'Load more' },
   chatLoadMoreCount: { ar: 'تحميل المزيد ({0} رسالة)', en: 'Load more ({0} messages)' },

@@ -87,8 +87,20 @@ export default function Drawer({
 
   if (!open) return null;
 
-  const slideClass = side === 'start' ? 'nx-drawer-slide-start' : 'nx-drawer-slide-end';
-  const posClass   = side === 'start' ? 'inset-y-0 start-0' : 'inset-y-0 end-0';
+  const isBottom = side === 'bottom';
+  const slideClass = isBottom
+    ? 'nx-drawer-slide-bottom'
+    : side === 'start'
+      ? 'nx-drawer-slide-start'
+      : 'nx-drawer-slide-end';
+  const posClass = isBottom
+    ? 'inset-x-0 bottom-0 top-auto'
+    : side === 'start'
+      ? 'inset-y-0 start-0'
+      : 'inset-y-0 end-0';
+  const panelWidthClass = isBottom
+    ? 'w-full max-w-[100vw]'
+    : (SIZE_WIDTH[size as keyof typeof SIZE_WIDTH] ?? SIZE_WIDTH.md);
 
   return createPortal(
     <div
@@ -104,11 +116,12 @@ export default function Drawer({
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
         className={cn(
-          'absolute flex flex-col h-full',
+          'absolute flex flex-col',
+          isBottom ? 'max-h-[min(88dvh,920px)] h-auto min-h-0 overflow-hidden rounded-t-2xl border-b-0' : 'h-full',
           'bg-white border border-noorix-border',
           'shadow-[0_0_40px_rgba(10,31,68,0.2)]',
           'focus:outline-none',
-          SIZE_WIDTH[size as keyof typeof SIZE_WIDTH] ?? SIZE_WIDTH.md,
+          panelWidthClass,
           posClass,
           slideClass,
           'nx-drawer-panel',
@@ -141,7 +154,12 @@ export default function Drawer({
         )}
 
         {/* المحتوى */}
-        <div className="flex-1 overflow-y-auto p-4 min-h-0 scrollbar-thin">
+        <div
+          className={cn(
+            'flex-1 overflow-y-auto min-h-0 scrollbar-thin',
+            isBottom ? 'p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]' : 'p-4',
+          )}
+        >
           {children}
         </div>
 

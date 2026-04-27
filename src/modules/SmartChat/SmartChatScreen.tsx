@@ -20,7 +20,7 @@ import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { loadChat, saveChat, filterByDate } from './chatStorage';
 import './SmartChatScreen.css';
-import { Button, AdaptiveSheet, Input } from '../../ui';
+import { Button, AdaptiveSheet, Input, useAdaptiveSheetNarrow } from '../../ui';
 import { formatSaudiDateTime } from '../../utils/saudiDate';
 import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 import { SendIcon } from './SmartChatIcons';
@@ -348,6 +348,111 @@ const CMD_GROUPS = [
   },
 ];
 
+/** محتوى ورقة الجوال: فلتر التاريخ + أوامر + أسئلة جاهزة */
+function SmartChatMobileToolsBody({
+  isAr,
+  dateFilter,
+  setDateFilter,
+  t,
+  filteredGroups,
+  showFaq,
+  visibleFaqQuestions,
+  handleCommand,
+  handleSend,
+  onCloseSheet,
+}: any) {
+  return (
+    <div className="flex flex-col gap-5 pt-1 min-w-0" dir={isAr ? 'rtl' : 'ltr'}>
+      <section className="min-w-0 space-y-2">
+        <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-noorix-muted">
+          {t('chatFilterByDate')}
+        </div>
+        <div className="flex flex-wrap items-stretch gap-2">
+          <Input
+            type="date"
+            className="noorix-smart-chat-date-input flex-1 min-w-0 min-h-[44px]"
+            value={dateFilter}
+            onChange={(e: any) => setDateFilter(e.target.value || '')}
+            lang="en"
+            title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
+          />
+          {dateFilter ? (
+            <Button type="button" size="sm" className="shrink-0 min-h-[44px]" onClick={() => setDateFilter('')}>
+              {t('chatClearFilter')}
+            </Button>
+          ) : null}
+        </div>
+      </section>
+
+      {filteredGroups.length > 0 ? (
+        <div className="noorix-chat-commands-panel-content min-w-0 rounded-xl overflow-hidden border border-noorix-border">
+          {filteredGroups.map((g: any) => (
+            <div key={g.id} className="noorix-chat-commands-group">
+              <div className="noorix-chat-commands-group-label">
+                {g.icon} {isAr ? g.labelAr : g.labelEn}
+              </div>
+              <div className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}>
+                {g.items.map((it: any) => (
+                  <Button
+                    key={it.key}
+                    type="button"
+                    className="noorix-chat-commands-item"
+                    onClick={() => {
+                      handleCommand(it.key);
+                      onCloseSheet();
+                    }}
+                  >
+                    <span aria-hidden>{it.icon}</span>
+                    <span>{isAr ? it.labelAr : it.labelEn}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {showFaq ? (
+        <div className="flex flex-col gap-1 pb-2 min-w-0">
+          <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-noorix-muted pb-1">
+            {isAr ? 'أسئلة جاهزة' : 'Suggested questions'}
+          </div>
+          {FAQ_SECTION_ORDER.map((sec: any) => {
+            const qs = visibleFaqQuestions.filter((q: any) => q.section === sec.id);
+            if (!qs.length) return null;
+            return (
+              <div key={sec.id} className="min-w-0">
+                <div
+                  className="px-1 pt-2 pb-1 text-[11px] font-bold uppercase tracking-[0.06em] text-noorix-muted"
+                  style={{ textAlign: isAr ? 'right' : 'left' }}
+                >
+                  {isAr ? sec.labelAr : sec.labelEn}
+                </div>
+                <div className="flex flex-col gap-2">
+                  {qs.map((q: any, i: any) => (
+                    <Button
+                      key={`${sec.id}-${i}`}
+                      type="button"
+                      className="w-full text-[14px] justify-start py-3 px-4 font-medium leading-snug min-h-[48px] h-auto whitespace-normal"
+                      style={{ textAlign: isAr ? 'right' : 'left' }}
+                      onClick={() => {
+                        void handleSend(isAr ? q.ar : q.en);
+                        onCloseSheet();
+                      }}
+                    >
+                      {isAr ? (q.shortAr || q.ar) : (q.shortEn || q.en)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function SmartChatScreen() {
   const { activeCompanyId } = useApp();
   const { t, lang } = useTranslation();
@@ -358,6 +463,7 @@ export default function SmartChatScreen() {
   const [faqOpen, setFaqOpen] = useState(false);
   const [entryMode, setEntryMode] = useState<any>(null);
   const [commandsOpen, setCommandsOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
   const [expenseMode, setExpenseMode] = useState<any>(null);
@@ -368,9 +474,9 @@ export default function SmartChatScreen() {
   const messagesScrollRef = useRef<any>(null);
   const skipScrollToEndRef = useRef(false);
   const inputRef = useRef<any>(null);
-  const commandsWrapRef = useRef<any>(null);
-  const commandsPanelRef = useRef<any>(null);
   const saveTimerRef = useRef<any>(null);
+
+  const narrow = useAdaptiveSheetNarrow();
 
   const u = getStoredUser();
   const userName = u?.nameAr || u?.nameEn || u?.email || '';
@@ -396,7 +502,7 @@ export default function SmartChatScreen() {
     items: g.items.filter((it: any) => it.canUse(can)),
   })).filter((g: any) => g.items.length > 0);
 
-  const quickRowCols = filteredGroups.length > 0 && showFaq ? 2 : 1;
+  const quickRowCols = !narrow && filteredGroups.length > 0 && showFaq ? 2 : 1;
 
   useEffect(() => {
     document.body.classList.add('noorix-page-smart-chat');
@@ -485,16 +591,6 @@ export default function SmartChatScreen() {
   }, []);
 
   useEffect(() => {
-    const onDoc = (e: any) => {
-      const inTrigger = commandsWrapRef.current?.contains(e.target);
-      const inPanel   = commandsPanelRef.current?.contains(e.target);
-      if (!inTrigger && !inPanel) setCommandsOpen(false);
-    };
-    document.addEventListener('pointerdown', onDoc, true);
-    return () => document.removeEventListener('pointerdown', onDoc, true);
-  }, []);
-
-  useEffect(() => {
     if (skipScrollToEndRef.current) return;
     const scroller = messagesScrollRef.current;
     if (!scroller) return;
@@ -515,6 +611,7 @@ export default function SmartChatScreen() {
     setLoading(true);
     setCommandsOpen(false);
     setFaqOpen(false);
+    setMobileToolsOpen(false);
     try {
       const res = await chatQuery(q);
       if (res?.success && res?.data) {
@@ -540,6 +637,7 @@ export default function SmartChatScreen() {
 
   const handleCommand = (cmd: any) => {
     setCommandsOpen(false);
+    setMobileToolsOpen(false);
     if (cmd === 'addEmployee') {
       setAddEmployeeOpen(true);
     } else if (cmd === 'addExpenseLine') {
@@ -600,7 +698,30 @@ export default function SmartChatScreen() {
         </div>
       )}
 
-      {activeCompanyId && (
+      {activeCompanyId && narrow && (
+        <div className="noorix-smart-chat-sticky noorix-smart-chat-sticky--mobile-toolbar">
+          <header className="noorix-smart-chat-mobile-header" dir={isAr ? 'rtl' : 'ltr'}>
+            <h1 className="noorix-smart-chat-mobile-title">{t('smartChat')}</h1>
+            {dateFilter ? (
+              <span className="noorix-smart-chat-date-badge" title={t('chatFilterByDate')}>
+                {dateFilter.slice(5).replace('-', '/')}
+              </span>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="primary"
+              className="noorix-smart-chat-tools-btn shrink-0"
+              onClick={() => setMobileToolsOpen(true)}
+              aria-haspopup="dialog"
+            >
+              {t('chatToolsMenu')}
+            </Button>
+          </header>
+        </div>
+      )}
+
+      {activeCompanyId && !narrow && (
         <div className="noorix-smart-chat-sticky">
           {(filteredGroups.length > 0 || showFaq) && (
             <div
@@ -608,7 +729,7 @@ export default function SmartChatScreen() {
               dir={isAr ? 'rtl' : 'ltr'}
             >
               {filteredGroups.length > 0 ? (
-                <div ref={commandsWrapRef} className="noorix-smart-chat-quick-cell">
+                <div className="noorix-smart-chat-quick-cell">
                   <Button className="noorix-chat-gradient-btn" onClick={() => setCommandsOpen((o: any) => !o)} aria-expanded={commandsOpen}>
                     <span className="noorix-chat-gradient-icon" aria-hidden>
                     </span>
@@ -682,10 +803,14 @@ export default function SmartChatScreen() {
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 </div>
-                <div className="text-[15px] max-w-[360px] leading-[1.7] opacity-70">
+                <div className="text-[15px] max-w-[min(360px,92vw)] leading-[1.7] opacity-70 px-1">
                   {isAr
-                    ? 'استخدم «الأوامر» لإدخال البيانات، أو «أسئلة جاهزة» للاستفسار، أو اكتب سؤالك مباشرة.'
-                    : 'Use Commands to enter data, Suggested for queries, or type your question below.'}
+                    ? narrow
+                      ? 'افتح «أدوات» للفلتر والأوامر والأسئلة الجاهزة، أو اكتب سؤالك هنا.'
+                      : 'استخدم «الأوامر» لإدخال البيانات، أو «أسئلة جاهزة» للاستفسار، أو اكتب سؤالك مباشرة.'
+                    : narrow
+                      ? 'Open Tools for filters, commands, and suggested questions, or type below.'
+                      : 'Use Commands to enter data, Suggested for queries, or type your question below.'}
                 </div>
               </div>
             )
@@ -749,7 +874,7 @@ export default function SmartChatScreen() {
       </div>
       )}
 
-      {faqOpen && (
+      {!narrow && faqOpen && (
         <AdaptiveSheet open={true} onClose={() => setFaqOpen(false)} title={isAr ? 'أسئلة جاهزة' : 'Suggested questions'} size="md" side="start" className="smartchat-faq-drawer">
           <div className="flex flex-col gap-1 pb-2">
             {FAQ_SECTION_ORDER.map((sec: any) => {
@@ -836,7 +961,7 @@ export default function SmartChatScreen() {
 
       {expenseMode === 'editLine' && activeCompanyId && (
         expenseEditLine === undefined ? (
-          <AdaptiveSheet open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm" side="start" className="smartchat-expense-pick-drawer">
+          <AdaptiveSheet open={true} onClose={() => setExpenseMode(null)} title={t('chatEditFixedExpense')} size="sm" side={narrow ? 'bottom' : 'start'} className="smartchat-expense-pick-drawer">
             <div className="flex flex-col gap-2">
               {expenseLines.filter((l: any) => l.isActive !== false).map((line: any) => (
                 <Button key={line.id} className="w-full justify-start py-3 px-[14px]" style={{ textAlign: isAr ? 'right' : 'left' }} onClick={() => setExpenseEditLine(line)}>
@@ -863,14 +988,14 @@ export default function SmartChatScreen() {
       )}
 
       <AdaptiveSheet
-        open={!!(activeCompanyId && commandsOpen && filteredGroups.length > 0)}
+        open={!!(activeCompanyId && !narrow && commandsOpen && filteredGroups.length > 0)}
         onClose={() => setCommandsOpen(false)}
         title={isAr ? 'أوامر المحادثة' : 'Chat commands'}
         size="md"
         side="start"
         className="smartchat-commands-drawer"
       >
-        <div ref={commandsPanelRef} className="noorix-chat-commands-panel-content" dir={isAr ? 'rtl' : 'ltr'}>
+        <div className="noorix-chat-commands-panel-content" dir={isAr ? 'rtl' : 'ltr'}>
           {filteredGroups.map((g: any) => (
             <div key={g.id} className="noorix-chat-commands-group">
               <div className="noorix-chat-commands-group-label">
@@ -894,6 +1019,30 @@ export default function SmartChatScreen() {
           ))}
         </div>
       </AdaptiveSheet>
+
+      {activeCompanyId && narrow && (
+        <AdaptiveSheet
+          open={mobileToolsOpen}
+          onClose={() => setMobileToolsOpen(false)}
+          title={t('chatToolsSheetTitle')}
+          size="lg"
+          side="bottom"
+          className="smartchat-mobile-tools-sheet"
+        >
+          <SmartChatMobileToolsBody
+            isAr={isAr}
+            dateFilter={dateFilter}
+            setDateFilter={setDateFilter}
+            t={t}
+            filteredGroups={filteredGroups}
+            showFaq={showFaq}
+            visibleFaqQuestions={visibleFaqQuestions}
+            handleCommand={handleCommand}
+            handleSend={handleSend}
+            onCloseSheet={() => setMobileToolsOpen(false)}
+          />
+        </AdaptiveSheet>
+      )}
 
     </div>
   );
