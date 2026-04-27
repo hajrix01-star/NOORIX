@@ -87,7 +87,8 @@
 5. تدريجي: اختبارات `financial-core` الحرجة.
 
 ### P3 — **مستقبلاً**
-- TypeScript للواجهة (مجلدات `utils`/`hooks`)، BullMQ لـ OCR، Sentry/Datadog، object storage، حدود استخدام Gemini.
+- **الواجهة:** TypeScript strict مفعّل في الجذر (2026-04-27)؛ أي توسيع تدريجي يبقى تحسين أنواع دون تبديل المبدأ.
+- BullMQ لـ OCR، Sentry/Datadog، object storage، حدود استخدام Gemini.
 
 **حدود الملفات (مواءمة مع “ميثاق” الأعلى)**
 - **هدف الخدمة/المكوّن الثقيل: ≤ 450 سطر**؛ **إن جاوز 600** يُعامل كمؤشر “قصّ” قريب. التقسيم: OCR (استخراج/تسعير/كتالوج)؛ HR (تفرعات)؛ مالي (outflow/inflow/transfer).
@@ -100,16 +101,16 @@
 
 | # | فعل | تم؟ | ملاحظة |
 |---|-----|-----|--------|
-| P0-1 | `uploads` في `.gitignore` + إزالة تتبّع من Git | ☐ | |
-| P0-2 | VOLUME أو docker-compose mount لـ `/app/uploads` (أو قرار S3) | ☐ | |
-| P0-3 | `npm` root: حذف prisma إن زائد + `npm install` | ☐ | |
-| P0-4 | `jwt.config.ts` + env إلزامي في prod | ☐ | |
-| P0-5 | `HttpExceptionFilter` إخفاء 500 details في `production` | ☐ | |
-| P1-1 | `extract-json.util.ts` + استيراد لثلاثة | ☐ | |
-| P1-2 | `OcrCorrectionRule` في `enrichExtraction` | ☐ | |
-| P1-3 | dynamic import في `bankStatementExportPrint` | ☐ | |
-| P1-4 | تدقيق كل `validateJournalBalance` (قراءة نصية) | ☐ | |
-| P2-1 | قرار `cacheHelper` (حذف أو ربط) | ☐ | |
+| P0-1 | `uploads` في `.gitignore` + إزالة تتبّع من Git | ☑ | `backend/uploads/` في `.gitignore`؛ `git ls-files` لا يُرجع uploads (2026-04-27). |
+| P0-2 | VOLUME أو docker-compose mount لـ `/app/uploads` (أو قرار S3) | ☑ | `backend/Dockerfile`: `VOLUME ["/app/uploads"]`؛ توثيق VPS في `DEPLOYMENT.md` § المرفقات (2026-04-27). |
+| P0-3 | `npm` root: حذف prisma إن زائد + `npm install` | ☑ | لا `prisma` في `package.json` جذر الواجهة (2026-04-27). |
+| P0-4 | `jwt.config.ts` + env إلزامي في prod | ☑ | `backend/src/config/jwt.config.ts` + فحص `main.ts` / `AuthModule` (2026-04-27). |
+| P0-5 | `HttpExceptionFilter` إخفاء 500 details في `production` | ☑ | `http-exception.filter.ts`: Prisma غير P2002/3 والأخطاء العامة مُبهَمة في prod (2026-04-27). |
+| P1-1 | `extract-json.util.ts` + استيراد لثلاثة | ☑ | `extract-json.util.ts`؛ `app.service` + `gemini.service`؛ OCR يستخدم `ocr-llm-json.util` للنصوص الطويلة (2026-04-27). |
+| P1-2 | `OcrCorrectionRule` في `enrichExtraction` | ☑ | `ocr-extraction.service.ts` — `applyCorrections` قبل مطابقة المورد/الأصناف (2026-04-27). |
+| P1-3 | dynamic import في `bankStatementExportPrint` | ☑ | `bankStatementExportPrint.ts` — `await import('xlsx-js-style')` (2026-04-27). |
+| P1-4 | تدقيق كل `validateJournalBalance` (قراءة نصية) | ☐ | يبقى تدقيقاً دورياً عند تغيير `financial-core`؛ لا يُغلق آلياً. |
+| P2-1 | قرار `cacheHelper` (حذف أو ربط) | ☑ | لا مراجع `cacheHelper` في `src/`؛ الهجرة ضمن دفعة A+B (2026-04-26). |
 
 ---
 
@@ -127,4 +128,4 @@
 
 ---
 
-**آخر تحديث المستند:** 2026-04-26 — يُنصح بربطه بسطر في CHANGELOG عند اكتمال P0.
+**آخر تحديث المستند:** 2026-04-27 — P0–P1 مُتحققة في الكود (جدول §3)؛ P1-4 مراجعة مستمرة عند المسار المالي؛ راجع [NOORIX_TRANSFORMATION_PLAYBOOK](NOORIX_TRANSFORMATION_PLAYBOOK.md) §6 للسجل التفصيلي.

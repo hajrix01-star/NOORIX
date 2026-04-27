@@ -3,6 +3,8 @@
 **المرجع الاستراتيجي:** [docs/NOORIX_360_REVIEW_ABRIL_2026.md](NOORIX_360_REVIEW_ABRIL_2026.md) (الميزانية والميثاق ≤450 سطر/خدمة ثقيلّة)  
 **الفلسفة:** خطوة واحدة = **وحدة اختبار واضحة** + **commit(ات) معزولة** + **نشر (push) لـ GitHub بعد إغلاق كل *مرحلة* كحد أدنى** (يفضّل أيضاً push للفرع يومياً لعدم فقدان العمل).
 
+**ملخص حالة الخطة (2026-04-27):** بوابات **A** و**B** ومعظم بنود **C** و**D** مُنفَّذة في الكود (انظر جدول السجل §6 من 2026-04-26). **E:** اكتمل **TypeScript strict** للواجهة (`tsconfig.json`)؛ **BullMQ** و**S3** يبقيان تكاملاً بنيوياً لاحقاً بعد استقرار التشغيل. **A3** (`git filter-repo`) يُنفَّذ فقط عند إثبات تسرّب بيانات في **تاريخ** الـ Git وليس ضمن التشغيل اليومي.
+
 ---
 
 ## 1) تعريفات: خطوة، مرحلة، نوع التغيير
@@ -93,9 +95,10 @@
 
 ---
 
-### المرحلة E — مستقبل (BullMQ، S3، TS للواجهة)
+### المرحلة E — مستقبل (BullMQ، S3، مراقبة)
 
 - **بعد** استقرار P0–P2؛ توثيق استهلاك Gemini والنسخ الاحتياطي.
+- **TS للواجهة (strict):** مكتمل في الجذر (`tsconfig.json`) اعتباراً من 2026-04-27 — يُزال من قائمة «مستقبل» هنا.
 
 ---
 
@@ -148,10 +151,7 @@
 | 2026-04-26 | C | C3 + C5 + C6 | `a494eba` | Cursor | ✓ | `@CompanyId` على `suppliers` / `ledger` / `chat` (مع بقاء fallback لأول شركة في الشات)؛ `assert-vaults-for-payment.util` + `hr.service`؛ `imageUtils.compressImageFileToJpegDataUrl` وOCR تبويب الرفع. **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | C | C1 (جزئي) + C3 + C4 | `31a487f` | Cursor | ✓ | `PartialType` لـ `UpdateEmployeeDto` / `UpdateResidencyDto` + `@nestjs/mapped-types`؛ `CompanyId` decorator + `vaults` + `hr` controllers؛ `getSaudiDateParts`/`getSaudiNow`/`getSaudiYearMonth` في `saudiDate.js` وربط 8+ مكوّنات. **الاختبارات:** vitest + vite build + nest build |
 | 2026-04-26 | A+B | A1–A2، B1–B7 (دفعة 1) | `4fd6a85` | Cursor | ✓ | `git rm --cached` لـ `backend/uploads/*` + `build-out.txt`، `.gitignore`، إزالة prisma من جذر الواجهة، JWT موحّد، `http-exception` production، `extractJson`+OCR util، `OcrCorrectionRule`، dynamic xlsx bank، `cacheHelper`، تنظيف imports، `Dockerfile` VOLUME. **اختبارات:** `npm run build` + `npm test` (جذر)، `npm run build` (backend) |
-| YYYY-MM-DD | A | A1 | | | | |
-| | | A2 | | | | |
-| | B | B1 | | | | |
-| | … | | | | | |
+| 2026-04-27 | E + تشغيل | إغلاق واجهة + إبطال HR + توثيق نشر | `4f5fe64` | Cursor | ✓ | **الواجهة:** `strict: true` في `tsconfig.json`، `npm run typecheck`/`test`/`build`. **إبطال:** `queryInvalidation.ts` — بادئات HR (`employees`، `leaves`، `residencies`، …). **نشر:** قسم `uploads` في `DEPLOYMENT.md`. **A3:** لا ينطبق بدون تسرّب تاريخي. **خلفية:** خدمات ثقيلة (`financial-core…monolith` >450 سطر) تبقى تحت ميثاق «تقسيم عند التغيير» وليس حذفاً فورياً. |
 
 **نموذج ملاحظة سطر:** `A2 ✓ 2026-04-28 abc1234 — git ls-files uploads clean; build ok`
 
@@ -167,4 +167,4 @@
 
 ---
 
-**آخر تحديث لملف التشغيل:** 2026-04-26
+**آخر تحديث لملف التشغيل:** 2026-04-27

@@ -27,12 +27,25 @@ const FINANCIAL_QUERY_PREFIXES = [
   ['category-purchase-history'],
   ['payroll-runs'],
   ['payroll-run'],
+  ['payroll-run-items'],
   ['invoice-day-close'],
   ['suppliers'],
   ['deductions'],
   ['company-assets'],
   // حركات الموظفين (صرف/ترقية/إنهاء) — تتأثر بالفواتير والمسيرات
   ['movements'],
+  // HR — سلف/مسيرات/إجازات/إقامة/مستندات تتقاطع مع الفواتير والخزائن
+  ['employees'],
+  ['employees-paged'],
+  ['employee'],
+  ['leaves'],
+  ['residencies'],
+  ['documents'],
+  ['leave-salary-settlements'],
+  ['leave-salary-settlement-preview'],
+  ['termination-settlement-advances'],
+  ['termination-settlement-salary-exists'],
+  ['custom-allowances'],
 ];
 
 /**
