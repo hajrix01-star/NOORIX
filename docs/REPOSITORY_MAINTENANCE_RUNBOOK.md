@@ -30,8 +30,12 @@
 - **كشوف بنك + تعديل فاتورة (2026-04-28 ج):** `bank-statements-template-matcher.util.ts` (مطابقة قالب عند الرفع)، `bank-statements-structure-suggestion.util.ts` (تحويل أنواع أعمدة + تحديث السجل). `invoice-build-update-data.util.ts` + `invoice-cancel-reference.util.ts` — إلغاء/حقول `update` خارج `invoice.service.ts`.
 
 ```bash
+npm run check:service-footprint
+# أو من مجلد الـ backend فقط:
 cd backend && npm run check:service-footprint
 ```
+
+**CI enforcement added for §3 (financial tests) and §6 (git cleanliness + service footprint)** — انظر `.github/workflows/ci.yml` وخطاف `.husky/pre-commit`.
 
 ---
 
@@ -46,6 +50,8 @@ cd backend && npm run check:service-footprint
 عند أي PR يمس `financial-outflow` / `financial-inflow` / `financial-transfer` أو `financial-core-helpers.util.ts`:
 
 ```bash
+npm run test:financial
+# أو يدوياً من backend:
 cd backend
 npx jest financial-core-helpers.util.spec.ts --no-cache
 npx jest financial-outflow-ledger.util.spec.ts --no-cache
@@ -110,4 +116,4 @@ npm run verify:git-cleanliness -- --strict
 
 ---
 
-**آخر تحديث:** 2026-04-28
+**آخر تحديث:** 2026-04-28 — فرض CI لـ §3 و§6 (اختبارات مالية، نظافة Git، بصمة الخدمات).

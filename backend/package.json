@@ -24,7 +24,8 @@
     "db:delete-vip-moallim": "node prisma/delete-companies.js",
     "db:seed-hajri-history": "node prisma/seed-vat-planning-history.js",
     "audit:http-surface": "node scripts/audit-http-surface.mjs",
-    "check:service-footprint": "node scripts/check-heavy-service-footprint.mjs"
+    "check:service-footprint": "node ../scripts/check-heavy-service-footprint.mjs",
+    "test:financial": "jest --config jest.config.cjs financial-core-helpers.util.spec.ts financial-outflow-ledger.util.spec.ts"
   },
   "dependencies": {
     "@nestjs/bull": "^10.2.3",

@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+npm run verify:git-cleanliness -- --strict || exit 1
+npm run check:service-footprint || exit 1
