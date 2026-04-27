@@ -96,7 +96,7 @@ export default function App() {
   // بعد الدخول: تحميل مسبق لأهم الأقسام أثناء خمول المتصفح — يقلّل انتظار أول زيارة (lazy chunks)
   useEffect(() => {
     if (!isAuthenticated || !user || isLoginPage) return;
-    const routes = ['/', '/sales', '/purchases', '/invoices'];
+    const routes = ['/', '/sales', '/purchases', '/invoices', '/reports/analytics-studio'];
     const run = () => routes.forEach((to: any) => prefetchRouteChunk(to));
     let idleId: number | undefined;
     /** في المتصفح `setTimeout` يعيد رقمًا؛ أنواع Node تعيد `Timeout` */
@@ -398,6 +398,8 @@ export default function App() {
                 <Route path="/tax" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/form" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/reports" element={<Navigate to="/reports/tax" replace />} />
+                <Route path="/analytics-studio" element={<Navigate to="/reports/analytics-studio" replace />} />
+                <Route path="/analytics" element={<Navigate to="/reports/analytics-studio" replace />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>

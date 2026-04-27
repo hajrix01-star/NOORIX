@@ -73,7 +73,7 @@ export default function AnalyticsKpiGrid({
     { key: 'sales', label: t('analyticsStudioKpiSales'), value: data.kpis.totalSales },
     { key: 'purchases', label: t('analyticsStudioKpiPurchases'), value: data.kpis.totalPurchases },
     { key: 'outflow', label: t('analyticsStudioKpiOutflow'), value: data.kpis.totalOutflow },
-    { key: 'net', label: t('analyticsStudioKpiNetFlow'), value: data.kpis.netInvoiceFlow },
+    { key: 'net', label: t('analyticsStudioKpiPeriodNetMovement'), value: data.kpis.netInvoiceFlow },
   ];
 
   return (
@@ -89,10 +89,10 @@ export default function AnalyticsKpiGrid({
           </div>
         </div>
       ))}
-      <div className="rounded-lg border border-noorix-border bg-[var(--noorix-bg-surface)] p-4 shadow-sm sm:col-span-2 lg:col-span-4">
+      <div className="rounded-lg border border-noorix-border bg-[var(--noorix-bg-surface)] p-4 shadow-sm sm:col-span-2 lg:col-span-4 border-t-4 border-t-noorix-blue">
         <div className="text-[12px] font-semibold text-noorix-muted">{t('analyticsStudioInvoiceCount')}</div>
         <div className="mt-1 text-[18px] font-bold tabular-nums">{data.kpis.totalInvoices}</div>
-        <div className="mt-2 text-[11px] text-noorix-muted">{t('analyticsStudioSourceHint')}</div>
+        <p className="mt-3 text-[13px] font-medium leading-relaxed text-noorix-text">{t('analyticsStudioSourceHint')}</p>
       </div>
     </div>
   );

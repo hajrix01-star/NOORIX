@@ -9,7 +9,7 @@ export type AnalyticsDrilldownTableProps = {
 };
 
 export default function AnalyticsDrilldownTable({ loading, rows }: AnalyticsDrilldownTableProps) {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
 
   if (loading) {
     return <div className="mt-8 h-[160px] animate-pulse rounded-lg bg-[var(--noorix-bg-muted)]" />;
@@ -24,12 +24,12 @@ export default function AnalyticsDrilldownTable({ loading, rows }: AnalyticsDril
       <table className="min-w-[720px] w-full border-collapse text-[13px]" style={{ tableLayout: 'fixed' }}>
         <thead>
           <tr className="border-b border-noorix-border bg-[var(--noorix-bg-muted)]">
-            <th className="p-3 text-start font-bold">{lang === 'en' ? 'Company' : 'الشركة'}</th>
-            <th className="p-3 text-end font-bold">{lang === 'en' ? 'Sales' : 'مبيعات'}</th>
-            <th className="p-3 text-end font-bold">{lang === 'en' ? 'Purchases' : 'مشتريات'}</th>
-            <th className="p-3 text-end font-bold">{lang === 'en' ? 'Outflow' : 'خروج'}</th>
-            <th className="p-3 text-end font-bold">{lang === 'en' ? 'Net (invoices)' : 'صافي (فواتير)'}</th>
-            <th className="p-3 text-end font-bold">{lang === 'en' ? 'Invoices' : 'عدد الفواتير'}</th>
+            <th className="p-3 text-start font-bold">{t('analyticsStudioDrilldownCompany')}</th>
+            <th className="p-3 text-end font-bold">{t('analyticsStudioDrilldownSales')}</th>
+            <th className="p-3 text-end font-bold">{t('analyticsStudioDrilldownPurchases')}</th>
+            <th className="p-3 text-end font-bold">{t('analyticsStudioDrilldownOutflow')}</th>
+            <th className="p-3 text-end font-bold">{t('analyticsStudioDrilldownEstimatedNet')}</th>
+            <th className="p-3 text-end font-bold">{t('analyticsStudioDrilldownInvoices')}</th>
           </tr>
         </thead>
         <tbody>

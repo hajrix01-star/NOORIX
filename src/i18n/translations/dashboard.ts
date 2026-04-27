@@ -3,6 +3,11 @@
  */
 export default {
   dashboardDesc: { ar: 'نظرة عامة على الأعمال، التقويم، ومبيعات التطبيق.', en: 'Business overview, calendar, and app sales.' },
+  dashboardAnalyticsStudioLink: { ar: 'استوديو التحليلات', en: 'Analytics Studio' },
+  dashboardAnalyticsStudioHint: {
+    ar: 'ضمن التقارير أو من الرابط المختصر /analytics',
+    en: 'Under Reports, or short URL /analytics',
+  },
   dashboardOverview: { ar: 'نظرة عامة', en: 'Overview' },
   dashboardCalendar: { ar: 'التقويم', en: 'Calendar' },
   dashboardAppSales: { ar: 'مبيعات التطبيق', en: 'App Sales' },

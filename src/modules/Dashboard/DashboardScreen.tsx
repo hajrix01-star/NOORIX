@@ -2,7 +2,9 @@
  * DashboardScreen — لوحة التحكم الرئيسية
  */
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { hasPermission } from '../../constants/permissions';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Input, ScreenTabs, ScreenShell } from '../../ui';
@@ -27,7 +29,8 @@ const MONTH_NAMES_EN = [
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
-  const { activeCompanyId } = useApp();
+  const { activeCompanyId, userRole, userPermissions } = useApp();
+  const showAnalyticsStudioLink = hasPermission(userRole, 'VIEW_REPORTS', userPermissions);
   const now = getSaudiNow();
   const [activeTab, setActiveTab] = useTabSearchParam(DASHBOARD_TAB_IDS, 'overview');
   const [year, setYear]                   = useState(now.year);
@@ -54,6 +57,18 @@ export default function DashboardScreen() {
         <div>
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('dashboard')}</h1>
           <p className="text-[13px] text-noorix-muted mt-1 m-0">{t('dashboardDesc')}</p>
+          {showAnalyticsStudioLink && (
+            <p className="mt-2 m-0">
+              <Link
+                to="/reports/analytics-studio"
+                className="text-[13px] font-semibold text-noorix-blue underline-offset-2 hover:underline"
+              >
+                {t('dashboardAnalyticsStudioLink')}
+              </Link>
+              <span className="text-[12px] text-noorix-muted mx-1">—</span>
+              <span className="text-[12px] text-noorix-muted">{t('dashboardAnalyticsStudioHint')}</span>
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[12px] text-noorix-muted">{t('reportYear')}</span>
