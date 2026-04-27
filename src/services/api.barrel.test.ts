@@ -27,5 +27,6 @@ describe('services/api barrel (apiEndpoints)', () => {
     expect(typeof api.getEmployees).toBe('function');
     expect(typeof api.getPayrollRuns).toBe('function');
     expect(typeof api.getSuppliers).toBe('function');
+    expect(typeof api.getAnalyticsStudio).toBe('function');
   });
 });

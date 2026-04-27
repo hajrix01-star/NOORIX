@@ -29,6 +29,7 @@ const HajriTaxLayout = React.lazy(() => import('./modules/HajriTax/HajriTaxLayou
 const HajriTaxScreen = React.lazy(() => import('./modules/HajriTax/HajriTaxScreen'));
 const HajriTaxQuarterOverview = React.lazy(() => import('./modules/HajriTax/HajriTaxQuarterOverview'));
 const BankStatementAnalysisScreen = React.lazy(() => import('./modules/Reports/BankStatementAnalysisScreen'));
+const AnalyticsStudioScreen = React.lazy(() => import('./modules/Analytics/AnalyticsStudioScreen'));
 const SettingsScreen = React.lazy(() => import('./modules/Settings/SettingsScreen'));
 const LoginScreen = React.lazy(() => import('./modules/Login/LoginScreen'));
 const InvoicesListScreen = React.lazy(() => import('./modules/Invoices'));
@@ -383,6 +384,7 @@ export default function App() {
                   <Route index element={<Navigate to="/reports/general" replace />} />
                   <Route path="general" element={<ReportsScreen />} />
                   <Route path="tax" element={<ReportsTaxScreen />} />
+                  <Route path="analytics-studio" element={<AnalyticsStudioScreen />} />
                   <Route path="vat-registry" element={<Navigate to="/hajri-tax" replace />} />
                   <Route path="bank-statement" element={<BankStatementAnalysisScreen />} />
                 </Route>
