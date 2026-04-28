@@ -12,4 +12,3 @@ export * from './hr';
 export * from './suppliers';
 export * from './invoices';
 export * from './backup';
-export * from './analytics';

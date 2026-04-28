@@ -24,7 +24,6 @@ const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   ['purchase-batch-summaries'],
   ['ledger'],
   ['reports'],
-  ['analytics-studio'],
   ['categories'],
   ['company'],
   ['vat-planning'],

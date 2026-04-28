@@ -29,7 +29,6 @@ const HajriTaxLayout = React.lazy(() => import('./modules/HajriTax/HajriTaxLayou
 const HajriTaxScreen = React.lazy(() => import('./modules/HajriTax/HajriTaxScreen'));
 const HajriTaxQuarterOverview = React.lazy(() => import('./modules/HajriTax/HajriTaxQuarterOverview'));
 const BankStatementAnalysisScreen = React.lazy(() => import('./modules/Reports/BankStatementAnalysisScreen'));
-const AnalyticsStudioScreen = React.lazy(() => import('./modules/Analytics/AnalyticsStudioScreen'));
 const SettingsScreen = React.lazy(() => import('./modules/Settings/SettingsScreen'));
 const LoginScreen = React.lazy(() => import('./modules/Login/LoginScreen'));
 const InvoicesListScreen = React.lazy(() => import('./modules/Invoices'));
@@ -96,7 +95,7 @@ export default function App() {
   // بعد الدخول: تحميل مسبق لأهم الأقسام أثناء خمول المتصفح — يقلّل انتظار أول زيارة (lazy chunks)
   useEffect(() => {
     if (!isAuthenticated || !user || isLoginPage) return;
-    const routes = ['/', '/sales', '/purchases', '/invoices', '/reports/analytics-studio'];
+    const routes = ['/', '/sales', '/purchases', '/invoices', '/reports/general'];
     const run = () => routes.forEach((to: any) => prefetchRouteChunk(to));
     let idleId: number | undefined;
     /** في المتصفح `setTimeout` يعيد رقمًا؛ أنواع Node تعيد `Timeout` */
@@ -384,7 +383,6 @@ export default function App() {
                   <Route index element={<Navigate to="/reports/general" replace />} />
                   <Route path="general" element={<ReportsScreen />} />
                   <Route path="tax" element={<ReportsTaxScreen />} />
-                  <Route path="analytics-studio" element={<AnalyticsStudioScreen />} />
                   <Route path="vat-registry" element={<Navigate to="/hajri-tax" replace />} />
                   <Route path="bank-statement" element={<BankStatementAnalysisScreen />} />
                 </Route>
@@ -398,8 +396,8 @@ export default function App() {
                 <Route path="/tax" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/form" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/reports" element={<Navigate to="/reports/tax" replace />} />
-                <Route path="/analytics-studio" element={<Navigate to="/reports/analytics-studio" replace />} />
-                <Route path="/analytics" element={<Navigate to="/reports/analytics-studio" replace />} />
+                <Route path="/analytics-studio" element={<Navigate to="/reports/general" replace />} />
+                <Route path="/analytics" element={<Navigate to="/reports/general" replace />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>

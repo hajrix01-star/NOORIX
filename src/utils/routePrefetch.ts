@@ -21,7 +21,6 @@ const routeLoaders = {
   '/hr': () => import('../modules/HR/HRMainScreen'),
   '/reports': () => import('../modules/Reports/ReportsLayout'),
   '/reports/general': () => import('../modules/Reports/ReportsScreen'),
-  '/reports/analytics-studio': () => import('../modules/Analytics/AnalyticsStudioScreen'),
   '/reports/tax': () => import('../modules/Reports/ReportsTaxScreen'),
   '/reports/bank-statement': () => import('../modules/Reports/BankStatementAnalysisScreen'),
   '/hajri-tax': () => import('../modules/HajriTax/HajriTaxLayout'),
