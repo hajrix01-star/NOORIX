@@ -1,0 +1,102 @@
+import {
+  downloadInvoiceTemplate,
+  downloadEmployeeTemplate,
+  downloadSalesTemplate,
+  validateInvoiceRows,
+  validateEmployeeRows,
+  validateSalesRows,
+} from '../../utils/importTemplates';
+import type { EntityConfig, ImportEntityType, ImportExportStyles } from './types';
+
+export const ENTITY_CONFIG: Record<ImportEntityType, EntityConfig> = {
+  invoices: {
+    labelKey: 'importExportEntityInvoices',
+    downloadTemplate: null,
+    validate: null,
+    batchSize: 8,
+    parallel: true,
+    exportFilename: 'invoices-export.xlsx',
+  },
+  employees: {
+    labelKey: 'importExportEntityEmployees',
+    downloadTemplate: downloadEmployeeTemplate,
+    validate: (rows: Record<string, unknown>[]) => validateEmployeeRows(rows),
+    batchSize: 50,
+    parallel: false,
+    exportFilename: 'employees-export.xlsx',
+  },
+  sales: {
+    labelKey: 'importExportEntitySales',
+    downloadTemplate: null,
+    validate: null,
+    batchSize: 1,
+    parallel: false,
+    exportFilename: 'daily-sales-export.xlsx',
+  },
+};
+
+export const S: ImportExportStyles = {
+  tabs: {
+    display: 'flex',
+    gap: 0,
+    borderBottom: '1px solid var(--noorix-border)',
+    marginBottom: 16,
+  },
+  tab: (active) => ({
+    padding: '10px 20px',
+    fontSize: 14,
+    fontWeight: active ? 700 : 500,
+    color: active ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    borderBottom: active ? '2px solid var(--noorix-accent-blue)' : '2px solid transparent',
+  }),
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: 'var(--noorix-text-muted)',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  card: {
+    borderRadius: 12,
+    border: '1px solid var(--noorix-border)',
+    padding: 16,
+    background: 'var(--noorix-bg)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+  },
+  dropzone: (dragging) => ({
+    border: `2px dashed ${dragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
+    borderRadius: 12,
+    padding: '28px 20px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    background: dragging ? 'var(--noorix-blue-6)' : 'var(--noorix-bg)',
+    transition: 'all 0.18s ease',
+    color: 'var(--noorix-text-muted)',
+  }),
+  errorRow: {
+    display: 'grid',
+    gridTemplateColumns: '56px 1fr',
+    gap: 8,
+    alignItems: 'start',
+    padding: '6px 10px',
+    borderRadius: 8,
+    background: 'var(--noorix-red-7)',
+    fontSize: 13,
+  },
+  warnRow: {
+    display: 'grid',
+    gridTemplateColumns: '56px 1fr',
+    gap: 8,
+    alignItems: 'start',
+    padding: '5px 10px',
+    borderRadius: 8,
+    background: 'var(--noorix-yellow-7)',
+    fontSize: 12,
+  },
+};
