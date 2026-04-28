@@ -7,4 +7,6 @@ export const supplierKeys = {
 
   /** بادئة إبطال كل قوائم موردي شركة */
   byCompany: (companyId: string) => ['suppliers', companyId] as const,
+
+  root: () => ['suppliers'] as const,
 };

@@ -7,6 +7,10 @@ export const expenseKeys = {
   /** بادئة إبطال كل استعلامات بنود مصروفات */
   linesRoot: () => ['expense-lines'] as const,
 
+  lineRoot: () => ['expense-line'] as const,
+
+  linePaymentsRoot: () => ['expense-line-payments'] as const,
+
   linesWithKind: (companyId: string, filterKind: string) =>
     ['expense-lines', companyId, filterKind] as const,
 

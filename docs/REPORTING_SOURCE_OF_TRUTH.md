@@ -17,6 +17,11 @@
 | Bank reconciliation / categorization | Bank statement analysis | Bank statement services | Control / operational | Bank statement reports | |
 | OCR pipeline status | OCR services | OCR endpoints | Operational | OCR module only | لا يُضاف كـ KPI للداشبورد العام في هذا الإصدار. |
 
+## مفاتيح React Query والإبطال المالي
+
+- **مصانع المفاتيح:** `src/services/queryKeys/` — استخدمها في الاستعلامات بدل تكرار السلاسل يدويًا.
+- **إبطال واسع بعد عمليات مالية:** `src/utils/queryInvalidation.ts` (`invalidateOnFinancialMutation`) يستدعي دوال بادئة من المصانع (`*Root()` وما شابه)؛ راجع **`docs/REACT_QUERY_KEYS_GUIDE.md`** قبل إضافة بادئات جديدة.
+
 ## قواعد التطوير اللاحق (Owner BI / Analytics)
 
 - **Analytics Engine** (عند بنائه لاحقًا) يقرأ من المصادر أعلاه عبر APIs؛ لا يُنشئ أرقامًا محاسبية من الصفر في الواجهة.

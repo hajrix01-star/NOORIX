@@ -9,4 +9,6 @@ export const purchaseKeys = {
     batchQ: string,
     lang: string,
   ) => ['purchase-batch-summaries', companyId, startDate, endDate, batchQ, lang] as const,
+
+  batchSummariesRoot: () => ['purchase-batch-summaries'] as const,
 };

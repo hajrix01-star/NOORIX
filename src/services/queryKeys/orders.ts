@@ -2,6 +2,16 @@
  * مفاتيح React Query — الطلبات والمنتجات المرتبطة
  */
 export const orderKeys = {
+  /** بادئة إبطال كل استعلامات قائمة الطلبات */
+  listRoot: () => ['orders'] as const,
+  /** بادئة إبطال ملخص الطلبات */
+  summaryRoot: () => ['orders-summary'] as const,
+  itemsReportRoot: () => ['orders-items-report'] as const,
+  productsRoot: () => ['order-products'] as const,
+  categoriesRoot: () => ['order-categories'] as const,
+  productPurchaseHistoryRoot: () => ['product-purchase-history'] as const,
+  categoryPurchaseHistoryRoot: () => ['category-purchase-history'] as const,
+
   list: (companyId: string, year: unknown, month: unknown) =>
     ['orders', companyId, year, month] as const,
 

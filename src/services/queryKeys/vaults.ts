@@ -19,6 +19,10 @@ export const vaultKeys = {
   transactions: (vaultId: unknown, companyId: string, startDate: unknown, endDate: unknown, page: number) =>
     ['vault-transactions', vaultId, companyId, startDate, endDate, page] as const,
 
+  paymentVaultsRoot: () => ['payment-vaults'] as const,
+
+  vaultTransactionsRoot: () => ['vault-transactions'] as const,
+
   /** بادئة إبطال كل الخزائن */
   root: () => ['vaults'] as const,
 };

@@ -32,4 +32,10 @@ export const salesKeys = {
     ] as const,
 
   channels: (companyId: string) => ['sales-channels', companyId] as const,
+
+  summariesRoot: () => ['sales-summaries'] as const,
+
+  summariesPagedRoot: () => ['sales-summaries-paged'] as const,
+
+  channelsRoot: () => ['sales-channels'] as const,
 };

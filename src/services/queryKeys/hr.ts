@@ -71,4 +71,30 @@ export const hrKeys = {
 
   /** بادئة إبطال بدلات مخصصة لشركة */
   customAllowancesByCompany: (companyId: string) => ['custom-allowances', companyId] as const,
+
+  payrollRunsRoot: () => ['payroll-runs'] as const,
+
+  payrollRunRoot: () => ['payroll-run'] as const,
+
+  payrollRunItemsRoot: () => ['payroll-run-items'] as const,
+
+  deductionsRoot: () => ['deductions'] as const,
+
+  movementsRoot: () => ['movements'] as const,
+
+  leavesRoot: () => ['leaves'] as const,
+
+  residenciesRoot: () => ['residencies'] as const,
+
+  documentsRoot: () => ['documents'] as const,
+
+  leaveSalarySettlementsRoot: () => ['leave-salary-settlements'] as const,
+
+  leaveSalarySettlementPreviewRoot: () => ['leave-salary-settlement-preview'] as const,
+
+  terminationSettlementAdvancesRoot: () => ['termination-settlement-advances'] as const,
+
+  terminationSettlementSalaryExistsRoot: () => ['termination-settlement-salary-exists'] as const,
+
+  customAllowancesRoot: () => ['custom-allowances'] as const,
 };

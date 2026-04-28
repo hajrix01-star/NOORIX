@@ -7,4 +7,6 @@ export const ownerKeys = {
 
   dailySales: (companyId: string, year: number, month: number | null) =>
     ['owner-daily-sales', companyId, year, month] as const,
+
+  dailySalesRoot: () => ['owner-daily-sales'] as const,
 };

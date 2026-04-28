@@ -42,4 +42,22 @@ export const ocrKeys = {
   /** بادئة إبطال لاقتراحات موردي المحاسبة لشركة */
   accountingSupplierSuggestionsByCompany: (companyId: string) =>
     ['ocr-accounting-supplier-suggestions', companyId] as const,
+
+  invoicesRoot: () => ['ocr-invoices'] as const,
+
+  purchasesReportRoot: () => ['ocr-purchases-report'] as const,
+
+  suppliersRoot: () => ['ocr-suppliers'] as const,
+
+  accountingSupplierSuggestionsRoot: () => ['ocr-accounting-supplier-suggestions'] as const,
+
+  catalogAccountingSuggestionsRoot: () => ['ocr-catalog-accounting-suggestions'] as const,
+
+  accountingCatalogRoot: () => ['accounting-suppliers-ocr-catalog'] as const,
+
+  itemsRoot: () => ['ocr-items'] as const,
+
+  priceAlertsRoot: () => ['ocr-price-alerts'] as const,
+
+  reviewQueueRoot: () => ['ocr-review-queue'] as const,
 };

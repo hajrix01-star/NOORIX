@@ -33,4 +33,7 @@ export const reportKeys = {
     salesAmountIncludesVat: boolean,
   ) =>
     ['reports', 'tax-vat', companyId, year, period, salesAmountIncludesVat] as const,
+
+  /** بادئة إبطال كل استعلامات التقارير */
+  root: () => ['reports'] as const,
 };

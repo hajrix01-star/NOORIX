@@ -16,6 +16,10 @@ export const employeeKeys = {
   /** إبطال كل الشركات/القوائم */
   root: () => ['employees'] as const,
 
+  employeesPagedRoot: () => ['employees-paged'] as const,
+
+  employeeRoot: () => ['employee'] as const,
+
   /** بادئة تفصيل موظف بدون companyId (إبطال جزئي) */
   detailPartial: (employeeId: unknown) => ['employee', employeeId] as const,
 };

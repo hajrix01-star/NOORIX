@@ -38,4 +38,14 @@ export const bankKeys = {
   treeCategories: (companyId: string) => ['bank-tree-categories', companyId] as const,
 
   classificationRules: (companyId: string) => ['bank-classification-rules', companyId] as const,
+
+  reconciliationStatsRoot: () => ['bank-reconciliation-stats'] as const,
+
+  statementTemplatesRoot: () => ['bank-statement-templates'] as const,
+
+  classificationRulesRoot: () => ['bank-classification-rules'] as const,
+
+  treeCategoriesRoot: () => ['bank-tree-categories'] as const,
+
+  statementMappingRoot: () => ['bank-statement-mapping'] as const,
 };

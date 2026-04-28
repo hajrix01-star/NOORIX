@@ -71,6 +71,10 @@ export const invoiceKeys = {
   creatorFilterOptions: (companyId: string) =>
     ['invoice-creator-filter-options', companyId] as const,
 
+  creatorFilterOptionsRoot: () => ['invoice-creator-filter-options'] as const,
+
+  dayCloseRoot: () => ['invoice-day-close'] as const,
+
   /** بادئة إبطال كل استعلامات الفواتير */
   root: () => ['invoices'] as const,
 };
