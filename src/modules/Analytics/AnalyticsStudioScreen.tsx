@@ -65,13 +65,6 @@ export default function AnalyticsStudioScreen() {
   return (
     <ScreenShell embedded>
       <ScreenTitle>{t('analyticsStudioTitle')}</ScreenTitle>
-      <p className="mb-4 text-[14px] text-noorix-muted">{t('analyticsStudioSubtitle')}</p>
-      <div
-        className="mb-6 rounded-lg border border-noorix-blue/25 bg-[var(--noorix-blue-6)] p-4 text-[13px] leading-relaxed text-noorix-text"
-        role="note"
-      >
-        {t('analyticsStudioSourceBanner')}
-      </div>
 
       <AnalyticsFilterBar
         filters={filters}

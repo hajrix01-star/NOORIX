@@ -89,10 +89,9 @@ export default function AnalyticsKpiGrid({
           </div>
         </div>
       ))}
-      <div className="rounded-lg border border-noorix-border bg-[var(--noorix-bg-surface)] p-4 shadow-sm sm:col-span-2 lg:col-span-4 border-t-4 border-t-noorix-blue">
+      <div className="rounded-lg border border-noorix-border bg-[var(--noorix-bg-surface)] p-4 shadow-sm sm:col-span-2 lg:col-span-4">
         <div className="text-[12px] font-semibold text-noorix-muted">{t('analyticsStudioInvoiceCount')}</div>
         <div className="mt-1 text-[18px] font-bold tabular-nums">{data.kpis.totalInvoices}</div>
-        <p className="mt-3 text-[13px] font-medium leading-relaxed text-noorix-text">{t('analyticsStudioSourceHint')}</p>
       </div>
     </div>
   );

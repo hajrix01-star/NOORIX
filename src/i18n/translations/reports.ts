@@ -78,14 +78,6 @@ export default {
   reportGeneralReport: { ar: 'التقرير العام', en: 'General report' },
   reportAnalyticsStudio: { ar: 'استوديو التحليلات', en: 'Analytics Studio' },
   analyticsStudioTitle: { ar: 'استوديو التحليلات', en: 'Analytics Studio' },
-  analyticsStudioSubtitle: {
-    ar: 'تحليلات تشغيلية للفترة: فواتير نشطة + تحليل فترة (ليست P&L محاسبي كامل ولا مبنية على دفتر القيود الكامل).',
-    en: 'Operational period analytics: active invoices and period window (not full ledger-based P&L).',
-  },
-  analyticsStudioSourceBanner: {
-    ar: 'استوديو التحليلات V1 يستند إلى الفواتير النشطة في النطاق الزمني (تحليل الفترة) فقط. الأرقام ليست صافي ربح محاسبي كاملاً ولا تغني عن تقرير الربح والخسارة من التقارير العامة.',
-    en: 'Analytics Studio V1 uses active invoices in the selected range (period analytics) only. Figures are not full accounting net profit and do not replace the general P&L report.',
-  },
   analyticsStudioStart: { ar: 'من تاريخ', en: 'From' },
   analyticsStudioEnd: { ar: 'إلى تاريخ', en: 'To' },
   analyticsStudioCompanyScope: { ar: 'نطاق الشركات', en: 'Company scope' },
@@ -109,10 +101,6 @@ export default {
   /** صافي حركة الفترة — مبيعات فواتير ناقص تدفقات الخروج (ليست «صافي ربح» محاسبي) */
   analyticsStudioKpiPeriodNetMovement: { ar: 'صافي حركة الفترة', en: 'Period net movement' },
   analyticsStudioInvoiceCount: { ar: 'عدد الفواتير النشطة', en: 'Active invoice count' },
-  analyticsStudioSourceHint: {
-    ar: 'المصدر: تحليل فترة الفواتير النشطة (getPeriodAnalytics) — ليس P&L محاسبي كاملاً من الدفتر.',
-    en: 'Source: period analytics on active invoices (getPeriodAnalytics) — not full ledger P&L.',
-  },
   analyticsStudioDrilldownCompany: { ar: 'الشركة', en: 'Company' },
   analyticsStudioDrilldownSales: { ar: 'مبيعات', en: 'Sales' },
   analyticsStudioDrilldownPurchases: { ar: 'مشتريات', en: 'Purchases' },
