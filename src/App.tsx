@@ -18,6 +18,7 @@ import { canAccessThemePreview } from './utils/themePreviewAccess';
 import { STORAGE_KEYS, CARD_STYLE_KEY } from './constants/storageKeys';
 import { readStoredLanguage, writeStoredLanguage } from './utils/storedLanguage';
 import { appKeys } from './services/queryKeys';
+import { STALE_CHUNK_RELOAD_QUERY } from './utils/staleChunkRecovery';
 
 const DashboardScreen = React.lazy(() => import('./modules/Dashboard/DashboardScreen'));
 const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScreen'));
@@ -63,7 +64,17 @@ function getInitialCardStyle() {
 
 export default function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isLoginPage = location.pathname === '/login';
+
+  // إزالة علامة إعادة التحميل بعد نشر جديد — لا تُبقِها في شريط العنوان
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (!params.has(STALE_CHUNK_RELOAD_QUERY)) return;
+    params.delete(STALE_CHUNK_RELOAD_QUERY);
+    const qs = params.toString();
+    navigate(`${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`, { replace: true });
+  }, [location.search, location.pathname, location.hash, navigate]);
 
   const { isAuthenticated, user, setUser, setToken } = useAuth();
 
@@ -224,7 +235,6 @@ export default function App() {
   }, [user?.id, user?.preferredLang]);
 
   const toggleSidebar = () => setSidebarOpen((prev: any) => !prev);
-  const navigate = useNavigate();
   const handleLogout = () => {
     queryClient.clear();
     setToken(null);

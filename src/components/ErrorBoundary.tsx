@@ -3,6 +3,11 @@
  */
 import React from 'react';
 import { Button } from '../ui';
+import {
+  hasStaleChunkRecoveryFlag,
+  isStaleViteChunkLoadError,
+  tryRecoverStaleChunkError,
+} from '../utils/staleChunkRecovery';
 
 type ErrorBoundaryProps = { children: React.ReactNode };
 type ErrorBoundaryState = { hasError: boolean; error: Error | null };
@@ -14,6 +19,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    if (tryRecoverStaleChunkError(error)) {
+      return { hasError: false, error: null };
+    }
     return { hasError: true, error };
   }
 
@@ -44,10 +52,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           >
             <div className="text-[20px] mb-3">⚠️</div>
             <h2 className="m-0 text-[16px] text-noorix-text mb-2">
-              حدث خطأ غير متوقع
+              {this.state.error && isStaleViteChunkLoadError(this.state.error) && hasStaleChunkRecoveryFlag()
+                ? 'تعذّر تحميل واجهة محدّثة'
+                : 'حدث خطأ غير متوقع'}
             </h2>
             <p className="m-0 text-noorix-muted text-[14px] mb-5">
-              نعتذر عن الإزعاج. يمكنك تحديث الصفحة والمحاولة مرة أخرى.
+              {this.state.error && isStaleViteChunkLoadError(this.state.error) && hasStaleChunkRecoveryFlag()
+                ? 'غالباً نسخة قديمة في المتصفح أو التطبيق المثبّت بعد تحديث الموقع. جرّب «إعادة تحميل الصفحة» أو مسح بيانات الموقع لهذا العنوان.'
+                : 'نعتذر عن الإزعاج. يمكنك تحديث الصفحة والمحاولة مرة أخرى.'}
             </p>
             {this.state.error?.message && (
               <pre className="text-[12px] nx-ltr overflow-auto rounded-lg mb-4 p-3 max-h-[120px] bg-black/5">
