@@ -120,8 +120,9 @@ export function useDashboardOverviewModel(
     if (insightsQuery.isError) return { show: false };
     if (insightDisplayRows.length > 0) return { show: true, state: 'ready', items: insightDisplayRows };
     if (insightsQuery.isPending) return { show: true, state: 'loading' };
+    if (insightsQuery.isSuccess) return { show: true, state: 'empty' };
     return { show: false };
-  }, [insightDisplayRows, insightsQuery.isError, insightsQuery.isPending]);
+  }, [insightDisplayRows, insightsQuery.isError, insightsQuery.isPending, insightsQuery.isSuccess]);
 
   const { data: periodData, isLoading: isPeriodLoading } = usePeriodAnalytics({
     companyId,

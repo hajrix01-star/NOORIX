@@ -53,6 +53,18 @@ export function DashboardOverviewInsightsSection({ lang, insightsUi, t }: Props)
     );
   }
 
+  if (insightsUi.state === 'empty') {
+    return (
+      <section className="min-w-0" aria-label={title}>
+        <Card padding="sm" className="border border-noorix-border/80 bg-noorix-bg-muted/20">
+          <h2 className="text-[13px] font-bold text-noorix-text mb-2">{title}</h2>
+          <p className="text-[13px] font-medium text-noorix-text">{t('dashboardInsightsEmptyTitle')}</p>
+          <p className="text-[12px] text-noorix-muted mt-1 leading-snug">{t('dashboardInsightsEmptyDetail')}</p>
+        </Card>
+      </section>
+    );
+  }
+
   const { items } = insightsUi;
   if (items.length === 0) return null;
 

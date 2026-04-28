@@ -18,4 +18,5 @@ export type DashboardInsightDisplayItem = {
 export type DashboardInsightsUi =
   | { show: false }
   | { show: true; state: 'loading' }
+  | { show: true; state: 'empty' }
   | { show: true; state: 'ready'; items: DashboardInsightDisplayItem[] };

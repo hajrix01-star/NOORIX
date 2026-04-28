@@ -72,4 +72,12 @@ export default {
   dashboardInsightsBasisAccounting: { ar: 'محاسبة (أرباح وخسائر)', en: 'Accounting P&L' },
   dashboardInsightsBasisOperational: { ar: 'مبيعات تشغيلية', en: 'Operational sales' },
   dashboardInsightsBasisInvoicePeriod: { ar: 'فواتير الفترة', en: 'Invoice period' },
+  dashboardInsightsEmptyTitle: {
+    ar: 'لا توجد تنبيهات مالية حالياً',
+    en: 'No financial alerts',
+  },
+  dashboardInsightsEmptyDetail: {
+    ar: 'الأرقام الحالية لا تتجاوز حدود التحذير المعتمدة.',
+    en: 'Current figures do not exceed the configured warning thresholds.',
+  },
 };
