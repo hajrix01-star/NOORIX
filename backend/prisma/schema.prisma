@@ -135,6 +135,7 @@ model Company {
   backupJobs             BackupJob[]
   companyAssets        CompanyAsset[]
   companyBackupConfig  CompanyBackupConfig?
+  companyInsightSettings CompanyInsightSettings?
   vatPlanningQuarters VatPlanningQuarter[]
   ocrSuppliers        OcrSupplier[]
   ocrItems            OcrItem[]
@@ -246,6 +247,19 @@ model CompanyBackupConfig {
 
   @@index([tenantId])
   @@map("company_backup_config")
+}
+
+/// حدود تنبيهات الرؤى المالية لكل شركة — المرحلة أ: تخزين فقط (بدون ربط سلوك الإنتاج بعد)
+model CompanyInsightSettings {
+  id          String   @id @default(cuid())
+  companyId   String   @unique @map("company_id")
+  thresholds  Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_insight_settings")
 }
 
 // تحليل كشوف الحساب — كشف واحد مع حركاته
