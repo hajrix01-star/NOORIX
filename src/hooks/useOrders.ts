@@ -39,10 +39,7 @@ export function useOrders(companyId: any, year: any, month: any) {
 export function useCreateOrderMutation() {
   return useApiMutation({
     mutationFn: createOrder,
-    invalidateQueries: [
-      { predicate: (q: any) => q.queryKey[0] === 'orders' },
-      { predicate: (q: any) => q.queryKey[0] === 'orders-summary' },
-    ],
+    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot()],
     showErrorToast: false,
   });
 }
@@ -50,10 +47,7 @@ export function useCreateOrderMutation() {
 export function useUpdateOrderMutation(companyId: any) {
   return useApiMutation({
     mutationFn: ({ id, body }: any) => updateOrder(id, body, companyId),
-    invalidateQueries: [
-      { predicate: (q: any) => q.queryKey[0] === 'orders' },
-      { predicate: (q: any) => q.queryKey[0] === 'orders-summary' },
-    ],
+    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot()],
     showErrorToast: false,
   });
 }
@@ -61,10 +55,7 @@ export function useUpdateOrderMutation(companyId: any) {
 export function useCancelOrderMutation(companyId: any) {
   return useApiMutation({
     mutationFn: (id: any) => cancelOrder(id, companyId),
-    invalidateQueries: [
-      { predicate: (q: any) => q.queryKey[0] === 'orders' },
-      { predicate: (q: any) => q.queryKey[0] === 'orders-summary' },
-    ],
+    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot()],
     showErrorToast: false,
   });
 }
