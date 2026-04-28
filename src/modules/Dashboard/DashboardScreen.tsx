@@ -6,7 +6,7 @@ import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Input, ScreenTabs, ScreenShell } from '../../ui';
-import DashboardOverviewTab from './components/DashboardOverviewTab';
+import DashboardOverviewTab from './overview/DashboardOverviewTab';
 import DashboardCalendarTab from './components/DashboardCalendarTab';
 import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
 import DashboardAppSalesTab from './components/DashboardAppSalesTab';

@@ -7,10 +7,11 @@ import {
   getTaxVatReport,
   throwIfApiFailed,
 } from '../services/api';
+import { reportKeys } from '../services/queryKeys/reports';
 
-export function useReportsGeneralProfitLoss({ companyId, year }: any) {
+export function useReportsGeneralProfitLoss({ companyId, year }: { companyId: string; year: number }) {
   return useQuery({
-    queryKey: ['reports', 'general-profit-loss', companyId, year],
+    queryKey: reportKeys.generalProfitLoss(companyId, year),
     queryFn: async () => {
       const res = await getGeneralProfitLossReport(companyId, year);
       throwIfApiFailed(res, 'فشل تحميل التقرير');
@@ -21,9 +22,23 @@ export function useReportsGeneralProfitLoss({ companyId, year }: any) {
   });
 }
 
-export function useReportDetails({ companyId, year, month, groupKey, itemKey, enabled = true }: any) {
+export function useReportDetails({
+  companyId,
+  year,
+  month,
+  groupKey,
+  itemKey,
+  enabled = true,
+}: {
+  companyId: string;
+  year: number;
+  month: number;
+  groupKey: string;
+  itemKey?: string;
+  enabled?: boolean;
+}) {
   return useQuery({
-    queryKey: ['reports', 'general-profit-loss', 'details', companyId, year, month, groupKey, itemKey || 'all'],
+    queryKey: reportKeys.generalProfitLossDetails(companyId, year, month, groupKey, itemKey),
     queryFn: async () => {
       const res = await getGeneralProfitLossDetails(companyId, year, month, groupKey, itemKey);
       if (!res?.success) throw new Error(res?.error || 'فشل تحميل تفاصيل التقرير');
@@ -33,9 +48,21 @@ export function useReportDetails({ companyId, year, month, groupKey, itemKey, en
   });
 }
 
-export function useReportTrend({ companyId, year, groupKey, itemKey, enabled = true }: any) {
+export function useReportTrend({
+  companyId,
+  year,
+  groupKey,
+  itemKey,
+  enabled = true,
+}: {
+  companyId: string;
+  year: number;
+  groupKey: string;
+  itemKey?: string;
+  enabled?: boolean;
+}) {
   return useQuery({
-    queryKey: ['reports', 'general-profit-loss', 'trend', companyId, year, groupKey, itemKey || 'all'],
+    queryKey: reportKeys.generalProfitLossTrend(companyId, year, groupKey, itemKey),
     queryFn: async () => {
       const res = await getGeneralProfitLossTrend(companyId, year, groupKey, itemKey);
       throwIfApiFailed(res, 'فشل تحميل اتجاه البند');
@@ -45,9 +72,19 @@ export function useReportTrend({ companyId, year, groupKey, itemKey, enabled = t
   });
 }
 
-export function usePeriodAnalytics({ companyId, startDate, endDate, enabled = true }: any) {
+export function usePeriodAnalytics({
+  companyId,
+  startDate,
+  endDate,
+  enabled = true,
+}: {
+  companyId: string;
+  startDate: string;
+  endDate: string;
+  enabled?: boolean;
+}) {
   return useQuery({
-    queryKey: ['reports', 'period-analytics', companyId, startDate, endDate],
+    queryKey: reportKeys.periodAnalytics(companyId, startDate, endDate),
     queryFn: async () => {
       const res = await getPeriodAnalytics(companyId, startDate, endDate);
       throwIfApiFailed(res, 'فشل تحميل تحليل الفترة');
@@ -58,11 +95,23 @@ export function usePeriodAnalytics({ companyId, startDate, endDate, enabled = tr
   });
 }
 
-export function useTaxReport({ companyId, year, period, salesAmountIncludesVat = false, enabled = true }: any) {
+export function useTaxReport({
+  companyId,
+  year,
+  period,
+  salesAmountIncludesVat = false,
+  enabled = true,
+}: {
+  companyId: string;
+  year: number;
+  period: string | number;
+  salesAmountIncludesVat?: boolean;
+  enabled?: boolean;
+}) {
   return useQuery({
-    queryKey: ['reports', 'tax-vat', companyId, year, period, salesAmountIncludesVat],
+    queryKey: reportKeys.taxVat(companyId, year, period, salesAmountIncludesVat),
     queryFn: async () => {
-      const res = await getTaxVatReport(companyId, year, period, {
+      const res = await getTaxVatReport(companyId, year, String(period), {
         salesAmountIncludesVat,
       });
       throwIfApiFailed(res, 'فشل تحميل التقرير الضريبي');

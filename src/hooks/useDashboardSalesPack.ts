@@ -3,6 +3,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { getDashboardSalesPack, throwIfApiFailed } from '../services/api';
+import { dashboardKeys } from '../services/queryKeys/dashboard';
 
 /**
  * @param {{
@@ -16,7 +17,16 @@ import { getDashboardSalesPack, throwIfApiFailed } from '../services/api';
  *   enabled?: boolean,
  * }} p
  */
-export function useDashboardSalesPack(p: any) {
+export function useDashboardSalesPack(p: {
+  companyId: string;
+  yearStart: string;
+  yearEnd: string;
+  dailyStart: string | null;
+  dailyEnd: string | null;
+  monthStart: string | null;
+  monthEnd: string | null;
+  enabled?: boolean;
+}) {
   const {
     companyId,
     yearStart,
@@ -29,8 +39,7 @@ export function useDashboardSalesPack(p: any) {
   } = p;
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: [
-      'sales-dashboard-pack',
+    queryKey: dashboardKeys.salesPack(
       companyId,
       yearStart,
       yearEnd,
@@ -38,16 +47,16 @@ export function useDashboardSalesPack(p: any) {
       dailyEnd,
       monthStart,
       monthEnd,
-    ],
+    ),
     queryFn: async () => {
       const res = await getDashboardSalesPack({
         companyId,
         yearStart,
         yearEnd,
-        dailyStart,
-        dailyEnd,
-        monthStart,
-        monthEnd,
+        dailyStart: dailyStart ?? undefined,
+        dailyEnd: dailyEnd ?? undefined,
+        monthStart: monthStart ?? undefined,
+        monthEnd: monthEnd ?? undefined,
       });
       throwIfApiFailed(res, 'فشل تحميل بيانات المبيعات للوحة التحكم');
       const raw = res.data?.data ?? res.data;
