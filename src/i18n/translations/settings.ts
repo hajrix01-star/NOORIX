@@ -299,4 +299,38 @@ export default {
   expensesGroup: { ar: 'مصاريف', en: 'Expenses' },
   purchasesGroup: { ar: 'مشتريات', en: 'Purchases' },
   revenueGroup: { ar: 'إيرادات', en: 'Revenue' },
+
+  financialInsightThresholdsSaving: { ar: 'جاري الحفظ…', en: 'Saving…' },
+  financialInsightThresholdsResetting: { ar: 'جاري إعادة التعيين…', en: 'Resetting…' },
+  financialInsightThresholdsSectionTitle: { ar: 'حدود التحليل المالي', en: 'Financial insight thresholds' },
+  financialInsightThresholdsHelper: {
+    ar: 'تستخدم هذه الحدود لتحديد متى تظهر تنبيهات التحليل المالي في لوحة التحكم.',
+    en: 'These thresholds control when financial insight alerts appear in the dashboard.',
+  },
+  financialInsightPurchaseWarn: { ar: 'نسبة المشتريات إلى المبيعات — تحذير %', en: 'Purchase-to-sales ratio — warning %' },
+  financialInsightPurchaseCrit: { ar: 'نسبة المشتريات إلى المبيعات — حرج %', en: 'Purchase-to-sales ratio — critical %' },
+  financialInsightExpenseWarn: { ar: 'نسبة المصاريف إلى المبيعات — تحذير %', en: 'Expense-to-sales ratio — warning %' },
+  financialInsightExpenseCrit: { ar: 'نسبة المصاريف إلى المبيعات — حرج %', en: 'Expense-to-sales ratio — critical %' },
+  financialInsightNetMarginWarn: { ar: 'هامش صافي الربح — تحذير عند الأقل من %', en: 'Net profit margin — warn when below %' },
+  financialInsightThresholdsReadOnly: { ar: 'عرض فقط — لا تملك صلاحية تعديل إعدادات الشركة.', en: 'Read-only — you cannot edit company settings.' },
+  financialInsightThresholdsSaved: { ar: 'تم حفظ حدود التحليل.', en: 'Insight thresholds saved.' },
+  financialInsightThresholdsSaveError: { ar: 'فشل حفظ الحدود.', en: 'Could not save thresholds.' },
+  financialInsightThresholdsLoadError: { ar: 'فشل تحميل الحدود.', en: 'Could not load thresholds.' },
+  financialInsightThresholdsResetDone: { ar: 'تمت إعادة الحدود للافتراضي.', en: 'Thresholds reset to defaults.' },
+  financialInsightThresholdsResetError: { ar: 'فشل إعادة التعيين.', en: 'Could not reset thresholds.' },
+  financialInsightThresholdsResetConfirm: {
+    ar: 'إعادة جميع الحدود إلى القيم الافتراضية لهذا النظام؟',
+    en: 'Reset all thresholds to system defaults for this company?',
+  },
+  financialInsightThresholdsReset: { ar: 'إعادة للافتراضي', en: 'Reset to defaults' },
+  financialInsightThresholdsSave: { ar: 'حفظ الحدود', en: 'Save thresholds' },
+  financialInsightValidationRange: { ar: 'القيم يجب أن تكون بين ٠ و ١٠٠٪.', en: 'Values must be between 0 and 100%.' },
+  financialInsightValidationPurchaseOrder: {
+    ar: 'في المشتريات: يجب أن يكون التحذير أقل من الحرج.',
+    en: 'Purchases: warning must be less than critical.',
+  },
+  financialInsightValidationExpenseOrder: {
+    ar: 'في المصاريف: يجب أن يكون التحذير أقل من الحرج.',
+    en: 'Expenses: warning must be less than critical.',
+  },
 };

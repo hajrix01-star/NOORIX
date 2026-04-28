@@ -13,7 +13,8 @@ export type AuditAction =
   | 'login'
   | 'logout'
   | 'password_change'
-  | 'role_change';
+  | 'role_change'
+  | 'reset';
 
 export interface AuditLogParams {
   companyId:  string;

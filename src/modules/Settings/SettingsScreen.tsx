@@ -76,7 +76,13 @@ export default function SettingsScreen() {
 
   const tabPanels = (
     <>
-      {activeTab === 'companies' && <CompaniesTab onCompanyCreated={(id: any) => setActiveCompany(id)} />}
+      {activeTab === 'companies' && (
+        <CompaniesTab
+          onCompanyCreated={(id: any) => setActiveCompany(id)}
+          userRole={userRole}
+          userPermissions={userPermissions}
+        />
+      )}
       {activeTab === 'tax'       && <TaxSettingsTab />}
       {activeTab === 'users'     && <UsersTab userRole={userRole} activeCompanies={activeCompanies} />}
       {activeTab === 'roles'     && <RolesTab userRole={userRole} language={language} />}

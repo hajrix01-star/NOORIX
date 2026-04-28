@@ -12,8 +12,17 @@ import {
 } from '../constants/settingsConstants';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { appKeys } from '../../../services/queryKeys';
+import CompanyFinancialInsightThresholdsSection from './CompanyFinancialInsightThresholdsSection';
 
-export default function CompaniesTab({ onCompanyCreated }: any) {
+export default function CompaniesTab({
+  onCompanyCreated,
+  userRole,
+  userPermissions = [],
+}: {
+  onCompanyCreated?: (id: unknown) => void;
+  userRole?: string;
+  userPermissions?: string[];
+}) {
   const [includeArchived,    setIncludeArchived]    = useState(false);
   const [showAddForm,        setShowAddForm]        = useState(false);
   const [editModal,          setEditModal]          = useState<any>(null);
@@ -362,6 +371,12 @@ export default function CompaniesTab({ onCompanyCreated }: any) {
 
               {updateMutation.isError && <p className="m-0 text-[13px] rounded-lg py-2 px-3 text-noorix-red bg-noorix-red/10">{updateMutation.error?.message}</p>}
             </form>
+
+            <CompanyFinancialInsightThresholdsSection
+              companyId={editModal.id}
+              userRole={userRole}
+              userPermissions={userPermissions}
+            />
 
             {/* قسم الخطر */}
             <div className="rounded-xl mt-3 p-[14px] bg-noorix-red/5 border border-noorix-red/20">
