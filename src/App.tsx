@@ -14,6 +14,7 @@ import AppSidebar from './components/AppSidebar';
 import AppHeader from './components/AppHeader';
 import LoadingFallback from './components/LoadingFallback';
 import { prefetchRouteChunk } from './utils/routePrefetch';
+import { canAccessThemePreview } from './utils/themePreviewAccess';
 import { STORAGE_KEYS, CARD_STYLE_KEY } from './constants/storageKeys';
 import { readStoredLanguage, writeStoredLanguage } from './utils/storedLanguage';
 
@@ -364,7 +365,18 @@ export default function App() {
             <PermissionGuard userRole={user?.role} userPermissions={user?.permissions} isUserLoading={isUserLoading}>
               <Routes>
                 <Route path="/purchasing" element={<Navigate to="/purchases" replace />} />
-                <Route path="/theme-preview" element={<ThemePreviewScreen />} />
+                <Route
+                  path="/theme-preview"
+                  element={
+                    isUserLoading ? (
+                      <LoadingFallback />
+                    ) : canAccessThemePreview(user?.role) ? (
+                      <ThemePreviewScreen />
+                    ) : (
+                      <Forbidden403 />
+                    )
+                  }
+                />
                 <Route path="/403" element={<Forbidden403 />} />
                 <Route path="/sales" element={<DailySalesScreen />} />
                 <Route path="/sales/new" element={<DailySalesScreen />} />

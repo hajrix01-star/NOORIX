@@ -6,6 +6,7 @@ import { NavLink, useLocation, useNavigate, type NavLinkRenderProps } from 'reac
 import { useTranslation } from '../i18n/useTranslation';
 import { hasPermission } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
+import { canAccessThemePreview } from '../utils/themePreviewAccess';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
 import { Button } from '../ui';
 import {
@@ -54,7 +55,7 @@ const SIDEBAR_LINKS = [
   { to: '/ocr/cashier', labelKey: 'ocrCashierSubmitNav', icon: IconOcr, permission: 'OCR_SUBMIT' },
   { to: '/settings', labelKey: 'settings', icon: IconSettings, permission: 'MANAGE_SETTINGS' },
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
-];
+] as const;
 
 export type AppSidebarProps = {
   isOpen: boolean;
@@ -69,7 +70,8 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
   const navigate = useNavigate();
   const navLinkClass = ({ isActive }: NavLinkRenderProps) =>
     `app-nav-link${isActive ? ' app-nav-link--active' : ''}`;
-  const visibleLinks = SIDEBAR_LINKS.filter((link: any) => {
+  const visibleLinks = SIDEBAR_LINKS.filter((link) => {
+    if (link.to === '/theme-preview' && !canAccessThemePreview(userRole)) return false;
     if ((link as { ownerOnly?: boolean }).ownerOnly && String(userRole || '').toLowerCase() !== 'owner') return false;
     return hasPermission(userRole, link.permission, userPermissions);
   });
