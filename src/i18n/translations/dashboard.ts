@@ -62,4 +62,14 @@ export default {
   dashboardKpiPctSales: { ar: 'نسبة المبيعات من المبيعات', en: 'Sales share of total sales' },
   dashboardKpiPctGrossProfit: { ar: 'نسبة الربح الإجمالي من المبيعات', en: 'Gross profit share of sales' },
   dashboardKpiPctNetProfit: { ar: 'نسبة الربح الصافي من المبيعات', en: 'Net profit share of sales' },
+
+  /** رؤى لوحة التحكم — قراءة فقط */
+  dashboardInsightsSectionTitle: { ar: 'تنبيهات وتحليلات ذكية', en: 'Smart Insights' },
+  dashboardInsightsLoadingHint: { ar: 'جاري تحميل التحليلات…', en: 'Loading insights…' },
+  dashboardInsightsSeverityInfo: { ar: 'معلومة', en: 'Info' },
+  dashboardInsightsSeverityWarning: { ar: 'تنبيه', en: 'Warning' },
+  dashboardInsightsSeverityCritical: { ar: 'حرج', en: 'Critical' },
+  dashboardInsightsBasisAccounting: { ar: 'محاسبة (أرباح وخسائر)', en: 'Accounting P&L' },
+  dashboardInsightsBasisOperational: { ar: 'مبيعات تشغيلية', en: 'Operational sales' },
+  dashboardInsightsBasisInvoicePeriod: { ar: 'فواتير الفترة', en: 'Invoice period' },
 };

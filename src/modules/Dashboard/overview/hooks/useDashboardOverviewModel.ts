@@ -3,6 +3,9 @@ import { useTranslation } from '../../../../i18n/useTranslation';
 import { useReportsGeneralProfitLoss, usePeriodAnalytics } from '../../../../hooks/useReports';
 import { monthDateBounds } from '../../../../utils/reportDrillLinks';
 import { useDashboardSalesPack } from '../../../../hooks/useDashboardSalesPack';
+import { useDashboardInsights } from '../../hooks/useDashboardInsights';
+import { pickDashboardInsightDisplayItems } from '../utils/dashboardOverviewInsightsPick';
+import type { DashboardInsightsUi } from '../types/dashboardInsightsDisplay';
 import { EN_MONTHS } from '../../../Reports/reportHelpers';
 import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../../constants/kpiCardTheme';
 import { useUiDir } from '../../../../hooks/useUiDir';
@@ -92,6 +95,33 @@ export function useDashboardOverviewModel(
     () => monthDateBounds(year, selectedMonth ?? null),
     [year, selectedMonth],
   );
+
+  const insightsQuery = useDashboardInsights({
+    companyId,
+    year,
+    yearStart,
+    yearEnd,
+    dailyStart,
+    dailyEnd,
+    monthStart: monthSalesAvgBounds.start,
+    monthEnd: monthSalesAvgBounds.end,
+    periodStart: supplierFrom,
+    periodEnd: supplierTo,
+    selectedMonth: selectedMonth ?? undefined,
+    enabled: !!companyId,
+  });
+
+  const insightDisplayRows = useMemo(
+    () => pickDashboardInsightDisplayItems(insightsQuery.data),
+    [insightsQuery.data],
+  );
+
+  const insightsUi = useMemo((): DashboardInsightsUi => {
+    if (insightsQuery.isError) return { show: false };
+    if (insightDisplayRows.length > 0) return { show: true, state: 'ready', items: insightDisplayRows };
+    if (insightsQuery.isPending) return { show: true, state: 'loading' };
+    return { show: false };
+  }, [insightDisplayRows, insightsQuery.isError, insightsQuery.isPending]);
 
   const { data: periodData, isLoading: isPeriodLoading } = usePeriodAnalytics({
     companyId,
@@ -258,6 +288,7 @@ export function useDashboardOverviewModel(
     year,
     selectedMonth,
     pieColors: PIE_COLORS,
+    insightsUi,
   };
 }
 
