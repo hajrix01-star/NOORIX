@@ -11,6 +11,7 @@ import {
   fileToDataUrl,
 } from '../constants/settingsConstants';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { appKeys } from '../../../services/queryKeys';
 
 export default function CompaniesTab({ onCompanyCreated }: any) {
   const [includeArchived,    setIncludeArchived]    = useState(false);
@@ -29,7 +30,7 @@ export default function CompaniesTab({ onCompanyCreated }: any) {
   const [logoUrl,  setLogoUrl]  = useState('');
 
   const { data: companiesList = [], isLoading, isError, refetch } = useQuery({
-    queryKey:        ['companies', includeArchived],
+    queryKey:        appKeys.companies(includeArchived),
     queryFn:         async () => {
       try { const r = await getCompanies(includeArchived); return Array.isArray(r?.data) ? r.data : []; }
       catch { return []; }
@@ -52,7 +53,7 @@ export default function CompaniesTab({ onCompanyCreated }: any) {
 
   const addMutation = useApiMutation({
     mutationFn: (body: any) => createCompany(body),
-    invalidateQueries: [['companies']],
+    invalidateQueries: [appKeys.companiesRoot()],
     showErrorToast: false,
     onSuccess: (res: any) => {
       const created = res?.data ?? res;
@@ -63,7 +64,7 @@ export default function CompaniesTab({ onCompanyCreated }: any) {
 
   const updateMutation = useApiMutation({
     mutationFn: ({ id, body }: any) => updateCompany(id, body),
-    invalidateQueries: [['companies']],
+    invalidateQueries: [appKeys.companiesRoot()],
     showErrorToast: false,
       successToast: (data: any, variables: any) => {
       if (variables?.body?.isArchived === true) return 'تم أرشفة الشركة.';
@@ -77,7 +78,7 @@ export default function CompaniesTab({ onCompanyCreated }: any) {
 
   const deleteMutation = useApiMutation({
     mutationFn: (id: any) => deleteCompany(id),
-    invalidateQueries: [['companies']],
+    invalidateQueries: [appKeys.companiesRoot()],
     showErrorToast: false,
     onSuccess: () => { setEditModal(null); },
   });

@@ -7,6 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useVaults } from '../../../hooks/useVaults';
 import { getEmployees } from '../../../services/api';
+import { employeeKeys } from '../../../services/queryKeys';
 import { createResidency, updateResidency, createInvoice } from '../../../services/api';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
@@ -49,7 +50,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
   const vaults = paymentVaults;
 
   const { data: employees = [] } = useQuery({
-    queryKey: ['employees', cid, false],
+    queryKey: employeeKeys.list(cid, false),
     queryFn: async () => {
       const res = await getEmployees(cid, false);
       if (!res?.success) return [];

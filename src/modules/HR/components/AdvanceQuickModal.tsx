@@ -7,6 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useVaults } from '../../../hooks/useVaults';
 import { useQuery } from '@tanstack/react-query';
 import { getEmployees } from '../../../services/api';
+import { employeeKeys } from '../../../services/queryKeys';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
@@ -28,7 +29,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
   const [installmentCount, setInstallmentCount] = useState('');
 
   const { data: employees = [] } = useQuery({
-    queryKey: ['employees', companyId, false],
+    queryKey: employeeKeys.list(companyId, false),
     queryFn: async () => {
       const res = await getEmployees(companyId, false);
       if (!res?.success) return [];

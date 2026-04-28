@@ -21,6 +21,7 @@ import {
 } from './invoiceUpload/useInvoiceUploadReactQueryEffects';
 import { useOcrInvoiceImagePipeline } from './invoiceUpload/useOcrInvoiceImagePipeline';
 import { useOcrInvoiceLineItems } from './invoiceUpload/useOcrInvoiceLineItems';
+import { vaultKeys, ocrKeys } from '../../../services/queryKeys';
 
 /**
  * منطق تبويب رفع/استخراج فاتورة OCR (منفصل عن العرض)
@@ -103,7 +104,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const accSuggestKey = `${finalizeOcrId || ''}|${prefillOcrSupplierId || ''}|${supplierNameForSuggest}|${invoiceVatDigits}`;
 
   const { data: vaultRows = [] } = useQuery({
-    queryKey: ['vaults', activeCompanyId, 'ocr-finalize'],
+    queryKey: vaultKeys.ocrFinalize(activeCompanyId || ''),
     enabled: !!activeCompanyId && !!finalizeOcrId && createLinkedPurchase && canCreatePurchase,
     queryFn: async () => {
       const r = await getVaults(activeCompanyId, false);
@@ -112,13 +113,12 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   });
 
   const { data: accSuggestions = [], isFetching: accSuggestionsFetching } = useQuery({
-    queryKey: [
-      'ocr-accounting-supplier-suggestions',
-      activeCompanyId,
+    queryKey: ocrKeys.accountingSupplierSuggestions(
+      activeCompanyId || '',
       prefillOcrSupplierId || '',
       supplierNameForSuggest,
       invoiceVatDigits,
-    ],
+    ),
     enabled:
       !!activeCompanyId &&
       !!finalizeOcrId &&
@@ -310,8 +310,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
         setNewOcrError(r.error || t('ocrExtractFailed'));
         return;
       }
-      queryClient.invalidateQueries({ queryKey: ['ocr-suppliers', activeCompanyId] });
-      queryClient.invalidateQueries({ queryKey: ['ocr-accounting-supplier-suggestions', activeCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ocrKeys.suppliers(activeCompanyId || '') });
+      queryClient.invalidateQueries({ queryKey: ocrKeys.accountingSupplierSuggestionsByCompany(activeCompanyId || '') });
       const row = r.data;
       setExtracted((ex: any) =>
         ex ? { ...ex, supplierMatch: { id: row.id, nameAr: row.nameAr, score: 1, status: 'new' } } : null,

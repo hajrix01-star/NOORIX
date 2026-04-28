@@ -21,6 +21,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, Modal, FmtNum, Input } from '../../../ui';
+import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
 function payrollMonthFirstDay(terminationYmd: any) {
   const s = toYmd(terminationYmd);
@@ -119,7 +120,7 @@ export default function TerminationSettlementModal({
   );
 
   const { data: advanceInvoices = [] } = useQuery({
-    queryKey: ['termination-settlement-advances', companyId, empId],
+    queryKey: hrKeys.terminationAdvances(companyId, empId),
     queryFn: async () => {
       const res = await getInvoices(companyId, undefined, undefined, 1, 100, null, empId, 'advance');
       if (!res?.success) return [];
@@ -148,7 +149,7 @@ export default function TerminationSettlementModal({
   );
 
   const { data: hasTerminationSalaryThisMonth = false, isFetching: checkingTerminationSalaryInvoice } = useQuery({
-    queryKey: ['termination-settlement-salary-exists', companyId, empId, monthFirst, termSalaryTag],
+    queryKey: hrKeys.terminationSalaryExists(companyId, empId, monthFirst, termSalaryTag),
     queryFn: async () => {
       if (!companyId || !empId || !monthFirst || !termSalaryTag) return false;
       const hit = await findTerminationSalaryInvoiceThisMonth(companyId, empId, monthFirst, termSalaryTag);
@@ -237,8 +238,8 @@ export default function TerminationSettlementModal({
         file,
       });
       assertApiOk(res, t('saveFailed'));
-      queryClient.invalidateQueries({ queryKey: ['documents', companyId, empId] });
-      queryClient.invalidateQueries({ queryKey: ['employee', empId, companyId] });
+      queryClient.invalidateQueries({ queryKey: hrKeys.documents(companyId, empId) });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(empId, companyId) });
       showToast(t('documentUploaded'), 'success');
     } catch (err: any) {
       showToast(err?.message || t('saveFailed'), 'error');
@@ -280,7 +281,7 @@ export default function TerminationSettlementModal({
           invoiceNumber: dup.invoiceNumber || dup.id || '',
           invoiceId: dup.id || '',
         });
-        queryClient.invalidateQueries({ queryKey: ['termination-settlement-salary-exists', companyId, empId] });
+        queryClient.invalidateQueries({ queryKey: hrKeys.terminationSalaryExistsByEmployee(companyId, empId) });
         return;
       }
 
@@ -338,7 +339,7 @@ export default function TerminationSettlementModal({
       }
 
       invalidateOnFinancialMutation(queryClient);
-      queryClient.invalidateQueries({ queryKey: ['termination-settlement-salary-exists', companyId, empId] });
+      queryClient.invalidateQueries({ queryKey: hrKeys.terminationSalaryExistsByEmployee(companyId, empId) });
 
       setIssuedInvoice({ invoiceNumber, invoiceId });
       const baseMsg = `${t('terminationSettlementInvoiceCreated')}: ${invoiceNumber}`;

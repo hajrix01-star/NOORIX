@@ -23,6 +23,7 @@ import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation'
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, ScreenShell, Modal, Spinner, SmartTable } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
 const PAGE_SIZE = 50;
 
@@ -50,11 +51,11 @@ function canShowSalarySettlement(row: any) {
 /** بعد حفظ إجازة من الـ modal: قوائم الإجازات/التسويات/الموظفين + إبطال الطبقة المالية */
 function invalidateAfterLeaveFormModalSuccess(queryClient: any, companyId: any, year: any) {
   if (!queryClient || !companyId) return;
-  queryClient.invalidateQueries({ queryKey: ['leaves', companyId] });
-  queryClient.invalidateQueries({ queryKey: ['leaves', companyId, year] });
-  queryClient.invalidateQueries({ queryKey: ['leave-salary-settlements', companyId] });
-  queryClient.invalidateQueries({ queryKey: ['employees', companyId, false] });
-  queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
+  queryClient.invalidateQueries({ queryKey: hrKeys.leaves(companyId) });
+  queryClient.invalidateQueries({ queryKey: hrKeys.leavesForYear(companyId, year) });
+  queryClient.invalidateQueries({ queryKey: hrKeys.leaveSalarySettlements(companyId) });
+  queryClient.invalidateQueries({ queryKey: employeeKeys.list(companyId, false) });
+  queryClient.invalidateQueries({ queryKey: employeeKeys.byCompany(companyId) });
   invalidateOnFinancialMutation(queryClient);
 }
 
@@ -73,7 +74,7 @@ export default function LeaveTab() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['leaves', companyId, year],
+    queryKey: hrKeys.leavesForYear(companyId, year),
     queryFn: async () => {
       const res = await getLeaves(companyId, undefined, year);
       if (!res?.success) return [];
@@ -91,12 +92,12 @@ export default function LeaveTab() {
       return res;
     },
     invalidateQueries: [
-      ['leaves', companyId, year],
-      ['leaves', companyId],
-      ['leave-salary-settlements', companyId],
-      ['movements', companyId],
-      ['employees', companyId, false],
-      ['employees', companyId],
+      hrKeys.leavesForYear(companyId, year),
+      hrKeys.leaves(companyId),
+      hrKeys.leaveSalarySettlements(companyId),
+      hrKeys.movementsCompany(companyId),
+      employeeKeys.list(companyId, false),
+      employeeKeys.byCompany(companyId),
     ],
     successToast: () => t('leaveReturnedOk'),
     errorToast: (e: any) => e?.message || t('saveFailed'),
@@ -117,7 +118,7 @@ export default function LeaveTab() {
     isError: settlementPreviewError,
     error: settlementPreviewErr,
   } = useQuery({
-    queryKey: ['leave-salary-settlement-preview', companyId, settlementRow?.id],
+    queryKey: hrKeys.leaveSettlementPreview(companyId, settlementRow?.id),
     queryFn: async () => {
       const res = await getLeaveSalarySettlementPreview(settlementRow.id, companyId);
       rejectIfApiFailed(res, t('saveFailed'));

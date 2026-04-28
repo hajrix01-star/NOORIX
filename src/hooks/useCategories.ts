@@ -11,10 +11,11 @@ import {
   updateCategory,
   deleteCategory,
 } from '../services/api';
+import { categoryKeys } from '../services/queryKeys';
 
 export function useCategories(companyId: string | null | undefined) {
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ['categories', companyId],
+    queryKey: categoryKeys.list(companyId || ''),
     queryFn: async () => {
       const res = await getCategories(companyId as string);
       if (!res?.success) return [];
@@ -34,19 +35,19 @@ export function useCategories(companyId: string | null | undefined) {
 
   const createMutation = useApiMutation({
     mutationFn: createCategory,
-    invalidateQueries: [['categories', companyId]],
+    invalidateQueries: [categoryKeys.list(companyId as string)],
     showErrorToast: false,
   });
 
   const updateMutation = useApiMutation({
     mutationFn: ({ id, body }: { id: string; body: unknown }) => updateCategory(id, body),
-    invalidateQueries: [['categories', companyId]],
+    invalidateQueries: [categoryKeys.list(companyId as string)],
     showErrorToast: false,
   });
 
   const deleteMutation = useApiMutation({
     mutationFn: (id: string) => deleteCategory(id, companyId as string),
-    invalidateQueries: [['categories', companyId]],
+    invalidateQueries: [categoryKeys.list(companyId as string)],
     showErrorToast: false,
   });
 

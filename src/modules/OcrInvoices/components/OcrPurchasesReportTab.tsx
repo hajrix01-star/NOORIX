@@ -4,6 +4,7 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button } from '../../../ui';
 import { getOcrPurchasesByMonth } from '../services/ocrApi';
+import { ocrKeys } from '../../../services/queryKeys';
 
 function defaultMonthStr() {
   const d = new Date();
@@ -18,7 +19,7 @@ export default function OcrPurchasesReportTab() {
   const [appliedMonth, setAppliedMonth] = useState(defaultMonthStr);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['ocr-purchases-report', activeCompanyId, appliedMonth],
+    queryKey: ocrKeys.purchasesReport(activeCompanyId || '', appliedMonth),
     enabled: !!activeCompanyId && /^\d{4}-\d{2}$/.test(appliedMonth),
     queryFn: async () => {
       const r = await getOcrPurchasesByMonth(appliedMonth);

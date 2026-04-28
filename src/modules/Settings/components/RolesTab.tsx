@@ -8,6 +8,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { appKeys, settingsKeys } from '../../../services/queryKeys';
 
 function Cb({ checked, indeterminate, onChange, disabled }: any) {
   return (
@@ -185,7 +186,7 @@ export default function RolesTab({ userRole, language }: any) {
 
   // ── جلب المصفوفة من Backend (مصدر الحقيقة الوحيد) ──
   const { data: schema } = useQuery({
-    queryKey: ['permissions-schema'],
+    queryKey: settingsKeys.permissionsSchema(),
     queryFn: async () => {
       const res = await getPermissionsSchema();
       return res?.success ? res.data : null;
@@ -197,7 +198,7 @@ export default function RolesTab({ userRole, language }: any) {
   const levels  = schema?.levels  || {};
 
   const { data: roles = [], isLoading } = useQuery({
-    queryKey: ['roles'],
+    queryKey: settingsKeys.roles(),
     queryFn: async () => {
       const res = await getRoles();
       return res?.success ? (res.data ?? []) : [];
@@ -206,7 +207,7 @@ export default function RolesTab({ userRole, language }: any) {
 
   const createMutation = useApiMutation({
     mutationFn: createRole,
-    invalidateQueries: [['roles']],
+    invalidateQueries: [settingsKeys.roles()],
     successToast: () => t('roleAdded'),
     errorToast: (e: any) => e?.message || t('addFailed'),
     onSuccess: () => {
@@ -217,7 +218,7 @@ export default function RolesTab({ userRole, language }: any) {
 
   const updateMutation = useApiMutation({
     mutationFn: ({ id, body }: any) => updateRole(id, body),
-    invalidateQueries: [['roles'], ['me']],
+    invalidateQueries: [settingsKeys.roles(), appKeys.me()],
     successToast: () => t('updateSuccess'),
     errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
@@ -225,7 +226,7 @@ export default function RolesTab({ userRole, language }: any) {
 
   const deleteMutation = useApiMutation({
     mutationFn: deleteRole,
-    invalidateQueries: [['roles']],
+    invalidateQueries: [settingsKeys.roles()],
     successToast: () => t('roleDeleted'),
     errorToast: (e: any) => e?.message || t('deleteFailed'),
     onSuccess: () => { setEditing(null); },

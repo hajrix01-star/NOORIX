@@ -30,6 +30,7 @@ import HajriTaxDetailEditor from './HajriTaxDetailEditor';
 import HajriTaxRegistryList from './HajriTaxRegistryList';
 import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
 import HajriTaxBulkImportModal from './HajriTaxBulkImportModal';
+import { vatKeys } from '../../services/queryKeys';
 
 function clonePayload(from: any) {
   return mergeImportedDisclosure(defaultDisclosureData(), from || {});
@@ -480,7 +481,7 @@ export default function HajriTaxScreen() {
         });
         throwIfApiFailed(res, 'فشل استيراد سجل');
       }
-      qc.invalidateQueries({ queryKey: ['vat-planning'] });
+      qc.invalidateQueries({ queryKey: vatKeys.root() });
       refetchRegistry();
       refetch();
     },

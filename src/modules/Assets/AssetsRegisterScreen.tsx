@@ -35,6 +35,7 @@ import {
 } from '../../ui';
 import { SupplierSelect } from '../../components/common/SupplierSelect';
 import { formatAssetDate } from './assetsRegisterUtils';
+import { assetKeys } from '../../services/queryKeys';
 
 const ASSET_SECTION_TAB_IDS = ['register', 'queue'];
 
@@ -59,7 +60,7 @@ export default function AssetsRegisterScreen() {
   const { suppliers } = useSuppliers(companyId, { pageSize: 500 });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['company-assets', companyId, warrantyFilter, debouncedQ, page, pageSize],
+    queryKey: assetKeys.register(companyId, warrantyFilter, debouncedQ, page, pageSize),
     queryFn: async () => {
       const res = await getCompanyAssets(companyId, {
         warrantyFilter: warrantyFilter === 'all' ? undefined : warrantyFilter,
@@ -85,7 +86,7 @@ export default function AssetsRegisterScreen() {
   const [completeSaving, setCompleteSaving] = useState(false);
 
   const { data: pendingRows = [], isLoading: pendingLoading } = useQuery({
-    queryKey: ['company-assets', companyId, 'pending-warranty'],
+    queryKey: assetKeys.pendingWarranty(companyId),
     queryFn: async () => {
       const res = await getPendingWarrantyInvoices(companyId);
       assertApiOk(res, t('loadingError'));
@@ -105,14 +106,14 @@ export default function AssetsRegisterScreen() {
   }, []);
 
   const handleSaved = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['company-assets'] });
+    queryClient.invalidateQueries({ queryKey: assetKeys.root() });
     setSheetOpen(false);
     setEditing(null);
     showToast(t('savedSuccessfully') || 'تم الحفظ');
   }, [queryClient, showToast, t]);
 
   const handleWarrantyCompleteSaved = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['company-assets'] });
+    queryClient.invalidateQueries({ queryKey: assetKeys.root() });
     setPendingInvoiceForComplete(null);
     showToast(t('savedSuccessfully') || 'تم الحفظ');
   }, [queryClient, showToast, t]);
@@ -124,7 +125,7 @@ export default function AssetsRegisterScreen() {
       try {
         const res = await deleteCompanyAsset(row.id, companyId);
         assertApiOk(res, t('delete'));
-        queryClient.invalidateQueries({ queryKey: ['company-assets'] });
+        queryClient.invalidateQueries({ queryKey: assetKeys.root() });
         showToast(t('savedSuccessfully') || 'تم الحذف');
       } catch (e: any) {
         showToast(e?.message || t('loadingError'), 'error');

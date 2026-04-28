@@ -14,6 +14,7 @@ import {
 import { getSuppliers } from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
 import { OCR_SUPPLIER_CATEGORY_OPTIONS, ocrSupplierCategoryLabel } from '../constants/ocrSupplierCategories';
+import { ocrKeys } from '../../../services/queryKeys';
 
 /** ترتيب موردي المحاسبة حسب الاسم أو الرقم الضريبي (درجة أعلى = أقرب) */
 function scoreAccountingSupplierMatch(row: any, queryRaw: any) {
@@ -97,7 +98,7 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   const { data: accountingSuppliers = [] } = useQuery({
-    queryKey: ['accounting-suppliers-ocr-catalog', activeCompanyId],
+    queryKey: ocrKeys.accountingCatalog(activeCompanyId || ''),
     enabled: !!activeCompanyId && !!viewing,
     queryFn: async () => {
       const r = await getSuppliers(activeCompanyId, 1, 500);
@@ -117,13 +118,12 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
   );
 
   const { data: accLinkSuggestions = [], isFetching: accSuggestionsFetching } = useQuery({
-    queryKey: [
-      'ocr-catalog-accounting-suggestions',
-      activeCompanyId,
+    queryKey: ocrKeys.catalogAccountingSuggestions(
+      activeCompanyId || '',
       viewing?.id || '',
       ocrNameSuggest,
       ocrTaxDigits,
-    ],
+    ),
     enabled: !!activeCompanyId && !!viewing?.id,
     queryFn: async () => {
       const r = await getOcrAccountingSupplierSuggestions({

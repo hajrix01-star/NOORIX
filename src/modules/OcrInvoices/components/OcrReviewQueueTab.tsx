@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getOcrReviewQueue } from '../services/ocrApi';
+import { ocrKeys } from '../../../services/queryKeys';
 import OcrInvoiceThumb from './OcrInvoiceThumb';
 
 const STATUS_LABEL = {
@@ -18,7 +19,7 @@ export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
   const { activeCompanyId } = useApp();
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['ocr-review-queue', activeCompanyId],
+    queryKey: ocrKeys.reviewQueue(activeCompanyId || ''),
     enabled: !!activeCompanyId,
     queryFn: async () => {
       const r = await getOcrReviewQueue();

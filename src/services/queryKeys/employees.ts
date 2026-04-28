@@ -12,4 +12,10 @@ export const employeeKeys = {
 
   /** بادئة إبطال كل قوائم موظفي شركة (كل قيم includeTerminated) */
   byCompany: (companyId: string) => ['employees', companyId] as const,
+
+  /** إبطال كل الشركات/القوائم */
+  root: () => ['employees'] as const,
+
+  /** بادئة تفصيل موظف بدون companyId (إبطال جزئي) */
+  detailPartial: (employeeId: unknown) => ['employee', employeeId] as const,
 };

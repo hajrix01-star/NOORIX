@@ -38,6 +38,7 @@ import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
 import { totalSalary } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
+import { employeeKeys, hrKeys } from '../../services/queryKeys';
 
 const PAGE_SIZE = 50;
 
@@ -78,9 +79,9 @@ export default function StaffListScreen({ embedded }: any) {
     errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: (_data: any, variables: any) => {
       const id = variables.id;
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
-      queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['employee', id, companyId] });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id, companyId) });
       invalidateOnFinancialMutation(queryClient);
     },
   });
@@ -104,7 +105,7 @@ export default function StaffListScreen({ embedded }: any) {
     isLoading,
     error: employeesError,
   } = useQuery({
-    queryKey: ['employees-paged', companyId, viewMode, listPage, PAGE_SIZE, debouncedQ, sortKey, sortDir],
+    queryKey: hrKeys.employeesPaged(companyId, viewMode, listPage, PAGE_SIZE, debouncedQ, sortKey, sortDir),
     queryFn: async () => {
       const res = await getEmployeesPaged(companyId, {
         tab: viewMode,
@@ -322,9 +323,9 @@ export default function StaffListScreen({ embedded }: any) {
       }
     }
 
-    queryClient.invalidateQueries({ queryKey: ['custom-allowances', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+    queryClient.invalidateQueries({ queryKey: hrKeys.customAllowancesByCompany(companyId) });
+    queryClient.invalidateQueries({ queryKey: employeeKeys.byCompany(companyId) });
+    queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
   }
 
   function handleSave(payload: any) {
@@ -449,8 +450,8 @@ export default function StaffListScreen({ embedded }: any) {
               return list.map((e: any) => formatEmployeeForExport(e, totalsMap));
             }}
             onImportSuccess={(count: any) => {
-              queryClient.invalidateQueries({ queryKey: ['employees'] });
-              queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+              queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
+              queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
               showToast(t('employeesImportSuccessCount', String(count)), 'success');
             }}
           />

@@ -23,6 +23,7 @@ import { Button, Badge, Input, ScreenShell, Modal , FmtNum, SmartTable } from '.
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
+import { hrKeys } from '../../../services/queryKeys';
 
 const PAGE_SIZE = 50;
 
@@ -63,7 +64,7 @@ export default function PayrollTab() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['payroll-runs', companyId, year],
+    queryKey: hrKeys.payrollRuns(companyId, year),
     queryFn: async () => {
       const res = await getPayrollRuns(companyId, year);
       if (!res?.success) return [];

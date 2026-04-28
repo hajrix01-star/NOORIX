@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getVatPlanningList, getVatPlanningRegistry, upsertVatPlanning, throwIfApiFailed } from '../services/api';
+import { vatKeys } from '../services/queryKeys';
 
 export function useVatPlanningList(year: any, quarter: any, companyId: any, enabled: any = true) {
   return useQuery({
-    queryKey: ['vat-planning', year, quarter, companyId ?? ''],
+    queryKey: vatKeys.planning(year, quarter, companyId ?? ''),
     queryFn: async () => {
       const res = await getVatPlanningList(year, quarter, companyId);
       throwIfApiFailed(res, 'فشل تحميل سجل الضريبة التخطيطي');
@@ -17,7 +18,11 @@ export function useVatPlanningList(year: any, quarter: any, companyId: any, enab
 /** قائمة الإقرارات المسجّلة (فلاتر اختيارية) */
 export function useVatPlanningRegistry(filters: any, enabled: any = true) {
   return useQuery({
-    queryKey: ['vat-planning', 'registry', filters?.year ?? '', filters?.quarter ?? '', filters?.companyId ?? ''],
+    queryKey: vatKeys.registry(
+      String(filters?.year ?? ''),
+      String(filters?.quarter ?? ''),
+      String(filters?.companyId ?? ''),
+    ),
     queryFn: async () => {
       const res = await getVatPlanningRegistry(filters);
       throwIfApiFailed(res, 'فشل تحميل سجل الإقرارات');
@@ -37,7 +42,7 @@ export function useUpsertVatPlanning() {
       return res.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['vat-planning'] });
+      qc.invalidateQueries({ queryKey: vatKeys.root() });
     },
   });
 }

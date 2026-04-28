@@ -38,6 +38,7 @@ import {
   updateOrderProduct,
 } from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
+import { orderKeys } from '../../../services/queryKeys';
 
 /**
  * State and handlers for the Orders «manage items» tab (products + categories).
@@ -285,8 +286,8 @@ export function useItemsManageTab(companyId: any) {
         added = productsPayload.length;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['order-products', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['order-categories', companyId] });
+      queryClient.invalidateQueries({ queryKey: orderKeys.products(companyId) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.categories(companyId) });
 
       if (added === 0 && updated === 0 && catsAdded === 0) {
         showToast(t('ordersPresetNothingDone'), 'success');

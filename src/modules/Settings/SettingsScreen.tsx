@@ -19,6 +19,7 @@ import TaxSettingsTab      from './components/TaxSettingsTab';
 import AISettingsTab       from './components/AISettingsTab';
 import BackupTab           from './components/BackupTab';
 import AppBrandingTab      from './components/AppBrandingTab';
+import { appKeys } from '../../services/queryKeys';
 
 export default function SettingsScreen() {
   const { t }           = useTranslation();
@@ -62,7 +63,7 @@ export default function SettingsScreen() {
   }, [activeTab, isMobile]);
 
   const { data: companiesData = [] } = useQuery({
-    queryKey:        ['companies', false],
+    queryKey:        appKeys.companies(false),
     queryFn:         async () => {
       try { const r = await getCompanies(false); return Array.isArray(r?.data) ? r.data : []; }
       catch { return []; }

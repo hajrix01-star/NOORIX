@@ -10,6 +10,7 @@ import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getExpenseLines, deactivateExpenseLine } from '../../services/api';
+import { expenseKeys } from '../../services/queryKeys';
 import { Button, ScreenTabs, ScreenShell, cn } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import ExpenseLineList from './components/ExpenseLineList';
@@ -43,7 +44,7 @@ export default function ExpensesScreen() {
   const [showExpenseForm, setShowExpenseForm] = useState(false);
 
   const { data: expenseLines = [], isLoading: linesLoading } = useQuery({
-    queryKey: ['expense-lines', companyId, filterKind],
+    queryKey: expenseKeys.linesWithKind(companyId, filterKind),
     queryFn: async () => {
       const res = await getExpenseLines(companyId, filterKind || undefined);
       return res?.data ?? (Array.isArray(res) ? res : []);
@@ -71,7 +72,7 @@ export default function ExpensesScreen() {
     if (!confirm(`هل تريد إلغاء تفعيل بند المصروف "${line.nameAr || line.nameEn}"؟\n(لن يُحذف حذفاً نهائياً، بل سيُستبعد من القوائم النشطة)`)) return;
     deactivateExpenseLine(line.id, companyId)
       .then(() => {
-        queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
+        queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
         showToast(t('savedSuccessfully') || 'تم إلغاء التفعيل بنجاح');
       })
       .catch((err: any) => showToast(err?.message || 'فشل', 'error'));
@@ -79,7 +80,7 @@ export default function ExpensesScreen() {
 
   const handleFormSaved = () => {
     invalidateOnFinancialMutation(queryClient);
-    queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
+    queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
     handleCloseForm();
     showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
   };
@@ -127,7 +128,7 @@ export default function ExpensesScreen() {
               filterKind={filterKind}
               onFilterKindChange={setFilterKind}
               onCreateLine={handleCreateLine}
-              onRefresh={() => queryClient.invalidateQueries({ queryKey: ['expense-lines'] })}
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() })}
               onLineClick={handleLineClick}
               onEditLine={handleEditLine}
               onDeleteLine={handleDeleteLine}
@@ -154,7 +155,7 @@ export default function ExpensesScreen() {
                     onSaved={() => {
                       setShowExpenseForm(false);
                       invalidateOnFinancialMutation(queryClient);
-                      queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
+                      queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
                       showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
                     }}
                   />
@@ -167,7 +168,7 @@ export default function ExpensesScreen() {
         {activeTab === 'batch' && (
           <ExpenseBatchTable embedded companyId={companyId} onSaved={() => {
             invalidateOnFinancialMutation(queryClient);
-            queryClient.invalidateQueries({ queryKey: ['expense-lines'] });
+            queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
             showToast(t('savedSuccessfully') || 'تم الحفظ بنجاح');
           }}
           />
@@ -197,7 +198,7 @@ export default function ExpensesScreen() {
           companyId={companyId}
           onClose={handleCloseDetail}
           dateFilter={dateFilter}
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: ['expense-lines'] })}
+          onRefresh={() => queryClient.invalidateQueries({ queryKey: expenseKeys.linesRoot() })}
         />
       )}
 

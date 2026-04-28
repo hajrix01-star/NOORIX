@@ -16,6 +16,7 @@ import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
+import { hrKeys } from '../../../services/queryKeys';
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
@@ -27,7 +28,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
   const [slipNetOnly, setSlipNetOnly] = useState(false);
 
   const { data: run, isLoading } = useQuery({
-    queryKey: ['payroll-run', runId, companyId],
+    queryKey: hrKeys.payrollRun(runId, companyId),
     queryFn: async () => {
       const res = await getPayrollRun(runId, companyId);
       rejectIfApiFailed(res, t('loadingError'));

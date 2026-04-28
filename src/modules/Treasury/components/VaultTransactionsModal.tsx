@@ -11,6 +11,7 @@ import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
+import { vaultKeys } from '../../../services/queryKeys';
 import { Button, AdaptiveSheet , FmtNum, SmartTable } from '../../../ui';
 
 const PAGE_SIZE = 50;
@@ -35,7 +36,7 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   useEffect(() => { setPage(1); }, [startDate, endDate]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['vault-transactions', vault?.id, companyId, startDate, endDate, page],
+    queryKey: vaultKeys.transactions(vault?.id, companyId, startDate, endDate, page),
     queryFn: async () => {
       const res = await getVaultTransactions(vault?.id, companyId, startDate, endDate, page, PAGE_SIZE);
       if (!res?.success) return { items: [], total: 0, page: 1, pageSize: PAGE_SIZE };

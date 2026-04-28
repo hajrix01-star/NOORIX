@@ -29,6 +29,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, AdaptiveSheet, Input, cn , FmtNum } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { employeeKeys, hrKeys, invoiceKeys } from '../../../services/queryKeys';
 
 function parseDeferredMonth(notes: any) {
   const m = String(notes || '').match(/\[ADV_DEFER\]\s*(\d{4}-\d{2})/);
@@ -93,7 +94,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   const [error, setError] = useState('');
 
   const { data: employees = [] } = useQuery({
-    queryKey: ['employees', cid, false],
+    queryKey: employeeKeys.list(cid, false),
     queryFn: async () => {
       const res = await getEmployees(cid, false);
       if (!res?.success) return [];
@@ -103,7 +104,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   });
 
   const { data: existingRuns = [] } = useQuery({
-    queryKey: ['payroll-runs', cid, new Date(payrollMonth).getFullYear()],
+    queryKey: hrKeys.payrollRuns(cid, new Date(payrollMonth).getFullYear()),
     queryFn: async () => {
       const res = await getPayrollRuns(cid, new Date(payrollMonth).getFullYear());
       if (!res?.success) return [];
@@ -114,7 +115,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   });
 
   const { data: editingRun, isLoading: isLoadingRun } = useQuery({
-    queryKey: ['payroll-run', runId, cid],
+    queryKey: hrKeys.payrollRun(runId, cid),
     queryFn: async () => {
       const res = await getPayrollRun(runId, cid);
       throwIfApiFailed(res, 'فشل تحميل المسيرة');
@@ -138,7 +139,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   }, [allCustomAllowances]);
 
   const { data: advances = [] } = useQuery({
-    queryKey: ['invoices', cid, 'advance', monthStr],
+    queryKey: invoiceKeys.advancesForMonth(cid, monthStr),
     queryFn: async () => {
       const res = await getInvoices(cid, undefined, undefined, 1, 1000, null, null, 'advance');
       if (!res?.success) return [];
@@ -148,7 +149,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   });
 
   const { data: leaves = [] } = useQuery({
-    queryKey: ['leaves', cid, 'payroll-form'],
+    queryKey: hrKeys.leavesPayrollForm(cid),
     queryFn: async () => {
       const res = await getLeaves(cid);
       if (!res?.success) return [];
@@ -158,7 +159,7 @@ export function PayrollRunFormModal({ companyId, runId = null, onCreate, onClose
   });
 
   const { data: leaveSalarySettlements = [] } = useQuery({
-    queryKey: ['leave-salary-settlements', cid, payrollMonth],
+    queryKey: hrKeys.leaveSalarySettlementsForMonth(cid, payrollMonth),
     queryFn: async () => {
       const res = await getLeaveSalarySettlements(cid, payrollMonth || defaultMonth);
       if (!res?.success) return [];

@@ -8,6 +8,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApp } from '../../../context/AppContext';
 import { getCompany, updateCompany } from '../../../services/api';
 import { Button, Input } from '../../../ui';
+import { appKeys, companyKeys } from '../../../services/queryKeys';
 
 export default function TaxSettingsTab() {
   const queryClient = useQueryClient();
@@ -17,7 +18,7 @@ export default function TaxSettingsTab() {
   const [vatRate, setVatRate] = useState(15);
 
   const { data: company, isLoading } = useQuery({
-    queryKey: ['company', activeCompanyId],
+    queryKey: companyKeys.single(activeCompanyId || ''),
     queryFn: async () => {
       const res = await getCompany(activeCompanyId);
       if (!res?.success) return null;
@@ -36,7 +37,7 @@ export default function TaxSettingsTab() {
 
   const updateMutation = useApiMutation({
     mutationFn: (body: any) => updateCompany(activeCompanyId, body),
-    invalidateQueries: [['company', activeCompanyId], ['companies']],
+    invalidateQueries: [companyKeys.single(activeCompanyId || ''), appKeys.companiesRoot()],
     showErrorToast: false,
   });
 

@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getExpenseLine, getExpenseLinePayments } from '../../../services/api';
+import { expenseKeys } from '../../../services/queryKeys';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
@@ -42,13 +43,19 @@ export default function ExpenseLineDetailModal({
   const [page, setPage] = useState(1);
 
   const { data: lineData, isLoading: lineLoading } = useQuery({
-    queryKey: ['expense-line', lineId, companyId],
+    queryKey: expenseKeys.line(lineId, companyId),
     queryFn: () => getExpenseLine(lineId, companyId),
     enabled: !!lineId && !!companyId,
   });
 
   const { data: paymentsData, isLoading: paymentsLoading } = useQuery({
-    queryKey: ['expense-line-payments', lineId, companyId, dateFilter?.startDate, dateFilter?.endDate, page],
+    queryKey: expenseKeys.linePayments(
+      lineId,
+      companyId,
+      dateFilter?.startDate,
+      dateFilter?.endDate,
+      page,
+    ),
     queryFn: () =>
       getExpenseLinePayments(
         lineId,

@@ -5,6 +5,7 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getInvoices, throwIfApiFailed, downloadInvoiceAttachment } from '../../../services/api';
+import { invoiceKeys } from '../../../services/queryKeys';
 import { useToast } from '../../../context/ToastContext';
 import DateFilterBar, { useDateFilter } from '../../../shared/components/DateFilterBar';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
@@ -34,7 +35,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   const kindParam = filterKind ? filterKind : 'expense,fixed_expense';
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['invoices', companyId, startDate, endDate, kindParam, 'requireExpenseLine'],
+    queryKey: invoiceKeys.paymentHistoryExpense(companyId, startDate, endDate, kindParam),
     queryFn: async () => {
       const res = await getInvoices(
         companyId,

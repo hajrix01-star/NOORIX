@@ -25,6 +25,7 @@ import { formatSaudiDateTime } from '../../utils/saudiDate';
 import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 import { SendIcon } from './SmartChatIcons';
 import { FAQ_SECTION_ORDER } from './smartChatFaq';
+import { employeeKeys, expenseKeys, vaultKeys } from '../../services/queryKeys';
 
 const CHAT_PAGE_SIZE = 6;
 
@@ -489,7 +490,7 @@ export default function SmartChatScreen() {
   const isAr = lang === 'ar';
 
   const { data: expenseLines = [] } = useQuery({
-    queryKey: ['expense-lines', activeCompanyId],
+    queryKey: expenseKeys.lines(activeCompanyId || ''),
     queryFn: async () => {
       const res = await getExpenseLines(activeCompanyId || '');
       return res?.data ?? (Array.isArray(res) ? res : []);
@@ -512,14 +513,14 @@ export default function SmartChatScreen() {
   useEffect(() => {
     if (!activeCompanyId) return;
     qc.prefetchQuery({
-      queryKey: ['employees', activeCompanyId, false],
+      queryKey: employeeKeys.list(activeCompanyId, false),
       queryFn: async () => {
         const res = await getEmployees(activeCompanyId, false);
         return res?.success ? (res.data ?? []) : [];
       },
     });
     qc.prefetchQuery({
-      queryKey: ['vaults', activeCompanyId, false],
+      queryKey: vaultKeys.shortActive(activeCompanyId),
       queryFn: async () => {
         const res = await getVaults(activeCompanyId, false);
         if (!res?.success) return [];
@@ -938,7 +939,7 @@ export default function SmartChatScreen() {
           onClose={() => setExpenseMode(null)}
           onSaved={() => {
             invalidateOnFinancialMutation(qc);
-            qc.invalidateQueries({ queryKey: ['expense-lines'] });
+            qc.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
             setExpenseMode(null);
             showToast(isAr ? 'تمت إضافة بند المصروف' : 'Expense line added', 'success');
             addMessage({ role: 'assistant', textAr: 'النوع: إضافة بند مصروف\nالحالة: تمت الإضافة بنجاح', textEn: 'Type: Add expense line\nStatus: Added successfully' });
@@ -977,7 +978,7 @@ export default function SmartChatScreen() {
             onClose={() => { setExpenseEditLine(undefined); setExpenseMode(null); }}
             onSaved={() => {
               invalidateOnFinancialMutation(qc);
-              qc.invalidateQueries({ queryKey: ['expense-lines'] });
+              qc.invalidateQueries({ queryKey: expenseKeys.linesRoot() });
               setExpenseEditLine(undefined);
               setExpenseMode(null);
               showToast(isAr ? 'تم تعديل بند المصروف' : 'Expense line updated', 'success');

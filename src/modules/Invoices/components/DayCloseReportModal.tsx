@@ -10,6 +10,7 @@ import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { Button, Modal, Input, cn } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
+import { invoiceKeys } from '../../../services/queryKeys';
 
 function SectionTitle({ children }: any) {
   return (
@@ -333,7 +334,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
   }, [isOpen]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['invoice-day-close', companyId, dateStr],
+    queryKey: invoiceKeys.dayClose(companyId, dateStr),
     queryFn: async () => {
       const res = await getInvoiceDayCloseReport(companyId, dateStr);
       throwIfApiFailed(res, t('dayCloseLoadFailed'));

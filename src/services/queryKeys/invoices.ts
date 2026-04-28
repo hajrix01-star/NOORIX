@@ -45,4 +45,32 @@ export const invoiceKeys = {
       p.createdByUserId,
       p.requireExpenseLine,
     ] as const,
+
+  /** سجل المدفوعات (تبويب مصروفات) — شكل مبسّط */
+  paymentHistoryExpense: (
+    companyId: string,
+    startDate: unknown,
+    endDate: unknown,
+    kindParam: string,
+  ) => ['invoices', companyId, startDate, endDate, kindParam, 'requireExpenseLine'] as const,
+
+  advancesForCompany: (companyId: string) => ['invoices', companyId, 'advance'] as const,
+
+  advancesForEmployee: (companyId: string, employeeId: unknown) =>
+    ['invoices', companyId, 'advance', employeeId] as const,
+
+  advancesForMonth: (companyId: string, monthStr: string) =>
+    ['invoices', companyId, 'advance', monthStr] as const,
+
+  hrAllForEmployee: (companyId: string, employeeId: unknown) =>
+    ['invoices', companyId, 'hr-all', employeeId] as const,
+
+  dayClose: (companyId: string, dateStr: unknown) =>
+    ['invoice-day-close', companyId, dateStr] as const,
+
+  creatorFilterOptions: (companyId: string) =>
+    ['invoice-creator-filter-options', companyId] as const,
+
+  /** بادئة إبطال كل استعلامات الفواتير */
+  root: () => ['invoices'] as const,
 };

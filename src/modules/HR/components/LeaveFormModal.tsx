@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getEmployees, createLeave, updateLeave } from '../../../services/api';
+import { employeeKeys } from '../../../services/queryKeys';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet, Modal } from '../../../ui';
 import { assertApiOk } from '../../../utils/apiResponse';
@@ -86,7 +87,7 @@ export function LeaveFormModal({
   }, [isEdit, editLeave?.id, initialEmployeeId]);
 
   const { data: employees = [] } = useQuery({
-    queryKey: ['employees', cid, false],
+    queryKey: employeeKeys.list(cid, false),
     queryFn: async () => {
       const res = await getEmployees(cid, false);
       if (!res?.success) return [];

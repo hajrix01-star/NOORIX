@@ -21,6 +21,7 @@ import ResidencyTab from './tabs/ResidencyTab';
 import SalaryCalcTab from './tabs/SalaryCalcTab';
 import EOSCalcTab from './tabs/EOSCalcTab';
 import HrPrintDocumentsTab from './tabs/HrPrintDocumentsTab';
+import { hrKeys, invoiceKeys } from '../../services/queryKeys';
 
 const TABS = [
   { id: 'employees',  labelKey: 'hrTabEmployees'  },
@@ -58,7 +59,7 @@ export default function HRMainScreen() {
   }, [customAllowances]);
 
   const { data: residencies = [] } = useQuery({
-    queryKey: ['residencies', companyId],
+    queryKey: hrKeys.residencies(companyId),
     queryFn: async () => {
       const res = await getResidencies(companyId);
       if (!res?.success) return [];
@@ -69,7 +70,7 @@ export default function HRMainScreen() {
   });
 
   const { data: leavesData = [] } = useQuery({
-    queryKey: ['leaves', companyId, CURRENT_YEAR],
+    queryKey: hrKeys.leavesForYear(companyId, CURRENT_YEAR),
     queryFn: async () => {
       const res = await getLeaves(companyId, undefined, CURRENT_YEAR);
       if (!res?.success) return [];
@@ -81,7 +82,7 @@ export default function HRMainScreen() {
   });
 
   const { data: advancesData = [] } = useQuery({
-    queryKey: ['invoices', companyId, 'advance'],
+    queryKey: invoiceKeys.advancesForCompany(companyId),
     queryFn: async () => {
       const res = await getInvoices(companyId, undefined, undefined, 1, 500);
       if (!res?.success) return [];

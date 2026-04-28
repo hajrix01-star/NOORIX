@@ -10,6 +10,7 @@ import { getVatPlanningList, throwIfApiFailed } from '../../services/api';
 import { defaultDisclosureData, computeNetPayable } from '../../constants/taxDisclosure';
 import { fmtTax } from '../../utils/format';
 import { Button } from '../../ui';
+import { vatKeys } from '../../services/queryKeys';
 
 const QUARTER_LABEL_AR = {
   1: 'الربع الأول (يناير – مارس)',
@@ -36,7 +37,7 @@ export default function HajriTaxQuarterOverview() {
 
   const quarterResults = useQueries({
     queries: [1, 2, 3, 4].map((q: any) => ({
-      queryKey: ['vat-planning', year, q, companyId],
+      queryKey: vatKeys.planning(year, q, companyId),
       queryFn: async () => {
         if (!companyId) return null;
         const res = await getVatPlanningList(year, q, companyId);

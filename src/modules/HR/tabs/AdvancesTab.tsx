@@ -20,6 +20,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { hrKeys, invoiceKeys } from '../../../services/queryKeys';
 
 const PAGE_SIZE = 50;
 
@@ -39,7 +40,7 @@ export default function AdvancesTab() {
   const { createAdvance } = useEmployees(companyId, { includeTerminated: false });
 
   const { data: rawAdvanceRows, isLoading } = useQuery({
-    queryKey: ['invoices', companyId, 'advance'],
+    queryKey: invoiceKeys.advancesForCompany(companyId),
     queryFn: async () => {
       const res = await getInvoices(companyId, undefined, undefined, 1, 500);
       if (!res?.success) return [];
@@ -366,7 +367,7 @@ export default function AdvancesTab() {
           onClose={() => setSettlingAdvance(null)}
           onSaved={() => {
             invalidateOnFinancialMutation(queryClient);
-            queryClient.invalidateQueries({ queryKey: ['deductions', companyId] });
+            queryClient.invalidateQueries({ queryKey: hrKeys.deductionsByCompany(companyId) });
             showToast(t('advanceSettledSuccess'), 'success');
             setSettlingAdvance(null);
           }}

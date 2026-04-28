@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCustomAllowances, throwIfApiFailed } from '../services/api';
+import { hrKeys } from '../services/queryKeys';
 
 export function useCustomAllowances(companyId: string, employeeId?: string | null) {
   const query = useQuery({
-    queryKey: ['custom-allowances', companyId, employeeId || 'all'],
+    queryKey: hrKeys.customAllowances(companyId, (employeeId || 'all') as 'all' | string),
     queryFn: async () => {
       const res = await getCustomAllowances(companyId, employeeId ?? undefined);
       throwIfApiFailed(res, 'فشل تحميل البدلات المخصصة');

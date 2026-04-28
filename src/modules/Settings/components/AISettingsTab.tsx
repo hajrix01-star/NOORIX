@@ -8,6 +8,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getHealth, testGemini } from '../../../services/api';
 import { Button } from '../../../ui';
+import { settingsKeys } from '../../../services/queryKeys';
 
 const STATUS_ONLINE = 'online';
 const STATUS_OFFLINE = 'offline';
@@ -18,7 +19,7 @@ export default function AISettingsTab() {
   const [lastTestResult, setLastTestResult] = useState<any>(null);
 
   const { data: healthData, isLoading: healthLoading, refetch: refetchHealth } = useQuery({
-    queryKey: ['health', 'ai-settings'],
+    queryKey: settingsKeys.healthAiSettings(),
     queryFn: async () => {
       const res = await getHealth();
       if (!res.success) return { error: res.error, isNetworkError: res.isNetworkError };
@@ -30,7 +31,7 @@ export default function AISettingsTab() {
 
   const testMutation = useApiMutation({
     mutationFn: testGemini,
-    invalidateQueries: [['health', 'ai-settings']],
+    invalidateQueries: [settingsKeys.healthAiSettings()],
     showErrorToast: false,
     rejectOnApiFailure: false,
     onSuccess: (res: any) => {

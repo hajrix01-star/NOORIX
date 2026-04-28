@@ -19,6 +19,7 @@ import {
   getPriceAlerts,
 } from './services/ocrApi';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
+import { ocrKeys } from '../../services/queryKeys';
 
 const TABS = [
   { key: 'upload',    labelAr: 'رفع فاتورة',      labelEn: 'Upload' },
@@ -43,28 +44,28 @@ export default function OcrInvoicesScreen() {
   const ocrEnabled = !!activeCompanyId;
 
   const { data: invoicesData,  isLoading: invoicesLoading,  refetch: refetchInvoices  } = useQuery({
-    queryKey: ['ocr-invoices', activeCompanyId],
+    queryKey: ocrKeys.invoices(activeCompanyId || ''),
     enabled: ocrEnabled,
     queryFn: async () => { const r = await getOcrInvoices();  return r.success ? (r.data || []) : []; },
   });
   const { data: suppliersData, isLoading: suppliersLoading, refetch: refetchSuppliers } = useQuery({
-    queryKey: ['ocr-suppliers', activeCompanyId],
+    queryKey: ocrKeys.suppliers(activeCompanyId || ''),
     enabled: ocrEnabled,
     queryFn: async () => { const r = await getOcrSuppliers(); return r.success ? (r.data || []) : []; },
   });
   const { data: itemsData,     isLoading: itemsLoading,     refetch: refetchItems     } = useQuery({
-    queryKey: ['ocr-items', activeCompanyId],
+    queryKey: ocrKeys.items(activeCompanyId || ''),
     enabled: ocrEnabled,
     queryFn: async () => { const r = await getOcrItems();     return r.success ? (r.data || []) : []; },
   });
   const { data: alertsData,    isLoading: alertsLoading,    refetch: refetchAlerts    } = useQuery({
-    queryKey: ['ocr-price-alerts', activeCompanyId],
+    queryKey: ocrKeys.priceAlerts(activeCompanyId || ''),
     enabled: ocrEnabled,
     queryFn: async () => { const r = await getPriceAlerts();  return r.success ? (r.data || []) : []; },
   });
 
   const { data: reviewQueueData } = useQuery({
-    queryKey: ['ocr-review-queue', activeCompanyId],
+    queryKey: ocrKeys.reviewQueue(activeCompanyId || ''),
     enabled: ocrEnabled,
     queryFn: async () => {
       const r = await getOcrReviewQueue();
@@ -73,7 +74,7 @@ export default function OcrInvoicesScreen() {
   });
 
   const handleSaved = useCallback((meta: any) => {
-    queryClient.invalidateQueries({ queryKey: ['ocr-review-queue', activeCompanyId] });
+    queryClient.invalidateQueries({ queryKey: ocrKeys.reviewQueue(activeCompanyId || '') });
     if (meta?.invalidateFinancial) {
       invalidateOnFinancialMutation(queryClient);
     }

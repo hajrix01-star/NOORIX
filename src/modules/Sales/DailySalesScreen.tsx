@@ -28,6 +28,7 @@ import ImportExportModal from '../../components/ImportExportModal';
 import { formatSalesForExport } from '../../utils/importTemplates';
 import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
+import { salesKeys, companyKeys } from '../../services/queryKeys';
 
 const PAGE_SIZE = 50;
 
@@ -171,8 +172,7 @@ export default function DailySalesScreen() {
     isLoading: summariesLoading,
     error: summariesError,
   } = useQuery({
-    queryKey: [
-      'sales-summaries-paged',
+    queryKey: salesKeys.summariesPaged(
       companyId,
       dateFilter.startDate,
       dateFilter.endDate,
@@ -183,7 +183,7 @@ export default function DailySalesScreen() {
       sortDir,
       salesViewSummariesList,
       showCancelledSales,
-    ],
+    ),
     queryFn: async () => {
       const res = await getDailySalesSummaries(
         companyId,
@@ -206,7 +206,7 @@ export default function DailySalesScreen() {
   const pagedSummaries = salesPage?.items ?? [];
 
   const { data: companyData } = useQuery({
-    queryKey: ['company', companyId],
+    queryKey: companyKeys.single(companyId),
     queryFn: async () => {
       const res = await getCompany(companyId);
       return res?.success ? res.data : null;

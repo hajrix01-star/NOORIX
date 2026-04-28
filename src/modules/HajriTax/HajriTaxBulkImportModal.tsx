@@ -8,6 +8,7 @@ import { exportToExcel, importFromExcel } from '../../utils/exportUtils';
 import { disclosureFromBulkFlatRow, roundMoney2 } from '../../constants/taxDisclosure';
 import { upsertVatPlanning, throwIfApiFailed } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { vatKeys } from '../../services/queryKeys';
 
 /** رؤوس القالب — المفتاح ثابت للقراءة من الملف المُصدَّر من نفس القالب */
 export const HAJRI_BULK_TEMPLATE_COLUMNS = [
@@ -167,7 +168,7 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
           }
         }
 
-        await qc.invalidateQueries({ queryKey: ['vat-planning'] });
+        await qc.invalidateQueries({ queryKey: vatKeys.root() });
         onImported?.();
 
         if (ok > 0) {

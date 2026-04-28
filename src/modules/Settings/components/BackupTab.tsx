@@ -36,6 +36,7 @@ import {
   BackupJobsHistory,
   BackupSheetsAndModals,
 } from './backup';
+import { appKeys, settingsKeys } from '../../../services/queryKeys';
 
 export default function BackupTab({ activeCompanies = [] }: any) {
   const { t, lang } = useTranslation();
@@ -76,26 +77,26 @@ export default function BackupTab({ activeCompanies = [] }: any) {
   const restoreFromPcFileRef = React.useRef<any>(null);
 
   const { data: jobsRes, isLoading } = useQuery({
-    queryKey: ['backup-jobs'],
+    queryKey: settingsKeys.backupJobs(),
     queryFn: async () => backupListJobs(50),
     refetchInterval: 15_000,
   });
 
   const { data: sysCfgRes } = useQuery({
-    queryKey: ['backup-system-config'],
+    queryKey: settingsKeys.backupSystemConfig(),
     queryFn: () => backupGetSystemConfig(),
     enabled: canSystemBackup,
   });
 
   const { data: sysJobsRes, isLoading: sysJobsLoading } = useQuery({
-    queryKey: ['backup-system-jobs'],
+    queryKey: settingsKeys.backupSystemJobs(),
     queryFn: () => backupListSystemJobs(15),
     enabled: canSystemBackup,
     refetchInterval: 20_000,
   });
 
   const { data: coCfgRes } = useQuery({
-    queryKey: ['backup-company-config', companyId],
+    queryKey: settingsKeys.backupCompanyConfig(companyId),
     queryFn: () => backupGetCompanyConfig(companyId),
     enabled: !!companyId,
   });
@@ -138,7 +139,7 @@ export default function BackupTab({ activeCompanies = [] }: any) {
 
   const triggerMut = useApiMutation({
     mutationFn: () => backupTriggerCompany(companyId),
-    invalidateQueries: [['backup-jobs']],
+    invalidateQueries: [settingsKeys.backupJobs()],
     successToast: () => t('backupStarted'),
     errorToast: (e: any) => e?.message || t('backupError'),
   });
@@ -174,10 +175,10 @@ export default function BackupTab({ activeCompanies = [] }: any) {
         setToken(ref.data.access_token);
         if (ref.data.user) setUser(ref.data.user);
       }
-      await qc.invalidateQueries({ queryKey: ['backup-jobs'] });
+      await qc.invalidateQueries({ queryKey: settingsKeys.backupJobs() });
       await Promise.all([
-        qc.refetchQueries({ queryKey: ['companies'] }),
-        qc.refetchQueries({ queryKey: ['companies', false] }),
+        qc.refetchQueries({ queryKey: appKeys.companiesRoot() }),
+        qc.refetchQueries({ queryKey: appKeys.companies(false) }),
       ]);
       const nid = res.data?.newCompanyId;
       if (nid && typeof setActiveCompany === 'function') setActiveCompany(nid);
@@ -191,28 +192,28 @@ export default function BackupTab({ activeCompanies = [] }: any) {
 
   const retryMut = useApiMutation({
     mutationFn: (jobId: any) => backupRetryExternal(jobId),
-    invalidateQueries: [['backup-jobs']],
+    invalidateQueries: [settingsKeys.backupJobs()],
     successToast: () => t('backupRetryOk'),
     errorToast: (e: any) => e?.message || t('backupError'),
   });
 
   const saveSysMut = useApiMutation({
     mutationFn: (body: any) => backupPatchSystemConfig(body),
-    invalidateQueries: [['backup-system-config']],
+    invalidateQueries: [settingsKeys.backupSystemConfig()],
     successToast: () => t('backupSettingsSaved'),
     errorToast: (e: any) => e?.message || t('backupError'),
   });
 
   const runFullArchiveMut = useApiMutation({
     mutationFn: () => backupRunSystemFullArchive(),
-    invalidateQueries: [['backup-system-jobs'], ['backup-jobs']],
+    invalidateQueries: [settingsKeys.backupSystemJobs(), settingsKeys.backupJobs()],
     successToast: () => t('backupStarted'),
     errorToast: (e: any) => e?.message || t('backupError'),
   });
 
   const verifySysMut = useApiMutation({
     mutationFn: (jobId: any) => backupVerifySystemJob(jobId),
-    invalidateQueries: [['backup-system-jobs']],
+    invalidateQueries: [settingsKeys.backupSystemJobs()],
     successToast: () => t('backupVerifyOk'),
     errorToast: (e: any) => e?.message || t('backupVerifyBad'),
   });
@@ -225,7 +226,7 @@ export default function BackupTab({ activeCompanies = [] }: any) {
 
   const uploadSysArchiveMut = useApiMutation({
     mutationFn: (file: any) => backupUploadSystemFullArchive(file),
-    invalidateQueries: [['backup-system-jobs']],
+    invalidateQueries: [settingsKeys.backupSystemJobs()],
     successToast: (res: any) =>
       res?.data?.status === 'skipped_duplicate' ? t('backupSystemUploadDup') : t('backupSystemUploadOk'),
     errorToast: (e: any) => e?.message || t('backupError'),
@@ -233,7 +234,7 @@ export default function BackupTab({ activeCompanies = [] }: any) {
 
   const restorePcMut = useApiMutation({
     mutationFn: ({ file, confirmPhrase }: any) => backupRestoreSystemFromUpload(file, confirmPhrase),
-    invalidateQueries: [['backup-system-jobs'], ['backup-jobs']],
+    invalidateQueries: [settingsKeys.backupSystemJobs(), settingsKeys.backupJobs()],
     successToast: false,
     errorToast: (e: any) => e?.message || t('backupError'),
     onSuccess: (res: any) => {
@@ -246,14 +247,14 @@ export default function BackupTab({ activeCompanies = [] }: any) {
 
   const verifyCoMut = useApiMutation({
     mutationFn: (jobId: any) => backupVerifyCompanyJob(jobId),
-    invalidateQueries: [['backup-jobs']],
+    invalidateQueries: [settingsKeys.backupJobs()],
     successToast: () => t('backupVerifyOk'),
     errorToast: (e: any) => e?.message || t('backupVerifyBad'),
   });
 
   const saveCoMut = useApiMutation({
     mutationFn: (body: any) => backupPatchCompanyConfig(body),
-    invalidateQueries: [['backup-company-config', companyId]],
+    invalidateQueries: [settingsKeys.backupCompanyConfig(companyId)],
     successToast: () => t('backupSettingsSaved'),
     errorToast: (e: any) => e?.message || t('backupError'),
   });

@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState, useMemo, useTransition, useCallback, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCompanies, getMe, checkApiConnection } from './services/api';
+import { getMe, getCompanies, checkApiConnection } from './services/api';
 import { setActiveCompanyId } from './services/authStore';
 import { AppContext } from './context/AppContext';
 import type { AppContextValue, CompanyListItem } from './context/appTypes';
@@ -17,6 +17,7 @@ import { prefetchRouteChunk } from './utils/routePrefetch';
 import { canAccessThemePreview } from './utils/themePreviewAccess';
 import { STORAGE_KEYS, CARD_STYLE_KEY } from './constants/storageKeys';
 import { readStoredLanguage, writeStoredLanguage } from './utils/storedLanguage';
+import { appKeys } from './services/queryKeys';
 
 const DashboardScreen = React.lazy(() => import('./modules/Dashboard/DashboardScreen'));
 const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScreen'));
@@ -67,7 +68,7 @@ export default function App() {
   const { isAuthenticated, user, setUser, setToken } = useAuth();
 
   const { isLoading: isMeLoading, isFetched: isMeFetched } = useQuery({
-    queryKey: ['me'],
+    queryKey: appKeys.me(),
     queryFn: async () => {
       const res = await getMe();
       if (res?.success && res?.data) {
@@ -115,7 +116,7 @@ export default function App() {
   }, [isAuthenticated, isLoginPage, user?.id]);
 
   const { data: companiesFromApi } = useQuery({
-    queryKey: ['companies'],
+    queryKey: appKeys.companiesRoot(),
     queryFn: async () => {
       try {
         const res = await getCompanies();

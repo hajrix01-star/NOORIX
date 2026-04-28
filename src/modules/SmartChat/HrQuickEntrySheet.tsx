@@ -15,6 +15,7 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { roundMoney2 } from '../../utils/moneyInput';
 import { fmt } from '../../utils/format';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
+import { employeeKeys, hrKeys } from '../../services/queryKeys';
 
 const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -26,12 +27,12 @@ const MODE_META = {
 };
 
 function invalidateHrQueries(qc: any, companyId: any) {
-  qc.invalidateQueries({ queryKey: ['employees', companyId] });
-  qc.invalidateQueries({ queryKey: ['employees-paged', companyId] });
-  qc.invalidateQueries({ queryKey: ['leaves', companyId] });
-  qc.invalidateQueries({ queryKey: ['deductions', companyId] });
-  qc.invalidateQueries({ queryKey: ['custom-allowances', companyId] });
-  qc.invalidateQueries({ queryKey: ['movements', companyId] });
+  qc.invalidateQueries({ queryKey: employeeKeys.byCompany(companyId) });
+  qc.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
+  qc.invalidateQueries({ queryKey: hrKeys.leaves(companyId) });
+  qc.invalidateQueries({ queryKey: hrKeys.deductionsByCompany(companyId) });
+  qc.invalidateQueries({ queryKey: hrKeys.customAllowancesByCompany(companyId) });
+  qc.invalidateQueries({ queryKey: hrKeys.movementsCompany(companyId) });
 }
 
 function Field({
@@ -88,7 +89,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   const vaults = paymentVaults;
 
   const { data: employees = [], isLoading: employeesLoading } = useQuery({
-    queryKey: ['employees', companyId, false],
+    queryKey: employeeKeys.list(companyId, false),
     queryFn: async () => {
       const res = await getEmployees(companyId, false);
       if (!res?.success) return [];

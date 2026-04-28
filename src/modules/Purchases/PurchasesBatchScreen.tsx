@@ -38,6 +38,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { buildActiveCancelledPartialStatusMap } from '../../constants/badgeMaps';
+import { purchaseKeys, supplierKeys } from '../../services/queryKeys';
 import { isWarrantyFollowUpKind } from './utils/batchRowModel';
 
 const PAGE_SIZE = 50;
@@ -111,7 +112,7 @@ export default function PurchasesBatchScreen() {
   const debouncedBatchQ = useDebouncedValue(batchSearchInput.trim(), 300);
 
   const { data: batchSummaryData, isLoading: batchesLoading, isError: batchesError, error: batchesErr } = useQuery({
-    queryKey: ['purchase-batch-summaries', companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ, lang],
+    queryKey: purchaseKeys.batchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ, lang),
     queryFn: async () => {
       const res = await getPurchaseBatchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ || undefined, lang);
       throwIfApiFailed(res, t('loadBatchFailed'));
@@ -424,7 +425,7 @@ export default function PurchasesBatchScreen() {
     const current = bookmarks.includes(id);
     try {
       await setSupplierBookmark(id, !current);
-      queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] });
+      queryClient.invalidateQueries({ queryKey: supplierKeys.byCompany(companyId) });
     } catch {
       showToast(t('bookmarkUpdateFailed'), 'error');
     }

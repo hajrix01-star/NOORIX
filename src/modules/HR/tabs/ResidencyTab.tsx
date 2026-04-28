@@ -17,6 +17,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, Input, ScreenShell, SmartTable } from '../../../ui';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
+import { hrKeys } from '../../../services/queryKeys';
 
 const PAGE_SIZE = 50;
 const EXPIRY_DAYS = 90;
@@ -43,7 +44,7 @@ export default function ResidencyTab() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['residencies', companyId],
+    queryKey: hrKeys.residencies(companyId),
     queryFn: async () => {
       const res = await getResidencies(companyId);
       if (!res?.success) return [];
@@ -56,7 +57,7 @@ export default function ResidencyTab() {
 
   const deleteMutation = useApiMutation({
     mutationFn: (id: any) => deleteResidency(id, companyId),
-    invalidateQueries: [['residencies', companyId]],
+    invalidateQueries: [hrKeys.residencies(companyId)],
     successToast: () => t('residencyDeleted'),
     errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: () => {
@@ -220,7 +221,7 @@ export default function ResidencyTab() {
         <ResidencyFormModal
           companyId={companyId}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['residencies', companyId] });
+            queryClient.invalidateQueries({ queryKey: hrKeys.residencies(companyId) });
             invalidateOnFinancialMutation(queryClient);
             showToast(t('residencyAdded'), 'success');
           }}
@@ -233,7 +234,7 @@ export default function ResidencyTab() {
           residency={editingResidency}
           companyId={companyId}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['residencies', companyId] });
+            queryClient.invalidateQueries({ queryKey: hrKeys.residencies(companyId) });
             showToast(t('residencyUpdated'), 'success');
             setEditingResidency(null);
           }}

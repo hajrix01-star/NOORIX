@@ -23,6 +23,7 @@ import { useDateFilter } from '../../shared/components/DateFilterBar';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
 import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../constants/badgeMaps';
 import { PAGE_SIZE, MAX_VAULT_SLOTS } from './invoicesListScreenHelpers';
+import { invoiceKeys, ledgerKeys, vaultKeys } from '../../services/queryKeys';
 import { buildInvoiceExportColumnDefs, invoiceToExportRow } from './invoicesListExportModel';
 import {
   buildInvoiceListColumns,
@@ -145,7 +146,7 @@ export function useInvoicesListScreen() {
 
   const deleteInvoiceMut = useApiMutation({
     mutationFn: ({ id }: any) => deleteInvoice(id, companyId),
-    invalidateQueries: [['invoices'], ['vaults'], ['ledger']],
+    invalidateQueries: [invoiceKeys.root(), vaultKeys.root(), ledgerKeys.root()],
     successToast: () => t('invoiceDeleted'),
     errorToast: (e: any) => e?.message || t('deleteFailed'),
   });
@@ -177,7 +178,7 @@ export function useInvoicesListScreen() {
 
   const { suppliers } = useSuppliers(companyId);
   const { data: creatorFilterOptions = { users: [] } } = useQuery({
-    queryKey: ['invoice-creator-filter-options', companyId],
+    queryKey: invoiceKeys.creatorFilterOptions(companyId),
     queryFn: async () => {
       const res = await getInvoiceCreatorFilterOptions(companyId);
       return res.success ? { users: res.users } : { users: [] };

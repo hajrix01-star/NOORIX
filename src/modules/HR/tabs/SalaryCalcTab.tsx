@@ -32,6 +32,7 @@ import {
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, FormRow, FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
+import { employeeKeys } from '../../../services/queryKeys';
 
 function toDecimal(value: any) {
   return new Decimal(value || 0);
@@ -190,12 +191,12 @@ export default function SalaryCalcTab() {
   // ── تحديث الموظف ─────────────────────────────────────────
   const updateMutation = useApiMutation({
     mutationFn: async ({ id, body }: any) => updateEmployee(id, body, companyId),
-    invalidateQueries: [['employees']],
+    invalidateQueries: [employeeKeys.root()],
     successToast: () => t('salaryCalcUpdated') || 'تم تحديث الراتب بنجاح',
     errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: (data: any, variables: any) => {
-      queryClient.invalidateQueries({ queryKey: ['employee', variables.id, companyId] });
-      queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(variables.id, companyId) });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
     },
   });
 

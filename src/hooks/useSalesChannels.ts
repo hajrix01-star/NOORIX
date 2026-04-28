@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getSalesChannels, throwIfApiFailed } from '../services/api';
+import { salesKeys } from '../services/queryKeys';
 
 export function useSalesChannels(companyId: any) {
   const query = useQuery({
-    queryKey: ['sales-channels', companyId],
+    queryKey: salesKeys.channels(companyId),
     queryFn: async () => {
       const res = await getSalesChannels(companyId);
       throwIfApiFailed(res, 'فشل تحميل قنوات البيع');

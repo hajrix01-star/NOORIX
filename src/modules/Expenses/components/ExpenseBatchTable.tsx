@@ -8,6 +8,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { createInvoiceBatch, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
+import { expenseKeys } from '../../../services/queryKeys';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { canExemptThisExpensePayment, isExpensePaymentTaxable } from '../utils/expenseTax';
@@ -32,7 +33,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
   const [vaultId, setVaultId] = useState('');
 
   const { data: expenseLines = [] } = useQuery({
-    queryKey: ['expense-lines', companyId],
+    queryKey: expenseKeys.lines(companyId),
     queryFn: async () => {
       const res = await getExpenseLines(companyId);
       return res?.data ?? (Array.isArray(res) ? res : []);

@@ -47,6 +47,7 @@ import { EmployeeProfileCareerSection } from './components/employeeProfile/Emplo
 import { EmployeeProfileFinancialSection } from './components/employeeProfile/EmployeeProfileFinancialSection';
 import { EmployeeProfilePayrollSection } from './components/employeeProfile/EmployeeProfilePayrollSection';
 import { EmployeeProfileLeaveSection } from './components/employeeProfile/EmployeeProfileLeaveSection';
+import { employeeKeys, hrKeys, invoiceKeys } from '../../services/queryKeys';
 import { EmployeeProfileAdvancesSection } from './components/employeeProfile/EmployeeProfileAdvancesSection';
 import { EmployeeProfileResidencySection } from './components/employeeProfile/EmployeeProfileResidencySection';
 import { EmployeeProfileDocumentsSection } from './components/employeeProfile/EmployeeProfileDocumentsSection';
@@ -88,7 +89,7 @@ export default function EmployeeProfileScreen() {
   const payrollRunStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
 
   const { data: leaves = [] } = useQuery({
-    queryKey: ['leaves', companyId, id],
+    queryKey: hrKeys.leavesByEmployee(companyId, id),
     queryFn: async () => {
       const res = await getLeaves(companyId, id);
       if (!res?.success) return [];
@@ -99,7 +100,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const { data: residencies = [] } = useQuery({
-    queryKey: ['residencies', companyId, id],
+    queryKey: hrKeys.residenciesByEmployee(companyId, id),
     queryFn: async () => {
       const res = await getResidencies(companyId, id);
       if (!res?.success) return [];
@@ -110,7 +111,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const { data: documents = [] } = useQuery({
-    queryKey: ['documents', companyId, id],
+    queryKey: hrKeys.documents(companyId, id),
     queryFn: async () => {
       const res = await getDocuments(companyId, id);
       if (!res?.success) return [];
@@ -126,7 +127,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const { data: invoicesData } = useQuery({
-    queryKey: ['invoices', companyId, 'advance', id],
+    queryKey: invoiceKeys.advancesForEmployee(companyId, id),
     queryFn: async () => {
       const res = await getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'advance');
       if (!res?.success) return { items: [] };
@@ -137,7 +138,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const { data: hrInvoicesData } = useQuery({
-    queryKey: ['invoices', companyId, 'hr-all', id],
+    queryKey: invoiceKeys.hrAllForEmployee(companyId, id),
     queryFn: async () => {
       const [advRes, hrRes, salRes] = await Promise.all([
         getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'advance', undefined, undefined, undefined, undefined, undefined, undefined, false),
@@ -166,7 +167,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const { data: deductions = [] } = useQuery({
-    queryKey: ['deductions', companyId, id],
+    queryKey: hrKeys.deductions(companyId, id),
     queryFn: async () => {
       const res = await getDeductions(companyId, id);
       if (!res?.success) return [];
@@ -177,7 +178,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const { data: movements = [] } = useQuery({
-    queryKey: ['movements', companyId, id],
+    queryKey: hrKeys.movementsByEmployee(companyId, id),
     queryFn: async () => {
       const res = await getMovements(companyId, id);
       if (!res?.success) return [];
@@ -188,7 +189,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const { data: payrollItems = [] } = useQuery({
-    queryKey: ['payroll-run-items', companyId, id],
+    queryKey: hrKeys.payrollRunItems(companyId, id),
     queryFn: async () => {
       if (!id) return [];
       const res = await getEmployeePayrollItems(companyId, id);
@@ -216,9 +217,9 @@ export default function EmployeeProfileScreen() {
     successToast: () => t('employeeDeletedPermanent'),
     errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employee', id, companyId] });
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
-      queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id, companyId) });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
       invalidateOnFinancialMutation(queryClient);
       navigate('/hr');
     },
@@ -233,14 +234,14 @@ export default function EmployeeProfileScreen() {
   }
 
   const invalidateAll = () => {
-    queryClient.invalidateQueries({ queryKey: ['employee', id] });
-    queryClient.invalidateQueries({ queryKey: ['custom-allowances', companyId, id] });
-    queryClient.invalidateQueries({ queryKey: ['leaves', companyId, id] });
-    queryClient.invalidateQueries({ queryKey: ['leave-salary-settlements', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['residencies', companyId, id] });
-    queryClient.invalidateQueries({ queryKey: ['documents', companyId, id] });
+    queryClient.invalidateQueries({ queryKey: employeeKeys.detailPartial(id) });
+    queryClient.invalidateQueries({ queryKey: hrKeys.customAllowances(companyId, String(id)) });
+    queryClient.invalidateQueries({ queryKey: hrKeys.leavesByEmployee(companyId, id) });
+    queryClient.invalidateQueries({ queryKey: hrKeys.leaveSalarySettlements(companyId) });
+    queryClient.invalidateQueries({ queryKey: hrKeys.residenciesByEmployee(companyId, id) });
+    queryClient.invalidateQueries({ queryKey: hrKeys.documents(companyId, id) });
     invalidateOnFinancialMutation(queryClient);
-    queryClient.invalidateQueries({ queryKey: ['payroll-run-items', companyId, id] });
+    queryClient.invalidateQueries({ queryKey: hrKeys.payrollRunItems(companyId, id) });
   };
 
   const handleUploadDoc = async (e: any) => {
@@ -427,9 +428,9 @@ export default function EmployeeProfileScreen() {
           onClose={() => setCareerModal(null)}
           onSuccess={() => {
             invalidateOnFinancialMutation(queryClient);
-            queryClient.invalidateQueries({ queryKey: ['employee', id, companyId] });
-            queryClient.invalidateQueries({ queryKey: ['employees', companyId] });
-            queryClient.invalidateQueries({ queryKey: ['employees-paged', companyId] });
+            queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id, companyId) });
+            queryClient.invalidateQueries({ queryKey: employeeKeys.byCompany(companyId) });
+            queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
             showToast(t('careerMovementSaved'), 'success');
           }}
         />

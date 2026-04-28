@@ -8,6 +8,7 @@ import { getUsers, createUser, updateUser, archiveUser, restoreUser } from '../.
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Badge, Input, AdaptiveSheet, ScreenShell, SmartTable } from '../../../ui';
+import { settingsKeys } from '../../../services/queryKeys';
 
 export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const { t } = useTranslation();
@@ -16,7 +17,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const [form, setForm] = useState<{ password: string; nameAr: string; roleName: string; preferredLang: string; companyIds: string[] }>({ password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
 
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ['users'],
+    queryKey: settingsKeys.users(),
     queryFn: async () => {
       const res = await getUsers();
       return res?.success ? (res.data ?? []) : [];
@@ -24,7 +25,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   });
 
   const { data: roles = [] } = useQuery({
-    queryKey: ['roles'],
+    queryKey: settingsKeys.roles(),
     queryFn: async () => {
       const res = await getRoles();
       return res?.success ? (res.data ?? []) : [];
@@ -33,7 +34,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
 
   const createMutation = useApiMutation({
     mutationFn: createUser,
-    invalidateQueries: [['users']],
+    invalidateQueries: [settingsKeys.users()],
     successToast: (res: any) => {
       const email = res?.data?.email;
       return email ? t('userAddedWithEmail', email) : t('userAdded');
@@ -44,7 +45,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
 
   const updateMutation = useApiMutation({
     mutationFn: ({ id, body }: any) => updateUser(id, body),
-    invalidateQueries: [['users']],
+    invalidateQueries: [settingsKeys.users()],
     successToast: () => t('updateSuccess'),
     errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
@@ -52,7 +53,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
 
   const archiveMutation = useApiMutation({
     mutationFn: archiveUser,
-    invalidateQueries: [['users']],
+    invalidateQueries: [settingsKeys.users()],
     successToast: () => t('userArchived'),
     errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
@@ -60,7 +61,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
 
   const restoreMutation = useApiMutation({
     mutationFn: restoreUser,
-    invalidateQueries: [['users']],
+    invalidateQueries: [settingsKeys.users()],
     successToast: () => t('userRestored'),
     errorToast: (e: any) => e?.message || t('updateFailed'),
     onSuccess: () => { setEditing(null); },
