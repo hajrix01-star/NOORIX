@@ -6,6 +6,19 @@ import {
 import { INSIGHT_THRESHOLDS } from './insights.thresholds';
 import type { InsightItem, InsightMetricBasis } from './insights.types';
 
+/**
+ * Formats a fractional ratio (e.g. 0.355) for insight copy: percentage with max one decimal,
+ * no trailing ".0" for whole numbers. Display-only; does not alter underlying numeric inputs.
+ */
+export function formatInsightPercentFraction(fraction: number): string {
+  const pct = fraction * 100;
+  const rounded = Math.round(pct * 10) / 10;
+  if (!Number.isFinite(rounded)) return '0';
+  if (Object.is(rounded, -0)) return '0';
+  if (Number.isInteger(rounded)) return String(rounded);
+  return rounded.toFixed(1);
+}
+
 export type AccountingSnapshot = {
   raw: {
     sales: string | number | null;
@@ -173,6 +186,9 @@ export function rulePurchaseRatioToSales(
 ): InsightItem | null {
   if (purchaseToSales == null || !Number.isFinite(purchaseToSales)) return null;
   const { warning, critical } = thresholds.purchaseToSales;
+  const actualPct = formatInsightPercentFraction(purchaseToSales);
+  const warnPct = formatInsightPercentFraction(warning);
+  const critPct = formatInsightPercentFraction(critical);
   if (purchaseToSales >= critical) {
     return {
       id: 'purchase_ratio_to_sales',
@@ -181,8 +197,8 @@ export function rulePurchaseRatioToSales(
       metricBasis: BASIS_PL,
       titleAr: 'نسبة المشتريات إلى المبيعات مرتفعة جداً',
       titleEn: 'Very high purchase-to-sales ratio',
-      detailAr: `نسبة المشتريات إلى المبيعات (محاسبية) تبلغ ${(purchaseToSales * 100).toFixed(1)}% وتصل أو تتجاوز الحد الحرج.`,
-      detailEn: `Accounting purchase-to-sales ratio is ${(purchaseToSales * 100).toFixed(1)}%, at or above the critical threshold.`,
+      detailAr: `المشتريات تمثل ${actualPct}% من المبيعات، وهي أعلى من حد الخطر المحدد ${critPct}%.`,
+      detailEn: `Purchases represent ${actualPct}% of sales, above the configured critical threshold of ${critPct}%.`,
       values: { purchaseToSales, thresholdCritical: critical },
     };
   }
@@ -194,8 +210,8 @@ export function rulePurchaseRatioToSales(
       metricBasis: BASIS_PL,
       titleAr: 'نسبة المشتريات إلى المبيعات مرتفعة',
       titleEn: 'High purchase-to-sales ratio',
-      detailAr: `نسبة المشتريات إلى المبيعات (محاسبية) تبلغ ${(purchaseToSales * 100).toFixed(1)}% وتصل أو تتجاوز حد التحذير.`,
-      detailEn: `Accounting purchase-to-sales ratio is ${(purchaseToSales * 100).toFixed(1)}%, at or above the warning threshold.`,
+      detailAr: `المشتريات تمثل ${actualPct}% من المبيعات، وهي أعلى من حد التحذير المحدد ${warnPct}%.`,
+      detailEn: `Purchases represent ${actualPct}% of sales, above the configured warning threshold of ${warnPct}%.`,
       values: { purchaseToSales, thresholdWarning: warning },
     };
   }
@@ -208,6 +224,9 @@ export function ruleExpenseRatioToSales(
 ): InsightItem | null {
   if (expenseToSales == null || !Number.isFinite(expenseToSales)) return null;
   const { warning, critical } = thresholds.expenseToSales;
+  const actualPct = formatInsightPercentFraction(expenseToSales);
+  const warnPct = formatInsightPercentFraction(warning);
+  const critPct = formatInsightPercentFraction(critical);
   if (expenseToSales >= critical) {
     return {
       id: 'expense_ratio_to_sales',
@@ -216,8 +235,8 @@ export function ruleExpenseRatioToSales(
       metricBasis: BASIS_PL,
       titleAr: 'نسبة المصاريف إلى المبيعات مرتفعة جداً',
       titleEn: 'Very high expense-to-sales ratio',
-      detailAr: `نسبة المصاريف إلى المبيعات (محاسبية) تبلغ ${(expenseToSales * 100).toFixed(1)}% وتصل أو تتجاوز الحد الحرج.`,
-      detailEn: `Accounting expense-to-sales ratio is ${(expenseToSales * 100).toFixed(1)}%, at or above the critical threshold.`,
+      detailAr: `المصاريف تمثل ${actualPct}% من المبيعات، وهي أعلى من حد الخطر المحدد ${critPct}%.`,
+      detailEn: `Expenses represent ${actualPct}% of sales, above the configured critical threshold of ${critPct}%.`,
       values: { expenseToSales, thresholdCritical: critical },
     };
   }
@@ -229,8 +248,8 @@ export function ruleExpenseRatioToSales(
       metricBasis: BASIS_PL,
       titleAr: 'نسبة المصاريف إلى المبيعات مرتفعة',
       titleEn: 'High expense-to-sales ratio',
-      detailAr: `نسبة المصاريف إلى المبيعات (محاسبية) تبلغ ${(expenseToSales * 100).toFixed(1)}% وتصل أو تتجاوز حد التحذير.`,
-      detailEn: `Accounting expense-to-sales ratio is ${(expenseToSales * 100).toFixed(1)}%, at or above the warning threshold.`,
+      detailAr: `المصاريف تمثل ${actualPct}% من المبيعات، وهي أعلى من حد التحذير المحدد ${warnPct}%.`,
+      detailEn: `Expenses represent ${actualPct}% of sales, above the configured warning threshold of ${warnPct}%.`,
       values: { expenseToSales, thresholdWarning: warning },
     };
   }
@@ -249,6 +268,7 @@ export function ruleNetProfitMargin(
   if (sales != null && Math.abs(sales) <= eps) return null;
 
   if (netProfitMargin < 0) {
+    const mPct = formatInsightPercentFraction(netProfitMargin);
     return {
       id: 'net_profit_margin',
       severity: 'critical',
@@ -256,8 +276,8 @@ export function ruleNetProfitMargin(
       metricBasis: BASIS_PL,
       titleAr: 'هامش صافي الربح سالب',
       titleEn: 'Negative net profit margin',
-      detailAr: `هامش صافي الربح (محاسبي) سالب بنسبة ${(netProfitMargin * 100).toFixed(1)}% من المبيعات.`,
-      detailEn: `Accounting net profit margin is negative: ${(netProfitMargin * 100).toFixed(1)}% of sales.`,
+      detailAr: `هامش صافي الربح ${mPct}%.`,
+      detailEn: `Net profit margin is ${mPct}%.`,
       values: { netProfitMargin, sales },
     };
   }
@@ -268,6 +288,8 @@ export function ruleNetProfitMargin(
     netProfitMargin >= 0 &&
     netProfitMargin < critBelow
   ) {
+    const mPct = formatInsightPercentFraction(netProfitMargin);
+    const cPct = formatInsightPercentFraction(critBelow);
     return {
       id: 'net_profit_margin',
       severity: 'critical',
@@ -275,12 +297,14 @@ export function ruleNetProfitMargin(
       metricBasis: BASIS_PL,
       titleAr: 'هامش صافي الربح منخفض جداً',
       titleEn: 'Very low net profit margin',
-      detailAr: `هامش صافي الربح (محاسبي) ${(netProfitMargin * 100).toFixed(1)}% دون الحد الحرج (${(critBelow * 100).toFixed(0)}%).`,
-      detailEn: `Accounting net profit margin is ${(netProfitMargin * 100).toFixed(1)}%, below the ${(critBelow * 100).toFixed(0)}% critical guide.`,
+      detailAr: `هامش صافي الربح ${mPct}%، وهو أقل من حد الخطر المحدد ${cPct}%.`,
+      detailEn: `Net profit margin is ${mPct}%, below the configured critical threshold of ${cPct}%.`,
       values: { netProfitMargin, thresholdCritical: critBelow },
     };
   }
   if (sales != null && Math.abs(sales) > eps && netProfitMargin >= 0 && netProfitMargin < warnBelow) {
+    const mPct = formatInsightPercentFraction(netProfitMargin);
+    const wPct = formatInsightPercentFraction(warnBelow);
     return {
       id: 'net_profit_margin',
       severity: 'warning',
@@ -288,8 +312,8 @@ export function ruleNetProfitMargin(
       metricBasis: BASIS_PL,
       titleAr: 'هامش صافي الربح منخفض',
       titleEn: 'Low net profit margin',
-      detailAr: `هامش صافي الربح (محاسبي) ${(netProfitMargin * 100).toFixed(1)}% دون حد التحذير (${(warnBelow * 100).toFixed(0)}%).`,
-      detailEn: `Accounting net profit margin is ${(netProfitMargin * 100).toFixed(1)}%, below the ${(warnBelow * 100).toFixed(0)}% warning guide.`,
+      detailAr: `هامش صافي الربح ${mPct}%، وهو أقل من الحد الصحي المحدد ${wPct}%.`,
+      detailEn: `Net profit margin is ${mPct}%, below the configured healthy threshold of ${wPct}%.`,
       values: { netProfitMargin, thresholdWarning: warnBelow },
     };
   }
@@ -306,8 +330,10 @@ export function ruleNegativeProfit(netProfit: number | null): InsightItem | null
       metricBasis: BASIS_PL,
       titleAr: 'صافي الربح سالب',
       titleEn: 'Negative net profit',
-      detailAr: `صافي الربح (محاسبي) للفترة سالب: ${netProfit.toFixed(2)}.`,
-      detailEn: `Accounting net profit for the period is negative: ${netProfit.toFixed(2)}.`,
+      detailAr:
+        'صافي الربح للفترة المحددة سلبي. راجع المشتريات والمصاريف المؤثرة على النتيجة.',
+      detailEn:
+        'Net profit is negative for the selected period. Review purchases and expenses affecting the result.',
       values: { netProfit },
     };
   }

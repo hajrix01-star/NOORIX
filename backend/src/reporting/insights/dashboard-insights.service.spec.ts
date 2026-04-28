@@ -220,6 +220,13 @@ describe('DashboardInsightsService', () => {
     const ids = out.warnings.map((w) => w.id);
     expect(ids).toContain('negative_profit_warning');
     expect(ids).toContain('net_profit_margin');
+    const neg = out.warnings.find((w) => w.id === 'negative_profit_warning');
+    expect(neg?.detailAr).toBe(
+      'صافي الربح للفترة المحددة سلبي. راجع المشتريات والمصاريف المؤثرة على النتيجة.',
+    );
+    expect(neg?.detailEn).toBe(
+      'Net profit is negative for the selected period. Review purchases and expenses affecting the result.',
+    );
     expect(out.health.band).toBe('red');
   });
 
@@ -243,7 +250,11 @@ describe('DashboardInsightsService', () => {
       mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
     );
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
-    expect(out.warnings.some((w) => w.id === 'purchase_ratio_to_sales')).toBe(true);
+    const pur = out.warnings.find((w) => w.id === 'purchase_ratio_to_sales');
+    expect(pur).toBeDefined();
+    expect(pur?.detailAr).toContain('70%');
+    expect(pur?.detailAr).toContain('65%');
+    expect(pur?.detailEn).toMatch(/warning threshold of 65%/);
     expect(out.ratios.purchaseToSales).toBeCloseTo(0.7, 5);
   });
 
@@ -269,6 +280,8 @@ describe('DashboardInsightsService', () => {
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     const expRule = out.warnings.find((w) => w.id === 'expense_ratio_to_sales');
     expect(expRule?.severity).toBe('critical');
+    expect(expRule?.detailAr).toContain('50%');
+    expect(expRule?.detailEn).toMatch(/critical threshold of 50%/);
     expect(out.ratios.expenseToSales).toBeCloseTo(0.5, 5);
   });
 
