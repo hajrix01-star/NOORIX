@@ -7,7 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getStoredUser } from '../../services/authStore';
 import { hasPermission } from '../../constants/permissions';
-import { HrQuickEntrySheet } from './HrQuickEntrySheet';
+import { HrQuickEntrySheet } from '../HR/components/HrQuickEntrySheet';
 import { StaffFormModal } from '../HR/components/StaffFormModal';
 import { useEmployees } from '../../hooks/useEmployees';
 import ExpenseLineFormModal from '../Expenses/components/ExpenseLineFormModal';
