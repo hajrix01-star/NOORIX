@@ -9,7 +9,6 @@ import {
   extractAccountingSnapshot,
   rollupOperationalMonth,
   ruleExpenseRatioToSales,
-  ruleMissingSalesData,
   ruleNegativeProfit,
   ruleNetProfitMargin,
   rulePurchaseRatioToSales,
@@ -49,7 +48,7 @@ export class DashboardInsightsService {
     push(ruleExpenseRatioToSales(expenseToSales));
     push(ruleNetProfitMargin(netProfitMargin, snap?.numeric.sales ?? null));
     push(ruleNegativeProfit(snap?.numeric.netProfit ?? null));
-    push(ruleMissingSalesData(op.activeSalesDaysInMonth, selectedMonth, dateRange.year, refDate));
+    // v1 does not emit ruleMissingSalesData — current product relies on accounting P&L revenue, not operational daily summaries.
 
     const band = computeHealthBand(warnings);
     const score = computeHealthScore(warnings);

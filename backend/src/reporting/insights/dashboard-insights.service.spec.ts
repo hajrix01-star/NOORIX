@@ -246,7 +246,7 @@ describe('DashboardInsightsService', () => {
     expect(out.ratios.expenseToSales).toBeCloseTo(0.5, 5);
   });
 
-  it('missing sales month: warning when operational active days = 0', async () => {
+  it('v1: does not emit missing_sales_data_warning when operational pack empty but accounting sales exist', async () => {
     const facade = mkFacade();
     facade.getDashboardSummary.mockResolvedValue({
       profitLoss: mockMonthlyPL({
@@ -264,7 +264,27 @@ describe('DashboardInsightsService', () => {
     const svc = new DashboardInsightsService(facade as unknown as ReportingFacade);
     const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
     expect(out.metrics.operational.activeSalesDaysInMonth).toBe(0);
-    expect(out.warnings.some((w) => w.id === 'missing_sales_data_warning')).toBe(true);
+    expect(out.warnings.some((w) => w.id === 'missing_sales_data_warning')).toBe(false);
+  });
+
+  it('v1: empty operational daily summaries never add missing_sales_data_warning', async () => {
+    const facade = mkFacade();
+    facade.getDashboardSummary.mockResolvedValue({
+      profitLoss: mockMonthlyPL({
+        monthIndex: 2,
+        sales: '5000.00',
+        purchases: '1000.00',
+        expenses: '500.00',
+        grossProfit: '4000.00',
+        netProfit: '3500.00',
+      }),
+      salesPack: { dailySummaries: [], monthSummaries: [] },
+      periodAnalytics: {},
+    });
+
+    const svc = new DashboardInsightsService(facade as unknown as ReportingFacade);
+    const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
+    expect(out.warnings.every((w) => w.id !== 'missing_sales_data_warning')).toBe(true);
   });
 
   it('near-zero sales denominator: ratios null with notes', async () => {

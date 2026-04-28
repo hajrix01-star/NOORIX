@@ -280,6 +280,10 @@ export function ruleNegativeProfit(netProfit: number | null): InsightItem | null
   return null;
 }
 
+/**
+ * Operational daily-sales coverage — **not emitted in dashboard insights v1** (`DashboardInsightsService` omits this rule).
+ * Kept for a possible future mode where daily operational summaries are mandatory; current usage relies on accounting P&L revenue.
+ */
 export function ruleMissingSalesData(
   activeSalesDaysInMonth: number | null,
   selectedMonth: number | null,

@@ -104,7 +104,8 @@ Deterministic **business insights** sit conceptually **above** reporting reads (
 - `expense_ratio_to_sales`
 - `net_profit_margin`
 - `negative_profit_warning`
-- `missing_sales_data_warning`
+
+**Disabled in v1 (not emitted):** operational daily-sales **missing-data** alerts (`missing_sales_data_warning` exists as code in `insights.rules.ts` but **`DashboardInsightsService` does not push it**). Current NOORIX usage treats **accounting P&L revenue** as the source of truth for sales; operational daily sales summaries are optional and warning users about “missing” operational rows would be misleading. If daily summaries become a required workflow, this rule may be re-enabled.
 
 ### Exclusions in v1
 
