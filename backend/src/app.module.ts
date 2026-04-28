@@ -27,6 +27,7 @@ import { VaultBalanceModule }  from './vault-balance/vault-balance.module';
 import { IdempotencyModule }   from './idempotency/idempotency.module';
 import { ExpenseLineModule }   from './expense-line/expense-line.module';
 import { ReportsModule }       from './reports/reports.module';
+import { ReportingModule }     from './reporting/reporting.module';
 import { ChatModule }          from './chat/chat.module';
 import { BankStatementsModule } from './bank-statements/bank-statements.module';
 import { OrdersModule }         from './orders/orders.module';
@@ -79,6 +80,7 @@ import { getJwtSecret }        from './config/jwt.config';
     IdempotencyModule,
     ExpenseLineModule,
     ReportsModule,
+    ReportingModule,
     ChatModule,
     BankStatementsModule,
     OrdersModule,
