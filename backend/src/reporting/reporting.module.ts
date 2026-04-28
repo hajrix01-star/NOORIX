@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ReportsModule } from '../reports/reports.module';
 import { SalesModule } from '../sales/sales.module';
+import { CompanyInsightThresholdSettingsService } from './insights/company-insight-threshold-settings.service';
 import { DashboardInsightsService } from './insights/dashboard-insights.service';
 import { ReportingFacade } from './reporting.facade';
 import { ReportingController } from './reporting.controller';
@@ -12,7 +13,7 @@ import { ReportingController } from './reporting.controller';
 @Module({
   imports: [AuthModule, ReportsModule, SalesModule],
   controllers: [ReportingController],
-  providers: [ReportingFacade, DashboardInsightsService],
+  providers: [ReportingFacade, CompanyInsightThresholdSettingsService, DashboardInsightsService],
   exports: [ReportingFacade, DashboardInsightsService],
 })
 export class ReportingModule {}

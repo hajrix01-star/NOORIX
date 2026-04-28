@@ -13,6 +13,7 @@ import {
   ruleNetProfitMargin,
   rulePurchaseRatioToSales,
 } from './insights.rules';
+import { CompanyInsightThresholdSettingsService } from './company-insight-threshold-settings.service';
 
 /**
  * Phase A — deterministic insights from {@link ReportingFacade.getDashboardSummary} only.
@@ -21,7 +22,10 @@ import {
  */
 @Injectable()
 export class DashboardInsightsService {
-  constructor(private readonly reportingFacade: ReportingFacade) {}
+  constructor(
+    private readonly reportingFacade: ReportingFacade,
+    private readonly companyInsightThresholdSettings: CompanyInsightThresholdSettingsService,
+  ) {}
 
   async buildDashboardInsights(
     companyId: string,
@@ -29,6 +33,7 @@ export class DashboardInsightsService {
     selectedMonth: number | null,
     refDate: Date = new Date(),
   ): Promise<DashboardInsightsPayload> {
+    const thresholds = await this.companyInsightThresholdSettings.getResolvedThresholds(companyId);
     const summary = await this.reportingFacade.getDashboardSummary(companyId, dateRange);
     const { profitLoss, salesPack } = summary;
 
@@ -44,9 +49,9 @@ export class DashboardInsightsService {
       if (item) warnings.push(item);
     };
 
-    push(rulePurchaseRatioToSales(purchaseToSales));
-    push(ruleExpenseRatioToSales(expenseToSales));
-    push(ruleNetProfitMargin(netProfitMargin, snap?.numeric.sales ?? null));
+    push(rulePurchaseRatioToSales(purchaseToSales, thresholds));
+    push(ruleExpenseRatioToSales(expenseToSales, thresholds));
+    push(ruleNetProfitMargin(netProfitMargin, snap?.numeric.sales ?? null, thresholds));
     push(ruleNegativeProfit(snap?.numeric.netProfit ?? null));
     // v1 does not emit ruleMissingSalesData — current product relies on accounting P&L revenue, not operational daily summaries.
 

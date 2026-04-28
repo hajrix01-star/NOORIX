@@ -1,4 +1,8 @@
 import type { GeneralProfitLossModel } from '../../reports/reports-general-profit-loss-model.util';
+import {
+  mergeInsightThresholds,
+  type CompanyInsightThresholdsPayload,
+} from './company-insight-thresholds';
 import { INSIGHT_THRESHOLDS } from './insights.thresholds';
 import type { InsightItem, InsightMetricBasis } from './insights.types';
 
@@ -163,9 +167,12 @@ export function isCalendarMonthEntirelyInFuture(year: number, month: number, ref
 const BASIS_PL: InsightMetricBasis = 'accounting_pl';
 const BASIS_OP: InsightMetricBasis = 'operational_sales';
 
-export function rulePurchaseRatioToSales(purchaseToSales: number | null): InsightItem | null {
+export function rulePurchaseRatioToSales(
+  purchaseToSales: number | null,
+  thresholds: CompanyInsightThresholdsPayload = mergeInsightThresholds(undefined),
+): InsightItem | null {
   if (purchaseToSales == null || !Number.isFinite(purchaseToSales)) return null;
-  const { warning, critical } = INSIGHT_THRESHOLDS.purchaseToSales;
+  const { warning, critical } = thresholds.purchaseToSales;
   if (purchaseToSales >= critical) {
     return {
       id: 'purchase_ratio_to_sales',
@@ -195,9 +202,12 @@ export function rulePurchaseRatioToSales(purchaseToSales: number | null): Insigh
   return null;
 }
 
-export function ruleExpenseRatioToSales(expenseToSales: number | null): InsightItem | null {
+export function ruleExpenseRatioToSales(
+  expenseToSales: number | null,
+  thresholds: CompanyInsightThresholdsPayload = mergeInsightThresholds(undefined),
+): InsightItem | null {
   if (expenseToSales == null || !Number.isFinite(expenseToSales)) return null;
-  const { warning, critical } = INSIGHT_THRESHOLDS.expenseToSales;
+  const { warning, critical } = thresholds.expenseToSales;
   if (expenseToSales >= critical) {
     return {
       id: 'expense_ratio_to_sales',
@@ -227,10 +237,15 @@ export function ruleExpenseRatioToSales(expenseToSales: number | null): InsightI
   return null;
 }
 
-export function ruleNetProfitMargin(netProfitMargin: number | null, sales: number | null): InsightItem | null {
+export function ruleNetProfitMargin(
+  netProfitMargin: number | null,
+  sales: number | null,
+  thresholds: CompanyInsightThresholdsPayload = mergeInsightThresholds(undefined),
+): InsightItem | null {
   if (netProfitMargin == null || !Number.isFinite(netProfitMargin)) return null;
-  const thr = INSIGHT_THRESHOLDS.netProfitMargin.warningHigh;
   const eps = INSIGHT_THRESHOLDS.salesEpsilon;
+  const warnBelow = thresholds.netProfitMargin.warningBelow;
+  const critBelow = thresholds.netProfitMargin.criticalBelow;
   if (sales != null && Math.abs(sales) <= eps) return null;
 
   if (netProfitMargin < 0) {
@@ -246,7 +261,26 @@ export function ruleNetProfitMargin(netProfitMargin: number | null, sales: numbe
       values: { netProfitMargin, sales },
     };
   }
-  if (sales != null && Math.abs(sales) > eps && netProfitMargin >= 0 && netProfitMargin < thr) {
+  if (
+    sales != null &&
+    Math.abs(sales) > eps &&
+    critBelow > 0 &&
+    netProfitMargin >= 0 &&
+    netProfitMargin < critBelow
+  ) {
+    return {
+      id: 'net_profit_margin',
+      severity: 'critical',
+      category: 'margin',
+      metricBasis: BASIS_PL,
+      titleAr: 'هامش صافي الربح منخفض جداً',
+      titleEn: 'Very low net profit margin',
+      detailAr: `هامش صافي الربح (محاسبي) ${(netProfitMargin * 100).toFixed(1)}% دون الحد الحرج (${(critBelow * 100).toFixed(0)}%).`,
+      detailEn: `Accounting net profit margin is ${(netProfitMargin * 100).toFixed(1)}%, below the ${(critBelow * 100).toFixed(0)}% critical guide.`,
+      values: { netProfitMargin, thresholdCritical: critBelow },
+    };
+  }
+  if (sales != null && Math.abs(sales) > eps && netProfitMargin >= 0 && netProfitMargin < warnBelow) {
     return {
       id: 'net_profit_margin',
       severity: 'warning',
@@ -254,9 +288,9 @@ export function ruleNetProfitMargin(netProfitMargin: number | null, sales: numbe
       metricBasis: BASIS_PL,
       titleAr: 'هامش صافي الربح منخفض',
       titleEn: 'Low net profit margin',
-      detailAr: `هامش صافي الربح (محاسبي) ${(netProfitMargin * 100).toFixed(1)}% دون حد التحذير (${(thr * 100).toFixed(0)}%).`,
-      detailEn: `Accounting net profit margin is ${(netProfitMargin * 100).toFixed(1)}%, below the ${(thr * 100).toFixed(0)}% warning guide.`,
-      values: { netProfitMargin, thresholdWarning: thr },
+      detailAr: `هامش صافي الربح (محاسبي) ${(netProfitMargin * 100).toFixed(1)}% دون حد التحذير (${(warnBelow * 100).toFixed(0)}%).`,
+      detailEn: `Accounting net profit margin is ${(netProfitMargin * 100).toFixed(1)}%, below the ${(warnBelow * 100).toFixed(0)}% warning guide.`,
+      values: { netProfitMargin, thresholdWarning: warnBelow },
     };
   }
   return null;
