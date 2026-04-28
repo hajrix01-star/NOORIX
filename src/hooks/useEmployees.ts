@@ -13,7 +13,7 @@ import {
 } from '../services/api';
 import { createAdvance } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
-import { employeeKeys } from '../services/queryKeys';
+import { employeeKeys, invoiceKeys, vaultKeys } from '../services/queryKeys';
 
 export type UseEmployeesOpts = { includeTerminated?: boolean; fetchEnabled?: boolean };
 
@@ -35,8 +35,8 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
     invalidateQueries: [
       employeeKeys.byCompany(companyId),
       employeeKeys.pagedByCompany(companyId),
-      ['invoices'],
-      ['vaults'],
+      invoiceKeys.root(),
+      vaultKeys.root(),
     ],
     showErrorToast: false,
   });
@@ -46,8 +46,8 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
     invalidateQueries: [
       employeeKeys.byCompany(companyId),
       employeeKeys.pagedByCompany(companyId),
-      ['invoices'],
-      ['vaults'],
+      invoiceKeys.root(),
+      vaultKeys.root(),
     ],
     showErrorToast: false,
   });
