@@ -10,6 +10,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { createInvoice, getExpenseLines, uploadInvoiceAttachment } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
+import { expenseKeys } from '../../../services/queryKeys';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
@@ -48,7 +49,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   const receiptInputRef = useRef<any>(null);
 
   const { data: expenseLines = [] } = useQuery({
-    queryKey: ['expense-lines', companyId],
+    queryKey: expenseKeys.lines(companyId),
     queryFn: async () => {
       const res = await getExpenseLines(companyId);
       return res?.data ?? (Array.isArray(res) ? res : []);

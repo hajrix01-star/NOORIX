@@ -22,6 +22,7 @@ import {
 } from '../../../services/api';
 import { TRANSACTION_TYPES, TRANSACTION_SIDES, getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
 import { getSaudiToday } from '../../../utils/saudiDate';
+import { bankKeys } from '../../../services/queryKeys';
 
 const labelMuted = { fontSize: 12, color: 'var(--noorix-text-muted)' };
 
@@ -79,7 +80,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
 
   const createMut = useApiMutation({
     mutationFn: (body: any) => bankStatementTreeCategoryCreate(body),
-    invalidateQueries: [['bank-tree-categories', companyId]],
+    invalidateQueries: [bankKeys.treeCategories(companyId)],
     successToast: () => t('savedSuccessfully'),
     errorToast: (e: any) => e?.message || t('apiRequestFailed'),
     onSuccess: () => onClose(),
@@ -87,7 +88,7 @@ function CategoryFormModal({ open, onClose, category, existingCategories, compan
 
   const updateMut = useApiMutation({
     mutationFn: ({ id, patch }: any) => bankStatementTreeCategoryUpdate(companyId, id, patch),
-    invalidateQueries: [['bank-tree-categories', companyId]],
+    invalidateQueries: [bankKeys.treeCategories(companyId)],
     successToast: () => t('savedSuccessfully'),
     errorToast: (e: any) => e?.message || t('apiRequestFailed'),
     onSuccess: () => onClose(),
@@ -395,9 +396,9 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
     [companies, companyId],
   );
 
-  const qKey = ['bank-tree-categories', companyId];
+  const treeKey = bankKeys.treeCategories(companyId);
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: qKey,
+    queryKey: treeKey,
     queryFn: async () => {
       const res = await bankStatementTreeCategoriesList(companyId);
       throwIfApiFailed(res, res.error || 'فشل التحميل');
@@ -407,7 +408,7 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
   });
 
   const { data: flatRules = [] } = useQuery({
-    queryKey: ['bank-classification-rules', companyId],
+    queryKey: bankKeys.classificationRules(companyId),
     queryFn: async () => {
       const res = await bankStatementClassificationRulesList(companyId);
       throwIfApiFailed(res, res.error || 'فشل التحميل');
@@ -436,21 +437,21 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
 
   const deleteMut = useApiMutation({
     mutationFn: (id: any) => bankStatementTreeCategoryDelete(companyId, id),
-    invalidateQueries: [qKey],
+    invalidateQueries: [treeKey],
     successToast: () => t('deletedSuccessfully'),
     errorToast: (e: any) => e?.message || t('apiRequestFailed'),
   });
 
   const updateMut = useApiMutation({
     mutationFn: ({ id, patch }: any) => bankStatementTreeCategoryUpdate(companyId, id, patch),
-    invalidateQueries: [qKey],
+    invalidateQueries: [treeKey],
     showErrorToast: true,
     errorToast: (e: any) => e?.message || t('apiRequestFailed'),
   });
 
   const seedDefaultsMut = useApiMutation({
     mutationFn: () => bankStatementTreeCategoriesSeedDefaults(companyId),
-    invalidateQueries: [qKey],
+    invalidateQueries: [treeKey],
     successToast: (res: any) => {
       const inner = res?.data ?? res;
       const n = inner?.created ?? 8;
@@ -501,8 +502,8 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
         throwIfApiFailed(res, res.error || 'migrate');
         order += 10;
       }
-      await qc.invalidateQueries({ queryKey: qKey });
-      await qc.invalidateQueries({ queryKey: ['bank-classification-rules', companyId] });
+      await qc.invalidateQueries({ queryKey: treeKey });
+      await qc.invalidateQueries({ queryKey: bankKeys.classificationRules(companyId) });
       showToast(t('bankTreeMigrateDone', String(groupedForMigrate.length)));
       setShowMigrate(false);
     } catch (e: any) {
@@ -522,8 +523,8 @@ export default function BankCategoryTreePanel({ companyId, companies = [] }: any
   }, []);
 
   const invalidateRulesQueries = useCallback(() => {
-    qc.invalidateQueries({ queryKey: ['bank-tree-categories', companyId] });
-    qc.invalidateQueries({ queryKey: ['bank-classification-rules', companyId] });
+    qc.invalidateQueries({ queryKey: bankKeys.treeCategories(companyId) });
+    qc.invalidateQueries({ queryKey: bankKeys.classificationRules(companyId) });
   }, [qc, companyId]);
 
   const handleExportRules = async () => {

@@ -22,10 +22,11 @@ import {
   createOrderCategoriesBatch,
   throwIfApiFailed,
 } from '../services/api';
+import { orderKeys } from '../services/queryKeys';
 
 export function useOrders(companyId: any, year: any, month: any) {
   return useQuery({
-    queryKey: ['orders', companyId, year, month],
+    queryKey: orderKeys.list(companyId, year, month),
     queryFn: async () => {
       const res = await getOrders(companyId, year, month);
       throwIfApiFailed(res, 'فشل تحميل الطلبات');
@@ -70,7 +71,7 @@ export function useCancelOrderMutation(companyId: any) {
 
 export function useOrdersSummary(companyId: any, year: any, month: any) {
   return useQuery({
-    queryKey: ['orders-summary', companyId, year, month],
+    queryKey: orderKeys.summary(companyId, year, month),
     queryFn: async () => {
       const res = await getOrdersSummary(companyId, year, month);
       if (!res?.success) return {};
@@ -82,7 +83,7 @@ export function useOrdersSummary(companyId: any, year: any, month: any) {
 
 export function useOrderProducts(companyId: any) {
   return useQuery({
-    queryKey: ['order-products', companyId],
+    queryKey: orderKeys.products(companyId),
     queryFn: async () => {
       const res = await getOrderProducts(companyId);
       throwIfApiFailed(res, 'فشل تحميل الأصناف');
@@ -94,7 +95,7 @@ export function useOrderProducts(companyId: any) {
 
 export function useOrderCategories(companyId: any) {
   return useQuery({
-    queryKey: ['order-categories', companyId],
+    queryKey: orderKeys.categories(companyId),
     queryFn: async () => {
       const res = await getOrderCategories(companyId);
       throwIfApiFailed(res, 'فشل تحميل الفئات');
@@ -106,7 +107,7 @@ export function useOrderCategories(companyId: any) {
 
 export function useProductPurchaseHistory(companyId: any, productId: any, year: any, month: any, enabled: any = true) {
   return useQuery({
-    queryKey: ['product-purchase-history', companyId, productId, year, month],
+    queryKey: orderKeys.productPurchaseHistory(companyId, productId, year, month),
     queryFn: async () => {
       const res = await getProductPurchaseHistory(companyId, productId, year, month);
       if (!res?.success) return [];
@@ -118,7 +119,7 @@ export function useProductPurchaseHistory(companyId: any, productId: any, year: 
 
 export function useCategoryPurchaseHistory(companyId: any, categoryId: any, year: any, month: any, enabled: any = true) {
   return useQuery({
-    queryKey: ['category-purchase-history', companyId, categoryId, year, month],
+    queryKey: orderKeys.categoryPurchaseHistory(companyId, categoryId, year, month),
     queryFn: async () => {
       const res = await getCategoryPurchaseHistory(companyId, categoryId, year, month);
       if (!res?.success) return [];
@@ -130,7 +131,7 @@ export function useCategoryPurchaseHistory(companyId: any, categoryId: any, year
 
 export function useOrdersItemsReport(companyId: any, year: any, month: any) {
   return useQuery({
-    queryKey: ['orders-items-report', companyId, year, month],
+    queryKey: orderKeys.itemsReport(companyId, year, month),
     queryFn: async () => {
       const res = await getOrdersItemsReport(companyId, year, month);
       throwIfApiFailed(res, 'فشل تحميل التقرير');
@@ -143,7 +144,7 @@ export function useOrdersItemsReport(companyId: any, year: any, month: any) {
 export function useCreateOrderProductMutation(companyId: any) {
   return useApiMutation({
     mutationFn: createOrderProduct,
-    invalidateQueries: [['order-products', companyId]],
+    invalidateQueries: [orderKeys.products(companyId)],
     showErrorToast: false,
   });
 }
@@ -151,7 +152,7 @@ export function useCreateOrderProductMutation(companyId: any) {
 export function useCreateOrderProductsBatchMutation(companyId: any) {
   return useApiMutation({
     mutationFn: (products: any) => createOrderProductsBatch(companyId, products),
-    invalidateQueries: [['order-products', companyId]],
+    invalidateQueries: [orderKeys.products(companyId)],
     showErrorToast: false,
   });
 }
@@ -159,7 +160,7 @@ export function useCreateOrderProductsBatchMutation(companyId: any) {
 export function useCreateOrderCategoriesBatchMutation(companyId: any) {
   return useApiMutation({
     mutationFn: (categories: any) => createOrderCategoriesBatch(companyId, categories),
-    invalidateQueries: [['order-categories', companyId]],
+    invalidateQueries: [orderKeys.categories(companyId)],
     showErrorToast: false,
   });
 }
@@ -167,7 +168,7 @@ export function useCreateOrderCategoriesBatchMutation(companyId: any) {
 export function useUpdateOrderProductMutation(companyId: any) {
   return useApiMutation({
     mutationFn: ({ id, body }: any) => updateOrderProduct(id, body, companyId),
-    invalidateQueries: [['order-products', companyId]],
+    invalidateQueries: [orderKeys.products(companyId)],
     showErrorToast: false,
   });
 }
@@ -175,7 +176,7 @@ export function useUpdateOrderProductMutation(companyId: any) {
 export function useCreateOrderCategoryMutation(companyId: any) {
   return useApiMutation({
     mutationFn: createOrderCategory,
-    invalidateQueries: [['order-categories', companyId]],
+    invalidateQueries: [orderKeys.categories(companyId)],
     showErrorToast: false,
   });
 }
@@ -183,7 +184,7 @@ export function useCreateOrderCategoryMutation(companyId: any) {
 export function useUpdateOrderCategoryMutation(companyId: any) {
   return useApiMutation({
     mutationFn: ({ id, body }: any) => updateOrderCategory(id, body, companyId),
-    invalidateQueries: [['order-categories', companyId]],
+    invalidateQueries: [orderKeys.categories(companyId)],
     showErrorToast: false,
   });
 }

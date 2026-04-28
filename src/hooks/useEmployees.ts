@@ -13,6 +13,7 @@ import {
 } from '../services/api';
 import { createAdvance } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
+import { employeeKeys } from '../services/queryKeys';
 
 export type UseEmployeesOpts = { includeTerminated?: boolean; fetchEnabled?: boolean };
 
@@ -20,7 +21,7 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
   const queryClient = useQueryClient();
 
   const { data: employees = [], isLoading } = useQuery({
-    queryKey: ['employees', companyId, includeTerminated],
+    queryKey: employeeKeys.list(companyId, includeTerminated),
     queryFn: async () => {
       const res = await getEmployees(companyId, includeTerminated);
       throwIfApiFailed(res, 'فشل تحميل الموظفين');
@@ -32,8 +33,8 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
   const createMutation = useApiMutation({
     mutationFn: createEmployee,
     invalidateQueries: [
-      ['employees', companyId],
-      ['employees-paged', companyId],
+      employeeKeys.byCompany(companyId),
+      employeeKeys.pagedByCompany(companyId),
       ['invoices'],
       ['vaults'],
     ],
@@ -43,8 +44,8 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
   const updateMutation = useApiMutation({
     mutationFn: ({ id, body }: any) => updateEmployee(id, body, companyId),
     invalidateQueries: [
-      ['employees', companyId],
-      ['employees-paged', companyId],
+      employeeKeys.byCompany(companyId),
+      employeeKeys.pagedByCompany(companyId),
       ['invoices'],
       ['vaults'],
     ],
@@ -54,8 +55,8 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
   const advanceMutation = useApiMutation({
     mutationFn: createAdvance,
     invalidateQueries: [
-      ['employees', companyId],
-      ['employees-paged', companyId],
+      employeeKeys.byCompany(companyId),
+      employeeKeys.pagedByCompany(companyId),
     ],
     showErrorToast: false,
     onSuccess: () => {
@@ -78,7 +79,7 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
  */
 export function useEmployee(id: any, companyId: any) {
   return useQuery({
-    queryKey: ['employee', id, companyId],
+    queryKey: employeeKeys.detail(id, companyId),
     queryFn: async () => {
       const res = await getEmployee(id, companyId);
       throwIfApiFailed(res, 'فشل تحميل الموظف');

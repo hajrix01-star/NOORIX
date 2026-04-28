@@ -19,6 +19,7 @@ import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
+import { salesKeys } from '../../../services/queryKeys';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
@@ -97,7 +98,7 @@ export function OrdersTab({
   }, [propEndDate, year, month]);
 
   const { data: salesData } = useQuery({
-    queryKey: ['sales-summaries', companyId, startDate, endDate],
+    queryKey: salesKeys.summaries(companyId, startDate, endDate),
     queryFn: async () => {
       const res = await getDailySalesSummaries(companyId, startDate, endDate, 1, 200);
       if (!res?.success) return { items: [] };

@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { createVaultTransfer, getVaults, throwIfApiFailed } from '../../../services/api';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
+import { vaultKeys } from '../../../services/queryKeys';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
@@ -22,7 +23,7 @@ export default function VaultTransferModal({ companyId, startDate = null, endDat
 
   /** نفس استعلام شاشة الخزائن — أرقام الداخل/الخارج/الرصيد حسب الفلتر النشط */
   const { data: rawVaults = [], isLoading: vaultsLoading } = useQuery({
-    queryKey: ['vaults', companyId, false, startDate ?? '', endDate ?? ''],
+    queryKey: vaultKeys.list(companyId, false, startDate ?? '', endDate ?? ''),
     queryFn: async () => {
       const res = await getVaults(
         companyId,

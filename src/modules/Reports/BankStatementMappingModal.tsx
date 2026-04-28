@@ -19,6 +19,7 @@ import {
   sanitizeCustomerName,
 } from './bank/bankMappingAutoDetect';
 import { formatSaudiDate, toYmd } from '../../utils/saudiDate';
+import { bankKeys } from '../../services/queryKeys';
 
 /** مطابق COLUMN_TYPES في Base44 (بدون amount) */
 const COLUMN_FIELD_DEFS = [
@@ -60,7 +61,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
   }, [statement?.id]);
 
   const { data: fetched } = useQuery({
-    queryKey: ['bank-statement-mapping', companyId, statement?.id],
+    queryKey: bankKeys.statementMapping(companyId, statement?.id),
     queryFn: () => bankStatementGet(companyId, statement.id),
     enabled: !!statement?.id && !!companyId && !hasFullRaw,
   });

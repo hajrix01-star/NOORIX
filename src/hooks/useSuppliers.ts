@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, throwIfApiFailed } from '../services/api';
+import { supplierKeys } from '../services/queryKeys';
 
 /**
  * @param {string} companyId
@@ -13,7 +14,7 @@ import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, throwIfAp
  */
 export function useSuppliers(companyId: any, { pageSize = 200, q }: { pageSize?: number; q?: string } = {}) {
   const { data: raw = [], isLoading, isError, error } = useQuery({
-    queryKey: ['suppliers', companyId, pageSize, q || ''],
+    queryKey: supplierKeys.list(companyId, pageSize, q || ''),
     queryFn: async () => {
       const res = await getSuppliers(companyId, 1, pageSize, q);
       throwIfApiFailed(res, 'فشل تحميل الموردين');
@@ -27,19 +28,19 @@ export function useSuppliers(companyId: any, { pageSize = 200, q }: { pageSize?:
 
   const createMutation = useApiMutation({
     mutationFn: createSupplier,
-    invalidateQueries: [['suppliers', companyId]],
+    invalidateQueries: [supplierKeys.byCompany(companyId)],
     showErrorToast: false,
   });
 
   const updateMutation = useApiMutation({
     mutationFn: ({ id, body }: any) => updateSupplier(id, body),
-    invalidateQueries: [['suppliers', companyId]],
+    invalidateQueries: [supplierKeys.byCompany(companyId)],
     showErrorToast: false,
   });
 
   const deleteMutation = useApiMutation({
     mutationFn: deleteSupplier,
-    invalidateQueries: [['suppliers', companyId]],
+    invalidateQueries: [supplierKeys.byCompany(companyId)],
     showErrorToast: false,
   });
 

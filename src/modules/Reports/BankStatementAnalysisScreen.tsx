@@ -18,6 +18,7 @@ import {
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import { toYmd } from '../../utils/saudiDate';
+import { bankKeys } from '../../services/queryKeys';
 import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
@@ -56,13 +57,13 @@ export default function BankStatementAnalysisScreen() {
   const { showToast } = useToast();
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
-    queryKey: ['bank-statements-summary', companyId],
+    queryKey: bankKeys.statementsSummaryByCompany(companyId),
     queryFn: () => bankStatementSummary(companyId),
     enabled: !!companyId,
   });
 
   const { data: statements = [], isLoading: listLoading } = useQuery({
-    queryKey: ['bank-statements', companyId, filterMonth, filterBank],
+    queryKey: bankKeys.statementsListFiltered(companyId, filterMonth, filterBank),
     queryFn: async () => {
       const res = await bankStatementsList(companyId, {
         month: filterMonth || undefined,
@@ -74,7 +75,7 @@ export default function BankStatementAnalysisScreen() {
   });
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['bank-statement-categories', companyId],
+    queryKey: bankKeys.statementCategories(companyId),
     queryFn: async () => {
       const res = await bankStatementCategories(companyId);
       return res?.data ?? [];
@@ -83,10 +84,10 @@ export default function BankStatementAnalysisScreen() {
   });
 
   const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['bank-statements'] });
-    queryClient.invalidateQueries({ queryKey: ['bank-statements-summary'] });
-    queryClient.invalidateQueries({ queryKey: ['bank-statement-categories'] });
-    queryClient.invalidateQueries({ queryKey: ['bank-statement'] });
+    queryClient.invalidateQueries({ queryKey: bankKeys.statementsList() });
+    queryClient.invalidateQueries({ queryKey: bankKeys.statementsSummary() });
+    queryClient.invalidateQueries({ queryKey: bankKeys.statementCategoriesRoot() });
+    queryClient.invalidateQueries({ queryKey: bankKeys.statementDetailRoot() });
   }, [queryClient]);
 
   const handleUploadComplete = (stmt: any, fullRaw: any) => {

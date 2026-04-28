@@ -8,6 +8,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete, throwIfApiFailed } from '../../../services/api';
 import { Button, Modal } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
+import { bankKeys } from '../../../services/queryKeys';
 
 const COL_LABEL_KEYS: Record<string, string> = {
   date: 'bankTplColDate',
@@ -36,7 +37,7 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
   const [deleteId, setDeleteId] = useState<any>(null);
 
   const { data: list = [], isLoading } = useQuery({
-    queryKey: ['bank-statement-templates', companyId],
+    queryKey: bankKeys.statementTemplates(companyId),
     queryFn: async () => {
       const res = await bankStatementTemplatesList(companyId);
       throwIfApiFailed(res, res.error || 'فشل التحميل');
@@ -47,14 +48,14 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
 
   const toggleMut = useApiMutation({
     mutationFn: async ({ id, isActive }: any) => bankStatementTemplateSetActive(companyId, id, isActive),
-    invalidateQueries: [['bank-statement-templates', companyId]],
+    invalidateQueries: [bankKeys.statementTemplates(companyId)],
     successToast: () => t('bankTemplatesUpdated'),
     errorToast: (e: any) => e?.message || t('apiRequestFailed'),
   });
 
   const deleteMut = useApiMutation({
     mutationFn: async (id: any) => bankStatementTemplateDelete(companyId, id),
-    invalidateQueries: [['bank-statement-templates', companyId]],
+    invalidateQueries: [bankKeys.statementTemplates(companyId)],
     successToast: () => t('bankTemplatesDeleted'),
     errorToast: (e: any) => e?.message || t('apiRequestFailed'),
     onSuccess: () => { setDeleteId(null); },
