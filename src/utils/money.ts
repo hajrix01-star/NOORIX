@@ -1,6 +1,8 @@
 /**
  * تنسيق مركزي للمال والأرقام والنسب — عرض فقط (لا حسابات).
  * القيم المالية تُعرض أرقامًا إنجليزية مع فاصلات؛ اللاحقة SR تُضاف في JSX عبر nx-sar حسب القواعد.
+ *
+ * Product rule: numbers are always displayed with Latin digits (0-9), even in Arabic UI.
  */
 
 export type MoneyLang = 'ar' | 'en' | string;
@@ -10,9 +12,16 @@ function toFinite(n: unknown): number {
   return Number.isFinite(raw) ? raw : 0;
 }
 
-function localeForLang(lang?: MoneyLang): string {
-  if (lang === 'ar') return 'ar-SA';
-  return 'en';
+/**
+ * Latin-digit numeric string for display. `lang` is accepted at call sites for API
+ * compatibility; digit shape does not follow UI language.
+ */
+function formatWithLatinDigits(n: number, minimumFractionDigits: number, maximumFractionDigits: number): string {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits,
+    maximumFractionDigits,
+    numberingSystem: 'latn',
+  }).format(n);
 }
 
 /**
@@ -30,24 +39,20 @@ export function formatNumber(
   lang?: MoneyLang,
   options?: { minFractionDigits?: number; maxFractionDigits?: number },
 ): string {
+  void lang;
   const n = toFinite(value);
   const min = options?.minFractionDigits ?? 0;
   const max = options?.maxFractionDigits ?? 1;
-  return n.toLocaleString(localeForLang(lang), {
-    minimumFractionDigits: min,
-    maximumFractionDigits: max,
-  });
+  return formatWithLatinDigits(n, min, max);
 }
 
 /**
  * تنسيق نسبة — رقم خام (مثلاً 12.3 يعني 12.3%)
  */
 export function formatPercent(value: unknown, lang?: MoneyLang, fractionDigits = 1): string {
+  void lang;
   const n = toFinite(value);
-  return `${n.toLocaleString(localeForLang(lang), {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  })}%`;
+  return `${formatWithLatinDigits(n, fractionDigits, fractionDigits)}%`;
 }
 
 /**

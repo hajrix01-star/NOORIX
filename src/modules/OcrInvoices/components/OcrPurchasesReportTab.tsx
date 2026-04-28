@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button } from '../../../ui';
+import { formatNumber } from '../../../utils/money';
 import { getOcrPurchasesByMonth } from '../services/ocrApi';
 import { ocrKeys } from '../../../services/queryKeys';
 
@@ -29,7 +30,7 @@ export default function OcrPurchasesReportTab() {
 
   const fmt = (n: any) =>
     typeof n === 'number' && !Number.isNaN(n)
-      ? n.toLocaleString(isAr ? 'ar-SA' : 'en-US', { maximumFractionDigits: 2 })
+      ? formatNumber(n, lang, { minFractionDigits: 0, maxFractionDigits: 2 })
       : '—';
 
   return (
