@@ -1,0 +1,248 @@
+/**
+ * بطاقة تقرير الرد + مخططات مصغّرة مرتبطة بنفس ملف الشاشة السابق.
+ */
+import React, { useState } from 'react';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { formatSaudiDateTime } from '../../../utils/saudiDate';
+import { KPI_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
+import type { ChatAnswerExtras } from '../types';
+import { formatMiniChartTooltipValue, formatMiniChartYAxisTick } from '../utils/smartChatFormatters';
+
+function ReportDefinitionLine({ line, isAr }: { line: string; isAr: boolean }) {
+  const [open, setOpen] = useState(false);
+  const body = line.replace(/^(تعريف|Definition):\s*/i, '').trim();
+  return (
+    <div className="noorix-chat-report-card__definition rounded-[10px] border border-noorix-border overflow-hidden bg-noorix-bg-page/60">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between gap-2 text-[13px] font-semibold text-noorix-text py-2.5 px-3 hover:bg-noorix-bg-muted/80 transition-colors"
+        style={{ direction: isAr ? 'rtl' : 'ltr' }}
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span>{isAr ? 'تعريف المؤشرات' : 'Indicator definition'}</span>
+        <span className="text-noorix-muted nx-ltr text-[11px]" aria-hidden>{open ? '▾' : '▸'}</span>
+      </button>
+      {open ? (
+        <div className="text-[13px] text-noorix-muted leading-[1.65] px-3 pb-3 pt-0 border-t border-noorix-border border-opacity-60">
+          {body}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ChatMiniChart({
+  chart,
+  isAr,
+}: {
+  chart: NonNullable<ChatAnswerExtras['chart']>;
+  isAr: boolean;
+}) {
+  const bars = chart?.bars;
+  if (!Array.isArray(bars) || bars.length < 2) return null;
+  const data = bars.map((b) => ({
+    key: b.key,
+    name: isAr ? b.labelAr : b.labelEn,
+    value: Number(b.value),
+  }));
+  return (
+    <div
+      className="noorix-chat-mini-chart mt-3 pt-3 border-t border-noorix-border"
+      role="img"
+      aria-label={isAr ? 'مخطط مقارنة مبيعات الشهرين' : 'Bar chart comparing the two months'}
+    >
+      <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        {isAr ? 'مقارنة بصرية' : 'Visual comparison'}
+      </div>
+      <div className="nx-ltr" style={{ width: '100%', height: 132 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barCategoryGap="28%">
+            <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--noorix-text-muted)' }} axisLine={false} tickLine={false} />
+            <YAxis
+              width={44}
+              tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
+              tickFormatter={(v: number) => formatMiniChartYAxisTick(v)}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip
+              formatter={(value) => [
+                formatMiniChartTooltipValue(typeof value === 'number' || typeof value === 'string' ? value : 0, isAr),
+                isAr ? 'المبلغ' : 'Amount',
+              ]}
+              labelStyle={{ direction: isAr ? 'rtl' : 'ltr' }}
+              contentStyle={{
+                borderRadius: 8,
+                border: '1px solid var(--noorix-border)',
+                fontSize: 12,
+              }}
+            />
+            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={42}>
+              {data.map((_, i) => (
+                <Cell
+                  key={data[i].key}
+                  fill={i === 0 ? KPI_RECHARTS_COLORS.purchases : KPI_RECHARTS_COLORS.sales}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function ChatFinanceRatiosStrip({
+  chart,
+  isAr,
+}: {
+  chart: NonNullable<ChatAnswerExtras['chart']>;
+  isAr: boolean;
+}) {
+  const segments = chart?.segments;
+  if (!Array.isArray(segments) || segments.length === 0) return null;
+  const used = segments.reduce((a, s) => a + (Number(s.pct) || 0), 0);
+  const remainder = Math.max(0, 100 - used);
+  const fillFor = (key: string) =>
+    key === 'purchases' ? KPI_RECHARTS_COLORS.purchases : KPI_RECHARTS_COLORS.expenses;
+  const labelFor = (key: string) => {
+    if (key === 'purchases') return isAr ? 'مشتريات' : 'Purchases';
+    return isAr ? 'مصروفات' : 'Expenses';
+  };
+  return (
+    <div
+      className="noorix-chat-finance-ratios mt-3 pt-3 border-t border-noorix-border"
+      role="img"
+      aria-label={isAr ? 'شريط نسب الخارج التشغيلي من المبيعات' : 'Operating load as share of revenue'}
+    >
+      <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        {isAr ? 'توزيع الخارج التشغيلي من الإيراد' : 'Operating load vs revenue'}
+      </div>
+      <div
+        className="noorix-chat-finance-ratios__track nx-ltr flex h-[10px] rounded-full overflow-hidden border border-noorix-border/80 bg-noorix-bg-muted"
+        aria-hidden
+      >
+        {segments.map((s: { key: string; pct: unknown }) => (
+          <div
+            key={s.key}
+            className="noorix-chat-finance-ratios__seg h-full min-w-0 transition-[width] duration-300"
+            style={{ width: `${Math.max(0, Math.min(100, Number(s.pct) || 0))}%`, backgroundColor: fillFor(s.key) }}
+            title={`${labelFor(s.key)}: ${Number(s.pct).toFixed(2)}%`}
+          />
+        ))}
+        {remainder > 0.05 ? (
+          <div className="noorix-chat-finance-ratios__remainder flex-1 min-w-0 h-full bg-noorix-bg-page/90" />
+        ) : null}
+      </div>
+      <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-noorix-muted list-none m-0 p-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        {segments.map((s: { key: string; pct: unknown }) => (
+          <li key={s.key} className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-2 rounded-sm shrink-0" style={{ backgroundColor: fillFor(s.key) }} aria-hidden />
+            <span>
+              {labelFor(s.key)}: <span className="font-semibold text-noorix-text nx-ltr">{Number(s.pct).toFixed(2)}%</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export type SmartChatReportCardProps = {
+  text: string;
+  isAr: boolean;
+  createdAt?: string;
+  extras?: ChatAnswerExtras;
+};
+
+export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChatReportCardProps) {
+  const raw = String(text || '').trim();
+  const lines = raw
+    .split(/\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const renderKvLine = (line: string, i: number) => {
+    const colonIdx = line.indexOf(':');
+    const hasLabel = colonIdx > 0 && colonIdx < 50;
+    const label = hasLabel ? line.slice(0, colonIdx).trim() : null;
+    const value = hasLabel ? line.slice(colonIdx + 1).trim() : line;
+    const isNumericValue = /^\d/.test(value) || /\d{4}-\d{2}-\d{2}/.test(value);
+    const valueStyle: React.CSSProperties = isNumericValue ? { direction: 'ltr', unicodeBidi: 'isolate' } : {};
+    const isPeriod = /^(الفترة|Period)\s*:/i.test(line);
+    return (
+      <div
+        key={i}
+        className={`noorix-chat-report-card__grid${isPeriod ? ' noorix-chat-report-card__grid--period' : ''}`}
+        style={{ direction: isAr ? 'rtl' : 'ltr' }}
+      >
+        {label ? (
+          <>
+            <span className="text-[13px] text-noorix-muted font-semibold">{label}:</span>
+            <span style={valueStyle}>{value}</span>
+          </>
+        ) : (
+          <span style={{ gridColumn: '1 / -1', ...valueStyle }}>{value || line}</span>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className="noorix-chat-report-card bg-noorix-surface text-noorix-text text-[14px] md:text-[15px] py-3.5 px-3 md:py-4 md:px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words w-full min-w-0 max-w-full"
+      style={{
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+      }}
+    >
+      {lines.length > 0 ? (
+        <div className="flex flex-col gap-3 w-full min-w-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+          {lines.map((line, i) => {
+            if (/^##\s*/.test(line)) {
+              const title = line.replace(/^##\s*/, '').trim();
+              return (
+                <h3
+                  key={i}
+                  className="text-[15px] md:text-[16px] font-bold text-noorix-text tracking-tight border-b border-noorix-border pb-2 mb-0"
+                >
+                  {title}
+                </h3>
+              );
+            }
+            if (/^[•\-\*]\s*/.test(line)) {
+              const bulletText = line.replace(/^[•\-\*]\s*/, '').trim();
+              const isSummary = /^الخلاصة[:：]/i.test(bulletText) || /^Summary:/i.test(bulletText);
+              return (
+                <div
+                  key={i}
+                  className={`noorix-chat-report-card__bullet flex gap-2 text-[14px] md:text-[15px] pe-1${isSummary ? ' noorix-chat-report-card__bullet--summary' : ''}`}
+                >
+                  <span className="text-noorix-muted shrink-0" aria-hidden>•</span>
+                  <span className="min-w-0">{bulletText}</span>
+                </div>
+              );
+            }
+            if (/^(تعريف|Definition):\s*/i.test(line)) {
+              return <ReportDefinitionLine key={i} line={line} isAr={isAr} />;
+            }
+            return renderKvLine(line, i);
+          })}
+        </div>
+      ) : (
+        <div className="whitespace-pre-wrap">{text}</div>
+      )}
+      {extras?.chart?.kind === 'monthCompare' && extras.chart ? (
+        <ChatMiniChart chart={extras.chart} isAr={isAr} />
+      ) : null}
+      {extras?.chart?.kind === 'financeRatios' && extras.chart ? (
+        <ChatFinanceRatiosStrip chart={extras.chart} isAr={isAr} />
+      ) : null}
+      {createdAt && (
+        <div className="text-[12px] text-noorix-muted border-t border-noorix-border nx-ltr mt-[14px] pt-3">
+          {formatSaudiDateTime(createdAt)}
+        </div>
+      )}
+    </div>
+  );
+}

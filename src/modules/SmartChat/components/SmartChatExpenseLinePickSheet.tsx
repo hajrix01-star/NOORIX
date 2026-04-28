@@ -1,0 +1,56 @@
+import React from 'react';
+import { Button, AdaptiveSheet } from '../../../ui';
+
+export type ExpenseLineRow = {
+  id: string;
+  nameAr?: string;
+  nameEn?: string;
+  name?: string;
+  isActive?: boolean;
+};
+
+export type SmartChatExpenseLinePickSheetProps = {
+  open: boolean;
+  title: string;
+  isAr: boolean;
+  narrow: boolean;
+  expenseLines: ExpenseLineRow[];
+  onClose: () => void;
+  onPickLine: (line: ExpenseLineRow) => void;
+};
+
+export function SmartChatExpenseLinePickSheet({
+  open,
+  title,
+  isAr,
+  narrow,
+  expenseLines,
+  onClose,
+  onPickLine,
+}: SmartChatExpenseLinePickSheetProps) {
+  return (
+    <AdaptiveSheet
+      open={open}
+      onClose={onClose}
+      title={title}
+      size="sm"
+      side={narrow ? 'bottom' : 'start'}
+      className="smartchat-expense-pick-drawer"
+    >
+      <div className="flex flex-col gap-2">
+        {expenseLines
+          .filter((l) => l.isActive !== false)
+          .map((line) => (
+            <Button
+              key={line.id}
+              className="w-full justify-start py-3 px-[14px]"
+              style={{ textAlign: isAr ? 'right' : 'left' }}
+              onClick={() => onPickLine(line)}
+            >
+              {line.nameAr || line.nameEn || line.name || '—'}
+            </Button>
+          ))}
+      </div>
+    </AdaptiveSheet>
+  );
+}
