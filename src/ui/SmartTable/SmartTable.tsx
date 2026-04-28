@@ -3,93 +3,15 @@
  * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards | Column Resize
  */
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from '../i18n/useTranslation';
-import { useIsNarrow700 } from '../hooks/useMediaQuery';
-import { useUiDir } from '../hooks/useUiDir';
-import Button from './Button';
-import Input  from './Input';
-import { cn } from './cn';
-
-const ALIGN_MAP = { right: 'right', left: 'left', center: 'center', start: 'start', end: 'end' };
-
-/** عنوان العمود — يدعم `label` أو `header` (متوافق مع شاشات تستخدم header فقط) */
-function columnLabel(col: any) {
-  if (col == null) return '';
-  return col.label ?? col.header ?? '';
-}
-
-function getAlign(col: any) {
-  if (col.align) return (ALIGN_MAP as Record<string, string>)[String(col.align)] || 'start';
-  if (col.numeric) return 'right';
-  return 'start';
-}
-
-/**
- * يحوّل footerRow (مصفوفة شرائح) إلى خلايا <td> مدركة لإخفاء الأعمدة.
- * كل شريحة: { keys: string[], content?: ReactNode, className?: string }
- *
- * المبدأ: لا تُصيَّر خلايا 0-عرض أبدًا — بدلاً من ذلك تُدمج الأعمدة المخفية
- * في colSpan الخلية المرئية التالية (وهي 0-عرض أصلاً فلا تأثير بصري).
- * هذا يضمن عدم تسرّب المحتوى أو ظهور حدود طفيلية في أي متصفح.
- */
-function buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad }: any) {
-  const cells = [];
-
-  if (showRowNumbers) {
-    cells.push(
-      <td key="__num__" style={{ width: rowNumberWidth || 36, padding: cellPad.td }} />,
-    );
-  }
-
-  // بناء خريطة: أول مفتاح في الشريحة → الشريحة
-  const segByFirstKey = new Map();
-  footerRow.forEach((seg: any) => {
-    if (seg.keys?.length) segByFirstKey.set(seg.keys[0], seg);
-  });
-
-  // بناء قائمة مرتّبة من العناصر (شرائح + أعمدة منفردة)
-  const items = [];
-  let i = 0;
-  while (i < columns.length) {
-    const col = columns[i];
-    const seg = segByFirstKey.get(col.key);
-    if (seg) {
-      const allHidden = seg.keys.every((k: any) => hiddenCols.has(k));
-      items.push({ key: col.key, span: seg.keys.length, hidden: allHidden, content: seg.content, className: seg.className });
-      i += seg.keys.length;
-    } else {
-      items.push({ key: col.key, span: 1, hidden: hiddenCols.has(col.key), content: null, className: '' });
-      i++;
-    }
-  }
-
-  // دمج الأعمدة المخفية في colSpan الخلية المرئية التالية
-  let pendingSpan = 0;
-  for (const item of items) {
-    if (item.hidden) {
-      pendingSpan += item.span;
-    } else {
-      const totalSpan = pendingSpan + item.span;
-      cells.push(
-        <td
-          key={item.key}
-          colSpan={totalSpan > 1 ? totalSpan : undefined}
-          className={item.className || undefined}
-        >
-          {item.content}
-        </td>,
-      );
-      pendingSpan = 0;
-    }
-  }
-
-  // أعمدة مخفية متبقية في النهاية → خلية فارغة واحدة
-  if (pendingSpan > 0) {
-    cells.push(<td key="__trail__" colSpan={pendingSpan > 1 ? pendingSpan : undefined} />);
-  }
-
-  return cells;
-}
+import { useTranslation } from '../../i18n/useTranslation';
+import { useIsNarrow700 } from '../../hooks/useMediaQuery';
+import { useUiDir } from '../../hooks/useUiDir';
+import Button from '../Button';
+import Input from '../Input';
+import { cn } from '../cn';
+import type { SmartTableProps } from './types';
+import { columnLabel, getAlign } from './columnUtils';
+import { buildFooterCells } from './buildFooterCells';
 
 // ── Pagination ───────────────────────────────────────────────
 type PaginationBarProps = {
@@ -100,7 +22,12 @@ type PaginationBarProps = {
 };
 
 const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t }: PaginationBarProps) {
-  const go = useCallback((p: any) => { if (p >= 1 && p <= totalPages) onPageChange(p); }, [totalPages, onPageChange]);
+  const go = useCallback(
+    (p: number) => {
+      if (p >= 1 && p <= totalPages) onPageChange(p);
+    },
+    [totalPages, onPageChange],
+  );
   if (totalPages <= 1) return null;
   return (
     <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-noorix-border">
@@ -116,7 +43,7 @@ const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t 
 });
 
 // ── SmartTable ───────────────────────────────────────────────
-const SmartTable = memo(function SmartTable(props: Record<string, any>) {
+const SmartTable = memo(function SmartTable(props: SmartTableProps) {
   const {
     columns = [],
     data = [],
@@ -145,6 +72,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
     sortDir = 'desc',
     onSort,
     children,
+    footer,
     tableMinWidth = 0,
     compact = true,
     showRowNumbers = false,
@@ -165,11 +93,11 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
 
   // ── Column Resize ──────────────────────────────────────────────
   const resizingRef = useRef<any>(null);
-  const [colWidths, setColWidths] = useState(() => {
+  const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
     if (!tableId) return {};
     try {
       const saved = localStorage.getItem(`nx-col-widths:${tableId}`);
-      return saved ? JSON.parse(saved) : {};
+      return saved ? (JSON.parse(saved) as Record<string, number>) : {};
     } catch { return {}; }
   });
 
@@ -211,12 +139,14 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
   const colBtnRef  = useRef<any>(null);
   const colPanelRef = useRef<any>(null);
 
-  const [hiddenCols, setHiddenCols] = useState(() => {
-    if (!tableId) return new Set();
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
+    if (!tableId) return new Set<string>();
     try {
       const saved = localStorage.getItem(`nx-col-vis:${tableId}`);
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch { return new Set(); }
+      return saved ? new Set(JSON.parse(saved) as string[]) : new Set<string>();
+    } catch {
+      return new Set<string>();
+    }
   });
 
   useEffect(() => {
@@ -230,9 +160,9 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
     return () => document.removeEventListener('mousedown', handler);
   }, [showColPanel]);
 
-  const toggleColVis = useCallback((colKey: any) => {
-    setHiddenCols((prev: any) => {
-      const next = new Set(prev);
+  const toggleColVis = useCallback((colKey: string) => {
+    setHiddenCols((prev: Set<string>) => {
+      const next = new Set<string>(prev);
       if (next.has(colKey)) next.delete(colKey); else next.add(colKey);
       if (tableId) {
         try { localStorage.setItem(`nx-col-vis:${tableId}`, JSON.stringify([...next])); } catch { /* noop */ }
@@ -242,7 +172,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
   }, [tableId]);
 
   const resetColVis = useCallback(() => {
-    setHiddenCols(new Set());
+    setHiddenCols(new Set<string>());
     if (tableId) {
       try { localStorage.removeItem(`nx-col-vis:${tableId}`); } catch { /* noop */ }
     }
@@ -528,6 +458,7 @@ const SmartTable = memo(function SmartTable(props: Record<string, any>) {
       )}
 
       {children}
+      {footer}
     </div>
   );
 });

@@ -32,6 +32,11 @@ export { FmtNum } from './FmtNum';
  * SmartTable — الجدول الذكي المركزي
  * Pagination | Sort | Search | Loading Skeleton | Mobile Cards | Sticky Actions
  */
-export { default as SmartTable } from './SmartTable';
+export {
+  default as SmartTable,
+  type SmartTableColumn,
+  type SmartTableFooterSegment,
+  type SmartTableProps,
+} from './SmartTable';
 
 export { cn } from './cn';
