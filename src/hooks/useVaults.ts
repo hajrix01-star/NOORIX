@@ -14,6 +14,7 @@ import {
   deleteVault,
   throwIfApiFailed,
 } from '../services/api';
+import { salesKeys, vaultKeys } from '../services/queryKeys';
 
 /**
  * @param {{ companyId: string, includeArchived?: boolean, startDate?: string|null, endDate?: string|null }} params
@@ -22,7 +23,7 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
   const queryClient = useQueryClient();
 
   const { data: vaultsList = [], isLoading, isFetching, isError } = useQuery({
-    queryKey: ['vaults', companyId, includeArchived, startDate ?? '', endDate ?? ''],
+    queryKey: vaultKeys.list(companyId, includeArchived, startDate ?? '', endDate ?? ''),
     queryFn: async () => {
       const res = await getVaults(
         companyId,
@@ -38,7 +39,7 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
   });
 
   const { data: paymentVaults = [], isLoading: paymentVaultsLoading } = useQuery({
-    queryKey: ['payment-vaults', companyId],
+    queryKey: vaultKeys.paymentOptions(companyId),
     queryFn: async () => {
       const res = await getPaymentVaults(companyId);
       throwIfApiFailed(res, 'فشل تحميل خيارات الدفع');
@@ -50,9 +51,9 @@ export function useVaults({ companyId, includeArchived = false, startDate = null
 
   const invalidate = () =>
     Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['vaults', companyId] }),
-      queryClient.invalidateQueries({ queryKey: ['payment-vaults', companyId] }),
-      queryClient.invalidateQueries({ queryKey: ['sales-channels', companyId] }),
+      queryClient.invalidateQueries({ queryKey: vaultKeys.byCompany(companyId) }),
+      queryClient.invalidateQueries({ queryKey: vaultKeys.paymentOptions(companyId) }),
+      queryClient.invalidateQueries({ queryKey: salesKeys.channels(companyId) }),
     ]);
 
   const createMutation = useApiMutation({

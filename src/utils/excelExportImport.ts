@@ -1,7 +1,7 @@
 /**
  * تصدير Excel عام + استيراد Excel/CSV (كشوف، قوالب)
  */
-import { assertSpreadsheetUploadFile } from './spreadsheetUploadGuard';
+import { assertSpreadsheetUploadFile } from './uploadGuards';
 import { roundMoney2 } from './moneyInput';
 import { normalizeColumnDefs } from './exportNormalize';
 

@@ -19,6 +19,7 @@ import {
 import { BANK_ANALYSIS_CARDS_KEY } from '../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../utils/jsonStorage';
 import { toYmd } from '../utils/saudiDate';
+import { bankKeys } from '../services/queryKeys';
 
 export const AVAILABLE_ANALYSIS_CARDS = [
   { id: 'cash_flow', nameKey: 'bankCardCashFlow', icon: '' },
@@ -59,7 +60,7 @@ export default function useBankStatementView(statementId: any, companyId: any, t
   const [cardToDelete, setCardToDelete] = useState<any>(null);
 
   const { data: rawRes, isLoading, refetch } = useQuery({
-    queryKey: ['bank-statement', companyId, statementId],
+    queryKey: bankKeys.statement(companyId, statementId),
     queryFn: () => bankStatementGet(companyId, statementId),
     enabled: !!companyId && !!statementId,
   });
@@ -73,7 +74,7 @@ export default function useBankStatementView(statementId: any, companyId: any, t
   const reconEnd = toYmd(statement?.endDate);
 
   const { data: reconRaw, isLoading: reconLoading } = useQuery({
-    queryKey: ['bank-reconciliation-stats', companyId, reconStart, reconEnd],
+    queryKey: bankKeys.reconciliationStats(companyId, reconStart, reconEnd),
     queryFn: async () => {
       const r = await bankStatementReconciliationStats(companyId, reconStart, reconEnd);
       if (!r.success) throw new Error(r.error || 'recon');
@@ -166,9 +167,9 @@ export default function useBankStatementView(statementId: any, companyId: any, t
 
   const bankInv = useMemo(
     () => [
-      ['bank-statement', companyId, statementId],
-      ['bank-statements'],
-      ['bank-statements-summary'],
+      bankKeys.statement(companyId, statementId),
+      bankKeys.statementsList(),
+      bankKeys.statementsSummary(),
     ],
     [companyId, statementId],
   );
@@ -191,7 +192,7 @@ export default function useBankStatementView(statementId: any, companyId: any, t
     mutationFn: () => bankStatementReclassify(companyId, statementId),
     invalidateQueries: [
       ...bankInv,
-      { queryKey: ['bank-reconciliation-stats', companyId] },
+      { queryKey: bankKeys.reconciliationStatsByCompany(companyId) },
     ],
     showErrorToast: false,
   });

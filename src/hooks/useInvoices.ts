@@ -4,6 +4,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { getInvoices, throwIfApiFailed } from '../services/api';
+import { invoiceKeys } from '../services/queryKeys';
 
 export type UseInvoicesParams = {
   companyId: string;
@@ -48,7 +49,26 @@ export function useInvoices({
   requireExpenseLine,
 }: UseInvoicesParams) {
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['invoices', companyId, startDate, endDate, page, pageSize, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId, batchId, createdByUserId, requireExpenseLine],
+    queryKey: invoiceKeys.list({
+      companyId,
+      startDate,
+      endDate,
+      page,
+      pageSize,
+      kind,
+      sortBy,
+      sortDir,
+      supplierId,
+      q,
+      categoryId,
+      expenseLineId,
+      includeCancelled,
+      hasNotes,
+      vaultId,
+      batchId,
+      createdByUserId,
+      requireExpenseLine,
+    }),
     queryFn: async () => {
       const res = await getInvoices(companyId, startDate, endDate, page, pageSize, batchId || null, null, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId, createdByUserId || undefined, requireExpenseLine);
       throwIfApiFailed(res, 'فشل تحميل الفواتير');

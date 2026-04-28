@@ -11,6 +11,7 @@ import {
   throwIfApiFailed,
 } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
+import { salesKeys } from '../services/queryKeys';
 
 /**
  * @param {{ companyId: string, startDate?: string, endDate?: string, enabled?: boolean, fetchList?: boolean }} params
@@ -20,7 +21,7 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['sales-summaries', companyId, startDate, endDate],
+    queryKey: salesKeys.summaries(companyId, startDate, endDate),
     queryFn: async () => {
       const pageSize = 150;
       let page = 1;

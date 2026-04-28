@@ -15,6 +15,7 @@ import { OwnerKpiCards } from './components/OwnerKpiCards';
 import { OwnerPerformanceChart } from './components/OwnerPerformanceChart';
 import { OwnerMonthlyComparisonTable } from './components/OwnerMonthlyComparisonTable';
 import { MONTH_NAMES_AR } from './utils/ownerDashboardCalculations';
+import { ErrorState, LoadingState } from '../../components/states';
 
 export default function OwnerDashboardScreen() {
   const { t, lang } = useTranslation();
@@ -97,16 +98,15 @@ export default function OwnerDashboardScreen() {
       />
 
       {data.isLoading && (
-        <div className="noorix-surface-card text-center text-noorix-muted p-8">{t('loading')}</div>
+        <div className="noorix-surface-card p-8">
+          <LoadingState className="text-center" />
+        </div>
       )}
 
       {data.isError && (
-        <div
-          className="noorix-surface-card p-5"
-          style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-8)' }}
-        >
+        <ErrorState className="noorix-surface-card">
           {queryErrorMessage(data.error) || t('loading')}
-        </div>
+        </ErrorState>
       )}
 
       {!data.isLoading && !data.isError && idsToFetch.length > 0 && (
