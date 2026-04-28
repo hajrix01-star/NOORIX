@@ -22,3 +22,4 @@ export { appKeys } from './app';
 export { companyKeys } from './company';
 export { settingsKeys } from './settings';
 export { ledgerKeys } from './ledger';
+export { reportingInsightsKeys } from './reportingInsightsKeys';
