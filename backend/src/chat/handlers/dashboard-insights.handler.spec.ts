@@ -6,6 +6,8 @@ import {
   buildDashboardInsightsDateRangeForMonth,
   formatInsightsPeriodLabelAr,
   formatInsightsPeriodLabelEn,
+  parseDashboardInsightsMonth,
+  resolveInsightsYearMonth,
 } from './dashboard-insights.handler';
 import { financeRatiosHandler } from './finance-ratios.handler';
 import type { ChatHandlerContext } from './types';
@@ -255,5 +257,125 @@ describe('dashboardInsightsHandler', () => {
     await dashboardInsightsHandler.process!(ctx);
     expect(buildDashboardInsights).toHaveBeenCalled();
     expect(prismaSpy).not.toHaveBeenCalled();
+  });
+
+  it('كيف وضع أبريل 2026؟ resolves to April 2026 for buildDashboardInsights', async () => {
+    const q = normalizeQuery('كيف وضع أبريل 2026؟');
+    const buildDashboardInsights = jest.fn().mockResolvedValue(mkPayload({ warnings: [] }));
+    const ctx = mkCtx({
+      query: q,
+      period: parsePeriod(q, refDate),
+      now: refDate,
+      dashboardInsightsService: { buildDashboardInsights },
+    });
+
+    await dashboardInsightsHandler.process!(ctx);
+    expect(buildDashboardInsights).toHaveBeenCalledWith(
+      'c1',
+      buildDashboardInsightsDateRangeForMonth(2026, 4),
+      4,
+      refDate,
+    );
+  });
+
+  it('هل المشتريات مرتفعة في ابريل 2026؟ resolves to 4/2026', async () => {
+    const q = normalizeQuery('هل المشتريات مرتفعة في ابريل 2026؟');
+    const buildDashboardInsights = jest.fn().mockResolvedValue(mkPayload({ warnings: [] }));
+    const ctx = mkCtx({ query: q, now: refDate, dashboardInsightsService: { buildDashboardInsights } });
+
+    await dashboardInsightsHandler.process!(ctx);
+    expect(buildDashboardInsights).toHaveBeenCalledWith(
+      'c1',
+      buildDashboardInsightsDateRangeForMonth(2026, 4),
+      4,
+      refDate,
+    );
+  });
+
+  it('How is April 2026? resolves to 4/2026 and period labels in response', async () => {
+    const q = normalizeQuery('How is April 2026?');
+    const buildDashboardInsights = jest.fn().mockResolvedValue(mkPayload({ warnings: [] }));
+    const ctx = mkCtx({ query: q, now: refDate, dashboardInsightsService: { buildDashboardInsights } });
+
+    const out = await dashboardInsightsHandler.process!(ctx);
+    expect(buildDashboardInsights).toHaveBeenCalledWith(
+      'c1',
+      buildDashboardInsightsDateRangeForMonth(2026, 4),
+      4,
+      refDate,
+    );
+    expect(out?.answerAr).toContain(formatInsightsPeriodLabelAr(2026, 4));
+    expect(out?.answerEn).toContain(formatInsightsPeriodLabelEn(2026, 4));
+  });
+
+  it('كيف وضع يناير؟ without year uses now.getFullYear()', async () => {
+    const q = normalizeQuery('كيف وضع يناير؟');
+    const buildDashboardInsights = jest.fn().mockResolvedValue(mkPayload({ warnings: [] }));
+    const ctx = mkCtx({ query: q, now: refDate, dashboardInsightsService: { buildDashboardInsights } });
+
+    await dashboardInsightsHandler.process!(ctx);
+    expect(buildDashboardInsights).toHaveBeenCalledWith(
+      'c1',
+      buildDashboardInsightsDateRangeForMonth(2024, 1),
+      1,
+      refDate,
+    );
+  });
+
+  it('query with both الشهر and أبريل 2026 uses April 2026, not current month from parsePeriod', async () => {
+    const raw = 'كيف وضع الشهر في أبريل 2026؟';
+    const q = normalizeQuery(raw);
+    const period = parsePeriod(q, refDate);
+    expect(period).not.toBeNull();
+    const buildDashboardInsights = jest.fn().mockResolvedValue(mkPayload({ warnings: [] }));
+    const ctx = mkCtx({
+      query: q,
+      period,
+      now: refDate,
+      dashboardInsightsService: { buildDashboardInsights },
+    });
+
+    await dashboardInsightsHandler.process!(ctx);
+    expect(buildDashboardInsights).toHaveBeenCalledWith(
+      'c1',
+      buildDashboardInsightsDateRangeForMonth(2026, 4),
+      4,
+      refDate,
+    );
+  });
+
+  it('كيف وضع الشهر الماضي؟ still uses ctx.period from parsePeriod', async () => {
+    const q = normalizeQuery('كيف وضع الشهر الماضي؟');
+    const period = parsePeriod(q, refDate);
+    expect(period).not.toBeNull();
+    const buildDashboardInsights = jest.fn().mockResolvedValue(mkPayload({ warnings: [] }));
+    const ctx = mkCtx({ query: q, period, now: refDate, dashboardInsightsService: { buildDashboardInsights } });
+
+    await dashboardInsightsHandler.process!(ctx);
+    expect(parseDashboardInsightsMonth(q, refDate)).toBeNull();
+    expect(buildDashboardInsights).toHaveBeenCalledWith(
+      'c1',
+      buildDashboardInsightsDateRangeForMonth(2024, 2),
+      2,
+      refDate,
+    );
+  });
+});
+
+describe('parseDashboardInsightsMonth / resolveInsightsYearMonth', () => {
+  const refDate = new Date('2024-03-15T12:00:00.000Z');
+
+  it('parse: Arabic month + year', () => {
+    expect(parseDashboardInsightsMonth(normalizeQuery('كيف وضع أبريل 2026؟'), refDate)).toEqual({
+      year: 2026,
+      selectedMonth: 4,
+    });
+  });
+
+  it('resolveInsightsYearMonth prefers explicit month over ctx.period', () => {
+    const q = normalizeQuery('كيف وضع الشهر في أبريل 2026؟');
+    const period = parsePeriod(q, refDate)!;
+    const ctx = mkCtx({ query: q, period, now: refDate });
+    expect(resolveInsightsYearMonth(ctx)).toEqual({ year: 2026, selectedMonth: 4 });
   });
 });

@@ -67,6 +67,70 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
+/** أسماء أشهر صريحة في سؤال الرؤى — بدون تعديل parsePeriod العام. */
+const DASHBOARD_INSIGHTS_MONTH_ROWS: Array<{
+  month: number;
+  arKeys: string[];
+  enPatterns: string[];
+}> = [
+  { month: 1, arKeys: ['يناير'], enPatterns: ['january', 'jan'] },
+  { month: 2, arKeys: ['فبراير'], enPatterns: ['february', 'feb'] },
+  { month: 3, arKeys: ['مارس'], enPatterns: ['march', 'mar'] },
+  { month: 4, arKeys: ['أبريل', 'ابريل'], enPatterns: ['april', 'apr'] },
+  { month: 5, arKeys: ['مايو'], enPatterns: ['may'] },
+  { month: 6, arKeys: ['يونيو'], enPatterns: ['june', 'jun'] },
+  { month: 7, arKeys: ['يوليو'], enPatterns: ['july', 'jul'] },
+  { month: 8, arKeys: ['أغسطس', 'اغسطس'], enPatterns: ['august', 'aug'] },
+  { month: 9, arKeys: ['سبتمبر'], enPatterns: ['september', 'sep'] },
+  { month: 10, arKeys: ['أكتوبر', 'اكتوبر'], enPatterns: ['october', 'oct'] },
+  { month: 11, arKeys: ['نوفمبر'], enPatterns: ['november', 'nov'] },
+  { month: 12, arKeys: ['ديسمبر'], enPatterns: ['december', 'dec'] },
+];
+
+function extractCalendarYearFromQuery(q: string, now: Date): number {
+  const m = q.match(/\b(19\d{2}|20\d{2})\b/);
+  if (m) return parseInt(m[1], 10);
+  return now.getFullYear();
+}
+
+/**
+ * يستخرج شهراً تقويمياً صريحاً من نص السؤال (عربي/إنجليزي).
+ * لا يغيّر أي حسابات مالية — تواريخ عرض فقط.
+ */
+export function parseDashboardInsightsMonth(
+  q: string,
+  now: Date,
+): { year: number; selectedMonth: number } | null {
+  const year = extractCalendarYearFromQuery(q, now);
+
+  const arFlat = DASHBOARD_INSIGHTS_MONTH_ROWS.flatMap((row) =>
+    row.arKeys.map((key) => ({ month: row.month, key })),
+  ).sort((a, b) => b.key.length - a.key.length);
+
+  for (const { month, key } of arFlat) {
+    if (q.includes(key)) {
+      return { year, selectedMonth: month };
+    }
+  }
+
+  const lower = q.toLowerCase();
+  for (const row of DASHBOARD_INSIGHTS_MONTH_ROWS) {
+    const sorted = [...row.enPatterns].sort((a, b) => b.length - a.length);
+    for (const pat of sorted) {
+      try {
+        const re = new RegExp(`\\b${pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (re.test(lower)) {
+          return { year, selectedMonth: row.month };
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return null;
+}
+
 /** يطابق بناء فترة لوحة التحكم لشهر تقويمي واحد (بدون حسابات مالية جديدة). */
 export function buildDashboardInsightsDateRangeForMonth(
   year: number,
@@ -88,11 +152,15 @@ export function buildDashboardInsightsDateRangeForMonth(
   };
 }
 
-/** شهر تقويمي للتحليل من parsePeriod أو الشهر الحالي. */
+/**
+ * شهر/سنة الرؤى: أولاً شهر صريح بالاسم، ثم parsePeriod، ثم الشهر الحالي.
+ */
 export function resolveInsightsYearMonth(ctx: ChatHandlerContext): {
   year: number;
   selectedMonth: number;
 } {
+  const explicit = parseDashboardInsightsMonth(ctx.query, ctx.now);
+  if (explicit) return explicit;
   if (ctx.period) {
     const start = ctx.period.start;
     return { year: start.getFullYear(), selectedMonth: start.getMonth() + 1 };
@@ -130,6 +198,26 @@ export function classifyDashboardInsightsQuery(q: string): DashboardInsightsQuer
   ) {
     return 'general';
   }
+
+  const explicitMonth = parseDashboardInsightsMonth(q, new Date());
+  if (explicitMonth !== null) {
+    if (
+      matches(q, [
+        'كيف وضع',
+        'وضع الشهر',
+        'ملخص الشهر',
+        'اعطني ملخص الشهر',
+        'how is',
+        "how's",
+        'monthly summary',
+        'month status',
+      ]) ||
+      (matches(q, ['ملخص']) && matches(q, ['شهر']))
+    ) {
+      return 'general';
+    }
+  }
+
   return null;
 }
 
