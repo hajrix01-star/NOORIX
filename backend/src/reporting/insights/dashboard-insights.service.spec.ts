@@ -94,6 +94,82 @@ function mockMonthlyPL(params: {
   };
 }
 
+/** Same shape as {@link mockMonthlyPL} but purchases group carries a full 12-month series. */
+function mockMonthlyPLWithPurchasesSeries(params: {
+  monthIndex: number;
+  purchasesMonths12: string[];
+  sales: string;
+  expenses: string;
+  grossProfit: string;
+  netProfit: string;
+}): GeneralProfitLossModel {
+  const z = zeros12();
+  const mi = params.monthIndex;
+  const purSeries = [...params.purchasesMonths12];
+  return {
+    months: [],
+    groups: [
+      {
+        key: 'sales',
+        labelAr: 'م',
+        labelEn: 'S',
+        months: fillMonth(z, mi, params.sales),
+        total: params.sales,
+        percentOfSalesMonths: zeros12(),
+        percentOfSalesYear: '0',
+        items: [],
+      },
+      {
+        key: 'purchases',
+        labelAr: 'م',
+        labelEn: 'P',
+        months: purSeries,
+        total: purSeries[mi] ?? '0',
+        percentOfSalesMonths: zeros12(),
+        percentOfSalesYear: '0',
+        items: [],
+      },
+      {
+        key: 'expenses',
+        labelAr: 'م',
+        labelEn: 'E',
+        months: fillMonth([...z], mi, params.expenses),
+        total: params.expenses,
+        percentOfSalesMonths: zeros12(),
+        percentOfSalesYear: '0',
+        items: [],
+      },
+    ],
+    summaryRows: [
+      {
+        key: 'grossProfit',
+        labelAr: '',
+        labelEn: '',
+        months: fillMonth([...z], mi, params.grossProfit),
+        total: params.grossProfit,
+        percentOfSalesMonths: zeros12(),
+        percentOfSalesYear: '0',
+      },
+      {
+        key: 'netProfit',
+        labelAr: '',
+        labelEn: '',
+        months: fillMonth([...z], mi, params.netProfit),
+        total: params.netProfit,
+        percentOfSalesMonths: zeros12(),
+        percentOfSalesYear: '0',
+      },
+    ],
+    cards: {
+      sales: params.sales,
+      purchases: purSeries[mi] ?? '0',
+      expenses: params.expenses,
+      grossProfit: params.grossProfit,
+      netProfit: params.netProfit,
+    },
+  };
+}
+
 const baseDr = {
   year: 2024,
   yearStart: '2024-01-01',
@@ -283,6 +359,44 @@ describe('DashboardInsightsService', () => {
     expect(expRule?.detailAr).toContain('50%');
     expect(expRule?.detailEn).toMatch(/critical threshold of 50%/);
     expect(out.ratios.expenseToSales).toBeCloseTo(0.5, 5);
+  });
+
+  it('unusually high purchases: emits unusually_high_purchases_warning when trail avg + 40%', async () => {
+    const pm = zeros12();
+    pm[0] = '1000.00';
+    pm[1] = '1000.00';
+    pm[2] = '1400.00';
+    const facade = mkFacade();
+    facade.getDashboardSummary.mockResolvedValue({
+      profitLoss: mockMonthlyPLWithPurchasesSeries({
+        monthIndex: 2,
+        purchasesMonths12: pm,
+        sales: '100000.00',
+        expenses: '1000.00',
+        grossProfit: '99000.00',
+        netProfit: '50000.00',
+      }),
+      salesPack: { dailySummaries: [{ transactionDate: '2024-03-01', totalAmount: '10' }] },
+      periodAnalytics: {},
+    });
+
+    const svc = new DashboardInsightsService(
+      facade as unknown as ReportingFacade,
+      mkThresholdSettings() as unknown as CompanyInsightThresholdSettingsService,
+    );
+    const out = await svc.buildDashboardInsights(companyId, baseDr, 3, new Date('2024-06-01'));
+    const unusual = out.warnings.find((w) => w.id === 'unusually_high_purchases_warning');
+    expect(unusual).toBeDefined();
+    expect(unusual?.severity).toBe('warning');
+    expect(unusual?.values).toMatchObject({
+      currentPurchases: 1400,
+      trailingAveragePurchases: 1000,
+      increaseRatio: 0.4,
+      thresholdIncreaseWarning: 0.4,
+      monthsUsed: 2,
+    });
+    expect(unusual?.detailEn).toContain('40%');
+    expect(out.warnings.some((w) => w.id === 'purchase_ratio_to_sales')).toBe(false);
   });
 
   it('v1: does not emit missing_sales_data_warning when operational pack empty but accounting sales exist', async () => {

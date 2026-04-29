@@ -12,6 +12,7 @@ import {
   ruleNegativeProfit,
   ruleNetProfitMargin,
   rulePurchaseRatioToSales,
+  ruleUnusuallyHighPurchases,
 } from './insights.rules';
 import { CompanyInsightThresholdSettingsService } from './company-insight-threshold-settings.service';
 
@@ -50,6 +51,7 @@ export class DashboardInsightsService {
     };
 
     push(rulePurchaseRatioToSales(purchaseToSales, thresholds));
+    push(ruleUnusuallyHighPurchases(profitLoss, selectedMonth));
     push(ruleExpenseRatioToSales(expenseToSales, thresholds));
     push(ruleNetProfitMargin(netProfitMargin, snap?.numeric.sales ?? null, thresholds));
     push(ruleNegativeProfit(snap?.numeric.netProfit ?? null));

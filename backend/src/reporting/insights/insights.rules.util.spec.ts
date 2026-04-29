@@ -1,10 +1,12 @@
 import { mergeInsightThresholds } from './company-insight-thresholds';
+import type { GeneralProfitLossModel } from '../../reports/reports-general-profit-loss-model.util';
 import {
   formatInsightPercentFraction,
   ruleExpenseRatioToSales,
   ruleNegativeProfit,
   ruleNetProfitMargin,
   rulePurchaseRatioToSales,
+  ruleUnusuallyHighPurchases,
 } from './insights.rules';
 
 describe('formatInsightPercentFraction', () => {
@@ -75,5 +77,85 @@ describe('insight rule copy (ratio / margin / negative profit)', () => {
     expect(out?.severity).toBe('critical');
     expect(out?.detailEn).toContain('below the configured critical threshold');
     expect(out?.detailEn).toContain('6%');
+  });
+});
+
+function purchaseOnlyPL(purchases12: string[]): GeneralProfitLossModel {
+  return {
+    groups: [
+      {
+        key: 'purchases',
+        labelAr: 'م',
+        labelEn: 'P',
+        months: purchases12,
+        total: '0',
+        percentOfSalesMonths: Array.from({ length: 12 }, () => '0'),
+        percentOfSalesYear: '0',
+        items: [],
+      },
+    ],
+  } as unknown as GeneralProfitLossModel;
+}
+
+describe('ruleUnusuallyHighPurchases', () => {
+  const z = () => Array.from({ length: 12 }, () => '0.00');
+
+  it('fires when current purchases are >= 40% above trailing average', () => {
+    const m = z();
+    m[0] = '1000.00';
+    m[1] = '1000.00';
+    m[2] = '1400.00';
+    const out = ruleUnusuallyHighPurchases(purchaseOnlyPL(m), 3);
+    expect(out?.id).toBe('unusually_high_purchases_warning');
+    expect(out?.severity).toBe('warning');
+    expect(out?.values).toMatchObject({
+      currentPurchases: 1400,
+      trailingAveragePurchases: 1000,
+      increaseRatio: 0.4,
+      thresholdIncreaseWarning: 0.4,
+      monthsUsed: 2,
+    });
+  });
+
+  it('does not fire when increase is below 40%', () => {
+    const m = z();
+    m[0] = '1000.00';
+    m[1] = '1000.00';
+    m[2] = '1390.00';
+    expect(ruleUnusuallyHighPurchases(purchaseOnlyPL(m), 3)).toBeNull();
+  });
+
+  it('does not fire when selectedMonth is null', () => {
+    const m = z();
+    m[0] = '1000.00';
+    m[1] = '1000.00';
+    m[2] = '2000.00';
+    expect(ruleUnusuallyHighPurchases(purchaseOnlyPL(m), null)).toBeNull();
+  });
+
+  it('does not fire with fewer than 2 valid previous months', () => {
+    const m = z();
+    m[0] = '1000.00';
+    m[1] = '5000.00';
+    expect(ruleUnusuallyHighPurchases(purchaseOnlyPL(m), 2)).toBeNull();
+  });
+
+  it('does not fire when trailing average is near zero', () => {
+    const m = z();
+    m[0] = '0.00';
+    m[1] = '0.00';
+    m[2] = '100.00';
+    expect(ruleUnusuallyHighPurchases(purchaseOnlyPL(m), 3)).toBeNull();
+  });
+
+  it('Arabic and English details use Latin digits for the increase percent', () => {
+    const m = z();
+    m[0] = '1000.00';
+    m[1] = '1000.00';
+    m[2] = '1500.00';
+    const out = ruleUnusuallyHighPurchases(purchaseOnlyPL(m), 3);
+    expect(out?.detailEn).toMatch(/50% above the recent-month average/);
+    expect(out?.detailAr).toMatch(/50%/);
+    expect(out?.detailAr).not.toMatch(/[٠-٩]/);
   });
 });

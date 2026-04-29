@@ -15,4 +15,8 @@ export const INSIGHT_THRESHOLDS = {
   },
   /** Treat |sales| below this as near-zero for ratios */
   salesEpsilon: 1e-9,
+  /** Current-month purchases vs trailing recent-month average (same P&L year, accounting purchases only) */
+  unusuallyHighPurchases: {
+    increaseWarning: 0.4,
+  },
 } as const;

@@ -341,6 +341,72 @@ export function ruleNegativeProfit(netProfit: number | null): InsightItem | null
 }
 
 /**
+ * Flags when accounting purchases for the selected month exceed the average of prior months
+ * in the same P&L year by at least {@link INSIGHT_THRESHOLDS.unusuallyHighPurchases.increaseWarning}.
+ * Uses up to three immediate prior months; requires at least two valid prior purchase amounts.
+ */
+export function ruleUnusuallyHighPurchases(
+  profitLoss: GeneralProfitLossModel | null | undefined,
+  selectedMonth: number | null,
+): InsightItem | null {
+  if (selectedMonth == null || selectedMonth < 1 || selectedMonth > 12) return null;
+  if (!profitLoss || typeof profitLoss !== 'object') return null;
+
+  const increaseWarning = INSIGHT_THRESHOLDS.unusuallyHighPurchases.increaseWarning;
+  const eps = INSIGHT_THRESHOLDS.salesEpsilon;
+
+  const purG = profitLoss.groups?.find((g) => g.key === 'purchases');
+  const months = purG?.months;
+  if (!Array.isArray(months)) return null;
+
+  const mi = selectedMonth - 1;
+  const priorVals: number[] = [];
+  for (let offset = 1; offset <= 3; offset++) {
+    const idx = mi - offset;
+    if (idx < 0) break;
+    const raw = months[idx];
+    const v = parseAmount(raw);
+    if (v != null && Number.isFinite(v)) {
+      priorVals.push(v);
+    }
+  }
+
+  if (priorVals.length < 2) return null;
+
+  const trailingAveragePurchases = priorVals.reduce((sum, n) => sum + n, 0) / priorVals.length;
+  if (!Number.isFinite(trailingAveragePurchases) || trailingAveragePurchases <= eps) return null;
+
+  const rawCurrent = months[mi];
+  const currentPurchases = parseAmount(rawCurrent);
+  if (currentPurchases == null || !Number.isFinite(currentPurchases)) return null;
+
+  if (currentPurchases <= trailingAveragePurchases) return null;
+
+  const increaseRatio = (currentPurchases - trailingAveragePurchases) / trailingAveragePurchases;
+  if (!Number.isFinite(increaseRatio) || increaseRatio < increaseWarning) return null;
+
+  const increasePct = formatInsightPercentFraction(increaseRatio);
+
+  return {
+    id: 'unusually_high_purchases_warning',
+    severity: 'warning',
+    category: 'cost_control',
+    metricBasis: BASIS_PL,
+    titleAr: 'ارتفاع غير معتاد في المشتريات',
+    titleEn: 'Unusually high purchases',
+    detailAr: `مشتريات هذا الشهر أعلى من متوسط آخر أشهر بنسبة ${increasePct}%. راجع أسباب الزيادة قبل اعتمادها كسلوك طبيعي.`,
+    detailEn: `Purchases this month are ${increasePct}% above the recent-month average. Review the increase before treating it as normal.`,
+    values: {
+      currentPurchases,
+      trailingAveragePurchases,
+      increaseRatio,
+      thresholdIncreaseWarning: increaseWarning,
+      monthsUsed: priorVals.length,
+    },
+  };
+}
+
+/**
  * Operational daily-sales coverage — **not emitted in dashboard insights v1** (`DashboardInsightsService` omits this rule).
  * Kept for a possible future mode where daily operational summaries are mandatory; current usage relies on accounting P&L revenue.
  */
