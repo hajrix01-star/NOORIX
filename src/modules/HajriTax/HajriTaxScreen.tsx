@@ -103,14 +103,28 @@ export default function HajriTaxScreen() {
 
   /** قائمة الشركات للفلتر: من التطبيق + أي شركة تظهر في السجل الكامل (مؤرشفة أو غائبة عن GET /companies) */
   const registryFilterCompanies = useMemo(() => {
-    const map = new Map<string, { id: string; nameAr?: string; nameEn?: string | null }>();
+    const map = new Map<
+      string,
+      { id: string; nameAr?: string; nameEn?: string | null; taxNumber?: string | null }
+    >();
     (companies || []).forEach((c: any) => {
-      if (c?.id) map.set(c.id, { id: c.id, nameAr: c.nameAr, nameEn: c.nameEn ?? null });
+      if (c?.id)
+        map.set(c.id, {
+          id: c.id,
+          nameAr: c.nameAr,
+          nameEn: c.nameEn ?? null,
+          taxNumber: c.taxNumber ?? null,
+        });
     });
     (registryAllRows || []).forEach((r: any) => {
       const c = r?.company;
-      if (c?.id && !map.has(c.id)) {
-        map.set(c.id, { id: c.id, nameAr: c.nameAr, nameEn: c.nameEn ?? null });
+      if (!c?.id) return;
+      const prev = map.get(c.id);
+      const tn = c.taxNumber ?? null;
+      if (!prev) {
+        map.set(c.id, { id: c.id, nameAr: c.nameAr, nameEn: c.nameEn ?? null, taxNumber: tn });
+      } else if (!prev.taxNumber && tn) {
+        map.set(c.id, { ...prev, taxNumber: tn });
       }
     });
     const collator = lang === 'ar' ? 'ar' : 'en';

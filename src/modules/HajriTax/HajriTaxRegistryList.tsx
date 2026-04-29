@@ -6,6 +6,7 @@ import { Button, Input } from '../../ui';
 import { fmt, fmtTax } from '../../utils/format';
 import { computeNetPayable } from '../../constants/taxDisclosure';
 import {
+  buildCompanyFilterSelectOptions,
   isHajriDeclarationSubmitted,
   registryInputVat,
   registryOutputVat,
@@ -41,6 +42,11 @@ export default function HajriTaxRegistryList({
     return ['', currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
   }, [filterYearOptions, currentYear]);
 
+  const companyFilterOptions = useMemo(
+    () => buildCompanyFilterSelectOptions(companies || [], lang),
+    [companies, lang],
+  );
+
   return (
     <div className="grid gap-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -64,9 +70,9 @@ export default function HajriTaxRegistryList({
             className="min-w-[200px]"
           >
             <option value="">{t('vatAllCompanies')}</option>
-            {(companies || []).map((c: any) => (
-              <option key={c.id} value={c.id}>
-                {lang === 'en' ? (c.nameEn || c.nameAr) : c.nameAr}
+            {companyFilterOptions.map((opt: any) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
               </option>
             ))}
           </Input>

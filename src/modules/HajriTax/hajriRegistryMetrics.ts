@@ -28,6 +28,31 @@ export function registryInputVat(payload: any) {
   return computeInputTotal(payload);
 }
 
+/** تسميات قابل للتمييز عند تكرار اسم الشركة في القائمة (سجلّان مختلفان بنفس الاسم). */
+export function buildCompanyFilterSelectOptions(
+  items: Array<{ id: string; nameAr?: string; nameEn?: string | null; taxNumber?: string | null }>,
+  lang: string,
+): Array<{ id: string; label: string }> {
+  const baseLabel = (c: any) =>
+    String(lang === 'en' ? (c.nameEn || c.nameAr || '') : (c.nameAr || c.nameEn || '')).trim();
+  const counts = new Map<string, number>();
+  items.forEach((c) => {
+    const k = baseLabel(c);
+    if (k) counts.set(k, (counts.get(k) || 0) + 1);
+  });
+  return items.map((c) => {
+    const base = baseLabel(c);
+    const dup = Boolean(base && (counts.get(base) || 0) > 1);
+    let label = base || String(c.id);
+    if (dup) {
+      const tn = String(c.taxNumber || '').trim();
+      if (tn) label = `${base} (${tn})`;
+      else label = `${base} · ${String(c.id).slice(-6)}`;
+    }
+    return { id: c.id, label };
+  });
+}
+
 /** يُعرض «تم التقديم» إذا وُجدت إشارة في الملاحظات أو لقطة المصدر أو زرع الأرشيف */
 export function isHajriDeclarationSubmitted(row: any): boolean {
   const notes = row.notes || '';
