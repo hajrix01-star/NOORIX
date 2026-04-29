@@ -257,14 +257,14 @@ export default function ReportsScreen() {
                     </colgroup>
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'right', padding: isMobile ? '7px 8px' : '8px 12px', borderBottom: '2px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: 'var(--noorix-bg-surface)', zIndex: 2, fontSize: isMobile ? 12 : 13, fontWeight: 700, fontFamily: 'var(--noorix-font-primary)', color: 'var(--noorix-text)', width: isMobile ? 130 : 220, minWidth: isMobile ? 130 : 220, maxWidth: isMobile ? 130 : 280 }}>{t('reportItem')}</th>
+                        <th style={{ textAlign: 'right', padding: isMobile ? '5px 8px' : '6px 12px', borderBottom: '2px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: 'var(--noorix-bg-surface)', zIndex: 2, fontSize: isMobile ? 12 : 13, fontWeight: 700, fontFamily: 'var(--noorix-font-primary)', color: 'var(--noorix-text)', width: isMobile ? 130 : 220, minWidth: isMobile ? 130 : 220, maxWidth: isMobile ? 130 : 280 }}>{t('reportItem')}</th>
                         {selectedMonthNumber && (
-                          <th style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-blue-6)', fontSize: 13, fontWeight: 700 }}>{(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}</th>
+                          <th style={{ textAlign: 'center', padding: '6px 6px', borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-blue-6)', fontSize: 13, fontWeight: 700 }}>{(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}</th>
                         )}
                         {!isMobile && (report?.months ?? []).map((month: any) => (
-                          <th key={month.index} style={{ textAlign: 'center', padding: '8px 4px', borderBottom: '2px solid var(--noorix-border)', whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, background: selectedMonthNumber === month.index ? 'var(--noorix-blue-10)' : undefined }}>{month.label}</th>
+                          <th key={month.index} style={{ textAlign: 'center', padding: '5px 4px', borderBottom: '2px solid var(--noorix-border)', whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, background: selectedMonthNumber === month.index ? 'var(--noorix-blue-10)' : undefined }}>{month.label}</th>
                         ))}
-                        <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-table-header-bg)', borderInlineStart: '2px solid var(--noorix-navy-12)', fontWeight: 800, fontSize: 13 }}>{t('reportAnnualTotal')}</th>
+                        <th style={{ textAlign: 'right', padding: '6px 12px', borderBottom: '2px solid var(--noorix-border)', background: 'var(--noorix-table-header-bg)', borderInlineStart: '2px solid var(--noorix-navy-12)', fontWeight: 800, fontSize: 13 }}>{t('reportAnnualTotal')}</th>
                       </tr>
                     </thead>
                   <tbody>
@@ -278,7 +278,7 @@ export default function ReportsScreen() {
                       const canCollapse = isGroup || isCategory;
                       const indent = (row.depth || 0) * 22;
                       const rowTone = getRowTone(row);
-                      const rowPaddingV = isGroup ? (isMobile ? '8px' : '10px') : isSummary ? (isMobile ? '7px' : '9px') : isCategory ? (isMobile ? '6px' : '8px') : (isMobile ? '5px' : '7px');
+                      const rowPaddingV = isGroup ? (isMobile ? '5px' : '7px') : isSummary ? (isMobile ? '4px' : '6px') : isCategory ? (isMobile ? '4px' : '5px') : (isMobile ? '3px' : '4px');
                       return (
                         <tr
                           key={`${row.groupKey}-${row.itemKey || row.rowType}-${row.depth ?? 0}`}
@@ -288,7 +288,7 @@ export default function ReportsScreen() {
                             borderTop: rowTone.borderTop || undefined,
                           }}
                         >
-                          <td style={{ padding: `${rowPaddingV} ${isMobile ? '8px' : '12px'}`, borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: rowTone.stickyBg, fontSize: isMobile ? (isGroup ? 13 : 12) : (isGroup ? 14 : isCategory ? 13 : isSummary ? 14 : 13), fontFamily: 'var(--noorix-font-primary)', lineHeight: 1.35, width: isMobile ? 130 : 220, minWidth: isMobile ? 130 : 220, maxWidth: isMobile ? 130 : 220, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <td style={{ padding: `${rowPaddingV} ${isMobile ? '8px' : '12px'}`, borderBottom: '1px solid var(--noorix-border)', position: 'sticky', [lang === 'en' ? 'left' : 'right']: 0, background: rowTone.stickyBg, fontSize: isMobile ? (isGroup ? 13 : 12) : (isGroup ? 14 : isCategory ? 13 : isSummary ? 14 : 13), fontFamily: 'var(--noorix-font-primary)', lineHeight: 1.25, width: isMobile ? 130 : 220, minWidth: isMobile ? 130 : 220, maxWidth: isMobile ? 130 : 220, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {canCollapse ? (
                               <Button
                                 onClick={() => toggleGroup(collapseKey)}
@@ -348,8 +348,8 @@ export default function ReportsScreen() {
                                 onClick={() => setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: row.rowType === 'item' })}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'block', width: '100%', padding: 0 }}
                               >
-                                <div style={{ fontSize: 13 }}>{amountText(getContextAmount(row, selectedMonthNumber))}</div>
-                                <div style={{ fontSize: 11, marginTop: 2, color: PERCENT_COLOR }}>{percentText(getContextPercent(row, selectedMonthNumber))}</div>
+                                <div style={{ fontSize: 13, lineHeight: 1.2 }}>{amountText(getContextAmount(row, selectedMonthNumber))}</div>
+                                <div style={{ fontSize: 11, marginTop: 1, lineHeight: 1.15, color: PERCENT_COLOR }}>{percentText(getContextPercent(row, selectedMonthNumber))}</div>
                               </Button>
                             </td>
                           )}
@@ -370,15 +370,15 @@ export default function ReportsScreen() {
                                   fontFamily: 'var(--noorix-font-numbers)',
                                 }}
                               >
-                                <div style={{ fontSize: isGroup || isSummary ? 13 : 12 }}>{amountText(value)}</div>
-                                <div style={{ fontSize: 11, marginTop: 2, color: PERCENT_COLOR }}>{percentText(row.percentOfSalesMonths?.[index])}</div>
+                                <div style={{ fontSize: isGroup || isSummary ? 13 : 12, lineHeight: 1.2 }}>{amountText(value)}</div>
+                                <div style={{ fontSize: 11, marginTop: 1, lineHeight: 1.15, color: PERCENT_COLOR }}>{percentText(row.percentOfSalesMonths?.[index])}</div>
                               </Button>
                             </td>
                           ))}
 
                           <td style={{ padding: `${rowPaddingV} 12px`, borderBottom: '1px solid var(--noorix-border)', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--noorix-font-numbers)', color: isSummary ? (Number(row.total || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)') : (row.groupKey === 'purchases' || row.groupKey === 'expenses' ? rowTone.accent : 'inherit'), background: 'var(--noorix-table-header-bg)', borderInlineStart: '2px solid var(--noorix-navy-12)' }}>
-                            <div style={{ fontSize: isGroup || isSummary ? 14 : 13 }}>{amountText(row.total)}</div>
-                            <div style={{ fontSize: 11, marginTop: 2, color: PERCENT_COLOR }}>{percentText(row.percentOfSalesYear)}</div>
+                            <div style={{ fontSize: isGroup || isSummary ? 14 : 13, lineHeight: 1.2 }}>{amountText(row.total)}</div>
+                            <div style={{ fontSize: 11, marginTop: 1, lineHeight: 1.15, color: PERCENT_COLOR }}>{percentText(row.percentOfSalesYear)}</div>
                           </td>
                         </tr>
                       );
