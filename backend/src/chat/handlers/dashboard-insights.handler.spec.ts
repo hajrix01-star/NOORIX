@@ -11,6 +11,7 @@ import {
   buildDashboardInsightsDateRangeForMonth,
   buildExtendedInsightsExplanationPackage,
   buildInsightsExplanationPackage,
+  classifyDashboardInsightsQuery,
   formatInsightsPeriodLabelAr,
   formatInsightsPeriodLabelEn,
   parseDashboardInsightsMonth,
@@ -249,6 +250,10 @@ function mkCtx(
 
 describe('dashboardInsightsHandler', () => {
   const refDate = new Date('2024-03-15T12:00:00.000Z');
+
+  it('classifyDashboardInsightsQuery matches حلل المشتريات (purchase analysis phrase)', () => {
+    expect(classifyDashboardInsightsQuery(normalizeQuery('حلل المشتريات'))).toBe('general');
+  });
 
   it('returns health summary and warning bullets for كيف وضع الشهر؟', async () => {
     const rawQ = 'كيف وضع الشهر؟';

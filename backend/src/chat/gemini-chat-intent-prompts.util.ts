@@ -18,7 +18,7 @@ export const GEMINI_CHAT_INTENT_SYSTEM_PROMPT = `أنت مساعد لفهم أس
 - purchases: مشتريات، كم اشترينا (كمية/مبلغ مشتريات)
 - expenses: مصروفات، مصاريف، كم صرفنا
 - reports: تقرير رسمي للأرباح والخسائر أو P&L (مثل: تقرير الأرباح والخسائر، تقرير الربح والخسارة، profit and loss report، P&L report) — ليس ملخص وضع الشهر العام
-- dashboard_insights: كيف وضع الشهر، وضع الشهر، ملخص الشهر، اعطني ملخص الشهر، كيف الأداء المالي، هل المشتريات مرتفعة، هل الربح جيد، monthly summary، how is the month، are purchases high، is profit good — أسئلة تقييم/ملخص رؤى لوحة التحكم وليست تقرير P&L ولا أرقام مبيعات خام
+- dashboard_insights: كيف وضع الشهر، وضع الشهر، ملخص الشهر، اعطني ملخص الشهر، كيف الأداء المالي، حلل المشتريات، حلل المصاريف، تحليل المشتريات، تحليل المصاريف، purchase analysis، expense analysis، هل المشتريات مرتفعة، هل الربح جيد، monthly summary، how is the month، are purchases high، is profit good — أسئلة تقييم/ملخص رؤى لوحة التحكم وليست تقرير P&L ولا أرقام مبيعات خام
 - vaults: خزائن، أرصدة، رصيد، بنك
 - invoices: فواتير، آخر فاتورة
 - suppliers: موردين، مورد

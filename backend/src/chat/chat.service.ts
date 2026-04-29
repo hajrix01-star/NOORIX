@@ -14,6 +14,7 @@ import { PERMISSIONS, hasPermission } from '../auth/constants/permissions';
 import { CHAT_HANDLERS } from './handlers';
 import type { ChatResponseExtras } from './handlers/types';
 import { normalizeQuery, parsePeriod } from './handlers/utils';
+import { classifyDashboardInsightsQuery } from './handlers/dashboard-insights.handler';
 import { GeminiService } from './gemini.service';
 import { isGeminiOpenModeEnabled, isSmartChatInsightsLlmExplanationEnabled } from '../config/gemini.config';
 
@@ -84,15 +85,21 @@ export class ChatService {
       try {
         const parsed = await this.geminiService.parseIntent(query);
         if (parsed && parsed.intent !== 'unknown') {
+          /** Avoid KPI handlers when wording is a dashboard_insights phrase (e.g. Gemini returns purchases for "حلل المشتريات"). */
+          const isDashboardInsightsPhrase = classifyDashboardInsightsQuery(q) != null;
+          const routingIntent =
+            isDashboardInsightsPhrase && (parsed.intent === 'purchases' || parsed.intent === 'expenses')
+              ? 'dashboard_insights'
+              : parsed.intent;
           const geminiCtx = {
             ...baseCtx,
             intentSource: 'gemini' as const,
-            parsedIntent: parsed.intent,
+            parsedIntent: routingIntent,
           };
           for (const handler of CHAT_HANDLERS) {
-            if (handler.matchesIntent?.(parsed.intent, can)) {
+            if (handler.matchesIntent?.(routingIntent, can)) {
               const result = await handler.process(geminiCtx);
-              if (result) return { ...result, meta: { intentSource: 'gemini', intent: parsed.intent } };
+              if (result) return { ...result, meta: { intentSource: 'gemini', intent: routingIntent } };
             }
           }
         }

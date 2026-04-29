@@ -205,4 +205,99 @@ describe('ChatService intent routing', () => {
     expect(dashboard.buildDashboardInsights).not.toHaveBeenCalled();
     expect(reportingInsightsAggregator.getExtendedInsights).not.toHaveBeenCalled();
   });
+
+  it('remaps Gemini purchases to dashboard_insights for حلل المشتريات and returns insight text (not year KPI line)', async () => {
+    const prisma = {
+      ledgerEntry: { aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 0 } }) },
+    };
+    const reports = { getGeneralProfitLoss: jest.fn() };
+    const dash = mkInsightsPayload();
+    dash.warnings = [
+      {
+        id: 'purchase_ratio_to_sales',
+        severity: 'warning',
+        category: 'purchases',
+        metricBasis: 'accounting_pl',
+        titleAr: 'تنبيه نسبة المشتريات للمبيعات',
+        titleEn: 'Purchase ratio alert',
+        detailAr: 'تفاصيل من الرؤى.',
+        detailEn: 'Insight details.',
+      },
+    ];
+    const dashboard = { buildDashboardInsights: jest.fn().mockResolvedValue(dash) };
+    const reportingInsightsAggregator = {
+      getExtendedInsights: jest.fn().mockImplementation(async (cid: string, dr: unknown, sm: number, ref: Date) => {
+        const d = await dashboard.buildDashboardInsights(cid, dr, sm, ref);
+        return mkExtendedFromDashboardForChat(d);
+      }),
+    };
+    const gemini = {
+      isAvailable: () => true,
+      parseIntent: jest.fn().mockResolvedValue({
+        intent: 'purchases',
+        period: null,
+        rawQuery: 'حلل المشتريات',
+      }),
+      explainDashboardInsights: jest.fn(),
+    };
+    const chat = new ChatService(
+      prisma as any,
+      reports as any,
+      {} as any,
+      dashboard as any,
+      reportingInsightsAggregator as any,
+      gemini as any,
+    );
+    const res = await chat.processQuery(companyId, 'حلل المشتريات', 'owner', undefined);
+    expect(reportingInsightsAggregator.getExtendedInsights).toHaveBeenCalled();
+    expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
+    expect(res.meta?.intent).toBe('dashboard_insights');
+    expect(res.answerAr).toContain('تنبيه نسبة المشتريات');
+    expect(res.answerAr).not.toMatch(/مشتريات السنة/);
+    const combined = `${res.answerAr}\n${res.answerEn}`;
+    expect(combined).not.toContain('schemaVersion');
+    expect(combined).not.toContain('dashboardInsights');
+  });
+
+  it('remaps Gemini expenses to dashboard_insights for حلل المصاريف', async () => {
+    const prisma = { ledgerEntry: { aggregate: jest.fn() } };
+    const reports = { getGeneralProfitLoss: jest.fn() };
+    const dash = mkInsightsPayload();
+    dash.warnings = [
+      {
+        id: 'expense_ratio_to_sales',
+        severity: 'warning',
+        category: 'expenses',
+        metricBasis: 'accounting_pl',
+        titleAr: 'تنبيه مصاريف',
+        titleEn: 'Expense alert',
+        detailAr: 'x',
+        detailEn: 'x',
+      },
+    ];
+    const dashboard = { buildDashboardInsights: jest.fn().mockResolvedValue(dash) };
+    const reportingInsightsAggregator = {
+      getExtendedInsights: jest.fn().mockImplementation(async (cid: string, dr: unknown, sm: number, ref: Date) => {
+        const d = await dashboard.buildDashboardInsights(cid, dr, sm, ref);
+        return mkExtendedFromDashboardForChat(d);
+      }),
+    };
+    const gemini = {
+      isAvailable: () => true,
+      parseIntent: jest.fn().mockResolvedValue({ intent: 'expenses', period: null, rawQuery: 'حلل المصاريف' }),
+      explainDashboardInsights: jest.fn(),
+    };
+    const chat = new ChatService(
+      prisma as any,
+      reports as any,
+      {} as any,
+      dashboard as any,
+      reportingInsightsAggregator as any,
+      gemini as any,
+    );
+    const res = await chat.processQuery(companyId, 'حلل المصاريف', 'owner', undefined);
+    expect(res.meta?.intent).toBe('dashboard_insights');
+    expect(res.answerAr).toContain('تنبيه مصاريف');
+    expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
+  });
 });

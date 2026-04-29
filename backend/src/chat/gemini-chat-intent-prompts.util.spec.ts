@@ -9,7 +9,8 @@ describe('Gemini chat intent prompt & schema description', () => {
     expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('dashboard_insights');
     expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('كيف وضع الشهر');
     expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('ملخص الشهر');
-    expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('هل المشتريات مرتفعة');
+    expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('حلل المشتريات');
+    expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('purchase analysis');
     expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('هل الربح جيد');
     expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('اعطني ملخص الشهر');
     expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toMatch(/how is the month/i);

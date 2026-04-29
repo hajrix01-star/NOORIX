@@ -2,13 +2,16 @@ import Decimal from 'decimal.js';
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { ChatHandler, ChatHandlerContext } from './types';
 import { matches } from './utils';
+import { classifyDashboardInsightsQuery } from './dashboard-insights.handler';
 
 export const expensesHandler: ChatHandler = {
   priority: 12,
   intent: 'expenses',
   matchesIntent: (intent, can) => intent === 'expenses' && can(PERMISSIONS.VIEW_VAULTS),
   canHandle: (q, can) =>
-    matches(q, ['مصروفات', 'مصاريف', 'المصروفات', 'expenses', 'كم صرفنا', 'إجمالي المصروفات']) && can(PERMISSIONS.VIEW_VAULTS),
+    classifyDashboardInsightsQuery(q) == null &&
+    matches(q, ['مصروفات', 'مصاريف', 'المصروفات', 'expenses', 'كم صرفنا', 'إجمالي المصروفات']) &&
+    can(PERMISSIONS.VIEW_VAULTS),
   process: async (ctx) => {
     const { companyId, period } = ctx;
     const { prisma, reportsService } = ctx;
