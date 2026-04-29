@@ -650,6 +650,50 @@ function overviewRecommendationsEn(band: DashboardInsightsPayload['health']['ban
   return out.slice(0, 2);
 }
 
+/** Column header + data rows for invoice-period purchase categories (no numbered section title). */
+function purchaseCategoryTable(
+  extended: ExtendedReportingInsightsPayload,
+  merged: CombinedInsightWarning[],
+): { linesAr: string[]; linesEn: string[] } | null {
+  const eps = INSIGHT_THRESHOLDS.salesEpsilon;
+  const purchaseRows = extended.purchaseSupplierInsights.periodPurchaseCategoryBreakdown?.slice(0, 5);
+  const purchaseTotalStr = extended.purchaseSupplierInsights.periodPurchaseCategoryTotal;
+  const purchaseTotal = purchaseTotalStr != null ? parseInvoiceAmountStr(purchaseTotalStr) : 0;
+  if (!purchaseRows?.length || purchaseTotal <= eps) return null;
+  const linesAr = ['الفئة\tالمبلغ\tمن إجمالي المشتريات\tالحالة'];
+  const linesEn = ['Category\tAmount\t% of purchases\tStatus'];
+  for (const row of purchaseRows) {
+    const amt = parseInvoiceAmountStr(row.amount);
+    const share = amt / purchaseTotal;
+    const pct = formatInsightPercentFraction(share);
+    const stAr = purchaseRowStatusAr(row, merged);
+    const stEn = purchaseRowStatusEn(row, merged);
+    const label = row.nameAr?.trim() || row.nameEn || '—';
+    const labelEn = row.nameEn?.trim() || row.nameAr || '—';
+    linesAr.push(`${label}\t${row.amount}\t${pct}%\t${stAr}`);
+    linesEn.push(`${labelEn}\t${row.amount}\t${pct}%\t${stEn}`);
+  }
+  return { linesAr, linesEn };
+}
+
+/** Column header + data rows for P&L expense categories for the month (no numbered section title). */
+function expenseCategoryTable(
+  extended: ExtendedReportingInsightsPayload,
+  merged: CombinedInsightWarning[],
+): { linesAr: string[]; linesEn: string[] } | null {
+  const expenseRows = extended.expenseInsights.expenseCategoryBreakdown?.slice(0, 5);
+  if (!expenseRows?.length) return null;
+  const linesAr = ['الفئة\tالمبلغ\tمن إجمالي المصاريف\tالحالة'];
+  const linesEn = ['Category\tAmount\t% of expenses\tStatus'];
+  for (const row of expenseRows) {
+    const share = row.shareOfGroupTotal;
+    const pct = share != null && Number.isFinite(share) ? `${formatInsightPercentFraction(share)}%` : '—';
+    linesAr.push(`${row.labelAr}\t${row.amountDisplay}\t${pct}\t${expenseRowStatusAr(row.key, merged)}`);
+    linesEn.push(`${row.labelEn}\t${row.amountDisplay}\t${pct}\t${expenseRowStatusEn(row.key, merged)}`);
+  }
+  return { linesAr, linesEn };
+}
+
 function buildMoneyOverviewAnswer(
   extended: ExtendedReportingInsightsPayload,
   merged: CombinedInsightWarning[],
@@ -661,7 +705,6 @@ function buildMoneyOverviewAnswer(
   const periodEn = formatInsightsPeriodLabelEn(year, selectedMonth);
   const m = payload.metrics.accounting;
   const r = payload.ratios;
-  const eps = INSIGHT_THRESHOLDS.salesEpsilon;
 
   const snapAr: string[] = [];
   const snapEn: string[] = [];
@@ -694,37 +737,8 @@ function buildMoneyOverviewAnswer(
     snapEn.push(`Net margin\t${formatInsightPercentFraction(r.netProfitMargin)}%`);
   }
 
-  const purchaseRows = extended.purchaseSupplierInsights.periodPurchaseCategoryBreakdown?.slice(0, 5);
-  const purchaseTotalStr = extended.purchaseSupplierInsights.periodPurchaseCategoryTotal;
-  const purchaseTotal = purchaseTotalStr != null ? parseInvoiceAmountStr(purchaseTotalStr) : 0;
-
-  const purchaseAr: string[] = [];
-  const purchaseEn: string[] = [];
-  if (purchaseRows?.length && purchaseTotal > eps) {
-    for (const row of purchaseRows) {
-      const amt = parseInvoiceAmountStr(row.amount);
-      const share = amt / purchaseTotal;
-      const pct = formatInsightPercentFraction(share);
-      const stAr = purchaseRowStatusAr(row, merged);
-      const stEn = purchaseRowStatusEn(row, merged);
-      const label = row.nameAr?.trim() || row.nameEn || '—';
-      const labelEn = row.nameEn?.trim() || row.nameAr || '—';
-      purchaseAr.push(`${label}\t${row.amount}\t${pct}%\t${stAr}`);
-      purchaseEn.push(`${labelEn}\t${row.amount}\t${pct}%\t${stEn}`);
-    }
-  }
-
-  const expenseRows = extended.expenseInsights.expenseCategoryBreakdown?.slice(0, 5);
-  const expenseAr: string[] = [];
-  const expenseEn: string[] = [];
-  if (expenseRows?.length) {
-    for (const row of expenseRows) {
-      const share = row.shareOfGroupTotal;
-      const pct = share != null && Number.isFinite(share) ? `${formatInsightPercentFraction(share)}%` : '—';
-      expenseAr.push(`${row.labelAr}\t${row.amountDisplay}\t${pct}\t${expenseRowStatusAr(row.key, merged)}`);
-      expenseEn.push(`${row.labelEn}\t${row.amountDisplay}\t${pct}\t${expenseRowStatusEn(row.key, merged)}`);
-    }
-  }
+  const purchaseTable = purchaseCategoryTable(extended, merged);
+  const expenseTable = expenseCategoryTable(extended, merged);
 
   const salesRows = payload.salesBreakdown?.slice(0, 5);
   const salesAr: string[] = [];
@@ -774,18 +788,13 @@ function buildMoneyOverviewAnswer(
     partsAr.push('', '١) لقطة مالية', 'النوع\tالمبلغ', ...snapAr);
     partsEn.push('', '1) Financial snapshot', 'Item\tAmount', ...snapEn);
   }
-  if (purchaseAr.length > 0) {
-    partsAr.push('', '٢) مشتريات حسب الفئة (فترة الفواتير)', 'الفئة\tالمبلغ\tمن إجمالي المشتريات\tالحالة', ...purchaseAr);
-    partsEn.push(
-      '',
-      '2) Purchases by category (invoice period)',
-      'Category\tAmount\t% of purchases\tStatus',
-      ...purchaseEn,
-    );
+  if (purchaseTable) {
+    partsAr.push('', '٢) مشتريات حسب الفئة (فترة الفواتير)', ...purchaseTable.linesAr);
+    partsEn.push('', '2) Purchases by category (invoice period)', ...purchaseTable.linesEn);
   }
-  if (expenseAr.length > 0) {
-    partsAr.push('', '٣) مصاريف حسب الفئة (دفتر الشهر)', 'الفئة\tالمبلغ\tمن إجمالي المصاريف\tالحالة', ...expenseAr);
-    partsEn.push('', '3) Expenses by category (month ledger)', 'Category\tAmount\t% of expenses\tStatus', ...expenseEn);
+  if (expenseTable) {
+    partsAr.push('', '٣) مصاريف حسب الفئة (دفتر الشهر)', ...expenseTable.linesAr);
+    partsEn.push('', '3) Expenses by category (month ledger)', ...expenseTable.linesEn);
   }
   if (salesAr.length > 0) {
     partsAr.push('', '٤) المبيعات حسب المصدر (دفتر الشهر)', 'البند\tالمبلغ\tمن إجمالي المبيعات\tالحالة', ...salesAr);
@@ -814,6 +823,9 @@ function buildAnswer(
     return buildMoneyOverviewAnswer(extended, merged, year, selectedMonth);
   }
 
+  const purchaseTable = focus === 'purchases' ? purchaseCategoryTable(extended, merged) : null;
+  const expenseTable = focus === 'expenses' ? expenseCategoryTable(extended, merged) : null;
+
   const pool = filterMergedByFocus(focus, merged);
   const maxPick = focus === 'alerts' ? 5 : 8;
   const picked = pool.slice(0, maxPick);
@@ -822,14 +834,42 @@ function buildAnswer(
   if (picked.length === 0) {
     const periodAr = formatInsightsPeriodLabelAr(year, selectedMonth);
     const periodEn = formatInsightsPeriodLabelEn(year, selectedMonth);
-    const baseAr = [periodAr, '', healthAr, '', msgNoFocusAreaAr(focus)];
-    const baseEn = [periodEn, '', healthEn, '', msgNoFocusAreaEn(focus)];
+    const baseAr: string[] = [periodAr, '', healthAr];
+    if (purchaseTable) {
+      baseAr.push('', 'مشتريات حسب الفئة (فترة الفواتير)', ...purchaseTable.linesAr);
+    }
+    if (expenseTable) {
+      baseAr.push('', 'مصاريف حسب الفئة (دفتر الشهر)', ...expenseTable.linesAr);
+    }
+    baseAr.push('', msgNoFocusAreaAr(focus));
+    const baseEn: string[] = [periodEn, '', healthEn];
+    if (purchaseTable) {
+      baseEn.push('', 'Purchases by category (invoice period)', ...purchaseTable.linesEn);
+    }
+    if (expenseTable) {
+      baseEn.push('', 'Expenses by category (month ledger)', ...expenseTable.linesEn);
+    }
+    baseEn.push('', msgNoFocusAreaEn(focus));
     if (compactAr) baseAr.push('', compactAr);
     if (compactEn) baseEn.push('', compactEn);
     return { answerAr: baseAr.join('\n'), answerEn: baseEn.join('\n') };
   }
-  const partsAr = [healthAr, '', formatLinesAr(picked)];
-  const partsEn = [healthEn, '', formatLinesEn(picked)];
+  const partsAr: string[] = [healthAr];
+  if (purchaseTable) {
+    partsAr.push('', 'مشتريات حسب الفئة (فترة الفواتير)', ...purchaseTable.linesAr);
+  }
+  if (expenseTable) {
+    partsAr.push('', 'مصاريف حسب الفئة (دفتر الشهر)', ...expenseTable.linesAr);
+  }
+  partsAr.push('', formatLinesAr(picked));
+  const partsEn: string[] = [healthEn];
+  if (purchaseTable) {
+    partsEn.push('', 'Purchases by category (invoice period)', ...purchaseTable.linesEn);
+  }
+  if (expenseTable) {
+    partsEn.push('', 'Expenses by category (month ledger)', ...expenseTable.linesEn);
+  }
+  partsEn.push('', formatLinesEn(picked));
   if (compactAr) partsAr.push('', compactAr);
   if (compactEn) partsEn.push('', compactEn);
   return { answerAr: partsAr.join('\n'), answerEn: partsEn.join('\n') };

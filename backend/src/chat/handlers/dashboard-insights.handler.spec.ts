@@ -1311,7 +1311,7 @@ describe('financial overview (dashboard_insights overview focus)', () => {
     expect(answerAr).not.toContain('تنبيه_5');
   });
 
-  it('purchases focus answer format stays warning-only (no overview title)', () => {
+  it('purchases focus keeps purchase alerts and shows category table when invoice data exists', () => {
     const merged: CombinedInsightWarning[] = [
       {
         id: 'purchase_ratio_to_sales',
@@ -1326,9 +1326,45 @@ describe('financial overview (dashboard_insights overview focus)', () => {
       },
     ];
     const ext = mkExtendedWithMergedWarnings(merged);
+    ext.purchaseSupplierInsights.periodPurchaseCategoryBreakdown = [
+      { categoryId: 'x', nameAr: 'فئة تجريبية', nameEn: 'Test cat', amount: '100.0000' },
+    ];
+    ext.purchaseSupplierInsights.periodPurchaseCategoryTotal = '100.0000';
     const { answerAr } = buildDashboardInsightsDeterministicAnswer('purchases', ext, 2024, 3);
     expect(answerAr).not.toContain('تحليل الوضع المالي');
+    expect(answerAr).toContain('مشتريات حسب الفئة (فترة الفواتير)');
+    expect(answerAr).toContain('فئة تجريبية');
     expect(answerAr).toContain('نسبة مشتريات');
+  });
+
+  it('expenses focus shows expense category table when P&L slice exists', () => {
+    const merged: CombinedInsightWarning[] = [
+      {
+        id: 'expense_ratio_to_sales',
+        severity: 'warning',
+        category: 'expenses',
+        metricBasis: 'accounting_pl',
+        titleAr: 'نسبة مصاريف',
+        titleEn: 'Expense ratio',
+        detailAr: 'd',
+        detailEn: 'd',
+        source: 'dashboard',
+      },
+    ];
+    const ext = mkExtendedWithMergedWarnings(merged);
+    ext.expenseInsights.expenseCategoryBreakdown = [
+      {
+        key: 'category:rent',
+        labelAr: 'إيجار',
+        labelEn: 'Rent',
+        amountDisplay: '100',
+        shareOfGroupTotal: 1,
+      },
+    ];
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('expenses', ext, 2024, 3);
+    expect(answerAr).toContain('مصاريف حسب الفئة (دفتر الشهر)');
+    expect(answerAr).toContain('إيجار');
+    expect(answerAr).toContain('نسبة مصاريف');
   });
 
   it('overview user-facing text does not expose raw extended payload root keys', () => {
