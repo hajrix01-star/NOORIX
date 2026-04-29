@@ -1,4 +1,5 @@
 import type { InsightItem } from '../insights.types';
+import type { PurchaseCategoryBreakdownRow } from './purchase-supplier-insights.rules';
 
 export const PURCHASE_SUPPLIER_INSIGHTS_SCHEMA_VERSION = 1 as const;
 
@@ -22,4 +23,7 @@ export type PurchaseSupplierInsightsPayload = {
   supplierInsights: InsightItem[];
   purchaseInsights: InsightItem[];
   warnings: InsightItem[];
+  /** Invoice-period purchase categories from period analytics (read-only pass-through). */
+  periodPurchaseCategoryBreakdown?: PurchaseCategoryBreakdownRow[];
+  periodPurchaseCategoryTotal?: string;
 };

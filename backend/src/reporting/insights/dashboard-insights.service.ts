@@ -14,6 +14,7 @@ import {
   rulePurchaseRatioToSales,
   ruleUnusuallyHighPurchases,
 } from './insights.rules';
+import { buildSalesBreakdownForMonth } from './shared/overview-pl-breakdown.util';
 import { CompanyInsightThresholdSettingsService } from './company-insight-threshold-settings.service';
 
 /**
@@ -61,6 +62,8 @@ export class DashboardInsightsService {
     const score = computeHealthScore(warnings);
 
     const { summaryAr, summaryEn } = summarizeHealth(band);
+
+    const salesBreakdown = buildSalesBreakdownForMonth(profitLoss, selectedMonth, 5);
 
     const rawAccounting = snap?.raw ?? {
       sales: null,
@@ -111,6 +114,7 @@ export class DashboardInsightsService {
       insights: [],
       opportunities: [],
       warnings,
+      ...(salesBreakdown?.length ? { salesBreakdown } : {}),
     };
   }
 }

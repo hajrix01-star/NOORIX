@@ -1,4 +1,5 @@
 import type { InsightItem } from '../insights.types';
+import type { OverviewPlBreakdownRow } from '../shared/overview-pl-breakdown.util';
 
 export const EXPENSE_INSIGHTS_SCHEMA_VERSION = 1 as const;
 
@@ -19,4 +20,6 @@ export type ExpenseInsightsPayload = {
   };
   expenseInsights: InsightItem[];
   warnings: InsightItem[];
+  /** P&L expense `category:` rows for the selected month (read-only presentation slice). */
+  expenseCategoryBreakdown?: OverviewPlBreakdownRow[];
 };

@@ -8,6 +8,7 @@ import {
 } from './expense-insights.rules';
 import type { ExpenseInsightsPayload } from './expense-insights.types';
 import { EXPENSE_INSIGHTS_SCHEMA_VERSION } from './expense-insights.types';
+import { buildExpenseCategoryBreakdownForMonth } from '../shared/overview-pl-breakdown.util';
 
 /**
  * Wave 2 — expense deterministic insights from {@link ReportingFacade.getDashboardSummary} only.
@@ -32,6 +33,8 @@ export class ExpenseInsightsService {
       ruleFixedExpensePressure(profitLoss, selectedMonth),
     ].filter((w): w is NonNullable<typeof w> => w != null);
 
+    const expenseCategoryBreakdown = buildExpenseCategoryBreakdownForMonth(profitLoss, selectedMonth, 5);
+
     return {
       schemaVersion: EXPENSE_INSIGHTS_SCHEMA_VERSION,
       generatedAt: new Date().toISOString(),
@@ -47,6 +50,7 @@ export class ExpenseInsightsService {
       },
       expenseInsights: [],
       warnings,
+      ...(expenseCategoryBreakdown?.length ? { expenseCategoryBreakdown } : {}),
     };
   }
 }

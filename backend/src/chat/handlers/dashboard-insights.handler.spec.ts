@@ -9,6 +9,7 @@ import type {
 import {
   dashboardInsightsHandler,
   buildDashboardInsightsDateRangeForMonth,
+  buildDashboardInsightsDeterministicAnswer,
   buildExtendedInsightsExplanationPackage,
   buildInsightsExplanationPackage,
   classifyDashboardInsightsQuery,
@@ -287,6 +288,7 @@ describe('dashboardInsightsHandler', () => {
     const ctx = mkCtx({ query: q, period, dashboardInsightsService: { buildDashboardInsights } });
 
     const out = await dashboardInsightsHandler.process!(ctx);
+    expect(out?.answerAr).toContain('تحليل الوضع المالي');
     expect(out?.answerAr).toContain('يوجد تحذيرات تستحق المراجعة.');
     expect(out?.answerAr).toContain('تنبيه مصروفات');
     expect(out?.answerAr).toContain('مشتريات');
@@ -381,6 +383,7 @@ describe('dashboardInsightsHandler', () => {
 
     const out = await dashboardInsightsHandler.process!(ctx);
     expect(out?.answerAr).not.toMatch(/الإصدار|قواعد/i);
+    expect(out?.answerAr).toContain('تحليل الوضع المالي');
     expect(out?.answerAr).toContain('لا توجد تنبيهات مالية حالياً.');
     expect(out?.answerAr).toContain('الأرقام الحالية لا تتجاوز حدود التحذير المحددة لهذه الشركة.');
     expect(out?.answerAr).toContain(formatInsightsPeriodLabelAr(2024, 3));
@@ -736,23 +739,16 @@ describe('dashboard_insights response quality (mocked extended payload)', () => 
     for (const key of RAW_PAYLOAD_KEYS) {
       expect(combined).not.toContain(key);
     }
-    expect(out?.answerAr).toContain('ملخص التنبيهات: 4 إجمالي');
-    expect(out?.answerAr).toContain('1 حرج');
-    expect(out?.answerAr).toContain('2 تحذير');
-    expect(out?.answerAr).toContain('1 معلومات');
-    expect(out?.answerAr).toContain('المصادر: لوحة، مشتريات، مصاريف');
-    expect(out?.answerAr).toContain('أبرز التنبيهات: تحذير حرج للربح');
-    expect(out?.answerAr).toContain('[لوحة]');
-    expect(out?.answerAr).toContain('[مشتريات]');
-    expect(out?.answerAr).toContain('[مصاريف]');
-    expect(out?.answerAr).not.toContain('InsightWarningSource');
-    expect(out?.answerAr).not.toContain('purchase_supplier_insights_v1');
-    const bulletCount = (out?.answerAr.match(/•/g) || []).length;
-    expect(bulletCount).toBe(3);
+    expect(out?.answerAr).toContain('تحليل الوضع المالي');
+    expect(out?.answerAr).toContain('٥) أبرز التنبيهات');
+    expect(out?.answerAr).toContain('تحذير حرج للربح');
+    expect(out?.answerAr).toContain('تنبيه موردين');
+    expect(out?.answerAr).toContain('قفزة مصروفات');
+    expect(out?.answerAr).toContain('٦) توصيات عملية');
+    expect((out?.answerAr.match(/• \[/g) || []).length).toBe(3);
     expect(out?.answerAr).not.toContain('• [لوحة] معلومة مبيعات');
-    expect(out?.answerEn).toContain('Alert overview: 4 total');
-    expect(out?.answerEn).toContain('1 critical');
-    expect(out?.answerEn).toContain('Top alerts: Critical profit alert');
+    expect(out?.answerEn).toContain('5) Top alerts');
+    expect(out?.answerEn).toContain('Critical profit alert');
   });
 
   it('does not repeat bullet lines for aggregator-deduped merged warnings', async () => {
@@ -804,7 +800,7 @@ describe('dashboard_insights response quality (mocked extended payload)', () => 
     expect((out?.answerAr.match(/عنوان فريد ألف/g) || []).length).toBe(1);
     expect((out?.answerAr.match(/عنوان فريد باء/g) || []).length).toBe(1);
     expect((out?.answerAr.match(/عنوان فريد جيم/g) || []).length).toBe(1);
-    expect((out?.answerAr.match(/•/g) || []).length).toBe(3);
+    expect((out?.answerAr.match(/• \[/g) || []).length).toBe(3);
   });
 
   it('empty merged warnings: useful period + no-alert copy; no bullets; no alert overview line', async () => {
@@ -827,12 +823,12 @@ describe('dashboard_insights response quality (mocked extended payload)', () => 
     });
     const out = await dashboardInsightsHandler.process!(ctx);
     expect(out?.answerAr).toContain(formatInsightsPeriodLabelAr(2024, 3));
+    expect(out?.answerAr).toContain('تحليل الوضع المالي');
     expect(out?.answerAr).toContain('لا توجد تنبيهات مالية حالياً.');
-    expect(out?.answerAr).not.toContain('•');
+    expect(out?.answerAr).not.toMatch(/• \[(لوحة|مشتريات|مصاريف)\]/);
     expect(out?.answerAr).not.toContain('ملخص التنبيهات');
-    expect(out?.answerAr).not.toContain('أبرز التنبيهات');
     expect(out?.answerAr).not.toMatch(/حرج|critical/i);
-    expect(out?.answerEn).not.toContain('•');
+    expect(out?.answerEn).not.toMatch(/• \[(Dashboard|Purchases|Expenses)\]/);
     expect(out?.answerEn).not.toContain('Alert overview');
   });
 
@@ -1133,8 +1129,7 @@ describe('resolveDashboardInsightsFocus / focused Smart Chat answers', () => {
       },
     });
     const out = await dashboardInsightsHandler.process!(ctx);
-    expect((out?.answerAr.match(/•/g) || []).length).toBe(3);
-    expect(out?.answerAr).not.toContain('رابع');
+    expect((out?.answerAr.match(/• \[/g) || []).length).toBe(3);
     for (const key of RAW_PAYLOAD_KEYS) {
       expect(`${out?.answerAr}\n${out?.answerEn}`).not.toContain(key);
     }
@@ -1169,6 +1164,179 @@ describe('resolveDashboardInsightsFocus / focused Smart Chat answers', () => {
     expect(out?.answerAr).not.toContain('•');
     for (const key of RAW_PAYLOAD_KEYS) {
       expect(`${out?.answerAr}\n${out?.answerEn}`).not.toContain(key);
+    }
+  });
+});
+
+describe('financial overview (dashboard_insights overview focus)', () => {
+  it('حلل الوضع المالي resolves classify to general and focus to overview', () => {
+    const q = normalizeQuery('حلل الوضع المالي');
+    expect(classifyDashboardInsightsQuery(q)).toBe('general');
+    expect(resolveDashboardInsightsFocus(q)).toBe('overview');
+    expect(resolveDashboardInsightsFocus(normalizeQuery('financial health'))).toBe('overview');
+    expect(resolveDashboardInsightsFocus(normalizeQuery('business health'))).toBe('overview');
+  });
+
+  it('overview includes snapshot table when accounting metrics exist', () => {
+    const dash = mkPayload({
+      warnings: [],
+      metrics: {
+        accounting: {
+          sales: '100000',
+          purchases: '40000',
+          expenses: '20000',
+          grossProfit: '60000',
+          netProfit: '40000',
+        },
+        operational: {},
+      },
+      ratios: {
+        purchaseToSales: 0.4,
+        expenseToSales: 0.2,
+        netProfitMargin: 0.4,
+        notes: [],
+      },
+    });
+    const ext = mkExtendedFromDashboard(dash);
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);
+    expect(answerAr).toContain('١) لقطة مالية');
+    expect(answerAr).toContain('المبيعات\t100000');
+    expect(answerAr).toContain('مشتريات/مبيعات\t40%');
+  });
+
+  it('overview includes purchase category breakdown when invoice-period rows exist (max 5)', () => {
+    const dash = mkPayload({ warnings: [] });
+    const ext = mkExtendedFromDashboard(dash);
+    ext.purchaseSupplierInsights.periodPurchaseCategoryBreakdown = [
+      { categoryId: 'c1', nameAr: 'أعلى فئة', nameEn: 'Top', amount: '50.0000' },
+      { categoryId: 'c2', nameAr: 'ثانية', nameEn: 'Second', amount: '30.0000' },
+      { categoryId: null, nameAr: 'غير مصنّف', nameEn: 'Uncategorized', amount: '20.0000' },
+    ];
+    ext.purchaseSupplierInsights.periodPurchaseCategoryTotal = '100.0000';
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);
+    expect(answerAr).toContain('٢) مشتريات حسب الفئة');
+    expect(answerAr).toContain('غير مصنّف');
+  });
+
+  it('overview truncates purchase breakdown to five rows', () => {
+    const dash = mkPayload({ warnings: [] });
+    const ext = mkExtendedFromDashboard(dash);
+    const rows = Array.from({ length: 7 }, (_, i) => ({
+      categoryId: `id${i + 1}`,
+      nameAr: `الفئة_${i + 1}`,
+      nameEn: `Cat_${i + 1}`,
+      amount: '10.0000',
+    }));
+    ext.purchaseSupplierInsights.periodPurchaseCategoryBreakdown = rows;
+    ext.purchaseSupplierInsights.periodPurchaseCategoryTotal = '70.0000';
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);
+    expect(answerAr).toContain('الفئة_1');
+    expect(answerAr).not.toContain('الفئة_7');
+  });
+
+  it('overview includes expense category breakdown when expense service slice exists', () => {
+    const dash = mkPayload({ warnings: [] });
+    const ext = mkExtendedFromDashboard(dash);
+    ext.expenseInsights.expenseCategoryBreakdown = [
+      {
+        key: 'category:rent',
+        labelAr: 'إيجار',
+        labelEn: 'Rent',
+        amountDisplay: '5000',
+        shareOfGroupTotal: 0.5,
+      },
+      {
+        key: 'uncategorized:expense',
+        labelAr: 'غير مصنّف',
+        labelEn: 'Uncategorized',
+        amountDisplay: '5000',
+        shareOfGroupTotal: 0.5,
+      },
+    ];
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);
+    expect(answerAr).toContain('٣) مصاريف حسب الفئة');
+    expect(answerAr).toContain('إيجار');
+  });
+
+  it('overview includes sales breakdown when dashboard slice exists', () => {
+    const dash = mkPayload({
+      warnings: [],
+      salesBreakdown: [
+        {
+          key: 'sales-channel:ch1',
+          labelAr: 'قناة أ',
+          labelEn: 'Channel A',
+          amountDisplay: '80000',
+          shareOfGroupTotal: 0.8,
+        },
+        {
+          key: 'kind:sale',
+          labelAr: 'مبيعات عامة',
+          labelEn: 'General sales',
+          amountDisplay: '20000',
+          shareOfGroupTotal: 0.2,
+        },
+      ],
+    });
+    const ext = mkExtendedFromDashboard(dash);
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);
+    expect(answerAr).toContain('٤) المبيعات حسب المصدر');
+    expect(answerAr).toContain('قناة أ');
+  });
+
+  it('overview omits optional breakdown sections when data is absent', () => {
+    const dash = mkPayload({ warnings: [] });
+    const ext = mkExtendedFromDashboard(dash);
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);
+    expect(answerAr).not.toContain('٢) مشتريات حسب الفئة');
+    expect(answerAr).not.toContain('٣) مصاريف حسب الفئة');
+    expect(answerAr).not.toContain('٤) المبيعات حسب المصدر');
+  });
+
+  it('overview lists at most three sourced alert bullets', () => {
+    const merged: CombinedInsightWarning[] = Array.from({ length: 5 }, (_, i) => ({
+      id: `w${i}`,
+      severity: 'warning' as const,
+      category: 'purchases',
+      metricBasis: 'accounting_pl' as const,
+      titleAr: `تنبيه_${i + 1}`,
+      titleEn: `Alert_${i + 1}`,
+      detailAr: 'd',
+      detailEn: 'd',
+      source: 'dashboard' as const,
+    }));
+    const ext = mkExtendedWithMergedWarnings(merged);
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);
+    expect((answerAr.match(/• \[لوحة\]/g) || []).length).toBe(3);
+    expect(answerAr).not.toContain('تنبيه_5');
+  });
+
+  it('purchases focus answer format stays warning-only (no overview title)', () => {
+    const merged: CombinedInsightWarning[] = [
+      {
+        id: 'purchase_ratio_to_sales',
+        severity: 'warning',
+        category: 'purchases',
+        metricBasis: 'accounting_pl',
+        titleAr: 'نسبة مشتريات',
+        titleEn: 'Purchase ratio',
+        detailAr: 'تفاصيل.',
+        detailEn: 'Details.',
+        source: 'dashboard',
+      },
+    ];
+    const ext = mkExtendedWithMergedWarnings(merged);
+    const { answerAr } = buildDashboardInsightsDeterministicAnswer('purchases', ext, 2024, 3);
+    expect(answerAr).not.toContain('تحليل الوضع المالي');
+    expect(answerAr).toContain('نسبة مشتريات');
+  });
+
+  it('overview user-facing text does not expose raw extended payload root keys', () => {
+    const ext = mkExtendedWithMergedWarnings([]);
+    const { answerAr, answerEn } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);
+    const combined = `${answerAr}\n${answerEn}`;
+    for (const key of RAW_PAYLOAD_KEYS) {
+      expect(combined).not.toContain(key);
     }
   });
 });

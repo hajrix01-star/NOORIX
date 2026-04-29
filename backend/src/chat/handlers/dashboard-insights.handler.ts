@@ -5,6 +5,9 @@
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { DashboardSummaryDateRange } from '../../reporting/reporting.facade';
 import type { DashboardInsightsPayload, InsightItem } from '../../reporting/insights/insights.types';
+import { formatInsightPercentFraction } from '../../reporting/insights/insights.rules';
+import { INSIGHT_THRESHOLDS } from '../../reporting/insights/insights.thresholds';
+import type { PurchaseCategoryBreakdownRow } from '../../reporting/insights/purchases/purchase-supplier-insights.rules';
 import type {
   CombinedInsightWarning,
   ExtendedReportingInsightsPayload,
@@ -192,6 +195,19 @@ export function resolveDashboardInsightsFocus(q: string): DashboardInsightsFocus
   const lower = q.toLowerCase();
   if (
     matches(q, [
+      'حلل الوضع المالي',
+      'كيف الوضع المالي',
+      'تقرير مالي مختصر',
+      'ملخص مالي',
+    ]) ||
+    /\bfinancial overview\b/i.test(lower) ||
+    /\bfinancial health\b/i.test(lower) ||
+    /\bbusiness health\b/i.test(lower)
+  ) {
+    return 'overview';
+  }
+  if (
+    matches(q, [
       'وش أهم التنبيهات',
       'وش اهم التنبيهات',
       'وش التنبيهات',
@@ -303,7 +319,25 @@ export function classifyDashboardInsightsQuery(q: string): DashboardInsightsQuer
     return 'general';
   }
 
+  if (
+    matches(q, [
+      'حلل الوضع المالي',
+      'كيف الوضع المالي',
+      'تقرير مالي مختصر',
+      'ملخص مالي',
+    ])
+  ) {
+    return 'general';
+  }
+
   const lower = q.toLowerCase();
+  if (
+    /\bfinancial overview\b/i.test(lower) ||
+    /\bfinancial health\b/i.test(lower) ||
+    /\bbusiness health\b/i.test(lower)
+  ) {
+    return 'general';
+  }
   if (
     matches(q, [
       'حلل المشتريات',
@@ -512,29 +546,282 @@ function formatCompactSummaryEn(merged: CombinedInsightWarning[]): string | null
     .join(' ');
 }
 
-function buildAnswer(
-  focus: DashboardInsightsFocus,
-  healthAr: string,
-  healthEn: string,
+function accountingCellPresent(v: string | number | null | undefined): boolean {
+  if (v === null || v === undefined) return false;
+  return String(v).trim() !== '';
+}
+
+function parseInvoiceAmountStr(s: string): number {
+  const n = parseFloat(String(s ?? '0').replace(/,/g, ''));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function purchaseRowStatusAr(row: PurchaseCategoryBreakdownRow, merged: CombinedInsightWarning[]): string {
+  for (const w of merged) {
+    const v = w.values as Record<string, unknown> | undefined;
+    if (!v) continue;
+    if (w.id === 'purchase_category_concentration_warning' && String(v.topCategoryId ?? '') === String(row.categoryId ?? '')) {
+      return w.severity === 'critical' ? 'حرج' : 'تحذير';
+    }
+    if (w.id === 'purchase_uncategorized_share_warning' && row.categoryId == null) {
+      return w.severity === 'critical' ? 'حرج' : 'تحذير';
+    }
+    if (w.id === 'purchase_category_spike_warning' && String(v.categoryId ?? '') === String(row.categoryId ?? '')) {
+      return w.severity === 'critical' ? 'حرج' : 'تحذير';
+    }
+  }
+  return '—';
+}
+
+function purchaseRowStatusEn(row: PurchaseCategoryBreakdownRow, merged: CombinedInsightWarning[]): string {
+  for (const w of merged) {
+    const v = w.values as Record<string, unknown> | undefined;
+    if (!v) continue;
+    if (w.id === 'purchase_category_concentration_warning' && String(v.topCategoryId ?? '') === String(row.categoryId ?? '')) {
+      return w.severity === 'critical' ? 'Critical' : 'Warning';
+    }
+    if (w.id === 'purchase_uncategorized_share_warning' && row.categoryId == null) {
+      return w.severity === 'critical' ? 'Critical' : 'Warning';
+    }
+    if (w.id === 'purchase_category_spike_warning' && String(v.categoryId ?? '') === String(row.categoryId ?? '')) {
+      return w.severity === 'critical' ? 'Critical' : 'Warning';
+    }
+  }
+  return '—';
+}
+
+function expenseRowStatusAr(rowKey: string, merged: CombinedInsightWarning[]): string {
+  const catId = rowKey.startsWith('category:') ? rowKey.slice('category:'.length) : null;
+  for (const w of merged) {
+    const v = w.values as Record<string, unknown> | undefined;
+    if (!v) continue;
+    if (w.id === 'top_expense_category_share_warning' && catId && String(v.categoryId ?? '') === catId) {
+      return w.severity === 'critical' ? 'حرج' : 'تحذير';
+    }
+    if (w.id === 'missing_expense_category_warning' && rowKey === 'uncategorized:expense') {
+      return w.severity === 'critical' ? 'حرج' : 'تحذير';
+    }
+  }
+  return '—';
+}
+
+function expenseRowStatusEn(rowKey: string, merged: CombinedInsightWarning[]): string {
+  const catId = rowKey.startsWith('category:') ? rowKey.slice('category:'.length) : null;
+  for (const w of merged) {
+    const v = w.values as Record<string, unknown> | undefined;
+    if (!v) continue;
+    if (w.id === 'top_expense_category_share_warning' && catId && String(v.categoryId ?? '') === catId) {
+      return w.severity === 'critical' ? 'Critical' : 'Warning';
+    }
+    if (w.id === 'missing_expense_category_warning' && rowKey === 'uncategorized:expense') {
+      return w.severity === 'critical' ? 'Critical' : 'Warning';
+    }
+  }
+  return '—';
+}
+
+function overviewRecommendationsAr(band: DashboardInsightsPayload['health']['band']): string[] {
+  const out: string[] = [];
+  if (band === 'red') {
+    out.push('أولوية لهذا الشهر: معالجة أسباب التنبيهات الحرجة قبل زيادة الالتزامات أو الاستثمار.');
+  } else if (band === 'amber') {
+    out.push('راجع بنود التحذير أعلاه وتحقق من اكتمال التصنيف في المشتريات والمصاريف.');
+  } else if (band === 'green') {
+    out.push('تابع القراءة الشهرية لنفس المؤشرات للإبقاء على المسار الحالي.');
+  }
+  if (out.length < 2) {
+    out.push('استخدم تقارير التفصيل في النظام عند الحاجة لمقارنة هذا الشهر بأشهر سابقة.');
+  }
+  return out.slice(0, 2);
+}
+
+function overviewRecommendationsEn(band: DashboardInsightsPayload['health']['band']): string[] {
+  const out: string[] = [];
+  if (band === 'red') {
+    out.push('Priority this month: address critical alert drivers before increasing commitments or investment.');
+  } else if (band === 'amber') {
+    out.push('Review the warning items above and confirm purchase/expense categorization is complete.');
+  } else if (band === 'green') {
+    out.push('Keep the same monthly indicators review cadence to catch changes early.');
+  }
+  if (out.length < 2) {
+    out.push('Use detailed reports in the system when you need to compare this month to prior months.');
+  }
+  return out.slice(0, 2);
+}
+
+function buildMoneyOverviewAnswer(
+  extended: ExtendedReportingInsightsPayload,
   merged: CombinedInsightWarning[],
   year: number,
   selectedMonth: number,
 ): { answerAr: string; answerEn: string } {
+  const payload = extended.dashboardInsights;
+  const periodAr = formatInsightsPeriodLabelAr(year, selectedMonth);
+  const periodEn = formatInsightsPeriodLabelEn(year, selectedMonth);
+  const m = payload.metrics.accounting;
+  const r = payload.ratios;
+  const eps = INSIGHT_THRESHOLDS.salesEpsilon;
+
+  const snapAr: string[] = [];
+  const snapEn: string[] = [];
+  if (accountingCellPresent(m.sales)) {
+    snapAr.push(`المبيعات\t${String(m.sales).trim()}`);
+    snapEn.push(`Sales\t${String(m.sales).trim()}`);
+  }
+  if (accountingCellPresent(m.purchases)) {
+    snapAr.push(`المشتريات\t${String(m.purchases).trim()}`);
+    snapEn.push(`Purchases\t${String(m.purchases).trim()}`);
+  }
+  if (accountingCellPresent(m.expenses)) {
+    snapAr.push(`المصاريف\t${String(m.expenses).trim()}`);
+    snapEn.push(`Expenses\t${String(m.expenses).trim()}`);
+  }
+  if (accountingCellPresent(m.netProfit)) {
+    snapAr.push(`صافي الربح\t${String(m.netProfit).trim()}`);
+    snapEn.push(`Net profit\t${String(m.netProfit).trim()}`);
+  }
+  if (r.purchaseToSales != null && Number.isFinite(r.purchaseToSales)) {
+    snapAr.push(`مشتريات/مبيعات\t${formatInsightPercentFraction(r.purchaseToSales)}%`);
+    snapEn.push(`Purchases / sales\t${formatInsightPercentFraction(r.purchaseToSales)}%`);
+  }
+  if (r.expenseToSales != null && Number.isFinite(r.expenseToSales)) {
+    snapAr.push(`مصاريف/مبيعات\t${formatInsightPercentFraction(r.expenseToSales)}%`);
+    snapEn.push(`Expenses / sales\t${formatInsightPercentFraction(r.expenseToSales)}%`);
+  }
+  if (r.netProfitMargin != null && Number.isFinite(r.netProfitMargin)) {
+    snapAr.push(`هامش صافي الربح\t${formatInsightPercentFraction(r.netProfitMargin)}%`);
+    snapEn.push(`Net margin\t${formatInsightPercentFraction(r.netProfitMargin)}%`);
+  }
+
+  const purchaseRows = extended.purchaseSupplierInsights.periodPurchaseCategoryBreakdown?.slice(0, 5);
+  const purchaseTotalStr = extended.purchaseSupplierInsights.periodPurchaseCategoryTotal;
+  const purchaseTotal = purchaseTotalStr != null ? parseInvoiceAmountStr(purchaseTotalStr) : 0;
+
+  const purchaseAr: string[] = [];
+  const purchaseEn: string[] = [];
+  if (purchaseRows?.length && purchaseTotal > eps) {
+    for (const row of purchaseRows) {
+      const amt = parseInvoiceAmountStr(row.amount);
+      const share = amt / purchaseTotal;
+      const pct = formatInsightPercentFraction(share);
+      const stAr = purchaseRowStatusAr(row, merged);
+      const stEn = purchaseRowStatusEn(row, merged);
+      const label = row.nameAr?.trim() || row.nameEn || '—';
+      const labelEn = row.nameEn?.trim() || row.nameAr || '—';
+      purchaseAr.push(`${label}\t${row.amount}\t${pct}%\t${stAr}`);
+      purchaseEn.push(`${labelEn}\t${row.amount}\t${pct}%\t${stEn}`);
+    }
+  }
+
+  const expenseRows = extended.expenseInsights.expenseCategoryBreakdown?.slice(0, 5);
+  const expenseAr: string[] = [];
+  const expenseEn: string[] = [];
+  if (expenseRows?.length) {
+    for (const row of expenseRows) {
+      const share = row.shareOfGroupTotal;
+      const pct = share != null && Number.isFinite(share) ? `${formatInsightPercentFraction(share)}%` : '—';
+      expenseAr.push(`${row.labelAr}\t${row.amountDisplay}\t${pct}\t${expenseRowStatusAr(row.key, merged)}`);
+      expenseEn.push(`${row.labelEn}\t${row.amountDisplay}\t${pct}\t${expenseRowStatusEn(row.key, merged)}`);
+    }
+  }
+
+  const salesRows = payload.salesBreakdown?.slice(0, 5);
+  const salesAr: string[] = [];
+  const salesEn: string[] = [];
+  if (salesRows?.length) {
+    for (const row of salesRows) {
+      const share = row.shareOfGroupTotal;
+      const pct = share != null && Number.isFinite(share) ? `${formatInsightPercentFraction(share)}%` : '—';
+      salesAr.push(`${row.labelAr}\t${row.amountDisplay}\t${pct}\t—`);
+      salesEn.push(`${row.labelEn}\t${row.amountDisplay}\t${pct}\t—`);
+    }
+  }
+
+  const warnPick = merged.slice(0, 3);
+  const warnAr =
+    warnPick.length > 0
+      ? warnPick
+          .map((w) => {
+            const p = sourcePrefixAr(w);
+            const d = w.detailAr?.trim();
+            return d ? `• ${p}${w.titleAr}\n  ${d}` : `• ${p}${w.titleAr}`;
+          })
+          .join('\n')
+      : MSG_NO_ALERT_AR;
+  const warnEn =
+    warnPick.length > 0
+      ? warnPick
+          .map((w) => {
+            const p = sourcePrefixEn(w);
+            const d = w.detailEn?.trim();
+            return d ? `• ${p}${w.titleEn}\n  ${d}` : `• ${p}${w.titleEn}`;
+          })
+          .join('\n')
+      : MSG_NO_ALERT_EN;
+
+  const recoAr = overviewRecommendationsAr(payload.health.band)
+    .map((line) => `• ${line}`)
+    .join('\n');
+  const recoEn = overviewRecommendationsEn(payload.health.band)
+    .map((line) => `• ${line}`)
+    .join('\n');
+
+  const partsAr: string[] = ['تحليل الوضع المالي', '', periodAr, '', payload.health.summaryAr];
+  const partsEn: string[] = ['Financial overview', '', periodEn, '', payload.health.summaryEn];
+
+  if (snapAr.length > 0) {
+    partsAr.push('', '١) لقطة مالية', 'النوع\tالمبلغ', ...snapAr);
+    partsEn.push('', '1) Financial snapshot', 'Item\tAmount', ...snapEn);
+  }
+  if (purchaseAr.length > 0) {
+    partsAr.push('', '٢) مشتريات حسب الفئة (فترة الفواتير)', 'الفئة\tالمبلغ\tمن إجمالي المشتريات\tالحالة', ...purchaseAr);
+    partsEn.push(
+      '',
+      '2) Purchases by category (invoice period)',
+      'Category\tAmount\t% of purchases\tStatus',
+      ...purchaseEn,
+    );
+  }
+  if (expenseAr.length > 0) {
+    partsAr.push('', '٣) مصاريف حسب الفئة (دفتر الشهر)', 'الفئة\tالمبلغ\tمن إجمالي المصاريف\tالحالة', ...expenseAr);
+    partsEn.push('', '3) Expenses by category (month ledger)', 'Category\tAmount\t% of expenses\tStatus', ...expenseEn);
+  }
+  if (salesAr.length > 0) {
+    partsAr.push('', '٤) المبيعات حسب المصدر (دفتر الشهر)', 'البند\tالمبلغ\tمن إجمالي المبيعات\tالحالة', ...salesAr);
+    partsEn.push('', '4) Sales breakdown (month ledger)', 'Item\tAmount\t% of sales\tStatus', ...salesEn);
+  }
+  partsAr.push('', '٥) أبرز التنبيهات', warnAr);
+  partsEn.push('', '5) Top alerts', warnEn);
+  partsAr.push('', '٦) توصيات عملية', recoAr);
+  partsEn.push('', '6) Practical recommendations', recoEn);
+
+  return { answerAr: partsAr.join('\n'), answerEn: partsEn.join('\n') };
+}
+
+function buildAnswer(
+  focus: DashboardInsightsFocus,
+  extended: ExtendedReportingInsightsPayload,
+  year: number,
+  selectedMonth: number,
+): { answerAr: string; answerEn: string } {
+  const payload = extended.dashboardInsights;
+  const healthAr = payload.health.summaryAr;
+  const healthEn = payload.health.summaryEn;
+  const merged = extended.warnings;
+
+  if (focus === 'overview') {
+    return buildMoneyOverviewAnswer(extended, merged, year, selectedMonth);
+  }
+
   const pool = filterMergedByFocus(focus, merged);
-  const maxPick = focus === 'overview' ? 3 : focus === 'alerts' ? 5 : 8;
+  const maxPick = focus === 'alerts' ? 5 : 8;
   const picked = pool.slice(0, maxPick);
   const compactAr = formatCompactSummaryAr(merged);
   const compactEn = formatCompactSummaryEn(merged);
   if (picked.length === 0) {
     const periodAr = formatInsightsPeriodLabelAr(year, selectedMonth);
     const periodEn = formatInsightsPeriodLabelEn(year, selectedMonth);
-    if (focus === 'overview') {
-      const baseAr = [periodAr, '', MSG_NO_ALERT_AR];
-      const baseEn = [periodEn, '', MSG_NO_ALERT_EN];
-      if (compactAr) baseAr.push('', compactAr);
-      if (compactEn) baseEn.push('', compactEn);
-      return { answerAr: baseAr.join('\n'), answerEn: baseEn.join('\n') };
-    }
     const baseAr = [periodAr, '', healthAr, '', msgNoFocusAreaAr(focus)];
     const baseEn = [periodEn, '', healthEn, '', msgNoFocusAreaEn(focus)];
     if (compactAr) baseAr.push('', compactAr);
@@ -546,6 +833,16 @@ function buildAnswer(
   if (compactAr) partsAr.push('', compactAr);
   if (compactEn) partsEn.push('', compactEn);
   return { answerAr: partsAr.join('\n'), answerEn: partsEn.join('\n') };
+}
+
+/** Exported for unit tests — deterministic Smart Chat body for dashboard_insights. */
+export function buildDashboardInsightsDeterministicAnswer(
+  focus: DashboardInsightsFocus,
+  extended: ExtendedReportingInsightsPayload,
+  year: number,
+  selectedMonth: number,
+): { answerAr: string; answerEn: string } {
+  return buildAnswer(focus, extended, year, selectedMonth);
 }
 
 /** لاختبارات الوحدة — حزمة JSON آمنة لشرح LLM فقط (لوحة فقط). */
@@ -689,14 +986,7 @@ export const dashboardInsightsHandler: ChatHandler = {
     const payload = extended.dashboardInsights;
     const effectiveFocus = resolveEffectiveDashboardInsightsFocus(ctx.query, kind);
 
-    let { answerAr, answerEn } = buildAnswer(
-      effectiveFocus,
-      payload.health.summaryAr,
-      payload.health.summaryEn,
-      extended.warnings,
-      year,
-      selectedMonth,
-    );
+    let { answerAr, answerEn } = buildAnswer(effectiveFocus, extended, year, selectedMonth);
 
     const poolLlm = filterMergedByFocus(effectiveFocus, extended.warnings);
     const maxLlmPick = effectiveFocus === 'overview' ? 3 : 5;

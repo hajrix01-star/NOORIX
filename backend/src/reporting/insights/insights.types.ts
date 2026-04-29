@@ -62,4 +62,12 @@ export type DashboardInsightsPayload = {
   insights: InsightItem[];
   opportunities: InsightItem[];
   warnings: InsightItem[];
+  /** P&L sales sub-rows for the selected month (read-only presentation slice for Smart Chat). */
+  salesBreakdown?: Array<{
+    key: string;
+    labelAr: string;
+    labelEn: string;
+    amountDisplay: string;
+    shareOfGroupTotal: number | null;
+  }>;
 };

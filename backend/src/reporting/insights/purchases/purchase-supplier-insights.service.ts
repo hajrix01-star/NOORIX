@@ -65,6 +65,9 @@ export class PurchaseSupplierInsightsService {
       supplierInsights: [],
       purchaseInsights: [],
       warnings,
+      ...(breakdown?.length
+        ? { periodPurchaseCategoryBreakdown: breakdown, periodPurchaseCategoryTotal: purchaseCategoryTotal }
+        : {}),
     };
   }
 }
