@@ -9,7 +9,7 @@ import { fmt, fmtTax } from '../utils/format';
  * <FmtNum n={1234.5} />          → "1,234" + ".5" (خافت صغير)
  * <FmtNum n={5000} />            → "5,000" (بدون كسر)
  * <FmtNum n={v} className="nx-cell-num" />
- * <FmtNum n={v} tax />  — خانتان عشريتان (الضريبة)
+ * <FmtNum n={v} tax />  — الضريبة: خانة عشرية كحد أقصى (`fmtTax`)
  */
 export function FmtNum({
   n,

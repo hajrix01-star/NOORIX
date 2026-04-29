@@ -4,6 +4,7 @@
 import React from 'react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatSaudiDateTime } from '../../../utils/saudiDate';
+import { fmt } from '../../../utils/format';
 import { KPI_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { ChatAnswerExtras } from '../types';
 import { formatMiniChartTooltipValue, formatMiniChartYAxisTick } from '../utils/smartChatFormatters';
@@ -167,7 +168,7 @@ function ChatFinanceRatiosStrip({
             key={s.key}
             className="noorix-chat-finance-ratios__seg h-full min-w-0 transition-[width] duration-300"
             style={{ width: `${Math.max(0, Math.min(100, Number(s.pct) || 0))}%`, backgroundColor: fillFor(s.key) }}
-            title={`${labelFor(s.key)}: ${Number(s.pct).toFixed(2)}%`}
+            title={`${labelFor(s.key)}: ${fmt(Number(s.pct), 1)}%`}
           />
         ))}
         {remainder > 0.05 ? (
@@ -179,7 +180,7 @@ function ChatFinanceRatiosStrip({
           <li key={s.key} className="inline-flex items-center gap-1.5">
             <span className="inline-block size-2 rounded-sm shrink-0" style={{ backgroundColor: fillFor(s.key) }} aria-hidden />
             <span>
-              {labelFor(s.key)}: <span className="font-semibold text-noorix-text nx-ltr">{Number(s.pct).toFixed(2)}%</span>
+              {labelFor(s.key)}: <span className="font-semibold text-noorix-text nx-ltr">{fmt(Number(s.pct), 1)}%</span>
             </span>
           </li>
         ))}

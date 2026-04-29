@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import { formatReportMoneyInteger } from '../../common/utils/report-display-format.util';
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { ChatHandler, ChatHandlerContext } from './types';
 import { matches } from './utils';
@@ -26,9 +27,9 @@ export const expensesHandler: ChatHandler = {
         },
         _sum: { amount: true },
       });
-      const total = new Decimal(agg._sum.amount ?? 0).toFixed(2);
-      const amt = `${Number(total).toLocaleString('en')} SR`;
-      const amtEn = `${Number(total).toLocaleString('en')} SAR`;
+      const total = new Decimal(agg._sum.amount ?? 0);
+      const amt = `${formatReportMoneyInteger(total)} SR`;
+      const amtEn = `${formatReportMoneyInteger(total)} SAR`;
       return {
         answerAr: ['## مصروفات الفترة', '', 'البند\tالمبلغ', `${period.labelAr}\t${amt}`].join('\n'),
         answerEn: ['## Expenses for the period', '', 'Item\tAmount', `${period.labelEn}\t${amtEn}`].join('\n'),
@@ -37,8 +38,8 @@ export const expensesHandler: ChatHandler = {
 
     const report = await reportsService.getGeneralProfitLoss(companyId, ctx.year);
     const total = report?.cards?.expenses ?? '0';
-    const amt = `${Number(total).toLocaleString('en')} SR`;
-    const amtEn = `${Number(total).toLocaleString('en')} SAR`;
+    const amt = `${formatReportMoneyInteger(total)} SR`;
+    const amtEn = `${formatReportMoneyInteger(total)} SAR`;
     return {
       answerAr: ['## مصروفات السنة', '', 'البند\tالمبلغ', `إجمالي المصروفات (${ctx.year})\t${amt}`].join('\n'),
       answerEn: ['## Annual expenses', '', 'Item\tAmount', `Total expenses (${ctx.year})\t${amtEn}`].join('\n'),

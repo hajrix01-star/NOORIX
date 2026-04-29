@@ -1,7 +1,8 @@
 /** تنسيق أرقام للمخططات المصغّرة في المحادثة — عرض فقط */
+import { fmt } from '../../../utils/format';
 
 export function formatMiniChartTooltipValue(value: unknown, isAr: boolean): string {
-  return `${Number(value).toLocaleString('en')} ${isAr ? 'ر.س' : 'SAR'}`;
+  return `${fmt(value, 0)} ${isAr ? 'ر.س' : 'SAR'}`;
 }
 
 export function formatMiniChartYAxisTick(v: number): string {

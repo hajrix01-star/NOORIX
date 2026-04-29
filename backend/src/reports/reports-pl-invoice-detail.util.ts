@@ -11,6 +11,7 @@ import {
 import { getCategoryAndDescendantIds } from './reports-category-descendants.util';
 import { plDec } from './reports-pl-math.util';
 import { resolvePlItemMeta } from './reports-pl-item-meta.util';
+import { formatReportMoneyInteger, formatReportTaxAmount } from '../common/utils/report-display-format.util';
 
 /**
  * تفاصيل التقرير من Ledger — عند النقر على حساب (account:xxx)
@@ -146,10 +147,10 @@ export async function loadPlDetailFromLedger(
       channelNames: (inv?.dailySalesSummary?.channels || []).map((ch) => ({
         nameAr: ch.vault.nameAr,
         nameEn: ch.vault.nameEn,
-        amount: plDec(ch.amount).toFixed(2),
+        amount: formatReportMoneyInteger(plDec(ch.amount)),
       })),
-      totalAmount: amt.toFixed(2),
-      netAmount: amt.toFixed(2),
+      totalAmount: formatReportMoneyInteger(amt),
+      netAmount: formatReportMoneyInteger(amt),
       taxAmount: '0',
       notes: inv?.notes || null,
     });
@@ -305,11 +306,11 @@ export async function loadPlDetailInvoices(
       channelNames: (invoice.dailySalesSummary?.channels || []).map((ch) => ({
         nameAr: ch.vault.nameAr,
         nameEn: ch.vault.nameEn,
-        amount: plDec(ch.amount).toFixed(2),
+        amount: formatReportMoneyInteger(plDec(ch.amount)),
       })),
-      totalAmount: plDec(invoice.totalAmount).toFixed(2),
-      netAmount: plDec(invoice.netAmount).toFixed(2),
-      taxAmount: plDec(invoice.taxAmount).toFixed(2),
+      totalAmount: formatReportMoneyInteger(plDec(invoice.totalAmount)),
+      netAmount: formatReportMoneyInteger(plDec(invoice.netAmount)),
+      taxAmount: formatReportTaxAmount(plDec(invoice.taxAmount)),
       notes: invoice.notes || null,
     };
   });

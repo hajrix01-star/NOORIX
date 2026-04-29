@@ -25,7 +25,7 @@ function inTenantContext<T>(tenantId: string, userId: string, fn: () => Promise<
 }
 
 function d(s: string): Decimal {
-  return new Decimal(s);
+  return new Decimal(String(s).replace(/,/g, ''));
 }
 
 function localYmd(date: Date): string {

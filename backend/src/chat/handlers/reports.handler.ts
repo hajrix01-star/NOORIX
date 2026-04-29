@@ -1,6 +1,7 @@
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { ChatHandler, ChatHandlerContext } from './types';
 import { matches } from './utils';
+import { formatReportMoneyInteger } from '../../common/utils/report-display-format.util';
 
 export const reportsHandler: ChatHandler = {
   priority: 13,
@@ -18,8 +19,8 @@ export const reportsHandler: ChatHandler = {
     const expenses = report?.cards?.expenses ?? '0';
     const gross = report?.cards?.grossProfit ?? '0';
     const net = report?.cards?.netProfit ?? '0';
-    const fmt = (v: string) => `${Number(v).toLocaleString('en')} SR`;
-    const fmtEn = (v: string) => `${Number(v).toLocaleString('en')} SAR`;
+    const fmt = (v: string) => `${formatReportMoneyInteger(v)} SR`;
+    const fmtEn = (v: string) => `${formatReportMoneyInteger(v)} SAR`;
     return {
       answerAr: [
         `## ملخص الربح والخسارة — ${year}`,

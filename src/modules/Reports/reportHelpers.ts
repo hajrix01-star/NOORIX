@@ -1,6 +1,8 @@
 /**
  * reportHelpers — دوال مساعدة لتقارير ربح وخسارة
  */
+import { fmt } from '../../utils/format';
+
 export const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const PERCENT_COLOR = '#0d9488';
@@ -20,7 +22,8 @@ export function formatSmartNumber(value: any, decimals: any = 1) {
 }
 
 export function amountText(value: any) {
-  return formatSmartNumber(value, 1);
+  if (isEmptyMetric(value)) return '-';
+  return fmt(value, 0);
 }
 
 export function moneyText(value: any) {
@@ -31,11 +34,11 @@ export function moneyText(value: any) {
 /** قيمة لـ MetricCard.Value (رقم أو '-' للعرض كنص) — العملة تُمرَّر عبر currency="SR" */
 export function metricCardAmountValue(value: any) {
   if (isEmptyMetric(value)) return '-';
-  return Number(value);
+  return Math.round(Number(value));
 }
 
 export function percentText(value: any) {
-  return isEmptyMetric(value) ? '-' : `${formatSmartNumber(value, 1)}%`;
+  return isEmptyMetric(value) ? '-' : `${fmt(value, 1)}%`;
 }
 
 export function truncateText(value: any, max: any = 42) {

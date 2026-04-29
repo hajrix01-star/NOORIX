@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import { formatReportMoneyInteger, formatReportPercentNumber } from '../common/utils/report-display-format.util';
 import {
   type CategoryNode,
   type ExpenseLineNode,
@@ -98,10 +99,14 @@ export function buildPlCategoryHierarchy(
 
     if (totalSum < 0.0001 && childNodes.length === 0) return null;
 
-    const months = monthsSum.map((v) => v.toFixed(2));
-    const total = totalSum.toFixed(2);
-    const pctMonths = monthsSum.map((v, i) => (parseFloat(salesMonths[i]?.toString() || '0') ? ((v / parseFloat(salesMonths[i].toString())) * 100).toFixed(2) : '0'));
-    const pctYear = totalSales.eq(0) ? '0' : new Decimal(total).div(totalSales).mul(100).toFixed(2);
+    const months = monthsSum.map((v) => formatReportMoneyInteger(v));
+    const total = formatReportMoneyInteger(totalSum);
+    const pctMonths = monthsSum.map((v, i) =>
+      parseFloat(salesMonths[i]?.toString() || '0')
+        ? formatReportPercentNumber((v / parseFloat(salesMonths[i].toString())) * 100)
+        : '0',
+    );
+    const pctYear = totalSales.eq(0) ? '0' : formatReportPercentNumber(new Decimal(total).div(totalSales).mul(100));
 
     const node: ExpenseTreeNode = toNode(key, cat.nameAr, cat.nameEn || cat.nameAr, months, total, pctMonths, pctYear);
     if (childNodes.length > 0) node.children = childNodes;

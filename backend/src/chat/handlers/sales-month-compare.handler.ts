@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import { formatReportMoneyInteger, formatReportPercentNumber } from '../../common/utils/report-display-format.util';
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { ChatHandler, ChatHandlerContext } from './types';
 import { matches, lastMonthPartialMatchingMtd, thisMonthThroughTodayRange } from './utils';
@@ -17,7 +18,7 @@ async function sumRevenue(ctx: ChatHandlerContext, start: Date, end: Date): Prom
 }
 
 function fmtMoney(n: Decimal): string {
-  return `${Number(n.toFixed(2)).toLocaleString('en')} SR`;
+  return `${formatReportMoneyInteger(n)} SR`;
 }
 
 export const salesMonthCompareHandler: ChatHandler = {
@@ -67,7 +68,7 @@ export const salesMonthCompareHandler: ChatHandler = {
     const cur = await sumRevenue(ctx, thisP.start, thisP.end);
     const prev = await sumRevenue(ctx, prevP.start, prevP.end);
     const diff = cur.minus(prev);
-    const deltaPct = prev.gt(0) ? diff.div(prev).mul(100).toDecimalPlaces(2).toString() : '—';
+    const deltaPct = prev.gt(0) ? formatReportPercentNumber(diff.div(prev).mul(100)) : '—';
     const trendAr = prev.lte(0) ? '—' : diff.gt(0) ? 'أعلى من الشهر الماضي' : diff.lt(0) ? 'أقل من الشهر الماضي' : 'مساوٍ للشهر الماضي';
     const trendEn = prev.lte(0) ? '—' : diff.gt(0) ? 'Above last month' : diff.lt(0) ? 'Below last month' : 'Same as last month';
 
@@ -82,7 +83,7 @@ export const salesMonthCompareHandler: ChatHandler = {
       summaryAr = `• الخلاصة: مبيعاتك هذا الشهر أعلى من الشهر الماضي بنحو ${deltaPct}% لنفس الفترة — جيد إن كان ذلك متوافقاً مع أهدافك.`;
       summaryEn = `• Summary: this month is about ${deltaPct}% above last month for the same window — good if that matches your plan.`;
     } else if (diff.lt(0)) {
-      const dropPct = diff.abs().div(prev).mul(100).toDecimalPlaces(2).toString();
+      const dropPct = formatReportPercentNumber(diff.abs().div(prev).mul(100));
       summaryAr = `• الخلاصة: مبيعاتك هذا الشهر أدنى من الشهر الماضي بنحو ${dropPct}% لنفس الفترة — راجع الأسباب التشغيلية إن لزم.`;
       summaryEn = `• Summary: this month is about ${dropPct}% below last month for the same window — review drivers if needed.`;
     } else {

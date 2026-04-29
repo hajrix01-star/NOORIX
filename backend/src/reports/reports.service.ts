@@ -20,6 +20,7 @@ import { resolvePlDetailTitle } from './reports-pl-item-meta.util';
 import { loadAnnualLedgerAggregates } from './reports-pl-ledger-aggregates.util';
 import { createPlGroupStates } from './reports-pl-group-states.util';
 import { resolveExpenseTreeNode } from './reports-expense-tree.util';
+import { formatReportMoneyInteger, formatReportPercentNumber } from '../common/utils/report-display-format.util';
 
 @Injectable()
 export class ReportsService {
@@ -157,16 +158,16 @@ export class ReportsService {
     /** إجمالي الفاتورة (شامل الضريبة) عند تفصيل بند من الفواتير — يتوافق مع جدول التفاصيل */
     if (useInvoiceGross && yearAgg) {
       const yVal = plDec(String(yearAgg._sum.totalAmount ?? 0));
-      annualAmount = yVal.toFixed(2);
+      annualAmount = formatReportMoneyInteger(yVal);
       const salesYear = parseFloat(salesGroup?.total ?? '0');
-      annualPercentOfSales = salesYear > 0.0001 ? yVal.div(salesYear).mul(100).toFixed(2) : '0';
+      annualPercentOfSales = salesYear > 0.0001 ? formatReportPercentNumber(yVal.div(salesYear).mul(100)) : '0';
       if (month != null && monthAgg) {
         const mVal = plDec(String(monthAgg._sum.totalAmount ?? 0));
-        contextAmount = mVal.toFixed(2);
+        contextAmount = formatReportMoneyInteger(mVal);
         const salesM = parseFloat(salesGroup?.months?.[month - 1] ?? '0');
-        contextPercentOfSales = salesM > 0.0001 ? mVal.div(salesM).mul(100).toFixed(2) : '0';
+        contextPercentOfSales = salesM > 0.0001 ? formatReportPercentNumber(mVal.div(salesM).mul(100)) : '0';
       } else {
-        contextAmount = yVal.toFixed(2);
+        contextAmount = formatReportMoneyInteger(yVal);
         contextPercentOfSales = annualPercentOfSales;
       }
     }
@@ -239,7 +240,7 @@ export class ReportsService {
 
     const monthRow = (index: number) => {
       if (invoiceMonths) {
-        return invoiceMonths[index].toFixed(2);
+        return formatReportMoneyInteger(invoiceMonths[index]);
       }
       if (itemKey) {
         return selectedItem?.months?.[index] ?? '0';
@@ -251,7 +252,7 @@ export class ReportsService {
       if (invoiceMonths) {
         const salesM = parseFloat(salesGroup?.months?.[index] ?? '0');
         const amt = invoiceMonths[index];
-        return salesM > 0.0001 ? amt.div(salesM).mul(100).toFixed(2) : '0';
+        return salesM > 0.0001 ? formatReportPercentNumber(amt.div(salesM).mul(100)) : '0';
       }
       if (itemKey) {
         return selectedItem?.percentOfSalesMonths?.[index] ?? '0';
@@ -263,10 +264,10 @@ export class ReportsService {
       ? invoiceMonths.reduce((a, b) => a.plus(b), new Decimal(0))
       : new Decimal(itemKey ? selectedItem?.total ?? '0' : group?.total ?? '0');
     const salesYearTotal = parseFloat(salesGroup?.total ?? '0');
-    const totalStr = invoiceMonths ? itemYearTotal.toFixed(2) : itemKey ? (selectedItem?.total ?? '0') : (group?.total ?? '0');
+    const totalStr = invoiceMonths ? formatReportMoneyInteger(itemYearTotal) : itemKey ? (selectedItem?.total ?? '0') : (group?.total ?? '0');
     const percentOfSalesYearStr = invoiceMonths
       ? salesYearTotal > 0.0001
-        ? itemYearTotal.div(salesYearTotal).mul(100).toFixed(2)
+        ? formatReportPercentNumber(itemYearTotal.div(salesYearTotal).mul(100))
         : '0'
       : itemKey
         ? (selectedItem?.percentOfSalesYear ?? '0')
@@ -334,10 +335,10 @@ export class ReportsService {
             key: item.key,
             labelAr: item.labelAr,
             labelEn: item.labelEn,
-            months: item.months.map((month) => month.toFixed(2)),
-            total: itemTotal.toFixed(2),
-            percentOfSalesMonths: itemPercentMonths.map((value) => value.toFixed(2)),
-            percentOfSalesYear: itemPercentYear.toFixed(2),
+            months: item.months.map((month) => formatReportMoneyInteger(month)),
+            total: formatReportMoneyInteger(itemTotal),
+            percentOfSalesMonths: itemPercentMonths.map((value) => formatReportPercentNumber(value)),
+            percentOfSalesYear: formatReportPercentNumber(itemPercentYear),
             sortOrder: item.sortOrder,
           };
         });
@@ -353,10 +354,10 @@ export class ReportsService {
         key: groupState.key,
         labelAr: groupState.labelAr,
         labelEn: groupState.labelEn,
-        months: groupState.months.map((month) => month.toFixed(2)),
-        total: total.toFixed(2),
-        percentOfSalesMonths: percentOfSalesMonths.map((value) => value.toFixed(2)),
-        percentOfSalesYear: plPercentOfSales(total, totalSales).toFixed(2),
+        months: groupState.months.map((month) => formatReportMoneyInteger(month)),
+        total: formatReportMoneyInteger(total),
+        percentOfSalesMonths: percentOfSalesMonths.map((value) => formatReportPercentNumber(value)),
+        percentOfSalesYear: formatReportPercentNumber(plPercentOfSales(total, totalSales)),
         items,
       };
     });
@@ -369,27 +370,31 @@ export class ReportsService {
           key: 'grossProfit',
           labelAr: GROUP_LABELS.grossProfit.ar,
           labelEn: GROUP_LABELS.grossProfit.en,
-          months: grossProfitMonths.map((month) => month.toFixed(2)),
-          total: plSumMonths(grossProfitMonths).toFixed(2),
-          percentOfSalesMonths: grossProfitMonths.map((month, index) => plPercentOfSales(month, salesMonths[index]).toFixed(2)),
-          percentOfSalesYear: plPercentOfSales(plSumMonths(grossProfitMonths), totalSales).toFixed(2),
+          months: grossProfitMonths.map((month) => formatReportMoneyInteger(month)),
+          total: formatReportMoneyInteger(plSumMonths(grossProfitMonths)),
+          percentOfSalesMonths: grossProfitMonths.map((month, index) =>
+            formatReportPercentNumber(plPercentOfSales(month, salesMonths[index])),
+          ),
+          percentOfSalesYear: formatReportPercentNumber(plPercentOfSales(plSumMonths(grossProfitMonths), totalSales)),
         },
         {
           key: 'netProfit',
           labelAr: GROUP_LABELS.netProfit.ar,
           labelEn: GROUP_LABELS.netProfit.en,
-          months: netProfitMonths.map((month) => month.toFixed(2)),
-          total: plSumMonths(netProfitMonths).toFixed(2),
-          percentOfSalesMonths: netProfitMonths.map((month, index) => plPercentOfSales(month, salesMonths[index]).toFixed(2)),
-          percentOfSalesYear: plPercentOfSales(plSumMonths(netProfitMonths), totalSales).toFixed(2),
+          months: netProfitMonths.map((month) => formatReportMoneyInteger(month)),
+          total: formatReportMoneyInteger(plSumMonths(netProfitMonths)),
+          percentOfSalesMonths: netProfitMonths.map((month, index) =>
+            formatReportPercentNumber(plPercentOfSales(month, salesMonths[index])),
+          ),
+          percentOfSalesYear: formatReportPercentNumber(plPercentOfSales(plSumMonths(netProfitMonths), totalSales)),
         },
       ],
       cards: {
-        sales: totalSales.toFixed(2),
-        purchases: plSumMonths(purchasesMonths).toFixed(2),
-        expenses: plSumMonths(expensesMonths).toFixed(2),
-        grossProfit: plSumMonths(grossProfitMonths).toFixed(2),
-        netProfit: plSumMonths(netProfitMonths).toFixed(2),
+        sales: formatReportMoneyInteger(totalSales),
+        purchases: formatReportMoneyInteger(plSumMonths(purchasesMonths)),
+        expenses: formatReportMoneyInteger(plSumMonths(expensesMonths)),
+        grossProfit: formatReportMoneyInteger(plSumMonths(grossProfitMonths)),
+        netProfit: formatReportMoneyInteger(plSumMonths(netProfitMonths)),
       },
     };
   }

@@ -1,6 +1,7 @@
 import type { GeneralProfitLossModel } from '../../../reports/reports-general-profit-loss-model.util';
 import { INSIGHT_THRESHOLDS } from '../insights.thresholds';
 import { parseAmount } from '../insights.rules';
+import { formatReportMoneyInteger } from '../../../common/utils/report-display-format.util';
 import { flattenPlGroupItems } from './pl-group-flatten.util';
 
 const EPS = INSIGHT_THRESHOLDS.salesEpsilon;
@@ -56,7 +57,7 @@ export function buildExpenseCategoryBreakdownForMonth(
         key: r.key,
         labelAr: r.labelAr,
         labelEn: r.labelEn,
-        amountDisplay: cell ?? String(amt),
+        amountDisplay: formatReportMoneyInteger(cell != null ? parseAmount(cell) ?? amt : amt),
         shareOfGroupTotal: amt / totalExpenses,
       });
     } else if (r.key.startsWith('kind:') || r.key.startsWith('account:')) {
@@ -70,7 +71,7 @@ export function buildExpenseCategoryBreakdownForMonth(
           key: 'uncategorized:expense',
           labelAr: 'غير مصنّف',
           labelEn: 'Uncategorized',
-          amountDisplay: uncAmt.toFixed(4),
+          amountDisplay: formatReportMoneyInteger(uncAmt),
           shareOfGroupTotal: uncAmt / totalExpenses,
         }
       : null;
@@ -119,14 +120,14 @@ export function buildSalesBreakdownForMonth(
         labelAr: r.labelAr,
         labelEn: r.labelEn,
         amount: nextAmt,
-        display: nextAmt.toFixed(4),
+        display: formatReportMoneyInteger(nextAmt),
       });
     } else {
       byKey.set(r.key, {
         labelAr: r.labelAr,
         labelEn: r.labelEn,
         amount: amt,
-        display: cell ?? String(amt),
+        display: formatReportMoneyInteger(cell != null ? parseAmount(cell) ?? amt : amt),
       });
     }
   }

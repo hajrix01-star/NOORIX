@@ -25,14 +25,14 @@ export function fmt(n: any, maxDecimals: any = 1) {
 }
 
 /**
- * تنسيق مبالغ الضريبة في واجهات الإفصاح (Hajri + تقرير الضريبة) — خانتان عشريتان دائمًا.
+ * تنسيق مبالغ الضريبة في واجهات الإفصاح (Hajri + تقرير الضريبة) — خانة عشرية كحد أقصى.
  */
 export function fmtTax(n: any) {
   const raw = n instanceof Decimal ? n.toNumber() : Number(n ?? 0);
   const num = Number.isFinite(raw) ? raw : 0;
   return num.toLocaleString('en', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
   });
 }
 

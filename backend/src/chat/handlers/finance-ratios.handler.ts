@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import { formatReportMoneyInteger, formatReportPercentNumber } from '../../common/utils/report-display-format.util';
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { ChatHandler, ChatHandlerContext } from './types';
 import { matches, thisMonthToDateRange } from './utils';
@@ -54,17 +55,18 @@ async function sumOperatingExpenses(ctx: ChatHandlerContext, start: Date, end: D
 
 function pctOf(numer: Decimal, denom: Decimal): string {
   if (denom.lte(0)) return '—';
-  return `${numer.div(denom).mul(100).toDecimalPlaces(2).toString()}%`;
+  return `${formatReportPercentNumber(numer.div(denom).mul(100))}%`;
 }
 
 /** نسبة رقمية 0–100 للواجهة (شريط مكدّس) */
 function pctOfSalesNumber(numer: Decimal, sales: Decimal): number {
   if (sales.lte(0)) return 0;
-  return Math.min(100, Number(numer.div(sales).mul(100).toDecimalPlaces(2)));
+  const n = numer.div(sales).mul(100).toNumber();
+  return Math.min(100, Math.round(n * 10) / 10);
 }
 
 function fmtMoney(n: Decimal): string {
-  return `${Number(n.toFixed(2)).toLocaleString('en')} SR`;
+  return `${formatReportMoneyInteger(n)} SR`;
 }
 
 export const financeRatiosHandler: ChatHandler = {
@@ -239,7 +241,7 @@ export const financeRatiosHandler: ChatHandler = {
     if (segSum > 100 && ratioSegments.length > 0) {
       normalized = ratioSegments.map((s) => ({
         ...s,
-        pct: Number(((s.pct / segSum) * 100).toFixed(2)),
+        pct: Math.round(((s.pct / segSum) * 100) * 10) / 10,
       }));
     }
 
