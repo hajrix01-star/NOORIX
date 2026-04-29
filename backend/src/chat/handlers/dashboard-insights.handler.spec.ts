@@ -4,6 +4,8 @@ import type { DashboardInsightsPayload } from '../../reporting/insights/insights
 import {
   dashboardInsightsHandler,
   buildDashboardInsightsDateRangeForMonth,
+  formatInsightsPeriodLabelAr,
+  formatInsightsPeriodLabelEn,
 } from './dashboard-insights.handler';
 import { financeRatiosHandler } from './finance-ratios.handler';
 import type { ChatHandlerContext } from './types';
@@ -202,15 +204,20 @@ describe('dashboardInsightsHandler', () => {
     expect(out?.answerAr).not.toContain('مشتريات');
   });
 
-  it('uses neutral message when there are no warnings', async () => {
+  it('uses business-friendly no-alert copy when there are no warnings, with period line', async () => {
     const q = normalizeQuery('ملخص الشهر');
     const payload = mkPayload({ warnings: [] });
     const buildDashboardInsights = jest.fn().mockResolvedValue(payload);
     const ctx = mkCtx({ query: q, period: null, dashboardInsightsService: { buildDashboardInsights } });
 
     const out = await dashboardInsightsHandler.process!(ctx);
-    expect(out?.answerAr).toContain('لا توجد تنبيهات مالية واضحة حالياً حسب حدود التحليل الحالية.');
-    expect(out?.answerEn).toContain('No clear financial alerts based on the current insight thresholds.');
+    expect(out?.answerAr).not.toMatch(/الإصدار|قواعد/i);
+    expect(out?.answerAr).toContain('لا توجد تنبيهات مالية حالياً.');
+    expect(out?.answerAr).toContain('الأرقام الحالية لا تتجاوز حدود التحذير المحددة لهذه الشركة.');
+    expect(out?.answerAr).toContain(formatInsightsPeriodLabelAr(2024, 3));
+    expect(out?.answerEn).toContain('No financial alerts right now.');
+    expect(out?.answerEn).toContain("Current figures do not exceed this company's configured warning thresholds.");
+    expect(out?.answerEn).toContain(formatInsightsPeriodLabelEn(2024, 3));
   });
 
   it('blocks when user lacks REPORTS_READ', async () => {

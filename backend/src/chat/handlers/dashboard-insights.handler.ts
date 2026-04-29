@@ -10,9 +10,53 @@ import { matches } from './utils';
 const PURCHASE_INSIGHT_IDS = new Set(['purchase_ratio_to_sales', 'unusually_high_purchases_warning']);
 const PROFIT_INSIGHT_IDS = new Set(['net_profit_margin', 'negative_profit_warning']);
 
-const MSG_NEUTRAL_AR =
-  'لا توجد تنبيهات مالية واضحة حالياً حسب حدود التحليل الحالية.';
-const MSG_NEUTRAL_EN = 'No clear financial alerts based on the current insight thresholds.';
+/** نصوص تُعرض عند عدم وجود تنبيهات مطابِقة — دون استخدام ملخص «الصحة» من الخادم (قد يحتوي صياغة تقنية). */
+const MSG_NO_ALERT_AR = `لا توجد تنبيهات مالية حالياً.
+الأرقام الحالية لا تتجاوز حدود التحذير المحددة لهذه الشركة.`;
+
+const MSG_NO_ALERT_EN = `No financial alerts right now.
+Current figures do not exceed this company's configured warning thresholds.`;
+
+const MONTH_NAMES_AR = [
+  'يناير',
+  'فبراير',
+  'مارس',
+  'أبريل',
+  'مايو',
+  'يونيو',
+  'يوليو',
+  'أغسطس',
+  'سبتمبر',
+  'أكتوبر',
+  'نوفمبر',
+  'ديسمبر',
+] as const;
+
+const MONTH_NAMES_EN = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+/** عرض شهر/سنة للفترة المختارة — للنسخ فقط، بدون حسابات. */
+export function formatInsightsPeriodLabelAr(year: number, selectedMonth: number): string {
+  const idx = Math.min(Math.max(selectedMonth, 1), 12) - 1;
+  return `الفترة: ${MONTH_NAMES_AR[idx]} ${year}`;
+}
+
+export function formatInsightsPeriodLabelEn(year: number, selectedMonth: number): string {
+  const idx = Math.min(Math.max(selectedMonth, 1), 12) - 1;
+  return `Period: ${MONTH_NAMES_EN[idx]} ${year}`;
+}
 
 const MSG_NO_REPORTS_AR =
   'لعرض مؤشرات الحالة المالية يلزم صلاحية عرض التقارير. تواصل مع المسؤول.';
@@ -122,12 +166,16 @@ function buildAnswer(
   healthAr: string,
   healthEn: string,
   warnings: InsightItem[],
+  year: number,
+  selectedMonth: number,
 ): { answerAr: string; answerEn: string } {
   const picked = kind === 'general' ? warnings.slice(0, 3) : filterWarnings(kind, warnings);
   if (picked.length === 0) {
+    const periodAr = formatInsightsPeriodLabelAr(year, selectedMonth);
+    const periodEn = formatInsightsPeriodLabelEn(year, selectedMonth);
     return {
-      answerAr: [healthAr, '', MSG_NEUTRAL_AR].join('\n'),
-      answerEn: [healthEn, '', MSG_NEUTRAL_EN].join('\n'),
+      answerAr: [periodAr, '', MSG_NO_ALERT_AR].join('\n'),
+      answerEn: [periodEn, '', MSG_NO_ALERT_EN].join('\n'),
     };
   }
   return {
@@ -159,7 +207,14 @@ export const dashboardInsightsHandler: ChatHandler = {
       ctx.now,
     );
 
-    const { answerAr, answerEn } = buildAnswer(kind, payload.health.summaryAr, payload.health.summaryEn, payload.warnings);
+    const { answerAr, answerEn } = buildAnswer(
+      kind,
+      payload.health.summaryAr,
+      payload.health.summaryEn,
+      payload.warnings,
+      year,
+      selectedMonth,
+    );
     return { answerAr, answerEn };
   },
 };
