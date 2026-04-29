@@ -13,8 +13,8 @@ export const suppliersHandler: ChatHandler = {
     const { prisma } = ctx;
     const count = await prisma.supplier.count({ where: { companyId, isDeleted: false } });
     return {
-      answerAr: `عدد الموردين المسجلين: ${count}`,
-      answerEn: `Number of registered suppliers: ${count}`,
+      answerAr: ['## الموردون', '', 'البند\tالقيمة', `المسجلون\t${count}`].join('\n'),
+      answerEn: ['## Suppliers', '', 'Item\tValue', `Registered\t${count}`].join('\n'),
     };
   },
 };

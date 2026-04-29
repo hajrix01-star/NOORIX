@@ -57,9 +57,17 @@ export const hrHandler: ChatHandler = {
     if (matches(ctx.query, ['موظفين', 'موظف', 'عدد الموظفين', 'employee'])) {
       const count = await prisma.employee.count({ where: { companyId, status: 'active' } });
       const terminated = await prisma.employee.count({ where: { companyId, status: 'terminated' } });
+      const rowsAr =
+        terminated > 0
+          ? ['الحالة\tالعدد', `نشط\t${count}`, `منتهي الخدمة\t${terminated}`]
+          : ['الحالة\tالعدد', `نشط\t${count}`];
+      const rowsEn =
+        terminated > 0
+          ? ['Status\tCount', `Active\t${count}`, `Terminated\t${terminated}`]
+          : ['Status\tCount', `Active\t${count}`];
       return {
-        answerAr: `عدد الموظفين النشطين: ${count}${terminated > 0 ? ` | المنتهية خدمتهم: ${terminated}` : ''}`,
-        answerEn: `Active employees: ${count}${terminated > 0 ? ` | Terminated: ${terminated}` : ''}`,
+        answerAr: ['## الموظفون', '', ...rowsAr].join('\n'),
+        answerEn: ['## Employees', '', ...rowsEn].join('\n'),
       };
     }
 

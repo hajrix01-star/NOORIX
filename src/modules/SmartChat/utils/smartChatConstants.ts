@@ -1,5 +1,8 @@
 /**
  * ثوابت المحادثة: أسئلة جاهزة + مجموعات الأوامر
+ *
+ * إجابات «الأسئلة الجاهزة» (PERMANENT_QUESTIONS) تُصدَّر من المعالجات كـ: عنوان ## ثم جدول
+ * بفاصل Tab (عمودان على الأقل) ليعرضها SmartChatReportCard كجدول HTML — لا يُستنتج الجدول تلقائياً من الأرقام وحدها.
  */
 import { PERMISSIONS } from '../../../constants/permissions';
 import type { ChatCommandGroup, PermanentQuestion, PermissionChecker } from '../types';

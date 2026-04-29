@@ -213,6 +213,24 @@ export const financeRatiosHandler: ChatHandler = {
       linesEn.push(`• (Purchases + expenses) / sales: ${pctOf(sum, sales)} (sum: ${fmtMoney(sum).replace('SR', 'SAR')})`);
     }
 
+    const tabAr = ['', 'المؤشر\tالقيمة', `إجمالي المبيعات\t${fmtMoney(sales)}`];
+    const tabEn = ['', 'Metric\tValue', `Total sales\t${fmtMoney(sales).replace('SR', 'SAR')}`];
+    if (showPur) {
+      tabAr.push(`المشتريات\t${fmtMoney(purchases)} — ${pctOf(purchases, sales)} من المبيعات`);
+      tabEn.push(`Purchases\t${fmtMoney(purchases).replace('SR', 'SAR')} — ${pctOf(purchases, sales)} of sales`);
+    }
+    if (showExp) {
+      tabAr.push(`المصروفات التشغيلية\t${fmtMoney(expenses)} — ${pctOf(expenses, sales)} من المبيعات`);
+      tabEn.push(`Operating expenses\t${fmtMoney(expenses).replace('SR', 'SAR')} — ${pctOf(expenses, sales)} of sales`);
+    }
+    if (showSum) {
+      const sum = purchases.plus(expenses);
+      tabAr.push(`المشتريات + المصروفات\t${fmtMoney(sum)} — ${pctOf(sum, sales)} من المبيعات`);
+      tabEn.push(`Purchases + expenses\t${fmtMoney(sum).replace('SR', 'SAR')} — ${pctOf(sum, sales)} of sales`);
+    }
+    linesAr.push(...tabAr);
+    linesEn.push(...tabEn);
+
     const ratioSegments: Array<{ key: 'purchases' | 'expenses'; pct: number }> = [];
     if (showPur) ratioSegments.push({ key: 'purchases', pct: pctOfSalesNumber(purchases, sales) });
     if (showExp) ratioSegments.push({ key: 'expenses', pct: pctOfSalesNumber(expenses, sales) });

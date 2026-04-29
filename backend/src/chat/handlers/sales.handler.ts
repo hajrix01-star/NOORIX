@@ -33,9 +33,11 @@ export const salesHandler: ChatHandler = {
         _sum: { amount: true },
       });
       const total = new Decimal(agg._sum.amount ?? 0).toFixed(2);
+      const amt = `${Number(total).toLocaleString('en')} SR`;
+      const amtEn = `${Number(total).toLocaleString('en')} SAR`;
       return {
-        answerAr: `مبيعات ${period.labelAr}: ${Number(total).toLocaleString('en')} SR`,
-        answerEn: `Sales ${period.labelEn}: ${Number(total).toLocaleString('en')} SAR`,
+        answerAr: ['## مبيعات الفترة', '', 'البند\tالمبلغ', `${period.labelAr}\t${amt}`].join('\n'),
+        answerEn: ['## Sales for the period', '', 'Item\tAmount', `${period.labelEn}\t${amtEn}`].join('\n'),
       };
     }
 
@@ -43,9 +45,11 @@ export const salesHandler: ChatHandler = {
     const { reportsService } = ctx;
     const report = await reportsService.getGeneralProfitLoss(companyId, ctx.year);
     const total = report?.cards?.sales ?? '0';
+    const amt = `${Number(total).toLocaleString('en')} SR`;
+    const amtEn = `${Number(total).toLocaleString('en')} SAR`;
     return {
-      answerAr: `مبيعات السنة ${ctx.year}: ${Number(total).toLocaleString('en')} SR`,
-      answerEn: `Sales for ${ctx.year}: ${Number(total).toLocaleString('en')} SAR`,
+      answerAr: ['## مبيعات السنة', '', 'البند\tالمبلغ', `إجمالي المبيعات (${ctx.year})\t${amt}`].join('\n'),
+      answerEn: ['## Annual sales', '', 'Item\tAmount', `Total sales (${ctx.year})\t${amtEn}`].join('\n'),
     };
   },
 };

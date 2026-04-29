@@ -93,19 +93,23 @@ export const salesMonthCompareHandler: ChatHandler = {
     const linesAr = [
       '## مقارنة المبيعات بين الشهرين',
       summaryAr,
-      `• هذا الشهر (${thisP.labelAr}): ${fmtMoney(cur)}`,
-      `• ${prevP.labelAr}: ${fmtMoney(prev)}`,
-      `الفرق: ${fmtMoney(diff)} (${deltaPct}% عن الشهر الماضي)`,
-      `الاتجاه: ${trendAr}`,
+      '',
+      'الشهر\tالمبيعات',
+      `الحالي (${thisP.labelAr})\t${fmtMoney(cur)}`,
+      `${prevP.labelAr}\t${fmtMoney(prev)}`,
+      `الفرق\t${fmtMoney(diff)} (${deltaPct}% عن الشهر الماضي)`,
+      `الاتجاه\t${trendAr}`,
       '• نطاق المقارنة: الشهر الحالي من اليوم 1 حتى اليوم؛ الشهر الماضي من اليوم 1 حتى نفس تاريخ اليوم (بحد أقصى أيام ذلك الشهر).',
     ];
     const linesEn = [
       '## Month-over-month sales',
       summaryEn,
-      `• This month (${thisP.labelEn}): ${fmtMoney(cur).replace('SR', 'SAR')}`,
-      `• ${prevP.labelEn}: ${fmtMoney(prev).replace('SR', 'SAR')}`,
-      `Difference: ${fmtMoney(diff).replace('SR', 'SAR')} (${deltaPct}% vs last month)`,
-      `Trend: ${trendEn}`,
+      '',
+      'Month\tSales',
+      `Current (${thisP.labelEn})\t${fmtMoney(cur).replace('SR', 'SAR')}`,
+      `${prevP.labelEn}\t${fmtMoney(prev).replace('SR', 'SAR')}`,
+      `Difference\t${fmtMoney(diff).replace('SR', 'SAR')} (${deltaPct}% vs last month)`,
+      `Trend\t${trendEn}`,
       '• Comparison window: this month from the 1st through today; last month from the 1st through the same calendar day (capped by that month’s length).',
     ];
 

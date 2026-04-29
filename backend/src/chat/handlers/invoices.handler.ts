@@ -28,9 +28,24 @@ export const invoicesHandler: ChatHandler = {
         return { answerAr: 'لا توجد فواتير.', answerEn: 'No invoices found.' };
       }
       const supp = last.supplier ? ` (${last.supplier.nameAr})` : '';
+      const suppEn = last.supplier ? ` (${last.supplier.nameEn || last.supplier.nameAr})` : '';
       return {
-        answerAr: `آخر فاتورة: ${last.invoiceNumber}${supp} — ${Number(last.totalAmount).toLocaleString('en')} SR — ${last.transactionDate.toLocaleDateString('en-GB')}`,
-        answerEn: `Last invoice: ${last.invoiceNumber}${last.supplier ? ` (${last.supplier.nameEn || last.supplier.nameAr})` : ''} — ${Number(last.totalAmount).toLocaleString('en')} SAR — ${last.transactionDate.toLocaleDateString('en-GB')}`,
+        answerAr: [
+          '## آخر فاتورة',
+          '',
+          'الحقل\tالقيمة',
+          `الرقم\t${last.invoiceNumber}${supp}`,
+          `المبلغ\t${Number(last.totalAmount).toLocaleString('en')} SR`,
+          `التاريخ\t${last.transactionDate.toLocaleDateString('en-GB')}`,
+        ].join('\n'),
+        answerEn: [
+          '## Last invoice',
+          '',
+          'Field\tValue',
+          `Number\t${last.invoiceNumber}${suppEn}`,
+          `Amount\t${Number(last.totalAmount).toLocaleString('en')} SAR`,
+          `Date\t${last.transactionDate.toLocaleDateString('en-GB')}`,
+        ].join('\n'),
       };
     }
 
@@ -42,8 +57,24 @@ export const invoicesHandler: ChatHandler = {
     ]);
     const total = saleCount + purchaseCount + expenseCount;
     return {
-      answerAr: `عدد الفواتير في ${year}: ${total}\n• مبيعات: ${saleCount}\n• مشتريات: ${purchaseCount}\n• مصروفات: ${expenseCount}`,
-      answerEn: `Invoice count for ${year}: ${total}\n• Sales: ${saleCount}\n• Purchases: ${purchaseCount}\n• Expenses: ${expenseCount}`,
+      answerAr: [
+        `## عدد الفواتير — ${year}`,
+        '',
+        'النوع\tالعدد',
+        `مبيعات\t${saleCount}`,
+        `مشتريات\t${purchaseCount}`,
+        `مصروفات\t${expenseCount}`,
+        `الإجمالي\t${total}`,
+      ].join('\n'),
+      answerEn: [
+        `## Invoice counts — ${year}`,
+        '',
+        'Kind\tCount',
+        `Sales\t${saleCount}`,
+        `Purchases\t${purchaseCount}`,
+        `Expenses\t${expenseCount}`,
+        `Total\t${total}`,
+      ].join('\n'),
     };
   },
 };
