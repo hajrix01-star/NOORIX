@@ -31,4 +31,10 @@ export type GeminiParseResult = {
   intent: GeminiIntent;
   period: GeminiPeriod;
   rawQuery: string;
+  /** ثقة النموذج في اختيار النية (0–1) عند إرجاعها من الـ API */
+  confidence?: number;
+  /** true عندما أُجبرت النية إلى unknown بسبب ثقة أقل من الحد */
+  confidenceRejected?: boolean;
+  /** النية التي اختارها النموذج قبل رفضها لانخفاض الثقة */
+  rejectedModelIntent?: GeminiIntent;
 };

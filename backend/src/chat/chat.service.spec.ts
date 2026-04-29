@@ -135,6 +135,7 @@ describe('ChatService intent routing', () => {
         intent: 'dashboard_insights',
         period: 'this_month',
         rawQuery: 'كيف وضع الشهر؟',
+        confidence: 0.92,
       }),
     });
 
@@ -146,6 +147,7 @@ describe('ChatService intent routing', () => {
     expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
     expect(res.meta?.intentSource).toBe('gemini');
     expect(res.meta?.intent).toBe('dashboard_insights');
+    expect(res.meta?.intentConfidence).toBe(0.92);
   });
 
   it('routes formal P&L wording to reports when Gemini returns reports', async () => {
@@ -195,6 +197,41 @@ describe('ChatService intent routing', () => {
     expect(reportingInsightsAggregator.getExtendedInsights).toHaveBeenCalled();
     expect(dashboard.buildDashboardInsights).toHaveBeenCalled();
     expect(res.meta?.intentSource).toBe('keyword');
+  });
+
+  it('uses keyword path when Gemini returns low-confidence rejection', async () => {
+    const { chat, gemini, reportingInsightsAggregator } = mkDeps({
+      parseIntent: jest.fn().mockResolvedValue({
+        intent: 'unknown',
+        period: null,
+        rawQuery: 'كم بيعنا هذا الشهر',
+        confidence: 0.35,
+        confidenceRejected: true,
+        rejectedModelIntent: 'purchases',
+      }),
+    });
+
+    const res = await chat.processQuery(companyId, 'كم بيعنا هذا الشهر', 'owner', undefined);
+
+    expect(gemini.parseIntent).toHaveBeenCalled();
+    expect(reportingInsightsAggregator.getExtendedInsights).not.toHaveBeenCalled();
+    expect(res.meta?.intentSource).toBe('keyword');
+    expect(res.meta?.geminiIntentRejected).toBe(true);
+    expect(res.meta?.intentConfidence).toBe(0.35);
+    expect(res.meta?.geminiSuggestedIntent).toBe('purchases');
+    expect(res.answerAr).toMatch(/مبيعات/);
+  });
+
+  it('unsupported query response includes bilingual examples', async () => {
+    const { chat, gemini } = mkDeps({
+      isAvailable: () => false,
+      parseIntent: jest.fn(),
+    });
+    const res = await chat.processQuery(companyId, 'سؤال عشوائي غير مدعوم xyz999nop', 'owner', undefined);
+    expect(gemini.parseIntent).not.toHaveBeenCalled();
+    expect(res.answerAr).toContain('كيف وضع الشهر');
+    expect(res.answerEn).toMatch(/How is the month/i);
+    expect(res.answerEn).toMatch(/help/i);
   });
 
   it('does not call dashboard insights when Gemini returns reports for profit and loss report', async () => {
@@ -252,6 +289,7 @@ describe('ChatService intent routing', () => {
     expect(reportingInsightsAggregator.getExtendedInsights).toHaveBeenCalled();
     expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
     expect(res.meta?.intent).toBe('dashboard_insights');
+    expect(res.meta?.geminiIntent).toBe('purchases');
     expect(res.answerAr).toContain('تنبيه نسبة المشتريات');
     expect(res.answerAr).not.toMatch(/مشتريات السنة/);
     const combined = `${res.answerAr}\n${res.answerEn}`;
@@ -297,6 +335,7 @@ describe('ChatService intent routing', () => {
     );
     const res = await chat.processQuery(companyId, 'حلل المصاريف', 'owner', undefined);
     expect(res.meta?.intent).toBe('dashboard_insights');
+    expect(res.meta?.geminiIntent).toBe('expenses');
     expect(res.answerAr).toContain('تنبيه مصاريف');
     expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
   });

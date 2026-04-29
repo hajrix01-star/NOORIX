@@ -4,7 +4,7 @@
  * عند توفر GEMINI_API_KEY: يفهم النية عبر Gemini ثم يوجّه للمعالج المناسب
  * عند عدم التوفر: fallback لمطابقة الكلمات المفتاحية
  */
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ReportsService } from '../reports/reports.service';
 import { VaultsService } from '../vaults/vaults.service';
@@ -16,10 +16,28 @@ import type { ChatResponseExtras } from './handlers/types';
 import { normalizeQuery, parsePeriod } from './handlers/utils';
 import { classifyDashboardInsightsQuery } from './handlers/dashboard-insights.handler';
 import { GeminiService } from './gemini.service';
+import type { GeminiParseResult } from './gemini-types';
 import { isGeminiOpenModeEnabled, isSmartChatInsightsLlmExplanationEnabled } from '../config/gemini.config';
+
+import { SMART_CHAT_UNSUPPORTED_ANSWER_AR, SMART_CHAT_UNSUPPORTED_ANSWER_EN } from './smart-chat-messages';
+
+export type SmartChatProcessQueryMeta = {
+  intentSource: 'gemini' | 'keyword';
+  intent?: string;
+  /** ثقة تصنيف Gemini (0–1) عند توفرها */
+  intentConfidence?: number;
+  /** النية التي اقترحها النموذج قبل رفضها لانخفاض الثقة */
+  geminiSuggestedIntent?: string;
+  /** true عند تجاهل توجيه Gemini والاعتماد على الكلمات بسبب ثقة منخفضة */
+  geminiIntentRejected?: boolean;
+  /** نية Gemini قبل إعادة التوجيه البرمجية (مثل purchases → dashboard_insights لعبارة تحليل) */
+  geminiIntent?: string;
+};
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly reportsService: ReportsService,
@@ -37,7 +55,7 @@ export class ChatService {
   ): Promise<{
     answerAr: string;
     answerEn: string;
-    meta?: { intentSource: 'gemini' | 'keyword'; intent?: string };
+    meta?: SmartChatProcessQueryMeta;
     extras?: ChatResponseExtras;
   }> {
     const q = normalizeQuery(query);
@@ -80,13 +98,17 @@ export class ChatService {
       insightsLlmExplain,
     };
 
+    let lastGeminiParse: GeminiParseResult | null = null;
+
     // ─── محاولة فهم النية عبر Gemini (إن توفر المفتاح) ───
     if (this.geminiService.isAvailable()) {
       try {
         const parsed = await this.geminiService.parseIntent(query);
+        lastGeminiParse = parsed;
         if (parsed && parsed.intent !== 'unknown') {
           /** Avoid KPI handlers when wording is a dashboard_insights phrase (e.g. Gemini returns purchases for "حلل المشتريات"). */
           const isDashboardInsightsPhrase = classifyDashboardInsightsQuery(q) != null;
+          const rawGeminiIntent = parsed.intent;
           const routingIntent =
             isDashboardInsightsPhrase && (parsed.intent === 'purchases' || parsed.intent === 'expenses')
               ? 'dashboard_insights'
@@ -99,9 +121,19 @@ export class ChatService {
           for (const handler of CHAT_HANDLERS) {
             if (handler.matchesIntent?.(routingIntent, can)) {
               const result = await handler.process(geminiCtx);
-              if (result) return { ...result, meta: { intentSource: 'gemini', intent: routingIntent } };
+              if (result) {
+                const meta: SmartChatProcessQueryMeta = {
+                  intentSource: 'gemini',
+                  intent: routingIntent,
+                  ...(parsed.confidence !== undefined ? { intentConfidence: parsed.confidence } : {}),
+                  ...(rawGeminiIntent !== routingIntent ? { geminiIntent: rawGeminiIntent } : {}),
+                };
+                return { ...result, meta };
+              }
             }
           }
+        } else if (parsed?.intent === 'unknown' && !parsed.confidenceRejected) {
+          this.logger.debug(`Gemini returned unknown intent for query (first 120 chars): ${q.slice(0, 120)}`);
         }
       } catch {
         // fallback إلى الكلمات المفتاحية
@@ -112,7 +144,15 @@ export class ChatService {
     for (const handler of CHAT_HANDLERS) {
       if (handler.canHandle(q, can)) {
         const result = await handler.process(baseCtx);
-        if (result) return { ...result, meta: { intentSource: 'keyword' } };
+        if (result) {
+          const meta: SmartChatProcessQueryMeta = { intentSource: 'keyword' };
+          if (lastGeminiParse?.confidenceRejected) {
+            meta.geminiIntentRejected = true;
+            if (lastGeminiParse.confidence !== undefined) meta.intentConfidence = lastGeminiParse.confidence;
+            if (lastGeminiParse.rejectedModelIntent) meta.geminiSuggestedIntent = lastGeminiParse.rejectedModelIntent;
+          }
+          return { ...result, meta };
+        }
       }
     }
 
@@ -120,15 +160,19 @@ export class ChatService {
     if (this.geminiService.isAvailable() && isGeminiOpenModeEnabled()) {
       try {
         const general = await this.geminiService.answerGeneral(query);
-        if (general) return { ...general, meta: { intentSource: 'gemini', intent: 'general' } };
+        if (general)
+          return {
+            ...general,
+            meta: { intentSource: 'gemini', intent: 'general', ...(lastGeminiParse?.confidence !== undefined ? { intentConfidence: lastGeminiParse.confidence } : {}) },
+          };
       } catch {
         // fallback للرد الافتراضي
       }
     }
 
     return {
-      answerAr: 'لم أفهم سؤالك. جرّب صياغة أخرى أو اكتب "مساعدة" لرؤية الأسئلة المدعومة.',
-      answerEn: 'I did not understand your question. Try rephrasing or type "help" to see supported questions.',
+      answerAr: SMART_CHAT_UNSUPPORTED_ANSWER_AR,
+      answerEn: SMART_CHAT_UNSUPPORTED_ANSWER_EN,
       meta: { intentSource: 'keyword' },
     };
   }

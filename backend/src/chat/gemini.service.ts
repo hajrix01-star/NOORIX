@@ -6,7 +6,7 @@
  * الأمان: المفتاح في backend/.env فقط — يُقرأ عبر gemini.config.ts
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { getGeminiApiKey } from '../config/gemini.config';
+import { getGeminiApiKey, getGeminiIntentConfidenceMin } from '../config/gemini.config';
 import { extractJson } from '../common/utils/extract-json.util';
 import { getGeminiChatIntentRequestUrl, GEMINI_CHAT_INTENT_SYSTEM_PROMPT, GEMINI_INTENT_FIELD_SCHEMA_DESCRIPTION } from './gemini-chat-intent-prompts.util';
 import { toYmd } from '../common/utils/to-ymd.util';
@@ -75,6 +75,11 @@ export class GeminiService {
               properties: {
                 intent: { type: 'string', description: GEMINI_INTENT_FIELD_SCHEMA_DESCRIPTION },
                 period: { type: 'string', description: 'One of: today, yesterday, day_before_yesterday, this_week, last_week, this_month, last_month, year, or null' },
+                confidence: {
+                  type: 'number',
+                  description:
+                    'Your confidence in the chosen intent from 0 to 1. Use 0.85+ when the wording clearly matches one intent; 0.5 or below when ambiguous; if unsure between dashboard_insights and raw purchases/sales numbers, use lower confidence.',
+                },
               },
               required: ['intent'],
             },
@@ -83,7 +88,7 @@ export class GeminiService {
       });
 
       if (!response.ok) {
-        console.warn('[GeminiService] API error:', response.status, await response.text());
+        this.logger.warn(`parseIntent API error: ${response.status} ${await response.text()}`);
         return null;
       }
 
@@ -91,14 +96,40 @@ export class GeminiService {
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) return null;
 
-      const parsed = extractJson<{ intent?: string; period?: string | null }>(text);
+      const parsed = extractJson<{ intent?: string; period?: string | null; confidence?: number }>(text);
       if (!parsed) return null;
-      const intent = normalizeGeminiIntent(parsed?.intent);
+      const normalizedIntent = normalizeGeminiIntent(parsed?.intent);
       const period = normalizeGeminiPeriod(parsed?.period);
 
-      return { intent, period, rawQuery: trimmed };
+      const rawConf = parsed?.confidence;
+      let modelConfidence: number | undefined;
+      if (typeof rawConf === 'number' && Number.isFinite(rawConf)) {
+        modelConfidence = Math.min(1, Math.max(0, rawConf));
+      }
+
+      const minConf = getGeminiIntentConfidenceMin();
+      if (modelConfidence !== undefined && modelConfidence < minConf) {
+        this.logger.debug(
+          `parseIntent: low confidence ${modelConfidence} < ${minConf} for intent=${normalizedIntent} -> unknown`,
+        );
+        return {
+          intent: 'unknown',
+          period,
+          rawQuery: trimmed,
+          confidence: modelConfidence,
+          confidenceRejected: true,
+          rejectedModelIntent: normalizedIntent,
+        };
+      }
+
+      return {
+        intent: normalizedIntent,
+        period,
+        rawQuery: trimmed,
+        ...(modelConfidence !== undefined ? { confidence: modelConfidence } : {}),
+      };
     } catch (err) {
-      console.warn('[GeminiService] Parse error:', err);
+      this.logger.warn(`parseIntent: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
     });

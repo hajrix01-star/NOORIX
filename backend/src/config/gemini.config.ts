@@ -36,3 +36,16 @@ export function isSmartChatInsightsLlmExplanationEnabled(): boolean {
   const v = process.env.SMART_CHAT_INSIGHTS_LLM_EXPLANATION?.toLowerCase();
   return v === 'true' || v === '1' || v === 'yes';
 }
+
+/**
+ * الحد الأدنى لثقة تصنيف النية (0–1) من Gemini.
+ * دونه يُعامل الرد كـ unknown ويُستخدم مطابقة الكلمات (أو الإجابة العامة إن وُجدت).
+ * يُضبط عبر GEMINI_INTENT_CONFIDENCE_MIN (افتراضي 0.55).
+ */
+export function getGeminiIntentConfidenceMin(): number {
+  const raw = process.env.GEMINI_INTENT_CONFIDENCE_MIN?.trim();
+  if (!raw) return 0.55;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 0.55;
+  return Math.min(1, Math.max(0, n));
+}

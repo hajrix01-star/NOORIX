@@ -30,6 +30,12 @@ describe('Gemini chat intent prompt & schema description', () => {
     expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('نسبة المشتريات من المبيعات');
   });
 
+  it('includes confidence in JSON format line and disambiguation rules', () => {
+    expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('"confidence"');
+    expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toMatch(/financial health/i);
+    expect(GEMINI_CHAT_INTENT_SYSTEM_PROMPT).toContain('قواعد تمييز سريعة');
+  });
+
   it('lists dashboard_insights in GEMINI_INTENT_FIELD_SCHEMA_DESCRIPTION', () => {
     expect(GEMINI_INTENT_FIELD_SCHEMA_DESCRIPTION).toContain('dashboard_insights');
   });
