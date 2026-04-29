@@ -3,7 +3,7 @@
  */
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useUpsertVatPlanning, useVatPlanningList, useVatPlanningRegistry } from '../../hooks/useVatPlanning';
@@ -24,13 +24,13 @@ import {
 import { fmt, fmtTax } from '../../utils/format';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
-import { getTaxVatReport, getVatPlanningList, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
+import { getTaxVatReport, getVatPlanningList, getCompanies, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
 import { Button, Input } from '../../ui';
 import HajriTaxDetailEditor from './HajriTaxDetailEditor';
 import HajriTaxRegistryList from './HajriTaxRegistryList';
 import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
 import HajriTaxBulkImportModal from './HajriTaxBulkImportModal';
-import { vatKeys } from '../../services/queryKeys';
+import { vatKeys, appKeys } from '../../services/queryKeys';
 import {
   isHajriDeclarationSubmitted,
   registryInputVat,
@@ -101,37 +101,69 @@ export default function HajriTaxScreen() {
   const registryUnfilteredFilters = useMemo(() => ({}), []);
   const { data: registryAllRows = [] } = useVatPlanningRegistry(registryUnfilteredFilters, !detailCompanyId);
 
-  /** قائمة الشركات للفلتر: من التطبيق + أي شركة تظهر في السجل الكامل (مؤرشفة أو غائبة عن GET /companies) */
+  /** جميع الشركات (بما فيها المؤرشفة) — نفس مصدر الإعدادات عند تفعيل «إظهار المؤرشف»؛ يمنع تكرار الاسم مع دمج السجل */
+  const { data: companiesAllArchived = [] } = useQuery({
+    queryKey: appKeys.companies(true),
+    queryFn: async () => {
+      try {
+        const r = await getCompanies(true);
+        return r?.success && Array.isArray(r.data) ? r.data : [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 60_000,
+  });
+
+  /** قائمة الشركات للفلتر: GET /companies?includeArchived=true ثم إكمال من السجل إن وُجد معرّف غير مُدرَّج */
   const registryFilterCompanies = useMemo(() => {
     const map = new Map<
       string,
-      { id: string; nameAr?: string; nameEn?: string | null; taxNumber?: string | null }
+      {
+        id: string;
+        nameAr?: string;
+        nameEn?: string | null;
+        taxNumber?: string | null;
+        isArchived?: boolean;
+      }
     >();
-    (companies || []).forEach((c: any) => {
+
+    const seed =
+      Array.isArray(companiesAllArchived) && companiesAllArchived.length > 0 ? companiesAllArchived : companies || [];
+    seed.forEach((c: any) => {
       if (c?.id)
         map.set(c.id, {
           id: c.id,
           nameAr: c.nameAr,
           nameEn: c.nameEn ?? null,
           taxNumber: c.taxNumber ?? null,
+          isArchived: !!c.isArchived,
         });
     });
+
     (registryAllRows || []).forEach((r: any) => {
       const c = r?.company;
       if (!c?.id) return;
       const prev = map.get(c.id);
       const tn = c.taxNumber ?? null;
       if (!prev) {
-        map.set(c.id, { id: c.id, nameAr: c.nameAr, nameEn: c.nameEn ?? null, taxNumber: tn });
+        map.set(c.id, {
+          id: c.id,
+          nameAr: c.nameAr,
+          nameEn: c.nameEn ?? null,
+          taxNumber: tn,
+          isArchived: false,
+        });
       } else if (!prev.taxNumber && tn) {
         map.set(c.id, { ...prev, taxNumber: tn });
       }
     });
+
     const collator = lang === 'ar' ? 'ar' : 'en';
     return Array.from(map.values()).sort((a, b) =>
       (a.nameAr || a.nameEn || '').localeCompare(b.nameAr || b.nameEn || '', collator),
     );
-  }, [companies, registryAllRows, lang]);
+  }, [companiesAllArchived, companies, registryAllRows, lang]);
 
   /** سنوات الفلتر: السنوات الافتراضية + أي سنة موجودة في السجل الكامل */
   const registryFilterYearOptions = useMemo(() => {

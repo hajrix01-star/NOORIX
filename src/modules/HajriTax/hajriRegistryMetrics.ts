@@ -30,18 +30,33 @@ export function registryInputVat(payload: any) {
 
 /** تسميات قابل للتمييز عند تكرار اسم الشركة في القائمة (سجلّان مختلفان بنفس الاسم). */
 export function buildCompanyFilterSelectOptions(
-  items: Array<{ id: string; nameAr?: string; nameEn?: string | null; taxNumber?: string | null }>,
+  items: Array<{
+    id: string;
+    nameAr?: string;
+    nameEn?: string | null;
+    taxNumber?: string | null;
+    isArchived?: boolean | null;
+  }>,
   lang: string,
 ): Array<{ id: string; label: string }> {
-  const baseLabel = (c: any) =>
+  const nameOnly = (c: any) =>
     String(lang === 'en' ? (c.nameEn || c.nameAr || '') : (c.nameAr || c.nameEn || '')).trim();
+
+  /** الاسم كما يُعرض قبل حساب التكرار — يُفرّق النشط عن المؤرشف بنفس الاسم التجاري */
+  const primaryLabel = (c: any) => {
+    const n = nameOnly(c);
+    if (c.isArchived) return `${n}${lang === 'ar' ? ' (أرشيف)' : ' (Archived)'}`;
+    return n;
+  };
+
   const counts = new Map<string, number>();
   items.forEach((c) => {
-    const k = baseLabel(c);
+    const k = primaryLabel(c);
     if (k) counts.set(k, (counts.get(k) || 0) + 1);
   });
+
   return items.map((c) => {
-    const base = baseLabel(c);
+    const base = primaryLabel(c);
     const dup = Boolean(base && (counts.get(base) || 0) > 1);
     let label = base || String(c.id);
     if (dup) {
