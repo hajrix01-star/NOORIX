@@ -1,10 +1,18 @@
 /**
  * سجل الإقرارات الضريبية — فلاتر + جدول صفوف + إقرار جديد
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Button, Input } from '../../ui';
-import { fmtTax } from '../../utils/format';
-import { computeNetPayable, defaultDisclosureData } from '../../constants/taxDisclosure';
+import { fmt, fmtTax } from '../../utils/format';
+import { computeNetPayable } from '../../constants/taxDisclosure';
+import {
+  isHajriDeclarationSubmitted,
+  registryInputVat,
+  registryOutputVat,
+  registryPayload,
+  registryPurchasesAmount,
+  registrySalesAmount,
+} from './hajriRegistryMetrics';
 
 export default function HajriTaxRegistryList({
   t,
@@ -104,7 +112,7 @@ export default function HajriTaxRegistryList({
       ) : (
         <div className="noorix-surface-card overflow-hidden p-0">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] table-fixed border-collapse text-[14px]">
+            <table className="w-full min-w-[1280px] table-fixed border-collapse text-[14px]">
               <thead>
                 <tr>
                   <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold">
@@ -117,10 +125,25 @@ export default function HajriTaxRegistryList({
                     {t('vatQuarter')}
                   </th>
                   <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold nx-font-numbers">
+                    {t('hajriTaxColSales')}
+                  </th>
+                  <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold nx-font-numbers">
+                    {t('hajriTaxColPurchases')}
+                  </th>
+                  <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold nx-font-numbers">
+                    {t('hajriTaxColOutputVat')}
+                  </th>
+                  <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold nx-font-numbers">
+                    {t('hajriTaxColInputVat')}
+                  </th>
+                  <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold nx-font-numbers">
                     {t('vatNetPayable')}
                   </th>
                   <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold nx-font-numbers">
                     {t('vatPaymentTarget')}
+                  </th>
+                  <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold">
+                    {t('hajriTaxColFiling')}
                   </th>
                   <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold">
                     {t('vatLastUpdated')}
@@ -136,11 +159,15 @@ export default function HajriTaxRegistryList({
                     lang === 'en'
                       ? row.company?.nameEn || row.company?.nameAr
                       : row.company?.nameAr || row.company?.nameEn;
-                  const payload =
-                    row.payload && typeof row.payload === 'object' ? row.payload : defaultDisclosureData();
+                  const payload = registryPayload(row);
                   const net = computeNetPayable(payload);
                   const pt = row.paymentTarget != null ? parseFloat(String(row.paymentTarget)) : null;
                   const updated = row.updatedAt ? String(row.updatedAt).slice(0, 19) : '—';
+                  const sales = registrySalesAmount(payload);
+                  const purchases = registryPurchasesAmount(payload);
+                  const outVat = registryOutputVat(payload);
+                  const inVat = registryInputVat(payload);
+                  const submitted = isHajriDeclarationSubmitted(row);
                   return (
                     <tr key={row.id} className="hover:bg-[var(--noorix-blue-6)]/40">
                       <td className="border-b border-noorix-border px-3 py-2.5 truncate" title={nm}>
@@ -148,9 +175,40 @@ export default function HajriTaxRegistryList({
                       </td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">{row.year}</td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end font-medium">Q{row.quarter}</td>
-                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">{fmtTax(net)}</td>
-                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">
-                        {Number.isFinite(pt) ? fmtTax(pt) : '—'}
+                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
+                        {fmt(sales, 2)} <span className="nx-sar">SR</span>
+                      </td>
+                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
+                        {fmt(purchases, 2)} <span className="nx-sar">SR</span>
+                      </td>
+                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
+                        {fmtTax(outVat)} <span className="nx-sar">SR</span>
+                      </td>
+                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
+                        {fmtTax(inVat)} <span className="nx-sar">SR</span>
+                      </td>
+                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
+                        {fmtTax(net)} <span className="nx-sar">SR</span>
+                      </td>
+                      <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers whitespace-nowrap">
+                        {Number.isFinite(pt) ? (
+                          <>
+                            {fmtTax(pt)} <span className="nx-sar">SR</span>
+                          </>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="border-b border-noorix-border px-3 py-2.5 text-end">
+                        {submitted ? (
+                          <span className="inline-block rounded border border-emerald-200/90 bg-emerald-50 px-2 py-0.5 text-[12px] font-semibold text-emerald-900">
+                            {t('hajriTaxSubmittedYes')}
+                          </span>
+                        ) : (
+                          <span className="inline-block rounded border border-noorix-border bg-[var(--noorix-table-header-bg)] px-2 py-0.5 text-[12px] font-medium text-noorix-muted">
+                            {t('hajriTaxSubmittedNo')}
+                          </span>
+                        )}
                       </td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end text-[12px] text-noorix-muted">
                         {updated}

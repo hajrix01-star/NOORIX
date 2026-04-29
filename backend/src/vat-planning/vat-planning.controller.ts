@@ -20,7 +20,8 @@ export class VatPlanningController {
   async listRegistry(
     @Query('year') yearStr: string | undefined,
     @Query('quarter') quarterStr: string | undefined,
-    @CompanyId() companyId: string,
+    /** فلتر اختياري فقط من السلسلة — لا نستخدم x-company-id حتى يظهر السجل لجميع الشركات المسموح بها */
+    @Query('companyId') companyIdFilter: string | undefined,
     @Req() req: { user: JwtUser },
   ) {
     const yearParsed = yearStr !== undefined && yearStr !== '' ? parseInt(yearStr, 10) : NaN;
@@ -30,6 +31,7 @@ export class VatPlanningController {
       Number.isFinite(quarterParsed) && quarterParsed >= 1 && quarterParsed <= 4
         ? quarterParsed
         : undefined;
+    const companyId = companyIdFilter?.trim() || undefined;
     return this.service.listRegistry(req.user, { year, quarter, companyId });
   }
 
@@ -39,11 +41,13 @@ export class VatPlanningController {
   async list(
     @Query('year') yearStr: string,
     @Query('quarter') quarterStr: string,
-    @CompanyId() companyId: string,
+    /** فلتر اختياري من السلسلة فقط — بدونها تُعرض كل الشركات المسموح بها للربع */
+    @Query('companyId') companyIdFilter: string | undefined,
     @Req() req: { user: JwtUser },
   ) {
     const year = parseInt(yearStr, 10);
     const quarter = parseInt(quarterStr, 10);
+    const companyId = companyIdFilter?.trim() || undefined;
     return this.service.list(req.user, year, quarter, companyId);
   }
 

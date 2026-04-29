@@ -21,7 +21,7 @@ import {
   getRowValue,
   scaleInputVatForPaymentTarget,
 } from '../../constants/taxDisclosure';
-import { fmtTax } from '../../utils/format';
+import { fmt, fmtTax } from '../../utils/format';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { getTaxVatReport, getVatPlanningList, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
@@ -31,6 +31,14 @@ import HajriTaxRegistryList from './HajriTaxRegistryList';
 import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
 import HajriTaxBulkImportModal from './HajriTaxBulkImportModal';
 import { vatKeys } from '../../services/queryKeys';
+import {
+  isHajriDeclarationSubmitted,
+  registryInputVat,
+  registryOutputVat,
+  registryPayload,
+  registryPurchasesAmount,
+  registrySalesAmount,
+} from './hajriRegistryMetrics';
 
 function clonePayload(from: any) {
   return mergeImportedDisclosure(defaultDisclosureData(), from || {});
@@ -394,17 +402,23 @@ export default function HajriTaxScreen() {
 
   const exportConsolidatedExcel = useCallback(() => {
     const rows = registryRows.map((r: any) => {
-      const payload = r.payload && typeof r.payload === 'object' ? r.payload : defaultDisclosureData();
+      const payload = registryPayload(r);
       const net = computeNetPayable(payload);
       const pt = r.paymentTarget != null ? parseFloat(String(r.paymentTarget)) : null;
+      const submitted = isHajriDeclarationSubmitted(r);
       return {
         [lang === 'ar' ? 'الشركة' : 'Company']: lang === 'en'
           ? (r.company?.nameEn || r.company?.nameAr)
           : (r.company?.nameAr || r.company?.nameEn),
         Year: r.year,
         Quarter: `Q${r.quarter}`,
+        [t('hajriTaxColSales')]: registrySalesAmount(payload),
+        [t('hajriTaxColPurchases')]: registryPurchasesAmount(payload),
+        [t('hajriTaxColOutputVat')]: registryOutputVat(payload),
+        [t('hajriTaxColInputVat')]: registryInputVat(payload),
         [t('vatNetPayable')]: net,
         [t('vatPaymentTarget')]: Number.isFinite(pt) ? pt : '',
+        [t('hajriTaxColFiling')]: submitted ? t('hajriTaxSubmittedYes') : t('hajriTaxSubmittedNo'),
         [t('vatNotes')]: r.notes || '',
         [t('vatLastUpdated')]: r.updatedAt ? String(r.updatedAt).slice(0, 19) : '—',
       };
@@ -416,17 +430,19 @@ export default function HajriTaxScreen() {
     const bodyRows = registryRows
       .map((r: any) => {
         const nm = lang === 'en' ? (r.company?.nameEn || r.company?.nameAr) : r.company?.nameAr;
-        const payload = r.payload && typeof r.payload === 'object' ? r.payload : defaultDisclosureData();
+        const payload = registryPayload(r);
         const net = computeNetPayable(payload);
         const pt = r.paymentTarget != null ? parseFloat(String(r.paymentTarget)) : null;
-        return `<tr><td>${(nm || '').replace(/</g, '&lt;')}</td><td>${r.year}</td><td>Q${r.quarter}</td><td>${fmtTax(net)}</td><td>${pt != null && Number.isFinite(pt) ? fmtTax(pt) : '—'}</td><td>${(r.notes || '').replace(/</g, '&lt;')}</td></tr>`;
+        const submitted = isHajriDeclarationSubmitted(r);
+        const esc = (s: string) => String(s || '').replace(/</g, '&lt;');
+        return `<tr><td>${esc(nm || '')}</td><td>${r.year}</td><td>Q${r.quarter}</td><td>${fmt(registrySalesAmount(payload), 2)} SR</td><td>${fmt(registryPurchasesAmount(payload), 2)} SR</td><td>${fmtTax(registryOutputVat(payload))} SR</td><td>${fmtTax(registryInputVat(payload))} SR</td><td>${fmtTax(net)} SR</td><td>${pt != null && Number.isFinite(pt) ? `${fmtTax(pt)} SR` : '—'}</td><td>${esc(submitted ? t('hajriTaxSubmittedYes') : t('hajriTaxSubmittedNo'))}</td><td>${esc(r.notes || '')}</td></tr>`;
       })
       .join('');
     openPrintWindow({
       title: `${t('hajriTax')} — ${lang === 'ar' ? 'السجل' : 'Registry'}`,
       companyName: '',
       subtitle: '',
-      body: `<table class="w-full"><thead><tr><th>${lang === 'ar' ? 'الشركة' : 'Company'}</th><th>${lang === 'ar' ? 'السنة' : 'Year'}</th><th>${t('vatQuarter')}</th><th>${t('vatNetPayable')}</th><th>${t('vatPaymentTarget')}</th><th>${t('vatNotes')}</th></tr></thead><tbody>${bodyRows}</tbody></table>`,
+      body: `<table class="w-full"><thead><tr><th>${lang === 'ar' ? 'الشركة' : 'Company'}</th><th>${lang === 'ar' ? 'السنة' : 'Year'}</th><th>${t('vatQuarter')}</th><th>${t('hajriTaxColSales')}</th><th>${t('hajriTaxColPurchases')}</th><th>${t('hajriTaxColOutputVat')}</th><th>${t('hajriTaxColInputVat')}</th><th>${t('vatNetPayable')}</th><th>${t('vatPaymentTarget')}</th><th>${t('hajriTaxColFiling')}</th><th>${t('vatNotes')}</th></tr></thead><tbody>${bodyRows}</tbody></table>`,
     });
   }, [registryRows, lang, t]);
 

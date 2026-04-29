@@ -521,6 +521,13 @@ export default {
     en: 'Saved filings by period. Use filters or open a new declaration.',
   },
   hajriTaxRegistryFilters: { ar: 'تصفية السجل', en: 'Filter registry' },
+  hajriTaxColSales: { ar: 'المبيعات', en: 'Sales' },
+  hajriTaxColPurchases: { ar: 'المشتريات', en: 'Purchases' },
+  hajriTaxColOutputVat: { ar: 'ضريبة المخرجات', en: 'Output VAT' },
+  hajriTaxColInputVat: { ar: 'ضريبة المدخلات', en: 'Input VAT' },
+  hajriTaxColFiling: { ar: 'التقديم', en: 'Filing' },
+  hajriTaxSubmittedYes: { ar: 'تم التقديم', en: 'Submitted' },
+  hajriTaxSubmittedNo: { ar: 'مسودة', en: 'Draft' },
   hajriTaxFilterAllYears: { ar: 'كل السنوات', en: 'All years' },
   hajriTaxFilterAllQuarters: { ar: 'كل الأرباع', en: 'All quarters' },
   hajriTaxRegistryEmpty: {
