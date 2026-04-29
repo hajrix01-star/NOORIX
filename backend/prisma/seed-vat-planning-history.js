@@ -16,6 +16,7 @@ try {
 }
 
 const { PrismaClient } = require('@prisma/client');
+const { pickCompanyForHajriKey } = require('./lib/hajri-resolve-company.cjs');
 
 const prisma = new PrismaClient();
 
@@ -115,21 +116,9 @@ function buildPayload(row) {
 
 async function resolveCompany(rowKey) {
   const companies = await prisma.company.findMany({
-    select: { id: true, tenantId: true, nameAr: true, nameEn: true },
+    select: { id: true, tenantId: true, nameAr: true, nameEn: true, isArchived: true },
   });
-
-  const na = (s) => (s || '').trim();
-
-  if (rowKey === 'ARZ') {
-    const hit = companies.find(
-      (c) => /\bARZ\b/i.test(na(c.nameEn)) || na(c.nameAr).includes('ARZ'),
-    );
-    return hit || null;
-  }
-
-  const needle = rowKey;
-  const hit = companies.find((c) => na(c.nameAr).includes(needle) || na(c.nameEn).includes(needle));
-  return hit || null;
+  return pickCompanyForHajriKey(rowKey, companies);
 }
 
 async function main() {
