@@ -2,6 +2,7 @@
  * سجل معالجات المحادثة الذكية — تُنفَّذ بالترتيب حسب الأولوية
  */
 import type { ChatHandler } from './types';
+import { dashboardInsightsHandler } from './dashboard-insights.handler';
 import { salesMonthCompareHandler } from './sales-month-compare.handler';
 import { financeRatiosHandler } from './finance-ratios.handler';
 import { salesHandler } from './sales.handler';
@@ -18,6 +19,7 @@ import { ordersHandler } from './orders.handler';
 import { helpHandler } from './help.handler';
 
 export const CHAT_HANDLERS: ChatHandler[] = [
+  dashboardInsightsHandler,
   salesMonthCompareHandler,
   financeRatiosHandler,
   salesHandler,

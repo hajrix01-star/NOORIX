@@ -8,6 +8,7 @@ import { Injectable } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ReportsService } from '../reports/reports.service';
 import { VaultsService } from '../vaults/vaults.service';
+import { DashboardInsightsService } from '../reporting/insights/dashboard-insights.service';
 import { PERMISSIONS, hasPermission } from '../auth/constants/permissions';
 import { CHAT_HANDLERS } from './handlers';
 import type { ChatResponseExtras } from './handlers/types';
@@ -21,6 +22,7 @@ export class ChatService {
     private readonly prisma: TenantPrismaService,
     private readonly reportsService: ReportsService,
     private readonly vaultsService: VaultsService,
+    private readonly dashboardInsightsService: DashboardInsightsService,
     private readonly geminiService: GeminiService,
   ) {}
 
@@ -63,6 +65,7 @@ export class ChatService {
       prisma: this.prisma,
       reportsService: this.reportsService,
       vaultsService: this.vaultsService,
+      dashboardInsightsService: this.dashboardInsightsService,
     };
 
     // ─── محاولة فهم النية عبر Gemini (إن توفر المفتاح) ───

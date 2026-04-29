@@ -1,6 +1,8 @@
 /**
  * أنواع معالجات المحادثة الذكية
  */
+import type { DashboardInsightsService } from '../../reporting/insights/dashboard-insights.service';
+
 export type ChatHandlerContext = {
   companyId: string;
   query: string;
@@ -13,6 +15,7 @@ export type ChatHandlerContext = {
   prisma: any;
   reportsService: any;
   vaultsService: any;
+  dashboardInsightsService: DashboardInsightsService;
 };
 
 /** مخطط مقارنة شهريّين (أعمدة) */
@@ -43,6 +46,7 @@ export type GeminiIntent =
   | 'invoices' | 'suppliers' | 'categories' | 'expense_lines' | 'hr' | 'orders' | 'help'
   | 'finance_ratios'
   | 'sales_month_compare'
+  | 'dashboard_insights'
   | 'unknown';
 
 export type ChatHandler = {
