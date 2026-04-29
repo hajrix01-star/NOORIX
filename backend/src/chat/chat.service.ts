@@ -9,6 +9,7 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ReportsService } from '../reports/reports.service';
 import { VaultsService } from '../vaults/vaults.service';
 import { DashboardInsightsService } from '../reporting/insights/dashboard-insights.service';
+import { ReportingInsightsAggregatorService } from '../reporting/insights/reporting-insights-aggregator.service';
 import { PERMISSIONS, hasPermission } from '../auth/constants/permissions';
 import { CHAT_HANDLERS } from './handlers';
 import type { ChatResponseExtras } from './handlers/types';
@@ -23,6 +24,7 @@ export class ChatService {
     private readonly reportsService: ReportsService,
     private readonly vaultsService: VaultsService,
     private readonly dashboardInsightsService: DashboardInsightsService,
+    private readonly reportingInsightsAggregatorService: ReportingInsightsAggregatorService,
     private readonly geminiService: GeminiService,
   ) {}
 
@@ -72,6 +74,7 @@ export class ChatService {
       reportsService: this.reportsService,
       vaultsService: this.vaultsService,
       dashboardInsightsService: this.dashboardInsightsService,
+      reportingInsightsAggregatorService: this.reportingInsightsAggregatorService,
       intentSource: 'keyword' as const,
       insightsLlmExplain,
     };

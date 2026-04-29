@@ -1,6 +1,9 @@
 import { ChatService } from './chat.service';
 import { INSIGHTS_SCHEMA_VERSION } from '../reporting/insights/insights.types';
 import type { DashboardInsightsPayload } from '../reporting/insights/insights.types';
+import { EXTENDED_REPORTING_INSIGHTS_SCHEMA_VERSION } from '../reporting/insights/reporting-insights-aggregator.types';
+import type { ExtendedReportingInsightsPayload } from '../reporting/insights/reporting-insights-aggregator.types';
+import { buildDashboardInsightsDateRangeForMonth } from './handlers/dashboard-insights.handler';
 
 function mkInsightsPayload(): DashboardInsightsPayload {
   return {
@@ -33,6 +36,61 @@ function mkInsightsPayload(): DashboardInsightsPayload {
   };
 }
 
+function mkExtendedFromDashboardForChat(dash: DashboardInsightsPayload): ExtendedReportingInsightsPayload {
+  const { companyId, year, selectedMonth } = dash.context;
+  const sm = selectedMonth ?? 3;
+  const dr = buildDashboardInsightsDateRangeForMonth(year, sm);
+  return {
+    schemaVersion: EXTENDED_REPORTING_INSIGHTS_SCHEMA_VERSION,
+    generatedAt: dash.generatedAt,
+    context: {
+      companyId,
+      year,
+      selectedMonth: sm,
+      periodStart: dr.periodStart,
+      periodEnd: dr.periodEnd,
+      labels: { dashboard: 'd', purchases: 'p', expenses: 'e' },
+    },
+    dashboardInsights: dash,
+    purchaseSupplierInsights: {
+      schemaVersion: 1,
+      generatedAt: '',
+      context: {
+        companyId,
+        year,
+        selectedMonth: sm,
+        periodStart: dr.periodStart,
+        periodEnd: dr.periodEnd,
+        labels: {
+          purchaseCategoriesScope: 'invoice_period_purchase_only',
+          supplierClassificationScope: 'invoice_period_supplier_counts',
+          purchaseCategorySpikeScope: 'accounting_ledger_pl_purchase_categories',
+        },
+      },
+      supplierInsights: [],
+      purchaseInsights: [],
+      warnings: [],
+    },
+    expenseInsights: {
+      schemaVersion: 1,
+      generatedAt: '',
+      context: {
+        companyId,
+        year,
+        selectedMonth: sm,
+        labels: {
+          expenseBreakdownScope: 'accounting_ledger_pl_month',
+          expenseSpikeScope: 'accounting_ledger_pl_expense_totals',
+          fixedExpenseScope: 'accounting_ledger_pl_kind_fixed_expense',
+        },
+      },
+      expenseInsights: [],
+      warnings: [],
+    },
+    warnings: dash.warnings.map((w) => ({ ...w, source: 'dashboard' as const })),
+  };
+}
+
 describe('ChatService intent routing', () => {
   const companyId = 'c1';
 
@@ -49,17 +107,30 @@ describe('ChatService intent routing', () => {
     };
     const vaults = {};
     const dashboard = { buildDashboardInsights: jest.fn().mockResolvedValue(mkInsightsPayload()) };
+    const reportingInsightsAggregator = {
+      getExtendedInsights: jest.fn().mockImplementation(async (cid: string, dr: unknown, sm: number, ref: Date) => {
+        const dash = await dashboard.buildDashboardInsights(cid, dr, sm, ref);
+        return mkExtendedFromDashboardForChat(dash);
+      }),
+    };
     const gemini = {
       isAvailable: geminiOverrides.isAvailable ?? (() => true),
       parseIntent: geminiOverrides.parseIntent ?? jest.fn().mockResolvedValue(null),
       explainDashboardInsights: jest.fn(),
     };
-    const chat = new ChatService(prisma as any, reports as any, vaults as any, dashboard as any, gemini as any);
-    return { chat, prisma, reports, dashboard, gemini };
+    const chat = new ChatService(
+      prisma as any,
+      reports as any,
+      vaults as any,
+      dashboard as any,
+      reportingInsightsAggregator as any,
+      gemini as any,
+    );
+    return { chat, prisma, reports, dashboard, reportingInsightsAggregator, gemini };
   }
 
   it('routes كيف وضع الشهر؟ to dashboard insights when Gemini returns dashboard_insights', async () => {
-    const { chat, dashboard, gemini, reports } = mkDeps({
+    const { chat, dashboard, reportingInsightsAggregator, gemini, reports } = mkDeps({
       parseIntent: jest.fn().mockResolvedValue({
         intent: 'dashboard_insights',
         period: 'this_month',
@@ -70,6 +141,7 @@ describe('ChatService intent routing', () => {
     const res = await chat.processQuery(companyId, 'كيف وضع الشهر؟', 'owner', undefined);
 
     expect(gemini.parseIntent).toHaveBeenCalled();
+    expect(reportingInsightsAggregator.getExtendedInsights).toHaveBeenCalled();
     expect(dashboard.buildDashboardInsights).toHaveBeenCalled();
     expect(reports.getGeneralProfitLoss).not.toHaveBeenCalled();
     expect(res.meta?.intentSource).toBe('gemini');
@@ -77,7 +149,7 @@ describe('ChatService intent routing', () => {
   });
 
   it('routes formal P&L wording to reports when Gemini returns reports', async () => {
-    const { chat, dashboard, reports } = mkDeps({
+    const { chat, dashboard, reportingInsightsAggregator, reports } = mkDeps({
       parseIntent: jest.fn().mockResolvedValue({
         intent: 'reports',
         period: 'year',
@@ -89,12 +161,13 @@ describe('ChatService intent routing', () => {
 
     expect(reports.getGeneralProfitLoss).toHaveBeenCalled();
     expect(dashboard.buildDashboardInsights).not.toHaveBeenCalled();
+    expect(reportingInsightsAggregator.getExtendedInsights).not.toHaveBeenCalled();
     expect(res.meta?.intent).toBe('reports');
     expect(res.answerAr).toMatch(/ملخص الربح والخسارة/);
   });
 
   it('routes نسبة المشتريات من المبيعات to finance ratios when Gemini returns finance_ratios', async () => {
-    const { chat, dashboard } = mkDeps({
+    const { chat, dashboard, reportingInsightsAggregator } = mkDeps({
       parseIntent: jest.fn().mockResolvedValue({
         intent: 'finance_ratios',
         period: null,
@@ -107,10 +180,11 @@ describe('ChatService intent routing', () => {
     expect(res.meta?.intent).toBe('finance_ratios');
     expect(res.answerAr).toMatch(/مؤشرات الخارج على المبيعات/);
     expect(dashboard.buildDashboardInsights).not.toHaveBeenCalled();
+    expect(reportingInsightsAggregator.getExtendedInsights).not.toHaveBeenCalled();
   });
 
   it('keyword fallback still handles month status when Gemini is unavailable', async () => {
-    const { chat, dashboard, gemini } = mkDeps({
+    const { chat, dashboard, reportingInsightsAggregator, gemini } = mkDeps({
       isAvailable: () => false,
       parseIntent: jest.fn(),
     });
@@ -118,15 +192,17 @@ describe('ChatService intent routing', () => {
     const res = await chat.processQuery(companyId, 'كيف وضع الشهر؟', 'owner', undefined);
 
     expect(gemini.parseIntent).not.toHaveBeenCalled();
+    expect(reportingInsightsAggregator.getExtendedInsights).toHaveBeenCalled();
     expect(dashboard.buildDashboardInsights).toHaveBeenCalled();
     expect(res.meta?.intentSource).toBe('keyword');
   });
 
   it('does not call dashboard insights when Gemini returns reports for profit and loss report', async () => {
-    const { chat, dashboard } = mkDeps({
+    const { chat, dashboard, reportingInsightsAggregator } = mkDeps({
       parseIntent: jest.fn().mockResolvedValue({ intent: 'reports', period: null, rawQuery: 'x' }),
     });
     await chat.processQuery(companyId, 'profit and loss report', 'owner', undefined);
     expect(dashboard.buildDashboardInsights).not.toHaveBeenCalled();
+    expect(reportingInsightsAggregator.getExtendedInsights).not.toHaveBeenCalled();
   });
 });

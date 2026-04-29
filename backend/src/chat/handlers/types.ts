@@ -2,6 +2,7 @@
  * أنواع معالجات المحادثة الذكية
  */
 import type { DashboardInsightsService } from '../../reporting/insights/dashboard-insights.service';
+import type { ReportingInsightsAggregatorService } from '../../reporting/insights/reporting-insights-aggregator.service';
 import type { GeminiIntent } from '../gemini-types';
 
 export type { GeminiIntent } from '../gemini-types';
@@ -19,6 +20,8 @@ export type ChatHandlerContext = {
   reportsService: any;
   vaultsService: any;
   dashboardInsightsService: DashboardInsightsService;
+  /** Extended insights (dashboard + purchase/supplier + expense); used by `dashboard_insights` Smart Chat handler. */
+  reportingInsightsAggregatorService: ReportingInsightsAggregatorService;
   /** مضبوط عند التوجيه عبر Gemini فقط */
   intentSource?: 'gemini' | 'keyword';
   /** نية Gemini الأصلية عند intentSource === 'gemini' */

@@ -6,6 +6,7 @@ import { CompanyInsightThresholdSettingsService } from './insights/company-insig
 import { DashboardInsightsService } from './insights/dashboard-insights.service';
 import { ExpenseInsightsService } from './insights/expenses/expense-insights.service';
 import { PurchaseSupplierInsightsService } from './insights/purchases/purchase-supplier-insights.service';
+import { ReportingInsightsAggregatorService } from './insights/reporting-insights-aggregator.service';
 import { ReportingFacade } from './reporting.facade';
 import { ReportingController } from './reporting.controller';
 
@@ -21,12 +22,14 @@ import { ReportingController } from './reporting.controller';
     DashboardInsightsService,
     PurchaseSupplierInsightsService,
     ExpenseInsightsService,
+    ReportingInsightsAggregatorService,
   ],
   exports: [
     ReportingFacade,
     DashboardInsightsService,
     PurchaseSupplierInsightsService,
     ExpenseInsightsService,
+    ReportingInsightsAggregatorService,
   ],
 })
 export class ReportingModule {}
