@@ -75,9 +75,12 @@ function ReportDataTable({ rows, isAr }: { rows: string[][]; isAr: boolean }) {
 function ChatMiniChart({
   chart,
   isAr,
+  variant = 'belowText',
 }: {
   chart: NonNullable<ChatAnswerExtras['chart']>;
   isAr: boolean;
+  /** highlight: أعلى الكرت — بدون خط علوي طويل وبلا عنوان فرعي */
+  variant?: 'belowText' | 'highlight';
 }) {
   const bars = chart?.bars;
   if (!Array.isArray(bars) || bars.length < 2) return null;
@@ -86,16 +89,23 @@ function ChatMiniChart({
     name: isAr ? b.labelAr : b.labelEn,
     value: Number(b.value),
   }));
+  const isHighlight = variant === 'highlight';
   return (
     <div
-      className="noorix-chat-mini-chart mt-3 pt-3 border-t border-noorix-border"
+      className={
+        isHighlight
+          ? 'noorix-chat-mini-chart noorix-chat-mini-chart--highlight mb-3 rounded-[10px] border border-noorix-border/70 bg-noorix-bg-muted/50 px-2.5 py-2'
+          : 'noorix-chat-mini-chart mt-3 pt-3 border-t border-noorix-border'
+      }
       role="img"
       aria-label={isAr ? 'مخطط مقارنة مبيعات الشهرين' : 'Bar chart comparing the two months'}
     >
-      <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
-        {isAr ? 'مقارنة بصرية' : 'Visual comparison'}
-      </div>
-      <div className="nx-ltr" style={{ width: '100%', height: 132 }}>
+      {!isHighlight ? (
+        <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+          {isAr ? 'مقارنة بصرية' : 'Visual comparison'}
+        </div>
+      ) : null}
+      <div className="nx-ltr" style={{ width: '100%', height: isHighlight ? 120 : 132 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barCategoryGap="28%">
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--noorix-text-muted)' }} axisLine={false} tickLine={false} />
@@ -213,6 +223,9 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
     .map((s) => s.trim())
     .filter(Boolean);
 
+  const monthCompareChart =
+    extras?.chart?.kind === 'monthCompare' && extras.chart ? extras.chart : null;
+
   const renderKvLine = (line: string, i: number) => {
     const colonIdx = line.indexOf(':');
     const hasLabel = colonIdx > 0 && colonIdx < 50;
@@ -305,21 +318,22 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
 
   return (
     <div
-      className={`noorix-chat-report-card bg-noorix-surface text-noorix-text text-[14px] md:text-[15px] py-3.5 px-3 md:py-4 md:px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words w-full min-w-0 max-w-full${emphasizeDataCard ? ' noorix-chat-report-card--numeric' : ''}`}
+      className={`noorix-chat-report-card bg-noorix-surface text-noorix-text text-[14px] md:text-[15px] py-3.5 px-3 md:py-4 md:px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words w-full min-w-0 max-w-full${emphasizeDataCard ? ' noorix-chat-report-card--numeric' : ''}${monthCompareChart ? ' noorix-chat-report-card--month-compare' : ''}`}
       style={{
         boxShadow: emphasizeDataCard ? undefined : '0 2px 8px rgba(0,0,0,0.04)',
       }}
     >
+      {monthCompareChart ? <ChatMiniChart chart={monthCompareChart} isAr={isAr} variant="highlight" /> : null}
       {lines.length > 0 ? (
-        <div className="flex flex-col gap-3 w-full min-w-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        <div
+          className={`flex flex-col w-full min-w-0${monthCompareChart ? ' gap-2.5' : ' gap-3'}`}
+          style={{ direction: isAr ? 'rtl' : 'ltr' }}
+        >
           {renderBody()}
         </div>
       ) : (
         <div className="whitespace-pre-wrap">{text}</div>
       )}
-      {extras?.chart?.kind === 'monthCompare' && extras.chart ? (
-        <ChatMiniChart chart={extras.chart} isAr={isAr} />
-      ) : null}
       {extras?.chart?.kind === 'financeRatios' && extras.chart ? (
         <ChatFinanceRatiosStrip chart={extras.chart} isAr={isAr} />
       ) : null}

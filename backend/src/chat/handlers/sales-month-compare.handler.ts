@@ -69,50 +69,34 @@ export const salesMonthCompareHandler: ChatHandler = {
     const prev = await sumRevenue(ctx, prevP.start, prevP.end);
     const diff = cur.minus(prev);
     const deltaPct = prev.gt(0) ? formatReportPercentNumber(diff.div(prev).mul(100)) : '—';
-    const trendAr = prev.lte(0) ? '—' : diff.gt(0) ? 'أعلى من الشهر الماضي' : diff.lt(0) ? 'أقل من الشهر الماضي' : 'مساوٍ للشهر الماضي';
-    const trendEn = prev.lte(0) ? '—' : diff.gt(0) ? 'Above last month' : diff.lt(0) ? 'Below last month' : 'Same as last month';
+    const trendAr = prev.lte(0) ? '—' : diff.gt(0) ? 'أعلى' : diff.lt(0) ? 'أدنى' : 'مماثل';
+    const trendEn = prev.lte(0) ? '—' : diff.gt(0) ? 'Up' : diff.lt(0) ? 'Down' : 'Flat';
 
-    let summaryAr = '';
-    let summaryEn = '';
-    if (prev.lte(0)) {
-      summaryAr =
-        '• الخلاصة: لا بيانات مبيعات كافية في الشهر الماضي لهذه الفترة — راجع تسجيل الإيراد أو اختر شهراً أحدث للمقارنة.';
-      summaryEn =
-        '• Summary: not enough last-month revenue in this window — check postings or pick another month to compare.';
-    } else if (diff.gt(0)) {
-      summaryAr = `• الخلاصة: مبيعاتك هذا الشهر أعلى من الشهر الماضي بنحو ${deltaPct}% لنفس الفترة — جيد إن كان ذلك متوافقاً مع أهدافك.`;
-      summaryEn = `• Summary: this month is about ${deltaPct}% above last month for the same window — good if that matches your plan.`;
-    } else if (diff.lt(0)) {
-      const dropPct = formatReportPercentNumber(diff.abs().div(prev).mul(100));
-      summaryAr = `• الخلاصة: مبيعاتك هذا الشهر أدنى من الشهر الماضي بنحو ${dropPct}% لنفس الفترة — راجع الأسباب التشغيلية إن لزم.`;
-      summaryEn = `• Summary: this month is about ${dropPct}% below last month for the same window — review drivers if needed.`;
-    } else {
-      summaryAr = '• الخلاصة: مبيعات الشهرين متقاربة لنفس الفترة — استقرار نسبي.';
-      summaryEn = '• Summary: both months are close for the same window — relatively steady.';
-    }
+    /** سطر واحد فقط عند غياب بيانات الشهر الماضي — دون صندوق «خلاصة» المزعج */
+    const hintAr = prev.lte(0) ? '• الشهر الماضي: لا بيانات في نافذة المقارنة.' : '';
+    const hintEn = prev.lte(0) ? '• Last month: no data in this comparison window.' : '';
 
-    const linesAr = [
-      '## مقارنة المبيعات بين الشهرين',
-      summaryAr,
-      '',
-      'الشهر\tالمبيعات',
-      `الحالي (${thisP.labelAr})\t${fmtMoney(cur)}`,
-      `${prevP.labelAr}\t${fmtMoney(prev)}`,
-      `الفرق\t${fmtMoney(diff)} (${deltaPct}% عن الشهر الماضي)`,
+    const diffLabelAr = prev.gt(0) ? `${fmtMoney(diff)} (${deltaPct}%)` : `${fmtMoney(diff)}`;
+    const diffLabelEn = prev.gt(0) ? `${fmtMoney(diff).replace('SR', 'SAR')} (${deltaPct}%)` : `${fmtMoney(diff).replace('SR', 'SAR')}`;
+
+    const linesAr = ['## مبيعات: هذا الشهر مقابل الماضي'];
+    if (hintAr) linesAr.push(hintAr);
+    linesAr.push(
+      'الفترة\tالمبيعات',
+      `هذا الشهر\t${fmtMoney(cur)}`,
+      `الشهر الماضي\t${fmtMoney(prev)}`,
+      `الفرق\t${diffLabelAr}`,
       `الاتجاه\t${trendAr}`,
-      '• نطاق المقارنة: الشهر الحالي من اليوم 1 حتى اليوم؛ الشهر الماضي من اليوم 1 حتى نفس تاريخ اليوم (بحد أقصى أيام ذلك الشهر).',
-    ];
-    const linesEn = [
-      '## Month-over-month sales',
-      summaryEn,
-      '',
-      'Month\tSales',
-      `Current (${thisP.labelEn})\t${fmtMoney(cur).replace('SR', 'SAR')}`,
-      `${prevP.labelEn}\t${fmtMoney(prev).replace('SR', 'SAR')}`,
-      `Difference\t${fmtMoney(diff).replace('SR', 'SAR')} (${deltaPct}% vs last month)`,
+    );
+    const linesEn = ['## Sales: this month vs last'];
+    if (hintEn) linesEn.push(hintEn);
+    linesEn.push(
+      'Period\tSales',
+      `This month\t${fmtMoney(cur).replace('SR', 'SAR')}`,
+      `Last month\t${fmtMoney(prev).replace('SR', 'SAR')}`,
+      `Change\t${diffLabelEn}`,
       `Trend\t${trendEn}`,
-      '• Comparison window: this month from the 1st through today; last month from the 1st through the same calendar day (capped by that month’s length).',
-    ];
+    );
 
     return {
       answerAr: linesAr.join('\n'),
@@ -121,8 +105,8 @@ export const salesMonthCompareHandler: ChatHandler = {
         chart: {
           kind: 'monthCompare',
           bars: [
-            { key: 'prev', labelAr: 'الشهر الماضي', labelEn: 'Last month', value: prev.toNumber() },
-            { key: 'cur', labelAr: 'الشهر الحالي', labelEn: 'This month', value: cur.toNumber() },
+            { key: 'prev', labelAr: 'الماضي', labelEn: 'Last', value: prev.toNumber() },
+            { key: 'cur', labelAr: 'الحالي', labelEn: 'This', value: cur.toNumber() },
           ],
         },
       },

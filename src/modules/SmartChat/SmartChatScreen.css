@@ -586,6 +586,17 @@ body.noorix-page-smart-chat .app-main__content {
   background: color-mix(in srgb, var(--noorix-bg-muted) 22%, transparent);
 }
 
+.noorix-chat-report-card--month-compare .noorix-chat-report-table th:first-child,
+.noorix-chat-report-card--month-compare .noorix-chat-report-table td:first-child {
+  width: 38%;
+  max-width: 11rem;
+}
+
+.noorix-chat-report-card--month-compare .noorix-chat-report-card__bullet {
+  font-size: 0.8125rem;
+  color: var(--noorix-text-muted);
+}
+
 .dark .noorix-chat-report-card__bullet--summary {
   background: color-mix(in srgb, var(--noorix-accent-blue) 12%, transparent);
   border-color: color-mix(in srgb, var(--noorix-accent-blue) 28%, var(--noorix-border));
