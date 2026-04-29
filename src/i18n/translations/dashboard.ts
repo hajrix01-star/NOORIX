@@ -80,4 +80,36 @@ export default {
     ar: 'الأرقام الحالية لا تتجاوز حدود التحذير المعتمدة.',
     en: 'Current figures do not exceed the configured warning thresholds.',
   },
+
+  /** تكامل رؤى KPI — تذييل نسبة فقط (القيمة الملونة) */
+  dashboardKpiInsightPurchasesAboveWarn: {
+    ar: '{base}% — أعلى من الحد {limit}%',
+    en: '{base}% — above limit {limit}%',
+  },
+  dashboardKpiInsightPurchasesAboveCrit: {
+    ar: '{base}% — خطر: أعلى من الحد {limit}%',
+    en: '{base}% — critical: above limit {limit}%',
+  },
+  dashboardKpiInsightExpensesAboveWarn: {
+    ar: '{base}% — أعلى من الحد {limit}%',
+    en: '{base}% — above limit {limit}%',
+  },
+  dashboardKpiInsightExpensesAboveCrit: {
+    ar: '{base}% — خطر: أعلى من الحد {limit}%',
+    en: '{base}% — critical: above limit {limit}%',
+  },
+  dashboardKpiInsightNetMarginBelowWarn: {
+    ar: '{base}% — أقل من الحد {limit}%',
+    en: '{base}% — below limit {limit}%',
+  },
+  dashboardKpiInsightNetMarginBelowCrit: {
+    ar: '{base}% — خطر: أقل من الحد {limit}%',
+    en: '{base}% — critical: below limit {limit}%',
+  },
+  dashboardKpiInsightNetProfitNegative: { ar: 'صافي الربح سلبي', en: 'Negative net profit' },
+  dashboardKpiInsightPurchasesUnusuallyHigh: {
+    ar: 'أعلى من المعتاد +{pct}%',
+    en: 'Above normal +{pct}%',
+  },
+  dashboardKpiFooterNetProfitMarginLabel: { ar: 'هامش صافي الربح', en: 'Net profit margin' },
 };

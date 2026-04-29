@@ -3,6 +3,7 @@ import { useTranslation } from '../../../../i18n/useTranslation';
 import { amountText } from '../../../Reports/reportHelpers';
 import { FmtNum, MetricCard } from '../../../../ui';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../../constants/kpiCardTheme';
+import { cn } from '../../../../ui/cn';
 import {
   getCardValue,
   getMonthlyData,
@@ -10,6 +11,8 @@ import {
   type PlReportLike,
 } from '../utils/dashboardOverviewCalculations';
 import type { DashboardOverviewFilter } from '../types';
+import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
+import { severityFooterValueClass } from '../utils/dashboardOverviewKpiInsightFooters';
 
 type CardDef = {
   key: string;
@@ -25,6 +28,7 @@ type Props = {
   filter: DashboardOverviewFilter | undefined;
   year: number;
   revenueDailyAvgActiveDays: number | null;
+  kpiInsightFooters: KpiInsightFooterMap;
 };
 
 export function DashboardOverviewKpis({
@@ -34,6 +38,7 @@ export function DashboardOverviewKpis({
   filter,
   year,
   revenueDailyAvgActiveDays,
+  kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
 
@@ -80,6 +85,11 @@ export function DashboardOverviewKpis({
           const pctLabelText = t(card.pctLabelKey);
           const pctTitle = pctNum != null ? `${pctLabelText}: ${arrow}${Math.abs(pctNum)}%` : pctLabelText;
 
+          const insightBundle =
+            card.key === 'purchases' || card.key === 'expenses' || card.key === 'netProfit'
+              ? kpiInsightFooters[card.key]
+              : undefined;
+
           return (
             <MetricCard key={card.key} color={accentColor} className="min-h-[188px]">
               <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
@@ -108,22 +118,63 @@ export function DashboardOverviewKpis({
               <MetricCard.Spark data={sparkData} color={accentColor} grow />
               <MetricCard.Footer className="mt-3 flex flex-col gap-1.5 border-t border-noorix-border pt-3 pb-3">
                 <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
-                <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-                  <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
-                    {pctLabelText}
-                  </span>
-                  {pctNum != null ? (
-                    <span
-                      className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
-                      title={pctTitle}
-                    >
-                      {arrow}
-                      {Math.abs(pctNum)}%
+
+                {insightBundle?.lines?.length ? (
+                  <div className="flex flex-col gap-1">
+                    {insightBundle.lines.map((line, idx) => {
+                      const footerLabel =
+                        idx === 0
+                          ? insightBundle.footerLabelKey
+                            ? t(insightBundle.footerLabelKey)
+                            : pctLabelText
+                          : '';
+                      const valueCn = cn(
+                        'inline-flex max-w-full items-center justify-end truncate rounded px-2 py-0.5 text-[11px] font-bold nx-font-numbers',
+                        severityFooterValueClass(line.severity),
+                        line.compact && 'text-[10px]',
+                      );
+                      if (line.compact) {
+                        return (
+                          <div key={`${card.key}-ins-${idx}`} className="flex justify-end">
+                            <span className={valueCn} title={line.title}>
+                              {line.text}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div
+                          key={`${card.key}-ins-${idx}`}
+                          className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1"
+                        >
+                          <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
+                            {footerLabel}
+                          </span>
+                          <span className={cn(valueCn, 'shrink-0')} title={line.title}>
+                            {line.text}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                    <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
+                      {pctLabelText}
                     </span>
-                  ) : (
-                    <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>
-                  )}
-                </div>
+                    {pctNum != null ? (
+                      <span
+                        className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
+                        title={pctTitle}
+                      >
+                        {arrow}
+                        {Math.abs(pctNum)}%
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>
+                    )}
+                  </div>
+                )}
               </MetricCard.Footer>
             </MetricCard>
           );

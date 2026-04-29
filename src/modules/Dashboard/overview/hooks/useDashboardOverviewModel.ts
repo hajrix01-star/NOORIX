@@ -4,8 +4,7 @@ import { useReportsGeneralProfitLoss, usePeriodAnalytics } from '../../../../hoo
 import { monthDateBounds } from '../../../../utils/reportDrillLinks';
 import { useDashboardSalesPack } from '../../../../hooks/useDashboardSalesPack';
 import { useDashboardInsights } from '../../hooks/useDashboardInsights';
-import { pickDashboardInsightDisplayItems } from '../utils/dashboardOverviewInsightsPick';
-import type { DashboardInsightsUi } from '../types/dashboardInsightsDisplay';
+import { buildKpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
 import { EN_MONTHS } from '../../../Reports/reportHelpers';
 import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../../constants/kpiCardTheme';
 import { useUiDir } from '../../../../hooks/useUiDir';
@@ -111,18 +110,10 @@ export function useDashboardOverviewModel(
     enabled: !!companyId,
   });
 
-  const insightDisplayRows = useMemo(
-    () => pickDashboardInsightDisplayItems(insightsQuery.data),
-    [insightsQuery.data],
+  const kpiInsightFooters = useMemo(
+    () => buildKpiInsightFooterMap(insightsQuery.data, insightsQuery.isError, t, lang === 'ar'),
+    [insightsQuery.data, insightsQuery.isError, t, lang],
   );
-
-  const insightsUi = useMemo((): DashboardInsightsUi => {
-    if (insightsQuery.isError) return { show: false };
-    if (insightDisplayRows.length > 0) return { show: true, state: 'ready', items: insightDisplayRows };
-    if (insightsQuery.isPending) return { show: true, state: 'loading' };
-    if (insightsQuery.isSuccess) return { show: true, state: 'empty' };
-    return { show: false };
-  }, [insightDisplayRows, insightsQuery.isError, insightsQuery.isPending, insightsQuery.isSuccess]);
 
   const { data: periodData, isLoading: isPeriodLoading } = usePeriodAnalytics({
     companyId,
@@ -289,7 +280,7 @@ export function useDashboardOverviewModel(
     year,
     selectedMonth,
     pieColors: PIE_COLORS,
-    insightsUi,
+    kpiInsightFooters,
   };
 }
 
