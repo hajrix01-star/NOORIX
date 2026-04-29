@@ -82,19 +82,52 @@ export default function HajriTaxScreen() {
   /** استيراد مبيعات بدون ضريبة مسجّلة: إذا كان صافي الفاتورة إجماليًا شاملاً 15% وليس أساسًا خاضعًا */
   const [salesAmountIncludesVat, setSalesAmountIncludesVat] = useState(false);
 
-  const registryQueryFilters = useMemo(
-    () => ({
-      year: regFilterYear === '' ? undefined : Number(regFilterYear),
-      quarter: regFilterQuarter === '' ? undefined : Number(regFilterQuarter),
+  const registryQueryFilters = useMemo(() => {
+    const y = regFilterYear === '' ? undefined : Number(regFilterYear);
+    const q = regFilterQuarter === '' ? undefined : Number(regFilterQuarter);
+    return {
+      year: y !== undefined && Number.isFinite(y) && y >= 2000 && y <= 2100 ? y : undefined,
+      quarter: q !== undefined && Number.isFinite(q) && q >= 1 && q <= 4 ? q : undefined,
       companyId: regFilterCompany || undefined,
-    }),
-    [regFilterYear, regFilterQuarter, regFilterCompany],
-  );
+    };
+  }, [regFilterYear, regFilterQuarter, regFilterCompany]);
 
   const { data: registryRows = [], isLoading: registryLoading, refetch: refetchRegistry } = useVatPlanningRegistry(
     registryQueryFilters,
     !detailCompanyId,
   );
+
+  /** سجل بدون فلتر — لخيارات الشركة/السنة في القائمة فقط (لا نعتمد على الصفوف المصفّاة وإلا تختفي شركات من الفلتر) */
+  const registryUnfilteredFilters = useMemo(() => ({}), []);
+  const { data: registryAllRows = [] } = useVatPlanningRegistry(registryUnfilteredFilters, !detailCompanyId);
+
+  /** قائمة الشركات للفلتر: من التطبيق + أي شركة تظهر في السجل الكامل (مؤرشفة أو غائبة عن GET /companies) */
+  const registryFilterCompanies = useMemo(() => {
+    const map = new Map<string, { id: string; nameAr?: string; nameEn?: string | null }>();
+    (companies || []).forEach((c: any) => {
+      if (c?.id) map.set(c.id, { id: c.id, nameAr: c.nameAr, nameEn: c.nameEn ?? null });
+    });
+    (registryAllRows || []).forEach((r: any) => {
+      const c = r?.company;
+      if (c?.id && !map.has(c.id)) {
+        map.set(c.id, { id: c.id, nameAr: c.nameAr, nameEn: c.nameEn ?? null });
+      }
+    });
+    const collator = lang === 'ar' ? 'ar' : 'en';
+    return Array.from(map.values()).sort((a, b) =>
+      (a.nameAr || a.nameEn || '').localeCompare(b.nameAr || b.nameEn || '', collator),
+    );
+  }, [companies, registryAllRows, lang]);
+
+  /** سنوات الفلتر: السنوات الافتراضية + أي سنة موجودة في السجل الكامل */
+  const registryFilterYearOptions = useMemo(() => {
+    const base = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
+    const years = new Set(base);
+    (registryAllRows || []).forEach((r: any) => {
+      if (Number.isFinite(r.year) && r.year >= 2000) years.add(r.year);
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [currentYear, registryAllRows]);
 
   const periodStr = `Q${quarter}`;
   const periodLabel = `${year}-${periodStr}`;
@@ -582,7 +615,8 @@ export default function HajriTaxScreen() {
       <HajriTaxRegistryList
         t={t}
         lang={lang}
-        companies={companies}
+        companies={registryFilterCompanies}
+        filterYearOptions={registryFilterYearOptions}
         currentYear={currentYear}
         registryRows={registryRows}
         registryLoading={registryLoading}
@@ -612,6 +646,7 @@ export default function HajriTaxScreen() {
         lang={lang}
         t={t}
         onImported={() => {
+          qc.invalidateQueries({ queryKey: vatKeys.root() });
           refetchRegistry();
           refetch();
         }}

@@ -18,6 +18,8 @@ export default function HajriTaxRegistryList({
   t,
   lang,
   companies,
+  /** خيارات سنة الفلتر — إن وُجدت تُستخدم بدل القائمة الثابتة (سنوات إضافية من السجل) */
+  filterYearOptions,
   currentYear,
   registryRows,
   registryLoading,
@@ -32,10 +34,12 @@ export default function HajriTaxRegistryList({
   onEditRow,
   jsonToolbar,
 }: any) {
-  const yearOptions = useMemo(
-    () => ['', currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4],
-    [currentYear],
-  );
+  const yearOptions = useMemo(() => {
+    if (Array.isArray(filterYearOptions) && filterYearOptions.length > 0) {
+      return ['', ...filterYearOptions];
+    }
+    return ['', currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
+  }, [filterYearOptions, currentYear]);
 
   return (
     <div className="grid gap-5">
