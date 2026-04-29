@@ -10,7 +10,7 @@ import { DashboardOverviewKpiSkeleton } from './components/DashboardOverviewKpiS
 import { DashboardOverviewTopCharts } from './components/DashboardOverviewTopCharts';
 import { DashboardOverviewKpis } from './components/DashboardOverviewKpis';
 import { DashboardOverviewTimelineSection } from './components/DashboardOverviewTimelineSection';
-import { DashboardOverviewInsightsSection } from './components/DashboardOverviewInsightsSection';
+import { DashboardOverviewInsightsRail } from './components/DashboardOverviewInsightsRail';
 
 export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }: DashboardOverviewTabProps) {
   const { t } = useTranslation();
@@ -34,6 +34,8 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
 
   return (
     <div className="flex flex-col gap-5">
+      <DashboardOverviewInsightsRail lang={m.lang} insightsUi={m.insightsUi} t={t} />
+
       <DashboardOverviewTopCharts
         lang={m.lang}
         supplierFrom={m.supplierFrom}
@@ -44,8 +46,6 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
         selectedMonth={m.selectedMonth}
         periodPurchaseTotal={Number(m.periodData?.purchaseCategoryTotal || 0)}
       />
-
-      <DashboardOverviewInsightsSection lang={m.lang} insightsUi={m.insightsUi} t={t} />
 
       <DashboardOverviewKpis
         report={m.report}

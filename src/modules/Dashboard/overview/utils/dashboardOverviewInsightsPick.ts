@@ -5,7 +5,7 @@ import type {
   DashboardInsightSeverity,
 } from '../types/dashboardInsightsDisplay';
 
-const MAX_ITEMS = 5;
+const MAX_ITEMS = 3;
 
 const ALLOWED_BASIS = new Set<DashboardInsightMetricBasis>([
   'accounting_pl',
@@ -40,7 +40,7 @@ export function parseInsightDisplayItem(raw: unknown): DashboardInsightDisplayIt
 }
 
 /**
- * تحذيرات أولاً ثم رؤى، حتى ‎MAX_ITEMS — يُقبل فقط الأساسات المسموحة في v1.
+ * تحذيرات أولاً ثم رؤى، حتى ‎MAX_ITEMS (عرض الشريط) — يُقبل فقط الأساسات المسموحة في v1.
  */
 export function pickDashboardInsightDisplayItems(
   payload: DashboardInsightsPayload | undefined | null,
