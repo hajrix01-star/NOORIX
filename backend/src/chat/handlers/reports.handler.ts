@@ -18,9 +18,29 @@ export const reportsHandler: ChatHandler = {
     const expenses = report?.cards?.expenses ?? '0';
     const gross = report?.cards?.grossProfit ?? '0';
     const net = report?.cards?.netProfit ?? '0';
+    const fmt = (v: string) => `${Number(v).toLocaleString('en')} SR`;
+    const fmtEn = (v: string) => `${Number(v).toLocaleString('en')} SAR`;
     return {
-      answerAr: `ملخص الربح والخسارة ${year}:\n• المبيعات: ${Number(sales).toLocaleString('en')} SR\n• المشتريات: ${Number(purchases).toLocaleString('en')} SR\n• المصروفات: ${Number(expenses).toLocaleString('en')} SR\n• الربح الإجمالي: ${Number(gross).toLocaleString('en')} SR\n• الربح الصافي: ${Number(net).toLocaleString('en')} SR`,
-      answerEn: `P&L Summary ${year}:\n• Sales: ${Number(sales).toLocaleString('en')} SAR\n• Purchases: ${Number(purchases).toLocaleString('en')} SAR\n• Expenses: ${Number(expenses).toLocaleString('en')} SAR\n• Gross Profit: ${Number(gross).toLocaleString('en')} SAR\n• Net Profit: ${Number(net).toLocaleString('en')} SAR`,
+      answerAr: [
+        `## ملخص الربح والخسارة — ${year}`,
+        '',
+        'البند\tالمبلغ',
+        `المبيعات\t${fmt(sales)}`,
+        `المشتريات\t${fmt(purchases)}`,
+        `المصروفات\t${fmt(expenses)}`,
+        `الربح الإجمالي\t${fmt(gross)}`,
+        `الربح الصافي\t${fmt(net)}`,
+      ].join('\n'),
+      answerEn: [
+        `## P&L summary — ${year}`,
+        '',
+        'Item\tAmount',
+        `Sales\t${fmtEn(sales)}`,
+        `Purchases\t${fmtEn(purchases)}`,
+        `Expenses\t${fmtEn(expenses)}`,
+        `Gross profit\t${fmtEn(gross)}`,
+        `Net profit\t${fmtEn(net)}`,
+      ].join('\n'),
     };
   },
 };
