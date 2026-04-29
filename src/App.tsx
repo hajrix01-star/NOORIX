@@ -21,6 +21,7 @@ import { appKeys } from './services/queryKeys';
 import { STALE_CHUNK_RELOAD_QUERY } from './utils/staleChunkRecovery';
 
 const DashboardScreen = React.lazy(() => import('./modules/Dashboard/DashboardScreen'));
+const DashboardStudioScreen = React.lazy(() => import('./modules/Dashboard/DashboardStudioScreen'));
 const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScreen'));
 const PurchasesBatchScreen = React.lazy(() => import('./modules/Purchases/PurchasesBatchScreen'));
 const ThemePreviewScreen = React.lazy(() => import('./modules/ThemePreviewScreen'));
@@ -419,8 +420,9 @@ export default function App() {
                 <Route path="/tax" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/form" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/reports" element={<Navigate to="/reports/tax" replace />} />
-                <Route path="/analytics-studio" element={<Navigate to="/reports/general" replace />} />
+                <Route path="/analytics-studio" element={<Navigate to="/dashboard-studio" replace />} />
                 <Route path="/analytics" element={<Navigate to="/reports/general" replace />} />
+                <Route path="/dashboard-studio" element={<DashboardStudioScreen />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>

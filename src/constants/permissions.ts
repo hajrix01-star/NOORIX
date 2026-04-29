@@ -154,7 +154,8 @@ export const ROUTE_PERMISSION = {
   '/reports':       PERMISSIONS.VIEW_REPORTS,
   '/hajri-tax':     PERMISSIONS.VIEW_REPORTS,
   '/settings':      PERMISSIONS.MANAGE_SETTINGS,
-  '/theme-preview': PERMISSIONS.VIEW_DASHBOARD,
+  '/theme-preview':    PERMISSIONS.VIEW_DASHBOARD,
+  '/dashboard-studio': PERMISSIONS.VIEW_DASHBOARD,
   '/ocr':           PERMISSIONS.VIEW_OCR,
   '/ocr/cashier':   PERMISSIONS.OCR_SUBMIT,
 };

@@ -112,4 +112,24 @@ export default {
     en: 'Above normal +{pct}%',
   },
   dashboardKpiFooterNetProfitMarginLabel: { ar: 'هامش صافي الربح', en: 'Net profit margin' },
+
+  dashboardStudioNav: { ar: 'لوحة التحكم (استوديو)', en: 'Dashboard (Studio)' },
+  dashboardStudioTitle: { ar: 'استوديو لوحة التحكم', en: 'Dashboard studio' },
+  dashboardStudioBeta: { ar: 'تجريبي', en: 'Beta' },
+  dashboardStudioDesc: {
+    ar: 'نفس بيانات نظرة عامة لوحة التحكم مع فلاتر أوضح وتصدير — للتجربة قبل أي استبدال للوحة التقليدية.',
+    en: 'Same overview data with clearer filters and export — try before replacing the classic dashboard.',
+  },
+  dashboardStudioClassicLink: { ar: 'اللوحة التقليدية', en: 'Classic dashboard' },
+  dashboardStudioExportCsv: { ar: 'تصدير KPI (CSV)', en: 'Export KPIs (CSV)' },
+  dashboardStudioFilters: { ar: 'الفلاتر', en: 'Filters' },
+  dashboardStudioFiltersHint: {
+    ar: 'اختر السنة والشكل الزمني للشهر — يحدّث المخططات والمؤشرات فوراً.',
+    en: 'Pick year and month scope — charts and KPIs update instantly.',
+  },
+  dashboardStudioScope: { ar: 'النطاق', en: 'Scope' },
+  dashboardStudioCsvScope: { ar: 'النطاق', en: 'Scope' },
+  dashboardStudioCsvMetric: { ar: 'المؤشر', en: 'Metric' },
+  dashboardStudioCsvValue: { ar: 'القيمة', en: 'Value' },
+  dashboardStudioCsvPctOfSales: { ar: '٪ من المبيعات', en: '% of sales' },
 };

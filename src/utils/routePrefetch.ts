@@ -9,6 +9,7 @@
 const routeLoaders = {
   '/owner': () => import('../modules/Owner/OwnerDashboardScreen'),
   '/': () => import('../modules/Dashboard/DashboardScreen'),
+  '/dashboard-studio': () => import('../modules/Dashboard/DashboardStudioScreen'),
   '/chat': () => import('../modules/SmartChat/SmartChatScreen'),
   '/sales': () => import('../modules/Sales/DailySalesScreen'),
   '/purchases': () => import('../modules/Purchases/PurchasesBatchScreen'),

@@ -7,9 +7,7 @@ import { ErrorState } from '../../../components/states';
 import type { DashboardOverviewTabProps } from './types';
 import { useDashboardOverviewModel } from './hooks/useDashboardOverviewModel';
 import { DashboardOverviewKpiSkeleton } from './components/DashboardOverviewKpiSkeleton';
-import { DashboardOverviewTopCharts } from './components/DashboardOverviewTopCharts';
-import { DashboardOverviewKpis } from './components/DashboardOverviewKpis';
-import { DashboardOverviewTimelineSection } from './components/DashboardOverviewTimelineSection';
+import { DashboardOverviewContent } from './DashboardOverviewContent';
 export default function DashboardOverviewTab({ companyId, year, selectedMonth, filter }: DashboardOverviewTabProps) {
   const { t } = useTranslation();
   const m = useDashboardOverviewModel(companyId, year, selectedMonth, filter);
@@ -30,46 +28,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     );
   }
 
-  return (
-    <div className="flex flex-col gap-5">
-      <DashboardOverviewTopCharts
-        lang={m.lang}
-        supplierFrom={m.supplierFrom}
-        supplierTo={m.supplierTo}
-        isPeriodLoading={m.isPeriodLoading}
-        topSuppliersChartData={m.topSuppliersChartData}
-        purchaseCategoriesPieData={m.purchaseCategoriesPieData}
-        selectedMonth={m.selectedMonth}
-        periodPurchaseTotal={Number(m.periodData?.purchaseCategoryTotal || 0)}
-      />
-
-      <DashboardOverviewKpis
-        report={m.report}
-        selectedMonth={m.selectedMonth}
-        cards={m.cards}
-        filter={m.filter}
-        year={m.year}
-        revenueDailyAvgActiveDays={m.revenueDailyAvgActiveDays}
-        kpiInsightFooters={m.kpiInsightFooters}
-      />
-
-      <DashboardOverviewTimelineSection
-        lang={m.lang}
-        timelineGrain={m.timelineGrain}
-        setTimelineGrain={m.setTimelineGrain}
-        timelineMonthName={m.timelineMonthName}
-        year={m.year}
-        performanceData={m.performanceData as Record<string, string | number>[]}
-        perfTotal={m.perfTotal}
-        channelData={m.channelData}
-        hiddenSeries={m.hiddenSeries}
-        toggleSeries={m.toggleSeries}
-        SERIES={m.SERIES}
-        pieColors={m.pieColors}
-        uiDir={m.uiDir}
-      />
-    </div>
-  );
+  return <DashboardOverviewContent m={m} />;
 }
 
 export type { DashboardOverviewTabProps } from './types';

@@ -285,3 +285,5 @@ export function useDashboardOverviewModel(
 }
 
 export { MONTH_NAMES_AR, MONTH_NAMES_EN, PIE_COLORS };
+
+export type DashboardOverviewModel = ReturnType<typeof useDashboardOverviewModel>;
