@@ -21,6 +21,12 @@ import {
 } from '../utils/dashboardOverviewBuilders';
 import type { DashboardOverviewFilter } from '../types';
 
+/** خيارات اختيارية — تستخدمها شاشة الاستوديو فقط (لا تغيّر اللوحة التقليدية). */
+export type UseDashboardOverviewModelOptions = {
+  /** يمرّر لـ GET رؤى لوحة التحكم — يؤثر على مفتاح الاستعلام */
+  includeCancelledSales?: boolean;
+};
+
 const MONTH_NAMES_AR = [
   'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
@@ -46,6 +52,7 @@ export function useDashboardOverviewModel(
   year: number,
   selectedMonth: number | null,
   filter: DashboardOverviewFilter | undefined,
+  modelOptions?: UseDashboardOverviewModelOptions,
 ) {
   const { t, lang } = useTranslation();
   const uiDir = useUiDir();
@@ -107,6 +114,7 @@ export function useDashboardOverviewModel(
     periodStart: supplierFrom,
     periodEnd: supplierTo,
     selectedMonth: selectedMonth ?? undefined,
+    includeCancelledSales: modelOptions?.includeCancelledSales === true,
     enabled: !!companyId,
   });
 
@@ -281,6 +289,11 @@ export function useDashboardOverviewModel(
     selectedMonth,
     pieColors: PIE_COLORS,
     kpiInsightFooters,
+    dashboardInsights: {
+      data: insightsQuery.data,
+      isLoading: insightsQuery.isLoading,
+      isError: insightsQuery.isError,
+    },
   };
 }
 

@@ -8,21 +8,7 @@ import { usePeriodAnalytics } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
 import { monthDateBounds, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button } from '../../ui';
-
-const KIND_ORDER = ['sale', 'purchase', 'expense', 'fixed_expense', 'hr_expense', 'salary', 'advance'];
-
-function kindLabel(t: any, k: any) {
-  const m = {
-    sale: t('categoryTypeSale'),
-    purchase: t('categoryTypes'),
-    expense: t('categoryTypeExpense'),
-    fixed_expense: t('fixedExpenseType'),
-    hr_expense: t('invoiceKindHrExpense'),
-    salary: t('totalSalary'),
-    advance: t('quickAdvance'),
-  };
-  return (m as Record<string, string>)[String(k)] || k;
-}
+import { PERIOD_INVOICE_KIND_ORDER, periodInvoiceKindLabel } from '../Dashboard/utils/periodInvoiceKindLabels';
 
 export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }: any) {
   const { t, lang } = useTranslation();
@@ -38,7 +24,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
 
   const byKindRows = useMemo(() => {
     const m = data?.totalsByKind || {};
-    return KIND_ORDER.filter((k: any) => m[k]?.invoiceCount > 0).map((k: any) => ({
+    return PERIOD_INVOICE_KIND_ORDER.filter((k: any) => m[k]?.invoiceCount > 0).map((k: any) => ({
       kind: k,
       total: Number(m[k]?.totalAmount || 0),
       count: m[k]?.invoiceCount || 0,
@@ -74,7 +60,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                   }}
                   className="flex items-center justify-between w-full text-[12px] text-start"
                 >
-                  <span className="font-bold">{kindLabel(t, row.kind)}</span>
+                  <span className="font-bold">{periodInvoiceKindLabel(t, row.kind)}</span>
                   <span className="nx-font-numbers text-noorix-blue">
                     {fmt(row.total, 0)} <small className="opacity-70">({row.count})</small>
                   </span>

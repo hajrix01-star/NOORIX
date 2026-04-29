@@ -1,11 +1,12 @@
 /**
- * لوحة تحكم تجريبية — تخطيط أقرب لتجربة تحليلات (فلاتر جانبية، تصدير، متجاوبة).
- * المسار: /dashboard-studio — لا تستبدل لوحة التحكم التقليدية.
+ * لوحة تحكم تجريبية — فلاتر إضافية، بيانات ورؤى أكثر من نظرة عامة التقليدية.
+ * المسار: /dashboard-studio
  */
 import React, { useMemo, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
+import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import { Button, Input, ScreenShell } from '../../ui';
 import { cn } from '../../ui/cn';
 import { getSaudiNow } from '../../utils/saudiDate';
@@ -17,7 +18,11 @@ import {
 import { DashboardOverviewContent } from './overview/DashboardOverviewContent';
 import { DashboardOverviewKpiSkeleton } from './overview/components/DashboardOverviewKpiSkeleton';
 import { ErrorState } from '../../components/states';
-import { buildDashboardStudioKpiCsv } from './utils/buildDashboardStudioCsv';
+import { buildDashboardStudioKpiCsv, buildDashboardStudioPeriodCsvAppend } from './utils/buildDashboardStudioCsv';
+import { periodInvoiceKindLabel } from './utils/periodInvoiceKindLabels';
+import { DashboardStudioPeriodSnapshot } from './studio/DashboardStudioPeriodSnapshot';
+import { DashboardStudioInsightsPanel } from './studio/DashboardStudioInsightsPanel';
+import { DashboardStudioCompareBlock } from './studio/DashboardStudioCompareBlock';
 
 export default function DashboardStudioScreen() {
   const { t, lang } = useTranslation();
@@ -27,6 +32,8 @@ export default function DashboardStudioScreen() {
   const [year, setYear] = useState(now.year);
   const [selectedMonth, setSelectedMonth] = useState(String(now.month));
   const selectedMonthNumber = selectedMonth ? Number(selectedMonth) : null;
+  const [includeCancelledSales, setIncludeCancelledSales] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
 
   const filter = useMemo(
     () => ({
@@ -39,21 +46,38 @@ export default function DashboardStudioScreen() {
     [year, selectedMonthNumber],
   );
 
-  const m = useDashboardOverviewModel(activeCompanyId || '', year, selectedMonthNumber, filter);
+  const modelOptions = useMemo(() => ({ includeCancelledSales }), [includeCancelledSales]);
+
+  const m = useDashboardOverviewModel(activeCompanyId || '', year, selectedMonthNumber, filter, modelOptions);
+
+  const compareAnnual = showCompare && selectedMonthNumber == null;
+  const prevYearPl = useReportsGeneralProfitLoss({
+    companyId: activeCompanyId || '',
+    year: year - 1,
+    enabled: !!activeCompanyId && compareAnnual && year > 2001,
+  });
 
   const exportCsv = useCallback(() => {
     if (!m.report || m.isLoading || m.salesPackLoading) return;
-    const blob = new Blob(
-      [
-        buildDashboardStudioKpiCsv(m, {
-          scopeLabel: t('dashboardStudioCsvScope'),
-          metric: t('dashboardStudioCsvMetric'),
-          value: t('dashboardStudioCsvValue'),
-          pctOfSales: t('dashboardStudioCsvPctOfSales'),
-        }),
-      ],
-      { type: 'text/csv;charset=utf-8' },
+    const kpi = buildDashboardStudioKpiCsv(m, {
+      scopeLabel: t('dashboardStudioCsvScope'),
+      metric: t('dashboardStudioCsvMetric'),
+      value: t('dashboardStudioCsvValue'),
+      pctOfSales: t('dashboardStudioCsvPctOfSales'),
+    });
+    const periodAppend = buildDashboardStudioPeriodCsvAppend(
+      m,
+      {
+        section: t('dashboardStudioPeriodSnapshotTitle'),
+        kind: t('dashboardStudioByInvoiceKind'),
+        amount: t('dashboardStudioCsvValue'),
+        count: t('dashboardStudioInvoiceCount'),
+      },
+      (kind) => periodInvoiceKindLabel(t, kind),
     );
+    const cancelledNote = includeCancelledSales ? `\r\n${t('dashboardStudioIncludeCancelledNote')},1` : '';
+    const text = kpi + (periodAppend ? `\r\n${periodAppend}` : '') + cancelledNote;
+    const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const part = selectedMonthNumber != null ? String(selectedMonthNumber) : 'all';
@@ -64,24 +88,7 @@ export default function DashboardStudioScreen() {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }, [m, selectedMonthNumber, t, year]);
-
-  const body = (() => {
-    if (!activeCompanyId) {
-      return <div className="p-8 text-center text-noorix-muted">{t('pleaseSelectCompany')}</div>;
-    }
-    if (m.isLoading || m.salesPackLoading) {
-      return <DashboardOverviewKpiSkeleton />;
-    }
-    if (m.error) {
-      return (
-        <ErrorState className="m-4">
-          {m.error instanceof Error ? m.error.message : String(m.error)}
-        </ErrorState>
-      );
-    }
-    return <DashboardOverviewContent m={m} />;
-  })();
+  }, [m, selectedMonthNumber, t, year, includeCancelledSales]);
 
   return (
     <ScreenShell>
@@ -105,7 +112,7 @@ export default function DashboardStudioScreen() {
                     {t('dashboardStudioBeta')}
                   </span>
                 </div>
-                <p className="text-[13px] text-noorix-muted mt-1.5 m-0 max-w-[52ch]">{t('dashboardStudioDesc')}</p>
+                <p className="text-[13px] text-noorix-muted mt-1.5 m-0 max-w-[56ch]">{t('dashboardStudioDesc')}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <Button type="button" size="sm" variant="secondary" onClick={() => navigate('/')}>
@@ -174,6 +181,27 @@ export default function DashboardStudioScreen() {
                   ))}
                 </Input>
               </div>
+
+              <div className="border-t border-noorix-border pt-3">
+                <div className="text-[11px] font-bold uppercase tracking-wide text-noorix-muted mb-2">
+                  {t('dashboardStudioAdvancedFilters')}
+                </div>
+                <label className="nx-checkbox flex cursor-pointer items-start gap-2.5 py-1.5 text-[13px] font-medium text-noorix-text select-none">
+                  <input
+                    type="checkbox"
+                    checked={includeCancelledSales}
+                    onChange={(e) => setIncludeCancelledSales(e.target.checked)}
+                  />
+                  <span>{t('dashboardStudioIncludeCancelled')}</span>
+                </label>
+                <p className="mt-1 text-[11px] text-noorix-muted m-0">{t('dashboardStudioIncludeCancelledHint')}</p>
+
+                <label className="nx-checkbox mt-3 flex cursor-pointer items-start gap-2.5 py-1.5 text-[13px] font-medium text-noorix-text select-none">
+                  <input type="checkbox" checked={showCompare} onChange={(e) => setShowCompare(e.target.checked)} />
+                  <span>{t('dashboardStudioCompareToggle')}</span>
+                </label>
+                <p className="mt-1 text-[11px] text-noorix-muted m-0">{t('dashboardStudioCompareToggleHint')}</p>
+              </div>
             </div>
           </aside>
 
@@ -181,9 +209,55 @@ export default function DashboardStudioScreen() {
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-noorix-border bg-noorix-bg-muted/30 px-3 py-2.5">
               <span className="text-[12px] text-noorix-muted">
                 {t('dashboardStudioScope')}: <span className="font-semibold text-noorix-text">{filter.label}</span>
+                {includeCancelledSales ? (
+                  <span className="ms-2 rounded bg-noorix-bg-muted px-1.5 py-0.5 text-[11px] text-noorix-text">
+                    {t('dashboardStudioCancelledBadge')}
+                  </span>
+                ) : null}
               </span>
             </div>
-            {body}
+
+            {!activeCompanyId ? (
+              <div className="p-8 text-center text-noorix-muted">{t('pleaseSelectCompany')}</div>
+            ) : m.isLoading || m.salesPackLoading ? (
+              <DashboardOverviewKpiSkeleton />
+            ) : m.error ? (
+              <ErrorState className="m-4">
+                {m.error instanceof Error ? m.error.message : String(m.error)}
+              </ErrorState>
+            ) : (
+              <>
+                <DashboardStudioPeriodSnapshot
+                  companyId={activeCompanyId}
+                  from={m.supplierFrom}
+                  to={m.supplierTo}
+                  periodData={m.periodData}
+                  isLoading={m.isPeriodLoading}
+                  isError={false}
+                />
+
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
+                  <DashboardStudioCompareBlock
+                    show={showCompare}
+                    year={year}
+                    selectedMonth={selectedMonthNumber}
+                    currentReport={m.report}
+                    prevYearReport={prevYearPl.data}
+                    prevYearLoading={prevYearPl.isLoading}
+                  />
+                  <DashboardStudioInsightsPanel
+                    payload={m.dashboardInsights.data}
+                    isLoading={m.dashboardInsights.isLoading}
+                    isError={m.dashboardInsights.isError}
+                  />
+                </div>
+
+                <div className="text-[12px] font-semibold uppercase tracking-wide text-noorix-muted">
+                  {t('dashboardStudioClassicChartsTitle')}
+                </div>
+                <DashboardOverviewContent m={m} />
+              </>
+            )}
           </section>
         </div>
       </div>
