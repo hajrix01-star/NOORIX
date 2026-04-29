@@ -5,7 +5,7 @@ export function normalizeGeminiIntent(v: unknown): GeminiIntent {
   const valid: GeminiIntent[] = [
     'sales', 'purchases', 'expenses', 'reports', 'vaults',
     'invoices', 'suppliers', 'categories', 'expense_lines', 'hr', 'orders', 'help',
-    'finance_ratios', 'sales_month_compare', 'unknown',
+    'finance_ratios', 'sales_month_compare', 'dashboard_insights', 'unknown',
   ];
   return valid.includes(s as GeminiIntent) ? (s as GeminiIntent) : 'unknown';
 }

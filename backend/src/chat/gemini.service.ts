@@ -8,13 +8,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { getGeminiApiKey } from '../config/gemini.config';
 import { extractJson } from '../common/utils/extract-json.util';
-import { getGeminiChatIntentRequestUrl, GEMINI_CHAT_INTENT_SYSTEM_PROMPT } from './gemini-chat-intent-prompts.util';
+import { getGeminiChatIntentRequestUrl, GEMINI_CHAT_INTENT_SYSTEM_PROMPT, GEMINI_INTENT_FIELD_SCHEMA_DESCRIPTION } from './gemini-chat-intent-prompts.util';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { normalizeGeminiIntent, normalizeGeminiPeriod } from './gemini-normalize.util';
 import { GeminiConcurrencyGate } from './gemini-concurrency.util';
 import type { GeminiParseResult } from './gemini-types';
 
 export type { GeminiIntent, GeminiPeriod, GeminiParseResult } from './gemini-types';
+
+/** مطالبة نظام لشرح JSON الرؤى — يُختبر في الوحدات لضمان عدم طلب حسابات جديدة */
+export const DASHBOARD_INSIGHTS_LLM_SYSTEM_PROMPT = `You are a financial explanation assistant for NOORIX.
+Use only the provided Dashboard Insights JSON.
+Do not calculate new financial numbers.
+Do not invent missing data.
+Do not mention anything not present in the JSON.
+Do not create new warnings.
+Do not override severity.
+Do not provide tax, payroll, VAT, bank, vault, or legal advice.
+If the JSON does not support an answer, say the data is not enough.
+Keep the answer concise and business-friendly.
+Arabic first when the user writes Arabic.
+Structure: one short opening sentence on overall status, then 1–3 bullet points based only on warnings/insights from the JSON. If there are no warnings and no relevant insights in the JSON, say the neutral line that current figures do not exceed configured warning thresholds (in both languages).`;
 
 @Injectable()
 export class GeminiService {
@@ -59,7 +73,7 @@ export class GeminiService {
             responseJsonSchema: {
               type: 'object',
               properties: {
-                intent: { type: 'string', description: 'One of: sales, purchases, expenses, reports, vaults, invoices, suppliers, categories, expense_lines, hr, orders, help, finance_ratios, sales_month_compare, unknown' },
+                intent: { type: 'string', description: GEMINI_INTENT_FIELD_SCHEMA_DESCRIPTION },
                 period: { type: 'string', description: 'One of: today, yesterday, day_before_yesterday, this_week, last_week, this_month, last_month, year, or null' },
               },
               required: ['intent'],
@@ -87,6 +101,73 @@ export class GeminiService {
       console.warn('[GeminiService] Parse error:', err);
       return null;
     }
+    });
+  }
+
+  /**
+   * شرح JSON الرؤى فقط — لا جلب بيانات ولا حسابات؛ عند الفشل يُرجع null
+   */
+  async explainDashboardInsights(
+    userQuery: string,
+    insightsPackage: Record<string, unknown>,
+    opts: { prefersArabic: boolean },
+  ): Promise<{ answerAr: string; answerEn: string } | null> {
+    if (!this.apiKey) return null;
+    const trimmed = (userQuery || '').trim();
+    if (!trimmed || trimmed.length > 500) return null;
+
+    const pref = opts.prefersArabic
+      ? 'The user writes primarily in Arabic: lead with Arabic tone in answerAr; answerEn mirrors the same facts.'
+      : 'The user writes primarily in English: lead with English in answerEn; answerAr mirrors the same facts.';
+
+    return this.geminiGate.with(async () => {
+      try {
+        const response = await fetch(`${getGeminiChatIntentRequestUrl()}?key=${this.apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `${DASHBOARD_INSIGHTS_LLM_SYSTEM_PROMPT}\n\n${pref}\n\nDashboard Insights JSON (only source of truth):\n${JSON.stringify(insightsPackage)}\n\nUser question: ${JSON.stringify(trimmed)}\n\nReturn JSON only: {"answerAr":"...","answerEn":"..."}`,
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.15,
+              maxOutputTokens: 512,
+              responseMimeType: 'application/json',
+              responseJsonSchema: {
+                type: 'object',
+                properties: {
+                  answerAr: { type: 'string' },
+                  answerEn: { type: 'string' },
+                },
+                required: ['answerAr', 'answerEn'],
+              },
+            },
+          }),
+        });
+
+        if (!response.ok) return null;
+
+        const data = (await response.json()) as any;
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) return null;
+
+        const parsed = extractJson<{ answerAr?: string; answerEn?: string }>(text);
+        if (!parsed?.answerAr || !parsed?.answerEn) return null;
+
+        return {
+          answerAr: String(parsed.answerAr).trim(),
+          answerEn: String(parsed.answerEn).trim(),
+        };
+      } catch (err) {
+        this.logger.warn(`explainDashboardInsights: ${err instanceof Error ? err.message : String(err)}`);
+        return null;
+      }
     });
   }
 

@@ -4,10 +4,12 @@ import type { DashboardInsightsPayload } from '../../reporting/insights/insights
 import {
   dashboardInsightsHandler,
   buildDashboardInsightsDateRangeForMonth,
+  buildInsightsExplanationPackage,
   formatInsightsPeriodLabelAr,
   formatInsightsPeriodLabelEn,
   parseDashboardInsightsMonth,
   resolveInsightsYearMonth,
+  validateInsightsLlmAnswer,
 } from './dashboard-insights.handler';
 import { financeRatiosHandler } from './finance-ratios.handler';
 import type { ChatHandlerContext } from './types';
@@ -359,6 +361,123 @@ describe('dashboardInsightsHandler', () => {
       2,
       refDate,
     );
+  });
+
+  it('Gemini-routed dashboard_insights uses general kind when classify returns null', async () => {
+    const q = normalizeQuery('random paraphrase only');
+    const buildDashboardInsights = jest.fn().mockResolvedValue(mkPayload({ warnings: [] }));
+    const ctx = mkCtx({
+      query: q,
+      intentSource: 'gemini',
+      parsedIntent: 'dashboard_insights',
+      now: refDate,
+      dashboardInsightsService: { buildDashboardInsights },
+    });
+    const out = await dashboardInsightsHandler.process!(ctx);
+    expect(buildDashboardInsights).toHaveBeenCalled();
+    expect(out?.answerAr).toContain('لا توجد تنبيهات مالية حالياً.');
+  });
+
+  it('buildInsightsExplanationPackage contains only safe JSON fields (no DB rows)', () => {
+    const payload = mkPayload({ warnings: [] });
+    const pack = buildInsightsExplanationPackage(payload, 'general', 2024, 3);
+    expect(Object.keys(pack).sort()).toEqual(
+      ['health', 'insights', 'metrics', 'periodLabel', 'ratios', 'warnings'].sort(),
+    );
+    expect(pack).not.toHaveProperty('ledger');
+    expect(pack).not.toHaveProperty('prisma');
+  });
+
+  it('validateInsightsLlmAnswer rejects invented large numbers not present in pack JSON', () => {
+    const pack = JSON.stringify({ health: { score: 50 }, warnings: [] });
+    expect(
+      validateInsightsLlmAnswer(
+        {
+          answerAr: 'ملخص طويل بما يكفي لاجتياز الحد الأدنى للطول مع رقم وهمي 987654',
+          answerEn: 'English summary long enough with fake number 987654',
+        },
+        pack,
+      ),
+    ).toBe(false);
+  });
+
+  it('validateInsightsLlmAnswer accepts LLM text when large numbers appear in the pack', () => {
+    const pack = JSON.stringify({ ratios: { note: 'sales 12000 SR' } });
+    expect(
+      validateInsightsLlmAnswer(
+        {
+          answerAr: 'الوضع مستقر نسبياً وفق البيانات. المبيعات 12000 SR ضمن النطاق.',
+          answerEn: 'Status is stable per data. Sales 12000 SR within range.',
+        },
+        pack.replace(/\s+/g, ''),
+      ),
+    ).toBe(true);
+  });
+
+  it('falls back to deterministic answer when insightsLlmExplain returns null', async () => {
+    const q = normalizeQuery('كيف وضع الشهر؟');
+    const payload = mkPayload({
+      warnings: [
+        {
+          id: 'purchase_ratio_to_sales',
+          severity: 'warning',
+          category: 'purchases',
+          metricBasis: 'accounting_pl',
+          titleAr: 'عنوان',
+          titleEn: 'Title',
+          detailAr: 'تفاصيل.',
+          detailEn: 'Details.',
+        },
+      ],
+    });
+    const buildDashboardInsights = jest.fn().mockResolvedValue(payload);
+    const insightsLlmExplain = jest.fn().mockResolvedValue(null);
+    const ctx = mkCtx({
+      query: q,
+      period: parsePeriod(q, refDate),
+      now: refDate,
+      dashboardInsightsService: { buildDashboardInsights },
+      insightsLlmExplain,
+    });
+    const out = await dashboardInsightsHandler.process!(ctx);
+    expect(insightsLlmExplain).toHaveBeenCalled();
+    expect(out?.answerAr).toContain('عنوان');
+  });
+
+  it('uses LLM text when insightsLlmExplain returns a grounded valid response', async () => {
+    const q = normalizeQuery('how is the month');
+    const payload = mkPayload({
+      warnings: [
+        {
+          id: 'purchase_ratio_to_sales',
+          severity: 'warning',
+          category: 'purchases',
+          metricBasis: 'accounting_pl',
+          titleAr: 'مشتريات',
+          titleEn: 'Purchases',
+          detailAr: 'من الخادم.',
+          detailEn: 'From server.',
+        },
+      ],
+    });
+    const buildDashboardInsights = jest.fn().mockResolvedValue(payload);
+    const packForAssert = buildInsightsExplanationPackage(payload, 'general', 2024, 3);
+    const insightsLlmExplain = jest.fn().mockImplementation((_query, pack) => {
+      expect(pack).toEqual(packForAssert);
+      return Promise.resolve({
+        answerAr: 'الوضع يحتاج متابعة وفق التنبيهات المعروضة في البيانات فقط.',
+        answerEn: 'The situation needs follow-up per the warnings shown in the data only.',
+      });
+    });
+    const ctx = mkCtx({
+      query: q,
+      now: refDate,
+      dashboardInsightsService: { buildDashboardInsights },
+      insightsLlmExplain,
+    });
+    const out = await dashboardInsightsHandler.process!(ctx);
+    expect(out?.answerEn).toContain('follow-up per the warnings');
+    expect(out?.answerAr).toContain('التنبيهات');
   });
 });
 

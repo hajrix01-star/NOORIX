@@ -13,6 +13,7 @@ export type GeminiIntent =
   | 'help'
   | 'finance_ratios'
   | 'sales_month_compare'
+  | 'dashboard_insights'
   | 'unknown';
 
 export type GeminiPeriod =

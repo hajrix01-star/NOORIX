@@ -2,6 +2,9 @@
  * أنواع معالجات المحادثة الذكية
  */
 import type { DashboardInsightsService } from '../../reporting/insights/dashboard-insights.service';
+import type { GeminiIntent } from '../gemini-types';
+
+export type { GeminiIntent } from '../gemini-types';
 
 export type ChatHandlerContext = {
   companyId: string;
@@ -16,6 +19,19 @@ export type ChatHandlerContext = {
   reportsService: any;
   vaultsService: any;
   dashboardInsightsService: DashboardInsightsService;
+  /** مضبوط عند التوجيه عبر Gemini فقط */
+  intentSource?: 'gemini' | 'keyword';
+  /** نية Gemini الأصلية عند intentSource === 'gemini' */
+  parsedIntent?: GeminiIntent;
+  /**
+   * شرح JSON الرؤى عبر Gemini — يُحقن من ChatService عند تفعيل SMART_CHAT_INSIGHTS_LLM_EXPLANATION
+   * ووجود مفتاح API فقط.
+   */
+  insightsLlmExplain?: (
+    query: string,
+    insightsPackage: Record<string, unknown>,
+    opts: { prefersArabic: boolean },
+  ) => Promise<{ answerAr: string; answerEn: string } | null>;
 };
 
 /** مخطط مقارنة شهريّين (أعمدة) */
@@ -40,14 +56,6 @@ export type ChatHandlerResult = {
   answerEn: string;
   extras?: ChatResponseExtras;
 };
-
-export type GeminiIntent =
-  | 'sales' | 'purchases' | 'expenses' | 'reports' | 'vaults'
-  | 'invoices' | 'suppliers' | 'categories' | 'expense_lines' | 'hr' | 'orders' | 'help'
-  | 'finance_ratios'
-  | 'sales_month_compare'
-  | 'dashboard_insights'
-  | 'unknown';
 
 export type ChatHandler = {
   /** أولوية التنفيذ (أقل = أولاً) */

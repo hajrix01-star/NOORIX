@@ -14,7 +14,7 @@ import { CHAT_HANDLERS } from './handlers';
 import type { ChatResponseExtras } from './handlers/types';
 import { normalizeQuery, parsePeriod } from './handlers/utils';
 import { GeminiService } from './gemini.service';
-import { isGeminiOpenModeEnabled } from '../config/gemini.config';
+import { isGeminiOpenModeEnabled, isSmartChatInsightsLlmExplanationEnabled } from '../config/gemini.config';
 
 @Injectable()
 export class ChatService {
@@ -53,7 +53,13 @@ export class ChatService {
     const month = now.getMonth() + 1;
     const period = parsePeriod(q, now);
 
-    const ctx = {
+    const insightsLlmExplain =
+      isSmartChatInsightsLlmExplanationEnabled() && this.geminiService.isAvailable()
+        ? (q: string, pack: Record<string, unknown>, opts: { prefersArabic: boolean }) =>
+            this.geminiService.explainDashboardInsights(q, pack, opts)
+        : undefined;
+
+    const baseCtx = {
       companyId,
       query: q,
       userRole,
@@ -66,6 +72,8 @@ export class ChatService {
       reportsService: this.reportsService,
       vaultsService: this.vaultsService,
       dashboardInsightsService: this.dashboardInsightsService,
+      intentSource: 'keyword' as const,
+      insightsLlmExplain,
     };
 
     // ─── محاولة فهم النية عبر Gemini (إن توفر المفتاح) ───
@@ -73,9 +81,14 @@ export class ChatService {
       try {
         const parsed = await this.geminiService.parseIntent(query);
         if (parsed && parsed.intent !== 'unknown') {
+          const geminiCtx = {
+            ...baseCtx,
+            intentSource: 'gemini' as const,
+            parsedIntent: parsed.intent,
+          };
           for (const handler of CHAT_HANDLERS) {
             if (handler.matchesIntent?.(parsed.intent, can)) {
-              const result = await handler.process(ctx);
+              const result = await handler.process(geminiCtx);
               if (result) return { ...result, meta: { intentSource: 'gemini', intent: parsed.intent } };
             }
           }
@@ -88,7 +101,7 @@ export class ChatService {
     // ─── مطابقة الكلمات المفتاحية (fallback أو عند عدم توفر Gemini) ───
     for (const handler of CHAT_HANDLERS) {
       if (handler.canHandle(q, can)) {
-        const result = await handler.process(ctx);
+        const result = await handler.process(baseCtx);
         if (result) return { ...result, meta: { intentSource: 'keyword' } };
       }
     }

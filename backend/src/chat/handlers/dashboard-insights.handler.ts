@@ -3,7 +3,7 @@
  */
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { DashboardSummaryDateRange } from '../../reporting/reporting.facade';
-import type { InsightItem } from '../../reporting/insights/insights.types';
+import type { DashboardInsightsPayload, InsightItem } from '../../reporting/insights/insights.types';
 import type { ChatHandler, ChatHandlerContext } from './types';
 import { matches } from './utils';
 
@@ -272,6 +272,73 @@ function buildAnswer(
   };
 }
 
+/** لاختبارات الوحدة — حزمة JSON آمنة لشرح LLM فقط */
+export function buildInsightsExplanationPackage(
+  payload: DashboardInsightsPayload,
+  kind: DashboardInsightsQueryKind,
+  year: number,
+  selectedMonth: number,
+): Record<string, unknown> {
+  const warningsForPack =
+    kind === 'general' ? payload.warnings.slice(0, 25) : filterWarnings(kind, payload.warnings);
+  const mapItem = (w: InsightItem) => ({
+    id: w.id,
+    severity: w.severity,
+    category: w.category,
+    metricBasis: w.metricBasis,
+    titleAr: w.titleAr,
+    detailAr: w.detailAr,
+    titleEn: w.titleEn,
+    detailEn: w.detailEn,
+    values: w.values,
+  });
+  return {
+    periodLabel: {
+      ar: formatInsightsPeriodLabelAr(year, selectedMonth),
+      en: formatInsightsPeriodLabelEn(year, selectedMonth),
+    },
+    health: {
+      summaryAr: payload.health.summaryAr,
+      summaryEn: payload.health.summaryEn,
+      band: payload.health.band,
+      score: payload.health.score,
+    },
+    warnings: warningsForPack.map(mapItem),
+    insights: payload.insights.slice(0, 25).map(mapItem),
+    ratios: payload.ratios,
+    metrics: payload.metrics,
+  };
+}
+
+function queryLooksArabic(q: string): boolean {
+  return /[\u0600-\u06FF]/.test(q);
+}
+
+/** أرقام مالية كبيرة في نص LLM يجب أن تظهر في JSON الحزمة — يقلل الادعاءات غير المدعومة */
+function insightsLlmContainsUngroundedLargeNumber(text: string, packStr: string): boolean {
+  const nums = text.match(/\b\d{4,}(?:[.,]\d+)?\b/g);
+  if (!nums) return false;
+  const flatPack = packStr.replace(/\s+/g, '');
+  for (const num of nums) {
+    const candidates = [num, num.replace(/,/g, ''), num.replace(/\./g, ',')];
+    if (candidates.some((c) => flatPack.includes(c.replace(/\s+/g, '')))) continue;
+    return true;
+  }
+  return false;
+}
+
+/** يُرجع true إذا كان نص LLM مقبولاً كبديل عن الرد الحتمي */
+export function validateInsightsLlmAnswer(llm: { answerAr: string; answerEn: string }, packStr: string): boolean {
+  const ar = String(llm.answerAr || '').trim();
+  const en = String(llm.answerEn || '').trim();
+  if (ar.length < 8 || en.length < 8) return false;
+  const MAX = 1100;
+  if (ar.length > MAX || en.length > MAX || ar.length + en.length > 2000) return false;
+  if (/{/.test(ar) || /{/.test(en)) return false;
+  if (insightsLlmContainsUngroundedLargeNumber(`${ar}\n${en}`, packStr)) return false;
+  return true;
+}
+
 export const dashboardInsightsHandler: ChatHandler = {
   priority: 5,
   intent: 'dashboard_insights',
@@ -279,7 +346,10 @@ export const dashboardInsightsHandler: ChatHandler = {
     intent === 'dashboard_insights' && can(PERMISSIONS.REPORTS_READ) && can(PERMISSIONS.SMART_CHAT_READ),
   canHandle: (q) => classifyDashboardInsightsQuery(q) != null,
   process: async (ctx) => {
-    const kind = classifyDashboardInsightsQuery(ctx.query);
+    let kind = classifyDashboardInsightsQuery(ctx.query);
+    if (kind == null && ctx.intentSource === 'gemini' && ctx.parsedIntent === 'dashboard_insights') {
+      kind = 'general';
+    }
     if (kind == null) return null;
 
     if (!ctx.can(PERMISSIONS.REPORTS_READ)) {
@@ -295,7 +365,7 @@ export const dashboardInsightsHandler: ChatHandler = {
       ctx.now,
     );
 
-    const { answerAr, answerEn } = buildAnswer(
+    let { answerAr, answerEn } = buildAnswer(
       kind,
       payload.health.summaryAr,
       payload.health.summaryEn,
@@ -303,6 +373,26 @@ export const dashboardInsightsHandler: ChatHandler = {
       year,
       selectedMonth,
     );
+
+    const pickedForLlm =
+      kind === 'general' ? payload.warnings.slice(0, 3) : filterWarnings(kind, payload.warnings);
+
+    if (ctx.insightsLlmExplain && pickedForLlm.length > 0) {
+      try {
+        const explanationPack = buildInsightsExplanationPackage(payload, kind, year, selectedMonth);
+        const packStr = JSON.stringify(explanationPack);
+        const llmOut = await ctx.insightsLlmExplain(ctx.query, explanationPack, {
+          prefersArabic: queryLooksArabic(ctx.query),
+        });
+        if (llmOut && validateInsightsLlmAnswer(llmOut, packStr)) {
+          answerAr = llmOut.answerAr;
+          answerEn = llmOut.answerEn;
+        }
+      } catch {
+        /* الرد الحتمي */
+      }
+    }
+
     return { answerAr, answerEn };
   },
 };

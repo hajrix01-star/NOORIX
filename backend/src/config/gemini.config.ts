@@ -30,3 +30,9 @@ export function isGeminiOpenModeEnabled(): boolean {
   const v = process.env.GEMINI_OPEN_MODE?.toLowerCase();
   return v !== 'false' && v !== '0' && v !== 'no';
 }
+
+/** شرح رؤى لوحة التحكم عبر LLM — افتراضي: معطّل (الرد الحتمي فقط) */
+export function isSmartChatInsightsLlmExplanationEnabled(): boolean {
+  const v = process.env.SMART_CHAT_INSIGHTS_LLM_EXPLANATION?.toLowerCase();
+  return v === 'true' || v === '1' || v === 'yes';
+}
