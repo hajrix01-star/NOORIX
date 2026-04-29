@@ -9,7 +9,15 @@ import {
 } from '../services/api';
 import { reportKeys } from '../services/queryKeys/reports';
 
-export function useReportsGeneralProfitLoss({ companyId, year }: { companyId: string; year: number }) {
+export function useReportsGeneralProfitLoss({
+  companyId,
+  year,
+  enabled = true,
+}: {
+  companyId: string;
+  year: number;
+  enabled?: boolean;
+}) {
   return useQuery({
     queryKey: reportKeys.generalProfitLoss(companyId, year),
     queryFn: async () => {
@@ -17,7 +25,7 @@ export function useReportsGeneralProfitLoss({ companyId, year }: { companyId: st
       throwIfApiFailed(res, 'فشل تحميل التقرير');
       return res.data;
     },
-    enabled: !!companyId && !!year,
+    enabled: !!companyId && !!year && enabled,
     placeholderData: keepPreviousData,
   });
 }

@@ -244,17 +244,6 @@ export function DashboardStudioInsightsPanel({ payload, isLoading, isError, clas
               </div>
             </div>
           ) : null}
-
-          {lists.opportunities.length === 0 &&
-            lists.warnings.length === 0 &&
-            lists.insights.length === 0 &&
-            !metrics?.accounting &&
-            !health?.summaryAr &&
-            !health?.summaryEn && (
-              <div className="rounded-lg border border-dashed border-noorix-border px-3 py-6 text-center text-[13px] text-noorix-muted">
-                {t('dashboardInsightsEmptyDetail')}
-              </div>
-            )}
         </>
       )}
     </div>

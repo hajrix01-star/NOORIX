@@ -123,7 +123,16 @@ export function DashboardStudioCompareBlock({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {rows.map((row) => {
+                const goodUp = row.key === 'sales' || row.key === 'grossProfit' || row.key === 'netProfit';
+                const up = row.cur > row.prev;
+                const isGood = goodUp ? up : !up;
+                const toneClass = row.cur === row.prev
+                  ? 'text-noorix-muted'
+                  : isGood
+                    ? 'text-noorix-green'
+                    : 'text-noorix-red';
+                return (
                 <tr key={row.key} className="border-b border-noorix-border/60">
                   <td className="py-2 pe-2 font-medium text-noorix-text">{row.label}</td>
                   <td className="py-2 pe-2 text-end nx-font-numbers ltr" dir="ltr">
@@ -132,16 +141,12 @@ export function DashboardStudioCompareBlock({
                   <td className="py-2 pe-2 text-end nx-font-numbers ltr" dir="ltr">
                     {amountText(String(row.prev))} <span className="nx-sar">SR</span>
                   </td>
-                  <td
-                    className={cn(
-                      'py-2 text-end font-semibold nx-font-numbers',
-                      row.cur > row.prev ? 'text-noorix-green' : row.cur < row.prev ? 'text-noorix-red' : 'text-noorix-muted',
-                    )}
-                  >
+                  <td className={cn('py-2 text-end font-semibold nx-font-numbers', toneClass)}>
                     {pctChange(row.cur, row.prev)}
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>
