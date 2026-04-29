@@ -1,33 +1,72 @@
 /**
- * بطاقة تقرير الرد + مخططات مصغّرة مرتبطة بنفس ملف الشاشة السابق.
+ * بطاقة تقرير الرد — عناوين، نقاط، جداول من أسطر tab، ومخططات مصغّرة.
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatSaudiDateTime } from '../../../utils/saudiDate';
 import { KPI_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { ChatAnswerExtras } from '../types';
 import { formatMiniChartTooltipValue, formatMiniChartYAxisTick } from '../utils/smartChatFormatters';
 
-function ReportDefinitionLine({ line, isAr }: { line: string; isAr: boolean }) {
-  const [open, setOpen] = useState(false);
-  const body = line.replace(/^(تعريف|Definition):\s*/i, '').trim();
+/** أسطر tab بنفس عدد الأعمدة (≥2) ولها صفّان على الأقل → جدول */
+function tryParseTabularBlock(
+  lines: string[],
+  start: number,
+): { rows: string[][]; endExclusive: number } | null {
+  if (start >= lines.length) return null;
+  const first = lines[start];
+  if (!first.includes('\t')) return null;
+  const headerCols = first.split('\t');
+  const colCount = headerCols.length;
+  if (colCount < 2) return null;
+  const rows: string[][] = [];
+  let i = start;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.includes('\t')) break;
+    const cells = line.split('\t');
+    if (cells.length !== colCount) break;
+    rows.push(cells.map((c) => c.trim()));
+    i += 1;
+  }
+  if (rows.length < 2) return null;
+  return { rows, endExclusive: i };
+}
+
+function ReportDataTable({ rows, isAr }: { rows: string[][]; isAr: boolean }) {
+  const [header, ...body] = rows;
+  const cellNumericClass = (cell: string) =>
+    /^[\d۰-۹٠-٩,.%\s—–-]+$/.test(cell.replace(/,/g, '')) ? 'nx-ltr tabular-nums' : '';
+
   return (
-    <div className="noorix-chat-report-card__definition rounded-[10px] border border-noorix-border overflow-hidden bg-noorix-bg-page/60">
-      <button
-        type="button"
-        className="w-full flex items-center justify-between gap-2 text-[13px] font-semibold text-noorix-text py-2.5 px-3 hover:bg-noorix-bg-muted/80 transition-colors"
-        style={{ direction: isAr ? 'rtl' : 'ltr' }}
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
-        <span>{isAr ? 'تعريف المؤشرات' : 'Indicator definition'}</span>
-        <span className="text-noorix-muted nx-ltr text-[11px]" aria-hidden>{open ? '▾' : '▸'}</span>
-      </button>
-      {open ? (
-        <div className="text-[13px] text-noorix-muted leading-[1.65] px-3 pb-3 pt-0 border-t border-noorix-border border-opacity-60">
-          {body}
-        </div>
-      ) : null}
+    <div
+      className="noorix-chat-report-table-wrap"
+      dir={isAr ? 'rtl' : 'ltr'}
+      role="region"
+      aria-label={isAr ? 'جدول بيانات' : 'Data table'}
+    >
+      <table className="noorix-chat-report-table">
+        <thead>
+          <tr>
+            {header.map((h, j) => (
+              <th key={j} scope="col">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {body.map((row, ri) => (
+            <tr key={ri}>
+              {row.map((cell, ci) => (
+                <td key={ci} className={ci > 0 ? `min-w-0 ${cellNumericClass(cell)}` : 'min-w-0'}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -156,6 +195,9 @@ export type SmartChatReportCardProps = {
   extras?: ChatAnswerExtras;
 };
 
+const NUMBERED_SECTION = /^([٠-٩]+|\d+)[\).\]]\s+/;
+const DEFINITION_LINE = /^(تعريف|Definition)\s*:/i;
+
 export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChatReportCardProps) {
   const raw = String(text || '').trim();
   const lines = raw
@@ -189,6 +231,67 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
     );
   };
 
+  const renderBody = () => {
+    const nodes: React.ReactNode[] = [];
+    let i = 0;
+    let k = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (DEFINITION_LINE.test(line)) {
+        i += 1;
+        continue;
+      }
+      if (/^##\s*/.test(line)) {
+        const title = line.replace(/^##\s*/, '').trim();
+        nodes.push(
+          <h3
+            key={`h-${k++}`}
+            className="text-[15px] md:text-[16px] font-bold text-noorix-text tracking-tight border-b border-noorix-border pb-2 mb-0"
+          >
+            {title}
+          </h3>,
+        );
+        i += 1;
+        continue;
+      }
+      if (/^[•\-\*]\s*/.test(line)) {
+        const bulletText = line.replace(/^[•\-\*]\s*/, '').trim();
+        const isSummary = /^الخلاصة[:：]/i.test(bulletText) || /^Summary:/i.test(bulletText);
+        nodes.push(
+          <div
+            key={`b-${k++}`}
+            className={`noorix-chat-report-card__bullet flex gap-2 text-[14px] md:text-[15px] pe-1${isSummary ? ' noorix-chat-report-card__bullet--summary' : ''}`}
+          >
+            <span className="text-noorix-muted shrink-0" aria-hidden>
+              •
+            </span>
+            <span className="min-w-0">{bulletText}</span>
+          </div>,
+        );
+        i += 1;
+        continue;
+      }
+      const table = tryParseTabularBlock(lines, i);
+      if (table) {
+        nodes.push(<ReportDataTable key={`t-${k++}`} rows={table.rows} isAr={isAr} />);
+        i = table.endExclusive;
+        continue;
+      }
+      if (NUMBERED_SECTION.test(line) && !line.includes('\t')) {
+        nodes.push(
+          <h4 key={`s-${k++}`} className="noorix-chat-report-card__section-title">
+            {line}
+          </h4>,
+        );
+        i += 1;
+        continue;
+      }
+      nodes.push(renderKvLine(line, k++));
+      i += 1;
+    }
+    return nodes;
+  };
+
   return (
     <div
       className="noorix-chat-report-card bg-noorix-surface text-noorix-text text-[14px] md:text-[15px] py-3.5 px-3 md:py-4 md:px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words w-full min-w-0 max-w-full"
@@ -198,36 +301,7 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
     >
       {lines.length > 0 ? (
         <div className="flex flex-col gap-3 w-full min-w-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
-          {lines.map((line, i) => {
-            if (/^##\s*/.test(line)) {
-              const title = line.replace(/^##\s*/, '').trim();
-              return (
-                <h3
-                  key={i}
-                  className="text-[15px] md:text-[16px] font-bold text-noorix-text tracking-tight border-b border-noorix-border pb-2 mb-0"
-                >
-                  {title}
-                </h3>
-              );
-            }
-            if (/^[•\-\*]\s*/.test(line)) {
-              const bulletText = line.replace(/^[•\-\*]\s*/, '').trim();
-              const isSummary = /^الخلاصة[:：]/i.test(bulletText) || /^Summary:/i.test(bulletText);
-              return (
-                <div
-                  key={i}
-                  className={`noorix-chat-report-card__bullet flex gap-2 text-[14px] md:text-[15px] pe-1${isSummary ? ' noorix-chat-report-card__bullet--summary' : ''}`}
-                >
-                  <span className="text-noorix-muted shrink-0" aria-hidden>•</span>
-                  <span className="min-w-0">{bulletText}</span>
-                </div>
-              );
-            }
-            if (/^(تعريف|Definition):\s*/i.test(line)) {
-              return <ReportDefinitionLine key={i} line={line} isAr={isAr} />;
-            }
-            return renderKvLine(line, i);
-          })}
+          {renderBody()}
         </div>
       ) : (
         <div className="whitespace-pre-wrap">{text}</div>

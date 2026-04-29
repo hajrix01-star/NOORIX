@@ -512,6 +512,68 @@ body.noorix-page-smart-chat .app-main__content {
   border: 1px solid color-mix(in srgb, var(--noorix-accent-blue) 18%, var(--noorix-border));
 }
 
+/* عنوان فرعي مرقّم (١) …) — بدون تعقيد */
+.noorix-chat-report-card__section-title {
+  margin: 0.15rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--noorix-text);
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+}
+
+/* جدول رد المحادثة — تمرير أفقي على الجوال، رأس واضح */
+.noorix-chat-report-table-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  border-radius: 12px;
+  border: 1px solid var(--noorix-border);
+  background: var(--noorix-bg-surface);
+  box-sizing: border-box;
+}
+
+.noorix-chat-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+@media (min-width: 768px) {
+  .noorix-chat-report-table {
+    font-size: 0.875rem;
+  }
+}
+
+.noorix-chat-report-table th,
+.noorix-chat-report-table td {
+  padding: 0.55rem 0.65rem;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid color-mix(in srgb, var(--noorix-border) 85%, transparent);
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.noorix-chat-report-table th {
+  font-weight: 700;
+  color: var(--noorix-text);
+  background: color-mix(in srgb, var(--noorix-bg-muted) 55%, var(--noorix-bg-surface));
+  white-space: nowrap;
+}
+
+.noorix-chat-report-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.noorix-chat-report-table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--noorix-bg-muted) 22%, transparent);
+}
+
 .dark .noorix-chat-report-card__bullet--summary {
   background: color-mix(in srgb, var(--noorix-accent-blue) 12%, transparent);
   border-color: color-mix(in srgb, var(--noorix-accent-blue) 28%, var(--noorix-border));

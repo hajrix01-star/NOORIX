@@ -97,7 +97,7 @@ export const salesMonthCompareHandler: ChatHandler = {
       `• ${prevP.labelAr}: ${fmtMoney(prev)}`,
       `الفرق: ${fmtMoney(diff)} (${deltaPct}% عن الشهر الماضي)`,
       `الاتجاه: ${trendAr}`,
-      'تعريف: مقارنة عادلة — الشهر الحالي من 1 إلى اليوم؛ الشهر الماضي من 1 إلى نفس رقم اليوم (مقصور على طول ذلك الشهر).',
+      '• نطاق المقارنة: الشهر الحالي من اليوم 1 حتى اليوم؛ الشهر الماضي من اليوم 1 حتى نفس تاريخ اليوم (بحد أقصى أيام ذلك الشهر).',
     ];
     const linesEn = [
       '## Month-over-month sales',
@@ -106,7 +106,7 @@ export const salesMonthCompareHandler: ChatHandler = {
       `• ${prevP.labelEn}: ${fmtMoney(prev).replace('SR', 'SAR')}`,
       `Difference: ${fmtMoney(diff).replace('SR', 'SAR')} (${deltaPct}% vs last month)`,
       `Trend: ${trendEn}`,
-      'Definition: this month from the 1st through today; last month from the 1st through the same calendar day (capped by last month length).',
+      '• Comparison window: this month from the 1st through today; last month from the 1st through the same calendar day (capped by that month’s length).',
     ];
 
     return {

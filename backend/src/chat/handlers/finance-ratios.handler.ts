@@ -171,8 +171,6 @@ export const financeRatiosHandler: ChatHandler = {
       linesEn.push(
         '• Summary: no sales in this range; check revenue postings or widen the period, then ask again.',
       );
-      linesAr.push(`تعريف: النسب من إجمالي المبيعات (إيراد)؛ المشتريات من حسابات PUR؛ المصروفات دون تكرار المشتريات.`);
-      linesEn.push(`Definition: vs revenue; purchases = PUR*; operating expenses exclude PUR.`);
       return { answerAr: linesAr.join('\n'), answerEn: linesEn.join('\n') };
     }
 
@@ -197,8 +195,6 @@ export const financeRatiosHandler: ChatHandler = {
     }
     linesAr.push(summaryAr);
     linesEn.push(summaryEn);
-    linesAr.push(`تعريف: النسب من إجمالي المبيعات (إيراد)؛ المشتريات من حسابات PUR؛ المصروفات دون تكرار المشتريات.`);
-    linesEn.push(`Definition: vs revenue; purchases = PUR*; operating expenses exclude PUR.`);
 
     linesAr.push(`• إجمالي المبيعات: ${fmtMoney(sales)}`);
     linesEn.push(`• Total sales: ${fmtMoney(sales).replace('SR', 'SAR')}`);
