@@ -198,6 +198,13 @@ export type SmartChatReportCardProps = {
 const NUMBERED_SECTION = /^([٠-٩]+|\d+)[\).\]]\s+/;
 const DEFINITION_LINE = /^(تعريف|Definition)\s*:/i;
 
+/** رد يحوي أرقاماً/مبالغ/نسباً — يُبرز إطار الكرت لتمييزه عن الخلفية */
+function answerLooksNumericOrMetrics(text: string): boolean {
+  const s = String(text || '');
+  if (!/[\d۰-۹]/.test(s)) return false;
+  return /(?:SR|SAR|٪|%|\bvs\b)/i.test(s) || /\d{2,}/.test(s);
+}
+
 export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChatReportCardProps) {
   const raw = String(text || '').trim();
   const lines = raw
@@ -292,11 +299,14 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
     return nodes;
   };
 
+  const emphasizeDataCard =
+    answerLooksNumericOrMetrics(raw) || Boolean(extras?.chart);
+
   return (
     <div
-      className="noorix-chat-report-card bg-noorix-surface text-noorix-text text-[14px] md:text-[15px] py-3.5 px-3 md:py-4 md:px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words w-full min-w-0 max-w-full"
+      className={`noorix-chat-report-card bg-noorix-surface text-noorix-text text-[14px] md:text-[15px] py-3.5 px-3 md:py-4 md:px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words w-full min-w-0 max-w-full${emphasizeDataCard ? ' noorix-chat-report-card--numeric' : ''}`}
       style={{
-        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        boxShadow: emphasizeDataCard ? undefined : '0 2px 8px rgba(0,0,0,0.04)',
       }}
     >
       {lines.length > 0 ? (

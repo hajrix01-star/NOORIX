@@ -470,6 +470,18 @@ body.noorix-page-smart-chat .app-main__content {
   to { transform: rotate(360deg); }
 }
 
+.noorix-chat-report-card--numeric {
+  border-color: color-mix(in srgb, var(--noorix-border) 88%, var(--noorix-text) 12%);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.075);
+  background: color-mix(in srgb, var(--noorix-bg-surface) 88%, var(--noorix-bg-muted) 12%);
+}
+
+.dark .noorix-chat-report-card--numeric {
+  border-color: color-mix(in srgb, var(--noorix-border) 75%, var(--noorix-text-muted) 25%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--noorix-bg-surface) 82%, var(--noorix-bg-muted) 18%);
+}
+
 /* ─── بطاقة الرد (تقرير) — لا تتجاوز عرض المحادثة على الجوال ─── */
 .noorix-chat-report-card {
   box-sizing: border-box;
