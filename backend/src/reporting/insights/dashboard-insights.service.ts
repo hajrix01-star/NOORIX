@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ReportingFacade, type DashboardSummaryDateRange } from '../reporting.facade';
+import { ReportingFacade, type DashboardSummaryDateRange, type DashboardSummaryPayload } from '../reporting.facade';
 import { INSIGHTS_SCHEMA_VERSION } from './insights.types';
 import type { DashboardInsightsPayload, InsightItem } from './insights.types';
 import {
@@ -34,9 +34,11 @@ export class DashboardInsightsService {
     dateRange: DashboardSummaryDateRange,
     selectedMonth: number | null,
     refDate: Date = new Date(),
+    preloadedSummary?: DashboardSummaryPayload,
   ): Promise<DashboardInsightsPayload> {
     const thresholds = await this.companyInsightThresholdSettings.getResolvedThresholds(companyId);
-    const summary = await this.reportingFacade.getDashboardSummary(companyId, dateRange);
+    const summary =
+      preloadedSummary ?? (await this.reportingFacade.getDashboardSummary(companyId, dateRange));
     const { profitLoss, salesPack } = summary;
 
     const snap = extractAccountingSnapshot(profitLoss, selectedMonth);

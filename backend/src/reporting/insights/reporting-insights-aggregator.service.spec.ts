@@ -13,6 +13,20 @@ describe('ReportingInsightsAggregatorService', () => {
     periodEnd: '2026-03-31',
   };
 
+  function makeDashboardSummaryStub() {
+    return {
+      profitLoss: {} as unknown,
+      salesPack: {} as unknown,
+      periodAnalytics: {} as unknown,
+    };
+  }
+
+  function makeReportingFacadeMock(summary = makeDashboardSummaryStub()) {
+    return {
+      getDashboardSummary: jest.fn().mockResolvedValue(summary),
+    };
+  }
+
   function makeDashboardPayload(overrides?: Partial<DashboardInsightsPayload>): DashboardInsightsPayload {
     return {
       schemaVersion: 1,
@@ -83,30 +97,38 @@ describe('ReportingInsightsAggregatorService', () => {
     } as ExpenseInsightsPayload;
   }
 
-  it('calls each of the three services exactly once with the same companyId, dateRange, and selectedMonth', async () => {
+  it('fetches dashboard summary once and passes the same snapshot to all three builders', async () => {
+    const summary = makeDashboardSummaryStub();
+    const facade = makeReportingFacadeMock(summary);
     const buildDashboardInsights = jest.fn().mockResolvedValue(makeDashboardPayload());
     const buildPurchaseSupplierInsights = jest.fn().mockResolvedValue(makePurchasePayload());
     const buildExpenseInsights = jest.fn().mockResolvedValue(makeExpensePayload());
 
     const svc = new ReportingInsightsAggregatorService(
+      facade as any,
       { buildDashboardInsights } as any,
       { buildPurchaseSupplierInsights } as any,
       { buildExpenseInsights } as any,
     );
 
-    await svc.getExtendedInsights('c1', dateRange, 3);
+    const ref = new Date('2026-01-15T12:00:00.000Z');
+    await svc.getExtendedInsights('c1', dateRange, 3, ref);
+
+    expect(facade.getDashboardSummary).toHaveBeenCalledTimes(1);
+    expect(facade.getDashboardSummary).toHaveBeenCalledWith('c1', dateRange);
 
     expect(buildDashboardInsights).toHaveBeenCalledTimes(1);
     expect(buildPurchaseSupplierInsights).toHaveBeenCalledTimes(1);
     expect(buildExpenseInsights).toHaveBeenCalledTimes(1);
 
-    expect(buildDashboardInsights).toHaveBeenCalledWith('c1', dateRange, 3, expect.any(Date));
-    expect(buildPurchaseSupplierInsights).toHaveBeenCalledWith('c1', dateRange, 3);
-    expect(buildExpenseInsights).toHaveBeenCalledWith('c1', dateRange, 3);
+    expect(buildDashboardInsights).toHaveBeenCalledWith('c1', dateRange, 3, ref, summary);
+    expect(buildPurchaseSupplierInsights).toHaveBeenCalledWith('c1', dateRange, 3, summary);
+    expect(buildExpenseInsights).toHaveBeenCalledWith('c1', dateRange, 3, summary);
   });
 
   it('returns schemaVersion 1 and generatedAt', async () => {
     const svc = new ReportingInsightsAggregatorService(
+      makeReportingFacadeMock() as any,
       { buildDashboardInsights: jest.fn().mockResolvedValue(makeDashboardPayload()) } as any,
       { buildPurchaseSupplierInsights: jest.fn().mockResolvedValue(makePurchasePayload()) } as any,
       { buildExpenseInsights: jest.fn().mockResolvedValue(makeExpensePayload()) } as any,
@@ -121,6 +143,7 @@ describe('ReportingInsightsAggregatorService', () => {
     const pur = makePurchasePayload();
     const exp = makeExpensePayload();
     const svc = new ReportingInsightsAggregatorService(
+      makeReportingFacadeMock() as any,
       { buildDashboardInsights: jest.fn().mockResolvedValue(dash) } as any,
       { buildPurchaseSupplierInsights: jest.fn().mockResolvedValue(pur) } as any,
       { buildExpenseInsights: jest.fn().mockResolvedValue(exp) } as any,
@@ -188,6 +211,7 @@ describe('ReportingInsightsAggregatorService', () => {
     });
 
     const svc = new ReportingInsightsAggregatorService(
+      makeReportingFacadeMock() as any,
       { buildDashboardInsights: jest.fn().mockResolvedValue(dash) } as any,
       { buildPurchaseSupplierInsights: jest.fn().mockResolvedValue(pur) } as any,
       { buildExpenseInsights: jest.fn().mockResolvedValue(exp) } as any,
@@ -218,6 +242,7 @@ describe('ReportingInsightsAggregatorService', () => {
     const exp = makeExpensePayload({ warnings: [] });
 
     const svc = new ReportingInsightsAggregatorService(
+      makeReportingFacadeMock() as any,
       { buildDashboardInsights: jest.fn().mockResolvedValue(dash) } as any,
       { buildPurchaseSupplierInsights: jest.fn().mockResolvedValue(pur) } as any,
       { buildExpenseInsights: jest.fn().mockResolvedValue(exp) } as any,
@@ -231,6 +256,7 @@ describe('ReportingInsightsAggregatorService', () => {
 
   it('handles all-empty warnings', async () => {
     const svc = new ReportingInsightsAggregatorService(
+      makeReportingFacadeMock() as any,
       { buildDashboardInsights: jest.fn().mockResolvedValue(makeDashboardPayload()) } as any,
       { buildPurchaseSupplierInsights: jest.fn().mockResolvedValue(makePurchasePayload()) } as any,
       { buildExpenseInsights: jest.fn().mockResolvedValue(makeExpensePayload()) } as any,

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { DashboardSummaryDateRange } from '../reporting.facade';
+import { ReportingFacade, type DashboardSummaryDateRange } from '../reporting.facade';
 import { DashboardInsightsService } from './dashboard-insights.service';
 import { ExpenseInsightsService } from './expenses/expense-insights.service';
 import { PurchaseSupplierInsightsService } from './purchases/purchase-supplier-insights.service';
@@ -31,10 +31,12 @@ function dedupeKey(w: InsightItem): string {
 /**
  * Orchestrates {@link DashboardInsightsService}, {@link PurchaseSupplierInsightsService},
  * and {@link ExpenseInsightsService} into one extended payload. No HTTP exposure; no new calculations.
+ * Fetches {@link ReportingFacade.getDashboardSummary} once per request and passes it to all three builders.
  */
 @Injectable()
 export class ReportingInsightsAggregatorService {
   constructor(
+    private readonly reportingFacade: ReportingFacade,
     private readonly dashboardInsightsService: DashboardInsightsService,
     private readonly purchaseSupplierInsightsService: PurchaseSupplierInsightsService,
     private readonly expenseInsightsService: ExpenseInsightsService,
@@ -49,10 +51,22 @@ export class ReportingInsightsAggregatorService {
     selectedMonth: number | null = null,
     refDate: Date = new Date(),
   ): Promise<ExtendedReportingInsightsPayload> {
+    const summary = await this.reportingFacade.getDashboardSummary(companyId, dateRange);
     const [dashboardInsights, purchaseSupplierInsights, expenseInsights] = await Promise.all([
-      this.dashboardInsightsService.buildDashboardInsights(companyId, dateRange, selectedMonth, refDate),
-      this.purchaseSupplierInsightsService.buildPurchaseSupplierInsights(companyId, dateRange, selectedMonth),
-      this.expenseInsightsService.buildExpenseInsights(companyId, dateRange, selectedMonth),
+      this.dashboardInsightsService.buildDashboardInsights(
+        companyId,
+        dateRange,
+        selectedMonth,
+        refDate,
+        summary,
+      ),
+      this.purchaseSupplierInsightsService.buildPurchaseSupplierInsights(
+        companyId,
+        dateRange,
+        selectedMonth,
+        summary,
+      ),
+      this.expenseInsightsService.buildExpenseInsights(companyId, dateRange, selectedMonth, summary),
     ]);
 
     const tagged: TaggedWarning[] = [];

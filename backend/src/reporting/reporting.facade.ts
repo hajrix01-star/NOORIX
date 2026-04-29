@@ -87,3 +87,6 @@ export class ReportingFacade {
     };
   }
 }
+
+/** Result of {@link ReportingFacade.getDashboardSummary} — pass into insight builders to avoid duplicate reads in one request. */
+export type DashboardSummaryPayload = Awaited<ReturnType<ReportingFacade['getDashboardSummary']>>;

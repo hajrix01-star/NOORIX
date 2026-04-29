@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ReportingFacade, type DashboardSummaryDateRange } from '../../reporting.facade';
+import { ReportingFacade, type DashboardSummaryDateRange, type DashboardSummaryPayload } from '../../reporting.facade';
 import {
   ruleMissingSupplierBreakdown,
   rulePurchaseCategoryConcentration,
@@ -23,8 +23,10 @@ export class PurchaseSupplierInsightsService {
     companyId: string,
     dateRange: DashboardSummaryDateRange,
     selectedMonth: number | null,
+    preloadedSummary?: DashboardSummaryPayload,
   ): Promise<PurchaseSupplierInsightsPayload> {
-    const summary = await this.reportingFacade.getDashboardSummary(companyId, dateRange);
+    const summary =
+      preloadedSummary ?? (await this.reportingFacade.getDashboardSummary(companyId, dateRange));
     const pa = summary.periodAnalytics as
       | {
           purchaseCategoryBreakdown?: PurchaseCategoryBreakdownRow[];

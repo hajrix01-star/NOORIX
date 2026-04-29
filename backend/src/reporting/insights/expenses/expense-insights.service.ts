@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ReportingFacade, type DashboardSummaryDateRange } from '../../reporting.facade';
+import { ReportingFacade, type DashboardSummaryDateRange, type DashboardSummaryPayload } from '../../reporting.facade';
 import {
   ruleFixedExpensePressure,
   ruleMissingExpenseCategory,
@@ -22,8 +22,10 @@ export class ExpenseInsightsService {
     companyId: string,
     dateRange: DashboardSummaryDateRange,
     selectedMonth: number | null,
+    preloadedSummary?: DashboardSummaryPayload,
   ): Promise<ExpenseInsightsPayload> {
-    const summary = await this.reportingFacade.getDashboardSummary(companyId, dateRange);
+    const summary =
+      preloadedSummary ?? (await this.reportingFacade.getDashboardSummary(companyId, dateRange));
     const { profitLoss } = summary;
 
     const warnings = [
