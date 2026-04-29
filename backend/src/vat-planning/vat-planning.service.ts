@@ -80,7 +80,9 @@ export class VatPlanningService {
     const rows = await this.prisma.vatPlanningQuarter.findMany({
       where,
       include: {
-        company: { select: { id: true, nameAr: true, nameEn: true, taxNumber: true } },
+        company: {
+          select: { id: true, nameAr: true, nameEn: true, taxNumber: true, isArchived: true },
+        },
       },
       orderBy: [{ year: 'desc' }, { quarter: 'desc' }, { company: { nameAr: 'asc' } }],
     });
@@ -124,7 +126,9 @@ export class VatPlanningService {
     const rows = await this.prisma.vatPlanningQuarter.findMany({
       where,
       include: {
-        company: { select: { id: true, nameAr: true, nameEn: true, taxNumber: true } },
+        company: {
+          select: { id: true, nameAr: true, nameEn: true, taxNumber: true, isArchived: true },
+        },
       },
       orderBy: [{ company: { nameAr: 'asc' } }],
     });
@@ -191,7 +195,9 @@ export class VatPlanningService {
         ...(dto.importedAt !== undefined ? { importedAt } : {}),
       },
       include: {
-        company: { select: { id: true, nameAr: true, nameEn: true, taxNumber: true } },
+        company: {
+          select: { id: true, nameAr: true, nameEn: true, taxNumber: true, isArchived: true },
+        },
       },
     });
 

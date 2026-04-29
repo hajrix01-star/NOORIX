@@ -101,12 +101,12 @@ export default function HajriTaxScreen() {
   const registryUnfilteredFilters = useMemo(() => ({}), []);
   const { data: registryAllRows = [] } = useVatPlanningRegistry(registryUnfilteredFilters, !detailCompanyId);
 
-  /** جميع الشركات (بما فيها المؤرشفة) — نفس مصدر الإعدادات عند تفعيل «إظهار المؤرشف»؛ يمنع تكرار الاسم مع دمج السجل */
-  const { data: companiesAllArchived = [] } = useQuery({
-    queryKey: appKeys.companies(true),
+  /** شركات نشطة فقط — للفلتر؛ الإقرارات المؤرشفة لا تُدرَج كخيار شركة */
+  const { data: companiesActiveForFilter = [] } = useQuery({
+    queryKey: appKeys.companies(false),
     queryFn: async () => {
       try {
-        const r = await getCompanies(true);
+        const r = await getCompanies(false);
         return r?.success && Array.isArray(r.data) ? r.data : [];
       } catch {
         return [];
@@ -115,7 +115,7 @@ export default function HajriTaxScreen() {
     staleTime: 60_000,
   });
 
-  /** قائمة الشركات للفلتر: GET /companies?includeArchived=true ثم إكمال من السجل إن وُجد معرّف غير مُدرَّج */
+  /** قائمة الشركات للفلتر: نشطة من API ثم إضافة من السجل فقط إن لم تكن مؤرشفة */
   const registryFilterCompanies = useMemo(() => {
     const map = new Map<
       string,
@@ -124,26 +124,26 @@ export default function HajriTaxScreen() {
         nameAr?: string;
         nameEn?: string | null;
         taxNumber?: string | null;
-        isArchived?: boolean;
       }
     >();
 
     const seed =
-      Array.isArray(companiesAllArchived) && companiesAllArchived.length > 0 ? companiesAllArchived : companies || [];
+      Array.isArray(companiesActiveForFilter) && companiesActiveForFilter.length > 0
+        ? companiesActiveForFilter
+        : companies || [];
     seed.forEach((c: any) => {
-      if (c?.id)
+      if (c?.id && !c.isArchived)
         map.set(c.id, {
           id: c.id,
           nameAr: c.nameAr,
           nameEn: c.nameEn ?? null,
           taxNumber: c.taxNumber ?? null,
-          isArchived: !!c.isArchived,
         });
     });
 
     (registryAllRows || []).forEach((r: any) => {
       const c = r?.company;
-      if (!c?.id) return;
+      if (!c?.id || c.isArchived === true) return;
       const prev = map.get(c.id);
       const tn = c.taxNumber ?? null;
       if (!prev) {
@@ -152,7 +152,6 @@ export default function HajriTaxScreen() {
           nameAr: c.nameAr,
           nameEn: c.nameEn ?? null,
           taxNumber: tn,
-          isArchived: false,
         });
       } else if (!prev.taxNumber && tn) {
         map.set(c.id, { ...prev, taxNumber: tn });
@@ -163,7 +162,7 @@ export default function HajriTaxScreen() {
     return Array.from(map.values()).sort((a, b) =>
       (a.nameAr || a.nameEn || '').localeCompare(b.nameAr || b.nameEn || '', collator),
     );
-  }, [companiesAllArchived, companies, registryAllRows, lang]);
+  }, [companiesActiveForFilter, companies, registryAllRows, lang]);
 
   /** سنوات الفلتر: السنوات الافتراضية + أي سنة موجودة في السجل الكامل */
   const registryFilterYearOptions = useMemo(() => {
