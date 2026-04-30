@@ -24,6 +24,7 @@ import {
   buildVisibleRows,
   buildExportRows,
 } from './reportHelpers';
+import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
 
 const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -50,7 +51,23 @@ export default function ReportsScreen() {
 
   const flatRows = useMemo(() => buildFlatRows(report, collapsedGroups), [report, collapsedGroups]);
   const visibleRows = useMemo(() => buildVisibleRows(flatRows, collapsedGroups), [flatRows, collapsedGroups]);
-  const exportRows = useMemo(() => buildExportRows(report, lang, t, selectedMonth ? Number(selectedMonth) : null), [report, lang, t, selectedMonth]);
+  const monthLabelForExport = useMemo(() => {
+    if (!selectedMonth) return '';
+    const names = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+    return names[Number(selectedMonth) - 1];
+  }, [selectedMonth, lang]);
+
+  const exportRows = useMemo(
+    () =>
+      buildExportRows(
+        report,
+        lang,
+        t,
+        selectedMonth ? Number(selectedMonth) : null,
+        selectedMonth ? { amountColumnTitle: `${monthLabelForExport} ${year}` } : undefined,
+      ),
+    [report, lang, t, selectedMonth, year, monthLabelForExport],
+  );
   const yearOptions = useMemo(() => Array.from({ length: 6 }, (_: any, index: any) => currentYear - index), [currentYear]);
   const selectedMonthNumber = selectedMonth ? Number(selectedMonth) : null;
 
@@ -92,9 +109,14 @@ export default function ReportsScreen() {
   function handleExportPdf() {
     exportTableToPdf({
       companyName: companyName || t('reports'),
-      title: `${t('reportGeneral')} — ${year}${selectedMonthNumber ? ` — ${EN_MONTHS[selectedMonthNumber - 1]}` : ''}`,
+      title: selectedMonthNumber
+        ? `${t('reportIncomeStatementTitle')} — ${year}`
+        : `${t('reportGeneral')} — ${year}`,
+      subtitle: selectedMonthNumber
+        ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]}`
+        : '',
       filename: `general-profit-loss-${year}${selectedMonthNumber ? `-m${selectedMonthNumber}` : ''}.pdf`,
-      landscape: true,
+      landscape: !selectedMonthNumber,
       data: exportRows,
     });
   }
@@ -108,47 +130,48 @@ export default function ReportsScreen() {
     const printRows = buildFlatRows(report, {});
     const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
     const monthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : '';
-
-    let head: string;
-    let bodyRows: string;
+    const printLang = lang === 'en' ? 'en' : 'ar';
+    const printDir = lang === 'en' ? 'ltr' : 'rtl';
 
     if (selectedMonthNumber) {
-      head = [
-        `<th>${escPrintCell(`${monthLabel} · ${year}`)}</th>`,
-        `<th>${escPrintCell(t('reportSalesShareMonth'))}</th>`,
-        `<th>${escPrintCell(t('reportAnnualTotal'))}</th>`,
-        `<th>${escPrintCell(t('reportSalesShareYear'))}</th>`,
-      ].join('');
-      bodyRows = printRows
-        .map((row: any) => {
-          const firstCell = escPrintCell(displayLabel(row, lang));
-          const mAmt = amountText(getContextAmount(row, selectedMonthNumber));
-          const mPct = percentText(getContextPercent(row, selectedMonthNumber));
-          const yTot = amountText(row.total);
-          const yPct = percentText(row.percentOfSalesYear);
-          return `<tr><td>${firstCell}</td><td>${mAmt}</td><td>${mPct}</td><td>${yTot}</td><td>${yPct}</td></tr>`;
-        })
-        .join('');
-    } else {
-      head = `${EN_MONTHS.map((month: any) => `<th>${escPrintCell(month)}</th>`).join('')}<th>${escPrintCell(t('reportAnnualTotal'))}</th><th>${escPrintCell(t('reportSalesShareYear'))}</th>`;
-      bodyRows = printRows
-        .map((row: any) => {
-          const firstCell = escPrintCell(displayLabel(row, lang));
-          const monthsCells = (row.months ?? []).map((value: any) => `<td>${amountText(value)}</td>`).join('');
-          return `<tr><td>${firstCell}</td>${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
-        })
-        .join('');
+      const amountColumnTitle = `${monthLabel} ${year}`;
+      openPrintWindow({
+        title: t('reportIncomeStatementTitle'),
+        companyName: companyName || t('reports'),
+        subtitle: '',
+        landscape: false,
+        htmlLang: printLang,
+        htmlDir: printDir,
+        extraCss: plMonthStatementPrintCss(),
+        body: buildPlMonthStatementBody({
+          report,
+          selectedMonthNumber,
+          monthLabel,
+          year,
+          lang,
+          t,
+          amountColumnTitle,
+        }),
+      });
+      return;
     }
 
-    const subtitle = selectedMonthNumber
-      ? `${t('reportGeneral')} — ${monthLabel} ${year}`
-      : `${t('reportGeneral')} — ${year}`;
+    const head = `${EN_MONTHS.map((month: any) => `<th>${escPrintCell(month)}</th>`).join('')}<th>${escPrintCell(t('reportAnnualTotal'))}</th><th>${escPrintCell(t('reportSalesShareYear'))}</th>`;
+    const bodyRows = printRows
+      .map((row: any) => {
+        const firstCell = escPrintCell(displayLabel(row, lang));
+        const monthsCells = (row.months ?? []).map((value: any) => `<td>${amountText(value)}</td>`).join('');
+        return `<tr><td>${firstCell}</td>${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
+      })
+      .join('');
 
     openPrintWindow({
       title: t('reportGeneral'),
       companyName: companyName || t('reports'),
-      subtitle,
-      landscape: !selectedMonthNumber,
+      subtitle: `${t('reportGeneral')} — ${year}`,
+      landscape: true,
+      htmlLang: printLang,
+      htmlDir: printDir,
       body: `<table><thead><tr><th>${escPrintCell(t('reportItem'))}</th>${head}</tr></thead><tbody>${bodyRows}</tbody></table>`,
     });
   }

@@ -12,8 +12,16 @@
 
 const NOORIX_BLUE = '#185FA5';
 
-function arabicPrintDate() {
-  return new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+function formatPrintFooterDate(lang: string) {
+  try {
+    return new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'ar-SA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
 }
 
 /**
@@ -98,7 +106,8 @@ function escHtml(v: any) {
  * @param {boolean} [opts.landscape]  - طباعة أفقية (افتراضي: false)
  * @param {string}  [opts.extraCss]   - CSS إضافي للوثائق ذات التخطيط الخاص
  * @param {boolean} [opts.showPageCounter] - تذييل ترقيم الصفحات (افتراضي: true)
- * @param {number}  [opts.pageMarginMm] - هامش @page بالمليمتر (اختياري)
+ * @param {string}  [opts.htmlDir]     - اتجاه المستند: rtl | ltr (افتراضي rtl)
+ * @param {string}  [opts.htmlLang]    - لغة وسم html (افتراضي ar)
  */
 type OpenPrintWindowOpts = {
   title?: string;
@@ -110,6 +119,8 @@ type OpenPrintWindowOpts = {
   extraCss?: string;
   showPageCounter?: boolean;
   pageMarginMm?: number;
+  htmlDir?: 'rtl' | 'ltr';
+  htmlLang?: string;
 };
 
 export function openPrintWindow({
@@ -122,6 +133,8 @@ export function openPrintWindow({
   extraCss = '',
   showPageCounter = true,
   pageMarginMm,
+  htmlDir = 'rtl',
+  htmlLang = 'ar',
 }: OpenPrintWindowOpts = {}) {
   const headerHtml = companyName
     ? `<div class="print-header">
@@ -131,8 +144,13 @@ export function openPrintWindow({
       </div>`
     : '';
 
+  const footerText =
+    htmlLang === 'en'
+      ? `Printed on: ${formatPrintFooterDate('en')}`
+      : `طُبع بتاريخ: ${formatPrintFooterDate('ar')}`;
+
   const html = `<!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="${escHtml(htmlDir)}" lang="${escHtml(htmlLang)}">
 <head>
 <meta charset="utf-8">
 <title>${escHtml(title || companyName)}</title>
@@ -145,7 +163,7 @@ ${extraCss ? `\n/* — CSS خاص بالوثيقة — */\n${extraCss}` : ''}
 <body>
 ${headerHtml}
 ${body}
-<div class="print-footer">طُبع بتاريخ: ${arabicPrintDate()}</div>
+<div class="print-footer">${footerText}</div>
 </body>
 </html>`;
 

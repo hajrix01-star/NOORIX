@@ -126,22 +126,37 @@ export function buildVisibleRows(rows: any, collapsedGroups: any) {
   });
 }
 
-export function buildExportRows(report: any, lang: any, t: any, selectedMonth: any) {
+export function buildExportRows(
+  report: any,
+  lang: any,
+  t: any,
+  selectedMonth: number | null | undefined,
+  exportOpts?: { amountColumnTitle?: string },
+) {
   const rows = buildFlatRows(report, {});
+  const amountCol =
+    selectedMonth && exportOpts?.amountColumnTitle
+      ? exportOpts.amountColumnTitle
+      : selectedMonth
+        ? t('selectedMonth')
+        : null;
+
   return rows.map((row: any) => {
     const indent = '  '.repeat(row.depth || 0) + (row.rowType === 'item' ? '  ' : '');
     const base: Record<string, any> = {
       [t('reportItem')]: `${indent}${displayLabel(row, lang)}`,
     };
-    if (selectedMonth) {
-      base[t('selectedMonth')] = amountText(getContextAmount(row, selectedMonth));
-      base[t('reportSalesShare')] = percentText(getContextPercent(row, selectedMonth));
+    if (selectedMonth && amountCol) {
+      base[amountCol] = amountText(getContextAmount(row, selectedMonth));
+      base[t('reportSalesShareMonth')] = percentText(getContextPercent(row, selectedMonth));
     }
-    EN_MONTHS.forEach((month: any, index: any) => {
-      base[month] = amountText(row?.months?.[index]);
-    });
+    if (!selectedMonth) {
+      EN_MONTHS.forEach((month: any, index: any) => {
+        base[month] = amountText(row?.months?.[index]);
+      });
+    }
     base[t('reportAnnualTotal')] = amountText(row?.total);
-    base[`${t('reportSalesShare')} (${t('reportYear')})`] = percentText(row?.percentOfSalesYear);
+    base[t('reportSalesShareYear')] = percentText(row?.percentOfSalesYear);
     return base;
   });
 }
