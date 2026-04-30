@@ -588,6 +588,8 @@ export default {
     ar: 'المبيعات، المزامنة من النظام، الضريبة والعمولة، تكلفة المبيعات، الرواتب، وأدوات التوزيع والحساب العكسي — في لوحة واحدة منسّقة.',
     en: 'Sales, system sync, VAT and commission, COGS, payroll, and mix/reverse tools — one structured panel.',
   },
+  reportCostAppsColumnInputs: { ar: 'المدخلات والاستيراد', en: 'Inputs & import' },
+  reportCostAppsColumnResults: { ar: 'النتائج', en: 'Results' },
   reportCostAppsZoneSales: { ar: 'المبيعات', en: 'Sales' },
   reportCostAppsZoneSync: { ar: 'مزامنة من النظام', en: 'Sync from system' },
   reportCostAppsZoneRates: { ar: 'الضريبة والعمولة وتكلفة المبيعات', en: 'VAT, commission & COGS' },

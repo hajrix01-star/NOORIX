@@ -874,7 +874,7 @@ export default function CostAccountingAppsScreen() {
   }
 
   return (
-    <div className="cost-apps-calc mx-auto flex w-full max-w-6xl flex-col gap-4 md:gap-5 print:max-w-none print:gap-2">
+    <div className="cost-apps-calc mx-auto flex w-full max-w-7xl flex-col gap-4 md:gap-5 print:max-w-none print:gap-2">
       <header className="noorix-print-hidden overflow-hidden rounded-2xl border border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-1)] to-[var(--noorix-surface-1)] p-4 shadow-sm sm:p-5 print:hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
@@ -907,38 +907,25 @@ export default function CostAccountingAppsScreen() {
         </div>
       </header>
 
-      <div className="noorix-print-hidden grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 print:hidden">
-        <Card
-          variant="stat"
-          color="blue"
-          label={t('reportCostAppsGrossTotal')}
-          value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.grossTotal)}</span>}
-        />
-        <Card
-          variant="stat"
-          color="green"
-          label={t('reportCostAppsKpiNetWithApps')}
-          value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.netProfit)}</span>}
-        />
-        <Card
-          variant="stat"
-          color="gray"
-          label={t('reportCostAppsKpiNetNoApps')}
-          value={<span dir="ltr" className="tabular-nums">{fmt2(plWithout.netProfit)}</span>}
-        />
-      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start lg:gap-5 print:grid-cols-1 print:gap-3">
+        {/* عمود المدخلات والاستيراد */}
+        <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:col-span-5 print:order-1">
+          <div className="noorix-print-hidden flex items-center gap-2 border-b border-noorix-border pb-2 print:hidden">
+            <span className="h-1 w-8 shrink-0 rounded-full bg-noorix-blue/80" aria-hidden />
+            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-noorix-muted">{t('reportCostAppsColumnInputs')}</span>
+          </div>
 
-      <Card
-        variant="surface"
-        padding="none"
-        className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none"
-      >
-        <div className="border-b border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-2)] to-[var(--noorix-surface-2)] px-4 py-3.5 sm:px-5">
-          <h2 className="m-0 text-base font-bold tracking-tight text-noorix-text sm:text-[17px]">{t('reportCostAppsInputsPanelTitle')}</h2>
-          <p className="m-0 mt-1 max-w-3xl text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsInputsPanelSubtitle')}</p>
-        </div>
+          <Card
+            variant="surface"
+            padding="none"
+            className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none"
+          >
+            <div className="border-b border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-2)] to-[var(--noorix-surface-2)] px-4 py-3.5 sm:px-5">
+              <h2 className="m-0 text-base font-bold tracking-tight text-noorix-text sm:text-[17px]">{t('reportCostAppsInputsPanelTitle')}</h2>
+              <p className="m-0 mt-1 max-w-3xl text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsInputsPanelSubtitle')}</p>
+            </div>
 
-        <div className="space-y-5 p-4 sm:p-5">
+            <div className="space-y-5 p-4 sm:p-5">
           {/* —— المبيعات —— */}
           <div className="space-y-3">
             <SectionHeading>{t('reportCostAppsZoneSales')}</SectionHeading>
@@ -1248,6 +1235,36 @@ export default function CostAccountingAppsScreen() {
         </div>
       </Card>
 
+        </div>
+
+        {/* عمود النتائج: مؤشرات + جدول الربحية + إجراءات */}
+        <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:col-span-7 lg:sticky lg:top-4 lg:z-[1] lg:self-start print:order-2">
+          <div className="noorix-print-hidden flex items-center gap-2 border-b border-noorix-border pb-2 print:hidden">
+            <span className="h-1 w-8 shrink-0 rounded-full bg-noorix-green/90" aria-hidden />
+            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-noorix-muted">{t('reportCostAppsColumnResults')}</span>
+          </div>
+
+          <div className="noorix-print-hidden grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 print:hidden">
+            <Card
+              variant="stat"
+              color="blue"
+              label={t('reportCostAppsGrossTotal')}
+              value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.grossTotal)}</span>}
+            />
+            <Card
+              variant="stat"
+              color="green"
+              label={t('reportCostAppsKpiNetWithApps')}
+              value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.netProfit)}</span>}
+            />
+            <Card
+              variant="stat"
+              color="gray"
+              label={t('reportCostAppsKpiNetNoApps')}
+              value={<span dir="ltr" className="tabular-nums">{fmt2(plWithout.netProfit)}</span>}
+            />
+          </div>
+
       <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
         <div className="border-s-4 border-s-noorix-blue border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
           <h2 className="m-0 text-[15px] font-bold text-noorix-text print:text-xs">{t('reportCostAppsPlSummaryTitle')}</h2>
@@ -1383,6 +1400,9 @@ export default function CostAccountingAppsScreen() {
           <Button type="button" variant="ghost" onClick={clearDraft}>
             {t('reportCostAppsResetDraft')}
           </Button>
+        </div>
+      </div>
+
         </div>
       </div>
 
