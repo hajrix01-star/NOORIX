@@ -637,6 +637,8 @@ export default function CostAccountingAppsScreen() {
   const handlePrint = useCallback(() => {
     const rows = [
       ['', t('reportCostAppsScenarioWithApps'), t('reportCostAppsScenarioNoApps')],
+      [t('reportCostAppsPlAppSales'), fmt2(plWith.grossApp), fmt2(plWithout.grossApp)],
+      [t('reportCostAppsPlLocalSales'), fmt2(plWith.grossLocal), fmt2(plWithout.grossLocal)],
       [t('reportCostAppsGrossTotal'), fmt2(plWith.grossTotal), fmt2(plWithout.grossTotal)],
       [t('reportCostAppsNetSales'), fmt2(plWith.netSales), fmt2(plWithout.netSales)],
       [t('reportCostAppsVatExtracted'), fmt2(plWith.vatAmount), fmt2(plWithout.vatAmount)],
@@ -703,9 +705,8 @@ export default function CostAccountingAppsScreen() {
 
   const handleExportExcel = useCallback(async () => {
     const rows = [
-      { item: t('reportCostAppsGrossApp'), withApps: plWith.grossApp.toNumber(), noApps: 0 },
-      { item: t('reportCostAppsGrossCash'), withApps: plWith.grossLocalCash.toNumber(), noApps: plWithout.grossLocalCash.toNumber() },
-      { item: t('reportCostAppsGrossBank'), withApps: plWith.grossLocalBank.toNumber(), noApps: plWithout.grossLocalBank.toNumber() },
+      { item: t('reportCostAppsPlAppSales'), withApps: plWith.grossApp.toNumber(), noApps: plWithout.grossApp.toNumber() },
+      { item: t('reportCostAppsPlLocalSales'), withApps: plWith.grossLocal.toNumber(), noApps: plWithout.grossLocal.toNumber() },
       { item: t('reportCostAppsGrossTotal'), withApps: plWith.grossTotal.toNumber(), noApps: plWithout.grossTotal.toNumber() },
       { item: t('reportCostAppsNetSales'), withApps: plWith.netSales.toNumber(), noApps: plWithout.netSales.toNumber() },
       { item: t('reportCostAppsCommission'), withApps: plWith.commission.toNumber(), noApps: plWithout.commission.toNumber() },
@@ -1307,6 +1308,24 @@ export default function CostAccountingAppsScreen() {
               </tr>
             </thead>
             <tbody>
+              <tr>
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsPlAppSales')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
+                  {fmt2(plWith.grossApp)}
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
+                  {fmt2(plWithout.grossApp)}
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsPlLocalSales')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
+                  {fmt2(plWith.grossLocal)}
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
+                  {fmt2(plWithout.grossLocal)}
+                </td>
+              </tr>
               <tr>
                 <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsGrossTotal')}</td>
                 <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">

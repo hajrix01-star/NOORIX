@@ -672,6 +672,8 @@ export default {
   reportCostAppsAppShare: { ar: 'نسبة مبيعات التطبيقات من الإجمالي %', en: 'App sales share of total %' },
   reportCostAppsApplyShare: { ar: 'تطبيق النسبة على الإجمالي', en: 'Apply share to total gross' },
   reportCostAppsGrossTotal: { ar: 'إجمالي المبيعات', en: 'Total gross sales' },
+  reportCostAppsPlAppSales: { ar: 'مبيعات التطبيقات', en: 'App gross sales' },
+  reportCostAppsPlLocalSales: { ar: 'مبيعات المحل', en: 'Local gross sales' },
   reportCostAppsNetSales: { ar: 'صافي المبيعات', en: 'Net sales' },
   reportCostAppsVatExtracted: { ar: 'ضريبة', en: 'VAT' },
   reportCostAppsCommission: { ar: 'عمولة التطبيقات', en: 'App commission' },
