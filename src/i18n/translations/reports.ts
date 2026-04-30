@@ -729,6 +729,8 @@ export default {
   reportCostAppsCommission: { ar: 'عمولة التطبيقات', en: 'App commission' },
   reportCostAppsNetProfit: { ar: 'صافي الربح', en: 'Net profit' },
   reportCostAppsScenarioWithApps: { ar: '(+ تطبيقات)', en: '(+ apps)' },
+  /** pct = رقم فقط داخل النسبة، مثال 30 أو 38.5 */
+  reportCostAppsScenarioWithAppsPct: { ar: '(+ تطبيقات {pct}%)', en: '(+ apps {pct}%)' },
   reportCostAppsScenarioNoApps: { ar: 'محلي', en: 'Local' },
   reportCostAppsPrint: { ar: 'طباعة A4', en: 'Print A4' },
   reportCostAppsExportExcel: { ar: 'تصدير Excel', en: 'Export Excel' },

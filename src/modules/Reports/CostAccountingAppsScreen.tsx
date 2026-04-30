@@ -38,6 +38,16 @@ import {
   removeSavedSlotById,
 } from './costAccountingAppsSavedSlots';
 
+/** نسبة العمولة في عنوان عمود السيناريو (المدخل 0–100 كما في النموذج). */
+function formatCommissionPctForColumnLabel(d: Decimal): string {
+  const n = d.toNumber();
+  if (!Number.isFinite(n)) return '0';
+  const rounded = Math.round(n * 100) / 100;
+  let s = rounded.toFixed(2);
+  s = s.replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+  return s;
+}
+
 function Field({
   label,
   children,
@@ -240,6 +250,11 @@ export default function CostAccountingAppsScreen() {
   }, [vatRatePctStr]);
 
   const commissionPctDec = useMemo(() => parseMoneyInput(commissionPctStr), [commissionPctStr]);
+
+  const withAppsScenarioLabel = useMemo(
+    () => t('reportCostAppsScenarioWithAppsPct', { pct: formatCommissionPctForColumnLabel(commissionPctDec) }),
+    [t, commissionPctDec],
+  );
 
   const fixedTotal = useMemo(() => {
     return fixedLines.reduce((acc, line) => acc.plus(parseMoneyInput(line.amount)), new Decimal(0));
@@ -636,7 +651,7 @@ export default function CostAccountingAppsScreen() {
 
   const handlePrint = useCallback(() => {
     const rows = [
-      ['', t('reportCostAppsScenarioWithApps'), t('reportCostAppsScenarioNoApps')],
+      ['', withAppsScenarioLabel, t('reportCostAppsScenarioNoApps')],
       [t('reportCostAppsPlAppSales'), fmt2(plWith.grossApp), fmt2(plWithout.grossApp)],
       [t('reportCostAppsPlLocalSales'), fmt2(plWith.grossLocal), fmt2(plWithout.grossLocal)],
       [t('reportCostAppsGrossTotal'), fmt2(plWith.grossTotal), fmt2(plWithout.grossTotal)],
@@ -655,7 +670,7 @@ export default function CostAccountingAppsScreen() {
     ];
     const body = `
       <table>
-        <thead><tr><th>${t('reportItem')}</th><th>${t('reportCostAppsScenarioWithApps')}</th><th>${t('reportCostAppsScenarioNoApps')}</th></tr></thead>
+        <thead><tr><th>${t('reportItem')}</th><th>${withAppsScenarioLabel}</th><th>${t('reportCostAppsScenarioNoApps')}</th></tr></thead>
         <tbody>
           ${rows
             .slice(1)
@@ -701,7 +716,7 @@ export default function CostAccountingAppsScreen() {
       `,
       body,
     });
-  }, [companyName, expensesAnnualTotal, expensesMonthlyTotal, fixedLines, plWith, plWithout, salaryStr, t]);
+  }, [companyName, expensesAnnualTotal, expensesMonthlyTotal, fixedLines, plWith, plWithout, salaryStr, t, withAppsScenarioLabel]);
 
   const handleExportExcel = useCallback(async () => {
     const rows = [
@@ -728,12 +743,12 @@ export default function CostAccountingAppsScreen() {
       sheetName: 'P&L',
       columns: [
         { key: 'item', label: t('reportItem') },
-        { key: 'withApps', label: t('reportCostAppsScenarioWithApps') },
+        { key: 'withApps', label: withAppsScenarioLabel },
         { key: 'noApps', label: t('reportCostAppsScenarioNoApps') },
       ],
       money2ColumnKeys: ['withApps', 'noApps'],
     });
-  }, [companyName, plWith, plWithout, t]);
+  }, [companyName, plWith, plWithout, t, withAppsScenarioLabel]);
 
   const clearDraft = useCallback(() => {
     if (!activeCompanyId) return;
@@ -1303,7 +1318,7 @@ export default function CostAccountingAppsScreen() {
             <thead>
               <tr className="bg-[var(--noorix-table-header-bg)]">
                 <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{t('reportItem')}</th>
-                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{t('reportCostAppsScenarioWithApps')}</th>
+                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{withAppsScenarioLabel}</th>
                 <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{t('reportCostAppsScenarioNoApps')}</th>
               </tr>
             </thead>
