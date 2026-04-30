@@ -19,6 +19,7 @@ import {
   computeOutputTotal,
   computeInputTotal,
   getRowValue,
+  isDisclosurePayloadEmpty,
   scaleInputVatForPaymentTarget,
 } from '../../constants/taxDisclosure';
 import { fmt, fmtTax } from '../../utils/format';
@@ -51,6 +52,8 @@ export default function HajriTaxScreen() {
   const qc = useQueryClient();
   const jsonInputRef = useRef<any>(null);
   const urlOpenKeyRef = useRef('');
+  /** منع تكرار الاستيراد التلقائي من المحاسبة لنفس (شركة + سنة + ربع) */
+  const autoImportAttemptedKeyRef = useRef<string | null>(null);
 
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(() => {
@@ -276,6 +279,7 @@ export default function HajriTaxScreen() {
   const closeDetail = useCallback(() => {
     setDetailCompanyId(null);
     setDetailReadOnly(false);
+    autoImportAttemptedKeyRef.current = null;
     refetch();
     refetchRegistry();
     setSearchParams((sp: any) => {
@@ -318,7 +322,14 @@ export default function HajriTaxScreen() {
       const next = { ...prev };
       const isSummaryField = !field || SUMMARY_ROWS.some((r: any) => r.key === key);
       if (isSummaryField) next[key] = num;
-      else next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), [field]: num };
+      else {
+        const row = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), [field]: num };
+        next[key] = row;
+        // صفوف المعدل القياسي 15%: عند تغيير الأساس يُحدَّث عمود الضريبة تلقائياً (وإلا تبقى الإجماليات صفراً)
+        if (field === 'amount' && (key === 'standard_sales' || key === 'standard_purchases')) {
+          next[key] = { ...row, vat: roundMoney2(num * 0.15) };
+        }
+      }
       return next;
     });
   }, [detailReadOnly]);
@@ -405,6 +416,26 @@ export default function HajriTaxScreen() {
       setImportingReport(false);
     }
   }, [detailCompanyId, detailReadOnly, year, periodStr, salesAmountIncludesVat]);
+
+  /** إقرار فارغ: محاولة واحدة للاستيراد من تقرير الضريبة المحاسبي (تجنّب تكرار الطلب عند الفشل أو عند بقاء الأرقام صفراً في الفترة) */
+  useEffect(() => {
+    if (!detailCompanyId || detailReadOnly || importingReport) return;
+    if (!isDisclosurePayloadEmpty(draftData)) return;
+    const sessionKey = `${detailCompanyId}|${year}|${quarter}`;
+    if (autoImportAttemptedKeyRef.current === sessionKey) return;
+    autoImportAttemptedKeyRef.current = sessionKey;
+    void handleImportFromTaxReport().catch(() => {
+      /* يبقى النموذج فارغاً؛ المستخدم يضغط «جلب من المحاسبة» أو يصلح الصلاحيات/الشبكة */
+    });
+  }, [
+    detailCompanyId,
+    detailReadOnly,
+    draftData,
+    year,
+    quarter,
+    importingReport,
+    handleImportFromTaxReport,
+  ]);
 
   const handleBalancePayment = useCallback(() => {
     if (detailReadOnly) return;

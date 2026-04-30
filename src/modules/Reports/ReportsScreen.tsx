@@ -142,6 +142,8 @@ export default function ReportsScreen() {
         landscape: false,
         htmlLang: printLang,
         htmlDir: printDir,
+        showPageCounter: false,
+        pageMarginMm: 5,
         extraCss: plMonthStatementPrintCss(),
         body: buildPlMonthStatementBody({
           report,
