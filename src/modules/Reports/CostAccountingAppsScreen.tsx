@@ -38,10 +38,26 @@ import {
   removeSavedSlotById,
 } from './costAccountingAppsSavedSlots';
 
-function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+function Field({
+  label,
+  children,
+  className,
+  labelAlign = 'center',
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  /** محاذاة عنوان الحقل فوق الخانة */
+  labelAlign?: 'start' | 'center' | 'end';
+}) {
+  const align =
+    labelAlign === 'start' ? 'text-start' : labelAlign === 'end' ? 'text-end' : 'text-center';
   return (
     <div className={cn('flex min-w-0 flex-col gap-1', className)}>
-      <span className="line-clamp-2 text-[11px] font-bold leading-tight text-noorix-text" title={label}>
+      <span
+        className={cn('line-clamp-2 text-[11px] font-bold leading-tight text-noorix-text', align)}
+        title={typeof label === 'string' ? label : undefined}
+      >
         {label}
       </span>
       {children}
@@ -86,6 +102,30 @@ function ymdParts(y: number, m: number, d: number) {
 
 function lastDayOfMonth(y: number, m: number) {
   return new Date(y, m, 0).getDate();
+}
+
+function formatYearMonthLabel(year: number, month: number, lang: string): string {
+  const iso = `${year}-${String(month).padStart(2, '0')}-15T12:00:00+03:00`;
+  try {
+    return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SA' : 'en-GB', {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'Asia/Riyadh',
+    }).format(new Date(iso));
+  } catch {
+    return `${year}-${String(month).padStart(2, '0')}`;
+  }
+}
+
+/** يطابق مفتاح YYYY-MM إذا كان من–إلى يغطيان الشهر كاملاً */
+function importMonthKeyFromRange(from: string, to: string): string | null {
+  if (!from || !to || from.length < 10 || to.length < 10) return null;
+  const y = parseInt(from.slice(0, 4), 10);
+  const m = parseInt(from.slice(5, 7), 10);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) return null;
+  if (from !== ymdParts(y, m, 1)) return null;
+  if (to !== ymdParts(y, m, lastDayOfMonth(y, m))) return null;
+  return `${y}-${String(m).padStart(2, '0')}`;
 }
 
 function parseMoneyInput(s: string): Decimal {
@@ -247,6 +287,37 @@ export default function CostAccountingAppsScreen() {
 
   const plWith = useMemo(() => computeCostAppsPl({ ...baseParams, includeAppChannel: true }), [baseParams]);
   const plWithout = useMemo(() => computeCostAppsPl({ ...baseParams, includeAppChannel: false }), [baseParams]);
+
+  const importYearForPicker = useMemo(() => {
+    const y = parseInt(importFrom.slice(0, 4), 10);
+    return Number.isFinite(y) && y >= 2000 ? y : getSaudiYearMonth().year;
+  }, [importFrom]);
+
+  const importMonthOptions = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => {
+        const m = i + 1;
+        const y = importYearForPicker;
+        return {
+          value: `${y}-${String(m).padStart(2, '0')}`,
+          label: formatYearMonthLabel(y, m, lang),
+        };
+      }),
+    [importYearForPicker, lang],
+  );
+
+  const importMonthSelectValue = useMemo(() => {
+    const k = importMonthKeyFromRange(importFrom, importTo);
+    if (k) return k;
+    if (importFrom.length >= 7) {
+      const m = parseInt(importFrom.slice(5, 7), 10);
+      if (Number.isFinite(m) && m >= 1 && m <= 12) {
+        return `${importYearForPicker}-${String(m).padStart(2, '0')}`;
+      }
+    }
+    const sa = getSaudiYearMonth();
+    return `${sa.year}-${String(sa.month).padStart(2, '0')}`;
+  }, [importFrom, importTo, importYearForPicker]);
 
   useLayoutEffect(() => {
     if (!activeCompanyId) return;
@@ -841,47 +912,45 @@ export default function CostAccountingAppsScreen() {
           <div className="space-y-3">
             <SectionHeading tone="blue">{t('reportCostAppsZoneSales')}</SectionHeading>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
-              <div className="flex min-w-0 flex-col gap-1">
-                <p className="m-0 min-h-[2.25rem] text-[10px] font-bold leading-tight text-noorix-muted">
-                  {t('reportCostAppsAppShareOfGrossAbove')}
-                  <span dir="ltr" className="ms-1 tabular-nums text-noorix-text">
-                    {grossInputsSum.gt(0) ? `${fmt(plWith.appShareOfGrossPct.toNumber(), 2)}%` : '—'}
-                  </span>
-                </p>
-                <Field label={t('reportCostAppsGrossApp')}>
-                  <Input
-                    value={grossAppStr}
-                    onChange={(e: any) => setGrossAppStr(e.target.value)}
-                    inputMode="decimal"
-                    dir="ltr"
-                    className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
-                  />
-                </Field>
-              </div>
-              <div className="flex min-w-0 flex-col gap-1">
-                <div className="min-h-[2.25rem] shrink-0 sm:block" aria-hidden />
-                <Field label={t('reportCostAppsGrossCash')}>
-                  <Input
-                    value={grossCashStr}
-                    onChange={(e: any) => setGrossCashStr(e.target.value)}
-                    inputMode="decimal"
-                    dir="ltr"
-                    className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
-                  />
-                </Field>
-              </div>
-              <div className="flex min-w-0 flex-col gap-1">
-                <div className="min-h-[2.25rem] shrink-0 sm:block" aria-hidden />
-                <Field label={t('reportCostAppsGrossBank')}>
-                  <Input
-                    value={grossBankStr}
-                    onChange={(e: any) => setGrossBankStr(e.target.value)}
-                    inputMode="decimal"
-                    dir="ltr"
-                    className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
-                  />
-                </Field>
-              </div>
+              <Field
+                labelAlign="center"
+                label={
+                  <>
+                    {t('reportCostAppsGrossApp')}
+                    {grossInputsSum.gt(0) ? (
+                      <span dir="ltr" className="ms-1 inline tabular-nums">
+                        {fmt(plWith.appShareOfGrossPct.toNumber(), 2)}%
+                      </span>
+                    ) : null}
+                  </>
+                }
+              >
+                <Input
+                  value={grossAppStr}
+                  onChange={(e: any) => setGrossAppStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-full text-center text-sm font-medium tabular-nums"
+                />
+              </Field>
+              <Field labelAlign="center" label={t('reportCostAppsGrossCash')}>
+                <Input
+                  value={grossCashStr}
+                  onChange={(e: any) => setGrossCashStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-full text-center text-sm font-medium tabular-nums"
+                />
+              </Field>
+              <Field labelAlign="center" label={t('reportCostAppsGrossBank')}>
+                <Input
+                  value={grossBankStr}
+                  onChange={(e: any) => setGrossBankStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-full text-center text-sm font-medium tabular-nums"
+                />
+              </Field>
             </div>
             <div className="flex flex-col gap-1 rounded-lg border border-noorix-border bg-[var(--noorix-surface-2)] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-[12px] font-bold text-noorix-text">{t('reportCostAppsSalesInputsTotal')}</span>
@@ -894,19 +963,38 @@ export default function CostAccountingAppsScreen() {
           {/* —— مزامنة المبيعات —— */}
           <div className="noorix-print-hidden space-y-3 border-t border-noorix-border pt-5 print:hidden">
             <SectionHeading tone="green">{t('reportCostAppsZoneSync')}</SectionHeading>
-            <div className="flex flex-wrap items-end gap-2 sm:gap-3">
-              <Field label={t('reportDateFrom')}>
-                <Input type="date" value={importFrom} onChange={(e: any) => setImportFrom(e.target.value)} dir="ltr" className="min-h-10 min-w-[132px]" />
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <Field label={t('reportCostAppsImportMonth')} labelAlign="center" className="min-w-0 flex-1 sm:max-w-[min(100%,20rem)]">
+                <select
+                  className={cn(
+                    'min-h-10 w-full rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-center text-sm font-semibold text-noorix-text',
+                  )}
+                  value={importMonthSelectValue}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const [ys, ms] = v.split('-');
+                    const y = parseInt(ys, 10);
+                    const m = parseInt(ms, 10);
+                    if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) return;
+                    setImportFrom(ymdParts(y, m, 1));
+                    setImportTo(ymdParts(y, m, lastDayOfMonth(y, m)));
+                  }}
+                >
+                  {importMonthOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </Field>
-              <Field label={t('reportDateTo')}>
-                <Input type="date" value={importTo} onChange={(e: any) => setImportTo(e.target.value)} dir="ltr" className="min-h-10 min-w-[132px]" />
-              </Field>
-              <Button type="button" variant="secondary" size="sm" disabled={importing} onClick={handleImportSystem}>
-                {importing ? t('loading') : t('reportCostAppsImportBtn')}
-              </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={() => fileRef.current?.click()}>
-                {t('reportCostAppsCsvImport')}
-              </Button>
+              <div className="flex flex-wrap items-end justify-center gap-2 sm:justify-start">
+                <Button type="button" variant="secondary" size="sm" disabled={importing} onClick={handleImportSystem}>
+                  {importing ? t('loading') : t('reportCostAppsImportBtn')}
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => fileRef.current?.click()}>
+                  {t('reportCostAppsCsvImport')}
+                </Button>
+              </div>
               <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvPick} />
             </div>
           </div>
@@ -919,23 +1007,23 @@ export default function CostAccountingAppsScreen() {
               <span>{t('reportCostAppsVatInclusive')}</span>
             </label>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Field label={t('reportCostAppsVatRate')}>
-                <Input value={vatRatePctStr} onChange={(e: any) => setVatRatePctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-end tabular-nums" />
+              <Field labelAlign="center" label={t('reportCostAppsVatRate')}>
+                <Input value={vatRatePctStr} onChange={(e: any) => setVatRatePctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
               </Field>
-              <Field label={t('reportCostAppsCommissionPct')}>
-                <Input value={commissionPctStr} onChange={(e: any) => setCommissionPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-end tabular-nums" />
+              <Field labelAlign="center" label={t('reportCostAppsCommissionPct')}>
+                <Input value={commissionPctStr} onChange={(e: any) => setCommissionPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
               </Field>
-              <Field label={t('reportCostAppsCogsLocalPct')} className="max-lg:col-span-2">
-                <Input value={cogsLocalPctStr} onChange={(e: any) => setCogsLocalPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-end tabular-nums" />
+              <Field labelAlign="center" label={t('reportCostAppsCogsLocalPct')} className="max-lg:col-span-2">
+                <Input value={cogsLocalPctStr} onChange={(e: any) => setCogsLocalPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
               </Field>
-              <Field label={t('reportCostAppsAppMarkupPct')} className="max-lg:col-span-2">
-                <Input value={appPriceMarkupPctStr} onChange={(e: any) => setAppPriceMarkupPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-end tabular-nums" />
+              <Field labelAlign="center" label={t('reportCostAppsAppMarkupPct')} className="max-lg:col-span-2">
+                <Input value={appPriceMarkupPctStr} onChange={(e: any) => setAppPriceMarkupPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
               </Field>
             </div>
-            <Field label={t('reportCostAppsCommissionBase')}>
+            <Field labelAlign="center" label={t('reportCostAppsCommissionBase')}>
               <select
                 className={cn(
-                  'min-h-10 w-full max-w-xl rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm',
+                  'min-h-10 w-full max-w-xl rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-center text-sm font-medium',
                 )}
                 value={commissionBase}
                 onChange={(e) => setCommissionBase(e.target.value as CostAppsCommissionBase)}
@@ -950,17 +1038,17 @@ export default function CostAccountingAppsScreen() {
           {/* —— حساب عكسي ونسبة التطبيق —— */}
           <div className="noorix-print-hidden space-y-3 border-t border-noorix-border pt-5 print:hidden">
             <SectionHeading tone="slate">{t('reportCostAppsZoneAnalysis')}</SectionHeading>
-            <div className="flex flex-wrap items-end gap-2 sm:gap-3">
-              <Field label={t('reportCostAppsTargetProfit')}>
-                <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-[128px] text-end tabular-nums" />
+            <div className="flex flex-wrap items-end justify-center gap-2 sm:justify-start sm:gap-3">
+              <Field labelAlign="center" label={t('reportCostAppsTargetProfit')}>
+                <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-[128px] text-center tabular-nums" />
               </Field>
-              <Field label={t('reportCostAppsReverseAppShare')}>
+              <Field labelAlign="center" label={t('reportCostAppsReverseAppShare')}>
                 <Input
                   value={reverseAppSharePctStr}
                   onChange={(e: any) => setReverseAppSharePctStr(e.target.value)}
                   inputMode="decimal"
                   dir="ltr"
-                  className="min-h-10 w-[80px] text-end tabular-nums"
+                  className="min-h-10 w-[80px] text-center tabular-nums"
                 />
               </Field>
               <Button type="button" variant="secondary" size="sm" onClick={handleReverse}>
@@ -978,15 +1066,15 @@ export default function CostAccountingAppsScreen() {
                 </Button>
               </div>
             ) : null}
-            <div className="flex flex-wrap items-end gap-2 border-t border-dashed border-noorix-border/80 pt-3 sm:gap-3">
-              <Field label={t('reportCostAppsAppShare')}>
+            <div className="flex flex-wrap items-end justify-center gap-2 border-t border-dashed border-noorix-border/80 pt-3 sm:justify-start sm:gap-3">
+              <Field labelAlign="center" label={t('reportCostAppsAppShare')}>
                 <Input
                   value={appSharePctStr}
                   onChange={(e: any) => setAppSharePctStr(e.target.value)}
                   placeholder={plWith.grossTotal.gt(0) ? fmt(plWith.appShareOfGrossPct.toNumber(), 2) : ''}
                   inputMode="decimal"
                   dir="ltr"
-                  className="min-h-10 w-[96px] text-end tabular-nums"
+                  className="min-h-10 w-[96px] text-center tabular-nums"
                 />
               </Field>
               <Button type="button" variant="secondary" size="sm" onClick={handleApplyAppShare}>
@@ -1021,11 +1109,19 @@ export default function CostAccountingAppsScreen() {
           <table className="w-full border-collapse border border-noorix-border text-sm print:text-[11px]">
             <thead>
               <tr className="bg-[var(--noorix-table-header-bg)]">
-                <th className="border border-noorix-border px-2 py-2 text-start font-bold print:px-1 print:py-1">{t('reportCostAppsLineLabel')}</th>
-                <th className="border border-noorix-border px-2 py-2 text-end font-bold print:px-1 print:py-1" style={{ width: '120px' }}>
+                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight print:px-1 print:py-1">
+                  {t('reportCostAppsLineLabel')}
+                </th>
+                <th
+                  className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight print:px-1 print:py-1"
+                  style={{ width: '120px' }}
+                >
                   {t('reportCostAppsLineMonthlyAmount')}
                 </th>
-                <th className="border border-noorix-border px-2 py-2 text-end font-bold print:px-1 print:py-1" style={{ width: '120px' }}>
+                <th
+                  className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight print:px-1 print:py-1"
+                  style={{ width: '120px' }}
+                >
                   {t('reportCostAppsLineAnnualAmount')}
                 </th>
                 <th className="noorix-print-hidden border border-noorix-border px-2 py-2 w-16 print:hidden" />
@@ -1033,18 +1129,20 @@ export default function CostAccountingAppsScreen() {
             </thead>
             <tbody>
               <tr className="bg-[var(--noorix-surface-1)]/60">
-                <td className="border border-noorix-border px-2 py-2 text-[13px] font-medium text-noorix-text">{t('reportCostAppsPayrollLineLabel')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center text-[13px] font-medium text-noorix-text">
+                  {t('reportCostAppsPayrollLineLabel')}
+                </td>
                 <td className="border border-noorix-border p-1">
                   <Input
                     value={salaryStr}
                     onChange={(e: any) => setSalaryStr(e.target.value)}
                     dir="ltr"
-                    className="text-end border-0 tabular-nums"
+                    className="border-0 text-center tabular-nums"
                     inputMode="decimal"
                     placeholder="0"
                   />
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end tabular-nums text-noorix-text" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center tabular-nums text-noorix-text" dir="ltr">
                   {fmt2(parseMoneyInput(salaryStr).mul(12))}
                 </td>
                 <td className="noorix-print-hidden border border-noorix-border px-2 py-2 print:hidden" aria-hidden />
@@ -1055,12 +1153,22 @@ export default function CostAccountingAppsScreen() {
                 return (
                   <tr key={line.id}>
                     <td className="border border-noorix-border p-1">
-                      <Input value={line.label} onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, label: e.target.value } : r)))} className="border-0" />
+                      <Input
+                        value={line.label}
+                        onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, label: e.target.value } : r)))}
+                        className="border-0 text-center"
+                      />
                     </td>
                     <td className="border border-noorix-border p-1">
-                      <Input value={line.amount} onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, amount: e.target.value } : r)))} dir="ltr" className="text-end border-0" inputMode="decimal" />
+                      <Input
+                        value={line.amount}
+                        onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, amount: e.target.value } : r)))}
+                        dir="ltr"
+                        className="border-0 text-center tabular-nums"
+                        inputMode="decimal"
+                      />
                     </td>
-                    <td className="border border-noorix-border px-2 py-2 text-end tabular-nums text-noorix-text" dir="ltr">
+                    <td className="border border-noorix-border px-2 py-2 text-center tabular-nums text-noorix-text" dir="ltr">
                       {fmt2(annualDec)}
                     </td>
                     <td className="noorix-print-hidden border border-noorix-border p-1 print:hidden">
@@ -1079,11 +1187,11 @@ export default function CostAccountingAppsScreen() {
             </tbody>
             <tfoot>
               <tr>
-                <td className="border border-noorix-border px-2 py-2 font-bold">{t('reportTotalAmount')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end font-bold tabular-nums" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center font-bold">{t('reportTotalAmount')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center font-bold tabular-nums" dir="ltr">
                   {fmt2(expensesMonthlyTotal)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end font-bold tabular-nums" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center font-bold tabular-nums" dir="ltr">
                   {fmt2(expensesAnnualTotal)}
                 </td>
                 <td className="noorix-print-hidden print:hidden" />
@@ -1107,40 +1215,50 @@ export default function CostAccountingAppsScreen() {
             {t('reportCostAppsSaveSlotBtn')}
           </Button>
         </div>
-        <div className="overflow-x-auto p-2 sm:p-4">
+        <div className="overflow-x-auto p-3 sm:p-4">
           {savedSlots.length === 0 ? (
-            <p className="m-0 px-2 py-6 text-center text-[13px] text-noorix-muted">{t('reportCostAppsSavedSlotsEmpty')}</p>
+            <p className="m-0 px-2 py-8 text-center text-[13px] text-noorix-muted">{t('reportCostAppsSavedSlotsEmpty')}</p>
           ) : (
-            <table className="w-full border-collapse border border-noorix-border text-sm">
-              <thead>
-                <tr className="bg-[var(--noorix-table-header-bg)]">
-                  <th className="border border-noorix-border px-2 py-2 text-start font-bold">{t('reportCostAppsSavedColLabel')}</th>
-                  <th className="border border-noorix-border px-2 py-2 text-start font-bold">{t('reportCostAppsSavedColDate')}</th>
-                  <th className="w-[1%] whitespace-nowrap border border-noorix-border px-2 py-2 text-center font-bold">{t('actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {savedSlots.map((slot) => (
-                  <tr key={slot.id}>
-                    <td className="border border-noorix-border px-2 py-2 font-medium">{slot.label}</td>
-                    <td className="border border-noorix-border px-2 py-2 text-[12px] text-noorix-muted">{formatUiDateTime(slot.savedAt, lang, 'detailed')}</td>
-                    <td className="border border-noorix-border px-2 py-2">
-                      <div className="flex flex-wrap justify-center gap-1">
-                        <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewSlot(slot)}>
-                          {t('reportCostAppsSavedView')}
-                        </Button>
-                        <Button type="button" variant="secondary" size="sm" onClick={() => handleImportSavedSlot(slot)}>
-                          {t('reportCostAppsSavedImport')}
-                        </Button>
-                        <Button type="button" variant="ghost" size="sm" className="text-noorix-red" onClick={() => handleDeleteSavedSlot(slot.id)}>
-                          {t('reportCostAppsSavedDelete')}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="flex flex-col gap-3">
+              {savedSlots.map((slot) => (
+                <div
+                  key={slot.id}
+                  className="flex flex-col gap-3 rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                >
+                  <div className="min-w-0 flex-1 text-center sm:text-start">
+                    <p className="m-0 truncate text-sm font-bold text-noorix-text" title={slot.label}>
+                      {slot.label}
+                    </p>
+                    <p className="m-0 mt-1 text-center text-[12px] text-noorix-muted sm:text-start">
+                      {formatUiDateTime(slot.savedAt, lang, 'detailed')}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-row flex-wrap items-center justify-center gap-2 sm:justify-end">
+                    <Button type="button" variant="ghost" size="sm" className="min-h-9 min-w-[4.5rem] whitespace-nowrap px-3" onClick={() => setPreviewSlot(slot)}>
+                      {t('reportCostAppsSavedView')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="min-h-9 min-w-[5.5rem] whitespace-nowrap px-3"
+                      onClick={() => handleImportSavedSlot(slot)}
+                    >
+                      {t('reportCostAppsSavedImport')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-9 min-w-[4.5rem] whitespace-nowrap px-3 text-noorix-red hover:bg-noorix-red/10"
+                      onClick={() => handleDeleteSavedSlot(slot.id)}
+                    >
+                      {t('reportCostAppsSavedDelete')}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </Card>
@@ -1183,90 +1301,90 @@ export default function CostAccountingAppsScreen() {
           <table className="w-full border-collapse border border-noorix-border text-sm print:text-[11px]">
             <thead>
               <tr className="bg-[var(--noorix-table-header-bg)]">
-                <th className="border border-noorix-border px-2 py-2 text-start font-bold">{t('reportItem')}</th>
-                <th className="border border-noorix-border px-2 py-2 text-end font-bold">{t('reportCostAppsScenarioWithApps')}</th>
-                <th className="border border-noorix-border px-2 py-2 text-end font-bold">{t('reportCostAppsScenarioNoApps')}</th>
+                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{t('reportItem')}</th>
+                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{t('reportCostAppsScenarioWithApps')}</th>
+                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{t('reportCostAppsScenarioNoApps')}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsGrossTotal')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsGrossTotal')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.grossTotal)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWithout.grossTotal)}
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsNetSales')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsNetSales')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.netSales)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWithout.netSales)}
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsVatExtracted')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsVatExtracted')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.vatAmount)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWithout.vatAmount)}
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsCommission')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsCommission')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.commission)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWithout.commission)}
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsCogsLocal')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsCogsLocal')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.cogsLocal)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWithout.cogsLocal)}
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsCogsApp')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsCogsApp')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.cogsApp)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWithout.cogsApp)}
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsCogsTotal')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsCogsTotal')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.cogsTotal)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWithout.cogsTotal)}
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsExpensesTotalRow')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsExpensesTotalRow')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.fixedTotal.plus(plWith.salaryTotal))}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWithout.fixedTotal.plus(plWithout.salaryTotal))}
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2 font-bold">{t('reportCostAppsNetProfit')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end font-bold text-noorix-blue" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center font-bold">{t('reportCostAppsNetProfit')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center font-bold text-noorix-blue" dir="ltr">
                   {fmt2(plWith.netProfit)}
                 </td>
-                <td className="border border-noorix-border px-2 py-2 text-end font-bold" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 text-center font-bold" dir="ltr">
                   {fmt2(plWithout.netProfit)}
                 </td>
               </tr>

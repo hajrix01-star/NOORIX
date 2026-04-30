@@ -600,10 +600,6 @@ export default {
   reportCostAppsGrossApp: { ar: 'تطبيقات', en: 'Apps' },
   reportCostAppsGrossCash: { ar: 'نقد', en: 'Cash' },
   reportCostAppsGrossBank: { ar: 'بنك', en: 'Bank' },
-  reportCostAppsAppShareOfGrossAbove: {
-    ar: 'حصّة التطبيقات من الإجمالي',
-    en: 'App share of total',
-  },
   reportCostAppsSalesInputsTotal: { ar: 'المجموع', en: 'Total' },
   reportCostAppsPayrollLineLabel: { ar: 'الرواتب (من الموظفين)', en: 'Payroll (from employees)' },
   reportCostAppsSalaryLoadErr: {
@@ -662,6 +658,7 @@ export default {
   reportCostAppsLineMonthlyAmount: { ar: 'المبلغ الشهري', en: 'Monthly amount' },
   reportCostAppsLineAnnualAmount: { ar: 'المبلغ السنوي', en: 'Annual amount' },
   reportCostAppsImportBtn: { ar: 'استيراد من النظام', en: 'Import from system' },
+  reportCostAppsImportMonth: { ar: 'الشهر', en: 'Month' },
   reportCostAppsImportOk: { ar: 'تم تعبئة المبالغ من المبيعات.', en: 'Sales totals filled from system.' },
   reportCostAppsImportEmpty: { ar: 'لا توجد مبيعات في هذه الفترة.', en: 'No sales in this period.' },
   reportCostAppsCsvImport: { ar: 'استيراد CSV', en: 'Import CSV' },
