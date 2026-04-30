@@ -19,6 +19,10 @@ import {
   reverseGrossTotalForTargetProfit,
   type CostAppsCommissionBase,
 } from './costAccountingAppsModel';
+import {
+  buildCostAppsScenarioFile,
+  parseCostAppsScenarioJson,
+} from './costAccountingAppsScenario';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -100,6 +104,7 @@ export default function CostAccountingAppsScreen() {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
+  const scenarioFileRef = useRef<HTMLInputElement>(null);
 
   const company = companies?.find((c: any) => c.id === activeCompanyId);
   const companyName =
@@ -501,6 +506,105 @@ export default function CostAccountingAppsScreen() {
     showToast(lang === 'ar' ? 'تم المسح.' : 'Cleared.', 'success');
   }, [activeCompanyId, lang, showToast]);
 
+  const handleExportScenario = useCallback(() => {
+    const json = buildCostAppsScenarioFile({
+      name: companyName || undefined,
+      grossAppStr,
+      grossCashStr,
+      grossBankStr,
+      vatInclusive,
+      vatRatePctStr,
+      commissionPctStr,
+      commissionBase,
+      fixedLines,
+      importFrom,
+      importTo,
+      targetProfitStr,
+      reverseGrossStr,
+      appSharePctStr,
+      reverseAppSharePctStr,
+      cogsLocalPctStr,
+      appPriceMarkupPctStr,
+    });
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `noorix-cost-apps-scenario-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast(t('reportCostAppsScenarioExportOk'), 'success');
+  }, [
+    appPriceMarkupPctStr,
+    appSharePctStr,
+    cogsLocalPctStr,
+    commissionBase,
+    commissionPctStr,
+    companyName,
+    fixedLines,
+    grossAppStr,
+    grossBankStr,
+    grossCashStr,
+    importFrom,
+    importTo,
+    reverseAppSharePctStr,
+    reverseGrossStr,
+    showToast,
+    t,
+    targetProfitStr,
+    vatInclusive,
+    vatRatePctStr,
+  ]);
+
+  const handleScenarioFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0];
+      e.target.value = '';
+      if (!f) return;
+      try {
+        const text = await f.text();
+        const res = parseCostAppsScenarioJson(text);
+        if (!res.ok) {
+          const key =
+            res.error === 'invalid_json'
+              ? 'reportCostAppsScenarioErrInvalidJson'
+              : res.error === 'bad_version'
+                ? 'reportCostAppsScenarioErrBadVersion'
+                : res.error === 'not_object'
+                  ? 'reportCostAppsScenarioErrNotObject'
+                  : res.error === 'empty_scenario'
+                    ? 'reportCostAppsScenarioErrEmpty'
+                    : 'reportCostAppsScenarioErrGeneric';
+          showToast(t(key), 'error');
+          return;
+        }
+        const { restore } = res;
+        if (restore.grossAppStr !== undefined) setGrossAppStr(restore.grossAppStr);
+        if (restore.grossCashStr !== undefined) setGrossCashStr(restore.grossCashStr);
+        if (restore.grossBankStr !== undefined) setGrossBankStr(restore.grossBankStr);
+        if (restore.vatInclusive !== undefined) setVatInclusive(restore.vatInclusive);
+        if (restore.vatRatePctStr !== undefined) setVatRatePctStr(restore.vatRatePctStr);
+        if (restore.commissionPctStr !== undefined) setCommissionPctStr(restore.commissionPctStr);
+        if (restore.commissionBase !== undefined) setCommissionBase(restore.commissionBase);
+        if (restore.fixedLines !== undefined) setFixedLines(restore.fixedLines);
+        if (restore.importFrom !== undefined) setImportFrom(restore.importFrom);
+        if (restore.importTo !== undefined) setImportTo(restore.importTo);
+        if (restore.targetProfitStr !== undefined) setTargetProfitStr(restore.targetProfitStr);
+        if (restore.reverseGrossStr !== undefined) setReverseGrossStr(restore.reverseGrossStr);
+        if (restore.appSharePctStr !== undefined) setAppSharePctStr(restore.appSharePctStr);
+        if (restore.reverseAppSharePctStr !== undefined) setReverseAppSharePctStr(restore.reverseAppSharePctStr);
+        if (restore.cogsLocalPctStr !== undefined) setCogsLocalPctStr(restore.cogsLocalPctStr);
+        if (restore.appPriceMarkupPctStr !== undefined) setAppPriceMarkupPctStr(restore.appPriceMarkupPctStr);
+        showToast(t('reportCostAppsScenarioImportOk'), 'success');
+      } catch (err: any) {
+        showToast(err?.message || String(err), 'error');
+      }
+    },
+    [showToast, t],
+  );
+
   if (!activeCompanyId) {
     return (
       <div className="rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] p-8 text-center text-noorix-muted">
@@ -515,6 +619,7 @@ export default function CostAccountingAppsScreen() {
         <h2 className="m-0 text-lg font-bold text-noorix-text">{t('reportCostAppsTitle')}</h2>
         <p className="m-0 text-sm text-noorix-muted">{t('reportCostAppsDesc')}</p>
         <p className="m-0 text-xs text-noorix-muted">{t('reportCostAppsSavedLocal')}</p>
+        <p className="m-0 text-xs text-noorix-muted">{t('reportCostAppsScenarioHint')}</p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-1 print:gap-2">
@@ -799,6 +904,19 @@ export default function CostAccountingAppsScreen() {
         <Button type="button" variant="secondary" onClick={handleExportExcel}>
           {t('reportCostAppsExportExcel')}
         </Button>
+        <Button type="button" variant="secondary" onClick={handleExportScenario}>
+          {t('reportCostAppsScenarioExport')}
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => scenarioFileRef.current?.click()}>
+          {t('reportCostAppsScenarioImport')}
+        </Button>
+        <input
+          ref={scenarioFileRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={handleScenarioFileChange}
+        />
         <Button type="button" variant="ghost" onClick={clearDraft}>
           {t('reportCostAppsResetDraft')}
         </Button>

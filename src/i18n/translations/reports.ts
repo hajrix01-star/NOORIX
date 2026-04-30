@@ -654,4 +654,17 @@ export default {
     ar: 'حصة التطبيقات في الحساب العكسي %',
     en: 'App share of total gross in reverse calc %',
   },
+  reportCostAppsScenarioExport: { ar: 'تصدير السيناريو (JSON)', en: 'Export scenario (JSON)' },
+  reportCostAppsScenarioImport: { ar: 'استيراد سيناريو (JSON)', en: 'Import scenario (JSON)' },
+  reportCostAppsScenarioHint: {
+    ar: 'ملف JSON يحفظ كل المدخلات والمصاريف الثابتة؛ يمكن نقله بين الأجهزة أو الأرشفة. لا يُرفع للخادم.',
+    en: 'A JSON file stores all inputs and fixed-cost lines; move between devices or archive. Not uploaded to the server.',
+  },
+  reportCostAppsScenarioExportOk: { ar: 'تم تنزيل ملف السيناريو.', en: 'Scenario file downloaded.' },
+  reportCostAppsScenarioImportOk: { ar: 'تم استيراد السيناريو.', en: 'Scenario imported.' },
+  reportCostAppsScenarioErrInvalidJson: { ar: 'ملف JSON غير صالح.', en: 'Invalid JSON file.' },
+  reportCostAppsScenarioErrBadVersion: { ar: 'إصدار الملف غير مدعوم.', en: 'Unsupported file version.' },
+  reportCostAppsScenarioErrNotObject: { ar: 'محتوى الملف غير صالح.', en: 'Invalid file contents.' },
+  reportCostAppsScenarioErrEmpty: { ar: 'الملف لا يحتوي على بيانات للاستيراد.', en: 'File has no importable data.' },
+  reportCostAppsScenarioErrGeneric: { ar: 'تعذّر استيراد الملف.', en: 'Could not import file.' },
 };
