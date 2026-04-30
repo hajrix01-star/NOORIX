@@ -159,6 +159,8 @@ export default function CostAccountingAppsScreen() {
     return fixedLines.reduce((acc, line) => acc.plus(parseMoneyInput(line.amount)), new Decimal(0));
   }, [fixedLines]);
 
+  const fixedAnnualTotal = useMemo(() => fixedTotal.mul(12), [fixedTotal]);
+
   const grossApp = useMemo(() => parseMoneyInput(grossAppStr), [grossAppStr]);
   const grossCash = useMemo(() => parseMoneyInput(grossCashStr), [grossCashStr]);
   const grossBank = useMemo(() => parseMoneyInput(grossBankStr), [grossBankStr]);
@@ -494,14 +496,16 @@ export default function CostAccountingAppsScreen() {
       </table>
       <h3 style="margin:12px 0 6px;font-size:13px;">${t('reportCostAppsFixedLines')}</h3>
       <table>
+        <thead><tr><th>${t('reportCostAppsLineLabel')}</th><th style="text-align:right">${t('reportCostAppsLineMonthlyAmount')}</th><th style="text-align:right">${t('reportCostAppsLineAnnualAmount')}</th></tr></thead>
         <tbody>
           ${fixedLines
-            .map(
-              (l) =>
-                `<tr><td>${String(l.label || '—').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(parseMoneyInput(l.amount).toNumber(), 2)}</td></tr>`,
-            )
+            .map((l) => {
+              const m = parseMoneyInput(l.amount);
+              const a = m.mul(12);
+              return `<tr><td>${String(l.label || '—').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(m.toNumber(), 2)}</td><td style="text-align:right">${fmt(a.toNumber(), 2)}</td></tr>`;
+            })
             .join('')}
-          <tr><td><strong>${t('reportAnnualTotal')}</strong></td><td style="text-align:right"><strong>${fmt2(fixedTotal)}</strong></td></tr>
+          <tr><td><strong>${t('reportTotalAmount')}</strong></td><td style="text-align:right"><strong>${fmt2(fixedTotal)}</strong></td><td style="text-align:right"><strong>${fmt2(fixedAnnualTotal)}</strong></td></tr>
         </tbody>
       </table>
     `;
@@ -525,6 +529,7 @@ export default function CostAccountingAppsScreen() {
     commissionPctDec,
     companyName,
     cogsLocalPctStr,
+    fixedAnnualTotal,
     fixedLines,
     fixedTotal,
     plWith,
@@ -907,39 +912,52 @@ export default function CostAccountingAppsScreen() {
             <thead>
               <tr className="bg-[var(--noorix-table-header-bg)]">
                 <th className="border border-noorix-border px-2 py-2 text-start font-bold print:px-1 print:py-1">{t('reportCostAppsLineLabel')}</th>
-                <th className="border border-noorix-border px-2 py-2 text-end font-bold print:px-1 print:py-1" style={{ width: '140px' }}>
-                  {t('reportCostAppsLineAmount')}
+                <th className="border border-noorix-border px-2 py-2 text-end font-bold print:px-1 print:py-1" style={{ width: '120px' }}>
+                  {t('reportCostAppsLineMonthlyAmount')}
+                </th>
+                <th className="border border-noorix-border px-2 py-2 text-end font-bold print:px-1 print:py-1" style={{ width: '120px' }}>
+                  {t('reportCostAppsLineAnnualAmount')}
                 </th>
                 <th className="noorix-print-hidden border border-noorix-border px-2 py-2 w-16 print:hidden" />
               </tr>
             </thead>
             <tbody>
-              {fixedLines.map((line) => (
-                <tr key={line.id}>
-                  <td className="border border-noorix-border p-1">
-                    <Input value={line.label} onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, label: e.target.value } : r)))} className="border-0" />
-                  </td>
-                  <td className="border border-noorix-border p-1">
-                    <Input value={line.amount} onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, amount: e.target.value } : r)))} dir="ltr" className="text-end border-0" inputMode="decimal" />
-                  </td>
-                  <td className="noorix-print-hidden border border-noorix-border p-1 print:hidden">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="min-h-0 px-2 py-1 text-xs"
-                      onClick={() => setFixedLines((rows) => (rows.length <= 1 ? rows : rows.filter((r) => r.id !== line.id)))}
-                    >
-                      ×
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {fixedLines.map((line) => {
+                const monthlyDec = parseMoneyInput(line.amount);
+                const annualDec = monthlyDec.mul(12);
+                return (
+                  <tr key={line.id}>
+                    <td className="border border-noorix-border p-1">
+                      <Input value={line.label} onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, label: e.target.value } : r)))} className="border-0" />
+                    </td>
+                    <td className="border border-noorix-border p-1">
+                      <Input value={line.amount} onChange={(e: any) => setFixedLines((rows) => rows.map((r) => (r.id === line.id ? { ...r, amount: e.target.value } : r)))} dir="ltr" className="text-end border-0" inputMode="decimal" />
+                    </td>
+                    <td className="border border-noorix-border px-2 py-2 text-end tabular-nums text-noorix-text" dir="ltr">
+                      {fmt2(annualDec)}
+                    </td>
+                    <td className="noorix-print-hidden border border-noorix-border p-1 print:hidden">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="min-h-0 px-2 py-1 text-xs"
+                        onClick={() => setFixedLines((rows) => (rows.length <= 1 ? rows : rows.filter((r) => r.id !== line.id)))}
+                      >
+                        ×
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr>
-                <td className="border border-noorix-border px-2 py-2 font-bold">{t('reportAnnualTotal')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end font-bold" dir="ltr">
+                <td className="border border-noorix-border px-2 py-2 font-bold">{t('reportTotalAmount')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-end font-bold tabular-nums" dir="ltr">
                   {fmt2(fixedTotal)}
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-end font-bold tabular-nums" dir="ltr">
+                  {fmt2(fixedAnnualTotal)}
                 </td>
                 <td className="noorix-print-hidden print:hidden" />
               </tr>

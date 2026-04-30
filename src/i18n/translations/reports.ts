@@ -624,12 +624,14 @@ export default {
     en: 'No fixed expense lines with amounts that map to a monthly figure.',
   },
   reportCostAppsFixedMonthlyNote: {
-    ar: 'عمود المبلغ: تقدير شهري للحاسبة فقط.',
-    en: 'Amount column: monthly estimate for this worksheet only.',
+    ar: 'المبلغ الشهري يُستخدم في الحاسبة؛ السنوي = الشهري × 12 (عرض).',
+    en: 'Monthly amount drives the calculator; annual = monthly × 12 (display).',
   },
   reportCostAppsAddLine: { ar: 'إضافة بند', en: 'Add line' },
   reportCostAppsLineLabel: { ar: 'البيان', en: 'Description' },
   reportCostAppsLineAmount: { ar: 'المبلغ', en: 'Amount' },
+  reportCostAppsLineMonthlyAmount: { ar: 'المبلغ الشهري', en: 'Monthly amount' },
+  reportCostAppsLineAnnualAmount: { ar: 'المبلغ السنوي', en: 'Annual amount' },
   reportCostAppsImportRange: { ar: 'فترة الاستيراد من المبيعات', en: 'Import range (sales summaries)' },
   reportCostAppsImportBtn: { ar: 'استيراد المبالغ من النظام', en: 'Import totals from system' },
   reportCostAppsImportHint: {
