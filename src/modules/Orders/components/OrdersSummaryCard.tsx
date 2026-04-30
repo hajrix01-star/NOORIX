@@ -1,7 +1,6 @@
 ﻿/** Large summary card: customer → products → line → totals */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { fmt } from '../../../utils/format';
 import { FmtNum } from '../../../ui';
 
 export type OrdersSummaryMetrics = {
@@ -27,7 +26,7 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
-            <span className="nx-font-numbers font-bold text-[13px] text-noorix-red">ظêْ <FmtNum n={Number(spent ?? 0)} /></span>
+            <FmtNum n={Number(spent ?? 0)} className="nx-font-numbers font-bold text-[13px] text-noorix-red" />
           </div>
         </div>
       </div>
@@ -39,7 +38,8 @@ function SectionBlock({ title, received, spent, result, receivedLabel, spentLabe
         <div dir="ltr" className="font-extrabold nx-font-numbers text-[22px] tracking-[-0.5px]" style={{
           color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
         }}>
-          {resNum < 0 ? 'ظêْ' : ''}<FmtNum n={Math.abs(resNum)} />
+          {resNum < 0 ? '-' : ''}
+          <FmtNum n={Math.abs(resNum)} />
           <span className="nx-sar">SR</span>
         </div>
       </div>
