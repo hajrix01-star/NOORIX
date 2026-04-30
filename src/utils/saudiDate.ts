@@ -1,9 +1,17 @@
 /**
  * saudiDate — تواريخ بتوقيت السعودية (Asia/Riyadh)
- * جميع التواريخ تُعرض بصيغة إنجليزية فقط (en-GB).
+ *
+ * - للحقول الرقمية الثابتة (DD-MM-YYYY، إلخ): دوال `formatSaudi*` على أساس en-GB/en-CA.
+ * - للعرض حسب لغة الواجهة (عربي/إنجليزي) مع **أرقام لاتينية 0–9** دائماً: {@link formatUiDateTime}.
  */
 
 const RIYADH_TZ = 'Asia/Riyadh';
+
+/** خيارات `Intl` المشتركة: تقويم الرياض + أرقام لاتينية (لا أرقام عربية شرقية). */
+const uiRiyadhLatin: Pick<Intl.DateTimeFormatOptions, 'timeZone' | 'numberingSystem'> = {
+  timeZone: RIYADH_TZ,
+  numberingSystem: 'latn',
+};
 
 /**
  * تاريخ اليوم بتوقيت الرياض بصيغة YYYY-MM-DD.
@@ -159,4 +167,29 @@ export function formatSaudiDateTime(value: any) {
   const minute = parts.find((p: any) => p.type === 'minute')?.value;
   if (!year || !month || !day) return '—';
   return `${day}-${month}-${year} ${hour}:${minute}`;
+}
+
+/** أسلوب عرض للواجهة: صف جدول / تفصيلي، أو مدمج (مثل اقتراح prompt الحفظ). */
+export type UiDateTimeVariant = 'detailed' | 'compact';
+
+/**
+ * تاريخ ووقت للعرض حسب لغة الواجهة (`ar` → نص عربي بتقويم المستخدم، `en` → en-GB)،
+ * دائماً بتوقيت الرياض وبأرقام لاتينية — مطابق لسياسة `money.ts` (لا أرقام هندية شرقية في الواجهة).
+ *
+ * @param value `Date` أو ISO؛ إذا غير صالح يُعاد النص الأصلي إن كان `string` وإلا `—`.
+ */
+export function formatUiDateTime(value: unknown, lang: string, variant: UiDateTimeVariant = 'detailed'): string {
+  const d = value instanceof Date ? value : new Date(value as string | number);
+  if (Number.isNaN(d.getTime())) {
+    return typeof value === 'string' ? value : '—';
+  }
+  const isAr = lang === 'ar';
+  const locale = isAr ? 'ar-SA' : 'en-GB';
+  const dateStyle: Intl.DateTimeFormatOptions['dateStyle'] = variant === 'compact' ? 'short' : 'medium';
+  const timeStyle: Intl.DateTimeFormatOptions['timeStyle'] = 'short';
+  return new Intl.DateTimeFormat(locale, {
+    ...uiRiyadhLatin,
+    dateStyle,
+    timeStyle,
+  }).format(d);
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toDateInputYmd, getSaudiToday, toYmd } from './saudiDate';
+import { toDateInputYmd, getSaudiToday, toYmd, formatUiDateTime } from './saudiDate';
 
 describe('toDateInputYmd', () => {
   it('returns empty for empty, null, and undefined', () => {
@@ -41,5 +41,24 @@ describe('toYmd', () => {
 
   it('returns empty for invalid Date', () => {
     expect(toYmd(new Date(NaN))).toBe('');
+  });
+});
+
+describe('formatUiDateTime', () => {
+  const instant = new Date(Date.UTC(2026, 3, 30, 12, 10, 0));
+
+  it('uses Latin digits for Arabic UI (no Eastern Arabic-Indic numerals)', () => {
+    const s = formatUiDateTime(instant, 'ar', 'detailed');
+    expect(s).not.toMatch(/[\u0660-\u0669]/);
+    expect(/\d/.test(s)).toBe(true);
+  });
+
+  it('returns original string for invalid date input', () => {
+    expect(formatUiDateTime('not-a-date', 'ar')).toBe('not-a-date');
+  });
+
+  it('formats English locale without Eastern digits', () => {
+    const s = formatUiDateTime(instant, 'en', 'compact');
+    expect(s).not.toMatch(/[\u0660-\u0669]/);
   });
 });

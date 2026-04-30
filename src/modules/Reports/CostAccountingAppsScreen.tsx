@@ -9,7 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import { getDashboardSalesPack, getExpenseLines, throwIfApiFailed } from '../../services/api';
 import { fmt } from '../../utils/format';
 import { TAX_RATE } from '../../utils/math-engine';
-import { getSaudiYearMonth } from '../../utils/saudiDate';
+import { formatUiDateTime, getSaudiYearMonth } from '../../utils/saudiDate';
 import { openPrintWindow } from '../../utils/printUtils';
 import { exportToExcel } from '../../utils/exportUtils';
 import { Button, Input, cn } from '../../ui';
@@ -123,16 +123,6 @@ function mapCsvAmount(row: Record<string, string>, keys: string[]): string {
   return '';
 }
 
-function formatSavedAtIso(iso: string, lang: string) {
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
-  } catch {
-    return iso;
-  }
-}
-
 export default function CostAccountingAppsScreen() {
   const { activeCompanyId, companies } = useApp();
   const { t, lang } = useTranslation();
@@ -196,6 +186,8 @@ export default function CostAccountingAppsScreen() {
       commissionPct: commissionPctDec,
       commissionBase,
       fixedTotal,
+      /** رواتب الفترة: سيتم ربطها بالواجهة لاحقاً؛ 0 = بدون خصم رواتب */
+      salaryTotal: new Decimal(0),
       cogsLocalPct: parseMoneyInput(cogsLocalPctStr),
       appPriceMarkupPct: parseMoneyInput(appPriceMarkupPctStr),
     }),
@@ -692,10 +684,7 @@ export default function CostAccountingAppsScreen() {
       showToast(t('pleaseSelectCompany'), 'error');
       return;
     }
-    const suggested = new Date().toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-GB', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    });
+    const suggested = formatUiDateTime(new Date(), lang, 'compact');
     const input = typeof window !== 'undefined' ? window.prompt(String(t('reportCostAppsSaveSlotPrompt')), suggested) : null;
     if (input === null) return;
     const labelTrim = input.trim();
@@ -1167,7 +1156,7 @@ export default function CostAccountingAppsScreen() {
                 {savedSlots.map((slot) => (
                   <tr key={slot.id}>
                     <td className="border border-noorix-border px-2 py-2 font-medium">{slot.label}</td>
-                    <td className="border border-noorix-border px-2 py-2 text-[12px] text-noorix-muted">{formatSavedAtIso(slot.savedAt, lang)}</td>
+                    <td className="border border-noorix-border px-2 py-2 text-[12px] text-noorix-muted">{formatUiDateTime(slot.savedAt, lang, 'detailed')}</td>
                     <td className="border border-noorix-border px-2 py-2">
                       <div className="flex flex-wrap justify-center gap-1">
                         <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewSlot(slot)}>

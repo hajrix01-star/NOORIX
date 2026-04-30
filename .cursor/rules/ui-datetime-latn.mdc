@@ -1,0 +1,37 @@
+---
+description: عرض التاريخ/الوقت في الواجهة — أرقام لاتينية دائماً (latn) مع saudiDate
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Noorix — تواريخ وعروض زمنية في الواجهة
+
+## المبدأ
+
+- واجهة عربية (`ar-SA`) **لا** تُلزم أرقاماً «هندية شرقية» في التواريخ/الأوقات؛ سياسة المنتج: **أرقام لاتينية 0–9** مثل `money.ts`.
+- **لا** تستخدم `toLocaleString('ar-SA', …)` أو `Intl.DateTimeFormat('ar-SA', …)` **من دون** `numberingSystem: 'latn'` **أو** دالة جاهزة من المشروع.
+
+## الدالة المركزية
+
+| الحاجة | الاستخدام |
+|--------|-----------|
+| عرض تاريخ+وقت حسب لغة الواجهة (عربي/إنجليزي)، بتوقيت الرياض، أرقام لاتينية | `formatUiDateTime(value, lang, variant)` من `src/utils/saudiDate.ts` |
+| عرض ثابت DD-MM-YYYY HH:mm (24h) بتوقيت الرياض، للقوائم الفنية/النسخ الاحتياطي | `formatSaudiDateTime` من نفس الملف |
+| YMD للـ API أو مفاتيح | `toYmd` / `toDateInputYmd` — قاعدة `date-ymd-helpers.mdc` |
+
+`variant`: `'detailed'` (تاريخ متوسط + وقت قصير، جداول)، أو `'compact'` (تاريخ قصير + وقت قصير، مثل اقتراحات الحفظ).
+
+## ممنوع
+
+```tsx
+// ❌ قد يُظهر ٣٠/٤/٢٠٢٦ حسب المتصفح
+new Date(x).toLocaleString('ar-SA', { dateStyle: 'medium' })
+
+// ✅
+import { formatUiDateTime } from '../../utils/saudiDate';
+formatUiDateTime(x, lang, 'detailed')
+```
+
+## استثناءات نادرة
+
+طباعة PDF أو مستندات رسمية تتطلب صيغة محددة جداً: راجع الملف الموجود؛ عند إضافة `ar-SA` يدوياً أضف **`numberingSystem: 'latn'`** في خيارات `Intl`.

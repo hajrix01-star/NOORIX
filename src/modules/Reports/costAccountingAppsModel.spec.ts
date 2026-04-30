@@ -7,6 +7,7 @@ import {
 } from './costAccountingAppsModel';
 
 const zeroCogs = { cogsLocalPct: new Decimal(0), appPriceMarkupPct: new Decimal(0) };
+const zeroSalary = { salaryTotal: new Decimal(0) };
 
 describe('computeCostAppsPl', () => {
   it('splits VAT and subtracts commission on gross app', () => {
@@ -21,11 +22,31 @@ describe('computeCostAppsPl', () => {
       fixedTotal: new Decimal(5000),
       includeAppChannel: true,
       ...zeroCogs,
+      ...zeroSalary,
     });
     expect(r.grossTotal.toNumber()).toBe(34500);
     expect(r.commission.toNumber()).toBe(2300);
     expect(r.netSales.toNumber()).toBeCloseTo(30000, 1);
     expect(r.netProfit.toNumber()).toBeCloseTo(22700, 1);
+  });
+
+  it('subtracts salary total from net profit', () => {
+    const base = {
+      grossApp: new Decimal(11500),
+      grossLocalCash: new Decimal(23000),
+      grossLocalBank: new Decimal(0),
+      vatInclusive: true,
+      vatRate: new Decimal(0.15),
+      commissionPct: new Decimal(20),
+      commissionBase: 'gross' as const,
+      fixedTotal: new Decimal(5000),
+      includeAppChannel: true,
+      ...zeroCogs,
+    };
+    const withoutSalary = computeCostAppsPl({ ...base, salaryTotal: new Decimal(0) });
+    const withSalary = computeCostAppsPl({ ...base, salaryTotal: new Decimal(3000) });
+    expect(withSalary.netProfit.toNumber()).toBeCloseTo(withoutSalary.netProfit.minus(3000).toNumber(), 1);
+    expect(withSalary.salaryTotal.toNumber()).toBe(3000);
   });
 
   it('without app channel zeros app and commission', () => {
@@ -40,6 +61,7 @@ describe('computeCostAppsPl', () => {
       fixedTotal: new Decimal(1000),
       includeAppChannel: false,
       ...zeroCogs,
+      ...zeroSalary,
     });
     expect(r.grossApp.toNumber()).toBe(0);
     expect(r.commission.toNumber()).toBe(0);
@@ -59,6 +81,7 @@ describe('computeCostAppsPl', () => {
       includeAppChannel: true,
       cogsLocalPct: new Decimal(50),
       appPriceMarkupPct: new Decimal(30),
+      salaryTotal: new Decimal(0),
     });
     expect(r.cogsLocal.toNumber()).toBe(10);
     expect(r.cogsApp.toNumber()).toBe(10);
@@ -80,6 +103,7 @@ describe('reverseGrossTotalForTargetProfit', () => {
     const res = reverseGrossTotalForTargetProfit({
       targetProfit: new Decimal(20000),
       fixedTotal: new Decimal(10000),
+      salaryTotal: new Decimal(0),
       appShareDecimal: new Decimal(0.4),
       vatInclusive: true,
       vatRate: new Decimal(0.15),
@@ -101,6 +125,38 @@ describe('reverseGrossTotalForTargetProfit', () => {
       fixedTotal: new Decimal(10000),
       includeAppChannel: true,
       ...zeroCogs,
+      salaryTotal: new Decimal(0),
+    });
+    expect(check.netProfit.toNumber()).toBeCloseTo(20000, 0);
+  });
+
+  it('includes salary in required gross', () => {
+    const res = reverseGrossTotalForTargetProfit({
+      targetProfit: new Decimal(20000),
+      fixedTotal: new Decimal(10000),
+      salaryTotal: new Decimal(5000),
+      appShareDecimal: new Decimal(0.4),
+      vatInclusive: true,
+      vatRate: new Decimal(0.15),
+      commissionPct: new Decimal(25),
+      commissionBase: 'gross',
+      cogsLocalPct: new Decimal(0),
+      appPriceMarkupPct: new Decimal(0),
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    const check = computeCostAppsPl({
+      grossApp: res.grossTotal.mul(0.4),
+      grossLocalCash: res.grossTotal.mul(0.6),
+      grossLocalBank: new Decimal(0),
+      vatInclusive: true,
+      vatRate: new Decimal(0.15),
+      commissionPct: new Decimal(25),
+      commissionBase: 'gross',
+      fixedTotal: new Decimal(10000),
+      includeAppChannel: true,
+      ...zeroCogs,
+      salaryTotal: new Decimal(5000),
     });
     expect(check.netProfit.toNumber()).toBeCloseTo(20000, 0);
   });
@@ -132,6 +188,7 @@ describe('reverseGrossTotalForTargetProfit', () => {
       includeAppChannel: true,
       cogsLocalPct: new Decimal(50),
       appPriceMarkupPct: new Decimal(30),
+      salaryTotal: new Decimal(0),
     });
     expect(check.netProfit.toNumber()).toBeCloseTo(20000, 0);
   });

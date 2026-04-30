@@ -20,6 +20,8 @@ export type CostAppsScenarioFile = {
   commissionPctStr?: string;
   commissionBase?: 'gross' | 'net';
   fixedLines?: CostAppsScenarioFixedLine[];
+  /** إجمالي رواتب الفترة (نص) */
+  salaryStr?: string;
   importFrom?: string;
   importTo?: string;
   targetProfitStr?: string;
@@ -39,6 +41,8 @@ export type CostAppsScenarioRestore = {
   commissionPctStr?: string;
   commissionBase?: 'gross' | 'net';
   fixedLines?: CostAppsScenarioFixedLine[];
+  /** إجمالي رواتب الفترة (نص) */
+  salaryStr?: string;
   importFrom?: string;
   importTo?: string;
   targetProfitStr?: string;
@@ -95,6 +99,7 @@ export function parseCostAppsScenarioJson(
   if (rec.commissionBase === 'gross' || rec.commissionBase === 'net') restore.commissionBase = rec.commissionBase;
   const fl = normalizeFixedLines(rec.fixedLines);
   if (fl) restore.fixedLines = fl;
+  if (rec.salaryStr != null) restore.salaryStr = String(rec.salaryStr);
   if (rec.importFrom != null) restore.importFrom = String(rec.importFrom);
   if (rec.importTo != null) restore.importTo = String(rec.importTo);
   if (rec.targetProfitStr != null) restore.targetProfitStr = String(rec.targetProfitStr);

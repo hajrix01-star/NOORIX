@@ -12,6 +12,7 @@ globs: src/**/*.{ts,tsx},backend/src/**/*.ts
 |--------|--------|
 | معاملات API، مفاتيح تجميع، قصّ بادئة `YYYY-MM-DD` أو ISO من نص | `toYmd(value)` |
 | `input type="date"` أو يوم تقويمي **بتوقيت الرياض** من طابع زمني | `toDateInputYmd(value)` |
+| عرض تاريخ/وقت في الجداول أو النصوص حسب لغة الواجهة (أرقام لاتينية) | `formatUiDateTime` — انظر `ui-datetime-latn.mdc` |
 
 - **`toYmd` مع `instanceof Date`:** يُعاد جزء **UTC** من `toISOString().slice(0, 10)` — **مطابق** لـ `toYmd` في الخادم.
 - **لا** تمرّر `Date` إلى `toYmd` إذا كان المطلوب يوم **الرياض** لعرض/إدخال المستخدم؛ استخدم `toDateInputYmd`.

@@ -18,6 +18,8 @@ export type CostAppsPlInput = {
   commissionPct: Decimal;
   commissionBase: CostAppsCommissionBase;
   fixedTotal: Decimal;
+  /** إجمالي رواتب الفترة (فواتير salary) — يُطرح من صافي الربح */
+  salaryTotal: Decimal;
   /** false = لا مبيعات تطبيقات ولا عمولة (مقارنة) */
   includeAppChannel: boolean;
   /** 0–100: تكلفة المبيعات كنسبة من إجمالي مبيعات المحلي (كاش+بنك) */
@@ -39,6 +41,7 @@ export type CostAppsPlResult = {
   cogsApp: Decimal;
   cogsTotal: Decimal;
   fixedTotal: Decimal;
+  salaryTotal: Decimal;
   netProfit: Decimal;
   appShareOfGrossPct: Decimal;
 };
@@ -101,7 +104,10 @@ export function computeCostAppsPl(inp: CostAppsPlInput): CostAppsPlResult {
       : new Decimal(0);
   const cogsTotal = roundAmount(cogsLocal.plus(cogsApp));
 
-  const netProfit = roundAmount(netSales.minus(commission).minus(cogsTotal).minus(inp.fixedTotal));
+  const salary = roundAmount(d(inp.salaryTotal));
+  const netProfit = roundAmount(
+    netSales.minus(commission).minus(cogsTotal).minus(inp.fixedTotal).minus(salary),
+  );
 
   const appShareOfGrossPct = grossTotal.gt(0)
     ? roundAmount(gApp.div(grossTotal).mul(100), 2)
@@ -120,6 +126,7 @@ export function computeCostAppsPl(inp: CostAppsPlInput): CostAppsPlResult {
     cogsApp,
     cogsTotal,
     fixedTotal: roundAmount(inp.fixedTotal),
+    salaryTotal: salary,
     netProfit,
     appShareOfGrossPct,
   };
@@ -136,6 +143,8 @@ export type ReverseGrossTotalResult =
 export function reverseGrossTotalForTargetProfit(params: {
   targetProfit: Decimal;
   fixedTotal: Decimal;
+  /** رواتب الفترة (تُضاف إلى التكاليف الثابتة في الحل العكسي) */
+  salaryTotal?: Decimal;
   /** حصة التطبيقات من الإجمالي 0–1 */
   appShareDecimal: Decimal;
   vatInclusive: boolean;
@@ -148,7 +157,7 @@ export function reverseGrossTotalForTargetProfit(params: {
   const alpha = params.appShareDecimal;
   if (alpha.lt(0) || alpha.gt(1)) return { ok: false, code: 'invalid_share' };
 
-  const P = d(params.targetProfit).plus(d(params.fixedTotal));
+  const P = d(params.targetProfit).plus(d(params.fixedTotal)).plus(d(params.salaryTotal ?? 0));
   const r = params.vatRate;
   const onePlusR = new Decimal(1).plus(r);
   const p = params.commissionPct.div(100);
