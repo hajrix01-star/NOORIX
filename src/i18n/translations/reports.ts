@@ -592,6 +592,10 @@ export default {
     ar: 'أداة تقديرية معزولة: لا تُسجّل في دفتر الأستاذ. تستورد مبالغ المبيعات من ملخصات المبيعات اليومية فقط، والمصاريف الثابتة يدوية.',
     en: 'Standalone estimate tool: not posted to the ledger. Imports sales totals from daily sales summaries only; fixed costs are manual.',
   },
+  reportCostAppsPlSummaryTitle: { ar: 'جدول الربحية التقديرية', en: 'Estimated P&L table' },
+  reportCostAppsKpiNetWithApps: { ar: 'صافي الربح (مع التطبيقات)', en: 'Net profit (with apps)' },
+  reportCostAppsKpiNetNoApps: { ar: 'صافي الربح (بدون التطبيقات)', en: 'Net profit (no apps)' },
+  reportCostAppsCompanyLabel: { ar: 'الشركة', en: 'Company' },
   reportCostAppsGrossApp: { ar: 'مبيعات التطبيقات (إجمالي المدخل)', en: 'App channel sales (gross entered)' },
   reportCostAppsGrossCash: { ar: 'مبيعات محلية — نقد', en: 'Local sales — cash' },
   reportCostAppsGrossBank: { ar: 'مبيعات محلية — بنك / مدى', en: 'Local sales — bank / Mada' },
@@ -602,6 +606,27 @@ export default {
   reportCostAppsCommissionOnGross: { ar: 'على إجمالي مبيعات التطبيقات', en: 'On app gross sales' },
   reportCostAppsCommissionOnNet: { ar: 'على صافي مبيعات التطبيقات بعد استخراج الضريبة', en: 'On app net after VAT split' },
   reportCostAppsFixedLines: { ar: 'مصاريف ثابتة (يدوي)', en: 'Fixed costs (manual)' },
+  reportCostAppsFixedImportBtn: { ar: 'استيراد من المصاريف الثابتة (شهري)', en: 'Import from fixed expenses (monthly)' },
+  reportCostAppsFixedImportHint: {
+    ar: 'يُجلب من قسم المصاريف بنود النوع «ثابت» فقط. الإجمالي السنوي يُقسَّم على 12؛ أو مبلغ الدفعة ÷ أشهر الفترة بين الدفعات. يمكنك بعدها تعديل البنود أو إضافة صفوف.',
+    en: 'Loads fixed-expense lines from Expenses. Annual total ÷ 12; or payment amount ÷ months between payments. You can edit rows or add more after.',
+  },
+  reportCostAppsFixedImportConfirm: {
+    ar: 'سيتم استبدال جميع الصفوف في جدول المصاريف الثابتة أدناه ببنود مستوردة (مبالغ شهرية). هل تتابع؟',
+    en: 'All rows in the fixed-costs table below will be replaced with imported lines (monthly amounts). Continue?',
+  },
+  reportCostAppsFixedImportOk: {
+    ar: 'تم استيراد {count} بنداً بمبالغ شهرية.',
+    en: 'Imported {count} line(s) with monthly amounts.',
+  },
+  reportCostAppsFixedImportEmpty: {
+    ar: 'لا توجد مصاريف ثابتة بمبالغ يمكن تحويلها لشهري (تحقق من الإجمالي السنوي أو مبلغ الدفعة والفترة).',
+    en: 'No fixed expense lines with amounts that map to a monthly figure.',
+  },
+  reportCostAppsFixedMonthlyNote: {
+    ar: 'عمود المبلغ: تقدير شهري للحاسبة فقط.',
+    en: 'Amount column: monthly estimate for this worksheet only.',
+  },
   reportCostAppsAddLine: { ar: 'إضافة بند', en: 'Add line' },
   reportCostAppsLineLabel: { ar: 'البيان', en: 'Description' },
   reportCostAppsLineAmount: { ar: 'المبلغ', en: 'Amount' },

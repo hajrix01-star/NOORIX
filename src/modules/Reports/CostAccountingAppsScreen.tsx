@@ -1,18 +1,19 @@
 /**
  * حاسبة تكاليف / تطبيقات — معزولة عن دفتر الحسابات؛ استيراد مبيعات من الملخصات اليومية فقط.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Decimal from 'decimal.js';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
-import { getDashboardSalesPack, throwIfApiFailed } from '../../services/api';
+import { getDashboardSalesPack, getExpenseLines, throwIfApiFailed } from '../../services/api';
 import { fmt } from '../../utils/format';
 import { TAX_RATE } from '../../utils/math-engine';
 import { getSaudiYearMonth } from '../../utils/saudiDate';
 import { openPrintWindow } from '../../utils/printUtils';
 import { exportToExcel } from '../../utils/exportUtils';
 import { Button, Input, cn } from '../../ui';
+import Card from '../../ui/Card';
 import {
   aggregateSalesChannelsInRange,
   computeCostAppsPl,
@@ -23,11 +24,12 @@ import {
   buildCostAppsScenarioFile,
   parseCostAppsScenarioJson,
 } from './costAccountingAppsScenario';
+import { monthlyAmountFromExpenseLine } from './costAccountingAppsFixedExpenseImport';
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-sm font-medium text-noorix-text">{label}</span>
+    <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
+      <span className="text-[12px] font-semibold tracking-wide text-noorix-muted">{label}</span>
       {children}
     </div>
   );
@@ -58,6 +60,21 @@ function parseMoneyInput(s: string): Decimal {
 
 function newLine(): FixedLine {
   return { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: '', amount: '' };
+}
+
+function normalizeFixedLines(raw: unknown): FixedLine[] {
+  if (!Array.isArray(raw) || raw.length === 0) return [newLine()];
+  const rows: FixedLine[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const x = item as Record<string, unknown>;
+    rows.push({
+      id: typeof x.id === 'string' && x.id ? x.id : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      label: x.label != null ? String(x.label) : '',
+      amount: x.amount != null ? String(x.amount) : '',
+    });
+  }
+  return rows.length ? rows : [newLine()];
 }
 
 function draftKey(companyId: string) {
@@ -110,10 +127,6 @@ export default function CostAccountingAppsScreen() {
   const companyName =
     lang === 'en' ? company?.nameEn || company?.nameAr || '' : company?.nameAr || company?.nameEn || '';
 
-  const sa = getSaudiYearMonth();
-  const defaultFrom = ymdParts(sa.year, sa.month, 1);
-  const defaultTo = ymdParts(sa.year, sa.month, lastDayOfMonth(sa.year, sa.month));
-
   const [grossAppStr, setGrossAppStr] = useState('');
   const [grossCashStr, setGrossCashStr] = useState('');
   const [grossBankStr, setGrossBankStr] = useState('');
@@ -122,9 +135,11 @@ export default function CostAccountingAppsScreen() {
   const [commissionPctStr, setCommissionPctStr] = useState('25');
   const [commissionBase, setCommissionBase] = useState<CostAppsCommissionBase>('gross');
   const [fixedLines, setFixedLines] = useState<FixedLine[]>(() => [newLine()]);
-  const [importFrom, setImportFrom] = useState(defaultFrom);
-  const [importTo, setImportTo] = useState(defaultTo);
+  const sa0 = getSaudiYearMonth();
+  const [importFrom, setImportFrom] = useState(() => ymdParts(sa0.year, sa0.month, 1));
+  const [importTo, setImportTo] = useState(() => ymdParts(sa0.year, sa0.month, lastDayOfMonth(sa0.year, sa0.month)));
   const [importing, setImporting] = useState(false);
+  const [importingFixedLines, setImportingFixedLines] = useState(false);
   const [targetProfitStr, setTargetProfitStr] = useState('20000');
   const [reverseGrossStr, setReverseGrossStr] = useState('');
   const [appSharePctStr, setAppSharePctStr] = useState('');
@@ -178,28 +193,44 @@ export default function CostAccountingAppsScreen() {
   const plWith = useMemo(() => computeCostAppsPl({ ...baseParams, includeAppChannel: true }), [baseParams]);
   const plWithout = useMemo(() => computeCostAppsPl({ ...baseParams, includeAppChannel: false }), [baseParams]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!activeCompanyId) return;
+    setImporting(false);
+    setImportingFixedLines(false);
+
+    const sa = getSaudiYearMonth();
+    const defFrom = ymdParts(sa.year, sa.month, 1);
+    const defTo = ymdParts(sa.year, sa.month, lastDayOfMonth(sa.year, sa.month));
+
+    let o: Record<string, unknown> | null = null;
     try {
       const raw = localStorage.getItem(draftKey(activeCompanyId));
-      if (!raw) return;
-      const o = JSON.parse(raw);
-      if (o.grossAppStr != null) setGrossAppStr(String(o.grossAppStr));
-      if (o.grossCashStr != null) setGrossCashStr(String(o.grossCashStr));
-      if (o.grossBankStr != null) setGrossBankStr(String(o.grossBankStr));
-      if (typeof o.vatInclusive === 'boolean') setVatInclusive(o.vatInclusive);
-      if (o.vatRatePctStr != null) setVatRatePctStr(String(o.vatRatePctStr));
-      if (o.commissionPctStr != null) setCommissionPctStr(String(o.commissionPctStr));
-      if (o.commissionBase === 'gross' || o.commissionBase === 'net') setCommissionBase(o.commissionBase);
-      if (Array.isArray(o.fixedLines) && o.fixedLines.length) setFixedLines(o.fixedLines);
-      if (o.importFrom) setImportFrom(String(o.importFrom));
-      if (o.importTo) setImportTo(String(o.importTo));
-      if (o.cogsLocalPctStr != null) setCogsLocalPctStr(String(o.cogsLocalPctStr));
-      if (o.appPriceMarkupPctStr != null) setAppPriceMarkupPctStr(String(o.appPriceMarkupPctStr));
-      if (o.reverseAppSharePctStr != null) setReverseAppSharePctStr(String(o.reverseAppSharePctStr));
+      if (raw) o = JSON.parse(raw) as Record<string, unknown>;
     } catch {
-      /* ignore */
+      o = null;
     }
+
+    const pickStr = (key: string, fallback: string) => {
+      const v = o?.[key];
+      return v != null ? String(v) : fallback;
+    };
+
+    setGrossAppStr(pickStr('grossAppStr', ''));
+    setGrossCashStr(pickStr('grossCashStr', ''));
+    setGrossBankStr(pickStr('grossBankStr', ''));
+    setVatInclusive(o && typeof o.vatInclusive === 'boolean' ? o.vatInclusive : true);
+    setVatRatePctStr(pickStr('vatRatePctStr', String(TAX_RATE * 100)));
+    setCommissionPctStr(pickStr('commissionPctStr', '25'));
+    setCommissionBase(o?.commissionBase === 'net' ? 'net' : 'gross');
+    setFixedLines(normalizeFixedLines(o?.fixedLines));
+    setImportFrom(pickStr('importFrom', defFrom));
+    setImportTo(pickStr('importTo', defTo));
+    setCogsLocalPctStr(pickStr('cogsLocalPctStr', '0'));
+    setAppPriceMarkupPctStr(pickStr('appPriceMarkupPctStr', '0'));
+    setReverseAppSharePctStr(pickStr('reverseAppSharePctStr', '30'));
+    setTargetProfitStr(pickStr('targetProfitStr', '20000'));
+    setReverseGrossStr(pickStr('reverseGrossStr', ''));
+    setAppSharePctStr(pickStr('appSharePctStr', ''));
   }, [activeCompanyId]);
 
   useEffect(() => {
@@ -218,6 +249,9 @@ export default function CostAccountingAppsScreen() {
       cogsLocalPctStr,
       appPriceMarkupPctStr,
       reverseAppSharePctStr,
+      targetProfitStr,
+      reverseGrossStr,
+      appSharePctStr,
     };
     try {
       localStorage.setItem(draftKey(activeCompanyId), JSON.stringify(payload));
@@ -239,6 +273,9 @@ export default function CostAccountingAppsScreen() {
     cogsLocalPctStr,
     appPriceMarkupPctStr,
     reverseAppSharePctStr,
+    targetProfitStr,
+    reverseGrossStr,
+    appSharePctStr,
   ]);
 
   const fmt2 = (d: Decimal) => fmt(d.toNumber(), 2);
@@ -279,6 +316,40 @@ export default function CostAccountingAppsScreen() {
       setImporting(false);
     }
   }, [activeCompanyId, importFrom, importTo, showToast, t]);
+
+  const handleImportFixedExpenses = useCallback(async () => {
+    if (!activeCompanyId) {
+      showToast(t('pleaseSelectCompany'), 'error');
+      return;
+    }
+    if (typeof window !== 'undefined' && !window.confirm(t('reportCostAppsFixedImportConfirm'))) return;
+    setImportingFixedLines(true);
+    try {
+      const res = await getExpenseLines(activeCompanyId, 'fixed_expense');
+      throwIfApiFailed(res, t('reportCostAppsFixedImportEmpty'));
+      const rows = Array.isArray(res.data) ? res.data : [];
+      const mapped: FixedLine[] = [];
+      for (const line of rows) {
+        const m = monthlyAmountFromExpenseLine(line);
+        if (m == null || m.lte(0)) continue;
+        const nameAr = line?.nameAr != null ? String(line.nameAr).trim() : '';
+        const nameEn = line?.nameEn != null ? String(line.nameEn).trim() : '';
+        const label = (lang === 'en' ? nameEn || nameAr : nameAr || nameEn) || '—';
+        const row = newLine();
+        mapped.push({ ...row, label, amount: m.toFixed(2) });
+      }
+      if (!mapped.length) {
+        showToast(t('reportCostAppsFixedImportEmpty'), 'error');
+        return;
+      }
+      setFixedLines(mapped);
+      showToast(t('reportCostAppsFixedImportOk', { count: mapped.length }), 'success');
+    } catch (e: any) {
+      showToast(e?.message || String(e), 'error');
+    } finally {
+      setImportingFixedLines(false);
+    }
+  }, [activeCompanyId, lang, showToast, t]);
 
   const handleCsvPick = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -495,14 +566,26 @@ export default function CostAccountingAppsScreen() {
   const clearDraft = useCallback(() => {
     if (!activeCompanyId) return;
     localStorage.removeItem(draftKey(activeCompanyId));
+    const sa = getSaudiYearMonth();
+    const defFrom = ymdParts(sa.year, sa.month, 1);
+    const defTo = ymdParts(sa.year, sa.month, lastDayOfMonth(sa.year, sa.month));
     setGrossAppStr('');
     setGrossCashStr('');
     setGrossBankStr('');
+    setVatInclusive(true);
+    setVatRatePctStr(String(TAX_RATE * 100));
+    setCommissionPctStr('25');
+    setCommissionBase('gross');
+    setFixedLines([newLine()]);
+    setImportFrom(defFrom);
+    setImportTo(defTo);
     setCogsLocalPctStr('0');
     setAppPriceMarkupPctStr('0');
     setReverseAppSharePctStr('30');
-    setFixedLines([newLine()]);
+    setTargetProfitStr('20000');
     setReverseGrossStr('');
+    setAppSharePctStr('');
+    setImporting(false);
     showToast(lang === 'ar' ? 'تم المسح.' : 'Cleared.', 'success');
   }, [activeCompanyId, lang, showToast]);
 
@@ -614,68 +697,121 @@ export default function CostAccountingAppsScreen() {
   }
 
   return (
-    <div className="cost-apps-calc flex flex-col gap-6 print:gap-2">
-      <div className="flex flex-col gap-1 print:hidden">
-        <h2 className="m-0 text-lg font-bold text-noorix-text">{t('reportCostAppsTitle')}</h2>
-        <p className="m-0 text-sm text-noorix-muted">{t('reportCostAppsDesc')}</p>
-        <p className="m-0 text-xs text-noorix-muted">{t('reportCostAppsSavedLocal')}</p>
-        <p className="m-0 text-xs text-noorix-muted">{t('reportCostAppsScenarioHint')}</p>
+    <div className="cost-apps-calc mx-auto flex w-full max-w-6xl flex-col gap-5 md:gap-6 print:max-w-none print:gap-2">
+      <header className="noorix-print-hidden overflow-hidden rounded-2xl border border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-1)] to-[var(--noorix-surface-1)] p-5 shadow-sm sm:p-6 print:hidden">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="m-0 text-xl font-bold tracking-tight text-noorix-text sm:text-2xl">{t('reportCostAppsTitle')}</h1>
+              <span className="rounded-full border border-noorix-border bg-[var(--noorix-surface-2)] px-2.5 py-0.5 text-[11px] font-semibold text-noorix-muted">
+                {t('reportCostAppsNav')}
+              </span>
+            </div>
+            <p className="m-0 max-w-2xl text-sm leading-relaxed text-noorix-muted">{t('reportCostAppsDesc')}</p>
+            <div className="flex flex-wrap gap-2 text-[11px] text-noorix-muted">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-[var(--noorix-surface-2)] px-2 py-1">
+                <span className="size-1.5 shrink-0 rounded-full bg-noorix-green" aria-hidden />
+                {t('reportCostAppsSavedLocal')}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-[var(--noorix-surface-2)] px-2 py-1">
+                <span className="size-1.5 shrink-0 rounded-full bg-noorix-amber" aria-hidden />
+                {t('reportCostAppsScenarioHint')}
+              </span>
+            </div>
+          </div>
+          {companyName ? (
+            <div className="shrink-0 rounded-xl border border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3 text-center sm:text-end">
+              <p className="m-0 text-[10px] font-semibold uppercase tracking-wider text-noorix-muted">{t('reportCostAppsCompanyLabel')}</p>
+              <p className="m-0 mt-1 max-w-[200px] truncate text-sm font-bold text-noorix-text sm:max-w-[240px]" title={companyName}>
+                {companyName}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </header>
+
+      <div className="noorix-print-hidden grid grid-cols-1 gap-3 sm:grid-cols-3 print:hidden">
+        <Card
+          variant="stat"
+          color="blue"
+          label={t('reportCostAppsGrossTotal')}
+          value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.grossTotal)}</span>}
+        />
+        <Card
+          variant="stat"
+          color="green"
+          label={t('reportCostAppsKpiNetWithApps')}
+          value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.netProfit)}</span>}
+        />
+        <Card
+          variant="stat"
+          color="gray"
+          label={t('reportCostAppsKpiNetNoApps')}
+          value={<span dir="ltr" className="tabular-nums">{fmt2(plWithout.netProfit)}</span>}
+        />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-1 print:gap-2">
-        <div className="rounded-lg border border-noorix-border p-4 print:border print:p-2">
-          <h3 className="mt-0 mb-3 text-sm font-bold text-noorix-text print:text-xs print:mb-1">{t('reportCostAppsSalesSection')}</h3>
-          <div className="flex flex-col gap-3">
-            <Field label={t('reportCostAppsGrossApp')}>
-              <Input value={grossAppStr} onChange={(e: any) => setGrossAppStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right" />
-            </Field>
-            <Field label={t('reportCostAppsGrossCash')}>
-              <Input value={grossCashStr} onChange={(e: any) => setGrossCashStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right" />
-            </Field>
-            <Field label={t('reportCostAppsGrossBank')}>
-              <Input value={grossBankStr} onChange={(e: any) => setGrossBankStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right" />
-            </Field>
+      <div className="grid gap-5 lg:grid-cols-2 print:grid-cols-1 print:gap-3">
+        <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
+          <div className="border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
+            <h2 className="m-0 text-[15px] font-bold text-noorix-text">{t('reportCostAppsSalesSection')}</h2>
           </div>
-
-          <div className="mt-4 space-y-2 rounded-md bg-[var(--noorix-surface-2)] p-3 print:hidden">
-            <div className="text-xs font-semibold text-noorix-text">{t('reportCostAppsImportRange')}</div>
-            <div className="flex flex-wrap items-end gap-3">
-              <Field label={t('reportDateFrom')}>
-                <Input type="date" value={importFrom} onChange={(e: any) => setImportFrom(e.target.value)} dir="ltr" className="min-w-[140px]" />
+          <div className="space-y-5 p-4 sm:p-5">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label={t('reportCostAppsGrossApp')}>
+                <Input value={grossAppStr} onChange={(e: any) => setGrossAppStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 text-right" />
               </Field>
-              <Field label={t('reportDateTo')}>
-                <Input type="date" value={importTo} onChange={(e: any) => setImportTo(e.target.value)} dir="ltr" className="min-w-[140px]" />
+              <Field label={t('reportCostAppsGrossCash')}>
+                <Input value={grossCashStr} onChange={(e: any) => setGrossCashStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 text-right" />
               </Field>
-              <Button type="button" variant="secondary" disabled={importing} onClick={handleImportSystem}>
-                {importing ? t('loading') : t('reportCostAppsImportBtn')}
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => fileRef.current?.click()}>
-                {t('reportCostAppsCsvImport')}
-              </Button>
-              <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvPick} />
+              <Field label={t('reportCostAppsGrossBank')}>
+                <Input value={grossBankStr} onChange={(e: any) => setGrossBankStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 text-right" />
+              </Field>
             </div>
-            <p className="m-0 text-[11px] text-noorix-muted">{t('reportCostAppsImportHint')}</p>
-            <p className="m-0 text-[11px] text-noorix-muted">{t('reportCostAppsCsvHint')}</p>
+            <div className="noorix-print-hidden space-y-3 rounded-xl border border-dashed border-noorix-border bg-[var(--noorix-surface-2)]/60 p-4 print:hidden">
+              <div className="text-[12px] font-semibold text-noorix-text">{t('reportCostAppsImportRange')}</div>
+              <div className="flex flex-wrap items-end gap-3">
+                <Field label={t('reportDateFrom')}>
+                  <Input type="date" value={importFrom} onChange={(e: any) => setImportFrom(e.target.value)} dir="ltr" className="min-h-10 min-w-[140px]" />
+                </Field>
+                <Field label={t('reportDateTo')}>
+                  <Input type="date" value={importTo} onChange={(e: any) => setImportTo(e.target.value)} dir="ltr" className="min-h-10 min-w-[140px]" />
+                </Field>
+                <Button type="button" variant="secondary" disabled={importing} onClick={handleImportSystem}>
+                  {importing ? t('loading') : t('reportCostAppsImportBtn')}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => fileRef.current?.click()}>
+                  {t('reportCostAppsCsvImport')}
+                </Button>
+                <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvPick} />
+              </div>
+              <p className="m-0 text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsImportHint')}</p>
+              <p className="m-0 text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsCsvHint')}</p>
+            </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="rounded-lg border border-noorix-border p-4 print:border print:p-2">
-          <h3 className="mt-0 mb-3 text-sm font-bold print:text-xs print:mb-1">{t('reportCostAppsTaxCommissionTitle')}</h3>
-          <div className="flex flex-col gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-sm print:text-xs">
-              <input type="checkbox" checked={vatInclusive} onChange={(e) => setVatInclusive(e.target.checked)} />
+        <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
+          <div className="border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
+            <h2 className="m-0 text-[15px] font-bold text-noorix-text">{t('reportCostAppsTaxCommissionTitle')}</h2>
+          </div>
+          <div className="space-y-4 p-4 sm:p-5">
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2.5 text-sm print:border-0 print:bg-transparent print:px-0 print:py-1">
+              <input type="checkbox" className="size-4 shrink-0 rounded border-noorix-border" checked={vatInclusive} onChange={(e) => setVatInclusive(e.target.checked)} />
               {t('reportCostAppsVatInclusive')}
             </label>
-            <Field label={t('reportCostAppsVatRate')}>
-              <Input value={vatRatePctStr} onChange={(e: any) => setVatRatePctStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right max-w-[120px]" />
-            </Field>
-            <Field label={t('reportCostAppsCommissionPct')}>
-              <Input value={commissionPctStr} onChange={(e: any) => setCommissionPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right max-w-[120px]" />
-            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={t('reportCostAppsVatRate')}>
+                <Input value={vatRatePctStr} onChange={(e: any) => setVatRatePctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 max-w-[140px] text-right" />
+              </Field>
+              <Field label={t('reportCostAppsCommissionPct')}>
+                <Input value={commissionPctStr} onChange={(e: any) => setCommissionPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 max-w-[140px] text-right" />
+              </Field>
+            </div>
             <Field label={t('reportCostAppsCommissionBase')}>
               <select
                 className={cn(
-                  'w-full max-w-[280px] rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm',
+                  'min-h-10 w-full max-w-md rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm',
                 )}
                 value={commissionBase}
                 onChange={(e) => setCommissionBase(e.target.value as CostAppsCommissionBase)}
@@ -684,76 +820,89 @@ export default function CostAccountingAppsScreen() {
                 <option value="net">{t('reportCostAppsCommissionOnNet')}</option>
               </select>
             </Field>
-          </div>
 
-          <div className="mt-4 border-t border-noorix-border pt-4 print:hidden">
-            <h4 className="mt-0 mb-2 text-xs font-bold uppercase tracking-wide text-noorix-muted">{t('reportCostAppsReverseTitle')}</h4>
-            <div className="flex flex-wrap items-end gap-3">
-              <Field label={t('reportCostAppsTargetProfit')}>
-                <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right w-[140px]" />
-              </Field>
-              <Field label={t('reportCostAppsReverseAppShare')}>
-                <Input
-                  value={reverseAppSharePctStr}
-                  onChange={(e: any) => setReverseAppSharePctStr(e.target.value)}
-                  inputMode="decimal"
-                  dir="ltr"
-                  className="text-right w-[80px]"
-                />
-              </Field>
-              <Button type="button" variant="secondary" onClick={handleReverse}>
-                {t('reportCostAppsReverseCalc')}
-              </Button>
-            </div>
-            {reverseGrossStr ? (
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                <span className="text-noorix-muted">{t('reportCostAppsGrossTotal')}:</span>
-                <strong dir="ltr">{fmt(parseMoneyInput(reverseGrossStr).toNumber(), 2)}</strong>
-                <Button type="button" variant="primary" onClick={handleApplyReverse}>
-                  {t('reportCostAppsReverseApply')}
+            <div className="noorix-print-hidden space-y-3 rounded-xl border border-noorix-border bg-[var(--noorix-surface-2)]/50 p-4 print:hidden">
+              <h3 className="m-0 text-xs font-bold uppercase tracking-wide text-noorix-muted">{t('reportCostAppsReverseTitle')}</h3>
+              <div className="flex flex-wrap items-end gap-3">
+                <Field label={t('reportCostAppsTargetProfit')}>
+                  <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-[140px] text-right" />
+                </Field>
+                <Field label={t('reportCostAppsReverseAppShare')}>
+                  <Input
+                    value={reverseAppSharePctStr}
+                    onChange={(e: any) => setReverseAppSharePctStr(e.target.value)}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="min-h-10 w-[88px] text-right"
+                  />
+                </Field>
+                <Button type="button" variant="secondary" onClick={handleReverse}>
+                  {t('reportCostAppsReverseCalc')}
                 </Button>
               </div>
-            ) : null}
-            <div className="mt-3 flex flex-wrap items-end gap-3">
-              <Field label={t('reportCostAppsAppShare')}>
-                <Input
-                  value={appSharePctStr}
-                  onChange={(e: any) => setAppSharePctStr(e.target.value)}
-                  placeholder={plWith.grossTotal.gt(0) ? fmt(plWith.appShareOfGrossPct.toNumber(), 2) : ''}
-                  inputMode="decimal"
-                  dir="ltr"
-                  className="text-right w-[100px]"
-                />
-              </Field>
-              <Button type="button" variant="secondary" onClick={handleApplyAppShare}>
-                {t('reportCostAppsApplyShare')}
-              </Button>
+              {reverseGrossStr ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm">
+                  <span className="text-noorix-muted">{t('reportCostAppsGrossTotal')}:</span>
+                  <strong className="tabular-nums" dir="ltr">
+                    {fmt(parseMoneyInput(reverseGrossStr).toNumber(), 2)}
+                  </strong>
+                  <Button type="button" variant="primary" size="sm" onClick={handleApplyReverse}>
+                    {t('reportCostAppsReverseApply')}
+                  </Button>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap items-end gap-3 border-t border-noorix-border/70 pt-3">
+                <Field label={t('reportCostAppsAppShare')}>
+                  <Input
+                    value={appSharePctStr}
+                    onChange={(e: any) => setAppSharePctStr(e.target.value)}
+                    placeholder={plWith.grossTotal.gt(0) ? fmt(plWith.appShareOfGrossPct.toNumber(), 2) : ''}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="min-h-10 w-[104px] text-right"
+                  />
+                </Field>
+                <Button type="button" variant="secondary" onClick={handleApplyAppShare}>
+                  {t('reportCostAppsApplyShare')}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
-      <div className="rounded-lg border border-noorix-border p-4 print:border print:p-2">
-        <h3 className="mt-0 mb-2 text-sm font-bold print:text-xs">{t('reportCostAppsCogsSection')}</h3>
-        <p className="mb-3 text-[11px] leading-relaxed text-noorix-muted print:text-[10px]">{t('reportCostAppsCogsHint')}</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={t('reportCostAppsCogsLocalPct')}>
-            <Input value={cogsLocalPctStr} onChange={(e: any) => setCogsLocalPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right max-w-[120px]" />
-          </Field>
-          <Field label={t('reportCostAppsAppMarkupPct')}>
-            <Input value={appPriceMarkupPctStr} onChange={(e: any) => setAppPriceMarkupPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right max-w-[120px]" />
-          </Field>
+      <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
+        <div className="border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
+          <h2 className="m-0 text-[15px] font-bold text-noorix-text">{t('reportCostAppsCogsSection')}</h2>
         </div>
-      </div>
+        <div className="space-y-3 p-4 sm:p-5">
+          <p className="m-0 text-[11px] leading-relaxed text-noorix-muted print:text-[10px]">{t('reportCostAppsCogsHint')}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t('reportCostAppsCogsLocalPct')}>
+              <Input value={cogsLocalPctStr} onChange={(e: any) => setCogsLocalPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 max-w-[140px] text-right" />
+            </Field>
+            <Field label={t('reportCostAppsAppMarkupPct')}>
+              <Input value={appPriceMarkupPctStr} onChange={(e: any) => setAppPriceMarkupPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 max-w-[140px] text-right" />
+            </Field>
+          </div>
+        </div>
+      </Card>
 
-      <div className="rounded-lg border border-noorix-border p-4 print:p-2">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 print:hidden">
-          <h3 className="m-0 text-sm font-bold">{t('reportCostAppsFixedLines')}</h3>
-          <Button type="button" variant="ghost" onClick={() => setFixedLines((prev) => [...prev, newLine()])}>
-            {t('reportCostAppsAddLine')}
-          </Button>
+      <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
+          <h2 className="m-0 text-[15px] font-bold print:text-xs">{t('reportCostAppsFixedLines')}</h2>
+          <div className="noorix-print-hidden flex flex-wrap gap-2 print:hidden">
+            <Button type="button" variant="secondary" size="sm" disabled={importingFixedLines} onClick={handleImportFixedExpenses}>
+              {importingFixedLines ? t('loading') : t('reportCostAppsFixedImportBtn')}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setFixedLines((prev) => [...prev, newLine()])}>
+              {t('reportCostAppsAddLine')}
+            </Button>
+          </div>
         </div>
-        <div className="overflow-x-auto">
+        <p className="noorix-print-hidden mx-4 mt-3 text-[11px] leading-relaxed text-noorix-muted print:hidden">{t('reportCostAppsFixedImportHint')}</p>
+        <p className="mx-4 mt-2 text-[11px] text-noorix-muted print:mt-1 print:text-[10px]">{t('reportCostAppsFixedMonthlyNote')}</p>
+        <div className="overflow-x-auto p-2 sm:p-0 print:p-0">
           <table className="w-full border-collapse border border-noorix-border text-sm print:text-[11px]">
             <thead>
               <tr className="bg-[var(--noorix-table-header-bg)]">
@@ -797,11 +946,14 @@ export default function CostAccountingAppsScreen() {
             </tfoot>
           </table>
         </div>
-      </div>
+      </Card>
 
-      <div className="rounded-lg border border-noorix-border p-4 print:p-2">
-        <h3 className="mt-0 mb-3 text-sm font-bold print:text-xs">{t('reportCostAppsNetProfit')}</h3>
-        <div className="overflow-x-auto">
+      <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
+        <div className="border-s-4 border-s-noorix-blue border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
+          <h2 className="m-0 text-[15px] font-bold text-noorix-text print:text-xs">{t('reportCostAppsPlSummaryTitle')}</h2>
+          <p className="m-0 mt-1 text-[11px] text-noorix-muted print:hidden">{t('reportCostAppsNetProfit')}</p>
+        </div>
+        <div className="overflow-x-auto p-2 sm:p-0 print:p-0">
           <table className="w-full border-collapse border border-noorix-border text-sm print:text-[11px]">
             <thead>
               <tr className="bg-[var(--noorix-table-header-bg)]">
@@ -895,31 +1047,34 @@ export default function CostAccountingAppsScreen() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
-      <div className="flex flex-wrap gap-2 print:hidden">
-        <Button type="button" variant="secondary" onClick={handlePrint}>
-          {t('reportCostAppsPrint')}
-        </Button>
-        <Button type="button" variant="secondary" onClick={handleExportExcel}>
-          {t('reportCostAppsExportExcel')}
-        </Button>
-        <Button type="button" variant="secondary" onClick={handleExportScenario}>
-          {t('reportCostAppsScenarioExport')}
-        </Button>
-        <Button type="button" variant="ghost" onClick={() => scenarioFileRef.current?.click()}>
-          {t('reportCostAppsScenarioImport')}
-        </Button>
-        <input
-          ref={scenarioFileRef}
-          type="file"
-          accept=".json,application/json"
-          className="hidden"
-          onChange={handleScenarioFileChange}
-        />
-        <Button type="button" variant="ghost" onClick={clearDraft}>
-          {t('reportCostAppsResetDraft')}
-        </Button>
+      <div className="noorix-print-hidden rounded-xl border border-noorix-border bg-[var(--noorix-surface-2)] p-4 print:hidden">
+        <p className="m-0 mb-3 text-[11px] font-semibold uppercase tracking-wide text-noorix-muted">{t('actions')}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="secondary" onClick={handlePrint}>
+            {t('reportCostAppsPrint')}
+          </Button>
+          <Button type="button" variant="secondary" onClick={handleExportExcel}>
+            {t('reportCostAppsExportExcel')}
+          </Button>
+          <Button type="button" variant="secondary" onClick={handleExportScenario}>
+            {t('reportCostAppsScenarioExport')}
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => scenarioFileRef.current?.click()}>
+            {t('reportCostAppsScenarioImport')}
+          </Button>
+          <input
+            ref={scenarioFileRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={handleScenarioFileChange}
+          />
+          <Button type="button" variant="ghost" onClick={clearDraft}>
+            {t('reportCostAppsResetDraft')}
+          </Button>
+        </div>
       </div>
 
       <style>{`
