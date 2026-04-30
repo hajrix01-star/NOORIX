@@ -41,16 +41,42 @@ import {
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
-      <span className="text-[12px] font-semibold tracking-wide text-noorix-muted">{label}</span>
+      <span
+        className="line-clamp-2 min-h-[2.5rem] text-[11px] font-semibold leading-snug text-noorix-muted"
+        title={label}
+      >
+        {label}
+      </span>
       {children}
     </div>
   );
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function SectionHeading({
+  children,
+  tone = 'blue',
+}: {
+  children: React.ReactNode;
+  tone?: 'blue' | 'green' | 'amber' | 'slate' | 'rose';
+}) {
+  const bar = {
+    blue: 'bg-noorix-blue',
+    green: 'bg-noorix-green',
+    amber: 'bg-noorix-amber',
+    slate: 'bg-noorix-text/45',
+    rose: 'bg-noorix-red',
+  }[tone];
+  const shell = {
+    blue: 'border-noorix-blue/25 bg-gradient-to-br from-noorix-blue/[0.12] via-noorix-blue/[0.04] to-[var(--noorix-surface-2)]',
+    green: 'border-noorix-green/25 bg-gradient-to-br from-noorix-green/[0.11] via-noorix-green/[0.04] to-[var(--noorix-surface-2)]',
+    amber: 'border-noorix-amber/35 bg-gradient-to-br from-noorix-amber/[0.14] via-noorix-amber/[0.05] to-[var(--noorix-surface-2)]',
+    slate: 'border-noorix-border bg-gradient-to-br from-[var(--noorix-surface-2)] to-[var(--noorix-surface-1)]',
+    rose: 'border-noorix-red/25 bg-gradient-to-br from-noorix-red/[0.09] via-noorix-red/[0.03] to-[var(--noorix-surface-2)]',
+  }[tone];
   return (
-    <div className="flex items-center gap-2 border-s-[3px] border-s-noorix-blue ps-2.5">
-      <h3 className="m-0 text-[11px] font-bold uppercase tracking-[0.06em] text-noorix-muted">{children}</h3>
+    <div className={cn('mb-1 flex items-center gap-2.5 rounded-lg border px-3 py-2 shadow-sm', shell)}>
+      <span className={cn('h-7 w-1 shrink-0 rounded-full', bar)} aria-hidden />
+      <h3 className="m-0 min-w-0 text-[12px] font-bold leading-snug tracking-wide text-noorix-text">{children}</h3>
     </div>
   );
 }
@@ -928,7 +954,7 @@ export default function CostAccountingAppsScreen() {
             <div className="space-y-5 p-4 sm:p-5">
           {/* —— المبيعات —— */}
           <div className="space-y-3">
-            <SectionHeading>{t('reportCostAppsZoneSales')}</SectionHeading>
+            <SectionHeading tone="blue">{t('reportCostAppsZoneSales')}</SectionHeading>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Field label={t('reportCostAppsGrossApp')} className="gap-1.5">
                 <Input
@@ -969,7 +995,7 @@ export default function CostAccountingAppsScreen() {
 
           {/* —— مزامنة المبيعات —— */}
           <div className="noorix-print-hidden space-y-3 border-t border-noorix-border pt-5 print:hidden">
-            <SectionHeading>{t('reportCostAppsZoneSync')}</SectionHeading>
+            <SectionHeading tone="green">{t('reportCostAppsZoneSync')}</SectionHeading>
             <div className="flex flex-wrap items-end gap-2 sm:gap-3">
               <Field label={t('reportDateFrom')}>
                 <Input type="date" value={importFrom} onChange={(e: any) => setImportFrom(e.target.value)} dir="ltr" className="min-h-10 min-w-[132px]" />
@@ -991,7 +1017,7 @@ export default function CostAccountingAppsScreen() {
 
           {/* —— ضريبة / عمولة / COGS —— */}
           <div className="space-y-3 border-t border-noorix-border pt-5">
-            <SectionHeading>{t('reportCostAppsZoneRates')}</SectionHeading>
+            <SectionHeading tone="amber">{t('reportCostAppsZoneRates')}</SectionHeading>
             <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-noorix-border/90 bg-[var(--noorix-surface-1)] px-3 py-2 text-[13px] print:border-0 print:bg-transparent print:px-0 print:py-1">
               <input type="checkbox" className="size-4 shrink-0 rounded border-noorix-border" checked={vatInclusive} onChange={(e) => setVatInclusive(e.target.checked)} />
               <span>{t('reportCostAppsVatInclusive')}</span>
@@ -1027,7 +1053,7 @@ export default function CostAccountingAppsScreen() {
 
           {/* —— حساب عكسي ونسبة التطبيق —— */}
           <div className="noorix-print-hidden space-y-3 border-t border-noorix-border pt-5 print:hidden">
-            <SectionHeading>{t('reportCostAppsZoneAnalysis')}</SectionHeading>
+            <SectionHeading tone="slate">{t('reportCostAppsZoneAnalysis')}</SectionHeading>
             <p className="m-0 -mt-1 text-[10px] text-noorix-muted">{t('reportCostAppsReverseTitle')}</p>
             <div className="flex flex-wrap items-end gap-2 sm:gap-3">
               <Field label={t('reportCostAppsTargetProfit')}>
@@ -1076,7 +1102,7 @@ export default function CostAccountingAppsScreen() {
 
           {/* —— الرواتب —— */}
           <div className="space-y-2 border-t border-noorix-border pt-5">
-            <SectionHeading>{t('reportCostAppsZonePayroll')}</SectionHeading>
+            <SectionHeading tone="rose">{t('reportCostAppsZonePayroll')}</SectionHeading>
             <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px] print:text-[10px]">{t('reportCostAppsSalaryImportHint')}</p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
               <Field label={t('reportCostAppsSalaryAmount')} className="min-w-0 flex-1">
