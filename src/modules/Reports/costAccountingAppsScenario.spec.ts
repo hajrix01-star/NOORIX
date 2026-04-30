@@ -20,6 +20,7 @@ describe('costAccountingAppsScenario', () => {
       reverseAppSharePctStr: '30',
       cogsLocalPctStr: '50',
       appPriceMarkupPctStr: '30',
+      salaryStr: '1200',
     });
     const parsed = parseCostAppsScenarioJson(json);
     expect(parsed.ok).toBe(true);
@@ -27,6 +28,7 @@ describe('costAccountingAppsScenario', () => {
     expect(parsed.restore.grossAppStr).toBe('100');
     expect(parsed.restore.fixedLines?.[0]?.label).toBe('إيجار');
     expect(parsed.restore.reverseAppSharePctStr).toBe('30');
+    expect(parsed.restore.salaryStr).toBe('1200');
   });
 
   it('rejects bad version', () => {

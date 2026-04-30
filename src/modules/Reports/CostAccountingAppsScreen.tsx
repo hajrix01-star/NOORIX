@@ -6,13 +6,13 @@ import Decimal from 'decimal.js';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
-import { getDashboardSalesPack, getExpenseLines, throwIfApiFailed } from '../../services/api';
+import { getDashboardSalesPack, getExpenseLines, getPeriodAnalytics, throwIfApiFailed } from '../../services/api';
 import { fmt } from '../../utils/format';
 import { TAX_RATE } from '../../utils/math-engine';
 import { formatUiDateTime, getSaudiYearMonth } from '../../utils/saudiDate';
 import { openPrintWindow } from '../../utils/printUtils';
 import { exportToExcel } from '../../utils/exportUtils';
-import { Button, Input, cn } from '../../ui';
+import { Button, Input, cn, Modal } from '../../ui';
 import Card from '../../ui/Card';
 import {
   aggregateSalesChannelsInRange,
@@ -147,6 +147,8 @@ export default function CostAccountingAppsScreen() {
   const [importTo, setImportTo] = useState(() => ymdParts(sa0.year, sa0.month, lastDayOfMonth(sa0.year, sa0.month)));
   const [importing, setImporting] = useState(false);
   const [importingFixedLines, setImportingFixedLines] = useState(false);
+  const [importingSalary, setImportingSalary] = useState(false);
+  const [salaryStr, setSalaryStr] = useState('');
   const [targetProfitStr, setTargetProfitStr] = useState('20000');
   const [reverseGrossStr, setReverseGrossStr] = useState('');
   const [appSharePctStr, setAppSharePctStr] = useState('');
@@ -176,6 +178,8 @@ export default function CostAccountingAppsScreen() {
 
   const grossInputsSum = useMemo(() => grossApp.plus(grossCash).plus(grossBank), [grossApp, grossCash, grossBank]);
 
+  const salaryTotal = useMemo(() => parseMoneyInput(salaryStr), [salaryStr]);
+
   const baseParams = useMemo(
     () => ({
       grossApp,
@@ -186,8 +190,7 @@ export default function CostAccountingAppsScreen() {
       commissionPct: commissionPctDec,
       commissionBase,
       fixedTotal,
-      /** رواتب الفترة: سيتم ربطها بالواجهة لاحقاً؛ 0 = بدون خصم رواتب */
-      salaryTotal: new Decimal(0),
+      salaryTotal,
       cogsLocalPct: parseMoneyInput(cogsLocalPctStr),
       appPriceMarkupPct: parseMoneyInput(appPriceMarkupPctStr),
     }),
@@ -200,6 +203,7 @@ export default function CostAccountingAppsScreen() {
       commissionPctDec,
       commissionBase,
       fixedTotal,
+      salaryTotal,
       cogsLocalPctStr,
       appPriceMarkupPctStr,
     ],
@@ -212,6 +216,7 @@ export default function CostAccountingAppsScreen() {
     if (!activeCompanyId) return;
     setImporting(false);
     setImportingFixedLines(false);
+    setImportingSalary(false);
 
     const sa = getSaudiYearMonth();
     const defFrom = ymdParts(sa.year, sa.month, 1);
@@ -238,6 +243,7 @@ export default function CostAccountingAppsScreen() {
     setCommissionPctStr(pickStr('commissionPctStr', '25'));
     setCommissionBase(o?.commissionBase === 'net' ? 'net' : 'gross');
     setFixedLines(normalizeFixedLines(o?.fixedLines));
+    setSalaryStr(pickStr('salaryStr', ''));
     setImportFrom(pickStr('importFrom', defFrom));
     setImportTo(pickStr('importTo', defTo));
     setCogsLocalPctStr(pickStr('cogsLocalPctStr', '0'));
@@ -260,6 +266,7 @@ export default function CostAccountingAppsScreen() {
       commissionPctStr,
       commissionBase,
       fixedLines,
+      salaryStr,
       importFrom,
       importTo,
       cogsLocalPctStr,
@@ -284,6 +291,7 @@ export default function CostAccountingAppsScreen() {
     commissionPctStr,
     commissionBase,
     fixedLines,
+    salaryStr,
     importFrom,
     importTo,
     cogsLocalPctStr,
@@ -305,6 +313,7 @@ export default function CostAccountingAppsScreen() {
     if (restore.commissionPctStr !== undefined) setCommissionPctStr(restore.commissionPctStr);
     if (restore.commissionBase !== undefined) setCommissionBase(restore.commissionBase);
     if (restore.fixedLines !== undefined) setFixedLines(normalizeFixedLines(restore.fixedLines));
+    if (restore.salaryStr !== undefined) setSalaryStr(restore.salaryStr);
     if (restore.importFrom !== undefined) setImportFrom(restore.importFrom);
     if (restore.importTo !== undefined) setImportTo(restore.importTo);
     if (restore.targetProfitStr !== undefined) setTargetProfitStr(restore.targetProfitStr);
@@ -349,6 +358,35 @@ export default function CostAccountingAppsScreen() {
       showToast(e?.message || String(e), 'error');
     } finally {
       setImporting(false);
+    }
+  }, [activeCompanyId, importFrom, importTo, showToast, t]);
+
+  const handleImportSalaryFromHr = useCallback(async () => {
+    if (!activeCompanyId) {
+      showToast(t('pleaseSelectCompany'), 'error');
+      return;
+    }
+    setImportingSalary(true);
+    try {
+      const res = await getPeriodAnalytics(activeCompanyId, importFrom, importTo);
+      throwIfApiFailed(res, t('reportCostAppsSalaryImportEmpty'));
+      const data = res.data as { totalsByKind?: Record<string, { totalAmount?: string }> } | undefined;
+      const raw = data?.totalsByKind?.salary?.totalAmount;
+      if (raw == null || String(raw).trim() === '') {
+        showToast(t('reportCostAppsSalaryImportEmpty'), 'error');
+        return;
+      }
+      const amt = parseMoneyInput(String(raw));
+      if (amt.lte(0)) {
+        showToast(t('reportCostAppsSalaryImportEmpty'), 'error');
+        return;
+      }
+      setSalaryStr(amt.toFixed(2));
+      showToast(t('reportCostAppsSalaryImportOk'), 'success');
+    } catch (e: any) {
+      showToast(e?.message || String(e), 'error');
+    } finally {
+      setImportingSalary(false);
     }
   }, [activeCompanyId, importFrom, importTo, showToast, t]);
 
@@ -423,6 +461,7 @@ export default function CostAccountingAppsScreen() {
     const rev = reverseGrossTotalForTargetProfit({
       targetProfit: parseMoneyInput(targetProfitStr),
       fixedTotal,
+      salaryTotal,
       appShareDecimal: alpha,
       vatInclusive,
       vatRate: vatRateDec,
@@ -444,6 +483,7 @@ export default function CostAccountingAppsScreen() {
     commissionPctDec,
     fixedTotal,
     reverseAppSharePctStr,
+    salaryTotal,
     showToast,
     t,
     targetProfitStr,
@@ -509,6 +549,7 @@ export default function CostAccountingAppsScreen() {
       [t('reportCostAppsCogsApp'), fmt2(plWith.cogsApp), fmt2(plWithout.cogsApp)],
       [t('reportCostAppsCogsTotal'), fmt2(plWith.cogsTotal), fmt2(plWithout.cogsTotal)],
       [t('reportCostAppsFixedTotalRow'), fmt2(plWith.fixedTotal), fmt2(plWithout.fixedTotal)],
+      [t('reportCostAppsSalaryRow'), fmt2(plWith.salaryTotal), fmt2(plWithout.salaryTotal)],
       [t('reportCostAppsNetProfit'), fmt2(plWith.netProfit), fmt2(plWithout.netProfit)],
     ];
     const body = `
@@ -584,6 +625,7 @@ export default function CostAccountingAppsScreen() {
       { item: t('reportCostAppsCogsApp'), withApps: plWith.cogsApp.toNumber(), noApps: plWithout.cogsApp.toNumber() },
       { item: t('reportCostAppsCogsTotal'), withApps: plWith.cogsTotal.toNumber(), noApps: plWithout.cogsTotal.toNumber() },
       { item: t('reportCostAppsFixedTotalRow'), withApps: plWith.fixedTotal.toNumber(), noApps: plWithout.fixedTotal.toNumber() },
+      { item: t('reportCostAppsSalaryRow'), withApps: plWith.salaryTotal.toNumber(), noApps: plWithout.salaryTotal.toNumber() },
       { item: t('reportCostAppsNetProfit'), withApps: plWith.netProfit.toNumber(), noApps: plWithout.netProfit.toNumber() },
     ];
     await exportToExcel({
@@ -610,6 +652,7 @@ export default function CostAccountingAppsScreen() {
     setGrossAppStr('');
     setGrossCashStr('');
     setGrossBankStr('');
+    setSalaryStr('');
     setVatInclusive(true);
     setVatRatePctStr(String(TAX_RATE * 100));
     setCommissionPctStr('25');
@@ -638,6 +681,7 @@ export default function CostAccountingAppsScreen() {
       commissionPctStr,
       commissionBase,
       fixedLines,
+      salaryStr,
       importFrom,
       importTo,
       targetProfitStr,
@@ -672,6 +716,7 @@ export default function CostAccountingAppsScreen() {
     importTo,
     reverseAppSharePctStr,
     reverseGrossStr,
+    salaryStr,
     showToast,
     t,
     targetProfitStr,
@@ -698,6 +743,7 @@ export default function CostAccountingAppsScreen() {
       commissionPctStr,
       commissionBase,
       fixedLines,
+      salaryStr,
       importFrom,
       importTo,
       targetProfitStr,
@@ -732,6 +778,7 @@ export default function CostAccountingAppsScreen() {
     lang,
     reverseAppSharePctStr,
     reverseGrossStr,
+    salaryStr,
     showToast,
     t,
     targetProfitStr,
@@ -1042,6 +1089,28 @@ export default function CostAccountingAppsScreen() {
         </div>
       </Card>
 
+      <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
+        <div className="border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
+          <h2 className="m-0 text-[15px] font-bold text-noorix-text print:text-xs">{t('reportCostAppsSalarySection')}</h2>
+          <p className="m-0 mt-1 text-[11px] leading-relaxed text-noorix-muted print:text-[10px]">{t('reportCostAppsSalaryImportHint')}</p>
+        </div>
+        <div className="noorix-print-hidden flex flex-wrap items-end gap-3 p-4 sm:p-5 print:hidden">
+          <Field label={t('reportCostAppsSalaryAmount')} className="min-w-[200px] flex-1">
+            <Input
+              value={salaryStr}
+              onChange={(e: any) => setSalaryStr(e.target.value)}
+              inputMode="decimal"
+              dir="ltr"
+              className="min-h-10 w-full max-w-md text-right"
+              placeholder="0"
+            />
+          </Field>
+          <Button type="button" variant="secondary" size="sm" disabled={importingSalary} onClick={handleImportSalaryFromHr}>
+            {importingSalary ? t('loading') : t('reportCostAppsSalaryImportBtn')}
+          </Button>
+        </div>
+      </Card>
+
       <Card
         key={`cost-apps-fixed-${activeCompanyId}`}
         variant="surface"
@@ -1266,6 +1335,15 @@ export default function CostAccountingAppsScreen() {
                 </td>
               </tr>
               <tr>
+                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsSalaryRow')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWith.salaryTotal)}
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWithout.salaryTotal)}
+                </td>
+              </tr>
+              <tr>
                 <td className="border border-noorix-border px-2 py-2 font-bold">{t('reportCostAppsNetProfit')}</td>
                 <td className="border border-noorix-border px-2 py-2 text-end font-bold text-noorix-blue" dir="ltr">
                   {fmt2(plWith.netProfit)}
@@ -1307,47 +1385,39 @@ export default function CostAccountingAppsScreen() {
         </div>
       </div>
 
-      {previewSlot ? (
-        <div
-          className="noorix-print-hidden fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 print:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="cost-apps-preview-title"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setPreviewSlot(null);
-          }}
-        >
-          <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] shadow-lg">
-            <div className="flex items-center justify-between gap-2 border-b border-noorix-border px-4 py-3">
-              <h3 id="cost-apps-preview-title" className="m-0 min-w-0 truncate text-[15px] font-bold">
-                {previewSlot.label}
-              </h3>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewSlot(null)}>
-                {t('close')}
-              </Button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-auto p-4">
-              <pre className="m-0 whitespace-pre-wrap break-all text-[11px] leading-relaxed text-noorix-text" dir="ltr">
-                {(() => {
-                  try {
-                    return JSON.stringify(JSON.parse(previewSlot.scenarioJson), null, 2);
-                  } catch {
-                    return previewSlot.scenarioJson;
-                  }
-                })()}
-              </pre>
-            </div>
-            <div className="flex flex-wrap justify-end gap-2 border-t border-noorix-border px-4 py-3">
+      <Modal
+        open={!!previewSlot}
+        onClose={() => setPreviewSlot(null)}
+        title={previewSlot?.label ?? ''}
+        size="xl"
+        footer={
+          previewSlot ? (
+            <>
               <Button type="button" variant="ghost" onClick={() => setPreviewSlot(null)}>
                 {t('close')}
               </Button>
               <Button type="button" variant="primary" onClick={() => handleImportSavedSlot(previewSlot)}>
                 {t('reportCostAppsSavedImport')}
               </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+            </>
+          ) : undefined
+        }
+      >
+        {previewSlot ? (
+          <pre
+            className="m-0 max-w-full overflow-x-auto font-mono text-[12px] leading-relaxed text-noorix-text whitespace-pre-wrap break-words"
+            dir="ltr"
+          >
+            {(() => {
+              try {
+                return JSON.stringify(JSON.parse(previewSlot.scenarioJson), null, 2);
+              } catch {
+                return previewSlot.scenarioJson;
+              }
+            })()}
+          </pre>
+        ) : null}
+      </Modal>
 
       <style>{`
         @media print {

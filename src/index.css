@@ -156,6 +156,9 @@
   --noorix-bg-surface:  #ffffff;
   --noorix-surface:     #ffffff;
   --noorix-bg-muted:    #f1f3f6;
+  /* طبقات سطح — مستخدمة في تقارير/حاسبة التكاليف (كانت تشير لمتغيرات غير معرّفة) */
+  --noorix-surface-1:   var(--noorix-bg-surface);
+  --noorix-surface-2:   var(--noorix-bg-muted);
   /* نصوص */
   --noorix-text:        #1a2332;
   --noorix-text-muted:  #5a6a7e;
@@ -2906,6 +2909,7 @@ input:focus, select:focus, textarea:focus {
   .app-sidebar-backdrop,
   .app-main__menu-button,
   .noorix-topbar,
+  .nx-modal-backdrop,
   .noorix-print-hide,
   button,
   .noorix-btn-nav,

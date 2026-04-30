@@ -42,6 +42,7 @@ describe('computeCostAppsPl', () => {
       fixedTotal: new Decimal(5000),
       includeAppChannel: true,
       ...zeroCogs,
+      ...zeroSalary,
     };
     const withoutSalary = computeCostAppsPl({ ...base, salaryTotal: new Decimal(0) });
     const withSalary = computeCostAppsPl({ ...base, salaryTotal: new Decimal(3000) });
