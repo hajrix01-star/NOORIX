@@ -30,6 +30,8 @@ export type CostAppsScenarioFile = {
   reverseAppSharePctStr?: string;
   cogsLocalPctStr?: string;
   appPriceMarkupPctStr?: string;
+  /** إجمالي مبيعات للمعاينة العكسية (ربح من جملة معلومة) */
+  probeSalesGrossStr?: string;
 };
 
 export type CostAppsScenarioRestore = {
@@ -51,6 +53,7 @@ export type CostAppsScenarioRestore = {
   reverseAppSharePctStr?: string;
   cogsLocalPctStr?: string;
   appPriceMarkupPctStr?: string;
+  probeSalesGrossStr?: string;
 };
 
 function newLineId() {
@@ -108,6 +111,7 @@ export function parseCostAppsScenarioJson(
   if (rec.reverseAppSharePctStr != null) restore.reverseAppSharePctStr = String(rec.reverseAppSharePctStr);
   if (rec.cogsLocalPctStr != null) restore.cogsLocalPctStr = String(rec.cogsLocalPctStr);
   if (rec.appPriceMarkupPctStr != null) restore.appPriceMarkupPctStr = String(rec.appPriceMarkupPctStr);
+  if (rec.probeSalesGrossStr != null) restore.probeSalesGrossStr = String(rec.probeSalesGrossStr);
 
   if (Object.keys(restore).length === 0) return { ok: false, error: 'empty_scenario' };
 

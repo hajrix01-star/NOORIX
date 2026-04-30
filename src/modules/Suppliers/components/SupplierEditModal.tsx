@@ -2,9 +2,10 @@
  * SupplierEditModal — نافذة تعديل المورد.
  * Props: supplier, flatCategories, onSave(body), onClose, isSaving
  */
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet, FormRow } from '../../../ui';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 
 export type SupplierEditModalProps = {
   supplier: any;
@@ -18,7 +19,6 @@ export const SupplierEditModal = memo(function SupplierEditModal({
   supplier, flatCategories = [], onSave, onClose, isSaving,
 }: SupplierEditModalProps) {
   const { t, lang } = useTranslation();
-  const catLabel = (c: any) => (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || '';
   const SUPPLIER_TYPES = [
     { value: 'purchases', label: t('supplierTypePurchases') },
     { value: 'expenses',  label: t('supplierTypeExpenses') },
@@ -49,6 +49,21 @@ export const SupplierEditModal = memo(function SupplierEditModal({
     if (form.supplierType === 'expenses') return c.type === 'expense';
     return true;
   });
+
+  const categoryPickerOptions = useMemo(
+    () =>
+      filteredCategories.map((c: any) => {
+        const icon = c.icon || c.account?.icon || '';
+        const displayCode = c.code || c.account?.code || '';
+        const code = displayCode ? ` [${displayCode}]` : '';
+        const name = lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn;
+        return {
+          value: c.id,
+          label: `${icon} ${c.parentId ? `↳ ${name}` : name}${code}`.trim(),
+        };
+      }),
+    [filteredCategories, lang],
+  );
 
   function handleSubmit(e: any) {
     e.preventDefault();
@@ -94,32 +109,23 @@ export const SupplierEditModal = memo(function SupplierEditModal({
             onChange={(e: any) => set('phone', e.target.value)}
             placeholder="05xxxxxxxx"
           />
-          <Input
-            type="select"
+          <SearchableOptionsPicker
             label={t('supplierType')}
             value={form.supplierType}
-            onChange={(e: any) => set('supplierType', e.target.value)}
-          >
-            {SUPPLIER_TYPES.map((st: any) => <option key={st.value} value={st.value}>{st.label}</option>)}
-          </Input>
-          <Input
-            type="select"
+            onChange={(v) => set('supplierType', v)}
+            options={SUPPLIER_TYPES}
+            aria-label={t('supplierType')}
+          />
+          <SearchableOptionsPicker
             label={t('category')}
+            allowEmpty
+            emptyValue=""
+            emptyLabel={t('noCategory')}
             value={form.supplierCategoryId}
-            onChange={(e: any) => set('supplierCategoryId', e.target.value)}
-          >
-            <option value="">{t('noCategory')}</option>
-            {filteredCategories.map((c: any) => {
-              const icon = c.icon || c.account?.icon || '';
-              const displayCode = c.code || c.account?.code || '';
-              const code = displayCode ? ` [${displayCode}]` : '';
-              return (
-                <option key={c.id} value={c.id}>
-                  {icon} {c.parentId ? `↳ ${catLabel(c)}` : catLabel(c)}{code}
-                </option>
-              );
-            })}
-          </Input>
+            onChange={(v) => set('supplierCategoryId', v)}
+            options={categoryPickerOptions}
+            aria-label={t('category')}
+          />
         </FormRow>
 
         <label className="nx-checkbox flex items-center gap-2 mt-3 cursor-pointer select-none text-[13px] text-noorix-text">

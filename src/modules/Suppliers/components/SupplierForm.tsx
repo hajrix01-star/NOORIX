@@ -2,9 +2,10 @@
  * SupplierForm — نموذج إضافة مورد جديد.
  * Props: companyId, categories (flat), onSave(body), isSaving, onCancel
  */
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, Card, FormRow } from '../../../ui';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 
 const EMPTY = { nameAr: '', nameEn: '', taxNumber: '', phone: '', supplierCategoryId: '', supplierType: 'purchases', isTaxRegistered: true };
 
@@ -18,7 +19,6 @@ export type SupplierFormProps = {
 
 export const SupplierForm = memo(function SupplierForm({ companyId, flatCategories = [], onSave, isSaving, onCancel }: SupplierFormProps) {
   const { t, lang } = useTranslation();
-  const catLabel = (c: any) => (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || '';
   const [form, setForm] = useState(EMPTY);
 
   const set = (k: any, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
@@ -29,6 +29,29 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
     if (form.supplierType === 'expenses') return c.type === 'expense';
     return true;
   });
+
+  const categoryPickerOptions = useMemo(
+    () =>
+      filteredCategories.map((c: any) => {
+        const icon = c.icon || c.account?.icon || '';
+        const displayCode = c.code || c.account?.code || '';
+        const code = displayCode ? ` [${displayCode}]` : '';
+        const name = lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn;
+        return {
+          value: c.id,
+          label: `${icon} ${c.parentId ? `↳ ${name}` : name}${code}`.trim(),
+        };
+      }),
+    [filteredCategories, lang],
+  );
+
+  const supplierTypeOptions = useMemo(
+    () => [
+      { value: 'purchases', label: t('supplierTypePurchases') },
+      { value: 'expenses', label: t('supplierTypeExpenses') },
+    ],
+    [t],
+  );
 
   function handleSubmit(e: any) {
     e.preventDefault();
@@ -75,33 +98,23 @@ export const SupplierForm = memo(function SupplierForm({ companyId, flatCategori
             onChange={(e: any) => set('phone', e.target.value)}
             placeholder="05xxxxxxxx"
           />
-          <Input
-            type="select"
+          <SearchableOptionsPicker
             label={t('supplierType')}
             value={form.supplierType}
-            onChange={(e: any) => set('supplierType', e.target.value)}
-          >
-            <option value="purchases">{t('supplierTypePurchases')}</option>
-            <option value="expenses">{t('supplierTypeExpenses')}</option>
-          </Input>
-          <Input
-            type="select"
+            onChange={(v) => set('supplierType', v)}
+            options={supplierTypeOptions}
+            aria-label={t('supplierType')}
+          />
+          <SearchableOptionsPicker
             label={t('categoryLinked')}
+            allowEmpty
+            emptyValue=""
+            emptyLabel={t('noCategory')}
             value={form.supplierCategoryId}
-            onChange={(e: any) => set('supplierCategoryId', e.target.value)}
-          >
-            <option value="">{t('noCategory')}</option>
-            {filteredCategories.map((c: any) => {
-              const icon = c.icon || c.account?.icon || '';
-              const displayCode = c.code || c.account?.code || '';
-              const code = displayCode ? ` [${displayCode}]` : '';
-              return (
-                <option key={c.id} value={c.id}>
-                  {icon} {c.parentId ? `↳ ${catLabel(c)}` : catLabel(c)}{code}
-                </option>
-              );
-            })}
-          </Input>
+            onChange={(v) => set('supplierCategoryId', v)}
+            options={categoryPickerOptions}
+            aria-label={t('categoryLinked')}
+          />
         </FormRow>
 
         <label className="nx-checkbox flex items-center gap-2 mt-3 cursor-pointer select-none text-[13px] text-noorix-text">

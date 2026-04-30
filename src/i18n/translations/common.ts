@@ -540,4 +540,8 @@ export default {
   loadBatchFailed: { ar: 'فشل تحميل الدفعات', en: 'Failed to load batches' },
   taxPct: { ar: 'ض%', en: 'VAT%' },
   taxPctTitle: { ar: 'ضريبة القيمة المضافة', en: 'Value Added Tax' },
+  dropdownSearchPlaceholder: { ar: 'ابحث في القائمة...', en: 'Search list...' },
+  dropdownOpenAria: { ar: 'فتح القائمة', en: 'Open list' },
+  dropdownClearAll: { ar: 'مسح الكل', en: 'Clear all' },
+  dropdownSelectedCount: { ar: '{0} محدد', en: '{0} selected' },
 };

@@ -240,6 +240,14 @@ export default function CostAccountingAppsScreen() {
   const [appPriceMarkupPctStr, setAppPriceMarkupPctStr] = useState('0');
   /** حصة التطبيقات من إجمالي المبيعات في الحساب العكسي (%) */
   const [reverseAppSharePctStr, setReverseAppSharePctStr] = useState('30');
+  /** إجمالي مبيعات لمعاينة صافي الربح (توزيع بنفس حصة التطبيقات أعلاه) */
+  const [probeSalesGrossStr, setProbeSalesGrossStr] = useState('');
+  const [probePlPreview, setProbePlPreview] = useState<{
+    netProfit: Decimal;
+    netSales: Decimal;
+    commission: Decimal;
+    grossTotal: Decimal;
+  } | null>(null);
   const [savedSlots, setSavedSlots] = useState<CostAppsSavedSlot[]>([]);
   const [previewSlot, setPreviewSlot] = useState<CostAppsSavedSlot | null>(null);
 
@@ -372,6 +380,8 @@ export default function CostAccountingAppsScreen() {
     setReverseAppSharePctStr(pickStr('reverseAppSharePctStr', '30'));
     setTargetProfitStr(pickStr('targetProfitStr', '20000'));
     setReverseGrossStr(pickStr('reverseGrossStr', ''));
+    setProbeSalesGrossStr(pickStr('probeSalesGrossStr', ''));
+    setProbePlPreview(null);
     setAppSharePctStr(pickStr('appSharePctStr', ''));
     setSavedSlots(readSavedSlots(activeCompanyId));
   }, [activeCompanyId]);
@@ -395,6 +405,7 @@ export default function CostAccountingAppsScreen() {
       reverseAppSharePctStr,
       targetProfitStr,
       reverseGrossStr,
+      probeSalesGrossStr,
       appSharePctStr,
     };
     try {
@@ -420,6 +431,7 @@ export default function CostAccountingAppsScreen() {
     reverseAppSharePctStr,
     targetProfitStr,
     reverseGrossStr,
+    probeSalesGrossStr,
     appSharePctStr,
   ]);
 
@@ -441,8 +453,10 @@ export default function CostAccountingAppsScreen() {
     if (restore.reverseGrossStr !== undefined) setReverseGrossStr(restore.reverseGrossStr);
     if (restore.appSharePctStr !== undefined) setAppSharePctStr(restore.appSharePctStr);
     if (restore.reverseAppSharePctStr !== undefined) setReverseAppSharePctStr(restore.reverseAppSharePctStr);
+    if (restore.probeSalesGrossStr !== undefined) setProbeSalesGrossStr(restore.probeSalesGrossStr);
     if (restore.cogsLocalPctStr !== undefined) setCogsLocalPctStr(restore.cogsLocalPctStr);
     if (restore.appPriceMarkupPctStr !== undefined) setAppPriceMarkupPctStr(restore.appPriceMarkupPctStr);
+    setProbePlPreview(null);
   }, []);
 
   const handleImportSystem = useCallback(async () => {
@@ -601,6 +615,82 @@ export default function CostAccountingAppsScreen() {
     vatInclusive,
     vatRateDec,
   ]);
+
+  const handleProbeProfit = useCallback(() => {
+    const G = parseMoneyInput(probeSalesGrossStr);
+    const alphaPct = parseMoneyInput(reverseAppSharePctStr);
+    const alpha = alphaPct.div(100);
+    if (G.lte(0) || alpha.lt(0) || alpha.gt(1)) {
+      showToast(t('reportCostAppsReverseErr'), 'error');
+      setProbePlPreview(null);
+      return;
+    }
+    const loc = grossCash.plus(grossBank);
+    const cashRatio = loc.gt(0) ? grossCash.div(loc) : new Decimal(0.5);
+    const gApp = G.mul(alpha);
+    const gLoc = G.minus(gApp);
+    const gCashNew = gLoc.mul(cashRatio);
+    const gBankNew = gLoc.minus(gCashNew);
+    const pl = computeCostAppsPl({
+      grossApp: gApp,
+      grossLocalCash: gCashNew,
+      grossLocalBank: gBankNew,
+      vatInclusive,
+      vatRate: vatRateDec,
+      commissionPct: commissionPctDec,
+      commissionBase,
+      fixedTotal,
+      salaryTotal,
+      includeAppChannel: alpha.gt(0),
+      cogsLocalPct: parseMoneyInput(cogsLocalPctStr),
+      appPriceMarkupPct: parseMoneyInput(appPriceMarkupPctStr),
+    });
+    setProbePlPreview({
+      netProfit: pl.netProfit,
+      netSales: pl.netSales,
+      commission: pl.commission,
+      grossTotal: pl.grossTotal,
+    });
+  }, [
+    appPriceMarkupPctStr,
+    cogsLocalPctStr,
+    commissionBase,
+    commissionPctDec,
+    fixedTotal,
+    grossBank,
+    grossCash,
+    probeSalesGrossStr,
+    reverseAppSharePctStr,
+    salaryTotal,
+    showToast,
+    t,
+    vatInclusive,
+    vatRateDec,
+  ]);
+
+  const handleApplyProbeToFields = useCallback(() => {
+    const G = parseMoneyInput(probeSalesGrossStr);
+    if (G.lte(0)) {
+      showToast(t('reportCostAppsReverseErr'), 'error');
+      return;
+    }
+    const alphaPct = parseMoneyInput(reverseAppSharePctStr);
+    const alpha = alphaPct.div(100);
+    if (alpha.lt(0) || alpha.gt(1)) {
+      showToast(t('reportCostAppsReverseErr'), 'error');
+      return;
+    }
+    const loc = grossCash.plus(grossBank);
+    const cashRatio = loc.gt(0) ? grossCash.div(loc) : new Decimal(0.5);
+    const gApp = G.mul(alpha);
+    const gLoc = G.minus(gApp);
+    const gCash = gLoc.mul(cashRatio);
+    const gBank = gLoc.minus(gCash);
+    setGrossAppStr(gApp.toFixed(2));
+    setGrossCashStr(gCash.toFixed(2));
+    setGrossBankStr(gBank.toFixed(2));
+    showToast(t('reportCostAppsImportOk'), 'success');
+  }, [grossBank, grossCash, probeSalesGrossStr, reverseAppSharePctStr, showToast, t]);
 
   const handleApplyReverse = useCallback(() => {
     const G = parseMoneyInput(reverseGrossStr);
@@ -773,6 +863,8 @@ export default function CostAccountingAppsScreen() {
     setTargetProfitStr('20000');
     setReverseGrossStr('');
     setAppSharePctStr('');
+    setProbeSalesGrossStr('');
+    setProbePlPreview(null);
     setImporting(false);
     showToast(lang === 'ar' ? 'تم المسح.' : 'Cleared.', 'success');
   }, [activeCompanyId, lang, showToast]);
@@ -803,6 +895,7 @@ export default function CostAccountingAppsScreen() {
       reverseGrossStr,
       appSharePctStr,
       reverseAppSharePctStr,
+      probeSalesGrossStr,
       cogsLocalPctStr,
       appPriceMarkupPctStr,
     });
@@ -831,6 +924,7 @@ export default function CostAccountingAppsScreen() {
     lang,
     reverseAppSharePctStr,
     reverseGrossStr,
+    probeSalesGrossStr,
     salaryStr,
     showToast,
     t,
@@ -1082,6 +1176,51 @@ export default function CostAccountingAppsScreen() {
                 </Button>
               </div>
             ) : null}
+            <div className="flex flex-col gap-2 border-t border-dashed border-noorix-border/80 pt-3">
+              <p className="m-0 text-[12px] font-medium text-noorix-text">{t('reportCostAppsProbeProfitSection')}</p>
+              <div className="flex flex-wrap items-end justify-center gap-2 sm:justify-start sm:gap-3">
+                <Field labelAlign="center" label={t('reportCostAppsProbeSalesInput')}>
+                  <Input
+                    value={probeSalesGrossStr}
+                    onChange={(e: any) => setProbeSalesGrossStr(e.target.value)}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="min-h-10 w-[128px] text-center tabular-nums"
+                  />
+                </Field>
+                <Button type="button" variant="secondary" size="sm" onClick={handleProbeProfit}>
+                  {t('reportCostAppsProbeProfitCalc')}
+                </Button>
+              </div>
+              <p className="m-0 text-[11px] text-noorix-muted">{t('reportCostAppsProbeProfitHint')}</p>
+              {probePlPreview ? (
+                <div className="flex flex-col gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span>
+                      <span className="text-noorix-muted">{t('reportCostAppsNetProfit')}:</span>{' '}
+                      <strong className="tabular-nums" dir="ltr">
+                        {fmt2(probePlPreview.netProfit)}
+                      </strong>
+                    </span>
+                    <span>
+                      <span className="text-noorix-muted">{t('reportCostAppsNetSales')}:</span>{' '}
+                      <strong className="tabular-nums" dir="ltr">
+                        {fmt2(probePlPreview.netSales)}
+                      </strong>
+                    </span>
+                    <span>
+                      <span className="text-noorix-muted">{t('reportCostAppsCommission')}:</span>{' '}
+                      <strong className="tabular-nums" dir="ltr">
+                        {fmt2(probePlPreview.commission)}
+                      </strong>
+                    </span>
+                  </div>
+                  <Button type="button" variant="primary" size="sm" className="self-start" onClick={handleApplyProbeToFields}>
+                    {t('reportCostAppsProbeProfitApply')}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
             <div className="flex flex-wrap items-end justify-center gap-2 border-t border-dashed border-noorix-border/80 pt-3 sm:justify-start sm:gap-3">
               <Field labelAlign="center" label={t('reportCostAppsAppShare')}>
                 <Input

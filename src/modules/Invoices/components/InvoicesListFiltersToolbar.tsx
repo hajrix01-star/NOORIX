@@ -1,6 +1,15 @@
-import React from 'react';
-import { Button, Input } from '../../../ui';
+import React, { useMemo } from 'react';
+import { Button } from '../../../ui';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+
+function csvToValues(s: string) {
+  return (s || '').split(',').map((x) => x.trim()).filter(Boolean);
+}
+
+function valuesToCsv(values: string[]) {
+  return [...new Set(values)].join(',');
+}
 
 /**
  * لافتة الحفر + شريط الفلاتر التنفيذي — مستخرج من InvoicesListScreen
@@ -30,6 +39,45 @@ export function InvoicesListFiltersToolbar({
   creatorUsersForFilter,
   vaultsList,
 }: any) {
+  const kindOptions = useMemo(
+    () => [
+      { value: 'purchase', label: t('categoryTypes') },
+      { value: 'expense', label: t('categoryTypeExpense') },
+      { value: 'fixed_expense', label: t('fixedExpenseType') },
+      { value: 'hr_expense', label: t('invoiceKindHrExpense') },
+      { value: 'salary', label: t('totalSalary') },
+      { value: 'advance', label: t('quickAdvance') },
+      { value: 'sale', label: t('categoryTypeSale') },
+    ],
+    [t],
+  );
+
+  const supplierOptions = useMemo(
+    () =>
+      (suppliers || []).map((s: any) => ({
+        value: s.id,
+        label: (lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id,
+      })),
+    [suppliers, lang],
+  );
+
+  const creatorOptions = useMemo(() => {
+    const users = (creatorUsersForFilter || []).map((u: any) => ({
+      value: u.id,
+      label: lang === 'en' ? u.nameEn || u.nameAr || u.email : u.nameAr || u.nameEn || u.email,
+    }));
+    return [{ value: '__none__', label: t('invoicesFilterCreatorUnrecorded') }, ...users];
+  }, [creatorUsersForFilter, lang, t]);
+
+  const vaultOptions = useMemo(
+    () =>
+      (vaultsList || []).map((v: any) => ({
+        value: v.id,
+        label: vaultDisplayName(v, lang) || v.id,
+      })),
+    [vaultsList, lang],
+  );
+
   return (
     <>
       {(urlExtra.categoryId || urlExtra.expenseLineId || urlExtra.kind) && (
@@ -128,88 +176,75 @@ export function InvoicesListFiltersToolbar({
             <polygon points="4 2 20 2 14 10 14 22 10 22 10 10 4 2" />
           </svg>
         </span>
-        <Input
-          type="select"
-          value={filterKind}
-          onChange={(e: any) => {
-            setFilterKind(e.target.value);
+        <SearchableOptionsPicker
+          mode="multiple"
+          size="sm"
+          className="noorix-exec-filters__select"
+          aria-label={t('filterByType')}
+          values={csvToValues(filterKind)}
+          onChange={(vals) => {
+            setFilterKind(valuesToCsv(vals));
             setUrlExtra((p: any) => ({ ...p, kind: '' }));
             setPage(1);
           }}
+          options={kindOptions}
+          emptyLabel={t('filterAllTypes')}
+          showClearAll
+        />
+        <SearchableOptionsPicker
+          mode="multiple"
+          size="sm"
           className="noorix-exec-filters__select"
-        >
-          <option value="">{t('filterAllTypes')}</option>
-          <option value="purchase">{t('categoryTypes')}</option>
-          <option value="expense">{t('categoryTypeExpense')}</option>
-          <option value="fixed_expense">{t('fixedExpenseType')}</option>
-          <option value="hr_expense">{t('invoiceKindHrExpense')}</option>
-          <option value="salary">{t('totalSalary')}</option>
-          <option value="advance">{t('quickAdvance')}</option>
-          <option value="sale">{t('categoryTypeSale')}</option>
-        </Input>
-        <Input
-          type="select"
-          value={filterSupplierId}
-          onChange={(e: any) => {
-            setFilterSupplierId(e.target.value);
+          aria-label={t('allSuppliers')}
+          values={csvToValues(filterSupplierId)}
+          onChange={(vals) => {
+            setFilterSupplierId(valuesToCsv(vals));
             setPage(1);
           }}
-          className="noorix-exec-filters__select"
-        >
-          <option value="">{t('allSuppliers')}</option>
-          {(suppliers || []).map((s: any) => (
-            <option key={s.id} value={s.id}>
-              {(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id}
-            </option>
-          ))}
-        </Input>
+          options={supplierOptions}
+          emptyLabel={t('allSuppliers')}
+          showClearAll
+        />
         <span className="noorix-exec-filters__icon" title={t('invoiceUserColumn')} aria-hidden>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
         </span>
-        <Input
-          type="select"
-          value={filterCreatedByUserId}
-          onChange={(e: any) => {
-            setFilterCreatedByUserId(e.target.value);
-            setPage(1);
-          }}
+        <SearchableOptionsPicker
+          mode="multiple"
+          size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('invoiceUserColumn')}
-        >
-          <option value="">{t('invoicesFilterCreatorAll')}</option>
-          <option value="__none__">{t('invoicesFilterCreatorUnrecorded')}</option>
-          {creatorUsersForFilter.map((u: any) => (
-            <option key={u.id} value={u.id}>
-              {lang === 'en' ? u.nameEn || u.nameAr || u.email : u.nameAr || u.nameEn || u.email}
-            </option>
-          ))}
-        </Input>
+          values={csvToValues(filterCreatedByUserId)}
+          onChange={(vals) => {
+            setFilterCreatedByUserId(valuesToCsv(vals));
+            setPage(1);
+          }}
+          options={creatorOptions}
+          emptyLabel={t('invoicesFilterCreatorAll')}
+          showClearAll
+        />
         <span className="noorix-exec-filters__icon" title={t('invoiceVaultColumn')} aria-hidden>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="2" y="6" width="20" height="14" rx="2" />
             <path d="M12 10v4M8 12h8" />
           </svg>
         </span>
-        <Input
-          type="select"
-          value={filterVaultId}
-          onChange={(e: any) => {
-            setFilterVaultId(e.target.value);
-            setPage(1);
-          }}
+        <SearchableOptionsPicker
+          mode="multiple"
+          size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('invoiceVaultColumn')}
-        >
-          <option value="">{t('invoicesFilterVaultAll')}</option>
-          {vaultsList.map((v: any) => (
-            <option key={v.id} value={v.id}>
-              {vaultDisplayName(v, lang) || v.id}
-            </option>
-          ))}
-        </Input>
+          values={csvToValues(filterVaultId)}
+          onChange={(vals) => {
+            setFilterVaultId(valuesToCsv(vals));
+            setPage(1);
+          }}
+          options={vaultOptions}
+          emptyLabel={t('invoicesFilterVaultAll')}
+          showClearAll
+        />
       </div>
     </>
   );

@@ -7,6 +7,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from '../i18n/useTranslation';
 import { useToast } from '../context/ToastContext';
 import { Button, Input, Card, Badge, FormRow, SmartTable } from '../ui';
+import { SearchableOptionsPicker } from './common/SearchableOptionsPicker';
 
 const TYPE_MAP = {
   purchase: { labelKey: 'categoryTypes' },
@@ -91,6 +92,19 @@ export const CategoriesManager = memo(function CategoriesManager({
   const roots = useMemo(
     () => (categories as CategoryNode[]).filter((c: any) => !c.parentId),
     [categories],
+  );
+
+  const parentPickerOptions = useMemo(
+    () =>
+      roots
+        .filter((c: any) => c.id !== editing?.id)
+        .map((c: any) => ({
+          value: c.id,
+          label: `${c.icon || ''} ${lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}${
+            c.code || c.account?.code ? ` [${c.code || c.account?.code}]` : ''
+          }`.trim(),
+        })),
+    [roots, editing?.id, lang],
   );
 
   const handleParentChange = (parentId: string) => {
@@ -333,22 +347,16 @@ export const CategoriesManager = memo(function CategoriesManager({
               />
             </FormRow>
             <div className="mb-[14px]">
-              <Input
-                type="select"
+              <SearchableOptionsPicker
                 label={t('parentCategory')}
+                allowEmpty
+                emptyValue=""
+                emptyLabel={lang === 'en' ? '— Main category —' : '— تصنيف رئيسي —'}
                 value={form.parentId}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => handleParentChange(e.target.value)}
-              >
-                <option value="">— تصنيف رئيسي —</option>
-                {roots
-                  .filter((c: any) => c.id !== editing?.id)
-                  .map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon || ''} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
-                      {c.code || c.account?.code ? ` [${c.code || c.account?.code}]` : ''}
-                    </option>
-                  ))}
-              </Input>
+                onChange={handleParentChange}
+                options={parentPickerOptions}
+                aria-label={t('parentCategory')}
+              />
             </div>
             <div className="flex gap-2">
               <Button

@@ -15,6 +15,7 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import {
   canExemptThisExpensePayment,
   isExpensePaymentTaxable,
@@ -150,6 +151,46 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   const vaultOptions = useMemo(
     () => activeVaults.map((v: any) => ({ id: v.id, label: v.nameAr || v.nameEn || v.id })),
     [activeVaults],
+  );
+
+  const expenseLinePickerOptions = useMemo(
+    () =>
+      expenseLines.map((l: any) => ({
+        value: l.id,
+        label: `${l.nameAr || l.nameEn} (${l.kind === 'fixed_expense' ? (lang === 'en' ? 'Fixed' : 'ثابت') : (lang === 'en' ? 'Variable' : 'متغير')})`,
+      })),
+    [expenseLines, lang],
+  );
+
+  const vaultPickerOptions = useMemo(
+    () => vaultOptions.map((v: any) => ({ value: v.id, label: v.label })),
+    [vaultOptions],
+  );
+
+  const coverageModeOptions = useMemo(
+    () => [
+      { value: 'quarter', label: t('expenseCoverageModeQuarter') },
+      { value: 'month_range', label: t('expenseCoverageModeMonths') },
+    ],
+    [t],
+  );
+
+  const quarterOptions = useMemo(
+    () =>
+      [1, 2, 3, 4].map((q) => ({
+        value: String(q),
+        label: `Q${q}`,
+      })),
+    [],
+  );
+
+  const monthOptions = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => {
+        const m = i + 1;
+        return { value: String(m), label: String(m) };
+      }),
+    [],
   );
 
   const handleSubmit = (e: any) => {
@@ -308,20 +349,16 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
           </div>
         )}
 
-        <Input
-          type="select"
+        <SearchableOptionsPicker
           label={lang === 'en' ? 'Expense line *' : 'بند المصروف *'}
+          allowEmpty
+          emptyValue=""
+          emptyLabel={lang === 'en' ? '— Select line —' : '— اختر البند —'}
           value={form.expenseLineId}
-          onChange={(e: any) => setForm((p: any) => ({ ...p, expenseLineId: e.target.value }))}
-          required
-        >
-          <option value="">{lang === 'en' ? '— Select line —' : '— اختر البند —'}</option>
-          {expenseLines.map((l: any) => (
-            <option key={l.id} value={l.id}>
-              {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? (lang === 'en' ? 'Fixed' : 'ثابت') : (lang === 'en' ? 'Variable' : 'متغير')})
-            </option>
-          ))}
-        </Input>
+          onChange={(v) => setForm((p: any) => ({ ...p, expenseLineId: v }))}
+          options={expenseLinePickerOptions}
+          aria-label={lang === 'en' ? 'Expense line' : 'بند المصروف'}
+        />
 
         <Input
           type="text"
@@ -408,49 +445,37 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
               className="ltr"
               required
             />
-            <Input
-              type="select"
+            <SearchableOptionsPicker
               label={t('expenseCoverageModeLabel')}
               value={form.coverageMode}
-              onChange={(e: any) => setForm((p: any) => ({ ...p, coverageMode: e.target.value }))}
-            >
-              <option value="quarter">{t('expenseCoverageModeQuarter')}</option>
-              <option value="month_range">{t('expenseCoverageModeMonths')}</option>
-            </Input>
+              onChange={(v) => setForm((p: any) => ({ ...p, coverageMode: v }))}
+              options={coverageModeOptions}
+              aria-label={t('expenseCoverageModeLabel')}
+            />
             {form.coverageMode === 'quarter' ? (
-              <Input
-                type="select"
+              <SearchableOptionsPicker
                 label={t('expenseCoverageQuarter')}
                 value={String(form.expenseCoverageQuarter)}
-                onChange={(e: any) => setForm((p: any) => ({ ...p, expenseCoverageQuarter: Number(e.target.value) }))}
-              >
-                <option value="1">Q1</option>
-                <option value="2">Q2</option>
-                <option value="3">Q3</option>
-                <option value="4">Q4</option>
-              </Input>
+                onChange={(v) => setForm((p: any) => ({ ...p, expenseCoverageQuarter: Number(v) }))}
+                options={quarterOptions}
+                aria-label={t('expenseCoverageQuarter')}
+              />
             ) : (
               <>
-                <Input
-                  type="select"
+                <SearchableOptionsPicker
                   label={t('expenseCoverageMonthStart')}
                   value={String(form.expenseCoverageMonthStart)}
-                  onChange={(e: any) => setForm((p: any) => ({ ...p, expenseCoverageMonthStart: Number(e.target.value) }))}
-                >
-                  {Array.from({ length: 12 }, (_: any, i: any) => i + 1).map((m: any) => (
-                    <option key={m} value={String(m)}>{m}</option>
-                  ))}
-                </Input>
-                <Input
-                  type="select"
+                  onChange={(v) => setForm((p: any) => ({ ...p, expenseCoverageMonthStart: Number(v) }))}
+                  options={monthOptions}
+                  aria-label={t('expenseCoverageMonthStart')}
+                />
+                <SearchableOptionsPicker
                   label={t('expenseCoverageMonthsCount')}
                   value={String(form.expenseMonthsCovered)}
-                  onChange={(e: any) => setForm((p: any) => ({ ...p, expenseMonthsCovered: Number(e.target.value) }))}
-                >
-                  {Array.from({ length: 12 }, (_: any, i: any) => i + 1).map((m: any) => (
-                    <option key={m} value={String(m)}>{m}</option>
-                  ))}
-                </Input>
+                  onChange={(v) => setForm((p: any) => ({ ...p, expenseMonthsCovered: Number(v) }))}
+                  options={monthOptions}
+                  aria-label={t('expenseCoverageMonthsCount')}
+                />
               </>
             )}
           </div>
@@ -466,18 +491,16 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
 
         <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted p-3 flex flex-col gap-2">
           <div className="text-[12px] font-semibold text-noorix-text">{t('invoiceVaultColumn')} *</div>
-          <Input
-            type="select"
+          <SearchableOptionsPicker
             label={t('selectVault')}
+            allowEmpty
+            emptyValue=""
+            emptyLabel={`— ${t('selectVault')} —`}
             value={form.primaryVaultId}
-            onChange={(e: any) => setForm((p: any) => ({ ...p, primaryVaultId: e.target.value }))}
-            required
-          >
-            <option value="">— {t('selectVault')} —</option>
-            {vaultOptions.map((v: any) => (
-              <option key={v.id} value={v.id}>{v.label}</option>
-            ))}
-          </Input>
+            onChange={(v) => setForm((p: any) => ({ ...p, primaryVaultId: v }))}
+            options={vaultPickerOptions}
+            aria-label={t('selectVault')}
+          />
 
           {!secondVaultEnabled ? (
             <Button
@@ -495,17 +518,17 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
           ) : (
             <>
               <div className="text-[11px] text-noorix-muted">{t('secondVaultHint')}</div>
-              <Input
-                type="select"
+              <SearchableOptionsPicker
                 label={t('secondVaultSelectLabel')}
+                allowEmpty
+                emptyValue=""
+                emptyLabel={`— ${t('selectVault')} —`}
                 value={secondVaultId}
-                onChange={(e: any) => setSecondVaultId(e.target.value)}
-              >
-                <option value="">— {t('selectVault')} —</option>
-                {vaultOptions.map((v: any) => (
-                  <option key={v.id} value={v.id} disabled={v.id === form.primaryVaultId}>{v.label}</option>
-                ))}
-              </Input>
+                onChange={(v) => setSecondVaultId(v)}
+                options={vaultPickerOptions}
+                getOptionDisabled={(opt) => opt.value === form.primaryVaultId}
+                aria-label={t('secondVaultSelectLabel')}
+              />
               <Input
                 type="number"
                 step="0.01"

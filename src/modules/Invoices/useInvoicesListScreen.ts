@@ -90,6 +90,7 @@ export function useInvoicesListScreen() {
     filterKind,
     filterSupplierId,
     filterCreatedByUserId,
+    filterVaultId,
     showCancelled,
     filterHasNotesOnly,
     urlExtra.kind,

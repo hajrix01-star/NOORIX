@@ -9,6 +9,7 @@ import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 
 const INSTALLMENT_INTERVALS = [1, 2, 3, 4, 6, 12];
 
@@ -78,6 +79,45 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
   const { categories = [] } = useCategories(companyId);
   const { suppliers = [] } = useSuppliers(companyId);
   const expenseCategoriesGrouped = categories.filter((c: any) => c.type === 'expense');
+
+  const expenseKindOptions = useMemo(
+    () => [
+      { value: 'expense', label: lang === 'en' ? 'Variable' : 'متغير' },
+      { value: 'fixed_expense', label: lang === 'en' ? 'Fixed' : 'ثابت' },
+    ],
+    [lang],
+  );
+
+  const categoryPickerOptions = useMemo(() => {
+    const out: { value: string; label: string }[] = [];
+    for (const parent of expenseCategoriesGrouped) {
+      const pn = parent.nameAr || parent.nameEn || '—';
+      out.push({ value: parent.id, label: `${pn} — ${lang === 'en' ? 'main' : 'رئيسية'}` });
+      for (const child of parent.children || []) {
+        const cn = child.nameAr || child.nameEn || '—';
+        out.push({ value: child.id, label: `↳ ${cn} — ${lang === 'en' ? 'sub' : 'فرعية'}` });
+      }
+    }
+    return out;
+  }, [expenseCategoriesGrouped, lang]);
+
+  const supplierPickerOptions = useMemo(
+    () =>
+      suppliers.map((s: any) => ({
+        value: s.id,
+        label: (lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || '',
+      })),
+    [suppliers, lang],
+  );
+
+  const installmentOptions = useMemo(
+    () =>
+      INSTALLMENT_INTERVALS.map((n: number) => ({
+        value: String(n),
+        label: `${n} ${lang === 'en' ? 'months' : 'أشهر'}`,
+      })),
+    [lang],
+  );
 
   const createMutation = useApiMutation({
     mutationFn: (body: any) => createExpenseLine(body),
@@ -216,15 +256,13 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           required
         />
 
-        <Input
-          type="select"
+        <SearchableOptionsPicker
           label="النوع *"
           value={form.kind}
-          onChange={(e: any) => setForm((p: any) => ({ ...p, kind: e.target.value }))}
-        >
-          <option value="expense">متغير</option>
-          <option value="fixed_expense">ثابت</option>
-        </Input>
+          onChange={(v) => setForm((p: any) => ({ ...p, kind: v }))}
+          options={expenseKindOptions}
+          aria-label="النوع"
+        />
 
         {form.kind === 'fixed_expense' && (
           <>
@@ -240,19 +278,16 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
             />
             <p className="text-[11px] text-noorix-muted -mt-2 mb-1">{t('expenseLineAnnualTotalHint')}</p>
 
-            <Input
-              type="select"
+            <SearchableOptionsPicker
               label={t('expenseLineInstallmentInterval')}
+              allowEmpty
+              emptyValue=""
+              emptyLabel="—"
               value={form.installmentIntervalMonths}
-              onChange={(e: any) => setForm((p: any) => ({ ...p, installmentIntervalMonths: e.target.value }))}
-            >
-              <option value="">—</option>
-              {INSTALLMENT_INTERVALS.map((n: any) => (
-                <option key={n} value={n}>
-                  {n} {lang === 'en' ? 'months' : 'أشهر'}
-                </option>
-              ))}
-            </Input>
+              onChange={(v) => setForm((p: any) => ({ ...p, installmentIntervalMonths: v }))}
+              options={installmentOptions}
+              aria-label={t('expenseLineInstallmentInterval')}
+            />
 
             {suggestedPerPayment != null && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 mb-2">
@@ -293,36 +328,27 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
           </>
         )}
 
-        <Input
-          type="select"
+        <SearchableOptionsPicker
           label="الفئة *"
+          allowEmpty
+          emptyValue=""
+          emptyLabel="— اختر الفئة —"
           value={form.categoryId}
-          onChange={(e: any) => setForm((p: any) => ({ ...p, categoryId: e.target.value }))}
-          required
-        >
-          <option value="">— اختر الفئة —</option>
-          {expenseCategoriesGrouped.map((parent: any) => (
-            <optgroup key={parent.id} label={`${parent.nameAr || parent.nameEn || '—'} (فئة رئيسية)`}>
-              <option value={parent.id}>{parent.nameAr || parent.nameEn} — رئيسية</option>
-              {(parent.children || []).map((child: any) => (
-                <option key={child.id} value={child.id}>↳ {child.nameAr || child.nameEn} — فرعية</option>
-              ))}
-            </optgroup>
-          ))}
-        </Input>
+          onChange={(v) => setForm((p: any) => ({ ...p, categoryId: v }))}
+          options={categoryPickerOptions}
+          aria-label="الفئة"
+        />
 
-        <Input
-          type="select"
+        <SearchableOptionsPicker
           label="المورد *"
+          allowEmpty
+          emptyValue=""
+          emptyLabel="— اختر المورد —"
           value={form.supplierId}
-          onChange={(e: any) => setForm((p: any) => ({ ...p, supplierId: e.target.value }))}
-          required
-        >
-          <option value="">— اختر المورد —</option>
-          {suppliers.map((s: any) => (
-            <option key={s.id} value={s.id}>{(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn)}</option>
-          ))}
-        </Input>
+          onChange={(v) => setForm((p: any) => ({ ...p, supplierId: v }))}
+          options={supplierPickerOptions}
+          aria-label="المورد"
+        />
 
         <Input
           type="text"
