@@ -40,11 +40,8 @@ import {
 
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
-      <span
-        className="line-clamp-2 min-h-[2.5rem] text-[11px] font-semibold leading-snug text-noorix-muted"
-        title={label}
-      >
+    <div className={cn('flex min-w-0 flex-col gap-1', className)}>
+      <span className="line-clamp-2 text-[11px] font-bold leading-tight text-noorix-text" title={label}>
         {label}
       </span>
       {children}
@@ -167,7 +164,6 @@ export default function CostAccountingAppsScreen() {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
-  const scenarioFileRef = useRef<HTMLInputElement>(null);
 
   const company = companies?.find((c: any) => c.id === activeCompanyId);
   const companyName =
@@ -694,60 +690,6 @@ export default function CostAccountingAppsScreen() {
     showToast(lang === 'ar' ? 'تم المسح.' : 'Cleared.', 'success');
   }, [activeCompanyId, lang, showToast]);
 
-  const handleExportScenario = useCallback(() => {
-    const json = buildCostAppsScenarioFile({
-      name: companyName || undefined,
-      grossAppStr,
-      grossCashStr,
-      grossBankStr,
-      vatInclusive,
-      vatRatePctStr,
-      commissionPctStr,
-      commissionBase,
-      fixedLines,
-      salaryStr,
-      importFrom,
-      importTo,
-      targetProfitStr,
-      reverseGrossStr,
-      appSharePctStr,
-      reverseAppSharePctStr,
-      cogsLocalPctStr,
-      appPriceMarkupPctStr,
-    });
-    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `noorix-cost-apps-scenario-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    showToast(t('reportCostAppsScenarioExportOk'), 'success');
-  }, [
-    appPriceMarkupPctStr,
-    appSharePctStr,
-    cogsLocalPctStr,
-    commissionBase,
-    commissionPctStr,
-    companyName,
-    fixedLines,
-    grossAppStr,
-    grossBankStr,
-    grossCashStr,
-    importFrom,
-    importTo,
-    reverseAppSharePctStr,
-    reverseGrossStr,
-    salaryStr,
-    showToast,
-    t,
-    targetProfitStr,
-    vatInclusive,
-    vatRatePctStr,
-  ]);
-
   const handleSaveCalculatorSlot = useCallback(() => {
     if (!activeCompanyId) {
       showToast(t('pleaseSelectCompany'), 'error');
@@ -846,38 +788,6 @@ export default function CostAccountingAppsScreen() {
     [activeCompanyId, showToast, t],
   );
 
-  const handleScenarioFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const f = e.target.files?.[0];
-      e.target.value = '';
-      if (!f) return;
-      try {
-        const text = await f.text();
-        const res = parseCostAppsScenarioJson(text);
-        if (!res.ok) {
-          const key =
-            res.error === 'invalid_json'
-              ? 'reportCostAppsScenarioErrInvalidJson'
-              : res.error === 'bad_version'
-                ? 'reportCostAppsScenarioErrBadVersion'
-                : res.error === 'not_object'
-                  ? 'reportCostAppsScenarioErrNotObject'
-                  : res.error === 'empty_scenario'
-                    ? 'reportCostAppsScenarioErrEmpty'
-                    : 'reportCostAppsScenarioErrGeneric';
-          showToast(t(key), 'error');
-          return;
-        }
-        const { restore } = res;
-        applyScenarioRestore(restore);
-        showToast(t('reportCostAppsScenarioImportOk'), 'success');
-      } catch (err: any) {
-        showToast(err?.message || String(err), 'error');
-      }
-    },
-    [applyScenarioRestore, showToast, t],
-  );
-
   if (!activeCompanyId) {
     return (
       <div className="rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] p-8 text-center text-noorix-muted">
@@ -930,34 +840,48 @@ export default function CostAccountingAppsScreen() {
           {/* —— المبيعات —— */}
           <div className="space-y-3">
             <SectionHeading tone="blue">{t('reportCostAppsZoneSales')}</SectionHeading>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <Field label={t('reportCostAppsGrossApp')} className="gap-1.5">
-                <Input
-                  value={grossAppStr}
-                  onChange={(e: any) => setGrossAppStr(e.target.value)}
-                  inputMode="decimal"
-                  dir="ltr"
-                  className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
-                />
-              </Field>
-              <Field label={t('reportCostAppsGrossCash')} className="gap-1.5">
-                <Input
-                  value={grossCashStr}
-                  onChange={(e: any) => setGrossCashStr(e.target.value)}
-                  inputMode="decimal"
-                  dir="ltr"
-                  className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
-                />
-              </Field>
-              <Field label={t('reportCostAppsGrossBank')} className="gap-1.5">
-                <Input
-                  value={grossBankStr}
-                  onChange={(e: any) => setGrossBankStr(e.target.value)}
-                  inputMode="decimal"
-                  dir="ltr"
-                  className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
-                />
-              </Field>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
+              <div className="flex min-w-0 flex-col gap-1">
+                <p className="m-0 min-h-[2.25rem] text-[10px] font-bold leading-tight text-noorix-muted">
+                  {t('reportCostAppsAppShareOfGrossAbove')}
+                  <span dir="ltr" className="ms-1 tabular-nums text-noorix-text">
+                    {grossInputsSum.gt(0) ? `${fmt(plWith.appShareOfGrossPct.toNumber(), 2)}%` : '—'}
+                  </span>
+                </p>
+                <Field label={t('reportCostAppsGrossApp')}>
+                  <Input
+                    value={grossAppStr}
+                    onChange={(e: any) => setGrossAppStr(e.target.value)}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
+                  />
+                </Field>
+              </div>
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="min-h-[2.25rem] shrink-0 sm:block" aria-hidden />
+                <Field label={t('reportCostAppsGrossCash')}>
+                  <Input
+                    value={grossCashStr}
+                    onChange={(e: any) => setGrossCashStr(e.target.value)}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
+                  />
+                </Field>
+              </div>
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="min-h-[2.25rem] shrink-0 sm:block" aria-hidden />
+                <Field label={t('reportCostAppsGrossBank')}>
+                  <Input
+                    value={grossBankStr}
+                    onChange={(e: any) => setGrossBankStr(e.target.value)}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
+                  />
+                </Field>
+              </div>
             </div>
             <div className="flex flex-col gap-1 rounded-lg border border-noorix-border bg-[var(--noorix-surface-2)] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-[12px] font-bold text-noorix-text">{t('reportCostAppsSalesInputsTotal')}</span>
@@ -1234,19 +1158,19 @@ export default function CostAccountingAppsScreen() {
             <Card
               variant="stat"
               color="blue"
-              label={t('reportCostAppsGrossTotal')}
+              label={<span className="text-[11px] font-bold leading-tight text-noorix-text">{t('reportCostAppsGrossTotal')}</span>}
               value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.grossTotal)}</span>}
             />
             <Card
               variant="stat"
               color="green"
-              label={t('reportCostAppsKpiNetWithApps')}
+              label={<span className="text-[11px] font-bold leading-tight text-noorix-text">{t('reportCostAppsKpiNetWithApps')}</span>}
               value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.netProfit)}</span>}
             />
             <Card
               variant="stat"
               color="gray"
-              label={t('reportCostAppsKpiNetNoApps')}
+              label={<span className="text-[11px] font-bold leading-tight text-noorix-text">{t('reportCostAppsKpiNetNoApps')}</span>}
               value={<span dir="ltr" className="tabular-nums">{fmt2(plWithout.netProfit)}</span>}
             />
           </div>
@@ -1359,19 +1283,6 @@ export default function CostAccountingAppsScreen() {
           <Button type="button" variant="secondary" onClick={handleExportExcel}>
             {t('reportCostAppsExportExcel')}
           </Button>
-          <Button type="button" variant="secondary" onClick={handleExportScenario}>
-            {t('reportCostAppsScenarioExport')}
-          </Button>
-          <Button type="button" variant="ghost" onClick={() => scenarioFileRef.current?.click()}>
-            {t('reportCostAppsScenarioImport')}
-          </Button>
-          <input
-            ref={scenarioFileRef}
-            type="file"
-            accept=".json,application/json"
-            className="hidden"
-            onChange={handleScenarioFileChange}
-          />
           <Button type="button" variant="ghost" onClick={clearDraft}>
             {t('reportCostAppsResetDraft')}
           </Button>
