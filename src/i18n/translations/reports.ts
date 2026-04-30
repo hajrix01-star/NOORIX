@@ -599,6 +599,11 @@ export default {
   reportCostAppsGrossApp: { ar: 'مبيعات التطبيقات (إجمالي المدخل)', en: 'App channel sales (gross entered)' },
   reportCostAppsGrossCash: { ar: 'مبيعات محلية — نقد', en: 'Local sales — cash' },
   reportCostAppsGrossBank: { ar: 'مبيعات محلية — بنك / مدى', en: 'Local sales — bank / Mada' },
+  reportCostAppsSalesInputsTotal: { ar: 'المجموع', en: 'Total' },
+  reportCostAppsSalesInputsTotalHint: {
+    ar: 'مجموع الحقول أعلاه (تطبيقات + نقد + بنك). للعرض فقط.',
+    en: 'Sum of the fields above (app + cash + bank). Display only.',
+  },
   reportCostAppsVatInclusive: { ar: 'المبالغ شاملة ضريبة القيمة المضافة', en: 'Amounts are VAT-inclusive' },
   reportCostAppsVatRate: { ar: 'نسبة الضريبة %', en: 'VAT rate %' },
   reportCostAppsCommissionPct: { ar: 'عمولة التطبيقات %', en: 'App commission %' },

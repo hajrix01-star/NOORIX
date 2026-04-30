@@ -184,6 +184,8 @@ export default function CostAccountingAppsScreen() {
   const grossCash = useMemo(() => parseMoneyInput(grossCashStr), [grossCashStr]);
   const grossBank = useMemo(() => parseMoneyInput(grossBankStr), [grossBankStr]);
 
+  const grossInputsSum = useMemo(() => grossApp.plus(grossCash).plus(grossBank), [grossApp, grossCash, grossBank]);
+
   const baseParams = useMemo(
     () => ({
       grossApp,
@@ -885,16 +887,51 @@ export default function CostAccountingAppsScreen() {
             <h2 className="m-0 text-[15px] font-bold text-noorix-text">{t('reportCostAppsSalesSection')}</h2>
           </div>
           <div className="space-y-5 p-4 sm:p-5">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field label={t('reportCostAppsGrossApp')}>
-                <Input value={grossAppStr} onChange={(e: any) => setGrossAppStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 text-right" />
-              </Field>
-              <Field label={t('reportCostAppsGrossCash')}>
-                <Input value={grossCashStr} onChange={(e: any) => setGrossCashStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 text-right" />
-              </Field>
-              <Field label={t('reportCostAppsGrossBank')}>
-                <Input value={grossBankStr} onChange={(e: any) => setGrossBankStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 text-right" />
-              </Field>
+            <div className="mx-auto w-full max-w-lg rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] shadow-sm overflow-hidden">
+              <div className="divide-y divide-noorix-border">
+                <div className="px-4 py-3.5 sm:px-5 sm:py-4">
+                  <Field label={t('reportCostAppsGrossApp')} className="gap-2">
+                    <Input
+                      value={grossAppStr}
+                      onChange={(e: any) => setGrossAppStr(e.target.value)}
+                      inputMode="decimal"
+                      dir="ltr"
+                      className="min-h-11 w-full text-end font-medium tabular-nums"
+                    />
+                  </Field>
+                </div>
+                <div className="px-4 py-3.5 sm:px-5 sm:py-4">
+                  <Field label={t('reportCostAppsGrossCash')} className="gap-2">
+                    <Input
+                      value={grossCashStr}
+                      onChange={(e: any) => setGrossCashStr(e.target.value)}
+                      inputMode="decimal"
+                      dir="ltr"
+                      className="min-h-11 w-full text-end font-medium tabular-nums"
+                    />
+                  </Field>
+                </div>
+                <div className="px-4 py-3.5 sm:px-5 sm:py-4">
+                  <Field label={t('reportCostAppsGrossBank')} className="gap-2">
+                    <Input
+                      value={grossBankStr}
+                      onChange={(e: any) => setGrossBankStr(e.target.value)}
+                      inputMode="decimal"
+                      dir="ltr"
+                      className="min-h-11 w-full text-end font-medium tabular-nums"
+                    />
+                  </Field>
+                </div>
+              </div>
+              <div className="border-t-2 border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3.5 sm:px-5 sm:py-4">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <span className="text-[13px] font-bold tracking-wide text-noorix-text">{t('reportCostAppsSalesInputsTotal')}</span>
+                  <span dir="ltr" className="text-[17px] font-bold tabular-nums text-noorix-blue sm:text-end">
+                    {fmt2(grossInputsSum)}
+                  </span>
+                </div>
+                <p className="m-0 mt-2 text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsSalesInputsTotalHint')}</p>
+              </div>
             </div>
             <div className="noorix-print-hidden space-y-3 rounded-xl border border-dashed border-noorix-border bg-[var(--noorix-surface-2)]/60 p-4 print:hidden">
               <div className="text-[12px] font-semibold text-noorix-text">{t('reportCostAppsImportRange')}</div>
