@@ -185,8 +185,7 @@ export default function CostAccountingAppsScreen() {
   const [importFrom, setImportFrom] = useState(() => ymdParts(sa0.year, sa0.month, 1));
   const [importTo, setImportTo] = useState(() => ymdParts(sa0.year, sa0.month, lastDayOfMonth(sa0.year, sa0.month)));
   const [importing, setImporting] = useState(false);
-  const [importingFixedLines, setImportingFixedLines] = useState(false);
-  const [importingSalary, setImportingSalary] = useState(false);
+  const [importingExpenses, setImportingExpenses] = useState(false);
   const [salaryStr, setSalaryStr] = useState('');
   const [targetProfitStr, setTargetProfitStr] = useState('20000');
   const [reverseGrossStr, setReverseGrossStr] = useState('');
@@ -210,8 +209,6 @@ export default function CostAccountingAppsScreen() {
     return fixedLines.reduce((acc, line) => acc.plus(parseMoneyInput(line.amount)), new Decimal(0));
   }, [fixedLines]);
 
-  const fixedAnnualTotal = useMemo(() => fixedTotal.mul(12), [fixedTotal]);
-
   const grossApp = useMemo(() => parseMoneyInput(grossAppStr), [grossAppStr]);
   const grossCash = useMemo(() => parseMoneyInput(grossCashStr), [grossCashStr]);
   const grossBank = useMemo(() => parseMoneyInput(grossBankStr), [grossBankStr]);
@@ -219,6 +216,9 @@ export default function CostAccountingAppsScreen() {
   const grossInputsSum = useMemo(() => grossApp.plus(grossCash).plus(grossBank), [grossApp, grossCash, grossBank]);
 
   const salaryTotal = useMemo(() => parseMoneyInput(salaryStr), [salaryStr]);
+
+  const expensesMonthlyTotal = useMemo(() => fixedTotal.plus(salaryTotal), [fixedTotal, salaryTotal]);
+  const expensesAnnualTotal = useMemo(() => expensesMonthlyTotal.mul(12), [expensesMonthlyTotal]);
 
   const baseParams = useMemo(
     () => ({
@@ -255,8 +255,7 @@ export default function CostAccountingAppsScreen() {
   useLayoutEffect(() => {
     if (!activeCompanyId) return;
     setImporting(false);
-    setImportingFixedLines(false);
-    setImportingSalary(false);
+    setImportingExpenses(false);
 
     const sa = getSaudiYearMonth();
     const defFrom = ymdParts(sa.year, sa.month, 1);
@@ -401,44 +400,19 @@ export default function CostAccountingAppsScreen() {
     }
   }, [activeCompanyId, importFrom, importTo, showToast, t]);
 
-  const handleImportSalaryFromHr = useCallback(async () => {
-    if (!activeCompanyId) {
-      showToast(t('pleaseSelectCompany'), 'error');
-      return;
-    }
-    setImportingSalary(true);
-    try {
-      const res = await getEmployeesMonthlySalaryContractTotal(activeCompanyId);
-      throwIfApiFailed(res, t('reportCostAppsSalaryLoadErr'));
-      const payload = res.data as { totalAmount?: string; employeeCount?: number } | undefined;
-      const raw = payload?.totalAmount;
-      const amt = raw != null && String(raw).trim() !== ''
-        ? new Decimal(String(raw).replace(/,/g, '').trim())
-        : new Decimal(0);
-      if (!amt.isFinite() || amt.lte(0)) {
-        showToast(t('reportCostAppsSalaryImportEmpty'), 'error');
-        return;
-      }
-      setSalaryStr(amt.toFixed(2));
-      showToast(t('reportCostAppsSalaryImportOk'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || String(e), 'error');
-    } finally {
-      setImportingSalary(false);
-    }
-  }, [activeCompanyId, showToast, t]);
-
-  const handleImportFixedExpenses = useCallback(async () => {
+  const handleImportExpensesFromSystem = useCallback(async () => {
     if (!activeCompanyId) {
       showToast(t('pleaseSelectCompany'), 'error');
       return;
     }
     if (typeof window !== 'undefined' && !window.confirm(t('reportCostAppsFixedImportConfirm'))) return;
-    setImportingFixedLines(true);
+    setImportingExpenses(true);
     try {
-      const res = await getExpenseLines(activeCompanyId, 'fixed_expense');
-      throwIfApiFailed(res, t('reportCostAppsFixedImportEmpty'));
-      const rows = Array.isArray(res.data) ? res.data : [];
+      const [expRes, salRes] = await Promise.all([
+        getExpenseLines(activeCompanyId, 'fixed_expense'),
+        getEmployeesMonthlySalaryContractTotal(activeCompanyId),
+      ]);
+      const rows = Array.isArray(expRes.data) ? expRes.data : [];
       const mapped: FixedLine[] = [];
       for (const line of rows) {
         const m = monthlyAmountFromExpenseLine(line);
@@ -449,16 +423,33 @@ export default function CostAccountingAppsScreen() {
         const row = newLine();
         mapped.push({ ...row, label, amount: m.toFixed(2) });
       }
-      if (!mapped.length) {
-        showToast(t('reportCostAppsFixedImportEmpty'), 'error');
+      let payrollOk = false;
+      let amt = new Decimal(0);
+      if (salRes.success) {
+        const payload = salRes.data as { totalAmount?: string; employeeCount?: number } | undefined;
+        const rawSal = payload?.totalAmount;
+        amt =
+          rawSal != null && String(rawSal).trim() !== ''
+            ? new Decimal(String(rawSal).replace(/,/g, '').trim())
+            : new Decimal(0);
+        payrollOk = amt.isFinite() && amt.gt(0);
+      } else {
+        showToast(String(salRes.error || t('reportCostAppsSalaryLoadErr')), 'error');
+      }
+      if (!mapped.length && !payrollOk) {
+        showToast(t('reportCostAppsExpensesImportEmpty'), 'error');
         return;
       }
-      setFixedLines(mapped);
-      showToast(t('reportCostAppsFixedImportOk', { count: mapped.length }), 'success');
+      setFixedLines(mapped.length ? mapped : [newLine()]);
+      if (salRes.success) {
+        setSalaryStr(payrollOk ? amt.toFixed(2) : '');
+      }
+      const payrollMonthly = payrollOk ? fmt(amt.toNumber(), 2) : '—';
+      showToast(t('reportCostAppsExpensesImportOk', { expenseCount: mapped.length, payrollMonthly }), 'success');
     } catch (e: any) {
       showToast(e?.message || String(e), 'error');
     } finally {
-      setImportingFixedLines(false);
+      setImportingExpenses(false);
     }
   }, [activeCompanyId, lang, showToast, t]);
 
@@ -586,8 +577,11 @@ export default function CostAccountingAppsScreen() {
       [t('reportCostAppsCogsLocal'), fmt2(plWith.cogsLocal), fmt2(plWithout.cogsLocal)],
       [t('reportCostAppsCogsApp'), fmt2(plWith.cogsApp), fmt2(plWithout.cogsApp)],
       [t('reportCostAppsCogsTotal'), fmt2(plWith.cogsTotal), fmt2(plWithout.cogsTotal)],
-      [t('reportCostAppsFixedTotalRow'), fmt2(plWith.fixedTotal), fmt2(plWithout.fixedTotal)],
-      [t('reportCostAppsSalaryRow'), fmt2(plWith.salaryTotal), fmt2(plWithout.salaryTotal)],
+      [
+        t('reportCostAppsExpensesTotalRow'),
+        fmt2(plWith.fixedTotal.plus(plWith.salaryTotal)),
+        fmt2(plWithout.fixedTotal.plus(plWithout.salaryTotal)),
+      ],
       [t('reportCostAppsNetProfit'), fmt2(plWith.netProfit), fmt2(plWithout.netProfit)],
     ];
     const body = `
@@ -607,6 +601,11 @@ export default function CostAccountingAppsScreen() {
       <table>
         <thead><tr><th>${t('reportCostAppsLineLabel')}</th><th style="text-align:right">${t('reportCostAppsLineMonthlyAmount')}</th><th style="text-align:right">${t('reportCostAppsLineAnnualAmount')}</th></tr></thead>
         <tbody>
+          <tr>
+            <td class="border border-noorix-border px-2 py-2">${String(t('reportCostAppsPayrollLineLabel')).replace(/</g, '&lt;')}</td>
+            <td style="text-align:right">${fmt(parseMoneyInput(salaryStr).toNumber(), 2)}</td>
+            <td style="text-align:right">${fmt(parseMoneyInput(salaryStr).mul(12).toNumber(), 2)}</td>
+          </tr>
           ${fixedLines
             .map((l) => {
               const m = parseMoneyInput(l.amount);
@@ -614,7 +613,7 @@ export default function CostAccountingAppsScreen() {
               return `<tr><td>${String(l.label || '—').replace(/</g, '&lt;')}</td><td style="text-align:right">${fmt(m.toNumber(), 2)}</td><td style="text-align:right">${fmt(a.toNumber(), 2)}</td></tr>`;
             })
             .join('')}
-          <tr><td><strong>${t('reportTotalAmount')}</strong></td><td style="text-align:right"><strong>${fmt2(fixedTotal)}</strong></td><td style="text-align:right"><strong>${fmt2(fixedAnnualTotal)}</strong></td></tr>
+          <tr><td><strong>${t('reportTotalAmount')}</strong></td><td style="text-align:right"><strong>${fmt2(expensesMonthlyTotal)}</strong></td><td style="text-align:right"><strong>${fmt2(expensesAnnualTotal)}</strong></td></tr>
         </tbody>
       </table>
     `;
@@ -633,7 +632,7 @@ export default function CostAccountingAppsScreen() {
       `,
       body,
     });
-  }, [companyName, fixedAnnualTotal, fixedLines, fixedTotal, plWith, plWithout, t]);
+  }, [companyName, expensesAnnualTotal, expensesMonthlyTotal, fixedLines, plWith, plWithout, salaryStr, t]);
 
   const handleExportExcel = useCallback(async () => {
     const rows = [
@@ -646,8 +645,11 @@ export default function CostAccountingAppsScreen() {
       { item: t('reportCostAppsCogsLocal'), withApps: plWith.cogsLocal.toNumber(), noApps: plWithout.cogsLocal.toNumber() },
       { item: t('reportCostAppsCogsApp'), withApps: plWith.cogsApp.toNumber(), noApps: plWithout.cogsApp.toNumber() },
       { item: t('reportCostAppsCogsTotal'), withApps: plWith.cogsTotal.toNumber(), noApps: plWithout.cogsTotal.toNumber() },
-      { item: t('reportCostAppsFixedTotalRow'), withApps: plWith.fixedTotal.toNumber(), noApps: plWithout.fixedTotal.toNumber() },
-      { item: t('reportCostAppsSalaryRow'), withApps: plWith.salaryTotal.toNumber(), noApps: plWithout.salaryTotal.toNumber() },
+      {
+        item: t('reportCostAppsExpensesTotalRow'),
+        withApps: plWith.fixedTotal.plus(plWith.salaryTotal).toNumber(),
+        noApps: plWithout.fixedTotal.plus(plWithout.salaryTotal).toNumber(),
+      },
       { item: t('reportCostAppsNetProfit'), withApps: plWith.netProfit.toNumber(), noApps: plWithout.netProfit.toNumber() },
     ];
     await exportToExcel({
@@ -1069,32 +1071,11 @@ export default function CostAccountingAppsScreen() {
             </div>
           </div>
 
-          {/* —— الرواتب —— */}
-          <div className="space-y-2 border-t border-noorix-border pt-5">
-            <SectionHeading tone="rose">{t('reportCostAppsZonePayroll')}</SectionHeading>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <Field label={t('reportCostAppsSalaryAmount')} className="min-w-0 flex-1">
-                <Input
-                  value={salaryStr}
-                  onChange={(e: any) => setSalaryStr(e.target.value)}
-                  inputMode="decimal"
-                  dir="ltr"
-                  className="min-h-10 w-full max-w-xl text-end tabular-nums"
-                  placeholder="0"
-                />
-              </Field>
-              <span className="noorix-print-hidden shrink-0 print:hidden">
-                <Button type="button" variant="secondary" size="sm" disabled={importingSalary} onClick={handleImportSalaryFromHr}>
-                  {importingSalary ? t('loading') : t('reportCostAppsSalaryImportBtn')}
-                </Button>
-              </span>
-            </div>
-          </div>
         </div>
       </Card>
 
       <Card
-        key={`cost-apps-fixed-${activeCompanyId}`}
+        key={`cost-apps-expenses-${activeCompanyId}`}
         variant="surface"
         padding="none"
         className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none"
@@ -1104,8 +1085,8 @@ export default function CostAccountingAppsScreen() {
             <h2 className="m-0 text-[15px] font-bold print:text-xs">{t('reportCostAppsFixedLines')}</h2>
           </div>
           <div className="noorix-print-hidden flex flex-wrap gap-2 print:hidden">
-            <Button type="button" variant="secondary" size="sm" disabled={importingFixedLines} onClick={handleImportFixedExpenses}>
-              {importingFixedLines ? t('loading') : t('reportCostAppsFixedImportBtn')}
+            <Button type="button" variant="secondary" size="sm" disabled={importingExpenses} onClick={handleImportExpensesFromSystem}>
+              {importingExpenses ? t('loading') : t('reportCostAppsExpensesImportBtn')}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setFixedLines((prev) => [...prev, newLine()])}>
               {t('reportCostAppsAddLine')}
@@ -1127,6 +1108,23 @@ export default function CostAccountingAppsScreen() {
               </tr>
             </thead>
             <tbody>
+              <tr className="bg-[var(--noorix-surface-1)]/60">
+                <td className="border border-noorix-border px-2 py-2 text-[13px] font-medium text-noorix-text">{t('reportCostAppsPayrollLineLabel')}</td>
+                <td className="border border-noorix-border p-1">
+                  <Input
+                    value={salaryStr}
+                    onChange={(e: any) => setSalaryStr(e.target.value)}
+                    dir="ltr"
+                    className="text-end border-0 tabular-nums"
+                    inputMode="decimal"
+                    placeholder="0"
+                  />
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-end tabular-nums text-noorix-text" dir="ltr">
+                  {fmt2(parseMoneyInput(salaryStr).mul(12))}
+                </td>
+                <td className="noorix-print-hidden border border-noorix-border px-2 py-2 print:hidden" aria-hidden />
+              </tr>
               {fixedLines.map((line) => {
                 const monthlyDec = parseMoneyInput(line.amount);
                 const annualDec = monthlyDec.mul(12);
@@ -1159,10 +1157,10 @@ export default function CostAccountingAppsScreen() {
               <tr>
                 <td className="border border-noorix-border px-2 py-2 font-bold">{t('reportTotalAmount')}</td>
                 <td className="border border-noorix-border px-2 py-2 text-end font-bold tabular-nums" dir="ltr">
-                  {fmt2(fixedTotal)}
+                  {fmt2(expensesMonthlyTotal)}
                 </td>
                 <td className="border border-noorix-border px-2 py-2 text-end font-bold tabular-nums" dir="ltr">
-                  {fmt2(fixedAnnualTotal)}
+                  {fmt2(expensesAnnualTotal)}
                 </td>
                 <td className="noorix-print-hidden print:hidden" />
               </tr>
@@ -1331,21 +1329,12 @@ export default function CostAccountingAppsScreen() {
                 </td>
               </tr>
               <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsFixedTotalRow')}</td>
+                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsExpensesTotalRow')}</td>
                 <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
-                  {fmt2(plWith.fixedTotal)}
+                  {fmt2(plWith.fixedTotal.plus(plWith.salaryTotal))}
                 </td>
                 <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
-                  {fmt2(plWithout.fixedTotal)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsSalaryRow')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
-                  {fmt2(plWith.salaryTotal)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
-                  {fmt2(plWithout.salaryTotal)}
+                  {fmt2(plWithout.fixedTotal.plus(plWithout.salaryTotal))}
                 </td>
               </tr>
               <tr>
