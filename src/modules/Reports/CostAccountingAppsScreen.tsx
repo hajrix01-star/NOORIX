@@ -311,6 +311,14 @@ export default function CostAccountingAppsScreen() {
   const plWith = useMemo(() => computeCostAppsPl({ ...baseParams, includeAppChannel: true }), [baseParams]);
   const plWithout = useMemo(() => computeCostAppsPl({ ...baseParams, includeAppChannel: false }), [baseParams]);
 
+  const appSalesRowLabel = useMemo(
+    () =>
+      t('reportCostAppsPlAppSalesShare', {
+        pct: formatCommissionPctForColumnLabel(plWith.appShareOfGrossPct),
+      }),
+    [t, plWith.appShareOfGrossPct],
+  );
+
   const importYearForPicker = useMemo(() => {
     const y = parseInt(importFrom.slice(0, 4), 10);
     return Number.isFinite(y) && y >= 2000 ? y : getSaudiYearMonth().year;
@@ -742,7 +750,7 @@ export default function CostAccountingAppsScreen() {
   const handlePrint = useCallback(() => {
     const rows = [
       ['', withAppsScenarioLabel, t('reportCostAppsScenarioNoApps')],
-      [t('reportCostAppsPlAppSales'), fmt2(plWith.grossApp), fmt2(plWithout.grossApp)],
+      [appSalesRowLabel, fmt2(plWith.grossApp), fmt2(plWithout.grossApp)],
       [t('reportCostAppsPlLocalSales'), fmt2(plWith.grossLocal), fmt2(plWithout.grossLocal)],
       [t('reportCostAppsGrossTotal'), fmt2(plWith.grossTotal), fmt2(plWithout.grossTotal)],
       [t('reportCostAppsNetSales'), fmt2(plWith.netSales), fmt2(plWithout.netSales)],
@@ -806,11 +814,11 @@ export default function CostAccountingAppsScreen() {
       `,
       body,
     });
-  }, [companyName, expensesAnnualTotal, expensesMonthlyTotal, fixedLines, plWith, plWithout, salaryStr, t, withAppsScenarioLabel]);
+  }, [appSalesRowLabel, companyName, expensesAnnualTotal, expensesMonthlyTotal, fixedLines, plWith, plWithout, salaryStr, t, withAppsScenarioLabel]);
 
   const handleExportExcel = useCallback(async () => {
     const rows = [
-      { item: t('reportCostAppsPlAppSales'), withApps: plWith.grossApp.toNumber(), noApps: plWithout.grossApp.toNumber() },
+      { item: appSalesRowLabel, withApps: plWith.grossApp.toNumber(), noApps: plWithout.grossApp.toNumber() },
       { item: t('reportCostAppsPlLocalSales'), withApps: plWith.grossLocal.toNumber(), noApps: plWithout.grossLocal.toNumber() },
       { item: t('reportCostAppsGrossTotal'), withApps: plWith.grossTotal.toNumber(), noApps: plWithout.grossTotal.toNumber() },
       { item: t('reportCostAppsNetSales'), withApps: plWith.netSales.toNumber(), noApps: plWithout.netSales.toNumber() },
@@ -838,7 +846,7 @@ export default function CostAccountingAppsScreen() {
       ],
       money2ColumnKeys: ['withApps', 'noApps'],
     });
-  }, [companyName, plWith, plWithout, t, withAppsScenarioLabel]);
+  }, [appSalesRowLabel, companyName, plWith, plWithout, t, withAppsScenarioLabel]);
 
   const clearDraft = useCallback(() => {
     if (!activeCompanyId) return;
@@ -1485,7 +1493,7 @@ export default function CostAccountingAppsScreen() {
             </thead>
             <tbody>
               <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsPlAppSales')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-center">{appSalesRowLabel}</td>
                 <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
                   {fmt2(plWith.grossApp)}
                 </td>
