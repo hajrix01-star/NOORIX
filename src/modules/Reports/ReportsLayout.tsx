@@ -9,6 +9,7 @@ import { ScreenShell, ScreenTitle, cn } from '../../ui';
 
 const REPORT_SUB_LINKS = [
   { to: '/reports/general', labelKey: 'reportGeneralReport' },
+  { to: '/reports/cost-apps', labelKey: 'reportCostAppsNav' },
   { to: '/reports/tax', labelKey: 'reportTax' },
   { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis' },
 ];

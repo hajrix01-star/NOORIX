@@ -28,6 +28,7 @@ const ThemePreviewScreen = React.lazy(() => import('./modules/ThemePreviewScreen
 const OwnerDashboardScreen = React.lazy(() => import('./modules/Owner/OwnerDashboardScreen'));
 const ReportsLayout = React.lazy(() => import('./modules/Reports/ReportsLayout'));
 const ReportsScreen = React.lazy(() => import('./modules/Reports/ReportsScreen'));
+const CostAccountingAppsScreen = React.lazy(() => import('./modules/Reports/CostAccountingAppsScreen'));
 const ReportsTaxScreen = React.lazy(() => import('./modules/Reports/ReportsTaxScreen'));
 const HajriTaxLayout = React.lazy(() => import('./modules/HajriTax/HajriTaxLayout'));
 const HajriTaxScreen = React.lazy(() => import('./modules/HajriTax/HajriTaxScreen'));
@@ -406,6 +407,7 @@ export default function App() {
                 <Route path="/reports" element={<ReportsLayout />}>
                   <Route index element={<Navigate to="/reports/general" replace />} />
                   <Route path="general" element={<ReportsScreen />} />
+                  <Route path="cost-apps" element={<CostAccountingAppsScreen />} />
                   <Route path="tax" element={<ReportsTaxScreen />} />
                   <Route path="vat-registry" element={<Navigate to="/hajri-tax" replace />} />
                   <Route path="bank-statement" element={<BankStatementAnalysisScreen />} />
