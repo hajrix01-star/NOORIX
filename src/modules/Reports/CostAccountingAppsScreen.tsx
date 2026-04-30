@@ -23,8 +23,15 @@ import {
 import {
   buildCostAppsScenarioFile,
   parseCostAppsScenarioJson,
+  type CostAppsScenarioRestore,
 } from './costAccountingAppsScenario';
 import { monthlyAmountFromExpenseLine } from './costAccountingAppsFixedExpenseImport';
+import {
+  type CostAppsSavedSlot,
+  prependSavedSlot,
+  readSavedSlots,
+  removeSavedSlotById,
+} from './costAccountingAppsSavedSlots';
 
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
@@ -116,6 +123,16 @@ function mapCsvAmount(row: Record<string, string>, keys: string[]): string {
   return '';
 }
 
+function formatSavedAtIso(iso: string, lang: string) {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {
+    return iso;
+  }
+}
+
 export default function CostAccountingAppsScreen() {
   const { activeCompanyId, companies } = useApp();
   const { t, lang } = useTranslation();
@@ -147,6 +164,8 @@ export default function CostAccountingAppsScreen() {
   const [appPriceMarkupPctStr, setAppPriceMarkupPctStr] = useState('0');
   /** حصة التطبيقات من إجمالي المبيعات في الحساب العكسي (%) */
   const [reverseAppSharePctStr, setReverseAppSharePctStr] = useState('30');
+  const [savedSlots, setSavedSlots] = useState<CostAppsSavedSlot[]>([]);
+  const [previewSlot, setPreviewSlot] = useState<CostAppsSavedSlot | null>(null);
 
   const vatRateDec = useMemo(() => {
     const p = parseMoneyInput(vatRatePctStr);
@@ -233,6 +252,7 @@ export default function CostAccountingAppsScreen() {
     setTargetProfitStr(pickStr('targetProfitStr', '20000'));
     setReverseGrossStr(pickStr('reverseGrossStr', ''));
     setAppSharePctStr(pickStr('appSharePctStr', ''));
+    setSavedSlots(readSavedSlots(activeCompanyId));
   }, [activeCompanyId]);
 
   useEffect(() => {
@@ -281,6 +301,25 @@ export default function CostAccountingAppsScreen() {
   ]);
 
   const fmt2 = (d: Decimal) => fmt(d.toNumber(), 2);
+
+  const applyScenarioRestore = useCallback((restore: CostAppsScenarioRestore) => {
+    if (restore.grossAppStr !== undefined) setGrossAppStr(restore.grossAppStr);
+    if (restore.grossCashStr !== undefined) setGrossCashStr(restore.grossCashStr);
+    if (restore.grossBankStr !== undefined) setGrossBankStr(restore.grossBankStr);
+    if (restore.vatInclusive !== undefined) setVatInclusive(restore.vatInclusive);
+    if (restore.vatRatePctStr !== undefined) setVatRatePctStr(restore.vatRatePctStr);
+    if (restore.commissionPctStr !== undefined) setCommissionPctStr(restore.commissionPctStr);
+    if (restore.commissionBase !== undefined) setCommissionBase(restore.commissionBase);
+    if (restore.fixedLines !== undefined) setFixedLines(normalizeFixedLines(restore.fixedLines));
+    if (restore.importFrom !== undefined) setImportFrom(restore.importFrom);
+    if (restore.importTo !== undefined) setImportTo(restore.importTo);
+    if (restore.targetProfitStr !== undefined) setTargetProfitStr(restore.targetProfitStr);
+    if (restore.reverseGrossStr !== undefined) setReverseGrossStr(restore.reverseGrossStr);
+    if (restore.appSharePctStr !== undefined) setAppSharePctStr(restore.appSharePctStr);
+    if (restore.reverseAppSharePctStr !== undefined) setReverseAppSharePctStr(restore.reverseAppSharePctStr);
+    if (restore.cogsLocalPctStr !== undefined) setCogsLocalPctStr(restore.cogsLocalPctStr);
+    if (restore.appPriceMarkupPctStr !== undefined) setAppPriceMarkupPctStr(restore.appPriceMarkupPctStr);
+  }, []);
 
   const handleImportSystem = useCallback(async () => {
     if (!activeCompanyId) {
@@ -646,6 +685,105 @@ export default function CostAccountingAppsScreen() {
     vatRatePctStr,
   ]);
 
+  const handleSaveCalculatorSlot = useCallback(() => {
+    if (!activeCompanyId) {
+      showToast(t('pleaseSelectCompany'), 'error');
+      return;
+    }
+    const suggested = new Date().toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-GB', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+    const input = typeof window !== 'undefined' ? window.prompt(String(t('reportCostAppsSaveSlotPrompt')), suggested) : null;
+    if (input === null) return;
+    const labelTrim = input.trim();
+    const json = buildCostAppsScenarioFile({
+      name: labelTrim || companyName || undefined,
+      grossAppStr,
+      grossCashStr,
+      grossBankStr,
+      vatInclusive,
+      vatRatePctStr,
+      commissionPctStr,
+      commissionBase,
+      fixedLines,
+      importFrom,
+      importTo,
+      targetProfitStr,
+      reverseGrossStr,
+      appSharePctStr,
+      reverseAppSharePctStr,
+      cogsLocalPctStr,
+      appPriceMarkupPctStr,
+    });
+    const slot: CostAppsSavedSlot = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      savedAt: new Date().toISOString(),
+      label: labelTrim || t('reportCostAppsSavedUnnamed'),
+      scenarioJson: json,
+    };
+    setSavedSlots(prependSavedSlot(activeCompanyId, slot));
+    showToast(t('reportCostAppsSaveSlotOk'), 'success');
+  }, [
+    activeCompanyId,
+    appPriceMarkupPctStr,
+    appSharePctStr,
+    cogsLocalPctStr,
+    commissionBase,
+    commissionPctStr,
+    companyName,
+    fixedLines,
+    grossAppStr,
+    grossBankStr,
+    grossCashStr,
+    importFrom,
+    importTo,
+    lang,
+    reverseAppSharePctStr,
+    reverseGrossStr,
+    showToast,
+    t,
+    targetProfitStr,
+    vatInclusive,
+    vatRatePctStr,
+  ]);
+
+  const handleImportSavedSlot = useCallback(
+    (slot: CostAppsSavedSlot) => {
+      if (typeof window !== 'undefined' && !window.confirm(t('reportCostAppsSavedImportConfirm'))) return;
+      const res = parseCostAppsScenarioJson(slot.scenarioJson);
+      if (!res.ok) {
+        const key =
+          res.error === 'invalid_json'
+            ? 'reportCostAppsScenarioErrInvalidJson'
+            : res.error === 'bad_version'
+              ? 'reportCostAppsScenarioErrBadVersion'
+              : res.error === 'not_object'
+                ? 'reportCostAppsScenarioErrNotObject'
+                : res.error === 'empty_scenario'
+                  ? 'reportCostAppsScenarioErrEmpty'
+                  : 'reportCostAppsScenarioErrGeneric';
+        showToast(t(key), 'error');
+        return;
+      }
+      applyScenarioRestore(res.restore);
+      showToast(t('reportCostAppsScenarioImportOk'), 'success');
+      setPreviewSlot(null);
+    },
+    [applyScenarioRestore, showToast, t],
+  );
+
+  const handleDeleteSavedSlot = useCallback(
+    (slotId: string) => {
+      if (!activeCompanyId) return;
+      if (typeof window !== 'undefined' && !window.confirm(t('reportCostAppsSavedDeleteConfirm'))) return;
+      setSavedSlots(removeSavedSlotById(activeCompanyId, slotId));
+      setPreviewSlot((p) => (p?.id === slotId ? null : p));
+      showToast(t('reportCostAppsSavedDeleteOk'), 'success');
+    },
+    [activeCompanyId, showToast, t],
+  );
+
   const handleScenarioFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
@@ -669,28 +807,13 @@ export default function CostAccountingAppsScreen() {
           return;
         }
         const { restore } = res;
-        if (restore.grossAppStr !== undefined) setGrossAppStr(restore.grossAppStr);
-        if (restore.grossCashStr !== undefined) setGrossCashStr(restore.grossCashStr);
-        if (restore.grossBankStr !== undefined) setGrossBankStr(restore.grossBankStr);
-        if (restore.vatInclusive !== undefined) setVatInclusive(restore.vatInclusive);
-        if (restore.vatRatePctStr !== undefined) setVatRatePctStr(restore.vatRatePctStr);
-        if (restore.commissionPctStr !== undefined) setCommissionPctStr(restore.commissionPctStr);
-        if (restore.commissionBase !== undefined) setCommissionBase(restore.commissionBase);
-        if (restore.fixedLines !== undefined) setFixedLines(restore.fixedLines);
-        if (restore.importFrom !== undefined) setImportFrom(restore.importFrom);
-        if (restore.importTo !== undefined) setImportTo(restore.importTo);
-        if (restore.targetProfitStr !== undefined) setTargetProfitStr(restore.targetProfitStr);
-        if (restore.reverseGrossStr !== undefined) setReverseGrossStr(restore.reverseGrossStr);
-        if (restore.appSharePctStr !== undefined) setAppSharePctStr(restore.appSharePctStr);
-        if (restore.reverseAppSharePctStr !== undefined) setReverseAppSharePctStr(restore.reverseAppSharePctStr);
-        if (restore.cogsLocalPctStr !== undefined) setCogsLocalPctStr(restore.cogsLocalPctStr);
-        if (restore.appPriceMarkupPctStr !== undefined) setAppPriceMarkupPctStr(restore.appPriceMarkupPctStr);
+        applyScenarioRestore(restore);
         showToast(t('reportCostAppsScenarioImportOk'), 'success');
       } catch (err: any) {
         showToast(err?.message || String(err), 'error');
       }
     },
-    [showToast, t],
+    [applyScenarioRestore, showToast, t],
   );
 
   if (!activeCompanyId) {
@@ -893,9 +1016,19 @@ export default function CostAccountingAppsScreen() {
         </div>
       </Card>
 
-      <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
+      <Card
+        key={`cost-apps-fixed-${activeCompanyId}`}
+        variant="surface"
+        padding="none"
+        className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none"
+      >
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
-          <h2 className="m-0 text-[15px] font-bold print:text-xs">{t('reportCostAppsFixedLines')}</h2>
+          <div className="min-w-0">
+            <h2 className="m-0 text-[15px] font-bold print:text-xs">{t('reportCostAppsFixedLines')}</h2>
+            <p className="noorix-print-hidden m-0 mt-1 text-[11px] leading-relaxed text-noorix-muted print:hidden">
+              {t('reportCostAppsFixedPerCompanyNote')}
+            </p>
+          </div>
           <div className="noorix-print-hidden flex flex-wrap gap-2 print:hidden">
             <Button type="button" variant="secondary" size="sm" disabled={importingFixedLines} onClick={handleImportFixedExpenses}>
               {importingFixedLines ? t('loading') : t('reportCostAppsFixedImportBtn')}
@@ -963,6 +1096,59 @@ export default function CostAccountingAppsScreen() {
               </tr>
             </tfoot>
           </table>
+        </div>
+      </Card>
+
+      <Card
+        key={`cost-apps-saved-slots-${activeCompanyId}`}
+        variant="surface"
+        padding="none"
+        className="noorix-print-hidden overflow-hidden border border-noorix-border shadow-sm print:hidden"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
+          <div className="min-w-0">
+            <h2 className="m-0 text-[15px] font-bold">{t('reportCostAppsSavedSlotsTitle')}</h2>
+            <p className="m-0 mt-1 text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsSavedSlotsHint')}</p>
+          </div>
+          <Button type="button" variant="secondary" size="sm" onClick={handleSaveCalculatorSlot}>
+            {t('reportCostAppsSaveSlotBtn')}
+          </Button>
+        </div>
+        <div className="overflow-x-auto p-2 sm:p-4">
+          {savedSlots.length === 0 ? (
+            <p className="m-0 px-2 py-6 text-center text-[13px] text-noorix-muted">{t('reportCostAppsSavedSlotsEmpty')}</p>
+          ) : (
+            <table className="w-full border-collapse border border-noorix-border text-sm">
+              <thead>
+                <tr className="bg-[var(--noorix-table-header-bg)]">
+                  <th className="border border-noorix-border px-2 py-2 text-start font-bold">{t('reportCostAppsSavedColLabel')}</th>
+                  <th className="border border-noorix-border px-2 py-2 text-start font-bold">{t('reportCostAppsSavedColDate')}</th>
+                  <th className="w-[1%] whitespace-nowrap border border-noorix-border px-2 py-2 text-center font-bold">{t('actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {savedSlots.map((slot) => (
+                  <tr key={slot.id}>
+                    <td className="border border-noorix-border px-2 py-2 font-medium">{slot.label}</td>
+                    <td className="border border-noorix-border px-2 py-2 text-[12px] text-noorix-muted">{formatSavedAtIso(slot.savedAt, lang)}</td>
+                    <td className="border border-noorix-border px-2 py-2">
+                      <div className="flex flex-wrap justify-center gap-1">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewSlot(slot)}>
+                          {t('reportCostAppsSavedView')}
+                        </Button>
+                        <Button type="button" variant="secondary" size="sm" onClick={() => handleImportSavedSlot(slot)}>
+                          {t('reportCostAppsSavedImport')}
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" className="text-noorix-red" onClick={() => handleDeleteSavedSlot(slot.id)}>
+                          {t('reportCostAppsSavedDelete')}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </Card>
 
@@ -1094,6 +1280,48 @@ export default function CostAccountingAppsScreen() {
           </Button>
         </div>
       </div>
+
+      {previewSlot ? (
+        <div
+          className="noorix-print-hidden fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 print:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cost-apps-preview-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPreviewSlot(null);
+          }}
+        >
+          <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] shadow-lg">
+            <div className="flex items-center justify-between gap-2 border-b border-noorix-border px-4 py-3">
+              <h3 id="cost-apps-preview-title" className="m-0 min-w-0 truncate text-[15px] font-bold">
+                {previewSlot.label}
+              </h3>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewSlot(null)}>
+                {t('close')}
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto p-4">
+              <pre className="m-0 whitespace-pre-wrap break-all text-[11px] leading-relaxed text-noorix-text" dir="ltr">
+                {(() => {
+                  try {
+                    return JSON.stringify(JSON.parse(previewSlot.scenarioJson), null, 2);
+                  } catch {
+                    return previewSlot.scenarioJson;
+                  }
+                })()}
+              </pre>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-noorix-border px-4 py-3">
+              <Button type="button" variant="ghost" onClick={() => setPreviewSlot(null)}>
+                {t('close')}
+              </Button>
+              <Button type="button" variant="primary" onClick={() => handleImportSavedSlot(previewSlot)}>
+                {t('reportCostAppsSavedImport')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <style>{`
         @media print {
