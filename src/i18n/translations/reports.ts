@@ -50,7 +50,10 @@ export default {
   reportAmountInclTax: { ar: 'المبلغ (شامل الضريبة)', en: 'Amount (incl. tax)' },
   reportTimeline: { ar: 'الخط الزمني السنوي', en: 'Yearly timeline' },
   reportInvoicesCount: { ar: 'عدد الفواتير', en: 'Invoice count' },
-  reportFocusedMonthDesc: { ar: 'تم التركيز على الشهر المحدد مع الإبقاء على الخط الزمني السنوي كاملاً للمقارنة.', en: 'The selected month is in focus while keeping the full yearly timeline for comparison.' },
+  reportFocusedMonthDesc: {
+    ar: 'تم التركيز على الشهر المحدد مع الإبقاء على الخط الزمني السنوي كاملاً للمقارنة. زر «طباعة» يُخرج ورقةً للشهر المحدد (مبالغ الشهر، نسبة من مبيعات الشهر، الإجمالي السنوي، ونسبة من مبيعات السنة).',
+    en: 'The selected month is in focus while keeping the full yearly timeline for comparison. «Print» opens a sheet for that month only (month amounts, share of month sales, annual total, and share of annual sales).',
+  },
   reportClickHint: { ar: 'اضغط على المبلغ لعرض التفاصيل، أو على اسم البند لعرض الاتجاه خلال السنة.', en: 'Click an amount for details, or the item name to view the yearly trend.' },
   reportTopMonth: { ar: 'أعلى شهر', en: 'Top month' },
   reportSmartSummary: { ar: 'ملخص ذكي مختصر', en: 'Smart summary' },

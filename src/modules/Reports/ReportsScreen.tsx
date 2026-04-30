@@ -99,22 +99,57 @@ export default function ReportsScreen() {
     });
   }
 
+  function escPrintCell(s: string) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   function handlePrint() {
+    if (!report) return;
     const printRows = buildFlatRows(report, {});
-    const head = `${selectedMonthNumber ? `<th>${(t('selectedMonth') || '').replace(/</g, '&lt;')}</th><th>${(t('reportSalesShare') || '').replace(/</g, '&lt;')}</th>` : ''}${EN_MONTHS.map((month: any) => `<th>${month}</th>`).join('')}<th>${(t('reportAnnualTotal') || '').replace(/</g, '&lt;')}</th><th>${(t('reportSalesShare') || '').replace(/</g, '&lt;')}</th>`;
-    const bodyRows = printRows.map((row: any) => {
-      const firstCell = (displayLabel(row, lang) || '').replace(/</g, '&lt;');
-      const contextCells = selectedMonthNumber ? `<td>${amountText(getContextAmount(row, selectedMonthNumber))}</td><td>${percentText(getContextPercent(row, selectedMonthNumber))}</td>` : '';
-      const monthsCells = (row.months ?? []).map((value: any) => `<td>${amountText(value)}</td>`).join('');
-      return `<tr><td>${firstCell}</td>${contextCells}${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
-    }).join('');
-    const subtitle = `${t('reportGeneral')} — ${year}${selectedMonthNumber ? ` — ${EN_MONTHS[selectedMonthNumber - 1]}` : ''}`;
+    const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+    const monthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : '';
+
+    let head: string;
+    let bodyRows: string;
+
+    if (selectedMonthNumber) {
+      head = [
+        `<th>${escPrintCell(`${monthLabel} · ${year}`)}</th>`,
+        `<th>${escPrintCell(t('reportSalesShareMonth'))}</th>`,
+        `<th>${escPrintCell(t('reportAnnualTotal'))}</th>`,
+        `<th>${escPrintCell(t('reportSalesShareYear'))}</th>`,
+      ].join('');
+      bodyRows = printRows
+        .map((row: any) => {
+          const firstCell = escPrintCell(displayLabel(row, lang));
+          const mAmt = amountText(getContextAmount(row, selectedMonthNumber));
+          const mPct = percentText(getContextPercent(row, selectedMonthNumber));
+          const yTot = amountText(row.total);
+          const yPct = percentText(row.percentOfSalesYear);
+          return `<tr><td>${firstCell}</td><td>${mAmt}</td><td>${mPct}</td><td>${yTot}</td><td>${yPct}</td></tr>`;
+        })
+        .join('');
+    } else {
+      head = `${EN_MONTHS.map((month: any) => `<th>${escPrintCell(month)}</th>`).join('')}<th>${escPrintCell(t('reportAnnualTotal'))}</th><th>${escPrintCell(t('reportSalesShareYear'))}</th>`;
+      bodyRows = printRows
+        .map((row: any) => {
+          const firstCell = escPrintCell(displayLabel(row, lang));
+          const monthsCells = (row.months ?? []).map((value: any) => `<td>${amountText(value)}</td>`).join('');
+          return `<tr><td>${firstCell}</td>${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
+        })
+        .join('');
+    }
+
+    const subtitle = selectedMonthNumber
+      ? `${t('reportGeneral')} — ${monthLabel} ${year}`
+      : `${t('reportGeneral')} — ${year}`;
+
     openPrintWindow({
       title: t('reportGeneral'),
       companyName: companyName || t('reports'),
       subtitle,
-      landscape: true,
-      body: `<table><thead><tr><th>${(t('reportItem') || '').replace(/</g, '&lt;')}</th>${head}</tr></thead><tbody>${bodyRows}</tbody></table>`,
+      landscape: !selectedMonthNumber,
+      body: `<table><thead><tr><th>${escPrintCell(t('reportItem'))}</th>${head}</tr></thead><tbody>${bodyRows}</tbody></table>`,
     });
   }
 
