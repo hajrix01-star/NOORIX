@@ -49,8 +49,8 @@ export default {
   reportIncomeStatementTitle: { ar: 'قائمة الدخل (ربح وخسارة)', en: 'Income Statement (Profit & Loss)' },
   reportPlPeriodMonth: { ar: 'الفترة: {month} {year}', en: 'Period: {month} {year}' },
   reportPlCurrencyNote: {
-    ar: 'جميع المبالغ بالريال السعودي (ر.س). النسبة من المبيعات تُحسب على أساس إجمالي المبيعات في الشهر أو في السنة حسب العمود.',
-    en: 'All amounts in Saudi Riyals (SAR). Percentages are shares of total sales for the month or the year, per column.',
+    ar: 'المبالغ بنفس تنسيق النظام؛ العملة SR. النسبة من المبيعات تُحسب على أساس إجمالي المبيعات في الشهر أو في السنة حسب العمود.',
+    en: 'Amounts use the same formatting as in the app; currency SR. Percentages are shares of total sales for the month or the year, per column.',
   },
   reportPlPreparedBy: { ar: 'وثيقة مُنشأة آلياً من النظام — غير موقعة', en: 'System-generated document — unsigned' },
   reportYtdShort: { ar: 'تراكمي السنة', en: 'Year-to-date' },
