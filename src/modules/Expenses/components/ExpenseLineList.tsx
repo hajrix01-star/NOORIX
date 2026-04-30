@@ -6,9 +6,22 @@ import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
-import { Button, Badge, Input, ScreenShell, cn, SmartTable } from '../../../ui';
+import { fmt } from '../../../utils/format';
+import { Button, Badge, Input, ScreenShell, cn, SmartTable, FmtNum } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
+import { monthlyAmountFromExpenseLine } from '../../Reports/costAccountingAppsFixedExpenseImport';
+
+/** عرض شهري/سنوي تقديري لبند ثابت (نفس منطق الاستيراد في حاسبة التكاليف). */
+function monthlyAnnualForExpenseLineRow(line: { kind?: string; annualTotalAmount?: unknown } & Record<string, unknown>) {
+  if (!line || line.kind !== 'fixed_expense') return { monthly: null as number | null, annual: null as number | null };
+  const m = monthlyAmountFromExpenseLine(line);
+  if (m == null || m.lte(0)) return { monthly: null, annual: null };
+  const annDbRaw = line.annualTotalAmount;
+  const annDb = annDbRaw != null && annDbRaw !== '' ? Number(annDbRaw) : Number.NaN;
+  const annual = Number.isFinite(annDb) && annDb > 0 ? annDb : m.mul(12).toNumber();
+  return { monthly: m.toNumber(), annual };
+}
 
 
 const REFRESH_ICON = (
@@ -57,7 +70,7 @@ export default function ExpenseLineList({
       key: 'nameAr',
       label: 'اسم البند',
       sortable: true,
-      width: '18%',
+      width: '16%',
       render: (v: any, row: any) => (
         <Button
           variant="raw"
@@ -73,7 +86,7 @@ export default function ExpenseLineList({
       key: 'kind',
       label: 'النوع',
       sortable: true,
-      width: '22%',
+      width: '18%',
       render: (v: any, row: any) => {
         const { color } = Badge.fromStatus(v, kindBadgeMap);
         return (
@@ -100,14 +113,46 @@ export default function ExpenseLineList({
     {
       key: 'serviceNumber',
       label: 'رقم الخدمة',
-      width: '10%',
+      width: '9%',
       align: 'center',
       render: (v: any) => <span className="nx-cell-num text-[13px]">{v || '—'}</span>,
     },
     {
+      key: 'monthlyAmount',
+      label: t('expenseLineListMonthlyAmount'),
+      width: '10%',
+      align: 'center',
+      numeric: true,
+      render: (_: unknown, row: any) => {
+        const { monthly } = monthlyAnnualForExpenseLineRow(row);
+        if (monthly == null) return <span className="text-[13px] text-noorix-muted">—</span>;
+        return (
+          <span dir="ltr" className="inline-block">
+            <FmtNum n={monthly} className="nx-cell-num text-[13px]" />
+          </span>
+        );
+      },
+    },
+    {
+      key: 'annualAmount',
+      label: t('expenseLineListAnnualAmount'),
+      width: '10%',
+      align: 'center',
+      numeric: true,
+      render: (_: unknown, row: any) => {
+        const { annual } = monthlyAnnualForExpenseLineRow(row);
+        if (annual == null) return <span className="text-[13px] text-noorix-muted">—</span>;
+        return (
+          <span dir="ltr" className="inline-block">
+            <FmtNum n={annual} className="nx-cell-num text-[13px]" />
+          </span>
+        );
+      },
+    },
+    {
       key: 'actions',
       label: t('actions'),
-      width: '14%',
+      width: '12%',
       align: 'center',
       render: (_: any, row: any) => (
         <div className="noorix-actions-row flex flex-wrap justify-center gap-1.5">
@@ -129,14 +174,21 @@ export default function ExpenseLineList({
     })),
   [expenseLines, lang]);
 
-  const exportData = useMemo(() =>
-    tableData.map((r: any) => ({
-      'اسم البند': r.nameAr || r.nameEn || '—',
-      'النوع': formatKindWithCategory(r.kind, r.categoryName),
-      'المورد': r.supplierName,
-      'رقم الخدمة': r.serviceNumber || '—',
-    })),
-  [tableData, formatKindWithCategory]);
+  const exportData = useMemo(
+    () =>
+      tableData.map((r: any) => {
+        const { monthly, annual } = monthlyAnnualForExpenseLineRow(r);
+        return {
+          'اسم البند': r.nameAr || r.nameEn || '—',
+          'النوع': formatKindWithCategory(r.kind, r.categoryName),
+          'المورد': r.supplierName,
+          'رقم الخدمة': r.serviceNumber || '—',
+          [t('expenseLineListMonthlyAmount')]: monthly != null ? fmt(monthly) : '—',
+          [t('expenseLineListAnnualAmount')]: annual != null ? fmt(annual) : '—',
+        };
+      }),
+    [tableData, formatKindWithCategory, t],
+  );
 
   const renderMobileCard = useCallback((row: any) => (
     <div>
@@ -162,6 +214,24 @@ export default function ExpenseLineList({
         {row.supplierName && row.supplierName !== '—' && <span>{row.supplierName}</span>}
         {row.serviceNumber && <span className="nx-cell-num">#{row.serviceNumber}</span>}
       </div>
+      {(() => {
+        const { monthly, annual } = monthlyAnnualForExpenseLineRow(row);
+        if (monthly == null && annual == null) return null;
+        return (
+          <div className="text-[12px] text-noorix-muted mb-2 flex flex-wrap gap-3 gap-y-1" dir="ltr">
+            {monthly != null && (
+              <span className="tabular-nums">
+                {t('expenseLineListMonthlyAmount')}: <FmtNum n={monthly} className="font-semibold text-noorix-text" />
+              </span>
+            )}
+            {annual != null && (
+              <span className="tabular-nums">
+                {t('expenseLineListAnnualAmount')}: <FmtNum n={annual} className="font-semibold text-noorix-text" />
+              </span>
+            )}
+          </div>
+        );
+      })()}
       <div className="flex gap-2 justify-end">
         <Button size="sm" onClick={() => onEditLine?.(row)}>{t('edit')}</Button>
         <Button size="sm" variant="danger" onClick={() => onDeleteLine?.(row)}>{t('delete')}</Button>
@@ -170,15 +240,22 @@ export default function ExpenseLineList({
   ), [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, formatKindWithCategory]);
 
   function handlePrint() {
-    const rows = tableData.map((r: any) =>
-      `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${formatKindWithCategory(r.kind, r.categoryName).replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td></tr>`,
-    ).join('');
+    const thMonthly = t('expenseLineListMonthlyAmount');
+    const thAnnual = t('expenseLineListAnnualAmount');
+    const rows = tableData
+      .map((r: any) => {
+        const { monthly, annual } = monthlyAnnualForExpenseLineRow(r);
+        const mCell = monthly != null ? fmt(monthly) : '—';
+        const aCell = annual != null ? fmt(annual) : '—';
+        return `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${formatKindWithCategory(r.kind, r.categoryName).replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td><td style="text-align:end" dir="ltr">${String(mCell).replace(/</g, '&lt;')}</td><td style="text-align:end" dir="ltr">${String(aCell).replace(/</g, '&lt;')}</td></tr>`;
+      })
+      .join('');
     const printTitle = t('expenseLinesPrintTitle') || 'بنود المصاريف';
     openPrintWindow({
       title: printTitle,
       companyName,
       subtitle: printTitle,
-      body: `<table><thead><tr><th>اسم البند</th><th>النوع</th><th>المورد</th><th>رقم الخدمة</th></tr></thead><tbody>${rows || '<tr><td colspan="4">لا توجد بيانات</td></tr>'}</tbody></table>`,
+      body: `<table><thead><tr><th>اسم البند</th><th>النوع</th><th>المورد</th><th>رقم الخدمة</th><th>${thMonthly.replace(/</g, '&lt;')}</th><th>${thAnnual.replace(/</g, '&lt;')}</th></tr></thead><tbody>${rows || '<tr><td colspan="6">لا توجد بيانات</td></tr>'}</tbody></table>`,
     });
   }
 
@@ -244,7 +321,7 @@ export default function ExpenseLineList({
         renderMobileCard={renderMobileCard}
         tableId="expense-lines"
         tableLayout="fixed"
-        tableMinWidth={1100}
+        tableMinWidth={1260}
         stickyActionColumn={false}
       />
     </ScreenShell>

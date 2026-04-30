@@ -178,6 +178,8 @@ export default {
     en: 'e.g. Rent 120,000/year — paid quarterly (30,000 per installment)',
   },
   expenseLineAnnualTotal: { ar: 'الإجمالي السنوي المتوقع', en: 'Expected annual total' },
+  expenseLineListMonthlyAmount: { ar: 'المبلغ الشهري', en: 'Monthly amount' },
+  expenseLineListAnnualAmount: { ar: 'المبلغ السنوي', en: 'Annual amount' },
   expenseLineAnnualTotalHint: {
     ar: 'مثال: 120000 — يُستخدم مع فترة الدفع لاقتراح مبلغ كل دفعة.',
     en: 'e.g. 120000 — with payment interval to suggest each installment.',
