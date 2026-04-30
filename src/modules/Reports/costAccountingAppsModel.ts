@@ -1,6 +1,18 @@
 /**
  * نموذج معزول: ربح/خسارة تقديرية (تطبيقات × محلي × ضريبة × عمولة × تكلفة مبيعات).
  * جميع العمليات بـ Decimal.js.
+ *
+ * ## افتراضات محاسبية (مراجعة قبل تغيير السلوك)
+ *
+ * 1. **الضريبة:** `vatRate` كسر عشري (0.15 = 15%). عند «شامل الضريبة» يُستخرج الصافي والضريبة
+ *    عبر `splitTaxFromTotal` (صافي = إجمالي ÷ (1+r)). عند عدم التضمين تُعامل المدخلات كصافية
+ *    بلا استخراج ضريبة في هذا الجدول (ضريبة العرض = 0).
+ * 2. **العمولة:** على مبيعات التطبيقات فقط؛ إما على **إجمالي** قناة التطبيق أو على **صافيها**
+ *    بعد استخراج الضريبة حسب (1).
+ * 3. **تكلفة المبيعات:** تُحسب كنسبة من **إجمالي المدخل لكل قناة كما أُدخل** (وليس من صافي المبيعات بعد الضريبة):
+ *    محلي = (نقد+بنك)×نسبة؛ تطبيقات = إجمالي التطبيقات × النسبة ÷ (1+رفع السعر) لمكافئ المحل عند وجود «رفع سعر».
+ * 4. **صافي الربح:** صافي المبيعات − عمولة − إجمالي COGS − مصاريف ثابتة (شهري) − رواتب.
+ * 5. **الحساب العكسي:** يفترض تجميع إجمالي المبيعات G مع حصة تطبيقات α من G ثابتة؛ يطابق (1)–(4) جبرياً.
  */
 import Decimal from 'decimal.js';
 import { roundAmount, splitTaxFromTotal } from '../../utils/math-engine';
@@ -18,7 +30,7 @@ export type CostAppsPlInput = {
   commissionPct: Decimal;
   commissionBase: CostAppsCommissionBase;
   fixedTotal: Decimal;
-  /** إجمالي رواتب الفترة (فواتير salary) — يُطرح من صافي الربح */
+  /** إجمالي رواتب الفترة (شهري من المصدر) — يُطرح من صافي الربح */
   salaryTotal: Decimal;
   /** false = لا مبيعات تطبيقات ولا عمولة (مقارنة) */
   includeAppChannel: boolean;
@@ -104,9 +116,10 @@ export function computeCostAppsPl(inp: CostAppsPlInput): CostAppsPlResult {
       : new Decimal(0);
   const cogsTotal = roundAmount(cogsLocal.plus(cogsApp));
 
+  const fixedRounded = roundAmount(d(inp.fixedTotal));
   const salary = roundAmount(d(inp.salaryTotal));
   const netProfit = roundAmount(
-    netSales.minus(commission).minus(cogsTotal).minus(inp.fixedTotal).minus(salary),
+    netSales.minus(commission).minus(cogsTotal).minus(fixedRounded).minus(salary),
   );
 
   const appShareOfGrossPct = grossTotal.gt(0)
@@ -125,7 +138,7 @@ export function computeCostAppsPl(inp: CostAppsPlInput): CostAppsPlResult {
     cogsLocal,
     cogsApp,
     cogsTotal,
-    fixedTotal: roundAmount(inp.fixedTotal),
+    fixedTotal: fixedRounded,
     salaryTotal: salary,
     netProfit,
     appShareOfGrossPct,

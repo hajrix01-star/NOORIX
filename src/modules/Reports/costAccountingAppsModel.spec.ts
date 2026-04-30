@@ -50,6 +50,58 @@ describe('computeCostAppsPl', () => {
     expect(withSalary.salaryTotal.toNumber()).toBe(3000);
   });
 
+  it('commission on net uses post-VAT app net only', () => {
+    const r = computeCostAppsPl({
+      grossApp: new Decimal(11500),
+      grossLocalCash: new Decimal(23000),
+      grossLocalBank: new Decimal(0),
+      vatInclusive: true,
+      vatRate: new Decimal(0.15),
+      commissionPct: new Decimal(20),
+      commissionBase: 'net',
+      fixedTotal: new Decimal(5000),
+      includeAppChannel: true,
+      ...zeroCogs,
+      ...zeroSalary,
+    });
+    expect(r.netSales.toNumber()).toBe(30000);
+    expect(r.commission.toNumber()).toBe(2000);
+    expect(r.netProfit.toNumber()).toBe(23000);
+  });
+
+  it('reverse round-trip VAT inclusive commission on net', () => {
+    const alpha = new Decimal(11500).div(34500);
+    const res = reverseGrossTotalForTargetProfit({
+      targetProfit: new Decimal(23000),
+      fixedTotal: new Decimal(5000),
+      salaryTotal: new Decimal(0),
+      appShareDecimal: alpha,
+      vatInclusive: true,
+      vatRate: new Decimal(0.15),
+      commissionPct: new Decimal(20),
+      commissionBase: 'net',
+      cogsLocalPct: new Decimal(0),
+      appPriceMarkupPct: new Decimal(0),
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    const G = res.grossTotal;
+    const check = computeCostAppsPl({
+      grossApp: G.mul(alpha),
+      grossLocalCash: G.mul(new Decimal(1).minus(alpha)),
+      grossLocalBank: new Decimal(0),
+      vatInclusive: true,
+      vatRate: new Decimal(0.15),
+      commissionPct: new Decimal(20),
+      commissionBase: 'net',
+      fixedTotal: new Decimal(5000),
+      includeAppChannel: true,
+      ...zeroCogs,
+      salaryTotal: new Decimal(0),
+    });
+    expect(check.netProfit.toNumber()).toBeCloseTo(23000, 0);
+  });
+
   it('without app channel zeros app and commission', () => {
     const r = computeCostAppsPl({
       grossApp: new Decimal(10000),

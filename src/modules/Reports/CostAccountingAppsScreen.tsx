@@ -199,6 +199,7 @@ export default function CostAccountingAppsScreen() {
   const [previewSlot, setPreviewSlot] = useState<CostAppsSavedSlot | null>(null);
 
   const vatRateDec = useMemo(() => {
+    /** حقل الواجهة كنسبة مئوية (مثلاً 15 = 15٪) — يُحوَّل دائماً إلى كسر عشري للنموذج. */
     const p = parseMoneyInput(vatRatePctStr);
     return p.div(100);
   }, [vatRatePctStr]);
