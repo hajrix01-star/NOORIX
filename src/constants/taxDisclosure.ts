@@ -214,20 +214,3 @@ export function disclosureFromBulkFlatRow(vals: any) {
 export function periodKeyFromQuarter(year: any, quarter: any) {
   return `${year}-Q${quarter}`;
 }
-
-/** هل نموذج الإفصاح ما زال الأصفار الافتراضية (قبل الاستيراد أو الإدخال)؟ */
-export function isDisclosurePayloadEmpty(data: any): boolean {
-  if (!data || typeof data !== 'object') return true;
-  const d = normalizeDisclosureDecimals(data);
-  for (const r of [...OUTPUT_ROWS, ...INPUT_ROWS].filter((x: any) => !x.isTotal)) {
-    const o = d[r.key];
-    if (!o || typeof o !== 'object') continue;
-    if (roundMoney2(o.amount) !== 0 || roundMoney2(o.vat) !== 0 || roundMoney2(o.adjustment) !== 0) return false;
-  }
-  for (const r of SUMMARY_ROWS) {
-    const v = d[r.key];
-    const n = typeof v === 'number' && Number.isFinite(v) ? v : 0;
-    if (roundMoney2(n) !== 0) return false;
-  }
-  return true;
-}
