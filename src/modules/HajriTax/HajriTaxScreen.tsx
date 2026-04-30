@@ -20,6 +20,7 @@ import {
   computeInputTotal,
   getRowValue,
   scaleInputVatForPaymentTarget,
+  syncVatPlanningSummaryFields,
 } from '../../constants/taxDisclosure';
 import { fmt, fmtTax } from '../../utils/format';
 import { exportToExcel } from '../../utils/exportUtils';
@@ -41,7 +42,19 @@ import {
 } from './hajriRegistryMetrics';
 
 function clonePayload(from: any) {
-  return mergeImportedDisclosure(defaultDisclosureData(), from || {});
+  return normalizeDisclosureDecimals(syncVatPlanningSummaryFields(mergeImportedDisclosure(defaultDisclosureData(), from || {})));
+}
+
+function formatLoadedPaymentTarget(pt: any): string {
+  if (pt == null || pt === '') return '';
+  const n = Number(pt);
+  return Number.isFinite(n) && Math.abs(n) > 1e-9 ? String(n) : '';
+}
+
+function fmtDisclosurePrintCell(n: any): string {
+  const x = Number(n);
+  if (!Number.isFinite(x) || Math.abs(x) < 0.0005) return '—';
+  return fmtTax(x);
 }
 
 export default function HajriTaxScreen() {
@@ -219,7 +232,7 @@ export default function HajriTaxScreen() {
       }
       const payload = rec?.payload && typeof rec.payload === 'object' ? rec.payload : {};
       setDraftData(clonePayload(payload));
-      setPaymentTargetStr(rec?.paymentTarget != null ? String(rec.paymentTarget) : '');
+      setPaymentTargetStr(formatLoadedPaymentTarget(rec?.paymentTarget));
       setNotes(rec?.notes || '');
       setSourceSnapshot(rec?.sourceSnapshot ?? null);
       setImportIso(rec?.importedAt || null);
@@ -237,7 +250,7 @@ export default function HajriTaxScreen() {
     setDetailReadOnly(mode === 'view');
     const payload = row.payload && typeof row.payload === 'object' ? row.payload : {};
     setDraftData(clonePayload(payload));
-    setPaymentTargetStr(row.paymentTarget != null ? String(row.paymentTarget) : '');
+    setPaymentTargetStr(formatLoadedPaymentTarget(row.paymentTarget));
     setNotes(row.notes || '');
     setSourceSnapshot(row.sourceSnapshot ?? null);
     setImportIso(row.importedAt || null);
@@ -256,7 +269,7 @@ export default function HajriTaxScreen() {
       const rec = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
       if (rec) {
         setDraftData(clonePayload(rec.payload));
-        setPaymentTargetStr(rec.paymentTarget != null ? String(rec.paymentTarget) : '');
+        setPaymentTargetStr(formatLoadedPaymentTarget(rec.paymentTarget));
         setNotes(rec.notes || '');
         setSourceSnapshot(rec.sourceSnapshot ?? null);
         setImportIso(rec.importedAt || null);
@@ -318,7 +331,13 @@ export default function HajriTaxScreen() {
       const next = { ...prev };
       const isSummaryField = !field || SUMMARY_ROWS.some((r: any) => r.key === key);
       if (isSummaryField) next[key] = num;
-      else next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), [field]: num };
+      else {
+        const row = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), [field]: num };
+        next[key] = row;
+        if (field === 'amount' && (key === 'standard_sales' || key === 'standard_purchases')) {
+          next[key] = { ...row, vat: roundMoney2(num * 0.15) };
+        }
+      }
       return next;
     });
   }, [detailReadOnly]);
@@ -328,10 +347,10 @@ export default function HajriTaxScreen() {
       const cellId = `${key}:${field}`;
       const raw = getRowValue(draftData, key, field);
       const n = Number(raw);
+      const rounded = Number.isFinite(n) ? roundMoney2(n) : NaN;
+      const isZero = !Number.isFinite(rounded) || rounded === 0;
       const committed =
-        raw === '' || raw === null || raw === undefined || !Number.isFinite(n)
-          ? ''
-          : roundMoney2(n).toFixed(2);
+        raw === '' || raw === null || raw === undefined || !Number.isFinite(n) || isZero ? '' : rounded.toFixed(2);
       const display = cellEdit?.id === cellId ? cellEdit.text : committed;
 
       return (
@@ -340,13 +359,11 @@ export default function HajriTaxScreen() {
           inputMode="decimal"
           readOnly={detailReadOnly}
           value={display}
-          placeholder="0.00"
+          placeholder=" "
           onFocus={() => {
             if (detailReadOnly) return;
             const start =
-              raw === '' || raw === null || raw === undefined || !Number.isFinite(n)
-                ? ''
-                : roundMoney2(n).toFixed(2);
+              raw === '' || raw === null || raw === undefined || !Number.isFinite(n) || isZero ? '' : roundMoney2(n).toFixed(2);
             setCellEdit({ id: cellId, text: start });
           }}
           onBlur={() => {
@@ -389,6 +406,12 @@ export default function HajriTaxScreen() {
     return +(simulatorRequiredInputVat / 0.15).toFixed(2);
   }, [simulatorRequiredInputVat]);
 
+  const simulatorInvalidTarget = useMemo(() => {
+    if (!Number.isFinite(paymentTargetParsed)) return false;
+    if (simulatorRequiredInputVat == null) return false;
+    return simulatorRequiredInputVat < 0;
+  }, [paymentTargetParsed, simulatorRequiredInputVat]);
+
   const handleImportFromTaxReport = useCallback(async () => {
     if (!detailCompanyId || detailReadOnly) return;
     setImportingReport(true);
@@ -398,7 +421,9 @@ export default function HajriTaxScreen() {
       });
       throwIfApiFailed(res, 'فشل استيراد تقرير الضريبة');
       const imported = res.data;
-      setDraftData((prev: any) => normalizeDisclosureDecimals(mergeImportedDisclosure(prev, imported)));
+      setDraftData((prev: any) =>
+        normalizeDisclosureDecimals(syncVatPlanningSummaryFields(mergeImportedDisclosure(prev, imported))),
+      );
       setSourceSnapshot(imported && typeof imported === 'object' ? { ...imported } : imported);
       setImportIso(new Date().toISOString());
     } finally {
@@ -410,7 +435,9 @@ export default function HajriTaxScreen() {
     if (detailReadOnly) return;
     const target = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
     if (!Number.isFinite(target)) return;
-    setDraftData((prev: any) => scaleInputVatForPaymentTarget(prev, target));
+    setDraftData((prev: any) =>
+      normalizeDisclosureDecimals(syncVatPlanningSummaryFields(scaleInputVatForPaymentTarget(prev, target))),
+    );
   }, [paymentTargetStr, detailReadOnly]);
 
   const handleSaveDetail = useCallback(async () => {
@@ -420,9 +447,9 @@ export default function HajriTaxScreen() {
       companyId: detailCompanyId,
       year,
       quarter,
-      payload: normalizeDisclosureDecimals(draftData),
+      payload: normalizeDisclosureDecimals(syncVatPlanningSummaryFields(draftData)),
       sourceSnapshot: sourceSnapshot ?? undefined,
-      paymentTarget: Number.isFinite(pt) ? pt : null,
+      paymentTarget: Number.isFinite(pt) && Math.abs(pt) > 1e-9 ? pt : null,
       notes: notes.trim() || null,
       importedAt: importIso || undefined,
     };
@@ -446,18 +473,21 @@ export default function HajriTaxScreen() {
     const outRows = OUTPUT_ROWS.map((r: any) => {
       const amt = r.isTotal ? outputTotal : getRowValue(draftData, r.key, 'amount');
       const vat = r.isTotal ? outputTotal : getRowValue(draftData, r.key, 'vat');
-      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtTax(amt)}</td><td>${r.isTotal ? '—' : fmtTax(getRowValue(draftData, r.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
+      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtDisclosurePrintCell(amt)}</td><td>${r.isTotal ? '—' : fmtDisclosurePrintCell(getRowValue(draftData, r.key, 'adjustment'))}</td><td>${fmtDisclosurePrintCell(vat)}</td></tr>`;
     }).join('');
     const inRows = INPUT_ROWS.map((r: any) => {
       const amt = r.isTotal ? inputTotal : getRowValue(draftData, r.key, 'amount');
       const vat = r.isTotal ? inputTotal : getRowValue(draftData, r.key, 'vat');
-      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtTax(amt)}</td><td>${r.isTotal ? '—' : fmtTax(getRowValue(draftData, r.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
+      return `<tr><td>${(label(r) || '').replace(/</g, '&lt;')}</td><td>${fmtDisclosurePrintCell(amt)}</td><td>${r.isTotal ? '—' : fmtDisclosurePrintCell(getRowValue(draftData, r.key, 'adjustment'))}</td><td>${fmtDisclosurePrintCell(vat)}</td></tr>`;
     }).join('');
     openPrintWindow({
       title: t('hajriTax'),
       companyName: name || '',
       subtitle: `${periodLabel} — ${lang === 'ar' ? 'تخطيط ضريبي (لا يؤثر على المحاسبة)' : 'Planning only (no accounting impact)'}`,
-      body: `<p>${lang === 'ar' ? 'مبلغ الدفع المستهدف:' : 'Target payment:'} ${fmtTax(parseFloat(paymentTargetStr) || 0)} SR</p>
+      body: `<p>${lang === 'ar' ? 'مبلغ الدفع المستهدف:' : 'Target payment:'} ${(() => {
+        const p = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
+        return Number.isFinite(p) && Math.abs(p) > 1e-9 ? `${fmtTax(p)} SR` : '—';
+      })()}</p>
 <table><thead><tr><th>${t('reportItem')}</th><th>SR</th><th>${lang === 'ar' ? 'تعديل' : 'Adj.'}</th><th>VAT</th></tr></thead>
 <tbody><tr><td colspan="4" style="background:#f0fdf4;font-weight:700">${lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (sales)'}</td></tr>${outRows}
 <tr><td colspan="4" style="background:#fef2f2;font-weight:700">${lang === 'ar' ? 'ضريبة المشتريات والمصروفات (ما سُجّلت ضريبته فقط)' : 'Purchases & expenses VAT (tax lines only)'}</td></tr>${inRows}</tbody></table>
@@ -623,6 +653,7 @@ export default function HajriTaxScreen() {
         handleBalancePayment={handleBalancePayment}
         simulatorRequiredInputVat={simulatorRequiredInputVat}
         simulatorEstimatedBaseAt15={simulatorEstimatedBaseAt15}
+        simulatorInvalidTarget={simulatorInvalidTarget}
         paymentTargetParsed={paymentTargetParsed}
         renderEditableCell={renderEditableCell}
         updateRow={updateRow}

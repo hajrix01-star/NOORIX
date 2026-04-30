@@ -79,6 +79,23 @@ export function computeNetPayable(data: any) {
   return netVat + priorAdj + balanceCarried;
 }
 
+/** يحدّث حقول الملخص المشتقة (vat_due، net_vat، …) لتطابق الصفوف — مفيد قبل الحفظ والطباعة. */
+export function syncVatPlanningSummaryFields(data: any) {
+  const base = data && typeof data === 'object' ? { ...data } : defaultDisclosureData();
+  const out = computeOutputTotal(base);
+  const inn = computeInputTotal(base);
+  const netV = roundMoney2(out - inn);
+  const priorRaw = base.prior_adjustments;
+  const balRaw = base.balance_carried;
+  const prior = roundMoney2(typeof priorRaw === 'number' && Number.isFinite(priorRaw) ? priorRaw : 0);
+  const bcf = roundMoney2(typeof balRaw === 'number' && Number.isFinite(balRaw) ? balRaw : 0);
+  base.vat_due = roundMoney2(out);
+  base.vat_recoverable = roundMoney2(inn);
+  base.net_vat = netV;
+  base.net_payable_refund = roundMoney2(netV + prior + bcf);
+  return base;
+}
+
 /** تقريب مالي إلى منزلتين عشريتين (عرض وتخزين الحقول الضريبية). */
 export function roundMoney2(n: any) {
   const x = Number(n);

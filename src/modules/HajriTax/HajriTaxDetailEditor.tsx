@@ -36,6 +36,7 @@ export default function HajriTaxDetailEditor({
   handleBalancePayment,
   simulatorRequiredInputVat,
   simulatorEstimatedBaseAt15,
+  simulatorInvalidTarget = false,
   paymentTargetParsed,
   renderEditableCell,
   updateRow,
@@ -56,7 +57,9 @@ export default function HajriTaxDetailEditor({
   const formatSummaryCommitted = (v: any) => {
     if (v === '' || v === null || v === undefined) return '';
     const x = Number(v);
-    return Number.isFinite(x) ? roundMoney2(x).toFixed(2) : '';
+    if (!Number.isFinite(x)) return '';
+    if (Math.abs(roundMoney2(x)) < 0.0005) return '';
+    return roundMoney2(x).toFixed(2);
   };
 
   const renderSectionRows = (rows: any, sectionTotal: any, totalVatLabelKey: any = 'vatColumnVat') =>
@@ -164,6 +167,9 @@ export default function HajriTaxDetailEditor({
             <div className="flex items-center gap-2 border-b border-noorix-border bg-[var(--noorix-blue-6)] px-4 py-3">
               <span className="text-[15px] font-bold text-noorix-blue">{t('vatSectionOutputTitle')}</span>
             </div>
+            <p className="m-0 border-b border-noorix-border bg-[var(--noorix-blue-6)] px-4 pb-3 text-[11px] leading-snug text-noorix-muted">
+              {t('vatHajriSalesAuto15Hint')}
+            </p>
             <div className="hidden grid-cols-[minmax(0,2fr)_1fr_1fr_88px] gap-2 border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-4 py-2 text-[11px] font-bold text-noorix-muted sm:grid">
               <div>{t('reportItem')}</div>
               <div className="text-end">{t('vatColumnBase')}</div>
@@ -217,7 +223,7 @@ export default function HajriTaxDetailEditor({
                   if (readOnly) return;
                   setSummaryInline({ id: 'prior_adjustments', text: e.target.value });
                 }}
-                placeholder="0"
+                placeholder=" "
               />
               <Input
                 type="text"
@@ -247,7 +253,7 @@ export default function HajriTaxDetailEditor({
                   if (readOnly) return;
                   setSummaryInline({ id: 'balance_carried', text: e.target.value });
                 }}
-                placeholder="0"
+                placeholder=" "
               />
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-noorix-border pt-3">
@@ -312,6 +318,7 @@ export default function HajriTaxDetailEditor({
             </div>
             {showSimulator ? (
               <div className="space-y-3">
+                <p className="m-0 text-[11px] leading-snug text-noorix-muted">{t('vatSimulatorHelpShort')}</p>
                 <Input
                   type="text"
                   inputMode="decimal"
@@ -319,24 +326,28 @@ export default function HajriTaxDetailEditor({
                   label={t('vatSimulatorHint')}
                   value={paymentTargetStr}
                   onChange={(e: any) => setPaymentTargetStr(e.target.value)}
-                  placeholder="0"
+                  placeholder=" "
                 />
                 {Number.isFinite(paymentTargetParsed) ? (
-                  <div className="space-y-2 text-[12px] leading-relaxed text-noorix-muted">
-                    {simulatorRequiredInputVat != null ? (
-                      <p className="m-0">
-                        {t('vatSimulatorExplainInputVat', {
-                          inputVat: fmtTax(simulatorRequiredInputVat),
-                          target: fmtTax(paymentTargetParsed),
-                        })}
-                      </p>
-                    ) : null}
-                    {simulatorEstimatedBaseAt15 != null ? (
-                      <p className="m-0">
-                        {t('vatSimulatorExplainBase', { base: fmtTax(simulatorEstimatedBaseAt15) })}
-                      </p>
-                    ) : null}
-                  </div>
+                  simulatorInvalidTarget ? (
+                    <p className="m-0 text-[12px] font-medium text-amber-800 dark:text-amber-200">{t('vatSimulatorInvalidTarget')}</p>
+                  ) : (
+                    <div className="space-y-2 text-[12px] leading-relaxed text-noorix-muted">
+                      {simulatorRequiredInputVat != null ? (
+                        <p className="m-0">
+                          {t('vatSimulatorExplainInputVat', {
+                            inputVat: fmtTax(simulatorRequiredInputVat),
+                            target: fmtTax(paymentTargetParsed),
+                          })}
+                        </p>
+                      ) : null}
+                      {simulatorEstimatedBaseAt15 != null ? (
+                        <p className="m-0">
+                          {t('vatSimulatorExplainBase', { base: fmtTax(simulatorEstimatedBaseAt15) })}
+                        </p>
+                      ) : null}
+                    </div>
+                  )
                 ) : (
                   <p className="m-0 text-[12px] text-noorix-muted">{t('vatSimulatorEnterTarget')}</p>
                 )}

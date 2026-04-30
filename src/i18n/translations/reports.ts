@@ -511,7 +511,22 @@ export default {
   vatAmountRefundable: { ar: 'مبلغ قابل للاسترداد (تخطيطي)', en: 'Refundable amount (planning)' },
   vatSimulatorTitle: { ar: 'محاكي السداد المستهدف', en: 'Target payment simulator' },
   vatSimulatorToggle: { ar: 'عرض المحاكي', en: 'Show simulator' },
-  vatSimulatorHint: { ar: 'أدخل المبلغ الذي ترغب في سداده (صافي مستحق)', en: 'Enter target net payable amount' },
+  vatSimulatorHint: {
+    ar: 'صافي الضريبة المستهدف سدادها للهيئة (ريال)',
+    en: 'Target net VAT payable to the authority (SAR)',
+  },
+  vatHajriSalesAuto15Hint: {
+    ar: 'أدخل المبلغ الخاضع في عمود «المبلغ الخاضع»؛ تُحسب ضريبة المبيعات تلقائياً (× ١٥٪).',
+    en: 'Enter the taxable base; sales VAT is calculated automatically (× 15%).',
+  },
+  vatSimulatorInvalidTarget: {
+    ar: 'هذا المستهدف أقل من صافي الضريبة الحالي أو غير متسق: زِد ضريبة المشتريات يدوياً أو خفّض المستهدف/زِد مبيعاتك.',
+    en: 'This target is below current net VAT or inconsistent: raise purchase VAT manually, or lower the target / raise sales VAT.',
+  },
+  vatSimulatorHelpShort: {
+    ar: 'بعد إدخال المستهدف اضغط «تعبئة المشتريات» لملء سطر المشتريات (أساس + ضريبة ١٥٪) المتوافق مع صافي السداد.',
+    en: 'After entering the target, use «Auto-fill local purchases» to fill the purchases row (base + 15% VAT) for that net payable.',
+  },
   vatSimulatorExplainInputVat: {
     ar: 'ضريبة المشتريات والمصروفات المطلوبة تقريباً {inputVat} SR لتحقيق صافي سداد {target} SR.',
     en: 'Approx. purchase & expense VAT needed ≈ {inputVat} SR to reach net payable {target} SR.',
