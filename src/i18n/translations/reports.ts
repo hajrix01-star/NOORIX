@@ -746,6 +746,12 @@ export default {
     ar: 'حصة التطبيقات في الحساب العكسي %',
     en: 'App share of total gross in reverse calc %',
   },
+  /** صف واحد مشترك أعلى الحاسبتين */
+  reportCostAppsSharedAppSharePct: { ar: 'حصة التطبيقات %', en: 'App share %' },
+  reportCostAppsReverseCardTitle: {
+    ar: 'من ربح مستهدف إلى إجمالي مبيعات',
+    en: 'Target profit → gross sales',
+  },
   /** معاينة ربح من إجمالي مبيعات معلوم ونفس حصة التطبيقات؛ العمولة من حقل «عمولة التطبيق» أعلاه */
   reportCostAppsProbeProfitSection: {
     ar: 'من إجمالي المبيعات إلى صافي الربح',
@@ -756,10 +762,6 @@ export default {
     en: 'Total gross sales (estimate)',
   },
   reportCostAppsProbeProfitCalc: { ar: 'احسب صافي الربح', en: 'Calculate net profit' },
-  reportCostAppsProbeProfitHint: {
-    ar: 'يستخدم حصة التطبيقات أعلاه، وعمولة التطبيق والضريبة والتكاليف والمصاريف من لوحة المدخلات.',
-    en: 'Uses the app share above, plus app commission, VAT, COGS, and expenses from the inputs panel.',
-  },
   reportCostAppsProbeProfitApply: { ar: 'تطبيق على حقول المبيعات', en: 'Apply to sales fields' },
   reportCostAppsScenarioImportOk: { ar: 'تم استيراد السيناريو.', en: 'Scenario imported.' },
   reportCostAppsScenarioErrInvalidJson: { ar: 'ملف JSON غير صالح.', en: 'Invalid JSON file.' },

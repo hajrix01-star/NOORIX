@@ -1146,83 +1146,105 @@ export default function CostAccountingAppsScreen() {
           </div>
 
           {/* —— حساب عكسي ونسبة التطبيق —— */}
-          <div className="noorix-print-hidden space-y-3 border-t border-noorix-border pt-5 print:hidden">
+          <div className="noorix-print-hidden space-y-4 border-t border-noorix-border pt-5 print:hidden">
             <SectionHeading tone="slate">{t('reportCostAppsZoneAnalysis')}</SectionHeading>
+
             <div className="flex flex-wrap items-end justify-center gap-2 sm:justify-start sm:gap-3">
-              <Field labelAlign="center" label={t('reportCostAppsTargetProfit')}>
-                <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-[128px] text-center tabular-nums" />
-              </Field>
-              <Field labelAlign="center" label={t('reportCostAppsReverseAppShare')}>
+              <Field labelAlign="center" label={t('reportCostAppsSharedAppSharePct')} className="min-w-[140px]">
                 <Input
                   value={reverseAppSharePctStr}
                   onChange={(e: any) => setReverseAppSharePctStr(e.target.value)}
                   inputMode="decimal"
                   dir="ltr"
-                  className="min-h-10 w-[80px] text-center tabular-nums"
+                  className="min-h-10 w-[88px] text-center tabular-nums"
                 />
               </Field>
-              <Button type="button" variant="secondary" size="sm" onClick={handleReverse}>
-                {t('reportCostAppsReverseCalc')}
-              </Button>
             </div>
-            {reverseGrossStr ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm">
-                <span className="text-noorix-muted">{t('reportCostAppsGrossTotal')}:</span>
-                <strong className="tabular-nums" dir="ltr">
-                  {fmt(parseMoneyInput(reverseGrossStr).toNumber(), 2)}
-                </strong>
-                <Button type="button" variant="primary" size="sm" onClick={handleApplyReverse}>
-                  {t('reportCostAppsReverseApply')}
-                </Button>
-              </div>
-            ) : null}
-            <div className="flex flex-col gap-2 border-t border-dashed border-noorix-border/80 pt-3">
-              <p className="m-0 text-[12px] font-medium text-noorix-text">{t('reportCostAppsProbeProfitSection')}</p>
-              <div className="flex flex-wrap items-end justify-center gap-2 sm:justify-start sm:gap-3">
-                <Field labelAlign="center" label={t('reportCostAppsProbeSalesInput')}>
-                  <Input
-                    value={probeSalesGrossStr}
-                    onChange={(e: any) => setProbeSalesGrossStr(e.target.value)}
-                    inputMode="decimal"
-                    dir="ltr"
-                    className="min-h-10 w-[128px] text-center tabular-nums"
-                  />
-                </Field>
-                <Button type="button" variant="secondary" size="sm" onClick={handleProbeProfit}>
-                  {t('reportCostAppsProbeProfitCalc')}
-                </Button>
-              </div>
-              <p className="m-0 text-[11px] text-noorix-muted">{t('reportCostAppsProbeProfitHint')}</p>
-              {probePlPreview ? (
-                <div className="flex flex-col gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <span>
-                      <span className="text-noorix-muted">{t('reportCostAppsNetProfit')}:</span>{' '}
-                      <strong className="tabular-nums" dir="ltr">
-                        {fmt2(probePlPreview.netProfit)}
-                      </strong>
-                    </span>
-                    <span>
-                      <span className="text-noorix-muted">{t('reportCostAppsNetSales')}:</span>{' '}
-                      <strong className="tabular-nums" dir="ltr">
-                        {fmt2(probePlPreview.netSales)}
-                      </strong>
-                    </span>
-                    <span>
-                      <span className="text-noorix-muted">{t('reportCostAppsCommission')}:</span>{' '}
-                      <strong className="tabular-nums" dir="ltr">
-                        {fmt2(probePlPreview.commission)}
-                      </strong>
-                    </span>
-                  </div>
-                  <Button type="button" variant="primary" size="sm" className="self-start" onClick={handleApplyProbeToFields}>
-                    {t('reportCostAppsProbeProfitApply')}
+
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start lg:gap-4">
+              <div className="flex flex-col gap-3 rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] p-3 shadow-sm">
+                <h4 className="m-0 border-b border-noorix-border/80 pb-2 text-center text-[12px] font-semibold leading-snug text-noorix-text">
+                  {t('reportCostAppsReverseCardTitle')}
+                </h4>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-center">
+                  <Field labelAlign="center" label={t('reportCostAppsTargetProfit')}>
+                    <Input
+                      value={targetProfitStr}
+                      onChange={(e: any) => setTargetProfitStr(e.target.value)}
+                      inputMode="decimal"
+                      dir="ltr"
+                      className="min-h-10 w-[128px] text-center tabular-nums"
+                    />
+                  </Field>
+                  <Button type="button" variant="secondary" size="sm" className="shrink-0" onClick={handleReverse}>
+                    {t('reportCostAppsReverseCalc')}
                   </Button>
                 </div>
-              ) : null}
+                {reverseGrossStr ? (
+                  <div className="flex flex-col gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-surface-2)] px-3 py-2.5 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-noorix-muted">{t('reportCostAppsGrossTotal')}:</span>
+                      <strong className="tabular-nums text-noorix-text" dir="ltr">
+                        {fmt(parseMoneyInput(reverseGrossStr).toNumber(), 2)}
+                      </strong>
+                    </div>
+                    <Button type="button" variant="primary" size="sm" className="w-full shrink-0 sm:w-auto" onClick={handleApplyReverse}>
+                      {t('reportCostAppsReverseApply')}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex flex-col gap-3 rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] p-3 shadow-sm">
+                <h4 className="m-0 border-b border-noorix-border/80 pb-2 text-center text-[12px] font-semibold leading-snug text-noorix-text">
+                  {t('reportCostAppsProbeProfitSection')}
+                </h4>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-center">
+                  <Field labelAlign="center" label={t('reportCostAppsProbeSalesInput')}>
+                    <Input
+                      value={probeSalesGrossStr}
+                      onChange={(e: any) => setProbeSalesGrossStr(e.target.value)}
+                      inputMode="decimal"
+                      dir="ltr"
+                      className="min-h-10 w-[128px] text-center tabular-nums"
+                    />
+                  </Field>
+                  <Button type="button" variant="secondary" size="sm" className="shrink-0" onClick={handleProbeProfit}>
+                    {t('reportCostAppsProbeProfitCalc')}
+                  </Button>
+                </div>
+                {probePlPreview ? (
+                  <div className="flex flex-col gap-3 rounded-lg border border-noorix-border bg-[var(--noorix-surface-2)] px-3 py-2.5 text-sm">
+                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-between">
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        <span className="text-noorix-muted">{t('reportCostAppsNetProfit')}:</span>
+                        <strong className="tabular-nums text-noorix-text" dir="ltr">
+                          {fmt2(probePlPreview.netProfit)}
+                        </strong>
+                      </span>
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        <span className="text-noorix-muted">{t('reportCostAppsNetSales')}:</span>
+                        <strong className="tabular-nums text-noorix-text" dir="ltr">
+                          {fmt2(probePlPreview.netSales)}
+                        </strong>
+                      </span>
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        <span className="text-noorix-muted">{t('reportCostAppsCommission')}:</span>
+                        <strong className="tabular-nums text-noorix-text" dir="ltr">
+                          {fmt2(probePlPreview.commission)}
+                        </strong>
+                      </span>
+                    </div>
+                    <Button type="button" variant="primary" size="sm" className="w-full shrink-0 sm:ms-auto sm:w-auto" onClick={handleApplyProbeToFields}>
+                      {t('reportCostAppsProbeProfitApply')}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             </div>
-            <div className="flex flex-wrap items-end justify-center gap-2 border-t border-dashed border-noorix-border/80 pt-3 sm:justify-start sm:gap-3">
-              <Field labelAlign="center" label={t('reportCostAppsAppShare')}>
+
+            <div className="flex flex-col gap-2 rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] p-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-end sm:justify-center">
+              <Field labelAlign="center" label={t('reportCostAppsAppShare')} className="min-w-0 sm:min-w-[200px]">
                 <Input
                   value={appSharePctStr}
                   onChange={(e: any) => setAppSharePctStr(e.target.value)}
@@ -1232,7 +1254,7 @@ export default function CostAccountingAppsScreen() {
                   className="min-h-10 w-[96px] text-center tabular-nums"
                 />
               </Field>
-              <Button type="button" variant="secondary" size="sm" onClick={handleApplyAppShare}>
+              <Button type="button" variant="secondary" size="sm" className="shrink-0" onClick={handleApplyAppShare}>
                 {t('reportCostAppsApplyShare')}
               </Button>
             </div>
