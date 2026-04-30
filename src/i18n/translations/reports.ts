@@ -583,6 +583,16 @@ export default {
   },
 
   reportCostAppsNav: { ar: 'حاسبة التكاليف والتطبيقات', en: 'Cost & apps calculator' },
+  reportCostAppsInputsPanelTitle: { ar: 'مدخلات الحاسبة والنِسَب', en: 'Calculator inputs & rates' },
+  reportCostAppsInputsPanelSubtitle: {
+    ar: 'المبيعات، المزامنة من النظام، الضريبة والعمولة، تكلفة المبيعات، الرواتب، وأدوات التوزيع والحساب العكسي — في لوحة واحدة منسّقة.',
+    en: 'Sales, system sync, VAT and commission, COGS, payroll, and mix/reverse tools — one structured panel.',
+  },
+  reportCostAppsZoneSales: { ar: 'المبيعات', en: 'Sales' },
+  reportCostAppsZoneSync: { ar: 'مزامنة من النظام', en: 'Sync from system' },
+  reportCostAppsZoneRates: { ar: 'الضريبة والعمولة وتكلفة المبيعات', en: 'VAT, commission & COGS' },
+  reportCostAppsZoneAnalysis: { ar: 'التوزيع والحساب العكسي', en: 'Mix & reverse calc' },
+  reportCostAppsZonePayroll: { ar: 'الرواتب', en: 'Payroll' },
   reportCostAppsSalesSection: { ar: 'مدخلات المبيعات', en: 'Sales inputs' },
   reportDateFrom: { ar: 'من تاريخ', en: 'From date' },
   reportDateTo: { ar: 'إلى تاريخ', en: 'To date' },

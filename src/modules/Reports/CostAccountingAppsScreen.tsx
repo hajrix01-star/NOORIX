@@ -47,6 +47,14 @@ function Field({ label, children, className }: { label: string; children: React.
   );
 }
 
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 border-s-[3px] border-s-noorix-blue ps-2.5">
+      <h3 className="m-0 text-[11px] font-bold uppercase tracking-[0.06em] text-noorix-muted">{children}</h3>
+    </div>
+  );
+}
+
 type FixedLine = { id: string; label: string; amount: string };
 
 function ymdParts(y: number, m: number, d: number) {
@@ -866,8 +874,8 @@ export default function CostAccountingAppsScreen() {
   }
 
   return (
-    <div className="cost-apps-calc mx-auto flex w-full max-w-6xl flex-col gap-5 md:gap-6 print:max-w-none print:gap-2">
-      <header className="noorix-print-hidden overflow-hidden rounded-2xl border border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-1)] to-[var(--noorix-surface-1)] p-5 shadow-sm sm:p-6 print:hidden">
+    <div className="cost-apps-calc mx-auto flex w-full max-w-6xl flex-col gap-4 md:gap-5 print:max-w-none print:gap-2">
+      <header className="noorix-print-hidden overflow-hidden rounded-2xl border border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-1)] to-[var(--noorix-surface-1)] p-4 shadow-sm sm:p-5 print:hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -899,7 +907,7 @@ export default function CostAccountingAppsScreen() {
         </div>
       </header>
 
-      <div className="noorix-print-hidden grid grid-cols-1 gap-3 sm:grid-cols-3 print:hidden">
+      <div className="noorix-print-hidden grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 print:hidden">
         <Card
           variant="stat"
           color="blue"
@@ -920,102 +928,105 @@ export default function CostAccountingAppsScreen() {
         />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2 print:grid-cols-1 print:gap-3">
-        <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
-          <div className="border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
-            <h2 className="m-0 text-[15px] font-bold text-noorix-text">{t('reportCostAppsSalesSection')}</h2>
-          </div>
-          <div className="space-y-5 p-4 sm:p-5">
-            <div className="mx-auto w-full max-w-lg rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] shadow-sm overflow-hidden">
-              <div className="divide-y divide-noorix-border">
-                <div className="px-4 py-3.5 sm:px-5 sm:py-4">
-                  <Field label={t('reportCostAppsGrossApp')} className="gap-2">
-                    <Input
-                      value={grossAppStr}
-                      onChange={(e: any) => setGrossAppStr(e.target.value)}
-                      inputMode="decimal"
-                      dir="ltr"
-                      className="min-h-11 w-full text-end font-medium tabular-nums"
-                    />
-                  </Field>
-                </div>
-                <div className="px-4 py-3.5 sm:px-5 sm:py-4">
-                  <Field label={t('reportCostAppsGrossCash')} className="gap-2">
-                    <Input
-                      value={grossCashStr}
-                      onChange={(e: any) => setGrossCashStr(e.target.value)}
-                      inputMode="decimal"
-                      dir="ltr"
-                      className="min-h-11 w-full text-end font-medium tabular-nums"
-                    />
-                  </Field>
-                </div>
-                <div className="px-4 py-3.5 sm:px-5 sm:py-4">
-                  <Field label={t('reportCostAppsGrossBank')} className="gap-2">
-                    <Input
-                      value={grossBankStr}
-                      onChange={(e: any) => setGrossBankStr(e.target.value)}
-                      inputMode="decimal"
-                      dir="ltr"
-                      className="min-h-11 w-full text-end font-medium tabular-nums"
-                    />
-                  </Field>
-                </div>
-              </div>
-              <div className="border-t-2 border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3.5 sm:px-5 sm:py-4">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  <span className="text-[13px] font-bold tracking-wide text-noorix-text">{t('reportCostAppsSalesInputsTotal')}</span>
-                  <span dir="ltr" className="text-[17px] font-bold tabular-nums text-noorix-blue sm:text-end">
-                    {fmt2(grossInputsSum)}
-                  </span>
-                </div>
-                <p className="m-0 mt-2 text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsSalesInputsTotalHint')}</p>
-              </div>
-            </div>
-            <div className="noorix-print-hidden space-y-3 rounded-xl border border-dashed border-noorix-border bg-[var(--noorix-surface-2)]/60 p-4 print:hidden">
-              <div className="text-[12px] font-semibold text-noorix-text">{t('reportCostAppsImportRange')}</div>
-              <div className="flex flex-wrap items-end gap-3">
-                <Field label={t('reportDateFrom')}>
-                  <Input type="date" value={importFrom} onChange={(e: any) => setImportFrom(e.target.value)} dir="ltr" className="min-h-10 min-w-[140px]" />
-                </Field>
-                <Field label={t('reportDateTo')}>
-                  <Input type="date" value={importTo} onChange={(e: any) => setImportTo(e.target.value)} dir="ltr" className="min-h-10 min-w-[140px]" />
-                </Field>
-                <Button type="button" variant="secondary" disabled={importing} onClick={handleImportSystem}>
-                  {importing ? t('loading') : t('reportCostAppsImportBtn')}
-                </Button>
-                <Button type="button" variant="ghost" onClick={() => fileRef.current?.click()}>
-                  {t('reportCostAppsCsvImport')}
-                </Button>
-                <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvPick} />
-              </div>
-              <p className="m-0 text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsImportHint')}</p>
-              <p className="m-0 text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsCsvHint')}</p>
-            </div>
-          </div>
-        </Card>
+      <Card
+        variant="surface"
+        padding="none"
+        className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none"
+      >
+        <div className="border-b border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-2)] to-[var(--noorix-surface-2)] px-4 py-3.5 sm:px-5">
+          <h2 className="m-0 text-base font-bold tracking-tight text-noorix-text sm:text-[17px]">{t('reportCostAppsInputsPanelTitle')}</h2>
+          <p className="m-0 mt-1 max-w-3xl text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsInputsPanelSubtitle')}</p>
+        </div>
 
-        <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
-          <div className="border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
-            <h2 className="m-0 text-[15px] font-bold text-noorix-text">{t('reportCostAppsTaxCommissionTitle')}</h2>
+        <div className="space-y-5 p-4 sm:p-5">
+          {/* —— المبيعات —— */}
+          <div className="space-y-3">
+            <SectionHeading>{t('reportCostAppsZoneSales')}</SectionHeading>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Field label={t('reportCostAppsGrossApp')} className="gap-1.5">
+                <Input
+                  value={grossAppStr}
+                  onChange={(e: any) => setGrossAppStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
+                />
+              </Field>
+              <Field label={t('reportCostAppsGrossCash')} className="gap-1.5">
+                <Input
+                  value={grossCashStr}
+                  onChange={(e: any) => setGrossCashStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
+                />
+              </Field>
+              <Field label={t('reportCostAppsGrossBank')} className="gap-1.5">
+                <Input
+                  value={grossBankStr}
+                  onChange={(e: any) => setGrossBankStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-full text-end text-sm font-medium tabular-nums"
+                />
+              </Field>
+            </div>
+            <div className="flex flex-col gap-1 rounded-lg border border-noorix-border bg-[var(--noorix-surface-2)] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-[12px] font-bold text-noorix-text">{t('reportCostAppsSalesInputsTotal')}</span>
+              <span dir="ltr" className="text-base font-bold tabular-nums text-noorix-blue sm:text-lg">
+                {fmt2(grossInputsSum)}
+              </span>
+            </div>
+            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px]">{t('reportCostAppsSalesInputsTotalHint')}</p>
           </div>
-          <div className="space-y-4 p-4 sm:p-5">
-            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2.5 text-sm print:border-0 print:bg-transparent print:px-0 print:py-1">
+
+          {/* —— مزامنة المبيعات —— */}
+          <div className="noorix-print-hidden space-y-3 border-t border-noorix-border pt-5 print:hidden">
+            <SectionHeading>{t('reportCostAppsZoneSync')}</SectionHeading>
+            <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+              <Field label={t('reportDateFrom')}>
+                <Input type="date" value={importFrom} onChange={(e: any) => setImportFrom(e.target.value)} dir="ltr" className="min-h-10 min-w-[132px]" />
+              </Field>
+              <Field label={t('reportDateTo')}>
+                <Input type="date" value={importTo} onChange={(e: any) => setImportTo(e.target.value)} dir="ltr" className="min-h-10 min-w-[132px]" />
+              </Field>
+              <Button type="button" variant="secondary" size="sm" disabled={importing} onClick={handleImportSystem}>
+                {importing ? t('loading') : t('reportCostAppsImportBtn')}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => fileRef.current?.click()}>
+                {t('reportCostAppsCsvImport')}
+              </Button>
+              <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvPick} />
+            </div>
+            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px]">{t('reportCostAppsImportHint')}</p>
+            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px]">{t('reportCostAppsCsvHint')}</p>
+          </div>
+
+          {/* —— ضريبة / عمولة / COGS —— */}
+          <div className="space-y-3 border-t border-noorix-border pt-5">
+            <SectionHeading>{t('reportCostAppsZoneRates')}</SectionHeading>
+            <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-noorix-border/90 bg-[var(--noorix-surface-1)] px-3 py-2 text-[13px] print:border-0 print:bg-transparent print:px-0 print:py-1">
               <input type="checkbox" className="size-4 shrink-0 rounded border-noorix-border" checked={vatInclusive} onChange={(e) => setVatInclusive(e.target.checked)} />
-              {t('reportCostAppsVatInclusive')}
+              <span>{t('reportCostAppsVatInclusive')}</span>
             </label>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Field label={t('reportCostAppsVatRate')}>
-                <Input value={vatRatePctStr} onChange={(e: any) => setVatRatePctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 max-w-[140px] text-right" />
+                <Input value={vatRatePctStr} onChange={(e: any) => setVatRatePctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-end tabular-nums" />
               </Field>
               <Field label={t('reportCostAppsCommissionPct')}>
-                <Input value={commissionPctStr} onChange={(e: any) => setCommissionPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 max-w-[140px] text-right" />
+                <Input value={commissionPctStr} onChange={(e: any) => setCommissionPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-end tabular-nums" />
+              </Field>
+              <Field label={t('reportCostAppsCogsLocalPct')} className="max-lg:col-span-2">
+                <Input value={cogsLocalPctStr} onChange={(e: any) => setCogsLocalPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-end tabular-nums" />
+              </Field>
+              <Field label={t('reportCostAppsAppMarkupPct')} className="max-lg:col-span-2">
+                <Input value={appPriceMarkupPctStr} onChange={(e: any) => setAppPriceMarkupPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-end tabular-nums" />
               </Field>
             </div>
             <Field label={t('reportCostAppsCommissionBase')}>
               <select
                 className={cn(
-                  'min-h-10 w-full max-w-md rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm',
+                  'min-h-10 w-full max-w-xl rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm',
                 )}
                 value={commissionBase}
                 onChange={(e) => setCommissionBase(e.target.value as CostAppsCommissionBase)}
@@ -1024,93 +1035,80 @@ export default function CostAccountingAppsScreen() {
                 <option value="net">{t('reportCostAppsCommissionOnNet')}</option>
               </select>
             </Field>
+            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted print:text-[10px]">{t('reportCostAppsCogsHint')}</p>
+          </div>
 
-            <div className="noorix-print-hidden space-y-3 rounded-xl border border-noorix-border bg-[var(--noorix-surface-2)]/50 p-4 print:hidden">
-              <h3 className="m-0 text-xs font-bold uppercase tracking-wide text-noorix-muted">{t('reportCostAppsReverseTitle')}</h3>
-              <div className="flex flex-wrap items-end gap-3">
-                <Field label={t('reportCostAppsTargetProfit')}>
-                  <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-[140px] text-right" />
-                </Field>
-                <Field label={t('reportCostAppsReverseAppShare')}>
-                  <Input
-                    value={reverseAppSharePctStr}
-                    onChange={(e: any) => setReverseAppSharePctStr(e.target.value)}
-                    inputMode="decimal"
-                    dir="ltr"
-                    className="min-h-10 w-[88px] text-right"
-                  />
-                </Field>
-                <Button type="button" variant="secondary" onClick={handleReverse}>
-                  {t('reportCostAppsReverseCalc')}
+          {/* —— حساب عكسي ونسبة التطبيق —— */}
+          <div className="noorix-print-hidden space-y-3 border-t border-noorix-border pt-5 print:hidden">
+            <SectionHeading>{t('reportCostAppsZoneAnalysis')}</SectionHeading>
+            <p className="m-0 -mt-1 text-[10px] text-noorix-muted">{t('reportCostAppsReverseTitle')}</p>
+            <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+              <Field label={t('reportCostAppsTargetProfit')}>
+                <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-[128px] text-end tabular-nums" />
+              </Field>
+              <Field label={t('reportCostAppsReverseAppShare')}>
+                <Input
+                  value={reverseAppSharePctStr}
+                  onChange={(e: any) => setReverseAppSharePctStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-[80px] text-end tabular-nums"
+                />
+              </Field>
+              <Button type="button" variant="secondary" size="sm" onClick={handleReverse}>
+                {t('reportCostAppsReverseCalc')}
+              </Button>
+            </div>
+            {reverseGrossStr ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm">
+                <span className="text-noorix-muted">{t('reportCostAppsGrossTotal')}:</span>
+                <strong className="tabular-nums" dir="ltr">
+                  {fmt(parseMoneyInput(reverseGrossStr).toNumber(), 2)}
+                </strong>
+                <Button type="button" variant="primary" size="sm" onClick={handleApplyReverse}>
+                  {t('reportCostAppsReverseApply')}
                 </Button>
               </div>
-              {reverseGrossStr ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-sm">
-                  <span className="text-noorix-muted">{t('reportCostAppsGrossTotal')}:</span>
-                  <strong className="tabular-nums" dir="ltr">
-                    {fmt(parseMoneyInput(reverseGrossStr).toNumber(), 2)}
-                  </strong>
-                  <Button type="button" variant="primary" size="sm" onClick={handleApplyReverse}>
-                    {t('reportCostAppsReverseApply')}
-                  </Button>
-                </div>
-              ) : null}
-              <div className="flex flex-wrap items-end gap-3 border-t border-noorix-border/70 pt-3">
-                <Field label={t('reportCostAppsAppShare')}>
-                  <Input
-                    value={appSharePctStr}
-                    onChange={(e: any) => setAppSharePctStr(e.target.value)}
-                    placeholder={plWith.grossTotal.gt(0) ? fmt(plWith.appShareOfGrossPct.toNumber(), 2) : ''}
-                    inputMode="decimal"
-                    dir="ltr"
-                    className="min-h-10 w-[104px] text-right"
-                  />
-                </Field>
-                <Button type="button" variant="secondary" onClick={handleApplyAppShare}>
-                  {t('reportCostAppsApplyShare')}
-                </Button>
-              </div>
+            ) : null}
+            <div className="flex flex-wrap items-end gap-2 border-t border-dashed border-noorix-border/80 pt-3 sm:gap-3">
+              <Field label={t('reportCostAppsAppShare')}>
+                <Input
+                  value={appSharePctStr}
+                  onChange={(e: any) => setAppSharePctStr(e.target.value)}
+                  placeholder={plWith.grossTotal.gt(0) ? fmt(plWith.appShareOfGrossPct.toNumber(), 2) : ''}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-[96px] text-end tabular-nums"
+                />
+              </Field>
+              <Button type="button" variant="secondary" size="sm" onClick={handleApplyAppShare}>
+                {t('reportCostAppsApplyShare')}
+              </Button>
             </div>
           </div>
-        </Card>
-      </div>
 
-      <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
-        <div className="border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
-          <h2 className="m-0 text-[15px] font-bold text-noorix-text">{t('reportCostAppsCogsSection')}</h2>
-        </div>
-        <div className="space-y-3 p-4 sm:p-5">
-          <p className="m-0 text-[11px] leading-relaxed text-noorix-muted print:text-[10px]">{t('reportCostAppsCogsHint')}</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t('reportCostAppsCogsLocalPct')}>
-              <Input value={cogsLocalPctStr} onChange={(e: any) => setCogsLocalPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 max-w-[140px] text-right" />
-            </Field>
-            <Field label={t('reportCostAppsAppMarkupPct')}>
-              <Input value={appPriceMarkupPctStr} onChange={(e: any) => setAppPriceMarkupPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 max-w-[140px] text-right" />
-            </Field>
+          {/* —— الرواتب —— */}
+          <div className="space-y-2 border-t border-noorix-border pt-5">
+            <SectionHeading>{t('reportCostAppsZonePayroll')}</SectionHeading>
+            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px] print:text-[10px]">{t('reportCostAppsSalaryImportHint')}</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <Field label={t('reportCostAppsSalaryAmount')} className="min-w-0 flex-1">
+                <Input
+                  value={salaryStr}
+                  onChange={(e: any) => setSalaryStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="min-h-10 w-full max-w-xl text-end tabular-nums"
+                  placeholder="0"
+                />
+              </Field>
+              <span className="noorix-print-hidden shrink-0 print:hidden">
+                <Button type="button" variant="secondary" size="sm" disabled={importingSalary} onClick={handleImportSalaryFromHr}>
+                  {importingSalary ? t('loading') : t('reportCostAppsSalaryImportBtn')}
+                </Button>
+              </span>
+            </div>
           </div>
-        </div>
-      </Card>
-
-      <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
-        <div className="border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
-          <h2 className="m-0 text-[15px] font-bold text-noorix-text print:text-xs">{t('reportCostAppsSalarySection')}</h2>
-          <p className="m-0 mt-1 text-[11px] leading-relaxed text-noorix-muted print:text-[10px]">{t('reportCostAppsSalaryImportHint')}</p>
-        </div>
-        <div className="noorix-print-hidden flex flex-wrap items-end gap-3 p-4 sm:p-5 print:hidden">
-          <Field label={t('reportCostAppsSalaryAmount')} className="min-w-[200px] flex-1">
-            <Input
-              value={salaryStr}
-              onChange={(e: any) => setSalaryStr(e.target.value)}
-              inputMode="decimal"
-              dir="ltr"
-              className="min-h-10 w-full max-w-md text-right"
-              placeholder="0"
-            />
-          </Field>
-          <Button type="button" variant="secondary" size="sm" disabled={importingSalary} onClick={handleImportSalaryFromHr}>
-            {importingSalary ? t('loading') : t('reportCostAppsSalaryImportBtn')}
-          </Button>
         </div>
       </Card>
 
