@@ -69,6 +69,13 @@ export async function getEmployeesBulk(companyId: string, tab: any = 'active'): 
   if (!res.success) return { success: false, error: res.error, data: [] };
   return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
+
+/** مجموع الراتب الشهري من حقول الموظفين النشطين (أساسي + بدلات) — للتقديرات وحاسبة التكاليف */
+export async function getEmployeesMonthlySalaryContractTotal(companyId: string): Promise<ApiParsedResult> {
+  if (!companyId) return { success: false, error: 'معرف الشركة مطلوب' };
+  return apiGet('/api/v1/employees/monthly-salary-contract-total', { companyId });
+}
+
 export async function getEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiGet(`/api/v1/employees/${id}`, { companyId });

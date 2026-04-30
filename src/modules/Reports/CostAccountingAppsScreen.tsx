@@ -6,7 +6,12 @@ import Decimal from 'decimal.js';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
-import { getDashboardSalesPack, getExpenseLines, getPeriodAnalytics, throwIfApiFailed } from '../../services/api';
+import {
+  getDashboardSalesPack,
+  getEmployeesMonthlySalaryContractTotal,
+  getExpenseLines,
+  throwIfApiFailed,
+} from '../../services/api';
 import { fmt } from '../../utils/format';
 import { TAX_RATE } from '../../utils/math-engine';
 import { formatUiDateTime, getSaudiYearMonth } from '../../utils/saudiDate';
@@ -26,10 +31,6 @@ import {
   type CostAppsScenarioRestore,
 } from './costAccountingAppsScenario';
 import { monthlyAmountFromExpenseLine } from './costAccountingAppsFixedExpenseImport';
-import {
-  salaryInvoiceTotalFromTotalsByKind,
-  unwrapTotalsByKind,
-} from './costAccountingAppsSalaryImport';
 import {
   type CostAppsSavedSlot,
   prependSavedSlot,
@@ -372,11 +373,14 @@ export default function CostAccountingAppsScreen() {
     }
     setImportingSalary(true);
     try {
-      const res = await getPeriodAnalytics(activeCompanyId, importFrom, importTo);
+      const res = await getEmployeesMonthlySalaryContractTotal(activeCompanyId);
       throwIfApiFailed(res, t('reportCostAppsSalaryLoadErr'));
-      const tbk = unwrapTotalsByKind(res.data);
-      const amt = salaryInvoiceTotalFromTotalsByKind(tbk);
-      if (amt == null) {
+      const payload = res.data as { totalAmount?: string; employeeCount?: number } | undefined;
+      const raw = payload?.totalAmount;
+      const amt = raw != null && String(raw).trim() !== ''
+        ? new Decimal(String(raw).replace(/,/g, '').trim())
+        : new Decimal(0);
+      if (!amt.isFinite() || amt.lte(0)) {
         showToast(t('reportCostAppsSalaryImportEmpty'), 'error');
         return;
       }
@@ -387,7 +391,7 @@ export default function CostAccountingAppsScreen() {
     } finally {
       setImportingSalary(false);
     }
-  }, [activeCompanyId, importFrom, importTo, showToast, t]);
+  }, [activeCompanyId, showToast, t]);
 
   const handleImportFixedExpenses = useCallback(async () => {
     if (!activeCompanyId) {

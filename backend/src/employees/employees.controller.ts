@@ -49,6 +49,13 @@ export class EmployeesController {
     return this.svc.findAllLegacy(companyId, inc === 'true');
   }
 
+  /** إجمالي الراتب الشهري من جدول الموظفين (للتقديرات / حاسبة التكاليف) — ليس من فواتير أو مسيرات */
+  @Get('monthly-salary-contract-total')
+  @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ', 'REPORTS_READ')
+  monthlySalaryContractTotal(@CompanyId() companyId: string) {
+    return this.svc.sumActiveEmployeesContractSalaryMonthly(companyId);
+  }
+
   @Get(':id')
   @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_INCREASES')
   findOne(

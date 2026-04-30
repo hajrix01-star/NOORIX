@@ -350,4 +350,39 @@ export class EmployeesService {
 
     return updated;
   }
+
+  /**
+   * مجموع الراتب الشهري من بيانات الموظف (المصدر): أساسي + بدلات الحقول المعيارية.
+   * يشمل الموظفين غير المنهي خدمتهم وغير المؤرشفين (مثل تبويب «نشط»)، بما في ذلك «إجازة».
+   */
+  async sumActiveEmployeesContractSalaryMonthly(companyId: string): Promise<{
+    totalAmount: string;
+    employeeCount: number;
+  }> {
+    const where: Prisma.EmployeeWhereInput = {
+      companyId,
+      status: { notIn: ['terminated', 'archived'] },
+    };
+    const [agg, employeeCount] = await Promise.all([
+      this.prisma.employee.aggregate({
+        where,
+        _sum: {
+          basicSalary: true,
+          housingAllowance: true,
+          transportAllowance: true,
+          otherAllowance: true,
+        },
+      }),
+      this.prisma.employee.count({ where }),
+    ]);
+    const z = (v: Prisma.Decimal | null | undefined) => v ?? new Prisma.Decimal(0);
+    const total = z(agg._sum.basicSalary)
+      .add(z(agg._sum.housingAllowance))
+      .add(z(agg._sum.transportAllowance))
+      .add(z(agg._sum.otherAllowance));
+    return {
+      totalAmount: total.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP).toFixed(2),
+      employeeCount,
+    };
+  }
 }
