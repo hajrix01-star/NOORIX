@@ -1,5 +1,5 @@
 /**
- * نموذج معزول: ربح/خسارة تقديرية (تطبيقات × محلي × ضريبة × عمولة).
+ * نموذج معزول: ربح/خسارة تقديرية (تطبيقات × محلي × ضريبة × عمولة × تكلفة مبيعات).
  * جميع العمليات بـ Decimal.js.
  */
 import Decimal from 'decimal.js';
@@ -20,6 +20,10 @@ export type CostAppsPlInput = {
   fixedTotal: Decimal;
   /** false = لا مبيعات تطبيقات ولا عمولة (مقارنة) */
   includeAppChannel: boolean;
+  /** 0–100: تكلفة المبيعات كنسبة من إجمالي مبيعات المحلي (كاش+بنك) */
+  cogsLocalPct: Decimal;
+  /** 0–100: رفع سعر التطبيقات مقابل مكافئ المحل (+30 => ÷1.30 على إجمالي التطبيقات) */
+  appPriceMarkupPct: Decimal;
 };
 
 export type CostAppsPlResult = {
@@ -31,6 +35,9 @@ export type CostAppsPlResult = {
   netSales: Decimal;
   vatAmount: Decimal;
   commission: Decimal;
+  cogsLocal: Decimal;
+  cogsApp: Decimal;
+  cogsTotal: Decimal;
   fixedTotal: Decimal;
   netProfit: Decimal;
   appShareOfGrossPct: Decimal;
@@ -42,6 +49,22 @@ function d(v: string | number | Decimal): Decimal {
   } catch {
     return new Decimal(0);
   }
+}
+
+/** معامل تكلفة المبيعات الخطي في الإجمالي: COGS_total = coeff × G */
+export function cogsCoefficientPerGrossTotal(
+  cogsLocalPct: Decimal,
+  appPriceMarkupPct: Decimal,
+  alpha: Decimal,
+): Decimal {
+  const c = d(cogsLocalPct).div(100);
+  if (c.lte(0)) return new Decimal(0);
+  const m = d(appPriceMarkupPct).div(100);
+  const onePlusM = new Decimal(1).plus(m);
+  const divisor = onePlusM.gt(0) ? onePlusM : new Decimal(1);
+  const a = d(alpha);
+  const inner = new Decimal(1).minus(a).plus(a.div(divisor));
+  return c.mul(inner);
 }
 
 export function computeCostAppsPl(inp: CostAppsPlInput): CostAppsPlResult {
@@ -66,7 +89,19 @@ export function computeCostAppsPl(inp: CostAppsPlInput): CostAppsPlResult {
     ? roundAmount(baseComm.mul(inp.commissionPct).div(100))
     : new Decimal(0);
 
-  const netProfit = roundAmount(netSales.minus(commission).minus(inp.fixedTotal));
+  const cRate = d(inp.cogsLocalPct).div(100);
+  const m = d(inp.appPriceMarkupPct).div(100);
+  const onePlusM = new Decimal(1).plus(m);
+  const divisor = onePlusM.gt(0) ? onePlusM : new Decimal(1);
+
+  const cogsLocal = roundAmount(gLocal.mul(cRate));
+  const cogsApp =
+    inp.includeAppChannel && gApp.gt(0) && cRate.gt(0)
+      ? roundAmount(gApp.mul(cRate).div(divisor))
+      : new Decimal(0);
+  const cogsTotal = roundAmount(cogsLocal.plus(cogsApp));
+
+  const netProfit = roundAmount(netSales.minus(commission).minus(cogsTotal).minus(inp.fixedTotal));
 
   const appShareOfGrossPct = grossTotal.gt(0)
     ? roundAmount(gApp.div(grossTotal).mul(100), 2)
@@ -81,6 +116,9 @@ export function computeCostAppsPl(inp: CostAppsPlInput): CostAppsPlResult {
     netSales,
     vatAmount,
     commission,
+    cogsLocal,
+    cogsApp,
+    cogsTotal,
     fixedTotal: roundAmount(inp.fixedTotal),
     netProfit,
     appShareOfGrossPct,
@@ -93,7 +131,7 @@ export type ReverseGrossTotalResult =
 
 /**
  * حجم إجمالي المبيعات (شامل/غير شامل حسب المدخل) المطلوب لتحقيق ربح مستهدف،
- * مع ثبات: نسبة التطبيقات من الإجمالي، نسبة كاش/بنك داخل المحلي، نسبة العمولة، الضريبة.
+ * مع ثبات: حصة التطبيقات من الإجمالي α، عمولة، ضريبة، وتكلفة مبيعات (محلي + تطبيقات بمكافئ المحل).
  */
 export function reverseGrossTotalForTargetProfit(params: {
   targetProfit: Decimal;
@@ -104,6 +142,8 @@ export function reverseGrossTotalForTargetProfit(params: {
   vatRate: Decimal;
   commissionPct: Decimal;
   commissionBase: CostAppsCommissionBase;
+  cogsLocalPct?: Decimal;
+  appPriceMarkupPct?: Decimal;
 }): ReverseGrossTotalResult {
   const alpha = params.appShareDecimal;
   if (alpha.lt(0) || alpha.gt(1)) return { ok: false, code: 'invalid_share' };
@@ -112,6 +152,12 @@ export function reverseGrossTotalForTargetProfit(params: {
   const r = params.vatRate;
   const onePlusR = new Decimal(1).plus(r);
   const p = params.commissionPct.div(100);
+
+  const kCogs = cogsCoefficientPerGrossTotal(
+    d(params.cogsLocalPct ?? 0),
+    d(params.appPriceMarkupPct ?? 0),
+    alpha,
+  );
 
   let denom: Decimal;
   if (params.vatInclusive) {
@@ -125,6 +171,8 @@ export function reverseGrossTotalForTargetProfit(params: {
   } else {
     denom = new Decimal(1).minus(alpha.mul(p));
   }
+
+  denom = denom.minus(kCogs);
 
   if (!denom.isFinite() || denom.lte(0)) return { ok: false, code: 'denom_non_positive' };
   return { ok: true, grossTotal: roundAmount(P.div(denom), 2) };

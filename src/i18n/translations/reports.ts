@@ -639,4 +639,19 @@ export default {
   reportCostAppsExportExcel: { ar: 'تصدير Excel', en: 'Export Excel' },
   reportCostAppsResetDraft: { ar: 'مسح المسودة المحفوطة محلياً', en: 'Clear locally saved draft' },
   reportCostAppsSavedLocal: { ar: 'تُحفظ المسودة تلقائياً في المتصفح فقط.', en: 'Draft auto-saves in the browser only.' },
+  reportCostAppsCogsSection: { ar: 'تكلفة المبيعات (COGS)', en: 'Cost of goods sold (COGS)' },
+  reportCostAppsCogsLocalPct: { ar: 'نسبة تكلفة المبيعات على مبيعات المحلي %', en: 'COGS % of local gross (cash+bank)' },
+  reportCostAppsAppMarkupPct: { ar: 'رفع سعر التطبيقات مقابل المحل %', en: 'App price uplift vs local %' },
+  reportCostAppsCogsHint: {
+    ar: 'تُحسب تكلفة المحلي = النسبة × إجمالي المحلي. تكلفة التطبيقات = النسبة × (إجمالي التطبيقات ÷ (1 + رفع السعر/100)) بحيث تبقى تكلفة السلعة كما عند سعر المحل. العمولة منفصلة.',
+    en: 'Local COGS = % × local gross. App COGS = % × (app gross ÷ (1 + uplift%/100)) so unit cost matches local pricing. Commission is separate.',
+  },
+  reportCostAppsCogsLocal: { ar: 'تكلفة مبيعات — محلي', en: 'COGS — local' },
+  reportCostAppsCogsApp: { ar: 'تكلفة مبيعات — تطبيقات', en: 'COGS — apps' },
+  reportCostAppsCogsTotal: { ar: 'إجمالي تكلفة المبيعات', en: 'Total COGS' },
+  reportCostAppsFixedTotalRow: { ar: 'المصاريف الثابتة (مجموع البنود)', en: 'Fixed costs (sum of lines)' },
+  reportCostAppsReverseAppShare: {
+    ar: 'حصة التطبيقات في الحساب العكسي %',
+    en: 'App share of total gross in reverse calc %',
+  },
 };

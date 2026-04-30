@@ -13,6 +13,12 @@ import { getSaudiYearMonth } from '../../utils/saudiDate';
 import { openPrintWindow } from '../../utils/printUtils';
 import { exportToExcel } from '../../utils/exportUtils';
 import { Button, Input, cn } from '../../ui';
+import {
+  aggregateSalesChannelsInRange,
+  computeCostAppsPl,
+  reverseGrossTotalForTargetProfit,
+  type CostAppsCommissionBase,
+} from './costAccountingAppsModel';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -22,12 +28,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-import {
-  aggregateSalesChannelsInRange,
-  computeCostAppsPl,
-  reverseGrossTotalForTargetProfit,
-  type CostAppsCommissionBase,
-} from './costAccountingAppsModel';
 
 type FixedLine = { id: string; label: string; amount: string };
 
@@ -123,6 +123,10 @@ export default function CostAccountingAppsScreen() {
   const [targetProfitStr, setTargetProfitStr] = useState('20000');
   const [reverseGrossStr, setReverseGrossStr] = useState('');
   const [appSharePctStr, setAppSharePctStr] = useState('');
+  const [cogsLocalPctStr, setCogsLocalPctStr] = useState('0');
+  const [appPriceMarkupPctStr, setAppPriceMarkupPctStr] = useState('0');
+  /** حصة التطبيقات من إجمالي المبيعات في الحساب العكسي (%) */
+  const [reverseAppSharePctStr, setReverseAppSharePctStr] = useState('30');
 
   const vatRateDec = useMemo(() => {
     const p = parseMoneyInput(vatRatePctStr);
@@ -149,8 +153,21 @@ export default function CostAccountingAppsScreen() {
       commissionPct: commissionPctDec,
       commissionBase,
       fixedTotal,
+      cogsLocalPct: parseMoneyInput(cogsLocalPctStr),
+      appPriceMarkupPct: parseMoneyInput(appPriceMarkupPctStr),
     }),
-    [grossApp, grossCash, grossBank, vatInclusive, vatRateDec, commissionPctDec, commissionBase, fixedTotal],
+    [
+      grossApp,
+      grossCash,
+      grossBank,
+      vatInclusive,
+      vatRateDec,
+      commissionPctDec,
+      commissionBase,
+      fixedTotal,
+      cogsLocalPctStr,
+      appPriceMarkupPctStr,
+    ],
   );
 
   const plWith = useMemo(() => computeCostAppsPl({ ...baseParams, includeAppChannel: true }), [baseParams]);
@@ -172,6 +189,9 @@ export default function CostAccountingAppsScreen() {
       if (Array.isArray(o.fixedLines) && o.fixedLines.length) setFixedLines(o.fixedLines);
       if (o.importFrom) setImportFrom(String(o.importFrom));
       if (o.importTo) setImportTo(String(o.importTo));
+      if (o.cogsLocalPctStr != null) setCogsLocalPctStr(String(o.cogsLocalPctStr));
+      if (o.appPriceMarkupPctStr != null) setAppPriceMarkupPctStr(String(o.appPriceMarkupPctStr));
+      if (o.reverseAppSharePctStr != null) setReverseAppSharePctStr(String(o.reverseAppSharePctStr));
     } catch {
       /* ignore */
     }
@@ -190,6 +210,9 @@ export default function CostAccountingAppsScreen() {
       fixedLines,
       importFrom,
       importTo,
+      cogsLocalPctStr,
+      appPriceMarkupPctStr,
+      reverseAppSharePctStr,
     };
     try {
       localStorage.setItem(draftKey(activeCompanyId), JSON.stringify(payload));
@@ -208,6 +231,9 @@ export default function CostAccountingAppsScreen() {
     fixedLines,
     importFrom,
     importTo,
+    cogsLocalPctStr,
+    appPriceMarkupPctStr,
+    reverseAppSharePctStr,
   ]);
 
   const fmt2 = (d: Decimal) => fmt(d.toNumber(), 2);
@@ -276,8 +302,13 @@ export default function CostAccountingAppsScreen() {
   );
 
   const handleReverse = useCallback(() => {
-    const gTot = plWith.grossTotal;
-    const alpha = gTot.gt(0) ? grossApp.div(gTot) : new Decimal(0);
+    const alphaPct = parseMoneyInput(reverseAppSharePctStr);
+    const alpha = alphaPct.div(100);
+    if (alpha.lt(0) || alpha.gt(1)) {
+      showToast(t('reportCostAppsReverseErr'), 'error');
+      setReverseGrossStr('');
+      return;
+    }
     const rev = reverseGrossTotalForTargetProfit({
       targetProfit: parseMoneyInput(targetProfitStr),
       fixedTotal,
@@ -286,6 +317,8 @@ export default function CostAccountingAppsScreen() {
       vatRate: vatRateDec,
       commissionPct: commissionPctDec,
       commissionBase,
+      cogsLocalPct: parseMoneyInput(cogsLocalPctStr),
+      appPriceMarkupPct: parseMoneyInput(appPriceMarkupPctStr),
     });
     if (!rev.ok) {
       showToast(t('reportCostAppsReverseErr'), 'error');
@@ -294,11 +327,12 @@ export default function CostAccountingAppsScreen() {
     }
     setReverseGrossStr(rev.grossTotal.toFixed(2));
   }, [
+    appPriceMarkupPctStr,
+    cogsLocalPctStr,
     commissionBase,
     commissionPctDec,
     fixedTotal,
-    grossApp,
-    plWith.grossTotal,
+    reverseAppSharePctStr,
     showToast,
     t,
     targetProfitStr,
@@ -312,8 +346,12 @@ export default function CostAccountingAppsScreen() {
       showToast(t('reportCostAppsReverseErr'), 'error');
       return;
     }
-    const gTot = plWith.grossTotal;
-    const alpha = gTot.gt(0) ? grossApp.div(gTot) : new Decimal(0);
+    const alphaPct = parseMoneyInput(reverseAppSharePctStr);
+    const alpha = alphaPct.div(100);
+    if (alpha.lt(0) || alpha.gt(1)) {
+      showToast(t('reportCostAppsReverseErr'), 'error');
+      return;
+    }
     const loc = grossCash.plus(grossBank);
     const cashRatio = loc.gt(0) ? grossCash.div(loc) : new Decimal(0.5);
     const gApp = G.mul(alpha);
@@ -324,7 +362,7 @@ export default function CostAccountingAppsScreen() {
     setGrossCashStr(gCash.toFixed(2));
     setGrossBankStr(gBank.toFixed(2));
     showToast(t('reportCostAppsImportOk'), 'success');
-  }, [grossApp, grossBank, grossCash, plWith.grossTotal, reverseGrossStr, showToast, t]);
+  }, [grossBank, grossCash, reverseAppSharePctStr, reverseGrossStr, showToast, t]);
 
   const handleApplyAppShare = useCallback(() => {
     const G = plWith.grossTotal;
@@ -356,11 +394,15 @@ export default function CostAccountingAppsScreen() {
       [t('reportCostAppsNetSales'), fmt2(plWith.netSales), fmt2(plWithout.netSales)],
       [t('reportCostAppsVatExtracted'), fmt2(plWith.vatAmount), fmt2(plWithout.vatAmount)],
       [t('reportCostAppsCommission'), fmt2(plWith.commission), fmt2(plWithout.commission)],
+      [t('reportCostAppsCogsLocal'), fmt2(plWith.cogsLocal), fmt2(plWithout.cogsLocal)],
+      [t('reportCostAppsCogsApp'), fmt2(plWith.cogsApp), fmt2(plWithout.cogsApp)],
+      [t('reportCostAppsCogsTotal'), fmt2(plWith.cogsTotal), fmt2(plWithout.cogsTotal)],
+      [t('reportCostAppsFixedTotalRow'), fmt2(plWith.fixedTotal), fmt2(plWithout.fixedTotal)],
       [t('reportCostAppsNetProfit'), fmt2(plWith.netProfit), fmt2(plWithout.netProfit)],
     ];
     const body = `
       <div style="font-size:11px;line-height:1.35;margin-bottom:8px;">
-        ${vatInclusive ? t('reportCostAppsVatInclusive') : '—'} · ${t('reportCostAppsCommissionPct')}: ${fmt(commissionPctDec.toNumber(), 2)}% · ${t('reportCostAppsVatRate')}: ${fmt(vatRateDec.mul(100).toNumber(), 2)}%
+        ${vatInclusive ? t('reportCostAppsVatInclusive') : '—'} · ${t('reportCostAppsCommissionPct')}: ${fmt(commissionPctDec.toNumber(), 2)}% · ${t('reportCostAppsVatRate')}: ${fmt(vatRateDec.mul(100).toNumber(), 2)}% · ${t('reportCostAppsCogsLocalPct')}: ${fmt(parseMoneyInput(cogsLocalPctStr).toNumber(), 2)}% · ${t('reportCostAppsAppMarkupPct')}: ${fmt(parseMoneyInput(appPriceMarkupPctStr).toNumber(), 2)}%
       </div>
       <table>
         <thead><tr><th>${t('reportItem')}</th><th>${t('reportCostAppsScenarioWithApps')}</th><th>${t('reportCostAppsScenarioNoApps')}</th></tr></thead>
@@ -403,8 +445,10 @@ export default function CostAccountingAppsScreen() {
       body,
     });
   }, [
+    appPriceMarkupPctStr,
     commissionPctDec,
     companyName,
+    cogsLocalPctStr,
     fixedLines,
     fixedTotal,
     plWith,
@@ -422,6 +466,10 @@ export default function CostAccountingAppsScreen() {
       { item: t('reportCostAppsGrossTotal'), withApps: plWith.grossTotal.toNumber(), noApps: plWithout.grossTotal.toNumber() },
       { item: t('reportCostAppsNetSales'), withApps: plWith.netSales.toNumber(), noApps: plWithout.netSales.toNumber() },
       { item: t('reportCostAppsCommission'), withApps: plWith.commission.toNumber(), noApps: plWithout.commission.toNumber() },
+      { item: t('reportCostAppsCogsLocal'), withApps: plWith.cogsLocal.toNumber(), noApps: plWithout.cogsLocal.toNumber() },
+      { item: t('reportCostAppsCogsApp'), withApps: plWith.cogsApp.toNumber(), noApps: plWithout.cogsApp.toNumber() },
+      { item: t('reportCostAppsCogsTotal'), withApps: plWith.cogsTotal.toNumber(), noApps: plWithout.cogsTotal.toNumber() },
+      { item: t('reportCostAppsFixedTotalRow'), withApps: plWith.fixedTotal.toNumber(), noApps: plWithout.fixedTotal.toNumber() },
       { item: t('reportCostAppsNetProfit'), withApps: plWith.netProfit.toNumber(), noApps: plWithout.netProfit.toNumber() },
     ];
     await exportToExcel({
@@ -445,6 +493,9 @@ export default function CostAccountingAppsScreen() {
     setGrossAppStr('');
     setGrossCashStr('');
     setGrossBankStr('');
+    setCogsLocalPctStr('0');
+    setAppPriceMarkupPctStr('0');
+    setReverseAppSharePctStr('30');
     setFixedLines([newLine()]);
     setReverseGrossStr('');
     showToast(lang === 'ar' ? 'تم المسح.' : 'Cleared.', 'success');
@@ -536,6 +587,15 @@ export default function CostAccountingAppsScreen() {
               <Field label={t('reportCostAppsTargetProfit')}>
                 <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right w-[140px]" />
               </Field>
+              <Field label={t('reportCostAppsReverseAppShare')}>
+                <Input
+                  value={reverseAppSharePctStr}
+                  onChange={(e: any) => setReverseAppSharePctStr(e.target.value)}
+                  inputMode="decimal"
+                  dir="ltr"
+                  className="text-right w-[80px]"
+                />
+              </Field>
               <Button type="button" variant="secondary" onClick={handleReverse}>
                 {t('reportCostAppsReverseCalc')}
               </Button>
@@ -565,6 +625,19 @@ export default function CostAccountingAppsScreen() {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-noorix-border p-4 print:border print:p-2">
+        <h3 className="mt-0 mb-2 text-sm font-bold print:text-xs">{t('reportCostAppsCogsSection')}</h3>
+        <p className="mb-3 text-[11px] leading-relaxed text-noorix-muted print:text-[10px]">{t('reportCostAppsCogsHint')}</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label={t('reportCostAppsCogsLocalPct')}>
+            <Input value={cogsLocalPctStr} onChange={(e: any) => setCogsLocalPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right max-w-[120px]" />
+          </Field>
+          <Field label={t('reportCostAppsAppMarkupPct')}>
+            <Input value={appPriceMarkupPctStr} onChange={(e: any) => setAppPriceMarkupPctStr(e.target.value)} inputMode="decimal" dir="ltr" className="text-right max-w-[120px]" />
+          </Field>
         </div>
       </div>
 
@@ -667,6 +740,42 @@ export default function CostAccountingAppsScreen() {
                 </td>
                 <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
                   {fmt2(plWithout.commission)}
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsCogsLocal')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWith.cogsLocal)}
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWithout.cogsLocal)}
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsCogsApp')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWith.cogsApp)}
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWithout.cogsApp)}
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsCogsTotal')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWith.cogsTotal)}
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWithout.cogsTotal)}
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-noorix-border px-2 py-2">{t('reportCostAppsFixedTotalRow')}</td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWith.fixedTotal)}
+                </td>
+                <td className="border border-noorix-border px-2 py-2 text-end" dir="ltr">
+                  {fmt2(plWithout.fixedTotal)}
                 </td>
               </tr>
               <tr>
