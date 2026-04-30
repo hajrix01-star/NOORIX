@@ -591,9 +591,6 @@ export default function CostAccountingAppsScreen() {
       [t('reportCostAppsNetProfit'), fmt2(plWith.netProfit), fmt2(plWithout.netProfit)],
     ];
     const body = `
-      <div style="font-size:11px;line-height:1.35;margin-bottom:8px;">
-        ${vatInclusive ? t('reportCostAppsVatInclusive') : '—'} · ${t('reportCostAppsCommissionPct')}: ${fmt(commissionPctDec.toNumber(), 2)}% · ${t('reportCostAppsVatRate')}: ${fmt(vatRateDec.mul(100).toNumber(), 2)}% · ${t('reportCostAppsCogsLocalPct')}: ${fmt(parseMoneyInput(cogsLocalPctStr).toNumber(), 2)}% · ${t('reportCostAppsAppMarkupPct')}: ${fmt(parseMoneyInput(appPriceMarkupPctStr).toNumber(), 2)}%
-      </div>
       <table>
         <thead><tr><th>${t('reportItem')}</th><th>${t('reportCostAppsScenarioWithApps')}</th><th>${t('reportCostAppsScenarioNoApps')}</th></tr></thead>
         <tbody>
@@ -636,20 +633,7 @@ export default function CostAccountingAppsScreen() {
       `,
       body,
     });
-  }, [
-    appPriceMarkupPctStr,
-    commissionPctDec,
-    companyName,
-    cogsLocalPctStr,
-    fixedAnnualTotal,
-    fixedLines,
-    fixedTotal,
-    plWith,
-    plWithout,
-    t,
-    vatInclusive,
-    vatRateDec,
-  ]);
+  }, [companyName, fixedAnnualTotal, fixedLines, fixedTotal, plWith, plWithout, t]);
 
   const handleExportExcel = useCallback(async () => {
     const rows = [
@@ -904,22 +888,11 @@ export default function CostAccountingAppsScreen() {
     <div className="cost-apps-calc mx-auto flex w-full max-w-7xl flex-col gap-4 md:gap-5 print:max-w-none print:gap-2">
       <header className="noorix-print-hidden overflow-hidden rounded-2xl border border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-1)] to-[var(--noorix-surface-1)] p-4 shadow-sm sm:p-5 print:hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="m-0 text-xl font-bold tracking-tight text-noorix-text sm:text-2xl">{t('reportCostAppsTitle')}</h1>
               <span className="rounded-full border border-noorix-border bg-[var(--noorix-surface-2)] px-2.5 py-0.5 text-[11px] font-semibold text-noorix-muted">
                 {t('reportCostAppsNav')}
-              </span>
-            </div>
-            <p className="m-0 max-w-2xl text-sm leading-relaxed text-noorix-muted">{t('reportCostAppsDesc')}</p>
-            <div className="flex flex-wrap gap-2 text-[11px] text-noorix-muted">
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-[var(--noorix-surface-2)] px-2 py-1">
-                <span className="size-1.5 shrink-0 rounded-full bg-noorix-green" aria-hidden />
-                {t('reportCostAppsSavedLocal')}
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-[var(--noorix-surface-2)] px-2 py-1">
-                <span className="size-1.5 shrink-0 rounded-full bg-noorix-amber" aria-hidden />
-                {t('reportCostAppsScenarioHint')}
               </span>
             </div>
           </div>
@@ -949,7 +922,6 @@ export default function CostAccountingAppsScreen() {
           >
             <div className="border-b border-noorix-border bg-gradient-to-br from-noorix-blue/[0.07] via-[var(--noorix-surface-2)] to-[var(--noorix-surface-2)] px-4 py-3.5 sm:px-5">
               <h2 className="m-0 text-base font-bold tracking-tight text-noorix-text sm:text-[17px]">{t('reportCostAppsInputsPanelTitle')}</h2>
-              <p className="m-0 mt-1 max-w-3xl text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsInputsPanelSubtitle')}</p>
             </div>
 
             <div className="space-y-5 p-4 sm:p-5">
@@ -991,7 +963,6 @@ export default function CostAccountingAppsScreen() {
                 {fmt2(grossInputsSum)}
               </span>
             </div>
-            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px]">{t('reportCostAppsSalesInputsTotalHint')}</p>
           </div>
 
           {/* —— مزامنة المبيعات —— */}
@@ -1012,8 +983,6 @@ export default function CostAccountingAppsScreen() {
               </Button>
               <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvPick} />
             </div>
-            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px]">{t('reportCostAppsImportHint')}</p>
-            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px]">{t('reportCostAppsCsvHint')}</p>
           </div>
 
           {/* —— ضريبة / عمولة / COGS —— */}
@@ -1049,13 +1018,12 @@ export default function CostAccountingAppsScreen() {
                 <option value="net">{t('reportCostAppsCommissionOnNet')}</option>
               </select>
             </Field>
-            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted print:text-[10px]">{t('reportCostAppsCogsHint')}</p>
+
           </div>
 
           {/* —— حساب عكسي ونسبة التطبيق —— */}
           <div className="noorix-print-hidden space-y-3 border-t border-noorix-border pt-5 print:hidden">
             <SectionHeading tone="slate">{t('reportCostAppsZoneAnalysis')}</SectionHeading>
-            <p className="m-0 -mt-1 text-[10px] text-noorix-muted">{t('reportCostAppsReverseTitle')}</p>
             <div className="flex flex-wrap items-end gap-2 sm:gap-3">
               <Field label={t('reportCostAppsTargetProfit')}>
                 <Input value={targetProfitStr} onChange={(e: any) => setTargetProfitStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-[128px] text-end tabular-nums" />
@@ -1104,7 +1072,6 @@ export default function CostAccountingAppsScreen() {
           {/* —— الرواتب —— */}
           <div className="space-y-2 border-t border-noorix-border pt-5">
             <SectionHeading tone="rose">{t('reportCostAppsZonePayroll')}</SectionHeading>
-            <p className="m-0 text-[10px] leading-relaxed text-noorix-muted sm:text-[11px] print:text-[10px]">{t('reportCostAppsSalaryImportHint')}</p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
               <Field label={t('reportCostAppsSalaryAmount')} className="min-w-0 flex-1">
                 <Input
@@ -1135,9 +1102,6 @@ export default function CostAccountingAppsScreen() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
           <div className="min-w-0">
             <h2 className="m-0 text-[15px] font-bold print:text-xs">{t('reportCostAppsFixedLines')}</h2>
-            <p className="noorix-print-hidden m-0 mt-1 text-[11px] leading-relaxed text-noorix-muted print:hidden">
-              {t('reportCostAppsFixedPerCompanyNote')}
-            </p>
           </div>
           <div className="noorix-print-hidden flex flex-wrap gap-2 print:hidden">
             <Button type="button" variant="secondary" size="sm" disabled={importingFixedLines} onClick={handleImportFixedExpenses}>
@@ -1148,8 +1112,6 @@ export default function CostAccountingAppsScreen() {
             </Button>
           </div>
         </div>
-        <p className="noorix-print-hidden mx-4 mt-3 text-[11px] leading-relaxed text-noorix-muted print:hidden">{t('reportCostAppsFixedImportHint')}</p>
-        <p className="mx-4 mt-2 text-[11px] text-noorix-muted print:mt-1 print:text-[10px]">{t('reportCostAppsFixedMonthlyNote')}</p>
         <div className="overflow-x-auto p-2 sm:p-0 print:p-0">
           <table className="w-full border-collapse border border-noorix-border text-sm print:text-[11px]">
             <thead>
@@ -1218,7 +1180,6 @@ export default function CostAccountingAppsScreen() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
           <div className="min-w-0">
             <h2 className="m-0 text-[15px] font-bold">{t('reportCostAppsSavedSlotsTitle')}</h2>
-            <p className="m-0 mt-1 text-[11px] leading-relaxed text-noorix-muted">{t('reportCostAppsSavedSlotsHint')}</p>
           </div>
           <Button type="button" variant="secondary" size="sm" onClick={handleSaveCalculatorSlot}>
             {t('reportCostAppsSaveSlotBtn')}
@@ -1295,7 +1256,6 @@ export default function CostAccountingAppsScreen() {
       <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
         <div className="border-s-4 border-s-noorix-blue border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
           <h2 className="m-0 text-[15px] font-bold text-noorix-text print:text-xs">{t('reportCostAppsPlSummaryTitle')}</h2>
-          <p className="m-0 mt-1 text-[11px] text-noorix-muted print:hidden">{t('reportCostAppsNetProfit')}</p>
         </div>
         <div className="overflow-x-auto p-2 sm:p-0 print:p-0">
           <table className="w-full border-collapse border border-noorix-border text-sm print:text-[11px]">
@@ -1403,7 +1363,6 @@ export default function CostAccountingAppsScreen() {
       </Card>
 
       <div className="noorix-print-hidden rounded-xl border border-noorix-border bg-[var(--noorix-surface-2)] p-4 print:hidden">
-        <p className="m-0 mb-3 text-[11px] font-semibold uppercase tracking-wide text-noorix-muted">{t('actions')}</p>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="secondary" onClick={handlePrint}>
             {t('reportCostAppsPrint')}
