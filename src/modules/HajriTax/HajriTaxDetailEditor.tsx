@@ -44,6 +44,10 @@ export default function HajriTaxDetailEditor({
   setSalesAmountIncludesVat,
   readOnly = false,
   onSwitchToEdit,
+  filingSubmitted = false,
+  onApproveFiling,
+  onReopenFiling,
+  filingActionPending = false,
 }: any) {
   const dueNet = netPayableDraft >= 0;
 
@@ -96,6 +100,26 @@ export default function HajriTaxDetailEditor({
 
   return (
     <div className="space-y-5">
+      {filingSubmitted ? (
+        <div className="rounded-lg border border-emerald-500/40 bg-emerald-50/90 px-4 py-3 text-[13px] text-emerald-950 dark:border-emerald-600/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span>{t('hajriTaxFilingApprovedBanner')}</span>
+            {onReopenFiling ? (
+              <Button
+                type="button"
+                variant="warning"
+                size="sm"
+                className="shrink-0"
+                loading={filingActionPending}
+                disabled={filingActionPending}
+                onClick={onReopenFiling}
+              >
+                {t('hajriTaxReopenFiling')}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {readOnly ? (
         <div className="rounded-lg border border-noorix-blue/30 bg-[var(--noorix-blue-6)] px-4 py-3 text-[13px] text-noorix-text">
           {t('hajriTaxViewModeBanner')}
@@ -131,6 +155,18 @@ export default function HajriTaxDetailEditor({
           {readOnly && onSwitchToEdit ? (
             <Button type="button" variant="primary" size="sm" onClick={onSwitchToEdit}>
               {t('hajriTaxActionEdit')}
+            </Button>
+          ) : null}
+          {!readOnly && !filingSubmitted && onApproveFiling ? (
+            <Button
+              type="button"
+              variant="success"
+              size="sm"
+              loading={filingActionPending}
+              disabled={filingActionPending}
+              onClick={onApproveFiling}
+            >
+              {t('hajriTaxApproveFiling')}
             </Button>
           ) : null}
           {!readOnly ? (

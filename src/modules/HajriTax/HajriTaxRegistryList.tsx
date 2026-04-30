@@ -33,6 +33,8 @@ export default function HajriTaxRegistryList({
   onNewDeclaration,
   onViewRow,
   onEditRow,
+  onRegistryFilingChange,
+  filingBusyRowId,
   jsonToolbar,
 }: any) {
   const yearOptions = useMemo(() => {
@@ -122,7 +124,7 @@ export default function HajriTaxRegistryList({
       ) : (
         <div className="noorix-surface-card overflow-hidden p-0">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1280px] table-fixed border-collapse text-[14px]">
+            <table className="w-full min-w-[1480px] table-fixed border-collapse text-[14px]">
               <thead>
                 <tr>
                   <th className="border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-3 py-3 text-end font-bold">
@@ -225,6 +227,31 @@ export default function HajriTaxRegistryList({
                       </td>
                       <td className="sticky end-0 border-b border-noorix-border bg-noorix-surface px-3 py-2 text-end shadow-[inset_1px_0_0_var(--noorix-border)]">
                         <div className="flex flex-wrap justify-end gap-2">
+                          {onRegistryFilingChange ? (
+                            submitted ? (
+                              <Button
+                                type="button"
+                                variant="warning"
+                                size="sm"
+                                loading={filingBusyRowId === row.id}
+                                disabled={filingBusyRowId != null && filingBusyRowId !== row.id}
+                                onClick={() => onRegistryFilingChange(row, false)}
+                              >
+                                {t('hajriTaxReopenFiling')}
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="success"
+                                size="sm"
+                                loading={filingBusyRowId === row.id}
+                                disabled={filingBusyRowId != null && filingBusyRowId !== row.id}
+                                onClick={() => onRegistryFilingChange(row, true)}
+                              >
+                                {t('hajriTaxApproveFiling')}
+                              </Button>
+                            )
+                          ) : null}
                           <Button type="button" variant="ghost" size="sm" onClick={() => onViewRow(row)}>
                             {t('hajriTaxActionView')}
                           </Button>

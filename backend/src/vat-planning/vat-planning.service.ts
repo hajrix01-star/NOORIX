@@ -14,6 +14,8 @@ export type UpsertVatPlanningDto = {
   paymentTarget?: number | null;
   notes?: string | null;
   importedAt?: string | null;
+  /** اعتماد التقديم في السجل؛ إن غُفل عند التحديث يُحافَظ على القيمة الحالية في قاعدة البيانات */
+  filingSubmitted?: boolean;
 };
 
 @Injectable()
@@ -99,6 +101,7 @@ export class VatPlanningService {
         paymentTarget: r.paymentTarget?.toString() ?? null,
         notes: r.notes,
         importedAt: r.importedAt?.toISOString() ?? null,
+        filingSubmitted: r.filingSubmitted === true,
         updatedAt: r.updatedAt.toISOString(),
         company: r.company,
       })),
@@ -145,6 +148,7 @@ export class VatPlanningService {
         paymentTarget: r.paymentTarget?.toString() ?? null,
         notes: r.notes,
         importedAt: r.importedAt?.toISOString() ?? null,
+        filingSubmitted: r.filingSubmitted === true,
         updatedAt: r.updatedAt.toISOString(),
         company: r.company,
       })),
@@ -186,6 +190,7 @@ export class VatPlanningService {
         paymentTarget,
         notes: dto.notes ?? null,
         importedAt: importedAt ?? undefined,
+        filingSubmitted: dto.filingSubmitted ?? false,
       },
       update: {
         payload: payload as Prisma.InputJsonValue,
@@ -193,6 +198,7 @@ export class VatPlanningService {
         paymentTarget,
         notes: dto.notes ?? null,
         ...(dto.importedAt !== undefined ? { importedAt } : {}),
+        ...(dto.filingSubmitted !== undefined ? { filingSubmitted: dto.filingSubmitted } : {}),
       },
       include: {
         company: {
@@ -213,6 +219,7 @@ export class VatPlanningService {
         paymentTarget: row.paymentTarget?.toString() ?? null,
         notes: row.notes,
         importedAt: row.importedAt?.toISOString() ?? null,
+        filingSubmitted: row.filingSubmitted === true,
         updatedAt: row.updatedAt.toISOString(),
         company: row.company,
       },

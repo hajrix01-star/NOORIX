@@ -570,6 +570,14 @@ export default {
   hajriTaxColFiling: { ar: 'التقديم', en: 'Filing' },
   hajriTaxSubmittedYes: { ar: 'تم التقديم', en: 'Submitted' },
   hajriTaxSubmittedNo: { ar: 'مسودة', en: 'Draft' },
+  hajriTaxApproveFiling: { ar: 'اعتماد التقديم', en: 'Confirm filing' },
+  hajriTaxReopenFiling: { ar: 'إعادة فتح', en: 'Reopen for editing' },
+  hajriTaxFilingApprovedBanner: {
+    ar: 'تم اعتماد هذا الإقرار كـ«مقدَّم» في السجل. يمكنك إعادة الفتح للتحرير عند الحاجة.',
+    en: 'This declaration is marked as filed in the registry. You can reopen it to edit if needed.',
+  },
+  hajriTaxFilingApprovedOk: { ar: 'تم اعتماد التقديم.', en: 'Filing confirmed.' },
+  hajriTaxFilingReopenedOk: { ar: 'تمت إعادة فتح الإقرار للتحرير.', en: 'Declaration reopened for editing.' },
   hajriTaxFilterAllYears: { ar: 'كل السنوات', en: 'All years' },
   hajriTaxFilterAllQuarters: { ar: 'كل الأرباع', en: 'All quarters' },
   hajriTaxRegistryEmpty: {

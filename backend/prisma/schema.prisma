@@ -159,6 +159,8 @@ model VatPlanningQuarter {
   sourceSnapshot   Json?     @map("source_snapshot")
   paymentTarget    Decimal?  @map("payment_target") @db.Decimal(18, 4)
   notes            String?   @db.Text
+  /// اعتماد التقديم الرسمي في سجل HAJRI (يمكن إعادة فتح التحرير لاحقاً)
+  filingSubmitted  Boolean   @default(false) @map("filing_submitted")
   importedAt       DateTime? @map("imported_at")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")

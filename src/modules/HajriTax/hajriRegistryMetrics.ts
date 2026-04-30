@@ -60,11 +60,14 @@ export function buildCompanyFilterSelectOptions(
   });
 }
 
-/** يُعرض «تم التقديم» إذا وُجدت إشارة في الملاحظات أو لقطة المصدر أو زرع الأرشيف */
+/** يُعرض «تم التقديم» من عمود filingSubmitted أو إشارات قديمة في الملاحظات/المصدر */
 export function isHajriDeclarationSubmitted(row: any): boolean {
-  const notes = row.notes || '';
+  if (row && typeof row.filingSubmitted === 'boolean') {
+    return row.filingSubmitted === true;
+  }
+  const notes = row?.notes || '';
   if (/مقدَّم|مقدم|تم التقديم|submitted|filed/i.test(notes)) return true;
-  const ss = row.sourceSnapshot;
+  const ss = row?.sourceSnapshot;
   if (ss && typeof ss === 'object') {
     if (ss.submitted === true) return true;
     if (ss.source === 'seed-vat-planning-history') return true;

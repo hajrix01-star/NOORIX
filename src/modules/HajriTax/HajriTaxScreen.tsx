@@ -89,6 +89,8 @@ export default function HajriTaxScreen() {
   const [notes, setNotes] = useState('');
   const [sourceSnapshot, setSourceSnapshot] = useState<any>(null);
   const [importIso, setImportIso] = useState<any>(null);
+  const [detailFilingSubmitted, setDetailFilingSubmitted] = useState(false);
+  const [filingBusyRowId, setFilingBusyRowId] = useState<string | null>(null);
   const [saveHint, setSaveHint] = useState('');
   const [showSimulator, setShowSimulator] = useState(true);
   const [importingReport, setImportingReport] = useState(false);
@@ -200,6 +202,36 @@ export default function HajriTaxScreen() {
 
   const upsertMutation = useUpsertVatPlanning();
 
+  const buildUpsertFromRegistryRow = useCallback((row: any, overrides: Record<string, unknown> = {}) => {
+    const payload = normalizeDisclosureDecimals(
+      syncVatPlanningSummaryFields(mergeImportedDisclosure(defaultDisclosureData(), registryPayload(row))),
+    );
+    const pt = row.paymentTarget != null ? parseFloat(String(row.paymentTarget)) : NaN;
+    return {
+      companyId: row.companyId,
+      year: row.year,
+      quarter: row.quarter,
+      payload,
+      sourceSnapshot: row.sourceSnapshot ?? undefined,
+      paymentTarget: Number.isFinite(pt) ? pt : null,
+      notes: row.notes ?? null,
+      importedAt: row.importedAt ?? undefined,
+      ...overrides,
+    };
+  }, []);
+
+  const handleRegistryFilingChange = useCallback(
+    async (row: any, next: boolean) => {
+      setFilingBusyRowId(row.id);
+      try {
+        await upsertMutation.mutateAsync(buildUpsertFromRegistryRow(row, { filingSubmitted: next }));
+      } finally {
+        setFilingBusyRowId(null);
+      }
+    },
+    [buildUpsertFromRegistryRow, upsertMutation],
+  );
+
   const recordByCompany = useMemo(() => {
     const m = new Map();
     (apiRecords || []).forEach((r: any) => m.set(r.companyId, r));
@@ -236,6 +268,7 @@ export default function HajriTaxScreen() {
       setNotes(rec?.notes || '');
       setSourceSnapshot(rec?.sourceSnapshot ?? null);
       setImportIso(rec?.importedAt || null);
+      setDetailFilingSubmitted(rec ? isHajriDeclarationSubmitted(rec) : false);
       setDetailCompanyId(companyId);
       setDetailReadOnly(false);
       setSaveHint('');
@@ -254,6 +287,7 @@ export default function HajriTaxScreen() {
     setNotes(row.notes || '');
     setSourceSnapshot(row.sourceSnapshot ?? null);
     setImportIso(row.importedAt || null);
+    setDetailFilingSubmitted(isHajriDeclarationSubmitted(row));
     setDetailCompanyId(row.companyId);
     setSaveHint('');
   }, []);
@@ -273,12 +307,14 @@ export default function HajriTaxScreen() {
         setNotes(rec.notes || '');
         setSourceSnapshot(rec.sourceSnapshot ?? null);
         setImportIso(rec.importedAt || null);
+        setDetailFilingSubmitted(isHajriDeclarationSubmitted(rec));
       } else {
         setDraftData(defaultDisclosureData());
         setPaymentTargetStr('');
         setNotes('');
         setSourceSnapshot(null);
         setImportIso(null);
+        setDetailFilingSubmitted(false);
       }
       setDetailCompanyId(companyId);
       setSaveHint('');
@@ -289,6 +325,7 @@ export default function HajriTaxScreen() {
   const closeDetail = useCallback(() => {
     setDetailCompanyId(null);
     setDetailReadOnly(false);
+    setDetailFilingSubmitted(false);
     refetch();
     refetchRegistry();
     setSearchParams((sp: any) => {
@@ -442,6 +479,38 @@ export default function HajriTaxScreen() {
     );
   }, [paymentTargetStr, detailReadOnly]);
 
+  const persistDetailFilingSubmitted = useCallback(
+    async (next: boolean) => {
+      if (!detailCompanyId) return;
+      const pt = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
+      await upsertMutation.mutateAsync({
+        companyId: detailCompanyId,
+        year,
+        quarter,
+        payload: normalizeDisclosureDecimals(syncVatPlanningSummaryFields(draftData)),
+        sourceSnapshot: sourceSnapshot ?? undefined,
+        paymentTarget: Number.isFinite(pt) && Math.abs(pt) > 1e-9 ? pt : null,
+        notes: notes.trim() || null,
+        importedAt: importIso || undefined,
+        filingSubmitted: next,
+      });
+      setDetailFilingSubmitted(next);
+      setSaveHint(next ? t('hajriTaxFilingApprovedOk') : t('hajriTaxFilingReopenedOk'));
+    },
+    [
+      detailCompanyId,
+      year,
+      quarter,
+      draftData,
+      sourceSnapshot,
+      paymentTargetStr,
+      notes,
+      importIso,
+      upsertMutation,
+      t,
+    ],
+  );
+
   const handleSaveDetail = useCallback(async () => {
     if (!detailCompanyId || detailReadOnly) return;
     const pt = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
@@ -454,10 +523,24 @@ export default function HajriTaxScreen() {
       paymentTarget: Number.isFinite(pt) && Math.abs(pt) > 1e-9 ? pt : null,
       notes: notes.trim() || null,
       importedAt: importIso || undefined,
+      filingSubmitted: detailFilingSubmitted,
     };
     await upsertMutation.mutateAsync(body);
     setSaveHint(t('vatSavedOk'));
-  }, [detailCompanyId, detailReadOnly, year, quarter, draftData, sourceSnapshot, paymentTargetStr, notes, importIso, upsertMutation, t]);
+  }, [
+    detailCompanyId,
+    detailReadOnly,
+    year,
+    quarter,
+    draftData,
+    sourceSnapshot,
+    paymentTargetStr,
+    notes,
+    importIso,
+    detailFilingSubmitted,
+    upsertMutation,
+    t,
+  ]);
 
   const companyMeta = useCallback(
     (id: any) => {
@@ -663,6 +746,10 @@ export default function HajriTaxScreen() {
         setSalesAmountIncludesVat={setSalesAmountIncludesVat}
         readOnly={detailReadOnly}
         onSwitchToEdit={() => setDetailReadOnly(false)}
+        filingSubmitted={detailFilingSubmitted}
+        onApproveFiling={() => void persistDetailFilingSubmitted(true)}
+        onReopenFiling={() => void persistDetailFilingSubmitted(false)}
+        filingActionPending={upsertMutation.isPending}
       />
     );
   }
@@ -707,6 +794,8 @@ export default function HajriTaxScreen() {
         onNewDeclaration={() => setShowNewDeclarationModal(true)}
         onViewRow={(row: any) => openFromRegistryRow(row, 'view')}
         onEditRow={(row: any) => openFromRegistryRow(row, 'edit')}
+        onRegistryFilingChange={handleRegistryFilingChange}
+        filingBusyRowId={filingBusyRowId}
         jsonToolbar={jsonToolbar}
       />
       <HajriTaxNewDeclarationModal
