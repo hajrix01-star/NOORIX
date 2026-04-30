@@ -27,6 +27,10 @@ import {
 } from './costAccountingAppsScenario';
 import { monthlyAmountFromExpenseLine } from './costAccountingAppsFixedExpenseImport';
 import {
+  salaryInvoiceTotalFromTotalsByKind,
+  unwrapTotalsByKind,
+} from './costAccountingAppsSalaryImport';
+import {
   type CostAppsSavedSlot,
   prependSavedSlot,
   readSavedSlots,
@@ -369,15 +373,10 @@ export default function CostAccountingAppsScreen() {
     setImportingSalary(true);
     try {
       const res = await getPeriodAnalytics(activeCompanyId, importFrom, importTo);
-      throwIfApiFailed(res, t('reportCostAppsSalaryImportEmpty'));
-      const data = res.data as { totalsByKind?: Record<string, { totalAmount?: string }> } | undefined;
-      const raw = data?.totalsByKind?.salary?.totalAmount;
-      if (raw == null || String(raw).trim() === '') {
-        showToast(t('reportCostAppsSalaryImportEmpty'), 'error');
-        return;
-      }
-      const amt = parseMoneyInput(String(raw));
-      if (amt.lte(0)) {
+      throwIfApiFailed(res, t('reportCostAppsSalaryLoadErr'));
+      const tbk = unwrapTotalsByKind(res.data);
+      const amt = salaryInvoiceTotalFromTotalsByKind(tbk);
+      if (amt == null) {
         showToast(t('reportCostAppsSalaryImportEmpty'), 'error');
         return;
       }
