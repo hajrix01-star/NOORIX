@@ -375,7 +375,9 @@ export default function HajriTaxScreen() {
           }}
           onChange={(e: any) => {
             if (detailReadOnly) return;
-            setCellEdit({ id: cellId, text: e.target.value });
+            const text = e.target.value;
+            setCellEdit({ id: cellId, text });
+            updateRow(key, field, text);
           }}
         />
       );
