@@ -13,7 +13,8 @@ import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, Input , FmtNum, SmartTable } from '../../../ui';
+import { Button, Badge, FmtNum, SmartTable } from '../../../ui';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 
@@ -25,6 +26,14 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   const activeCompany = companies.find((c: any) => c.id === (companyId || activeCompanyId));
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
+
+  const kindFilterOptions = useMemo(
+    () => [
+      { value: 'fixed_expense', label: t('fixedExpense') },
+      { value: 'expense', label: t('variableExpense') },
+    ],
+    [t],
+  );
   const internalDateFilter = useDateFilter();
   const dateFilter = externalDateFilter ?? internalDateFilter;
   const [filterKind, setFilterKind] = useState('');
@@ -177,18 +186,17 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <div className="w-full min-w-0 sm:w-[min(100%,14rem)] shrink-0">
-            <Input
-              type="select"
+            <SearchableOptionsPicker
               size="sm"
-              value={filterKind}
-              onChange={(e: any) => setFilterKind(e.target.value)}
               className="w-full"
               aria-label={t('paymentHistoryTab')}
-            >
-              <option value="">الكل (ثابت + متغير)</option>
-              <option value="fixed_expense">ثابت فقط</option>
-              <option value="expense">متغير فقط</option>
-            </Input>
+              allowEmpty
+              emptyValue=""
+              emptyLabel={lang === 'en' ? 'All (fixed + variable)' : 'الكل (ثابت + متغير)'}
+              value={filterKind}
+              onChange={(v) => setFilterKind(v)}
+              options={kindFilterOptions}
+            />
           </div>
           <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!activeItems.length}>
             {t('print')}

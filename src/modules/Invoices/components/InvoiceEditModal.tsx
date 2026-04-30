@@ -16,6 +16,7 @@ import {
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 
 // بلا مورد نهائياً (رواتب وسلف — فواتير نظام داخلية)
@@ -53,6 +54,23 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
   }, [invoice]);
 
   const isMultiVault = (invoice?.vaultAllocations?.length || 0) > 1;
+
+  const purchaseKindOptions = useMemo(
+    () => [
+      { value: 'purchase', label: t('purchaseType') },
+      { value: 'expense', label: t('expenseType') },
+    ],
+    [t],
+  );
+
+  const vaultPickerOptions = useMemo(
+    () =>
+      vaultsList.map((v: any) => ({
+        value: v.id,
+        label: vaultDisplayName(v, lang) || v.id,
+      })),
+    [vaultsList, lang],
+  );
 
   const saveMutation = useApiMutation({
     mutationFn: ({ id, body }: any) => updateInvoice(id, body, companyId),
@@ -273,15 +291,13 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             />
 
             {supplierRequired && (
-              <Input
-                type="select"
+              <SearchableOptionsPicker
                 label={t('kind')}
                 value={form.kind}
-                onChange={(e: any) => updateField('kind', e.target.value)}
-              >
-                <option value="purchase">{t('purchaseType')}</option>
-                <option value="expense">{t('expenseType')}</option>
-              </Input>
+                onChange={(v) => updateField('kind', v)}
+                options={purchaseKindOptions}
+                aria-label={t('kind')}
+              />
             )}
           </>
         )}
@@ -312,17 +328,16 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
 
         {vaultsList.length > 0 && (
           <div>
-            <Input
-              type="select"
+            <SearchableOptionsPicker
               label={t('invoiceVaultColumn')}
+              allowEmpty
+              emptyValue=""
+              emptyLabel={t('selectVault')}
               value={form.vaultId}
-              onChange={(e: any) => updateField('vaultId', e.target.value)}
-            >
-              <option value="">{t('selectVault')}</option>
-              {vaultsList.map((v: any) => (
-                <option key={v.id} value={v.id}>{vaultDisplayName(v, lang) || v.id}</option>
-              ))}
-            </Input>
+              onChange={(v) => updateField('vaultId', v)}
+              options={vaultPickerOptions}
+              aria-label={t('invoiceVaultColumn')}
+            />
             {isMultiVault && (
               <p className="text-[11px] text-noorix-muted m-0 mt-1">
                 {t('invoiceEditVaultMultiHint')}

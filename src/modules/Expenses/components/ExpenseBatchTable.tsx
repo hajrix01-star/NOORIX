@@ -14,6 +14,7 @@ import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
 import { canExemptThisExpensePayment, isExpensePaymentTaxable } from '../utils/expenseTax';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 
 const EMPTY_ROW = () => ({
   key: `${Date.now()}-${Math.random()}`,
@@ -42,6 +43,24 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
   });
 
   const { paymentVaults: activeVaults = [] } = useVaults({ companyId });
+
+  const expenseLinePickerOptions = useMemo(
+    () =>
+      expenseLines.map((l: any) => ({
+        value: l.id,
+        label: `${l.nameAr || l.nameEn} (${l.kind === 'fixed_expense' ? (lang === 'en' ? 'Fixed' : 'ثابت') : (lang === 'en' ? 'Variable' : 'متغير')})`,
+      })),
+    [expenseLines, lang],
+  );
+
+  const vaultPickerOptions = useMemo(
+    () =>
+      activeVaults.map((v: any) => ({
+        value: v.id,
+        label: v.nameAr || v.nameEn || v.id,
+      })),
+    [activeVaults],
+  );
 
   const validRows = useMemo(() => {
     return rows.filter((r: any) => {
@@ -156,20 +175,17 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
             {t('delete')}
           </Button>
         </div>
-        <Input
+        <SearchableOptionsPicker
           label={lang === 'en' ? 'Expense line' : 'بند المصروف'}
-          type="select"
           size="sm"
+          allowEmpty
+          emptyValue=""
+          emptyLabel={lang === 'en' ? '— Select —' : '— اختر —'}
           value={row.expenseLineId}
-          onChange={(e: any) => updateRow(i, { expenseLineId: e.target.value })}
-        >
-          <option value="">— {lang === 'en' ? 'Select' : 'اختر'} —</option>
-          {expenseLines.map((l: any) => (
-            <option key={l.id} value={l.id}>
-              {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? (lang === 'en' ? 'Fixed' : 'ثابت') : (lang === 'en' ? 'Variable' : 'متغير')})
-            </option>
-          ))}
-        </Input>
+          onChange={(v) => updateRow(i, { expenseLineId: v })}
+          options={expenseLinePickerOptions}
+          aria-label={lang === 'en' ? 'Expense line' : 'بند المصروف'}
+        />
         <div className="nx-mc__grid nx-mc__grid--2">
           <div>
             <div className="nx-mc__stat-label">{lang === 'en' ? 'Category' : 'الفئة'}</div>
@@ -248,19 +264,16 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
       label: 'بند المصروف (يُملأ تلقائياً)',
       width: '17%',
       render: (_: any, row: any) => (
-        <Input
-          type="select"
+        <SearchableOptionsPicker
           size="sm"
+          allowEmpty
+          emptyValue=""
+          emptyLabel="— اختر —"
           value={row.expenseLineId}
-          onChange={(e: any) => updateRow(row.index - 1, { expenseLineId: e.target.value })}
-        >
-          <option value="">— اختر —</option>
-          {expenseLines.map((l: any) => (
-            <option key={l.id} value={l.id}>
-              {l.nameAr || l.nameEn} ({l.kind === 'fixed_expense' ? 'ثابت' : 'متغير'})
-            </option>
-          ))}
-        </Input>
+          onChange={(v) => updateRow(row.index - 1, { expenseLineId: v })}
+          options={expenseLinePickerOptions}
+          aria-label="بند المصروف"
+        />
       ),
     },
     { key: 'categoryName', label: 'الفئة', width: '8%', render: (v: any) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={v}>{v}</span> },
@@ -391,18 +404,17 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
             onChange={(e: any) => setBatchDate(e.target.value)}
           />
           <div className="min-w-0 w-full sm:w-[min(100%,14rem)] sm:max-w-xs">
-            <Input
+            <SearchableOptionsPicker
               label="الخزينة *"
-              type="select"
               size="sm"
+              allowEmpty
+              emptyValue=""
+              emptyLabel="— اختر الخزينة —"
               value={vaultId}
-              onChange={(e: any) => setVaultId(e.target.value)}
-            >
-              <option value="">— اختر الخزينة —</option>
-              {activeVaults.map((v: any) => (
-                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn}</option>
-              ))}
-            </Input>
+              onChange={(v) => setVaultId(v)}
+              options={vaultPickerOptions}
+              aria-label="الخزينة"
+            />
           </div>
         </div>
         <Button size="sm" className="shrink-0 whitespace-nowrap self-end lg:self-auto" onClick={addRow}>

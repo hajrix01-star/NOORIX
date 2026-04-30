@@ -7,7 +7,8 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { fmt } from '../../../utils/format';
-import { Button, Badge, Input, ScreenShell, cn, SmartTable, FmtNum } from '../../../ui';
+import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum } from '../../../ui';
+import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 import { monthlyAmountFromExpenseLine } from '../../Reports/costAccountingAppsFixedExpenseImport';
@@ -50,6 +51,14 @@ export default function ExpenseLineList({
   const activeCompany = companies.find((c: any) => c.id === activeCompanyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const kindBadgeMap = useMemo(() => buildExpenseLineKindBadgeMap(t), [t]);
+
+  const kindFilterOptions = useMemo(
+    () => [
+      { value: 'fixed_expense', label: t('fixedExpense') },
+      { value: 'expense', label: t('variableExpense') },
+    ],
+    [t],
+  );
 
   /** نوع البند (ثابت/متغير) + اسم الفئة المختارة عند العرض */
   const formatKindWithCategory = useCallback((kind: any, categoryName: any) => {
@@ -269,18 +278,17 @@ export default function ExpenseLineList({
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <div className="w-full min-w-0 sm:w-[min(100%,11rem)] shrink-0">
-            <Input
-              type="select"
+            <SearchableOptionsPicker
               size="sm"
-              value={filterKind}
-              onChange={(e: any) => onFilterKindChange(e.target.value)}
               className="w-full"
               aria-label={t('allTypes')}
-            >
-              <option value="">{t('allTypes')}</option>
-              <option value="fixed_expense">{t('fixedExpense')}</option>
-              <option value="expense">{t('variableExpense')}</option>
-            </Input>
+              allowEmpty
+              emptyValue=""
+              emptyLabel={t('allTypes')}
+              value={filterKind}
+              onChange={(v) => onFilterKindChange(v)}
+              options={kindFilterOptions}
+            />
           </div>
           <Button
             size="sm"

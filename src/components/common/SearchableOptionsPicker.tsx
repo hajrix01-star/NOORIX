@@ -235,12 +235,12 @@ export function SearchableOptionsPicker(props: SearchableOptionsPickerProps) {
               <Input
                 type="search"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
                 placeholder={searchPh}
                 size={size === 'sm' ? 'sm' : 'md'}
                 autoComplete="off"
                 aria-label={searchPh}
-                onKeyDown={(e) => e.stopPropagation()}
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.stopPropagation()}
               />
             </div>
             {isMulti && (props as SearchableOptionsPickerMultiProps).showClearAll && selectedMulti.length > 0 && (
