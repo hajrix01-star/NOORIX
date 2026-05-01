@@ -19,8 +19,7 @@ import {
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
 } from '../utils/dashboardOverviewBuilders';
-import { getCardValue, type PlReportLike } from '../utils/dashboardOverviewCalculations';
-import { avgWeeklySalesFromMonthTotal, pctChangeVsBaseline } from '../utils/dashboardWeeklySales';
+import { bucketMonthIntoWeeks, pctChangeVsBaseline } from '../utils/dashboardWeeklySales';
 import type { DashboardOverviewFilter } from '../types';
 
 /** خيارات اختيارية — تستخدمها شاشة الاستوديو فقط (لا تغيّر اللوحة التقليدية). */
@@ -60,12 +59,6 @@ export function useDashboardOverviewModel(
   const uiDir = useUiDir();
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
 
-  const { data: reportPrevYear, isLoading: isPrevYearReportLoading } = useReportsGeneralProfitLoss({
-    companyId,
-    year: year - 1,
-    enabled: !!companyId && selectedMonth != null && year > 1900,
-  });
-
   const [timelineGrain, setTimelineGrain] = useState(() => (selectedMonth != null ? 'daily' : 'monthly'));
   const [weeklySalesCompareMode, setWeeklySalesCompareMode] = useState<'mom' | 'yoy'>('mom');
 
@@ -73,8 +66,19 @@ export function useDashboardOverviewModel(
   const chartMonthForDaily =
     selectedMonth != null ? selectedMonth : year === saudiYM.year ? saudiYM.month : 1;
   const lastDayChart = lastDayOfMonth(year, chartMonthForDaily);
-  const dailyStart = timelineGrain === 'daily' ? ymd(year, chartMonthForDaily, 1) : null;
-  const dailyEnd = timelineGrain === 'daily' ? ymd(year, chartMonthForDaily, lastDayChart) : null;
+  /** عند اختيار شهر: نحمّل دائماً الملخصات اليومية لذلك الشهر (أسابيع معزولة). */
+  const dailyStartEffective =
+    selectedMonth != null
+      ? ymd(year, selectedMonth, 1)
+      : timelineGrain === 'daily'
+        ? ymd(year, chartMonthForDaily, 1)
+        : null;
+  const dailyEndEffective =
+    selectedMonth != null
+      ? ymd(year, selectedMonth, lastDayOfMonth(year, selectedMonth))
+      : timelineGrain === 'daily'
+        ? ymd(year, chartMonthForDaily, lastDayChart)
+        : null;
 
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
@@ -85,6 +89,38 @@ export function useDashboardOverviewModel(
     return { start: ymd(year, selectedMonth, 1), end: ymd(year, selectedMonth, ld) };
   }, [year, selectedMonth]);
 
+  const baselineDailyBounds = useMemo(() => {
+    if (selectedMonth == null) {
+      return { start: null as string | null, end: null as string | null, refYear: year, refMonth: 1 };
+    }
+    if (weeklySalesCompareMode === 'mom') {
+      if (selectedMonth >= 2) {
+        const m = selectedMonth - 1;
+        const ld = lastDayOfMonth(year, m);
+        return {
+          start: ymd(year, m, 1),
+          end: ymd(year, m, ld),
+          refYear: year,
+          refMonth: m,
+        };
+      }
+      const ldDec = lastDayOfMonth(year - 1, 12);
+      return {
+        start: ymd(year - 1, 12, 1),
+        end: ymd(year - 1, 12, ldDec),
+        refYear: year - 1,
+        refMonth: 12,
+      };
+    }
+    const ld = lastDayOfMonth(year - 1, selectedMonth);
+    return {
+      start: ymd(year - 1, selectedMonth, 1),
+      end: ymd(year - 1, selectedMonth, ld),
+      refYear: year - 1,
+      refMonth: selectedMonth,
+    };
+  }, [year, selectedMonth, weeklySalesCompareMode]);
+
   const {
     dailySummaries,
     yearSummaries,
@@ -94,11 +130,22 @@ export function useDashboardOverviewModel(
     companyId,
     yearStart,
     yearEnd,
-    dailyStart: timelineGrain === 'daily' ? dailyStart : null,
-    dailyEnd: timelineGrain === 'daily' ? dailyEnd : null,
+    dailyStart: dailyStartEffective,
+    dailyEnd: dailyEndEffective,
     monthStart: monthSalesAvgBounds.start,
     monthEnd: monthSalesAvgBounds.end,
     enabled: !!companyId,
+  });
+
+  const { dailySummaries: baselineDailySummaries, isLoading: baselineSalesPackLoading } = useDashboardSalesPack({
+    companyId,
+    yearStart,
+    yearEnd,
+    dailyStart: baselineDailyBounds.start,
+    dailyEnd: baselineDailyBounds.end,
+    monthStart: null,
+    monthEnd: null,
+    enabled: !!companyId && selectedMonth != null,
   });
 
   const revenueDailyAvgActiveDays = useMemo(
@@ -116,8 +163,8 @@ export function useDashboardOverviewModel(
     year,
     yearStart,
     yearEnd,
-    dailyStart,
-    dailyEnd,
+    dailyStart: dailyStartEffective,
+    dailyEnd: dailyEndEffective,
     monthStart: monthSalesAvgBounds.start,
     monthEnd: monthSalesAvgBounds.end,
     periodStart: supplierFrom,
@@ -266,54 +313,46 @@ export function useDashboardOverviewModel(
   const timelineMonthName =
     lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
 
-  const weeklySalesComparison = useMemo(() => {
-    if (selectedMonth == null || !report) return null;
+  const weeklySalesWeekRows = useMemo(() => {
+    if (selectedMonth == null) return null;
 
-    const curTotal = Number(getCardValue(report, 'sales', selectedMonth) || 0);
-    const currentWeekly = avgWeeklySalesFromMonthTotal(curTotal, year, selectedMonth);
-
-    const needsPrevYear = weeklySalesCompareMode === 'yoy' || selectedMonth === 1;
-    if (needsPrevYear && !reportPrevYear) return null;
-
-    let baseTotal = 0;
-    let baseYear = year;
-    let baseMonth = selectedMonth;
-
-    if (weeklySalesCompareMode === 'mom') {
-      if (selectedMonth >= 2) {
-        baseTotal = Number(getCardValue(report, 'sales', selectedMonth - 1) || 0);
-        baseYear = year;
-        baseMonth = selectedMonth - 1;
-      } else {
-        baseTotal = Number(getCardValue(reportPrevYear as PlReportLike, 'sales', 12) || 0);
-        baseYear = year - 1;
-        baseMonth = 12;
-      }
-    } else {
-      baseTotal = Number(getCardValue(reportPrevYear as PlReportLike, 'sales', selectedMonth) || 0);
-      baseYear = year - 1;
-      baseMonth = selectedMonth;
-    }
-
-    const baselineWeekly = avgWeeklySalesFromMonthTotal(baseTotal, baseYear, baseMonth);
-    const deltaPct = pctChangeVsBaseline(currentWeekly, baselineWeekly);
+    const curBuckets = bucketMonthIntoWeeks(year, selectedMonth, dailySummaries);
+    const { refYear, refMonth } = baselineDailyBounds;
+    const baseBuckets = bucketMonthIntoWeeks(refYear, refMonth, baselineDailySummaries);
 
     const baselineLabel =
       lang === 'ar'
-        ? `${MONTH_NAMES_AR[baseMonth - 1]} ${baseYear}`
-        : `${MONTH_NAMES_EN[baseMonth - 1]} ${baseYear}`;
+        ? `${MONTH_NAMES_AR[refMonth - 1]} ${refYear}`
+        : `${MONTH_NAMES_EN[refMonth - 1]} ${refYear}`;
 
-    return {
-      currentWeekly,
-      baselineWeekly,
-      deltaPct,
-      baselineLabel,
-    };
-  }, [report, reportPrevYear, selectedMonth, year, weeklySalesCompareMode, lang]);
+    const maxW = Math.max(curBuckets.length, baseBuckets.length);
+    const rows = [];
+    for (let i = 0; i < maxW; i++) {
+      const c = curBuckets[i];
+      const b = baseBuckets[i];
+      const avgC = c?.avgDailyInWeek ?? 0;
+      const avgB = b?.avgDailyInWeek ?? 0;
+      rows.push({
+        weekIndex: i + 1,
+        dayStart: c?.dayStart ?? b?.dayStart ?? 0,
+        dayEnd: c?.dayEnd ?? b?.dayEnd ?? 0,
+        avgDailyCurrent: avgC,
+        avgDailyBaseline: avgB,
+        deltaPct: pctChangeVsBaseline(avgC, avgB),
+      });
+    }
 
-  const weeklySalesComparisonLoading =
-    selectedMonth != null &&
-    (isLoading || (((weeklySalesCompareMode === 'yoy' || selectedMonth === 1) && isPrevYearReportLoading)));
+    return { rows, baselineLabel };
+  }, [
+    baselineDailyBounds,
+    baselineDailySummaries,
+    dailySummaries,
+    lang,
+    selectedMonth,
+    year,
+  ]);
+
+  const weeklySalesPanelLoading = selectedMonth != null && (salesPackLoading || baselineSalesPackLoading);
 
   return {
     t,
@@ -354,8 +393,8 @@ export function useDashboardOverviewModel(
     },
     weeklySalesCompareMode,
     setWeeklySalesCompareMode,
-    weeklySalesComparison,
-    weeklySalesComparisonLoading,
+    weeklySalesWeekRows,
+    weeklySalesPanelLoading,
   };
 }
 

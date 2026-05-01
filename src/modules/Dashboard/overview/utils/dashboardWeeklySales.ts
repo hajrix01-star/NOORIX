@@ -1,12 +1,55 @@
 /**
- * متوسط مبيعات أسبوعي ضمني من إجمالي الشهر: نفس الإيراد الشهري موزّع على أيام الشهر ثم ×7.
+ * تقسيم شهر إلى أسابيع متتالية (1–7، 8–14، …) من ملخصات يومية،
+ * مع متوسط يومي لكل جزء داخل أيام ذلك الجزء فقط.
  */
+import { toYmd } from '../../../../utils/saudiDate';
 import { lastDayOfMonth } from './dashboardOverviewDateUtils';
 
-export function avgWeeklySalesFromMonthTotal(monthTotal: number, year: number, month: number): number {
-  const d = lastDayOfMonth(year, month);
-  if (!d || !Number.isFinite(monthTotal) || monthTotal <= 0) return 0;
-  return (monthTotal * 7) / d;
+export type MonthWeekBucket = {
+  weekIndex: number;
+  dayStart: number;
+  dayEnd: number;
+  totalSales: number;
+  /** متوسط يومي داخل أيام هذا الجزء فقط */
+  avgDailyInWeek: number;
+};
+
+export function bucketMonthIntoWeeks(
+  year: number,
+  month: number,
+  dailySummaries: ReadonlyArray<{ transactionDate?: string | null; totalAmount?: string | number | null }>,
+): MonthWeekBucket[] {
+  const ymPrefix = `${year}-${String(month).padStart(2, '0')}`;
+  const ld = lastDayOfMonth(year, month);
+  const byDay = new Map<number, number>();
+
+  for (const s of dailySummaries) {
+    const ymdStr = toYmd(s.transactionDate);
+    if (!ymdStr || ymdStr.length < 10 || !ymdStr.startsWith(ymPrefix)) continue;
+    const d = parseInt(ymdStr.slice(8, 10), 10);
+    if (!Number.isFinite(d) || d < 1 || d > ld) continue;
+    byDay.set(d, (byDay.get(d) || 0) + Number(s.totalAmount || 0));
+  }
+
+  const buckets: MonthWeekBucket[] = [];
+  let start = 1;
+  let weekIndex = 1;
+  while (start <= ld) {
+    const end = Math.min(start + 6, ld);
+    let total = 0;
+    for (let d = start; d <= end; d++) total += byDay.get(d) || 0;
+    const days = end - start + 1;
+    buckets.push({
+      weekIndex,
+      dayStart: start,
+      dayEnd: end,
+      totalSales: total,
+      avgDailyInWeek: days > 0 ? total / days : 0,
+    });
+    start = end + 1;
+    weekIndex++;
+  }
+  return buckets;
 }
 
 export function pctChangeVsBaseline(current: number, baseline: number): number | null {

@@ -30,8 +30,8 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         selectedMonth={m.selectedMonth}
         compareMode={m.weeklySalesCompareMode}
         onCompareModeChange={m.setWeeklySalesCompareMode}
-        data={m.weeklySalesComparison}
-        isLoading={m.weeklySalesComparisonLoading}
+        data={m.weeklySalesWeekRows}
+        isLoading={m.weeklySalesPanelLoading}
       />
 
       <DashboardOverviewKpis

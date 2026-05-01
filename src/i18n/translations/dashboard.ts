@@ -170,12 +170,30 @@ export default {
   dashboardStudioCsvValue: { ar: 'القيمة', en: 'Value' },
   dashboardStudioCsvPctOfSales: { ar: '٪ من المبيعات', en: '% of sales' },
 
-  dashboardWeeklySalesTitle: { ar: 'متوسط المبيعات الأسبوعية', en: 'Average weekly sales' },
-  dashboardWeeklySalesFormulaNote: { ar: 'من إجمالي الشهر: × 7 ÷ أيام الشهر', en: 'From month total: × 7 ÷ days in month' },
+  dashboardWeeklySalesTitle: {
+    ar: 'متوسط المبيعات اليومية حسب أسبوع الشهر',
+    en: 'Daily sales average by week of month',
+  },
+  dashboardWeeklySalesFormulaNote: {
+    ar: 'كل أسبوع معزول: 1–7 ثم 8–14، إلخ؛ المتوسط = مجموع الجزء ÷ عدد أيامه في الشهر.',
+    en: 'Each week is isolated (1–7, then 8–14, …); average = slice total ÷ days in that slice.',
+  },
   dashboardWeeklySalesCompareLabel: { ar: 'نوع المقارنة', en: 'Comparison type' },
+  dashboardWeeklySalesCompareRef: { ar: 'مرجع المقارنة', en: 'Comparison period' },
   dashboardWeeklySalesCompareMom: { ar: 'الشهر السابق', en: 'Prior month' },
   dashboardWeeklySalesCompareYoy: { ar: 'نفس الشهر (العام الماضي)', en: 'Same month last year' },
-  dashboardWeeklySalesCurrent: { ar: 'الشهر المحدد', en: 'Selected month' },
-  dashboardWeeklySalesBaseline: { ar: 'المتوسط المرجعي', en: 'Reference average' },
-  dashboardWeeklySalesDelta: { ar: 'التغير النسبي', en: 'Relative change' },
+  dashboardWeeklySalesWeekCol: { ar: 'الفترة', en: 'Period' },
+  dashboardWeeklySalesWeekRange: {
+    ar: 'أسبوع {n} ({from}–{to})',
+    en: 'Week {n} ({from}–{to})',
+  },
+  dashboardWeeklySalesAvgDailyCurrent: {
+    ar: 'متوسط يومي — الشهر المحدد',
+    en: 'Daily avg — selected month',
+  },
+  dashboardWeeklySalesAvgDailyBaseline: {
+    ar: 'متوسط يومي — المرجع',
+    en: 'Daily avg — reference',
+  },
+  dashboardWeeklySalesDelta: { ar: 'التغير ٪', en: 'Change %' },
 };
