@@ -27,9 +27,16 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
       />
 
       <DashboardOverviewWeeklySalesPanel
-        selectedMonth={m.selectedMonth}
-        compareMode={m.weeklySalesCompareMode}
-        onCompareModeChange={m.setWeeklySalesCompareMode}
+        weeklyYearOptions={m.weeklyYearOptions}
+        weeklyMonthOptions={m.weeklyMonthOptions}
+        panelYearA={m.weeklyPanelYearA}
+        panelMonthA={m.weeklyPanelMonthA}
+        panelYearB={m.weeklyPanelYearB}
+        panelMonthB={m.weeklyPanelMonthB}
+        onPanelYearAChange={m.setWeeklyPanelYearA}
+        onPanelMonthAChange={m.setWeeklyPanelMonthA}
+        onPanelYearBChange={m.setWeeklyPanelYearB}
+        onPanelMonthBChange={m.setWeeklyPanelMonthB}
         data={m.weeklySalesWeekRows}
         isLoading={m.weeklySalesPanelLoading}
       />

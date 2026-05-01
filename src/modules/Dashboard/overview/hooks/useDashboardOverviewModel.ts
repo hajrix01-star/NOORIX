@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { useReportsGeneralProfitLoss, usePeriodAnalytics } from '../../../../hooks/useReports';
 import { monthDateBounds } from '../../../../utils/reportDrillLinks';
@@ -9,7 +9,7 @@ import { EN_MONTHS } from '../../../Reports/reportHelpers';
 import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../../constants/kpiCardTheme';
 import { useUiDir } from '../../../../hooks/useUiDir';
 import { getSaudiYearMonth } from '../../../../utils/saudiDate';
-import { lastDayOfMonth, ymd } from '../utils/dashboardOverviewDateUtils';
+import { lastDayOfMonth, prevCalendarMonth, ymd } from '../utils/dashboardOverviewDateUtils';
 import {
   buildChannelPieRows,
   buildPerformanceRows,
@@ -60,7 +60,39 @@ export function useDashboardOverviewModel(
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
 
   const [timelineGrain, setTimelineGrain] = useState(() => (selectedMonth != null ? 'daily' : 'monthly'));
-  const [weeklySalesCompareMode, setWeeklySalesCompareMode] = useState<'mom' | 'yoy'>('mom');
+
+  const saInit = getSaudiYearMonth();
+  const initPrev = prevCalendarMonth(saInit.year, saInit.month);
+  const [weeklyPanelYearA, setWeeklyPanelYearA] = useState(saInit.year);
+  const [weeklyPanelMonthA, setWeeklyPanelMonthA] = useState(saInit.month);
+  const [weeklyPanelYearB, setWeeklyPanelYearB] = useState(initPrev.year);
+  const [weeklyPanelMonthB, setWeeklyPanelMonthB] = useState(initPrev.month);
+
+  /** عند اختيار شهر في لوحة التحكم: يُحدَّث العمود أ=ذلك الشهر والعمود ب=الشهر التقويمي السابق. */
+  useEffect(() => {
+    if (selectedMonth == null) return;
+    setWeeklyPanelYearA(year);
+    setWeeklyPanelMonthA(selectedMonth);
+    const p = prevCalendarMonth(year, selectedMonth);
+    setWeeklyPanelYearB(p.year);
+    setWeeklyPanelMonthB(p.month);
+  }, [year, selectedMonth]);
+
+  const weeklyYearOptions = useMemo(() => {
+    const sa = getSaudiYearMonth();
+    const hi = sa.year + 1;
+    const lo = hi - 10;
+    return Array.from({ length: hi - lo + 1 }, (_, i) => hi - i);
+  }, []);
+
+  const weeklyMonthOptions = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => ({
+        value: i + 1,
+        label: lang === 'ar' ? MONTH_NAMES_AR[i] : MONTH_NAMES_EN[i],
+      })),
+    [lang],
+  );
 
   const saudiYM = getSaudiYearMonth();
   const chartMonthForDaily =
@@ -89,37 +121,30 @@ export function useDashboardOverviewModel(
     return { start: ymd(year, selectedMonth, 1), end: ymd(year, selectedMonth, ld) };
   }, [year, selectedMonth]);
 
-  const baselineDailyBounds = useMemo(() => {
-    if (selectedMonth == null) {
-      return { start: null as string | null, end: null as string | null, refYear: year, refMonth: 1 };
-    }
-    if (weeklySalesCompareMode === 'mom') {
-      if (selectedMonth >= 2) {
-        const m = selectedMonth - 1;
-        const ld = lastDayOfMonth(year, m);
-        return {
-          start: ymd(year, m, 1),
-          end: ymd(year, m, ld),
-          refYear: year,
-          refMonth: m,
-        };
-      }
-      const ldDec = lastDayOfMonth(year - 1, 12);
-      return {
-        start: ymd(year - 1, 12, 1),
-        end: ymd(year - 1, 12, ldDec),
-        refYear: year - 1,
-        refMonth: 12,
-      };
-    }
-    const ld = lastDayOfMonth(year - 1, selectedMonth);
+  const weeklyBoundsA = useMemo(() => {
+    const ld = lastDayOfMonth(weeklyPanelYearA, weeklyPanelMonthA);
     return {
-      start: ymd(year - 1, selectedMonth, 1),
-      end: ymd(year - 1, selectedMonth, ld),
-      refYear: year - 1,
-      refMonth: selectedMonth,
+      start: ymd(weeklyPanelYearA, weeklyPanelMonthA, 1),
+      end: ymd(weeklyPanelYearA, weeklyPanelMonthA, ld),
     };
-  }, [year, selectedMonth, weeklySalesCompareMode]);
+  }, [weeklyPanelYearA, weeklyPanelMonthA]);
+
+  const weeklyBoundsB = useMemo(() => {
+    const ld = lastDayOfMonth(weeklyPanelYearB, weeklyPanelMonthB);
+    return {
+      start: ymd(weeklyPanelYearB, weeklyPanelMonthB, 1),
+      end: ymd(weeklyPanelYearB, weeklyPanelMonthB, ld),
+    };
+  }, [weeklyPanelYearB, weeklyPanelMonthB]);
+
+  const weeklyPackYearSpanA = useMemo(
+    () => ({ yearStart: `${weeklyPanelYearA}-01-01`, yearEnd: `${weeklyPanelYearA}-12-31` }),
+    [weeklyPanelYearA],
+  );
+  const weeklyPackYearSpanB = useMemo(
+    () => ({ yearStart: `${weeklyPanelYearB}-01-01`, yearEnd: `${weeklyPanelYearB}-12-31` }),
+    [weeklyPanelYearB],
+  );
 
   const {
     dailySummaries,
@@ -137,15 +162,26 @@ export function useDashboardOverviewModel(
     enabled: !!companyId,
   });
 
-  const { dailySummaries: baselineDailySummaries, isLoading: baselineSalesPackLoading } = useDashboardSalesPack({
+  const { dailySummaries: weeklyDailySummariesA, isLoading: weeklyPackALoading } = useDashboardSalesPack({
     companyId,
-    yearStart,
-    yearEnd,
-    dailyStart: baselineDailyBounds.start,
-    dailyEnd: baselineDailyBounds.end,
+    yearStart: weeklyPackYearSpanA.yearStart,
+    yearEnd: weeklyPackYearSpanA.yearEnd,
+    dailyStart: weeklyBoundsA.start,
+    dailyEnd: weeklyBoundsA.end,
     monthStart: null,
     monthEnd: null,
-    enabled: !!companyId && selectedMonth != null,
+    enabled: !!companyId,
+  });
+
+  const { dailySummaries: weeklyDailySummariesB, isLoading: weeklyPackBLoading } = useDashboardSalesPack({
+    companyId,
+    yearStart: weeklyPackYearSpanB.yearStart,
+    yearEnd: weeklyPackYearSpanB.yearEnd,
+    dailyStart: weeklyBoundsB.start,
+    dailyEnd: weeklyBoundsB.end,
+    monthStart: null,
+    monthEnd: null,
+    enabled: !!companyId,
   });
 
   const revenueDailyAvgActiveDays = useMemo(
@@ -314,16 +350,16 @@ export function useDashboardOverviewModel(
     lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
 
   const weeklySalesWeekRows = useMemo(() => {
-    if (selectedMonth == null) return null;
-
-    const curBuckets = bucketMonthIntoWeeks(year, selectedMonth, dailySummaries);
-    const { refYear, refMonth } = baselineDailyBounds;
-    const baseBuckets = bucketMonthIntoWeeks(refYear, refMonth, baselineDailySummaries);
-
-    const baselineLabel =
-      lang === 'ar'
-        ? `${MONTH_NAMES_AR[refMonth - 1]} ${refYear}`
-        : `${MONTH_NAMES_EN[refMonth - 1]} ${refYear}`;
+    const curBuckets = bucketMonthIntoWeeks(
+      weeklyPanelYearA,
+      weeklyPanelMonthA,
+      weeklyDailySummariesA,
+    );
+    const baseBuckets = bucketMonthIntoWeeks(
+      weeklyPanelYearB,
+      weeklyPanelMonthB,
+      weeklyDailySummariesB,
+    );
 
     const maxW = Math.max(curBuckets.length, baseBuckets.length);
     const rows = [];
@@ -342,17 +378,17 @@ export function useDashboardOverviewModel(
       });
     }
 
-    return { rows, baselineLabel };
+    return { rows };
   }, [
-    baselineDailyBounds,
-    baselineDailySummaries,
-    dailySummaries,
-    lang,
-    selectedMonth,
-    year,
+    weeklyDailySummariesA,
+    weeklyDailySummariesB,
+    weeklyPanelMonthA,
+    weeklyPanelMonthB,
+    weeklyPanelYearA,
+    weeklyPanelYearB,
   ]);
 
-  const weeklySalesPanelLoading = selectedMonth != null && (salesPackLoading || baselineSalesPackLoading);
+  const weeklySalesPanelLoading = weeklyPackALoading || weeklyPackBLoading;
 
   return {
     t,
@@ -391,8 +427,16 @@ export function useDashboardOverviewModel(
       isLoading: insightsQuery.isLoading,
       isError: insightsQuery.isError,
     },
-    weeklySalesCompareMode,
-    setWeeklySalesCompareMode,
+    weeklyPanelYearA,
+    setWeeklyPanelYearA,
+    weeklyPanelMonthA,
+    setWeeklyPanelMonthA,
+    weeklyPanelYearB,
+    setWeeklyPanelYearB,
+    weeklyPanelMonthB,
+    setWeeklyPanelMonthB,
+    weeklyYearOptions,
+    weeklyMonthOptions,
     weeklySalesWeekRows,
     weeklySalesPanelLoading,
   };
