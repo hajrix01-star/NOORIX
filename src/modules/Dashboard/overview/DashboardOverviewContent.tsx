@@ -5,6 +5,7 @@ import React from 'react';
 import { DashboardOverviewTopCharts } from './components/DashboardOverviewTopCharts';
 import { DashboardOverviewKpis } from './components/DashboardOverviewKpis';
 import { DashboardOverviewWeeklySalesPanel } from './components/DashboardOverviewWeeklySalesPanel';
+import { DashboardOverviewTimelineSection } from './components/DashboardOverviewTimelineSection';
 import type { DashboardOverviewModel } from './hooks/useDashboardOverviewModel';
 
 export type DashboardOverviewContentProps = {
