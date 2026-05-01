@@ -6,6 +6,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { DEFAULT_ADMIN_EMAIL } from '../common/official-email';
 import { PrismaService } from '../prisma/prisma.service';
+import { PermissionCacheService } from '../auth/permission-cache.service';
 import { SYSTEM_ROLE_SEEDS } from '../auth/constants/permissions';
 
 const ADMIN_EMAIL = DEFAULT_ADMIN_EMAIL;
@@ -19,7 +20,10 @@ const ALL_PERMISSIONS = SYSTEM_ROLE_SEEDS['owner']?.permissions || [];
 export class DatabaseBootstrapService implements OnModuleInit {
   private readonly logger = new Logger(DatabaseBootstrapService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly permCache: PermissionCacheService,
+  ) {}
 
   async onModuleInit() {
     if (process.env.APP_SKIP_SEED === 'true') {
@@ -134,6 +138,7 @@ export class DatabaseBootstrapService implements OnModuleInit {
         });
         if (toAdd.length > 0) {
           this.logger.log(`تم إضافة ${toAdd.length} صلاحية جديدة لدور "${name}": ${toAdd.join(', ')}`);
+          this.permCache.invalidate(name);
         } else {
           this.logger.log(`تم تحديث lastSeedPermissions لدور "${name}" (بدون تغيير في الصلاحيات)`);
         }

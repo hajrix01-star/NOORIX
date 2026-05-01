@@ -246,6 +246,8 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
     permissions: [
       PERMISSIONS.VIEW_CHAT, PERMISSIONS.VIEW_SALES, PERMISSIONS.VIEW_INVOICES,
       PERMISSIONS.SALES_READ, PERMISSIONS.SALES_WRITE, PERMISSIONS.SALES_ACTIONS,
+      /** يسمح بعرض ملخصات المبيعات والتقارير لأي تاريخ (بدون قصّ آخر 7 أيام). */
+      PERMISSIONS.SALES_FULL_HISTORY,
       PERMISSIONS.SALES_VIEW_SUMMARIES_LIST,
       PERMISSIONS.INVOICES_READ, PERMISSIONS.INVOICES_WRITE, PERMISSIONS.INVOICES_ACTIONS,
       // الكاشير: عرض المشتريات فقط (بدون تعديل/حذف)
