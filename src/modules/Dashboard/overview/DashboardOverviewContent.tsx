@@ -4,7 +4,7 @@
 import React from 'react';
 import { DashboardOverviewTopCharts } from './components/DashboardOverviewTopCharts';
 import { DashboardOverviewKpis } from './components/DashboardOverviewKpis';
-import { DashboardOverviewTimelineSection } from './components/DashboardOverviewTimelineSection';
+import { DashboardOverviewWeeklySalesPanel } from './components/DashboardOverviewWeeklySalesPanel';
 import type { DashboardOverviewModel } from './hooks/useDashboardOverviewModel';
 
 export type DashboardOverviewContentProps = {
@@ -23,6 +23,14 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         purchaseCategoriesPieData={m.purchaseCategoriesPieData}
         selectedMonth={m.selectedMonth}
         periodPurchaseTotal={Number(m.periodData?.purchaseCategoryTotal || 0)}
+      />
+
+      <DashboardOverviewWeeklySalesPanel
+        selectedMonth={m.selectedMonth}
+        compareMode={m.weeklySalesCompareMode}
+        onCompareModeChange={m.setWeeklySalesCompareMode}
+        data={m.weeklySalesComparison}
+        isLoading={m.weeklySalesComparisonLoading}
       />
 
       <DashboardOverviewKpis

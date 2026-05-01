@@ -169,4 +169,13 @@ export default {
   dashboardStudioCsvMetric: { ar: 'المؤشر', en: 'Metric' },
   dashboardStudioCsvValue: { ar: 'القيمة', en: 'Value' },
   dashboardStudioCsvPctOfSales: { ar: '٪ من المبيعات', en: '% of sales' },
+
+  dashboardWeeklySalesTitle: { ar: 'متوسط المبيعات الأسبوعية', en: 'Average weekly sales' },
+  dashboardWeeklySalesFormulaNote: { ar: 'من إجمالي الشهر: × 7 ÷ أيام الشهر', en: 'From month total: × 7 ÷ days in month' },
+  dashboardWeeklySalesCompareLabel: { ar: 'نوع المقارنة', en: 'Comparison type' },
+  dashboardWeeklySalesCompareMom: { ar: 'الشهر السابق', en: 'Prior month' },
+  dashboardWeeklySalesCompareYoy: { ar: 'نفس الشهر (العام الماضي)', en: 'Same month last year' },
+  dashboardWeeklySalesCurrent: { ar: 'الشهر المحدد', en: 'Selected month' },
+  dashboardWeeklySalesBaseline: { ar: 'المتوسط المرجعي', en: 'Reference average' },
+  dashboardWeeklySalesDelta: { ar: 'التغير النسبي', en: 'Relative change' },
 };

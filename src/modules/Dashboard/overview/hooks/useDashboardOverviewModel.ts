@@ -19,6 +19,8 @@ import {
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
 } from '../utils/dashboardOverviewBuilders';
+import { getCardValue, type PlReportLike } from '../utils/dashboardOverviewCalculations';
+import { avgWeeklySalesFromMonthTotal, pctChangeVsBaseline } from '../utils/dashboardWeeklySales';
 import type { DashboardOverviewFilter } from '../types';
 
 /** خيارات اختيارية — تستخدمها شاشة الاستوديو فقط (لا تغيّر اللوحة التقليدية). */
@@ -58,7 +60,14 @@ export function useDashboardOverviewModel(
   const uiDir = useUiDir();
   const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
 
+  const { data: reportPrevYear, isLoading: isPrevYearReportLoading } = useReportsGeneralProfitLoss({
+    companyId,
+    year: year - 1,
+    enabled: !!companyId && selectedMonth != null && year > 1900,
+  });
+
   const [timelineGrain, setTimelineGrain] = useState(() => (selectedMonth != null ? 'daily' : 'monthly'));
+  const [weeklySalesCompareMode, setWeeklySalesCompareMode] = useState<'mom' | 'yoy'>('mom');
 
   const saudiYM = getSaudiYearMonth();
   const chartMonthForDaily =
@@ -257,6 +266,55 @@ export function useDashboardOverviewModel(
   const timelineMonthName =
     lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
 
+  const weeklySalesComparison = useMemo(() => {
+    if (selectedMonth == null || !report) return null;
+
+    const curTotal = Number(getCardValue(report, 'sales', selectedMonth) || 0);
+    const currentWeekly = avgWeeklySalesFromMonthTotal(curTotal, year, selectedMonth);
+
+    const needsPrevYear = weeklySalesCompareMode === 'yoy' || selectedMonth === 1;
+    if (needsPrevYear && !reportPrevYear) return null;
+
+    let baseTotal = 0;
+    let baseYear = year;
+    let baseMonth = selectedMonth;
+
+    if (weeklySalesCompareMode === 'mom') {
+      if (selectedMonth >= 2) {
+        baseTotal = Number(getCardValue(report, 'sales', selectedMonth - 1) || 0);
+        baseYear = year;
+        baseMonth = selectedMonth - 1;
+      } else {
+        baseTotal = Number(getCardValue(reportPrevYear as PlReportLike, 'sales', 12) || 0);
+        baseYear = year - 1;
+        baseMonth = 12;
+      }
+    } else {
+      baseTotal = Number(getCardValue(reportPrevYear as PlReportLike, 'sales', selectedMonth) || 0);
+      baseYear = year - 1;
+      baseMonth = selectedMonth;
+    }
+
+    const baselineWeekly = avgWeeklySalesFromMonthTotal(baseTotal, baseYear, baseMonth);
+    const deltaPct = pctChangeVsBaseline(currentWeekly, baselineWeekly);
+
+    const baselineLabel =
+      lang === 'ar'
+        ? `${MONTH_NAMES_AR[baseMonth - 1]} ${baseYear}`
+        : `${MONTH_NAMES_EN[baseMonth - 1]} ${baseYear}`;
+
+    return {
+      currentWeekly,
+      baselineWeekly,
+      deltaPct,
+      baselineLabel,
+    };
+  }, [report, reportPrevYear, selectedMonth, year, weeklySalesCompareMode, lang]);
+
+  const weeklySalesComparisonLoading =
+    selectedMonth != null &&
+    (isLoading || (((weeklySalesCompareMode === 'yoy' || selectedMonth === 1) && isPrevYearReportLoading)));
+
   return {
     t,
     lang,
@@ -294,6 +352,10 @@ export function useDashboardOverviewModel(
       isLoading: insightsQuery.isLoading,
       isError: insightsQuery.isError,
     },
+    weeklySalesCompareMode,
+    setWeeklySalesCompareMode,
+    weeklySalesComparison,
+    weeklySalesComparisonLoading,
   };
 }
 
