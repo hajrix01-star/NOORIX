@@ -3,7 +3,8 @@
  */
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { splitTax } from '../common/utils/math-engine';
+import Decimal from 'decimal.js';
+import { splitTax, toHalalas } from '../common/utils/math-engine';
 
 export type InflowChannelInput = { vaultId: string; amount: string };
 
@@ -52,13 +53,16 @@ export function buildChannelNetTaxForInflow(
   for (const ch of activeChannels) {
     const amt = new Prisma.Decimal(ch.amount || '0');
     if (vatEnabled) {
-      const { net, tax } = splitTax(amt.toString(), vatRateDecimal);
-      channelNetTax.push({
-        net: new Prisma.Decimal(net.toString()),
-        tax: new Prisma.Decimal(tax.toString()),
-      });
-      totalNet = totalNet.plus(net);
-      totalTax = totalTax.plus(tax);
+      // صافي مُقرَّب إلى هللتين ثم ضريبة = إجمالي القناة − الصافي حتى لا يبقى فرق تُخفيه toFixed(4) في رسالة التوازن.
+      const gross = new Decimal(amt.toString());
+      const { net } = splitTax(gross, vatRateDecimal);
+      const netRounded = toHalalas(net);
+      const taxBalanced = gross.minus(netRounded);
+      const netP = new Prisma.Decimal(netRounded.toString());
+      const taxP = new Prisma.Decimal(taxBalanced.toString());
+      channelNetTax.push({ net: netP, tax: taxP });
+      totalNet = totalNet.plus(netP);
+      totalTax = totalTax.plus(taxP);
     } else {
       channelNetTax.push({ net: amt, tax: new Prisma.Decimal(0) });
       totalNet = totalNet.plus(amt);
