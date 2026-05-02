@@ -1,18 +1,14 @@
 -- مفتاح تطبيع داخلي + فهرس فريد جزئي للفواتير النشطة (شركة + مورد + رقم فاتورة المورد بعد التطبيع)
 -- عند وجود فواتير نشطة مكررة تاريخياً: نُبقي أقدم سجل بالمفتاح الأصلي ونُلحق @<id> بالباقي حتى ينجح الفهرس الفريد.
+-- translate(text, from, to) — دمج العربية/الفارسية في translate واحد لتفادي أخطاء التحليل والأقواس.
 ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "supplier_invoice_dedup_key" TEXT;
 
 UPDATE "invoices"
 SET "supplier_invoice_dedup_key" = lower(
   translate(
-    translate(
-      regexp_replace(btrim(regexp_replace(COALESCE("supplier_invoice_number", ''), '[[:space:]]', '', 'g')),
-        '٠١٢٣٤٥٦٧٨٩',
-        '0123456789'
-      ),
-      '۰۱۲۳۴۵۶۷۸۹',
-      '0123456789'
-    )
+    btrim(regexp_replace(COALESCE("supplier_invoice_number", ''), '[[:space:]]', '', 'g'))::text,
+    '٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹',
+    '01234567890123456789'
   )
 )
 WHERE "supplier_id" IS NOT NULL
@@ -23,7 +19,6 @@ WHERE "supplier_id" IS NOT NULL
 
 UPDATE "invoices" SET "supplier_invoice_dedup_key" = NULL WHERE "supplier_invoice_dedup_key" = '';
 
--- فك التكرار بين فواتير نشطة (نفس company + supplier + dedup_key): الأقدم يبقى، الباقي يحصل على لاحقة فريدة
 WITH ranked AS (
   SELECT
     id,
