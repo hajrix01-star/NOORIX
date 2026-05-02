@@ -126,6 +126,25 @@ export function buildVisibleRows(rows: any, collapsedGroups: any) {
   });
 }
 
+/**
+ * أعمدة إيرادات / مشتريات / مصاريف للتصدير إلى Excel: رقم في عمود الفئة فقط لصفوف البند والتصنيف
+ * (بدون صف المجموعة لتفادي ازدواجية مع جمع البنود تحتها).
+ */
+function plCategorySplitNumericCells(row: any, selectedMonth: number | null | undefined) {
+  const empty = '' as const;
+  if (row.rowType === 'summary' || row.rowType === 'group') {
+    return { sales: empty, purchases: empty, expenses: empty };
+  }
+  const gk = row.groupKey;
+  const raw = getContextAmount(row, selectedMonth ?? undefined);
+  if (isEmptyMetric(raw)) return { sales: empty, purchases: empty, expenses: empty };
+  const n = Math.round(Number(raw));
+  if (gk === 'sales') return { sales: n, purchases: empty, expenses: empty };
+  if (gk === 'purchases') return { sales: empty, purchases: n, expenses: empty };
+  if (gk === 'expenses') return { sales: empty, purchases: empty, expenses: n };
+  return { sales: empty, purchases: empty, expenses: empty };
+}
+
 export function buildExportRows(
   report: any,
   lang: any,
@@ -146,6 +165,10 @@ export function buildExportRows(
     const base: Record<string, any> = {
       [t('reportItem')]: `${indent}${displayLabel(row, lang)}`,
     };
+    const split = plCategorySplitNumericCells(row, selectedMonth ?? null);
+    base[t('revenueGroup')] = split.sales === '' ? '' : split.sales;
+    base[t('purchasesGroup')] = split.purchases === '' ? '' : split.purchases;
+    base[t('expensesGroup')] = split.expenses === '' ? '' : split.expenses;
     if (selectedMonth && amountCol) {
       base[amountCol] = amountText(getContextAmount(row, selectedMonth));
       base[t('reportSalesShareMonth')] = percentText(getContextPercent(row, selectedMonth));

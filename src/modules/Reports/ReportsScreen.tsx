@@ -109,6 +109,18 @@ export default function ReportsScreen() {
     [report, selectedMonthNumber],
   );
 
+  /** مفاتيح أعمدة المبالغ الرقمية في Excel (بما فيها أعمدة الفئات الثلاث) */
+  const plExcelMoneyColumnKeys = useMemo(() => {
+    const keys = [t('revenueGroup'), t('purchasesGroup'), t('expensesGroup')];
+    if (selectedMonthNumber && monthLabelForExport) {
+      keys.push(`${monthLabelForExport} ${year}`);
+      return keys;
+    }
+    EN_MONTHS.forEach((m) => keys.push(m));
+    keys.push(t('reportAnnualTotal'));
+    return keys;
+  }, [t, selectedMonthNumber, monthLabelForExport, year]);
+
   function handleExportExcel() {
     if (!report) return;
     void exportToExcel({
@@ -122,6 +134,8 @@ export default function ReportsScreen() {
       rtl: lang !== 'en',
       headerColor: selectedMonthNumber ? '1e3a5f' : '185FA5',
       profitLossRowMeta: plExportRowMeta,
+      money2ColumnKeys: plExcelMoneyColumnKeys,
+      moneyColumnFractionDigits: 0,
     });
   }
 
