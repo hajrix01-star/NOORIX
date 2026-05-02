@@ -30,7 +30,6 @@ git reset --hard origin/main
 echo "Deployed commit: $(git log -1 --oneline)"
 sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz "$DEPLOY_SHA"
 rm -f /tmp/noorix-frontend.tar.gz
-export DEPLOY_SHA
 echo "==> المساحة (اختياري للتشخيص):" && df -h / /var/www 2>/dev/null | head -5 || true
 echo "==> إيقاف noorix-backend مؤقتاً قبل npm ci"
 pm2 stop noorix-backend 2>/dev/null || true
