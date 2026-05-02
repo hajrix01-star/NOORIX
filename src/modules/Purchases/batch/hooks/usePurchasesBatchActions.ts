@@ -179,6 +179,9 @@ export function usePurchasesBatchActions(options: {
       netAmount: inv.netAmount,
       taxAmount: inv.taxAmount,
       status: inv.status,
+      ...(inv.transactionDate?.trim()
+        ? { transactionDate: inv.transactionDate.trim().slice(0, 10) }
+        : {}),
     };
     return updateInvoice(inv.id, payload, companyId);
   }

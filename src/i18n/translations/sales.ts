@@ -56,6 +56,8 @@ export default {
   invoiceNumber: { ar: 'رقم الفاتورة', en: 'Invoice number' },
   documentNumber: { ar: 'رقم السند', en: 'Document number' },
   supplierInvoiceNumber: { ar: 'رقم فاتورة المورد', en: 'Supplier invoice number' },
+  /** تعديل دفعة محفوظة — عمود تاريخ الفاتورة (transactionDate) */
+  batchEditInvoiceDate: { ar: 'تاريخ الفاتورة', en: 'Invoice date' },
   beforeTax: { ar: 'قبل الضريبة', en: 'Before tax' },
   tax: { ar: 'الضريبة', en: 'Tax' },
   date: { ar: 'التاريخ', en: 'Date' },

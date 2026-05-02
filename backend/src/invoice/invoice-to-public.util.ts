@@ -1,13 +1,19 @@
 /**
  * إخفاء مسار المرفق عن JSON — علامة hasInvoiceAttachment.
  */
-export function toPublicInvoiceView<I extends { attachmentPath?: string | null; attachmentOriginalName?: string | null }>(
+export function toPublicInvoiceView<
+  I extends {
+    attachmentPath?: string | null;
+    attachmentOriginalName?: string | null;
+    supplierInvoiceDedupKey?: string | null;
+  },
+>(
   inv: I,
-): Omit<I, 'attachmentPath'> & { hasInvoiceAttachment: boolean } {
-  const { attachmentPath, ...rest } = inv;
+): Omit<I, 'attachmentPath' | 'supplierInvoiceDedupKey'> & { hasInvoiceAttachment: boolean } {
+  const { attachmentPath, supplierInvoiceDedupKey: _dedup, ...rest } = inv;
   const hasInvoiceAttachment = !!(attachmentPath && String(attachmentPath).trim());
   return {
-    ...(rest as Omit<I, 'attachmentPath'>),
+    ...(rest as Omit<I, 'attachmentPath' | 'supplierInvoiceDedupKey'>),
     hasInvoiceAttachment,
   };
 }

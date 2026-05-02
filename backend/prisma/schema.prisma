@@ -937,6 +937,8 @@ model Invoice {
   categoryId      String?   @map("category_id")     // فئة المصروف — للفلترة والتقارير
   invoiceNumber   String    @map("invoice_number")
   supplierInvoiceNumber String? @map("supplier_invoice_number")  // رقم الفاتورة من المورد (غير السريل الداخلي)
+  /// مفتاح تطبيع لمنع تكرار (شركة + مورد + رقم فاتورة المورد) للفواتير النشطة — داخلي
+  supplierInvoiceDedupKey String? @map("supplier_invoice_dedup_key")
   kind            String    // purchase | expense | salary | advance | hr_expense | fixed_expense
   totalAmount     Decimal   @map("total_amount")     @db.Decimal(18, 4)
   netAmount       Decimal   @map("net_amount")       @db.Decimal(18, 4)

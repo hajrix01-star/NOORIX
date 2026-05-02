@@ -7,6 +7,10 @@ import { FinancialCoreService } from '../financial-core/financial-core.service';
 import { nowSaudi } from '../common/utils/date-utils';
 import type { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { buildInvoiceUncheckedUpdateFromDto } from './invoice-build-update-data.util';
+import {
+  assertNoActiveDuplicateSupplierInvoiceDedupKey,
+  patchSupplierInvoiceDedupKeyOnUpdateInput,
+} from './invoice-supplier-invoice-dedup.util';
 
 /**
  * تحديث فاتورة داخل $transaction (قيود + audit).
@@ -25,6 +29,15 @@ export async function updateInvoiceInTransaction(
     const oldInvoice = await tx.invoice.findFirstOrThrow({ where: { id, companyId } });
 
     const updateData = buildInvoiceUncheckedUpdateFromDto(dto);
+    patchSupplierInvoiceDedupKeyOnUpdateInput(updateData, oldInvoice, dto);
+    const mergedSupplierId =
+      dto.supplierId !== undefined ? dto.supplierId : oldInvoice.supplierId;
+    await assertNoActiveDuplicateSupplierInvoiceDedupKey(tx, {
+      companyId,
+      supplierId: mergedSupplierId,
+      dedupKey: (updateData.supplierInvoiceDedupKey as string | null | undefined) ?? null,
+      excludeInvoiceId: id,
+    });
 
     const newInvoice = await tx.invoice.update({ where: { id }, data: updateData });
 

@@ -6,6 +6,7 @@ import {
   importSnapshotDdate as ddate,
 } from './backup-logical-import-helpers.util';
 import { verifyImportedCompanyVaultAllocations } from './backup-logical-import-verify-allocations.util';
+import { computeSupplierInvoiceDedupKeyForInvoiceRow } from '../invoice/invoice-supplier-invoice-dedup.util';
 
 export type BackupLogicalImportTxParams = {
   tenantId: string;
@@ -500,6 +501,18 @@ export async function runBackupLogicalImportInTransaction(
             ? dailySalesSummaryMap.get(String(inv.dailySalesSummaryId))
             : undefined;
           const pmId = inv.paymentMethodId ? vaultMap.get(String(inv.paymentMethodId)) : undefined;
+          const invStatus = String(inv.status ?? 'active');
+          const supInvNum = (inv.supplierInvoiceNumber as string | null) ?? null;
+          const dedupFromSnap = inv.supplierInvoiceDedupKey;
+          const supplierInvoiceDedupKey =
+            dedupFromSnap != null && String(dedupFromSnap).trim() !== ''
+              ? String(dedupFromSnap).trim().toLowerCase()
+              : computeSupplierInvoiceDedupKeyForInvoiceRow({
+                  supplierId: supId ?? null,
+                  kind: String(inv.kind),
+                  supplierInvoiceNumber: supInvNum,
+                  status: invStatus,
+                });
           await tx.invoice.create({
             data: {
               id,
@@ -510,7 +523,8 @@ export async function runBackupLogicalImportInTransaction(
               expenseLineId: exId ?? null,
               categoryId: catId ?? null,
               invoiceNumber: String(inv.invoiceNumber),
-              supplierInvoiceNumber: (inv.supplierInvoiceNumber as string | null) ?? null,
+              supplierInvoiceNumber: supInvNum,
+              supplierInvoiceDedupKey,
               kind: String(inv.kind),
               totalAmount: dec(inv.totalAmount),
               netAmount: dec(inv.netAmount),

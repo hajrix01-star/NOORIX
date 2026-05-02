@@ -19,6 +19,7 @@ import { persistOutflowInvoiceWithLedger } from './financial-outflow-persist.uti
 import { toYmd } from '../common/utils/to-ymd.util';
 import type { OutflowDto } from './dto/financial-operation.dto';
 import type { TxClient } from './financial-core-helpers.util';
+import { assertOutflowBatchNoDuplicateSupplierInvoiceKeys } from '../invoice/invoice-supplier-invoice-dedup.util';
 
 @Injectable()
 export class FinancialOutflowService {
@@ -107,6 +108,7 @@ export class FinancialOutflowService {
   }
 
   private async _processBatchInner(dtos: OutflowDto[], callerUserId: string | undefined, tenantId: string) {
+    assertOutflowBatchNoDuplicateSupplierInvoiceKeys(dtos);
     const userId = this.support.resolveUserId(callerUserId);
     return this.db.withTenant(async (tx) => {
       const results = [];

@@ -8,6 +8,7 @@ import { fmt, sumAmounts } from '../../../utils/format';
 import { Button, AdaptiveSheet } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
+import { toDateInputYmd } from '../../../utils/saudiDate';
 import { BatchEditInvoiceLine } from './BatchEditInvoiceLine';
 
 export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSaveInvoice, onClose }: any) {
@@ -20,6 +21,7 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSave
       totalAmount: Number(i.totalAmount),
       netAmount: Number(i.netAmount),
       taxAmount: Number(i.taxAmount),
+      transactionDate: toDateInputYmd(i.transactionDate) || '',
     })),
   );
   const [saving, setSaving] = useState(false);
@@ -99,6 +101,7 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSave
               <tr className="bg-noorix-bg border-b-2 border-noorix-border">
                 <th className="py-2 px-2.5 text-right w-9">#</th>
                 <th className="py-2 px-2.5 text-right min-w-[140px]">{t('supplier')}</th>
+                <th className="py-2 px-2.5 text-right w-[118px]">{t('batchEditInvoiceDate')}</th>
                 <th className="py-2 px-2.5 text-right w-[90px]">{t('supplierInvoiceNumber')}</th>
                 <th className="py-2 px-2.5 text-right w-[90px]">{t('total')}</th>
                 <th className="py-2 px-2.5 text-right w-20">{t('kind')}</th>

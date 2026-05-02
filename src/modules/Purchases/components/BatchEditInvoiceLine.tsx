@@ -63,6 +63,24 @@ export function BatchEditInvoiceLine({
             )}
           </div>
 
+          <div>
+            <label htmlFor={ids.invoiceDate} className="text-[11px] font-semibold text-noorix-muted mb-1 block">
+              {t('batchEditInvoiceDate')}
+            </label>
+            {cancelled ? (
+              <span className="nx-cell-muted text-[13px] nx-font-numbers">{inv.transactionDate || '—'}</span>
+            ) : (
+              <Input
+                id={ids.invoiceDate}
+                type="date"
+                size="sm"
+                value={inv.transactionDate ?? ''}
+                onChange={(e: any) => updateInv(i, 'transactionDate', e.target.value)}
+                className="nx-font-numbers"
+              />
+            )}
+          </div>
+
           <FormRow cols={1} gap="sm">
             {cancelled ? (
               <>
@@ -144,6 +162,20 @@ export function BatchEditInvoiceLine({
             onChange={(v: any) => updateInv(i, 'supplierId', v)}
             bookmarkedIds={[]}
             placeholder={t('selectSupplierPlaceholder')}
+          />
+        )}
+      </td>
+      <td className="p-1.5">
+        {cancelled ? (
+          <span className="nx-cell-muted nx-font-numbers">{inv.transactionDate || '—'}</span>
+        ) : (
+          <Input
+            type="date"
+            size="sm"
+            value={inv.transactionDate ?? ''}
+            onChange={(e: any) => updateInv(i, 'transactionDate', e.target.value)}
+            className="w-full nx-font-numbers"
+            aria-label={`${t('batchEditInvoiceDate')} — ${t('batchRowLineAriaLabel', i + 1)}`}
           />
         )}
       </td>

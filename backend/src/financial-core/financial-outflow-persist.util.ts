@@ -7,6 +7,10 @@ import { FinancialCoreSupportService } from './financial-core-support.service';
 import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
 import type { OutflowDto } from './dto/financial-operation.dto';
 import type { TxClient } from './financial-core-helpers.util';
+import {
+  assertNoActiveDuplicateSupplierInvoiceDedupKey,
+  computeSupplierInvoiceDedupKeyForOutflowDto,
+} from '../invoice/invoice-supplier-invoice-dedup.util';
 
 export async function persistOutflowInvoiceWithLedger(
   tx: TxClient,
@@ -27,6 +31,13 @@ export async function persistOutflowInvoiceWithLedger(
   const { tenantId, userId, dto, entryDate, txDate, invoiceNumber } = p;
   await fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
+  const supplierInvoiceDedupKey = computeSupplierInvoiceDedupKeyForOutflowDto(dto);
+  await assertNoActiveDuplicateSupplierInvoiceDedupKey(tx, {
+    companyId: dto.companyId,
+    supplierId: dto.supplierId,
+    dedupKey: supplierInvoiceDedupKey,
+  });
+
   const splits = await support.resolveOutflowVaultSplits(tx, dto.companyId, dto);
   const debitAccountId =
     dto.debitAccountId ?? (await support.getDefaultExpenseAccount(tx, dto.companyId, dto.kind));
@@ -45,6 +56,7 @@ export async function persistOutflowInvoiceWithLedger(
       categoryId:      dto.categoryId ?? null,
       invoiceNumber:         invoiceNumber,
       supplierInvoiceNumber: dto.supplierInvoiceNumber ?? null,
+      supplierInvoiceDedupKey,
       kind:                  dto.kind,
       totalAmount:           new Prisma.Decimal(dto.totalAmount),
       netAmount:             new Prisma.Decimal(dto.netAmount),

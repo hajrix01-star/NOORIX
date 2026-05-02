@@ -40,6 +40,11 @@ import type {
   TransferDto,
   CancelOperationDto,
 } from './dto/financial-operation.dto';
+import {
+  assertNoActiveDuplicateSupplierInvoiceDedupKey,
+  assertOutflowBatchNoDuplicateSupplierInvoiceKeys,
+  computeSupplierInvoiceDedupKeyForOutflowDto,
+} from '../invoice/invoice-supplier-invoice-dedup.util';
 
 // Prisma-safe snapshot type
 type JsonObject = Prisma.InputJsonValue;
@@ -168,6 +173,13 @@ export class FinancialCoreService {
       const invoiceNumber = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
       await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
+      const supplierInvoiceDedupKey = computeSupplierInvoiceDedupKeyForOutflowDto(dto);
+      await assertNoActiveDuplicateSupplierInvoiceDedupKey(tx, {
+        companyId: dto.companyId,
+        supplierId: dto.supplierId,
+        dedupKey: supplierInvoiceDedupKey,
+      });
+
       const splits = await this._resolveOutflowVaultSplits(tx, dto.companyId, dto);
       const debitAccountId =
         dto.debitAccountId ?? (await this._getDefaultExpenseAccount(tx, dto.companyId, dto.kind));
@@ -188,6 +200,7 @@ export class FinancialCoreService {
           categoryId:      dto.categoryId ?? null,
           invoiceNumber:         invoiceNumber,
           supplierInvoiceNumber: dto.supplierInvoiceNumber ?? null,
+          supplierInvoiceDedupKey,
           kind:                  dto.kind,
           totalAmount:           new Prisma.Decimal(dto.totalAmount),
           netAmount:             new Prisma.Decimal(dto.netAmount),
@@ -293,6 +306,7 @@ export class FinancialCoreService {
 
   private async _processBatchInner(dtos: OutflowDto[], callerUserId: string | undefined, tenantId: string) {
     const userId = this._resolveUserId(callerUserId);
+    assertOutflowBatchNoDuplicateSupplierInvoiceKeys(dtos);
     return this.db.withTenant(async (tx) => {
       const results = [];
       for (const dto of dtos) {
@@ -300,6 +314,13 @@ export class FinancialCoreService {
         const { entryDate, txDate } = this._buildDates(dto.transactionDate);
         const serial = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
         await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
+
+        const supplierInvoiceDedupKey = computeSupplierInvoiceDedupKeyForOutflowDto(dto);
+        await assertNoActiveDuplicateSupplierInvoiceDedupKey(tx, {
+          companyId: dto.companyId,
+          supplierId: dto.supplierId,
+          dedupKey: supplierInvoiceDedupKey,
+        });
 
         const splits = await this._resolveOutflowVaultSplits(tx, dto.companyId, dto);
         const debitAccountId =
@@ -318,6 +339,7 @@ export class FinancialCoreService {
             categoryId:      dto.categoryId ?? null,
             invoiceNumber:         serial,
             supplierInvoiceNumber: dto.supplierInvoiceNumber ?? null,
+            supplierInvoiceDedupKey,
             kind:                  dto.kind,
             totalAmount:           new Prisma.Decimal(dto.totalAmount),
             netAmount:             new Prisma.Decimal(dto.netAmount),
