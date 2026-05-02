@@ -126,8 +126,8 @@ export function buildVisibleRows(rows: any, collapsedGroups: any) {
   });
 }
 
-/** يجمع مفاتيح category:* التي لها أبناء — للطي الافتراضي في وضع الملخص */
-function collectExpenseCategoryKeysWithChildren(nodes: any[]): string[] {
+/** يجمع مفاتيح category:* التي لها أبناء — لطي الأفرع تحت فئة (أي مجموعة بها شجرة) */
+function collectCategoryKeysWithChildren(nodes: any[]): string[] {
   const keys: string[] = [];
   const walk = (list: any[]) => {
     for (const node of list || []) {
@@ -142,24 +142,31 @@ function collectExpenseCategoryKeysWithChildren(nodes: any[]): string[] {
   return keys;
 }
 
+/** مستويات عرض التقرير: 1 = أقسام + ملخص فقط، 2 = أول طبقة بنود، 3 = الشجرة كاملة */
+export type PlDisplayLevel = 1 | 2 | 3;
+
 /**
- * وضع الملخص: أقسام مفتوحة + أول مستوى مصاريف (فئات ظاهرة، أفرع الفئات مطوية).
- * لا يُطوى قسم المبيعات/المشتريات/المصاريف بالكامل (مفاتيح sales/purchases/expenses تبقى false).
+ * حالة الطي الافتراضية لمستوى العرض (1–3).
+ * - المستوى 1: إخفاء كل بنود المبيعات/المشتريات/المصاريف (يظهر رأس القسم والملخصات فقط).
+ * - المستوى 2: إظهار أول طبقة تحت كل قسم (فئات الجذر ظاهرة، أفرع الفئات مطوية).
+ * - المستوى 3: توسيع كل الفئات.
  */
-export function buildSummaryCollapsedGroups(report: any): Record<string, boolean> {
+export function buildCollapsedGroupsForLevel(report: any, level: PlDisplayLevel): Record<string, boolean> {
+  if (level === 3) {
+    return { sales: false, purchases: false, expenses: false };
+  }
+  if (level === 1) {
+    return { sales: true, purchases: true, expenses: true };
+  }
   const out: Record<string, boolean> = { sales: false, purchases: false, expenses: false };
-  const exp = report?.groups?.find((g: any) => g.key === 'expenses');
-  if (Array.isArray(exp?.items) && exp.items.some((i: any) => i.children)) {
-    for (const k of collectExpenseCategoryKeysWithChildren(exp.items)) {
-      out[k] = true;
+  for (const g of report?.groups || []) {
+    if (Array.isArray(g.items) && g.items.some((i: any) => i.children)) {
+      for (const k of collectCategoryKeysWithChildren(g.items)) {
+        out[k] = true;
+      }
     }
   }
   return out;
-}
-
-/** وضع التفصيل: إظهار كل أفرع المصاريف */
-export function buildDetailCollapsedGroups(): Record<string, boolean> {
-  return { sales: false, purchases: false, expenses: false };
 }
 
 /** تصفية صفوف الجدول المعروضة حسب نص البحث (يبقي رؤوس الأقسام والملخص) */
@@ -192,14 +199,14 @@ function plCategorySplitNumericCells(row: any, selectedMonth: number | null | un
   return { sales: empty, purchases: empty, expenses: empty };
 }
 
-export function buildExportRows(
-  report: any,
+/** صفوف تصدير Excel/PDF من صفوف مسطّحة معروضة (نفس مستوى العرض والطي) */
+export function buildExportRowsFromVisibleRows(
+  rows: any[],
   lang: any,
   t: any,
   selectedMonth: number | null | undefined,
   exportOpts?: { amountColumnTitle?: string },
 ) {
-  const rows = buildFlatRows(report, {});
   const amountCol =
     selectedMonth && exportOpts?.amountColumnTitle
       ? exportOpts.amountColumnTitle
@@ -231,6 +238,16 @@ export function buildExportRows(
   });
 }
 
+export function buildExportRows(
+  report: any,
+  lang: any,
+  t: any,
+  selectedMonth: number | null | undefined,
+  exportOpts?: { amountColumnTitle?: string },
+) {
+  return buildExportRowsFromVisibleRows(buildFlatRows(report, {}), lang, t, selectedMonth, exportOpts);
+}
+
 /** تصدير PDF/Excel — صفوف ملخص فقط (أقسام + إجمالي/صافي) */
 export function filterProfitLossExportSummaryOnly<T extends Record<string, unknown>>(
   rows: T[],
@@ -248,10 +265,14 @@ export function filterProfitLossExportSummaryOnly<T extends Record<string, unkno
   return { rows: outRows, metas: outMetas };
 }
 
-/** بيانات وصفية لصف التصدير (Excel/PDF) — نفس ترتيب `buildExportRows` */
-export function buildProfitLossExportRowMeta(report: any, selectedMonthNum: number | null) {
-  const rows = buildFlatRows(report, {});
-  return rows.map((row: any) => ({
+/** بيانات وصفية لصف التصدير (Excel/PDF) — نفس ترتيب الصفوف الممرَّرة */
+export function buildProfitLossExportRowMeta(
+  report: any,
+  selectedMonthNum: number | null,
+  rows?: any[],
+) {
+  const src = rows !== undefined ? rows : buildFlatRows(report, {});
+  return src.map((row: any) => ({
     rowType: row.rowType as string,
     groupKey: (row.groupKey ?? null) as string | null,
     key: row.key as string | undefined,

@@ -57,10 +57,14 @@ export default {
   reportPlExecutiveSummary: { ar: 'ملخص تنفيذي', en: 'Executive summary' },
   reportPlDetailSectionTitle: { ar: 'تفاصيل التقرير (الشهر المحدد فقط)', en: 'Statement details (selected month only)' },
   reportPlDetailSectionTitleSummary: { ar: 'ملخص الأقسام (بدون بنود فرعية)', en: 'Section totals (no line items)' },
-  reportPlViewSummary: { ar: 'عرض عام', en: 'Summary view' },
-  reportPlViewDetail: { ar: 'تفصيل', en: 'Detailed view' },
+  reportPlLevel1: { ar: 'مستوى 1', en: 'Level 1' },
+  reportPlLevel2: { ar: 'مستوى 2', en: 'Level 2' },
+  reportPlLevel3: { ar: 'مستوى 3', en: 'Level 3' },
+  reportPlLevelsHint: {
+    ar: 'المستوى 1: الأقسام والملخص فقط. المستوى 2: أول طبقة تفصيل. المستوى 3: التفاصيل الكاملة. الطباعة والتصدير يطابقان المستوى الحالي.',
+    en: 'Level 1: sections and totals only. Level 2: first detail tier. Level 3: full tree. Print and export match the current level.',
+  },
   reportPlRowFilterPlaceholder: { ar: 'بحث في اسم البند…', en: 'Search line items…' },
-  reportPlIncludeDetailInOutput: { ar: 'تضمين بنود التفصيل في الطباعة والتصدير', en: 'Include line items in print and export' },
   reportPlToolbarPeriod: { ar: 'الفترة', en: 'Period' },
   reportPlDetailInvoicesHint: {
     ar: 'للمستندات والاتجاه السنوي: اضغط على البند أو المبلغ.',
@@ -85,8 +89,8 @@ export default {
   reportTimeline: { ar: 'الخط الزمني السنوي', en: 'Yearly timeline' },
   reportInvoicesCount: { ar: 'عدد الفواتير', en: 'Invoice count' },
   reportFocusedMonthDesc: {
-    ar: 'عند اختيار شهر: الطباعة تعرض ملخصاً تنفيذياً ثم تفاصيل البنود للشهر فقط على صفحة A4 واحدة (مع ضغط تلقائي عند كثرة الأسطر). التصدير PDF/Excel يبقى بأعمدة الشهر والتراكمي السنة.',
-    en: 'When a month is selected: print shows an executive summary then line-item details for that month on one A4 page (auto-shrinks if many lines). PDF/Excel export still uses month and year-to-date columns.',
+    ar: 'عند اختيار شهر: الطباعة تعرض ملخصاً تنفيذياً ثم جدول البنود حسب المستوى المختار (1–3) على صفحة A4 واحدة (مع ضغط تلقائي عند كثرة الأسطر). التصدير PDF/Excel يطابق نفس المستوى مع أعمدة الشهر والتراكمي السنة.',
+    en: 'When a month is selected: print shows an executive summary then the line table at your chosen level (1–3) on one A4 page (auto-shrinks if many lines). PDF/Excel export matches the same level with month and year-to-date columns.',
   },
   reportClickHint: { ar: 'اضغط على المبلغ لعرض التفاصيل، أو على اسم البند لعرض الاتجاه خلال السنة.', en: 'Click an amount for details, or the item name to view the yearly trend.' },
   reportTopMonth: { ar: 'أعلى شهر', en: 'Top month' },

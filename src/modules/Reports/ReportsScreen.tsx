@@ -18,12 +18,11 @@ import {
   displayLabel,
   buildFlatRows,
   buildVisibleRows,
-  buildExportRows,
+  buildExportRowsFromVisibleRows,
   buildProfitLossExportRowMeta,
-  buildSummaryCollapsedGroups,
-  buildDetailCollapsedGroups,
+  buildCollapsedGroupsForLevel,
   filterVisibleRowsByLabel,
-  filterProfitLossExportSummaryOnly,
+  type PlDisplayLevel,
 } from './reportHelpers';
 import GeneralPlTable from './GeneralPlTable';
 import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
@@ -39,14 +38,13 @@ export default function ReportsScreen() {
   const [year, setYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [detailState, setDetailState] = useState<any>(null);
-  const [plViewMode, setPlViewMode] = useState<'summary' | 'detail'>('summary');
+  const [plDisplayLevel, setPlDisplayLevel] = useState<PlDisplayLevel>(2);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
     sales: false,
     purchases: false,
     expenses: false,
   });
   const [rowSearch, setRowSearch] = useState('');
-  const [includeDetailInOutput, setIncludeDetailInOutput] = useState(true);
   const company = companies?.find((item: any) => item.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
 
@@ -59,12 +57,8 @@ export default function ReportsScreen() {
 
   useLayoutEffect(() => {
     if (!report) return;
-    if (plViewMode === 'summary') {
-      setCollapsedGroups(buildSummaryCollapsedGroups(report));
-    } else {
-      setCollapsedGroups(buildDetailCollapsedGroups());
-    }
-  }, [report, year, activeCompanyId, plViewMode]);
+    setCollapsedGroups(buildCollapsedGroupsForLevel(report, plDisplayLevel));
+  }, [report, year, activeCompanyId, plDisplayLevel]);
 
   const visibleRowsBase = useMemo(() => buildVisibleRows(flatRows, collapsedGroups), [flatRows, collapsedGroups]);
   const visibleRows = useMemo(
@@ -111,31 +105,20 @@ export default function ReportsScreen() {
     return ((profit / sales) * 100).toFixed(1);
   }
 
-  const plExportRowMetaFull = useMemo(
-    () => (report ? buildProfitLossExportRowMeta(report, selectedMonthNumber) : []),
-    [report, selectedMonthNumber],
-  );
-
-  const exportRowsFull = useMemo(
-    () =>
-      buildExportRows(
-        report,
-        lang,
-        t,
-        selectedMonth ? Number(selectedMonth) : null,
-        selectedMonth ? { amountColumnTitle: `${monthLabelForExport} ${year}` } : undefined,
-      ),
-    [report, lang, t, selectedMonth, year, monthLabelForExport],
-  );
-
   const { exportRows, plExportRowMeta } = useMemo(() => {
-    if (!report) return { exportRows: [] as Record<string, unknown>[], plExportRowMeta: [] as ReturnType<typeof buildProfitLossExportRowMeta> };
-    if (includeDetailInOutput) {
-      return { exportRows: exportRowsFull, plExportRowMeta: plExportRowMetaFull };
+    if (!report) {
+      return { exportRows: [] as Record<string, unknown>[], plExportRowMeta: [] as ReturnType<typeof buildProfitLossExportRowMeta> };
     }
-    const f = filterProfitLossExportSummaryOnly(exportRowsFull, plExportRowMetaFull);
-    return { exportRows: f.rows, plExportRowMeta: f.metas as ReturnType<typeof buildProfitLossExportRowMeta> };
-  }, [report, includeDetailInOutput, exportRowsFull, plExportRowMetaFull]);
+    const rows = buildExportRowsFromVisibleRows(
+      visibleRowsBase,
+      lang,
+      t,
+      selectedMonth ? Number(selectedMonth) : null,
+      selectedMonth ? { amountColumnTitle: `${monthLabelForExport} ${year}` } : undefined,
+    );
+    const metas = buildProfitLossExportRowMeta(report, selectedMonthNumber, visibleRowsBase);
+    return { exportRows: rows, plExportRowMeta: metas };
+  }, [report, visibleRowsBase, lang, t, selectedMonth, monthLabelForExport, year, selectedMonthNumber]);
 
   /** مفاتيح أعمدة المبالغ الرقمية في Excel (بما فيها أعمدة الفئات الثلاث) */
   const plExcelMoneyColumnKeys = useMemo(() => {
@@ -195,10 +178,8 @@ export default function ReportsScreen() {
 
   function handlePrint() {
     if (!report) return;
-    const printRowsAll = buildFlatRows(report, {});
-    const printRowsForDoc = includeDetailInOutput
-      ? printRowsAll
-      : printRowsAll.filter((r: any) => r.rowType === 'group' || r.rowType === 'summary');
+    const printFlat = buildFlatRows(report, collapsedGroups);
+    const printRowsForDoc = buildVisibleRows(printFlat, collapsedGroups);
     const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
     const monthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : '';
     const printLang = lang === 'en' ? 'en' : 'ar';
@@ -224,7 +205,7 @@ export default function ReportsScreen() {
           lang,
           t,
           amountColumnTitle,
-          includeLineDetail: includeDetailInOutput,
+          collapsedGroups,
         }),
       });
       return;
@@ -391,22 +372,17 @@ export default function ReportsScreen() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      <Button
-                        size="sm"
-                        variant={plViewMode === 'summary' ? 'primary' : 'default'}
-                        type="button"
-                        onClick={() => setPlViewMode('summary')}
-                      >
-                        {t('reportPlViewSummary')}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={plViewMode === 'detail' ? 'primary' : 'default'}
-                        type="button"
-                        onClick={() => setPlViewMode('detail')}
-                      >
-                        {t('reportPlViewDetail')}
-                      </Button>
+                      {([1, 2, 3] as const).map((lvl) => (
+                        <Button
+                          key={lvl}
+                          size="sm"
+                          variant={plDisplayLevel === lvl ? 'primary' : 'default'}
+                          type="button"
+                          onClick={() => setPlDisplayLevel(lvl)}
+                        >
+                          {lvl === 1 ? t('reportPlLevel1') : lvl === 2 ? t('reportPlLevel2') : t('reportPlLevel3')}
+                        </Button>
+                      ))}
                     </div>
                     <Input
                       type="text"
@@ -416,16 +392,8 @@ export default function ReportsScreen() {
                       value={rowSearch}
                       onChange={(e: any) => setRowSearch(e.target.value)}
                     />
-                    <label className="flex cursor-pointer items-center gap-2 text-[12px] text-noorix-muted">
-                      <input
-                        type="checkbox"
-                        className="h-3.5 w-3.5 shrink-0 rounded border-noorix-border"
-                        checked={includeDetailInOutput}
-                        onChange={(e) => setIncludeDetailInOutput(e.target.checked)}
-                      />
-                      <span>{t('reportPlIncludeDetailInOutput')}</span>
-                    </label>
                   </div>
+                  <div className="mt-1.5 text-[11px] leading-snug text-noorix-muted">{t('reportPlLevelsHint')}</div>
                 </div>
                 <GeneralPlTable
                   report={report}
