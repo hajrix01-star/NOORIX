@@ -38,7 +38,7 @@ sleep 4
   rm -rf node_modules && \
   npm ci && \
   (npx prisma generate || (echo "==> إعادة prisma generate" >&2; sleep 5; npx prisma generate) || (echo "==> آخر محاولة prisma generate" >&2; sleep 5; npx prisma generate)) && \
-  npx prisma migrate deploy && \
+  bash ../deploy/prisma-migrate-deploy-with-recovery.sh && \
   npm run build)
 (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
 API_PORT=3000
