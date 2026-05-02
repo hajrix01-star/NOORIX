@@ -25,6 +25,7 @@ export default function InvoicesListScreen() {
         displayedTotal={s.displayedTotal}
         onExportExcel={s.handleExportExcel}
         onPrintInvoices={s.handlePrintInvoices}
+        onPrintCashReport={s.handlePrintCashReport}
       />
 
       {!s.companyId && (

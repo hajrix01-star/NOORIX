@@ -12,6 +12,7 @@ describe('useInvoicesListScreen', () => {
     const { result } = renderHook(() => useInvoicesListScreen(), { wrapper: TestProviders });
     expect(result.current.companyId).toBe('');
     expect(typeof result.current.toggleSort).toBe('function');
+    expect(typeof result.current.handlePrintCashReport).toBe('function');
     expect(result.current.sortKey).toBe('transactionDate');
     expect(result.current.sortDir).toBe('desc');
   });

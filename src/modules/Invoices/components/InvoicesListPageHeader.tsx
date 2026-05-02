@@ -13,6 +13,7 @@ export function InvoicesListPageHeader({
   displayedTotal,
   onExportExcel,
   onPrintInvoices,
+  onPrintCashReport,
 }: any) {
   return (
     <>
@@ -31,6 +32,15 @@ export function InvoicesListPageHeader({
               disabled={exportBusy || displayedTotal === 0}
             >
               {exportBusy ? '…' : t('exportExcel')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="primary"
+              onClick={onPrintCashReport}
+              disabled={exportBusy}
+            >
+              {t('invoicesCashReportBtn')}
             </Button>
             <Button
               type="button"

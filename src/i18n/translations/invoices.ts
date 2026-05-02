@@ -159,5 +159,33 @@ export default {
   dayCloseKpiColMetric: { ar: 'البند', en: 'Item' },
   dayCloseKpiColValue: { ar: 'المبلغ (SR)', en: 'Amount (SR)' },
   dayCloseKpiColCount: { ar: 'العدد', en: 'Count' },
+  /** تقرير الكاش — زر في رأس قائمة الفواتير */
+  invoicesCashReportBtn: { ar: 'تقرير الكاش', en: 'Cash report' },
+  invoicesCashReportTitle: { ar: 'تقرير الكاش', en: 'Cash report' },
+  invoicesCashReportSubtitle: { ar: 'ملخص حركة النقد في الفترة', en: 'Cash movement summary for the period' },
+  invoicesCashReportScope: {
+    ar: 'الداخل/الخارج/المتبقي: من الفواتير النشطة فقط (غير الملغاة)، لخزائن النوع «نقد»، ضمن الفترة المحددة في أعلى الصفحة — بغض النظر عن فلاتر الجدول.',
+    en: 'In / out / remainder: active (non-cancelled) invoices only, for vaults of type «cash», within the page date range — independent of table filters.',
+  },
+  invoicesCashReportVaultSection: { ar: 'تفصيل خزائن النقد', en: 'Cash vault breakdown' },
+  invoicesCashReportColVault: { ar: 'الخزينة', en: 'Vault' },
+  invoicesCashReportColIn: { ar: 'دخل (مبيعات للخزنة)', en: 'Inflow (sales to vault)' },
+  invoicesCashReportColOut: { ar: 'خرج (صرف من الخزنة)', en: 'Outflow (paid from vault)' },
+  invoicesCashReportColRemain: { ar: 'المتبقي في الفترة', en: 'Period remainder' },
+  invoicesCashReportTotalsRow: { ar: 'الإجمالي — نقد', en: 'Total — cash' },
+  invoicesCashReportSalesCashOnHandTitle: {
+    ar: 'مجموع «المبلغ الموجود بالصندوق» من ملخصات المبيعات',
+    en: 'Sum of «cash on hand» from daily sales summaries',
+  },
+  invoicesCashReportSalesCashOnHandHint: {
+    ar: 'يُجمع حقل المبلغ الموجود بالصندوق من إدخالات المبيعات النشطة في نفس الفترة',
+    en: 'Sums the cash-on-hand field from active daily sales summaries in the same period',
+  },
+  invoicesCashReportSummariesCount: { ar: 'عدد ملخصات المبيعات', en: 'Sales summaries count' },
+  invoicesCashReportNoCashVaults: {
+    ar: 'لا توجد خزينة نوعها «نقد» في الشركة، أو لا توجد حركات نقدية في الفترة.',
+    en: 'No vault of type «cash», or no cash vault movements in this period.',
+  },
+  invoicesCashReportLoadFailed: { ar: 'تعذر تجهيز تقرير الكاش', en: 'Failed to build cash report' },
   totalAmountInclTax: { ar: 'الإجمالي (شامل الضريبة) *', en: 'Total amount (incl. VAT) *' },
 };

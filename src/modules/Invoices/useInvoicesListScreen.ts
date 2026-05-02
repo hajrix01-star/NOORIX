@@ -15,7 +15,9 @@ import {
   getInvoices,
   deleteInvoice,
   fetchAllInvoicesForExport,
+  fetchAllSalesSummariesForExport,
   getInvoiceCreatorFilterOptions,
+  throwIfApiFailed,
 } from '../../services/api';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
@@ -32,6 +34,10 @@ import {
 } from './invoicesListTableModel';
 import { nextInvoiceSortState } from './invoicesListSort';
 import { toYmd } from '../../utils/saudiDate';
+import {
+  buildInvoicesCashReportBody,
+  INVOICES_CASH_REPORT_PRINT_EXTRA_CSS,
+} from './utils/buildInvoicesCashReportPrint';
 
 /**
  * منطق شاشة قائمة الفواتير — عرض فقط يبقى في InvoicesListScreen.jsx
@@ -330,6 +336,145 @@ export function useInvoicesListScreen() {
   const serverInflow = sums.inflow;
   const serverOutflow = sums.outflow;
 
+  const handlePrintCashReport = useCallback(async () => {
+    if (!companyId) return;
+    setExportBusy(true);
+    try {
+      const invRes = await getInvoices(
+        companyId,
+        invoiceQueryStartDate,
+        invoiceQueryEndDate,
+        1,
+        1,
+        null,
+        null,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+      throwIfApiFailed(invRes, t('invoicesCashReportLoadFailed'));
+      const pack = invRes.data as {
+        inflowByVault?: { vaultId: string; nameAr?: string; nameEn?: string; total: string; outflow: string; remainder: string }[];
+      };
+      const inflowByVault = pack?.inflowByVault ?? [];
+      const cashVaultIds = new Set(
+        (vaultsList as { id?: string; type?: string }[])
+          .filter((v) => String(v.type || '').toLowerCase() === 'cash')
+          .map((v) => String(v.id)),
+      );
+      const cashRows = inflowByVault.filter((r) => r.vaultId && cashVaultIds.has(r.vaultId));
+      let summaries: unknown[] = [];
+      try {
+        summaries = await fetchAllSalesSummariesForExport(
+          companyId,
+          invoiceQueryStartDate,
+          invoiceQueryEndDate,
+          undefined,
+          'transactionDate',
+          'desc',
+          false,
+        );
+      } catch {
+        summaries = [];
+      }
+      const cashOnHandSum = (summaries as { cashOnHand?: unknown }[]).reduce(
+        (acc, s) => acc + Number(s.cashOnHand ?? 0),
+        0,
+      );
+
+      const vaultRows = cashRows.map((r) => {
+        const n = lang === 'en' ? r.nameEn || r.nameAr : r.nameAr || r.nameEn;
+        return {
+          vaultName: n || '—',
+          inflow: fmt(Number(r.total ?? 0)),
+          outflow: fmt(Number(r.outflow ?? 0)),
+          remainder: fmt(Number(r.remainder ?? 0)),
+        };
+      });
+
+      let tin = 0;
+      let tout = 0;
+      let trem = 0;
+      for (const r of cashRows) {
+        tin += Number(r.total ?? 0);
+        tout += Number(r.outflow ?? 0);
+        trem += Number(r.remainder ?? 0);
+      }
+      const totals = {
+        inflow: fmt(tin),
+        outflow: fmt(tout),
+        remainder: fmt(trem),
+      };
+
+      const periodLine =
+        fromUrl && toUrl
+          ? `${fromUrl} — ${toUrl}`
+          : `${toYmd(invoiceQueryStartDate) || '—'} — ${toYmd(invoiceQueryEndDate) || '—'}`;
+
+      const labels = {
+        reportTitle: t('invoicesCashReportTitle'),
+        subtitle: t('invoicesCashReportSubtitle'),
+        periodLine,
+        scopeNote: t('invoicesCashReportScope'),
+        vaultSectionTitle: t('invoicesCashReportVaultSection'),
+        colVault: t('invoicesCashReportColVault'),
+        colIn: t('invoicesCashReportColIn'),
+        colOut: t('invoicesCashReportColOut'),
+        colRemain: t('invoicesCashReportColRemain'),
+        totalsTitle: t('invoicesCashReportTotalsRow'),
+        salesCashOnHandTitle: t('invoicesCashReportSalesCashOnHandTitle'),
+        salesCashOnHandHint: t('invoicesCashReportSalesCashOnHandHint'),
+        summariesCountLabel: t('invoicesCashReportSummariesCount'),
+        noCashVaults: t('invoicesCashReportNoCashVaults'),
+      };
+
+      const body = buildInvoicesCashReportBody(
+        labels,
+        vaultRows,
+        totals,
+        fmt(cashOnHandSum),
+        summaries.length,
+      );
+
+      openPrintWindow({
+        title: t('invoicesCashReportTitle'),
+        companyName,
+        subtitle: `${t('invoicesTitle')} — ${(fromUrl && toUrl ? `${fromUrl} — ${toUrl}` : dateFilter.label) || periodLine}`,
+        logoUrl,
+        landscape: false,
+        extraCss: INVOICES_CASH_REPORT_PRINT_EXTRA_CSS,
+        body,
+      });
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : t('invoicesCashReportLoadFailed'), 'error');
+    } finally {
+      setExportBusy(false);
+    }
+  }, [
+    companyId,
+    invoiceQueryStartDate,
+    invoiceQueryEndDate,
+    vaultsList,
+    lang,
+    fmt,
+    t,
+    companyName,
+    logoUrl,
+    fromUrl,
+    toUrl,
+    dateFilter.label,
+    showToast,
+  ]);
+
   const handlePrintInvoices = useCallback(async () => {
     if (!companyId || displayedTotal === 0) return;
     setExportBusy(true);
@@ -497,6 +642,7 @@ export function useInvoicesListScreen() {
     displayedTotal,
     handleExportExcel,
     handlePrintInvoices,
+    handlePrintCashReport,
     editingInvoice,
     setEditingInvoice,
     viewingInvoice,
