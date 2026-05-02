@@ -29,7 +29,7 @@ fi
 git reset --hard origin/main
 echo "Deployed commit: $(git log -1 --oneline)"
 sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz "$DEPLOY_SHA"
-rm -f /tmp/noorix-frontend.tar.gz
+# لا تحذف الأرشيف هنا — عند فشل npm/migrate وإعادة محاولة SSH من CI يحتاج الملف ليبقى في /tmp
 echo "==> المساحة (اختياري للتشخيص):" && df -h / /var/www 2>/dev/null | head -5 || true
 echo "==> إيقاف noorix-backend مؤقتاً قبل npm ci"
 pm2 stop noorix-backend 2>/dev/null || true
@@ -83,4 +83,5 @@ curl -sS -f -o /tmp/noorix-pub.txt --max-time 35 "https://hajrix.com/api/v1/heal
 head -c 500 /tmp/noorix-pub.txt
 echo ""
 rm -f /tmp/noorix-pub.txt
+rm -f /tmp/noorix-frontend.tar.gz
 echo "Deployment completed successfully!"
