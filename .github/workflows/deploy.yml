@@ -1,16 +1,21 @@
-# نشر الواجهة: أرشيف من الـ runner → SCP → install-frontend.sh (مسار واحد على السيرفر).
-# النشر الافتراضي على السيرفر: /var/www/noorix/dist (يجب أن يطابق root في Nginx لـ hajrix.com) أو /etc/noorix/frontend-root.
+# نشر الواجهة: أرشيف من الـ runner → SCP (OpenSSH + إعادة محاولة) → سكربت على السيرفر.
+# بدون appleboy لتفادي أعطال الـ action وتحسين: انتظار فتح المنفذ، TCP keepalive، عدة محاولات SCP/SSH.
 name: Deploy React Frontend
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-noorix-vps
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code
@@ -19,7 +24,6 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          # LTS للبناء؛ إجراءات checkout/setup-node v5 تعمل على Node 24 داخلياً وتزيل تحذير إهلاك Node 20
           node-version: '22'
           package-manager-cache: false
 
@@ -32,120 +36,72 @@ jobs:
           CI: false
           VITE_BUILD_ID: ${{ github.sha }}
 
-      # أرشيف كامل لـ dist؛ النشر على السيرفر عبر deploy/install-frontend.sh → /etc/noorix/frontend-root أو الافتراضي /var/www/noorix/dist.
       - name: Pack frontend tarball
         run: tar czf noorix-frontend.tar.gz -C dist .
 
-      - name: Upload frontend tarball to VPS
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_SSH_PORT || '22' }}
-          protocol: tcp4
-          timeout: 3m
-          command_timeout: 15m
-          source: noorix-frontend.tar.gz
-          target: /tmp/
+      - name: Upload tarball and remote install (SSH wait + retries)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VPS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_KEY:-}" ]; then
+            echo "ERROR: GitHub secrets VPS_HOST / VPS_USERNAME / VPS_SSH_KEY must be set."
+            exit 1
+          fi
+          PORT="${VPS_PORT:-22}"
+          mkdir -p ~/.ssh
+          KEY="$HOME/.ssh/noorix_ci_deploy_key"
+          printf '%s\n' "$VPS_KEY" > "$KEY"
+          chmod 600 "$KEY"
 
-      # فرض IPv4 يقلّل أعطال الاتصال عبر IPv6. المنفذ: Secret VPS_SSH_PORT (اختياري، الافتراضي 22).
-      - name: Install frontend on VPS, backend pull, migrate, build, PM2 + reload Nginx
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_SSH_PORT || '22' }}
-          protocol: tcp4
-          timeout: 3m
-          command_timeout: 25m
-          script: |
-            set -e
-            echo "==> Deploy host: $(hostname) user: $(whoami)"
-            if ! sudo -n true 2>/dev/null; then
-              echo "ERROR: مستخدم النشر يحتاج sudo بدون كلمة مرور (Defaults !requiretty + NOPASSWD لأوامر النشر)، أو شغّل الـ deploy بمستخدم لديه ذلك."
+          # scp: -P للمنفذ | ssh: -p للمنفذ
+          COMMON_SCP_OPTS=( -4 -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=12 -o TCPKeepAlive=yes -o ConnectTimeout=50 -i "$KEY" -P "$PORT" )
+          COMMON_SSH_OPTS=( -4 -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=12 -o TCPKeepAlive=yes -o ConnectTimeout=50 -i "$KEY" -p "$PORT" )
+
+          echo "==> Waiting for TCP ${VPS_HOST}:${PORT} (up to ~10 min, GitHub runner → VPS)..."
+          tcp_ok=0
+          for i in $(seq 1 150); do
+            if timeout 8 bash -c "exec 3<>/dev/tcp/${VPS_HOST}/${PORT}" 2>/dev/null; then
+              exec 3<&- 3>&- 2>/dev/null || true
+              tcp_ok=1
+              break
+            fi
+            if [ $((i % 20)) -eq 1 ]; then echo "  ... still waiting ($i/150)"; fi
+            sleep 3
+          done
+          if [ "$tcp_ok" != 1 ]; then
+            echo "ERROR: ${VPS_HOST}:${PORT} unreachable (timeout). Open SSH in the host firewall / cloud SG for GitHub-hosted runners, or use a self-hosted runner in the same network."
+            exit 1
+          fi
+          echo "==> Port open, starting SCP..."
+
+          for attempt in $(seq 1 8); do
+            echo "==> SCP attempt ${attempt}/8"
+            if scp "${COMMON_SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_HOST}:/tmp/"; then
+              break
+            fi
+            if [ "$attempt" -eq 8 ]; then
+              echo "ERROR: SCP failed after 8 attempts."
               exit 1
             fi
-            if [ ! -f /tmp/noorix-frontend.tar.gz ]; then
-              echo "ERROR: /tmp/noorix-frontend.tar.gz missing — SCP step did not upload the frontend archive."
+            echo "  sleeping 40s..."
+            sleep 40
+          done
+
+          for attempt in $(seq 1 6); do
+            echo "==> Remote install attempt ${attempt}/6"
+            if ssh "${COMMON_SSH_OPTS[@]}" "${VPS_USER}@${VPS_HOST}" "export DEPLOY_SHA='${DEPLOY_SHA}'; bash -s" < deploy/ci-remote-install.sh; then
+              echo "==> Done."
+              exit 0
+            fi
+            if [ "$attempt" -eq 6 ]; then
+              echo "ERROR: Remote install failed after 6 attempts."
               exit 1
             fi
-            file /tmp/noorix-frontend.tar.gz || true
-            tar tzf /tmp/noorix-frontend.tar.gz >/dev/null
-            # بدون هذا المسار لن يُحدَّث الباكند — الفشل هنا يوضح في GitHub Actions أن السيرفر غير مربوط
-            if [ ! -d /var/www/noorix ]; then
-              echo "ERROR: /var/www/noorix not found. Clone the repo there and set up .env, or set NOORIX_ROOT on the server."
-              exit 1
-            fi
-            cd /var/www/noorix
-            # يطابق السيرفر مع origin/main (الملفات غير المتتبعة مثل .env لا تُحذف)
-            git fetch origin main
-            if git rev-parse --verify main >/dev/null 2>&1; then
-              git checkout -f main
-            else
-              git checkout -b main origin/main
-            fi
-            git reset --hard origin/main
-            echo "Deployed commit: $(git log -1 --oneline)"
-            # الواجهة أولاً (قبل npm ci الطويل) لتقليل نافذة الخطر وتحديث الموقع حتى لو فشل الباكند لاحقاً
-            sudo bash deploy/install-frontend.sh /tmp/noorix-frontend.tar.gz ${{ github.sha }}
-            rm -f /tmp/noorix-frontend.tar.gz
-            export DEPLOY_SHA="${{ github.sha }}"
-            # Prisma: إيقاف العملية قبل حذف node_modules — الـ .so مُحمّل في الذاكرة؛ بدون stop يفشل generate (ENOENT copyfile)
-            echo "==> المساحة (اختياري للتشخيص):" && df -h / /var/www 2>/dev/null | head -5 || true
-            echo "==> إيقاف noorix-backend مؤقتاً قبل npm ci"
-            pm2 stop noorix-backend 2>/dev/null || true
-            sleep 4
-            (cd backend && \
-              rm -rf node_modules && \
-              npm ci && \
-              (npx prisma generate || (echo "==> إعادة prisma generate" >&2; sleep 5; npx prisma generate) || (echo "==> آخر محاولة prisma generate" >&2; sleep 5; npx prisma generate)) && \
-              npx prisma migrate deploy && \
-              npm run build)
-            (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
-            # المنفذ من backend/.env (مثال 8080) — الافتراضي 3000. يجب أن يطابق Nginx.
-            API_PORT=3000
-            if [ -f backend/.env ]; then
-              p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' backend/.env | head -1 | tr -d '\r')
-              p=$(echo "$p" | sed "s/^[\"']//;s/[\"']$//" | tr -d '[:space:]')
-              case "$p" in
-                ''|*[!0-9]*) ;;
-                *) API_PORT=$p ;;
-              esac
-            fi
-            echo "==> فحوص liveness تستخدم منفذ API_PORT=${API_PORT} (نفس Nginx ‎proxy_pass)"
-            if [ "$API_PORT" != "3000" ]; then
-              echo "   تنبيه: Nginx يجب أن يوجّه لـ 127.0.0.1:${API_PORT} وليس 3000 إن كان .env 8080"
-            fi
-            # Nest يحتاج ثوانٍ لربط المنفذ — curl فوري يعطي connection refused
-            echo "==> انتظار liveness على 127.0.0.1:${API_PORT} (حتى 90s)"
-            ready=0
-            for i in $(seq 1 90); do
-              if curl -sS -f -o /dev/null --connect-timeout 2 --max-time 3 "http://127.0.0.1:${API_PORT}/api/v1/health/live" 2>/dev/null; then
-                echo "==> الـ API ردّ بعد ${i} ث"
-                ready=1
-                break
-              fi
-              sleep 1
-            done
-            if [ "$ready" != 1 ]; then
-              echo "ERROR: انتهت مهلة 90s — pm2 noorix-backend (آخر 80 سطر)" >&2
-              pm2 logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
-              exit 1
-            fi
-            pm2 restart hajri-menu --update-env 2>/dev/null || true
-            echo "==> readiness (200 + status=ok | 503 إذا DB غير جاهز)"
-            curl -sS -f -o /tmp/noorix-h.txt --max-time 25 "http://127.0.0.1:${API_PORT}/api/v1/health"
-            head -c 500 /tmp/noorix-h.txt
-            echo ""
-            rm -f /tmp/noorix-h.txt
-            sudo systemctl reload nginx
-            echo "==> فحص Nginx: ملف مفقود تحت /assets/ يجب ألا يعيد index.html (انظر deploy/nginx-frontend-cache.example — location ^~ /assets/)"
-            curl -sSI --max-time 12 "https://hajrix.com/assets/.noorix-probe-missing.js" | head -18 || true
-            echo "==> فحص عبر https://hajrix.com (Nginx + TLS + تطبيق). إن فشل: فحص hairpin أو إعدادات النطاق"
-            curl -sS -f -o /tmp/noorix-pub.txt --max-time 35 "https://hajrix.com/api/v1/health"
-            head -c 500 /tmp/noorix-pub.txt
-            echo ""
-            rm -f /tmp/noorix-pub.txt
-            echo "Deployment completed successfully!"
+            echo "  sleeping 45s..."
+            sleep 45
+          done
