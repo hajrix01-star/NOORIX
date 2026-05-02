@@ -73,7 +73,6 @@ export function useInvoicesListScreen() {
   const [sortDir, setSortDir] = useState('desc');
   const [showImportExport, setShowImportExport] = useState(false);
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
-  const [dayCloseOpenV2, setDayCloseOpenV2] = useState(false);
   const qInit = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : '';
   const [searchText, setSearchText] = useState(qInit);
   const debouncedQ = useDebouncedValue((searchText || '').trim(), 300);
@@ -653,8 +652,6 @@ export function useInvoicesListScreen() {
     dayCloseDefaultYmd,
     dayCloseOpen,
     setDayCloseOpen,
-    dayCloseOpenV2,
-    setDayCloseOpenV2,
     showImportExport,
     setShowImportExport,
     importExportExportFetcher,

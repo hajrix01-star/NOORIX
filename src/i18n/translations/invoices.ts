@@ -98,10 +98,7 @@ export default {
   filterInvoicesWithNotesOnly: { ar: 'فقط ذات ملاحظة', en: 'With notes only' },
 
   dayCloseTitle: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },
-  /** نسخة مختصرة للتجربة — بدون جدول فئات المصروف وتكرارات */
-  dayCloseTitleV2: { ar: 'تقرير نهاية اليوم 2', en: 'End-of-day report 2' },
   dayCloseOpenBtn: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },
-  dayCloseOpenBtnV2: { ar: 'تقرير نهاية اليوم 2', en: 'End-of-day report 2' },
   dayCloseVaultBalanceNoteCompact: {
     ar: 'تفصيل قنوات المبيعات يظهر في «حركة الخزائن في اليوم» أدناه. رصيد الكاش في الأعلى من القيود (UTC).',
     en: 'Sales channel detail is under «Vault movement (this day)». Cash balance at top is from ledger (UTC).',

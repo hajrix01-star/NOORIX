@@ -310,7 +310,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
 
 export default function DayCloseReportModal({ companyId, isOpen, onClose, defaultDateYmd, compact = false }: any) {
   const { t, lang } = useTranslation();
-  const reportTitle = compact ? t('dayCloseTitleV2') : t('dayCloseTitle');
+  const reportTitle = t('dayCloseTitle');
   const { companies, activeCompanyId } = useApp();
   const [dateStr, setDateStr] = useState(() => toYmd(defaultDateYmd) || getSaudiToday());
 
@@ -556,7 +556,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           <div className="day-close-no-print flex flex-col gap-3 mb-[14px]">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-6 flex-wrap">
-                <h2 id={compact ? 'day-close-title-v2' : 'day-close-title'} className="m-0 font-extrabold text-[17px]">{reportTitle}</h2>
+                <h2 id="day-close-title" className="m-0 font-extrabold text-[17px]">{reportTitle}</h2>
                 <label className="flex items-center gap-3 text-[13px]">
                   <span className="text-noorix-muted">{t('date')}</span>
                   <Input

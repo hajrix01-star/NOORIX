@@ -48,14 +48,6 @@ export default function InvoicesListScreen() {
           isOpen={s.dayCloseOpen}
           onClose={() => s.setDayCloseOpen(false)}
           defaultDateYmd={s.dayCloseDefaultYmd}
-        />
-      )}
-      {s.dayCloseOpenV2 && (
-        <DayCloseReportModal
-          companyId={s.companyId}
-          isOpen={s.dayCloseOpenV2}
-          onClose={() => s.setDayCloseOpenV2(false)}
-          defaultDateYmd={s.dayCloseDefaultYmd}
           compact
         />
       )}
@@ -85,7 +77,6 @@ export default function InvoicesListScreen() {
             setUrlExtra={s.setUrlExtra}
             setPage={s.setPage}
             setDayCloseOpen={s.setDayCloseOpen}
-            setDayCloseOpenV2={s.setDayCloseOpenV2}
             setShowImportExport={s.setShowImportExport}
             filterHasNotesOnly={s.filterHasNotesOnly}
             setFilterHasNotesOnly={s.setFilterHasNotesOnly}
