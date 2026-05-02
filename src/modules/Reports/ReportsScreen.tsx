@@ -23,8 +23,10 @@ import {
   buildFlatRows,
   buildVisibleRows,
   buildExportRows,
+  buildProfitLossExportRowMeta,
 } from './reportHelpers';
 import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
+import { profitLossPdfExportExtraCss } from './reportsPlExportPdfCss';
 
 const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -102,11 +104,29 @@ export default function ReportsScreen() {
     return ((profit / sales) * 100).toFixed(1);
   }
 
+  const plExportRowMeta = useMemo(
+    () => (report ? buildProfitLossExportRowMeta(report, selectedMonthNumber) : undefined),
+    [report, selectedMonthNumber],
+  );
+
   function handleExportExcel() {
-    exportToExcel(exportRows, `general-profit-loss-${year}${selectedMonthNumber ? `-m${selectedMonthNumber}` : ''}.xlsx`);
+    if (!report) return;
+    void exportToExcel({
+      data: exportRows,
+      filename: `general-profit-loss-${year}${selectedMonthNumber ? `-m${selectedMonthNumber}` : ''}.xlsx`,
+      companyName: companyName || undefined,
+      title: selectedMonthNumber
+        ? `${t('reportIncomeStatementTitle')} — ${monthLabelForExport} ${year}`
+        : `${t('reportGeneral')} — ${year}`,
+      sheetName: lang === 'ar' ? 'ربح وخسارة' : 'P&L',
+      rtl: lang !== 'en',
+      headerColor: selectedMonthNumber ? '1e3a5f' : '185FA5',
+      profitLossRowMeta: plExportRowMeta,
+    });
   }
 
   function handleExportPdf() {
+    if (!report) return;
     exportTableToPdf({
       companyName: companyName || t('reports'),
       title: selectedMonthNumber
@@ -118,6 +138,12 @@ export default function ReportsScreen() {
       filename: `general-profit-loss-${year}${selectedMonthNumber ? `-m${selectedMonthNumber}` : ''}.pdf`,
       landscape: !selectedMonthNumber,
       data: exportRows,
+      extraCss: profitLossPdfExportExtraCss(),
+      htmlDir: lang === 'en' ? 'ltr' : 'rtl',
+      htmlLang: lang === 'en' ? 'en' : 'ar',
+      showPageCounter: !selectedMonthNumber,
+      pageMarginMm: selectedMonthNumber ? 8 : 10,
+      pdfRowMetas: plExportRowMeta,
     });
   }
 

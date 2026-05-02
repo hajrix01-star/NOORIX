@@ -154,9 +154,30 @@ export function buildExportRows(
       EN_MONTHS.forEach((month: any, index: any) => {
         base[month] = amountText(row?.months?.[index]);
       });
+      base[t('reportAnnualTotal')] = amountText(row?.total);
+      base[t('reportSalesShareYear')] = percentText(row?.percentOfSalesYear);
     }
-    base[t('reportAnnualTotal')] = amountText(row?.total);
-    base[t('reportSalesShareYear')] = percentText(row?.percentOfSalesYear);
     return base;
   });
+}
+
+/** بيانات وصفية لصف التصدير (Excel/PDF) — نفس ترتيب `buildExportRows` */
+export function buildProfitLossExportRowMeta(report: any, selectedMonthNum: number | null) {
+  const rows = buildFlatRows(report, {});
+  return rows.map((row: any) => ({
+    rowType: row.rowType as string,
+    groupKey: (row.groupKey ?? null) as string | null,
+    key: row.key as string | undefined,
+    tone: profitLossSummaryTone(row, selectedMonthNum),
+  }));
+}
+
+function profitLossSummaryTone(row: any, selectedMonthNum: number | null): 'pos' | 'neg' | undefined {
+  if (row.rowType !== 'summary' || (row.key !== 'netProfit' && row.key !== 'grossProfit')) return undefined;
+  const amt =
+    selectedMonthNum != null
+      ? Number(row.months?.[selectedMonthNum - 1] ?? 0)
+      : Number(row.total ?? 0);
+  if (!Number.isFinite(amt)) return undefined;
+  return amt >= 0 ? 'pos' : 'neg';
 }

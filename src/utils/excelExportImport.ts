@@ -24,6 +24,9 @@ type ExportToExcelObjectArg = {
   columns?: unknown;
   money2ColumnKeys?: string[];
   moneyColumnFractionDigits?: number;
+  /** صف واحد لكل صف بيانات — تنسيق تقرير ربح وخسارة (xlsx-js-style) */
+  profitLossRowMeta?: Array<{ rowType?: string; groupKey?: string | null; tone?: string }>;
+  rtl?: boolean;
 } & Record<string, unknown>;
 
 /**
@@ -47,12 +50,16 @@ export async function exportToExcel(
   let configOpts: ExportToExcelConfigOpts = { ...opts };
   let columnDefs: unknown = null;
 
+  let plRowMeta: Array<{ rowType?: string; groupKey?: string | null; tone?: string }> | undefined;
+
   if (!Array.isArray(data) && data && typeof data === 'object' && 'data' in data) {
     const {
       data: innerData, filename: cfgFile, title: cfgTitle,
       companyName: cfgCo, sheetName: cfgSheet, columns: cfgColumns,
       money2ColumnKeys: cfgMoney2,
       moneyColumnFractionDigits: cfgMoneyFrac,
+      profitLossRowMeta: cfgPlMeta,
+      rtl: cfgRtl,
     } = data as ExportToExcelObjectArg;
     if (cfgFile) filename = cfgFile;
     if (cfgCo && !configOpts.companyName) configOpts = { companyName: cfgCo, ...configOpts };
@@ -63,6 +70,8 @@ export async function exportToExcel(
     if (typeof cfgMoneyFrac === 'number') {
       configOpts = { ...configOpts, moneyColumnFractionDigits: cfgMoneyFrac };
     }
+    if (Array.isArray(cfgPlMeta) && cfgPlMeta.length) plRowMeta = cfgPlMeta;
+    if (typeof cfgRtl === 'boolean') configOpts = { ...configOpts, rtl: cfgRtl };
     data = (Array.isArray(innerData) ? innerData : []) as unknown[];
   }
 
@@ -173,6 +182,58 @@ export async function exportToExcel(
       alignment: { horizontal: rtl ? 'right' : 'left', vertical: 'center', wrapText: false },
     };
   });
+
+  function plExcelRowFill(meta: { rowType?: string; groupKey?: string | null }) {
+    if (!meta?.rowType) return undefined;
+    if (meta.rowType === 'summary') return { patternType: 'solid' as const, fgColor: { rgb: 'EEF2FF' } };
+    if (meta.rowType === 'group') {
+      if (meta.groupKey === 'sales') return { patternType: 'solid' as const, fgColor: { rgb: 'EFF6FF' } };
+      if (meta.groupKey === 'purchases') return { patternType: 'solid' as const, fgColor: { rgb: 'FEF2F2' } };
+      if (meta.groupKey === 'expenses') return { patternType: 'solid' as const, fgColor: { rgb: 'FFFBEB' } };
+      return { patternType: 'solid' as const, fgColor: { rgb: 'F1F5F9' } };
+    }
+    if (meta.rowType === 'category') return { patternType: 'solid' as const, fgColor: { rgb: 'F8FAFC' } };
+    return undefined;
+  }
+
+  if (plRowMeta && plRowMeta.length === rowsInput.length && rowsInput.length > 0) {
+    for (let ri = 0; ri < rowsInput.length; ri++) {
+      const meta = plRowMeta[ri] || {};
+      const isGroupOrSummary = meta.rowType === 'group' || meta.rowType === 'summary';
+      const fillBase = plExcelRowFill(meta);
+      const fillZebra =
+        fillBase ||
+        ((meta.rowType === 'item' || meta.rowType === 'category') && ri % 2 === 1
+          ? { patternType: 'solid' as const, fgColor: { rgb: 'F9FAFB' } }
+          : undefined);
+      for (let ci = 0; ci < headers.length; ci++) {
+        const addr = XLSX.utils.encode_cell({ r: headerRowR + 1 + ri, c: ci });
+        if (!ws[addr]) continue;
+        const isFirst = ci === 0;
+        const isNumericCol = !isFirst;
+        const rawV = ws[addr].v;
+        const isPercentCell = typeof rawV === 'string' && /%/.test(rawV);
+        let fontRgb = '1e293b';
+        if (isGroupOrSummary && isNumericCol && !isPercentCell && meta.tone === 'neg') fontRgb = 'b91c1c';
+        if (isGroupOrSummary && isNumericCol && !isPercentCell && meta.tone === 'pos') fontRgb = '15803d';
+        ws[addr].s = {
+          ...(fillZebra ? { fill: fillZebra } : {}),
+          font: { name: 'Calibri', sz: isGroupOrSummary ? 11 : 10, bold: isGroupOrSummary, color: { rgb: fontRgb } },
+          alignment: {
+            horizontal: rtl
+              ? isFirst
+                ? 'right'
+                : 'right'
+              : isFirst
+                ? 'left'
+                : 'right',
+            vertical: 'center',
+            wrapText: isFirst,
+          },
+        };
+      }
+    }
+  }
 
   if (headers.length) {
     ws['!cols'] = headers.map((label: any, ci: any) => {
