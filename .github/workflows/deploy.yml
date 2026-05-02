@@ -94,6 +94,15 @@ jobs:
 
           for attempt in $(seq 1 6); do
             echo "==> Remote install attempt ${attempt}/6"
+            if [ "$attempt" -gt 1 ]; then
+              echo "==> Re-SCP tarball (retry after failure)"
+              if ! scp "${COMMON_SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_HOST}:/tmp/"; then
+                echo "ERROR: re-SCP failed on attempt ${attempt}"
+                if [ "$attempt" -eq 6 ]; then exit 1; fi
+                sleep 30
+                continue
+              fi
+            fi
             if ssh "${COMMON_SSH_OPTS[@]}" "${VPS_USER}@${VPS_HOST}" "export DEPLOY_SHA='${DEPLOY_SHA}'; bash -s" < deploy/ci-remote-install.sh; then
               echo "==> Done."
               exit 0
@@ -105,3 +114,5 @@ jobs:
             echo "  sleeping 45s..."
             sleep 45
           done
+          echo "ERROR: Remote install loop ended without success."
+          exit 1
