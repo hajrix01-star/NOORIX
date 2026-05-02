@@ -52,7 +52,8 @@ jobs:
             echo "ERROR: GitHub secrets VPS_HOST / VPS_USERNAME / VPS_SSH_KEY must be set."
             exit 1
           fi
-          PORT="${VPS_PORT:-22}"
+          PORT="$(printf '%s' "${VPS_PORT:-22}" | tr -d '[:space:]\r')"
+          if [ -z "$PORT" ]; then PORT=22; fi
           mkdir -p ~/.ssh
           KEY="$HOME/.ssh/noorix_ci_deploy_key"
           printf '%s\n' "$VPS_KEY" > "$KEY"
@@ -62,19 +63,43 @@ jobs:
           COMMON_SCP_OPTS=( -4 -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=12 -o TCPKeepAlive=yes -o ConnectTimeout=50 -i "$KEY" -P "$PORT" )
           COMMON_SSH_OPTS=( -4 -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=12 -o TCPKeepAlive=yes -o ConnectTimeout=50 -i "$KEY" -p "$PORT" )
 
-          echo "==> Waiting for TCP ${VPS_HOST}:${PORT} (up to ~10 min, GitHub runner → VPS)..."
-          tcp_ok=0
-          for i in $(seq 1 150); do
-            if timeout 8 bash -c "exec 3<>/dev/tcp/${VPS_HOST}/${PORT}" 2>/dev/null; then
+          # فحص TCP على IPv4 صريح: /dev/tcp بالاسم قد يجرّب IPv6 أولاً فيتعطل بينما ssh -4 ينجح لاحقاً
+          WAIT_HOST="${VPS_HOST}"
+          IP_LINE="$(getent ahostsv4 "${VPS_HOST}" 2>/dev/null | awk '/STREAM/ {print $1; exit}' || true)"
+          if [[ "${IP_LINE:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            WAIT_HOST="${IP_LINE}"
+            echo "==> TCP wait uses IPv4 address ${WAIT_HOST} (host: ${VPS_HOST})"
+          else
+            echo "==> TCP wait uses hostname ${VPS_HOST} (no ahostsv4 STREAM — check DNS A record)"
+          fi
+
+          tcp_probe() {
+            if command -v nc >/dev/null 2>&1; then
+              nc -z -w 5 -4 "${WAIT_HOST}" "${PORT}" 2>/dev/null && return 0
+            fi
+            if timeout 6 bash -c "exec 3<>/dev/tcp/${WAIT_HOST}/${PORT}" 2>/dev/null; then
               exec 3<&- 3>&- 2>/dev/null || true
+              return 0
+            fi
+            return 1
+          }
+
+          echo "==> Waiting for TCP ${WAIT_HOST}:${PORT} (GitHub runner → VPS, up to ~8 min)..."
+          tcp_ok=0
+          for i in $(seq 1 120); do
+            if tcp_probe; then
               tcp_ok=1
               break
             fi
-            if [ $((i % 20)) -eq 1 ]; then echo "  ... still waiting ($i/150)"; fi
-            sleep 3
+            if [ $((i % 25)) -eq 1 ]; then
+              echo "  ... still waiting ($i/120) — open inbound TCP ${PORT} on this host to GitHub Actions, or use a self-hosted runner."
+            fi
+            sleep 2
           done
           if [ "$tcp_ok" != 1 ]; then
-            echo "ERROR: ${VPS_HOST}:${PORT} unreachable (timeout). Open SSH in the host firewall / cloud SG for GitHub-hosted runners, or use a self-hosted runner in the same network."
+            echo "ERROR: ${WAIT_HOST}:${PORT} unreachable from this runner."
+            echo "==> DNS / IPv4 hint:"
+            getent ahostsv4 "${VPS_HOST}" 2>/dev/null | head -5 || true
             exit 1
           fi
           echo "==> Port open, starting SCP..."
