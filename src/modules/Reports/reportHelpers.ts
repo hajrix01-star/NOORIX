@@ -126,6 +126,53 @@ export function buildVisibleRows(rows: any, collapsedGroups: any) {
   });
 }
 
+/** يجمع مفاتيح category:* التي لها أبناء — للطي الافتراضي في وضع الملخص */
+function collectExpenseCategoryKeysWithChildren(nodes: any[]): string[] {
+  const keys: string[] = [];
+  const walk = (list: any[]) => {
+    for (const node of list || []) {
+      const ch = Array.isArray(node?.children) ? node.children : [];
+      if (node?.key?.startsWith('category:') && ch.length > 0) {
+        keys.push(node.key);
+        walk(ch);
+      } else if (ch.length) walk(ch);
+    }
+  };
+  walk(nodes || []);
+  return keys;
+}
+
+/**
+ * وضع الملخص: أقسام مفتوحة + أول مستوى مصاريف (فئات ظاهرة، أفرع الفئات مطوية).
+ * لا يُطوى قسم المبيعات/المشتريات/المصاريف بالكامل (مفاتيح sales/purchases/expenses تبقى false).
+ */
+export function buildSummaryCollapsedGroups(report: any): Record<string, boolean> {
+  const out: Record<string, boolean> = { sales: false, purchases: false, expenses: false };
+  const exp = report?.groups?.find((g: any) => g.key === 'expenses');
+  if (Array.isArray(exp?.items) && exp.items.some((i: any) => i.children)) {
+    for (const k of collectExpenseCategoryKeysWithChildren(exp.items)) {
+      out[k] = true;
+    }
+  }
+  return out;
+}
+
+/** وضع التفصيل: إظهار كل أفرع المصاريف */
+export function buildDetailCollapsedGroups(): Record<string, boolean> {
+  return { sales: false, purchases: false, expenses: false };
+}
+
+/** تصفية صفوف الجدول المعروضة حسب نص البحث (يبقي رؤوس الأقسام والملخص) */
+export function filterVisibleRowsByLabel(rows: any[], query: string, lang: any) {
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter((row: any) => {
+    if (row.rowType === 'group' || row.rowType === 'summary') return true;
+    const lab = String(displayLabel(row, lang) || '').toLowerCase();
+    return lab.includes(q);
+  });
+}
+
 /**
  * أعمدة إيرادات / مشتريات / مصاريف للتصدير إلى Excel: رقم في عمود الفئة فقط لصفوف البند والتصنيف
  * (بدون صف المجموعة لتفادي ازدواجية مع جمع البنود تحتها).
@@ -182,6 +229,23 @@ export function buildExportRows(
     }
     return base;
   });
+}
+
+/** تصدير PDF/Excel — صفوف ملخص فقط (أقسام + إجمالي/صافي) */
+export function filterProfitLossExportSummaryOnly<T extends Record<string, unknown>>(
+  rows: T[],
+  metas: Array<{ rowType?: string }>,
+): { rows: T[]; metas: Array<{ rowType?: string }> } {
+  const outRows: T[] = [];
+  const outMetas: Array<{ rowType?: string }> = [];
+  for (let i = 0; i < rows.length; i++) {
+    const m = metas[i];
+    if (m?.rowType === 'group' || m?.rowType === 'summary') {
+      outRows.push(rows[i]);
+      outMetas.push(m);
+    }
+  }
+  return { rows: outRows, metas: outMetas };
 }
 
 /** بيانات وصفية لصف التصدير (Excel/PDF) — نفس ترتيب `buildExportRows` */

@@ -299,9 +299,15 @@ export function buildPlMonthStatementBody(opts: {
   lang: string;
   t: TFn;
   amountColumnTitle: string;
+  /** false = جدول تفاصيل بأقسام وملخص فقط (بدون بنود فرعية) */
+  includeLineDetail?: boolean;
 }): string {
   const { report, selectedMonthNumber, monthLabel, year, lang, t, amountColumnTitle } = opts;
-  const printRows = buildFlatRows(report, {});
+  const includeLineDetail = opts.includeLineDetail !== false;
+  const printRowsAll = buildFlatRows(report, {});
+  const printRows = includeLineDetail
+    ? printRowsAll
+    : printRowsAll.filter((row: any) => row.rowType === 'group' || row.rowType === 'summary');
   const m = selectedMonthNumber;
   const n = printRows.length;
   const zoom = getPlMonthPrintZoom(n);
@@ -367,7 +373,7 @@ export function buildPlMonthStatementBody(opts: {
     `<p class="pl-doc-note">${note}</p>` +
     summaryHtml +
     `<section class="pl-detail-block">` +
-    `<h3 class="pl-section-title">${esc(t('reportPlDetailSectionTitle'))}</h3>` +
+    `<h3 class="pl-section-title">${esc(includeLineDetail ? t('reportPlDetailSectionTitle') : t('reportPlDetailSectionTitleSummary'))}</h3>` +
     `<table class="pl-grid">${head}${bodyParts.join('')}</table>` +
     `</section>` +
     `<p class="pl-footer-meta">${meta} · ${esc(t('reportPlSinglePageLayout'))}</p>` +

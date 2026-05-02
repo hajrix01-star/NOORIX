@@ -56,6 +56,16 @@ export default {
   reportYtdShort: { ar: 'تراكمي السنة', en: 'Year-to-date' },
   reportPlExecutiveSummary: { ar: 'ملخص تنفيذي', en: 'Executive summary' },
   reportPlDetailSectionTitle: { ar: 'تفاصيل التقرير (الشهر المحدد فقط)', en: 'Statement details (selected month only)' },
+  reportPlDetailSectionTitleSummary: { ar: 'ملخص الأقسام (بدون بنود فرعية)', en: 'Section totals (no line items)' },
+  reportPlViewSummary: { ar: 'عرض عام', en: 'Summary view' },
+  reportPlViewDetail: { ar: 'تفصيل', en: 'Detailed view' },
+  reportPlRowFilterPlaceholder: { ar: 'بحث في اسم البند…', en: 'Search line items…' },
+  reportPlIncludeDetailInOutput: { ar: 'تضمين بنود التفصيل في الطباعة والتصدير', en: 'Include line items in print and export' },
+  reportPlToolbarPeriod: { ar: 'الفترة', en: 'Period' },
+  reportPlDetailInvoicesHint: {
+    ar: 'للمستندات والاتجاه السنوي: اضغط على البند أو المبلغ.',
+    en: 'For documents and yearly trend: click an amount or line name.',
+  },
   reportPlFormulaSmart: {
     ar: 'الربح الإجمالي = المبيعات − المشتريات؛ الربح الصافي = الربح الإجمالي − المصاريف.',
     en: 'Gross profit = Sales − Purchases; Net profit = Gross profit − Expenses.',
