@@ -1,4 +1,5 @@
 import React from 'react';
+import { vaultDisplayName } from '../../../../../utils/vaultDisplay';
 import { Button, Input } from '../../../../../ui';
 import { HrQuickEntryRow } from './HrQuickEntryRow';
 
@@ -71,7 +72,7 @@ export function HrQuickEntryAdvanceForm(props: {
           <option value="">{isAr ? '— اختر الخزينة —' : '— Select Vault —'}</option>
           {vaults.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.nameAr || v.nameEn || v.id}
+              {vaultDisplayName(v, isAr ? 'ar' : 'en')}
             </option>
           ))}
         </Input>

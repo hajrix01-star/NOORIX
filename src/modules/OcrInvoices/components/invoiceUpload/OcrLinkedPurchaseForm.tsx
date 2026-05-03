@@ -1,5 +1,6 @@
 import { Button, Input } from '../../../../ui';
 import { toYmd } from '../../../../utils/saudiDate';
+import { vaultDisplayName } from '../../../../utils/vaultDisplay';
 
 export function OcrLinkedPurchaseForm({
   t,
@@ -26,6 +27,7 @@ export function OcrLinkedPurchaseForm({
   extracted,
   isPurchaseTaxable,
   onIsPurchaseTaxableChange,
+  lang,
 }: any) {
   if (!finalizeOcrId) return null;
 
@@ -101,7 +103,7 @@ export function OcrLinkedPurchaseForm({
                   <option value="">{t('ocrSelectVault')}</option>
                   {vaultRows.map((v: any) => (
                     <option key={v.id} value={v.id}>
-                      {v.nameAr || v.nameEn || v.id}
+                      {vaultDisplayName(v, lang)}
                     </option>
                   ))}
                 </select>

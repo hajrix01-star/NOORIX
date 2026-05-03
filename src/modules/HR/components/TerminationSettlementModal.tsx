@@ -18,6 +18,7 @@ import { totalSalary } from '../utils/employeeSalaryMath';
 import { getEmploymentProrationInMonth, toLocalDayKey } from '../utils/payrollAttendanceMath';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, Modal, FmtNum, Input } from '../../../ui';
@@ -445,7 +446,7 @@ export default function TerminationSettlementModal({
               >
                 <option value="">—</option>
                 {paymentVaults.map((v: any) => (
-                  <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.name || v.id}</option>
+                  <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
                 ))}
               </Input>
               <Input

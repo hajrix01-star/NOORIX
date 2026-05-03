@@ -9,6 +9,7 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
+import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -40,7 +41,7 @@ function lastDayOfPayrollMonth(monthRaw: any) {
 }
 
 export default function PayrollTab() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { activeCompanyId, companies, userRole, user } = useApp();
   const effectiveRole = resolveUserRole(user?.role ?? userRole);
   const canDeletePayroll = canDeletePayrollRunRole(effectiveRole);
@@ -499,7 +500,7 @@ export default function PayrollTab() {
             >
               <option value="">{t('payrollPayVaultDefault')}</option>
               {paymentVaults.map((v: any) => (
-                <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
+                <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
               ))}
             </Input>
             {!paySecondEnabled ? (
@@ -517,7 +518,7 @@ export default function PayrollTab() {
                   <option value="">—</option>
                   {paymentVaults.map((v: any) => (
                     <option key={v.id} value={v.id} disabled={v.id === payVaultId}>
-                      {v.nameAr || v.nameEn || v.id}
+                      {vaultDisplayName(v, lang)}
                     </option>
                   ))}
                 </Input>

@@ -12,6 +12,7 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 
@@ -133,7 +134,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
         >
           <option value="">— {t('selectVault') || 'اختر الخزينة'} —</option>
           {vaults.map((v: any) => (
-            <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
+            <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
           ))}
         </Input>
         <Input

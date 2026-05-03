@@ -11,6 +11,7 @@ import { employeeKeys } from '../../../services/queryKeys';
 import { createResidency, updateResidency, createInvoice } from '../../../services/api';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { assertApiOk } from '../../../utils/apiResponse';
 
@@ -220,9 +221,9 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
                     onChange={(e: any) => setVaultId(e.target.value)}
                     required
                   >
-                    <option value="">— اختر الخزينة —</option>
+                    <option value="">— {t('selectVault')} —</option>
                     {vaults.map((v: any) => (
-                      <option key={v.id} value={v.id}>{v.nameAr || v.nameEn || v.id}</option>
+                      <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
                     ))}
                   </Input>
                 </div>

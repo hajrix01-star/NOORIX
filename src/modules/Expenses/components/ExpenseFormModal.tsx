@@ -21,6 +21,7 @@ import {
   isExpensePaymentTaxable,
   supplierAppliesVat,
 } from '../utils/expenseTax';
+import { vaultDisplayName } from '../../../utils/vaultDisplay';
 
 export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   const { t, lang } = useTranslation();
@@ -149,8 +150,8 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   });
 
   const vaultOptions = useMemo(
-    () => activeVaults.map((v: any) => ({ id: v.id, label: v.nameAr || v.nameEn || v.id })),
-    [activeVaults],
+    () => activeVaults.map((v: any) => ({ id: v.id, label: vaultDisplayName(v, lang) })),
+    [activeVaults, lang],
   );
 
   const expenseLinePickerOptions = useMemo(

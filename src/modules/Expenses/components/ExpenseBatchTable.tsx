@@ -15,6 +15,7 @@ import { canExemptThisExpensePayment, isExpensePaymentTaxable } from '../utils/e
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { vaultDisplayName } from '../../../utils/vaultDisplay';
 
 const EMPTY_ROW = () => ({
   key: `${Date.now()}-${Math.random()}`,
@@ -57,9 +58,9 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
     () =>
       activeVaults.map((v: any) => ({
         value: v.id,
-        label: v.nameAr || v.nameEn || v.id,
+        label: vaultDisplayName(v, lang),
       })),
-    [activeVaults],
+    [activeVaults, lang],
   );
 
   const validRows = useMemo(() => {

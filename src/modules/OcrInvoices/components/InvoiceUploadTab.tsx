@@ -83,6 +83,7 @@ export default function InvoiceUploadTab(props: any) {
                 extracted={o.extracted}
                 isPurchaseTaxable={o.isPurchaseTaxable}
                 onIsPurchaseTaxableChange={o.setIsPurchaseTaxable}
+                lang={o.language}
               />
               <OcrWarningStrip warningCount={o.warningCount} extracted={o.extracted} isAr={o.isAr} />
               <OcrLineItemsList
