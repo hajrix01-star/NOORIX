@@ -57,16 +57,26 @@ function counterpartyLabel(op: any, lang: any) {
   return op.notes || '—';
 }
 
+/** قيم عرض كرت الكاش: صافي الشهر إن وُجد من الـ API، وإلا الرصيد التراكمي (توافق خلفي). */
+function getDayCloseCashKpis(cash: any) {
+  const lifetime = Number(cash?.balanceLifetimeCashVaultsEod ?? cash?.balanceEndOfDayCashVaults ?? 0);
+  const raw = cash?.availableCashMonthScoped;
+  const hasMonthScoped = raw != null && raw !== '';
+  const monthScoped = hasMonthScoped ? Number(raw) : lifetime;
+  return { monthScoped, lifetime };
+}
+
 function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact = false }: any) {
   const monthStartYmd = data.meta?.cashMonthScopeStart;
   const monthStartLabel =
     monthStartYmd && /^\d{4}-\d{2}-\d{2}$/.test(String(monthStartYmd))
       ? formatSaudiDateISO(`${monthStartYmd}T12:00:00.000Z`)
       : '—';
-  const availableCash =
-    data.cash?.availableCashMonthScoped != null
-      ? Number(data.cash.availableCashMonthScoped)
-      : Number(data.cash?.balanceEndOfDayCashVaults ?? 0);
+  const { monthScoped, lifetime } = getDayCloseCashKpis(data.cash);
+  const showLifetimeFootnote =
+    Number.isFinite(monthScoped) &&
+    Number.isFinite(lifetime) &&
+    Math.abs(monthScoped - lifetime) > 1e-6;
 
   return (
     <div className="grid gap-3.5">
@@ -105,9 +115,14 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
         <div className="dc-kpi-card dc-kpi-card--bal">
           <div className="dc-kpi-card__label">{t('dayCloseCashRemainingEod')}</div>
           <div className="dc-kpi-card__val">
-            {fmt(availableCash)} <span className="nx-sar">SR</span>
+            {fmt(monthScoped)} <span className="nx-sar">SR</span>
           </div>
           <div className="dc-kpi-card__sub">{t('dayCloseEodDefinition')}</div>
+          {showLifetimeFootnote && (
+            <div className="dc-kpi-card__footnote text-[10px] text-noorix-muted mt-1 leading-snug">
+              {t('dayCloseLifetimeCashFootnote', fmt(lifetime))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -116,11 +131,14 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
           <p className="dc-print-cash-hero__lead">{t('dayCloseAvailableCashPrintLead')}</p>
           <p className="dc-print-cash-hero__title">{t('dayCloseCashRemainingEod')}</p>
           <p className="dc-print-cash-hero__amount">
-            {fmt(availableCash)} <span className="nx-sar">SR</span>
+            {fmt(monthScoped)} <span className="nx-sar">SR</span>
           </p>
           <p className="dc-print-cash-hero__scope">
             {t('dayCloseAvailableCashPrintScope', monthStartLabel, reportDateLabel)}
           </p>
+          {showLifetimeFootnote && (
+            <p className="dc-print-cash-hero__lifetime">{t('dayCloseLifetimeCashFootnote', fmt(lifetime))}</p>
+          )}
         </div>
       </div>
 
@@ -151,7 +169,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
           </tr>
           <tr>
             <td>{t('dayCloseCashRemainingEod')}</td>
-            <td className="dc-num">{fmt(availableCash)}</td>
+            <td className="dc-num">{fmt(monthScoped)}</td>
             <td className="dc-empty">—</td>
           </tr>
           <tr>
@@ -513,6 +531,13 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           color: #64748b;
           line-height: 1.4;
         }
+        .day-close-report .dc-print-cash-hero__lifetime {
+          margin: 8px 0 0;
+          font-size: 10px;
+          font-weight: 600;
+          color: #475569;
+          line-height: 1.35;
+        }
         .day-close-report .dc-inline-stats {
           display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; margin-top: 4px;
         }
@@ -617,6 +642,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           .day-close-report .dc-print-cash-hero__title { font-size: 10pt !important; margin-bottom: 5px !important; }
           .day-close-report .dc-print-cash-hero__amount { font-size: 19pt !important; }
           .day-close-report .dc-print-cash-hero__scope { font-size: 7.5pt !important; margin-top: 7px !important; }
+          .day-close-report .dc-print-cash-hero__lifetime { font-size: 7pt !important; margin-top: 5px !important; }
         }
       `}</style>
 

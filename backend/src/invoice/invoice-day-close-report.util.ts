@@ -233,6 +233,8 @@ export async function loadInvoiceDayCloseReport(
       balanceLifetimeCashVaultsEod: cashBalanceEod,
       /** الكاش المتوفر ضمن شهر تقويم التقرير: صافي الحركة من أول الشهر حتى نهاية اليوم. */
       availableCashMonthScoped,
+      /** توافق خلفي: الرصيد التراكمي لخزائن النقد حتى نهاية يوم التقرير. */
+      balanceEndOfDayCashVaults: cashBalanceEod,
     },
     operations,
   };

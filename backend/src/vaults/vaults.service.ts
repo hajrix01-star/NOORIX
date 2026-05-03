@@ -48,12 +48,13 @@ export class VaultsService {
     // ── 2. جمع accountIds لجميع الخزائن ─────────────────────
     const accountIds = vaults.map((v) => v.accountId);
 
+    /** مطابقة `buildInvoiceTransactionDateFilter`: يوم كامل UTC وليس `Date('YYYY-MM-DD')` كحد علوي (= منتصف ليل بداية اليوم فقط). */
     const dateFilter =
       startDate || endDate
         ? {
             transactionDate: {
-              ...(startDate ? { gte: new Date(startDate) } : {}),
-              ...(endDate ? { lte: new Date(endDate) } : {}),
+              ...(startDate ? { gte: new Date(`${toYmd(startDate)}T00:00:00.000Z`) } : {}),
+              ...(endDate ? { lte: new Date(`${toYmd(endDate)}T23:59:59.999Z`) } : {}),
             },
           }
         : {};
