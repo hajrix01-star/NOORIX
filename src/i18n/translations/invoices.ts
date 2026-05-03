@@ -100,8 +100,8 @@ export default {
   dayCloseTitle: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },
   dayCloseOpenBtn: { ar: 'تقرير نهاية اليوم', en: 'End-of-day report' },
   dayCloseVaultBalanceNoteCompact: {
-    ar: 'تفصيل قنوات المبيعات يظهر في «حركة الخزائن في اليوم» أدناه. رصيد الكاش في الأعلى من القيود (UTC).',
-    en: 'Sales channel detail is under «Vault movement (this day)». Cash balance at top is from ledger (UTC).',
+    ar: 'تفصيل قنوات المبيعات يظهر في «حركة الخزائن في اليوم» أدناه. «الكاش المتوفر» أعلاه من القيود ضمن شهر التقرير فقط (UTC).',
+    en: 'Sales channel detail is under «Vault movement (this day)». «Available cash» above is ledger-based for the report month only (UTC).',
   },
   dayCloseRefresh: { ar: 'تحديث', en: 'Refresh' },
   dayClosePrint: { ar: 'طباعة', en: 'Print' },
@@ -123,8 +123,8 @@ export default {
   dayCloseLoadFailed: { ar: 'تعذر تحميل التقرير', en: 'Failed to load report' },
   dayCloseReportDate: { ar: 'تاريخ التقرير', en: 'Report date' },
   dayCloseVaultBalanceNote: {
-    ar: 'رصيد الكاش في نهاية اليوم يُشتق من القيود حتى نهاية ذلك اليوم (UTC). حركة الخزائن أدناه لكل الأنواع.',
-    en: 'End-of-day cash balance is from ledger entries through that day (UTC). Vault movement below lists all vault types.',
+    ar: '«الكاش المتوفر» = صافي حركة خزائن النقد من أول شهر تقويم تاريخ التقرير حتى نهاية ذلك اليوم (القيود، UTC). حركة الخزائن أدناه لكل الأنواع.',
+    en: '«Available cash» = net cash-vault movement from the first day of the report month through that day end (ledger, UTC). Vault movement below lists all vault types.',
   },
   dayCloseTruncatedWarning: {
     ar: 'تم اقتصار جدول العمليات على أول {0} سجلاً — يوجد المزيد في نفس اليوم.',
@@ -133,8 +133,16 @@ export default {
   dayCloseOperations: { ar: 'عملية', en: 'ops' },
   dayCloseNetDayCash: { ar: 'صافي حركة الكاش اليوم', en: 'Net cash movement (day)' },
   dayCloseCashVaultsOnly: { ar: 'خزائن النقد فقط', en: 'Cash vaults only' },
-  dayCloseCashRemainingEod: { ar: 'رصيد الكاش في نهاية اليوم', en: 'Cash balance at day end' },
-  dayCloseEodDefinition: { ar: 'تراكمي حتى نهاية اليوم', en: 'Cumulative through day end' },
+  dayCloseCashRemainingEod: { ar: 'الكاش المتوفر', en: 'Available cash' },
+  dayCloseEodDefinition: {
+    ar: 'ضمن شهر التقرير · خزائن النقد فقط',
+    en: 'Within report month · cash vaults only',
+  },
+  dayCloseAvailableCashPrintLead: { ar: 'صافي الكاش — نطاق الشهر', en: 'Net cash — month scope' },
+  dayCloseAvailableCashPrintScope: {
+    ar: 'من {0} إلى {1} · وفق القيود (UTC)',
+    en: 'From {0} through {1} · per ledger (UTC)',
+  },
   dayCloseCashMovement: { ar: 'حركة الكاش (اليوم)', en: 'Cash movement (day)' },
   dayCloseCashIn: { ar: 'داخل', en: 'In' },
   dayCloseCashOut: { ar: 'خارج', en: 'Out' },

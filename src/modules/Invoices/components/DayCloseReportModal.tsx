@@ -58,6 +58,16 @@ function counterpartyLabel(op: any, lang: any) {
 }
 
 function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact = false }: any) {
+  const monthStartYmd = data.meta?.cashMonthScopeStart;
+  const monthStartLabel =
+    monthStartYmd && /^\d{4}-\d{2}-\d{2}$/.test(String(monthStartYmd))
+      ? formatSaudiDateISO(`${monthStartYmd}T12:00:00.000Z`)
+      : '—';
+  const availableCash =
+    data.cash?.availableCashMonthScoped != null
+      ? Number(data.cash.availableCashMonthScoped)
+      : Number(data.cash?.balanceEndOfDayCashVaults ?? 0);
+
   return (
     <div className="grid gap-3.5">
       <div className="day-close-screen-only flex gap-2 justify-between items-baseline flex-wrap pb-2 border-b border-noorix-border">
@@ -94,8 +104,23 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
         </div>
         <div className="dc-kpi-card dc-kpi-card--bal">
           <div className="dc-kpi-card__label">{t('dayCloseCashRemainingEod')}</div>
-          <div className="dc-kpi-card__val">{fmt(Number(data.cash?.balanceEndOfDayCashVaults ?? 0))} SR</div>
+          <div className="dc-kpi-card__val">
+            {fmt(availableCash)} <span className="nx-sar">SR</span>
+          </div>
           <div className="dc-kpi-card__sub">{t('dayCloseEodDefinition')}</div>
+        </div>
+      </div>
+
+      <div className="day-close-print-only dc-print-block dc-print-cash-hero">
+        <div className="dc-print-cash-hero__inner">
+          <p className="dc-print-cash-hero__lead">{t('dayCloseAvailableCashPrintLead')}</p>
+          <p className="dc-print-cash-hero__title">{t('dayCloseCashRemainingEod')}</p>
+          <p className="dc-print-cash-hero__amount">
+            {fmt(availableCash)} <span className="nx-sar">SR</span>
+          </p>
+          <p className="dc-print-cash-hero__scope">
+            {t('dayCloseAvailableCashPrintScope', monthStartLabel, reportDateLabel)}
+          </p>
         </div>
       </div>
 
@@ -126,7 +151,7 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
           </tr>
           <tr>
             <td>{t('dayCloseCashRemainingEod')}</td>
-            <td className="dc-num">{fmt(Number(data.cash?.balanceEndOfDayCashVaults ?? 0))}</td>
+            <td className="dc-num">{fmt(availableCash)}</td>
             <td className="dc-empty">—</td>
           </tr>
           <tr>
@@ -448,6 +473,46 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
         .day-close-report .dc-kpi-card--out { border-color: var(--noorix-red-25); background: var(--noorix-red-4); }
         .day-close-report .dc-kpi-card--cash { border-color: var(--noorix-blue-30); background: var(--noorix-blue-5); }
         .day-close-report .dc-kpi-card--bal { border-color: var(--noorix-violet-28); background: var(--noorix-violet-5); }
+        .day-close-report .dc-print-cash-hero { margin: 0 0 14px; }
+        .day-close-report .dc-print-cash-hero__inner {
+          border-radius: 12px;
+          border: 1px solid #c4b5fd;
+          background: linear-gradient(145deg, #faf5ff 0%, #ede9fe 42%, #f5f3ff 100%);
+          padding: 16px 20px;
+          text-align: center;
+          box-shadow: 0 2px 8px rgba(91, 33, 182, 0.08);
+        }
+        .day-close-report .dc-print-cash-hero__lead {
+          margin: 0 0 4px;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          color: #6d28d9;
+          text-transform: uppercase;
+        }
+        .day-close-report .dc-print-cash-hero__title {
+          margin: 0 0 8px;
+          font-size: 13px;
+          font-weight: 800;
+          color: #4c1d95;
+        }
+        .day-close-report .dc-print-cash-hero__amount {
+          margin: 0;
+          font-size: 26px;
+          font-weight: 900;
+          font-family: var(--noorix-font-numbers, ui-monospace, monospace);
+          color: #1e1b4b;
+          direction: ltr;
+          unicode-bidi: isolate;
+          line-height: 1.15;
+        }
+        .day-close-report .dc-print-cash-hero__scope {
+          margin: 10px 0 0;
+          font-size: 10px;
+          font-weight: 600;
+          color: #64748b;
+          line-height: 1.4;
+        }
         .day-close-report .dc-inline-stats {
           display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; margin-top: 4px;
         }
@@ -541,6 +606,17 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           .day-close-report .dc-print-header__co { font-size: 12pt; font-weight: 800; margin: 0 0 2px; }
           .day-close-report .dc-print-header__doc { font-size: 10pt; font-weight: 700; margin: 0; color: #333; }
           .day-close-report .dc-print-header__date { font-size: 8pt; margin: 4px 0 0; color: #555; }
+          .day-close-report .dc-print-cash-hero { margin: 0 0 10px !important; page-break-inside: avoid; }
+          .day-close-report .dc-print-cash-hero__inner {
+            border-radius: 10px !important;
+            padding: 11px 14px !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+          .day-close-report .dc-print-cash-hero__lead { font-size: 7.5pt !important; }
+          .day-close-report .dc-print-cash-hero__title { font-size: 10pt !important; margin-bottom: 5px !important; }
+          .day-close-report .dc-print-cash-hero__amount { font-size: 19pt !important; }
+          .day-close-report .dc-print-cash-hero__scope { font-size: 7.5pt !important; margin-top: 7px !important; }
         }
       `}</style>
 

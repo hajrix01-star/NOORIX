@@ -9,6 +9,17 @@ import { buildInvoiceTransactionDateFilter } from './invoice-transaction-date-fi
 
 const MAX_INVOICES = 2000;
 
+/** اليوم التقويمي السابق لـ YMD بتوقيت UTC (مطابق منطق الفلاتر في التقرير). */
+function ymdUtcPrevDay(ymd: string): string {
+  const [y, mo, day] = ymd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, mo - 1, day));
+  dt.setUTCDate(dt.getUTCDate() - 1);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
 /**
  * تقرير نهاية اليوم — ملخص مالي مضغوط ليوم واحد: فواتير، مبيعات يومية، خزائن، تحويلات.
  */
@@ -27,7 +38,11 @@ export async function loadInvoiceDayCloseReport(
   const dateFilter = buildInvoiceTransactionDateFilter(d, d);
   const activeDayWhere = { companyId, status: 'active' as const, ...dateFilter };
 
-  const [byKindRows, invoiceCountAll, invoices, salesSummaries, vaultsAsOf, vaultsDay, transferAgg] = await Promise.all([
+  const [yStr, mStr] = d.split('-');
+  const monthStartYmd = `${yStr}-${mStr}-01`;
+  const dayBeforeReportMonth = ymdUtcPrevDay(monthStartYmd);
+
+  const [byKindRows, invoiceCountAll, invoices, salesSummaries, vaultsAsOf, vaultsBeforeMonth, vaultsDay, transferAgg] = await Promise.all([
     prisma.invoice.groupBy({
       by: ['kind'],
       where: activeDayWhere,
@@ -59,6 +74,7 @@ export async function loadInvoiceDayCloseReport(
       orderBy: { summaryNumber: 'asc' },
     }),
     vaultsService.getBalancesAsOf(companyId, d),
+    vaultsService.getBalancesAsOf(companyId, dayBeforeReportMonth),
     vaultsService.findAll(companyId, false, d, d),
     prisma.ledgerEntry.aggregate({
       where: { companyId, status: 'active', referenceType: 'transfer', ...dateFilter },
@@ -121,9 +137,13 @@ export async function loadInvoiceDayCloseReport(
 
   const cashVaultsDay = vaultsDay.filter((v) => v.type === 'cash');
   const cashVaultsAsOf = vaultsAsOf.filter((v) => v.type === 'cash');
+  const cashVaultsBeforeMonth = vaultsBeforeMonth.filter((v) => v.type === 'cash');
   const cashDayIn = cashVaultsDay.reduce((s, v) => s.plus(v.totalIn), new Decimal(0)).toNumber();
   const cashDayOut = cashVaultsDay.reduce((s, v) => s.plus(v.totalOut), new Decimal(0)).toNumber();
   const cashBalanceEod = cashVaultsAsOf.reduce((s, v) => s.plus(v.balance), new Decimal(0)).toNumber();
+  const cashBalanceBeforeReportMonth = cashVaultsBeforeMonth.reduce((s, v) => s.plus(v.balance), new Decimal(0)).toNumber();
+  /** صافي حركة خزائن النقد من أول شهر التاريخ ولغاية نهاية يوم التقرير (فرق أرصدة القيود). */
+  const availableCashMonthScoped = new Decimal(cashBalanceEod).minus(cashBalanceBeforeReportMonth).toNumber();
 
   const operations = invoiceRows.map((inv) => {
     const alloc = inv.vaultAllocations ?? [];
@@ -191,6 +211,8 @@ export async function loadInvoiceDayCloseReport(
       invoiceCountAll,
       operationsReturned: invoiceRows.length,
       invoicesTruncated,
+      cashMonthScopeStart: monthStartYmd,
+      cashMonthLedgerBaselineDate: dayBeforeReportMonth,
     },
     sums,
     byKind,
@@ -207,7 +229,10 @@ export async function loadInvoiceDayCloseReport(
       dayTotalIn: cashDayIn,
       dayTotalOut: cashDayOut,
       netDay: new Decimal(cashDayIn).minus(cashDayOut).toNumber(),
-      balanceEndOfDayCashVaults: cashBalanceEod,
+      /** تراكمي لجميع الفترات — للمرجعية؛ لا يُعرض كـ «كاش الشهر». */
+      balanceLifetimeCashVaultsEod: cashBalanceEod,
+      /** الكاش المتوفر ضمن شهر تقويم التقرير: صافي الحركة من أول الشهر حتى نهاية اليوم. */
+      availableCashMonthScoped,
     },
     operations,
   };
