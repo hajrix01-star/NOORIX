@@ -27,6 +27,7 @@ import {
 import GeneralPlTable from './GeneralPlTable';
 import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
 import { profitLossPdfExportExtraCss } from './reportsPlExportPdfCss';
+import { getSaudiNow } from '../../utils/saudiDate';
 
 const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -34,9 +35,9 @@ const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 
 export default function ReportsScreen() {
   const { activeCompanyId, companies } = useApp();
   const { t, lang } = useTranslation();
-  const currentYear = new Date().getUTCFullYear();
-  const [year, setYear] = useState(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const currentYear = getSaudiNow().year;
+  const [year, setYear] = useState(() => getSaudiNow().year);
+  const [selectedMonth, setSelectedMonth] = useState(() => String(getSaudiNow().month));
   const [detailState, setDetailState] = useState<any>(null);
   const [plDisplayLevel, setPlDisplayLevel] = useState<PlDisplayLevel>(2);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
