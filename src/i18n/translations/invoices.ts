@@ -142,7 +142,6 @@ export default {
     ar: 'الرصيد التراكمي حتى نهاية اليوم: {0} SR',
     en: 'Cumulative balance at day end: {0} SR',
   },
-  dayCloseAvailableCashPrintLead: { ar: 'صافي الكاش — نطاق الشهر', en: 'Net cash — month scope' },
   dayCloseAvailableCashPrintScope: {
     ar: 'من {0} إلى {1} · وفق القيود (UTC)',
     en: 'From {0} through {1} · per ledger (UTC)',

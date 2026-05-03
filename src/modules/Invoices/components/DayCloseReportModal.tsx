@@ -126,20 +126,20 @@ function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact
         </div>
       </div>
 
-      <div className="day-close-print-only dc-print-block dc-print-cash-hero">
-        <div className="dc-print-cash-hero__inner">
-          <p className="dc-print-cash-hero__lead">{t('dayCloseAvailableCashPrintLead')}</p>
-          <p className="dc-print-cash-hero__title">{t('dayCloseCashRemainingEod')}</p>
-          <p className="dc-print-cash-hero__amount">
+      <div className="day-close-print-only dc-print-block dc-print-cash-line">
+        <div className="dc-print-cash-line__row">
+          <span className="dc-print-cash-line__label">{t('dayCloseCashRemainingEod')}:</span>
+          <span className="dc-print-cash-line__amount">
             {fmt(monthScoped)} <span className="nx-sar">SR</span>
-          </p>
-          <p className="dc-print-cash-hero__scope">
+          </span>
+          <span className="dc-print-cash-line__meta">
+            {' — '}
             {t('dayCloseAvailableCashPrintScope', monthStartLabel, reportDateLabel)}
-          </p>
-          {showLifetimeFootnote && (
-            <p className="dc-print-cash-hero__lifetime">{t('dayCloseLifetimeCashFootnote', fmt(lifetime))}</p>
-          )}
+          </span>
         </div>
+        {showLifetimeFootnote && (
+          <div className="dc-print-cash-line__sub">{t('dayCloseLifetimeCashFootnote', fmt(lifetime))}</div>
+        )}
       </div>
 
       <table className="dc-table day-close-print-only" aria-label={t('dayCloseKpiPrintCaption')}>
@@ -491,51 +491,39 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
         .day-close-report .dc-kpi-card--out { border-color: var(--noorix-red-25); background: var(--noorix-red-4); }
         .day-close-report .dc-kpi-card--cash { border-color: var(--noorix-blue-30); background: var(--noorix-blue-5); }
         .day-close-report .dc-kpi-card--bal { border-color: var(--noorix-violet-28); background: var(--noorix-violet-5); }
-        .day-close-report .dc-print-cash-hero { margin: 0 0 14px; }
-        .day-close-report .dc-print-cash-hero__inner {
-          border-radius: 12px;
-          border: 1px solid #c4b5fd;
-          background: linear-gradient(145deg, #faf5ff 0%, #ede9fe 42%, #f5f3ff 100%);
-          padding: 16px 20px;
-          text-align: center;
-          box-shadow: 0 2px 8px rgba(91, 33, 182, 0.08);
-        }
-        .day-close-report .dc-print-cash-hero__lead {
-          margin: 0 0 4px;
-          font-size: 9px;
-          font-weight: 800;
-          letter-spacing: 0.06em;
-          color: #6d28d9;
-          text-transform: uppercase;
-        }
-        .day-close-report .dc-print-cash-hero__title {
+        .day-close-report .dc-print-cash-line {
           margin: 0 0 8px;
-          font-size: 13px;
-          font-weight: 800;
-          color: #4c1d95;
+          padding: 0;
+          border: none;
+          background: transparent;
+          box-shadow: none;
         }
-        .day-close-report .dc-print-cash-hero__amount {
-          margin: 0;
-          font-size: 26px;
+        .day-close-report .dc-print-cash-line__row {
+          display: block;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--dc-head);
+          line-height: 1.45;
+        }
+        .day-close-report .dc-print-cash-line__label { font-weight: 800; }
+        .day-close-report .dc-print-cash-line__amount {
           font-weight: 900;
+          font-size: 13px;
           font-family: var(--noorix-font-numbers, ui-monospace, monospace);
-          color: #1e1b4b;
           direction: ltr;
           unicode-bidi: isolate;
-          line-height: 1.15;
+          margin-inline-start: 4px;
         }
-        .day-close-report .dc-print-cash-hero__scope {
-          margin: 10px 0 0;
+        .day-close-report .dc-print-cash-line__meta {
           font-size: 10px;
           font-weight: 600;
-          color: #64748b;
-          line-height: 1.4;
+          color: var(--dc-muted);
         }
-        .day-close-report .dc-print-cash-hero__lifetime {
-          margin: 8px 0 0;
+        .day-close-report .dc-print-cash-line__sub {
+          margin-top: 3px;
           font-size: 10px;
           font-weight: 600;
-          color: #475569;
+          color: var(--dc-muted);
           line-height: 1.35;
         }
         .day-close-report .dc-inline-stats {
@@ -631,18 +619,15 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
           .day-close-report .dc-print-header__co { font-size: 12pt; font-weight: 800; margin: 0 0 2px; }
           .day-close-report .dc-print-header__doc { font-size: 10pt; font-weight: 700; margin: 0; color: #333; }
           .day-close-report .dc-print-header__date { font-size: 8pt; margin: 4px 0 0; color: #555; }
-          .day-close-report .dc-print-cash-hero { margin: 0 0 10px !important; page-break-inside: avoid; }
-          .day-close-report .dc-print-cash-hero__inner {
-            border-radius: 10px !important;
-            padding: 11px 14px !important;
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
+          .day-close-report .dc-print-cash-line {
+            margin: 0 0 5px !important;
+            padding: 0 !important;
+            page-break-inside: avoid;
           }
-          .day-close-report .dc-print-cash-hero__lead { font-size: 7.5pt !important; }
-          .day-close-report .dc-print-cash-hero__title { font-size: 10pt !important; margin-bottom: 5px !important; }
-          .day-close-report .dc-print-cash-hero__amount { font-size: 19pt !important; }
-          .day-close-report .dc-print-cash-hero__scope { font-size: 7.5pt !important; margin-top: 7px !important; }
-          .day-close-report .dc-print-cash-hero__lifetime { font-size: 7pt !important; margin-top: 5px !important; }
+          .day-close-report .dc-print-cash-line__row { font-size: 9.5pt !important; }
+          .day-close-report .dc-print-cash-line__amount { font-size: 10.5pt !important; }
+          .day-close-report .dc-print-cash-line__meta { font-size: 8pt !important; }
+          .day-close-report .dc-print-cash-line__sub { font-size: 7.5pt !important; margin-top: 2px !important; }
         }
       `}</style>
 
