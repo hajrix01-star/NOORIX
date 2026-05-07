@@ -22,6 +22,15 @@ import { createPlGroupStates } from './reports-pl-group-states.util';
 import { resolveExpenseTreeNode } from './reports-expense-tree.util';
 import { formatReportMoneyInteger, formatReportPercentNumber } from '../common/utils/report-display-format.util';
 
+function resolveCategoryLedgerAccountItemKey(
+  categories: Map<string, CategoryNode>,
+  itemKey?: string,
+): string | null {
+  if (!itemKey?.startsWith('category:')) return null;
+  const category = categories.get(itemKey.replace('category:', ''));
+  return category?.accountId ? `account:${category.accountId}` : null;
+}
+
 @Injectable()
 export class ReportsService {
   constructor(
@@ -84,10 +93,11 @@ export class ReportsService {
 
     const catRows = await this.prisma.category.findMany({
       where: { companyId, isActive: true },
-      select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
+      select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true, accountId: true },
     });
     const categories = new Map(catRows.map((c) => [c.id, { ...c } as CategoryNode]));
     const title = resolvePlDetailTitle(groupKey, itemKey, categories);
+    const ledgerAccountItemKey = resolveCategoryLedgerAccountItemKey(categories, itemKey);
 
     let detailItems: Array<{
       id: string;
@@ -113,12 +123,14 @@ export class ReportsService {
       notes: string | null;
     }>;
 
-    const useInvoiceGross = !!itemKey && !itemKey.startsWith('account:');
+    const useInvoiceGross = !!itemKey && !itemKey.startsWith('account:') && !ledgerAccountItemKey;
     let yearAgg: { _sum: { totalAmount: unknown } } | null = null;
     let monthAgg: { _sum: { totalAmount: unknown } } | null = null;
 
     if (itemKey?.startsWith('account:')) {
-      detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey, itemKey);
+      detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, itemKey);
+    } else if (ledgerAccountItemKey) {
+      detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, ledgerAccountItemKey);
     } else {
       const yearWhere = useInvoiceGross ? buildPlInvoiceWhere(companyId, year, undefined, groupKey as GroupKey, itemKey, categories) : null;
       const monthWhere =
@@ -232,10 +244,12 @@ export class ReportsService {
     if (useInvoiceGross) {
       const catRows = await this.prisma.category.findMany({
         where: { companyId, isActive: true },
-        select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true },
+        select: { id: true, nameAr: true, nameEn: true, parentId: true, sortOrder: true, type: true, accountId: true },
       });
       const categories = new Map(catRows.map((c) => [c.id, { ...c } as CategoryNode]));
-      invoiceMonths = await sumInvoiceTotalAmountByMonth(this.prisma, companyId, year, groupKey as GroupKey, itemKey, categories);
+      if (!resolveCategoryLedgerAccountItemKey(categories, itemKey)) {
+        invoiceMonths = await sumInvoiceTotalAmountByMonth(this.prisma, companyId, year, groupKey as GroupKey, itemKey, categories);
+      }
     }
 
     const monthRow = (index: number) => {
