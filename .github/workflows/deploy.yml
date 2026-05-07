@@ -1,5 +1,34 @@
-# نشر الواجهة: أرشيف من الـ runner → SCP (OpenSSH + إعادة محاولة) → سكربت على السيرفر.
-# بدون appleboy لتفادي أعطال الـ action وتحسين: انتظار فتح المنفذ، TCP keepalive، عدة محاولات SCP/SSH.
+# نشر الواجهة — Tailscale VPN → SCP → سكربت على السيرفر
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  لماذا Tailscale؟
+#  GitHub Actions تعمل على Azure بعناوين IP ديناميكية متغيرة.
+#  فتح منفذ 22 للعموم خطر؛ وإضافة 200+ CIDR كل أسبوع غير عملي.
+#  Tailscale تُنشئ نفقاً WireGuard خاصاً: الـ runner ينضم للشبكة
+#  ثم يصل للـ VPS على عنوانه الداخلي دون فتح أي منفذ عام.
+#
+#  الإعداد الأولي (مرة واحدة):
+#  1. على الـ VPS:
+#       curl -fsSL https://tailscale.com/install.sh | sh
+#       sudo tailscale up --authkey=<TSKEY> --advertise-tags=tag:server
+#       sudo systemctl enable --now tailscaled
+#     ثم: tailscale status  ← احفظ الاسم/IP الظاهر (مثال: 100.64.1.5)
+#
+#  2. في Tailscale Admin Console:
+#       Settings → OAuth Clients → New Client
+#       Scope: devices:write | Tag: tag:ci
+#       احفظ Client ID + Secret
+#
+#  3. في GitHub repo → Settings → Secrets → Actions:
+#       TS_OAUTH_CLIENT_ID    = <OAuth Client ID>
+#       TS_OAUTH_SECRET       = <OAuth Client Secret>
+#       VPS_TS_HOST           = <Tailscale IP أو اسم VPS مثال 100.64.1.5>
+#       VPS_HOST              = <النطاق العام hajrix.com — للفحص النهائي فقط>
+#       VPS_USERNAME          = <اسم المستخدم على VPS>
+#       VPS_SSH_KEY           = <المفتاح الخاص SSH>
+#       VPS_SSH_PORT          = <منفذ SSH إن لم يكن 22 — اختياري>
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 name: Deploy React Frontend
 
 on:
@@ -19,16 +48,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-          package-manager-cache: false
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build project
         run: npm run build
@@ -39,105 +68,84 @@ jobs:
       - name: Pack frontend tarball
         run: tar czf noorix-frontend.tar.gz -C dist .
 
-      - name: Upload tarball and remote install (SSH wait + retries)
+      # ── الاتصال بـ Tailscale قبل SSH ───────────────────────
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret:    ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          version: latest
+
+      # ── النشر عبر SSH (من خلال نفق Tailscale) ─────────────
+      - name: Upload tarball and remote install
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
-          DEPLOY_SHA: ${{ github.sha }}
+          VPS_TS_HOST: ${{ secrets.VPS_TS_HOST }}
+          VPS_HOST:    ${{ secrets.VPS_HOST }}
+          VPS_USER:    ${{ secrets.VPS_USERNAME }}
+          VPS_KEY:     ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT:    ${{ secrets.VPS_SSH_PORT }}
+          DEPLOY_SHA:  ${{ github.sha }}
         run: |
           set -euo pipefail
-          if [ -z "${VPS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_KEY:-}" ]; then
-            echo "ERROR: GitHub secrets VPS_HOST / VPS_USERNAME / VPS_SSH_KEY must be set."
+
+          if [ -z "${VPS_TS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_KEY:-}" ]; then
+            echo "ERROR: يجب ضبط: VPS_TS_HOST / VPS_USERNAME / VPS_SSH_KEY في GitHub Secrets."
+            echo "       راجع تعليمات الإعداد في أعلى ملف deploy.yml"
             exit 1
           fi
+
           PORT="$(printf '%s' "${VPS_PORT:-22}" | tr -d '[:space:]\r')"
           if [ -z "$PORT" ]; then PORT=22; fi
+
           mkdir -p ~/.ssh
           KEY="$HOME/.ssh/noorix_ci_deploy_key"
           printf '%s\n' "$VPS_KEY" > "$KEY"
           chmod 600 "$KEY"
 
-          # scp: -P للمنفذ | ssh: -p للمنفذ
-          COMMON_SCP_OPTS=( -4 -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=12 -o TCPKeepAlive=yes -o ConnectTimeout=50 -i "$KEY" -P "$PORT" )
-          COMMON_SSH_OPTS=( -4 -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=12 -o TCPKeepAlive=yes -o ConnectTimeout=50 -i "$KEY" -p "$PORT" )
+          SCP_OPTS=( -o BatchMode=yes -o StrictHostKeyChecking=accept-new
+                     -o ServerAliveInterval=20 -o ServerAliveCountMax=12
+                     -o TCPKeepAlive=yes     -o ConnectTimeout=30
+                     -i "$KEY" -P "$PORT" )
+          SSH_OPTS=( -o BatchMode=yes -o StrictHostKeyChecking=accept-new
+                     -o ServerAliveInterval=20 -o ServerAliveCountMax=12
+                     -o TCPKeepAlive=yes     -o ConnectTimeout=30
+                     -i "$KEY" -p "$PORT" )
 
-          # فحص TCP على IPv4 صريح: /dev/tcp بالاسم قد يجرّب IPv6 أولاً فيتعطل بينما ssh -4 ينجح لاحقاً
-          WAIT_HOST="${VPS_HOST}"
-          IP_LINE="$(getent ahostsv4 "${VPS_HOST}" 2>/dev/null | awk '/STREAM/ {print $1; exit}' || true)"
-          if [[ "${IP_LINE:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            WAIT_HOST="${IP_LINE}"
-            echo "==> TCP wait uses IPv4 address ${WAIT_HOST} (host: ${VPS_HOST})"
-          else
-            echo "==> TCP wait uses hostname ${VPS_HOST} (no ahostsv4 STREAM — check DNS A record)"
-          fi
-
-          tcp_probe() {
-            if command -v nc >/dev/null 2>&1; then
-              nc -z -w 5 -4 "${WAIT_HOST}" "${PORT}" 2>/dev/null && return 0
-            fi
-            if timeout 6 bash -c "exec 3<>/dev/tcp/${WAIT_HOST}/${PORT}" 2>/dev/null; then
-              exec 3<&- 3>&- 2>/dev/null || true
-              return 0
-            fi
-            return 1
-          }
-
-          echo "==> Waiting for TCP ${WAIT_HOST}:${PORT} (GitHub runner → VPS, up to ~8 min)..."
-          tcp_ok=0
-          for i in $(seq 1 120); do
-            if tcp_probe; then
-              tcp_ok=1
+          # ── SCP: أرشيف الواجهة ───────────────────────────
+          for attempt in $(seq 1 5); do
+            echo "==> SCP attempt ${attempt}/5 → ${VPS_TS_HOST}:/tmp/"
+            if scp "${SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_TS_HOST}:/tmp/"; then
+              echo "==> SCP OK"
               break
             fi
-            if [ $((i % 25)) -eq 1 ]; then
-              echo "  ... still waiting ($i/120) — open inbound TCP ${PORT} on this host to GitHub Actions, or use a self-hosted runner."
-            fi
-            sleep 2
-          done
-          if [ "$tcp_ok" != 1 ]; then
-            echo "ERROR: ${WAIT_HOST}:${PORT} unreachable from this runner."
-            echo "==> DNS / IPv4 hint:"
-            getent ahostsv4 "${VPS_HOST}" 2>/dev/null | head -5 || true
-            exit 1
-          fi
-          echo "==> Port open, starting SCP..."
-
-          for attempt in $(seq 1 8); do
-            echo "==> SCP attempt ${attempt}/8"
-            if scp "${COMMON_SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_HOST}:/tmp/"; then
-              break
-            fi
-            if [ "$attempt" -eq 8 ]; then
-              echo "ERROR: SCP failed after 8 attempts."
+            if [ "$attempt" -eq 5 ]; then
+              echo "ERROR: SCP failed after 5 attempts."
               exit 1
             fi
-            echo "  sleeping 40s..."
-            sleep 40
+            echo "  sleeping 20s before retry..."
+            sleep 20
           done
 
-          for attempt in $(seq 1 6); do
-            echo "==> Remote install attempt ${attempt}/6"
+          # ── SSH: تثبيت الواجهة + migrate + pm2 restart ──
+          for attempt in $(seq 1 4); do
+            echo "==> Remote install attempt ${attempt}/4"
             if [ "$attempt" -gt 1 ]; then
               echo "==> Re-SCP tarball (retry after failure)"
-              if ! scp "${COMMON_SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_HOST}:/tmp/"; then
-                echo "ERROR: re-SCP failed on attempt ${attempt}"
-                if [ "$attempt" -eq 6 ]; then exit 1; fi
-                sleep 30
-                continue
-              fi
+              scp "${SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_TS_HOST}:/tmp/" || {
+                echo "ERROR: re-SCP failed"
+                [ "$attempt" -eq 4 ] && exit 1
+                sleep 20; continue
+              }
             fi
-            if ssh "${COMMON_SSH_OPTS[@]}" "${VPS_USER}@${VPS_HOST}" "export DEPLOY_SHA='${DEPLOY_SHA}'; bash -s" < deploy/ci-remote-install.sh; then
-              echo "==> Done."
+            if ssh "${SSH_OPTS[@]}" "${VPS_USER}@${VPS_TS_HOST}" \
+                "export DEPLOY_SHA='${DEPLOY_SHA}'; bash -s" < deploy/ci-remote-install.sh; then
+              echo "==> Deployment completed."
               exit 0
             fi
-            if [ "$attempt" -eq 6 ]; then
-              echo "ERROR: Remote install failed after 6 attempts."
-              exit 1
-            fi
-            echo "  sleeping 45s..."
-            sleep 45
+            [ "$attempt" -eq 4 ] && { echo "ERROR: Remote install failed after 4 attempts."; exit 1; }
+            echo "  sleeping 30s..."
+            sleep 30
           done
-          echo "ERROR: Remote install loop ended without success."
+          echo "ERROR: deploy loop ended without success."
           exit 1

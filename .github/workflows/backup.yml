@@ -1,4 +1,11 @@
 name: Database Backup → Google Drive (VPS)
+#
+# يتصل بـ Tailscale أولاً ثم يشغّل pg_dump على الـ VPS عبر SSH.
+# يحتاج نفس إعداد Tailscale الموثّق في deploy.yml.
+# Secrets المطلوبة: TS_OAUTH_CLIENT_ID, TS_OAUTH_SECRET, VPS_TS_HOST,
+#                   VPS_USER, VPS_SSH_KEY, VPS_DB_PASSWORD,
+#                   VPS_DB_NAME (افتراضي: noorix), VPS_DB_USER (افتراضي: postgres),
+#                   GDRIVE_SCRIPT_URL
 
 on:
   schedule:
@@ -11,9 +18,17 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret:    ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          version: latest
+
       - name: Backup via SSH & upload to Google Drive
         env:
-          VPS_HOST:          ${{ secrets.VPS_HOST }}
+          VPS_TS_HOST:       ${{ secrets.VPS_TS_HOST }}
           VPS_USER:          ${{ secrets.VPS_USER }}
           VPS_SSH_KEY:       ${{ secrets.VPS_SSH_KEY }}
           VPS_DB_PASSWORD:   ${{ secrets.VPS_DB_PASSWORD }}
@@ -21,30 +36,42 @@ jobs:
           VPS_DB_USER:       ${{ secrets.VPS_DB_USER || 'postgres' }}
           GDRIVE_SCRIPT_URL: ${{ secrets.GDRIVE_SCRIPT_URL }}
         run: |
-          # ── إعداد مفتاح SSH ──
+          set -euo pipefail
+
+          if [ -z "${VPS_TS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_SSH_KEY:-}" ]; then
+            echo "ERROR: يجب ضبط VPS_TS_HOST / VPS_USER / VPS_SSH_KEY في GitHub Secrets."
+            exit 1
+          fi
+
           mkdir -p ~/.ssh
-          echo "$VPS_SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          KEY="$HOME/.ssh/noorix_backup_key"
+          printf '%s\n' "$VPS_SSH_KEY" > "$KEY"
+          chmod 600 "$KEY"
+
+          SSH_OPTS=( -o BatchMode=yes -o StrictHostKeyChecking=accept-new
+                     -o ConnectTimeout=30 -o ServerAliveInterval=20
+                     -i "$KEY" )
 
           TS=$(date +%Y%m%d_%H%M%S)
           FNAME="noorix_backup_${TS}.dump"
           export FNAME
 
-          # ── تشغيل pg_dump على الـ VPS ونقل الملف ──
-          ssh -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}" \
+          # pg_dump على VPS
+          ssh "${SSH_OPTS[@]}" "${VPS_USER}@${VPS_TS_HOST}" \
             "PGPASSWORD='${VPS_DB_PASSWORD}' pg_dump \
-              -U ${VPS_DB_USER} \
-              -d ${VPS_DB_NAME} \
+              -U ${VPS_DB_USER} -d ${VPS_DB_NAME} \
               --no-owner --no-acl --format=custom \
               --file=/tmp/${FNAME} && gzip -9 /tmp/${FNAME}"
 
-          scp -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}:/tmp/${FNAME}.gz" "/tmp/${FNAME}.gz"
+          # نقل الملف
+          scp -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=30 -i "$KEY" \
+              "${VPS_USER}@${VPS_TS_HOST}:/tmp/${FNAME}.gz" "/tmp/${FNAME}.gz"
 
-          # ── حذف الملف من الـ VPS ──
-          ssh -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}" "rm -f /tmp/${FNAME}.gz"
+          # حذف الملف من VPS
+          ssh "${SSH_OPTS[@]}" "${VPS_USER}@${VPS_TS_HOST}" "rm -f /tmp/${FNAME}.gz"
 
-          # ── رفع إلى Google Drive ──
+          # رفع إلى Google Drive
           python3 - <<'PYEOF'
           import os, base64, json
           import urllib.request
