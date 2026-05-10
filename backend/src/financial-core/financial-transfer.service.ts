@@ -6,7 +6,6 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { FiscalPeriodService } from '../fiscal-period/fiscal-period.service';
 import { IdempotencyService } from '../idempotency/idempotency.service';
-import { VaultBalanceService } from '../vault-balance/vault-balance.service';
 import { assertOperationNotesLength, validateJournalBalance } from './financial-core-helpers.util';
 import { FinancialCoreSupportService } from './financial-core-support.service';
 import type { TransferDto } from './dto/financial-operation.dto';
@@ -18,7 +17,6 @@ export class FinancialTransferService {
     private readonly db: TenantPrismaService,
     private readonly fiscalPeriod: FiscalPeriodService,
     private readonly idempotency: IdempotencyService,
-    private readonly vaultBalance: VaultBalanceService,
     private readonly support: FinancialCoreSupportService,
   ) {}
 
@@ -68,13 +66,6 @@ export class FinancialTransferService {
       await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
 
       await this.support.assertVaultTransferEndpoints(tx, dto.companyId, dto.fromVaultId, dto.toVaultId);
-
-      const fromBalance = await this.vaultBalance.getVaultBalance(tx, dto.fromVaultId);
-      if (fromBalance.lt(amount)) {
-        throw new BadRequestException(
-          `رصيد الخزينة المُرسِل غير كافٍ. المتاح: ${fromBalance.toFixed(2)} — المطلوب: ${amount.toFixed(2)}`,
-        );
-      }
 
       const [fromAccountId, toAccountId] = await Promise.all([
         this.support.getVaultAccount(tx, dto.companyId, dto.fromVaultId),

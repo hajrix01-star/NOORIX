@@ -7,14 +7,12 @@ import { FinancialTransferService }  from './financial-transfer.service';
 import { FinancialCancelService }   from './financial-cancel.service';
 import { FiscalPeriodModule }        from '../fiscal-period/fiscal-period.module';
 import { IdempotencyModule }         from '../idempotency/idempotency.module';
-import { VaultBalanceModule }        from '../vault-balance/vault-balance.module';
-
 /**
  * FinancialCoreModule — يُصدَّر كـ Global لأن جميع الوحدات المالية تحتاجه.
  * PrismaModule مُسجَّل كـ @Global، لذا TenantPrismaService متاح تلقائياً.
  */
 @Module({
-  imports:   [FiscalPeriodModule, IdempotencyModule, VaultBalanceModule],
+  imports:   [FiscalPeriodModule, IdempotencyModule],
   providers: [
     FinancialCoreSupportService,
     FinancialOutflowService,

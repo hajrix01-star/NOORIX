@@ -16,21 +16,21 @@ import { fmt } from '../../../utils/format';
 import { useToast } from '../../../context/ToastContext';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
-export default function VaultTransferModal({ companyId, startDate = null, endDate = null, onClose }: any) {
+export default function VaultTransferModal({ companyId, onClose }: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  /** نفس استعلام شاشة الخزائن — أرقام الداخل/الخارج/الرصيد حسب الفلتر النشط */
+  /**
+   * جلب الخزائن بدون فلتر تاريخ حتى يعكس الرصيد المعروض الرصيد الكلي التراكمي،
+   * وهو نفس ما يتحقق منه السيرفر عند التحويل (getVaultBalance بدون asOfDate).
+   * استخدام startDate/endDate من الشاشة الأم كان يُظهر رصيد الفترة فقط
+   * مما يُوهم المستخدم بوجود رصيد أعلى من الحقيقي ويتسبب في خطأ "رصيد غير كافٍ".
+   */
   const { data: rawVaults = [], isLoading: vaultsLoading } = useQuery({
-    queryKey: vaultKeys.list(companyId, false, startDate ?? '', endDate ?? ''),
+    queryKey: vaultKeys.list(companyId, false, '', ''),
     queryFn: async () => {
-      const res = await getVaults(
-        companyId,
-        false,
-        startDate || undefined,
-        endDate || undefined,
-      );
+      const res = await getVaults(companyId, false, undefined, undefined);
       throwIfApiFailed(res, t('loadMovementsFailed'));
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
