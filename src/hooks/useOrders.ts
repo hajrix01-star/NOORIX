@@ -20,6 +20,8 @@ import {
   createOrderCategory,
   updateOrderCategory,
   createOrderCategoriesBatch,
+  deleteOrderProductsBulk,
+  deleteOrderCategoriesBulk,
   throwIfApiFailed,
 } from '../services/api';
 import { orderKeys } from '../services/queryKeys';
@@ -175,6 +177,22 @@ export function useCreateOrderCategoryMutation(companyId: any) {
 export function useUpdateOrderCategoryMutation(companyId: any) {
   return useApiMutation({
     mutationFn: ({ id, body }: any) => updateOrderCategory(id, body, companyId),
+    invalidateQueries: [orderKeys.categories(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useDeleteOrderProductsMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: (ids: string[]) => deleteOrderProductsBulk(companyId, ids),
+    invalidateQueries: [orderKeys.products(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useDeleteOrderCategoriesMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: (ids: string[]) => deleteOrderCategoriesBulk(companyId, ids),
     invalidateQueries: [orderKeys.categories(companyId)],
     showErrorToast: false,
   });

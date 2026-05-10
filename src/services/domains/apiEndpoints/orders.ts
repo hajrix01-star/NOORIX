@@ -99,3 +99,15 @@ export async function updateOrderCategory(
 ): Promise<ApiParsedResult> {
   return apiPatch(`/api/v1/orders/categories/${id}?companyId=${companyId}`, body);
 }
+export async function deleteOrderProductsBulk(
+  companyId: string,
+  ids: string[],
+): Promise<ApiParsedResult> {
+  return apiPost(`/api/v1/orders/products/bulk-delete?companyId=${companyId}`, { ids });
+}
+export async function deleteOrderCategoriesBulk(
+  companyId: string,
+  ids: string[],
+): Promise<ApiParsedResult> {
+  return apiPost(`/api/v1/orders/categories/bulk-delete?companyId=${companyId}`, { ids });
+}

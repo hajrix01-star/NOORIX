@@ -165,6 +165,18 @@ export class OrdersController {
     return this.ordersService.update(companyId, id, body);
   }
 
+  @Post('products/bulk-delete')
+  @RequirePermission('VIEW_SALES')
+  deleteProductsBulk(@CompanyId() companyId: string, @Body() body: { ids: string[] }) {
+    return this.ordersService.deleteProductsBulk(companyId, body.ids ?? []);
+  }
+
+  @Post('categories/bulk-delete')
+  @RequirePermission('VIEW_SALES')
+  deleteCategoriesBulk(@CompanyId() companyId: string, @Body() body: { ids: string[] }) {
+    return this.ordersService.deleteCategoriesBulk(companyId, body.ids ?? []);
+  }
+
   @Delete(':id')
   @RequirePermission('VIEW_SALES')
   cancel(@Param('id') id: string, @CompanyId() companyId: string) {

@@ -23,7 +23,16 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
     handleExportCategories,
     handleCreateCategory,
     handleUpdateCategory,
+    selectedCategoryIds,
+    toggleCategorySelection,
+    toggleAllCategories,
+    handleDeleteSelectedCategories,
+    deleteCategoriesMutation,
   } = ctrl;
+
+  const allFilteredIds = filteredCategories.map((c: any) => c.id);
+  const allSelected = allFilteredIds.length > 0 && selectedCategoryIds.size === allFilteredIds.length;
+  const someSelected = selectedCategoryIds.size > 0;
 
   return (
     <div className="grid gap-5">
@@ -72,7 +81,21 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
       </div>
 
       <div className="noorix-surface-card overflow-auto">
-        <div className="nx-section-header justify-end">
+        <div className="nx-section-header justify-between gap-2">
+          {someSelected ? (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={handleDeleteSelectedCategories}
+              disabled={deleteCategoriesMutation.isPending}
+            >
+              {deleteCategoriesMutation.isPending
+                ? t('saving')
+                : `${t('ordersDeleteSelected')} (${selectedCategoryIds.size})`}
+            </Button>
+          ) : (
+            <span />
+          )}
           <Input
             type="search"
             value={categorySearchQuery}
@@ -85,6 +108,15 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
         <table className="w-full text-[13px] border-collapse">
           <thead>
             <tr className="border-b-2 border-noorix-border">
+              <th className="py-[10px] px-3 w-10 text-center">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={() => toggleAllCategories(allFilteredIds)}
+                  aria-label={t('ordersSelectAll')}
+                  className="cursor-pointer"
+                />
+              </th>
               <th className="font-bold text-right py-[10px] px-3">{t('categoryNameAr')}</th>
               <th className="font-bold text-right py-[10px] px-3">{t('categoryNameEn')}</th>
               <th className="text-center font-bold py-[10px] px-3">{t('actions')}</th>
@@ -92,9 +124,15 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
           </thead>
           <tbody>
             {filteredCategories.map((c: any) => (
-              <tr key={c.id} className="border-b border-noorix-border">
+              <tr
+                key={c.id}
+                className={`border-b border-noorix-border${selectedCategoryIds.has(c.id) ? ' bg-noorix-bg-muted' : ''}`}
+              >
                 {editingCategory?.id === c.id ? (
                   <>
+                    <td className="py-2 px-3 text-center">
+                      <input type="checkbox" checked={selectedCategoryIds.has(c.id)} onChange={() => toggleCategorySelection(c.id)} className="cursor-pointer" />
+                    </td>
                     <td className="py-2 px-3">
                       <Input type="text" value={editingCategory.nameAr} onChange={(e: any) => setEditingCategory((x: any) => ({ ...x, nameAr: e.target.value }))} placeholder={t('categoryNameAr')} />
                     </td>
@@ -114,6 +152,9 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
                   </>
                 ) : (
                   <>
+                    <td className="py-[10px] px-3 text-center">
+                      <input type="checkbox" checked={selectedCategoryIds.has(c.id)} onChange={() => toggleCategorySelection(c.id)} className="cursor-pointer" />
+                    </td>
                     <td className="py-[10px] px-3">{c.nameAr || '—'}</td>
                     <td className="nx-cell-muted py-[10px] px-3">{c.nameEn || '—'}</td>
                     <td className="text-center py-[10px] px-3">

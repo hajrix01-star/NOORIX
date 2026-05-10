@@ -176,4 +176,9 @@ export default {
   unitPrice: { ar: 'سعر الوحدة', en: 'Unit price' },
   unit: { ar: 'الوحدة', en: 'Unit' },
   lastPrice: { ar: 'آخر سعر', en: 'Last price' },
+  ordersDeleteSelected: { ar: 'حذف المحدد', en: 'Delete selected' },
+  ordersSelectAll: { ar: 'تحديد الكل', en: 'Select all' },
+  ordersProductsDeleted: { ar: 'تم حذف {0} صنف', en: '{0} product(s) deleted' },
+  ordersCategoriesDeleted: { ar: 'تم حذف {0} فئة', en: '{0} categor(y/ies) deleted' },
+  ordersSelectedCount: { ar: '{0} محدد', en: '{0} selected' },
 };

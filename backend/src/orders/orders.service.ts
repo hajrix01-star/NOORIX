@@ -419,4 +419,22 @@ export class OrdersService {
       },
     });
   }
+
+  async deleteProductsBulk(companyId: string, ids: string[]) {
+    if (!ids.length) return { deleted: 0 };
+    const { count } = await this.prisma.orderProduct.updateMany({
+      where: { id: { in: ids }, companyId },
+      data: { isActive: false },
+    });
+    return { deleted: count };
+  }
+
+  async deleteCategoriesBulk(companyId: string, ids: string[]) {
+    if (!ids.length) return { deleted: 0 };
+    const { count } = await this.prisma.orderCategory.updateMany({
+      where: { id: { in: ids }, companyId },
+      data: { isActive: false },
+    });
+    return { deleted: count };
+  }
 }

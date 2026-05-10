@@ -36,7 +36,16 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
     removeEditingVariant,
     setAddSizeModal,
     setAddPackagingModal,
+    selectedProductIds,
+    toggleProductSelection,
+    toggleAllProducts,
+    handleDeleteSelectedProducts,
+    deleteProductsMutation,
   } = ctrl;
+
+  const allFilteredIds = filteredProducts.map((p: any) => p.id);
+  const allSelected = allFilteredIds.length > 0 && selectedProductIds.size === allFilteredIds.length;
+  const someSelected = selectedProductIds.size > 0;
 
   return (
     <div className="grid gap-5">
@@ -175,7 +184,21 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
       </div>
 
       <div className="noorix-surface-card overflow-auto">
-        <div className="nx-section-header justify-end">
+        <div className="nx-section-header justify-between gap-2">
+          {someSelected ? (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={handleDeleteSelectedProducts}
+              disabled={deleteProductsMutation.isPending}
+            >
+              {deleteProductsMutation.isPending
+                ? t('saving')
+                : `${t('ordersDeleteSelected')} (${selectedProductIds.size})`}
+            </Button>
+          ) : (
+            <span />
+          )}
           <Input
             type="search"
             value={productSearchQuery}
@@ -188,6 +211,15 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
         <table className="w-full text-[13px] border-collapse">
           <thead>
             <tr className="border-b-2 border-noorix-border">
+              <th className="py-[10px] px-3 w-10 text-center">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={() => toggleAllProducts(allFilteredIds)}
+                  aria-label={t('ordersSelectAll')}
+                  className="cursor-pointer"
+                />
+              </th>
               <th className="font-bold text-right py-[10px] px-3">{t('productNameAr')}</th>
               <th className="font-bold text-right py-[10px] px-3">{t('productNameEn')}</th>
               <th className="font-bold text-right py-[10px] px-3">{t('category')}</th>
@@ -205,9 +237,15 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                     ? String(fmt(p.lastPrice))
                     : '';
               return (
-                <tr key={p.id} className="border-b border-noorix-border">
+                <tr
+                  key={p.id}
+                  className={`border-b border-noorix-border${selectedProductIds.has(p.id) ? ' bg-noorix-bg-muted' : ''}`}
+                >
                   {editingProduct?.id === p.id ? (
                     <>
+                      <td className="py-2 px-3 text-center">
+                        <input type="checkbox" checked={selectedProductIds.has(p.id)} onChange={() => toggleProductSelection(p.id)} className="cursor-pointer" />
+                      </td>
                       <td className="py-2 px-3" colSpan={5}>
                         <div className="grid gap-3">
                           <div className="flex flex-wrap gap-3">
@@ -315,6 +353,9 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                     </>
                   ) : (
                     <>
+                      <td className="py-[10px] px-3 text-center">
+                        <input type="checkbox" checked={selectedProductIds.has(p.id)} onChange={() => toggleProductSelection(p.id)} className="cursor-pointer" />
+                      </td>
                       <td className="py-[10px] px-3">{p.nameAr || '—'}</td>
                       <td className="nx-cell-muted py-[10px] px-3">{p.nameEn || '—'}</td>
                       <td className="nx-cell-muted py-[10px] px-3">{p.category?.nameAr || p.category?.nameEn || '—'}</td>

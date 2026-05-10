@@ -10,6 +10,8 @@ import {
   useCreateOrderCategoryMutation,
   useCreateOrderCategoriesBatchMutation,
   useUpdateOrderCategoryMutation,
+  useDeleteOrderProductsMutation,
+  useDeleteOrderCategoriesMutation,
 } from '../../../hooks/useOrders';
 import {
   importFromExcel,
@@ -66,15 +68,19 @@ export function useItemsManageTab(companyId: any) {
   const [presetBusy, setPresetBusy] = useState(false);
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
 
   const { data: products = [] } = useOrderProducts(companyId);
   const { data: categories = [] } = useOrderCategories(companyId);
   const createProduct = useCreateOrderProductMutation(companyId);
   const createProductsBatch = useCreateOrderProductsBatchMutation(companyId);
   const updateProductMutation = useUpdateOrderProductMutation(companyId);
+  const deleteProductsMutation = useDeleteOrderProductsMutation(companyId);
   const createCategory = useCreateOrderCategoryMutation(companyId);
   const createCategoriesBatch = useCreateOrderCategoriesBatchMutation(companyId);
   const updateCategory = useUpdateOrderCategoryMutation(companyId);
+  const deleteCategoriesMutation = useDeleteOrderCategoriesMutation(companyId);
   const fileInputProducts = useRef<any>(null);
   const fileInputCategories = useRef<any>(null);
 
@@ -405,6 +411,60 @@ export function useItemsManageTab(companyId: any) {
     );
   }
 
+  function toggleProductSelection(id: string) {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllProducts(ids: string[]) {
+    setSelectedProductIds((prev) =>
+      prev.size === ids.length ? new Set() : new Set(ids),
+    );
+  }
+
+  function toggleCategorySelection(id: string) {
+    setSelectedCategoryIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllCategories(ids: string[]) {
+    setSelectedCategoryIds((prev) =>
+      prev.size === ids.length ? new Set() : new Set(ids),
+    );
+  }
+
+  function handleDeleteSelectedProducts() {
+    const ids = [...selectedProductIds];
+    if (!ids.length) return;
+    deleteProductsMutation.mutate(ids, {
+      onSuccess: (res: any) => {
+        const n = res?.data?.deleted ?? ids.length;
+        showToast(t('ordersProductsDeleted', String(n)), 'success');
+        setSelectedProductIds(new Set());
+      },
+      onError: (e: any) => showToast(e?.message || t('deleteFailed'), 'error'),
+    });
+  }
+
+  function handleDeleteSelectedCategories() {
+    const ids = [...selectedCategoryIds];
+    if (!ids.length) return;
+    deleteCategoriesMutation.mutate(ids, {
+      onSuccess: (res: any) => {
+        const n = res?.data?.deleted ?? ids.length;
+        showToast(t('ordersCategoriesDeleted', String(n)), 'success');
+        setSelectedCategoryIds(new Set());
+      },
+      onError: (e: any) => showToast(e?.message || t('deleteFailed'), 'error'),
+    });
+  }
+
   function addVariantToProduct() {
     setNewProduct((p: any) => ({
       ...p,
@@ -474,6 +534,16 @@ export function useItemsManageTab(companyId: any) {
     packagingOptions,
     fileInputProducts,
     fileInputCategories,
+    selectedProductIds,
+    selectedCategoryIds,
+    toggleProductSelection,
+    toggleAllProducts,
+    toggleCategorySelection,
+    toggleAllCategories,
+    handleDeleteSelectedProducts,
+    handleDeleteSelectedCategories,
+    deleteProductsMutation,
+    deleteCategoriesMutation,
     createProduct,
     createProductsBatch,
     updateProduct: updateProductMutation,
