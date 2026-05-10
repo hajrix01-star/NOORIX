@@ -100,7 +100,10 @@ export function OrdersImportModal({ type, products, categories, createProductsBa
   const [result, setResult] = useState<ImportResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [parseError, setParseError] = useState('');
+  const [newCategoriesToCreate, setNewCategoriesToCreate] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Persists catByName across processFile → handleImport so new category IDs can be injected
+  const catByNameRef = useRef<Map<string, string>>(new Map());
 
   // ── Derived counts ──────────────────────────────────────────────────────────
   const counts = useMemo(() => ({
@@ -149,12 +152,17 @@ export function OrdersImportModal({ type, products, categories, createProductsBa
         const catByName = new Map(
           categories.map((c: any) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]),
         );
+        catByNameRef.current = catByName;
+
         const existingNames = new Set(
           products.map((p: any) => String(p.nameAr ?? '').trim().toLowerCase()),
         );
         const groups = groupOrderProductImportRows(filtered);
         const payloads = orderProductImportGroupsToPayload(groups, catByName);
         const payloadMap = new Map(payloads.map((p: any) => [String(p.nameAr).trim().toLowerCase(), p]));
+
+        // Collect unique category names that need to be created
+        const missingCatNames = new Map<string, string>(); // lower → original case
 
         parsed = groups.map((g: any): ParsedRow => {
           const nameAr = String(g.nameAr || (g.type === 'legacy' ? (g.row?.nameAr ?? '') : '')).trim();
@@ -172,23 +180,27 @@ export function OrdersImportModal({ type, products, categories, createProductsBa
             : '—';
 
           const catNameLower = category.trim().toLowerCase();
-          const catWarning = catNameLower && !catByName.has(catNameLower)
-            ? ` (${t('importReasonCategoryNotFound')}: "${category}")`
-            : '';
+          let catNote = '';
+          if (catNameLower && !catByName.has(catNameLower)) {
+            missingCatNames.set(catNameLower, category.trim());
+            catNote = t('importReasonCategoryWillBeCreated');
+          }
 
           if (existingNames.has(nameAr.toLowerCase())) {
             return {
               status: 'duplicate',
-              reason: t('importReasonDuplicate') + catWarning,
+              reason: t('importReasonDuplicate') + (catNote ? ` — ${catNote}` : ''),
               nameAr, nameEn, category, variantsSummary, payload,
             };
           }
           return {
             status: 'new',
-            reason: catWarning || '',
+            reason: catNote,
             nameAr, nameEn, category, variantsSummary, payload,
           };
         });
+
+        setNewCategoriesToCreate(Array.from(missingCatNames.values()));
       }
 
       // Filter out completely empty rows (no nameAr, no data)
@@ -230,25 +242,48 @@ export function OrdersImportModal({ type, products, categories, createProductsBa
     if (!toImport.length) return;
 
     setPhase('importing');
-    const payloads = toImport.map(r => r.payload);
     const skipped = rows.filter(r => r.status === 'duplicate' && skipDuplicates).length;
     const invalid = counts.invalid;
 
-    const onSuccess = (res: any) => {
-      const importedData = res?.data ?? res;
-      const imported = Array.isArray(importedData) ? importedData.length : (payloads.length);
+    try {
+      // ── Step 1: auto-create missing categories (products only) ─────────────
+      if (isProducts && newCategoriesToCreate.length > 0) {
+        const newCatPayloads = newCategoriesToCreate.map(nameAr => ({ nameAr }));
+        const catRes: any = await new Promise((resolve, reject) => {
+          createCategoriesBatch.mutate(newCatPayloads, { onSuccess: resolve, onError: reject });
+        });
+        // Inject new IDs into catByNameRef so product payloads can reference them
+        const created: any[] = catRes?.data ?? catRes ?? [];
+        for (const cat of created) {
+          const key = String(cat.nameAr ?? '').trim().toLowerCase();
+          if (key && cat.id) catByNameRef.current.set(key, cat.id);
+        }
+      }
+
+      // ── Step 2: build final product payloads (inject newly created categoryIds) ──
+      let payloads: any[];
+      if (isProducts) {
+        payloads = toImport.map(r => {
+          const catKey = String(r.category ?? '').trim().toLowerCase();
+          const resolvedCatId = catKey ? catByNameRef.current.get(catKey) : undefined;
+          return resolvedCatId ? { ...r.payload, categoryId: resolvedCatId } : r.payload;
+        });
+      } else {
+        payloads = toImport.map(r => r.payload);
+      }
+
+      // ── Step 3: create items ────────────────────────────────────────────────
+      const mutation = isProducts ? createProductsBatch : createCategoriesBatch;
+      const itemRes: any = await new Promise((resolve, reject) => {
+        mutation.mutate(payloads, { onSuccess: resolve, onError: reject });
+      });
+      const importedData = itemRes?.data ?? itemRes;
+      const imported = Array.isArray(importedData) ? importedData.length : payloads.length;
       setResult({ imported, skipped, invalid });
       setPhase('done');
-    };
-    const onError = (err: any) => {
+    } catch (err: any) {
       setResult({ imported: 0, skipped, invalid, error: err?.message || t('importDoneError') });
       setPhase('done');
-    };
-
-    if (!isProducts) {
-      createCategoriesBatch.mutate(payloads, { onSuccess, onError });
-    } else {
-      createProductsBatch.mutate(payloads, { onSuccess, onError });
     }
   }
 
@@ -342,6 +377,15 @@ export function OrdersImportModal({ type, products, categories, createProductsBa
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-[12px] font-semibold">
               <span className="w-2 h-2 rounded-full bg-red-500 inline-block flex-shrink-0" />
               {counts.invalid} {t('importStatusInvalid')}
+            </span>
+          )}
+          {isProducts && newCategoriesToCreate.length > 0 && (
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[12px] font-semibold cursor-help"
+              title={newCategoriesToCreate.join('، ')}
+            >
+              <span className="text-[11px]">✨</span>
+              {t('importNewCategoriesBadge', String(newCategoriesToCreate.length))}
             </span>
           )}
         </div>
@@ -493,7 +537,7 @@ export function OrdersImportModal({ type, products, categories, createProductsBa
     if (phase === 'preview') {
       return (
         <div className="flex items-center justify-between gap-2">
-          <Button variant="ghost" onClick={() => { setPhase('upload'); setRows([]); }}>
+          <Button variant="ghost" onClick={() => { setPhase('upload'); setRows([]); setNewCategoriesToCreate([]); }}>
             {t('importBackBtn')}
           </Button>
           <Button

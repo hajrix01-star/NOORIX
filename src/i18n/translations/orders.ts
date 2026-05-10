@@ -202,6 +202,8 @@ export default {
   importReasonMissingNameAr: { ar: 'الاسم العربي مطلوب', en: 'Arabic name is required' },
   importReasonDuplicate: { ar: 'موجود مسبقاً في القائمة', en: 'Already exists in the list' },
   importReasonCategoryNotFound: { ar: 'الفئة غير موجودة', en: 'Category not found' },
+  importReasonCategoryWillBeCreated: { ar: 'سيتم إنشاء الفئة تلقائياً', en: 'Category will be auto-created' },
+  importNewCategoriesBadge: { ar: '{0} فئة ستُنشأ تلقائياً', en: '{0} categor(y/ies) will be auto-created' },
   importFilterAll: { ar: 'الكل', en: 'All' },
   importFilterNew: { ar: 'جديد', en: 'New' },
   importFilterDuplicate: { ar: 'مكرر', en: 'Duplicate' },
