@@ -99,15 +99,21 @@ export async function updateOrderCategory(
 ): Promise<ApiParsedResult> {
   return apiPatch(`/api/v1/orders/categories/${id}?companyId=${companyId}`, body);
 }
-export async function deleteOrderProductsBulk(
+export async function deactivateOrderProductsBulk(
   companyId: string,
   ids: string[],
-): Promise<ApiParsedResult> {
-  return apiPost(`/api/v1/orders/products/bulk-delete?companyId=${companyId}`, { ids });
+): Promise<{ deleted: number }> {
+  const results = await Promise.all(
+    ids.map((id) => apiPatch(`/api/v1/orders/products/${id}?companyId=${companyId}`, { isActive: false })),
+  );
+  return { deleted: results.filter((r) => r?.success).length };
 }
-export async function deleteOrderCategoriesBulk(
+export async function deactivateOrderCategoriesBulk(
   companyId: string,
   ids: string[],
-): Promise<ApiParsedResult> {
-  return apiPost(`/api/v1/orders/categories/bulk-delete?companyId=${companyId}`, { ids });
+): Promise<{ deleted: number }> {
+  const results = await Promise.all(
+    ids.map((id) => apiPatch(`/api/v1/orders/categories/${id}?companyId=${companyId}`, { isActive: false })),
+  );
+  return { deleted: results.filter((r) => r?.success).length };
 }

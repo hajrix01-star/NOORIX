@@ -82,18 +82,6 @@ export class OrdersController {
     return this.ordersService.createCategoriesBatch(body.companyId, body.categories);
   }
 
-  @Post('products/bulk-delete')
-  @RequirePermission('VIEW_SALES')
-  deleteProductsBulk(@CompanyId() companyId: string, @Body() body: { ids: string[] }) {
-    return this.ordersService.deleteProductsBulk(companyId, body.ids ?? []);
-  }
-
-  @Post('categories/bulk-delete')
-  @RequirePermission('VIEW_SALES')
-  deleteCategoriesBulk(@CompanyId() companyId: string, @Body() body: { ids: string[] }) {
-    return this.ordersService.deleteCategoriesBulk(companyId, body.ids ?? []);
-  }
-
   @Patch('products/:id')
   @RequirePermission('VIEW_SALES')
   updateProduct(
