@@ -13,6 +13,12 @@ import {
   groupOrderProductImportRows,
   orderProductImportGroupsToPayload,
 } from '../../../utils/exportUtils';
+import {
+  addCustomSize,
+  addCustomPackaging,
+  getSizesOptions,
+  getPackagingOptions,
+} from '../constants/orderDefaults';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +45,7 @@ interface ImportResult {
 
 interface Props {
   type: 'products' | 'categories';
+  companyId: string;
   products: any[];
   categories: any[];
   createProductsBatch: any;
@@ -89,7 +96,7 @@ function StatusBadge({ status, label }: { status: RowStatus; label: string }) {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function OrdersImportModal({ type, products, categories, createProductsBatch, createCategoriesBatch, onClose }: Props) {
+export function OrdersImportModal({ type, companyId, products, categories, createProductsBatch, createCategoriesBatch, onClose }: Props) {
   const { t } = useTranslation();
   const isProducts = type === 'products';
 
@@ -279,6 +286,31 @@ export function OrdersImportModal({ type, products, categories, createProductsBa
       });
       const importedData = itemRes?.data ?? itemRes;
       const imported = Array.isArray(importedData) ? importedData.length : payloads.length;
+
+      // ── Step 4: persist new sizes & packaging into localStorage ────────────
+      if (isProducts && companyId) {
+        const existingSizes = new Set(
+          getSizesOptions(companyId).map((s: any) => String(s.ar ?? '').trim().toLowerCase()),
+        );
+        const existingPkg = new Set(
+          getPackagingOptions(companyId).map((s: any) => String(s.ar ?? '').trim().toLowerCase()),
+        );
+        for (const p of payloads) {
+          for (const v of (p as any)?.variants ?? []) {
+            const size = String(v.size ?? '').trim();
+            if (size && !existingSizes.has(size.toLowerCase())) {
+              addCustomSize(companyId, size, '');
+              existingSizes.add(size.toLowerCase());
+            }
+            const pkg = String(v.packaging ?? '').trim();
+            if (pkg && !existingPkg.has(pkg.toLowerCase())) {
+              addCustomPackaging(companyId, pkg, '');
+              existingPkg.add(pkg.toLowerCase());
+            }
+          }
+        }
+      }
+
       setResult({ imported, skipped, invalid });
       setPhase('done');
     } catch (err: any) {

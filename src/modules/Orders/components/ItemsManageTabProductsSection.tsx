@@ -54,6 +54,7 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
       {showImportModal && (
         <OrdersImportModal
           type="products"
+          companyId={companyId}
           products={products}
           categories={categories}
           createProductsBatch={createProductsBatch}
