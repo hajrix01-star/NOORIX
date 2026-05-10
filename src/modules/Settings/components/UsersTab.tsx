@@ -1,7 +1,7 @@
 ﻿/**
  * UsersTab — إدارة المستخدمين
  */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser } from '../../../services/api';
@@ -13,6 +13,8 @@ import { settingsKeys } from '../../../services/queryKeys';
 export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
+  /** Archived users (isActive === false) are hidden until this is toggled on */
+  const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<{ password: string; nameAr: string; roleName: string; preferredLang: string; companyIds: string[] }>({ password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
 
@@ -67,6 +69,11 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
     onSuccess: () => { setEditing(null); },
   });
 
+  const visibleUsers = useMemo(
+    () => (showArchived ? users : users.filter((u: any) => u.isActive !== false)),
+    [users, showArchived],
+  );
+
   function openEdit(u: any) {
     setEditing({
       id: u.id,
@@ -93,6 +100,15 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   return (
     <ScreenShell embedded>
       <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-end">
+        <Button
+          size="sm"
+          variant={showArchived ? 'primary' : 'ghost'}
+          className="w-full min-h-[44px] min-[420px]:w-auto min-[420px]:min-h-0"
+          onClick={() => setShowArchived((v) => !v)}
+          aria-pressed={showArchived}
+        >
+          {showArchived ? t('hideArchivedUsers') : t('showArchivedUsers')}
+        </Button>
         <Button
           variant="primary"
           className="w-full min-h-[44px] min-[420px]:w-auto min-[420px]:min-h-0"
@@ -181,15 +197,19 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
       <div className="min-w-0 w-full overflow-x-auto">
         <SmartTable
           columns={columns}
-          data={users}
-          total={users.length}
+          data={visibleUsers}
+          total={visibleUsers.length}
           page={1}
           pageSize={50}
           showRowNumbers
           rowNumberWidth="1%"
           isLoading={isLoading}
           title={t('usersTab')}
-          emptyMessage={t('noUsers')}
+          emptyMessage={
+            visibleUsers.length === 0 && users.length > 0 && !showArchived
+              ? t('usersArchivedHiddenEmpty')
+              : t('noUsers')
+          }
           renderMobileCard={(row: any) => (
             <div className="grid gap-2 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">

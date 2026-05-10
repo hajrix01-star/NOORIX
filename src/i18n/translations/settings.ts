@@ -241,6 +241,11 @@ export default {
   wrongConfirmCode: { ar: 'رقم التأكيد غير صحيح.', en: 'Wrong confirmation code.' },
   usersAndPermissions: { ar: 'المستخدمون وصلاحياتهم', en: 'Users and permissions' },
   showArchivedUsers: { ar: 'عرض المؤرشفين', en: 'Show archived' },
+  hideArchivedUsers: { ar: 'إخفاء المؤرشفين', en: 'Hide archived' },
+  usersArchivedHiddenEmpty: {
+    ar: 'لا يوجد مستخدمون نشطون. اضغط «عرض المؤرشفين» لعرض المؤرشفين.',
+    en: 'No active users. Tap «Show archived» to list archived users.',
+  },
   addUser: { ar: '+ إضافة مستخدم', en: '+ Add user' },
   addNewUser: { ar: 'إضافة مستخدم جديد', en: 'Add new user' },
   usernameOrEmailLabel: { ar: 'اسم المستخدم / البريد *', en: 'Username / Email *' },
