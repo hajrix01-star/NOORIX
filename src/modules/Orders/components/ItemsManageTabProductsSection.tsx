@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { fmt } from '../../../utils/format';
 import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
+import { OrdersImportModal } from './OrdersImportModal';
 import { Button, Input } from '../../../ui';
 
 /** Products sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
@@ -19,13 +20,12 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
     setEditingProduct,
     productSearchQuery,
     setProductSearchQuery,
-    fileInputProducts,
     presetBusy,
     createProduct,
     createProductsBatch,
+    createCategoriesBatch,
     handleInsertPresetCatalog,
     handleDownloadProductsImportTemplate,
-    handleImportProducts,
     handleExportProducts,
     handleCreateProduct,
     handleUpdateProduct,
@@ -43,11 +43,24 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
     deleteProductsMutation,
   } = ctrl;
 
+  const [showImportModal, setShowImportModal] = useState(false);
+
   const allFilteredIds = filteredProducts.map((p: any) => p.id);
   const allSelected = allFilteredIds.length > 0 && selectedProductIds.size === allFilteredIds.length;
   const someSelected = selectedProductIds.size > 0;
 
   return (
+    <>
+      {showImportModal && (
+        <OrdersImportModal
+          type="products"
+          products={products}
+          categories={categories}
+          createProductsBatch={createProductsBatch}
+          createCategoriesBatch={createCategoriesBatch}
+          onClose={() => setShowImportModal(false)}
+        />
+      )}
     <div className="grid gap-5">
       <div className="noorix-surface-card p-4 lg:p-5">
         <div className="flex flex-col gap-3 mb-3">
@@ -55,7 +68,6 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
             <h4 className="m-0 text-[15px]">+ {t('ordersAddProduct')}</h4>
             <OrdersImportHelpTrigger t={t} variant="products" />
           </div>
-          <input ref={fileInputProducts} type="file" accept=".xlsx,.xls" onChange={handleImportProducts} className="hidden" />
           <div className="overflow-x-auto">
             <div className="flex gap-2 w-max">
               <Button size="sm" variant="primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
@@ -64,7 +76,7 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
               <Button size="sm" onClick={handleDownloadProductsImportTemplate}>
                 {t('ordersDownloadImportTemplate')}
               </Button>
-              <Button size="sm" onClick={() => fileInputProducts.current?.click()} disabled={createProductsBatch.isPending}>
+              <Button size="sm" onClick={() => setShowImportModal(true)} disabled={createProductsBatch.isPending}>
                 {t('import')}
               </Button>
               <Button size="sm" onClick={handleExportProducts} disabled={products.length === 0}>
@@ -397,5 +409,6 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
         {products.length > 0 && filteredProducts.length === 0 && <div className="text-center text-noorix-muted p-[30px]">{t('ordersNoSearchResults')}</div>}
       </div>
     </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
+import { OrdersImportModal } from './OrdersImportModal';
 import { Button, Input } from '../../../ui';
 
 /** Categories sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
@@ -7,6 +8,7 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
   const {
     t,
     companyId,
+    products,
     categories,
     filteredCategories,
     newCategory,
@@ -15,11 +17,10 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
     setEditingCategory,
     categorySearchQuery,
     setCategorySearchQuery,
-    fileInputCategories,
     createCategory,
+    createProductsBatch,
     createCategoriesBatch,
     handleDownloadCategoriesImportTemplate,
-    handleImportCategories,
     handleExportCategories,
     handleCreateCategory,
     handleUpdateCategory,
@@ -30,11 +31,24 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
     deleteCategoriesMutation,
   } = ctrl;
 
+  const [showImportModal, setShowImportModal] = useState(false);
+
   const allFilteredIds = filteredCategories.map((c: any) => c.id);
   const allSelected = allFilteredIds.length > 0 && selectedCategoryIds.size === allFilteredIds.length;
   const someSelected = selectedCategoryIds.size > 0;
 
   return (
+    <>
+      {showImportModal && (
+        <OrdersImportModal
+          type="categories"
+          products={products}
+          categories={categories}
+          createProductsBatch={createProductsBatch}
+          createCategoriesBatch={createCategoriesBatch}
+          onClose={() => setShowImportModal(false)}
+        />
+      )}
     <div className="grid gap-5">
       <div className="noorix-surface-card p-4 lg:p-5">
         <div className="flex flex-col gap-3 mb-3">
@@ -42,13 +56,12 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
             <h4 className="m-0 text-[15px]">+ {t('ordersAddCategory')}</h4>
             <OrdersImportHelpTrigger t={t} variant="categories" />
           </div>
-          <input ref={fileInputCategories} type="file" accept=".xlsx,.xls" onChange={handleImportCategories} className="hidden" />
           <div className="overflow-x-auto">
             <div className="flex gap-2 w-max">
               <Button size="sm" onClick={handleDownloadCategoriesImportTemplate}>
                 {t('ordersDownloadImportTemplate')}
               </Button>
-              <Button size="sm" onClick={() => fileInputCategories.current?.click()} disabled={createCategoriesBatch.isPending}>
+              <Button size="sm" onClick={() => setShowImportModal(true)} disabled={createCategoriesBatch.isPending}>
                 {t('import')}
               </Button>
               <Button size="sm" onClick={handleExportCategories} disabled={categories.length === 0}>
@@ -170,5 +183,6 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
         {categories.length > 0 && filteredCategories.length === 0 && <div className="text-center text-noorix-muted p-[30px]">{t('ordersNoSearchResults')}</div>}
       </div>
     </div>
+    </>
   );
 }
