@@ -72,23 +72,30 @@ jobs:
           rm -f /tmp/noorix-frontend.tar.gz
 
       # ── تحديث الخلفية وإعادة بنائها في مسار الإنتاج ────
-      # Zero-downtime: البناء يتم أولاً وPM2 يبقى شغّالاً طوال هذه المرحلة.
-      # pm2 startOrReload (graceful reload) تُشغَّل فقط بعد اكتمال dist/ — لا downtime.
+      # البناء يتم أولاً وPM2 يبقى شغّالاً. بعد اكتمال dist/ نحذف العملية القديمة
+      # ونُنشئ جديدة — أكثر موثوقية من startOrReload في وضع cluster.
       - name: Sync backend to production path & rebuild
         run: |
           PROD=/var/www/noorix/backend
+          WORKSPACE="${{ github.workspace }}"
 
-          # دالة إسعاف: إذا فشل البناء نُعيد تشغيل PM2 بالـ dist القديم
+          # دالة إسعاف: إذا فشل البناء نُعيد تشغيل PM2 بالـ dist القديم (إن وُجد)
           ensure_pm2_running() {
-            pm2 startOrReload "$PROD/ecosystem.config.cjs" --update-env 2>/dev/null || true
+            echo "==> [trap] خطأ — نُعيد تشغيل PM2 بالكود السابق إن أمكن"
+            pm2 delete noorix-backend 2>/dev/null || true
+            pm2 start "$PROD/ecosystem.config.cjs" 2>/dev/null || true
             pm2 save 2>/dev/null || true
           }
           trap ensure_pm2_running ERR
 
-          echo "==> مزامنة الكود الجديد (بدون node_modules/dist/.env)"
+          echo "==> مزامنة كود الخلفية (بدون node_modules/dist/.env)"
           rsync -a --delete \
             --exclude='node_modules' --exclude='dist' --exclude='.env' \
             backend/ "$PROD/"
+
+          echo "==> مزامنة سكريبتات النشر (deploy/) للسيرفر"
+          mkdir -p /var/www/noorix/deploy
+          rsync -a deploy/ /var/www/noorix/deploy/
 
           cd "$PROD"
 
@@ -101,15 +108,16 @@ jobs:
             || (sleep 5; npx prisma generate)
 
           echo "==> prisma migrate deploy"
-          bash ../deploy/prisma-migrate-deploy-with-recovery.sh
+          bash "$WORKSPACE/deploy/prisma-migrate-deploy-with-recovery.sh"
 
           echo "==> npm run build"
           npm run build
 
-          echo "==> pm2 startOrReload (graceful reload بعد اكتمال البناء)"
-          DEPLOY_SHA="${{ github.sha }}" pm2 startOrReload ecosystem.config.cjs --update-env
+          echo "==> إيقاف PM2 القديم وتشغيل نسخة جديدة بالـ dist الجديد"
+          pm2 delete noorix-backend 2>/dev/null || true
+          DEPLOY_SHA="${{ github.sha }}" pm2 start ecosystem.config.cjs
 
-          echo "==> pm2 save (حفظ قائمة العمليات لتبقى بعد إعادة تشغيل السيرفر)"
+          echo "==> pm2 save"
           pm2 save
 
       # ── انتظار جاهزية الـ API ─────────────────────────────
