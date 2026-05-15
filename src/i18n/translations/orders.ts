@@ -245,6 +245,8 @@ export default {
   ordersStaffQuantity: { ar: 'الكمية', en: 'Qty' },
   ordersStaffUnitPrice: { ar: 'سعر الوحدة', en: 'Unit price' },
   ordersStaffRemoveLine: { ar: 'حذف السطر', en: 'Remove line' },
+  ordersStaffLinesTable: { ar: 'الأصناف', en: 'Line items' },
+  ordersStaffDeleteLineAria: { ar: 'حذف السطر', en: 'Remove line' },
   ordersStaffNotes: { ar: 'ملاحظات', en: 'Notes' },
   ordersStaffSaved: { ar: 'تم حفظ الطلب', en: 'Request saved' },
   ordersStaffUpdated: { ar: 'تم تحديث الطلب', en: 'Request updated' },
