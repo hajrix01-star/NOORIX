@@ -8,7 +8,6 @@ import React, { useState, useRef, useEffect, useMemo, type ChangeEvent, type CSS
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
-import { orderProductDisplayName } from '../../utils/orderDisplay';
 import { fmt } from '../../utils/format';
 import { Input } from '../../ui';
 
@@ -77,7 +76,7 @@ export function ProductSearchInput({
   compact = false,
   loading = false,
 }: ProductSearchInputProps) {
-  const { t, lang } = useTranslation();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 300);
   const [open, setOpen] = useState(false);
@@ -87,7 +86,7 @@ export function ProductSearchInput({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedProduct = value ? productsById?.get(value) : null;
-  const displayValue = selectedProduct ? orderProductDisplayName(selectedProduct, lang) : '';
+  const displayValue = selectedProduct ? selectedProduct.nameAr || selectedProduct.nameEn || '' : '';
 
   const filtered = useMemo(() => {
     const q = normalizeForSearch(debouncedQuery);
@@ -228,7 +227,6 @@ export function ProductSearchInput({
                 const lastPrice = first?.lastPrice ?? p?.lastPrice ?? 0;
                 const variantLabel = first ? [first.size, first.packaging, first.unit].filter(Boolean).join(' / ') : '';
                 const isHighlight = i === highlightIdx;
-                const rowLabel = orderProductDisplayName(p, lang);
                 return (
                   <div
                     key={p.id}
@@ -246,7 +244,7 @@ export function ProductSearchInput({
                     }}
                   >
                     <span className="font-medium flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                      {rowLabel !== '—' ? rowLabel : p.id}
+                      {p.nameAr || p.nameEn || p.id}
                     </span>
                     {(variantLabel || Number(lastPrice) > 0) && (
                       <span className="text-[12px] shrink-0 whitespace-nowrap text-noorix-muted">

@@ -72,30 +72,49 @@ jobs:
           rm -f /tmp/noorix-frontend.tar.gz
 
       # ── تحديث الخلفية وإعادة بنائها في مسار الإنتاج ────
-      - name: Sync backend & deploy scripts to production path
+      - name: Sync backend to production path & rebuild
         run: |
           PROD=/var/www/noorix/backend
 
-          # نقل سكريبتات deploy (يُصلح مشكلة بقاء النسخ القديمة على السيرفر)
-          rsync -a deploy/ /var/www/noorix/deploy/
-
-          # مزامنة كود الـ backend (بدون node_modules/dist/.env)
+          # مزامنة الكود الجديد إلى مسار الإنتاج (بدون node_modules/dist/.env)
           rsync -a --delete \
             --exclude='node_modules' --exclude='dist' --exclude='.env' \
             backend/ "$PROD/"
 
-      - name: Rebuild & restart backend (root via sudo — ensures correct PM2 + .env port)
-        run: |
-          # تشغيل كـ root كاملاً: يضمن قراءة .env وPM2 الصحيح (يحل مشكلة PORT 3000 vs 8080)
-          sudo DEPLOY_SHA="${{ github.sha }}" bash /var/www/noorix/deploy/ci-backend-start.sh
+          cd "$PROD"
+
+          echo "==> إيقاف noorix-backend مؤقتاً"
+          pm2 stop noorix-backend 2>/dev/null || true
+          sleep 2
+
+          echo "==> npm ci"
+          rm -rf node_modules
+          npm ci
+
+          echo "==> prisma generate"
+          npx prisma generate \
+            || (sleep 5; npx prisma generate) \
+            || (sleep 5; npx prisma generate)
+
+          echo "==> prisma migrate deploy"
+          bash ../deploy/prisma-migrate-deploy-with-recovery.sh
+
+          echo "==> npm run build"
+          npm run build
+
+          echo "==> pm2 startOrReload"
+          DEPLOY_SHA="${{ github.sha }}" pm2 startOrReload ecosystem.config.cjs --update-env
 
       # ── انتظار جاهزية الـ API ─────────────────────────────
-      - name: Wait for API liveness & verify staff route
+      - name: Wait for API liveness
         run: |
-          API_PORT=$(sudo bash -c "
-            p=\$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' /var/www/noorix/backend/.env 2>/dev/null | head -1 | tr -d '\\r[:space:]')
-            case \"\$p\" in ''|*[!0-9]*) echo 3000;; *) echo \"\$p\";; esac
-          ")
+          API_PORT=3000
+          if [ -f /var/www/noorix/backend/.env ]; then
+            p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' \
+              /var/www/noorix/backend/.env | head -1 | tr -d '\r')
+            p=$(echo "$p" | tr -d '[:space:]')
+            case "$p" in ''|*[!0-9]*) ;; *) API_PORT=$p ;; esac
+          fi
           echo "==> Waiting for liveness on port ${API_PORT}..."
           ready=0
           for i in $(seq 1 90); do
@@ -108,36 +127,15 @@ jobs:
           done
           if [ "$ready" != 1 ]; then
             echo "ERROR: timeout 90s" >&2
-            sudo $(which pm2) logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
+            pm2 logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
             exit 1
           fi
-
-          # التحقق من وجود مسار الموظفين — يجب ألا يُعيد 404
-          echo "==> Checking staff route (must NOT be 404)..."
-          STAFF_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
-            -X POST "http://127.0.0.1:${API_PORT}/api/v1/orders/staff" \
-            -H "Content-Type: application/json" -d '{}' 2>/dev/null || echo "000")
-          echo "==> POST /api/v1/orders/staff → HTTP $STAFF_STATUS"
-          if [ "$STAFF_STATUS" = "404" ] || [ "$STAFF_STATUS" = "000" ]; then
-            echo "ERROR: مسار الموظفين لا يزال 404 — backend لا يعمل بالكود الجديد!" >&2
-            sudo $(which pm2) list
-            sudo $(which pm2) logs noorix-backend --lines 50 --nostream 2>&1 | tail -50
-            exit 1
-          fi
-          echo "==> Staff route OK (HTTP $STAFF_STATUS) ✓"
 
       # ── إعادة تحميل Nginx وفحص نهائي ─────────────────────
       - name: Reload Nginx & final health check
         run: |
           sudo systemctl reload nginx
           echo "==> Public health check..."
-          BODY=$(curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health" || echo '{}')
-          echo "$BODY" | head -c 500
+          curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health" | head -c 500
           echo ""
-          EXPECTED="${{ github.sha }}"
-          if echo "$BODY" | grep -q "$EXPECTED"; then
-            echo "==> SHA verified: backend running new code ✓"
-          else
-            echo "WARNING: SHA mismatch — backend may be cached. Check pm2 logs."
-          fi
           echo "==> Deployment completed successfully."

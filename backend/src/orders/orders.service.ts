@@ -3,13 +3,12 @@ import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
 import { utcBoundsForGregorianMonth } from './orders-month-range.util';
-import { mapDtoItemsToOrderLines, mapStaffDtoItemsToOrderLines, orderLinesToLastPriceInputs } from './orders-lines.util';
-import type { StaffOrderItemDto } from './orders-lines.util';
+import { mapDtoItemsToOrderLines, orderLinesToLastPriceInputs } from './orders-lines.util';
 import { orderGregorianDateToNumberPrefix, buildOrderNumberFromPrefix } from './orders-order-number.util';
 import { aggregateOrdersMonthSummary } from './orders-month-summary.util';
 import { aggregateOrderItemsByProductForReport } from './orders-items-report-aggregate.util';
 
-type OrderItemInput = { productId: string | null; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
+type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
 
 @Injectable()
 export class OrdersService {
@@ -17,7 +16,6 @@ export class OrdersService {
 
   async updateProductLastPrices(items: OrderItemInput[]) {
     for (const it of items) {
-      if (!it.productId) continue;
       const product = await this.prisma.orderProduct.findUnique({ where: { id: it.productId }, select: { variants: true } });
       if (!product) continue;
       const variants = product.variants as Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }> | null;
@@ -48,7 +46,6 @@ export class OrdersService {
       where: { companyId, status: 'active', orderDate: { gte: start, lte: end } },
       orderBy: [{ orderDate: 'desc' }, { orderNumber: 'desc' }],
       include: {
-        createdBy: { select: { id: true, nameAr: true, nameEn: true, email: true } },
         items: {
           include: { product: { include: { category: true } } },
         },
@@ -61,7 +58,6 @@ export class OrdersService {
     const order = await this.prisma.order.findFirst({
       where: { id, companyId },
       include: {
-        createdBy: { select: { id: true, nameAr: true, nameEn: true, email: true } },
         items: {
           include: { product: { include: { category: true } } },
         },
@@ -103,8 +99,6 @@ export class OrdersService {
         items: {
           create: items.map((i) => ({
             productId: i.productId,
-            customLabelAr: i.customLabelAr,
-            customLabelEn: i.customLabelEn,
             size: i.size,
             packaging: i.packaging,
             unit: i.unit,
@@ -115,7 +109,6 @@ export class OrdersService {
         },
       },
       include: {
-        createdBy: { select: { id: true, nameAr: true, nameEn: true, email: true } },
         items: {
           include: { product: { include: { category: true } } },
         },
@@ -135,9 +128,6 @@ export class OrdersService {
   }) {
     const existing = await this.prisma.order.findFirst({ where: { id, companyId, status: 'active' } });
     if (!existing) throw new NotFoundException('الطلب غير موجود');
-    if (existing.isStaffRequest && !existing.staffDigestSentAt) {
-      throw new BadRequestException('طلب موظف قيد المراجعة — يُحدَّث من صفحة طلبات الموظفين فقط');
-    }
 
     if (dto.items?.length) {
       await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
@@ -147,8 +137,6 @@ export class OrdersService {
         data: items.map((i) => ({
           orderId: id,
           productId: i.productId,
-          customLabelAr: i.customLabelAr,
-          customLabelEn: i.customLabelEn,
           size: i.size,
           packaging: i.packaging,
           unit: i.unit,
@@ -193,12 +181,7 @@ export class OrdersService {
   async getSummary(companyId: string, year: number, month: number) {
     const { start, end } = utcBoundsForGregorianMonth(year, month);
     const orders = await this.prisma.order.findMany({
-      where: {
-        companyId,
-        status: 'active',
-        orderDate: { gte: start, lte: end },
-        OR: [{ isStaffRequest: false }, { staffDigestSentAt: { not: null } }],
-      },
+      where: { companyId, status: 'active', orderDate: { gte: start, lte: end } },
     });
     return aggregateOrdersMonthSummary(orders);
   }
@@ -207,13 +190,7 @@ export class OrdersService {
     const { start, end } = utcBoundsForGregorianMonth(year, month);
     const items = await this.prisma.orderItem.findMany({
       where: {
-        productId: { not: null },
-        order: {
-          companyId,
-          status: 'active',
-          orderDate: { gte: start, lte: end },
-          OR: [{ isStaffRequest: false }, { staffDigestSentAt: { not: null } }],
-        },
+        order: { companyId, status: 'active', orderDate: { gte: start, lte: end } },
       },
       include: {
         product: { include: { category: true } },
@@ -221,17 +198,11 @@ export class OrdersService {
       },
     });
 
-    return aggregateOrderItemsByProductForReport(
-      items.filter((it) => it.product != null) as Parameters<typeof aggregateOrderItemsByProductForReport>[0],
-    );
+    return aggregateOrderItemsByProductForReport(items);
   }
 
   async getProductPurchaseHistory(companyId: string, productId: string, year?: number, month?: number) {
-    const orderWhere: Prisma.OrderWhereInput = {
-      companyId,
-      status: 'active',
-      OR: [{ isStaffRequest: false }, { staffDigestSentAt: { not: null } }],
-    };
+    const orderWhere: Record<string, unknown> = { companyId, status: 'active' };
     if (year && month) {
       const { start, end } = utcBoundsForGregorianMonth(year, month);
       orderWhere.orderDate = { gte: start, lte: end };
@@ -248,17 +219,13 @@ export class OrdersService {
       quantity: it.quantity.toString(),
       unitPrice: it.unitPrice.toString(),
       amount: it.amount.toString(),
-      productNameAr: it.product!.nameAr,
-      productNameEn: it.product!.nameEn,
+      productNameAr: it.product.nameAr,
+      productNameEn: it.product.nameEn,
     }));
   }
 
   async getCategoryPurchaseHistory(companyId: string, categoryId: string, year?: number, month?: number) {
-    const orderWhere: Prisma.OrderWhereInput = {
-      companyId,
-      status: 'active',
-      OR: [{ isStaffRequest: false }, { staffDigestSentAt: { not: null } }],
-    };
+    const orderWhere: Record<string, unknown> = { companyId, status: 'active' };
     if (year && month) {
       const { start, end } = utcBoundsForGregorianMonth(year, month);
       orderWhere.orderDate = { gte: start, lte: end };
@@ -275,10 +242,10 @@ export class OrdersService {
       quantity: it.quantity.toString(),
       unitPrice: it.unitPrice.toString(),
       amount: it.amount.toString(),
-      productNameAr: it.product!.nameAr,
-      productNameEn: it.product!.nameEn,
-      categoryNameAr: it.product!.category?.nameAr,
-      categoryNameEn: it.product!.category?.nameEn,
+      productNameAr: it.product.nameAr,
+      productNameEn: it.product.nameEn,
+      categoryNameAr: it.product.category?.nameAr,
+      categoryNameEn: it.product.category?.nameEn,
     }));
   }
 
@@ -451,170 +418,6 @@ export class OrdersService {
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
       },
     });
-  }
-
-  async createStaffRequest(companyId: string, userId: string, dto: { orderDate: string; notes?: string; items: StaffOrderItemDto[] }) {
-    const tenantId = TenantContext.getTenantId();
-    if (!dto.items?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
-    for (const row of dto.items) {
-      const hasP = !!(row.productId && String(row.productId).trim());
-      const hasC = !!(row.customLabelAr && String(row.customLabelAr).trim());
-      if (!hasP && !hasC) throw new BadRequestException('كل بند يجب أن يكون له صنف أو اسم عربي للبند الحر');
-    }
-    const items = mapStaffDtoItemsToOrderLines(dto.items);
-    if (items.length === 0) throw new BadRequestException('لا توجد بنود صالحة');
-
-    const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
-
-    const dateStr = orderGregorianDateToNumberPrefix(dto.orderDate);
-    const existing = await this.prisma.order.count({
-      where: { companyId, orderNumber: { startsWith: `ORD-${dateStr}` } },
-    });
-    const orderNumber = buildOrderNumberFromPrefix(dateStr, existing + 1);
-
-    const order = await this.prisma.order.create({
-      data: {
-        tenantId,
-        companyId,
-        orderNumber,
-        orderDate: new Date(dto.orderDate),
-        orderType: 'internal',
-        pettyCashAmount: null,
-        totalAmount,
-        notes: dto.notes?.trim() || null,
-        isStaffRequest: true,
-        createdByUserId: userId,
-        staffDigestSentAt: null,
-        items: {
-          create: items.map((i) => ({
-            productId: i.productId,
-            customLabelAr: i.customLabelAr,
-            customLabelEn: i.customLabelEn,
-            size: i.size,
-            packaging: i.packaging,
-            unit: i.unit,
-            quantity: i.quantity,
-            unitPrice: i.unitPrice,
-            amount: i.amount,
-          })),
-        },
-      },
-      include: {
-        createdBy: { select: { id: true, nameAr: true, nameEn: true, email: true } },
-        items: { include: { product: { include: { category: true } } } },
-      },
-    });
-
-    await this.updateProductLastPrices(orderLinesToLastPriceInputs(items));
-    return order;
-  }
-
-  async updateStaffRequest(companyId: string, userId: string, orderId: string, dto: { orderDate?: string; notes?: string; items: StaffOrderItemDto[] }) {
-    const existing = await this.prisma.order.findFirst({
-      where: {
-        id: orderId,
-        companyId,
-        status: 'active',
-        isStaffRequest: true,
-        createdByUserId: userId,
-        staffDigestSentAt: null,
-      },
-    });
-    if (!existing) throw new NotFoundException('الطلب غير موجود أو لا يمكن تعديله');
-
-    for (const row of dto.items || []) {
-      const hasP = !!(row.productId && String(row.productId).trim());
-      const hasC = !!(row.customLabelAr && String(row.customLabelAr).trim());
-      if (!hasP && !hasC) throw new BadRequestException('كل بند يجب أن يكون له صنف أو اسم عربي للبند الحر');
-    }
-    if (!dto.items?.length) throw new BadRequestException('يجب إدخال صنف واحد على الأقل');
-
-    const items = mapStaffDtoItemsToOrderLines(dto.items);
-    if (items.length === 0) throw new BadRequestException('لا توجد بنود صالحة');
-    const totalAmount = items.reduce((sum, i) => sum.plus(i.amount), new Prisma.Decimal(0));
-
-    await this.prisma.orderItem.deleteMany({ where: { orderId } });
-    await this.prisma.orderItem.createMany({
-      data: items.map((i) => ({
-        orderId,
-        productId: i.productId,
-        customLabelAr: i.customLabelAr,
-        customLabelEn: i.customLabelEn,
-        size: i.size,
-        packaging: i.packaging,
-        unit: i.unit,
-        quantity: i.quantity,
-        unitPrice: i.unitPrice,
-        amount: i.amount,
-      })),
-    });
-    await this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        totalAmount,
-        ...(dto.orderDate ? { orderDate: new Date(dto.orderDate) } : {}),
-        ...(dto.notes !== undefined ? { notes: dto.notes?.trim() || null } : {}),
-      },
-    });
-    await this.updateProductLastPrices(orderLinesToLastPriceInputs(items));
-    return this.findOne(orderId, companyId);
-  }
-
-  async listStaffOwnRequests(companyId: string, userId: string, year: number, month: number) {
-    const { start, end } = utcBoundsForGregorianMonth(year, month);
-    return this.prisma.order.findMany({
-      where: {
-        companyId,
-        status: 'active',
-        isStaffRequest: true,
-        createdByUserId: userId,
-        orderDate: { gte: start, lte: end },
-      },
-      orderBy: [{ orderDate: 'desc' }, { orderNumber: 'desc' }],
-      include: {
-        createdBy: { select: { id: true, nameAr: true, nameEn: true, email: true } },
-        items: { include: { product: { include: { category: true } } } },
-      },
-    });
-  }
-
-  async cancelStaffOwnRequest(companyId: string, userId: string, orderId: string) {
-    const o = await this.prisma.order.findFirst({
-      where: {
-        id: orderId,
-        companyId,
-        isStaffRequest: true,
-        createdByUserId: userId,
-        staffDigestSentAt: null,
-        status: 'active',
-      },
-    });
-    if (!o) throw new NotFoundException('الطلب غير موجود أو لا يمكن إلغاؤه');
-    await this.prisma.order.update({ where: { id: orderId }, data: { status: 'cancelled' } });
-    return { success: true };
-  }
-
-  async markStaffDigestSent(companyId: string, orderIds: string[]) {
-    if (!orderIds?.length) throw new BadRequestException('لم يُحدد أي طلب');
-    const rows = await this.prisma.order.findMany({
-      where: {
-        id: { in: orderIds },
-        companyId,
-        status: 'active',
-        isStaffRequest: true,
-        staffDigestSentAt: null,
-      },
-      select: { id: true },
-    });
-    if (rows.length !== orderIds.length) {
-      throw new BadRequestException('بعض الطلبات غير صالحة أو مُرسَلة مسبقاً');
-    }
-    const now = new Date();
-    await this.prisma.order.updateMany({
-      where: { id: { in: orderIds }, companyId },
-      data: { staffDigestSentAt: now },
-    });
-    return { success: true, marked: rows.length, staffDigestSentAt: now };
   }
 
 }

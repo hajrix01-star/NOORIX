@@ -53,8 +53,6 @@ export const PERMISSIONS = {
   ORDERS_READ:      'ORDERS_READ',
   ORDERS_WRITE:     'ORDERS_WRITE',
   ORDERS_DELETE:    'ORDERS_DELETE',
-  /** صفحة طلبات الموظفين (موبايل) — إنشاء مسودات دون صلاحية الطلبات الكاملة */
-  ORDERS_STAFF_PORTAL: 'ORDERS_STAFF_PORTAL',
 
   REPORTS_READ:     'REPORTS_READ',
 
@@ -156,13 +154,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
   {
     key: 'orders', labelAr: 'الطلبات', labelEn: 'Orders', icon: '📦',
-    permissions: {
-      view: 'VIEW_ORDERS',
-      read: 'ORDERS_READ',
-      write: 'ORDERS_WRITE',
-      delete: 'ORDERS_DELETE',
-      staffPortal: 'ORDERS_STAFF_PORTAL',
-    },
+    permissions: { view: 'VIEW_ORDERS', read: 'ORDERS_READ', write: 'ORDERS_WRITE', delete: 'ORDERS_DELETE' },
   },
   {
     key: 'employees', labelAr: 'الموظفين', labelEn: 'Employees', icon: '👥',
@@ -216,7 +208,6 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
   chatFaq:    { ar: 'محادثة · أسئلة', en: 'Chat · FAQ' },
   chatInc:    { ar: 'محادثة · زيادات', en: 'Chat · Raises' },
-  staffPortal: { ar: 'طلبات الموظفين (موبايل)', en: 'Staff order requests (mobile)' },
 };
 
 // ── صلاحيات الأدوار النظامية (تُزرع في DB عند أول تشغيل) ──
