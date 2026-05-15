@@ -80,6 +80,7 @@ model User {
   backupJobsCreated BackupJob[] @relation("BackupCreatedBy")
   invoicesCreated Invoice[] @relation("InvoiceCreatedBy")
   ocrInvoicesSubmitted OcrInvoice[] @relation("OcrInvoiceSubmittedBy")
+  ordersCreated        Order[]      @relation("OrderCreatedBy")
 
   @@index([tenantId])
   @@map("users")
@@ -1219,23 +1220,32 @@ model Order {
   totalAmount     Decimal  @map("total_amount")  @db.Decimal(18, 4)
   notes           String?
   status          String   @default("active") @map("status")  // active | cancelled
+  /// طلب من صفحة موظف (مسودة حتى يُعلّم المدير الإرسال الجماعي)
+  isStaffRequest    Boolean   @default(false) @map("is_staff_request")
+  createdByUserId   String?   @map("created_by_user_id")
+  staffDigestSentAt DateTime? @map("staff_digest_sent_at")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt      @map("updated_at")
 
-  company Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  items   OrderItem[]
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?       @relation("OrderCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  items     OrderItem[]
 
   @@unique([companyId, orderNumber])
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, orderDate])
+  @@index([companyId, isStaffRequest, staffDigestSentAt])
   @@map("orders")
 }
 
 model OrderItem {
   id         String   @id @default(cuid())
   orderId    String   @map("order_id")
-  productId  String   @map("product_id")
+  productId  String?  @map("product_id")
+  /// بند حر من الموظف عند غياب productId
+  customLabelAr String? @map("custom_label_ar")
+  customLabelEn String? @map("custom_label_en")
   size       String?  @map("size")       // الحجم المختار
   packaging  String?  @map("packaging")  // التغليف المختار
   unit       String?  @map("unit")       // الوحدة المختارة (piece|kg|box|dozen)
@@ -1243,8 +1253,8 @@ model OrderItem {
   unitPrice  Decimal  @map("unit_price") @db.Decimal(18, 4)
   amount     Decimal  @db.Decimal(18, 4)
 
-  order   Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product OrderProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  order   Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product OrderProduct? @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@index([orderId])
   @@index([productId])

@@ -22,6 +22,11 @@ import {
   createOrderCategoriesBatch,
   deactivateOrderProductsBulk,
   deactivateOrderCategoriesBulk,
+  getStaffMyOrders,
+  createStaffOrder,
+  updateStaffOrder,
+  cancelStaffOrder,
+  markStaffOrdersDigestSent,
   throwIfApiFailed,
 } from '../services/api';
 import { orderKeys } from '../services/queryKeys';
@@ -194,6 +199,50 @@ export function useDeleteOrderCategoriesMutation(companyId: any) {
   return useApiMutation({
     mutationFn: (ids: string[]) => deactivateOrderCategoriesBulk(companyId, ids),
     invalidateQueries: [orderKeys.categories(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useStaffMyOrders(companyId: any, year: any, month: any) {
+  return useQuery({
+    queryKey: orderKeys.staffMine(companyId, year, month),
+    queryFn: async () => {
+      const res = await getStaffMyOrders(companyId, year, month);
+      throwIfApiFailed(res, 'فشل تحميل طلباتك');
+      return res.data ?? [];
+    },
+    enabled: !!companyId && !!year && !!month,
+  });
+}
+
+export function useCreateStaffOrderMutation() {
+  return useApiMutation({
+    mutationFn: createStaffOrder,
+    invalidateQueries: [orderKeys.staffMineRoot(), orderKeys.listRoot(), orderKeys.summaryRoot()],
+    showErrorToast: false,
+  });
+}
+
+export function useUpdateStaffOrderMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: ({ id, body }: any) => updateStaffOrder(id, body, companyId),
+    invalidateQueries: [orderKeys.staffMineRoot(), orderKeys.listRoot(), orderKeys.summaryRoot()],
+    showErrorToast: false,
+  });
+}
+
+export function useCancelStaffOrderMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: (id: any) => cancelStaffOrder(id, companyId),
+    invalidateQueries: [orderKeys.staffMineRoot(), orderKeys.listRoot(), orderKeys.summaryRoot()],
+    showErrorToast: false,
+  });
+}
+
+export function useMarkStaffDigestSentMutation() {
+  return useApiMutation({
+    mutationFn: markStaffOrdersDigestSent,
+    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot(), orderKeys.itemsReportRoot()],
     showErrorToast: false,
   });
 }

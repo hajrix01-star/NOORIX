@@ -23,6 +23,8 @@ describe('services/api barrel (apiEndpoints)', () => {
     expect(typeof api.getGeneralProfitLossReport).toBe('function');
     expect(typeof api.upsertVatPlanning).toBe('function');
     expect(typeof api.getOrders).toBe('function');
+    expect(typeof api.getStaffMyOrders).toBe('function');
+    expect(typeof api.createStaffOrder).toBe('function');
     expect(typeof api.getVaults).toBe('function');
     expect(typeof api.getEmployees).toBe('function');
     expect(typeof api.getPayrollRuns).toBe('function');

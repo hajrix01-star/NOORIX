@@ -38,7 +38,8 @@ const SIDEBAR_LINKS = [
   { to: '/treasury', labelKey: 'vaults', icon: IconDollar, permission: 'VIEW_VAULTS' },
   { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_EXPENSES' },
   { to: '/assets', labelKey: 'assetsRegister', icon: IconMonitor, permission: 'VIEW_EXPENSES' },
-  { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS' },
+  { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS', end: true },
+  { to: '/orders/staff', labelKey: 'ordersStaffNav', icon: IconBox, permissionAny: ['ORDERS_STAFF_PORTAL'] },
   { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: 'VIEW_EMPLOYEES' },
   { to: '/hajri-tax', labelKey: 'hajriTax', icon: IconDocument, permission: 'VIEW_REPORTS' },
   {
@@ -75,7 +76,13 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
   const visibleLinks = SIDEBAR_LINKS.filter((link) => {
     if (link.to === '/theme-preview' && !canAccessThemePreview(userRole)) return false;
     if ((link as { ownerOnly?: boolean }).ownerOnly && String(userRole || '').toLowerCase() !== 'owner') return false;
-    return hasPermission(userRole, link.permission, userPermissions);
+    const anyPerms = (link as { permissionAny?: string[] }).permissionAny;
+    if (anyPerms?.length) {
+      return anyPerms.some((p) => hasPermission(userRole, p, userPermissions));
+    }
+    const perm = (link as { permission?: string }).permission;
+    if (!perm) return false;
+    return hasPermission(userRole, perm, userPermissions);
   });
 
   const isReportsExpanded = visibleLinks.some((l: any) => l.to === '/reports' && l.children?.some((c: any) => location.pathname.startsWith(c.to)));

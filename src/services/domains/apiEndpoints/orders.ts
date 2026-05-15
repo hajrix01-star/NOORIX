@@ -19,6 +19,35 @@ export async function updateOrder(id: string, body: unknown, companyId: string):
 export async function cancelOrder(id: string, companyId: string): Promise<ApiParsedResult> {
   return apiDelete(`/api/v1/orders/${id}?companyId=${companyId}`);
 }
+
+export async function getStaffMyOrders(
+  companyId: string,
+  year: string | number,
+  month: string | number,
+): Promise<ApiParsedResult> {
+  const res = await apiGet('/api/v1/orders/staff/my', { companyId, year: String(year), month: String(month) });
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+
+export async function createStaffOrder(body: unknown): Promise<ApiParsedResult> {
+  return apiPost('/api/v1/orders/staff', body);
+}
+
+export async function updateStaffOrder(id: string, body: unknown, companyId: string): Promise<ApiParsedResult> {
+  return apiPatch(`/api/v1/orders/staff/${id}?companyId=${companyId}`, body);
+}
+
+export async function cancelStaffOrder(id: string, companyId: string): Promise<ApiParsedResult> {
+  return apiDelete(`/api/v1/orders/staff/${id}?companyId=${companyId}`);
+}
+
+export async function markStaffOrdersDigestSent(body: {
+  companyId: string;
+  orderIds: string[];
+}): Promise<ApiParsedResult> {
+  return apiPost('/api/v1/orders/staff/mark-digest-sent', body);
+}
+
 export async function getOrdersSummary(
   companyId: string,
   year: string | number,
