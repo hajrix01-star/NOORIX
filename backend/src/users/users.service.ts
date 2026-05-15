@@ -32,13 +32,14 @@ export class UsersService {
   private buildEmailLocalPart(nameAr: string, nameEn?: string): string {
     const en = (nameEn || '').trim().toLowerCase();
     const fromEn = en.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    if (fromEn.length >= 2) return fromEn.slice(0, 48);
+    // حرف واحد (مثل "T") يجب أن يصبح البريد t@domain ليتوافق مع تسجيل الدخول باسم المستخدم القصير
+    if (fromEn.length >= 1) return fromEn.slice(0, 48);
     const fromArLatin = nameAr
       .trim()
       .replace(/[^a-zA-Z0-9]+/g, '-')
       .toLowerCase()
       .replace(/^-+|-+$/g, '');
-    if (fromArLatin.length >= 2) return fromArLatin.slice(0, 48);
+    if (fromArLatin.length >= 1) return fromArLatin.slice(0, 48);
     return `user-${randomBytes(4).toString('hex')}`;
   }
 
