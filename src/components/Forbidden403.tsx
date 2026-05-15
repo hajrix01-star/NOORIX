@@ -1,9 +1,13 @@
 ﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui';
+import { useAuth } from '../context/AuthContext';
+import { getFirstAccessibleAppPath } from '../constants/permissions';
 
 export default function Forbidden403() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const goHome = () => navigate(getFirstAccessibleAppPath(user?.role, user?.permissions));
   return (
     <div
       className="flex flex-col items-center text-center p-6 min-h-[60vh]"
@@ -15,8 +19,8 @@ export default function Forbidden403() {
         <p className="m-0 text-noorix-muted text-[14px] mb-5">
           لا تملك صلاحية لعرض هذه الصفحة. ما لا تملك صلاحية عليه لا تراه.
         </p>
-        <Button variant="primary" onClick={() => navigate('/')}>
-          العودة للوحة التحكم
+        <Button variant="primary" onClick={goHome}>
+          العودة للتطبيق
         </Button>
       </div>
     </div>

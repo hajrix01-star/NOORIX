@@ -8,6 +8,7 @@ import { getText } from '../../i18n/translations';
 import { login as apiLogin } from '../../services/api';
 import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor, getLoginDomain } from '../../utils/appBranding';
 import { Button, Input, cn } from '../../ui';
+import { getFirstAccessibleAppPath } from '../../constants/permissions';
 
 function getLang() {
   return (typeof document !== 'undefined' && document.documentElement?.lang === 'en') ? 'en' : 'ar';
@@ -55,7 +56,8 @@ export default function LoginScreen() {
       if (!access_token || !user) { setError(t('invalidCredentials')); return; }
       setToken(access_token);
       setUser(user);
-      navigate('/sales', { replace: true });
+      const dest = getFirstAccessibleAppPath(user?.role, user?.permissions);
+      navigate(dest, { replace: true });
     } catch (err: any) {
       setError(err?.message || t('serverConnectionError'));
     } finally {

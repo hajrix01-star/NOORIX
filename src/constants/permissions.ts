@@ -142,6 +142,7 @@ export function resolveUserRole(primary: any) {
 
 /** مسارات الصفحات → صلاحية مطلوبة */
 export const ROUTE_PERMISSION = {
+  '/':              PERMISSIONS.VIEW_DASHBOARD,
   '/owner':         PERMISSIONS.VIEW_OWNER,
   '/chat':          PERMISSIONS.VIEW_CHAT,
   '/sales':         PERMISSIONS.VIEW_SALES,
@@ -164,7 +165,8 @@ export const ROUTE_PERMISSION = {
 };
 
 export const REDIRECT_ONLY_PATHS = new Set([
-  '/', '/purchasing', '/403',
+  '/purchasing',
+  '/403',
 ]);
 
 export function getRouteRequiredPermissions(pathname: any) {
@@ -187,4 +189,55 @@ export function getRouteRequiredPermissions(pathname: any) {
     return [ROUTE_PERMISSION['/hajri-tax']];
   }
   return null;
+}
+
+/**
+ * إن وُجدت أي صلاحية داخل قسم يملك مفتاح `view` في المصفوفة، يُضاف تلقائياً عرض الصفحة (VIEW_*)
+ * حتى تتطابق القائمة الجانبية مع اختيار «القسم» (مثلاً ORDERS_READ بدون VIEW_ORDERS كان يخفي الطلبات).
+ */
+export function normalizeModuleViewAccess(
+  modules: Array<{ permissions?: Record<string, string> }> | undefined,
+  perms: string[],
+): string[] {
+  if (!Array.isArray(modules) || !modules.length) return [...perms];
+  const set = new Set(perms);
+  for (const mod of modules) {
+    const pmap = mod.permissions || {};
+    const viewPerm = pmap.view;
+    if (!viewPerm) continue;
+    const hasAnyNonView = Object.entries(pmap).some(([k, p]) => k !== 'view' && set.has(p));
+    if (hasAnyNonView) set.add(viewPerm);
+  }
+  return Array.from(set);
+}
+
+/** أول مسار يملك المستخدم صلاحية دخوله — بعد تسجيل الدخول أو زر «عودة» من 403/404 */
+const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[] }> = [
+  { path: '/sales', required: PERMISSIONS.VIEW_SALES },
+  { path: '/orders', required: PERMISSIONS.VIEW_ORDERS },
+  { path: '/', required: PERMISSIONS.VIEW_DASHBOARD },
+  { path: '/dashboard-studio', required: PERMISSIONS.VIEW_DASHBOARD },
+  { path: '/purchases', required: PERMISSIONS.VIEW_PURCHASES },
+  { path: '/invoices', required: [PERMISSIONS.VIEW_INVOICES, PERMISSIONS.VIEW_PURCHASES] },
+  { path: '/treasury', required: PERMISSIONS.VIEW_VAULTS },
+  { path: '/expenses', required: PERMISSIONS.VIEW_EXPENSES },
+  { path: '/assets', required: PERMISSIONS.VIEW_EXPENSES },
+  { path: '/suppliers', required: PERMISSIONS.VIEW_SUPPLIERS },
+  { path: '/hr', required: PERMISSIONS.VIEW_EMPLOYEES },
+  { path: '/reports/general', required: PERMISSIONS.VIEW_REPORTS },
+  { path: '/hajri-tax', required: PERMISSIONS.VIEW_REPORTS },
+  { path: '/chat', required: PERMISSIONS.VIEW_CHAT },
+  { path: '/ocr', required: PERMISSIONS.VIEW_OCR },
+  { path: '/ocr/cashier', required: PERMISSIONS.OCR_SUBMIT },
+  { path: '/owner', required: PERMISSIONS.VIEW_OWNER },
+  { path: '/settings', required: PERMISSIONS.MANAGE_SETTINGS },
+];
+
+export function getFirstAccessibleAppPath(userRole: any, userPermissions: any): string {
+  if (isSuperAdmin(userRole)) return '/';
+  for (const { path, required } of APP_HOME_ROUTE_SEQUENCE) {
+    const list = Array.isArray(required) ? required : [required];
+    if (list.some((perm) => hasPermission(userRole, perm, userPermissions))) return path;
+  }
+  return '/';
 }

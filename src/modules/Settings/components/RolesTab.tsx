@@ -9,6 +9,7 @@ import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } fr
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { appKeys, settingsKeys } from '../../../services/queryKeys';
+import { normalizeModuleViewAccess } from '../../../constants/permissions';
 
 function Cb({ checked, indeterminate, onChange, disabled }: any) {
   return (
@@ -233,12 +234,13 @@ export default function RolesTab({ userRole, language }: any) {
   });
 
   function openEdit(r: any) {
+    const raw = Array.isArray(r.permissions) ? [...r.permissions] : [];
     setEditing({
       id: r.id,
       name: r.name,
       nameAr: r.nameAr || '',
       description: r.description || '',
-      permissions: Array.isArray(r.permissions) ? [...r.permissions] : [],
+      permissions: normalizeModuleViewAccess(modules, raw),
       isSystem: r.isSystem,
     });
   }
@@ -374,7 +376,7 @@ export default function RolesTab({ userRole, language }: any) {
             name: form.name.trim().toLowerCase().replace(/\s+/g, '_'),
             nameAr: form.nameAr?.trim(),
             description: form.description?.trim(),
-            permissions: form.permissions,
+            permissions: normalizeModuleViewAccess(modules, form.permissions),
           });
         }}>
           <div className="grid gap-3 mb-4">
@@ -392,7 +394,7 @@ export default function RolesTab({ userRole, language }: any) {
             modules={modules}
             levels={levels}
             permissions={form.permissions}
-            onChange={(perms: any) => setForm((p: any) => ({ ...p, permissions: perms }))}
+            onChange={(perms: any) => setForm((p: any) => ({ ...p, permissions: normalizeModuleViewAccess(modules, perms) }))}
             disabled={false}
             language={language}
           />
@@ -425,7 +427,7 @@ export default function RolesTab({ userRole, language }: any) {
               body: {
                 nameAr: editing.nameAr?.trim(),
                 description: editing.description?.trim(),
-                permissions: editing.permissions,
+                permissions: normalizeModuleViewAccess(modules, editing.permissions),
               },
             });
           }}>
@@ -452,7 +454,7 @@ export default function RolesTab({ userRole, language }: any) {
               modules={modules}
               levels={levels}
               permissions={editing.permissions}
-              onChange={(perms: any) => setEditing((p: any) => ({ ...p, permissions: perms }))}
+              onChange={(perms: any) => setEditing((p: any) => ({ ...p, permissions: normalizeModuleViewAccess(modules, perms) }))}
               disabled={false}
               language={language}
             />
