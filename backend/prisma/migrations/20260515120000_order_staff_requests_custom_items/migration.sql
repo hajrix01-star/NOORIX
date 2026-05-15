@@ -1,4 +1,6 @@
 -- Staff order drafts + optional product on line items
+-- Fully idempotent: safe to re-run if partially applied.
+
 ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "is_staff_request" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "created_by_user_id" TEXT;
 ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "staff_digest_sent_at" TIMESTAMP(3);
@@ -20,7 +22,17 @@ END $$;
 ALTER TABLE "order_items" ADD COLUMN IF NOT EXISTS "custom_label_ar" TEXT;
 ALTER TABLE "order_items" ADD COLUMN IF NOT EXISTS "custom_label_en" TEXT;
 
-ALTER TABLE "order_items" DROP CONSTRAINT IF EXISTS "order_items_product_id_fkey";
-ALTER TABLE "order_items" ALTER COLUMN "product_id" DROP NOT NULL;
-ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_fkey"
-  FOREIGN KEY ("product_id") REFERENCES "order_products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+DO $$
+BEGIN
+  -- Re-create product_id FK as nullable (idempotent)
+  ALTER TABLE "order_items" ALTER COLUMN "product_id" DROP NOT NULL;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER TABLE "order_items" DROP CONSTRAINT IF EXISTS "order_items_product_id_fkey";
+  ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_fkey"
+    FOREIGN KEY ("product_id") REFERENCES "order_products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
