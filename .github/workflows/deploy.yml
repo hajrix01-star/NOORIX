@@ -84,83 +84,18 @@ jobs:
             --exclude='node_modules' --exclude='dist' --exclude='.env' \
             backend/ "$PROD/"
 
-      - name: Rebuild & restart backend (via sudo to reach correct PM2 daemon)
-        env:
-          DEPLOY_SHA: ${{ github.sha }}
+      - name: Rebuild & restart backend (root via sudo — ensures correct PM2 + .env port)
         run: |
-          PROD=/var/www/noorix/backend
-          SHA="${DEPLOY_SHA}"
-
-          # تشخيص: من نحن وأي عمليات PM2 تعمل الآن
-          echo "==> runner user: $(whoami)"
-          PM2BIN="$(which pm2 2>/dev/null || echo '/usr/local/bin/pm2')"
-          echo "==> pm2 path: $PM2BIN"
-
-          echo "==> PM2 processes BEFORE (runner context):"
-          "$PM2BIN" list 2>/dev/null || true
-
-          echo "==> PM2 processes BEFORE (sudo/root context):"
-          sudo "$PM2BIN" list 2>/dev/null || true
-
-          # إيقاف وحذف جميع نسخ المشروع من كلا السياقين
-          echo "==> إيقاف العمليات القديمة"
-          "$PM2BIN"      stop  noorix-backend 2>/dev/null || true
-          "$PM2BIN"      delete noorix-backend 2>/dev/null || true
-          "$PM2BIN"      stop  noorix-api     2>/dev/null || true
-          "$PM2BIN"      delete noorix-api     2>/dev/null || true
-          sudo "$PM2BIN" stop  noorix-backend 2>/dev/null || true
-          sudo "$PM2BIN" delete noorix-backend 2>/dev/null || true
-          sudo "$PM2BIN" stop  noorix-api     2>/dev/null || true
-          sudo "$PM2BIN" delete noorix-api     2>/dev/null || true
-          sleep 3
-
-          # بناء الـ backend
-          cd "$PROD"
-          echo "==> npm ci"
-          rm -rf node_modules
-          npm ci
-
-          echo "==> prisma generate"
-          npx prisma generate \
-            || (sleep 5; npx prisma generate) \
-            || (sleep 5; npx prisma generate)
-
-          echo "==> prisma migrate deploy (فشله لا يوقف النشر)"
-          bash ../deploy/prisma-migrate-deploy-with-recovery.sh || echo "WARN: migration failed — continuing"
-
-          echo "==> npm run build"
-          npm run build
-
-          # بدء PM2 نظيف — نجرّب بدون sudo أولاً ثم بـ sudo للتأكد
-          echo "==> pm2 start (runner context)"
-          DEPLOY_SHA="$SHA" "$PM2BIN" start ecosystem.config.cjs --update-env || true
-          "$PM2BIN" save --force 2>/dev/null || true
-
-          echo "==> PM2 list after start:"
-          "$PM2BIN" list 2>/dev/null || true
-
-          # إذا كانت العملية غير موجودة (ربما root يملك PM2) — نجرّب sudo
-          if ! "$PM2BIN" list 2>/dev/null | grep -q 'noorix-backend'; then
-            echo "==> runner PM2 لا يحتوي noorix-backend — نحاول sudo PM2"
-            sudo DEPLOY_SHA="$SHA" "$PM2BIN" stop  noorix-backend 2>/dev/null || true
-            sudo DEPLOY_SHA="$SHA" "$PM2BIN" delete noorix-backend 2>/dev/null || true
-            sudo DEPLOY_SHA="$SHA" "$PM2BIN" start "$PROD/ecosystem.config.cjs" --update-env
-            sudo "$PM2BIN" save --force
-            echo "==> PM2 list (sudo) after start:"
-            sudo "$PM2BIN" list
-          fi
+          # تشغيل كـ root كاملاً: يضمن قراءة .env وPM2 الصحيح (يحل مشكلة PORT 3000 vs 8080)
+          sudo DEPLOY_SHA="${{ github.sha }}" bash /var/www/noorix/deploy/ci-backend-start.sh
 
       # ── انتظار جاهزية الـ API ─────────────────────────────
       - name: Wait for API liveness & verify staff route
         run: |
-          PM2BIN="$(which pm2 2>/dev/null || echo '/usr/local/bin/pm2')"
-          API_PORT=3000
-          if [ -f /var/www/noorix/backend/.env ]; then
-            p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' \
-              /var/www/noorix/backend/.env | head -1 | tr -d '\r')
-            p=$(echo "$p" | tr -d '[:space:]')
-            case "$p" in ''|*[!0-9]*) ;; *) API_PORT=$p ;; esac
-          fi
+          API_PORT=$(sudo bash -c "
+            p=\$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' /var/www/noorix/backend/.env 2>/dev/null | head -1 | tr -d '\\r[:space:]')
+            case \"\$p\" in ''|*[!0-9]*) echo 3000;; *) echo \"\$p\";; esac
+          ")
           echo "==> Waiting for liveness on port ${API_PORT}..."
           ready=0
           for i in $(seq 1 90); do
@@ -173,8 +108,7 @@ jobs:
           done
           if [ "$ready" != 1 ]; then
             echo "ERROR: timeout 90s" >&2
-            "$PM2BIN" logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
-            sudo "$PM2BIN" logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
+            sudo $(which pm2) logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
             exit 1
           fi
 
@@ -185,14 +119,12 @@ jobs:
             -H "Content-Type: application/json" -d '{}' 2>/dev/null || echo "000")
           echo "==> POST /api/v1/orders/staff → HTTP $STAFF_STATUS"
           if [ "$STAFF_STATUS" = "404" ] || [ "$STAFF_STATUS" = "000" ]; then
-            echo "ERROR: مسار الموظفين لا يزال 404 — الـ backend لا يعمل بالكود الجديد!" >&2
-            "$PM2BIN" list 2>/dev/null || true
-            sudo "$PM2BIN" list 2>/dev/null || true
-            "$PM2BIN" logs noorix-backend --lines 50 --nostream 2>&1 | tail -50
-            sudo "$PM2BIN" logs noorix-backend --lines 50 --nostream 2>&1 | tail -50
+            echo "ERROR: مسار الموظفين لا يزال 404 — backend لا يعمل بالكود الجديد!" >&2
+            sudo $(which pm2) list
+            sudo $(which pm2) logs noorix-backend --lines 50 --nostream 2>&1 | tail -50
             exit 1
           fi
-          echo "==> Staff route OK (HTTP $STAFF_STATUS — 401/400/403 expected) ✓"
+          echo "==> Staff route OK (HTTP $STAFF_STATUS) ✓"
 
       # ── إعادة تحميل Nginx وفحص نهائي ─────────────────────
       - name: Reload Nginx & final health check
