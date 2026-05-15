@@ -80,6 +80,7 @@ export function OrdersTab({
   startDate: propStartDate,
   endDate: propEndDate,
   dateFilter,
+  onNavigateToManageItems,
 }: {
   companyId: any;
   year: any;
@@ -87,9 +88,11 @@ export function OrdersTab({
   startDate?: string;
   endDate?: string;
   dateFilter: any;
+  onNavigateToManageItems?: () => void;
 }) {
   const { t, lang } = useTranslation();
   const { companies = [], userRole, userPermissions = [] } = useApp();
+  const canManageCatalog = hasPermission(userRole, PERMISSIONS.ORDERS_WRITE, userPermissions);
   const [showModal, setShowModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const { showToast } = useToast();
@@ -539,10 +542,21 @@ export function OrdersTab({
 
       <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
         <DateFilterBar filter={dateFilter} />
-        <div className="nx-toolbar">
+        <div className="nx-toolbar flex-wrap gap-2">
           <Button variant="primary" size="sm" className="noorix-print-hide" onClick={() => { setEditingOrder(null); setShowModal(true); }}>
             + {t('ordersNewOrder')}
           </Button>
+          {canManageCatalog && typeof onNavigateToManageItems === 'function' && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="noorix-print-hide border-2 border-noorix-blue text-noorix-blue font-semibold hover:bg-blue-500/10"
+              onClick={() => onNavigateToManageItems()}
+            >
+              + {t('ordersAddProduct')}
+            </Button>
+          )}
         </div>
       </div>
 

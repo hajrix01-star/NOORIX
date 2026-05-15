@@ -76,6 +76,7 @@ export default function OrdersScreen() {
               startDate={startDate}
               endDate={endDate}
               dateFilter={dateFilter}
+              onNavigateToManageItems={() => setActiveTab('items-manage')}
             />
           )}
           {activeTab === 'items-report' && (
