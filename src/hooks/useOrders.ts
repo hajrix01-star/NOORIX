@@ -22,6 +22,12 @@ import {
   createOrderCategoriesBatch,
   deactivateOrderProductsBulk,
   deactivateOrderCategoriesBulk,
+  getMyStaffOrders,
+  createStaffOrder,
+  updateStaffOrder,
+  deleteStaffOrder,
+  getStaffDigest,
+  sendStaffDigest,
   throwIfApiFailed,
 } from '../services/api';
 import { orderKeys } from '../services/queryKeys';
@@ -194,6 +200,66 @@ export function useDeleteOrderCategoriesMutation(companyId: any) {
   return useApiMutation({
     mutationFn: (ids: string[]) => deactivateOrderCategoriesBulk(companyId, ids),
     invalidateQueries: [orderKeys.categories(companyId)],
+    showErrorToast: false,
+  });
+}
+
+// ══════════════════════════════════════════════════
+// Staff Orders — طلبات الأقسام
+// ══════════════════════════════════════════════════
+
+export function useMyStaffOrders(companyId: any) {
+  return useQuery({
+    queryKey: orderKeys.staffMy(companyId),
+    queryFn: async () => {
+      const res = await getMyStaffOrders(companyId);
+      throwIfApiFailed(res, 'فشل تحميل الطلبات');
+      return res.data ?? [];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useCreateStaffOrderMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: createStaffOrder,
+    invalidateQueries: [orderKeys.staffMy(companyId), orderKeys.staffDigest(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useUpdateStaffOrderMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: ({ id, body }: any) => updateStaffOrder(id, companyId, body),
+    invalidateQueries: [orderKeys.staffMy(companyId), orderKeys.staffDigest(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useDeleteStaffOrderMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: (id: string) => deleteStaffOrder(id, companyId),
+    invalidateQueries: [orderKeys.staffMy(companyId), orderKeys.staffDigest(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useStaffDigest(companyId: any) {
+  return useQuery({
+    queryKey: orderKeys.staffDigest(companyId),
+    queryFn: async () => {
+      const res = await getStaffDigest(companyId);
+      if (!res?.success) return { sections: [], totalOrders: 0, pendingCount: 0 };
+      return res.data ?? { sections: [], totalOrders: 0, pendingCount: 0 };
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useSendStaffDigestMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: (orderIds?: string[]) => sendStaffDigest(companyId, orderIds),
+    invalidateQueries: [orderKeys.staffDigest(companyId), orderKeys.staffMyRoot()],
     showErrorToast: false,
   });
 }

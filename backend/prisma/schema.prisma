@@ -80,6 +80,7 @@ model User {
   backupJobsCreated BackupJob[] @relation("BackupCreatedBy")
   invoicesCreated Invoice[] @relation("InvoiceCreatedBy")
   ocrInvoicesSubmitted OcrInvoice[] @relation("OcrInvoiceSubmittedBy")
+  staffOrders          StaffOrder[]
 
   @@index([tenantId])
   @@map("users")
@@ -1198,9 +1199,10 @@ model OrderProduct {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt      @map("updated_at")
 
-  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  category OrderCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  items    OrderItem[]
+  company    Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category   OrderCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  items      OrderItem[]
+  staffItems StaffOrderItem[]
 
   @@index([tenantId])
   @@index([companyId])
@@ -1249,6 +1251,51 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
+}
+
+// ══════════════════════════════════════════════════
+// STAFF ORDERS — طلبات الأقسام (مطبخ، بار، ...)
+// موظف يُنشئ الطلب، الكاشير يجمعها ويرسل واتساب موحّد
+// ══════════════════════════════════════════════════
+
+model StaffOrder {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  companyId   String    @map("company_id")
+  userId      String    @map("user_id")
+  sectionName String    @map("section_name")   // مطبخ | بار | كاشير | ...
+  status      String    @default("pending")     // pending | sent
+  notes       String?
+  sentAt      DateTime? @map("sent_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt      @map("updated_at")
+
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId],    references: [id], onDelete: Cascade)
+  items   StaffOrderItem[]
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([userId])
+  @@map("staff_orders")
+}
+
+model StaffOrderItem {
+  id           String   @id @default(cuid())
+  staffOrderId String   @map("staff_order_id")
+  productId    String   @map("product_id")
+  quantity     Decimal  @db.Decimal(18, 4)
+  unit         String?
+  notes        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  staffOrder StaffOrder   @relation(fields: [staffOrderId], references: [id], onDelete: Cascade)
+  product    OrderProduct @relation(fields: [productId],    references: [id], onDelete: Restrict)
+
+  @@index([staffOrderId])
+  @@index([productId])
+  @@map("staff_order_items")
 }
 
 // ══════════════════════════════════════════════════

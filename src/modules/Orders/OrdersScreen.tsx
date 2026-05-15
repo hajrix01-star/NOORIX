@@ -1,13 +1,21 @@
-﻿/** Orders section: orders | product reports | product admin */
+﻿/**
+ * OrdersScreen — يعرض واجهة الموظف أو المدير حسب الصلاحية
+ *
+ * STAFF_ORDERS_SUBMIT فقط (بدون VIEW_ORDERS) → StaffOrdersView (جوال مبسّط)
+ * VIEW_ORDERS → واجهة المدير الكاملة + تبويب «طلبات الأقسام» إن كان STAFF_ORDERS_DIGEST
+ */
 import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
+import { PERMISSIONS } from '../../constants/permissions';
 import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
 import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
+import { StaffDigestTab } from './components/StaffDigestTab';
+import { StaffOrdersView } from './StaffOrdersView';
 
 function parseYearMonth(dateStr: any) {
   if (!dateStr || typeof dateStr !== 'string') return null;
@@ -18,17 +26,52 @@ function parseYearMonth(dateStr: any) {
   return Number.isFinite(y) && Number.isFinite(m) ? { year: y, month: m } : null;
 }
 
-const ORDER_TAB_IDS = ['orders', 'items-report', 'items-manage'];
-
 export default function OrdersScreen() {
-  const { activeCompanyId } = useApp();
+  const { activeCompanyId, user } = useApp();
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
-  const [activeTab, setActiveTab] = useTabSearchParam(ORDER_TAB_IDS, 'orders');
+
+  const userPermissions: string[] = (user as any)?.permissions ?? [];
+  const canViewOrders = userPermissions.includes(PERMISSIONS.VIEW_ORDERS)
+    || (user as any)?.role === 'owner'
+    || (user as any)?.role === 'super_admin';
+  const canSubmitStaff = userPermissions.includes(PERMISSIONS.STAFF_ORDERS_SUBMIT);
+  const canDigest = userPermissions.includes(PERMISSIONS.STAFF_ORDERS_DIGEST);
+
+  // الموظف البسيط — يرى واجهة مبسّطة فقط
+  if (!canViewOrders && canSubmitStaff) {
+    return companyId
+      ? <StaffOrdersView companyId={companyId} />
+      : (
+        <ScreenShell>
+          <ScreenTitle>{t('ordersTitle')}</ScreenTitle>
+          <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
+        </ScreenShell>
+      );
+  }
+
+  return <ManagerOrdersScreen
+    companyId={companyId}
+    dateFilter={dateFilter}
+    canDigest={canDigest}
+    canSubmitStaff={canSubmitStaff}
+  />;
+}
+
+function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff }: any) {
+  const { t } = useTranslation();
+
+  const TAB_IDS = useMemo(() => {
+    const ids = ['orders', 'items-report', 'items-manage'];
+    if (canDigest) ids.push('staff-digest');
+    return ids;
+  }, [canDigest]);
+
+  const [activeTab, setActiveTab] = useTabSearchParam(TAB_IDS, 'orders');
 
   const { year, month, startDate, endDate } = useMemo(() => {
-    const { mode, selYear, selMonth, selDay, rangeStart, rangeEnd } = dateFilter;
+    const { mode, selYear, selMonth, selDay, rangeStart } = dateFilter;
     if (mode === 'month') {
       return { year: selYear, month: selMonth, startDate: dateFilter.startDate, endDate: dateFilter.endDate };
     }
@@ -43,11 +86,15 @@ export default function OrdersScreen() {
     return { year: selYear, month: selMonth, startDate: dateFilter.startDate, endDate: dateFilter.endDate };
   }, [dateFilter.mode, dateFilter.selYear, dateFilter.selMonth, dateFilter.selDay, dateFilter.rangeStart, dateFilter.rangeEnd, dateFilter.startDate, dateFilter.endDate]);
 
-  const tabItems = useMemo(() => [
-    { id: 'orders', label: t('ordersTab') },
-    { id: 'items-report', label: t('ordersItemsReportTab') },
-    { id: 'items-manage', label: t('ordersItemsManageTab') },
-  ], [t]);
+  const tabItems = useMemo(() => {
+    const tabs = [
+      { id: 'orders', label: t('ordersTab') },
+      { id: 'items-report', label: t('ordersItemsReportTab') },
+      { id: 'items-manage', label: t('ordersItemsManageTab') },
+    ];
+    if (canDigest) tabs.push({ id: 'staff-digest', label: t('staffDigestTab') });
+    return tabs;
+  }, [t, canDigest]);
 
   return (
     <ScreenShell className="min-w-0">
@@ -89,6 +136,7 @@ export default function OrdersScreen() {
             />
           )}
           {activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
+          {activeTab === 'staff-digest' && canDigest && <StaffDigestTab companyId={companyId} />}
         </ScreenTabs>
       )}
     </ScreenShell>

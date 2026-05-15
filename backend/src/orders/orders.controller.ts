@@ -1,10 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CompanyId } from '../auth/decorators/company-id.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { OrdersService } from './orders.service';
+import { OrdersStaffService } from './orders-staff.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
@@ -13,7 +15,63 @@ import { CreateOrderDto } from './dto/create-order.dto';
 @Controller('orders')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly staffService: OrdersStaffService,
+  ) {}
+
+  // ══════════════════════════════════════════════════
+  // STAFF ORDERS — طلبات الأقسام
+  // يجب أن تكون قبل routes الـ wildcard /:id
+  // ══════════════════════════════════════════════════
+
+  @Get('staff/my')
+  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  getMyStaffOrders(@CompanyId() companyId: string, @CurrentUser() user: any) {
+    if (!companyId) return [];
+    return this.staffService.getMyStaffOrders(companyId, user.sub);
+  }
+
+  @Get('staff/digest')
+  @RequirePermission('STAFF_ORDERS_DIGEST')
+  getStaffDigest(@CompanyId() companyId: string) {
+    if (!companyId) return { sections: [], totalOrders: 0, pendingCount: 0 };
+    return this.staffService.getDigest(companyId);
+  }
+
+  @Post('staff')
+  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  createStaffOrder(@Body() body: any, @CurrentUser() user: any) {
+    return this.staffService.createStaffOrder(user.sub, body);
+  }
+
+  @Post('staff/send-digest')
+  @RequirePermission('STAFF_ORDERS_DIGEST')
+  sendStaffDigest(@CompanyId() companyId: string, @Body() body: { orderIds?: string[] }) {
+    if (!companyId) throw new Error('companyId مطلوب');
+    return this.staffService.sendDigest(companyId, body?.orderIds);
+  }
+
+  @Patch('staff/:id')
+  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  updateStaffOrder(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: any,
+    @Body() body: any,
+  ) {
+    return this.staffService.updateStaffOrder(id, companyId, user.sub, body);
+  }
+
+  @Delete('staff/:id')
+  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  deleteStaffOrder(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.staffService.deleteStaffOrder(id, companyId, user.sub);
+  }
 
   @Get()
   @RequirePermission('VIEW_SALES')

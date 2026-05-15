@@ -30,4 +30,10 @@ export const orderKeys = {
 
   itemsReport: (companyId: string, year: unknown, month: unknown) =>
     ['orders-items-report', companyId, year, month] as const,
+
+  staffMyRoot: () => ['staff-orders-my'] as const,
+  staffMy: (companyId: string) => ['staff-orders-my', companyId] as const,
+
+  staffDigestRoot: () => ['staff-orders-digest'] as const,
+  staffDigest: (companyId: string) => ['staff-orders-digest', companyId] as const,
 };

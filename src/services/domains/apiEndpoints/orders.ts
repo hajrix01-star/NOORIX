@@ -117,3 +117,31 @@ export async function deactivateOrderCategoriesBulk(
   );
   return { deleted: results.filter((r) => r?.success).length };
 }
+
+// ——— طلبات الأقسام (Staff Orders) ———
+
+export async function getMyStaffOrders(companyId: string): Promise<ApiParsedResult> {
+  const res = await apiGet('/api/v1/orders/staff/my', { companyId });
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+
+export async function createStaffOrder(body: unknown): Promise<ApiParsedResult> {
+  return apiPost('/api/v1/orders/staff', body);
+}
+
+export async function updateStaffOrder(id: string, companyId: string, body: unknown): Promise<ApiParsedResult> {
+  return apiPatch(`/api/v1/orders/staff/${id}?companyId=${companyId}`, body);
+}
+
+export async function deleteStaffOrder(id: string, companyId: string): Promise<ApiParsedResult> {
+  return apiDelete(`/api/v1/orders/staff/${id}?companyId=${companyId}`);
+}
+
+export async function getStaffDigest(companyId: string): Promise<ApiParsedResult> {
+  const res = await apiGet('/api/v1/orders/staff/digest', { companyId });
+  return res?.success ? { ...res, data: res.data ?? { sections: [], totalOrders: 0, pendingCount: 0 } } : { success: false, data: { sections: [], totalOrders: 0, pendingCount: 0 } };
+}
+
+export async function sendStaffDigest(companyId: string, orderIds?: string[]): Promise<ApiParsedResult> {
+  return apiPost(`/api/v1/orders/staff/send-digest?companyId=${companyId}`, { orderIds });
+}
