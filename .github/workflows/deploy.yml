@@ -72,23 +72,27 @@ jobs:
           rm -f /tmp/noorix-frontend.tar.gz
 
       # ── تحديث الخلفية وإعادة بنائها في مسار الإنتاج ────
+      # Zero-downtime: البناء يتم أولاً وPM2 يبقى شغّالاً طوال هذه المرحلة.
+      # pm2 startOrReload (graceful reload) تُشغَّل فقط بعد اكتمال dist/ — لا downtime.
       - name: Sync backend to production path & rebuild
         run: |
           PROD=/var/www/noorix/backend
 
-          # مزامنة الكود الجديد إلى مسار الإنتاج (بدون node_modules/dist/.env)
+          # دالة إسعاف: إذا فشل البناء نُعيد تشغيل PM2 بالـ dist القديم
+          ensure_pm2_running() {
+            pm2 startOrReload "$PROD/ecosystem.config.cjs" --update-env 2>/dev/null || true
+            pm2 save 2>/dev/null || true
+          }
+          trap ensure_pm2_running ERR
+
+          echo "==> مزامنة الكود الجديد (بدون node_modules/dist/.env)"
           rsync -a --delete \
             --exclude='node_modules' --exclude='dist' --exclude='.env' \
             backend/ "$PROD/"
 
           cd "$PROD"
 
-          echo "==> إيقاف noorix-backend مؤقتاً"
-          pm2 stop noorix-backend 2>/dev/null || true
-          sleep 2
-
-          echo "==> npm ci"
-          rm -rf node_modules
+          echo "==> npm ci (PM2 لا يزال يعمل بالـ dist القديم)"
           npm ci
 
           echo "==> prisma generate"
@@ -102,8 +106,11 @@ jobs:
           echo "==> npm run build"
           npm run build
 
-          echo "==> pm2 startOrReload"
+          echo "==> pm2 startOrReload (graceful reload بعد اكتمال البناء)"
           DEPLOY_SHA="${{ github.sha }}" pm2 startOrReload ecosystem.config.cjs --update-env
+
+          echo "==> pm2 save (حفظ قائمة العمليات لتبقى بعد إعادة تشغيل السيرفر)"
+          pm2 save
 
       # ── انتظار جاهزية الـ API ─────────────────────────────
       - name: Wait for API liveness
