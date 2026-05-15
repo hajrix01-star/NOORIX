@@ -33,11 +33,12 @@ export default function OrdersScreen() {
   const dateFilter = useDateFilter();
 
   const userPermissions: string[] = (user as any)?.permissions ?? [];
-  const canViewOrders = userPermissions.includes(PERMISSIONS.VIEW_ORDERS)
-    || (user as any)?.role === 'owner'
-    || (user as any)?.role === 'super_admin';
-  const canSubmitStaff = userPermissions.includes(PERMISSIONS.STAFF_ORDERS_SUBMIT);
-  const canDigest = userPermissions.includes(PERMISSIONS.STAFF_ORDERS_DIGEST);
+  const role = String((user as any)?.role || '').toLowerCase();
+  const isAdmin = role === 'owner' || role === 'super_admin';
+
+  const canViewOrders = isAdmin || userPermissions.includes(PERMISSIONS.VIEW_ORDERS);
+  const canSubmitStaff = isAdmin || userPermissions.includes(PERMISSIONS.STAFF_ORDERS_SUBMIT);
+  const canDigest = isAdmin || userPermissions.includes(PERMISSIONS.STAFF_ORDERS_DIGEST);
 
   // الموظف البسيط — يرى واجهة مبسّطة فقط
   if (!canViewOrders && canSubmitStaff) {
