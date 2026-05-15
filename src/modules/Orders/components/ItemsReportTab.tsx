@@ -11,12 +11,14 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { Button, Input, AdaptiveSheet, SmartTable, FmtNum, MetricCard } from '../../../ui';
+import { orderLocalizedName } from '../../../utils/orderDisplay';
 
-const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
-
-function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-accent-blue)' }: any) {
+function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-accent-blue)', resolveLabel }: any) {
   const m = maxVal > 0 ? maxVal : 1;
-  const getLabel = (r: any) => r[labelKey] || r.productNameEn || r.categoryNameEn || '—';
+  const getLabel = (r: any) => {
+    if (typeof resolveLabel === 'function') return resolveLabel(r) || '—';
+    return r[labelKey] || r.productNameEn || r.categoryNameEn || '—';
+  };
   return (
     <div className="flex flex-col gap-1.5">
       {data.slice(0, 10).map((r: any, i: any) => (
@@ -44,7 +46,7 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
   );
 }
 
-function PurchaseHistoryModal({ companyId, year, month, product, category, onClose, t }: any) {
+function PurchaseHistoryModal({ companyId, year, month, product, category, onClose, t, lang }: any) {
   const isProduct = !!product;
   const productId = product?.id ?? product?.productId;
   const categoryId = category?.id;
@@ -58,7 +60,14 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
 
   const history = isProduct ? productHistory : categoryHistory;
   const isLoading = isProduct ? productLoading : categoryLoading;
-  const title = isProduct ? (product?.productNameAr || product?.nameAr || product?.productNameEn || product?.nameEn || productId) : (category?.nameAr || category?.nameEn || categoryId);
+  const titleRaw = isProduct
+    ? orderLocalizedName(
+        product?.productNameAr ?? product?.nameAr,
+        product?.productNameEn ?? product?.nameEn,
+        lang,
+      )
+    : orderLocalizedName(category?.nameAr, category?.nameEn, lang);
+  const title = titleRaw !== '—' ? titleRaw : (isProduct ? productId : categoryId);
 
   return (
     <AdaptiveSheet
@@ -118,7 +127,7 @@ export function ItemsReportTab({
   endDate?: string;
   dateFilter: any;
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const [filterMode, setFilterMode] = useState('all'); // all | top | bottom
   const [filterCount, setFilterCount] = useState(10);
@@ -141,11 +150,14 @@ export function ItemsReportTab({
 
   const maxAmount = useMemo(() => Math.max(...filtered.map((r: any) => Number(r.amount ?? 0)), 1), [filtered]);
 
+  const productReportLabel = (r: any) => orderLocalizedName(r.productNameAr, r.productNameEn, lang);
+  const categoryReportLabel = (r: any) => orderLocalizedName(r.categoryNameAr, r.categoryNameEn, lang);
+
   const handleExportExcel = async () => {
     try {
       const rows = filtered.map((r: any) => ({
-        [t('product')]: r.productNameAr || r.productNameEn || '—',
-        [t('category')]: r.categoryNameAr || r.categoryNameEn || '—',
+        [t('product')]: productReportLabel(r),
+        [t('category')]: categoryReportLabel(r),
         [t('unit')]: r.unit || '—',
         [t('quantity')]: fmt(r.quantity ?? 0),
         [t('total')]: fmt(r.amount ?? 0),
@@ -162,8 +174,8 @@ export function ItemsReportTab({
     try {
       const cols = [t('product'), t('category'), t('quantity'), t('total'), t('ordersOrderCount')];
       const data = filtered.map((r: any) => ({
-        [t('product')]: r.productNameAr || r.productNameEn || '—',
-        [t('category')]: r.categoryNameAr || r.categoryNameEn || '—',
+        [t('product')]: productReportLabel(r),
+        [t('category')]: categoryReportLabel(r),
         [t('quantity')]: fmt(r.quantity ?? 0),
         [t('total')]: fmt(r.amount ?? 0),
         [t('ordersOrderCount')]: r.orderCount ?? 0,
@@ -230,11 +242,11 @@ export function ItemsReportTab({
           <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
             <div>
               <div className="text-[12px] mb-2 text-noorix-muted">{t('ordersChartByAmount')}</div>
-              <BarChart data={filtered} maxVal={maxAmount} labelKey="productNameAr" valueKey="amount" color="#2563eb" />
+              <BarChart data={filtered} maxVal={maxAmount} labelKey="productNameAr" valueKey="amount" color="#2563eb" resolveLabel={productReportLabel} />
             </div>
             <div>
               <div className="text-[12px] mb-2 text-noorix-muted">{t('ordersChartByOrders')}</div>
-              <BarChart data={filtered} maxVal={Math.max(...filtered.map((r: any) => r.orderCount ?? 0), 1)} labelKey="productNameAr" valueKey="orderCount" color="#16a34a" />
+              <BarChart data={filtered} maxVal={Math.max(...filtered.map((r: any) => r.orderCount ?? 0), 1)} labelKey="productNameAr" valueKey="orderCount" color="#16a34a" resolveLabel={productReportLabel} />
             </div>
           </div>
         </div>
@@ -253,7 +265,7 @@ export function ItemsReportTab({
                 onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })}
                 className="text-[13px] font-semibold text-noorix-blue underline"
               >
-                {r.productNameAr || r.productNameEn || '—'}
+                {productReportLabel(r)}
               </Button>
             ),
           },
@@ -267,7 +279,7 @@ export function ItemsReportTab({
                 onClick={() => setHistoryModal({ category: { id: r.categoryId, nameAr: r.categoryNameAr, nameEn: r.categoryNameEn } })}
                 className="text-[13px] text-noorix-blue underline"
               >
-                {r.categoryNameAr || r.categoryNameEn || '—'}
+                {categoryReportLabel(r)}
               </Button>
             ) : <span className="nx-cell-muted">—</span>,
           },
@@ -296,12 +308,12 @@ export function ItemsReportTab({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-2">
               <Button variant="ghost" type="button" onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })} className="font-bold text-noorix-blue underline text-[13px]">
-                {r.productNameAr || r.productNameEn || '—'}
+                {productReportLabel(r)}
               </Button>
               <span className="nx-cell-num text-noorix-green font-bold text-[13px]"><FmtNum n={r.amount ?? 0} /> SR</span>
             </div>
             <div className="flex gap-3 text-[12px] text-noorix-muted">
-              {r.categoryNameAr && <span>{r.categoryNameAr}</span>}
+              {r.categoryId ? <span>{categoryReportLabel(r)}</span> : null}
               {r.unit && <span>{r.unit}</span>}
               <span>{t('quantity')}: {fmt(r.quantity ?? 0)}</span>
               <span>{t('ordersOrderCount')}: {r.orderCount ?? 0}</span>
@@ -319,6 +331,7 @@ export function ItemsReportTab({
           category={historyModal.category}
           onClose={() => setHistoryModal(null)}
           t={t}
+          lang={lang}
         />
       )}
     </div>

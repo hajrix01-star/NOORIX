@@ -13,6 +13,7 @@ import {
   useCancelStaffOrderMutation,
 } from '../../hooks/useOrders';
 import { getSaudiToday, toDateInputYmd, formatSaudiDate } from '../../utils/saudiDate';
+import { orderLocalizedName, orderProductDisplayName } from '../../utils/orderDisplay';
 import { ProductSearchInput } from '../../components/common/ProductSearchInput';
 import { ScreenShell, ScreenTitle, Button, Input, FmtNum } from '../../ui';
 
@@ -73,6 +74,8 @@ export default function StaffOrdersScreen() {
     [products],
   );
 
+  const productById = useMemo(() => new Map(productsForSearch.map((p: any) => [p.id, p])), [productsForSearch]);
+
   const resetForm = useCallback(() => {
     setEditingId(null);
     setOrderDate(getSaudiToday());
@@ -88,7 +91,7 @@ export default function StaffOrdersScreen() {
     const next: LineRow[] = (o.items || []).map((it: any) => {
       if (it.productId) {
         const p = products.find((x: any) => x.id === it.productId);
-        const hint = lang === 'ar' ? p?.nameAr || it.product?.nameAr : p?.nameEn || it.product?.nameEn || p?.nameAr || it.product?.nameAr;
+        const hint = orderLocalizedName(p?.nameAr ?? it.product?.nameAr, p?.nameEn ?? it.product?.nameEn, lang);
         return {
           key: newLineKey(),
           mode: 'product' as const,
@@ -332,11 +335,7 @@ export default function StaffOrdersScreen() {
                               key: newLineKey(),
                               mode: 'product',
                               productId: p.productId,
-                              labelHint:
-                                lang === 'ar'
-                                  ? productsForSearch.find((x: any) => x.id === p.productId)?.nameAr
-                                  : productsForSearch.find((x: any) => x.id === p.productId)?.nameEn ||
-                                    productsForSearch.find((x: any) => x.id === p.productId)?.nameAr,
+                              labelHint: orderProductDisplayName(productsForSearch.find((x: any) => x.id === p.productId), lang),
                               size: p.size,
                               packaging: p.packaging,
                               unit: p.unit,
@@ -390,7 +389,12 @@ export default function StaffOrdersScreen() {
                             <td className="p-1.5 pe-2 align-middle min-w-0">
                               {row.mode === 'product' ? (
                                 <div className="min-w-0">
-                                  <div className="font-semibold text-[13px] leading-snug line-clamp-2 break-words">{row.labelHint || '—'}</div>
+                                  <div className="font-semibold text-[13px] leading-snug line-clamp-2 break-words">
+                                    {orderProductDisplayName(
+                                      row.productId ? (productById.get(row.productId) as { nameAr?: string; nameEn?: string } | undefined) : undefined,
+                                      lang,
+                                    )}
+                                  </div>
                                   {[row.size, row.packaging, row.unit].filter(Boolean).length > 0 && (
                                     <div className="text-[10px] text-noorix-muted leading-tight mt-0.5 line-clamp-1">
                                       {[row.size, row.packaging, row.unit].filter(Boolean).join(' · ')}

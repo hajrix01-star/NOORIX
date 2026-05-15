@@ -26,16 +26,17 @@ import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu, FmtNum } from '../../../ui';
+import { orderLocalizedName, orderProductDisplayName } from '../../../utils/orderDisplay';
 
 function orderItemLineLabel(it: any, lang: string) {
   if (it.productId && it.product) {
-    const name = lang === 'ar' ? it.product?.nameAr || it.product?.nameEn : it.product?.nameEn || it.product?.nameAr;
+    const name = orderProductDisplayName(it.product, lang);
     const parts = [it.size, it.packaging, it.unit].filter(Boolean);
     const variantPart = parts.length > 0 ? ` (${parts.join(' / ')})` : '';
     return `${name || '—'}${variantPart}`;
   }
   if (it.customLabelAr || it.customLabelEn) {
-    return lang === 'ar' ? (it.customLabelAr || it.customLabelEn || '—') : (it.customLabelEn || it.customLabelAr || '—');
+    return orderLocalizedName(it.customLabelAr, it.customLabelEn, lang);
   }
   return '—';
 }
@@ -525,7 +526,9 @@ export function OrdersTab({
     setEditingOrder(null);
   }
 
-  const companyName = companies.find((c: any) => c.id === companyId)?.nameAr || companies.find((c: any) => c.id === companyId)?.nameEn || '';
+  const companyRow = companies.find((c: any) => c.id === companyId);
+  const companyNameRaw = companyRow ? orderLocalizedName(companyRow.nameAr, companyRow.nameEn, lang) : '—';
+  const companyName = companyNameRaw === '—' ? '' : companyNameRaw;
   const printDate = `${year}/${String(month).padStart(2, '0')}`;
 
   return (
