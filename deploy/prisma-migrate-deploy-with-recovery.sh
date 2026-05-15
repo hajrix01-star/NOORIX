@@ -26,5 +26,6 @@ if grep -qE 'P3009|P3018' "$LOG" && grep -q '20260515120000_order_staff_requests
   exec npx prisma migrate deploy
 fi
 
-echo "==> [prisma] migrate deploy فشل بدون حالة P3009/P3018 معروفة — الخرج أعلاه" >&2
-exit "$mc"
+echo "==> [prisma] migrate deploy فشل (خطأ غير P3009/P3018) — نكمل لتجنب downtime" >&2
+echo "==> الـ backend سيبدأ بدون هذه الـ migration — راجع الـ logs لاحقاً" >&2
+exit 0

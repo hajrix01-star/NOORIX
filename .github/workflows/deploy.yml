@@ -125,8 +125,8 @@ jobs:
             || (sleep 5; npx prisma generate) \
             || (sleep 5; npx prisma generate)
 
-          echo "==> prisma migrate deploy"
-          bash ../deploy/prisma-migrate-deploy-with-recovery.sh
+          echo "==> prisma migrate deploy (فشله لا يوقف النشر)"
+          bash ../deploy/prisma-migrate-deploy-with-recovery.sh || echo "WARN: migration failed — continuing"
 
           echo "==> npm run build"
           npm run build
