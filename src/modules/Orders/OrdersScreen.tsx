@@ -27,13 +27,12 @@ function parseYearMonth(dateStr: any) {
 }
 
 export default function OrdersScreen() {
-  const { activeCompanyId, user } = useApp();
+  const { activeCompanyId, userRole, userPermissions } = useApp();
   const { t } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
 
-  const userPermissions: string[] = (user as any)?.permissions ?? [];
-  const role = String((user as any)?.role || '').toLowerCase();
+  const role = String(userRole || '').toLowerCase();
   const isAdmin = role === 'owner' || role === 'super_admin';
 
   const canViewOrders = isAdmin || userPermissions.includes(PERMISSIONS.VIEW_ORDERS);
