@@ -83,9 +83,13 @@ jobs:
 
           cd "$PROD"
 
-          echo "==> إيقاف noorix-backend مؤقتاً"
-          pm2 stop noorix-backend 2>/dev/null || true
-          sleep 2
+          echo "==> إيقاف جميع عمليات PM2 المرتبطة بـ noorix-backend"
+          pm2 stop noorix-backend  2>/dev/null || true
+          pm2 delete noorix-backend 2>/dev/null || true
+          # إزالة العملية القديمة noorix-api إن وُجدت (كانت تستخدم نفس المنفذ)
+          pm2 stop noorix-api  2>/dev/null || true
+          pm2 delete noorix-api 2>/dev/null || true
+          sleep 3
 
           echo "==> npm ci"
           rm -rf node_modules
@@ -102,8 +106,9 @@ jobs:
           echo "==> npm run build"
           npm run build
 
-          echo "==> pm2 startOrReload"
-          DEPLOY_SHA="${{ github.sha }}" pm2 startOrReload ecosystem.config.cjs --update-env
+          echo "==> pm2 start جديد + save"
+          DEPLOY_SHA="${{ github.sha }}" pm2 start ecosystem.config.cjs --update-env
+          pm2 save --force
 
       # ── انتظار جاهزية الـ API ─────────────────────────────
       - name: Wait for API liveness
@@ -136,6 +141,16 @@ jobs:
         run: |
           sudo systemctl reload nginx
           echo "==> Public health check..."
-          curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health" | head -c 500
+          BODY=$(curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health" || echo '{}')
+          echo "$BODY" | head -c 500
           echo ""
+          # تحقق من SHA — إذا لم يتطابق يعني البيانات قديمة
+          EXPECTED="${{ github.sha }}"
+          if echo "$BODY" | grep -q "$EXPECTED"; then
+            echo "==> SHA verified: backend running new code ✓"
+          else
+            echo "WARNING: SHA mismatch — public health may show old code. Checking local..."
+            pm2 list
+            pm2 logs noorix-backend --lines 30 --nostream 2>&1 | tail -30
+          fi
           echo "==> Deployment completed successfully."

@@ -21,9 +21,13 @@ if [[ ! -f "$REPO/backend/package.json" ]]; then
 fi
 
 cd "$REPO/backend"
-echo "==> إيقاف noorix-backend (تحرير engines Prisma) ثم بيئة نظيفة"
+echo "==> إيقاف وحذف PM2 القديمة (noorix-backend + noorix-api)"
 if command -v pm2 >/dev/null 2>&1; then
-  pm2 stop noorix-backend 2>/dev/null || true
+  pm2 stop  noorix-backend 2>/dev/null || true
+  pm2 delete noorix-backend 2>/dev/null || true
+  # إزالة العملية القديمة noorix-api إن كانت لا تزال تعمل على نفس المنفذ
+  pm2 stop  noorix-api 2>/dev/null || true
+  pm2 delete noorix-api 2>/dev/null || true
   sleep 4
 fi
 rm -rf node_modules
@@ -33,10 +37,10 @@ npm ci
 npx prisma migrate deploy
 npm run build
 
-echo "==> PM2 startOrReload (noorix-backend)"
+echo "==> PM2 start نظيف (noorix-backend)"
 if command -v pm2 >/dev/null 2>&1; then
-  pm2 startOrReload ecosystem.config.cjs --update-env
-  pm2 save
+  pm2 start ecosystem.config.cjs --update-env
+  pm2 save --force
   pm2 list | head -20
 else
   echo "ERROR: pm2 غير مثبت" >&2
