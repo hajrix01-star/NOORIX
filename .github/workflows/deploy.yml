@@ -99,6 +99,9 @@ jobs:
 
           cd "$PROD"
 
+          echo "==> تنظيف node_modules القديمة لضمان npm ci نظيف"
+          rm -rf node_modules
+
           echo "==> npm ci (PM2 لا يزال يعمل بالـ dist القديم)"
           npm ci
 
