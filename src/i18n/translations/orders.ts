@@ -258,6 +258,7 @@ export default {
   staffOrderItems:          { ar: 'الأصناف', en: 'Items' },
   staffOrderItemsRequired:  { ar: 'يجب إضافة صنف واحد على الأقل بكمية', en: 'At least one item with quantity is required' },
   staffOrderSelectProduct:  { ar: '— اختر صنفاً —', en: '— Select product —' },
+  staffOrderSearchProduct:  { ar: 'ابحث عن صنف...', en: 'Search product...' },
   staffOrderAddItem:        { ar: 'إضافة صنف', en: 'Add item' },
   staffOrderSubmit:         { ar: 'إرسال الطلب', en: 'Submit Order' },
   staffOrderCreated:        { ar: 'تم إرسال الطلب', en: 'Order submitted' },

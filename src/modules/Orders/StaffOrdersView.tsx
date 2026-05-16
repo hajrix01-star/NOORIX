@@ -1,8 +1,8 @@
 /**
  * StaffOrdersView — واجهة الموظف لإرسال طلبات القسم
- * جوال أولاً 100%، بدون تفاصيل مالية، بدون تعقيد
+ * جوال أولاً 100%، بحث ذكي في الأصناف، بدون تعقيد
  */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
@@ -32,6 +32,111 @@ interface ItemRow {
   unit: string;
 }
 
+// ── مكوّن بحث الأصناف ─────────────────────────────────────────────
+interface ProductSearchProps {
+  value: string;
+  products: any[];
+  freqMap: Map<string, number>;
+  lang: string;
+  placeholder: string;
+  onChange: (productId: string, unit: string) => void;
+}
+
+function ProductSearchInput({ value, products, freqMap, lang, placeholder, onChange }: ProductSearchProps) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // اسم الصنف المختار
+  const selectedProduct = products.find((p: any) => p.id === value);
+  const selectedLabel = selectedProduct
+    ? (lang === 'en' ? (selectedProduct.nameEn || selectedProduct.nameAr) : (selectedProduct.nameAr || selectedProduct.nameEn))
+    : '';
+
+  // فلترة + ترتيب ذكي
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    const list = q
+      ? products.filter((p: any) => {
+          const ar = (p.nameAr || '').toLowerCase();
+          const en = (p.nameEn || '').toLowerCase();
+          return ar.includes(q) || en.includes(q);
+        })
+      : [...products];
+    // ترتيب: الأكثر طلبًا أولاً
+    list.sort((a: any, b: any) => {
+      const fa = freqMap.get(a.id) ?? 0;
+      const fb = freqMap.get(b.id) ?? 0;
+      if (fb !== fa) return fb - fa;
+      const na = lang === 'en' ? (a.nameEn || a.nameAr) : (a.nameAr || a.nameEn);
+      const nb = lang === 'en' ? (b.nameEn || b.nameAr) : (b.nameAr || b.nameEn);
+      return na.localeCompare(nb);
+    });
+    return list.slice(0, 50);
+  }, [products, query, freqMap, lang]);
+
+  // إغلاق عند النقر خارج
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery('');
+      }
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  function handleSelect(p: any) {
+    onChange(p.id, p.unit || 'piece');
+    setQuery('');
+    setOpen(false);
+  }
+
+  function itemLabel(p: any): string {
+    return lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
+  }
+
+  return (
+    <div ref={wrapRef} className="relative w-full">
+      <input
+        className="w-full h-9 rounded-lg border border-noorix-border bg-noorix-surface px-2.5 text-[13px] text-noorix-text placeholder:text-noorix-muted focus:outline-none focus:ring-1 focus:ring-noorix-blue"
+        value={open ? query : selectedLabel}
+        placeholder={open ? placeholder : (selectedLabel || placeholder)}
+        onFocus={() => { setOpen(true); setQuery(''); }}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {open && (
+        <div className="absolute z-50 top-full start-0 end-0 mt-1 bg-noorix-surface border border-noorix-border rounded-lg shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-[12px] text-noorix-muted">—</div>
+          ) : (
+            filtered.map((p: any) => {
+              const freq = freqMap.get(p.id) ?? 0;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="w-full flex items-center justify-between px-3 py-2 text-[13px] hover:bg-noorix-bg-muted transition-colors text-start"
+                  onMouseDown={(e) => { e.preventDefault(); handleSelect(p); }}
+                >
+                  <span>{itemLabel(p)}</span>
+                  {freq > 0 && (
+                    <span className="text-[10px] text-noorix-blue font-bold bg-noorix-blue/10 rounded-full px-1.5 py-0.5 shrink-0">
+                      ×{freq}
+                    </span>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
 export function StaffOrdersView({ companyId }: { companyId: string }) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
@@ -49,22 +154,26 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  /** خريطة تكرار الأصناف من الطلبات السابقة */
+  const freqMap = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const o of myOrders as any[]) {
+      for (const it of (o.items || [])) {
+        if (it.productId) m.set(it.productId, (m.get(it.productId) ?? 0) + 1);
+      }
+    }
+    return m;
+  }, [myOrders]);
+
   /** اسم القسم بلغة الواجهة */
   function sectionLabel(s: any): string {
     return lang === 'en' ? (s.nameEn || s.nameAr) : (s.nameAr || s.nameEn);
   }
 
-  /** اسم الصنف بلغة الواجهة */
-  function productLabel(p: any): string {
-    return lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
-  }
-
-  /** الأصناف المفلترة حسب القسم المختار:
-   *  - بدون قسم → كل الأصناف
-   *  - قسم محدد → فقط الأصناف المرتبطة صراحةً بهذا القسم */
+  /** الأصناف المفلترة حسب القسم المختار */
   const products = useMemo(() => {
     if (!sectionName) return allProducts;
-    return allProducts.filter((p: any) => {
+    return (allProducts as any[]).filter((p: any) => {
       const secs = p.sections as string[] | null;
       return Array.isArray(secs) && secs.length > 0 && secs.includes(sectionName);
     });
@@ -72,7 +181,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
 
   const productsById = useMemo(() => {
     const m = new Map<string, any>();
-    allProducts.forEach((p: any) => m.set(p.id, p));
+    (allProducts as any[]).forEach((p: any) => m.set(p.id, p));
     return m;
   }, [allProducts]);
 
@@ -88,10 +197,14 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     setItems((prev) => {
       const next = [...prev];
       next[idx] = { ...next[idx], [field]: value };
-      if (field === 'productId') {
-        const p = productsById.get(value);
-        next[idx].unit = p?.unit || 'piece';
-      }
+      return next;
+    });
+  }
+
+  function handleProductChange(idx: number, productId: string, unit: string) {
+    setItems((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], productId, unit };
       return next;
     });
   }
@@ -160,8 +273,8 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     }
   }, []);
 
-  const pendingOrders = useMemo(() => myOrders.filter((o: any) => o.status === 'pending'), [myOrders]);
-  const sentOrders = useMemo(() => myOrders.filter((o: any) => o.status === 'sent'), [myOrders]);
+  const pendingOrders = useMemo(() => (myOrders as any[]).filter((o: any) => o.status === 'pending'), [myOrders]);
+  const sentOrders   = useMemo(() => (myOrders as any[]).filter((o: any) => o.status === 'sent'),    [myOrders]);
 
   return (
     <ScreenShell>
@@ -180,7 +293,6 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
           value={sectionName}
           onChange={(e: any) => {
             setSectionName(e.target.value);
-            // إعادة تعيين الأصناف المختارة عند تغيير القسم
             setItems([{ productId: '', quantity: '', unit: '' }]);
           }}
         >
@@ -197,17 +309,16 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
           <div className="text-[12px] font-semibold text-noorix-muted">{t('staffOrderItems')}</div>
           {items.map((row, idx) => (
             <div key={idx} className="flex items-center gap-2 flex-wrap">
+              {/* بحث ذكي */}
               <div className="flex-1 min-w-[160px]">
-                <select
-                  className="w-full h-9 rounded-lg border border-noorix-border bg-noorix-surface px-2 text-[13px] text-noorix-text"
+                <ProductSearchInput
                   value={row.productId}
-                  onChange={(e) => updateItemRow(idx, 'productId', e.target.value)}
-                >
-                  <option value="">{t('staffOrderSelectProduct')}</option>
-                  {products.map((p: any) => (
-                    <option key={p.id} value={p.id}>{productLabel(p)}</option>
-                  ))}
-                </select>
+                  products={products as any[]}
+                  freqMap={freqMap}
+                  lang={lang}
+                  placeholder={t('staffOrderSearchProduct')}
+                  onChange={(pid, unit) => handleProductChange(idx, pid, unit)}
+                />
               </div>
               <div className="w-20">
                 <Input
@@ -257,18 +368,11 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
 
         {/* أزرار */}
         <div className="flex gap-2 flex-wrap">
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
+          <Button variant="primary" size="md" onClick={handleSubmit} disabled={submitting}>
             {submitting ? t('saving') : editingId ? t('save') : t('staffOrderSubmit')}
           </Button>
           {editingId && (
-            <Button size="md" variant="ghost" onClick={resetForm}>
-              {t('cancel')}
-            </Button>
+            <Button size="md" variant="ghost" onClick={resetForm}>{t('cancel')}</Button>
           )}
         </div>
       </div>
@@ -338,7 +442,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
         </div>
       )}
 
-      {!isLoading && myOrders.length === 0 && (
+      {!isLoading && (myOrders as any[]).length === 0 && (
         <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
           {t('staffOrderNoOrders')}
         </div>
