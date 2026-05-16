@@ -40,6 +40,16 @@ export class OrdersController {
     return this.staffService.getDigest(companyId);
   }
 
+  @Get('staff/digest/history')
+  @RequirePermission('STAFF_ORDERS_DIGEST')
+  getDigestHistory(
+    @CompanyId() companyId: string,
+    @Query('days') days?: string,
+  ) {
+    if (!companyId) return [];
+    return this.staffService.getDigestHistory(companyId, days ? parseInt(days, 10) : 30);
+  }
+
   @Post('staff')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
   createStaffOrder(@Body() body: any, @CurrentUser() user: any) {

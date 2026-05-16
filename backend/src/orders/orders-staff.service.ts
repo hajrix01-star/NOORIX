@@ -106,6 +106,60 @@ export class OrdersStaffService {
     return { deleted: true };
   }
 
+  /** الكاشير: تاريخ الإرسالات — آخر 30 يوماً مجمّعة بتاريخ الإرسال */
+  async getDigestHistory(companyId: string, days = 30) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const orders = await this.prisma.staffOrder.findMany({
+      where: { companyId, status: 'sent', sentAt: { gte: since } },
+      orderBy: [{ sentAt: 'desc' }, { sectionName: 'asc' }],
+      include: {
+        items: { include: { product: true } },
+        user: { select: { id: true, nameAr: true, nameEn: true } },
+      },
+    });
+
+    // تجميع بتاريخ اليوم (YYYY-MM-DD بناءً على sentAt)
+    const byDate: Record<string, { date: string; sentAt: Date; sections: Record<string, any[]> }> = {};
+    for (const o of orders) {
+      const d = o.sentAt ?? o.updatedAt;
+      const key = d.toISOString().slice(0, 10);
+      if (!byDate[key]) byDate[key] = { date: key, sentAt: d, sections: {} };
+      const sec = o.sectionName;
+      if (!byDate[key].sections[sec]) byDate[key].sections[sec] = [];
+      byDate[key].sections[sec].push(o);
+    }
+
+    return Object.values(byDate).map((day) => ({
+      date: day.date,
+      sentAt: day.sentAt,
+      sections: Object.entries(day.sections).map(([sectionName, sOrders]) => {
+        // دمج الأصناف المتشابهة لكل قسم
+        const itemMap: Record<string, { nameAr: string; nameEn: string | null; qty: number; unit: string }> = {};
+        for (const o of sOrders as any[]) {
+          for (const it of o.items) {
+            const key = `${it.productId}|${it.unit || ''}`;
+            if (!itemMap[key]) {
+              itemMap[key] = {
+                nameAr: it.product?.nameAr || '—',
+                nameEn: it.product?.nameEn || null,
+                qty: 0,
+                unit: it.unit || '',
+              };
+            }
+            itemMap[key].qty += Number(it.quantity);
+          }
+        }
+        return {
+          sectionName,
+          ordersCount: (sOrders as any[]).length,
+          items: Object.values(itemMap),
+        };
+      }),
+    }));
+  }
+
   /** المدير/الكاشير: يجلب الطلبات المعلّقة مجمّعة بالقسم */
   async getDigest(companyId: string) {
     const orders = await this.prisma.staffOrder.findMany({

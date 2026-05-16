@@ -27,6 +27,7 @@ import {
   updateStaffOrder,
   deleteStaffOrder,
   getStaffDigest,
+  getDigestHistory,
   sendStaffDigest,
   getOrderSections,
   createOrderSection,
@@ -257,6 +258,18 @@ export function useStaffDigest(companyId: any) {
       return res.data ?? { sections: [], totalOrders: 0, pendingCount: 0 };
     },
     enabled: !!companyId,
+  });
+}
+
+export function useDigestHistory(companyId: any, days = 30) {
+  return useQuery({
+    queryKey: ['digestHistory', companyId, days],
+    queryFn: async () => {
+      const res = await getDigestHistory(companyId, days);
+      return res.data ?? [];
+    },
+    enabled: !!companyId,
+    staleTime: 60_000,
   });
 }
 

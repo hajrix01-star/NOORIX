@@ -2,13 +2,14 @@
  * StaffDigestTab — تبويب الكاشير/المدير لمراجعة طلبات الأقسام وإرسالها
  * يُعرض فقط لمن لديه صلاحية STAFF_ORDERS_DIGEST
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useStaffDigest, useSendStaffDigestMutation } from '../../../hooks/useOrders';
-import { Button, Badge, Spinner } from '../../../ui';
+import { Button, Badge, Spinner, ScreenTabs } from '../../../ui';
+import { StaffDigestHistoryTab } from './StaffDigestHistoryTab';
 
 type DisplayLang = 'ar' | 'en';
 
@@ -89,6 +90,12 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
   const sendDigest = useSendStaffDigestMutation(companyId);
   const [sending, setSending] = useState(false);
   const [displayLang, setDisplayLang] = useState<DisplayLang>(lang as DisplayLang);
+  const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
+
+  const tabs = useMemo(() => [
+    { id: 'pending', label: t('staffDigestPending') },
+    { id: 'history', label: t('digestHistoryTitle') },
+  ], [t]);
 
   const sections: any[] = digest?.sections ?? [];
   const pendingCount: number = digest?.pendingCount ?? 0;
@@ -111,64 +118,68 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
     }
   }, [pendingCount, sendDigest, refetch, displayLang]);
 
-  if (isLoading) return (
-    <div className="flex justify-center py-12">
-      <Spinner />
-    </div>
-  );
-
-  if (sections.length === 0) return (
-    <div className="noorix-surface-card p-10 text-center text-noorix-muted text-[14px]">
-      {t('staffDigestEmpty')}
-    </div>
-  );
-
   return (
-    <div className="flex flex-col gap-4">
-      {/* شريط الإجراءات */}
-      <div className="noorix-surface-card px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-[14px] font-bold">{t('staffDigestPending')}</span>
-          <Badge color="amber" size="sm">{pendingCount} {t('staffOrdersCount')}</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* مبدّل لغة العرض والإرسال */}
-          <div className="inline-flex rounded-lg border border-noorix-border overflow-hidden text-[12px]">
-            <button
-              type="button"
-              className={`px-3 py-1.5 transition-colors ${displayLang === 'ar' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
-              onClick={() => setDisplayLang('ar')}
-            >
-              AR
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-1.5 transition-colors ${displayLang === 'en' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
-              onClick={() => setDisplayLang('en')}
-            >
-              EN
-            </button>
+    <ScreenTabs
+      items={tabs}
+      value={activeTab}
+      onChange={(v) => setActiveTab(v as 'pending' | 'history')}
+    >
+      {activeTab === 'pending' && (
+        <div className="flex flex-col gap-4">
+          {/* شريط الإجراءات */}
+          <div className="noorix-surface-card px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Badge color="amber" size="sm">{pendingCount} {t('staffOrdersCount')}</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* مبدّل لغة الإرسال */}
+              <div className="inline-flex rounded-lg border border-noorix-border overflow-hidden text-[12px]">
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 transition-colors ${displayLang === 'ar' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
+                  onClick={() => setDisplayLang('ar')}
+                >
+                  AR
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 transition-colors ${displayLang === 'en' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
+                  onClick={() => setDisplayLang('en')}
+                >
+                  EN
+                </button>
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleSend()}
+                disabled={sending || !pendingCount}
+              >
+                {sending ? t('sending') : t('staffDigestSendAll')}
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => handleSend()}
-            disabled={sending || !pendingCount}
-          >
-            {sending ? t('sending') : t('staffDigestSendAll')}
-          </Button>
-        </div>
-      </div>
 
-      {/* بطاقات الأقسام */}
-      {sections.map((sec: any) => (
-        <SectionCard
-          key={sec.sectionName}
-          section={sec}
-          displayLang={displayLang}
-          onSendSection={(ids) => handleSend(ids)}
-        />
-      ))}
-    </div>
+          {isLoading ? (
+            <div className="flex justify-center py-12"><Spinner /></div>
+          ) : sections.length === 0 ? (
+            <div className="noorix-surface-card p-10 text-center text-noorix-muted text-[14px]">
+              {t('staffDigestEmpty')}
+            </div>
+          ) : (
+            sections.map((sec: any) => (
+              <SectionCard
+                key={sec.sectionName}
+                section={sec}
+                displayLang={displayLang}
+                onSendSection={(ids) => handleSend(ids)}
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      {activeTab === 'history' && <StaffDigestHistoryTab companyId={companyId} />}
+    </ScreenTabs>
   );
 }
