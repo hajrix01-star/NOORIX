@@ -38,7 +38,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
   const { showToast } = useToast();
 
   const { data: myOrders = [], isLoading } = useMyStaffOrders(companyId);
-  const { data: products = [] } = useOrderProducts(companyId);
+  const { data: allProducts = [] } = useOrderProducts(companyId);
   const createOrder = useCreateStaffOrderMutation(companyId);
   const updateOrder = useUpdateStaffOrderMutation(companyId);
   const deleteOrder = useDeleteStaffOrderMutation(companyId);
@@ -50,11 +50,20 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // فلترة الأصناف حسب القسم: إذا كان sections فارغًا/null → يظهر لكل الأقسام
+  const products = useMemo(() => {
+    if (!sectionName.trim()) return allProducts;
+    return allProducts.filter((p: any) => {
+      const secs: string[] | null = p.sections;
+      return !secs || secs.length === 0 || secs.includes(sectionName.trim());
+    });
+  }, [allProducts, sectionName]);
+
   const productsById = useMemo(() => {
     const m = new Map<string, any>();
-    products.forEach((p: any) => m.set(p.id, p));
+    allProducts.forEach((p: any) => m.set(p.id, p));
     return m;
-  }, [products]);
+  }, [allProducts]);
 
   const filteredSuggestions = useMemo(() =>
     SECTION_SUGGESTIONS.filter((s) => !sectionName || s.includes(sectionName)),

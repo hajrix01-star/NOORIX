@@ -25,6 +25,8 @@ export default {
   ordersNoProductsYet: { ar: 'لا توجد أصناف بعد.', en: 'No products yet.' },
   ordersNoCategoriesYet: { ar: 'لا توجد فئات بعد.', en: 'No categories yet.' },
   ordersProductNameRequired: { ar: 'اسم الصنف بالعربية مطلوب', en: 'Product name in Arabic is required' },
+  productSections: { ar: 'الأقسام', en: 'Sections' },
+  productSectionsPlaceholder: { ar: 'مطبخ، بار (فارغ = للكل)', en: 'Kitchen, Bar (empty = all sections)' },
   ordersCategoryNameRequired: { ar: 'اسم الفئة بالعربية مطلوب', en: 'Category name in Arabic is required' },
   ordersProductAdded: { ar: 'تمت إضافة الصنف بنجاح', en: 'Product added successfully' },
   ordersProductUpdated: { ar: 'تم تحديث الصنف بنجاح', en: 'Product updated successfully' },

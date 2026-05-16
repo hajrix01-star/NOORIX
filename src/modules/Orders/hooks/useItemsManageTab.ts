@@ -56,6 +56,7 @@ export function useItemsManageTab(companyId: any) {
     nameAr: '',
     nameEn: '',
     categoryId: '',
+    sectionsText: '', // نص مفصول بفاصلة → يُحوَّل لمصفوفة عند الإرسال
     variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
   });
   const [newCategory, setNewCategory] = useState({ nameAr: '', nameEn: '' });
@@ -121,11 +122,13 @@ export function useItemsManageTab(companyId: any) {
     const validVariants = (newProduct.variants || []).filter(
       (v: any) => v.size || v.packaging || v.unit || parseFloat(v.lastPrice) > 0,
     );
+    const sectionsArr = (newProduct.sectionsText || '').split(/[,،]/).map((s) => s.trim()).filter(Boolean);
     const payload = {
       companyId,
       nameAr: newProduct.nameAr.trim(),
       nameEn: newProduct.nameEn?.trim() || undefined,
       categoryId: newProduct.categoryId || undefined,
+      sections: sectionsArr.length > 0 ? sectionsArr : undefined,
       variants:
         validVariants.length > 0
           ? validVariants.map((v: any) => ({
@@ -143,6 +146,7 @@ export function useItemsManageTab(companyId: any) {
           nameAr: '',
           nameEn: '',
           categoryId: '',
+          sectionsText: '',
           variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
         });
       },
@@ -157,10 +161,12 @@ export function useItemsManageTab(companyId: any) {
     const validVariants = (editingProduct.variants || []).filter(
       (v: any) => v.size || v.packaging || v.unit || parseFloat(v.lastPrice) > 0,
     );
+    const sectionsArr = (editingProduct.sectionsText || '').split(/[,،]/).map((s: string) => s.trim()).filter(Boolean);
     const body = {
       nameAr: editingProduct.nameAr,
       nameEn: editingProduct.nameEn ?? null,
       categoryId: editingProduct.categoryId || null,
+      sections: sectionsArr.length > 0 ? sectionsArr : null,
       variants:
         validVariants.length > 0
           ? validVariants.map((v: any) => ({

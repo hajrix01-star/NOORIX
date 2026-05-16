@@ -114,6 +114,12 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                 </option>
               ))}
             </Input>
+            <Input
+              label={t('productSections')}
+              value={newProduct.sectionsText || ''}
+              onChange={(e: any) => setNewProduct((p: any) => ({ ...p, sectionsText: e.target.value }))}
+              placeholder={t('productSectionsPlaceholder')}
+            />
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -236,6 +242,7 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
               <th className="font-bold text-right py-[10px] px-3">{t('productNameAr')}</th>
               <th className="font-bold text-right py-[10px] px-3">{t('productNameEn')}</th>
               <th className="font-bold text-right py-[10px] px-3">{t('category')}</th>
+              <th className="font-bold text-right py-[10px] px-3">{t('productSections')}</th>
               <th className="font-bold text-right py-[10px] px-3">{t('ordersProductVariants')}</th>
               <th className="text-center font-bold py-[10px] px-3">{t('actions')}</th>
             </tr>
@@ -280,6 +287,15 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                                   </option>
                                 ))}
                               </Input>
+                            </div>
+                            <div className="min-w-[160px]">
+                              <label className="text-[11px] text-noorix-muted">{t('productSections')}</label>
+                              <Input
+                                type="text"
+                                value={editingProduct.sectionsText || ''}
+                                onChange={(e: any) => setEditingProduct((x: any) => ({ ...x, sectionsText: e.target.value }))}
+                                placeholder={t('productSectionsPlaceholder')}
+                              />
                             </div>
                           </div>
                           <div>
@@ -372,6 +388,9 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                       <td className="py-[10px] px-3">{p.nameAr || '—'}</td>
                       <td className="nx-cell-muted py-[10px] px-3">{p.nameEn || '—'}</td>
                       <td className="nx-cell-muted py-[10px] px-3">{p.category?.nameAr || p.category?.nameEn || '—'}</td>
+                      <td className="nx-cell-muted py-[10px] px-3 text-[12px]">
+                        {Array.isArray(p.sections) && p.sections.length > 0 ? (p.sections as string[]).join(' · ') : <span className="text-noorix-muted opacity-50">—</span>}
+                      </td>
                       <td className="nx-cell-ellipsis nx-cell-muted py-[10px] px-3 text-[12px] max-w-[280px]" title={variantsSummary}>
                         {variantsSummary}
                       </td>
@@ -384,6 +403,7 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                               nameAr: p.nameAr,
                               nameEn: p.nameEn || '',
                               categoryId: p.categoryId || '',
+                              sectionsText: Array.isArray(p.sections) ? (p.sections as string[]).join('، ') : '',
                               variants:
                                 variants.length > 0
                                   ? variants.map((v: any) => ({

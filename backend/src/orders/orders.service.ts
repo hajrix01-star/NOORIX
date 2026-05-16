@@ -250,11 +250,17 @@ export class OrdersService {
   }
 
   // ── Order Products ─────────────────────────────────────────────
-  async getProducts(companyId: string) {
-    return this.prisma.orderProduct.findMany({
+  async getProducts(companyId: string, section?: string) {
+    const all = await this.prisma.orderProduct.findMany({
       where: { companyId, isActive: true },
       orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
       include: { category: true },
+    });
+    if (!section) return all;
+    // فلترة حسب القسم: إذا كان sections فارغًا/null → يظهر لكل الأقسام
+    return all.filter((p) => {
+      const secs = p.sections as string[] | null;
+      return !secs || secs.length === 0 || secs.includes(section);
     });
   }
 
@@ -320,6 +326,7 @@ export class OrdersService {
     packaging?: string;
     categoryId?: string;
     lastPrice?: string;
+    sections?: string[];
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }>;
   }) {
     const tenantId = TenantContext.getTenantId();
@@ -338,6 +345,7 @@ export class OrdersService {
         packaging: dto.packaging?.trim() || null,
         categoryId: dto.categoryId || null,
         lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
+        sections: dto.sections?.length ? dto.sections : Prisma.DbNull,
         variants: variantsData as object,
       } as any,
       include: { category: true },
@@ -352,6 +360,7 @@ export class OrdersService {
     packaging?: string | null;
     categoryId?: string | null;
     lastPrice?: string;
+    sections?: string[] | null;
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }>;
     isActive?: boolean;
   }) {
@@ -372,6 +381,7 @@ export class OrdersService {
         ...(dto.packaging !== undefined ? { packaging: dto.packaging?.trim() || null } : {}),
         ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId || null } : {}),
         ...(dto.lastPrice !== undefined ? { lastPrice: new Prisma.Decimal(dto.lastPrice) } : {}),
+        ...(dto.sections !== undefined ? { sections: dto.sections?.length ? dto.sections : Prisma.DbNull } : {}),
         ...(variantsData !== undefined ? { variants: variantsData as object } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
       },

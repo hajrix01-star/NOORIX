@@ -5,6 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { OrdersService } from './orders.service';
 import { OrdersStaffService } from './orders-staff.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -116,10 +117,13 @@ export class OrdersController {
   }
 
   @Get('products')
-  @RequirePermission('VIEW_SALES')
-  getProducts(@CompanyId() companyId: string) {
+  @RequireAnyPermission('VIEW_SALES', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
+  getProducts(
+    @CompanyId() companyId: string,
+    @Query('section') section?: string,
+  ) {
     if (!companyId) return [];
-    return this.ordersService.getProducts(companyId);
+    return this.ordersService.getProducts(companyId, section);
   }
 
   @Post('products')
@@ -179,7 +183,7 @@ export class OrdersController {
   }
 
   @Get('categories')
-  @RequirePermission('VIEW_SALES')
+  @RequireAnyPermission('VIEW_SALES', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
   getCategories(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.ordersService.getCategories(companyId);

@@ -59,8 +59,10 @@ export async function getOrdersItemsReport(
   const res = await apiGet('/api/v1/orders/items-report', { companyId, year: String(year), month: String(month) });
   return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
 }
-export async function getOrderProducts(companyId: string): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/orders/products', { companyId });
+export async function getOrderProducts(companyId: string, section?: string): Promise<ApiParsedResult> {
+  const params: Record<string, string> = { companyId };
+  if (section) params.section = section;
+  const res = await apiGet('/api/v1/orders/products', params);
   return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
 }
 export async function createOrderProduct(body: unknown): Promise<ApiParsedResult> {
