@@ -35,12 +35,16 @@ export default function OrdersScreen() {
   const role = String(userRole || '').toLowerCase();
   const isAdmin = role === 'owner' || role === 'super_admin';
 
-  const canViewOrders = isAdmin || userPermissions.includes(PERMISSIONS.VIEW_ORDERS);
   const canSubmitStaff = isAdmin || userPermissions.includes(PERMISSIONS.STAFF_ORDERS_SUBMIT);
   const canDigest = isAdmin || userPermissions.includes(PERMISSIONS.STAFF_ORDERS_DIGEST);
+  // VIEW_ORDERS = وصول للصفحة فقط (routing)
+  // canManageOrders = يملك صلاحية جلب بيانات الطلبات من الـ API (VIEW_SALES أو ORDERS_READ)
+  const canManageOrders = isAdmin
+    || userPermissions.includes(PERMISSIONS.VIEW_SALES)
+    || userPermissions.includes(PERMISSIONS.ORDERS_READ);
 
   // الموظف البسيط — يرى واجهة مبسّطة فقط
-  if (!canViewOrders && canSubmitStaff) {
+  if (!canManageOrders && (canSubmitStaff || canDigest)) {
     return companyId
       ? <StaffOrdersView companyId={companyId} />
       : (
