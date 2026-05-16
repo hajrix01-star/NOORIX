@@ -23,7 +23,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   /** Archived users (isActive === false) are hidden until this is toggled on */
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState<{ loginName: string; password: string; nameAr: string; roleName: string; preferredLang: string; companyIds: string[] }>({ loginName: '', password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
+  const [form, setForm] = useState<{ loginName: string; password: string; roleName: string; preferredLang: string; companyIds: string[] }>({ loginName: '', password: '', roleName: '', preferredLang: 'ar', companyIds: [] });
   const [loginNameEdit, setLoginNameEdit] = useState('');
 
   const { data: users = [], isLoading } = useQuery({
@@ -104,7 +104,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
 
   const columns = [
     { key: 'email', label: t('loginName'), render: (v: any) => <span className="font-semibold ltr">{toLoginName(v)}</span> },
-    { key: 'nameAr', label: t('nameAr'), render: (v: any, row: any) => <span>{v || row.nameEn || '—'}</span> },
+    { key: 'nameAr', label: t('nameAr'), render: (v: any, row: any) => <span className={!v && !row.nameEn ? 'nx-cell-muted ltr' : ''}>{v || row.nameEn || toLoginName(row.email)}</span> },
     { key: 'preferredLang', label: t('preferredLang'), render: (v: any) => <Badge color={v === 'en' ? 'blue' : 'violet'} size="sm">{v === 'en' ? t('langEn') : t('langAr')}</Badge> },
     { key: 'role', label: t('role'), render: (_: any, row: any) => <span>{row.role?.nameAr || row.role?.name || '—'}</span> },
     { key: 'companies', label: t('companies'), render: (_: any, row: any) => <span className="nx-cell-muted">{(row.userCompanies || []).map((uc: any) => uc.company?.nameAr).filter(Boolean).join(', ') || '—'}</span> },
@@ -127,7 +127,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
         <Button
           variant="primary"
           className="w-full min-h-[44px] min-[420px]:w-auto min-[420px]:min-h-0"
-          onClick={() => { setForm({ loginName: '', password: '', nameAr: '', roleName: roles[0]?.name || '', preferredLang: 'ar', companyIds: [] }); setShowForm(true); }}
+          onClick={() => { setForm({ loginName: '', password: '', roleName: roles[0]?.name || '', preferredLang: 'ar', companyIds: [] }); setShowForm(true); }}
         >
           {t('addUser')}
         </Button>
@@ -142,7 +142,6 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
             if (!ln || !form.password?.trim()) return;
             createMutation.mutate({
               loginName: ln,
-              nameAr: form.nameAr.trim() || undefined,
               password: form.password,
               preferredLang: form.preferredLang,
               roleName: form.roleName || roles[0]?.name,
@@ -162,13 +161,6 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
                 />
                 <p className="text-[11px] text-noorix-muted mt-1 mb-0">{t('loginNameValidation')}</p>
               </div>
-              <Input
-                type="text"
-                label={t('userCreateNameLabel')}
-                value={form.nameAr}
-                onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))}
-                placeholder={t('optional')}
-              />
               <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e: any) => setForm((p: any) => ({ ...p, password: e.target.value }))} required />
               <Input type="select" label={t('preferredLang')} value={form.preferredLang} onChange={(e: any) => setForm((p: any) => ({ ...p, preferredLang: e.target.value }))}>
                 <option value="ar">{t('langAr')}</option>
