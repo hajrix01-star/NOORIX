@@ -139,6 +139,7 @@ export class UsersService {
       roleName?: string;
       password?: string;
       companyIds?: string[];
+      loginName?: string;
     },
     currentUserId: string,
   ) {
@@ -146,6 +147,19 @@ export class UsersService {
     if (!user) throw new NotFoundException('المستخدم غير موجود');
 
     const updateData: Record<string, unknown> = {};
+
+    if (data.loginName !== undefined && data.loginName !== null) {
+      const raw = data.loginName.trim().toLowerCase();
+      if (!/^[a-z0-9][a-z0-9._-]{0,47}$/.test(raw)) {
+        throw new BadRequestException('اسم الدخول يجب أن يبدأ بحرف أو رقم ويحتوي على أحرف لاتينية وأرقام ونقاط وشرطات فقط (48 حرفًا كحد أقصى)');
+      }
+      const newEmail = `${raw}@${OFFICIAL_EMAIL_DOMAIN}`;
+      const existing = await this.prisma.user.findUnique({ where: { email: newEmail } });
+      if (existing && existing.id !== id) {
+        throw new ConflictException('اسم الدخول مستخدَم مسبقًا، اختر اسمًا آخر');
+      }
+      updateData.email = newEmail;
+    }
     if (data.nameAr !== undefined) updateData.nameAr = data.nameAr?.trim() || null;
     if (data.nameEn !== undefined) updateData.nameEn = data.nameEn?.trim() || null;
     if (data.preferredLang !== undefined) updateData.preferredLang = (data.preferredLang === 'en' ? 'en' : 'ar');

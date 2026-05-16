@@ -33,7 +33,7 @@ export class UsersController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() body: { nameAr?: string; nameEn?: string; roleName?: string; password?: string; companyIds?: string[] },
+    @Body() body: { nameAr?: string; nameEn?: string; roleName?: string; password?: string; companyIds?: string[]; loginName?: string },
     @Req() req: { user: { userId: string } },
   ) {
     return this.usersService.update(id, body, req.user.userId);

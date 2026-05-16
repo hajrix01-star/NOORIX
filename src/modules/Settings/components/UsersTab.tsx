@@ -24,6 +24,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<{ password: string; nameAr: string; roleName: string; preferredLang: string; companyIds: string[] }>({ password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
+  const [loginNameEdit, setLoginNameEdit] = useState('');
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: settingsKeys.users(),
@@ -82,6 +83,8 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   );
 
   function openEdit(u: any) {
+    const ln = toLoginName(u.email);
+    setLoginNameEdit(ln);
     setEditing({
       id: u.id,
       email: u.email,
@@ -92,6 +95,11 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
       companyIds: (u.userCompanies || []).map((uc: any) => uc.companyId),
       isActive: u.isActive !== false,
     });
+  }
+
+  /** هل اسم الدخول مُولَّد تلقائياً (user-xxxxxxxx)؟ */
+  function isAutoGenLoginName(ln: string): boolean {
+    return /^user-[0-9a-f]{8}$/.test(ln);
   }
 
   const columns = [
@@ -168,9 +176,30 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
         className="users-edit-drawer"
       >
         {editing && (
-          <form onSubmit={(e: any) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), preferredLang: editing.preferredLang, roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
+          <form onSubmit={(e: any) => {
+            e.preventDefault();
+            const ln = loginNameEdit.trim().toLowerCase();
+            const body: any = { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), preferredLang: editing.preferredLang, roleName: editing.roleName, companyIds: editing.companyIds };
+            if (ln && ln !== toLoginName(editing.email)) body.loginName = ln;
+            updateMutation.mutate({ id: editing.id, body });
+          }}>
             <div className="grid gap-3 mb-[14px]">
-              <Input type="text" label={t('loginName')} value={toLoginName(editing.email)} disabled dir="ltr" />
+              {isAutoGenLoginName(toLoginName(editing.email)) && (
+                <div className="text-[12px] text-noorix-amber bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
+                  {t('loginNameAutoWarning')}
+                </div>
+              )}
+              <div>
+                <Input
+                  type="text"
+                  label={t('loginNameEdit')}
+                  value={loginNameEdit}
+                  onChange={(e: any) => setLoginNameEdit(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
+                  dir="ltr"
+                  placeholder={t('loginNamePlaceholder')}
+                />
+                <p className="text-[11px] text-noorix-muted mt-1 mb-0">{t('loginNameValidation')}</p>
+              </div>
               <Input type="text" label={t('nameAr')} value={editing.nameAr} onChange={(e: any) => setEditing((p: any) => ({ ...p, nameAr: e.target.value }))} />
               <Input type="select" label={t('preferredLang')} value={editing.preferredLang} onChange={(e: any) => setEditing((p: any) => ({ ...p, preferredLang: e.target.value }))}>
                 <option value="ar">{t('langAr')}</option>
