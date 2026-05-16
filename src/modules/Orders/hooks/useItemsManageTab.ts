@@ -72,6 +72,8 @@ export function useItemsManageTab(companyId: any) {
   const [packagingKey, setPackagingKey] = useState(0);
   const [presetBusy, setPresetBusy] = useState(false);
   const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [productFilterSection, setProductFilterSection] = useState<string>(''); // '' = الكل | '__none__' = بدون قسم | nameAr = قسم محدد
+  const [productFilterCategory, setProductFilterCategory] = useState<string>(''); // '' = الكل | categoryId
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
@@ -97,20 +99,41 @@ export function useItemsManageTab(companyId: any) {
   const packagingOptions = useMemo(() => getPackagingOptions(companyId || ''), [companyId, packagingKey]);
 
   const filteredProducts = useMemo(() => {
+    let result = products as any[];
+
+    // فلتر البحث النصي
     const q = productSearchQuery.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((p: any) => {
-      const cat = `${p.category?.nameAr || ''} ${p.category?.nameEn || ''}`.toLowerCase();
-      const na = String(p.nameAr || '').toLowerCase();
-      const ne = String(p.nameEn || '').toLowerCase();
-      const variants = Array.isArray(p.variants) ? p.variants : [];
-      const vtxt = variants
-        .map((v: any) => `${v.size || ''} ${v.packaging || ''} ${v.unit || ''} ${v.lastPrice ?? ''}`)
-        .join(' ')
-        .toLowerCase();
-      return na.includes(q) || ne.includes(q) || cat.includes(q) || vtxt.includes(q);
-    });
-  }, [products, productSearchQuery]);
+    if (q) {
+      result = result.filter((p: any) => {
+        const cat = `${p.category?.nameAr || ''} ${p.category?.nameEn || ''}`.toLowerCase();
+        const na = String(p.nameAr || '').toLowerCase();
+        const ne = String(p.nameEn || '').toLowerCase();
+        const variants = Array.isArray(p.variants) ? p.variants : [];
+        const vtxt = variants
+          .map((v: any) => `${v.size || ''} ${v.packaging || ''} ${v.unit || ''} ${v.lastPrice ?? ''}`)
+          .join(' ')
+          .toLowerCase();
+        return na.includes(q) || ne.includes(q) || cat.includes(q) || vtxt.includes(q);
+      });
+    }
+
+    // فلتر الفئة
+    if (productFilterCategory) {
+      result = result.filter((p: any) => p.categoryId === productFilterCategory);
+    }
+
+    // فلتر القسم
+    if (productFilterSection === '__none__') {
+      result = result.filter((p: any) => !p.sections || (p.sections as string[]).length === 0);
+    } else if (productFilterSection) {
+      result = result.filter((p: any) => {
+        const secs = p.sections as string[] | null;
+        return secs && secs.includes(productFilterSection);
+      });
+    }
+
+    return result;
+  }, [products, productSearchQuery, productFilterSection, productFilterCategory]);
 
   const filteredCategories = useMemo(() => {
     const q = categorySearchQuery.trim().toLowerCase();
@@ -538,6 +561,10 @@ export function useItemsManageTab(companyId: any) {
     presetBusy,
     productSearchQuery,
     setProductSearchQuery,
+    productFilterSection,
+    setProductFilterSection,
+    productFilterCategory,
+    setProductFilterCategory,
     categorySearchQuery,
     setCategorySearchQuery,
     products,

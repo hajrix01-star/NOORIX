@@ -21,6 +21,10 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
     setEditingProduct,
     productSearchQuery,
     setProductSearchQuery,
+    productFilterSection,
+    setProductFilterSection,
+    productFilterCategory,
+    setProductFilterCategory,
     presetBusy,
     createProduct,
     createProductsBatch,
@@ -295,9 +299,10 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
       </div>
 
       <div className="noorix-surface-card overflow-auto">
-        <div className="nx-section-header justify-between gap-2">
+        {/* شريط الأدوات العلوي */}
+        <div className="nx-section-header justify-between gap-2 flex-wrap">
           {someSelected ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Button
                 size="sm"
                 variant="ghost"
@@ -325,8 +330,54 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
             onChange={(e: any) => setProductSearchQuery(e.target.value)}
             placeholder={t('ordersSearchProducts')}
             aria-label={t('ordersSearchProducts')}
-            className="max-w-[320px]"
+            className="max-w-[220px]"
           />
+        </div>
+
+        {/* شريط الفلاتر */}
+        <div className="flex flex-wrap items-center gap-2 px-3 pb-2">
+          {/* فلتر الأقسام */}
+          <Input
+            type="select"
+            value={productFilterSection}
+            onChange={(e: any) => setProductFilterSection(e.target.value)}
+            className="min-w-[160px]"
+          >
+            <option value="">{t('filterAllSections')}</option>
+            <option value="__none__">{t('filterNoSection')}</option>
+            {(sections as any[]).map((s: any) => (
+              <option key={s.id} value={s.nameAr}>{s.nameAr}{s.nameEn ? ` / ${s.nameEn}` : ''}</option>
+            ))}
+          </Input>
+
+          {/* فلتر الفئة */}
+          <Input
+            type="select"
+            value={productFilterCategory}
+            onChange={(e: any) => setProductFilterCategory(e.target.value)}
+            className="min-w-[160px]"
+          >
+            <option value="">{t('filterAllCategories')}</option>
+            {(categories as any[]).map((c: any) => (
+              <option key={c.id} value={c.id}>{c.nameAr || c.nameEn}</option>
+            ))}
+          </Input>
+
+          {/* زر إعادة الضبط */}
+          {(productFilterSection || productFilterCategory) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => { setProductFilterSection(''); setProductFilterCategory(''); }}
+            >
+              ✕ {t('clearFilters')}
+            </Button>
+          )}
+
+          {/* عداد النتائج */}
+          <span className="text-[12px] text-noorix-muted ms-auto">
+            {filteredProducts.length} / {products.length}
+          </span>
         </div>
         <table className="w-full text-[13px] border-collapse">
           <thead>
