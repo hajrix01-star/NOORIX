@@ -5,35 +5,74 @@ import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { useDigestHistory } from '../../../hooks/useOrders';
-import { Badge, Spinner, Input } from '../../../ui';
+import { Badge, Spinner, Input, Button } from '../../../ui';
 
 type DisplayLang = 'ar' | 'en';
+
+/** بناء نص واتساب من بيانات اليوم */
+function buildResendText(day: any, lang: DisplayLang): string {
+  const header = lang === 'en'
+    ? `🧾 Section Orders — ${day.date}`
+    : `🧾 طلبات الأقسام — ${day.date}`;
+  const lines: string[] = [header, ''];
+  for (const sec of day.sections) {
+    lines.push(`*${sec.sectionName}:*`);
+    for (const it of sec.items) {
+      const name = lang === 'en' ? (it.nameEn || it.nameAr) : (it.nameAr || it.nameEn);
+      const unit = it.unit ? ` ${it.unit}` : '';
+      lines.push(`• ${name} × ${fmt(it.qty, 0)}${unit}`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n').trim();
+}
 
 function DayCard({ day, displayLang }: { day: any; displayLang: DisplayLang }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
-  const totalItems = day.sections.reduce((sum: number, s: any) => sum + s.items.length, 0);
   const totalOrders = day.sections.reduce((sum: number, s: any) => sum + s.ordersCount, 0);
 
   function itemName(it: any): string {
     return displayLang === 'en' ? (it.nameEn || it.nameAr) : (it.nameAr || it.nameEn);
   }
 
+  function handleResend() {
+    const text = buildResendText(day, displayLang);
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  }
+
   return (
     <div className="noorix-surface-card overflow-hidden">
-      <button
-        type="button"
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-noorix-bg-muted/40 transition-colors"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        <div className="flex items-center gap-3">
+      {/* رأس البطاقة */}
+      <div className="flex items-center justify-between px-4 py-3 gap-2">
+        <button
+          type="button"
+          className="flex items-center gap-3 flex-1 text-start hover:opacity-80 transition-opacity"
+          onClick={() => setExpanded((v) => !v)}
+        >
           <span className="text-[14px] font-bold text-noorix-text nx-font-numbers ltr">{day.date}</span>
           <Badge color="green" size="sm">{totalOrders} {t('staffOrdersCount')}</Badge>
           <span className="text-[12px] text-noorix-muted">{day.sections.length} {t('digestHistorySections')}</span>
-        </div>
-        <span className="text-noorix-muted text-[12px]">{expanded ? '▲' : '▼'}</span>
-      </button>
+          <span className="text-noorix-muted text-[12px] ms-auto">{expanded ? '▲' : '▼'}</span>
+        </button>
+
+        {/* زر إعادة الإرسال */}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleResend}
+          title={t('digestResend')}
+        >
+          <span className="flex items-center gap-1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 2L11 13"/>
+              <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+            </svg>
+            {t('digestResend')}
+          </span>
+        </Button>
+      </div>
 
       {expanded && (
         <div className="border-t border-noorix-border divide-y divide-noorix-border">

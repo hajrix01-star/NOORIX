@@ -47,6 +47,7 @@ export default {
   digestHistorySections: { ar: 'قسم', en: 'sections' },
   digestHistoryDays: { ar: 'يوم', en: 'days' },
   digestHistoryEmpty: { ar: 'لا توجد إرسالات في هذه الفترة', en: 'No sent orders in this period' },
+  digestResend:       { ar: 'إعادة إرسال', en: 'Resend' },
   filterAllSections: { ar: 'كل الأقسام', en: 'All Sections' },
   filterNoSection: { ar: 'بدون قسم', en: 'No Section' },
   filterAllCategories: { ar: 'كل الفئات', en: 'All Categories' },
