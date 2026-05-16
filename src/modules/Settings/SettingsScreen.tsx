@@ -34,13 +34,13 @@ export default function SettingsScreen() {
   const tabBarRef = useRef<any>(null);
 
   const TABS_BASE = useMemo(() => [
-    { id: 'companies', label: t('companiesTab') },
-    { id: 'tax',       label: t('taxTab') },
-    { id: 'users',     label: t('usersTab'),   permission: 'MANAGE_USERS' },
-    { id: 'roles',     label: t('rolesTab') },
-    { id: 'backup',    label: t('backupTab'),  permission: 'MANAGE_SETTINGS' },
-    { id: 'ai',        label: t('aiTab') },
-    { id: 'branding',  label: t('brandingTab') },
+    { id: 'companies', label: t('companiesTab'), permission: 'MANAGE_COMPANIES' },
+    { id: 'tax',       label: t('taxTab'),       permission: 'MANAGE_SETTINGS' },
+    { id: 'users',     label: t('usersTab'),     permission: 'MANAGE_USERS' },
+    { id: 'roles',     label: t('rolesTab'),     permission: 'MANAGE_SETTINGS' },
+    { id: 'backup',    label: t('backupTab'),   permission: 'MANAGE_SETTINGS' },
+    { id: 'ai',        label: t('aiTab'),        permission: 'MANAGE_SETTINGS' },
+    { id: 'branding',  label: t('brandingTab'),  permission: 'MANAGE_SETTINGS' },
   ], [t]);
 
   const TABS = useMemo(

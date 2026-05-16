@@ -106,6 +106,12 @@ export function hasPermission(roleOrPermissions: any, permission: any, userPermi
   return userPermissions.includes(permission);
 }
 
+/** أي صلاحية من القائمة (منطق OR) — للقائمة الجانبية ومسارات متعددة المداخل */
+export function hasAnyOfPermissions(userRole: any, required: readonly string[], userPermissions: any): boolean {
+  if (!required.length) return false;
+  return required.some((p) => hasPermission(userRole, p, userPermissions));
+}
+
 export function isSuperAdmin(role: any) {
   const r = (role || '').toLowerCase();
   return r === 'super_admin' || r === 'owner';
@@ -140,6 +146,24 @@ export function resolveUserRole(primary: any) {
   return decodeJwtRole();
 }
 
+/** دخول شاشة HR/الموظفين: قائمة الموظفين أو أي صلاحية تشغيل في وحدة الموارد البشرية */
+export const HR_APP_ACCESS = [
+  PERMISSIONS.VIEW_EMPLOYEES,
+  PERMISSIONS.HR_READ,
+  PERMISSIONS.HR_WRITE,
+  PERMISSIONS.HR_DELETE,
+];
+
+/** دخول الإعدادات: إدارة عامة أو مستخدمين أو شركات */
+export const SETTINGS_APP_ACCESS = [
+  PERMISSIONS.MANAGE_SETTINGS,
+  PERMISSIONS.MANAGE_USERS,
+  PERMISSIONS.MANAGE_COMPANIES,
+];
+
+/** فواتير المبيعات: مسار واحد يخدم عارضي المبيعات أو المشتريات */
+export const INVOICES_ROUTE_ACCESS = [PERMISSIONS.VIEW_INVOICES, PERMISSIONS.VIEW_PURCHASES];
+
 /** مسارات الصفحات → صلاحية مطلوبة */
 export const ROUTE_PERMISSION = {
   '/':              PERMISSIONS.VIEW_DASHBOARD,
@@ -147,17 +171,17 @@ export const ROUTE_PERMISSION = {
   '/chat':          PERMISSIONS.VIEW_CHAT,
   '/sales':         PERMISSIONS.VIEW_SALES,
   '/sales/new':     PERMISSIONS.VIEW_SALES,
-  '/invoices':      [PERMISSIONS.VIEW_INVOICES, PERMISSIONS.VIEW_PURCHASES],
+  '/invoices':      INVOICES_ROUTE_ACCESS,
   '/purchases':     PERMISSIONS.VIEW_PURCHASES,
   '/suppliers':     PERMISSIONS.VIEW_SUPPLIERS,
   '/treasury':      PERMISSIONS.VIEW_VAULTS,
   '/expenses':      PERMISSIONS.VIEW_EXPENSES,
   '/assets':        PERMISSIONS.VIEW_EXPENSES,
   '/orders':        PERMISSIONS.VIEW_ORDERS,
-  '/hr':            PERMISSIONS.VIEW_EMPLOYEES,
+  '/hr':            HR_APP_ACCESS,
   '/reports':       PERMISSIONS.VIEW_REPORTS,
   '/hajri-tax':     PERMISSIONS.VIEW_REPORTS,
-  '/settings':      PERMISSIONS.MANAGE_SETTINGS,
+  '/settings':      SETTINGS_APP_ACCESS,
   '/theme-preview':    PERMISSIONS.VIEW_DASHBOARD,
   '/dashboard-studio': PERMISSIONS.VIEW_DASHBOARD,
   '/ocr':           PERMISSIONS.VIEW_OCR,
@@ -177,7 +201,7 @@ export function getRouteRequiredPermissions(pathname: any) {
   }
   if (pathname.startsWith('/hr/')) {
     const hr = ROUTE_PERMISSION['/hr'];
-    return Array.isArray(hr) ? hr : [hr];
+    return Array.isArray(hr) ? [...hr] : [hr];
   }
   if (pathname.startsWith('/purchases')) {
     return [PERMISSIONS.VIEW_PURCHASES];
@@ -215,22 +239,22 @@ export function normalizeModuleViewAccess(
 const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[] }> = [
   { path: '/sales', required: PERMISSIONS.VIEW_SALES },
   { path: '/orders', required: PERMISSIONS.VIEW_ORDERS },
+  { path: '/settings', required: [...SETTINGS_APP_ACCESS] },
+  { path: '/hr', required: [...HR_APP_ACCESS] },
   { path: '/', required: PERMISSIONS.VIEW_DASHBOARD },
   { path: '/dashboard-studio', required: PERMISSIONS.VIEW_DASHBOARD },
   { path: '/purchases', required: PERMISSIONS.VIEW_PURCHASES },
-  { path: '/invoices', required: [PERMISSIONS.VIEW_INVOICES, PERMISSIONS.VIEW_PURCHASES] },
+  { path: '/invoices', required: INVOICES_ROUTE_ACCESS },
   { path: '/treasury', required: PERMISSIONS.VIEW_VAULTS },
   { path: '/expenses', required: PERMISSIONS.VIEW_EXPENSES },
   { path: '/assets', required: PERMISSIONS.VIEW_EXPENSES },
   { path: '/suppliers', required: PERMISSIONS.VIEW_SUPPLIERS },
-  { path: '/hr', required: PERMISSIONS.VIEW_EMPLOYEES },
   { path: '/reports/general', required: PERMISSIONS.VIEW_REPORTS },
   { path: '/hajri-tax', required: PERMISSIONS.VIEW_REPORTS },
   { path: '/chat', required: PERMISSIONS.VIEW_CHAT },
   { path: '/ocr', required: PERMISSIONS.VIEW_OCR },
   { path: '/ocr/cashier', required: PERMISSIONS.OCR_SUBMIT },
   { path: '/owner', required: PERMISSIONS.VIEW_OWNER },
-  { path: '/settings', required: PERMISSIONS.MANAGE_SETTINGS },
 ];
 
 export function getFirstAccessibleAppPath(userRole: any, userPermissions: any): string {

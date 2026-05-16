@@ -6,6 +6,7 @@ import {
   PERMISSION_LEVELS,
   SYSTEM_ROLE_SEEDS,
 } from '../auth/constants/permissions';
+import { normalizeStoredRolePermissions } from '../auth/permission-normalize';
 
 @Injectable()
 export class RolesService implements OnModuleInit {
@@ -66,12 +67,13 @@ export class RolesService implements OnModuleInit {
   async create(data: { name: string; nameAr?: string; description?: string; permissions: string[] }) {
     const existing = await this.prisma.role.findUnique({ where: { name: data.name } });
     if (existing) throw new BadRequestException('اسم الدور مستخدم مسبقاً');
+    const permissions = normalizeStoredRolePermissions(Array.isArray(data.permissions) ? data.permissions : []);
     return this.prisma.role.create({
       data: {
         name: data.name.toLowerCase().trim(),
         nameAr: data.nameAr?.trim() || null,
         description: data.description?.trim() || null,
-        permissions: data.permissions || [],
+        permissions,
         isSystem: false,
       },
     });
@@ -80,12 +82,16 @@ export class RolesService implements OnModuleInit {
   async update(id: string, data: { nameAr?: string; description?: string; permissions?: string[] }) {
     const role = await this.prisma.role.findUnique({ where: { id } });
     if (!role) throw new NotFoundException('الدور غير موجود');
+    const permissions =
+      data.permissions !== undefined
+        ? normalizeStoredRolePermissions(Array.isArray(data.permissions) ? data.permissions : [])
+        : undefined;
     const updated = await this.prisma.role.update({
       where: { id },
       data: {
         nameAr: data.nameAr !== undefined ? data.nameAr.trim() || null : undefined,
         description: data.description !== undefined ? data.description.trim() || null : undefined,
-        permissions: data.permissions !== undefined ? data.permissions : undefined,
+        permissions,
       },
     });
     this.permCache.invalidate(role.name);

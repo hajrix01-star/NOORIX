@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, type NavLinkRenderProps } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
-import { hasPermission } from '../constants/permissions';
+import { hasPermission, hasAnyOfPermissions, HR_APP_ACCESS, SETTINGS_APP_ACCESS, INVOICES_ROUTE_ACCESS } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { canAccessThemePreview } from '../utils/themePreviewAccess';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
@@ -33,13 +33,13 @@ const SIDEBAR_LINKS = [
   { to: '/chat', labelKey: 'smartChat', icon: IconChat, permission: 'VIEW_CHAT' },
   { to: '/sales', labelKey: 'sales', icon: IconCart, permission: 'VIEW_SALES' },
   { to: '/purchases', labelKey: 'purchases', icon: IconDocument, permission: 'VIEW_PURCHASES' },
-  { to: '/invoices', labelKey: 'invoices', icon: IconDocument, permission: 'VIEW_INVOICES' },
+  { to: '/invoices', labelKey: 'invoices', icon: IconDocument, permission: INVOICES_ROUTE_ACCESS },
   { to: '/suppliers', labelKey: 'suppliersAndCategories', icon: IconTruck, permission: 'VIEW_SUPPLIERS' },
   { to: '/treasury', labelKey: 'vaults', icon: IconDollar, permission: 'VIEW_VAULTS' },
   { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_EXPENSES' },
   { to: '/assets', labelKey: 'assetsRegister', icon: IconMonitor, permission: 'VIEW_EXPENSES' },
   { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS' },
-  { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: 'VIEW_EMPLOYEES' },
+  { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: HR_APP_ACCESS },
   { to: '/hajri-tax', labelKey: 'hajriTax', icon: IconDocument, permission: 'VIEW_REPORTS' },
   {
     to: '/reports',
@@ -55,7 +55,7 @@ const SIDEBAR_LINKS = [
   },
   { to: '/ocr', labelKey: 'ocrTitle', icon: IconOcr, permission: 'VIEW_OCR' },
   { to: '/ocr/cashier', labelKey: 'ocrCashierSubmitNav', icon: IconOcr, permission: 'OCR_SUBMIT' },
-  { to: '/settings', labelKey: 'settings', icon: IconSettings, permission: 'MANAGE_SETTINGS' },
+  { to: '/settings', labelKey: 'settings', icon: IconSettings, permission: SETTINGS_APP_ACCESS },
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
 ] as const;
 
@@ -75,7 +75,9 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
   const visibleLinks = SIDEBAR_LINKS.filter((link) => {
     if (link.to === '/theme-preview' && !canAccessThemePreview(userRole)) return false;
     if ((link as { ownerOnly?: boolean }).ownerOnly && String(userRole || '').toLowerCase() !== 'owner') return false;
-    return hasPermission(userRole, link.permission, userPermissions);
+    const p = link.permission as string | readonly string[];
+    if (Array.isArray(p)) return hasAnyOfPermissions(userRole, p as readonly string[], userPermissions);
+    return hasPermission(userRole, p, userPermissions);
   });
 
   const isReportsExpanded = visibleLinks.some((l: any) => l.to === '/reports' && l.children?.some((c: any) => location.pathname.startsWith(c.to)));
