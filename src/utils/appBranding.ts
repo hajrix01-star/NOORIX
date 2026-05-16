@@ -42,6 +42,22 @@ export const getBrandLogo      = () => get('logo');
 export const getBrandColor     = () => get('color');
 export const getLoginDomain    = () => get('loginDomain');
 
+/**
+ * نطاق البريد المُلحق عند تسجيل الدخول باسم مستخدم قصير (بدون @).
+ * 1) نطاق «هوية التطبيق» إن وُجد في localStorage
+ * 2) ثم VITE_OFFICIAL_EMAIL_DOMAIN (يجب أن يطابق OFFICIAL_EMAIL_DOMAIN في الـ backend عند النشر)
+ * 3) ثم الافتراضي hajrix.com
+ */
+export function getResolvedLoginEmailDomain(): string {
+  const fromBranding = (getLoginDomain() || '').trim().toLowerCase();
+  if (fromBranding) return fromBranding;
+  const fromEnv =
+    typeof import.meta !== 'undefined' && import.meta.env?.VITE_OFFICIAL_EMAIL_DOMAIN
+      ? String(import.meta.env.VITE_OFFICIAL_EMAIL_DOMAIN).trim().toLowerCase()
+      : '';
+  return fromEnv || 'hajrix.com';
+}
+
 /** يُرجع الاسم أو الجملة حسب اللغة الحالية */
 export const getBrandName    = (lang: any = 'ar') => lang === 'en' ? getBrandNameEn()    : getBrandNameAr();
 export const getBrandTagline = (lang: any = 'ar') => lang === 'en' ? getBrandTaglineEn() : getBrandTaglineAr();

@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getText } from '../../i18n/translations';
 import { login as apiLogin } from '../../services/api';
-import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor, getLoginDomain } from '../../utils/appBranding';
+import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor, getResolvedLoginEmailDomain } from '../../utils/appBranding';
 import { Button, Input, cn } from '../../ui';
 import { getFirstAccessibleAppPath } from '../../constants/permissions';
 
@@ -30,15 +30,13 @@ export default function LoginScreen() {
   const brandName    = getBrandName(lang);
   const brandTagline = getBrandTagline(lang);
   const brandColor   = getBrandColor();
-  const loginDomain  = getLoginDomain();
-
-  /** بريد كامل أو اسم مستخدم + نطاق الهوية (نفس السجل في قاعدة البيانات كبريد). */
+  /** بريد كامل أو اسم مستخدم + نطاق الهوية (مطابق لبريد المستخدم في DB بعد toLowerCase). */
   const resolveLoginIdentifier = (raw: any) => {
     const s = raw.trim();
     if (!s) return s;
-    if (s.includes('@')) return s;
-    const domain = (loginDomain || '').trim();
-    return domain ? `${s}@${domain}` : s;
+    if (s.includes('@')) return s.toLowerCase();
+    const domain = getResolvedLoginEmailDomain();
+    return `${s.toLowerCase()}@${domain}`;
   };
 
   const handleSubmit = async (e: any) => {
