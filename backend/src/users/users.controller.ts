@@ -54,4 +54,9 @@ export class UsersController {
   remove(@Param('id') id: string, @Req() req: { user: { userId: string } }) {
     return this.usersService.remove(id, req.user.userId);
   }
+
+  @Delete(':id/permanent')
+  hardDelete(@Param('id') id: string, @Req() req: { user: { userId: string } }) {
+    return this.usersService.hardDelete(id, req.user.userId);
+  }
 }

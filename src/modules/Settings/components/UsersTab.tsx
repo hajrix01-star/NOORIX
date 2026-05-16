@@ -4,7 +4,7 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { getUsers, createUser, updateUser, archiveUser, restoreUser } from '../../../services/api';
+import { getUsers, createUser, updateUser, archiveUser, restoreUser, hardDeleteUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Badge, Input, AdaptiveSheet, ScreenShell, SmartTable } from '../../../ui';
@@ -25,6 +25,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<{ loginName: string; password: string; roleName: string; preferredLang: string; companyIds: string[] }>({ loginName: '', password: '', roleName: '', preferredLang: 'ar', companyIds: [] });
   const [loginNameEdit, setLoginNameEdit] = useState('');
+  const [confirmHardDelete, setConfirmHardDelete] = useState(false);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: settingsKeys.users(),
@@ -77,6 +78,14 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
     onSuccess: () => { setEditing(null); },
   });
 
+  const hardDeleteMutation = useApiMutation({
+    mutationFn: hardDeleteUser,
+    invalidateQueries: [settingsKeys.users()],
+    successToast: () => t('userHardDeleted'),
+    errorToast: (e: any) => e?.message || t('updateFailed'),
+    onSuccess: () => { setEditing(null); setConfirmHardDelete(false); },
+  });
+
   const visibleUsers = useMemo(
     () => (showArchived ? users : users.filter((u: any) => u.isActive !== false)),
     [users, showArchived],
@@ -85,6 +94,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   function openEdit(u: any) {
     const ln = toLoginName(u.email);
     setLoginNameEdit(ln);
+    setConfirmHardDelete(false);
     setEditing({
       id: u.id,
       email: u.email,
@@ -242,10 +252,22 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
               <Button type="submit" variant="primary" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" disabled={updateMutation.isPending}>{updateMutation.isPending ? t('saving') : t('save')}</Button>
               <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => setEditing(null)}>{t('close')}</Button>
               {editing.isActive ? (
-                <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => archiveMutation.mutate(editing.id)} disabled={archiveMutation.isPending}>أرشفة</Button>
-              ) : (
-                <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => restoreMutation.mutate(editing.id)} disabled={restoreMutation.isPending}>استعادة</Button>
-              )}
+                <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => archiveMutation.mutate(editing.id)} disabled={archiveMutation.isPending}>{t('archive')}</Button>
+              ) : (<>
+                <Button type="button" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => restoreMutation.mutate(editing.id)} disabled={restoreMutation.isPending}>{t('restore')}</Button>
+                {!confirmHardDelete ? (
+                  <Button type="button" variant="danger" className="w-full min-h-[44px] min-[440px]:w-auto min-[440px]:min-h-0" onClick={() => setConfirmHardDelete(true)}>{t('hardDelete')}</Button>
+                ) : (
+                  <div className="flex flex-col gap-1.5 w-full min-[440px]:w-auto">
+                    <p className="text-[12px] text-noorix-red font-semibold m-0">{t('hardDeleteConfirm')}</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button type="button" variant="danger" className="flex-1 min-[440px]:flex-none" onClick={() => hardDeleteMutation.mutate(editing.id)} disabled={hardDeleteMutation.isPending}>{hardDeleteMutation.isPending ? t('deleting') : t('hardDeleteConfirmYes')}</Button>
+                      <Button type="button" className="flex-1 min-[440px]:flex-none" onClick={() => setConfirmHardDelete(false)}>{t('cancel')}</Button>
+                    </div>
+                  </div>
+                )}
+              </>)}
+              
             </div>
           </form>
         )}

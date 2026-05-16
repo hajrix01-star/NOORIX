@@ -70,6 +70,9 @@ export async function restoreUser(id: string): Promise<ApiParsedResult> {
 export async function deleteUser(id: string): Promise<ApiParsedResult> {
   return apiDelete(`/api/v1/users/${id}`);
 }
+export async function hardDeleteUser(id: string): Promise<ApiParsedResult> {
+  return apiDelete(`/api/v1/users/${id}/permanent`);
+}
 
 export async function createCompany(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/companies', body);

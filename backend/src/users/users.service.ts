@@ -96,7 +96,17 @@ export class UsersService {
         }
         const candidate = `${raw}@${OFFICIAL_EMAIL_DOMAIN}`;
         const existing = await this.prisma.user.findUnique({ where: { email: candidate } });
-        if (existing) throw new ConflictException('اسم الدخول مستخدَم مسبقاً، اختر اسماً آخر');
+        if (existing) {
+          if (!existing.isActive) {
+            // الاسم محجوز من مستخدم مؤرشَف — نُحرِّر الفتحة بإعادة تسمية بريده
+            await this.prisma.user.update({
+              where: { id: existing.id },
+              data: { email: `evicted_${Date.now()}_${existing.email}` },
+            });
+          } else {
+            throw new ConflictException('اسم الدخول مستخدَم مسبقاً، اختر اسماً آخر');
+          }
+        }
         email = candidate;
       } else if (nameArTrim) {
         email = await this.allocateOfficialEmail(nameArTrim, data.nameEn?.trim());
@@ -168,7 +178,14 @@ export class UsersService {
       const newEmail = `${raw}@${OFFICIAL_EMAIL_DOMAIN}`;
       const existing = await this.prisma.user.findUnique({ where: { email: newEmail } });
       if (existing && existing.id !== id) {
-        throw new ConflictException('اسم الدخول مستخدَم مسبقًا، اختر اسمًا آخر');
+        if (!existing.isActive) {
+          await this.prisma.user.update({
+            where: { id: existing.id },
+            data: { email: `evicted_${Date.now()}_${existing.email}` },
+          });
+        } else {
+          throw new ConflictException('اسم الدخول مستخدَم مسبقًا، اختر اسمًا آخر');
+        }
       }
       updateData.email = newEmail;
     }
@@ -239,5 +256,22 @@ export class UsersService {
       data: { isActive: false, email: `deleted_${Date.now()}_${user.email}` },
       select: { id: true, email: true },
     });
+  }
+
+  /**
+   * حذف نهائي — يُتاح فقط للمستخدمين المؤرشَفين.
+   * يحذف StaffOrders أولاً (FK غير nullable)، ثم يتولى Prisma تصفية باقي العلاقات (SetNull/Cascade).
+   */
+  async hardDelete(id: string, currentUserId: string) {
+    if (id === currentUserId) throw new BadRequestException('لا يمكنك حذف حسابك الحالي');
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('المستخدم غير موجود');
+    if (user.isActive) throw new BadRequestException('يجب أرشفة المستخدم أولاً قبل الحذف النهائي');
+
+    // StaffOrders لها FK غير nullable — نحذفها صراحةً قبل حذف المستخدم
+    await this.prisma.staffOrder.deleteMany({ where: { userId: id } });
+
+    await this.prisma.user.delete({ where: { id } });
+    return { id, deleted: true };
   }
 }
