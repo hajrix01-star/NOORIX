@@ -257,10 +257,10 @@ export class OrdersService {
       include: { category: true },
     });
     if (!section) return all;
-    // فلترة حسب القسم: إذا كان sections فارغًا/null → يظهر لكل الأقسام
+    // قسم محدد → فقط الأصناف المرتبطة صراحةً بهذا القسم
     return all.filter((p) => {
       const secs = p.sections as string[] | null;
-      return !secs || secs.length === 0 || secs.includes(section);
+      return Array.isArray(secs) && secs.length > 0 && secs.includes(section);
     });
   }
 

@@ -59,12 +59,14 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     return lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
   }
 
-  /** الأصناف المفلترة حسب القسم المختار */
+  /** الأصناف المفلترة حسب القسم المختار:
+   *  - بدون قسم → كل الأصناف
+   *  - قسم محدد → فقط الأصناف المرتبطة صراحةً بهذا القسم */
   const products = useMemo(() => {
     if (!sectionName) return allProducts;
     return allProducts.filter((p: any) => {
-      const secs: string[] | null = p.sections;
-      return !secs || secs.length === 0 || secs.includes(sectionName);
+      const secs = p.sections as string[] | null;
+      return Array.isArray(secs) && secs.length > 0 && secs.includes(sectionName);
     });
   }, [allProducts, sectionName]);
 
