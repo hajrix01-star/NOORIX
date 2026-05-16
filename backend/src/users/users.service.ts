@@ -30,12 +30,13 @@ export class UsersService {
 
   /** جزء محلي من البريد من الاسم (لاتيني من الاسم الإنجليزي أو الأحرف اللاتينية في الاسم العربي). */
   private buildEmailLocalPart(nameAr: string, nameEn?: string): string {
-    const en = (nameEn || '').trim().toLowerCase();
+    const ar = (nameAr || '').normalize('NFKC').trim();
+    const enRaw = (nameEn || '').normalize('NFKC').trim();
+    const en = enRaw.toLowerCase();
     const fromEn = en.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    // حرف واحد (مثل "T") يجب أن يصبح البريد t@domain ليتوافق مع تسجيل الدخول باسم المستخدم القصير
+    // حرف واحد (مثل "T" أو "G") يجب أن يصبح البريد t@domain / g@domain ليتوافق مع تسجيل الدخول بالاسم القصير
     if (fromEn.length >= 1) return fromEn.slice(0, 48);
-    const fromArLatin = nameAr
-      .trim()
+    const fromArLatin = ar
       .replace(/[^a-zA-Z0-9]+/g, '-')
       .toLowerCase()
       .replace(/^-+|-+$/g, '');
