@@ -30,7 +30,7 @@ export default function LoginScreen() {
   const brandName    = getBrandName(lang);
   const brandTagline = getBrandTagline(lang);
   const brandColor   = getBrandColor();
-  /** بريد كامل أو اسم مستخدم + نطاق الهوية (مطابق لبريد المستخدم في DB بعد toLowerCase). */
+  /** بريد كامل أو اسم مستخدم + النطاق الرسمي فقط (مطابق لـ OFFICIAL_EMAIL_DOMAIN / VITE_OFFICIAL_EMAIL_DOMAIN؛ الجزء المحلي بحروف صغيرة كما في DB). */
   const resolveLoginIdentifier = (raw: any) => {
     const s = raw.trim();
     if (!s) return s;

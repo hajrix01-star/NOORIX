@@ -43,14 +43,11 @@ export const getBrandColor     = () => get('color');
 export const getLoginDomain    = () => get('loginDomain');
 
 /**
- * نطاق البريد المُلحق عند تسجيل الدخول باسم مستخدم قصير (بدون @).
- * 1) نطاق «هوية التطبيق» إن وُجد في localStorage
- * 2) ثم VITE_OFFICIAL_EMAIL_DOMAIN (يجب أن يطابق OFFICIAL_EMAIL_DOMAIN في الـ backend عند النشر)
- * 3) ثم الافتراضي hajrix.com
+ * نطاق البريد عند إدخال اسم مستخدم بدون @.
+ * يجب أن يطابق **دائماً** `OFFICIAL_EMAIL_DOMAIN` في الـ backend (عبر `VITE_OFFICIAL_EMAIL_DOMAIN` عند بناء الواجهة، أو الافتراضي hajrix.com).
+ * لا نستخدم دوميناً من localStorage حتى يبقى البريد الناتج عن إنشاء المستخدم مطابقاً لتسجيل الدخول القصير.
  */
 export function getResolvedLoginEmailDomain(): string {
-  const fromBranding = (getLoginDomain() || '').trim().toLowerCase();
-  if (fromBranding) return fromBranding;
   const fromEnv =
     typeof import.meta !== 'undefined' && import.meta.env?.VITE_OFFICIAL_EMAIL_DOMAIN
       ? String(import.meta.env.VITE_OFFICIAL_EMAIL_DOMAIN).trim().toLowerCase()

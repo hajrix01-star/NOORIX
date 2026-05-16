@@ -6,8 +6,9 @@ import { Button, Input } from '../../../ui';
 import {
   getBrandNameAr, getBrandNameEn,
   getBrandTaglineAr, getBrandTaglineEn,
-  getBrandLogo, getBrandColor, getLoginDomain,
+  getBrandLogo, getBrandColor,
   saveBranding,
+  getResolvedLoginEmailDomain,
 } from '../../../utils/appBranding';
 
 const SECTION_TITLE_CLS = 'text-[13px] font-bold text-noorix-text mb-3 pb-2 border-b border-noorix-border';
@@ -19,9 +20,9 @@ export default function AppBrandingTab() {
   const [taglineEn,   setTaglineEn]   = useState(getBrandTaglineEn);
   const [logoUrl,     setLogoUrl]     = useState(getBrandLogo);
   const [color,       setColor]       = useState(getBrandColor);
-  const [loginDomain, setLoginDomain] = useState(getLoginDomain);
   const [saved,       setSaved]       = useState(false);
   const fileRef = useRef<any>(null);
+  const officialLoginDomain = getResolvedLoginEmailDomain();
 
   const handleFile = (e: any) => {
     const file = e.target.files?.[0];
@@ -39,7 +40,7 @@ export default function AppBrandingTab() {
       taglineEn:   taglineEn.trim()   || undefined,
       logoUrl:     logoUrl.trim()     || undefined,
       color,
-      loginDomain: loginDomain.trim() || undefined,
+      loginDomain: '',
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -53,7 +54,6 @@ export default function AppBrandingTab() {
     setTaglineEn('Business Management System');
     setLogoUrl('');
     setColor('var(--noorix-navy)');
-    setLoginDomain('hajrix.com');
   };
 
   return (
@@ -65,6 +65,7 @@ export default function AppBrandingTab() {
         <div>• <strong>هوية التطبيق (هنا)</strong>: الاسم والشعار العام للنظام — يظهر في تبويب المتصفح، أيقونة PWA، وأعلى الشريط الجانبي.</div>
         <div>• <strong>شعار الشركة</strong> (إدارة الشركات): يظهر بجانب اسم الشركة النشطة في الشريط الجانبي وفي الفواتير والتقارير. لا يؤثر على أيقونة المتصفح.</div>
         <div>• <strong>إذا لم تضع شعار للتطبيق</strong>، يظهر الحرف الأول من اسم التطبيق كأيقونة في الشريط.</div>
+        <div>• <strong>تسجيل الدخول القصير</strong>: يُبنى البريد كـ <span className="font-mono nx-ltr">اسم@نطاق-رسمي</span> حيث النطاق ثابت من إعداد النشر (يطابق الخادم) — لا يُعدَّل من هذه الشاشة.</div>
       </div>
 
       {/* ── معاينة ────────────────────────────────────────────────────────── */}
@@ -181,23 +182,19 @@ export default function AppBrandingTab() {
         </div>
       </div>
 
-      {/* ── دومين تسجيل الدخول ────────────────────────────────────────────── */}
+      {/* ── نطاق البريد الرسمي (قراءة فقط — مطابق للخادم) ─────────────────── */}
       <div>
-        <div className={SECTION_TITLE_CLS}>دومين النظام (يظهر كتلميح في صفحة الدخول)</div>
-        <div className="flex w-full max-w-full min-w-0 items-center gap-0 sm:max-w-[320px]">
-          <span className="bg-noorix-bg-muted text-[13px] text-noorix-muted nx-ltr py-[10px] px-3 border border-noorix-border rounded-s-[10px] shrink-0">@</span>
-          <Input
-            type="text"
-            value={loginDomain}
-            onChange={(e: any) => setLoginDomain(e.target.value.replace(/^@/, '').replace(/\s/g, ''))}
-            placeholder="hajrix.com"
-            className="rounded-e-[10px] rounded-s-none border-s-0 ltr text-left"
-            maxLength={60}
-          />
+        <div className={SECTION_TITLE_CLS}>نطاق البريد الرسمي (تسجيل الدخول القصير وإنشاء المستخدم)</div>
+        <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted px-3.5 py-3 text-[15px] font-bold text-noorix-text nx-ltr break-all">
+          @{officialLoginDomain}
         </div>
-        <div className="text-[11px] text-noorix-muted mt-1.5">
-          يظهر كتلميح في خانة البريد الإلكتروني بصفحة الدخول. لا يغير الإيميلات المسجّلة فعلياً.
-        </div>
+        <p className="text-[11px] text-noorix-muted mt-1.5 m-0 leading-relaxed">
+          عند إنشاء مستخدم بدون بريد يدوي، أو عند إدخال اسم مستخدم فقط في صفحة الدخول، يُستخدم <strong>هذا النطاق فقط</strong> بحيث يطابق{' '}
+          <span className="font-mono text-[11px]">OFFICIAL_EMAIL_DOMAIN</span> في الخادم و
+          <span className="font-mono text-[11px]"> VITE_OFFICIAL_EMAIL_DOMAIN </span>
+          في بناء الواجهة. الجزء المحلي يُخزَّن بحروف صغيرة (مثال: مستخدم باسم KHALED →{' '}
+          <span className="font-mono whitespace-nowrap">khaled@{officialLoginDomain}</span>).
+        </p>
       </div>
 
       {/* ── لون الهوية ────────────────────────────────────────────────────── */}
