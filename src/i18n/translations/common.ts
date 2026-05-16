@@ -333,6 +333,7 @@ export default {
   login: { ar: 'تسجيل الدخول', en: 'Login' },
   logout: { ar: 'تسجيل الخروج', en: 'Logout' },
   email: { ar: 'البريد الإلكتروني', en: 'Email' },
+  optional: { ar: 'اختياري', en: 'Optional' },
   password: { ar: 'كلمة المرور', en: 'Password' },
   pleaseSelectCompany: { ar: 'اختر شركة من القائمة الجانبية.', en: 'Select a company from the sidebar.' },
   importExportLabel: { ar: 'استيراد / تصدير', en: 'Import / Export' },

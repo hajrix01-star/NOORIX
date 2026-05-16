@@ -23,7 +23,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   /** Archived users (isActive === false) are hidden until this is toggled on */
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState<{ password: string; nameAr: string; roleName: string; preferredLang: string; companyIds: string[] }>({ password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
+  const [form, setForm] = useState<{ loginName: string; password: string; nameAr: string; roleName: string; preferredLang: string; companyIds: string[] }>({ loginName: '', password: '', nameAr: '', roleName: '', preferredLang: 'ar', companyIds: [] });
   const [loginNameEdit, setLoginNameEdit] = useState('');
 
   const { data: users = [], isLoading } = useQuery({
@@ -127,7 +127,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
         <Button
           variant="primary"
           className="w-full min-h-[44px] min-[420px]:w-auto min-[420px]:min-h-0"
-          onClick={() => { setForm({ password: '', nameAr: '', roleName: roles[0]?.name || '', preferredLang: 'ar', companyIds: [] }); setShowForm(true); }}
+          onClick={() => { setForm({ loginName: '', password: '', nameAr: '', roleName: roles[0]?.name || '', preferredLang: 'ar', companyIds: [] }); setShowForm(true); }}
         >
           {t('addUser')}
         </Button>
@@ -136,10 +136,39 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
       {showForm && (
         <div className="noorix-surface-card p-5">
           <h4 className="text-[14px] m-0 mb-4">{t('newUser')}</h4>
-          <form onSubmit={(e: any) => { e.preventDefault(); if (!form.nameAr?.trim() || !form.password?.trim()) return; createMutation.mutate({ password: form.password, nameAr: form.nameAr.trim(), preferredLang: form.preferredLang, roleName: form.roleName || roles[0]?.name, companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c: any) => c.id) }); }}>
+          <form onSubmit={(e: any) => {
+            e.preventDefault();
+            const ln = form.loginName.trim().toLowerCase();
+            if (!ln || !form.password?.trim()) return;
+            createMutation.mutate({
+              loginName: ln,
+              nameAr: form.nameAr.trim() || undefined,
+              password: form.password,
+              preferredLang: form.preferredLang,
+              roleName: form.roleName || roles[0]?.name,
+              companyIds: form.companyIds.length ? form.companyIds : activeCompanies.map((c: any) => c.id),
+            });
+          }}>
             <div className="grid w-full min-w-0 max-w-[400px] gap-3 mb-[14px]">
-              <Input type="text" label={t('userCreateNameLabel')} value={form.nameAr} onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))} required />
-              <p className="text-[11px] text-noorix-muted m-0 -mt-2">{t('userEmailAutoHint')}</p>
+              <div>
+                <Input
+                  type="text"
+                  label={`${t('loginName')} *`}
+                  value={form.loginName}
+                  onChange={(e: any) => setForm((p: any) => ({ ...p, loginName: e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, '') }))}
+                  dir="ltr"
+                  placeholder={t('loginNamePlaceholder')}
+                  required
+                />
+                <p className="text-[11px] text-noorix-muted mt-1 mb-0">{t('loginNameValidation')}</p>
+              </div>
+              <Input
+                type="text"
+                label={t('userCreateNameLabel')}
+                value={form.nameAr}
+                onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))}
+                placeholder={t('optional')}
+              />
               <Input type="password" label={`${t('password')} *`} value={form.password} onChange={(e: any) => setForm((p: any) => ({ ...p, password: e.target.value }))} required />
               <Input type="select" label={t('preferredLang')} value={form.preferredLang} onChange={(e: any) => setForm((p: any) => ({ ...p, preferredLang: e.target.value }))}>
                 <option value="ar">{t('langAr')}</option>

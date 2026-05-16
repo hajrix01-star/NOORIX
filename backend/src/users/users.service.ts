@@ -77,6 +77,7 @@ export class UsersService {
 
   async create(data: {
     email?: string;
+    loginName?: string;
     password: string;
     nameAr?: string;
     nameEn?: string;
@@ -87,10 +88,21 @@ export class UsersService {
     const nameArTrim = data.nameAr?.trim() || '';
     let email = (data.email || '').toLowerCase().trim();
     if (!email) {
-      if (!nameArTrim) {
-        throw new BadRequestException('الاسم مطلوب عند عدم إدخال البريد الإلكتروني');
+      // أولوية: loginName مباشر (يكتبه المستخدم) → ثم استنتاج من الاسم
+      if (data.loginName?.trim()) {
+        const raw = data.loginName.trim().toLowerCase();
+        if (!/^[a-z0-9][a-z0-9._-]{0,47}$/.test(raw)) {
+          throw new BadRequestException('اسم الدخول يجب أن يبدأ بحرف أو رقم ويحتوي على أحرف لاتينية وأرقام ونقاط وشرطات فقط');
+        }
+        const candidate = `${raw}@${OFFICIAL_EMAIL_DOMAIN}`;
+        const existing = await this.prisma.user.findUnique({ where: { email: candidate } });
+        if (existing) throw new ConflictException('اسم الدخول مستخدَم مسبقاً، اختر اسماً آخر');
+        email = candidate;
+      } else if (nameArTrim) {
+        email = await this.allocateOfficialEmail(nameArTrim, data.nameEn?.trim());
+      } else {
+        throw new BadRequestException('اسم الدخول أو الاسم مطلوب');
       }
-      email = await this.allocateOfficialEmail(nameArTrim, data.nameEn?.trim());
     }
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException('البريد الإلكتروني أو اسم المستخدم مسجّل مسبقاً');
