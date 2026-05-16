@@ -128,6 +128,7 @@ model Company {
   orders              Order[]
   orderProducts       OrderProduct[]
   orderCategories     OrderCategory[]
+  orderSections       OrderSection[]
   staffOrders         StaffOrder[]
   bankStatements      BankStatement[]
   bankStatementCategories BankStatementCategory[]
@@ -1181,6 +1182,23 @@ model OrderCategory {
   @@index([tenantId])
   @@index([companyId])
   @@map("order_categories")
+}
+
+model OrderSection {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  companyId String   @map("company_id")
+  nameAr    String   @map("name_ar")
+  nameEn    String?  @map("name_en")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("order_sections")
 }
 
 model OrderProduct {

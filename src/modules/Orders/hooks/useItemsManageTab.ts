@@ -4,6 +4,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import {
   useOrderProducts,
   useOrderCategories,
+  useOrderSections,
   useCreateOrderProductMutation,
   useCreateOrderProductsBatchMutation,
   useUpdateOrderProductMutation,
@@ -12,6 +13,9 @@ import {
   useUpdateOrderCategoryMutation,
   useDeleteOrderProductsMutation,
   useDeleteOrderCategoriesMutation,
+  useCreateOrderSectionMutation,
+  useDeleteOrderSectionMutation,
+  useBulkSetProductSectionsMutation,
 } from '../../../hooks/useOrders';
 import {
   importFromExcel,
@@ -74,6 +78,7 @@ export function useItemsManageTab(companyId: any) {
 
   const { data: products = [] } = useOrderProducts(companyId);
   const { data: categories = [] } = useOrderCategories(companyId);
+  const { data: sections = [] } = useOrderSections(companyId);
   const createProduct = useCreateOrderProductMutation(companyId);
   const createProductsBatch = useCreateOrderProductsBatchMutation(companyId);
   const updateProductMutation = useUpdateOrderProductMutation(companyId);
@@ -82,6 +87,9 @@ export function useItemsManageTab(companyId: any) {
   const createCategoriesBatch = useCreateOrderCategoriesBatchMutation(companyId);
   const updateCategory = useUpdateOrderCategoryMutation(companyId);
   const deleteCategoriesMutation = useDeleteOrderCategoriesMutation(companyId);
+  const createSection = useCreateOrderSectionMutation(companyId);
+  const deleteSection = useDeleteOrderSectionMutation(companyId);
+  const bulkSetSections = useBulkSetProductSectionsMutation(companyId);
   const fileInputProducts = useRef<any>(null);
   const fileInputCategories = useRef<any>(null);
 
@@ -571,5 +579,9 @@ export function useItemsManageTab(companyId: any) {
     removeNewProductVariant,
     updateEditingVariant,
     removeEditingVariant,
+    sections,
+    createSection,
+    deleteSection,
+    bulkSetSections,
   };
 }

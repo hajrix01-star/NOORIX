@@ -144,6 +144,26 @@ export async function getStaffDigest(companyId: string): Promise<ApiParsedResult
   return res?.success ? { ...res, data: res.data ?? { sections: [], totalOrders: 0, pendingCount: 0 } } : { success: false, data: { sections: [], totalOrders: 0, pendingCount: 0 } };
 }
 
-export async function sendStaffDigest(companyId: string, orderIds?: string[]): Promise<ApiParsedResult> {
-  return apiPost(`/api/v1/orders/staff/send-digest?companyId=${companyId}`, { orderIds });
+export async function sendStaffDigest(companyId: string, orderIds?: string[], lang?: 'ar' | 'en'): Promise<ApiParsedResult> {
+  return apiPost(`/api/v1/orders/staff/send-digest?companyId=${companyId}`, { orderIds, lang });
+}
+
+// ── Sections ──────────────────────────────────────────────────────
+export async function getOrderSections(companyId: string): Promise<ApiParsedResult> {
+  const res = await apiGet('/api/v1/orders/sections', { companyId });
+  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+}
+export async function createOrderSection(body: unknown): Promise<ApiParsedResult> {
+  return apiPost('/api/v1/orders/sections', body);
+}
+export async function deleteOrderSection(id: string, companyId: string): Promise<ApiParsedResult> {
+  return apiDelete(`/api/v1/orders/sections/${id}?companyId=${companyId}`);
+}
+export async function bulkSetProductSections(
+  companyId: string,
+  productIds: string[],
+  sectionNames: string[],
+  mode?: 'replace' | 'add',
+): Promise<ApiParsedResult> {
+  return apiPost(`/api/v1/orders/products/bulk-sections?companyId=${companyId}`, { productIds, sectionNames, mode });
 }

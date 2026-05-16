@@ -28,6 +28,10 @@ import {
   deleteStaffOrder,
   getStaffDigest,
   sendStaffDigest,
+  getOrderSections,
+  createOrderSection,
+  deleteOrderSection,
+  bulkSetProductSections,
   throwIfApiFailed,
 } from '../services/api';
 import { orderKeys } from '../services/queryKeys';
@@ -258,8 +262,47 @@ export function useStaffDigest(companyId: any) {
 
 export function useSendStaffDigestMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: (orderIds?: string[]) => sendStaffDigest(companyId, orderIds),
+    mutationFn: ({ orderIds, lang }: { orderIds?: string[]; lang?: 'ar' | 'en' } = {}) =>
+      sendStaffDigest(companyId, orderIds, lang),
     invalidateQueries: [orderKeys.staffDigest(companyId), orderKeys.staffMyRoot()],
+    showErrorToast: false,
+  });
+}
+
+// ── Sections ──────────────────────────────────────────────────────
+export function useOrderSections(companyId: any) {
+  return useQuery({
+    queryKey: ['orderSections', companyId],
+    queryFn: async () => {
+      const res = await getOrderSections(companyId);
+      throwIfApiFailed(res, 'فشل تحميل الأقسام');
+      return res.data ?? [];
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useCreateOrderSectionMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: (body: unknown) => createOrderSection(body),
+    invalidateQueries: [['orderSections', companyId]],
+    showErrorToast: false,
+  });
+}
+
+export function useDeleteOrderSectionMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: (id: string) => deleteOrderSection(id, companyId),
+    invalidateQueries: [['orderSections', companyId]],
+    showErrorToast: false,
+  });
+}
+
+export function useBulkSetProductSectionsMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: (body: { productIds: string[]; sectionNames: string[]; mode?: 'replace' | 'add' }) =>
+      bulkSetProductSections(companyId, body.productIds, body.sectionNames, body.mode),
+    invalidateQueries: [orderKeys.products(companyId)],
     showErrorToast: false,
   });
 }

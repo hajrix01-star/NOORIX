@@ -13,10 +13,9 @@ import {
   useUpdateStaffOrderMutation,
   useDeleteStaffOrderMutation,
   useOrderProducts,
+  useOrderSections,
 } from '../../hooks/useOrders';
 import { Button, Input, Badge, ScreenShell, ScreenTitle } from '../../ui';
-
-const SECTION_SUGGESTIONS = ['مطبخ', 'بار', 'كاشير', 'مخزن', 'سناك'];
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
@@ -34,28 +33,38 @@ interface ItemRow {
 }
 
 export function StaffOrdersView({ companyId }: { companyId: string }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { showToast } = useToast();
 
   const { data: myOrders = [], isLoading } = useMyStaffOrders(companyId);
   const { data: allProducts = [] } = useOrderProducts(companyId);
+  const { data: sections = [] } = useOrderSections(companyId);
   const createOrder = useCreateStaffOrderMutation(companyId);
   const updateOrder = useUpdateStaffOrderMutation(companyId);
   const deleteOrder = useDeleteStaffOrderMutation(companyId);
 
   const [sectionName, setSectionName] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<ItemRow[]>([{ productId: '', quantity: '', unit: '' }]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // فلترة الأصناف حسب القسم: إذا كان sections فارغًا/null → يظهر لكل الأقسام
+  /** اسم القسم بلغة الواجهة */
+  function sectionLabel(s: any): string {
+    return lang === 'en' ? (s.nameEn || s.nameAr) : (s.nameAr || s.nameEn);
+  }
+
+  /** اسم الصنف بلغة الواجهة */
+  function productLabel(p: any): string {
+    return lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
+  }
+
+  /** الأصناف المفلترة حسب القسم المختار */
   const products = useMemo(() => {
-    if (!sectionName.trim()) return allProducts;
+    if (!sectionName) return allProducts;
     return allProducts.filter((p: any) => {
       const secs: string[] | null = p.sections;
-      return !secs || secs.length === 0 || secs.includes(sectionName.trim());
+      return !secs || secs.length === 0 || secs.includes(sectionName);
     });
   }, [allProducts, sectionName]);
 
@@ -64,11 +73,6 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     allProducts.forEach((p: any) => m.set(p.id, p));
     return m;
   }, [allProducts]);
-
-  const filteredSuggestions = useMemo(() =>
-    SECTION_SUGGESTIONS.filter((s) => !sectionName || s.includes(sectionName)),
-    [sectionName],
-  );
 
   function addItemRow() {
     setItems((prev) => [...prev, { productId: '', quantity: '', unit: '' }]);
@@ -112,7 +116,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
   }
 
   const handleSubmit = useCallback(async () => {
-    if (!sectionName.trim()) { showToast(t('staffOrderSectionRequired'), 'error'); return; }
+    if (!sectionName) { showToast(t('staffOrderSectionRequired'), 'error'); return; }
     const validItems = items.filter((it) => it.productId && parseFloat(it.quantity) > 0);
     if (!validItems.length) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
 
@@ -120,7 +124,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     try {
       const payload = {
         companyId,
-        sectionName: sectionName.trim(),
+        sectionName,
         notes: notes.trim() || undefined,
         items: validItems.map((it) => ({
           productId: it.productId,
@@ -167,31 +171,24 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
           {editingId ? t('staffOrderEdit') : t('staffOrderNew')}
         </div>
 
-        {/* القسم */}
-        <div className="relative">
-          <Input
-            label={t('staffOrderSection')}
-            value={sectionName}
-            onChange={(e: any) => { setSectionName(e.target.value); setShowSuggestions(true); }}
-            onFocus={() => setShowSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-            placeholder={t('staffOrderSectionPlaceholder')}
-          />
-          {showSuggestions && filteredSuggestions.length > 0 && (
-            <div className="absolute z-10 top-full start-0 end-0 mt-1 bg-noorix-surface border border-noorix-border rounded-lg shadow-lg overflow-hidden">
-              {filteredSuggestions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className="w-full text-start px-3 py-2 text-[14px] hover:bg-noorix-bg-muted transition-colors"
-                  onMouseDown={() => { setSectionName(s); setShowSuggestions(false); }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* القسم — قائمة منسدلة */}
+        <Input
+          type="select"
+          label={t('staffOrderSection')}
+          value={sectionName}
+          onChange={(e: any) => {
+            setSectionName(e.target.value);
+            // إعادة تعيين الأصناف المختارة عند تغيير القسم
+            setItems([{ productId: '', quantity: '', unit: '' }]);
+          }}
+        >
+          <option value="">{t('staffOrderSectionPlaceholder')}</option>
+          {(sections as any[]).map((s: any) => (
+            <option key={s.id} value={s.nameAr}>
+              {sectionLabel(s)}
+            </option>
+          ))}
+        </Input>
 
         {/* الأصناف */}
         <div className="flex flex-col gap-2">
@@ -206,7 +203,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
                 >
                   <option value="">{t('staffOrderSelectProduct')}</option>
                   {products.map((p: any) => (
-                    <option key={p.id} value={p.id}>{p.nameAr || p.nameEn}</option>
+                    <option key={p.id} value={p.id}>{productLabel(p)}</option>
                   ))}
                 </select>
               </div>
@@ -298,7 +295,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
                 <div className="grid grid-cols-1 gap-1">
                   {(o.items || []).map((it: any, i: number) => {
                     const p = it.product;
-                    const name = p?.nameAr || p?.nameEn || '—';
+                    const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
                     const unit = it.unit ? ` ${it.unit}` : '';
                     return (
                       <div key={i} className="flex justify-between text-[13px]">

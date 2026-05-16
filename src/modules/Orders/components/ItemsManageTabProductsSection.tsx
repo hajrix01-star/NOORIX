@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { fmt } from '../../../utils/format';
 import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
 import { OrdersImportModal } from './OrdersImportModal';
-import { Button, Input } from '../../../ui';
+import { Button, Input, Modal } from '../../../ui';
 
 /** Products sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
 export function ItemsManageTabProductsSection({ ctrl }: any) {
@@ -10,6 +10,7 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
     t,
     companyId,
     categories,
+    sections,
     products,
     filteredProducts,
     sizesOptions,
@@ -41,9 +42,29 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
     toggleAllProducts,
     handleDeleteSelectedProducts,
     deleteProductsMutation,
+    bulkSetSections,
   } = ctrl;
 
   const [showImportModal, setShowImportModal] = useState(false);
+  const [bulkSectionModal, setBulkSectionModal] = useState(false);
+  const [bulkSelectedSections, setBulkSelectedSections] = useState<string[]>([]);
+  const [bulkMode, setBulkMode] = useState<'replace' | 'add'>('replace');
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  async function handleBulkApply() {
+    setBulkBusy(true);
+    try {
+      await bulkSetSections.mutateAsync({
+        productIds: [...selectedProductIds],
+        sectionNames: bulkSelectedSections,
+        mode: bulkMode,
+      });
+      setBulkSectionModal(false);
+      setBulkSelectedSections([]);
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   const allFilteredIds = filteredProducts.map((p: any) => p.id);
   const allSelected = allFilteredIds.length > 0 && selectedProductIds.size === allFilteredIds.length;
@@ -62,6 +83,61 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
           onClose={() => setShowImportModal(false)}
         />
       )}
+
+      {/* Modal الربط الجماعي بالأقسام */}
+      <Modal
+        open={bulkSectionModal}
+        onClose={() => setBulkSectionModal(false)}
+        title={`${t('bulkAssignSections')} (${selectedProductIds.size})`}
+        size="sm"
+      >
+        <div className="flex flex-col gap-4">
+          {(sections as any[]).length === 0 ? (
+            <p className="text-noorix-muted text-[13px]">{t('sectionsEmpty')}</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="text-[12px] text-noorix-muted mb-1">{t('bulkSelectSections')}</div>
+              {(sections as any[]).map((s: any) => (
+                <label key={s.id} className="flex items-center gap-2 cursor-pointer text-[13px]">
+                  <input
+                    type="checkbox"
+                    checked={bulkSelectedSections.includes(s.nameAr)}
+                    onChange={(e) => {
+                      if (e.target.checked) setBulkSelectedSections((prev) => [...prev, s.nameAr]);
+                      else setBulkSelectedSections((prev) => prev.filter((n) => n !== s.nameAr));
+                    }}
+                    className="cursor-pointer"
+                  />
+                  {s.nameAr}{s.nameEn ? ` / ${s.nameEn}` : ''}
+                </label>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-[12px] cursor-pointer">
+              <input type="radio" checked={bulkMode === 'replace'} onChange={() => setBulkMode('replace')} />
+              {t('bulkModeReplace')}
+            </label>
+            <label className="flex items-center gap-2 text-[12px] cursor-pointer">
+              <input type="radio" checked={bulkMode === 'add'} onChange={() => setBulkMode('add')} />
+              {t('bulkModeAdd')}
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleBulkApply}
+              disabled={bulkBusy}
+            >
+              {bulkBusy ? t('saving') : t('apply')}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setBulkSectionModal(false)}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     <div className="grid gap-5">
       <div className="noorix-surface-card p-4 lg:p-5">
         <div className="flex flex-col gap-3 mb-3">
@@ -114,12 +190,28 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                 </option>
               ))}
             </Input>
-            <Input
-              label={t('productSections')}
-              value={newProduct.sectionsText || ''}
-              onChange={(e: any) => setNewProduct((p: any) => ({ ...p, sectionsText: e.target.value }))}
-              placeholder={t('productSectionsPlaceholder')}
-            />
+            {(sections as any[]).length > 0 && (
+              <div>
+                <div className="text-[12px] text-noorix-muted mb-1">{t('productSections')}</div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {(sections as any[]).map((s: any) => (
+                    <label key={s.id} className="flex items-center gap-1 text-[12px] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(newProduct.sectionsText || '').split(/[,،]/).map((x: string) => x.trim()).includes(s.nameAr)}
+                        onChange={(e) => {
+                          const cur = (newProduct.sectionsText || '').split(/[,،]/).map((x: string) => x.trim()).filter(Boolean);
+                          const next = e.target.checked ? [...new Set([...cur, s.nameAr])] : cur.filter((n: string) => n !== s.nameAr);
+                          setNewProduct((p: any) => ({ ...p, sectionsText: next.join('، ') }));
+                        }}
+                        className="cursor-pointer"
+                      />
+                      {s.nameAr}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -205,16 +297,25 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
       <div className="noorix-surface-card overflow-auto">
         <div className="nx-section-header justify-between gap-2">
           {someSelected ? (
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={handleDeleteSelectedProducts}
-              disabled={deleteProductsMutation.isPending}
-            >
-              {deleteProductsMutation.isPending
-                ? t('saving')
-                : `${t('ordersDeleteSelected')} (${selectedProductIds.size})`}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => { setBulkSelectedSections([]); setBulkSectionModal(true); }}
+              >
+                {t('bulkAssignSections')} ({selectedProductIds.size})
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={handleDeleteSelectedProducts}
+                disabled={deleteProductsMutation.isPending}
+              >
+                {deleteProductsMutation.isPending
+                  ? t('saving')
+                  : `${t('ordersDeleteSelected')} (${selectedProductIds.size})`}
+              </Button>
+            </div>
           ) : (
             <span />
           )}
@@ -288,15 +389,30 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                                 ))}
                               </Input>
                             </div>
-                            <div className="min-w-[160px]">
-                              <label className="text-[11px] text-noorix-muted">{t('productSections')}</label>
-                              <Input
-                                type="text"
-                                value={editingProduct.sectionsText || ''}
-                                onChange={(e: any) => setEditingProduct((x: any) => ({ ...x, sectionsText: e.target.value }))}
-                                placeholder={t('productSectionsPlaceholder')}
-                              />
-                            </div>
+                            {(sections as any[]).length > 0 && (
+                              <div className="min-w-[160px]">
+                                <div className="text-[11px] text-noorix-muted mb-1">{t('productSections')}</div>
+                                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                                  {(sections as any[]).map((s: any) => {
+                                    const cur = (editingProduct.sectionsText || '').split(/[,،]/).map((x: string) => x.trim()).filter(Boolean);
+                                    return (
+                                      <label key={s.id} className="flex items-center gap-1 text-[12px] cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={cur.includes(s.nameAr)}
+                                          onChange={(e) => {
+                                            const next = e.target.checked ? [...new Set([...cur, s.nameAr])] : cur.filter((n: string) => n !== s.nameAr);
+                                            setEditingProduct((x: any) => ({ ...x, sectionsText: next.join('، ') }));
+                                          }}
+                                          className="cursor-pointer"
+                                        />
+                                        {s.nameAr}
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
                           <div>
                             <div className="flex items-center justify-between mb-1.5">

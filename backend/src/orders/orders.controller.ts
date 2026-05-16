@@ -48,9 +48,9 @@ export class OrdersController {
 
   @Post('staff/send-digest')
   @RequirePermission('STAFF_ORDERS_DIGEST')
-  sendStaffDigest(@CompanyId() companyId: string, @Body() body: { orderIds?: string[] }) {
+  sendStaffDigest(@CompanyId() companyId: string, @Body() body: { orderIds?: string[]; lang?: 'ar' | 'en' }) {
     if (!companyId) throw new Error('companyId مطلوب');
-    return this.staffService.sendDigest(companyId, body?.orderIds);
+    return this.staffService.sendDigest(companyId, body?.orderIds, body?.lang ?? 'ar');
   }
 
   @Patch('staff/:id')
@@ -203,6 +203,36 @@ export class OrdersController {
     @Body() body: { nameAr?: string; nameEn?: string | null; sortOrder?: number; isActive?: boolean },
   ) {
     return this.ordersService.updateCategory(id, companyId || '', body);
+  }
+
+  // ── Sections ──────────────────────────────────────────────────────
+
+  @Get('sections')
+  @RequireAnyPermission('VIEW_SALES', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
+  getSections(@CompanyId() companyId: string) {
+    if (!companyId) return [];
+    return this.ordersService.getSections(companyId);
+  }
+
+  @Post('sections')
+  @RequirePermission('VIEW_SALES')
+  createSection(@Body() body: { companyId: string; nameAr: string; nameEn?: string; sortOrder?: number }) {
+    return this.ordersService.createSection(body.companyId, body);
+  }
+
+  @Delete('sections/:id')
+  @RequirePermission('VIEW_SALES')
+  deleteSection(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.ordersService.deleteSection(id, companyId || '');
+  }
+
+  @Post('products/bulk-sections')
+  @RequirePermission('VIEW_SALES')
+  bulkSetProductSections(
+    @CompanyId() companyId: string,
+    @Body() body: { productIds: string[]; sectionNames: string[]; mode?: 'replace' | 'add' },
+  ) {
+    return this.ordersService.bulkSetProductSections(companyId || '', body.productIds, body.sectionNames, body.mode);
   }
 
   @Get(':id')

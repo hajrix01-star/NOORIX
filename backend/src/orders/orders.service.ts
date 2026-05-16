@@ -411,6 +411,45 @@ export class OrdersService {
     });
   }
 
+  // ── Order Sections ──────────────────────────────────────────────
+  async getSections(companyId: string) {
+    return this.prisma.orderSection.findMany({
+      where: { companyId },
+      orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
+    });
+  }
+
+  async createSection(companyId: string, dto: { nameAr: string; nameEn?: string; sortOrder?: number }) {
+    const tenantId = TenantContext.getTenantId();
+    if (!dto.nameAr?.trim()) throw new BadRequestException('اسم القسم بالعربية مطلوب');
+    return this.prisma.orderSection.create({
+      data: { tenantId, companyId, nameAr: dto.nameAr.trim(), nameEn: dto.nameEn?.trim() || null, sortOrder: dto.sortOrder ?? 0 },
+    });
+  }
+
+  async deleteSection(id: string, companyId: string) {
+    const sec = await this.prisma.orderSection.findFirst({ where: { id, companyId } });
+    if (!sec) throw new NotFoundException('القسم غير موجود');
+    await this.prisma.orderSection.delete({ where: { id } });
+    return { deleted: true };
+  }
+
+  /** ربط مجموعة أصناف بقائمة أقسام (استبدال كامل أو إضافة) */
+  async bulkSetProductSections(companyId: string, productIds: string[], sectionNames: string[], mode: 'replace' | 'add' = 'replace') {
+    const products = await this.prisma.orderProduct.findMany({ where: { id: { in: productIds }, companyId } });
+    await Promise.all(
+      products.map((p) => {
+        const existing = (p.sections as string[] | null) ?? [];
+        const next = mode === 'add' ? [...new Set([...existing, ...sectionNames])] : sectionNames;
+        return this.prisma.orderProduct.update({
+          where: { id: p.id },
+          data: { sections: next.length > 0 ? next : Prisma.DbNull },
+        });
+      }),
+    );
+    return { updated: products.length };
+  }
+
   async updateCategory(id: string, companyId: string, dto: {
     nameAr?: string;
     nameEn?: string | null;

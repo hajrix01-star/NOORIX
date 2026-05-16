@@ -10,14 +10,29 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useStaffDigest, useSendStaffDigestMutation } from '../../../hooks/useOrders';
 import { Button, Badge, Spinner } from '../../../ui';
 
-function SectionCard({ section, onSendSection }: { section: any; onSendSection: (ids: string[]) => void }) {
+type DisplayLang = 'ar' | 'en';
+
+function SectionCard({
+  section,
+  displayLang,
+  onSendSection,
+}: {
+  section: any;
+  displayLang: DisplayLang;
+  onSendSection: (ids: string[]) => void;
+}) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const orderIds = section.orders.map((o: any) => o.id);
 
+  function itemName(it: any): string {
+    return displayLang === 'en'
+      ? (it.product?.nameEn || it.product?.nameAr || '—')
+      : (it.product?.nameAr || it.product?.nameEn || '—');
+  }
+
   return (
     <div className="noorix-surface-card overflow-hidden">
-      {/* رأس القسم */}
       <button
         type="button"
         className="w-full flex items-center justify-between px-4 py-3 border-b border-noorix-border hover:bg-noorix-bg-muted/50 transition-colors"
@@ -34,18 +49,15 @@ function SectionCard({ section, onSendSection }: { section: any; onSendSection: 
         <div className="divide-y divide-noorix-border">
           {section.orders.map((order: any) => (
             <div key={order.id} className="px-4 py-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-[12px] text-noorix-muted">
-                  {order.user?.nameAr || order.user?.nameEn || '—'} · {formatSaudiDate(order.createdAt)}
-                </div>
+              <div className="text-[12px] text-noorix-muted mb-2">
+                {order.user?.nameAr || order.user?.nameEn || '—'} · {formatSaudiDate(order.createdAt)}
               </div>
               <div className="grid grid-cols-1 gap-1">
                 {(order.items || []).map((it: any, i: number) => {
-                  const name = it.product?.nameAr || it.product?.nameEn || '—';
                   const unit = it.unit ? ` ${it.unit}` : '';
                   return (
                     <div key={i} className="flex justify-between text-[13px]">
-                      <span>{name}</span>
+                      <span>{itemName(it)}</span>
                       <span className="font-bold nx-font-numbers">{fmt(it.quantity, 0)}{unit}</span>
                     </div>
                   );
@@ -59,7 +71,6 @@ function SectionCard({ section, onSendSection }: { section: any; onSendSection: 
         </div>
       )}
 
-      {/* زر إرسال القسم */}
       {section.orders.length > 0 && (
         <div className="px-4 py-3 border-t border-noorix-border bg-noorix-bg-muted/30">
           <Button size="sm" variant="ghost" onClick={() => onSendSection(orderIds)}>
@@ -72,11 +83,12 @@ function SectionCard({ section, onSendSection }: { section: any; onSendSection: 
 }
 
 export function StaffDigestTab({ companyId }: { companyId: string }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { data: digest, isLoading, refetch } = useStaffDigest(companyId);
   const sendDigest = useSendStaffDigestMutation(companyId);
   const [sending, setSending] = useState(false);
+  const [displayLang, setDisplayLang] = useState<DisplayLang>(lang as DisplayLang);
 
   const sections: any[] = digest?.sections ?? [];
   const pendingCount: number = digest?.pendingCount ?? 0;
@@ -85,7 +97,7 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
     if (!pendingCount && !orderIds?.length) return;
     setSending(true);
     try {
-      const res = await sendDigest.mutateAsync(orderIds);
+      const res = await sendDigest.mutateAsync({ orderIds, lang: displayLang });
       const whatsAppText: string = (res as any)?.data?.whatsAppText || (res as any)?.whatsAppText || '';
       if (whatsAppText) {
         window.open(`https://wa.me/?text=${encodeURIComponent(whatsAppText)}`, '_blank');
@@ -97,7 +109,7 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
     } finally {
       setSending(false);
     }
-  }, [pendingCount, sendDigest, refetch]);
+  }, [pendingCount, sendDigest, refetch, displayLang]);
 
   if (isLoading) return (
     <div className="flex justify-center py-12">
@@ -119,14 +131,33 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
           <span className="text-[14px] font-bold">{t('staffDigestPending')}</span>
           <Badge color="amber" size="sm">{pendingCount} {t('staffOrdersCount')}</Badge>
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => handleSend()}
-          disabled={sending || !pendingCount}
-        >
-          {sending ? t('sending') : t('staffDigestSendAll')}
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* مبدّل لغة العرض والإرسال */}
+          <div className="inline-flex rounded-lg border border-noorix-border overflow-hidden text-[12px]">
+            <button
+              type="button"
+              className={`px-3 py-1.5 transition-colors ${displayLang === 'ar' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
+              onClick={() => setDisplayLang('ar')}
+            >
+              AR
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 transition-colors ${displayLang === 'en' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
+              onClick={() => setDisplayLang('en')}
+            >
+              EN
+            </button>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => handleSend()}
+            disabled={sending || !pendingCount}
+          >
+            {sending ? t('sending') : t('staffDigestSendAll')}
+          </Button>
+        </div>
       </div>
 
       {/* بطاقات الأقسام */}
@@ -134,6 +165,7 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
         <SectionCard
           key={sec.sectionName}
           section={sec}
+          displayLang={displayLang}
           onSendSection={(ids) => handleSend(ids)}
         />
       ))}

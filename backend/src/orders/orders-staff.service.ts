@@ -140,23 +140,26 @@ export class OrdersStaffService {
   private buildWhatsAppText(
     sections: { sectionName: string; orders: any[] }[],
     date: string,
+    lang: 'ar' | 'en' = 'ar',
   ): string {
-    const lines: string[] = [`طلبات الأقسام — ${date}`, ''];
+    const header = lang === 'en' ? `Section Orders — ${date}` : `طلبات الأقسام — ${date}`;
+    const lines: string[] = [header, ''];
     for (const sec of sections) {
       lines.push(`▪ ${sec.sectionName}`);
-      // دمج الأصناف المتشابهة
-      const itemMap: Record<string, { nameAr: string; qty: number; unit: string }> = {};
+      const itemMap: Record<string, { name: string; qty: number; unit: string }> = {};
       for (const order of sec.orders) {
         for (const it of order.items) {
           const key = `${it.productId}|${it.unit || ''}`;
-          const name = it.product?.nameAr || it.product?.nameEn || '—';
-          if (!itemMap[key]) itemMap[key] = { nameAr: name, qty: 0, unit: it.unit || '' };
+          const name = lang === 'en'
+            ? (it.product?.nameEn || it.product?.nameAr || '—')
+            : (it.product?.nameAr || it.product?.nameEn || '—');
+          if (!itemMap[key]) itemMap[key] = { name, qty: 0, unit: it.unit || '' };
           itemMap[key].qty += Number(it.quantity);
         }
       }
-      for (const { nameAr, qty, unit } of Object.values(itemMap)) {
+      for (const { name, qty, unit } of Object.values(itemMap)) {
         const unitStr = unit ? ` ${unit}` : '';
-        lines.push(`  - ${nameAr}: ${qty}${unitStr}`);
+        lines.push(`  - ${name}: ${qty}${unitStr}`);
       }
       lines.push('');
     }
@@ -164,7 +167,7 @@ export class OrdersStaffService {
   }
 
   /** الكاشير: يرسل الملخص — يعلّم الطلبات كـ «تم الإرسال» ويعيد نص واتساب */
-  async sendDigest(companyId: string, orderIds?: string[]) {
+  async sendDigest(companyId: string, orderIds?: string[], lang: 'ar' | 'en' = 'ar') {
     const where: any = { companyId, status: 'pending' };
     if (orderIds?.length) where.id = { in: orderIds };
 
@@ -191,7 +194,7 @@ export class OrdersStaffService {
     const now = new Date();
     const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
     const sections = Object.entries(grouped).map(([sectionName, sOrders]) => ({ sectionName, orders: sOrders }));
-    const whatsAppText = this.buildWhatsAppText(sections, dateStr);
+    const whatsAppText = this.buildWhatsAppText(sections, dateStr, lang);
 
     return { sent: orders.length, whatsAppText };
   }
