@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import slugify from 'slugify';
 import { OFFICIAL_EMAIL_DOMAIN } from '../common/official-email';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }  from '../common/tenant-context';
@@ -28,10 +29,22 @@ export class UsersService {
     });
   }
 
-  /** جزء محلي من البريد من الاسم (لاتيني من الاسم الإنجليزي أو الأحرف اللاتينية في الاسم العربي). */
+  /** إزالة أحرف غير مرئية/اتجاه قد تُفرغ الجزء المحلي بعد التصفية. */
+  private stripInvisibleAndBidi(s: string): string {
+    return (s || '')
+      .normalize('NFKC')
+      .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u061C\u2066-\u2069]/g, '')
+      .trim();
+  }
+
+  /**
+   * جزء محلي من البريد من الاسم.
+   * ملاحظة: [A-Za-z] في JS هي ASCII فقط — حرف «R» السيريلي (U+0420) يُزال فيُفرغ الجزء المحلي
+   * إن لم نُحوّل عبر slugify. slugify يُحوّل العربية/السيريلية وغيرها إلى slug لاتيني آمن.
+   */
   private buildEmailLocalPart(nameAr: string, nameEn?: string): string {
-    const ar = (nameAr || '').normalize('NFKC').trim();
-    const enRaw = (nameEn || '').normalize('NFKC').trim();
+    const ar = this.stripInvisibleAndBidi(nameAr || '');
+    const enRaw = this.stripInvisibleAndBidi(nameEn || '');
     const en = enRaw.toLowerCase();
     const fromEn = en.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     // حرف واحد (مثل "T" أو "G") يجب أن يصبح البريد t@domain / g@domain ليتوافق مع تسجيل الدخول بالاسم القصير
@@ -41,6 +54,11 @@ export class UsersService {
       .toLowerCase()
       .replace(/^-+|-+$/g, '');
     if (fromArLatin.length >= 1) return fromArLatin.slice(0, 48);
+
+    const combined = `${enRaw} ${ar}`.trim();
+    const fromSlug = slugify(combined, { lower: true, strict: true, trim: true });
+    if (fromSlug.length >= 1) return fromSlug.slice(0, 48);
+
     return `user-${randomBytes(4).toString('hex')}`;
   }
 
