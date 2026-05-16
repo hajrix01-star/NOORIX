@@ -150,9 +150,13 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
 
   const [sectionName, setSectionName] = useState('');
   const [notes, setNotes] = useState('');
-  const [items, setItems] = useState<ItemRow[]>([{ productId: '', quantity: '', unit: '' }]);
+  const [items, setItems] = useState<ItemRow[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // الصنف المحدد في حقل البحث (لم يُضَف بعد)
+  const [pickedId, setPickedId] = useState('');
+  const [pickedUnit, setPickedUnit] = useState('piece');
 
   /** خريطة تكرار الأصناف من الطلبات السابقة */
   const freqMap = useMemo(() => {
@@ -185,8 +189,22 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     return m;
   }, [allProducts]);
 
-  function addItemRow() {
-    setItems((prev) => [...prev, { productId: '', quantity: '', unit: '' }]);
+  /** إضافة الصنف المحدد إلى القائمة (أو زيادة كميته إن كان موجوداً) */
+  function commitPicked() {
+    if (!pickedId) return;
+    setItems((prev) => {
+      const existing = prev.findIndex((r) => r.productId === pickedId);
+      if (existing >= 0) {
+        // زيادة الكمية بـ 1
+        const next = [...prev];
+        const qty = parseFloat(next[existing].quantity) || 0;
+        next[existing] = { ...next[existing], quantity: String(qty + 1) };
+        return next;
+      }
+      return [...prev, { productId: pickedId, quantity: '1', unit: pickedUnit }];
+    });
+    setPickedId('');
+    setPickedUnit('piece');
   }
 
   function removeItemRow(idx: number) {
@@ -201,18 +219,12 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     });
   }
 
-  function handleProductChange(idx: number, productId: string, unit: string) {
-    setItems((prev) => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], productId, unit };
-      return next;
-    });
-  }
-
   function resetForm() {
     setSectionName('');
     setNotes('');
-    setItems([{ productId: '', quantity: '', unit: '' }]);
+    setItems([]);
+    setPickedId('');
+    setPickedUnit('piece');
     setEditingId(null);
   }
 
@@ -222,10 +234,12 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     setItems(
       (order.items || []).map((it: any) => ({
         productId: it.productId || '',
-        quantity: String(it.quantity ?? ''),
-        unit: it.unit || '',
+        quantity: String(it.quantity ?? '1'),
+        unit: it.unit || 'piece',
       })),
     );
+    setPickedId('');
+    setPickedUnit('piece');
     setEditingId(order.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -304,59 +318,78 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
           ))}
         </Input>
 
-        {/* الأصناف */}
-        <div className="flex flex-col gap-2">
+        {/* ── بحث + زر إضافة ── */}
+        <div className="flex flex-col gap-1.5">
           <div className="text-[12px] font-semibold text-noorix-muted">{t('staffOrderItems')}</div>
-          {items.map((row, idx) => (
-            <div key={idx} className="flex items-center gap-2 flex-wrap">
-              {/* بحث ذكي */}
-              <div className="flex-1 min-w-[160px]">
-                <ProductSearchInput
-                  value={row.productId}
-                  products={products as any[]}
-                  freqMap={freqMap}
-                  lang={lang}
-                  placeholder={t('staffOrderSearchProduct')}
-                  onChange={(pid, unit) => handleProductChange(idx, pid, unit)}
-                />
-              </div>
-              <div className="w-20">
-                <Input
-                  type="number"
-                  placeholder={t('quantity')}
-                  value={row.quantity}
-                  onChange={(e: any) => updateItemRow(idx, 'quantity', e.target.value)}
-                  min="0"
-                />
-              </div>
-              <div className="w-24">
-                <select
-                  className="w-full h-9 rounded-lg border border-noorix-border bg-noorix-surface px-2 text-[13px] text-noorix-text"
-                  value={row.unit}
-                  onChange={(e) => updateItemRow(idx, 'unit', e.target.value)}
-                >
-                  <option value="piece">{t('ordersUnitPiece')}</option>
-                  <option value="kg">{t('ordersUnitKg')}</option>
-                  <option value="box">{t('ordersUnitBox')}</option>
-                  <option value="dozen">{t('ordersUnitDozen')}</option>
-                </select>
-              </div>
-              {items.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeItemRow(idx)}
-                  className="text-noorix-red text-[18px] leading-none px-1 flex-shrink-0"
-                  aria-label={t('delete')}
-                >
-                  ×
-                </button>
-              )}
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <ProductSearchInput
+                value={pickedId}
+                products={products as any[]}
+                freqMap={freqMap}
+                lang={lang}
+                placeholder={t('staffOrderSearchProduct')}
+                onChange={(pid, unit) => { setPickedId(pid); setPickedUnit(unit); }}
+              />
             </div>
-          ))}
-          <Button type="button" size="sm" variant="ghost" onClick={addItemRow}>
-            + {t('staffOrderAddItem')}
-          </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={commitPicked}
+              disabled={!pickedId}
+            >
+              + {t('staffOrderAddItem')}
+            </Button>
+          </div>
         </div>
+
+        {/* ── قائمة الأصناف المضافة ── */}
+        {items.length > 0 && (
+          <div className="flex flex-col gap-1 rounded-xl border border-noorix-border overflow-hidden">
+            {items.map((row, idx) => {
+              const p = productsById.get(row.productId);
+              const name = p
+                ? (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn))
+                : row.productId;
+              return (
+                <div
+                  key={row.productId}
+                  className="flex items-center gap-2 px-3 py-2 bg-noorix-surface border-b border-noorix-border last:border-b-0"
+                >
+                  <span className="flex-1 text-[13px] text-noorix-text truncate">{name}</span>
+                  {/* كمية */}
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-16 h-8 rounded-lg border border-noorix-border bg-noorix-bg text-[13px] text-center text-noorix-text focus:outline-none focus:ring-1 focus:ring-noorix-blue"
+                    value={row.quantity}
+                    onChange={(e) => updateItemRow(idx, 'quantity', e.target.value)}
+                  />
+                  {/* وحدة */}
+                  <select
+                    className="h-8 rounded-lg border border-noorix-border bg-noorix-bg px-1.5 text-[12px] text-noorix-text"
+                    value={row.unit}
+                    onChange={(e) => updateItemRow(idx, 'unit', e.target.value)}
+                  >
+                    <option value="piece">{t('ordersUnitPiece')}</option>
+                    <option value="kg">{t('ordersUnitKg')}</option>
+                    <option value="box">{t('ordersUnitBox')}</option>
+                    <option value="dozen">{t('ordersUnitDozen')}</option>
+                  </select>
+                  {/* حذف */}
+                  <button
+                    type="button"
+                    onClick={() => removeItemRow(idx)}
+                    className="text-noorix-red text-[18px] leading-none px-0.5 flex-shrink-0 hover:opacity-70"
+                    aria-label={t('delete')}
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* ملاحظات */}
         <Input
