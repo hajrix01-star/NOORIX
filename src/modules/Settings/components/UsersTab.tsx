@@ -10,6 +10,13 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Badge, Input, AdaptiveSheet, ScreenShell, SmartTable } from '../../../ui';
 import { settingsKeys } from '../../../services/queryKeys';
 
+/** الجزء المحلي من البريد الداخلي → اسم الدخول المعروض للمستخدم. */
+function toLoginName(email: string): string {
+  if (!email) return '—';
+  const at = email.indexOf('@');
+  return at > 0 ? email.slice(0, at) : email;
+}
+
 export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
@@ -38,8 +45,8 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
     mutationFn: createUser,
     invalidateQueries: [settingsKeys.users()],
     successToast: (res: any) => {
-      const email = res?.data?.email;
-      return email ? t('userAddedWithEmail', email) : t('userAdded');
+      const loginName = toLoginName(res?.data?.email);
+      return loginName && loginName !== '—' ? t('userAddedWithEmail', loginName) : t('userAdded');
     },
     errorToast: (e: any) => e?.message || t('addFailed'),
     onSuccess: () => { setShowForm(false); },
@@ -88,7 +95,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   }
 
   const columns = [
-    { key: 'email', label: t('email'), render: (v: any) => <span className="font-semibold">{v || '—'}</span> },
+    { key: 'email', label: t('loginName'), render: (v: any) => <span className="font-semibold ltr">{toLoginName(v)}</span> },
     { key: 'nameAr', label: t('nameAr'), render: (v: any, row: any) => <span>{v || row.nameEn || '—'}</span> },
     { key: 'preferredLang', label: t('preferredLang'), render: (v: any) => <Badge color={v === 'en' ? 'blue' : 'violet'} size="sm">{v === 'en' ? t('langEn') : t('langAr')}</Badge> },
     { key: 'role', label: t('role'), render: (_: any, row: any) => <span>{row.role?.nameAr || row.role?.name || '—'}</span> },
@@ -155,7 +162,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
       <AdaptiveSheet
         open={!!editing}
         onClose={() => !updateMutation.isPending && setEditing(null)}
-        title={editing ? t('editUser', editing.email) : ''}
+        title={editing ? t('editUser', toLoginName(editing.email)) : ''}
         size="md"
         side="start"
         className="users-edit-drawer"
@@ -163,7 +170,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
         {editing && (
           <form onSubmit={(e: any) => { e.preventDefault(); updateMutation.mutate({ id: editing.id, body: { nameAr: editing.nameAr?.trim(), nameEn: editing.nameEn?.trim(), preferredLang: editing.preferredLang, roleName: editing.roleName, companyIds: editing.companyIds } }); }}>
             <div className="grid gap-3 mb-[14px]">
-              <Input type="email" label={t('email')} value={editing.email} disabled />
+              <Input type="text" label={t('loginName')} value={toLoginName(editing.email)} disabled dir="ltr" />
               <Input type="text" label={t('nameAr')} value={editing.nameAr} onChange={(e: any) => setEditing((p: any) => ({ ...p, nameAr: e.target.value }))} />
               <Input type="select" label={t('preferredLang')} value={editing.preferredLang} onChange={(e: any) => setEditing((p: any) => ({ ...p, preferredLang: e.target.value }))}>
                 <option value="ar">{t('langAr')}</option>
@@ -218,7 +225,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
                   {row.isActive ? t('active') : t('archived')}
                 </Badge>
               </div>
-              <div className="nx-cell-muted nx-ltr text-right break-all">{row.email || '—'}</div>
+              <div className="nx-cell-muted ltr text-right break-all">{toLoginName(row.email)}</div>
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <span className="nx-cell-muted min-w-0 break-words">{row.role?.nameAr || row.role?.name || '—'}</span>
                 <Button size="sm" className="shrink-0" onClick={() => openEdit(row)}>{t('edit')}</Button>

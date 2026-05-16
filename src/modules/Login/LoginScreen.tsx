@@ -117,7 +117,7 @@ export default function LoginScreen() {
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 text-left">
-              {/* اسم المستخدم أو البريد */}
+              {/* اسم الدخول */}
               <div>
                 <label className="text-[13px] font-bold text-noorix-text block mb-1.5 text-left">
                   {t('usernameOrEmail')}
