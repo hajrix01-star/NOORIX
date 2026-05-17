@@ -464,4 +464,19 @@ export class HRController {
   ) {
     return this.hrService.createDeduction(dto, user.sub);
   }
+
+  // ══════════════════════════════════════════════════════════
+  // DASHBOARD SUMMARY BFF
+  // ══════════════════════════════════════════════════════════
+
+  /**
+   * GET /api/v1/hr/dashboard-summary
+   * إجازات + إقامات منتهية + سلف مستحقة في طلب واحد بالتوازي.
+   * يحلّ مشكلة "تغيّر أرقام بطاقة HR" الناتجة عن 3 طلبات منفصلة.
+   */
+  @Get('dashboard-summary')
+  @RequirePermission('HR_READ')
+  getHrDashboardSummary(@CompanyId() companyId: string) {
+    return this.hrService.getDashboardSummary(companyId);
+  }
 }

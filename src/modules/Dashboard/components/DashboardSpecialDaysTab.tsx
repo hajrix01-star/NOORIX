@@ -1,9 +1,9 @@
 ﻿/**
  * DashboardSpecialDaysTab — إدارة الأيام الخاصة (رمضان، أعياد، إجازات)
  */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getStoredSpecialDays, setStoredSpecialDays } from '../utils/dashboardStorage';
+import { useDashboardCalendarData } from '../../../hooks/useDashboardCalendarData';
 import { Button, Input } from '../../../ui';
 import { toYmd } from '../../../utils/saudiDate';
 
@@ -26,7 +26,13 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const startDate = ymd(year, month, 1);
   const endDate = ymd(year, month, lastDay);
 
-  const [specialDaysVersion, setSpecialDaysVersion] = useState(0);
+  const { specialDays: specialDaysList, saveSpecialDays } = useDashboardCalendarData({
+    companyId,
+    year,
+    month,
+    enabled: !!companyId,
+  });
+
   const [showForm, setShowForm] = useState(false);
   const [newFrom, setNewFrom] = useState(startDate);
   const [newTo, setNewTo] = useState(endDate);
@@ -34,43 +40,48 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const [editingId, setEditingId] = useState<any>(null);
   const [editingName, setEditingName] = useState('');
 
-  const specialDaysList = useMemo(() => getStoredSpecialDays(companyId, year, month), [companyId, year, month, specialDaysVersion]);
-
-  const handleAdd = useCallback(() => {
+  const handleAdd = useCallback(async () => {
     let from = toYmd(newFrom);
     let to = toYmd(newTo) || from;
     const name = (newName || t('dashboardSpecialDay')).trim();
     if (!from) return;
     if (to < from) { const tmp = from; from = to; to = tmp; }
-    const list = getStoredSpecialDays(companyId, year, month);
     const id = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const color = DEFAULT_COLORS[list.length % DEFAULT_COLORS.length];
-    list.push({ id, name, fromDate: from, toDate: to, color });
-    setStoredSpecialDays(companyId, year, month, list);
-    setSpecialDaysVersion((v: any) => v + 1);
-    setNewFrom(startDate);
-    setNewTo(endDate);
-    setNewName('');
-    setShowForm(false);
-  }, [companyId, year, month, newFrom, newTo, newName, startDate, endDate, t]);
-
-  const handleUpdate = useCallback((id: any, updates: any) => {
-    const list = getStoredSpecialDays(companyId, year, month);
-    const idx = list.findIndex((x: any) => x.id === id);
-    if (idx >= 0) {
-      list[idx] = { ...list[idx], ...updates };
-      setStoredSpecialDays(companyId, year, month, list);
-      setSpecialDaysVersion((v: any) => v + 1);
-      setEditingId(null);
+    const color = DEFAULT_COLORS[specialDaysList.length % DEFAULT_COLORS.length];
+    const newList = [...specialDaysList, { id, name, fromDate: from, toDate: to, color }];
+    try {
+      await saveSpecialDays(newList);
+      setNewFrom(startDate);
+      setNewTo(endDate);
+      setNewName('');
+      setShowForm(false);
+    } catch {
+      // no-op
     }
-  }, [companyId, year, month]);
+  }, [companyId, year, month, newFrom, newTo, newName, startDate, endDate, t, specialDaysList, saveSpecialDays]);
 
-  const handleRemove = useCallback((id: any) => {
+  const handleUpdate = useCallback(async (id: any, updates: any) => {
+    const idx = specialDaysList.findIndex((x: any) => x.id === id);
+    if (idx >= 0) {
+      const newList = specialDaysList.map((x: any, i: number) => i === idx ? { ...x, ...updates } : x);
+      try {
+        await saveSpecialDays(newList);
+        setEditingId(null);
+      } catch {
+        // no-op
+      }
+    }
+  }, [specialDaysList, saveSpecialDays]);
+
+  const handleRemove = useCallback(async (id: any) => {
     if (!window.confirm(t('confirmDelete'))) return;
-    const list = getStoredSpecialDays(companyId, year, month).filter((x: any) => x.id !== id);
-    setStoredSpecialDays(companyId, year, month, list);
-    setSpecialDaysVersion((v: any) => v + 1);
-  }, [companyId, year, month, t]);
+    const newList = specialDaysList.filter((x: any) => x.id !== id);
+    try {
+      await saveSpecialDays(newList);
+    } catch {
+      // no-op
+    }
+  }, [specialDaysList, saveSpecialDays, t]);
 
   const monthLabel = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month - 1];
 

@@ -97,4 +97,9 @@ export const hrKeys = {
   terminationSettlementSalaryExistsRoot: () => ['termination-settlement-salary-exists'] as const,
 
   customAllowancesRoot: () => ['custom-allowances'] as const,
+
+  /** ملخص لوحة HR الموحّد — إجازات + إقامات + سلف */
+  dashboardSummary: (companyId: string) => ['hr-dashboard-summary', companyId] as const,
+
+  dashboardSummaryRoot: () => ['hr-dashboard-summary'] as const,
 };

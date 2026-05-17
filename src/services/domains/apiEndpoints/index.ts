@@ -13,3 +13,6 @@ export * from './suppliers';
 export * from './invoices';
 export * from './backup';
 export * from './dashboard-overview';
+export * from './owner-overview';
+export * from './hr-dashboard-summary';
+export * from './dashboard-calendar';

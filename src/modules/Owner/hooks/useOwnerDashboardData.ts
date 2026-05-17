@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import type { CompanyListItem } from '../../../context/appTypes';
-import { useOwnerReports } from '../../../hooks/useOwnerReports';
-import { useOwnerDailySales } from '../../../hooks/useOwnerDailySales';
+import { useOwnerOverview } from '../../../hooks/useOwnerOverview';
 import { SERIES_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import {
   buildAggregated,
@@ -38,13 +37,17 @@ export function useOwnerDashboardData({
   companyList,
   lang,
 }: UseOwnerDashboardDataArgs) {
-  const { reportsByCompany, isLoading, isError, error } = useOwnerReports({ companyIds: idsToFetch, year });
-  const dailySalesQuery = useOwnerDailySales({
+  // ─── طلب واحد موحّد: P&L + مبيعات يومية لكل الشركات ───────────
+  // المبيعات اليومية تُجلب دائماً مع الشهر الحالي (pre-fetch)
+  // حتى إذا كان المستخدم في وضع "شهري"، تكون البيانات جاهزة عند التبديل.
+  const { data: overviewData, isLoading, isError, error } = useOwnerOverview({
     companyIds: idsToFetch,
     year,
     month: chartMonthForDaily,
-    enabled: chartGrain === 'daily',
+    enabled: idsToFetch.length > 0,
   });
+
+  const { reportsByCompany, dailySalesByCompany } = overviewData;
 
   const aggregated = useMemo(
     () => buildAggregated(reportsByCompany, companyList, lang, selectedMonthNum),
@@ -83,12 +86,12 @@ export function useOwnerDashboardData({
         reportsByCompany,
         metricFilter,
         lang,
-        itemsByCompanyId: dailySalesQuery.itemsByCompanyId as Record<string, OwnerDailySalesItem[]>,
+        itemsByCompanyId: dailySalesByCompany as Record<string, OwnerDailySalesItem[]>,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       chartGrain,
-      dailySalesQuery.dataStamp,
+      overviewData,      // بديل عن dataStamp — يُعيد الحساب عند وصول البيانات الكاملة
       year,
       chartMonthForDaily,
       idsToFetch.join(','),
@@ -103,6 +106,21 @@ export function useOwnerDashboardData({
     () => buildCompanySeries(idsToFetch, companyList, lang, COLORS),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [idsToFetch.join(','), companyList, lang],
+  );
+
+  // واجهة متوافقة مع OwnerPerformanceChart (تتوقع dailySalesQuery.isLoading)
+  const dailySalesQuery = useMemo(
+    () => ({
+      itemsByCompanyId: dailySalesByCompany as Record<string, OwnerDailySalesItem[]>,
+      isLoading: false,   // البيانات مدمجة في الطلب الموحّد — لا انتظار إضافي
+      isError,
+      error,
+      enabled: true,
+      bounds: null,
+      dataStamp: 0,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dailySalesByCompany, isError, error],
   );
 
   return {

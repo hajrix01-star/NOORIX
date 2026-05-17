@@ -2,16 +2,9 @@ import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../../../i18n/useTranslation';
 import { useApp } from '../../../../../context/AppContext';
 import { useDashboardSalesPack } from '../../../../../hooks/useDashboardSalesPack';
+import { useDashboardCalendarData } from '../../../../../hooks/useDashboardCalendarData';
 import { fmt } from '../../../../../utils/format';
 import { openPrintWindow } from '../../../../../utils/printUtils';
-import {
-  getStoredTargets,
-  setStoredTargets,
-  getStoredSpecialDays,
-  setStoredSpecialDays,
-  getStoredDayNotes,
-  setStoredDayNotes,
-} from '../../../utils/dashboardStorage';
 import { getSaudiNow, toYmd } from '../../../../../utils/saudiDate';
 import {
   lastDayOfMonth,
@@ -40,7 +33,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
 
   const {
     dailySummaries: summaries,
-    isLoading,
+    isLoading: salesLoading,
   } = useDashboardSalesPack({
     companyId: companyId as string,
     yearStart: `${year}-01-01`,
@@ -52,27 +45,33 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     enabled: !!companyId,
   });
 
-  const [targetsVersion, setTargetsVersion] = useState(0);
+  const {
+    isLoading: calendarLoading,
+    targets: storedTargets,
+    specialDays: specialDaysList,
+    dayNotes,
+    saveTargets,
+    saveSpecialDays,
+    saveDayNotes,
+  } = useDashboardCalendarData({ companyId, year, month, enabled: !!companyId });
+
+  const isLoading = salesLoading || calendarLoading;
+
   const [editingTarget, setEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState('');
+  const [targetsVersion, setTargetsVersion] = useState(0);
   const [showTargetsPanel, setShowTargetsPanel] = useState(false);
   const [selectedDay, setSelectedDay] = useState<any>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState<Set<string>>(() => new Set<string>());
   const [lastClickedDate, setLastClickedDate] = useState<any>(null);
-  const [specialDaysVersion, setSpecialDaysVersion] = useState(0);
-  const [dayNotesVersion, setDayNotesVersion] = useState(0);
   const [showAddSpecialModal, setShowAddSpecialModal] = useState(false);
   const [newSpecialName, setNewSpecialName] = useState('');
 
-  const storedTargets = useMemo(() => getStoredTargets(companyId, year, month), [companyId, year, month, targetsVersion]);
-  const specialDaysList = useMemo(() => getStoredSpecialDays(companyId, year, month), [companyId, year, month, specialDaysVersion]);
-  const dayNotes = useMemo(() => getStoredDayNotes(companyId, year, month), [companyId, year, month, dayNotesVersion]);
-
   const targets = useMemo(
     () => ({
-      overall: storedTargets.overall,
-      byDow: storedTargets.byDow || {},
+      overall: storedTargets?.overall ?? null,
+      byDow: storedTargets?.byDow ?? {},
     }),
     [storedTargets],
   );
@@ -129,46 +128,53 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   const company = companies?.find((c: any) => c.id === companyId);
   const companyName = lang === 'en' ? company?.nameEn || company?.nameAr || '' : company?.nameAr || company?.nameEn || '';
 
-  const handleSaveOverallTarget = useCallback(() => {
+  const handleSaveOverallTarget = useCallback(async () => {
     const v = parseFloat(String(targetInput).replace(/,/g, ''));
     if (!Number.isNaN(v) && v >= 0) {
-      const data = getStoredTargets(companyId, year, month);
-      data.overall = v;
-      if (setStoredTargets(companyId, year, month, data)) {
+      const newTargets = { ...targets, byDow: { ...targets.byDow }, overall: v };
+      try {
+        await saveTargets(newTargets);
         setTargetInput('');
         setEditingTarget(false);
-        setTargetsVersion((x: number) => x + 1);
+        setTargetsVersion((x) => x + 1);
+      } catch {
+        // no-op — حالة الفشل تُعاد برقم مؤقت
       }
     }
-  }, [companyId, year, month, targetInput]);
+  }, [targets, targetInput, saveTargets]);
 
   const handleSaveDowTarget = useCallback(
-    (dow: number, value: unknown) => {
+    async (dow: number, value: unknown) => {
       const str = String(value || '').trim();
       const v = str === '' ? null : parseFloat(str.replace(/,/g, ''));
       if (v === null || (!Number.isNaN(v) && v >= 0)) {
-        const data = getStoredTargets(companyId, year, month);
-        data.byDow = data.byDow || {};
-        if (v === null) delete data.byDow[dow];
-        else data.byDow[dow] = v;
-        if (setStoredTargets(companyId, year, month, data)) {
-          setTargetsVersion((prev: number) => prev + 1);
+        const newByDow = { ...targets.byDow };
+        if (v === null) delete newByDow[dow];
+        else newByDow[dow] = v;
+        const newTargets = { ...targets, byDow: newByDow };
+        try {
+          await saveTargets(newTargets);
+          setTargetsVersion((x) => x + 1);
+        } catch {
+          // no-op
         }
       }
     },
-    [companyId, year, month],
+    [targets, saveTargets],
   );
 
   const handleSaveDayNote = useCallback(
-    (dateStr: string, note: unknown) => {
-      const notes = getStoredDayNotes(companyId, year, month);
-      if (note) notes[dateStr] = note;
-      else delete notes[dateStr];
-      if (setStoredDayNotes(companyId, year, month, notes)) {
-        setDayNotesVersion((v: number) => v + 1);
+    async (dateStr: string, note: unknown) => {
+      const newNotes = { ...dayNotes };
+      if (note) newNotes[dateStr] = note as string;
+      else delete newNotes[dateStr];
+      try {
+        await saveDayNotes(newNotes);
+      } catch {
+        // no-op
       }
     },
-    [companyId, year, month],
+    [dayNotes, saveDayNotes],
   );
 
   const handleDayClick = useCallback(
@@ -201,23 +207,24 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     [isSelectionMode, lastClickedDate, daysInMonth],
   );
 
-  const handleAddSelectedAsSpecial = useCallback(() => {
+  const handleAddSelectedAsSpecial = useCallback(async () => {
     const sorted = [...selectedDates].filter((d: string) => d >= startDate && d <= endDate).sort();
     if (sorted.length === 0) return;
     const from = sorted[0];
     const to = sorted[sorted.length - 1];
     const name = (newSpecialName || t('dashboardSpecialDay')).trim();
-    const list = getStoredSpecialDays(companyId, year, month);
     const id = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const color = DEFAULT_COLORS[list.length % DEFAULT_COLORS.length];
-    list.push({ id, name, fromDate: from, toDate: to, color });
-    if (setStoredSpecialDays(companyId, year, month, list)) {
-      setSpecialDaysVersion((v: number) => v + 1);
+    const color = DEFAULT_COLORS[specialDaysList.length % DEFAULT_COLORS.length];
+    const newList = [...specialDaysList, { id, name, fromDate: from, toDate: to, color }];
+    try {
+      await saveSpecialDays(newList);
       setSelectedDates(new Set<string>());
       setShowAddSpecialModal(false);
       setNewSpecialName('');
+    } catch {
+      // no-op
     }
-  }, [companyId, year, month, selectedDates, startDate, endDate, newSpecialName, t]);
+  }, [companyId, year, month, selectedDates, startDate, endDate, newSpecialName, t, specialDaysList, saveSpecialDays]);
 
   const handlePrintDayDetails = useCallback(
     (dateStr: any, dayTarget: any, daySummaries: any, totalAmount: any, achieved: any) => {
@@ -305,8 +312,6 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     endDate,
     summaries,
     isLoading,
-    targetsVersion,
-    setTargetsVersion,
     editingTarget,
     setEditingTarget,
     targetInput,
@@ -321,8 +326,6 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     setSelectedDates,
     lastClickedDate,
     setLastClickedDate,
-    specialDaysVersion,
-    dayNotesVersion,
     showAddSpecialModal,
     setShowAddSpecialModal,
     newSpecialName,
@@ -333,6 +336,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     daysInMonth,
     maxAmount,
     companyName,
+    targetsVersion,
     handleSaveOverallTarget,
     handleSaveDowTarget,
     handleSaveDayNote,
@@ -343,6 +347,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     handlePrintCalendar,
     selectedDatesSorted,
     dayNotes,
+    specialDaysList,
     year,
   };
 }

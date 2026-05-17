@@ -144,8 +144,9 @@ model Company {
   ocrItems            OcrItem[]
   ocrInvoices         OcrInvoice[]
   ocrPriceHistory     OcrPriceHistory[]
-  ocrCorrectionRules  OcrCorrectionRule[]
-  ocrExtractionLogs   OcrExtractionLog[]
+  ocrCorrectionRules    OcrCorrectionRule[]
+  ocrExtractionLogs     OcrExtractionLog[]
+  dashboardCalendarData DashboardCalendarData[]
 
   @@index([tenantId])
   @@map("companies")
@@ -1538,4 +1539,32 @@ model OcrExtractionLog {
   @@index([companyId])
   @@index([supplierId])
   @@map("ocr_extraction_logs")
+}
+
+// ══════════════════════════════════════════════════
+// DASHBOARD CALENDAR — أهداف وأيام خاصة وملاحظات
+// يتم حفظها في قاعدة البيانات بدلاً من localStorage
+// ══════════════════════════════════════════════════
+model DashboardCalendarData {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  companyId   String   @map("company_id")
+  year        Int
+  month       Int
+  /// { overall: number|null, byDow: Record<string, number> }
+  targets     Json     @default("{\"overall\":null,\"byDow\":{}}")
+  /// Array<{ id, name, fromDate, toDate, color }>
+  specialDays Json     @default("[]") @map("special_days")
+  /// Record<dateStr, string>
+  dayNotes    Json     @default("{}") @map("day_notes")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year, month])
+  @@index([tenantId])
+  @@index([tenantId, companyId])
+  @@index([companyId])
+  @@map("dashboard_calendar_data")
 }

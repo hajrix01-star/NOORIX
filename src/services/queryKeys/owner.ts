@@ -9,4 +9,10 @@ export const ownerKeys = {
     ['owner-daily-sales', companyId, year, month] as const,
 
   dailySalesRoot: () => ['owner-daily-sales'] as const,
+
+  /** نظرة عامة موحّدة — P&L + مبيعات يومية لكل الشركات في طلب واحد */
+  overview: (companyIds: string[], year: number, month: number | null) =>
+    ['owner-overview', companyIds.slice().sort().join(','), year, month] as const,
+
+  overviewRoot: () => ['owner-overview'] as const,
 };

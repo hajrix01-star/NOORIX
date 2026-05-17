@@ -2,14 +2,13 @@
  * HRMainScreen — الشاشة الرئيسية للموارد البشرية
  */
 import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { ScreenShell, ScreenTabs } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
-import { getResidencies, getLeaves, getInvoices } from '../../services/api';
+import { useHrDashboardSummary } from '../../hooks/useHrDashboardSummary';
 import { roundMoney2 } from '../../utils/moneyInput';
 import { totalSalary } from './utils/employeeSalaryMath';
 import HRSummaryCard from './components/HRSummaryCard';
@@ -21,7 +20,6 @@ import ResidencyTab from './tabs/ResidencyTab';
 import SalaryCalcTab from './tabs/SalaryCalcTab';
 import EOSCalcTab from './tabs/EOSCalcTab';
 import HrPrintDocumentsTab from './tabs/HrPrintDocumentsTab';
-import { hrKeys, invoiceKeys } from '../../services/queryKeys';
 
 const TABS = [
   { id: 'employees',  labelKey: 'hrTabEmployees'  },
@@ -34,8 +32,6 @@ const TABS = [
   { id: 'printDocs',  labelKey: 'hrTabPrintDocs'   },
 ];
 
-const EXPIRY_DAYS = 90;
-const CURRENT_YEAR = new Date().getFullYear();
 const HR_TAB_IDS = TABS.map((tab: any) => tab.id);
 
 export default function HRMainScreen() {
@@ -44,8 +40,12 @@ export default function HRMainScreen() {
   const companyId = activeCompanyId ?? '';
   const [activeTab, setActiveTab] = useTabSearchParam(HR_TAB_IDS, 'employees');
 
+  // ─── بيانات الموظفين (مطلوبة للتبويبات + حساب الرواتب) ───────────
   const { employees, isLoading: empLoading } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: !!companyId });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
+
+  // ─── ملخص HR الموحّد: إجازات + إقامات + سلف في طلب واحد ──────────
+  const { data: hrSummary, isLoading: summaryLoading } = useHrDashboardSummary(companyId);
 
   const allowanceTotals = useMemo(() => {
     const map = new Map();
@@ -58,55 +58,10 @@ export default function HRMainScreen() {
     return map;
   }, [customAllowances]);
 
-  const { data: residencies = [] } = useQuery({
-    queryKey: hrKeys.residencies(companyId),
-    queryFn: async () => {
-      const res = await getResidencies(companyId);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
-    },
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: leavesData = [] } = useQuery({
-    queryKey: hrKeys.leavesForYear(companyId, CURRENT_YEAR),
-    queryFn: async () => {
-      const res = await getLeaves(companyId, undefined, CURRENT_YEAR);
-      if (!res?.success) return [];
-      const d = res.data;
-      return Array.isArray(d) ? d : (d?.items ?? []);
-    },
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: advancesData = [] } = useQuery({
-    queryKey: invoiceKeys.advancesForCompany(companyId),
-    queryFn: async () => {
-      const res = await getInvoices(companyId, undefined, undefined, 1, 500);
-      if (!res?.success) return [];
-      const items = res.data?.items ?? [];
-      return items.filter((inv: any) => inv.kind === 'advance').map((i: any) => ({
-        ...i,
-        settlementStatus:
-          i.status === 'cancelled'
-            ? 'cancelled'
-            : Number(i.settledAmount ?? 0) >= Number(i.totalAmount ?? 0)
-              ? 'settled'
-              : 'outstanding',
-        remainingAmount: Math.max(0, Number(i.totalAmount ?? 0) - Number(i.settledAmount ?? 0)),
-      }));
-    },
-    enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
-  });
-
   const activeEmployees = employees.filter((e: any) => e.status === 'active');
   const terminatedCount = employees.filter((e: any) => e.status === 'terminated').length;
   const activeCount = activeEmployees.length;
 
-  /** مطابق لعمود «إجمالي الراتب» في قائمة الموظفين: أساسي + بدلات + مخصصة + تقدير الأوفر تايم */
   const monthlyPayrollTotal = useMemo(
     () => roundMoney2(
       activeEmployees.reduce(
@@ -117,43 +72,29 @@ export default function HRMainScreen() {
     [activeEmployees, allowanceTotals],
   );
 
-  const expiringCount = residencies.filter((r: any) => {
-    const exp = new Date(r.expiryDate);
-    const now = new Date();
-    const diff = (exp.getTime() - now.getTime()) / (24 * 60 * 60 * 1000);
-    return diff >= 0 && diff <= EXPIRY_DAYS;
-  }).length;
-
-  const registeredLeavesCount = leavesData.length;
-
-  const outstandingAdvances = advancesData.filter(
-    (a: any) => a.status !== 'cancelled' && a.settlementStatus !== 'settled',
-  );
-  const outstandingAdvancesCount = outstandingAdvances.length;
-  const outstandingAdvancesAmount = outstandingAdvances.reduce((s: any, a: any) => s + a.remainingAmount, 0);
-
   const hrTabItems = useMemo(
     () => TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) })),
     [t],
   );
 
+  // skeleton يُعرض حتى تكتمل بيانات الموظفين والملخص معاً
+  const cardLoading = empLoading || summaryLoading;
+
   return (
     <ScreenShell>
 
-      {/* ── ترويسة ── */}
       <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
 
-      {/* ── كرت الملخص الشامل ── */}
       {companyId && (
         <HRSummaryCard
-          isLoading={empLoading}
+          isLoading={cardLoading}
           activeCount={activeCount}
           terminatedCount={terminatedCount}
           monthlyPayrollTotal={monthlyPayrollTotal}
-          expiringResidencyCount={expiringCount}
-          registeredLeavesCount={registeredLeavesCount}
-          outstandingAdvancesCount={outstandingAdvancesCount}
-          outstandingAdvancesAmount={outstandingAdvancesAmount}
+          expiringResidencyCount={hrSummary.expiringResidenciesCount}
+          registeredLeavesCount={hrSummary.leavesCount}
+          outstandingAdvancesCount={hrSummary.outstandingAdvancesCount}
+          outstandingAdvancesAmount={hrSummary.outstandingAdvancesAmount}
         />
       )}
 
@@ -163,14 +104,14 @@ export default function HRMainScreen() {
         onChange={setActiveTab}
         contentClassName="nx-tab-content min-h-[200px]"
       >
-        {activeTab === 'employees' && <StaffListScreen embedded />}
-        {activeTab === 'payroll'   && <PayrollTab />}
-        {activeTab === 'leave'     && <LeaveTab />}
-        {activeTab === 'advances'  && <AdvancesTab />}
-        {activeTab === 'residency' && <ResidencyTab />}
+        {activeTab === 'employees'  && <StaffListScreen embedded />}
+        {activeTab === 'payroll'    && <PayrollTab />}
+        {activeTab === 'leave'      && <LeaveTab />}
+        {activeTab === 'advances'   && <AdvancesTab />}
+        {activeTab === 'residency'  && <ResidencyTab />}
         {activeTab === 'salaryCalc' && <SalaryCalcTab />}
-        {activeTab === 'eosCalc'   && <EOSCalcTab />}
-        {activeTab === 'printDocs' && <HrPrintDocumentsTab />}
+        {activeTab === 'eosCalc'    && <EOSCalcTab />}
+        {activeTab === 'printDocs'  && <HrPrintDocumentsTab />}
       </ScreenTabs>
 
     </ScreenShell>

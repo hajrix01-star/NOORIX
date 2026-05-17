@@ -64,8 +64,11 @@ const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   bankKeys.classificationRulesRoot(),
   bankKeys.treeCategoriesRoot(),
   bankKeys.statementMappingRoot(),
-  // لوحة المالك — تجميع مبيعات يومية
+  // لوحة المالك — تجميع مبيعات يومية + overview موحّد
   ownerKeys.dailySalesRoot(),
+  ownerKeys.overviewRoot(),
+  // HR — ملخص لوحة HR الموحّد
+  hrKeys.dashboardSummaryRoot(),
   // OCR — قوائم مرتبطة بالمشتريات/الفواتير بعد إبطال مالي
   ocrKeys.invoicesRoot(),
   ocrKeys.purchasesReportRoot(),

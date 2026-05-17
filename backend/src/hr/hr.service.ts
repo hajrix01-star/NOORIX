@@ -171,4 +171,42 @@ export class HRService {
   deleteDocument(...args: Parameters<HrDocumentService['deleteDocument']>) {
     return this.document.deleteDocument(...args);
   }
+
+  // ── Dashboard summary BFF ──
+
+  /**
+   * يُنفّذ إجازات + إقامات + سلف بالتوازي ويُعيد ملخصاً واحداً.
+   * يحلّ مشكلة "تغيّر الأرقام" في بطاقة ملخص الموارد البشرية.
+   */
+  async getDashboardSummary(companyId: string) {
+    const EXPIRY_DAYS = 90;
+    const currentYear = new Date().getFullYear();
+
+    const [leaves, residencies, advances] = await Promise.all([
+      this.leave.findLeaves(companyId, undefined, currentYear),
+      this.residency.findResidencies(companyId),
+      this.payroll.findAdvanceInvoices(companyId),
+    ]);
+
+    const now = new Date();
+    const expiringResidenciesCount = (residencies as any[]).filter((r) => {
+      const diff = (new Date(r.expiryDate).getTime() - now.getTime()) / 86_400_000;
+      return diff >= 0 && diff <= EXPIRY_DAYS;
+    }).length;
+
+    const outstandingAdvances = (advances as any[]).filter(
+      (a) => a.status !== 'cancelled' && Number(a.settledAmount ?? 0) < Number(a.totalAmount ?? 0),
+    );
+
+    return {
+      leavesCount: (leaves as any[]).length,
+      expiringResidenciesCount,
+      outstandingAdvancesCount: outstandingAdvances.length,
+      outstandingAdvancesAmount: outstandingAdvances.reduce(
+        (s: number, a: any) =>
+          s + Math.max(0, Number(a.totalAmount ?? 0) - Number(a.settledAmount ?? 0)),
+        0,
+      ),
+    };
+  }
 }

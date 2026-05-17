@@ -49,4 +49,10 @@ export const dashboardKeys = {
     ] as const,
 
   overviewRoot: () => ['dashboard-overview'] as const,
+
+  /** بيانات التقويم (أهداف + أيام خاصة + ملاحظات) */
+  calendar: (companyId: string, year: number, month: number) =>
+    ['dashboard-calendar', companyId, year, month] as const,
+
+  calendarRoot: () => ['dashboard-calendar'] as const,
 };
