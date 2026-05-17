@@ -15,7 +15,7 @@ import {
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
-import { Button, Input, Badge, ScreenShell, ScreenTitle } from '../../ui';
+import { Button, Input, Badge, ScreenShell, ScreenTitle, Modal } from '../../ui';
 
 // ─── أنواع ────────────────────────────────────────────────────────────────────
 interface ItemRow { productId: string; quantity: number; unit: string; }
@@ -125,6 +125,9 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const orderSummaryRef = useRef<HTMLDivElement>(null);
 
+  // نافذة اختيار الكمية
+  const [qtyModal, setQtyModal] = useState<{ product: any; qty: number; unit: string } | null>(null);
+
   // ─── تكرار الطلبات لترتيب ذكي ─────────────────────────────────
   const freqMap = useMemo(() => {
     const m = new Map<string, number>();
@@ -181,23 +184,33 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
   // ─── السلة كـ array للعرض ─────────────────────────────────────
   const basketItems = useMemo(() => Array.from(basket.values()), [basket]);
 
-  // ─── لمس الكرت: أضف 1 أو أنشئ ───────────────────────────────
+  // ─── لمس الكرت: إذا موجود → زد الكمية مباشرة، وإلا → افتح النافذة ───
   function tapProduct(product: any) {
-    const def = product.unit || 'piece';
+    const existing = basket.get(product.id);
+    if (existing) {
+      // زيادة الكمية مباشرة بدون نافذة
+      setBasket((prev) => {
+        const next = new Map(prev);
+        next.set(product.id, { ...existing, quantity: existing.quantity + 1 });
+        return next;
+      });
+    } else {
+      // افتح نافذة الكمية
+      setQtyModal({ product, qty: 1, unit: product.unit || 'piece' });
+    }
+  }
+
+  function confirmQtyModal() {
+    if (!qtyModal) return;
+    const { product, qty, unit } = qtyModal;
+    if (qty <= 0) { setQtyModal(null); return; }
     setBasket((prev) => {
       const next = new Map(prev);
-      const existing = next.get(product.id);
-      if (existing) {
-        next.set(product.id, { ...existing, quantity: existing.quantity + 1 });
-      } else {
-        next.set(product.id, { productId: product.id, quantity: 1, unit: def });
-      }
+      next.set(product.id, { productId: product.id, quantity: qty, unit });
       return next;
     });
-    // مرر للملخص أول مرة فقط
-    if (!basket.has(product.id)) {
-      setTimeout(() => orderSummaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
-    }
+    setQtyModal(null);
+    setTimeout(() => orderSummaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
   }
 
   function removeProduct(productId: string) {
@@ -522,6 +535,67 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
         <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
           {t('staffOrderNoOrders')}
         </div>
+      )}
+
+      {/* ── نافذة الكمية ── */}
+      {qtyModal && (
+        <Modal
+          open
+          onClose={() => setQtyModal(null)}
+          title={lang === 'en'
+            ? (qtyModal.product.nameEn || qtyModal.product.nameAr)
+            : (qtyModal.product.nameAr || qtyModal.product.nameEn)}
+          size="sm"
+        >
+          <div className="flex flex-col gap-5 p-1">
+            {/* عداد الكمية */}
+            <div className="flex flex-col gap-2">
+              <div className="text-[13px] text-noorix-muted text-center">{t('quantity')}</div>
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setQtyModal((m) => m ? { ...m, qty: Math.max(1, m.qty - 1) } : m)}
+                  className="w-10 h-10 rounded-full border-2 border-noorix-border text-noorix-text text-[22px] flex items-center justify-center hover:border-noorix-blue hover:text-noorix-blue transition-colors"
+                >−</button>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-20 h-12 text-center text-[22px] font-bold border-2 border-noorix-border rounded-xl bg-noorix-bg text-noorix-text focus:outline-none focus:border-noorix-blue"
+                  value={qtyModal.qty}
+                  onChange={(e) => setQtyModal((m) => m ? { ...m, qty: Math.max(1, Number(e.target.value) || 1) } : m)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setQtyModal((m) => m ? { ...m, qty: m.qty + 1 } : m)}
+                  className="w-10 h-10 rounded-full border-2 border-noorix-border text-noorix-text text-[22px] flex items-center justify-center hover:border-noorix-blue hover:text-noorix-blue transition-colors"
+                >+</button>
+              </div>
+            </div>
+
+            {/* الوحدة */}
+            <Input
+              type="select"
+              label={t('ordersUnit')}
+              value={qtyModal.unit}
+              onChange={(e: any) => setQtyModal((m) => m ? { ...m, unit: e.target.value } : m)}
+            >
+              <option value="piece">{t('ordersUnitPiece')}</option>
+              <option value="kg">{t('ordersUnitKg')}</option>
+              <option value="box">{t('ordersUnitBox')}</option>
+              <option value="dozen">{t('ordersUnitDozen')}</option>
+            </Input>
+
+            {/* أزرار */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <Button variant="ghost" size="md" onClick={() => setQtyModal(null)}>
+                {t('cancel')}
+              </Button>
+              <Button variant="success" size="md" onClick={confirmQtyModal}>
+                {t('staffOrderAddItem')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </ScreenShell>
   );

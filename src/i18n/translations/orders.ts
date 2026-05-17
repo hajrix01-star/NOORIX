@@ -57,6 +57,7 @@ export default {
   ordersProductUpdated: { ar: 'تم تحديث الصنف بنجاح', en: 'Product updated successfully' },
   ordersCategoryAdded: { ar: 'تمت إضافة الفئة بنجاح', en: 'Category added successfully' },
   ordersCategoryUpdated: { ar: 'تم تحديث الفئة بنجاح', en: 'Category updated successfully' },
+  ordersUnit:      { ar: 'الوحدة', en: 'Unit' },
   ordersUnitPiece: { ar: 'حبة', en: 'Piece' },
   ordersProductSize: { ar: 'الحجم', en: 'Size' },
   ordersProductSizes: { ar: 'الأحجام', en: 'Sizes' },
