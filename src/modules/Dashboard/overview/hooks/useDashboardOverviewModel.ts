@@ -1,9 +1,8 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { useReportsGeneralProfitLoss, usePeriodAnalytics } from '../../../../hooks/useReports';
-import { monthDateBounds } from '../../../../utils/reportDrillLinks';
+import { useDashboardOverview, type DashboardSummaryLike } from '../../../../hooks/useDashboardOverview';
 import { useDashboardSalesPack } from '../../../../hooks/useDashboardSalesPack';
-import { useDashboardInsights } from '../../hooks/useDashboardInsights';
+import { monthDateBounds } from '../../../../utils/reportDrillLinks';
 import { buildKpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
 import { EN_MONTHS } from '../../../Reports/reportHelpers';
 import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../../constants/kpiCardTheme';
@@ -57,7 +56,6 @@ export function useDashboardOverviewModel(
 ) {
   const { t, lang } = useTranslation();
   const uiDir = useUiDir();
-  const { data: report, isLoading, error } = useReportsGeneralProfitLoss({ companyId, year });
 
   const [timelineGrain, setTimelineGrain] = useState(() => (selectedMonth != null ? 'daily' : 'monthly'));
 
@@ -68,7 +66,6 @@ export function useDashboardOverviewModel(
   const [weeklyPanelYearB, setWeeklyPanelYearB] = useState(initPrev.year);
   const [weeklyPanelMonthB, setWeeklyPanelMonthB] = useState(initPrev.month);
 
-  /** عند اختيار شهر في لوحة التحكم: يُحدَّث العمود أ=ذلك الشهر والعمود ب=الشهر التقويمي السابق. */
   useEffect(() => {
     if (selectedMonth == null) return;
     setWeeklyPanelYearA(year);
@@ -98,7 +95,7 @@ export function useDashboardOverviewModel(
   const chartMonthForDaily =
     selectedMonth != null ? selectedMonth : year === saudiYM.year ? saudiYM.month : 1;
   const lastDayChart = lastDayOfMonth(year, chartMonthForDaily);
-  /** عند اختيار شهر: نحمّل دائماً الملخصات اليومية لذلك الشهر (أسابيع معزولة). */
+
   const dailyStartEffective =
     selectedMonth != null
       ? ymd(year, selectedMonth, 1)
@@ -121,6 +118,45 @@ export function useDashboardOverviewModel(
     return { start: ymd(year, selectedMonth, 1), end: ymd(year, selectedMonth, ld) };
   }, [year, selectedMonth]);
 
+  const { from: supplierFrom, to: supplierTo } = useMemo(
+    () => monthDateBounds(year, selectedMonth ?? null),
+    [year, selectedMonth],
+  );
+
+  // ─── طلب موحّد واحد: P&L + Sales Pack + Insights + Period Analytics ───
+  const {
+    data: overviewData,
+    isLoading,
+    isError,
+    error,
+  } = useDashboardOverview({
+    companyId,
+    year,
+    yearStart,
+    yearEnd,
+    periodStart: supplierFrom,
+    periodEnd: supplierTo,
+    dailyStart: dailyStartEffective,
+    dailyEnd: dailyEndEffective,
+    monthStart: monthSalesAvgBounds.start,
+    monthEnd: monthSalesAvgBounds.end,
+    selectedMonth,
+    includeCancelledSales: modelOptions?.includeCancelledSales === true,
+    enabled: !!companyId,
+  });
+
+  const report = overviewData.report;
+  const dailySummaries = overviewData.salesPack.dailySummaries;
+  const yearSummaries = overviewData.salesPack.yearSummaries;
+  const monthSalesForDailyAvg = overviewData.salesPack.monthSummaries;
+  const periodData = overviewData.periodData;
+
+  const kpiInsightFooters = useMemo(
+    () => buildKpiInsightFooterMap(overviewData.insights ?? undefined, isError, t, lang === 'ar'),
+    [overviewData.insights, isError, t, lang],
+  );
+
+  // ─── حزمتا المقارنة الأسبوعية — تبقيان منفصلتين لأنهما تفاعليتان ───
   const weeklyBoundsA = useMemo(() => {
     const ld = lastDayOfMonth(weeklyPanelYearA, weeklyPanelMonthA);
     return {
@@ -145,22 +181,6 @@ export function useDashboardOverviewModel(
     () => ({ yearStart: `${weeklyPanelYearB}-01-01`, yearEnd: `${weeklyPanelYearB}-12-31` }),
     [weeklyPanelYearB],
   );
-
-  const {
-    dailySummaries,
-    yearSummaries,
-    monthSummaries: monthSalesForDailyAvg,
-    isLoading: salesPackLoading,
-  } = useDashboardSalesPack({
-    companyId,
-    yearStart,
-    yearEnd,
-    dailyStart: dailyStartEffective,
-    dailyEnd: dailyEndEffective,
-    monthStart: monthSalesAvgBounds.start,
-    monthEnd: monthSalesAvgBounds.end,
-    enabled: !!companyId,
-  });
 
   const { dailySummaries: weeklyDailySummariesA, isLoading: weeklyPackALoading } = useDashboardSalesPack({
     companyId,
@@ -188,39 +208,6 @@ export function useDashboardOverviewModel(
     () => computeRevenueDailyAvgActiveDays(monthSalesForDailyAvg),
     [monthSalesForDailyAvg],
   );
-
-  const { from: supplierFrom, to: supplierTo } = useMemo(
-    () => monthDateBounds(year, selectedMonth ?? null),
-    [year, selectedMonth],
-  );
-
-  const insightsQuery = useDashboardInsights({
-    companyId,
-    year,
-    yearStart,
-    yearEnd,
-    dailyStart: dailyStartEffective,
-    dailyEnd: dailyEndEffective,
-    monthStart: monthSalesAvgBounds.start,
-    monthEnd: monthSalesAvgBounds.end,
-    periodStart: supplierFrom,
-    periodEnd: supplierTo,
-    selectedMonth: selectedMonth ?? undefined,
-    includeCancelledSales: modelOptions?.includeCancelledSales === true,
-    enabled: !!companyId,
-  });
-
-  const kpiInsightFooters = useMemo(
-    () => buildKpiInsightFooterMap(insightsQuery.data, insightsQuery.isError, t, lang === 'ar'),
-    [insightsQuery.data, insightsQuery.isError, t, lang],
-  );
-
-  const { data: periodData, isLoading: isPeriodLoading } = usePeriodAnalytics({
-    companyId,
-    startDate: supplierFrom,
-    endDate: supplierTo,
-    enabled: !!companyId,
-  });
 
   const monthName = selectedMonth
     ? lang === 'ar'
@@ -396,15 +383,17 @@ export function useDashboardOverviewModel(
     uiDir,
     report,
     isLoading,
+    isError,
     error,
-    salesPackLoading,
+    // salesPackLoading محذوف — الآن مندمج في isLoading الموحّد
+    salesPackLoading: false,
     timelineGrain,
     setTimelineGrain,
     chartMonthForDaily,
     lastDayChart,
     supplierFrom,
     supplierTo,
-    isPeriodLoading,
+    isPeriodLoading: false,
     periodData,
     cards,
     performanceData,
@@ -423,9 +412,9 @@ export function useDashboardOverviewModel(
     pieColors: PIE_COLORS,
     kpiInsightFooters,
     dashboardInsights: {
-      data: insightsQuery.data,
-      isLoading: insightsQuery.isLoading,
-      isError: insightsQuery.isError,
+      data: overviewData.insights,
+      isLoading: false,
+      isError,
     },
     weeklyPanelYearA,
     setWeeklyPanelYearA,

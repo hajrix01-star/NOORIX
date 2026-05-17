@@ -36,6 +36,7 @@ import { BackupModule }         from './backup/backup.module';
 import { OcrInvoicesModule }   from './ocr-invoices/ocr-invoices.module';
 import { CompanyAssetsModule } from './company-assets/company-assets.module';
 import { VatPlanningModule } from './vat-planning/vat-planning.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { PermissionCacheModule } from './auth/permission-cache.service';
 import { TenantMiddleware }    from './common/tenant.middleware';
 import { JwtModule }           from '@nestjs/jwt';
@@ -88,6 +89,7 @@ import { getJwtSecret }        from './config/jwt.config';
     OcrInvoicesModule,
     CompanyAssetsModule,
     VatPlanningModule,
+    DashboardModule,
     JwtModule.register({ secret: getJwtSecret() }),
   ],
   controllers: [AppController],

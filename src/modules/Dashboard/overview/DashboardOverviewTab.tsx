@@ -16,7 +16,7 @@ export default function DashboardOverviewTab({ companyId, year, selectedMonth, f
     return <div className="p-8 text-center text-noorix-muted">{t('pleaseSelectCompany')}</div>;
   }
 
-  if (m.isLoading || m.salesPackLoading) {
+  if (m.isLoading) {
     return <DashboardOverviewKpiSkeleton />;
   }
 
