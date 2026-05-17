@@ -1,8 +1,8 @@
 /**
  * StaffOrdersView — واجهة الموظف لإرسال طلبات القسم
- * جوال أولاً 100%، بحث ذكي في الأصناف، بدون تعقيد
+ * تجربة POS: شبكة كروت، ضغطة تضيف للطلب، ملخص أسفل الشاشة
  */
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
@@ -17,6 +17,9 @@ import {
 } from '../../hooks/useOrders';
 import { Button, Input, Badge, ScreenShell, ScreenTitle } from '../../ui';
 
+// ─── أنواع ────────────────────────────────────────────────────────────────────
+interface ItemRow { productId: string; quantity: number; unit: string; }
+
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
   return (
@@ -26,117 +29,81 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-interface ItemRow {
-  productId: string;
-  quantity: string;
-  unit: string;
-}
-
-// ── مكوّن بحث الأصناف ─────────────────────────────────────────────
-interface ProductSearchProps {
-  value: string;
-  products: any[];
-  freqMap: Map<string, number>;
+// ─── كرت صنف واحد ─────────────────────────────────────────────────────────────
+function ProductCard({
+  product,
+  lang,
+  qty,
+  freqCount,
+  onTap,
+  onRemove,
+  onQtyChange,
+}: {
+  product: any;
   lang: string;
-  placeholder: string;
-  onChange: (productId: string, unit: string) => void;
-}
+  qty: number;
+  freqCount: number;
+  onTap: () => void;
+  onRemove: () => void;
+  onQtyChange: (v: number) => void;
+}) {
+  const name = lang === 'en'
+    ? (product.nameEn || product.nameAr)
+    : (product.nameAr || product.nameEn);
 
-function ProductSearchInput({ value, products, freqMap, lang, placeholder, onChange }: ProductSearchProps) {
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const selected = qty > 0;
 
-  // اسم الصنف المختار
-  const selectedProduct = products.find((p: any) => p.id === value);
-  const selectedLabel = selectedProduct
-    ? (lang === 'en' ? (selectedProduct.nameEn || selectedProduct.nameAr) : (selectedProduct.nameAr || selectedProduct.nameEn))
-    : '';
-
-  // فلترة + ترتيب ذكي
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    const list = q
-      ? products.filter((p: any) => {
-          const ar = (p.nameAr || '').toLowerCase();
-          const en = (p.nameEn || '').toLowerCase();
-          return ar.includes(q) || en.includes(q);
-        })
-      : [...products];
-    // ترتيب: الأكثر طلبًا أولاً
-    list.sort((a: any, b: any) => {
-      const fa = freqMap.get(a.id) ?? 0;
-      const fb = freqMap.get(b.id) ?? 0;
-      if (fb !== fa) return fb - fa;
-      const na = lang === 'en' ? (a.nameEn || a.nameAr) : (a.nameAr || a.nameEn);
-      const nb = lang === 'en' ? (b.nameEn || b.nameAr) : (b.nameAr || b.nameEn);
-      return na.localeCompare(nb);
-    });
-    return list.slice(0, 50);
-  }, [products, query, freqMap, lang]);
-
-  // إغلاق عند النقر خارج
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        setQuery('');
-      }
-    }
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
-
-  function handleSelect(p: any) {
-    onChange(p.id, p.unit || 'piece');
-    setQuery('');
-    setOpen(false);
-  }
-
-  function itemLabel(p: any): string {
-    return lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
-  }
+  // وحدات الصنف (قد يكون للصنف أكثر من وحدة في الاسم)
+  const unitHint = product.unit || '';
 
   return (
-    <div ref={wrapRef} className="relative w-full">
-      <input
-        className="w-full h-9 rounded-lg border border-noorix-border bg-noorix-surface px-2.5 text-[13px] text-noorix-text placeholder:text-noorix-muted focus:outline-none focus:ring-1 focus:ring-noorix-blue"
-        value={open ? query : selectedLabel}
-        placeholder={open ? placeholder : (selectedLabel || placeholder)}
-        onFocus={() => { setOpen(true); setQuery(''); }}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-      {open && (
-        <div className="absolute z-50 top-full start-0 end-0 mt-1 bg-noorix-surface border border-noorix-border rounded-lg shadow-lg overflow-hidden max-h-56 overflow-y-auto">
-          {filtered.length === 0 ? (
-            <div className="px-3 py-2 text-[12px] text-noorix-muted">—</div>
-          ) : (
-            filtered.map((p: any) => {
-              const freq = freqMap.get(p.id) ?? 0;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  className="w-full flex items-center justify-between px-3 py-2 text-[13px] hover:bg-noorix-bg-muted transition-colors text-start"
-                  onMouseDown={(e) => { e.preventDefault(); handleSelect(p); }}
-                >
-                  <span>{itemLabel(p)}</span>
-                  {freq > 0 && (
-                    <span className="text-[10px] text-noorix-blue font-bold bg-noorix-blue/10 rounded-full px-1.5 py-0.5 shrink-0">
-                      ×{freq}
-                    </span>
-                  )}
-                </button>
-              );
-            })
-          )}
+    <div
+      className={`relative rounded-xl border transition-all cursor-pointer select-none
+        ${selected
+          ? 'border-noorix-blue bg-blue-50 shadow-md ring-1 ring-noorix-blue/30'
+          : 'border-noorix-border bg-noorix-surface hover:border-noorix-blue/40 hover:shadow-sm'
+        }`}
+      onClick={onTap}
+    >
+      {/* × حذف */}
+      {selected && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          className="absolute top-1 start-1 z-10 w-5 h-5 rounded-full bg-noorix-red text-white text-[11px] flex items-center justify-center shadow leading-none"
+          aria-label="remove"
+        >
+          ×
+        </button>
+      )}
+
+      {/* شارة الكمية */}
+      {selected && (
+        <div
+          className="absolute top-1 end-1 z-10 min-w-[20px] h-5 px-1 rounded-full bg-noorix-blue text-white text-[11px] font-bold flex items-center justify-center shadow"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {qty}
         </div>
       )}
+
+      {/* محتوى الكرت */}
+      <div className="p-2.5 pt-5 text-center">
+        <div className={`text-[13px] font-semibold leading-snug ${selected ? 'text-noorix-blue' : 'text-noorix-text'}`}>
+          {name}
+        </div>
+        {unitHint && (
+          <div className="text-[11px] text-noorix-muted mt-0.5 capitalize">{unitHint}</div>
+        )}
+        {freqCount > 0 && !selected && (
+          <div className="text-[10px] text-noorix-blue/70 mt-0.5">×{freqCount}</div>
+        )}
+      </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────
+// ─── الشاشة الرئيسية ───────────────────────────────────────────────────────────
 export function StaffOrdersView({ companyId }: { companyId: string }) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
@@ -150,15 +117,15 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
 
   const [sectionName, setSectionName] = useState('');
   const [notes, setNotes] = useState('');
-  const [items, setItems] = useState<ItemRow[]>([]);
+  const [search, setSearch] = useState('');
+  // خريطة { productId → { quantity, unit } }
+  const [basket, setBasket] = useState<Map<string, ItemRow>>(new Map());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const orderSummaryRef = useRef<HTMLDivElement>(null);
 
-  // الصنف المحدد في حقل البحث (لم يُضَف بعد)
-  const [pickedId, setPickedId] = useState('');
-  const [pickedUnit, setPickedUnit] = useState('piece');
-
-  /** خريطة تكرار الأصناف من الطلبات السابقة */
+  // ─── تكرار الطلبات لترتيب ذكي ─────────────────────────────────
   const freqMap = useMemo(() => {
     const m = new Map<string, number>();
     for (const o of myOrders as any[]) {
@@ -169,99 +136,132 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     return m;
   }, [myOrders]);
 
-  /** اسم القسم بلغة الواجهة */
-  function sectionLabel(s: any): string {
-    return lang === 'en' ? (s.nameEn || s.nameAr) : (s.nameAr || s.nameEn);
-  }
-
-  /** الأصناف المفلترة حسب القسم المختار */
-  const products = useMemo(() => {
-    if (!sectionName) return allProducts;
-    return (allProducts as any[]).filter((p: any) => {
-      const secs = p.sections as string[] | null;
-      return Array.isArray(secs) && secs.length > 0 && secs.includes(sectionName);
-    });
-  }, [allProducts, sectionName]);
-
+  // ─── خريطة id → product ──────────────────────────────────────
   const productsById = useMemo(() => {
     const m = new Map<string, any>();
     (allProducts as any[]).forEach((p: any) => m.set(p.id, p));
     return m;
   }, [allProducts]);
 
-  /** إضافة الصنف المحدد إلى القائمة (أو زيادة كميته إن كان موجوداً) */
-  function commitPicked() {
-    if (!pickedId) return;
-    setItems((prev) => {
-      const existing = prev.findIndex((r) => r.productId === pickedId);
-      if (existing >= 0) {
-        // زيادة الكمية بـ 1
-        const next = [...prev];
-        const qty = parseFloat(next[existing].quantity) || 0;
-        next[existing] = { ...next[existing], quantity: String(qty + 1) };
-        return next;
-      }
-      return [...prev, { productId: pickedId, quantity: '1', unit: pickedUnit }];
+  // ─── اسم القسم حسب اللغة ──────────────────────────────────────
+  function sectionLabel(s: any) {
+    return lang === 'en' ? (s.nameEn || s.nameAr) : (s.nameAr || s.nameEn);
+  }
+
+  // ─── أصناف القسم مفلترة + مرتبة ذكياً ───────────────────────
+  const products = useMemo(() => {
+    let list = sectionName
+      ? (allProducts as any[]).filter((p: any) => {
+          const secs = p.sections as string[] | null;
+          return Array.isArray(secs) && secs.length > 0 && secs.includes(sectionName);
+        })
+      : (allProducts as any[]);
+
+    // فلتر بحث
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p: any) => {
+        const ar = (p.nameAr || '').toLowerCase();
+        const en = (p.nameEn || '').toLowerCase();
+        return ar.includes(q) || en.includes(q);
+      });
+    }
+
+    // ترتيب: المطلوب كثيراً أولاً
+    return [...list].sort((a: any, b: any) => {
+      const fa = freqMap.get(a.id) ?? 0;
+      const fb = freqMap.get(b.id) ?? 0;
+      if (fb !== fa) return fb - fa;
+      const na = lang === 'en' ? (a.nameEn || a.nameAr) : (a.nameAr || a.nameEn);
+      const nb = lang === 'en' ? (b.nameEn || b.nameAr) : (b.nameAr || b.nameEn);
+      return na.localeCompare(nb);
     });
-    setPickedId('');
-    setPickedUnit('piece');
+  }, [allProducts, sectionName, search, freqMap, lang]);
+
+  // ─── السلة كـ array للعرض ─────────────────────────────────────
+  const basketItems = useMemo(() => Array.from(basket.values()), [basket]);
+
+  // ─── لمس الكرت: أضف 1 أو أنشئ ───────────────────────────────
+  function tapProduct(product: any) {
+    const def = product.unit || 'piece';
+    setBasket((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(product.id);
+      if (existing) {
+        next.set(product.id, { ...existing, quantity: existing.quantity + 1 });
+      } else {
+        next.set(product.id, { productId: product.id, quantity: 1, unit: def });
+      }
+      return next;
+    });
+    // مرر للملخص أول مرة فقط
+    if (!basket.has(product.id)) {
+      setTimeout(() => orderSummaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+    }
   }
 
-  function removeItemRow(idx: number) {
-    setItems((prev) => prev.filter((_, i) => i !== idx));
+  function removeProduct(productId: string) {
+    setBasket((prev) => { const next = new Map(prev); next.delete(productId); return next; });
   }
 
-  function updateItemRow(idx: number, field: keyof ItemRow, value: string) {
-    setItems((prev) => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], [field]: value };
+  function setQty(productId: string, qty: number) {
+    if (qty <= 0) { removeProduct(productId); return; }
+    setBasket((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(productId);
+      if (existing) next.set(productId, { ...existing, quantity: qty });
       return next;
     });
   }
 
+  function setUnit(productId: string, unit: string) {
+    setBasket((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(productId);
+      if (existing) next.set(productId, { ...existing, unit });
+      return next;
+    });
+  }
+
+  // ─── إعادة الضبط ──────────────────────────────────────────────
   function resetForm() {
     setSectionName('');
     setNotes('');
-    setItems([]);
-    setPickedId('');
-    setPickedUnit('piece');
+    setSearch('');
+    setBasket(new Map());
     setEditingId(null);
+    setEditingQtyId(null);
   }
 
   function loadForEdit(order: any) {
     setSectionName(order.sectionName || '');
     setNotes(order.notes || '');
-    setItems(
-      (order.items || []).map((it: any) => ({
-        productId: it.productId || '',
-        quantity: String(it.quantity ?? '1'),
-        unit: it.unit || 'piece',
-      })),
-    );
-    setPickedId('');
-    setPickedUnit('piece');
+    setSearch('');
+    const m = new Map<string, ItemRow>();
+    for (const it of (order.items || [])) {
+      m.set(it.productId, { productId: it.productId, quantity: Number(it.quantity) || 1, unit: it.unit || 'piece' });
+    }
+    setBasket(m);
     setEditingId(order.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // ─── إرسال ────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     if (!sectionName) { showToast(t('staffOrderSectionRequired'), 'error'); return; }
-    const validItems = items.filter((it) => it.productId && parseFloat(it.quantity) > 0);
-    if (!validItems.length) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
-
+    if (basket.size === 0) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
     setSubmitting(true);
     try {
       const payload = {
         companyId,
         sectionName,
         notes: notes.trim() || undefined,
-        items: validItems.map((it) => ({
+        items: basketItems.map((it) => ({
           productId: it.productId,
-          quantity: it.quantity,
+          quantity: String(it.quantity),
           unit: it.unit || undefined,
         })),
       };
-
       if (editingId) {
         await updateOrder.mutateAsync({ id: editingId, body: payload });
         showToast(t('staffOrderUpdated'), 'success');
@@ -275,7 +275,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     } finally {
       setSubmitting(false);
     }
-  }, [sectionName, notes, items, editingId, companyId]);
+  }, [sectionName, notes, basket, basketItems, editingId, companyId]);
 
   const handleDelete = useCallback(async (order: any) => {
     if (!window.confirm(t('staffOrderDeleteConfirm'))) return;
@@ -290,125 +290,167 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
   const pendingOrders = useMemo(() => (myOrders as any[]).filter((o: any) => o.status === 'pending'), [myOrders]);
   const sentOrders   = useMemo(() => (myOrders as any[]).filter((o: any) => o.status === 'sent'),    [myOrders]);
 
+  // ─── واجهة ────────────────────────────────────────────────────
   return (
     <ScreenShell>
       <ScreenTitle>{t('staffOrdersTitle')}</ScreenTitle>
 
-      {/* ── نموذج الإضافة/التعديل ── */}
-      <div className="noorix-surface-card p-4 flex flex-col gap-3">
-        <div className="text-[14px] font-bold text-noorix-text">
-          {editingId ? t('staffOrderEdit') : t('staffOrderNew')}
-        </div>
+      {/* ── اختيار القسم ── */}
+      <Input
+        type="select"
+        label={t('staffOrderSection')}
+        value={sectionName}
+        onChange={(e: any) => {
+          setSectionName(e.target.value);
+          setBasket(new Map());
+          setSearch('');
+        }}
+      >
+        <option value="">{t('staffOrderSectionPlaceholder')}</option>
+        {(sections as any[]).map((s: any) => (
+          <option key={s.id} value={s.nameAr}>{sectionLabel(s)}</option>
+        ))}
+      </Input>
 
-        {/* القسم — قائمة منسدلة */}
-        <Input
-          type="select"
-          label={t('staffOrderSection')}
-          value={sectionName}
-          onChange={(e: any) => {
-            setSectionName(e.target.value);
-            setItems([{ productId: '', quantity: '', unit: '' }]);
-          }}
+      {/* ── بحث ── */}
+      <div className="relative">
+        <svg
+          className="absolute start-3 top-1/2 -translate-y-1/2 text-noorix-muted"
+          width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
         >
-          <option value="">{t('staffOrderSectionPlaceholder')}</option>
-          {(sections as any[]).map((s: any) => (
-            <option key={s.id} value={s.nameAr}>
-              {sectionLabel(s)}
-            </option>
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          className="w-full h-9 rounded-xl border border-noorix-border bg-noorix-surface ps-9 pe-3 text-[13px] text-noorix-text placeholder:text-noorix-muted focus:outline-none focus:ring-1 focus:ring-noorix-blue"
+          placeholder={t('staffOrderSearchProduct')}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* ── شبكة الكروت ── */}
+      {products.length > 0 ? (
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+          {products.map((p: any) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              lang={lang}
+              qty={basket.get(p.id)?.quantity ?? 0}
+              freqCount={freqMap.get(p.id) ?? 0}
+              onTap={() => tapProduct(p)}
+              onRemove={() => removeProduct(p.id)}
+              onQtyChange={(v) => setQty(p.id, v)}
+            />
           ))}
-        </Input>
-
-        {/* ── بحث + زر إضافة ── */}
-        <div className="flex flex-col gap-1.5">
-          <div className="text-[12px] font-semibold text-noorix-muted">{t('staffOrderItems')}</div>
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <ProductSearchInput
-                value={pickedId}
-                products={products as any[]}
-                freqMap={freqMap}
-                lang={lang}
-                placeholder={t('staffOrderSearchProduct')}
-                onChange={(pid, unit) => { setPickedId(pid); setPickedUnit(unit); }}
-              />
-            </div>
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={commitPicked}
-              disabled={!pickedId}
-            >
-              + {t('staffOrderAddItem')}
-            </Button>
-          </div>
         </div>
+      ) : (
+        sectionName && (
+          <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[13px]">
+            {t('staffOrderNoProducts')}
+          </div>
+        )
+      )}
 
-        {/* ── قائمة الأصناف المضافة ── */}
-        {items.length > 0 && (
-          <div className="flex flex-col gap-1 rounded-xl border border-noorix-border overflow-hidden">
-            {items.map((row, idx) => {
+      {/* ── ملخص الطلب ── */}
+      {basket.size > 0 && (
+        <div ref={orderSummaryRef} className="noorix-surface-card overflow-hidden">
+          <div className="px-4 py-3 border-b border-noorix-border flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span className="text-[14px] font-bold">{t('staffOrderBasket')} ({basket.size})</span>
+          </div>
+
+          <div className="divide-y divide-noorix-border">
+            {basketItems.map((row) => {
               const p = productsById.get(row.productId);
               const name = p
                 ? (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn))
                 : row.productId;
+              const isEditingQty = editingQtyId === row.productId;
               return (
-                <div
-                  key={row.productId}
-                  className="flex items-center gap-2 px-3 py-2 bg-noorix-surface border-b border-noorix-border last:border-b-0"
-                >
-                  <span className="flex-1 text-[13px] text-noorix-text truncate">{name}</span>
-                  {/* كمية */}
-                  <input
-                    type="number"
-                    min="1"
-                    className="w-16 h-8 rounded-lg border border-noorix-border bg-noorix-bg text-[13px] text-center text-noorix-text focus:outline-none focus:ring-1 focus:ring-noorix-blue"
-                    value={row.quantity}
-                    onChange={(e) => updateItemRow(idx, 'quantity', e.target.value)}
-                  />
+                <div key={row.productId} className="flex items-center gap-2 px-4 py-2.5">
+                  <span className="flex-1 text-[13px] text-noorix-text">{name}</span>
+
+                  {/* عداد الكمية */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setQty(row.productId, row.quantity - 1)}
+                      className="w-7 h-7 rounded-full border border-noorix-border text-noorix-text text-[16px] flex items-center justify-center hover:bg-noorix-bg-muted"
+                    >−</button>
+                    {isEditingQty ? (
+                      <input
+                        autoFocus
+                        type="number"
+                        min="1"
+                        className="w-10 h-7 text-center text-[13px] border border-noorix-blue rounded-lg bg-noorix-bg focus:outline-none"
+                        value={row.quantity}
+                        onChange={(e) => setQty(row.productId, Number(e.target.value))}
+                        onBlur={() => setEditingQtyId(null)}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setEditingQtyId(row.productId)}
+                        className="w-8 h-7 text-center text-[13px] font-bold text-noorix-blue hover:underline"
+                      >{row.quantity}</button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setQty(row.productId, row.quantity + 1)}
+                      className="w-7 h-7 rounded-full border border-noorix-border text-noorix-text text-[16px] flex items-center justify-center hover:bg-noorix-bg-muted"
+                    >+</button>
+                  </div>
+
                   {/* وحدة */}
                   <select
-                    className="h-8 rounded-lg border border-noorix-border bg-noorix-bg px-1.5 text-[12px] text-noorix-text"
+                    className="h-7 rounded-lg border border-noorix-border bg-noorix-bg px-1 text-[11px] text-noorix-text"
                     value={row.unit}
-                    onChange={(e) => updateItemRow(idx, 'unit', e.target.value)}
+                    onChange={(e) => setUnit(row.productId, e.target.value)}
                   >
                     <option value="piece">{t('ordersUnitPiece')}</option>
                     <option value="kg">{t('ordersUnitKg')}</option>
                     <option value="box">{t('ordersUnitBox')}</option>
                     <option value="dozen">{t('ordersUnitDozen')}</option>
                   </select>
+
                   {/* حذف */}
                   <button
                     type="button"
-                    onClick={() => removeItemRow(idx)}
-                    className="text-noorix-red text-[18px] leading-none px-0.5 flex-shrink-0 hover:opacity-70"
-                    aria-label={t('delete')}
-                  >
-                    ×
-                  </button>
+                    onClick={() => removeProduct(row.productId)}
+                    className="text-noorix-red text-[16px] px-0.5 hover:opacity-70"
+                    aria-label="remove"
+                  >×</button>
                 </div>
               );
             })}
           </div>
-        )}
 
-        {/* ملاحظات */}
-        <Input
-          label={t('notes')}
-          value={notes}
-          onChange={(e: any) => setNotes(e.target.value)}
-          placeholder={t('optional')}
-        />
+          {/* ملاحظات */}
+          <div className="px-4 pb-3 pt-2">
+            <Input
+              label={t('notes')}
+              value={notes}
+              onChange={(e: any) => setNotes(e.target.value)}
+              placeholder={t('optional')}
+            />
+          </div>
 
-        {/* أزرار */}
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="primary" size="md" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? t('saving') : editingId ? t('save') : t('staffOrderSubmit')}
-          </Button>
-          {editingId && (
-            <Button size="md" variant="ghost" onClick={resetForm}>{t('cancel')}</Button>
-          )}
+          {/* أزرار الإرسال */}
+          <div className="px-4 pb-4 grid grid-cols-2 gap-2">
+            <Button variant="ghost" size="md" onClick={resetForm} disabled={submitting}>
+              {t('cancel')}
+            </Button>
+            <Button variant="primary" size="md" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? t('saving') : editingId ? t('staffOrderUpdate') : t('staffOrderSubmit')}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── طلباتي المعلّقة ── */}
       {pendingOrders.length > 0 && (
@@ -431,15 +473,16 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
                   </div>
                 </div>
                 <div className="text-[11px] text-noorix-muted">{formatSaudiDate(o.createdAt)}</div>
-                <div className="grid grid-cols-1 gap-1">
+                <div className="flex flex-col gap-1">
                   {(o.items || []).map((it: any, i: number) => {
                     const p = it.product;
-                    const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
-                    const unit = it.unit ? ` ${it.unit}` : '';
+                    const name = lang === 'en'
+                      ? (p?.nameEn || p?.nameAr || '—')
+                      : (p?.nameAr || p?.nameEn || '—');
                     return (
                       <div key={i} className="flex justify-between text-[13px]">
                         <span className="text-noorix-text">{name}</span>
-                        <span className="font-semibold nx-font-numbers">{fmt(it.quantity, 0)}{unit}</span>
+                        <span className="font-semibold nx-font-numbers">{fmt(it.quantity, 0)} {it.unit || ''}</span>
                       </div>
                     );
                   })}
@@ -475,7 +518,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
         </div>
       )}
 
-      {!isLoading && (myOrders as any[]).length === 0 && (
+      {!isLoading && (myOrders as any[]).length === 0 && basket.size === 0 && (
         <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
           {t('staffOrderNoOrders')}
         </div>
