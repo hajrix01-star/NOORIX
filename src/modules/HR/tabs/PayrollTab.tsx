@@ -20,7 +20,7 @@ import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, Input, ScreenShell, Modal , FmtNum, SmartTable } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, Modal, FmtNum, KebabMenu, SmartTable } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -299,6 +299,41 @@ export default function PayrollTab() {
     );
   }, [payrollStatusMap, payrollRunBadgeProps, t, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll]);
 
+  const renderCompactRow = useCallback((row: any) => {
+    const isDraft = String(row.status || '').toLowerCase() === 'draft';
+    const isCompleted = String(row.status || '').toLowerCase() === 'completed';
+    const canPay = isCompleted && !row.issuedInvoiceNumber;
+    return (
+      <div>
+        <div className="nx-cr__line1">
+          <span className="nx-cr__id">{row.runNumber}</span>
+          <span className="nx-cr__sub">{row.month}</span>
+          <Badge {...payrollRunBadgeProps(row)} size="sm" />
+        </div>
+        <div className="nx-cr__line2">
+          <div className="nx-cr__line2-start">
+            <span className="nx-cr__meta">{t('payrollGross')}: <span className="text-noorix-text">{hrFmt(row.grossTotal)}</span></span>
+          </div>
+          <div className="nx-cr__line2-end">
+            <span className="nx-cr__amount text-noorix-green">{hrFmt(row.netTotal)} <span className="nx-sar">SR</span></span>
+            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+              <KebabMenu
+                ariaLabel={t('actions')}
+                items={[
+                  { key: 'view', label: t('view'), onClick: () => setDetailRunId(row.id) },
+                  ...(isDraft ? [{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingRunId(row.id) }] : []),
+                  ...(isDraft ? [{ key: 'approve', label: t('payrollApprove'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => updateStatusMutation.mutate({ id: row.id, status: 'completed' }) }] : []),
+                  ...(canPay ? [{ key: 'pay', label: t('payrollPay'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openPayModal(row) }] : []),
+                  ...(canDeletePayroll ? [{ key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDeletePayrollRun(row) }] : []),
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, [t, payrollRunBadgeProps, updateStatusMutation, handleDeletePayrollRun, openPayModal, canDeletePayroll, setDetailRunId, setEditingRunId]);
+
   function handleExportExcel() {
     exportToExcel(exportData, `payroll-runs-${year}.xlsx`);
   }
@@ -369,6 +404,7 @@ export default function PayrollTab() {
         onSort={toggleSort}
         footerCells={footerCells}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={renderCompactRow}
         renderMobileCard={renderMobileCard}
         stripeMobileCards
       />

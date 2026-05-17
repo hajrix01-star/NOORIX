@@ -15,7 +15,7 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell, SmartTable } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, KebabMenu, SmartTable } from '../../../ui';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
 
@@ -162,6 +162,38 @@ export default function ResidencyTab() {
     );
   }, [t, deleteMutation, residencyStatusMap]);
 
+  const renderCompactRow = useCallback((row: any) => {
+    const soon = isExpiringSoon(row.expiryDate);
+    return (
+      <div>
+        <div className="nx-cr__line1">
+          <span className="nx-cr__name">{row.employeeName}</span>
+          {row.iqamaNumber && <span className="nx-cr__sub ltr">{row.iqamaNumber}</span>}
+          <Badge {...Badge.fromStatus(residencyStatusKey(row.status), residencyStatusMap)} size="sm" />
+        </div>
+        <div className="nx-cr__line2">
+          <div className="nx-cr__line2-start">
+            <span className="nx-cr__meta ltr">{formatSaudiDate(row.issueDate)} → </span>
+            <span className="nx-cr__meta ltr" style={{ color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
+              {formatSaudiDate(row.expiryDate)}{soon && ' ⚠'}
+            </span>
+          </div>
+          <div className="nx-cr__line2-end">
+            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+              <KebabMenu
+                ariaLabel={t('actions')}
+                items={[
+                  { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingResidency(row) },
+                  { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => { if (window.confirm(t('deleteResidencyConfirm'))) deleteMutation.mutate(row.id); } },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, [t, deleteMutation, residencyStatusMap, setEditingResidency]);
+
   return (
     <ScreenShell>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
@@ -213,6 +245,7 @@ export default function ResidencyTab() {
         sortDir={sortDir}
         onSort={toggleSort}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={renderCompactRow}
         renderMobileCard={renderMobileCard}
         stripeMobileCards
       />

@@ -349,6 +349,50 @@ export function OrdersTab({
     [t, fmt, formatSaudiDate, cumulativeRemainingByOrderId],
   );
 
+  const renderCompactRow = useCallback(
+    (o: any) => {
+      const isExt = o.orderType === 'external';
+      const total = Number(o.totalAmount ?? 0);
+      const cumRem = cumulativeRemainingByOrderId?.[o.id];
+      return (
+        <div onClick={() => handleView(o)} style={{ cursor: 'pointer' }}>
+          <div className="nx-cr__line1">
+            <span className="nx-cr__id">#{o.orderNumber}</span>
+            <Badge color={isExt ? 'blue' : 'green'} size="sm">
+              {isExt ? t('orderTypeExternal') : t('orderTypeInternal')}
+            </Badge>
+            {cumRem != null && (
+              <Badge color={cumRem >= 0 ? 'green' : 'red'} size="sm">
+                {cumRem >= 0 ? '' : '−'}<FmtNum n={Math.abs(cumRem)} />
+              </Badge>
+            )}
+          </div>
+          <div className="nx-cr__line2">
+            <div className="nx-cr__line2-start">
+              <span className="nx-cr__meta">{formatSaudiDate(o.orderDate)}</span>
+              <span className="nx-cr__meta">{(o.items ?? []).length} {t('ordersTotalItems')}</span>
+            </div>
+            <div className="nx-cr__line2-end">
+              <span className="nx-cr__amount"><FmtNum n={total} /> <span className="nx-sar">SR</span></span>
+              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+                <KebabMenu
+                  ariaLabel={t('actions')}
+                  items={[
+                    { key: 'view', label: t('view'), onClick: () => handleView(o) },
+                    { key: 'wa', label: t('sendWhatsApp'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleWhatsApp(o) },
+                    { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => handleEdit(o) },
+                    { key: 'del', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDelete(o) },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    },
+    [t, formatSaudiDate, cumulativeRemainingByOrderId],
+  );
+
   function handleWhatsApp(order: any) {
     const text = encodeURIComponent(buildWhatsAppText(order, t));
     window.open(`https://wa.me/?text=${text}`, '_blank');
@@ -477,6 +521,7 @@ export function OrdersTab({
         page={1}
         pageSize={Math.max(filteredOrders.length, 1)}
         footerCells={ordersFooterCells}
+        renderCompactRow={renderCompactRow}
         renderMobileCard={ordersRenderMobileCard}
         stripeMobileCards
         badge={

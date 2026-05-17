@@ -102,6 +102,31 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={(row: any) => {
+          const pr = row.payrollRun;
+          const stPr = String(pr?.status || '').toLowerCase();
+          const payrollBadgeProps =
+            stPr === 'completed' && pr?.issuedSalaryInvoiceNumber
+              ? { color: 'green' as const, children: t('payrollPaid') }
+              : Badge.fromStatus(pr?.status, payrollRunStatusMap);
+          return (
+            <div>
+              <div className="nx-cr__line1">
+                <span className="nx-cr__id">{pr?.runNumber ?? '—'}</span>
+                <span className="nx-cr__sub">{formatSaudiDate(pr?.payrollMonth)}</span>
+                <Badge {...payrollBadgeProps} size="sm" />
+              </div>
+              <div className="nx-cr__line2">
+                <div className="nx-cr__line2-start">
+                  <span className="nx-cr__meta">{t('grossSalary')}: <FmtNum n={row.grossSalary} /></span>
+                </div>
+                <div className="nx-cr__line2-end">
+                  <span className="nx-cr__amount text-noorix-green"><FmtNum n={row.netSalary} /> <span className="nx-sar">SR</span></span>
+                </div>
+              </div>
+            </div>
+          );
+        }}
         renderMobileCard={(row: any) => {
           const pr = row.payrollRun;
           const stPr = String(pr?.status || '').toLowerCase();

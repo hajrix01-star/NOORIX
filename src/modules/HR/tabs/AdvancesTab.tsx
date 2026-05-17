@@ -17,7 +17,7 @@ import { useTableFilter } from '../../../hooks/useTableFilter';
 import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn, FmtNum, KebabMenu, SmartTable } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { hrKeys, invoiceKeys } from '../../../services/queryKeys';
@@ -270,6 +270,40 @@ export default function AdvancesTab() {
     );
   }, [t, settlementMap]);
 
+  const renderCompactRow = useCallback((row: any) => {
+    const settled = row.settlementStatus === 'settled';
+    const canSettle = row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled';
+    return (
+      <div>
+        <div className="nx-cr__line1">
+          <span className={cn('nx-cr__name', settled && 'line-through text-noorix-muted')}>
+            {row.employeeName}
+          </span>
+          <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" />
+        </div>
+        <div className="nx-cr__line2">
+          <div className="nx-cr__line2-start">
+            <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
+          </div>
+          <div className="nx-cr__line2-end">
+            <span className="nx-cr__amount" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+              <FmtNum n={row.remainingAmount} /> <span className="nx-sar">SR</span>
+            </span>
+            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+              <KebabMenu
+                ariaLabel={t('actions')}
+                items={[
+                  { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingAdvance(row) },
+                  ...(canSettle ? [{ key: 'settle', label: t('settle'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => setSettlingAdvance(row) }] : []),
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, [t, settlementMap, setEditingAdvance, setSettlingAdvance]);
+
   return (
     <ScreenShell>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
@@ -331,6 +365,7 @@ export default function AdvancesTab() {
         onSort={toggleSort}
         footerCells={footerCells}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={renderCompactRow}
         renderMobileCard={renderMobileCard}
         stripeMobileCards
       />

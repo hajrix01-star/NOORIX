@@ -19,7 +19,7 @@ import { fmt, sumAmounts } from '../../utils/format';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
-import { Badge, Button, ScreenShell, FmtNum, cn, SmartTable } from '../../ui';
+import { Badge, Button, ScreenShell, FmtNum, cn, KebabMenu, SmartTable } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
 import { SalesEditModal } from './components/SalesEditModal';
@@ -524,6 +524,33 @@ export default function DailySalesScreen() {
     </div>
   ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang]);
 
+  const renderCompactRow = useCallback((row: any) => (
+    <div onClick={() => setEditingSummary(row)} style={{ cursor: 'pointer' }}>
+      <div className="nx-cr__line1">
+        <span className="nx-cr__id">#{row.summaryNumber}</span>
+        <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
+        <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
+      </div>
+      <div className="nx-cr__line2">
+        <div className="nx-cr__line2-start">
+          <span className="nx-cr__meta">{row.customerCount ?? 0} {t('customers')}</span>
+        </div>
+        <div className="nx-cr__line2-end">
+          <span className="nx-cr__amount text-noorix-green"><FmtNum n={row.totalAmount} /> <span className="nx-sar">SR</span></span>
+          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+            <KebabMenu
+              ariaLabel={t('actions')}
+              items={[
+                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingSummary(row) },
+                ...(row.status !== 'cancelled' ? [{ key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDeleteSummary(row) }] : []),
+              ]}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary]);
+
   return (
     <ScreenShell>
       {editingSummary && (
@@ -666,6 +693,7 @@ export default function DailySalesScreen() {
           sortDir={sortDir}
           onSort={toggleSort}
           emptyMessage={t('noSummariesInPeriod')}
+          renderCompactRow={renderCompactRow}
           renderMobileCard={renderMobileCard}
         />
       )}

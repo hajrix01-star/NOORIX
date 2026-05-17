@@ -1,5 +1,5 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
-import { Badge, SmartTable } from '../../../../ui';
+import { Badge, KebabMenu, SmartTable } from '../../../../ui';
 import { HRActionsCell } from '../HRActionsCell';
 import { TYPE_MAP } from './employeeProfileModel';
 
@@ -71,6 +71,27 @@ export function EmployeeProfileLeaveSection({
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={(row: any) => (
+          <div>
+            <div className="nx-cr__line1">
+              <span className="nx-cr__name">{t((TYPE_MAP as Record<string, string>)[String(row.leaveType)] || 'leaveOther')}</span>
+              <Badge {...Badge.fromStatus(row.status, leaveProfileStatusMap)} size="sm" />
+            </div>
+            <div className="nx-cr__line2">
+              <div className="nx-cr__line2-start">
+                <span className="nx-cr__meta ltr">{formatSaudiDate(row.startDate)} → {formatSaudiDate(row.endDate)}</span>
+              </div>
+              <div className="nx-cr__line2-end">
+                <span className="nx-cr__amount">{row.daysCount ?? '—'} {t('daysCount')}</span>
+                {canEditHrLeave && (
+                  <div className="nx-cr__kebab" onClick={(e: any) => e.stopPropagation()}>
+                    <KebabMenu ariaLabel={t('actions')} items={[{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEditLeave(row) }]} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">

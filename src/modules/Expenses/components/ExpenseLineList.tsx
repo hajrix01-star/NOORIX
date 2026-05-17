@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { fmt } from '../../../utils/format';
-import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum } from '../../../ui';
+import { Button, Badge, ScreenShell, cn, KebabMenu, SmartTable, FmtNum } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
@@ -248,6 +248,37 @@ export default function ExpenseLineList({
     </div>
   ), [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, formatKindWithCategory]);
 
+  const renderCompactRow = useCallback((row: any) => {
+    const { monthly, annual } = monthlyAnnualForExpenseLineRow(row);
+    return (
+      <div onClick={() => onLineClick(row)} style={{ cursor: 'pointer' }}>
+        <div className="nx-cr__line1">
+          <span className="nx-cr__name text-noorix-blue">{row.nameAr || row.nameEn || '—'}</span>
+          <Badge color={Badge.fromStatus(row.kind, kindBadgeMap).color} size="sm">
+            {formatKindWithCategory(row.kind, row.categoryName)}
+          </Badge>
+        </div>
+        <div className="nx-cr__line2">
+          <div className="nx-cr__line2-start">
+            {monthly != null && <span className="nx-cr__meta">{t('expenseLineListMonthlyAmount')}: <FmtNum n={monthly} /></span>}
+            {annual != null && <span className="nx-cr__meta">{t('expenseLineListAnnualAmount')}: <FmtNum n={annual} /></span>}
+          </div>
+          <div className="nx-cr__line2-end">
+            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+              <KebabMenu
+                ariaLabel={t('actions')}
+                items={[
+                  { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEditLine?.(row) },
+                  { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDeleteLine?.(row) },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, formatKindWithCategory]);
+
   function handlePrint() {
     const thMonthly = t('expenseLineListMonthlyAmount');
     const thAnnual = t('expenseLineListAnnualAmount');
@@ -326,6 +357,7 @@ export default function ExpenseLineList({
         showSearchInHeader={false}
         emptyMessage={t('expenseLinesEmptyState')}
         keyExtractor={(row: any) => row.id}
+        renderCompactRow={renderCompactRow}
         renderMobileCard={renderMobileCard}
         tableId="expense-lines"
         tableLayout="fixed"

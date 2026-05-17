@@ -21,7 +21,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, ScreenShell, Modal, Spinner, SmartTable } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
@@ -295,6 +295,39 @@ export default function LeaveTab() {
     );
   }, [t, deleteLeaveMutation]);
 
+  const renderCompactRow = useCallback((row: any) => (
+    <div>
+      <div className="nx-cr__line1">
+        <span className="nx-cr__name">{row.employeeName}</span>
+        <span className="nx-cr__sub">{t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
+        {row.salarySettlement && <Badge color="green" size="sm">{t('leaveSalarySettledBadge')}</Badge>}
+      </div>
+      <div className="nx-cr__line2">
+        <div className="nx-cr__line2-start">
+          <span className="nx-cr__meta ltr">{formatSaudiDate(row.startDate)} → {formatSaudiDate(row.endDate)}</span>
+        </div>
+        <div className="nx-cr__line2-end">
+          <span className="nx-cr__amount">{row.daysCount ?? '—'} {t('daysCount')}</span>
+          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+            <KebabMenu
+              ariaLabel={t('actions')}
+              items={[
+                ...(canShowLeaveReturnRow(row) ? [{ key: 'return', label: t('leaveReturnFromLeave'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => setReturnRow(row) }] : []),
+                ...(canShowSalarySettlement(row) ? [{ key: 'settle', label: t('leaveSalarySettlement'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setSettlementRow(row) }] : []),
+                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditLeave(row) },
+                { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => {
+                  if (!window.confirm(t('deleteLeaveConfirm'))) return;
+                  if (row.salarySettlement && !window.confirm(t('deleteLeaveVoidSettlementConfirm'))) return;
+                  deleteLeaveMutation.mutate({ id: row.id, voidSettlement: !!row.salarySettlement });
+                }},
+              ]}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  ), [t, deleteLeaveMutation, setReturnRow, setSettlementRow, setEditLeave, canShowLeaveReturnRow, canShowSalarySettlement]);
+
   return (
     <ScreenShell>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
@@ -342,6 +375,7 @@ export default function LeaveTab() {
         sortDir={sortDir}
         onSort={toggleSort}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={renderCompactRow}
         renderMobileCard={renderMobileCard}
         stripeMobileCards
       />

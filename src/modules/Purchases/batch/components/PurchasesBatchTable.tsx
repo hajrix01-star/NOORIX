@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Decimal from 'decimal.js';
-import { Button, Badge, SmartTable } from '../../../../ui';
+import { Button, Badge, KebabMenu, SmartTable } from '../../../../ui';
 import { formatSaudiDate, toYmd } from '../../../../utils/saudiDate';
 import { fmt } from '../../../../utils/format';
 import { PAGE_SIZE } from '../constants';
@@ -223,6 +223,41 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
     ],
   );
 
+  const renderCompactRow = useCallback(
+    (row: any) => {
+      const canCancel = row.status === 'active' || row.status === 'partial';
+      return (
+        <div>
+          <div className="nx-cr__line1">
+            <span className="nx-cr__id text-noorix-blue">{row.batchId}</span>
+            <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
+            <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />
+          </div>
+          <div className="nx-cr__line2">
+            <div className="nx-cr__line2-start">
+              {row.supplierNames && <span className="nx-cr__sub">{row.supplierNames}</span>}
+              {row.vaultName && <span className="nx-cr__meta">{row.vaultName}</span>}
+            </div>
+            <div className="nx-cr__line2-end">
+              <span className="nx-cr__amount">{fmt(row.totalAmount)} <span className="nx-sar">SR</span></span>
+              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+                <KebabMenu
+                  ariaLabel={t('actions')}
+                  items={[
+                    { key: 'print', label: t('print'), onClick: () => openBatchWithInvoices(row, setPrintingBatch), disabled: batchActionLoading === row.batchId },
+                    { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openBatchWithInvoices(row, setEditingBatch), disabled: batchActionLoading === row.batchId },
+                    ...(canCancel ? [{ key: 'cancel', label: t('cancel'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleCancelBatch(row, setEditingBatch), disabled: batchActionLoading === row.batchId }] : []),
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    },
+    [statusBadgeMap, t, batchActionLoading, openBatchWithInvoices, handleCancelBatch, dateFilter.startDate, dateFilter.endDate, setPrintingBatch, setEditingBatch],
+  );
+
   const renderBatchMobileCard = useCallback(
     (row: any) => {
       const canCancel = row.status === 'active' || row.status === 'partial';
@@ -359,6 +394,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       sortDir={sortDir}
       onSort={toggleSort}
       emptyMessage={t('noBatchesInPeriod')}
+      renderCompactRow={renderCompactRow}
       renderMobileCard={renderBatchMobileCard}
       stripeMobileCards
       stickyActionColumn={false}

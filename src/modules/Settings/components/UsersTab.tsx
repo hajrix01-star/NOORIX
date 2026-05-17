@@ -7,7 +7,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser, hardDeleteUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, Input, AdaptiveSheet, ScreenShell, SmartTable } from '../../../ui';
+import { Button, Badge, Input, AdaptiveSheet, ScreenShell, KebabMenu, SmartTable } from '../../../ui';
 import { settingsKeys } from '../../../services/queryKeys';
 
 /** الجزء المحلي من البريد الداخلي → اسم الدخول المعروض للمستخدم. */
@@ -289,6 +289,30 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
               ? t('usersArchivedHiddenEmpty')
               : t('noUsers')
           }
+          renderCompactRow={(row: any) => (
+            <div>
+              <div className="nx-cr__line1">
+                <span className="nx-cr__name">{row.nameAr || row.nameEn || row.email || '—'}</span>
+                <span className="nx-cr__sub ltr">{toLoginName(row.email)}</span>
+                <Badge color={row.isActive ? 'green' : 'red'} size="sm">
+                  {row.isActive ? t('active') : t('archived')}
+                </Badge>
+              </div>
+              <div className="nx-cr__line2">
+                <div className="nx-cr__line2-start">
+                  <span className="nx-cr__meta">{row.role?.nameAr || row.role?.name || '—'}</span>
+                </div>
+                <div className="nx-cr__line2-end">
+                  <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+                    <KebabMenu
+                      ariaLabel={t('actions')}
+                      items={[{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openEdit(row) }]}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           renderMobileCard={(row: any) => (
             <div className="grid gap-2 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">

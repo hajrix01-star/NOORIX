@@ -292,6 +292,24 @@ export function ItemsReportTab({
             <td style={{ padding: '8px 12px' }} />
           </>
         ) : null}
+        renderCompactRow={(r: any) => (
+          <div onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })} style={{ cursor: 'pointer' }}>
+            <div className="nx-cr__line1">
+              <span className="nx-cr__name text-noorix-blue">{r.productNameAr || r.productNameEn || '—'}</span>
+              {r.categoryNameAr && <span className="nx-cr__sub">{r.categoryNameAr}</span>}
+            </div>
+            <div className="nx-cr__line2">
+              <div className="nx-cr__line2-start">
+                <span className="nx-cr__meta">{t('quantity')}: {fmt(r.quantity ?? 0)}</span>
+                {r.unit && <span className="nx-cr__meta">{r.unit}</span>}
+                <span className="nx-cr__meta">{t('ordersOrderCount')}: {r.orderCount ?? 0}</span>
+              </div>
+              <div className="nx-cr__line2-end">
+                <span className="nx-cr__amount text-noorix-green"><FmtNum n={r.amount ?? 0} /> <span className="nx-sar">SR</span></span>
+              </div>
+            </div>
+          </div>
+        )}
         renderMobileCard={(r: any) => (
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-2">

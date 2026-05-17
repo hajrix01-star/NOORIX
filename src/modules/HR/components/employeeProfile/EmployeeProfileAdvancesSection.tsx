@@ -64,6 +64,22 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={(row: any) => (
+          <div>
+            <div className="nx-cr__line1">
+              <span className="nx-cr__amount text-noorix-green"><FmtNum n={row.totalAmount} /> <span className="nx-sar">SR</span></span>
+              <Badge {...Badge.fromStatus(row.status, advanceStatusMap)} size="sm" />
+            </div>
+            <div className="nx-cr__line2">
+              <div className="nx-cr__line2-start">
+                <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
+                {row.installmentCount > 1 && (
+                  <span className="nx-cr__meta text-noorix-blue ltr">{row.installmentCount} × {hrFmt(row.installmentAmount ?? 0)}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">

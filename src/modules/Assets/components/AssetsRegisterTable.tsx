@@ -171,6 +171,49 @@ export function AssetsRegisterTable({
     [lang, sumAll, t],
   );
 
+  const renderCompactRow = useCallback(
+    (row: AssetRegisterListItem) => (
+      <div>
+        <div className="nx-cr__line1">
+          <span className="nx-cr__name">{String(row.nameAr ?? '')}</span>
+          {row.serialNumber && <span className="nx-cr__sub ltr">{String(row.serialNumber)}</span>}
+          <Badge
+            {...Badge.fromStatus(String(row.warrantyStatus ?? 'none'), {
+              none: { color: 'gray', label: t('assetWarrantyNone') },
+              active: { color: 'green', label: t('assetWarrantyActive') },
+              expiring: { color: 'amber', label: t('assetWarrantyExpiring') },
+              expired: { color: 'red', label: t('assetWarrantyExpired') },
+            })}
+            size="sm"
+          />
+        </div>
+        <div className="nx-cr__line2">
+          <div className="nx-cr__line2-start">
+            <span className="nx-cr__meta ltr">{formatAssetDate(row.purchaseDate)}</span>
+            {row.warrantyEndDate && <span className="nx-cr__meta ltr">→ {formatAssetDate(row.warrantyEndDate)}</span>}
+          </div>
+          <div className="nx-cr__line2-end">
+            {row.acquisitionCost != null && (
+              <span className="nx-cr__amount text-noorix-green">{formatMoney(row.acquisitionCost, lang)} <span className="nx-sar">SR</span></span>
+            )}
+            {(canWrite || canDelete) && (
+              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+                <KebabMenu
+                  ariaLabel={t('actions')}
+                  items={[
+                    ...(canWrite ? [{ key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit(row) }] : []),
+                    ...(canDelete ? [{ key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDelete(row) }] : []),
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ),
+    [t, lang, canWrite, canDelete, onEdit, onDelete],
+  );
+
   const renderMobileCard = useCallback(
     (row: AssetRegisterListItem) => (
       <div className="flex flex-col gap-2 nx-mc__root">
@@ -233,6 +276,7 @@ export function AssetsRegisterTable({
       footerRow={footerRow}
       showSearchInHeader={false}
       emptyMessage={t('expenseLinesEmptyState')}
+      renderCompactRow={renderCompactRow}
       renderMobileCard={renderMobileCard}
       tableMinWidth={960}
     />

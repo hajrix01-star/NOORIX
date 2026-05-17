@@ -59,6 +59,21 @@ export function EmployeeProfileDocumentsSection({
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={(row: any) => (
+          <div>
+            <div className="nx-cr__line1">
+              <span className="nx-cr__name">{row.fileName || row.documentType || 'مستند'}</span>
+            </div>
+            <div className="nx-cr__line2">
+              <div className="nx-cr__line2-start" />
+              <div className="nx-cr__line2-end">
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Button size="sm" onClick={() => onDownload(row.id)}>{t('download')}</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div>

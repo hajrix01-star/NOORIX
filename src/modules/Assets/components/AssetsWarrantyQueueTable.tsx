@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { SmartTable, Button } from '../../../ui';
+import { SmartTable, Badge, Button, KebabMenu } from '../../../ui';
 import { formatMoney } from '../../../utils/money';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import type { PendingWarrantyInvoiceRow } from '../types';
@@ -95,6 +95,36 @@ export function AssetsWarrantyQueueTable({
     [canWrite, lang, onCompleteClick, t],
   );
 
+  const renderCompactRow = useCallback(
+    (row: PendingWarrantyInvoiceRow) => (
+      <div>
+        <div className="nx-cr__line1">
+          <span className="nx-cr__id text-noorix-blue">{String(row.invoiceNumber)}</span>
+          <span className="nx-cr__sub">{getInvoiceKindLabel(row.kind, t)}</span>
+          <span className="nx-cr__sub">{getSupplierDisplayName(row.supplier, lang)}</span>
+        </div>
+        <div className="nx-cr__line2">
+          <div className="nx-cr__line2-start">
+            <span className="nx-cr__meta ltr">{formatSaudiDate(row.transactionDate)}</span>
+            {row.expenseLine && <span className="nx-cr__meta">{getExpenseLineLabel(row.expenseLine, lang)}</span>}
+          </div>
+          <div className="nx-cr__line2-end">
+            <span className="nx-cr__amount text-noorix-green">{formatMoney(row.totalAmount, lang)} <span className="nx-sar">SR</span></span>
+            {canWrite && (
+              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+                <KebabMenu
+                  ariaLabel={t('actions')}
+                  items={[{ key: 'complete', label: t('warrantyQueueComplete'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onCompleteClick(row) }]}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ),
+    [canWrite, lang, onCompleteClick, t],
+  );
+
   const renderPendingMobileCard = useCallback(
     (row: PendingWarrantyInvoiceRow) => (
       <div className="flex flex-col gap-2 nx-mc__root">
@@ -146,6 +176,7 @@ export function AssetsWarrantyQueueTable({
       errorMessage=""
       showSearchInHeader={false}
       emptyMessage={t('warrantyQueueEmpty')}
+      renderCompactRow={renderCompactRow}
       renderMobileCard={renderPendingMobileCard}
       tableMinWidth={980}
     />

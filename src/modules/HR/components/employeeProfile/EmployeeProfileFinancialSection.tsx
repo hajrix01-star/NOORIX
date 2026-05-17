@@ -46,6 +46,22 @@ export function EmployeeProfileFinancialSection({ t, financialRecords }: any) {
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={(row: any) => (
+          <div>
+            <div className="nx-cr__line1">
+              <span className="nx-cr__name">{row.typeLabel}</span>
+              <span className="nx-cr__meta">{formatSaudiDate(row.date)}</span>
+            </div>
+            <div className="nx-cr__line2">
+              <div className="nx-cr__line2-start">
+                {row.notes && <span className="nx-cr__sub">{row.notes}</span>}
+              </div>
+              <div className="nx-cr__line2-end">
+                <span className="nx-cr__amount" style={{ color: row.amount < 0 ? 'var(--noorix-accent-red)' : undefined }}>{hrFmt(row.amount)} <span className="nx-sar">SR</span></span>
+              </div>
+            </div>
+          </div>
+        )}
         renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">

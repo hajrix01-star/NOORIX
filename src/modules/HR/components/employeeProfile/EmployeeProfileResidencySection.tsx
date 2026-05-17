@@ -43,6 +43,19 @@ export function EmployeeProfileResidencySection({ t, residencies, residencyProfi
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
+        renderCompactRow={(row: any) => (
+          <div>
+            <div className="nx-cr__line1">
+              <span className="nx-cr__id">{row.iqamaNumber || '—'}</span>
+              <Badge {...Badge.fromStatus(row.status, residencyProfileStatusMap)} size="sm" />
+            </div>
+            <div className="nx-cr__line2">
+              <div className="nx-cr__line2-start">
+                <span className="nx-cr__meta ltr">{formatSaudiDate(row.issueDate)} → {formatSaudiDate(row.expiryDate)}</span>
+              </div>
+            </div>
+          </div>
+        )}
         renderMobileCard={(row: any) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
