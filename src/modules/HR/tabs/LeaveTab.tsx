@@ -23,6 +23,7 @@ import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation'
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, Input, ScreenShell, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
 const PAGE_SIZE = 50;
@@ -73,14 +74,13 @@ export default function LeaveTab() {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: hrKeys.leavesForYear(companyId, year),
     queryFn: async () => {
       const res = await getLeaves(companyId, undefined, year);
-      if (!res?.success) return [];
+      throwIfApiFailed(res, 'فشل تحميل الإجازات');
       const d = res.data;
-      const arr = Array.isArray(d) ? d : (d?.items ?? []);
-      return arr;
+      return Array.isArray(d) ? d : (d?.items ?? []);
     },
     enabled: !!companyId,
   });
@@ -366,6 +366,7 @@ export default function LeaveTab() {
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
         isLoading={isLoading}
+        isError={isError}
         title={t('hrTabLeave')}
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
         searchValue={searchText}

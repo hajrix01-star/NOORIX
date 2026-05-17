@@ -1,8 +1,13 @@
 /**
  * IdempotencyService — منع تنفيذ نفس العملية مرتين
  *
- * يُستخدم مع processInflow عند تمرير idempotencyKey من الواجهة.
+ * يُستخدم مع processInflow/processOutflow/processTransfer عند تمرير idempotencyKey.
  * يُخزّن النتيجة بشكل آمن مع تحويل Decimal و Date إلى قيم قابلة للتسلسل.
+ *
+ * حل race condition:
+ *   يستخدم `inFlight` Map لتتبع العمليات الجارية في نفس العملية (process).
+ *   طلبان متزامنان بنفس المفتاح يشتركان في نفس الـ Promise → نتيجة واحدة، لا تكرار.
+ *   بعد انتهاء العملية تُخزَّن النتيجة في DB للطلبات المستقبلية.
  */
 import { Injectable } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -29,11 +34,53 @@ function serializeForStorage(obj: unknown): unknown {
 
 @Injectable()
 export class IdempotencyService {
+  /**
+   * تتبع العمليات الجارية داخل نفس العملية (process).
+   * المفتاح: `tenantId:companyId:keyHash` — القيمة: Promise مشترك بين الطلبات المتزامنة.
+   */
+  private readonly inFlight = new Map<string, Promise<unknown>>();
+
   constructor(private readonly prisma: TenantPrismaService) {}
 
   hashKey(operationType: string, payload: Record<string, unknown>): string {
     const str = `${operationType}:${JSON.stringify(payload)}`;
     return crypto.createHash('sha256').update(str).digest('hex');
+  }
+
+  /**
+   * التنفيذ الآمن مع ضمان عدم التكرار:
+   * 1. يتحقق من DB cache أولاً.
+   * 2. إن وُجد طلب جارٍ بنفس المفتاح → يُعيد نفس الـ Promise (لا تنفيذ ثانٍ).
+   * 3. ينفذ fn() مرة واحدة فقط ويخزن النتيجة في DB.
+   */
+  async withIdempotency<T>(
+    tenantId: string,
+    companyId: string,
+    keyHash: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    // فحص DB cache
+    const cached = await this.getCachedResult(tenantId, companyId, keyHash);
+    if (cached !== null) return cached as T;
+
+    // فحص العمليات الجارية داخل نفس العملية
+    const inFlightKey = `${tenantId}:${companyId}:${keyHash}`;
+    const existing = this.inFlight.get(inFlightKey);
+    if (existing) return existing as Promise<T>;
+
+    // تنفيذ العملية مع تسجيلها كجارية
+    const promise = (async (): Promise<T> => {
+      try {
+        const result = await fn();
+        await this.storeResult(tenantId, companyId, keyHash, result);
+        return result;
+      } finally {
+        this.inFlight.delete(inFlightKey);
+      }
+    })();
+
+    this.inFlight.set(inFlightKey, promise);
+    return promise;
   }
 
   async getCachedResult(
@@ -51,7 +98,6 @@ export class IdempotencyService {
   /**
    * حذف مفاتيح عدم التكرار المنتهية (expiresAt < now).
    * يُستدعى من Cron كل ساعة — يستخدم PrismaService لتجاوز RLS (تنظيف شامل).
-   * لا نطرح ساعات إضافية لأن expiresAt يمثل بالفعل حد انتهاء الصلاحية.
    */
   async cleanupExpiredKeys(prisma: { idempotencyKey: { deleteMany: (args: unknown) => Promise<{ count: number }> } }): Promise<number> {
     const result = await prisma.idempotencyKey.deleteMany({
@@ -72,17 +118,8 @@ export class IdempotencyService {
 
     await this.prisma.idempotencyKey.upsert({
       where: { companyId_keyHash: { companyId, keyHash } },
-      create: {
-        tenantId,
-        companyId,
-        keyHash,
-        resultJson: serialized,
-        expiresAt,
-      },
-      update: {
-        resultJson: serialized,
-        expiresAt,
-      },
+      create: { tenantId, companyId, keyHash, resultJson: serialized, expiresAt },
+      update: { resultJson: serialized, expiresAt },
     });
   }
 }

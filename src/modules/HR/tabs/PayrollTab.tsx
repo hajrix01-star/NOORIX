@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun } from '../../../services/api';
+import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun, throwIfApiFailed } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
@@ -64,11 +64,11 @@ export default function PayrollTab() {
   const { paymentVaults = [] } = useVaults({ companyId });
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: hrKeys.payrollRuns(companyId, year),
     queryFn: async () => {
       const res = await getPayrollRuns(companyId, year);
-      if (!res?.success) return [];
+      throwIfApiFailed(res, 'فشل تحميل مسيرات الرواتب');
       const raw = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
       return raw.map((run: any) => {
         const grossTotal = Array.isArray(run.items)
@@ -389,6 +389,7 @@ export default function PayrollTab() {
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
         isLoading={isLoading}
+        isError={isError}
         title={t('hrTabPayroll')}
         badge={
           <>

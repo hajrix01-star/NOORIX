@@ -34,32 +34,33 @@ export class FinancialOutflowService {
     const tenantId = this.support.resolveTenantId();
     if (dto.idempotencyKey) {
       const vaultSplitsSig =
-        dto.vaultSplits?.length ?
-          [...dto.vaultSplits].map((s) => `${s.vaultId}:${s.amount}`).sort().join('|')
-        : '';
+        dto.vaultSplits?.length
+          ? [...dto.vaultSplits].map((s) => `${s.vaultId}:${s.amount}`).sort().join('|')
+          : '';
       const keyHash = this.idempotency.hashKey('processOutflow', {
-        companyId:             dto.companyId,
-        kind:                  dto.kind,
-        totalAmount:           dto.totalAmount,
-        transactionDate:       dto.transactionDate,
-        supplierId:            dto.supplierId,
-        supplierInvoiceNumber: dto.supplierInvoiceNumber,
-        vaultId:               dto.vaultId,
+        companyId:                 dto.companyId,
+        kind:                      dto.kind,
+        totalAmount:               dto.totalAmount,
+        transactionDate:           dto.transactionDate,
+        supplierId:                dto.supplierId,
+        supplierInvoiceNumber:     dto.supplierInvoiceNumber,
+        vaultId:                   dto.vaultId,
         vaultSplitsSig,
-        employeeId:            dto.employeeId,
-        expenseLineId:         dto.expenseLineId,
-        expenseCoverageYear:   dto.expenseCoverageYear,
-        expenseCoverageQuarter: dto.expenseCoverageQuarter,
+        employeeId:                dto.employeeId,
+        expenseLineId:             dto.expenseLineId,
+        expenseCoverageYear:       dto.expenseCoverageYear,
+        expenseCoverageQuarter:    dto.expenseCoverageQuarter,
         expenseCoverageMonthStart: dto.expenseCoverageMonthStart,
-        expenseMonthsCovered: dto.expenseMonthsCovered,
-        warrantyFollowUp:     dto.warrantyFollowUp === true,
-        idempotencyKey:        dto.idempotencyKey,
+        expenseMonthsCovered:      dto.expenseMonthsCovered,
+        warrantyFollowUp:          dto.warrantyFollowUp === true,
+        idempotencyKey:            dto.idempotencyKey,
       });
-      const cached = await this.idempotency.getCachedResult(tenantId, dto.companyId, keyHash);
-      if (cached) return cached as Awaited<ReturnType<typeof this._processOutflowInner>>;
-      const result = await this.support.withRetry(async () => this._processOutflowInner(dto, callerUserId));
-      await this.idempotency.storeResult(tenantId, dto.companyId, keyHash, result);
-      return result;
+      return this.idempotency.withIdempotency(
+        tenantId,
+        dto.companyId,
+        keyHash,
+        () => this.support.withRetry(() => this._processOutflowInner(dto, callerUserId)),
+      ) as Promise<Awaited<ReturnType<typeof this._processOutflowInner>>>;
     }
     return this.support.withRetry(async () => this._processOutflowInner(dto, callerUserId));
   }

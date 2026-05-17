@@ -7,7 +7,7 @@ import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation'
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { createDeduction, getInvoices, updateInvoice } from '../../../services/api';
+import { createDeduction, getInvoices, updateInvoice, throwIfApiFailed } from '../../../services/api';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { sumAmounts } from '../../../utils/format';
@@ -39,11 +39,11 @@ export default function AdvancesTab() {
 
   const { createAdvance } = useEmployees(companyId, { includeTerminated: false });
 
-  const { data: rawAdvanceRows, isLoading } = useQuery({
+  const { data: rawAdvanceRows, isLoading, isError } = useQuery({
     queryKey: invoiceKeys.advancesForCompany(companyId),
     queryFn: async () => {
       const res = await getInvoices(companyId, undefined, undefined, 1, 500);
-      if (!res?.success) return [];
+      throwIfApiFailed(res, 'فشل تحميل السلف');
       const items = res.data?.items ?? [];
       return items.filter((inv: any) => inv.kind === 'advance').map((i: any) => ({
         ...i,
@@ -355,6 +355,7 @@ export default function AdvancesTab() {
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
         isLoading={isLoading}
+        isError={isError}
         title={t('hrTabAdvances')}
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
         searchValue={searchText}

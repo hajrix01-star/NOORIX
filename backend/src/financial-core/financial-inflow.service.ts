@@ -40,27 +40,19 @@ export class FinancialInflowService {
     const tenantId = this.support.resolveTenantId();
     if (dto.idempotencyKey) {
       const keyHash = this.idempotency.hashKey('processInflow', {
-        companyId: dto.companyId,
+        companyId:       dto.companyId,
         transactionDate: dto.transactionDate,
-        channels: dto.channels,
-        idempotencyKey: dto.idempotencyKey,
+        channels:        dto.channels,
+        idempotencyKey:  dto.idempotencyKey,
       });
-      const cached = await this.idempotency.getCachedResult(tenantId, dto.companyId, keyHash);
-      if (cached) return cached as Awaited<ReturnType<typeof this._processInflowInner>>;
+      return this.idempotency.withIdempotency(
+        tenantId,
+        dto.companyId,
+        keyHash,
+        () => this.support.withRetry(() => this._processInflowInner(dto, callerUserId)),
+      ) as Promise<Awaited<ReturnType<typeof this._processInflowInner>>>;
     }
-
-    const result = await this.support.withRetry(async () => this._processInflowInner(dto, callerUserId));
-
-    if (dto.idempotencyKey) {
-      const keyHash = this.idempotency.hashKey('processInflow', {
-        companyId: dto.companyId,
-        transactionDate: dto.transactionDate,
-        channels: dto.channels,
-        idempotencyKey: dto.idempotencyKey,
-      });
-      await this.idempotency.storeResult(tenantId, dto.companyId, keyHash, result);
-    }
-    return result;
+    return this.support.withRetry(async () => this._processInflowInner(dto, callerUserId));
   }
 
   private async _processInflowInner(dto: InflowDto, callerUserId?: string) {

@@ -16,6 +16,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, Input, ScreenShell, KebabMenu, SmartTable } from '../../../ui';
+import { throwIfApiFailed } from '../../../services/api';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
 
@@ -43,14 +44,13 @@ export default function ResidencyTab() {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: hrKeys.residencies(companyId),
     queryFn: async () => {
       const res = await getResidencies(companyId);
-      if (!res?.success) return [];
+      throwIfApiFailed(res, 'فشل تحميل الإقامات');
       const d = res.data;
-      const arr = Array.isArray(d) ? d : (d?.items ?? []);
-      return arr;
+      return Array.isArray(d) ? d : (d?.items ?? []);
     },
     enabled: !!companyId,
   });
@@ -231,6 +231,7 @@ export default function ResidencyTab() {
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
         isLoading={isLoading}
+        isError={isError}
         title={t('hrTabResidency')}
         badge={
           <>

@@ -38,11 +38,12 @@ export class FinancialTransferService {
         transactionDate: dto.transactionDate,
         idempotencyKey:  dto.idempotencyKey,
       });
-      const cached = await this.idempotency.getCachedResult(tenantId, dto.companyId, keyHash);
-      if (cached) return cached as Awaited<ReturnType<typeof this._processTransferInner>>;
-      const result = await this.support.withRetry(async () => this._processTransferInner(dto, callerUserId));
-      await this.idempotency.storeResult(tenantId, dto.companyId, keyHash, result);
-      return result;
+      return this.idempotency.withIdempotency(
+        tenantId,
+        dto.companyId,
+        keyHash,
+        () => this.support.withRetry(() => this._processTransferInner(dto, callerUserId)),
+      ) as Promise<Awaited<ReturnType<typeof this._processTransferInner>>>;
     }
     return this.support.withRetry(async () => this._processTransferInner(dto, callerUserId));
   }

@@ -2,12 +2,13 @@
  * CompanyAccessGuard — يتحقق أن المستخدم يملك صلاحية الوصول للشركة المطلوبة.
  *
  * ترتيب استخراج companyId (من الأعلى أولويةً) — **مطابق** `getCompanyIdFromHttpRequest`:
- *   POST/PUT/PATCH:  body.companyId → params → query → x-company-id
- *   GET/DELETE/…:  params → query → x-company-id (body غير مُعَدّ للشركة عادة)
+ *   POST/PUT/PATCH:  body.companyId → params (companyId | id) → query → x-company-id
+ *   GET/DELETE/…:   params (companyId | id) → query → x-company-id
  *
  * التحققات:
- *   - المستخدم مرتبط بالشركة (user.companyIds)
- *   - الشركة موجودة وتنتمي لـ tenant المستخدم (RLS)
+ *   1. المستخدم مرتبط بالشركة — يُقرأ من DB (مُخزَّن مؤقتاً 60 ثانية لكل مستخدم)
+ *      بدلاً من JWT فقط، للتغلب على مشكلة قِدَم companyIds في الـ token.
+ *   2. الشركة موجودة وتنتمي لـ tenant المستخدم (RLS).
  *
  * استثناءات: Endpoints مُعلَّمة بـ @SkipCompanyCheck() تمر دون فحص.
  */
@@ -18,8 +19,16 @@ import { TenantContext } from '../../common/tenant-context';
 import { isSuperAdmin }              from '../constants/permissions';
 import { SKIP_COMPANY_CHECK_KEY }    from '../decorators/skip-company-check.decorator';
 
+/** مدة صلاحية Cache عضوية الشركة لكل مستخدم (بالمللي ثانية) */
+const COMPANY_MEMBERSHIP_TTL_MS = 60_000;
+
+interface CacheEntry { companyIds: string[]; expiresAt: number }
+
 @Injectable()
 export class CompanyAccessGuard implements CanActivate {
+  /** Cache خفيف: userId → { companyIds, expiresAt } */
+  private readonly membershipCache = new Map<string, CacheEntry>();
+
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: TenantPrismaService,
@@ -42,13 +51,15 @@ export class CompanyAccessGuard implements CanActivate {
     const role = (user.role || '').toLowerCase();
     if (isSuperAdmin(role)) return true;
 
-    // ── استخراج companyId (بنفس منطق getCompanyIdFromHttpRequest) ─
+    // ── استخراج companyId ─────────────────────────────────
+    // يشمل params.id لمعالجة مسارات مثل GET /companies/:id (IDOR fix)
     const method = (request.method || '').toUpperCase();
     const readFromBody = method === 'POST' || method === 'PUT' || method === 'PATCH';
 
     const companyId: string =
       (readFromBody ? (request.body?.companyId as string) : undefined) ||
       (request.params?.companyId as string) ||
+      (request.params?.id        as string) ||   // ← يُغطي :id routes (مثل GET /companies/:id)
       (request.query?.companyId  as string) ||
       (request.headers?.['x-company-id'] as string) ||
       '';
@@ -60,14 +71,13 @@ export class CompanyAccessGuard implements CanActivate {
       );
     }
 
-    // ── هل المستخدم مرتبط بهذه الشركة؟ ───────────────────
-    const companyIds: string[] = user.companyIds || [];
-    if (!companyIds.includes(companyId)) {
+    // ── هل المستخدم مرتبط بهذه الشركة؟ (DB + Cache) ──────
+    const allowedIds = await this.resolveCompanyIds(user.sub ?? user.userId, user.companyIds);
+    if (!allowedIds.includes(companyId)) {
       throw new ForbiddenException('غير مصرح لك بالوصول لهذه الشركة.');
     }
 
     // ── هل الشركة موجودة وتنتمي لـ tenant المستخدم؟ ────────
-    // RLS يفلتر تلقائياً — إذا لم نجدها فالشركة إما غير موجودة أو في tenant آخر
     if (TenantContext.hasContext()) {
       const company = await this.prisma.company.findFirst({
         where: { id: companyId },
@@ -82,5 +92,30 @@ export class CompanyAccessGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  /**
+   * يجلب قائمة شركات المستخدم من DB مع Cache مدته 60 ثانية.
+   * هذا يحل مشكلة قِدَم companyIds في JWT دون إضافة ضغط على DB.
+   */
+  private async resolveCompanyIds(userId: string, jwtCompanyIds: string[] = []): Promise<string[]> {
+    if (!userId) return jwtCompanyIds;
+
+    const now = Date.now();
+    const cached = this.membershipCache.get(userId);
+    if (cached && cached.expiresAt > now) return cached.companyIds;
+
+    try {
+      const rows = await this.prisma.userCompany.findMany({
+        where: { userId },
+        select: { companyId: true },
+      });
+      const ids = rows.map((r) => r.companyId);
+      this.membershipCache.set(userId, { companyIds: ids, expiresAt: now + COMPANY_MEMBERSHIP_TTL_MS });
+      return ids;
+    } catch {
+      // fallback إلى JWT في حالة فشل قاعدة البيانات مؤقتاً
+      return jwtCompanyIds;
+    }
   }
 }
