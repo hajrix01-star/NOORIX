@@ -2,7 +2,7 @@
  * StaffOrdersView — واجهة الموظف لإرسال طلبات القسم
  * تجربة POS: شبكة كروت، ضغطة تضيف للطلب، ملخص أسفل الشاشة
  */
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
@@ -123,7 +123,6 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const orderSummaryRef = useRef<HTMLDivElement>(null);
 
   // نافذة اختيار الكمية
   const [qtyModal, setQtyModal] = useState<{ product: any; qty: number; unit: string } | null>(null);
@@ -210,7 +209,6 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
       return next;
     });
     setQtyModal(null);
-    setTimeout(() => orderSummaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
   }
 
   function removeProduct(productId: string) {
@@ -376,7 +374,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
 
       {/* ── ملخص الطلب ── */}
       {basket.size > 0 && (
-        <div ref={orderSummaryRef} className="noorix-surface-card overflow-hidden">
+        <div className="noorix-surface-card overflow-hidden">
           <div className="px-4 py-3 border-b border-noorix-border flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue">
               <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
