@@ -50,6 +50,16 @@ export class OrdersController {
     return this.staffService.getDigestHistory(companyId, days ? parseInt(days, 10) : 30);
   }
 
+  @Get('sales/report')
+  @RequireAnyPermission('VIEW_SALES', 'STAFF_ORDERS_DIGEST')
+  getSalesReport(
+    @CompanyId() companyId: string,
+    @Query('days') days?: string,
+  ) {
+    if (!companyId) return { summary: {}, byProduct: [], bySection: [], byUser: [], byDay: [] };
+    return this.staffService.getSalesReport(companyId, days ? parseInt(days, 10) : 30);
+  }
+
   @Post('staff')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
   createStaffOrder(@Body() body: any, @CurrentUser() user: any) {

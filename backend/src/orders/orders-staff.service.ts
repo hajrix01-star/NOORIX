@@ -254,4 +254,76 @@ export class OrdersStaffService {
 
     return { sent: orders.length, whatsAppText };
   }
+
+  /** تقرير المبيعات — orderType = 'sale' */
+  async getSalesReport(companyId: string, days = 30) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const orders = await this.prisma.staffOrder.findMany({
+      where: { companyId, orderType: 'sale', createdAt: { gte: since } },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        items: { include: { product: { include: { category: true } } } },
+        user: { select: { id: true, nameAr: true, nameEn: true } },
+      },
+    } as any);
+
+    let totalOrders = 0;
+    let totalQty = 0;
+    const byProduct: Record<string, { productId: string; nameAr: string; nameEn: string | null; qty: number; unit: string; sections: Set<string> }> = {};
+    const bySection: Record<string, { sectionName: string; qty: number; ordersCount: number }> = {};
+    const byUser: Record<string, { userId: string; nameAr: string; nameEn: string | null; ordersCount: number; qty: number }> = {};
+    const byDay: Record<string, { date: string; ordersCount: number; qty: number }> = {};
+
+    for (const o of orders as any[]) {
+      totalOrders++;
+      const day = o.createdAt.toISOString().slice(0, 10);
+
+      // بالقسم
+      if (!bySection[o.sectionName]) bySection[o.sectionName] = { sectionName: o.sectionName, qty: 0, ordersCount: 0 };
+      bySection[o.sectionName].ordersCount++;
+
+      // بالمستخدم
+      const uid = o.userId;
+      if (!byUser[uid]) byUser[uid] = { userId: uid, nameAr: o.user?.nameAr || '—', nameEn: o.user?.nameEn || null, ordersCount: 0, qty: 0 };
+      byUser[uid].ordersCount++;
+
+      // باليوم
+      if (!byDay[day]) byDay[day] = { date: day, ordersCount: 0, qty: 0 };
+      byDay[day].ordersCount++;
+
+      for (const it of o.items) {
+        const qty = Number(it.quantity);
+        totalQty += qty;
+        bySection[o.sectionName].qty += qty;
+        byUser[uid].qty += qty;
+        byDay[day].qty += qty;
+
+        const pid = it.productId;
+        if (!byProduct[pid]) {
+          byProduct[pid] = {
+            productId: pid,
+            nameAr: it.product?.nameAr || '—',
+            nameEn: it.product?.nameEn || null,
+            qty: 0,
+            unit: it.unit || it.product?.unit || '',
+            sections: new Set(),
+          };
+        }
+        byProduct[pid].qty += qty;
+        byProduct[pid].sections.add(o.sectionName);
+      }
+    }
+
+    return {
+      summary: { totalOrders, totalQty, uniqueProducts: Object.keys(byProduct).length, uniqueSections: Object.keys(bySection).length },
+      byProduct: Object.values(byProduct)
+        .map((p) => ({ ...p, sections: Array.from(p.sections) }))
+        .sort((a, b) => b.qty - a.qty),
+      bySection: Object.values(bySection).sort((a, b) => b.qty - a.qty),
+      byUser: Object.values(byUser).sort((a, b) => b.qty - a.qty),
+      byDay: Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)),
+    };
+  }
 }

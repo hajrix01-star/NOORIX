@@ -140,6 +140,11 @@ export async function deleteStaffOrder(id: string, companyId: string): Promise<A
   return apiDelete(`/api/v1/orders/staff/${id}?companyId=${companyId}`);
 }
 
+export async function getSalesReport(companyId: string, days = 30): Promise<ApiParsedResult> {
+  const res = await apiGet('/api/v1/orders/sales/report', { companyId, days: String(days) });
+  return res?.success ? { ...res, data: res.data ?? {} } : { success: false, data: {} };
+}
+
 export async function getDigestHistory(companyId: string, days = 30): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/staff/digest/history', { companyId, days: String(days) });
   return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };

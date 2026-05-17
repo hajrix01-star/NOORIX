@@ -15,6 +15,7 @@ import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
 import { ItemsManageTab } from './components/ItemsManageTab';
 import { StaffDigestTab } from './components/StaffDigestTab';
+import { SalesReportTab } from './components/SalesReportTab';
 import { StaffOrdersView } from './StaffOrdersView';
 
 function parseYearMonth(dateStr: any) {
@@ -67,7 +68,7 @@ function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff 
   const { t } = useTranslation();
 
   const TAB_IDS = useMemo(() => {
-    const ids = ['orders', 'items-report', 'items-manage'];
+    const ids = ['orders', 'items-report', 'items-manage', 'sales-report'];
     if (canDigest) ids.push('staff-digest');
     return ids;
   }, [canDigest]);
@@ -92,9 +93,10 @@ function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff 
 
   const tabItems = useMemo(() => {
     const tabs = [
-      { id: 'orders', label: t('ordersTab') },
+      { id: 'orders',       label: t('ordersTab') },
       { id: 'items-report', label: t('ordersItemsReportTab') },
       { id: 'items-manage', label: t('ordersItemsManageTab') },
+      { id: 'sales-report', label: t('salesReportTab') },
     ];
     if (canDigest) tabs.push({ id: 'staff-digest', label: t('staffDigestTab') });
     return tabs;
@@ -140,6 +142,7 @@ function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff 
             />
           )}
           {activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
+          {activeTab === 'sales-report' && <SalesReportTab companyId={companyId} />}
           {activeTab === 'staff-digest' && canDigest && <StaffDigestTab companyId={companyId} />}
         </ScreenTabs>
       )}
