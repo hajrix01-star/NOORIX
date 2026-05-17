@@ -415,7 +415,7 @@ export function OrderFormModal({
 
               {/* شبكة الكروت */}
               {filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4 max-h-[240px] overflow-y-auto">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
                   {filteredProducts.map((p: any) => (
                     <PosProductCard
                       key={p.id}
