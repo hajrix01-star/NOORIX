@@ -308,22 +308,30 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
     <ScreenShell>
       <ScreenTitle>{t('staffOrdersTitle')}</ScreenTitle>
 
-      {/* ── اختيار القسم ── */}
-      <Input
-        type="select"
-        label={t('staffOrderSection')}
-        value={sectionName}
-        onChange={(e: any) => {
-          setSectionName(e.target.value);
-          setBasket(new Map());
-          setSearch('');
-        }}
-      >
-        <option value="">{t('staffOrderSectionPlaceholder')}</option>
-        {(sections as any[]).map((s: any) => (
-          <option key={s.id} value={s.nameAr}>{sectionLabel(s)}</option>
-        ))}
-      </Input>
+      {/* ── اختيار القسم — أزرار ── */}
+      <div className="flex flex-wrap gap-2">
+        {(sections as any[]).map((s: any) => {
+          const active = sectionName === s.nameAr;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => {
+                setSectionName(active ? '' : s.nameAr);
+                setBasket(new Map());
+                setSearch('');
+              }}
+              className={`px-4 py-2 rounded-xl text-[13px] font-semibold border transition-all
+                ${active
+                  ? 'bg-noorix-blue text-white border-noorix-blue shadow-sm'
+                  : 'bg-noorix-surface text-noorix-text border-noorix-border hover:border-noorix-blue/50 hover:text-noorix-blue'
+                }`}
+            >
+              {sectionLabel(s)}
+            </button>
+          );
+        })}
+      </div>
 
       {/* ── بحث ── */}
       <div className="relative">
