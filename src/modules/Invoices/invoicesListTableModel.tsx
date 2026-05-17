@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatSaudiDateISO } from '../../utils/saudiDate';
-import { Badge, FmtNum, cn } from '../../ui';
+import { Badge, FmtNum, KebabMenu, cn } from '../../ui';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
 import { PAGE_SIZE } from './invoicesListScreenHelpers';
 
@@ -237,6 +237,79 @@ export function buildInvoiceListFooterRow({ t, serverAll, total }: any) {
       content: <FmtNum n={Number(serverAll.total)} />,
     },
   ];
+}
+
+/**
+ * renderCompactRow — نمط السطر المضغوط (2 سطور) للجوال.
+ * السطر الأول: رقم الفاتورة + نوعها + اسم المورد + الحالة.
+ * السطر الثاني: التاريخ + المبلغ الإجمالي + كباب الإجراءات.
+ * الضغط على الصف يفتح تفاصيل الفاتورة (setViewingInvoice).
+ */
+export function createInvoiceCompactRowRenderer({
+  t,
+  STATUS_MAP,
+  KIND_MAP,
+  userRole,
+  companyId,
+  setViewingInvoice,
+  setEditingInvoice,
+  confirmAndDeleteInvoice,
+}: any) {
+  return (row: any) => {
+    const isInbound = row.kind === 'sale';
+    const amountColor = isInbound ? 'var(--color-nx-sales)' : 'var(--color-nx-expenses)';
+    return (
+      <div onClick={() => setViewingInvoice?.(row)} style={{ cursor: 'pointer' }}>
+        {/* السطر الأول */}
+        <div className="nx-cr__line1">
+          <span className="nx-cr__id" style={{ color: amountColor }}>
+            {row.invoiceNumber || '—'}
+          </span>
+          <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
+          <span className="nx-cr__sub flex-1">{row.supplierName || '—'}</span>
+          <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
+        </div>
+        {/* السطر الثاني */}
+        <div className="nx-cr__line2">
+          <div className="nx-cr__line2-start">
+            <span className="nx-cr__meta">{formatSaudiDateISO(row.transactionDate)}</span>
+          </div>
+          <div className="nx-cr__line2-end">
+            <span className="nx-cr__amount" style={{ color: amountColor }}>
+              <FmtNum n={row.totalAmount} /> <span className="nx-sar">SR</span>
+            </span>
+            <div
+              className="nx-cr__kebab"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <KebabMenu
+                ariaLabel={t('actions')}
+                items={[
+                  {
+                    key: 'view',
+                    label: t('view'),
+                    onClick: () => setViewingInvoice?.(row),
+                  },
+                  ...(userRole !== 'viewer' ? [{
+                    key: 'edit',
+                    label: t('edit'),
+                    style: { color: 'var(--noorix-accent-green)' },
+                    onClick: () => setEditingInvoice?.(row),
+                  }] : []),
+                  {
+                    key: 'delete',
+                    label: t('delete'),
+                    style: { color: 'var(--noorix-accent-red)' },
+                    onClick: () => confirmAndDeleteInvoice?.(row),
+                  },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 }
 
 export function createInvoiceListMobileCardRenderer({

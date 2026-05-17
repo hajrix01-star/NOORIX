@@ -59,6 +59,11 @@ export type SmartTableProps = {
   getRowStyle?: (row: any, index: number) => CSSProperties | undefined;
   renderMobileCard?: (row: any, index: number) => ReactNode;
   stripeMobileCards?: boolean;
+  /**
+   * بديل renderMobileCard — يعرض كل سجل كسطرين مضغوطَين (List-Row pattern).
+   * عند تمريره يُعطى الأولوية على renderMobileCard في العروض الضيقة.
+   */
+  renderCompactRow?: (row: any, index: number) => ReactNode;
   stickyActionColumn?: boolean;
   tableId?: string;
   /** موروث — غير مستخدم داخلياً؛ يُبقي توافقاً مع شاشات قديمة */

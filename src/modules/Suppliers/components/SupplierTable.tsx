@@ -227,68 +227,45 @@ export const SupplierTable = memo(function SupplierTable({
       getRowStyle={(row: any) =>
         selectedIds.has(row.id) ? { background: 'var(--noorix-green-4)' } : undefined
       }
-      renderMobileCard={(row: any) => {
+      renderCompactRow={(row: any) => {
         const cat     = flatCategories.find((c: any) => c.id === row.supplierCategoryId);
-        const icon    = cat?.icon || cat?.account?.icon || '';
+        const catName = cat ? (lang === 'en' ? cat.nameEn || cat.nameAr : cat.nameAr || cat.nameEn) : null;
         const checked = selectedIds.has(row.id);
         return (
-          <div
-            style={{
-              background: checked ? 'var(--noorix-green-4)' : 'transparent',
-              margin: '-12px -16px',
-              padding: '12px 16px',
-            }}
-          >
-            <div className="flex gap-2 items-start">
-              <CB
-                checked={checked}
-                indeterminate={false}
-                onChange={(v: any) => onSelectChange?.(row.id, v)}
-                ariaLabel={`تحديد ${row.nameAr}`}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex mb-1 justify-between items-start gap-2">
-                  <div className="min-w-0">
-                    <div className="font-bold text-[14px]">{sName(row, lang)}</div>
-                    {row.nameEn && row.nameAr && lang !== 'en' && (
-                      <div className="nx-cell-muted">{row.nameEn}</div>
-                    )}
-                    {row.nameAr && lang === 'en' && (
-                      <div className="nx-cell-muted">{row.nameAr}</div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {row.isTaxRegistered != null && (
-                      row.isTaxRegistered
-                        ? <Badge color="green" size="sm">{t('taxRegisteredBadgeYes')}</Badge>
-                        : <Badge color="gray" size="sm">{t('taxRegisteredBadgeNo')}</Badge>
-                    )}
-                    <TypeBadge type={row.supplierType || 'purchases'} />
-                  </div>
-                </div>
-                {(row.phone || row.taxNumber) && (
-                  <div className="flex gap-3 text-[12px] text-noorix-muted mb-1">
-                    {row.phone && <span>{row.phone}</span>}
-                    {row.taxNumber && <span className="nx-cell-num">{row.taxNumber}</span>}
-                  </div>
-                )}
-                {cat && (
-                  <div className="mb-2">
-                    <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
-                      {icon && <span>{icon}</span>}
-                      {lang === 'en' ? cat.nameEn || cat.nameAr : cat.nameAr || cat.nameEn}
-                    </Badge>
-                  </div>
-                )}
-                <div className="flex justify-end">
-                  <KebabMenu
-                    ariaLabel={t('actions')}
-                    items={[
-                      { key: 'edit',   label: t('edit'),   style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
-                      { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' },   onClick: () => onDelete?.(row) },
-                    ]}
-                  />
-                </div>
+          <div style={{ background: checked ? 'var(--noorix-green-4)' : 'transparent', margin: '-9px -14px', padding: '9px 14px' }}>
+            {/* السطر الأول: checkbox + الاسم + نوع + حالة الضريبة */}
+            <div className="nx-cr__line1">
+              <div onClick={(e) => e.stopPropagation()}>
+                <CB
+                  checked={checked}
+                  indeterminate={false}
+                  onChange={(v: any) => onSelectChange?.(row.id, v)}
+                  ariaLabel={`تحديد ${row.nameAr}`}
+                />
+              </div>
+              <span className="nx-cr__name">{sName(row, lang)}</span>
+              <TypeBadge type={row.supplierType || 'purchases'} />
+              {row.isTaxRegistered != null && (
+                row.isTaxRegistered
+                  ? <Badge color="green" size="sm">{t('taxRegisteredBadgeYes')}</Badge>
+                  : <Badge color="gray"  size="sm">{t('taxRegisteredBadgeNo')}</Badge>
+              )}
+            </div>
+            {/* السطر الثاني: التصنيف + هاتف/رقم ضريبي + كباب */}
+            <div className="nx-cr__line2">
+              <div className="nx-cr__line2-start">
+                {catName && <span className="nx-cr__meta">{catName}</span>}
+                {row.phone && <span className="nx-cr__meta">{row.phone}</span>}
+                {row.taxNumber && <span className="nx-cr__meta nx-cell-num">{row.taxNumber}</span>}
+              </div>
+              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+                <KebabMenu
+                  ariaLabel={t('actions')}
+                  items={[
+                    { key: 'edit',   label: t('edit'),   style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
+                    { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' },   onClick: () => onDelete?.(row) },
+                  ]}
+                />
               </div>
             </div>
           </div>

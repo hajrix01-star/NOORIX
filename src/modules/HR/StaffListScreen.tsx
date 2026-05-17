@@ -28,7 +28,7 @@ import {
   getEmployeesBulk,
   throwIfApiFailed,
 } from '../../services/api';
-import { Badge, Button, Modal, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../ui';
+import { Badge, Button, Modal, Input, ScreenShell, cn, FmtNum, KebabMenu, SmartTable } from '../../ui';
 import { HRActionsCell } from './components/HRActionsCell';
 import { StaffFormModal } from './components/StaffFormModal';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
@@ -369,44 +369,71 @@ export default function StaffListScreen({ embedded }: any) {
     }
   }
 
-  const renderMobileCard = useCallback((row: any) => (
-    <div>
-      <div className="nx-mc__header mb-1">
-        <span className="nx-cell-num nx-cell-muted-sm">{row.employeeSerial || '—'}</span>
+  const renderCompactRow = useCallback((row: any) => (
+    <div onClick={() => navigate(`/hr/employee/${row.id}`)} style={{ cursor: 'pointer' }}>
+      {/* السطر الأول: الاسم + المسمى الوظيفي + الحالة */}
+      <div className="nx-cr__line1">
+        <span className="nx-cr__name text-noorix-blue">
+          {employeeDisplayName(row, lang)}
+        </span>
+        {row.jobTitle && (
+          <span className="nx-cr__sub">{row.jobTitle}</span>
+        )}
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
       </div>
-      <Button
-        variant="raw"
-        size="auto"
-        className="nx-mc__name w-full text-noorix-blue font-bold text-[14px] hover:underline cursor-pointer p-0 bg-transparent text-end"
-        onClick={() => navigate(`/hr/employee/${row.id}`)}
-      >
-        {employeeDisplayName(row, lang)}
-      </Button>
-      {row.jobTitle && <div className="nx-mc__subtitle">{row.jobTitle}</div>}
-      <div className="nx-mc__grid nx-mc__grid--2">
-        <div>
-          <div className="nx-mc__stat-label">{t('joinDate')}</div>
-          <div className="nx-mc__stat-value text-[13px]">{formatSaudiDate(row.joinDate)}</div>
+      {/* السطر الثاني: تاريخ الانضمام + الراتب + كباب */}
+      <div className="nx-cr__line2">
+        <div className="nx-cr__line2-start">
+          <span className="nx-cr__meta">{formatSaudiDate(row.joinDate)}</span>
         </div>
-        <div>
-          <div className="nx-mc__stat-label">{t('totalSalary')}</div>
-          <div className="nx-mc__stat-value"><FmtNum n={row.totalSalary} /> <span className="nx-sar">SR</span></div>
+        <div className="nx-cr__line2-end">
+          <span className="nx-cr__amount text-noorix-green">
+            <FmtNum n={row.totalSalary} /> <span className="nx-sar">SR</span>
+          </span>
+          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+            <KebabMenu
+              ariaLabel={t('actions')}
+              items={[
+                {
+                  key: 'profile',
+                  label: t('viewProfile'),
+                  onClick: () => navigate(`/hr/employee/${row.id}`),
+                },
+                {
+                  key: 'edit',
+                  label: t('edit'),
+                  style: { color: 'var(--noorix-accent-green)' },
+                  onClick: () => setEditingEmployee(row),
+                },
+                ...(row.status === 'active' ? [{
+                  key: 'advance',
+                  label: t('advance'),
+                  style: { color: 'var(--noorix-accent-blue)' },
+                  onClick: () => setAdvanceEmployee(row),
+                }] : []),
+                ...(row.status !== 'terminated' && row.status !== 'archived' ? [{
+                  key: 'terminate',
+                  label: t('terminate'),
+                  style: { color: 'var(--noorix-accent-amber)' },
+                  onClick: () => {
+                    setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
+                    setTerminatingEmployee(row);
+                  },
+                }] : []),
+                ...(canDeleteEmployee ? [{
+                  key: 'delete',
+                  label: t('permanentDelete'),
+                  style: { color: 'var(--noorix-accent-red)' },
+                  onClick: () => handlePermanentDelete(row),
+                }] : []),
+              ]}
+            />
+          </div>
         </div>
-      </div>
-      <div className="nx-mc__actions">
-        <HRActionsCell
-          row={row}
-          onEdit={() => setEditingEmployee(row)}
-          onAdvance={row.status === 'active' ? () => setAdvanceEmployee(row) : undefined}
-          onTerminate={row.status !== 'terminated' && row.status !== 'archived'
-            ? () => { setTerminationForm({ reason: '', clause: '', date: getSaudiToday() }); setTerminatingEmployee(row); }
-            : undefined}
-          onPermanentDelete={canDeleteEmployee ? handlePermanentDelete : undefined}
-        />
       </div>
     </div>
-  ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete]);
+  ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete,
+      setEditingEmployee, setAdvanceEmployee, setTerminatingEmployee, setTerminationForm]);
 
   return (
     <ScreenShell
@@ -507,7 +534,7 @@ export default function StaffListScreen({ embedded }: any) {
             sortDir={sortDir}
             onSort={toggleSort}
             emptyMessage={t('noEmployees')}
-            renderMobileCard={renderMobileCard}
+            renderCompactRow={renderCompactRow}
             stripeMobileCards
           />
         </>

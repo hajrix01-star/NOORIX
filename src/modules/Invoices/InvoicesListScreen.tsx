@@ -135,6 +135,7 @@ export default function InvoicesListScreen() {
             sortDir={s.sortDir}
             onSort={s.toggleSort}
             emptyMessage={s.t('noInvoicesInPeriod')}
+            renderCompactRow={s.renderCompactRow}
             renderMobileCard={s.renderMobileCard}
             stripeMobileCards
           />

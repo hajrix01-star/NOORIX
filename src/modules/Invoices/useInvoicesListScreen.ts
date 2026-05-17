@@ -31,6 +31,7 @@ import {
   buildInvoiceListColumns,
   buildInvoiceListFooterRow,
   createInvoiceListMobileCardRenderer,
+  createInvoiceCompactRowRenderer,
 } from './invoicesListTableModel';
 import { nextInvoiceSortState } from './invoicesListSort';
 import { toYmd } from '../../utils/saudiDate';
@@ -580,6 +581,21 @@ export function useInvoicesListScreen() {
     [KIND_MAP, STATUS_MAP, userRole, companyId, t, lang, confirmAndDeleteInvoice],
   );
 
+  const renderCompactRow = useMemo(
+    () =>
+      createInvoiceCompactRowRenderer({
+        t,
+        STATUS_MAP,
+        KIND_MAP,
+        userRole,
+        companyId,
+        setViewingInvoice,
+        setEditingInvoice,
+        confirmAndDeleteInvoice,
+      }),
+    [KIND_MAP, STATUS_MAP, userRole, companyId, t, confirmAndDeleteInvoice],
+  );
+
   const importExportExportFetcher = useCallback(async () => {
     const kindForExport = filterKind || (urlExtra.kind ? urlExtra.kind.split(',')[0] : '');
     const res = await getInvoices(
@@ -692,6 +708,7 @@ export function useInvoicesListScreen() {
     sortDir,
     toggleSort,
     renderMobileCard,
+    renderCompactRow,
     showToast,
     PAGE_SIZE,
   };

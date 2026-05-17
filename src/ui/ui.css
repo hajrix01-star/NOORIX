@@ -1499,6 +1499,97 @@
 }
 
 
+/* ─── Compact List Row — نمط السطر المضغوط للجوال (List-Row pattern) ─── */
+.nx-compact-row {
+  position: relative;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--noorix-border);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.nx-compact-row:last-child {
+  border-bottom: none;
+}
+.nx-compact-row--base   { background: var(--noorix-bg); }
+.nx-compact-row--stripe { background: var(--noorix-blue-10); }
+.nx-compact-row:active  { background: var(--noorix-bg-muted) !important; }
+
+/* السطر الأول: رقم + نوع + اسم + حالة */
+.nx-cr__line1 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+  min-width: 0;
+}
+/* السطر الثاني: تفاصيل ثانوية + مبلغ + كباب */
+.nx-cr__line2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.nx-cr__line2-start {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+.nx-cr__line2-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+/* الاسم/المورد: يأخذ المساحة المتبقية ويقطع بـ … */
+.nx-cr__name {
+  font-weight: 700;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.nx-cr__sub {
+  font-size: 12px;
+  color: var(--noorix-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.nx-cr__id {
+  font-family: var(--noorix-font-numbers);
+  font-weight: 700;
+  font-size: 13px;
+  direction: ltr;
+  unicode-bidi: isolate;
+  flex-shrink: 0;
+}
+.nx-cr__amount {
+  font-family: var(--noorix-font-numbers);
+  font-weight: 700;
+  font-size: 13px;
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+.nx-cr__meta {
+  font-size: 11px;
+  color: var(--noorix-text-muted);
+  white-space: nowrap;
+}
+/* منطقة الكباب — يمنع فقاعة الحدث إلى onClick الصف */
+.nx-cr__kebab {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+
 /* ═══════════════════════════════════════════════════════════
    13. Pill Badge — شارة مضمّنة خفيفة (للاستخدام في الجداول)
    ═══════════════════════════════════════════════════════════ */

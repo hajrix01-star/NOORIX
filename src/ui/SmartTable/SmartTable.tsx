@@ -84,6 +84,7 @@ const SmartTable = memo(function SmartTable(props: SmartTableProps) {
     renderMobileCard,
     /** صفوف متناوبة الخلفية في عرض بطاقات الجوال — افتراضي مفعّل؛ عطّل بـ false */
     stripeMobileCards = true,
+    renderCompactRow,
     stickyActionColumn = true,
     /** معرف فريد للجدول — لما يُمرَّر يُفعّل السحب لتغيير عرض الأعمدة + الحفظ في localStorage */
     tableId,
@@ -181,7 +182,8 @@ const SmartTable = memo(function SmartTable(props: SmartTableProps) {
 
   const isNarrow = useIsNarrow700();
 
-  const showCards    = isNarrow && typeof renderMobileCard === 'function';
+  const showCompact  = isNarrow && typeof renderCompactRow === 'function';
+  const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
   const safePageSize = Math.max(1, pageSize);
   const totalPages   = Math.max(1, Math.ceil(total / safePageSize));
   const colCount     = columns.length;
@@ -294,6 +296,27 @@ const SmartTable = memo(function SmartTable(props: SmartTableProps) {
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── صفوف مضغوطة (List-Row pattern) ── */}
+      {!isLoading && showCompact && (
+        <div>
+          {data.length === 0 ? (
+            <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
+              {emptyMsg}
+            </div>
+          ) : data.map((row: any, i: any) => (
+            <div
+              key={row.id ?? i}
+              className={cn(
+                'nx-compact-row',
+                i % 2 === 1 ? 'nx-compact-row--stripe' : 'nx-compact-row--base',
+              )}
+            >
+              {renderCompactRow!(row, i)}
+            </div>
+          ))}
         </div>
       )}
 
