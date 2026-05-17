@@ -58,6 +58,11 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
             m.setEditingTarget(true);
           }}
           onSaveDowTarget={m.handleSaveDowTarget}
+          applyToAll={m.applyToAll}
+          onToggleApplyToAll={m.setApplyToAll}
+          isDefaultTargets={m.isDefaultTargets}
+          hasMonthOverride={m.hasMonthOverride}
+          onResetMonthTargets={m.handleResetMonthTargets}
           lang={m.lang}
           t={m.t}
         />

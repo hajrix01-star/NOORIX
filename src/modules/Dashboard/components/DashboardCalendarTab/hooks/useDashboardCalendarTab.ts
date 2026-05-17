@@ -50,9 +50,12 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     targets: storedTargets,
     specialDays: specialDaysList,
     dayNotes,
+    isDefaultTargets,
+    hasMonthOverride,
     saveTargets,
     saveSpecialDays,
     saveDayNotes,
+    resetMonthTargets,
   } = useDashboardCalendarData({ companyId, year, month, enabled: !!companyId });
 
   const isLoading = salesLoading || calendarLoading;
@@ -60,6 +63,8 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   const [editingTarget, setEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState('');
   const [targetsVersion, setTargetsVersion] = useState(0);
+  /** true = الهدف لكل الشهور (الافتراضي)، false = لهذا الشهر فقط */
+  const [applyToAll, setApplyToAll] = useState(true);
   const [showTargetsPanel, setShowTargetsPanel] = useState(false);
   const [selectedDay, setSelectedDay] = useState<any>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -133,7 +138,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     if (!Number.isNaN(v) && v >= 0) {
       const newTargets = { ...targets, byDow: { ...targets.byDow }, overall: v };
       try {
-        await saveTargets(newTargets);
+        await saveTargets(newTargets, applyToAll);
         setTargetInput('');
         setEditingTarget(false);
         setTargetsVersion((x) => x + 1);
@@ -141,7 +146,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
         // no-op — حالة الفشل تُعاد برقم مؤقت
       }
     }
-  }, [targets, targetInput, saveTargets]);
+  }, [targets, targetInput, saveTargets, applyToAll]);
 
   const handleSaveDowTarget = useCallback(
     async (dow: number, value: unknown) => {
@@ -153,15 +158,24 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
         else newByDow[dow] = v;
         const newTargets = { ...targets, byDow: newByDow };
         try {
-          await saveTargets(newTargets);
+          await saveTargets(newTargets, applyToAll);
           setTargetsVersion((x) => x + 1);
         } catch {
           // no-op
         }
       }
     },
-    [targets, saveTargets],
+    [targets, saveTargets, applyToAll],
   );
+
+  const handleResetMonthTargets = useCallback(async () => {
+    try {
+      await resetMonthTargets();
+      setTargetsVersion((x) => x + 1);
+    } catch {
+      // no-op
+    }
+  }, [resetMonthTargets]);
 
   const handleSaveDayNote = useCallback(
     async (dateStr: string, note: unknown) => {
@@ -337,11 +351,16 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     maxAmount,
     companyName,
     targetsVersion,
+    isDefaultTargets,
+    hasMonthOverride,
+    applyToAll,
+    setApplyToAll,
     handleSaveOverallTarget,
     handleSaveDowTarget,
     handleSaveDayNote,
     handleDayClick,
     handleAddSelectedAsSpecial,
+    handleResetMonthTargets,
     handlePrintDayDetails,
     monthLabel,
     handlePrintCalendar,

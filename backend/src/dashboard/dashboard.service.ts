@@ -116,35 +116,109 @@ export class DashboardService {
 
   // ── Calendar Data ─────────────────────────────────────
 
+  /**
+   * يحدد ما إذا كان صف أهداف الشهر يحتوي على تخصيص فعلي
+   * (الهدف الإجمالي أو هدف يوم من الأسبوع غير فارغ)
+   */
+  private hasTargetOverride(targets: any): boolean {
+    if (!targets || typeof targets !== 'object') return false;
+    if (targets.overall != null) return true;
+    const byDow = targets.byDow;
+    if (byDow && typeof byDow === 'object' && Object.keys(byDow).length > 0) return true;
+    return false;
+  }
+
+  /**
+   * يجلب بيانات التقويم لشهر محدد مع fallback للهدف الافتراضي (month=0):
+   * - targets: month=X إن وجد تخصيص، وإلا month=0 (الافتراضي لكل الشهور)
+   * - specialDays/dayNotes: دائماً خاصة بالشهر فقط
+   */
   async getCalendarData(companyId: string, tenantId: string, year: number, month: number) {
-    const row = await this.prisma.dashboardCalendarData.findUnique({
-      where: { companyId_year_month: { companyId, year, month } },
-    });
-    if (!row) return DEFAULT_CALENDAR_DATA;
+    const [monthRow, defaultRow] = await Promise.all([
+      month !== 0
+        ? this.prisma.dashboardCalendarData.findUnique({
+            where: { companyId_year_month: { companyId, year, month } },
+          })
+        : Promise.resolve(null),
+      this.prisma.dashboardCalendarData.findUnique({
+        where: { companyId_year_month: { companyId, year, month: 0 } },
+      }),
+    ]);
+
+    const monthTargets = monthRow?.targets as any;
+    const defaultTargets = defaultRow?.targets as any;
+    const hasMonthOverride = this.hasTargetOverride(monthTargets);
+    const effectiveTargets = hasMonthOverride
+      ? monthTargets
+      : defaultTargets ?? DEFAULT_CALENDAR_DATA.targets;
+
     return {
-      targets: (row.targets as any) ?? DEFAULT_CALENDAR_DATA.targets,
-      specialDays: (row.specialDays as any) ?? DEFAULT_CALENDAR_DATA.specialDays,
-      dayNotes: (row.dayNotes as any) ?? DEFAULT_CALENDAR_DATA.dayNotes,
+      targets: effectiveTargets,
+      specialDays: (monthRow?.specialDays as any) ?? DEFAULT_CALENDAR_DATA.specialDays,
+      dayNotes: (monthRow?.dayNotes as any) ?? DEFAULT_CALENDAR_DATA.dayNotes,
+      isDefaultTargets: !hasMonthOverride,
+      hasMonthOverride,
+      defaultTargets: defaultTargets ?? DEFAULT_CALENDAR_DATA.targets,
     };
   }
 
+  /**
+   * يحفظ الأهداف:
+   * - applyToAll=true  → يحفظ في month=0 (افتراضي لكل الشهور) ويحذف تخصيص الشهر الحالي
+   * - applyToAll=false → يحفظ تخصيصاً للشهر المحدد فقط
+   */
   async upsertCalendarTargets(
     companyId: string,
     tenantId: string,
     year: number,
     month: number,
     targets: unknown,
+    applyToAll = true,
   ) {
-    const row = await this.prisma.dashboardCalendarData.upsert({
+    if (applyToAll) {
+      // حفظ الهدف الافتراضي لكل الشهور (month=0)
+      await this.prisma.dashboardCalendarData.upsert({
+        where: { companyId_year_month: { companyId, year, month: 0 } },
+        create: { companyId, tenantId, year, month: 0, targets: targets as any },
+        update: { targets: targets as any },
+      });
+      // حذف تخصيص الشهر الحالي إن وُجد (سيسقط لـ الافتراضي تلقائياً)
+      if (month !== 0) {
+        const existing = await this.prisma.dashboardCalendarData.findUnique({
+          where: { companyId_year_month: { companyId, year, month } },
+        });
+        if (existing && this.hasTargetOverride(existing.targets as any)) {
+          await this.prisma.dashboardCalendarData.update({
+            where: { companyId_year_month: { companyId, year, month } },
+            data: { targets: DEFAULT_CALENDAR_DATA.targets as any },
+          });
+        }
+      }
+    } else {
+      // تخصيص الشهر المحدد فقط
+      await this.prisma.dashboardCalendarData.upsert({
+        where: { companyId_year_month: { companyId, year, month } },
+        create: { companyId, tenantId, year, month, targets: targets as any },
+        update: { targets: targets as any },
+      });
+    }
+    return this.getCalendarData(companyId, tenantId, year, month);
+  }
+
+  /**
+   * يُعيد الشهر للهدف الافتراضي (يحذف تخصيصه)
+   */
+  async resetMonthTargets(companyId: string, tenantId: string, year: number, month: number) {
+    const row = await this.prisma.dashboardCalendarData.findUnique({
       where: { companyId_year_month: { companyId, year, month } },
-      create: { companyId, tenantId, year, month, targets: targets as any },
-      update: { targets: targets as any },
     });
-    return {
-      targets: row.targets as any,
-      specialDays: (row.specialDays as any) ?? [],
-      dayNotes: (row.dayNotes as any) ?? {},
-    };
+    if (row) {
+      await this.prisma.dashboardCalendarData.update({
+        where: { companyId_year_month: { companyId, year, month } },
+        data: { targets: DEFAULT_CALENDAR_DATA.targets as any },
+      });
+    }
+    return this.getCalendarData(companyId, tenantId, year, month);
   }
 
   async upsertCalendarSpecialDays(
@@ -154,16 +228,12 @@ export class DashboardService {
     month: number,
     specialDays: unknown,
   ) {
-    const row = await this.prisma.dashboardCalendarData.upsert({
+    await this.prisma.dashboardCalendarData.upsert({
       where: { companyId_year_month: { companyId, year, month } },
       create: { companyId, tenantId, year, month, specialDays: specialDays as any },
       update: { specialDays: specialDays as any },
     });
-    return {
-      targets: (row.targets as any) ?? DEFAULT_CALENDAR_DATA.targets,
-      specialDays: row.specialDays as any,
-      dayNotes: (row.dayNotes as any) ?? {},
-    };
+    return this.getCalendarData(companyId, tenantId, year, month);
   }
 
   async upsertCalendarDayNotes(
@@ -173,15 +243,11 @@ export class DashboardService {
     month: number,
     dayNotes: unknown,
   ) {
-    const row = await this.prisma.dashboardCalendarData.upsert({
+    await this.prisma.dashboardCalendarData.upsert({
       where: { companyId_year_month: { companyId, year, month } },
       create: { companyId, tenantId, year, month, dayNotes: dayNotes as any },
       update: { dayNotes: dayNotes as any },
     });
-    return {
-      targets: (row.targets as any) ?? DEFAULT_CALENDAR_DATA.targets,
-      specialDays: (row.specialDays as any) ?? [],
-      dayNotes: row.dayNotes as any,
-    };
+    return this.getCalendarData(companyId, tenantId, year, month);
   }
 }

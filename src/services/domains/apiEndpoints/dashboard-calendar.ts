@@ -1,10 +1,16 @@
 import type { ApiParsedResult } from '../../../types/api';
-import { apiGet, apiPut } from '../../core/apiHttp';
+import { apiGet, apiPut, apiDelete } from '../../core/apiHttp';
 
 export interface DashboardCalendarDataResult {
   targets: { overall: number | null; byDow: Record<string, number> };
   specialDays: Array<{ id: string; name: string; fromDate: string; toDate: string; color: string }>;
   dayNotes: Record<string, string>;
+  /** true إذا كان الهدف المعروض هو الهدف الافتراضي (month=0) لا تخصيص خاص بالشهر */
+  isDefaultTargets: boolean;
+  /** true إذا كان هناك تخصيص خاص بهذا الشهر */
+  hasMonthOverride: boolean;
+  /** الهدف الافتراضي المحفوظ لكل الشهور */
+  defaultTargets: { overall: number | null; byDow: Record<string, number> };
 }
 
 /**
@@ -23,17 +29,33 @@ export async function getDashboardCalendarData(
 }
 
 /**
- * PUT /api/v1/dashboard/calendar/targets
+ * PUT /api/v1/dashboard/calendar/targets?applyToAll=true|false
+ * applyToAll=true  → يحفظ كهدف افتراضي لكل الشهور (month=0)
+ * applyToAll=false → يحفظ تخصيصاً لهذا الشهر فقط
  */
 export async function putDashboardCalendarTargets(
   companyId: string,
   year: number,
   month: number,
   targets: { overall: number | null; byDow: Record<string, number> },
+  applyToAll = true,
 ): Promise<ApiParsedResult> {
   return apiPut(
-    `/api/v1/dashboard/calendar/targets?companyId=${encodeURIComponent(companyId)}&year=${year}&month=${month}`,
+    `/api/v1/dashboard/calendar/targets?companyId=${encodeURIComponent(companyId)}&year=${year}&month=${month}&applyToAll=${applyToAll}`,
     { targets },
+  );
+}
+
+/**
+ * DELETE /api/v1/dashboard/calendar/targets — إعادة الشهر للهدف الافتراضي
+ */
+export async function deleteDashboardCalendarTargets(
+  companyId: string,
+  year: number,
+  month: number,
+): Promise<ApiParsedResult> {
+  return apiDelete(
+    `/api/v1/dashboard/calendar/targets?companyId=${encodeURIComponent(companyId)}&year=${year}&month=${month}`,
   );
 }
 

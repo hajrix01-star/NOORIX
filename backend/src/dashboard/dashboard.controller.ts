@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Put, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -52,6 +52,7 @@ export class DashboardController {
     @Query('companyId') companyId: string,
     @Query('year') year: string,
     @Query('month') month: string,
+    @Query('applyToAll') applyToAll: string,
     @Body() body: { targets: unknown },
     @CurrentUser() user: JwtUser,
   ) {
@@ -61,6 +62,23 @@ export class DashboardController {
       parseInt(year, 10),
       parseInt(month, 10),
       body.targets,
+      applyToAll !== 'false',
+    );
+  }
+
+  @Delete('calendar/targets')
+  @RequirePermission('REPORTS_READ')
+  async resetCalendarTargets(
+    @Query('companyId') companyId: string,
+    @Query('year') year: string,
+    @Query('month') month: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.dashboardService.resetMonthTargets(
+      companyId,
+      user.tenantId ?? '',
+      parseInt(year, 10),
+      parseInt(month, 10),
     );
   }
 
