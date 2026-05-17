@@ -23,27 +23,37 @@ export function ItemsManageTab({ companyId }: any) {
         className="inline-flex flex-wrap p-1 gap-0.5 rounded-xl border border-noorix-border bg-noorix-bg-muted/50"
         role="tablist"
       >
-        {(['products', 'categories', 'sections'] as const).map((tab) => (
+        {([
+          { id: 'products',       label: t('ordersProducts') },
+          { id: 'sales-products', label: t('salesProducts') },
+          { id: 'categories',     label: t('ordersCategories') },
+          { id: 'sections',       label: t('ordersSections') },
+        ] as const).map(({ id, label }) => (
           <Button
-            key={tab}
+            key={id}
             type="button"
             variant="raw"
             size="auto"
             role="tab"
-            aria-selected={activeSubTab === tab}
-            onClick={() => setActiveSubTab(tab)}
+            aria-selected={activeSubTab === id}
+            onClick={() => setActiveSubTab(id)}
             className={`rounded-lg px-4 py-2 text-sm transition-colors ${
-              activeSubTab === tab
+              activeSubTab === id
                 ? 'bg-noorix-surface font-bold text-noorix-text shadow-sm ring-1 ring-noorix-border'
                 : 'font-medium text-noorix-muted hover:text-noorix-text hover:bg-noorix-bg-surface/60'
             }`}
           >
-            {tab === 'products' ? t('ordersProducts') : tab === 'categories' ? t('ordersCategories') : t('ordersSections')}
+            {label}
           </Button>
         ))}
       </div>
 
-      {activeSubTab === 'products' && <ItemsManageTabProductsSection ctrl={ctrl} />}
+      {activeSubTab === 'products' && (
+        <ItemsManageTabProductsSection ctrl={ctrl} productTypeFilter="order" />
+      )}
+      {activeSubTab === 'sales-products' && (
+        <ItemsManageTabProductsSection ctrl={ctrl} productTypeFilter="sale" />
+      )}
       {activeSubTab === 'categories' && <ItemsManageTabCategoriesSection ctrl={ctrl} />}
       {activeSubTab === 'sections' && <ItemsManageTabSectionsSection ctrl={ctrl} />}
     </div>

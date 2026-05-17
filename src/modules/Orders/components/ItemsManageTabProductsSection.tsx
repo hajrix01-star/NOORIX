@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
 import { OrdersImportModal } from './OrdersImportModal';
 import { Button, Input, Modal } from '../../../ui';
 
 /** Products sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
-export function ItemsManageTabProductsSection({ ctrl }: any) {
+export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order' }: any) {
   const {
     t,
     companyId,
     categories,
     sections,
     products,
-    filteredProducts,
+    filteredProducts: _filteredAll,
     sizesOptions,
     packagingOptions,
     newProduct,
@@ -69,6 +69,14 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
       setBulkBusy(false);
     }
   }
+
+  const filteredProducts = _filteredAll.filter(
+    (p: any) => (p.productType || 'order') === productTypeFilter
+  );
+
+  useEffect(() => {
+    setNewProduct((p: any) => ({ ...p, productType: productTypeFilter }));
+  }, [productTypeFilter]);
 
   const allFilteredIds = filteredProducts.map((p: any) => p.id);
   const allSelected = allFilteredIds.length > 0 && selectedProductIds.size === allFilteredIds.length;
@@ -194,15 +202,8 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                 </option>
               ))}
             </Input>
-            <Input
-              type="select"
-              label={t('productType')}
-              value={newProduct.productType || 'order'}
-              onChange={(e: any) => setNewProduct((p: any) => ({ ...p, productType: e.target.value }))}
-            >
-              <option value="order">{t('productTypeOrder')}</option>
-              <option value="sale">{t('productTypeSale')}</option>
-            </Input>
+            {/* productType hidden — determined by current tab (productTypeFilter) */}
+            <input type="hidden" value={productTypeFilter} onChange={() => setNewProduct((p: any) => ({ ...p, productType: productTypeFilter }))} />
             {(sections as any[]).length > 0 && (
               <div>
                 <div className="text-[12px] text-noorix-muted mb-1">{t('productSections')}</div>
@@ -385,7 +386,7 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
 
           {/* عداد النتائج */}
           <span className="text-[12px] text-noorix-muted ms-auto">
-            {filteredProducts.length} / {products.length}
+            {filteredProducts.length} / {products.filter((p: any) => (p.productType || 'order') === productTypeFilter).length}
           </span>
         </div>
         <table className="w-full text-[13px] border-collapse">
@@ -449,13 +450,7 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                                 ))}
                               </Input>
                             </div>
-                            <div className="min-w-[100px]">
-                              <label className="text-[11px] text-noorix-muted">{t('productType')}</label>
-                              <Input type="select" value={editingProduct.productType || 'order'} onChange={(e: any) => setEditingProduct((x: any) => ({ ...x, productType: e.target.value }))}>
-                                <option value="order">{t('productTypeOrder')}</option>
-                                <option value="sale">{t('productTypeSale')}</option>
-                              </Input>
-                            </div>
+                            {/* productType locked to current tab */}
                             {(sections as any[]).length > 0 && (
                               <div className="min-w-[160px]">
                                 <div className="text-[11px] text-noorix-muted mb-1">{t('productSections')}</div>
