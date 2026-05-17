@@ -1214,6 +1214,7 @@ model OrderProduct {
   lastPrice   Decimal  @default(0) @map("last_price") @db.Decimal(18, 4)  // سعر افتراضي عند عدم وجود variants
   variants    Json?    @map("variants")   // [{size,packaging,unit,lastPrice},...] — تركيبات متعددة بأسعار
   sections    Json?    @map("sections")   // ["مطبخ","بار",...] — null = يظهر لجميع الأقسام
+  productType String   @default("order") @map("product_type")  // order | sale
   isActive    Boolean  @default(true) @map("is_active")
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -1284,6 +1285,7 @@ model StaffOrder {
   companyId   String    @map("company_id")
   userId      String    @map("user_id")
   sectionName String    @map("section_name")   // مطبخ | بار | كاشير | ...
+  orderType   String    @default("order") @map("order_type")  // order | sale
   status      String    @default("pending")     // pending | sent
   notes       String?
   sentAt      DateTime? @map("sent_at")

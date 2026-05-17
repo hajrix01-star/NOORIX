@@ -12,6 +12,7 @@ export interface StaffOrderItemInput {
 export interface CreateStaffOrderDto {
   companyId: string;
   sectionName: string;
+  orderType?: string;  // 'order' | 'sale'
   notes?: string;
   items: StaffOrderItemInput[];
 }
@@ -37,6 +38,7 @@ export class OrdersStaffService {
         companyId: dto.companyId,
         userId,
         sectionName: dto.sectionName.trim(),
+        orderType: dto.orderType || 'order',
         notes: dto.notes?.trim() || null,
         status: 'pending',
         items: {

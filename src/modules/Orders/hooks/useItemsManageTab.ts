@@ -61,6 +61,7 @@ export function useItemsManageTab(companyId: any) {
     nameEn: '',
     categoryId: '',
     sectionsText: '', // نص مفصول بفاصلة → يُحوَّل لمصفوفة عند الإرسال
+    productType: 'order' as 'order' | 'sale',
     variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
   });
   const [newCategory, setNewCategory] = useState({ nameAr: '', nameEn: '' });
@@ -160,6 +161,7 @@ export function useItemsManageTab(companyId: any) {
       nameEn: newProduct.nameEn?.trim() || undefined,
       categoryId: newProduct.categoryId || undefined,
       sections: sectionsArr.length > 0 ? sectionsArr : undefined,
+      productType: newProduct.productType || 'order',
       variants:
         validVariants.length > 0
           ? validVariants.map((v: any) => ({
@@ -178,6 +180,7 @@ export function useItemsManageTab(companyId: any) {
           nameEn: '',
           categoryId: '',
           sectionsText: '',
+          productType: 'order',
           variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
         });
       },
@@ -198,6 +201,7 @@ export function useItemsManageTab(companyId: any) {
       nameEn: editingProduct.nameEn ?? null,
       categoryId: editingProduct.categoryId || null,
       sections: sectionsArr.length > 0 ? sectionsArr : null,
+      productType: editingProduct.productType || 'order',
       variants:
         validVariants.length > 0
           ? validVariants.map((v: any) => ({

@@ -56,6 +56,10 @@ export class CreateProductDto {
   sections?: string[];
 
   @IsOptional()
+  @IsString()
+  productType?: string;  // 'order' | 'sale'
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductVariantDto)

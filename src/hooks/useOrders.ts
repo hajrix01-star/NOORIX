@@ -85,11 +85,11 @@ export function useOrdersSummary(companyId: any, year: any, month: any) {
   });
 }
 
-export function useOrderProducts(companyId: any) {
+export function useOrderProducts(companyId: any, type?: string) {
   return useQuery({
-    queryKey: orderKeys.products(companyId),
+    queryKey: [...orderKeys.products(companyId), type],
     queryFn: async () => {
-      const res = await getOrderProducts(companyId);
+      const res = await getOrderProducts(companyId, undefined, type);
       throwIfApiFailed(res, 'فشل تحميل الأصناف');
       return res.data ?? [];
     },

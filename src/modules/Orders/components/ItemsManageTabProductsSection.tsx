@@ -194,6 +194,15 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                 </option>
               ))}
             </Input>
+            <Input
+              type="select"
+              label={t('productType')}
+              value={newProduct.productType || 'order'}
+              onChange={(e: any) => setNewProduct((p: any) => ({ ...p, productType: e.target.value }))}
+            >
+              <option value="order">{t('productTypeOrder')}</option>
+              <option value="sale">{t('productTypeSale')}</option>
+            </Input>
             {(sections as any[]).length > 0 && (
               <div>
                 <div className="text-[12px] text-noorix-muted mb-1">{t('productSections')}</div>
@@ -440,6 +449,13 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                                 ))}
                               </Input>
                             </div>
+                            <div className="min-w-[100px]">
+                              <label className="text-[11px] text-noorix-muted">{t('productType')}</label>
+                              <Input type="select" value={editingProduct.productType || 'order'} onChange={(e: any) => setEditingProduct((x: any) => ({ ...x, productType: e.target.value }))}>
+                                <option value="order">{t('productTypeOrder')}</option>
+                                <option value="sale">{t('productTypeSale')}</option>
+                              </Input>
+                            </div>
                             {(sections as any[]).length > 0 && (
                               <div className="min-w-[160px]">
                                 <div className="text-[11px] text-noorix-muted mb-1">{t('productSections')}</div>
@@ -555,6 +571,11 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                       <td className="py-[10px] px-3">{p.nameAr || '—'}</td>
                       <td className="nx-cell-muted py-[10px] px-3">{p.nameEn || '—'}</td>
                       <td className="nx-cell-muted py-[10px] px-3">{p.category?.nameAr || p.category?.nameEn || '—'}</td>
+                      <td className="nx-cell-muted py-[10px] px-3">
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${(p as any).productType === 'sale' ? 'bg-green-100 text-noorix-green' : 'bg-blue-100 text-noorix-blue'}`}>
+                          {(p as any).productType === 'sale' ? t('productTypeSale') : t('productTypeOrder')}
+                        </span>
+                      </td>
                       <td className="nx-cell-muted py-[10px] px-3 text-[12px]">
                         {Array.isArray(p.sections) && p.sections.length > 0 ? (p.sections as string[]).join(' · ') : <span className="text-noorix-muted opacity-50">—</span>}
                       </td>
@@ -571,6 +592,7 @@ export function ItemsManageTabProductsSection({ ctrl }: any) {
                               nameEn: p.nameEn || '',
                               categoryId: p.categoryId || '',
                               sectionsText: Array.isArray(p.sections) ? (p.sections as string[]).join('، ') : '',
+                              productType: (p as any).productType || 'order',
                               variants:
                                 variants.length > 0
                                   ? variants.map((v: any) => ({

@@ -131,9 +131,10 @@ export class OrdersController {
   getProducts(
     @CompanyId() companyId: string,
     @Query('section') section?: string,
+    @Query('type') type?: string,
   ) {
     if (!companyId) return [];
-    return this.ordersService.getProducts(companyId, section);
+    return this.ordersService.getProducts(companyId, section, type);
   }
 
   @Post('products')

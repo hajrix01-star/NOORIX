@@ -250,9 +250,13 @@ export class OrdersService {
   }
 
   // ── Order Products ─────────────────────────────────────────────
-  async getProducts(companyId: string, section?: string) {
+  async getProducts(companyId: string, section?: string, productType?: string) {
     const all = await this.prisma.orderProduct.findMany({
-      where: { companyId, isActive: true },
+      where: {
+        companyId,
+        isActive: true,
+        ...(productType ? { productType } : {}),
+      },
       orderBy: [{ sortOrder: 'asc' }, { nameAr: 'asc' }],
       include: { category: true },
     });
@@ -327,6 +331,7 @@ export class OrdersService {
     categoryId?: string;
     lastPrice?: string;
     sections?: string[];
+    productType?: string;
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }>;
   }) {
     const tenantId = TenantContext.getTenantId();
@@ -346,6 +351,7 @@ export class OrdersService {
         categoryId: dto.categoryId || null,
         lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
         sections: dto.sections?.length ? dto.sections : Prisma.DbNull,
+        productType: dto.productType || 'order',
         variants: variantsData as object,
       } as any,
       include: { category: true },
@@ -361,6 +367,7 @@ export class OrdersService {
     categoryId?: string | null;
     lastPrice?: string;
     sections?: string[] | null;
+    productType?: string;
     variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }>;
     isActive?: boolean;
   }) {
@@ -382,6 +389,7 @@ export class OrdersService {
         ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId || null } : {}),
         ...(dto.lastPrice !== undefined ? { lastPrice: new Prisma.Decimal(dto.lastPrice) } : {}),
         ...(dto.sections !== undefined ? { sections: dto.sections?.length ? dto.sections : Prisma.DbNull } : {}),
+        ...(dto.productType !== undefined ? { productType: dto.productType } : {}),
         ...(variantsData !== undefined ? { variants: variantsData as object } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
       },
