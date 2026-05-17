@@ -344,7 +344,7 @@ const SmartTable = memo(function SmartTable(props: SmartTableProps) {
       )}
 
       {/* ── الجدول ── */}
-      {!isLoading && !showCards && (
+      {!isLoading && !showCards && !showCompact && (
         <div className="overflow-x-auto noorix-table-scroll-wrapper">
           <table
             className="noorix-table w-full"
