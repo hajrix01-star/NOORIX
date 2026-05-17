@@ -321,16 +321,41 @@ export function OrderFormModal({
           </Button>
         }
       >
-        {/* ─── معلومات الطلب ─── */}
-        <div className="grid gap-4 mb-5">
-          <Input type="date" label={`${t('orderDate')} *`} value={orderDate} onChange={(e: any) => setOrderDate(e.target.value)} />
-          <Input type="select" label={`${t('orderType')} *`} value={orderType} onChange={(e: any) => setOrderType(e.target.value)}>
-            <option value="external">{t('orderTypeExternal')}</option>
-            <option value="internal">{t('orderTypeInternal')}</option>
-          </Input>
+        {/* ─── معلومات الطلب (صف مضغوط) ─── */}
+        <div className="flex flex-wrap items-end gap-3 mb-4 p-3 rounded-xl bg-noorix-bg-muted/50 border border-noorix-border">
+          {/* التاريخ */}
+          <div className="flex flex-col gap-1 min-w-[130px] flex-1">
+            <label className="text-[11px] text-noorix-muted font-medium">{t('orderDate')} *</label>
+            <Input type="date" value={orderDate} onChange={(e: any) => setOrderDate(e.target.value)} />
+          </div>
+
+          {/* نوع الطلب — أزرار */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] text-noorix-muted font-medium">{t('orderType')} *</label>
+            <div className="inline-flex rounded-xl border border-noorix-border overflow-hidden text-[12px] h-[38px]">
+              {(['external', 'internal'] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setOrderType(type)}
+                  className={`px-4 font-semibold transition-colors
+                    ${orderType === type
+                      ? 'bg-noorix-blue text-white'
+                      : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
+                >
+                  {type === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* مبلغ العهدة */}
           {orderType === 'external' && (
-            <Input type="number" label={t('pettyCashAmount')} min="0" step="0.01"
-              value={pettyCashAmount} onChange={(e: any) => setPettyCashAmount(e.target.value)} placeholder="0.00" />
+            <div className="flex flex-col gap-1 min-w-[110px] flex-1">
+              <label className="text-[11px] text-noorix-muted font-medium">{t('pettyCashAmount')}</label>
+              <Input type="number" min="0" step="0.01"
+                value={pettyCashAmount} onChange={(e: any) => setPettyCashAmount(e.target.value)} placeholder="0.00" />
+            </div>
           )}
         </div>
 
@@ -411,15 +436,15 @@ export function OrderFormModal({
         {/* ─── جدول البنود المضافة ─── */}
         {items.length > 0 && (
           <div className="mb-4 overflow-x-auto border border-noorix-border rounded-xl">
-            <table className="w-full border-collapse text-[13px]">
+            <table className="w-full border-collapse text-[14px]">
               <thead>
                 <tr className="bg-noorix-bg-muted border-b-2 border-noorix-border">
-                  <th className="text-end font-bold py-2 px-2.5">{t('product')}</th>
-                  <th className="text-end font-bold py-2 px-2.5">{t('ordersProductSize')} / {t('ordersProductPackaging')}</th>
-                  <th className="text-end font-bold py-2 px-2.5">{t('quantity')}</th>
-                  <th className="text-end font-bold py-2 px-2.5">{t('unitPrice')}</th>
-                  <th className="text-end font-bold py-2 px-2.5">{t('total')}</th>
-                  <th className="w-11 py-2 px-1" />
+                  <th className="text-end font-bold py-3 px-3">{t('product')}</th>
+                  <th className="text-end font-bold py-3 px-3">{t('ordersProductSize')} / {t('ordersProductPackaging')}</th>
+                  <th className="text-end font-bold py-3 px-3">{t('quantity')}</th>
+                  <th className="text-end font-bold py-3 px-3">{t('unitPrice')}</th>
+                  <th className="text-end font-bold py-3 px-3">{t('total')}</th>
+                  <th className="w-12 py-3 px-1" />
                 </tr>
               </thead>
               <tbody>
@@ -429,8 +454,8 @@ export function OrderFormModal({
                   const sizesArr = p?.sizes ? String(p.sizes).split(/[,،]/).map((x: any) => x.trim()).filter(Boolean) : [];
                   const variantLabel = [it.size, it.packaging, it.unit].filter(Boolean).join(' / ') || '—';
                   return (
-                    <tr key={idx} className="border-b border-noorix-border">
-                      <td className="py-2 px-2.5 min-w-[140px]">
+                    <tr key={idx} className="border-b border-noorix-border hover:bg-noorix-bg-muted/30 transition-colors">
+                      <td className="py-3 px-3 min-w-[160px]">
                         <ProductSearchInput
                           products={products}
                           productsById={productsById}
@@ -447,7 +472,7 @@ export function OrderFormModal({
                           compact
                         />
                       </td>
-                      <td className="py-2 px-2.5 min-w-0">
+                      <td className="py-3 px-3 min-w-[120px]">
                         {variantsArr.length > 0 ? (
                           <Input type="select"
                             value={`${it.size||''}|${it.packaging||''}|${it.unit||''}`}
@@ -468,17 +493,17 @@ export function OrderFormModal({
                             {sizesArr.map((s: any) => <option key={s} value={s}>{s}</option>)}
                           </Input>
                         ) : (
-                          <span className="nx-cell-muted">{variantLabel}</span>
+                          <span className="text-noorix-muted text-[13px]">{variantLabel}</span>
                         )}
                       </td>
-                      <td className="py-2 px-2.5">
-                        <Input type="number" min="0" step="0.01" value={it.quantity} onChange={(e: any) => updateItem(idx, 'quantity', e.target.value)} className="w-[70px]" />
+                      <td className="py-3 px-3">
+                        <Input type="number" min="0" step="0.01" value={it.quantity} onChange={(e: any) => updateItem(idx, 'quantity', e.target.value)} className="w-[80px]" />
                       </td>
-                      <td className="py-2 px-2.5">
-                        <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e: any) => updateItem(idx, 'unitPrice', e.target.value)} className="w-20" />
+                      <td className="py-3 px-3">
+                        <Input type="number" min="0" step="0.01" value={it.unitPrice} onChange={(e: any) => updateItem(idx, 'unitPrice', e.target.value)} className="w-[90px]" />
                       </td>
-                      <td className="nx-cell-num font-semibold py-2 px-2.5"><FmtNum n={enrichedItems[idx]?.amount ?? 0} /></td>
-                      <td className="py-2 px-1">
+                      <td className="nx-cell-num font-bold text-noorix-green py-3 px-3 whitespace-nowrap"><FmtNum n={enrichedItems[idx]?.amount ?? 0} /> SR</td>
+                      <td className="py-3 px-1">
                         <Button size="sm" variant="danger" onClick={() => removeItem(idx)}>✕</Button>
                       </td>
                     </tr>
