@@ -13,9 +13,9 @@ import { useOrderSections } from '../../../hooks/useOrders';
 
 // ─── كرت صنف ──────────────────────────────────────────────────────────────────
 function PosProductCard({
-  product, lang, qtyInList, onTap,
+  product, lang, qtyInList, onTap, onRemove,
 }: {
-  product: any; lang: string; qtyInList: number; onTap: () => void;
+  product: any; lang: string; qtyInList: number; onTap: () => void; onRemove: () => void;
 }) {
   const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
   const selected = qtyInList > 0;
@@ -28,6 +28,16 @@ function PosProductCard({
           : 'border-noorix-border bg-noorix-surface hover:border-noorix-blue/40 hover:shadow-sm'
         }`}
     >
+      {selected && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          className="absolute top-1 end-1 w-5 h-5 rounded-full bg-noorix-red text-white text-[12px] font-bold flex items-center justify-center leading-none hover:opacity-75 transition-opacity"
+          tabIndex={-1}
+        >
+          ×
+        </button>
+      )}
       {selected && (
         <span className="absolute top-1 start-1 bg-noorix-blue text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none">
           {qtyInList}
@@ -423,6 +433,7 @@ export function OrderFormModal({
                       lang={lang}
                       qtyInList={Math.round(qtyMap.get(p.id) ?? 0)}
                       onTap={() => tapProduct(p)}
+                      onRemove={() => setItems((prev: any[]) => prev.filter((it: any) => it.productId !== p.id))}
                     />
                   ))}
                 </div>
