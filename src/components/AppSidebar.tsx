@@ -29,7 +29,6 @@ import {
 const SIDEBAR_LINKS = [
   { to: '/owner', labelKey: 'ownerDashboard', icon: IconCrown, permission: 'VIEW_OWNER' },
   { to: '/', end: true, labelKey: 'dashboard', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
-  { to: '/dashboard-studio', labelKey: 'dashboardStudioNav', icon: IconChartBar, permission: 'VIEW_DASHBOARD' },
   { to: '/chat', labelKey: 'smartChat', icon: IconChat, permission: 'VIEW_CHAT' },
   { to: '/sales', labelKey: 'sales', icon: IconCart, permission: 'VIEW_SALES' },
   { to: '/purchases', labelKey: 'purchases', icon: IconDocument, permission: 'VIEW_PURCHASES' },

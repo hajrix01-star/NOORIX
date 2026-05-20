@@ -183,7 +183,6 @@ export const ROUTE_PERMISSION = {
   '/hajri-tax':     PERMISSIONS.VIEW_REPORTS,
   '/settings':      SETTINGS_APP_ACCESS,
   '/theme-preview':    PERMISSIONS.VIEW_DASHBOARD,
-  '/dashboard-studio': PERMISSIONS.VIEW_DASHBOARD,
   '/ocr':           PERMISSIONS.VIEW_OCR,
   '/ocr/cashier':   PERMISSIONS.OCR_SUBMIT,
 };
@@ -242,7 +241,6 @@ const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[]
   { path: '/settings', required: [...SETTINGS_APP_ACCESS] },
   { path: '/hr', required: [...HR_APP_ACCESS] },
   { path: '/', required: PERMISSIONS.VIEW_DASHBOARD },
-  { path: '/dashboard-studio', required: PERMISSIONS.VIEW_DASHBOARD },
   { path: '/purchases', required: PERMISSIONS.VIEW_PURCHASES },
   { path: '/invoices', required: INVOICES_ROUTE_ACCESS },
   { path: '/treasury', required: PERMISSIONS.VIEW_VAULTS },
