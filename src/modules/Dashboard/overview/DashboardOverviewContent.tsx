@@ -15,17 +15,6 @@ export type DashboardOverviewContentProps = {
 export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
   return (
     <div className="flex flex-col gap-5">
-      <DashboardOverviewTopCharts
-        lang={m.lang}
-        supplierFrom={m.supplierFrom}
-        supplierTo={m.supplierTo}
-        isPeriodLoading={m.isPeriodLoading}
-        topSuppliersChartData={m.topSuppliersChartData}
-        purchaseCategoriesPieData={m.purchaseCategoriesPieData}
-        selectedMonth={m.selectedMonth}
-        periodPurchaseTotal={Number(m.periodData?.purchaseCategoryTotal || 0)}
-      />
-
       <DashboardOverviewWeeklySalesPanel
         weeklyYearOptions={m.weeklyYearOptions}
         weeklyMonthOptions={m.weeklyMonthOptions}
@@ -65,6 +54,17 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         SERIES={m.SERIES}
         pieColors={m.pieColors}
         uiDir={m.uiDir}
+      />
+
+      <DashboardOverviewTopCharts
+        lang={m.lang}
+        supplierFrom={m.supplierFrom}
+        supplierTo={m.supplierTo}
+        isPeriodLoading={m.isPeriodLoading}
+        topSuppliersChartData={m.topSuppliersChartData}
+        purchaseCategoriesPieData={m.purchaseCategoriesPieData}
+        selectedMonth={m.selectedMonth}
+        periodPurchaseTotal={Number(m.periodData?.purchaseCategoryTotal || 0)}
       />
     </div>
   );
