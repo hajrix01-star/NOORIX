@@ -3,6 +3,7 @@
  * Arabic/English copy via `t()`; English digits in numeric segments only.
  */
 import type { DashboardInsightsPayload } from '../../../../services/reportingInsightsApi';
+import { fmt } from '../../../../utils/format';
 
 export type KpiInsightSeverity = 'info' | 'warning' | 'critical';
 
@@ -138,8 +139,10 @@ export function buildKpiInsightFooterMap(
     const inc = num(vals.increaseRatio);
     if (inc != null) {
       const pct = formatInsightPercentDisplay(inc * 100);
+      const trailAvg = num(vals.trailingAveragePurchases);
+      const avg = trailAvg != null ? fmt(trailAvg) : '—';
       purchaseLines.push({
-        text: t('dashboardKpiInsightPurchasesUnusuallyHigh', { pct }),
+        text: t('dashboardKpiInsightPurchasesUnusuallyHigh', { pct, avg }),
         severity: sev,
         title: detailTitle(unusualPurchases, isAr),
         compact: true,
@@ -154,6 +157,9 @@ export function buildKpiInsightFooterMap(
 
   /* ─── Expenses ─── */
   const expenseRatio = findRawById(all, 'expense_ratio_to_sales');
+  const unusualExpenses = findRawById(all, 'unusual_expense_spike_warning');
+  const expenseLines: KpiInsightFooterLine[] = [];
+
   if (expenseRatio) {
     const sev = readSeverity(expenseRatio);
     const vals = readValues(expenseRatio);
@@ -168,12 +174,35 @@ export function buildKpiInsightFooterMap(
     } else if (tw != null) {
       const limit = formatThresholdPercentFromFraction(tw);
       text = t('dashboardKpiInsightExpensesAboveWarn', { base, limit });
+    } else if (ratio != null) {
+      // Normal range — still show ratio so unusually_high line doesn't hide the default badge
+      text = `${base}%`;
     }
     if (text) {
-      out.expenses = {
-        lines: [{ text, severity: sev, title: detailTitle(expenseRatio, isAr) }],
-      };
+      expenseLines.push({ text, severity: sev, title: detailTitle(expenseRatio, isAr) });
     }
+  }
+
+  if (unusualExpenses) {
+    const sev = readSeverity(unusualExpenses);
+    const vals = readValues(unusualExpenses);
+    const inc = num(vals.increaseRatio);
+    if (inc != null) {
+      const pct = formatInsightPercentDisplay(inc * 100);
+      const trailAvg = num(vals.trailingAverage);
+      const avg = trailAvg != null ? fmt(trailAvg) : '—';
+      expenseLines.push({
+        text: t('dashboardKpiInsightExpensesUnusuallyHigh', { pct, avg }),
+        severity: sev,
+        title: detailTitle(unusualExpenses, isAr),
+        compact: true,
+      });
+    }
+  }
+
+  if (expenseLines.length > 2) expenseLines.length = 2;
+  if (expenseLines.length > 0) {
+    out.expenses = { lines: expenseLines };
   }
 
   /* ─── Net profit ─── */

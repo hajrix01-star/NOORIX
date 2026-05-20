@@ -14,6 +14,7 @@ import {
   rulePurchaseRatioToSales,
   ruleUnusuallyHighPurchases,
 } from './insights.rules';
+import { ruleUnusualExpenseSpike } from './expenses/expense-insights.rules';
 import { buildSalesBreakdownForMonth } from './shared/overview-pl-breakdown.util';
 import { CompanyInsightThresholdSettingsService } from './company-insight-threshold-settings.service';
 
@@ -56,6 +57,7 @@ export class DashboardInsightsService {
     push(rulePurchaseRatioToSales(purchaseToSales, thresholds));
     push(ruleUnusuallyHighPurchases(profitLoss, selectedMonth));
     push(ruleExpenseRatioToSales(expenseToSales, thresholds));
+    push(ruleUnusualExpenseSpike(profitLoss, selectedMonth));
     push(ruleNetProfitMargin(netProfitMargin, snap?.numeric.sales ?? null, thresholds));
     push(ruleNegativeProfit(snap?.numeric.netProfit ?? null));
     // v1 does not emit ruleMissingSalesData — current product relies on accounting P&L revenue, not operational daily summaries.

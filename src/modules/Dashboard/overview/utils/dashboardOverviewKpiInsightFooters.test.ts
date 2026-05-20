@@ -25,7 +25,9 @@ function mockT(key: string, vars?: Record<string, string | number>): string {
     case 'dashboardKpiInsightNetProfitNegative':
       return 'Negative net profit';
     case 'dashboardKpiInsightPurchasesUnusuallyHigh':
-      return `Above normal +${v.pct}%`;
+      return `Above normal (${v.avg} SR) by +${v.pct}%`;
+    case 'dashboardKpiInsightExpensesUnusuallyHigh':
+      return `Above normal (${v.avg} SR) by +${v.pct}%`;
     default:
       return key;
   }
@@ -93,14 +95,14 @@ describe('buildKpiInsightFooterMap', () => {
     expect(m.purchases?.lines[0]?.severity).toBe('critical');
   });
 
-  it('purchases: unusually high as second compact line', () => {
+  it('purchases: unusually high shows avg and pct', () => {
     const payload = {
       warnings: [
         {
           id: 'unusually_high_purchases_warning',
           severity: 'warning',
           metricBasis: 'accounting_pl',
-          values: { increaseRatio: 0.41 },
+          values: { increaseRatio: 0.41, trailingAveragePurchases: 5000 },
         },
       ],
       insights: [],
@@ -108,7 +110,72 @@ describe('buildKpiInsightFooterMap', () => {
 
     const m = buildKpiInsightFooterMap(payload, false, mockT, false);
     expect(m.purchases?.lines[0]?.compact).toBe(true);
-    expect(m.purchases?.lines[0]?.text).toMatch(/Above normal \+41%/);
+    expect(m.purchases?.lines[0]?.text).toMatch(/Above normal/);
+    expect(m.purchases?.lines[0]?.text).toMatch(/41%/);
+    expect(m.purchases?.lines[0]?.text).toMatch(/SR/);
+  });
+
+  it('expenses: normal ratio shows fallback pct line', () => {
+    const payload = {
+      warnings: [
+        {
+          id: 'expense_ratio_to_sales',
+          severity: 'info',
+          metricBasis: 'accounting_pl',
+          values: { expenseToSales: 0.18 },
+        },
+      ],
+      insights: [],
+    } as unknown as DashboardInsightsPayload;
+
+    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
+    expect(m.expenses?.lines[0]?.text).toBe('18%');
+    expect(m.expenses?.lines[0]?.compact).toBeUndefined();
+  });
+
+  it('expenses: unusually high shows avg and pct as compact', () => {
+    const payload = {
+      warnings: [
+        {
+          id: 'unusual_expense_spike_warning',
+          severity: 'warning',
+          metricBasis: 'accounting_pl',
+          values: { increaseRatio: 0.3, trailingAverage: 3000 },
+        },
+      ],
+      insights: [],
+    } as unknown as DashboardInsightsPayload;
+
+    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
+    expect(m.expenses?.lines[0]?.compact).toBe(true);
+    expect(m.expenses?.lines[0]?.text).toMatch(/Above normal/);
+    expect(m.expenses?.lines[0]?.text).toMatch(/30%/);
+    expect(m.expenses?.lines[0]?.text).toMatch(/SR/);
+  });
+
+  it('expenses: normal ratio + unusually high both appear', () => {
+    const payload = {
+      warnings: [
+        {
+          id: 'expense_ratio_to_sales',
+          severity: 'info',
+          metricBasis: 'accounting_pl',
+          values: { expenseToSales: 0.15 },
+        },
+        {
+          id: 'unusual_expense_spike_warning',
+          severity: 'warning',
+          metricBasis: 'accounting_pl',
+          values: { increaseRatio: 0.25, trailingAverage: 2000 },
+        },
+      ],
+      insights: [],
+    } as unknown as DashboardInsightsPayload;
+
+    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
+    expect(m.expenses?.lines.length).toBe(2);
+    expect(m.expenses?.lines[0]?.text).toBe('15%');
+    expect(m.expenses?.lines[1]?.compact).toBe(true);
   });
 
   it('expenses: warning footer text', () => {
@@ -188,9 +255,10 @@ describe('buildKpiInsightFooterMap', () => {
     // First line = ratio (info, not compact)
     expect(m.purchases?.lines[0]?.text).toBe('28%');
     expect(m.purchases?.lines[0]?.compact).toBeUndefined();
-    // Second line = unusually high (compact)
+    // Second line = unusually high (compact) — includes avg and pct
     expect(m.purchases?.lines[1]?.compact).toBe(true);
-    expect(m.purchases?.lines[1]?.text).toMatch(/Above normal \+35%/);
+    expect(m.purchases?.lines[1]?.text).toMatch(/Above normal/);
+    expect(m.purchases?.lines[1]?.text).toMatch(/35%/);
   });
 
   it('caps purchase lines at 2', () => {

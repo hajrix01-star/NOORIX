@@ -115,8 +115,12 @@ export default {
   },
   dashboardKpiInsightNetProfitNegative: { ar: 'صافي الربح سلبي', en: 'Negative net profit' },
   dashboardKpiInsightPurchasesUnusuallyHigh: {
-    ar: 'أعلى من المعتاد +{pct}%',
-    en: 'Above normal +{pct}%',
+    ar: 'أعلى من المعتاد ({avg} SR) بـ +{pct}%',
+    en: 'Above normal ({avg} SR) by +{pct}%',
+  },
+  dashboardKpiInsightExpensesUnusuallyHigh: {
+    ar: 'أعلى من المعتاد ({avg} SR) بـ +{pct}%',
+    en: 'Above normal ({avg} SR) by +{pct}%',
   },
   dashboardKpiFooterNetProfitMarginLabel: { ar: 'هامش صافي الربح', en: 'Net profit margin' },
 
