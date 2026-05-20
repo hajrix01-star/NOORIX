@@ -1,7 +1,7 @@
 ﻿/**
  * SmartChatScreen — حاوية المحادثة الذكية (منطق الصفحة في hooks ومكوّنات فرعية).
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -22,6 +22,7 @@ import { useSmartChatUploads } from './hooks/useSmartChatUploads';
 import { useSmartChatComposer } from './hooks/useSmartChatComposer';
 import { useSmartChatActions } from './hooks/useSmartChatActions';
 import { useSmartChatExpenseModalHandlers } from './hooks/useSmartChatExpenseModalHandlers';
+import { useSmartChatUsage } from './hooks/useSmartChatUsage';
 import { SmartChatMessageList } from './components/SmartChatMessageList';
 import { SmartChatComposer } from './components/SmartChatComposer';
 import { SmartChatQuickActions } from './components/SmartChatQuickActions';
@@ -30,6 +31,9 @@ import { SmartChatFaqList } from './components/SmartChatFaqList';
 import { SmartChatMobileStickyHeader } from './components/SmartChatMobileStickyHeader';
 import { SmartChatCommandsPanel } from './components/SmartChatCommandsPanel';
 import { SmartChatExpenseLinePickSheet, type ExpenseLineRow } from './components/SmartChatExpenseLinePickSheet';
+import { SmartChatWelcome } from './components/SmartChatWelcome';
+import { SmartChatTypingIndicator } from './components/SmartChatTypingIndicator';
+import { SmartChatReplyChips } from './components/SmartChatReplyChips';
 
 export default function SmartChatScreen() {
   const { activeCompanyId } = useApp();
@@ -58,6 +62,9 @@ export default function SmartChatScreen() {
   const showFaq = canUseChatPresetFaq(can);
   const visibleFaqQuestions = filterVisibleFaqQuestions(showFaq, PERMANENT_QUESTIONS, can);
   const filteredGroups = useMemo(() => filterCommandGroups(can), [can]);
+
+  const { recordUsage, getSortedQuestions } = useSmartChatUsage(activeCompanyId, userId);
+  const topWelcomeChips = useMemo(() => getSortedQuestions(can, isAr), [getSortedQuestions, can, isAr]);
 
   const {
     setMessages,
@@ -97,6 +104,44 @@ export default function SmartChatScreen() {
     setExpenseEditLine,
     create,
   });
+
+  // دالة مغلّفة تسجّل الاستخدام قبل الإرسال
+  const handleSendTracked = useCallback(
+    async (text?: string) => {
+      const q = (text ?? input ?? '').trim();
+      if (q) recordUsage(q);
+      await handleSend(text);
+    },
+    [handleSend, input, recordUsage],
+  );
+
+  // chips متابعة سياقية بعد الرد (تُحسب من آخر سؤال)
+  const replyChips = useMemo(() => {
+    if (!activeCompanyId) return [];
+    const lastUser = [...displayedMessages].reverse().find((m) => m.role === 'user') as any;
+    if (!lastUser) return [];
+    const q: string = (lastUser.text || '').toLowerCase();
+    if (q.includes('مبيعات اليوم') || q.includes('today')) {
+      return [
+        { label: isAr ? 'أمس' : 'Yesterday', text: isAr ? 'كم مبيعات أمس؟' : 'What are yesterday\'s sales?' },
+        { label: isAr ? 'هذا الشهر' : 'This month', text: isAr ? 'كم مبيعات هذا الشهر؟' : 'What are this month\'s sales?' },
+        { label: isAr ? 'مقارنة الشهر' : 'Month compare', text: isAr ? 'مبيعات الشهر الحالي مقابل الماضي (نفس الفترة)' : 'This month vs last month sales (aligned partial months).' },
+      ];
+    }
+    if (q.includes('مبيعات') || q.includes('sale')) {
+      return [
+        { label: isAr ? 'أرصدة الخزائن' : 'Vault balances', text: isAr ? 'ما أرصدة الخزائن؟' : 'What are vault balances?' },
+        { label: isAr ? 'ملخص الربح' : 'P&L', text: isAr ? 'أعطني ملخص الربح والخسارة' : 'Give me P&L summary' },
+      ];
+    }
+    if (q.includes('خزائن') || q.includes('vault')) {
+      return [
+        { label: isAr ? 'مبيعات اليوم' : 'Today\'s sales', text: isAr ? 'كم مبيعات اليوم؟' : 'What are today\'s sales?' },
+        { label: isAr ? 'ملخص الربح' : 'P&L', text: isAr ? 'أعطني ملخص الربح والخسارة' : 'Give me P&L summary' },
+      ];
+    }
+    return [];
+  }, [displayedMessages, isAr, activeCompanyId]);
 
   const { onAddLineSaved, onPaySaved, onEditLineSaved } = useSmartChatExpenseModalHandlers({
     isAr,
@@ -158,11 +203,15 @@ export default function SmartChatScreen() {
             emptyFilteredHint={t('chatNoMessagesOnDate')}
             loadMoreLabel={t('chatLoadMoreCount', String(olderHiddenCount))}
             scrollRef={messagesScrollRef}
+            userName={userName}
+            topWelcomeChips={topWelcomeChips}
+            onChipPick={(text) => void handleSendTracked(text)}
+            replyChips={replyChips}
           />
           <SmartChatComposer
             input={input}
             onChange={onChange}
-            onSend={() => void handleSend()}
+            onSend={() => void handleSendTracked()}
             loading={loading}
             disabledNoCompany={!activeCompanyId}
             placeholder={t('chatInputPlaceholder')}
@@ -187,7 +236,7 @@ export default function SmartChatScreen() {
             visibleFaqQuestions={visibleFaqQuestions}
             isAr={isAr}
             onPickQuestion={(text) => {
-              void handleSend(text);
+              void handleSendTracked(text);
               setFaqOpen(false);
             }}
           />
@@ -285,7 +334,7 @@ export default function SmartChatScreen() {
             showFaq={showFaq}
             visibleFaqQuestions={visibleFaqQuestions}
             handleCommand={handleCommand}
-            handleSend={handleSend}
+            handleSend={handleSendTracked}
             onCloseSheet={() => setMobileToolsOpen(false)}
           />
         </AdaptiveSheet>

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Button } from '../../../ui';
-import type { ChatMessage } from '../types';
+import type { ChatMessage, PermanentQuestion } from '../types';
 import { SmartChatMessageBubble } from './SmartChatMessageBubble';
 import { SmartChatEmptyState } from './SmartChatEmptyState';
+import { SmartChatWelcome } from './SmartChatWelcome';
+import { SmartChatTypingIndicator } from './SmartChatTypingIndicator';
+import { SmartChatReplyChips } from './SmartChatReplyChips';
 
 export type SmartChatMessageListProps = {
   displayedMessages: ChatMessage[];
@@ -15,6 +18,10 @@ export type SmartChatMessageListProps = {
   emptyFilteredHint: string;
   loadMoreLabel: string;
   scrollRef: React.Ref<HTMLDivElement>;
+  userName: string;
+  topWelcomeChips: PermanentQuestion[];
+  onChipPick: (text: string) => void;
+  replyChips: Array<{ label: string; text: string }>;
 };
 
 export function SmartChatMessageList({
@@ -28,7 +35,17 @@ export function SmartChatMessageList({
   emptyFilteredHint,
   loadMoreLabel,
   scrollRef,
+  userName,
+  topWelcomeChips,
+  onChipPick,
+  replyChips,
 }: SmartChatMessageListProps) {
+  const isEmpty = displayedMessages.length === 0;
+  const showWelcome = isEmpty && !dateFilter;
+  const lastIsAssistant =
+    displayedMessages.length > 0 &&
+    displayedMessages[displayedMessages.length - 1].role === 'assistant';
+
   return (
     <div
       className="noorix-smart-chat-messages"
@@ -44,23 +61,35 @@ export function SmartChatMessageList({
           {loadMoreLabel}
         </Button>
       )}
-      {displayedMessages.length === 0 &&
-        (dateFilter ? (
-          <div className="text-noorix-muted text-[14px] text-center p-6">{emptyFilteredHint}</div>
-        ) : (
-          <SmartChatEmptyState narrow={narrow} isAr={isAr} />
-        ))}
+
+      {/* ترحيب عند فتح محادثة فارغة */}
+      {showWelcome && (
+        <SmartChatWelcome
+          userName={userName}
+          isAr={isAr}
+          loading={loading}
+          topQuestions={topWelcomeChips}
+          onPick={onChipPick}
+        />
+      )}
+
+      {/* رسالة «لا رسائل لهذا التاريخ» */}
+      {isEmpty && dateFilter && (
+        <div className="text-noorix-muted text-[14px] text-center p-6">{emptyFilteredHint}</div>
+      )}
+
+      {/* الرسائل */}
       {displayedMessages.map((m, i) => (
         <SmartChatMessageBubble key={i} message={m} isAr={isAr} />
       ))}
-      {loading && (
+
+      {/* مؤشر الكتابة أثناء الانتظار */}
+      {loading && <SmartChatTypingIndicator isAr={isAr} />}
+
+      {/* chips متابعة بعد آخر رد من البوت */}
+      {!loading && lastIsAssistant && replyChips.length > 0 && (
         <div className="noorix-chat-msg-row noorix-chat-msg-row--assistant">
-          <div className="noorix-chat-skeleton-card" aria-hidden>
-            <div className="noorix-chat-skeleton-line noorix-chat-skeleton-line--sm" />
-            <div className="noorix-chat-skeleton-line" />
-            <div className="noorix-chat-skeleton-line noorix-chat-skeleton-line--lg" />
-          </div>
-          <div className="sr-only">{isAr ? 'جاري البحث…' : 'Searching…'}</div>
+          <SmartChatReplyChips chips={replyChips} loading={loading} onPick={onChipPick} />
         </div>
       )}
     </div>

@@ -30,8 +30,7 @@ body.noorix-page-smart-chat .app-main__content {
   min-height: 0;
   min-width: 0;
   width: 100%;
-  max-width: 860px;
-  margin: 0 auto;
+  max-width: 100%;
   background: var(--noorix-bg-page);
   box-sizing: border-box;
   overflow-x: hidden;
@@ -41,9 +40,8 @@ body.noorix-page-smart-chat .app-main__content {
 .noorix-smart-chat-sticky {
   flex-shrink: 0;
   background: var(--noorix-bg-page);
-  padding: 10px 16px 8px;
+  padding: 6px 16px 6px;
   border-bottom: 1px solid var(--noorix-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   z-index: 50;
 }
 
@@ -104,7 +102,7 @@ body.noorix-page-smart-chat .app-main__content {
   justify-content: space-between;
   flex-wrap: nowrap;
   gap: 10px;
-  padding: 4px 0 6px;
+  padding: 2px 0 4px;
 }
 
 .noorix-smart-chat-header .noorix-smart-chat-title {
@@ -308,10 +306,10 @@ body.noorix-page-smart-chat .app-main__content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px 24px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   min-height: 0;
   scroll-behavior: smooth;
   overscroll-behavior: contain;
@@ -348,14 +346,16 @@ body.noorix-page-smart-chat .app-main__content {
   width: 100%;
 }
 
+/* RTL (عربي افتراضي): المستخدم يمين، المساعد يسار */
 .noorix-chat-msg-row--user {
-  align-items: flex-start;
-}
-
-.noorix-chat-msg-row--assistant {
   align-items: flex-end;
 }
 
+.noorix-chat-msg-row--assistant {
+  align-items: flex-start;
+}
+
+/* LTR (إنجليزي): المستخدم يسار، المساعد يمين */
 [dir='ltr'] .noorix-chat-msg-row--user {
   align-items: flex-end;
 }
@@ -830,5 +830,114 @@ body.noorix-page-smart-chat .app-main__content {
 @media (max-width: 380px) {
   .noorix-smart-chat-header .noorix-smart-chat-title {
     font-size: 1rem;
+  }
+}
+
+/* ─── Typing Indicator (●●●) ─── */
+.noorix-chat-typing {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 14px;
+  background: var(--noorix-bg-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 18px 18px 18px 4px;
+  width: fit-content;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.noorix-chat-typing__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--noorix-text-muted);
+  animation: nx-chat-typing-bounce 1.2s ease-in-out infinite;
+}
+.noorix-chat-typing__dot:nth-child(2) { animation-delay: 0.2s; }
+.noorix-chat-typing__dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes nx-chat-typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ─── Welcome chips + Quick reply chips ─── */
+.noorix-chat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.noorix-chat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--btn-primary-bg, #2563eb);
+  background: transparent;
+  color: var(--btn-primary-bg, #2563eb);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+  white-space: nowrap;
+  touch-action: manipulation;
+  line-height: 1.3;
+}
+
+.noorix-chat-chip:hover:not(:disabled) {
+  background: var(--btn-primary-bg, #2563eb);
+  color: #fff;
+}
+
+.noorix-chat-chip:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.noorix-chat-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ─── Welcome bubble ─── */
+.noorix-chat-welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  background: var(--noorix-bg-surface);
+  border: 1px solid var(--noorix-border);
+  border-radius: 18px 18px 18px 4px;
+  max-width: min(80%, 540px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.noorix-chat-welcome__greeting {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--noorix-text);
+  line-height: 1.4;
+}
+
+.noorix-chat-welcome__sub {
+  font-size: 13px;
+  color: var(--noorix-text-muted);
+  margin-bottom: 2px;
+}
+
+@media (max-width: 768px) {
+  .noorix-chat-chips {
+    gap: 6px;
+  }
+  .noorix-chat-chip {
+    font-size: 12px;
+    padding: 6px 12px;
+    min-height: 36px;
+  }
+  .noorix-chat-welcome {
+    max-width: min(92%, 100%);
   }
 }
