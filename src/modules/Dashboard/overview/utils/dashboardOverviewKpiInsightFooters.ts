@@ -119,6 +119,9 @@ export function buildKpiInsightFooterMap(
     } else if (tw != null) {
       const limit = formatThresholdPercentFromFraction(tw);
       text = t('dashboardKpiInsightPurchasesAboveWarn', { base, limit });
+    } else if (ratio != null) {
+      // Normal range — still show ratio so unusually_high line doesn't hide the default badge
+      text = `${base}%`;
     }
     if (text) {
       purchaseLines.push({

@@ -164,6 +164,35 @@ describe('buildKpiInsightFooterMap', () => {
     expect(m.netProfit?.lines[0]?.compact).toBe(true);
   });
 
+  it('purchases: normal ratio + unusually_high both appear (ratio not hidden)', () => {
+    const payload = {
+      warnings: [
+        {
+          id: 'purchase_ratio_to_sales',
+          severity: 'info',
+          metricBasis: 'accounting_pl',
+          values: { purchaseToSales: 0.28 }, // below any threshold — normal
+        },
+        {
+          id: 'unusually_high_purchases_warning',
+          severity: 'warning',
+          metricBasis: 'accounting_pl',
+          values: { increaseRatio: 0.35 },
+        },
+      ],
+      insights: [],
+    } as unknown as DashboardInsightsPayload;
+
+    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
+    expect(m.purchases?.lines.length).toBe(2);
+    // First line = ratio (info, not compact)
+    expect(m.purchases?.lines[0]?.text).toBe('28%');
+    expect(m.purchases?.lines[0]?.compact).toBeUndefined();
+    // Second line = unusually high (compact)
+    expect(m.purchases?.lines[1]?.compact).toBe(true);
+    expect(m.purchases?.lines[1]?.text).toMatch(/Above normal \+35%/);
+  });
+
   it('caps purchase lines at 2', () => {
     const payload = {
       warnings: [
