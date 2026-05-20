@@ -121,6 +121,25 @@ export function DashboardOverviewKpis({
 
                 {insightBundle?.lines?.length ? (
                   <div className="flex flex-col gap-1">
+                    {/* When all lines are compact, the ratio row is absent — show pctNum badge first */}
+                    {insightBundle.lines.every((l) => l.compact) && (
+                      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                        <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
+                          {pctLabelText}
+                        </span>
+                        {pctNum != null ? (
+                          <span
+                            className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
+                            title={pctTitle}
+                          >
+                            {arrow}
+                            {Math.abs(pctNum)}%
+                          </span>
+                        ) : (
+                          <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>
+                        )}
+                      </div>
+                    )}
                     {insightBundle.lines.map((line, idx) => {
                       const footerLabel =
                         idx === 0
