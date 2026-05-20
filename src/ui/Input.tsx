@@ -35,6 +35,7 @@ export type InputProps = {
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
   className?: string;
+  containerClassName?: string;
   children?: React.ReactNode;
   id?: string;
 } & Record<string, unknown>;
@@ -53,6 +54,7 @@ export default function Input({
   prefix,
   suffix,
   className = '',
+  containerClassName = '',
   children,
   id: externalId,
   ...rest
@@ -94,7 +96,7 @@ export default function Input({
   };
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className={cn('flex flex-col gap-1', containerClassName)}>
       {label && (
         <label htmlFor={id} className="text-[13px] font-semibold text-noorix-text">
           {label}

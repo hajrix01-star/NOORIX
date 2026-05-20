@@ -33,6 +33,7 @@ export function SmartChatComposer({
         ref={inputRef}
         type="text"
         className="noorix-chat-input-field"
+        containerClassName="flex-1 min-w-0"
         value={input}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
         onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
