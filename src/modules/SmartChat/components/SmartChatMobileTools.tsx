@@ -16,22 +16,23 @@ export function SmartChatMobileToolsBody({
   onCloseSheet,
 }: SmartChatMobileToolsBodyProps) {
   return (
-    <div className="flex flex-col gap-5 pt-1 min-w-0" dir={isAr ? 'rtl' : 'ltr'}>
-      <section className="min-w-0 space-y-2">
-        <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-noorix-muted">
+    <div className="flex flex-col gap-3 pt-1 min-w-0" dir={isAr ? 'rtl' : 'ltr'}>
+      <section className="min-w-0 space-y-1.5">
+        <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-noorix-muted">
           {t('chatFilterByDate')}
         </div>
-        <div className="flex flex-wrap items-stretch gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Input
             type="date"
-            className="noorix-smart-chat-date-input flex-1 min-w-0 min-h-[44px]"
+            size="sm"
+            className="noorix-smart-chat-date-input flex-1 min-w-0"
             value={dateFilter}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFilter(e.target.value || '')}
             lang="en"
             title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
           />
           {dateFilter ? (
-            <Button type="button" size="sm" className="shrink-0 min-h-[44px]" onClick={() => setDateFilter('')}>
+            <Button type="button" size="sm" className="shrink-0" onClick={() => setDateFilter('')}>
               {t('chatClearFilter')}
             </Button>
           ) : null}
@@ -45,19 +46,19 @@ export function SmartChatMobileToolsBody({
               <div className="noorix-chat-commands-group-label">
                 {g.icon} {isAr ? g.labelAr : g.labelEn}
               </div>
-              <div className={`noorix-chat-commands-grid${g.items.length === 1 ? ' noorix-chat-commands-grid--single' : ''}`}>
+              <div className="noorix-chat-commands-grid">
                 {g.items.map((it) => (
                   <Button
                     key={it.key}
                     type="button"
-                    className="noorix-chat-commands-item"
+                    className="noorix-chat-commands-item noorix-chat-commands-item--compact"
                     onClick={() => {
                       handleCommand(it.key);
                       onCloseSheet();
                     }}
                   >
-                    <span aria-hidden>{it.icon}</span>
-                    <span>{isAr ? it.labelAr : it.labelEn}</span>
+                    <span className="text-[15px] leading-none" aria-hidden>{it.icon}</span>
+                    <span className="truncate text-[12px]">{isAr ? it.labelAr : it.labelEn}</span>
                   </Button>
                 ))}
               </div>
@@ -76,19 +77,15 @@ export function SmartChatMobileToolsBody({
             if (!qs.length) return null;
             return (
               <div key={sec.id} className="min-w-0">
-                <div
-                  className="px-1 pt-2 pb-1 text-[11px] font-bold uppercase tracking-[0.06em] text-noorix-muted"
-                  style={{ textAlign: isAr ? 'right' : 'left' }}
-                >
+                <div className={`px-1 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-noorix-muted ${isAr ? 'text-right' : 'text-left'}`}>
                   {isAr ? sec.labelAr : sec.labelEn}
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1">
                   {qs.map((q, i) => (
                     <Button
                       key={`${sec.id}-${i}`}
                       type="button"
-                      className="w-full text-[14px] justify-start py-3 px-4 font-medium leading-snug min-h-[48px] h-auto whitespace-normal"
-                      style={{ textAlign: isAr ? 'right' : 'left' }}
+                      className={`w-full text-[12px] ${isAr ? 'justify-end text-right' : 'justify-start text-left'} py-2 px-3 font-medium leading-snug min-h-[36px] h-auto whitespace-normal`}
                       onClick={() => {
                         void handleSend(isAr ? q.ar : q.en);
                         onCloseSheet();
