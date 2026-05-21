@@ -138,6 +138,12 @@ export default {
     ar: 'أقل من المعتاد ({avg} SR) بـ -{pct}%',
     en: 'Below normal ({avg} SR) by -{pct}%',
   },
+  /** جدول footer موحّد للكروت */
+  dashboardKpiFooterRatioToSales: { ar: 'النسبة من المبيعات', en: '% of Sales' },
+  dashboardKpiFooterGrossMargin: { ar: 'هامش الربح الإجمالي', en: 'Gross Margin' },
+  dashboardKpiFooterNetMargin: { ar: 'هامش صافي الربح', en: 'Net Margin' },
+  dashboardKpiFooterTrailingAvg: { ar: 'المتوسط الشهري', en: 'Monthly Avg' },
+  dashboardKpiFooterChangeVsAvg: { ar: 'التغيير', en: 'Change' },
   dashboardKpiFooterNetProfitMarginLabel: { ar: 'هامش صافي الربح', en: 'Net profit margin' },
 
   dashboardWeeklySalesTitle: {

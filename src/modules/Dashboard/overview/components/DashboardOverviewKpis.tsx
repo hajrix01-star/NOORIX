@@ -3,7 +3,6 @@ import { useTranslation } from '../../../../i18n/useTranslation';
 import { amountText } from '../../../Reports/reportHelpers';
 import { FmtNum, MetricCard } from '../../../../ui';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../../constants/kpiCardTheme';
-import { cn } from '../../../../ui/cn';
 import {
   getCardValue,
   getMonthlyData,
@@ -12,7 +11,7 @@ import {
 } from '../utils/dashboardOverviewCalculations';
 import type { DashboardOverviewFilter } from '../types';
 import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
-import { severityFooterValueClass } from '../utils/dashboardOverviewKpiInsightFooters';
+import { kpiFooterRowColorClass } from '../utils/dashboardOverviewKpiInsightFooters';
 
 type CardDef = {
   key: string;
@@ -62,13 +61,8 @@ export function DashboardOverviewKpis({
             badgeTone = 'neutral';
             arrow = '';
           } else if (isProfit && pctNum != null) {
-            if (pctNum > 0) {
-              badgeTone = 'positive';
-              arrow = '↑ ';
-            } else if (pctNum < 0) {
-              badgeTone = 'negative';
-              arrow = '↓ ';
-            }
+            if (pctNum > 0) { badgeTone = 'positive'; arrow = '↑ '; }
+            else if (pctNum < 0) { badgeTone = 'negative'; arrow = '↓ '; }
           } else if (!isSales && pctNum != null) {
             badgeTone = 'zero';
             arrow = '↓ ';
@@ -92,6 +86,8 @@ export function DashboardOverviewKpis({
             card.key === 'netProfit'
               ? kpiInsightFooters[card.key as 'purchases' | 'expenses' | 'grossProfit' | 'netProfit']
               : undefined;
+
+          const hasRows = (insightBundle?.rows?.length ?? 0) > 0;
 
           return (
             <MetricCard key={card.key} color={accentColor} className="min-h-[188px]">
@@ -119,68 +115,33 @@ export function DashboardOverviewKpis({
                 <MetricCard.Value value={amountText(rawVal)} currency="SR" />
               )}
               <MetricCard.Spark data={sparkData} color={accentColor} grow />
-              <MetricCard.Footer className="mt-3 flex flex-col gap-1.5 border-t border-noorix-border pt-3 pb-3">
-                <span className="min-w-0 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
 
-                {insightBundle?.lines?.length ? (
-                  <div className="flex flex-col gap-1">
-                    {/* When all lines are compact, the ratio row is absent — show pctNum badge first */}
-                    {insightBundle.lines.every((l) => l.compact) && (
-                      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-                        <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
-                          {pctLabelText}
+              <MetricCard.Footer className="mt-3 flex flex-col gap-1 border-t border-noorix-border pt-2 pb-2">
+                <span className="text-[10px] font-medium text-noorix-muted">{periodLabel}</span>
+
+                {hasRows ? (
+                  /* ── جدول موحّد: نسبة + متوسط + تغيير ── */
+                  <div className="flex flex-col divide-y divide-noorix-border mt-0.5">
+                    {insightBundle!.rows.map((row, idx) => (
+                      <div
+                        key={`${card.key}-row-${idx}`}
+                        className="flex items-center justify-between gap-2 py-[3px]"
+                        title={row.tooltip}
+                      >
+                        <span className="text-[10px] text-noorix-muted truncate leading-snug">
+                          {row.label}
                         </span>
-                        {pctNum != null ? (
-                          <span
-                            className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
-                            title={pctTitle}
-                          >
-                            {arrow}
-                            {Math.abs(pctNum)}%
-                          </span>
-                        ) : (
-                          <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>
-                        )}
-                      </div>
-                    )}
-                    {insightBundle.lines.map((line, idx) => {
-                      const footerLabel =
-                        idx === 0
-                          ? insightBundle.footerLabelKey
-                            ? t(insightBundle.footerLabelKey)
-                            : pctLabelText
-                          : '';
-                      const valueCn = cn(
-                        'inline-flex max-w-full items-center justify-end truncate rounded px-2 py-0.5 text-[11px] font-bold nx-font-numbers',
-                        severityFooterValueClass(line.severity),
-                        line.compact && 'text-[10px]',
-                      );
-                      if (line.compact) {
-                        return (
-                          <div key={`${card.key}-ins-${idx}`} className="flex justify-end">
-                            <span className={valueCn} title={line.title}>
-                              {line.text}
-                            </span>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div
-                          key={`${card.key}-ins-${idx}`}
-                          className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1"
+                        <span
+                          className={`shrink-0 text-[11px] font-bold nx-font-numbers ltr ${kpiFooterRowColorClass(row.color)}`}
                         >
-                          <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
-                            {footerLabel}
-                          </span>
-                          <span className={cn(valueCn, 'shrink-0')} title={line.title}>
-                            {line.text}
-                          </span>
-                        </div>
-                      );
-                    })}
+                          {row.value}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                  /* ── fallback: شارة النسبة العادية (للكروت بدون insights أو في الوضع السنوي) ── */
+                  <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1 mt-0.5">
                     <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
                       {pctLabelText}
                     </span>
@@ -189,8 +150,7 @@ export function DashboardOverviewKpis({
                         className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
                         title={pctTitle}
                       >
-                        {arrow}
-                        {Math.abs(pctNum)}%
+                        {arrow}{Math.abs(pctNum)}%
                       </span>
                     ) : (
                       <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>

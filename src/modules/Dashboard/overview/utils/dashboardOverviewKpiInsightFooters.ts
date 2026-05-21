@@ -1,25 +1,24 @@
 /**
- * Maps dashboard insights payload to KPI footer lines (display-only).
- * Arabic/English copy via `t()`; English digits in numeric segments only.
+ * Maps dashboard insights payload to KPI footer table rows (display-only).
+ * Each non-sales KPI card shows up to 3 rows: ratio%, trailing avg, change vs avg.
  */
 import type { DashboardInsightsPayload } from '../../../../services/reportingInsightsApi';
 import { fmt } from '../../../../utils/format';
 
 export type KpiInsightSeverity = 'info' | 'warning' | 'critical';
 
-export type KpiInsightFooterLine = {
-  text: string;
-  severity: KpiInsightSeverity;
-  /** Native tooltip (full insight detail) */
-  title?: string;
-  /** Smaller secondary line */
-  compact?: boolean;
+/** Color token for a footer row value */
+export type KpiFooterRowColor = 'positive' | 'negative' | 'warning' | 'critical' | 'muted' | 'info';
+
+export type KpiFooterRow = {
+  label: string;
+  value: string;
+  color?: KpiFooterRowColor;
+  tooltip?: string;
 };
 
 export type KpiInsightFooterBundle = {
-  /** Optional i18n key to replace footer ratio label (e.g. net profit margin) */
-  footerLabelKey?: string;
-  lines: KpiInsightFooterLine[];
+  rows: KpiFooterRow[];
 };
 
 export type KpiInsightFooterMap = Partial<
@@ -28,9 +27,8 @@ export type KpiInsightFooterMap = Partial<
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
-/** Max 1 decimal, drop trailing .0 — matches backend insight display helper. */
-export function formatInsightPercentDisplay(pctOrFractionTimes100: number): string {
-  const n = pctOrFractionTimes100;
+/** Max 1 decimal, drop trailing .0 */
+export function formatInsightPercentDisplay(n: number): string {
   if (!Number.isFinite(n)) return '0';
   const rounded = Math.round(n * 10) / 10;
   if (Object.is(rounded, -0)) return '0';
@@ -38,10 +36,20 @@ export function formatInsightPercentDisplay(pctOrFractionTimes100: number): stri
   return rounded.toFixed(1);
 }
 
-/** `values.threshold*` are decimals (e.g. 0.35 → 35%). */
-export function formatThresholdPercentFromFraction(fraction: number | null | undefined): string {
-  if (fraction == null || !Number.isFinite(fraction)) return '';
-  return formatInsightPercentDisplay(fraction * 100);
+export function kpiFooterRowColorClass(color: KpiFooterRowColor | undefined): string {
+  switch (color) {
+    case 'positive':  return 'text-noorix-green';
+    case 'negative':  return 'text-[color:var(--noorix-accent-red)]';
+    case 'warning':   return 'text-[color:var(--noorix-accent-amber)]';
+    case 'critical':  return 'text-[color:var(--noorix-accent-red)]';
+    case 'muted':     return 'text-noorix-muted';
+    default:          return 'text-[color:var(--noorix-accent-blue)]';
+  }
+}
+
+function num(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  return null;
 }
 
 function collectRawInsights(payload: DashboardInsightsPayload | undefined): unknown[] {
@@ -60,6 +68,12 @@ function findRawById(items: unknown[], id: string): Record<string, unknown> | nu
   return null;
 }
 
+function readValues(raw: Record<string, unknown>): Record<string, unknown> {
+  const v = raw.values;
+  if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
+  return {};
+}
+
 function readSeverity(raw: Record<string, unknown>): KpiInsightSeverity {
   const s = raw.severity;
   if (s === 'critical') return 'critical';
@@ -67,267 +81,222 @@ function readSeverity(raw: Record<string, unknown>): KpiInsightSeverity {
   return 'info';
 }
 
-function readValues(raw: Record<string, unknown>): Record<string, unknown> {
-  const v = raw.values;
-  if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
-  return {};
+/** Format change ratio (+/-X.X% with arrow) */
+function fmtChange(changeRatio: number): string {
+  const pct = formatInsightPercentDisplay(Math.abs(changeRatio) * 100);
+  return changeRatio >= 0 ? `+${pct}% ↑` : `-${pct}% ↓`;
 }
 
-function num(v: unknown): number | null {
-  if (typeof v === 'number' && Number.isFinite(v)) return v;
-  return null;
+/** Change color: positive = good, negative = bad (for profit cards) */
+function profitChangeColor(changeRatio: number): KpiFooterRowColor {
+  return changeRatio >= 0 ? 'positive' : 'warning';
 }
 
-function detailTitle(raw: Record<string, unknown>, isAr: boolean): string | undefined {
-  const ar = typeof raw.detailAr === 'string' ? raw.detailAr : '';
-  const en = typeof raw.detailEn === 'string' ? raw.detailEn : '';
-  const s = isAr ? ar : en;
-  return s.trim() || undefined;
+/** Change color: positive = bad, negative = good (for cost cards) */
+function costChangeColor(changeRatio: number): KpiFooterRowColor {
+  return changeRatio > 0 ? 'warning' : 'positive';
 }
 
 /**
- * Builds footer bundles for Purchases / Expenses / Net Profit KPI cards.
- * When `insightsFailed`, returns {} so existing KPI footers stay unchanged.
+ * Builds the ratio row color for purchases/expenses based on threshold insight severity.
+ * Falls back to 'info' when no threshold is crossed.
+ */
+function ratioColorFromThreshold(
+  thresholdInsight: Record<string, unknown> | null,
+): KpiFooterRowColor {
+  if (!thresholdInsight) return 'info';
+  const sev = readSeverity(thresholdInsight);
+  if (sev === 'critical') return 'critical';
+  if (sev === 'warning') return 'warning';
+  return 'info';
+}
+
+/**
+ * Builds footer row bundles for all 4 KPI cards: purchases, expenses, gross profit, net profit.
+ * Returns {} when insightsFailed or payload is missing.
  */
 export function buildKpiInsightFooterMap(
   payload: DashboardInsightsPayload | undefined,
   insightsFailed: boolean,
   t: TFn,
-  isAr: boolean,
+  _isAr: boolean,
 ): KpiInsightFooterMap {
   if (insightsFailed || !payload) return {};
 
   const all = collectRawInsights(payload);
   const out: KpiInsightFooterMap = {};
 
-  // payload.ratios always has the actual computed ratios regardless of threshold crossings
-  const payloadRatios =
+  const ratios =
     payload.ratios && typeof payload.ratios === 'object' && !Array.isArray(payload.ratios)
       ? (payload.ratios as Record<string, unknown>)
       : {};
-  const rawPurchaseToSales = num(payloadRatios.purchaseToSales);
-  const rawExpenseToSales = num(payloadRatios.expenseToSales);
-  const rawGrossProfitMargin = num(payloadRatios.grossProfitMargin);
+
+  /* ─── helpers ─── */
+  const rawPurchaseToSales      = num(ratios.purchaseToSales);
+  const rawExpenseToSales       = num(ratios.expenseToSales);
+  const rawGrossProfitMargin    = num(ratios.grossProfitMargin);
+  const rawNetProfitMargin      = num(ratios.netProfitMargin);
+
+  const trailingAvgPurchases    = num(ratios.trailingAvgPurchases);
+  const purchaseChangeRatio     = num(ratios.purchaseChangeRatio);
+  const trailingAvgExpenses     = num(ratios.trailingAvgExpenses);
+  const expenseChangeRatio      = num(ratios.expenseChangeRatio);
+  const trailingAvgGrossProfit  = num(ratios.trailingAvgGrossProfit);
+  const grossProfitChangeRatio  = num(ratios.grossProfitChangeRatio);
+  const trailingAvgNetProfit    = num(ratios.trailingAvgNetProfit);
+  const netProfitChangeRatio    = num(ratios.netProfitChangeRatio);
 
   /* ─── Purchases ─── */
-  const purchaseRatio = findRawById(all, 'purchase_ratio_to_sales');
-  const unusualPurchases = findRawById(all, 'unusually_high_purchases_warning');
-  const purchaseLines: KpiInsightFooterLine[] = [];
-
   {
-    // Threshold-based warning from insight (only emitted when above threshold)
-    let thresholdLine: KpiInsightFooterLine | null = null;
-    if (purchaseRatio) {
-      const sev = readSeverity(purchaseRatio);
-      const vals = readValues(purchaseRatio);
-      const tw = num(vals.thresholdWarning);
-      const tc = num(vals.thresholdCritical);
-      const base = rawPurchaseToSales != null ? formatInsightPercentDisplay(rawPurchaseToSales * 100) : '';
-      let text = '';
-      if (sev === 'critical' && tc != null) {
-        const limit = formatThresholdPercentFromFraction(tc);
-        text = t('dashboardKpiInsightPurchasesAboveCrit', { base, limit });
-      } else if (tw != null) {
-        const limit = formatThresholdPercentFromFraction(tw);
-        text = t('dashboardKpiInsightPurchasesAboveWarn', { base, limit });
+    const thresholdInsight = findRawById(all, 'purchase_ratio_to_sales');
+    const rows: KpiFooterRow[] = [];
+
+    if (rawPurchaseToSales != null) {
+      const pct = formatInsightPercentDisplay(rawPurchaseToSales * 100);
+      let tooltip: string | undefined;
+      if (thresholdInsight) {
+        const vals = readValues(thresholdInsight);
+        const tw = num(vals.thresholdWarning);
+        const tc = num(vals.thresholdCritical);
+        const limit = tc != null && readSeverity(thresholdInsight) === 'critical' ? tc : tw;
+        if (limit != null) {
+          const limitPct = formatInsightPercentDisplay(limit * 100);
+          tooltip = `${t('dashboardKpiFooterRatioToSales')}: ${pct}% (${t('dashboardKpiInsightPurchasesAboveWarn', { base: pct, limit: limitPct })})`;
+        }
       }
-      if (text) thresholdLine = { text, severity: sev, title: detailTitle(purchaseRatio, isAr) };
-    }
-
-    if (thresholdLine) {
-      purchaseLines.push(thresholdLine);
-    } else if (rawPurchaseToSales != null) {
-      // Always show current ratio even when below threshold
-      const base = formatInsightPercentDisplay(rawPurchaseToSales * 100);
-      purchaseLines.push({ text: `${base}%`, severity: 'info' });
-    }
-  }
-
-  if (unusualPurchases) {
-    const sev = readSeverity(unusualPurchases);
-    const vals = readValues(unusualPurchases);
-    const inc = num(vals.increaseRatio);
-    if (inc != null) {
-      const pct = formatInsightPercentDisplay(inc * 100);
-      const trailAvg = num(vals.trailingAveragePurchases);
-      const avg = trailAvg != null ? fmt(trailAvg) : '—';
-      purchaseLines.push({
-        text: t('dashboardKpiInsightPurchasesUnusuallyHigh', { pct, avg }),
-        severity: sev,
-        title: detailTitle(unusualPurchases, isAr),
-        compact: true,
+      rows.push({
+        label: t('dashboardKpiFooterRatioToSales'),
+        value: `${pct}%`,
+        color: ratioColorFromThreshold(thresholdInsight),
+        tooltip,
       });
     }
-  }
 
-  if (purchaseLines.length > 2) purchaseLines.length = 2;
-  if (purchaseLines.length > 0) {
-    out.purchases = { lines: purchaseLines };
+    if (trailingAvgPurchases != null) {
+      rows.push({
+        label: t('dashboardKpiFooterTrailingAvg'),
+        value: `${fmt(trailingAvgPurchases)} SR`,
+        color: 'muted',
+      });
+    }
+
+    if (purchaseChangeRatio != null) {
+      rows.push({
+        label: t('dashboardKpiFooterChangeVsAvg'),
+        value: fmtChange(purchaseChangeRatio),
+        color: costChangeColor(purchaseChangeRatio),
+      });
+    }
+
+    if (rows.length > 0) out.purchases = { rows };
   }
 
   /* ─── Expenses ─── */
-  const expenseRatio = findRawById(all, 'expense_ratio_to_sales');
-  const unusualExpenses = findRawById(all, 'unusual_expense_spike_warning');
-  const expenseLines: KpiInsightFooterLine[] = [];
-
   {
-    // Threshold-based warning from insight (only emitted when above threshold)
-    let thresholdLine: KpiInsightFooterLine | null = null;
-    if (expenseRatio) {
-      const sev = readSeverity(expenseRatio);
-      const vals = readValues(expenseRatio);
-      const tw = num(vals.thresholdWarning);
-      const tc = num(vals.thresholdCritical);
-      const base = rawExpenseToSales != null ? formatInsightPercentDisplay(rawExpenseToSales * 100) : '';
-      let text = '';
-      if (sev === 'critical' && tc != null) {
-        const limit = formatThresholdPercentFromFraction(tc);
-        text = t('dashboardKpiInsightExpensesAboveCrit', { base, limit });
-      } else if (tw != null) {
-        const limit = formatThresholdPercentFromFraction(tw);
-        text = t('dashboardKpiInsightExpensesAboveWarn', { base, limit });
-      }
-      if (text) thresholdLine = { text, severity: sev, title: detailTitle(expenseRatio, isAr) };
-    }
+    const thresholdInsight = findRawById(all, 'expense_ratio_to_sales');
+    const rows: KpiFooterRow[] = [];
 
-    if (thresholdLine) {
-      expenseLines.push(thresholdLine);
-    } else if (rawExpenseToSales != null) {
-      // Always show current ratio even when below threshold
-      const base = formatInsightPercentDisplay(rawExpenseToSales * 100);
-      expenseLines.push({ text: `${base}%`, severity: 'info' });
-    }
-  }
-
-  if (unusualExpenses) {
-    const sev = readSeverity(unusualExpenses);
-    const vals = readValues(unusualExpenses);
-    const inc = num(vals.increaseRatio);
-    if (inc != null) {
-      const pct = formatInsightPercentDisplay(inc * 100);
-      const trailAvg = num(vals.trailingAverage);
-      const avg = trailAvg != null ? fmt(trailAvg) : '—';
-      expenseLines.push({
-        text: t('dashboardKpiInsightExpensesUnusuallyHigh', { pct, avg }),
-        severity: sev,
-        title: detailTitle(unusualExpenses, isAr),
-        compact: true,
+    if (rawExpenseToSales != null) {
+      const pct = formatInsightPercentDisplay(rawExpenseToSales * 100);
+      rows.push({
+        label: t('dashboardKpiFooterRatioToSales'),
+        value: `${pct}%`,
+        color: ratioColorFromThreshold(thresholdInsight),
       });
     }
-  }
 
-  if (expenseLines.length > 2) expenseLines.length = 2;
-  if (expenseLines.length > 0) {
-    out.expenses = { lines: expenseLines };
+    if (trailingAvgExpenses != null) {
+      rows.push({
+        label: t('dashboardKpiFooterTrailingAvg'),
+        value: `${fmt(trailingAvgExpenses)} SR`,
+        color: 'muted',
+      });
+    }
+
+    if (expenseChangeRatio != null) {
+      rows.push({
+        label: t('dashboardKpiFooterChangeVsAvg'),
+        value: fmtChange(expenseChangeRatio),
+        color: costChangeColor(expenseChangeRatio),
+      });
+    }
+
+    if (rows.length > 0) out.expenses = { rows };
   }
 
   /* ─── Gross Profit ─── */
-  const unusualGrossProfit = findRawById(all, 'unusual_gross_profit_change');
-  const grossProfitLines: KpiInsightFooterLine[] = [];
+  {
+    const rows: KpiFooterRow[] = [];
 
-  if (rawGrossProfitMargin != null) {
-    const base = formatInsightPercentDisplay(rawGrossProfitMargin * 100);
-    grossProfitLines.push({ text: `${base}%`, severity: 'info' });
-  }
-
-  if (unusualGrossProfit) {
-    const sev = readSeverity(unusualGrossProfit);
-    const vals = readValues(unusualGrossProfit);
-    const changeRatio = num(vals.changeRatio);
-    if (changeRatio != null) {
-      const pct = formatInsightPercentDisplay(Math.abs(changeRatio) * 100);
-      const trailAvg = num(vals.trailingAverage);
-      const avg = trailAvg != null ? fmt(trailAvg) : '—';
-      const isUp = changeRatio > 0;
-      grossProfitLines.push({
-        text: t(isUp ? 'dashboardKpiInsightGrossProfitUnusuallyHigh' : 'dashboardKpiInsightGrossProfitUnusuallyLow', { pct, avg }),
-        severity: sev,
-        title: detailTitle(unusualGrossProfit, isAr),
-        compact: true,
+    if (rawGrossProfitMargin != null) {
+      const pct = formatInsightPercentDisplay(rawGrossProfitMargin * 100);
+      rows.push({
+        label: t('dashboardKpiFooterGrossMargin'),
+        value: `${pct}%`,
+        color: 'info',
       });
     }
-  }
 
-  if (grossProfitLines.length > 2) grossProfitLines.length = 2;
-  if (grossProfitLines.length > 0) {
-    out.grossProfit = { lines: grossProfitLines };
-  }
-
-  /* ─── Net profit ─── */
-  const netMargin = findRawById(all, 'net_profit_margin');
-  const negProfit = findRawById(all, 'negative_profit_warning');
-  const unusualNetProfit = findRawById(all, 'unusual_net_profit_change');
-  const netLines: KpiInsightFooterLine[] = [];
-  let footerLabelKey: string | undefined;
-
-  if (netMargin) {
-    const sev = readSeverity(netMargin);
-    const vals = readValues(netMargin);
-    const margin = num(vals.netProfitMargin);
-    const tw = num(vals.thresholdWarning);
-    const tc = num(vals.thresholdCritical);
-    const base = margin != null ? formatInsightPercentDisplay(margin * 100) : '';
-    let text = '';
-    if (sev === 'critical' && tc != null && tc > 0) {
-      const limit = formatThresholdPercentFromFraction(tc);
-      text = t('dashboardKpiInsightNetMarginBelowCrit', { base, limit });
-    } else if (tw != null) {
-      const limit = formatThresholdPercentFromFraction(tw);
-      text = t('dashboardKpiInsightNetMarginBelowWarn', { base, limit });
-    }
-    if (text) {
-      footerLabelKey = 'dashboardKpiFooterNetProfitMarginLabel';
-      netLines.push({
-        text,
-        severity: sev,
-        title: detailTitle(netMargin, isAr),
-      });
-    } else if (margin != null) {
-      footerLabelKey = 'dashboardKpiFooterNetProfitMarginLabel';
-      netLines.push({
-        text: `${formatInsightPercentDisplay(margin * 100)}%`,
-        severity: sev,
-        title: detailTitle(netMargin, isAr),
+    if (trailingAvgGrossProfit != null) {
+      rows.push({
+        label: t('dashboardKpiFooterTrailingAvg'),
+        value: `${fmt(trailingAvgGrossProfit)} SR`,
+        color: 'muted',
       });
     }
-  }
 
-  if (negProfit) {
-    const sev = readSeverity(negProfit);
-    netLines.push({
-      text: t('dashboardKpiInsightNetProfitNegative'),
-      severity: sev,
-      title: detailTitle(negProfit, isAr),
-      compact: true,
-    });
-  }
-
-  if (unusualNetProfit && !negProfit) {
-    const sev = readSeverity(unusualNetProfit);
-    const vals = readValues(unusualNetProfit);
-    const changeRatio = num(vals.changeRatio);
-    if (changeRatio != null) {
-      const pct = formatInsightPercentDisplay(Math.abs(changeRatio) * 100);
-      const trailAvg = num(vals.trailingAverage);
-      const avg = trailAvg != null ? fmt(trailAvg) : '—';
-      const isUp = changeRatio > 0;
-      netLines.push({
-        text: t(isUp ? 'dashboardKpiInsightNetProfitUnusuallyHigh' : 'dashboardKpiInsightNetProfitUnusuallyLow', { pct, avg }),
-        severity: sev,
-        title: detailTitle(unusualNetProfit, isAr),
-        compact: true,
+    if (grossProfitChangeRatio != null) {
+      rows.push({
+        label: t('dashboardKpiFooterChangeVsAvg'),
+        value: fmtChange(grossProfitChangeRatio),
+        color: profitChangeColor(grossProfitChangeRatio),
       });
     }
+
+    if (rows.length > 0) out.grossProfit = { rows };
   }
 
-  if (netLines.length > 2) netLines.length = 2;
-  if (netLines.length > 0) {
-    out.netProfit = { lines: netLines, footerLabelKey };
+  /* ─── Net Profit ─── */
+  {
+    const negProfit = findRawById(all, 'negative_profit_warning');
+    const netMarginInsight = findRawById(all, 'net_profit_margin');
+    const rows: KpiFooterRow[] = [];
+
+    if (rawNetProfitMargin != null) {
+      const pct = formatInsightPercentDisplay(rawNetProfitMargin * 100);
+      let color: KpiFooterRowColor = 'info';
+      if (negProfit || rawNetProfitMargin < 0) color = 'critical';
+      else if (netMarginInsight) color = readSeverity(netMarginInsight) === 'critical' ? 'critical' : 'warning';
+      rows.push({
+        label: t('dashboardKpiFooterNetMargin'),
+        value: `${pct}%`,
+        color,
+      });
+    }
+
+    if (trailingAvgNetProfit != null) {
+      rows.push({
+        label: t('dashboardKpiFooterTrailingAvg'),
+        value: `${fmt(trailingAvgNetProfit)} SR`,
+        color: 'muted',
+      });
+    }
+
+    if (netProfitChangeRatio != null && !negProfit) {
+      rows.push({
+        label: t('dashboardKpiFooterChangeVsAvg'),
+        value: fmtChange(netProfitChangeRatio),
+        color: profitChangeColor(netProfitChangeRatio),
+      });
+    }
+
+    if (rows.length > 0) out.netProfit = { rows };
   }
 
   return out;
 }
 
+/** @deprecated Use kpiFooterRowColorClass instead */
 export function severityFooterValueClass(severity: KpiInsightSeverity): string {
   if (severity === 'critical') return 'text-[color:var(--noorix-accent-red)]';
   if (severity === 'warning') return 'text-[color:var(--noorix-accent-amber)]';

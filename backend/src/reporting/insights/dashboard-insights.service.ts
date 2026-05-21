@@ -6,16 +6,18 @@ import {
   computeHealthBand,
   computeHealthScore,
   computeRatios,
+  computeTrailingComparisons,
   extractAccountingSnapshot,
   rollupOperationalMonth,
   ruleExpenseRatioToSales,
   ruleNegativeProfit,
   ruleNetProfitMargin,
   rulePurchaseRatioToSales,
+  ruleUnusualGrossProfitChange,
   ruleUnusuallyHighPurchases,
+  ruleUnusualNetProfitChange,
 } from './insights.rules';
 import { ruleUnusualExpenseSpike } from './expenses/expense-insights.rules';
-import { ruleUnusualGrossProfitChange, ruleUnusualNetProfitChange } from './insights.rules';
 import { buildSalesBreakdownForMonth } from './shared/overview-pl-breakdown.util';
 import { CompanyInsightThresholdSettingsService } from './company-insight-threshold-settings.service';
 
@@ -46,6 +48,7 @@ export class DashboardInsightsService {
     const snap = extractAccountingSnapshot(profitLoss, selectedMonth);
     const ratioNotes: string[] = [];
     const { purchaseToSales, expenseToSales, grossProfitMargin, netProfitMargin } = computeRatios(snap, ratioNotes);
+    const trailing = computeTrailingComparisons(profitLoss, selectedMonth);
 
     const op = rollupOperationalMonth(salesPack, dateRange.year, selectedMonth);
 
@@ -111,6 +114,14 @@ export class DashboardInsightsService {
         expenseToSales,
         grossProfitMargin,
         netProfitMargin,
+        trailingAvgPurchases: trailing.purchases.trailingAvg,
+        purchaseChangeRatio: trailing.purchases.changeRatio,
+        trailingAvgExpenses: trailing.expenses.trailingAvg,
+        expenseChangeRatio: trailing.expenses.changeRatio,
+        trailingAvgGrossProfit: trailing.grossProfit.trailingAvg,
+        grossProfitChangeRatio: trailing.grossProfit.changeRatio,
+        trailingAvgNetProfit: trailing.netProfit.trailingAvg,
+        netProfitChangeRatio: trailing.netProfit.changeRatio,
         notes: ratioNotes,
       },
       health: {

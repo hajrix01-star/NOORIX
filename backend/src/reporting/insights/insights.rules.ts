@@ -573,6 +573,63 @@ export function ruleUnusualNetProfitChange(
   );
 }
 
+function extractGroupMonths(
+  profitLoss: GeneralProfitLossModel | null | undefined,
+  key: string,
+): (string | number)[] | null {
+  if (!profitLoss?.groups) return null;
+  const group = profitLoss.groups.find((g) => (g as { key?: string }).key === key);
+  const months = (group as { months?: unknown })?.months;
+  return Array.isArray(months) ? (months as (string | number)[]) : null;
+}
+
+export type TrailingComparison = { trailingAvg: number | null; changeRatio: number | null };
+export type TrailingComparisons = {
+  purchases: TrailingComparison;
+  expenses: TrailingComparison;
+  grossProfit: TrailingComparison;
+  netProfit: TrailingComparison;
+};
+
+/**
+ * Always computes trailing 2–3 month average and change ratio for all four KPI metrics.
+ * Returns nulls when selectedMonth is null (yearly view) or data is insufficient (< 2 prior months).
+ */
+export function computeTrailingComparisons(
+  profitLoss: GeneralProfitLossModel | null | undefined,
+  selectedMonth: number | null,
+): TrailingComparisons {
+  const empty: TrailingComparison = { trailingAvg: null, changeRatio: null };
+  if (!profitLoss || selectedMonth == null || selectedMonth < 1 || selectedMonth > 12) {
+    return { purchases: empty, expenses: empty, grossProfit: empty, netProfit: empty };
+  }
+  const mi = selectedMonth - 1;
+  const eps = INSIGHT_THRESHOLDS.salesEpsilon;
+
+  function calc(months: (string | number)[] | null): TrailingComparison {
+    if (!months) return empty;
+    const trail = trailingAvgForMonth(months, mi);
+    if (!trail) return empty;
+    const current = parseAmount(months[mi]);
+    if (current == null || !Number.isFinite(current)) return empty;
+    const rawRatio =
+      Math.abs(trail.average) <= eps
+        ? null
+        : (current - trail.average) / Math.abs(trail.average);
+    return {
+      trailingAvg: trail.average,
+      changeRatio: rawRatio != null && Number.isFinite(rawRatio) ? rawRatio : null,
+    };
+  }
+
+  return {
+    purchases: calc(extractGroupMonths(profitLoss, 'purchases')),
+    expenses: calc(extractGroupMonths(profitLoss, 'expenses')),
+    grossProfit: calc(extractSummaryRowMonths(profitLoss, 'grossProfit')),
+    netProfit: calc(extractSummaryRowMonths(profitLoss, 'netProfit')),
+  };
+}
+
 export function computeHealthBand(warnings: InsightItem[]): 'green' | 'amber' | 'red' | 'unknown' {
   if (warnings.length === 0) return 'green';
   if (warnings.some((w) => w.severity === 'critical')) return 'red';

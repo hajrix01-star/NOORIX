@@ -52,6 +52,15 @@ export type DashboardInsightsPayload = {
     expenseToSales: number | null;
     grossProfitMargin: number | null;
     netProfitMargin: number | null;
+    /** Trailing 2–3 month averages + change ratios — null when selectedMonth is null or data insufficient */
+    trailingAvgPurchases: number | null;
+    purchaseChangeRatio: number | null;
+    trailingAvgExpenses: number | null;
+    expenseChangeRatio: number | null;
+    trailingAvgGrossProfit: number | null;
+    grossProfitChangeRatio: number | null;
+    trailingAvgNetProfit: number | null;
+    netProfitChangeRatio: number | null;
     notes: string[];
   };
   health: {
