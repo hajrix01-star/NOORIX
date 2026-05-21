@@ -509,6 +509,16 @@ function extractSummaryRowMonths(
   return Array.isArray(months) && months.length > 0 ? (months as (string | number)[]) : null;
 }
 
+function priorMonthAmount(
+  months: (string | number)[],
+  mi: number,
+): number | null {
+  const idx = mi - 1;
+  if (idx < 0) return null;
+  const v = parseAmount(months[idx]);
+  return v != null && Number.isFinite(v) ? v : null;
+}
+
 function trailingAvgForMonth(
   months: (string | number)[],
   mi: number,
@@ -592,8 +602,8 @@ export type TrailingComparisons = {
 };
 
 /**
- * Always computes trailing 2–3 month average and change ratio for all four KPI metrics.
- * Returns nulls when selectedMonth is null (yearly view) or data is insufficient (< 2 prior months).
+ * Compares each KPI metric to the **immediate prior month** only (not a multi-month average).
+ * Returns nulls when selectedMonth is null (yearly view) or the prior month has no amount.
  */
 export function computeTrailingComparisons(
   profitLoss: GeneralProfitLossModel | null | undefined,
@@ -608,16 +618,14 @@ export function computeTrailingComparisons(
 
   function calc(months: (string | number)[] | null): TrailingComparison {
     if (!months) return empty;
-    const trail = trailingAvgForMonth(months, mi);
-    if (!trail) return empty;
+    const priorMonth = priorMonthAmount(months, mi);
+    if (priorMonth == null) return empty;
     const current = parseAmount(months[mi]);
     if (current == null || !Number.isFinite(current)) return empty;
     const rawRatio =
-      Math.abs(trail.average) <= eps
-        ? null
-        : (current - trail.average) / Math.abs(trail.average);
+      Math.abs(priorMonth) <= eps ? null : (current - priorMonth) / Math.abs(priorMonth);
     return {
-      trailingAvg: trail.average,
+      trailingAvg: priorMonth,
       changeRatio: rawRatio != null && Number.isFinite(rawRatio) ? rawRatio : null,
     };
   }

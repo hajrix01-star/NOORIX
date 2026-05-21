@@ -17,9 +17,9 @@ function mockT(key: string, vars?: Record<string, string | number>): string {
     case 'dashboardKpiFooterNetMargin':
       return 'Net Margin';
     case 'dashboardKpiFooterTrailingAvg':
-      return 'Monthly Avg';
+      return 'Previous month';
     case 'dashboardKpiFooterChangeVsAvg':
-      return 'Change';
+      return 'Change vs prev month';
     case 'dashboardKpiInsightPurchasesAboveWarn':
       return `${v.base}% — above limit ${v.limit}%`;
     default:
@@ -27,6 +27,7 @@ function mockT(key: string, vars?: Record<string, string | number>): string {
   }
 }
 
+/** Jan–May sample; index 4 = May, index 3 = April (prior month for May). */
 const monthReport = {
   groups: [
     { key: 'sales', months: [100, 100, 100, 100, 176540] },
@@ -64,31 +65,30 @@ describe('buildKpiInsightFooterMap', () => {
     expect(buildKpiInsightFooterMap(undefined, true, mockT, false)).toEqual({});
   });
 
-  it('builds from report alone when insights payload missing (month view = 3 rows)', () => {
+  it('builds from report alone — May compares to April only (3 rows)', () => {
     const m = buildKpiInsightFooterMap(undefined, false, mockT, false, monthReport, 5);
     expect(m.purchases?.rows).toHaveLength(3);
     expect(m.purchases?.rows[0]?.value).toBe('43%');
-    expect(m.purchases?.rows[1]?.label).toBe('Monthly Avg');
-    expect(m.purchases?.rows[1]?.value).toMatch(/SR$/);
-    expect(m.purchases?.rows[2]?.label).toBe('Change');
-    expect(m.purchases?.rows[2]?.value).toMatch(/%/);
-    expect(m.grossProfit?.rows[0]?.value).toBe('57%');
+    expect(m.purchases?.rows[1]?.label).toBe('Previous month');
+    expect(m.purchases?.rows[1]?.value).toBe('65,000 SR');
+    expect(m.purchases?.rows[2]?.label).toBe('Change vs prev month');
+    expect(m.purchases?.rows[2]?.value).toBe('+16.7% ↑');
   });
 
-  it('uses API trailing when present, otherwise report fallback', () => {
+  it('uses API prior-month values when present', () => {
     const payload = {
       ratios: {
         purchaseToSales: 0.43,
-        trailingAvgPurchases: 60000,
-        purchaseChangeRatio: 0.26,
+        trailingAvgPurchases: 70000,
+        purchaseChangeRatio: 0.084,
       },
       warnings: [],
       insights: [],
     } as unknown as DashboardInsightsPayload;
 
     const m = buildKpiInsightFooterMap(payload, false, mockT, false, monthReport, 5);
-    expect(m.purchases?.rows[1]?.value).toContain('60,000');
-    expect(m.purchases?.rows[2]?.value).toBe('+26% ↑');
+    expect(m.purchases?.rows[1]?.value).toContain('70,000');
+    expect(m.purchases?.rows[2]?.value).toBe('+8.4% ↑');
   });
 
   it('purchases: warning ratio color from threshold insight', () => {
@@ -109,7 +109,7 @@ describe('buildKpiInsightFooterMap', () => {
     expect(m.purchases?.rows[0]?.color).toBe('warning');
   });
 
-  it('year view shows ratio only when trailing unavailable', () => {
+  it('year view shows ratio only when prior month row omitted', () => {
     const payload = {
       ratios: { purchaseToSales: 0.28 },
       warnings: [],
@@ -119,5 +119,11 @@ describe('buildKpiInsightFooterMap', () => {
     const m = buildKpiInsightFooterMap(payload, false, mockT, false, monthReport, null);
     expect(m.purchases?.rows).toHaveLength(1);
     expect(m.purchases?.rows[0]?.value).toBe('28%');
+  });
+
+  it('January has no prior month in same year', () => {
+    const m = buildKpiInsightFooterMap(undefined, false, mockT, false, monthReport, 1);
+    expect(m.purchases?.rows[1]?.value).toBe('—');
+    expect(m.purchases?.rows[2]?.value).toBe('—');
   });
 });

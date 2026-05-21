@@ -142,8 +142,8 @@ export default {
   dashboardKpiFooterRatioToSales: { ar: 'النسبة من المبيعات', en: '% of Sales' },
   dashboardKpiFooterGrossMargin: { ar: 'هامش الربح الإجمالي', en: 'Gross Margin' },
   dashboardKpiFooterNetMargin: { ar: 'هامش صافي الربح', en: 'Net Margin' },
-  dashboardKpiFooterTrailingAvg: { ar: 'المتوسط الشهري', en: 'Monthly Avg' },
-  dashboardKpiFooterChangeVsAvg: { ar: 'التغيير', en: 'Change' },
+  dashboardKpiFooterTrailingAvg: { ar: 'الشهر الماضي', en: 'Previous month' },
+  dashboardKpiFooterChangeVsAvg: { ar: 'التغيير عن الشهر الماضي', en: 'Change vs prev month' },
   dashboardKpiFooterNetProfitMarginLabel: { ar: 'هامش صافي الربح', en: 'Net profit margin' },
 
   dashboardWeeklySalesTitle: {

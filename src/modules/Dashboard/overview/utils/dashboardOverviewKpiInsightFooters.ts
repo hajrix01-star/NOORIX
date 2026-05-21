@@ -1,6 +1,6 @@
 /**
  * Maps dashboard insights payload + P&L report to KPI footer table rows (display-only).
- * Each non-sales KPI card shows 3 rows in month view: ratio%, trailing avg, change vs avg.
+ * Each non-sales KPI card shows 3 rows in month view: ratio%, prior month, change vs prior month.
  */
 import type { DashboardInsightsPayload } from '../../../../services/reportingInsightsApi';
 import { fmt } from '../../../../utils/format';
@@ -127,7 +127,7 @@ function marginFractionFromReport(
   return Number.isFinite(n) ? n / 100 : null;
 }
 
-function trailingFromReport(
+function priorMonthFromReport(
   report: PlReportLike | null | undefined,
   selectedMonth: number | null,
   key: KpiMetricKey,
@@ -139,26 +139,17 @@ function trailingFromReport(
   if (!months.length) return empty;
 
   const mi = selectedMonth - 1;
-  const vals: number[] = [];
-  for (let offset = 1; offset <= 3; offset++) {
-    const idx = mi - offset;
-    if (idx < 0) break;
-    const v = parseAmount(months[idx]);
-    if (v != null && Number.isFinite(v)) vals.push(v);
-  }
-  if (vals.length < 2) return empty;
+  const priorMonth = parseAmount(months[mi - 1]);
+  if (priorMonth == null || !Number.isFinite(priorMonth) || mi - 1 < 0) return empty;
 
-  const trailingAvg = vals.reduce((s, n) => s + n, 0) / vals.length;
   const current = parseAmount(months[mi]);
   if (current == null || !Number.isFinite(current)) return empty;
 
   const changeRatio =
-    Math.abs(trailingAvg) <= 0.000001
-      ? null
-      : (current - trailingAvg) / Math.abs(trailingAvg);
+    Math.abs(priorMonth) <= 0.000001 ? null : (current - priorMonth) / Math.abs(priorMonth);
 
   return {
-    trailingAvg,
+    trailingAvg: priorMonth,
     changeRatio: changeRatio != null && Number.isFinite(changeRatio) ? changeRatio : null,
   };
 }
@@ -173,7 +164,7 @@ function pickTrailing(
   if (apiAvg != null || apiChange != null) {
     return { trailingAvg: apiAvg, changeRatio: apiChange };
   }
-  return trailingFromReport(report, selectedMonth, key);
+  return priorMonthFromReport(report, selectedMonth, key);
 }
 
 function pushTrailingRows(
