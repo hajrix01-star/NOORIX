@@ -18,7 +18,6 @@ import { buildPlCategoryHierarchy } from './reports-pl-category-hierarchy.util';
 import { buildPlInvoiceWhere, loadPlDetailFromLedger, loadPlDetailInvoices, sumInvoiceTotalAmountByMonth } from './reports-pl-invoice-detail.util';
 import { resolvePlDetailTitle } from './reports-pl-item-meta.util';
 import { loadAnnualLedgerAggregates } from './reports-pl-ledger-aggregates.util';
-import { loadCompletedUnpaidPayrollPlEntries } from './reports-pl-payroll-accrual.util';
 import { createPlGroupStates } from './reports-pl-group-states.util';
 import { resolveExpenseTreeNode } from './reports-expense-tree.util';
 import { formatReportMoneyInteger, formatReportPercentNumber } from '../common/utils/report-display-format.util';
@@ -307,13 +306,10 @@ export class ReportsService {
   }
 
   private async buildGeneralProfitLossModel(companyId: string, year: number): Promise<GeneralProfitLossModel> {
-    const [{ entries, categories, expenseLines }, payrollAccrualEntries] = await Promise.all([
-      loadAnnualLedgerAggregates(this.prisma, companyId, year),
-      loadCompletedUnpaidPayrollPlEntries(this.prisma, companyId, year),
-    ]);
+    const { entries, categories, expenseLines } = await loadAnnualLedgerAggregates(this.prisma, companyId, year);
     const groups = createPlGroupStates();
 
-    for (const e of [...entries, ...payrollAccrualEntries]) {
+    for (const e of entries) {
       const { groupKey, monthIndex, amount, itemKey, labelAr, labelEn, sortOrder } = e;
       if (!groupKey) continue;
 
