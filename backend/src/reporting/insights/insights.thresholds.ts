@@ -19,4 +19,8 @@ export const INSIGHT_THRESHOLDS = {
   unusuallyHighPurchases: {
     increaseWarning: 0.4,
   },
+  /** Current-month gross / net profit vs trailing recent-month average — both directions */
+  unusualProfitChange: {
+    changeWarning: 0.4,
+  },
 } as const;

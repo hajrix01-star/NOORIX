@@ -15,6 +15,7 @@ import {
   ruleUnusuallyHighPurchases,
 } from './insights.rules';
 import { ruleUnusualExpenseSpike } from './expenses/expense-insights.rules';
+import { ruleUnusualGrossProfitChange, ruleUnusualNetProfitChange } from './insights.rules';
 import { buildSalesBreakdownForMonth } from './shared/overview-pl-breakdown.util';
 import { CompanyInsightThresholdSettingsService } from './company-insight-threshold-settings.service';
 
@@ -44,7 +45,7 @@ export class DashboardInsightsService {
 
     const snap = extractAccountingSnapshot(profitLoss, selectedMonth);
     const ratioNotes: string[] = [];
-    const { purchaseToSales, expenseToSales, netProfitMargin } = computeRatios(snap, ratioNotes);
+    const { purchaseToSales, expenseToSales, grossProfitMargin, netProfitMargin } = computeRatios(snap, ratioNotes);
 
     const op = rollupOperationalMonth(salesPack, dateRange.year, selectedMonth);
 
@@ -58,6 +59,8 @@ export class DashboardInsightsService {
     push(ruleUnusuallyHighPurchases(profitLoss, selectedMonth));
     push(ruleExpenseRatioToSales(expenseToSales, thresholds));
     push(ruleUnusualExpenseSpike(profitLoss, selectedMonth));
+    push(ruleUnusualGrossProfitChange(profitLoss, selectedMonth));
+    push(ruleUnusualNetProfitChange(profitLoss, selectedMonth));
     push(ruleNetProfitMargin(netProfitMargin, snap?.numeric.sales ?? null, thresholds));
     push(ruleNegativeProfit(snap?.numeric.netProfit ?? null));
     // v1 does not emit ruleMissingSalesData — current product relies on accounting P&L revenue, not operational daily summaries.
@@ -106,6 +109,7 @@ export class DashboardInsightsService {
       ratios: {
         purchaseToSales,
         expenseToSales,
+        grossProfitMargin,
         netProfitMargin,
         notes: ratioNotes,
       },

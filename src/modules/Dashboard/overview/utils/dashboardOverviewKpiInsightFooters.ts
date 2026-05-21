@@ -23,7 +23,7 @@ export type KpiInsightFooterBundle = {
 };
 
 export type KpiInsightFooterMap = Partial<
-  Record<'purchases' | 'expenses' | 'netProfit', KpiInsightFooterBundle | null>
+  Record<'purchases' | 'expenses' | 'grossProfit' | 'netProfit', KpiInsightFooterBundle | null>
 >;
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
@@ -107,6 +107,7 @@ export function buildKpiInsightFooterMap(
       : {};
   const rawPurchaseToSales = num(payloadRatios.purchaseToSales);
   const rawExpenseToSales = num(payloadRatios.expenseToSales);
+  const rawGrossProfitMargin = num(payloadRatios.grossProfitMargin);
 
   /* ─── Purchases ─── */
   const purchaseRatio = findRawById(all, 'purchase_ratio_to_sales');
@@ -220,9 +221,42 @@ export function buildKpiInsightFooterMap(
     out.expenses = { lines: expenseLines };
   }
 
+  /* ─── Gross Profit ─── */
+  const unusualGrossProfit = findRawById(all, 'unusual_gross_profit_change');
+  const grossProfitLines: KpiInsightFooterLine[] = [];
+
+  if (rawGrossProfitMargin != null) {
+    const base = formatInsightPercentDisplay(rawGrossProfitMargin * 100);
+    grossProfitLines.push({ text: `${base}%`, severity: 'info' });
+  }
+
+  if (unusualGrossProfit) {
+    const sev = readSeverity(unusualGrossProfit);
+    const vals = readValues(unusualGrossProfit);
+    const changeRatio = num(vals.changeRatio);
+    if (changeRatio != null) {
+      const pct = formatInsightPercentDisplay(Math.abs(changeRatio) * 100);
+      const trailAvg = num(vals.trailingAverage);
+      const avg = trailAvg != null ? fmt(trailAvg) : '—';
+      const isUp = changeRatio > 0;
+      grossProfitLines.push({
+        text: t(isUp ? 'dashboardKpiInsightGrossProfitUnusuallyHigh' : 'dashboardKpiInsightGrossProfitUnusuallyLow', { pct, avg }),
+        severity: sev,
+        title: detailTitle(unusualGrossProfit, isAr),
+        compact: true,
+      });
+    }
+  }
+
+  if (grossProfitLines.length > 2) grossProfitLines.length = 2;
+  if (grossProfitLines.length > 0) {
+    out.grossProfit = { lines: grossProfitLines };
+  }
+
   /* ─── Net profit ─── */
   const netMargin = findRawById(all, 'net_profit_margin');
   const negProfit = findRawById(all, 'negative_profit_warning');
+  const unusualNetProfit = findRawById(all, 'unusual_net_profit_change');
   const netLines: KpiInsightFooterLine[] = [];
   let footerLabelKey: string | undefined;
 
@@ -266,6 +300,24 @@ export function buildKpiInsightFooterMap(
       title: detailTitle(negProfit, isAr),
       compact: true,
     });
+  }
+
+  if (unusualNetProfit && !negProfit) {
+    const sev = readSeverity(unusualNetProfit);
+    const vals = readValues(unusualNetProfit);
+    const changeRatio = num(vals.changeRatio);
+    if (changeRatio != null) {
+      const pct = formatInsightPercentDisplay(Math.abs(changeRatio) * 100);
+      const trailAvg = num(vals.trailingAverage);
+      const avg = trailAvg != null ? fmt(trailAvg) : '—';
+      const isUp = changeRatio > 0;
+      netLines.push({
+        text: t(isUp ? 'dashboardKpiInsightNetProfitUnusuallyHigh' : 'dashboardKpiInsightNetProfitUnusuallyLow', { pct, avg }),
+        severity: sev,
+        title: detailTitle(unusualNetProfit, isAr),
+        compact: true,
+      });
+    }
   }
 
   if (netLines.length > 2) netLines.length = 2;

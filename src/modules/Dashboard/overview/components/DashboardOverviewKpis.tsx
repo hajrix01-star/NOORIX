@@ -86,8 +86,11 @@ export function DashboardOverviewKpis({
           const pctTitle = pctNum != null ? `${pctLabelText}: ${arrow}${Math.abs(pctNum)}%` : pctLabelText;
 
           const insightBundle =
-            card.key === 'purchases' || card.key === 'expenses' || card.key === 'netProfit'
-              ? kpiInsightFooters[card.key]
+            card.key === 'purchases' ||
+            card.key === 'expenses' ||
+            card.key === 'grossProfit' ||
+            card.key === 'netProfit'
+              ? kpiInsightFooters[card.key as 'purchases' | 'expenses' | 'grossProfit' | 'netProfit']
               : undefined;
 
           return (

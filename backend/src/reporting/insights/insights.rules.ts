@@ -438,29 +438,139 @@ export function ruleMissingSalesData(
 export function computeRatios(
   snap: AccountingSnapshot | null,
   notes: string[],
-): { purchaseToSales: number | null; expenseToSales: number | null; netProfitMargin: number | null } {
+): {
+  purchaseToSales: number | null;
+  expenseToSales: number | null;
+  grossProfitMargin: number | null;
+  netProfitMargin: number | null;
+} {
   const eps = INSIGHT_THRESHOLDS.salesEpsilon;
+  const nullAll = { purchaseToSales: null, expenseToSales: null, grossProfitMargin: null, netProfitMargin: null };
   if (!snap) {
     notes.push('Accounting snapshot unavailable.');
-    return { purchaseToSales: null, expenseToSales: null, netProfitMargin: null };
+    return nullAll;
   }
-  const { sales, purchases, expenses, netProfit } = snap.numeric;
+  const { sales, purchases, expenses, grossProfit, netProfit } = snap.numeric;
   if (sales == null || purchases == null || expenses == null) {
     notes.push('Missing accounting components for ratio.');
-    return { purchaseToSales: null, expenseToSales: null, netProfitMargin: null };
+    return nullAll;
   }
   if (Math.abs(sales) <= eps) {
     notes.push('Sales near zero — ratios omitted.');
-    return {
-      purchaseToSales: null,
-      expenseToSales: null,
-      netProfitMargin: null,
-    };
+    return nullAll;
   }
   const purchaseToSales = purchases / sales;
   const expenseToSales = expenses / sales;
+  const grossProfitMargin = grossProfit != null ? grossProfit / sales : null;
   const netProfitMargin = netProfit != null ? netProfit / sales : null;
-  return { purchaseToSales, expenseToSales, netProfitMargin };
+  return { purchaseToSales, expenseToSales, grossProfitMargin, netProfitMargin };
+}
+
+const TH_PROFIT_CHANGE = INSIGHT_THRESHOLDS.unusualProfitChange.changeWarning;
+
+function buildUnusualProfitChangeItem(
+  id: string,
+  current: number,
+  trailingAverage: number,
+  priorValsLength: number,
+  titleArUp: string,
+  titleArDown: string,
+  titleEnUp: string,
+  titleEnDown: string,
+  detailArUp: (pct: string) => string,
+  detailArDown: (pct: string) => string,
+  detailEnUp: (pct: string) => string,
+  detailEnDown: (pct: string) => string,
+): InsightItem | null {
+  const changeRatio = (current - trailingAverage) / Math.abs(trailingAverage);
+  if (!Number.isFinite(changeRatio) || Math.abs(changeRatio) < TH_PROFIT_CHANGE) return null;
+  const isUp = changeRatio > 0;
+  const pct = formatInsightPercentFraction(Math.abs(changeRatio));
+  return {
+    id,
+    severity: isUp ? 'info' : 'warning',
+    category: 'profitability',
+    metricBasis: 'accounting_pl' as InsightMetricBasis,
+    titleAr: isUp ? titleArUp : titleArDown,
+    titleEn: isUp ? titleEnUp : titleEnDown,
+    detailAr: isUp ? detailArUp(pct) : detailArDown(pct),
+    detailEn: isUp ? detailEnUp(pct) : detailEnDown(pct),
+    values: { current, trailingAverage, changeRatio, thresholdChangeWarning: TH_PROFIT_CHANGE, monthsUsed: priorValsLength },
+  };
+}
+
+function extractSummaryRowMonths(
+  profitLoss: GeneralProfitLossModel | null | undefined,
+  key: string,
+): (string | number)[] | null {
+  if (!profitLoss?.summaryRows) return null;
+  const row = profitLoss.summaryRows.find((r) => (r as { key?: string }).key === key);
+  const months = (row as { months?: unknown })?.months;
+  return Array.isArray(months) && months.length >= 12 ? (months as (string | number)[]) : null;
+}
+
+function trailingAvgForMonth(
+  months: (string | number)[],
+  mi: number,
+  lookback: number = 3,
+): { average: number; count: number } | null {
+  const vals: number[] = [];
+  for (let offset = 1; offset <= lookback; offset++) {
+    const idx = mi - offset;
+    if (idx < 0) break;
+    const v = parseAmount(months[idx]);
+    if (v != null && Number.isFinite(v)) vals.push(v);
+  }
+  if (vals.length < 2) return null;
+  return { average: vals.reduce((s, n) => s + n, 0) / vals.length, count: vals.length };
+}
+
+export function ruleUnusualGrossProfitChange(
+  profitLoss: GeneralProfitLossModel | null | undefined,
+  selectedMonth: number | null,
+): InsightItem | null {
+  if (selectedMonth == null || selectedMonth < 1 || selectedMonth > 12) return null;
+  const months = extractSummaryRowMonths(profitLoss, 'grossProfit');
+  if (!months) return null;
+  const mi = selectedMonth - 1;
+  const trail = trailingAvgForMonth(months, mi);
+  if (!trail || Math.abs(trail.average) <= INSIGHT_THRESHOLDS.salesEpsilon) return null;
+  const current = parseAmount(months[mi]);
+  if (current == null || !Number.isFinite(current)) return null;
+  return buildUnusualProfitChangeItem(
+    'unusual_gross_profit_change',
+    current, trail.average, trail.count,
+    'ارتفاع غير معتاد في الربح الإجمالي', 'انخفاض غير معتاد في الربح الإجمالي',
+    'Unusually high gross profit', 'Unusually low gross profit',
+    (p) => `الربح الإجمالي هذا الشهر أعلى من متوسط الأشهر السابقة بنسبة ${p}%.`,
+    (p) => `الربح الإجمالي هذا الشهر أقل من متوسط الأشهر السابقة بنسبة ${p}%.`,
+    (p) => `Gross profit this month is ${p}% above the recent-month average.`,
+    (p) => `Gross profit this month is ${p}% below the recent-month average.`,
+  );
+}
+
+export function ruleUnusualNetProfitChange(
+  profitLoss: GeneralProfitLossModel | null | undefined,
+  selectedMonth: number | null,
+): InsightItem | null {
+  if (selectedMonth == null || selectedMonth < 1 || selectedMonth > 12) return null;
+  const months = extractSummaryRowMonths(profitLoss, 'netProfit');
+  if (!months) return null;
+  const mi = selectedMonth - 1;
+  const trail = trailingAvgForMonth(months, mi);
+  if (!trail || Math.abs(trail.average) <= INSIGHT_THRESHOLDS.salesEpsilon) return null;
+  const current = parseAmount(months[mi]);
+  if (current == null || !Number.isFinite(current)) return null;
+  return buildUnusualProfitChangeItem(
+    'unusual_net_profit_change',
+    current, trail.average, trail.count,
+    'ارتفاع غير معتاد في صافي الربح', 'انخفاض غير معتاد في صافي الربح',
+    'Unusually high net profit', 'Unusually low net profit',
+    (p) => `صافي الربح هذا الشهر أعلى من متوسط الأشهر السابقة بنسبة ${p}%.`,
+    (p) => `صافي الربح هذا الشهر أقل من متوسط الأشهر السابقة بنسبة ${p}%.`,
+    (p) => `Net profit this month is ${p}% above the recent-month average.`,
+    (p) => `Net profit this month is ${p}% below the recent-month average.`,
+  );
 }
 
 export function computeHealthBand(warnings: InsightItem[]): 'green' | 'amber' | 'red' | 'unknown' {

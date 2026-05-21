@@ -122,6 +122,22 @@ export default {
     ar: 'أعلى من المعتاد ({avg} SR) بـ +{pct}%',
     en: 'Above normal ({avg} SR) by +{pct}%',
   },
+  dashboardKpiInsightGrossProfitUnusuallyHigh: {
+    ar: 'أعلى من المعتاد ({avg} SR) بـ +{pct}%',
+    en: 'Above normal ({avg} SR) by +{pct}%',
+  },
+  dashboardKpiInsightGrossProfitUnusuallyLow: {
+    ar: 'أقل من المعتاد ({avg} SR) بـ -{pct}%',
+    en: 'Below normal ({avg} SR) by -{pct}%',
+  },
+  dashboardKpiInsightNetProfitUnusuallyHigh: {
+    ar: 'أعلى من المعتاد ({avg} SR) بـ +{pct}%',
+    en: 'Above normal ({avg} SR) by +{pct}%',
+  },
+  dashboardKpiInsightNetProfitUnusuallyLow: {
+    ar: 'أقل من المعتاد ({avg} SR) بـ -{pct}%',
+    en: 'Below normal ({avg} SR) by -{pct}%',
+  },
   dashboardKpiFooterNetProfitMarginLabel: { ar: 'هامش صافي الربح', en: 'Net profit margin' },
 
   dashboardWeeklySalesTitle: {
