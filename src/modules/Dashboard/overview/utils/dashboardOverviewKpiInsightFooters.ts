@@ -100,36 +100,45 @@ export function buildKpiInsightFooterMap(
   const all = collectRawInsights(payload);
   const out: KpiInsightFooterMap = {};
 
+  // payload.ratios always has the actual computed ratios regardless of threshold crossings
+  const payloadRatios =
+    payload.ratios && typeof payload.ratios === 'object' && !Array.isArray(payload.ratios)
+      ? (payload.ratios as Record<string, unknown>)
+      : {};
+  const rawPurchaseToSales = num(payloadRatios.purchaseToSales);
+  const rawExpenseToSales = num(payloadRatios.expenseToSales);
+
   /* ─── Purchases ─── */
   const purchaseRatio = findRawById(all, 'purchase_ratio_to_sales');
   const unusualPurchases = findRawById(all, 'unusually_high_purchases_warning');
   const purchaseLines: KpiInsightFooterLine[] = [];
 
-  if (purchaseRatio) {
-    const sev = readSeverity(purchaseRatio);
-    const vals = readValues(purchaseRatio);
-    const ratio = num(vals.purchaseToSales);
-    const tw = num(vals.thresholdWarning);
-    const tc = num(vals.thresholdCritical);
-    const base =
-      ratio != null ? formatInsightPercentDisplay(ratio * 100) : '';
-    let text = '';
-    if (sev === 'critical' && tc != null) {
-      const limit = formatThresholdPercentFromFraction(tc);
-      text = t('dashboardKpiInsightPurchasesAboveCrit', { base, limit });
-    } else if (tw != null) {
-      const limit = formatThresholdPercentFromFraction(tw);
-      text = t('dashboardKpiInsightPurchasesAboveWarn', { base, limit });
-    } else if (ratio != null) {
-      // Normal range — still show ratio so unusually_high line doesn't hide the default badge
-      text = `${base}%`;
+  {
+    // Threshold-based warning from insight (only emitted when above threshold)
+    let thresholdLine: KpiInsightFooterLine | null = null;
+    if (purchaseRatio) {
+      const sev = readSeverity(purchaseRatio);
+      const vals = readValues(purchaseRatio);
+      const tw = num(vals.thresholdWarning);
+      const tc = num(vals.thresholdCritical);
+      const base = rawPurchaseToSales != null ? formatInsightPercentDisplay(rawPurchaseToSales * 100) : '';
+      let text = '';
+      if (sev === 'critical' && tc != null) {
+        const limit = formatThresholdPercentFromFraction(tc);
+        text = t('dashboardKpiInsightPurchasesAboveCrit', { base, limit });
+      } else if (tw != null) {
+        const limit = formatThresholdPercentFromFraction(tw);
+        text = t('dashboardKpiInsightPurchasesAboveWarn', { base, limit });
+      }
+      if (text) thresholdLine = { text, severity: sev, title: detailTitle(purchaseRatio, isAr) };
     }
-    if (text) {
-      purchaseLines.push({
-        text,
-        severity: sev,
-        title: detailTitle(purchaseRatio, isAr),
-      });
+
+    if (thresholdLine) {
+      purchaseLines.push(thresholdLine);
+    } else if (rawPurchaseToSales != null) {
+      // Always show current ratio even when below threshold
+      const base = formatInsightPercentDisplay(rawPurchaseToSales * 100);
+      purchaseLines.push({ text: `${base}%`, severity: 'info' });
     }
   }
 
@@ -160,26 +169,32 @@ export function buildKpiInsightFooterMap(
   const unusualExpenses = findRawById(all, 'unusual_expense_spike_warning');
   const expenseLines: KpiInsightFooterLine[] = [];
 
-  if (expenseRatio) {
-    const sev = readSeverity(expenseRatio);
-    const vals = readValues(expenseRatio);
-    const ratio = num(vals.expenseToSales);
-    const tw = num(vals.thresholdWarning);
-    const tc = num(vals.thresholdCritical);
-    const base = ratio != null ? formatInsightPercentDisplay(ratio * 100) : '';
-    let text = '';
-    if (sev === 'critical' && tc != null) {
-      const limit = formatThresholdPercentFromFraction(tc);
-      text = t('dashboardKpiInsightExpensesAboveCrit', { base, limit });
-    } else if (tw != null) {
-      const limit = formatThresholdPercentFromFraction(tw);
-      text = t('dashboardKpiInsightExpensesAboveWarn', { base, limit });
-    } else if (ratio != null) {
-      // Normal range — still show ratio so unusually_high line doesn't hide the default badge
-      text = `${base}%`;
+  {
+    // Threshold-based warning from insight (only emitted when above threshold)
+    let thresholdLine: KpiInsightFooterLine | null = null;
+    if (expenseRatio) {
+      const sev = readSeverity(expenseRatio);
+      const vals = readValues(expenseRatio);
+      const tw = num(vals.thresholdWarning);
+      const tc = num(vals.thresholdCritical);
+      const base = rawExpenseToSales != null ? formatInsightPercentDisplay(rawExpenseToSales * 100) : '';
+      let text = '';
+      if (sev === 'critical' && tc != null) {
+        const limit = formatThresholdPercentFromFraction(tc);
+        text = t('dashboardKpiInsightExpensesAboveCrit', { base, limit });
+      } else if (tw != null) {
+        const limit = formatThresholdPercentFromFraction(tw);
+        text = t('dashboardKpiInsightExpensesAboveWarn', { base, limit });
+      }
+      if (text) thresholdLine = { text, severity: sev, title: detailTitle(expenseRatio, isAr) };
     }
-    if (text) {
-      expenseLines.push({ text, severity: sev, title: detailTitle(expenseRatio, isAr) });
+
+    if (thresholdLine) {
+      expenseLines.push(thresholdLine);
+    } else if (rawExpenseToSales != null) {
+      // Always show current ratio even when below threshold
+      const base = formatInsightPercentDisplay(rawExpenseToSales * 100);
+      expenseLines.push({ text: `${base}%`, severity: 'info' });
     }
   }
 

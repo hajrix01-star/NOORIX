@@ -56,16 +56,13 @@ describe('buildKpiInsightFooterMap', () => {
 
   it('purchases: warning ratio shows above limit with Latin digits', () => {
     const payload = {
+      ratios: { purchaseToSales: 0.42, expenseToSales: 0.1 },
       warnings: [
         {
           id: 'purchase_ratio_to_sales',
           severity: 'warning',
           metricBasis: 'accounting_pl',
-          titleAr: '',
-          titleEn: '',
-          detailAr: '',
-          detailEn: '',
-          values: { purchaseToSales: 0.42, thresholdWarning: 0.35 },
+          values: { thresholdWarning: 0.35 },
         },
       ],
       insights: [],
@@ -79,12 +76,13 @@ describe('buildKpiInsightFooterMap', () => {
 
   it('purchases: critical ratio shows critical copy', () => {
     const payload = {
+      ratios: { purchaseToSales: 0.46, expenseToSales: 0.1 },
       warnings: [
         {
           id: 'purchase_ratio_to_sales',
           severity: 'critical',
           metricBasis: 'accounting_pl',
-          values: { purchaseToSales: 0.46, thresholdCritical: 0.45 },
+          values: { thresholdCritical: 0.45 },
         },
       ],
       insights: [],
@@ -95,8 +93,23 @@ describe('buildKpiInsightFooterMap', () => {
     expect(m.purchases?.lines[0]?.severity).toBe('critical');
   });
 
-  it('purchases: unusually high shows avg and pct', () => {
+  it('purchases: normal ratio always shows (no insight needed)', () => {
+    // No purchase_ratio_to_sales insight — ratio comes from payload.ratios
     const payload = {
+      ratios: { purchaseToSales: 0.28, expenseToSales: 0.12 },
+      warnings: [],
+      insights: [],
+    } as unknown as DashboardInsightsPayload;
+
+    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
+    expect(m.purchases?.lines[0]?.text).toBe('28%');
+    expect(m.purchases?.lines[0]?.severity).toBe('info');
+    expect(m.purchases?.lines[0]?.compact).toBeUndefined();
+  });
+
+  it('purchases: unusually high shows ratio first then compact avg+pct', () => {
+    const payload = {
+      ratios: { purchaseToSales: 0.55, expenseToSales: 0.12 },
       warnings: [
         {
           id: 'unusually_high_purchases_warning',
@@ -109,22 +122,22 @@ describe('buildKpiInsightFooterMap', () => {
     } as unknown as DashboardInsightsPayload;
 
     const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.purchases?.lines[0]?.compact).toBe(true);
-    expect(m.purchases?.lines[0]?.text).toMatch(/Above normal/);
-    expect(m.purchases?.lines[0]?.text).toMatch(/41%/);
-    expect(m.purchases?.lines[0]?.text).toMatch(/SR/);
+    expect(m.purchases?.lines.length).toBe(2);
+    // First line = ratio (not compact)
+    expect(m.purchases?.lines[0]?.text).toBe('55%');
+    expect(m.purchases?.lines[0]?.compact).toBeUndefined();
+    // Second line = compact unusual warning with avg
+    expect(m.purchases?.lines[1]?.compact).toBe(true);
+    expect(m.purchases?.lines[1]?.text).toMatch(/Above normal/);
+    expect(m.purchases?.lines[1]?.text).toMatch(/41%/);
+    expect(m.purchases?.lines[1]?.text).toMatch(/SR/);
   });
 
-  it('expenses: normal ratio shows fallback pct line', () => {
+  it('expenses: normal ratio always shows (no insight needed)', () => {
+    // No expense_ratio_to_sales insight — ratio comes from payload.ratios
     const payload = {
-      warnings: [
-        {
-          id: 'expense_ratio_to_sales',
-          severity: 'info',
-          metricBasis: 'accounting_pl',
-          values: { expenseToSales: 0.18 },
-        },
-      ],
+      ratios: { purchaseToSales: 0.3, expenseToSales: 0.18 },
+      warnings: [],
       insights: [],
     } as unknown as DashboardInsightsPayload;
 
@@ -133,8 +146,9 @@ describe('buildKpiInsightFooterMap', () => {
     expect(m.expenses?.lines[0]?.compact).toBeUndefined();
   });
 
-  it('expenses: unusually high shows avg and pct as compact', () => {
+  it('expenses: unusually high shows ratio first then compact avg+pct', () => {
     const payload = {
+      ratios: { purchaseToSales: 0.3, expenseToSales: 0.15 },
       warnings: [
         {
           id: 'unusual_expense_spike_warning',
@@ -147,45 +161,23 @@ describe('buildKpiInsightFooterMap', () => {
     } as unknown as DashboardInsightsPayload;
 
     const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.expenses?.lines[0]?.compact).toBe(true);
-    expect(m.expenses?.lines[0]?.text).toMatch(/Above normal/);
-    expect(m.expenses?.lines[0]?.text).toMatch(/30%/);
-    expect(m.expenses?.lines[0]?.text).toMatch(/SR/);
-  });
-
-  it('expenses: normal ratio + unusually high both appear', () => {
-    const payload = {
-      warnings: [
-        {
-          id: 'expense_ratio_to_sales',
-          severity: 'info',
-          metricBasis: 'accounting_pl',
-          values: { expenseToSales: 0.15 },
-        },
-        {
-          id: 'unusual_expense_spike_warning',
-          severity: 'warning',
-          metricBasis: 'accounting_pl',
-          values: { increaseRatio: 0.25, trailingAverage: 2000 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
     expect(m.expenses?.lines.length).toBe(2);
     expect(m.expenses?.lines[0]?.text).toBe('15%');
     expect(m.expenses?.lines[1]?.compact).toBe(true);
+    expect(m.expenses?.lines[1]?.text).toMatch(/Above normal/);
+    expect(m.expenses?.lines[1]?.text).toMatch(/30%/);
+    expect(m.expenses?.lines[1]?.text).toMatch(/SR/);
   });
 
   it('expenses: warning footer text', () => {
     const payload = {
+      ratios: { purchaseToSales: 0.3, expenseToSales: 0.42 },
       warnings: [
         {
           id: 'expense_ratio_to_sales',
           severity: 'warning',
           metricBasis: 'accounting_pl',
-          values: { expenseToSales: 0.42, thresholdWarning: 0.4 },
+          values: { thresholdWarning: 0.4 },
         },
       ],
       insights: [],
@@ -231,50 +223,21 @@ describe('buildKpiInsightFooterMap', () => {
     expect(m.netProfit?.lines[0]?.compact).toBe(true);
   });
 
-  it('purchases: normal ratio + unusually_high both appear (ratio not hidden)', () => {
-    const payload = {
-      warnings: [
-        {
-          id: 'purchase_ratio_to_sales',
-          severity: 'info',
-          metricBasis: 'accounting_pl',
-          values: { purchaseToSales: 0.28 }, // below any threshold — normal
-        },
-        {
-          id: 'unusually_high_purchases_warning',
-          severity: 'warning',
-          metricBasis: 'accounting_pl',
-          values: { increaseRatio: 0.35 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.purchases?.lines.length).toBe(2);
-    // First line = ratio (info, not compact)
-    expect(m.purchases?.lines[0]?.text).toBe('28%');
-    expect(m.purchases?.lines[0]?.compact).toBeUndefined();
-    // Second line = unusually high (compact) — includes avg and pct
-    expect(m.purchases?.lines[1]?.compact).toBe(true);
-    expect(m.purchases?.lines[1]?.text).toMatch(/Above normal/);
-    expect(m.purchases?.lines[1]?.text).toMatch(/35%/);
-  });
-
   it('caps purchase lines at 2', () => {
     const payload = {
+      ratios: { purchaseToSales: 0.7, expenseToSales: 0.1 },
       warnings: [
         {
           id: 'purchase_ratio_to_sales',
           severity: 'warning',
           metricBasis: 'accounting_pl',
-          values: { purchaseToSales: 0.7, thresholdWarning: 0.65 },
+          values: { thresholdWarning: 0.65 },
         },
         {
           id: 'unusually_high_purchases_warning',
           severity: 'warning',
           metricBasis: 'accounting_pl',
-          values: { increaseRatio: 0.5 },
+          values: { increaseRatio: 0.5, trailingAveragePurchases: 8000 },
         },
       ],
       insights: [],
