@@ -50,6 +50,7 @@ export type DashboardInsightsPayload = {
   ratios: {
     purchaseToSales: number | null;
     expenseToSales: number | null;
+    grossProfitMargin: number | null;
     netProfitMargin: number | null;
     notes: string[];
   };
