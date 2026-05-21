@@ -1,9 +1,14 @@
 /**
- * Maps dashboard insights payload to KPI footer table rows (display-only).
- * Each non-sales KPI card shows up to 3 rows: ratio%, trailing avg, change vs avg.
+ * Maps dashboard insights payload + P&L report to KPI footer table rows (display-only).
+ * Each non-sales KPI card shows 3 rows in month view: ratio%, trailing avg, change vs avg.
  */
 import type { DashboardInsightsPayload } from '../../../../services/reportingInsightsApi';
 import { fmt } from '../../../../utils/format';
+import {
+  getMonthlyData,
+  getSectionPercentOfSales,
+  type PlReportLike,
+} from './dashboardOverviewCalculations';
 
 export type KpiInsightSeverity = 'info' | 'warning' | 'critical';
 
@@ -27,6 +32,8 @@ export type KpiInsightFooterMap = Partial<
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
+type KpiMetricKey = 'purchases' | 'expenses' | 'grossProfit' | 'netProfit';
+
 /** Max 1 decimal, drop trailing .0 */
 export function formatInsightPercentDisplay(n: number): string {
   if (!Number.isFinite(n)) return '0';
@@ -38,18 +45,25 @@ export function formatInsightPercentDisplay(n: number): string {
 
 export function kpiFooterRowColorClass(color: KpiFooterRowColor | undefined): string {
   switch (color) {
-    case 'positive':  return 'text-noorix-green';
-    case 'negative':  return 'text-[color:var(--noorix-accent-red)]';
-    case 'warning':   return 'text-[color:var(--noorix-accent-amber)]';
-    case 'critical':  return 'text-[color:var(--noorix-accent-red)]';
-    case 'muted':     return 'text-noorix-muted';
-    default:          return 'text-[color:var(--noorix-accent-blue)]';
+    case 'positive': return 'text-noorix-green';
+    case 'negative': return 'text-[color:var(--noorix-accent-red)]';
+    case 'warning': return 'text-[color:var(--noorix-accent-amber)]';
+    case 'critical': return 'text-[color:var(--noorix-accent-red)]';
+    case 'muted': return 'text-noorix-muted';
+    default: return 'text-[color:var(--noorix-accent-blue)]';
   }
 }
 
 function num(v: unknown): number | null {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   return null;
+}
+
+function parseAmount(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const n = parseFloat(String(value).replace(/,/g, ''));
+  return Number.isFinite(n) ? n : null;
 }
 
 function collectRawInsights(payload: DashboardInsightsPayload | undefined): unknown[] {
@@ -81,29 +95,20 @@ function readSeverity(raw: Record<string, unknown>): KpiInsightSeverity {
   return 'info';
 }
 
-/** Format change ratio (+/-X.X% with arrow) */
 function fmtChange(changeRatio: number): string {
   const pct = formatInsightPercentDisplay(Math.abs(changeRatio) * 100);
   return changeRatio >= 0 ? `+${pct}% ↑` : `-${pct}% ↓`;
 }
 
-/** Change color: positive = good, negative = bad (for profit cards) */
 function profitChangeColor(changeRatio: number): KpiFooterRowColor {
   return changeRatio >= 0 ? 'positive' : 'warning';
 }
 
-/** Change color: positive = bad, negative = good (for cost cards) */
 function costChangeColor(changeRatio: number): KpiFooterRowColor {
   return changeRatio > 0 ? 'warning' : 'positive';
 }
 
-/**
- * Builds the ratio row color for purchases/expenses based on threshold insight severity.
- * Falls back to 'info' when no threshold is crossed.
- */
-function ratioColorFromThreshold(
-  thresholdInsight: Record<string, unknown> | null,
-): KpiFooterRowColor {
+function ratioColorFromThreshold(thresholdInsight: Record<string, unknown> | null): KpiFooterRowColor {
   if (!thresholdInsight) return 'info';
   const sev = readSeverity(thresholdInsight);
   if (sev === 'critical') return 'critical';
@@ -111,40 +116,165 @@ function ratioColorFromThreshold(
   return 'info';
 }
 
+function marginFractionFromReport(
+  report: PlReportLike | null | undefined,
+  key: KpiMetricKey,
+  selectedMonth: number | null,
+): number | null {
+  const pct = getSectionPercentOfSales(report, key, selectedMonth);
+  if (pct == null) return null;
+  const n = parseFloat(pct);
+  return Number.isFinite(n) ? n / 100 : null;
+}
+
+function trailingFromReport(
+  report: PlReportLike | null | undefined,
+  selectedMonth: number | null,
+  key: KpiMetricKey,
+): { trailingAvg: number | null; changeRatio: number | null } {
+  const empty = { trailingAvg: null, changeRatio: null };
+  if (!report || selectedMonth == null || selectedMonth < 1 || selectedMonth > 12) return empty;
+
+  const months = getMonthlyData(report, key);
+  if (!months.length) return empty;
+
+  const mi = selectedMonth - 1;
+  const vals: number[] = [];
+  for (let offset = 1; offset <= 3; offset++) {
+    const idx = mi - offset;
+    if (idx < 0) break;
+    const v = parseAmount(months[idx]);
+    if (v != null && Number.isFinite(v)) vals.push(v);
+  }
+  if (vals.length < 2) return empty;
+
+  const trailingAvg = vals.reduce((s, n) => s + n, 0) / vals.length;
+  const current = parseAmount(months[mi]);
+  if (current == null || !Number.isFinite(current)) return empty;
+
+  const changeRatio =
+    Math.abs(trailingAvg) <= 0.000001
+      ? null
+      : (current - trailingAvg) / Math.abs(trailingAvg);
+
+  return {
+    trailingAvg,
+    changeRatio: changeRatio != null && Number.isFinite(changeRatio) ? changeRatio : null,
+  };
+}
+
+function pickTrailing(
+  apiAvg: number | null,
+  apiChange: number | null,
+  report: PlReportLike | null | undefined,
+  selectedMonth: number | null,
+  key: KpiMetricKey,
+): { trailingAvg: number | null; changeRatio: number | null } {
+  if (apiAvg != null || apiChange != null) {
+    return { trailingAvg: apiAvg, changeRatio: apiChange };
+  }
+  return trailingFromReport(report, selectedMonth, key);
+}
+
+function pushTrailingRows(
+  rows: KpiFooterRow[],
+  t: TFn,
+  trailingAvg: number | null,
+  changeRatio: number | null,
+  changeColorFn: (r: number) => KpiFooterRowColor,
+  monthView: boolean,
+): void {
+  if (monthView) {
+    rows.push({
+      label: t('dashboardKpiFooterTrailingAvg'),
+      value: trailingAvg != null ? `${fmt(trailingAvg)} SR` : '—',
+      color: 'muted',
+    });
+    rows.push({
+      label: t('dashboardKpiFooterChangeVsAvg'),
+      value: changeRatio != null ? fmtChange(changeRatio) : '—',
+      color: changeRatio != null ? changeColorFn(changeRatio) : 'muted',
+    });
+    return;
+  }
+
+  if (trailingAvg != null) {
+    rows.push({
+      label: t('dashboardKpiFooterTrailingAvg'),
+      value: `${fmt(trailingAvg)} SR`,
+      color: 'muted',
+    });
+  }
+  if (changeRatio != null) {
+    rows.push({
+      label: t('dashboardKpiFooterChangeVsAvg'),
+      value: fmtChange(changeRatio),
+      color: changeColorFn(changeRatio),
+    });
+  }
+}
+
 /**
- * Builds footer row bundles for all 4 KPI cards: purchases, expenses, gross profit, net profit.
- * Returns {} when insightsFailed or payload is missing.
+ * Builds footer row bundles for purchases, expenses, gross profit, net profit.
+ * Uses API ratios when available; falls back to P&L report for margins and trailing stats.
  */
 export function buildKpiInsightFooterMap(
   payload: DashboardInsightsPayload | undefined,
   insightsFailed: boolean,
   t: TFn,
   _isAr: boolean,
+  report?: PlReportLike | null,
+  selectedMonth?: number | null,
 ): KpiInsightFooterMap {
-  if (insightsFailed || !payload) return {};
+  if (insightsFailed && !report) return {};
+  if (!payload && !report) return {};
 
+  const monthView = selectedMonth != null && selectedMonth >= 1 && selectedMonth <= 12;
   const all = collectRawInsights(payload);
   const out: KpiInsightFooterMap = {};
 
   const ratios =
-    payload.ratios && typeof payload.ratios === 'object' && !Array.isArray(payload.ratios)
+    payload?.ratios && typeof payload.ratios === 'object' && !Array.isArray(payload.ratios)
       ? (payload.ratios as Record<string, unknown>)
       : {};
 
-  /* ─── helpers ─── */
-  const rawPurchaseToSales      = num(ratios.purchaseToSales);
-  const rawExpenseToSales       = num(ratios.expenseToSales);
-  const rawGrossProfitMargin    = num(ratios.grossProfitMargin);
-  const rawNetProfitMargin      = num(ratios.netProfitMargin);
+  const rawPurchaseToSales =
+    num(ratios.purchaseToSales) ?? marginFractionFromReport(report, 'purchases', selectedMonth ?? null);
+  const rawExpenseToSales =
+    num(ratios.expenseToSales) ?? marginFractionFromReport(report, 'expenses', selectedMonth ?? null);
+  const rawGrossProfitMargin =
+    num(ratios.grossProfitMargin) ?? marginFractionFromReport(report, 'grossProfit', selectedMonth ?? null);
+  const rawNetProfitMargin =
+    num(ratios.netProfitMargin) ?? marginFractionFromReport(report, 'netProfit', selectedMonth ?? null);
 
-  const trailingAvgPurchases    = num(ratios.trailingAvgPurchases);
-  const purchaseChangeRatio     = num(ratios.purchaseChangeRatio);
-  const trailingAvgExpenses     = num(ratios.trailingAvgExpenses);
-  const expenseChangeRatio      = num(ratios.expenseChangeRatio);
-  const trailingAvgGrossProfit  = num(ratios.trailingAvgGrossProfit);
-  const grossProfitChangeRatio  = num(ratios.grossProfitChangeRatio);
-  const trailingAvgNetProfit    = num(ratios.trailingAvgNetProfit);
-  const netProfitChangeRatio    = num(ratios.netProfitChangeRatio);
+  const purchasesTrail = pickTrailing(
+    num(ratios.trailingAvgPurchases),
+    num(ratios.purchaseChangeRatio),
+    report,
+    selectedMonth ?? null,
+    'purchases',
+  );
+  const expensesTrail = pickTrailing(
+    num(ratios.trailingAvgExpenses),
+    num(ratios.expenseChangeRatio),
+    report,
+    selectedMonth ?? null,
+    'expenses',
+  );
+  const grossTrail = pickTrailing(
+    num(ratios.trailingAvgGrossProfit),
+    num(ratios.grossProfitChangeRatio),
+    report,
+    selectedMonth ?? null,
+    'grossProfit',
+  );
+  const netTrail = pickTrailing(
+    num(ratios.trailingAvgNetProfit),
+    num(ratios.netProfitChangeRatio),
+    report,
+    selectedMonth ?? null,
+    'netProfit',
+  );
 
   /* ─── Purchases ─── */
   {
@@ -153,40 +283,21 @@ export function buildKpiInsightFooterMap(
 
     if (rawPurchaseToSales != null) {
       const pct = formatInsightPercentDisplay(rawPurchaseToSales * 100);
-      let tooltip: string | undefined;
-      if (thresholdInsight) {
-        const vals = readValues(thresholdInsight);
-        const tw = num(vals.thresholdWarning);
-        const tc = num(vals.thresholdCritical);
-        const limit = tc != null && readSeverity(thresholdInsight) === 'critical' ? tc : tw;
-        if (limit != null) {
-          const limitPct = formatInsightPercentDisplay(limit * 100);
-          tooltip = `${t('dashboardKpiFooterRatioToSales')}: ${pct}% (${t('dashboardKpiInsightPurchasesAboveWarn', { base: pct, limit: limitPct })})`;
-        }
-      }
       rows.push({
         label: t('dashboardKpiFooterRatioToSales'),
         value: `${pct}%`,
         color: ratioColorFromThreshold(thresholdInsight),
-        tooltip,
       });
     }
 
-    if (trailingAvgPurchases != null) {
-      rows.push({
-        label: t('dashboardKpiFooterTrailingAvg'),
-        value: `${fmt(trailingAvgPurchases)} SR`,
-        color: 'muted',
-      });
-    }
-
-    if (purchaseChangeRatio != null) {
-      rows.push({
-        label: t('dashboardKpiFooterChangeVsAvg'),
-        value: fmtChange(purchaseChangeRatio),
-        color: costChangeColor(purchaseChangeRatio),
-      });
-    }
+    pushTrailingRows(
+      rows,
+      t,
+      purchasesTrail.trailingAvg,
+      purchasesTrail.changeRatio,
+      costChangeColor,
+      monthView,
+    );
 
     if (rows.length > 0) out.purchases = { rows };
   }
@@ -205,21 +316,14 @@ export function buildKpiInsightFooterMap(
       });
     }
 
-    if (trailingAvgExpenses != null) {
-      rows.push({
-        label: t('dashboardKpiFooterTrailingAvg'),
-        value: `${fmt(trailingAvgExpenses)} SR`,
-        color: 'muted',
-      });
-    }
-
-    if (expenseChangeRatio != null) {
-      rows.push({
-        label: t('dashboardKpiFooterChangeVsAvg'),
-        value: fmtChange(expenseChangeRatio),
-        color: costChangeColor(expenseChangeRatio),
-      });
-    }
+    pushTrailingRows(
+      rows,
+      t,
+      expensesTrail.trailingAvg,
+      expensesTrail.changeRatio,
+      costChangeColor,
+      monthView,
+    );
 
     if (rows.length > 0) out.expenses = { rows };
   }
@@ -237,21 +341,14 @@ export function buildKpiInsightFooterMap(
       });
     }
 
-    if (trailingAvgGrossProfit != null) {
-      rows.push({
-        label: t('dashboardKpiFooterTrailingAvg'),
-        value: `${fmt(trailingAvgGrossProfit)} SR`,
-        color: 'muted',
-      });
-    }
-
-    if (grossProfitChangeRatio != null) {
-      rows.push({
-        label: t('dashboardKpiFooterChangeVsAvg'),
-        value: fmtChange(grossProfitChangeRatio),
-        color: profitChangeColor(grossProfitChangeRatio),
-      });
-    }
+    pushTrailingRows(
+      rows,
+      t,
+      grossTrail.trailingAvg,
+      grossTrail.changeRatio,
+      profitChangeColor,
+      monthView,
+    );
 
     if (rows.length > 0) out.grossProfit = { rows };
   }
@@ -266,7 +363,9 @@ export function buildKpiInsightFooterMap(
       const pct = formatInsightPercentDisplay(rawNetProfitMargin * 100);
       let color: KpiFooterRowColor = 'info';
       if (negProfit || rawNetProfitMargin < 0) color = 'critical';
-      else if (netMarginInsight) color = readSeverity(netMarginInsight) === 'critical' ? 'critical' : 'warning';
+      else if (netMarginInsight) {
+        color = readSeverity(netMarginInsight) === 'critical' ? 'critical' : 'warning';
+      }
       rows.push({
         label: t('dashboardKpiFooterNetMargin'),
         value: `${pct}%`,
@@ -274,21 +373,14 @@ export function buildKpiInsightFooterMap(
       });
     }
 
-    if (trailingAvgNetProfit != null) {
-      rows.push({
-        label: t('dashboardKpiFooterTrailingAvg'),
-        value: `${fmt(trailingAvgNetProfit)} SR`,
-        color: 'muted',
-      });
-    }
-
-    if (netProfitChangeRatio != null && !negProfit) {
-      rows.push({
-        label: t('dashboardKpiFooterChangeVsAvg'),
-        value: fmtChange(netProfitChangeRatio),
-        color: profitChangeColor(netProfitChangeRatio),
-      });
-    }
+    pushTrailingRows(
+      rows,
+      t,
+      netTrail.trailingAvg,
+      negProfit ? null : netTrail.changeRatio,
+      profitChangeColor,
+      monthView,
+    );
 
     if (rows.length > 0) out.netProfit = { rows };
   }

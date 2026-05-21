@@ -152,8 +152,16 @@ export function useDashboardOverviewModel(
   const periodData = overviewData.periodData;
 
   const kpiInsightFooters = useMemo(
-    () => buildKpiInsightFooterMap(overviewData.insights ?? undefined, isError, t, lang === 'ar'),
-    [overviewData.insights, isError, t, lang],
+    () =>
+      buildKpiInsightFooterMap(
+        overviewData.insights ?? undefined,
+        isError,
+        t,
+        lang === 'ar',
+        report,
+        selectedMonth,
+      ),
+    [overviewData.insights, isError, t, lang, report, selectedMonth],
   );
 
   // ─── حزمتا المقارنة الأسبوعية — تبقيان منفصلتين لأنهما تفاعليتان ───

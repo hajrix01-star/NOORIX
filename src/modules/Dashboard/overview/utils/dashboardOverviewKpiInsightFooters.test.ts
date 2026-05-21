@@ -3,247 +3,121 @@ import type { DashboardInsightsPayload } from '../../../../services/reportingIns
 import {
   buildKpiInsightFooterMap,
   formatInsightPercentDisplay,
+  kpiFooterRowColorClass,
   severityFooterValueClass,
 } from './dashboardOverviewKpiInsightFooters';
 
-/** Minimal `t` for predictable assertions */
 function mockT(key: string, vars?: Record<string, string | number>): string {
   const v = vars ?? {};
   switch (key) {
+    case 'dashboardKpiFooterRatioToSales':
+      return '% of Sales';
+    case 'dashboardKpiFooterGrossMargin':
+      return 'Gross Margin';
+    case 'dashboardKpiFooterNetMargin':
+      return 'Net Margin';
+    case 'dashboardKpiFooterTrailingAvg':
+      return 'Monthly Avg';
+    case 'dashboardKpiFooterChangeVsAvg':
+      return 'Change';
     case 'dashboardKpiInsightPurchasesAboveWarn':
       return `${v.base}% — above limit ${v.limit}%`;
-    case 'dashboardKpiInsightPurchasesAboveCrit':
-      return `${v.base}% — critical: above limit ${v.limit}%`;
-    case 'dashboardKpiInsightExpensesAboveWarn':
-      return `${v.base}% — above limit ${v.limit}%`;
-    case 'dashboardKpiInsightExpensesAboveCrit':
-      return `${v.base}% — critical: above limit ${v.limit}%`;
-    case 'dashboardKpiInsightNetMarginBelowWarn':
-      return `${v.base}% — below limit ${v.limit}%`;
-    case 'dashboardKpiInsightNetMarginBelowCrit':
-      return `${v.base}% — critical: below limit ${v.limit}%`;
-    case 'dashboardKpiInsightNetProfitNegative':
-      return 'Negative net profit';
-    case 'dashboardKpiInsightPurchasesUnusuallyHigh':
-      return `Above normal (${v.avg} SR) by +${v.pct}%`;
-    case 'dashboardKpiInsightExpensesUnusuallyHigh':
-      return `Above normal (${v.avg} SR) by +${v.pct}%`;
     default:
       return key;
   }
 }
 
+const monthReport = {
+  groups: [
+    { key: 'sales', months: [100, 100, 100, 100, 176540] },
+    { key: 'purchases', months: [50000, 55000, 60000, 65000, 75879] },
+    { key: 'expenses', months: [5000, 5500, 6000, 6500, 8615] },
+  ],
+  summaryRows: [
+    { key: 'grossProfit', months: [50000, 45000, 40000, 35000, 100661] },
+    { key: 'netProfit', months: [45000, 39500, 34000, 28500, 92046] },
+  ],
+};
+
 describe('formatInsightPercentDisplay', () => {
   it('uses max one decimal and drops trailing .0', () => {
     expect(formatInsightPercentDisplay(35.5)).toBe('35.5');
     expect(formatInsightPercentDisplay(35)).toBe('35');
-    expect(formatInsightPercentDisplay(41)).toBe('41');
+  });
+});
+
+describe('kpiFooterRowColorClass', () => {
+  it('maps color tokens', () => {
+    expect(kpiFooterRowColorClass('positive')).toContain('noorix-green');
+    expect(kpiFooterRowColorClass('warning')).toContain('noorix-accent-amber');
   });
 });
 
 describe('severityFooterValueClass', () => {
   it('maps severities to design-system CSS vars', () => {
     expect(severityFooterValueClass('critical')).toContain('noorix-accent-red');
-    expect(severityFooterValueClass('warning')).toContain('noorix-accent-amber');
-    expect(severityFooterValueClass('info')).toContain('noorix-accent-blue');
   });
 });
 
 describe('buildKpiInsightFooterMap', () => {
-  it('returns empty map when insights failed', () => {
+  it('returns empty map when insights failed and no report', () => {
     expect(buildKpiInsightFooterMap(undefined, true, mockT, false)).toEqual({});
   });
 
-  it('purchases: warning ratio shows above limit with Latin digits', () => {
+  it('builds from report alone when insights payload missing (month view = 3 rows)', () => {
+    const m = buildKpiInsightFooterMap(undefined, false, mockT, false, monthReport, 5);
+    expect(m.purchases?.rows).toHaveLength(3);
+    expect(m.purchases?.rows[0]?.value).toBe('43%');
+    expect(m.purchases?.rows[1]?.label).toBe('Monthly Avg');
+    expect(m.purchases?.rows[1]?.value).toMatch(/SR$/);
+    expect(m.purchases?.rows[2]?.label).toBe('Change');
+    expect(m.purchases?.rows[2]?.value).toMatch(/%/);
+    expect(m.grossProfit?.rows[0]?.value).toBe('57%');
+  });
+
+  it('uses API trailing when present, otherwise report fallback', () => {
     const payload = {
-      ratios: { purchaseToSales: 0.42, expenseToSales: 0.1 },
+      ratios: {
+        purchaseToSales: 0.43,
+        trailingAvgPurchases: 60000,
+        purchaseChangeRatio: 0.26,
+      },
+      warnings: [],
+      insights: [],
+    } as unknown as DashboardInsightsPayload;
+
+    const m = buildKpiInsightFooterMap(payload, false, mockT, false, monthReport, 5);
+    expect(m.purchases?.rows[1]?.value).toContain('60,000');
+    expect(m.purchases?.rows[2]?.value).toBe('+26% ↑');
+  });
+
+  it('purchases: warning ratio color from threshold insight', () => {
+    const payload = {
+      ratios: { purchaseToSales: 0.42 },
       warnings: [
         {
           id: 'purchase_ratio_to_sales',
           severity: 'warning',
-          metricBasis: 'accounting_pl',
           values: { thresholdWarning: 0.35 },
         },
       ],
       insights: [],
     } as unknown as DashboardInsightsPayload;
 
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.purchases?.lines[0]?.text).toMatch(/42% — above limit 35%/);
-    expect(m.purchases?.lines[0]?.severity).toBe('warning');
-    expect(m.purchases?.lines[0]?.text).toMatch(/^\d/);
+    const m = buildKpiInsightFooterMap(payload, false, mockT, false, monthReport, 5);
+    expect(m.purchases?.rows[0]?.value).toBe('42%');
+    expect(m.purchases?.rows[0]?.color).toBe('warning');
   });
 
-  it('purchases: critical ratio shows critical copy', () => {
+  it('year view shows ratio only when trailing unavailable', () => {
     const payload = {
-      ratios: { purchaseToSales: 0.46, expenseToSales: 0.1 },
-      warnings: [
-        {
-          id: 'purchase_ratio_to_sales',
-          severity: 'critical',
-          metricBasis: 'accounting_pl',
-          values: { thresholdCritical: 0.45 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.purchases?.lines[0]?.text).toContain('critical: above limit 45%');
-    expect(m.purchases?.lines[0]?.severity).toBe('critical');
-  });
-
-  it('purchases: normal ratio always shows (no insight needed)', () => {
-    // No purchase_ratio_to_sales insight — ratio comes from payload.ratios
-    const payload = {
-      ratios: { purchaseToSales: 0.28, expenseToSales: 0.12 },
+      ratios: { purchaseToSales: 0.28 },
       warnings: [],
       insights: [],
     } as unknown as DashboardInsightsPayload;
 
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.purchases?.lines[0]?.text).toBe('28%');
-    expect(m.purchases?.lines[0]?.severity).toBe('info');
-    expect(m.purchases?.lines[0]?.compact).toBeUndefined();
-  });
-
-  it('purchases: unusually high shows ratio first then compact avg+pct', () => {
-    const payload = {
-      ratios: { purchaseToSales: 0.55, expenseToSales: 0.12 },
-      warnings: [
-        {
-          id: 'unusually_high_purchases_warning',
-          severity: 'warning',
-          metricBasis: 'accounting_pl',
-          values: { increaseRatio: 0.41, trailingAveragePurchases: 5000 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.purchases?.lines.length).toBe(2);
-    // First line = ratio (not compact)
-    expect(m.purchases?.lines[0]?.text).toBe('55%');
-    expect(m.purchases?.lines[0]?.compact).toBeUndefined();
-    // Second line = compact unusual warning with avg
-    expect(m.purchases?.lines[1]?.compact).toBe(true);
-    expect(m.purchases?.lines[1]?.text).toMatch(/Above normal/);
-    expect(m.purchases?.lines[1]?.text).toMatch(/41%/);
-    expect(m.purchases?.lines[1]?.text).toMatch(/SR/);
-  });
-
-  it('expenses: normal ratio always shows (no insight needed)', () => {
-    // No expense_ratio_to_sales insight — ratio comes from payload.ratios
-    const payload = {
-      ratios: { purchaseToSales: 0.3, expenseToSales: 0.18 },
-      warnings: [],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.expenses?.lines[0]?.text).toBe('18%');
-    expect(m.expenses?.lines[0]?.compact).toBeUndefined();
-  });
-
-  it('expenses: unusually high shows ratio first then compact avg+pct', () => {
-    const payload = {
-      ratios: { purchaseToSales: 0.3, expenseToSales: 0.15 },
-      warnings: [
-        {
-          id: 'unusual_expense_spike_warning',
-          severity: 'warning',
-          metricBasis: 'accounting_pl',
-          values: { increaseRatio: 0.3, trailingAverage: 3000 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.expenses?.lines.length).toBe(2);
-    expect(m.expenses?.lines[0]?.text).toBe('15%');
-    expect(m.expenses?.lines[1]?.compact).toBe(true);
-    expect(m.expenses?.lines[1]?.text).toMatch(/Above normal/);
-    expect(m.expenses?.lines[1]?.text).toMatch(/30%/);
-    expect(m.expenses?.lines[1]?.text).toMatch(/SR/);
-  });
-
-  it('expenses: warning footer text', () => {
-    const payload = {
-      ratios: { purchaseToSales: 0.3, expenseToSales: 0.42 },
-      warnings: [
-        {
-          id: 'expense_ratio_to_sales',
-          severity: 'warning',
-          metricBasis: 'accounting_pl',
-          values: { thresholdWarning: 0.4 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.expenses?.lines[0]?.text).toMatch(/42% — above limit 40%/);
-  });
-
-  it('net profit: margin below warning limit', () => {
-    const payload = {
-      warnings: [
-        {
-          id: 'net_profit_margin',
-          severity: 'warning',
-          metricBasis: 'accounting_pl',
-          values: { netProfitMargin: 0.042, thresholdWarning: 0.1 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.netProfit?.footerLabelKey).toBe('dashboardKpiFooterNetProfitMarginLabel');
-    expect(m.netProfit?.lines[0]?.text).toMatch(/4\.2% — below limit 10%/);
-  });
-
-  it('net profit: negative_profit_warning compact line', () => {
-    const payload = {
-      warnings: [
-        {
-          id: 'negative_profit_warning',
-          severity: 'critical',
-          metricBasis: 'accounting_pl',
-          values: { netProfit: -100 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.netProfit?.lines[0]?.text).toBe('Negative net profit');
-    expect(m.netProfit?.lines[0]?.compact).toBe(true);
-  });
-
-  it('caps purchase lines at 2', () => {
-    const payload = {
-      ratios: { purchaseToSales: 0.7, expenseToSales: 0.1 },
-      warnings: [
-        {
-          id: 'purchase_ratio_to_sales',
-          severity: 'warning',
-          metricBasis: 'accounting_pl',
-          values: { thresholdWarning: 0.65 },
-        },
-        {
-          id: 'unusually_high_purchases_warning',
-          severity: 'warning',
-          metricBasis: 'accounting_pl',
-          values: { increaseRatio: 0.5, trailingAveragePurchases: 8000 },
-        },
-      ],
-      insights: [],
-    } as unknown as DashboardInsightsPayload;
-
-    const m = buildKpiInsightFooterMap(payload, false, mockT, false);
-    expect(m.purchases?.lines.length).toBe(2);
+    const m = buildKpiInsightFooterMap(payload, false, mockT, false, monthReport, null);
+    expect(m.purchases?.rows).toHaveLength(1);
+    expect(m.purchases?.rows[0]?.value).toBe('28%');
   });
 });

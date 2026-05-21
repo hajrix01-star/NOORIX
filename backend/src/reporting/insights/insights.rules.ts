@@ -506,7 +506,7 @@ function extractSummaryRowMonths(
   if (!profitLoss?.summaryRows) return null;
   const row = profitLoss.summaryRows.find((r) => (r as { key?: string }).key === key);
   const months = (row as { months?: unknown })?.months;
-  return Array.isArray(months) && months.length >= 12 ? (months as (string | number)[]) : null;
+  return Array.isArray(months) && months.length > 0 ? (months as (string | number)[]) : null;
 }
 
 function trailingAvgForMonth(
