@@ -4,6 +4,7 @@ import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
 import { Button, Input, Modal } from '../../../ui';
 import {
+  exportItemsCatalogToPdf,
   filterProductsForCatalogPrint,
   printItemsCatalog,
   type ItemsCatalogPrintFilters,
@@ -78,18 +79,29 @@ export function ItemsCatalogPrintModal({
   const productTypeLabel =
     productTypeFilter === 'sale' ? t('salesProducts') : t('ordersProducts');
 
+  const catalogOpts = {
+    products,
+    filters,
+    categories,
+    sections,
+    companyName,
+    productTypeLabel,
+    t,
+    unitLabel,
+    lang,
+  };
+
   function handlePrint() {
-    const result = printItemsCatalog({
-      products,
-      filters,
-      categories,
-      sections,
-      companyName,
-      productTypeLabel,
-      t,
-      unitLabel,
-      lang,
-    });
+    const result = printItemsCatalog(catalogOpts);
+    if (result.empty) {
+      showToast(t('ordersPrintCatalogEmpty'), 'error');
+      return;
+    }
+    onClose();
+  }
+
+  function handleExportPdf() {
+    const result = exportItemsCatalogToPdf(catalogOpts);
     if (result.empty) {
       showToast(t('ordersPrintCatalogEmpty'), 'error');
       return;
@@ -137,10 +149,14 @@ export function ItemsCatalogPrintModal({
         <div className="text-[12px] text-noorix-muted">
           {t('ordersPrintCatalogMatchCount').replace('{0}', String(matchCount))}
         </div>
+        <p className="m-0 text-[11px] text-noorix-muted">{t('ordersPrintCatalogPdfHint')}</p>
 
         <div className="flex gap-2 flex-wrap">
           <Button variant="primary" size="sm" onClick={handlePrint} disabled={matchCount === 0}>
             {t('print')}
+          </Button>
+          <Button size="sm" onClick={handleExportPdf} disabled={matchCount === 0}>
+            {t('exportPdf')}
           </Button>
           <Button size="sm" variant="ghost" onClick={onClose}>
             {t('cancel')}

@@ -185,6 +185,10 @@ export default {
   ordersPrintCatalogNotes: { ar: 'ملاحظات', en: 'Notes' },
   ordersPrintCatalogMatchCount: { ar: '{0} صنف جاهز للطباعة', en: '{0} items ready to print' },
   ordersPrintCatalogNoCategory: { ar: 'بدون فئة', en: 'Uncategorized' },
+  ordersPrintCatalogPdfHint: {
+    ar: 'اختر «حفظ كـ PDF» من نافذة الطباعة.',
+    en: 'Choose «Save as PDF» in the print dialog.',
+  },
   ordersProductVariants: { ar: 'تركيبات الأسعار (حجم + تغليف + وحدة)', en: 'Price variants (size + packaging + unit)' },
   ordersAddVariant: { ar: '+ إضافة تركيبة', en: '+ Add variant' },
   ordersVariantPrice: { ar: 'آخر سعر', en: 'Last price' },

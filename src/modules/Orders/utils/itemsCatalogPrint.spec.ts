@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildItemsCatalogPdfFilename,
   expandProductsToPrintRows,
   filterProductsForCatalogPrint,
   groupProductsByCategory,
@@ -77,6 +78,17 @@ describe('sortProductsForCatalogPrint', () => {
     );
 
     expect(sorted.map((p) => p.nameAr)).toEqual(['أناناس', 'تفاح']);
+  });
+});
+
+describe('buildItemsCatalogPdfFilename', () => {
+  it('builds a stable filename from filters', () => {
+    const name = buildItemsCatalogPdfFilename(
+      { section: 'مطبخ', categoryId: 'c1', productType: 'order' },
+      [{ id: 'c1', nameAr: 'لحوم' }],
+      [{ id: 's1', nameAr: 'مطبخ' }],
+    );
+    expect(name).toMatch(/^items-catalog-order-مطبخ-لحوم-\d{4}-\d{2}-\d{2}\.pdf$/);
   });
 });
 

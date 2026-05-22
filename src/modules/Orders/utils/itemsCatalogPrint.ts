@@ -251,7 +251,7 @@ tr.cat-header td {
 tr.cat-header + tr td { border-top: 2px solid #185FA5; }
 `.trim();
 
-type PrintItemsCatalogOpts = {
+export type ItemsCatalogOutputOpts = {
   products: any[];
   filters: ItemsCatalogPrintFilters;
   categories: any[];
@@ -263,14 +263,50 @@ type PrintItemsCatalogOpts = {
   lang: string;
 };
 
-export function printItemsCatalog(opts: PrintItemsCatalogOpts): { empty: boolean } {
+function slugPart(value: string) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\u0600-\u06FF-]+/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+export function buildItemsCatalogPdfFilename(
+  filters: ItemsCatalogPrintFilters,
+  categories: any[],
+  sections: any[],
+) {
+  const parts = ['items-catalog', filters.productType];
+
+  if (filters.section === '__none__') parts.push('no-section');
+  else if (filters.section) {
+    const sec = sections.find((s) => s.nameAr === filters.section);
+    parts.push(slugPart(sec?.nameAr || sec?.nameEn || filters.section));
+  }
+
+  if (filters.categoryId) {
+    const cat = categories.find((c) => c.id === filters.categoryId);
+    parts.push(slugPart(cat?.nameAr || cat?.nameEn || 'category'));
+  }
+
+  parts.push(new Date().toISOString().slice(0, 10));
+  return `${parts.filter(Boolean).join('-')}.pdf`;
+}
+
+function prepareItemsCatalogDocument(opts: ItemsCatalogOutputOpts) {
   const filtered = filterProductsForCatalogPrint(opts.products, opts.filters);
-  if (filtered.length === 0) return { empty: true };
+  if (filtered.length === 0) return { empty: true as const };
 
   const groupByCategory = !opts.filters.categoryId;
   const groups = groupByCategory
     ? groupProductsByCategory(filtered, opts.categories, opts.t('ordersPrintCatalogNoCategory'))
-    : [{ categoryId: opts.filters.categoryId, categoryName: '', products: sortProductsForCatalogPrint(filtered, opts.categories) }];
+    : [{
+        categoryId: opts.filters.categoryId,
+        categoryName: '',
+        products: sortProductsForCatalogPrint(filtered, opts.categories),
+      }];
 
   const filterSubtitle = buildItemsCatalogPrintSubtitle(
     opts.filters,
@@ -280,15 +316,38 @@ export function printItemsCatalog(opts: PrintItemsCatalogOpts): { empty: boolean
   );
   const subtitle = [opts.productTypeLabel, filterSubtitle].filter(Boolean).join(' — ');
 
-  openPrintWindow({
-    title: opts.t('ordersPrintCatalogTitle'),
-    companyName: opts.companyName,
+  return {
+    empty: false as const,
     subtitle,
     body: buildItemsCatalogPrintHtml(groups, opts.t, opts.unitLabel, groupByCategory),
+    pdfFilename: buildItemsCatalogPdfFilename(opts.filters, opts.categories, opts.sections),
+  };
+}
+
+function openItemsCatalogDocument(
+  opts: ItemsCatalogOutputOpts,
+  mode: 'print' | 'pdf',
+): { empty: boolean } {
+  const doc = prepareItemsCatalogDocument(opts);
+  if (doc.empty) return { empty: true };
+
+  openPrintWindow({
+    title: mode === 'pdf' ? doc.pdfFilename.replace(/\.pdf$/i, '') : opts.t('ordersPrintCatalogTitle'),
+    companyName: opts.companyName,
+    subtitle: doc.subtitle,
+    body: doc.body,
     extraCss: CATALOG_PRINT_EXTRA_CSS,
     htmlLang: opts.lang === 'en' ? 'en' : 'ar',
     htmlDir: opts.lang === 'en' ? 'ltr' : 'rtl',
   });
 
   return { empty: false };
+}
+
+export function printItemsCatalog(opts: ItemsCatalogOutputOpts): { empty: boolean } {
+  return openItemsCatalogDocument(opts, 'print');
+}
+
+export function exportItemsCatalogToPdf(opts: ItemsCatalogOutputOpts): { empty: boolean } {
+  return openItemsCatalogDocument(opts, 'pdf');
 }
