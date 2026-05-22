@@ -51,6 +51,7 @@ export default {
   dashboardKpiFormulaSales: { ar: 'إجمالي المبيعات للفترة', en: 'Total sales for the period' },
   /** متوسط يومي: المجموع ÷ عدد الأيام ذات الإيراد &gt; 0 فقط */
   dashboardSalesDailyAvgActiveDays: { ar: 'المعدل اليومي', en: 'Daily average' },
+  dashboardSalesDailyAvgPrevMonth: { ar: 'المعدل اليومي — الشهر الماضي', en: 'Daily avg — prev month' },
   /** فئات الموردين — نفس فترة التحليل */
   dashboardSuppliersInPeriod: { ar: 'موردون بحركة في الفترة', en: 'Suppliers with activity in period' },
   dashboardNoSuppliersInPeriod: { ar: 'لا يوجد موردون بفواتير مشتريات/مصروف في هذه الفترة.', en: 'No suppliers with purchase/expense invoices in this period.' },

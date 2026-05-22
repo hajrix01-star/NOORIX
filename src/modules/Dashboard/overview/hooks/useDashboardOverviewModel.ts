@@ -118,6 +118,17 @@ export function useDashboardOverviewModel(
     return { start: ymd(year, selectedMonth, 1), end: ymd(year, selectedMonth, ld) };
   }, [year, selectedMonth]);
 
+  const prevMonthSalesAvgBounds = useMemo(() => {
+    if (selectedMonth == null) return { start: null, end: null, year: null as number | null };
+    const prev = prevCalendarMonth(year, selectedMonth);
+    const ld = lastDayOfMonth(prev.year, prev.month);
+    return {
+      start: ymd(prev.year, prev.month, 1),
+      end: ymd(prev.year, prev.month, ld),
+      year: prev.year,
+    };
+  }, [year, selectedMonth]);
+
   const { from: supplierFrom, to: supplierTo } = useMemo(
     () => monthDateBounds(year, selectedMonth ?? null),
     [year, selectedMonth],
@@ -212,9 +223,36 @@ export function useDashboardOverviewModel(
     enabled: !!companyId,
   });
 
+  const prevMonthPackYearSpan = useMemo(
+    () =>
+      prevMonthSalesAvgBounds.year != null
+        ? {
+            yearStart: `${prevMonthSalesAvgBounds.year}-01-01`,
+            yearEnd: `${prevMonthSalesAvgBounds.year}-12-31`,
+          }
+        : null,
+    [prevMonthSalesAvgBounds.year],
+  );
+
+  const { monthSummaries: prevMonthSalesForDailyAvg } = useDashboardSalesPack({
+    companyId,
+    yearStart: prevMonthPackYearSpan?.yearStart ?? `${year}-01-01`,
+    yearEnd: prevMonthPackYearSpan?.yearEnd ?? `${year}-12-31`,
+    dailyStart: null,
+    dailyEnd: null,
+    monthStart: prevMonthSalesAvgBounds.start,
+    monthEnd: prevMonthSalesAvgBounds.end,
+    enabled: !!companyId && selectedMonth != null && !!prevMonthSalesAvgBounds.start,
+  });
+
   const revenueDailyAvgActiveDays = useMemo(
     () => computeRevenueDailyAvgActiveDays(monthSalesForDailyAvg),
     [monthSalesForDailyAvg],
+  );
+
+  const revenueDailyAvgPrevMonthActiveDays = useMemo(
+    () => computeRevenueDailyAvgActiveDays(prevMonthSalesForDailyAvg),
+    [prevMonthSalesForDailyAvg],
   );
 
   const monthName = selectedMonth
@@ -410,6 +448,7 @@ export function useDashboardOverviewModel(
     topSuppliersChartData,
     purchaseCategoriesPieData,
     revenueDailyAvgActiveDays,
+    revenueDailyAvgPrevMonthActiveDays,
     hiddenSeries,
     toggleSeries,
     SERIES,
