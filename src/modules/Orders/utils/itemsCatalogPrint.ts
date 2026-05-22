@@ -194,42 +194,42 @@ export function buildItemsCatalogPrintHtml(
 }
 
 const CATALOG_PRINT_EXTRA_CSS = `
-body { font-size: 9px; line-height: 1.15; }
-.print-header { padding-bottom: 4px; margin-bottom: 6px; border-bottom-width: 1px; }
-.print-header h1 { font-size: 13px; margin-bottom: 2px; }
-.print-header .sub { font-size: 9px; line-height: 1.2; }
-.print-footer { margin-top: 6px; padding-top: 4px; font-size: 8px; }
+body { font-size: 11px; line-height: 1.35; }
+.print-header { padding-bottom: 8px; margin-bottom: 10px; border-bottom-width: 1px; }
+.print-header h1 { font-size: 17px; margin-bottom: 3px; }
+.print-header .sub { font-size: 11px; line-height: 1.35; }
+.print-footer { margin-top: 10px; padding-top: 6px; font-size: 10px; }
 .print-hint {
-  margin: 0 0 4px;
-  padding: 3px 6px;
+  margin: 0 0 8px;
+  padding: 6px 8px;
   background: #f1f5f9;
-  border-radius: 3px;
-  font-size: 8px;
+  border-radius: 4px;
+  font-size: 10px;
   color: #475569;
-  line-height: 1.2;
+  line-height: 1.35;
 }
-.catalog-table { font-size: 9px; }
+.catalog-table { font-size: 11px; }
 .catalog-table th,
 .catalog-table td {
-  padding: 1px 3px !important;
-  line-height: 1.15;
+  padding: 4px 6px !important;
+  line-height: 1.35;
   vertical-align: middle;
 }
-.catalog-table th { font-size: 8px; font-weight: 700; }
-.col-num { width: 18px; min-width: 18px; text-align: center; }
-.col-name { min-width: 90px; }
-.col-spec { font-size: 8px; color: #334155; }
-.name-ar { font-weight: 600; }
-.name-en { font-size: 8px; color: #64748b; font-weight: 400; }
-.col-qty { width: 42px; min-width: 42px; height: 14px; }
-.col-notes { width: 52px; min-width: 52px; height: 14px; }
+.catalog-table th { font-size: 11px; font-weight: 700; }
+.col-num { width: 26px; min-width: 26px; text-align: center; }
+.col-name { min-width: 110px; }
+.col-spec { font-size: 10px; color: #334155; }
+.name-ar { font-weight: 600; font-size: 11px; }
+.name-en { font-size: 10px; color: #64748b; font-weight: 400; }
+.col-qty { width: 52px; min-width: 52px; height: 22px; }
+.col-notes { width: 64px; min-width: 64px; height: 22px; }
 tr.cat-header td {
   background: #e8f0fa;
   color: #185FA5;
   font-weight: 700;
-  font-size: 9px;
+  font-size: 11px;
   border-color: #b8cfe8;
-  padding: 2px 4px !important;
+  padding: 5px 8px !important;
 }
 tr.cat-header + tr td { border-top: 1px solid #185FA5; }
 tr:nth-child(even) td { background: #fafbfc; }
@@ -322,8 +322,8 @@ function openItemsCatalogDocument(
     subtitle: doc.subtitle,
     body: doc.body,
     extraCss: CATALOG_PRINT_EXTRA_CSS,
-    landscape: true,
-    pageMarginMm: 5,
+    landscape: false,
+    pageMarginMm: 8,
     showPageCounter: false,
     htmlLang: opts.lang === 'en' ? 'en' : 'ar',
     htmlDir: opts.lang === 'en' ? 'ltr' : 'rtl',
