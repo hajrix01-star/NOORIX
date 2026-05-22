@@ -177,6 +177,24 @@ export function computeRevenueDailyAvgActiveDays(
   return sum / n;
 }
 
+export type RevenueDailyAvgCompareTone = 'up' | 'down' | 'neutral';
+
+/** Compare current-month daily avg to previous month (revenue: higher is better → up). */
+export function compareRevenueDailyAvgTone(
+  current: number | null | undefined,
+  prev: number | null | undefined,
+): RevenueDailyAvgCompareTone {
+  if (current == null || prev == null) return 'neutral';
+  if (current > prev) return 'up';
+  if (current < prev) return 'down';
+  return 'neutral';
+}
+
+export function revenueDailyAvgDeltaPct(current: number, prev: number): number | null {
+  if (!Number.isFinite(current) || !Number.isFinite(prev) || prev === 0) return null;
+  return ((current - prev) / prev) * 100;
+}
+
 export function performanceTotalForSalesKey(
   performanceData: Record<string, string | number>[],
   salesKey: string,

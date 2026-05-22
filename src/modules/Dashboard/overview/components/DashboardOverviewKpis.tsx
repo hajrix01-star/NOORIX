@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { amountText } from '../../../Reports/reportHelpers';
-import { FmtNum, MetricCard } from '../../../../ui';
+import { MetricCard } from '../../../../ui';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../../constants/kpiCardTheme';
 import {
   getCardValue,
@@ -12,6 +12,7 @@ import {
 import type { DashboardOverviewFilter } from '../types';
 import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
 import { kpiFooterRowColorClass } from '../utils/dashboardOverviewKpiInsightFooters';
+import { DashboardOverviewRevenueDailyAvgPanel } from './DashboardOverviewRevenueDailyAvgPanel';
 
 type CardDef = {
   key: string;
@@ -95,36 +96,14 @@ export function DashboardOverviewKpis({
             <MetricCard key={card.key} color={accentColor} className="min-h-[188px]">
               <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
               {isSales && selectedMonth != null ? (
-                <div className="px-4 mt-1">
-                  <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-1">
-                    <div
-                      dir="ltr"
-                      className="nx-font-numbers inline-flex shrink-0 items-baseline gap-x-1 text-[22px] font-bold leading-tight tracking-[-0.5px] text-noorix-text"
-                      style={{ fontFamily: 'var(--noorix-font-numbers)' }}
-                    >
-                      {amountText(rawVal)}
-                      <span className="nx-sar">SR</span>
-                    </div>
-                    <div className="flex min-w-0 flex-col items-end gap-0.5 text-end">
-                      {revenueDailyAvgActiveDays != null ? (
-                        <div className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5">
-                          <span className="text-[11px] text-noorix-muted">{t('dashboardSalesDailyAvgActiveDays')}</span>
-                          <span className="text-[15px] font-semibold text-noorix-blue nx-font-numbers ltr whitespace-nowrap">
-                            <FmtNum n={revenueDailyAvgActiveDays} /> <span className="nx-sar">SR</span>
-                          </span>
-                        </div>
-                      ) : null}
-                      {revenueDailyAvgPrevMonthActiveDays != null ? (
-                        <div className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5">
-                          <span className="text-[11px] text-noorix-muted">{t('dashboardSalesDailyAvgPrevMonth')}</span>
-                          <span className="text-[13px] font-semibold text-noorix-muted nx-font-numbers ltr whitespace-nowrap">
-                            <FmtNum n={revenueDailyAvgPrevMonthActiveDays} /> <span className="nx-sar">SR</span>
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
+                <>
+                  <MetricCard.Value value={amountText(rawVal)} currency="SR" />
+                  <DashboardOverviewRevenueDailyAvgPanel
+                    current={revenueDailyAvgActiveDays}
+                    prev={revenueDailyAvgPrevMonthActiveDays}
+                    t={t}
+                  />
+                </>
               ) : (
                 <MetricCard.Value value={amountText(rawVal)} currency="SR" />
               )}
