@@ -14,9 +14,11 @@ import {
   buildPerformanceRows,
   buildPurchaseCategoriesData,
   buildTopSuppliersChartData,
+  buildYearMonthlyDailyAvgRows,
   computeRevenueDailyAvgActiveDays,
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
+  yearMonthlyDailyAvgCapMonth,
 } from '../utils/dashboardOverviewBuilders';
 import { bucketMonthIntoWeeks, pctChangeVsBaseline } from '../utils/dashboardWeeklySales';
 import type { DashboardOverviewFilter } from '../types';
@@ -255,6 +257,19 @@ export function useDashboardOverviewModel(
     [prevMonthSalesForDailyAvg],
   );
 
+  const yearlyDailyAvgRows = useMemo(() => {
+    const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
+    const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+    return buildYearMonthlyDailyAvgRows({
+      year,
+      yearSummaries,
+      monthNames,
+      capMonth,
+      currentYear: saudiYM.year,
+      currentMonth: saudiYM.month,
+    });
+  }, [year, yearSummaries, lang, saudiYM.year, saudiYM.month]);
+
   const monthName = selectedMonth
     ? lang === 'ar'
       ? MONTH_NAMES_AR[selectedMonth - 1]
@@ -449,6 +464,7 @@ export function useDashboardOverviewModel(
     purchaseCategoriesPieData,
     revenueDailyAvgActiveDays,
     revenueDailyAvgPrevMonthActiveDays,
+    yearlyDailyAvgRows,
     hiddenSeries,
     toggleSeries,
     SERIES,

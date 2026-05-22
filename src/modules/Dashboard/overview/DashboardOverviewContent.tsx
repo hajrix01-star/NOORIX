@@ -5,6 +5,7 @@ import React from 'react';
 import { DashboardOverviewTopCharts } from './components/DashboardOverviewTopCharts';
 import { DashboardOverviewKpis } from './components/DashboardOverviewKpis';
 import { DashboardOverviewWeeklySalesPanel } from './components/DashboardOverviewWeeklySalesPanel';
+import { DashboardOverviewYearlyDailyAvgPanel } from './components/DashboardOverviewYearlyDailyAvgPanel';
 import { DashboardOverviewTimelineSection } from './components/DashboardOverviewTimelineSection';
 import type { DashboardOverviewModel } from './hooks/useDashboardOverviewModel';
 
@@ -39,6 +40,12 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         revenueDailyAvgActiveDays={m.revenueDailyAvgActiveDays}
         revenueDailyAvgPrevMonthActiveDays={m.revenueDailyAvgPrevMonthActiveDays}
         kpiInsightFooters={m.kpiInsightFooters}
+      />
+
+      <DashboardOverviewYearlyDailyAvgPanel
+        year={m.year}
+        rows={m.yearlyDailyAvgRows}
+        selectedMonth={m.selectedMonth}
       />
 
       <DashboardOverviewTimelineSection

@@ -195,6 +195,90 @@ export function revenueDailyAvgDeltaPct(current: number, prev: number): number |
   return ((current - prev) / prev) * 100;
 }
 
+export type YearMonthlyDailyAvgRow = {
+  month: number;
+  monthLabel: string;
+  avgDaily: number | null;
+  activeDays: number;
+  deltaPctVsPrev: number | null;
+  tone: RevenueDailyAvgCompareTone;
+  isCurrentMonth: boolean;
+};
+
+/**
+ * Monthly daily revenue averages for a calendar year, Jan → capMonth.
+ * Uses the same active-day rule as computeRevenueDailyAvgActiveDays.
+ * Current month naturally reflects data only through the last sales entry.
+ */
+export function buildYearMonthlyDailyAvgRows(params: {
+  year: number;
+  yearSummaries: SummaryLike[] | null | undefined;
+  monthNames: readonly string[];
+  capMonth: number;
+  currentYear: number;
+  currentMonth: number;
+}): YearMonthlyDailyAvgRow[] {
+  const { year, yearSummaries, monthNames, capMonth, currentYear, currentMonth } = params;
+  if (capMonth <= 0) return [];
+
+  const prefix = `${year}-`;
+  const byMonthDay = new Map<number, Map<string, number>>();
+
+  for (const s of yearSummaries ?? []) {
+    const ymdStr = toYmd(s.transactionDate);
+    if (!ymdStr || ymdStr.length < 7 || !ymdStr.startsWith(prefix)) continue;
+    const month = parseInt(ymdStr.slice(5, 7), 10);
+    if (!Number.isFinite(month) || month < 1 || month > capMonth) continue;
+    if (!byMonthDay.has(month)) byMonthDay.set(month, new Map());
+    const dayMap = byMonthDay.get(month)!;
+    dayMap.set(ymdStr, (dayMap.get(ymdStr) || 0) + Number(s.totalAmount || 0));
+  }
+
+  const rows: YearMonthlyDailyAvgRow[] = [];
+  let prevAvg: number | null = null;
+
+  for (let month = 1; month <= capMonth; month += 1) {
+    const dayMap = byMonthDay.get(month);
+    let sum = 0;
+    let activeDays = 0;
+    if (dayMap) {
+      for (const amt of dayMap.values()) {
+        if (amt > 0) {
+          sum += amt;
+          activeDays += 1;
+        }
+      }
+    }
+    const avgDaily = activeDays > 0 ? sum / activeDays : null;
+    const deltaPctVsPrev =
+      avgDaily != null && prevAvg != null ? revenueDailyAvgDeltaPct(avgDaily, prevAvg) : null;
+
+    rows.push({
+      month,
+      monthLabel: monthNames[month - 1] ?? String(month),
+      avgDaily,
+      activeDays,
+      deltaPctVsPrev,
+      tone: compareRevenueDailyAvgTone(avgDaily, prevAvg),
+      isCurrentMonth: year === currentYear && month === currentMonth,
+    });
+
+    if (avgDaily != null) prevAvg = avgDaily;
+  }
+
+  return rows;
+}
+
+export function yearMonthlyDailyAvgCapMonth(
+  year: number,
+  currentYear: number,
+  currentMonth: number,
+): number {
+  if (year < currentYear) return 12;
+  if (year > currentYear) return 0;
+  return currentMonth;
+}
+
 export function performanceTotalForSalesKey(
   performanceData: Record<string, string | number>[],
   salesKey: string,

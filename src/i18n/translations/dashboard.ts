@@ -169,4 +169,12 @@ export default {
     en: 'Week {n} ({from}–{to})',
   },
   dashboardWeeklySalesDelta: { ar: 'التغير ٪', en: 'Change %' },
+
+  dashboardYearlyDailyAvgTitle: { ar: 'المعدل اليومي الشهري', en: 'Monthly daily average' },
+  dashboardYearlyDailyAvgFormulaNote: {
+    ar: 'من يناير إلى الشهر الحالي؛ المتوسط = مجموع الإيراد ÷ أيام الإيراد &gt; 0. الشهر الجاري حتى آخر إدخال.',
+    en: 'Jan through current month; avg = revenue sum ÷ days with revenue &gt; 0. Current month through last entry.',
+  },
+  dashboardYearlyDailyAvgMonthCol: { ar: 'الشهر', en: 'Month' },
+  dashboardYearlyDailyAvgCurrentBadge: { ar: 'الحالي', en: 'Current' },
 };
