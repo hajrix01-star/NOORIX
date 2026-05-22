@@ -93,25 +93,26 @@ describe('buildItemsCatalogPdfFilename', () => {
 });
 
 describe('expandProductsToPrintRows', () => {
-  it('expands variants into separate rows', () => {
+  it('uses one row per product with combined variant specs', () => {
     const rows = expandProductsToPrintRows(
       [
         {
           nameAr: 'دجاج',
           nameEn: 'Chicken',
-          category: { nameAr: 'لحوم' },
           variants: [
             { size: 'صغير', packaging: 'كيس', unit: 'kg' },
             { size: 'كبير', packaging: 'كرتون', unit: 'box' },
           ],
         },
+        { nameAr: 'ملح', unit: 'piece' },
       ],
       unitLabel,
     );
 
     expect(rows).toHaveLength(2);
     expect(rows[0].nameAr).toBe('دجاج');
-    expect(rows[1].nameAr).toBe('');
-    expect(rows[1].size).toBe('كبير');
+    expect(rows[0].spec).toContain('صغير / كيس / kg');
+    expect(rows[0].spec).toContain('·');
+    expect(rows[1].spec).toBe('piece');
   });
 });

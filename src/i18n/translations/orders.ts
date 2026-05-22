@@ -185,6 +185,7 @@ export default {
   ordersPrintCatalogNotes: { ar: 'ملاحظات', en: 'Notes' },
   ordersPrintCatalogMatchCount: { ar: '{0} صنف جاهز للطباعة', en: '{0} items ready to print' },
   ordersPrintCatalogNoCategory: { ar: 'بدون فئة', en: 'Uncategorized' },
+  ordersPrintCatalogSpec: { ar: 'المواصفات', en: 'Specs' },
   ordersPrintCatalogPdfHint: {
     ar: 'اختر «حفظ كـ PDF» من نافذة الطباعة.',
     en: 'Choose «Save as PDF» in the print dialog.',

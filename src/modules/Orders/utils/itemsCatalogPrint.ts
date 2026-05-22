@@ -10,10 +10,39 @@ type PrintRow = {
   num: number;
   nameAr: string;
   nameEn: string;
-  size: string;
-  packaging: string;
-  unit: string;
+  spec: string;
 };
+
+function buildProductSpec(p: any, unitLabel: (u: string) => string): string {
+  const variants = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : null;
+  if (variants) {
+    return variants
+      .map((v: any) => {
+        const parts = [v.size, v.packaging, unitLabel(v.unit || 'piece')].filter((x) => x && x !== '—');
+        return parts.join(' / ') || '—';
+      })
+      .join(' · ');
+  }
+  const unit = unitLabel(p.unit || 'piece');
+  return unit || '—';
+}
+
+function renderProductName(nameAr: string, nameEn: string) {
+  if (nameEn) {
+    return `<span class="name-ar">${esc(nameAr)}</span> <span class="name-en">(${esc(nameEn)})</span>`;
+  }
+  return `<span class="name-ar">${esc(nameAr)}</span>`;
+}
+
+function renderPrintRow(r: PrintRow) {
+  return `<tr>
+  <td class="col-num">${r.num}</td>
+  <td class="col-name">${renderProductName(r.nameAr, r.nameEn)}</td>
+  <td class="col-spec">${esc(r.spec)}</td>
+  <td class="col-qty"></td>
+  <td class="col-notes"></td>
+</tr>`;
+}
 
 export type CategoryPrintGroup = {
   categoryId: string | null;
@@ -90,53 +119,12 @@ export function groupProductsByCategory(
 }
 
 export function expandProductsToPrintRows(products: any[], unitLabel: (u: string) => string): PrintRow[] {
-  const rows: PrintRow[] = [];
-  let num = 0;
-
-  for (const p of products) {
-    const variants = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : null;
-
-    if (variants) {
-      variants.forEach((v: any, i: number) => {
-        num += 1;
-        rows.push({
-          num,
-          nameAr: i === 0 ? (p.nameAr || '—') : '',
-          nameEn: i === 0 ? (p.nameEn || '') : '',
-          size: v.size || '—',
-          packaging: v.packaging || '—',
-          unit: unitLabel(v.unit || 'piece'),
-        });
-      });
-    } else {
-      num += 1;
-      rows.push({
-        num,
-        nameAr: p.nameAr || '—',
-        nameEn: p.nameEn || '',
-        size: '—',
-        packaging: '—',
-        unit: unitLabel(p.unit || 'piece'),
-      });
-    }
-  }
-
-  return rows;
-}
-
-function renderPrintRow(r: PrintRow) {
-  const nameCell = r.nameEn
-    ? `<strong>${esc(r.nameAr)}</strong><br><span style="font-size:11px;color:#64748b">${esc(r.nameEn)}</span>`
-    : esc(r.nameAr);
-  return `<tr>
-  <td class="col-num">${r.num}</td>
-  <td>${nameCell}</td>
-  <td>${esc(r.size)}</td>
-  <td>${esc(r.packaging)}</td>
-  <td class="col-unit">${esc(r.unit)}</td>
-  <td class="col-qty"></td>
-  <td class="col-notes"></td>
-</tr>`;
+  return products.map((p, idx) => ({
+    num: idx + 1,
+    nameAr: p.nameAr || '—',
+    nameEn: p.nameEn || '',
+    spec: buildProductSpec(p, unitLabel),
+  }));
 }
 
 export function buildItemsCatalogPrintSubtitle(
@@ -174,50 +162,29 @@ export function buildItemsCatalogPrintHtml(
   for (const group of groups) {
     if (groupByCategory) {
       bodyParts.push(
-        `<tr class="cat-header"><td colspan="7">${esc(t('category'))}: ${esc(group.categoryName)}</td></tr>`,
+        `<tr class="cat-header"><td colspan="5">${esc(t('category'))}: ${esc(group.categoryName)}</td></tr>`,
       );
     }
 
-    const groupRows: PrintRow[] = [];
-    for (const p of group.products) {
-      const variants = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : null;
-      if (variants) {
-        variants.forEach((v: any, i: number) => {
-          num += 1;
-          groupRows.push({
-            num,
-            nameAr: i === 0 ? (p.nameAr || '—') : '',
-            nameEn: i === 0 ? (p.nameEn || '') : '',
-            size: v.size || '—',
-            packaging: v.packaging || '—',
-            unit: unitLabel(v.unit || 'piece'),
-          });
-        });
-      } else {
-        num += 1;
-        groupRows.push({
-          num,
-          nameAr: p.nameAr || '—',
-          nameEn: p.nameEn || '',
-          size: '—',
-          packaging: '—',
-          unit: unitLabel(p.unit || 'piece'),
-        });
-      }
-    }
+    const groupRows = group.products.map((p) => ({
+      nameAr: p.nameAr || '—',
+      nameEn: p.nameEn || '',
+      spec: buildProductSpec(p, unitLabel),
+    }));
 
-    bodyParts.push(...groupRows.map(renderPrintRow));
+    groupRows.forEach((row) => {
+      num += 1;
+      bodyParts.push(renderPrintRow({ num, ...row }));
+    });
   }
 
   return `<p class="print-hint">${esc(t('ordersPrintCatalogFillQty'))}</p>
-<table>
+<table class="catalog-table">
 <thead>
 <tr>
   <th class="col-num">#</th>
-  <th>${esc(t('productNameAr'))}</th>
-  <th>${esc(t('ordersProductSize'))}</th>
-  <th>${esc(t('ordersProductPackaging'))}</th>
-  <th>${esc(t('ordersUnit'))}</th>
+  <th class="col-name">${esc(t('productNameAr'))}</th>
+  <th class="col-spec">${esc(t('ordersPrintCatalogSpec'))}</th>
   <th class="col-qty">${esc(t('quantity'))}</th>
   <th class="col-notes">${esc(t('ordersPrintCatalogNotes'))}</th>
 </tr>
@@ -227,28 +194,46 @@ export function buildItemsCatalogPrintHtml(
 }
 
 const CATALOG_PRINT_EXTRA_CSS = `
+body { font-size: 9px; line-height: 1.15; }
+.print-header { padding-bottom: 4px; margin-bottom: 6px; border-bottom-width: 1px; }
+.print-header h1 { font-size: 13px; margin-bottom: 2px; }
+.print-header .sub { font-size: 9px; line-height: 1.2; }
+.print-footer { margin-top: 6px; padding-top: 4px; font-size: 8px; }
 .print-hint {
-  margin: 0 0 14px;
-  padding: 8px 12px;
+  margin: 0 0 4px;
+  padding: 3px 6px;
   background: #f1f5f9;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: 3px;
+  font-size: 8px;
   color: #475569;
+  line-height: 1.2;
 }
-.col-num { width: 32px; min-width: 32px; text-align: center; }
-.col-unit { width: 56px; min-width: 56px; text-align: center; }
-.col-qty { width: 72px; min-width: 72px; height: 28px; }
-.col-notes { width: 90px; min-width: 90px; }
-tbody td { vertical-align: middle; }
+.catalog-table { font-size: 9px; }
+.catalog-table th,
+.catalog-table td {
+  padding: 1px 3px !important;
+  line-height: 1.15;
+  vertical-align: middle;
+}
+.catalog-table th { font-size: 8px; font-weight: 700; }
+.col-num { width: 18px; min-width: 18px; text-align: center; }
+.col-name { min-width: 90px; }
+.col-spec { font-size: 8px; color: #334155; }
+.name-ar { font-weight: 600; }
+.name-en { font-size: 8px; color: #64748b; font-weight: 400; }
+.col-qty { width: 42px; min-width: 42px; height: 14px; }
+.col-notes { width: 52px; min-width: 52px; height: 14px; }
 tr.cat-header td {
   background: #e8f0fa;
   color: #185FA5;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 9px;
   border-color: #b8cfe8;
-  padding: 10px 12px;
+  padding: 2px 4px !important;
 }
-tr.cat-header + tr td { border-top: 2px solid #185FA5; }
+tr.cat-header + tr td { border-top: 1px solid #185FA5; }
+tr:nth-child(even) td { background: #fafbfc; }
+thead { display: table-header-group; }
 `.trim();
 
 export type ItemsCatalogOutputOpts = {
@@ -337,6 +322,9 @@ function openItemsCatalogDocument(
     subtitle: doc.subtitle,
     body: doc.body,
     extraCss: CATALOG_PRINT_EXTRA_CSS,
+    landscape: true,
+    pageMarginMm: 5,
+    showPageCounter: false,
     htmlLang: opts.lang === 'en' ? 'en' : 'ar',
     htmlDir: opts.lang === 'en' ? 'ltr' : 'rtl',
   });
