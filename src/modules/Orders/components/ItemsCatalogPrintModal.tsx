@@ -1,0 +1,152 @@
+import React, { useMemo, useState } from 'react';
+import { useTranslation } from '../../../i18n/useTranslation';
+import { useApp } from '../../../context/AppContext';
+import { useToast } from '../../../context/ToastContext';
+import { Button, Input, Modal } from '../../../ui';
+import {
+  filterProductsForCatalogPrint,
+  printItemsCatalog,
+  type ItemsCatalogPrintFilters,
+} from '../utils/itemsCatalogPrint';
+
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  companyId: string;
+  products: any[];
+  categories: any[];
+  sections: any[];
+  productTypeFilter: 'order' | 'sale';
+  initialSection?: string;
+  initialCategoryId?: string;
+};
+
+export function ItemsCatalogPrintModal({
+  open,
+  onClose,
+  companyId,
+  products,
+  categories,
+  sections,
+  productTypeFilter,
+  initialSection = '',
+  initialCategoryId = '',
+}: Props) {
+  const { t, lang } = useTranslation();
+  const { companies = [] } = useApp();
+  const { showToast } = useToast();
+
+  const [printSection, setPrintSection] = useState(initialSection);
+  const [printCategory, setPrintCategory] = useState(initialCategoryId);
+
+  React.useEffect(() => {
+    if (open) {
+      setPrintSection(initialSection);
+      setPrintCategory(initialCategoryId);
+    }
+  }, [open, initialSection, initialCategoryId]);
+
+  const filters: ItemsCatalogPrintFilters = useMemo(
+    () => ({
+      section: printSection,
+      categoryId: printCategory,
+      productType: productTypeFilter,
+    }),
+    [printSection, printCategory, productTypeFilter],
+  );
+
+  const matchCount = useMemo(
+    () => filterProductsForCatalogPrint(products, filters).length,
+    [products, filters],
+  );
+
+  const companyName = useMemo(() => {
+    const c = companies.find((x: any) => x.id === companyId);
+    return c?.nameAr || c?.nameEn || '';
+  }, [companies, companyId]);
+
+  const unitLabel = (u: string) => {
+    const map: Record<string, string> = {
+      piece: t('ordersUnitPiece'),
+      kg: t('ordersUnitKg'),
+      box: t('ordersUnitBox'),
+      dozen: t('ordersUnitDozen'),
+    };
+    return map[u] || u;
+  };
+
+  const productTypeLabel =
+    productTypeFilter === 'sale' ? t('salesProducts') : t('ordersProducts');
+
+  function handlePrint() {
+    const result = printItemsCatalog({
+      products,
+      filters,
+      categories,
+      sections,
+      companyName,
+      productTypeLabel,
+      t,
+      unitLabel,
+      lang,
+    });
+    if (result.empty) {
+      showToast(t('ordersPrintCatalogEmpty'), 'error');
+      return;
+    }
+    onClose();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={t('ordersPrintCatalog')} size="sm">
+      <div className="flex flex-col gap-4">
+        <p className="m-0 text-[13px] text-noorix-muted leading-[1.5]">
+          {t('ordersPrintCatalogHint')}
+        </p>
+
+        <Input
+          type="select"
+          label={t('ordersPrintCatalogSection')}
+          value={printSection}
+          onChange={(e: any) => setPrintSection(e.target.value)}
+        >
+          <option value="">{t('filterAllSections')}</option>
+          <option value="__none__">{t('filterNoSection')}</option>
+          {(sections as any[]).map((s: any) => (
+            <option key={s.id} value={s.nameAr}>
+              {s.nameAr}
+              {s.nameEn ? ` / ${s.nameEn}` : ''}
+            </option>
+          ))}
+        </Input>
+
+        <Input
+          type="select"
+          label={t('category')}
+          value={printCategory}
+          onChange={(e: any) => setPrintCategory(e.target.value)}
+        >
+          <option value="">{t('filterAllCategories')}</option>
+          {(categories as any[]).map((c: any) => (
+            <option key={c.id} value={c.id}>
+              {c.nameAr || c.nameEn}
+            </option>
+          ))}
+        </Input>
+
+        <div className="text-[12px] text-noorix-muted">
+          {t('ordersPrintCatalogMatchCount').replace('{0}', String(matchCount))}
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="primary" size="sm" onClick={handlePrint} disabled={matchCount === 0}>
+            {t('print')}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}

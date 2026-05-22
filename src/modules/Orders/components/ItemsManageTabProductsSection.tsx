@@ -3,6 +3,7 @@ import { fmt } from '../../../utils/format';
 import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
 import { OrdersImportModal } from './OrdersImportModal';
 import { Button, Input, Modal } from '../../../ui';
+import { ItemsCatalogPrintModal } from './ItemsCatalogPrintModal';
 
 /** Products sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
 export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order' }: any) {
@@ -50,6 +51,7 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
   } = ctrl;
 
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [bulkSectionModal, setBulkSectionModal] = useState(false);
   const [bulkSelectedSections, setBulkSelectedSections] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<'replace' | 'add'>('replace');
@@ -84,6 +86,18 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
 
   return (
     <>
+      <ItemsCatalogPrintModal
+        open={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        companyId={companyId}
+        products={products}
+        categories={categories}
+        sections={sections}
+        productTypeFilter={productTypeFilter}
+        initialSection={productFilterSection}
+        initialCategoryId={productFilterCategory}
+      />
+
       {showImportModal && (
         <OrdersImportModal
           type="products"
@@ -170,6 +184,9 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
               </Button>
               <Button size="sm" onClick={handleExportProducts} disabled={products.length === 0}>
                 {t('exportExcel')}
+              </Button>
+              <Button size="sm" onClick={() => setShowPrintModal(true)} disabled={products.length === 0}>
+                {t('ordersPrintCatalog')}
               </Button>
             </div>
           </div>
@@ -383,6 +400,14 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
               ✕ {t('clearFilters')}
             </Button>
           )}
+
+          <Button
+            size="sm"
+            onClick={() => setShowPrintModal(true)}
+            disabled={filteredProducts.length === 0}
+          >
+            {t('ordersPrintCatalog')}
+          </Button>
 
           {/* عداد النتائج */}
           <span className="text-[12px] text-noorix-muted ms-auto">
