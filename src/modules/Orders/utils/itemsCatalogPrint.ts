@@ -13,7 +13,7 @@ type PrintRow = {
   spec: string;
 };
 
-function buildProductSpec(p: any, unitLabel: (u: string) => string): string {
+export function buildProductSpec(p: any, unitLabel: (u: string) => string): string {
   const variants = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : null;
   if (variants) {
     return variants
@@ -27,7 +27,7 @@ function buildProductSpec(p: any, unitLabel: (u: string) => string): string {
   return unit || '—';
 }
 
-function renderProductName(nameAr: string, nameEn: string) {
+export function renderCatalogProductName(nameAr: string, nameEn: string) {
   if (nameEn) {
     return `<span class="name-ar">${esc(nameAr)}</span> <span class="name-en">(${esc(nameEn)})</span>`;
   }
@@ -37,7 +37,7 @@ function renderProductName(nameAr: string, nameEn: string) {
 function renderPrintRow(r: PrintRow) {
   return `<tr>
   <td class="col-num">${r.num}</td>
-  <td class="col-name">${renderProductName(r.nameAr, r.nameEn)}</td>
+  <td class="col-name">${renderCatalogProductName(r.nameAr, r.nameEn)}</td>
   <td class="col-spec">${esc(r.spec)}</td>
   <td class="col-qty"></td>
   <td class="col-notes"></td>

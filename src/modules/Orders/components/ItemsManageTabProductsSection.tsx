@@ -4,6 +4,7 @@ import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
 import { OrdersImportModal } from './OrdersImportModal';
 import { Button, Input, Modal } from '../../../ui';
 import { ItemsCatalogPrintModal } from './ItemsCatalogPrintModal';
+import { ItemsCatalogWeeklyPrintModal } from './ItemsCatalogWeeklyPrintModal';
 
 /** Products sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
 export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order' }: any) {
@@ -52,6 +53,7 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
 
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showWeeklyPrintModal, setShowWeeklyPrintModal] = useState(false);
   const [bulkSectionModal, setBulkSectionModal] = useState(false);
   const [bulkSelectedSections, setBulkSelectedSections] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<'replace' | 'add'>('replace');
@@ -89,6 +91,18 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
       <ItemsCatalogPrintModal
         open={showPrintModal}
         onClose={() => setShowPrintModal(false)}
+        companyId={companyId}
+        products={products}
+        categories={categories}
+        sections={sections}
+        productTypeFilter={productTypeFilter}
+        initialSection={productFilterSection}
+        initialCategoryId={productFilterCategory}
+      />
+
+      <ItemsCatalogWeeklyPrintModal
+        open={showWeeklyPrintModal}
+        onClose={() => setShowWeeklyPrintModal(false)}
         companyId={companyId}
         products={products}
         categories={categories}
@@ -187,6 +201,9 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
               </Button>
               <Button size="sm" onClick={() => setShowPrintModal(true)} disabled={products.length === 0}>
                 {t('ordersPrintCatalog')}
+              </Button>
+              <Button size="sm" onClick={() => setShowWeeklyPrintModal(true)} disabled={products.length === 0}>
+                {t('ordersPrintWeeklySheet')}
               </Button>
             </div>
           </div>
@@ -407,6 +424,13 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
             disabled={filteredProducts.length === 0}
           >
             {t('ordersPrintCatalog')}
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setShowWeeklyPrintModal(true)}
+            disabled={filteredProducts.length === 0}
+          >
+            {t('ordersPrintWeeklySheet')}
           </Button>
 
           {/* عداد النتائج */}
