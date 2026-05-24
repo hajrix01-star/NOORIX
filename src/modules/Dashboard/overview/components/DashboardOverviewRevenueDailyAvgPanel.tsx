@@ -7,8 +7,10 @@ import {
 } from '../utils/dashboardOverviewBuilders';
 
 type Props = {
-  current: number | null;
-  prev: number | null;
+  revenueCurrent: number | null;
+  revenuePrev: number | null;
+  customerCurrent: number | null;
+  customerPrev: number | null;
   t: (key: string) => string;
 };
 
@@ -19,7 +21,23 @@ function formatDeltaPct(n: number): string {
   return rounded.toFixed(1);
 }
 
-export function DashboardOverviewRevenueDailyAvgPanel({ current, prev, t }: Props) {
+type MetricBlockProps = {
+  labelKey: string;
+  current: number | null;
+  prev: number | null;
+  t: (key: string) => string;
+  variant: 'currency' | 'count';
+  borderedStart?: boolean;
+};
+
+function DailyAvgMetricBlock({
+  labelKey,
+  current,
+  prev,
+  t,
+  variant,
+  borderedStart = false,
+}: MetricBlockProps) {
   if (current == null && prev == null) return null;
 
   const tone = compareRevenueDailyAvgTone(current, prev);
@@ -48,18 +66,23 @@ export function DashboardOverviewRevenueDailyAvgPanel({ current, prev, t }: Prop
         : 'bg-noorix-bg-muted text-noorix-muted';
 
   return (
-    <div className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border">
+    <div
+      className={cn(
+        'flex min-w-0 flex-col',
+        borderedStart ? 'sm:border-s border-noorix-border' : '',
+      )}
+    >
       {current != null ? (
         <div
           className={cn(
-            'flex items-center justify-between gap-2 px-3 py-2',
+            'flex flex-1 items-center justify-between gap-2 px-3 py-2',
             currentRowClass,
             prev != null ? 'border-b border-noorix-border' : '',
           )}
         >
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-[11px] font-semibold leading-snug text-noorix-text">
-              {t('dashboardSalesDailyAvgActiveDays')}
+              {t(labelKey)}
             </span>
             {prev != null ? (
               <span className="text-[10px] leading-snug text-noorix-muted">
@@ -87,7 +110,14 @@ export function DashboardOverviewRevenueDailyAvgPanel({ current, prev, t }: Prop
                 currentValueClass,
               )}
             >
-              <FmtNum n={current} /> <span className="nx-sar">SR</span>
+              <FmtNum n={current} />
+              {variant === 'currency' ? (
+                <> <span className="nx-sar">SR</span></>
+              ) : (
+                <span className="ms-1 text-[10px] font-medium text-noorix-muted">
+                  {t('dashboardSalesCustomerDailyAvgUnit')}
+                </span>
+              )}
             </span>
           </div>
         </div>
@@ -99,10 +129,55 @@ export function DashboardOverviewRevenueDailyAvgPanel({ current, prev, t }: Prop
             {t('dashboardKpiFooterTrailingAvg')}
           </span>
           <span className="text-[13px] font-semibold text-noorix-muted nx-font-numbers ltr whitespace-nowrap">
-            <FmtNum n={prev} /> <span className="nx-sar">SR</span>
+            <FmtNum n={prev} />
+            {variant === 'currency' ? (
+              <> <span className="nx-sar">SR</span></>
+            ) : (
+              <span className="ms-1 text-[9px] font-medium text-noorix-muted">
+                {t('dashboardSalesCustomerDailyAvgUnit')}
+              </span>
+            )}
           </span>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+export function DashboardOverviewRevenueDailyAvgPanel({
+  revenueCurrent,
+  revenuePrev,
+  customerCurrent,
+  customerPrev,
+  t,
+}: Props) {
+  const hasRevenue = revenueCurrent != null || revenuePrev != null;
+  const hasCustomers = customerCurrent != null || customerPrev != null;
+  if (!hasRevenue && !hasCustomers) return null;
+
+  return (
+    <div className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border">
+      <div className="grid grid-cols-1 sm:grid-cols-2">
+        {hasRevenue ? (
+          <DailyAvgMetricBlock
+            labelKey="dashboardSalesDailyAvgActiveDays"
+            current={revenueCurrent}
+            prev={revenuePrev}
+            t={t}
+            variant="currency"
+          />
+        ) : null}
+        {hasCustomers ? (
+          <DailyAvgMetricBlock
+            labelKey="dashboardSalesCustomerDailyAvg"
+            current={customerCurrent}
+            prev={customerPrev}
+            t={t}
+            variant="count"
+            borderedStart={hasRevenue}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

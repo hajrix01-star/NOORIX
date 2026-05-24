@@ -6,6 +6,7 @@ type TFn = (key: string) => string;
 type SummaryLike = {
   transactionDate?: string | null;
   totalAmount?: string | number | null;
+  customerCount?: number | null;
   channels?: Array<{ amount?: string | number | null; vault?: { nameAr?: string | null; nameEn?: string | null } }>;
 };
 
@@ -156,14 +157,15 @@ export function mergePurchaseCategoriesOthers(
   ];
 }
 
-export function computeRevenueDailyAvgActiveDays(
+function computeDailyAvgActiveDays(
   monthSalesForDailyAvg: SummaryLike[] | null | undefined,
+  pickDayValue: (summary: SummaryLike) => number,
 ): number | null {
   if (!monthSalesForDailyAvg?.length) return null;
   const byDay = new Map<string, number>();
   monthSalesForDailyAvg.forEach((s) => {
     const d = toYmd(s.transactionDate);
-    byDay.set(d, (byDay.get(d) || 0) + Number(s.totalAmount || 0));
+    byDay.set(d, (byDay.get(d) || 0) + pickDayValue(s));
   });
   let sum = 0;
   let n = 0;
@@ -175,6 +177,24 @@ export function computeRevenueDailyAvgActiveDays(
   }
   if (n === 0) return null;
   return sum / n;
+}
+
+export function computeRevenueDailyAvgActiveDays(
+  monthSalesForDailyAvg: SummaryLike[] | null | undefined,
+): number | null {
+  return computeDailyAvgActiveDays(
+    monthSalesForDailyAvg,
+    (s) => Number(s.totalAmount || 0),
+  );
+}
+
+export function computeCustomerDailyAvgActiveDays(
+  monthSalesForDailyAvg: SummaryLike[] | null | undefined,
+): number | null {
+  return computeDailyAvgActiveDays(
+    monthSalesForDailyAvg,
+    (s) => Number(s.customerCount || 0),
+  );
 }
 
 export type RevenueDailyAvgCompareTone = 'up' | 'down' | 'neutral';

@@ -29,6 +29,8 @@ type Props = {
   year: number;
   revenueDailyAvgActiveDays: number | null;
   revenueDailyAvgPrevMonthActiveDays: number | null;
+  customerDailyAvgActiveDays: number | null;
+  customerDailyAvgPrevMonthActiveDays: number | null;
   kpiInsightFooters: KpiInsightFooterMap;
 };
 
@@ -40,6 +42,8 @@ export function DashboardOverviewKpis({
   year,
   revenueDailyAvgActiveDays,
   revenueDailyAvgPrevMonthActiveDays,
+  customerDailyAvgActiveDays,
+  customerDailyAvgPrevMonthActiveDays,
   kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
@@ -99,8 +103,10 @@ export function DashboardOverviewKpis({
                 <>
                   <MetricCard.Value value={amountText(rawVal)} currency="SR" />
                   <DashboardOverviewRevenueDailyAvgPanel
-                    current={revenueDailyAvgActiveDays}
-                    prev={revenueDailyAvgPrevMonthActiveDays}
+                    revenueCurrent={revenueDailyAvgActiveDays}
+                    revenuePrev={revenueDailyAvgPrevMonthActiveDays}
+                    customerCurrent={customerDailyAvgActiveDays}
+                    customerPrev={customerDailyAvgPrevMonthActiveDays}
                     t={t}
                   />
                 </>

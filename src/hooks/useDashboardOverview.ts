@@ -16,6 +16,7 @@ import type { PlReportLike } from '../modules/Dashboard/overview/utils/dashboard
 export type DashboardSummaryLike = {
   transactionDate?: string | null;
   totalAmount?: string | number | null;
+  customerCount?: number | null;
   channels?: Array<{
     amount?: string | number | null;
     vault?: { nameAr?: string | null; nameEn?: string | null };

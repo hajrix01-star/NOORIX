@@ -16,6 +16,7 @@ import {
   buildTopSuppliersChartData,
   buildYearMonthlyDailyAvgRows,
   computeRevenueDailyAvgActiveDays,
+  computeCustomerDailyAvgActiveDays,
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
   yearMonthlyDailyAvgCapMonth,
@@ -257,6 +258,16 @@ export function useDashboardOverviewModel(
     [prevMonthSalesForDailyAvg],
   );
 
+  const customerDailyAvgActiveDays = useMemo(
+    () => computeCustomerDailyAvgActiveDays(monthSalesForDailyAvg),
+    [monthSalesForDailyAvg],
+  );
+
+  const customerDailyAvgPrevMonthActiveDays = useMemo(
+    () => computeCustomerDailyAvgActiveDays(prevMonthSalesForDailyAvg),
+    [prevMonthSalesForDailyAvg],
+  );
+
   const yearlyDailyAvgRows = useMemo(() => {
     const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
     const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
@@ -464,6 +475,8 @@ export function useDashboardOverviewModel(
     purchaseCategoriesPieData,
     revenueDailyAvgActiveDays,
     revenueDailyAvgPrevMonthActiveDays,
+    customerDailyAvgActiveDays,
+    customerDailyAvgPrevMonthActiveDays,
     yearlyDailyAvgRows,
     hiddenSeries,
     toggleSeries,
