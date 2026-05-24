@@ -21,42 +21,35 @@ function formatDeltaPct(n: number): string {
   return rounded.toFixed(1);
 }
 
-type MetricBlockProps = {
+type MetricRowProps = {
   labelKey: string;
   current: number | null;
   prev: number | null;
   t: (key: string) => string;
   variant: 'currency' | 'count';
-  borderedStart?: boolean;
+  showDivider?: boolean;
 };
 
-function DailyAvgMetricBlock({
+function DailyAvgMetricRow({
   labelKey,
   current,
   prev,
   t,
   variant,
-  borderedStart = false,
-}: MetricBlockProps) {
+  showDivider = false,
+}: MetricRowProps) {
   if (current == null && prev == null) return null;
 
   const tone = compareRevenueDailyAvgTone(current, prev);
   const deltaPct =
     current != null && prev != null ? revenueDailyAvgDeltaPct(current, prev) : null;
 
-  const currentValueClass =
+  const valueClass =
     tone === 'up'
       ? 'text-noorix-blue'
       : tone === 'down'
         ? 'text-noorix-red'
         : 'text-noorix-text';
-
-  const currentRowClass =
-    tone === 'up'
-      ? 'bg-[color-mix(in_srgb,var(--color-nx-sales)_10%,transparent)]'
-      : tone === 'down'
-        ? 'bg-[color-mix(in_srgb,var(--color-nx-expenses)_10%,transparent)]'
-        : 'bg-noorix-bg-muted/40';
 
   const deltaBadgeClass =
     tone === 'up'
@@ -66,76 +59,56 @@ function DailyAvgMetricBlock({
         : 'bg-noorix-bg-muted text-noorix-muted';
 
   return (
-    <div
-      className={cn(
-        'flex min-w-0 flex-col',
-        borderedStart ? 'sm:border-s border-noorix-border' : '',
-      )}
-    >
+    <div className={cn('px-3 py-2.5', showDivider && 'border-t border-noorix-border')}>
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <span className="min-w-0 truncate text-[10px] font-semibold text-noorix-muted">
+          {t(labelKey)}
+        </span>
+        {deltaPct != null ? (
+          <span
+            className={cn(
+              'inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold nx-font-numbers ltr',
+              deltaBadgeClass,
+            )}
+            title={t('dashboardKpiFooterChangeVsAvg')}
+          >
+            {deltaPct > 0 ? '↑ ' : deltaPct < 0 ? '↓ ' : ''}
+            {deltaPct > 0 ? '+' : ''}
+            {formatDeltaPct(deltaPct)}%
+          </span>
+        ) : null}
+      </div>
+
       {current != null ? (
         <div
+          dir="ltr"
           className={cn(
-            'flex flex-1 items-center justify-between gap-2 px-3 py-2',
-            currentRowClass,
-            prev != null ? 'border-b border-noorix-border' : '',
+            'mt-1 flex min-w-0 items-baseline gap-1 text-start nx-font-numbers',
+            valueClass,
           )}
         >
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[11px] font-semibold leading-snug text-noorix-text">
-              {t(labelKey)}
+          <span className="truncate text-[15px] font-bold leading-tight">
+            <FmtNum n={current} />
+          </span>
+          {variant === 'currency' ? (
+            <span className="nx-sar shrink-0">SR</span>
+          ) : (
+            <span className="shrink-0 text-[10px] font-medium text-noorix-muted">
+              {t('dashboardSalesCustomerDailyAvgUnit')}
             </span>
-            {prev != null ? (
-              <span className="text-[10px] leading-snug text-noorix-muted">
-                {t('dashboardSalesDailyAvgCompareHint')}
-              </span>
-            ) : null}
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-            {deltaPct != null ? (
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold nx-font-numbers ltr',
-                  deltaBadgeClass,
-                )}
-                title={t('dashboardKpiFooterChangeVsAvg')}
-              >
-                {deltaPct > 0 ? '↑ ' : deltaPct < 0 ? '↓ ' : ''}
-                {deltaPct > 0 ? '+' : ''}
-                {formatDeltaPct(deltaPct)}%
-              </span>
-            ) : null}
-            <span
-              className={cn(
-                'text-[15px] font-bold leading-none nx-font-numbers ltr whitespace-nowrap',
-                currentValueClass,
-              )}
-            >
-              <FmtNum n={current} />
-              {variant === 'currency' ? (
-                <> <span className="nx-sar">SR</span></>
-              ) : (
-                <span className="ms-1 text-[10px] font-medium text-noorix-muted">
-                  {t('dashboardSalesCustomerDailyAvgUnit')}
-                </span>
-              )}
-            </span>
-          </div>
+          )}
         </div>
       ) : null}
 
       {prev != null ? (
-        <div className="flex items-center justify-between gap-2 bg-noorix-surface px-3 py-1.5">
-          <span className="text-[10px] font-medium text-noorix-muted">
-            {t('dashboardKpiFooterTrailingAvg')}
-          </span>
-          <span className="text-[13px] font-semibold text-noorix-muted nx-font-numbers ltr whitespace-nowrap">
+        <div className="mt-1.5 flex min-w-0 items-center justify-between gap-2 text-[10px] text-noorix-muted">
+          <span className="shrink-0">{t('dashboardKpiFooterTrailingAvg')}</span>
+          <span dir="ltr" className="min-w-0 truncate text-start font-medium nx-font-numbers">
             <FmtNum n={prev} />
             {variant === 'currency' ? (
               <> <span className="nx-sar">SR</span></>
             ) : (
-              <span className="ms-1 text-[9px] font-medium text-noorix-muted">
-                {t('dashboardSalesCustomerDailyAvgUnit')}
-              </span>
+              <span className="ms-0.5">{t('dashboardSalesCustomerDailyAvgUnit')}</span>
             )}
           </span>
         </div>
@@ -156,28 +129,26 @@ export function DashboardOverviewRevenueDailyAvgPanel({
   if (!hasRevenue && !hasCustomers) return null;
 
   return (
-    <div className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border">
-      <div className="grid grid-cols-1 sm:grid-cols-2">
-        {hasRevenue ? (
-          <DailyAvgMetricBlock
-            labelKey="dashboardSalesDailyAvgActiveDays"
-            current={revenueCurrent}
-            prev={revenuePrev}
-            t={t}
-            variant="currency"
-          />
-        ) : null}
-        {hasCustomers ? (
-          <DailyAvgMetricBlock
-            labelKey="dashboardSalesCustomerDailyAvg"
-            current={customerCurrent}
-            prev={customerPrev}
-            t={t}
-            variant="count"
-            borderedStart={hasRevenue}
-          />
-        ) : null}
-      </div>
+    <div className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
+      {hasRevenue ? (
+        <DailyAvgMetricRow
+          labelKey="dashboardSalesDailyAvgActiveDays"
+          current={revenueCurrent}
+          prev={revenuePrev}
+          t={t}
+          variant="currency"
+        />
+      ) : null}
+      {hasCustomers ? (
+        <DailyAvgMetricRow
+          labelKey="dashboardSalesCustomerDailyAvg"
+          current={customerCurrent}
+          prev={customerPrev}
+          t={t}
+          variant="count"
+          showDivider={hasRevenue}
+        />
+      ) : null}
     </div>
   );
 }

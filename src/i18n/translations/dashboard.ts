@@ -52,7 +52,7 @@ export default {
   /** متوسط يومي: المجموع ÷ عدد الأيام ذات الإيراد &gt; 0 فقط */
   dashboardSalesDailyAvgActiveDays: { ar: 'المعدل اليومي', en: 'Daily average' },
   dashboardSalesCustomerDailyAvg: { ar: 'معدل العملاء', en: 'Customer avg' },
-  dashboardSalesCustomerDailyAvgUnit: { ar: 'عميل/يوم', en: 'cust/day' },
+  dashboardSalesCustomerDailyAvgUnit: { ar: '/ يوم', en: '/day' },
   dashboardSalesDailyAvgPrevMonth: { ar: 'المعدل اليومي — الشهر الماضي', en: 'Daily avg — prev month' },
   dashboardSalesDailyAvgCompareHint: { ar: 'مقارنة بالشهر الماضي', en: 'vs previous month' },
   /** فئات الموردين — نفس فترة التحليل */
