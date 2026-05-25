@@ -34,7 +34,9 @@ jobs:
           export FNAME
 
           echo "==> pg_dump → /tmp/${FNAME}"
-          PGPASSWORD="${VPS_DB_PASSWORD}" pg_dump \
+          # TCP على localhost — peer auth على socket يرفض مستخدم الـ runner
+          PGPASSWORD="${VPS_DB_PASSWORD}" PGSSLMODE=disable pg_dump \
+            -h 127.0.0.1 \
             -U "${VPS_DB_USER}" -d "${VPS_DB_NAME}" \
             --no-owner --no-acl --format=custom \
             --file="/tmp/${FNAME}"
