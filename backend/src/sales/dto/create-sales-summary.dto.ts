@@ -45,9 +45,10 @@ export class CreateSalesSummaryDto {
   @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
 
+  @IsOptional()
   @IsString()
   @IsIn(SALES_SHIFT_VALUES, { message: 'الشفت يجب أن يكون: يوم كامل (all) أو صباحي (morning) أو مسائي (evening)' })
-  shift: SalesShiftValue;
+  shift?: SalesShiftValue;
 
   /** مفتاح عدم التكرار — يمنع تنفيذ نفس العملية مرتين (مثلاً عند النقر المزدوج) */
   @IsOptional()

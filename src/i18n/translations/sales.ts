@@ -37,6 +37,10 @@ export default {
   salesEntryGrandPreview: { ar: 'المجموع التقريبي', en: 'Estimated total' },
   salesEntryDualShiftReport: { ar: 'ملخص الشفتين', en: 'Both shifts summary' },
   salesEntrySaveAndWhatsApp: { ar: 'حفظ وإرسال واتساب', en: 'Save & send WhatsApp' },
+  salesEntryLegacyServerWarning: {
+    ar: 'تم الحفظ لكن الخادم قديم ولا يدعم الشفت في قاعدة البيانات — شغّل نشر الخلفية من GitHub Actions ثم أعد إدخال الملخصات.',
+    en: 'Saved, but the server is outdated and did not store shift in the database — redeploy the backend, then re-enter summaries.',
+  },
   salesEntryCopyFromMorning: { ar: 'نسخ القنوات من الصباحي', en: 'Copy channels from morning' },
   customerCount: { ar: 'عدد العملاء', en: 'Customer count' },
   cashOnHand: { ar: 'المبلغ الموجود بالصندوق', en: 'Cash on hand' },

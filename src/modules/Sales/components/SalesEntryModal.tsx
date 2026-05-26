@@ -4,6 +4,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { useToast } from '../../../context/ToastContext';
 import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { sumObjectValues } from '../../../utils/math-engine';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
@@ -82,6 +83,7 @@ export function SalesEntryModal({
   autoCloseOnSuccess = true,
 }: Props) {
   const { t, lang } = useTranslation();
+  const { showToast } = useToast();
   const [txDate, setTxDate] = useState(getSaudiToday());
   const [selection, setSelection] = useState<SalesEntrySelection>(EMPTY_SALES_ENTRY_SELECTION);
   const [shiftForms, setShiftForms] = useState<Partial<Record<SalesShiftValue, ShiftEntryFormState>>>({});
@@ -169,7 +171,10 @@ export function SalesEntryModal({
       buildShiftEntryPayload(s, shiftForms[s]!, salesChannels),
     );
 
-    const onSaveSuccess = (summaries: SavedSummary[]) => {
+    const onSaveSuccess = (summaries: SavedSummary[], usedLegacyNoShift = false) => {
+      if (usedLegacyNoShift) {
+        showToast(t('salesEntryLegacyServerWarning'), 'error');
+      }
       if (sendWhatsAppAfter && summaries.length > 1) {
         openDailyWhatsApp(summaries);
       }
@@ -192,10 +197,10 @@ export function SalesEntryModal({
           batchIdempotencyKey,
         },
         {
-          onSuccess: (res: { data?: { summaries?: SavedSummary[] }; summaries?: SavedSummary[] }) => {
+          onSuccess: (res: { data?: { summaries?: SavedSummary[]; usedLegacyNoShift?: boolean } }) => {
             const data = res?.data ?? res;
-            const summaries = (data as { summaries?: SavedSummary[] })?.summaries ?? [];
-            onSaveSuccess(summaries);
+            const pack = data as { summaries?: SavedSummary[]; usedLegacyNoShift?: boolean };
+            onSaveSuccess(pack.summaries ?? [], !!pack.usedLegacyNoShift);
           },
           onError: (e: unknown) => onError?.(formatSaveError(e)),
         },

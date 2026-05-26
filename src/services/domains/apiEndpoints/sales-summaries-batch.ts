@@ -4,6 +4,7 @@
 import type { ApiParsedResult } from '../../../types/api';
 import { toYmd } from '../../../utils/saudiDate';
 import { apiPost } from '../../core/apiHttp';
+import { postSalesSummaryWithCompat } from '../../../modules/Sales/utils/salesApiCompat';
 import {
   buildCreateSalesSummaryApiBody,
   type CreateSalesSummaryBodyInput,
@@ -61,13 +62,14 @@ export function buildBatchItemApiPayload(
 /** حفظ متسلسل — طلب /summary لكل شفت */
 export async function createDailySalesSummariesSequential(
   body: DailySalesBatchPayload,
-): Promise<ApiParsedResult<{ summaries: unknown[] }>> {
+): Promise<ApiParsedResult<{ summaries: unknown[]; usedLegacyNoShift?: boolean }>> {
   const summaries: unknown[] = [];
+  let usedLegacyNoShift = false;
 
   for (let i = 0; i < body.items.length; i++) {
     const item = body.items[i];
     const payload = buildBatchItemApiPayload(body, item, i);
-    const res = await apiPost('/api/v1/sales/summary', payload);
+    const res = await postSalesSummaryWithCompat(payload);
     if (!res.success) {
       return {
         success: false,
@@ -75,10 +77,11 @@ export async function createDailySalesSummariesSequential(
         code: res.code,
       };
     }
+    if (res.usedLegacyNoShift) usedLegacyNoShift = true;
     summaries.push(extractSummaryFromInflowResponse(res.data));
   }
 
-  return { success: true, data: { summaries } };
+  return { success: true, data: { summaries, usedLegacyNoShift } };
 }
 
 /** POST /sales/summary-batch — عند تفعيل VITE_SALES_USE_BATCH */

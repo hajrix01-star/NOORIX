@@ -5,7 +5,7 @@
  *   POST /summary  → SALES_WRITE  (owner | super_admin | accountant | cashier)
  *   GET /summaries → SALES_READ   (owner | super_admin | accountant | cashier)
  */
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard }            from '@nestjs/passport';
 import { CompanyAccessGuard }   from '../auth/guards/company-access.guard';
@@ -17,7 +17,7 @@ import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
 import { clampSalesSummaryDateQuery } from '../common/utils/sales-summary-date-range';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { SalesService }           from './sales.service';
-import { CreateSalesSummaryDto }  from './dto/create-sales-summary.dto';
+import { CreateSalesSummaryDto, SALES_SHIFT_VALUES }  from './dto/create-sales-summary.dto';
 import { CreateSalesSummaryBatchDto } from './dto/create-sales-summary-batch.dto';
 import { UpdateSalesSummaryDto }  from './dto/update-sales-summary.dto';
 
@@ -26,12 +26,21 @@ import { UpdateSalesSummaryDto }  from './dto/update-sales-summary.dto';
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
+  private assertSalesShiftProvided(shift: string | undefined): asserts shift is (typeof SALES_SHIFT_VALUES)[number] {
+    if (!shift || !SALES_SHIFT_VALUES.includes(shift as (typeof SALES_SHIFT_VALUES)[number])) {
+      throw new BadRequestException(
+        'الشفت مطلوب: يوم كامل (all) أو صباحي (morning) أو مسائي (evening)',
+      );
+    }
+  }
+
   @Post('summary')
   @RequirePermission('SALES_WRITE')
   async createSummary(
     @Body()        dto:  CreateSalesSummaryDto,
     @CurrentUser() user: JwtUser,
   ) {
+    this.assertSalesShiftProvided(dto.shift);
     return this.salesService.createSummary({
       companyId:       dto.companyId,
       transactionDate: dto.transactionDate,

@@ -6,12 +6,13 @@ import {
   postDailySalesSummaryBatch,
   type DailySalesBatchPayload,
 } from './sales-summaries-batch';
+import { postSalesSummaryWithCompat } from '../../../modules/Sales/utils/salesApiCompat';
 import type { SalesListShiftFilter } from '../../../modules/Sales/constants/salesShift';
 import { listShiftFilterToApiParam } from '../../../modules/Sales/constants/salesShift';
 
 // ——— ملخصات المبيعات اليومية ———
 export async function createDailySalesSummary(body: unknown): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/sales/summary', body);
+  return postSalesSummaryWithCompat(body as Record<string, unknown>);
 }
 
 export async function createDailySalesSummaryBatch(body: unknown): Promise<ApiParsedResult> {
