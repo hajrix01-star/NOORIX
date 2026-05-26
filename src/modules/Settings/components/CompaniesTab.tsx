@@ -14,6 +14,44 @@ import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 import CompanyFinancialInsightThresholdsSection from './CompanyFinancialInsightThresholdsSection';
 
+function normalizeText(v: any) {
+  return String(v ?? '').trim();
+}
+
+function buildCompanyUpdateBody(editModal: any) {
+  const initial = editModal?._initial || {};
+  const nameAr = normalizeText(editModal?.nameAr);
+  const current = {
+    nameEn: normalizeText(editModal?.nameEn),
+    taxNumber: normalizeText(editModal?.taxNumber),
+    phone: normalizeText(editModal?.phone),
+    address: normalizeText(editModal?.address),
+    email: normalizeText(editModal?.email),
+    logoUrl: normalizeText(editModal?.logoUrl),
+    salesShiftsEnabled: !!editModal?.salesShiftsEnabled,
+  };
+  const baseline = {
+    nameEn: normalizeText(initial.nameEn),
+    taxNumber: normalizeText(initial.taxNumber),
+    phone: normalizeText(initial.phone),
+    address: normalizeText(initial.address),
+    email: normalizeText(initial.email),
+    logoUrl: normalizeText(initial.logoUrl),
+    salesShiftsEnabled: !!initial.salesShiftsEnabled,
+  };
+  const body: any = { nameAr };
+  if (current.nameEn !== baseline.nameEn) body.nameEn = current.nameEn;
+  if (current.taxNumber !== baseline.taxNumber) body.taxNumber = current.taxNumber;
+  if (current.phone !== baseline.phone) body.phone = current.phone;
+  if (current.address !== baseline.address) body.address = current.address;
+  if (current.email !== baseline.email) body.email = current.email;
+  if (current.logoUrl !== baseline.logoUrl) body.logoUrl = current.logoUrl;
+  if (current.salesShiftsEnabled !== baseline.salesShiftsEnabled) {
+    body.salesShiftsEnabled = current.salesShiftsEnabled;
+  }
+  return body;
+}
+
 export default function CompaniesTab({
   onCompanyCreated,
   userRole,
@@ -80,7 +118,7 @@ export default function CompaniesTab({
       if (variables?.body?.isArchived === false) {
         return 'تم إعادة تفعيل الشركة. ستظهر في قائمة الشركات النشطة والقائمة أعلى النظام.';
       }
-      return null;
+      return 'تم حفظ تعديلات الشركة.';
     },
     onSuccess: () => { setEditModal(null); },
   });
@@ -127,6 +165,15 @@ export default function CompaniesTab({
       logoUrl: company.logoUrl || '',
       isArchived: !!company.isArchived,
       salesShiftsEnabled: !!company.salesShiftsEnabled,
+      _initial: {
+        nameEn: company.nameEn || '',
+        taxNumber: company.taxNumber || '',
+        phone: company.phone || '',
+        address: company.address || '',
+        email: company.email || '',
+        logoUrl: company.logoUrl || '',
+        salesShiftsEnabled: !!company.salesShiftsEnabled,
+      },
     });
     setDeleteConfirmCode('');
     setDeleteCodeSetting(getDeleteCode());
@@ -344,18 +391,10 @@ export default function CompaniesTab({
               id="edit-company-form"
               onSubmit={(e: any) => {
                 e.preventDefault();
+                const body = buildCompanyUpdateBody(editModal);
                 updateMutation.mutate({
                   id: editModal.id,
-                  body: {
-                    nameAr: editModal.nameAr.trim(),
-                    nameEn: editModal.nameEn.trim() || undefined,
-                    taxNumber: editModal.taxNumber.trim() || undefined,
-                    phone: editModal.phone.trim() || undefined,
-                    address: editModal.address.trim() || undefined,
-                    email: editModal.email.trim() || undefined,
-                    logoUrl: editModal.logoUrl.trim() || undefined,
-                    salesShiftsEnabled: !!editModal.salesShiftsEnabled,
-                  },
+                  body,
                 });
               }}
               className="grid gap-3.5"
