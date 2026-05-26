@@ -2,7 +2,7 @@
  * CompaniesTab — تبويب إدارة الشركات
  */
 import React, { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getCompanies, createCompany, updateCompany, deleteCompany, resetCompanyCategories } from '../../../services/api';
 import {
@@ -61,6 +61,7 @@ export default function CompaniesTab({
   userRole?: string;
   userPermissions?: string[];
 }) {
+  const queryClient = useQueryClient();
   const [includeArchived,    setIncludeArchived]    = useState(false);
   const [showAddForm,        setShowAddForm]        = useState(false);
   const [editModal,          setEditModal]          = useState<any>(null);
@@ -120,7 +121,21 @@ export default function CompaniesTab({
       }
       return 'تم حفظ تعديلات الشركة.';
     },
-    onSuccess: () => { setEditModal(null); },
+    onSuccess: (_res: any, variables: any) => {
+      const id = variables?.id;
+      const patch = variables?.body || {};
+      if (id) {
+        queryClient.setQueriesData({ queryKey: appKeys.companiesRoot() }, (prev: any) => {
+          if (!Array.isArray(prev)) return prev;
+          return prev.map((c: any) => (c?.id === id ? { ...c, ...patch } : c));
+        });
+        queryClient.setQueryData(companyKeys.single(id), (prev: any) => {
+          if (!prev || typeof prev !== 'object') return prev;
+          return { ...prev, ...patch };
+        });
+      }
+      setEditModal(null);
+    },
   });
 
   const deleteMutation = useApiMutation({

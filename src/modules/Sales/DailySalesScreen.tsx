@@ -112,6 +112,7 @@ export default function DailySalesScreen() {
   /** افتراضي: الملخصات الملغاة مخفية (لا يُرسل includeCancelled للـ API) */
   const [showCancelledSales, setShowCancelledSales] = useState(false);
   const [selectedShift, setSelectedShift] = useState<SalesShiftFilter>('all');
+  const [salesShiftsEnabled, setSalesShiftsEnabled] = useState<boolean>(!!(activeCo as any)?.salesShiftsEnabled);
 
   const salesFullHistory = hasPermission(userRole, PERMISSIONS.SALES_FULL_HISTORY, userPermissions);
   const salesViewSummariesList = hasPermission(userRole, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, userPermissions);
@@ -152,6 +153,11 @@ export default function DailySalesScreen() {
 
   useEffect(() => {
     setSelectedShift('all');
+  }, [companyId]);
+
+  useEffect(() => {
+    const fallback = (activeCo as any)?.salesShiftsEnabled;
+    setSalesShiftsEnabled(typeof fallback === 'boolean' ? fallback : false);
   }, [companyId]);
 
   useEffect(() => {
@@ -230,7 +236,17 @@ export default function DailySalesScreen() {
   });
   const vatEnabled = !!companyData?.vatEnabledForSales;
   const vatRate = companyData?.vatRatePercent != null ? Number(companyData.vatRatePercent) / 100 : 0.15;
-  const salesShiftsEnabled = !!companyData?.salesShiftsEnabled;
+
+  useEffect(() => {
+    if (companyData && typeof companyData.salesShiftsEnabled === 'boolean') {
+      setSalesShiftsEnabled(companyData.salesShiftsEnabled);
+      return;
+    }
+    const fallback = (activeCo as any)?.salesShiftsEnabled;
+    if (typeof fallback === 'boolean') {
+      setSalesShiftsEnabled(fallback);
+    }
+  }, [companyData, activeCo, companyId]);
 
   useEffect(() => {
     if (!salesShiftsEnabled && selectedShift !== 'all') {
