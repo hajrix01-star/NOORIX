@@ -41,6 +41,7 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         revenueDailyAvgPrevMonthActiveDays={m.revenueDailyAvgPrevMonthActiveDays}
         customerDailyAvgActiveDays={m.customerDailyAvgActiveDays}
         customerDailyAvgPrevMonthActiveDays={m.customerDailyAvgPrevMonthActiveDays}
+        salesShiftPeriodTotals={m.salesShiftPeriodTotals}
         kpiInsightFooters={m.kpiInsightFooters}
       />
 

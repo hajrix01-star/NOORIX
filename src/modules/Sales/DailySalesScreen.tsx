@@ -30,6 +30,7 @@ import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
 import { salesKeys, companyKeys } from '../../services/queryKeys';
 import { SalesShiftPicker } from './components/SalesShiftPicker';
+import { SalesDailyWhatsAppReportBar } from './components/SalesDailyWhatsAppReportBar';
 import type { SalesListShiftFilter, SalesShiftValue } from './constants/salesShift';
 import { getSalesShiftLabel, parseSalesShiftValue } from './constants/salesShift';
 
@@ -679,6 +680,14 @@ export default function DailySalesScreen() {
       )}
 
       {salesFullHistory && <DateFilterBar filter={dateFilter} />}
+
+      {hasCompany && salesViewSummariesList && (
+        <SalesDailyWhatsAppReportBar
+          companyId={companyId}
+          companyName={companyName}
+          disabled={!hasCompany}
+        />
+      )}
 
       {!hasCompany && (
         <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">

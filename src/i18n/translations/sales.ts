@@ -113,6 +113,17 @@ export default {
   salesWhatsAppAvgInvoiceLine: { ar: '🧾 متوسط الفاتورة:', en: '🧾 Avg. sale:' },
   salesWhatsAppCashLine: { ar: '💵 الصندوق:', en: '💵 Cash on hand:' },
   salesWhatsAppNoChannels: { ar: '• لا يوجد تفصيل قنوات.', en: '• No channel breakdown.' },
+  salesDailyWaTitle: { ar: '📊 تقرير مبيعات يومي', en: '📊 Daily sales report' },
+  salesDailyWaPickDay: { ar: 'تاريخ التقرير', en: 'Report date' },
+  salesDailyWaSend: { ar: 'إرسال تقرير يومي واتساب', en: 'Send daily WhatsApp report' },
+  salesDailyWaHint: {
+    ar: 'يجمع ملخصات اليوم المختار: شفت صباحي، مسائي، يوم كامل (إن وُجد)، والإجمالي وعدد العملاء.',
+    en: 'Combines summaries for the selected day: morning, evening, full day (if any), grand total and customers.',
+  },
+  salesDailyWaGrandTotal: { ar: 'الإجمالي الكلي لليوم', en: 'Day grand total' },
+  salesDailyWaNoShiftData: { ar: '— لا يوجد ملخص لهذا الشفت', en: '— No summary for this shift' },
+  salesDailyWaNoDataForDay: { ar: 'لا توجد ملخصات مبيعات نشطة في هذا اليوم.', en: 'No active sales summaries for this day.' },
+  salesDailyWaLoadFailed: { ar: 'تعذر تحميل بيانات اليوم', en: 'Could not load day data' },
   /** صف إدخال دفعة المشتريات — زر الضريبة والوصولية */
   batchRowTaxIncludeVat: { ar: '✓ 15%', en: '✓ 15%' },
   batchRowTaxExemptShort: { ar: '⊘ إبطال', en: '⊘ Exempt' },

@@ -21,6 +21,7 @@ import {
   performanceTotalForSalesKey,
   yearMonthlyDailyAvgCapMonth,
 } from '../utils/dashboardOverviewBuilders';
+import { computeSalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
 import { bucketMonthIntoWeeks, pctChangeVsBaseline } from '../utils/dashboardWeeklySales';
 import type { DashboardOverviewFilter } from '../types';
 
@@ -268,6 +269,11 @@ export function useDashboardOverviewModel(
     [prevMonthSalesForDailyAvg],
   );
 
+  const salesShiftPeriodTotals = useMemo(() => {
+    const src = selectedMonth != null ? monthSalesForDailyAvg : yearSummaries;
+    return computeSalesShiftPeriodTotals(src);
+  }, [selectedMonth, monthSalesForDailyAvg, yearSummaries]);
+
   const yearlyDailyAvgRows = useMemo(() => {
     const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
     const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
@@ -477,6 +483,7 @@ export function useDashboardOverviewModel(
     revenueDailyAvgPrevMonthActiveDays,
     customerDailyAvgActiveDays,
     customerDailyAvgPrevMonthActiveDays,
+    salesShiftPeriodTotals,
     yearlyDailyAvgRows,
     hiddenSeries,
     toggleSeries,

@@ -13,6 +13,8 @@ import type { DashboardOverviewFilter } from '../types';
 import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
 import { kpiFooterRowColorClass } from '../utils/dashboardOverviewKpiInsightFooters';
 import { DashboardOverviewRevenueDailyAvgPanel } from './DashboardOverviewRevenueDailyAvgPanel';
+import { DashboardOverviewSalesShiftPanel } from './DashboardOverviewSalesShiftPanel';
+import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
 
 type CardDef = {
   key: string;
@@ -31,6 +33,7 @@ type Props = {
   revenueDailyAvgPrevMonthActiveDays: number | null;
   customerDailyAvgActiveDays: number | null;
   customerDailyAvgPrevMonthActiveDays: number | null;
+  salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
   kpiInsightFooters: KpiInsightFooterMap;
 };
 
@@ -44,6 +47,7 @@ export function DashboardOverviewKpis({
   revenueDailyAvgPrevMonthActiveDays,
   customerDailyAvgActiveDays,
   customerDailyAvgPrevMonthActiveDays,
+  salesShiftPeriodTotals,
   kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
@@ -99,16 +103,19 @@ export function DashboardOverviewKpis({
           return (
             <MetricCard key={card.key} color={accentColor} className="min-h-[188px]">
               <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
-              {isSales && selectedMonth != null ? (
+              {isSales ? (
                 <>
                   <MetricCard.Value value={amountText(rawVal)} currency="SR" />
-                  <DashboardOverviewRevenueDailyAvgPanel
-                    revenueCurrent={revenueDailyAvgActiveDays}
-                    revenuePrev={revenueDailyAvgPrevMonthActiveDays}
-                    customerCurrent={customerDailyAvgActiveDays}
-                    customerPrev={customerDailyAvgPrevMonthActiveDays}
-                    t={t}
-                  />
+                  <DashboardOverviewSalesShiftPanel totals={salesShiftPeriodTotals} t={t} />
+                  {selectedMonth != null ? (
+                    <DashboardOverviewRevenueDailyAvgPanel
+                      revenueCurrent={revenueDailyAvgActiveDays}
+                      revenuePrev={revenueDailyAvgPrevMonthActiveDays}
+                      customerCurrent={customerDailyAvgActiveDays}
+                      customerPrev={customerDailyAvgPrevMonthActiveDays}
+                      t={t}
+                    />
+                  ) : null}
                 </>
               ) : (
                 <MetricCard.Value value={amountText(rawVal)} currency="SR" />
