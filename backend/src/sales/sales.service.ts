@@ -47,6 +47,36 @@ export class SalesService {
     );
   }
 
+  /** عدة ملخصات (شفتان كحد أقصى) في معاملة واحدة — للإدخال الديناميكي */
+  async createSummaryBatch(dto: {
+    companyId:            string;
+    transactionDate:      string;
+    items:                {
+      shift:          'morning' | 'evening' | 'all';
+      customerCount:  number;
+      cashOnHand?:    string;
+      channels:       { vaultId: string; amount: string }[];
+      notes?:         string;
+    }[];
+    batchIdempotencyKey?: string;
+    userId?:              string;
+  }) {
+    const inflowDtos = dto.items.map((item) => ({
+      companyId:       dto.companyId,
+      transactionDate: dto.transactionDate,
+      customerCount:   item.customerCount,
+      shift:           item.shift,
+      cashOnHand:      item.cashOnHand ?? '0',
+      channels:        item.channels,
+      notes:           item.notes,
+    }));
+    return this.financialCore.processInflowBatch(
+      inflowDtos,
+      dto.userId,
+      dto.batchIdempotencyKey,
+    );
+  }
+
   /** تضمين موحّد لقنوات الملخص — يُستخدم في القائمة وحزمة الداشبورد. */
   private dailySalesSummaryListInclude(): Prisma.DailySalesSummaryInclude {
     return {

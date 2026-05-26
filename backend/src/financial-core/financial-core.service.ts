@@ -34,6 +34,9 @@ export class FinancialCoreService {
   processInflow(...a: Parameters<FinancialInflowService['processInflow']>) {
     return this.inflow.processInflow(...a);
   }
+  processInflowBatch(...a: Parameters<FinancialInflowService['processInflowBatch']>) {
+    return this.inflow.processInflowBatch(...a);
+  }
   updateInflow(
     id: string,
     companyId: string,

@@ -18,6 +18,7 @@ import { clampSalesSummaryDateQuery } from '../common/utils/sales-summary-date-r
 import { toYmd } from '../common/utils/to-ymd.util';
 import { SalesService }           from './sales.service';
 import { CreateSalesSummaryDto }  from './dto/create-sales-summary.dto';
+import { CreateSalesSummaryBatchDto } from './dto/create-sales-summary-batch.dto';
 import { UpdateSalesSummaryDto }  from './dto/update-sales-summary.dto';
 
 @Controller('sales')
@@ -41,6 +42,27 @@ export class SalesController {
       notes:           dto.notes,
       idempotencyKey:  dto.idempotencyKey,
       userId:          user.sub,
+    });
+  }
+
+  @Post('summary-batch')
+  @RequirePermission('SALES_WRITE')
+  async createSummaryBatch(
+    @Body()        dto:  CreateSalesSummaryBatchDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.salesService.createSummaryBatch({
+      companyId:            dto.companyId,
+      transactionDate:      dto.transactionDate,
+      items:                dto.items.map((item) => ({
+        shift:          item.shift,
+        customerCount:  item.customerCount,
+        cashOnHand:     item.cashOnHand ?? '0',
+        channels:       item.channels ?? [],
+        notes:          item.notes,
+      })),
+      batchIdempotencyKey: dto.batchIdempotencyKey,
+      userId:              user.sub,
     });
   }
 

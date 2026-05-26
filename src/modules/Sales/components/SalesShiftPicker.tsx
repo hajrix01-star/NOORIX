@@ -6,12 +6,21 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, cn } from '../../../ui';
 import type { SalesShiftFormValue, SalesShiftValue, SalesListShiftFilter } from '../constants/salesShift';
 import { isSalesShiftValue } from '../constants/salesShift';
+import type { SalesEntrySelection } from '../constants/salesShiftEntry';
+import { hasEntrySelection, toggleEntryShift } from '../constants/salesShiftEntry';
 
 type FormProps = {
   mode: 'form';
   value: SalesShiftFormValue;
   onChange: (value: SalesShiftValue) => void;
   required?: boolean;
+  className?: string;
+};
+
+type EntryProps = {
+  mode: 'entry';
+  selection: SalesEntrySelection;
+  onChange: (selection: SalesEntrySelection) => void;
   className?: string;
 };
 
@@ -22,7 +31,7 @@ type FilterProps = {
   className?: string;
 };
 
-export type SalesShiftPickerProps = FormProps | FilterProps;
+export type SalesShiftPickerProps = FormProps | FilterProps | EntryProps;
 
 function shiftLabelKey(v: SalesShiftValue | 'any'): string {
   if (v === 'any') return 'salesShiftFilterAny';
@@ -31,9 +40,55 @@ function shiftLabelKey(v: SalesShiftValue | 'any'): string {
   return 'salesShiftEvening';
 }
 
+const ENTRY_KEYS: { key: keyof SalesEntrySelection; labelKey: string }[] = [
+  { key: 'morning', labelKey: 'salesShiftMorning' },
+  { key: 'evening', labelKey: 'salesShiftEvening' },
+  { key: 'fullDay', labelKey: 'salesShiftFullDay' },
+];
+
 export function SalesShiftPicker(props: SalesShiftPickerProps) {
   const { t } = useTranslation();
   const { className } = props;
+
+  if (props.mode === 'entry') {
+    const showHint = !hasEntrySelection(props.selection);
+    return (
+      <div className={cn('flex flex-col gap-2', className)}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="text-[13px] font-bold text-noorix-text m-0">{t('salesEntryWhatToday')}</label>
+          {showHint ? (
+            <span className="text-[11px] text-noorix-amber font-medium">{t('salesShiftRequired')}</span>
+          ) : null}
+        </div>
+        <div
+          className="grid grid-cols-1 min-[360px]:grid-cols-3 gap-2"
+          role="group"
+          aria-label={t('salesEntryWhatToday')}
+        >
+          {ENTRY_KEYS.map(({ key, labelKey }) => {
+            const on = props.selection[key];
+            return (
+              <Button
+                key={key}
+                type="button"
+                size="sm"
+                variant={on ? 'primary' : 'ghost'}
+                className={cn(
+                  'min-h-[44px] justify-center font-semibold',
+                  !on && showHint && 'border border-dashed border-noorix-border',
+                )}
+                onClick={() => props.onChange(toggleEntryShift(props.selection, key))}
+                aria-pressed={on}
+              >
+                {t(labelKey)}
+              </Button>
+            );
+          })}
+        </div>
+        <p className="m-0 text-[11px] text-noorix-muted leading-relaxed">{t('salesEntryShiftHint')}</p>
+      </div>
+    );
+  }
 
   if (props.mode === 'filter') {
     const options: SalesListShiftFilter[] = ['any', 'all', 'morning', 'evening'];

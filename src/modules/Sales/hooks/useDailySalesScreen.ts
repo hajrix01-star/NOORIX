@@ -85,7 +85,7 @@ export function useDailySalesScreen() {
   const salesFullHistory = hasPermission(userRole, PERMISSIONS.SALES_FULL_HISTORY, userPermissions);
   const salesViewSummariesList = hasPermission(userRole, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, userPermissions);
 
-  const { createSummary, updateSummary, deleteSummary } = useSales({
+  const { createSummary, createSummaryBatch, updateSummary, deleteSummary } = useSales({
     companyId,
     startDate: dateFilter.startDate,
     endDate: dateFilter.endDate,
@@ -494,6 +494,7 @@ export function useDailySalesScreen() {
     salesChannelsErrorMessage,
     refetchSalesChannels,
     createSummary,
+    createSummaryBatch,
     updateSummary,
     summariesLoading,
     summariesError,

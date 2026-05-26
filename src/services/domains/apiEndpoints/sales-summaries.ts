@@ -8,6 +8,10 @@ import { listShiftFilterToApiParam } from '../../../modules/Sales/constants/sale
 export async function createDailySalesSummary(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/sales/summary', body);
 }
+
+export async function createDailySalesSummaryBatch(body: unknown): Promise<ApiParsedResult> {
+  return apiPost('/api/v1/sales/summary-batch', body);
+}
 export async function updateDailySalesSummary(
   id: string,
   body: unknown,

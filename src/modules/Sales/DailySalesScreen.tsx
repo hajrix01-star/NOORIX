@@ -55,6 +55,7 @@ export default function DailySalesScreen() {
     salesChannelsErrorMessage,
     refetchSalesChannels,
     createSummary,
+    createSummaryBatch,
     summariesLoading,
     summariesError,
     vatEnabled,
@@ -210,12 +211,14 @@ export default function DailySalesScreen() {
       {showEntryModal && hasCompany && (
         <SalesEntryModal
           companyId={companyId}
+          companyName={companyName}
           salesChannels={salesChannels}
           salesChannelsLoading={salesChannelsLoading}
           salesChannelsError={salesChannelsErrorMessage}
           vatEnabled={vatEnabled}
           vatRate={vatRate}
           createSummary={createSummary}
+          createSummaryBatch={createSummaryBatch}
           onSuccess={(summary: { summaryNumber?: string | number }) => showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success')}
           onError={(msg: string) => showToast(msg || t('saveFailed'), 'error')}
           onClose={() => setShowEntryModal(false)}

@@ -1,109 +1,214 @@
 ﻿/**
- * SalesEntryModal — نافذة إدخال ملخص المبيعات اليومي
- * على الديسك توب: نافذة منبثقة مركزية
- * على الجوال: Bottom Sheet من الأسفل
+ * SalesEntryModal — إدخال ملخص المبيعات اليومي (ديناميكي: شفت واحد أو شفتان أو يوم كامل)
  */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { splitTaxFromTotal } from '../../../utils/math-engine';
+import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { sumObjectValues } from '../../../utils/math-engine';
-import { getSaudiToday } from '../../../utils/saudiDate';
+import { fmt } from '../../../utils/format';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import { SalesShiftPicker } from './SalesShiftPicker';
-import type { SalesShiftFormValue, SalesShiftValue } from '../constants/salesShift';
-import { isSalesShiftValue } from '../constants/salesShift';
+import { SalesShiftEntryCard, isShiftEntryFormValid, buildShiftEntryPayload } from './SalesShiftEntryCard';
+import type { SalesShiftValue } from '../constants/salesShift';
+import { getSalesShiftLabel } from '../constants/salesShift';
+import {
+  EMPTY_SALES_ENTRY_SELECTION,
+  emptyShiftEntryForm,
+  getActiveEntryShifts,
+  hasEntrySelection,
+  type SalesEntrySelection,
+  type ShiftEntryFormState,
+} from '../constants/salesShiftEntry';
+import {
+  aggregateSalesDayByShift,
+  buildDailyShiftWhatsAppText,
+  openWhatsAppWithText,
+} from '../utils/salesDayShiftReport';
+
+type SavedSummary = {
+  id?: string;
+  summaryNumber?: string | number;
+  totalAmount?: string | number;
+  customerCount?: number;
+  shift?: string;
+  transactionDate?: string;
+  channels?: unknown[];
+};
+
+type Props = {
+  companyId: string;
+  companyName?: string;
+  salesChannels: { id: string; [key: string]: unknown }[];
+  salesChannelsLoading?: boolean;
+  salesChannelsError?: string;
+  vatEnabled?: boolean;
+  vatRate?: number;
+  createSummary: { mutate: Function; isPending: boolean };
+  createSummaryBatch?: { mutate: Function; isPending: boolean };
+  onSuccess?: (summary: SavedSummary | SavedSummary[]) => void;
+  onError?: (msg: string) => void;
+  onClose?: () => void;
+  onWhatsApp?: (summary: SavedSummary) => void;
+  autoCloseOnSuccess?: boolean;
+};
+
+function ensureShiftForms(
+  prev: Partial<Record<SalesShiftValue, ShiftEntryFormState>>,
+  active: SalesShiftValue[],
+): Partial<Record<SalesShiftValue, ShiftEntryFormState>> {
+  const next = { ...prev };
+  for (const s of active) {
+    if (!next[s]) next[s] = emptyShiftEntryForm();
+  }
+  return next;
+}
 
 export function SalesEntryModal({
   companyId,
+  companyName = '',
   salesChannels,
   salesChannelsLoading = false,
   salesChannelsError = '',
   vatEnabled = false,
   vatRate = 0.15,
   createSummary,
+  createSummaryBatch,
   onSuccess,
   onError,
   onClose,
   onWhatsApp,
   autoCloseOnSuccess = true,
-}: any) {
+}: Props) {
   const { t, lang } = useTranslation();
   const [txDate, setTxDate] = useState(getSaudiToday());
-  const [customerCount, setCustomerCount] = useState('');
-  const [cashOnHand, setCashOnHand] = useState('');
-  const [shift, setShift] = useState<SalesShiftFormValue>('');
-  const [notes, setNotes] = useState('');
-  const [channelAmounts, setChannelAmounts] = useState<Record<string, string>>({});
-  const [savedSummary, setSavedSummary] = useState<any>(null);
+  const [selection, setSelection] = useState<SalesEntrySelection>(EMPTY_SALES_ENTRY_SELECTION);
+  const [shiftForms, setShiftForms] = useState<Partial<Record<SalesShiftValue, ShiftEntryFormState>>>({});
+  const [savedSummaries, setSavedSummaries] = useState<SavedSummary[] | null>(null);
+
+  const activeShifts = useMemo(() => getActiveEntryShifts(selection), [selection]);
+  const isBatch = activeShifts.length > 1;
+  const saving = createSummary.isPending || (createSummaryBatch?.isPending ?? false);
 
   useEffect(() => {
     setTxDate(getSaudiToday());
-    setChannelAmounts({});
-    setShift('');
+    setSelection(EMPTY_SALES_ENTRY_SELECTION);
+    setShiftForms({});
+    setSavedSummaries(null);
   }, [companyId]);
 
-  const totalAmount = useMemo(() => sumObjectValues(channelAmounts), [channelAmounts]);
-  const avgPerCustomer = useMemo(() => {
-    const cc = parseInt(customerCount, 10) || 0;
-    if (cc <= 0 || totalAmount.lte(0)) return new Decimal(0);
-    return totalAmount.div(cc);
-  }, [totalAmount, customerCount]);
-  const { net: totalNet, tax: totalTax } = useMemo(
-    () => splitTaxFromTotal(totalAmount, vatEnabled, vatRate),
-    [totalAmount, vatEnabled, vatRate],
+  useEffect(() => {
+    setShiftForms((prev) => ensureShiftForms(prev, activeShifts));
+  }, [activeShifts]);
+
+  const grandTotal = useMemo(() => {
+    let total = new Decimal(0);
+    let customers = 0;
+    for (const s of activeShifts) {
+      const f = shiftForms[s];
+      if (!f) continue;
+      total = total.plus(sumObjectValues(f.channelAmounts));
+      customers += parseInt(f.customerCount, 10) || 0;
+    }
+    return { total, customers };
+  }, [activeShifts, shiftForms]);
+
+  const allFormsValid = useMemo(
+    () => activeShifts.length > 0 && activeShifts.every((s) => {
+      const f = shiftForms[s];
+      return f && isShiftEntryFormValid(f, salesChannels);
+    }),
+    [activeShifts, shiftForms, salesChannels],
   );
 
-  const shiftSelected = isSalesShiftValue(shift);
-
-  function resetForm() {
+  const resetForm = useCallback(() => {
     setTxDate(getSaudiToday());
-    setCustomerCount('');
-    setCashOnHand('');
-    setShift('');
-    setNotes('');
-    setChannelAmounts({});
-    setSavedSummary(null);
-  }
+    setSelection(EMPTY_SALES_ENTRY_SELECTION);
+    setShiftForms({});
+    setSavedSummaries(null);
+  }, []);
+
+  const openDailyWhatsApp = useCallback((summaries: SavedSummary[]) => {
+    const report = aggregateSalesDayByShift(summaries, txDate);
+    const dateRaw = formatSaudiDate(txDate);
+    let dateLabel = dateRaw;
+    if (dateRaw !== '—') {
+      const wd = formatSaudiWeekdayName(txDate, lang);
+      if (wd) dateLabel = `${dateRaw} ${wd}`;
+    }
+    const text = buildDailyShiftWhatsAppText({
+      companyName,
+      dateLabel,
+      report,
+      t,
+    });
+    openWhatsAppWithText(text);
+  }, [companyName, lang, t, txDate]);
 
   function handleSave() {
-    if (!companyId || createSummary.isPending || !shiftSelected) return;
-    const cc = parseInt(customerCount, 10) || 0;
-    if (cc <= 0) return;
-    const channels = salesChannels
-      .filter((v: any) => parseFloat(channelAmounts[v.id]) > 0)
-      .map((v: any) => ({ vaultId: v.id, amount: channelAmounts[v.id] }));
-    const idempotencyKey = `sales-${companyId}-${txDate}-${Date.now()}`;
+    if (!companyId || saving || !allFormsValid) return;
+
+    const items = activeShifts.map((s) =>
+      buildShiftEntryPayload(s, shiftForms[s]!, salesChannels),
+    );
+
+    const onSaveSuccess = (summaries: SavedSummary[]) => {
+      if (autoCloseOnSuccess) {
+        onSuccess?.(summaries.length === 1 ? summaries[0] : summaries);
+        onClose?.();
+        return;
+      }
+      setSavedSummaries(summaries);
+      onSuccess?.(summaries.length === 1 ? summaries[0] : summaries);
+    };
+
+    if (isBatch && createSummaryBatch) {
+      const batchIdempotencyKey = `sales-batch-${companyId}-${txDate}-${Date.now()}`;
+      createSummaryBatch.mutate(
+        {
+          companyId,
+          transactionDate: txDate,
+          items,
+          batchIdempotencyKey,
+        },
+        {
+          onSuccess: (res: { data?: { summaries?: SavedSummary[] }; summaries?: SavedSummary[] }) => {
+            const data = res?.data ?? res;
+            const summaries = (data as { summaries?: SavedSummary[] })?.summaries ?? [];
+            onSaveSuccess(summaries);
+          },
+          onError: (e: { message?: string }) => onError?.(e?.message ?? t('saveFailed')),
+        },
+      );
+      return;
+    }
+
+    const single = items[0];
+    const idempotencyKey = `sales-${companyId}-${txDate}-${single.shift}-${Date.now()}`;
     createSummary.mutate(
       {
         companyId,
         transactionDate: txDate,
-        customerCount: parseInt(customerCount, 10) || 0,
-        cashOnHand: cashOnHand || '0',
-        shift: shift as SalesShiftValue,
-        channels,
-        notes: notes.trim() || undefined,
+        customerCount: single.customerCount,
+        cashOnHand: single.cashOnHand,
+        shift: single.shift,
+        channels: single.channels,
+        notes: single.notes,
         idempotencyKey,
       },
       {
-        onSuccess: (res: any) => {
+        onSuccess: (res: { data?: { summary?: SavedSummary }; summary?: SavedSummary }) => {
           const data = res?.data ?? res;
-          const summary = data?.summary ?? data;
-          if (autoCloseOnSuccess) {
-            onSuccess?.(summary);
-            onClose?.();
-          } else {
-            setSavedSummary(summary);
-            onSuccess?.(summary);
-          }
+          const summary = (data as { summary?: SavedSummary })?.summary ?? (data as SavedSummary);
+          onSaveSuccess([summary]);
         },
-        onError: (e: any) => onError?.(e?.message),
+        onError: (e: { message?: string }) => onError?.(e?.message ?? t('saveFailed')),
       },
     );
   }
 
-  if (savedSummary) {
+  if (savedSummaries && savedSummaries.length > 0) {
+    const multi = savedSummaries.length > 1;
     return (
       <AdaptiveSheet
         open={true}
@@ -120,39 +225,42 @@ export function SalesEntryModal({
         }
       >
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-noorix-bg-muted">
-            <span className="text-[12px] text-noorix-muted font-medium">{t('summaryNumber')}</span>
-            <strong className="text-[14px]" style={{ color: 'var(--noorix-accent-blue)' }}>#{savedSummary.summaryNumber}</strong>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-green-12)' }}>
-              <span className="text-[11px] text-noorix-muted mb-1">{t('total')}</span>
-              <span dir="ltr" className="text-[20px] font-black nx-font-numbers" style={{ color: 'var(--noorix-accent-green)' }}><FmtNum n={savedSummary.totalAmount} /></span>
-              <span className="nx-sar">SR</span>
+          {savedSummaries.map((s) => (
+            <div
+              key={String(s.id ?? s.summaryNumber)}
+              className="flex flex-col gap-2 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[12px] text-noorix-muted">{getSalesShiftLabel(s.shift, t)}</span>
+                <strong className="text-[13px] text-noorix-blue">#{s.summaryNumber}</strong>
+              </div>
+              <div className="flex justify-between text-[13px]">
+                <span className="text-noorix-muted">{t('total')}</span>
+                <span dir="ltr" className="font-bold text-noorix-green nx-font-numbers">
+                  <FmtNum n={s.totalAmount} /> <span className="nx-sar">SR</span>
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-blue-8)' }}>
-              <span className="text-[11px] text-noorix-muted mb-1">{t('customers')}</span>
-              <span className="text-[20px] font-black" style={{ color: 'var(--noorix-accent-blue)' }}>{savedSummary.customerCount}</span>
-              <span className="text-[11px] text-noorix-muted mt-0.5">&nbsp;</span>
-            </div>
-          </div>
-          <Button
-            variant="success"
-            size="md"
-            className="w-full"
-            onClick={() => {
-              const fromForm = salesChannels
-                .filter((v: any) => parseFloat(channelAmounts[v.id]) > 0)
-                .map((v: any) => ({ vaultId: v.id, amount: channelAmounts[v.id], vault: v }));
-              onWhatsApp?.({
-                ...savedSummary,
-                shift: savedSummary?.shift || (shiftSelected ? shift : 'all'),
-                channels: fromForm.length ? fromForm : (savedSummary.channels || []),
-              });
-            }}
-          >
-            {t('sendWhatsApp')} — {t('salesDailySummary')}
-          </Button>
+          ))}
+          {multi ? (
+            <Button
+              variant="success"
+              size="md"
+              className="w-full"
+              onClick={() => openDailyWhatsApp(savedSummaries)}
+            >
+              {t('sendWhatsApp')} — {t('salesDailyWaTitle')}
+            </Button>
+          ) : (
+            <Button
+              variant="success"
+              size="md"
+              className="w-full"
+              onClick={() => onWhatsApp?.(savedSummaries[0])}
+            >
+              {t('sendWhatsApp')} — {t('salesDailySummary')}
+            </Button>
+          )}
         </div>
       </AdaptiveSheet>
     );
@@ -171,99 +279,83 @@ export function SalesEntryModal({
           <Button
             variant="primary"
             disabled={
-              createSummary.isPending
+              saving
               || salesChannelsLoading
               || !!salesChannelsError
-              || totalAmount.lte(0)
               || salesChannels.length === 0
-              || !customerCount
-              || parseInt(customerCount, 10) <= 0
-              || !shiftSelected
+              || !hasEntrySelection(selection)
+              || !allFormsValid
             }
             onClick={handleSave}
             className="flex-1 min-w-0"
           >
-            {createSummary.isPending ? t('saving') : t('saveSummary')}
+            {saving ? t('saving') : isBatch ? t('salesEntrySaveBatch') : t('saveSummary')}
           </Button>
           <Button onClick={resetForm}>{t('reset')}</Button>
         </>
       }
     >
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
-        <Input type="date" label={t('transactionDate')} value={txDate} onChange={(e: any) => setTxDate(e.target.value)} />
-        <Input type="number" min="0" label={t('customerCount')} required value={customerCount} onChange={(e: any) => setCustomerCount(e.target.value)} placeholder="0" />
-        <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
-      </div>
-
-      <SalesShiftPicker mode="form" value={shift} onChange={setShift} required className="mb-4" />
-
       <div className="mb-4">
-        <label className="text-[13px] font-bold mb-2 block">{t('salesChannels')}</label>
-        {salesChannelsLoading ? (
-          <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px]" style={{ border: '2px dashed var(--noorix-border)' }}>
-            {t('loading')}
-          </div>
-        ) : salesChannelsError ? (
-          <div className="p-4 text-center text-[13px] font-semibold rounded-[10px]" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)' }}>
-            {salesChannelsError}
-          </div>
-        ) : salesChannels.length === 0 ? (
-          <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px]" style={{ border: '2px dashed var(--noorix-border)' }}>
-            {t('noSalesChannels')}
-          </div>
-        ) : (
-          <div className="sales-channels-grid grid gap-2">
-            {salesChannels.map((v: any) => {
-              const amt = channelAmounts[v.id] || '';
-              return (
-                <div key={v.id} className="flex flex-col gap-1">
-                  <label className="text-[12px] font-semibold text-noorix-muted nx-truncate" title={vaultDisplayName(v, lang)}>{vaultDisplayName(v, lang)}</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amt}
-                    onChange={(e: any) => setChannelAmounts((p: any) => ({ ...p, [v.id]: e.target.value }))}
-                    placeholder="0.00"
-                    style={{ fontFamily: 'var(--noorix-font-numbers)' }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <Input
+          type="date"
+          label={t('transactionDate')}
+          value={txDate}
+          onChange={(e: { target: { value: string } }) => setTxDate(e.target.value)}
+        />
       </div>
 
-      <div className="mb-4">
-        <Input multiline label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} rows={2} placeholder={t('notesPlaceholder')} style={{ resize: 'vertical' }} />
+      <SalesShiftPicker mode="entry" selection={selection} onChange={setSelection} className="mb-4" />
+
+      {activeShifts.length > 1 && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted/30 px-3 py-2 text-[12px]">
+          <span className="text-noorix-muted">{t('salesEntryGrandPreview')}</span>
+          <span dir="ltr" className="font-bold text-nx-sales nx-font-numbers">
+            <FmtNum n={grandTotal.total.toNumber()} /> <span className="nx-sar">SR</span>
+            <span className="text-noorix-muted font-normal mx-1">·</span>
+            {fmt(grandTotal.customers, 0)} {t('customersLabel')}
+          </span>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {activeShifts.map((shift) => {
+          const form = shiftForms[shift] ?? emptyShiftEntryForm();
+          return (
+            <SalesShiftEntryCard
+              key={shift}
+              shift={shift}
+              form={form}
+              onChange={(next) => setShiftForms((prev) => ({ ...prev, [shift]: next }))}
+              salesChannels={salesChannels}
+              salesChannelsLoading={salesChannelsLoading}
+              salesChannelsError={salesChannelsError}
+              lang={lang}
+              vatEnabled={vatEnabled}
+              vatRate={vatRate}
+              t={t}
+              showCopyFromMorning={shift === 'evening' && activeShifts.includes('morning')}
+              onCopyFromMorning={
+                shift === 'evening' && shiftForms.morning
+                  ? () => {
+                      const m = shiftForms.morning!;
+                      setShiftForms((prev) => ({
+                        ...prev,
+                        evening: {
+                          ...form,
+                          channelAmounts: { ...m.channelAmounts },
+                        },
+                      }));
+                    }
+                  : undefined
+              }
+            />
+          );
+        })}
       </div>
 
-      <div className={`noorix-summary-bar noorix-summary-bar--${vatEnabled && totalAmount.gt(0) ? '5' : '3'} mb-2`}>
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('totalLabel')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--green"><FmtNum n={totalAmount.toNumber()} /> <span className="nx-sar">SR</span></div>
-        </div>
-        {vatEnabled && totalAmount.gt(0) && (
-          <>
-            <div className="noorix-summary-bar__item">
-              <div className="noorix-summary-bar__label">الصافي</div>
-              <div className="noorix-summary-bar__value noorix-summary-bar__value--blue"><FmtNum n={totalNet.toNumber()} /> <span className="nx-sar">SR</span></div>
-            </div>
-            <div className="noorix-summary-bar__item">
-              <div className="noorix-summary-bar__label">الضريبة</div>
-              <div className="noorix-summary-bar__value noorix-summary-bar__value--amber"><FmtNum n={totalTax.toNumber()} /> <span className="nx-sar">SR</span></div>
-            </div>
-          </>
-        )}
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('customersLabel')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{customerCount || 0}</div>
-        </div>
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('avgPerOrder')}</div>
-          <div className="noorix-summary-bar__value"><FmtNum n={avgPerCustomer.toNumber()} /> <span className="nx-sar">SR</span></div>
-        </div>
-      </div>
+      {!hasEntrySelection(selection) && (
+        <p className="m-0 mt-2 text-center text-[12px] text-noorix-muted">{t('salesEntryPickShift')}</p>
+      )}
     </AdaptiveSheet>
   );
 }

@@ -6,6 +6,7 @@ import { useApiMutation } from './useApiMutation';
 import {
   getDailySalesSummaries,
   createDailySalesSummary,
+  createDailySalesSummaryBatch,
   updateDailySalesSummary,
   deleteDailySalesSummary,
   throwIfApiFailed,
@@ -54,6 +55,12 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
     showErrorToast: false,
   });
 
+  const createBatchMutation = useApiMutation({
+    mutationFn: createDailySalesSummaryBatch,
+    onSuccess: invalidate,
+    showErrorToast: false,
+  });
+
   const updateMutation = useApiMutation({
     mutationFn: ({ id, body, companyId: cid }: any) => updateDailySalesSummary(id, body, cid),
     onSuccess: invalidate,
@@ -72,6 +79,7 @@ export function useSales({ companyId, startDate, endDate, enabled = true, fetchL
     isError,
     error,
     createSummary: createMutation,
+    createSummaryBatch: createBatchMutation,
     updateSummary: updateMutation,
     deleteSummary: deleteMutation,
   };

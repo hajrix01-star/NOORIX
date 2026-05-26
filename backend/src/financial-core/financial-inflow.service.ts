@@ -18,6 +18,8 @@ import {
 } from './financial-inflow-channels.util';
 import { createInflowSaleLedgerEntries } from './financial-inflow-ledger.util';
 import type { InflowDto, SalesChannelDto, SalesShift } from './dto/financial-operation.dto';
+import { assertValidInflowBatch } from './financial-inflow-batch.util';
+import type { TxClient } from './financial-core-helpers.util';
 
 function normalizeSalesShift(value: unknown): SalesShift {
   if (value === 'morning' || value === 'evening' || value === 'all') return value;
@@ -60,11 +62,54 @@ export class FinancialInflowService {
     return this.support.withRetry(async () => this._processInflowInner(dto, callerUserId));
   }
 
+  /**
+   * processInflowBatch: عدة ملخصات (شفتان كحد أقصى) في transaction واحدة.
+   */
+  async processInflowBatch(dtos: InflowDto[], callerUserId?: string, batchIdempotencyKey?: string) {
+    assertValidInflowBatch(dtos);
+    if (dtos.length === 1) {
+      const single = await this.processInflow(dtos[0], callerUserId);
+      return { summaries: [single.summary] };
+    }
+
+    const tenantId = this.support.resolveTenantId();
+    const companyId = dtos[0].companyId;
+
+    if (batchIdempotencyKey) {
+      const keyHash = this.idempotency.hashKey('processInflowBatch', {
+        companyId,
+        transactionDate: dtos[0].transactionDate,
+        itemCount:       dtos.length,
+        shifts:          dtos.map((d) => normalizeSalesShift(d.shift)).join(','),
+        idempotencyKey:  batchIdempotencyKey,
+      });
+      return this.idempotency.withIdempotency(
+        tenantId,
+        companyId,
+        keyHash,
+        () => this.support.withRetry(() => this._processInflowBatchInner(dtos, callerUserId)),
+      ) as Promise<{ summaries: Awaited<ReturnType<typeof this._processInflowInTx>>['summary'][] }>;
+    }
+
+    return this.support.withRetry(() => this._processInflowBatchInner(dtos, callerUserId));
+  }
+
+  private async _processInflowBatchInner(dtos: InflowDto[], callerUserId?: string) {
+    const { txDate } = this.support.buildDates(dtos[0].transactionDate);
+    return this.db.withTenant(async (tx) => {
+      await this.fiscalPeriod.assertPeriodOpenForDate(tx, dtos[0].companyId, txDate);
+      const summaries = [];
+      for (const dto of dtos) {
+        const { summary } = await this._processInflowInTx(tx as TxClient, dto, callerUserId);
+        summaries.push(summary);
+      }
+      return { summaries };
+    });
+  }
+
   private async _processInflowInner(dto: InflowDto, callerUserId?: string) {
     assertOperationNotesLength(dto.notes);
-    const userId   = this.support.resolveUserId(callerUserId);
-    const tenantId = this.support.resolveTenantId();
-    const { entryDate, txDate } = this.support.buildDates(dto.transactionDate);
+    const { txDate } = this.support.buildDates(dto.transactionDate);
 
     assertInflowChannelsListNonEmpty(dto.channels);
     assertInflowNotFutureDate(txDate);
@@ -72,20 +117,33 @@ export class FinancialInflowService {
     const totalAmount = sumInflowChannelAmounts(dto.channels!);
     assertInflowTotalPositive(totalAmount);
 
-    const activeChannels = filterPositiveInflowChannels(dto.channels!);
-
     return this.db.withTenant(async (tx) => {
       await this.fiscalPeriod.assertPeriodOpenForDate(tx, dto.companyId, txDate);
+      return this._processInflowInTx(tx as TxClient, dto, callerUserId);
+    });
+  }
 
-      // ── [A] توليد رقم ملخص فريد DS-YYYYMMDD-NNN ────────
-      const dateStr  = dto.transactionDate.replace(/-/g, '').slice(0, 8);
-      const existing = await tx.dailySalesSummary.count({
-        where: { companyId: dto.companyId, summaryNumber: { startsWith: `DS-${dateStr}` } },
-      });
-      const summaryNumber = `DS-${dateStr}-${String(existing + 1).padStart(3, '0')}`;
+  private async _processInflowInTx(tx: TxClient, dto: InflowDto, callerUserId?: string) {
+    assertOperationNotesLength(dto.notes);
+    const userId   = this.support.resolveUserId(callerUserId);
+    const tenantId = this.support.resolveTenantId();
+    const { entryDate, txDate } = this.support.buildDates(dto.transactionDate);
 
-      // ── [A2] جلب إعدادات الضريبة للشركة ─────────────────
-      const company = await tx.company.findUnique({
+    assertInflowChannelsListNonEmpty(dto.channels);
+    assertInflowNotFutureDate(txDate);
+    const totalAmount = sumInflowChannelAmounts(dto.channels!);
+    assertInflowTotalPositive(totalAmount);
+    const activeChannels = filterPositiveInflowChannels(dto.channels!);
+
+    // ── [A] توليد رقم ملخص فريد DS-YYYYMMDD-NNN ────────
+    const dateStr  = dto.transactionDate.replace(/-/g, '').slice(0, 8);
+    const existing = await tx.dailySalesSummary.count({
+      where: { companyId: dto.companyId, summaryNumber: { startsWith: `DS-${dateStr}` } },
+    });
+    const summaryNumber = `DS-${dateStr}-${String(existing + 1).padStart(3, '0')}`;
+
+    // ── [A2] جلب إعدادات الضريبة للشركة ─────────────────
+    const company = await tx.company.findUnique({
         where: { id: dto.companyId },
         select: { vatEnabledForSales: true, vatRatePercent: true },
       });
@@ -204,7 +262,6 @@ export class FinancialInflowService {
       });
 
       return { summary, ledgerEntries };
-    });
   }
 
   /**
