@@ -19,7 +19,6 @@ import {
   assetKeys,
   bankKeys,
   categoryKeys,
-  companyKeys,
   dashboardKeys,
   employeeKeys,
   expenseKeys,
@@ -52,7 +51,6 @@ const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   ledgerKeys.root(),
   reportKeys.root(),
   categoryKeys.root(),
-  companyKeys.root(),
   vatKeys.root(),
   // كشوف بنك — تتقاطع مع التدفقات بعد فواتير/مبيعات/تحويلات
   bankKeys.statementsList(),

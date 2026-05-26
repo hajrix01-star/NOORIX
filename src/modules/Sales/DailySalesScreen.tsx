@@ -223,7 +223,8 @@ export default function DailySalesScreen() {
     queryKey: companyKeys.single(companyId),
     queryFn: async () => {
       const res = await getCompany(companyId);
-      return res?.success ? res.data : null;
+      throwIfApiFailed(res, 'تعذر تحميل إعدادات الشركة');
+      return res.data;
     },
     enabled: !!companyId,
   });

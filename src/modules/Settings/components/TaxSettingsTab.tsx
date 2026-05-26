@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApp } from '../../../context/AppContext';
-import { getCompany, updateCompany } from '../../../services/api';
+import { getCompany, updateCompany, throwIfApiFailed } from '../../../services/api';
 import { Button, Input } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 
@@ -18,11 +18,11 @@ export default function TaxSettingsTab() {
   const [vatRate, setVatRate] = useState(15);
   const [salesShiftsEnabled, setSalesShiftsEnabled] = useState(false);
 
-  const { data: company, isLoading } = useQuery({
+  const { data: company, isLoading, isError, error } = useQuery({
     queryKey: companyKeys.single(activeCompanyId || ''),
     queryFn: async () => {
       const res = await getCompany(activeCompanyId);
-      if (!res?.success) return null;
+      throwIfApiFailed(res, 'تعذر تحميل إعدادات الشركة');
       return res.data;
     },
     enabled: !!activeCompanyId,
@@ -71,6 +71,14 @@ export default function TaxSettingsTab() {
     return (
       <div className="text-center text-noorix-muted p-8">
         جاري التحميل...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center text-noorix-red p-8 text-[13px]">
+        {error?.message || 'تعذر تحميل إعدادات الشركة.'}
       </div>
     );
   }
