@@ -151,14 +151,14 @@ function sleepMs(ms: number) {
   return new Promise((resolve: any) => setTimeout(resolve, ms));
 }
 
-export async function parseResponse(
+export async function parseResponse<T = any>(
   res: Response,
   retryFn?: () => Promise<unknown>,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<T>> {
   const data = await res.json().catch(() => ({}));
   if (res.status === 401 && retryFn) {
     const refreshed = await tryRefreshToken();
-    if (refreshed) return (await retryFn()) as ApiParsedResult; // نفس شكل parseResponse
+    if (refreshed) return (await retryFn()) as ApiParsedResult<T>; // نفس شكل parseResponse
     handleUnauthorized();
     return { success: false, error: 'غير مصرح — يُرجى تسجيل الدخول', code: 401 };
   }
@@ -184,8 +184,14 @@ export async function parseResponse(
   return { success: true, data: data?.data ?? data };
 }
 
-export function throwIfApiFailed(res: unknown, fallbackMessage: any = 'طلب فشل') {
-  const r = res as { success?: boolean; error?: string; code?: number; isTransientServerError?: boolean; isNetworkError?: boolean };
+export function throwIfApiFailed(res: unknown, fallbackMessage: string = 'طلب فشل'): void {
+  const r = res as {
+    success?: boolean;
+    error?: string;
+    code?: number;
+    isTransientServerError?: boolean;
+    isNetworkError?: boolean;
+  };
   if (r?.success) return;
   const err = new Error(String(r?.error || fallbackMessage)) as ApiThrownError;
   if (r?.code != null) err.code = r.code;
@@ -194,14 +200,36 @@ export function throwIfApiFailed(res: unknown, fallbackMessage: any = 'طلب ف
   throw err;
 }
 
+/** يتحقق من نجاح الاستجابة ويُرجع `data` — بديل `(res as any)?.data` */
+export function unwrapApiData<T>(
+  res: ApiParsedResult<T>,
+  fallbackMessage = 'طلب فشل',
+): T {
+  throwIfApiFailed(res, fallbackMessage);
+  if (res.data === undefined) {
+    throw new Error(fallbackMessage);
+  }
+  return res.data;
+}
+
+/** مثل unwrapApiData لكن يعيد fallback عند غياب data (استعلامات مع placeholder) */
+export function unwrapApiDataOr<T>(
+  res: ApiParsedResult<T>,
+  fallback: T,
+  fallbackMessage = 'طلب فشل',
+): T {
+  throwIfApiFailed(res, fallbackMessage);
+  return res.data ?? fallback;
+}
+
 export function getApiBaseUrl() {
   return BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 }
 
-export async function apiGet(
+export async function apiGet<T = any>(
   path: string,
   params: Record<string, string | number | boolean | null | undefined> = {},
-) {
+): Promise<ApiParsedResult<T>> {
   const url = new URL(path, getApiBaseUrl());
   Object.entries(params).forEach(([k, v]: any) => {
     if (v != null && v !== '') url.searchParams.set(k, String(v));
@@ -241,11 +269,11 @@ export async function apiGet(
   return lastFailure;
 }
 
-export async function apiPost(
+export async function apiPost<T = any>(
   path: string,
   body: unknown = {},
   opts: { timeout?: number } = {},
-) {
+): Promise<ApiParsedResult<T>> {
   const timeout = opts.timeout ?? TIMEOUT_MS;
   const url = new URL(path, getApiBaseUrl());
   const fetchOpts = { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) };
@@ -261,7 +289,7 @@ export async function apiPost(
   }
 }
 
-export async function apiPatch(path: string, body: unknown = {}) {
+export async function apiPatch<T = any>(path: string, body: unknown = {}): Promise<ApiParsedResult<T>> {
   const url = new URL(path, getApiBaseUrl());
   const doFetch = async () => {
     const res = await safeFetch(url.toString(), {
@@ -283,7 +311,7 @@ export async function apiPatch(path: string, body: unknown = {}) {
   }
 }
 
-export async function apiPut(path: string, body: unknown = {}) {
+export async function apiPut<T = any>(path: string, body: unknown = {}): Promise<ApiParsedResult<T>> {
   const url = new URL(path, getApiBaseUrl());
   const doFetch = async () => {
     const res = await safeFetch(url.toString(), {
@@ -305,7 +333,7 @@ export async function apiPut(path: string, body: unknown = {}) {
   }
 }
 
-export async function apiDelete(path: string) {
+export async function apiDelete<T = any>(path: string): Promise<ApiParsedResult<T>> {
   const url = new URL(path, getApiBaseUrl());
   const doFetch = async () => {
     const res = await safeFetch(url.toString(), { method: 'DELETE', headers: getAuthHeaders() });

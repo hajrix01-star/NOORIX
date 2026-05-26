@@ -1,4 +1,4 @@
-import type { ApiParsedResult } from '../../../types/api';
+import type { ApiParsedResult, StaffDigestData, StaffDigestSendResult, OrderCatalogBatchCreateResult } from '../../../types/api';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
 // ——— الطلبات ———
@@ -72,14 +72,14 @@ export async function createOrderProduct(body: unknown): Promise<ApiParsedResult
 export async function createOrderProductsBatch(
   companyId: string,
   products: unknown,
-): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/orders/products/batch', { companyId, products }, { timeout: 90000 });
+): Promise<ApiParsedResult<OrderCatalogBatchCreateResult>> {
+  return apiPost<OrderCatalogBatchCreateResult>('/api/v1/orders/products/batch', { companyId, products }, { timeout: 90000 });
 }
 export async function createOrderCategoriesBatch(
   companyId: string,
   categories: unknown,
-): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/orders/categories/batch', { companyId, categories }, { timeout: 60000 });
+): Promise<ApiParsedResult<OrderCatalogBatchCreateResult>> {
+  return apiPost<OrderCatalogBatchCreateResult>('/api/v1/orders/categories/batch', { companyId, categories }, { timeout: 60000 });
 }
 export async function updateOrderProduct(
   id: string,
@@ -150,13 +150,18 @@ export async function getDigestHistory(companyId: string, days = 30): Promise<Ap
   return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
 }
 
-export async function getStaffDigest(companyId: string): Promise<ApiParsedResult> {
-  const res = await apiGet('/api/v1/orders/staff/digest', { companyId });
-  return res?.success ? { ...res, data: res.data ?? { sections: [], totalOrders: 0, pendingCount: 0 } } : { success: false, data: { sections: [], totalOrders: 0, pendingCount: 0 } };
+export async function getStaffDigest(companyId: string): Promise<ApiParsedResult<StaffDigestData>> {
+  const res = await apiGet<StaffDigestData>('/api/v1/orders/staff/digest', { companyId });
+  const empty: StaffDigestData = { sections: [], totalOrders: 0, pendingCount: 0 };
+  return res?.success ? { ...res, data: res.data ?? empty } : { success: false, data: empty };
 }
 
-export async function sendStaffDigest(companyId: string, orderIds?: string[], lang?: 'ar' | 'en'): Promise<ApiParsedResult> {
-  return apiPost(`/api/v1/orders/staff/send-digest?companyId=${companyId}`, { orderIds, lang });
+export async function sendStaffDigest(
+  companyId: string,
+  orderIds?: string[],
+  lang?: 'ar' | 'en',
+): Promise<ApiParsedResult<StaffDigestSendResult>> {
+  return apiPost<StaffDigestSendResult>(`/api/v1/orders/staff/send-digest?companyId=${companyId}`, { orderIds, lang });
 }
 
 // ── Sections ──────────────────────────────────────────────────────

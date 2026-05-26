@@ -11,18 +11,36 @@ import {
   putDashboardCalendarSpecialDays,
   putDashboardCalendarDayNotes,
   deleteDashboardCalendarTargets,
+  type DashboardCalendarDataResult,
 } from '../services/domains/apiEndpoints/dashboard-calendar';
+import type { ApiParsedResult } from '../types/api';
+import { unwrapApiDataOr } from '../services/core/apiHttp';
 
 const DEFAULT_TARGETS = { overall: null as number | null, byDow: {} as Record<string, number> };
 
-const DEFAULT_CALENDAR_DATA = {
+const DEFAULT_CALENDAR_DATA: DashboardCalendarDataResult = {
   targets: DEFAULT_TARGETS,
-  specialDays: [] as Array<{ id: string; name: string; fromDate: string; toDate: string; color: string }>,
-  dayNotes: {} as Record<string, string>,
+  specialDays: [],
+  dayNotes: {},
   isDefaultTargets: true,
   hasMonthOverride: false,
   defaultTargets: DEFAULT_TARGETS,
 };
+
+function applyCalendarMutationCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  companyId: string,
+  year: number,
+  month: number,
+  res: ApiParsedResult<DashboardCalendarDataResult>,
+) {
+  const data = res.data;
+  if (data) {
+    queryClient.setQueryData(dashboardKeys.calendar(companyId, year, month), data);
+  } else {
+    queryClient.invalidateQueries({ queryKey: dashboardKeys.calendar(companyId, year, month) });
+  }
+}
 
 interface UseCalendarDataOptions {
   companyId: string | null | undefined;
@@ -39,7 +57,7 @@ export function useDashboardCalendarData({ companyId, year, month, enabled = tru
     queryKey: dashboardKeys.calendar(companyId ?? '', year, month),
     queryFn: async () => {
       const res = await getDashboardCalendarData(companyId!, year, month);
-      return (res as any)?.data ?? res ?? DEFAULT_CALENDAR_DATA;
+      return unwrapApiDataOr(res, DEFAULT_CALENDAR_DATA);
     },
     enabled: isEnabled,
     staleTime: 5 * 60 * 1000,
@@ -57,39 +75,31 @@ export function useDashboardCalendarData({ companyId, year, month, enabled = tru
       targets: { overall: number | null; byDow: Record<string, number> };
       applyToAll?: boolean;
     }) => putDashboardCalendarTargets(companyId!, year, month, targets, applyToAll),
-    onSuccess: (res: any) => {
-      const data = res?.data ?? res;
-      if (data) queryClient.setQueryData(dashboardKeys.calendar(companyId!, year, month), data);
-      else invalidate();
+    onSuccess: (res) => {
+      applyCalendarMutationCache(queryClient, companyId!, year, month, res);
     },
   });
 
   const resetTargetsMutation = useMutation({
     mutationFn: () => deleteDashboardCalendarTargets(companyId!, year, month),
-    onSuccess: (res: any) => {
-      const data = res?.data ?? res;
-      if (data) queryClient.setQueryData(dashboardKeys.calendar(companyId!, year, month), data);
-      else invalidate();
+    onSuccess: (res) => {
+      applyCalendarMutationCache(queryClient, companyId!, year, month, res);
     },
   });
 
   const specialDaysMutation = useMutation({
     mutationFn: (specialDays: unknown[]) =>
       putDashboardCalendarSpecialDays(companyId!, year, month, specialDays),
-    onSuccess: (res: any) => {
-      const data = res?.data ?? res;
-      if (data) queryClient.setQueryData(dashboardKeys.calendar(companyId!, year, month), data);
-      else invalidate();
+    onSuccess: (res) => {
+      applyCalendarMutationCache(queryClient, companyId!, year, month, res);
     },
   });
 
   const dayNotesMutation = useMutation({
     mutationFn: (dayNotes: Record<string, string>) =>
       putDashboardCalendarDayNotes(companyId!, year, month, dayNotes),
-    onSuccess: (res: any) => {
-      const data = res?.data ?? res;
-      if (data) queryClient.setQueryData(dashboardKeys.calendar(companyId!, year, month), data);
-      else invalidate();
+    onSuccess: (res) => {
+      applyCalendarMutationCache(queryClient, companyId!, year, month, res);
     },
   });
 

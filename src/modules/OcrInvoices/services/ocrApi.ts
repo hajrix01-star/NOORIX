@@ -1,5 +1,11 @@
 ﻿/** OCR invoices — extraction and review API helpers */
 import { apiGet, apiPost, apiPut, apiDelete, apiPatch } from '../../../services/api';
+import type {
+  OcrInvoiceSaveBody,
+  OcrItemMutationBody,
+  OcrMutationResult,
+  OcrSupplierMutationBody,
+} from '../../../types/api';
 
 // --- OCR extraction ---
 
@@ -46,8 +52,8 @@ export async function getOcrAccountingSupplierSuggestions(filters: Record<string
   return apiGet(`/api/v1/ocr/accounting-supplier-suggestions${suffix}`);
 }
 
-export async function saveOcrInvoice(data: any) {
-  return apiPost('/api/v1/ocr/invoices', data);
+export async function saveOcrInvoice(data: OcrInvoiceSaveBody) {
+  return apiPost<OcrMutationResult>('/api/v1/ocr/invoices', data);
 }
 
 export async function confirmOcrInvoice(id: any, status: any) {
@@ -60,12 +66,12 @@ export async function getOcrSuppliers() {
   return apiGet('/api/v1/ocr/suppliers');
 }
 
-export async function createOcrSupplier(data: any) {
-  return apiPost('/api/v1/ocr/suppliers', data);
+export async function createOcrSupplier(data: OcrSupplierMutationBody) {
+  return apiPost<OcrMutationResult>('/api/v1/ocr/suppliers', data);
 }
 
-export async function updateOcrSupplier(id: any, data: any) {
-  return apiPut(`/api/v1/ocr/suppliers/${id}`, data);
+export async function updateOcrSupplier(id: string, data: OcrSupplierMutationBody) {
+  return apiPut<OcrMutationResult>(`/api/v1/ocr/suppliers/${id}`, data);
 }
 
 export async function deleteOcrSupplier(id: any) {
@@ -82,12 +88,12 @@ export async function getOcrItems() {
   return apiGet('/api/v1/ocr/items');
 }
 
-export async function createOcrItem(data: any) {
-  return apiPost('/api/v1/ocr/items', data);
+export async function createOcrItem(data: OcrItemMutationBody) {
+  return apiPost<OcrMutationResult>('/api/v1/ocr/items', data);
 }
 
-export async function updateOcrItem(id: any, data: any) {
-  return apiPut(`/api/v1/ocr/items/${id}`, data);
+export async function updateOcrItem(id: string, data: OcrItemMutationBody) {
+  return apiPut<OcrMutationResult>(`/api/v1/ocr/items/${id}`, data);
 }
 
 export async function deleteOcrItem(id: any) {

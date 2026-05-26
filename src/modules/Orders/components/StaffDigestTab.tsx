@@ -10,6 +10,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { useStaffDigest, useSendStaffDigestMutation } from '../../../hooks/useOrders';
 import { Button, Badge, Spinner, ScreenTabs } from '../../../ui';
 import { StaffDigestHistoryTab } from './StaffDigestHistoryTab';
+import type { StaffDigestOrderItem, StaffDigestSection } from '../../../types/api';
 
 type DisplayLang = 'ar' | 'en';
 
@@ -18,15 +19,15 @@ function SectionCard({
   displayLang,
   onSendSection,
 }: {
-  section: any;
+  section: StaffDigestSection;
   displayLang: DisplayLang;
   onSendSection: (ids: string[]) => void;
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
-  const orderIds = section.orders.map((o: any) => o.id);
+  const orderIds = section.orders.map((o) => o.id);
 
-  function itemName(it: any): string {
+  function itemName(it: StaffDigestOrderItem): string {
     return displayLang === 'en'
       ? (it.product?.nameEn || it.product?.nameAr || '—')
       : (it.product?.nameAr || it.product?.nameEn || '—');
@@ -48,13 +49,13 @@ function SectionCard({
 
       {expanded && (
         <div className="divide-y divide-noorix-border">
-          {section.orders.map((order: any) => (
+          {section.orders.map((order) => (
             <div key={order.id} className="px-4 py-3">
               <div className="text-[12px] text-noorix-muted mb-2">
-                {order.user?.nameAr || order.user?.nameEn || '—'} · {formatSaudiDate(order.createdAt)}
+                {order.user?.nameAr || order.user?.nameEn || '—'} · {formatSaudiDate(order.createdAt ?? '')}
               </div>
               <div className="grid grid-cols-1 gap-1">
-                {(order.items || []).map((it: any, i: number) => {
+                {(order.items || []).map((it, i) => {
                   const unit = it.unit ? ` ${it.unit}` : '';
                   return (
                     <div key={i} className="flex justify-between text-[13px]">
@@ -97,7 +98,7 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
     { id: 'history', label: t('digestHistoryTitle') },
   ], [t]);
 
-  const sections: any[] = digest?.sections ?? [];
+  const sections: StaffDigestSection[] = digest?.sections ?? [];
   const pendingCount: number = digest?.pendingCount ?? 0;
 
   const handleSend = useCallback(async (orderIds?: string[]) => {
@@ -105,7 +106,7 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
     setSending(true);
     try {
       const res = await sendDigest.mutateAsync({ orderIds, lang: displayLang });
-      const whatsAppText: string = (res as any)?.data?.whatsAppText || (res as any)?.whatsAppText || '';
+      const whatsAppText = res.data?.whatsAppText ?? '';
       if (whatsAppText) {
         window.open(`https://wa.me/?text=${encodeURIComponent(whatsAppText)}`, '_blank');
       }

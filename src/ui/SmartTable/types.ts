@@ -1,9 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 
-/**
- * عمود جدول ذكي — `render` يستخدم `row: any` عمداً لبقاء التوافق مع شاشات تُضيّق نوع الصف.
- */
-export type SmartTableColumn = {
+/** عمود جدول ذكي — مرّر `TRow` من الشاشة لتضييق نوع الصف في `render` */
+export type SmartTableColumn<TRow = any> = {
   key: string;
   label?: ReactNode;
   header?: ReactNode;
@@ -14,8 +12,7 @@ export type SmartTableColumn = {
   width?: CSSProperties['width'];
   minWidth?: number | string;
   maxWidth?: number | string;
-  /** الصف يُعرَّف كـ `any` للتوافق مع الشاشات التي تمرّر أنواعًا ضيقة في الدالة دون كسر تعيين الأعمدة */
-  render?: (value: unknown, row: any, index: number) => ReactNode;
+  render?: (value: unknown, row: TRow, index: number) => ReactNode;
 };
 
 export type SmartTableFooterSegment = {
@@ -24,9 +21,9 @@ export type SmartTableFooterSegment = {
   className?: string;
 };
 
-export type SmartTableProps = {
-  columns?: SmartTableColumn[];
-  data?: Record<string, unknown>[];
+export type SmartTableProps<TRow = any> = {
+  columns?: SmartTableColumn<TRow>[];
+  data?: TRow[];
   total?: number;
   page?: number;
   pageSize?: number;
@@ -55,17 +52,17 @@ export type SmartTableProps = {
   innerPadding?: number | string;
   tableLayout?: CSSProperties['tableLayout'];
   rowNumberWidth?: number | string;
-  getRowClassName?: (row: any, index: number) => string | undefined;
-  getRowStyle?: (row: any, index: number) => CSSProperties | undefined;
-  renderMobileCard?: (row: any, index: number) => ReactNode;
+  getRowClassName?: (row: TRow, index: number) => string | undefined;
+  getRowStyle?: (row: TRow, index: number) => CSSProperties | undefined;
+  renderMobileCard?: (row: TRow, index: number) => ReactNode;
   stripeMobileCards?: boolean;
   /**
    * بديل renderMobileCard — يعرض كل سجل كسطرين مضغوطَين (List-Row pattern).
    * عند تمريره يُعطى الأولوية على renderMobileCard في العروض الضيقة.
    */
-  renderCompactRow?: (row: any, index: number) => ReactNode;
+  renderCompactRow?: (row: TRow, index: number) => ReactNode;
   stickyActionColumn?: boolean;
   tableId?: string;
   /** موروث — غير مستخدم داخلياً؛ يُبقي توافقاً مع شاشات قديمة */
-  keyExtractor?: (row: any, index: number) => string | number;
+  keyExtractor?: (row: TRow, index: number) => string | number;
 };

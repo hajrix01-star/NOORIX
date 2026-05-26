@@ -1,5 +1,5 @@
 import { getAuthToken, getActiveCompanyId } from '../../authStore';
-import type { ApiParsedResult } from '../../../types/api';
+import type { ApiParsedResult, CreateInvoiceBatchResult } from '../../../types/api';
 import {
   apiGet,
   apiPost,
@@ -48,8 +48,8 @@ export type FetchAllInvoicesForExportOpts = {
 export async function createInvoice(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/invoices', body);
 }
-export async function createInvoiceBatch(body: unknown): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/invoices/batch', body);
+export async function createInvoiceBatch(body: unknown): Promise<ApiParsedResult<CreateInvoiceBatchResult>> {
+  return apiPost<CreateInvoiceBatchResult>('/api/v1/invoices/batch', body);
 }
 
 /** صرف سلفة لموظف — فاتورة نوع advance عبر المحرك المالي */

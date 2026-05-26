@@ -9,7 +9,7 @@ import { useUiDir } from '../../hooks/useUiDir';
 import Button from '../Button';
 import Input from '../Input';
 import { cn } from '../cn';
-import type { SmartTableProps } from './types';
+import type { SmartTableProps as SmartTablePropsBase } from './types';
 import { columnLabel, getAlign } from './columnUtils';
 import { buildFooterCells } from './buildFooterCells';
 
@@ -43,7 +43,7 @@ const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t 
 });
 
 // ── SmartTable ───────────────────────────────────────────────
-const SmartTable = memo(function SmartTable(props: SmartTableProps) {
+const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const {
     columns = [],
     data = [],

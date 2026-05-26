@@ -1,368 +1,105 @@
 ﻿/**
  * DailySalesScreen — ملخص المبيعات اليومي
- * يعتمد على: useSales, useVaults (hooks) + SmartTable + utils/saudiDate, utils/format
+ * يعتمد على: useDailySalesScreen + SmartTable + utils/saudiDate, utils/format
  * يدعم: تصدير Excel، PDF، طباعة احترافية (اسم الشركة + شعار)
  */
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
-import { useSearchParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
-import { useApp } from '../../context/AppContext';
-import { useToast } from '../../context/ToastContext';
-import { useTranslation } from '../../i18n/useTranslation';
-import { useSales } from '../../hooks/useSales';
-import { useSalesChannels } from '../../hooks/useSalesChannels';
-import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport, throwIfApiFailed } from '../../services/api';
-import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toDateInputYmd, toYmd } from '../../utils/saudiDate';
-import { fmt, sumAmounts } from '../../utils/format';
-import { vaultDisplayName } from '../../utils/vaultDisplay';
-import { exportToExcel, exportToPdf } from '../../utils/exportUtils';
-import { openPrintWindow } from '../../utils/printUtils';
-import { Badge, Button, ScreenShell, FmtNum, cn, KebabMenu, SmartTable } from '../../ui';
-import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
+import React, { useMemo, useCallback } from 'react';
+import { formatSaudiDate } from '../../utils/saudiDate';
+import { Badge, Button, ScreenShell, FmtNum, KebabMenu, SmartTable } from '../../ui';
+import type { SmartTableColumn } from '../../ui/SmartTable/types';
+import DateFilterBar from '../../shared/components/DateFilterBar';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
 import { SalesEditModal } from './components/SalesEditModal';
 import { SalesEntryModal } from './components/SalesEntryModal';
-import ImportExportModal from '../../components/ImportExportModal';
-import { formatSalesForExport } from '../../utils/importTemplates';
-import { hasPermission, PERMISSIONS } from '../../constants/permissions';
-import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
-import { salesKeys, companyKeys } from '../../services/queryKeys';
+import { DailySalesChannelsChips } from './components/DailySalesChannelsChips';
 import { SalesShiftPicker } from './components/SalesShiftPicker';
 import { SalesDailyWhatsAppReportBar } from './components/SalesDailyWhatsAppReportBar';
-import type { SalesListShiftFilter, SalesShiftValue } from './constants/salesShift';
-import { getSalesShiftLabel, parseSalesShiftValue } from './constants/salesShift';
+import ImportExportModal from '../../components/ImportExportModal';
+import { useDailySalesScreen } from './hooks/useDailySalesScreen';
+import type { DailySalesTableRow } from './hooks/useDailySalesScreen';
+import { getSalesShiftLabel } from './constants/salesShift';
 
-const PAGE_SIZE = 50;
-
-/** عرض قنوات البيع في الجدول والجوال — شرائح واضحة بدل نص مفصول بـ | */
-function SalesChannelsChips({ channels, lang }: any) {
-  const list = Array.isArray(channels)
-    ? [...channels].sort(
-        (a: any, b: any) =>
-          (a.vault?.sortOrder ?? 0) - (b.vault?.sortOrder ?? 0) ||
-          String(a.vault?.nameAr || '').localeCompare(String(b.vault?.nameAr || ''), 'ar'),
-      )
-    : [];
-  if (list.length === 0) {
-    return <span className="text-[12px] text-noorix-muted">—</span>;
-  }
-  return (
-    <div className="flex flex-wrap gap-1.5 justify-end">
-      {list.map((ch: any, i: any) => {
-        const vid = ch.vaultId ?? ch.vault?.id ?? i;
-        const label = vaultDisplayName(ch.vault, lang);
-        return (
-          <div
-            key={vid}
-            className={cn(
-              'inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-noorix-border',
-              'bg-noorix-bg-muted/90 px-2 py-1 shadow-sm',
-            )}
-            title={label}
-          >
-            <span className="min-w-0 truncate text-[11px] font-semibold text-noorix-text">{label}</span>
-            <span dir="ltr" className="shrink-0 whitespace-nowrap text-[12px] font-bold tabular-nums text-nx-sales">
-              {fmt(ch.amount)} <span className="nx-sar">SR</span>
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function addCalendarDaysYmd(ymd: any, delta: any) {
-  const [y, m, d] = ymd.split('-').map((x: any) => parseInt(x, 10));
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return ymd;
-  const dt = new Date(Date.UTC(y, m - 1, d + delta));
-  if (isNaN(dt.getTime())) return ymd;
-  return toDateInputYmd(dt) || ymd;
-}
-
-/* ══ الشاشة الرئيسية ══════════════════════════════════════════ */
 export default function DailySalesScreen() {
-  const queryClient = useQueryClient();
-  const { activeCompanyId, userRole, userPermissions, companies } = useApp();
-  const { t, lang } = useTranslation();
-  const [searchParams] = useSearchParams();
-  const urlDrillKeyRef = useRef('');
-  const companyId = activeCompanyId ?? '';
-  const dateFilter = useDateFilter();
-  const activeCo = companies?.find((c: any) => c.id === activeCompanyId);
-  const companyName = (lang === 'en' ? (activeCo?.nameEn || activeCo?.nameAr) : (activeCo?.nameAr || activeCo?.nameEn)) || '';
-  const logoUrl = activeCo?.logoUrl || '';
-
-  // ── كل الـ Hooks في أعلى المكوّن ──
-  const { showToast } = useToast();
-  const [showEntryModal, setShowEntryModal] = useState(false);
-  const [editingSummary, setEditingSummary] = useState<any>(null);
-  const [listPage, setListPage] = useState(1);
-  const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
-  const [searchInput, setSearchInput] = useState(qInit);
-  const debouncedQRaw = useDebouncedValue(searchInput.trim(), 300);
-  const [sortKey, setSortKey] = useState('transactionDate');
-  const [sortDir, setSortDir] = useState('desc');
-  const [exportBusy, setExportBusy] = useState(false);
-  const [showImportExport, setShowImportExport] = useState(false);
-  /** افتراضي: الملخصات الملغاة مخفية (لا يُرسل includeCancelled للـ API) */
-  const [showCancelledSales, setShowCancelledSales] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<SalesListShiftFilter>('any');
-
-  const salesFullHistory = hasPermission(userRole, PERMISSIONS.SALES_FULL_HISTORY, userPermissions);
-  const salesViewSummariesList = hasPermission(userRole, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, userPermissions);
-
-  const { createSummary, updateSummary, deleteSummary } = useSales({
+  const {
+    PAGE_SIZE,
+    t,
+    lang,
+    userRole,
     companyId,
-    startDate: dateFilter.startDate,
-    endDate: dateFilter.endDate,
-    fetchList: false,
-  });
-  const {
+    companyName,
+    hasCompany,
+    salesFullHistory,
+    salesViewSummariesList,
+    dateFilter,
+    showEntryModal,
+    setShowEntryModal,
+    editingSummary,
+    setEditingSummary,
+    listPage,
+    setListPage,
+    searchInput,
+    setSearchInput,
+    sortKey,
+    sortDir,
+    toggleSort,
+    exportBusy,
+    showImportExport,
+    setShowImportExport,
+    showCancelledSales,
+    setShowCancelledSales,
+    selectedShift,
+    setSelectedShift,
     salesChannels,
-    isLoading: salesChannelsLoading,
-    isError: salesChannelsHasError,
-    error: salesChannelsError,
-    refetch: refetchSalesChannels,
-  } = useSalesChannels(companyId);
-
-  useEffect(() => {
-    if (salesFullHistory) return;
-    setSearchInput('');
-  }, [salesFullHistory, companyId]);
-
-  useEffect(() => {
-    if (salesFullHistory || !companyId) return;
-    const end = getSaudiToday();
-    const start = addCalendarDaysYmd(end, -6);
-    dateFilter.setMode('range');
-    dateFilter.setRangeStart(start);
-    dateFilter.setRangeEnd(end);
-  }, [salesFullHistory, companyId]);
-
-  const debouncedQEffective = salesFullHistory ? debouncedQRaw : '';
-
-  useEffect(() => {
-    setListPage(1);
-  }, [debouncedQEffective, dateFilter.startDate, dateFilter.endDate, showCancelledSales, selectedShift]);
-
-  useEffect(() => {
-    setSelectedShift('any');
-  }, [companyId]);
-
-  useEffect(() => {
-    if (!salesFullHistory) return;
-    const keys = ['from', 'to', 'q'];
-    const parts = keys.map((k: any) => searchParams.get(k) || '');
-    const drillKey = parts.join('\u001f');
-    if (!parts.some(Boolean)) {
-      urlDrillKeyRef.current = '';
-      return;
-    }
-    if (urlDrillKeyRef.current === drillKey) return;
-    urlDrillKeyRef.current = drillKey;
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const q = searchParams.get('q') || '';
-    if (from && to) {
-      dateFilter.setMode('range');
-      dateFilter.setRangeStart(toYmd(from));
-      dateFilter.setRangeEnd(toYmd(to));
-    }
-    if (q) {
-      setSearchInput(q);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  const {
-    data: salesPage,
-    isLoading: summariesLoading,
-    error: summariesError,
-  } = useQuery({
-    queryKey: salesKeys.summariesPaged(
-      companyId,
-      dateFilter.startDate,
-      dateFilter.endDate,
-      listPage,
-      PAGE_SIZE,
-      debouncedQEffective,
-      sortKey,
-      sortDir,
-      salesViewSummariesList,
-      showCancelledSales,
-      selectedShift,
-    ),
-    queryFn: async () => {
-      const res = await getDailySalesSummaries(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        listPage,
-        PAGE_SIZE,
-        debouncedQEffective,
-        sortKey,
-        sortDir,
-        showCancelledSales,
-        selectedShift,
-      );
-      throwIfApiFailed(res, 'فشل تحميل المبيعات');
-      return res.data;
-    },
-    enabled: !!companyId && salesViewSummariesList,
-  });
-
-  const listTotal = salesPage?.total ?? 0;
-  const pagedSummaries = salesPage?.items ?? [];
-
-  const { data: companyData } = useQuery({
-    queryKey: companyKeys.single(companyId),
-    queryFn: async () => {
-      const res = await getCompany(companyId);
-      throwIfApiFailed(res, 'تعذر تحميل إعدادات الشركة');
-      return res.data;
-    },
-    enabled: !!companyId,
-  });
-  const vatEnabled = !!companyData?.vatEnabledForSales;
-  const vatRate = companyData?.vatRatePercent != null ? Number(companyData.vatRatePercent) / 100 : 0.15;
-
-  // ── حسابات ──
-  function buildWhatsAppText(s: any) {
-    const cc = s.customerCount || 0;
-    const total = Number(s.totalAmount || 0);
-    const avg = cc > 0 ? (total / cc) : 0;
-    const name = (companyName || '').trim();
-    const dateRaw = formatSaudiDate(s.transactionDate);
-    let dateWithWeekday = dateRaw;
-    if (dateRaw !== '—') {
-      const wd = formatSaudiWeekdayName(s.transactionDate, lang);
-      if (wd) dateWithWeekday = `${dateRaw} ${wd}`;
-    }
-
-    const lines = [
-      `${t('salesWhatsAppReportTitle')}${name ? ` ${name}` : ''}`,
-      `${t('salesWhatsAppDateLine')} ${dateWithWeekday}`,
-      `${t('salesWhatsAppSummaryRef')} ${s.summaryNumber ?? '—'}`,
-      `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel(s.shift, t)}`,
-      '',
-    ];
-
-    const chList = s.channels || [];
-    if (chList.length > 0) {
-      chList.forEach((ch: any) => {
-        lines.push(`• ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)} SR`);
-      });
-    } else {
-      lines.push(t('salesWhatsAppNoChannels'));
-    }
-
-    lines.push(
-      '',
-      `${t('salesWhatsAppTotalLine')} ${fmt(total)} SR`,
-      `${t('salesWhatsAppCustomersLine')} ${cc}`,
-      `${t('salesWhatsAppAvgInvoiceLine')} ${fmt(avg)} SR`,
-    );
-
-    if (Number(s.cashOnHand) > 0) {
-      lines.push(`${t('salesWhatsAppCashLine')} ${fmt(s.cashOnHand)} SR`);
-    }
-    if (s.notes?.trim()) {
-      lines.push('', `${t('salesShareNotes')}: ${s.notes.trim()}`);
-    }
-    return lines.join('\n');
-  }
-
-  function openWhatsApp(s: any) {
-    window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(s))}`, '_blank');
-  }
-
-  async function handleEditSave(body: any) {
-    if (!editingSummary || !companyId) return;
-    const res = await updateSummary.mutateAsync({
-      id: editingSummary.id,
-      body,
-      companyId,
-    });
-    if (res?.success === false) {
-      throw new Error(res?.error || t('updateFailed'));
-    }
-    showToast(t('updateSuccess'), 'success');
-    setEditingSummary(null);
-  }
-
-  const handleDeleteSummary = useCallback((s: any) => {
-    if (!companyId || !window.confirm(t('deleteSummaryConfirm', s.summaryNumber))) return;
-    deleteSummary.mutate(
-      { id: s.id, companyId },
-      {
-        onSuccess: () => showToast(t('summaryDeleted'), 'success'),
-        onError: (e: any) => showToast(e?.message || t('deleteFailed'), 'error'),
-      },
-    );
-  }, [companyId, deleteSummary, t, showToast]);
-
-  const hasCompany = !!companyId;
-
-  // ── بيانات الجدول ──
-  const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
-
-  const tableData = useMemo(() => pagedSummaries.map((s: any) => {
-    const total = Number(s.totalAmount || 0);
-    const cc = s.customerCount || 0;
-    const channelsText = (s.channels || []).map((ch: any) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
-    return {
-      ...s,
-      shift: parseSalesShiftValue(s.shift, 'all') as SalesShiftValue,
-      channelsText,
-      avgPerCustomer: cc > 0 ? total / cc : 0,
-    };
-  }), [pagedSummaries, lang]);
-
-  const allowedSort = useMemo(() => new Set(['summaryNumber', 'transactionDate', 'totalAmount', 'customerCount']), []);
-  const toggleSort = useCallback((key: any) => {
-    if (!allowedSort.has(key)) return;
-    setSortKey((prev: any) => {
-      if (prev === key) {
-        setSortDir((d: any) => (d === 'asc' ? 'desc' : 'asc'));
-        return key;
-      }
-      setSortDir('desc');
-      return key;
-    });
-    setListPage(1);
-  }, [allowedSort]);
-
-  const activeOnly = tableData.filter((s: any) => s.status !== 'cancelled');
-  const displayedTotal = listTotal;
-  const totalAmountSum = sumAmounts(activeOnly, 'totalAmount');
-  const totalCustomers = activeOnly.reduce((sum: any, s: any) => sum + (s.customerCount || 0), 0);
+    salesChannelsLoading,
+    salesChannelsHasError,
+    salesChannelsErrorMessage,
+    refetchSalesChannels,
+    createSummary,
+    summariesLoading,
+    summariesError,
+    vatEnabled,
+    vatRate,
+    openWhatsApp,
+    handleEditSave,
+    handleDeleteSummary,
+    STATUS_MAP,
+    tableData,
+    activeOnly,
+    displayedTotal,
+    totalAmountSum,
+    totalCustomers,
+    handleExportExcel,
+    handleExportPdf,
+    handlePrint,
+    importExportFetcher,
+    handleImportSuccess,
+    showToast,
+  } = useDailySalesScreen();
 
   const columns = useMemo(() => [
     { key: 'summaryNumber', label: t('summaryNumber'), sortable: true, width: '10%',
-      render: (v: any) => <span className="nx-cell-num nx-cell-accent">{v}</span> },
+      render: (v: unknown) => <span className="nx-cell-num nx-cell-accent">{v as string | number}</span> },
     { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '10%',
-      render: (v: any, row: any) => (
+      render: (v: unknown, row: DailySalesTableRow) => (
         <div className="flex flex-col items-start gap-0.5">
-          <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>
+          <span className="nx-cell-muted-sm">{formatSaudiDate(v as string)}</span>
           <span className="inline-flex items-center rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
             {getSalesShiftLabel(row.shift, t)}
           </span>
         </div>
       ) },
     { key: 'channelsText', label: t('salesChannels'), sortable: false, width: '38%',
-      render: (_: any, row: any) => <SalesChannelsChips channels={row.channels} lang={lang} /> },
+      render: (_: unknown, row: DailySalesTableRow) => <DailySalesChannelsChips channels={row.channels} lang={lang} /> },
     { key: 'customerCount', label: t('customers'), numeric: true, sortable: true, width: '7%',
-      render: (v: any) => <span className="nx-cell-num nx-cell-num--blue">{v ?? 0}</span> },
+      render: (v: unknown) => <span className="nx-cell-num nx-cell-num--blue">{(v as number) ?? 0}</span> },
     { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '10%',
-      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green nx-cell-bold" /> },
+      render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--green nx-cell-bold" /> },
     { key: 'avgPerCustomer', label: t('avgPerOrder'), numeric: true, sortable: false, width: '7%',
-      render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--violet" /> },
+      render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', label: t('statusLabel'), width: '8%',
-      render: (v: any) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
+      render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
     { key: 'actions', label: t('actions'), align: 'center', width: '8%',
-      render: (_: any, row: any) => (
+      render: (_: unknown, row: DailySalesTableRow) => (
         <SalesActionsCell
           summary={row}
           userRole={userRole}
@@ -372,14 +109,14 @@ export default function DailySalesScreen() {
         />
       ),
     },
-  ], [userRole, t, STATUS_MAP, handleDeleteSummary, lang]);
+  ] as SmartTableColumn[], [userRole, t, STATUS_MAP, handleDeleteSummary, lang, openWhatsApp, setEditingSummary]);
 
   const footerCells = (
     <>
       <td />
       <td colSpan={3} className="nx-tfoot-label">
         {t('totalSummaries', activeOnly.length)}
-        {listTotal > PAGE_SIZE ? (
+        {displayedTotal > PAGE_SIZE ? (
           <span className="nx-cell-muted-sm me-1.5"> (إجمالي الصفحة الحالية)</span>
         ) : null}
       </td>
@@ -390,135 +127,7 @@ export default function DailySalesScreen() {
     </>
   );
 
-  // ── بيانات التصدير والطباعة (تُصدّر البيانات المعروضة/المفلترة) ──
-  const exportColumns = [
-    { key: 'summaryNumber', label: t('summaryNumber') },
-    { key: 'transactionDate', label: t('transactionDate') },
-    { key: 'shiftLabel', label: t('salesShiftLabel') },
-    { key: 'channelsText', label: t('salesChannels') },
-    { key: 'customerCount', label: t('customers') },
-    { key: 'totalAmount', label: t('total') },
-    { key: 'avgPerCustomer', label: t('avgPerOrder') },
-    { key: 'status', label: t('statusLabel') },
-  ];
-
-  function mapSummariesToExportRows(rows: any) {
-    return rows.map((s: any) => {
-      const total = Number(s.totalAmount || 0);
-      const cc = s.customerCount || 0;
-      const channelsText = (s.channels || []).map((ch: any) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
-      return {
-        summaryNumber: s.summaryNumber,
-        transactionDate: formatSaudiDate(s.transactionDate),
-        shiftLabel: getSalesShiftLabel(s.shift, t),
-        channelsText,
-        customerCount: cc,
-        totalAmount: fmt(total),
-        avgPerCustomer: cc > 0 ? fmt(total / cc) : '0.00',
-        status: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
-      };
-    });
-  }
-
-  async function handleExportExcel() {
-    if (!companyId) return;
-    setExportBusy(true);
-    try {
-      const all = await fetchAllSalesSummariesForExport(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        debouncedQEffective,
-        sortKey,
-        sortDir,
-        showCancelledSales,
-        selectedShift,
-      );
-      const exportData = mapSummariesToExportRows(all);
-      exportToExcel({
-        columns: exportColumns,
-        data: exportData,
-        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}.xlsx`,
-        companyName,
-        title: `${t('salesDailySummary')} — ${dateFilter.label}`,
-        logoUrl,
-      });
-    } catch (e: any) {
-      showToast(e?.message || t('saveFailed'), 'error');
-    } finally {
-      setExportBusy(false);
-    }
-  }
-
-  async function handleExportPdf() {
-    if (!companyId) return;
-    setExportBusy(true);
-    try {
-      const all = await fetchAllSalesSummariesForExport(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        debouncedQEffective,
-        sortKey,
-        sortDir,
-        showCancelledSales,
-        selectedShift,
-      );
-      const exportData = mapSummariesToExportRows(all);
-      exportToPdf({
-        columns: exportColumns,
-        data: exportData,
-        filename: `sales-summaries-${dateFilter.startDate || 'all'}-${dateFilter.endDate || 'all'}`,
-        companyName,
-        title: `${t('salesDailySummary')} — ${dateFilter.label}`,
-        logoUrl,
-      });
-    } catch (e: any) {
-      showToast(e?.message || t('saveFailed'), 'error');
-    } finally {
-      setExportBusy(false);
-    }
-  }
-
-  async function handlePrint() {
-    if (!companyId) return;
-    setExportBusy(true);
-    let allFilteredData = [];
-    try {
-      allFilteredData = await fetchAllSalesSummariesForExport(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        debouncedQEffective,
-        sortKey,
-        sortDir,
-        showCancelledSales,
-        selectedShift,
-      );
-    } catch (e: any) {
-      showToast(e?.message || t('saveFailed'), 'error');
-      setExportBusy(false);
-      return;
-    } finally {
-      setExportBusy(false);
-    }
-    const channelsRows = allFilteredData.map((s: any) => {
-      const ch = (s.channels || []).map((c: any) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
-      const total = Number(s.totalAmount || 0);
-      const cc = s.customerCount || 0;
-      const shiftLabel = getSalesShiftLabel(s.shift, t);
-      return `<tr><td>${(s.summaryNumber || '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${shiftLabel}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total)}</td><td>${cc > 0 ? fmt(total / cc) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
-    }).join('');
-    openPrintWindow({
-      title: t('salesDailySummary'),
-      companyName: companyName || 'الشركة',
-      subtitle: `${t('salesDailySummary')} — ${dateFilter.label || ''}`,
-      logoUrl: logoUrl || '',
-      body: `<table><thead><tr><th>${t('summaryNumber')}</th><th>${t('transactionDate')}</th><th>${t('salesShiftLabel')}</th><th>${t('salesChannels')}</th><th>${t('customers')}</th><th>${t('total')}</th><th>${t('avgPerOrder')}</th><th>${t('statusLabel')}</th></tr></thead><tbody>${channelsRows || '<tr><td colspan="8">' + t('noSummariesInPeriod') + '</td></tr>'}</tbody></table>`,
-    });
-  }
-
-  const renderMobileCard = useCallback((row: any) => (
+  const renderMobileCard = useCallback((row: DailySalesTableRow) => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-bold text-noorix-blue ltr">#{row.summaryNumber}</span>
@@ -532,12 +141,12 @@ export default function DailySalesScreen() {
       </div>
       <div className="rounded-lg border border-noorix-border/80 bg-noorix-bg-muted/40 p-2">
         <div className="text-[11px] font-bold text-noorix-muted mb-1.5">{t('salesChannels')}</div>
-        <SalesChannelsChips channels={row.channels} lang={lang} />
+        <DailySalesChannelsChips channels={row.channels} lang={lang} />
       </div>
       <div className="nx-mc__grid nx-mc__grid--3 mt-1">
         <div>
           <div className="nx-mc__stat-label">{t('total')}</div>
-          <div className="nx-mc__stat-value text-[13px] font-bold text-noorix-green"><FmtNum n={row.totalAmount} /></div>
+          <div className="nx-mc__stat-value text-[13px] font-bold text-noorix-green"><FmtNum n={Number(row.totalAmount)} /></div>
         </div>
         <div>
           <div className="nx-mc__stat-label">{t('customers')}</div>
@@ -552,9 +161,9 @@ export default function DailySalesScreen() {
         <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
       </div>
     </div>
-  ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang]);
+  ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang, openWhatsApp, setEditingSummary]);
 
-  const renderCompactRow = useCallback((row: any) => (
+  const renderCompactRow = useCallback((row: DailySalesTableRow) => (
     <div onClick={() => setEditingSummary(row)} style={{ cursor: 'pointer' }}>
       <div className="nx-cr__line1">
         <span className="nx-cr__id">#{row.summaryNumber}</span>
@@ -567,7 +176,7 @@ export default function DailySalesScreen() {
           <span className="nx-cr__meta">{row.customerCount ?? 0} {t('customers')}</span>
         </div>
         <div className="nx-cr__line2-end">
-          <span className="nx-cr__amount text-noorix-green"><FmtNum n={row.totalAmount} /> <span className="nx-sar">SR</span></span>
+          <span className="nx-cr__amount text-noorix-green"><FmtNum n={Number(row.totalAmount)} /> <span className="nx-sar">SR</span></span>
           <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
             <KebabMenu
               ariaLabel={t('actions')}
@@ -589,7 +198,7 @@ export default function DailySalesScreen() {
           summary={editingSummary}
           salesChannels={salesChannels}
           salesChannelsLoading={salesChannelsLoading}
-          salesChannelsError={salesChannelsHasError ? (salesChannelsError?.message || t('salesChannelsLoadFailed')) : ''}
+          salesChannelsError={salesChannelsErrorMessage}
           companyId={companyId}
           vatEnabled={vatEnabled}
           vatRate={vatRate}
@@ -603,12 +212,12 @@ export default function DailySalesScreen() {
           companyId={companyId}
           salesChannels={salesChannels}
           salesChannelsLoading={salesChannelsLoading}
-          salesChannelsError={salesChannelsHasError ? (salesChannelsError?.message || t('salesChannelsLoadFailed')) : ''}
+          salesChannelsError={salesChannelsErrorMessage}
           vatEnabled={vatEnabled}
           vatRate={vatRate}
           createSummary={createSummary}
-          onSuccess={(summary: any) => showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success')}
-          onError={(msg: any) => showToast(msg || t('saveFailed'), 'error')}
+          onSuccess={(summary: { summaryNumber?: string | number }) => showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success')}
+          onError={(msg: string) => showToast(msg || t('saveFailed'), 'error')}
           onClose={() => setShowEntryModal(false)}
           onWhatsApp={openWhatsApp}
           autoCloseOnSuccess={false}
@@ -620,26 +229,10 @@ export default function DailySalesScreen() {
         onClose={() => setShowImportExport(false)}
         entityType="sales"
         companyId={companyId}
-        exportFetcher={async () => {
-          const list = await fetchAllSalesSummariesForExport(
-            companyId,
-            dateFilter.startDate,
-            dateFilter.endDate,
-            debouncedQEffective,
-            sortKey,
-            sortDir,
-            showCancelledSales,
-            selectedShift,
-          );
-          return (list as Record<string, unknown>[]).map(formatSalesForExport);
-        }}
-        onImportSuccess={() => {
-          invalidateOnFinancialMutation(queryClient);
-          showToast('تم استيراد ملخصات المبيعات بنجاح', 'success');
-        }}
+        exportFetcher={importExportFetcher}
+        onImportSuccess={handleImportSuccess}
       />
 
-      {/* هيدر + شريط إجراءات — زر الملخصات الملغاة هنا ليظهر فوق الطيّ ولا يختفي داخل رأس الجدول */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('salesDailySummary')}</h1>
         <div className="flex items-center gap-2 flex-wrap print:hidden">
@@ -651,7 +244,7 @@ export default function DailySalesScreen() {
               size="sm"
               variant={showCancelledSales ? 'primary' : 'default'}
               aria-pressed={showCancelledSales}
-              onClick={() => setShowCancelledSales((v: any) => !v)}
+              onClick={() => setShowCancelledSales((v) => !v)}
             >
               {showCancelledSales ? t('hideCancelledSummaries') : t('showCancelledSummaries')}
             </Button>
@@ -674,7 +267,7 @@ export default function DailySalesScreen() {
 
       {hasCompany && salesChannelsHasError && (
         <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-noorix-red">
-          <span className="flex-1">{salesChannelsError?.message || t('salesChannelsLoadFailed')}</span>
+          <span className="flex-1">{salesChannelsErrorMessage}</span>
           <Button size="sm" onClick={() => void refetchSalesChannels()}>{t('retryLoadSalesChannels')}</Button>
         </div>
       )}

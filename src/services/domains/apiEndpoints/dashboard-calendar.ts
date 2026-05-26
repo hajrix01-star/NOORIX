@@ -20,7 +20,7 @@ export async function getDashboardCalendarData(
   companyId: string,
   year: number,
   month: number,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<DashboardCalendarDataResult>> {
   return apiGet('/api/v1/dashboard/calendar', {
     companyId,
     year: String(year),
@@ -39,7 +39,7 @@ export async function putDashboardCalendarTargets(
   month: number,
   targets: { overall: number | null; byDow: Record<string, number> },
   applyToAll = true,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<DashboardCalendarDataResult>> {
   return apiPut(
     `/api/v1/dashboard/calendar/targets?companyId=${encodeURIComponent(companyId)}&year=${year}&month=${month}&applyToAll=${applyToAll}`,
     { targets },
@@ -53,7 +53,7 @@ export async function deleteDashboardCalendarTargets(
   companyId: string,
   year: number,
   month: number,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<DashboardCalendarDataResult>> {
   return apiDelete(
     `/api/v1/dashboard/calendar/targets?companyId=${encodeURIComponent(companyId)}&year=${year}&month=${month}`,
   );
@@ -67,7 +67,7 @@ export async function putDashboardCalendarSpecialDays(
   year: number,
   month: number,
   specialDays: unknown[],
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<DashboardCalendarDataResult>> {
   return apiPut(
     `/api/v1/dashboard/calendar/special-days?companyId=${encodeURIComponent(companyId)}&year=${year}&month=${month}`,
     { specialDays },
@@ -82,7 +82,7 @@ export async function putDashboardCalendarDayNotes(
   year: number,
   month: number,
   dayNotes: Record<string, string>,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<DashboardCalendarDataResult>> {
   return apiPut(
     `/api/v1/dashboard/calendar/day-notes?companyId=${encodeURIComponent(companyId)}&year=${year}&month=${month}`,
     { dayNotes },
