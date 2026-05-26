@@ -11,7 +11,7 @@ import {
   fileToDataUrl,
 } from '../constants/settingsConstants';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
-import { appKeys } from '../../../services/queryKeys';
+import { appKeys, companyKeys } from '../../../services/queryKeys';
 import CompanyFinancialInsightThresholdsSection from './CompanyFinancialInsightThresholdsSection';
 
 export default function CompaniesTab({
@@ -73,7 +73,7 @@ export default function CompaniesTab({
 
   const updateMutation = useApiMutation({
     mutationFn: ({ id, body }: any) => updateCompany(id, body),
-    invalidateQueries: [appKeys.companiesRoot()],
+    invalidateQueries: [appKeys.companiesRoot(), companyKeys.root()],
     showErrorToast: false,
       successToast: (data: any, variables: any) => {
       if (variables?.body?.isArchived === true) return 'تم أرشفة الشركة.';
