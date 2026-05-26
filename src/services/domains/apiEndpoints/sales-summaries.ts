@@ -3,6 +3,7 @@ import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 import {
   createDailySalesSummariesSequential,
+  postDailySalesSummaryBatch,
   type DailySalesBatchPayload,
 } from './sales-summaries-batch';
 import type { SalesListShiftFilter } from '../../../modules/Sales/constants/salesShift';
@@ -15,17 +16,18 @@ export async function createDailySalesSummary(body: unknown): Promise<ApiParsedR
 
 export async function createDailySalesSummaryBatch(body: unknown): Promise<ApiParsedResult> {
   const batch = body as DailySalesBatchPayload;
-  const res = await apiPost('/api/v1/sales/summary-batch', batch);
-  if (res.success) {
-    const raw = res.data as { summaries?: unknown[] } | undefined;
-    const summaries = raw?.summaries ?? (Array.isArray(raw) ? raw : []);
-    return { success: true, data: { summaries } };
+  if (!Array.isArray(batch?.items) || batch.items.length === 0) {
+    return { success: false, error: 'لا توجد ملخصات للحفظ' };
   }
-  // خادم إنتاج لم يُحدَّث بعد — نفس الشكل { summaries } عبر /summary × N
-  if (res.code === 404 && Array.isArray(batch?.items) && batch.items.length > 0) {
-    return createDailySalesSummariesSequential(batch);
+
+  const useBatchRoute = import.meta.env.VITE_SALES_USE_BATCH === 'true';
+  if (useBatchRoute && batch.items.length > 1) {
+    const res = await postDailySalesSummaryBatch(batch);
+    if (res.success) return res;
+    if (res.code !== 404) return res;
   }
-  return res;
+
+  return createDailySalesSummariesSequential(batch);
 }
 
 export { createDailySalesSummariesSequential } from './sales-summaries-batch';

@@ -25,6 +25,7 @@ import {
   buildDailyShiftWhatsAppText,
   openWhatsAppWithText,
 } from '../utils/salesDayShiftReport';
+import { buildCreateSalesSummaryApiBody } from '../utils/salesApiPayload';
 
 type SavedSummary = {
   id?: string;
@@ -196,7 +197,7 @@ export function SalesEntryModal({
             const summaries = (data as { summaries?: SavedSummary[] })?.summaries ?? [];
             onSaveSuccess(summaries);
           },
-          onError: (e: { message?: string }) => onError?.(e?.message ?? t('saveFailed')),
+          onError: (e: unknown) => onError?.(formatSaveError(e)),
         },
       );
       return;
@@ -205,7 +206,7 @@ export function SalesEntryModal({
     const single = items[0];
     const idempotencyKey = `sales-${companyId}-${txDate}-${single.shift}-${Date.now()}`;
     createSummary.mutate(
-      {
+      buildCreateSalesSummaryApiBody({
         companyId,
         transactionDate: txDate,
         customerCount: single.customerCount,
@@ -214,16 +215,22 @@ export function SalesEntryModal({
         channels: single.channels,
         notes: single.notes,
         idempotencyKey,
-      },
+        omitIdempotencyKey: true,
+      }),
       {
         onSuccess: (res: { data?: { summary?: SavedSummary }; summary?: SavedSummary }) => {
           const data = res?.data ?? res;
           const summary = (data as { summary?: SavedSummary })?.summary ?? (data as SavedSummary);
           onSaveSuccess([summary]);
         },
-        onError: (e: { message?: string }) => onError?.(e?.message ?? t('saveFailed')),
+        onError: (e: unknown) => onError?.(formatSaveError(e)),
       },
     );
+  }
+
+  function formatSaveError(e: unknown): string {
+    const msg = e instanceof Error ? e.message : String(e ?? '');
+    return msg.trim() || t('saveFailed');
   }
 
   if (savedSummaries && savedSummaries.length > 0) {

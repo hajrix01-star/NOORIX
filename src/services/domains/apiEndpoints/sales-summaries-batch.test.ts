@@ -30,6 +30,9 @@ describe('createDailySalesSummariesSequential', () => {
     expect(res.success).toBe(true);
     expect(res.data?.summaries).toHaveLength(2);
     expect(apiPost).toHaveBeenCalledTimes(2);
+    const firstBody = vi.mocked(apiPost).mock.calls[0][1] as Record<string, unknown>;
+    expect(firstBody).not.toHaveProperty('idempotencyKey');
+    expect(firstBody.shift).toBe('morning');
   });
 
   it('stops on first failure', async () => {

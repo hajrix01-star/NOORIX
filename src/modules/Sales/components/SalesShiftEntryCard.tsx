@@ -9,6 +9,7 @@ import { Button, Input, FmtNum, Card } from '../../../ui';
 import type { SalesShiftValue } from '../constants/salesShift';
 import type { ShiftEntryFormState } from '../constants/salesShiftEntry';
 import { shiftEntryTitleKey } from '../constants/salesShiftEntry';
+import { formatSalesApiAmount } from '../utils/salesApiPayload';
 
 type VaultRow = { id: string; nameAr?: string; nameEn?: string; [key: string]: unknown };
 
@@ -202,12 +203,15 @@ export function buildShiftEntryPayload(
   salesChannels: VaultRow[],
 ) {
   const channels = salesChannels
-    .filter((v) => parseFloat(form.channelAmounts[v.id] || '') > 0)
-    .map((v) => ({ vaultId: v.id, amount: form.channelAmounts[v.id] }));
+    .map((v) => ({
+      vaultId: v.id,
+      amount: formatSalesApiAmount(form.channelAmounts[v.id] || ''),
+    }))
+    .filter((ch) => ch.amount);
   return {
     shift,
     customerCount: parseInt(form.customerCount, 10) || 0,
-    cashOnHand: form.cashOnHand || '0',
+    cashOnHand: formatSalesApiAmount(form.cashOnHand || '0') || '0',
     channels,
     notes: form.notes.trim() || undefined,
   };
