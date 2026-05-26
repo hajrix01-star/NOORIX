@@ -1,7 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { aggregateSalesDayByShift, buildDailyShiftWhatsAppText } from './salesDayShiftReport';
+import {
+  aggregateSalesDayByShift,
+  buildDailyShiftWhatsAppText,
+  buildDayShiftReportFromEntryItems,
+} from './salesDayShiftReport';
 
 describe('aggregateSalesDayByShift', () => {
+  it('reads shift from legacy notes tag when DB shift is all', () => {
+    const r = aggregateSalesDayByShift(
+      [
+        {
+          status: 'active',
+          transactionDate: '2026-05-26',
+          shift: 'all',
+          totalAmount: 10,
+          customerCount: 10,
+          notes: 'ملاحظة\n[شفت: شفت صباحي]',
+        },
+      ],
+      '2026-05-26',
+    );
+    expect(r.morning.total).toBe(10);
+    expect(r.fullDay.summaryCount).toBe(0);
+  });
+
   it('sums by shift and grand total for one day', () => {
     const r = aggregateSalesDayByShift(
       [
@@ -16,6 +38,17 @@ describe('aggregateSalesDayByShift', () => {
     expect(r.evening.total).toBe(200);
     expect(r.grand.total).toBe(300);
     expect(r.grand.customers).toBe(30);
+  });
+});
+
+describe('buildDayShiftReportFromEntryItems', () => {
+  it('places morning/evening from entry items even when API shift is all', () => {
+    const report = buildDayShiftReportFromEntryItems(
+      [{ totalAmount: 100, customerCount: 5, shift: 'all' }],
+      [{ shift: 'morning' }],
+    );
+    expect(report.morning.total).toBe(100);
+    expect(report.fullDay.summaryCount).toBe(0);
   });
 });
 

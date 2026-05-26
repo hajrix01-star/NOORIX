@@ -1,7 +1,7 @@
 import { toYmd } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import type { SalesShiftValue } from '../constants/salesShift';
-import { parseSalesShiftValue } from '../constants/salesShift';
+import { parseSalesShiftValue, resolveSalesSummaryShift } from '../constants/salesShift';
 
 export type SalesSummaryLike = {
   status?: string;
@@ -50,12 +50,52 @@ export function aggregateSalesDayByShift(
     if (s.status === 'cancelled') continue;
     if (toYmd(s.transactionDate) !== day) continue;
     addToAgg(out.grand, s);
-    const shift: SalesShiftValue = parseSalesShiftValue(s.shift, 'all');
+    const shift = resolveSalesSummaryShift(s);
     if (shift === 'morning') addToAgg(out.morning, s);
     else if (shift === 'evening') addToAgg(out.evening, s);
     else addToAgg(out.fullDay, s);
   }
   return out;
+}
+
+export type EntryShiftRow = {
+  shift: SalesShiftValue;
+  total: number;
+  customers: number;
+};
+
+/** تقرير واتساب من شفتات الإدخال المعروفة (لا تعتمد على shift في استجابة API) */
+export function buildDayShiftReportFromEntryRows(rows: EntryShiftRow[]): DayShiftReport {
+  const out: DayShiftReport = {
+    morning: emptyAgg(),
+    evening: emptyAgg(),
+    fullDay: emptyAgg(),
+    grand: emptyAgg(),
+  };
+  for (const row of rows) {
+    const pseudo: SalesSummaryLike = {
+      totalAmount: row.total,
+      customerCount: row.customers,
+      shift: row.shift,
+    };
+    addToAgg(out.grand, pseudo);
+    if (row.shift === 'morning') addToAgg(out.morning, pseudo);
+    else if (row.shift === 'evening') addToAgg(out.evening, pseudo);
+    else addToAgg(out.fullDay, pseudo);
+  }
+  return out;
+}
+
+export function buildDayShiftReportFromEntryItems(
+  summaries: SalesSummaryLike[],
+  items: { shift: string }[],
+): DayShiftReport {
+  const rows: EntryShiftRow[] = items.map((item, i) => ({
+    shift: parseSalesShiftValue(item.shift, 'all'),
+    total: Number(summaries[i]?.totalAmount ?? 0),
+    customers: Number(summaries[i]?.customerCount ?? 0),
+  }));
+  return buildDayShiftReportFromEntryRows(rows);
 }
 
 type BuildDailyWaParams = {

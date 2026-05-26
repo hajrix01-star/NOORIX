@@ -6,7 +6,7 @@ import { FmtNum } from '../../../ui';
 import { fmt } from '../../../utils/format';
 import type { SalesShiftValue } from '../constants/salesShift';
 import { getSalesShiftLabel } from '../constants/salesShift';
-import type { DayShiftReport } from '../utils/salesDayShiftReport';
+import { buildDayShiftReportFromEntryRows, type EntryShiftRow } from '../utils/salesDayShiftReport';
 
 type ShiftRow = {
   shift: SalesShiftValue;
@@ -41,24 +41,8 @@ export function buildDualShiftPreviewRows(
 }
 
 /** تحويل صفوف المعاينة إلى DayShiftReport لنص واتساب */
-export function previewRowsToDayShiftReport(
-  rows: ShiftRow[],
-  grandTotal: number,
-  grandCustomers: number,
-): DayShiftReport {
-  const out: DayShiftReport = {
-    morning: { total: 0, customers: 0, summaryCount: 0 },
-    evening: { total: 0, customers: 0, summaryCount: 0 },
-    fullDay: { total: 0, customers: 0, summaryCount: 0 },
-    grand: { total: grandTotal, customers: grandCustomers, summaryCount: rows.length },
-  };
-  for (const row of rows) {
-    const bucket = row.shift === 'morning' ? out.morning : row.shift === 'evening' ? out.evening : out.fullDay;
-    bucket.total = row.total;
-    bucket.customers = row.customers;
-    bucket.summaryCount = row.total > 0 || row.customers > 0 ? 1 : 0;
-  }
-  return out;
+export function previewRowsToDayShiftReport(rows: ShiftRow[]) {
+  return buildDayShiftReportFromEntryRows(rows as EntryShiftRow[]);
 }
 
 export function SalesDualShiftEntryReport({ rows, grandTotal, grandCustomers, t }: Props) {

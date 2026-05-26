@@ -1,13 +1,7 @@
 import type { ApiParsedResult } from '../../../types/api';
 import { apiPost } from '../../../services/core/apiHttp';
 import type { SalesShiftValue } from '../constants/salesShift';
-import { isSalesShiftValue } from '../constants/salesShift';
-
-const SHIFT_NOTE_LABEL: Record<SalesShiftValue, string> = {
-  morning: 'شفت صباحي',
-  evening: 'شفت مسائي',
-  all: 'يوم كامل',
-};
+import { formatShiftNoteTag, isSalesShiftValue } from '../constants/salesShift';
 
 /** خادم قديم: forbidNonWhitelisted — property shift should not exist */
 export function isShiftPropertyRejected(error: unknown): boolean {
@@ -21,7 +15,7 @@ export function isShiftPropertyRejected(error: unknown): boolean {
 }
 
 function appendShiftToNotes(notes: unknown, shift: SalesShiftValue): string {
-  const line = `[شفت: ${SHIFT_NOTE_LABEL[shift]}]`;
+  const line = formatShiftNoteTag(shift);
   const base = typeof notes === 'string' ? notes.trim() : '';
   return base ? `${base}\n${line}` : line;
 }

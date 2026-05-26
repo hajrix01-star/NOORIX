@@ -24,6 +24,7 @@ import {
 import {
   aggregateSalesDayByShift,
   buildDailyShiftWhatsAppText,
+  buildDayShiftReportFromEntryItems,
   openWhatsAppWithText,
 } from '../utils/salesDayShiftReport';
 import { buildCreateSalesSummaryApiBody } from '../utils/salesApiPayload';
@@ -88,6 +89,7 @@ export function SalesEntryModal({
   const [selection, setSelection] = useState<SalesEntrySelection>(EMPTY_SALES_ENTRY_SELECTION);
   const [shiftForms, setShiftForms] = useState<Partial<Record<SalesShiftValue, ShiftEntryFormState>>>({});
   const [savedSummaries, setSavedSummaries] = useState<SavedSummary[] | null>(null);
+  const [savedEntryItems, setSavedEntryItems] = useState<{ shift: string }[] | null>(null);
 
   const activeShifts = useMemo(() => getActiveEntryShifts(selection), [selection]);
   const isBatch = activeShifts.length > 1;
@@ -129,10 +131,16 @@ export function SalesEntryModal({
     setSelection(EMPTY_SALES_ENTRY_SELECTION);
     setShiftForms({});
     setSavedSummaries(null);
+    setSavedEntryItems(null);
   }, []);
 
-  const openDailyWhatsApp = useCallback((summaries: SavedSummary[]) => {
-    const report = aggregateSalesDayByShift(summaries, txDate);
+  const openDailyWhatsApp = useCallback((
+    summaries: SavedSummary[],
+    entryItems?: { shift: string }[] | null,
+  ) => {
+    const report = entryItems?.length
+      ? buildDayShiftReportFromEntryItems(summaries, entryItems)
+      : aggregateSalesDayByShift(summaries, txDate);
     const dateRaw = formatSaudiDate(txDate);
     let dateLabel = dateRaw;
     if (dateRaw !== '—') {
@@ -175,8 +183,8 @@ export function SalesEntryModal({
       if (usedLegacyNoShift) {
         showToast(t('salesEntryLegacyServerWarning'), 'error');
       }
-      if (sendWhatsAppAfter && summaries.length > 1) {
-        openDailyWhatsApp(summaries);
+      if (sendWhatsAppAfter && summaries.length > 0) {
+        openDailyWhatsApp(summaries, items);
       }
       if (autoCloseOnSuccess) {
         onSuccess?.(summaries.length === 1 ? summaries[0] : summaries);
@@ -184,6 +192,7 @@ export function SalesEntryModal({
         return;
       }
       setSavedSummaries(summaries);
+      setSavedEntryItems(items);
       onSuccess?.(summaries.length === 1 ? summaries[0] : summaries);
     };
 
@@ -278,7 +287,7 @@ export function SalesEntryModal({
               variant="success"
               size="md"
               className="w-full"
-              onClick={() => openDailyWhatsApp(savedSummaries)}
+              onClick={() => openDailyWhatsApp(savedSummaries, savedEntryItems)}
             >
               {t('sendWhatsApp')} — {t('salesDailyWaTitle')}
             </Button>
