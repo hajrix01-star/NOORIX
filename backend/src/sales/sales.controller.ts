@@ -20,6 +20,7 @@ import { SalesService }           from './sales.service';
 import { CreateSalesSummaryDto, SALES_SHIFT_VALUES }  from './dto/create-sales-summary.dto';
 import { CreateSalesSummaryBatchDto } from './dto/create-sales-summary-batch.dto';
 import { UpdateSalesSummaryDto }  from './dto/update-sales-summary.dto';
+import { PatchSalesSummaryShiftDto } from './dto/patch-sales-summary-shift.dto';
 
 @Controller('sales')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -73,6 +74,17 @@ export class SalesController {
       batchIdempotencyKey: dto.batchIdempotencyKey,
       userId:              user.sub,
     });
+  }
+
+  @Patch('summaries/:id/shift')
+  @RequirePermission('SALES_WRITE')
+  async patchSummaryShift(
+    @Param('id')   id:      string,
+    @Body()        dto:     PatchSalesSummaryShiftDto,
+    @CompanyId() companyId: string,
+  ) {
+    if (!companyId) throw new BadRequestException('companyId مطلوب');
+    return this.salesService.patchSummaryShift(id, companyId, dto.shift);
   }
 
   @Patch('summaries/:id')

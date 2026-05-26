@@ -4,7 +4,7 @@
  * createSummary يُفوَّض بالكامل → FinancialCoreService.processInflow
  * findAll تبقى هنا (قراءة بحتة).
  */
-import { Injectable }           from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma }                from '@prisma/client';
 import { TenantPrismaService }   from '../prisma/tenant-prisma.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
@@ -256,6 +256,22 @@ export class SalesService {
     ]);
 
     return { items, total, page: p, pageSize: size };
+  }
+
+  /** تحديث شفت الملخص فقط — لا يمس القيود أو القنوات */
+  async patchSummaryShift(
+    id: string,
+    companyId: string,
+    shift: 'morning' | 'evening' | 'all',
+  ) {
+    const updated = await this.prisma.dailySalesSummary.updateMany({
+      where: { id, companyId, status: 'active' },
+      data: { shift },
+    });
+    if (updated.count === 0) {
+      throw new NotFoundException('الملخص غير موجود أو تم إلغاؤه.');
+    }
+    return { ok: true, shift };
   }
 
   /**
