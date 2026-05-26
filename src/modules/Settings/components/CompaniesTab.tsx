@@ -13,44 +13,8 @@ import {
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 import CompanyFinancialInsightThresholdsSection from './CompanyFinancialInsightThresholdsSection';
-
-function normalizeText(v: any) {
-  return String(v ?? '').trim();
-}
-
-function buildCompanyUpdateBody(editModal: any) {
-  const initial = editModal?._initial || {};
-  const nameAr = normalizeText(editModal?.nameAr);
-  const current = {
-    nameEn: normalizeText(editModal?.nameEn),
-    taxNumber: normalizeText(editModal?.taxNumber),
-    phone: normalizeText(editModal?.phone),
-    address: normalizeText(editModal?.address),
-    email: normalizeText(editModal?.email),
-    logoUrl: normalizeText(editModal?.logoUrl),
-    salesShiftsEnabled: !!editModal?.salesShiftsEnabled,
-  };
-  const baseline = {
-    nameEn: normalizeText(initial.nameEn),
-    taxNumber: normalizeText(initial.taxNumber),
-    phone: normalizeText(initial.phone),
-    address: normalizeText(initial.address),
-    email: normalizeText(initial.email),
-    logoUrl: normalizeText(initial.logoUrl),
-    salesShiftsEnabled: !!initial.salesShiftsEnabled,
-  };
-  const body: any = { nameAr };
-  if (current.nameEn !== baseline.nameEn) body.nameEn = current.nameEn;
-  if (current.taxNumber !== baseline.taxNumber) body.taxNumber = current.taxNumber;
-  if (current.phone !== baseline.phone) body.phone = current.phone;
-  if (current.address !== baseline.address) body.address = current.address;
-  if (current.email !== baseline.email) body.email = current.email;
-  if (current.logoUrl !== baseline.logoUrl) body.logoUrl = current.logoUrl;
-  if (current.salesShiftsEnabled !== baseline.salesShiftsEnabled) {
-    body.salesShiftsEnabled = current.salesShiftsEnabled;
-  }
-  return body;
-}
+import { buildCompanyUpdateBody, mergeCompanySavePatch } from '../utils/companyUpdateBody';
+import { coerceCompanyBoolean } from '../../../utils/coerceCompanyBoolean';
 
 export default function CompaniesTab({
   onCompanyCreated,
@@ -121,10 +85,10 @@ export default function CompaniesTab({
       }
       return 'تم حفظ تعديلات الشركة.';
     },
-    onSuccess: (_res: any, variables: any) => {
-      const id = variables?.id;
-      const patch = variables?.body || {};
-      if (id) {
+    onSuccess: (res: any, variables: any) => {
+      const merged = mergeCompanySavePatch(res, variables);
+      if (merged) {
+        const { id, patch } = merged;
         queryClient.setQueriesData({ queryKey: appKeys.companiesRoot() }, (prev: any) => {
           if (!Array.isArray(prev)) return prev;
           return prev.map((c: any) => (c?.id === id ? { ...c, ...patch } : c));
@@ -169,6 +133,7 @@ export default function CompaniesTab({
 
   const openEdit = (company: any, e: any) => {
     if (e?.target?.closest?.('button')) return;
+    const shiftsEnabled = coerceCompanyBoolean(company.salesShiftsEnabled, false);
     setEditModal({
       id: company.id,
       nameAr: company.nameAr || '',
@@ -179,7 +144,7 @@ export default function CompaniesTab({
       email: company.email || '',
       logoUrl: company.logoUrl || '',
       isArchived: !!company.isArchived,
-      salesShiftsEnabled: !!company.salesShiftsEnabled,
+      salesShiftsEnabled: shiftsEnabled,
       _initial: {
         nameEn: company.nameEn || '',
         taxNumber: company.taxNumber || '',
@@ -187,7 +152,7 @@ export default function CompaniesTab({
         address: company.address || '',
         email: company.email || '',
         logoUrl: company.logoUrl || '',
-        salesShiftsEnabled: !!company.salesShiftsEnabled,
+        salesShiftsEnabled: shiftsEnabled,
       },
     });
     setDeleteConfirmCode('');
@@ -433,7 +398,7 @@ export default function CompaniesTab({
                   <label className="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green">
                     <input
                       type="checkbox"
-                      checked={!!editModal.salesShiftsEnabled}
+                      checked={coerceCompanyBoolean(editModal.salesShiftsEnabled, false)}
                       onChange={(e: any) => setEditModal((p: any) => ({ ...p, salesShiftsEnabled: e.target.checked }))}
                     />
                     <span className="text-[12px] text-noorix-muted">

@@ -28,6 +28,7 @@ import ImportExportModal from '../../components/ImportExportModal';
 import { formatSalesForExport } from '../../utils/importTemplates';
 import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
+import { coerceCompanyBoolean } from '../../utils/coerceCompanyBoolean';
 import { salesKeys, companyKeys } from '../../services/queryKeys';
 
 const PAGE_SIZE = 50;
@@ -112,7 +113,7 @@ export default function DailySalesScreen() {
   /** افتراضي: الملخصات الملغاة مخفية (لا يُرسل includeCancelled للـ API) */
   const [showCancelledSales, setShowCancelledSales] = useState(false);
   const [selectedShift, setSelectedShift] = useState<SalesShiftFilter>('all');
-  const [salesShiftsEnabled, setSalesShiftsEnabled] = useState<boolean>(!!(activeCo as any)?.salesShiftsEnabled);
+  const [salesShiftsEnabled, setSalesShiftsEnabled] = useState<boolean>(false);
 
   const salesFullHistory = hasPermission(userRole, PERMISSIONS.SALES_FULL_HISTORY, userPermissions);
   const salesViewSummariesList = hasPermission(userRole, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, userPermissions);
@@ -156,9 +157,8 @@ export default function DailySalesScreen() {
   }, [companyId]);
 
   useEffect(() => {
-    const fallback = (activeCo as any)?.salesShiftsEnabled;
-    setSalesShiftsEnabled(typeof fallback === 'boolean' ? fallback : false);
-  }, [companyId]);
+    setSalesShiftsEnabled(coerceCompanyBoolean((activeCo as { salesShiftsEnabled?: unknown })?.salesShiftsEnabled, false));
+  }, [companyId, activeCo]);
 
   useEffect(() => {
     if (!salesFullHistory) return;
@@ -238,14 +238,11 @@ export default function DailySalesScreen() {
   const vatRate = companyData?.vatRatePercent != null ? Number(companyData.vatRatePercent) / 100 : 0.15;
 
   useEffect(() => {
-    if (companyData && typeof companyData.salesShiftsEnabled === 'boolean') {
-      setSalesShiftsEnabled(companyData.salesShiftsEnabled);
+    if (companyData && companyData.salesShiftsEnabled !== undefined && companyData.salesShiftsEnabled !== null) {
+      setSalesShiftsEnabled(coerceCompanyBoolean(companyData.salesShiftsEnabled, false));
       return;
     }
-    const fallback = (activeCo as any)?.salesShiftsEnabled;
-    if (typeof fallback === 'boolean') {
-      setSalesShiftsEnabled(fallback);
-    }
+    setSalesShiftsEnabled(coerceCompanyBoolean((activeCo as { salesShiftsEnabled?: unknown })?.salesShiftsEnabled, false));
   }, [companyData, activeCo, companyId]);
 
   useEffect(() => {

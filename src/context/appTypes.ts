@@ -10,6 +10,8 @@ export type CompanyListItem = {
   /** بعض الشاشات تعرض اسمًا موحّداً */
   name?: string | null;
   taxNumber?: string | null;
+  /** تفعيل شفتات المبيعات اليومية (صباحي/مسائي) */
+  salesShiftsEnabled?: boolean;
 };
 
 /** قيمة `AppContext` — تُبنى في `App.tsx` */
