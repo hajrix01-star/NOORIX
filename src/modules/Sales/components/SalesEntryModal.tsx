@@ -6,10 +6,10 @@ import Decimal from 'decimal.js';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { sumObjectValues } from '../../../utils/math-engine';
-import { fmt } from '../../../utils/format';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import { SalesShiftPicker } from './SalesShiftPicker';
 import { SalesShiftEntryCard, isShiftEntryFormValid, buildShiftEntryPayload } from './SalesShiftEntryCard';
+import { SalesDualShiftEntryReport, buildDualShiftPreviewRows } from './SalesDualShiftEntryReport';
 import type { SalesShiftValue } from '../constants/salesShift';
 import { getSalesShiftLabel } from '../constants/salesShift';
 import {
@@ -145,7 +145,23 @@ export function SalesEntryModal({
     openWhatsAppWithText(text);
   }, [companyName, lang, t, txDate]);
 
-  function handleSave() {
+  const dualShiftPreviewRows = useMemo(
+    () => buildDualShiftPreviewRows(
+      activeShifts,
+      (shift) => sumObjectValues(shiftForms[shift]?.channelAmounts ?? {}).toNumber(),
+      (shift) => parseInt(shiftForms[shift]?.customerCount ?? '', 10) || 0,
+    ),
+    [activeShifts, shiftForms],
+  );
+
+  const saveDisabled = saving
+    || salesChannelsLoading
+    || !!salesChannelsError
+    || salesChannels.length === 0
+    || !hasEntrySelection(selection)
+    || !allFormsValid;
+
+  function handleSave(sendWhatsAppAfter = false) {
     if (!companyId || saving || !allFormsValid) return;
 
     const items = activeShifts.map((s) =>
@@ -153,6 +169,9 @@ export function SalesEntryModal({
     );
 
     const onSaveSuccess = (summaries: SavedSummary[]) => {
+      if (sendWhatsAppAfter && summaries.length > 1) {
+        openDailyWhatsApp(summaries);
+      }
       if (autoCloseOnSuccess) {
         onSuccess?.(summaries.length === 1 ? summaries[0] : summaries);
         onClose?.();
@@ -275,24 +294,21 @@ export function SalesEntryModal({
       side="start"
       className="sales-entry-drawer"
       footer={
-        <>
-          <Button
-            variant="primary"
-            disabled={
-              saving
-              || salesChannelsLoading
-              || !!salesChannelsError
-              || salesChannels.length === 0
-              || !hasEntrySelection(selection)
-              || !allFormsValid
-            }
-            onClick={handleSave}
-            className="flex-1 min-w-0"
-          >
-            {saving ? t('saving') : isBatch ? t('salesEntrySaveBatch') : t('saveSummary')}
-          </Button>
-          <Button onClick={resetForm}>{t('reset')}</Button>
-        </>
+        isBatch ? (
+          <Button onClick={resetForm} className="w-full">{t('reset')}</Button>
+        ) : (
+          <>
+            <Button
+              variant="primary"
+              disabled={saveDisabled}
+              onClick={() => handleSave(false)}
+              className="flex-1 min-w-0"
+            >
+              {saving ? t('saving') : t('saveSummary')}
+            </Button>
+            <Button onClick={resetForm}>{t('reset')}</Button>
+          </>
+        )
       }
     >
       <div className="mb-4">
@@ -305,17 +321,6 @@ export function SalesEntryModal({
       </div>
 
       <SalesShiftPicker mode="entry" selection={selection} onChange={setSelection} className="mb-4" />
-
-      {activeShifts.length > 1 && (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted/30 px-3 py-2 text-[12px]">
-          <span className="text-noorix-muted">{t('salesEntryGrandPreview')}</span>
-          <span dir="ltr" className="font-bold text-nx-sales nx-font-numbers">
-            <FmtNum n={grandTotal.total.toNumber()} /> <span className="nx-sar">SR</span>
-            <span className="text-noorix-muted font-normal mx-1">·</span>
-            {fmt(grandTotal.customers, 0)} {t('customersLabel')}
-          </span>
-        </div>
-      )}
 
       <div className="flex flex-col gap-4">
         {activeShifts.map((shift) => {
@@ -352,6 +357,28 @@ export function SalesEntryModal({
           );
         })}
       </div>
+
+      {isBatch && (
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+          <div className="flex-1 min-w-0">
+            <SalesDualShiftEntryReport
+              rows={dualShiftPreviewRows}
+              grandTotal={grandTotal.total.toNumber()}
+              grandCustomers={grandTotal.customers}
+              t={t}
+            />
+          </div>
+          <Button
+            variant="success"
+            size="md"
+            disabled={saveDisabled}
+            onClick={() => handleSave(true)}
+            className="shrink-0 min-h-[44px] sm:min-w-[min(100%,200px)] sm:self-stretch sm:px-4"
+          >
+            {saving ? t('saving') : t('salesEntrySaveAndWhatsApp')}
+          </Button>
+        </div>
+      )}
 
       {!hasEntrySelection(selection) && (
         <p className="m-0 mt-2 text-center text-[12px] text-noorix-muted">{t('salesEntryPickShift')}</p>

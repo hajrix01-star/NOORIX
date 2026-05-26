@@ -35,6 +35,8 @@ export default {
   salesEntryPickShift: { ar: 'اختر شفتاً واحداً على الأقل أو «يوم كامل» لبدء الإدخال.', en: 'Select at least one shift or full day to start entering.' },
   salesEntrySaveBatch: { ar: 'حفظ الملخصات', en: 'Save summaries' },
   salesEntryGrandPreview: { ar: 'المجموع التقريبي', en: 'Estimated total' },
+  salesEntryDualShiftReport: { ar: 'ملخص الشفتين', en: 'Both shifts summary' },
+  salesEntrySaveAndWhatsApp: { ar: 'حفظ وإرسال واتساب', en: 'Save & send WhatsApp' },
   salesEntryCopyFromMorning: { ar: 'نسخ القنوات من الصباحي', en: 'Copy channels from morning' },
   customerCount: { ar: 'عدد العملاء', en: 'Customer count' },
   cashOnHand: { ar: 'المبلغ الموجود بالصندوق', en: 'Cash on hand' },
