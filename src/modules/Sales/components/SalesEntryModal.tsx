@@ -28,6 +28,7 @@ import {
   openWhatsAppWithText,
 } from '../utils/salesDayShiftReport';
 import { buildCreateSalesSummaryApiBody } from '../utils/salesApiPayload';
+import { channelsFromEntryPayload } from '../utils/salesWhatsAppChannels';
 
 type SavedSummary = {
   id?: string;
@@ -134,13 +135,34 @@ export function SalesEntryModal({
     setSavedEntryItems(null);
   }, []);
 
+  const enrichSummariesWithEntryChannels = useCallback((
+    summaries: SavedSummary[],
+    items: { shift: string; channels: { vaultId: string; amount: string }[] }[],
+  ): SavedSummary[] => summaries.map((s, i) => {
+    const payload = items[i];
+    if (!payload?.channels?.length) return s;
+    const hasChannels = Array.isArray(s.channels) && s.channels.length > 0;
+    if (hasChannels) return s;
+    return {
+      ...s,
+      shift: payload.shift ?? s.shift,
+      channels: channelsFromEntryPayload(payload, salesChannels),
+    };
+  }), [salesChannels]);
+
   const openDailyWhatsApp = useCallback((
     summaries: SavedSummary[],
-    entryItems?: { shift: string }[] | null,
+    entryItems?: { shift: string; channels?: { vaultId: string; amount: string }[] }[] | null,
   ) => {
+    const enriched = entryItems?.length
+      ? enrichSummariesWithEntryChannels(
+        summaries,
+        entryItems as { shift: string; channels: { vaultId: string; amount: string }[] }[],
+      )
+      : summaries;
     const report = entryItems?.length
-      ? buildDayShiftReportFromEntryItems(summaries, entryItems)
-      : aggregateSalesDayByShift(summaries, txDate);
+      ? buildDayShiftReportFromEntryItems(enriched, entryItems)
+      : aggregateSalesDayByShift(enriched, txDate);
     const dateRaw = formatSaudiDate(txDate);
     let dateLabel = dateRaw;
     if (dateRaw !== '—') {
@@ -152,9 +174,12 @@ export function SalesEntryModal({
       dateLabel,
       report,
       t,
+      daySummaries: enriched,
+      dayYmd: txDate,
+      lang,
     });
     openWhatsAppWithText(text);
-  }, [companyName, lang, t, txDate]);
+  }, [companyName, enrichSummariesWithEntryChannels, lang, t, txDate]);
 
   const dualShiftPreviewRows = useMemo(
     () => buildDualShiftPreviewRows(
@@ -303,7 +328,18 @@ export function SalesEntryModal({
               variant="success"
               size="md"
               className="w-full"
-              onClick={() => onWhatsApp?.(savedSummaries[0])}
+              onClick={() => {
+                if (!savedSummaries?.length) return;
+                const entryPayloads = (savedEntryItems ?? []).map((item) => {
+                  const shift = parseSalesShiftValue(item.shift, 'all');
+                  const form = shiftForms[shift];
+                  return form
+                    ? buildShiftEntryPayload(shift, form, salesChannels)
+                    : { shift: item.shift, channels: [] as { vaultId: string; amount: string }[] };
+                });
+                const [enriched] = enrichSummariesWithEntryChannels(savedSummaries, entryPayloads);
+                onWhatsApp?.(enriched ?? savedSummaries[0]);
+              }}
             >
               {t('sendWhatsApp')} — {t('salesDailySummary')}
             </Button>

@@ -23,6 +23,10 @@ import { addCalendarDaysYmd } from '../dailySalesScreenUtils';
 import type { DailySalesChannelEntry } from '../components/DailySalesChannelsChips';
 import type { SalesListShiftFilter, SalesShiftValue } from '../constants/salesShift';
 import { getSalesShiftLabel, resolveSalesSummaryShift } from '../constants/salesShift';
+import {
+  buildSummaryChannelWhatsAppLines,
+  buildVaultLookup,
+} from '../utils/salesWhatsAppChannels';
 
 const PAGE_SIZE = 50;
 
@@ -200,6 +204,8 @@ export function useDailySalesScreen() {
   const vatEnabled = !!companyData?.vatEnabledForSales;
   const vatRate = companyData?.vatRatePercent != null ? Number(companyData.vatRatePercent) / 100 : 0.15;
 
+  const vaultById = useMemo(() => buildVaultLookup(salesChannels), [salesChannels]);
+
   const buildWhatsAppText = useCallback((s: DailySalesSummary) => {
     const cc = s.customerCount || 0;
     const total = Number(s.totalAmount || 0);
@@ -220,11 +226,10 @@ export function useDailySalesScreen() {
       '',
     ];
 
-    const chList = s.channels || [];
-    if (chList.length > 0) {
-      chList.forEach((ch) => {
-        lines.push(`• ${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)} SR`);
-      });
+    const channelLines = buildSummaryChannelWhatsAppLines(s.channels, lang, vaultById);
+    if (channelLines.length > 0) {
+      lines.push(t('salesWhatsAppChannelsHeader'));
+      lines.push(...channelLines);
     } else {
       lines.push(t('salesWhatsAppNoChannels'));
     }
@@ -243,7 +248,7 @@ export function useDailySalesScreen() {
       lines.push('', `${t('salesShareNotes')}: ${s.notes.trim()}`);
     }
     return lines.join('\n');
-  }, [companyName, lang, t]);
+  }, [companyName, lang, t, vaultById]);
 
   const openWhatsApp = useCallback((s: DailySalesSummary) => {
     window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(s))}`, '_blank');

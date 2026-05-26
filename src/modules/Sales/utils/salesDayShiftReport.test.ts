@@ -70,4 +70,31 @@ describe('buildDailyShiftWhatsAppText', () => {
     expect(text).toContain('salesDailyWaGrandTotal');
     expect(text).toContain('100');
   });
+
+  it('includes sales channels when day summaries provided', () => {
+    const text = buildDailyShiftWhatsAppText({
+      companyName: 'مطعم',
+      dateLabel: '2026-05-10',
+      report: {
+        morning: { total: 100, customers: 10, summaryCount: 1 },
+        evening: { total: 0, customers: 0, summaryCount: 0 },
+        fullDay: { total: 0, customers: 0, summaryCount: 0 },
+        grand: { total: 100, customers: 10, summaryCount: 1 },
+      },
+      t,
+      dayYmd: '2026-05-10',
+      lang: 'ar',
+      daySummaries: [
+        {
+          status: 'active',
+          transactionDate: '2026-05-10',
+          shift: 'morning',
+          channels: [{ vault: { nameAr: 'نقدي', sortOrder: 1 }, amount: 100 }],
+        },
+      ],
+    });
+    expect(text).toContain('salesWhatsAppChannelsHeader');
+    expect(text).toContain('نقدي');
+    expect(text).toContain('100');
+  });
 });
