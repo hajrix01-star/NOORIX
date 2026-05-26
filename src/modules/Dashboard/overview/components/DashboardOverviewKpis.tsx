@@ -12,8 +12,7 @@ import {
 import type { DashboardOverviewFilter } from '../types';
 import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
 import { kpiFooterRowColorClass } from '../utils/dashboardOverviewKpiInsightFooters';
-import { DashboardOverviewRevenueDailyAvgPanel } from './DashboardOverviewRevenueDailyAvgPanel';
-import { DashboardOverviewSalesShiftPanel } from './DashboardOverviewSalesShiftPanel';
+import { DashboardOverviewRevenueMonthBody } from './DashboardOverviewRevenueMonthBody';
 import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
 
 type CardDef = {
@@ -29,11 +28,14 @@ type Props = {
   cards: CardDef[];
   filter: DashboardOverviewFilter | undefined;
   year: number;
+  revenueMtdEndDay: number;
+  revenueMtdCalendar: number | null;
+  revenueMtdPrevCalendar: number | null;
+  customerMtdCalendar: number | null;
   revenueDailyAvgActiveDays: number | null;
-  revenueDailyAvgPrevMonthActiveDays: number | null;
   customerDailyAvgActiveDays: number | null;
-  customerDailyAvgPrevMonthActiveDays: number | null;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
+  monthName: string | null;
   kpiInsightFooters: KpiInsightFooterMap;
 };
 
@@ -43,11 +45,14 @@ export function DashboardOverviewKpis({
   cards,
   filter,
   year,
+  revenueMtdEndDay,
+  revenueMtdCalendar,
+  revenueMtdPrevCalendar,
+  customerMtdCalendar,
   revenueDailyAvgActiveDays,
-  revenueDailyAvgPrevMonthActiveDays,
   customerDailyAvgActiveDays,
-  customerDailyAvgPrevMonthActiveDays,
   salesShiftPeriodTotals,
+  monthName,
   kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
@@ -101,18 +106,25 @@ export function DashboardOverviewKpis({
           const hasRows = (insightBundle?.rows?.length ?? 0) > 0;
 
           return (
-            <MetricCard key={card.key} color={accentColor} className="min-h-[188px]">
+            <MetricCard
+              key={card.key}
+              color={accentColor}
+              className={isSales && selectedMonth != null ? 'min-h-0' : 'min-h-[188px]'}
+            >
               <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
               {isSales ? (
                 <>
                   <MetricCard.Value value={amountText(rawVal)} currency="SR" />
-                  <DashboardOverviewSalesShiftPanel totals={salesShiftPeriodTotals} t={t} />
                   {selectedMonth != null ? (
-                    <DashboardOverviewRevenueDailyAvgPanel
-                      revenueCurrent={revenueDailyAvgActiveDays}
-                      revenuePrev={revenueDailyAvgPrevMonthActiveDays}
-                      customerCurrent={customerDailyAvgActiveDays}
-                      customerPrev={customerDailyAvgPrevMonthActiveDays}
+                    <DashboardOverviewRevenueMonthBody
+                      mtdEndDay={revenueMtdEndDay}
+                      monthLabel={monthName ?? ''}
+                      revenueMtd={revenueMtdCalendar}
+                      revenueMtdPrev={revenueMtdPrevCalendar}
+                      revenueActiveDays={revenueDailyAvgActiveDays}
+                      customerMtd={customerMtdCalendar}
+                      customerActiveDays={customerDailyAvgActiveDays}
+                      salesShiftPeriodTotals={salesShiftPeriodTotals}
                       t={t}
                     />
                   ) : null}
@@ -120,8 +132,11 @@ export function DashboardOverviewKpis({
               ) : (
                 <MetricCard.Value value={amountText(rawVal)} currency="SR" />
               )}
-              <MetricCard.Spark data={sparkData} color={accentColor} grow />
+              {!(isSales && selectedMonth != null) ? (
+                <MetricCard.Spark data={sparkData} color={accentColor} grow />
+              ) : null}
 
+              {!isSales ? (
               <MetricCard.Footer className="mt-3 flex flex-col gap-1 border-t border-noorix-border pt-2 pb-2">
                 <span className="text-[10px] font-medium text-noorix-muted">{periodLabel}</span>
 
@@ -164,6 +179,11 @@ export function DashboardOverviewKpis({
                   </div>
                 )}
               </MetricCard.Footer>
+              ) : (
+                <div className="mt-2 border-t border-noorix-border pt-2 pb-1 mx-4">
+                  <span className="text-[10px] font-medium text-noorix-muted">{periodLabel}</span>
+                </div>
+              )}
             </MetricCard>
           );
         })}

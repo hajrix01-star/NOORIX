@@ -1,5 +1,6 @@
 import { toYmd } from '../../../../utils/saudiDate';
 import type { PlReportLike } from './dashboardOverviewCalculations';
+import { lastDayOfMonth, mtdCalendarDaysInMonth } from './dashboardOverviewDateUtils';
 
 type TFn = (key: string) => string;
 
@@ -177,6 +178,60 @@ function computeDailyAvgActiveDays(
   }
   if (n === 0) return null;
   return sum / n;
+}
+
+function sumMonthMetric(
+  monthSales: SummaryLike[] | null | undefined,
+  year: number,
+  month: number,
+  pick: (s: SummaryLike) => number,
+): number {
+  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+  let total = 0;
+  for (const s of monthSales ?? []) {
+    const d = toYmd(s.transactionDate);
+    if (!d || !d.startsWith(prefix)) continue;
+    total += pick(s);
+  }
+  return total;
+}
+
+/** معدل يومي تقويمي: إجمالي الشهر ÷ عدد الأيام (من 1 حتى endDayInclusive ضمن الشهر) */
+export function computeRevenueDailyAvgCalendarMtd(
+  monthSales: SummaryLike[] | null | undefined,
+  year: number,
+  month: number,
+  endDayInclusive: number,
+): number | null {
+  const last = lastDayOfMonth(year, month);
+  const days = Math.max(1, Math.min(endDayInclusive, last));
+  const total = sumMonthMetric(monthSales, year, month, (s) => Number(s.totalAmount || 0));
+  if (total <= 0) return null;
+  return total / days;
+}
+
+export function computeCustomerDailyAvgCalendarMtd(
+  monthSales: SummaryLike[] | null | undefined,
+  year: number,
+  month: number,
+  endDayInclusive: number,
+): number | null {
+  const last = lastDayOfMonth(year, month);
+  const days = Math.max(1, Math.min(endDayInclusive, last));
+  const total = sumMonthMetric(monthSales, year, month, (s) => Number(s.customerCount || 0));
+  if (total <= 0) return null;
+  return total / days;
+}
+
+/** يوم النهاية لعرض MTD: شهر جاري → اليوم؛ شهر ماضٍ كامل → آخر يوم */
+export function revenueMtdEndDay(
+  year: number,
+  month: number,
+  todayYear: number,
+  todayMonth: number,
+  todayDay: number,
+): number {
+  return mtdCalendarDaysInMonth(year, month, todayYear, todayMonth, todayDay);
 }
 
 export function computeRevenueDailyAvgActiveDays(
