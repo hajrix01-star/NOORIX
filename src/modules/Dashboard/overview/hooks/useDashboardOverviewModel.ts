@@ -7,7 +7,7 @@ import { buildKpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFo
 import { EN_MONTHS } from '../../../Reports/reportHelpers';
 import { KPI_RECHARTS_COLORS, VAULT_RECHARTS_COLORS } from '../../../../constants/kpiCardTheme';
 import { useUiDir } from '../../../../hooks/useUiDir';
-import { getSaudiYearMonth } from '../../../../utils/saudiDate';
+import { getSaudiNow, getSaudiYearMonth } from '../../../../utils/saudiDate';
 import { lastDayOfMonth, prevCalendarMonth, ymd } from '../utils/dashboardOverviewDateUtils';
 import {
   buildChannelPieRows,
@@ -17,6 +17,9 @@ import {
   buildYearMonthlyDailyAvgRows,
   computeRevenueDailyAvgActiveDays,
   computeCustomerDailyAvgActiveDays,
+  computeRevenueDailyAvgCalendarMtd,
+  computeCustomerDailyAvgCalendarMtd,
+  revenueMtdEndDay as getRevenueMtdEndDay,
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
   yearMonthlyDailyAvgCapMonth,
@@ -249,6 +252,44 @@ export function useDashboardOverviewModel(
     enabled: !!companyId && selectedMonth != null && !!prevMonthSalesAvgBounds.start,
   });
 
+  const saudiNow = getSaudiNow();
+
+  const revenueMtdEndDay = useMemo(() => {
+    if (selectedMonth == null) return 0;
+    return getRevenueMtdEndDay(year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day);
+  }, [year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day]);
+
+  const revenueMtdCalendar = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
+    return computeRevenueDailyAvgCalendarMtd(
+      monthSalesForDailyAvg,
+      year,
+      selectedMonth,
+      revenueMtdEndDay,
+    );
+  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
+
+  const revenueMtdPrevCalendar = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
+    const prev = prevCalendarMonth(year, selectedMonth);
+    return computeRevenueDailyAvgCalendarMtd(
+      prevMonthSalesForDailyAvg,
+      prev.year,
+      prev.month,
+      revenueMtdEndDay,
+    );
+  }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
+
+  const customerMtdCalendar = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
+    return computeCustomerDailyAvgCalendarMtd(
+      monthSalesForDailyAvg,
+      year,
+      selectedMonth,
+      revenueMtdEndDay,
+    );
+  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
+
   const revenueDailyAvgActiveDays = useMemo(
     () => computeRevenueDailyAvgActiveDays(monthSalesForDailyAvg),
     [monthSalesForDailyAvg],
@@ -479,10 +520,15 @@ export function useDashboardOverviewModel(
     perfTotal,
     topSuppliersChartData,
     purchaseCategoriesPieData,
+    revenueMtdEndDay,
+    revenueMtdCalendar,
+    revenueMtdPrevCalendar,
+    customerMtdCalendar,
     revenueDailyAvgActiveDays,
     revenueDailyAvgPrevMonthActiveDays,
     customerDailyAvgActiveDays,
     customerDailyAvgPrevMonthActiveDays,
+    monthName,
     salesShiftPeriodTotals,
     yearlyDailyAvgRows,
     hiddenSeries,
