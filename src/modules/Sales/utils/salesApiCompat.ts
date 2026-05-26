@@ -1,5 +1,5 @@
 import type { ApiParsedResult } from '../../../types/api';
-import { apiPost } from '../../../services/core/apiHttp';
+import { apiPatch, apiPost } from '../../../services/core/apiHttp';
 import type { SalesShiftValue } from '../constants/salesShift';
 import { formatShiftNoteTag, isSalesShiftValue } from '../constants/salesShift';
 
@@ -18,6 +18,26 @@ function appendShiftToNotes(notes: unknown, shift: SalesShiftValue): string {
   const line = formatShiftNoteTag(shift);
   const base = typeof notes === 'string' ? notes.trim() : '';
   return base ? `${base}\n${line}` : line;
+}
+
+function extractCreatedSummaryId(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const root = data as Record<string, unknown>;
+  const summary = (root.summary ?? root) as Record<string, unknown>;
+  return typeof summary.id === 'string' ? summary.id : null;
+}
+
+/** بعد حفظ قديم بدون shift — محاولة PATCH إن كان الخادم يدعم التعديل */
+async function tryPatchShiftAfterLegacyCreate(
+  summaryId: string,
+  companyId: string,
+  shift: SalesShiftValue,
+): Promise<boolean> {
+  const res = await apiPatch(
+    `/api/v1/sales/summaries/${summaryId}?companyId=${encodeURIComponent(companyId)}`,
+    { shift },
+  );
+  return !!res.success;
 }
 
 /**
@@ -39,7 +59,13 @@ export async function postSalesSummaryWithCompat(
     };
     const legacy = await apiPost('/api/v1/sales/summary', legacyBody);
     if (legacy.success) {
-      return { ...legacy, usedLegacyNoShift: true };
+      const companyId = String(rest.companyId ?? body.companyId ?? '');
+      const summaryId = extractCreatedSummaryId(legacy.data);
+      let shiftPatched = false;
+      if (summaryId && companyId && isSalesShiftValue(shift)) {
+        shiftPatched = await tryPatchShiftAfterLegacyCreate(summaryId, companyId, shift);
+      }
+      return { ...legacy, usedLegacyNoShift: !shiftPatched };
     }
     return legacy;
   }

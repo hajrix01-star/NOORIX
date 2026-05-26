@@ -22,7 +22,7 @@ import { salesKeys, companyKeys } from '../../../services/queryKeys';
 import { addCalendarDaysYmd } from '../dailySalesScreenUtils';
 import type { DailySalesChannelEntry } from '../components/DailySalesChannelsChips';
 import type { SalesListShiftFilter, SalesShiftValue } from '../constants/salesShift';
-import { getSalesShiftLabel, parseSalesShiftValue } from '../constants/salesShift';
+import { getSalesShiftLabel, resolveSalesSummaryShift } from '../constants/salesShift';
 
 const PAGE_SIZE = 50;
 
@@ -216,7 +216,7 @@ export function useDailySalesScreen() {
       `${t('salesWhatsAppReportTitle')}${name ? ` ` + name : ''}`,
       `${t('salesWhatsAppDateLine')} ${dateWithWeekday}`,
       `${t('salesWhatsAppSummaryRef')} ${s.summaryNumber ?? '—'}`,
-      `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel(s.shift, t)}`,
+      `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel(resolveSalesSummaryShift(s), t)}`,
       '',
     ];
 
@@ -284,7 +284,7 @@ export function useDailySalesScreen() {
     const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
     return {
       ...s,
-      shift: parseSalesShiftValue(s.shift, 'all'),
+      shift: resolveSalesSummaryShift(s),
       channelsText,
       avgPerCustomer: cc > 0 ? total / cc : 0,
     };
@@ -327,7 +327,7 @@ export function useDailySalesScreen() {
       return {
         summaryNumber: s.summaryNumber,
         transactionDate: formatSaudiDate(s.transactionDate),
-        shiftLabel: getSalesShiftLabel(s.shift, t),
+        shiftLabel: getSalesShiftLabel(resolveSalesSummaryShift(s), t),
         channelsText,
         customerCount: cc,
         totalAmount: fmt(total),
@@ -423,7 +423,7 @@ export function useDailySalesScreen() {
       const ch = (s.channels || []).map((c) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
       const total = Number(s.totalAmount || 0);
       const cc = s.customerCount || 0;
-      return `<tr><td>${String(s.summaryNumber ?? '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${getSalesShiftLabel(s.shift, t)}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total)}</td><td>${cc > 0 ? fmt(total / cc) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
+      return `<tr><td>${String(s.summaryNumber ?? '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${getSalesShiftLabel(resolveSalesSummaryShift(s), t)}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total)}</td><td>${cc > 0 ? fmt(total / cc) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
     }).join('');
     openPrintWindow({
       title: t('salesDailySummary'),

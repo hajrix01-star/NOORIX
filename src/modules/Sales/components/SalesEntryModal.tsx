@@ -12,7 +12,7 @@ import { SalesShiftPicker } from './SalesShiftPicker';
 import { SalesShiftEntryCard, isShiftEntryFormValid, buildShiftEntryPayload } from './SalesShiftEntryCard';
 import { SalesDualShiftEntryReport, buildDualShiftPreviewRows } from './SalesDualShiftEntryReport';
 import type { SalesShiftValue } from '../constants/salesShift';
-import { getSalesShiftLabel } from '../constants/salesShift';
+import { getSalesShiftLabel, parseSalesShiftValue, resolveSalesSummaryShift } from '../constants/salesShift';
 import {
   EMPTY_SALES_ENTRY_SELECTION,
   emptyShiftEntryForm,
@@ -265,13 +265,20 @@ export function SalesEntryModal({
         }
       >
         <div className="flex flex-col gap-4">
-          {savedSummaries.map((s) => (
+          {savedSummaries.map((s, i) => (
             <div
               key={String(s.id ?? s.summaryNumber)}
               className="flex flex-col gap-2 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 p-3"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[12px] text-noorix-muted">{getSalesShiftLabel(s.shift, t)}</span>
+                <span className="text-[12px] text-noorix-muted">
+                  {getSalesShiftLabel(
+                    savedEntryItems?.[i]?.shift
+                      ? parseSalesShiftValue(savedEntryItems[i].shift, 'all')
+                      : resolveSalesSummaryShift(s),
+                    t,
+                  )}
+                </span>
                 <strong className="text-[13px] text-noorix-blue">#{s.summaryNumber}</strong>
               </div>
               <div className="flex justify-between text-[13px]">
