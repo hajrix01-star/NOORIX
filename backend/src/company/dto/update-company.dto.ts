@@ -18,5 +18,6 @@ export const updateCompanySchema = z.object({
   isArchived: z.boolean().optional(),
   vatEnabledForSales: z.boolean().optional(),
   vatRatePercent: z.number().min(0).max(100).optional(),
+  salesShiftsEnabled: z.boolean().optional(),
 });
 export type UpdateCompanyDto = z.infer<typeof updateCompanySchema>;

@@ -16,6 +16,7 @@ export const salesKeys = {
     sortDir: string,
     salesViewSummariesList: boolean,
     showCancelledSales: boolean,
+    shift: 'morning' | 'evening' | 'all',
   ) =>
     [
       'sales-summaries-paged',
@@ -29,6 +30,7 @@ export const salesKeys = {
       sortDir,
       salesViewSummariesList,
       showCancelledSales,
+      shift,
     ] as const,
 
   channels: (companyId: string) => ['sales-channels', companyId] as const,

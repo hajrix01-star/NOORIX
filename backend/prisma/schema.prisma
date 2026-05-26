@@ -102,6 +102,7 @@ model Company {
   isArchived Boolean  @default(false) @map("is_archived")
   vatEnabledForSales Boolean @default(false) @map("vat_enabled_for_sales")
   vatRatePercent     Decimal  @default(15)   @map("vat_rate_percent") @db.Decimal(5, 2)
+  salesShiftsEnabled Boolean  @default(false) @map("sales_shifts_enabled")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt      @map("updated_at")
 
@@ -1071,6 +1072,7 @@ model DailySalesSummary {
   summaryNumber   String   @map("summary_number")
   transactionDate DateTime @map("transaction_date")
   customerCount   Int      @default(0)   @map("customer_count")
+  shift           String   @default("all")
   cashOnHand      Decimal  @default(0)   @map("cash_on_hand")  @db.Decimal(18, 4)
   totalAmount     Decimal  @default(0)   @map("total_amount")  @db.Decimal(18, 4)
   notes           String?

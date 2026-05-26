@@ -1,8 +1,11 @@
 import {
   IsString, IsNumber, IsInt, IsArray, IsOptional,
-  ValidateNested, Min, Max, IsDateString, ArrayMinSize, Matches, MaxLength,
+  ValidateNested, Min, Max, IsDateString, ArrayMinSize, Matches, MaxLength, IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+export const SALES_SHIFT_VALUES = ['morning', 'evening', 'all'] as const;
+export type SalesShiftValue = (typeof SALES_SHIFT_VALUES)[number];
 
 export class SalesChannelDto {
   @IsString()
@@ -41,6 +44,11 @@ export class CreateSalesSummaryDto {
   @IsString()
   @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(SALES_SHIFT_VALUES, { message: 'الشفت يجب أن يكون صباحي أو مسائي أو all' })
+  shift?: SalesShiftValue;
 
   /** مفتاح عدم التكرار — يمنع تنفيذ نفس العملية مرتين (مثلاً عند النقر المزدوج) */
   @IsOptional()

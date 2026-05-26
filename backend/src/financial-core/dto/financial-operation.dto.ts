@@ -6,6 +6,8 @@ export interface SalesChannelDto {
   amount: string;
 }
 
+export type SalesShift = 'morning' | 'evening' | 'all';
+
 /** توزيع السداد على أكثر من خزنة — مجموع المبالغ يجب أن يساوي totalAmount */
 export interface OutflowVaultSplitDto {
   vaultId: string;
@@ -56,6 +58,7 @@ export interface InflowDto {
   cashOnHand?: string;
   channels: SalesChannelDto[];
   notes?: string;
+  shift?: SalesShift;
   /** مفتاح عدم التكرار — إن وُجد يُرجع النتيجة المخزنة بدل التنفيذ مرة ثانية */
   idempotencyKey?: string;
 }

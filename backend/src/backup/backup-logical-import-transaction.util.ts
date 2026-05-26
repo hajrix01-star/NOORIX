@@ -44,6 +44,7 @@ export async function runBackupLogicalImportInTransaction(
             isArchived: false,
             vatEnabledForSales: Boolean(co.vatEnabledForSales),
             vatRatePercent: dec(co.vatRatePercent ?? 15),
+            salesShiftsEnabled: Boolean(co.salesShiftsEnabled),
           },
         });
 
@@ -245,6 +246,7 @@ export async function runBackupLogicalImportInTransaction(
               summaryNumber: String(s.summaryNumber),
               transactionDate: ddate(s.transactionDate),
               customerCount: Number(s.customerCount ?? 0),
+              shift: s.shift === 'morning' || s.shift === 'evening' || s.shift === 'all' ? String(s.shift) : 'all',
               cashOnHand: dec(s.cashOnHand ?? 0),
               totalAmount: dec(s.totalAmount ?? 0),
               notes: (s.notes as string | null) ?? null,

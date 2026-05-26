@@ -20,6 +20,7 @@ export function SalesEntryModal({
   salesChannelsError = '',
   vatEnabled = false,
   vatRate = 0.15,
+  shiftsEnabled = false,
   createSummary,
   onSuccess,
   onError,
@@ -31,6 +32,7 @@ export function SalesEntryModal({
   const [txDate, setTxDate] = useState(getSaudiToday());
   const [customerCount, setCustomerCount] = useState('');
   const [cashOnHand, setCashOnHand] = useState('');
+  const [shift, setShift] = useState<'morning' | 'evening' | 'all'>(shiftsEnabled ? 'morning' : 'all');
   const [notes, setNotes] = useState('');
   const [channelAmounts, setChannelAmounts] = useState<Record<string, string>>({});
   const [savedSummary, setSavedSummary] = useState<any>(null);
@@ -38,7 +40,8 @@ export function SalesEntryModal({
   useEffect(() => {
     setTxDate(getSaudiToday());
     setChannelAmounts({});
-  }, [companyId]);
+    setShift(shiftsEnabled ? 'morning' : 'all');
+  }, [companyId, shiftsEnabled]);
 
   const totalAmount = useMemo(() => sumObjectValues(channelAmounts), [channelAmounts]);
   const avgPerCustomer = useMemo(() => {
@@ -55,6 +58,7 @@ export function SalesEntryModal({
     setTxDate(getSaudiToday());
     setCustomerCount('');
     setCashOnHand('');
+    setShift(shiftsEnabled ? 'morning' : 'all');
     setNotes('');
     setChannelAmounts({});
     setSavedSummary(null);
@@ -74,6 +78,7 @@ export function SalesEntryModal({
         transactionDate: txDate,
         customerCount: parseInt(customerCount, 10) || 0,
         cashOnHand: cashOnHand || '0',
+        shift: shiftsEnabled ? shift : 'all',
         channels,
         notes: notes.trim() || undefined,
         idempotencyKey,
@@ -142,6 +147,7 @@ export function SalesEntryModal({
                 .map((v: any) => ({ vaultId: v.id, amount: channelAmounts[v.id], vault: v }));
               onWhatsApp?.({
                 ...savedSummary,
+                shift: savedSummary?.shift || (shiftsEnabled ? shift : 'all'),
                 channels: fromForm.length ? fromForm : (savedSummary.channels || []),
               });
             }}
@@ -180,6 +186,20 @@ export function SalesEntryModal({
         <Input type="number" min="0" label={t('customerCount')} required value={customerCount} onChange={(e: any) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
+
+      {shiftsEnabled && (
+        <div className="mb-4">
+          <label className="text-[13px] font-bold mb-2 block">{t('salesShiftLabel')}</label>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant={shift === 'morning' ? 'primary' : 'ghost'} onClick={() => setShift('morning')}>
+              {t('salesShiftMorning')}
+            </Button>
+            <Button size="sm" variant={shift === 'evening' ? 'primary' : 'ghost'} onClick={() => setShift('evening')}>
+              {t('salesShiftEvening')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4">
         <label className="text-[13px] font-bold mb-2 block">{t('salesChannels')}</label>

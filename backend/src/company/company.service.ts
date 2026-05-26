@@ -59,6 +59,7 @@ export class CompanyService {
     if (dto.isArchived !== undefined) data.isArchived = dto.isArchived;
     if (dto.vatEnabledForSales !== undefined) data.vatEnabledForSales = dto.vatEnabledForSales;
     if (dto.vatRatePercent !== undefined) data.vatRatePercent = dto.vatRatePercent;
+    if (dto.salesShiftsEnabled !== undefined) data.salesShiftsEnabled = dto.salesShiftsEnabled;
     return this.prisma.company.update({
       where: { id },
       data: data as Parameters<TenantPrismaService['company']['update']>[0]['data'],

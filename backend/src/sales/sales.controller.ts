@@ -35,6 +35,7 @@ export class SalesController {
       companyId:       dto.companyId,
       transactionDate: dto.transactionDate,
       customerCount:   dto.customerCount  ?? 0,
+      shift:           dto.shift,
       cashOnHand:      dto.cashOnHand     ?? '0',
       channels:        dto.channels       ?? [],
       notes:           dto.notes,
@@ -55,6 +56,7 @@ export class SalesController {
     return this.salesService.updateSummary(id, companyId, {
       transactionDate: dto.transactionDate,
       customerCount:   dto.customerCount,
+      shift:           dto.shift,
       cashOnHand:      dto.cashOnHand,
       channels:        dto.channels,
       notes:           dto.notes,
@@ -144,6 +146,7 @@ export class SalesController {
     @Query('sortBy')    sortBy?:    string,
     @Query('sortDir')   sortDir?:   string,
     @Query('includeCancelled') includeCancelled?: string,
+    @Query('shift') shift?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const pageSizeNum = pageSize ? parseInt(pageSize, 10) : 30;
@@ -171,6 +174,7 @@ export class SalesController {
       sortBy,
       sortDir,
       includeCancelled === '1' || includeCancelled === 'true',
+      shift,
     );
   }
 }

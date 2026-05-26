@@ -16,11 +16,12 @@ const CHANNEL_COLORS = {
   app:  { bg: 'var(--noorix-violet-8)', border: 'var(--noorix-accent-violet)', icon: '📱' },
 };
 
-export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }: any) {
-  const { lang } = useTranslation();
+export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, shiftsEnabled = false, onSaved, onClose }: any) {
+  const { lang, t } = useTranslation();
   const [txDate, setTxDate] = useState('');
   const [customerCount, setCustomerCount] = useState('');
   const [cashOnHand, setCashOnHand] = useState('');
+  const [shift, setShift] = useState<'morning' | 'evening' | 'all'>('all');
   const [notes, setNotes] = useState('');
   const [channelAmounts, setChannelAmounts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -35,6 +36,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
     setTxDate(toDateInputYmd(summary.transactionDate));
     setCustomerCount(String(summary.customerCount ?? 0));
     setCashOnHand(String(summary.cashOnHand ?? 0));
+    setShift(summary.shift === 'morning' || summary.shift === 'evening' ? summary.shift : 'all');
     setNotes(summary.notes || '');
     setChannelAmounts(ch);
   }, [summary]);
@@ -90,6 +92,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         transactionDate: txDate,
         customerCount: parseInt(customerCount, 10) || 0,
         cashOnHand: cashOnHand || '0',
+        shift: shiftsEnabled ? shift : (summary.shift || 'all'),
         channels,
         notes: notes.trim() || undefined,
       });
@@ -136,6 +139,20 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         <Input type="number" min="0" label="عدد العملاء" value={customerCount} onChange={(e: any) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label="المبلغ الموجود بالصندوق" value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
+
+      {shiftsEnabled && (
+        <div className="mb-4">
+          <label className="text-[13px] font-bold mb-2 block">{t('salesShiftLabel')}</label>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant={shift === 'morning' ? 'primary' : 'ghost'} onClick={() => setShift('morning')}>
+              {t('salesShiftMorning')}
+            </Button>
+            <Button size="sm" variant={shift === 'evening' ? 'primary' : 'ghost'} onClick={() => setShift('evening')}>
+              {t('salesShiftEvening')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4">
         <label className="text-[13px] font-bold mb-2 block">قنوات البيع</label>

@@ -59,6 +59,7 @@ export async function getDailySalesSummaries(
   sortBy?: string,
   sortDir?: string,
   includeCancelled?: boolean,
+  shift?: 'morning' | 'evening' | 'all',
 ): Promise<ApiParsedResult> {
   const size = Math.min(200, Math.max(1, Number(pageSize) || 50));
   const params: Record<string, string> = {
@@ -72,6 +73,7 @@ export async function getDailySalesSummaries(
   if (sortBy) params.sortBy = sortBy;
   if (sortDir) params.sortDir = sortDir;
   if (includeCancelled) params.includeCancelled = '1';
+  if (shift && shift !== 'all') params.shift = shift;
   const res = await apiGet('/api/v1/sales/summaries', params);
   if (!res.success) return res;
   const raw = res.data?.data ?? res.data;
@@ -97,6 +99,7 @@ export async function fetchAllSalesSummariesForExport(
   sortBy: any = 'transactionDate',
   sortDir: any = 'desc',
   includeCancelled: any = true,
+  shift: 'morning' | 'evening' | 'all' = 'all',
 ): Promise<unknown[]> {
   const pageSize = 150;
   let page = 1;
@@ -112,6 +115,7 @@ export async function fetchAllSalesSummariesForExport(
       sortBy,
       sortDir,
       includeCancelled,
+      shift,
     );
     if (!res?.success) break;
     const pack = res.data as { items?: unknown[]; total?: number } | undefined;

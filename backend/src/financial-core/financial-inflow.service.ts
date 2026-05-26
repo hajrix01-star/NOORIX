@@ -17,7 +17,12 @@ import {
   sumInflowChannelAmounts,
 } from './financial-inflow-channels.util';
 import { createInflowSaleLedgerEntries } from './financial-inflow-ledger.util';
-import type { InflowDto, SalesChannelDto } from './dto/financial-operation.dto';
+import type { InflowDto, SalesChannelDto, SalesShift } from './dto/financial-operation.dto';
+
+function normalizeSalesShift(value: unknown): SalesShift {
+  if (value === 'morning' || value === 'evening' || value === 'all') return value;
+  return 'all';
+}
 
 @Injectable()
 export class FinancialInflowService {
@@ -117,6 +122,7 @@ export class FinancialInflowService {
           summaryNumber,
           transactionDate: txDate,
           customerCount:   dto.customerCount || 0,
+          shift:           normalizeSalesShift(dto.shift),
           cashOnHand:      new Prisma.Decimal(dto.cashOnHand || '0'),
           totalAmount,
           notes:           dto.notes ?? null,
@@ -190,6 +196,7 @@ export class FinancialInflowService {
             summaryNumber,
             totalAmount:   totalAmount.toString(),
             customerCount: dto.customerCount,
+            shift:         normalizeSalesShift(dto.shift),
             channelCount:  activeChannels.length,
           } as JsonObject,
           createdAt: entryDate,
@@ -212,6 +219,7 @@ export class FinancialInflowService {
       cashOnHand: string;
       channels: { vaultId: string; amount: string }[];
       notes?: string;
+      shift?: SalesShift;
     },
     callerUserId?: string,
   ) {
@@ -274,6 +282,7 @@ export class FinancialInflowService {
         data:  {
           transactionDate: txDate,
           customerCount:   dto.customerCount,
+          shift:           dto.shift ?? normalizeSalesShift(summary.shift),
           cashOnHand:      new Prisma.Decimal(dto.cashOnHand || '0'),
           totalAmount,
           notes:           dto.notes ?? null,
@@ -352,6 +361,7 @@ export class FinancialInflowService {
           newValue:  {
             totalAmount:   totalAmount.toString(),
             customerCount: dto.customerCount,
+            shift:         dto.shift ?? normalizeSalesShift(summary.shift),
             channelCount:  activeChannels.length,
           } as JsonObject,
           createdAt: entryDate,

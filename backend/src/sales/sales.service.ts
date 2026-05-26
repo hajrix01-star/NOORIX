@@ -25,6 +25,7 @@ export class SalesService {
     companyId:       string;
     transactionDate: string;
     customerCount:   number;
+    shift?:          'morning' | 'evening' | 'all';
     cashOnHand:      string;
     channels:        { vaultId: string; amount: string }[];
     notes?:          string;
@@ -36,6 +37,7 @@ export class SalesService {
         companyId:       dto.companyId,
         transactionDate: dto.transactionDate,
         customerCount:   dto.customerCount,
+        shift:           dto.shift ?? 'all',
         cashOnHand:      dto.cashOnHand,
         channels:        dto.channels,
         notes:           dto.notes,
@@ -161,6 +163,7 @@ export class SalesService {
     sortBy = 'transactionDate',
     sortDir: 'asc' | 'desc' | string = 'desc',
     includeCancelled = false,
+    shift?: string,
   ) {
     const dateFilter =
       startDate || endDate
@@ -192,6 +195,11 @@ export class SalesService {
         : {};
 
     const where = { companyId, ...statusFilter, ...dateFilter, ...searchFilter };
+    const shiftFilter =
+      shift === 'morning' || shift === 'evening'
+        ? { shift }
+        : {};
+    const whereWithShift = { ...where, ...shiftFilter };
 
     const dir: Prisma.SortOrder = String(sortDir).toLowerCase() === 'asc' ? 'asc' : 'desc';
     const allowed = new Set(['transactionDate', 'summaryNumber', 'totalAmount', 'customerCount', 'createdAt']);
@@ -208,13 +216,13 @@ export class SalesService {
 
     const [items, total] = await Promise.all([
       this.prisma.dailySalesSummary.findMany({
-        where,
+        where: whereWithShift,
         orderBy,
         skip:    (p - 1) * size,
         take:    size,
         include: this.dailySalesSummaryListInclude(),
       }),
-      this.prisma.dailySalesSummary.count({ where }),
+      this.prisma.dailySalesSummary.count({ where: whereWithShift }),
     ]);
 
     return { items, total, page: p, pageSize: size };
@@ -229,6 +237,7 @@ export class SalesService {
     dto: {
       transactionDate?: string;
       customerCount?: number;
+      shift?: 'morning' | 'evening' | 'all';
       cashOnHand?: string;
       channels?: { vaultId: string; amount: string }[];
       notes?: string;
@@ -256,6 +265,7 @@ export class SalesService {
     return this.financialCore.updateInflow(id, companyId, {
       transactionDate: dto.transactionDate ?? toYmd(summary.transactionDate),
       customerCount:   dto.customerCount ?? summary.customerCount,
+      shift:           dto.shift ?? ((summary as { shift?: 'morning' | 'evening' | 'all' }).shift ?? 'all'),
       cashOnHand:      dto.cashOnHand ?? String(summary.cashOnHand),
       channels:        dto.channels,
       notes:           dto.notes ?? summary.notes ?? undefined,
