@@ -1,6 +1,10 @@
 import type { ApiParsedResult } from '../../../types/api';
 import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+import {
+  createDailySalesSummariesSequential,
+  type DailySalesBatchPayload,
+} from './sales-summaries-batch';
 import type { SalesListShiftFilter } from '../../../modules/Sales/constants/salesShift';
 import { listShiftFilterToApiParam } from '../../../modules/Sales/constants/salesShift';
 
@@ -10,8 +14,22 @@ export async function createDailySalesSummary(body: unknown): Promise<ApiParsedR
 }
 
 export async function createDailySalesSummaryBatch(body: unknown): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/sales/summary-batch', body);
+  const batch = body as DailySalesBatchPayload;
+  const res = await apiPost('/api/v1/sales/summary-batch', batch);
+  if (res.success) {
+    const raw = res.data as { summaries?: unknown[] } | undefined;
+    const summaries = raw?.summaries ?? (Array.isArray(raw) ? raw : []);
+    return { success: true, data: { summaries } };
+  }
+  // خادم إنتاج لم يُحدَّث بعد — نفس الشكل { summaries } عبر /summary × N
+  if (res.code === 404 && Array.isArray(batch?.items) && batch.items.length > 0) {
+    return createDailySalesSummariesSequential(batch);
+  }
+  return res;
 }
+
+export { createDailySalesSummariesSequential } from './sales-summaries-batch';
+export type { DailySalesBatchPayload, DailySalesBatchItem } from './sales-summaries-batch';
 export async function updateDailySalesSummary(
   id: string,
   body: unknown,
