@@ -116,7 +116,18 @@ export default function CompaniesTab({
 
   const openEdit = (company: any, e: any) => {
     if (e?.target?.closest?.('button')) return;
-    setEditModal({ id: company.id, nameAr: company.nameAr || '', nameEn: company.nameEn || '', taxNumber: company.taxNumber || '', phone: company.phone || '', address: company.address || '', email: company.email || '', logoUrl: company.logoUrl || '', isArchived: !!company.isArchived });
+    setEditModal({
+      id: company.id,
+      nameAr: company.nameAr || '',
+      nameEn: company.nameEn || '',
+      taxNumber: company.taxNumber || '',
+      phone: company.phone || '',
+      address: company.address || '',
+      email: company.email || '',
+      logoUrl: company.logoUrl || '',
+      isArchived: !!company.isArchived,
+      salesShiftsEnabled: !!company.salesShiftsEnabled,
+    });
     setDeleteConfirmCode('');
     setDeleteCodeSetting(getDeleteCode());
   };
@@ -333,7 +344,19 @@ export default function CompaniesTab({
               id="edit-company-form"
               onSubmit={(e: any) => {
                 e.preventDefault();
-                updateMutation.mutate({ id: editModal.id, body: { nameAr: editModal.nameAr.trim(), nameEn: editModal.nameEn.trim() || undefined, taxNumber: editModal.taxNumber.trim() || undefined, phone: editModal.phone.trim() || undefined, address: editModal.address.trim() || undefined, email: editModal.email.trim() || undefined, logoUrl: editModal.logoUrl.trim() || undefined } });
+                updateMutation.mutate({
+                  id: editModal.id,
+                  body: {
+                    nameAr: editModal.nameAr.trim(),
+                    nameEn: editModal.nameEn.trim() || undefined,
+                    taxNumber: editModal.taxNumber.trim() || undefined,
+                    phone: editModal.phone.trim() || undefined,
+                    address: editModal.address.trim() || undefined,
+                    email: editModal.email.trim() || undefined,
+                    logoUrl: editModal.logoUrl.trim() || undefined,
+                    salesShiftsEnabled: !!editModal.salesShiftsEnabled,
+                  },
+                });
               }}
               className="grid gap-3.5"
             >
@@ -347,6 +370,27 @@ export default function CompaniesTab({
               </div>
               <Input type="text" label="العنوان" value={editModal.address} onChange={(e: any) => setEditModal((p: any) => ({ ...p, address: e.target.value }))} placeholder="الرياض، حي..." />
               <Input type="email" label="البريد الإلكتروني" value={editModal.email} onChange={(e: any) => setEditModal((p: any) => ({ ...p, email: e.target.value }))} placeholder="info@example.com" />
+
+              <div className="rounded-xl border border-noorix-border bg-noorix-bg-muted py-3 px-[14px]">
+                <div className="flex flex-col gap-2 min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between">
+                  <div className="text-[13px] font-semibold">
+                    تفعيل الشفتات في المبيعات اليومية (صباحي / مسائي)
+                  </div>
+                  <label className="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green">
+                    <input
+                      type="checkbox"
+                      checked={!!editModal.salesShiftsEnabled}
+                      onChange={(e: any) => setEditModal((p: any) => ({ ...p, salesShiftsEnabled: e.target.checked }))}
+                    />
+                    <span className="text-[12px] text-noorix-muted">
+                      {editModal.salesShiftsEnabled ? 'مفعّل' : 'معطّل'}
+                    </span>
+                  </label>
+                </div>
+                <p className="m-0 mt-1 text-[11px] text-noorix-muted">
+                  هذا الخيار خاص فقط بتصنيف مبيعات اليوم حسب الوقت، ولا يغيّر الضريبة ولا إجمالي التقارير العامة.
+                </p>
+              </div>
 
               {/* شعار الشركة */}
               <div className="rounded-xl bg-noorix-bg-muted p-3.5 border border-noorix-border">

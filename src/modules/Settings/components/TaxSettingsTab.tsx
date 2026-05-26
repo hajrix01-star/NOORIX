@@ -3,7 +3,7 @@
  * تفعيل ضريبة القيمة المضافة للمبيعات ونسبة الضريبة (%)
  */
 import React, { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApp } from '../../../context/AppContext';
 import { getCompany, updateCompany, throwIfApiFailed } from '../../../services/api';
@@ -11,12 +11,10 @@ import { Button, Input } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 
 export default function TaxSettingsTab() {
-  const queryClient = useQueryClient();
   const { activeCompanyId } = useApp();
 
   const [vatEnabled, setVatEnabled] = useState(false);
   const [vatRate, setVatRate] = useState(15);
-  const [salesShiftsEnabled, setSalesShiftsEnabled] = useState(false);
 
   const { data: company, isLoading, isError, error } = useQuery({
     queryKey: companyKeys.single(activeCompanyId || ''),
@@ -33,7 +31,6 @@ export default function TaxSettingsTab() {
       setVatEnabled(!!company.vatEnabledForSales);
       const rate = company.vatRatePercent;
       setVatRate(rate != null ? Number(rate) : 15);
-      setSalesShiftsEnabled(!!company.salesShiftsEnabled);
     }
   }, [company]);
 
@@ -48,15 +45,13 @@ export default function TaxSettingsTab() {
     updateMutation.mutate({
       vatEnabledForSales: vatEnabled,
       vatRatePercent: vatRate,
-      salesShiftsEnabled,
     });
   }
 
   const hasChanges =
     company &&
     (!!company.vatEnabledForSales !== vatEnabled ||
-      Number(company.vatRatePercent ?? 15) !== vatRate ||
-      !!company.salesShiftsEnabled !== salesShiftsEnabled);
+      Number(company.vatRatePercent ?? 15) !== vatRate);
 
   if (!activeCompanyId) {
     return (
@@ -104,18 +99,6 @@ export default function TaxSettingsTab() {
                 onChange={(e: any) => setVatEnabled(e.target.checked)}
               />
               <span className="text-[13px] text-noorix-muted">{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
-            </label>
-          </div>
-
-          <div className="flex flex-col gap-3 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between rounded-xl border border-noorix-border bg-noorix-bg-muted py-3 px-[14px]">
-            <label className="block text-[14px] font-semibold m-0 min-w-0">تفعيل الشفتات في المبيعات اليومية (صباحي / مسائي)</label>
-            <label className="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green">
-              <input
-                type="checkbox"
-                checked={salesShiftsEnabled}
-                onChange={(e: any) => setSalesShiftsEnabled(e.target.checked)}
-              />
-              <span className="text-[13px] text-noorix-muted">{salesShiftsEnabled ? 'مفعّل' : 'معطّل'}</span>
             </label>
           </div>
 
