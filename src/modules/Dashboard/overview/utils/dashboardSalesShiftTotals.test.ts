@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { computeSalesShiftPeriodTotals } from './dashboardSalesShiftTotals';
+import {
+  computeSalesShiftPeriodTotals,
+  formatSalesShiftSharePercent,
+  salesShiftPeriodGrandTotal,
+  salesShiftSharePercent,
+} from './dashboardSalesShiftTotals';
 
 describe('computeSalesShiftPeriodTotals', () => {
   it('aggregates by shift', () => {
@@ -32,5 +37,17 @@ describe('computeSalesShiftPeriodTotals', () => {
     expect(t.morning.amount).toBe(80);
     expect(t.evening.amount).toBe(120);
     expect(t.all.amount).toBe(0);
+  });
+
+  it('computes share percent against grand total of all shifts', () => {
+    const t = computeSalesShiftPeriodTotals([
+      { shift: 'morning', totalAmount: 100, customerCount: 1 },
+      { shift: 'evening', totalAmount: 300, customerCount: 1 },
+    ]);
+    const grand = salesShiftPeriodGrandTotal(t);
+    expect(grand).toBe(400);
+    expect(salesShiftSharePercent(t.morning.amount, grand)).toBe(25);
+    expect(salesShiftSharePercent(t.evening.amount, grand)).toBe(75);
+    expect(formatSalesShiftSharePercent(33.333)).toBe('33.3');
   });
 });
