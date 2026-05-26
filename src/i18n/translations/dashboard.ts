@@ -54,6 +54,7 @@ export default {
   dashboardSalesCustomerDailyAvg: { ar: 'معدل العملاء', en: 'Customer avg' },
   dashboardSalesCustomerDailyAvgUnit: { ar: '/ يوم', en: '/day' },
   dashboardSalesByShift: { ar: 'مبيعات حسب الشفت', en: 'Sales by shift' },
+  dashboardShiftShareOfSales: { ar: 'نسبة من إجمالي المبيعات', en: 'Share of total sales' },
   dashboardSalesDailyAvgPrevMonth: { ar: 'المعدل اليومي — الشهر الماضي', en: 'Daily avg — prev month' },
   dashboardSalesDailyAvgCompareHint: { ar: 'مقارنة بالشهر الماضي', en: 'vs previous month' },
   /** فئات الموردين — نفس فترة التحليل */

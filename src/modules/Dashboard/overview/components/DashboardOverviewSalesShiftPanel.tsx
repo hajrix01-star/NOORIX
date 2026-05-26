@@ -2,6 +2,11 @@ import React from 'react';
 import { FmtNum } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
 import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
+import {
+  formatSalesShiftSharePercent,
+  salesShiftPeriodGrandTotal,
+  salesShiftSharePercent,
+} from '../utils/dashboardSalesShiftTotals';
 
 type Props = {
   totals: SalesShiftPeriodTotals | null;
@@ -19,6 +24,8 @@ export function DashboardOverviewSalesShiftPanel({ totals, t }: Props) {
   const hasAny = ROWS.some((r) => totals[r.key].amount > 0);
   if (!hasAny) return null;
 
+  const grandTotal = salesShiftPeriodGrandTotal(totals);
+
   return (
     <div className="mx-4 mt-2 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
       <div className="px-3 py-2 border-b border-noorix-border">
@@ -27,6 +34,11 @@ export function DashboardOverviewSalesShiftPanel({ totals, t }: Props) {
       {ROWS.map((row, idx) => {
         const bucket = totals[row.key];
         if (bucket.amount <= 0) return null;
+        const sharePct = salesShiftSharePercent(bucket.amount, grandTotal);
+        const shareLabel =
+          sharePct != null
+            ? `${formatSalesShiftSharePercent(sharePct)}%`
+            : null;
         return (
           <div
             key={row.key}
@@ -34,9 +46,19 @@ export function DashboardOverviewSalesShiftPanel({ totals, t }: Props) {
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-[10px] font-semibold text-noorix-muted truncate">{t(row.labelKey)}</span>
-              <span dir="ltr" className="shrink-0 text-[12px] font-bold text-nx-sales nx-font-numbers">
-                <FmtNum n={bucket.amount} /> <span className="nx-sar">SR</span>
-              </span>
+              <div dir="ltr" className="flex shrink-0 items-center gap-2">
+                {shareLabel ? (
+                  <span
+                    className="text-[10px] font-bold text-noorix-blue nx-font-numbers"
+                    title={t('dashboardShiftShareOfSales')}
+                  >
+                    {shareLabel}
+                  </span>
+                ) : null}
+                <span className="text-[12px] font-bold text-nx-sales nx-font-numbers">
+                  <FmtNum n={bucket.amount} /> <span className="nx-sar">SR</span>
+                </span>
+              </div>
             </div>
             <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-noorix-muted">
               <span>{t('customers')}</span>
