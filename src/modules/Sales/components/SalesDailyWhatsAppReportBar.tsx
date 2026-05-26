@@ -11,6 +11,7 @@ import {
   buildDailyShiftWhatsAppText,
   openWhatsAppWithText,
 } from '../utils/salesDayShiftReport';
+import type { SalesSummaryChannelsLike } from '../utils/salesWhatsAppChannels';
 
 type Props = {
   companyId: string;
@@ -53,6 +54,9 @@ export function SalesDailyWhatsAppReportBar({ companyId, companyName, disabled }
         dateLabel,
         report,
         t,
+        daySummaries: list as SalesSummaryChannelsLike[],
+        dayYmd: reportDate,
+        lang,
       });
       openWhatsAppWithText(text);
     } catch (e: unknown) {

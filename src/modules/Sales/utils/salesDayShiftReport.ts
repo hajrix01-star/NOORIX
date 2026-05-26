@@ -2,6 +2,11 @@ import { toYmd } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import type { SalesShiftValue } from '../constants/salesShift';
 import { parseSalesShiftValue, resolveSalesSummaryShift } from '../constants/salesShift';
+import {
+  aggregateDayChannelWhatsAppLines,
+  aggregateShiftChannelWhatsAppLines,
+  type SalesSummaryChannelsLike,
+} from './salesWhatsAppChannels';
 
 export type SalesSummaryLike = {
   status?: string;
@@ -103,42 +108,73 @@ type BuildDailyWaParams = {
   dateLabel: string;
   report: DayShiftReport;
   t: (key: string) => string;
+  /** ملخصات اليوم — لعرض قنوات البيع مجمّعة حسب الشفت */
+  daySummaries?: SalesSummaryChannelsLike[];
+  dayYmd?: string;
+  lang?: string;
 };
 
 function shiftBlock(
   title: string,
   agg: ShiftDayAggregate,
   t: (key: string) => string,
+  channelLines: string[],
 ): string[] {
   if (agg.summaryCount === 0) {
     return [title, t('salesDailyWaNoShiftData'), ''];
   }
-  return [
-    title,
+  const lines = [title];
+  if (channelLines.length > 0) {
+    lines.push(t('salesWhatsAppChannelsHeader'));
+    lines.push(...channelLines);
+  }
+  lines.push(
     `${t('salesWhatsAppTotalLine')} ${fmt(agg.total)} SR`,
     `${t('salesWhatsAppCustomersLine')} ${fmt(agg.customers, 0)}`,
     '',
-  ];
+  );
+  return lines;
 }
 
 /** نص واتساب لتقرير يومي شامل (صباحي + مسائي + يوم كامل + المجموع) */
 export function buildDailyShiftWhatsAppText(p: BuildDailyWaParams): string {
-  const { companyName, dateLabel, report, t } = p;
+  const { companyName, dateLabel, report, t, daySummaries, dayYmd, lang } = p;
   const name = (companyName || '').trim();
+  const day = dayYmd ? toYmd(dayYmd) : null;
+  const canChannels = !!(day && daySummaries?.length && lang);
+
+  const morningChannels = canChannels
+    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'morning', lang!)
+    : [];
+  const eveningChannels = canChannels
+    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'evening', lang!)
+    : [];
+  const fullDayChannels = canChannels
+    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'all', lang!)
+    : [];
+
   const lines: string[] = [
     `${t('salesDailyWaTitle')}${name ? ` — ${name}` : ''}`,
     `${t('salesWhatsAppDateLine')} ${dateLabel}`,
     '',
-    ...shiftBlock(`🌅 ${t('salesShiftMorning')}`, report.morning, t),
-    ...shiftBlock(`🌙 ${t('salesShiftEvening')}`, report.evening, t),
+    ...shiftBlock(`🌅 ${t('salesShiftMorning')}`, report.morning, t, morningChannels),
+    ...shiftBlock(`🌙 ${t('salesShiftEvening')}`, report.evening, t, eveningChannels),
   ];
 
   if (report.fullDay.summaryCount > 0) {
-    lines.push(...shiftBlock(`☀️ ${t('salesShiftFullDay')}`, report.fullDay, t));
+    lines.push(...shiftBlock(`☀️ ${t('salesShiftFullDay')}`, report.fullDay, t, fullDayChannels));
   }
 
+  const grandChannelLines = canChannels
+    ? aggregateDayChannelWhatsAppLines(daySummaries!, day, lang!)
+    : [];
+
+  lines.push(`📌 ${t('salesDailyWaGrandTotal')}`);
+  if (grandChannelLines.length > 0) {
+    lines.push(t('salesWhatsAppChannelsHeader'));
+    lines.push(...grandChannelLines);
+  }
   lines.push(
-    `📌 ${t('salesDailyWaGrandTotal')}`,
     `${t('salesWhatsAppTotalLine')} ${fmt(report.grand.total)} SR`,
     `${t('salesWhatsAppCustomersLine')} ${fmt(report.grand.customers, 0)}`,
   );

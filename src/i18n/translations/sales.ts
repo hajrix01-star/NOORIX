@@ -128,6 +128,7 @@ export default {
   salesWhatsAppAvgInvoiceLine: { ar: '🧾 متوسط الفاتورة:', en: '🧾 Avg. sale:' },
   salesWhatsAppCashLine: { ar: '💵 الصندوق:', en: '💵 Cash on hand:' },
   salesWhatsAppNoChannels: { ar: '• لا يوجد تفصيل قنوات.', en: '• No channel breakdown.' },
+  salesWhatsAppChannelsHeader: { ar: '🏪 قنوات البيع:', en: '🏪 Sales channels:' },
   salesDailyWaTitle: { ar: '📊 تقرير مبيعات يومي', en: '📊 Daily sales report' },
   salesDailyWaPickDay: { ar: 'تاريخ التقرير', en: 'Report date' },
   salesDailyWaSend: { ar: 'إرسال تقرير يومي واتساب', en: 'Send daily WhatsApp report' },

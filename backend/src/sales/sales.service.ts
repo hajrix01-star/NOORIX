@@ -32,7 +32,7 @@ export class SalesService {
     idempotencyKey?: string;
     userId?:         string;
   }) {
-    return this.financialCore.processInflow(
+    const result = await this.financialCore.processInflow(
       {
         companyId:       dto.companyId,
         transactionDate: dto.transactionDate,
@@ -45,6 +45,8 @@ export class SalesService {
       },
       dto.userId,
     );
+    const summary = await this.loadSummaryWithChannels(result.summary.id, dto.companyId);
+    return { ...result, summary: summary ?? result.summary };
   }
 
   /** عدة ملخصات (شفتان كحد أقصى) في معاملة واحدة — للإدخال الديناميكي */
@@ -70,11 +72,25 @@ export class SalesService {
       channels:        item.channels,
       notes:           item.notes,
     }));
-    return this.financialCore.processInflowBatch(
+    const batch = await this.financialCore.processInflowBatch(
       inflowDtos,
       dto.userId,
       dto.batchIdempotencyKey,
     );
+    const summaries = await Promise.all(
+      (batch.summaries || []).map(async (s) => {
+        const full = await this.loadSummaryWithChannels(s.id, dto.companyId);
+        return full ?? s;
+      }),
+    );
+    return { ...batch, summaries };
+  }
+
+  private async loadSummaryWithChannels(id: string, companyId: string) {
+    return this.prisma.dailySalesSummary.findFirst({
+      where: { id, companyId },
+      include: this.dailySalesSummaryListInclude(),
+    });
   }
 
   /** تضمين موحّد لقنوات الملخص — يُستخدم في القائمة وحزمة الداشبورد. */
@@ -86,7 +102,7 @@ export class SalesService {
           { vault: { nameAr: 'asc' } },
         ],
         include: {
-          vault: { select: { nameAr: true, type: true, paymentMethod: true, sortOrder: true } },
+          vault: { select: { id: true, nameAr: true, nameEn: true, type: true, paymentMethod: true, sortOrder: true } },
         },
       },
       createdBy: { select: { nameAr: true } },
