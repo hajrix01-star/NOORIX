@@ -6,12 +6,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { splitTaxFromTotal } from '../../../utils/math-engine';
 import { sumObjectValues } from '../../../utils/math-engine';
 import { getSaudiToday } from '../../../utils/saudiDate';
-import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import { SalesShiftPicker } from './SalesShiftPicker';
+import type { SalesShiftFormValue, SalesShiftValue } from '../constants/salesShift';
+import { isSalesShiftValue } from '../constants/salesShift';
 
 export function SalesEntryModal({
   companyId,
@@ -20,7 +22,6 @@ export function SalesEntryModal({
   salesChannelsError = '',
   vatEnabled = false,
   vatRate = 0.15,
-  shiftsEnabled = false,
   createSummary,
   onSuccess,
   onError,
@@ -32,7 +33,7 @@ export function SalesEntryModal({
   const [txDate, setTxDate] = useState(getSaudiToday());
   const [customerCount, setCustomerCount] = useState('');
   const [cashOnHand, setCashOnHand] = useState('');
-  const [shift, setShift] = useState<'morning' | 'evening' | 'all'>(shiftsEnabled ? 'morning' : 'all');
+  const [shift, setShift] = useState<SalesShiftFormValue>('');
   const [notes, setNotes] = useState('');
   const [channelAmounts, setChannelAmounts] = useState<Record<string, string>>({});
   const [savedSummary, setSavedSummary] = useState<any>(null);
@@ -40,8 +41,8 @@ export function SalesEntryModal({
   useEffect(() => {
     setTxDate(getSaudiToday());
     setChannelAmounts({});
-    setShift(shiftsEnabled ? 'morning' : 'all');
-  }, [companyId, shiftsEnabled]);
+    setShift('');
+  }, [companyId]);
 
   const totalAmount = useMemo(() => sumObjectValues(channelAmounts), [channelAmounts]);
   const avgPerCustomer = useMemo(() => {
@@ -54,18 +55,20 @@ export function SalesEntryModal({
     [totalAmount, vatEnabled, vatRate],
   );
 
+  const shiftSelected = isSalesShiftValue(shift);
+
   function resetForm() {
     setTxDate(getSaudiToday());
     setCustomerCount('');
     setCashOnHand('');
-    setShift(shiftsEnabled ? 'morning' : 'all');
+    setShift('');
     setNotes('');
     setChannelAmounts({});
     setSavedSummary(null);
   }
 
   function handleSave() {
-    if (!companyId || createSummary.isPending) return;
+    if (!companyId || createSummary.isPending || !shiftSelected) return;
     const cc = parseInt(customerCount, 10) || 0;
     if (cc <= 0) return;
     const channels = salesChannels
@@ -78,7 +81,7 @@ export function SalesEntryModal({
         transactionDate: txDate,
         customerCount: parseInt(customerCount, 10) || 0,
         cashOnHand: cashOnHand || '0',
-        shift: shiftsEnabled ? shift : 'all',
+        shift: shift as SalesShiftValue,
         channels,
         notes: notes.trim() || undefined,
         idempotencyKey,
@@ -117,12 +120,10 @@ export function SalesEntryModal({
         }
       >
         <div className="flex flex-col gap-4">
-          {/* رقم الملخص */}
           <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-noorix-bg-muted">
             <span className="text-[12px] text-noorix-muted font-medium">{t('summaryNumber')}</span>
             <strong className="text-[14px]" style={{ color: 'var(--noorix-accent-blue)' }}>#{savedSummary.summaryNumber}</strong>
           </div>
-          {/* أرقام الإجمالي والعملاء */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col items-center py-4 rounded-xl" style={{ background: 'var(--noorix-green-12)' }}>
               <span className="text-[11px] text-noorix-muted mb-1">{t('total')}</span>
@@ -135,19 +136,17 @@ export function SalesEntryModal({
               <span className="text-[11px] text-noorix-muted mt-0.5">&nbsp;</span>
             </div>
           </div>
-          {/* إرسال واتساب */}
           <Button
             variant="success"
             size="md"
             className="w-full"
             onClick={() => {
-              /* الـ API لا يعيد channels مع الملخص بعد الإنشاء — نبنيها من النموذج حتى تظهر في واتساب */
               const fromForm = salesChannels
                 .filter((v: any) => parseFloat(channelAmounts[v.id]) > 0)
                 .map((v: any) => ({ vaultId: v.id, amount: channelAmounts[v.id], vault: v }));
               onWhatsApp?.({
                 ...savedSummary,
-                shift: savedSummary?.shift || (shiftsEnabled ? shift : 'all'),
+                shift: savedSummary?.shift || (shiftSelected ? shift : 'all'),
                 channels: fromForm.length ? fromForm : (savedSummary.channels || []),
               });
             }}
@@ -171,7 +170,16 @@ export function SalesEntryModal({
         <>
           <Button
             variant="primary"
-            disabled={createSummary.isPending || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || salesChannels.length === 0 || !customerCount || parseInt(customerCount, 10) <= 0}
+            disabled={
+              createSummary.isPending
+              || salesChannelsLoading
+              || !!salesChannelsError
+              || totalAmount.lte(0)
+              || salesChannels.length === 0
+              || !customerCount
+              || parseInt(customerCount, 10) <= 0
+              || !shiftSelected
+            }
             onClick={handleSave}
             className="flex-1 min-w-0"
           >
@@ -187,19 +195,7 @@ export function SalesEntryModal({
         <Input type="number" min="0" step="0.01" label={t('cashOnHand')} value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
-      {shiftsEnabled && (
-        <div className="mb-4">
-          <label className="text-[13px] font-bold mb-2 block">{t('salesShiftLabel')}</label>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant={shift === 'morning' ? 'primary' : 'ghost'} onClick={() => setShift('morning')}>
-              {t('salesShiftMorning')}
-            </Button>
-            <Button size="sm" variant={shift === 'evening' ? 'primary' : 'ghost'} onClick={() => setShift('evening')}>
-              {t('salesShiftEvening')}
-            </Button>
-          </div>
-        </div>
-      )}
+      <SalesShiftPicker mode="form" value={shift} onChange={setShift} required className="mb-4" />
 
       <div className="mb-4">
         <label className="text-[13px] font-bold mb-2 block">{t('salesChannels')}</label>

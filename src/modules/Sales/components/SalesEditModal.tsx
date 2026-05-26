@@ -7,8 +7,11 @@ import Decimal from 'decimal.js';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { splitTaxFromTotal } from '../../../utils/math-engine';
-import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
+import { SalesShiftPicker } from './SalesShiftPicker';
+import type { SalesShiftFormValue, SalesShiftValue } from '../constants/salesShift';
+import { isSalesShiftValue, parseSalesShiftValue } from '../constants/salesShift';
 
 const CHANNEL_COLORS = {
   cash: { bg: 'var(--noorix-green-8)', border: 'var(--noorix-accent-green)', icon: '💵' },
@@ -16,12 +19,12 @@ const CHANNEL_COLORS = {
   app:  { bg: 'var(--noorix-violet-8)', border: 'var(--noorix-accent-violet)', icon: '📱' },
 };
 
-export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, shiftsEnabled = false, onSaved, onClose }: any) {
+export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }: any) {
   const { lang, t } = useTranslation();
   const [txDate, setTxDate] = useState('');
   const [customerCount, setCustomerCount] = useState('');
   const [cashOnHand, setCashOnHand] = useState('');
-  const [shift, setShift] = useState<'morning' | 'evening' | 'all'>('all');
+  const [shift, setShift] = useState<SalesShiftFormValue>('');
   const [notes, setNotes] = useState('');
   const [channelAmounts, setChannelAmounts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -36,7 +39,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
     setTxDate(toDateInputYmd(summary.transactionDate));
     setCustomerCount(String(summary.customerCount ?? 0));
     setCashOnHand(String(summary.cashOnHand ?? 0));
-    setShift(summary.shift === 'morning' || summary.shift === 'evening' ? summary.shift : 'all');
+    setShift(parseSalesShiftValue(summary.shift, 'all'));
     setNotes(summary.notes || '');
     setChannelAmounts(ch);
   }, [summary]);
@@ -86,13 +89,17 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       setError('يجب أن يكون إجمالي المبيعات أكبر من صفر');
       return;
     }
+    if (!isSalesShiftValue(shift)) {
+      setError(t('salesShiftRequired'));
+      return;
+    }
     setSaving(true);
     try {
       await onSaved({
         transactionDate: txDate,
         customerCount: parseInt(customerCount, 10) || 0,
         cashOnHand: cashOnHand || '0',
-        shift: shiftsEnabled ? shift : (summary.shift || 'all'),
+        shift: shift as SalesShiftValue,
         channels,
         notes: notes.trim() || undefined,
       });
@@ -118,7 +125,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         <>
           <Button
             variant="primary"
-            disabled={saving || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || mergedSalesChannels.length === 0}
+            disabled={saving || salesChannelsLoading || !!salesChannelsError || totalAmount.lte(0) || mergedSalesChannels.length === 0 || !isSalesShiftValue(shift)}
             onClick={handleSave}
             className="flex-1 min-w-0"
           >
@@ -140,19 +147,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         <Input type="number" min="0" step="0.01" label="المبلغ الموجود بالصندوق" value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
-      {shiftsEnabled && (
-        <div className="mb-4">
-          <label className="text-[13px] font-bold mb-2 block">{t('salesShiftLabel')}</label>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant={shift === 'morning' ? 'primary' : 'ghost'} onClick={() => setShift('morning')}>
-              {t('salesShiftMorning')}
-            </Button>
-            <Button size="sm" variant={shift === 'evening' ? 'primary' : 'ghost'} onClick={() => setShift('evening')}>
-              {t('salesShiftEvening')}
-            </Button>
-          </div>
-        </div>
-      )}
+      <SalesShiftPicker mode="form" value={shift} onChange={setShift} required className="mb-4" />
 
       <div className="mb-4">
         <label className="text-[13px] font-bold mb-2 block">قنوات البيع</label>

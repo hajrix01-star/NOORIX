@@ -2,59 +2,40 @@ import { describe, it, expect } from 'vitest';
 import { buildCompanyUpdateBody, mergeCompanySavePatch } from './companyUpdateBody';
 
 describe('buildCompanyUpdateBody', () => {
-  it('always includes salesShiftsEnabled even when unchanged from baseline', () => {
-    const body = buildCompanyUpdateBody({
-      nameAr: 'شركة',
-      salesShiftsEnabled: true,
-      _initial: { salesShiftsEnabled: true },
-    });
-    expect(body.salesShiftsEnabled).toBe(true);
-    expect(body.nameAr).toBe('شركة');
-  });
-
-  it('sends salesShiftsEnabled true when toggled on from false baseline', () => {
-    const body = buildCompanyUpdateBody({
-      nameAr: 'شركة',
-      salesShiftsEnabled: true,
-      _initial: { salesShiftsEnabled: false },
-    });
-    expect(body.salesShiftsEnabled).toBe(true);
-  });
-
-  it('sends salesShiftsEnabled false when toggled off', () => {
-    const body = buildCompanyUpdateBody({
-      nameAr: 'شركة',
-      salesShiftsEnabled: false,
-      _initial: { salesShiftsEnabled: true },
-    });
-    expect(body.salesShiftsEnabled).toBe(false);
-  });
-
-  it('omits unchanged text fields but keeps nameAr and salesShiftsEnabled', () => {
+  it('always includes nameAr', () => {
     const body = buildCompanyUpdateBody({
       nameAr: 'شركة',
       nameEn: 'Co',
-      salesShiftsEnabled: false,
-      _initial: { nameEn: 'Co', salesShiftsEnabled: false },
+      _initial: { nameEn: 'Co' },
     });
-    expect(body).toEqual({ nameAr: 'شركة', salesShiftsEnabled: false });
+    expect(body).toEqual({ nameAr: 'شركة' });
+  });
+
+  it('includes changed text fields only', () => {
+    const body = buildCompanyUpdateBody({
+      nameAr: 'شركة',
+      phone: '05',
+      _initial: { phone: '' },
+    });
+    expect(body).toEqual({ nameAr: 'شركة', phone: '05' });
+  });
+
+  it('does not include salesShiftsEnabled', () => {
+    const body = buildCompanyUpdateBody({
+      nameAr: 'شركة',
+      salesShiftsEnabled: true,
+    });
+    expect(body).not.toHaveProperty('salesShiftsEnabled');
   });
 });
 
 describe('mergeCompanySavePatch', () => {
-  it('prefers server salesShiftsEnabled in cache patch', () => {
+  it('merges server company into patch', () => {
     const merged = mergeCompanySavePatch(
-      { data: { id: 'c1', salesShiftsEnabled: true, nameAr: 'شركة' } },
-      { id: 'c1', body: { nameAr: 'شركة', salesShiftsEnabled: true } },
+      { data: { id: 'c1', nameAr: 'شركة', phone: '05' } },
+      { id: 'c1', body: { nameAr: 'شركة', phone: '05' } },
     );
-    expect(merged?.patch.salesShiftsEnabled).toBe(true);
-  });
-
-  it('coerces string false from server', () => {
-    const merged = mergeCompanySavePatch(
-      { data: { id: 'c1', salesShiftsEnabled: 'false' } },
-      { id: 'c1', body: {} },
-    );
-    expect(merged?.patch.salesShiftsEnabled).toBe(false);
+    expect(merged?.patch.nameAr).toBe('شركة');
+    expect(merged?.patch.phone).toBe('05');
   });
 });

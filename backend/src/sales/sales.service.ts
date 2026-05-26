@@ -37,7 +37,7 @@ export class SalesService {
         companyId:       dto.companyId,
         transactionDate: dto.transactionDate,
         customerCount:   dto.customerCount,
-        shift:           dto.shift ?? 'all',
+        shift:           dto.shift,
         cashOnHand:      dto.cashOnHand,
         channels:        dto.channels,
         notes:           dto.notes,
@@ -196,7 +196,7 @@ export class SalesService {
 
     const where = { companyId, ...statusFilter, ...dateFilter, ...searchFilter };
     const shiftFilter =
-      shift === 'morning' || shift === 'evening'
+      shift === 'morning' || shift === 'evening' || shift === 'all'
         ? { shift }
         : {};
     const whereWithShift = { ...where, ...shiftFilter };

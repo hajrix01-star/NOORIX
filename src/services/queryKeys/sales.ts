@@ -16,7 +16,7 @@ export const salesKeys = {
     sortDir: string,
     salesViewSummariesList: boolean,
     showCancelledSales: boolean,
-    shift: 'morning' | 'evening' | 'all',
+    shift: string,
   ) =>
     [
       'sales-summaries-paged',

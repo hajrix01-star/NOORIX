@@ -1,6 +1,8 @@
 import type { ApiParsedResult } from '../../../types/api';
 import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+import type { SalesListShiftFilter } from '../../../modules/Sales/constants/salesShift';
+import { listShiftFilterToApiParam } from '../../../modules/Sales/constants/salesShift';
 
 // ——— ملخصات المبيعات اليومية ———
 export async function createDailySalesSummary(body: unknown): Promise<ApiParsedResult> {
@@ -59,7 +61,7 @@ export async function getDailySalesSummaries(
   sortBy?: string,
   sortDir?: string,
   includeCancelled?: boolean,
-  shift?: 'morning' | 'evening' | 'all',
+  shift?: SalesListShiftFilter,
 ): Promise<ApiParsedResult> {
   const size = Math.min(200, Math.max(1, Number(pageSize) || 50));
   const params: Record<string, string> = {
@@ -73,7 +75,8 @@ export async function getDailySalesSummaries(
   if (sortBy) params.sortBy = sortBy;
   if (sortDir) params.sortDir = sortDir;
   if (includeCancelled) params.includeCancelled = '1';
-  if (shift && shift !== 'all') params.shift = shift;
+  const shiftParam = shift != null ? listShiftFilterToApiParam(shift) : undefined;
+  if (shiftParam) params.shift = shiftParam;
   const res = await apiGet('/api/v1/sales/summaries', params);
   if (!res.success) return res;
   const raw = res.data?.data ?? res.data;
@@ -99,7 +102,7 @@ export async function fetchAllSalesSummariesForExport(
   sortBy: any = 'transactionDate',
   sortDir: any = 'desc',
   includeCancelled: any = true,
-  shift: 'morning' | 'evening' | 'all' = 'all',
+  shift: SalesListShiftFilter = 'any',
 ): Promise<unknown[]> {
   const pageSize = 150;
   let page = 1;

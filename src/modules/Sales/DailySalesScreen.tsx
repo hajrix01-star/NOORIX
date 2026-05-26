@@ -28,17 +28,12 @@ import ImportExportModal from '../../components/ImportExportModal';
 import { formatSalesForExport } from '../../utils/importTemplates';
 import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 import { buildActiveCancelledStatusMap } from '../../constants/badgeMaps';
-import { coerceCompanyBoolean } from '../../utils/coerceCompanyBoolean';
 import { salesKeys, companyKeys } from '../../services/queryKeys';
+import { SalesShiftPicker } from './components/SalesShiftPicker';
+import type { SalesListShiftFilter, SalesShiftValue } from './constants/salesShift';
+import { getSalesShiftLabel, parseSalesShiftValue } from './constants/salesShift';
 
 const PAGE_SIZE = 50;
-type SalesShiftFilter = 'morning' | 'evening' | 'all';
-
-function getSalesShiftLabel(shift: SalesShiftFilter, t: (k: string) => string): string {
-  if (shift === 'morning') return t('salesShiftMorning');
-  if (shift === 'evening') return t('salesShiftEvening');
-  return t('salesShiftAll');
-}
 
 /** عرض قنوات البيع في الجدول والجوال — شرائح واضحة بدل نص مفصول بـ | */
 function SalesChannelsChips({ channels, lang }: any) {
@@ -112,8 +107,7 @@ export default function DailySalesScreen() {
   const [showImportExport, setShowImportExport] = useState(false);
   /** افتراضي: الملخصات الملغاة مخفية (لا يُرسل includeCancelled للـ API) */
   const [showCancelledSales, setShowCancelledSales] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<SalesShiftFilter>('all');
-  const [salesShiftsEnabled, setSalesShiftsEnabled] = useState<boolean>(false);
+  const [selectedShift, setSelectedShift] = useState<SalesListShiftFilter>('any');
 
   const salesFullHistory = hasPermission(userRole, PERMISSIONS.SALES_FULL_HISTORY, userPermissions);
   const salesViewSummariesList = hasPermission(userRole, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, userPermissions);
@@ -153,12 +147,8 @@ export default function DailySalesScreen() {
   }, [debouncedQEffective, dateFilter.startDate, dateFilter.endDate, showCancelledSales, selectedShift]);
 
   useEffect(() => {
-    setSelectedShift('all');
+    setSelectedShift('any');
   }, [companyId]);
-
-  useEffect(() => {
-    setSalesShiftsEnabled(coerceCompanyBoolean((activeCo as { salesShiftsEnabled?: unknown })?.salesShiftsEnabled, false));
-  }, [companyId, activeCo]);
 
   useEffect(() => {
     if (!salesFullHistory) return;
@@ -237,20 +227,6 @@ export default function DailySalesScreen() {
   const vatEnabled = !!companyData?.vatEnabledForSales;
   const vatRate = companyData?.vatRatePercent != null ? Number(companyData.vatRatePercent) / 100 : 0.15;
 
-  useEffect(() => {
-    if (companyData && companyData.salesShiftsEnabled !== undefined && companyData.salesShiftsEnabled !== null) {
-      setSalesShiftsEnabled(coerceCompanyBoolean(companyData.salesShiftsEnabled, false));
-      return;
-    }
-    setSalesShiftsEnabled(coerceCompanyBoolean((activeCo as { salesShiftsEnabled?: unknown })?.salesShiftsEnabled, false));
-  }, [companyData, activeCo, companyId]);
-
-  useEffect(() => {
-    if (!salesShiftsEnabled && selectedShift !== 'all') {
-      setSelectedShift('all');
-    }
-  }, [salesShiftsEnabled, selectedShift]);
-
   // ── حسابات ──
   function buildWhatsAppText(s: any) {
     const cc = s.customerCount || 0;
@@ -268,7 +244,7 @@ export default function DailySalesScreen() {
       `${t('salesWhatsAppReportTitle')}${name ? ` ${name}` : ''}`,
       `${t('salesWhatsAppDateLine')} ${dateWithWeekday}`,
       `${t('salesWhatsAppSummaryRef')} ${s.summaryNumber ?? '—'}`,
-      `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel((s.shift || 'all') as SalesShiftFilter, t)}`,
+      `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel(s.shift, t)}`,
       '',
     ];
 
@@ -337,7 +313,7 @@ export default function DailySalesScreen() {
     const channelsText = (s.channels || []).map((ch: any) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
     return {
       ...s,
-      shift: (s.shift || 'all') as SalesShiftFilter,
+      shift: parseSalesShiftValue(s.shift, 'all') as SalesShiftValue,
       channelsText,
       avgPerCustomer: cc > 0 ? total / cc : 0,
     };
@@ -369,11 +345,9 @@ export default function DailySalesScreen() {
       render: (v: any, row: any) => (
         <div className="flex flex-col items-start gap-0.5">
           <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>
-          {(salesShiftsEnabled || row.shift !== 'all') ? (
-            <span className="inline-flex items-center rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
-              {getSalesShiftLabel((row.shift || 'all') as SalesShiftFilter, t)}
-            </span>
-          ) : null}
+          <span className="inline-flex items-center rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
+            {getSalesShiftLabel(row.shift, t)}
+          </span>
         </div>
       ) },
     { key: 'channelsText', label: t('salesChannels'), sortable: false, width: '38%',
@@ -397,7 +371,7 @@ export default function DailySalesScreen() {
         />
       ),
     },
-  ], [userRole, t, STATUS_MAP, handleDeleteSummary, lang, salesShiftsEnabled]);
+  ], [userRole, t, STATUS_MAP, handleDeleteSummary, lang]);
 
   const footerCells = (
     <>
@@ -435,7 +409,7 @@ export default function DailySalesScreen() {
       return {
         summaryNumber: s.summaryNumber,
         transactionDate: formatSaudiDate(s.transactionDate),
-        shiftLabel: getSalesShiftLabel((s.shift || 'all') as SalesShiftFilter, t),
+        shiftLabel: getSalesShiftLabel(s.shift, t),
         channelsText,
         customerCount: cc,
         totalAmount: fmt(total),
@@ -531,7 +505,7 @@ export default function DailySalesScreen() {
       const ch = (s.channels || []).map((c: any) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
       const total = Number(s.totalAmount || 0);
       const cc = s.customerCount || 0;
-      const shiftLabel = getSalesShiftLabel((s.shift || 'all') as SalesShiftFilter, t);
+      const shiftLabel = getSalesShiftLabel(s.shift, t);
       return `<tr><td>${(s.summaryNumber || '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${shiftLabel}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total)}</td><td>${cc > 0 ? fmt(total / cc) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
     }).join('');
     openPrintWindow({
@@ -549,11 +523,9 @@ export default function DailySalesScreen() {
         <span className="text-[14px] font-bold text-noorix-blue ltr">#{row.summaryNumber}</span>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
-          {(salesShiftsEnabled || row.shift !== 'all') && (
-            <span className="rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
-              {getSalesShiftLabel((row.shift || 'all') as SalesShiftFilter, t)}
-            </span>
-          )}
+          <span className="rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
+            {getSalesShiftLabel(row.shift, t)}
+          </span>
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
       </div>
@@ -579,16 +551,14 @@ export default function DailySalesScreen() {
         <SalesActionsCell summary={row} userRole={userRole} onPrint={openWhatsApp} onEdit={setEditingSummary} onDelete={handleDeleteSummary} />
       </div>
     </div>
-  ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang, salesShiftsEnabled]);
+  ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang]);
 
   const renderCompactRow = useCallback((row: any) => (
     <div onClick={() => setEditingSummary(row)} style={{ cursor: 'pointer' }}>
       <div className="nx-cr__line1">
         <span className="nx-cr__id">#{row.summaryNumber}</span>
         <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
-        {(salesShiftsEnabled || row.shift !== 'all') && (
-          <span className="nx-cr__meta">{getSalesShiftLabel((row.shift || 'all') as SalesShiftFilter, t)}</span>
-        )}
+        <span className="nx-cr__meta">{getSalesShiftLabel(row.shift, t)}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
       </div>
       <div className="nx-cr__line2">
@@ -609,7 +579,7 @@ export default function DailySalesScreen() {
         </div>
       </div>
     </div>
-  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary, salesShiftsEnabled]);
+  ), [STATUS_MAP, t, handleDeleteSummary, setEditingSummary]);
 
   return (
     <ScreenShell>
@@ -622,7 +592,6 @@ export default function DailySalesScreen() {
           companyId={companyId}
           vatEnabled={vatEnabled}
           vatRate={vatRate}
-          shiftsEnabled={salesShiftsEnabled}
           onSaved={handleEditSave}
           onClose={() => setEditingSummary(null)}
         />
@@ -636,7 +605,6 @@ export default function DailySalesScreen() {
           salesChannelsError={salesChannelsHasError ? (salesChannelsError?.message || t('salesChannelsLoadFailed')) : ''}
           vatEnabled={vatEnabled}
           vatRate={vatRate}
-          shiftsEnabled={salesShiftsEnabled}
           createSummary={createSummary}
           onSuccess={(summary: any) => showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success')}
           onError={(msg: any) => showToast(msg || t('saveFailed'), 'error')}
@@ -674,19 +642,8 @@ export default function DailySalesScreen() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('salesDailySummary')}</h1>
         <div className="flex items-center gap-2 flex-wrap print:hidden">
-          {hasCompany && salesViewSummariesList && salesShiftsEnabled && (
-            <div className="inline-flex items-center gap-1 rounded-lg border border-noorix-border bg-noorix-bg-muted/50 p-1">
-              <span className="text-[12px] font-semibold text-noorix-muted px-1">{t('salesShiftFilter')}</span>
-              <Button size="sm" variant={selectedShift === 'all' ? 'primary' : 'ghost'} onClick={() => setSelectedShift('all')}>
-                {t('salesShiftAll')}
-              </Button>
-              <Button size="sm" variant={selectedShift === 'morning' ? 'primary' : 'ghost'} onClick={() => setSelectedShift('morning')}>
-                {t('salesShiftMorning')}
-              </Button>
-              <Button size="sm" variant={selectedShift === 'evening' ? 'primary' : 'ghost'} onClick={() => setSelectedShift('evening')}>
-                {t('salesShiftEvening')}
-              </Button>
-            </div>
+          {hasCompany && salesViewSummariesList && (
+            <SalesShiftPicker mode="filter" value={selectedShift} onChange={setSelectedShift} />
           )}
           {hasCompany && salesViewSummariesList && (
             <Button

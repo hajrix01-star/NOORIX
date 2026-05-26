@@ -1,17 +1,13 @@
-import { coerceCompanyBoolean } from '../../../utils/coerceCompanyBoolean';
-
 function normalizeText(v: unknown) {
   return String(v ?? '').trim();
 }
 
 /**
- * جسم PATCH لتحديث الشركة: الحقول النصية المتغيرة فقط + salesShiftsEnabled دائماً
- * (علم إعدادات يجب أن يُرسل صراحةً عند الحفظ حتى لا يُتخطى بمنطق المقارنة).
+ * جسم PATCH لتحديث الشركة — الحقول النصية المتغيرة فقط + nameAr إلزامي في الطلب.
  */
 export function buildCompanyUpdateBody(editModal: Record<string, unknown> | null | undefined) {
   const initial = (editModal?._initial as Record<string, unknown> | undefined) || {};
   const nameAr = normalizeText(editModal?.nameAr);
-  const salesShiftsEnabled = coerceCompanyBoolean(editModal?.salesShiftsEnabled, false);
 
   const current = {
     nameEn: normalizeText(editModal?.nameEn),
@@ -30,7 +26,7 @@ export function buildCompanyUpdateBody(editModal: Record<string, unknown> | null
     logoUrl: normalizeText(initial.logoUrl),
   };
 
-  const body: Record<string, unknown> = { nameAr, salesShiftsEnabled };
+  const body: Record<string, unknown> = { nameAr };
   if (current.nameEn !== baseline.nameEn) body.nameEn = current.nameEn;
   if (current.taxNumber !== baseline.taxNumber) body.taxNumber = current.taxNumber;
   if (current.phone !== baseline.phone) body.phone = current.phone;
@@ -56,9 +52,5 @@ export function mergeCompanySavePatch(
       : null;
 
   const patch: Record<string, unknown> = saved ? { ...requested, ...saved } : { ...requested };
-  if (patch.salesShiftsEnabled !== undefined) {
-    patch.salesShiftsEnabled = coerceCompanyBoolean(patch.salesShiftsEnabled);
-  }
-
   return { id, patch };
 }
