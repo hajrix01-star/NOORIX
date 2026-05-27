@@ -4660,10 +4660,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   .nx-orders-summary-card {
     box-shadow: none;
   }
-  .nx-orders-summary-section {
-    background: var(--noorix-bg-muted);
-    box-shadow: none;
-  }
   .nx-orders-tab-content .noorix-surface-card:not(.noorix-table-frame) {
     box-shadow: none;
   }
