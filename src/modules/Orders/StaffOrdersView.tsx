@@ -598,6 +598,7 @@ export function StaffOrdersView({ companyId }: { companyId: string }) {
         items={tabs}
         value={activeTab}
         onChange={(v) => setActiveTab(v as 'order' | 'sale')}
+        contentClassName="px-3 pt-3 pb-4 sm:px-4"
       >
         <StaffOrderPanel key={activeTab} companyId={companyId} productType={activeTab} />
       </ScreenTabs>
