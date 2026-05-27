@@ -7,11 +7,14 @@ export interface StaffOrderItemInput {
   quantity: string;
   unit?: string;
   notes?: string;
+  /** قسم الصنف — يُستنتج من تعريف المنتج إن لم يُمرَّر */
+  sectionName?: string;
 }
 
 export interface CreateStaffOrderDto {
   companyId: string;
-  sectionName: string;
+  /** اختياري — إن لم يُمرَّر يُجزَّأ الطلب حسب أقسام الأصناف */
+  sectionName?: string;
   orderType?: string;  // 'order' | 'sale'
   /** YYYY-MM-DD — يوم المبيعات (تبويبة المبيعات) */
   saleDate?: string;
@@ -35,37 +38,74 @@ function staffOrderDayKey(o: { saleDate?: Date | null; createdAt: Date }): strin
 export class OrdersStaffService {
   constructor(private readonly prisma: TenantPrismaService) {}
 
-  async createStaffOrder(userId: string, dto: CreateStaffOrderDto) {
-    const tenantId = TenantContext.getTenantId();
-    if (!dto.items?.length) throw new BadRequestException('يجب إضافة صنف واحد على الأقل');
-    if (!dto.sectionName?.trim()) throw new BadRequestException('اسم القسم مطلوب');
+  private resolveProductSection(product: { sections?: unknown } | null | undefined): string {
+    const secs = product?.sections as string[] | null;
+    if (Array.isArray(secs) && secs.length > 0) return secs[0];
+    return 'عام';
+  }
 
-    const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
-    const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
+  private async groupItemsBySection(
+    companyId: string,
+    items: StaffOrderItemInput[],
+    explicitSection?: string,
+  ): Promise<Map<string, StaffOrderItemInput[]>> {
+    const groups = new Map<string, StaffOrderItemInput[]>();
+    if (explicitSection?.trim()) {
+      groups.set(explicitSection.trim(), items);
+      return groups;
+    }
 
-    const qty = dto.items.map((it) => {
+    const productIds = [...new Set(items.map((it) => it.productId).filter(Boolean))];
+    const products = productIds.length
+      ? await this.prisma.orderProduct.findMany({
+          where: { companyId, id: { in: productIds } },
+          select: { id: true, sections: true },
+        })
+      : [];
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    for (const it of items) {
+      const fromItem = it.sectionName?.trim();
+      const fromProduct = this.resolveProductSection(productMap.get(it.productId));
+      const sec = fromItem || fromProduct;
+      if (!groups.has(sec)) groups.set(sec, []);
+      groups.get(sec)!.push(it);
+    }
+    return groups;
+  }
+
+  private validateItemQuantities(items: StaffOrderItemInput[]): number[] {
+    return items.map((it) => {
       const q = parseFloat(it.quantity);
       if (!it.productId || isNaN(q) || q <= 0) throw new BadRequestException('بيانات الصنف غير صحيحة');
       return q;
     });
+  }
 
-    const isSale = orderType === 'sale';
-    const saleDate = isSale ? parseSaleDateYmd(dto.saleDate || new Date().toISOString().slice(0, 10)) : null;
-    const sentAt = isSale ? new Date() : null;
-
-    const order = await this.prisma.staffOrder.create({
+  private async createStaffOrderRecord(
+    tenantId: string,
+    userId: string,
+    dto: CreateStaffOrderDto,
+    sectionName: string,
+    items: StaffOrderItemInput[],
+    orderType: 'order' | 'sale',
+    saleDate: Date | null,
+    sentAt: Date | null,
+  ) {
+    const qty = this.validateItemQuantities(items);
+    return this.prisma.staffOrder.create({
       data: {
         tenantId,
         companyId: dto.companyId,
         userId,
-        sectionName: dto.sectionName.trim(),
+        sectionName,
         orderType,
         saleDate,
         notes: dto.notes?.trim() || null,
-        status: isSale ? 'sent' : 'pending',
+        status: orderType === 'sale' ? 'sent' : 'pending',
         sentAt,
         items: {
-          create: dto.items.map((it, i) => ({
+          create: items.map((it, i) => ({
             productId: it.productId,
             quantity: qty[i],
             unit: it.unit?.trim() || null,
@@ -78,11 +118,42 @@ export class OrdersStaffService {
         user: { select: { nameAr: true, nameEn: true } },
       },
     });
+  }
 
-    if (!isSale) return order;
+  async createStaffOrder(userId: string, dto: CreateStaffOrderDto) {
+    const tenantId = TenantContext.getTenantId();
+    if (!dto.items?.length) throw new BadRequestException('يجب إضافة صنف واحد على الأقل');
 
-    const whatsAppText = this.buildSalesWhatsAppText(order, saleDate!, lang);
-    return { ...order, whatsAppText };
+    const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
+    const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
+    const isSale = orderType === 'sale';
+    const saleDate = isSale ? parseSaleDateYmd(dto.saleDate || new Date().toISOString().slice(0, 10)) : null;
+    const sentAt = isSale ? new Date() : null;
+
+    const grouped = await this.groupItemsBySection(dto.companyId, dto.items, dto.sectionName);
+    const sectionEntries = [...grouped.entries()];
+
+    const orders: Awaited<ReturnType<typeof this.createStaffOrderRecord>>[] = [];
+    for (const [sectionName, sectionItems] of sectionEntries) {
+      orders.push(
+        await this.createStaffOrderRecord(
+          tenantId,
+          userId,
+          dto,
+          sectionName,
+          sectionItems,
+          orderType,
+          saleDate,
+          sentAt,
+        ),
+      );
+    }
+
+    if (!isSale) return orders.length === 1 ? orders[0] : { orders, count: orders.length };
+
+    const whatsAppText = this.buildSalesWhatsAppTextCombined(orders, saleDate!, lang);
+    const primary = orders[0];
+    return { ...primary, orders, count: orders.length, whatsAppText };
   }
 
   async getMyStaffOrders(companyId: string, userId: string) {
@@ -225,28 +296,38 @@ export class OrdersStaffService {
     };
   }
 
-  /** نص واتساب لمبيعات قسم — يُرسل مباشرة من الموظف دون الكاشير */
-  private buildSalesWhatsAppText(order: any, saleDate: Date, lang: 'ar' | 'en' = 'ar'): string {
+  /** نص واتساب لمبيعات — قسم واحد أو عدة أقسام في رسالة واحدة */
+  private buildSalesWhatsAppTextCombined(orders: any[], saleDate: Date, lang: 'ar' | 'en' = 'ar'): string {
     const d = saleDate.toISOString().slice(0, 10).replace(/-/g, '/');
-    const section = order.sectionName || '—';
-    const header = lang === 'en' ? `Sales — ${section}` : `مبيعات — ${section}`;
+    const multi = orders.length > 1;
+    const header = lang === 'en'
+      ? (multi ? 'Sales' : `Sales — ${orders[0]?.sectionName || '—'}`)
+      : (multi ? 'مبيعات' : `مبيعات — ${orders[0]?.sectionName || '—'}`);
     const dateLine = lang === 'en' ? `Date: ${d}` : `تاريخ المبيعات: ${d}`;
     const lines: string[] = [header, dateLine, '──────────────'];
     let totalQty = 0;
-    for (const it of order.items || []) {
-      const name = lang === 'en'
-        ? (it.product?.nameEn || it.product?.nameAr || '—')
-        : (it.product?.nameAr || it.product?.nameEn || '—');
-      const q = Number(it.quantity);
-      totalQty += q;
-      lines.push(`• ${name}: ${q}`);
+
+    for (const order of orders) {
+      if (multi) lines.push(`▪ ${order.sectionName || '—'}`);
+      for (const it of order.items || []) {
+        const name = lang === 'en'
+          ? (it.product?.nameEn || it.product?.nameAr || '—')
+          : (it.product?.nameAr || it.product?.nameEn || '—');
+        const q = Number(it.quantity);
+        totalQty += q;
+        const prefix = multi ? '  ' : '';
+        lines.push(`${prefix}• ${name}: ${q}`);
+      }
+      if (multi) lines.push('');
     }
+
     lines.push('──────────────');
     lines.push(lang === 'en' ? `Total qty: ${totalQty}` : `إجمالي الكميات: ${totalQty}`);
-    if (order.notes?.trim()) {
-      lines.push(lang === 'en' ? `Notes: ${order.notes.trim()}` : `ملاحظات: ${order.notes.trim()}`);
+    const notes = orders[0]?.notes?.trim();
+    if (notes) {
+      lines.push(lang === 'en' ? `Notes: ${notes}` : `ملاحظات: ${notes}`);
     }
-    const by = order.user?.nameAr || order.user?.nameEn;
+    const by = orders[0]?.user?.nameAr || orders[0]?.user?.nameEn;
     if (by) lines.push(lang === 'en' ? `By: ${by}` : `بواسطة: ${by}`);
     return lines.join('\n').trim();
   }

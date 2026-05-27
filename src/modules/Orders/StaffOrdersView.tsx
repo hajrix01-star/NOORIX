@@ -19,7 +19,16 @@ import {
 import { Button, Badge, ScreenShell, ScreenTitle, Modal, ScreenTabs, Input } from '../../ui';
 
 // ─── أنواع ────────────────────────────────────────────────────────────────────
-interface ItemRow { productId: string; quantity: number; unit: string; }
+interface ItemRow { productId: string; quantity: number; unit: string; sectionName?: string; }
+
+/** قسم الصنف عند الإضافة — من الفلتر النشط أو من تعريف الصنف */
+function resolveItemSection(product: any, activeFilter: string): string {
+  const secs = product?.sections as string[] | null | undefined;
+  if (activeFilter && Array.isArray(secs) && secs.includes(activeFilter)) return activeFilter;
+  if (Array.isArray(secs) && secs.length === 1) return secs[0];
+  if (Array.isArray(secs) && secs.length > 0) return secs[0];
+  return activeFilter || 'عام';
+}
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
@@ -96,7 +105,8 @@ function StaffOrderPanel({
   const deleteOrder = useDeleteStaffOrderMutation(companyId);
 
   const isSale = productType === 'sale';
-  const [sectionName, setSectionName] = useState('');
+  /** فلتر عرض الأصناف فقط — ليس شرطاً للإرسال */
+  const [sectionFilter, setSectionFilter] = useState('');
   const [saleDate, setSaleDate] = useState(() => getSaudiToday());
   const [notes, setNotes] = useState('');
   const [search, setSearch] = useState('');
@@ -128,10 +138,10 @@ function StaffOrderPanel({
   }
 
   const products = useMemo(() => {
-    let list = sectionName
+    let list = sectionFilter
       ? (allProducts as any[]).filter((p: any) => {
           const secs = p.sections as string[] | null;
-          return Array.isArray(secs) && secs.length > 0 && secs.includes(sectionName);
+          return Array.isArray(secs) && secs.length > 0 && secs.includes(sectionFilter);
         })
       : (allProducts as any[]);
 
@@ -149,7 +159,7 @@ function StaffOrderPanel({
       const nb = lang === 'en' ? (b.nameEn || b.nameAr) : (b.nameAr || b.nameEn);
       return na.localeCompare(nb);
     });
-  }, [allProducts, sectionName, search, freqMap, lang]);
+  }, [allProducts, sectionFilter, search, freqMap, lang]);
 
   const basketItems = useMemo(() => Array.from(basket.values()), [basket]);
 
@@ -164,10 +174,11 @@ function StaffOrderPanel({
   // ─── لمس الكرت ──────────────────────────────────────────────────
   function tapProduct(product: any) {
     const existing = basket.get(product.id);
+    const sec = resolveItemSection(product, sectionFilter);
     if (existing) {
       setBasket((prev) => {
         const next = new Map(prev);
-        next.set(product.id, { ...existing, quantity: existing.quantity + 1 });
+        next.set(product.id, { ...existing, quantity: existing.quantity + 1, sectionName: existing.sectionName || sec });
         return next;
       });
     } else {
@@ -179,9 +190,10 @@ function StaffOrderPanel({
     if (!qtyModal) return;
     const { product, qty, unit } = qtyModal;
     if (qty <= 0) { setQtyModal(null); return; }
+    const sec = resolveItemSection(product, sectionFilter);
     setBasket((prev) => {
       const next = new Map(prev);
-      next.set(product.id, { productId: product.id, quantity: qty, unit });
+      next.set(product.id, { productId: product.id, quantity: qty, unit, sectionName: sec });
       return next;
     });
     setQtyModal(null);
@@ -211,7 +223,7 @@ function StaffOrderPanel({
   }
 
   function resetForm() {
-    setSectionName('');
+    setSectionFilter('');
     setSaleDate(getSaudiToday());
     setNotes('');
     setSearch('');
@@ -226,12 +238,17 @@ function StaffOrderPanel({
   }
 
   function loadForEdit(order: any) {
-    setSectionName(order.sectionName || '');
+    setSectionFilter(order.sectionName || '');
     setNotes(order.notes || '');
     setSearch('');
     const m = new Map<string, ItemRow>();
     for (const it of (order.items || [])) {
-      m.set(it.productId, { productId: it.productId, quantity: Number(it.quantity) || 1, unit: it.unit || 'piece' });
+      m.set(it.productId, {
+        productId: it.productId,
+        quantity: Number(it.quantity) || 1,
+        unit: it.unit || 'piece',
+        sectionName: order.sectionName || undefined,
+      });
     }
     setBasket(m);
     setEditingId(order.id);
@@ -239,24 +256,30 @@ function StaffOrderPanel({
   }
 
   const handleSubmit = useCallback(async () => {
-    if (!sectionName) { showToast(t('staffOrderSectionRequired'), 'error'); return; }
     if (basket.size === 0) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
     if (isSale && !saleDate) { showToast(t('staffSaleDateRequired'), 'error'); return; }
     setSubmitting(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         companyId,
-        sectionName,
         orderType: productType,
         saleDate: isSale ? saleDate : undefined,
         lang,
         notes: notes.trim() || undefined,
-        items: basketItems.map((it) => ({
-          productId: it.productId,
-          quantity: String(it.quantity),
-          unit: it.unit || undefined,
-        })),
+        items: basketItems.map((it) => {
+          const p = productsById.get(it.productId);
+          const sectionName = it.sectionName || (p ? resolveItemSection(p, sectionFilter) : undefined);
+          return {
+            productId: it.productId,
+            quantity: String(it.quantity),
+            unit: it.unit || undefined,
+            sectionName: sectionName || undefined,
+          };
+        }),
       };
+      if (editingId) {
+        payload.sectionName = sectionFilter || basketItems[0]?.sectionName || 'عام';
+      }
       if (editingId) {
         await updateOrder.mutateAsync({ id: editingId, body: payload });
         showToast(t('staffOrderUpdated'), 'success');
@@ -277,7 +300,7 @@ function StaffOrderPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [sectionName, saleDate, notes, basket, basketItems, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder]);
+  }, [sectionFilter, saleDate, notes, basket, basketItems, productsById, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder]);
 
   const handleDelete = useCallback(async (order: any) => {
     if (!window.confirm(t('staffOrderDeleteConfirm'))) return;
@@ -294,14 +317,13 @@ function StaffOrderPanel({
       {/* ── أزرار الأقسام ── */}
       <div className="flex flex-wrap gap-2">
         {(sections as any[]).map((s: any) => {
-          const active = sectionName === s.nameAr;
+          const active = sectionFilter === s.nameAr;
           return (
             <button
               key={s.id}
               type="button"
               onClick={() => {
-                setSectionName(active ? '' : s.nameAr);
-                setBasket(new Map());
+                setSectionFilter(active ? '' : s.nameAr);
                 setSearch('');
               }}
               className={`px-4 py-2 rounded-xl text-[13px] font-semibold border transition-all
@@ -345,7 +367,7 @@ function StaffOrderPanel({
           ))}
         </div>
       ) : (
-        sectionName && (
+        sectionFilter && (
           <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[13px]">
             {t('staffOrderNoProducts')}
           </div>
