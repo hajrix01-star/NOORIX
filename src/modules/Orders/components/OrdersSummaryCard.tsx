@@ -1,4 +1,4 @@
-﻿/** ملخص الطلبات — كرت واحد: عهدة المندوب + نقد المحل */
+﻿/** ملخص الطلبات — كرت واحد: عهدة المندوب + نقد المحل (جداول داخلية) */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { FmtNum } from '../../../ui';
@@ -19,6 +19,8 @@ function SummaryPane({
   spentLabel,
   resultLabel,
   accentColor,
+  colItem,
+  colAmount,
 }: {
   title: string;
   received: number;
@@ -28,11 +30,13 @@ function SummaryPane({
   spentLabel: string;
   resultLabel: string;
   accentColor: string;
+  colItem: string;
+  colAmount: string;
 }) {
   const resNum = Number(result ?? 0);
   return (
     <div className="nx-orders-summary-pane flex min-w-0 flex-col px-3 py-3 sm:px-4 sm:py-3.5">
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-2.5 flex items-center gap-2">
         <span
           className="h-4 w-1 shrink-0 rounded-full"
           style={{ background: accentColor || 'var(--color-nx-sales)' }}
@@ -42,31 +46,47 @@ function SummaryPane({
           {title}
         </div>
       </div>
-      <div className="grid gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] text-noorix-muted">{receivedLabel}</span>
-          <FmtNum n={Number(received ?? 0)} className="nx-font-numbers text-[13px] font-bold text-noorix-green" />
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
-          <FmtNum n={Number(spent ?? 0)} className="nx-font-numbers text-[13px] font-bold text-noorix-red" />
-        </div>
-      </div>
-      <div className="mt-3 border-t border-noorix-border pt-3 text-center">
-        <div className="mb-1 text-[10px] uppercase tracking-[0.04em] text-noorix-muted">
-          {resultLabel}
-        </div>
-        <div
-          dir="ltr"
-          className="nx-font-numbers text-[22px] font-extrabold tracking-[-0.5px]"
-          style={{
-            color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
-          }}
-        >
-          {resNum < 0 ? '-' : ''}
-          <FmtNum n={Math.abs(resNum)} />
-          <span className="nx-sar">SR</span>
-        </div>
+      <div className="overflow-hidden rounded-md border border-noorix-border">
+        <table className="nx-orders-summary-table noorix-table w-full">
+          <thead>
+            <tr>
+              <th scope="col">{colItem}</th>
+              <th scope="col">{colAmount}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{receivedLabel}</td>
+              <td>
+                <FmtNum n={Number(received ?? 0)} className="nx-font-numbers font-semibold text-noorix-green" />
+              </td>
+            </tr>
+            <tr>
+              <td>{spentLabel}</td>
+              <td>
+                <FmtNum n={Number(spent ?? 0)} className="nx-font-numbers font-semibold text-noorix-red" />
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>{resultLabel}</td>
+              <td>
+                <span
+                  dir="ltr"
+                  className="nx-font-numbers inline-flex items-baseline justify-end gap-0.5 font-bold"
+                  style={{
+                    color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
+                  }}
+                >
+                  {resNum < 0 ? '-' : ''}
+                  <FmtNum n={Math.abs(resNum)} className="text-[15px] sm:text-[16px]" />
+                  <span className="nx-sar text-[11px] font-normal">SR</span>
+                </span>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   );
@@ -88,6 +108,9 @@ export function OrdersSummaryCard({
   const delegateBalance = Number(summary.delegateBalance ?? 0);
   const cashSales = Number(cashSalesTotal);
   const cashRemaining = cashSales - localPurchases;
+
+  const colItem = t('ordersSummaryColItem');
+  const colAmount = t('ordersSummaryColAmount');
 
   if (isLoading) {
     return (
@@ -119,6 +142,8 @@ export function OrdersSummaryCard({
           spentLabel={t('ordersDelegatePurchases')}
           resultLabel={t('ordersDelegateBalance')}
           accentColor="var(--color-nx-sales)"
+          colItem={colItem}
+          colAmount={colAmount}
         />
         <SummaryPane
           title={t('ordersLocalCashSection')}
@@ -129,6 +154,8 @@ export function OrdersSummaryCard({
           spentLabel={t('ordersLocalPurchases')}
           resultLabel={t('ordersCashRemaining')}
           accentColor="var(--color-nx-profit)"
+          colItem={colItem}
+          colAmount={colAmount}
         />
       </div>
     </div>

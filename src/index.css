@@ -4639,6 +4639,45 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
 }
 
+/* ── ملخص الطلبات — جداول داخل الكرت ── */
+.nx-orders-summary-table {
+  font-size: var(--noorix-text-base, 13px);
+}
+.nx-orders-summary-table thead th {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.nx-orders-summary-table tbody td,
+.nx-orders-summary-table tfoot td {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+.nx-orders-summary-table thead th:first-child,
+.nx-orders-summary-table tbody td:first-child,
+.nx-orders-summary-table tfoot td:first-child {
+  text-align: start;
+}
+.nx-orders-summary-table thead th:last-child,
+.nx-orders-summary-table tbody td:last-child,
+.nx-orders-summary-table tfoot td:last-child {
+  text-align: end;
+  padding-inline-end: 12px;
+}
+.nx-orders-summary-table tbody td:last-child .nx-font-numbers,
+.nx-orders-summary-table tfoot td:last-child .nx-font-numbers {
+  display: inline-block;
+  width: 100%;
+  text-align: end;
+}
+.nx-orders-summary-table tfoot td {
+  font-weight: 700;
+  background: var(--noorix-table-header-bg);
+  border-top: 2px solid var(--noorix-border);
+}
+
 /* ── الطلبات — جوال: تسطيح الطبقات داخل تبويبات ScreenTabs ── */
 @media (max-width: 640px) {
   .nx-orders-tabs-shell {

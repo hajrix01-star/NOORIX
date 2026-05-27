@@ -211,6 +211,8 @@ export default {
   ordersAddVariant: { ar: '+ إضافة تركيبة', en: '+ Add variant' },
   ordersVariantPrice: { ar: 'آخر سعر', en: 'Last price' },
   ordersSummaryCardTitle: { ar: 'ملخص الطلبات والمبيعات — الشهر الحالي', en: 'Orders & Sales Summary — Current Month' },
+  ordersSummaryColItem: { ar: 'البند', en: 'Item' },
+  ordersSummaryColAmount: { ar: 'المبلغ', en: 'Amount' },
   ordersPettyCash: { ar: 'عهدة (محوّل للمندوب)', en: 'Petty cash (transferred)' },
   ordersDelegatePurchases: { ar: 'مشتريات المندوب', en: 'Delegate purchases' },
   ordersDelegateBalance: { ar: 'رصيد المندوب', en: 'Delegate balance' },
