@@ -48,4 +48,26 @@ describe('buildYearMonthlyDailyAvgRows', () => {
     expect(rows[4].isCurrentMonth).toBe(true);
     expect(rows[4].deltaPctVsPrev).toBe(50);
   });
+
+  it('caps previous month to prevMonthAlignEndDay when viewing current month MTD', () => {
+    const rows = buildYearMonthlyDailyAvgRows({
+      year: 2026,
+      yearSummaries: [
+        { transactionDate: '2026-04-10', totalAmount: 1000 },
+        { transactionDate: '2026-04-20', totalAmount: 1000 },
+        { transactionDate: '2026-04-28', totalAmount: 10000 },
+        { transactionDate: '2026-05-10', totalAmount: 500 },
+      ],
+      monthNames: MONTHS,
+      capMonth: 5,
+      currentYear: 2026,
+      currentMonth: 5,
+      prevMonthAlignEndDay: 20,
+    });
+
+    const april = rows[3];
+    expect(april.month).toBe(4);
+    expect(april.avgDaily).toBe(1000);
+    expect(april.activeDays).toBe(2);
+  });
 });
