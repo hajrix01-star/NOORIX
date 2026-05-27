@@ -3,7 +3,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useDashboardCalendarData } from '../../../hooks/useDashboardCalendarData';
+import { useDashboardYearSpecialDays } from '../../../hooks/useDashboardYearSpecialDays';
 import { Button, Input } from '../../../ui';
 import { toYmd } from '../../../utils/saudiDate';
 import { getSaudiNow } from '../../../utils/saudiDate';
@@ -31,10 +31,17 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
   const startDate = ymd(year, month, 1);
   const endDate = ymd(year, month, lastDay);
 
-  const { specialDays: specialDaysList, saveSpecialDays } = useDashboardCalendarData({
+  const {
+    specialDays: specialDaysList,
+    getMonthSpecialDays,
+    saveMonthSpecialDays,
+    updateSpecialDayById,
+    removeSpecialDayById,
+    invalidateYear,
+    isLoading: yearSpecialDaysLoading,
+  } = useDashboardYearSpecialDays({
     companyId,
     year,
-    month,
     enabled: !!companyId,
   });
 
@@ -58,9 +65,11 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
     }
     const id = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const color = DEFAULT_COLORS[specialDaysList.length % DEFAULT_COLORS.length];
-    const newList = [...specialDaysList, { id, name, fromDate: from, toDate: to, color }];
+    const targetMonth = parseInt(from.slice(5, 7), 10) || month;
+    const newList = [...getMonthSpecialDays(targetMonth), { id, name, fromDate: from, toDate: to, color }];
     try {
-      await saveSpecialDays(newList);
+      await saveMonthSpecialDays(targetMonth, newList);
+      await invalidateYear();
       setNewFrom(startDate);
       setNewTo(endDate);
       setNewName('');
@@ -68,31 +77,30 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
     } catch {
       // no-op
     }
-  }, [newFrom, newTo, newName, startDate, endDate, t, specialDaysList, saveSpecialDays]);
+  }, [newFrom, newTo, newName, startDate, endDate, t, specialDaysList, getMonthSpecialDays, saveMonthSpecialDays, month, invalidateYear]);
 
   const handleUpdate = useCallback(
     async (id: string, updates: Record<string, unknown>) => {
-      const newList = specialDaysList.map((x) => (x.id === id ? { ...x, ...updates } : x));
       try {
-        await saveSpecialDays(newList);
+        await updateSpecialDayById(id, updates as { name?: string });
         setEditingId(null);
       } catch {
         // no-op
       }
     },
-    [specialDaysList, saveSpecialDays],
+    [updateSpecialDayById],
   );
 
   const handleRemove = useCallback(
     async (id: string) => {
       if (!window.confirm(t('confirmDelete'))) return;
       try {
-        await saveSpecialDays(specialDaysList.filter((x) => x.id !== id));
+        await removeSpecialDayById(id);
       } catch {
         // no-op
       }
     },
-    [specialDaysList, saveSpecialDays, t],
+    [removeSpecialDayById, t],
   );
 
   const monthLabel = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1];
@@ -109,9 +117,12 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
     <div className="max-w-[560px]">
       <div className="mb-5">
         <h3 className="m-0 text-[16px] font-bold">
-          {t('dashboardSpecialDays')} — {monthLabel} {year}
+          {t('dashboardSpecialDays')} — {year}
         </h3>
-        <p className="mt-1.5 text-[13px] text-noorix-muted">{t('dashboardSpecialDaysDesc')}</p>
+        <p className="mt-1.5 text-[13px] text-noorix-muted">{t('dashboardSpecialDaysYearDesc')}</p>
+        <p className="mt-1 text-[11px] text-noorix-muted">
+          {t('dashboardSpecialDaysAddMonthHint', { 0: `${monthLabel} ${year}` })}
+        </p>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -130,6 +141,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         onClose={() => setImportOpen(false)}
         companyId={companyId}
         year={year}
+        onApplied={() => void invalidateYear()}
       />
 
       {showForm && (
@@ -168,8 +180,11 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
       )}
 
       <div className="flex flex-col gap-2.5">
+        {yearSpecialDaysLoading && specialDaysList.length === 0 && (
+          <p className="text-center text-[13px] text-noorix-muted py-4">{t('loading')}</p>
+        )}
         {specialDaysList.map((sp) => (
-          <div key={sp.id} className="noorix-surface-card flex items-center gap-3 p-3.5">
+          <div key={`${sp.id}-${sp.fromDate}-${sp.toDate}`} className="noorix-surface-card flex items-center gap-3 p-3.5">
             <div className="w-3 h-3 rounded-md shrink-0" style={{ background: sp.color || '#8b5cf6' }} />
             {editingId === sp.id ? (
               <>

@@ -33,6 +33,22 @@ export default {
   dashboardSpecialDay: { ar: 'فترة خاصة', en: 'Special period' },
   dashboardNoSpecialDays: { ar: 'لا توجد أيام خاصة. اضغط «إضافة» للبدء.', en: 'No special days. Click «Add» to start.' },
   dashboardSpecialDaysDesc: { ar: 'أضف فترات خاصة مثل رمضان أو الأعياد لتظهر مميزة في التقويم.', en: 'Add special periods like Ramadan or holidays to highlight them on the calendar.' },
+  dashboardSpecialDaysYearDesc: {
+    ar: 'قائمة بكل الأيام الخاصة للعام (بما فيها المستوردة من المناسبات السعودية).',
+    en: 'All special days for the year (including imported Saudi occasions).',
+  },
+  dashboardSpecialDaysAddMonthHint: {
+    ar: 'الإضافة اليدوية تُحفظ في شهر: {0} (غيّر الشهر من أعلى الصفحة).',
+    en: 'Manual add saves to month: {0} (change month from the page header).',
+  },
+  dashboardImportSaudiLoadFailed: {
+    ar: 'تعذّر تحميل المناسبات. تحقق من الاتصال وأعد المحاولة.',
+    en: 'Could not load occasions. Check connection and retry.',
+  },
+  dashboardImportSaudiSuccessMonths: {
+    ar: 'تم تحديث {0} شهراً في التقويم — راجع تبويب التقويم أو القائمة أدناه.',
+    en: 'Updated {0} month(s) on the calendar — see Calendar tab or the list below.',
+  },
   dashboardImportSaudiOccasions: { ar: 'استيراد مناسبات السعودية', en: 'Import Saudi occasions' },
   dashboardImportSaudiOccasionsHint: {
     ar: 'التواريخ تُحسب تلقائياً من تقويم أم القرى. العيدان مُوسَمان «تقديري» — راجع إعلان وزارة الموارد البشرية قبل الاعتماد النهائي.',

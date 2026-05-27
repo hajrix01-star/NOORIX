@@ -91,8 +91,12 @@ export type SaudiOccasionDto = {
 
 export async function getDashboardSaudiOccasions(
   year: number,
+  companyId?: string,
 ): Promise<ApiParsedResult<SaudiOccasionDto[]>> {
-  return apiGet('/api/v1/dashboard/calendar/saudi-occasions', { year: String(year) });
+  return apiGet('/api/v1/dashboard/calendar/saudi-occasions', {
+    year: String(year),
+    ...(companyId ? { companyId } : {}),
+  });
 }
 
 export async function applyDashboardSpecialOccasions(

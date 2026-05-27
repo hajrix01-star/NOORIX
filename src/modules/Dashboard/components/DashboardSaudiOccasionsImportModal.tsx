@@ -43,13 +43,14 @@ export function DashboardSaudiOccasionsImportModal({
   const [error, setError] = useState<string | null>(null);
 
   const occasionsQuery = useQuery({
-    queryKey: ['dashboard-saudi-occasions', year],
+    queryKey: ['dashboard-saudi-occasions', companyId, year],
     queryFn: async () => {
-      const res = await getDashboardSaudiOccasions(year);
+      const res = await getDashboardSaudiOccasions(year, companyId);
       return unwrapApiDataOr(res, [] as SaudiOccasionDto[]);
     },
-    enabled: open && !!year,
+    enabled: open && !!year && !!companyId,
     staleTime: 24 * 60 * 60 * 1000,
+    retry: 1,
   });
 
   const occasions = occasionsQuery.data ?? [];
@@ -137,11 +138,15 @@ export function DashboardSaudiOccasionsImportModal({
       const data = unwrapApiDataOr(res, { companies: 0, monthsUpdated: 0, occasionCount: 0 });
       await queryClient.invalidateQueries({ queryKey: dashboardKeys.calendarRoot() });
       onApplied?.();
+      const monthsHint =
+        data.monthsUpdated > 0
+          ? t('dashboardImportSaudiSuccessMonths', { 0: String(data.monthsUpdated) })
+          : '';
       window.alert(
-        t('dashboardImportSaudiSuccess', {
+        `${t('dashboardImportSaudiSuccess', {
           0: String(data.occasionCount || selected.size),
           1: String(data.companies || 1),
-        }),
+        })}${monthsHint ? `\n${monthsHint}` : ''}`,
       );
       onClose();
     } catch (e: unknown) {
@@ -239,6 +244,17 @@ export function DashboardSaudiOccasionsImportModal({
             <div className="flex justify-center py-8">
               <Spinner />
               <span className="sr-only">{t('dashboardImportSaudiLoading')}</span>
+            </div>
+          ) : occasionsQuery.isError ? (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <p className="m-0 text-[13px] text-noorix-red" role="alert">
+                {occasionsQuery.error instanceof Error
+                  ? occasionsQuery.error.message
+                  : t('dashboardImportSaudiLoadFailed')}
+              </p>
+              <Button size="sm" variant="primary" onClick={() => void occasionsQuery.refetch()}>
+                {t('retry')}
+              </Button>
             </div>
           ) : occasions.length === 0 ? (
             <p className="text-center text-[13px] text-noorix-muted py-6">{t('dashboardImportSaudiEmptyYear')}</p>
