@@ -2538,6 +2538,8 @@ input:focus, select:focus, textarea:focus {
   flex-wrap: nowrap;
   flex-shrink: 0;
 }
+/* غلاف Input — لا يتمدد مع w-full على الـ select */
+.ndfb-date-selects .ndfb-date-select-field,
 .ndfb-date-selects .nx-input {
   flex: 0 0 auto;
   flex-shrink: 0;
@@ -2557,14 +2559,22 @@ input:focus, select:focus, textarea:focus {
   min-width: 0;
   width: auto;
 }
-/* select السنة — className يُطبَّق مباشرة على عنصر الـ select */
-.nx-input__field.ndfb-year-select  { width: 88px; min-width: 76px; box-sizing: border-box; }
-/* select الشهر — عرض كافٍ لأسماء الأشهر الإنجليزية + السهم */
-.nx-input__field.ndfb-month-select {
-  width: 128px;
-  min-width: 118px;
-  max-width: 150px;
+/* select السنة/الشهر — className على <select> (Input الموحّد) */
+.ndfb-date-selects select.ndfb-year-select,
+.nx-input__field.ndfb-year-select {
+  width: 4.5rem !important;
+  min-width: 4.5rem;
+  max-width: 4.5rem;
   box-sizing: border-box;
+  padding-inline: 0.35rem 1.35rem;
+}
+.ndfb-date-selects select.ndfb-month-select,
+.nx-input__field.ndfb-month-select {
+  width: 7.25rem !important;
+  min-width: 7rem;
+  max-width: 7.75rem;
+  box-sizing: border-box;
+  padding-inline: 0.35rem 1.35rem;
 }
 /* date input */
 .ndfb-fields .nx-input__field[type="date"] { width: 150px; }
@@ -2788,8 +2798,10 @@ input:focus, select:focus, textarea:focus {
   .ndfb-mode-btn { padding: 5px 10px; font-size: 13px; min-height: 40px; }
   /* الجوال: السنة والشهر يبقيان في سطر واحد */
   .ndfb-fields { flex-wrap: nowrap; }
-  .nx-input__field.ndfb-year-select  { width: 80px !important; min-width: 72px !important; }
-  .nx-input__field.ndfb-month-select { width: 118px !important; min-width: 112px !important; max-width: none !important; }
+  .ndfb-date-selects select.ndfb-year-select,
+  .nx-input__field.ndfb-year-select  { width: 4.25rem !important; min-width: 4.25rem !important; max-width: 4.25rem !important; }
+  .ndfb-date-selects select.ndfb-month-select,
+  .nx-input__field.ndfb-month-select { width: 6.75rem !important; min-width: 6.5rem !important; max-width: 7rem !important; }
   .ndfb-fields .nx-input__field[type="date"] { width: 140px !important; }
   .ndfb-reset-btn { min-width: 40px; min-height: 40px; }
   .ndfb-badge { flex-shrink: 0; }
