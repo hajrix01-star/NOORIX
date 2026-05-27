@@ -7,6 +7,7 @@ import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator'
 import { DashboardService } from './dashboard.service';
 import { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';
 import { ApplySpecialOccasionsDto } from './dto/apply-special-occasions.dto';
+import { SkipCompanyCheck } from '../auth/decorators/skip-company-check.decorator';
 
 /**
  * GET  /api/v1/dashboard/overview
@@ -85,8 +86,13 @@ export class DashboardController {
 
   @Get('calendar/saudi-occasions')
   @RequirePermission('REPORTS_READ')
+  @SkipCompanyCheck()
   getSaudiOccasions(@Query('year') year: string) {
-    return this.dashboardService.getSaudiOccasions(parseInt(year, 10));
+    const y = parseInt(year, 10);
+    if (!Number.isFinite(y)) {
+      return [];
+    }
+    return this.dashboardService.getSaudiOccasions(y);
   }
 
   @Post('calendar/special-days/apply-occasions')

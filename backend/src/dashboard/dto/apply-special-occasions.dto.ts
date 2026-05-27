@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class ApplySpecialOccasionsDto {
   @IsInt()
@@ -25,5 +25,6 @@ export class ApplySpecialOccasionsDto {
 
   /** إزاحة بالأيام لكل مناسبة (مفتاح = id المناسبة، قيمة -3..3) */
   @IsOptional()
+  @IsObject()
   dayShifts?: Record<string, number>;
 }

@@ -2,9 +2,26 @@
  * مناسبات سعودية — حساب تلقائي عبر تقويم أم القرى (Umm al-Qura).
  * العيدان والرؤية الرسمية قد تختلف يوماً؛ تُوسَم estimated=true.
  */
-import umalqura from '@umalqura/core';
+import umalquraModule from '@umalqura/core';
 
 const RIYADH_TZ = 'Asia/Riyadh';
+
+type UmAlQuraStatic = {
+  gregorianToHijri: (d: Date) => { hy: number; hm: number; hd: number };
+  toDate: (hy: number, hm: number, hd: number, h?: number, m?: number, s?: number, ms?: number) => Date;
+  getDaysInMonth: (hy: number, hm: number) => number;
+  addDays: (d: Date, days: number) => Date;
+};
+
+function loadUmAlQuraStatic(): UmAlQuraStatic {
+  const mod = umalquraModule as { $?: UmAlQuraStatic; default?: { $?: UmAlQuraStatic } };
+  const api = mod.default ?? mod;
+  const $ = api.$;
+  if (!$?.gregorianToHijri || !$?.toDate) {
+    throw new Error('@umalqura/core failed to load — run npm install in backend');
+  }
+  return $;
+}
 
 export type SaudiOccasionKind = 'founding' | 'national' | 'ramadan' | 'eid_fitr' | 'eid_adha';
 
@@ -27,7 +44,7 @@ const C = {
   eid: '#3B6D11',
 } as const;
 
-const $ = umalqura.$;
+const $ = loadUmAlQuraStatic();
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
