@@ -60,6 +60,22 @@ describe('SmartTable', () => {
     expect(onSort).toHaveBeenCalledWith('name');
   });
 
+  it('portals column visibility panel to document body', () => {
+    render(
+      <SmartTable
+        tableId="test-cols"
+        columns={columns}
+        data={rows}
+        total={2}
+        title="Cols"
+      />,
+    );
+    fireEvent.click(screen.getByLabelText('إظهار / إخفاء الأعمدة'));
+    const panel = document.body.querySelector('.nx-col-vis-panel--viewport');
+    expect(panel).toBeTruthy();
+    expect(screen.getByText('الأعمدة')).toBeTruthy();
+  });
+
   it('renders pagination when total exceeds pageSize', () => {
     render(
       <SmartTable

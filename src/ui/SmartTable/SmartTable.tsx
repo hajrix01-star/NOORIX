@@ -2,7 +2,8 @@
  * SmartTable — مكون الجداول المركزي لنظام نوركس
  * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards | Column Resize
  */
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useIsNarrow768 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
@@ -12,6 +13,29 @@ import { cn } from '../cn';
 import type { SmartTableProps as SmartTablePropsBase } from './types';
 import { columnLabel, getAlign } from './columnUtils';
 import { buildFooterCells } from './buildFooterCells';
+
+const COL_VIS_PANEL_MARGIN = 12;
+const COL_VIS_PANEL_GAP = 6;
+const COL_VIS_PANEL_FALLBACK_W = 220;
+const COL_VIS_PANEL_FALLBACK_H = 320;
+
+/** يثبّت لوحة الأعمدة داخل الشاشة (جوال RTL/LTR) */
+export function placeColVisPanel(btn: HTMLElement, panel: HTMLElement): { top: number; left: number } {
+  const rect = btn.getBoundingClientRect();
+  const w = panel.offsetWidth || COL_VIS_PANEL_FALLBACK_W;
+  const h = panel.offsetHeight || COL_VIS_PANEL_FALLBACK_H;
+  const maxLeft = window.innerWidth - COL_VIS_PANEL_MARGIN - w;
+  const isRtl = typeof document !== 'undefined'
+    && (document.documentElement.dir === 'rtl'
+      || getComputedStyle(document.documentElement).direction === 'rtl');
+  let left = isRtl ? rect.left : rect.right - w;
+  left = Math.max(COL_VIS_PANEL_MARGIN, Math.min(left, maxLeft));
+  let top = rect.bottom + COL_VIS_PANEL_GAP;
+  if (top + h > window.innerHeight - COL_VIS_PANEL_MARGIN) {
+    top = Math.max(COL_VIS_PANEL_MARGIN, rect.top - h - COL_VIS_PANEL_GAP);
+  }
+  return { top, left };
+}
 
 // ── Pagination ───────────────────────────────────────────────
 type PaginationBarProps = {
@@ -137,8 +161,9 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
   // ── Column Visibility ──────────────────────────────────────────
   const [showColPanel, setShowColPanel] = useState(false);
-  const colBtnRef  = useRef<any>(null);
-  const colPanelRef = useRef<any>(null);
+  const [colPanelPos, setColPanelPos] = useState<{ top: number; left: number } | null>(null);
+  const colBtnRef  = useRef<HTMLButtonElement | null>(null);
+  const colPanelRef = useRef<HTMLDivElement | null>(null);
 
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
     if (!tableId) return new Set<string>();
@@ -150,10 +175,33 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     }
   });
 
+  const syncColPanelPosition = useCallback(() => {
+    const btn = colBtnRef.current;
+    const panel = colPanelRef.current;
+    if (!btn || !panel) return;
+    setColPanelPos(placeColVisPanel(btn, panel));
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!showColPanel) {
+      setColPanelPos(null);
+      return undefined;
+    }
+    syncColPanelPosition();
+    const onReflow = () => syncColPanelPosition();
+    window.addEventListener('resize', onReflow);
+    window.addEventListener('scroll', onReflow, true);
+    return () => {
+      window.removeEventListener('resize', onReflow);
+      window.removeEventListener('scroll', onReflow, true);
+    };
+  }, [showColPanel, syncColPanelPosition, hiddenCols.size]);
+
   useEffect(() => {
     if (!showColPanel) return;
-    const handler = (e: any) => {
-      if (!colPanelRef.current?.contains(e.target) && !colBtnRef.current?.contains(e.target)) {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!colPanelRef.current?.contains(target) && !colBtnRef.current?.contains(target)) {
         setShowColPanel(false);
       }
     };
@@ -244,12 +292,18 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                     <span className="nx-col-vis-badge">{hiddenCols.size}</span>
                   )}
                 </button>
-                {showColPanel && (
-                  <div ref={colPanelRef} className="nx-col-vis-panel">
+                {showColPanel && typeof document !== 'undefined' && createPortal(
+                  <div
+                    ref={colPanelRef}
+                    className={cn('nx-col-vis-panel', 'nx-col-vis-panel--viewport', !colPanelPos && 'nx-col-vis-panel--measuring')}
+                    style={colPanelPos ? { top: colPanelPos.top, left: colPanelPos.left } : undefined}
+                    role="dialog"
+                    aria-label="إظهار / إخفاء الأعمدة"
+                  >
                     <div className="nx-col-vis-panel__header">
                       <span>الأعمدة</span>
                       {hiddenCols.size > 0 && (
-                        <button className="nx-col-vis-reset" onClick={resetColVis}>إعادة تعيين</button>
+                        <button type="button" className="nx-col-vis-reset" onClick={resetColVis}>إعادة تعيين</button>
                       )}
                     </div>
                     {hideableCols.map((col: any) => (
@@ -262,7 +316,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         <span>{columnLabel(col)}</span>
                       </label>
                     ))}
-                  </div>
+                  </div>,
+                  document.body,
                 )}
               </div>
             )}
