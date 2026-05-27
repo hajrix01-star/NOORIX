@@ -129,6 +129,25 @@
   border-radius: 12px 12px 0 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
+/* تمرير أفقي مع تلميح بصري على الحواف (تبويبات كثيرة >8) */
+@media (max-width: 640px) {
+  .nx-connected-tab-strip--scroll {
+    mask-image: linear-gradient(
+      to left,
+      transparent 0,
+      #000 10px,
+      #000 calc(100% - 10px),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to left,
+      transparent 0,
+      #000 10px,
+      #000 calc(100% - 10px),
+      transparent 100%
+    );
+  }
+}
 .nx-connected-tab-sparkline {
   background: linear-gradient(
     90deg,

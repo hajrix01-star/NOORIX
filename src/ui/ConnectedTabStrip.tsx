@@ -37,6 +37,7 @@ export default function ConnectedTabStrip({
 }: ConnectedTabStripProps) {
   const uiDir = useUiDir();
   const hasEnd = tabBarEnd != null && tabBarEnd !== false;
+  const denseMobile = compactMobile && items.length > 4;
   return (
     <div
       className={cn(
@@ -55,7 +56,10 @@ export default function ConnectedTabStrip({
             'nx-connected-tab-strip isolate flex min-w-0 flex-nowrap items-stretch text-[14px]',
             compactMobile
               ? 'max-sm:overflow-x-hidden max-sm:text-[11px]'
-              : 'overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+              : cn(
+                  'nx-connected-tab-strip--scroll overflow-x-auto [-webkit-overflow-scrolling:touch]',
+                  '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+                ),
             /* مع tabBarEnd: لا نستخدم flex-1 حتى لا يبقى فراغ كبير بين التبويبات وشريط الأدوات */
             hasEnd ? 'min-w-0 max-w-full shrink bg-transparent' : 'min-w-0 flex-1 bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
             stripClassName,
@@ -78,11 +82,19 @@ export default function ConnectedTabStrip({
                   /* grid: مركز النص في الصف العلوي؛ السباركلاين صف ثابت — size=auto يزيل h-9 من الزر */
                   '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch rounded-none',
                   compactMobile
-                    ? 'max-sm:min-h-[34px] max-sm:min-w-0 max-sm:flex-1 max-sm:basis-0 shrink-0'
+                    ? cn(
+                        'max-sm:min-h-[34px] max-sm:min-w-0 max-sm:flex-1 max-sm:basis-0 max-sm:shrink',
+                        denseMobile && 'max-sm:min-h-[40px]',
+                      )
                     : 'shrink-0',
                   'border-0 border-e border-noorix-border-strong last:border-e-0',
                   compactMobile
-                    ? 'max-sm:text-[11px] text-[14px] leading-snug max-sm:leading-tight whitespace-nowrap'
+                    ? cn(
+                        'text-[14px] leading-snug max-sm:leading-tight',
+                        denseMobile
+                          ? 'max-sm:text-[10px] max-sm:whitespace-normal'
+                          : 'max-sm:text-[11px] max-sm:whitespace-nowrap',
+                      )
                     : 'text-[14px] leading-normal whitespace-nowrap',
                   /* انتقال محدود — لا يشمل font-weight لتفادي اهتزاز الرسم */
                   'transition-[background-color,color,box-shadow] duration-200 ease-out',
@@ -96,19 +108,29 @@ export default function ConnectedTabStrip({
               >
                 <span
                   className={cn(
-                    'grid h-full min-h-0 w-full place-items-center py-0',
-                    compactMobile ? 'px-1 max-sm:px-1.5 sm:px-3' : 'px-3',
+                    'grid h-full min-h-0 w-full min-w-0 place-items-center py-0',
+                    compactMobile ? 'px-1 max-sm:px-1 sm:px-3' : 'px-3',
                   )}
                 >
-                  <span
-                    aria-hidden
-                    className="invisible col-start-1 row-start-1 font-bold leading-normal whitespace-nowrap"
-                  >
-                    {item.label}
-                  </span>
+                  {!compactMobile && (
+                    <span
+                      aria-hidden
+                      className="invisible col-start-1 row-start-1 font-bold leading-normal whitespace-nowrap"
+                    >
+                      {item.label}
+                    </span>
+                  )}
                   <span
                     className={cn(
-                      'col-start-1 row-start-1 flex min-h-0 w-full min-w-0 items-center justify-center text-center leading-normal whitespace-nowrap max-sm:truncate max-sm:px-0.5',
+                      'col-start-1 row-start-1 flex min-h-0 w-full min-w-0 items-center justify-center text-center',
+                      compactMobile
+                        ? cn(
+                            denseMobile
+                              ? 'max-sm:line-clamp-2 max-sm:whitespace-normal max-sm:leading-tight max-sm:px-0.5'
+                              : 'max-sm:truncate max-sm:whitespace-nowrap max-sm:px-0.5',
+                            'leading-snug sm:leading-normal sm:whitespace-nowrap',
+                          )
+                        : 'leading-normal whitespace-nowrap',
                       'transition-[color] duration-200 ease-out',
                       active ? 'font-bold' : 'font-semibold',
                     )}

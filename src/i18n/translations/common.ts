@@ -109,6 +109,10 @@ export default {
   expenseEntryTab: { ar: 'تسجيل مصروف', en: 'Record expense' },
   expenseBatchTab: { ar: 'إدخال جماعي', en: 'Batch entry' },
   paymentHistoryTab: { ar: 'سجل المدفوعات', en: 'Payment history' },
+  expenseLinesTabShort: { ar: 'أصناف', en: 'Lines' },
+  expenseEntryTabShort: { ar: 'تسجيل', en: 'Record' },
+  expenseBatchTabShort: { ar: 'جماعي', en: 'Batch' },
+  paymentHistoryTabShort: { ar: 'مدفوعات', en: 'Payments' },
   paymentHistoryEmptyExpenseModule: {
     ar: 'لا توجد مدفوعات مسجّلة من قسم المصاريف (مرتبطة ببند مصروف) في الفترة المحددة.',
     en: 'No payments from the Expenses module (linked to an expense line) in this period.',
