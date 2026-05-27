@@ -1,8 +1,8 @@
 import React, { type Dispatch, type SetStateAction } from 'react';
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -139,7 +139,7 @@ export function DashboardOverviewTimelineSection({
                   className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-600 rounded border transition-all duration-150 select-none"
                 >
                   <span
-                    className="inline-block w-3 h-0.5 rounded-full flex-shrink-0"
+                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
                     style={{ background: hidden || disabled ? 'var(--noorix-border)' : s.color }}
                   />
                   {s.label}
@@ -162,16 +162,13 @@ export function DashboardOverviewTimelineSection({
           </EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={performanceData} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
-              <defs>
-                {SERIES.map((s) => (
-                  <linearGradient key={s.gradId} id={s.gradId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={s.color} stopOpacity={0.22} />
-                    <stop offset="95%" stopColor={s.color} stopOpacity={0.02} />
-                  </linearGradient>
-                ))}
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" opacity={0.6} />
+            <BarChart
+              data={performanceData}
+              margin={{ top: 4, right: 4, left: -10, bottom: 0 }}
+              barCategoryGap={timelineGrain === 'monthly' ? '22%' : '12%'}
+              barGap={3}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" opacity={0.6} vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-primary)' }}
@@ -188,19 +185,18 @@ export function DashboardOverviewTimelineSection({
               <Tooltip content={(tp) => <DashboardAreaTooltip {...(tp as any)} lang={lang} />} />
               {SERIES.map((s) =>
                 !hiddenSeries.has(s.key) && !s.disabled ? (
-                  <Area
+                  <Bar
                     key={s.key}
-                    type="monotone"
                     dataKey={s.key}
-                    stroke={s.color}
-                    strokeWidth={2}
-                    fill={`url(#${s.gradId})`}
-                    dot={false}
-                    activeDot={{ r: 4 }}
+                    name={s.label}
+                    fill={s.color}
+                    fillOpacity={0.9}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={timelineGrain === 'monthly' ? 28 : 12}
                   />
                 ) : null,
               )}
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         )}
       </div>
