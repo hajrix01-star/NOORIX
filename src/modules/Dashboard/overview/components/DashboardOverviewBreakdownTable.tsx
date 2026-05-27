@@ -25,9 +25,18 @@ type Props = {
   t: (key: string) => string;
 };
 
-const GRID_WITH_CUSTOMERS =
-  'grid-cols-[minmax(0,1fr)_minmax(4.75rem,auto)_minmax(2.25rem,auto)_minmax(3.25rem,auto)]';
-const GRID_DEFAULT = 'grid-cols-[minmax(0,1fr)_minmax(5rem,auto)_minmax(2.75rem,auto)]';
+/** أعمدة متساوية — ثلاثة أو أربعة — مع محاذاة وسط */
+const GRID_3 = 'grid-cols-3';
+const GRID_4 = 'grid-cols-4';
+
+const thClass = (compact: boolean) =>
+  cn(
+    'text-center font-semibold text-noorix-muted',
+    compact ? 'px-1 py-1 text-[9px]' : 'px-2 py-1.5 text-[10px]',
+  );
+
+const tdClass = (compact: boolean) =>
+  cn('text-center', compact ? 'px-1 py-1' : 'px-2 py-2');
 
 export function DashboardOverviewBreakdownTable({
   title,
@@ -42,7 +51,7 @@ export function DashboardOverviewBreakdownTable({
 }: Props) {
   if (rows.length === 0) return null;
 
-  const gridClass = showCustomers ? GRID_WITH_CUSTOMERS : GRID_DEFAULT;
+  const gridClass = showCustomers ? GRID_4 : GRID_3;
 
   return (
     <div
@@ -55,7 +64,7 @@ export function DashboardOverviewBreakdownTable({
       {title ? (
         <div
           className={cn(
-            'border-b border-noorix-border',
+            'border-b border-noorix-border text-center',
             compact ? 'px-2.5 py-1.5' : 'px-3 py-2',
           )}
         >
@@ -69,95 +78,83 @@ export function DashboardOverviewBreakdownTable({
           </span>
         </div>
       ) : null}
-      <div className={compact ? 'px-2 py-1.5' : 'px-3 py-2'}>
+      <div className={compact ? 'px-1.5 py-1.5' : 'px-2 py-2'}>
         <div
           className={cn(
-            'grid items-center gap-x-2 border-b border-noorix-border text-end',
-            compact ? 'pb-1' : 'pb-2',
+            'grid items-center border-b border-noorix-border',
             gridClass,
+            compact ? 'pb-1' : 'pb-1.5',
           )}
         >
-          <span
-            className={cn(
-              'truncate font-semibold text-noorix-muted',
-              compact ? 'text-[9px]' : 'text-[10px]',
-            )}
-          >
-            {labelHeader}
-          </span>
-          <span className={cn('font-semibold text-noorix-muted', compact ? 'text-[9px]' : 'text-[10px]')}>
-            {t('total')}
-          </span>
-          <span className={cn('font-semibold text-noorix-muted', compact ? 'text-[9px]' : 'text-[10px]')}>
-            %
-          </span>
-          {showCustomers ? (
-            <span className={cn('font-semibold text-noorix-muted', compact ? 'text-[9px]' : 'text-[10px]')}>
-              {t('customers')}
-            </span>
-          ) : null}
+          <span className={thClass(compact)}>{labelHeader}</span>
+          <span className={thClass(compact)}>{t('total')}</span>
+          <span className={thClass(compact)}>%</span>
+          {showCustomers ? <span className={thClass(compact)}>{t('customers')}</span> : null}
         </div>
         {rows.map((row, idx) => (
           <div
             key={row.key}
             className={cn(
-              'grid items-center gap-x-2 text-end',
-              compact ? 'py-1' : 'py-2.5',
+              'grid items-center',
               gridClass,
               idx > 0 && 'border-t border-noorix-border',
             )}
           >
-            <div className="flex min-w-0 items-center justify-end gap-1.5">
-              {row.color ? (
+            <div className={cn(tdClass(compact), 'min-w-0')}>
+              <div className="mx-auto flex max-w-full items-center justify-center gap-1.5">
+                {row.color ? (
+                  <span
+                    className={cn('shrink-0 rounded-full', compact ? 'h-1.5 w-1.5' : 'h-2 w-2')}
+                    style={{ background: row.color }}
+                    aria-hidden
+                  />
+                ) : null}
                 <span
-                  className={cn('shrink-0 rounded-sm', compact ? 'h-1.5 w-1.5' : 'h-2 w-2')}
-                  style={{ background: row.color }}
-                  aria-hidden
-                />
-              ) : null}
-              <span
-                className={cn(
-                  'truncate font-semibold text-noorix-text',
-                  compact ? 'text-[10px]' : 'text-[11px]',
-                )}
-              >
-                {row.label}
-              </span>
+                  className={cn(
+                    'truncate font-semibold text-noorix-text',
+                    compact ? 'text-[10px]' : 'text-[11px]',
+                  )}
+                  title={row.label}
+                >
+                  {row.label}
+                </span>
+              </div>
             </div>
-            <span
-              dir="ltr"
-              className={cn(
-                'nx-font-numbers font-bold text-nx-sales',
-                compact ? 'text-[10px]' : 'text-[12px]',
-              )}
-            >
-              <FmtNum n={row.amount} />
-              {showCurrency ? (
-                <>
-                  {' '}
-                  <span className="nx-sar">SR</span>
-                </>
-              ) : null}
-            </span>
-            <span
-              dir="ltr"
-              className={cn(
-                'nx-font-numbers font-bold',
-                compact ? 'text-[10px] text-noorix-blue' : 'text-[12px] text-nx-sales',
-              )}
-            >
-              {row.pct}%
-            </span>
-            {showCustomers ? (
+            <div className={tdClass(compact)}>
               <span
                 dir="ltr"
                 className={cn(
-                  'nx-font-numbers font-medium text-noorix-text',
-                  compact ? 'text-[10px]' : 'text-[11px]',
+                  'inline-flex items-center justify-center gap-0.5 nx-font-numbers font-bold text-nx-sales',
+                  compact ? 'text-[10px]' : 'text-[12px]',
                 )}
               >
-                <FmtNum n={row.customers ?? 0} />
+                <FmtNum n={row.amount} />
+                {showCurrency ? <span className="nx-sar">SR</span> : null}
               </span>
+            </div>
+            <div className={tdClass(compact)}>
+              <span
+                dir="ltr"
+                className={cn(
+                  'inline-block nx-font-numbers font-bold',
+                  compact ? 'text-[10px] text-noorix-blue' : 'text-[12px] text-nx-sales',
+                )}
+              >
+                {row.pct}%
+              </span>
+            </div>
+            {showCustomers ? (
+              <div className={tdClass(compact)}>
+                <span
+                  dir="ltr"
+                  className={cn(
+                    'inline-block nx-font-numbers font-medium text-noorix-text',
+                    compact ? 'text-[10px]' : 'text-[11px]',
+                  )}
+                >
+                  <FmtNum n={row.customers ?? 0} />
+                </span>
+              </div>
             ) : null}
           </div>
         ))}
