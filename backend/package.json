@@ -39,6 +39,7 @@
     "@nestjs/schedule": "^4.1.2",
     "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^5.22.0",
+    "@umalqura/core": "^0.0.7",
     "bcrypt": "^5.1.1",
     "bull": "^4.16.5",
     "class-transformer": "^0.5.1",

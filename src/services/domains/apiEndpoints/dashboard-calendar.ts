@@ -85,6 +85,8 @@ export type SaudiOccasionDto = {
   fromDate: string;
   toDate: string;
   color: string;
+  /** أم القرى — قد يختلف يوماً عن الإعلان الرسمي للعيدين */
+  estimated: boolean;
 };
 
 export async function getDashboardSaudiOccasions(

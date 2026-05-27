@@ -230,7 +230,19 @@ export function DashboardSaudiOccasionsImportModal({
                         aria-hidden
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-[13px] font-semibold text-noorix-text">{labelFor(o)}</span>
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[13px] font-semibold text-noorix-text">{labelFor(o)}</span>
+                          <span
+                            className={cn(
+                              'rounded px-1.5 py-px text-[9px] font-semibold',
+                              o.estimated
+                                ? 'bg-[color-mix(in_srgb,var(--color-nx-net-profit)_18%,transparent)] text-[var(--color-nx-net-profit)]'
+                                : 'bg-[color-mix(in_srgb,var(--color-nx-sales)_12%,transparent)] text-noorix-blue',
+                            )}
+                          >
+                            {o.estimated ? t('dashboardImportSaudiEstimated') : t('dashboardImportSaudiOfficial')}
+                          </span>
+                        </span>
                         <span className="block text-[11px] text-noorix-muted ltr" dir="ltr">
                           {dateRangeLabel(o)}
                         </span>
