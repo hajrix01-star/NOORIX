@@ -1,0 +1,33 @@
+# إعادة تشغيل الـ API فقط — عند 502 بعد نشر ناجح (runner يقتل PM2 عند انتهاء المهمة)
+name: Restart API (emergency)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: restart-noorix-api
+  cancel-in-progress: false
+
+jobs:
+  restart:
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Sync deploy scripts to server
+        run: |
+          mkdir -p /var/www/noorix/deploy
+          rsync -a deploy/ /var/www/noorix/deploy/
+
+      - name: Restart API detached from runner
+        run: |
+          export DEPLOY_SHA="${{ github.sha }}"
+          bash "${{ github.workspace }}/deploy/restart-api-detached.sh" --wait-public
+
+      - name: Public readiness check
+        run: |
+          curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health" | head -c 500
+          echo ""
