@@ -33,16 +33,6 @@ npm ci
 npx prisma migrate deploy
 npm run build
 
-echo "==> PM2 startOrReload (noorix-backend)"
-if command -v pm2 >/dev/null 2>&1; then
-  pm2 startOrReload ecosystem.config.cjs --update-env
-  pm2 save
-  pm2 list | head -20
-else
-  echo "ERROR: pm2 غير مثبت" >&2
-  exit 1
-fi
-
 API_PORT=3000
 if [[ -f .env ]]; then
   p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' .env | head -1 | tr -d '\r')
@@ -52,7 +42,18 @@ if [[ -f .env ]]; then
     *) API_PORT=$p ;;
   esac
 fi
-echo "==> liveness ثم readiness على 127.0.0.1:${API_PORT} (نفس Nginx ‎proxy_pass)"
+
+echo "==> PM2 + تحرير المنفذ + فحص saudi-occasions"
+if command -v pm2 >/dev/null 2>&1; then
+  export API_PORT NOORIX_BACKEND_DIR="$REPO/backend"
+  bash "$REPO/deploy/ensure-api-listener.sh"
+  pm2 list | head -20
+else
+  echo "ERROR: pm2 غير مثبت" >&2
+  exit 1
+fi
+
+echo "==> readiness على 127.0.0.1:${API_PORT} (نفس Nginx ‎proxy_pass)"
 if command -v curl >/dev/null 2>&1; then
   curl -sS -f -o /dev/null --max-time 12 "http://127.0.0.1:${API_PORT}/api/v1/health/live" || { echo "FAIL liveness" >&2; exit 1; }
   if curl -sS -f -o /tmp/noorix-health.txt --max-time 20 "http://127.0.0.1:${API_PORT}/api/v1/health"; then
