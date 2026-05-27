@@ -219,15 +219,41 @@ function sumMonthMetric(
   return total;
 }
 
-/** يوم النهاية لعرض MTD: شهر جاري → اليوم؛ شهر ماضٍ كامل → آخر يوم */
+/** آخر يوم تقويمي فيه مبيعات > 0 ضمن الشهر (من ملخصات التشغيل). */
+export function lastRevenueSalesDayInMonth(
+  monthSales: SummaryLike[] | null | undefined,
+  year: number,
+  month: number,
+): number {
+  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+  let maxDay = 0;
+  for (const s of monthSales ?? []) {
+    const d = toYmd(s.transactionDate);
+    if (!d?.startsWith(prefix)) continue;
+    if (Number(s.totalAmount || 0) <= 0) continue;
+    const day = parseInt(d.slice(8, 10), 10);
+    if (Number.isFinite(day) && day > maxDay) maxDay = day;
+  }
+  return maxDay;
+}
+
+/**
+ * يوم نهاية فترة MTD: لا يتجاوز اليوم التقويمي (شهر جاري) ولا يتجاوز آخر يوم مبيعات مسجّل.
+ * يُستخدم لقصّ الشهر الحالي والشهر السابق بنفس اليوم (مثلاً 1–27).
+ */
 export function revenueMtdEndDay(
   year: number,
   month: number,
   todayYear: number,
   todayMonth: number,
   todayDay: number,
+  monthSales?: SummaryLike[] | null,
 ): number {
-  return mtdCalendarDaysInMonth(year, month, todayYear, todayMonth, todayDay);
+  const calendarCap = mtdCalendarDaysInMonth(year, month, todayYear, todayMonth, todayDay);
+  if (calendarCap <= 0) return 0;
+  const lastEntry = lastRevenueSalesDayInMonth(monthSales, year, month);
+  if (lastEntry <= 0) return calendarCap;
+  return Math.min(calendarCap, lastEntry);
 }
 
 /** عدد أيام التقويم (1…endDay) التي فيها إيراد مبيعات > 0 */

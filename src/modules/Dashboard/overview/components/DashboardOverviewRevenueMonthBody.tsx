@@ -10,6 +10,7 @@ import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals'
 
 type Props = {
   mtdEndDay: number;
+  prevMonthSalesTotal: number;
   revenueDailyAvg: number | null;
   revenueDailyAvgPrev: number | null;
   customerDailyAvg: number | null;
@@ -58,6 +59,7 @@ function DeltaBadge({
 
 export function DashboardOverviewRevenueMonthBody({
   mtdEndDay,
+  prevMonthSalesTotal,
   revenueDailyAvg,
   revenueDailyAvgPrev,
   customerDailyAvg,
@@ -93,6 +95,17 @@ export function DashboardOverviewRevenueMonthBody({
               {revenueDailyAvgPrev != null ? (
                 <div dir="ltr" className="mt-0.5 text-[9px] text-noorix-muted nx-font-numbers truncate">
                   <FmtNum n={revenueDailyAvgPrev} /> <span className="nx-sar">SR</span>
+                </div>
+              ) : null}
+              {prevMonthSalesTotal > 0 ? (
+                <div className="mt-1 border-t border-noorix-border/60 pt-1">
+                  <div className="text-[8px] font-semibold text-noorix-muted truncate">
+                    {t('dashboardRevenuePrevMonthSales')}
+                    <span className="nx-font-numbers ltr font-normal"> · 1–{mtdEndDay}</span>
+                  </div>
+                  <div dir="ltr" className="text-[11px] font-bold text-noorix-text nx-font-numbers">
+                    <FmtNum n={prevMonthSalesTotal} /> <span className="nx-sar text-[9px]">SR</span>
+                  </div>
                 </div>
               ) : null}
             </div>

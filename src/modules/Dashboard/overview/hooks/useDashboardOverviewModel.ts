@@ -18,6 +18,7 @@ import {
   computeRevenueDailyAvgActiveDays,
   computeCustomerDailyAvgActiveDays,
   filterSalesThroughDay,
+  sumRevenueThroughDay,
   revenueMtdEndDay as getRevenueMtdEndDay,
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
@@ -255,8 +256,15 @@ export function useDashboardOverviewModel(
 
   const revenueMtdEndDay = useMemo(() => {
     if (selectedMonth == null) return 0;
-    return getRevenueMtdEndDay(year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day);
-  }, [year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day]);
+    return getRevenueMtdEndDay(
+      year,
+      selectedMonth,
+      saudiNow.year,
+      saudiNow.month,
+      saudiNow.day,
+      monthSalesForDailyAvg,
+    );
+  }, [year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day, monthSalesForDailyAvg]);
 
   const monthSalesThroughMtd = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return monthSalesForDailyAvg;
@@ -283,6 +291,17 @@ export function useDashboardOverviewModel(
     () => computeRevenueDailyAvgActiveDays(prevMonthSalesThroughMtd),
     [prevMonthSalesThroughMtd],
   );
+
+  const revenuePrevMonthTotalSum = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
+    const prev = prevCalendarMonth(year, selectedMonth);
+    return sumRevenueThroughDay(
+      prevMonthSalesForDailyAvg,
+      prev.year,
+      prev.month,
+      revenueMtdEndDay,
+    );
+  }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
 
   const customerDailyAvgActiveDays = useMemo(
     () => computeCustomerDailyAvgActiveDays(monthSalesThroughMtd),
@@ -529,6 +548,7 @@ export function useDashboardOverviewModel(
     revenueMtdEndDay,
     revenueDailyAvgActiveDays,
     revenueDailyAvgPrevMonthActiveDays,
+    revenuePrevMonthTotalSum,
     customerDailyAvgActiveDays,
     customerDailyAvgPrevMonthActiveDays,
     monthName,
