@@ -29,7 +29,7 @@ function ExpenseLineMoneyCell({ amount }: { amount: number | null }) {
     return <span className="nx-expense-line-cell nx-expense-line-cell--muted">—</span>;
   }
   return (
-    <span dir="ltr" className="nx-expense-line-money inline-flex w-full items-baseline justify-end gap-0.5">
+    <span dir="ltr" className="nx-expense-line-money inline-flex max-w-full items-baseline justify-end gap-0.5">
       <FmtNum n={amount} className="nx-cell-num nx-expense-line-cell font-semibold tabular-nums" />
       <span className="nx-sar nx-expense-line-cell-sar">SR</span>
     </span>
@@ -162,8 +162,12 @@ export default function ExpenseLineList({
     },
     {
       key: 'monthlyAmount',
-      label: <span className="nx-expense-line-th-money">{t('expenseLineListMonthlyAmount')}</span>,
-      minWidth: '7.5em',
+      label: (
+        <span className="nx-expense-line-th-money" title={t('expenseLineListMonthlyAmount')}>
+          {t('expenseLineMonthlyColShort')}
+        </span>
+      ),
+      shrink: true,
       cellClassName: 'nx-col-expense-money',
       numeric: true,
       render: (_: unknown, row: any) => (
@@ -172,8 +176,12 @@ export default function ExpenseLineList({
     },
     {
       key: 'annualAmount',
-      label: <span className="nx-expense-line-th-money">{t('expenseLineListAnnualAmount')}</span>,
-      minWidth: '7.5em',
+      label: (
+        <span className="nx-expense-line-th-money" title={t('expenseLineListAnnualAmount')}>
+          {t('expenseLineAnnualColShort')}
+        </span>
+      ),
+      shrink: true,
       cellClassName: 'nx-col-expense-money',
       numeric: true,
       render: (_: unknown, row: any) => (

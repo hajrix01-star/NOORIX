@@ -4576,7 +4576,17 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .nx-expense-line-table-wrap .nx-col-expense-kind { min-width: 7.5em; }
 .nx-expense-line-table-wrap .nx-col-expense-text { min-width: 8.5em; }
 .nx-expense-line-table-wrap .nx-col-expense-service { min-width: 5.5em; }
-.nx-expense-line-table-wrap .nx-col-expense-money { min-width: 7.5em; }
+/* عرض مالي: ch حسب الأرقام — لا يتمدد لعنوان «المبلغ الشهري» الطويل */
+.nx-expense-line-table-wrap .nx-col-expense-money {
+  width: 1%;
+  min-width: 6.5ch;
+  max-width: 11ch;
+  white-space: nowrap;
+}
+.nx-expense-line-table-wrap .noorix-table thead th.nx-col-expense-money,
+.nx-expense-line-table-wrap .noorix-table tbody td.nx-col-expense-money.noorix-numeric-cell {
+  padding-inline: 0.5em !important;
+}
 .nx-expense-line-table-wrap .nx-col-expense-actions { min-width: 3.25em; }
 .nx-expense-line-table-wrap .noorix-table tbody td {
   vertical-align: middle;
