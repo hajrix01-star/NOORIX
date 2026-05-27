@@ -38,13 +38,12 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         filter={m.filter}
         year={m.year}
         revenueMtdEndDay={m.revenueMtdEndDay}
-        revenueMtdCalendar={m.revenueMtdCalendar}
-        revenueMtdPrevCalendar={m.revenueMtdPrevCalendar}
         revenueMtdTotalSum={m.revenueMtdTotalSum}
         revenueMtdActiveDayCount={m.revenueMtdActiveDayCount}
-        customerMtdCalendar={m.customerMtdCalendar}
         revenueDailyAvgActiveDays={m.revenueDailyAvgActiveDays}
         revenueDailyAvgPrevMonthActiveDays={m.revenueDailyAvgPrevMonthActiveDays}
+        customerDailyAvgActiveDays={m.customerDailyAvgActiveDays}
+        customerDailyAvgPrevMonthActiveDays={m.customerDailyAvgPrevMonthActiveDays}
         salesShiftPeriodTotals={m.salesShiftPeriodTotals}
         monthName={m.monthName}
         kpiInsightFooters={m.kpiInsightFooters}

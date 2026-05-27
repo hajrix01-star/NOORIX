@@ -29,13 +29,12 @@ type Props = {
   filter: DashboardOverviewFilter | undefined;
   year: number;
   revenueMtdEndDay: number;
-  revenueMtdCalendar: number | null;
-  revenueMtdPrevCalendar: number | null;
   revenueMtdTotalSum: number;
   revenueMtdActiveDayCount: number;
-  customerMtdCalendar: number | null;
   revenueDailyAvgActiveDays: number | null;
   revenueDailyAvgPrevMonthActiveDays: number | null;
+  customerDailyAvgActiveDays: number | null;
+  customerDailyAvgPrevMonthActiveDays: number | null;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
   monthName: string | null;
   kpiInsightFooters: KpiInsightFooterMap;
@@ -48,13 +47,12 @@ export function DashboardOverviewKpis({
   filter,
   year,
   revenueMtdEndDay,
-  revenueMtdCalendar,
-  revenueMtdPrevCalendar,
   revenueMtdTotalSum,
   revenueMtdActiveDayCount,
-  customerMtdCalendar,
   revenueDailyAvgActiveDays,
   revenueDailyAvgPrevMonthActiveDays,
+  customerDailyAvgActiveDays,
+  customerDailyAvgPrevMonthActiveDays,
   salesShiftPeriodTotals,
   monthName,
   kpiInsightFooters,
@@ -144,13 +142,12 @@ export function DashboardOverviewKpis({
                 <DashboardOverviewRevenueMonthBody
                   mtdEndDay={revenueMtdEndDay}
                   monthLabel={monthName ?? ''}
-                  revenueMtd={revenueMtdCalendar}
-                  revenueMtdPrev={revenueMtdPrevCalendar}
-                  revenueMtdTotalSum={revenueMtdTotalSum}
-                  revenueMtdActiveDayCount={revenueMtdActiveDayCount}
-                  revenueActiveDays={revenueDailyAvgActiveDays}
-                  revenueActiveDaysPrev={revenueDailyAvgPrevMonthActiveDays}
-                  customerMtd={customerMtdCalendar}
+                  revenueDailyAvg={revenueDailyAvgActiveDays}
+                  revenueDailyAvgPrev={revenueDailyAvgPrevMonthActiveDays}
+                  revenueTotalSum={revenueMtdTotalSum}
+                  revenueActiveDayCount={revenueMtdActiveDayCount}
+                  customerDailyAvg={customerDailyAvgActiveDays}
+                  customerDailyAvgPrev={customerDailyAvgPrevMonthActiveDays}
                   salesShiftPeriodTotals={salesShiftPeriodTotals}
                   t={t}
                 />
