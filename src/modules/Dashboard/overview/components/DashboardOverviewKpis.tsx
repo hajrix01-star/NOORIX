@@ -29,7 +29,10 @@ type Props = {
   filter: DashboardOverviewFilter | undefined;
   year: number;
   revenueMtdEndDay: number;
+  revenueMtdTotalSum: number;
   revenuePrevMonthTotalSum: number;
+  monthName: string | null;
+  prevMonthName: string;
   revenueDailyAvgActiveDays: number | null;
   revenueDailyAvgPrevMonthActiveDays: number | null;
   customerDailyAvgActiveDays: number | null;
@@ -45,7 +48,10 @@ export function DashboardOverviewKpis({
   filter,
   year,
   revenueMtdEndDay,
+  revenueMtdTotalSum,
   revenuePrevMonthTotalSum,
+  monthName,
+  prevMonthName,
   revenueDailyAvgActiveDays,
   revenueDailyAvgPrevMonthActiveDays,
   customerDailyAvgActiveDays,
@@ -140,6 +146,9 @@ export function DashboardOverviewKpis({
               {showMonthSalesBody ? (
                 <DashboardOverviewRevenueMonthBody
                   mtdEndDay={revenueMtdEndDay}
+                  currentMonthLabel={monthName ?? ''}
+                  prevMonthLabel={prevMonthName}
+                  currentMonthSalesTotal={revenueMtdTotalSum}
                   prevMonthSalesTotal={revenuePrevMonthTotalSum}
                   revenueDailyAvg={revenueDailyAvgActiveDays}
                   revenueDailyAvgPrev={revenueDailyAvgPrevMonthActiveDays}
