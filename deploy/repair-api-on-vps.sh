@@ -43,10 +43,9 @@ if [[ -f .env ]]; then
   esac
 fi
 
-echo "==> PM2 + تحرير المنفذ + فحص saudi-occasions"
+echo "==> إعادة تشغيل API (detached — يبقى بعد خروج الطرفية)"
 if command -v pm2 >/dev/null 2>&1; then
-  export API_PORT NOORIX_BACKEND_DIR="$REPO/backend"
-  bash "$REPO/deploy/ensure-api-listener.sh"
+  bash "$REPO/deploy/restart-api-detached.sh" --wait-public
   pm2 list | head -20
 else
   echo "ERROR: pm2 غير مثبت" >&2

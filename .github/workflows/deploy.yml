@@ -23,8 +23,13 @@
 #  │    - rsync + قراءة/كتابة في /var/www/noorix              │
 #  │    - sudo bash deploy/install-frontend.sh (بدون كلمة)    │
 #  │    - sudo systemctl reload nginx (بدون كلمة)             │
+#  │    - sudo systemd-run (لتشغيل PM2 بعيداً عن دورة الـ job) │
 #  │    مثال: sudo visudo ثم أضف:                             │
 #  │    runner ALL=(ALL) NOPASSWD: /bin/bash, /bin/systemctl  │
+#  │
+#  │ ⚠️ الـ runner يقتل عمليات PM2/node عند انتهاء المهمة     │
+#  │    (orphan cleanup). لذلك إعادة تشغيل API تتم عبر        │
+#  │    systemd-run — انظر deploy/restart-api-detached.sh     │
 #  └─────────────────────────────────────────────────────────┘
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -79,14 +84,13 @@ jobs:
           PROD=/var/www/noorix/backend
           WORKSPACE="${{ github.workspace }}"
 
-          # دالة إسعاف: إذا فشل البناء نُعيد تشغيل PM2 بالـ dist القديم (إن وُجد)
-          ensure_pm2_running() {
-            echo "==> [trap] خطأ — نُعيد تشغيل PM2 بالكود السابق إن أمكن"
-            pm2 delete noorix-api noorix-backend 2>/dev/null || true
-            pm2 start "$PROD/ecosystem.config.cjs" 2>/dev/null || true
-            pm2 save 2>/dev/null || true
+          # إسعاف: إعادة تشغيل API عبر systemd-run (لا تُقتل عند انتهاء الـ job)
+          recover_api_detached() {
+            echo "==> [trap] خطأ — إعادة تشغيل API (detached)"
+            export DEPLOY_SHA="${{ github.sha }}"
+            bash "$WORKSPACE/deploy/restart-api-detached.sh" || true
           }
-          trap ensure_pm2_running ERR
+          trap recover_api_detached ERR
 
           echo "==> مزامنة كود الخلفية (بدون node_modules/dist/.env)"
           rsync -a --delete \
@@ -128,54 +132,11 @@ jobs:
             exit 1
           fi
 
-          API_PORT=3000
-          if [ -f "$PROD/.env" ]; then
-            p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' \
-              "$PROD/.env" | head -1 | tr -d '\r')
-            p=$(echo "$p" | tr -d '[:space:]')
-            case "$p" in ''|*[!0-9]*) ;; *) API_PORT=$p ;; esac
-          fi
-          export API_PORT DEPLOY_SHA="${{ github.sha }}"
-          bash "$WORKSPACE/deploy/ensure-api-listener.sh"
-
-      # ── انتظار جاهزية الـ API ─────────────────────────────
-      - name: Wait for API liveness
+      # PM2 يُشغَّل عبر systemd-run — وإلا يقتله الـ runner عند "Complete job"
+      - name: Restart API (detached from runner orphan cleanup)
         run: |
-          API_PORT=3000
-          if [ -f /var/www/noorix/backend/.env ]; then
-            p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' \
-              /var/www/noorix/backend/.env | head -1 | tr -d '\r')
-            p=$(echo "$p" | tr -d '[:space:]')
-            case "$p" in ''|*[!0-9]*) ;; *) API_PORT=$p ;; esac
-          fi
-          echo "==> API_PORT=${API_PORT} (يجب أن يطابق Nginx proxy_pass)"
-          echo "==> Waiting for liveness on port ${API_PORT}..."
-          ready=0
-          for i in $(seq 1 90); do
-            if curl -sS -f -o /dev/null --connect-timeout 2 --max-time 3 \
-                "http://127.0.0.1:${API_PORT}/api/v1/health/live" 2>/dev/null; then
-              echo "==> API ready after ${i}s"
-              ready=1; break
-            fi
-            sleep 1
-          done
-          if [ "$ready" != 1 ]; then
-            echo "ERROR: timeout 90s" >&2
-            pm2 logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
-            exit 1
-          fi
-
-      - name: Verify Saudi occasions route (no stale listener on API port)
-        run: |
-          API_PORT=3000
-          if [ -f /var/www/noorix/backend/.env ]; then
-            p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' \
-              /var/www/noorix/backend/.env | head -1 | tr -d '\r')
-            p=$(echo "$p" | tr -d '[:space:]')
-            case "$p" in ''|*[!0-9]*) ;; *) API_PORT=$p ;; esac
-          fi
-          export API_PORT DEPLOY_SHA="${{ github.sha }}"
-          bash "${{ github.workspace }}/deploy/ensure-api-listener.sh"
+          export DEPLOY_SHA="${{ github.sha }}"
+          bash "${{ github.workspace }}/deploy/restart-api-detached.sh" --wait-public
 
       # ── إعادة تحميل Nginx وفحص نهائي ─────────────────────
       - name: Reload Nginx & final health check
