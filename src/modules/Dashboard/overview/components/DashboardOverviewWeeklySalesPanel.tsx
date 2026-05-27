@@ -63,18 +63,15 @@ export function DashboardOverviewWeeklySalesPanel({
   const { t } = useTranslation();
 
   return (
-    <section
-      className="overflow-hidden rounded-xl border border-noorix-border bg-[var(--noorix-surface-1)] shadow-sm"
-      aria-label={t('dashboardWeeklySalesTitle')}
-    >
-      <div className="flex flex-wrap items-center gap-3 border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
-        <span className="h-8 w-1 shrink-0 rounded-full bg-noorix-blue" aria-hidden />
-        <h2 className="m-0 min-w-0 flex-1 text-[13px] font-bold leading-snug text-noorix-text">
+    <section className="min-w-0" aria-label={t('dashboardWeeklySalesTitle')}>
+      <div className="flex flex-wrap items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted/40 px-2 py-2.5 sm:gap-3 sm:px-3 sm:py-3">
+        <span className="h-7 w-1 shrink-0 rounded-full bg-noorix-blue sm:h-8" aria-hidden />
+        <h2 className="m-0 min-w-0 flex-1 text-[12px] font-bold leading-snug text-noorix-text sm:text-[13px]">
           {t('dashboardWeeklySalesTitle')}
         </h2>
       </div>
 
-      <div className="overflow-x-auto p-2 sm:p-4">
+      <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
         {isLoading || !data ? (
           <div className="space-y-2">
             {[0, 1, 2, 3].map((i) => (
