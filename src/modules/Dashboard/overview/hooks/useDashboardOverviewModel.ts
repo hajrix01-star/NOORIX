@@ -18,8 +18,6 @@ import {
   computeRevenueDailyAvgActiveDays,
   computeCustomerDailyAvgActiveDays,
   filterSalesThroughDay,
-  countRevenueActiveSalesDays,
-  sumRevenueThroughDay,
   revenueMtdEndDay as getRevenueMtdEndDay,
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
@@ -276,21 +274,6 @@ export function useDashboardOverviewModel(
     );
   }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
 
-  const revenueMtdTotalSum = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
-    return sumRevenueThroughDay(monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay);
-  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
-  const revenueMtdActiveDayCount = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
-    return countRevenueActiveSalesDays(
-      monthSalesForDailyAvg,
-      year,
-      selectedMonth,
-      revenueMtdEndDay,
-    );
-  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
   const revenueDailyAvgActiveDays = useMemo(
     () => computeRevenueDailyAvgActiveDays(monthSalesThroughMtd),
     [monthSalesThroughMtd],
@@ -544,8 +527,6 @@ export function useDashboardOverviewModel(
     topSuppliersChartData,
     purchaseCategoriesPieData,
     revenueMtdEndDay,
-    revenueMtdTotalSum,
-    revenueMtdActiveDayCount,
     revenueDailyAvgActiveDays,
     revenueDailyAvgPrevMonthActiveDays,
     customerDailyAvgActiveDays,

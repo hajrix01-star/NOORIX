@@ -29,14 +29,11 @@ type Props = {
   filter: DashboardOverviewFilter | undefined;
   year: number;
   revenueMtdEndDay: number;
-  revenueMtdTotalSum: number;
-  revenueMtdActiveDayCount: number;
   revenueDailyAvgActiveDays: number | null;
   revenueDailyAvgPrevMonthActiveDays: number | null;
   customerDailyAvgActiveDays: number | null;
   customerDailyAvgPrevMonthActiveDays: number | null;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
-  monthName: string | null;
   kpiInsightFooters: KpiInsightFooterMap;
 };
 
@@ -47,14 +44,11 @@ export function DashboardOverviewKpis({
   filter,
   year,
   revenueMtdEndDay,
-  revenueMtdTotalSum,
-  revenueMtdActiveDayCount,
   revenueDailyAvgActiveDays,
   revenueDailyAvgPrevMonthActiveDays,
   customerDailyAvgActiveDays,
   customerDailyAvgPrevMonthActiveDays,
   salesShiftPeriodTotals,
-  monthName,
   kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
@@ -135,17 +129,17 @@ export function DashboardOverviewKpis({
               color={accentColor}
               className="flex h-full min-h-0 flex-col"
             >
-              <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
+              <MetricCard.Header
+                label={card.label}
+                subLabel={isSales ? undefined : t(card.formulaKey)}
+              />
               <MetricCard.Value value={amountText(rawVal)} currency="SR" className="pb-1" />
 
               {showMonthSalesBody ? (
                 <DashboardOverviewRevenueMonthBody
                   mtdEndDay={revenueMtdEndDay}
-                  monthLabel={monthName ?? ''}
                   revenueDailyAvg={revenueDailyAvgActiveDays}
                   revenueDailyAvgPrev={revenueDailyAvgPrevMonthActiveDays}
-                  revenueTotalSum={revenueMtdTotalSum}
-                  revenueActiveDayCount={revenueMtdActiveDayCount}
                   customerDailyAvg={customerDailyAvgActiveDays}
                   customerDailyAvgPrev={customerDailyAvgPrevMonthActiveDays}
                   salesShiftPeriodTotals={salesShiftPeriodTotals}
@@ -157,7 +151,6 @@ export function DashboardOverviewKpis({
                 periodLabel={periodLabel}
                 rows={!isSales ? footerRows : undefined}
                 fallback={isSales ? null : pctFallback}
-                timelineHint={isSales ? t('dashboardKpiTimelineHint') : undefined}
               />
             </MetricCard>
           );
