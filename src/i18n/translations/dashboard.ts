@@ -35,9 +35,11 @@ export default {
   dashboardSpecialDaysDesc: { ar: 'أضف فترات خاصة مثل رمضان أو الأعياد لتظهر مميزة في التقويم.', en: 'Add special periods like Ramadan or holidays to highlight them on the calendar.' },
   dashboardImportSaudiOccasions: { ar: 'استيراد مناسبات السعودية', en: 'Import Saudi occasions' },
   dashboardImportSaudiOccasionsHint: {
-    ar: 'اختر الإجازات والأعياد ورمضان (تقويم أم القرى تقريبي). تُقسَّم الفترات تلقائياً حسب الشهر في التقويم.',
-    en: 'Pick holidays, Eid, and Ramadan (approx. Umm al-Qura). Ranges are split by month on the calendar.',
+    ar: 'التواريخ تُحسب تلقائياً من تقويم أم القرى. العيدان مُوسَمان «تقديري» — راجع إعلان وزارة الموارد البشرية قبل الاعتماد النهائي.',
+    en: 'Dates are computed from the Umm al-Qura calendar. Eid periods are marked estimated — confirm official HRSD announcements before final use.',
   },
+  dashboardImportSaudiEstimated: { ar: 'تقديري (أم القرى)', en: 'Estimated (Umm al-Qura)' },
+  dashboardImportSaudiOfficial: { ar: 'ثابت', en: 'Fixed' },
   dashboardImportSaudiSelectAll: { ar: 'تحديد الكل', en: 'Select all' },
   dashboardImportSaudiClear: { ar: 'إلغاء التحديد', en: 'Clear selection' },
   dashboardImportSaudiApply: { ar: 'تطبيق المحدد', en: 'Apply selected' },
