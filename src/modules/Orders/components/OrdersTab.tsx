@@ -483,15 +483,20 @@ export function OrdersTab({
   const printDate = `${year}/${String(month).padStart(2, '0')}`;
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="nx-orders-tab-root flex min-w-0 flex-col gap-3 sm:gap-4">
       <div className="noorix-print-header hidden print:block">
         {companyName} — {t('ordersTab')} — {printDate}
       </div>
 
-      <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
+      <div className="noorix-print-hide nx-orders-filter-row nx-page-header nx-page-header--filter-row flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
         <DateFilterBar filter={dateFilter} />
-        <div className="nx-toolbar">
-          <Button variant="primary" size="sm" className="noorix-print-hide" onClick={() => { setEditingOrder(null); setShowModal(true); }}>
+        <div className="nx-toolbar w-full shrink-0 sm:ms-auto sm:w-auto">
+          <Button
+            variant="primary"
+            size="sm"
+            className="noorix-print-hide w-full min-h-11 sm:w-auto sm:min-h-0"
+            onClick={() => { setEditingOrder(null); setShowModal(true); }}
+          >
             + {t('ordersNewOrder')}
           </Button>
         </div>

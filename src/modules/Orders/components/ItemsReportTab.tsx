@@ -176,7 +176,7 @@ export function ItemsReportTab({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="nx-orders-tab-root flex flex-col gap-3 sm:gap-4">
       <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
         <DateFilterBar filter={dateFilter} />
         <div className="nx-toolbar">
@@ -223,7 +223,7 @@ export function ItemsReportTab({
 
       {/* رسم بياني */}
       {filtered.length > 0 && (
-        <div className="noorix-surface-card p-5">
+        <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-3 sm:bg-noorix-surface sm:p-5">
           <div className="text-[13px] font-bold mb-4 text-noorix-muted">
             {filterMode === 'top' ? t('ordersChartTop') : filterMode === 'bottom' ? t('ordersChartBottom') : t('ordersChartAll')}
           </div>

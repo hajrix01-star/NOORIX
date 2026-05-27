@@ -93,13 +93,26 @@ function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff 
 
   const tabItems = useMemo(() => {
     const tabs = [
-      { id: 'orders',       label: t('ordersTab') },
-      { id: 'items-report', label: t('ordersItemsReportTab') },
-      { id: 'items-manage', label: t('ordersItemsManageTab') },
-      { id: 'sales-report', label: t('salesReportTab') },
+      { id: 'orders', labelKey: 'ordersTab', shortLabelKey: 'ordersTabShort' },
+      { id: 'items-report', labelKey: 'ordersItemsReportTab', shortLabelKey: 'ordersItemsReportTabShort' },
+      { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
+      { id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' },
     ];
-    if (canDigest) tabs.push({ id: 'staff-digest', label: t('staffDigestTab') });
-    return tabs;
+    if (canDigest) tabs.push({ id: 'staff-digest', labelKey: 'staffDigestTab', shortLabelKey: 'staffDigestTabShort' });
+    return tabs.map((tab: any) => {
+      const full = t(tab.labelKey);
+      const short = tab.shortLabelKey ? t(tab.shortLabelKey) : full;
+      const label =
+        short === full ? (
+          full
+        ) : (
+          <>
+            <span className="hidden sm:inline">{full}</span>
+            <span className="sm:hidden">{short}</span>
+          </>
+        );
+      return { id: tab.id, label };
+    });
   }, [t, canDigest]);
 
   return (
@@ -119,7 +132,8 @@ function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff 
           items={tabItems}
           value={activeTab}
           onChange={setActiveTab}
-          contentClassName="nx-tab-content"
+          shellClassName="nx-orders-tabs-shell"
+          contentClassName="nx-tab-content nx-orders-tab-content min-h-[200px] px-1 py-2 sm:px-3 sm:py-3"
         >
           {activeTab === 'orders' && (
             <OrdersTab

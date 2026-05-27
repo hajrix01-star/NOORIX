@@ -4639,6 +4639,36 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
 }
 
+/* ── الطلبات — جوال: تسطيح الطبقات داخل تبويبات ScreenTabs ── */
+@media (max-width: 640px) {
+  .nx-orders-tabs-shell {
+    box-shadow: none;
+  }
+  .nx-orders-tab-content {
+    padding: 8px 6px 12px;
+  }
+  .nx-orders-tab-root {
+    gap: 10px;
+  }
+  .nx-orders-filter-row .noorix-date-filter-bar {
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
+    padding: 8px 10px;
+    box-shadow: none;
+  }
+  .nx-orders-summary-card {
+    box-shadow: none;
+  }
+  .nx-orders-summary-section {
+    background: var(--noorix-bg-muted);
+    box-shadow: none;
+  }
+  .nx-orders-tab-content .noorix-surface-card:not(.noorix-table-frame) {
+    box-shadow: none;
+  }
+}
+
 /* ── Responsive — OCR ── */
 @media (max-width: 640px) {
   .ocr-h1 { font-size: 17px; }
