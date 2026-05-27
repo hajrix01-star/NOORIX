@@ -14,6 +14,10 @@ if [[ ! -f "$REPO/backend/ecosystem.config.cjs" ]]; then
   echo "ERROR: missing $REPO/backend/ecosystem.config.cjs" >&2
   exit 1
 fi
+if ! command -v pm2-runtime >/dev/null 2>&1 && ! command -v pm2 >/dev/null 2>&1; then
+  echo "ERROR: pm2 غير مثبت عالمياً — على VPS: npm install -g pm2" >&2
+  exit 1
+fi
 
 echo "==> Installing $UNIT_DST"
 sudo cp "$UNIT_SRC" "$UNIT_DST"

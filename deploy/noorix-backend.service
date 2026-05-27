@@ -16,8 +16,9 @@ Environment=NODE_ENV=production
 Environment=PM2_HOME=/etc/.pm2
 EnvironmentFile=-/var/www/noorix/backend/.env
 # pm2-runtime يبقى في المقدمة — يُعاد تشغيله تلقائياً عند الفشل
-ExecStart=/bin/bash -lc 'cd /var/www/noorix/backend && exec ./node_modules/.bin/pm2-runtime start ecosystem.config.cjs'
-ExecReload=/bin/bash -lc 'cd /var/www/noorix/backend && ./node_modules/.bin/pm2 reload ecosystem.config.cjs --update-env'
+# pm2 مثبت عالمياً على VPS (ليس في backend/package.json)
+ExecStart=/bin/bash -lc 'cd /var/www/noorix/backend && exec pm2-runtime start ecosystem.config.cjs'
+ExecReload=/bin/bash -lc 'cd /var/www/noorix/backend && pm2 reload ecosystem.config.cjs --update-env'
 Restart=always
 RestartSec=5
 KillMode=mixed
