@@ -87,7 +87,7 @@ function AvgCell({ row }: { row: YearMonthlyDailyAvgRow }) {
     return <span className="font-semibold text-noorix-muted">—</span>;
   }
   return (
-    <span dir="ltr" className="inline-flex max-w-full items-baseline justify-end gap-0.5 whitespace-nowrap nx-font-numbers">
+    <span dir="ltr" className="inline-flex max-w-full items-baseline justify-center gap-0.5 whitespace-nowrap nx-font-numbers">
       <FmtNum n={row.avgDaily} className={cn('font-bold', valueToneClass(row.tone, true))} />
       <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
     </span>
@@ -134,10 +134,10 @@ function YearlyDailyAvgTable({
             <th scope="col" className={cn(TH_CELL, 'px-1.5 text-start')}>
               {t('dashboardYearlyDailyAvgMonthCol')}
             </th>
-            <th scope="col" className={cn(TH_CELL, 'px-1 text-end')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1 text-center')}>
               <AvgHeader t={t} />
             </th>
-            <th scope="col" className={cn(TH_CELL, 'px-1 text-end')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1 text-center')}>
               {t('dashboardWeeklySalesDelta')}
             </th>
           </tr>
@@ -150,10 +150,10 @@ function YearlyDailyAvgTable({
                 <td className={cn(TD_CELL, 'px-1.5 text-start')}>
                   <MonthCell row={row} t={t} />
                 </td>
-                <td className={cn(TD_CELL, 'px-1 text-end')}>
+                <td className={cn(TD_CELL, 'px-1 text-center')}>
                   <AvgCell row={row} />
                 </td>
-                <td className={cn(TD_CELL, 'px-1 text-end')}>
+                <td className={cn(TD_CELL, 'px-1 text-center')}>
                   <DeltaCell row={row} />
                 </td>
               </tr>
