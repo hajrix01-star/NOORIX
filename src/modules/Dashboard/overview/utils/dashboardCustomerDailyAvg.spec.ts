@@ -29,6 +29,23 @@ describe('computeRevenueDailyAvgCalendarMtd', () => {
     expect(mtdCalendarDaysInMonth(2026, 5, 2026, 5, 26)).toBe(26);
     expect(computeRevenueDailyAvgCalendarMtd(sales, 2026, 5, 26)).toBeCloseTo(1500 / 26, 5);
   });
+
+  it('excludes sales after end day from MTD total', () => {
+    const sales = [
+      { transactionDate: '2026-05-10', totalAmount: 1000 },
+      { transactionDate: '2026-05-28', totalAmount: 9000 },
+    ];
+    expect(computeRevenueDailyAvgCalendarMtd(sales, 2026, 5, 20)).toBe(50);
+  });
+
+  it('compares same calendar span for previous month', () => {
+    const april = [
+      { transactionDate: '2026-04-05', totalAmount: 400 },
+      { transactionDate: '2026-04-15', totalAmount: 600 },
+      { transactionDate: '2026-04-28', totalAmount: 3000 },
+    ];
+    expect(computeRevenueDailyAvgCalendarMtd(april, 2026, 4, 20)).toBe(50);
+  });
 });
 
 describe('computeCustomerDailyAvgCalendarMtd', () => {

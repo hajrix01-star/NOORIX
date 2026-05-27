@@ -180,17 +180,40 @@ function computeDailyAvgActiveDays(
   return sum / n;
 }
 
+/** قصّ مبيعات الشهر حتى يوم تقويمي (شامل) — لـ MTD ومقارنة الشهر السابق. */
+export function filterSalesThroughDay(
+  monthSales: SummaryLike[] | null | undefined,
+  year: number,
+  month: number,
+  endDayInclusive: number,
+): SummaryLike[] {
+  const last = lastDayOfMonth(year, month);
+  const cap = Math.max(1, Math.min(endDayInclusive, last));
+  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+  return (monthSales ?? []).filter((s) => {
+    const d = toYmd(s.transactionDate);
+    if (!d || !d.startsWith(prefix)) return false;
+    const day = parseInt(d.slice(8, 10), 10);
+    return Number.isFinite(day) && day >= 1 && day <= cap;
+  });
+}
+
 function sumMonthMetric(
   monthSales: SummaryLike[] | null | undefined,
   year: number,
   month: number,
   pick: (s: SummaryLike) => number,
+  endDayInclusive?: number,
 ): number {
-  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+  const rows =
+    endDayInclusive != null
+      ? filterSalesThroughDay(monthSales, year, month, endDayInclusive)
+      : (monthSales ?? []).filter((s) => {
+          const d = toYmd(s.transactionDate);
+          return !!d && d.startsWith(`${year}-${String(month).padStart(2, '0')}-`);
+        });
   let total = 0;
-  for (const s of monthSales ?? []) {
-    const d = toYmd(s.transactionDate);
-    if (!d || !d.startsWith(prefix)) continue;
+  for (const s of rows) {
     total += pick(s);
   }
   return total;
@@ -205,7 +228,13 @@ export function computeRevenueDailyAvgCalendarMtd(
 ): number | null {
   const last = lastDayOfMonth(year, month);
   const days = Math.max(1, Math.min(endDayInclusive, last));
-  const total = sumMonthMetric(monthSales, year, month, (s) => Number(s.totalAmount || 0));
+  const total = sumMonthMetric(
+    monthSales,
+    year,
+    month,
+    (s) => Number(s.totalAmount || 0),
+    endDayInclusive,
+  );
   if (total <= 0) return null;
   return total / days;
 }
@@ -218,7 +247,13 @@ export function computeCustomerDailyAvgCalendarMtd(
 ): number | null {
   const last = lastDayOfMonth(year, month);
   const days = Math.max(1, Math.min(endDayInclusive, last));
-  const total = sumMonthMetric(monthSales, year, month, (s) => Number(s.customerCount || 0));
+  const total = sumMonthMetric(
+    monthSales,
+    year,
+    month,
+    (s) => Number(s.customerCount || 0),
+    endDayInclusive,
+  );
   if (total <= 0) return null;
   return total / days;
 }

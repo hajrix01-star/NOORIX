@@ -33,7 +33,7 @@ type Props = {
   revenueMtdPrevCalendar: number | null;
   customerMtdCalendar: number | null;
   revenueDailyAvgActiveDays: number | null;
-  customerDailyAvgActiveDays: number | null;
+  revenueDailyAvgPrevMonthActiveDays: number | null;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
   monthName: string | null;
   kpiInsightFooters: KpiInsightFooterMap;
@@ -50,7 +50,7 @@ export function DashboardOverviewKpis({
   revenueMtdPrevCalendar,
   customerMtdCalendar,
   revenueDailyAvgActiveDays,
-  customerDailyAvgActiveDays,
+  revenueDailyAvgPrevMonthActiveDays,
   salesShiftPeriodTotals,
   monthName,
   kpiInsightFooters,
@@ -143,8 +143,8 @@ export function DashboardOverviewKpis({
                   revenueMtd={revenueMtdCalendar}
                   revenueMtdPrev={revenueMtdPrevCalendar}
                   revenueActiveDays={revenueDailyAvgActiveDays}
+                  revenueActiveDaysPrev={revenueDailyAvgPrevMonthActiveDays}
                   customerMtd={customerMtdCalendar}
-                  customerActiveDays={customerDailyAvgActiveDays}
                   salesShiftPeriodTotals={salesShiftPeriodTotals}
                   t={t}
                 />

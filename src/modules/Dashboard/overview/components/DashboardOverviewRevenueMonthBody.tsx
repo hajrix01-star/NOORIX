@@ -14,8 +14,8 @@ type Props = {
   revenueMtd: number | null;
   revenueMtdPrev: number | null;
   revenueActiveDays: number | null;
+  revenueActiveDaysPrev: number | null;
   customerMtd: number | null;
-  customerActiveDays: number | null;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
   t: (key: string, vars?: Record<string, string | number>) => string;
 };
@@ -64,19 +64,23 @@ function DeltaBadge({
 function MiniStat({
   label,
   value,
+  prevValue,
   unit,
   suffix,
+  t,
 }: {
   label: string;
   value: number | null;
+  prevValue?: number | null;
   unit: 'currency' | 'count';
   suffix?: string;
+  t: Props['t'];
 }) {
   if (value == null) return null;
   return (
     <div className="min-w-0 rounded-md border border-noorix-border/80 bg-noorix-bg-muted/30 px-2 py-1.5">
       <div className="truncate text-[9px] font-semibold text-noorix-muted leading-tight">{label}</div>
-      <div dir="ltr" className="mt-0.5 flex items-baseline gap-0.5 text-start nx-font-numbers">
+      <div dir="ltr" className="mt-0.5 flex items-baseline justify-center gap-0.5 text-center nx-font-numbers">
         <span className="truncate text-[12px] font-bold text-noorix-text">
           <FmtNum n={value} />
         </span>
@@ -86,6 +90,19 @@ function MiniStat({
           <span className="shrink-0 text-[9px] text-noorix-muted">{suffix}</span>
         )}
       </div>
+      {prevValue != null ? (
+        <div className="mt-1 flex items-center justify-between gap-1 text-[8px] text-noorix-muted">
+          <span className="truncate">{t('dashboardKpiFooterTrailingAvg')}</span>
+          <span dir="ltr" className="shrink-0 font-medium nx-font-numbers">
+            <FmtNum n={prevValue} />
+            {unit === 'currency' ? (
+              <span className="nx-sar"> SR</span>
+            ) : (
+              <span> {suffix}</span>
+            )}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -96,15 +113,14 @@ export function DashboardOverviewRevenueMonthBody({
   revenueMtd,
   revenueMtdPrev,
   revenueActiveDays,
+  revenueActiveDaysPrev,
   customerMtd,
-  customerActiveDays,
   salesShiftPeriodTotals,
   t,
 }: Props) {
   const [shiftsOpen, setShiftsOpen] = useState(false);
   const hasMtd = revenueMtd != null;
-  const hasSecondary =
-    revenueActiveDays != null || customerMtd != null || customerActiveDays != null;
+  const hasSecondary = revenueActiveDays != null || customerMtd != null;
 
   if (!hasMtd && !hasSecondary && !salesShiftPeriodTotals) return null;
 
@@ -143,13 +159,16 @@ export function DashboardOverviewRevenueMonthBody({
           <MiniStat
             label={t('dashboardRevenueActiveDaysAvg')}
             value={revenueActiveDays}
+            prevValue={revenueActiveDaysPrev}
             unit="currency"
+            t={t}
           />
           <MiniStat
             label={t('dashboardSalesCustomerDailyAvg')}
-            value={customerMtd ?? customerActiveDays}
+            value={customerMtd}
             unit="count"
             suffix={t('dashboardSalesCustomerDailyAvgUnit')}
+            t={t}
           />
         </div>
       ) : null}

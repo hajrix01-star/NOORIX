@@ -60,8 +60,8 @@ export default {
     en: 'Month total ÷ calendar days to date',
   },
   dashboardRevenueActiveDaysAvg: {
-    ar: 'متوسط أيام البيع',
-    en: 'Avg. on sales days',
+    ar: 'متوسط أيام البيع (نفس الفترة)',
+    en: 'Avg. on sales days (same span)',
   },
   dashboardShiftDetailsToggle: { ar: 'تفاصيل الشفت', en: 'Shift breakdown' },
   dashboardKpiTimelineHint: {
