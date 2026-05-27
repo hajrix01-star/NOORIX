@@ -2171,6 +2171,16 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--noorix-blue-12);
 }
 
+/* لوحة — قوائم شهر/سنة في جدول المبيعات الأسبوعية (وسط على الجوال و RTL) */
+.nx-dashboard-period-select {
+  text-align: center !important;
+  text-align-last: center !important;
+  -moz-text-align-last: center;
+}
+.nx-dashboard-period-select option {
+  text-align: center;
+}
+
 /* ========== استجابة الجوال — NOORIX UI MANIFESTO ========== */
 /* الحد الأدنى للخط على الجوال: 12px لقراءة سهلة ميدانياً */
 @media (max-width: 768px) {
