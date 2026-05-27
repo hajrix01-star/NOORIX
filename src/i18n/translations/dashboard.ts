@@ -56,12 +56,20 @@ export default {
     en: 'Daily avg (1–{to} {month})',
   },
   dashboardRevenueMtdHint: {
-    ar: 'إجمالي الشهر ÷ أيام التقويم حتى اليوم',
-    en: 'Month total ÷ calendar days to date',
+    ar: 'إجمالي المبيعات ÷ كل أيام التقويم (1–{to}) — يشمل أياماً بلا مبيعات',
+    en: 'Sales total ÷ all calendar days (1–{to}) — includes days with no sales',
+  },
+  dashboardRevenueMtdMath: {
+    ar: '{total} SR ÷ {days} يوم = المعدل أعلاه',
+    en: '{total} SR ÷ {days} days = rate above',
   },
   dashboardRevenueActiveDaysAvg: {
-    ar: 'متوسط أيام البيع (نفس الفترة)',
-    en: 'Avg. on sales days (same span)',
+    ar: 'متوسط يوم البيع',
+    en: 'Avg. per sales day',
+  },
+  dashboardRevenueActiveDaysHint: {
+    ar: 'نفس الإجمالي ÷ {active} يوم فيه مبيعات فقط (من {total} يوم)',
+    en: 'Same total ÷ {active} days with sales only (of {total} days)',
   },
   dashboardShiftDetailsToggle: { ar: 'تفاصيل الشفت', en: 'Shift breakdown' },
   dashboardKpiTimelineHint: {

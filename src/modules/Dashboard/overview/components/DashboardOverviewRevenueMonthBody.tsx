@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FmtNum } from '../../../../ui';
+import { fmt } from '../../../../utils/format';
 import { cn } from '../../../../ui/cn';
 import {
   compareRevenueDailyAvgTone,
@@ -13,6 +14,8 @@ type Props = {
   monthLabel: string;
   revenueMtd: number | null;
   revenueMtdPrev: number | null;
+  revenueMtdTotalSum: number;
+  revenueMtdActiveDayCount: number;
   revenueActiveDays: number | null;
   revenueActiveDaysPrev: number | null;
   customerMtd: number | null;
@@ -63,6 +66,7 @@ function DeltaBadge({
 
 function MiniStat({
   label,
+  hint,
   value,
   prevValue,
   unit,
@@ -70,6 +74,7 @@ function MiniStat({
   t,
 }: {
   label: string;
+  hint?: string;
   value: number | null;
   prevValue?: number | null;
   unit: 'currency' | 'count';
@@ -80,6 +85,9 @@ function MiniStat({
   return (
     <div className="min-w-0 rounded-md border border-noorix-border/80 bg-noorix-bg-muted/30 px-2 py-1.5">
       <div className="truncate text-[9px] font-semibold text-noorix-muted leading-tight">{label}</div>
+      {hint ? (
+        <div className="mt-0.5 text-[8px] leading-snug text-noorix-muted">{hint}</div>
+      ) : null}
       <div dir="ltr" className="mt-0.5 flex items-baseline justify-center gap-0.5 text-center nx-font-numbers">
         <span className="truncate text-[12px] font-bold text-noorix-text">
           <FmtNum n={value} />
@@ -112,6 +120,8 @@ export function DashboardOverviewRevenueMonthBody({
   monthLabel,
   revenueMtd,
   revenueMtdPrev,
+  revenueMtdTotalSum,
+  revenueMtdActiveDayCount,
   revenueActiveDays,
   revenueActiveDaysPrev,
   customerMtd,
@@ -133,7 +143,9 @@ export function DashboardOverviewRevenueMonthBody({
               <div className="text-[10px] font-semibold text-noorix-muted leading-snug">
                 {t('dashboardRevenueMtdLabel', { from: 1, to: mtdEndDay, month: monthLabel })}
               </div>
-              <div className="text-[9px] text-noorix-muted mt-0.5">{t('dashboardRevenueMtdHint')}</div>
+              <div className="text-[9px] text-noorix-muted mt-0.5 leading-snug">
+                {t('dashboardRevenueMtdHint', { to: mtdEndDay })}
+              </div>
             </div>
             <DeltaBadge current={revenueMtd} prev={revenueMtdPrev} t={t} />
           </div>
@@ -143,6 +155,14 @@ export function DashboardOverviewRevenueMonthBody({
             </span>
             <span className="nx-sar text-[11px]">SR</span>
           </div>
+          {revenueMtdTotalSum > 0 && mtdEndDay > 0 ? (
+            <div dir="ltr" className="mt-1 text-[9px] font-medium text-noorix-muted nx-font-numbers">
+              {t('dashboardRevenueMtdMath', {
+                total: fmt(revenueMtdTotalSum, 0),
+                days: mtdEndDay,
+              })}
+            </div>
+          ) : null}
           {revenueMtdPrev != null ? (
             <div className="mt-1 flex items-center justify-between gap-2 text-[9px] text-noorix-muted">
               <span>{t('dashboardKpiFooterTrailingAvg')}</span>
@@ -158,6 +178,14 @@ export function DashboardOverviewRevenueMonthBody({
         <div className="grid grid-cols-2 gap-1.5">
           <MiniStat
             label={t('dashboardRevenueActiveDaysAvg')}
+            hint={
+              revenueMtdActiveDayCount > 0 && mtdEndDay > 0
+                ? t('dashboardRevenueActiveDaysHint', {
+                    active: revenueMtdActiveDayCount,
+                    total: mtdEndDay,
+                  })
+                : undefined
+            }
             value={revenueActiveDays}
             prevValue={revenueActiveDaysPrev}
             unit="currency"

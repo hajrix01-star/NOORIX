@@ -31,6 +31,8 @@ type Props = {
   revenueMtdEndDay: number;
   revenueMtdCalendar: number | null;
   revenueMtdPrevCalendar: number | null;
+  revenueMtdTotalSum: number;
+  revenueMtdActiveDayCount: number;
   customerMtdCalendar: number | null;
   revenueDailyAvgActiveDays: number | null;
   revenueDailyAvgPrevMonthActiveDays: number | null;
@@ -48,6 +50,8 @@ export function DashboardOverviewKpis({
   revenueMtdEndDay,
   revenueMtdCalendar,
   revenueMtdPrevCalendar,
+  revenueMtdTotalSum,
+  revenueMtdActiveDayCount,
   customerMtdCalendar,
   revenueDailyAvgActiveDays,
   revenueDailyAvgPrevMonthActiveDays,
@@ -142,6 +146,8 @@ export function DashboardOverviewKpis({
                   monthLabel={monthName ?? ''}
                   revenueMtd={revenueMtdCalendar}
                   revenueMtdPrev={revenueMtdPrevCalendar}
+                  revenueMtdTotalSum={revenueMtdTotalSum}
+                  revenueMtdActiveDayCount={revenueMtdActiveDayCount}
                   revenueActiveDays={revenueDailyAvgActiveDays}
                   revenueActiveDaysPrev={revenueDailyAvgPrevMonthActiveDays}
                   customerMtd={customerMtdCalendar}
