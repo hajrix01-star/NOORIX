@@ -3,13 +3,16 @@ import { createDailySalesSummariesSequential } from './sales-summaries-batch';
 
 vi.mock('../../core/apiHttp', () => ({
   apiPost: vi.fn(),
+  apiPatch: vi.fn(),
 }));
 
-import { apiPost } from '../../core/apiHttp';
+import { apiPost, apiPatch } from '../../core/apiHttp';
 
 describe('createDailySalesSummariesSequential', () => {
   beforeEach(() => {
     vi.mocked(apiPost).mockReset();
+    vi.mocked(apiPatch).mockReset();
+    vi.mocked(apiPatch).mockResolvedValue({ success: true, data: {} });
   });
 
   it('returns summaries in order', async () => {
