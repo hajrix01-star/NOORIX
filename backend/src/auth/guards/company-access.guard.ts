@@ -2,8 +2,9 @@
  * CompanyAccessGuard — يتحقق أن المستخدم يملك صلاحية الوصول للشركة المطلوبة.
  *
  * ترتيب استخراج companyId (من الأعلى أولويةً) — **مطابق** `getCompanyIdFromHttpRequest`:
- *   POST/PUT/PATCH:  body.companyId → params (companyId | id) → query → x-company-id
- *   GET/DELETE/…:   params (companyId | id) → query → x-company-id
+ *   POST/PUT/PATCH:  body.companyId → params.companyId → query → x-company-id
+ *   GET/DELETE/…:   params.companyId → query → x-company-id
+ *   (لا يُستخدم params.id كشركة — يتعارض مع PATCH/GET لموارد مثل /orders/:id)
  *
  * التحققات:
  *   1. المستخدم مرتبط بالشركة — يُقرأ من DB (مُخزَّن مؤقتاً 60 ثانية لكل مستخدم)
@@ -14,6 +15,7 @@
  */
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { getCompanyIdFromHttpRequest } from '../../common/utils/company-request';
 import { TenantPrismaService } from '../../prisma/tenant-prisma.service';
 import { TenantContext } from '../../common/tenant-context';
 import { isSuperAdmin }              from '../constants/permissions';
@@ -51,18 +53,8 @@ export class CompanyAccessGuard implements CanActivate {
     const role = (user.role || '').toLowerCase();
     if (isSuperAdmin(role)) return true;
 
-    // ── استخراج companyId ─────────────────────────────────
-    // يشمل params.id لمعالجة مسارات مثل GET /companies/:id (IDOR fix)
-    const method = (request.method || '').toUpperCase();
-    const readFromBody = method === 'POST' || method === 'PUT' || method === 'PATCH';
-
-    const companyId: string =
-      (readFromBody ? (request.body?.companyId as string) : undefined) ||
-      (request.params?.companyId as string) ||
-      (request.params?.id        as string) ||   // ← يُغطي :id routes (مثل GET /companies/:id)
-      (request.query?.companyId  as string) ||
-      (request.headers?.['x-company-id'] as string) ||
-      '';
+    // ── استخراج companyId (مصدر واحد مع @CompanyId()) ───
+    const companyId = getCompanyIdFromHttpRequest(request);
 
     // ── لم يُحدَّد companyId → مرفوض لغير الـ Super Admin ──
     if (!companyId) {
