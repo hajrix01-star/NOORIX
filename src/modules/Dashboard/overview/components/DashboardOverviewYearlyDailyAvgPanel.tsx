@@ -1,5 +1,5 @@
 /**
- * المعدل اليومي لكل شهر — جدول بحدود؛ عمود الشهر بعرض المحتوى فقط.
+ * المعدل اليومي لكل شهر — جدول بحدود يتسع داخل الكرت (نِسَب أعمدة ثابتة، بدون قصّ RTL).
  */
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
@@ -14,9 +14,14 @@ type Props = {
   selectedMonth: number | null;
 };
 
+/** ~375px عرض محتوى: شهر ~30% | معدل ~50% | تغيّر ~20% */
+const COL_MONTH = '30%';
+const COL_AVG = '50%';
+const COL_DELTA = '20%';
+
 const TH_CELL =
-  'border border-noorix-border bg-noorix-bg-muted py-1 text-[9px] font-bold text-noorix-text';
-const TD_CELL = 'border border-noorix-border py-1 align-middle text-[10px]';
+  'border border-noorix-border bg-noorix-bg-muted py-1 text-[9px] font-bold leading-tight text-noorix-text';
+const TD_CELL = 'border border-noorix-border py-1 align-middle text-[10px] leading-tight';
 
 function formatDeltaPct(n: number): string {
   const rounded = Math.round(n * 10) / 10;
@@ -48,16 +53,32 @@ function rowHighlightClass(row: YearMonthlyDailyAvgRow, isSelected: boolean): st
 
 function MonthCell({ row, t }: { row: YearMonthlyDailyAvgRow; t: (key: string) => string }) {
   return (
-    <div className="flex w-max max-w-full flex-col items-start gap-0.5">
-      <span className="whitespace-nowrap text-[10px] font-semibold leading-tight text-noorix-text">
+    <div className="flex min-w-0 items-center gap-1">
+      <span className="whitespace-nowrap text-[10px] font-semibold text-noorix-text" title={row.monthLabel}>
         {row.monthLabel}
       </span>
       {row.isCurrentMonth ? (
-        <span className="whitespace-nowrap rounded bg-[color-mix(in_srgb,var(--color-nx-sales)_14%,transparent)] px-1 py-px text-[8px] font-bold leading-none text-noorix-blue">
-          {t('dashboardYearlyDailyAvgCurrentBadge')}
-        </span>
+        <>
+          <span
+            className="size-1.5 shrink-0 rounded-full bg-noorix-blue sm:hidden"
+            title={t('dashboardYearlyDailyAvgCurrentBadge')}
+            aria-label={t('dashboardYearlyDailyAvgCurrentBadge')}
+          />
+          <span className="hidden shrink-0 rounded bg-[color-mix(in_srgb,var(--color-nx-sales)_14%,transparent)] px-1 py-px text-[8px] font-bold leading-none text-noorix-blue sm:inline">
+            {t('dashboardYearlyDailyAvgCurrentBadge')}
+          </span>
+        </>
       ) : null}
     </div>
+  );
+}
+
+function AvgHeader({ t }: { t: (key: string) => string }) {
+  return (
+    <>
+      <span className="sm:hidden">{t('dashboardYearlyDailyAvgAvgColShort')}</span>
+      <span className="hidden sm:inline">{t('dashboardSalesDailyAvgActiveDays')}</span>
+    </>
   );
 }
 
@@ -66,7 +87,7 @@ function AvgCell({ row }: { row: YearMonthlyDailyAvgRow }) {
     return <span className="font-semibold text-noorix-muted">—</span>;
   }
   return (
-    <span dir="ltr" className="inline-flex items-baseline justify-end gap-0.5 whitespace-nowrap nx-font-numbers">
+    <span dir="ltr" className="inline-flex max-w-full items-baseline justify-end gap-0.5 whitespace-nowrap nx-font-numbers">
       <FmtNum n={row.avgDaily} className={cn('font-bold', valueToneClass(row.tone, true))} />
       <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
     </span>
@@ -101,22 +122,22 @@ function YearlyDailyAvgTable({
   t: (key: string) => string;
 }) {
   return (
-    <div className="max-w-full overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
-      <table className="w-full max-w-full table-fixed border-collapse text-[10px]">
+    <div className="w-full min-w-0 rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
+      <table className="w-full table-fixed border-collapse text-[10px]">
         <colgroup>
-          <col className="w-0" />
-          <col />
-          <col className="w-[3.25rem]" />
+          <col style={{ width: COL_MONTH }} />
+          <col style={{ width: COL_AVG }} />
+          <col style={{ width: COL_DELTA }} />
         </colgroup>
         <thead>
           <tr>
-            <th scope="col" className={cn(TH_CELL, 'px-1.5 text-start whitespace-nowrap')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1.5 text-start')}>
               {t('dashboardYearlyDailyAvgMonthCol')}
             </th>
-            <th scope="col" className={cn(TH_CELL, 'px-1 text-end whitespace-nowrap')}>
-              {t('dashboardSalesDailyAvgActiveDays')}
+            <th scope="col" className={cn(TH_CELL, 'px-1 text-end')}>
+              <AvgHeader t={t} />
             </th>
-            <th scope="col" className={cn(TH_CELL, 'px-1 text-end whitespace-nowrap')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1 text-end')}>
               {t('dashboardWeeklySalesDelta')}
             </th>
           </tr>
@@ -126,7 +147,7 @@ function YearlyDailyAvgTable({
             const isSelected = selectedMonth != null && selectedMonth === row.month;
             return (
               <tr key={row.month} className={rowHighlightClass(row, isSelected)}>
-                <td className={cn(TD_CELL, 'w-0 px-1.5 text-start')}>
+                <td className={cn(TD_CELL, 'px-1.5 text-start')}>
                   <MonthCell row={row} t={t} />
                 </td>
                 <td className={cn(TD_CELL, 'px-1 text-end')}>
@@ -153,13 +174,13 @@ export function DashboardOverviewYearlyDailyAvgPanel({ year, rows, selectedMonth
 
   return (
     <div className="nx-kpi-container w-full min-w-0" aria-label={t('dashboardYearlyDailyAvgTitle')}>
-      <MetricCard color={accentColor} className="flex w-full min-w-0 flex-col">
+      <MetricCard color={accentColor} className="flex w-full min-w-0 flex-col overflow-hidden">
         <MetricCard.Header
           label={`${t('dashboardYearlyDailyAvgTitle')} — ${year}`}
           subLabel={t('dashboardYearlyDailyAvgFormulaNote')}
         />
 
-        <MetricCard.Section className="min-w-0 pb-3 pt-0">
+        <MetricCard.Section className="min-w-0 px-2 pb-3 pt-0 sm:px-4">
           <YearlyDailyAvgTable rows={rows} selectedMonth={selectedMonth} t={t} />
         </MetricCard.Section>
       </MetricCard>
