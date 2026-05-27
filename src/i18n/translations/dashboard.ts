@@ -197,6 +197,7 @@ export default {
     en: 'Jan through current month; avg = revenue sum ÷ days with revenue &gt; 0. Current month through last entry.',
   },
   dashboardYearlyDailyAvgMonthCol: { ar: 'الشهر', en: 'Month' },
+  dashboardYearlyDailyAvgAvgColShort: { ar: 'معدل', en: 'Avg' },
   dashboardYearlyDailyAvgValuesCol: { ar: 'المعدل والتغيّر', en: 'Avg & change' },
   dashboardYearlyDailyAvgCurrentBadge: { ar: 'الحالي', en: 'Current' },
 };
