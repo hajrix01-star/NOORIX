@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -6,6 +6,7 @@ import { RequirePermission } from '../auth/decorators/require-permission.decorat
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { DashboardService } from './dashboard.service';
 import { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';
+import { ApplySpecialOccasionsDto } from './dto/apply-special-occasions.dto';
 
 /**
  * GET  /api/v1/dashboard/overview
@@ -79,6 +80,32 @@ export class DashboardController {
       user.tenantId ?? '',
       parseInt(year, 10),
       parseInt(month, 10),
+    );
+  }
+
+  @Get('calendar/saudi-occasions')
+  @RequirePermission('REPORTS_READ')
+  getSaudiOccasions(@Query('year') year: string) {
+    return this.dashboardService.getSaudiOccasions(parseInt(year, 10));
+  }
+
+  @Post('calendar/special-days/apply-occasions')
+  @RequirePermission('REPORTS_READ')
+  async applySaudiOccasions(
+    @Query('companyId') companyId: string,
+    @Body() body: ApplySpecialOccasionsDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const lang = body.lang === 'en' ? 'en' : 'ar';
+    return this.dashboardService.applySaudiSpecialOccasions(
+      user,
+      user.tenantId ?? '',
+      companyId,
+      body.year,
+      body.occasionIds,
+      body.scope,
+      lang,
+      body.companyIds,
     );
   }
 
