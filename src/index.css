@@ -4516,128 +4516,64 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   color: var(--noorix-text);
 }
 
-/* ── أصناف المصاريف — صفوف مضغوطة / بطاقات جوال ── */
-.nx-expense-line-table-wrap .noorix-table-frame .nx-compact-row {
-  padding: 0;
-  border-bottom: none;
-}
-.nx-expense-line-table-wrap .noorix-table-frame .nx-compact-row--stripe,
-.nx-expense-line-table-wrap .noorix-table-frame .nx-compact-row--base {
-  background: transparent;
-}
-.nx-expense-line-row {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--noorix-border-muted, var(--noorix-border));
-  text-align: start;
-  -webkit-tap-highlight-color: transparent;
-}
-.nx-expense-line-row:last-child {
-  border-bottom: none;
-}
-.nx-expense-line-row--card {
-  border-bottom: none;
-}
-.nx-compact-row--stripe .nx-expense-line-row,
-.nx-mobile-card-row--stripe .nx-expense-line-row--card {
-  background: color-mix(in srgb, var(--color-nx-expenses, var(--noorix-accent-red)) 4%, var(--noorix-bg-surface));
-}
-.nx-compact-row--base .nx-expense-line-row,
-.nx-mobile-card-row--base .nx-expense-line-row--card {
-  background: var(--noorix-bg-surface);
-}
-.nx-expense-line-row:active {
-  background: var(--noorix-bg-muted) !important;
-}
-.nx-expense-line-row__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-.nx-expense-line-row__name {
-  flex: 1;
+/* ── أصناف المصاريف — جدول موحّد (سطح مكتب + جوال بتمرير أفقي) ── */
+.nx-expense-line-table-wrap .noorix-table-frame {
   min-width: 0;
-  font-size: 14px;
-  font-weight: 700;
+}
+.nx-expense-line-table-wrap .noorix-table-scroll-wrapper {
+  -webkit-overflow-scrolling: touch;
+}
+.nx-expense-line-table-wrap .noorix-table thead th {
+  background: color-mix(in srgb, var(--noorix-navy, #1a2e4a) 5%, var(--noorix-bg-muted));
+  border-bottom: 2px solid var(--noorix-border);
+  vertical-align: middle;
   line-height: 1.35;
-  color: var(--noorix-accent-blue);
-  overflow-wrap: anywhere;
-}
-.nx-expense-line-row__head-end {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-.nx-expense-line-row__meta {
-  margin: 0 0 10px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--noorix-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.nx-expense-line-row__amounts {
-  display: grid;
-  gap: 8px 16px;
-  padding-top: 8px;
-  border-top: 1px solid var(--noorix-border-muted, var(--noorix-border));
-}
-.nx-expense-line-row__amounts--dual {
-  grid-template-columns: 1fr 1fr;
-}
-.nx-expense-line-row__amounts--single {
-  grid-template-columns: 1fr;
-  max-width: 12rem;
-  margin-inline-start: auto;
-}
-[dir='rtl'] .nx-expense-line-row__amounts--single {
-  margin-inline-start: 0;
-  margin-inline-end: auto;
-}
-.nx-expense-line-row__amount-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  min-width: 0;
-}
-.nx-expense-line-row__amount-label {
-  width: 100%;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--noorix-text-muted);
-  text-align: end;
-}
-.nx-expense-line-row__amount-value {
-  font-family: var(--noorix-font-numbers);
-  font-size: 14px;
+.nx-expense-line-table-wrap .noorix-table thead th .nx-expense-line-th-money {
+  display: block;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1.2;
-  color: var(--noorix-text);
-  unicode-bidi: isolate;
-  white-space: nowrap;
+  line-height: 1.3;
+  color: var(--noorix-text-muted);
 }
-.nx-expense-line-row__kebab {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
+.nx-expense-line-table-wrap .noorix-table tbody td {
+  vertical-align: middle;
 }
-
-/* جدول سطح المكتب — أصناف المصاريف */
+.nx-expense-line-table-wrap .noorix-table tbody tr.nx-expense-line-tr:hover td {
+  background: color-mix(in srgb, var(--color-nx-expenses, #a32d2d) 6%, var(--noorix-bg-surface)) !important;
+}
+.nx-expense-line-table-wrap .noorix-table tbody tr.nx-expense-line-tr td.noorix-numeric-cell {
+  background: color-mix(in srgb, var(--color-nx-expenses, #a32d2d) 3%, transparent);
+}
+.nx-expense-line-table-wrap .noorix-table tbody tr.nx-expense-line-tr:hover td.noorix-numeric-cell {
+  background: color-mix(in srgb, var(--color-nx-expenses, #a32d2d) 8%, var(--noorix-bg-surface)) !important;
+}
 .nx-expense-line-table-wrap .noorix-table thead th:first-child,
 .nx-expense-line-table-wrap .noorix-table tbody td:first-child {
   text-align: start;
 }
 .nx-expense-line-table-wrap .noorix-table .nx-expense-line-name-cell {
   text-align: start;
-  padding-inline-start: 14px;
 }
-.nx-expense-line-table-wrap .noorix-table .noorix-numeric-cell {
-  padding-inline-end: 14px;
+.nx-expense-line-table-wrap .noorix-table .nx-expense-line-money {
+  font-variant-numeric: tabular-nums;
+}
+.nx-expense-line-table-wrap .noorix-table .noorix-actions-sticky {
+  box-shadow: -4px 0 10px color-mix(in srgb, var(--noorix-navy, #000) 8%, transparent);
+}
+@media (max-width: 768px) {
+  .nx-expense-line-table-wrap .noorix-table-frame .noorix-table-scroll-wrapper {
+    margin-inline: -4px;
+    padding-inline: 4px;
+  }
+  .nx-expense-line-table-wrap .noorix-table thead th,
+  .nx-expense-line-table-wrap .noorix-table tbody td {
+    font-size: 12px;
+  }
+  .nx-expense-line-table-wrap .noorix-table thead th .nx-expense-line-th-money {
+    font-size: 10px;
+  }
 }
 
 /* ── Responsive — OCR ── */

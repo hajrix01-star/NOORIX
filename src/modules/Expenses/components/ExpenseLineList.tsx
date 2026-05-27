@@ -1,22 +1,17 @@
 ﻿/**
- * ExpenseLineList — قائمة بنود المصاريف
+ * ExpenseLineList — قائمة بنود المصاريف (جدول موحّد على كل العروض)
  */
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { fmt } from '../../../utils/format';
-import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum } from '../../../ui';
+import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, KebabMenu } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 import { monthlyAmountFromExpenseLine } from '../../Reports/costAccountingAppsFixedExpenseImport';
-import {
-  ExpenseLineCompactRow,
-  ExpenseLineMobileCard,
-  expenseLineKindShortLabel,
-  type ExpenseLineRowModel,
-} from './ExpenseLineListRow';
+import { expenseLineKindShortLabel } from './expenseLineTableUtils';
 
 /** عرض شهري/سنوي تقديري لبند ثابت */
 function monthlyAnnualForExpenseLineRow(line: { kind?: string; annualTotalAmount?: unknown } & Record<string, unknown>) {
@@ -27,6 +22,33 @@ function monthlyAnnualForExpenseLineRow(line: { kind?: string; annualTotalAmount
   const annDb = annDbRaw != null && annDbRaw !== '' ? Number(annDbRaw) : Number.NaN;
   const annual = Number.isFinite(annDb) && annDb > 0 ? annDb : m.mul(12).toNumber();
   return { monthly: m.toNumber(), annual };
+}
+
+function ExpenseLineMoneyCell({ amount }: { amount: number | null }) {
+  if (amount == null) {
+    return <span className="text-[13px] text-noorix-muted">—</span>;
+  }
+  return (
+    <span dir="ltr" className="nx-expense-line-money inline-flex w-full items-baseline justify-end gap-0.5">
+      <FmtNum n={amount} className="nx-cell-num text-[13px] font-semibold tabular-nums" />
+      <span className="nx-sar text-[11px]">SR</span>
+    </span>
+  );
+}
+
+function ExpenseLineTextCell({ value, muted }: { value: string; muted?: boolean }) {
+  const text = value && value !== '—' ? value : '—';
+  return (
+    <span
+      className={cn(
+        'block min-w-0 truncate text-[13px]',
+        muted || text === '—' ? 'text-noorix-muted' : 'text-noorix-text',
+      )}
+      title={text !== '—' ? text : undefined}
+    >
+      {text}
+    </span>
+  );
 }
 
 const REFRESH_ICON = (
@@ -69,7 +91,8 @@ export default function ExpenseLineList({
       key: 'nameAr',
       label: t('expenseLineNameCol'),
       sortable: true,
-      width: '18%',
+      width: '20%',
+      minWidth: 140,
       align: 'start',
       render: (v: any, row: any) => (
         <Button
@@ -88,14 +111,17 @@ export default function ExpenseLineList({
       key: 'kind',
       label: t('expenseLineKindCol'),
       sortable: true,
-      width: '12%',
+      width: 108,
+      shrink: true,
       align: 'center',
       render: (v: any) => {
         const { color } = Badge.fromStatus(v, kindBadgeMap);
         return (
-          <Badge color={color} size="sm" className="whitespace-nowrap">
-            {expenseLineKindShortLabel(v, t)}
-          </Badge>
+          <div className="flex justify-center">
+            <Badge color={color} size="sm" className="whitespace-nowrap">
+              {expenseLineKindShortLabel(v, t)}
+            </Badge>
+          </div>
         );
       },
     },
@@ -104,73 +130,79 @@ export default function ExpenseLineList({
       label: t('category'),
       sortable: true,
       width: '14%',
+      minWidth: 100,
       align: 'start',
-      render: (v: any) => (
-        <span className="block min-w-0 truncate text-start text-[13px] text-noorix-text" title={v || ''}>
-          {v || '—'}
-        </span>
-      ),
+      render: (v: any) => <ExpenseLineTextCell value={v} />,
     },
     {
       key: 'supplierName',
       label: t('supplier'),
       sortable: true,
       width: '14%',
+      minWidth: 100,
       align: 'start',
+      render: (v: any) => <ExpenseLineTextCell value={v} />,
+    },
+    {
+      key: 'serviceNumber',
+      label: t('expenseLineServiceNumberCol'),
+      width: 88,
+      shrink: true,
+      align: 'center',
       render: (v: any) => (
-        <span className="block min-w-0 truncate text-start text-[13px] text-noorix-text" title={v || ''}>
+        <span className="nx-cell-num block text-center text-[13px] tabular-nums text-noorix-text">
           {v || '—'}
         </span>
       ),
     },
     {
-      key: 'serviceNumber',
-      label: t('expenseLineServiceNumberCol'),
-      width: '9%',
-      align: 'center',
-      render: (v: any) => <span className="nx-cell-num text-[13px]">{v || '—'}</span>,
-    },
-    {
       key: 'monthlyAmount',
-      label: t('expenseLineListMonthlyAmount'),
-      width: '11%',
+      label: <span className="nx-expense-line-th-money">{t('expenseLineListMonthlyAmount')}</span>,
+      width: 108,
       numeric: true,
-      render: (_: unknown, row: any) => {
-        const { monthly } = monthlyAnnualForExpenseLineRow(row);
-        if (monthly == null) return <span className="text-[13px] text-noorix-muted">—</span>;
-        return (
-          <span dir="ltr" className="inline-flex items-baseline justify-end gap-0.5">
-            <FmtNum n={monthly} className="nx-cell-num text-[13px] font-semibold" />
-            <span className="nx-sar text-[11px]">SR</span>
-          </span>
-        );
-      },
+      render: (_: unknown, row: any) => (
+        <ExpenseLineMoneyCell amount={monthlyAnnualForExpenseLineRow(row).monthly} />
+      ),
     },
     {
       key: 'annualAmount',
-      label: t('expenseLineListAnnualAmount'),
-      width: '11%',
+      label: <span className="nx-expense-line-th-money">{t('expenseLineListAnnualAmount')}</span>,
+      width: 108,
       numeric: true,
-      render: (_: unknown, row: any) => {
-        const { annual } = monthlyAnnualForExpenseLineRow(row);
-        if (annual == null) return <span className="text-[13px] text-noorix-muted">—</span>;
-        return (
-          <span dir="ltr" className="inline-flex items-baseline justify-end gap-0.5">
-            <FmtNum n={annual} className="nx-cell-num text-[13px] font-semibold" />
-            <span className="nx-sar text-[11px]">SR</span>
-          </span>
-        );
-      },
+      render: (_: unknown, row: any) => (
+        <ExpenseLineMoneyCell amount={monthlyAnnualForExpenseLineRow(row).annual} />
+      ),
     },
     {
       key: 'actions',
       label: t('actions'),
-      width: '11%',
+      width: 52,
+      shrink: true,
       align: 'center',
       render: (_: any, row: any) => (
-        <div className="noorix-actions-row flex flex-nowrap items-center justify-center gap-1.5">
-          <Button size="sm" onClick={(e: any) => { e.stopPropagation(); onEditLine?.(row); }}>{t('edit')}</Button>
-          <Button size="sm" variant="danger" onClick={(e: any) => { e.stopPropagation(); onDeleteLine?.(row); }}>{t('delete')}</Button>
+        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+          <KebabMenu
+            ariaLabel={t('actions')}
+            items={[
+              {
+                key: 'open',
+                label: t('view'),
+                onClick: () => onLineClick(row),
+              },
+              {
+                key: 'edit',
+                label: t('edit'),
+                style: { color: 'var(--noorix-accent-green)' },
+                onClick: () => onEditLine?.(row),
+              },
+              {
+                key: 'delete',
+                label: t('delete'),
+                style: { color: 'var(--noorix-accent-red)' },
+                onClick: () => onDeleteLine?.(row),
+              },
+            ]}
+          />
         </div>
       ),
     },
@@ -201,6 +233,7 @@ export default function ExpenseLineList({
         return {
           [t('expenseLineNameCol')]: r.nameAr || r.nameEn || '—',
           [t('expenseLineKindCol')]: cat ? `${kindLabel} / ${cat}` : kindLabel,
+          [t('category')]: r.categoryName,
           [t('supplier')]: r.supplierName,
           [t('expenseLineServiceNumberCol')]: r.serviceNumber || '—',
           [t('expenseLineListMonthlyAmount')]: monthly != null ? fmt(monthly) : '—',
@@ -210,30 +243,7 @@ export default function ExpenseLineList({
     [tableData, t],
   );
 
-  const rowHandlers = useCallback(
-    (row: ExpenseLineRowModel) => ({
-      kindShortLabel: expenseLineKindShortLabel(row.kind, t),
-      amounts: monthlyAnnualForExpenseLineRow(row),
-      onOpen: () => onLineClick(row),
-      onEdit: () => onEditLine?.(row),
-      onDelete: () => onDeleteLine?.(row),
-    }),
-    [t, onLineClick, onEditLine, onDeleteLine],
-  );
-
-  const renderCompactRow = useCallback(
-    (row: ExpenseLineRowModel) => (
-      <ExpenseLineCompactRow row={row} kindBadgeMap={kindBadgeMap} {...rowHandlers(row)} />
-    ),
-    [kindBadgeMap, rowHandlers],
-  );
-
-  const renderMobileCard = useCallback(
-    (row: ExpenseLineRowModel) => (
-      <ExpenseLineMobileCard row={row} kindBadgeMap={kindBadgeMap} {...rowHandlers(row)} />
-    ),
-    [kindBadgeMap, rowHandlers],
-  );
+  const getRowClassName = useCallback(() => 'nx-expense-line-tr', []);
 
   function handlePrint() {
     const thMonthly = t('expenseLineListMonthlyAmount');
@@ -274,16 +284,16 @@ export default function ExpenseLineList({
               options={kindFilterOptions}
             />
           </div>
-          <Button size="sm" className="shitespace-nowrap shrink-0" icon={REFRESH_ICON} onClick={onRefresh}>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" icon={REFRESH_ICON} onClick={onRefresh}>
             {t('refresh')}
           </Button>
-          <Button size="sm" className="whitespace-nowrap shrink-0" onClick={handlePrint} disabled={!tableData.length}>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={handlePrint} disabled={!tableData.length}>
             {t('print')}
           </Button>
-          <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportToExcel(exportData, 'expense-lines.xlsx')} disabled={!tableData.length}>
             {t('exportExcel')}
           </Button>
-          <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => exportTableToPdf({ data: exportData, title: t('expenseLinesPrintTitle'), filename: 'expense-lines.pdf' })} disabled={!tableData.length}>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: t('expenseLinesPrintTitle'), filename: 'expense-lines.pdf' })} disabled={!tableData.length}>
             {t('exportPdf')}
           </Button>
         </div>
@@ -296,8 +306,8 @@ export default function ExpenseLineList({
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth={44}
-          innerPadding={0}
+          rowNumberWidth={40}
+          innerPadding={8}
           columns={columns}
           data={tableData}
           isLoading={isLoading}
@@ -306,12 +316,11 @@ export default function ExpenseLineList({
           showSearchInHeader={false}
           emptyMessage={t('expenseLinesEmptyState')}
           keyExtractor={(row: any) => row.id}
-          renderCompactRow={renderCompactRow}
-          renderMobileCard={renderMobileCard}
+          getRowClassName={getRowClassName}
           tableId="expense-lines"
           tableLayout="fixed"
-          tableMinWidth={1040}
-          stickyActionColumn={false}
+          tableMinWidth={980}
+          stickyActionColumn
         />
       </div>
     </ScreenShell>
