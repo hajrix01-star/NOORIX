@@ -1,5 +1,5 @@
 /**
- * المعدل اليومي لكل شهر — كرت MetricCard؛ جدول عمودين (شهر | معدل+تغيّر) لارتفاع أقل.
+ * المعدل اليومي لكل شهر — كرت MetricCard؛ صفوف flex (شهر | معدل+تغيّر) متوافقة RTL.
  */
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
@@ -68,9 +68,9 @@ function MonthCell({
 }) {
   const short = monthShortLabel(row, lang);
   return (
-    <div className="flex min-w-0 items-center gap-1">
+    <div className="flex min-w-0 shrink-0 items-center gap-1">
       <span
-        className="truncate text-[11px] font-semibold text-noorix-text"
+        className="text-[11px] font-semibold text-noorix-text whitespace-nowrap"
         title={row.monthLabel}
       >
         {short}
@@ -87,40 +87,48 @@ function MonthCell({
 }
 
 function ValuesCell({ row }: { row: YearMonthlyDailyAvgRow }) {
-  const hasAvg = row.avgDaily != null;
-
-  if (!hasAvg) {
-    return <span className="text-[11px] font-semibold text-noorix-muted">—</span>;
+  if (row.avgDaily == null) {
+    return (
+      <span className="text-[11px] font-semibold text-noorix-muted nx-font-numbers" dir="ltr">
+        —
+      </span>
+    );
   }
+
+  const hasDelta = row.deltaPctVsPrev != null;
 
   return (
     <div
       dir="ltr"
-      className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-2 gap-y-0.5"
+      className={cn(
+        'inline-grid shrink-0 items-baseline gap-x-2 nx-font-numbers',
+        hasDelta ? 'grid-cols-[auto_minmax(3rem,auto)]' : 'grid-cols-1',
+      )}
     >
-      <span className="inline-flex items-baseline gap-0.5 whitespace-nowrap">
+      <span className="inline-flex items-baseline justify-end gap-0.5 whitespace-nowrap text-end">
         <FmtNum
-          n={row.avgDaily!}
-          className={cn('text-[11px] font-bold nx-font-numbers', valueToneClass(row.tone, true))}
+          n={row.avgDaily}
+          className={cn('text-[11px] font-bold', valueToneClass(row.tone, true))}
         />
         <span className="nx-sar text-[9px] text-noorix-muted">SR</span>
       </span>
-      {row.deltaPctVsPrev != null ? (
+      {hasDelta ? (
         <span
           className={cn(
-            'text-[10px] font-bold nx-font-numbers whitespace-nowrap',
+            'text-[10px] font-bold whitespace-nowrap text-end tabular-nums',
             deltaToneClass(row.deltaPctVsPrev),
           )}
         >
-          {row.deltaPctVsPrev > 0 ? '+' : ''}
-          {formatDeltaPct(row.deltaPctVsPrev)}%
+          {row.deltaPctVsPrev! > 0 ? '+' : ''}
+          {formatDeltaPct(row.deltaPctVsPrev!)}
+          <span className="text-[9px]">%</span>
         </span>
-      ) : (
-        <span className="text-[10px] font-semibold text-noorix-muted">—</span>
-      )}
+      ) : null}
     </div>
   );
 }
+
+const ROW_SHELL = 'flex items-center justify-between gap-3 px-2.5 min-h-[1.75rem]';
 
 function YearlyDailyAvgTable({
   rows,
@@ -134,37 +142,33 @@ function YearlyDailyAvgTable({
   t: (key: string) => string;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
-      <table className="w-full table-fixed text-[10px]">
-        <colgroup>
-          <col className="w-[4.25rem] sm:w-[4.75rem]" />
-          <col />
-        </colgroup>
-        <thead>
-          <tr className="border-b border-noorix-border text-noorix-muted">
-            <th className="px-2 py-1.5 text-start font-semibold">{t('dashboardYearlyDailyAvgMonthCol')}</th>
-            <th className="px-2 py-1.5 text-end font-semibold">{t('dashboardYearlyDailyAvgValuesCol')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const isSelected = selectedMonth != null && selectedMonth === row.month;
-            return (
-              <tr
-                key={row.month}
-                className={cn('border-t border-noorix-border/80', rowHighlightClass(row, isSelected))}
-              >
-                <td className="px-2 py-1 align-middle">
-                  <MonthCell row={row} lang={lang} t={t} />
-                </td>
-                <td className="px-2 py-1 align-middle">
-                  <ValuesCell row={row} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25 text-[10px]">
+      <div
+        className={cn(
+          ROW_SHELL,
+          'border-b border-noorix-border py-1.5 font-semibold text-noorix-muted',
+        )}
+      >
+        <span>{t('dashboardYearlyDailyAvgMonthCol')}</span>
+        <span className="text-end">{t('dashboardYearlyDailyAvgValuesCol')}</span>
+      </div>
+
+      {rows.map((row) => {
+        const isSelected = selectedMonth != null && selectedMonth === row.month;
+        return (
+          <div
+            key={row.month}
+            className={cn(
+              ROW_SHELL,
+              'border-t border-noorix-border/80 py-1',
+              rowHighlightClass(row, isSelected),
+            )}
+          >
+            <MonthCell row={row} lang={lang} t={t} />
+            <ValuesCell row={row} />
+          </div>
+        );
+      })}
     </div>
   );
 }
