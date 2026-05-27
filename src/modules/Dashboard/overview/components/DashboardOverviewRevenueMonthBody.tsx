@@ -109,20 +109,20 @@ function CompareTable({
       <table className="w-full text-[10px] border-collapse">
         <thead>
           <tr className="border-b border-noorix-border bg-noorix-bg-muted/35">
-            <th className="px-2 py-1.5 text-start font-semibold text-noorix-muted w-[28%]" />
-            <th className="px-2 py-1.5 text-end font-semibold text-noorix-text">
+            <th className="w-[28%] px-2 py-1.5 text-center font-semibold text-noorix-muted" />
+            <th className="px-2 py-1.5 text-center font-semibold text-noorix-text">
               <span className="block truncate">{currentMonthLabel}</span>
-              <span className="block text-[8px] font-normal text-noorix-muted nx-font-numbers ltr">
+              <span className="nx-font-numbers block text-[8px] font-normal text-noorix-muted ltr">
                 1–{mtdEndDay}
               </span>
             </th>
-            <th className="px-2 py-1.5 text-end font-semibold text-noorix-text">
+            <th className="px-2 py-1.5 text-center font-semibold text-noorix-text">
               <span className="block truncate">{prevMonthLabel}</span>
-              <span className="block text-[8px] font-normal text-noorix-muted nx-font-numbers ltr">
+              <span className="nx-font-numbers block text-[8px] font-normal text-noorix-muted ltr">
                 1–{mtdEndDay}
               </span>
             </th>
-            <th className="px-2 py-1.5 text-end font-semibold text-noorix-muted w-[3.25rem]">
+            <th className="w-[3.25rem] px-2 py-1.5 text-center font-semibold text-noorix-muted">
               {t('dashboardWeeklySalesDelta')}
             </th>
           </tr>
@@ -130,16 +130,16 @@ function CompareTable({
         <tbody>
           {visible.map((row) => (
             <tr key={row.key} className="border-t border-noorix-border/80">
-              <td className="px-2 py-1.5 text-start font-medium text-noorix-muted truncate">
+              <td className="truncate px-2 py-1.5 text-center font-medium text-noorix-muted">
                 {row.label}
               </td>
-              <td dir="ltr" className="px-2 py-1.5 text-end whitespace-nowrap">
+              <td dir="ltr" className="whitespace-nowrap px-2 py-1.5 text-center">
                 <ValueCell value={row.current} unit={row.unit} t={t} />
               </td>
-              <td dir="ltr" className="px-2 py-1.5 text-end whitespace-nowrap text-noorix-muted">
+              <td dir="ltr" className="whitespace-nowrap px-2 py-1.5 text-center text-noorix-muted">
                 <ValueCell value={row.prev} unit={row.unit} t={t} />
               </td>
-              <td dir="ltr" className="px-2 py-1.5 text-end whitespace-nowrap">
+              <td dir="ltr" className="whitespace-nowrap px-2 py-1.5 text-center">
                 <DeltaCell current={row.current} prev={row.prev} />
               </td>
             </tr>
