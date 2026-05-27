@@ -292,6 +292,11 @@ export function useDashboardOverviewModel(
     [prevMonthSalesThroughMtd],
   );
 
+  const revenueMtdTotalSum = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
+    return sumRevenueThroughDay(monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay);
+  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
+
   const revenuePrevMonthTotalSum = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
     const prev = prevCalendarMonth(year, selectedMonth);
@@ -353,6 +358,14 @@ export function useDashboardOverviewModel(
       ? MONTH_NAMES_AR[selectedMonth - 1]
       : MONTH_NAMES_EN[selectedMonth - 1]
     : null;
+
+  const prevMonthName = useMemo(() => {
+    if (selectedMonth == null) return '';
+    const prev = prevCalendarMonth(year, selectedMonth);
+    return lang === 'ar'
+      ? MONTH_NAMES_AR[prev.month - 1]
+      : MONTH_NAMES_EN[prev.month - 1];
+  }, [year, selectedMonth, lang]);
 
   const cards = useMemo(
     () => [
@@ -548,10 +561,12 @@ export function useDashboardOverviewModel(
     revenueMtdEndDay,
     revenueDailyAvgActiveDays,
     revenueDailyAvgPrevMonthActiveDays,
+    revenueMtdTotalSum,
     revenuePrevMonthTotalSum,
+    monthName,
+    prevMonthName,
     customerDailyAvgActiveDays,
     customerDailyAvgPrevMonthActiveDays,
-    monthName,
     salesShiftPeriodTotals,
     yearlyDailyAvgRows,
     hiddenSeries,

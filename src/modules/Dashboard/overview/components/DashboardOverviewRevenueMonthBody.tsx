@@ -10,6 +10,9 @@ import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals'
 
 type Props = {
   mtdEndDay: number;
+  currentMonthLabel: string;
+  prevMonthLabel: string;
+  currentMonthSalesTotal: number;
   prevMonthSalesTotal: number;
   revenueDailyAvg: number | null;
   revenueDailyAvgPrev: number | null;
@@ -19,6 +22,14 @@ type Props = {
   t: (key: string, vars?: Record<string, string | number>) => string;
 };
 
+type CompareRow = {
+  key: string;
+  label: string;
+  current: number | null;
+  prev: number | null;
+  unit: 'currency' | 'count';
+};
+
 function formatDeltaPct(n: number): string {
   const rounded = Math.round(n * 10) / 10;
   if (Object.is(rounded, -0)) return '0';
@@ -26,30 +37,21 @@ function formatDeltaPct(n: number): string {
   return rounded.toFixed(1);
 }
 
-function DeltaBadge({
-  current,
-  prev,
-}: {
-  current: number | null;
-  prev: number | null;
-}) {
+function DeltaCell({ current, prev }: { current: number | null; prev: number | null }) {
   const deltaPct =
     current != null && prev != null ? revenueDailyAvgDeltaPct(current, prev) : null;
-  if (deltaPct == null) return null;
+  if (deltaPct == null) {
+    return <span className="text-noorix-muted">—</span>;
+  }
   const tone = compareRevenueDailyAvgTone(current, prev);
-  const badgeClass =
+  const toneClass =
     tone === 'up'
-      ? 'bg-[color-mix(in_srgb,var(--color-nx-sales)_14%,transparent)] text-noorix-blue'
+      ? 'text-noorix-blue'
       : tone === 'down'
-        ? 'bg-[color-mix(in_srgb,var(--color-nx-expenses)_14%,transparent)] text-noorix-red'
-        : 'bg-noorix-bg-muted text-noorix-muted';
+        ? 'text-noorix-red'
+        : 'text-noorix-muted';
   return (
-    <span
-      className={cn(
-        'inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold nx-font-numbers ltr',
-        badgeClass,
-      )}
-    >
+    <span className={cn('font-bold nx-font-numbers ltr', toneClass)}>
       {deltaPct > 0 ? '↑ ' : deltaPct < 0 ? '↓ ' : ''}
       {deltaPct > 0 ? '+' : ''}
       {formatDeltaPct(deltaPct)}%
@@ -57,8 +59,102 @@ function DeltaBadge({
   );
 }
 
+function ValueCell({
+  value,
+  unit,
+  t,
+}: {
+  value: number | null;
+  unit: CompareRow['unit'];
+  t: Props['t'];
+}) {
+  if (value == null) {
+    return <span className="text-noorix-muted">—</span>;
+  }
+  if (unit === 'currency') {
+    return (
+      <span className="font-bold text-nx-sales nx-font-numbers">
+        <FmtNum n={value} /> <span className="nx-sar text-[8px]">SR</span>
+      </span>
+    );
+  }
+  return (
+    <span className="font-bold text-noorix-text nx-font-numbers">
+      <FmtNum n={value} />
+      <span className="text-[8px] font-normal text-noorix-muted ms-0.5">
+        {t('dashboardSalesCustomerDailyAvgUnit')}
+      </span>
+    </span>
+  );
+}
+
+function CompareTable({
+  mtdEndDay,
+  currentMonthLabel,
+  prevMonthLabel,
+  rows,
+  t,
+}: {
+  mtdEndDay: number;
+  currentMonthLabel: string;
+  prevMonthLabel: string;
+  rows: CompareRow[];
+  t: Props['t'];
+}) {
+  const visible = rows.filter((r) => r.current != null || r.prev != null);
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-noorix-border bg-[color-mix(in_srgb,var(--color-nx-sales)_4%,transparent)]">
+      <table className="w-full text-[10px] border-collapse">
+        <thead>
+          <tr className="border-b border-noorix-border bg-noorix-bg-muted/35">
+            <th className="px-2 py-1.5 text-start font-semibold text-noorix-muted w-[28%]" />
+            <th className="px-2 py-1.5 text-end font-semibold text-noorix-text">
+              <span className="block truncate">{currentMonthLabel}</span>
+              <span className="block text-[8px] font-normal text-noorix-muted nx-font-numbers ltr">
+                1–{mtdEndDay}
+              </span>
+            </th>
+            <th className="px-2 py-1.5 text-end font-semibold text-noorix-text">
+              <span className="block truncate">{prevMonthLabel}</span>
+              <span className="block text-[8px] font-normal text-noorix-muted nx-font-numbers ltr">
+                1–{mtdEndDay}
+              </span>
+            </th>
+            <th className="px-2 py-1.5 text-end font-semibold text-noorix-muted w-[3.25rem]">
+              {t('dashboardWeeklySalesDelta')}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {visible.map((row) => (
+            <tr key={row.key} className="border-t border-noorix-border/80">
+              <td className="px-2 py-1.5 text-start font-medium text-noorix-muted truncate">
+                {row.label}
+              </td>
+              <td dir="ltr" className="px-2 py-1.5 text-end whitespace-nowrap">
+                <ValueCell value={row.current} unit={row.unit} t={t} />
+              </td>
+              <td dir="ltr" className="px-2 py-1.5 text-end whitespace-nowrap text-noorix-muted">
+                <ValueCell value={row.prev} unit={row.unit} t={t} />
+              </td>
+              <td dir="ltr" className="px-2 py-1.5 text-end whitespace-nowrap">
+                <DeltaCell current={row.current} prev={row.prev} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function DashboardOverviewRevenueMonthBody({
   mtdEndDay,
+  currentMonthLabel,
+  prevMonthLabel,
+  currentMonthSalesTotal,
   prevMonthSalesTotal,
   revenueDailyAvg,
   revenueDailyAvgPrev,
@@ -68,70 +164,44 @@ export function DashboardOverviewRevenueMonthBody({
   t,
 }: Props) {
   const [shiftsOpen, setShiftsOpen] = useState(false);
-  const hasRevenueAvg = revenueDailyAvg != null;
-  const hasCustomerAvg = customerDailyAvg != null;
 
-  if (!hasRevenueAvg && !hasCustomerAvg && !salesShiftPeriodTotals) return null;
+  const compareRows: CompareRow[] = [
+    {
+      key: 'sales',
+      label: t('dashboardRevenueCompareSales'),
+      current: currentMonthSalesTotal > 0 ? currentMonthSalesTotal : null,
+      prev: prevMonthSalesTotal > 0 ? prevMonthSalesTotal : null,
+      unit: 'currency',
+    },
+    {
+      key: 'dailyAvg',
+      label: t('dashboardSalesDailyAvgActiveDays'),
+      current: revenueDailyAvg,
+      prev: revenueDailyAvgPrev,
+      unit: 'currency',
+    },
+    {
+      key: 'customers',
+      label: t('dashboardSalesCustomerDailyAvg'),
+      current: customerDailyAvg,
+      prev: customerDailyAvgPrev,
+      unit: 'count',
+    },
+  ];
+
+  const hasCompare = compareRows.some((r) => r.current != null || r.prev != null);
+  if (!hasCompare && !salesShiftPeriodTotals) return null;
 
   return (
     <div className="mx-4 mt-1 flex flex-col gap-1.5 pb-0.5">
-      {(hasRevenueAvg || hasCustomerAvg) ? (
-        <div className="grid grid-cols-2 gap-1.5">
-          {hasRevenueAvg ? (
-            <div className="min-w-0 rounded-lg border border-noorix-border bg-[color-mix(in_srgb,var(--color-nx-sales)_6%,transparent)] px-2.5 py-1.5">
-              <div className="flex items-center justify-between gap-1">
-                <span className="truncate text-[9px] font-semibold text-noorix-muted">
-                  {t('dashboardSalesDailyAvgActiveDays')}
-                  <span className="nx-font-numbers ltr font-normal"> · 1–{mtdEndDay}</span>
-                </span>
-                <DeltaBadge current={revenueDailyAvg} prev={revenueDailyAvgPrev} />
-              </div>
-              <div dir="ltr" className="mt-0.5 flex items-baseline gap-0.5 text-nx-sales nx-font-numbers">
-                <span className="text-[16px] font-black leading-none">
-                  <FmtNum n={revenueDailyAvg!} />
-                </span>
-                <span className="nx-sar text-[10px]">SR</span>
-              </div>
-              {revenueDailyAvgPrev != null ? (
-                <div dir="ltr" className="mt-0.5 text-[9px] text-noorix-muted nx-font-numbers truncate">
-                  <FmtNum n={revenueDailyAvgPrev} /> <span className="nx-sar">SR</span>
-                </div>
-              ) : null}
-              {prevMonthSalesTotal > 0 ? (
-                <div className="mt-1 border-t border-noorix-border/60 pt-1">
-                  <div className="text-[8px] font-semibold text-noorix-muted truncate">
-                    {t('dashboardRevenuePrevMonthSales')}
-                    <span className="nx-font-numbers ltr font-normal"> · 1–{mtdEndDay}</span>
-                  </div>
-                  <div dir="ltr" className="text-[11px] font-bold text-noorix-text nx-font-numbers">
-                    <FmtNum n={prevMonthSalesTotal} /> <span className="nx-sar text-[9px]">SR</span>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div />
-          )}
-
-          {hasCustomerAvg ? (
-            <div className="min-w-0 rounded-md border border-noorix-border/80 bg-noorix-bg-muted/30 px-2.5 py-1.5">
-              <div className="truncate text-[9px] font-semibold text-noorix-muted">
-                {t('dashboardSalesCustomerDailyAvg')}
-              </div>
-              <div dir="ltr" className="mt-0.5 flex items-baseline gap-0.5 nx-font-numbers">
-                <span className="text-[16px] font-bold text-noorix-text">
-                  <FmtNum n={customerDailyAvg!} />
-                </span>
-                <span className="text-[9px] text-noorix-muted">{t('dashboardSalesCustomerDailyAvgUnit')}</span>
-              </div>
-              {customerDailyAvgPrev != null ? (
-                <div dir="ltr" className="mt-0.5 text-[9px] text-noorix-muted nx-font-numbers truncate">
-                  <FmtNum n={customerDailyAvgPrev} />
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+      {hasCompare ? (
+        <CompareTable
+          mtdEndDay={mtdEndDay}
+          currentMonthLabel={currentMonthLabel}
+          prevMonthLabel={prevMonthLabel}
+          rows={compareRows}
+          t={t}
+        />
       ) : null}
 
       <div className="md:hidden">

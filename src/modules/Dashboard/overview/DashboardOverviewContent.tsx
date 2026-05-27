@@ -38,7 +38,10 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         filter={m.filter}
         year={m.year}
         revenueMtdEndDay={m.revenueMtdEndDay}
+        revenueMtdTotalSum={m.revenueMtdTotalSum}
         revenuePrevMonthTotalSum={m.revenuePrevMonthTotalSum}
+        monthName={m.monthName}
+        prevMonthName={m.prevMonthName}
         revenueDailyAvgActiveDays={m.revenueDailyAvgActiveDays}
         revenueDailyAvgPrevMonthActiveDays={m.revenueDailyAvgPrevMonthActiveDays}
         customerDailyAvgActiveDays={m.customerDailyAvgActiveDays}

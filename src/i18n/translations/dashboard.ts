@@ -52,6 +52,7 @@ export default {
   /** متوسط يومي: المجموع ÷ عدد الأيام ذات الإيراد &gt; 0 فقط */
   dashboardSalesDailyAvgActiveDays: { ar: 'المعدل اليومي', en: 'Daily average' },
   dashboardRevenuePrevMonthSales: { ar: 'مبيعات الشهر الماضي', en: 'Prev month sales' },
+  dashboardRevenueCompareSales: { ar: 'المبيعات', en: 'Sales' },
   dashboardShiftDetailsToggle: { ar: 'الشفت', en: 'Shifts' },
   dashboardKpiTimelineHint: {
     ar: 'اتجاه الأشهر والأيام في «خط زمني للمبيعات» أدناه',
