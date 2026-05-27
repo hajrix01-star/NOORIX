@@ -180,6 +180,9 @@ export default {
   expenseLineAnnualTotal: { ar: 'الإجمالي السنوي المتوقع', en: 'Expected annual total' },
   expenseLineListMonthlyAmount: { ar: 'المبلغ الشهري', en: 'Monthly amount' },
   expenseLineListAnnualAmount: { ar: 'المبلغ السنوي', en: 'Annual amount' },
+  expenseLineNameCol: { ar: 'اسم البند', en: 'Line name' },
+  expenseLineKindCol: { ar: 'النوع', en: 'Type' },
+  expenseLineServiceNumberCol: { ar: 'رقم الخدمة', en: 'Service #' },
   expenseLineAnnualTotalHint: {
     ar: 'مثال: 120000 — يُستخدم مع فترة الدفع لاقتراح مبلغ كل دفعة.',
     en: 'e.g. 120000 — with payment interval to suggest each installment.',
