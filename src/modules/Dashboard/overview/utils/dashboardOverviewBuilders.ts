@@ -269,6 +269,42 @@ export function revenueMtdEndDay(
   return mtdCalendarDaysInMonth(year, month, todayYear, todayMonth, todayDay);
 }
 
+/** عدد أيام التقويم (1…endDay) التي فيها إيراد مبيعات > 0 */
+export function countRevenueActiveSalesDays(
+  monthSales: SummaryLike[] | null | undefined,
+  year: number,
+  month: number,
+  endDayInclusive: number,
+): number {
+  const rows = filterSalesThroughDay(monthSales, year, month, endDayInclusive);
+  const byDay = new Map<string, number>();
+  for (const s of rows) {
+    const d = toYmd(s.transactionDate);
+    if (!d) continue;
+    byDay.set(d, (byDay.get(d) || 0) + Number(s.totalAmount || 0));
+  }
+  let n = 0;
+  for (const amt of byDay.values()) {
+    if (amt > 0) n += 1;
+  }
+  return n;
+}
+
+export function sumRevenueThroughDay(
+  monthSales: SummaryLike[] | null | undefined,
+  year: number,
+  month: number,
+  endDayInclusive: number,
+): number {
+  return sumMonthMetric(
+    monthSales,
+    year,
+    month,
+    (s) => Number(s.totalAmount || 0),
+    endDayInclusive,
+  );
+}
+
 export function computeRevenueDailyAvgActiveDays(
   monthSalesForDailyAvg: SummaryLike[] | null | undefined,
 ): number | null {

@@ -4,8 +4,26 @@ import {
   computeCustomerDailyAvgCalendarMtd,
   computeRevenueDailyAvgActiveDays,
   computeRevenueDailyAvgCalendarMtd,
+  countRevenueActiveSalesDays,
+  sumRevenueThroughDay,
 } from './dashboardOverviewBuilders';
 import { mtdCalendarDaysInMonth } from './dashboardOverviewDateUtils';
+
+describe('revenue MTD totals and active day count', () => {
+  it('calendar avg vs active-day avg when one calendar day has zero sales', () => {
+    const sales = [
+      { transactionDate: '2026-05-01', totalAmount: 1000 },
+      { transactionDate: '2026-05-02', totalAmount: 2000 },
+      { transactionDate: '2026-05-03', totalAmount: 0 },
+    ];
+    const total = sumRevenueThroughDay(sales, 2026, 5, 3);
+    expect(total).toBe(3000);
+    expect(countRevenueActiveSalesDays(sales, 2026, 5, 3)).toBe(2);
+    expect(computeRevenueDailyAvgCalendarMtd(sales, 2026, 5, 3)).toBe(1000);
+    const through = sales.filter((s) => s.transactionDate !== '2026-05-03');
+    expect(computeRevenueDailyAvgActiveDays(through)).toBe(1500);
+  });
+});
 
 describe('computeRevenueDailyAvgActiveDays', () => {
   it('averages revenue across active days only', () => {
