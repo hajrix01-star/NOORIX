@@ -14,10 +14,11 @@ type Props = {
   selectedMonth: number | null;
 };
 
-/** ~375px عرض محتوى: شهر ~30% | معدل ~50% | تغيّر ~20% */
-const COL_MONTH = '30%';
-const COL_AVG = '50%';
-const COL_DELTA = '20%';
+/** شهر | مبيعات | معدل | تغيّر */
+const COL_MONTH = '22%';
+const COL_SALES = '28%';
+const COL_AVG = '32%';
+const COL_DELTA = '18%';
 
 const TH_CELL =
   'border border-noorix-border bg-noorix-bg-muted py-1 text-[9px] font-bold leading-tight text-noorix-text';
@@ -82,6 +83,18 @@ function AvgHeader({ t }: { t: (key: string) => string }) {
   );
 }
 
+function SalesCell({ row }: { row: YearMonthlyDailyAvgRow }) {
+  if (row.totalSales == null) {
+    return <span className="font-semibold text-noorix-muted">—</span>;
+  }
+  return (
+    <span dir="ltr" className="inline-flex max-w-full items-baseline justify-end gap-0.5 whitespace-nowrap nx-font-numbers">
+      <FmtNum n={row.totalSales} className="font-bold text-noorix-text" />
+      <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
+    </span>
+  );
+}
+
 function AvgCell({ row }: { row: YearMonthlyDailyAvgRow }) {
   if (row.avgDaily == null) {
     return <span className="font-semibold text-noorix-muted">—</span>;
@@ -126,6 +139,7 @@ function YearlyDailyAvgTable({
       <table className="w-full table-fixed border-collapse text-[10px]">
         <colgroup>
           <col style={{ width: COL_MONTH }} />
+          <col style={{ width: COL_SALES }} />
           <col style={{ width: COL_AVG }} />
           <col style={{ width: COL_DELTA }} />
         </colgroup>
@@ -133,6 +147,9 @@ function YearlyDailyAvgTable({
           <tr>
             <th scope="col" className={cn(TH_CELL, 'px-1.5 text-start')}>
               {t('dashboardYearlyDailyAvgMonthCol')}
+            </th>
+            <th scope="col" className={cn(TH_CELL, 'px-1 text-end')}>
+              {t('dashboardYearlyDailyAvgSalesCol')}
             </th>
             <th scope="col" className={cn(TH_CELL, 'px-1 text-center')}>
               <AvgHeader t={t} />
@@ -149,6 +166,9 @@ function YearlyDailyAvgTable({
               <tr key={row.month} className={rowHighlightClass(row, isSelected)}>
                 <td className={cn(TD_CELL, 'px-1.5 text-start')}>
                   <MonthCell row={row} t={t} />
+                </td>
+                <td className={cn(TD_CELL, 'px-1 text-end')}>
+                  <SalesCell row={row} />
                 </td>
                 <td className={cn(TD_CELL, 'px-1 text-center')}>
                   <AvgCell row={row} />
