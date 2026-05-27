@@ -180,6 +180,9 @@ export default {
   expenseLineAnnualTotal: { ar: 'الإجمالي السنوي المتوقع', en: 'Expected annual total' },
   expenseLineListMonthlyAmount: { ar: 'المبلغ الشهري', en: 'Monthly amount' },
   expenseLineListAnnualAmount: { ar: 'المبلغ السنوي', en: 'Annual amount' },
+  /** عناوين أعمدة الجدول — مختصرة لأن auto-layout يوسّع العمود حسب رأس الجدول */
+  expenseLineMonthlyColShort: { ar: 'شهري', en: 'Monthly' },
+  expenseLineAnnualColShort: { ar: 'سنوي', en: 'Annual' },
   expenseLineNameCol: { ar: 'اسم البند', en: 'Line name' },
   expenseLineKindCol: { ar: 'النوع', en: 'Type' },
   expenseLineServiceNumberCol: { ar: 'رقم الخدمة', en: 'Service #' },
