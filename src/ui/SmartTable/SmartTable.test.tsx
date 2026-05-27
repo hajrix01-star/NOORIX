@@ -12,7 +12,7 @@ vi.mock('../../i18n/useTranslation', () => ({
 }));
 
 vi.mock('../../hooks/useMediaQuery', () => ({
-  useIsNarrow700: () => false,
+  useIsNarrow768: () => false,
 }));
 
 vi.mock('../../hooks/useUiDir', () => ({

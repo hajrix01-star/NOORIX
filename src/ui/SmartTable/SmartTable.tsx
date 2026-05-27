@@ -4,7 +4,7 @@
  */
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
-import { useIsNarrow700 } from '../../hooks/useMediaQuery';
+import { useIsNarrow768 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
 import Button from '../Button';
 import Input from '../Input';
@@ -180,7 +180,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     setShowColPanel(false);
   }, [tableId]);
 
-  const isNarrow = useIsNarrow700();
+  /** محاذاة مع @media (max-width: 768px) — تجنّب جدول عريض + فراغ أبيض على تابلت/جوال */
+  const isNarrow = useIsNarrow768();
 
   const showCompact  = isNarrow && typeof renderCompactRow === 'function';
   const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
@@ -200,7 +201,10 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
   return (
     <div
-      className="noorix-table-frame min-w-0"
+      className={cn(
+        'noorix-table-frame min-w-0 max-w-full',
+        (renderCompactRow || renderMobileCard) && 'max-md:overflow-x-hidden',
+      )}
       style={{ padding: innerPadding }}
     >
       {/* ── رأس الجدول ── */}

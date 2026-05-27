@@ -306,8 +306,8 @@ export default function ExpenseLineList({
         embedded && 'pt-4',
       )}
     >
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
-        <div className="nx-toolbar min-w-0 flex-1">
+      <div className="mb-3 flex min-h-11 min-w-0 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+        <div className="nx-toolbar min-w-0 max-w-full flex-1 overflow-x-auto">
           <div className="w-full min-w-0 sm:w-[min(100%,11rem)] shrink-0">
             <SearchableOptionsPicker
               size="sm"
@@ -361,7 +361,7 @@ export default function ExpenseLineList({
         renderMobileCard={renderMobileCard}
         tableId="expense-lines"
         tableLayout="fixed"
-        tableMinWidth={1260}
+        tableMinWidth={1100}
         stickyActionColumn={false}
       />
     </ScreenShell>
