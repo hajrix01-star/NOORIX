@@ -106,6 +106,7 @@ export class DashboardController {
       body.scope,
       lang,
       body.companyIds,
+      body.dayShifts,
     );
   }
 

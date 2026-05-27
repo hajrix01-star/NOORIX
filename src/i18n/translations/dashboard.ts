@@ -40,6 +40,13 @@ export default {
   },
   dashboardImportSaudiEstimated: { ar: 'تقديري (أم القرى)', en: 'Estimated (Umm al-Qura)' },
   dashboardImportSaudiOfficial: { ar: 'ثابت', en: 'Fixed' },
+  dashboardImportSaudiShiftAdvance: { ar: 'تقديم يوم', en: 'Advance 1 day' },
+  dashboardImportSaudiShiftDelay: { ar: 'تأخير يوم', en: 'Delay 1 day' },
+  dashboardImportSaudiShiftReset: { ar: 'بدون إزاحة', en: 'No shift' },
+  dashboardImportSaudiShiftHint: {
+    ar: 'للمناسبات التقديرية: عدّل يوماً لتطابق إعلان رؤية الهلال',
+    en: 'For estimated occasions: shift by one day to match official moon-sighting',
+  },
   dashboardImportSaudiSelectAll: { ar: 'تحديد الكل', en: 'Select all' },
   dashboardImportSaudiClear: { ar: 'إلغاء التحديد', en: 'Clear selection' },
   dashboardImportSaudiApply: { ar: 'تطبيق المحدد', en: 'Apply selected' },

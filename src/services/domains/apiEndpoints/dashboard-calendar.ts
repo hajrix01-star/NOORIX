@@ -103,6 +103,7 @@ export async function applyDashboardSpecialOccasions(
     scope: 'company' | 'tenant';
     companyIds?: string[];
     lang?: 'ar' | 'en';
+    dayShifts?: Record<string, number>;
   },
 ): Promise<ApiParsedResult<{ companies: number; monthsUpdated: number; occasionCount: number }>> {
   return apiPost(
