@@ -54,7 +54,7 @@ function rowHighlightClass(row: YearMonthlyDailyAvgRow, isSelected: boolean): st
 
 function MonthCell({ row, t }: { row: YearMonthlyDailyAvgRow; t: (key: string) => string }) {
   return (
-    <div className="flex min-w-0 items-center gap-1">
+    <div className="flex min-w-0 items-center justify-center gap-1">
       <span className="whitespace-nowrap text-[10px] font-semibold text-noorix-text" title={row.monthLabel}>
         {row.monthLabel}
       </span>
@@ -145,10 +145,10 @@ function YearlyDailyAvgTable({
         </colgroup>
         <thead>
           <tr>
-            <th scope="col" className={cn(TH_CELL, 'px-1.5 text-start')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1.5 text-center')}>
               {t('dashboardYearlyDailyAvgMonthCol')}
             </th>
-            <th scope="col" className={cn(TH_CELL, 'px-1 text-end')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1 text-center')}>
               {t('dashboardYearlyDailyAvgSalesCol')}
             </th>
             <th scope="col" className={cn(TH_CELL, 'px-1 text-center')}>
