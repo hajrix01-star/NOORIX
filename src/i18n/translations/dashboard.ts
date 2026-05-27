@@ -174,8 +174,8 @@ export default {
     en: 'Daily sales average by week of month',
   },
   dashboardWeeklySalesFormulaNote: {
-    ar: 'كل أسبوع معزول: 1–7 ثم 8–14، إلخ؛ المتوسط = مجموع الجزء ÷ عدد أيامه في الشهر.',
-    en: 'Each week is isolated (1–7, then 8–14, …); average = slice total ÷ days in that slice.',
+    ar: 'كل أسبوع معزول: 1–7 ثم 8–14، إلخ؛ المتوسط = مجموع الجزء ÷ أيام البيع فقط (إيراد > 0).',
+    en: 'Each week is isolated (1–7, then 8–14, …); average = slice total ÷ sales days only (revenue > 0).',
   },
   dashboardWeeklySalesAvgDailyShort: { ar: 'متوسط يومي', en: 'Daily avg' },
   dashboardWeeklySalesPeriodMainHeader: { ar: 'الفترة الأولى', en: 'Primary period' },
