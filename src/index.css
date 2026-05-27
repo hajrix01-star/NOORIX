@@ -2189,6 +2189,20 @@ html[data-card-style="10"] .noorix-stat-card {
   white-space: nowrap;
   flex-shrink: 0;
 }
+/* غلاف SearchableOptionsPicker — w-full داخل flex nowrap يكدّس العناصر فوق بعضها */
+.noorix-exec-filters--scroll > div.relative {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 130px;
+  max-width: min(220px, 52vw);
+}
+.noorix-exec-filters--scroll > div.relative button {
+  width: 100%;
+  max-width: 100%;
+}
+.noorix-exec-filters--scroll .noorix-exec-filters__icon {
+  flex-shrink: 0;
+}
 
 /* ========== حقول الإدخال — rounded-sm احترافي ========== */
 input, select, textarea {
