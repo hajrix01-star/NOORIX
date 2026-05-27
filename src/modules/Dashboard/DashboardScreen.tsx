@@ -94,7 +94,7 @@ export default function DashboardScreen() {
         contentClassName={
           activeTab === 'calendar'
             ? 'nx-tab-content px-1 py-2 sm:px-3 sm:py-3 md:p-4'
-            : 'p-4 nx-tab-content'
+            : 'nx-tab-content px-1 py-2 sm:px-3 sm:py-3 md:p-4'
         }
       >
         {activeTab === 'overview'    && <DashboardOverviewTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
