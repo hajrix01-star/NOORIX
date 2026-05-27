@@ -88,7 +88,7 @@ function SalesCell({ row }: { row: YearMonthlyDailyAvgRow }) {
     return <span className="font-semibold text-noorix-muted">—</span>;
   }
   return (
-    <span dir="ltr" className="inline-flex max-w-full items-baseline justify-end gap-0.5 whitespace-nowrap nx-font-numbers">
+    <span dir="ltr" className="inline-flex max-w-full items-baseline justify-center gap-0.5 whitespace-nowrap nx-font-numbers">
       <FmtNum n={row.totalSales} className="font-bold text-noorix-text" />
       <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
     </span>
@@ -164,10 +164,10 @@ function YearlyDailyAvgTable({
             const isSelected = selectedMonth != null && selectedMonth === row.month;
             return (
               <tr key={row.month} className={rowHighlightClass(row, isSelected)}>
-                <td className={cn(TD_CELL, 'px-1.5 text-start')}>
+                <td className={cn(TD_CELL, 'px-1.5 text-center')}>
                   <MonthCell row={row} t={t} />
                 </td>
-                <td className={cn(TD_CELL, 'px-1 text-end')}>
+                <td className={cn(TD_CELL, 'px-1 text-center')}>
                   <SalesCell row={row} />
                 </td>
                 <td className={cn(TD_CELL, 'px-1 text-center')}>
