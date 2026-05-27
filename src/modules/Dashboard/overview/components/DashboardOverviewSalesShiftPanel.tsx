@@ -38,9 +38,9 @@ export function DashboardOverviewSalesShiftPanel({ totals, t, compact = false }:
           <thead>
             <tr className="text-noorix-muted">
               <th className="px-2 py-1 text-start font-semibold">{t('salesShiftLabel')}</th>
-              <th className="px-2 py-1 text-end font-semibold">{t('total')}</th>
-              <th className="px-2 py-1 text-end font-semibold w-[2.5rem]">%</th>
-              <th className="px-2 py-1 text-end font-semibold">{t('customers')}</th>
+              <th className="px-2 py-1 text-center font-semibold">{t('total')}</th>
+              <th className="px-2 py-1 text-center font-semibold w-[2.5rem]">%</th>
+              <th className="px-2 py-1 text-center font-semibold">{t('customers')}</th>
             </tr>
           </thead>
           <tbody>
@@ -52,13 +52,13 @@ export function DashboardOverviewSalesShiftPanel({ totals, t, compact = false }:
                   <td className="px-2 py-1 font-medium text-noorix-text truncate max-w-[5rem]">
                     {t(row.labelKey)}
                   </td>
-                  <td dir="ltr" className="px-2 py-1 text-end font-bold text-nx-sales nx-font-numbers whitespace-nowrap">
+                  <td dir="ltr" className="px-2 py-1 text-center font-bold text-nx-sales nx-font-numbers whitespace-nowrap">
                     <FmtNum n={bucket.amount} />
                   </td>
-                  <td dir="ltr" className="px-2 py-1 text-end font-semibold text-noorix-blue nx-font-numbers">
+                  <td dir="ltr" className="px-2 py-1 text-center font-semibold text-noorix-blue nx-font-numbers">
                     {sharePct != null ? `${formatSalesShiftSharePercent(sharePct)}%` : '—'}
                   </td>
-                  <td dir="ltr" className="px-2 py-1 text-end text-noorix-muted nx-font-numbers">
+                  <td dir="ltr" className="px-2 py-1 text-center text-noorix-muted nx-font-numbers">
                     <FmtNum n={bucket.customers} />
                   </td>
                 </tr>
