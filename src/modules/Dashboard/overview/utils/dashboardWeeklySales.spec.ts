@@ -30,4 +30,19 @@ describe('dashboardWeeklySales', () => {
   it('pctChangeVsBaseline', () => {
     expect(pctChangeVsBaseline(110, 100)).toBeCloseTo(10, 5);
   });
+
+  it('uses elapsed days in partial final week when maxDayInclusive is set', () => {
+    const year = 2026;
+    const month = 5;
+    const daily = [
+      { transactionDate: '2026-05-22', totalAmount: 500 },
+      { transactionDate: '2026-05-24', totalAmount: 500 },
+    ];
+    const buckets = bucketMonthIntoWeeks(year, month, daily, { maxDayInclusive: 26 });
+    const last = buckets[buckets.length - 1];
+    expect(last.dayStart).toBe(22);
+    expect(last.dayEnd).toBe(28);
+    expect(last.totalSales).toBe(1000);
+    expect(last.avgDailyInWeek).toBe(200);
+  });
 });

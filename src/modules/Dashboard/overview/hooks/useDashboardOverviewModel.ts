@@ -328,9 +328,17 @@ export function useDashboardOverviewModel(
   );
 
   const salesShiftPeriodTotals = useMemo(() => {
-    const src = selectedMonth != null ? monthSalesForDailyAvg : yearSummaries;
+    if (selectedMonth == null) return computeSalesShiftPeriodTotals(yearSummaries);
+    const src =
+      revenueMtdEndDay > 0 ? monthSalesThroughMtd : monthSalesForDailyAvg;
     return computeSalesShiftPeriodTotals(src);
-  }, [selectedMonth, monthSalesForDailyAvg, yearSummaries]);
+  }, [
+    selectedMonth,
+    yearSummaries,
+    monthSalesForDailyAvg,
+    monthSalesThroughMtd,
+    revenueMtdEndDay,
+  ]);
 
   const yearlyDailyAvgRows = useMemo(() => {
     const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
@@ -473,15 +481,20 @@ export function useDashboardOverviewModel(
     lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
 
   const weeklySalesWeekRows = useMemo(() => {
+    const capFor = (y: number, m: number) =>
+      y === saudiNow.year && m === saudiNow.month ? saudiNow.day : undefined;
+
     const curBuckets = bucketMonthIntoWeeks(
       weeklyPanelYearA,
       weeklyPanelMonthA,
       weeklyDailySummariesA,
+      { maxDayInclusive: capFor(weeklyPanelYearA, weeklyPanelMonthA) },
     );
     const baseBuckets = bucketMonthIntoWeeks(
       weeklyPanelYearB,
       weeklyPanelMonthB,
       weeklyDailySummariesB,
+      { maxDayInclusive: capFor(weeklyPanelYearB, weeklyPanelMonthB) },
     );
 
     const maxW = Math.max(curBuckets.length, baseBuckets.length);

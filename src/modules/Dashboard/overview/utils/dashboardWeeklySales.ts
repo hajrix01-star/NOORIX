@@ -14,20 +14,32 @@ export type MonthWeekBucket = {
   avgDailyInWeek: number;
 };
 
+export type BucketMonthIntoWeeksOptions = {
+  /** للشهر الجاري: متوسط يومي ÷ أيام منقضية في الجزء فقط (وليس 7 دائماً) */
+  maxDayInclusive?: number;
+};
+
 export function bucketMonthIntoWeeks(
   year: number,
   month: number,
   dailySummaries: ReadonlyArray<{ transactionDate?: string | null; totalAmount?: string | number | null }>,
+  options?: BucketMonthIntoWeeksOptions,
 ): MonthWeekBucket[] {
   const ymPrefix = `${year}-${String(month).padStart(2, '0')}`;
   const ld = lastDayOfMonth(year, month);
+  const cap =
+    options?.maxDayInclusive != null
+      ? Math.max(0, Math.min(options.maxDayInclusive, ld))
+      : ld;
+  if (cap <= 0) return [];
+
   const byDay = new Map<number, number>();
 
   for (const s of dailySummaries) {
     const ymdStr = toYmd(s.transactionDate);
     if (!ymdStr || ymdStr.length < 10 || !ymdStr.startsWith(ymPrefix)) continue;
     const d = parseInt(ymdStr.slice(8, 10), 10);
-    if (!Number.isFinite(d) || d < 1 || d > ld) continue;
+    if (!Number.isFinite(d) || d < 1 || d > cap) continue;
     byDay.set(d, (byDay.get(d) || 0) + Number(s.totalAmount || 0));
   }
 
@@ -36,9 +48,12 @@ export function bucketMonthIntoWeeks(
   let weekIndex = 1;
   while (start <= ld) {
     const end = Math.min(start + 6, ld);
+    const effectiveEnd = Math.min(end, cap);
+    if (start > cap) break;
+
     let total = 0;
-    for (let d = start; d <= end; d++) total += byDay.get(d) || 0;
-    const days = end - start + 1;
+    for (let d = start; d <= effectiveEnd; d++) total += byDay.get(d) || 0;
+    const days = effectiveEnd - start + 1;
     buckets.push({
       weekIndex,
       dayStart: start,
