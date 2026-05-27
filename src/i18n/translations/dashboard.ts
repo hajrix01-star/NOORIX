@@ -64,6 +64,10 @@ export default {
     en: 'Avg. on sales days',
   },
   dashboardShiftDetailsToggle: { ar: 'تفاصيل الشفت', en: 'Shift breakdown' },
+  dashboardKpiTimelineHint: {
+    ar: 'اتجاه الأشهر والأيام في «خط زمني للمبيعات» أدناه',
+    en: 'Monthly/daily trend in the sales timeline chart below',
+  },
   dashboardSalesCustomerDailyAvg: { ar: 'معدل العملاء', en: 'Customer avg' },
   dashboardSalesCustomerDailyAvgUnit: { ar: '/ يوم', en: '/day' },
   dashboardSalesByShift: { ar: 'مبيعات حسب الشفت', en: 'Sales by shift' },

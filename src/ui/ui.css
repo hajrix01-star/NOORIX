@@ -2044,6 +2044,15 @@
   gap: 12px;
 }
 
+/* لوحة التحكم — كروت بنفس الارتفاع في الصف، تذييل مثبت للأسفل */
+.nx-kpi-grid--dashboard {
+  align-items: stretch;
+}
+
+.nx-kpi-grid--dashboard > .noorix-surface-card {
+  height: 100%;
+}
+
 /* ≥ 1100px من عرض الحاوية: 5 أعمدة (شاشات كبيرة جداً ≥ 1400px viewport) */
 @container kpi-section (min-width: 1100px) {
   .nx-kpi-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; }

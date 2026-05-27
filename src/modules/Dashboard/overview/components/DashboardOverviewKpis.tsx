@@ -2,16 +2,16 @@ import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { amountText } from '../../../Reports/reportHelpers';
 import { MetricCard } from '../../../../ui';
+import { cn } from '../../../../ui/cn';
 import { KPI_CARD_SPARKLINE_COLORS } from '../../../../constants/kpiCardTheme';
 import {
   getCardValue,
-  getMonthlyData,
   getPctStringForCard,
   type PlReportLike,
 } from '../utils/dashboardOverviewCalculations';
 import type { DashboardOverviewFilter } from '../types';
 import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
-import { kpiFooterRowColorClass } from '../utils/dashboardOverviewKpiInsightFooters';
+import { DashboardOverviewKpiCardFooter } from './DashboardOverviewKpiCardFooter';
 import { DashboardOverviewRevenueMonthBody } from './DashboardOverviewRevenueMonthBody';
 import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
 
@@ -59,7 +59,7 @@ export function DashboardOverviewKpis({
 
   return (
     <div className="nx-kpi-container">
-      <div className="nx-kpi-grid">
+      <div className="nx-kpi-grid nx-kpi-grid--dashboard">
         {cards.map((card) => {
           const rawVal = getCardValue(report, card.key, selectedMonth);
           const isProfit = card.key === 'grossProfit' || card.key === 'netProfit';
@@ -69,7 +69,6 @@ export function DashboardOverviewKpis({
 
           const sparkColors = KPI_CARD_SPARKLINE_COLORS as Record<string, string>;
           const accentColor = sparkColors[card.key] || sparkColors.sales;
-          const sparkData = getMonthlyData(report, card.key);
 
           let badgeTone = 'neutral';
           let arrow = '';
@@ -103,87 +102,60 @@ export function DashboardOverviewKpis({
               ? kpiInsightFooters[card.key as 'purchases' | 'expenses' | 'grossProfit' | 'netProfit']
               : undefined;
 
-          const hasRows = (insightBundle?.rows?.length ?? 0) > 0;
+          const footerRows = insightBundle?.rows;
+          const showMonthSalesBody = isSales && selectedMonth != null;
+
+          const pctFallback = !isSales || !footerRows?.length ? (
+            <div className="flex items-center justify-between gap-3 py-0.5 min-h-[28px]">
+              <span className="min-w-0 flex-1 text-[10px] leading-snug text-noorix-muted text-start truncate">
+                {pctLabelText}
+              </span>
+              {pctNum != null ? (
+                <span
+                  className={cn(
+                    'inline-flex shrink-0 max-w-[55%] items-center justify-end truncate rounded px-2 py-0.5',
+                    'text-[11px] font-bold nx-font-numbers ltr',
+                    badgeClass,
+                  )}
+                  title={pctTitle}
+                >
+                  {arrow}{Math.abs(pctNum)}%
+                </span>
+              ) : (
+                <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>
+              )}
+            </div>
+          ) : null;
 
           return (
             <MetricCard
               key={card.key}
               color={accentColor}
-              className={isSales && selectedMonth != null ? 'min-h-0' : 'min-h-[188px]'}
+              className="flex h-full min-h-0 flex-col"
             >
               <MetricCard.Header label={card.label} subLabel={t(card.formulaKey)} />
-              {isSales ? (
-                <>
-                  <MetricCard.Value value={amountText(rawVal)} currency="SR" />
-                  {selectedMonth != null ? (
-                    <DashboardOverviewRevenueMonthBody
-                      mtdEndDay={revenueMtdEndDay}
-                      monthLabel={monthName ?? ''}
-                      revenueMtd={revenueMtdCalendar}
-                      revenueMtdPrev={revenueMtdPrevCalendar}
-                      revenueActiveDays={revenueDailyAvgActiveDays}
-                      customerMtd={customerMtdCalendar}
-                      customerActiveDays={customerDailyAvgActiveDays}
-                      salesShiftPeriodTotals={salesShiftPeriodTotals}
-                      t={t}
-                    />
-                  ) : null}
-                </>
-              ) : (
-                <MetricCard.Value value={amountText(rawVal)} currency="SR" />
-              )}
-              {!(isSales && selectedMonth != null) ? (
-                <MetricCard.Spark data={sparkData} color={accentColor} grow />
+              <MetricCard.Value value={amountText(rawVal)} currency="SR" className="pb-1" />
+
+              {showMonthSalesBody ? (
+                <DashboardOverviewRevenueMonthBody
+                  mtdEndDay={revenueMtdEndDay}
+                  monthLabel={monthName ?? ''}
+                  revenueMtd={revenueMtdCalendar}
+                  revenueMtdPrev={revenueMtdPrevCalendar}
+                  revenueActiveDays={revenueDailyAvgActiveDays}
+                  customerMtd={customerMtdCalendar}
+                  customerActiveDays={customerDailyAvgActiveDays}
+                  salesShiftPeriodTotals={salesShiftPeriodTotals}
+                  t={t}
+                />
               ) : null}
 
-              {!isSales ? (
-              <MetricCard.Footer className="mt-3 flex flex-col gap-1 border-t border-noorix-border pt-2 pb-2">
-                <span className="text-[10px] font-medium text-noorix-muted">{periodLabel}</span>
-
-                {hasRows ? (
-                  /* ── جدول موحّد: نسبة + متوسط + تغيير ── */
-                  <div className="flex flex-col divide-y divide-noorix-border mt-0.5">
-                    {insightBundle!.rows.map((row, idx) => (
-                      <div
-                        key={`${card.key}-row-${idx}`}
-                        className="flex items-center justify-between gap-2 py-[3px]"
-                        title={row.tooltip}
-                      >
-                        <span className="text-[10px] text-noorix-muted truncate leading-snug">
-                          {row.label}
-                        </span>
-                        <span
-                          className={`shrink-0 text-[11px] font-bold nx-font-numbers ltr ${kpiFooterRowColorClass(row.color)}`}
-                        >
-                          {row.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* ── fallback: شارة النسبة العادية (للكروت بدون insights أو في الوضع السنوي) ── */
-                  <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1 mt-0.5">
-                    <span className="min-w-0 max-w-[min(100%,calc(100%-3.5rem))] text-[10px] leading-snug text-noorix-muted">
-                      {pctLabelText}
-                    </span>
-                    {pctNum != null ? (
-                      <span
-                        className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold ${badgeClass}`}
-                        title={pctTitle}
-                      >
-                        {arrow}{Math.abs(pctNum)}%
-                      </span>
-                    ) : (
-                      <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>
-                    )}
-                  </div>
-                )}
-              </MetricCard.Footer>
-              ) : (
-                <div className="mt-2 border-t border-noorix-border pt-2 pb-1 mx-4">
-                  <span className="text-[10px] font-medium text-noorix-muted">{periodLabel}</span>
-                </div>
-              )}
+              <DashboardOverviewKpiCardFooter
+                periodLabel={periodLabel}
+                rows={!isSales ? footerRows : undefined}
+                fallback={isSales ? null : pctFallback}
+                timelineHint={isSales ? t('dashboardKpiTimelineHint') : undefined}
+              />
             </MetricCard>
           );
         })}

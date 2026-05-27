@@ -109,7 +109,7 @@ export function DashboardOverviewRevenueMonthBody({
   if (!hasMtd && !hasSecondary && !salesShiftPeriodTotals) return null;
 
   return (
-    <div className="mx-4 mt-2 flex flex-col gap-2">
+    <div className="mx-4 mt-1 flex flex-col gap-2 pb-0.5">
       {hasMtd ? (
         <div className="rounded-lg border border-noorix-border bg-[color-mix(in_srgb,var(--color-nx-sales)_6%,transparent)] px-3 py-2">
           <div className="flex items-start justify-between gap-2">
