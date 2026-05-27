@@ -116,6 +116,7 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
         <OrdersImportModal
           type="products"
           productType={productTypeFilter}
+          sections={sections}
           companyId={companyId}
           products={products}
           categories={categories}
@@ -618,11 +619,6 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
                       <td className="py-[10px] px-3">{p.nameAr || '—'}</td>
                       <td className="nx-cell-muted py-[10px] px-3">{p.nameEn || '—'}</td>
                       <td className="nx-cell-muted py-[10px] px-3">{p.category?.nameAr || p.category?.nameEn || '—'}</td>
-                      <td className="nx-cell-muted py-[10px] px-3">
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${(p as any).productType === 'sale' ? 'bg-green-100 text-noorix-green' : 'bg-blue-100 text-noorix-blue'}`}>
-                          {(p as any).productType === 'sale' ? t('productTypeSale') : t('productTypeOrder')}
-                        </span>
-                      </td>
                       <td className="nx-cell-muted py-[10px] px-3 text-[12px]">
                         {Array.isArray(p.sections) && p.sections.length > 0 ? (p.sections as string[]).join(' · ') : <span className="text-noorix-muted opacity-50">—</span>}
                       </td>

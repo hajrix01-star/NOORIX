@@ -268,7 +268,7 @@ export class OrdersService {
     });
   }
 
-  async createProductsBatch(companyId: string, products: { nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }> }[]) {
+  async createProductsBatch(companyId: string, products: { nameAr: string; nameEn?: string; unit?: string; sizes?: string; packaging?: string; categoryId?: string; productType?: string; sections?: string[]; lastPrice?: string; variants?: Array<{ size?: string; packaging?: string; unit?: string; lastPrice?: string }> }[]) {
     const tenantId = TenantContext.getTenantId();
     const data: Prisma.OrderProductCreateManyInput[] = [];
     for (const dto of products) {
@@ -286,6 +286,7 @@ export class OrdersService {
         packaging: dto.packaging?.trim() || null,
         categoryId: dto.categoryId || null,
         productType: dto.productType === 'sale' ? 'sale' : 'order',
+        sections: dto.sections?.length ? dto.sections : Prisma.DbNull,
         lastPrice: dto.lastPrice ? new Prisma.Decimal(dto.lastPrice) : new Prisma.Decimal(0),
         variants: variantsData === null ? Prisma.DbNull : (variantsData as Prisma.InputJsonValue),
       });

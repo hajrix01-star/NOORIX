@@ -32,6 +32,7 @@ interface ParsedRow {
   nameAr: string;
   nameEn: string;
   category: string;
+  sectionsSummary: string;
   variantsSummary: string;
   payload: Record<string, unknown> | null;
 }
@@ -47,6 +48,8 @@ interface Props {
   type: 'products' | 'categories';
   /** أصناف الطلبات أو المبيعات — يُطبَّق على الاستيراد والتكرار */
   productType?: 'order' | 'sale';
+  /** أقسام الشركة (بار، شيشة، مطبخ…) — للاختيار عند استيراد المبيعات */
+  sections?: any[];
   companyId: string;
   products: any[];
   categories: any[];
@@ -101,6 +104,7 @@ function StatusBadge({ status, label }: { status: RowStatus; label: string }) {
 export function OrdersImportModal({
   type,
   productType = 'order',
+  sections = [],
   companyId,
   products,
   categories,
@@ -110,12 +114,18 @@ export function OrdersImportModal({
 }: Props) {
   const { t } = useTranslation();
   const isProducts = type === 'products';
+  const needsImportSections = isProducts && productType === 'sale';
   const scopedProducts = useMemo(
     () => (isProducts ? products.filter((p: any) => (p.productType || 'order') === productType) : products),
     [isProducts, products, productType],
   );
+  const knownSectionNames = useMemo(
+    () => (sections as any[]).map((s) => String(s.nameAr ?? '').trim()).filter(Boolean),
+    [sections],
+  );
 
   const [phase, setPhase] = useState<Phase>('upload');
+  const [importSections, setImportSections] = useState<string[]>([]);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
   const [skipDuplicates, setSkipDuplicates] = useState(true);
@@ -143,9 +153,49 @@ export function OrdersImportModal({
     rows.filter(r => r.payload && (r.status === 'new' || (r.status === 'duplicate' && !skipDuplicates))).length
   ), [rows, skipDuplicates]);
 
+  const importSectionsOk = !needsImportSections || importSections.length > 0;
+
+  function renderImportSectionsPicker() {
+    if (!needsImportSections) return null;
+    if (knownSectionNames.length === 0) {
+      return (
+        <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 m-0">
+          {t('importSectionsEmptyHint')}
+        </p>
+      );
+    }
+    return (
+      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-3">
+        <div className="text-[13px] font-semibold text-noorix-text mb-1">{t('importChooseSections')}</div>
+        <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('importChooseSectionsHint')}</p>
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
+          {knownSectionNames.map((nameAr) => (
+            <label key={nameAr} className="flex items-center gap-2 text-[12px] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={importSections.includes(nameAr)}
+                onChange={(e) => {
+                  setImportSections((prev) =>
+                    e.target.checked ? [...new Set([...prev, nameAr])] : prev.filter((n) => n !== nameAr),
+                  );
+                }}
+                className="cursor-pointer"
+              />
+              {nameAr}
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // ── File processing ─────────────────────────────────────────────────────────
   const processFile = useCallback(async (file: File) => {
     setParseError('');
+    if (needsImportSections && importSections.length === 0) {
+      setParseError(t('importSectionsRequired'));
+      return;
+    }
     setPhase('parsing');
     try {
       const rawRows = await importFromExcel(file);
@@ -161,12 +211,12 @@ export function OrdersImportModal({
           const nameAr = String(r.nameAr ?? r.name_ar ?? '').trim();
           const nameEn = String(r.nameEn ?? r.name_en ?? '').trim();
           if (!nameAr) {
-            return { status: 'invalid', reason: t('importReasonMissingNameAr'), nameAr: '—', nameEn, category: '', variantsSummary: '', payload: null };
+            return { status: 'invalid', reason: t('importReasonMissingNameAr'), nameAr: '—', nameEn, category: '', sectionsSummary: '', variantsSummary: '', payload: null };
           }
           if (existingNames.has(nameAr.toLowerCase())) {
-            return { status: 'duplicate', reason: t('importReasonDuplicate'), nameAr, nameEn, category: '', variantsSummary: '', payload: { nameAr, nameEn: nameEn || undefined } };
+            return { status: 'duplicate', reason: t('importReasonDuplicate'), nameAr, nameEn, category: '', sectionsSummary: '', variantsSummary: '', payload: { nameAr, nameEn: nameEn || undefined } };
           }
-          return { status: 'new', reason: '', nameAr, nameEn, category: '', variantsSummary: '', payload: { nameAr, nameEn: nameEn || undefined } };
+          return { status: 'new', reason: '', nameAr, nameEn, category: '', sectionsSummary: '', variantsSummary: '', payload: { nameAr, nameEn: nameEn || undefined } };
         });
       } else {
         // ── Products ────────────────────────────────────────────────────────
@@ -180,7 +230,10 @@ export function OrdersImportModal({
           scopedProducts.map((p: any) => String(p.nameAr ?? '').trim().toLowerCase()),
         );
         const groups = groupOrderProductImportRows(filtered);
-        const payloads = orderProductImportGroupsToPayload(groups, catByName, productType);
+        const payloads = orderProductImportGroupsToPayload(groups, catByName, productType, {
+          knownSectionNames,
+          defaultSections: importSections,
+        });
         const payloadMap = new Map(payloads.map((p: any) => [String(p.nameAr).trim().toLowerCase(), p]));
 
         // Collect unique category names that need to be created
@@ -192,7 +245,7 @@ export function OrdersImportModal({
           const category = String(g.category || (g.type === 'legacy' ? (g.row?.category ?? '') : '') || '').trim();
 
           if (!nameAr) {
-            return { status: 'invalid', reason: t('importReasonMissingNameAr'), nameAr: '—', nameEn, category, variantsSummary: '', payload: null };
+            return { status: 'invalid', reason: t('importReasonMissingNameAr'), nameAr: '—', nameEn, category, sectionsSummary: '', variantsSummary: '', payload: null };
           }
 
           const payload = payloadMap.get(nameAr.toLowerCase()) ?? null;
@@ -200,6 +253,8 @@ export function OrdersImportModal({
           const variantsSummary = variants.length > 0
             ? t('importVariants', String(variants.length))
             : '—';
+          const rowSections: string[] = (payload as any)?.sections ?? [];
+          const sectionsSummary = rowSections.length > 0 ? rowSections.join(' · ') : '—';
 
           const catNameLower = category.trim().toLowerCase();
           let catNote = '';
@@ -208,17 +263,30 @@ export function OrdersImportModal({
             catNote = t('importReasonCategoryWillBeCreated');
           }
 
+          if (needsImportSections && rowSections.length === 0) {
+            return {
+              status: 'invalid',
+              reason: t('importReasonMissingSection'),
+              nameAr,
+              nameEn,
+              category,
+              sectionsSummary,
+              variantsSummary,
+              payload: null,
+            };
+          }
+
           if (existingNames.has(nameAr.toLowerCase())) {
             return {
               status: 'duplicate',
               reason: t('importReasonDuplicate') + (catNote ? ` — ${catNote}` : ''),
-              nameAr, nameEn, category, variantsSummary, payload,
+              nameAr, nameEn, category, sectionsSummary, variantsSummary, payload,
             };
           }
           return {
             status: 'new',
             reason: catNote,
-            nameAr, nameEn, category, variantsSummary, payload,
+            nameAr, nameEn, category, sectionsSummary, variantsSummary, payload,
           };
         });
 
@@ -241,7 +309,7 @@ export function OrdersImportModal({
       setParseError(e?.message || t('importFailed'));
       setPhase('upload');
     }
-  }, [isProducts, productType, scopedProducts, categories, t]);
+  }, [isProducts, productType, needsImportSections, importSections, knownSectionNames, scopedProducts, categories, t]);
 
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -262,6 +330,11 @@ export function OrdersImportModal({
       r => r.payload && (r.status === 'new' || (r.status === 'duplicate' && !skipDuplicates)),
     );
     if (!toImport.length) return;
+    if (needsImportSections && importSections.length === 0) {
+      setParseError(t('importSectionsRequired'));
+      setPhase('preview');
+      return;
+    }
 
     setPhase('importing');
     const skipped = rows.filter(r => r.status === 'duplicate' && skipDuplicates).length;
@@ -288,7 +361,10 @@ export function OrdersImportModal({
         payloads = toImport.map(r => {
           const catKey = String(r.category ?? '').trim().toLowerCase();
           const resolvedCatId = catKey ? catByNameRef.current.get(catKey) : undefined;
-          const base = { ...r.payload, productType };
+          const payloadSections = (r.payload as any)?.sections as string[] | undefined;
+          const sections =
+            payloadSections && payloadSections.length > 0 ? payloadSections : importSections;
+          const base = { ...r.payload, productType, sections };
           return resolvedCatId ? { ...base, categoryId: resolvedCatId } : base;
         });
       } else {
@@ -345,6 +421,7 @@ export function OrdersImportModal({
   function renderUpload() {
     return (
       <div className="flex flex-col gap-4">
+        {renderImportSectionsPicker()}
         {parseError && (
           <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 text-[12px]">
             <span className="text-base leading-none mt-0.5">⚠️</span>
@@ -407,6 +484,7 @@ export function OrdersImportModal({
 
     return (
       <div className="flex flex-col gap-4">
+        {renderImportSectionsPicker()}
         {/* Summary pills */}
         <div className="flex flex-wrap gap-2">
           {counts.new > 0 && (
@@ -472,6 +550,9 @@ export function OrdersImportModal({
                 <th className="py-2.5 px-3 text-start font-semibold">{t('productNameAr')}</th>
                 <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('productNameEn')}</th>
                 {isProducts && <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('ordersCategories')}</th>}
+                {isProducts && needsImportSections && (
+                  <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('productSections')}</th>
+                )}
                 {isProducts && <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('ordersProductVariants')}</th>}
                 <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('importColReason')}</th>
               </tr>
@@ -479,7 +560,7 @@ export function OrdersImportModal({
             <tbody>
               {filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={isProducts ? 6 : 4} className="py-8 text-center text-noorix-muted text-[12px]">
+                  <td colSpan={isProducts ? (needsImportSections ? 7 : 6) : 4} className="py-8 text-center text-noorix-muted text-[12px]">
                     {t('ordersNoSearchResults')}
                   </td>
                 </tr>
@@ -500,6 +581,11 @@ export function OrdersImportModal({
                   <td className="py-2 px-3 font-medium max-w-[150px] truncate" title={row.nameAr}>{row.nameAr}</td>
                   <td className="py-2 px-3 text-noorix-muted max-w-[120px] truncate" title={row.nameEn}>{row.nameEn || '—'}</td>
                   {isProducts && <td className="py-2 px-3 text-noorix-muted max-w-[100px] truncate" title={row.category}>{row.category || '—'}</td>}
+                  {isProducts && needsImportSections && (
+                    <td className="py-2 px-3 text-noorix-muted max-w-[100px] truncate" title={row.sectionsSummary}>
+                      {row.sectionsSummary}
+                    </td>
+                  )}
                   {isProducts && <td className="py-2 px-3 text-noorix-muted">{row.variantsSummary}</td>}
                   <td className="py-2 px-3 text-noorix-muted text-[11px] max-w-[160px]">
                     {row.reason ? (
@@ -591,7 +677,7 @@ export function OrdersImportModal({
           <Button
             variant="primary"
             onClick={handleImport}
-            disabled={toImportCount === 0}
+            disabled={toImportCount === 0 || !importSectionsOk}
           >
             {t('importConfirmBtn', String(toImportCount))}
           </Button>

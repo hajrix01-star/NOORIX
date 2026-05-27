@@ -30,7 +30,34 @@ function styleHeaderRow(XLSXmod: any, ws: any, rowIdx: any, colCount: any) {
   }
 }
 
-export const ORDER_PRODUCTS_EXCEL_HEADERS = ['nameAr', 'nameEn', 'category', 'size', 'packaging', 'unit', 'lastPrice'];
+export const ORDER_PRODUCTS_EXCEL_HEADERS = [
+  'nameAr',
+  'nameEn',
+  'category',
+  'size',
+  'packaging',
+  'unit',
+  'lastPrice',
+  'sections',
+];
+
+/** يطابق أسماء الأقسام من النظام (فاصلة عربية/إنجليزية) */
+export function parseOrderProductSectionsCell(
+  raw: unknown,
+  knownSectionNames: string[],
+  fallback: string[] = [],
+): string[] {
+  const fromCell = String(raw ?? '')
+    .split(/[,،]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const knownLower = new Map(knownSectionNames.map((n) => [n.trim().toLowerCase(), n.trim()]));
+  const resolved = fromCell
+    .map((s) => knownLower.get(s.toLowerCase()))
+    .filter((s): s is string => Boolean(s));
+  const picked = resolved.length > 0 ? resolved : fallback.filter((s) => knownLower.has(s.toLowerCase()));
+  return [...new Set(picked)];
+}
 
 export const ORDER_CATEGORIES_EXCEL_HEADERS = ['nameAr', 'nameEn'];
 
@@ -49,6 +76,7 @@ export function flattenOrderProductsToAoA(products: any) {
           v.packaging ?? '',
           v.unit ?? 'piece',
           parseFloat(v.lastPrice ?? 0) || 0,
+          i === 0 && Array.isArray(p.sections) && p.sections.length ? (p.sections as string[]).join('، ') : '',
         ]);
       });
     } else {
@@ -60,6 +88,7 @@ export function flattenOrderProductsToAoA(products: any) {
         '',
         p.unit ?? 'piece',
         parseFloat(p.lastPrice ?? 0) || 0,
+        Array.isArray(p.sections) && p.sections.length ? (p.sections as string[]).join('، ') : '',
       ]);
     }
   }
@@ -75,7 +104,7 @@ export async function exportOrderProductsWorkbook(products: any, filename: any =
   const XLSX = XLSXmod.default ?? XLSXmod;
   const aoa = flattenOrderProductsToAoA(products);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  setSheetColWidths(ws, [26, 22, 20, 16, 16, 11, 12]);
+  setSheetColWidths(ws, [26, 22, 20, 16, 16, 11, 12, 22]);
   setSheetRTL(ws);
   styleHeaderRow(XLSXmod, ws, 0, ORDER_PRODUCTS_EXCEL_HEADERS.length);
   const wb = XLSX.utils.book_new();
@@ -170,6 +199,7 @@ export function groupOrderProductImportRows(rows: any) {
         nameAr,
         nameEn: String(r.nameEn ?? r.name_en ?? '').trim(),
         category: String(r.category ?? r.categoryName ?? '').trim(),
+        sectionsRaw: String(r.sections ?? r.section ?? '').trim(),
         variantRows: [r],
       };
     } else if (flat) {
@@ -184,7 +214,10 @@ export function orderProductImportGroupsToPayload(
   groups: any,
   catByName: any,
   productType: OrderCatalogProductType = 'order',
+  opts: { knownSectionNames?: string[]; defaultSections?: string[] } = {},
 ) {
+  const knownSectionNames = opts.knownSectionNames ?? [];
+  const defaultSections = opts.defaultSections ?? [];
   const out = [];
   for (const g of groups) {
     if (g.type === 'legacy') {
@@ -207,11 +240,17 @@ export function orderProductImportGroupsToPayload(
       } catch {
         variants = undefined;
       }
+      const sections = parseOrderProductSectionsCell(
+        r.sections ?? r.section,
+        knownSectionNames,
+        defaultSections,
+      );
       out.push({
         nameAr,
         nameEn: String(r.nameEn ?? r.name_en ?? '').trim() || undefined,
         categoryId: categoryId || undefined,
         productType,
+        ...(sections.length ? { sections } : {}),
         variants,
       });
       continue;
@@ -228,11 +267,13 @@ export function orderProductImportGroupsToPayload(
       (v: any) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || parseFloat(v.lastPrice) > 0,
     );
     const finalVariants = nonEmpty.length > 0 ? nonEmpty : [{ size: '', packaging: '', unit: 'piece', lastPrice: variants[0] ? variants[0].lastPrice : '0' }];
+    const sections = parseOrderProductSectionsCell(g.sectionsRaw, knownSectionNames, defaultSections);
     out.push({
       nameAr: g.nameAr,
       nameEn: g.nameEn || undefined,
       categoryId: categoryId || undefined,
       productType,
+      ...(sections.length ? { sections } : {}),
       variants: finalVariants,
     });
   }
@@ -248,15 +289,16 @@ export async function exportOrdersProductsImportTemplate(
   const markerAr = getOrderProductsTemplateMarkerAr(productType);
   const typeLabelAr = productType === 'sale' ? 'مبيعات' : 'طلبات';
   const typeLabelEn = productType === 'sale' ? 'sales' : 'orders';
-  const emptyRow = () => ['', '', '', '', '', '', ''];
+  const emptyRow = () => ['', '', '', '', '', '', '', ''];
+  const exampleSections = productType === 'sale' ? 'شيشة' : '';
   const aoa = [
     ORDER_PRODUCTS_EXCEL_HEADERS,
-    [markerAr, `Example ${typeLabelEn} item (delete row)`, 'ألبان', 'كبير', 'كرتون', 'piece', 18.5],
-    ['', '', '', 'وسط', 'علبة', 'piece', 12],
+    [markerAr, `Example ${typeLabelEn} item (delete row)`, 'ألبان', 'كبير', 'كرتون', 'piece', 18.5, exampleSections],
+    ['', '', '', 'وسط', 'علبة', 'piece', 12, ''],
     ...Array.from({ length: 12 }, emptyRow),
   ];
   const wsData = XLSX.utils.aoa_to_sheet(aoa);
-  setSheetColWidths(wsData, [26, 22, 20, 16, 16, 11, 12]);
+  setSheetColWidths(wsData, [26, 22, 20, 16, 16, 11, 12, 22]);
   setSheetRTL(wsData);
   styleHeaderRow(XLSXmod, wsData, 0, ORDER_PRODUCTS_EXCEL_HEADERS.length);
 
@@ -275,8 +317,9 @@ export async function exportOrdersProductsImportTemplate(
     ['packaging', 'التغليف (خلية منفصلة).'],
     ['unit', 'piece | kg | box | dozen'],
     ['lastPrice', 'آخر سعر — رقم (يُصدَّر كرقم وليس نص).'],
+    ['sections', 'أسماء الأقسام من النظام (بار، شيشة، مطبخ…) مفصولة بفاصلة — اختياري في الملف إن اخترت القسم عند الاستيراد.'],
     ['', ''],
-    ['تركيبات متعددة', 'لنفس الصنف: اترك nameAr وnameEn وcategory فارغة في الصف التالي واملأ size/packaging/unit/lastPrice فقط.'],
+    ['تركيبات متعددة', 'لنفس الصنف: اترك nameAr وnameEn وcategory وsections فارغة في الصف التالي واملأ size/packaging/unit/lastPrice فقط.'],
     ['ملفات قديمة', 'عمود variants كنص JSON لا يزال مدعوماً إن وُجد.'],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instructions);

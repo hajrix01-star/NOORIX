@@ -58,6 +58,11 @@ export class CreateProductItemDto {
   productType?: string; // 'order' | 'sale'
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  sections?: string[];
+
+  @IsOptional()
   @IsString()
   @Matches(/^\d+(\.\d{1,4})?$/, { message: 'lastPrice يجب أن يكون رقماً غير سالب' })
   lastPrice?: string;
