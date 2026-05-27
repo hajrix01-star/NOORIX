@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { bucketMonthIntoWeeks, pctChangeVsBaseline } from './dashboardWeeklySales';
 
 describe('dashboardWeeklySales', () => {
-  it('bucketMonthIntoWeeks splits month into 7-day chunks and averages per chunk', () => {
+  it('bucketMonthIntoWeeks splits month into 7-day chunks and averages active sales days per chunk', () => {
     const year = 2026;
     const month = 4;
     const daily = [
@@ -15,12 +15,12 @@ describe('dashboardWeeklySales', () => {
     expect(buckets[0].dayStart).toBe(1);
     expect(buckets[0].dayEnd).toBe(7);
     expect(buckets[0].totalSales).toBe(2000);
-    expect(buckets[0].avgDailyInWeek).toBeCloseTo(2000 / 7, 5);
+    expect(buckets[0].avgDailyInWeek).toBe(1000);
     const w2 = buckets[1];
     expect(w2.dayStart).toBe(8);
     expect(w2.dayEnd).toBe(14);
     expect(w2.totalSales).toBe(7000);
-    expect(w2.avgDailyInWeek).toBeCloseTo(7000 / 7, 5);
+    expect(w2.avgDailyInWeek).toBe(7000);
   });
 
   it('pctChangeVsBaseline handles zero baseline', () => {
@@ -31,7 +31,7 @@ describe('dashboardWeeklySales', () => {
     expect(pctChangeVsBaseline(110, 100)).toBeCloseTo(10, 5);
   });
 
-  it('uses elapsed days in partial final week when maxDayInclusive is set', () => {
+  it('uses active sales days in partial final week when maxDayInclusive is set', () => {
     const year = 2026;
     const month = 5;
     const daily = [
@@ -43,6 +43,16 @@ describe('dashboardWeeklySales', () => {
     expect(last.dayStart).toBe(22);
     expect(last.dayEnd).toBe(28);
     expect(last.totalSales).toBe(1000);
-    expect(last.avgDailyInWeek).toBe(200);
+    expect(last.avgDailyInWeek).toBe(500);
+  });
+
+  it('returns zero average when a week slice has no sales', () => {
+    const buckets = bucketMonthIntoWeeks(2026, 6, [
+      { transactionDate: '2026-06-15', totalAmount: 3000 },
+    ]);
+    expect(buckets[1].totalSales).toBe(0);
+    expect(buckets[1].avgDailyInWeek).toBe(0);
+    expect(buckets[2].totalSales).toBe(3000);
+    expect(buckets[2].avgDailyInWeek).toBe(3000);
   });
 });
