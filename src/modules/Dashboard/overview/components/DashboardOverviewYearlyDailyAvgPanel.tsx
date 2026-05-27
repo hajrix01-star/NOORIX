@@ -1,5 +1,5 @@
 /**
- * المعدل اليومي لكل شهر — كرت MetricCard؛ جدول بحدود وعناوين وأعمدة (شهر | معدل | تغيّر).
+ * المعدل اليومي لكل شهر — جدول بحدود؛ عمود الشهر بعرض المحتوى فقط.
  */
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
@@ -15,8 +15,8 @@ type Props = {
 };
 
 const TH_CELL =
-  'border border-noorix-border bg-noorix-bg-muted px-2 py-1.5 text-[10px] font-bold text-noorix-text';
-const TD_CELL = 'border border-noorix-border px-2 py-1.5 align-middle text-[11px]';
+  'border border-noorix-border bg-noorix-bg-muted py-1 text-[9px] font-bold text-noorix-text';
+const TD_CELL = 'border border-noorix-border py-1 align-middle text-[10px]';
 
 function formatDeltaPct(n: number): string {
   const rounded = Math.round(n * 10) / 10;
@@ -48,10 +48,12 @@ function rowHighlightClass(row: YearMonthlyDailyAvgRow, isSelected: boolean): st
 
 function MonthCell({ row, t }: { row: YearMonthlyDailyAvgRow; t: (key: string) => string }) {
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-      <span className="font-semibold text-noorix-text">{row.monthLabel}</span>
+    <div className="flex w-max max-w-full flex-col items-start gap-0.5">
+      <span className="whitespace-nowrap text-[10px] font-semibold leading-tight text-noorix-text">
+        {row.monthLabel}
+      </span>
       {row.isCurrentMonth ? (
-        <span className="rounded-full bg-[color-mix(in_srgb,var(--color-nx-sales)_14%,transparent)] px-1.5 py-0.5 text-[9px] font-bold text-noorix-blue whitespace-nowrap">
+        <span className="whitespace-nowrap rounded bg-[color-mix(in_srgb,var(--color-nx-sales)_14%,transparent)] px-1 py-px text-[8px] font-bold leading-none text-noorix-blue">
           {t('dashboardYearlyDailyAvgCurrentBadge')}
         </span>
       ) : null}
@@ -65,11 +67,8 @@ function AvgCell({ row }: { row: YearMonthlyDailyAvgRow }) {
   }
   return (
     <span dir="ltr" className="inline-flex items-baseline justify-end gap-0.5 whitespace-nowrap nx-font-numbers">
-      <FmtNum
-        n={row.avgDaily}
-        className={cn('font-bold', valueToneClass(row.tone, true))}
-      />
-      <span className="nx-sar text-[9px] text-noorix-muted">SR</span>
+      <FmtNum n={row.avgDaily} className={cn('font-bold', valueToneClass(row.tone, true))} />
+      <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
     </span>
   );
 }
@@ -81,7 +80,10 @@ function DeltaCell({ row }: { row: YearMonthlyDailyAvgRow }) {
   return (
     <span
       dir="ltr"
-      className={cn('font-bold whitespace-nowrap nx-font-numbers tabular-nums', deltaToneClass(row.deltaPctVsPrev))}
+      className={cn(
+        'font-bold whitespace-nowrap nx-font-numbers tabular-nums',
+        deltaToneClass(row.deltaPctVsPrev),
+      )}
     >
       {row.deltaPctVsPrev > 0 ? '+' : ''}
       {formatDeltaPct(row.deltaPctVsPrev)}%
@@ -99,17 +101,22 @@ function YearlyDailyAvgTable({
   t: (key: string) => string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
-      <table className="w-full min-w-[17rem] border-collapse text-[10px]">
+    <div className="max-w-full overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
+      <table className="w-full max-w-full table-fixed border-collapse text-[10px]">
+        <colgroup>
+          <col className="w-0" />
+          <col />
+          <col className="w-[3.25rem]" />
+        </colgroup>
         <thead>
           <tr>
-            <th scope="col" className={cn(TH_CELL, 'text-start min-w-[5.5rem]')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1.5 text-start whitespace-nowrap')}>
               {t('dashboardYearlyDailyAvgMonthCol')}
             </th>
-            <th scope="col" className={cn(TH_CELL, 'text-end whitespace-nowrap')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1 text-end whitespace-nowrap')}>
               {t('dashboardSalesDailyAvgActiveDays')}
             </th>
-            <th scope="col" className={cn(TH_CELL, 'text-end w-[4.25rem] whitespace-nowrap')}>
+            <th scope="col" className={cn(TH_CELL, 'px-1 text-end whitespace-nowrap')}>
               {t('dashboardWeeklySalesDelta')}
             </th>
           </tr>
@@ -119,13 +126,13 @@ function YearlyDailyAvgTable({
             const isSelected = selectedMonth != null && selectedMonth === row.month;
             return (
               <tr key={row.month} className={rowHighlightClass(row, isSelected)}>
-                <td className={cn(TD_CELL, 'text-start')}>
+                <td className={cn(TD_CELL, 'w-0 px-1.5 text-start')}>
                   <MonthCell row={row} t={t} />
                 </td>
-                <td className={cn(TD_CELL, 'text-end')}>
+                <td className={cn(TD_CELL, 'px-1 text-end')}>
                   <AvgCell row={row} />
                 </td>
-                <td className={cn(TD_CELL, 'text-end')}>
+                <td className={cn(TD_CELL, 'px-1 text-end')}>
                   <DeltaCell row={row} />
                 </td>
               </tr>
@@ -145,14 +152,14 @@ export function DashboardOverviewYearlyDailyAvgPanel({ year, rows, selectedMonth
   const accentColor = KPI_CARD_SPARKLINE_COLORS.sales;
 
   return (
-    <div className="nx-kpi-container w-full" aria-label={t('dashboardYearlyDailyAvgTitle')}>
-      <MetricCard color={accentColor} className="flex w-full flex-col">
+    <div className="nx-kpi-container w-full min-w-0" aria-label={t('dashboardYearlyDailyAvgTitle')}>
+      <MetricCard color={accentColor} className="flex w-full min-w-0 flex-col">
         <MetricCard.Header
           label={`${t('dashboardYearlyDailyAvgTitle')} — ${year}`}
           subLabel={t('dashboardYearlyDailyAvgFormulaNote')}
         />
 
-        <MetricCard.Section className="pb-3 pt-0">
+        <MetricCard.Section className="min-w-0 pb-3 pt-0">
           <YearlyDailyAvgTable rows={rows} selectedMonth={selectedMonth} t={t} />
         </MetricCard.Section>
       </MetricCard>
