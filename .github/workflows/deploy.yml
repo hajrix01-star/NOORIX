@@ -27,9 +27,8 @@
 #  │    مثال: sudo visudo ثم أضف:                             │
 #  │    runner ALL=(ALL) NOPASSWD: /bin/bash, /bin/systemctl  │
 #  │
-#  │ ⚠️ الـ runner يقتل عمليات PM2/node عند انتهاء المهمة     │
-#  │    (orphan cleanup). لذلك إعادة تشغيل API تتم عبر        │
-#  │    systemd-run — انظر deploy/restart-api-detached.sh     │
+#  │ ⚠️ الـ runner يقتل عمليات PM2 عند انتهاء المهمة. API عبر  │
+#  │    systemd: deploy/noorix-backend.service + install script │
 #  └─────────────────────────────────────────────────────────┘
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -84,13 +83,12 @@ jobs:
           PROD=/var/www/noorix/backend
           WORKSPACE="${{ github.workspace }}"
 
-          # إسعاف: إعادة تشغيل API عبر systemd-run (لا تُقتل عند انتهاء الـ job)
-          recover_api_detached() {
-            echo "==> [trap] خطأ — إعادة تشغيل API (detached)"
-            export DEPLOY_SHA="${{ github.sha }}"
-            bash "$WORKSPACE/deploy/restart-api-detached.sh" || true
+          # إسعاف: إعادة تشغيل API عبر systemd (خارج دورة الـ runner)
+          recover_api() {
+            echo "==> [trap] خطأ — systemctl restart noorix-backend"
+            sudo bash "$WORKSPACE/deploy/install-noorix-backend-systemd.sh" || true
           }
-          trap recover_api_detached ERR
+          trap recover_api ERR
 
           echo "==> مزامنة كود الخلفية (بدون node_modules/dist/.env)"
           rsync -a --delete \
@@ -132,11 +130,12 @@ jobs:
             exit 1
           fi
 
-      # PM2 يُشغَّل عبر systemd-run — وإلا يقتله الـ runner عند "Complete job"
-      - name: Restart API (detached from runner orphan cleanup)
+      # API عبر systemd (noorix-backend.service) — لا يُقتل عند انتهاء مهمة الـ runner
+      - name: Install/restart API via systemd
         run: |
           export DEPLOY_SHA="${{ github.sha }}"
-          bash "${{ github.workspace }}/deploy/restart-api-detached.sh" --wait-public
+          sudo bash "${{ github.workspace }}/deploy/install-noorix-backend-systemd.sh"
+          bash "${{ github.workspace }}/deploy/wait-public-api.sh"
 
       # ── إعادة تحميل Nginx وفحص نهائي ─────────────────────
       - name: Reload Nginx & final health check
