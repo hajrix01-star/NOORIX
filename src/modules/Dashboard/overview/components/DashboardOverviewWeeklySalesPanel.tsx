@@ -6,17 +6,8 @@ import { useTranslation } from '../../../../i18n/useTranslation';
 import { FmtNum, Input } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
 
-/** محاذاة وسط لقائمة الشهر/السنة (جوال + RTL) — أنماط إضافية في index.css */
-const PERIOD_SELECT_CLASS = 'nx-dashboard-period-select';
-
-const PERIOD_CONTROLS_WRAP =
-  'mx-auto flex w-full max-w-[11rem] flex-col items-center gap-1 sm:flex-row sm:flex-wrap sm:justify-center';
-
-const PERIOD_MONTH_SELECT_CLASS =
-  'w-full max-w-[10.5rem] sm:min-w-[104px] sm:flex-1 sm:basis-[6.5rem]';
-
-const PERIOD_YEAR_SELECT_CLASS =
-  'w-full max-w-[5.5rem] sm:min-w-[72px] sm:shrink-0 sm:basis-[4.5rem]';
+/** قوائم شهر/سنة مضغوطة — أنماط في index.css (.nx-dashboard-period-select) */
+const PERIOD_CONTROLS_WRAP = 'inline-flex flex-row flex-wrap items-center justify-center gap-1';
 
 export type WeeklySalesWeekRow = {
   weekIndex: number;
@@ -85,14 +76,19 @@ export function DashboardOverviewWeeklySalesPanel({
                 <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold">
                   {t('dashboardWeeklySalesWeekCol')}
                 </th>
-                <th className="border border-noorix-border px-2 py-2 text-center align-bottom">
-                  <div className="mb-0.5 text-[11px] font-bold leading-snug text-noorix-text">{t('dashboardWeeklySalesPeriodMainHeader')}</div>
-                  <div className="mb-1 text-[10px] font-semibold text-noorix-muted">{t('dashboardWeeklySalesAvgDailyShort')}</div>
+                <th className="border border-noorix-border px-2 py-1.5 text-center align-bottom">
+                  <div className="mb-0.5 text-[11px] font-bold leading-snug text-noorix-text">
+                    {t('dashboardWeeklySalesPeriodMainHeader')}
+                  </div>
+                  <div className="mb-1 text-[10px] font-semibold text-noorix-muted">
+                    {t('dashboardWeeklySalesAvgDailyShort')}
+                  </div>
                   <div className={PERIOD_CONTROLS_WRAP}>
                     <Input
                       type="select"
                       size="sm"
-                      className={cn(PERIOD_MONTH_SELECT_CLASS, PERIOD_SELECT_CLASS)}
+                      containerClassName="!gap-0 w-auto shrink-0"
+                      className="nx-dashboard-period-select nx-dashboard-period-select--month"
                       value={panelMonthA}
                       onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                         onPanelMonthAChange(Number(e.target.value))
@@ -108,7 +104,8 @@ export function DashboardOverviewWeeklySalesPanel({
                     <Input
                       type="select"
                       size="sm"
-                      className={cn(PERIOD_YEAR_SELECT_CLASS, PERIOD_SELECT_CLASS)}
+                      containerClassName="!gap-0 w-auto shrink-0"
+                      className="nx-dashboard-period-select nx-dashboard-period-select--year"
                       value={panelYearA}
                       onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                         onPanelYearAChange(Number(e.target.value))
@@ -123,14 +120,19 @@ export function DashboardOverviewWeeklySalesPanel({
                     </Input>
                   </div>
                 </th>
-                <th className="border border-noorix-border px-2 py-2 text-center align-bottom">
-                  <div className="mb-0.5 text-[11px] font-bold leading-snug text-noorix-text">{t('dashboardWeeklySalesPeriodCompareHeader')}</div>
-                  <div className="mb-1 text-[10px] font-semibold text-noorix-muted">{t('dashboardWeeklySalesAvgDailyShort')}</div>
+                <th className="border border-noorix-border px-2 py-1.5 text-center align-bottom">
+                  <div className="mb-0.5 text-[11px] font-bold leading-snug text-noorix-text">
+                    {t('dashboardWeeklySalesPeriodCompareHeader')}
+                  </div>
+                  <div className="mb-1 text-[10px] font-semibold text-noorix-muted">
+                    {t('dashboardWeeklySalesAvgDailyShort')}
+                  </div>
                   <div className={PERIOD_CONTROLS_WRAP}>
                     <Input
                       type="select"
                       size="sm"
-                      className={cn(PERIOD_MONTH_SELECT_CLASS, PERIOD_SELECT_CLASS)}
+                      containerClassName="!gap-0 w-auto shrink-0"
+                      className="nx-dashboard-period-select nx-dashboard-period-select--month"
                       value={panelMonthB}
                       onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                         onPanelMonthBChange(Number(e.target.value))
@@ -146,7 +148,8 @@ export function DashboardOverviewWeeklySalesPanel({
                     <Input
                       type="select"
                       size="sm"
-                      className={cn(PERIOD_YEAR_SELECT_CLASS, PERIOD_SELECT_CLASS)}
+                      containerClassName="!gap-0 w-auto shrink-0"
+                      className="nx-dashboard-period-select nx-dashboard-period-select--year"
                       value={panelYearB}
                       onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                         onPanelYearBChange(Number(e.target.value))

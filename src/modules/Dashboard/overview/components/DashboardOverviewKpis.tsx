@@ -66,7 +66,7 @@ export function DashboardOverviewKpis({
       <div className="nx-kpi-grid nx-kpi-grid--dashboard">
         {cards.map((card) => {
           const rawVal = getCardValue(report, card.key, selectedMonth);
-          const isProfit = card.key === 'grossProfit' || card.key === 'netProfit';
+          const isProfit = card.key === 'netProfit';
           const isSales = card.key === 'sales';
           const pct = getPctStringForCard(report, card.key, selectedMonth);
           const pctNum = pct != null ? Number(pct) : null;
@@ -101,9 +101,8 @@ export function DashboardOverviewKpis({
           const insightBundle =
             card.key === 'purchases' ||
             card.key === 'expenses' ||
-            card.key === 'grossProfit' ||
             card.key === 'netProfit'
-              ? kpiInsightFooters[card.key as 'purchases' | 'expenses' | 'grossProfit' | 'netProfit']
+              ? kpiInsightFooters[card.key as 'purchases' | 'expenses' | 'netProfit']
               : undefined;
 
           const footerRows = insightBundle?.rows;

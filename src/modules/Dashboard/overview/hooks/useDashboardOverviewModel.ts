@@ -388,12 +388,6 @@ export function useDashboardOverviewModel(
         pctLabelKey: 'expensesToSalesRatio',
       },
       {
-        key: 'grossProfit',
-        label: t('annualGrossProfit'),
-        formulaKey: 'dashboardKpiFormulaGrossProfit',
-        pctLabelKey: 'dashboardKpiPctGrossProfit',
-      },
-      {
         key: 'netProfit',
         label: t('annualNetProfit'),
         formulaKey: 'dashboardKpiFormulaNetProfit',
