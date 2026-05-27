@@ -11,9 +11,10 @@ import { getSaudiNow } from '../../utils/saudiDate';
 
 export { useDateFilter };
 
+/** اختصارات — عرض مضغوط في شريط الفلتر (سطح مكتب وجوال) */
 const MONTH_NAMES_EN = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
 function ymd(y: any, m: any, d: any) {
@@ -68,8 +69,8 @@ export default function DateFilterBar({ filter }: any) {
           <Input
             type="select"
             size="sm"
-            containerClassName="ndfb-date-select-field"
-            className="ndfb-year-select !w-auto shrink-0"
+            containerClassName="ndfb-date-select-field shrink-0"
+            className="ndfb-year-select shrink-0"
             value={selYear}
             onChange={(e: any) => setSelYear(Number(e.target.value))}
           >
@@ -80,8 +81,8 @@ export default function DateFilterBar({ filter }: any) {
           <Input
             type="select"
             size="sm"
-            containerClassName="ndfb-date-select-field"
-            className="ndfb-month-select !w-auto shrink-0"
+            containerClassName="ndfb-date-select-field shrink-0"
+            className="ndfb-month-select shrink-0"
             value={selMonth}
             onChange={(e: any) => setSelMonth(Number(e.target.value))}
           >
