@@ -4655,22 +4655,14 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   padding: 7px 10px;
   font-size: 12px;
 }
-.nx-orders-summary-table thead th:first-child,
-.nx-orders-summary-table tbody td:first-child,
-.nx-orders-summary-table tfoot td:first-child {
-  text-align: start;
+.nx-orders-summary-table thead th,
+.nx-orders-summary-table tbody td,
+.nx-orders-summary-table tfoot td {
+  text-align: center;
 }
-.nx-orders-summary-table thead th:last-child,
-.nx-orders-summary-table tbody td:last-child,
-.nx-orders-summary-table tfoot td:last-child {
-  text-align: end;
-  padding-inline-end: 12px;
-}
-.nx-orders-summary-table tbody td:last-child .nx-font-numbers,
-.nx-orders-summary-table tfoot td:last-child .nx-font-numbers {
-  display: inline-block;
-  width: 100%;
-  text-align: end;
+.nx-orders-summary-table tbody td .nx-font-numbers,
+.nx-orders-summary-table tfoot td .nx-font-numbers {
+  text-align: center;
 }
 .nx-orders-summary-table tfoot td {
   font-weight: 700;
