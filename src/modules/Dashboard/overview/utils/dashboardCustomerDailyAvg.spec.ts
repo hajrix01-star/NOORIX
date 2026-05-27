@@ -3,6 +3,8 @@ import {
   computeCustomerDailyAvgActiveDays,
   computeRevenueDailyAvgActiveDays,
   countRevenueActiveSalesDays,
+  lastRevenueSalesDayInMonth,
+  revenueMtdEndDay,
   sumRevenueThroughDay,
 } from './dashboardOverviewBuilders';
 import { mtdCalendarDaysInMonth } from './dashboardOverviewDateUtils';
@@ -19,6 +21,24 @@ describe('revenue MTD totals and active day count', () => {
     expect(countRevenueActiveSalesDays(sales, 2026, 5, 3)).toBe(2);
     const through = sales.filter((s) => s.transactionDate !== '2026-05-03');
     expect(computeRevenueDailyAvgActiveDays(through)).toBe(1500);
+  });
+
+  it('revenueMtdEndDay uses last sales entry day capped by calendar today', () => {
+    const sales = [
+      { transactionDate: '2026-05-10', totalAmount: 1000 },
+      { transactionDate: '2026-05-25', totalAmount: 500 },
+    ];
+    expect(lastRevenueSalesDayInMonth(sales, 2026, 5)).toBe(25);
+    expect(revenueMtdEndDay(2026, 5, 2026, 5, 27, sales)).toBe(25);
+    expect(revenueMtdEndDay(2026, 5, 2026, 5, 20, sales)).toBe(20);
+  });
+
+  it('prev month total through aligned end day', () => {
+    const april = [
+      { transactionDate: '2026-04-10', totalAmount: 1000 },
+      { transactionDate: '2026-04-28', totalAmount: 9000 },
+    ];
+    expect(sumRevenueThroughDay(april, 2026, 4, 27)).toBe(1000);
   });
 
   it('mtd end day caps period without using calendar-day divisor', () => {
