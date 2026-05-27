@@ -1,5 +1,5 @@
 /**
- * المعدل اليومي لكل شهر — كرت MetricCard موحّد مع جدول (سطح المكتب) وبطاقات (جوال).
+ * المعدل اليومي لكل شهر — كرت MetricCard؛ جدول عمودين (شهر | معدل+تغيّر) لارتفاع أقل.
  */
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
@@ -14,11 +14,26 @@ type Props = {
   selectedMonth: number | null;
 };
 
+const MONTH_SHORT_AR = [
+  'ينا', 'فبر', 'مار', 'أبر', 'ماي', 'يون',
+  'يول', 'أغس', 'سبت', 'أكت', 'نوف', 'ديس',
+] as const;
+
+const MONTH_SHORT_EN = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+] as const;
+
 function formatDeltaPct(n: number): string {
   const rounded = Math.round(n * 10) / 10;
   if (Object.is(rounded, -0)) return '0';
   if (Number.isInteger(rounded)) return String(rounded);
   return rounded.toFixed(1);
+}
+
+function monthShortLabel(row: YearMonthlyDailyAvgRow, lang: 'ar' | 'en'): string {
+  const shorts = lang === 'ar' ? MONTH_SHORT_AR : MONTH_SHORT_EN;
+  return shorts[row.month - 1] ?? row.monthLabel;
 }
 
 function valueToneClass(tone: YearMonthlyDailyAvgRow['tone'], hasValue: boolean): string {
@@ -35,59 +50,6 @@ function deltaToneClass(delta: number | null): string {
   return 'text-noorix-muted';
 }
 
-type RowProps = {
-  row: YearMonthlyDailyAvgRow;
-  isSelected: boolean;
-  t: (key: string) => string;
-};
-
-function MonthBadge({ row, t }: { row: YearMonthlyDailyAvgRow; t: (key: string) => string }) {
-  return (
-    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-      <span className="text-[12px] font-semibold text-noorix-text">{row.monthLabel}</span>
-      {row.isCurrentMonth ? (
-        <span className="rounded-full bg-[color-mix(in_srgb,var(--color-nx-sales)_14%,transparent)] px-1.5 py-0.5 text-[9px] font-bold text-noorix-blue">
-          {t('dashboardYearlyDailyAvgCurrentBadge')}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function AvgCell({ row }: { row: YearMonthlyDailyAvgRow }) {
-  const hasValue = row.avgDaily != null;
-  if (!hasValue) {
-    return <span className="text-[12px] font-semibold text-noorix-muted">—</span>;
-  }
-  return (
-    <span dir="ltr" className="inline-flex items-baseline gap-0.5 whitespace-nowrap">
-      <FmtNum
-        n={row.avgDaily!}
-        className={cn('text-[12px] font-bold nx-font-numbers', valueToneClass(row.tone, true))}
-      />
-      <span className="nx-sar text-[10px] text-noorix-muted">SR</span>
-    </span>
-  );
-}
-
-function DeltaCell({ row }: { row: YearMonthlyDailyAvgRow }) {
-  if (row.deltaPctVsPrev == null) {
-    return <span className="text-[12px] font-semibold text-noorix-muted">—</span>;
-  }
-  return (
-    <span
-      dir="ltr"
-      className={cn(
-        'text-[12px] font-bold nx-font-numbers',
-        deltaToneClass(row.deltaPctVsPrev),
-      )}
-    >
-      {row.deltaPctVsPrev > 0 ? '+' : ''}
-      {formatDeltaPct(row.deltaPctVsPrev)}%
-    </span>
-  );
-}
-
 function rowHighlightClass(row: YearMonthlyDailyAvgRow, isSelected: boolean): string {
   return cn(
     row.isCurrentMonth && 'bg-[color-mix(in_srgb,var(--color-nx-sales)_6%,transparent)]',
@@ -95,56 +57,93 @@ function rowHighlightClass(row: YearMonthlyDailyAvgRow, isSelected: boolean): st
   );
 }
 
-function YearlyDailyAvgMobileRow({ row, isSelected, t }: RowProps) {
+function MonthCell({
+  row,
+  lang,
+  t,
+}: {
+  row: YearMonthlyDailyAvgRow;
+  lang: 'ar' | 'en';
+  t: (key: string) => string;
+}) {
+  const short = monthShortLabel(row, lang);
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-2 border-b border-noorix-border px-3 py-2.5 last:border-b-0',
-        rowHighlightClass(row, isSelected),
-      )}
-    >
-      <MonthBadge row={row} t={t} />
-      <div className="grid grid-cols-2 gap-3">
-        <div className="min-w-0">
-          <div className="text-[9px] font-semibold text-noorix-muted leading-snug">
-            {t('dashboardSalesDailyAvgActiveDays')}
-          </div>
-          <div className="mt-0.5 text-start">
-            <AvgCell row={row} />
-          </div>
-        </div>
-        <div className="min-w-0 text-end">
-          <div className="text-[9px] font-semibold text-noorix-muted leading-snug">
-            {t('dashboardWeeklySalesDelta')}
-          </div>
-          <div className="mt-0.5 flex justify-end">
-            <DeltaCell row={row} />
-          </div>
-        </div>
-      </div>
+    <div className="flex min-w-0 items-center gap-1">
+      <span
+        className="truncate text-[11px] font-semibold text-noorix-text"
+        title={row.monthLabel}
+      >
+        {short}
+      </span>
+      {row.isCurrentMonth ? (
+        <span
+          className="shrink-0 size-1.5 rounded-full bg-noorix-blue"
+          title={t('dashboardYearlyDailyAvgCurrentBadge')}
+          aria-label={t('dashboardYearlyDailyAvgCurrentBadge')}
+        />
+      ) : null}
     </div>
   );
 }
 
-function YearlyDailyAvgDesktopTable({
+function ValuesCell({ row }: { row: YearMonthlyDailyAvgRow }) {
+  const hasAvg = row.avgDaily != null;
+
+  if (!hasAvg) {
+    return <span className="text-[11px] font-semibold text-noorix-muted">—</span>;
+  }
+
+  return (
+    <div
+      dir="ltr"
+      className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-2 gap-y-0.5"
+    >
+      <span className="inline-flex items-baseline gap-0.5 whitespace-nowrap">
+        <FmtNum
+          n={row.avgDaily!}
+          className={cn('text-[11px] font-bold nx-font-numbers', valueToneClass(row.tone, true))}
+        />
+        <span className="nx-sar text-[9px] text-noorix-muted">SR</span>
+      </span>
+      {row.deltaPctVsPrev != null ? (
+        <span
+          className={cn(
+            'text-[10px] font-bold nx-font-numbers whitespace-nowrap',
+            deltaToneClass(row.deltaPctVsPrev),
+          )}
+        >
+          {row.deltaPctVsPrev > 0 ? '+' : ''}
+          {formatDeltaPct(row.deltaPctVsPrev)}%
+        </span>
+      ) : (
+        <span className="text-[10px] font-semibold text-noorix-muted">—</span>
+      )}
+    </div>
+  );
+}
+
+function YearlyDailyAvgTable({
   rows,
   selectedMonth,
+  lang,
   t,
 }: {
   rows: YearMonthlyDailyAvgRow[];
   selectedMonth: number | null;
+  lang: 'ar' | 'en';
   t: (key: string) => string;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
-      <table className="w-full text-[10px]">
+      <table className="w-full table-fixed text-[10px]">
+        <colgroup>
+          <col className="w-[4.25rem] sm:w-[4.75rem]" />
+          <col />
+        </colgroup>
         <thead>
-          <tr className="text-noorix-muted border-b border-noorix-border">
-            <th className="px-2.5 py-2 text-start font-semibold">{t('dashboardYearlyDailyAvgMonthCol')}</th>
-            <th className="px-2.5 py-2 text-end font-semibold">{t('dashboardSalesDailyAvgActiveDays')}</th>
-            <th className="px-2.5 py-2 text-end font-semibold w-[4.5rem]">
-              {t('dashboardWeeklySalesDelta')}
-            </th>
+          <tr className="border-b border-noorix-border text-noorix-muted">
+            <th className="px-2 py-1.5 text-start font-semibold">{t('dashboardYearlyDailyAvgMonthCol')}</th>
+            <th className="px-2 py-1.5 text-end font-semibold">{t('dashboardYearlyDailyAvgValuesCol')}</th>
           </tr>
         </thead>
         <tbody>
@@ -155,14 +154,11 @@ function YearlyDailyAvgDesktopTable({
                 key={row.month}
                 className={cn('border-t border-noorix-border/80', rowHighlightClass(row, isSelected))}
               >
-                <td className="px-2.5 py-2 align-middle">
-                  <MonthBadge row={row} t={t} />
+                <td className="px-2 py-1 align-middle">
+                  <MonthCell row={row} lang={lang} t={t} />
                 </td>
-                <td className="px-2.5 py-2 text-end align-middle">
-                  <AvgCell row={row} />
-                </td>
-                <td className="px-2.5 py-2 text-end align-middle">
-                  <DeltaCell row={row} />
+                <td className="px-2 py-1 align-middle">
+                  <ValuesCell row={row} />
                 </td>
               </tr>
             );
@@ -174,7 +170,7 @@ function YearlyDailyAvgDesktopTable({
 }
 
 export function DashboardOverviewYearlyDailyAvgPanel({ year, rows, selectedMonth }: Props) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   if (rows.length === 0) return null;
 
@@ -189,22 +185,7 @@ export function DashboardOverviewYearlyDailyAvgPanel({ year, rows, selectedMonth
         />
 
         <MetricCard.Section className="pb-3 pt-0">
-          {/* جوال — بطاقة لكل شهر */}
-          <div className="md:hidden overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
-            {rows.map((row) => (
-              <YearlyDailyAvgMobileRow
-                key={row.month}
-                row={row}
-                isSelected={selectedMonth != null && selectedMonth === row.month}
-                t={t}
-              />
-            ))}
-          </div>
-
-          {/* سطح المكتب — جدول مضغوط */}
-          <div className="hidden md:block">
-            <YearlyDailyAvgDesktopTable rows={rows} selectedMonth={selectedMonth} t={t} />
-          </div>
+          <YearlyDailyAvgTable rows={rows} selectedMonth={selectedMonth} lang={lang} t={t} />
         </MetricCard.Section>
       </MetricCard>
     </div>
