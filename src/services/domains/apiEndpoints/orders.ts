@@ -140,6 +140,14 @@ export async function deleteStaffOrder(id: string, companyId: string): Promise<A
   return apiDelete(`/api/v1/orders/staff/${id}?companyId=${companyId}`);
 }
 
+export async function resendStaffSale(
+  id: string,
+  companyId: string,
+  lang?: 'ar' | 'en',
+): Promise<ApiParsedResult> {
+  return apiPost(`/api/v1/orders/staff/${id}/resend?companyId=${companyId}`, { lang });
+}
+
 export async function getSalesReport(companyId: string, days = 30): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/sales/report', { companyId, days: String(days) });
   return res?.success ? { ...res, data: res.data ?? {} } : { success: false, data: {} };

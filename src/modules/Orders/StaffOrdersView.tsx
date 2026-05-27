@@ -7,12 +7,13 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
-import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday, toDateInputYmd } from '../../utils/saudiDate';
 import {
   useMyStaffOrders,
   useCreateStaffOrderMutation,
   useUpdateStaffOrderMutation,
   useDeleteStaffOrderMutation,
+  useResendStaffSaleMutation,
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
@@ -103,6 +104,7 @@ function StaffOrderPanel({
   const createOrder = useCreateStaffOrderMutation(companyId);
   const updateOrder = useUpdateStaffOrderMutation(companyId);
   const deleteOrder = useDeleteStaffOrderMutation(companyId);
+  const resendSale = useResendStaffSaleMutation(companyId);
 
   const isSale = productType === 'sale';
   /** فلتر عرض الأصناف فقط — ليس شرطاً للإرسال */
@@ -239,6 +241,7 @@ function StaffOrderPanel({
 
   function loadForEdit(order: any) {
     setSectionFilter(order.sectionName || '');
+    setSaleDate(order.saleDate ? toDateInputYmd(order.saleDate) : getSaudiToday());
     setNotes(order.notes || '');
     setSearch('');
     const m = new Map<string, ItemRow>();
@@ -281,8 +284,15 @@ function StaffOrderPanel({
         payload.sectionName = sectionFilter || basketItems[0]?.sectionName || 'عام';
       }
       if (editingId) {
-        await updateOrder.mutateAsync({ id: editingId, body: payload });
-        showToast(t('staffOrderUpdated'), 'success');
+        const res: any = await updateOrder.mutateAsync({ id: editingId, body: payload });
+        const data = res?.data ?? res;
+        if (isSale) {
+          showToast(t('staffSaleUpdated'), 'success');
+          const waText = data?.whatsAppText;
+          if (waText) openWhatsApp(waText);
+        } else {
+          showToast(t('staffOrderUpdated'), 'success');
+        }
       } else {
         const res: any = await createOrder.mutateAsync(payload);
         const data = res?.data ?? res;
@@ -302,15 +312,31 @@ function StaffOrderPanel({
     }
   }, [sectionFilter, saleDate, notes, basket, basketItems, productsById, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder]);
 
+  const handleResendSale = useCallback(async (order: any) => {
+    try {
+      const res: any = await resendSale.mutateAsync({ id: order.id, lang });
+      const data = res?.data ?? res;
+      const waText = data?.whatsAppText;
+      if (waText) {
+        openWhatsApp(waText);
+        showToast(t('staffSaleResent'), 'success');
+      }
+    } catch (e: any) {
+      showToast(e?.message || t('saveFailed'), 'error');
+    }
+  }, [lang, resendSale, t, showToast]);
+
   const handleDelete = useCallback(async (order: any) => {
-    if (!window.confirm(t('staffOrderDeleteConfirm'))) return;
+    const confirmKey = isSale ? 'staffSaleDeleteConfirm' : 'staffOrderDeleteConfirm';
+    if (!window.confirm(t(confirmKey))) return;
     try {
       await deleteOrder.mutateAsync(order.id);
+      if (editingId === order.id) resetForm();
       showToast(t('deleted'), 'success');
     } catch (e: any) {
       showToast(e?.message || t('deleteFailed'), 'error');
     }
-  }, []);
+  }, [isSale, editingId, t, showToast, deleteOrder]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -450,7 +476,7 @@ function StaffOrderPanel({
               {submitting
                 ? t('saving')
                 : editingId
-                  ? t('staffOrderUpdate')
+                  ? (isSale ? t('staffSaleUpdate') : t('staffOrderUpdate'))
                   : isSale
                     ? t('staffSaleSubmit')
                     : t('staffOrderSubmit')}
@@ -510,18 +536,50 @@ function StaffOrderPanel({
           </div>
           <div className="divide-y divide-noorix-border">
             {sentOrders.slice(0, 10).map((o: any) => (
-              <div key={o.id} className="px-4 py-3 flex items-center justify-between gap-2">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[13px] font-semibold">{o.sectionName}</span>
-                  <span className="text-[11px] text-noorix-muted">
+              isSale ? (
+                <div key={o.id} className="p-3 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-bold text-[14px] truncate">{o.sectionName}</span>
+                      <StatusBadge status={o.status} />
+                    </div>
+                    <div className="flex gap-1 shrink-0 flex-wrap justify-end">
+                      <Button size="sm" variant="ghost" onClick={() => handleResendSale(o)}>
+                        {t('staffSaleResend')}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => loadForEdit(o)}>{t('edit')}</Button>
+                      <Button size="sm" variant="danger" onClick={() => handleDelete(o)}>{t('delete')}</Button>
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-noorix-muted">
                     {o.saleDate ? formatSaudiDate(o.saleDate) : formatSaudiDate(o.createdAt)}
-                  </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {(o.items || []).map((it: any, i: number) => {
+                      const p = it.product;
+                      const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
+                      return (
+                        <div key={i} className="flex justify-between text-[13px]">
+                          <span>{name}</span>
+                          <span className="font-semibold nx-font-numbers">{fmt(it.quantity, 0)} {it.unit || ''}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {o.notes && <div className="text-[11px] text-noorix-muted italic">{o.notes}</div>}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] text-noorix-muted">{(o.items || []).length} {t('staffOrderItemsCount')}</span>
-                  <StatusBadge status={o.status} />
+              ) : (
+                <div key={o.id} className="px-4 py-3 flex items-center justify-between gap-2">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[13px] font-semibold">{o.sectionName}</span>
+                    <span className="text-[11px] text-noorix-muted">{formatSaudiDate(o.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] text-noorix-muted">{(o.items || []).length} {t('staffOrderItemsCount')}</span>
+                    <StatusBadge status={o.status} />
+                  </div>
                 </div>
-              </div>
+              )
             ))}
           </div>
         </div>

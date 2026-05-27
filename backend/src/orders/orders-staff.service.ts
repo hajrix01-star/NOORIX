@@ -171,43 +171,93 @@ export class OrdersStaffService {
     id: string,
     companyId: string,
     userId: string,
-    dto: { sectionName?: string; notes?: string; items?: StaffOrderItemInput[] },
+    dto: {
+      sectionName?: string;
+      notes?: string;
+      saleDate?: string;
+      items?: StaffOrderItemInput[];
+      lang?: 'ar' | 'en';
+    },
   ) {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
     if (!order) throw new NotFoundException('الطلب غير موجود');
     if (order.userId !== userId) throw new ForbiddenException('لا يمكن تعديل طلب موظف آخر');
-    if (order.orderType === 'sale') throw new BadRequestException('لا يمكن تعديل مبيعات مُرسلة');
-    if (order.status !== 'pending') throw new BadRequestException('لا يمكن تعديل طلب تم إرساله');
 
+    const isSale = order.orderType === 'sale';
+    if (!isSale && order.status !== 'pending') {
+      throw new BadRequestException('لا يمكن تعديل طلب تم إرساله');
+    }
+
+    const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const data: any = {};
-    if (dto.sectionName) data.sectionName = dto.sectionName.trim();
     if (dto.notes !== undefined) data.notes = dto.notes?.trim() || null;
 
+    if (isSale && dto.saleDate) {
+      data.saleDate = parseSaleDateYmd(dto.saleDate);
+    }
+
     if (dto.items?.length) {
+      const grouped = await this.groupItemsBySection(companyId, dto.items, dto.sectionName);
+      if (grouped.size > 1) {
+        throw new BadRequestException(
+          'لا يمكن دمج أقسام متعددة في سجل مبيعات واحد — عدّل كل قسم من قائمة المبيعات',
+        );
+      }
+      const [[sectionName, sectionItems]] = grouped.entries();
+      data.sectionName = sectionName;
+      const qty = this.validateItemQuantities(sectionItems);
       await this.prisma.staffOrderItem.deleteMany({ where: { staffOrderId: id } });
       data.items = {
-        create: dto.items.map((it) => ({
+        create: sectionItems.map((it, i) => ({
           productId: it.productId,
-          quantity: parseFloat(it.quantity),
+          quantity: qty[i],
           unit: it.unit?.trim() || null,
           notes: it.notes?.trim() || null,
         })),
       };
+    } else if (dto.sectionName?.trim()) {
+      data.sectionName = dto.sectionName.trim();
     }
 
-    return this.prisma.staffOrder.update({
+    const updated = await this.prisma.staffOrder.update({
       where: { id },
       data,
-      include: { items: { include: { product: true } } },
+      include: {
+        items: { include: { product: true } },
+        user: { select: { nameAr: true, nameEn: true } },
+      },
     });
+
+    if (!isSale) return updated;
+
+    const saleDay = updated.saleDate ?? updated.createdAt;
+    const whatsAppText = this.buildSalesWhatsAppTextCombined([updated], saleDay, lang);
+    return { ...updated, whatsAppText };
+  }
+
+  /** إعادة فتح واتساب لمبيعات مُسجّلة دون تعديل */
+  async resendStaffSale(id: string, companyId: string, userId: string, lang: 'ar' | 'en' = 'ar') {
+    const order = await this.prisma.staffOrder.findFirst({
+      where: { id, companyId, orderType: 'sale' },
+      include: {
+        items: { include: { product: true } },
+        user: { select: { nameAr: true, nameEn: true } },
+      },
+    });
+    if (!order) throw new NotFoundException('المبيعات غير موجودة');
+    if (order.userId !== userId) throw new ForbiddenException('لا يمكن إعادة إرسال مبيعات موظف آخر');
+    const saleDay = order.saleDate ?? order.createdAt;
+    const whatsAppText = this.buildSalesWhatsAppTextCombined([order], saleDay, lang);
+    return { whatsAppText };
   }
 
   async deleteStaffOrder(id: string, companyId: string, userId: string) {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
     if (!order) throw new NotFoundException('الطلب غير موجود');
     if (order.userId !== userId) throw new ForbiddenException('لا يمكن حذف طلب موظف آخر');
-    if (order.orderType === 'sale') throw new BadRequestException('لا يمكن حذف مبيعات مُرسلة');
-    if (order.status !== 'pending') throw new BadRequestException('لا يمكن حذف طلب تم إرساله');
+    if (order.orderType !== 'sale' && order.status !== 'pending') {
+      throw new BadRequestException('لا يمكن حذف طلب تم إرساله');
+    }
     await this.prisma.staffOrder.delete({ where: { id } });
     return { deleted: true };
   }

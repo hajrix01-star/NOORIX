@@ -26,6 +26,7 @@ import {
   createStaffOrder,
   updateStaffOrder,
   deleteStaffOrder,
+  resendStaffSale,
   getStaffDigest,
   getDigestHistory,
   getSalesReport,
@@ -250,6 +251,15 @@ export function useDeleteStaffOrderMutation(companyId: any) {
   return useApiMutation({
     mutationFn: (id: string) => deleteStaffOrder(id, companyId),
     invalidateQueries: [orderKeys.staffMy(companyId), orderKeys.staffDigest(companyId)],
+    showErrorToast: false,
+  });
+}
+
+export function useResendStaffSaleMutation(companyId: any) {
+  return useApiMutation({
+    mutationFn: ({ id, lang }: { id: string; lang?: 'ar' | 'en' }) =>
+      resendStaffSale(id, companyId, lang),
+    invalidateQueries: [orderKeys.staffMy(companyId)],
     showErrorToast: false,
   });
 }

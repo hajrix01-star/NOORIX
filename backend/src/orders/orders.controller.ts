@@ -84,6 +84,17 @@ export class OrdersController {
     return this.staffService.updateStaffOrder(id, companyId, user.sub, body);
   }
 
+  @Post('staff/:id/resend')
+  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  resendStaffSale(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: any,
+    @Body() body: { lang?: 'ar' | 'en' },
+  ) {
+    return this.staffService.resendStaffSale(id, companyId, user.sub, body?.lang ?? 'ar');
+  }
+
   @Delete('staff/:id')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
   deleteStaffOrder(
