@@ -19,6 +19,7 @@ import {
   computeCustomerDailyAvgActiveDays,
   computeRevenueDailyAvgCalendarMtd,
   computeCustomerDailyAvgCalendarMtd,
+  filterSalesThroughDay,
   revenueMtdEndDay as getRevenueMtdEndDay,
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
@@ -290,24 +291,40 @@ export function useDashboardOverviewModel(
     );
   }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
 
+  const monthSalesThroughMtd = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return monthSalesForDailyAvg;
+    return filterSalesThroughDay(monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay);
+  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
+
+  const prevMonthSalesThroughMtd = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return prevMonthSalesForDailyAvg;
+    const prev = prevCalendarMonth(year, selectedMonth);
+    return filterSalesThroughDay(
+      prevMonthSalesForDailyAvg,
+      prev.year,
+      prev.month,
+      revenueMtdEndDay,
+    );
+  }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
+
   const revenueDailyAvgActiveDays = useMemo(
-    () => computeRevenueDailyAvgActiveDays(monthSalesForDailyAvg),
-    [monthSalesForDailyAvg],
+    () => computeRevenueDailyAvgActiveDays(monthSalesThroughMtd),
+    [monthSalesThroughMtd],
   );
 
   const revenueDailyAvgPrevMonthActiveDays = useMemo(
-    () => computeRevenueDailyAvgActiveDays(prevMonthSalesForDailyAvg),
-    [prevMonthSalesForDailyAvg],
+    () => computeRevenueDailyAvgActiveDays(prevMonthSalesThroughMtd),
+    [prevMonthSalesThroughMtd],
   );
 
   const customerDailyAvgActiveDays = useMemo(
-    () => computeCustomerDailyAvgActiveDays(monthSalesForDailyAvg),
-    [monthSalesForDailyAvg],
+    () => computeCustomerDailyAvgActiveDays(monthSalesThroughMtd),
+    [monthSalesThroughMtd],
   );
 
   const customerDailyAvgPrevMonthActiveDays = useMemo(
-    () => computeCustomerDailyAvgActiveDays(prevMonthSalesForDailyAvg),
-    [prevMonthSalesForDailyAvg],
+    () => computeCustomerDailyAvgActiveDays(prevMonthSalesThroughMtd),
+    [prevMonthSalesThroughMtd],
   );
 
   const salesShiftPeriodTotals = useMemo(() => {
