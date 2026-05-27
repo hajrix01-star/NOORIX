@@ -74,7 +74,7 @@ function SummaryPane({
               <td>
                 <span
                   dir="ltr"
-                  className="nx-font-numbers inline-flex items-baseline justify-end gap-0.5 font-bold"
+                  className="nx-font-numbers inline-flex items-baseline justify-center gap-0.5 font-bold"
                   style={{
                     color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
                   }}
