@@ -12,13 +12,12 @@ import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals'
 type Props = {
   mtdEndDay: number;
   monthLabel: string;
-  revenueMtd: number | null;
-  revenueMtdPrev: number | null;
-  revenueMtdTotalSum: number;
-  revenueMtdActiveDayCount: number;
-  revenueActiveDays: number | null;
-  revenueActiveDaysPrev: number | null;
-  customerMtd: number | null;
+  revenueDailyAvg: number | null;
+  revenueDailyAvgPrev: number | null;
+  revenueTotalSum: number;
+  revenueActiveDayCount: number;
+  customerDailyAvg: number | null;
+  customerDailyAvgPrev: number | null;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
   t: (key: string, vars?: Record<string, string | number>) => string;
 };
@@ -64,50 +63,32 @@ function DeltaBadge({
   );
 }
 
-function MiniStat({
-  label,
-  hint,
+function CustomerMiniStat({
   value,
   prevValue,
-  unit,
-  suffix,
   t,
 }: {
-  label: string;
-  hint?: string;
   value: number | null;
-  prevValue?: number | null;
-  unit: 'currency' | 'count';
-  suffix?: string;
+  prevValue: number | null;
   t: Props['t'];
 }) {
   if (value == null) return null;
   return (
     <div className="min-w-0 rounded-md border border-noorix-border/80 bg-noorix-bg-muted/30 px-2 py-1.5">
-      <div className="truncate text-[9px] font-semibold text-noorix-muted leading-tight">{label}</div>
-      {hint ? (
-        <div className="mt-0.5 text-[8px] leading-snug text-noorix-muted">{hint}</div>
-      ) : null}
+      <div className="truncate text-[9px] font-semibold text-noorix-muted leading-tight">
+        {t('dashboardSalesCustomerDailyAvg')}
+      </div>
       <div dir="ltr" className="mt-0.5 flex items-baseline justify-center gap-0.5 text-center nx-font-numbers">
         <span className="truncate text-[12px] font-bold text-noorix-text">
           <FmtNum n={value} />
         </span>
-        {unit === 'currency' ? (
-          <span className="nx-sar shrink-0 text-[9px]">SR</span>
-        ) : (
-          <span className="shrink-0 text-[9px] text-noorix-muted">{suffix}</span>
-        )}
+        <span className="shrink-0 text-[9px] text-noorix-muted">{t('dashboardSalesCustomerDailyAvgUnit')}</span>
       </div>
       {prevValue != null ? (
         <div className="mt-1 flex items-center justify-between gap-1 text-[8px] text-noorix-muted">
           <span className="truncate">{t('dashboardKpiFooterTrailingAvg')}</span>
           <span dir="ltr" className="shrink-0 font-medium nx-font-numbers">
-            <FmtNum n={prevValue} />
-            {unit === 'currency' ? (
-              <span className="nx-sar"> SR</span>
-            ) : (
-              <span> {suffix}</span>
-            )}
+            <FmtNum n={prevValue} /> {t('dashboardSalesCustomerDailyAvgUnit')}
           </span>
         </div>
       ) : null}
@@ -118,87 +99,68 @@ function MiniStat({
 export function DashboardOverviewRevenueMonthBody({
   mtdEndDay,
   monthLabel,
-  revenueMtd,
-  revenueMtdPrev,
-  revenueMtdTotalSum,
-  revenueMtdActiveDayCount,
-  revenueActiveDays,
-  revenueActiveDaysPrev,
-  customerMtd,
+  revenueDailyAvg,
+  revenueDailyAvgPrev,
+  revenueTotalSum,
+  revenueActiveDayCount,
+  customerDailyAvg,
+  customerDailyAvgPrev,
   salesShiftPeriodTotals,
   t,
 }: Props) {
   const [shiftsOpen, setShiftsOpen] = useState(false);
-  const hasMtd = revenueMtd != null;
-  const hasSecondary = revenueActiveDays != null || customerMtd != null;
+  const hasRevenueAvg = revenueDailyAvg != null;
+  const hasCustomerAvg = customerDailyAvg != null;
 
-  if (!hasMtd && !hasSecondary && !salesShiftPeriodTotals) return null;
+  if (!hasRevenueAvg && !hasCustomerAvg && !salesShiftPeriodTotals) return null;
 
   return (
     <div className="mx-4 mt-1 flex flex-col gap-2 pb-0.5">
-      {hasMtd ? (
+      {hasRevenueAvg ? (
         <div className="rounded-lg border border-noorix-border bg-[color-mix(in_srgb,var(--color-nx-sales)_6%,transparent)] px-3 py-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="text-[10px] font-semibold text-noorix-muted leading-snug">
-                {t('dashboardRevenueMtdLabel', { from: 1, to: mtdEndDay, month: monthLabel })}
+                {t('dashboardSalesDailyAvgActiveDays')} — {t('dashboardRevenueDailyAvgPeriod', { from: 1, to: mtdEndDay, month: monthLabel })}
               </div>
-              <div className="text-[9px] text-noorix-muted mt-0.5 leading-snug">
-                {t('dashboardRevenueMtdHint', { to: mtdEndDay })}
-              </div>
+              {revenueActiveDayCount > 0 && mtdEndDay > 0 ? (
+                <div className="text-[9px] text-noorix-muted mt-0.5 leading-snug">
+                  {t('dashboardRevenueActiveDaysHint', {
+                    active: revenueActiveDayCount,
+                    total: mtdEndDay,
+                  })}
+                </div>
+              ) : null}
             </div>
-            <DeltaBadge current={revenueMtd} prev={revenueMtdPrev} t={t} />
+            <DeltaBadge current={revenueDailyAvg} prev={revenueDailyAvgPrev} t={t} />
           </div>
           <div dir="ltr" className="mt-1 flex items-baseline gap-1 text-nx-sales nx-font-numbers">
             <span className="text-[18px] font-black leading-none">
-              <FmtNum n={revenueMtd!} />
+              <FmtNum n={revenueDailyAvg!} />
             </span>
             <span className="nx-sar text-[11px]">SR</span>
           </div>
-          {revenueMtdTotalSum > 0 && mtdEndDay > 0 ? (
+          {revenueTotalSum > 0 && revenueActiveDayCount > 0 ? (
             <div dir="ltr" className="mt-1 text-[9px] font-medium text-noorix-muted nx-font-numbers">
-              {t('dashboardRevenueMtdMath', {
-                total: fmt(revenueMtdTotalSum, 0),
-                days: mtdEndDay,
+              {t('dashboardRevenueActiveDaysMath', {
+                total: fmt(revenueTotalSum, 0),
+                days: revenueActiveDayCount,
               })}
             </div>
           ) : null}
-          {revenueMtdPrev != null ? (
+          {revenueDailyAvgPrev != null ? (
             <div className="mt-1 flex items-center justify-between gap-2 text-[9px] text-noorix-muted">
               <span>{t('dashboardKpiFooterTrailingAvg')}</span>
               <span dir="ltr" className="font-medium nx-font-numbers">
-                <FmtNum n={revenueMtdPrev} /> <span className="nx-sar">SR</span>
+                <FmtNum n={revenueDailyAvgPrev} /> <span className="nx-sar">SR</span>
               </span>
             </div>
           ) : null}
         </div>
       ) : null}
 
-      {hasSecondary ? (
-        <div className="grid grid-cols-2 gap-1.5">
-          <MiniStat
-            label={t('dashboardRevenueActiveDaysAvg')}
-            hint={
-              revenueMtdActiveDayCount > 0 && mtdEndDay > 0
-                ? t('dashboardRevenueActiveDaysHint', {
-                    active: revenueMtdActiveDayCount,
-                    total: mtdEndDay,
-                  })
-                : undefined
-            }
-            value={revenueActiveDays}
-            prevValue={revenueActiveDaysPrev}
-            unit="currency"
-            t={t}
-          />
-          <MiniStat
-            label={t('dashboardSalesCustomerDailyAvg')}
-            value={customerMtd}
-            unit="count"
-            suffix={t('dashboardSalesCustomerDailyAvgUnit')}
-            t={t}
-          />
-        </div>
+      {hasCustomerAvg ? (
+        <CustomerMiniStat value={customerDailyAvg} prevValue={customerDailyAvgPrev} t={t} />
       ) : null}
 
       <div className="md:hidden">

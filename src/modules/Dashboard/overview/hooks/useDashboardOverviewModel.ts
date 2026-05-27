@@ -17,8 +17,6 @@ import {
   buildYearMonthlyDailyAvgRows,
   computeRevenueDailyAvgActiveDays,
   computeCustomerDailyAvgActiveDays,
-  computeRevenueDailyAvgCalendarMtd,
-  computeCustomerDailyAvgCalendarMtd,
   filterSalesThroughDay,
   countRevenueActiveSalesDays,
   sumRevenueThroughDay,
@@ -261,37 +259,6 @@ export function useDashboardOverviewModel(
     if (selectedMonth == null) return 0;
     return getRevenueMtdEndDay(year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day);
   }, [year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day]);
-
-  const revenueMtdCalendar = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
-    return computeRevenueDailyAvgCalendarMtd(
-      monthSalesForDailyAvg,
-      year,
-      selectedMonth,
-      revenueMtdEndDay,
-    );
-  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
-  const revenueMtdPrevCalendar = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
-    const prev = prevCalendarMonth(year, selectedMonth);
-    return computeRevenueDailyAvgCalendarMtd(
-      prevMonthSalesForDailyAvg,
-      prev.year,
-      prev.month,
-      revenueMtdEndDay,
-    );
-  }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
-  const customerMtdCalendar = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
-    return computeCustomerDailyAvgCalendarMtd(
-      monthSalesForDailyAvg,
-      year,
-      selectedMonth,
-      revenueMtdEndDay,
-    );
-  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
 
   const monthSalesThroughMtd = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return monthSalesForDailyAvg;
@@ -568,11 +535,8 @@ export function useDashboardOverviewModel(
     topSuppliersChartData,
     purchaseCategoriesPieData,
     revenueMtdEndDay,
-    revenueMtdCalendar,
-    revenueMtdPrevCalendar,
     revenueMtdTotalSum,
     revenueMtdActiveDayCount,
-    customerMtdCalendar,
     revenueDailyAvgActiveDays,
     revenueDailyAvgPrevMonthActiveDays,
     customerDailyAvgActiveDays,

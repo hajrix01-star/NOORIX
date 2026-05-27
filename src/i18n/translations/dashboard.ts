@@ -51,25 +51,17 @@ export default {
   dashboardKpiFormulaSales: { ar: 'إجمالي المبيعات للفترة', en: 'Total sales for the period' },
   /** متوسط يومي: المجموع ÷ عدد الأيام ذات الإيراد &gt; 0 فقط */
   dashboardSalesDailyAvgActiveDays: { ar: 'المعدل اليومي', en: 'Daily average' },
-  dashboardRevenueMtdLabel: {
-    ar: 'معدل يومي (1–{to} {month})',
-    en: 'Daily avg (1–{to} {month})',
-  },
-  dashboardRevenueMtdHint: {
-    ar: 'إجمالي المبيعات ÷ كل أيام التقويم (1–{to}) — يشمل أياماً بلا مبيعات',
-    en: 'Sales total ÷ all calendar days (1–{to}) — includes days with no sales',
-  },
-  dashboardRevenueMtdMath: {
-    ar: '{total} SR ÷ {days} يوم = المعدل أعلاه',
-    en: '{total} SR ÷ {days} days = rate above',
-  },
-  dashboardRevenueActiveDaysAvg: {
-    ar: 'متوسط يوم البيع',
-    en: 'Avg. per sales day',
+  dashboardRevenueDailyAvgPeriod: {
+    ar: '1–{to} {month}',
+    en: '1–{to} {month}',
   },
   dashboardRevenueActiveDaysHint: {
-    ar: 'نفس الإجمالي ÷ {active} يوم فيه مبيعات فقط (من {total} يوم)',
-    en: 'Same total ÷ {active} days with sales only (of {total} days)',
+    ar: 'إجمالي المبيعات ÷ {active} يوم بيع فقط (من {total} يوم تقويم)',
+    en: 'Sales total ÷ {active} sales days only (of {total} calendar days)',
+  },
+  dashboardRevenueActiveDaysMath: {
+    ar: '{total} SR ÷ {days} يوم بيع = المعدل أعلاه',
+    en: '{total} SR ÷ {days} sales days = rate above',
   },
   dashboardShiftDetailsToggle: { ar: 'تفاصيل الشفت', en: 'Shift breakdown' },
   dashboardKpiTimelineHint: {

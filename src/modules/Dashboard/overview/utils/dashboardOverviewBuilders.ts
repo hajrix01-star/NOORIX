@@ -219,45 +219,6 @@ function sumMonthMetric(
   return total;
 }
 
-/** معدل يومي تقويمي: إجمالي الشهر ÷ عدد الأيام (من 1 حتى endDayInclusive ضمن الشهر) */
-export function computeRevenueDailyAvgCalendarMtd(
-  monthSales: SummaryLike[] | null | undefined,
-  year: number,
-  month: number,
-  endDayInclusive: number,
-): number | null {
-  const last = lastDayOfMonth(year, month);
-  const days = Math.max(1, Math.min(endDayInclusive, last));
-  const total = sumMonthMetric(
-    monthSales,
-    year,
-    month,
-    (s) => Number(s.totalAmount || 0),
-    endDayInclusive,
-  );
-  if (total <= 0) return null;
-  return total / days;
-}
-
-export function computeCustomerDailyAvgCalendarMtd(
-  monthSales: SummaryLike[] | null | undefined,
-  year: number,
-  month: number,
-  endDayInclusive: number,
-): number | null {
-  const last = lastDayOfMonth(year, month);
-  const days = Math.max(1, Math.min(endDayInclusive, last));
-  const total = sumMonthMetric(
-    monthSales,
-    year,
-    month,
-    (s) => Number(s.customerCount || 0),
-    endDayInclusive,
-  );
-  if (total <= 0) return null;
-  return total / days;
-}
-
 /** يوم النهاية لعرض MTD: شهر جاري → اليوم؛ شهر ماضٍ كامل → آخر يوم */
 export function revenueMtdEndDay(
   year: number,
