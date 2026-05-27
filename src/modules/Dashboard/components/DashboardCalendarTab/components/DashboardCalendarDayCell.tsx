@@ -69,16 +69,16 @@ export default function DashboardCalendarDayCell({
       onKeyDown={(e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') onDayClick(item, e.shiftKey);
       }}
-      className="aspect-square rounded-md flex flex-col items-center justify-center p-[2px] min-h-12 cursor-pointer relative"
+      className="aspect-square rounded-md flex flex-col items-center justify-center p-px min-h-10 sm:min-h-12 cursor-pointer relative max-md:text-[10px]"
       style={{
         background: bg,
         border: cellBorder,
       }}
       title={`${dateStr}: ${fmt(amount)} SR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
     >
-      <span className="text-[12px] font-bold text-noorix-text">{day}</span>
+      <span className="text-[12px] max-md:text-[10px] font-bold text-noorix-text leading-none">{day}</span>
       <span
-        className="text-[11px] nx-font-numbers"
+        className="text-[11px] max-md:text-[9px] nx-font-numbers leading-tight"
         style={{
           color:
             amount <= 0

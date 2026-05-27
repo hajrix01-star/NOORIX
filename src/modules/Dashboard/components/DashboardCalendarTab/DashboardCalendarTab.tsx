@@ -25,7 +25,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
 
   return (
     <div className="noorix-calendar-layout">
-      <div className="noorix-calendar-card noorix-surface-card overflow-hidden p-4 w-full max-w-[760px] min-w-0">
+      <div className="noorix-calendar-card w-full min-w-0 max-w-[760px] md:noorix-surface-card md:overflow-hidden md:p-4">
         <DashboardCalendarHeader
           monthLabel={m.monthLabel}
           year={m.year}

@@ -76,7 +76,11 @@ export default function DashboardScreen() {
         items={dashboardTabItems}
         value={activeTab}
         onChange={setActiveTab}
-        contentClassName="p-4 nx-tab-content"
+        contentClassName={
+          activeTab === 'calendar'
+            ? 'nx-tab-content px-1 py-2 sm:px-3 sm:py-3 md:p-4'
+            : 'p-4 nx-tab-content'
+        }
       >
         {activeTab === 'overview'    && <DashboardOverviewTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
         {activeTab === 'calendar'    && <DashboardCalendarTab    companyId={activeCompanyId} year={year} selectedMonth={selectedMonthNumber} filter={filter} />}
