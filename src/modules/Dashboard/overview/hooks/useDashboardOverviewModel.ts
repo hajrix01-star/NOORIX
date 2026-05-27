@@ -327,6 +327,14 @@ export function useDashboardOverviewModel(
   const yearlyDailyAvgRows = useMemo(() => {
     const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
     const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+    const alignPrevMonthDay =
+      selectedMonth != null &&
+      selectedMonth === saudiYM.month &&
+      year === saudiYM.year &&
+      revenueMtdEndDay > 0
+        ? revenueMtdEndDay
+        : undefined;
+
     return buildYearMonthlyDailyAvgRows({
       year,
       yearSummaries,
@@ -334,8 +342,9 @@ export function useDashboardOverviewModel(
       capMonth,
       currentYear: saudiYM.year,
       currentMonth: saudiYM.month,
+      prevMonthAlignEndDay: alignPrevMonthDay,
     });
-  }, [year, yearSummaries, lang, saudiYM.year, saudiYM.month]);
+  }, [year, yearSummaries, lang, saudiYM.year, saudiYM.month, selectedMonth, revenueMtdEndDay]);
 
   const monthName = selectedMonth
     ? lang === 'ar'
