@@ -82,7 +82,7 @@ jobs:
           # دالة إسعاف: إذا فشل البناء نُعيد تشغيل PM2 بالـ dist القديم (إن وُجد)
           ensure_pm2_running() {
             echo "==> [trap] خطأ — نُعيد تشغيل PM2 بالكود السابق إن أمكن"
-            pm2 delete noorix-backend 2>/dev/null || true
+            pm2 delete noorix-api noorix-backend 2>/dev/null || true
             pm2 start "$PROD/ecosystem.config.cjs" 2>/dev/null || true
             pm2 save 2>/dev/null || true
           }
@@ -122,8 +122,9 @@ jobs:
           echo "==> npm run build"
           npm run build
 
-          echo "==> إيقاف PM2 القديم وتشغيل نسخة جديدة بالـ dist الجديد"
-          pm2 delete noorix-backend 2>/dev/null || true
+          echo "==> إيقاف كل عمليات Noorix API القديمة وتشغيل نسخة جديدة"
+          pm2 delete noorix-api noorix-backend 2>/dev/null || true
+          sleep 2
           DEPLOY_SHA="${{ github.sha }}" pm2 start ecosystem.config.cjs
 
           echo "==> pm2 save"
@@ -139,6 +140,7 @@ jobs:
             p=$(echo "$p" | tr -d '[:space:]')
             case "$p" in ''|*[!0-9]*) ;; *) API_PORT=$p ;; esac
           fi
+          echo "==> API_PORT=${API_PORT} (يجب أن يطابق Nginx proxy_pass)"
           echo "==> Waiting for liveness on port ${API_PORT}..."
           ready=0
           for i in $(seq 1 90); do
@@ -152,6 +154,36 @@ jobs:
           if [ "$ready" != 1 ]; then
             echo "ERROR: timeout 90s" >&2
             pm2 logs noorix-backend --lines 80 --nostream 2>&1 | tail -80
+            exit 1
+          fi
+
+      - name: Verify PM2 restarted and Saudi occasions route exists
+        run: |
+          API_PORT=3000
+          if [ -f /var/www/noorix/backend/.env ]; then
+            p=$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*//p' \
+              /var/www/noorix/backend/.env | head -1 | tr -d '\r')
+            p=$(echo "$p" | tr -d '[:space:]')
+            case "$p" in ''|*[!0-9]*) ;; *) API_PORT=$p ;; esac
+          fi
+          LIVE_JSON="$(curl -sS --max-time 5 "http://127.0.0.1:${API_PORT}/api/v1/health/live" || true)"
+          echo "live: ${LIVE_JSON}"
+          UPTIME="$(echo "$LIVE_JSON" | sed -n 's/.*"uptimeSec":\([0-9]*\).*/\1/p')"
+          if [ -n "$UPTIME" ] && [ "$UPTIME" -gt 600 ]; then
+            echo "WARN: uptimeSec=${UPTIME} — PM2 may not have restarted; forcing reload"
+            pm2 delete noorix-api noorix-backend 2>/dev/null || true
+            sleep 2
+            cd /var/www/noorix/backend
+            DEPLOY_SHA="${{ github.sha }}" pm2 start ecosystem.config.cjs
+            pm2 save
+            sleep 5
+          fi
+          CODE="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 8 \
+            "http://127.0.0.1:${API_PORT}/api/v1/dashboard/calendar/saudi-occasions?year=2026" || echo 000)"
+          echo "saudi-occasions HTTP ${CODE} (expect 401/403, not 404)"
+          if [ "$CODE" = "404" ]; then
+            echo "ERROR: route missing after deploy — run deploy/repair-api-on-vps.sh on VPS" >&2
+            pm2 list
             exit 1
           fi
 
