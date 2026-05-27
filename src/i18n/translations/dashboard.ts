@@ -187,6 +187,7 @@ export default {
     en: 'Jan through current month; avg = revenue sum ÷ days with revenue &gt; 0. Prior month aligned to the same calendar day (MTD).',
   },
   dashboardYearlyDailyAvgMonthCol: { ar: 'الشهر', en: 'Month' },
+  dashboardYearlyDailyAvgSalesCol: { ar: 'المبيعات', en: 'Sales' },
   dashboardYearlyDailyAvgAvgColShort: { ar: 'معدل', en: 'Avg' },
   dashboardYearlyDailyAvgValuesCol: { ar: 'المعدل والتغيّر', en: 'Avg & change' },
   dashboardYearlyDailyAvgCurrentBadge: { ar: 'الحالي', en: 'Current' },

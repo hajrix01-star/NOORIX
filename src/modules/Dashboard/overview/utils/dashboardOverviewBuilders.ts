@@ -331,6 +331,7 @@ export function revenueDailyAvgDeltaPct(current: number, prev: number): number |
 export type YearMonthlyDailyAvgRow = {
   month: number;
   monthLabel: string;
+  totalSales: number | null;
   avgDaily: number | null;
   activeDays: number;
   deltaPctVsPrev: number | null;
@@ -380,17 +381,20 @@ export function buildYearMonthlyDailyAvgRows(params: {
     const dayMap = byMonthDay.get(month);
     let sum = 0;
     let activeDays = 0;
-    const alignPrevMonth =
+    const mtdAlignDay =
       prevMonthAlignEndDay != null &&
       year === currentYear &&
       capMonth === currentMonth &&
-      month === capMonth - 1;
-    const maxDayInclusive = alignPrevMonth
-      ? Math.max(1, Math.min(prevMonthAlignEndDay, lastDayOfMonth(year, month)))
-      : lastDayOfMonth(year, month);
+      (month === capMonth || month === capMonth - 1)
+        ? prevMonthAlignEndDay
+        : null;
+    const maxDayInclusive =
+      mtdAlignDay != null
+        ? Math.max(1, Math.min(mtdAlignDay, lastDayOfMonth(year, month)))
+        : lastDayOfMonth(year, month);
     if (dayMap) {
       for (const [ymdStr, amt] of dayMap.entries()) {
-        if (alignPrevMonth) {
+        if (mtdAlignDay != null) {
           const day = parseInt(ymdStr.slice(8, 10), 10);
           if (!Number.isFinite(day) || day < 1 || day > maxDayInclusive) continue;
         }
@@ -407,6 +411,7 @@ export function buildYearMonthlyDailyAvgRows(params: {
     rows.push({
       month,
       monthLabel: monthNames[month - 1] ?? String(month),
+      totalSales: sum > 0 ? sum : null,
       avgDaily,
       activeDays,
       deltaPctVsPrev,

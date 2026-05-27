@@ -39,6 +39,7 @@ describe('buildYearMonthlyDailyAvgRows', () => {
     });
 
     expect(rows).toHaveLength(5);
+    expect(rows[0].totalSales).toBe(300);
     expect(rows[0].avgDaily).toBe(150);
     expect(rows[0].activeDays).toBe(2);
     expect(rows[1].avgDaily).toBe(400);
@@ -67,6 +68,7 @@ describe('buildYearMonthlyDailyAvgRows', () => {
 
     const april = rows[3];
     expect(april.month).toBe(4);
+    expect(april.totalSales).toBe(2000);
     expect(april.avgDaily).toBe(1000);
     expect(april.activeDays).toBe(2);
   });
