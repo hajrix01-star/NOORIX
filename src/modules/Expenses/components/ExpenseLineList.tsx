@@ -26,12 +26,12 @@ function monthlyAnnualForExpenseLineRow(line: { kind?: string; annualTotalAmount
 
 function ExpenseLineMoneyCell({ amount }: { amount: number | null }) {
   if (amount == null) {
-    return <span className="text-[13px] text-noorix-muted">—</span>;
+    return <span className="nx-expense-line-cell nx-expense-line-cell--muted">—</span>;
   }
   return (
     <span dir="ltr" className="nx-expense-line-money inline-flex w-full items-baseline justify-end gap-0.5">
-      <FmtNum n={amount} className="nx-cell-num text-[13px] font-semibold tabular-nums" />
-      <span className="nx-sar text-[11px]">SR</span>
+      <FmtNum n={amount} className="nx-cell-num nx-expense-line-cell font-semibold tabular-nums" />
+      <span className="nx-sar nx-expense-line-cell-sar">SR</span>
     </span>
   );
 }
@@ -41,8 +41,8 @@ function ExpenseLineTextCell({ value, muted }: { value: string; muted?: boolean 
   return (
     <span
       className={cn(
-        'block min-w-0 truncate text-[13px]',
-        muted || text === '—' ? 'text-noorix-muted' : 'text-noorix-text',
+        'nx-expense-line-cell block min-w-0 truncate',
+        muted || text === '—' ? 'nx-expense-line-cell--muted' : 'text-noorix-text',
       )}
       title={text !== '—' ? text : undefined}
     >
@@ -91,14 +91,15 @@ export default function ExpenseLineList({
       key: 'nameAr',
       label: t('expenseLineNameCol'),
       sortable: true,
-      width: '20%',
-      minWidth: 140,
+      width: '22%',
+      minWidth: '11em',
+      cellClassName: 'nx-col-expense-name',
       align: 'start',
       render: (v: any, row: any) => (
         <Button
           variant="raw"
           size="auto"
-          className="nx-expense-line-name-cell nx-cell-bold !h-auto !min-h-0 w-full max-w-full cursor-pointer !p-0 text-start text-[13px] font-bold text-noorix-blue hover:underline"
+          className="nx-expense-line-name-cell nx-cell-bold nx-expense-line-cell !h-auto !min-h-0 w-full max-w-full cursor-pointer !p-0 text-start font-bold text-noorix-blue hover:underline"
           onClick={() => onLineClick(row)}
         >
           <span className="block min-w-0 truncate" title={v || row.nameEn || ''}>
@@ -111,8 +112,9 @@ export default function ExpenseLineList({
       key: 'kind',
       label: t('expenseLineKindCol'),
       sortable: true,
-      width: 108,
+      minWidth: '7.5em',
       shrink: true,
+      cellClassName: 'nx-col-expense-kind',
       align: 'center',
       render: (v: any) => {
         const { color } = Badge.fromStatus(v, kindBadgeMap);
@@ -130,7 +132,8 @@ export default function ExpenseLineList({
       label: t('category'),
       sortable: true,
       width: '14%',
-      minWidth: 100,
+      minWidth: '8.5em',
+      cellClassName: 'nx-col-expense-text',
       align: 'start',
       render: (v: any) => <ExpenseLineTextCell value={v} />,
     },
@@ -139,18 +142,20 @@ export default function ExpenseLineList({
       label: t('supplier'),
       sortable: true,
       width: '14%',
-      minWidth: 100,
+      minWidth: '8.5em',
+      cellClassName: 'nx-col-expense-text',
       align: 'start',
       render: (v: any) => <ExpenseLineTextCell value={v} />,
     },
     {
       key: 'serviceNumber',
       label: t('expenseLineServiceNumberCol'),
-      width: 88,
+      minWidth: '5.5em',
       shrink: true,
+      cellClassName: 'nx-col-expense-service',
       align: 'center',
       render: (v: any) => (
-        <span className="nx-cell-num block text-center text-[13px] tabular-nums text-noorix-text">
+        <span className="nx-cell-num nx-expense-line-cell block text-center tabular-nums text-noorix-text">
           {v || '—'}
         </span>
       ),
@@ -158,7 +163,8 @@ export default function ExpenseLineList({
     {
       key: 'monthlyAmount',
       label: <span className="nx-expense-line-th-money">{t('expenseLineListMonthlyAmount')}</span>,
-      width: 108,
+      minWidth: '7.5em',
+      cellClassName: 'nx-col-expense-money',
       numeric: true,
       render: (_: unknown, row: any) => (
         <ExpenseLineMoneyCell amount={monthlyAnnualForExpenseLineRow(row).monthly} />
@@ -167,7 +173,8 @@ export default function ExpenseLineList({
     {
       key: 'annualAmount',
       label: <span className="nx-expense-line-th-money">{t('expenseLineListAnnualAmount')}</span>,
-      width: 108,
+      minWidth: '7.5em',
+      cellClassName: 'nx-col-expense-money',
       numeric: true,
       render: (_: unknown, row: any) => (
         <ExpenseLineMoneyCell amount={monthlyAnnualForExpenseLineRow(row).annual} />
@@ -176,8 +183,9 @@ export default function ExpenseLineList({
     {
       key: 'actions',
       label: t('actions'),
-      width: 52,
+      minWidth: '3.25em',
       shrink: true,
+      cellClassName: 'nx-col-expense-actions',
       align: 'center',
       render: (_: any, row: any) => (
         <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
@@ -306,7 +314,7 @@ export default function ExpenseLineList({
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth={40}
+          rowNumberWidth="2.75em"
           innerPadding={8}
           columns={columns}
           data={tableData}
@@ -318,8 +326,8 @@ export default function ExpenseLineList({
           keyExtractor={(row: any) => row.id}
           getRowClassName={getRowClassName}
           tableId="expense-lines"
-          tableLayout="fixed"
-          tableMinWidth={980}
+          tableLayout="auto"
+          tableMinWidth="62em"
           stickyActionColumn
         />
       </div>

@@ -239,7 +239,9 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
   const layout       = tableLayout ?? (isWideTable ? 'fixed' : 'auto');
-  const minW         = tableMinWidth > 0 ? tableMinWidth : (isWideTable ? 1100 : 0);
+  const minW         = tableMinWidth === 0 || tableMinWidth === ''
+    ? undefined
+    : (tableMinWidth != null ? tableMinWidth : (isWideTable ? 1100 : undefined));
   const cellPad      = compact ? { th: '6px 12px', td: '6px 12px' } : { th: '8px 14px', td: '8px 14px' };
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
@@ -433,12 +435,18 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   return (
                     <th
                       key={col.key}
-                      className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-th-shrink' : ''}${shouldTruncate ? ' noorix-cell-truncate' : ''}`}
+                      className={cn(
+                        col.cellClassName,
+                        col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
+                        col.numeric ? 'noorix-numeric-cell' : '',
+                        shrink ? 'noorix-th-shrink' : '',
+                        shouldTruncate ? 'noorix-cell-truncate' : '',
+                      )}
                       style={{
                         padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: align as React.CSSProperties['textAlign'],
                         position: resizableCol ? 'relative' : undefined,
                         width: effectiveWidth,
-                        minWidth: layout === 'fixed' ? undefined : col.minWidth,
+                        minWidth: col.minWidth,
                         maxWidth: resizableCol ? undefined : col.maxWidth,
                         cursor: col.sortable ? 'pointer' : 'default',
                         userSelect: col.sortable ? 'none' : 'auto',
@@ -502,14 +510,20 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                     return (
                       <td
                         key={col.key}
-                        className={`${col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : ''}${col.numeric ? ' noorix-numeric-cell' : ''}${shrink ? ' noorix-td-shrink' : ''}${shouldTruncate ? ' noorix-cell-truncate' : ''}`}
+                        className={cn(
+                          col.cellClassName,
+                          col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
+                          col.numeric ? 'noorix-numeric-cell' : '',
+                          shrink ? 'noorix-td-shrink' : '',
+                          shouldTruncate ? 'noorix-cell-truncate' : '',
+                        )}
                         style={{
                           padding: cellPad.td,
                           fontSize: cellFs,
                           textAlign: align as React.CSSProperties['textAlign'],
                           fontFamily: family,
                           width: tdEffectiveWidth,
-                          minWidth: layout === 'fixed' ? undefined : col.minWidth,
+                          minWidth: col.minWidth,
                           maxWidth: col.maxWidth,
                           whiteSpace: shrink ? 'nowrap' : undefined,
                         }}
