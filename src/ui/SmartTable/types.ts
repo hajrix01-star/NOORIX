@@ -12,6 +12,8 @@ export type SmartTableColumn<TRow = any> = {
   width?: CSSProperties['width'];
   minWidth?: number | string;
   maxWidth?: number | string;
+  /** صنف CSS على th/td — لعرض أعمدة مرِن (em/ch) */
+  cellClassName?: string;
   render?: (value: unknown, row: TRow, index: number) => ReactNode;
 };
 
@@ -46,7 +48,7 @@ export type SmartTableProps<TRow = any> = {
   children?: ReactNode;
   /** أسفل الإطار — بعض الشاشات القديمة تعرض ملخصًا خارج tbody بدلاً من children */
   footer?: ReactNode;
-  tableMinWidth?: number;
+  tableMinWidth?: number | string;
   compact?: boolean;
   showRowNumbers?: boolean;
   innerPadding?: number | string;
