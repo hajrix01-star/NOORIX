@@ -36,6 +36,7 @@ type Props = {
   performanceData: PerfRow[];
   perfTotal: number;
   channelData: ChannelRow[];
+  channelPeriodLabel: string;
   hiddenSeries: Set<string>;
   toggleSeries: (key: string) => void;
   SERIES: SeriesRow[];
@@ -52,6 +53,7 @@ export function DashboardOverviewTimelineSection({
   performanceData,
   perfTotal,
   channelData,
+  channelPeriodLabel,
   hiddenSeries,
   toggleSeries,
   SERIES,
@@ -209,7 +211,7 @@ export function DashboardOverviewTimelineSection({
             {t('reportChannels')}
           </div>
           <div className="mb-4 w-full text-[12px] text-noorix-muted max-lg:text-center lg:text-start">
-            {timelineGrain === 'daily' ? timelineMonthName : year}
+            {channelPeriodLabel}
           </div>
 
           <DashboardOverviewBreakdownTable

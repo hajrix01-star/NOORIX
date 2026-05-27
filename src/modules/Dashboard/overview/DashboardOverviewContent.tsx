@@ -65,6 +65,7 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         performanceData={m.performanceData as Record<string, string | number>[]}
         perfTotal={m.perfTotal}
         channelData={m.channelData}
+        channelPeriodLabel={m.channelPeriodLabel}
         hiddenSeries={m.hiddenSeries}
         toggleSeries={m.toggleSeries}
         SERIES={m.SERIES}

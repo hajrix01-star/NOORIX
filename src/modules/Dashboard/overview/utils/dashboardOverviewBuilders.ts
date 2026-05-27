@@ -59,11 +59,15 @@ export function buildPerformanceRows(params: {
 export function buildChannelPieRows(params: {
   yearSummaries: SummaryLike[];
   dailySummaries: SummaryLike[];
-  timelineGrain: string;
+  /** شهر محدّد من فلتر الصفحة — يوميات الشهر؛ وإلا ملخصات السنة */
+  selectedMonth: number | null;
   lang: string;
 }): { name: string; value: number; pct: string }[] {
-  const { yearSummaries, dailySummaries, timelineGrain, lang } = params;
-  const src = timelineGrain === 'daily' ? dailySummaries || [] : yearSummaries || [];
+  const { yearSummaries, dailySummaries, selectedMonth, lang } = params;
+  const src =
+    selectedMonth != null && selectedMonth >= 1 && selectedMonth <= 12
+      ? dailySummaries || []
+      : yearSummaries || [];
   const map: Record<string, number> = {};
   src.forEach((s) =>
     (s.channels || []).forEach((ch) => {

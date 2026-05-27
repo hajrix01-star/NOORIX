@@ -412,15 +412,21 @@ export function useDashboardOverviewModel(
     [report, timelineGrain, dailySummaries, lastDayChart, lang, t],
   );
 
+  const channelPeriodLabel = useMemo(() => {
+    if (filter?.label) return filter.label;
+    if (selectedMonth != null && monthName) return `${monthName} ${year}`;
+    return String(year);
+  }, [filter?.label, selectedMonth, monthName, year]);
+
   const channelData = useMemo(
     () =>
       buildChannelPieRows({
         yearSummaries,
         dailySummaries,
-        timelineGrain,
+        selectedMonth,
         lang,
       }),
-    [yearSummaries, dailySummaries, timelineGrain, lang],
+    [yearSummaries, dailySummaries, selectedMonth, lang],
   );
 
   const salesSeries = t('annualSales');
@@ -544,7 +550,7 @@ export function useDashboardOverviewModel(
     lastDayChart,
     supplierFrom,
     supplierTo,
-    isPeriodLoading: false,
+    isPeriodLoading: isLoading,
     periodData,
     cards,
     performanceData,
@@ -567,6 +573,7 @@ export function useDashboardOverviewModel(
     toggleSeries,
     SERIES,
     timelineMonthName,
+    channelPeriodLabel,
     filter,
     year,
     selectedMonth,
