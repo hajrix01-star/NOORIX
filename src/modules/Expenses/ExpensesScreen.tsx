@@ -21,10 +21,10 @@ import ExpenseBatchTable from './components/ExpenseBatchTable';
 import PaymentHistoryTab from './components/PaymentHistoryTab';
 
 const TABS = [
-  { id: 'lines', labelKey: 'expenseLinesTab' },
-  { id: 'entry', labelKey: 'expenseEntryTab' },
-  { id: 'batch', labelKey: 'expenseBatchTab' },
-  { id: 'payments', labelKey: 'paymentHistoryTab' },
+  { id: 'lines', labelKey: 'expenseLinesTab', shortLabelKey: 'expenseLinesTabShort' },
+  { id: 'entry', labelKey: 'expenseEntryTab', shortLabelKey: 'expenseEntryTabShort' },
+  { id: 'batch', labelKey: 'expenseBatchTab', shortLabelKey: 'expenseBatchTabShort' },
+  { id: 'payments', labelKey: 'paymentHistoryTab', shortLabelKey: 'paymentHistoryTabShort' },
 ];
 const EXPENSE_TAB_IDS = TABS.map((tab: any) => tab.id);
 
@@ -86,7 +86,21 @@ export default function ExpensesScreen() {
   };
 
   const expenseTabItems = useMemo(
-    () => TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) })),
+    () =>
+      TABS.map((tab: any) => {
+        const full = t(tab.labelKey);
+        const short = tab.shortLabelKey ? t(tab.shortLabelKey) : full;
+        const label =
+          short === full ? (
+            full
+          ) : (
+            <>
+              <span className="hidden sm:inline">{full}</span>
+              <span className="sm:hidden">{short}</span>
+            </>
+          );
+        return { id: tab.id, label };
+      }),
     [t],
   );
 

@@ -397,13 +397,16 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
     <ScreenShell embedded={!!embedded} className={cn(embedded && 'pt-4')}>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between lg:gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <Input
-            label="تاريخ العملية"
-            type="date"
-            size="sm"
-            value={batchDate}
-            onChange={(e: any) => setBatchDate(e.target.value)}
-          />
+          <div className="min-w-0 w-full sm:w-[min(100%,11rem)]">
+            <Input
+              label="تاريخ العملية"
+              type="date"
+              size="sm"
+              className="w-full min-w-0 max-w-full"
+              value={batchDate}
+              onChange={(e: any) => setBatchDate(e.target.value)}
+            />
+          </div>
           <div className="min-w-0 w-full sm:w-[min(100%,14rem)] sm:max-w-xs">
             <SearchableOptionsPicker
               label="الخزينة *"

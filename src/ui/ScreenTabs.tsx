@@ -54,6 +54,8 @@ export default function ScreenTabs({
   tabBarEnd,
 }: ScreenTabsProps) {
   const uiDir = useUiDir();
+  /** توزيع متساوٍ على الجوال بدون تمرير — مناسب لمعظم شاشات الأقسام (≤8 تبويبات) */
+  const resolvedCompactMobile = compactMobile ?? (items.length > 0 && items.length <= 8);
 
   if (variant === 'connected') {
     return (
@@ -65,7 +67,7 @@ export default function ScreenTabs({
         contentClassName={contentClassName}
         shellClassName={cn(className, shellClassName)}
         stripClassName={stripClassName}
-        compactMobile={compactMobile}
+        compactMobile={resolvedCompactMobile}
         tabBarEnd={tabBarEnd}
       >
         {children}
