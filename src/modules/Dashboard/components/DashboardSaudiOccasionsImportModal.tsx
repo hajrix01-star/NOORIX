@@ -14,6 +14,7 @@ import { dashboardKeys } from '../../../services/queryKeys/dashboard';
 import { unwrapApiDataOr } from '../../../services/core/apiHttp';
 import { Button, Modal, Spinner } from '../../../ui';
 import { cn } from '../../../ui/cn';
+import { shiftYmd } from '../../../utils/shiftYmd';
 
 type Step = 'pick' | 'scope';
 
@@ -37,6 +38,7 @@ export function DashboardSaudiOccasionsImportModal({
   const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>('pick');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [dayShifts, setDayShifts] = useState<Record<string, number>>({});
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +58,7 @@ export function DashboardSaudiOccasionsImportModal({
     if (!open) {
       setStep('pick');
       setSelected(new Set());
+      setDayShifts({});
       setError(null);
     }
   }, [open]);
@@ -71,9 +74,29 @@ export function DashboardSaudiOccasionsImportModal({
     [lang],
   );
 
-  const dateRangeLabel = useCallback((o: SaudiOccasionDto) => {
-    return o.fromDate === o.toDate ? o.fromDate : `${o.fromDate} — ${o.toDate}`;
-  }, []);
+  const getShift = (id: string) => dayShifts[id] ?? 0;
+
+  const dateRangeLabel = useCallback(
+    (o: SaudiOccasionDto) => {
+      const shift = dayShifts[o.id] ?? 0;
+      const from = shiftYmd(o.fromDate, shift);
+      const to = shiftYmd(o.toDate, shift);
+      return from === to ? from : `${from} — ${to}`;
+    },
+    [dayShifts],
+  );
+
+  const setShift = (id: string, value: number) => {
+    const clamped = Math.max(-3, Math.min(3, value));
+    setDayShifts((prev) => {
+      if (!clamped) {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      }
+      return { ...prev, [id]: clamped };
+    });
+  };
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -98,12 +121,18 @@ export function DashboardSaudiOccasionsImportModal({
     setApplying(true);
     setError(null);
     try {
+      const shiftsPayload: Record<string, number> = {};
+      for (const id of selected) {
+        const s = getShift(id);
+        if (s) shiftsPayload[id] = s;
+      }
       const res = await applyDashboardSpecialOccasions(companyId, {
         year,
         occasionIds: [...selected],
         scope,
         lang: lang === 'en' ? 'en' : 'ar',
         companyIds: scope === 'tenant' ? companies.map((c) => c.id) : undefined,
+        dayShifts: Object.keys(shiftsPayload).length ? shiftsPayload : undefined,
       });
       const data = unwrapApiDataOr(res, { companies: 0, monthsUpdated: 0, occasionCount: 0 });
       await queryClient.invalidateQueries({ queryKey: dashboardKeys.calendarRoot() });
@@ -185,13 +214,22 @@ export function DashboardSaudiOccasionsImportModal({
           <ul className="m-0 list-disc ps-5 text-noorix-muted">
             {[...selected].map((id) => {
               const o = occasions.find((x) => x.id === id);
-              return o ? <li key={id}>{labelFor(o)}</li> : null;
+              if (!o) return null;
+              const shift = getShift(id);
+              const dates = dateRangeLabel(o);
+              return (
+                <li key={id}>
+                  {labelFor(o)}
+                  {shift !== 0 ? ` (${dates})` : ''}
+                </li>
+              );
             })}
           </ul>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <p className="m-0 text-[12px] text-noorix-muted">{t('dashboardImportSaudiOccasionsHint')}</p>
+          <p className="m-0 text-[11px] text-noorix-muted">{t('dashboardImportSaudiShiftHint')}</p>
           {error && (
             <p className="m-0 text-[12px] font-medium text-noorix-red" role="alert">
               {error}
@@ -208,46 +246,86 @@ export function DashboardSaudiOccasionsImportModal({
             <ul className="m-0 flex flex-col gap-2 max-h-[min(52vh,360px)] overflow-y-auto">
               {occasions.map((o) => {
                 const checked = selected.has(o.id);
+                const shift = getShift(o.id);
                 return (
                   <li key={o.id}>
-                    <label
+                    <div
                       className={cn(
-                        'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
+                        'rounded-lg border p-3 transition-colors',
                         checked
                           ? 'border-noorix-blue bg-[color-mix(in_srgb,var(--color-nx-sales)_8%,transparent)]'
-                          : 'border-noorix-border bg-noorix-surface hover:bg-noorix-bg-muted/60',
+                          : 'border-noorix-border bg-noorix-surface',
                       )}
                     >
-                      <input
-                        type="checkbox"
-                        className="mt-0.5 shrink-0"
-                        checked={checked}
-                        onChange={() => toggle(o.id)}
-                      />
-                      <span
-                        className="mt-1 h-3 w-3 shrink-0 rounded-sm"
-                        style={{ background: o.color }}
-                        aria-hidden
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-[13px] font-semibold text-noorix-text">{labelFor(o)}</span>
-                          <span
-                            className={cn(
-                              'rounded px-1.5 py-px text-[9px] font-semibold',
-                              o.estimated
-                                ? 'bg-[color-mix(in_srgb,var(--color-nx-net-profit)_18%,transparent)] text-[var(--color-nx-net-profit)]'
-                                : 'bg-[color-mix(in_srgb,var(--color-nx-sales)_12%,transparent)] text-noorix-blue',
+                      <label className="flex cursor-pointer items-start gap-3">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5 shrink-0"
+                          checked={checked}
+                          onChange={() => toggle(o.id)}
+                        />
+                        <span
+                          className="mt-1 h-3 w-3 shrink-0 rounded-sm"
+                          style={{ background: o.color }}
+                          aria-hidden
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[13px] font-semibold text-noorix-text">{labelFor(o)}</span>
+                            <span
+                              className={cn(
+                                'rounded px-1.5 py-px text-[9px] font-semibold',
+                                o.estimated
+                                  ? 'bg-[color-mix(in_srgb,var(--color-nx-net-profit)_18%,transparent)] text-[var(--color-nx-net-profit)]'
+                                  : 'bg-[color-mix(in_srgb,var(--color-nx-sales)_12%,transparent)] text-noorix-blue',
+                              )}
+                            >
+                              {o.estimated ? t('dashboardImportSaudiEstimated') : t('dashboardImportSaudiOfficial')}
+                            </span>
+                          </span>
+                          <span className="block text-[11px] text-noorix-muted ltr" dir="ltr">
+                            {dateRangeLabel(o)}
+                            {shift !== 0 && (
+                              <span className="ms-1 text-noorix-blue">
+                                ({shift > 0 ? '+' : ''}
+                                {shift})
+                              </span>
                             )}
-                          >
-                            {o.estimated ? t('dashboardImportSaudiEstimated') : t('dashboardImportSaudiOfficial')}
                           </span>
                         </span>
-                        <span className="block text-[11px] text-noorix-muted ltr" dir="ltr">
-                          {dateRangeLabel(o)}
-                        </span>
-                      </span>
-                    </label>
+                      </label>
+                      {checked && o.estimated && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5 ps-7">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={shift === -1 ? 'primary' : 'ghost'}
+                            onClick={() => setShift(o.id, -1)}
+                            disabled={applying}
+                          >
+                            {t('dashboardImportSaudiShiftAdvance')}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={shift === 0 ? 'primary' : 'ghost'}
+                            onClick={() => setShift(o.id, 0)}
+                            disabled={applying}
+                          >
+                            {t('dashboardImportSaudiShiftReset')}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={shift === 1 ? 'primary' : 'ghost'}
+                            onClick={() => setShift(o.id, 1)}
+                            disabled={applying}
+                          >
+                            {t('dashboardImportSaudiShiftDelay')}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </li>
                 );
               })}

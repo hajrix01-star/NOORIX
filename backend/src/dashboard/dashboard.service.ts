@@ -9,6 +9,7 @@ import { SalesService } from '../sales/sales.service';
 import { DashboardInsightsService } from '../reporting/insights/dashboard-insights.service';
 import type { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';
 import { getSaudiOccasionsForYear } from './saudi-occasions.data';
+import { shiftGregorianYmd } from './saudi-occasions.umalqura';
 import {
   mergeSpecialDayPeriods,
   occasionsToSpecialDayPeriods,
@@ -288,9 +289,24 @@ export class DashboardService {
     scope: 'company' | 'tenant',
     lang: 'ar' | 'en',
     requestedCompanyIds?: string[],
+    dayShifts?: Record<string, number>,
   ): Promise<{ companies: number; monthsUpdated: number; occasionCount: number }> {
     const catalog = getSaudiOccasionsForYear(year);
-    const selected = catalog.filter((o) => occasionIds.includes(o.id));
+    const selected = catalog
+      .filter((o) => occasionIds.includes(o.id))
+      .map((o) => {
+        const raw = dayShifts?.[o.id];
+        const shift =
+          typeof raw === 'number' && Number.isFinite(raw)
+            ? Math.max(-3, Math.min(3, Math.trunc(raw)))
+            : 0;
+        if (!shift) return o;
+        return {
+          ...o,
+          fromDate: shiftGregorianYmd(o.fromDate, shift),
+          toDate: shiftGregorianYmd(o.toDate, shift),
+        };
+      });
     if (!selected.length) {
       return { companies: 0, monthsUpdated: 0, occasionCount: 0 };
     }

@@ -22,4 +22,8 @@ export class ApplySpecialOccasionsDto {
   @IsOptional()
   @IsIn(['ar', 'en'])
   lang?: 'ar' | 'en';
+
+  /** إزاحة بالأيام لكل مناسبة (مفتاح = id المناسبة، قيمة -3..3) */
+  @IsOptional()
+  dayShifts?: Record<string, number>;
 }

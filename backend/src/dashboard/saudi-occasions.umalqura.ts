@@ -61,11 +61,17 @@ function gregorianYmdInRiyadh(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function addGregorianDaysYmd(fromYmd: string, days: number): string {
+/** إزاحة تاريخ ميلادي (YMD) بعدد أيام — بتوقيت الرياض */
+export function shiftGregorianYmd(fromYmd: string, days: number): string {
+  if (!days) return fromYmd;
   const [y, m, d] = fromYmd.split('-').map((x) => parseInt(x, 10));
   const base = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
   const next = $.addDays(base, days);
   return gregorianYmdInRiyadh(next);
+}
+
+function addGregorianDaysYmd(fromYmd: string, days: number): string {
+  return shiftGregorianYmd(fromYmd, days);
 }
 
 function clipToGregorianYear(

@@ -1,8 +1,13 @@
-import { getSaudiOccasionsForYear, hijriToRiyadhYmd } from './saudi-occasions.umalqura';
+import { getSaudiOccasionsForYear, hijriToRiyadhYmd, shiftGregorianYmd } from './saudi-occasions.umalqura';
 
 describe('saudi-occasions.umalqura', () => {
   it('maps 1447 Arafat to 2026-05-26 (Riyadh)', () => {
     expect(hijriToRiyadhYmd(1447, 12, 9)).toBe('2026-05-26');
+  });
+
+  it('shifts gregorian YMD by days in Riyadh', () => {
+    expect(shiftGregorianYmd('2026-05-26', 1)).toBe('2026-05-27');
+    expect(shiftGregorianYmd('2026-05-26', -1)).toBe('2026-05-25');
   });
 
   it('builds 2026 occasions including estimated Eid al-Adha window', () => {
