@@ -57,10 +57,9 @@ export function DashboardOverviewWeeklySalesPanel({
     >
       <div className="flex flex-wrap items-center gap-3 border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
         <span className="h-8 w-1 shrink-0 rounded-full bg-noorix-blue" aria-hidden />
-        <div className="min-w-0 flex-1">
-          <h2 className="m-0 text-[13px] font-bold leading-snug text-noorix-text">{t('dashboardWeeklySalesTitle')}</h2>
-          <p className="m-0 mt-0.5 text-[10px] font-medium text-noorix-muted">{t('dashboardWeeklySalesFormulaNote')}</p>
-        </div>
+        <h2 className="m-0 min-w-0 flex-1 text-[13px] font-bold leading-snug text-noorix-text">
+          {t('dashboardWeeklySalesTitle')}
+        </h2>
       </div>
 
       <div className="overflow-x-auto p-2 sm:p-4">
