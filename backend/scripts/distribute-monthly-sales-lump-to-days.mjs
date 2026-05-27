@@ -28,6 +28,10 @@ import { PrismaClient } from '@prisma/client';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
+/** يطابق `SHIFT_NOTE_LABEL.all` في الواجهة — شفت يوم كامل */
+const SHIFT_NOTE_FULL_DAY = '[شفت: يوم كامل]';
+const SALES_SHIFT_FULL_DAY = 'all';
+
 function loadEnv() {
   const p = path.join(__dirname, '..', '.env');
   try {
@@ -349,7 +353,7 @@ async function main() {
         console.log('  ملخصات أيام أخرى (تُلغى أيضاً مع --force):', plan.otherSummaries.map((s) => s.summaryNumber).join(', '));
       }
       console.log('  مثال يوم 1:', plan.perDayTotal, 'SR | عملاء:', plan.days[0]?.customerCount ?? 0);
-      console.log('  أيام للإنشاء:', plan.days.length);
+      console.log('  أيام للإنشاء:', plan.days.length, '| شفت:', 'يوم كامل (all)');
     }
 
     console.log('\n========================================\n');
@@ -392,10 +396,10 @@ async function main() {
         console.log('  أُلغي:', s.summaryNumber);
       }
 
-      const noteBase = `موزّع من ملخص شهري ${plan.ym} (${plan.lumpSummaries.map((s) => s.summaryNumber).join(', ')})`;
+      const noteBase = `${SHIFT_NOTE_FULL_DAY}\nموزّع من ملخص شهري ${plan.ym} (${plan.lumpSummaries.map((s) => s.summaryNumber).join(', ')})`;
 
       for (const day of plan.days) {
-        const idempotencyKey = `distribute-lump-${company.id}-${plan.ym}-${day.transactionDate}`;
+        const idempotencyKey = `distribute-lump-${company.id}-${plan.ym}-${day.transactionDate}-allday`;
         await new Promise((resolve, reject) => {
           TenantContext.run(company.tenantId, actor.id, () => {
             core
@@ -405,7 +409,7 @@ async function main() {
                   transactionDate: day.transactionDate,
                   customerCount: day.customerCount,
                   cashOnHand: day.cashOnHand,
-                  shift: 'all',
+                  shift: SALES_SHIFT_FULL_DAY,
                   channels: day.channels,
                   notes: noteBase,
                   idempotencyKey,
