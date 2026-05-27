@@ -180,7 +180,7 @@ export function useItemsManageTab(companyId: any) {
           nameEn: '',
           categoryId: '',
           sectionsText: '',
-          productType: 'order',
+          productType: newProduct.productType || 'order',
           variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
         });
       },
@@ -348,9 +348,13 @@ export function useItemsManageTab(companyId: any) {
     }
   }
 
-  async function handleDownloadProductsImportTemplate() {
+  async function handleDownloadProductsImportTemplate(productType: 'order' | 'sale' = 'order') {
     try {
-      await exportOrdersProductsImportTemplate('order-products-import-template.xlsx');
+      const filename =
+        productType === 'sale'
+          ? 'sale-products-import-template.xlsx'
+          : 'order-products-import-template.xlsx';
+      await exportOrdersProductsImportTemplate(filename, productType);
       showToast(t('ordersImportTemplateReady'), 'success');
     } catch (e: any) {
       showToast(e?.message || t('exportFailed'), 'error');
@@ -366,9 +370,11 @@ export function useItemsManageTab(companyId: any) {
     }
   }
 
-  async function handleExportProducts() {
+  async function handleExportProducts(productType: 'order' | 'sale' = 'order') {
     try {
-      await exportOrderProductsWorkbook(products, 'order-products.xlsx');
+      const scoped = (products as any[]).filter((p) => (p.productType || 'order') === productType);
+      const filename = productType === 'sale' ? 'sale-products.xlsx' : 'order-products.xlsx';
+      await exportOrderProductsWorkbook(scoped, filename);
       showToast(t('exportSuccess'), 'success');
     } catch (e: any) {
       showToast(e?.message || t('exportFailed'), 'error');
@@ -384,15 +390,15 @@ export function useItemsManageTab(companyId: any) {
     }
   }
 
-  async function handleImportProducts(e: any) {
+  async function handleImportProducts(e: any, productType: 'order' | 'sale' = 'order') {
     const file = e?.target?.files?.[0];
     if (!file) return;
     try {
       const rawRows = await importFromExcel(file);
-      const filtered = filterOrderProductsTemplateRows(rawRows);
+      const filtered = filterOrderProductsTemplateRows(rawRows, productType);
       const catByName = new Map(categories.map((c: any) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]));
       const groups = groupOrderProductImportRows(filtered);
-      const toCreate = orderProductImportGroupsToPayload(groups, catByName);
+      const toCreate = orderProductImportGroupsToPayload(groups, catByName, productType);
       if (toCreate.length === 0) {
         showToast(t('ordersImportNoValidRows'), 'error');
         return;

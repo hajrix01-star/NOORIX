@@ -2,8 +2,9 @@
  * تصدير/استيراد قوالب Excel لأصناف الطلبات وفئاتها
  */
 import {
-  ORDER_PRODUCTS_TEMPLATE_MARKER_AR,
   ORDER_CATEGORIES_TEMPLATE_MARKER_AR,
+  getOrderProductsTemplateMarkerAr,
+  type OrderCatalogProductType,
 } from '../modules/Orders/constants/importTemplate';
 
 function setSheetColWidths(ws: any, widths: any) {
@@ -105,7 +106,14 @@ function rowHasOrderProductVariantData(r: any) {
   );
 }
 
-export function filterOrderProductsTemplateRows(rows: any, markerAr: any = ORDER_PRODUCTS_TEMPLATE_MARKER_AR) {
+export function filterOrderProductsTemplateRows(
+  rows: any,
+  productTypeOrMarker: OrderCatalogProductType | string = 'order',
+) {
+  const markerAr =
+    productTypeOrMarker === 'order' || productTypeOrMarker === 'sale'
+      ? getOrderProductsTemplateMarkerAr(productTypeOrMarker)
+      : productTypeOrMarker;
   const out = [];
   let afterMarker = false;
   for (const r of rows) {
@@ -172,7 +180,11 @@ export function groupOrderProductImportRows(rows: any) {
   return groups;
 }
 
-export function orderProductImportGroupsToPayload(groups: any, catByName: any) {
+export function orderProductImportGroupsToPayload(
+  groups: any,
+  catByName: any,
+  productType: OrderCatalogProductType = 'order',
+) {
   const out = [];
   for (const g of groups) {
     if (g.type === 'legacy') {
@@ -199,6 +211,7 @@ export function orderProductImportGroupsToPayload(groups: any, catByName: any) {
         nameAr,
         nameEn: String(r.nameEn ?? r.name_en ?? '').trim() || undefined,
         categoryId: categoryId || undefined,
+        productType,
         variants,
       });
       continue;
@@ -219,19 +232,26 @@ export function orderProductImportGroupsToPayload(groups: any, catByName: any) {
       nameAr: g.nameAr,
       nameEn: g.nameEn || undefined,
       categoryId: categoryId || undefined,
+      productType,
       variants: finalVariants,
     });
   }
   return out.filter((p: any) => p.nameAr);
 }
 
-export async function exportOrdersProductsImportTemplate(filename: any = 'order-products-import-template.xlsx') {
+export async function exportOrdersProductsImportTemplate(
+  filename: any = 'order-products-import-template.xlsx',
+  productType: OrderCatalogProductType = 'order',
+) {
   const XLSXmod = await import('xlsx-js-style');
   const XLSX = XLSXmod.default ?? XLSXmod;
+  const markerAr = getOrderProductsTemplateMarkerAr(productType);
+  const typeLabelAr = productType === 'sale' ? 'مبيعات' : 'طلبات';
+  const typeLabelEn = productType === 'sale' ? 'sales' : 'orders';
   const emptyRow = () => ['', '', '', '', '', '', ''];
   const aoa = [
     ORDER_PRODUCTS_EXCEL_HEADERS,
-    [ORDER_PRODUCTS_TEMPLATE_MARKER_AR, 'Example item (delete row)', 'ألبان', 'كبير', 'كرتون', 'piece', 18.5],
+    [markerAr, `Example ${typeLabelEn} item (delete row)`, 'ألبان', 'كبير', 'كرتون', 'piece', 18.5],
     ['', '', '', 'وسط', 'علبة', 'piece', 12],
     ...Array.from({ length: 12 }, emptyRow),
   ];
@@ -242,7 +262,8 @@ export async function exportOrdersProductsImportTemplate(filename: any = 'order-
 
   const instructions = [
     ['البند', 'الشرح'],
-    ['قالب استيراد الأصناف — Noorix', ''],
+    [`قالب استيراد أصناف ${typeLabelAr} — Noorix`, ''],
+    ['نوع الصنف', `يُستورد كأصناف ${typeLabelAr} (${productType}) من تبويبة «أصناف ${typeLabelAr}».`],
     ['الورقة الأولى «أصناف»', 'صف 1 = عناوين الأعمدة؛ كل قيمة في خلية منفصلة.'],
     ['', ''],
     ['ترتيب العمل', '1) أنشئ الفئات أولاً  2) احذف صفوف المثال (المحددة بعلامة)  3) استورد من التطبيق'],

@@ -115,6 +115,7 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
       {showImportModal && (
         <OrdersImportModal
           type="products"
+          productType={productTypeFilter}
           companyId={companyId}
           products={products}
           categories={categories}
@@ -183,20 +184,22 @@ export function ItemsManageTabProductsSection({ ctrl, productTypeFilter = 'order
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex items-center justify-between gap-2">
             <h4 className="m-0 text-[15px]">+ {t('ordersAddProduct')}</h4>
-            <OrdersImportHelpTrigger t={t} variant="products" />
+            <OrdersImportHelpTrigger t={t} variant="products" productType={productTypeFilter} />
           </div>
           <div className="overflow-x-auto">
             <div className="flex gap-2 w-max">
-              <Button size="sm" variant="primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
-                {presetBusy ? t('saving') : t('ordersPresetCatalogButton')}
-              </Button>
-              <Button size="sm" onClick={handleDownloadProductsImportTemplate}>
+              {productTypeFilter === 'order' && (
+                <Button size="sm" variant="primary" onClick={handleInsertPresetCatalog} disabled={presetBusy || !companyId}>
+                  {presetBusy ? t('saving') : t('ordersPresetCatalogButton')}
+                </Button>
+              )}
+              <Button size="sm" onClick={() => handleDownloadProductsImportTemplate(productTypeFilter)}>
                 {t('ordersDownloadImportTemplate')}
               </Button>
               <Button size="sm" onClick={() => setShowImportModal(true)} disabled={createProductsBatch.isPending}>
                 {t('import')}
               </Button>
-              <Button size="sm" onClick={handleExportProducts} disabled={products.length === 0}>
+              <Button size="sm" onClick={() => handleExportProducts(productTypeFilter)} disabled={filteredProducts.length === 0}>
                 {t('exportExcel')}
               </Button>
               <Button size="sm" onClick={() => setShowPrintModal(true)} disabled={products.length === 0}>

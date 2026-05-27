@@ -100,8 +100,12 @@ export default {
   ordersDownloadImportTemplate: { ar: 'تحميل قالب الاستيراد', en: 'Download import template' },
   ordersImportTemplateReady: { ar: 'تم تنزيل ملف القالب.', en: 'Template file downloaded.' },
   ordersImportTemplateHintProducts: {
-    ar: 'ملف .xlsx: صف عناوين ثم كل عمود في خلية (nameAr، nameEn، category، size، packaging، unit، lastPrice). تركيبات إضافية لنفس الصنف: صفوف لاحقة بـ nameAr فارغ. يُدعم أيضاً عمود variants كنص JSON للملفات القديمة.',
-    en: 'Headers row then one cell per column (nameAr, nameEn, category, size, packaging, unit, lastPrice). More variants: follow-up rows with empty nameAr. Legacy JSON variants column still supported.',
+    ar: 'قالب أصناف الطلبات: ملف .xlsx بصف عناوين ثم كل عمود في خلية (nameAr، nameEn، category، size، packaging، unit، lastPrice). يُستورد من تبويبة «أصناف الطلبات» فقط.',
+    en: 'Order products template: headers row then one cell per column (nameAr, nameEn, category, size, packaging, unit, lastPrice). Import from the «Order products» tab only.',
+  },
+  ordersImportTemplateHintSaleProducts: {
+    ar: 'قالب أصناف المبيعات: نفس الأعمدة لكن يُستورد من تبويبة «أصناف المبيعات» ويُسجَّل كل صنف كنوع مبيعات.',
+    en: 'Sales products template: same columns, imported from the «Sales products» tab; each row is saved as a sales product.',
   },
   ordersImportTemplateHintCategories: {
     ar: 'ورقة «فئات»: صف العناوين nameAr | nameEn ثم البيانات، كل قيمة في خلية منفصلة.',
@@ -111,7 +115,8 @@ export default {
     ar: 'الملف يحتوي ورقتين: الأولى للبيانات (يُستورد منها)، والثانية «تعليمات» للمرجع فقط.',
     en: 'The workbook has two sheets: the first is data (imported), the second «Instructions» is reference only.',
   },
-  ordersImportGuideProductsTitle: { ar: 'دليل استيراد الأصناف', en: 'Product import guide' },
+  ordersImportGuideProductsTitle: { ar: 'دليل استيراد أصناف الطلبات', en: 'Order products import guide' },
+  ordersImportGuideSaleProductsTitle: { ar: 'دليل استيراد أصناف المبيعات', en: 'Sales products import guide' },
   ordersImportGuideCategoriesTitle: { ar: 'دليل استيراد الفئات', en: 'Category import guide' },
   ordersImportProductsStep1: {
     ar: 'صدّر أو أضف الفئات أولاً، ثم اكتب في عمود category نفس الاسم بالعربي كما في النظام.',
@@ -252,7 +257,8 @@ export default {
   ordersSelectedCount: { ar: '{0} محدد', en: '{0} selected' },
 
   // ── استيراد احترافي ────────────────────────────────────────────
-  importProductsTitle: { ar: 'استيراد أصناف', en: 'Import Products' },
+  importProductsTitle: { ar: 'استيراد أصناف الطلبات', en: 'Import order products' },
+  importSaleProductsTitle: { ar: 'استيراد أصناف المبيعات', en: 'Import sales products' },
   importCategoriesTitle: { ar: 'استيراد فئات', en: 'Import Categories' },
   importStepUpload: { ar: 'رفع الملف', en: 'Upload' },
   importStepPreview: { ar: 'المعاينة', en: 'Preview' },

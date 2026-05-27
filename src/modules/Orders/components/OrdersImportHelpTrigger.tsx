@@ -2,7 +2,7 @@
 import { Button } from '../../../ui';
 
 /** علامة ⓘ: التمرير يعرض التعليمات؛ الضغط يثبتها حتى النقر خارجها */
-export function OrdersImportHelpTrigger({ t, variant }: any) {
+export function OrdersImportHelpTrigger({ t, variant, productType = 'order' }: any) {
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
   const wrapRef = useRef<any>(null);
@@ -20,7 +20,12 @@ export function OrdersImportHelpTrigger({ t, variant }: any) {
     };
   }, [pinned]);
 
-  const title = variant === 'products' ? t('ordersImportGuideProductsTitle') : t('ordersImportGuideCategoriesTitle');
+  const title =
+    variant === 'products'
+      ? productType === 'sale'
+        ? t('ordersImportGuideSaleProductsTitle')
+        : t('ordersImportGuideProductsTitle')
+      : t('ordersImportGuideCategoriesTitle');
 
   return (
     <div
@@ -67,7 +72,9 @@ export function OrdersImportHelpTrigger({ t, variant }: any) {
           {variant === 'products' ? (
             <>
               <p className="m-0 mb-[10px]">{t('ordersImportWorkbookNote')}</p>
-              <p className="m-0 mb-[10px]">{t('ordersImportTemplateHintProducts')}</p>
+              <p className="m-0 mb-[10px]">
+                {productType === 'sale' ? t('ordersImportTemplateHintSaleProducts') : t('ordersImportTemplateHintProducts')}
+              </p>
               <ul className="m-0 ps-[18px]">
                 <li className="mb-1.5">{t('ordersImportProductsStep1')}</li>
                 <li className="mb-1.5">{t('ordersImportProductsStep2')}</li>

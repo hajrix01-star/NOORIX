@@ -45,6 +45,8 @@ interface ImportResult {
 
 interface Props {
   type: 'products' | 'categories';
+  /** أصناف الطلبات أو المبيعات — يُطبَّق على الاستيراد والتكرار */
+  productType?: 'order' | 'sale';
   companyId: string;
   products: any[];
   categories: any[];
@@ -96,9 +98,22 @@ function StatusBadge({ status, label }: { status: RowStatus; label: string }) {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export function OrdersImportModal({ type, companyId, products, categories, createProductsBatch, createCategoriesBatch, onClose }: Props) {
+export function OrdersImportModal({
+  type,
+  productType = 'order',
+  companyId,
+  products,
+  categories,
+  createProductsBatch,
+  createCategoriesBatch,
+  onClose,
+}: Props) {
   const { t } = useTranslation();
   const isProducts = type === 'products';
+  const scopedProducts = useMemo(
+    () => (isProducts ? products.filter((p: any) => (p.productType || 'order') === productType) : products),
+    [isProducts, products, productType],
+  );
 
   const [phase, setPhase] = useState<Phase>('upload');
   const [rows, setRows] = useState<ParsedRow[]>([]);
@@ -155,17 +170,17 @@ export function OrdersImportModal({ type, companyId, products, categories, creat
         });
       } else {
         // ── Products ────────────────────────────────────────────────────────
-        const filtered = filterOrderProductsTemplateRows(rawRows);
+        const filtered = filterOrderProductsTemplateRows(rawRows, productType);
         const catByName = new Map(
           categories.map((c: any) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]),
         );
         catByNameRef.current = catByName;
 
         const existingNames = new Set(
-          products.map((p: any) => String(p.nameAr ?? '').trim().toLowerCase()),
+          scopedProducts.map((p: any) => String(p.nameAr ?? '').trim().toLowerCase()),
         );
         const groups = groupOrderProductImportRows(filtered);
-        const payloads = orderProductImportGroupsToPayload(groups, catByName);
+        const payloads = orderProductImportGroupsToPayload(groups, catByName, productType);
         const payloadMap = new Map(payloads.map((p: any) => [String(p.nameAr).trim().toLowerCase(), p]));
 
         // Collect unique category names that need to be created
@@ -226,7 +241,7 @@ export function OrdersImportModal({ type, companyId, products, categories, creat
       setParseError(e?.message || t('importFailed'));
       setPhase('upload');
     }
-  }, [isProducts, products, categories, t]);
+  }, [isProducts, productType, scopedProducts, categories, t]);
 
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -273,7 +288,8 @@ export function OrdersImportModal({ type, companyId, products, categories, creat
         payloads = toImport.map(r => {
           const catKey = String(r.category ?? '').trim().toLowerCase();
           const resolvedCatId = catKey ? catByNameRef.current.get(catKey) : undefined;
-          return resolvedCatId ? { ...r.payload, categoryId: resolvedCatId } : r.payload;
+          const base = { ...r.payload, productType };
+          return resolvedCatId ? { ...base, categoryId: resolvedCatId } : base;
         });
       } else {
         payloads = toImport.map(r => r.payload);
@@ -592,7 +608,11 @@ export function OrdersImportModal({ type, companyId, products, categories, creat
     return null;
   }
 
-  const title = isProducts ? t('importProductsTitle') : t('importCategoriesTitle');
+  const title = isProducts
+    ? productType === 'sale'
+      ? t('importSaleProductsTitle')
+      : t('importProductsTitle')
+    : t('importCategoriesTitle');
 
   return (
     <AdaptiveSheet
