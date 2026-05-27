@@ -229,7 +229,11 @@ export function useMyStaffOrders(companyId: any) {
 export function useCreateStaffOrderMutation(companyId: any) {
   return useApiMutation({
     mutationFn: createStaffOrder,
-    invalidateQueries: [orderKeys.staffMy(companyId), orderKeys.staffDigest(companyId)],
+    invalidateQueries: [
+      orderKeys.staffMy(companyId),
+      orderKeys.staffDigest(companyId),
+      ['salesReport', companyId],
+    ],
     showErrorToast: false,
   });
 }

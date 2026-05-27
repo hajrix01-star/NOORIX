@@ -7,7 +7,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
-import { formatSaudiDate } from '../../utils/saudiDate';
+import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
 import {
   useMyStaffOrders,
   useCreateStaffOrderMutation,
@@ -95,7 +95,9 @@ function StaffOrderPanel({
   const updateOrder = useUpdateStaffOrderMutation(companyId);
   const deleteOrder = useDeleteStaffOrderMutation(companyId);
 
+  const isSale = productType === 'sale';
   const [sectionName, setSectionName] = useState('');
+  const [saleDate, setSaleDate] = useState(() => getSaudiToday());
   const [notes, setNotes] = useState('');
   const [search, setSearch] = useState('');
   const [basket, setBasket] = useState<Map<string, ItemRow>>(new Map());
@@ -210,11 +212,17 @@ function StaffOrderPanel({
 
   function resetForm() {
     setSectionName('');
+    setSaleDate(getSaudiToday());
     setNotes('');
     setSearch('');
     setBasket(new Map());
     setEditingId(null);
     setEditingQtyId(null);
+  }
+
+  function openWhatsApp(text: string) {
+    if (!text?.trim()) return;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   }
 
   function loadForEdit(order: any) {
@@ -233,12 +241,15 @@ function StaffOrderPanel({
   const handleSubmit = useCallback(async () => {
     if (!sectionName) { showToast(t('staffOrderSectionRequired'), 'error'); return; }
     if (basket.size === 0) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
+    if (isSale && !saleDate) { showToast(t('staffSaleDateRequired'), 'error'); return; }
     setSubmitting(true);
     try {
       const payload = {
         companyId,
         sectionName,
         orderType: productType,
+        saleDate: isSale ? saleDate : undefined,
+        lang,
         notes: notes.trim() || undefined,
         items: basketItems.map((it) => ({
           productId: it.productId,
@@ -250,8 +261,15 @@ function StaffOrderPanel({
         await updateOrder.mutateAsync({ id: editingId, body: payload });
         showToast(t('staffOrderUpdated'), 'success');
       } else {
-        await createOrder.mutateAsync(payload);
-        showToast(t('staffOrderCreated'), 'success');
+        const res: any = await createOrder.mutateAsync(payload);
+        const data = res?.data ?? res;
+        if (isSale) {
+          showToast(t('staffSaleCreated'), 'success');
+          const waText = data?.whatsAppText;
+          if (waText) openWhatsApp(waText);
+        } else {
+          showToast(t('staffOrderCreated'), 'success');
+        }
       }
       resetForm();
     } catch (e: any) {
@@ -259,7 +277,7 @@ function StaffOrderPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [sectionName, notes, basket, basketItems, editingId, companyId, productType]);
+  }, [sectionName, saleDate, notes, basket, basketItems, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder]);
 
   const handleDelete = useCallback(async (order: any) => {
     if (!window.confirm(t('staffOrderDeleteConfirm'))) return;
@@ -342,7 +360,9 @@ function StaffOrderPanel({
               <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
             </svg>
-            <span className="text-[14px] font-bold">{t('staffOrderBasket')} ({basket.size})</span>
+            <span className="text-[14px] font-bold">
+              {isSale ? t('staffSaleBasket') : t('staffOrderBasket')} ({basket.size})
+            </span>
           </div>
           <div className="divide-y divide-noorix-border">
             {basketItems.map((row) => {
@@ -386,20 +406,39 @@ function StaffOrderPanel({
               );
             })}
           </div>
-          <div className="px-4 pb-3 pt-2">
+          <div className="px-4 pb-3 pt-2 flex flex-col gap-3">
+            {isSale && (
+              <Input
+                type="date"
+                label={t('staffSaleDate')}
+                value={saleDate}
+                onChange={(e: any) => setSaleDate(e.target.value)}
+              />
+            )}
             <Input label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={t('optional')} />
           </div>
           <div className="px-4 pb-4 grid grid-cols-2 gap-2">
             <Button variant="ghost" size="md" onClick={resetForm} disabled={submitting}>{t('cancel')}</Button>
-            <Button variant="primary" size="md" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? t('saving') : editingId ? t('staffOrderUpdate') : t('staffOrderSubmit')}
+            <Button
+              variant={isSale ? 'success' : 'primary'}
+              size="md"
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting
+                ? t('saving')
+                : editingId
+                  ? t('staffOrderUpdate')
+                  : isSale
+                    ? t('staffSaleSubmit')
+                    : t('staffOrderSubmit')}
             </Button>
           </div>
         </div>
       )}
 
-      {/* ── طلباتي المعلّقة ── */}
-      {pendingOrders.length > 0 && (
+      {/* ── طلباتي المعلّقة (طلبات الأقسام فقط — المبيعات تُرسل مباشرة) ── */}
+      {!isSale && pendingOrders.length > 0 && (
         <div className="noorix-surface-card overflow-hidden">
           <div className="px-4 py-3 border-b border-noorix-border flex items-center justify-between">
             <span className="text-[13px] font-bold">{t('staffOrderMyPending')}</span>
@@ -442,7 +481,9 @@ function StaffOrderPanel({
       {sentOrders.length > 0 && (
         <div className="noorix-surface-card overflow-hidden">
           <div className="px-4 py-3 border-b border-noorix-border flex items-center justify-between">
-            <span className="text-[13px] font-bold text-noorix-muted">{t('staffOrderMySent')}</span>
+            <span className="text-[13px] font-bold text-noorix-muted">
+              {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
+            </span>
             <Badge color="green" size="sm">{sentOrders.length}</Badge>
           </div>
           <div className="divide-y divide-noorix-border">
@@ -450,7 +491,9 @@ function StaffOrderPanel({
               <div key={o.id} className="px-4 py-3 flex items-center justify-between gap-2">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[13px] font-semibold">{o.sectionName}</span>
-                  <span className="text-[11px] text-noorix-muted">{formatSaudiDate(o.createdAt)}</span>
+                  <span className="text-[11px] text-noorix-muted">
+                    {o.saleDate ? formatSaudiDate(o.saleDate) : formatSaudiDate(o.createdAt)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[12px] text-noorix-muted">{(o.items || []).length} {t('staffOrderItemsCount')}</span>
@@ -464,7 +507,7 @@ function StaffOrderPanel({
 
       {!isLoading && myTypedOrders.length === 0 && basket.size === 0 && (
         <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
-          {t('staffOrderNoOrders')}
+          {isSale ? t('staffSaleNoRecords') : t('staffOrderNoOrders')}
         </div>
       )}
 

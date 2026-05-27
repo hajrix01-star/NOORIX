@@ -1290,6 +1290,7 @@ model StaffOrder {
   sectionName String    @map("section_name")   // مطبخ | بار | كاشير | ...
   orderType   String    @default("order") @map("order_type")  // order | sale
   status      String    @default("pending")     // pending | sent
+  saleDate    DateTime? @map("sale_date") @db.Date  // يوم المبيعات (لـ orderType=sale)
   notes       String?
   sentAt      DateTime? @map("sent_at")
   createdAt   DateTime  @default(now()) @map("created_at")

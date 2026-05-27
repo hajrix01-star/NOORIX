@@ -13,8 +13,22 @@ export interface CreateStaffOrderDto {
   companyId: string;
   sectionName: string;
   orderType?: string;  // 'order' | 'sale'
+  /** YYYY-MM-DD — يوم المبيعات (تبويبة المبيعات) */
+  saleDate?: string;
   notes?: string;
   items: StaffOrderItemInput[];
+  lang?: 'ar' | 'en';
+}
+
+function parseSaleDateYmd(ymd: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd ?? '').trim());
+  if (!m) throw new BadRequestException('تاريخ المبيعات غير صالح');
+  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+}
+
+function staffOrderDayKey(o: { saleDate?: Date | null; createdAt: Date }): string {
+  if (o.saleDate) return o.saleDate.toISOString().slice(0, 10);
+  return o.createdAt.toISOString().slice(0, 10);
 }
 
 @Injectable()
@@ -26,21 +40,30 @@ export class OrdersStaffService {
     if (!dto.items?.length) throw new BadRequestException('يجب إضافة صنف واحد على الأقل');
     if (!dto.sectionName?.trim()) throw new BadRequestException('اسم القسم مطلوب');
 
+    const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
+    const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
+
     const qty = dto.items.map((it) => {
       const q = parseFloat(it.quantity);
       if (!it.productId || isNaN(q) || q <= 0) throw new BadRequestException('بيانات الصنف غير صحيحة');
       return q;
     });
 
-    return this.prisma.staffOrder.create({
+    const isSale = orderType === 'sale';
+    const saleDate = isSale ? parseSaleDateYmd(dto.saleDate || new Date().toISOString().slice(0, 10)) : null;
+    const sentAt = isSale ? new Date() : null;
+
+    const order = await this.prisma.staffOrder.create({
       data: {
         tenantId,
         companyId: dto.companyId,
         userId,
         sectionName: dto.sectionName.trim(),
-        orderType: dto.orderType || 'order',
+        orderType,
+        saleDate,
         notes: dto.notes?.trim() || null,
-        status: 'pending',
+        status: isSale ? 'sent' : 'pending',
+        sentAt,
         items: {
           create: dto.items.map((it, i) => ({
             productId: it.productId,
@@ -50,8 +73,16 @@ export class OrdersStaffService {
           })),
         },
       },
-      include: { items: { include: { product: true } } },
+      include: {
+        items: { include: { product: true } },
+        user: { select: { nameAr: true, nameEn: true } },
+      },
     });
+
+    if (!isSale) return order;
+
+    const whatsAppText = this.buildSalesWhatsAppText(order, saleDate!, lang);
+    return { ...order, whatsAppText };
   }
 
   async getMyStaffOrders(companyId: string, userId: string) {
@@ -74,6 +105,7 @@ export class OrdersStaffService {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
     if (!order) throw new NotFoundException('الطلب غير موجود');
     if (order.userId !== userId) throw new ForbiddenException('لا يمكن تعديل طلب موظف آخر');
+    if (order.orderType === 'sale') throw new BadRequestException('لا يمكن تعديل مبيعات مُرسلة');
     if (order.status !== 'pending') throw new BadRequestException('لا يمكن تعديل طلب تم إرساله');
 
     const data: any = {};
@@ -103,6 +135,7 @@ export class OrdersStaffService {
     const order = await this.prisma.staffOrder.findFirst({ where: { id, companyId } });
     if (!order) throw new NotFoundException('الطلب غير موجود');
     if (order.userId !== userId) throw new ForbiddenException('لا يمكن حذف طلب موظف آخر');
+    if (order.orderType === 'sale') throw new BadRequestException('لا يمكن حذف مبيعات مُرسلة');
     if (order.status !== 'pending') throw new BadRequestException('لا يمكن حذف طلب تم إرساله');
     await this.prisma.staffOrder.delete({ where: { id } });
     return { deleted: true };
@@ -114,7 +147,7 @@ export class OrdersStaffService {
     since.setDate(since.getDate() - days);
 
     const orders = await this.prisma.staffOrder.findMany({
-      where: { companyId, status: 'sent', sentAt: { gte: since } },
+      where: { companyId, orderType: 'order', status: 'sent', sentAt: { gte: since } },
       orderBy: [{ sentAt: 'desc' }, { sectionName: 'asc' }],
       include: {
         items: { include: { product: true } },
@@ -165,7 +198,7 @@ export class OrdersStaffService {
   /** المدير/الكاشير: يجلب الطلبات المعلّقة مجمّعة بالقسم */
   async getDigest(companyId: string) {
     const orders = await this.prisma.staffOrder.findMany({
-      where: { companyId, status: 'pending' },
+      where: { companyId, orderType: 'order', status: 'pending' },
       orderBy: [{ sectionName: 'asc' }, { createdAt: 'asc' }],
       include: {
         items: { include: { product: true } },
@@ -190,6 +223,33 @@ export class OrdersStaffService {
       totalOrders: orders.length,
       pendingCount: orders.length,
     };
+  }
+
+  /** نص واتساب لمبيعات قسم — يُرسل مباشرة من الموظف دون الكاشير */
+  private buildSalesWhatsAppText(order: any, saleDate: Date, lang: 'ar' | 'en' = 'ar'): string {
+    const d = saleDate.toISOString().slice(0, 10).replace(/-/g, '/');
+    const section = order.sectionName || '—';
+    const header = lang === 'en' ? `Sales — ${section}` : `مبيعات — ${section}`;
+    const dateLine = lang === 'en' ? `Date: ${d}` : `تاريخ المبيعات: ${d}`;
+    const lines: string[] = [header, dateLine, '──────────────'];
+    let totalQty = 0;
+    for (const it of order.items || []) {
+      const name = lang === 'en'
+        ? (it.product?.nameEn || it.product?.nameAr || '—')
+        : (it.product?.nameAr || it.product?.nameEn || '—');
+      const q = Number(it.quantity);
+      totalQty += q;
+      const unit = it.unit ? ` ${it.unit}` : '';
+      lines.push(`• ${name}: ${q}${unit}`);
+    }
+    lines.push('──────────────');
+    lines.push(lang === 'en' ? `Total qty: ${totalQty}` : `إجمالي الكميات: ${totalQty}`);
+    if (order.notes?.trim()) {
+      lines.push(lang === 'en' ? `Notes: ${order.notes.trim()}` : `ملاحظات: ${order.notes.trim()}`);
+    }
+    const by = order.user?.nameAr || order.user?.nameEn;
+    if (by) lines.push(lang === 'en' ? `By: ${by}` : `بواسطة: ${by}`);
+    return lines.join('\n').trim();
   }
 
   /** بناء نص واتساب من الطلبات المعلّقة */
@@ -224,7 +284,7 @@ export class OrdersStaffService {
 
   /** الكاشير: يرسل الملخص — يعلّم الطلبات كـ «تم الإرسال» ويعيد نص واتساب */
   async sendDigest(companyId: string, orderIds?: string[], lang: 'ar' | 'en' = 'ar') {
-    const where: any = { companyId, status: 'pending' };
+    const where: any = { companyId, orderType: 'order', status: 'pending' };
     if (orderIds?.length) where.id = { in: orderIds };
 
     const orders = await this.prisma.staffOrder.findMany({
@@ -261,8 +321,15 @@ export class OrdersStaffService {
     since.setDate(since.getDate() - days);
 
     const orders = await this.prisma.staffOrder.findMany({
-      where: { companyId, orderType: 'sale', createdAt: { gte: since } },
-      orderBy: { createdAt: 'desc' },
+      where: {
+        companyId,
+        orderType: 'sale',
+        OR: [
+          { saleDate: { gte: since } },
+          { saleDate: null, createdAt: { gte: since } },
+        ],
+      },
+      orderBy: [{ saleDate: 'desc' }, { createdAt: 'desc' }],
       include: {
         items: { include: { product: { include: { category: true } } } },
         user: { select: { id: true, nameAr: true, nameEn: true } },
@@ -278,7 +345,7 @@ export class OrdersStaffService {
 
     for (const o of orders as any[]) {
       totalOrders++;
-      const day = o.createdAt.toISOString().slice(0, 10);
+      const day = staffOrderDayKey(o);
 
       // بالقسم
       if (!bySection[o.sectionName]) bySection[o.sectionName] = { sectionName: o.sectionName, qty: 0, ordersCount: 0 };
