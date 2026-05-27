@@ -7,11 +7,15 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import {
   applyDashboardSpecialOccasions,
-  getDashboardSaudiOccasions,
   type SaudiOccasionDto,
 } from '../../../services/domains/apiEndpoints/dashboard-calendar';
 import { dashboardKeys } from '../../../services/queryKeys/dashboard';
 import { unwrapApiDataOr } from '../../../services/core/apiHttp';
+import {
+  applySaudiOccasionsViaCalendar,
+  fetchSaudiOccasionsCatalog,
+  isSaudiOccasionsApiMissing,
+} from '../../../utils/saudiOccasionsApply';
 import { Button, Modal, Spinner } from '../../../ui';
 import { cn } from '../../../ui/cn';
 import { shiftYmd } from '../../../utils/shiftYmd';
@@ -44,10 +48,7 @@ export function DashboardSaudiOccasionsImportModal({
 
   const occasionsQuery = useQuery({
     queryKey: ['dashboard-saudi-occasions', companyId, year],
-    queryFn: async () => {
-      const res = await getDashboardSaudiOccasions(year, companyId);
-      return unwrapApiDataOr(res, [] as SaudiOccasionDto[]);
-    },
+    queryFn: () => fetchSaudiOccasionsCatalog(year, companyId) as Promise<SaudiOccasionDto[]>,
     enabled: open && !!year && !!companyId,
     staleTime: 24 * 60 * 60 * 1000,
     retry: 1,
@@ -127,15 +128,30 @@ export function DashboardSaudiOccasionsImportModal({
         const s = getShift(id);
         if (s) shiftsPayload[id] = s;
       }
+      const langCode = lang === 'en' ? 'en' : 'ar';
+      const companyIds =
+        scope === 'tenant' ? companies.map((c) => c.id) : [companyId];
+
       const res = await applyDashboardSpecialOccasions(companyId, {
         year,
         occasionIds: [...selected],
         scope,
-        lang: lang === 'en' ? 'en' : 'ar',
-        companyIds: scope === 'tenant' ? companies.map((c) => c.id) : undefined,
+        lang: langCode,
+        companyIds: scope === 'tenant' ? companyIds : undefined,
         dayShifts: Object.keys(shiftsPayload).length ? shiftsPayload : undefined,
       });
-      const data = unwrapApiDataOr(res, { companies: 0, monthsUpdated: 0, occasionCount: 0 });
+
+      const data = res.success
+        ? unwrapApiDataOr(res, { companies: 0, monthsUpdated: 0, occasionCount: 0 })
+        : isSaudiOccasionsApiMissing(res)
+          ? await applySaudiOccasionsViaCalendar({
+              companyIds,
+              year,
+              occasionIds: [...selected],
+              lang: langCode,
+              dayShifts: Object.keys(shiftsPayload).length ? shiftsPayload : undefined,
+            })
+          : unwrapApiDataOr(res, { companies: 0, monthsUpdated: 0, occasionCount: 0 });
       await queryClient.invalidateQueries({ queryKey: dashboardKeys.calendarRoot() });
       onApplied?.();
       const monthsHint =
