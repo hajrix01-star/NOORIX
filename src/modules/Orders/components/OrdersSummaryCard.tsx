@@ -1,4 +1,4 @@
-﻿/** Large summary card: customer → products → line → totals */
+﻿/** ملخص الطلبات — كرت واحد: عهدة المندوب + نقد المحل */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { FmtNum } from '../../../ui';
@@ -10,34 +10,59 @@ export type OrdersSummaryMetrics = {
   delegateBalance?: number;
 };
 
-function SectionBlock({ title, received, spent, result, receivedLabel, spentLabel, resultLabel, accentColor }: any) {
+function SummaryPane({
+  title,
+  received,
+  spent,
+  result,
+  receivedLabel,
+  spentLabel,
+  resultLabel,
+  accentColor,
+}: {
+  title: string;
+  received: number;
+  spent: number;
+  result: number;
+  receivedLabel: string;
+  spentLabel: string;
+  resultLabel: string;
+  accentColor: string;
+}) {
   const resNum = Number(result ?? 0);
   return (
-    <div className="nx-orders-summary-section flex min-w-0 flex-col overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/50">
-      <div className="h-1 rounded-t-lg" style={{ background: accentColor || 'var(--color-nx-sales)' }} aria-hidden />
-      <div className="pt-[14px] px-4 pb-3">
-        <div className="text-[11px] font-bold text-noorix-muted mb-3 uppercase tracking-[0.04em]">
+    <div className="nx-orders-summary-pane flex min-w-0 flex-col px-3 py-3 sm:px-4 sm:py-3.5">
+      <div className="mb-3 flex items-center gap-2">
+        <span
+          className="h-4 w-1 shrink-0 rounded-full"
+          style={{ background: accentColor || 'var(--color-nx-sales)' }}
+          aria-hidden
+        />
+        <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-noorix-muted">
           {title}
         </div>
-        <div className="grid gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-noorix-muted">{receivedLabel}</span>
-            <FmtNum n={Number(received ?? 0)} className="nx-font-numbers font-bold text-[13px] text-noorix-green" />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
-            <FmtNum n={Number(spent ?? 0)} className="nx-font-numbers font-bold text-[13px] text-noorix-red" />
-          </div>
+      </div>
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-noorix-muted">{receivedLabel}</span>
+          <FmtNum n={Number(received ?? 0)} className="nx-font-numbers text-[13px] font-bold text-noorix-green" />
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-noorix-muted">{spentLabel}</span>
+          <FmtNum n={Number(spent ?? 0)} className="nx-font-numbers text-[13px] font-bold text-noorix-red" />
         </div>
       </div>
-      <div className="border-t border-noorix-border mx-4" />
-      <div className="text-center py-3 px-4">
-        <div className="text-[10px] text-noorix-muted mb-1 uppercase tracking-[0.04em]">
+      <div className="mt-3 border-t border-noorix-border pt-3 text-center">
+        <div className="mb-1 text-[10px] uppercase tracking-[0.04em] text-noorix-muted">
           {resultLabel}
         </div>
-        <div dir="ltr" className="font-extrabold nx-font-numbers text-[22px] tracking-[-0.5px]" style={{
-          color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
-        }}>
+        <div
+          dir="ltr"
+          className="nx-font-numbers text-[22px] font-extrabold tracking-[-0.5px]"
+          style={{
+            color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
+          }}
+        >
           {resNum < 0 ? '-' : ''}
           <FmtNum n={Math.abs(resNum)} />
           <span className="nx-sar">SR</span>
@@ -78,35 +103,33 @@ export function OrdersSummaryCard({
         className="h-1 bg-gradient-to-r from-noorix-blue to-noorix-green"
         aria-hidden
       />
-      <div className="p-3 sm:p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <div className="text-[12px] font-bold text-noorix-muted tracking-[0.04em] sm:text-[13px]">
-            {t('ordersSummaryCardTitle')}
-          </div>
-          <span className="nx-sar text-[11px]">SR</span>
+      <div className="flex items-center justify-between gap-2 border-b border-noorix-border px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="text-[12px] font-bold tracking-[0.04em] text-noorix-muted sm:text-[13px]">
+          {t('ordersSummaryCardTitle')}
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
-          <SectionBlock
-            title={t('ordersDelegateSection')}
-            received={pettyCash}
-            spent={delegatePurchases}
-            result={delegateBalance}
-            receivedLabel={t('ordersReceived')}
-            spentLabel={t('ordersDelegatePurchases')}
-            resultLabel={t('ordersDelegateBalance')}
-            accentColor="var(--color-nx-sales)"
-          />
-          <SectionBlock
-            title={t('ordersLocalCashSection')}
-            received={cashSales}
-            spent={localPurchases}
-            result={cashRemaining}
-            receivedLabel={t('ordersCashSales')}
-            spentLabel={t('ordersLocalPurchases')}
-            resultLabel={t('ordersCashRemaining')}
-            accentColor="var(--color-nx-profit)"
-          />
-        </div>
+        <span className="nx-sar text-[11px]">SR</span>
+      </div>
+      <div className="grid grid-cols-1 divide-y divide-noorix-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+        <SummaryPane
+          title={t('ordersDelegateSection')}
+          received={pettyCash}
+          spent={delegatePurchases}
+          result={delegateBalance}
+          receivedLabel={t('ordersReceived')}
+          spentLabel={t('ordersDelegatePurchases')}
+          resultLabel={t('ordersDelegateBalance')}
+          accentColor="var(--color-nx-sales)"
+        />
+        <SummaryPane
+          title={t('ordersLocalCashSection')}
+          received={cashSales}
+          spent={localPurchases}
+          result={cashRemaining}
+          receivedLabel={t('ordersCashSales')}
+          spentLabel={t('ordersLocalPurchases')}
+          resultLabel={t('ordersCashRemaining')}
+          accentColor="var(--color-nx-profit)"
+        />
       </div>
     </div>
   );
