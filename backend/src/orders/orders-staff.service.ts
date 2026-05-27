@@ -239,8 +239,7 @@ export class OrdersStaffService {
         : (it.product?.nameAr || it.product?.nameEn || '—');
       const q = Number(it.quantity);
       totalQty += q;
-      const unit = it.unit ? ` ${it.unit}` : '';
-      lines.push(`• ${name}: ${q}${unit}`);
+      lines.push(`• ${name}: ${q}`);
     }
     lines.push('──────────────');
     lines.push(lang === 'en' ? `Total qty: ${totalQty}` : `إجمالي الكميات: ${totalQty}`);
