@@ -8,6 +8,13 @@ import { ReportsService } from '../reports/reports.service';
 import { SalesService } from '../sales/sales.service';
 import { DashboardInsightsService } from '../reporting/insights/dashboard-insights.service';
 import type { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';
+import { getSaudiOccasionsForYear } from './saudi-occasions.data';
+import {
+  mergeSpecialDayPeriods,
+  occasionsToSpecialDayPeriods,
+  type SpecialDayPeriod,
+} from './dashboard-special-days.util';
+import { isSuperAdmin } from '../auth/constants/permissions';
 
 const EMPTY_SALES_PACK = { yearSummaries: [], dailySummaries: [], monthSummaries: [] } as const;
 
@@ -234,6 +241,98 @@ export class DashboardService {
       update: { specialDays: specialDays as any },
     });
     return this.getCalendarData(companyId, tenantId, year, month);
+  }
+
+  getSaudiOccasions(year: number) {
+    return getSaudiOccasionsForYear(year);
+  }
+
+  private async resolveAllowedCompanyIds(
+    user: JwtUser,
+    tenantId: string,
+    sourceCompanyId: string,
+    scope: 'company' | 'tenant',
+    requestedCompanyIds?: string[],
+  ): Promise<string[]> {
+    if (scope === 'company') return [sourceCompanyId];
+
+    const role = (user.role || '').toLowerCase();
+    if (isSuperAdmin(role)) {
+      const all = await this.prisma.company.findMany({
+        where: { tenantId },
+        select: { id: true },
+      });
+      return all.map((c) => c.id);
+    }
+
+    const ids = (requestedCompanyIds?.length ? requestedCompanyIds : user.companyIds) ?? [];
+    const unique = [...new Set(ids.filter(Boolean))];
+    if (!unique.length) return [sourceCompanyId];
+
+    const rows = await this.prisma.company.findMany({
+      where: { tenantId, id: { in: unique } },
+      select: { id: true },
+    });
+    return rows.map((r) => r.id);
+  }
+
+  /**
+   * يدمج مناسبات سعودية مختارة في specialDays لكل شهر متأثر.
+   */
+  async applySaudiSpecialOccasions(
+    user: JwtUser,
+    tenantId: string,
+    sourceCompanyId: string,
+    year: number,
+    occasionIds: string[],
+    scope: 'company' | 'tenant',
+    lang: 'ar' | 'en',
+    requestedCompanyIds?: string[],
+  ): Promise<{ companies: number; monthsUpdated: number; occasionCount: number }> {
+    const catalog = getSaudiOccasionsForYear(year);
+    const selected = catalog.filter((o) => occasionIds.includes(o.id));
+    if (!selected.length) {
+      return { companies: 0, monthsUpdated: 0, occasionCount: 0 };
+    }
+
+    const companyIds = await this.resolveAllowedCompanyIds(
+      user,
+      tenantId,
+      sourceCompanyId,
+      scope,
+      requestedCompanyIds,
+    );
+
+    const byMonth = occasionsToSpecialDayPeriods(year, selected, lang);
+    let monthsUpdated = 0;
+
+    for (const companyId of companyIds) {
+      for (const [month, periods] of byMonth.entries()) {
+        const row = await this.prisma.dashboardCalendarData.findUnique({
+          where: { companyId_year_month: { companyId, year, month } },
+        });
+        const existing = ((row?.specialDays as SpecialDayPeriod[]) ?? []) as SpecialDayPeriod[];
+        const merged = mergeSpecialDayPeriods(existing, periods);
+        await this.prisma.dashboardCalendarData.upsert({
+          where: { companyId_year_month: { companyId, year, month } },
+          create: {
+            companyId,
+            tenantId,
+            year,
+            month,
+            specialDays: merged as any,
+          },
+          update: { specialDays: merged as any },
+        });
+        monthsUpdated += 1;
+      }
+    }
+
+    return {
+      companies: companyIds.length,
+      monthsUpdated,
+      occasionCount: selected.length,
+    };
   }
 
   async upsertCalendarDayNotes(

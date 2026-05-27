@@ -1,5 +1,5 @@
 import type { ApiParsedResult } from '../../../types/api';
-import { apiGet, apiPut, apiDelete } from '../../core/apiHttp';
+import { apiGet, apiPost, apiPut, apiDelete } from '../../core/apiHttp';
 
 export interface DashboardCalendarDataResult {
   targets: { overall: number | null; byDow: Record<string, number> };
@@ -77,6 +77,38 @@ export async function putDashboardCalendarSpecialDays(
 /**
  * PUT /api/v1/dashboard/calendar/day-notes
  */
+export type SaudiOccasionDto = {
+  id: string;
+  kind: string;
+  nameAr: string;
+  nameEn: string;
+  fromDate: string;
+  toDate: string;
+  color: string;
+};
+
+export async function getDashboardSaudiOccasions(
+  year: number,
+): Promise<ApiParsedResult<SaudiOccasionDto[]>> {
+  return apiGet('/api/v1/dashboard/calendar/saudi-occasions', { year: String(year) });
+}
+
+export async function applyDashboardSpecialOccasions(
+  companyId: string,
+  payload: {
+    year: number;
+    occasionIds: string[];
+    scope: 'company' | 'tenant';
+    companyIds?: string[];
+    lang?: 'ar' | 'en';
+  },
+): Promise<ApiParsedResult<{ companies: number; monthsUpdated: number; occasionCount: number }>> {
+  return apiPost(
+    `/api/v1/dashboard/calendar/special-days/apply-occasions?companyId=${encodeURIComponent(companyId)}`,
+    payload,
+  );
+}
+
 export async function putDashboardCalendarDayNotes(
   companyId: string,
   year: number,
