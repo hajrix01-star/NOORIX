@@ -1,0 +1,76 @@
+# توزيع مبيعات ARZ الشهرية (آخر يوم) على أيام الشهر — يُشغَّل على VPS (self-hosted)
+name: Distribute ARZ monthly sales to days
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run_only:
+        description: 'معاينة فقط (لا تغيير)'
+        type: boolean
+        default: false
+      from_month:
+        description: 'من شهر YYYY-MM'
+        required: true
+        default: '2025-09'
+      to_month:
+        description: 'إلى شهر YYYY-MM'
+        required: true
+        default: '2026-02'
+
+concurrency:
+  group: distribute-arz-sales
+  cancel-in-progress: true
+
+jobs:
+  distribute:
+    runs-on: self-hosted
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install distribute script on production backend
+        run: |
+          PROD=/var/www/noorix/backend
+          test -f "$PROD/.env" || (echo "Missing $PROD/.env" && exit 1)
+          cp "${{ github.workspace }}/backend/scripts/distribute-monthly-sales-lump-to-days.mjs" \
+            "$PROD/scripts/distribute-monthly-sales-lump-to-days.mjs"
+
+      - name: Ensure backend dist is built
+        working-directory: /var/www/noorix/backend
+        run: |
+          if [ ! -f dist/app.module.js ]; then
+            npm run build
+          fi
+
+      - name: Dry-run — ARZ only
+        id: dryrun
+        working-directory: /var/www/noorix/backend
+        run: |
+          node scripts/distribute-monthly-sales-lump-to-days.mjs \
+            --dry-run \
+            --company-name=ARZ \
+            --from=${{ inputs.from_month }} \
+            --to=${{ inputs.to_month }} \
+            | tee /tmp/arz-distribute-dryrun.log
+
+      - name: Execute — ARZ (يوم كامل لكل يوم)
+        if: inputs.dry_run_only != true
+        working-directory: /var/www/noorix/backend
+        run: |
+          node scripts/distribute-monthly-sales-lump-to-days.mjs \
+            --execute \
+            --i-confirm \
+            --company-name=ARZ \
+            --from=${{ inputs.from_month }} \
+            --to=${{ inputs.to_month }} \
+            | tee /tmp/arz-distribute-execute.log
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arz-distribute-logs
+          path: /tmp/arz-distribute-*.log
+          if-no-files-found: ignore
