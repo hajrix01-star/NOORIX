@@ -178,10 +178,6 @@ export default {
   dashboardWeeklySalesDelta: { ar: 'التغير ٪', en: 'Change %' },
 
   dashboardYearlyDailyAvgTitle: { ar: 'المعدل اليومي الشهري', en: 'Monthly daily average' },
-  dashboardYearlyDailyAvgFormulaNote: {
-    ar: 'من يناير إلى الشهر الحالي؛ المتوسط = مجموع الإيراد ÷ أيام الإيراد &gt; 0. شهر المقارنة السابق يُقصّ إلى نفس يوم الشهر الجاري (MTD).',
-    en: 'Jan through current month; avg = revenue sum ÷ days with revenue &gt; 0. Prior month aligned to the same calendar day (MTD).',
-  },
   dashboardYearlyDailyAvgMonthCol: { ar: 'الشهر', en: 'Month' },
   dashboardYearlyDailyAvgSalesCol: { ar: 'المبيعات', en: 'Sales' },
   dashboardYearlyDailyAvgAvgColShort: { ar: 'معدل', en: 'Avg' },

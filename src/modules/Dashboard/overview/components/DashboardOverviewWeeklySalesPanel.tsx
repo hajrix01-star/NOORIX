@@ -6,6 +6,10 @@ import { useTranslation } from '../../../../i18n/useTranslation';
 import { FmtNum, Input } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
 
+/** محاذاة وسط لقائمة الشهر/السنة (جوال + RTL) */
+const PERIOD_SELECT_CLASS =
+  'text-center [text-align-last:center] [&_option]:text-center';
+
 export type WeeklySalesWeekRow = {
   weekIndex: number;
   dayStart: number;
@@ -117,11 +121,11 @@ export function DashboardOverviewWeeklySalesPanel({
                 <th className="border border-noorix-border px-2 py-2 text-center align-bottom">
                   <div className="mb-0.5 text-[11px] font-bold leading-snug text-noorix-text">{t('dashboardWeeklySalesPeriodCompareHeader')}</div>
                   <div className="mb-1 text-[10px] font-semibold text-noorix-muted">{t('dashboardWeeklySalesAvgDailyShort')}</div>
-                  <div className="flex flex-wrap items-center justify-center gap-1">
+                  <div className="mx-auto flex w-full max-w-[11rem] flex-wrap items-center justify-center gap-1">
                     <Input
                       type="select"
                       size="sm"
-                      className="min-w-[104px]"
+                      className={cn('min-w-[104px] flex-1 basis-[6.5rem]', PERIOD_SELECT_CLASS)}
                       value={panelMonthB}
                       onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                         onPanelMonthBChange(Number(e.target.value))
@@ -137,7 +141,7 @@ export function DashboardOverviewWeeklySalesPanel({
                     <Input
                       type="select"
                       size="sm"
-                      className="min-w-[72px]"
+                      className={cn('min-w-[72px] shrink-0 basis-[4.5rem]', PERIOD_SELECT_CLASS)}
                       value={panelYearB}
                       onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                         onPanelYearBChange(Number(e.target.value))
