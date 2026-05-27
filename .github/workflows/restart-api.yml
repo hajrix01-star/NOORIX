@@ -22,10 +22,11 @@ jobs:
           mkdir -p /var/www/noorix/deploy
           rsync -a deploy/ /var/www/noorix/deploy/
 
-      - name: Restart API detached from runner
+      - name: Restart API via systemd
         run: |
           export DEPLOY_SHA="${{ github.sha }}"
-          bash "${{ github.workspace }}/deploy/restart-api-detached.sh" --wait-public
+          sudo bash "${{ github.workspace }}/deploy/install-noorix-backend-systemd.sh"
+          bash "${{ github.workspace }}/deploy/wait-public-api.sh"
 
       - name: Public readiness check
         run: |

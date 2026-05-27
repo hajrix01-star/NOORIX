@@ -13,13 +13,14 @@ type JsonRecord = Record<string, unknown>;
 export async function checkApiConnection(): Promise<{ ok: boolean; status?: number; error?: string }> {
   try {
     const base = getApiBaseUrl();
-    const url = base ? `${base}/api/v1/health` : '/api/v1/health';
+    // liveness فقط — لا يعتمد على DB (readiness /health قد يعطي 503 والعملية شغّالة)
+    const url = base ? `${base}/api/v1/health/live` : '/api/v1/health/live';
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 5000);
     const res = await fetch(url, { method: 'GET', signal: ctrl.signal }).catch(() => null);
     clearTimeout(tid);
     if (!res) return { ok: false, error: 'السيرفر غير متاح' };
-    return { ok: res.ok, status: res.status };
+    return { ok: res.status === 200, status: res.status };
   } catch (err: unknown) {
     return { ok: false, error: errMsg(err) };
   }

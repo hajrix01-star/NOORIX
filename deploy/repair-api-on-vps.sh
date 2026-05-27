@@ -43,14 +43,12 @@ if [[ -f .env ]]; then
   esac
 fi
 
-echo "==> إعادة تشغيل API (detached — يبقى بعد خروج الطرفية)"
+echo "==> إعادة تشغيل API (systemd noorix-backend)"
+sudo bash "$REPO/deploy/install-noorix-backend-systemd.sh"
 if command -v pm2 >/dev/null 2>&1; then
-  bash "$REPO/deploy/restart-api-detached.sh" --wait-public
-  pm2 list | head -20
-else
-  echo "ERROR: pm2 غير مثبت" >&2
-  exit 1
+  pm2 list | head -20 || true
 fi
+bash "$REPO/deploy/wait-public-api.sh" || true
 
 echo "==> readiness على 127.0.0.1:${API_PORT} (نفس Nginx ‎proxy_pass)"
 if command -v curl >/dev/null 2>&1; then

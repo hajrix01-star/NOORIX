@@ -1,0 +1,28 @@
+# Noorix API — خدمة systemd دائمة (لا تعتمد على GitHub Actions runner)
+# تثبيت مرة واحدة: sudo bash deploy/install-noorix-backend-systemd.sh
+#
+# Deploy يعيد التشغيل فقط: sudo systemctl restart noorix-backend
+
+[Unit]
+Description=Noorix ERP API
+Documentation=https://github.com/hajrix01-star/NOORIX
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/noorix/backend
+Environment=NODE_ENV=production
+Environment=PM2_HOME=/etc/.pm2
+EnvironmentFile=-/var/www/noorix/backend/.env
+# pm2-runtime يبقى في المقدمة — يُعاد تشغيله تلقائياً عند الفشل
+ExecStart=/bin/bash -lc 'cd /var/www/noorix/backend && exec ./node_modules/.bin/pm2-runtime start ecosystem.config.cjs'
+ExecReload=/bin/bash -lc 'cd /var/www/noorix/backend && ./node_modules/.bin/pm2 reload ecosystem.config.cjs --update-env'
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=45
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
