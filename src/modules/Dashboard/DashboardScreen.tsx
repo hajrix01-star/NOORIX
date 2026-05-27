@@ -13,10 +13,10 @@ import DashboardAppSalesTab from './components/DashboardAppSalesTab';
 import { getSaudiNow } from '../../utils/saudiDate';
 
 const DASHBOARD_TABS = [
-  { id: 'overview',     labelKey: 'dashboardOverview'     },
-  { id: 'calendar',    labelKey: 'dashboardCalendar'     },
-  { id: 'specialDays', labelKey: 'dashboardSpecialDays'  },
-  { id: 'appSales',    labelKey: 'dashboardAppSales'     },
+  { id: 'overview', labelKey: 'dashboardOverview', shortLabelKey: 'dashboardOverviewShort' },
+  { id: 'calendar', labelKey: 'dashboardCalendar' },
+  { id: 'specialDays', labelKey: 'dashboardSpecialDays' },
+  { id: 'appSales', labelKey: 'dashboardAppSales', shortLabelKey: 'dashboardAppSalesShort' },
 ];
 const DASHBOARD_TAB_IDS = DASHBOARD_TABS.map((tab: any) => tab.id);
 
@@ -43,7 +43,21 @@ export default function DashboardScreen() {
   }), [year, selectedMonthNumber]);
 
   const dashboardTabItems = useMemo(
-    () => DASHBOARD_TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) })),
+    () =>
+      DASHBOARD_TABS.map((tab: any) => {
+        const full = t(tab.labelKey);
+        const short = tab.shortLabelKey ? t(tab.shortLabelKey) : full;
+        const label =
+          short === full ? (
+            full
+          ) : (
+            <>
+              <span className="hidden sm:inline">{full}</span>
+              <span className="sm:hidden">{short}</span>
+            </>
+          );
+        return { id: tab.id, label };
+      }),
     [t],
   );
 
@@ -76,6 +90,7 @@ export default function DashboardScreen() {
         items={dashboardTabItems}
         value={activeTab}
         onChange={setActiveTab}
+        compactMobile
         contentClassName={
           activeTab === 'calendar'
             ? 'nx-tab-content px-1 py-2 sm:px-3 sm:py-3 md:p-4'

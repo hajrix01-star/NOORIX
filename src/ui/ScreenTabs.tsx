@@ -28,6 +28,8 @@ export type ScreenTabsProps = {
   children?: ReactNode;
   contentClassName?: string;
   shellClassName?: string;
+  stripClassName?: string;
+  compactMobile?: boolean;
   animateContent?: boolean;
   tabBarEnd?: ReactNode;
 };
@@ -46,6 +48,8 @@ export default function ScreenTabs({
   children,
   contentClassName,
   shellClassName,
+  stripClassName,
+  compactMobile,
   animateContent = true,
   tabBarEnd,
 }: ScreenTabsProps) {
@@ -60,6 +64,8 @@ export default function ScreenTabs({
         animateContent={animateContent}
         contentClassName={contentClassName}
         shellClassName={cn(className, shellClassName)}
+        stripClassName={stripClassName}
+        compactMobile={compactMobile}
         tabBarEnd={tabBarEnd}
       >
         {children}

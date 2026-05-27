@@ -13,6 +13,9 @@ export type ConnectedTabStripProps = {
   animateContent?: boolean;
   contentClassName?: string;
   shellClassName?: string;
+  stripClassName?: string;
+  /** على الجوال: توزيع متساوٍ بدون تمرير أفقي (لأشرطة بعدد تبويبات قليل) */
+  compactMobile?: boolean;
   tabBarEnd?: ReactNode;
 };
 
@@ -28,6 +31,8 @@ export default function ConnectedTabStrip({
   animateContent = true,
   contentClassName,
   shellClassName,
+  stripClassName,
+  compactMobile = false,
   tabBarEnd,
 }: ConnectedTabStripProps) {
   const uiDir = useUiDir();
@@ -47,10 +52,13 @@ export default function ConnectedTabStrip({
       >
         <div
           className={cn(
-            'nx-connected-tab-strip isolate flex min-w-0 flex-nowrap items-stretch overflow-x-auto text-[14px]',
+            'nx-connected-tab-strip isolate flex min-w-0 flex-nowrap items-stretch text-[14px]',
+            compactMobile
+              ? 'max-sm:overflow-x-hidden max-sm:text-[11px]'
+              : 'overflow-x-auto [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
             /* مع tabBarEnd: لا نستخدم flex-1 حتى لا يبقى فراغ كبير بين التبويبات وشريط الأدوات */
             hasEnd ? 'min-w-0 max-w-full shrink bg-transparent' : 'min-w-0 flex-1 bg-gradient-to-b from-noorix-bg-muted to-noorix-bg-muted/80',
-            '[-webkit-overflow-scrolling:touch] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+            stripClassName,
           )}
           role="tablist"
           dir={uiDir}
@@ -68,9 +76,14 @@ export default function ConnectedTabStrip({
                 data-active={active ? 'true' : 'false'}
                 className={cn(
                   /* grid: مركز النص في الصف العلوي؛ السباركلاين صف ثابت — size=auto يزيل h-9 من الزر */
-                  '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch shrink-0 rounded-none',
+                  '!grid !h-full min-h-[39px] grid-cols-1 grid-rows-[minmax(36px,1fr)_3px] sm:grid-rows-[minmax(38px,1fr)_3px] self-stretch rounded-none',
+                  compactMobile
+                    ? 'max-sm:min-h-[34px] max-sm:min-w-0 max-sm:flex-1 max-sm:basis-0 shrink-0'
+                    : 'shrink-0',
                   'border-0 border-e border-noorix-border-strong last:border-e-0',
-                  'text-[14px] leading-normal whitespace-nowrap',
+                  compactMobile
+                    ? 'max-sm:text-[11px] text-[14px] leading-snug max-sm:leading-tight whitespace-nowrap'
+                    : 'text-[14px] leading-normal whitespace-nowrap',
                   /* انتقال محدود — لا يشمل font-weight لتفادي اهتزاز الرسم */
                   'transition-[background-color,color,box-shadow] duration-200 ease-out',
                   active
@@ -81,7 +94,12 @@ export default function ConnectedTabStrip({
                   if (item.id !== value) onChange(item.id);
                 }}
               >
-                <span className="grid h-full min-h-0 w-full place-items-center px-3 py-0">
+                <span
+                  className={cn(
+                    'grid h-full min-h-0 w-full place-items-center py-0',
+                    compactMobile ? 'px-1 max-sm:px-1.5 sm:px-3' : 'px-3',
+                  )}
+                >
                   <span
                     aria-hidden
                     className="invisible col-start-1 row-start-1 font-bold leading-normal whitespace-nowrap"
@@ -90,7 +108,7 @@ export default function ConnectedTabStrip({
                   </span>
                   <span
                     className={cn(
-                      'col-start-1 row-start-1 flex min-h-0 w-full min-w-0 items-center justify-center text-center leading-normal whitespace-nowrap',
+                      'col-start-1 row-start-1 flex min-h-0 w-full min-w-0 items-center justify-center text-center leading-normal whitespace-nowrap max-sm:truncate max-sm:px-0.5',
                       'transition-[color] duration-200 ease-out',
                       active ? 'font-bold' : 'font-semibold',
                     )}

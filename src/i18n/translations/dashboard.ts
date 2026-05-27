@@ -4,8 +4,10 @@
 export default {
   dashboardDesc: { ar: 'نظرة عامة على الأعمال، التقويم، ومبيعات التطبيق.', en: 'Business overview, calendar, and app sales.' },
   dashboardOverview: { ar: 'نظرة عامة', en: 'Overview' },
+  dashboardOverviewShort: { ar: 'عامة', en: 'Overview' },
   dashboardCalendar: { ar: 'التقويم', en: 'Calendar' },
   dashboardAppSales: { ar: 'مبيعات التطبيق', en: 'App Sales' },
+  dashboardAppSalesShort: { ar: 'التطبيق', en: 'App' },
   dashboardPlaceholder: { ar: 'سيتم إضافة المحتوى قريباً.', en: 'Content will be added soon.' },
   dashboardSalesTimeline: { ar: 'خط زمني للمبيعات', en: 'Sales timeline' },
   dashboardTimelineDaily: { ar: 'يومي', en: 'Daily' },
