@@ -7,15 +7,13 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { Button, cn, FmtNum } from '../../../../ui';
+import { Button, cn } from '../../../../ui';
 import { formatCompactNumber } from '../../../../utils/money';
 import { EmptyState } from '../../../../components/states';
-import { DashboardAreaTooltip, DashboardPieTooltip } from './DashboardOverviewChartTooltips';
+import { DashboardAreaTooltip } from './DashboardOverviewChartTooltips';
+import { DashboardOverviewBreakdownTable } from './DashboardOverviewBreakdownTable';
 
 type SeriesRow = {
   key: string;
@@ -206,37 +204,26 @@ export function DashboardOverviewTimelineSection({
       </div>
 
       {channelData.length > 0 && (
-        <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
-          <div className="text-[14px] font-bold text-noorix-text mb-1 w-full max-lg:text-center lg:text-start">{t('reportChannels')}</div>
-          <div className="text-[12px] text-noorix-muted mb-4 w-full max-lg:text-center lg:text-start">
+        <div className="noorix-surface-card flex flex-col p-4 max-lg:items-center lg:p-5">
+          <div className="mb-1 w-full text-[14px] font-bold text-noorix-text max-lg:text-center lg:text-start">
+            {t('reportChannels')}
+          </div>
+          <div className="mb-4 w-full text-[12px] text-noorix-muted max-lg:text-center lg:text-start">
             {timelineGrain === 'daily' ? timelineMonthName : year}
           </div>
 
-          <ResponsiveContainer width="100%" height={180}>
-            <PieChart>
-              <Pie data={channelData} cx="50%" cy="50%" innerRadius={52} outerRadius={82} paddingAngle={2} dataKey="value">
-                {channelData.map((_, i) => (
-                  <Cell key={i} fill={pieColors[i % pieColors.length]} />
-                ))}
-              </Pie>
-              <Tooltip content={(tp) => <DashboardPieTooltip {...(tp as any)} lang={lang} />} />
-            </PieChart>
-          </ResponsiveContainer>
-
-          <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
-            {channelData.slice(0, 5).map((ch, i) => (
-              <div key={ch.name} className="flex items-center justify-between gap-2 text-[12px]">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: pieColors[i % pieColors.length] }} />
-                  <span className="text-noorix-text truncate">{ch.name}</span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <FmtNum n={ch.value} className="nx-font-numbers font-bold text-noorix-text" />
-                  <span className="text-noorix-muted">({ch.pct}%)</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <DashboardOverviewBreakdownTable
+            className="w-full"
+            labelHeader={t('reportChannels')}
+            rows={channelData.map((ch, i) => ({
+              key: ch.name,
+              label: ch.name,
+              amount: ch.value,
+              pct: ch.pct,
+              color: pieColors[i % pieColors.length],
+            }))}
+            t={t}
+          />
         </div>
       )}
     </div>

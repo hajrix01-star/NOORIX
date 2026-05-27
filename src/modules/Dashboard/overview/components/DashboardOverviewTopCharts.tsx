@@ -1,9 +1,9 @@
 import React from 'react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, Cell, PieChart, Pie } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, Cell } from 'recharts';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { formatCompactNumber, formatNumber } from '../../../../utils/money';
 import { LoadingState, EmptyState } from '../../../../components/states';
-import { DashboardPieTooltip } from './DashboardOverviewChartTooltips';
+import { DashboardOverviewBreakdownTable } from './DashboardOverviewBreakdownTable';
 
 type TopSuppliersRow = {
   name: string;
@@ -39,7 +39,7 @@ export function DashboardOverviewTopCharts({
   const { t } = useTranslation();
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
       <div className="noorix-surface-card p-4 lg:p-5">
         <div className="text-[14px] font-bold text-noorix-text mb-0.5 max-lg:text-center lg:text-start">
           {t('periodAnalyticsTopSuppliers')}
@@ -168,41 +168,19 @@ export function DashboardOverviewTopCharts({
             {t('dashboardNoPurchasesByCategory')}
           </EmptyState>
         ) : (
-          <>
-            <ResponsiveContainer width="100%" height={170}>
-              <PieChart>
-                <Pie
-                  data={purchaseCategoriesPieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={78}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {purchaseCategoriesPieData.map((entry, i) => (
-                    <Cell key={`${entry.name}-${i}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-              <Tooltip content={(tp) => <DashboardPieTooltip {...(tp as any)} lang={lang} />} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-col gap-1.5 mt-3 w-full max-lg:max-w-md">
-              {purchaseCategoriesPieData.map((cat, idx) => (
-                <div key={`${cat.name}-${idx}`} className="flex items-center justify-between gap-2 text-[12px]">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: cat.fill }} />
-                    <span className="text-noorix-text truncate">{cat.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="font-bold text-noorix-text ltr">{formatNumber(cat.value, lang)}</span>
-                    <span className="nx-sar">SR</span>
-                    <span className="text-noorix-muted">({cat.pct}%)</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
+          <DashboardOverviewBreakdownTable
+            className="w-full"
+            labelHeader={t('category')}
+            rows={purchaseCategoriesPieData.map((cat, idx) => ({
+              key: `${cat.name}-${idx}`,
+              label: cat.name,
+              amount: cat.value,
+              pct: cat.pct,
+              color: cat.fill,
+            }))}
+            showCurrency
+            t={t}
+          />
         )}
       </div>
     </div>
