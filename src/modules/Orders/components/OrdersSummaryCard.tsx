@@ -13,8 +13,8 @@ export type OrdersSummaryMetrics = {
 function SectionBlock({ title, received, spent, result, receivedLabel, spentLabel, resultLabel, accentColor }: any) {
   const resNum = Number(result ?? 0);
   return (
-    <div className="noorix-surface-card flex min-w-0 flex-col overflow-hidden">
-      <div className="h-1" style={{ background: accentColor || 'var(--color-nx-sales)' }} aria-hidden />
+    <div className="nx-orders-summary-section flex min-w-0 flex-col overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/50">
+      <div className="h-1 rounded-t-lg" style={{ background: accentColor || 'var(--color-nx-sales)' }} aria-hidden />
       <div className="pt-[14px] px-4 pb-3">
         <div className="text-[11px] font-bold text-noorix-muted mb-3 uppercase tracking-[0.04em]">
           {title}
@@ -66,26 +66,26 @@ export function OrdersSummaryCard({
 
   if (isLoading) {
     return (
-      <div className="noorix-surface-card p-6 text-center text-noorix-muted">
+      <div className="nx-orders-summary-card rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-4 text-center text-[13px] text-noorix-muted">
         {t('loading')}
       </div>
     );
   }
 
   return (
-    <div className="noorix-surface-card overflow-hidden">
+    <div className="nx-orders-summary-card overflow-hidden rounded-lg border border-noorix-border bg-noorix-surface">
       <div
         className="h-1 bg-gradient-to-r from-noorix-blue to-noorix-green"
         aria-hidden
       />
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-[13px] font-bold text-noorix-muted tracking-[0.04em]">
+      <div className="p-3 sm:p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="text-[12px] font-bold text-noorix-muted tracking-[0.04em] sm:text-[13px]">
             {t('ordersSummaryCardTitle')}
           </div>
-          <span className="nx-sar">SR</span>
+          <span className="nx-sar text-[11px]">SR</span>
         </div>
-        <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
           <SectionBlock
             title={t('ordersDelegateSection')}
             received={pettyCash}

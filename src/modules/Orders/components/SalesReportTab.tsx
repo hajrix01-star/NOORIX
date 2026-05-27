@@ -13,7 +13,7 @@ const PERIOD_OPTIONS = [7, 14, 30, 60, 90];
 // ── بطاقة KPI صغيرة ─────────────────────────────────────────────
 function KpiCard({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
-    <div className="noorix-surface-card p-4 flex flex-col gap-1">
+    <div className="nx-orders-kpi-tile rounded-lg border border-noorix-border bg-noorix-bg-muted/50 p-3 flex flex-col gap-1 sm:bg-noorix-surface sm:p-4">
       <div className="text-[12px] text-noorix-muted">{label}</div>
       <div className={`text-[22px] font-bold nx-font-numbers ${color}`}>{value}</div>
     </div>
@@ -112,9 +112,9 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="nx-orders-tab-root flex flex-col gap-3 sm:gap-4">
       {/* ── شريط التحكم ── */}
-      <div className="noorix-surface-card px-4 py-3 flex flex-wrap items-center gap-3">
+      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2.5 flex flex-wrap items-center gap-2 sm:bg-noorix-surface sm:px-4 sm:py-3 sm:shadow-sm">
         <span className="text-[13px] font-semibold">{t('salesReportTitle')}</span>
         <Input
           type="select"
@@ -145,7 +145,7 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
 
           {/* ── رسم بياني يومي بسيط ── */}
           {byDay.length > 0 && (
-            <div className="noorix-surface-card p-4">
+            <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-3 sm:bg-noorix-surface sm:p-4 sm:shadow-sm">
               <div className="text-[13px] font-semibold mb-3">{t('salesReportByDay')}</div>
               <div className="flex items-end gap-1 h-16 overflow-x-auto">
                 {(() => {
@@ -165,7 +165,7 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
           )}
 
           {/* ── تبويبات الجداول ── */}
-          <div className="noorix-surface-card overflow-hidden">
+          <div className="overflow-hidden rounded-lg border border-noorix-border bg-noorix-surface">
             <div className="flex border-b border-noorix-border overflow-x-auto">
               {views.map((v) => (
                 <button
@@ -216,7 +216,7 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
           </div>
 
           {byProduct.length === 0 && byDay.length === 0 && (
-            <div className="noorix-surface-card p-10 text-center text-noorix-muted text-[14px]">
+            <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-10 text-center text-noorix-muted text-[14px] sm:bg-noorix-surface">
               {t('salesReportEmpty')}
             </div>
           )}
