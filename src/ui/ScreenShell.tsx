@@ -3,10 +3,10 @@ import { cn } from './cn';
 
 /** قانون جذر الشاشة الكاملة داخل `app-main` — لا تكرّر هذا السطر يدوياً في شاشات جديدة */
 export const SCREEN_SHELL_PAGE_CLASS =
-  'flex flex-col gap-4 py-4 px-0 md:px-3 lg:px-6';
+  'flex min-w-0 flex-col gap-4 py-4 px-0 md:px-3 lg:px-6';
 
 /** داخل تبويب أو كرت أب — بدون py/px حتى لا يتضاعف الهامش مع `ScreenShell` الخارجي */
-export const SCREEN_SHELL_EMBEDDED_CLASS = 'flex flex-col gap-4';
+export const SCREEN_SHELL_EMBEDDED_CLASS = 'flex min-w-0 flex-col gap-4';
 
 export type ScreenShellProps = {
   children?: ReactNode;

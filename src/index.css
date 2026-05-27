@@ -2211,6 +2211,11 @@ input:focus, select:focus, textarea:focus {
   .noorix-table-frame {
     max-width: 100%;
     width: 100%;
+    /* hidden: يمنع شريط تمرير أفقي فارغ عند عرض القائمة المضغوطة/البطاقات */
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .noorix-table-frame .noorix-table-scroll-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
