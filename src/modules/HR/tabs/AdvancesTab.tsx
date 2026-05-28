@@ -42,10 +42,12 @@ export default function AdvancesTab() {
   const { data: rawAdvanceRows, isLoading, isError } = useQuery({
     queryKey: invoiceKeys.advancesForCompany(companyId),
     queryFn: async () => {
-      const res = await getInvoices(companyId, undefined, undefined, 1, 500);
+      // فلتر kind=advance من الخادم — لا تجلب كل الفواتير ثم فلتر محلياً (كان يُسقِط سلفاً
+      // عندما يتجاوز عدد فواتير الشركة حد الصفحة، مثل ADV-20260508-002).
+      const res = await getInvoices(companyId, undefined, undefined, 1, 1000, null, null, 'advance');
       throwIfApiFailed(res, 'فشل تحميل السلف');
       const items = res.data?.items ?? [];
-      return items.filter((inv: any) => inv.kind === 'advance').map((i: any) => ({
+      return items.map((i: any) => ({
         ...i,
         settledAmountNum: Number(i.settledAmount ?? 0),
         totalAmountNum: Number(i.totalAmount ?? 0),
