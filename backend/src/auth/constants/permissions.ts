@@ -25,6 +25,8 @@ export const PERMISSIONS = {
   INVOICES_WRITE:   'INVOICES_WRITE',
   INVOICES_DELETE:  'INVOICES_DELETE',
   INVOICES_ACTIONS: 'INVOICES_ACTIONS',
+  /** كروت الداخل/الخارج وملخصات الفترة في قائمة الفواتير */
+  INVOICES_VIEW_EXEC_SUMMARY: 'INVOICES_VIEW_EXEC_SUMMARY',
 
   VIEW_PURCHASES:    'VIEW_PURCHASES',
   PURCHASES_READ:    'PURCHASES_READ',
@@ -137,6 +139,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     permissions: {
       view: 'VIEW_INVOICES', read: 'INVOICES_READ', write: 'INVOICES_WRITE', delete: 'INVOICES_DELETE',
       actions: 'INVOICES_ACTIONS', create: 'CREATE_INVOICE',
+      summary: 'INVOICES_VIEW_EXEC_SUMMARY',
     },
   },
   {
@@ -213,6 +216,7 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   create:     { ar: 'إنشاء فاتورة', en: 'Create Invoice' },
   history:    { ar: 'التاريخ الكامل', en: 'Full History' },
   list:       { ar: 'قائمة الملخصات', en: 'Summaries List' },
+  summary:    { ar: 'كروت الداخل/الخارج', en: 'In/Out summary cards' },
   chatAdv:    { ar: 'محادثة · سلف', en: 'Chat · Advances' },
   chatLeave:  { ar: 'محادثة · إجازات', en: 'Chat · Leaves' },
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
@@ -235,6 +239,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.VIEW_SALES, PERMISSIONS.VIEW_EMPLOYEES, PERMISSIONS.VIEW_ORDERS,
       PERMISSIONS.VIEW_EXPENSES,
       PERMISSIONS.INVOICES_READ, PERMISSIONS.INVOICES_WRITE, PERMISSIONS.INVOICES_ACTIONS,
+      PERMISSIONS.INVOICES_VIEW_EXEC_SUMMARY,
       // صلاحيات المشتريات المنفصلة
       PERMISSIONS.VIEW_PURCHASES, PERMISSIONS.PURCHASES_READ, PERMISSIONS.PURCHASES_WRITE, PERMISSIONS.PURCHASES_DELETE,
       PERMISSIONS.SALES_READ, PERMISSIONS.SALES_WRITE, PERMISSIONS.SALES_ACTIONS,

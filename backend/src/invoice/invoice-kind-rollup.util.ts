@@ -3,6 +3,16 @@ import { Prisma } from '@prisma/client';
 
 const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
 
+/** استجابة قائمة الفواتير عند انعدام صلاحية ملخص الداخل/الخارج */
+export function emptyInvoiceListAggregates() {
+  return {
+    sums: { all: zero(), inflow: zero(), outflow: zero() },
+    sumsByKind: [] as SumsByKindRow[],
+    inflowByVault: [] as { vaultId: string; total: string; outflow: string; remainder: string }[],
+    outflowSummary: { purchasesTotal: '0', expensesTotal: '0', taxTotal: '0' },
+  };
+}
+
 export type SumsByKindRow = { kind: string; count: number; net: string; tax: string; total: string };
 export type InvoiceSumsRollup = {
   sums: { all: ReturnType<typeof zero>; inflow: ReturnType<typeof zero>; outflow: ReturnType<typeof zero> };

@@ -21,7 +21,11 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { resolveFixedExpenseCoverageForCreate } from './invoice-fixed-expense-coverage.util';
 import { toPublicInvoiceView } from './invoice-to-public.util';
 import { buildInvoiceListQueryParts } from './invoice-list-query-parts.util';
-import { rollupKindAggForInvoiceList, computeOutflowSummaryFromSumsByKind } from './invoice-kind-rollup.util';
+import {
+  rollupKindAggForInvoiceList,
+  computeOutflowSummaryFromSumsByKind,
+  emptyInvoiceListAggregates,
+} from './invoice-kind-rollup.util';
 import { loadInvoiceListInflowByVault } from './invoice-list-inflow-by-vault.util';
 import { loadInvoiceDayCloseReport } from './invoice-day-close-report.util';
 import { loadPurchaseBatchSummaries } from './invoice-purchase-batch-summaries.util';
@@ -266,6 +270,7 @@ export class InvoiceService {
     includeCancelled = true,
     hasNotes?: string | boolean,
     requireExpenseLine?: boolean,
+    includeExecSummary = true,
   ) {
     const { where, orderBy, size, p, aggKey, activeWhere } = buildInvoiceListQueryParts({
       companyId,
@@ -309,6 +314,22 @@ export class InvoiceService {
     });
     let items: Awaited<typeof itemsPromise>;
     let total: number;
+    if (!includeExecSummary) {
+      const [loadedItems, counted] = await Promise.all([
+        itemsPromise,
+        hitAgg && hitAgg.exp > aggNow ? Promise.resolve(hitAgg.total) : this.prisma.invoice.count({ where }),
+      ]);
+      items = loadedItems;
+      total = counted;
+      return {
+        items: items.map((row) => toPublicInvoiceView(row)),
+        total,
+        page: p,
+        pageSize: size,
+        ...emptyInvoiceListAggregates(),
+      };
+    }
+
     let kindAggRows: InvoiceKindAggRow[];
     if (hitAgg && hitAgg.exp > aggNow) {
       items = await itemsPromise;

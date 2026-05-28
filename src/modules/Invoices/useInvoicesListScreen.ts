@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
+import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useInvoices } from '../../hooks/useInvoices';
@@ -44,7 +45,13 @@ import {
  * منطق شاشة قائمة الفواتير — عرض فقط يبقى في InvoicesListScreen.jsx
  */
 export function useInvoicesListScreen() {
-  const { activeCompanyId, userRole, companies } = useApp();
+  const { activeCompanyId, userRole, userPermissions, companies } = useApp();
+  const invoicesViewExecSummary = hasPermission(
+    userRole,
+    PERMISSIONS.INVOICES_VIEW_EXEC_SUMMARY,
+    userPermissions,
+  );
+  const canFilterSaleInvoices = hasPermission(userRole, PERMISSIONS.VIEW_INVOICES, userPermissions);
   const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
   const fromUrl = toYmd(searchParams.get('from'));
@@ -562,8 +569,8 @@ export function useInvoicesListScreen() {
   );
 
   const footerRow = useMemo(
-    () => buildInvoiceListFooterRow({ t, serverAll, total }),
-    [t, serverAll, total],
+    () => (invoicesViewExecSummary ? buildInvoiceListFooterRow({ t, serverAll, total }) : undefined),
+    [invoicesViewExecSummary, t, serverAll, total],
   );
 
   const renderMobileCard = useMemo(
@@ -711,5 +718,7 @@ export function useInvoicesListScreen() {
     renderCompactRow,
     showToast,
     PAGE_SIZE,
+    invoicesViewExecSummary,
+    canFilterSaleInvoices,
   };
 }

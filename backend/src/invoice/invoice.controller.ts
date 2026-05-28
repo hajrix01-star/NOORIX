@@ -12,6 +12,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -32,7 +33,7 @@ import { CurrentUser, JwtUser }  from '../auth/decorators/current-user.decorator
 import { RequirePermission }     from '../auth/decorators/require-permission.decorator';
 import { RequireAnyPermission }  from '../auth/decorators/require-any-permission.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { hasPermission } from '../auth/constants/permissions';
+import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
 import { CreateInvoiceDto }      from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { UpdateInvoiceDto }      from './dto/update-invoice.dto';
@@ -77,10 +78,14 @@ export class InvoiceController {
   @Get('day-close-report')
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async dayCloseReport(
+    @CurrentUser() user: JwtUser,
     @CompanyId() companyId: string,
     @Query('date')     date:      string,
   ) {
     if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
+    if (!hasPermission(user.role, PERMISSIONS.INVOICES_VIEW_EXEC_SUMMARY, user.permissions)) {
+      throw new ForbiddenException('لا تملك صلاحية عرض ملخص الداخل/الخارج');
+    }
     return this.invoiceService.getDayCloseReport(companyId, date);
   }
 
@@ -129,6 +134,12 @@ export class InvoiceController {
       resolvedKind = 'sale';
     }
 
+    const includeExecSummary = hasPermission(
+      role,
+      PERMISSIONS.INVOICES_VIEW_EXEC_SUMMARY,
+      perms,
+    );
+
     return this.invoiceService.findAll(
       companyId,
       page     ? parseInt(page, 10)     : 1,
@@ -149,6 +160,7 @@ export class InvoiceController {
       includeCancelled === '1' || includeCancelled === 'true',
       hasNotes,
       requireExpenseLine === '1' || requireExpenseLine === 'true',
+      includeExecSummary,
     );
   }
 

@@ -26,6 +26,7 @@ export default function InvoicesListScreen() {
         onExportExcel={s.handleExportExcel}
         onPrintInvoices={s.handlePrintInvoices}
         onPrintCashReport={s.handlePrintCashReport}
+        showExecSummaryActions={s.invoicesViewExecSummary}
       />
 
       {!s.companyId && (
@@ -62,14 +63,16 @@ export default function InvoicesListScreen() {
 
       {s.companyId && (
         <>
-          <InvoicesListExecutiveCards
-            t={s.t}
-            serverInflow={s.serverInflow}
-            serverOutflow={s.serverOutflow}
-            inflowByVault={s.inflowByVault}
-            outflowSummary={s.outflowSummary}
-            vaultRowLabel={s.vaultRowLabel}
-          />
+          {s.invoicesViewExecSummary && (
+            <InvoicesListExecutiveCards
+              t={s.t}
+              serverInflow={s.serverInflow}
+              serverOutflow={s.serverOutflow}
+              inflowByVault={s.inflowByVault}
+              outflowSummary={s.outflowSummary}
+              vaultRowLabel={s.vaultRowLabel}
+            />
+          )}
           <InvoicesListFiltersToolbar
             t={s.t}
             lang={s.lang}
@@ -93,6 +96,8 @@ export default function InvoicesListScreen() {
             suppliers={s.suppliers}
             creatorUsersForFilter={s.creatorUsersForFilter}
             vaultsList={s.vaultsList}
+            showDayClose={s.invoicesViewExecSummary}
+            showSaleKindFilter={s.canFilterSaleInvoices}
           />
           {s.viewingInvoice && (
             <InvoiceViewModal
