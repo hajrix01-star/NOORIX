@@ -12,7 +12,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -78,14 +77,10 @@ export class InvoiceController {
   @Get('day-close-report')
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async dayCloseReport(
-    @CurrentUser() user: JwtUser,
     @CompanyId() companyId: string,
     @Query('date')     date:      string,
   ) {
     if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
-    if (!hasPermission(user.role, PERMISSIONS.INVOICES_VIEW_EXEC_SUMMARY, user.permissions)) {
-      throw new ForbiddenException('لا تملك صلاحية عرض ملخص الداخل/الخارج');
-    }
     return this.invoiceService.getDayCloseReport(companyId, date);
   }
 

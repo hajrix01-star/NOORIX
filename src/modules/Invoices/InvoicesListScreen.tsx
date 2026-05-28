@@ -96,7 +96,6 @@ export default function InvoicesListScreen() {
             suppliers={s.suppliers}
             creatorUsersForFilter={s.creatorUsersForFilter}
             vaultsList={s.vaultsList}
-            showDayClose={s.invoicesViewExecSummary}
             showSaleKindFilter={s.canFilterSaleInvoices}
           />
           {s.viewingInvoice && (
