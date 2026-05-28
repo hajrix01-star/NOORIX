@@ -56,7 +56,7 @@ export async function loadInvoiceDayCloseReport(
       take: MAX_INVOICES + 1,
       include: {
         supplier: { select: { nameAr: true, nameEn: true } },
-        employee: { select: { id: true, name: true } },
+        employee: { select: { id: true, name: true, nameEn: true } },
         expenseLine: { select: { id: true, nameAr: true, nameEn: true, kind: true } },
         vault: { select: { id: true, nameAr: true, nameEn: true, type: true, paymentMethod: true } },
         vaultAllocations: {

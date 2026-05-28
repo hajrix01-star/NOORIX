@@ -37,7 +37,11 @@ export default function AdvancesTab() {
   const [monthFilter, setMonthFilter] = useState('');
   const [settlementFilter, setSettlementFilter] = useState('all');
 
-  const { createAdvance } = useEmployees(companyId, { includeTerminated: false });
+  const { employees, createAdvance } = useEmployees(companyId, { includeTerminated: false });
+  const employeeById = useMemo(
+    () => new Map((employees as { id?: string }[]).map((e) => [e.id, e])),
+    [employees],
+  );
 
   const { data: rawAdvanceRows, isLoading, isError } = useQuery({
     queryKey: invoiceKeys.advancesForCompany(companyId),
@@ -65,10 +69,16 @@ export default function AdvancesTab() {
     enabled: !!companyId,
   });
 
-  const items = useMemo(() => (rawAdvanceRows ?? []).map((row: any) => ({
-    ...row,
-    employeeName: employeeDisplayName(row.employee || { name: row.employeeName }, lang),
-  })), [rawAdvanceRows, lang]);
+  const items = useMemo(() => (rawAdvanceRows ?? []).map((row: any) => {
+    const emp =
+      (row.employeeId && employeeById.get(row.employeeId)) ||
+      row.employee ||
+      { name: row.employeeName };
+    return {
+      ...row,
+      employeeName: employeeDisplayName(emp, lang),
+    };
+  }), [rawAdvanceRows, lang, employeeById]);
   const employeeOptions = useMemo(
     () => [...new Set(items.map((r: any) => r.employeeName).filter(Boolean))].sort((a: any, b: any) => String(a).localeCompare(String(b))),
     [items],

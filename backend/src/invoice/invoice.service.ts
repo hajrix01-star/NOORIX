@@ -303,7 +303,7 @@ export class InvoiceService {
       take: size,
       include: {
         supplier: true,
-        employee: { select: { id: true, name: true } },
+        employee: { select: { id: true, name: true, nameEn: true } },
         createdByUser: { select: { id: true, nameAr: true, nameEn: true, email: true } },
         expenseLine: { select: { id: true, nameAr: true, kind: true } },
         vault: { select: { id: true, nameAr: true, nameEn: true, type: true } },
