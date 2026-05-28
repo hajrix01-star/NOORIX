@@ -4676,7 +4676,17 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .nx-expense-line-table-wrap .nx-col-expense-name { min-width: 11em; }
 .nx-expense-line-table-wrap .nx-col-expense-kind { min-width: 7.5em; }
 .nx-expense-line-table-wrap .nx-col-expense-text { min-width: 8.5em; }
-.nx-expense-line-table-wrap .nx-col-expense-service { min-width: 5.5em; }
+/* رقم الخدمة: عرض حسب الأرقام — لا يمتص فراغ الجدول على سطح المكتب */
+.nx-expense-line-table-wrap .nx-col-expense-service {
+  width: 1%;
+  min-width: 4.75em;
+  max-width: 13ch;
+  white-space: nowrap;
+}
+.nx-expense-line-table-wrap .noorix-table thead th.nx-col-expense-service,
+.nx-expense-line-table-wrap .noorix-table tbody td.nx-col-expense-service {
+  padding-inline: 0.45em !important;
+}
 /* عرض مالي: ch حسب الأرقام — لا يتمدد لعنوان «المبلغ الشهري» الطويل */
 .nx-expense-line-table-wrap .nx-col-expense-money {
   width: 1%;

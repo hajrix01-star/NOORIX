@@ -11,7 +11,7 @@ import { SearchableOptionsPicker } from '../../../components/common/SearchableOp
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 import { monthlyAmountFromExpenseLine } from '../../Reports/costAccountingAppsFixedExpenseImport';
-import { expenseLineKindShortLabel } from './expenseLineTableUtils';
+import { expenseLineDisplayName, expenseLineKindShortLabel } from './expenseLineTableUtils';
 
 /** عرض شهري/سنوي تقديري لبند ثابت */
 function monthlyAnnualForExpenseLineRow(line: { kind?: string; annualTotalAmount?: unknown } & Record<string, unknown>) {
@@ -88,22 +88,22 @@ export default function ExpenseLineList({
 
   const columns = useMemo(() => [
     {
-      key: 'nameAr',
+      key: 'displayName',
       label: t('expenseLineNameCol'),
       sortable: true,
       width: '22%',
       minWidth: '11em',
       cellClassName: 'nx-col-expense-name',
       align: 'start',
-      render: (v: any, row: any) => (
+      render: (_v: any, row: any) => (
         <Button
           variant="raw"
           size="auto"
           className="nx-expense-line-name-cell nx-cell-bold nx-expense-line-cell !h-auto !min-h-0 w-full max-w-full cursor-pointer !p-0 text-start font-bold text-noorix-blue hover:underline"
           onClick={() => onLineClick(row)}
         >
-          <span className="block min-w-0 truncate" title={v || row.nameEn || ''}>
-            {v || row.nameEn || '—'}
+          <span className="block min-w-0 truncate" title={row.displayName}>
+            {row.displayName}
           </span>
         </Button>
       ),
@@ -150,12 +150,18 @@ export default function ExpenseLineList({
     {
       key: 'serviceNumber',
       label: t('expenseLineServiceNumberCol'),
-      minWidth: '5.5em',
+      width: '1%',
+      minWidth: '4.75em',
+      maxWidth: '13ch',
       shrink: true,
       cellClassName: 'nx-col-expense-service',
       align: 'center',
       render: (v: any) => (
-        <span className="nx-cell-num nx-expense-line-cell block text-center tabular-nums text-noorix-text">
+        <span
+          dir="ltr"
+          className="nx-cell-num nx-expense-line-cell mx-auto block max-w-full min-w-0 truncate text-center tabular-nums text-noorix-text"
+          title={v ? String(v) : undefined}
+        >
           {v || '—'}
         </span>
       ),
@@ -222,12 +228,13 @@ export default function ExpenseLineList({
         </div>
       ),
     },
-  ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t]);
+  ], [onLineClick, onEditLine, onDeleteLine, kindBadgeMap, t, lang]);
 
   const tableData = useMemo(
     () =>
       expenseLines.map((line: any) => ({
         ...line,
+        displayName: expenseLineDisplayName(line, lang),
         categoryName:
           (lang === 'en'
             ? line.category?.nameEn || line.category?.nameAr
@@ -247,7 +254,7 @@ export default function ExpenseLineList({
         const kindLabel = expenseLineKindShortLabel(r.kind, t);
         const cat = r.categoryName && r.categoryName !== '—' ? r.categoryName : '';
         return {
-          [t('expenseLineNameCol')]: r.nameAr || r.nameEn || '—',
+          [t('expenseLineNameCol')]: r.displayName,
           [t('expenseLineKindCol')]: cat ? `${kindLabel} / ${cat}` : kindLabel,
           [t('category')]: r.categoryName,
           [t('supplier')]: r.supplierName,
@@ -271,7 +278,7 @@ export default function ExpenseLineList({
         const aCell = annual != null ? fmt(annual) : '—';
         const kindLabel = expenseLineKindShortLabel(r.kind, t);
         const cat = r.categoryName && r.categoryName !== '—' ? r.categoryName : '—';
-        return `<tr><td>${(r.nameAr || r.nameEn || '—').replace(/</g, '&lt;')}</td><td>${kindLabel.replace(/</g, '&lt;')}</td><td>${cat.replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td><td style="text-align:end" dir="ltr">${String(mCell).replace(/</g, '&lt;')}</td><td style="text-align:end" dir="ltr">${String(aCell).replace(/</g, '&lt;')}</td></tr>`;
+        return `<tr><td>${(r.displayName || '—').replace(/</g, '&lt;')}</td><td>${kindLabel.replace(/</g, '&lt;')}</td><td>${cat.replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td><td style="text-align:end" dir="ltr">${String(mCell).replace(/</g, '&lt;')}</td><td style="text-align:end" dir="ltr">${String(aCell).replace(/</g, '&lt;')}</td></tr>`;
       })
       .join('');
     const printTitle = t('expenseLinesPrintTitle') || 'بنود المصاريف';
@@ -322,7 +329,7 @@ export default function ExpenseLineList({
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="2.75em"
+          rowNumberWidth="2.25em"
           innerPadding={8}
           columns={columns}
           data={tableData}
