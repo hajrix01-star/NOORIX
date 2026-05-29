@@ -60,10 +60,15 @@ export default function InvoiceUploadTab(props: any) {
             issueCopied={o.issueCopied}
             stageArtifacts={o.extractStageArtifacts}
             copiedStageKey={o.copiedStageKey}
+            copiedJsonKey={o.copiedJsonKey}
             onResetAll={o.handleResetImageColumn}
             onExtract={o.handleExtract}
             onCopyIssue={o.handleCopyIssueReport}
             onCopyStage={o.handleCopyStageArtifact}
+            onCopyFinalJson={o.handleCopyFinalJson}
+            onCopyRawJson={o.handleCopyRawJson}
+            onDownloadFinalJson={o.handleDownloadFinalJson}
+            onDownloadRawJson={o.handleDownloadRawJson}
             onSave={o.handleSave}
           />
 

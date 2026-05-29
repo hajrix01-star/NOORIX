@@ -95,6 +95,10 @@ export default {
   ocrPipelineFailedAt: { ar: 'تعطل عند مرحلة: {0}', en: 'Stopped at stage: {0}' },
   ocrPipelineCopyIssue: { ar: 'نسخ المشكلة', en: 'Copy issue' },
   ocrPipelineCopyStage: { ar: 'نسخ المرحلة', en: 'Copy stage' },
+  ocrPipelineCopyFinalJson: { ar: 'نسخ ملف النتيجة', en: 'Copy result JSON' },
+  ocrPipelineCopyRawJson: { ar: 'نسخ ملف JSON الخام', en: 'Copy raw JSON' },
+  ocrPipelineDownloadFinalJson: { ar: 'تحميل ملف النتيجة', en: 'Download result JSON' },
+  ocrPipelineDownloadRawJson: { ar: 'تحميل الملف الخام', en: 'Download raw JSON' },
   ocrPipelineIssueCopied: { ar: 'تم النسخ', en: 'Copied' },
   ocrPrefillLoading:   { ar: 'جاري تحميل فاتورة المراجعة…', en: 'Loading review invoice…' },
 

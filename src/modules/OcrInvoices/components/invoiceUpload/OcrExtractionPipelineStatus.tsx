@@ -41,9 +41,14 @@ export function OcrExtractionPipelineStatus({
   issueCopied,
   stageArtifacts,
   copiedStageKey,
+  copiedJsonKey,
   onRetry,
   onCopyIssue,
   onCopyStage,
+  onCopyFinalJson,
+  onCopyRawJson,
+  onDownloadFinalJson,
+  onDownloadRawJson,
 }: {
   t: (k: string, ...args: any[]) => string;
   isAr: boolean;
@@ -58,9 +63,14 @@ export function OcrExtractionPipelineStatus({
   issueCopied?: boolean;
   stageArtifacts?: Record<string, StageArtifactRow> | null;
   copiedStageKey?: string | null;
+  copiedJsonKey?: string | null;
   onRetry: () => void;
   onCopyIssue?: () => void;
   onCopyStage?: (stageKey: string) => void;
+  onCopyFinalJson?: () => void;
+  onCopyRawJson?: () => void;
+  onDownloadFinalJson?: () => void;
+  onDownloadRawJson?: () => void;
 }) {
   const [tick, setTick] = useState(() => Date.now());
 
@@ -165,6 +175,25 @@ export function OcrExtractionPipelineStatus({
           );
         })}
       </div>
+
+      {!!(extracted || stageArtifacts) && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="ghost" onClick={onCopyFinalJson}>
+            {t('ocrPipelineCopyFinalJson')}
+          </Button>
+          {copiedJsonKey === 'final' && <span className="text-[11px] text-noorix-green">{t('ocrPipelineIssueCopied')}</span>}
+          <Button size="sm" variant="ghost" onClick={onCopyRawJson}>
+            {t('ocrPipelineCopyRawJson')}
+          </Button>
+          {copiedJsonKey === 'raw' && <span className="text-[11px] text-noorix-green">{t('ocrPipelineIssueCopied')}</span>}
+          <Button size="sm" variant="ghost" onClick={onDownloadFinalJson}>
+            {t('ocrPipelineDownloadFinalJson')}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDownloadRawJson}>
+            {t('ocrPipelineDownloadRawJson')}
+          </Button>
+        </div>
+      )}
 
       {!!extractFailureStage && !loading && (
         <div className="mt-2 flex flex-wrap items-center gap-2">

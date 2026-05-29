@@ -19,11 +19,16 @@ export function OcrImagePreviewColumn({
   issueCopied,
   stageArtifacts,
   copiedStageKey,
+  copiedJsonKey,
   onResetAll,
   onExtract,
   onSave,
   onCopyIssue,
   onCopyStage,
+  onCopyFinalJson,
+  onCopyRawJson,
+  onDownloadFinalJson,
+  onDownloadRawJson,
 }: any) {
   return (
     <div className="noorix-surface-card flex-[1_1_280px] min-w-0 p-4">
@@ -67,9 +72,14 @@ export function OcrImagePreviewColumn({
         issueCopied={issueCopied}
         stageArtifacts={stageArtifacts}
         copiedStageKey={copiedStageKey}
+        copiedJsonKey={copiedJsonKey}
         onRetry={onExtract}
         onCopyIssue={onCopyIssue}
         onCopyStage={onCopyStage}
+        onCopyFinalJson={onCopyFinalJson}
+        onCopyRawJson={onCopyRawJson}
+        onDownloadFinalJson={onDownloadFinalJson}
+        onDownloadRawJson={onDownloadRawJson}
       />
     </div>
   );

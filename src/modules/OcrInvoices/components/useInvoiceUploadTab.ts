@@ -161,6 +161,26 @@ function buildStageArtifacts(args: {
   };
 }
 
+function toPrettyJson(value: unknown): string {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value ?? '');
+  }
+}
+
+function downloadJsonFile(filename: string, content: string) {
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(href);
+}
+
 /**
  * منطق تبويب رفع/استخراج فاتورة OCR (منفصل عن العرض)
  */
@@ -199,6 +219,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [issueCopied, setIssueCopied] = useState(false);
   const [extractStageArtifacts, setExtractStageArtifacts] = useState<Record<string, { status?: string; reportText: string }> | null>(null);
   const [copiedStageKey, setCopiedStageKey] = useState<string | null>(null);
+  const [lastExtractionPayload, setLastExtractionPayload] = useState<Record<string, any> | null>(null);
+  const [copiedJsonKey, setCopiedJsonKey] = useState<string | null>(null);
   const [finalizeOcrId, setFinalizeOcrId] = useState<any>(null);
   const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState<any>(null);
   const [createLinkedPurchase, setCreateLinkedPurchase] = useState(false);
@@ -351,6 +373,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setIssueCopied(false);
     setExtractStageArtifacts(null);
     setCopiedStageKey(null);
+    setLastExtractionPayload(null);
+    setCopiedJsonKey(null);
     setExtractStageDurations({ ...makeEmptyStageDurations(), uploadReadyMs: 0 });
     setLoading(true);
     setError(null);
@@ -373,6 +397,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
         enrichmentMs: toDurationMs(stageRows?.enrichment?.durationMs),
         readyForReviewMs: toDurationMs(stageRows?.readyForReview?.durationMs) ?? 0,
       };
+      setLastExtractionPayload(payload || null);
       const backendArtifacts = stageTelemetry?.artifacts && typeof stageTelemetry.artifacts === 'object'
         ? stageTelemetry.artifacts as Record<string, { status?: string; reportText?: string }>
         : null;
@@ -444,6 +469,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       } else {
         setExtractFailureStage('request');
         const requestError = res.error || t('ocrExtractFailed');
+        setLastExtractionPayload(payload || null);
         const failedDurations = { ...makeEmptyStageDurations(), uploadReadyMs: 0, modelRequestMs };
         setExtractStageDurations({ ...makeEmptyStageDurations(), uploadReadyMs: 0, modelRequestMs });
         setExtractStageArtifacts(buildStageArtifacts({
@@ -467,6 +493,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     } catch (err: any) {
       setExtractFailureStage('request');
       const msg = err?.message || t('ocrExtractFailed');
+      setLastExtractionPayload(null);
       const failedDurations = {
         ...makeEmptyStageDurations(),
         uploadReadyMs: 0,
@@ -506,6 +533,92 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     }
   }, [extractIssueReport]);
 
+  const getExportSourcePayload = useCallback(() => {
+    if (extracted && typeof extracted === 'object') return extracted as Record<string, any>;
+    if (lastExtractionPayload && typeof lastExtractionPayload === 'object') return lastExtractionPayload;
+    return null;
+  }, [extracted, lastExtractionPayload]);
+
+  const buildFinalResultPayload = useCallback((source: Record<string, any>) => {
+    const baseItems = Array.isArray(source?.items) ? source.items : [];
+    const lines = Array.isArray(activeItems) && activeItems.length > 0 ? activeItems : baseItems;
+    return {
+      supplier: source?.supplier ?? null,
+      supplierMatch: source?.supplierMatch ?? null,
+      vatNumber: source?.vatNumber ?? null,
+      invoiceNumber: source?.invoiceNumber ?? null,
+      invoiceDate: source?.invoiceDate ?? null,
+      subtotalAmount: source?.subtotalAmount ?? null,
+      vatAmount: source?.vatAmount ?? null,
+      totalAmount: source?.totalAmount ?? null,
+      items: lines.map((item: any) => ({
+        name: item?.name || '',
+        nameAr: item?.nameAr || null,
+        nameEn: item?.nameEn || null,
+        quantity: item?.quantity ?? null,
+        unitPrice: item?.unitPrice ?? null,
+        totalPrice: item?.totalPrice ?? null,
+        itemMatch: item?.itemMatch
+          ? {
+              id: item.itemMatch.id || null,
+              nameAr: item.itemMatch.nameAr || null,
+              score: item.itemMatch.score ?? null,
+              status: item.itemMatch.status || null,
+            }
+          : null,
+      })),
+      qualityStatus: source?.qualityStatus ?? null,
+      qualityFlags: Array.isArray(source?.qualityFlags) ? source.qualityFlags : [],
+      usedModel: source?.usedModel ?? null,
+      extractionLatencyMs: Number(source?.extractionLatencyMs) || 0,
+      exportedAt: new Date().toISOString(),
+    };
+  }, [activeItems]);
+
+  const handleCopyFinalJson = useCallback(async () => {
+    const source = getExportSourcePayload();
+    if (!source) return;
+    const text = toPrettyJson(buildFinalResultPayload(source));
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedJsonKey('final');
+      window.setTimeout(() => {
+        setCopiedJsonKey((current) => (current === 'final' ? null : current));
+      }, 1800);
+    } catch {
+      setCopiedJsonKey(null);
+    }
+  }, [buildFinalResultPayload, getExportSourcePayload]);
+
+  const handleCopyRawJson = useCallback(async () => {
+    const source = getExportSourcePayload();
+    if (!source) return;
+    const text = toPrettyJson(source);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedJsonKey('raw');
+      window.setTimeout(() => {
+        setCopiedJsonKey((current) => (current === 'raw' ? null : current));
+      }, 1800);
+    } catch {
+      setCopiedJsonKey(null);
+    }
+  }, [getExportSourcePayload]);
+
+  const handleDownloadFinalJson = useCallback(() => {
+    const source = getExportSourcePayload();
+    if (!source) return;
+    const text = toPrettyJson(buildFinalResultPayload(source));
+    downloadJsonFile(`ocr-result-${Date.now()}.json`, text);
+  }, [buildFinalResultPayload, getExportSourcePayload]);
+
+  const handleDownloadRawJson = useCallback(() => {
+    const source = getExportSourcePayload();
+    if (!source) return;
+    const text = toPrettyJson(source);
+    downloadJsonFile(`ocr-raw-${Date.now()}.json`, text);
+  }, [getExportSourcePayload]);
+
   const handleCopyStageArtifact = useCallback(async (stageKey: string) => {
     const report = extractStageArtifacts?.[stageKey]?.reportText;
     if (!report) return;
@@ -535,6 +648,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       setExtractIssueReport('');
       setExtractStageArtifacts(null);
       setCopiedStageKey(null);
+      setLastExtractionPayload(null);
+      setCopiedJsonKey(null);
       setExtractStageDurations(makeEmptyStageDurations());
     }
   }, [imageBase64]);
@@ -719,6 +834,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setIssueCopied(false);
     setExtractStageArtifacts(null);
     setCopiedStageKey(null);
+    setLastExtractionPayload(null);
+    setCopiedJsonKey(null);
     setExtractStageDurations(makeEmptyStageDurations());
     setEditItems(null);
     setFinalizeOcrId(null);
@@ -762,6 +879,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     issueCopied,
     extractStageArtifacts,
     copiedStageKey,
+    copiedJsonKey,
     prefillLoading,
     prefillLinkedPurchase,
     postSaveLinkedPurchase,
@@ -799,6 +917,10 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     handleExtract,
     handleCopyIssueReport,
     handleCopyStageArtifact,
+    handleCopyFinalJson,
+    handleCopyRawJson,
+    handleDownloadFinalJson,
+    handleDownloadRawJson,
     handleSave,
     handleResetImageColumn,
     openNewOcrSupplierModal,
