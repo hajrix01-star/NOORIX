@@ -30,4 +30,38 @@ describe('ocr-item-name-match packaging normalization', () => {
     expect(result?.item.id).toBe('item-1');
     expect((result?.score ?? 0)).toBeGreaterThanOrEqual(0.9);
   });
+
+  it('downgrades auto eligibility when a critical token is missing', () => {
+    const candidates = [
+      {
+        id: 'item-2',
+        nameAr: 'نعناع الفاخر',
+        nameEn: 'نعناع الفاخر 500 جرام',
+        hasSizes: true,
+        aliases: [],
+      },
+    ];
+    const result = findBestItemMatch('عنب نعناع الفاخر 500 جرام', candidates);
+    expect(result).not.toBeNull();
+    expect(result?.autoEligible).toBe(false);
+    expect((result?.semantic.missingCriticalTokens || []).length).toBeGreaterThan(0);
+    expect(result?.score || 0).toBeLessThan(0.95);
+  });
+
+  it('treats جبنة and جبن as semantic-equivalent token form', () => {
+    const candidates = [
+      {
+        id: 'item-3',
+        nameAr: 'جبن شيدر',
+        nameEn: 'Cheddar Cheese',
+        hasSizes: true,
+        aliases: [],
+      },
+    ];
+    const result = findBestItemMatch('جبنة شيدر 200 جرام', candidates);
+    expect(result).not.toBeNull();
+    expect(result?.item.id).toBe('item-3');
+    expect(result?.autoEligible).toBe(true);
+    expect(result?.semantic.missingCriticalTokens).toEqual([]);
+  });
 });

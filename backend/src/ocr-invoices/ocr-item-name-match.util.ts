@@ -1,4 +1,5 @@
 import { combinedSimilarity, deepSimilarity } from './ocr-match.util';
+import { normalize } from './ocr-normalize.util';
 
 const SIZE_UNITS = ['kg', 'g', 'gr', 'gm', 'ml', 'l', 'ltr', 'liter', 'pcs', 'pc', 'كجم', 'كيلو', 'جرام', 'مل', 'لتر', 'حبة', 'علبة', 'كيس'];
 const UNITS_PATTERN = SIZE_UNITS.join('|');
@@ -18,6 +19,31 @@ const PACKAGING_COUNT_REGEX =
 
 const ARABIC_RANGE = /[\u0600-\u06FF]/;
 const LATIN_RANGE  = /[A-Za-z]/;
+const NON_CRITICAL_SEMANTIC_TOKENS = new Set([
+  'فاخر',
+  'مزايا',
+  'اصلي',
+  'اصليه',
+  'صغير',
+  'كبير',
+  'وسط',
+  'جديد',
+  'قديم',
+  'عرض',
+  'خاص',
+  'مفري',
+  'عبوه',
+  'حبه',
+  'حبات',
+  'قطعه',
+  'قطع',
+  'pack',
+  'bundle',
+  'ctn',
+  'carton',
+]);
+const PACKAGING_TOKEN_RE =
+  /^(?:شد(?:ه)?|ربطه|رزمة|كرتون|pack|bundle|ctn|carton|box|pcs?|pc)$/i;
 
 function stripPackagingDescriptors(name: string): string {
   if (!name) return name;
@@ -26,6 +52,61 @@ function stripPackagingDescriptors(name: string): string {
     .replace(PACKAGING_COUNT_REGEX, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim();
+}
+
+function canonicalizeSemanticToken(token: string): string {
+  let t = token.trim();
+  if (!t) return '';
+  if (t.length >= 4 && t.endsWith('ه')) t = t.slice(0, -1);
+  if (t.length >= 5 && t.endsWith('ات')) t = t.slice(0, -2);
+  return t;
+}
+
+function extractSemanticTokensForMatch(raw: string): string[] {
+  const { cleanName } = extractSizeFromName(raw);
+  const tokens = normalize(cleanName)
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .filter((t) => !/^\d+(?:[.,]\d+)?$/.test(t))
+    .filter((t) => !PACKAGING_TOKEN_RE.test(t))
+    .map(canonicalizeSemanticToken)
+    .filter((t) => t.length > 1)
+    .filter((t) => !NON_CRITICAL_SEMANTIC_TOKENS.has(t));
+
+  return Array.from(new Set(tokens));
+}
+
+export type ItemMatchSemanticSignals = {
+  queryCoverage: number;
+  candidateCoverage: number;
+  overlapCount: number;
+  missingCriticalTokens: string[];
+  autoEligible: boolean;
+};
+
+function computeSemanticSignals(query: string, candidate: string): ItemMatchSemanticSignals {
+  const qSet = new Set(extractSemanticTokensForMatch(query));
+  const cSet = new Set(extractSemanticTokensForMatch(candidate));
+  const overlapTokens = [...qSet].filter((t) => cSet.has(t));
+
+  const overlapCount = overlapTokens.length;
+  const queryCoverage = qSet.size ? overlapCount / qSet.size : 1;
+  const candidateCoverage = cSet.size ? overlapCount / cSet.size : 1;
+  const missingCriticalTokens = [...qSet].filter((t) => !cSet.has(t));
+
+  const autoEligible =
+    (qSet.size === 0 || cSet.size === 0 || overlapCount > 0) &&
+    queryCoverage >= 0.75 &&
+    candidateCoverage >= 0.6;
+
+  return {
+    queryCoverage,
+    candidateCoverage,
+    overlapCount,
+    missingCriticalTokens,
+    autoEligible,
+  };
 }
 
 /** يقسّم الاسم المختلط إلى جزء عربي وجزء إنجليزي (يحذف الأرقام والرموز) */
@@ -98,14 +179,24 @@ export function normalizeItemForSearch(rawName: string): { ar: string; en: strin
 export function findBestItemMatch(
   query: string,
   candidates: Array<{ id: string; nameAr: string; nameEn?: string | null; hasSizes: boolean; aliases: { alias: string }[] }>,
-): { item: typeof candidates[0]; score: number } | null {
+): {
+  item: typeof candidates[0];
+  score: number;
+  autoEligible: boolean;
+  semantic: ItemMatchSemanticSignals;
+} | null {
   if (!query || candidates.length === 0) return null;
 
   const { cleanName: queryCleanName, size: qSize, sizeUnit: qUnit } = extractSizeFromName(query);
   const { ar: qAr, en: qEn, combined: qCombined } = normalizeItemForSearch(queryCleanName);
   const searchTerms = Array.from(new Set([queryCleanName, qAr, qEn, qCombined].filter(Boolean)));
 
-  let best: { item: typeof candidates[0]; score: number } | null = null;
+  let best: {
+    item: typeof candidates[0];
+    score: number;
+    autoEligible: boolean;
+    semantic: ItemMatchSemanticSignals;
+  } | null = null;
   let secondBestScore = 0;
 
   for (const candidate of candidates) {
@@ -120,6 +211,13 @@ export function findBestItemMatch(
     ].filter((n): n is string => !!n);
 
     let maxScore = 0;
+    let maxScoreSemantic: ItemMatchSemanticSignals = {
+      queryCoverage: 0,
+      candidateCoverage: 0,
+      overlapCount: 0,
+      missingCriticalTokens: [],
+      autoEligible: false,
+    };
     for (const sq of searchTerms) {
       if (!sq) continue;
       for (const cn of candidateNames) {
@@ -138,16 +236,34 @@ export function findBestItemMatch(
           s += 0.01;
         }
 
+        const semantic = computeSemanticSignals(sq, cn);
+        if (!semantic.autoEligible) {
+          s -= 0.12;
+          if (s > 0.93) s = 0.93;
+        } else if (semantic.queryCoverage < 0.9 || semantic.candidateCoverage < 0.85) {
+          s -= 0.03;
+        }
+
         if (s > 1) s = 1;
         if (s < 0) s = 0;
-        if (s > maxScore) maxScore = s;
+        if (s > maxScore) {
+          maxScore = s;
+          maxScoreSemantic = semantic;
+        }
       }
     }
 
-    if (maxScore >= 0.999) return { item: candidate, score: 1 };
+    if (maxScore >= 0.999) {
+      return { item: candidate, score: 1, autoEligible: true, semantic: maxScoreSemantic };
+    }
     if (!best || maxScore > best.score) {
       secondBestScore = best?.score ?? secondBestScore;
-      best = { item: candidate, score: maxScore };
+      best = {
+        item: candidate,
+        score: maxScore,
+        autoEligible: maxScoreSemantic.autoEligible,
+        semantic: maxScoreSemantic,
+      };
     } else if (maxScore > secondBestScore) {
       secondBestScore = maxScore;
     }

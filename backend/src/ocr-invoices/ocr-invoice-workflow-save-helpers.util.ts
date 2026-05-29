@@ -57,7 +57,7 @@ export async function processOcrLinesAgainstCatalog(
         }
 
         const matchResult = findBestItemMatch(searchName, workCatalog);
-        if (matchResult && matchResult.score >= 0.78) {
+        if (matchResult && matchResult.score >= 0.78 && matchResult.autoEligible !== false) {
           itemId = matchResult.item.id;
           if (lineSize) {
             await prisma.ocrItem
