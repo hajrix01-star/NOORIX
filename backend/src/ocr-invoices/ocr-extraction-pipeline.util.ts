@@ -25,7 +25,16 @@ export type ItemPriceWarning = {
 export type GeminiItemWithWarnings = GeminiExtractedItem & {
   mathWarning?: ItemMathWarning;
   priceWarning?: ItemPriceWarning;
-  itemMatch?: { id: string; nameAr: string; nameEn?: string | null; score: number; status: string; hasSizes: boolean } | null;
+  itemMatch?: {
+    id: string;
+    nameAr: string;
+    nameEn?: string | null;
+    score: number;
+    status: string;
+    hasSizes: boolean;
+    sizeGateDecision?: string;
+    qualityFlags?: string[];
+  } | null;
 };
 
 export type GeminiExtractionWithMath = Omit<GeminiExtractedInvoice, 'items'> & {
@@ -250,6 +259,38 @@ export function buildQualityFlags(
 
   if (!flags.size) flags.add('validated');
   return Array.from(flags);
+}
+
+export function mergeExtractionQualityFlags(
+  baseFlags: string[],
+  items: GeminiItemWithWarnings[],
+): { qualityFlags: string[]; qualityStatus: 'validated' | 'needs_review' } {
+  const itemGateFlags = Array.from(new Set(
+    (items || []).flatMap((x) => (
+      Array.isArray(x?.itemMatch?.qualityFlags)
+        ? x.itemMatch.qualityFlags.filter((flag: unknown): flag is string => typeof flag === 'string')
+        : []
+    )),
+  ));
+  const qualityFlags = Array.from(new Set([
+    ...baseFlags,
+    ...itemGateFlags,
+  ]));
+  const blockingQualityFlags = new Set([
+    'size_mismatch',
+    'missing_size_for_multi_size_item',
+    'incompatible_size_units',
+    'possible_decimal_size_error',
+    'size_gate_blocked_auto_match',
+  ]);
+  const hasBlockingFlags = qualityFlags.some((flag) => blockingQualityFlags.has(flag));
+  const qualityStatus = hasBlockingFlags
+    ? 'needs_review'
+    : qualityFlags.some((flag) => flag !== 'validated' && flag !== 'size_missing_on_candidate')
+      ? 'needs_review'
+      : 'validated';
+
+  return { qualityFlags, qualityStatus };
 }
 
 export function hasMeaningfulExtractionPayload(extracted: GeminiExtractedInvoice): boolean {
