@@ -23,6 +23,21 @@ import { useOcrInvoiceImagePipeline } from './invoiceUpload/useOcrInvoiceImagePi
 import { useOcrInvoiceLineItems } from './invoiceUpload/useOcrInvoiceLineItems';
 import { vaultKeys, ocrKeys } from '../../../services/queryKeys';
 
+function makeEmptyStageDurations() {
+  return {
+    uploadReadyMs: null,
+    modelRequestMs: null,
+    jsonValidationMs: null,
+    enrichmentMs: null,
+    readyForReviewMs: null,
+  };
+}
+
+function toDurationMs(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 /**
  * منطق تبويب رفع/استخراج فاتورة OCR (منفصل عن العرض)
  */
@@ -209,69 +224,57 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setExtractFailureStage(null);
     setExtractIssueReport('');
     setIssueCopied(false);
-    setExtractStageDurations({
-      uploadReadyMs: 0,
-      modelRequestMs: null,
-      jsonValidationMs: null,
-      enrichmentMs: null,
-      readyForReviewMs: null,
-    });
+    setExtractStageDurations({ ...makeEmptyStageDurations(), uploadReadyMs: 0 });
     setLoading(true);
     setError(null);
     setExtractWarning(null);
+    const requestStartedAt = Date.now();
     try {
-      const requestStartedAt = Date.now();
       const res = await extractInvoice(imageBase64, mimeType);
       const modelRequestMs = Math.max(1, Date.now() - requestStartedAt);
+      const payload = res.data && typeof res.data === 'object' ? res.data as Record<string, any> : null;
+      const stageTelemetry = payload?.extractionStageTelemetry && typeof payload.extractionStageTelemetry === 'object'
+        ? payload.extractionStageTelemetry as Record<string, any>
+        : null;
+      const stageRows = stageTelemetry?.stages && typeof stageTelemetry.stages === 'object'
+        ? stageTelemetry.stages as Record<string, any>
+        : null;
+      const stageDurationsFromBackend = {
+        uploadReadyMs: 0,
+        modelRequestMs: toDurationMs(stageRows?.modelRequest?.durationMs) ?? modelRequestMs,
+        jsonValidationMs: toDurationMs(stageRows?.jsonValidation?.durationMs),
+        enrichmentMs: toDurationMs(stageRows?.enrichment?.durationMs),
+        readyForReviewMs: toDurationMs(stageRows?.readyForReview?.durationMs) ?? 0,
+      };
       if (res.success) {
         if (res.data?.parseError) {
           const parseStartedAt = Date.now();
           setExtractFailureStage('parse');
-          const debugRaw = res.data || {};
+          const debugRaw = payload || {};
           const modelAttempts = Array.isArray(debugRaw.modelAttempts) ? debugRaw.modelAttempts : [];
           const schemaIssues = Array.isArray(debugRaw.schemaIssues) ? debugRaw.schemaIssues : [];
+          const failedStageKey = String(stageTelemetry?.failedStage || 'json_validation');
+          const failedReason = String(stageTelemetry?.failureReason || debugRaw.errorDetail || 'parse_or_schema_failed');
           const issueReport = [
             `OCR Pipeline Failure`,
-            `stage=parse_validation`,
+            `stage=${failedStageKey}`,
             `friendlyError=${t('ocrParseFriendlyError')}`,
-            `errorDetail=${String(debugRaw.errorDetail || 'parse_or_schema_failed')}`,
+            `errorDetail=${failedReason}`,
             `rawTextSnippet=${String(debugRaw.rawText || '').slice(0, 400)}`,
             schemaIssues.length ? `schemaIssues=${schemaIssues.join(' | ')}` : null,
             `modelAttempts=${JSON.stringify(modelAttempts)}`,
+            `stageDurations=${JSON.stringify(stageDurationsFromBackend)}`,
             `clientElapsedMs=${Date.now() - startedAt}`,
           ].filter(Boolean).join('\n');
           setExtractIssueReport(issueReport);
           setExtractStageDurations({
-            uploadReadyMs: 0,
-            modelRequestMs,
-            jsonValidationMs: Math.max(1, Date.now() - parseStartedAt),
-            enrichmentMs: null,
-            readyForReviewMs: null,
+            ...stageDurationsFromBackend,
+            jsonValidationMs:
+              stageDurationsFromBackend.jsonValidationMs ?? Math.max(1, Date.now() - parseStartedAt),
           });
           setError(t('ocrParseFriendlyError'));
         } else {
-          const parseStartedAt = Date.now();
-          const parseAndNormalizeMs = Math.max(1, Date.now() - parseStartedAt);
-          const telemetry = res.data && typeof res.data === 'object' ? res.data : {};
-          const extractionLatencyMs = Number((telemetry as { extractionLatencyMs?: number }).extractionLatencyMs) || 0;
-          const modelAttempts = Array.isArray((telemetry as { modelAttempts?: unknown[] }).modelAttempts)
-            ? (telemetry as { modelAttempts: Array<{ latencyMs?: number }> }).modelAttempts
-            : [];
-          const modelAttemptsMs = modelAttempts.reduce((sum, attempt) => {
-            const latency = Number(attempt?.latencyMs);
-            return sum + (Number.isFinite(latency) && latency > 0 ? latency : 0);
-          }, 0);
-          const processingOverheadMs = Math.max(0, extractionLatencyMs - modelAttemptsMs);
-          const jsonValidationMs = Math.max(1, Math.round(processingOverheadMs * 0.4) || parseAndNormalizeMs);
-          const enrichmentMs = Math.max(1, Math.round(processingOverheadMs * 0.6) || 1);
-
-          setExtractStageDurations({
-            uploadReadyMs: 0,
-            modelRequestMs,
-            jsonValidationMs,
-            enrichmentMs,
-            readyForReviewMs: 0,
-          });
+          setExtractStageDurations(stageDurationsFromBackend);
           setExtracted(res.data);
           setEditItems(null);
           if (res.data?.enrichError) {
@@ -281,11 +284,12 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       } else {
         setExtractFailureStage('request');
         const requestError = res.error || t('ocrExtractFailed');
-        setExtractStageDurations((prev) => ({ ...prev, modelRequestMs }));
+        setExtractStageDurations({ ...makeEmptyStageDurations(), uploadReadyMs: 0, modelRequestMs });
         setExtractIssueReport([
           'OCR Pipeline Failure',
           'stage=model_request',
           `error=${String(requestError)}`,
+          `stageDurations=${JSON.stringify({ uploadReadyMs: 0, modelRequestMs })}`,
           `clientElapsedMs=${Date.now() - startedAt}`,
         ].join('\n'));
         setError(requestError);
@@ -297,6 +301,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
         'OCR Pipeline Failure',
         'stage=model_request',
         `error=${String(msg)}`,
+        `stageDurations=${JSON.stringify({ uploadReadyMs: 0, modelRequestMs: Math.max(1, Date.now() - requestStartedAt) })}`,
         `clientElapsedMs=${Date.now() - startedAt}`,
       ].join('\n'));
       setError(msg);
@@ -329,13 +334,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       setExtractStartedAt(null);
       setExtractFailureStage(null);
       setExtractIssueReport('');
-      setExtractStageDurations({
-        uploadReadyMs: null,
-        modelRequestMs: null,
-        jsonValidationMs: null,
-        enrichmentMs: null,
-        readyForReviewMs: null,
-      });
+      setExtractStageDurations(makeEmptyStageDurations());
     }
   }, [imageBase64]);
 
@@ -517,13 +516,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setExtractFailureStage(null);
     setExtractIssueReport('');
     setIssueCopied(false);
-    setExtractStageDurations({
-      uploadReadyMs: null,
-      modelRequestMs: null,
-      jsonValidationMs: null,
-      enrichmentMs: null,
-      readyForReviewMs: null,
-    });
+    setExtractStageDurations(makeEmptyStageDurations());
     setEditItems(null);
     setFinalizeOcrId(null);
     setPrefillLinkedPurchase(null);

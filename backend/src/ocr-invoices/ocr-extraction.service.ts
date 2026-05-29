@@ -156,6 +156,11 @@ ${rawText.slice(0, 12000)}`;
     let bestEffortScore = -1;
     let bestEffortModel: string | undefined;
     let bestEffortVersion: string | undefined;
+    const stageTotals = {
+      modelRequestMs: 0,
+      jsonValidationMs: 0,
+      enrichmentMs: 0,
+    };
     const registerBestEffort = (
       payload: Record<string, unknown>,
       score: number,
@@ -168,6 +173,45 @@ ${rawText.slice(0, 12000)}`;
       bestEffortModel = model;
       bestEffortVersion = version;
     };
+    const attachPipelineTelemetry = (payload: Record<string, unknown>): Record<string, unknown> => {
+      const failureStage =
+        payload.pipelineFailureStage === 'model_request' || payload.pipelineFailureStage === 'json_validation'
+          ? payload.pipelineFailureStage
+          : null;
+      const failureReason =
+        typeof payload.pipelineFailureReason === 'string'
+          ? payload.pipelineFailureReason
+          : typeof payload.errorDetail === 'string'
+            ? payload.errorDetail
+            : undefined;
+      const parseError = !!payload.parseError || failureStage === 'json_validation';
+      const enrichError = typeof payload.enrichError === 'string' && payload.enrichError.trim().length > 0;
+      return {
+        ...payload,
+        extractionStageTelemetry: {
+          stages: {
+            modelRequest: {
+              durationMs: stageTotals.modelRequestMs,
+              status: failureStage === 'model_request' ? 'failed' : 'success',
+            },
+            jsonValidation: {
+              durationMs: stageTotals.jsonValidationMs,
+              status: failureStage === 'json_validation' ? 'failed' : 'success',
+            },
+            enrichment: {
+              durationMs: stageTotals.enrichmentMs,
+              status: parseError ? 'skipped' : enrichError ? 'warning' : 'success',
+            },
+            readyForReview: {
+              durationMs: 0,
+              status: parseError ? 'skipped' : 'success',
+            },
+          },
+          failedStage: failureStage || undefined,
+          failureReason: trimErrorText(failureReason, 400),
+        },
+      };
+    };
 
     // ── يُجرّب النماذج بالترتيب حتى ينجح أحدها ─────────────────────────
     for (const { model, version } of modelsToTry) {
@@ -175,6 +219,7 @@ ${rawText.slice(0, 12000)}`;
       const structuredOutput = supportsStructuredGeminiResponse(model);
       const requestBody = this.buildExtractionRequestBody(mimeType, dto.imageBase64, structuredOutput);
       const attemptStartedAt = Date.now();
+      const attemptStageDurations: NonNullable<OcrModelAttemptTelemetry['stageDurationsMs']> = {};
       const pushAttempt = (patch: Partial<OcrModelAttemptTelemetry> & { outcome: OcrModelAttemptOutcome }) => {
         modelAttempts.push({
           model,
@@ -183,18 +228,25 @@ ${rawText.slice(0, 12000)}`;
           startedAt: new Date(attemptStartedAt).toISOString(),
           latencyMs: Date.now() - attemptStartedAt,
           parseStage: patch.parseStage || 'none',
+          stageDurationsMs: {
+            ...attemptStageDurations,
+            ...(patch.stageDurationsMs || {}),
+          },
           ...patch,
         });
       };
 
       let rawJson: GeminiRaw | null = null;
       try {
+        const requestStageStartedAt = Date.now();
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
         });
         rawJson = await res.json().catch(() => null) as GeminiRaw | null;
+        attemptStageDurations.requestMs = Math.max(1, Date.now() - requestStageStartedAt);
+        stageTotals.modelRequestMs += attemptStageDurations.requestMs;
 
         if (!res.ok) {
           const errMsg = rawJson?.error?.message || res.statusText;
@@ -263,18 +315,31 @@ ${rawText.slice(0, 12000)}`;
           continue;
         }
 
+        const parseAndValidateStartedAt = Date.now();
+        const markParseAndValidateDone = () => {
+          if (attemptStageDurations.parseAndValidateMs != null) return;
+          attemptStageDurations.parseAndValidateMs = Math.max(1, Date.now() - parseAndValidateStartedAt);
+          stageTotals.jsonValidationMs += attemptStageDurations.parseAndValidateMs;
+        };
         let parseStage: OcrModelAttemptStage = 'none';
+        const directParseStartedAt = Date.now();
         let extracted = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(text);
+        attemptStageDurations.directParseMs = Math.max(1, Date.now() - directParseStartedAt);
         if (extracted) parseStage = 'direct';
         if (!extracted) {
+          const localRepairStartedAt = Date.now();
           extracted = tryLocalJsonRepair(text);
+          attemptStageDurations.localRepairMs = Math.max(1, Date.now() - localRepairStartedAt);
           if (extracted) parseStage = 'local_repair';
         }
         if (!extracted) {
+          const aiRepairStartedAt = Date.now();
           extracted = await this.tryRecoverJsonFromRawText(apiKey, model, version, text);
+          attemptStageDurations.aiRepairMs = Math.max(1, Date.now() - aiRepairStartedAt);
           if (extracted) parseStage = 'ai_repair';
         }
         if (!extracted) {
+          markParseAndValidateDone();
           this.logger.error(`Gemini parse failed (${model}). textLen=${text.length}`);
           pushAttempt({
             outcome: 'parse_failed',
@@ -289,6 +354,8 @@ ${rawText.slice(0, 12000)}`;
             usedModelVersion: version,
             rawText: text.substring(0, 400),
             errorDetail: 'JSON parse failed — Gemini returned text but no valid JSON found',
+            pipelineFailureStage: 'json_validation',
+            pipelineFailureReason: 'JSON parse failed — Gemini returned text but no valid JSON found',
             qualityFlags: ['json_parse_failed'],
             qualityStatus: 'needs_review',
             supplier: null, supplierMatch: null,
@@ -303,8 +370,11 @@ ${rawText.slice(0, 12000)}`;
         const normalizedExtraction = normalizeExtractedInvoicePayload(extracted);
         this.logger.log(`Gemini extracted OK (${model}): supplier=${normalizedExtraction.supplier?.name} items=${normalizedExtraction.items?.length}`);
 
+        const zodStartedAt = Date.now();
         const zodValidation = validateOcrExtractionWithZod(normalizedExtraction);
+        attemptStageDurations.zodValidateMs = Math.max(1, Date.now() - zodStartedAt);
         if (!zodValidation.success) {
+          markParseAndValidateDone();
           this.logger.warn(`OCR schema validation failed (${model}): ${zodValidation.issues.join(' | ')}`);
           pushAttempt({
             outcome: 'schema_failed',
@@ -319,6 +389,8 @@ ${rawText.slice(0, 12000)}`;
             usedModelVersion: version,
             rawText: text.substring(0, 400),
             errorDetail: 'Schema validation failed for OCR extraction payload',
+            pipelineFailureStage: 'json_validation',
+            pipelineFailureReason: 'Schema validation failed for OCR extraction payload',
             schemaIssues: zodValidation.issues.slice(0, 10),
             qualityFlags: ['schema_validation_failed'],
             qualityStatus: 'failed',
@@ -336,7 +408,10 @@ ${rawText.slice(0, 12000)}`;
           continue;
         }
 
+        const signalChecksStartedAt = Date.now();
         if (!hasMeaningfulExtractionPayload(zodValidation.data)) {
+          attemptStageDurations.signalChecksMs = Math.max(1, Date.now() - signalChecksStartedAt);
+          markParseAndValidateDone();
           pushAttempt({
             outcome: 'empty',
             parseStage,
@@ -349,7 +424,11 @@ ${rawText.slice(0, 12000)}`;
         }
 
         if (!isActionableExtractionPayload(zodValidation.data)) {
+          attemptStageDurations.signalChecksMs = Math.max(1, Date.now() - signalChecksStartedAt);
+          const mathStartedAt = Date.now();
           const mathValidatedExtraction = applyMathValidation(zodValidation.data);
+          attemptStageDurations.mathValidationMs = Math.max(1, Date.now() - mathStartedAt);
+          markParseAndValidateDone();
           const qualityFlags = Array.from(new Set([
             ...buildQualityFlags(mathValidatedExtraction),
             'insufficient_actionable_fields',
@@ -374,6 +453,8 @@ ${rawText.slice(0, 12000)}`;
             invoiceTotalWarning: mathValidatedExtraction.invoiceTotalWarning,
             vatAdjusted: mathValidatedExtraction.vatAdjusted,
             lineTaxMode: mathValidatedExtraction.lineTaxMode,
+            pipelineFailureStage: 'json_validation',
+            pipelineFailureReason: 'OCR extraction returned insufficient actionable fields',
             qualityFlags,
             qualityStatus: 'needs_review',
             errorDetail: 'OCR extraction returned insufficient actionable fields',
@@ -382,18 +463,25 @@ ${rawText.slice(0, 12000)}`;
           continue;
         }
 
+        attemptStageDurations.signalChecksMs = Math.max(1, Date.now() - signalChecksStartedAt);
+        const mathStartedAt = Date.now();
         const mathValidatedExtraction = applyMathValidation(zodValidation.data);
+        attemptStageDurations.mathValidationMs = Math.max(1, Date.now() - mathStartedAt);
+        markParseAndValidateDone();
 
+        const enrichStartedAt = Date.now();
         // enrichExtraction محمي بـ try/catch — لا يُفسد النتيجة
         try {
           const enriched = await this.enrichExtraction(tenantId, companyId, mathValidatedExtraction);
+          attemptStageDurations.enrichMs = Math.max(1, Date.now() - enrichStartedAt);
+          stageTotals.enrichmentMs += attemptStageDurations.enrichMs;
           pushAttempt({
             outcome: 'success',
             parseStage,
             httpStatus: res.status,
             finishReason: candidate?.finishReason,
           });
-          return attachModelTelemetry(enriched as Record<string, unknown>, {
+          return attachModelTelemetry(attachPipelineTelemetry(enriched as Record<string, unknown>), {
             attempts: modelAttempts,
             usedModel: model,
             usedModelVersion: version,
@@ -401,6 +489,8 @@ ${rawText.slice(0, 12000)}`;
             primaryModel,
           });
         } catch (enrichErr) {
+          attemptStageDurations.enrichMs = Math.max(1, Date.now() - enrichStartedAt);
+          stageTotals.enrichmentMs += attemptStageDurations.enrichMs;
           this.logger.error(`enrichExtraction failed: ${(enrichErr as Error).message}. Returning raw extraction.`);
           pushAttempt({
             outcome: 'success',
@@ -426,7 +516,7 @@ ${rawText.slice(0, 12000)}`;
             qualityStatus: qualityFlags.includes('validated') ? 'validated' : 'needs_review',
             enrichError: (enrichErr as Error).message,
           };
-          return attachModelTelemetry(payload, {
+          return attachModelTelemetry(attachPipelineTelemetry(payload), {
             attempts: modelAttempts,
             usedModel: model,
             usedModelVersion: version,
@@ -437,6 +527,10 @@ ${rawText.slice(0, 12000)}`;
 
       } catch (err) {
         if (err instanceof BadRequestException) throw err;
+        if (!attemptStageDurations.requestMs) {
+          attemptStageDurations.requestMs = Math.max(1, Date.now() - attemptStartedAt);
+          stageTotals.modelRequestMs += attemptStageDurations.requestMs;
+        }
         pushAttempt({
           outcome: 'runtime_error',
           error: trimErrorText(err),
@@ -447,7 +541,7 @@ ${rawText.slice(0, 12000)}`;
     }
 
     if (bestEffortPayload) {
-      return attachModelTelemetry(bestEffortPayload, {
+      return attachModelTelemetry(attachPipelineTelemetry(bestEffortPayload), {
         attempts: modelAttempts,
         usedModel: bestEffortModel,
         usedModelVersion: bestEffortVersion,

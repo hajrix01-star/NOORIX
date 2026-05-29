@@ -17,6 +17,17 @@ export type OcrModelAttemptTelemetry = {
   latencyMs: number;
   outcome: OcrModelAttemptOutcome;
   parseStage: OcrModelAttemptStage;
+  stageDurationsMs?: {
+    requestMs?: number;
+    parseAndValidateMs?: number;
+    directParseMs?: number;
+    localRepairMs?: number;
+    aiRepairMs?: number;
+    zodValidateMs?: number;
+    signalChecksMs?: number;
+    mathValidationMs?: number;
+    enrichMs?: number;
+  };
   httpStatus?: number;
   finishReason?: string;
   blockReason?: string;
