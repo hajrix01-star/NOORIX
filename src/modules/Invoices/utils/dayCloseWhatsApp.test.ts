@@ -2,72 +2,67 @@ import { describe, it, expect } from 'vitest';
 import { buildDayCloseWhatsAppText } from './dayCloseWhatsApp';
 
 describe('buildDayCloseWhatsAppText', () => {
-  const t = (k: string, ...args: unknown[]) => {
-    if (k === 'dayCloseLifetimeCashFootnote' && args.length) return `lifetime ${args[0]}`;
-    if (k === 'dayCloseWaOpsMore' && args.length >= 2) return `more ${args[0]} total ${args[1]} shown`;
-    return k;
-  };
+  const t = (k: string) => k;
 
-  const kindLabel = { sale: 'Sale', expense: 'Expense' };
+  const kindLabel = { sale: 'مبيعات', purchase: 'مشتريات', expense: 'مصروف' };
 
-  const baseData = {
-    sums: { inflow: { total: 1000, count: 2 }, outflow: { total: 400, count: 1 } },
-    cash: {
-      netDay: 600,
-      dayTotalIn: 800,
-      dayTotalOut: 200,
-      availableCashMonthScoped: 5000,
-      balanceLifetimeCashVaultsEod: 12000,
-    },
-    transfers: { count: 1, volume: 50 },
-    byKind: [{ kind: 'sale', count: 2, total: 1000 }],
-    outflowByPaymentMethod: [{ nameAr: 'نقدي', nameEn: 'Cash', total: 400 }],
-    meta: { invoiceCountAll: 3 },
-    operations: [
-      {
-        id: '1',
-        invoiceNumber: 'INV-1',
-        kind: 'sale',
-        totalAmount: 500,
-        status: 'active',
-        vaultNameAr: 'صندوق',
-      },
-    ],
-  };
-
-  it('includes company, KPIs, and sections', () => {
+  it('builds brief digest with day cash available = in − out', () => {
     const text = buildDayCloseWhatsAppText({
-      companyName: 'مطعم',
-      dateLabel: '29 May 2026',
-      data: baseData,
+      companyName: 'ARZ',
+      dateLabel: '28-05-2026 الخميس',
+      data: {
+        sums: { inflow: { total: 6463, count: 10 }, outflow: { total: 2990, count: 5 } },
+        cash: { dayTotalIn: 500, dayTotalOut: 100, netDay: 400 },
+        byKind: [
+          { kind: 'sale', count: 10, total: 6463 },
+          { kind: 'purchase', count: 2, total: 2100 },
+          { kind: 'expense', count: 3, total: 890 },
+        ],
+        salesSummaries: [
+          {
+            totalAmount: 6463,
+            customerCount: 85,
+            channels: [
+              { vaultNameAr: 'بنك', amount: 5607 },
+              { vaultNameAr: 'نقد', amount: 856 },
+            ],
+          },
+        ],
+      },
       kindLabel,
       lang: 'ar',
       t,
     });
-    expect(text).toContain('dayCloseWaTitle');
-    expect(text).toContain('مطعم');
-    expect(text).toContain('1,000');
-    expect(text).toContain('نقدي');
-    expect(text).toContain('INV-1');
-    expect(text).toContain('lifetime 12,000');
+
+    expect(text).toContain('ARZ');
+    expect(text).toContain('dayCloseWaSectionSales');
+    expect(text).toContain('│ بنك');
+    expect(text).toContain('dayCloseWaPurchases');
+    expect(text).toContain('dayCloseWaExpenses');
+    expect(text).toContain('dayCloseWaCashIn');
+    expect(text).toContain('500');
+    expect(text).toContain('dayCloseWaCashOut');
+    expect(text).toContain('100');
+    expect(text).toContain('dayCloseWaCashAvailable');
+    expect(text).toContain('400');
+    expect(text).not.toContain('INV-');
+    expect(text).not.toContain('dayCloseWaOpsMore');
   });
 
-  it('omits lifetime footnote when month scoped equals lifetime', () => {
+  it('uses netDay from cash when in/out differ from computed', () => {
     const text = buildDayCloseWhatsAppText({
       companyName: '',
       dateLabel: '2026-05-29',
       data: {
-        ...baseData,
-        cash: {
-          ...baseData.cash,
-          availableCashMonthScoped: 5000,
-          balanceLifetimeCashVaultsEod: 5000,
-        },
+        sums: { inflow: { total: 0 }, outflow: { total: 0 } },
+        cash: { dayTotalIn: 500, dayTotalOut: 100, netDay: 400 },
+        byKind: [],
+        salesSummaries: [],
       },
       kindLabel,
       lang: 'en',
       t,
     });
-    expect(text).not.toContain('lifetime');
+    expect(text).toContain('400');
   });
 });
