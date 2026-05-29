@@ -7,7 +7,12 @@ import {
   parseOcrConfidence,
   parseOcrNumber,
 } from './ocr-extraction-normalize.util';
-import { validateItemMath, validateInvoiceTotals, type OcrLineTaxMode } from './ocr-invoice-math-validate.util';
+import {
+  reconcileLineAmountsForTaxMode,
+  validateItemMath,
+  validateInvoiceTotals,
+  type OcrLineTaxMode,
+} from './ocr-invoice-math-validate.util';
 import type { GeminiExtractedInvoice, GeminiExtractedItem } from './ocr-gemini-extract.constants';
 
 export type ItemMathWarning = {
@@ -199,10 +204,32 @@ export function normalizeExtractedInvoicePayload(extracted: GeminiExtractedInvoi
 }
 
 export function applyMathValidation(extracted: GeminiExtractedInvoice): GeminiExtractionWithMath {
-  const items = (extracted.items || []).map((item) => {
-    const mathResult = validateItemMath(item.quantity, item.unitPrice, item.totalPrice);
+  const rawItems = extracted.items || [];
+  const itemsSum = rawItems.reduce((s, i) => s + (i.totalPrice || 0), 0);
+  const invoiceTotalValidation = validateInvoiceTotals(
+    itemsSum,
+    extracted.totalAmount?.value,
+    extracted.vatAmount?.value,
+    extracted.subtotalAmount?.value,
+  );
+  const lineTaxMode = invoiceTotalValidation.lineTaxMode;
+
+  const items = rawItems.map((item) => {
+    const reconciled = reconcileLineAmountsForTaxMode(
+      item.quantity,
+      item.unitPrice,
+      item.totalPrice,
+      lineTaxMode,
+    );
+    const quantity = item.quantity;
+    const unitPrice = reconciled.unitPrice ?? item.unitPrice;
+    const totalPrice = reconciled.totalPrice ?? item.totalPrice;
+    const mathResult = validateItemMath(quantity, unitPrice, totalPrice);
+
     return {
       ...item,
+      ...(reconciled.reconciled && unitPrice != null ? { unitPrice } : {}),
+      ...(reconciled.reconciled && totalPrice != null ? { totalPrice } : {}),
       mathWarning: mathResult.valid
         ? undefined
         : {
@@ -213,20 +240,12 @@ export function applyMathValidation(extracted: GeminiExtractedInvoice): GeminiEx
     };
   });
 
-  const itemsSum = items.reduce((s, i) => s + (i.totalPrice || 0), 0);
-  const invoiceTotalValidation = validateInvoiceTotals(
-    itemsSum,
-    extracted.totalAmount?.value,
-    extracted.vatAmount?.value,
-    extracted.subtotalAmount?.value,
-  );
-
   return {
     ...extracted,
     items,
     invoiceTotalWarning: invoiceTotalValidation.valid ? undefined : invoiceTotalValidation.warning,
     vatAdjusted: invoiceTotalValidation.vatAdjusted,
-    lineTaxMode: invoiceTotalValidation.lineTaxMode,
+    lineTaxMode,
   };
 }
 

@@ -1,4 +1,5 @@
 import {
+  applyMathValidation,
   hasMeaningfulExtractionPayload,
   isActionableExtractionPayload,
   summarizeExtractionSignal,
@@ -57,5 +58,26 @@ describe('ocr-extraction-pipeline signal guards', () => {
     const summary = summarizeExtractionSignal(payload);
     expect(summary.itemSignalCount).toBe(1);
     expect(summary.actionable).toBe(true);
+  });
+
+  it('auto-reconciles inclusive line unit price when OCR mixes net unit and gross total', () => {
+    const payload: GeminiExtractedInvoice = {
+      subtotalAmount: { value: 1478.26, confidence: 0.9 },
+      vatAmount: { value: 221.74, confidence: 0.9 },
+      totalAmount: { value: 1700, confidence: 0.95 },
+      items: [
+        {
+          name: 'تفاحتين الفاخر 500 جرام',
+          quantity: 1,
+          unitPrice: 1478.26,
+          totalPrice: 1699.999,
+          confidence: 0.9,
+        },
+      ],
+    };
+    const result = applyMathValidation(payload);
+    expect(result.lineTaxMode).toBe('inclusive');
+    expect(result.items[0].unitPrice).toBe(1700);
+    expect(result.items[0].mathWarning).toBeUndefined();
   });
 });

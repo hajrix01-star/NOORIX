@@ -1,4 +1,39 @@
-import { validateInvoiceTotals } from './ocr-invoice-math-validate.util';
+import {
+  reconcileLineAmountsForTaxMode,
+  validateInvoiceTotals,
+  validateItemMath,
+} from './ocr-invoice-math-validate.util';
+
+describe('validateItemMath', () => {
+  it('suggests gross unit price when net unit price is mixed with gross total', () => {
+    const result = validateItemMath(1, 1478.26, 1699.999);
+    expect(result.valid).toBe(false);
+    expect(result.suggestedUnitPrice).toBe(1700);
+  });
+});
+
+describe('reconcileLineAmountsForTaxMode', () => {
+  it('fixes inclusive lines when unit price is net and total is gross', () => {
+    const result = reconcileLineAmountsForTaxMode(1, 1478.26, 1699.999, 'inclusive');
+    expect(result.reconciled).toBe(true);
+    expect(result.unitPrice).toBe(1700);
+    expect(result.totalPrice).toBe(1699.999);
+    expect(validateItemMath(1, result.unitPrice, result.totalPrice).valid).toBe(true);
+  });
+
+  it('fixes exclusive lines when total is gross but unit price is net', () => {
+    const result = reconcileLineAmountsForTaxMode(2, 100, 230, 'exclusive');
+    expect(result.reconciled).toBe(true);
+    expect(result.unitPrice).toBe(100);
+    expect(result.totalPrice).toBe(200);
+    expect(validateItemMath(2, result.unitPrice, result.totalPrice).valid).toBe(true);
+  });
+
+  it('does not reconcile when quantity mismatch is the likely issue', () => {
+    const result = reconcileLineAmountsForTaxMode(1, 100, 200, 'inclusive');
+    expect(result.reconciled).toBe(false);
+  });
+});
 
 describe('validateInvoiceTotals', () => {
   it('classifies item totals close to subtotal as VAT-exclusive lines', () => {

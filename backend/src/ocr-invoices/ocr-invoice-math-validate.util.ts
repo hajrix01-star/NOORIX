@@ -9,6 +9,64 @@ export interface MathValidationResult {
 
 export type OcrLineTaxMode = 'exclusive' | 'inclusive' | 'unknown';
 
+export const SAUDI_VAT_RATE = 0.15;
+
+function amountTolerance(base: number): number {
+  return Math.max(Math.abs(base), 1) * 0.03;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export function reconcileLineAmountsForTaxMode(
+  quantity?: number,
+  unitPrice?: number,
+  totalPrice?: number,
+  lineTaxMode: OcrLineTaxMode = 'unknown',
+  vatRate = SAUDI_VAT_RATE,
+): { unitPrice?: number; totalPrice?: number; reconciled: boolean } {
+  if (!quantity || !unitPrice || !totalPrice || lineTaxMode === 'unknown') {
+    return { unitPrice, totalPrice, reconciled: false };
+  }
+
+  const mathResult = validateItemMath(quantity, unitPrice, totalPrice);
+  if (mathResult.valid) {
+    return { unitPrice, totalPrice, reconciled: false };
+  }
+
+  // Prefer quantity correction when the mismatch is clearly a quantity issue.
+  if (mathResult.suggestedQuantity !== undefined) {
+    return { unitPrice, totalPrice, reconciled: false };
+  }
+
+  const netLineTotal = quantity * unitPrice;
+  const grossFromNet = netLineTotal * (1 + vatRate);
+  const totalTol = amountTolerance(totalPrice);
+
+  if (lineTaxMode === 'inclusive') {
+    if (Math.abs(grossFromNet - totalPrice) <= totalTol) {
+      return {
+        unitPrice: roundMoney(totalPrice / quantity),
+        totalPrice,
+        reconciled: true,
+      };
+    }
+  }
+
+  if (lineTaxMode === 'exclusive') {
+    if (Math.abs(grossFromNet - totalPrice) <= totalTol) {
+      return {
+        unitPrice,
+        totalPrice: roundMoney(netLineTotal),
+        reconciled: true,
+      };
+    }
+  }
+
+  return { unitPrice, totalPrice, reconciled: false };
+}
+
 export function validateItemMath(
   quantity?: number,
   unitPrice?: number,
