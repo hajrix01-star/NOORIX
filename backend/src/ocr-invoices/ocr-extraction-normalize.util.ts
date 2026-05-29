@@ -10,9 +10,10 @@ const VAT_DIGITS_RE = /[^0-9]/g;
 const ARABIC_TEXT_RE = /[\u0600-\u06FF]/;
 const LATIN_TEXT_RE = /[A-Za-z]/;
 const SUPPLIER_META_TEXT_RE =
-  /(re-?evaluat|instruction|as per|combined for clarity|using the|let'?s stick|prompt|analysis|explain|choose|selected|official seller|supplier name:|name as|primary)/i;
+  /(re-?evaluat|instruction|as per|combined(?:\s+from|\s+for)?|header and invoice details|invoice details|using the|let'?s stick|prompt|analysis|explain|choose|selected|official seller|supplier name:|name as|primary|for clarity)/i;
 const SUPPLIER_COMPANY_TOKEN_RE =
   /(شركة|مؤسسة|مجموعة|مصنع|مخبز|trading|company|co\.?|est\.?|corporation|corp|llc|ltd)/i;
+const SUPPLIER_META_BRACKET_RE = /\(([^)]*)\)/g;
 
 function convertDigitsToWestern(value: string): string {
   return value
@@ -150,6 +151,15 @@ function cleanupSupplierSegment(raw: string): string {
     .trim();
 }
 
+function stripSupplierMetaSuffix(raw: string): string {
+  if (!raw) return raw;
+  const withoutMetaBrackets = raw.replace(SUPPLIER_META_BRACKET_RE, (full, inside) => {
+    const content = String(inside || '').trim();
+    return content && SUPPLIER_META_TEXT_RE.test(content) ? ' ' : full;
+  });
+  return cleanupSupplierSegment(withoutMetaBrackets.replace(/\s+/g, ' '));
+}
+
 function scoreSupplierCandidate(candidate: string): number {
   if (!candidate) return -100;
   if (SUPPLIER_META_TEXT_RE.test(candidate)) return -50;
@@ -178,9 +188,17 @@ export function normalizeOcrSupplierName(value: unknown): string | undefined {
     .split(/\r?\n|[|]/g)
     .map(cleanupSupplierSegment)
     .filter(Boolean)
-    .flatMap((line) => line.split(/\s+[–—-]\s+/g).map(cleanupSupplierSegment).filter(Boolean));
+    .flatMap((line) =>
+      line
+        .split(/\s+[–—-]\s+/g)
+        .map(cleanupSupplierSegment)
+        .map(stripSupplierMetaSuffix)
+        .filter(Boolean),
+    );
 
-  const candidates = (parts.length ? parts : [raw]).filter((x) => !SUPPLIER_META_TEXT_RE.test(x));
+  const candidates = (parts.length ? parts : [stripSupplierMetaSuffix(raw)]).filter(
+    (x) => !!x && !SUPPLIER_META_TEXT_RE.test(x),
+  );
   if (!candidates.length) return undefined;
 
   const best = candidates
