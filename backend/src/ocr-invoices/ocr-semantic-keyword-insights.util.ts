@@ -135,6 +135,7 @@ export async function buildSemanticKeywordInsights(
           invoiceDate: true,
           createdAt: true,
           totalAmount: true,
+          imageUrl: true,
           supplier: { select: { id: true, nameAr: true } },
         },
       },
@@ -214,6 +215,8 @@ export async function buildSemanticKeywordInsights(
     invoiceNumber: string;
     invoiceDate: string;
     supplierName: string;
+    invoiceImageUrl: string | null;
+    hasImage: boolean;
     matchedLines: number;
     matchedLinesTotal: number;
     invoiceTotal: number;
@@ -254,6 +257,8 @@ export async function buildSemanticKeywordInsights(
         invoiceNumber: line.invoice.invoiceNumber || '—',
         invoiceDate: invoiceDateYmd,
         supplierName,
+        invoiceImageUrl: line.invoice.imageUrl || null,
+        hasImage: !!line.invoice.imageUrl,
         matchedLines: 0,
         matchedLinesTotal: 0,
         invoiceTotal: asNumber(line.invoice.totalAmount) || 0,
@@ -292,6 +297,8 @@ export async function buildSemanticKeywordInsights(
       invoiceId: line.invoice.id,
       invoiceNumber: line.invoice.invoiceNumber || '—',
       invoiceDate: invoiceDateYmd,
+      invoiceImageUrl: line.invoice.imageUrl || null,
+      hasImage: !!line.invoice.imageUrl,
       supplierId: line.invoice.supplier?.id || null,
       supplierName,
       itemId,

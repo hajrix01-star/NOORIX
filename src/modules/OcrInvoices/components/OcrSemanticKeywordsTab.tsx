@@ -16,7 +16,16 @@ type InvoiceImageState = {
   imageUrl: string | null;
   loading: boolean;
   error: string;
+  isObjectUrl: boolean;
 };
+
+function normalizeInvoiceImageUrl(raw: unknown): string {
+  const text = String(raw || '').trim();
+  if (!text) return '';
+  if (/^(?:https?:)?\/\//i.test(text) || text.startsWith('data:') || text.startsWith('blob:')) return text;
+  if (text.startsWith('/')) return text;
+  return `/${text.replace(/^\.?\//, '')}`;
+}
 
 export default function OcrSemanticKeywordsTab() {
   const { lang } = useTranslation();
@@ -55,23 +64,26 @@ export default function OcrSemanticKeywordsTab() {
 
   useEffect(() => (
     () => {
-      if (imageState?.imageUrl) URL.revokeObjectURL(imageState.imageUrl);
+      if (imageState?.isObjectUrl && imageState?.imageUrl) URL.revokeObjectURL(imageState.imageUrl);
     }
-  ), [imageState?.imageUrl]);
+  ), [imageState?.imageUrl, imageState?.isObjectUrl]);
 
-  const openInvoiceImage = async (invoiceId: string, invoiceLabel: string) => {
-    if (!invoiceId) return;
+  const openInvoiceImage = async (invoiceId: string, invoiceLabel: string, rawImageUrl?: string | null) => {
+    const directImageUrl = normalizeInvoiceImageUrl(rawImageUrl);
+    if (!invoiceId && !directImageUrl) return;
     let nextState: InvoiceImageState = {
       invoiceId,
       invoiceLabel,
-      imageUrl: null,
-      loading: true,
+      imageUrl: directImageUrl || null,
+      loading: !directImageUrl,
       error: '',
+      isObjectUrl: false,
     };
     setImageState((prev) => {
-      if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
+      if (prev?.isObjectUrl && prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
       return nextState;
     });
+    if (directImageUrl) return;
     try {
       const blob = await fetchOcrInvoiceImageBlob(invoiceId, undefined);
       const blobUrl = URL.createObjectURL(blob);
@@ -79,23 +91,43 @@ export default function OcrSemanticKeywordsTab() {
         ...nextState,
         imageUrl: blobUrl,
         loading: false,
+        isObjectUrl: true,
       };
       setImageState(nextState);
-    } catch {
+    } catch (err: any) {
+      const status = Number(err?.status || 0);
       setImageState({
         ...nextState,
         loading: false,
-        error: isAr ? 'تعذّر تحميل صورة الفاتورة.' : 'Failed to load invoice image.',
+        error: status === 404
+          ? (isAr ? 'لا توجد صورة محفوظة لهذه الفاتورة.' : 'No stored image for this invoice.')
+          : (isAr ? 'تعذّر تحميل صورة الفاتورة.' : 'Failed to load invoice image.'),
       });
     }
   };
 
   const closeInvoiceImage = () => {
     setImageState((prev) => {
-      if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
+      if (prev?.isObjectUrl && prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
       return null;
     });
   };
+
+  const linesWithInvoiceStats = useMemo(() => {
+    const invoiceMap = new Map<string, any>();
+    for (const inv of semanticData?.invoices || []) {
+      invoiceMap.set(String(inv?.invoiceId || ''), inv);
+    }
+    return (semanticData?.lines || []).map((line: any) => {
+      const inv = invoiceMap.get(String(line?.invoiceId || ''));
+      return {
+        ...line,
+        invoiceMatchedLines: inv?.matchedLines ?? null,
+        invoiceMatchedLinesTotal: inv?.matchedLinesTotal ?? null,
+        invoiceTotal: inv?.invoiceTotal ?? null,
+      };
+    });
+  }, [semanticData?.invoices, semanticData?.lines]);
 
   const semanticLineColumns = useMemo(() => [
     { key: 'itemName', label: isAr ? 'الصنف' : 'Item' },
@@ -133,31 +165,21 @@ export default function OcrSemanticKeywordsTab() {
     { key: 'invoiceDate', label: isAr ? 'تاريخ الفاتورة' : 'Invoice date' },
     { key: 'invoiceNumber', label: isAr ? 'رقم الفاتورة' : 'Invoice #' },
     {
-      key: 'viewImage',
-      label: isAr ? 'الصورة' : 'Image',
-      render: (_: unknown, row: any) => (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => openInvoiceImage(String(row.invoiceId || ''), String(row.invoiceNumber || '—'))}
-        >
-          {isAr ? 'عرض' : 'View'}
-        </Button>
-      ),
-    },
-  ], [isAr]);
-
-  const semanticInvoiceColumns = useMemo(() => [
-    { key: 'invoiceNumber', label: isAr ? 'رقم الفاتورة' : 'Invoice #' },
-    { key: 'invoiceDate', label: isAr ? 'التاريخ' : 'Date' },
-    { key: 'supplierName', label: isAr ? 'المورد' : 'Supplier' },
-    { key: 'matchedLines', label: isAr ? 'السطور المطابقة' : 'Matched lines', numeric: true },
-    {
-      key: 'matchedLinesTotal',
-      label: isAr ? 'إجمالي السطور المطابقة' : 'Matched lines total',
+      key: 'invoiceMatchedLines',
+      label: isAr ? 'سطور الفاتورة المطابقة' : 'Invoice matched lines',
       numeric: true,
       render: (_: unknown, row: any) => (
-        <span className="ltr">{fmt(row.matchedLinesTotal || 0)} <span className="nx-sar">SR</span></span>
+        row.invoiceMatchedLines != null ? fmt(row.invoiceMatchedLines, 0) : '—'
+      ),
+    },
+    {
+      key: 'invoiceMatchedLinesTotal',
+      label: isAr ? 'إجمالي السطور المطابقة بالفاتورة' : 'Invoice matched lines total',
+      numeric: true,
+      render: (_: unknown, row: any) => (
+        row.invoiceMatchedLinesTotal != null
+          ? <span className="ltr">{fmt(row.invoiceMatchedLinesTotal)} <span className="nx-sar">SR</span></span>
+          : '—'
       ),
     },
     {
@@ -165,21 +187,31 @@ export default function OcrSemanticKeywordsTab() {
       label: isAr ? 'إجمالي الفاتورة' : 'Invoice total',
       numeric: true,
       render: (_: unknown, row: any) => (
-        <span className="ltr">{fmt(row.invoiceTotal || 0)} <span className="nx-sar">SR</span></span>
+        row.invoiceTotal != null
+          ? <span className="ltr">{fmt(row.invoiceTotal)} <span className="nx-sar">SR</span></span>
+          : '—'
       ),
     },
     {
       key: 'viewImage',
       label: isAr ? 'الصورة' : 'Image',
-      render: (_: unknown, row: any) => (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => openInvoiceImage(String(row.invoiceId || ''), String(row.invoiceNumber || '—'))}
-        >
-          {isAr ? 'عرض' : 'View'}
-        </Button>
-      ),
+      render: (_: unknown, row: any) => {
+        const canView = !!row?.hasImage || !!row?.invoiceImageUrl;
+        if (!canView) return <span className="text-[12px] text-noorix-muted">—</span>;
+        return (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => openInvoiceImage(
+              String(row.invoiceId || ''),
+              String(row.invoiceNumber || '—'),
+              row.invoiceImageUrl || null,
+            )}
+          >
+            {isAr ? 'عرض' : 'View'}
+          </Button>
+        );
+      },
     },
   ], [isAr]);
 
@@ -290,26 +322,16 @@ export default function OcrSemanticKeywordsTab() {
       )}
 
       {!!keyword && !semanticLoading && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <SmartTable
-            title={isAr ? 'سطور الفواتير المطابقة للكلمة' : 'Keyword-matched invoice lines'}
+            title={isAr ? 'سطور الفواتير المطابقة للكلمة (يشمل بيانات الفاتورة)' : 'Keyword-matched invoice lines (with invoice summary)'}
             columns={semanticLineColumns}
-            data={semanticData?.lines || []}
-            total={(semanticData?.lines || []).length}
+            data={linesWithInvoiceStats}
+            total={linesWithInvoiceStats.length}
             page={1}
-            pageSize={Math.max(1, Math.min(30, (semanticData?.lines || []).length || 1))}
+            pageSize={Math.max(1, Math.min(30, linesWithInvoiceStats.length || 1))}
             emptyMessage={isAr ? 'لا توجد سطور مطابقة لهذه الكلمة.' : 'No matching lines for this keyword.'}
             tableId="ocr-semantic-keyword-lines"
-          />
-          <SmartTable
-            title={isAr ? 'الفواتير المرتبطة بالكلمة' : 'Invoices linked to keyword'}
-            columns={semanticInvoiceColumns}
-            data={semanticData?.invoices || []}
-            total={(semanticData?.invoices || []).length}
-            page={1}
-            pageSize={Math.max(1, Math.min(30, (semanticData?.invoices || []).length || 1))}
-            emptyMessage={isAr ? 'لا توجد فواتير مرتبطة بالكلمة.' : 'No invoices linked to keyword.'}
-            tableId="ocr-semantic-keyword-invoices"
           />
           <SmartTable
             title={isAr ? 'الأصناف المرتبطة بالكلمة' : 'Items linked to keyword'}
@@ -352,6 +374,12 @@ export default function OcrSemanticKeywordsTab() {
             src={imageState.imageUrl}
             alt={isAr ? 'صورة الفاتورة' : 'Invoice image'}
             className="w-full max-h-[70vh] object-contain rounded-lg border border-noorix-border bg-noorix-bg-muted"
+            onError={() => setImageState((prev) => (
+              prev ? {
+                ...prev,
+                error: isAr ? 'تعذّر تحميل صورة الفاتورة.' : 'Failed to load invoice image.',
+              } : prev
+            ))}
           />
         )}
       </Modal>
