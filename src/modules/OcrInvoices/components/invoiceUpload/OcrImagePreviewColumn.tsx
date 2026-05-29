@@ -14,9 +14,13 @@ export function OcrImagePreviewColumn({
   extractError,
   extractFailureStage,
   extractStartedAt,
+  stageDurations,
+  copyIssueText,
+  issueCopied,
   onResetAll,
   onExtract,
   onSave,
+  onCopyIssue,
 }: any) {
   return (
     <div className="noorix-surface-card flex-[1_1_280px] min-w-0 p-4">
@@ -55,7 +59,11 @@ export function OcrImagePreviewColumn({
         extractError={extractError}
         extractFailureStage={extractFailureStage}
         extractStartedAt={extractStartedAt}
+        stageDurations={stageDurations}
+        copyIssueText={copyIssueText}
+        issueCopied={issueCopied}
         onRetry={onExtract}
+        onCopyIssue={onCopyIssue}
       />
     </div>
   );

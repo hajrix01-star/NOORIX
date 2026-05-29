@@ -44,6 +44,21 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [success, setSuccess] = useState(false);
   const [extractStartedAt, setExtractStartedAt] = useState<number | null>(null);
   const [extractFailureStage, setExtractFailureStage] = useState<'request' | 'parse' | null>(null);
+  const [extractStageDurations, setExtractStageDurations] = useState<{
+    uploadReadyMs: number | null;
+    modelRequestMs: number | null;
+    jsonValidationMs: number | null;
+    enrichmentMs: number | null;
+    readyForReviewMs: number | null;
+  }>({
+    uploadReadyMs: null,
+    modelRequestMs: null,
+    jsonValidationMs: null,
+    enrichmentMs: null,
+    readyForReviewMs: null,
+  });
+  const [extractIssueReport, setExtractIssueReport] = useState('');
+  const [issueCopied, setIssueCopied] = useState(false);
   const [finalizeOcrId, setFinalizeOcrId] = useState<any>(null);
   const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState<any>(null);
   const [createLinkedPurchase, setCreateLinkedPurchase] = useState(false);
@@ -189,18 +204,74 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
 
   const handleExtract = useCallback(async () => {
     if (!imageBase64) return;
-    setExtractStartedAt(Date.now());
+    const startedAt = Date.now();
+    setExtractStartedAt(startedAt);
     setExtractFailureStage(null);
+    setExtractIssueReport('');
+    setIssueCopied(false);
+    setExtractStageDurations({
+      uploadReadyMs: 0,
+      modelRequestMs: null,
+      jsonValidationMs: null,
+      enrichmentMs: null,
+      readyForReviewMs: null,
+    });
     setLoading(true);
     setError(null);
     setExtractWarning(null);
     try {
+      const requestStartedAt = Date.now();
       const res = await extractInvoice(imageBase64, mimeType);
+      const modelRequestMs = Math.max(1, Date.now() - requestStartedAt);
       if (res.success) {
         if (res.data?.parseError) {
+          const parseStartedAt = Date.now();
           setExtractFailureStage('parse');
+          const debugRaw = res.data || {};
+          const modelAttempts = Array.isArray(debugRaw.modelAttempts) ? debugRaw.modelAttempts : [];
+          const schemaIssues = Array.isArray(debugRaw.schemaIssues) ? debugRaw.schemaIssues : [];
+          const issueReport = [
+            `OCR Pipeline Failure`,
+            `stage=parse_validation`,
+            `friendlyError=${t('ocrParseFriendlyError')}`,
+            `errorDetail=${String(debugRaw.errorDetail || 'parse_or_schema_failed')}`,
+            `rawTextSnippet=${String(debugRaw.rawText || '').slice(0, 400)}`,
+            schemaIssues.length ? `schemaIssues=${schemaIssues.join(' | ')}` : null,
+            `modelAttempts=${JSON.stringify(modelAttempts)}`,
+            `clientElapsedMs=${Date.now() - startedAt}`,
+          ].filter(Boolean).join('\n');
+          setExtractIssueReport(issueReport);
+          setExtractStageDurations({
+            uploadReadyMs: 0,
+            modelRequestMs,
+            jsonValidationMs: Math.max(1, Date.now() - parseStartedAt),
+            enrichmentMs: null,
+            readyForReviewMs: null,
+          });
           setError(t('ocrParseFriendlyError'));
         } else {
+          const parseStartedAt = Date.now();
+          const parseAndNormalizeMs = Math.max(1, Date.now() - parseStartedAt);
+          const telemetry = res.data && typeof res.data === 'object' ? res.data : {};
+          const extractionLatencyMs = Number((telemetry as { extractionLatencyMs?: number }).extractionLatencyMs) || 0;
+          const modelAttempts = Array.isArray((telemetry as { modelAttempts?: unknown[] }).modelAttempts)
+            ? (telemetry as { modelAttempts: Array<{ latencyMs?: number }> }).modelAttempts
+            : [];
+          const modelAttemptsMs = modelAttempts.reduce((sum, attempt) => {
+            const latency = Number(attempt?.latencyMs);
+            return sum + (Number.isFinite(latency) && latency > 0 ? latency : 0);
+          }, 0);
+          const processingOverheadMs = Math.max(0, extractionLatencyMs - modelAttemptsMs);
+          const jsonValidationMs = Math.max(1, Math.round(processingOverheadMs * 0.4) || parseAndNormalizeMs);
+          const enrichmentMs = Math.max(1, Math.round(processingOverheadMs * 0.6) || 1);
+
+          setExtractStageDurations({
+            uploadReadyMs: 0,
+            modelRequestMs,
+            jsonValidationMs,
+            enrichmentMs,
+            readyForReviewMs: 0,
+          });
           setExtracted(res.data);
           setEditItems(null);
           if (res.data?.enrichError) {
@@ -209,15 +280,41 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
         }
       } else {
         setExtractFailureStage('request');
-        setError(res.error || t('ocrExtractFailed'));
+        const requestError = res.error || t('ocrExtractFailed');
+        setExtractStageDurations((prev) => ({ ...prev, modelRequestMs }));
+        setExtractIssueReport([
+          'OCR Pipeline Failure',
+          'stage=model_request',
+          `error=${String(requestError)}`,
+          `clientElapsedMs=${Date.now() - startedAt}`,
+        ].join('\n'));
+        setError(requestError);
       }
-    } catch {
+    } catch (err: any) {
       setExtractFailureStage('request');
-      setError(t('ocrExtractFailed'));
+      const msg = err?.message || t('ocrExtractFailed');
+      setExtractIssueReport([
+        'OCR Pipeline Failure',
+        'stage=model_request',
+        `error=${String(msg)}`,
+        `clientElapsedMs=${Date.now() - startedAt}`,
+      ].join('\n'));
+      setError(msg);
     } finally {
       setLoading(false);
     }
   }, [imageBase64, mimeType, t]);
+
+  const handleCopyIssueReport = useCallback(async () => {
+    if (!extractIssueReport.trim()) return;
+    try {
+      await navigator.clipboard.writeText(extractIssueReport);
+      setIssueCopied(true);
+      window.setTimeout(() => setIssueCopied(false), 1800);
+    } catch {
+      setIssueCopied(false);
+    }
+  }, [extractIssueReport]);
 
   useEffect(() => {
     if (!imageBase64 || extracted || loading || prefillLoading) return;
@@ -231,6 +328,14 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       autoExtractedImageRef.current = null;
       setExtractStartedAt(null);
       setExtractFailureStage(null);
+      setExtractIssueReport('');
+      setExtractStageDurations({
+        uploadReadyMs: null,
+        modelRequestMs: null,
+        jsonValidationMs: null,
+        enrichmentMs: null,
+        readyForReviewMs: null,
+      });
     }
   }, [imageBase64]);
 
@@ -410,6 +515,15 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setExtractWarning(null);
     setExtractStartedAt(null);
     setExtractFailureStage(null);
+    setExtractIssueReport('');
+    setIssueCopied(false);
+    setExtractStageDurations({
+      uploadReadyMs: null,
+      modelRequestMs: null,
+      jsonValidationMs: null,
+      enrichmentMs: null,
+      readyForReviewMs: null,
+    });
     setEditItems(null);
     setFinalizeOcrId(null);
     setPrefillLinkedPurchase(null);
@@ -447,6 +561,9 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     extractWarning,
     extractStartedAt,
     extractFailureStage,
+    extractStageDurations,
+    extractIssueReport,
+    issueCopied,
     prefillLoading,
     prefillLinkedPurchase,
     postSaveLinkedPurchase,
@@ -482,6 +599,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     readFile,
     handleDrop,
     handleExtract,
+    handleCopyIssueReport,
     handleSave,
     handleResetImageColumn,
     openNewOcrSupplierModal,

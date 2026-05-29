@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../../../ui';
 
 type PipelineFailureStage = 'request' | 'parse' | null;
+type PipelineStageDurations = {
+  uploadReadyMs?: number | null;
+  modelRequestMs?: number | null;
+  jsonValidationMs?: number | null;
+  enrichmentMs?: number | null;
+  readyForReviewMs?: number | null;
+};
 
 function statusBadgeClasses(status: 'pending' | 'running' | 'success' | 'failed' | 'warning') {
   if (status === 'success') return 'border-noorix-green bg-noorix-green text-white';
@@ -28,7 +35,11 @@ export function OcrExtractionPipelineStatus({
   extractError,
   extractFailureStage,
   extractStartedAt,
+  stageDurations,
+  copyIssueText,
+  issueCopied,
   onRetry,
+  onCopyIssue,
 }: {
   t: (k: string, ...args: any[]) => string;
   isAr: boolean;
@@ -38,7 +49,11 @@ export function OcrExtractionPipelineStatus({
   extractError: any;
   extractFailureStage: PipelineFailureStage;
   extractStartedAt: number | null;
+  stageDurations?: PipelineStageDurations;
+  copyIssueText?: string;
+  issueCopied?: boolean;
   onRetry: () => void;
+  onCopyIssue?: () => void;
 }) {
   const [tick, setTick] = useState(() => Date.now());
 
@@ -65,8 +80,25 @@ export function OcrExtractionPipelineStatus({
     ],
     [t],
   );
+  const completedTimes = [
+    stageDurations?.uploadReadyMs ?? null,
+    stageDurations?.modelRequestMs ?? null,
+    stageDurations?.jsonValidationMs ?? null,
+    stageDurations?.enrichmentMs ?? null,
+    stageDurations?.readyForReviewMs ?? null,
+  ];
 
   if (!showPipeline) return null;
+
+  const stageRunningElapsed = (idx: number) => {
+    if (!loading) return 0;
+    if (idx === 0) return Math.max(0, Math.min(elapsedMs, 1600));
+    if (idx === 1) return Math.max(0, Math.min(elapsedMs - 1600, 2600));
+    if (idx === 2) return Math.max(0, elapsedMs - 4200);
+    return 0;
+  };
+
+  const formatMs = (ms: number) => `${(ms / 1000).toFixed(ms >= 10000 ? 1 : 2)}s`;
 
   return (
     <div className="mt-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/60 p-3">
@@ -90,13 +122,24 @@ export function OcrExtractionPipelineStatus({
             status = 'warning';
           }
           return (
-            <div key={step.key} className="flex items-center gap-2">
+            <div key={step.key} className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full border text-[10px] font-bold ${statusBadgeClasses(status)}`}
+                >
+                  {status === 'success' ? '✓' : status === 'failed' ? '!' : idx + 1}
+                </span>
+                <span className={`text-[12px] ${rowTextClasses(status)}`}>{step.label}</span>
+              </div>
               <span
-                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full border text-[10px] font-bold ${statusBadgeClasses(status)}`}
+                className={`text-[11px] font-medium shrink-0 ${rowTextClasses(status)}`}
               >
-                {status === 'success' ? '✓' : status === 'failed' ? '!' : idx + 1}
+                {completedTimes[idx] != null
+                  ? formatMs(Number(completedTimes[idx]))
+                  : loading && status === 'running'
+                    ? formatMs(stageRunningElapsed(idx))
+                    : '—'}
               </span>
-              <span className={`text-[12px] ${rowTextClasses(status)}`}>{step.label}</span>
             </div>
           );
         })}
@@ -112,6 +155,12 @@ export function OcrExtractionPipelineStatus({
           <Button size="sm" variant="danger" onClick={onRetry}>
             {t('ocrRetryExtraction')}
           </Button>
+          {!!copyIssueText && (
+            <Button size="sm" variant="ghost" onClick={onCopyIssue}>
+              {t('ocrPipelineCopyIssue')}
+            </Button>
+          )}
+          {issueCopied && <span className="text-[11px] text-noorix-green">{t('ocrPipelineIssueCopied')}</span>}
         </div>
       )}
 

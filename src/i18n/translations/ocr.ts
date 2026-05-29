@@ -93,6 +93,8 @@ export default {
   ocrPipelineEnrichment: { ar: 'مطابقة المورد/الأصناف والتحقق الرياضي', en: 'Supplier/item matching & math checks' },
   ocrPipelineReadyForReview: { ar: 'جاهزة للمراجعة', en: 'Ready for review' },
   ocrPipelineFailedAt: { ar: 'تعطل عند مرحلة: {0}', en: 'Stopped at stage: {0}' },
+  ocrPipelineCopyIssue: { ar: 'نسخ المشكلة', en: 'Copy issue' },
+  ocrPipelineIssueCopied: { ar: 'تم النسخ', en: 'Copied' },
   ocrPrefillLoading:   { ar: 'جاري تحميل فاتورة المراجعة…', en: 'Loading review invoice…' },
 
   ocrLinkedPurchaseTitle: {
