@@ -16,7 +16,16 @@ type InvoiceImageState = {
   imageUrl: string | null;
   loading: boolean;
   error: string;
+  isObjectUrl: boolean;
 };
+
+function normalizeInvoiceImageUrl(raw: unknown): string {
+  const text = String(raw || '').trim();
+  if (!text) return '';
+  if (/^(?:https?:)?\/\//i.test(text) || text.startsWith('data:') || text.startsWith('blob:')) return text;
+  if (text.startsWith('/')) return text;
+  return `/${text.replace(/^\.?\//, '')}`;
+}
 
 export default function OcrSemanticKeywordsTab() {
   const { lang } = useTranslation();
@@ -55,23 +64,26 @@ export default function OcrSemanticKeywordsTab() {
 
   useEffect(() => (
     () => {
-      if (imageState?.imageUrl) URL.revokeObjectURL(imageState.imageUrl);
+      if (imageState?.isObjectUrl && imageState?.imageUrl) URL.revokeObjectURL(imageState.imageUrl);
     }
-  ), [imageState?.imageUrl]);
+  ), [imageState?.imageUrl, imageState?.isObjectUrl]);
 
-  const openInvoiceImage = async (invoiceId: string, invoiceLabel: string) => {
-    if (!invoiceId) return;
+  const openInvoiceImage = async (invoiceId: string, invoiceLabel: string, rawImageUrl?: string | null) => {
+    const directImageUrl = normalizeInvoiceImageUrl(rawImageUrl);
+    if (!invoiceId && !directImageUrl) return;
     let nextState: InvoiceImageState = {
       invoiceId,
       invoiceLabel,
-      imageUrl: null,
-      loading: true,
+      imageUrl: directImageUrl || null,
+      loading: !directImageUrl,
       error: '',
+      isObjectUrl: false,
     };
     setImageState((prev) => {
-      if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
+      if (prev?.isObjectUrl && prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
       return nextState;
     });
+    if (directImageUrl) return;
     try {
       const blob = await fetchOcrInvoiceImageBlob(invoiceId, undefined);
       const blobUrl = URL.createObjectURL(blob);
@@ -79,20 +91,24 @@ export default function OcrSemanticKeywordsTab() {
         ...nextState,
         imageUrl: blobUrl,
         loading: false,
+        isObjectUrl: true,
       };
       setImageState(nextState);
-    } catch {
+    } catch (err: any) {
+      const status = Number(err?.status || 0);
       setImageState({
         ...nextState,
         loading: false,
-        error: isAr ? 'تعذّر تحميل صورة الفاتورة.' : 'Failed to load invoice image.',
+        error: status === 404
+          ? (isAr ? 'لا توجد صورة محفوظة لهذه الفاتورة.' : 'No stored image for this invoice.')
+          : (isAr ? 'تعذّر تحميل صورة الفاتورة.' : 'Failed to load invoice image.'),
       });
     }
   };
 
   const closeInvoiceImage = () => {
     setImageState((prev) => {
-      if (prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
+      if (prev?.isObjectUrl && prev?.imageUrl) URL.revokeObjectURL(prev.imageUrl);
       return null;
     });
   };
@@ -135,15 +151,23 @@ export default function OcrSemanticKeywordsTab() {
     {
       key: 'viewImage',
       label: isAr ? 'الصورة' : 'Image',
-      render: (_: unknown, row: any) => (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => openInvoiceImage(String(row.invoiceId || ''), String(row.invoiceNumber || '—'))}
-        >
-          {isAr ? 'عرض' : 'View'}
-        </Button>
-      ),
+      render: (_: unknown, row: any) => {
+        const canView = !!row?.hasImage || !!row?.invoiceImageUrl;
+        if (!canView) return <span className="text-[12px] text-noorix-muted">—</span>;
+        return (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => openInvoiceImage(
+              String(row.invoiceId || ''),
+              String(row.invoiceNumber || '—'),
+              row.invoiceImageUrl || null,
+            )}
+          >
+            {isAr ? 'عرض' : 'View'}
+          </Button>
+        );
+      },
     },
   ], [isAr]);
 
@@ -171,15 +195,23 @@ export default function OcrSemanticKeywordsTab() {
     {
       key: 'viewImage',
       label: isAr ? 'الصورة' : 'Image',
-      render: (_: unknown, row: any) => (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => openInvoiceImage(String(row.invoiceId || ''), String(row.invoiceNumber || '—'))}
-        >
-          {isAr ? 'عرض' : 'View'}
-        </Button>
-      ),
+      render: (_: unknown, row: any) => {
+        const canView = !!row?.hasImage || !!row?.invoiceImageUrl;
+        if (!canView) return <span className="text-[12px] text-noorix-muted">—</span>;
+        return (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => openInvoiceImage(
+              String(row.invoiceId || ''),
+              String(row.invoiceNumber || '—'),
+              row.invoiceImageUrl || null,
+            )}
+          >
+            {isAr ? 'عرض' : 'View'}
+          </Button>
+        );
+      },
     },
   ], [isAr]);
 
@@ -352,6 +384,12 @@ export default function OcrSemanticKeywordsTab() {
             src={imageState.imageUrl}
             alt={isAr ? 'صورة الفاتورة' : 'Invoice image'}
             className="w-full max-h-[70vh] object-contain rounded-lg border border-noorix-border bg-noorix-bg-muted"
+            onError={() => setImageState((prev) => (
+              prev ? {
+                ...prev,
+                error: isAr ? 'تعذّر تحميل صورة الفاتورة.' : 'Failed to load invoice image.',
+              } : prev
+            ))}
           />
         )}
       </Modal>
