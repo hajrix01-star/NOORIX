@@ -11,6 +11,7 @@ import { formatSaudiDateISO, getSaudiToday, toYmd } from '../../../utils/saudiDa
 import { Button, Modal, Input, cn } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 import { invoiceKeys } from '../../../services/queryKeys';
+import { buildDayCloseWhatsAppText, openDayCloseWhatsApp } from '../utils/dayCloseWhatsApp';
 
 function SectionTitle({ children }: any) {
   return (
@@ -453,6 +454,22 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
 
   const reportDateLabel = formatSaudiDateISO(`${dateStr}T12:00:00.000Z`);
 
+  const handleWhatsApp = () => {
+    if (!data) {
+      showToast(t('dayCloseWaNoData'), 'error');
+      return;
+    }
+    const text = buildDayCloseWhatsAppText({
+      companyName,
+      dateLabel: reportDateLabel,
+      data,
+      kindLabel,
+      lang,
+      t,
+    });
+    openDayCloseWhatsApp(text);
+  };
+
   return (
     <Modal open={isOpen} onClose={onClose} size="xl" closeOnBackdrop={false} hideClose className="day-close-modal">
       <style>{`
@@ -658,6 +675,14 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 </Button>
               </div>
               <div className="flex gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="success"
+                  onClick={handleWhatsApp}
+                  disabled={!data || isLoading}
+                >
+                  {t('dayCloseWhatsApp')}
+                </Button>
                 <Button
                   size="sm"
                   onClick={() => {
