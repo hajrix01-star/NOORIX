@@ -18,6 +18,12 @@ export const ocrKeys = {
   operationsDashboard: (companyId: string, days: unknown) =>
     ['ocr-operations-dashboard', companyId, days] as const,
 
+  semanticKeywordInsights: (
+    companyId: string,
+    days: unknown,
+    keyword: unknown,
+  ) => ['ocr-semantic-keyword-insights', companyId, days, keyword] as const,
+
   accountingCatalog: (companyId: string) => ['accounting-suppliers-ocr-catalog', companyId] as const,
 
   catalogAccountingSuggestions: (
@@ -51,6 +57,8 @@ export const ocrKeys = {
   purchasesReportRoot: () => ['ocr-purchases-report'] as const,
 
   operationsDashboardRoot: () => ['ocr-operations-dashboard'] as const,
+
+  semanticKeywordInsightsRoot: () => ['ocr-semantic-keyword-insights'] as const,
 
   suppliersRoot: () => ['ocr-suppliers'] as const,
 

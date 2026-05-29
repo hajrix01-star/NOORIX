@@ -5,7 +5,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, SmartTable } from '../../../ui';
 import { fmt } from '../../../utils/format';
 import { ocrKeys } from '../../../services/queryKeys';
-import { getOcrOperationsDashboard } from '../services/ocrApi';
+import { getOcrOperationsDashboard, getOcrSemanticKeywordInsights } from '../services/ocrApi';
 
 const DAY_OPTIONS = [7, 30, 60, 90, 180];
 
@@ -27,12 +27,30 @@ export default function OcrOperationsDashboardTab() {
   const { activeCompanyId } = useApp();
   const isAr = lang === 'ar';
   const [days, setDays] = useState(30);
+  const [semanticKeywordInput, setSemanticKeywordInput] = useState('');
+  const [semanticKeyword, setSemanticKeyword] = useState('');
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ocrKeys.operationsDashboard(activeCompanyId || '', days),
     enabled: !!activeCompanyId,
     queryFn: async () => {
       const r = await getOcrOperationsDashboard(days);
+      return r.success ? (r.data || null) : null;
+    },
+  });
+
+  const {
+    data: semanticData,
+    isLoading: semanticLoading,
+  } = useQuery({
+    queryKey: ocrKeys.semanticKeywordInsights(activeCompanyId || '', days, semanticKeyword),
+    enabled: !!activeCompanyId && !!semanticKeyword.trim(),
+    queryFn: async () => {
+      const r = await getOcrSemanticKeywordInsights({
+        keyword: semanticKeyword.trim(),
+        days,
+        limit: 120,
+      });
       return r.success ? (r.data || null) : null;
     },
   });
@@ -205,6 +223,75 @@ export default function OcrOperationsDashboardTab() {
     },
   ], [isAr]);
 
+  const semanticLineColumns = useMemo(() => [
+    { key: 'itemName', label: isAr ? 'الصنف' : 'Item' },
+    { key: 'supplierName', label: isAr ? 'المورد' : 'Supplier' },
+    {
+      key: 'unitPrice',
+      label: isAr ? 'سعر الوحدة' : 'Unit price',
+      numeric: true,
+      render: (_: unknown, row: any) => (row.unitPrice != null ? fmt(row.unitPrice) : '—'),
+    },
+    {
+      key: 'totalPrice',
+      label: isAr ? 'إجمالي السطر' : 'Line total',
+      numeric: true,
+      render: (_: unknown, row: any) => (row.totalPrice != null ? fmt(row.totalPrice) : '—'),
+    },
+    {
+      key: 'historyPrice',
+      label: isAr ? 'آخر سعر تاريخي' : 'Latest historical price',
+      numeric: true,
+      render: (_: unknown, row: any) => (row.historyPrice != null ? fmt(row.historyPrice) : '—'),
+    },
+    {
+      key: 'priceDeltaPercent',
+      label: isAr ? 'فرق السعر %' : 'Price delta %',
+      numeric: true,
+      render: (_: unknown, row: any) => (row.priceDeltaPercent != null ? `${fmt(row.priceDeltaPercent)}%` : '—'),
+    },
+    { key: 'invoiceDate', label: isAr ? 'تاريخ الفاتورة' : 'Invoice date' },
+    { key: 'invoiceNumber', label: isAr ? 'رقم الفاتورة' : 'Invoice #' },
+  ], [isAr]);
+
+  const semanticInvoiceColumns = useMemo(() => [
+    { key: 'invoiceNumber', label: isAr ? 'رقم الفاتورة' : 'Invoice #' },
+    { key: 'invoiceDate', label: isAr ? 'التاريخ' : 'Date' },
+    { key: 'supplierName', label: isAr ? 'المورد' : 'Supplier' },
+    { key: 'matchedLines', label: isAr ? 'السطور المطابقة' : 'Matched lines', numeric: true },
+    {
+      key: 'matchedLinesTotal',
+      label: isAr ? 'إجمالي السطور المطابقة' : 'Matched lines total',
+      numeric: true,
+      render: (_: unknown, row: any) => fmt(row.matchedLinesTotal || 0),
+    },
+    {
+      key: 'invoiceTotal',
+      label: isAr ? 'إجمالي الفاتورة' : 'Invoice total',
+      numeric: true,
+      render: (_: unknown, row: any) => fmt(row.invoiceTotal || 0),
+    },
+  ], [isAr]);
+
+  const semanticItemColumns = useMemo(() => [
+    { key: 'itemName', label: isAr ? 'الصنف' : 'Item' },
+    { key: 'category', label: isAr ? 'التصنيف' : 'Category', render: (_: unknown, row: any) => row.category || '—' },
+    { key: 'lineCount', label: isAr ? 'السطور' : 'Lines', numeric: true },
+    { key: 'invoiceCount', label: isAr ? 'الفواتير' : 'Invoices', numeric: true },
+    {
+      key: 'avgUnitPrice',
+      label: isAr ? 'متوسط سعر الوحدة' : 'Avg unit price',
+      numeric: true,
+      render: (_: unknown, row: any) => fmt(row.avgUnitPrice || 0),
+    },
+    {
+      key: 'latestHistoryPrice',
+      label: isAr ? 'آخر سعر تاريخي' : 'Latest historical price',
+      numeric: true,
+      render: (_: unknown, row: any) => (row.latestHistoryPrice != null ? fmt(row.latestHistoryPrice) : '—'),
+    },
+  ], [isAr]);
+
   return (
     <div className="flex flex-col gap-4" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="noorix-surface-card p-4 flex flex-wrap items-end gap-3">
@@ -243,6 +330,113 @@ export default function OcrOperationsDashboardTab() {
               </div>
             ))}
           </div>
+
+          <div className="noorix-surface-card p-4 flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-[13px] font-bold text-noorix-text">
+                {isAr ? 'مستكشف الكلمات الدلالية' : 'Semantic keyword explorer'}
+              </div>
+              <div className="text-[12px] text-noorix-muted">
+                {isAr
+                  ? 'اضغط كلمة دلالية لعرض الأصناف والموردين والأسعار والفواتير'
+                  : 'Click a semantic keyword to explore items, suppliers, prices, and invoices'}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Input
+                type="search"
+                value={semanticKeywordInput}
+                onChange={(e: any) => setSemanticKeywordInput(e.target.value || '')}
+                placeholder={isAr ? 'مثال: جبن / نعناع / عنب' : 'e.g. cheese / mint / grape'}
+              />
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => setSemanticKeyword(semanticKeywordInput.trim())}
+              >
+                {isAr ? 'بحث' : 'Search'}
+              </Button>
+              {semanticKeyword && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setSemanticKeyword('');
+                    setSemanticKeywordInput('');
+                  }}
+                >
+                  {isAr ? 'مسح' : 'Clear'}
+                </Button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {(data?.topSemanticKeywords || []).slice(0, 12).map((row: any) => (
+                <Button
+                  key={row.keyword}
+                  size="sm"
+                  variant={semanticKeyword === row.keyword ? 'primary' : 'ghost'}
+                  onClick={() => {
+                    setSemanticKeywordInput(row.keyword);
+                    setSemanticKeyword(row.keyword);
+                  }}
+                >
+                  {row.keyword} ({fmt(row.count || 0, 0)})
+                </Button>
+              ))}
+            </div>
+
+            {semanticKeyword && (
+              <div className="text-[12px] text-noorix-muted ltr">
+                {isAr ? 'النتائج للكلمة:' : 'Results for:'} <span className="font-bold text-noorix-text">{semanticKeyword}</span>
+                {' • '}
+                {isAr ? 'سطور:' : 'Lines:'} {fmt(semanticData?.summary?.matchedLines || 0, 0)}
+                {' • '}
+                {isAr ? 'فواتير:' : 'Invoices:'} {fmt(semanticData?.summary?.invoicesCount || 0, 0)}
+              </div>
+            )}
+          </div>
+
+          {semanticLoading && semanticKeyword && (
+            <div className="text-[12px] text-noorix-muted">
+              {isAr ? 'جاري تحميل نتائج الكلمة الدلالية…' : 'Loading semantic keyword results…'}
+            </div>
+          )}
+
+          {!!semanticKeyword && !semanticLoading && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <SmartTable
+                title={isAr ? 'سطور الفواتير المطابقة للكلمة' : 'Keyword-matched invoice lines'}
+                columns={semanticLineColumns}
+                data={semanticData?.lines || []}
+                total={(semanticData?.lines || []).length}
+                page={1}
+                pageSize={Math.max(1, Math.min(30, (semanticData?.lines || []).length || 1))}
+                emptyMessage={isAr ? 'لا توجد سطور مطابقة لهذه الكلمة.' : 'No matching lines for this keyword.'}
+                tableId="ocr-semantic-keyword-lines"
+              />
+              <SmartTable
+                title={isAr ? 'الفواتير المرتبطة بالكلمة' : 'Invoices linked to keyword'}
+                columns={semanticInvoiceColumns}
+                data={semanticData?.invoices || []}
+                total={(semanticData?.invoices || []).length}
+                page={1}
+                pageSize={Math.max(1, Math.min(30, (semanticData?.invoices || []).length || 1))}
+                emptyMessage={isAr ? 'لا توجد فواتير مرتبطة بالكلمة.' : 'No invoices linked to keyword.'}
+                tableId="ocr-semantic-keyword-invoices"
+              />
+              <SmartTable
+                title={isAr ? 'الأصناف المرتبطة بالكلمة' : 'Items linked to keyword'}
+                columns={semanticItemColumns}
+                data={semanticData?.items || []}
+                total={(semanticData?.items || []).length}
+                page={1}
+                pageSize={Math.max(1, Math.min(30, (semanticData?.items || []).length || 1))}
+                emptyMessage={isAr ? 'لا توجد أصناف مرتبطة بالكلمة.' : 'No items linked to keyword.'}
+                tableId="ocr-semantic-keyword-items"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <SmartTable

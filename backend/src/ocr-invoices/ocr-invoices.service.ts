@@ -131,6 +131,10 @@ export class OcrInvoicesService {
     ...args: Parameters<OcrInvoiceWorkflowService['getOperationsDashboard']>
   ) { return this.workflow.getOperationsDashboard(...args); }
 
+  getSemanticKeywordInsights(
+    ...args: Parameters<OcrInvoiceWorkflowService['getSemanticKeywordInsights']>
+  ) { return this.workflow.getSemanticKeywordInsights(...args); }
+
   getCorrectionRules(
     ...args: Parameters<OcrInvoiceWorkflowService['getCorrectionRules']>
   ) { return this.workflow.getCorrectionRules(...args); }

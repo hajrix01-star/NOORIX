@@ -52,6 +52,23 @@ export async function getOcrOperationsDashboard(days: any = 30) {
   return apiGet(`/api/v1/ocr/reports/operations-dashboard${q ? `?${q}` : ''}`);
 }
 
+export async function getOcrSemanticKeywordInsights({
+  keyword,
+  days = 30,
+  limit = 120,
+}: {
+  keyword: string;
+  days?: number;
+  limit?: number;
+}) {
+  const params = new URLSearchParams();
+  if (keyword) params.set('keyword', String(keyword));
+  if (days != null) params.set('days', String(days));
+  if (limit != null) params.set('limit', String(limit));
+  const q = params.toString();
+  return apiGet(`/api/v1/ocr/reports/semantic-keyword-insights${q ? `?${q}` : ''}`);
+}
+
 export async function getOcrAccountingSupplierSuggestions(filters: Record<string, any> = {}) {
   const { ocrSupplierId, q, invoiceVat, limit } = filters;
   const params = new URLSearchParams();
