@@ -61,9 +61,24 @@ type GeminiExtractionWithMath = Omit<GeminiExtractedInvoice, 'items'> & {
   vatAdjusted: boolean;
 };
 
+type SupplierMatchRow = {
+  id: string;
+  nameAr: string;
+  nameEn?: string | null;
+  aliases: Array<{ alias: string }>;
+};
+
+type ItemMatchRow = {
+  id: string;
+  nameAr: string;
+  nameEn?: string | null;
+  aliases: Array<{ alias: string }>;
+};
+
 @Injectable()
 export class OcrExtractionService {
   private readonly logger = new Logger(OcrExtractionService.name);
+  private readonly arabicScriptRe = /[\u0600-\u06FF]/;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -340,6 +355,88 @@ ${rawText.slice(0, 12000)}`;
     return Array.from(flags);
   }
 
+  private detectAliasLanguage(text: string): 'ar' | 'en' {
+    return this.arabicScriptRe.test(text) ? 'ar' : 'en';
+  }
+
+  private shouldSkipAliasLearning(
+    rawAlias: string | undefined | null,
+    canonical: string,
+    altCanonical: string | null | undefined,
+    existingAliases: Array<{ alias: string }>,
+  ): string | null {
+    const trimmed = rawAlias?.trim();
+    if (!trimmed || trimmed.length < 3) return null;
+    const normAlias = normalize(trimmed);
+    if (!normAlias || normAlias.length < 2) return null;
+    if (normalize(canonical) === normAlias) return null;
+    if (altCanonical && normalize(altCanonical) === normAlias) return null;
+    if (existingAliases.some((a) => normalize(a.alias) === normAlias)) return null;
+    return trimmed;
+  }
+
+  private async learnSupplierAliasIfNeeded(
+    suppliers: SupplierMatchRow[],
+    supplierMatch: { id: string; score: number } | null,
+    rawAlias: string | undefined,
+    seenKeys: Set<string>,
+  ): Promise<void> {
+    if (!supplierMatch || supplierMatch.score < 0.9) return;
+    const matched = suppliers.find((s) => s.id === supplierMatch.id);
+    if (!matched) return;
+
+    const candidate = this.shouldSkipAliasLearning(rawAlias, matched.nameAr, matched.nameEn, matched.aliases);
+    if (!candidate) return;
+    const normCandidate = normalize(candidate);
+    const key = `${matched.id}:${normCandidate}`;
+    if (seenKeys.has(key)) return;
+    seenKeys.add(key);
+
+    await this.prisma.ocrSupplierAlias
+      .create({
+        data: {
+          supplierId: matched.id,
+          alias: candidate,
+          language: this.detectAliasLanguage(candidate),
+          addedBy: 'ocr-auto',
+        },
+      })
+      .catch(() => {});
+    matched.aliases.push({ alias: candidate });
+    this.logger.log(`OCR learned supplier alias "${candidate}" -> ${matched.id}`);
+  }
+
+  private async learnItemAliasIfNeeded(
+    items: ItemMatchRow[],
+    itemMatch: { id: string; score: number } | null,
+    rawAlias: string | undefined,
+    seenKeys: Set<string>,
+  ): Promise<void> {
+    if (!itemMatch || itemMatch.score < 0.9) return;
+    const matched = items.find((i) => i.id === itemMatch.id);
+    if (!matched) return;
+
+    const candidate = this.shouldSkipAliasLearning(rawAlias, matched.nameAr, matched.nameEn, matched.aliases);
+    if (!candidate) return;
+    const normCandidate = normalize(candidate);
+    const key = `${matched.id}:${normCandidate}`;
+    if (seenKeys.has(key)) return;
+    seenKeys.add(key);
+
+    await this.prisma.ocrItemAlias
+      .create({
+        data: {
+          itemId: matched.id,
+          alias: candidate,
+          language: this.detectAliasLanguage(candidate),
+          addedBy: 'ocr-auto',
+        },
+      })
+      .catch(() => {});
+    matched.aliases.push({ alias: candidate });
+    this.logger.log(`OCR learned item alias "${candidate}" -> ${matched.id}`);
+  }
+
   private async tryRecoverJsonFromRawText(
     apiKey: string,
     model: string,
@@ -543,6 +640,8 @@ ${rawText.slice(0, 12000)}`;
       where: { tenantId, companyId },
       include: { aliases: true },
     });
+    const learnedSupplierAliasKeys = new Set<string>();
+    const learnedItemAliasKeys = new Set<string>();
 
     // مطابقة المورد
     let supplierMatch: { id: string; nameAr: string; score: number; status: string } | null = null;
@@ -582,6 +681,13 @@ ${rawText.slice(0, 12000)}`;
           }
         }
       }
+
+      await this.learnSupplierAliasIfNeeded(
+        suppliers,
+        supplierMatch,
+        supplierName,
+        learnedSupplierAliasKeys,
+      );
 
       // سجّل في extraction log
       await this.logExtraction(tenantId, companyId, 'supplier', supplierName, supplierMatch);
@@ -638,6 +744,13 @@ ${rawText.slice(0, 12000)}`;
             }
           }
         }
+
+        await this.learnItemAliasIfNeeded(
+          items,
+          itemMatch,
+          cleanName || itemNameForPipeline,
+          learnedItemAliasKeys,
+        );
 
         // تسجيل بالاسم الأساسي (بدون الحجم)
         await this.logExtraction(tenantId, companyId, 'item', matchName, itemMatch, supplierMatch?.id);
