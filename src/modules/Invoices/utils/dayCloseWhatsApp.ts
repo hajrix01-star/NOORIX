@@ -1,8 +1,19 @@
 import { fmt } from '../../../utils/format';
 
-const MAX_WA_OPERATIONS = 12;
+const WA = {
+  rule: '━━━━━━━━━━━━━━━━━━━━',
+  ruleThin: '────────────────────',
+  sales: '☀',
+  outflow: '☾',
+  closing: '◆',
+  branch: '│',
+  bullet: '▸',
+} as const;
 
 export type DayCloseKindLabels = Record<string, string>;
+
+const PURCHASE_KIND = 'purchase';
+const EXPENSE_KINDS = new Set(['expense', 'fixed_expense', 'hr_expense', 'salary', 'advance']);
 
 function pickBilingual(lang: string, nameAr?: string | null, nameEn?: string | null): string {
   const ar = nameAr != null && String(nameAr).trim() !== '' ? String(nameAr).trim() : '';
@@ -11,26 +22,49 @@ function pickBilingual(lang: string, nameAr?: string | null, nameEn?: string | n
   return ar || en || '—';
 }
 
-function counterpartyLabel(op: any, lang: string): string {
-  const sup = pickBilingual(lang, op.supplierNameAr ?? op.supplierName, op.supplierNameEn);
-  if (sup !== '—') return sup;
-  if (op.employeeName) return String(op.employeeName);
-  const el = pickBilingual(lang, op.expenseLineNameAr ?? op.expenseLineName, op.expenseLineNameEn);
-  if (el !== '—') return el;
-  const notes = op.notes != null ? String(op.notes).trim() : '';
-  return notes || '—';
+function sectionTitle(symbol: string, label: string): string {
+  return `${WA.ruleThin}\n${symbol} ${label}\n${WA.ruleThin}`;
 }
 
-function getDayCloseCashKpis(cash: any) {
-  const lifetime = Number(cash?.balanceLifetimeCashVaultsEod ?? cash?.balanceEndOfDayCashVaults ?? 0);
-  const raw = cash?.availableCashMonthScoped;
-  const hasMonthScoped = raw != null && raw !== '';
-  const monthScoped = hasMonthScoped ? Number(raw) : lifetime;
-  return { monthScoped, lifetime };
+function channelRow(label: string, amount: number): string {
+  return `  ${WA.branch} ${label} · ${fmt(amount)} SR`;
 }
 
-function sectionHeader(t: (key: string) => string, key: string): string {
-  return `━━ ${t(key)} ━━`;
+function metricLine(label: string, value: string): string {
+  return `  ${label} ${value}`;
+}
+
+function sumByKinds(byKind: any[], kinds: Set<string> | string): number {
+  const set = typeof kinds === 'string' ? new Set([kinds]) : kinds;
+  return (byKind || []).reduce((s, row) => (set.has(row.kind) ? s + Number(row.total || 0) : s), 0);
+}
+
+function countByKinds(byKind: any[], kinds: Set<string> | string): number {
+  const set = typeof kinds === 'string' ? new Set([kinds]) : kinds;
+  return (byKind || []).reduce((s, row) => (set.has(row.kind) ? s + Number(row.count || 0) : s), 0);
+}
+
+/** تجميع قنوات ملخصات المبيعات اليومية */
+function aggregateSalesChannels(salesSummaries: any[], lang: string): { lines: string[]; total: number } {
+  const buckets = new Map<string, number>();
+  let total = 0;
+  for (const s of salesSummaries || []) {
+    total += Number(s.totalAmount || 0);
+    for (const ch of s.channels || []) {
+      const label = pickBilingual(lang, ch.vaultNameAr, ch.vaultNameEn);
+      const amt = Number(ch.amount || 0);
+      if (amt <= 0) continue;
+      buckets.set(label, (buckets.get(label) ?? 0) + amt);
+    }
+  }
+  const lines = [...buckets.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, amt]) => channelRow(label, amt));
+  return { lines, total };
+}
+
+function salesCustomersTotal(salesSummaries: any[]): number {
+  return (salesSummaries || []).reduce((s, x) => s + Number(x.customerCount || 0), 0);
 }
 
 export type BuildDayCloseWhatsAppParams = {
@@ -42,103 +76,89 @@ export type BuildDayCloseWhatsAppParams = {
   t: (key: string, ...args: unknown[]) => string;
 };
 
-/** نص واتساب منسّق لتقرير نهاية اليوم (ملخص + تفاصيل مختصرة) */
+/** ملخص واتساب مختصر لنهاية اليوم — بدون تفاصيل عمليات أو خزائن */
 export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): string {
   const { companyName, dateLabel, data, kindLabel, lang, t } = p;
   const name = (companyName || '').trim();
-  const { monthScoped, lifetime } = getDayCloseCashKpis(data.cash);
-  const showLifetimeFootnote =
-    Number.isFinite(monthScoped) &&
-    Number.isFinite(lifetime) &&
-    Math.abs(monthScoped - lifetime) > 1e-6;
+  const byKind = data.byKind || [];
+  const salesSummaries = data.salesSummaries || [];
 
+  const inflowTotal = Number(data.sums?.inflow?.total || 0);
+  const outflowTotal = Number(data.sums?.outflow?.total || 0);
+  const netDay = inflowTotal - outflowTotal;
+
+  const { lines: channelLines, total: channelsSum } = aggregateSalesChannels(salesSummaries, lang);
+  const salesTotal = salesSummaries.length > 0 ? channelsSum || salesSummaries.reduce(
+    (s: number, x: any) => s + Number(x.totalAmount || 0),
+    0,
+  ) : inflowTotal;
+  const customers = salesSummaries.length > 0
+    ? salesCustomersTotal(salesSummaries)
+    : countByKinds(byKind, 'sale');
+
+  const purchasesTotal = sumByKinds(byKind, PURCHASE_KIND);
+  const expensesTotal = sumByKinds(byKind, EXPENSE_KINDS);
+
+  const cashIn = Number(data.cash?.dayTotalIn ?? 0);
+  const cashOut = Number(data.cash?.dayTotalOut ?? 0);
+  const cashAvailable = Number(data.cash?.netDay ?? cashIn - cashOut);
+
+  const head = name ? `${t('dayCloseWaTitle')} — ${name}` : t('dayCloseWaTitle');
   const lines: string[] = [
-    `${t('dayCloseWaTitle')}${name ? ` — ${name}` : ''}`,
-    `${t('dayCloseWaDateLine')} ${dateLabel}`,
+    WA.rule,
+    head,
+    WA.rule,
+    `${WA.bullet} ${t('dayCloseWaDateLine')} ${dateLabel}`,
     '',
-    sectionHeader(t, 'dayCloseWaSectionSummary'),
-    `${t('dayCloseWaInflowLine')} ${fmt(Number(data.sums?.inflow?.total || 0))} SR (${data.sums?.inflow?.count ?? 0} ${t('dayCloseOperations')})`,
-    `${t('dayCloseWaOutflowLine')} ${fmt(Number(data.sums?.outflow?.total || 0))} SR (${data.sums?.outflow?.count ?? 0} ${t('dayCloseOperations')})`,
-    `${t('dayCloseWaNetCashLine')} ${fmt(Number(data.cash?.netDay ?? 0))} SR`,
-    `${t('dayCloseWaAvailableCashLine')} ${fmt(monthScoped)} SR`,
+    sectionTitle(WA.sales, t('dayCloseWaSectionSales')),
   ];
 
-  if (showLifetimeFootnote) {
-    lines.push(`${t('dayCloseLifetimeCashFootnote', fmt(lifetime))}`);
+  if (salesTotal > 0 || customers > 0) {
+    lines.push(
+      metricLine(
+        t('dayCloseWaSalesTotal'),
+        `${fmt(salesTotal)} SR · ${fmt(customers, 0)} ${t('dayCloseCustomers')}`,
+      ),
+    );
+    if (channelLines.length > 0) {
+      lines.push(`  ${t('dayCloseWaChannels')}`);
+      lines.push(...channelLines);
+    } else if (byKind.some((r: any) => r.kind === 'sale')) {
+      const saleLabel = kindLabel.sale || 'sale';
+      lines.push(metricLine(t('dayCloseWaFromInvoices'), `${fmt(inflowTotal)} SR (${saleLabel})`));
+    }
+  } else {
+    lines.push(`  ${t('dayCloseWaNoSales')}`);
   }
 
+  lines.push('', sectionTitle(WA.outflow, t('dayCloseWaSectionOutflow')));
+
+  if (purchasesTotal > 0) {
+    lines.push(metricLine(t('dayCloseWaPurchases'), `${fmt(purchasesTotal)} SR`));
+  }
+  if (expensesTotal > 0) {
+    lines.push(metricLine(t('dayCloseWaExpenses'), `${fmt(expensesTotal)} SR`));
+  }
+  if (purchasesTotal <= 0 && expensesTotal <= 0 && outflowTotal > 0) {
+    lines.push(metricLine(t('dayCloseWaOutflowTotal'), `${fmt(outflowTotal)} SR`));
+  } else if (purchasesTotal > 0 || expensesTotal > 0) {
+    lines.push(metricLine(t('dayCloseWaOutflowTotal'), `${fmt(purchasesTotal + expensesTotal)} SR`));
+  } else {
+    lines.push(`  ${t('dayCloseWaNoOutflow')}`);
+  }
+
+  const netPrefix = netDay >= 0 ? '+' : '';
   lines.push(
-    `${t('dayCloseWaCashMoveLine')} ${t('dayCloseCashIn')} ${fmt(Number(data.cash?.dayTotalIn ?? 0))} · ${t('dayCloseCashOut')} ${fmt(Number(data.cash?.dayTotalOut ?? 0))} SR`,
-    `${t('dayCloseWaTransfersLine')} ${data.transfers?.count ?? 0} / ${fmt(Number(data.transfers?.volume || 0))} SR`,
     '',
+    sectionTitle(WA.closing, t('dayCloseWaSectionClosing')),
+    metricLine(t('dayCloseWaNetDay'), `${netPrefix}${fmt(netDay)} SR`),
+    metricLine(t('dayCloseWaCashIn'), `${fmt(cashIn)} SR`),
+    metricLine(t('dayCloseWaCashOut'), `${fmt(cashOut)} SR`),
+    metricLine(t('dayCloseWaCashAvailable'), `${fmt(cashAvailable)} SR`),
+    '',
+    t('dayCloseWaFooter'),
   );
 
-  const byKind = data.byKind || [];
-  if (byKind.length > 0) {
-    lines.push(sectionHeader(t, 'dayCloseByKind'));
-    for (const row of byKind) {
-      const label = kindLabel[row.kind] || row.kind;
-      lines.push(`• ${label}: ${row.count} · ${fmt(Number(row.total))} SR`);
-    }
-    lines.push('');
-  }
-
-  const outflowChannels = data.outflowByPaymentMethod || [];
-  if (outflowChannels.length > 0) {
-    lines.push(sectionHeader(t, 'dayCloseByPaymentChannel'));
-    for (const row of outflowChannels) {
-      const vault = pickBilingual(lang, row.nameAr ?? row.label, row.nameEn);
-      lines.push(`• ${vault}: ${fmt(Number(row.total))} SR`);
-    }
-    lines.push('');
-  }
-
-  const salesSummaries = data.salesSummaries || [];
-  if (salesSummaries.length > 0) {
-    lines.push(sectionHeader(t, 'dayCloseSalesSummaries'));
-    for (const s of salesSummaries) {
-      lines.push(
-        `• #${s.summaryNumber}: ${fmt(Number(s.customerCount), 0)} ${t('dayCloseCustomers')} · ${t('dayCloseCashOnHand')} ${fmt(Number(s.cashOnHand))} · ${fmt(Number(s.totalAmount))} SR`,
-      );
-    }
-    lines.push('');
-  }
-
-  const vaultMovement = data.vaults?.movementOnDayByVault || [];
-  if (vaultMovement.length > 0) {
-    lines.push(sectionHeader(t, 'dayCloseVaultMovementDay'));
-    for (const v of vaultMovement) {
-      const vaultName = pickBilingual(lang, v.nameAr, v.nameEn);
-      lines.push(
-        `• ${vaultName}: ${t('dayCloseCashIn')} ${fmt(Number(v.totalIn))} · ${t('dayCloseCashOut')} ${fmt(Number(v.totalOut))} · ${t('dayCloseNet')} ${fmt(Number(v.netDay))} SR`,
-      );
-    }
-    lines.push('');
-  }
-
-  const operations = data.operations || [];
-  const totalOps = data.meta?.invoiceCountAll ?? operations.length;
-  if (operations.length > 0) {
-    lines.push(sectionHeader(t, 'dayCloseOperationsTable'));
-    const slice = operations.slice(0, MAX_WA_OPERATIONS);
-    for (const op of slice) {
-      const kind = kindLabel[op.kind] || op.kind;
-      const party = counterpartyLabel(op, lang);
-      const vault = pickBilingual(lang, op.vaultNameAr ?? op.vaultName, op.vaultNameEn);
-      const statusSuffix = op.status === 'cancelled' ? ` (${t('statusCancelled')})` : '';
-      lines.push(
-        `• ${op.invoiceNumber} · ${kind} · ${fmt(Number(op.totalAmount))} SR · ${party} · ${vault}${statusSuffix}`,
-      );
-    }
-    const truncatedTable = data.meta?.invoicesTruncated;
-    const remaining = totalOps - slice.length;
-    if (truncatedTable || remaining > 0) {
-      lines.push(t('dayCloseWaOpsMore', totalOps, slice.length));
-    }
-    lines.push('');
-  }
-
-  lines.push(t('dayCloseWaFooter'));
   return lines.join('\n').trim();
 }
 
