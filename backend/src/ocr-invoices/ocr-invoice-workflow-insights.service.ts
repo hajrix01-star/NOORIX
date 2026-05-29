@@ -7,6 +7,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { toYmd } from '../common/utils/to-ymd.util';
+import {
+  buildSemanticKeywordInsights,
+  extractSemanticTokens,
+} from './ocr-semantic-keyword-insights.util';
 
 type OcrAttemptTelemetry = {
   model?: string;
@@ -43,6 +47,10 @@ function asNumber(v: unknown): number | null {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   }
+  if (v && typeof v === 'object' && typeof (v as { toString?: () => string }).toString === 'function') {
+    const n = Number((v as { toString: () => string }).toString());
+    return Number.isFinite(n) ? n : null;
+  }
   return null;
 }
 
@@ -70,6 +78,7 @@ function normalizeReasonText(...parts: Array<unknown>): string {
     .toLowerCase()
     .trim();
 }
+
 
 function classifyFailureReason(
   reasonText: string,
@@ -281,6 +290,7 @@ export class OcrInvoiceWorkflowInsightsService {
       unmatchedLines: number;
       confidenceSum: number;
     }>();
+    const semanticKeywordCounts = new Map<string, number>();
     const supplierStats = new Map<string, {
       supplierId: string | null;
       nameAr: string;
@@ -305,6 +315,7 @@ export class OcrInvoiceWorkflowInsightsService {
     let fallbackUsedCount = 0;
     let lowConfidenceLineCount = 0;
     let unmatchedLineCount = 0;
+    let totalLineCount = 0;
 
     for (const inv of invoices) {
       const status = String(inv.status || '');
@@ -404,6 +415,11 @@ export class OcrInvoiceWorkflowInsightsService {
       }
 
       for (const line of inv.lines) {
+        totalLineCount += 1;
+        const semanticSource = line.item?.nameAr || String(line.rawName || '');
+        for (const token of extractSemanticTokens(semanticSource)) {
+          semanticKeywordCounts.set(token, (semanticKeywordCounts.get(token) || 0) + 1);
+        }
         const itemKey = line.item?.id || `raw:${String(line.rawName || '').trim().toLowerCase().slice(0, 72)}`;
         const itemName = line.item?.nameAr || String(line.rawName || '—');
         if (!itemStats.has(itemKey)) {
@@ -549,6 +565,10 @@ export class OcrInvoiceWorkflowInsightsService {
         )
       : 0;
     const tenItemsWasteSeconds = (tenItemsExpectedMs * (tenItemsWasteRate / 100)) / 1000;
+    const topSemanticKeywords = Array.from(semanticKeywordCounts.entries())
+      .map(([keyword, count]) => ({ keyword, count, rate: rate(count, totalLineCount) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 30);
 
     return {
       periodDays: days,
@@ -590,6 +610,7 @@ export class OcrInvoiceWorkflowInsightsService {
       dailyTrend,
       itemInsights,
       supplierInsights,
+      topSemanticKeywords,
       matching: {
         supplierLogsCount: supplierLogs.length,
         supplierResolutionRate: rate(supplierResolved, supplierOccurrences),
@@ -599,5 +620,13 @@ export class OcrInvoiceWorkflowInsightsService {
         itemAvgConfidence: avg(itemLogs.map((x) => x.confidence || 0)),
       },
     };
+  }
+
+  async getSemanticKeywordInsights(
+    tenantId: string,
+    companyId: string,
+    options?: { keyword?: string; days?: number; limit?: number },
+  ) {
+    return buildSemanticKeywordInsights(this.prisma, tenantId, companyId, options);
   }
 }

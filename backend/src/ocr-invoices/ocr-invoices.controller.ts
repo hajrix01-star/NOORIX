@@ -114,6 +114,28 @@ export class OcrInvoicesController {
     );
   }
 
+  @Get('reports/semantic-keyword-insights')
+  @RequirePermission('OCR_READ')
+  async semanticKeywordInsights(
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+    @Query('keyword') keyword?: string,
+    @Query('days') daysRaw?: string,
+    @Query('limit') limitRaw?: string,
+  ) {
+    const days = daysRaw ? Number(daysRaw) : undefined;
+    const limit = limitRaw ? Number(limitRaw) : undefined;
+    return this.svc.getSemanticKeywordInsights(
+      user.tenantId!,
+      this.requireCompanyId(companyId),
+      {
+        keyword: String(keyword || '').trim() || undefined,
+        days: Number.isFinite(days) ? days : undefined,
+        limit: Number.isFinite(limit) ? limit : undefined,
+      },
+    );
+  }
+
   @Get('accounting-supplier-suggestions')
   @RequirePermission('OCR_READ')
   async accountingSupplierSuggestions(
