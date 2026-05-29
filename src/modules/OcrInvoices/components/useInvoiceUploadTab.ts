@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
@@ -26,7 +26,7 @@ import { vaultKeys, ocrKeys } from '../../../services/queryKeys';
 /**
  * منطق تبويب رفع/استخراج فاتورة OCR (منفصل عن العرض)
  */
-export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsumed }: any) {
+export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsumed, suppliers = [], items = [] }: any) {
   const { t, lang: language } = useTranslation();
   const { activeCompanyId } = useApp();
   const queryClient = useQueryClient();
@@ -40,6 +40,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<any>(null);
+  const [extractWarning, setExtractWarning] = useState<any>(null);
   const [success, setSuccess] = useState(false);
   const [finalizeOcrId, setFinalizeOcrId] = useState<any>(null);
   const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState<any>(null);
@@ -53,6 +54,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [postSaveLinkedPurchase, setPostSaveLinkedPurchase] = useState<any>(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const autoExtractedImageRef = useRef<string | null>(null);
   const userTouchedAccountingRef = useRef(false);
   const [newOcrSupplierOpen, setNewOcrSupplierOpen] = useState(false);
   const [newOcrNameAr, setNewOcrNameAr] = useState('');
@@ -60,7 +62,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [newOcrSaving, setNewOcrSaving] = useState(false);
   const [newOcrError, setNewOcrError] = useState<any>(null);
 
-  const { activeItems, warningCount, updateItem, applyMathSuggestion } = useOcrInvoiceLineItems(
+  const { activeItems, warningCount, updateItem, applyMathSuggestion, updateItemMatch } = useOcrInvoiceLineItems(
     extracted,
     editItems,
     setEditItems,
@@ -183,23 +185,21 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     [readFile],
   );
 
-  const handleExtract = async () => {
+  const handleExtract = useCallback(async () => {
     if (!imageBase64) return;
     setLoading(true);
     setError(null);
+    setExtractWarning(null);
     try {
       const res = await extractInvoice(imageBase64, mimeType);
       if (res.success) {
         if (res.data?.parseError) {
-          const detail = res.data.errorDetail || '';
-          const model = res.data.usedModel || '';
-          const rawSnippet = res.data.rawText ? `\n\nGemini raw: ${res.data.rawText.substring(0, 200)}` : '';
-          setError(`${t('ocrExtractFailed')} — تعذّر قراءة الفاتورة.\nModel: ${model}\n${detail}${rawSnippet}`);
+          setError(t('ocrParseFriendlyError'));
         } else {
           setExtracted(res.data);
           setEditItems(null);
           if (res.data?.enrichError) {
-            console.warn('OCR enrichment warning:', res.data.enrichError);
+            setExtractWarning(t('ocrEnrichWarning'));
           }
         }
       } else {
@@ -210,7 +210,67 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     } finally {
       setLoading(false);
     }
-  };
+  }, [imageBase64, mimeType, t]);
+
+  useEffect(() => {
+    if (!imageBase64 || extracted || loading || prefillLoading) return;
+    if (autoExtractedImageRef.current === imageBase64) return;
+    autoExtractedImageRef.current = imageBase64;
+    void handleExtract();
+  }, [imageBase64, extracted, loading, prefillLoading, handleExtract]);
+
+  useEffect(() => {
+    if (!imageBase64) autoExtractedImageRef.current = null;
+  }, [imageBase64]);
+
+  const handleSupplierMatchChange = useCallback(
+    (supplierId: string) => {
+      const id = String(supplierId || '').trim();
+      if (!id) {
+        setExtracted((prev: any) => (prev ? { ...prev, supplierMatch: null } : prev));
+        setPrefillOcrSupplierId(null);
+        return;
+      }
+      const picked = (suppliers || []).find((s: any) => s.id === id);
+      if (!picked) return;
+      setExtracted((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              supplierMatch: {
+                id: picked.id,
+                nameAr: picked.nameAr,
+                score: 1,
+                status: 'review',
+              },
+            }
+          : prev,
+      );
+      setPrefillOcrSupplierId(picked.id);
+    },
+    [suppliers],
+  );
+
+  const handleItemMatchChange = useCallback(
+    (index: number, itemId: string) => {
+      const id = String(itemId || '').trim();
+      if (!id) {
+        updateItemMatch(index, null);
+        return;
+      }
+      const picked = (items || []).find((x: any) => x.id === id);
+      if (!picked) return;
+      updateItemMatch(index, {
+        id: picked.id,
+        nameAr: picked.nameAr,
+        nameEn: picked.nameEn ?? null,
+        hasSizes: !!picked.hasSizes,
+        score: 1,
+        status: 'review',
+      });
+    },
+    [items, updateItemMatch],
+  );
 
   const handleSave = async () => {
     if (!extracted) return;
@@ -271,6 +331,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
           setVaultId('');
           setPurchaseSupplierInvoiceNumber('');
           setTransactionDate(getSaudiToday());
+          setExtractWarning(null);
           setSuccess(false);
         }, delayMs);
       } else {
@@ -332,8 +393,10 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       return null;
     });
     setBase64(null);
+    autoExtractedImageRef.current = null;
     setExtracted(null);
     setError(null);
+    setExtractWarning(null);
     setEditItems(null);
     setFinalizeOcrId(null);
     setPrefillLinkedPurchase(null);
@@ -368,6 +431,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     saving,
     success,
     error,
+    extractWarning,
     prefillLoading,
     prefillLinkedPurchase,
     postSaveLinkedPurchase,
@@ -379,6 +443,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     vaultRows,
     accSuggestions,
     accSuggestionsFetching,
+    suppliers,
+    items,
     createLinkedPurchase,
     setCreateLinkedPurchase,
     transactionDate,
@@ -395,6 +461,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     activeItems,
     updateItem,
     applyMathSuggestion,
+    handleSupplierMatchChange,
+    handleItemMatchChange,
     onAccountingSupplierIdChange,
     readFile,
     handleDrop,

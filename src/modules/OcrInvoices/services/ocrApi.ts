@@ -25,6 +25,10 @@ export async function getOcrReviewQueue() {
   return apiGet('/api/v1/ocr/invoices/review-queue');
 }
 
+export async function retryOcrInvoiceExtraction(id: any) {
+  return apiPost(`/api/v1/ocr/invoices/${encodeURIComponent(id)}/retry`, {});
+}
+
 export async function getOcrInvoices() {
   return apiGet('/api/v1/ocr/invoices');
 }

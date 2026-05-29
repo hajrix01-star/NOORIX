@@ -50,7 +50,16 @@ function EditableNumber({ value, onChange, warn }: any) {
   );
 }
 
-export function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion }: any) {
+export function ItemRow({
+  item,
+  index,
+  language,
+  t,
+  itemCatalog = [],
+  onUpdate,
+  onApplySuggestion,
+  onItemMatchChange,
+}: any) {
   const match = item.itemMatch;
   const statusInfo = match
     ? (STATUS_BADGE as Record<string, (typeof STATUS_BADGE)['new']>)[String(match.status)]
@@ -135,6 +144,23 @@ export function ItemRow({ item, index, language, t, onUpdate, onApplySuggestion 
             {Math.round(item.confidence * 100)}%
           </span>
         )}
+      </div>
+
+      <div className="mt-2">
+        <Input
+          type="select"
+          size="sm"
+          label={t('ocrItemMatchOverride')}
+          value={item?.itemMatch?.id || ''}
+          onChange={(e: any) => onItemMatchChange?.(index, e.target.value)}
+        >
+          <option value="">{t('ocrItemUnmatched')}</option>
+          {(itemCatalog || []).map((it: any) => (
+            <option key={it.id} value={it.id}>
+              {[it.nameAr, it.nameEn].filter(Boolean).join(' / ')}
+            </option>
+          ))}
+        </Input>
       </div>
 
       {hasMathWarn && (

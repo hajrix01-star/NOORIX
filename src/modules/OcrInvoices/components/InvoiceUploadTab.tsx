@@ -6,6 +6,7 @@ import {
   OcrPostSaveLinkedBanner,
   OcrEmptyImageDropzone,
   OcrErrorBanner,
+  OcrWarningBanner,
 } from './invoiceUpload/OcrUploadBannersAndDropzone';
 import { OcrImagePreviewColumn } from './invoiceUpload/OcrImagePreviewColumn';
 import { OcrExtractedInfoAndTotalsCard } from './invoiceUpload/OcrExtractedInfoAndTotalsCard';
@@ -57,7 +58,13 @@ export default function InvoiceUploadTab(props: any) {
 
           {o.extracted && (
             <div className="flex flex-col gap-[14px] flex-[1_1_280px] min-w-0">
-              <OcrExtractedInfoAndTotalsCard t={o.t} extracted={o.extracted} isAr={o.isAr} />
+              <OcrExtractedInfoAndTotalsCard
+                t={o.t}
+                extracted={o.extracted}
+                isAr={o.isAr}
+                suppliers={o.suppliers}
+                onSupplierMatchChange={o.handleSupplierMatchChange}
+              />
               <OcrLinkedPurchaseForm
                 t={o.t}
                 finalizeOcrId={o.finalizeOcrId}
@@ -90,8 +97,10 @@ export default function InvoiceUploadTab(props: any) {
                 t={o.t}
                 language={o.language}
                 activeItems={o.activeItems}
+                itemCatalog={o.items}
                 onUpdateItem={o.updateItem}
                 onApplySuggestion={o.applyMathSuggestion}
+                onItemMatchChange={o.handleItemMatchChange}
               />
             </div>
           )}
@@ -99,6 +108,7 @@ export default function InvoiceUploadTab(props: any) {
       )}
 
       <OcrErrorBanner error={o.error} />
+      <OcrWarningBanner warning={o.extractWarning} />
       <OcrNewSupplierModal
         t={o.t}
         open={o.newOcrSupplierOpen}

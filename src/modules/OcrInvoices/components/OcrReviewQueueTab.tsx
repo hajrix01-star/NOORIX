@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { getOcrReviewQueue } from '../services/ocrApi';
+import { getOcrReviewQueue, retryOcrInvoiceExtraction } from '../services/ocrApi';
 import { ocrKeys } from '../../../services/queryKeys';
+import { Button } from '../../../ui';
 import OcrInvoiceThumb from './OcrInvoiceThumb';
 
 const STATUS_LABEL = {
@@ -17,6 +18,8 @@ export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
   const { lang, t } = useTranslation();
   const isAr = lang === 'ar';
   const { activeCompanyId } = useApp();
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ocrKeys.reviewQueue(activeCompanyId || ''),
@@ -35,22 +38,40 @@ export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
 
   const rows = useMemo(() => data || [], [data]);
 
+  const handleRetry = async (id: string) => {
+    if (!id || retryingId) return;
+    setRetryingId(id);
+    setRetryError(null);
+    try {
+      const r = await retryOcrInvoiceExtraction(id);
+      if (!r.success) {
+        setRetryError(r.error || t('ocrRetryFailed'));
+      }
+      await refetch();
+    } catch {
+      setRetryError(t('ocrRetryFailed'));
+    } finally {
+      setRetryingId(null);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h2 className="text-[15px] font-bold text-noorix-text m-0">
           {t('ocrReviewQueueTab')}
         </h2>
-        <button
-          type="button"
-          className="text-[12px] font-medium text-noorix-blue underline"
-          onClick={() => refetch()}
-        >
+        <Button type="button" variant="raw" size="sm" className="text-noorix-blue underline" onClick={() => refetch()}>
           {t('ocrRefresh')}
-        </button>
+        </Button>
       </div>
 
       {isLoading && <div className="text-noorix-muted text-[13px]">{t('ocrQueueLoading')}</div>}
+      {retryError && (
+        <div className="text-[13px] rounded-lg border border-noorix-red/35 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-noorix-red">
+          {retryError}
+        </div>
+      )}
 
       {!isLoading && rows.length === 0 && (
         <div className="text-noorix-muted text-[13px]">{t('ocrQueueEmpty')}</div>
@@ -86,13 +107,21 @@ export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
                   <td className="p-2">{inv.submittedBy?.nameAr || inv.submittedBy?.email || '—'}</td>
                   <td className="p-2">
                     {inv.status === 'pending_review' && (
-                      <button
-                        type="button"
-                        className="text-noorix-blue font-medium underline text-[12px]"
-                        onClick={() => onOpenInvoice?.(inv)}
-                      >
+                      <Button type="button" variant="raw" size="sm" className="text-noorix-blue underline" onClick={() => onOpenInvoice?.(inv)}>
                         {t('ocrReviewAction')}
-                      </button>
+                      </Button>
+                    )}
+                    {inv.status === 'extraction_failed' && (
+                      <Button
+                        type="button"
+                        variant="raw"
+                        size="sm"
+                        className="text-noorix-blue underline"
+                        onClick={() => handleRetry(inv.id)}
+                        disabled={retryingId === inv.id}
+                      >
+                        {retryingId === inv.id ? t('ocrRetrying') : t('ocrRetryExtraction')}
+                      </Button>
                     )}
                   </td>
                 </tr>

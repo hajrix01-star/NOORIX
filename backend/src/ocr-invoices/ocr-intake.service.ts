@@ -92,6 +92,33 @@ export class OcrIntakeService {
     return { id: inv.id, status: OcrInvoiceStatus.QUEUED };
   }
 
+  async retryExtractionForInvoice(tenantId: string, companyId: string, invoiceId: string) {
+    const inv = await this.prisma.ocrInvoice.findFirst({
+      where: { id: invoiceId, tenantId, companyId },
+      select: { id: true, status: true, imageUrl: true },
+    });
+    if (!inv) throw new NotFoundException('الفاتورة غير موجودة.');
+    if (!inv.imageUrl) {
+      throw new BadRequestException('لا يمكن إعادة المحاولة بدون صورة فاتورة.');
+    }
+    if (inv.status === OcrInvoiceStatus.EXTRACTING) {
+      throw new BadRequestException('الاستخراج قيد التنفيذ حالياً.');
+    }
+    if (
+      inv.status !== OcrInvoiceStatus.EXTRACTION_FAILED &&
+      inv.status !== OcrInvoiceStatus.QUEUED
+    ) {
+      throw new BadRequestException('إعادة المحاولة متاحة فقط للحالات الفاشلة أو العالقة في الانتظار.');
+    }
+
+    await this.prisma.ocrInvoice.update({
+      where: { id: inv.id },
+      data: { status: OcrInvoiceStatus.QUEUED, extractionError: null },
+    });
+    this.scheduleExtractionAfterSubmit(inv.id);
+    return { id: inv.id, status: OcrInvoiceStatus.QUEUED };
+  }
+
   private scheduleExtractionAfterSubmit(invoiceId: string): void {
     void this.extractionQueue
       .add(
