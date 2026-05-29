@@ -9,6 +9,7 @@ import { OcrIntakeService }     from './ocr-intake.service';
 import { OcrUploadsLocalStorage } from './ocr-uploads-local.storage';
 import { OCR_EXTRACTION_QUEUE } from './ocr-queue.constants';
 import { OcrExtractionProcessor } from './ocr-extraction.processor';
+import { OcrExtractionSweeperService } from './ocr-extraction-sweeper.service';
 import { OcrCatalogService }    from './ocr-catalog.service';
 import { OcrInvoiceWorkflowService } from './ocr-invoice-workflow.service';
 import { OcrInvoiceWorkflowReaderService } from './ocr-invoice-workflow-reader.service';
@@ -27,6 +28,7 @@ import { OcrInvoiceWorkflowInsightsService } from './ocr-invoice-workflow-insigh
   providers:   [
     OcrUploadsLocalStorage,
     OcrExtractionProcessor,
+    OcrExtractionSweeperService,
     OcrExtractionService,
     OcrIntakeService,
     OcrCatalogService,

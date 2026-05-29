@@ -17,6 +17,12 @@ import { buildAutoSaveDtoFromEnriched } from './ocr-auto-finalize.util';
 import { listOcrChatReminders } from './ocr-chat-reminders.util';
 import { mergeOcrImageBuffersVertically } from './ocr-image-merge.util';
 import type { OcrSaveInvoiceCaller } from './ocr-invoices.types';
+import {
+  OCR_EXTRACTION_JOB_OPTIONS,
+  ocrExtractingStuckAfterMinutes,
+  ocrQueueStuckAfterSeconds,
+  ocrUseInlineExtraction,
+} from './ocr-extraction-queue.util';
 
 @Injectable()
 export class OcrIntakeService {
@@ -192,20 +198,79 @@ export class OcrIntakeService {
   }
 
   private scheduleExtractionAfterSubmit(invoiceId: string): void {
-    void this.extractionQueue
-      .add(
+    void this.dispatchExtraction(invoiceId);
+  }
+
+  /** Bull queue with inline fallback when Redis/Bull unavailable */
+  async dispatchExtraction(invoiceId: string): Promise<void> {
+    if (ocrUseInlineExtraction()) {
+      this.runExtractionSafe(invoiceId);
+      return;
+    }
+    try {
+      await this.extractionQueue.add(
         'run-extraction',
         { invoiceId },
-        {
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 5000 },
-          removeOnComplete: 200,
-          removeOnFail: 100,
+        OCR_EXTRACTION_JOB_OPTIONS,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Bull enqueue failed for ${invoiceId}: ${(err as Error).message}. Running inline.`,
+      );
+      this.runExtractionSafe(invoiceId);
+    }
+  }
+
+  private runExtractionSafe(invoiceId: string): void {
+    void this.runExtractionForInvoice(invoiceId).catch((err) => {
+      this.logger.error(`OCR extraction crashed for ${invoiceId}: ${(err as Error).message}`);
+    });
+  }
+
+  /** Sweeper: queued invoices older than threshold — run extraction directly */
+  async processStuckQueuedInvoices(limit = 8, minAgeSeconds?: number): Promise<number> {
+    const maxAgeSeconds = minAgeSeconds ?? ocrQueueStuckAfterSeconds();
+    const cutoff = new Date(Date.now() - maxAgeSeconds * 1000);
+    const stuck = await this.prisma.ocrInvoice.findMany({
+      where: {
+        status: OcrInvoiceStatus.QUEUED,
+        updatedAt: { lte: cutoff },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+      select: { id: true },
+    });
+    for (const row of stuck) {
+      this.logger.warn(`Processing stuck queued OCR invoice ${row.id}`);
+      await this.runExtractionForInvoice(row.id);
+    }
+    return stuck.length;
+  }
+
+  /** Sweeper: reset long-running extracting jobs back to queue */
+  async recoverStuckExtractingInvoices(limit = 5): Promise<number> {
+    const maxAgeMinutes = ocrExtractingStuckAfterMinutes();
+    const cutoff = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
+    const stuck = await this.prisma.ocrInvoice.findMany({
+      where: {
+        status: OcrInvoiceStatus.EXTRACTING,
+        updatedAt: { lte: cutoff },
+      },
+      orderBy: { updatedAt: 'asc' },
+      take: limit,
+      select: { id: true },
+    });
+    for (const row of stuck) {
+      await this.prisma.ocrInvoice.update({
+        where: { id: row.id },
+        data: {
+          status: OcrInvoiceStatus.QUEUED,
+          extractionError: 'extracting_timeout_requeued',
         },
-      )
-      .catch((err) => {
-        this.logger.error(`Failed to enqueue OCR extraction for ${invoiceId}: ${(err as Error).message}`);
       });
+      void this.dispatchExtraction(row.id);
+    }
+    return stuck.length;
   }
 
   /** يُستدعى من عامل Bull (تسلسل concurrency:1 على مستوى الطابور). */
@@ -216,10 +281,17 @@ export class OcrIntakeService {
     });
     if (!inv?.imageUrl) return;
 
-    await this.prisma.ocrInvoice.update({
-      where: { id: inv.id },
-      data: { status: OcrInvoiceStatus.EXTRACTING, extractionError: null },
+    const claimed = await this.prisma.ocrInvoice.updateMany({
+      where: {
+        id: inv.id,
+        status: OcrInvoiceStatus.QUEUED,
+      },
+      data: {
+        status: OcrInvoiceStatus.EXTRACTING,
+        extractionError: null,
+      },
     });
+    if (claimed.count === 0) return;
 
     const relPath = inv.imageUrl.replace(/\\/g, '/');
     if (!this.uploads.exists(relPath)) {
