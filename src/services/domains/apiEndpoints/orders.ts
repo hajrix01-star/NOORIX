@@ -186,8 +186,12 @@ export async function deleteOrderSection(id: string, companyId: string): Promise
 export async function bulkSetProductSections(
   companyId: string,
   productIds: string[],
-  sectionNames: string[],
-  mode?: 'replace' | 'add',
+  opts: { sectionNames?: string[]; sectionIds?: string[]; mode?: 'replace' | 'add' },
 ): Promise<ApiParsedResult> {
-  return apiPost(`/api/v1/orders/products/bulk-sections?companyId=${companyId}`, { productIds, sectionNames, mode });
+  return apiPost(`/api/v1/orders/products/bulk-sections?companyId=${companyId}`, {
+    productIds,
+    sectionNames: opts.sectionNames,
+    sectionIds: opts.sectionIds,
+    mode: opts.mode,
+  });
 }

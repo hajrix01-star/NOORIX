@@ -386,4 +386,12 @@ export default {
   ordersProductSimplePrice:   { ar: 'آخر سعر', en: 'Last price' },
   ordersEditProduct:          { ar: 'تعديل صنف', en: 'Edit product' },
   ordersVariantsCount:        { ar: '{0} متغير', en: '{0} variant(s)' },
+
+  ordersSetupTitle:           { ar: 'إعداد الكتالوج', en: 'Catalog setup' },
+  ordersSetupHint:            { ar: 'اتبع الخطوات بالترتيب — الأقسام أولاً ثم الفئات ثم الأصناف.', en: 'Follow the steps in order — sections, then categories, then products.' },
+  ordersSetupStepSections:    { ar: 'أنشئ أقسام العمل (مطبخ، بار، …)', en: 'Create work sections (kitchen, bar, …)' },
+  ordersSetupStepCategories:  { ar: 'أضف فئات الأصناف (خضروات، لحوم، …)', en: 'Add product categories' },
+  ordersSetupStepProducts:    { ar: 'أضف أصناف أو استورد من Excel', en: 'Add products or import from Excel' },
+  ordersSetupGoSections:      { ar: 'فتح الأقسام', en: 'Open sections' },
+  ordersSetupGoCategories:    { ar: 'فتح الفئات', en: 'Open categories' },
 };

@@ -51,10 +51,14 @@ export function useOrders(companyId: any, year: any, month: any) {
   });
 }
 
-export function useCreateOrderMutation() {
+export function useCreateOrderMutation(companyId?: string) {
   return useApiMutation({
     mutationFn: createOrder,
-    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot()],
+    invalidateQueries: [
+      orderKeys.listRoot(),
+      orderKeys.summaryRoot(),
+      ...(companyId ? [orderKeys.products(companyId)] : [orderKeys.productsRoot()]),
+    ],
     showErrorToast: false,
   });
 }
@@ -62,7 +66,11 @@ export function useCreateOrderMutation() {
 export function useUpdateOrderMutation(companyId: any) {
   return useApiMutation({
     mutationFn: ({ id, body }: any) => updateOrder(id, body, companyId),
-    invalidateQueries: [orderKeys.listRoot(), orderKeys.summaryRoot()],
+    invalidateQueries: [
+      orderKeys.listRoot(),
+      orderKeys.summaryRoot(),
+      ...(companyId ? [orderKeys.products(companyId)] : []),
+    ],
     showErrorToast: false,
   });
 }
@@ -340,8 +348,12 @@ export function useDeleteOrderSectionMutation(companyId: any) {
 
 export function useBulkSetProductSectionsMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: (body: { productIds: string[]; sectionNames: string[]; mode?: 'replace' | 'add' }) =>
-      bulkSetProductSections(companyId, body.productIds, body.sectionNames, body.mode),
+    mutationFn: (body: { productIds: string[]; sectionNames?: string[]; sectionIds?: string[]; mode?: 'replace' | 'add' }) =>
+      bulkSetProductSections(companyId, body.productIds, {
+        sectionNames: body.sectionNames,
+        sectionIds: body.sectionIds,
+        mode: body.mode,
+      }),
     invalidateQueries: [orderKeys.products(companyId)],
     showErrorToast: false,
   });

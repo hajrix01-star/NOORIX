@@ -3,6 +3,7 @@ import { OrdersImportModal } from '../OrdersImportModal';
 import { ItemsCatalogPrintModal } from '../ItemsCatalogPrintModal';
 import { ItemsCatalogWeeklyPrintModal } from '../ItemsCatalogWeeklyPrintModal';
 import { Modal, Button } from '../../../../ui';
+import { CatalogSetupGuide } from './CatalogSetupGuide';
 import { CatalogInfoBanner } from './CatalogInfoBanner';
 import { CatalogTypeSegment } from './CatalogTypeSegment';
 import { CatalogToolbar } from './CatalogToolbar';
@@ -15,6 +16,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
     companyId,
     catalogProductType,
     setCatalogProductType,
+    setActiveSubTab,
     catalogFilteredProducts,
     products,
     categories,
@@ -108,7 +110,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
     try {
       await bulkSetSections.mutateAsync({
         productIds: [...selectedProductIds],
-        sectionNames: bulkSelectedSections,
+        sectionIds: bulkSelectedSections,
         mode: bulkMode,
       });
       setBulkSectionModal(false);
@@ -192,10 +194,10 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
                 <label key={s.id} className="flex items-center gap-2 cursor-pointer text-[13px]">
                   <input
                     type="checkbox"
-                    checked={bulkSelectedSections.includes(s.nameAr)}
+                    checked={bulkSelectedSections.includes(s.id)}
                     onChange={(e) => {
-                      if (e.target.checked) setBulkSelectedSections((prev) => [...prev, s.nameAr]);
-                      else setBulkSelectedSections((prev) => prev.filter((n) => n !== s.nameAr));
+                      if (e.target.checked) setBulkSelectedSections((prev) => [...prev, s.id]);
+                      else setBulkSelectedSections((prev) => prev.filter((n) => n !== s.id));
                     }}
                     className="cursor-pointer"
                   />
@@ -246,6 +248,16 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
       <div className="flex flex-col gap-4">
         <CatalogTypeSegment value={catalogProductType} onChange={setCatalogProductType} />
         <CatalogInfoBanner productType={catalogProductType} />
+        <CatalogSetupGuide
+          t={t}
+          sectionsCount={(sections as any[]).length}
+          categoriesCount={(categories as any[]).length}
+          productsCount={totalOfType}
+          onGoSections={() => setActiveSubTab('sections')}
+          onGoCategories={() => setActiveSubTab('categories')}
+          onImport={() => setShowImportModal(true)}
+          onAddProduct={openCreateSheet}
+        />
 
         <div className="noorix-surface-card p-4 flex flex-col gap-4">
           <CatalogToolbar

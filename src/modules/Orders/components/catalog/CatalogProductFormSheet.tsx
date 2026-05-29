@@ -8,7 +8,7 @@ type FormState = {
   nameAr: string;
   nameEn: string;
   categoryId: string;
-  sectionsText: string;
+  sectionIds: string[];
   productType: 'order' | 'sale';
   simpleLastPrice: string;
   variants: Array<{ size: string; packaging: string; unit: string; lastPrice: string }>;
@@ -144,10 +144,12 @@ export function CatalogProductFormSheet(props: CatalogProductFormSheetProps) {
 
   const title = mode === 'edit' ? t('ordersEditProduct') : t('ordersAddProduct');
 
-  function toggleSection(nameAr: string, checked: boolean) {
-    const cur = (form.sectionsText || '').split(/[,،]/).map((x: string) => x.trim()).filter(Boolean);
-    const next = checked ? [...new Set([...cur, nameAr])] : cur.filter((n) => n !== nameAr);
-    setForm((f: FormState) => ({ ...f, sectionsText: next.join('، ') }));
+  function toggleSection(sectionId: string, checked: boolean) {
+    setForm((f: FormState) => {
+      const cur = Array.isArray(f.sectionIds) ? [...f.sectionIds] : [];
+      const next = checked ? [...new Set([...cur, sectionId])] : cur.filter((id) => id !== sectionId);
+      return { ...f, sectionIds: next };
+    });
   }
 
   return (
@@ -191,20 +193,17 @@ export function CatalogProductFormSheet(props: CatalogProductFormSheetProps) {
           <div>
             <div className="text-[12px] text-noorix-muted mb-2">{t('productSections')}</div>
             <div className="flex flex-wrap gap-x-3 gap-y-2">
-              {(sections as any[]).map((s: any) => {
-                const cur = (form.sectionsText || '').split(/[,،]/).map((x: string) => x.trim()).filter(Boolean);
-                return (
-                  <label key={s.id} className="flex items-center gap-1.5 text-[13px] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={cur.includes(s.nameAr)}
-                      onChange={(e) => toggleSection(s.nameAr, e.target.checked)}
-                      className="cursor-pointer"
-                    />
-                    {s.nameAr}
-                  </label>
-                );
-              })}
+              {(sections as any[]).map((s: any) => (
+                <label key={s.id} className="flex items-center gap-1.5 text-[13px] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(form.sectionIds || []).includes(s.id)}
+                    onChange={(e) => toggleSection(s.id, e.target.checked)}
+                    className="cursor-pointer"
+                  />
+                  {s.nameAr}
+                </label>
+              ))}
             </div>
           </div>
         )}

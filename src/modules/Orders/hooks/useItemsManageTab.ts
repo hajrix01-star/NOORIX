@@ -61,7 +61,7 @@ export function useItemsManageTab(companyId: any) {
     nameAr: '',
     nameEn: '',
     categoryId: '',
-    sectionsText: '', // نص مفصول بفاصلة → يُحوَّل لمصفوفة عند الإرسال
+    sectionIds: [] as string[],
     productType: 'order' as 'order' | 'sale',
     simpleLastPrice: '',
     variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
@@ -158,7 +158,7 @@ export function useItemsManageTab(companyId: any) {
       nameAr: '',
       nameEn: '',
       categoryId: '',
-      sectionsText: '',
+      sectionIds: [],
       productType,
       simpleLastPrice: '',
       variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
@@ -169,12 +169,12 @@ export function useItemsManageTab(companyId: any) {
     const validVariants = (form.variants || []).filter(
       (v: any) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || parseFloat(v.lastPrice) > 0,
     );
-    const sectionsArr = (form.sectionsText || '').split(/[,،]/).map((s: string) => s.trim()).filter(Boolean);
+    const sectionIds = Array.isArray(form.sectionIds) ? form.sectionIds.filter(Boolean) : [];
     const base = {
       nameAr: form.nameAr?.trim(),
       nameEn: form.nameEn?.trim() || undefined,
       categoryId: form.categoryId || undefined,
-      sections: sectionsArr.length > 0 ? sectionsArr : undefined,
+      sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
       productType,
     };
     if (validVariants.length > 0) {
@@ -215,7 +215,6 @@ export function useItemsManageTab(companyId: any) {
 
   function handleUpdateProduct(onDone?: () => void) {
     if (!editingProduct?.id) return;
-    const sectionsArr = (editingProduct.sectionsText || '').split(/[,،]/).map((s: string) => s.trim()).filter(Boolean);
     const built = buildProductPayload(editingProduct, editingProduct.productType || catalogProductType);
     const validVariants = (editingProduct.variants || []).filter(
       (v: any) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || parseFloat(v.lastPrice) > 0,
@@ -224,7 +223,7 @@ export function useItemsManageTab(companyId: any) {
       nameAr: built.nameAr,
       nameEn: built.nameEn ?? null,
       categoryId: built.categoryId || null,
-      sections: sectionsArr.length > 0 ? sectionsArr : null,
+      sectionIds: (built as { sectionIds?: string[] }).sectionIds ?? [],
       productType: built.productType,
       ...(validVariants.length > 0
         ? {
@@ -257,7 +256,7 @@ export function useItemsManageTab(companyId: any) {
       nameAr: p.nameAr,
       nameEn: p.nameEn || '',
       categoryId: p.categoryId || '',
-      sectionsText: Array.isArray(p.sections) ? (p.sections as string[]).join('، ') : '',
+      sectionIds: Array.isArray(p.sectionIds) ? [...p.sectionIds] : [],
       productType: p.productType || catalogProductType,
       simpleLastPrice: hasVariants ? '' : String(p.lastPrice ?? ''),
       variants: hasVariants

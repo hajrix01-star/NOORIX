@@ -1216,7 +1216,8 @@ model OrderProduct {
   packaging   String?  @map("packaging")  // التغليف (للتوافق مع الإصدارات القديمة)
   lastPrice   Decimal  @default(0) @map("last_price") @db.Decimal(18, 4)  // سعر افتراضي عند عدم وجود variants
   variants    Json?    @map("variants")   // [{size,packaging,unit,lastPrice},...] — تركيبات متعددة بأسعار
-  sections    Json?    @map("sections")   // ["مطبخ","بار",...] — null = يظهر لجميع الأقسام
+  sections    Json?    @map("sections")   // ["مطبخ","بار",...] — أسماء للعرض والفلاتر القديمة
+  sectionIds  Json?    @map("section_ids") // ["cuid",...] — مصدر الربط الحقيقي
   productType String   @default("order") @map("product_type")  // order | sale
   isActive    Boolean  @default(true) @map("is_active")
   sortOrder   Int      @default(0) @map("sort_order")

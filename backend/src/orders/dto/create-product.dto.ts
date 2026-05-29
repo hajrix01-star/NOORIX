@@ -56,6 +56,11 @@ export class CreateProductDto {
   sections?: string[];
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  sectionIds?: string[];
+
+  @IsOptional()
   @IsString()
   productType?: string;  // 'order' | 'sale'
 

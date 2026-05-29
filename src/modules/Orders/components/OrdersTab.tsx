@@ -99,7 +99,7 @@ export function OrdersTab({
     return Array.from(byId.values());
   }, [orderCatalog, editingOrder]);
   const { data: summaryFromApi = {}, isLoading: summaryLoading } = useOrdersSummary(companyId, year, month);
-  const createOrder = useCreateOrderMutation();
+  const createOrder = useCreateOrderMutation(companyId);
   const updateOrder = useUpdateOrderMutation(companyId);
   const cancelOrder = useCancelOrderMutation(companyId);
 

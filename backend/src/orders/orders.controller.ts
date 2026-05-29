@@ -252,6 +252,16 @@ export class OrdersController {
     return this.ordersService.createSection(body.companyId, body);
   }
 
+  @Patch('sections/:id')
+  @RequirePermission('VIEW_SALES')
+  updateSection(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @Body() body: { nameAr?: string; nameEn?: string | null; sortOrder?: number },
+  ) {
+    return this.ordersService.updateSection(id, companyId || '', body);
+  }
+
   @Delete('sections/:id')
   @RequirePermission('VIEW_SALES')
   deleteSection(@Param('id') id: string, @CompanyId() companyId: string) {
@@ -262,9 +272,13 @@ export class OrdersController {
   @RequirePermission('VIEW_SALES')
   bulkSetProductSections(
     @CompanyId() companyId: string,
-    @Body() body: { productIds: string[]; sectionNames: string[]; mode?: 'replace' | 'add' },
+    @Body() body: { productIds: string[]; sectionNames?: string[]; sectionIds?: string[]; mode?: 'replace' | 'add' },
   ) {
-    return this.ordersService.bulkSetProductSections(companyId || '', body.productIds, body.sectionNames, body.mode);
+    return this.ordersService.bulkSetProductSections(companyId || '', body.productIds, {
+      sectionNames: body.sectionNames,
+      sectionIds: body.sectionIds,
+      mode: body.mode,
+    });
   }
 
   @Get(':id')
