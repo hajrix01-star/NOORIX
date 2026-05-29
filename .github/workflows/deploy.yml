@@ -76,6 +76,9 @@ jobs:
           rm -f /tmp/noorix-frontend.tar.gz
 
       # ── تحديث الخلفية وإعادة بنائها في مسار الإنتاج ────
+      - name: Ensure OCR queue infra (Redis or inline fallback)
+        run: bash "${{ github.workspace }}/deploy/ensure-ocr-queue-infra.sh"
+
       # البناء يتم أولاً وPM2 يبقى شغّالاً. بعد اكتمال dist/ نحذف العملية القديمة
       # ونُنشئ جديدة — أكثر موثوقية من startOrReload في وضع cluster.
       - name: Sync backend to production path & rebuild
