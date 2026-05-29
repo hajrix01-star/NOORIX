@@ -85,6 +85,14 @@ export default {
   ocrSupportedFormats: { ar: 'يدعم: JPG, PNG, WEBP', en: 'Supports: JPG, PNG, WEBP' },
   ocrExtract:          { ar: 'استخراج البيانات', en: 'Extract Data' },
   ocrExtracting:       { ar: 'جاري الاستخراج...', en: 'Extracting...' },
+  ocrPipelineTitle:    { ar: 'مراحل الاستخراج', en: 'Extraction pipeline' },
+  ocrPipelineInProgress: { ar: 'قيد التنفيذ…', en: 'In progress…' },
+  ocrPipelineImageReady: { ar: 'استلام الصورة', en: 'Image received' },
+  ocrPipelineModelRequest: { ar: 'إرسال للنموذج', en: 'Model extraction request' },
+  ocrPipelineJsonValidation: { ar: 'فحص JSON والتحقق', en: 'JSON parse & schema validation' },
+  ocrPipelineEnrichment: { ar: 'مطابقة المورد/الأصناف والتحقق الرياضي', en: 'Supplier/item matching & math checks' },
+  ocrPipelineReadyForReview: { ar: 'جاهزة للمراجعة', en: 'Ready for review' },
+  ocrPipelineFailedAt: { ar: 'تعطل عند مرحلة: {0}', en: 'Stopped at stage: {0}' },
   ocrPrefillLoading:   { ar: 'جاري تحميل فاتورة المراجعة…', en: 'Loading review invoice…' },
 
   ocrLinkedPurchaseTitle: {

@@ -51,6 +51,10 @@ export default function InvoiceUploadTab(props: any) {
             loading={o.loading}
             saving={o.saving}
             success={o.success}
+            extractWarning={o.extractWarning}
+            extractError={o.error}
+            extractFailureStage={o.extractFailureStage}
+            extractStartedAt={o.extractStartedAt}
             onResetAll={o.handleResetImageColumn}
             onExtract={o.handleExtract}
             onSave={o.handleSave}

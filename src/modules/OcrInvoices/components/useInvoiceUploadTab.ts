@@ -42,6 +42,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [error, setError] = useState<any>(null);
   const [extractWarning, setExtractWarning] = useState<any>(null);
   const [success, setSuccess] = useState(false);
+  const [extractStartedAt, setExtractStartedAt] = useState<number | null>(null);
+  const [extractFailureStage, setExtractFailureStage] = useState<'request' | 'parse' | null>(null);
   const [finalizeOcrId, setFinalizeOcrId] = useState<any>(null);
   const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState<any>(null);
   const [createLinkedPurchase, setCreateLinkedPurchase] = useState(false);
@@ -187,6 +189,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
 
   const handleExtract = useCallback(async () => {
     if (!imageBase64) return;
+    setExtractStartedAt(Date.now());
+    setExtractFailureStage(null);
     setLoading(true);
     setError(null);
     setExtractWarning(null);
@@ -194,6 +198,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       const res = await extractInvoice(imageBase64, mimeType);
       if (res.success) {
         if (res.data?.parseError) {
+          setExtractFailureStage('parse');
           setError(t('ocrParseFriendlyError'));
         } else {
           setExtracted(res.data);
@@ -203,9 +208,11 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
           }
         }
       } else {
+        setExtractFailureStage('request');
         setError(res.error || t('ocrExtractFailed'));
       }
     } catch {
+      setExtractFailureStage('request');
       setError(t('ocrExtractFailed'));
     } finally {
       setLoading(false);
@@ -220,7 +227,11 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   }, [imageBase64, extracted, loading, prefillLoading, handleExtract]);
 
   useEffect(() => {
-    if (!imageBase64) autoExtractedImageRef.current = null;
+    if (!imageBase64) {
+      autoExtractedImageRef.current = null;
+      setExtractStartedAt(null);
+      setExtractFailureStage(null);
+    }
   }, [imageBase64]);
 
   const handleSupplierMatchChange = useCallback(
@@ -397,6 +408,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setExtracted(null);
     setError(null);
     setExtractWarning(null);
+    setExtractStartedAt(null);
+    setExtractFailureStage(null);
     setEditItems(null);
     setFinalizeOcrId(null);
     setPrefillLinkedPurchase(null);
@@ -432,6 +445,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     success,
     error,
     extractWarning,
+    extractStartedAt,
+    extractFailureStage,
     prefillLoading,
     prefillLinkedPurchase,
     postSaveLinkedPurchase,

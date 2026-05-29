@@ -1,4 +1,5 @@
 import { Button } from '../../../../ui';
+import { OcrExtractionPipelineStatus } from './OcrExtractionPipelineStatus';
 
 export function OcrImagePreviewColumn({
   t,
@@ -9,6 +10,10 @@ export function OcrImagePreviewColumn({
   loading,
   saving,
   success,
+  extractWarning,
+  extractError,
+  extractFailureStage,
+  extractStartedAt,
   onResetAll,
   onExtract,
   onSave,
@@ -41,6 +46,17 @@ export function OcrImagePreviewColumn({
           </>
         )}
       </div>
+      <OcrExtractionPipelineStatus
+        t={t}
+        isAr={isAr}
+        loading={loading}
+        extracted={extracted}
+        extractWarning={extractWarning}
+        extractError={extractError}
+        extractFailureStage={extractFailureStage}
+        extractStartedAt={extractStartedAt}
+        onRetry={onExtract}
+      />
     </div>
   );
 }
