@@ -7,6 +7,8 @@ export interface MathValidationResult {
   suggestedUnitPrice?: number;
 }
 
+export type OcrLineTaxMode = 'exclusive' | 'inclusive' | 'unknown';
+
 export function validateItemMath(
   quantity?: number,
   unitPrice?: number,
@@ -46,38 +48,55 @@ export function validateInvoiceTotals(
   totalAmount?: number,
   vatAmount?: number,
   subtotalAmount?: number,
-): { valid: boolean; warning?: string; vatAdjusted: boolean } {
-  if (!totalAmount || itemsTotal === 0) return { valid: true, vatAdjusted: false };
+): { valid: boolean; warning?: string; vatAdjusted: boolean; lineTaxMode: OcrLineTaxMode } {
+  if (!totalAmount || itemsTotal === 0) {
+    return { valid: true, vatAdjusted: false, lineTaxMode: 'unknown' };
+  }
 
   const T = 0.05; // هامش 5%
 
   if (subtotalAmount && subtotalAmount > 0) {
-    const tol = subtotalAmount * T;
-    if (Math.abs(itemsTotal - subtotalAmount) <= tol) return { valid: true, vatAdjusted: true };
+    const subtotalTol = subtotalAmount * T;
+    if (Math.abs(itemsTotal - subtotalAmount) <= subtotalTol) {
+      return { valid: true, vatAdjusted: true, lineTaxMode: 'exclusive' };
+    }
+    const totalTol = totalAmount * T;
+    if (Math.abs(itemsTotal - totalAmount) <= totalTol) {
+      return { valid: true, vatAdjusted: false, lineTaxMode: 'inclusive' };
+    }
     return {
       valid: false,
       vatAdjusted: true,
-      warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} ≠ المجموع قبل الضريبة ${subtotalAmount.toFixed(2)}`,
+      lineTaxMode: 'unknown',
+      warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} لا يطابق المجموع قبل الضريبة ${subtotalAmount.toFixed(2)} ولا الإجمالي ${totalAmount.toFixed(2)}`,
     };
   }
 
   if (vatAmount && vatAmount > 0) {
     const expectedSubtotal = totalAmount - vatAmount;
     const tol = Math.max(expectedSubtotal, itemsTotal) * T;
-    if (Math.abs(itemsTotal - expectedSubtotal) <= tol) return { valid: true, vatAdjusted: true };
-    if (Math.abs(itemsTotal - totalAmount) <= totalAmount * T) return { valid: true, vatAdjusted: false };
+    if (Math.abs(itemsTotal - expectedSubtotal) <= tol) {
+      return { valid: true, vatAdjusted: true, lineTaxMode: 'exclusive' };
+    }
+    if (Math.abs(itemsTotal - totalAmount) <= totalAmount * T) {
+      return { valid: true, vatAdjusted: false, lineTaxMode: 'inclusive' };
+    }
     return {
       valid: false,
       vatAdjusted: true,
+      lineTaxMode: 'unknown',
       warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} ≠ المجموع قبل الضريبة المحسوب (${totalAmount} - ${vatAmount} = ${expectedSubtotal.toFixed(2)})`,
     };
   }
 
   const tol = totalAmount * T;
-  if (Math.abs(itemsTotal - totalAmount) <= tol) return { valid: true, vatAdjusted: false };
+  if (Math.abs(itemsTotal - totalAmount) <= tol) {
+    return { valid: true, vatAdjusted: false, lineTaxMode: 'unknown' };
+  }
   return {
     valid: false,
     vatAdjusted: false,
+    lineTaxMode: 'unknown',
     warning: `مجموع الأصناف ${itemsTotal.toFixed(2)} لا يتطابق مع إجمالي الفاتورة ${totalAmount}`,
   };
 }

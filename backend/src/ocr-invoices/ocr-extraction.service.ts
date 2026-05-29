@@ -373,6 +373,7 @@ ${rawText.slice(0, 12000)}`;
             items: (mathValidatedExtraction.items || []).map((item) => ({ ...item, itemMatch: null })),
             invoiceTotalWarning: mathValidatedExtraction.invoiceTotalWarning,
             vatAdjusted: mathValidatedExtraction.vatAdjusted,
+            lineTaxMode: mathValidatedExtraction.lineTaxMode,
             qualityFlags,
             qualityStatus: 'needs_review',
             errorDetail: 'OCR extraction returned insufficient actionable fields',
@@ -420,6 +421,7 @@ ${rawText.slice(0, 12000)}`;
             items: (mathValidatedExtraction.items || []).map((item) => ({ ...item, itemMatch: null })),
             invoiceTotalWarning: mathValidatedExtraction.invoiceTotalWarning,
             vatAdjusted: mathValidatedExtraction.vatAdjusted,
+            lineTaxMode: mathValidatedExtraction.lineTaxMode,
             qualityFlags,
             qualityStatus: qualityFlags.includes('validated') ? 'validated' : 'needs_review',
             enrichError: (enrichErr as Error).message,
@@ -686,6 +688,7 @@ ${rawText.slice(0, 12000)}`;
       items: enrichedWithWarnings,
       invoiceTotalWarning: extracted.invoiceTotalWarning,
       vatAdjusted: extracted.vatAdjusted, // للـ frontend: يعلمه أن المقارنة أخذت الضريبة بعين الاعتبار
+      lineTaxMode: extracted.lineTaxMode,
       qualityFlags,
       qualityStatus: qualityFlags.includes('validated') ? 'validated' : 'needs_review',
     };

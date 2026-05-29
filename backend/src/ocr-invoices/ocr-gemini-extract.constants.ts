@@ -94,7 +94,11 @@ Saudi tax invoices have THREE separate totals at the bottom:
   1. subtotalAmount (المجموع قبل الضريبة / Taxable Amount) — sum of all line items BEFORE VAT
   2. vatAmount (ضريبة القيمة المضافة / VAT 15%) — the tax amount
   3. totalAmount (الإجمالي شامل الضريبة / Total with VAT) — subtotalAmount + vatAmount
-ALWAYS extract all three. Item prices are EXCLUDING VAT.
+ALWAYS extract all three.
+For line items, extract unitPrice/totalPrice exactly as printed on the line:
+  - If line values are VAT-inclusive, keep them VAT-inclusive.
+  - If line values are before VAT, keep them before VAT.
+Do NOT force-convert line prices between inclusive/exclusive VAT.
 Verify: subtotalAmount + vatAmount ≈ totalAmount
 
 MATH RULES FOR LINE ITEMS:

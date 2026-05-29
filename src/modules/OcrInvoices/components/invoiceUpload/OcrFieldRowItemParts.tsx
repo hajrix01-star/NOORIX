@@ -50,10 +50,27 @@ function EditableNumber({ value, onChange, warn }: any) {
   );
 }
 
+function getLineAmountLabels(language: 'ar' | 'en', lineTaxMode?: string) {
+  if (lineTaxMode === 'inclusive') {
+    return language === 'ar'
+      ? { unit: 'السعر (شامل ضريبة)', total: 'الإجمالي (شامل ضريبة)' }
+      : { unit: 'Unit price (inc. VAT)', total: 'Line total (inc. VAT)' };
+  }
+  if (lineTaxMode === 'exclusive') {
+    return language === 'ar'
+      ? { unit: 'السعر (قبل الضريبة)', total: 'الإجمالي (قبل الضريبة)' }
+      : { unit: 'Unit price (ex. VAT)', total: 'Line total (ex. VAT)' };
+  }
+  return language === 'ar'
+    ? { unit: 'السعر', total: 'الإجمالي' }
+    : { unit: 'Unit price', total: 'Line total' };
+}
+
 export function ItemRow({
   item,
   index,
   language,
+  lineTaxMode,
   t,
   itemCatalog = [],
   onUpdate,
@@ -66,6 +83,7 @@ export function ItemRow({
     : STATUS_BADGE.new;
   const hasMathWarn = !!item.mathWarning;
   const hasPriceWarn = !!item.priceWarning;
+  const amountLabels = getLineAmountLabels(language === 'ar' ? 'ar' : 'en', lineTaxMode);
 
   const displayName = [item.nameAr, item.nameEn].filter(Boolean).join(' / ') || item.name || '—';
   const sizeLabel = item.size ? `${item.size}${item.sizeUnit || ''}` : null;
@@ -120,7 +138,7 @@ export function ItemRow({
         </div>
         <span className="text-noorix-muted text-[13px] self-end mb-1">×</span>
         <div className="flex flex-col items-center gap-[2px]">
-          <span className="text-noorix-muted text-[10px]">السعر</span>
+          <span className="text-noorix-muted text-[10px]">{amountLabels.unit}</span>
           <EditableNumber
             value={item.unitPrice}
             warn={hasMathWarn}
@@ -129,7 +147,7 @@ export function ItemRow({
         </div>
         <span className="text-noorix-muted text-[13px] self-end mb-1">=</span>
         <div className="flex flex-col items-center gap-[2px]">
-          <span className="text-noorix-muted text-[10px]">الإجمالي</span>
+          <span className="text-noorix-muted text-[10px]">{amountLabels.total}</span>
           <EditableNumber
             value={item.totalPrice}
             warn={hasMathWarn}

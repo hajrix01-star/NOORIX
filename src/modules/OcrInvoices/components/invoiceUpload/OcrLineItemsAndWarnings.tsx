@@ -28,6 +28,7 @@ export function OcrLineItemsList({
   t,
   language,
   activeItems,
+  lineTaxMode,
   itemCatalog = [],
   onUpdateItem,
   onApplySuggestion,
@@ -46,6 +47,7 @@ export function OcrLineItemsList({
             item={item}
             index={i}
             language={language}
+            lineTaxMode={lineTaxMode}
             t={t}
             itemCatalog={itemCatalog}
             onUpdate={onUpdateItem}

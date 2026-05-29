@@ -8,6 +8,14 @@ export function OcrExtractedInfoAndTotalsCard({
   suppliers = [],
   onSupplierMatchChange,
 }: any) {
+  const lineTaxMode = extracted?.lineTaxMode;
+  const lineTaxModeLabel =
+    lineTaxMode === 'inclusive'
+      ? (isAr ? 'أسعار السطور: شامل ضريبة' : 'Line prices: VAT-inclusive')
+      : lineTaxMode === 'exclusive'
+        ? (isAr ? 'أسعار السطور: قبل الضريبة' : 'Line prices: before VAT')
+        : null;
+
   return (
     <div className="noorix-surface-card p-4">
       <div className="font-semibold text-[14px] mb-3">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
@@ -69,6 +77,11 @@ export function OcrExtractedInfoAndTotalsCard({
               </span>
             </div>
           )}
+        </div>
+      )}
+      {lineTaxModeLabel && (
+        <div className="mt-2 text-[12px] text-noorix-muted">
+          {lineTaxModeLabel}
         </div>
       )}
     </div>

@@ -6,7 +6,7 @@ import {
   parseOcrConfidence,
   parseOcrNumber,
 } from './ocr-extraction-normalize.util';
-import { validateItemMath, validateInvoiceTotals } from './ocr-invoice-math-validate.util';
+import { validateItemMath, validateInvoiceTotals, type OcrLineTaxMode } from './ocr-invoice-math-validate.util';
 import type { GeminiExtractedInvoice, GeminiExtractedItem } from './ocr-gemini-extract.constants';
 
 export type ItemMathWarning = {
@@ -31,6 +31,7 @@ export type GeminiExtractionWithMath = Omit<GeminiExtractedInvoice, 'items'> & {
   items: GeminiItemWithWarnings[];
   invoiceTotalWarning?: string;
   vatAdjusted: boolean;
+  lineTaxMode: OcrLineTaxMode;
 };
 
 function tryParseJsonCandidate(candidate: string): GeminiExtractedInvoice | null {
@@ -215,6 +216,7 @@ export function applyMathValidation(extracted: GeminiExtractedInvoice): GeminiEx
     items,
     invoiceTotalWarning: invoiceTotalValidation.valid ? undefined : invoiceTotalValidation.warning,
     vatAdjusted: invoiceTotalValidation.vatAdjusted,
+    lineTaxMode: invoiceTotalValidation.lineTaxMode,
   };
 }
 

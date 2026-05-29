@@ -97,6 +97,7 @@ export default function InvoiceUploadTab(props: any) {
                 t={o.t}
                 language={o.language}
                 activeItems={o.activeItems}
+                lineTaxMode={o.extracted?.lineTaxMode}
                 itemCatalog={o.items}
                 onUpdateItem={o.updateItem}
                 onApplySuggestion={o.applyMathSuggestion}
