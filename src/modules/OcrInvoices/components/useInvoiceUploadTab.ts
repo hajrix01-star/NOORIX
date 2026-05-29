@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
@@ -40,6 +40,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<any>(null);
+  const [extractWarning, setExtractWarning] = useState<any>(null);
   const [success, setSuccess] = useState(false);
   const [finalizeOcrId, setFinalizeOcrId] = useState<any>(null);
   const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState<any>(null);
@@ -53,6 +54,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [postSaveLinkedPurchase, setPostSaveLinkedPurchase] = useState<any>(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const autoExtractedImageRef = useRef<string | null>(null);
   const userTouchedAccountingRef = useRef(false);
   const [newOcrSupplierOpen, setNewOcrSupplierOpen] = useState(false);
   const [newOcrNameAr, setNewOcrNameAr] = useState('');
@@ -183,23 +185,21 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     [readFile],
   );
 
-  const handleExtract = async () => {
+  const handleExtract = useCallback(async () => {
     if (!imageBase64) return;
     setLoading(true);
     setError(null);
+    setExtractWarning(null);
     try {
       const res = await extractInvoice(imageBase64, mimeType);
       if (res.success) {
         if (res.data?.parseError) {
-          const detail = res.data.errorDetail || '';
-          const model = res.data.usedModel || '';
-          const rawSnippet = res.data.rawText ? `\n\nGemini raw: ${res.data.rawText.substring(0, 200)}` : '';
-          setError(`${t('ocrExtractFailed')} — تعذّر قراءة الفاتورة.\nModel: ${model}\n${detail}${rawSnippet}`);
+          setError(t('ocrParseFriendlyError'));
         } else {
           setExtracted(res.data);
           setEditItems(null);
           if (res.data?.enrichError) {
-            console.warn('OCR enrichment warning:', res.data.enrichError);
+            setExtractWarning(t('ocrEnrichWarning'));
           }
         }
       } else {
@@ -210,7 +210,18 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     } finally {
       setLoading(false);
     }
-  };
+  }, [imageBase64, mimeType, t]);
+
+  useEffect(() => {
+    if (!imageBase64 || extracted || loading || prefillLoading) return;
+    if (autoExtractedImageRef.current === imageBase64) return;
+    autoExtractedImageRef.current = imageBase64;
+    void handleExtract();
+  }, [imageBase64, extracted, loading, prefillLoading, handleExtract]);
+
+  useEffect(() => {
+    if (!imageBase64) autoExtractedImageRef.current = null;
+  }, [imageBase64]);
 
   const handleSave = async () => {
     if (!extracted) return;
@@ -271,6 +282,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
           setVaultId('');
           setPurchaseSupplierInvoiceNumber('');
           setTransactionDate(getSaudiToday());
+          setExtractWarning(null);
           setSuccess(false);
         }, delayMs);
       } else {
@@ -332,8 +344,10 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       return null;
     });
     setBase64(null);
+    autoExtractedImageRef.current = null;
     setExtracted(null);
     setError(null);
+    setExtractWarning(null);
     setEditItems(null);
     setFinalizeOcrId(null);
     setPrefillLinkedPurchase(null);
@@ -368,6 +382,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     saving,
     success,
     error,
+    extractWarning,
     prefillLoading,
     prefillLinkedPurchase,
     postSaveLinkedPurchase,

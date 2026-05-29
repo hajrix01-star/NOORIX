@@ -67,6 +67,20 @@ export class OcrInvoicesController {
     );
   }
 
+  @Post('invoices/:id/retry')
+  @RequirePermission('OCR_WRITE')
+  async retryInvoiceExtraction(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.retryExtractionForInvoice(
+      user.tenantId!,
+      this.requireCompanyId(companyId),
+      id,
+    );
+  }
+
   // ─── Invoices ─────────────────────────────────────────────────────────────
 
   @Get('invoices/review-queue')

@@ -81,3 +81,12 @@ export function OcrErrorBanner({ error }: any) {
     </div>
   );
 }
+
+export function OcrWarningBanner({ warning }: any) {
+  if (!warning) return null;
+  return (
+    <div className="text-[13px] rounded-lg border border-noorix-amber/35 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 text-noorix-amber">
+      {warning}
+    </div>
+  );
+}

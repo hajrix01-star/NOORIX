@@ -6,6 +6,7 @@ import {
   OcrPostSaveLinkedBanner,
   OcrEmptyImageDropzone,
   OcrErrorBanner,
+  OcrWarningBanner,
 } from './invoiceUpload/OcrUploadBannersAndDropzone';
 import { OcrImagePreviewColumn } from './invoiceUpload/OcrImagePreviewColumn';
 import { OcrExtractedInfoAndTotalsCard } from './invoiceUpload/OcrExtractedInfoAndTotalsCard';
@@ -99,6 +100,7 @@ export default function InvoiceUploadTab(props: any) {
       )}
 
       <OcrErrorBanner error={o.error} />
+      <OcrWarningBanner warning={o.extractWarning} />
       <OcrNewSupplierModal
         t={o.t}
         open={o.newOcrSupplierOpen}

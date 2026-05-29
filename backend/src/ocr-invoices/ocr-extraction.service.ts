@@ -156,16 +156,26 @@ export class OcrExtractionService {
 
   private async enrichExtraction(tenantId: string, companyId: string, extracted: GeminiExtractedInvoice) {
     const correctionRules = await this.prisma.ocrCorrectionRule.findMany({
-      where: { tenantId, companyId, status: 'confirmed' },
+      where: { tenantId, companyId, status: 'confirmed', expiresAt: { gte: new Date() } },
     });
 
-    const applyCorrections = (raw: string): string => {
+    const applyCorrections = (
+      raw: string,
+      entityType: 'supplier' | 'item',
+      supplierId?: string | null,
+    ): string => {
       const trimmed = raw.trim();
       if (!trimmed) return raw;
-      const rule = correctionRules.find(
-        (r) => r.wrongText.trim().toLowerCase() === trimmed.toLowerCase(),
+      const norm = normalize(trimmed);
+      const matchingRules = correctionRules.filter(
+        (r) =>
+          r.entityType === entityType &&
+          normalize(r.wrongText) === norm &&
+          (!r.supplierId || (supplierId && r.supplierId === supplierId)),
       );
-      return rule ? rule.correctText : raw;
+      if (!matchingRules.length) return raw;
+      const supplierScoped = matchingRules.find((r) => !!r.supplierId);
+      return (supplierScoped || matchingRules[0]).correctText || raw;
     };
 
     const suppliers = await this.prisma.ocrSupplier.findMany({
@@ -194,12 +204,15 @@ export class OcrExtractionService {
       }
 
       if (!supplierMatch) {
-        const nameForMatch = applyCorrections(supplierName);
+        const nameForMatch = applyCorrections(supplierName, 'supplier');
         const result = findBestMatch(
           nameForMatch,
           suppliers,
           (s) => s.nameAr,
-          (s) => s.aliases.map((a) => a.alias),
+          (s) => [
+            ...s.aliases.map((a) => a.alias),
+            ...(s.nameEn ? [s.nameEn] : []),
+          ],
         );
         if (result) {
           const status = classifyConfidence(result.score);
@@ -224,7 +237,7 @@ export class OcrExtractionService {
         if (!item.name) return { ...item, itemMatch: null };
 
         // 1. استخرج الحجم من الاسم الكامل (بعد قواعد التصحيح المؤكّدة)
-        const itemNameForPipeline = applyCorrections(item.name);
+        const itemNameForPipeline = applyCorrections(item.name, 'item', supplierMatch?.id);
         const { cleanName, size, sizeUnit } = extractSizeFromName(itemNameForPipeline);
 
         // 2. قسّم الاسم إلى عربي وإنجليزي (بدون الحجم)
