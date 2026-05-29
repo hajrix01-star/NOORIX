@@ -9,7 +9,11 @@ import type { SaveInvoiceLineDto } from './dto/save-invoice.dto';
 
 type CatalogRow = Prisma.OcrItemGetPayload<{ include: { aliases: true } }>;
 
-export type ProcessedOcrLine = SaveInvoiceLineDto & { itemId: string | null; matchStatus: string };
+export type ProcessedOcrLine = Omit<SaveInvoiceLineDto, 'itemId' | 'matchStatus'> & {
+  itemId: string | null;
+  matchStatus: string;
+};
+const ARABIC_TEXT_RE = /[\u0600-\u06FF]/;
 
 function log(
   l: { log: (m: string) => void } | undefined,
@@ -65,8 +69,25 @@ export async function processOcrLinesAgainstCatalog(
             `Smart-matched item "${searchName}" → "${matchResult.item.nameAr}" (score: ${matchResult.score.toFixed(2)})`,
           );
         } else {
-          const cleanAr = nameAr || normalizeItemForSearch(line.rawName.trim()).ar || line.rawName.trim();
-          const cleanEn = nameEn || normalizeItemForSearch(line.rawName.trim()).en || null;
+          const normalizedNames = normalizeItemForSearch(line.rawName.trim());
+          const candidateAr = nameAr || normalizedNames.ar || null;
+          const cleanAr = candidateAr && ARABIC_TEXT_RE.test(candidateAr) ? candidateAr : null;
+          const cleanEn = nameEn || normalizedNames.en || line.rawName.trim() || null;
+
+          // قاعدة صارمة: إذا لا يوجد عربي فعلي، لا نُنشئ صنفاً جديداً لتجنب تلويث nameAr.
+          if (!cleanAr) {
+            log(
+              logSink,
+              `Skipped auto-create item for non-Arabic name "${line.rawName.trim()}"; kept as pending review`,
+            );
+            return {
+              ...line,
+              itemId: null,
+              nameEn: cleanEn || undefined,
+              matchStatus: 'pending',
+            };
+          }
+
           const newItem = await prisma.ocrItem.create({
             data: {
               tenantId,
@@ -80,7 +101,14 @@ export async function processOcrLinesAgainstCatalog(
           const rawTrimmed = line.rawName.trim();
           if (rawTrimmed !== cleanAr) {
             await prisma.ocrItemAlias
-              .create({ data: { itemId, alias: rawTrimmed, language: 'ar', addedBy: 'ocr-auto' } })
+              .create({
+                data: {
+                  itemId,
+                  alias: rawTrimmed,
+                  language: ARABIC_TEXT_RE.test(rawTrimmed) ? 'ar' : 'en',
+                  addedBy: 'ocr-auto',
+                },
+              })
               .catch(() => {});
           }
             workCatalog.push(

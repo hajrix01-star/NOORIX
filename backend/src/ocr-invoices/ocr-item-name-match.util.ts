@@ -88,13 +88,17 @@ export function findBestItemMatch(
 ): { item: typeof candidates[0]; score: number } | null {
   if (!query || candidates.length === 0) return null;
 
-  const { ar: qAr, en: qEn, combined: qCombined } = normalizeItemForSearch(query);
-  const searchTerms = [query, qAr, qEn, qCombined].filter(Boolean);
+  const { cleanName: queryCleanName, size: qSize, sizeUnit: qUnit } = extractSizeFromName(query);
+  const { ar: qAr, en: qEn, combined: qCombined } = normalizeItemForSearch(queryCleanName);
+  const searchTerms = Array.from(new Set([queryCleanName, qAr, qEn, qCombined].filter(Boolean)));
 
   let best: { item: typeof candidates[0]; score: number } | null = null;
+  let secondBestScore = 0;
 
   for (const candidate of candidates) {
-    const { ar: cAr, en: cEn, combined: cCombined } = normalizeItemForSearch(candidate.nameAr);
+    const { ar: cAr, en: cEn, combined: cCombined } = normalizeItemForSearch(
+      [candidate.nameAr, candidate.nameEn || ''].filter(Boolean).join(' '),
+    );
     const candidateNames = [
       candidate.nameAr,
       cAr, cEn, cCombined,
@@ -108,16 +112,36 @@ export function findBestItemMatch(
       for (const cn of candidateNames) {
         if (!cn) continue;
         if (sq.length < 2 || cn.length < 2) continue;
-        const s = Math.max(
+        let s = Math.max(
           combinedSimilarity(sq, cn),
           deepSimilarity(sq, cn),
         );
+
+        const { size: cSize, sizeUnit: cUnit } = extractSizeFromName(cn);
+        if (qSize && qUnit && cSize && cUnit) {
+          if (qSize === cSize && qUnit === cUnit) s += 0.03;
+          else s -= 0.04;
+        } else if (qSize && candidate.hasSizes) {
+          s += 0.01;
+        }
+
+        if (s > 1) s = 1;
+        if (s < 0) s = 0;
         if (s > maxScore) maxScore = s;
       }
     }
 
-    if (maxScore === 1) return { item: candidate, score: 1 };
-    if (!best || maxScore > best.score) best = { item: candidate, score: maxScore };
+    if (maxScore >= 0.999) return { item: candidate, score: 1 };
+    if (!best || maxScore > best.score) {
+      secondBestScore = best?.score ?? secondBestScore;
+      best = { item: candidate, score: maxScore };
+    } else if (maxScore > secondBestScore) {
+      secondBestScore = maxScore;
+    }
+  }
+
+  if (best && best.score >= 0.9 && secondBestScore > 0 && best.score - secondBestScore <= 0.02) {
+    best = { ...best, score: Math.max(0, best.score - 0.03) };
   }
 
   return best;

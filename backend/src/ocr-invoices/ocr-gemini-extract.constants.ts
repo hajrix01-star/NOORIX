@@ -8,15 +8,50 @@ export const GEMINI_FALLBACK_CHAIN = [
   { model: 'gemini-1.5-flash', version: 'v1' as const },
 ];
 
+function resolveGeminiApiVersion(model: string): 'v1' | 'v1beta' {
+  return /^gemini-1\.[05]/.test(model) ? 'v1' : 'v1beta';
+}
+
+function parseModelOrderEnv(): string[] {
+  const raw = process.env.OCR_GEMINI_MODEL_PRIORITY?.trim();
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((x) => x.trim())
+    .filter((x) => /^gemini-/i.test(x));
+}
+
+function getMaxModelsToTry(): number {
+  const n = Number(process.env.OCR_GEMINI_MAX_MODELS_TO_TRY);
+  if (!Number.isFinite(n)) return 5;
+  return Math.max(1, Math.min(10, Math.trunc(n)));
+}
+
 export function buildGeminiUrl(model: string, version: string): string {
   return `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent`;
 }
 
 export function getGeminiModelsToTry(): Array<{ model: string; version: string }> {
   const configured = getGeminiModel();
-  const version = /^gemini-1\.[05]/.test(configured) ? 'v1' : 'v1beta';
-  const chain = GEMINI_FALLBACK_CHAIN.filter((m) => m.model !== configured);
-  return [{ model: configured, version }, ...chain];
+  const preferredOrder = parseModelOrderEnv();
+  const maxModels = getMaxModelsToTry();
+  const order = [
+    ...preferredOrder,
+    configured,
+    ...GEMINI_FALLBACK_CHAIN.map((x) => x.model),
+  ];
+
+  const seen = new Set<string>();
+  const result: Array<{ model: string; version: string }> = [];
+  for (const model of order) {
+    const norm = model.trim();
+    if (!norm || seen.has(norm)) continue;
+    seen.add(norm);
+    result.push({ model: norm, version: resolveGeminiApiVersion(norm) });
+    if (result.length >= maxModels) break;
+  }
+
+  return result;
 }
 
 export interface GeminiExtractedItem {
