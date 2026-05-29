@@ -1,13 +1,11 @@
 import { fmt } from '../../../utils/format';
 import {
-  WA,
-  waChannel,
-  waEmpty,
-  waHeader,
-  waMeta,
-  waRow,
-  waSection,
-  waSubhead,
+  waChannelRow,
+  waMetaLine,
+  waMetricLine,
+  waReportHeader,
+  waShiftSectionTitle,
+  waSubheading,
 } from '../../../utils/whatsappTextFormat';
 
 export type DayCloseKindLabels = Record<string, string>;
@@ -46,7 +44,7 @@ function aggregateSalesChannels(salesSummaries: any[], lang: string): { lines: s
   }
   const lines = [...buckets.entries()]
     .sort((a, b) => b[1] - a[1])
-    .map(([label, amt]) => waChannel(label, fmt(amt)));
+    .map(([label, amt]) => waChannelRow(label, fmt(amt)));
   return { lines, total };
 }
 
@@ -63,7 +61,7 @@ export type BuildDayCloseWhatsAppParams = {
   t: (key: string, ...args: unknown[]) => string;
 };
 
-/** ملخص واتساب مختصر لنهاية اليوم */
+/** ملخص واتساب مختصر لنهاية اليوم — نفس رموز ملخص المبيعات (☀ ☾ ◆ │ ▸) */
 export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): string {
   const { companyName, dateLabel, data, kindLabel, lang, t } = p;
   const name = (companyName || '').trim();
@@ -90,52 +88,52 @@ export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): strin
   const cashAvailable = Number(data.cash?.netDay ?? cashIn - cashOut);
 
   const lines: string[] = [
-    waHeader(t('dayCloseWaTitle'), name),
-    waMeta(t('dayCloseWaDateLine'), dateLabel),
+    waReportHeader(t('dayCloseWaTitle'), name),
+    waMetaLine(t('dayCloseWaDateLine'), dateLabel),
     '',
-    waSection(WA.icon.sales, t('dayCloseWaSectionSales')),
+    waShiftSectionTitle('morning', t('dayCloseWaSectionSales')),
   ];
 
   if (salesTotal > 0 || customers > 0) {
-    lines.push(waRow(WA.icon.total, t('dayCloseWaSalesTotal'), `${fmt(salesTotal)} SR`));
+    lines.push(waMetricLine(t('dayCloseWaSalesTotal'), `${fmt(salesTotal)} SR`));
     if (channelLines.length > 0) {
-      lines.push(waSubhead(WA.icon.channels, t('dayCloseWaChannels')));
+      lines.push(waSubheading(t('dayCloseWaChannels')));
       lines.push(...channelLines);
     } else if (byKind.some((r: any) => r.kind === 'sale')) {
       const saleLabel = kindLabel.sale || 'sale';
-      lines.push(waRow(WA.icon.note, t('dayCloseWaFromInvoices'), `${fmt(inflowTotal)} SR (${saleLabel})`));
+      lines.push(waMetricLine(t('dayCloseWaFromInvoices'), `${fmt(inflowTotal)} SR (${saleLabel})`));
     }
     if (customers > 0) {
-      lines.push(waRow(WA.icon.customers, t('dayCloseWaCustomersLine'), fmt(customers, 0)));
+      lines.push(waMetricLine(t('dayCloseWaCustomersLine'), fmt(customers, 0)));
     }
   } else {
-    lines.push(waEmpty(WA.icon.note, t('dayCloseWaNoSales')));
+    lines.push(`  ${t('dayCloseWaNoSales')}`);
   }
 
-  lines.push('', waSection(WA.icon.outflow, t('dayCloseWaSectionOutflow')));
+  lines.push('', waShiftSectionTitle('evening', t('dayCloseWaSectionOutflow')));
 
   if (purchasesTotal > 0) {
-    lines.push(waRow(WA.icon.purchases, t('dayCloseWaPurchases'), `${fmt(purchasesTotal)} SR`));
+    lines.push(waMetricLine(t('dayCloseWaPurchases'), `${fmt(purchasesTotal)} SR`));
   }
   if (expensesTotal > 0) {
-    lines.push(waRow(WA.icon.expenses, t('dayCloseWaExpenses'), `${fmt(expensesTotal)} SR`));
+    lines.push(waMetricLine(t('dayCloseWaExpenses'), `${fmt(expensesTotal)} SR`));
   }
   if (purchasesTotal <= 0 && expensesTotal <= 0 && outflowTotal > 0) {
-    lines.push(waRow(WA.icon.outTotal, t('dayCloseWaOutflowTotal'), `${fmt(outflowTotal)} SR`));
+    lines.push(waMetricLine(t('dayCloseWaOutflowTotal'), `${fmt(outflowTotal)} SR`));
   } else if (purchasesTotal > 0 || expensesTotal > 0) {
-    lines.push(waRow(WA.icon.outTotal, t('dayCloseWaOutflowTotal'), `${fmt(purchasesTotal + expensesTotal)} SR`));
+    lines.push(waMetricLine(t('dayCloseWaOutflowTotal'), `${fmt(purchasesTotal + expensesTotal)} SR`));
   } else {
-    lines.push(waEmpty(WA.icon.note, t('dayCloseWaNoOutflow')));
+    lines.push(`  ${t('dayCloseWaNoOutflow')}`);
   }
 
   const netPrefix = netDay >= 0 ? '+' : '';
   lines.push(
     '',
-    waSection(WA.icon.closing, t('dayCloseWaSectionClosing')),
-    waRow(WA.icon.net, t('dayCloseWaNetDay'), `${netPrefix}${fmt(netDay)} SR`),
-    waRow(WA.icon.cashIn, t('dayCloseWaCashIn'), `${fmt(cashIn)} SR`),
-    waRow(WA.icon.cashOut, t('dayCloseWaCashOut'), `${fmt(cashOut)} SR`),
-    waRow(WA.icon.cashNet, t('dayCloseWaCashAvailable'), `${fmt(cashAvailable)} SR`),
+    waShiftSectionTitle('grand', t('dayCloseWaSectionClosing')),
+    waMetricLine(t('dayCloseWaNetDay'), `${netPrefix}${fmt(netDay)} SR`),
+    waMetricLine(t('dayCloseWaCashIn'), `${fmt(cashIn)} SR`),
+    waMetricLine(t('dayCloseWaCashOut'), `${fmt(cashOut)} SR`),
+    waMetricLine(t('dayCloseWaCashAvailable'), `${fmt(cashAvailable)} SR`),
     '',
     t('dayCloseWaFooter'),
   );

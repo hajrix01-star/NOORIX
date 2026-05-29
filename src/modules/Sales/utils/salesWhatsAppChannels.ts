@@ -1,6 +1,6 @@
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { waChannelRow } from './salesWhatsAppFormat';
+import { waChannelRow } from '../../../utils/whatsappTextFormat';
 import type { DailySalesChannelEntry, DailySalesVaultRef } from '../components/DailySalesChannelsChips';
 import type { SalesShiftValue } from '../constants/salesShift';
 import { resolveSalesSummaryShift } from '../constants/salesShift';

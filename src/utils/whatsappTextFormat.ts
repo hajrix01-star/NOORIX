@@ -1,67 +1,55 @@
 /**
- * تنسيق نص واتساب — رموز BMP + سطور متوازية (تسمية · قيمة).
+ * تنسيق نص واتساب الموحّد (ملخص المبيعات + نهاية اليوم) — رموز BMP: ☀ ☾ ◆ │ ▸
  */
 
-export const WA = {
+export const SALES_WA = {
   rule: '━━━━━━━━━━━━━━━━━━━━',
   ruleThin: '────────────────────',
-  dot: '·',
-  icon: {
-    meta: '▸',
-    sales: '☀',
-    outflow: '☾',
-    closing: '◆',
-    total: 'Σ',
-    channels: '⊞',
-    channel: '│',
-    customers: '#',
-    purchases: '⊖',
-    expenses: '⊘',
-    outTotal: '⊕',
-    net: '±',
-    cashIn: '↓',
-    cashOut: '↑',
-    cashNet: '⊙',
-    note: '○',
-  },
+  morning: '☀',
+  evening: '☾',
+  fullDay: '◐',
+  grand: '◆',
+  branch: '│',
+  bullet: '▸',
 } as const;
 
-function trimLabel(label: string): string {
-  return label.replace(/[:：]\s*$/u, '').trim();
+export type SalesWaShiftKind = 'morning' | 'evening' | 'fullDay' | 'grand';
+
+const SHIFT_SYMBOL: Record<SalesWaShiftKind, string> = {
+  morning: SALES_WA.morning,
+  evening: SALES_WA.evening,
+  fullDay: SALES_WA.fullDay,
+  grand: SALES_WA.grand,
+};
+
+export function waShiftSymbol(kind: SalesWaShiftKind): string {
+  return SHIFT_SYMBOL[kind];
 }
 
-/** رأس التقرير */
-export function waHeader(title: string, companyName?: string): string {
-  const head = (companyName || '').trim() ? `${title} — ${companyName.trim()}` : title;
-  return `${WA.rule}\n${head}\n${WA.rule}`;
+export function waReportHeader(title: string, companyName?: string): string {
+  const head = (companyName || '').trim()
+    ? `${title} — ${companyName!.trim()}`
+    : title;
+  return `${SALES_WA.rule}\n${head}\n${SALES_WA.rule}`;
 }
 
-/** سطر ميتا (تاريخ) */
-export function waMeta(label: string, value: string): string {
-  return `${WA.icon.meta}  ${trimLabel(label)} ${WA.dot}  ${value}`;
+export function waMetaLine(label: string, value: string): string {
+  return `${SALES_WA.bullet} ${label} ${value}`;
 }
 
-/** عنوان قسم */
-export function waSection(icon: string, title: string): string {
-  return `${WA.ruleThin}\n${icon}  ${title}\n${WA.ruleThin}`;
+export function waShiftSectionTitle(kind: SalesWaShiftKind, shiftLabel: string): string {
+  const sym = waShiftSymbol(kind);
+  return `${SALES_WA.ruleThin}\n${sym} ${shiftLabel}\n${SALES_WA.ruleThin}`;
 }
 
-/** عنوان فرعي بدون قيمة */
-export function waSubhead(icon: string, label: string): string {
-  return `  ${icon}  ${trimLabel(label)}`;
+export function waSubheading(label: string): string {
+  return `  ${SALES_WA.bullet} ${label}`;
 }
 
-/** سطر قيمة موازٍ: رمز · تسمية · قيمة */
-export function waRow(icon: string, label: string, value: string): string {
-  return `  ${icon}  ${trimLabel(label)} ${WA.dot}  ${value}`;
+export function waChannelRow(vaultLabel: string, amountText: string): string {
+  return `  ${SALES_WA.branch} ${vaultLabel} · ${amountText} SR`;
 }
 
-/** سطر قناة */
-export function waChannel(label: string, amountText: string): string {
-  return `  ${WA.icon.channel}  ${label} ${WA.dot}  ${amountText} SR`;
-}
-
-/** سطر فارغ / لا بيانات */
-export function waEmpty(icon: string, message: string): string {
-  return `  ${icon}  ${message}`;
+export function waMetricLine(label: string, value: string): string {
+  return `  ${label} ${value}`;
 }
