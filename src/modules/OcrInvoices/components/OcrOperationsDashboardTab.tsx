@@ -17,9 +17,9 @@ function reasonLabel(reasonKey: string, isAr: boolean): string {
     network: { ar: 'مشكلة اتصال/مهلة', en: 'Network/timeout issue' },
     model_unavailable: { ar: 'تعذر توفر النموذج', en: 'Model unavailable' },
     image: { ar: 'مشكلة جودة/ملف الصورة', en: 'Image quality/file issue' },
-    unknown: { ar: 'سبب غير مصنف', en: 'Unclassified reason' },
+    runtime: { ar: 'سبب تشغيلي بالنظام', en: 'System runtime failure' },
   };
-  return (labels[reasonKey] || labels.unknown)[isAr ? 'ar' : 'en'];
+  return (labels[reasonKey] || labels.runtime)[isAr ? 'ar' : 'en'];
 }
 
 export default function OcrOperationsDashboardTab() {

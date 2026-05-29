@@ -32,7 +32,7 @@ type OcrFailureReasonKey =
   | 'network'
   | 'model_unavailable'
   | 'image'
-  | 'unknown';
+  | 'runtime';
 
 const PROCESSING_STATUSES = new Set(['queued', 'extracting']);
 const UNMATCHED_LINE_STATUSES = new Set(['pending', 'new', 'rejected', '']);
@@ -71,8 +71,11 @@ function normalizeReasonText(...parts: Array<unknown>): string {
     .trim();
 }
 
-function classifyFailureReason(reasonText: string): OcrFailureReasonKey {
-  if (!reasonText) return 'unknown';
+function classifyFailureReason(
+  reasonText: string,
+  options?: { weakSignal?: boolean; status?: string; lastAttempt?: OcrAttemptTelemetry | null },
+): OcrFailureReasonKey {
+  if (options?.weakSignal) return 'low_signal';
   if (reasonText.includes('json_parse_failed') || reasonText.includes('parse')) return 'parse';
   if (reasonText.includes('schema')) return 'schema';
   if (reasonText.includes('no_signal') || reasonText.includes('low-signal') || reasonText.includes('insufficient_actionable')) return 'low_signal';
@@ -86,7 +89,14 @@ function classifyFailureReason(reasonText: string): OcrFailureReasonKey {
   ) return 'network';
   if (reasonText.includes('unavailable') || reasonText.includes('not found for api version') || reasonText.includes('not supported')) return 'model_unavailable';
   if (reasonText.includes('image') || reasonText.includes('file') || reasonText.includes('تعذّر قراءة الملف')) return 'image';
-  return 'unknown';
+  const attemptOutcome = String(options?.lastAttempt?.outcome || '').toLowerCase();
+  if (attemptOutcome === 'parse_failed') return 'parse';
+  if (attemptOutcome === 'schema_failed') return 'schema';
+  if (attemptOutcome === 'empty') return 'low_signal';
+  if (attemptOutcome === 'unavailable' || attemptOutcome === 'blocked') return 'model_unavailable';
+  if (attemptOutcome === 'http_error' || attemptOutcome === 'runtime_error') return 'network';
+  if (options?.status === 'extraction_failed') return 'runtime';
+  return 'runtime';
 }
 
 function hasUsefulInvoiceSignal(inv: {
@@ -367,7 +377,11 @@ export class OcrInvoiceWorkflowInsightsService {
           lastAttempt?.error,
           lastAttempt?.outcome,
         );
-        const reasonKey = classifyFailureReason(reasonText);
+        const reasonKey = classifyFailureReason(reasonText, {
+          weakSignal: status !== 'extraction_failed',
+          status,
+          lastAttempt,
+        });
         failureReasonCounts.set(reasonKey, (failureReasonCounts.get(reasonKey) || 0) + 1);
       }
 
