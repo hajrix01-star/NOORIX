@@ -69,6 +69,7 @@ describe('buildDailyShiftWhatsAppText', () => {
     });
     expect(text).toContain('salesDailyWaGrandTotal');
     expect(text).toContain('100');
+    expect(text).toContain('━━━━━━━━');
   });
 
   it('includes sales channels when day summaries provided', () => {
@@ -94,7 +95,7 @@ describe('buildDailyShiftWhatsAppText', () => {
       ],
     });
     expect(text).toContain('salesWhatsAppChannelsHeader');
-    expect(text).toContain('نقدي');
+    expect(text).toContain('│ نقدي');
     expect(text).toContain('100');
   });
 });

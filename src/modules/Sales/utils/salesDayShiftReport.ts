@@ -7,6 +7,14 @@ import {
   aggregateShiftChannelWhatsAppLines,
   type SalesSummaryChannelsLike,
 } from './salesWhatsAppChannels';
+import {
+  waMetaLine,
+  waMetricLine,
+  waReportHeader,
+  waShiftSectionTitle,
+  waSubheading,
+  type SalesWaShiftKind,
+} from './salesWhatsAppFormat';
 
 export type SalesSummaryLike = {
   status?: string;
@@ -115,22 +123,24 @@ type BuildDailyWaParams = {
 };
 
 function shiftBlock(
-  title: string,
+  kind: SalesWaShiftKind,
+  shiftLabel: string,
   agg: ShiftDayAggregate,
   t: (key: string) => string,
   channelLines: string[],
 ): string[] {
+  const title = waShiftSectionTitle(kind, shiftLabel);
   if (agg.summaryCount === 0) {
-    return [title, t('salesDailyWaNoShiftData'), ''];
+    return [title, `  ${t('salesDailyWaNoShiftData')}`, ''];
   }
   const lines = [title];
   if (channelLines.length > 0) {
-    lines.push(t('salesWhatsAppChannelsHeader'));
+    lines.push(waSubheading(t('salesWhatsAppChannelsHeader')));
     lines.push(...channelLines);
   }
   lines.push(
-    `${t('salesWhatsAppTotalLine')} ${fmt(agg.total)} SR`,
-    `${t('salesWhatsAppCustomersLine')} ${fmt(agg.customers, 0)}`,
+    waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(agg.total)} SR`),
+    waMetricLine(t('salesWhatsAppCustomersLine'), fmt(agg.customers, 0)),
     '',
   );
   return lines;
@@ -154,33 +164,33 @@ export function buildDailyShiftWhatsAppText(p: BuildDailyWaParams): string {
     : [];
 
   const lines: string[] = [
-    `${t('salesDailyWaTitle')}${name ? ` — ${name}` : ''}`,
-    `${t('salesWhatsAppDateLine')} ${dateLabel}`,
+    waReportHeader(t('salesDailyWaTitle'), name),
+    waMetaLine(t('salesWhatsAppDateLine'), dateLabel),
     '',
-    ...shiftBlock(`🌅 ${t('salesShiftMorning')}`, report.morning, t, morningChannels),
-    ...shiftBlock(`🌙 ${t('salesShiftEvening')}`, report.evening, t, eveningChannels),
+    ...shiftBlock('morning', t('salesShiftMorning'), report.morning, t, morningChannels),
+    ...shiftBlock('evening', t('salesShiftEvening'), report.evening, t, eveningChannels),
   ];
 
   if (report.fullDay.summaryCount > 0) {
-    lines.push(...shiftBlock(`☀️ ${t('salesShiftFullDay')}`, report.fullDay, t, fullDayChannels));
+    lines.push(...shiftBlock('fullDay', t('salesShiftFullDay'), report.fullDay, t, fullDayChannels));
   }
 
   const grandChannelLines = canChannels
     ? aggregateDayChannelWhatsAppLines(daySummaries!, day, lang!)
     : [];
 
-  lines.push(`📌 ${t('salesDailyWaGrandTotal')}`);
+  lines.push(waShiftSectionTitle('grand', t('salesDailyWaGrandTotal')));
   if (grandChannelLines.length > 0) {
-    lines.push(t('salesWhatsAppChannelsHeader'));
+    lines.push(waSubheading(t('salesWhatsAppChannelsHeader')));
     lines.push(...grandChannelLines);
   }
   lines.push(
-    `${t('salesWhatsAppTotalLine')} ${fmt(report.grand.total)} SR`,
-    `${t('salesWhatsAppCustomersLine')} ${fmt(report.grand.customers, 0)}`,
+    waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(report.grand.total)} SR`),
+    waMetricLine(t('salesWhatsAppCustomersLine'), fmt(report.grand.customers, 0)),
   );
   return lines.join('\n').trim();
 }
 
 export function openWhatsAppWithText(text: string) {
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
 }
