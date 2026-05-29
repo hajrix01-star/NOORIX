@@ -11,6 +11,7 @@ import { OcrInvoiceStatus, OCR_REVIEW_QUEUE_STATUSES } from './ocr-invoice-statu
 import { OcrExtractionService } from './ocr-extraction.service';
 import { OcrUploadsLocalStorage } from './ocr-uploads-local.storage';
 import { OCR_EXTRACTION_QUEUE } from './ocr-queue.constants';
+import { preprocessOcrImageForExtraction, type OcrPreprocessResult } from './ocr-image-preprocess.util';
 
 @Injectable()
 export class OcrIntakeService {
@@ -49,6 +50,32 @@ export class OcrIntakeService {
 
   private relativeOcrImagePath(companyId: string, invoiceId: string, ext: string): string {
     return `ocr-invoices/${companyId}/${invoiceId}.${ext}`;
+  }
+
+  private attachImagePreprocessMeta(
+    enriched: Record<string, unknown>,
+    preprocess: OcrPreprocessResult,
+  ): Record<string, unknown> {
+    const existingQualityFlags = Array.isArray(enriched.qualityFlags)
+      ? enriched.qualityFlags.filter((x): x is string => typeof x === 'string')
+      : [];
+    const qualityFlags = Array.from(new Set([...existingQualityFlags, ...preprocess.qualityFlags]));
+
+    const currentStatus = typeof enriched.qualityStatus === 'string' ? enriched.qualityStatus : null;
+    const qualityStatus = currentStatus
+      || (qualityFlags.length && !qualityFlags.includes('validated') ? 'needs_review' : 'validated');
+
+    return {
+      ...enriched,
+      qualityFlags,
+      qualityStatus,
+      imageQuality: {
+        ...(enriched.imageQuality && typeof enriched.imageQuality === 'object'
+          ? enriched.imageQuality as Record<string, unknown>
+          : {}),
+        ...preprocess.diagnostics,
+      },
+    };
   }
 
   /** كاشير: رفع صورة — يُنشئ سجلاً ثم يشغّل الاستخراج في الخلفية */
@@ -181,12 +208,15 @@ export class OcrIntakeService {
         ? 'image/webp'
         : 'image/jpeg';
 
+    const preprocessed = await preprocessOcrImageForExtraction(buf, mime);
+
     let enriched: Record<string, unknown>;
     try {
       enriched = (await this.extraction.extractInvoice(inv.tenantId, inv.companyId, {
-        imageBase64: buf.toString('base64'),
-        mimeType: mime,
+        imageBase64: preprocessed.buffer.toString('base64'),
+        mimeType: preprocessed.mimeType,
       })) as Record<string, unknown>;
+      enriched = this.attachImagePreprocessMeta(enriched, preprocessed);
     } catch (e) {
       await this.prisma.ocrInvoice.update({
         where: { id: inv.id },
