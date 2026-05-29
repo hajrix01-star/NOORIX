@@ -15,6 +15,9 @@ export const ocrKeys = {
   purchasesReport: (companyId: string, month: unknown) =>
     ['ocr-purchases-report', companyId, month] as const,
 
+  operationsDashboard: (companyId: string, days: unknown) =>
+    ['ocr-operations-dashboard', companyId, days] as const,
+
   accountingCatalog: (companyId: string) => ['accounting-suppliers-ocr-catalog', companyId] as const,
 
   catalogAccountingSuggestions: (
@@ -46,6 +49,8 @@ export const ocrKeys = {
   invoicesRoot: () => ['ocr-invoices'] as const,
 
   purchasesReportRoot: () => ['ocr-purchases-report'] as const,
+
+  operationsDashboardRoot: () => ['ocr-operations-dashboard'] as const,
 
   suppliersRoot: () => ['ocr-suppliers'] as const,
 

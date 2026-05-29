@@ -12,6 +12,7 @@ import ItemsCatalogTab     from './components/ItemsCatalogTab';
 import PriceAlertsTab      from './components/PriceAlertsTab';
 import OcrReviewQueueTab   from './components/OcrReviewQueueTab';
 import OcrPurchasesReportTab from './components/OcrPurchasesReportTab';
+import OcrOperationsDashboardTab from './components/OcrOperationsDashboardTab';
 import {
   getOcrInvoices,
   getOcrReviewQueue,
@@ -29,6 +30,7 @@ const TABS = [
   { key: 'suppliers', labelAr: 'الموردون',          labelEn: 'Suppliers' },
   { key: 'items',     labelAr: 'الأصناف',           labelEn: 'Items' },
   { key: 'alerts',    labelAr: 'تنبيهات الأسعار',  labelEn: 'Alerts' },
+  { key: 'ops',       labelAr: 'لوحة تشغيل OCR',   labelEn: 'OCR Ops Dashboard' },
   { key: 'purchases', labelAr: 'تقرير مشتريات',    labelEn: 'Purchases report' },
 ];
 const OCR_TAB_IDS = TABS.map((tab: any) => tab.key);
@@ -334,6 +336,7 @@ export default function OcrInvoicesScreen() {
         {activeTab === 'alerts' && (
           <PriceAlertsTab alerts={alertsData || []} loading={alertsLoading} invoices={invoicesData || []} onRefresh={refetchAlerts} />
         )}
+        {activeTab === 'ops' && <OcrOperationsDashboardTab />}
         {activeTab === 'purchases' && <OcrPurchasesReportTab />}
       </ScreenTabs>
 

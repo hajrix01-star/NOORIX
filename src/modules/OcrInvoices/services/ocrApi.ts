@@ -45,6 +45,13 @@ export async function getOcrPurchasesByMonth(month: any) {
   return apiGet(`/api/v1/ocr/reports/purchases-by-month${q ? `?${q}` : ''}`);
 }
 
+export async function getOcrOperationsDashboard(days: any = 30) {
+  const params = new URLSearchParams();
+  if (days != null && days !== '') params.set('days', String(days));
+  const q = params.toString();
+  return apiGet(`/api/v1/ocr/reports/operations-dashboard${q ? `?${q}` : ''}`);
+}
+
 export async function getOcrAccountingSupplierSuggestions(filters: Record<string, any> = {}) {
   const { ocrSupplierId, q, invoiceVat, limit } = filters;
   const params = new URLSearchParams();

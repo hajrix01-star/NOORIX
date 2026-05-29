@@ -75,6 +75,12 @@ export class OcrInvoiceWorkflowService {
     return this.insights.getPriceAlerts(...args);
   }
 
+  getOperationsDashboard(
+    ...args: Parameters<OcrInvoiceWorkflowInsightsService['getOperationsDashboard']>
+  ) {
+    return this.insights.getOperationsDashboard(...args);
+  }
+
   getCorrectionRules(...args: Parameters<OcrInvoiceWorkflowInsightsService['getCorrectionRules']>) {
     return this.insights.getCorrectionRules(...args);
   }

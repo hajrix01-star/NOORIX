@@ -127,6 +127,10 @@ export class OcrInvoicesService {
     ...args: Parameters<OcrInvoiceWorkflowService['getPriceAlerts']>
   ) { return this.workflow.getPriceAlerts(...args); }
 
+  getOperationsDashboard(
+    ...args: Parameters<OcrInvoiceWorkflowService['getOperationsDashboard']>
+  ) { return this.workflow.getOperationsDashboard(...args); }
+
   getCorrectionRules(
     ...args: Parameters<OcrInvoiceWorkflowService['getCorrectionRules']>
   ) { return this.workflow.getCorrectionRules(...args); }

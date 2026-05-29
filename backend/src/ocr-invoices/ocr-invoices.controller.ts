@@ -99,6 +99,21 @@ export class OcrInvoicesController {
     return this.svc.getPurchasesMonthlyReport(user.tenantId!, this.requireCompanyId(companyId), month || '');
   }
 
+  @Get('reports/operations-dashboard')
+  @RequirePermission('OCR_READ')
+  async operationsDashboard(
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+    @Query('days') daysRaw?: string,
+  ) {
+    const days = daysRaw ? Number(daysRaw) : undefined;
+    return this.svc.getOperationsDashboard(
+      user.tenantId!,
+      this.requireCompanyId(companyId),
+      Number.isFinite(days) ? { days } : undefined,
+    );
+  }
+
   @Get('accounting-supplier-suggestions')
   @RequirePermission('OCR_READ')
   async accountingSupplierSuggestions(
