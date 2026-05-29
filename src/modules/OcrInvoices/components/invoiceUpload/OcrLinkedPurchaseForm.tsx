@@ -47,8 +47,9 @@ export function OcrLinkedPurchaseForm({
             )}
             <label className="flex flex-col gap-1 text-[12px]">
               <span className="text-noorix-muted">{t('ocrSelectAccountingSupplier')}</span>
-              <select
-                className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
+              <Input
+                type="select"
+                size="sm"
                 value={accountingSupplierId}
                 onChange={(e: any) => onAccountingSupplierIdChange(e.target.value)}
               >
@@ -58,7 +59,7 @@ export function OcrLinkedPurchaseForm({
                     {(s.nameAr || s.nameEn || '') + (s.taxNumber ? ` — ${s.taxNumber}` : '')}
                   </option>
                 ))}
-              </select>
+              </Input>
               {accSuggestions[0] && (
                 <span className="text-[11px] text-noorix-muted">
                   {accSuggestions[0].linkedFromOcr
@@ -95,8 +96,9 @@ export function OcrLinkedPurchaseForm({
               </label>
               <label className="flex flex-col gap-1 text-[12px]">
                 <span className="text-noorix-muted">{t('ocrVaultSelect')}</span>
-                <select
-                  className="rounded-md border border-noorix-border bg-noorix-bg-surface px-2 py-2 text-[13px] text-noorix-text"
+                <Input
+                  type="select"
+                  size="sm"
                   value={vaultId}
                   onChange={(e: any) => onVaultIdChange(e.target.value)}
                 >
@@ -106,7 +108,7 @@ export function OcrLinkedPurchaseForm({
                       {vaultDisplayName(v, lang)}
                     </option>
                   ))}
-                </select>
+                </Input>
               </label>
               <label className="flex flex-col gap-1 text-[12px]">
                 <span className="text-noorix-muted">{t('ocrSupplierInvoiceNo')}</span>

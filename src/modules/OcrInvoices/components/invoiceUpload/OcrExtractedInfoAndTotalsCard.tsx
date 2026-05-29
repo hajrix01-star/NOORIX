@@ -1,11 +1,32 @@
+import { Input } from '../../../../ui';
 import { FieldRow } from './OcrFieldRowItemParts';
 
-export function OcrExtractedInfoAndTotalsCard({ t, extracted, isAr }: any) {
+export function OcrExtractedInfoAndTotalsCard({
+  t,
+  extracted,
+  isAr,
+  suppliers = [],
+  onSupplierMatchChange,
+}: any) {
   return (
     <div className="noorix-surface-card p-4">
       <div className="font-semibold text-[14px] mb-3">{isAr ? 'معلومات الفاتورة' : 'Invoice Info'}</div>
       <div className="grid gap-2">
         <FieldRow label={t('ocrSupplierField')} value={extracted.supplier?.name} confidence={extracted.supplier?.confidence} match={extracted.supplierMatch} />
+        <Input
+          type="select"
+          size="sm"
+          label={t('ocrSupplierMatchOverride')}
+          value={extracted?.supplierMatch?.id || ''}
+          onChange={(e: any) => onSupplierMatchChange?.(e.target.value)}
+        >
+          <option value="">{t('ocrSupplierUnmatched')}</option>
+          {(suppliers || []).map((s: any) => (
+            <option key={s.id} value={s.id}>
+              {[s.nameAr, s.nameEn].filter(Boolean).join(' / ')}
+            </option>
+          ))}
+        </Input>
         <FieldRow label={t('ocrVatNumber')} value={extracted.vatNumber?.value} confidence={extracted.vatNumber?.confidence} />
         <FieldRow
           label={t('ocrInvoiceNumber')}

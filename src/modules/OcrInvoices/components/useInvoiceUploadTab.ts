@@ -26,7 +26,7 @@ import { vaultKeys, ocrKeys } from '../../../services/queryKeys';
 /**
  * منطق تبويب رفع/استخراج فاتورة OCR (منفصل عن العرض)
  */
-export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsumed }: any) {
+export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsumed, suppliers = [], items = [] }: any) {
   const { t, lang: language } = useTranslation();
   const { activeCompanyId } = useApp();
   const queryClient = useQueryClient();
@@ -62,7 +62,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   const [newOcrSaving, setNewOcrSaving] = useState(false);
   const [newOcrError, setNewOcrError] = useState<any>(null);
 
-  const { activeItems, warningCount, updateItem, applyMathSuggestion } = useOcrInvoiceLineItems(
+  const { activeItems, warningCount, updateItem, applyMathSuggestion, updateItemMatch } = useOcrInvoiceLineItems(
     extracted,
     editItems,
     setEditItems,
@@ -222,6 +222,55 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   useEffect(() => {
     if (!imageBase64) autoExtractedImageRef.current = null;
   }, [imageBase64]);
+
+  const handleSupplierMatchChange = useCallback(
+    (supplierId: string) => {
+      const id = String(supplierId || '').trim();
+      if (!id) {
+        setExtracted((prev: any) => (prev ? { ...prev, supplierMatch: null } : prev));
+        setPrefillOcrSupplierId(null);
+        return;
+      }
+      const picked = (suppliers || []).find((s: any) => s.id === id);
+      if (!picked) return;
+      setExtracted((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              supplierMatch: {
+                id: picked.id,
+                nameAr: picked.nameAr,
+                score: 1,
+                status: 'review',
+              },
+            }
+          : prev,
+      );
+      setPrefillOcrSupplierId(picked.id);
+    },
+    [suppliers],
+  );
+
+  const handleItemMatchChange = useCallback(
+    (index: number, itemId: string) => {
+      const id = String(itemId || '').trim();
+      if (!id) {
+        updateItemMatch(index, null);
+        return;
+      }
+      const picked = (items || []).find((x: any) => x.id === id);
+      if (!picked) return;
+      updateItemMatch(index, {
+        id: picked.id,
+        nameAr: picked.nameAr,
+        nameEn: picked.nameEn ?? null,
+        hasSizes: !!picked.hasSizes,
+        score: 1,
+        status: 'review',
+      });
+    },
+    [items, updateItemMatch],
+  );
 
   const handleSave = async () => {
     if (!extracted) return;
@@ -394,6 +443,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     vaultRows,
     accSuggestions,
     accSuggestionsFetching,
+    suppliers,
+    items,
     createLinkedPurchase,
     setCreateLinkedPurchase,
     transactionDate,
@@ -410,6 +461,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     activeItems,
     updateItem,
     applyMathSuggestion,
+    handleSupplierMatchChange,
+    handleItemMatchChange,
     onAccountingSupplierIdChange,
     readFile,
     handleDrop,

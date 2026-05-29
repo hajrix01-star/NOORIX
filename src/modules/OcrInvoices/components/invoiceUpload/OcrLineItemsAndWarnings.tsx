@@ -24,7 +24,15 @@ export function OcrWarningStrip({ warningCount, extracted, isAr }: any) {
   );
 }
 
-export function OcrLineItemsList({ t, language, activeItems, onUpdateItem, onApplySuggestion }: any) {
+export function OcrLineItemsList({
+  t,
+  language,
+  activeItems,
+  itemCatalog = [],
+  onUpdateItem,
+  onApplySuggestion,
+  onItemMatchChange,
+}: any) {
   if (activeItems.length === 0) return null;
   return (
     <div className="noorix-surface-card p-4">
@@ -39,8 +47,10 @@ export function OcrLineItemsList({ t, language, activeItems, onUpdateItem, onApp
             index={i}
             language={language}
             t={t}
+            itemCatalog={itemCatalog}
             onUpdate={onUpdateItem}
             onApplySuggestion={onApplySuggestion}
+            onItemMatchChange={onItemMatchChange}
           />
         ))}
       </div>

@@ -172,6 +172,10 @@ export default {
   ocrMatchReview:      { ar: 'يحتاج مراجعة', en: 'Needs review' },
   ocrMatchNew:         { ar: 'صنف جديد', en: 'New item' },
   ocrMatchedTo:        { ar: 'طابق:', en: 'Matched to:' },
+  ocrSupplierMatchOverride: { ar: 'اختيار المورد الصحيح', en: 'Select matched supplier' },
+  ocrSupplierUnmatched: { ar: 'بدون مطابقة مورد', en: 'No supplier match' },
+  ocrItemMatchOverride: { ar: 'اختيار الصنف الصحيح', en: 'Select matched item' },
+  ocrItemUnmatched: { ar: 'بدون مطابقة صنف', en: 'No item match' },
 
   // Suppliers
   ocrAddSupplier:      { ar: 'إضافة مورد', en: 'Add Supplier' },

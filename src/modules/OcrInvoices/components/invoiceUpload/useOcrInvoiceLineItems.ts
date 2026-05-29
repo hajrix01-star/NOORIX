@@ -54,5 +54,17 @@ export function useOcrInvoiceLineItems(
     [activeItems, setEditItems],
   );
 
-  return { activeItems, warningCount, updateItem, applyMathSuggestion };
+  const updateItemMatch = useCallback(
+    (index: number, match: any) => {
+      const updated = [...activeItems];
+      updated[index] = {
+        ...updated[index],
+        itemMatch: match || null,
+      };
+      setEditItems(updated);
+    },
+    [activeItems, setEditItems],
+  );
+
+  return { activeItems, warningCount, updateItem, applyMathSuggestion, updateItemMatch };
 }
