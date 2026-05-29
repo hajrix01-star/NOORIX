@@ -94,6 +94,7 @@ export default {
   ocrPipelineReadyForReview: { ar: 'جاهزة للمراجعة', en: 'Ready for review' },
   ocrPipelineFailedAt: { ar: 'تعطل عند مرحلة: {0}', en: 'Stopped at stage: {0}' },
   ocrPipelineCopyIssue: { ar: 'نسخ المشكلة', en: 'Copy issue' },
+  ocrPipelineCopyStage: { ar: 'نسخ المرحلة', en: 'Copy stage' },
   ocrPipelineIssueCopied: { ar: 'تم النسخ', en: 'Copied' },
   ocrPrefillLoading:   { ar: 'جاري تحميل فاتورة المراجعة…', en: 'Loading review invoice…' },
 

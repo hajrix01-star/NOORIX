@@ -9,6 +9,7 @@ type PipelineStageDurations = {
   enrichmentMs?: number | null;
   readyForReviewMs?: number | null;
 };
+type StageArtifactRow = { status?: string; reportText?: string };
 
 function statusBadgeClasses(status: 'pending' | 'running' | 'success' | 'failed' | 'warning') {
   if (status === 'success') return 'border-noorix-green bg-noorix-green text-white';
@@ -38,8 +39,11 @@ export function OcrExtractionPipelineStatus({
   stageDurations,
   copyIssueText,
   issueCopied,
+  stageArtifacts,
+  copiedStageKey,
   onRetry,
   onCopyIssue,
+  onCopyStage,
 }: {
   t: (k: string, ...args: any[]) => string;
   isAr: boolean;
@@ -52,8 +56,11 @@ export function OcrExtractionPipelineStatus({
   stageDurations?: PipelineStageDurations;
   copyIssueText?: string;
   issueCopied?: boolean;
+  stageArtifacts?: Record<string, StageArtifactRow> | null;
+  copiedStageKey?: string | null;
   onRetry: () => void;
   onCopyIssue?: () => void;
+  onCopyStage?: (stageKey: string) => void;
 }) {
   const [tick, setTick] = useState(() => Date.now());
 
@@ -72,11 +79,11 @@ export function OcrExtractionPipelineStatus({
 
   const steps = useMemo(
     () => [
-      { key: 'upload-ready', label: t('ocrPipelineImageReady') },
-      { key: 'model-request', label: t('ocrPipelineModelRequest') },
-      { key: 'json-validate', label: t('ocrPipelineJsonValidation') },
-      { key: 'enrich-match', label: t('ocrPipelineEnrichment') },
-      { key: 'ready', label: t('ocrPipelineReadyForReview') },
+      { key: 'upload-ready', artifactKey: 'uploadReady', label: t('ocrPipelineImageReady') },
+      { key: 'model-request', artifactKey: 'modelRequest', label: t('ocrPipelineModelRequest') },
+      { key: 'json-validate', artifactKey: 'jsonValidation', label: t('ocrPipelineJsonValidation') },
+      { key: 'enrich-match', artifactKey: 'enrichment', label: t('ocrPipelineEnrichment') },
+      { key: 'ready', artifactKey: 'readyForReview', label: t('ocrPipelineReadyForReview') },
     ],
     [t],
   );
@@ -131,15 +138,29 @@ export function OcrExtractionPipelineStatus({
                 </span>
                 <span className={`text-[12px] ${rowTextClasses(status)}`}>{step.label}</span>
               </div>
-              <span
-                className={`text-[11px] font-medium shrink-0 ${rowTextClasses(status)}`}
-              >
-                {completedTimes[idx] != null
-                  ? formatMs(Number(completedTimes[idx]))
-                  : loading && status === 'running'
-                    ? formatMs(stageRunningElapsed(idx))
-                    : '—'}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  className={`text-[11px] font-medium ${rowTextClasses(status)}`}
+                >
+                  {completedTimes[idx] != null
+                    ? formatMs(Number(completedTimes[idx]))
+                    : loading && status === 'running'
+                      ? formatMs(stageRunningElapsed(idx))
+                      : '—'}
+                </span>
+                {!!stageArtifacts?.[step.artifactKey]?.reportText && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onCopyStage?.(step.artifactKey)}
+                  >
+                    {t('ocrPipelineCopyStage')}
+                  </Button>
+                )}
+                {copiedStageKey === step.artifactKey && (
+                  <span className="text-[11px] text-noorix-green">{t('ocrPipelineIssueCopied')}</span>
+                )}
+              </div>
             </div>
           );
         })}

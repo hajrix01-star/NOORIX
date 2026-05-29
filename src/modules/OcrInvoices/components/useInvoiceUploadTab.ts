@@ -38,6 +38,129 @@ function toDurationMs(value: unknown): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
+function toJsonLine(value: unknown, maxLen = 1600): string {
+  try {
+    const raw = JSON.stringify(value);
+    if (!raw) return '';
+    return raw.length > maxLen ? `${raw.slice(0, maxLen)}…[truncated]` : raw;
+  } catch {
+    return String(value ?? '');
+  }
+}
+
+function buildStageArtifacts(args: {
+  startedAt: number;
+  mimeType: string;
+  imageBytes: number;
+  payload?: Record<string, any> | null;
+  stageDurations: {
+    uploadReadyMs: number | null;
+    modelRequestMs: number | null;
+    jsonValidationMs: number | null;
+    enrichmentMs: number | null;
+    readyForReviewMs: number | null;
+  };
+  failureStage?: 'model_request' | 'json_validation' | null;
+  failureReason?: string;
+}) {
+  const payload = args.payload || {};
+  const attempts = Array.isArray(payload.modelAttempts) ? payload.modelAttempts : [];
+  const schemaIssues = Array.isArray(payload.schemaIssues) ? payload.schemaIssues : [];
+  const qualityFlags = Array.isArray(payload.qualityFlags) ? payload.qualityFlags : [];
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  const matchedItems = items.filter((x: any) => x?.itemMatch?.id).length;
+  const nowIso = new Date(args.startedAt).toISOString();
+
+  const modelStatus = args.failureStage === 'model_request'
+    ? 'failed'
+    : attempts.some((x: any) => x?.outcome === 'success')
+      ? 'success'
+      : 'warning';
+  const jsonStatus = args.failureStage === 'json_validation'
+    ? 'failed'
+    : payload.parseError
+      ? 'failed'
+      : 'success';
+  const enrichStatus = payload.parseError ? 'skipped' : payload.enrichError ? 'warning' : 'success';
+  const readyStatus = payload.parseError ? 'failed' : 'success';
+
+  return {
+    uploadReady: {
+      status: 'success',
+      reportText: [
+        'OCR Stage Artifact',
+        'stage=upload_ready',
+        'status=success',
+        `startedAt=${nowIso}`,
+        `mimeType=${args.mimeType}`,
+        `imageBytes=${args.imageBytes}`,
+        `durationMs=${args.stageDurations.uploadReadyMs ?? 0}`,
+      ].join('\n'),
+    },
+    modelRequest: {
+      status: modelStatus,
+      reportText: [
+        'OCR Stage Artifact',
+        'stage=model_request',
+        `status=${modelStatus}`,
+        `durationMs=${args.stageDurations.modelRequestMs ?? 0}`,
+        `attemptsCount=${attempts.length}`,
+        `attempts=${toJsonLine(attempts.map((a: any, idx: number) => ({
+          idx: idx + 1,
+          model: a?.model,
+          outcome: a?.outcome,
+          latencyMs: a?.latencyMs,
+          parseStage: a?.parseStage,
+          httpStatus: a?.httpStatus,
+          error: a?.error,
+        })))}`,
+        args.failureStage === 'model_request' ? `failureReason=${args.failureReason || 'model_request_failed'}` : null,
+      ].filter(Boolean).join('\n'),
+    },
+    jsonValidation: {
+      status: jsonStatus,
+      reportText: [
+        'OCR Stage Artifact',
+        'stage=json_validation',
+        `status=${jsonStatus}`,
+        `durationMs=${args.stageDurations.jsonValidationMs ?? 0}`,
+        `parseError=${!!payload.parseError}`,
+        `parseStageHints=${toJsonLine(attempts.map((a: any) => ({ model: a?.model, parseStage: a?.parseStage, outcome: a?.outcome })))}`,
+        schemaIssues.length ? `schemaIssues=${toJsonLine(schemaIssues)}` : null,
+        payload.rawText ? `rawTextSnippet=${String(payload.rawText).slice(0, 400)}` : null,
+        args.failureStage === 'json_validation' ? `failureReason=${args.failureReason || payload.errorDetail || 'json_validation_failed'}` : null,
+      ].filter(Boolean).join('\n'),
+    },
+    enrichment: {
+      status: enrichStatus,
+      reportText: [
+        'OCR Stage Artifact',
+        'stage=enrichment',
+        `status=${enrichStatus}`,
+        `durationMs=${args.stageDurations.enrichmentMs ?? 0}`,
+        `supplierName=${payload?.supplier?.name || ''}`,
+        `supplierMatched=${!!payload?.supplierMatch?.id}`,
+        `itemsCount=${items.length}`,
+        `matchedItems=${matchedItems}`,
+        payload.enrichError ? `enrichError=${String(payload.enrichError)}` : null,
+      ].filter(Boolean).join('\n'),
+    },
+    readyForReview: {
+      status: readyStatus,
+      reportText: [
+        'OCR Stage Artifact',
+        'stage=ready_for_review',
+        `status=${readyStatus}`,
+        `durationMs=${args.stageDurations.readyForReviewMs ?? 0}`,
+        `qualityStatus=${String(payload.qualityStatus || '')}`,
+        `qualityFlags=${toJsonLine(qualityFlags)}`,
+        `usedModel=${String(payload.usedModel || '')}`,
+        `extractionLatencyMs=${Number(payload.extractionLatencyMs) || 0}`,
+      ].join('\n'),
+    },
+  };
+}
+
 /**
  * منطق تبويب رفع/استخراج فاتورة OCR (منفصل عن العرض)
  */
@@ -74,6 +197,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
   });
   const [extractIssueReport, setExtractIssueReport] = useState('');
   const [issueCopied, setIssueCopied] = useState(false);
+  const [extractStageArtifacts, setExtractStageArtifacts] = useState<Record<string, { status?: string; reportText: string }> | null>(null);
+  const [copiedStageKey, setCopiedStageKey] = useState<string | null>(null);
   const [finalizeOcrId, setFinalizeOcrId] = useState<any>(null);
   const [prefillOcrSupplierId, setPrefillOcrSupplierId] = useState<any>(null);
   const [createLinkedPurchase, setCreateLinkedPurchase] = useState(false);
@@ -224,6 +349,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setExtractFailureStage(null);
     setExtractIssueReport('');
     setIssueCopied(false);
+    setExtractStageArtifacts(null);
+    setCopiedStageKey(null);
     setExtractStageDurations({ ...makeEmptyStageDurations(), uploadReadyMs: 0 });
     setLoading(true);
     setError(null);
@@ -246,6 +373,9 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
         enrichmentMs: toDurationMs(stageRows?.enrichment?.durationMs),
         readyForReviewMs: toDurationMs(stageRows?.readyForReview?.durationMs) ?? 0,
       };
+      const backendArtifacts = stageTelemetry?.artifacts && typeof stageTelemetry.artifacts === 'object'
+        ? stageTelemetry.artifacts as Record<string, { status?: string; reportText?: string }>
+        : null;
       if (res.success) {
         if (res.data?.parseError) {
           const parseStartedAt = Date.now();
@@ -267,6 +397,24 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
             `clientElapsedMs=${Date.now() - startedAt}`,
           ].filter(Boolean).join('\n');
           setExtractIssueReport(issueReport);
+          const fallbackArtifacts = buildStageArtifacts({
+            startedAt,
+            mimeType,
+            imageBytes: imageBase64.length,
+            payload,
+            stageDurations: {
+              ...stageDurationsFromBackend,
+              jsonValidationMs:
+                stageDurationsFromBackend.jsonValidationMs ?? Math.max(1, Date.now() - parseStartedAt),
+            },
+            failureStage: 'json_validation',
+            failureReason: failedReason,
+          });
+          setExtractStageArtifacts(
+            backendArtifacts
+              ? { ...fallbackArtifacts, ...backendArtifacts }
+              : fallbackArtifacts,
+          );
           setExtractStageDurations({
             ...stageDurationsFromBackend,
             jsonValidationMs:
@@ -274,6 +422,18 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
           });
           setError(t('ocrParseFriendlyError'));
         } else {
+          const fallbackArtifacts = buildStageArtifacts({
+            startedAt,
+            mimeType,
+            imageBytes: imageBase64.length,
+            payload,
+            stageDurations: stageDurationsFromBackend,
+          });
+          setExtractStageArtifacts(
+            backendArtifacts
+              ? { ...fallbackArtifacts, ...backendArtifacts }
+              : fallbackArtifacts,
+          );
           setExtractStageDurations(stageDurationsFromBackend);
           setExtracted(res.data);
           setEditItems(null);
@@ -284,7 +444,17 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       } else {
         setExtractFailureStage('request');
         const requestError = res.error || t('ocrExtractFailed');
+        const failedDurations = { ...makeEmptyStageDurations(), uploadReadyMs: 0, modelRequestMs };
         setExtractStageDurations({ ...makeEmptyStageDurations(), uploadReadyMs: 0, modelRequestMs });
+        setExtractStageArtifacts(buildStageArtifacts({
+          startedAt,
+          mimeType,
+          imageBytes: imageBase64.length,
+          payload: null,
+          stageDurations: failedDurations,
+          failureStage: 'model_request',
+          failureReason: requestError,
+        }));
         setExtractIssueReport([
           'OCR Pipeline Failure',
           'stage=model_request',
@@ -297,6 +467,21 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     } catch (err: any) {
       setExtractFailureStage('request');
       const msg = err?.message || t('ocrExtractFailed');
+      const failedDurations = {
+        ...makeEmptyStageDurations(),
+        uploadReadyMs: 0,
+        modelRequestMs: Math.max(1, Date.now() - requestStartedAt),
+      };
+      setExtractStageDurations(failedDurations);
+      setExtractStageArtifacts(buildStageArtifacts({
+        startedAt,
+        mimeType,
+        imageBytes: imageBase64.length,
+        payload: null,
+        stageDurations: failedDurations,
+        failureStage: 'model_request',
+        failureReason: msg,
+      }));
       setExtractIssueReport([
         'OCR Pipeline Failure',
         'stage=model_request',
@@ -321,6 +506,20 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     }
   }, [extractIssueReport]);
 
+  const handleCopyStageArtifact = useCallback(async (stageKey: string) => {
+    const report = extractStageArtifacts?.[stageKey]?.reportText;
+    if (!report) return;
+    try {
+      await navigator.clipboard.writeText(report);
+      setCopiedStageKey(stageKey);
+      window.setTimeout(() => {
+        setCopiedStageKey((current) => (current === stageKey ? null : current));
+      }, 1800);
+    } catch {
+      setCopiedStageKey(null);
+    }
+  }, [extractStageArtifacts]);
+
   useEffect(() => {
     if (!imageBase64 || extracted || loading || prefillLoading) return;
     if (autoExtractedImageRef.current === imageBase64) return;
@@ -334,6 +533,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
       setExtractStartedAt(null);
       setExtractFailureStage(null);
       setExtractIssueReport('');
+      setExtractStageArtifacts(null);
+      setCopiedStageKey(null);
       setExtractStageDurations(makeEmptyStageDurations());
     }
   }, [imageBase64]);
@@ -516,6 +717,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     setExtractFailureStage(null);
     setExtractIssueReport('');
     setIssueCopied(false);
+    setExtractStageArtifacts(null);
+    setCopiedStageKey(null);
     setExtractStageDurations(makeEmptyStageDurations());
     setEditItems(null);
     setFinalizeOcrId(null);
@@ -557,6 +760,8 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     extractStageDurations,
     extractIssueReport,
     issueCopied,
+    extractStageArtifacts,
+    copiedStageKey,
     prefillLoading,
     prefillLinkedPurchase,
     postSaveLinkedPurchase,
@@ -593,6 +798,7 @@ export function useInvoiceUploadTab({ onSaved, prefillInvoiceId, onPrefillConsum
     handleDrop,
     handleExtract,
     handleCopyIssueReport,
+    handleCopyStageArtifact,
     handleSave,
     handleResetImageColumn,
     openNewOcrSupplierModal,
