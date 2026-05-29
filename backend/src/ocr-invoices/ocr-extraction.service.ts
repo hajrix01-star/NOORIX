@@ -685,7 +685,10 @@ ${rawText.slice(0, 12000)}`;
         const hasArabicRawName = !!rawItemNameAr && /[\u0600-\u06FF]/.test(rawItemNameAr);
         let resolvedNameAr = hasArabicRawName ? rawItemNameAr : splitNameAr;
         if (bestResult) {
-          const status = classifyConfidence(bestResult.score);
+          let status = classifyConfidence(bestResult.score);
+          if (status === 'auto' && bestResult.autoEligible === false) {
+            status = 'review';
+          }
           if (status !== 'new') {
             itemMatch = {
               id: bestResult.item.id,
