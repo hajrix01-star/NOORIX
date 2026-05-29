@@ -27,6 +27,13 @@ import {
   buildSummaryChannelWhatsAppLines,
   buildVaultLookup,
 } from '../utils/salesWhatsAppChannels';
+import {
+  waMetaLine,
+  waMetricLine,
+  waReportHeader,
+  waShiftSectionTitle,
+  waSubheading,
+} from '../utils/salesWhatsAppFormat';
 
 const PAGE_SIZE = 50;
 
@@ -218,31 +225,33 @@ export function useDailySalesScreen() {
       if (wd) dateWithWeekday = `${dateRaw} ${wd}`;
     }
 
+    const shift = resolveSalesSummaryShift(s);
+    const shiftKind = shift === 'morning' ? 'morning' as const : shift === 'evening' ? 'evening' as const : 'fullDay' as const;
+
     const lines = [
-      `${t('salesWhatsAppReportTitle')}${name ? ` ` + name : ''}`,
-      `${t('salesWhatsAppDateLine')} ${dateWithWeekday}`,
-      `${t('salesWhatsAppSummaryRef')} ${s.summaryNumber ?? '—'}`,
-      `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel(resolveSalesSummaryShift(s), t)}`,
-      '',
+      waReportHeader(t('salesWhatsAppReportTitle'), name),
+      waMetaLine(t('salesWhatsAppDateLine'), dateWithWeekday),
+      waMetaLine(t('salesWhatsAppSummaryRef'), String(s.summaryNumber ?? '—')),
+      waShiftSectionTitle(shiftKind, `${t('salesWhatsAppShiftLine')} ${getSalesShiftLabel(shift, t)}`),
     ];
 
     const channelLines = buildSummaryChannelWhatsAppLines(s.channels, lang, vaultById);
     if (channelLines.length > 0) {
-      lines.push(t('salesWhatsAppChannelsHeader'));
+      lines.push(waSubheading(t('salesWhatsAppChannelsHeader')));
       lines.push(...channelLines);
     } else {
-      lines.push(t('salesWhatsAppNoChannels'));
+      lines.push(`  ${t('salesWhatsAppNoChannels')}`);
     }
 
     lines.push(
       '',
-      `${t('salesWhatsAppTotalLine')} ${fmt(total)} SR`,
-      `${t('salesWhatsAppCustomersLine')} ${cc}`,
-      `${t('salesWhatsAppAvgInvoiceLine')} ${fmt(avg)} SR`,
+      waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(total)} SR`),
+      waMetricLine(t('salesWhatsAppCustomersLine'), fmt(cc, 0)),
+      waMetricLine(t('salesWhatsAppAvgInvoiceLine'), `${fmt(avg)} SR`),
     );
 
     if (Number(s.cashOnHand) > 0) {
-      lines.push(`${t('salesWhatsAppCashLine')} ${fmt(s.cashOnHand)} SR`);
+      lines.push(waMetricLine(t('salesWhatsAppCashLine'), `${fmt(s.cashOnHand)} SR`));
     }
     if (s.notes?.trim()) {
       lines.push('', `${t('salesShareNotes')}: ${s.notes.trim()}`);
