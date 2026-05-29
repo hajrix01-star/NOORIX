@@ -441,6 +441,7 @@ ${rawText.slice(0, 12000)}`;
             error: 'insufficient_actionable_fields',
           });
           registerBestEffort({
+            parseError: true,
             supplier: mathValidatedExtraction.supplier,
             supplierMatch: null,
             vatNumber: mathValidatedExtraction.vatNumber,
@@ -456,7 +457,7 @@ ${rawText.slice(0, 12000)}`;
             pipelineFailureStage: 'json_validation',
             pipelineFailureReason: 'OCR extraction returned insufficient actionable fields',
             qualityFlags,
-            qualityStatus: 'needs_review',
+            qualityStatus: 'failed',
             errorDetail: 'OCR extraction returned insufficient actionable fields',
           }, 15 + summarizeExtractionSignal(zodValidation.data).completenessScore, model, version);
           this.logger.warn(`Gemini extraction not actionable (${model}) → trying next model`);
