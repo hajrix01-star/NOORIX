@@ -25,9 +25,10 @@ function newUid() {
 type OcrBatchUploadPanelProps = {
   disabled?: boolean;
   compact?: boolean;
+  companyId?: string;
 };
 
-export function OcrBatchUploadPanel({ disabled = false, compact = false }: OcrBatchUploadPanelProps) {
+export function OcrBatchUploadPanel({ disabled = false, compact = false, companyId = '' }: OcrBatchUploadPanelProps) {
   const { t, lang } = useTranslation();
   const isAr = lang === 'ar';
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -123,6 +124,11 @@ export function OcrBatchUploadPanel({ disabled = false, compact = false }: OcrBa
 
   const handleSubmit = useCallback(async () => {
     if (!groups.length || loading) return;
+    const cid = String(companyId || '').trim();
+    if (!cid) {
+      setError(t('ocrBatchNeedCompany'));
+      return;
+    }
     setLoading(true);
     setError(null);
     setSentCount(null);
@@ -134,7 +140,7 @@ export function OcrBatchUploadPanel({ disabled = false, compact = false }: OcrBa
           mimeType: img.mimeType,
         })),
       }));
-      const res = await submitOcrBatchSubmission(entries);
+      const res = await submitOcrBatchSubmission(entries, cid);
       if (res.success && res.data?.count != null) {
         setSentCount(Number(res.data.count));
         setGroups([]);
@@ -147,7 +153,7 @@ export function OcrBatchUploadPanel({ disabled = false, compact = false }: OcrBa
     } finally {
       setLoading(false);
     }
-  }, [groups, loading, t]);
+  }, [groups, loading, t, companyId]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();

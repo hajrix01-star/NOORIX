@@ -3,6 +3,7 @@
  * يُستخدم من طبقة API لجلب التوكن و companyId دون التلوث العالمي.
  */
 import type { AuthSessionUser } from '../types/api';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
 const TOKEN_KEY = 'noorix-auth-token';
 const REFRESH_TOKEN_KEY = 'noorix-refresh-token';
@@ -74,12 +75,33 @@ export function getRefreshToken(): string | null {
 
 /** تعيين الشركة النشطة */
 export function setActiveCompanyId(value: string | null | undefined) {
-  _companyId = value || '';
+  const id = String(value || '').trim();
+  _companyId = id;
+  try {
+    const storage = safeLocalStorage();
+    if (storage) {
+      if (id) storage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, id);
+      else storage.removeItem(STORAGE_KEYS.ACTIVE_COMPANY);
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 /** جلب الشركة النشطة */
 export function getActiveCompanyId() {
-  return _companyId;
+  if (_companyId) return _companyId;
+  try {
+    const storage = safeLocalStorage();
+    const saved = storage?.getItem(STORAGE_KEYS.ACTIVE_COMPANY);
+    if (saved) {
+      _companyId = saved;
+      return saved;
+    }
+  } catch {
+    /* ignore */
+  }
+  return '';
 }
 
 /** تعيين المستخدم — localStorage (للعرض فقط، أقل حساسية).

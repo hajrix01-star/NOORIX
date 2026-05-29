@@ -1,11 +1,16 @@
 ﻿/** OCR invoices — extraction and review API helpers */
 import { apiGet, apiPost, apiPut, apiDelete, apiPatch } from '../../../services/api';
+import { getActiveCompanyId } from '../../../services/authStore';
 import type {
   OcrInvoiceSaveBody,
   OcrItemMutationBody,
   OcrMutationResult,
   OcrSupplierMutationBody,
 } from '../../../types/api';
+
+function resolveOcrCompanyId(explicit?: string) {
+  return String(explicit || getActiveCompanyId() || '').trim();
+}
 
 // --- OCR extraction ---
 
@@ -15,15 +20,30 @@ export async function extractInvoice(imageBase64: any, mimeType: any = 'image/jp
 }
 
 /** Submit image for async OCR pipeline (does not wait for extraction) */
-export async function submitOcrSubmission(imageBase64: any, mimeType: any = 'image/jpeg') {
-  return apiPost('/api/v1/ocr/submissions', { imageBase64, mimeType }, { timeout: 120000 });
+export async function submitOcrSubmission(
+  imageBase64: any,
+  mimeType: any = 'image/jpeg',
+  companyId?: string,
+) {
+  const cid = resolveOcrCompanyId(companyId);
+  return apiPost(
+    '/api/v1/ocr/submissions',
+    { companyId: cid || undefined, imageBase64, mimeType },
+    { timeout: 120000 },
+  );
 }
 
 /** Submit multiple invoice images (separate or multi-page groups) */
 export async function submitOcrBatchSubmission(
   entries: Array<{ layout: 'single' | 'multi_page'; images: Array<{ imageBase64: string; mimeType?: string }> }>,
+  companyId?: string,
 ) {
-  return apiPost('/api/v1/ocr/submissions/batch', { entries }, { timeout: 180000 });
+  const cid = resolveOcrCompanyId(companyId);
+  return apiPost(
+    '/api/v1/ocr/submissions/batch',
+    { companyId: cid || undefined, entries },
+    { timeout: 180000 },
+  );
 }
 
 /** Failed OCR extractions for Smart Chat reminders */

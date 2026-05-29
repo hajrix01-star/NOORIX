@@ -34,6 +34,10 @@ export class SubmitOcrBatchEntryDto {
 }
 
 export class SubmitOcrBatchDto {
+  @IsOptional()
+  @IsString()
+  companyId?: string;
+
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(20)

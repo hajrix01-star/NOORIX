@@ -30,7 +30,7 @@ export default function OcrCashierSubmitScreen() {
           </p>
         </div>
 
-        <OcrBatchUploadPanel disabled={!activeCompanyId} />
+        <OcrBatchUploadPanel disabled={!activeCompanyId} companyId={activeCompanyId} />
       </div>
     </ScreenShell>
   );

@@ -115,6 +115,10 @@ export default {
   },
   ocrBatchReadFailed: { ar: 'تعذّر قراءة إحدى الصور', en: 'Could not read one of the images' },
   ocrBatchSubmitFailed: { ar: 'فشل إرسال الدفعة', en: 'Batch send failed' },
+  ocrBatchNeedCompany: {
+    ar: 'اختر الشركة من القائمة العلوية قبل الإرسال.',
+    en: 'Select a company from the top menu before sending.',
+  },
   ocrSupportedFormats: { ar: 'يدعم: JPG, PNG, WEBP', en: 'Supports: JPG, PNG, WEBP' },
   ocrExtract:          { ar: 'استخراج البيانات', en: 'Extract Data' },
   ocrExtracting:       { ar: 'جاري الاستخراج...', en: 'Extracting...' },

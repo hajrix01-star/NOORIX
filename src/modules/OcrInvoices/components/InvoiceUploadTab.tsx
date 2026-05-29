@@ -38,7 +38,7 @@ export default function InvoiceUploadTab(props: any) {
       />
 
       {!o.preview && isQueueSubmit && (
-        <OcrBatchUploadPanel disabled={!o.activeCompanyId} />
+        <OcrBatchUploadPanel disabled={!o.activeCompanyId} companyId={o.activeCompanyId} />
       )}
 
       {!o.preview && !isQueueSubmit && (

@@ -386,7 +386,7 @@ export function useInvoiceUploadTab({
     setError(null);
     setSubmittedId(null);
     try {
-      const res = await submitOcrSubmission(imageBase64, mimeType);
+      const res = await submitOcrSubmission(imageBase64, mimeType, activeCompanyId || undefined);
       if (res.success && res.data?.id) {
         setSubmittedId(String(res.data.id));
         setPreview((prev: any) => {

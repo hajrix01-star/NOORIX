@@ -10,4 +10,9 @@ export class SubmitOcrInvoiceDto {
   @IsString()
   @MaxLength(80)
   mimeType?: string;
+
+  /** يُقرأ في CompanyAccessGuard — مطلوب لطلبات POST من الجوال */
+  @IsOptional()
+  @IsString()
+  companyId?: string;
 }
