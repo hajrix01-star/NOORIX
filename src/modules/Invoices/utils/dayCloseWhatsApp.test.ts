@@ -23,8 +23,8 @@ describe('buildDayCloseWhatsAppText', () => {
             totalAmount: 6463,
             customerCount: 85,
             channels: [
-              { vaultNameAr: 'بنك', amount: 5607 },
-              { vaultNameAr: 'نقد', amount: 856 },
+              { vaultNameAr: 'بنك', vaultType: 'bank', amount: 5607 },
+              { vaultNameAr: 'نقد', vaultType: 'cash', amount: 856 },
             ],
           },
         ],
@@ -36,11 +36,13 @@ describe('buildDayCloseWhatsAppText', () => {
 
     expect(text).toContain('ARZ');
     expect(text).toContain('dayCloseWaSectionSales');
-    expect(text).toContain('│ بنك');
+    expect(text).toContain('▣ بنك');
+    expect(text).toContain('※');
+    expect(text).toContain('¤');
     expect(text).toContain('☀');
     expect(text).toContain('☾');
     expect(text).toContain('◆');
-    expect(text.indexOf('dayCloseWaCustomersLine')).toBeGreaterThan(text.indexOf('│ بنك'));
+    expect(text.indexOf('dayCloseWaCustomersLine')).toBeGreaterThan(text.indexOf('▣ بنك'));
     expect(text).toContain('dayCloseWaPurchases');
     expect(text).toContain('dayCloseWaExpenses');
     expect(text).toContain('dayCloseWaCashIn');

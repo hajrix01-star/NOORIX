@@ -8,6 +8,7 @@ import {
   type SalesSummaryChannelsLike,
 } from './salesWhatsAppChannels';
 import {
+  waCustomersLine,
   waMetaLine,
   waMetricLine,
   waReportHeader,
@@ -140,7 +141,7 @@ function shiftBlock(
   }
   lines.push(
     waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(agg.total)} SR`),
-    waMetricLine(t('salesWhatsAppCustomersLine'), fmt(agg.customers, 0)),
+    waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(agg.customers, 0)),
     '',
   );
   return lines;
@@ -186,7 +187,7 @@ export function buildDailyShiftWhatsAppText(p: BuildDailyWaParams): string {
   }
   lines.push(
     waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(report.grand.total)} SR`),
-    waMetricLine(t('salesWhatsAppCustomersLine'), fmt(report.grand.customers, 0)),
+    waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(report.grand.customers, 0)),
   );
   return lines.join('\n').trim();
 }

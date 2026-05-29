@@ -1,6 +1,8 @@
 import { fmt } from '../../../utils/format';
 import {
+  waCashLine,
   waChannelRow,
+  waCustomersLine,
   waMetaLine,
   waMetricLine,
   waReportHeader,
@@ -31,7 +33,7 @@ function countByKinds(byKind: any[], kinds: Set<string> | string): number {
 }
 
 function aggregateSalesChannels(salesSummaries: any[], lang: string): { lines: string[]; total: number } {
-  const buckets = new Map<string, number>();
+  const buckets = new Map<string, { label: string; vaultType: string | null; amount: number }>();
   let total = 0;
   for (const s of salesSummaries || []) {
     total += Number(s.totalAmount || 0);
@@ -39,12 +41,16 @@ function aggregateSalesChannels(salesSummaries: any[], lang: string): { lines: s
       const label = pickBilingual(lang, ch.vaultNameAr, ch.vaultNameEn);
       const amt = Number(ch.amount || 0);
       if (amt <= 0) continue;
-      buckets.set(label, (buckets.get(label) ?? 0) + amt);
+      const vaultType = ch.vaultType != null ? String(ch.vaultType) : null;
+      const key = `${vaultType || ''}:${label}`;
+      const prev = buckets.get(key);
+      if (prev) prev.amount += amt;
+      else buckets.set(key, { label, vaultType, amount: amt });
     }
   }
-  const lines = [...buckets.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, amt]) => waChannelRow(label, fmt(amt)));
+  const lines = [...buckets.values()]
+    .sort((a, b) => b.amount - a.amount)
+    .map((b) => waChannelRow(b.label, fmt(b.amount), b.vaultType));
   return { lines, total };
 }
 
@@ -104,7 +110,7 @@ export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): strin
       lines.push(waMetricLine(t('dayCloseWaFromInvoices'), `${fmt(inflowTotal)} SR (${saleLabel})`));
     }
     if (customers > 0) {
-      lines.push(waMetricLine(t('dayCloseWaCustomersLine'), fmt(customers, 0)));
+      lines.push(waCustomersLine(t('dayCloseWaCustomersLine'), fmt(customers, 0)));
     }
   } else {
     lines.push(`  ${t('dayCloseWaNoSales')}`);
@@ -131,9 +137,9 @@ export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): strin
     '',
     waShiftSectionTitle('grand', t('dayCloseWaSectionClosing')),
     waMetricLine(t('dayCloseWaNetDay'), `${netPrefix}${fmt(netDay)} SR`),
-    waMetricLine(t('dayCloseWaCashIn'), `${fmt(cashIn)} SR`),
-    waMetricLine(t('dayCloseWaCashOut'), `${fmt(cashOut)} SR`),
-    waMetricLine(t('dayCloseWaCashAvailable'), `${fmt(cashAvailable)} SR`),
+    waCashLine(t('dayCloseWaCashIn'), `${fmt(cashIn)} SR`),
+    waCashLine(t('dayCloseWaCashOut'), `${fmt(cashOut)} SR`),
+    waCashLine(t('dayCloseWaCashAvailable'), `${fmt(cashAvailable)} SR`),
     '',
     t('dayCloseWaFooter'),
   );

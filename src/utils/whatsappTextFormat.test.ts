@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   SALES_WA,
+  waCashLine,
   waChannelRow,
+  waCustomersLine,
   waReportHeader,
   waShiftSectionTitle,
+  waVaultTypeIcon,
 } from './whatsappTextFormat';
 
 describe('whatsappTextFormat', () => {
@@ -15,8 +18,16 @@ describe('whatsappTextFormat', () => {
     expect(section).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
   });
 
-  it('formats channel rows with branch character', () => {
-    expect(waChannelRow('بنك', '996')).toBe('  │ بنك · 996 SR');
+  it('formats channel rows by vault type', () => {
+    expect(waChannelRow('بنك', '996', 'bank')).toBe('  ▣ بنك · 996 SR');
+    expect(waChannelRow('نقد', '85', 'cash')).toBe('  ¤ نقد · 85 SR');
+    expect(waVaultTypeIcon(null, 'بنك الراجحي')).toBe(SALES_WA.bank);
+    expect(waVaultTypeIcon(null, 'نقدي')).toBe(SALES_WA.cash);
+  });
+
+  it('formats customers and cash lines', () => {
+    expect(waCustomersLine('عدد العملاء:', '85')).toBe('  ※ عدد العملاء: 85');
+    expect(waCashLine('دخل كاش:', '500 SR')).toBe('  ¤ دخل كاش: 500 SR');
   });
 
   it('wraps report title in rule lines', () => {

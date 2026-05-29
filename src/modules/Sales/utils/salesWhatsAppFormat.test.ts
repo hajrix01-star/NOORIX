@@ -17,7 +17,7 @@ describe('salesWhatsAppFormat', () => {
   });
 
   it('formats channel rows with branch character', () => {
-    expect(waChannelRow('بنك', '996')).toBe('  │ بنك · 996 SR');
+    expect(waChannelRow('بنك', '996', 'bank')).toBe('  ▣ بنك · 996 SR');
   });
 
   it('wraps report title in rule lines', () => {
@@ -55,7 +55,7 @@ describe('buildDailyShiftWhatsAppText formatting', () => {
     expect(text).toContain(SALES_WA.morning);
     expect(text).toContain(SALES_WA.evening);
     expect(text).toContain(SALES_WA.grand);
-    expect(text).toContain('│ نقد');
+    expect(text).toContain('¤ نقد');
     expect(text).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
   });
 });

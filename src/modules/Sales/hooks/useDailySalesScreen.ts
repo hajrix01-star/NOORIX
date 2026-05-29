@@ -28,6 +28,8 @@ import {
   buildVaultLookup,
 } from '../utils/salesWhatsAppChannels';
 import {
+  waCashLine,
+  waCustomersLine,
   waMetaLine,
   waMetricLine,
   waReportHeader,
@@ -246,12 +248,12 @@ export function useDailySalesScreen() {
     lines.push(
       '',
       waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(total)} SR`),
-      waMetricLine(t('salesWhatsAppCustomersLine'), fmt(cc, 0)),
+      waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(cc, 0)),
       waMetricLine(t('salesWhatsAppAvgInvoiceLine'), `${fmt(avg)} SR`),
     );
 
     if (Number(s.cashOnHand) > 0) {
-      lines.push(waMetricLine(t('salesWhatsAppCashLine'), `${fmt(s.cashOnHand)} SR`));
+      lines.push(waCashLine(t('salesWhatsAppCashLine'), `${fmt(s.cashOnHand)} SR`));
     }
     if (s.notes?.trim()) {
       lines.push('', `${t('salesShareNotes')}: ${s.notes.trim()}`);
