@@ -52,7 +52,8 @@ import { orderKeys } from '../../../services/queryKeys';
 export function useItemsManageTab(companyId: any) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [activeSubTab, setActiveSubTab] = useState('products');
+  const [activeSubTab, setActiveSubTab] = useState('sections');
+  const [catalogProductType, setCatalogProductType] = useState<'order' | 'sale'>('order');
   const { showToast } = useToast();
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -62,6 +63,7 @@ export function useItemsManageTab(companyId: any) {
     categoryId: '',
     sectionsText: '', // نص مفصول بفاصلة → يُحوَّل لمصفوفة عند الإرسال
     productType: 'order' as 'order' | 'sale',
+    simpleLastPrice: '',
     variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
   });
   const [newCategory, setNewCategory] = useState({ nameAr: '', nameEn: '' });
@@ -136,6 +138,11 @@ export function useItemsManageTab(companyId: any) {
     return result;
   }, [products, productSearchQuery, productFilterSection, productFilterCategory]);
 
+  const catalogFilteredProducts = useMemo(
+    () => (filteredProducts as any[]).filter((p: any) => (p.productType || 'order') === catalogProductType),
+    [filteredProducts, catalogProductType],
+  );
+
   const filteredCategories = useMemo(() => {
     const q = categorySearchQuery.trim().toLowerCase();
     if (!q) return categories;
@@ -146,43 +153,59 @@ export function useItemsManageTab(companyId: any) {
     });
   }, [categories, categorySearchQuery]);
 
-  function handleCreateProduct() {
+  function resetNewProductForm(productType: 'order' | 'sale' = catalogProductType) {
+    setNewProduct({
+      nameAr: '',
+      nameEn: '',
+      categoryId: '',
+      sectionsText: '',
+      productType,
+      simpleLastPrice: '',
+      variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
+    });
+  }
+
+  function buildProductPayload(form: any, productType: 'order' | 'sale') {
+    const validVariants = (form.variants || []).filter(
+      (v: any) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || parseFloat(v.lastPrice) > 0,
+    );
+    const sectionsArr = (form.sectionsText || '').split(/[,،]/).map((s: string) => s.trim()).filter(Boolean);
+    const base = {
+      nameAr: form.nameAr?.trim(),
+      nameEn: form.nameEn?.trim() || undefined,
+      categoryId: form.categoryId || undefined,
+      sections: sectionsArr.length > 0 ? sectionsArr : undefined,
+      productType,
+    };
+    if (validVariants.length > 0) {
+      return {
+        ...base,
+        variants: validVariants.map((v: any) => ({
+          size: v.size || '',
+          packaging: v.packaging || '',
+          unit: v.unit || 'piece',
+          lastPrice: v.lastPrice || '0',
+        })),
+      };
+    }
+    const price = String(form.simpleLastPrice ?? form.variants?.[0]?.lastPrice ?? '0').trim() || '0';
+    return { ...base, lastPrice: price };
+  }
+
+  function handleCreateProduct(onDone?: () => void) {
     if (!newProduct.nameAr?.trim()) {
       showToast(t('ordersProductNameRequired'), 'error');
       return;
     }
-    const validVariants = (newProduct.variants || []).filter(
-      (v: any) => v.size || v.packaging || v.unit || parseFloat(v.lastPrice) > 0,
-    );
-    const sectionsArr = (newProduct.sectionsText || '').split(/[,،]/).map((s) => s.trim()).filter(Boolean);
     const payload = {
       companyId,
-      nameAr: newProduct.nameAr.trim(),
-      nameEn: newProduct.nameEn?.trim() || undefined,
-      categoryId: newProduct.categoryId || undefined,
-      sections: sectionsArr.length > 0 ? sectionsArr : undefined,
-      productType: newProduct.productType || 'order',
-      variants:
-        validVariants.length > 0
-          ? validVariants.map((v: any) => ({
-              size: v.size || '',
-              packaging: v.packaging || '',
-              unit: v.unit || 'piece',
-              lastPrice: v.lastPrice || '0',
-            }))
-          : undefined,
+      ...buildProductPayload(newProduct, newProduct.productType || catalogProductType),
     };
     createProduct.mutate(payload, {
       onSuccess: () => {
         showToast(t('ordersProductAdded'), 'success');
-        setNewProduct({
-          nameAr: '',
-          nameEn: '',
-          categoryId: '',
-          sectionsText: '',
-          productType: newProduct.productType || 'order',
-          variants: [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
-        });
+        resetNewProductForm(newProduct.productType || catalogProductType);
+        onDone?.();
       },
       onError: (e: any) => {
         showToast((e as Error)?.message || (e as { error?: string })?.error || t('addFailed'), 'error');
@@ -190,27 +213,24 @@ export function useItemsManageTab(companyId: any) {
     });
   }
 
-  function handleUpdateProduct() {
+  function handleUpdateProduct(onDone?: () => void) {
     if (!editingProduct?.id) return;
-    const validVariants = (editingProduct.variants || []).filter(
-      (v: any) => v.size || v.packaging || v.unit || parseFloat(v.lastPrice) > 0,
-    );
     const sectionsArr = (editingProduct.sectionsText || '').split(/[,،]/).map((s: string) => s.trim()).filter(Boolean);
+    const built = buildProductPayload(editingProduct, editingProduct.productType || catalogProductType);
+    const validVariants = (editingProduct.variants || []).filter(
+      (v: any) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || parseFloat(v.lastPrice) > 0,
+    );
     const body = {
-      nameAr: editingProduct.nameAr,
-      nameEn: editingProduct.nameEn ?? null,
-      categoryId: editingProduct.categoryId || null,
+      nameAr: built.nameAr,
+      nameEn: built.nameEn ?? null,
+      categoryId: built.categoryId || null,
       sections: sectionsArr.length > 0 ? sectionsArr : null,
-      productType: editingProduct.productType || 'order',
-      variants:
-        validVariants.length > 0
-          ? validVariants.map((v: any) => ({
-              size: v.size || '',
-              packaging: v.packaging || '',
-              unit: v.unit || 'piece',
-              lastPrice: v.lastPrice || '0',
-            }))
-          : [],
+      productType: built.productType,
+      ...(validVariants.length > 0
+        ? {
+            variants: (built as any).variants ?? [],
+          }
+        : { variants: [], lastPrice: (built as any).lastPrice || '0' }),
     };
     updateProductMutation.mutate(
       { id: editingProduct.id, body },
@@ -218,12 +238,38 @@ export function useItemsManageTab(companyId: any) {
         onSuccess: () => {
           showToast(t('ordersProductUpdated'), 'success');
           setEditingProduct(null);
+          onDone?.();
         },
         onError: (e: any) => {
           showToast((e as Error)?.message || (e as { error?: string })?.error || t('updateFailed'), 'error');
         },
       },
     );
+  }
+
+  function openEditProduct(p: any) {
+    const variants = Array.isArray(p.variants) ? p.variants : [];
+    const hasVariants = variants.some(
+      (v: any) => v.size || v.packaging || parseFloat(v.lastPrice) > 0,
+    );
+    setEditingProduct({
+      id: p.id,
+      nameAr: p.nameAr,
+      nameEn: p.nameEn || '',
+      categoryId: p.categoryId || '',
+      sectionsText: Array.isArray(p.sections) ? (p.sections as string[]).join('، ') : '',
+      productType: p.productType || catalogProductType,
+      simpleLastPrice: hasVariants ? '' : String(p.lastPrice ?? ''),
+      variants: hasVariants
+        ? variants.map((v: any) => ({
+            size: v.size || '',
+            packaging: v.packaging || '',
+            unit: v.unit || 'piece',
+            lastPrice: v.lastPrice ? String(v.lastPrice) : '',
+          }))
+        : [{ size: '', packaging: '', unit: 'piece', lastPrice: '' }],
+      _advanced: hasVariants,
+    });
   }
 
   function handleCreateCategory() {
@@ -489,6 +535,7 @@ export function useItemsManageTab(companyId: any) {
   function handleDeleteSelectedProducts() {
     const ids = [...selectedProductIds];
     if (!ids.length) return;
+    if (!window.confirm(t('ordersProductDeactivateConfirm'))) return;
     deleteProductsMutation.mutate(ids, {
       onSuccess: (res: any) => {
         const n = res?.data?.deleted ?? ids.length;
@@ -550,6 +597,11 @@ export function useItemsManageTab(companyId: any) {
     companyId,
     activeSubTab,
     setActiveSubTab,
+    catalogProductType,
+    setCatalogProductType,
+    catalogFilteredProducts,
+    resetNewProductForm,
+    openEditProduct,
     addSizeModal,
     setAddSizeModal,
     addPackagingModal,

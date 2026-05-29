@@ -31,7 +31,9 @@ SmartTable = جداول بيانات (قراءة، فرز، بحث، كروت ج
 ### 2. جداول نماذج التحرير الثقيلة ✅ معفاة
 جداول فيها inputs في كل خلية — SmartTable لا يدعم inline editing بشكل مريح. تعمل جيداً كما هي ولا تستحق إعادة الكتابة.
 
-ملفات: `PurchasesBatchScreen`, `BatchEditPanel`, `PayrollRunFormModal`, `OrderFormModal`, `ItemsManageTab`, `TaxReportTab`, `BankStatementMappingModal`
+ملفات: `PurchasesBatchScreen`, `BatchEditPanel`, `PayrollRunFormModal`, `OrderFormModal`, `CatalogProductFormSheet` (جدول المتغيرات داخل Sheet فقط), `TaxReportTab`, `BankStatementMappingModal`
+
+**ملاحظة (2026-05):** قائمة كتالوج الأصناف في `CatalogProductTable` تستخدم `SmartTable` (قراءة فقط). التحرير في `AdaptiveSheet` — انظر `docs/modules/ORDERS_CATALOG_UX_PLAN_V2.md`.
 
 ### 3. هياكل خاصة ✅ معفاة — SmartTable لا يدعمها هندسياً
 - `ReportsScreen` — P&L هرمي بـ expand/collapse (SmartTable row-oriented فقط)

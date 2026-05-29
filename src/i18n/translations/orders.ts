@@ -375,4 +375,15 @@ export default {
   staffDigestSendSection:   { ar: 'إرسال {0} فقط', en: 'Send {0} only' },
   staffDigestSent:          { ar: 'تم الإرسال وتعليم الطلبات كمُرسلة', en: 'Sent and marked as sent' },
   sending:                  { ar: 'جارٍ الإرسال...', en: 'Sending...' },
+
+  // ── كتالوج الأصناف v2 ─────────────────────────────
+  ordersCatalogTab:           { ar: 'الكتالوج', en: 'Catalog' },
+  ordersCatalogHintOrder:     { ar: 'أصناف الطلبات: مشتريات وطلبات الأقسام.', en: 'Order catalog: purchases and section orders.' },
+  ordersCatalogHintSale:      { ar: 'أصناف المبيعات: تقارير مبيعات الموظفين فقط.', en: 'Sales catalog: staff sales reporting only.' },
+  ordersCatalogTools:         { ar: 'أدوات الكتالوج', en: 'Catalog tools' },
+  ordersProductDeactivateConfirm: { ar: 'إلغاء تفعيل الأصناف المحددة؟', en: 'Deactivate selected products?' },
+  ordersProductAdvanced:      { ar: 'أحجام وتعبئات متعددة', en: 'Multiple sizes / packaging' },
+  ordersProductSimplePrice:   { ar: 'آخر سعر', en: 'Last price' },
+  ordersEditProduct:          { ar: 'تعديل صنف', en: 'Edit product' },
+  ordersVariantsCount:        { ar: '{0} متغير', en: '{0} variant(s)' },
 };
