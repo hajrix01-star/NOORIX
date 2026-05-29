@@ -17,7 +17,7 @@ describe('salesWhatsAppChannels', () => {
       'ar',
       vaultById,
     );
-    expect(lines).toEqual(['  ¤ نقدي · 100 SR']);
+    expect(lines).toEqual(['  • نقدي: 100 SR']);
   });
 
   it('aggregates channels per shift for a day', () => {
@@ -43,7 +43,7 @@ describe('salesWhatsAppChannels', () => {
       'morning',
       'ar',
     );
-    expect(lines).toContain('  ¤ نقدي · 300 SR');
-    expect(lines).toContain('  ▣ بنك · 50 SR');
+    expect(lines).toContain('  • نقدي: 300 SR');
+    expect(lines).toContain('  • بنك: 50 SR');
   });
 });

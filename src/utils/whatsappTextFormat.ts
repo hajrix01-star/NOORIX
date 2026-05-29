@@ -1,28 +1,18 @@
 /**
- * تنسيق نص واتساب الموحّد (ملخص المبيعات + نهاية اليوم) — رموز BMP
+ * تنسيق نص واتساب الموحّد — نفس رموز ملخص المبيعات (إيموجي قياسية)
  */
 
 export const SALES_WA = {
   rule: '━━━━━━━━━━━━━━━━━━━━',
   ruleThin: '────────────────────',
-  morning: '☀',
-  evening: '☾',
-  fullDay: '◐',
-  grand: '◆',
-  branch: '│',
-  bullet: '▸',
-  /** نقد / خزينة نقدية */
-  cash: '¤',
-  /** بنك */
-  bank: '▣',
-  /** تطبيق / رقمي */
-  app: '◎',
-  /** عملاء */
-  people: '※',
+  morning: '🌅',
+  evening: '🌙',
+  fullDay: '☀️',
+  grand: '📌',
+  channelBullet: '•',
 } as const;
 
 export type SalesWaShiftKind = 'morning' | 'evening' | 'fullDay' | 'grand';
-export type VaultTypeHint = 'cash' | 'bank' | 'app' | string | null | undefined;
 
 const SHIFT_SYMBOL: Record<SalesWaShiftKind, string> = {
   morning: SALES_WA.morning,
@@ -35,21 +25,6 @@ export function waShiftSymbol(kind: SalesWaShiftKind): string {
   return SHIFT_SYMBOL[kind];
 }
 
-/** رمز القناة حسب نوع الخزينة أو اسمها */
-export function waVaultTypeIcon(vaultType?: VaultTypeHint, nameHint?: string): string {
-  const t = String(vaultType || '').toLowerCase();
-  if (t === 'cash') return SALES_WA.cash;
-  if (t === 'bank') return SALES_WA.bank;
-  if (t === 'app') return SALES_WA.app;
-
-  const n = `${nameHint || ''}`.toLowerCase();
-  if (/بنك|bank/.test(n)) return SALES_WA.bank;
-  if (/نقد|cash|صندوق|كاش/.test(n)) return SALES_WA.cash;
-  if (/تطبيق|app|رقم|digital/.test(n)) return SALES_WA.app;
-
-  return SALES_WA.branch;
-}
-
 export function waReportHeader(title: string, companyName?: string): string {
   const head = (companyName || '').trim()
     ? `${title} — ${companyName!.trim()}`
@@ -57,8 +32,9 @@ export function waReportHeader(title: string, companyName?: string): string {
   return `${SALES_WA.rule}\n${head}\n${SALES_WA.rule}`;
 }
 
+/** سطر تاريخ — التسمية تحتوي 📅 */
 export function waMetaLine(label: string, value: string): string {
-  return `${SALES_WA.bullet} ${label} ${value}`;
+  return `${label} ${value}`;
 }
 
 export function waShiftSectionTitle(kind: SalesWaShiftKind, shiftLabel: string): string {
@@ -66,29 +42,27 @@ export function waShiftSectionTitle(kind: SalesWaShiftKind, shiftLabel: string):
   return `${SALES_WA.ruleThin}\n${sym} ${shiftLabel}\n${SALES_WA.ruleThin}`;
 }
 
+/** عنوان فرعي — التسمية تحتوي 🏪 */
 export function waSubheading(label: string): string {
-  return `  ${SALES_WA.bullet} ${label}`;
+  return `  ${label}`;
 }
 
-export function waChannelRow(
-  vaultLabel: string,
-  amountText: string,
-  vaultType?: VaultTypeHint,
-): string {
-  const icon = waVaultTypeIcon(vaultType, vaultLabel);
-  return `  ${icon} ${vaultLabel} · ${amountText} SR`;
+/** سطر قناة: • بنك: 996 SR */
+export function waChannelRow(vaultLabel: string, amountText: string): string {
+  return `  ${SALES_WA.channelBullet} ${vaultLabel}: ${amountText} SR`;
 }
 
+/** سطر مالي — التسمية تحتوي الرمز (💰 👥 💵 …) */
 export function waMetricLine(label: string, value: string): string {
   return `  ${label} ${value}`;
 }
 
-/** عدد العملاء */
+/** @deprecated استخدم waMetricLine — التسمية تحتوي 👥 */
 export function waCustomersLine(label: string, countText: string): string {
-  return `  ${SALES_WA.people} ${label} ${countText}`;
+  return waMetricLine(label, countText);
 }
 
-/** سطر كاش (دخل / خرج / متوفر) */
+/** @deprecated استخدم waMetricLine — التسمية تحتوي 💵 */
 export function waCashLine(label: string, value: string): string {
-  return `  ${SALES_WA.cash} ${label} ${value}`;
+  return waMetricLine(label, value);
 }

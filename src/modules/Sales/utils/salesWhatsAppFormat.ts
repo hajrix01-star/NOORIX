@@ -10,7 +10,5 @@ export {
   waShiftSectionTitle,
   waShiftSymbol,
   waSubheading,
-  waVaultTypeIcon,
   type SalesWaShiftKind,
-  type VaultTypeHint,
 } from '../../../utils/whatsappTextFormat';

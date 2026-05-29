@@ -61,8 +61,7 @@ export function buildSummaryChannelWhatsAppLines(
     const amt = Number(ch.amount || 0);
     if (amt <= 0) continue;
     const label = vaultDisplayName(resolveChannelVaultRef(ch, vaultById), lang);
-    const vault = resolveChannelVaultRef(ch, vaultById);
-    lines.push(waChannelRow(label, fmt(amt), vault?.type));
+    lines.push(waChannelRow(label, fmt(amt)));
   }
   return lines;
 }
@@ -104,7 +103,7 @@ export function aggregateShiftChannelWhatsAppLines(
 
   return [...buckets.values()]
     .sort((a, b) => a.sortOrder - b.sortOrder || String(a.vault?.nameAr || '').localeCompare(String(b.vault?.nameAr || ''), 'ar'))
-    .map((b) => waChannelRow(vaultDisplayName(b.vault, lang), fmt(b.amount), b.vault?.type));
+    .map((b) => waChannelRow(vaultDisplayName(b.vault, lang), fmt(b.amount)));
 }
 
 /** تجميع قنوات البيع لكل ملخصات اليوم (قسم الإجمالي) */
@@ -141,7 +140,7 @@ export function aggregateDayChannelWhatsAppLines(
 
   return [...buckets.values()]
     .sort((a, b) => a.sortOrder - b.sortOrder || String(a.vault?.nameAr || '').localeCompare(String(b.vault?.nameAr || ''), 'ar'))
-    .map((b) => waChannelRow(vaultDisplayName(b.vault, lang), fmt(b.amount), b.vault?.type));
+    .map((b) => waChannelRow(vaultDisplayName(b.vault, lang), fmt(b.amount)));
 }
 
 /** قنوات من نموذج الإدخال (بعد الحفظ عندما لا تُرجع API القنوات) */

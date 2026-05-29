@@ -50,7 +50,7 @@ function aggregateSalesChannels(salesSummaries: any[], lang: string): { lines: s
   }
   const lines = [...buckets.values()]
     .sort((a, b) => b.amount - a.amount)
-    .map((b) => waChannelRow(b.label, fmt(b.amount), b.vaultType));
+    .map((b) => waChannelRow(b.label, fmt(b.amount)));
   return { lines, total };
 }
 
