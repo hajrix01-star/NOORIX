@@ -15,14 +15,238 @@ import {
   buildGeminiUrl,
   getGeminiModelsToTry,
   OCR_EXTRACTION_PROMPT,
+  OCR_EXTRACTION_RESPONSE_SCHEMA,
+  supportsStructuredGeminiResponse,
   type GeminiExtractedInvoice,
 } from './ocr-gemini-extract.constants';
+
+type GeminiRaw = {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> };
+    finishReason?: string;
+  }>;
+  error?: { message?: string; code?: number };
+  promptFeedback?: { blockReason?: string };
+};
 
 @Injectable()
 export class OcrExtractionService {
   private readonly logger = new Logger(OcrExtractionService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  private buildExtractionRequestBody(
+    mimeType: string,
+    imageBase64: string,
+    structuredOutput: boolean,
+  ): Record<string, unknown> {
+    const body: Record<string, unknown> = {
+      contents: [{
+        parts: [
+          { text: OCR_EXTRACTION_PROMPT },
+          { inlineData: { mimeType, data: imageBase64 } },
+        ],
+      }],
+      generationConfig: {
+        temperature: 0,
+        topP: 0.95,
+        maxOutputTokens: 8192,
+      },
+      // تعطيل كل فلاتر السلامة — الفواتير لا تحتوي محتوى ضار
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      ],
+    };
+    if (structuredOutput) {
+      (body.generationConfig as Record<string, unknown>).responseMimeType = 'application/json';
+      (body.generationConfig as Record<string, unknown>).responseSchema = OCR_EXTRACTION_RESPONSE_SCHEMA;
+    }
+    return body;
+  }
+
+  private buildJsonRepairRequestBody(rawText: string, structuredOutput: boolean): Record<string, unknown> {
+    const repairPrompt = `You are a strict JSON repair assistant for OCR extraction.
+Convert the noisy response below into valid JSON that matches the target invoice schema exactly.
+Never add markdown. Never invent values. Use null when value is not present in the source text.
+
+NOISY_SOURCE_TEXT:
+${rawText.slice(0, 12000)}`;
+
+    const body: Record<string, unknown> = {
+      contents: [{ parts: [{ text: repairPrompt }] }],
+      generationConfig: { temperature: 0, topP: 0.9, maxOutputTokens: 4096 },
+    };
+    if (structuredOutput) {
+      (body.generationConfig as Record<string, unknown>).responseMimeType = 'application/json';
+      (body.generationConfig as Record<string, unknown>).responseSchema = OCR_EXTRACTION_RESPONSE_SCHEMA;
+    }
+    return body;
+  }
+
+  private extractTextFromGeminiResponse(rawJson: GeminiRaw | null): string {
+    const candidate = rawJson?.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
+    return parts.map((p) => p.text || '').join('\n').trim();
+  }
+
+  private parseNumber(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value !== 'string') return undefined;
+    const cleaned = value.trim().replace(/,/g, '');
+    if (!cleaned) return undefined;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : undefined;
+  }
+
+  private parseConfidence(value: unknown): number | undefined {
+    const n = this.parseNumber(value);
+    if (n == null) return undefined;
+    if (n < 0) return 0;
+    if (n > 1) return 1;
+    return n;
+  }
+
+  private normalizeDigits(value: unknown): string | undefined {
+    if (value == null) return undefined;
+    const raw = String(value).trim();
+    if (!raw) return undefined;
+    const western = raw
+      .replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+      .replace(/[۰۱۲۳۴۵۶۷۸۹]/g, (d) => String(d.charCodeAt(0) - 0x06F0))
+      .replace(/[^0-9]/g, '');
+    return western || undefined;
+  }
+
+  private normalizeYmd(value: unknown): string | undefined {
+    if (value == null) return undefined;
+    const raw = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    return undefined;
+  }
+
+  private normalizeExtractedInvoice(extracted: GeminiExtractedInvoice): GeminiExtractedInvoice {
+    const supplierName = extracted?.supplier?.name?.trim() || undefined;
+    const supplierConfidence = this.parseConfidence(extracted?.supplier?.confidence);
+    const vatValue = this.normalizeDigits(extracted?.vatNumber?.value);
+    const vatConfidence = this.parseConfidence(extracted?.vatNumber?.confidence);
+    const invoiceNumber = extracted?.invoiceNumber?.value?.toString().trim() || undefined;
+    const invoiceNumberConfidence = this.parseConfidence(extracted?.invoiceNumber?.confidence);
+    const invoiceDate = this.normalizeYmd(extracted?.invoiceDate?.value);
+    const invoiceDateConfidence = this.parseConfidence(extracted?.invoiceDate?.confidence);
+    const subtotalValue = this.parseNumber(extracted?.subtotalAmount?.value);
+    const subtotalConfidence = this.parseConfidence(extracted?.subtotalAmount?.confidence);
+    const totalValue = this.parseNumber(extracted?.totalAmount?.value);
+    const totalConfidence = this.parseConfidence(extracted?.totalAmount?.confidence);
+    const vatAmountValue = this.parseNumber(extracted?.vatAmount?.value);
+    const vatAmountConfidence = this.parseConfidence(extracted?.vatAmount?.confidence);
+
+    const items = Array.isArray(extracted?.items)
+      ? extracted.items.map((item) => {
+        const name = item?.name?.toString().trim() || undefined;
+        const quantity = this.parseNumber(item?.quantity);
+        const unitPrice = this.parseNumber(item?.unitPrice);
+        const totalPrice = this.parseNumber(item?.totalPrice);
+        const confidence = this.parseConfidence(item?.confidence);
+        return {
+          ...(name ? { name } : {}),
+          ...(quantity != null ? { quantity } : {}),
+          ...(unitPrice != null ? { unitPrice } : {}),
+          ...(totalPrice != null ? { totalPrice } : {}),
+          ...(confidence != null ? { confidence } : {}),
+        };
+      }).filter((item) => Object.keys(item).length > 0)
+      : [];
+
+    return {
+      ...(supplierName || supplierConfidence != null
+        ? {
+          supplier: {
+            ...(supplierName ? { name: supplierName } : {}),
+            ...(supplierConfidence != null ? { confidence: supplierConfidence } : {}),
+          },
+        }
+        : {}),
+      ...(vatValue || vatConfidence != null
+        ? {
+          vatNumber: {
+            ...(vatValue ? { value: vatValue } : {}),
+            ...(vatConfidence != null ? { confidence: vatConfidence } : {}),
+          },
+        }
+        : {}),
+      ...(invoiceNumber || invoiceNumberConfidence != null
+        ? {
+          invoiceNumber: {
+            ...(invoiceNumber ? { value: invoiceNumber } : {}),
+            ...(invoiceNumberConfidence != null ? { confidence: invoiceNumberConfidence } : {}),
+          },
+        }
+        : {}),
+      ...(invoiceDate || invoiceDateConfidence != null
+        ? {
+          invoiceDate: {
+            ...(invoiceDate ? { value: invoiceDate } : {}),
+            ...(invoiceDateConfidence != null ? { confidence: invoiceDateConfidence } : {}),
+          },
+        }
+        : {}),
+      ...(subtotalValue != null || subtotalConfidence != null
+        ? {
+          subtotalAmount: {
+            ...(subtotalValue != null ? { value: subtotalValue } : {}),
+            ...(subtotalConfidence != null ? { confidence: subtotalConfidence } : {}),
+          },
+        }
+        : {}),
+      ...(totalValue != null || totalConfidence != null
+        ? {
+          totalAmount: {
+            ...(totalValue != null ? { value: totalValue } : {}),
+            ...(totalConfidence != null ? { confidence: totalConfidence } : {}),
+          },
+        }
+        : {}),
+      ...(vatAmountValue != null || vatAmountConfidence != null
+        ? {
+          vatAmount: {
+            ...(vatAmountValue != null ? { value: vatAmountValue } : {}),
+            ...(vatAmountConfidence != null ? { confidence: vatAmountConfidence } : {}),
+          },
+        }
+        : {}),
+      items,
+    };
+  }
+
+  private async tryRecoverJsonFromRawText(
+    apiKey: string,
+    model: string,
+    version: string,
+    rawText: string,
+  ): Promise<GeminiExtractedInvoice | null> {
+    if (!rawText.trim()) return null;
+    try {
+      const url = `${buildGeminiUrl(model, version)}?key=${apiKey}`;
+      const structuredOutput = supportsStructuredGeminiResponse(model);
+      const body = this.buildJsonRepairRequestBody(rawText, structuredOutput);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) return null;
+      const rawJson = await res.json().catch(() => null) as GeminiRaw | null;
+      const repairedText = this.extractTextFromGeminiResponse(rawJson);
+      if (!repairedText) return null;
+      const parsed = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(repairedText);
+      return parsed ? this.normalizeExtractedInvoice(parsed) : null;
+    } catch {
+      return null;
+    }
+  }
 
   async extractInvoice(tenantId: string, companyId: string, dto: ExtractInvoiceDto) {
     const apiKey = getGeminiApiKey();
@@ -31,34 +255,11 @@ export class OcrExtractionService {
     const mimeType = dto.mimeType || 'image/jpeg';
     const modelsToTry = getGeminiModelsToTry();
 
-    const requestBody = {
-      contents: [{
-        parts: [
-          { text: OCR_EXTRACTION_PROMPT },
-          { inlineData: { mimeType, data: dto.imageBase64 } },
-        ],
-      }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 8192 },
-      // تعطيل كل فلاتر السلامة — الفواتير لا تحتوي محتوى ضار
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT',         threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH',        threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',  threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT',  threshold: 'BLOCK_NONE' },
-      ],
-    };
-
-    type GeminiRaw = {
-      candidates?: Array<{
-        content?: { parts?: Array<{ text?: string }> };
-        finishReason?: string;
-      }>;
-      error?: { message?: string; code?: number };
-    };
-
     // ── يُجرّب النماذج بالترتيب حتى ينجح أحدها ─────────────────────────
     for (const { model, version } of modelsToTry) {
       const url = `${buildGeminiUrl(model, version)}?key=${apiKey}`;
+      const structuredOutput = supportsStructuredGeminiResponse(model);
+      const requestBody = this.buildExtractionRequestBody(mimeType, dto.imageBase64, structuredOutput);
 
       let rawJson: GeminiRaw | null = null;
       try {
@@ -90,32 +291,31 @@ export class OcrExtractionService {
         const candidate = rawJson?.candidates?.[0];
 
         // فحص حظر المحتوى (safety / prompt feedback)
-        const blockReason =
-          (rawJson as { promptFeedback?: { blockReason?: string } })?.promptFeedback?.blockReason
-          || candidate?.finishReason;
+        const blockReason = rawJson?.promptFeedback?.blockReason || candidate?.finishReason;
 
         if (blockReason === 'SAFETY' || blockReason === 'RECITATION' || blockReason === 'OTHER') {
           this.logger.warn(`Gemini blocked (${model}): ${blockReason} → trying next model`);
           continue;
         }
 
-        const parts = candidate?.content?.parts || [];
-        const text = parts.map((p) => p.text || '').join('\n').trim();
-
-        this.logger.log(`Gemini OK (${model}) | finish=${candidate?.finishReason} | parts=${parts.length} | textLen=${text.length} | text[500]=${text.substring(0, 500)}`);
+        const text = this.extractTextFromGeminiResponse(rawJson);
+        this.logger.log(`Gemini OK (${model}) | finish=${candidate?.finishReason} | textLen=${text.length}`);
 
         if (!text) {
           this.logger.warn(`Gemini returned empty text (${model}) → trying next model`);
           continue;
         }
 
-        const extracted = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(text);
+        let extracted = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(text);
         if (!extracted) {
-          this.logger.error(`Gemini parse failed (${model}). textLen=${text.length} text(1000)=${text.substring(0, 1000)}`);
+          extracted = await this.tryRecoverJsonFromRawText(apiKey, model, version, text);
+        }
+        if (!extracted) {
+          this.logger.error(`Gemini parse failed (${model}). textLen=${text.length}`);
           return {
             parseError: true,
             usedModel: model,
-            rawText: text.substring(0, 800),
+            rawText: text.substring(0, 400),
             errorDetail: 'JSON parse failed — Gemini returned text but no valid JSON found',
             supplier: null, supplierMatch: null,
             vatNumber: null, invoiceNumber: null,
@@ -124,22 +324,23 @@ export class OcrExtractionService {
           };
         }
 
-        this.logger.log(`Gemini extracted OK (${model}): supplier=${extracted.supplier?.name} items=${extracted.items?.length}`);
+        const normalizedExtraction = this.normalizeExtractedInvoice(extracted);
+        this.logger.log(`Gemini extracted OK (${model}): supplier=${normalizedExtraction.supplier?.name} items=${normalizedExtraction.items?.length}`);
 
         // enrichExtraction محمي بـ try/catch — لا يُفسد النتيجة
         try {
-          return await this.enrichExtraction(tenantId, companyId, extracted);
+          return await this.enrichExtraction(tenantId, companyId, normalizedExtraction);
         } catch (enrichErr) {
           this.logger.error(`enrichExtraction failed: ${(enrichErr as Error).message}. Returning raw extraction.`);
           return {
-            supplier: extracted.supplier,
+            supplier: normalizedExtraction.supplier,
             supplierMatch: null,
-            vatNumber: extracted.vatNumber,
-            invoiceNumber: extracted.invoiceNumber,
-            invoiceDate: extracted.invoiceDate,
-            totalAmount: extracted.totalAmount,
-            vatAmount: extracted.vatAmount,
-            items: (extracted.items || []).map((item) => ({ ...item, itemMatch: null })),
+            vatNumber: normalizedExtraction.vatNumber,
+            invoiceNumber: normalizedExtraction.invoiceNumber,
+            invoiceDate: normalizedExtraction.invoiceDate,
+            totalAmount: normalizedExtraction.totalAmount,
+            vatAmount: normalizedExtraction.vatAmount,
+            items: (normalizedExtraction.items || []).map((item) => ({ ...item, itemMatch: null })),
             enrichError: (enrichErr as Error).message,
           };
         }

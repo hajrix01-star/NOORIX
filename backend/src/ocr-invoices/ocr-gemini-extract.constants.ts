@@ -1,12 +1,11 @@
 import { getGeminiModel } from '../config/gemini.config';
 
 export const GEMINI_FALLBACK_CHAIN = [
-  { model: 'gemini-2.5-flash',     version: 'v1beta' as const },
-  { model: 'gemini-2.0-flash-exp', version: 'v1beta' as const },
-  { model: 'gemini-1.5-flash',     version: 'v1'     as const },
-  { model: 'gemini-1.5-pro',       version: 'v1'     as const },
-  { model: 'gemini-pro-vision',    version: 'v1beta' as const },
-  { model: 'gemini-2.0-flash',     version: 'v1beta' as const },
+  { model: 'gemini-2.5-flash', version: 'v1beta' as const },
+  { model: 'gemini-2.5-pro', version: 'v1beta' as const },
+  { model: 'gemini-2.0-flash', version: 'v1beta' as const },
+  { model: 'gemini-1.5-pro', version: 'v1' as const },
+  { model: 'gemini-1.5-flash', version: 'v1' as const },
 ];
 
 export function buildGeminiUrl(model: string, version: string): string {
@@ -44,7 +43,13 @@ export interface GeminiExtractedInvoice {
   items?: GeminiExtractedItem[];
 }
 
-export const OCR_EXTRACTION_PROMPT = `You are an expert invoice data extraction system specializing in Arabic/Saudi tax invoices. Extract ALL data and return ONLY a raw JSON object.
+export function supportsStructuredGeminiResponse(model: string): boolean {
+  return /^gemini-(1\.5|2\.0|2\.5)/i.test(model);
+}
+
+export const OCR_EXTRACTION_PROMPT = `You are a production-grade OCR extraction engine for Saudi supplier invoices.
+Your ONLY task is to extract reliable invoice data in strict JSON that matches the provided schema exactly.
+Do not explain. Do not add markdown. Do not add extra keys.
 
 OUTPUT FORMAT (no markdown, no explanation — start with { end with }):
 {"supplier":{"name":"seller name","confidence":0.95},"vatNumber":{"value":"tax registration number","confidence":0.9},"invoiceNumber":{"value":"invoice number","confidence":0.95},"invoiceDate":{"value":"YYYY-MM-DD","confidence":0.95},"subtotalAmount":{"value":515.85,"confidence":0.98},"vatAmount":{"value":77.30,"confidence":0.98},"totalAmount":{"value":593.22,"confidence":0.98},"items":[{"name":"item name as printed","quantity":5,"unitPrice":60.00,"totalPrice":300.00,"confidence":0.90}]}
@@ -67,10 +72,83 @@ MATH RULES FOR LINE ITEMS:
 GENERAL RULES:
 - Return ONLY valid JSON starting with {
 - confidence 0.0–1.0 per field
-- null for unreadable fields
+- use null only when value is truly unreadable
 - supplier.name: use the official seller / company name in the invoice header (الاسم التجاري أو اسم المنشأة كما في الترويسة)، not branch nicknames if both appear.
 - vatNumber: the seller VAT / tax registration number from the header (digits only in value).
 - Keep item names exactly as printed (Arabic, English, or mixed)
 - Date: YYYY-MM-DD format
 - Numbers only (no currency symbols, no commas)
-- Extract ALL line items — do not skip any`;
+- Extract ALL line items — do not skip any
+- Common OCR confusion handling:
+  - O↔0, I↔1, S↔5 in VAT/invoice numbers
+  - Arabic-Indic digits to western digits
+  - If uncertain between two values, choose the one that keeps invoice math consistent
+- Never invent lines, supplier names, or numbers that are not visible`;
+
+export const OCR_EXTRACTION_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    supplier: {
+      type: 'OBJECT',
+      properties: {
+        name: { type: 'STRING' },
+        confidence: { type: 'NUMBER' },
+      },
+    },
+    vatNumber: {
+      type: 'OBJECT',
+      properties: {
+        value: { type: 'STRING' },
+        confidence: { type: 'NUMBER' },
+      },
+    },
+    invoiceNumber: {
+      type: 'OBJECT',
+      properties: {
+        value: { type: 'STRING' },
+        confidence: { type: 'NUMBER' },
+      },
+    },
+    invoiceDate: {
+      type: 'OBJECT',
+      properties: {
+        value: { type: 'STRING' },
+        confidence: { type: 'NUMBER' },
+      },
+    },
+    subtotalAmount: {
+      type: 'OBJECT',
+      properties: {
+        value: { type: 'NUMBER' },
+        confidence: { type: 'NUMBER' },
+      },
+    },
+    totalAmount: {
+      type: 'OBJECT',
+      properties: {
+        value: { type: 'NUMBER' },
+        confidence: { type: 'NUMBER' },
+      },
+    },
+    vatAmount: {
+      type: 'OBJECT',
+      properties: {
+        value: { type: 'NUMBER' },
+        confidence: { type: 'NUMBER' },
+      },
+    },
+    items: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          name: { type: 'STRING' },
+          quantity: { type: 'NUMBER' },
+          unitPrice: { type: 'NUMBER' },
+          totalPrice: { type: 'NUMBER' },
+          confidence: { type: 'NUMBER' },
+        },
+      },
+    },
+  },
+} as const;
