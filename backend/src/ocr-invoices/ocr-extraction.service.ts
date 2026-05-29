@@ -22,7 +22,9 @@ import {
   applyMathValidation,
   buildQualityFlags,
   hasMeaningfulExtractionPayload,
+  isActionableExtractionPayload,
   normalizeExtractedInvoicePayload,
+  summarizeExtractionSignal,
   tryLocalJsonRepair,
   type GeminiExtractionWithMath,
 } from './ocr-extraction-pipeline.util';
@@ -69,7 +71,9 @@ export class OcrExtractionService {
       }],
       generationConfig: {
         temperature: 0,
-        topP: 0.95,
+        topP: 0.1,
+        topK: 1,
+        candidateCount: 1,
         maxOutputTokens: 8192,
       },
       // تعطيل كل فلاتر السلامة — الفواتير لا تحتوي محتوى ضار
@@ -97,7 +101,7 @@ ${rawText.slice(0, 12000)}`;
 
     const body: Record<string, unknown> = {
       contents: [{ parts: [{ text: repairPrompt }] }],
-      generationConfig: { temperature: 0, topP: 0.9, maxOutputTokens: 4096 },
+      generationConfig: { temperature: 0, topP: 0.1, topK: 1, candidateCount: 1, maxOutputTokens: 4096 },
     };
     if (structuredOutput) {
       (body.generationConfig as Record<string, unknown>).responseMimeType = 'application/json';
@@ -148,6 +152,22 @@ ${rawText.slice(0, 12000)}`;
     const extractionStartedAt = Date.now();
     const modelAttempts: OcrModelAttemptTelemetry[] = [];
     const primaryModel = modelsToTry[0]?.model;
+    let bestEffortPayload: Record<string, unknown> | null = null;
+    let bestEffortScore = -1;
+    let bestEffortModel: string | undefined;
+    let bestEffortVersion: string | undefined;
+    const registerBestEffort = (
+      payload: Record<string, unknown>,
+      score: number,
+      model: string,
+      version: string,
+    ) => {
+      if (score <= bestEffortScore) return;
+      bestEffortPayload = payload;
+      bestEffortScore = score;
+      bestEffortModel = model;
+      bestEffortVersion = version;
+    };
 
     // ── يُجرّب النماذج بالترتيب حتى ينجح أحدها ─────────────────────────
     for (const { model, version } of modelsToTry) {
@@ -183,6 +203,7 @@ ${rawText.slice(0, 12000)}`;
             errMsg.toLowerCase().includes('not found') ||
             errMsg.toLowerCase().includes('not supported') ||
             errMsg.toLowerCase().includes('is not found for api version');
+          const isRetryableHttp = res.status === 408 || res.status === 429 || res.status >= 500;
 
           if (isUnavailable) {
             pushAttempt({
@@ -192,6 +213,15 @@ ${rawText.slice(0, 12000)}`;
             });
             this.logger.warn(`Gemini model "${model}" unavailable → trying next in chain`);
             continue; // جرّب النموذج التالي
+          }
+          if (isRetryableHttp) {
+            pushAttempt({
+              outcome: 'http_error',
+              httpStatus: res.status,
+              error: trimErrorText(errMsg),
+            });
+            this.logger.warn(`Gemini transient HTTP error ${res.status} (${model}) → trying next model`);
+            continue;
           }
 
           pushAttempt({
@@ -266,13 +296,8 @@ ${rawText.slice(0, 12000)}`;
             invoiceDate: null, totalAmount: null,
             vatAmount: null, items: [],
           };
-          return attachModelTelemetry(payload, {
-            attempts: modelAttempts,
-            usedModel: model,
-            usedModelVersion: version,
-            extractionStartedAt,
-            primaryModel,
-          });
+          registerBestEffort(payload, 4, model, version);
+          continue;
         }
 
         const normalizedExtraction = normalizeExtractedInvoicePayload(extracted);
@@ -307,13 +332,8 @@ ${rawText.slice(0, 12000)}`;
             vatAmount: normalizedExtraction.vatAmount ?? null,
             items: [],
           };
-          return attachModelTelemetry(payload, {
-            attempts: modelAttempts,
-            usedModel: model,
-            usedModelVersion: version,
-            extractionStartedAt,
-            primaryModel,
-          });
+          registerBestEffort(payload, 10 + summarizeExtractionSignal(normalizedExtraction).completenessScore, model, version);
+          continue;
         }
 
         if (!hasMeaningfulExtractionPayload(zodValidation.data)) {
@@ -325,6 +345,39 @@ ${rawText.slice(0, 12000)}`;
             error: 'no_signal_extracted',
           });
           this.logger.warn(`Gemini returned low-signal extraction (${model}) → trying next model`);
+          continue;
+        }
+
+        if (!isActionableExtractionPayload(zodValidation.data)) {
+          const mathValidatedExtraction = applyMathValidation(zodValidation.data);
+          const qualityFlags = Array.from(new Set([
+            ...buildQualityFlags(mathValidatedExtraction),
+            'insufficient_actionable_fields',
+          ]));
+          pushAttempt({
+            outcome: 'empty',
+            parseStage,
+            httpStatus: res.status,
+            finishReason: candidate?.finishReason,
+            error: 'insufficient_actionable_fields',
+          });
+          registerBestEffort({
+            supplier: mathValidatedExtraction.supplier,
+            supplierMatch: null,
+            vatNumber: mathValidatedExtraction.vatNumber,
+            invoiceNumber: mathValidatedExtraction.invoiceNumber,
+            invoiceDate: mathValidatedExtraction.invoiceDate,
+            subtotalAmount: mathValidatedExtraction.subtotalAmount,
+            totalAmount: mathValidatedExtraction.totalAmount,
+            vatAmount: mathValidatedExtraction.vatAmount,
+            items: (mathValidatedExtraction.items || []).map((item) => ({ ...item, itemMatch: null })),
+            invoiceTotalWarning: mathValidatedExtraction.invoiceTotalWarning,
+            vatAdjusted: mathValidatedExtraction.vatAdjusted,
+            qualityFlags,
+            qualityStatus: 'needs_review',
+            errorDetail: 'OCR extraction returned insufficient actionable fields',
+          }, 15 + summarizeExtractionSignal(zodValidation.data).completenessScore, model, version);
+          this.logger.warn(`Gemini extraction not actionable (${model}) → trying next model`);
           continue;
         }
 
@@ -387,8 +440,18 @@ ${rawText.slice(0, 12000)}`;
           error: trimErrorText(err),
         });
         this.logger.error(`Gemini network/runtime error (${model}): ${(err as Error).message} ${(err as Error).stack}`);
-        throw new BadRequestException(`خطأ في الاتصال بـ Gemini: ${(err as Error).message}`);
+        continue;
       }
+    }
+
+    if (bestEffortPayload) {
+      return attachModelTelemetry(bestEffortPayload, {
+        attempts: modelAttempts,
+        usedModel: bestEffortModel,
+        usedModelVersion: bestEffortVersion,
+        extractionStartedAt,
+        primaryModel,
+      });
     }
 
     const lastOutcomes = modelAttempts

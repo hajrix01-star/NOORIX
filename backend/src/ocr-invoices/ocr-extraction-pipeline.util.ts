@@ -250,19 +250,59 @@ export function buildQualityFlags(
 }
 
 export function hasMeaningfulExtractionPayload(extracted: GeminiExtractedInvoice): boolean {
-  const hasHeaderSignal = !!(
-    extracted.supplier?.name ||
-    extracted.vatNumber?.value ||
-    extracted.invoiceNumber?.value ||
-    extracted.invoiceDate?.value ||
-    extracted.subtotalAmount?.value != null ||
-    extracted.totalAmount?.value != null ||
-    extracted.vatAmount?.value != null
-  );
-  const hasItemsSignal = (extracted.items || []).some((item) => {
+  return summarizeExtractionSignal(extracted).hasMeaningful;
+}
+
+export type OcrExtractionSignalSummary = {
+  hasMeaningful: boolean;
+  actionable: boolean;
+  headerSignalCount: number;
+  itemSignalCount: number;
+  completenessScore: number;
+};
+
+export function summarizeExtractionSignal(extracted: GeminiExtractedInvoice): OcrExtractionSignalSummary {
+  const hasSupplier = !!extracted.supplier?.name;
+  const hasVatNumber = !!extracted.vatNumber?.value;
+  const hasInvoiceNumber = !!extracted.invoiceNumber?.value;
+  const hasInvoiceDate = !!extracted.invoiceDate?.value;
+  const hasSubtotal = extracted.subtotalAmount?.value != null;
+  const hasTotal = extracted.totalAmount?.value != null;
+  const hasVatAmount = extracted.vatAmount?.value != null;
+
+  const hasFinancialSignal = hasSubtotal || hasTotal || hasVatAmount;
+  const hasReferenceSignal = hasVatNumber || hasInvoiceNumber || hasInvoiceDate;
+
+  const itemSignalCount = (extracted.items || []).reduce((count, item) => {
     const hasName = !!item.name;
     const hasNumbers = item.quantity != null || item.unitPrice != null || item.totalPrice != null;
-    return hasName || hasNumbers;
-  });
-  return hasHeaderSignal || hasItemsSignal;
+    return count + (hasName || hasNumbers ? 1 : 0);
+  }, 0);
+  const hasItemsSignal = itemSignalCount > 0;
+
+  const headerSignalCount = [
+    hasSupplier,
+    hasVatNumber,
+    hasInvoiceNumber,
+    hasInvoiceDate,
+    hasSubtotal,
+    hasTotal,
+    hasVatAmount,
+  ].filter(Boolean).length;
+
+  const hasMeaningful = headerSignalCount > 0 || hasItemsSignal;
+  const actionable = hasItemsSignal || hasFinancialSignal || (hasSupplier && hasReferenceSignal);
+  const completenessScore = headerSignalCount + Math.min(itemSignalCount, 3) * 2;
+
+  return {
+    hasMeaningful,
+    actionable,
+    headerSignalCount,
+    itemSignalCount,
+    completenessScore,
+  };
+}
+
+export function isActionableExtractionPayload(extracted: GeminiExtractedInvoice): boolean {
+  return summarizeExtractionSignal(extracted).actionable;
 }
