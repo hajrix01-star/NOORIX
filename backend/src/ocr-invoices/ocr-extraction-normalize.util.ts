@@ -7,6 +7,12 @@ const ARABIC_THOUSANDS_SEPARATOR = /٬/g;
 const NON_NUMBER_CHARS_RE = /[^0-9,.\-]/g;
 const DATE_SEPARATOR_RE = /[\/.\-]/;
 const VAT_DIGITS_RE = /[^0-9]/g;
+const ARABIC_TEXT_RE = /[\u0600-\u06FF]/;
+const LATIN_TEXT_RE = /[A-Za-z]/;
+const SUPPLIER_META_TEXT_RE =
+  /(re-?evaluat|instruction|as per|combined for clarity|using the|let'?s stick|prompt|analysis|explain|choose|selected|official seller|supplier name:|name as|primary)/i;
+const SUPPLIER_COMPANY_TOKEN_RE =
+  /(شركة|مؤسسة|مجموعة|مصنع|مخبز|trading|company|co\.?|est\.?|corporation|corp|llc|ltd)/i;
 
 function convertDigitsToWestern(value: string): string {
   return value
@@ -135,4 +141,52 @@ export function normalizeOcrInvoiceNumber(value: unknown): string | undefined {
   const normalized = normalizeRawString(value);
   if (!normalized) return undefined;
   return normalized.replace(/\s+/g, ' ');
+}
+
+function cleanupSupplierSegment(raw: string): string {
+  return raw
+    .replace(/^[:\-–—\s]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function scoreSupplierCandidate(candidate: string): number {
+  if (!candidate) return -100;
+  if (SUPPLIER_META_TEXT_RE.test(candidate)) return -50;
+  const words = candidate.split(/\s+/).filter(Boolean).length;
+  const hasArabic = ARABIC_TEXT_RE.test(candidate);
+  const hasLatin = LATIN_TEXT_RE.test(candidate);
+  const hasCompanyToken = SUPPLIER_COMPANY_TOKEN_RE.test(candidate);
+  let score = 0;
+  if (hasArabic) score += 3;
+  if (hasLatin) score += 1;
+  if (hasCompanyToken) score += 3;
+  if (candidate.length >= 3 && candidate.length <= 70) score += 2;
+  if (words >= 1 && words <= 8) score += 2;
+  if (/[.!?]/.test(candidate)) score -= 2;
+  if (words > 12) score -= 4;
+  if (/\d{6,}/.test(candidate)) score -= 2;
+  return score;
+}
+
+export function normalizeOcrSupplierName(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  const raw = String(value).trim();
+  if (!raw) return undefined;
+
+  const parts = raw
+    .split(/\r?\n|[|]/g)
+    .map(cleanupSupplierSegment)
+    .filter(Boolean)
+    .flatMap((line) => line.split(/\s+[–—-]\s+/g).map(cleanupSupplierSegment).filter(Boolean));
+
+  const candidates = (parts.length ? parts : [raw]).filter((x) => !SUPPLIER_META_TEXT_RE.test(x));
+  if (!candidates.length) return undefined;
+
+  const best = candidates
+    .map((candidate) => ({ candidate, score: scoreSupplierCandidate(candidate) }))
+    .sort((a, b) => b.score - a.score)[0];
+
+  if (!best || best.score < 1) return undefined;
+  return best.candidate;
 }

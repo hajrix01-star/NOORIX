@@ -3,6 +3,7 @@ import {
   normalizeOcrDateToYmd,
   normalizeOcrDigits,
   normalizeOcrInvoiceNumber,
+  normalizeOcrSupplierName,
   parseOcrConfidence,
   parseOcrNumber,
 } from './ocr-extraction-normalize.util';
@@ -77,7 +78,7 @@ export function tryLocalJsonRepair(rawText: string): GeminiExtractedInvoice | nu
 }
 
 export function normalizeExtractedInvoicePayload(extracted: GeminiExtractedInvoice): GeminiExtractedInvoice {
-  const supplierName = extracted?.supplier?.name?.trim() || undefined;
+  const supplierName = normalizeOcrSupplierName(extracted?.supplier?.name);
   const supplierConfidence = parseOcrConfidence(extracted?.supplier?.confidence);
   const vatValue = normalizeOcrDigits(extracted?.vatNumber?.value);
   const vatConfidence = parseOcrConfidence(extracted?.vatNumber?.confidence);

@@ -113,6 +113,8 @@ GENERAL RULES:
 - confidence 0.0–1.0 per field
 - use null only when value is truly unreadable
 - supplier.name: use the official seller / company name in the invoice header (الاسم التجاري أو اسم المنشأة كما في الترويسة)، not branch nicknames if both appear.
+- supplier.name MUST be a clean company name only (max 70 chars). Never include explanations, reasoning, or instruction-like text.
+- NEVER output phrases like: "using", "as per instructions", "re-evaluating", "combined for clarity", or any commentary in supplier.name.
 - vatNumber: the seller VAT / tax registration number from the header (digits only in value).
 - Keep item names exactly as printed (Arabic, English, or mixed)
 - Date: YYYY-MM-DD format
