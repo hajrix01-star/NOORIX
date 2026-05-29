@@ -274,8 +274,6 @@ export function summarizeExtractionSignal(extracted: GeminiExtractedInvoice): Oc
   const hasVatAmount = extracted.vatAmount?.value != null;
 
   const hasFinancialSignal = hasSubtotal || hasTotal || hasVatAmount;
-  const hasReferenceSignal = hasVatNumber || hasInvoiceNumber || hasInvoiceDate;
-
   const itemSignalCount = (extracted.items || []).reduce((count, item) => {
     const hasName = !!item.name;
     const hasNumbers = item.quantity != null || item.unitPrice != null || item.totalPrice != null;
@@ -294,7 +292,9 @@ export function summarizeExtractionSignal(extracted: GeminiExtractedInvoice): Oc
   ].filter(Boolean).length;
 
   const hasMeaningful = headerSignalCount > 0 || hasItemsSignal;
-  const actionable = hasItemsSignal || hasFinancialSignal || (hasSupplier && hasReferenceSignal);
+  // Actionable payloads must include line-level or money-level signal.
+  // Supplier/VAT-only payloads are considered non-actionable to avoid false "success".
+  const actionable = hasItemsSignal || hasFinancialSignal;
   const completenessScore = headerSignalCount + Math.min(itemSignalCount, 3) * 2;
 
   return {

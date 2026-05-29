@@ -26,7 +26,7 @@ describe('ocr-extraction-pipeline signal guards', () => {
     expect(isActionableExtractionPayload(payload)).toBe(true);
   });
 
-  it('marks extraction with supplier plus invoice reference as actionable', () => {
+  it('marks extraction with supplier plus invoice reference as non-actionable', () => {
     const payload: GeminiExtractedInvoice = {
       supplier: { name: 'AL HAJRI', confidence: 0.88 },
       invoiceNumber: { value: 'INV-2026-1008', confidence: 0.7 },
@@ -34,7 +34,18 @@ describe('ocr-extraction-pipeline signal guards', () => {
     };
     const summary = summarizeExtractionSignal(payload);
     expect(summary.hasMeaningful).toBe(true);
-    expect(summary.actionable).toBe(true);
+    expect(summary.actionable).toBe(false);
+  });
+
+  it('marks supplier plus VAT number only as non-actionable', () => {
+    const payload: GeminiExtractedInvoice = {
+      supplier: { name: 'شركة ركن على هواك التجارية', confidence: 0.86 },
+      vatNumber: { value: '311354068000003', confidence: 0.91 },
+      items: [],
+    };
+    const summary = summarizeExtractionSignal(payload);
+    expect(summary.hasMeaningful).toBe(true);
+    expect(summary.actionable).toBe(false);
   });
 
   it('marks extraction with line items as actionable', () => {

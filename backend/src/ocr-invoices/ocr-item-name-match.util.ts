@@ -11,9 +11,22 @@ const SIMPLE_SIZE_REGEX = new RegExp(
   `\\(?(\\d+(?:[.,]\\d+)?)\\s*-?\\s*(${UNITS_PATTERN})\\.?\\)?(?=\\s|$|[,)x×])`,
   'gi',
 );
+const PACKAGING_SUFFIX_REGEX =
+  /(?:^|\s)(?:شد(?:ة)?|ربطة|رزمة|كرتون|carton|ctn|pack|bundle|باك(?:يت)?)\s*\d+(?:[.,]\d+)?(?=\s|$)/gi;
+const PACKAGING_COUNT_REGEX =
+  /(?:^|\s)\d+(?:[.,]\d+)?\s*(?:حبة|حبات|pcs?|pc|cartons?|packs?)(?=\s|$)/gi;
 
 const ARABIC_RANGE = /[\u0600-\u06FF]/;
 const LATIN_RANGE  = /[A-Za-z]/;
+
+function stripPackagingDescriptors(name: string): string {
+  if (!name) return name;
+  return name
+    .replace(PACKAGING_SUFFIX_REGEX, ' ')
+    .replace(PACKAGING_COUNT_REGEX, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
 
 /** يقسّم الاسم المختلط إلى جزء عربي وجزء إنجليزي (يحذف الأرقام والرموز) */
 export function splitBilingualName(name: string): { nameAr: string | null; nameEn: string | null } {
@@ -53,7 +66,7 @@ export function extractSizeFromName(name: string): { cleanName: string; size: st
   if (packMatch) {
     size = packMatch[2].replace(',', '.');
     sizeUnit = packMatch[3].toLowerCase();
-    cleanName = name.replace(packMatch[0], ' ').replace(/\s{2,}/g, ' ').trim();
+    cleanName = stripPackagingDescriptors(name.replace(packMatch[0], ' ').replace(/\s{2,}/g, ' ').trim());
     return { cleanName, size, sizeUnit };
   }
 
@@ -62,11 +75,11 @@ export function extractSizeFromName(name: string): { cleanName: string; size: st
   if (simpleMatch) {
     size = simpleMatch[1].replace(',', '.');
     sizeUnit = simpleMatch[2].toLowerCase();
-    cleanName = name.replace(simpleMatch[0], ' ').replace(/\s{2,}/g, ' ').trim();
+    cleanName = stripPackagingDescriptors(name.replace(simpleMatch[0], ' ').replace(/\s{2,}/g, ' ').trim());
     return { cleanName, size, sizeUnit };
   }
 
-  return { cleanName: name.trim(), size: null, sizeUnit: null };
+  return { cleanName: stripPackagingDescriptors(name.trim()), size: null, sizeUnit: null };
 }
 
 /** يُطبّع اسم صنف للمقارنة الذكية */

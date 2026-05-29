@@ -681,7 +681,9 @@ ${rawText.slice(0, 12000)}`;
         const bestResult = findBestItemMatch(matchName, items);
 
         let itemMatch: { id: string; nameAr: string; nameEn?: string | null; score: number; status: string; hasSizes: boolean } | null = null;
-        let resolvedNameAr = splitNameAr;
+        const rawItemNameAr = item?.nameAr?.toString().trim() || undefined;
+        const hasArabicRawName = !!rawItemNameAr && /[\u0600-\u06FF]/.test(rawItemNameAr);
+        let resolvedNameAr = hasArabicRawName ? rawItemNameAr : splitNameAr;
         if (bestResult) {
           const status = classifyConfidence(bestResult.score);
           if (status !== 'new') {
