@@ -26,6 +26,7 @@ import { CreateOcrSupplierDto } from './dto/create-ocr-supplier.dto';
 import { CreateOcrItemDto }     from './dto/create-ocr-item.dto';
 import { SaveInvoiceDto }       from './dto/save-invoice.dto';
 import { SubmitOcrInvoiceDto }  from './dto/submit-ocr.dto';
+import { SubmitOcrBatchDto } from './dto/submit-ocr-batch.dto';
 
 @Controller('ocr')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -65,6 +66,27 @@ export class OcrInvoicesController {
       user.sub,
       dto,
     );
+  }
+
+  @Post('submissions/batch')
+  @RequirePermission('OCR_SUBMIT')
+  async submitBatchForExtraction(
+    @Body() dto: SubmitOcrBatchDto,
+    @CurrentUser() user: JwtUser,
+    @CompanyId() companyId: string,
+  ) {
+    return this.svc.submitBatchForExtraction(
+      user.tenantId!,
+      this.requireCompanyId(companyId),
+      user.sub,
+      dto,
+    );
+  }
+
+  @Get('invoices/chat-reminders')
+  @RequirePermission('OCR_READ')
+  async chatReminders(@CurrentUser() user: JwtUser, @CompanyId() companyId: string) {
+    return this.svc.getOcrChatReminders(user.tenantId!, this.requireCompanyId(companyId));
   }
 
   @Post('invoices/:id/retry')

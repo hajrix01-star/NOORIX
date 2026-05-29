@@ -19,6 +19,18 @@ export async function submitOcrSubmission(imageBase64: any, mimeType: any = 'ima
   return apiPost('/api/v1/ocr/submissions', { imageBase64, mimeType }, { timeout: 120000 });
 }
 
+/** Submit multiple invoice images (separate or multi-page groups) */
+export async function submitOcrBatchSubmission(
+  entries: Array<{ layout: 'single' | 'multi_page'; images: Array<{ imageBase64: string; mimeType?: string }> }>,
+) {
+  return apiPost('/api/v1/ocr/submissions/batch', { entries }, { timeout: 180000 });
+}
+
+/** Failed OCR extractions for Smart Chat reminders */
+export async function getOcrChatReminders() {
+  return apiGet('/api/v1/ocr/invoices/chat-reminders');
+}
+
 // --- OCR invoices ---
 
 export async function getOcrReviewQueue() {

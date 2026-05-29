@@ -866,6 +866,7 @@ export function useInvoiceUploadTab({
     prefillOcrSupplierId,
     warningCount,
     activeItems,
+    activeCompanyId,
     updateItem,
     applyMathSuggestion,
     handleSupplierMatchChange,

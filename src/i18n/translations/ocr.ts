@@ -6,8 +6,8 @@ export default {
   ocrCashierSubmitNav: { ar: 'إرسال فاتورة (كاشير)', en: 'Submit invoice (cashier)' },
   ocrCashierPageTitle: { ar: 'إرسال فاتورة مورد', en: 'Submit supplier invoice' },
   ocrCashierPageHint: {
-    ar: 'يُرسل الطلب للخلفية للاستخراج. ستظهر للمحاسب في «مراجعة الاستخراج» عند الجاهزية.',
-    en: 'The request is queued for background extraction. It will appear in extraction review when ready.',
+    ar: 'يُرسل الطلب للخلفية: استخراج تلقائي ثم حفظ تلقائي عند النجاح. عند الفشل يصل تذكير في المحادثة الذكية. يمكنك إرسال عدة فواتير دفعة واحدة.',
+    en: 'Requests run in the background: auto-extract then auto-save on success. On failure, a reminder appears in Smart Chat. You can send multiple invoices at once.',
   },
   ocrCashierSentOk: {
     ar: 'تم الإرسال بنجاح — رقم الطلب: {0}',
@@ -16,8 +16,8 @@ export default {
   ocrBeta:             { ar: 'تجريبي', en: 'Beta' },
   ocrUploadTab:        { ar: 'إرسال للاستخراج', en: 'Send for extraction' },
   ocrUploadPageHint: {
-    ar: 'يُرسل الطلب للخلفية للاستخراج. راجع النتيجة من تبويب «مراجعة الاستخراج» عند الجاهزية.',
-    en: 'The request is queued for background extraction. Review the result under «Extraction review» when ready.',
+    ar: 'يُرسل للخلفية: استخراج وحفظ تلقائي عند النجاح. الفشل يُبلّغ عبر المحادثة الذكية. يمكن رفع عدة صور (فاتورة واحدة أو متعددة الصفحات).',
+    en: 'Queued for background auto-extract and auto-save. Failures notify via Smart Chat. Upload multiple images (separate invoices or multi-page).',
   },
   ocrSubmitForExtraction: { ar: 'إرسال للاستخراج', en: 'Send for extraction' },
   ocrSubmitting:       { ar: 'جاري الإرسال…', en: 'Sending…' },
@@ -93,6 +93,28 @@ export default {
 
   // Upload
   ocrDragDrop:         { ar: 'اسحب صورة الفاتورة هنا أو اضغط للاختيار', en: 'Drag invoice image here or click to select' },
+  ocrBatchDragDrop:    { ar: 'اسحب صور الفواتير هنا أو اضغط لاختيار عدة صور', en: 'Drag invoice images here or click to select multiple' },
+  ocrBatchAutoHint: {
+    ar: 'بعد الإرسال: استخراج تلقائي → حفظ تلقائي. اختر «فاتورة منفصلة» أو جمّع صفحات متعددة كفاتورة واحدة.',
+    en: 'After send: auto-extract → auto-save. Keep each image separate or group pages into one invoice.',
+  },
+  ocrBatchPendingCount: { ar: '{0} صورة جاهزة للإرسال', en: '{0} image(s) ready to send' },
+  ocrBatchGroupMultiPage: { ar: 'دمج المحدد كفاتورة متعددة الصفحات', en: 'Group selected as multi-page invoice' },
+  ocrBatchGroupHint: {
+    ar: 'حدّد صورتين أو أكثر ثم «دمج» إذا كانت صفحات فاتورة واحدة. كل مجموعة تُرسل كفاتورة مستقلة.',
+    en: 'Select two or more images then «Group» if they are pages of one invoice. Each group is sent as one invoice.',
+  },
+  ocrBatchLayoutSingle: { ar: 'فاتورة منفصلة', en: 'Separate invoice' },
+  ocrBatchLayoutMultiPage: { ar: 'فاتورة متعددة الصفحات ({0} صور)', en: 'Multi-page invoice ({0} pages)' },
+  ocrBatchSplitGroup: { ar: 'فصل الصفحات', en: 'Split pages' },
+  ocrBatchRemoveGroup: { ar: 'حذف', en: 'Remove' },
+  ocrBatchSubmitAll: { ar: 'إرسال الكل للاستخراج', en: 'Send all for extraction' },
+  ocrBatchSentOk: {
+    ar: 'تم إرسال {0} فاتورة — سيتم الاستخراج والحفظ تلقائياً',
+    en: '{0} invoice(s) sent — auto-extract and auto-save will run',
+  },
+  ocrBatchReadFailed: { ar: 'تعذّر قراءة إحدى الصور', en: 'Could not read one of the images' },
+  ocrBatchSubmitFailed: { ar: 'فشل إرسال الدفعة', en: 'Batch send failed' },
   ocrSupportedFormats: { ar: 'يدعم: JPG, PNG, WEBP', en: 'Supports: JPG, PNG, WEBP' },
   ocrExtract:          { ar: 'استخراج البيانات', en: 'Extract Data' },
   ocrExtracting:       { ar: 'جاري الاستخراج...', en: 'Extracting...' },

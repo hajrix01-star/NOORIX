@@ -7,10 +7,16 @@ import type { Queue } from 'bull';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubmitOcrInvoiceDto } from './dto/submit-ocr.dto';
+import type { SubmitOcrBatchDto } from './dto/submit-ocr-batch.dto';
 import { OcrInvoiceStatus, OCR_REVIEW_QUEUE_STATUSES } from './ocr-invoice-status';
 import { OcrExtractionService } from './ocr-extraction.service';
+import { OcrInvoiceWorkflowPersistService } from './ocr-invoice-workflow-persist.service';
 import { OcrUploadsLocalStorage } from './ocr-uploads-local.storage';
 import { OCR_EXTRACTION_QUEUE } from './ocr-queue.constants';
+import { buildAutoSaveDtoFromEnriched } from './ocr-auto-finalize.util';
+import { listOcrChatReminders } from './ocr-chat-reminders.util';
+import { mergeOcrImageBuffersVertically } from './ocr-image-merge.util';
+import type { OcrSaveInvoiceCaller } from './ocr-invoices.types';
 
 @Injectable()
 export class OcrIntakeService {
@@ -19,6 +25,7 @@ export class OcrIntakeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly extraction: OcrExtractionService,
+    private readonly persist: OcrInvoiceWorkflowPersistService,
     private readonly uploads: OcrUploadsLocalStorage,
     @InjectQueue(OCR_EXTRACTION_QUEUE) private readonly extractionQueue: Queue,
   ) {}
@@ -51,24 +58,32 @@ export class OcrIntakeService {
     return `ocr-invoices/${companyId}/${invoiceId}.${ext}`;
   }
 
-  /** كاشير: رفع صورة — يُنشئ سجلاً ثم يشغّل الاستخراج في الخلفية */
-  async submitForExtraction(
-    tenantId: string,
-    companyId: string,
-    submittedByUserId: string,
-    dto: SubmitOcrInvoiceDto,
-  ) {
-    const mime = (dto.mimeType || 'image/jpeg').toLowerCase();
+  private decodeSubmissionImage(imageBase64: string, mimeType?: string): { buf: Buffer; mime: string } {
     let buf: Buffer;
     try {
-      buf = Buffer.from(dto.imageBase64, 'base64');
+      buf = Buffer.from(imageBase64, 'base64');
     } catch {
       throw new BadRequestException('صورة غير صالحة (تشفير base64).');
     }
+    const mime = (mimeType || 'image/jpeg').toLowerCase();
     this.validateSubmissionImageBuffer(buf, mime);
+    return { buf, mime };
+  }
 
-    const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg';
+  private mimeToExt(mime: string): string {
+    if (mime.includes('png')) return 'png';
+    if (mime.includes('webp')) return 'webp';
+    return 'jpg';
+  }
 
+  private async createQueuedInvoiceFromBuffer(
+    tenantId: string,
+    companyId: string,
+    submittedByUserId: string,
+    buf: Buffer,
+    mime: string,
+  ) {
+    const ext = this.mimeToExt(mime);
     const inv = await this.prisma.ocrInvoice.create({
       data: {
         tenantId,
@@ -78,18 +93,74 @@ export class OcrIntakeService {
         extractionError: null,
       },
     });
-
     const rel = this.relativeOcrImagePath(companyId, inv.id, ext);
     await this.uploads.writeBuffer(rel, buf);
-
     await this.prisma.ocrInvoice.update({
       where: { id: inv.id },
       data: { imageUrl: rel },
     });
-
     this.scheduleExtractionAfterSubmit(inv.id);
-
     return { id: inv.id, status: OcrInvoiceStatus.QUEUED };
+  }
+
+  /** كاشير: رفع صورة — يُنشئ سجلاً ثم يشغّل الاستخراج في الخلفية */
+  async submitForExtraction(
+    tenantId: string,
+    companyId: string,
+    submittedByUserId: string,
+    dto: SubmitOcrInvoiceDto,
+  ) {
+    const { buf, mime } = this.decodeSubmissionImage(dto.imageBase64, dto.mimeType);
+    return this.createQueuedInvoiceFromBuffer(tenantId, companyId, submittedByUserId, buf, mime);
+  }
+
+  async submitBatchForExtraction(
+    tenantId: string,
+    companyId: string,
+    submittedByUserId: string,
+    dto: SubmitOcrBatchDto,
+  ) {
+    const items: Array<{ id: string; status: string; layout: string; imageCount: number }> = [];
+    for (const entry of dto.entries) {
+      if (entry.layout === 'multi_page') {
+        const decoded = entry.images.map((img) => this.decodeSubmissionImage(img.imageBase64, img.mimeType));
+        const merged = await mergeOcrImageBuffersVertically(decoded.map((x) => x.buf));
+        const created = await this.createQueuedInvoiceFromBuffer(
+          tenantId,
+          companyId,
+          submittedByUserId,
+          merged,
+          'image/jpeg',
+        );
+        items.push({
+          ...created,
+          layout: entry.layout,
+          imageCount: entry.images.length,
+        });
+        continue;
+      }
+      for (const image of entry.images) {
+        const { buf, mime } = this.decodeSubmissionImage(image.imageBase64, image.mimeType);
+        const created = await this.createQueuedInvoiceFromBuffer(
+          tenantId,
+          companyId,
+          submittedByUserId,
+          buf,
+          mime,
+        );
+        items.push({
+          ...created,
+          layout: entry.layout,
+          imageCount: 1,
+        });
+      }
+    }
+    return { items, count: items.length };
+  }
+
+  async getChatReminders(tenantId: string, companyId: string) {
+    const reminders = await listOcrChatReminders(this.prisma, tenantId, companyId);
+    return { reminders };
   }
 
   async retryExtractionForInvoice(tenantId: string, companyId: string, invoiceId: string) {
@@ -152,13 +223,7 @@ export class OcrIntakeService {
 
     const relPath = inv.imageUrl.replace(/\\/g, '/');
     if (!this.uploads.exists(relPath)) {
-      await this.prisma.ocrInvoice.update({
-        where: { id: inv.id },
-        data: {
-          status: OcrInvoiceStatus.EXTRACTION_FAILED,
-          extractionError: 'ملف الصورة غير موجود على الخادم.',
-        },
-      });
+      await this.markExtractionFailed(inv.id, 'ملف الصورة غير موجود على الخادم.');
       return;
     }
 
@@ -166,13 +231,7 @@ export class OcrIntakeService {
     try {
       buf = await this.uploads.readBuffer(relPath);
     } catch (e) {
-      await this.prisma.ocrInvoice.update({
-        where: { id: inv.id },
-        data: {
-          status: OcrInvoiceStatus.EXTRACTION_FAILED,
-          extractionError: `تعذّر قراءة الملف: ${(e as Error).message}`,
-        },
-      });
+      await this.markExtractionFailed(inv.id, `تعذّر قراءة الملف: ${(e as Error).message}`);
       return;
     }
 
@@ -189,29 +248,77 @@ export class OcrIntakeService {
         mimeType: mime,
       })) as Record<string, unknown>;
     } catch (e) {
-      await this.prisma.ocrInvoice.update({
-        where: { id: inv.id },
-        data: {
-          status: OcrInvoiceStatus.EXTRACTION_FAILED,
-          extractionError: (e as Error).message?.slice(0, 2000) || 'فشل الاستخراج',
-        },
-      });
+      await this.markExtractionFailed(
+        inv.id,
+        (e as Error).message?.slice(0, 2000) || 'فشل الاستخراج',
+      );
       return;
     }
 
     if (enriched.parseError === true) {
-      await this.prisma.ocrInvoice.update({
-        where: { id: inv.id },
-        data: {
-          status: OcrInvoiceStatus.EXTRACTION_FAILED,
-          extractionError: String(enriched.errorDetail || 'parse_error').slice(0, 2000),
-          rawExtraction: enriched as object,
-        },
-      });
+      await this.markExtractionFailed(
+        inv.id,
+        String(enriched.errorDetail || 'parse_error').slice(0, 2000),
+        enriched,
+      );
       return;
     }
 
     await this.applyEnrichedResultToInvoiceRecord(inv.tenantId, inv.companyId, inv.id, enriched);
+    await this.tryAutoFinalizeInvoice(inv.tenantId, inv.companyId, inv.id, enriched);
+  }
+
+  private async markExtractionFailed(
+    invoiceId: string,
+    extractionError: string,
+    rawExtraction?: Record<string, unknown>,
+  ): Promise<void> {
+    await this.prisma.ocrInvoice.update({
+      where: { id: invoiceId },
+      data: {
+        status: OcrInvoiceStatus.EXTRACTION_FAILED,
+        extractionError: extractionError.slice(0, 2000),
+        ...(rawExtraction ? { rawExtraction: rawExtraction as object } : {}),
+      },
+    });
+  }
+
+  private async resolveAutoSaveCaller(submittedByUserId?: string | null): Promise<OcrSaveInvoiceCaller | undefined> {
+    if (!submittedByUserId) return undefined;
+    const user = await this.prisma.user.findUnique({
+      where: { id: submittedByUserId },
+      include: { role: true },
+    });
+    if (!user) return undefined;
+    return {
+      userId: user.id,
+      role: user.role?.name,
+      permissions: user.role?.permissions || [],
+    };
+  }
+
+  private async tryAutoFinalizeInvoice(
+    tenantId: string,
+    companyId: string,
+    invoiceId: string,
+    enriched: Record<string, unknown>,
+  ): Promise<void> {
+    const dto = buildAutoSaveDtoFromEnriched(invoiceId, enriched);
+    if (!dto) {
+      this.logger.warn(`OCR auto-save skipped (${invoiceId}): insufficient extracted data`);
+      return;
+    }
+    const inv = await this.prisma.ocrInvoice.findUnique({
+      where: { id: invoiceId },
+      select: { submittedByUserId: true },
+    });
+    const caller = await this.resolveAutoSaveCaller(inv?.submittedByUserId);
+    try {
+      await this.persist.saveInvoice(tenantId, companyId, dto, caller);
+      this.logger.log(`OCR auto-saved invoice ${invoiceId}`);
+    } catch (err) {
+      this.logger.warn(`OCR auto-save failed for ${invoiceId}: ${(err as Error).message}`);
+    }
   }
 
   /** يحوّل ناتج enrichExtraction إلى سجل فاتورة + سطور بحالة انتظار المراجعة */

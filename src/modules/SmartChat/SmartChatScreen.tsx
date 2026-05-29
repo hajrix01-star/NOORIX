@@ -6,7 +6,7 @@ import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getStoredUser } from '../../services/authStore';
-import { hasPermission } from '../../constants/permissions';
+import { hasPermission, PERMISSIONS } from '../../constants/permissions';
 import { HrQuickEntrySheet } from '../HR/components/HrQuickEntrySheet';
 import { StaffFormModal } from '../HR/components/StaffFormModal';
 import { useEmployees } from '../../hooks/useEmployees';
@@ -16,13 +16,13 @@ import './SmartChatScreen.css';
 import { AdaptiveSheet, useAdaptiveSheetNarrow } from '../../ui';
 import { PERMANENT_QUESTIONS } from './utils/smartChatConstants';
 import { filterCommandGroups, filterVisibleFaqQuestions, canUseChatPresetFaq } from './utils/smartChatGuards';
-import type { EntryMode, ExpenseMode } from './types';
 import { useSmartChatMessages } from './hooks/useSmartChatMessages';
 import { useSmartChatUploads } from './hooks/useSmartChatUploads';
 import { useSmartChatComposer } from './hooks/useSmartChatComposer';
 import { useSmartChatActions } from './hooks/useSmartChatActions';
 import { useSmartChatExpenseModalHandlers } from './hooks/useSmartChatExpenseModalHandlers';
 import { useSmartChatUsage } from './hooks/useSmartChatUsage';
+import { useOcrChatReminders } from './hooks/useOcrChatReminders';
 import { SmartChatMessageList } from './components/SmartChatMessageList';
 import { SmartChatComposer } from './components/SmartChatComposer';
 import { SmartChatQuickActions } from './components/SmartChatQuickActions';
@@ -34,6 +34,7 @@ import { SmartChatExpenseLinePickSheet, type ExpenseLineRow } from './components
 import { SmartChatWelcome } from './components/SmartChatWelcome';
 import { SmartChatTypingIndicator } from './components/SmartChatTypingIndicator';
 import { SmartChatReplyChips } from './components/SmartChatReplyChips';
+import type { EntryMode, ExpenseMode } from './types';
 
 export default function SmartChatScreen() {
   const { activeCompanyId } = useApp();
@@ -78,6 +79,9 @@ export default function SmartChatScreen() {
     handleLoadMoreMessages,
     addMessage,
   } = useSmartChatMessages(activeCompanyId, userName, userId);
+
+  const canOcrReminders = can(PERMISSIONS.OCR_READ);
+  useOcrChatReminders(activeCompanyId, addMessage, canOcrReminders);
 
   const { expenseLines } = useSmartChatUploads(activeCompanyId, expenseMode);
   const { create } = useEmployees(activeCompanyId || '', { fetchEnabled: false });

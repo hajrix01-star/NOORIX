@@ -13,6 +13,7 @@ import { OcrExtractedInfoAndTotalsCard } from './invoiceUpload/OcrExtractedInfoA
 import { OcrLinkedPurchaseForm } from './invoiceUpload/OcrLinkedPurchaseForm';
 import { OcrLineItemsList, OcrWarningStrip } from './invoiceUpload/OcrLineItemsAndWarnings';
 import { OcrNewSupplierModal } from './invoiceUpload/OcrNewSupplierModal';
+import OcrBatchUploadPanel from './OcrBatchUploadPanel';
 
 export default function InvoiceUploadTab(props: any) {
   const o = useInvoiceUploadTab(props);
@@ -36,7 +37,11 @@ export default function InvoiceUploadTab(props: any) {
         postSaveLinkedPurchase={o.postSaveLinkedPurchase}
       />
 
-      {!o.preview && (
+      {!o.preview && isQueueSubmit && (
+        <OcrBatchUploadPanel disabled={!o.activeCompanyId} />
+      )}
+
+      {!o.preview && !isQueueSubmit && (
         <OcrEmptyImageDropzone
           t={o.t}
           dragging={o.dragging}

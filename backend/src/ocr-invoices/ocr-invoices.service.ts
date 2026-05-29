@@ -27,6 +27,14 @@ export class OcrInvoicesService {
     ...args: Parameters<OcrIntakeService['submitForExtraction']>
   ) { return this.intake.submitForExtraction(...args); }
 
+  submitBatchForExtraction(
+    ...args: Parameters<OcrIntakeService['submitBatchForExtraction']>
+  ) { return this.intake.submitBatchForExtraction(...args); }
+
+  getOcrChatReminders(
+    ...args: Parameters<OcrIntakeService['getChatReminders']>
+  ) { return this.intake.getChatReminders(...args); }
+
   retryExtractionForInvoice(
     ...args: Parameters<OcrIntakeService['retryExtractionForInvoice']>
   ) { return this.intake.retryExtractionForInvoice(...args); }
