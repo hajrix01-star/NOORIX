@@ -75,6 +75,31 @@ type ItemMatchRow = {
   aliases: Array<{ alias: string }>;
 };
 
+type OcrModelAttemptStage = 'none' | 'direct' | 'local_repair' | 'ai_repair';
+type OcrModelAttemptOutcome =
+  | 'success'
+  | 'unavailable'
+  | 'blocked'
+  | 'empty'
+  | 'parse_failed'
+  | 'schema_failed'
+  | 'http_error'
+  | 'runtime_error';
+
+type OcrModelAttemptTelemetry = {
+  model: string;
+  version: string;
+  structuredOutput: boolean;
+  startedAt: string;
+  latencyMs: number;
+  outcome: OcrModelAttemptOutcome;
+  parseStage: OcrModelAttemptStage;
+  httpStatus?: number;
+  finishReason?: string;
+  blockReason?: string;
+  error?: string;
+};
+
 @Injectable()
 export class OcrExtractionService {
   private readonly logger = new Logger(OcrExtractionService.name);
@@ -355,6 +380,67 @@ ${rawText.slice(0, 12000)}`;
     return Array.from(flags);
   }
 
+  private trimErrorText(value: unknown, maxLen = 260): string | undefined {
+    const text = typeof value === 'string'
+      ? value
+      : value instanceof Error
+        ? value.message
+        : value != null
+          ? String(value)
+          : '';
+    const trimmed = text.trim();
+    if (!trimmed) return undefined;
+    return trimmed.slice(0, maxLen);
+  }
+
+  private buildModelTelemetryFlags(
+    attempts: OcrModelAttemptTelemetry[],
+    primaryModel: string | undefined,
+    usedModel: string | undefined,
+  ): string[] {
+    const flags = new Set<string>();
+    if (attempts.length > 1) flags.add('model_multi_attempt');
+    if (primaryModel && usedModel && primaryModel !== usedModel) flags.add('model_fallback_used');
+    if (attempts.some((a) => a.outcome === 'unavailable')) flags.add('model_unavailable_retry');
+    if (attempts.some((a) => a.outcome === 'blocked')) flags.add('model_blocked_retry');
+    if (attempts.some((a) => a.parseStage === 'local_repair' || a.parseStage === 'ai_repair')) {
+      flags.add('model_repair_path_used');
+    }
+    return Array.from(flags);
+  }
+
+  private attachModelTelemetry(
+    payload: Record<string, unknown>,
+    args: {
+      attempts: OcrModelAttemptTelemetry[];
+      usedModel?: string;
+      usedModelVersion?: string;
+      extractionStartedAt: number;
+      primaryModel?: string;
+    },
+  ): Record<string, unknown> {
+    const modelQualityFlags = this.buildModelTelemetryFlags(args.attempts, args.primaryModel, args.usedModel);
+    const existingQualityFlags = Array.isArray(payload.qualityFlags)
+      ? payload.qualityFlags.filter((x): x is string => typeof x === 'string')
+      : [];
+    const qualityFlags = Array.from(new Set([...existingQualityFlags, ...modelQualityFlags]));
+    const qualityStatus = typeof payload.qualityStatus === 'string'
+      ? payload.qualityStatus
+      : qualityFlags.includes('validated') && qualityFlags.length === 1
+        ? 'validated'
+        : 'needs_review';
+
+    return {
+      ...payload,
+      usedModel: args.usedModel || payload.usedModel || null,
+      usedModelVersion: args.usedModelVersion || payload.usedModelVersion || null,
+      modelAttempts: args.attempts,
+      extractionLatencyMs: Date.now() - args.extractionStartedAt,
+      qualityFlags,
+      qualityStatus,
+    };
+  }
+
   private detectAliasLanguage(text: string): 'ar' | 'en' {
     return this.arabicScriptRe.test(text) ? 'ar' : 'en';
   }
@@ -470,12 +556,27 @@ ${rawText.slice(0, 12000)}`;
 
     const mimeType = dto.mimeType || 'image/jpeg';
     const modelsToTry = getGeminiModelsToTry();
+    const extractionStartedAt = Date.now();
+    const modelAttempts: OcrModelAttemptTelemetry[] = [];
+    const primaryModel = modelsToTry[0]?.model;
 
     // ── يُجرّب النماذج بالترتيب حتى ينجح أحدها ─────────────────────────
     for (const { model, version } of modelsToTry) {
       const url = `${buildGeminiUrl(model, version)}?key=${apiKey}`;
       const structuredOutput = supportsStructuredGeminiResponse(model);
       const requestBody = this.buildExtractionRequestBody(mimeType, dto.imageBase64, structuredOutput);
+      const attemptStartedAt = Date.now();
+      const pushAttempt = (patch: Partial<OcrModelAttemptTelemetry> & { outcome: OcrModelAttemptOutcome }) => {
+        modelAttempts.push({
+          model,
+          version,
+          structuredOutput,
+          startedAt: new Date(attemptStartedAt).toISOString(),
+          latencyMs: Date.now() - attemptStartedAt,
+          parseStage: patch.parseStage || 'none',
+          ...patch,
+        });
+      };
 
       let rawJson: GeminiRaw | null = null;
       try {
@@ -495,10 +596,20 @@ ${rawText.slice(0, 12000)}`;
             errMsg.toLowerCase().includes('is not found for api version');
 
           if (isUnavailable) {
+            pushAttempt({
+              outcome: 'unavailable',
+              httpStatus: res.status,
+              error: this.trimErrorText(errMsg),
+            });
             this.logger.warn(`Gemini model "${model}" unavailable → trying next in chain`);
             continue; // جرّب النموذج التالي
           }
 
+          pushAttempt({
+            outcome: 'http_error',
+            httpStatus: res.status,
+            error: this.trimErrorText(errMsg),
+          });
           this.logger.error(`Gemini error ${res.status} (${model}): ${errMsg}`);
           throw new BadRequestException(`فشل الاستخراج من Gemini: ${errMsg}`);
         }
@@ -510,6 +621,12 @@ ${rawText.slice(0, 12000)}`;
         const blockReason = rawJson?.promptFeedback?.blockReason || candidate?.finishReason;
 
         if (blockReason === 'SAFETY' || blockReason === 'RECITATION' || blockReason === 'OTHER') {
+          pushAttempt({
+            outcome: 'blocked',
+            httpStatus: res.status,
+            blockReason: this.trimErrorText(blockReason),
+            finishReason: candidate?.finishReason,
+          });
           this.logger.warn(`Gemini blocked (${model}): ${blockReason} → trying next model`);
           continue;
         }
@@ -518,22 +635,39 @@ ${rawText.slice(0, 12000)}`;
         this.logger.log(`Gemini OK (${model}) | finish=${candidate?.finishReason} | textLen=${text.length}`);
 
         if (!text) {
+          pushAttempt({
+            outcome: 'empty',
+            httpStatus: res.status,
+            finishReason: candidate?.finishReason,
+          });
           this.logger.warn(`Gemini returned empty text (${model}) → trying next model`);
           continue;
         }
 
+        let parseStage: OcrModelAttemptStage = 'none';
         let extracted = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(text);
+        if (extracted) parseStage = 'direct';
         if (!extracted) {
           extracted = this.tryLocalJsonRepair(text);
+          if (extracted) parseStage = 'local_repair';
         }
         if (!extracted) {
           extracted = await this.tryRecoverJsonFromRawText(apiKey, model, version, text);
+          if (extracted) parseStage = 'ai_repair';
         }
         if (!extracted) {
           this.logger.error(`Gemini parse failed (${model}). textLen=${text.length}`);
-          return {
+          pushAttempt({
+            outcome: 'parse_failed',
+            parseStage,
+            httpStatus: res.status,
+            finishReason: candidate?.finishReason,
+            error: 'json_parse_failed',
+          });
+          const payload = {
             parseError: true,
             usedModel: model,
+            usedModelVersion: version,
             rawText: text.substring(0, 400),
             errorDetail: 'JSON parse failed — Gemini returned text but no valid JSON found',
             qualityFlags: ['json_parse_failed'],
@@ -543,6 +677,13 @@ ${rawText.slice(0, 12000)}`;
             invoiceDate: null, totalAmount: null,
             vatAmount: null, items: [],
           };
+          return this.attachModelTelemetry(payload, {
+            attempts: modelAttempts,
+            usedModel: model,
+            usedModelVersion: version,
+            extractionStartedAt,
+            primaryModel,
+          });
         }
 
         const normalizedExtraction = this.normalizeExtractedInvoice(extracted);
@@ -551,9 +692,17 @@ ${rawText.slice(0, 12000)}`;
         const zodValidation = validateOcrExtractionWithZod(normalizedExtraction);
         if (!zodValidation.success) {
           this.logger.warn(`OCR schema validation failed (${model}): ${zodValidation.issues.join(' | ')}`);
-          return {
+          pushAttempt({
+            outcome: 'schema_failed',
+            parseStage,
+            httpStatus: res.status,
+            finishReason: candidate?.finishReason,
+            error: this.trimErrorText(zodValidation.issues.join(' | ')),
+          });
+          const payload = {
             parseError: true,
             usedModel: model,
+            usedModelVersion: version,
             rawText: text.substring(0, 400),
             errorDetail: 'Schema validation failed for OCR extraction payload',
             schemaIssues: zodValidation.issues.slice(0, 10),
@@ -569,17 +718,43 @@ ${rawText.slice(0, 12000)}`;
             vatAmount: normalizedExtraction.vatAmount ?? null,
             items: [],
           };
+          return this.attachModelTelemetry(payload, {
+            attempts: modelAttempts,
+            usedModel: model,
+            usedModelVersion: version,
+            extractionStartedAt,
+            primaryModel,
+          });
         }
 
         const mathValidatedExtraction = this.applyMathValidation(zodValidation.data);
 
         // enrichExtraction محمي بـ try/catch — لا يُفسد النتيجة
         try {
-          return await this.enrichExtraction(tenantId, companyId, mathValidatedExtraction);
+          const enriched = await this.enrichExtraction(tenantId, companyId, mathValidatedExtraction);
+          pushAttempt({
+            outcome: 'success',
+            parseStage,
+            httpStatus: res.status,
+            finishReason: candidate?.finishReason,
+          });
+          return this.attachModelTelemetry(enriched as Record<string, unknown>, {
+            attempts: modelAttempts,
+            usedModel: model,
+            usedModelVersion: version,
+            extractionStartedAt,
+            primaryModel,
+          });
         } catch (enrichErr) {
           this.logger.error(`enrichExtraction failed: ${(enrichErr as Error).message}. Returning raw extraction.`);
+          pushAttempt({
+            outcome: 'success',
+            parseStage,
+            httpStatus: res.status,
+            finishReason: candidate?.finishReason,
+          });
           const qualityFlags = this.buildQualityFlags(mathValidatedExtraction, { enrichError: true });
-          return {
+          const payload = {
             supplier: mathValidatedExtraction.supplier,
             supplierMatch: null,
             vatNumber: mathValidatedExtraction.vatNumber,
@@ -595,16 +770,33 @@ ${rawText.slice(0, 12000)}`;
             qualityStatus: qualityFlags.includes('validated') ? 'validated' : 'needs_review',
             enrichError: (enrichErr as Error).message,
           };
+          return this.attachModelTelemetry(payload, {
+            attempts: modelAttempts,
+            usedModel: model,
+            usedModelVersion: version,
+            extractionStartedAt,
+            primaryModel,
+          });
         }
 
       } catch (err) {
         if (err instanceof BadRequestException) throw err;
+        pushAttempt({
+          outcome: 'runtime_error',
+          error: this.trimErrorText(err),
+        });
         this.logger.error(`Gemini network/runtime error (${model}): ${(err as Error).message} ${(err as Error).stack}`);
         throw new BadRequestException(`خطأ في الاتصال بـ Gemini: ${(err as Error).message}`);
       }
     }
 
-    throw new BadRequestException('لا يوجد نموذج Gemini متاح. تحقق من GEMINI_API_KEY.');
+    const lastOutcomes = modelAttempts
+      .map((a) => `${a.model}:${a.outcome}`)
+      .slice(-4)
+      .join(', ');
+    throw new BadRequestException(
+      `لا يوجد نموذج Gemini متاح أو صالح للاستخراج. ${lastOutcomes ? `آخر المحاولات: ${lastOutcomes}` : ''}`.trim(),
+    );
   }
 
   private async enrichExtraction(tenantId: string, companyId: string, extracted: GeminiExtractionWithMath) {
