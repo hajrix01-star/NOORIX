@@ -260,13 +260,14 @@ export class OcrIntakeService {
 
     const lineCreates = items.map((item) => {
       const im = item.itemMatch as { id?: string; status?: string } | null | undefined;
+      const autoMatchedItemId = im?.status === 'auto' ? (im.id || null) : null;
       return {
         rawName: String(item.name || ''),
         nameAr: (item.nameAr as string) || null,
         nameEn: (item.nameEn as string) || null,
         size: (item.size as string) || null,
         sizeUnit: (item.sizeUnit as string) || null,
-        itemId: im?.id || null,
+        itemId: autoMatchedItemId,
         quantity: item.quantity != null ? new Prisma.Decimal(Number(item.quantity)) : null,
         unitPrice: item.unitPrice != null ? new Prisma.Decimal(Number(item.unitPrice)) : null,
         totalPrice: item.totalPrice != null ? new Prisma.Decimal(Number(item.totalPrice)) : null,

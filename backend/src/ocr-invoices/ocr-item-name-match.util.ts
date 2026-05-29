@@ -1,5 +1,6 @@
 import { combinedSimilarity, deepSimilarity } from './ocr-match.util';
 import { normalize } from './ocr-normalize.util';
+import { evaluateSizeGate, type OcrSizeGateResult } from './utils/ocr-size-gate.util';
 
 const SIZE_UNITS = ['kg', 'g', 'gr', 'gm', 'ml', 'l', 'ltr', 'liter', 'pcs', 'pc', 'كجم', 'كيلو', 'جرام', 'مل', 'لتر', 'حبة', 'علبة', 'كيس'];
 const UNITS_PATTERN = SIZE_UNITS.join('|');
@@ -85,6 +86,11 @@ export type ItemMatchSemanticSignals = {
   autoEligible: boolean;
 };
 
+export type FindBestItemMatchOptions = {
+  querySize?: string | number | null;
+  queryUnit?: string | null;
+};
+
 function computeSemanticSignals(query: string, candidate: string): ItemMatchSemanticSignals {
   const qSet = new Set(extractSemanticTokensForMatch(query));
   const cSet = new Set(extractSemanticTokensForMatch(candidate));
@@ -163,6 +169,23 @@ export function extractSizeFromName(name: string): { cleanName: string; size: st
   return { cleanName: stripPackagingDescriptors(name.trim()), size: null, sizeUnit: null };
 }
 
+function inferCandidatePrimarySize(candidate: {
+  nameAr: string;
+  nameEn?: string | null;
+  aliases: { alias: string }[];
+}): { size: string; sizeUnit: string } | null {
+  const probes = [
+    candidate.nameAr,
+    candidate.nameEn || '',
+    ...candidate.aliases.map((a) => a.alias),
+  ];
+  for (const probe of probes) {
+    const { size, sizeUnit } = extractSizeFromName(probe || '');
+    if (size && sizeUnit) return { size, sizeUnit };
+  }
+  return null;
+}
+
 /** يُطبّع اسم صنف للمقارنة الذكية */
 export function normalizeItemForSearch(rawName: string): { ar: string; en: string; combined: string } {
   const { cleanName } = extractSizeFromName(rawName);
@@ -179,15 +202,19 @@ export function normalizeItemForSearch(rawName: string): { ar: string; en: strin
 export function findBestItemMatch(
   query: string,
   candidates: Array<{ id: string; nameAr: string; nameEn?: string | null; hasSizes: boolean; aliases: { alias: string }[] }>,
+  options: FindBestItemMatchOptions = {},
 ): {
   item: typeof candidates[0];
   score: number;
   autoEligible: boolean;
   semantic: ItemMatchSemanticSignals;
+  sizeGate: OcrSizeGateResult;
 } | null {
   if (!query || candidates.length === 0) return null;
 
-  const { cleanName: queryCleanName, size: qSize, sizeUnit: qUnit } = extractSizeFromName(query);
+  const { cleanName: queryCleanName, size: extractedQuerySize, sizeUnit: extractedQueryUnit } = extractSizeFromName(query);
+  const gateQuerySize = options.querySize ?? extractedQuerySize;
+  const gateQueryUnit = options.queryUnit ?? extractedQueryUnit;
   const { ar: qAr, en: qEn, combined: qCombined } = normalizeItemForSearch(queryCleanName);
   const searchTerms = Array.from(new Set([queryCleanName, qAr, qEn, qCombined].filter(Boolean)));
 
@@ -196,10 +223,20 @@ export function findBestItemMatch(
     score: number;
     autoEligible: boolean;
     semantic: ItemMatchSemanticSignals;
+    sizeGate: OcrSizeGateResult;
   } | null = null;
   let secondBestScore = 0;
 
   for (const candidate of candidates) {
+    const candidatePrimarySize = inferCandidatePrimarySize(candidate);
+    const sizeGate = evaluateSizeGate(
+      gateQuerySize,
+      gateQueryUnit,
+      candidatePrimarySize?.size ?? null,
+      candidatePrimarySize?.sizeUnit ?? null,
+      { candidateHasSizes: candidate.hasSizes },
+    );
+
     const { ar: cAr, en: cEn, combined: cCombined } = normalizeItemForSearch(
       [candidate.nameAr, candidate.nameEn || ''].filter(Boolean).join(' '),
     );
@@ -228,14 +265,6 @@ export function findBestItemMatch(
           deepSimilarity(sq, cn),
         );
 
-        const { size: cSize, sizeUnit: cUnit } = extractSizeFromName(cn);
-        if (qSize && qUnit && cSize && cUnit) {
-          if (qSize === cSize && qUnit === cUnit) s += 0.03;
-          else s -= 0.04;
-        } else if (qSize && candidate.hasSizes) {
-          s += 0.01;
-        }
-
         const semantic = computeSemanticSignals(sq, cn);
         if (!semantic.autoEligible) {
           s -= 0.12;
@@ -253,16 +282,26 @@ export function findBestItemMatch(
       }
     }
 
+    const sizeAllowsAuto = sizeGate.decision === 'allow';
+    const autoEligible = maxScoreSemantic.autoEligible && sizeAllowsAuto;
+
     if (maxScore >= 0.999) {
-      return { item: candidate, score: 1, autoEligible: true, semantic: maxScoreSemantic };
+      return {
+        item: candidate,
+        score: 1,
+        autoEligible,
+        semantic: maxScoreSemantic,
+        sizeGate,
+      };
     }
     if (!best || maxScore > best.score) {
       secondBestScore = best?.score ?? secondBestScore;
       best = {
         item: candidate,
         score: maxScore,
-        autoEligible: maxScoreSemantic.autoEligible,
+        autoEligible,
         semantic: maxScoreSemantic,
+        sizeGate,
       };
     } else if (maxScore > secondBestScore) {
       secondBestScore = maxScore;

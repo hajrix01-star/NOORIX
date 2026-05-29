@@ -26,6 +26,8 @@ import {
   normalizeExtractedInvoicePayload,
   summarizeExtractionSignal,
   tryLocalJsonRepair,
+  mergeExtractionQualityFlags,
+  type GeminiItemWithWarnings,
   type GeminiExtractionWithMath,
 } from './ocr-extraction-pipeline.util';
 import {
@@ -679,19 +681,25 @@ ${rawText.slice(0, 12000)}`;
           cleanName,
         };
 
-        // استخدم nameAr أو nameEn أو الاسم المُنظَّف للمطابقة
         const matchName = splitNameAr || splitNameEn || cleanName;
+        const bestResult = findBestItemMatch(matchName, items, {
+          querySize: normalizedSize || null,
+          queryUnit: normalizedSizeUnit || null,
+        });
 
-        // البحث الذكي يقارن ضد الاسم العربي والإنجليزي المستخرجَين من أسماء DB أيضاً
-        const bestResult = findBestItemMatch(matchName, items);
-
-        let itemMatch: { id: string; nameAr: string; nameEn?: string | null; score: number; status: string; hasSizes: boolean } | null = null;
+        let itemMatch: NonNullable<GeminiItemWithWarnings['itemMatch']> | null = null;
         const rawItemNameAr = item?.nameAr?.toString().trim() || undefined;
         const hasArabicRawName = !!rawItemNameAr && /[\u0600-\u06FF]/.test(rawItemNameAr);
         let resolvedNameAr = hasArabicRawName ? rawItemNameAr : splitNameAr;
         if (bestResult) {
+          const gateFlags = Array.isArray(bestResult.sizeGate?.flags)
+            ? [...bestResult.sizeGate.flags]
+            : [];
           let status = classifyConfidence(bestResult.score);
-          if (status === 'auto' && bestResult.autoEligible === false) {
+          if (status === 'auto' && (bestResult.autoEligible === false || bestResult.sizeGate.decision !== 'allow')) {
+            status = 'review';
+          }
+          if (bestResult.sizeGate.decision !== 'allow' && status !== 'new') {
             status = 'review';
           }
           if (status !== 'new') {
@@ -702,6 +710,8 @@ ${rawText.slice(0, 12000)}`;
               hasSizes: bestResult.item.hasSizes,
               score: bestResult.score,
               status: status === 'auto' ? 'auto' : 'review',
+              sizeGateDecision: bestResult.sizeGate.decision,
+              qualityFlags: gateFlags,
             };
             // قاعدة صارمة: لا نملأ nameAr من اسم إنجليزي، إلا من كتالوج موثوق.
             if (!resolvedNameAr && bestResult.score >= 0.9 && bestResult.item.nameAr) {
@@ -721,10 +731,7 @@ ${rawText.slice(0, 12000)}`;
           );
         }
 
-        // تسجيل بالاسم الأساسي (بدون الحجم)
         await this.logExtraction(tenantId, companyId, 'item', matchName, itemMatch, supplierMatch?.id);
-
-        // إذا كان الصنف له حجم — حدّث has_sizes في الكتالوج
         if (this.allowCatalogMutationOnExtraction && itemMatch && normalizedSize) {
           await this.prisma.ocrItem.update({
             where: { id: itemMatch.id },
@@ -736,15 +743,11 @@ ${rawText.slice(0, 12000)}`;
       }),
     );
 
-    // ── Price Intelligence (التحقق الرياضي تم قبل المطابقة) ──────────────────
-
-    // سعر التاريخ — جلب آخر 90 يوم لكل صنف متطابق
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     const enrichedWithWarnings = await Promise.all(
       matchedItems.map(async (item) => {
-        // Price Intelligence — فقط للأصناف المطابقة والمسعّرة
         let priceWarning: { avg: number; deviation: number; lastPrice: number } | null = null;
         if (item.itemMatch?.id && item.unitPrice && item.unitPrice > 0) {
           const history = await this.prisma.ocrPriceHistory.findMany({
@@ -778,10 +781,11 @@ ${rawText.slice(0, 12000)}`;
       }),
     );
 
-    const qualityFlags = buildQualityFlags({
+    const baseQualityFlags = buildQualityFlags({
       ...extracted,
       items: enrichedWithWarnings,
     });
+    const { qualityFlags, qualityStatus } = mergeExtractionQualityFlags(baseQualityFlags, enrichedWithWarnings);
 
     return {
       supplier: extracted.supplier,
@@ -797,7 +801,7 @@ ${rawText.slice(0, 12000)}`;
       vatAdjusted: extracted.vatAdjusted, // للـ frontend: يعلمه أن المقارنة أخذت الضريبة بعين الاعتبار
       lineTaxMode: extracted.lineTaxMode,
       qualityFlags,
-      qualityStatus: qualityFlags.includes('validated') ? 'validated' : 'needs_review',
+      qualityStatus,
     };
   }
 

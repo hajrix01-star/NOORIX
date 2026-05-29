@@ -52,7 +52,7 @@ describe('ocr-item-name-match packaging normalization', () => {
     const candidates = [
       {
         id: 'item-3',
-        nameAr: 'جبن شيدر',
+        nameAr: 'جبن شيدر 200 جرام',
         nameEn: 'Cheddar Cheese',
         hasSizes: true,
         aliases: [],

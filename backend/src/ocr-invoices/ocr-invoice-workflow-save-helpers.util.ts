@@ -4,7 +4,7 @@
  */
 import { Prisma } from '@prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
-import { findBestItemMatch, normalizeItemForSearch } from './ocr-item-name-match.util';
+import { extractSizeFromName, findBestItemMatch, normalizeItemForSearch } from './ocr-item-name-match.util';
 import type { SaveInvoiceLineDto } from './dto/save-invoice.dto';
 
 type CatalogRow = Prisma.OcrItemGetPayload<{ include: { aliases: true } }>;
@@ -46,7 +46,9 @@ export async function processOcrLinesAgainstCatalog(
         };
         const nameAr = lineExt.nameAr?.trim() || null;
         const nameEn = lineExt.nameEn?.trim() || null;
-        const lineSize = lineExt.size || null;
+        const parsedRawSize = extractSizeFromName(line.rawName.trim());
+        const lineSize = lineExt.size || parsedRawSize.size || null;
+        const lineSizeUnit = lineExt.sizeUnit || parsedRawSize.sizeUnit || null;
 
         let searchName: string;
         if (nameAr || nameEn) {
@@ -56,7 +58,10 @@ export async function processOcrLinesAgainstCatalog(
           searchName = extracted.ar || extracted.en || line.rawName.trim();
         }
 
-        const matchResult = findBestItemMatch(searchName, workCatalog);
+        const matchResult = findBestItemMatch(searchName, workCatalog, {
+          querySize: lineSize,
+          queryUnit: lineSizeUnit,
+        });
         if (matchResult && matchResult.score >= 0.78 && matchResult.autoEligible !== false) {
           itemId = matchResult.item.id;
           if (lineSize) {
@@ -68,6 +73,16 @@ export async function processOcrLinesAgainstCatalog(
             logSink,
             `Smart-matched item "${searchName}" → "${matchResult.item.nameAr}" (score: ${matchResult.score.toFixed(2)})`,
           );
+        } else if (matchResult && matchResult.score >= 0.78) {
+          log(
+            logSink,
+            `Size gate held item "${searchName}" as pending review (score: ${matchResult.score.toFixed(2)} flags=${matchResult.sizeGate.flags.join(',') || 'none'})`,
+          );
+          return {
+            ...line,
+            itemId: null,
+            matchStatus: 'pending',
+          };
         } else {
           const normalizedNames = normalizeItemForSearch(line.rawName.trim());
           const candidateAr = nameAr || normalizedNames.ar || null;
