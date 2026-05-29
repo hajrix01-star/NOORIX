@@ -95,7 +95,7 @@ describe('buildDailyShiftWhatsAppText', () => {
       ],
     });
     expect(text).toContain('salesWhatsAppChannelsHeader');
-    expect(text).toContain('│ نقدي');
+    expect(text).toContain('• نقدي');
     expect(text).toContain('100');
   });
 });
