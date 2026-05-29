@@ -293,6 +293,11 @@ export class OcrInvoiceWorkflowInsightsService {
 
     const attemptLatencyAll: number[] = [];
     const attemptsForSuccess: number[] = [];
+    const successfulProfiles: Array<{
+      lineCount: number;
+      attempts: number;
+      extractionLatencyMs: number;
+    }> = [];
 
     let successCount = 0;
     let hardFailureCount = 0;
@@ -364,6 +369,19 @@ export class OcrInvoiceWorkflowInsightsService {
         if (attempts.length > 0) {
           attemptsForSuccess.push(attempts.length);
           attemptsDistribution.set(attempts.length, (attemptsDistribution.get(attempts.length) || 0) + 1);
+        }
+        const lineCount = inv.lines.length;
+        const extractionLatencyMs = asNumber(raw.extractionLatencyMs)
+          ?? attempts
+            .map((att) => asNumber(att.latencyMs))
+            .filter((x): x is number => x != null)
+            .reduce((s, x) => s + x, 0);
+        if (lineCount > 0 && extractionLatencyMs > 0) {
+          successfulProfiles.push({
+            lineCount,
+            attempts: Math.max(1, attempts.length),
+            extractionLatencyMs,
+          });
         }
       } else if (consideredFailure) {
         dayBucket.failed += 1;
@@ -517,6 +535,21 @@ export class OcrInvoiceWorkflowInsightsService {
     const itemResolved = itemLogs.reduce((s, x) => s + (x.resolvedToId ? x.occurrences : 0), 0);
     const itemOccurrences = itemLogs.reduce((s, x) => s + x.occurrences, 0);
 
+    const nearTenItemProfiles = successfulProfiles.filter((row) => row.lineCount >= 8 && row.lineCount <= 12);
+    const baselineProfiles = nearTenItemProfiles.length > 0
+      ? nearTenItemProfiles
+      : successfulProfiles;
+    const tenItemsExpectedMs = baselineProfiles.length > 0
+      ? avg(baselineProfiles.map((row) => row.extractionLatencyMs))
+      : (avg(attemptLatencyAll) * Math.max(1, avg(attemptsForSuccess)));
+    const tenItemsWasteRate = baselineProfiles.length > 0
+      ? rate(
+          baselineProfiles.reduce((s, row) => s + Math.max(0, row.attempts - 1), 0),
+          baselineProfiles.reduce((s, row) => s + Math.max(1, row.attempts), 0),
+        )
+      : 0;
+    const tenItemsWasteSeconds = (tenItemsExpectedMs * (tenItemsWasteRate / 100)) / 1000;
+
     return {
       periodDays: days,
       range: {
@@ -543,6 +576,10 @@ export class OcrInvoiceWorkflowInsightsService {
         fallbackUsedRate: rate(fallbackUsedCount, processedCount),
         avgAttemptLatencyMs: avg(attemptLatencyAll),
         p95AttemptLatencyMs: percentile(attemptLatencyAll, 95),
+        tenItemsExpectedSeconds: tenItemsExpectedMs / 1000,
+        tenItemsWasteRate,
+        tenItemsWasteSeconds,
+        tenItemsSampleSize: baselineProfiles.length,
         lowConfidenceLineCount,
         unmatchedLineCount,
       },

@@ -81,6 +81,20 @@ export default function OcrOperationsDashboardTab() {
       hint: `${isAr ? 'غير مطابق' : 'Unmatched'}: ${fmt(summary.unmatchedLineCount || 0, 0)}`,
       color: 'text-noorix-navy',
     },
+    {
+      key: 'tenItemsTime',
+      label: isAr ? 'مدة متوقعة (10 أصناف)' : 'Expected time (10 items)',
+      value: `${fmt(summary.tenItemsExpectedSeconds || 0)}s`,
+      hint: `${isAr ? 'عينة' : 'Sample'}: ${fmt(summary.tenItemsSampleSize || 0, 0)}`,
+      color: 'text-noorix-text',
+    },
+    {
+      key: 'tenItemsWaste',
+      label: isAr ? 'الهدر الزمني (10 أصناف)' : 'Time waste (10 items)',
+      value: `${fmt(summary.tenItemsWasteRate || 0)}%`,
+      hint: `${isAr ? 'فاقد' : 'Waste'}: ${fmt(summary.tenItemsWasteSeconds || 0)}s`,
+      color: 'text-noorix-amber',
+    },
   ]), [isAr, summary]);
 
   const failureRows = (data?.failureReasons || []).map((row: any) => ({
@@ -220,7 +234,7 @@ export default function OcrOperationsDashboardTab() {
 
       {!isLoading && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {kpis.map((kpi) => (
               <div key={kpi.key} className="noorix-surface-card p-4 flex flex-col gap-1">
                 <span className="text-[12px] text-noorix-muted">{kpi.label}</span>
