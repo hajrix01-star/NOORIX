@@ -248,3 +248,21 @@ export function buildQualityFlags(
   if (!flags.size) flags.add('validated');
   return Array.from(flags);
 }
+
+export function hasMeaningfulExtractionPayload(extracted: GeminiExtractedInvoice): boolean {
+  const hasHeaderSignal = !!(
+    extracted.supplier?.name ||
+    extracted.vatNumber?.value ||
+    extracted.invoiceNumber?.value ||
+    extracted.invoiceDate?.value ||
+    extracted.subtotalAmount?.value != null ||
+    extracted.totalAmount?.value != null ||
+    extracted.vatAmount?.value != null
+  );
+  const hasItemsSignal = (extracted.items || []).some((item) => {
+    const hasName = !!item.name;
+    const hasNumbers = item.quantity != null || item.unitPrice != null || item.totalPrice != null;
+    return hasName || hasNumbers;
+  });
+  return hasHeaderSignal || hasItemsSignal;
+}

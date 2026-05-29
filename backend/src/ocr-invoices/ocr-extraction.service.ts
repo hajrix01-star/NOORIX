@@ -21,6 +21,7 @@ import { validateOcrExtractionWithZod } from './ocr-extraction.schema';
 import {
   applyMathValidation,
   buildQualityFlags,
+  hasMeaningfulExtractionPayload,
   normalizeExtractedInvoicePayload,
   tryLocalJsonRepair,
   type GeminiExtractionWithMath,
@@ -313,6 +314,18 @@ ${rawText.slice(0, 12000)}`;
             extractionStartedAt,
             primaryModel,
           });
+        }
+
+        if (!hasMeaningfulExtractionPayload(zodValidation.data)) {
+          pushAttempt({
+            outcome: 'empty',
+            parseStage,
+            httpStatus: res.status,
+            finishReason: candidate?.finishReason,
+            error: 'no_signal_extracted',
+          });
+          this.logger.warn(`Gemini returned low-signal extraction (${model}) → trying next model`);
+          continue;
         }
 
         const mathValidatedExtraction = applyMathValidation(zodValidation.data);
