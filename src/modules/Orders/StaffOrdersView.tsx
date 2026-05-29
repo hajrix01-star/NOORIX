@@ -17,7 +17,7 @@ import {
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
-import { Button, Badge, ScreenShell, ScreenTitle, Modal, ScreenTabs, Input } from '../../ui';
+import { Button, Badge, ScreenShell, ScreenTitle, Modal, ScreenTabs, Input, cn } from '../../ui';
 
 // ─── أنواع ────────────────────────────────────────────────────────────────────
 interface ItemRow { productId: string; quantity: number; unit: string; sectionName?: string; }
@@ -83,6 +83,114 @@ function ProductCard({
           <div className="text-[10px] text-noorix-blue/70 mt-0.5">×{freqCount}</div>
         )}
       </div>
+    </div>
+  );
+}
+
+function StaffSentOrderRow({
+  order,
+  isSale,
+  lang,
+  t,
+  onResend,
+  onEdit,
+  onDelete,
+}: {
+  order: any;
+  isSale: boolean;
+  lang: string;
+  t: (key: string, ...args: unknown[]) => string;
+  onResend?: (o: any) => void;
+  onEdit: (o: any) => void;
+  onDelete: (o: any) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const items = order.items || [];
+  const dateLabel = order.saleDate ? formatSaudiDate(order.saleDate) : formatSaudiDate(order.createdAt);
+  const title = isSale ? dateLabel : (order.sectionName || '—');
+  const subtitle = isSale ? null : dateLabel;
+
+  return (
+    <div className="rounded-lg border border-noorix-border bg-noorix-bg overflow-hidden">
+      <div className="flex flex-col gap-2 p-3">
+        <div className="flex items-start gap-2 min-w-0">
+          <button
+            type="button"
+            className="shrink-0 mt-0.5 w-8 h-8 rounded-lg border border-noorix-border bg-noorix-bg-muted/50 flex items-center justify-center text-noorix-muted hover:text-noorix-text"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label={open ? t('staffSentCollapse') : t('staffSentExpand')}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={cn('transition-transform duration-200', open && 'rotate-180')}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="flex-1 min-w-0 text-start flex flex-col gap-0.5"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-[14px] text-noorix-text">{title}</span>
+              <StatusBadge status={order.status} />
+            </div>
+            {subtitle ? (
+              <span className="text-[11px] text-noorix-muted">{subtitle}</span>
+            ) : null}
+            {!open && items.length > 0 ? (
+              <span className="text-[11px] text-noorix-muted">
+                {items.length} {t('staffOrderItemsCount')}
+              </span>
+            ) : null}
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1 justify-end ps-10">
+          {isSale && onResend ? (
+            <Button size="sm" variant="ghost" onClick={() => onResend(order)}>
+              {t('staffSaleResend')}
+            </Button>
+          ) : null}
+          <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
+          <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
+        </div>
+      </div>
+      {open && (
+        <div className="px-3 pb-3 pt-0 border-t border-noorix-border flex flex-col gap-2">
+          <div className="flex flex-col gap-2 pt-2">
+            {items.map((it: any, i: number) => {
+              const p = it.product;
+              const nameAr = p?.nameAr || '—';
+              const nameEn = p?.nameEn?.trim() || null;
+              return (
+                <div key={i} className="flex items-start justify-between gap-2 text-[13px]">
+                  <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                    <span className="font-medium text-noorix-text break-words">{nameAr}</span>
+                    {nameEn ? (
+                      <span className="text-[11px] text-noorix-muted break-words ltr text-start">{nameEn}</span>
+                    ) : null}
+                  </div>
+                  <span className="font-semibold nx-font-numbers shrink-0 ltr">
+                    {fmt(it.quantity, 0)} {it.unit || ''}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {order.notes ? (
+            <div className="text-[11px] text-noorix-muted italic break-words">{order.notes}</div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
@@ -525,64 +633,30 @@ function StaffOrderPanel({
         </div>
       )}
 
-      {/* ── مُرسَل ── */}
+      {/* ── مُرسَل — بدون كرت خارجي إضافي؛ كل طلب مطوي افتراضياً ── */}
       {sentOrders.length > 0 && (
-        <div className="noorix-surface-card overflow-hidden">
-          <div className="px-4 py-3 border-b border-noorix-border flex items-center justify-between">
+        <section className="flex flex-col gap-2 pt-1 border-t border-noorix-border">
+          <div className="flex items-center justify-between gap-2 px-0.5 pt-3">
             <span className="text-[13px] font-bold text-noorix-muted">
               {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
             </span>
             <Badge color="green" size="sm">{sentOrders.length}</Badge>
           </div>
-          <div className="divide-y divide-noorix-border">
+          <div className="flex flex-col gap-2">
             {sentOrders.slice(0, 10).map((o: any) => (
-              isSale ? (
-                <div key={o.id} className="p-3 flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-bold text-[14px] truncate">{o.sectionName}</span>
-                      <StatusBadge status={o.status} />
-                    </div>
-                    <div className="flex gap-1 shrink-0 flex-wrap justify-end">
-                      <Button size="sm" variant="ghost" onClick={() => handleResendSale(o)}>
-                        {t('staffSaleResend')}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => loadForEdit(o)}>{t('edit')}</Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDelete(o)}>{t('delete')}</Button>
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-noorix-muted">
-                    {o.saleDate ? formatSaudiDate(o.saleDate) : formatSaudiDate(o.createdAt)}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    {(o.items || []).map((it: any, i: number) => {
-                      const p = it.product;
-                      const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
-                      return (
-                        <div key={i} className="flex justify-between text-[13px]">
-                          <span>{name}</span>
-                          <span className="font-semibold nx-font-numbers">{fmt(it.quantity, 0)} {it.unit || ''}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {o.notes && <div className="text-[11px] text-noorix-muted italic">{o.notes}</div>}
-                </div>
-              ) : (
-                <div key={o.id} className="px-4 py-3 flex items-center justify-between gap-2">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[13px] font-semibold">{o.sectionName}</span>
-                    <span className="text-[11px] text-noorix-muted">{formatSaudiDate(o.createdAt)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] text-noorix-muted">{(o.items || []).length} {t('staffOrderItemsCount')}</span>
-                    <StatusBadge status={o.status} />
-                  </div>
-                </div>
-              )
+              <StaffSentOrderRow
+                key={o.id}
+                order={o}
+                isSale={isSale}
+                lang={lang}
+                t={t}
+                onResend={isSale ? handleResendSale : undefined}
+                onEdit={loadForEdit}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {!isLoading && myTypedOrders.length === 0 && basket.size === 0 && (

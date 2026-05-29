@@ -364,6 +364,8 @@ export default {
   staffOrderPending:        { ar: 'معلّق', en: 'Pending' },
   staffOrderSent:           { ar: 'تم الإرسال', en: 'Sent' },
   staffOrderItemsCount:     { ar: 'صنف', en: 'item(s)' },
+  staffSentExpand:          { ar: 'عرض التفاصيل', en: 'Show details' },
+  staffSentCollapse:        { ar: 'إخفاء التفاصيل', en: 'Hide details' },
   staffOrdersCount:         { ar: 'طلب', en: 'order(s)' },
 
   // ── ملخص الكاشير ──────────────────────────────────
