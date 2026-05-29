@@ -8,7 +8,6 @@ import { normalize } from './ocr-normalize.util';
 import { findBestMatch, classifyConfidence } from './ocr-match.util';
 import { ExtractInvoiceDto } from './dto/extract-invoice.dto';
 import { extractJsonFromOcrLlmText } from '../common/utils/ocr-llm-json.util';
-import { validateItemMath, validateInvoiceTotals } from './ocr-invoice-math-validate.util';
 import { splitBilingualName, extractSizeFromName, findBestItemMatch } from './ocr-item-name-match.util';
 import {
   buildGeminiUrl,
@@ -16,17 +15,29 @@ import {
   OCR_EXTRACTION_PROMPT,
   OCR_EXTRACTION_RESPONSE_SCHEMA,
   supportsStructuredGeminiResponse,
-  type GeminiExtractedItem,
   type GeminiExtractedInvoice,
 } from './ocr-gemini-extract.constants';
-import {
-  normalizeOcrDateToYmd,
-  normalizeOcrDigits,
-  normalizeOcrInvoiceNumber,
-  parseOcrConfidence,
-  parseOcrNumber,
-} from './ocr-extraction-normalize.util';
 import { validateOcrExtractionWithZod } from './ocr-extraction.schema';
+import {
+  applyMathValidation,
+  buildQualityFlags,
+  normalizeExtractedInvoicePayload,
+  tryLocalJsonRepair,
+  type GeminiExtractionWithMath,
+} from './ocr-extraction-pipeline.util';
+import {
+  attachModelTelemetry,
+  trimErrorText,
+  type OcrModelAttemptStage,
+  type OcrModelAttemptOutcome,
+  type OcrModelAttemptTelemetry,
+} from './ocr-model-telemetry.util';
+import {
+  learnItemAliasIfNeeded,
+  learnSupplierAliasIfNeeded,
+  type ItemMatchRow,
+  type SupplierMatchRow,
+} from './ocr-alias-learning.util';
 
 type GeminiRaw = {
   candidates?: Array<{
@@ -37,73 +48,9 @@ type GeminiRaw = {
   promptFeedback?: { blockReason?: string };
 };
 
-type ItemMathWarning = {
-  message?: string;
-  suggestedQuantity?: number;
-  suggestedUnitPrice?: number;
-};
-
-type ItemPriceWarning = {
-  avg: number;
-  deviation: number;
-  lastPrice: number;
-};
-
-type GeminiItemWithWarnings = GeminiExtractedItem & {
-  mathWarning?: ItemMathWarning;
-  priceWarning?: ItemPriceWarning;
-  itemMatch?: { id: string; nameAr: string; nameEn?: string | null; score: number; status: string; hasSizes: boolean } | null;
-};
-
-type GeminiExtractionWithMath = Omit<GeminiExtractedInvoice, 'items'> & {
-  items: GeminiItemWithWarnings[];
-  invoiceTotalWarning?: string;
-  vatAdjusted: boolean;
-};
-
-type SupplierMatchRow = {
-  id: string;
-  nameAr: string;
-  nameEn?: string | null;
-  aliases: Array<{ alias: string }>;
-};
-
-type ItemMatchRow = {
-  id: string;
-  nameAr: string;
-  nameEn?: string | null;
-  aliases: Array<{ alias: string }>;
-};
-
-type OcrModelAttemptStage = 'none' | 'direct' | 'local_repair' | 'ai_repair';
-type OcrModelAttemptOutcome =
-  | 'success'
-  | 'unavailable'
-  | 'blocked'
-  | 'empty'
-  | 'parse_failed'
-  | 'schema_failed'
-  | 'http_error'
-  | 'runtime_error';
-
-type OcrModelAttemptTelemetry = {
-  model: string;
-  version: string;
-  structuredOutput: boolean;
-  startedAt: string;
-  latencyMs: number;
-  outcome: OcrModelAttemptOutcome;
-  parseStage: OcrModelAttemptStage;
-  httpStatus?: number;
-  finishReason?: string;
-  blockReason?: string;
-  error?: string;
-};
-
 @Injectable()
 export class OcrExtractionService {
   private readonly logger = new Logger(OcrExtractionService.name);
-  private readonly arabicScriptRe = /[\u0600-\u06FF]/;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -164,365 +111,6 @@ ${rawText.slice(0, 12000)}`;
     return parts.map((p) => p.text || '').join('\n').trim();
   }
 
-  private tryParseJsonCandidate(candidate: string): GeminiExtractedInvoice | null {
-    const trimmed = candidate.trim();
-    if (!trimmed) return null;
-    try {
-      const parsed = JSON.parse(trimmed) as GeminiExtractedInvoice;
-      if (parsed && typeof parsed === 'object') return parsed;
-    } catch {
-      return null;
-    }
-    return null;
-  }
-
-  private tryLocalJsonRepair(rawText: string): GeminiExtractedInvoice | null {
-    if (!rawText.trim()) return null;
-
-    const noMarkdown = rawText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
-    const normalizedQuotes = noMarkdown
-      .replace(/[“”]/g, '"')
-      .replace(/[‘’]/g, '\'')
-      .replace(/\u00A0/g, ' ');
-    const withoutTrailingCommas = normalizedQuotes.replace(/,\s*([}\]])/g, '$1');
-    const quotedKeys = withoutTrailingCommas.replace(/([{,]\s*)'([^']+?)'\s*:/g, '$1"$2":');
-    const quotedValues = quotedKeys.replace(/:\s*'([^']*)'/g, (_, value: string) => {
-      const escaped = value.replace(/"/g, '\\"');
-      return `: "${escaped}"`;
-    });
-
-    const candidates = [
-      normalizedQuotes,
-      withoutTrailingCommas,
-      quotedKeys,
-      quotedValues,
-    ];
-    for (const candidate of candidates) {
-      const direct = this.tryParseJsonCandidate(candidate);
-      if (direct) return direct;
-      const extracted = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(candidate);
-      if (extracted) return extracted;
-    }
-    return null;
-  }
-
-  private normalizeExtractedInvoice(extracted: GeminiExtractedInvoice): GeminiExtractedInvoice {
-    const supplierName = extracted?.supplier?.name?.trim() || undefined;
-    const supplierConfidence = parseOcrConfidence(extracted?.supplier?.confidence);
-    const vatValue = normalizeOcrDigits(extracted?.vatNumber?.value);
-    const vatConfidence = parseOcrConfidence(extracted?.vatNumber?.confidence);
-    const invoiceNumber = normalizeOcrInvoiceNumber(extracted?.invoiceNumber?.value);
-    const invoiceNumberConfidence = parseOcrConfidence(extracted?.invoiceNumber?.confidence);
-    const invoiceDate = normalizeOcrDateToYmd(extracted?.invoiceDate?.value);
-    const invoiceDateConfidence = parseOcrConfidence(extracted?.invoiceDate?.confidence);
-    const subtotalValue = parseOcrNumber(extracted?.subtotalAmount?.value);
-    const subtotalConfidence = parseOcrConfidence(extracted?.subtotalAmount?.confidence);
-    const totalValue = parseOcrNumber(extracted?.totalAmount?.value);
-    const totalConfidence = parseOcrConfidence(extracted?.totalAmount?.confidence);
-    const vatAmountValue = parseOcrNumber(extracted?.vatAmount?.value);
-    const vatAmountConfidence = parseOcrConfidence(extracted?.vatAmount?.confidence);
-
-    const items = Array.isArray(extracted?.items)
-      ? extracted.items
-        .map((item): GeminiExtractedItem | null => {
-          const name = item?.name?.toString().trim() || undefined;
-          if (!name) return null;
-
-          const quantity = parseOcrNumber(item?.quantity);
-          const unitPrice = parseOcrNumber(item?.unitPrice);
-          const totalPrice = parseOcrNumber(item?.totalPrice);
-          const confidence = parseOcrConfidence(item?.confidence);
-
-          const rawNameAr = item?.nameAr?.toString().trim() || undefined;
-          const hasArabicInNameAr = !!rawNameAr && /[\u0600-\u06FF]/.test(rawNameAr);
-          const nameAr = hasArabicInNameAr ? rawNameAr : undefined;
-          const nameEn = item?.nameEn?.toString().trim() || undefined;
-          const size = item?.size?.toString().trim() || undefined;
-          const sizeUnit = item?.sizeUnit?.toString().trim() || undefined;
-          const cleanName = item?.cleanName?.toString().trim() || undefined;
-
-          return {
-            name,
-            ...(quantity != null ? { quantity } : {}),
-            ...(unitPrice != null ? { unitPrice } : {}),
-            ...(totalPrice != null ? { totalPrice } : {}),
-            ...(confidence != null ? { confidence } : {}),
-            ...(nameAr ? { nameAr } : {}),
-            ...(nameEn ? { nameEn } : {}),
-            ...(size ? { size } : {}),
-            ...(sizeUnit ? { sizeUnit } : {}),
-            ...(cleanName ? { cleanName } : {}),
-          };
-        })
-        .filter((item): item is GeminiExtractedItem => !!item)
-      : [];
-
-    return {
-      ...(supplierName || supplierConfidence != null
-        ? {
-          supplier: {
-            ...(supplierName ? { name: supplierName } : {}),
-            ...(supplierConfidence != null ? { confidence: supplierConfidence } : {}),
-          },
-        }
-        : {}),
-      ...(vatValue || vatConfidence != null
-        ? {
-          vatNumber: {
-            ...(vatValue ? { value: vatValue } : {}),
-            ...(vatConfidence != null ? { confidence: vatConfidence } : {}),
-          },
-        }
-        : {}),
-      ...(invoiceNumber || invoiceNumberConfidence != null
-        ? {
-          invoiceNumber: {
-            ...(invoiceNumber ? { value: invoiceNumber } : {}),
-            ...(invoiceNumberConfidence != null ? { confidence: invoiceNumberConfidence } : {}),
-          },
-        }
-        : {}),
-      ...(invoiceDate || invoiceDateConfidence != null
-        ? {
-          invoiceDate: {
-            ...(invoiceDate ? { value: invoiceDate } : {}),
-            ...(invoiceDateConfidence != null ? { confidence: invoiceDateConfidence } : {}),
-          },
-        }
-        : {}),
-      ...(subtotalValue != null || subtotalConfidence != null
-        ? {
-          subtotalAmount: {
-            ...(subtotalValue != null ? { value: subtotalValue } : {}),
-            ...(subtotalConfidence != null ? { confidence: subtotalConfidence } : {}),
-          },
-        }
-        : {}),
-      ...(totalValue != null || totalConfidence != null
-        ? {
-          totalAmount: {
-            ...(totalValue != null ? { value: totalValue } : {}),
-            ...(totalConfidence != null ? { confidence: totalConfidence } : {}),
-          },
-        }
-        : {}),
-      ...(vatAmountValue != null || vatAmountConfidence != null
-        ? {
-          vatAmount: {
-            ...(vatAmountValue != null ? { value: vatAmountValue } : {}),
-            ...(vatAmountConfidence != null ? { confidence: vatAmountConfidence } : {}),
-          },
-        }
-        : {}),
-      items,
-    };
-  }
-
-  private applyMathValidation(extracted: GeminiExtractedInvoice): GeminiExtractionWithMath {
-    const items = (extracted.items || []).map((item) => {
-      const mathResult = validateItemMath(item.quantity, item.unitPrice, item.totalPrice);
-      return {
-        ...item,
-        mathWarning: mathResult.valid
-          ? undefined
-          : {
-            message: mathResult.warning,
-            suggestedQuantity: mathResult.suggestedQuantity,
-            suggestedUnitPrice: mathResult.suggestedUnitPrice,
-          },
-      };
-    });
-
-    const itemsSum = items.reduce((s, i) => s + (i.totalPrice || 0), 0);
-    const invoiceTotalValidation = validateInvoiceTotals(
-      itemsSum,
-      extracted.totalAmount?.value,
-      extracted.vatAmount?.value,
-      extracted.subtotalAmount?.value,
-    );
-
-    return {
-      ...extracted,
-      items,
-      invoiceTotalWarning: invoiceTotalValidation.valid ? undefined : invoiceTotalValidation.warning,
-      vatAdjusted: invoiceTotalValidation.vatAdjusted,
-    };
-  }
-
-  private buildQualityFlags(
-    extracted: GeminiExtractionWithMath,
-    options?: { schemaIssues?: string[]; enrichError?: boolean },
-  ): string[] {
-    const flags = new Set<string>();
-
-    if (options?.schemaIssues?.length) flags.add('schema_validation_warning');
-    if (options?.enrichError) flags.add('matching_enrichment_failed');
-    if (!extracted.totalAmount?.value) flags.add('missing_total_amount');
-    if (!extracted.items.length) flags.add('missing_items');
-
-    const confidenceValues = [
-      extracted.supplier?.confidence,
-      extracted.vatNumber?.confidence,
-      extracted.invoiceNumber?.confidence,
-      extracted.invoiceDate?.confidence,
-      extracted.totalAmount?.confidence,
-      extracted.vatAmount?.confidence,
-    ].filter((v): v is number => typeof v === 'number');
-    if (confidenceValues.some((v) => v < 0.7)) flags.add('low_confidence_header');
-    if (extracted.items.some((i) => typeof i.confidence === 'number' && i.confidence < 0.7)) {
-      flags.add('low_confidence_items');
-    }
-    if (extracted.items.some((i) => i.mathWarning?.message) || extracted.invoiceTotalWarning) {
-      flags.add('math_validation_warning');
-    }
-
-    if (!flags.size) flags.add('validated');
-    return Array.from(flags);
-  }
-
-  private trimErrorText(value: unknown, maxLen = 260): string | undefined {
-    const text = typeof value === 'string'
-      ? value
-      : value instanceof Error
-        ? value.message
-        : value != null
-          ? String(value)
-          : '';
-    const trimmed = text.trim();
-    if (!trimmed) return undefined;
-    return trimmed.slice(0, maxLen);
-  }
-
-  private buildModelTelemetryFlags(
-    attempts: OcrModelAttemptTelemetry[],
-    primaryModel: string | undefined,
-    usedModel: string | undefined,
-  ): string[] {
-    const flags = new Set<string>();
-    if (attempts.length > 1) flags.add('model_multi_attempt');
-    if (primaryModel && usedModel && primaryModel !== usedModel) flags.add('model_fallback_used');
-    if (attempts.some((a) => a.outcome === 'unavailable')) flags.add('model_unavailable_retry');
-    if (attempts.some((a) => a.outcome === 'blocked')) flags.add('model_blocked_retry');
-    if (attempts.some((a) => a.parseStage === 'local_repair' || a.parseStage === 'ai_repair')) {
-      flags.add('model_repair_path_used');
-    }
-    return Array.from(flags);
-  }
-
-  private attachModelTelemetry(
-    payload: Record<string, unknown>,
-    args: {
-      attempts: OcrModelAttemptTelemetry[];
-      usedModel?: string;
-      usedModelVersion?: string;
-      extractionStartedAt: number;
-      primaryModel?: string;
-    },
-  ): Record<string, unknown> {
-    const modelQualityFlags = this.buildModelTelemetryFlags(args.attempts, args.primaryModel, args.usedModel);
-    const existingQualityFlags = Array.isArray(payload.qualityFlags)
-      ? payload.qualityFlags.filter((x): x is string => typeof x === 'string')
-      : [];
-    const qualityFlags = Array.from(new Set([...existingQualityFlags, ...modelQualityFlags]));
-    const qualityStatus = typeof payload.qualityStatus === 'string'
-      ? payload.qualityStatus
-      : qualityFlags.includes('validated') && qualityFlags.length === 1
-        ? 'validated'
-        : 'needs_review';
-
-    return {
-      ...payload,
-      usedModel: args.usedModel || payload.usedModel || null,
-      usedModelVersion: args.usedModelVersion || payload.usedModelVersion || null,
-      modelAttempts: args.attempts,
-      extractionLatencyMs: Date.now() - args.extractionStartedAt,
-      qualityFlags,
-      qualityStatus,
-    };
-  }
-
-  private detectAliasLanguage(text: string): 'ar' | 'en' {
-    return this.arabicScriptRe.test(text) ? 'ar' : 'en';
-  }
-
-  private shouldSkipAliasLearning(
-    rawAlias: string | undefined | null,
-    canonical: string,
-    altCanonical: string | null | undefined,
-    existingAliases: Array<{ alias: string }>,
-  ): string | null {
-    const trimmed = rawAlias?.trim();
-    if (!trimmed || trimmed.length < 3) return null;
-    const normAlias = normalize(trimmed);
-    if (!normAlias || normAlias.length < 2) return null;
-    if (normalize(canonical) === normAlias) return null;
-    if (altCanonical && normalize(altCanonical) === normAlias) return null;
-    if (existingAliases.some((a) => normalize(a.alias) === normAlias)) return null;
-    return trimmed;
-  }
-
-  private async learnSupplierAliasIfNeeded(
-    suppliers: SupplierMatchRow[],
-    supplierMatch: { id: string; score: number } | null,
-    rawAlias: string | undefined,
-    seenKeys: Set<string>,
-  ): Promise<void> {
-    if (!supplierMatch || supplierMatch.score < 0.9) return;
-    const matched = suppliers.find((s) => s.id === supplierMatch.id);
-    if (!matched) return;
-
-    const candidate = this.shouldSkipAliasLearning(rawAlias, matched.nameAr, matched.nameEn, matched.aliases);
-    if (!candidate) return;
-    const normCandidate = normalize(candidate);
-    const key = `${matched.id}:${normCandidate}`;
-    if (seenKeys.has(key)) return;
-    seenKeys.add(key);
-
-    await this.prisma.ocrSupplierAlias
-      .create({
-        data: {
-          supplierId: matched.id,
-          alias: candidate,
-          language: this.detectAliasLanguage(candidate),
-          addedBy: 'ocr-auto',
-        },
-      })
-      .catch(() => {});
-    matched.aliases.push({ alias: candidate });
-    this.logger.log(`OCR learned supplier alias "${candidate}" -> ${matched.id}`);
-  }
-
-  private async learnItemAliasIfNeeded(
-    items: ItemMatchRow[],
-    itemMatch: { id: string; score: number } | null,
-    rawAlias: string | undefined,
-    seenKeys: Set<string>,
-  ): Promise<void> {
-    if (!itemMatch || itemMatch.score < 0.9) return;
-    const matched = items.find((i) => i.id === itemMatch.id);
-    if (!matched) return;
-
-    const candidate = this.shouldSkipAliasLearning(rawAlias, matched.nameAr, matched.nameEn, matched.aliases);
-    if (!candidate) return;
-    const normCandidate = normalize(candidate);
-    const key = `${matched.id}:${normCandidate}`;
-    if (seenKeys.has(key)) return;
-    seenKeys.add(key);
-
-    await this.prisma.ocrItemAlias
-      .create({
-        data: {
-          itemId: matched.id,
-          alias: candidate,
-          language: this.detectAliasLanguage(candidate),
-          addedBy: 'ocr-auto',
-        },
-      })
-      .catch(() => {});
-    matched.aliases.push({ alias: candidate });
-    this.logger.log(`OCR learned item alias "${candidate}" -> ${matched.id}`);
-  }
-
   private async tryRecoverJsonFromRawText(
     apiKey: string,
     model: string,
@@ -544,7 +132,7 @@ ${rawText.slice(0, 12000)}`;
       const repairedText = this.extractTextFromGeminiResponse(rawJson);
       if (!repairedText) return null;
       const parsed = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(repairedText);
-      return parsed ? this.normalizeExtractedInvoice(parsed) : null;
+      return parsed ? normalizeExtractedInvoicePayload(parsed) : null;
     } catch {
       return null;
     }
@@ -599,7 +187,7 @@ ${rawText.slice(0, 12000)}`;
             pushAttempt({
               outcome: 'unavailable',
               httpStatus: res.status,
-              error: this.trimErrorText(errMsg),
+              error: trimErrorText(errMsg),
             });
             this.logger.warn(`Gemini model "${model}" unavailable → trying next in chain`);
             continue; // جرّب النموذج التالي
@@ -608,7 +196,7 @@ ${rawText.slice(0, 12000)}`;
           pushAttempt({
             outcome: 'http_error',
             httpStatus: res.status,
-            error: this.trimErrorText(errMsg),
+            error: trimErrorText(errMsg),
           });
           this.logger.error(`Gemini error ${res.status} (${model}): ${errMsg}`);
           throw new BadRequestException(`فشل الاستخراج من Gemini: ${errMsg}`);
@@ -624,7 +212,7 @@ ${rawText.slice(0, 12000)}`;
           pushAttempt({
             outcome: 'blocked',
             httpStatus: res.status,
-            blockReason: this.trimErrorText(blockReason),
+            blockReason: trimErrorText(blockReason),
             finishReason: candidate?.finishReason,
           });
           this.logger.warn(`Gemini blocked (${model}): ${blockReason} → trying next model`);
@@ -648,7 +236,7 @@ ${rawText.slice(0, 12000)}`;
         let extracted = extractJsonFromOcrLlmText<GeminiExtractedInvoice>(text);
         if (extracted) parseStage = 'direct';
         if (!extracted) {
-          extracted = this.tryLocalJsonRepair(text);
+          extracted = tryLocalJsonRepair(text);
           if (extracted) parseStage = 'local_repair';
         }
         if (!extracted) {
@@ -677,7 +265,7 @@ ${rawText.slice(0, 12000)}`;
             invoiceDate: null, totalAmount: null,
             vatAmount: null, items: [],
           };
-          return this.attachModelTelemetry(payload, {
+          return attachModelTelemetry(payload, {
             attempts: modelAttempts,
             usedModel: model,
             usedModelVersion: version,
@@ -686,7 +274,7 @@ ${rawText.slice(0, 12000)}`;
           });
         }
 
-        const normalizedExtraction = this.normalizeExtractedInvoice(extracted);
+        const normalizedExtraction = normalizeExtractedInvoicePayload(extracted);
         this.logger.log(`Gemini extracted OK (${model}): supplier=${normalizedExtraction.supplier?.name} items=${normalizedExtraction.items?.length}`);
 
         const zodValidation = validateOcrExtractionWithZod(normalizedExtraction);
@@ -697,7 +285,7 @@ ${rawText.slice(0, 12000)}`;
             parseStage,
             httpStatus: res.status,
             finishReason: candidate?.finishReason,
-            error: this.trimErrorText(zodValidation.issues.join(' | ')),
+            error: trimErrorText(zodValidation.issues.join(' | ')),
           });
           const payload = {
             parseError: true,
@@ -718,7 +306,7 @@ ${rawText.slice(0, 12000)}`;
             vatAmount: normalizedExtraction.vatAmount ?? null,
             items: [],
           };
-          return this.attachModelTelemetry(payload, {
+          return attachModelTelemetry(payload, {
             attempts: modelAttempts,
             usedModel: model,
             usedModelVersion: version,
@@ -727,7 +315,7 @@ ${rawText.slice(0, 12000)}`;
           });
         }
 
-        const mathValidatedExtraction = this.applyMathValidation(zodValidation.data);
+        const mathValidatedExtraction = applyMathValidation(zodValidation.data);
 
         // enrichExtraction محمي بـ try/catch — لا يُفسد النتيجة
         try {
@@ -738,7 +326,7 @@ ${rawText.slice(0, 12000)}`;
             httpStatus: res.status,
             finishReason: candidate?.finishReason,
           });
-          return this.attachModelTelemetry(enriched as Record<string, unknown>, {
+          return attachModelTelemetry(enriched as Record<string, unknown>, {
             attempts: modelAttempts,
             usedModel: model,
             usedModelVersion: version,
@@ -753,7 +341,7 @@ ${rawText.slice(0, 12000)}`;
             httpStatus: res.status,
             finishReason: candidate?.finishReason,
           });
-          const qualityFlags = this.buildQualityFlags(mathValidatedExtraction, { enrichError: true });
+          const qualityFlags = buildQualityFlags(mathValidatedExtraction, { enrichError: true });
           const payload = {
             supplier: mathValidatedExtraction.supplier,
             supplierMatch: null,
@@ -770,7 +358,7 @@ ${rawText.slice(0, 12000)}`;
             qualityStatus: qualityFlags.includes('validated') ? 'validated' : 'needs_review',
             enrichError: (enrichErr as Error).message,
           };
-          return this.attachModelTelemetry(payload, {
+          return attachModelTelemetry(payload, {
             attempts: modelAttempts,
             usedModel: model,
             usedModelVersion: version,
@@ -783,7 +371,7 @@ ${rawText.slice(0, 12000)}`;
         if (err instanceof BadRequestException) throw err;
         pushAttempt({
           outcome: 'runtime_error',
-          error: this.trimErrorText(err),
+          error: trimErrorText(err),
         });
         this.logger.error(`Gemini network/runtime error (${model}): ${(err as Error).message} ${(err as Error).stack}`);
         throw new BadRequestException(`خطأ في الاتصال بـ Gemini: ${(err as Error).message}`);
@@ -874,7 +462,9 @@ ${rawText.slice(0, 12000)}`;
         }
       }
 
-      await this.learnSupplierAliasIfNeeded(
+      await learnSupplierAliasIfNeeded(
+        this.prisma,
+        this.logger,
         suppliers,
         supplierMatch,
         supplierName,
@@ -937,7 +527,9 @@ ${rawText.slice(0, 12000)}`;
           }
         }
 
-        await this.learnItemAliasIfNeeded(
+        await learnItemAliasIfNeeded(
+          this.prisma,
+          this.logger,
           items,
           itemMatch,
           cleanName || itemNameForPipeline,
@@ -1001,7 +593,7 @@ ${rawText.slice(0, 12000)}`;
       }),
     );
 
-    const qualityFlags = this.buildQualityFlags({
+    const qualityFlags = buildQualityFlags({
       ...extracted,
       items: enrichedWithWarnings,
     });
