@@ -79,6 +79,7 @@ export default function InvoiceUploadTab(props: any) {
             stageArtifacts={o.extractStageArtifacts}
             copiedStageKey={o.copiedStageKey}
             copiedJsonKey={o.copiedJsonKey}
+            reviewInvoiceStatus={o.reviewInvoiceStatus}
             workflowMode={o.workflowMode}
             onResetAll={o.handleResetImageColumn}
             onExtract={o.handleExtract}

@@ -16,6 +16,8 @@ const STATUS_LABEL = {
   extraction_failed: { ar: 'فشل الاستخراج', en: 'Extraction failed' },
 };
 
+const OPENABLE_STATUSES = new Set(['queued', 'extracting', 'pending_review', 'extraction_failed']);
+
 export default function OcrReviewQueueTab({
   suppliers = [],
   items = [],
@@ -50,6 +52,11 @@ export default function OcrReviewQueueTab({
 
   const rows = useMemo(() => data || [], [data]);
 
+  const openInvoiceSheet = (id: string) => {
+    if (!id) return;
+    setReviewInvoiceId(String(id));
+  };
+
   const handleRetry = async (id: string) => {
     if (!id || retryingId) return;
     setRetryingId(id);
@@ -58,6 +65,8 @@ export default function OcrReviewQueueTab({
       const r = await retryOcrInvoiceExtraction(id);
       if (!r.success) {
         setRetryError(r.error || t('ocrRetryFailed'));
+      } else {
+        openInvoiceSheet(id);
       }
       await refetch();
     } catch {
@@ -77,6 +86,12 @@ export default function OcrReviewQueueTab({
     queryClient.invalidateQueries({ queryKey: ocrKeys.invoices(activeCompanyId || '') });
     onReviewSaved?.();
   };
+
+  const activeRow = rows.find((x: any) => String(x.id) === String(reviewInvoiceId));
+  const sheetTitle =
+    activeRow?.status === 'pending_review'
+      ? t('ocrReviewSheetTitle')
+      : t('ocrReviewProgressSheetTitle');
 
   return (
     <div className="flex flex-col gap-3" dir={isAr ? 'rtl' : 'ltr'}>
@@ -114,46 +129,102 @@ export default function OcrReviewQueueTab({
             </thead>
             <tbody>
               {rows.map((inv: any) => {
+                const status = String(inv.status || '');
+                const canOpen = OPENABLE_STATUSES.has(status);
                 const submitterName = ocrSubmitterLabel(inv.submittedBy, isAr) || '—';
+                const statusLabel =
+                  ((STATUS_LABEL as Record<string, { ar: string; en: string }>)[status] || {
+                    ar: status,
+                    en: status,
+                  })[isAr ? 'ar' : 'en'];
+
                 return (
-                <tr key={inv.id} className="border-b border-noorix-border last:border-b-0">
-                  <td className="p-2 w-24">
-                    <OcrInvoiceThumb
-                      invoiceId={inv.id}
-                      className="w-16 h-16"
-                      submitterLabel={submitterName === '—' ? '' : submitterName}
-                    />
-                  </td>
-                  <td className="p-2">
-                    {((STATUS_LABEL as Record<string, { ar: string; en: string }>)[String(inv.status)] || { ar: inv.status, en: inv.status })[isAr ? 'ar' : 'en']}
-                    {inv.extractionError && (
-                      <div className="text-noorix-red text-[11px] mt-1 max-w-[240px] truncate" title={inv.extractionError}>
-                        {inv.extractionError}
+                  <tr key={inv.id} className="border-b border-noorix-border last:border-b-0">
+                    <td className="p-2 w-24">
+                      {canOpen ? (
+                        <button
+                          type="button"
+                          className="cursor-pointer rounded-md border-0 bg-transparent p-0 hover:opacity-85 focus:outline-none focus-visible:ring-2 focus-visible:ring-noorix-blue"
+                          onClick={() => openInvoiceSheet(inv.id)}
+                          title={statusLabel}
+                          aria-label={statusLabel}
+                        >
+                          <OcrInvoiceThumb
+                            invoiceId={inv.id}
+                            className="w-16 h-16"
+                            submitterLabel={submitterName === '—' ? '' : submitterName}
+                          />
+                        </button>
+                      ) : (
+                        <OcrInvoiceThumb
+                          invoiceId={inv.id}
+                          className="w-16 h-16"
+                          submitterLabel={submitterName === '—' ? '' : submitterName}
+                        />
+                      )}
+                    </td>
+                    <td className="p-2">
+                      {canOpen ? (
+                        <button
+                          type="button"
+                          className="cursor-pointer border-0 bg-transparent p-0 text-start text-noorix-blue underline hover:opacity-85"
+                          onClick={() => openInvoiceSheet(inv.id)}
+                        >
+                          {statusLabel}
+                        </button>
+                      ) : (
+                        statusLabel
+                      )}
+                      {inv.extractionError && (
+                        <div
+                          className="text-noorix-red text-[11px] mt-1 max-w-[240px] truncate"
+                          title={inv.extractionError}
+                        >
+                          {inv.extractionError}
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-2">{inv.supplier?.nameAr || '—'}</td>
+                    <td className="p-2">{submitterName}</td>
+                    <td className="p-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {canOpen && status !== 'pending_review' && (
+                          <Button
+                            type="button"
+                            variant="raw"
+                            size="sm"
+                            className="text-noorix-blue underline"
+                            onClick={() => openInvoiceSheet(inv.id)}
+                          >
+                            {t('ocrViewProgress')}
+                          </Button>
+                        )}
+                        {status === 'pending_review' && (
+                          <Button
+                            type="button"
+                            variant="raw"
+                            size="sm"
+                            className="text-noorix-blue underline"
+                            onClick={() => openInvoiceSheet(inv.id)}
+                          >
+                            {t('ocrReviewAction')}
+                          </Button>
+                        )}
+                        {status === 'extraction_failed' && (
+                          <Button
+                            type="button"
+                            variant="raw"
+                            size="sm"
+                            className="text-noorix-blue underline"
+                            onClick={() => handleRetry(inv.id)}
+                            disabled={retryingId === inv.id}
+                          >
+                            {retryingId === inv.id ? t('ocrRetrying') : t('ocrRetryExtraction')}
+                          </Button>
+                        )}
                       </div>
-                    )}
-                  </td>
-                  <td className="p-2">{inv.supplier?.nameAr || '—'}</td>
-                  <td className="p-2">{submitterName}</td>
-                  <td className="p-2">
-                    {inv.status === 'pending_review' && (
-                      <Button type="button" variant="raw" size="sm" className="text-noorix-blue underline" onClick={() => setReviewInvoiceId(String(inv.id))}>
-                        {t('ocrReviewAction')}
-                      </Button>
-                    )}
-                    {inv.status === 'extraction_failed' && (
-                      <Button
-                        type="button"
-                        variant="raw"
-                        size="sm"
-                        className="text-noorix-blue underline"
-                        onClick={() => handleRetry(inv.id)}
-                        disabled={retryingId === inv.id}
-                      >
-                        {retryingId === inv.id ? t('ocrRetrying') : t('ocrRetryExtraction')}
-                      </Button>
-                    )}
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
@@ -164,7 +235,7 @@ export default function OcrReviewQueueTab({
       <AdaptiveSheet
         open={!!reviewInvoiceId}
         onClose={closeReviewSheet}
-        title={t('ocrReviewSheetTitle')}
+        title={sheetTitle}
         size="full"
       >
         {reviewInvoiceId && (
@@ -172,6 +243,7 @@ export default function OcrReviewQueueTab({
             workflowMode="review"
             prefillInvoiceId={reviewInvoiceId}
             onPrefillConsumed={() => {}}
+            onDismiss={closeReviewSheet}
             onSaved={handleReviewSaved}
             suppliers={suppliers}
             items={items}

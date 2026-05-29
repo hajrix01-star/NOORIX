@@ -36,6 +36,7 @@ export function OcrExtractionPipelineStatus({
   extractError,
   extractFailureStage,
   extractStartedAt,
+  reviewInvoiceStatus = null,
   stageDurations,
   copyIssueText,
   issueCopied,
@@ -58,6 +59,7 @@ export function OcrExtractionPipelineStatus({
   extractError: any;
   extractFailureStage: PipelineFailureStage;
   extractStartedAt: number | null;
+  reviewInvoiceStatus?: string | null;
   stageDurations?: PipelineStageDurations;
   copyIssueText?: string;
   issueCopied?: boolean;
@@ -73,19 +75,30 @@ export function OcrExtractionPipelineStatus({
   onDownloadRawJson?: () => void;
 }) {
   const [tick, setTick] = useState(() => Date.now());
+  const isQueued = reviewInvoiceStatus === 'queued';
+  const isServerExtracting = reviewInvoiceStatus === 'extracting';
+  const isServerFailed = reviewInvoiceStatus === 'extraction_failed';
+  const effectiveLoading = loading || isServerExtracting;
 
   useEffect(() => {
-    if (!loading) return;
+    if (!effectiveLoading) return;
     const id = window.setInterval(() => setTick(Date.now()), 500);
     return () => window.clearInterval(id);
-  }, [loading]);
+  }, [effectiveLoading]);
 
-  const showPipeline = !!extractStartedAt || loading || !!extracted || !!extractFailureStage;
+  const showPipeline =
+    !!extractStartedAt ||
+    effectiveLoading ||
+    !!extracted ||
+    !!extractFailureStage ||
+    isQueued ||
+    isServerFailed;
   const elapsedMs = extractStartedAt ? Math.max(0, tick - extractStartedAt) : 0;
-  const activeStep = loading ? (elapsedMs < 1600 ? 1 : elapsedMs < 4200 ? 2 : 3) : null;
+  const activeStep = effectiveLoading ? (elapsedMs < 1600 ? 1 : elapsedMs < 4200 ? 2 : 3) : null;
 
-  const failAtStep = extractFailureStage === 'request' ? 1 : extractFailureStage === 'parse' ? 2 : null;
-  const hasSuccess = !!extracted && !loading && !extractFailureStage;
+  const failAtStep =
+    extractFailureStage === 'request' ? 1 : extractFailureStage === 'parse' ? 2 : isServerFailed ? 1 : null;
+  const hasSuccess = !!extracted && !effectiveLoading && !extractFailureStage && !isServerFailed;
 
   const steps = useMemo(
     () => [
@@ -108,7 +121,7 @@ export function OcrExtractionPipelineStatus({
   if (!showPipeline) return null;
 
   const stageRunningElapsed = (idx: number) => {
-    if (!loading) return 0;
+    if (!effectiveLoading) return 0;
     if (idx === 0) return Math.max(0, Math.min(elapsedMs, 1600));
     if (idx === 1) return Math.max(0, Math.min(elapsedMs - 1600, 2600));
     if (idx === 2) return Math.max(0, elapsedMs - 4200);
@@ -121,16 +134,22 @@ export function OcrExtractionPipelineStatus({
     <div className="mt-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/60 p-3">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="text-[12px] font-semibold text-noorix-text">{t('ocrPipelineTitle')}</div>
-        {loading && <div className="text-[11px] text-noorix-blue">{t('ocrPipelineInProgress')}</div>}
+        {isQueued && <div className="text-[11px] text-noorix-muted">{t('ocrQueueWaiting')}</div>}
+        {effectiveLoading && !isQueued && (
+          <div className="text-[11px] text-noorix-blue">{t('ocrPipelineInProgress')}</div>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">
         {steps.map((step, idx) => {
           let status: 'pending' | 'running' | 'success' | 'failed' | 'warning' = 'pending';
           if (hasSuccess) status = 'success';
-          if (loading && activeStep != null) {
+          if (isQueued) {
+            status = idx === 0 ? 'success' : 'pending';
+          } else if (effectiveLoading && activeStep != null) {
             if (idx < activeStep) status = 'success';
             if (idx === activeStep) status = 'running';
+            if (idx === 0 && activeStep >= 1) status = 'success';
           } else if (failAtStep != null) {
             if (idx < failAtStep) status = 'success';
             else if (idx === failAtStep) status = 'failed';
@@ -154,9 +173,11 @@ export function OcrExtractionPipelineStatus({
                 >
                   {completedTimes[idx] != null
                     ? formatMs(Number(completedTimes[idx]))
-                    : loading && status === 'running'
+                    : effectiveLoading && status === 'running'
                       ? formatMs(stageRunningElapsed(idx))
-                      : '—'}
+                      : isQueued && idx === 0
+                        ? '✓'
+                        : '—'}
                 </span>
                 {!!stageArtifacts?.[step.artifactKey]?.reportText && (
                   <Button
@@ -195,12 +216,12 @@ export function OcrExtractionPipelineStatus({
         </div>
       )}
 
-      {!!extractFailureStage && !loading && (
+      {!!(extractFailureStage || isServerFailed) && !effectiveLoading && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <div className="text-[12px] text-noorix-red">
-            {extractFailureStage === 'request'
-              ? t('ocrPipelineFailedAt', t('ocrPipelineModelRequest'))
-              : t('ocrPipelineFailedAt', t('ocrPipelineJsonValidation'))}
+            {extractFailureStage === 'parse'
+              ? t('ocrPipelineFailedAt', t('ocrPipelineJsonValidation'))
+              : t('ocrPipelineFailedAt', t('ocrPipelineModelRequest'))}
           </div>
           <Button size="sm" variant="danger" onClick={onRetry}>
             {t('ocrRetryExtraction')}
@@ -214,7 +235,7 @@ export function OcrExtractionPipelineStatus({
         </div>
       )}
 
-      {!!extractWarning && !loading && !extractFailureStage && (
+      {!!extractWarning && !effectiveLoading && !extractFailureStage && !isServerFailed && (
         <div className="mt-2 text-[12px] text-noorix-amber">
           {isAr
             ? 'اكتمل الاستخراج مع تنبيه في المطابقة — راجع النتائج قبل الحفظ.'
@@ -222,7 +243,7 @@ export function OcrExtractionPipelineStatus({
         </div>
       )}
 
-      {!!extractError && !loading && !extractFailureStage && (
+      {!!extractError && !effectiveLoading && !extractFailureStage && (
         <div className="mt-2 text-[12px] text-noorix-red">{String(extractError)}</div>
       )}
     </div>

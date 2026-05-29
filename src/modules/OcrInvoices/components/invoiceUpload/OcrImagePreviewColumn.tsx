@@ -22,6 +22,7 @@ export function OcrImagePreviewColumn({
   copiedStageKey,
   copiedJsonKey,
   workflowMode = 'queue-submit',
+  reviewInvoiceStatus = null,
   onResetAll,
   onExtract,
   onSave,
@@ -33,7 +34,12 @@ export function OcrImagePreviewColumn({
   onDownloadRawJson,
 }: any) {
   const isReview = workflowMode === 'review';
-  const showPipeline = isReview && !!extracted;
+  const showPipeline =
+    isReview &&
+    (!!extracted ||
+      !!reviewInvoiceStatus ||
+      loading ||
+      !!extractFailureStage);
 
   return (
     <div className="noorix-surface-card flex-[1_1_280px] min-w-0 p-4">
@@ -69,6 +75,11 @@ export function OcrImagePreviewColumn({
             </Button>
           </>
         )}
+        {!extracted && isReview && reviewInvoiceStatus === 'extraction_failed' && (
+          <Button onClick={onExtract} disabled={loading} variant="primary" className="flex-1 min-w-0">
+            {loading ? t('ocrRetrying') : t('ocrRetryExtraction')}
+          </Button>
+        )}
       </div>
       {showPipeline && (
         <OcrExtractionPipelineStatus
@@ -80,6 +91,7 @@ export function OcrImagePreviewColumn({
           extractError={extractError}
           extractFailureStage={extractFailureStage}
           extractStartedAt={extractStartedAt}
+          reviewInvoiceStatus={reviewInvoiceStatus}
           stageDurations={stageDurations}
           copyIssueText={copyIssueText}
           issueCopied={issueCopied}
