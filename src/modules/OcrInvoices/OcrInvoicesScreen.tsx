@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { ScreenShell, ScreenTabs } from '../../ui';
+import { fmt } from '../../utils/format';
 import InvoiceUploadTab    from './components/InvoiceUploadTab';
 import InvoiceListTab      from './components/InvoiceListTab';
 import SuppliersCatalogTab from './components/SuppliersCatalogTab';
@@ -31,6 +32,48 @@ const TABS = [
   { key: 'purchases', labelAr: 'تقرير مشتريات',    labelEn: 'Purchases report' },
 ];
 const OCR_TAB_IDS = TABS.map((tab: any) => tab.key);
+const OCR_PROCESSING_STATUSES = new Set(['queued', 'extracting']);
+
+function toFailureReasonKey(errorText: string): string {
+  const text = String(errorText || '').toLowerCase();
+  if (!text) return 'ocrKpiFailureUnknown';
+  if (
+    text.includes('json parse failed')
+    || text.includes('parse')
+    || text.includes('no valid json')
+    || text.includes('parse_error')
+  ) return 'ocrKpiFailureParse';
+  if (text.includes('schema')) return 'ocrKpiFailureSchema';
+  if (text.includes('no_signal_extracted') || text.includes('low-signal')) return 'ocrKpiFailureLowSignal';
+  if (text.includes('unavailable') || text.includes('not found for api version')) return 'ocrKpiFailureModel';
+  if (
+    text.includes('network')
+    || text.includes('connection')
+    || text.includes('timeout')
+    || text.includes('الاتصال')
+  ) return 'ocrKpiFailureNetwork';
+  if (
+    text.includes('ملف الصورة')
+    || text.includes('تعذّر قراءة الملف')
+    || text.includes('image')
+  ) return 'ocrKpiFailureImage';
+  return 'ocrKpiFailureUnknown';
+}
+
+function hasMeaningfulExtractionSignal(rawExtraction: any, lines: any[]): boolean {
+  if (Array.isArray(lines) && lines.length > 0) return true;
+  const raw = rawExtraction && typeof rawExtraction === 'object' ? rawExtraction : null;
+  if (!raw) return false;
+  const hasSupplier = !!raw?.supplier?.name;
+  const hasHeader =
+    raw?.invoiceNumber?.value
+    || raw?.invoiceDate?.value
+    || raw?.subtotalAmount?.value != null
+    || raw?.totalAmount?.value != null
+    || raw?.vatAmount?.value != null;
+  const hasItems = Array.isArray(raw?.items) && raw.items.length > 0;
+  return !!(hasSupplier || hasHeader || hasItems);
+}
 
 export default function OcrInvoicesScreen() {
   const { lang, t } = useTranslation();
@@ -96,6 +139,49 @@ export default function OcrInvoicesScreen() {
   const reviewPendingCount = Array.isArray(reviewQueueData)
     ? reviewQueueData.filter((x: any) => x.status === 'pending_review').length
     : 0;
+
+  const healthStats = useMemo(() => {
+    const allInvoices = Array.isArray(invoicesData) ? invoicesData : [];
+    const processed = allInvoices.filter((inv: any) => !OCR_PROCESSING_STATUSES.has(String(inv?.status || '')));
+    const processedCount = processed.length;
+    const successful = processed.filter((inv: any) => (
+      String(inv?.status || '') !== 'extraction_failed'
+      && hasMeaningfulExtractionSignal(inv?.rawExtraction, inv?.lines || [])
+    ));
+    const successCount = successful.length;
+    const successRate = processedCount > 0 ? (successCount / processedCount) * 100 : 0;
+
+    const fallbackUsedCount = processed.filter((inv: any) => {
+      const flags = Array.isArray(inv?.rawExtraction?.qualityFlags) ? inv.rawExtraction.qualityFlags : [];
+      return flags.includes('model_fallback_used');
+    }).length;
+    const fallbackRate = processedCount > 0 ? (fallbackUsedCount / processedCount) * 100 : 0;
+
+    const failureRows = processed.filter((inv: any) => String(inv?.status || '') === 'extraction_failed');
+    const reasonCounts = new Map<string, number>();
+    for (const inv of failureRows) {
+      const reasonSource = String(
+        inv?.extractionError
+        || inv?.rawExtraction?.errorDetail
+        || (Array.isArray(inv?.rawExtraction?.qualityFlags) ? inv.rawExtraction.qualityFlags.join(' ') : '')
+        || '',
+      );
+      const key = toFailureReasonKey(reasonSource);
+      reasonCounts.set(key, (reasonCounts.get(key) || 0) + 1);
+    }
+    const topFailureEntry = Array.from(reasonCounts.entries()).sort((a, b) => b[1] - a[1])[0] || null;
+
+    return {
+      processedCount,
+      successCount,
+      successRate,
+      fallbackUsedCount,
+      fallbackRate,
+      failureCount: failureRows.length,
+      topFailureReasonKey: topFailureEntry?.[0] || 'ocrKpiFailureNone',
+      topFailureReasonCount: topFailureEntry?.[1] || 0,
+    };
+  }, [invoicesData]);
 
   const STATS = useMemo(() => [
     { val: reviewPendingCount, labelKey: 'ocrStatToReview', tab: 'review' },
@@ -184,6 +270,37 @@ export default function OcrInvoicesScreen() {
             </span>
           </button>
         ))}
+      </div>
+
+      {/* ── عداد صحة الاستخراج (KPI) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="noorix-surface-card p-4 flex flex-col gap-1">
+          <span className="text-[12px] text-noorix-muted">{t('ocrKpiSuccessRate')}</span>
+          <span className="text-[24px] font-extrabold text-noorix-green leading-none tabular-nums ltr">
+            {fmt(healthStats.successRate)}%
+          </span>
+          <span className="text-[11px] text-noorix-muted">
+            {t('ocrKpiProcessedInvoices', fmt(healthStats.successCount, 0), fmt(healthStats.processedCount, 0))}
+          </span>
+        </div>
+        <div className="noorix-surface-card p-4 flex flex-col gap-1">
+          <span className="text-[12px] text-noorix-muted">{t('ocrKpiFallbackRate')}</span>
+          <span className="text-[24px] font-extrabold text-noorix-blue leading-none tabular-nums ltr">
+            {fmt(healthStats.fallbackRate)}%
+          </span>
+          <span className="text-[11px] text-noorix-muted">
+            {t('ocrKpiFallbackUsed', fmt(healthStats.fallbackUsedCount, 0), fmt(healthStats.processedCount, 0))}
+          </span>
+        </div>
+        <div className="noorix-surface-card p-4 flex flex-col gap-1">
+          <span className="text-[12px] text-noorix-muted">{t('ocrKpiTopFailureReason')}</span>
+          <span className="text-[16px] font-bold text-noorix-red leading-tight">
+            {t(healthStats.topFailureReasonKey)}
+          </span>
+          <span className="text-[11px] text-noorix-muted ltr">
+            {t('ocrKpiFailureCount', fmt(healthStats.topFailureReasonCount, 0), fmt(healthStats.failureCount, 0))}
+          </span>
+        </div>
       </div>
 
       {/* ── التبويبات والمحتوى ── */}
