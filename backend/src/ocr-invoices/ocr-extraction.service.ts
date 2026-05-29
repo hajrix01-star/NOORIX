@@ -54,6 +54,9 @@ type GeminiRaw = {
 @Injectable()
 export class OcrExtractionService {
   private readonly logger = new Logger(OcrExtractionService.name);
+  private readonly allowCatalogMutationOnExtraction = /^(1|true)$/i.test(
+    String(process.env.OCR_ALLOW_CATALOG_MUTATION_ON_EXTRACT || '').trim(),
+  );
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -635,14 +638,16 @@ ${rawText.slice(0, 12000)}`;
         }
       }
 
-      await learnSupplierAliasIfNeeded(
-        this.prisma,
-        this.logger,
-        suppliers,
-        supplierMatch,
-        supplierName,
-        learnedSupplierAliasKeys,
-      );
+      if (this.allowCatalogMutationOnExtraction) {
+        await learnSupplierAliasIfNeeded(
+          this.prisma,
+          this.logger,
+          suppliers,
+          supplierMatch,
+          supplierName,
+          learnedSupplierAliasKeys,
+        );
+      }
 
       // سجّل في extraction log
       await this.logExtraction(tenantId, companyId, 'supplier', supplierName, supplierMatch);
@@ -705,20 +710,22 @@ ${rawText.slice(0, 12000)}`;
           }
         }
 
-        await learnItemAliasIfNeeded(
-          this.prisma,
-          this.logger,
-          items,
-          itemMatch,
-          cleanName || itemNameForPipeline,
-          learnedItemAliasKeys,
-        );
+        if (this.allowCatalogMutationOnExtraction) {
+          await learnItemAliasIfNeeded(
+            this.prisma,
+            this.logger,
+            items,
+            itemMatch,
+            cleanName || itemNameForPipeline,
+            learnedItemAliasKeys,
+          );
+        }
 
         // تسجيل بالاسم الأساسي (بدون الحجم)
         await this.logExtraction(tenantId, companyId, 'item', matchName, itemMatch, supplierMatch?.id);
 
         // إذا كان الصنف له حجم — حدّث has_sizes في الكتالوج
-        if (itemMatch && normalizedSize) {
+        if (this.allowCatalogMutationOnExtraction && itemMatch && normalizedSize) {
           await this.prisma.ocrItem.update({
             where: { id: itemMatch.id },
             data: { hasSizes: true },
