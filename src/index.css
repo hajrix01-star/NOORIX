@@ -1402,6 +1402,15 @@ html[data-card-style="10"] .noorix-stat-card {
   width: 100%;
   max-width: 100%;
 }
+/* قائمة بطاقات جوال فقط — بدون إطار مزدوج (الصفوف تحمل الحدود) */
+@media (max-width: 768px) {
+  .noorix-table-frame--mobile-list {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    border-radius: 0;
+  }
+}
 /* حاوية الجدول — تمرير أفقي داخلي فقط (لا overflow للصفحة) */
 .noorix-table-scroll-wrapper {
   overflow-x: auto;
@@ -4785,6 +4794,38 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
   .nx-orders-tab-content .noorix-surface-card:not(.noorix-table-frame) {
     box-shadow: none;
+  }
+}
+
+/* إدارة الأصناف: تبويب فرعي داخل تبويب الطلبات — كرت واحد فقط (الخارجي) */
+.nx-orders-tab-content .nx-items-manage-subtabs.noorix-surface-card {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+}
+.nx-orders-tab-content .nx-items-manage-subtabs > .border-t {
+  border-top-width: 0;
+  background: transparent;
+}
+.nx-orders-tab-content .nx-items-manage-subtabs__content {
+  padding-inline: 0;
+}
+
+/* كتالوج الأصناف: شريط أدوات + قائمة — بدون كرت داخل إطار الجدول */
+.nx-catalog-products-list > :first-child {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--noorix-border);
+}
+.nx-catalog-products-list .noorix-table-frame {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+}
+@media (max-width: 768px) {
+  .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {
+    padding-inline: 0;
   }
 }
 

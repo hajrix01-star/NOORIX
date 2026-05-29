@@ -43,7 +43,8 @@ export function ItemsManageTab({ companyId }: { companyId: string }) {
         items={subTabs}
         value={activeSubTab}
         onChange={setActiveSubTab}
-        contentClassName="nx-tab-content pt-3 min-h-[200px]"
+        shellClassName="nx-items-manage-subtabs"
+        contentClassName="nx-tab-content nx-items-manage-subtabs__content pt-3 min-h-[200px] max-sm:px-0 max-sm:pt-2"
       >
         {activeSubTab === 'sections' && <ItemsManageTabSectionsSection ctrl={ctrl} />}
         {activeSubTab === 'categories' && <ItemsManageTabCategoriesSection ctrl={ctrl} />}

@@ -257,6 +257,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
       className={cn(
         'noorix-table-frame min-w-0 max-w-full',
         (renderCompactRow || renderMobileCard) && 'max-md:overflow-x-hidden',
+        showCards && 'noorix-table-frame--mobile-list',
       )}
       style={{ padding: innerPadding }}
     >

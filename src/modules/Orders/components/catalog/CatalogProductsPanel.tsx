@@ -259,7 +259,7 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
           onAddProduct={openCreateSheet}
         />
 
-        <div className="noorix-surface-card p-3 md:p-4 flex flex-col gap-4 min-w-0 max-w-full overflow-hidden">
+        <div className="nx-catalog-products-list flex flex-col gap-3 min-w-0 max-w-full">
           <CatalogToolbar
             productType={catalogProductType}
             productSearchQuery={productSearchQuery}
