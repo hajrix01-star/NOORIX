@@ -1,5 +1,28 @@
 import { fmt } from '../../../../utils/format';
 
+/** يفصل الاسم عن العلامة/الشركة إن وُجدت بين قوسين — مثل: Vanilla Ice Cream (Saudia) */
+export function parseProductDisplayNames(row: { nameAr?: string | null; nameEn?: string | null }) {
+  const splitParen = (raw: string) => {
+    const s = raw.trim();
+    if (!s) return { main: '', brand: null as string | null };
+    const m = s.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+    if (m) return { main: m[1].trim(), brand: m[2].trim() };
+    return { main: s, brand: null };
+  };
+
+  const ar = splitParen(String(row.nameAr ?? ''));
+  const en = splitParen(String(row.nameEn ?? ''));
+  const brand = en.brand || ar.brand;
+  const nameAr = ar.main || '—';
+  const nameEn = en.main || null;
+
+  return {
+    nameAr,
+    nameEn,
+    brand,
+  };
+}
+
 export function productVariantsSummary(p: any): string {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
   if (variants.length > 0) {

@@ -1,7 +1,11 @@
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { SmartTable, KebabMenu, Badge } from '../../../../ui';
-import { productVariantsSummary, productPriceLineShort } from './catalogProductUtils';
+import {
+  parseProductDisplayNames,
+  productVariantsSummary,
+  productPriceLineShort,
+} from './catalogProductUtils';
 
 type CatalogProductTableProps = {
   rows: any[];
@@ -30,39 +34,63 @@ export function CatalogProductTable({
     const secs = Array.isArray(row.sections) && row.sections.length > 0 ? row.sections : [];
     const priceFull = productVariantsSummary(row);
     const priceShort = productPriceLineShort(row);
-    const categoryLabel = row.category?.nameAr || row.category?.nameEn || '—';
+    const categoryLabel = row.category?.nameAr || row.category?.nameEn || null;
+    const { nameAr, nameEn, brand } = parseProductDisplayNames(row);
     return (
-      <div className="flex flex-col gap-2 min-w-0 max-w-full overflow-hidden">
-        <div className="nx-mc__header min-w-0">
-          <div className="nx-mc__meta min-w-0 flex-1">
-            <div className="nx-mc__name truncate" title={row.nameAr}>{row.nameAr || '—'}</div>
-            {row.nameEn && (
-              <div className="nx-mc__subtitle truncate" title={row.nameEn}>{row.nameEn}</div>
-            )}
-            <div className="text-[12px] text-noorix-muted truncate mt-0.5" title={categoryLabel}>
-              {categoryLabel}
-            </div>
-          </div>
+      <div className="flex flex-col gap-2.5 min-w-0 max-w-full">
+        <div className="flex items-start gap-2 min-w-0">
           <input
             type="checkbox"
             checked={selectedIds.has(row.id)}
             onChange={() => onToggleSelect(row.id)}
             className="cursor-pointer shrink-0 mt-1"
-            aria-label={row.nameAr || t('ordersSelectAll')}
+            aria-label={nameAr || t('ordersSelectAll')}
           />
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <div className="font-bold text-[14px] leading-snug text-noorix-text break-words">
+              {nameAr}
+            </div>
+            {nameEn ? (
+              <div className="text-[12px] leading-snug text-noorix-muted break-words ltr text-start">
+                {nameEn}
+              </div>
+            ) : null}
+            {brand ? (
+              <div className="text-[11px] leading-snug text-noorix-muted break-words">
+                {brand}
+              </div>
+            ) : null}
+            {categoryLabel ? (
+              <div className="text-[11px] leading-snug text-noorix-muted/90 break-words">
+                {categoryLabel}
+              </div>
+            ) : null}
+          </div>
+          {secs.length > 0 ? (
+            <div className="flex flex-col items-end gap-1 shrink-0 max-w-[38%]">
+              {secs.slice(0, 2).map((s: string) => (
+                <Badge key={s} color="blue" size="sm" title={s}>
+                  {s}
+                </Badge>
+              ))}
+              {secs.length > 2 ? (
+                <span className="text-[10px] text-noorix-muted">+{secs.length - 2}</span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
-        {secs.length > 0 && (
-          <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
-            {secs.map((s: string) => (
-              <Badge key={s} color="blue" size="sm" className="max-w-full truncate" title={s}>
+        {secs.length > 2 && (
+          <div className="flex flex-wrap gap-1 ps-7">
+            {secs.slice(2).map((s: string) => (
+              <Badge key={s} color="blue" size="sm" title={s}>
                 {s}
               </Badge>
             ))}
           </div>
         )}
-        <div className="nx-mc__actions min-w-0">
+        <div className="flex items-center justify-between gap-2 min-w-0 ps-7">
           <span
-            className="text-[13px] font-bold nx-font-numbers ltr min-w-0 flex-1 truncate pe-2"
+            className="text-[13px] font-bold nx-font-numbers ltr min-w-0 flex-1 break-all"
             title={priceFull}
           >
             {priceShort}
