@@ -113,7 +113,7 @@ export function OrderFormModal({
   }, [items]);
 
   const filteredProducts = useMemo(() => {
-    let list = [...products];
+    let list = products.filter((p: any) => (p.productType || 'order') === 'order');
     if (sectionFilter) {
       list = list.filter((p: any) => {
         const secs = p.sections as string[] | null;

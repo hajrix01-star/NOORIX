@@ -84,7 +84,20 @@ export function OrdersTab({
   const [viewingOrder, setViewingOrder] = useState<any>(null);
 
   const { data: orders = [], isLoading, error: ordersError } = useOrders(companyId, year, month);
-  const { data: products = [] } = useOrderProducts(companyId);
+  const { data: orderCatalog = [] } = useOrderProducts(companyId, 'order');
+  /** طلبات المشتريات — أصناف «طلبات» فقط؛ عند التعديل نُبقي أصناف السطر الحالية حتى لو كانت مبيعات قديماً */
+  const products = useMemo(() => {
+    const byId = new Map<string, any>();
+    for (const p of orderCatalog) byId.set(p.id, p);
+    const lineItems = editingOrder?.items;
+    if (Array.isArray(lineItems)) {
+      for (const it of lineItems) {
+        const p = it.product;
+        if (p?.id && !byId.has(p.id)) byId.set(p.id, p);
+      }
+    }
+    return Array.from(byId.values());
+  }, [orderCatalog, editingOrder]);
   const { data: summaryFromApi = {}, isLoading: summaryLoading } = useOrdersSummary(companyId, year, month);
   const createOrder = useCreateOrderMutation();
   const updateOrder = useUpdateOrderMutation(companyId);
