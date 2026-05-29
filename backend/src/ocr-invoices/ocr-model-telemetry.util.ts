@@ -94,3 +94,46 @@ export function attachModelTelemetry(
     qualityStatus,
   };
 }
+
+export function attachPipelineStageTelemetry(
+  payload: Record<string, unknown>,
+  stageTotals: { modelRequestMs: number; jsonValidationMs: number; enrichmentMs: number },
+): Record<string, unknown> {
+  const failureStage =
+    payload.pipelineFailureStage === 'model_request' || payload.pipelineFailureStage === 'json_validation'
+      ? payload.pipelineFailureStage
+      : null;
+  const failureReason =
+    typeof payload.pipelineFailureReason === 'string'
+      ? payload.pipelineFailureReason
+      : typeof payload.errorDetail === 'string'
+        ? payload.errorDetail
+        : undefined;
+  const parseError = !!payload.parseError || failureStage === 'json_validation';
+  const enrichError = typeof payload.enrichError === 'string' && payload.enrichError.trim().length > 0;
+  return {
+    ...payload,
+    extractionStageTelemetry: {
+      stages: {
+        modelRequest: {
+          durationMs: stageTotals.modelRequestMs,
+          status: failureStage === 'model_request' ? 'failed' : 'success',
+        },
+        jsonValidation: {
+          durationMs: stageTotals.jsonValidationMs,
+          status: failureStage === 'json_validation' ? 'failed' : 'success',
+        },
+        enrichment: {
+          durationMs: stageTotals.enrichmentMs,
+          status: parseError ? 'skipped' : enrichError ? 'warning' : 'success',
+        },
+        readyForReview: {
+          durationMs: 0,
+          status: parseError ? 'skipped' : 'success',
+        },
+      },
+      failedStage: failureStage || undefined,
+      failureReason: trimErrorText(failureReason, 400),
+    },
+  };
+}

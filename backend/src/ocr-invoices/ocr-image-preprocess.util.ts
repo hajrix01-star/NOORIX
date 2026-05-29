@@ -65,6 +65,32 @@ function ensureImageQualityFlags(
   }
 }
 
+export function mergeOcrImagePreprocessMeta(
+  enriched: Record<string, unknown>,
+  preprocess: OcrPreprocessResult,
+): Record<string, unknown> {
+  const existingQualityFlags = Array.isArray(enriched.qualityFlags)
+    ? enriched.qualityFlags.filter((x): x is string => typeof x === 'string')
+    : [];
+  const qualityFlags = Array.from(new Set([...existingQualityFlags, ...preprocess.qualityFlags]));
+
+  const currentStatus = typeof enriched.qualityStatus === 'string' ? enriched.qualityStatus : null;
+  const qualityStatus = currentStatus
+    || (qualityFlags.length && !qualityFlags.includes('validated') ? 'needs_review' : 'validated');
+
+  return {
+    ...enriched,
+    qualityFlags,
+    qualityStatus,
+    imageQuality: {
+      ...(enriched.imageQuality && typeof enriched.imageQuality === 'object'
+        ? enriched.imageQuality as Record<string, unknown>
+        : {}),
+      ...preprocess.diagnostics,
+    },
+  };
+}
+
 export async function preprocessOcrImageForExtraction(
   sourceBuffer: Buffer,
   sourceMimeType: string,

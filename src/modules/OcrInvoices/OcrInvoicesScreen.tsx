@@ -25,8 +25,8 @@ import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { ocrKeys } from '../../services/queryKeys';
 
 const TABS = [
-  { key: 'upload',    labelAr: 'رفع فاتورة',      labelEn: 'Upload' },
   { key: 'review',    labelAr: 'مراجعة الاستخراج', labelEn: 'Extraction review' },
+  { key: 'upload',    labelAr: 'إرسال للاستخراج',  labelEn: 'Send for extraction' },
   { key: 'invoices',  labelAr: 'الفواتير',          labelEn: 'Invoices' },
   { key: 'suppliers', labelAr: 'الموردون',          labelEn: 'Suppliers' },
   { key: 'items',     labelAr: 'الأصناف',           labelEn: 'Items' },
@@ -84,8 +84,7 @@ export default function OcrInvoicesScreen() {
   const { activeCompanyId } = useApp();
   const queryClient = useQueryClient();
   /** `ocrTab` + legacy `tab` (فقط إن كانت القيمة ضمن تبويبات OCR) — يمنى تعارض ?tab= من مشتريات/إعدادات */
-  const [activeTab, setActiveTab] = useTabSearchParam(OCR_TAB_IDS, 'upload', 'ocrTab', 'tab');
-  const [uploadPrefillId, setUploadPrefillId] = useState<any>(null);
+  const [activeTab, setActiveTab] = useTabSearchParam(OCR_TAB_IDS, 'review', 'ocrTab', 'tab');
   const isAr = lang === 'ar';
 
   const ocrEnabled = !!activeCompanyId;
@@ -111,7 +110,7 @@ export default function OcrInvoicesScreen() {
     queryFn: async () => { const r = await getPriceAlerts();  return r.success ? (r.data || []) : []; },
   });
 
-  const { data: reviewQueueData } = useQuery({
+  const { data: reviewQueueData, refetch: refetchReviewQueue } = useQuery({
     queryKey: ocrKeys.reviewQueue(activeCompanyId || ''),
     enabled: ocrEnabled,
     queryFn: async () => {
@@ -127,14 +126,6 @@ export default function OcrInvoicesScreen() {
     }
     refetchInvoices(); refetchAlerts(); refetchSuppliers(); refetchItems();
   }, [queryClient, activeCompanyId, refetchInvoices, refetchAlerts, refetchSuppliers, refetchItems]);
-
-  const handleOpenFromReview = useCallback((inv: any) => {
-    if (!inv?.id) return;
-    setUploadPrefillId(inv.id);
-    setActiveTab('upload');
-  }, [setActiveTab]);
-
-  const clearUploadPrefill = useCallback(() => setUploadPrefillId(null), []);
 
   const alertsCount   = alertsData?.length   || 0;
   const invoicesCount = invoicesData?.length  || 0;
@@ -316,15 +307,18 @@ export default function OcrInvoicesScreen() {
       >
         {activeTab === 'upload' && (
           <InvoiceUploadTab
+            workflowMode="queue-submit"
             suppliers={suppliersData || []}
             items={itemsData || []}
             onSaved={handleSaved}
-            prefillInvoiceId={uploadPrefillId}
-            onPrefillConsumed={clearUploadPrefill}
           />
         )}
         {activeTab === 'review' && (
-          <OcrReviewQueueTab onOpenInvoice={handleOpenFromReview} />
+          <OcrReviewQueueTab
+            suppliers={suppliersData || []}
+            items={itemsData || []}
+            onReviewSaved={() => refetchReviewQueue()}
+          />
         )}
         {activeTab === 'invoices' && (
           <InvoiceListTab invoices={invoicesData || []} loading={invoicesLoading} onRefresh={refetchInvoices} />

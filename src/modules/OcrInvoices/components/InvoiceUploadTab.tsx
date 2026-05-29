@@ -16,9 +16,18 @@ import { OcrNewSupplierModal } from './invoiceUpload/OcrNewSupplierModal';
 
 export default function InvoiceUploadTab(props: any) {
   const o = useInvoiceUploadTab(props);
+  const isQueueSubmit = o.workflowMode === 'queue-submit';
 
   return (
     <div className="flex flex-col gap-5" dir={o.dir}>
+      {isQueueSubmit && !o.preview && (
+        <p className="text-[13px] text-noorix-muted m-0">{o.t('ocrUploadPageHint')}</p>
+      )}
+      {isQueueSubmit && o.submittedId && (
+        <div className="rounded-lg border border-noorix-accent-green/40 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-[13px] text-noorix-text">
+          {o.t('ocrSubmitSentOk', o.submittedId)}
+        </div>
+      )}
       <OcrUploadPrefillBanner t={o.t} prefillLoading={o.prefillLoading} />
       <OcrPrefillLinkedPurchaseBanner t={o.t} prefillLinkedPurchase={o.prefillLinkedPurchase} />
       <OcrPostSaveLinkedBanner
@@ -61,6 +70,7 @@ export default function InvoiceUploadTab(props: any) {
             stageArtifacts={o.extractStageArtifacts}
             copiedStageKey={o.copiedStageKey}
             copiedJsonKey={o.copiedJsonKey}
+            workflowMode={o.workflowMode}
             onResetAll={o.handleResetImageColumn}
             onExtract={o.handleExtract}
             onCopyIssue={o.handleCopyIssueReport}

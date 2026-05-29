@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getOcrReviewQueue, retryOcrInvoiceExtraction } from '../services/ocrApi';
 import { ocrKeys } from '../../../services/queryKeys';
-import { Button } from '../../../ui';
+import { AdaptiveSheet, Button } from '../../../ui';
 import OcrInvoiceThumb from './OcrInvoiceThumb';
+import InvoiceUploadTab from './InvoiceUploadTab';
 
 const STATUS_LABEL = {
   queued: { ar: 'في الانتظار', en: 'Queued' },
@@ -14,12 +15,22 @@ const STATUS_LABEL = {
   extraction_failed: { ar: 'فشل الاستخراج', en: 'Extraction failed' },
 };
 
-export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
+export default function OcrReviewQueueTab({
+  suppliers = [],
+  items = [],
+  onReviewSaved,
+}: {
+  suppliers?: any[];
+  items?: any[];
+  onReviewSaved?: () => void;
+}) {
   const { lang, t } = useTranslation();
   const isAr = lang === 'ar';
   const { activeCompanyId } = useApp();
+  const queryClient = useQueryClient();
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [retryError, setRetryError] = useState<string | null>(null);
+  const [reviewInvoiceId, setReviewInvoiceId] = useState<string | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ocrKeys.reviewQueue(activeCompanyId || ''),
@@ -53,6 +64,17 @@ export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
     } finally {
       setRetryingId(null);
     }
+  };
+
+  const closeReviewSheet = () => {
+    setReviewInvoiceId(null);
+  };
+
+  const handleReviewSaved = () => {
+    closeReviewSheet();
+    void refetch();
+    queryClient.invalidateQueries({ queryKey: ocrKeys.invoices(activeCompanyId || '') });
+    onReviewSaved?.();
   };
 
   return (
@@ -107,7 +129,7 @@ export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
                   <td className="p-2">{inv.submittedBy?.nameAr || inv.submittedBy?.email || '—'}</td>
                   <td className="p-2">
                     {inv.status === 'pending_review' && (
-                      <Button type="button" variant="raw" size="sm" className="text-noorix-blue underline" onClick={() => onOpenInvoice?.(inv)}>
+                      <Button type="button" variant="raw" size="sm" className="text-noorix-blue underline" onClick={() => setReviewInvoiceId(String(inv.id))}>
                         {t('ocrReviewAction')}
                       </Button>
                     )}
@@ -130,6 +152,24 @@ export default function OcrReviewQueueTab({ onOpenInvoice }: any) {
           </table>
         </div>
       )}
+
+      <AdaptiveSheet
+        open={!!reviewInvoiceId}
+        onClose={closeReviewSheet}
+        title={t('ocrReviewSheetTitle')}
+        size="full"
+      >
+        {reviewInvoiceId && (
+          <InvoiceUploadTab
+            workflowMode="review"
+            prefillInvoiceId={reviewInvoiceId}
+            onPrefillConsumed={() => {}}
+            onSaved={handleReviewSaved}
+            suppliers={suppliers}
+            items={items}
+          />
+        )}
+      </AdaptiveSheet>
     </div>
   );
 }

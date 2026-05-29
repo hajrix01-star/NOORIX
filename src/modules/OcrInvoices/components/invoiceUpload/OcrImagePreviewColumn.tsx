@@ -20,6 +20,7 @@ export function OcrImagePreviewColumn({
   stageArtifacts,
   copiedStageKey,
   copiedJsonKey,
+  workflowMode = 'queue-submit',
   onResetAll,
   onExtract,
   onSave,
@@ -30,6 +31,9 @@ export function OcrImagePreviewColumn({
   onDownloadFinalJson,
   onDownloadRawJson,
 }: any) {
+  const isReview = workflowMode === 'review';
+  const showPipeline = isReview && !!extracted;
+
   return (
     <div className="noorix-surface-card flex-[1_1_280px] min-w-0 p-4">
       <div className="flex items-center justify-between mb-3">
@@ -40,47 +44,47 @@ export function OcrImagePreviewColumn({
       </div>
       <img src={preview} alt="invoice" className="w-full rounded-lg max-h-[500px] object-contain" />
       <div className="mt-3 flex gap-2 flex flex-wrap">
-        {!extracted && (
-          <Button onClick={onExtract} disabled={loading} variant="primary" className="flex-1 min-w-0">
-            {loading ? t('ocrExtracting') : t('ocrExtract')}
+        {!extracted && workflowMode === 'queue-submit' && (
+          <Button onClick={onExtract} disabled={loading || !imageBase64} variant="primary" className="flex-1 min-w-0">
+            {loading ? t('ocrSubmitting') : t('ocrSubmitForExtraction')}
           </Button>
         )}
-        {extracted && (
+        {extracted && isReview && (
           <>
             <Button onClick={onSave} disabled={saving || success} variant="primary" className="flex-1 min-w-0">
               {saving ? t('ocrSaving') : success ? t('ocrSaved') : t('ocrSaveInvoice')}
             </Button>
-            {!!imageBase64 && (
-              <Button onClick={onExtract} disabled={loading} className="flex-1 min-w-0">
-                {loading ? t('ocrExtracting') : isAr ? 'إعادة استخراج' : 'Re-extract'}
-              </Button>
-            )}
+            <Button onClick={onExtract} disabled={loading} className="flex-1 min-w-0">
+              {loading ? t('ocrRetrying') : t('ocrRetryExtraction')}
+            </Button>
           </>
         )}
       </div>
-      <OcrExtractionPipelineStatus
-        t={t}
-        isAr={isAr}
-        loading={loading}
-        extracted={extracted}
-        extractWarning={extractWarning}
-        extractError={extractError}
-        extractFailureStage={extractFailureStage}
-        extractStartedAt={extractStartedAt}
-        stageDurations={stageDurations}
-        copyIssueText={copyIssueText}
-        issueCopied={issueCopied}
-        stageArtifacts={stageArtifacts}
-        copiedStageKey={copiedStageKey}
-        copiedJsonKey={copiedJsonKey}
-        onRetry={onExtract}
-        onCopyIssue={onCopyIssue}
-        onCopyStage={onCopyStage}
-        onCopyFinalJson={onCopyFinalJson}
-        onCopyRawJson={onCopyRawJson}
-        onDownloadFinalJson={onDownloadFinalJson}
-        onDownloadRawJson={onDownloadRawJson}
-      />
+      {showPipeline && (
+        <OcrExtractionPipelineStatus
+          t={t}
+          isAr={isAr}
+          loading={loading}
+          extracted={extracted}
+          extractWarning={extractWarning}
+          extractError={extractError}
+          extractFailureStage={extractFailureStage}
+          extractStartedAt={extractStartedAt}
+          stageDurations={stageDurations}
+          copyIssueText={copyIssueText}
+          issueCopied={issueCopied}
+          stageArtifacts={stageArtifacts}
+          copiedStageKey={copiedStageKey}
+          copiedJsonKey={copiedJsonKey}
+          onRetry={onExtract}
+          onCopyIssue={onCopyIssue}
+          onCopyStage={onCopyStage}
+          onCopyFinalJson={onCopyFinalJson}
+          onCopyRawJson={onCopyRawJson}
+          onDownloadFinalJson={onDownloadFinalJson}
+          onDownloadRawJson={onDownloadRawJson}
+        />
+      )}
     </div>
   );
 }

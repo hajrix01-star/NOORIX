@@ -32,6 +32,7 @@ import {
 } from './ocr-extraction-pipeline.util';
 import {
   attachModelTelemetry,
+  attachPipelineStageTelemetry,
   trimErrorText,
   type OcrModelAttemptStage,
   type OcrModelAttemptOutcome,
@@ -43,6 +44,10 @@ import {
   type ItemMatchRow,
   type SupplierMatchRow,
 } from './ocr-alias-learning.util';
+import {
+  attachOcrImagePreprocessMeta,
+  prepareOcrExtractionImage,
+} from './ocr-extraction-image.util';
 
 type GeminiRaw = {
   candidates?: Array<{
@@ -152,7 +157,12 @@ ${rawText.slice(0, 12000)}`;
     const apiKey = getGeminiApiKey();
     if (!apiKey) throw new BadRequestException('Gemini API key not configured');
 
-    const mimeType = dto.mimeType || 'image/jpeg';
+    const preparedImage = await prepareOcrExtractionImage(dto);
+    const mimeType = preparedImage.mimeType;
+    const imageBase64 = preparedImage.imageBase64;
+    const attachImageMeta = (payload: Record<string, unknown>) => (
+      attachOcrImagePreprocessMeta(payload, preparedImage.preprocessResult)
+    );
     const modelsToTry = getGeminiModelsToTry();
     const extractionStartedAt = Date.now();
     const modelAttempts: OcrModelAttemptTelemetry[] = [];
@@ -178,51 +188,15 @@ ${rawText.slice(0, 12000)}`;
       bestEffortModel = model;
       bestEffortVersion = version;
     };
-    const attachPipelineTelemetry = (payload: Record<string, unknown>): Record<string, unknown> => {
-      const failureStage =
-        payload.pipelineFailureStage === 'model_request' || payload.pipelineFailureStage === 'json_validation'
-          ? payload.pipelineFailureStage
-          : null;
-      const failureReason =
-        typeof payload.pipelineFailureReason === 'string'
-          ? payload.pipelineFailureReason
-          : typeof payload.errorDetail === 'string'
-            ? payload.errorDetail
-            : undefined;
-      const parseError = !!payload.parseError || failureStage === 'json_validation';
-      const enrichError = typeof payload.enrichError === 'string' && payload.enrichError.trim().length > 0;
-      return {
-        ...payload,
-        extractionStageTelemetry: {
-          stages: {
-            modelRequest: {
-              durationMs: stageTotals.modelRequestMs,
-              status: failureStage === 'model_request' ? 'failed' : 'success',
-            },
-            jsonValidation: {
-              durationMs: stageTotals.jsonValidationMs,
-              status: failureStage === 'json_validation' ? 'failed' : 'success',
-            },
-            enrichment: {
-              durationMs: stageTotals.enrichmentMs,
-              status: parseError ? 'skipped' : enrichError ? 'warning' : 'success',
-            },
-            readyForReview: {
-              durationMs: 0,
-              status: parseError ? 'skipped' : 'success',
-            },
-          },
-          failedStage: failureStage || undefined,
-          failureReason: trimErrorText(failureReason, 400),
-        },
-      };
-    };
+    const attachPipelineTelemetry = (payload: Record<string, unknown>) => (
+      attachPipelineStageTelemetry(payload, stageTotals)
+    );
 
     // ── يُجرّب النماذج بالترتيب حتى ينجح أحدها ─────────────────────────
     for (const { model, version } of modelsToTry) {
       const url = `${buildGeminiUrl(model, version)}?key=${apiKey}`;
       const structuredOutput = supportsStructuredGeminiResponse(model);
-      const requestBody = this.buildExtractionRequestBody(mimeType, dto.imageBase64, structuredOutput);
+      const requestBody = this.buildExtractionRequestBody(mimeType, imageBase64, structuredOutput);
       const attemptStartedAt = Date.now();
       const attemptStageDurations: NonNullable<OcrModelAttemptTelemetry['stageDurationsMs']> = {};
       const pushAttempt = (patch: Partial<OcrModelAttemptTelemetry> & { outcome: OcrModelAttemptOutcome }) => {
@@ -487,7 +461,7 @@ ${rawText.slice(0, 12000)}`;
             httpStatus: res.status,
             finishReason: candidate?.finishReason,
           });
-          return attachModelTelemetry(attachPipelineTelemetry(enriched as Record<string, unknown>), {
+          return attachModelTelemetry(attachPipelineTelemetry(attachImageMeta(enriched as Record<string, unknown>)), {
             attempts: modelAttempts,
             usedModel: model,
             usedModelVersion: version,
@@ -522,7 +496,7 @@ ${rawText.slice(0, 12000)}`;
             qualityStatus: qualityFlags.includes('validated') ? 'validated' : 'needs_review',
             enrichError: (enrichErr as Error).message,
           };
-          return attachModelTelemetry(attachPipelineTelemetry(payload), {
+          return attachModelTelemetry(attachPipelineTelemetry(attachImageMeta(payload)), {
             attempts: modelAttempts,
             usedModel: model,
             usedModelVersion: version,
@@ -547,7 +521,7 @@ ${rawText.slice(0, 12000)}`;
     }
 
     if (bestEffortPayload) {
-      return attachModelTelemetry(attachPipelineTelemetry(bestEffortPayload), {
+      return attachModelTelemetry(attachPipelineTelemetry(attachImageMeta(bestEffortPayload)), {
         attempts: modelAttempts,
         usedModel: bestEffortModel,
         usedModelVersion: bestEffortVersion,
