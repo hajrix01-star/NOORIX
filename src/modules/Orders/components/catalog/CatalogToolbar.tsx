@@ -94,20 +94,20 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 min-w-0 max-w-full">
         <Input
           type="search"
           value={productSearchQuery}
           onChange={(e: any) => setProductSearchQuery(e.target.value)}
           placeholder={t('ordersSearchProducts')}
           aria-label={t('ordersSearchProducts')}
-          className="min-w-[160px] flex-1 max-w-[280px]"
+          className="w-full min-w-0 sm:flex-1 sm:max-w-[280px]"
         />
         <Input
           type="select"
           value={productFilterSection}
           onChange={(e: any) => setProductFilterSection(e.target.value)}
-          className="min-w-[140px]"
+          className="w-full min-w-0 sm:w-auto sm:min-w-[140px]"
           aria-label={t('productSections')}
         >
           <option value="">{t('filterAllSections')}</option>
@@ -122,7 +122,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
           type="select"
           value={productFilterCategory}
           onChange={(e: any) => setProductFilterCategory(e.target.value)}
-          className="min-w-[140px]"
+          className="w-full min-w-0 sm:w-auto sm:min-w-[140px]"
           aria-label={t('category')}
         >
           <option value="">{t('filterAllCategories')}</option>
@@ -139,7 +139,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
             ✕ {t('clearFilters')}
           </Button>
         )}
-        <span className="text-[12px] text-noorix-muted ms-auto shrink-0">
+        <span className="text-[12px] text-noorix-muted shrink-0 sm:ms-auto">
           {filteredCount} / {totalCount}
         </span>
       </div>

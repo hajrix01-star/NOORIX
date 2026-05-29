@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { SmartTable, KebabMenu, Badge } from '../../../../ui';
-import { productVariantsSummary } from './catalogProductUtils';
+import { productVariantsSummary, productPriceLineShort } from './catalogProductUtils';
 
 type CatalogProductTableProps = {
   rows: any[];
@@ -28,12 +28,20 @@ export function CatalogProductTable({
 
   const renderMobileCard = useCallback((row: any) => {
     const secs = Array.isArray(row.sections) && row.sections.length > 0 ? row.sections : [];
+    const priceFull = productVariantsSummary(row);
+    const priceShort = productPriceLineShort(row);
+    const categoryLabel = row.category?.nameAr || row.category?.nameEn || '—';
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="font-bold text-[14px] truncate">{row.nameAr || '—'}</div>
-            {row.nameEn && <div className="text-[11px] text-noorix-muted truncate">{row.nameEn}</div>}
+      <div className="flex flex-col gap-2 min-w-0 max-w-full overflow-hidden">
+        <div className="nx-mc__header min-w-0">
+          <div className="nx-mc__meta min-w-0 flex-1">
+            <div className="nx-mc__name truncate" title={row.nameAr}>{row.nameAr || '—'}</div>
+            {row.nameEn && (
+              <div className="nx-mc__subtitle truncate" title={row.nameEn}>{row.nameEn}</div>
+            )}
+            <div className="text-[12px] text-noorix-muted truncate mt-0.5" title={categoryLabel}>
+              {categoryLabel}
+            </div>
           </div>
           <input
             type="checkbox"
@@ -43,16 +51,22 @@ export function CatalogProductTable({
             aria-label={row.nameAr || t('ordersSelectAll')}
           />
         </div>
-        <div className="text-[12px] text-noorix-muted">{row.category?.nameAr || row.category?.nameEn || '—'}</div>
         {secs.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
             {secs.map((s: string) => (
-              <Badge key={s} color="blue" size="sm">{s}</Badge>
+              <Badge key={s} color="blue" size="sm" className="max-w-full truncate" title={s}>
+                {s}
+              </Badge>
             ))}
           </div>
         )}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[13px] font-bold nx-font-numbers ltr">{productVariantsSummary(row)}</span>
+        <div className="nx-mc__actions min-w-0">
+          <span
+            className="text-[13px] font-bold nx-font-numbers ltr min-w-0 flex-1 truncate pe-2"
+            title={priceFull}
+          >
+            {priceShort}
+          </span>
           <KebabMenu
             ariaLabel={t('actions')}
             items={[

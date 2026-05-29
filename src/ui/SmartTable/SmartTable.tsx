@@ -246,7 +246,10 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
-  const showTableHeaderRow = Boolean(title || badge || (onSearchChange && showSearchInHeader) || tableId);
+  /** على الجوال مع بطاقات فقط: لا نعرض شريط إخفاء الأعمدة (يضيق المحتوى ويبدو كزر عائم) */
+  const showTableHeaderRow = Boolean(
+    title || badge || (onSearchChange && showSearchInHeader) || (tableId && !showCards),
+  );
   const hideableCols = columns.filter((c: any) => c.key !== 'actions');
 
   return (
@@ -383,7 +386,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
       {/* ── بطاقات الجوال — حدود مستقلة + شريط أزرق فاتح متناوب (token: --noorix-blue-10) ── */}
       {!isLoading && showCards && (
-        <div className="flex flex-col gap-2 px-3 py-2">
+        <div className="flex flex-col gap-2 py-2 px-2 sm:px-3 min-w-0 max-w-full box-border">
           {data.length === 0 ? (
             <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
               {emptyMsg}
