@@ -178,6 +178,7 @@ export default {
   dayCloseWaSectionOutflow: { ar: 'الخارج', en: 'Outflows' },
   dayCloseWaSectionClosing: { ar: 'الخلاصة', en: 'Summary' },
   dayCloseWaSalesTotal: { ar: 'الإجمالي:', en: 'Total:' },
+  dayCloseWaCustomersLine: { ar: 'عدد العملاء:', en: 'Customers:' },
   dayCloseWaChannels: { ar: 'قنوات البيع:', en: 'Sales channels:' },
   dayCloseWaFromInvoices: { ar: 'من الفواتير:', en: 'From invoices:' },
   dayCloseWaNoSales: { ar: 'لا مبيعات مسجّلة اليوم.', en: 'No sales recorded today.' },

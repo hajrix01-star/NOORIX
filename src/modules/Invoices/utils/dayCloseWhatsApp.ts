@@ -114,18 +114,16 @@ export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): strin
   ];
 
   if (salesTotal > 0 || customers > 0) {
-    lines.push(
-      metricLine(
-        t('dayCloseWaSalesTotal'),
-        `${fmt(salesTotal)} SR · ${fmt(customers, 0)} ${t('dayCloseCustomers')}`,
-      ),
-    );
+    lines.push(metricLine(t('dayCloseWaSalesTotal'), `${fmt(salesTotal)} SR`));
     if (channelLines.length > 0) {
       lines.push(`  ${t('dayCloseWaChannels')}`);
       lines.push(...channelLines);
     } else if (byKind.some((r: any) => r.kind === 'sale')) {
       const saleLabel = kindLabel.sale || 'sale';
       lines.push(metricLine(t('dayCloseWaFromInvoices'), `${fmt(inflowTotal)} SR (${saleLabel})`));
+    }
+    if (customers > 0) {
+      lines.push(metricLine(t('dayCloseWaCustomersLine'), fmt(customers, 0)));
     }
   } else {
     lines.push(`  ${t('dayCloseWaNoSales')}`);
