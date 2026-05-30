@@ -397,70 +397,82 @@ export default function StaffListScreen({ embedded }: any) {
     }
   }
 
-  const renderCompactRow = useCallback((row: any) => (
-    <div onClick={() => navigate(`/hr/employee/${row.id}`)} style={{ cursor: 'pointer' }}>
-      {/* السطر الأول: الاسم + المسمى الوظيفي + الحالة */}
-      <div className="nx-cr__line1">
-        <span className="nx-cr__name text-noorix-blue">
-          {employeeDisplayName(row, lang)}
+  const renderCompactRow = useCallback((row: any) => {
+    const displayName = employeeDisplayName(row, lang);
+    return (
+      <div
+        className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 items-start min-w-0"
+        onClick={() => navigate(`/hr/employee/${row.id}`)}
+        style={{ cursor: 'pointer' }}
+      >
+        {/* الهوية — عمود البداية (يمين في RTL): الاسم + تاريخ التوظيف */}
+        <span
+          className="col-start-1 row-start-1 font-bold text-[13px] text-noorix-blue truncate min-w-0"
+          title={displayName}
+        >
+          {displayName}
         </span>
-        {row.jobTitle && (
-          <span className="nx-cr__sub">{row.jobTitle}</span>
-        )}
-        <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
-      </div>
-      {/* السطر الثاني: تاريخ الانضمام + الراتب + كباب */}
-      <div className="nx-cr__line2">
-        <div className="nx-cr__line2-start">
-          <span className="nx-cr__meta">{formatSaudiDate(row.joinDate)}</span>
-        </div>
-        <div className="nx-cr__line2-end">
-          <span className="nx-cr__amount text-noorix-green">
-            <FmtNum n={row.totalSalary} /> <span className="nx-sar">SR</span>
-          </span>
-          <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-            <KebabMenu
-              ariaLabel={t('actions')}
-              items={[
-                {
-                  key: 'profile',
-                  label: t('viewProfile'),
-                  onClick: () => navigate(`/hr/employee/${row.id}`),
-                },
-                {
-                  key: 'edit',
-                  label: t('edit'),
-                  style: { color: 'var(--noorix-accent-green)' },
-                  onClick: () => setEditingEmployee(row),
-                },
-                ...(row.status === 'active' ? [{
-                  key: 'advance',
-                  label: t('advance'),
-                  style: { color: 'var(--noorix-accent-blue)' },
-                  onClick: () => setAdvanceEmployee(row),
-                }] : []),
-                ...(row.status !== 'terminated' && row.status !== 'archived' ? [{
-                  key: 'terminate',
-                  label: t('terminate'),
-                  style: { color: 'var(--noorix-accent-amber)' },
-                  onClick: () => {
-                    setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
-                    setTerminatingEmployee(row);
+        <span className="col-start-1 row-start-2 nx-cr__meta min-w-0">
+          {formatSaudiDate(row.joinDate)}
+        </span>
+        {/* التفاصيل — عمود النهاية (يسار في RTL) */}
+        <div className="col-start-2 row-start-1 row-span-2 flex flex-col items-end gap-1 shrink-0 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-full">
+            {row.jobTitle && (
+              <span className="nx-cr__sub truncate max-w-[9.5rem]" title={row.jobTitle}>
+                {row.jobTitle}
+              </span>
+            )}
+            <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="nx-cr__amount text-noorix-green">
+              <FmtNum n={row.totalSalary} /> <span className="nx-sar">SR</span>
+            </span>
+            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+              <KebabMenu
+                ariaLabel={t('actions')}
+                items={[
+                  {
+                    key: 'profile',
+                    label: t('viewProfile'),
+                    onClick: () => navigate(`/hr/employee/${row.id}`),
                   },
-                }] : []),
-                ...(canDeleteEmployee ? [{
-                  key: 'delete',
-                  label: t('permanentDelete'),
-                  style: { color: 'var(--noorix-accent-red)' },
-                  onClick: () => handlePermanentDelete(row),
-                }] : []),
-              ]}
-            />
+                  {
+                    key: 'edit',
+                    label: t('edit'),
+                    style: { color: 'var(--noorix-accent-green)' },
+                    onClick: () => setEditingEmployee(row),
+                  },
+                  ...(row.status === 'active' ? [{
+                    key: 'advance',
+                    label: t('advance'),
+                    style: { color: 'var(--noorix-accent-blue)' },
+                    onClick: () => setAdvanceEmployee(row),
+                  }] : []),
+                  ...(row.status !== 'terminated' && row.status !== 'archived' ? [{
+                    key: 'terminate',
+                    label: t('terminate'),
+                    style: { color: 'var(--noorix-accent-amber)' },
+                    onClick: () => {
+                      setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
+                      setTerminatingEmployee(row);
+                    },
+                  }] : []),
+                  ...(canDeleteEmployee ? [{
+                    key: 'delete',
+                    label: t('permanentDelete'),
+                    style: { color: 'var(--noorix-accent-red)' },
+                    onClick: () => handlePermanentDelete(row),
+                  }] : []),
+                ]}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  ), [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete,
+    );
+  }, [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete,
       setEditingEmployee, setAdvanceEmployee, setTerminatingEmployee, setTerminationForm]);
 
   return (
