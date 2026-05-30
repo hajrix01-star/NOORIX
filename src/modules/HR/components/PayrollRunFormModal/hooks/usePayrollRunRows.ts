@@ -15,6 +15,7 @@ import {
   computeUnpaidLeaveDaysByEmployee,
   getAdvanceMetaForEmployee,
 } from '../utils/payrollRunCalculations';
+import { computeSettledDaysByEmployee } from '../../../utils/payrollAttendanceMath';
 import { payrollMonthAlreadyExists } from '../utils/payrollRunValidators';
 import {
   extractAdvanceDates,
@@ -95,14 +96,19 @@ export function usePayrollRunRows(state: StateShape) {
 
   const activeEmployees = useMemo(() => computeActiveEmployees(employees), [employees]);
 
-  const unpaidLeaveDaysByEmployee = useMemo(
+  const leaveDaysByEmployee = useMemo(
     () => computeUnpaidLeaveDaysByEmployee(leaves as never[], payrollMonth, defaultMonth),
     [leaves, payrollMonth, defaultMonth],
   );
 
+  const settledDaysByEmployee = useMemo(
+    () => computeSettledDaysByEmployee(employees, payrollMonth || defaultMonth, leaveSalarySettlements),
+    [employees, payrollMonth, defaultMonth, leaveSalarySettlements],
+  );
+
   const eligibleEmployees = useMemo(
-    () => computeEligibleEmployees(activeEmployees, payrollMonth, defaultMonth, leaveSettledEmployeeIds),
-    [activeEmployees, payrollMonth, defaultMonth, leaveSettledEmployeeIds],
+    () => computeEligibleEmployees(activeEmployees, payrollMonth, defaultMonth, leaveDaysByEmployee, settledDaysByEmployee),
+    [activeEmployees, payrollMonth, defaultMonth, leaveDaysByEmployee, settledDaysByEmployee],
   );
 
   const displayEmployees = useMemo(
@@ -129,7 +135,8 @@ export function usePayrollRunRows(state: StateShape) {
         payrollMonth,
         defaultMonth,
         allowanceTotals,
-        unpaidLeaveDaysByEmployee,
+        leaveDaysByEmployee,
+        settledDaysByEmployee,
         advancesByEmployee,
         lang,
         t,
@@ -138,7 +145,8 @@ export function usePayrollRunRows(state: StateShape) {
       payrollMonth,
       defaultMonth,
       allowanceTotals,
-      unpaidLeaveDaysByEmployee,
+      leaveDaysByEmployee,
+      settledDaysByEmployee,
       advancesByEmployee,
       lang,
       t,
@@ -207,7 +215,8 @@ export function usePayrollRunRows(state: StateShape) {
     existingMonthSet,
     alreadyExists,
     activeEmployees,
-    unpaidLeaveDaysByEmployee,
+    leaveDaysByEmployee,
+    settledDaysByEmployee,
     eligibleEmployees,
     displayEmployees,
     totalNet,

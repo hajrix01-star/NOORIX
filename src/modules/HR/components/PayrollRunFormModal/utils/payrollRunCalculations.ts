@@ -5,16 +5,16 @@ import { hrFmt } from '../../../utils/hrFmt';
 import { formatSaudiDate } from '../../../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../../../utils/moneyInput';
-import { parseOvertimeWorkDaysPerMonth, totalSalary } from '../../../utils/employeeSalaryMath';
+import { totalSalary } from '../../../utils/employeeSalaryMath';
 import {
-  filterLeaveDaySetToEmploymentWindow,
+  computeApprovedLeaveDaysByEmployee,
+  computeSettledDaysByEmployee,
+  countPayrollPaidDaysInMonth,
   getEmploymentProrationInMonth,
-  toLocalDayKey,
 } from '../../../utils/payrollAttendanceMath';
 import type { PayrollAdvanceDueRow, PayrollRunLineItem } from '../types';
 import {
   ceilAmount,
-  monthRange,
   parseDeferredMonth,
 } from './payrollRunMappers';
 
@@ -61,26 +61,7 @@ export function computeUnpaidLeaveDaysByEmployee(
   payrollMonth: string,
   defaultMonth: string,
 ): Map<string, Set<string>> {
-  const { start, end } = monthRange(payrollMonth || defaultMonth);
-  const map = new Map<string, Set<string>>();
-  for (const leave of leaves || []) {
-    if (!leave?.employeeId || leave.status !== 'approved') continue;
-    if (leave.leaveType !== 'unpaid') continue;
-    const overlapStart = new Date(Math.max(new Date(leave.startDate as string).getTime(), start.getTime()));
-    const overlapEnd = new Date(Math.min(new Date(leave.endDate as string).getTime(), end.getTime()));
-    if (overlapStart > overlapEnd) continue;
-    const days = map.get(leave.employeeId) || new Set<string>();
-    const cursor = new Date(overlapStart);
-    cursor.setHours(0, 0, 0, 0);
-    const overlapEndDay = new Date(overlapEnd);
-    overlapEndDay.setHours(0, 0, 0, 0);
-    while (cursor <= overlapEndDay) {
-      days.add(toLocalDayKey(cursor));
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    map.set(leave.employeeId, days);
-  }
-  return map;
+  return computeApprovedLeaveDaysByEmployee(leaves, payrollMonth || defaultMonth);
 }
 
 export function computeActiveEmployees(
@@ -90,15 +71,19 @@ export function computeActiveEmployees(
 }
 
 export function computeEligibleEmployees(
-  activeEmployees: Array<{ id?: string; status?: string }>,
+  activeEmployees: Array<{ id?: string; status?: string; joinDate?: unknown; notes?: unknown }>,
   payrollMonth: string,
   defaultMonth: string,
-  leaveSettledEmployeeIds: Set<string>,
-): Array<{ id?: string; status?: string }> {
+  leaveDaysByEmployee: Map<string, Set<string>>,
+  settledDaysByEmployee: Map<string, Set<string>>,
+): Array<{ id?: string; status?: string; joinDate?: unknown; notes?: unknown }> {
   const pm = payrollMonth || defaultMonth;
   return activeEmployees.filter((e) => {
-    if (!e.id || leaveSettledEmployeeIds.has(e.id)) return false;
-    return getEmploymentProrationInMonth(e, pm).factor > 0;
+    if (!e.id) return false;
+    const employment = getEmploymentProrationInMonth(e, pm);
+    if (employment.factor <= 0) return false;
+    const paid = countPayrollPaidDaysInMonth(e, pm, leaveDaysByEmployee, settledDaysByEmployee);
+    return paid.paidDays > 0;
   });
 }
 
@@ -187,7 +172,8 @@ type BuildLineDeps = {
   payrollMonth: string;
   defaultMonth: string;
   allowanceTotals: Map<string, number>;
-  unpaidLeaveDaysByEmployee: Map<string, Set<string>>;
+  leaveDaysByEmployee: Map<string, Set<string>>;
+  settledDaysByEmployee: Map<string, Set<string>>;
   advancesByEmployee: Map<string, PayrollAdvanceDueRow[]>;
   lang: string;
   t: (key: string, ...subst: string[]) => string;
@@ -199,23 +185,27 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
     payrollMonth,
     defaultMonth,
     allowanceTotals,
-    unpaidLeaveDaysByEmployee,
+    leaveDaysByEmployee,
+    settledDaysByEmployee,
     advancesByEmployee,
     lang,
     t,
   } = deps;
+  const pm = payrollMonth || defaultMonth;
   const customSum = (emp.id && allowanceTotals.get(emp.id)) || 0;
   const fullGross = totalSalary(emp, customSum);
-  const pr = getEmploymentProrationInMonth(emp, payrollMonth || defaultMonth);
-  const grossProrated = roundMoney2(fullGross * pr.factor);
-  const rawUnpaid = (emp.id && unpaidLeaveDaysByEmployee.get(emp.id)) || new Set<string>();
-  const unpaidInWindow = filterLeaveDaySetToEmploymentWindow(rawUnpaid, pr.effectiveStart, pr.effectiveEnd);
-  const unpaidDays = unpaidInWindow.size;
-  const workDays = Math.max(1, parseOvertimeWorkDaysPerMonth(emp));
-  const appliedUnpaid = Math.min(unpaidDays, workDays);
-  const leaveDeduction = appliedUnpaid
-    ? Math.min(grossProrated, ceilAmount((grossProrated * appliedUnpaid) / workDays))
-    : 0;
+  const pr = getEmploymentProrationInMonth(emp, pm);
+  const paidBreakdown = countPayrollPaidDaysInMonth(emp, pm, leaveDaysByEmployee, settledDaysByEmployee);
+  const { paidDays, leaveDays, settledDays, daysInMonth } = paidBreakdown;
+  const employmentGross = daysInMonth > 0 ? roundMoney2(fullGross * pr.factor) : 0;
+  const leaveDeduction =
+    daysInMonth > 0 && leaveDays > 0 ? ceilAmount((fullGross * leaveDays) / daysInMonth) : 0;
+  const settledDeduction =
+    daysInMonth > 0 && settledDays > 0 ? ceilAmount((fullGross * settledDays) / daysInMonth) : 0;
+  const grossProrated =
+    daysInMonth > 0 && paidDays > 0
+      ? roundMoney2(Math.max(0, employmentGross - leaveDeduction - settledDeduction))
+      : 0;
   const advRows = (emp.id && advancesByEmployee.get(emp.id)) || [];
   const dueAdv = advRows.filter((r) => !r.isDeferred);
   const advancesDeduct = dueAdv.reduce((s, r) => s + r.remaining, 0);
@@ -229,21 +219,27 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
       return dateStr;
     })
     .join(' ، ');
-  const netSalary = Math.max(0, grossProrated - leaveDeduction - advancesDeduct);
+  const netSalary = Math.max(0, grossProrated - advancesDeduct);
   const notesParts: string[] = [];
   if (advanceDatesLabel) notesParts.push(`تواريخ السلف: ${advanceDatesLabel}`);
   if (pr.factor < 1 && pr.daysInMonth > 0) {
     notesParts.push(t('payrollEmploymentProrationNote', String(pr.employedDays), String(pr.daysInMonth)));
   }
-  if (appliedUnpaid > 0) {
-    notesParts.push(t('payrollUnpaidLeaveDeductionNote', String(appliedUnpaid), hrFmt(leaveDeduction)));
+  if (leaveDays > 0) {
+    notesParts.push(t('payrollApprovedLeaveDeductionNote', String(leaveDays), hrFmt(leaveDeduction)));
+  }
+  if (settledDays > 0) {
+    notesParts.push(t('payrollLeaveSettlementDaysNote', String(settledDays)));
+  }
+  if (paidDays > 0 && paidDays < daysInMonth) {
+    notesParts.push(t('payrollLeavePaidDaysNote', String(paidDays), String(daysInMonth)));
   }
   return {
     employeeId: emp.id as string,
     employeeName: employeeDisplayName(emp, lang),
-    grossSalary: grossProrated,
+    grossSalary: employmentGross,
     allowancesAdd: 0,
-    deductions: leaveDeduction,
+    deductions: roundMoney2(leaveDeduction + settledDeduction),
     advancesDeduct,
     netSalary,
     deferAdvances: false,
