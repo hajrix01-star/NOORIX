@@ -2,10 +2,12 @@
  * HRService — واجهة نحو HrPayroll / HrLeave / HrResidency / HrDocument (بدون تغيير مسارات الـ API).
  */
 import { Injectable } from '@nestjs/common';
+import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { HrPayrollService } from './hr-payroll.service';
 import { HrLeaveService } from './hr-leave.service';
 import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
+import { sumMonthlyPayrollForActiveEmployees } from './utils/employee-monthly-payroll.util';
 
 @Injectable()
 export class HRService {
@@ -14,6 +16,7 @@ export class HRService {
     private readonly leave: HrLeaveService,
     private readonly residency: HrResidencyService,
     private readonly document: HrDocumentService,
+    private readonly prisma: TenantPrismaService,
   ) {}
 
   // ── Payroll & advances ──
@@ -185,26 +188,64 @@ export class HRService {
   async getDashboardSummary(companyId: string) {
     const EXPIRY_DAYS = 90;
     const currentYear = new Date().getFullYear();
+    const yearStart = new Date(`${currentYear}-01-01T00:00:00.000Z`);
+    const yearEnd = new Date(`${currentYear + 1}-01-01T00:00:00.000Z`);
+    const now = new Date();
+    const expiryMax = new Date(now.getTime() + EXPIRY_DAYS * 86_400_000);
 
-    const [leaves, residencies, advances] = await Promise.all([
-      this.leave.findLeaves(companyId, undefined, currentYear),
-      this.residency.findResidencies(companyId),
+    const [
+      activeCount,
+      terminatedCount,
+      leavesCount,
+      expiringResidenciesCount,
+      advances,
+      activeEmployees,
+      customAllowanceGroups,
+    ] = await Promise.all([
+      this.prisma.employee.count({ where: { companyId, status: 'active' } }),
+      this.prisma.employee.count({ where: { companyId, status: 'terminated' } }),
+      this.prisma.leave.count({
+        where: { companyId, startDate: { gte: yearStart, lt: yearEnd } },
+      }),
+      this.prisma.employeeResidency.count({
+        where: {
+          companyId,
+          expiryDate: { gte: now, lte: expiryMax },
+        },
+      }),
       this.payroll.findAdvanceInvoices(companyId),
+      this.prisma.employee.findMany({
+        where: { companyId, status: 'active' },
+        select: {
+          id: true,
+          basicSalary: true,
+          housingAllowance: true,
+          transportAllowance: true,
+          otherAllowance: true,
+          workHours: true,
+          workSchedule: true,
+        },
+      }),
+      this.prisma.employeeCustomAllowance.groupBy({
+        by: ['employeeId'],
+        where: { companyId, employee: { status: 'active' } },
+        _sum: { amount: true },
+      }),
     ]);
 
-    const now = new Date();
-    const expiringResidenciesCount = (residencies as any[]).filter((r) => {
-      if (!r.expiryDate) return false;
-      const diff = (new Date(r.expiryDate).getTime() - now.getTime()) / 86_400_000;
-      return diff >= 0 && diff <= EXPIRY_DAYS;
-    }).length;
+    const customByEmployee = new Map<string, number>();
+    for (const row of customAllowanceGroups) {
+      customByEmployee.set(row.employeeId, Number(row._sum.amount ?? 0));
+    }
+
+    const monthlyPayrollTotal = sumMonthlyPayrollForActiveEmployees(activeEmployees, customByEmployee);
 
     const outstandingAdvances = (advances as any[]).filter(
       (a) => a.status !== 'cancelled' && Number(a.settledAmount ?? 0) < Number(a.totalAmount ?? 0),
     );
 
     return {
-      leavesCount: (leaves as any[]).length,
+      leavesCount,
       expiringResidenciesCount,
       outstandingAdvancesCount: outstandingAdvances.length,
       outstandingAdvancesAmount: outstandingAdvances.reduce(
@@ -212,6 +253,9 @@ export class HRService {
           s + Math.max(0, Number(a.totalAmount ?? 0) - Number(a.settledAmount ?? 0)),
         0,
       ),
+      activeCount,
+      terminatedCount,
+      monthlyPayrollTotal,
     };
   }
 }

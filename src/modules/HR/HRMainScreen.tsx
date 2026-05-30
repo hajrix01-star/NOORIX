@@ -5,11 +5,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
-import { useEmployees } from '../../hooks/useEmployees';
-import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useHrDashboardSummary } from '../../hooks/useHrDashboardSummary';
-import { roundMoney2 } from '../../utils/moneyInput';
-import { totalSalary } from './utils/employeeSalaryMath';
 import HRSummaryCard from './components/HRSummaryCard';
 import { HrSectionSubTabs } from './components/HrSectionSubTabs';
 import { useHrScreenNavigation } from './hooks/useHrScreenNavigation';
@@ -37,38 +33,7 @@ export default function HRMainScreen() {
     [setSection, setTab],
   );
 
-  const { employees, isLoading: empLoading } = useEmployees(companyId, {
-    includeTerminated: true,
-    fetchEnabled: !!companyId,
-  });
-  const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
   const { data: hrSummary, isLoading: summaryLoading } = useHrDashboardSummary(companyId);
-
-  const allowanceTotals = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const row of customAllowances) {
-      const employeeId = row.employeeId;
-      if (!employeeId) continue;
-      const next = (map.get(employeeId) || 0) + (Number(row.amount) || 0);
-      map.set(employeeId, roundMoney2(next));
-    }
-    return map;
-  }, [customAllowances]);
-
-  const activeEmployees = employees.filter((e: { status?: string }) => e.status === 'active');
-  const terminatedCount = employees.filter((e: { status?: string }) => e.status === 'terminated').length;
-  const activeCount = activeEmployees.length;
-
-  const monthlyPayrollTotal = useMemo(
-    () =>
-      roundMoney2(
-        activeEmployees.reduce(
-          (sum, emp) => sum + totalSalary(emp, allowanceTotals.get(emp.id) || 0),
-          0,
-        ),
-      ),
-    [activeEmployees, allowanceTotals],
-  );
 
   const mainTabItems = useMemo(
     () =>
@@ -93,18 +58,16 @@ export default function HRMainScreen() {
     ? section
     : 'people';
 
-  const cardLoading = empLoading || summaryLoading;
-
   return (
     <ScreenShell>
       <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
 
       {companyId && (
         <HRSummaryCard
-          isLoading={cardLoading}
-          activeCount={activeCount}
-          terminatedCount={terminatedCount}
-          monthlyPayrollTotal={monthlyPayrollTotal}
+          isLoading={summaryLoading}
+          activeCount={hrSummary.activeCount}
+          terminatedCount={hrSummary.terminatedCount}
+          monthlyPayrollTotal={hrSummary.monthlyPayrollTotal}
           expiringResidencyCount={hrSummary.expiringResidenciesCount}
           registeredLeavesCount={hrSummary.leavesCount}
           outstandingAdvancesCount={hrSummary.outstandingAdvancesCount}

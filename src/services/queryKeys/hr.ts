@@ -98,6 +98,10 @@ export const hrKeys = {
 
   customAllowancesRoot: () => ['custom-allowances'] as const,
 
+  advancesForCompany: (companyId: string) => ['hr-advances', companyId] as const,
+
+  advancesRoot: () => ['hr-advances'] as const,
+
   /** ملخص لوحة HR الموحّد — إجازات + إقامات + سلف */
   dashboardSummary: (companyId: string) => ['hr-dashboard-summary', companyId] as const,
 

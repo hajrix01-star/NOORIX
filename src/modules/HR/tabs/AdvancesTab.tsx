@@ -7,7 +7,7 @@ import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation'
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { createDeduction, getInvoices, updateInvoice, throwIfApiFailed } from '../../../services/api';
+import { createDeduction, getHrAdvances, updateInvoice, throwIfApiFailed } from '../../../services/api';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { sumAmounts } from '../../../utils/format';
@@ -20,7 +20,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn, FmtNum, KebabMenu, SmartTable } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
-import { hrKeys, invoiceKeys } from '../../../services/queryKeys';
+import { hrKeys } from '../../../services/queryKeys';
 import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 import { countTruthyFilters } from '../utils/hrActiveFilterCount';
@@ -42,20 +42,14 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const [monthFilter, setMonthFilter] = useState('');
   const [settlementFilter, setSettlementFilter] = useState('all');
 
-  const { employees, createAdvance } = useEmployees(companyId, { includeTerminated: false });
-  const employeeById = useMemo(
-    () => new Map((employees as { id?: string }[]).map((e) => [e.id, e])),
-    [employees],
-  );
+  const { createAdvance } = useEmployees(companyId, { includeTerminated: false, fetchEnabled: false });
 
   const { data: rawAdvanceRows, isLoading, isError } = useQuery({
-    queryKey: invoiceKeys.advancesForCompany(companyId),
+    queryKey: hrKeys.advancesForCompany(companyId),
     queryFn: async () => {
-      // فلتر kind=advance من الخادم — لا تجلب كل الفواتير ثم فلتر محلياً (كان يُسقِط سلفاً
-      // عندما يتجاوز عدد فواتير الشركة حد الصفحة، مثل ADV-20260508-002).
-      const res = await getInvoices(companyId, undefined, undefined, 1, 1000, null, null, 'advance');
+      const res = await getHrAdvances(companyId);
       throwIfApiFailed(res, 'فشل تحميل السلف');
-      const items = res.data?.items ?? [];
+      const items = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
       return items.map((i: any) => ({
         ...i,
         settledAmountNum: Number(i.settledAmount ?? 0),
@@ -75,15 +69,12 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   });
 
   const items = useMemo(() => (rawAdvanceRows ?? []).map((row: any) => {
-    const emp =
-      (row.employeeId && employeeById.get(row.employeeId)) ||
-      row.employee ||
-      { name: row.employeeName };
+    const emp = row.employee || { name: row.employeeName };
     return {
       ...row,
-      employeeName: employeeDisplayName(emp, lang),
+      employeeName: employeeDisplayName(emp, lang, row.employeeId),
     };
-  }), [rawAdvanceRows, lang, employeeById]);
+  }), [rawAdvanceRows, lang]);
   const employeeOptions = useMemo(
     () => [...new Set(items.map((r: any) => r.employeeName).filter(Boolean))].sort((a: any, b: any) => String(a).localeCompare(String(b))),
     [items],

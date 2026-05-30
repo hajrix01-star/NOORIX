@@ -11,6 +11,9 @@ const EMPTY: HrDashboardSummaryData = {
   expiringResidenciesCount: 0,
   outstandingAdvancesCount: 0,
   outstandingAdvancesAmount: 0,
+  activeCount: 0,
+  terminatedCount: 0,
+  monthlyPayrollTotal: 0,
 };
 
 export function useHrDashboardSummary(companyId: string) {
@@ -25,6 +28,9 @@ export function useHrDashboardSummary(companyId: string) {
         expiringResidenciesCount:  Number(raw?.expiringResidenciesCount  ?? 0),
         outstandingAdvancesCount:  Number(raw?.outstandingAdvancesCount  ?? 0),
         outstandingAdvancesAmount: Number(raw?.outstandingAdvancesAmount ?? 0),
+        activeCount:               Number(raw?.activeCount               ?? 0),
+        terminatedCount:           Number(raw?.terminatedCount           ?? 0),
+        monthlyPayrollTotal:       Number(raw?.monthlyPayrollTotal       ?? 0),
       };
     },
     enabled: !!companyId,
