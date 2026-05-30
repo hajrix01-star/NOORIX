@@ -60,7 +60,9 @@ function invalidateAfterLeaveFormModalSuccess(queryClient: any, companyId: any, 
   invalidateOnFinancialMutation(queryClient);
 }
 
-export default function LeaveTab() {
+type LeaveTabProps = { embedded?: boolean };
+
+export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
@@ -329,7 +331,7 @@ export default function LeaveTab() {
   ), [t, deleteLeaveMutation, setReturnRow, setSettlementRow, setEditLeave, canShowLeaveReturnRow, canShowSalarySettlement]);
 
   return (
-    <ScreenShell>
+    <ScreenShell embedded={!!embedded}>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>

@@ -24,7 +24,9 @@ import { hrKeys, invoiceKeys } from '../../../services/queryKeys';
 
 const PAGE_SIZE = 50;
 
-export default function AdvancesTab() {
+type AdvancesTabProps = { embedded?: boolean };
+
+export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
@@ -317,7 +319,7 @@ export default function AdvancesTab() {
   }, [t, settlementMap, setEditingAdvance, setSettlingAdvance]);
 
   return (
-    <ScreenShell>
+    <ScreenShell embedded={!!embedded}>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <Input type="select" value={employeeFilter} onChange={(e: any) => setEmployeeFilter(e.target.value)}>

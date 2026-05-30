@@ -40,7 +40,9 @@ function lastDayOfPayrollMonth(monthRaw: any) {
   return `${y}-${mm2}-${dd}`;
 }
 
-export default function PayrollTab() {
+type PayrollTabProps = { embedded?: boolean };
+
+export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies, userRole, user } = useApp();
   const effectiveRole = resolveUserRole(user?.role ?? userRole);
@@ -351,7 +353,7 @@ export default function PayrollTab() {
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell embedded={!!embedded}>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>

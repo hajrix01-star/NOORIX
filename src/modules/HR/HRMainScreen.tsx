@@ -1,54 +1,42 @@
 ﻿/**
  * HRMainScreen — الشاشة الرئيسية للموارد البشرية
+ * 3 أقسام رئيسية + تبويبات فرعية (segmented): موظفون | رواتب | أدوات الراتب
  */
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
-import { useTabSearchParam } from '../../hooks/useTabSearchParam';
-import { ScreenShell, ScreenTabs } from '../../ui';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useHrDashboardSummary } from '../../hooks/useHrDashboardSummary';
 import { roundMoney2 } from '../../utils/moneyInput';
 import { totalSalary } from './utils/employeeSalaryMath';
 import HRSummaryCard from './components/HRSummaryCard';
-import StaffListScreen from './StaffListScreen';
-import PayrollTab from './tabs/PayrollTab';
-import LeaveTab from './tabs/LeaveTab';
-import AdvancesTab from './tabs/AdvancesTab';
-import ResidencyTab from './tabs/ResidencyTab';
-import SalaryCalcTab from './tabs/SalaryCalcTab';
-import EOSCalcTab from './tabs/EOSCalcTab';
-import HrPrintDocumentsTab from './tabs/HrPrintDocumentsTab';
+import { HrSectionSubTabs } from './components/HrSectionSubTabs';
+import { useHrScreenNavigation } from './hooks/useHrScreenNavigation';
+import { HR_SECTION_IDS, type HrSectionId } from './hrScreenNavigation';
+import { ScreenShell, ScreenTabs } from '../../ui';
 
-const TABS = [
-  { id: 'employees',  labelKey: 'hrTabEmployees'  },
-  { id: 'payroll',    labelKey: 'hrTabPayroll'     },
-  { id: 'leave',      labelKey: 'hrTabLeave'       },
-  { id: 'advances',   labelKey: 'hrTabAdvances'    },
-  { id: 'residency',  labelKey: 'hrTabResidency'   },
-  { id: 'salaryCalc', labelKey: 'hrTabSalaryCalc'  },
-  { id: 'eosCalc',    labelKey: 'hrTabEOSCalc'     },
-  { id: 'printDocs',  labelKey: 'hrTabPrintDocs'   },
-];
-
-const HR_TAB_IDS = TABS.map((tab: any) => tab.id);
+const MAIN_SECTIONS = [
+  { id: 'people', labelKey: 'hrSectionPeople', shortLabelKey: 'hrSectionPeopleShort' },
+  { id: 'payroll', labelKey: 'hrSectionPayroll', shortLabelKey: 'hrSectionPayrollShort' },
+  { id: 'tools', labelKey: 'hrSectionTools', shortLabelKey: 'hrSectionToolsShort' },
+] as const;
 
 export default function HRMainScreen() {
   const { t } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
-  const [activeTab, setActiveTab] = useTabSearchParam(HR_TAB_IDS, 'employees');
+  const { section, tab, setSection, setTab } = useHrScreenNavigation();
 
-  // ─── بيانات الموظفين (مطلوبة للتبويبات + حساب الرواتب) ───────────
-  const { employees, isLoading: empLoading } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: !!companyId });
+  const { employees, isLoading: empLoading } = useEmployees(companyId, {
+    includeTerminated: true,
+    fetchEnabled: !!companyId,
+  });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
-
-  // ─── ملخص HR الموحّد: إجازات + إقامات + سلف في طلب واحد ──────────
   const { data: hrSummary, isLoading: summaryLoading } = useHrDashboardSummary(companyId);
 
   const allowanceTotals = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, number>();
     for (const row of customAllowances) {
       const employeeId = row.employeeId;
       if (!employeeId) continue;
@@ -58,31 +46,48 @@ export default function HRMainScreen() {
     return map;
   }, [customAllowances]);
 
-  const activeEmployees = employees.filter((e: any) => e.status === 'active');
-  const terminatedCount = employees.filter((e: any) => e.status === 'terminated').length;
+  const activeEmployees = employees.filter((e: { status?: string }) => e.status === 'active');
+  const terminatedCount = employees.filter((e: { status?: string }) => e.status === 'terminated').length;
   const activeCount = activeEmployees.length;
 
   const monthlyPayrollTotal = useMemo(
-    () => roundMoney2(
-      activeEmployees.reduce(
-        (sum: any, emp: any) => sum + totalSalary(emp, allowanceTotals.get(emp.id) || 0),
-        0,
+    () =>
+      roundMoney2(
+        activeEmployees.reduce(
+          (sum, emp) => sum + totalSalary(emp, allowanceTotals.get(emp.id) || 0),
+          0,
+        ),
       ),
-    ),
     [activeEmployees, allowanceTotals],
   );
 
-  const hrTabItems = useMemo(
-    () => TABS.map((tab: any) => ({ id: tab.id, label: t(tab.labelKey) })),
+  const mainTabItems = useMemo(
+    () =>
+      MAIN_SECTIONS.map((row) => {
+        const full = t(row.labelKey);
+        const short = t(row.shortLabelKey);
+        const label =
+          short === full ? (
+            full
+          ) : (
+            <>
+              <span className="hidden sm:inline">{full}</span>
+              <span className="sm:hidden">{short}</span>
+            </>
+          );
+        return { id: row.id, label };
+      }),
     [t],
   );
 
-  // skeleton يُعرض حتى تكتمل بيانات الموظفين والملخص معاً
+  const activeSection = (HR_SECTION_IDS as readonly string[]).includes(section)
+    ? section
+    : 'people';
+
   const cardLoading = empLoading || summaryLoading;
 
   return (
     <ScreenShell>
-
       <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
 
       {companyId && (
@@ -99,21 +104,14 @@ export default function HRMainScreen() {
       )}
 
       <ScreenTabs
-        items={hrTabItems}
-        value={activeTab}
-        onChange={setActiveTab}
+        items={mainTabItems}
+        value={activeSection}
+        onChange={(id) => setSection(id as HrSectionId)}
         contentClassName="nx-tab-content min-h-[200px]"
+        animateContent={false}
       >
-        {activeTab === 'employees'  && <StaffListScreen embedded />}
-        {activeTab === 'payroll'    && <PayrollTab />}
-        {activeTab === 'leave'      && <LeaveTab />}
-        {activeTab === 'advances'   && <AdvancesTab />}
-        {activeTab === 'residency'  && <ResidencyTab />}
-        {activeTab === 'salaryCalc' && <SalaryCalcTab />}
-        {activeTab === 'eosCalc'    && <EOSCalcTab />}
-        {activeTab === 'printDocs'  && <HrPrintDocumentsTab />}
+        <HrSectionSubTabs section={activeSection} tab={tab} onTabChange={setTab} />
       </ScreenTabs>
-
     </ScreenShell>
   );
 }

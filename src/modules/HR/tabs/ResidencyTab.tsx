@@ -45,7 +45,9 @@ function residencyStatusKey(v: any) {
   return v === 'expired' || v === 'renewed' ? v : 'active';
 }
 
-export default function ResidencyTab() {
+type ResidencyTabProps = { embedded?: boolean };
+
+export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
@@ -255,7 +257,7 @@ export default function ResidencyTab() {
   };
 
   return (
-    <ScreenShell>
+    <ScreenShell embedded={!!embedded}>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1 flex-wrap">
           {expiringCount > 0 && (
