@@ -40,6 +40,7 @@ import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
 import { HR_EMBEDDED_SHELL_CLASS } from './hrWorkspaceLayout';
+import { HrTabToolbar } from './components/HrTabToolbar';
 
 const PAGE_SIZE = 50;
 
@@ -480,33 +481,60 @@ export default function StaffListScreen({ embedded }: any) {
             }}
           />
 
-          <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
-            <div className="nx-toolbar min-w-0 flex-1">
-              <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('active')}>{t('activeEmployeesList')}</Button>
-              <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('terminated')}>{t('terminatedEmployeesList')}</Button>
-              <Button size="sm" className="whitespace-nowrap shrink-0" onClick={() => setViewMode('archived')}>{t('archivedEmployeesList')}</Button>
+          <HrTabToolbar
+            leading={(
+              <div className="nx-hr-view-modes flex min-w-0 max-w-full gap-1 overflow-x-auto">
+                <Button
+                  size="sm"
+                  variant={viewMode === 'active' ? 'primary' : 'ghost'}
+                  className="shrink-0 whitespace-nowrap"
+                  onClick={() => setViewMode('active')}
+                >
+                  {t('activeEmployeesList')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === 'terminated' ? 'primary' : 'ghost'}
+                  className="shrink-0 whitespace-nowrap"
+                  onClick={() => setViewMode('terminated')}
+                >
+                  {t('terminatedEmployeesList')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === 'archived' ? 'primary' : 'ghost'}
+                  className="shrink-0 whitespace-nowrap"
+                  onClick={() => setViewMode('archived')}
+                >
+                  {t('archivedEmployeesList')}
+                </Button>
+              </div>
+            )}
+            desktopActions={(
               <Button
                 size="sm"
-                className="whitespace-nowrap shrink-0"
+                className="hidden lg:inline-flex shrink-0 whitespace-nowrap"
                 icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
                 onClick={() => setShowImportExport(true)}
               >
                 {t('importExportLabel')}
               </Button>
-            </div>
-            <Input
-              type="search"
-              value={searchInput}
-              onChange={(e: any) => setSearchInput(e.target.value)}
-              placeholder={t('searchPlaceholder')}
-              size="sm"
-              className="w-full min-w-0 sm:max-w-xs sm:flex-1"
-              aria-label={t('searchPlaceholder')}
-            />
-            <Button variant="primary" size="sm" className="shrink-0" onClick={() => { setEditingEmployee(null); setShowForm(true); }}>
-              {t('addEmployee')}
-            </Button>
-          </div>
+            )}
+            menuItems={[
+              {
+                key: 'import',
+                label: t('importExportLabel'),
+                onClick: () => setShowImportExport(true),
+              },
+            ]}
+            primaryAction={{
+              label: t('addEmployee'),
+              onClick: () => {
+                setEditingEmployee(null);
+                setShowForm(true);
+              },
+            }}
+          />
 
           <SmartTable
             compact
@@ -526,7 +554,7 @@ export default function StaffListScreen({ embedded }: any) {
             badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
             searchValue={searchInput}
             onSearchChange={setSearchInput}
-            showSearchInHeader={false}
+            showSearchInHeader
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={toggleSort}

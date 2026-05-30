@@ -26,6 +26,7 @@ import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/per
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
 import { hrKeys } from '../../../services/queryKeys';
 import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
+import { HrTabToolbar } from '../components/HrTabToolbar';
 
 const PAGE_SIZE = 50;
 
@@ -353,32 +354,36 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
     });
   }
 
+  const yearLeading = (
+    <>
+      <label className="text-[13px] font-semibold shrink-0 text-noorix-muted">{t('dateFilterYear')}</label>
+      <Input type="select" value={year} onChange={(e: any) => setYear(parseInt(e.target.value, 10))} size="sm" aria-label={t('dateFilterYear')}>
+        {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y: number) => (
+          <option key={y} value={y}>{y}</option>
+        ))}
+      </Input>
+    </>
+  );
+
   return (
     <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
-        <div className="nx-toolbar min-w-0 flex-1">
-          <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>
-          <Input type="select" value={year} onChange={(e: any) => setYear(parseInt(e.target.value, 10))}>
-            {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y: any) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </Input>
-          <Button size="sm" onClick={handleExportExcel}>{t('exportExcel')}</Button>
-          <Button size="sm" onClick={handlePrint}>{t('printPayroll')}</Button>
-        </div>
-        <Input
-          type="search"
-          value={searchText}
-          onChange={(e: any) => setSearch(e.target.value)}
-          placeholder={t('searchPlaceholder')}
-          size="sm"
-          className="w-full min-w-0 lg:max-w-xs lg:flex-1"
-          aria-label={t('searchPlaceholder')}
-        />
-        <Button variant="primary" size="sm" className="shrink-0" onClick={() => setShowCreate(true)}>
-          {t('createPayrollRun')}
-        </Button>
-      </div>
+      <HrTabToolbar
+        leading={yearLeading}
+        desktopActions={(
+          <>
+            <Button size="sm" className="hidden lg:inline-flex" onClick={handleExportExcel}>{t('exportExcel')}</Button>
+            <Button size="sm" className="hidden lg:inline-flex" onClick={handlePrint}>{t('printPayroll')}</Button>
+          </>
+        )}
+        menuItems={[
+          { key: 'export', label: t('exportExcel'), onClick: handleExportExcel },
+          { key: 'print', label: t('printPayroll'), onClick: handlePrint },
+        ]}
+        primaryAction={{
+          label: t('createPayrollRun'),
+          onClick: () => setShowCreate(true),
+        }}
+      />
 
       <SmartTable
         compact
@@ -402,7 +407,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
         }
         searchValue={searchText}
         onSearchChange={setSearch}
-        showSearchInHeader={false}
+        showSearchInHeader
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}

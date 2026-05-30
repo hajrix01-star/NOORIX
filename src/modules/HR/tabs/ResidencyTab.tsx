@@ -23,6 +23,8 @@ import { throwIfApiFailed } from '../../../services/api';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
 import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
+import { HrTabToolbar } from '../components/HrTabToolbar';
+import { countTruthyFilters } from '../utils/hrActiveFilterCount';
 import {
   HR_SERVICE_CATEGORIES,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
@@ -257,50 +259,55 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
     invalidateOnFinancialMutation(queryClient);
   };
 
+  const residencyFilters = (
+    <Input
+      type="select"
+      label={t('hrServiceCategory')}
+      value={categoryFilter}
+      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setCategoryFilter(e.target.value)}
+      size="sm"
+      aria-label={t('hrServiceCategory')}
+    >
+      <option value="">{t('hrServiceFilterAll')}</option>
+      {HR_SERVICE_CATEGORIES.map((cat) => (
+        <option key={cat} value={cat}>{t(HR_SERVICE_CATEGORY_LABEL_KEYS[cat])}</option>
+      ))}
+    </Input>
+  );
+
+  const residencyLeading = expiringCount > 0 ? (
+    <span className="rounded-lg text-[12px] font-semibold px-2.5 py-1 bg-noorix-amber/15 text-noorix-amber shrink-0">
+      {t('residencyExpiringSoon')}: {expiringCount}
+    </span>
+  ) : null;
+
   return (
     <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
-        <div className="nx-toolbar min-w-0 flex-1 flex-wrap">
-          {expiringCount > 0 && (
-            <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5 bg-noorix-amber/15 text-noorix-amber shrink-0">
-              {t('residencyExpiringSoon')}: {expiringCount}
-            </span>
-          )}
-          <Button size="sm" onClick={() => exportToExcel(exportData, 'hr-employee-services.xlsx')}>
+      <HrTabToolbar
+        leading={residencyLeading}
+        filters={residencyFilters}
+        activeFilterCount={countTruthyFilters([!!categoryFilter])}
+        onResetFilters={() => setCategoryFilter('')}
+        desktopActions={(
+          <Button size="sm" className="hidden lg:inline-flex" onClick={() => exportToExcel(exportData, 'hr-employee-services.xlsx')}>
             {t('exportExcel')}
           </Button>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:flex-1 lg:max-w-2xl">
-          <Input
-            type="select"
-            value={categoryFilter}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setCategoryFilter(e.target.value)}
-            size="sm"
-            className="w-full sm:min-w-[160px]"
-            aria-label={t('hrServiceCategory')}
-          >
-            <option value="">{t('hrServiceFilterAll')}</option>
-            {HR_SERVICE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{t(HR_SERVICE_CATEGORY_LABEL_KEYS[cat])}</option>
-            ))}
-          </Input>
-          <Input
-            type="search"
-            value={searchText}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setSearch(e.target.value)}
-            placeholder={t('searchPlaceholder')}
-            size="sm"
-            className="w-full min-w-0 flex-1"
-            aria-label={t('searchPlaceholder')}
-          />
-        </div>
-        <Button variant="primary" size="sm" className="shrink-0" onClick={() => openAdd()}>
-          {t('addHrService')}
-        </Button>
-      </div>
+        )}
+        menuItems={[
+          {
+            key: 'export',
+            label: t('exportExcel'),
+            onClick: () => exportToExcel(exportData, 'hr-employee-services.xlsx'),
+          },
+        ]}
+        primaryAction={{
+          label: t('addHrService'),
+          onClick: () => openAdd(),
+        }}
+      />
 
       <HrServiceQuickAddBar
-        className="mb-3 pb-3 border-b border-noorix-border"
+        className="mb-3"
         onSelectCategory={(cat) => openAdd(cat)}
       />
 
@@ -326,7 +333,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         }
         searchValue={searchText}
         onSearchChange={setSearch}
-        showSearchInHeader={false}
+        showSearchInHeader
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}

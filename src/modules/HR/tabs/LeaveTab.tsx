@@ -26,6 +26,7 @@ import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
+import { HrTabToolbar } from '../components/HrTabToolbar';
 
 const PAGE_SIZE = 50;
 
@@ -331,31 +332,38 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     </div>
   ), [t, deleteLeaveMutation, setReturnRow, setSettlementRow, setEditLeave, canShowLeaveReturnRow, canShowSalarySettlement]);
 
+  const yearLeading = (
+    <>
+      <label className="text-[13px] font-semibold shrink-0 text-noorix-muted">{t('dateFilterYear')}</label>
+      <Input type="select" value={year} onChange={(e: any) => setYear(parseInt(e.target.value, 10))} size="sm" aria-label={t('dateFilterYear')}>
+        {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y: number) => (
+          <option key={y} value={y}>{y}</option>
+        ))}
+      </Input>
+    </>
+  );
+
   return (
     <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
-        <div className="nx-toolbar min-w-0 flex-1">
-          <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>
-          <Input type="select" value={year} onChange={(e: any) => setYear(parseInt(e.target.value, 10))}>
-            {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y: any) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </Input>
-          <Button size="sm" onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>{t('exportExcel')}</Button>
-        </div>
-        <Input
-          type="search"
-          value={searchText}
-          onChange={(e: any) => setSearch(e.target.value)}
-          placeholder={t('searchPlaceholder')}
-          size="sm"
-          className="w-full min-w-0 lg:max-w-xs lg:flex-1"
-          aria-label={t('searchPlaceholder')}
-        />
-        <Button variant="primary" size="sm" className="shrink-0" onClick={() => setShowAdd(true)}>
-          {t('addLeave')}
-        </Button>
-      </div>
+      <HrTabToolbar
+        leading={yearLeading}
+        desktopActions={(
+          <Button size="sm" className="hidden lg:inline-flex" onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>
+            {t('exportExcel')}
+          </Button>
+        )}
+        menuItems={[
+          {
+            key: 'export',
+            label: t('exportExcel'),
+            onClick: () => exportToExcel(exportData, `leaves-${year}.xlsx`),
+          },
+        ]}
+        primaryAction={{
+          label: t('addLeave'),
+          onClick: () => setShowAdd(true),
+        }}
+      />
 
       <SmartTable
         compact
@@ -374,7 +382,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
         searchValue={searchText}
         onSearchChange={setSearch}
-        showSearchInHeader={false}
+        showSearchInHeader
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}

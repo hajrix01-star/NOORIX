@@ -4537,9 +4537,18 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-    padding: 10px 12px 12px;
+    padding: 8px 12px 10px;
     border-bottom: 1px solid var(--noorix-border);
-    background-color: var(--noorix-bg-muted);
+  }
+  .nx-hr-tab-toolbar {
+    width: 100%;
+    min-width: 0;
+  }
+  .nx-hr-view-modes {
+    -webkit-overflow-scrolling: touch;
+  }
+  .nx-hr-view-modes .nx-btn {
+    flex-shrink: 0;
   }
   .nx-hr-workspace__body {
     min-width: 0;
