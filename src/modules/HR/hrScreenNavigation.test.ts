@@ -60,4 +60,14 @@ describe('hrScreenNavigation', () => {
   it('defaultTabForHrSection', () => {
     expect(defaultTabForHrSection('tools')).toBe('salary-calc');
   });
+
+  it('writes payroll advances without stripping tab', () => {
+    const next = writeHrScreenToSearchParams(new URLSearchParams(), {
+      section: 'payroll',
+      tab: 'advances',
+    });
+    expect(next.get('section')).toBe('payroll');
+    expect(next.get('tab')).toBe('advances');
+    expect(hrScreenUrlNeedsNormalization(next)).toBe(false);
+  });
 });

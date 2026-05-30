@@ -44,17 +44,44 @@ export function useHrScreenNavigation() {
     [applyLocation],
   );
 
+  /** Prefer this for sub-tabs — pass the visible section so URL stays in sync with the main tab strip. */
+  const setSubTab = useCallback(
+    (tab: HrSubTabId, section: HrSectionId) => {
+      setSearchParams(
+        (prev) => writeHrScreenToSearchParams(prev, { section, tab }),
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  /** @deprecated Use setSubTab(tab, section) or navigateHrScreen — kept for callers that only have tab id */
   const setTab = useCallback(
     (tab: HrSubTabId) => {
-      applyLocation({ section: location.section, tab });
+      setSearchParams(
+        (prev) => {
+          const { section } = resolveHrScreenFromSearchParams(prev);
+          return writeHrScreenToSearchParams(prev, { section, tab });
+        },
+        { replace: true },
+      );
     },
-    [applyLocation, location.section],
+    [setSearchParams],
+  );
+
+  const navigateHrScreen = useCallback(
+    (next: HrScreenLocation) => {
+      applyLocation(next);
+    },
+    [applyLocation],
   );
 
   return {
     section: location.section,
     tab: location.tab,
     setSection,
+    setSubTab,
     setTab,
+    navigateHrScreen,
   };
 }

@@ -23,14 +23,13 @@ export default function HRMainScreen() {
   const { t } = useTranslation();
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
-  const { section, tab, setSection, setTab } = useHrScreenNavigation();
+  const { section, tab, setSection, setSubTab, navigateHrScreen } = useHrScreenNavigation();
 
   const handleKpiNavigate = useCallback(
     (loc: HrScreenLocation) => {
-      setSection(loc.section);
-      setTab(loc.tab);
+      navigateHrScreen(loc);
     },
-    [setSection, setTab],
+    [navigateHrScreen],
   );
 
   const { data: hrSummary, isLoading: summaryLoading } = useHrDashboardSummary(companyId);
@@ -83,7 +82,11 @@ export default function HRMainScreen() {
         contentClassName={HR_WORKSPACE_CONTENT_CLASS}
         animateContent={false}
       >
-        <HrSectionSubTabs section={activeSection} tab={tab} onTabChange={setTab} />
+        <HrSectionSubTabs
+          section={activeSection}
+          tab={tab}
+          onTabChange={(id) => setSubTab(id, activeSection)}
+        />
       </ScreenTabs>
     </ScreenShell>
   );
