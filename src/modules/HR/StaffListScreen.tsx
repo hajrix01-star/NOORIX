@@ -494,7 +494,8 @@ export default function StaffListScreen({ embedded }: any) {
           <HrTabToolbar
             leading={(
               <HrSegmentedControl
-                className="nx-hr-view-modes min-w-0 max-w-full !border-0 !border-b-0 !bg-transparent !p-0 shadow-none"
+                shellInset={false}
+                className="nx-hr-view-modes w-full"
                 items={employeeViewModeItems}
                 value={viewMode}
                 onChange={setViewMode}
