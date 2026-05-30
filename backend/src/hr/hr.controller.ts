@@ -301,9 +301,15 @@ export class HRController {
   deleteResidency(
     @Param('id') id: string,
     @CompanyId() companyId: string,
+    @Query('voidInvoice') voidInvoice: string | undefined,
     @CurrentUser() user: JwtUser,
   ) {
-    return this.hrService.deleteResidency(id, companyId, user.sub);
+    return this.hrService.deleteResidency(
+      id,
+      companyId,
+      user.sub,
+      voidInvoice === 'true',
+    );
   }
 
   // ══════════════════════════════════════════════════════════

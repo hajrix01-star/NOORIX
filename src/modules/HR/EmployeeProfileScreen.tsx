@@ -22,6 +22,7 @@ import {
   uploadDocumentFile,
   downloadDocument,
   deleteEmployee,
+  deleteResidency,
 } from '../../services/api';
 import { assertApiOk } from '../../utils/apiResponse';
 import { ScreenShell } from '../../ui';
@@ -79,6 +80,7 @@ export default function EmployeeProfileScreen() {
   const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [editProfileLeave, setEditProfileLeave] = useState<any>(null);
+  const [editProfileResidency, setEditProfileResidency] = useState<any>(null);
   const [profileServiceAdd, setProfileServiceAdd] = useState<{ category: string } | null>(null);
   const docFileRef = React.useRef<any>(null);
 
@@ -209,10 +211,36 @@ export default function EmployeeProfileScreen() {
   );
 
   const financialRecords = useMemo(
-    () => buildFinancialRecords(hrInvoicesData, deductions, t),
-    [hrInvoicesData, deductions, t],
+    () => buildFinancialRecords(hrInvoicesData, deductions, t, residencies),
+    [hrInvoicesData, deductions, t, residencies],
   );
   const queryClient = useQueryClient();
+
+  const deleteServiceMutation = useApiMutation({
+    mutationFn: ({ serviceId, voidInvoice }: { serviceId: string; voidInvoice?: boolean }) =>
+      deleteResidency(serviceId, companyId, !!voidInvoice),
+    successToast: () => t('hrServiceDeleted'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
+    onSuccess: () => {
+      setEditProfileResidency(null);
+      invalidateAll();
+    },
+  });
+
+  const handleDeleteService = (row: any) => {
+    const msg = row.invoiceId
+      ? t('deleteHrServiceWithInvoice')
+      : t('deleteHrServiceConfirm');
+    if (!window.confirm(msg)) return;
+    deleteServiceMutation.mutate({ serviceId: row.id, voidInvoice: !!row.invoiceId });
+  };
+
+  const openProfileResidency = (rowOrId: any) => {
+    const target = typeof rowOrId === 'string'
+      ? residencies.find((r: any) => r.id === rowOrId)
+      : rowOrId;
+    if (target) setEditProfileResidency(target);
+  };
 
   const permanentDeleteEmployeeMut = useApiMutation({
     mutationFn: ({ empId }: any) => deleteEmployee(empId, companyId),
@@ -337,7 +365,11 @@ export default function EmployeeProfileScreen() {
           onOpenPromotion={() => setCareerModal('promotion')}
           onOpenRaise={() => setCareerModal('raise')}
         />
-        <EmployeeProfileFinancialSection t={t} financialRecords={financialRecords} />
+        <EmployeeProfileFinancialSection
+          t={t}
+          financialRecords={financialRecords}
+          onOpenResidency={canEditHrLeave ? openProfileResidency : undefined}
+        />
         <EmployeeProfilePayrollSection
           t={t}
           payrollItems={payrollItems}
@@ -356,7 +388,10 @@ export default function EmployeeProfileScreen() {
           residencies={residencies}
           residencyProfileStatusMap={residencyProfileStatusMap}
           canAddService={canEditHrLeave}
+          canEditService={canEditHrLeave}
           onQuickAdd={(category: string) => setProfileServiceAdd({ category })}
+          onOpenService={canEditHrLeave ? openProfileResidency : undefined}
+          onDeleteService={canEditHrLeave ? handleDeleteService : undefined}
         />
         <EmployeeProfileDocumentsSection
           t={t}
@@ -465,6 +500,21 @@ export default function EmployeeProfileScreen() {
             setProfileServiceAdd(null);
           }}
           onClose={() => setProfileServiceAdd(null)}
+        />
+      )}
+      {editProfileResidency && (
+        <ResidencyFormModal
+          key={editProfileResidency.id}
+          residency={editProfileResidency}
+          companyId={companyId}
+          defaultEmployeeId={id}
+          onSuccess={() => {
+            invalidateAll();
+            showToast(t('hrServiceUpdated'), 'success');
+            setEditProfileResidency(null);
+          }}
+          onClose={() => setEditProfileResidency(null)}
+          onDelete={handleDeleteService}
         />
       )}
     </ScreenShell>

@@ -347,8 +347,8 @@ export default {
   hrServiceInvoiceIssued: { ar: 'تم إصدار الفاتورة وربطها بالسجل', en: 'Invoice issued and linked' },
   deleteHrServiceConfirm: { ar: 'حذف هذا السجل؟', en: 'Delete this record?' },
   deleteHrServiceWithInvoice: {
-    ar: 'لا يمكن الحذف — يوجد فاتورة نشطة. ألغِ الفاتورة من قسم الفواتير أولاً.',
-    en: 'Cannot delete — active invoice linked. Cancel the invoice first.',
+    ar: 'حذف هذا السجل سيُلغي الفاتورة المرتبطة من السجل المالي وقسم الفواتير. هل تريد المتابعة؟',
+    en: 'Deleting this record will cancel the linked invoice in financial logs and Invoices. Continue?',
   },
   iqamaNumberInvalid: { ar: 'رقم الإقامة يجب أن يكون 10 أرقام', en: 'Iqama number must be 10 digits' },
   expiryDate: { ar: 'تاريخ الانتهاء', en: 'Expiry date' },

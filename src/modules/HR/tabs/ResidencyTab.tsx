@@ -18,7 +18,7 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell, SmartTable } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, SmartTable, KebabMenu } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
@@ -74,14 +74,54 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   });
 
   const deleteMutation = useApiMutation({
-    mutationFn: (id: any) => deleteResidency(id, companyId),
+    mutationFn: ({ id, voidInvoice }: { id: string; voidInvoice?: boolean }) =>
+      deleteResidency(id, companyId, !!voidInvoice),
     invalidateQueries: [hrKeys.residencies(companyId)],
     successToast: () => t('hrServiceDeleted'),
     errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: () => {
       setEditingResidency(null);
+      invalidateOnFinancialMutation(queryClient);
     },
   });
+
+  const openServiceRow = useCallback((row: any) => {
+    setEditingResidency(row);
+  }, []);
+
+  const handleDelete = useCallback((row: any) => {
+    const msg = row.invoiceId
+      ? t('deleteHrServiceWithInvoice')
+      : t('deleteHrServiceConfirm');
+    if (!window.confirm(msg)) return;
+    deleteMutation.mutate({ id: row.id, voidInvoice: !!row.invoiceId });
+  }, [t, deleteMutation]);
+
+  const serviceKebabItems = useCallback((row: any) => [
+    {
+      key: 'view',
+      label: t('view'),
+      onClick: () => openServiceRow(row),
+    },
+    {
+      key: 'edit',
+      label: t('edit'),
+      style: { color: 'var(--noorix-accent-green)' },
+      onClick: () => openServiceRow(row),
+    },
+    ...(row.invoiceId ? [] : [{
+      key: 'issue',
+      label: t('hrServiceIssueInvoice'),
+      style: { color: 'var(--noorix-accent-blue)' },
+      onClick: () => setIssueInvoiceRow(row),
+    }]),
+    {
+      key: 'delete',
+      label: t('delete'),
+      style: { color: 'var(--noorix-accent-red)' },
+      onClick: () => handleDelete(row),
+    },
+  ], [t, openServiceRow, handleDelete]);
 
   const items = useMemo(() => (data ?? []).map((r: any) => ({
     ...r,
@@ -116,16 +156,17 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
     setShowAdd(true);
   };
 
-  const handleDelete = useCallback((row: any) => {
-    const msg = row.invoiceId
-      ? t('deleteHrServiceWithInvoice')
-      : t('deleteHrServiceConfirm');
-    if (window.confirm(msg)) deleteMutation.mutate(row.id);
-  }, [t, deleteMutation]);
-
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 150,
-      render: (v: any) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
+      render: (v: any, row: any) => (
+        <button
+          type="button"
+          className="font-semibold text-[13px] text-start text-noorix-blue hover:underline cursor-pointer bg-transparent border-0 p-0"
+          onClick={() => openServiceRow(row)}
+        >
+          {v || '—'}
+        </button>
+      ) },
     { key: 'serviceLabel', label: t('hrServiceCategory'), sortable: true, width: 140, minWidth: 130,
       render: (v: any) => <Badge color="blue" label={v} size="sm" /> },
     { key: 'serviceDetail', label: t('hrServiceDetailColumn'), sortable: false, width: 140, minWidth: 120,
@@ -153,7 +194,13 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
     { key: 'invoiceNumber', label: t('invoiceNumber'), sortable: true, width: 120, minWidth: 110,
       render: (v: any, row: any) => (
         v ? (
-          <span className="nx-cell-num text-noorix-blue font-semibold">{v}</span>
+          <button
+            type="button"
+            className="nx-cell-num text-noorix-blue font-semibold hover:underline cursor-pointer bg-transparent border-0 p-0"
+            onClick={() => openServiceRow(row)}
+          >
+            {v}
+          </button>
         ) : (
           <span className="text-[12px] text-noorix-muted">{t('hrServiceNoInvoice')}</span>
         )
@@ -175,12 +222,13 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         <HRActionsCell
           row={row}
           type="residency"
-          onEdit={() => setEditingResidency(row)}
+          onView={() => openServiceRow(row)}
+          onEdit={() => openServiceRow(row)}
           onIssueInvoice={!row.invoiceId ? () => setIssueInvoiceRow(row) : undefined}
           onDelete={() => handleDelete(row)}
         />
       ) },
-  ], [t, residencyStatusMap, handleDelete]);
+  ], [t, residencyStatusMap, handleDelete, openServiceRow]);
 
   const exportData = allFilteredData.map((r: any) => ({
     employeeName: r.employeeName || '—',
@@ -195,7 +243,13 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   const renderMobileCard = useCallback((row: any) => {
     const soon = isExpiringSoon(row.expiryDate);
     return (
-      <div>
+      <div
+        className="cursor-pointer"
+        onClick={() => openServiceRow(row)}
+        onKeyDown={(e) => { if (e.key === 'Enter') openServiceRow(row); }}
+        role="button"
+        tabIndex={0}
+      >
         <div className="flex items-center justify-between flex-wrap mb-1 gap-2">
           <span className="font-bold text-[14px]">{row.employeeName}</span>
           <Badge color="blue" label={row.serviceLabel} size="sm" />
@@ -215,28 +269,28 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           </div>
           <div>
             <div className="nx-mc__stat-label">{t('invoiceNumber')}</div>
-            <div className="nx-mc__stat-value text-[13px] ltr">{row.invoiceNumber || '—'}</div>
+            <div className="nx-mc__stat-value text-[13px] ltr text-noorix-blue">{row.invoiceNumber || '—'}</div>
           </div>
         </div>
-        <div className="flex items-center justify-end">
-          <HRActionsCell
-            row={row}
-            type="residency"
-            onEdit={() => setEditingResidency(row)}
-            onIssueInvoice={!row.invoiceId ? () => setIssueInvoiceRow(row) : undefined}
-            onDelete={() => handleDelete(row)}
-          />
+        <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
+          <KebabMenu ariaLabel={t('actions')} items={serviceKebabItems(row)} />
         </div>
       </div>
     );
-  }, [t, handleDelete]);
+  }, [t, openServiceRow, serviceKebabItems]);
 
   const renderCompactRow = useCallback((row: any) => {
     const soon = isExpiringSoon(row.expiryDate);
     return (
-      <div>
+      <div
+        className="cursor-pointer"
+        onClick={() => openServiceRow(row)}
+        onKeyDown={(e) => { if (e.key === 'Enter') openServiceRow(row); }}
+        role="button"
+        tabIndex={0}
+      >
         <div className="nx-cr__line1">
-          <span className="nx-cr__name">{row.employeeName}</span>
+          <span className="nx-cr__name text-noorix-blue">{row.employeeName}</span>
           <Badge color="blue" label={row.serviceLabel} size="sm" />
         </div>
         <div className="nx-cr__line2">
@@ -246,13 +300,16 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
               {row.expiryDate ? formatSaudiDate(row.expiryDate) : ''}
             </span>
           </div>
-          <div className="nx-cr__line2-end text-[12px] ltr text-noorix-blue">
-            {row.invoiceNumber || ''}
+          <div className="nx-cr__line2-end flex items-center gap-2">
+            <span className="text-[12px] ltr text-noorix-blue">{row.invoiceNumber || ''}</span>
+            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+              <KebabMenu ariaLabel={t('actions')} items={serviceKebabItems(row)} />
+            </div>
           </div>
         </div>
       </div>
     );
-  }, []);
+  }, [t, openServiceRow, serviceKebabItems]);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: hrKeys.residencies(companyId) });
@@ -365,6 +422,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
             setEditingResidency(null);
           }}
           onClose={() => setEditingResidency(null)}
+          onDelete={handleDelete}
         />
       )}
 
