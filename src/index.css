@@ -4549,7 +4549,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.14);
   }
 
-  /* مساحة عمل HR — كرت واحد (تبويبات رئيسية) + شريط فرعي + محتوى بنفس العرض */
+  /* مساحة عمل HR — كرت واحد (تبويبات رئيسية) + pills فرعية + محتوى */
   .nx-hr-workspace {
     display: flex;
     flex-direction: column;
@@ -4557,15 +4557,50 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     width: 100%;
     padding: 0;
   }
-  /* فاصل رقيق بين شريط التبويبات الرئيسية والفرعية */
-  .nx-hr-workspace > .nx-hr-subtab-shell::before {
-    content: '';
-    display: block;
-    flex-shrink: 0;
-    height: 3px;
-    background: var(--noorix-bg-page);
-    border-top: 1px solid var(--noorix-border);
-    box-sizing: border-box;
+  /* تبويبات فرعية — pills تحت الرئيسي (بدون sparkline، خط واحد أسفل الشريط) */
+  .nx-hr-subtab-section > .nx-segmented-shell--flat {
+    border-bottom: 1px solid var(--noorix-border);
+    padding-bottom: 0.625rem;
+    margin-bottom: 0;
+  }
+  .nx-hr-subtab-section .nx-segmented-tab-bar--track {
+    border-color: color-mix(in srgb, var(--noorix-border) 70%, transparent);
+    background: color-mix(in srgb, var(--noorix-bg-muted) 90%, var(--noorix-bg-surface));
+  }
+  /* فلاتر داخل الشاشة (نشطون | مفصولين | …) — pills صغيرة بدون track */
+  .nx-hr-filter-shell {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+  .nx-hr-filter-pills {
+    width: 100%;
+    min-width: 0;
+    gap: 6px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+  .nx-hr-filter-pills .nx-tab-btn.nx-tab-btn--segmented {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 2rem;
+    padding: 0.35rem 0.5rem;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 0.5rem;
+  }
+  @media (min-width: 641px) {
+    .nx-hr-filter-pills .nx-tab-btn.nx-tab-btn--segmented {
+      flex: 0 1 auto;
+      padding: 0.4rem 0.85rem;
+      font-size: 12px;
+    }
+  }
+  .nx-hr-view-modes {
+    width: 100%;
+    min-width: 0;
   }
   .nx-segmented-shell--flat {
     position: relative;
@@ -4589,7 +4624,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
   .nx-hr-subtab-inline {
     border-radius: 0;
-    border-bottom: 1px solid var(--noorix-border);
   }
   .nx-hr-workspace__body {
     position: relative;
