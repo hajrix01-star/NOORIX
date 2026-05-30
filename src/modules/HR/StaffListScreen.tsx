@@ -75,11 +75,27 @@ export default function StaffListScreen({ embedded }: any) {
   ];
 
   const employeeViewModeItems = useMemo(
-    () => [
-      { id: 'active', label: t('activeEmployeesList') },
-      { id: 'terminated', label: t('terminatedEmployeesList') },
-      { id: 'archived', label: t('archivedEmployeesList') },
-    ],
+    () =>
+      (
+        [
+          { id: 'active', fullKey: 'activeEmployeesList', shortKey: 'activeEmployeesListShort' },
+          { id: 'terminated', fullKey: 'terminatedEmployeesList', shortKey: 'terminatedEmployeesListShort' },
+          { id: 'archived', fullKey: 'archivedEmployeesList', shortKey: 'archivedEmployeesListShort' },
+        ] as const
+      ).map(({ id, fullKey, shortKey }) => {
+        const full = t(fullKey);
+        const short = t(shortKey);
+        const label =
+          short === full ? (
+            full
+          ) : (
+            <>
+              <span className="hidden sm:inline">{full}</span>
+              <span className="sm:hidden">{short}</span>
+            </>
+          );
+        return { id, label };
+      }),
     [t],
   );
   const queryClient = useQueryClient();

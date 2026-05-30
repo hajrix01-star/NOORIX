@@ -4581,6 +4581,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     background: transparent;
     border: none;
     box-shadow: none;
+    overflow: visible;
   }
   .nx-hr-filter-pills .nx-tab-btn.nx-tab-btn--segmented {
     flex: 1 1 0;
@@ -4590,10 +4591,14 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     font-size: 12px;
     font-weight: 600;
     border-radius: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   @media (min-width: 641px) {
     .nx-hr-filter-pills .nx-tab-btn.nx-tab-btn--segmented {
       flex: 0 1 auto;
+      min-width: 0;
       padding: 0.4rem 0.85rem;
       font-size: 12px;
     }
