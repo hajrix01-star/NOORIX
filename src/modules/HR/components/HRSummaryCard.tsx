@@ -6,6 +6,7 @@ import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { MetricCard } from '../../../ui';
 import { fmt } from '../../../utils/format';
+import type { HrScreenLocation } from '../hrScreenNavigation';
 
 /* ألوان Design Tokens الموحّدة (var() للكروت — لا hex مباشر) */
 const COLOR_ACTIVE    = 'var(--color-nx-profit)';   /* أخضر — موظفون نشطون */
@@ -16,6 +17,18 @@ const COLOR_LEAVES    = 'var(--color-nx-app)';      /* بنفسجي — إجاز
 
 const CARD_CLASS = 'min-h-[110px]';
 
+export type HRSummaryCardProps = {
+  activeCount?: number;
+  terminatedCount?: number;
+  monthlyPayrollTotal?: number;
+  expiringResidencyCount?: number;
+  registeredLeavesCount?: number;
+  outstandingAdvancesCount?: number;
+  outstandingAdvancesAmount?: number;
+  isLoading?: boolean;
+  onNavigate?: (location: HrScreenLocation) => void;
+};
+
 export default function HRSummaryCard({
   activeCount = 0,
   terminatedCount = 0,
@@ -25,13 +38,18 @@ export default function HRSummaryCard({
   outstandingAdvancesCount = 0,
   outstandingAdvancesAmount = 0,
   isLoading = false,
-}: any) {
+  onNavigate,
+}: HRSummaryCardProps) {
   const { t } = useTranslation();
+
+  const go = (location: HrScreenLocation) => {
+    if (onNavigate) onNavigate(location);
+  };
 
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {[...Array(5)].map((_: any, i: any) => (
+        {[...Array(5)].map((_: unknown, i: number) => (
           <div key={i} className="noorix-surface-card min-h-[110px] animate-pulse" />
         ))}
       </div>
@@ -41,8 +59,11 @@ export default function HRSummaryCard({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
 
-      {/* 1 — الموظفون النشطون */}
-      <MetricCard color={COLOR_ACTIVE} className={CARD_CLASS}>
+      <MetricCard
+        color={COLOR_ACTIVE}
+        className={CARD_CLASS}
+        onClick={onNavigate ? () => go({ section: 'people', tab: 'list' }) : undefined}
+      >
         <MetricCard.Header label={t('hrStatsActive')} />
         <MetricCard.Value value={activeCount} color={COLOR_ACTIVE} />
         {terminatedCount > 0 && (
@@ -54,16 +75,19 @@ export default function HRSummaryCard({
         )}
       </MetricCard>
 
-      {/* 2 — إجمالي الرواتب الشهري */}
-      <MetricCard color={COLOR_PAYROLL} className={CARD_CLASS}>
+      <MetricCard
+        color={COLOR_PAYROLL}
+        className={CARD_CLASS}
+        onClick={onNavigate ? () => go({ section: 'payroll', tab: 'runs' }) : undefined}
+      >
         <MetricCard.Header label={t('hrStatsMonthlyPayroll')} />
         <MetricCard.Value value={monthlyPayrollTotal} currency="SR" color={COLOR_PAYROLL} />
       </MetricCard>
 
-      {/* 3 — إقامات قريبة الانتهاء */}
       <MetricCard
         color={expiringResidencyCount > 0 ? 'var(--color-nx-net-profit)' : COLOR_RESIDENCY}
         className={CARD_CLASS}
+        onClick={onNavigate ? () => go({ section: 'people', tab: 'residency' }) : undefined}
       >
         <MetricCard.Header label={t('hrStatsResidencyExpiring')} />
         <MetricCard.Value
@@ -72,10 +96,10 @@ export default function HRSummaryCard({
         />
       </MetricCard>
 
-      {/* 4 — السلف المعلقة */}
       <MetricCard
         color={outstandingAdvancesCount > 0 ? COLOR_ADVANCES : COLOR_RESIDENCY}
         className={CARD_CLASS}
+        onClick={onNavigate ? () => go({ section: 'payroll', tab: 'advances' }) : undefined}
       >
         <MetricCard.Header label={t('hrStatsAdvancesOutstanding')} />
         <MetricCard.Value
@@ -94,8 +118,11 @@ export default function HRSummaryCard({
         )}
       </MetricCard>
 
-      {/* 5 — إجازات مسجّلة (السنة الحالية) — بدون مسار اعتماد منفصل */}
-      <MetricCard color={COLOR_LEAVES} className={CARD_CLASS}>
+      <MetricCard
+        color={COLOR_LEAVES}
+        className={CARD_CLASS}
+        onClick={onNavigate ? () => go({ section: 'people', tab: 'leave' }) : undefined}
+      >
         <MetricCard.Header label={t('hrStatsLeavesYear')} />
         <MetricCard.Value value={registeredLeavesCount} color={COLOR_LEAVES} />
       </MetricCard>

@@ -2,7 +2,7 @@
  * HRMainScreen — الشاشة الرئيسية للموارد البشرية
  * 3 أقسام رئيسية + تبويبات فرعية (segmented): موظفون | رواتب | أدوات الراتب
  */
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useApp } from '../../context/AppContext';
 import { useEmployees } from '../../hooks/useEmployees';
@@ -13,7 +13,7 @@ import { totalSalary } from './utils/employeeSalaryMath';
 import HRSummaryCard from './components/HRSummaryCard';
 import { HrSectionSubTabs } from './components/HrSectionSubTabs';
 import { useHrScreenNavigation } from './hooks/useHrScreenNavigation';
-import { HR_SECTION_IDS, type HrSectionId } from './hrScreenNavigation';
+import { HR_SECTION_IDS, type HrScreenLocation, type HrSectionId } from './hrScreenNavigation';
 import { HR_WORKSPACE_CONTENT_CLASS } from './hrWorkspaceLayout';
 import { ScreenShell, ScreenTabs } from '../../ui';
 
@@ -28,6 +28,14 @@ export default function HRMainScreen() {
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
   const { section, tab, setSection, setTab } = useHrScreenNavigation();
+
+  const handleKpiNavigate = useCallback(
+    (loc: HrScreenLocation) => {
+      setSection(loc.section);
+      setTab(loc.tab);
+    },
+    [setSection, setTab],
+  );
 
   const { employees, isLoading: empLoading } = useEmployees(companyId, {
     includeTerminated: true,
@@ -101,6 +109,7 @@ export default function HRMainScreen() {
           registeredLeavesCount={hrSummary.leavesCount}
           outstandingAdvancesCount={hrSummary.outstandingAdvancesCount}
           outstandingAdvancesAmount={hrSummary.outstandingAdvancesAmount}
+          onNavigate={handleKpiNavigate}
         />
       )}
 

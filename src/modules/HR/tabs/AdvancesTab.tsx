@@ -22,6 +22,8 @@ import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { hrKeys, invoiceKeys } from '../../../services/queryKeys';
 import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
+import { HrTabToolbar } from '../components/HrTabToolbar';
+import { countTruthyFilters } from '../utils/hrActiveFilterCount';
 
 const PAGE_SIZE = 50;
 
@@ -319,44 +321,58 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     );
   }, [t, settlementMap, setEditingAdvance, setSettlingAdvance]);
 
+  const advanceFilters = (
+    <>
+      <Input type="select" label={t('advancesFilterEmployee')} value={employeeFilter} onChange={(e: any) => setEmployeeFilter(e.target.value)} size="sm">
+        <option value="">{t('advancesFilterAll')}</option>
+        {employeeOptions.map((name: string) => (
+          <option key={name} value={name}>{name}</option>
+        ))}
+      </Input>
+      <Input type="select" label={t('advancesFilterMonth')} value={monthFilter} onChange={(e: any) => setMonthFilter(e.target.value)} size="sm">
+        <option value="">{t('advancesFilterAll')}</option>
+        {monthOptions.map((month: string) => (
+          <option key={month} value={month}>{month}</option>
+        ))}
+      </Input>
+      <Input type="select" label={t('advancesFilterSettlement')} value={settlementFilter} onChange={(e: any) => setSettlementFilter(e.target.value)} size="sm">
+        <option value="all">{t('advancesFilterAll')}</option>
+        <option value="outstanding">{t('advancesFilterOutstandingOnly')}</option>
+        <option value="settled">{t('advancesFilterSettledOnly')}</option>
+      </Input>
+    </>
+  );
+
+  const activeFilterCount = countTruthyFilters([
+    !!employeeFilter,
+    !!monthFilter,
+    settlementFilter !== 'all',
+  ]);
+
+  const resetAdvanceFilters = () => {
+    setEmployeeFilter('');
+    setMonthFilter('');
+    setSettlementFilter('all');
+  };
+
   return (
     <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
-        <div className="nx-toolbar min-w-0 flex-1">
-          <Input type="select" value={employeeFilter} onChange={(e: any) => setEmployeeFilter(e.target.value)}>
-            <option value="">{t('advancesFilterEmployee')} — {t('advancesFilterAll')}</option>
-            {employeeOptions.map((name: any) => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </Input>
-          <Input type="select" value={monthFilter} onChange={(e: any) => setMonthFilter(e.target.value)}>
-            <option value="">{t('advancesFilterMonth')} — {t('advancesFilterAll')}</option>
-            {monthOptions.map((month: any) => (
-              <option key={month} value={month}>{month}</option>
-            ))}
-          </Input>
-          <Input type="select" value={settlementFilter} onChange={(e: any) => setSettlementFilter(e.target.value)}>
-            <option value="all">{t('advancesFilterSettlement')} — {t('advancesFilterAll')}</option>
-            <option value="outstanding">{t('advancesFilterOutstandingOnly')}</option>
-            <option value="settled">{t('advancesFilterSettledOnly')}</option>
-          </Input>
-        </div>
-        <Input
-          type="search"
-          value={searchText}
-          onChange={(e: any) => setSearch(e.target.value)}
-          placeholder={t('searchPlaceholder')}
-          size="sm"
-          className="w-full min-w-0 lg:max-w-xs lg:flex-1"
-          aria-label={t('searchPlaceholder')}
-        />
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <Button size="sm" onClick={() => exportToExcel(exportData, 'advances.xlsx')}>{t('exportExcel')}</Button>
-          <Button variant="primary" size="sm" onClick={() => setShowAdvance(true)}>
-            {t('payAdvance')}
-          </Button>
-        </div>
-      </div>
+      <HrTabToolbar
+        filters={advanceFilters}
+        activeFilterCount={activeFilterCount}
+        onResetFilters={resetAdvanceFilters}
+        menuItems={[
+          {
+            key: 'export',
+            label: t('exportExcel'),
+            onClick: () => exportToExcel(exportData, 'advances.xlsx'),
+          },
+        ]}
+        primaryAction={{
+          label: t('payAdvance'),
+          onClick: () => setShowAdvance(true),
+        }}
+      />
 
       <SmartTable
         compact
@@ -375,7 +391,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
         badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
         searchValue={searchText}
         onSearchChange={setSearch}
-        showSearchInHeader={false}
+        showSearchInHeader
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}
