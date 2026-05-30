@@ -36,7 +36,12 @@
 | HAJRI TAX | `VIEW_REPORTS`, `REPORTS_READ` |
 | الأصول | `VIEW_EXPENSES`, `EXPENSES_READ` |
 
-## P1 — خارج Phase 0 (مخطط)
+## Roles UI (Settings → الأدوار)
+
+- **محرّر بشاشة كاملة** — ليس drawer 720px؛ قائمة أقسام + لوحة صلاحيات القسم النشط.
+- **Presets:** محاسب كامل · محاسب بدون خزائن · كاشير.
+- **المحادثة:** مجموعات (HR · مصروفات · FAQ) مع «تحديد المجموعة».
+- **جوال:** select للقسم + checkboxes بارتفاع 44px.
 
 - `@Roles('owner')` → صلاحيات matrix (`*_DELETE`)
 - `MANAGE_USERS` على users API
