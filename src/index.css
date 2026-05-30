@@ -4669,7 +4669,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border-radius: 0;
     background: transparent;
   }
-  /* قائمة HR على الجوال — صفوف مسطّحة؛ الحشو داخل JSX (px-4 py-3) */
+  /* قائمة HR — full-bleed هجين: L6 خلفية بعرض الكرت، L6a نص بمحاذاة px-4 */
   @media (max-width: 768px) {
     .nx-hr-workspace__body .nx-compact-row {
       padding-inline: 16px;
@@ -4681,7 +4681,12 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
       border-radius: 0;
     }
     .nx-hr-workspace__body .nx-hr-staff-list .nx-hr-table--flat-list .nx-compact-row {
+      --nx-hr-gutter: 1rem;
       padding: 0 !important;
+      margin-inline: calc(-1 * var(--nx-hr-gutter));
+      width: calc(100% + 2 * var(--nx-hr-gutter));
+      max-width: none;
+      box-sizing: border-box;
       border-bottom: 1px solid var(--noorix-border);
     }
     .nx-hr-workspace__body .nx-hr-staff-list .nx-hr-table--flat-list .nx-compact-row:last-child {

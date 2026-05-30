@@ -10,9 +10,13 @@ export const HR_WORKSPACE_GUTTER_X = 'px-4 sm:px-4';
 export const HR_WORKSPACE_CONTENT_CLASS =
   'nx-hr-workspace min-h-[200px] bg-noorix-surface p-0';
 
+/** متغير CSS للهامش الأفقي — يطابق HR_WORKSPACE_GUTTER_X (px-4) */
+export const HR_WORKSPACE_GUTTER_VAR_CLASS = '[--nx-hr-gutter:1rem]';
+
 export const HR_WORKSPACE_BODY_CLASS = cn(
   'nx-hr-workspace__body relative z-[1] min-w-0 w-full box-border',
   HR_WORKSPACE_GUTTER_X,
+  HR_WORKSPACE_GUTTER_VAR_CLASS,
   'py-3 sm:py-4',
 );
 
@@ -33,7 +37,7 @@ export const HR_SUBTAB_INLINE_CLASS = cn(
 /** جدول داخل مساحة HR — بدون إطار/ظل مزدوج (الكرت الخارجي يكفي) */
 export const HR_WORKSPACE_TABLE_CLASS = 'nx-hr-workspace-table';
 
-/** قائمة الموظفين داخل HR — نفس عرض منطقة الأدوات/البحث (بدون full-bleed) */
+/** قائمة الموظفين — full-bleed هجين: خلفية L6 لعرض الكرت، نص L6a بمحاذاة البحث */
 export const HR_STAFF_LIST_CLASS = 'nx-hr-staff-list w-full min-w-0';
 
 /** @deprecated استخدم HR_SUBTAB_SHELL_CLASS */
