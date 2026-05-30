@@ -20,6 +20,7 @@ export const PERMISSIONS = {
   VIEW_EMPLOYEES:   'VIEW_EMPLOYEES',
   VIEW_ORDERS:      'VIEW_ORDERS',
   VIEW_EXPENSES:    'VIEW_EXPENSES',
+  VIEW_ASSETS:      'VIEW_ASSETS',
 
   INVOICES_READ:    'INVOICES_READ',
   INVOICES_WRITE:   'INVOICES_WRITE',
@@ -52,11 +53,25 @@ export const PERMISSIONS = {
   EXPENSES_WRITE:   'EXPENSES_WRITE',
   EXPENSES_DELETE:  'EXPENSES_DELETE',
 
+  ASSETS_READ:      'ASSETS_READ',
+  ASSETS_WRITE:     'ASSETS_WRITE',
+  ASSETS_DELETE:    'ASSETS_DELETE',
+
   ORDERS_READ:      'ORDERS_READ',
   ORDERS_WRITE:     'ORDERS_WRITE',
   ORDERS_DELETE:    'ORDERS_DELETE',
 
   REPORTS_READ:     'REPORTS_READ',
+  VIEW_REPORTS_GENERAL:      'VIEW_REPORTS_GENERAL',
+  VIEW_REPORTS_COST_APPS:    'VIEW_REPORTS_COST_APPS',
+  VIEW_REPORTS_TAX:          'VIEW_REPORTS_TAX',
+  VIEW_REPORTS_BANK:         'VIEW_REPORTS_BANK',
+
+  VIEW_HAJRI_TAX:   'VIEW_HAJRI_TAX',
+  HAJRI_TAX_READ:   'HAJRI_TAX_READ',
+  HAJRI_TAX_WRITE:  'HAJRI_TAX_WRITE',
+
+  VIEW_HR:          'VIEW_HR',
 
   SMART_CHAT_READ:  'SMART_CHAT_READ',
 
@@ -189,6 +204,10 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     permissions: { view: 'VIEW_EXPENSES', read: 'EXPENSES_READ', write: 'EXPENSES_WRITE', delete: 'EXPENSES_DELETE' },
   },
   {
+    key: 'assets', labelAr: 'سجل الأصول', labelEn: 'Assets Register', icon: '🖥️',
+    permissions: { view: 'VIEW_ASSETS', read: 'ASSETS_READ', write: 'ASSETS_WRITE', delete: 'ASSETS_DELETE' },
+  },
+  {
     key: 'orders', labelAr: 'الطلبات', labelEn: 'Orders', icon: '📦',
     permissions: {
       view: 'VIEW_ORDERS', read: 'ORDERS_READ', write: 'ORDERS_WRITE', delete: 'ORDERS_DELETE',
@@ -201,11 +220,22 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
   {
     key: 'hr', labelAr: 'الموارد البشرية (رواتب، إجازات)', labelEn: 'HR (Payroll, Leaves)', icon: '🏢',
-    permissions: { read: 'HR_READ', write: 'HR_WRITE', delete: 'HR_DELETE' },
+    permissions: { view: 'VIEW_HR', read: 'HR_READ', write: 'HR_WRITE', delete: 'HR_DELETE' },
   },
   {
     key: 'reports', labelAr: 'التقارير', labelEn: 'Reports', icon: '📈',
-    permissions: { view: 'VIEW_REPORTS', read: 'REPORTS_READ' },
+    permissions: {
+      view: 'VIEW_REPORTS',
+      read: 'REPORTS_READ',
+      general: 'VIEW_REPORTS_GENERAL',
+      costApps: 'VIEW_REPORTS_COST_APPS',
+      taxReport: 'VIEW_REPORTS_TAX',
+      bankStatement: 'VIEW_REPORTS_BANK',
+    },
+  },
+  {
+    key: 'hajriTax', labelAr: 'HAJRI TAX (سجل ضريبي)', labelEn: 'HAJRI TAX (VAT registry)', icon: '📋',
+    permissions: { view: 'VIEW_HAJRI_TAX', read: 'HAJRI_TAX_READ', write: 'HAJRI_TAX_WRITE' },
   },
   {
     key: 'chat', labelAr: 'المحادثة الذكية', labelEn: 'Smart Chat', icon: '💬',
@@ -239,6 +269,10 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     key: 'ocr', labelAr: 'OCR الفواتير (تجريبي)', labelEn: 'OCR Invoices (Beta)', icon: '🔍',
     permissions: { view: 'VIEW_OCR', read: 'OCR_READ', write: 'OCR_WRITE', submit: 'OCR_SUBMIT' },
   },
+  {
+    key: 'ocrCashier', labelAr: 'OCR — رفع الكاشير', labelEn: 'OCR — Cashier submit', icon: '📷',
+    permissions: { view: 'OCR_SUBMIT' },
+  },
 ];
 
 export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
@@ -253,6 +287,11 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   history:    { ar: 'التاريخ الكامل', en: 'Full History' },
   list:       { ar: 'قائمة الملخصات', en: 'Summaries List' },
   summary:    { ar: 'كروت الداخل/الخارج', en: 'In/Out summary cards' },
+  general:    { ar: 'تقرير عام (ربح/خسارة)', en: 'General P&L report' },
+  costApps:   { ar: 'تكلفة تطبيقات', en: 'Cost accounting apps' },
+  taxReport:  { ar: 'تقرير الضريبة', en: 'Tax report' },
+  bankStatement: { ar: 'تحليل كشف البنك', en: 'Bank statement' },
+  submit:     { ar: 'رفع كاشير', en: 'Cashier submit' },
   chatAdv:    { ar: 'محادثة · سلف', en: 'Chat · Advances' },
   chatLeave:  { ar: 'محادثة · إجازات', en: 'Chat · Leaves' },
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
@@ -286,7 +325,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.VIEW_CHAT, PERMISSIONS.VIEW_INVOICES,
       PERMISSIONS.VIEW_SUPPLIERS, PERMISSIONS.VIEW_VAULTS, PERMISSIONS.VIEW_REPORTS,
       PERMISSIONS.VIEW_SALES, PERMISSIONS.VIEW_EMPLOYEES, PERMISSIONS.VIEW_ORDERS,
-      PERMISSIONS.VIEW_EXPENSES,
+      PERMISSIONS.VIEW_EXPENSES, PERMISSIONS.VIEW_ASSETS,
       PERMISSIONS.INVOICES_READ, PERMISSIONS.INVOICES_WRITE, PERMISSIONS.INVOICES_ACTIONS,
       PERMISSIONS.INVOICES_VIEW_EXEC_SUMMARY,
       // صلاحيات المشتريات المنفصلة
@@ -295,9 +334,13 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.SALES_FULL_HISTORY, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST,
       PERMISSIONS.SUPPLIERS_READ, PERMISSIONS.VAULTS_READ,
       PERMISSIONS.EXPENSES_READ, PERMISSIONS.EXPENSES_WRITE,
+      PERMISSIONS.ASSETS_READ, PERMISSIONS.ASSETS_WRITE,
       PERMISSIONS.ORDERS_READ, PERMISSIONS.ORDERS_WRITE, PERMISSIONS.REPORTS_READ,
+      PERMISSIONS.VIEW_REPORTS_GENERAL, PERMISSIONS.VIEW_REPORTS_COST_APPS,
+      PERMISSIONS.VIEW_REPORTS_TAX, PERMISSIONS.VIEW_REPORTS_BANK,
+      PERMISSIONS.VIEW_HAJRI_TAX, PERMISSIONS.HAJRI_TAX_READ, PERMISSIONS.HAJRI_TAX_WRITE,
       PERMISSIONS.EMPLOYEES_READ, PERMISSIONS.EMPLOYEES_WRITE,
-      PERMISSIONS.HR_READ, PERMISSIONS.HR_WRITE, PERMISSIONS.HR_DELETE,
+      PERMISSIONS.VIEW_HR, PERMISSIONS.HR_READ, PERMISSIONS.HR_WRITE, PERMISSIONS.HR_DELETE,
       PERMISSIONS.SMART_CHAT_READ, PERMISSIONS.CHAT_PRESET_ADVANCES,
       PERMISSIONS.CHAT_PRESET_LEAVES, PERMISSIONS.CHAT_PRESET_DEDUCTIONS,
       PERMISSIONS.CHAT_PRESET_INCREASES,

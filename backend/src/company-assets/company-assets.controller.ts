@@ -6,7 +6,7 @@ import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { CompanyAssetsService, WarrantyFilter } from './company-assets.service';
 import { CreateCompanyAssetDto } from './dto/create-company-asset.dto';
 import { UpdateCompanyAssetDto } from './dto/update-company-asset.dto';
@@ -18,7 +18,7 @@ export class CompanyAssetsController {
   constructor(private readonly companyAssetsService: CompanyAssetsService) {}
 
   @Get()
-  @RequirePermission('EXPENSES_READ')
+  @RequireAnyPermission('ASSETS_READ', 'EXPENSES_READ')
   findAll(
     @CompanyId() companyId: string,
     @Query('warrantyFilter') warrantyFilter?: WarrantyFilter,
@@ -36,32 +36,32 @@ export class CompanyAssetsController {
   }
 
   @Get('pending-invoices')
-  @RequirePermission('EXPENSES_READ')
+  @RequireAnyPermission('ASSETS_READ', 'EXPENSES_READ')
   findPendingWarrantyInvoices(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.companyAssetsService.findPendingWarrantyInvoices(companyId);
   }
 
   @Post('complete-from-invoice')
-  @RequirePermission('EXPENSES_WRITE')
+  @RequireAnyPermission('ASSETS_WRITE', 'EXPENSES_WRITE')
   completeFromInvoice(@Body() dto: CompleteCompanyAssetFromInvoiceDto) {
     return this.companyAssetsService.completeFromInvoice(dto);
   }
 
   @Get(':id')
-  @RequirePermission('EXPENSES_READ')
+  @RequireAnyPermission('ASSETS_READ', 'EXPENSES_READ')
   findOne(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.companyAssetsService.findOne(id, companyId);
   }
 
   @Post()
-  @RequirePermission('EXPENSES_WRITE')
+  @RequireAnyPermission('ASSETS_WRITE', 'EXPENSES_WRITE')
   create(@Body() dto: CreateCompanyAssetDto) {
     return this.companyAssetsService.create(dto);
   }
 
   @Patch(':id')
-  @RequirePermission('EXPENSES_WRITE')
+  @RequireAnyPermission('ASSETS_WRITE', 'EXPENSES_WRITE')
   update(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -71,7 +71,7 @@ export class CompanyAssetsController {
   }
 
   @Delete(':id')
-  @RequirePermission('EXPENSES_DELETE')
+  @RequireAnyPermission('ASSETS_DELETE', 'EXPENSES_DELETE')
   remove(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.companyAssetsService.remove(id, companyId);
   }
