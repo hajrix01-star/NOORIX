@@ -96,7 +96,7 @@ export default function RoleEditorOverlay({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[var(--nx-z-lightbox,3000)] flex flex-col bg-[var(--noorix-bg-page)]"
+      className="role-editor-overlay"
       role="dialog"
       aria-modal="true"
       aria-label={title}
