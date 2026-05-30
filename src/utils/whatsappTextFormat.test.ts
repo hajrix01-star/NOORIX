@@ -22,9 +22,9 @@ describe('whatsappTextFormat', () => {
     expect(waMetaLine('📅 التاريخ:', '28-05-2026')).toBe('📅 التاريخ: 28-05-2026');
   });
 
-  it('wraps report title in rule lines', () => {
+  it('puts report title on the first line without a rule separator', () => {
     const h = waReportHeader('📊 تقرير مبيعات يومي', 'ARZ');
-    expect(h).toContain('ARZ');
-    expect(h.startsWith(SALES_WA.rule)).toBe(true);
+    expect(h).toBe('📊 تقرير مبيعات يومي — ARZ');
+    expect(h.startsWith(SALES_WA.rule)).toBe(false);
   });
 });
