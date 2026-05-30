@@ -33,6 +33,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, FormRow, FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { employeeKeys } from '../../../services/queryKeys';
+import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
 
 function toDecimal(value: any) {
   return new Decimal(value || 0);
@@ -361,8 +362,8 @@ export default function SalaryCalcTab() {
 
   // ── JSX ──────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+    <div className={HR_TOOLS_ROOT_CLASS}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start w-full min-w-0">
 
         {/* ── عمود الإدخال ── */}
         <div className="noorix-surface-card p-5 flex flex-col gap-4">

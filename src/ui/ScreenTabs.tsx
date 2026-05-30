@@ -32,6 +32,8 @@ export type ScreenTabsProps = {
   compactMobile?: boolean;
   animateContent?: boolean;
   tabBarEnd?: ReactNode;
+  /** segmented: بدون كرت ثانٍ — شريط داخل حاوية أب (مثل HR) */
+  segmentedFlat?: boolean;
 };
 
 export default function ScreenTabs({
@@ -52,6 +54,7 @@ export default function ScreenTabs({
   compactMobile,
   animateContent = true,
   tabBarEnd,
+  segmentedFlat = false,
 }: ScreenTabsProps) {
   const uiDir = useUiDir();
   /** توزيع متساوٍ على الجوال بدون تمرير — مناسب لمعظم شاشات الأقسام (≤8 تبويبات) */
@@ -122,7 +125,9 @@ export default function ScreenTabs({
   const shellClass =
     variant === 'segmented'
       ? cn(
-          'relative w-full min-w-0 rounded-xl border border-noorix-border bg-noorix-bg-muted p-1',
+          segmentedFlat
+            ? 'nx-segmented-shell--flat relative w-full min-w-0'
+            : 'relative w-full min-w-0 rounded-xl border border-noorix-border bg-noorix-bg-muted p-1',
           className,
         )
       : cn('relative nx-tab-bar-fade-wrap', className);

@@ -22,6 +22,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input , FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
+import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -293,7 +294,8 @@ export default function EOSCalcTab() {
   }
 
   return (
-    <div className="noorix-surface-card p-6" style={{ maxWidth: 480 }}>
+    <div className={HR_TOOLS_ROOT_CLASS}>
+      <div className="noorix-surface-card w-full min-w-0 max-w-xl p-6">
       <h3 className="text-[18px] m-0 mb-5">{t('hrTabEOSCalc')}</h3>
 
       <div className="mb-4">
@@ -405,6 +407,7 @@ export default function EOSCalcTab() {
       >
         {t('printCalc')}
       </Button>
+      </div>
     </div>
   );
 }

@@ -37,6 +37,7 @@ import { HrPrintPayrollPanel } from './HrPrintPayrollPanel';
 import { HrPrintEosPanel } from './HrPrintEosPanel';
 import { HrPrintPreviewPanel } from './HrPrintPreviewPanel';
 import { HrPrintDocumentsTabToolbar } from './HrPrintDocumentsTabToolbar';
+import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
 
 type HrCustomAllowanceRow = {
   id: string;
@@ -237,18 +238,25 @@ export default function HrPrintDocumentsTab() {
   };
 
   if (!companyId) {
-    return <div className="noorix-surface-card p-5 text-center text-noorix-muted">{t('pleaseSelectCompany')}</div>;
+    return (
+      <div className={HR_TOOLS_ROOT_CLASS}>
+        <div className="noorix-surface-card w-full min-w-0 p-5 text-center text-noorix-muted">
+          {t('pleaseSelectCompany')}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="noorix-surface-card p-4 sm:p-5">
+    <div className={HR_TOOLS_ROOT_CLASS}>
+    <div className="noorix-surface-card w-full min-w-0 p-4 sm:p-5">
       <div className="mb-4">
         <h3 className="m-0 text-[17px] font-bold text-noorix-text">{t('hrTabPrintDocs')}</h3>
         <p className="mt-1.5 mb-0 text-[13px] text-noorix-muted">{t('hrTabPrintDocsDesc')}</p>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,36%)_minmax(0,64%)] xl:items-start 2xl:gap-6">
-        <div className="min-w-0 max-w-lg space-y-4 sm:max-w-xl">
+        <div className="min-w-0 space-y-4">
           <HrPrintDocumentsTabToolbar
             t={t}
             lang={lang}
@@ -298,6 +306,7 @@ export default function HrPrintDocumentsTab() {
           hasEmployee={!!emp}
         />
       </div>
+    </div>
     </div>
   );
 }

@@ -25,6 +25,7 @@ import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
 import { hrKeys } from '../../../services/queryKeys';
+import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
 
 const PAGE_SIZE = 50;
 
@@ -353,7 +354,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   }
 
   return (
-    <ScreenShell embedded={!!embedded}>
+    <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <label className="text-[13px] font-semibold shrink-0">{t('dateFilterYear')}</label>

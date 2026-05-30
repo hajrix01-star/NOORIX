@@ -22,6 +22,7 @@ import { Button, Badge, Input, ScreenShell, SmartTable } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
+import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
 import {
   HR_SERVICE_CATEGORIES,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
@@ -257,7 +258,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   };
 
   return (
-    <ScreenShell embedded={!!embedded}>
+    <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1 flex-wrap">
           {expiringCount > 0 && (
