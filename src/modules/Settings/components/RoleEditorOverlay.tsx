@@ -172,7 +172,7 @@ export default function RoleEditorOverlay({
           </div>
         )}
 
-        <div className="noorix-surface-card p-3 bg-[var(--noorix-blue-7)] border-noorix-border">
+        <div className="rounded-lg border border-noorix-border bg-[var(--noorix-blue-7)] p-3">
           <p className="m-0 mb-2 text-[13px] font-bold text-noorix-text">
             {isAr ? 'ابدأ من قالب جاهز (أسرع)' : 'Start from a preset (fastest)'}
           </p>
