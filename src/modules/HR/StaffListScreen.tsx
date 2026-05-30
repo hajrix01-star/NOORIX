@@ -43,6 +43,7 @@ import {
   HR_EMBEDDED_SHELL_CLASS,
   HR_STAFF_CONTROLS_CLASS,
   HR_STAFF_LIST_CLASS,
+  HR_STAFF_ROW_INNER_PAD_CLASS,
   HR_WORKSPACE_TABLE_CLASS,
 } from './hrWorkspaceLayout';
 import { HrTabToolbar } from './components/HrTabToolbar';
@@ -444,7 +445,7 @@ export default function StaffListScreen({ embedded }: any) {
       <div
         className={cn(
           'nx-hr-staff-row__inner flex min-w-0 items-start justify-between gap-3',
-          embedded && 'py-3',
+          embedded && HR_STAFF_ROW_INNER_PAD_CLASS,
         )}
         onClick={() => navigate(`/hr/employee/${row.id}`)}
         style={{ cursor: 'pointer' }}

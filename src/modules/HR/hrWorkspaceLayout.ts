@@ -13,8 +13,11 @@ export const HR_WORKSPACE_CONTENT_CLASS =
 /** متغير CSS للهامش الأفقي — يطابق HR_WORKSPACE_GUTTER_X (px-4) */
 export const HR_WORKSPACE_GUTTER_VAR_CLASS = '[--nx-hr-gutter:1rem]';
 
-/** هامش النص داخل صف الموظف فقط — مستقل عن غلاف التحكم */
-export const HR_STAFF_TEXT_INSET_VAR_CLASS = '[--nx-hr-text-inset:1rem]';
+/** هامش النص داخل صف الموظف فقط — مستقل عن غلاف التحكم (1.25rem على الجوال) */
+export const HR_STAFF_TEXT_INSET_VAR_CLASS = '[--nx-hr-text-inset:1.25rem]';
+
+/** padding أفقي للنص داخل صف الموظف — Tailwind لضمان التطبيق فوق @layer */
+export const HR_STAFF_ROW_INNER_PAD_CLASS = 'max-md:px-5 py-3';
 
 export const HR_WORKSPACE_BODY_CLASS = cn(
   'nx-hr-workspace__body relative z-[1] min-w-0 w-full box-border',

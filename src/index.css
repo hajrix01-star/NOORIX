@@ -4707,7 +4707,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
       box-sizing: border-box;
       max-width: 100%;
       width: 100%;
-      padding-inline: var(--nx-hr-text-inset, 1rem);
+      padding-inline: var(--nx-hr-text-inset, 1.25rem) !important;
     }
   }
 
