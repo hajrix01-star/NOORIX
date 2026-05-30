@@ -21,11 +21,12 @@ import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, Input, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
-import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
+import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
+import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 
 const PAGE_SIZE = 50;
@@ -344,54 +345,58 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   );
 
   return (
-    <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
-      <HrTabToolbar
-        leading={yearLeading}
-        desktopActions={(
-          <Button size="sm" className="hidden lg:inline-flex" onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>
-            {t('exportExcel')}
-          </Button>
-        )}
-        menuItems={[
-          {
-            key: 'export',
-            label: t('exportExcel'),
-            onClick: () => exportToExcel(exportData, `leaves-${year}.xlsx`),
-          },
-        ]}
-        primaryAction={{
-          label: t('addLeave'),
-          onClick: () => setShowAdd(true),
-        }}
-      />
-
-      <SmartTable
-        compact
-        showRowNumbers
-        rowNumberWidth="1%"
-        innerPadding={8}
-        columns={columns}
-        data={filteredData}
-        total={allFilteredData.length}
-        page={page}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPage}
-        isLoading={isLoading}
-        isError={isError}
-        title={t('hrTabLeave')}
-        badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
-        searchValue={searchText}
-        onSearchChange={setSearch}
-        showSearchInHeader
-        sortKey={sortKey}
-        sortDir={sortDir}
-        onSort={toggleSort}
-        emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={renderCompactRow}
-        renderMobileCard={renderMobileCard}
-        stripeMobileCards
-      />
-
+    <HrFlatListTabShell
+      embedded={embedded}
+      controls={(
+        <HrTabToolbar
+          leading={yearLeading}
+          desktopActions={(
+            <Button size="sm" className="hidden lg:inline-flex" onClick={() => exportToExcel(exportData, `leaves-${year}.xlsx`)}>
+              {t('exportExcel')}
+            </Button>
+          )}
+          menuItems={[
+            {
+              key: 'export',
+              label: t('exportExcel'),
+              onClick: () => exportToExcel(exportData, `leaves-${year}.xlsx`),
+            },
+          ]}
+          primaryAction={{
+            label: t('addLeave'),
+            onClick: () => setShowAdd(true),
+          }}
+        />
+      )}
+      list={(
+        <SmartTable
+          compact
+          showRowNumbers
+          rowNumberWidth="1%"
+          {...hrFlatSmartTableShellProps(embedded)}
+          columns={columns}
+          data={filteredData}
+          total={allFilteredData.length}
+          page={page}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          isLoading={isLoading}
+          isError={isError}
+          title={embedded ? undefined : t('hrTabLeave')}
+          badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
+          searchValue={searchText}
+          onSearchChange={setSearch}
+          showSearchInHeader={!embedded}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={toggleSort}
+          emptyMessage={t('noDataInPeriod')}
+          renderCompactRow={renderCompactRow}
+          renderMobileCard={renderMobileCard}
+          stripeMobileCards
+        />
+      )}
+    >
       {(showAdd || editLeave) && (
         <LeaveFormModal
           key={editLeave?.id ?? 'new-leave'}
@@ -524,6 +529,6 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           />
         )}
       </Modal>
-    </ScreenShell>
+    </HrFlatListTabShell>
   );
 }

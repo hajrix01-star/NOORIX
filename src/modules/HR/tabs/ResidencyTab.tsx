@@ -18,11 +18,12 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell, SmartTable, KebabMenu } from '../../../ui';
+import { Button, Badge, Input, SmartTable, KebabMenu } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
-import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
+import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
+import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 import { countTruthyFilters } from '../utils/hrActiveFilterCount';
 import {
@@ -339,67 +340,72 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   ) : null;
 
   return (
-    <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
-      <HrTabToolbar
-        leading={residencyLeading}
-        filters={residencyFilters}
-        activeFilterCount={countTruthyFilters([!!categoryFilter])}
-        onResetFilters={() => setCategoryFilter('')}
-        desktopActions={(
-          <Button size="sm" className="hidden lg:inline-flex" onClick={() => exportToExcel(exportData, 'hr-employee-services.xlsx')}>
-            {t('exportExcel')}
-          </Button>
-        )}
-        menuItems={[
-          {
-            key: 'export',
-            label: t('exportExcel'),
-            onClick: () => exportToExcel(exportData, 'hr-employee-services.xlsx'),
-          },
-        ]}
-        primaryAction={{
-          label: t('addHrService'),
-          onClick: () => openAdd(),
-        }}
-      />
-
-      <HrServiceQuickAddBar
-        className="mb-3"
-        onSelectCategory={(cat) => openAdd(cat)}
-      />
-
-      <SmartTable
-        compact
-        showRowNumbers
-        rowNumberWidth="1%"
-        innerPadding={8}
-        columns={columns}
-        data={filteredData}
-        total={allFilteredData.length}
-        page={page}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPage}
-        isLoading={isLoading}
-        isError={isError}
-        title={t('hrTabResidency')}
-        badge={
-          <>
-            {expiringCount > 0 && <span className="nx-pill nx-pill--amber nx-pill--sm">{expiringCount}</span>}
-            <span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>
-          </>
-        }
-        searchValue={searchText}
-        onSearchChange={setSearch}
-        showSearchInHeader
-        sortKey={sortKey}
-        sortDir={sortDir}
-        onSort={toggleSort}
-        emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={renderCompactRow}
-        renderMobileCard={renderMobileCard}
-        stripeMobileCards
-      />
-
+    <HrFlatListTabShell
+      embedded={embedded}
+      controls={(
+        <HrTabToolbar
+          leading={residencyLeading}
+          filters={residencyFilters}
+          activeFilterCount={countTruthyFilters([!!categoryFilter])}
+          onResetFilters={() => setCategoryFilter('')}
+          desktopActions={(
+            <Button size="sm" className="hidden lg:inline-flex" onClick={() => exportToExcel(exportData, 'hr-employee-services.xlsx')}>
+              {t('exportExcel')}
+            </Button>
+          )}
+          menuItems={[
+            {
+              key: 'export',
+              label: t('exportExcel'),
+              onClick: () => exportToExcel(exportData, 'hr-employee-services.xlsx'),
+            },
+          ]}
+          primaryAction={{
+            label: t('addHrService'),
+            onClick: () => openAdd(),
+          }}
+        />
+      )}
+      beforeList={(
+        <HrServiceQuickAddBar
+          className="mb-3"
+          onSelectCategory={(cat) => openAdd(cat)}
+        />
+      )}
+      list={(
+        <SmartTable
+          compact
+          showRowNumbers
+          rowNumberWidth="1%"
+          {...hrFlatSmartTableShellProps(embedded)}
+          columns={columns}
+          data={filteredData}
+          total={allFilteredData.length}
+          page={page}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          isLoading={isLoading}
+          isError={isError}
+          title={embedded ? undefined : t('hrTabResidency')}
+          badge={embedded ? undefined : (
+            <>
+              {expiringCount > 0 && <span className="nx-pill nx-pill--amber nx-pill--sm">{expiringCount}</span>}
+              <span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>
+            </>
+          )}
+          searchValue={searchText}
+          onSearchChange={setSearch}
+          showSearchInHeader={!embedded}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={toggleSort}
+          emptyMessage={t('noDataInPeriod')}
+          renderCompactRow={renderCompactRow}
+          renderMobileCard={renderMobileCard}
+          stripeMobileCards
+        />
+      )}
+    >
       {showAdd && (
         <ResidencyFormModal
           companyId={companyId}
@@ -438,6 +444,6 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           onClose={() => setIssueInvoiceRow(null)}
         />
       )}
-    </ScreenShell>
+    </HrFlatListTabShell>
   );
 }

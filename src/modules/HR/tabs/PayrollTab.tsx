@@ -20,12 +20,13 @@ import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, Input, ScreenShell, Modal, FmtNum, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, Input, Modal, FmtNum, KebabMenu, SmartTable } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
 import { hrKeys } from '../../../services/queryKeys';
-import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
+import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
+import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 
 const PAGE_SIZE = 50;
@@ -366,58 +367,62 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   );
 
   return (
-    <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
-      <HrTabToolbar
-        leading={yearLeading}
-        desktopActions={(
-          <>
-            <Button size="sm" className="hidden lg:inline-flex" onClick={handleExportExcel}>{t('exportExcel')}</Button>
-            <Button size="sm" className="hidden lg:inline-flex" onClick={handlePrint}>{t('printPayroll')}</Button>
-          </>
-        )}
-        menuItems={[
-          { key: 'export', label: t('exportExcel'), onClick: handleExportExcel },
-          { key: 'print', label: t('printPayroll'), onClick: handlePrint },
-        ]}
-        primaryAction={{
-          label: t('createPayrollRun'),
-          onClick: () => setShowCreate(true),
-        }}
-      />
-
-      <SmartTable
-        compact
-        showRowNumbers
-        rowNumberWidth="1%"
-        innerPadding={8}
-        columns={columns}
-        data={filteredData}
-        total={allFilteredData.length}
-        page={page}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPage}
-        isLoading={isLoading}
-        isError={isError}
-        title={t('hrTabPayroll')}
-        badge={
-          <>
-            <span className="nx-cell-muted">— {year}</span>
-            <span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>
-          </>
-        }
-        searchValue={searchText}
-        onSearchChange={setSearch}
-        showSearchInHeader
-        sortKey={sortKey}
-        sortDir={sortDir}
-        onSort={toggleSort}
-        footerCells={footerCells}
-        emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={renderCompactRow}
-        renderMobileCard={renderMobileCard}
-        stripeMobileCards
-      />
-
+    <HrFlatListTabShell
+      embedded={embedded}
+      controls={(
+        <HrTabToolbar
+          leading={yearLeading}
+          desktopActions={(
+            <>
+              <Button size="sm" className="hidden lg:inline-flex" onClick={handleExportExcel}>{t('exportExcel')}</Button>
+              <Button size="sm" className="hidden lg:inline-flex" onClick={handlePrint}>{t('printPayroll')}</Button>
+            </>
+          )}
+          menuItems={[
+            { key: 'export', label: t('exportExcel'), onClick: handleExportExcel },
+            { key: 'print', label: t('printPayroll'), onClick: handlePrint },
+          ]}
+          primaryAction={{
+            label: t('createPayrollRun'),
+            onClick: () => setShowCreate(true),
+          }}
+        />
+      )}
+      list={(
+        <SmartTable
+          compact
+          showRowNumbers
+          rowNumberWidth="1%"
+          {...hrFlatSmartTableShellProps(embedded)}
+          columns={columns}
+          data={filteredData}
+          total={allFilteredData.length}
+          page={page}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          isLoading={isLoading}
+          isError={isError}
+          title={embedded ? undefined : t('hrTabPayroll')}
+          badge={embedded ? undefined : (
+            <>
+              <span className="nx-cell-muted">— {year}</span>
+              <span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>
+            </>
+          )}
+          searchValue={searchText}
+          onSearchChange={setSearch}
+          showSearchInHeader={!embedded}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={toggleSort}
+          footerCells={footerCells}
+          emptyMessage={t('noDataInPeriod')}
+          renderCompactRow={renderCompactRow}
+          renderMobileCard={renderMobileCard}
+          stripeMobileCards
+        />
+      )}
+    >
       {showCreate && (
         <PayrollRunFormModal
           companyId={companyId}
@@ -594,6 +599,6 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           <p className="m-0 text-[12px] text-noorix-muted leading-relaxed">{t('payrollPayDateHelp')}</p>
         </div>
       </Modal>
-    </ScreenShell>
+    </HrFlatListTabShell>
   );
 }
