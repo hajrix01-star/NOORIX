@@ -2,24 +2,13 @@
  * DashboardAppSalesTab — متابعة نسبة التطبيقات من المبيعات شهرياً + أداء كل قناة
  */
 import React, { useMemo, useState } from 'react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Cell,
-} from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
-import { VAULT_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import { fmt } from '../../../utils/format';
 import { Input, SmartTable, FmtNum } from '../../../ui';
 import { LoadingState, EmptyState } from '../../../components/states';
 import { buildDashboardAppSalesModel } from '../utils/dashboardAppSalesData';
-const APP_COLOR = VAULT_RECHARTS_COLORS.app;
+import { DashboardAppSalesChart } from './DashboardAppSalesChart';
 const YEARS_SPAN_OPTIONS = [1, 2, 3] as const;
 
 type Props = {
@@ -151,55 +140,15 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
         </div>
       </div>
 
-      <div className="noorix-surface-card p-4 lg:p-5">
-        <div className="mb-1 text-[14px] font-bold text-noorix-text">{t('dashboardAppSalesChart')}</div>
-        <div className="mb-4 text-[12px] text-noorix-muted">{t('dashboardAppSalesPctOfSales')}</div>
-        <div dir="ltr" className="w-full">
-          <ResponsiveContainer width="100%" height={Math.max(220, Math.min(360, model.monthSeries.length * 14))}>
-            <BarChart
-              data={model.monthSeries}
-              margin={{ top: 8, right: 8, left: 0, bottom: model.monthSeries.length > 18 ? 56 : 36 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
-                interval={model.monthSeries.length > 18 ? 1 : 0}
-                angle={model.monthSeries.length > 12 ? -45 : 0}
-                textAnchor={model.monthSeries.length > 12 ? 'end' : 'middle'}
-                height={model.monthSeries.length > 12 ? 52 : 32}
-              />
-              <YAxis
-                tickFormatter={(v: number) => `${fmt(v, 0)}%`}
-                tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
-                width={44}
-                domain={[0, 'auto']}
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  const d = payload[0]?.payload as (typeof model.monthSeries)[0];
-                  return (
-                    <div className="rounded-md border border-noorix-border bg-noorix-surface px-3 py-2 text-[12px] shadow-md">
-                      <div className="font-bold text-noorix-text">{d.label}</div>
-                      <div className="mt-1 text-nx-app nx-font-numbers">{fmt(d.appPercent, 1)}%</div>
-                      <div className="mt-0.5 text-noorix-muted">
-                        <FmtNum n={d.app} /> / <FmtNum n={d.total} /> <span className="nx-sar">SR</span>
-                      </div>
-                    </div>
-                  );
-                }}
-              />
-              <Bar dataKey="appPercent" radius={[4, 4, 0, 0]} maxBarSize={28}>
-                {model.monthSeries.map((entry) => (
-                  <Cell
-                    key={entry.periodKey}
-                    fill={entry.appPercent > 0 ? APP_COLOR : '#d4d4d8'}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="noorix-surface-card p-3 sm:p-4 lg:p-5">
+        <div className="mb-1 text-[14px] font-bold text-noorix-text max-lg:text-center lg:text-start">
+          {t('dashboardAppSalesChart')}
+        </div>
+        <div className="mb-3 text-[12px] text-noorix-muted max-lg:text-center lg:text-start">
+          {t('dashboardAppSalesPctOfSales')}
+        </div>
+        <div dir="ltr" className="w-full min-w-0">
+          <DashboardAppSalesChart data={model.monthSeries} />
         </div>
       </div>
 

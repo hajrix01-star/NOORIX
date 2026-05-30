@@ -23,6 +23,10 @@ export default {
   dashboardAppSalesYears3: { ar: '3 سنوات', en: '3 years' },
   dashboardAppSalesAppsTable: { ar: 'أداء قنوات التطبيق — شهري', en: 'App channels — monthly performance' },
   dashboardAppSalesPctOfSales: { ar: '٪ من المبيعات', en: '% of sales' },
+  dashboardAppSalesChartScrollHint: {
+    ar: 'مرّر أفقياً لعرض كل الأشهر',
+    en: 'Swipe horizontally to see all months',
+  },
   dashboardAppSalesPeriodTotal: { ar: 'إجمالي الفترة', en: 'Period total' },
   dashboardAppSalesColApp: { ar: 'التطبيق', en: 'App' },
   dashboardAppSalesColPeriod: { ar: 'الفترة', en: 'Period' },

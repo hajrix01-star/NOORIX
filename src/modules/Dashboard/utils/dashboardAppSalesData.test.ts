@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDashboardAppSalesModel, listMonthKeys } from './dashboardAppSalesData';
+import { buildDashboardAppSalesModel, listMonthKeys, monthShortLabel } from './dashboardAppSalesData';
 
 describe('dashboardAppSalesData', () => {
   it('lists 12 months for one year', () => {
@@ -32,6 +32,8 @@ describe('dashboardAppSalesData', () => {
 
     const apr = model.monthSeries.find((p) => p.periodKey === '2025-04');
     const may = model.monthSeries.find((p) => p.periodKey === '2025-05');
+    expect(apr?.shortLabel).toBe('4');
+    expect(monthShortLabel(2025, 4, 'en', 2)).toBe("Apr'25");
     expect(apr?.appPercent).toBe(30);
     expect(may?.appPercent).toBe(20);
     expect(model.periodAppPercent).toBeCloseTo((400 / 1500) * 100, 5);

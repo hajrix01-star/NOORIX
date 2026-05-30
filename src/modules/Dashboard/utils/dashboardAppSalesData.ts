@@ -28,6 +28,7 @@ export type AppSalesMonthPoint = {
   month: number;
   periodKey: string;
   label: string;
+  shortLabel: string;
   total: number;
   app: number;
   appPercent: number;
@@ -63,6 +64,16 @@ function monthLabel(year: number, month: number, lang: string): string {
   const m = month - 1;
   if (lang === 'ar') return `${MONTH_NAMES_AR[m]} ${year}`;
   return `${MONTH_NAMES_EN[m]} '${String(year).slice(-2)}`;
+}
+
+/** تسمية مختصرة لمحور الرسم — تقلّل التداخل على الجوال */
+export function monthShortLabel(year: number, month: number, lang: string, yearsSpan: number): string {
+  const m = month - 1;
+  if (yearsSpan === 1) {
+    return lang === 'ar' ? String(month) : MONTH_NAMES_EN[m];
+  }
+  if (lang === 'ar') return `${month}/${String(year).slice(-2)}`;
+  return `${MONTH_NAMES_EN[m]}'${String(year).slice(-2)}`;
 }
 
 /** يولّد كل أشهر النطاق (حتى الفارغة) لعرض متصل على الرسم */
@@ -128,6 +139,7 @@ export function buildDashboardAppSalesModel(
       month,
       periodKey,
       label: monthLabel(year, month, lang),
+      shortLabel: monthShortLabel(year, month, lang, yearsSpan),
       total,
       app,
       appPercent: total > 0 ? (app / total) * 100 : 0,
