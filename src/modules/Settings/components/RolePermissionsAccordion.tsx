@@ -74,7 +74,7 @@ export default function RolePermissionsAccordion({
   };
 
   return (
-    <div className="noorix-surface-card overflow-hidden min-w-0">
+    <div className="noorix-surface-card overflow-hidden min-w-0 rounded-t-none border-t-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-noorix-bg-muted px-3 py-2 sm:px-4">
         <h3 className="m-0 text-[14px] font-bold text-noorix-text">
           {isAr ? 'صلاحيات الأقسام' : 'Module permissions'}
