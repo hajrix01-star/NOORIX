@@ -25,7 +25,7 @@ export const HR_WORKSPACE_BODY_STAFF_LIST_CLASS = cn(
   'nx-hr-workspace__body nx-hr-workspace__body--staff-list relative z-[1] min-w-0 w-full box-border',
   HR_WORKSPACE_GUTTER_VAR_CLASS,
   'py-3 sm:py-4',
-  'max-md:px-0 sm:px-4',
+  'max-md:px-0 md:px-4',
 );
 
 /** أزرار + فلاتر + بحث — هامش أفقي على الجوال فقط (محاذاة أسماء الصفوف) */

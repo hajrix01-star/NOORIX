@@ -4675,7 +4675,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
       padding-inline: 16px;
     }
     .nx-hr-workspace__body--staff-list {
-      padding-inline: 0;
+      padding-inline: 0 !important;
     }
     .nx-hr-workspace__body--staff-list .nx-hr-staff-controls {
       padding-inline: var(--nx-hr-gutter, 1rem);
