@@ -575,9 +575,21 @@ export default {
     ar: 'خصم إجازة غير مدفوعة ({0} يوم): {1}',
     en: 'Unpaid leave deduction ({0} d): {1}',
   },
+  payrollApprovedLeaveDeductionNote: {
+    ar: 'استبعاد إجازة ({0} يوم): {1}',
+    en: 'Leave excluded ({0} d): {1}',
+  },
+  payrollLeavePaidDaysNote: {
+    ar: 'أيام مدفوعة في المسيرة: {0} من {1}',
+    en: 'Paid days in run: {0} of {1}',
+  },
+  payrollLeaveSettlementDaysNote: {
+    ar: 'أيام مُصرفة مسبقاً بتسوية راتب: {0}',
+    en: 'Days already paid via salary settlement: {0}',
+  },
   payrollLeaveSettlementHint: {
-    ar: 'صُرف راتب (تسوية تقويمية) لموظفين عند اعتماد إجازة سنوية في هذا الشهر — لن يُضافوا تلقائياً إلى المسيرة لتجنب الازدواج. (هذا الاستبعاد لا يعتمد على حالة «في إجازة» في ملف الموظف، بل على وجود تسوية راتب لذلك الشهر.)',
-    en: 'Employees who received a calendar salary settlement when annual leave was approved this month are excluded from this run. This is based on that settlement, not the employee "On leave" flag.',
+    ar: 'بعض الموظفين لديهم تسوية راتب (إجازة سنوية) — أيام ما قبل الإجازة مُصرفة عبر التسوية ولا تُكرَّر في المسيرة. أيام الإجازة المعتمدة لا تُحسب في الراتب حتى العودة.',
+    en: 'Some employees have an annual-leave salary settlement — pre-leave days were paid separately and are not duplicated in this run. Approved leave days are excluded until return.',
   },
   leaveSalarySettledBadge: { ar: 'تسوية راتب', en: 'Salary settled' },
   leaveStatusUpdated: { ar: 'تم تحديث حالة الإجازة', en: 'Leave status updated' },

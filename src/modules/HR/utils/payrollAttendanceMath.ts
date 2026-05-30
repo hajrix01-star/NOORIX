@@ -1,12 +1,22 @@
 /**
- * ربط مسيرة الراتب بمدة العمل في الشهر وبإجازات غير المدفوعة.
+ * ربط مسيرة الراتب بمدة العمل في الشهر وبإجازات الموظف.
  * — تناسب تقويمي حسب تاريخ الالتحاق وتاريخ نهاية الخدمة (من ملاحظات الموظف).
- * — خصم أيام الإجازة المعتمدة من نوع unpaid فقط (السنوية/المرضية لا تُخصم آلياً).
+ * — أي يوم إجازة معتمدة لا يُحسب في المسيرة؛ الراتب من أيام العمل الفعلية فقط (مثلاً بعد العودة).
+ * — أيام تسوية الراتب (إجازة سنوية) مُصرفة مسبقاً ولا تُكرَّر في المسيرة.
  */
 import { parseEmployeeNotesMeta } from './employeeNotesMeta';
 
-/** مفاتيح أيام الإجازة التي تُخصم من الراتب في المسيرة */
-export const LEAVE_TYPES_DEDUCT_SALARY = ['unpaid'];
+export type PayrollLeaveRow = {
+  employeeId?: string;
+  status?: string;
+  startDate?: string | Date;
+  endDate?: string | Date;
+};
+
+export type PayrollLeaveSettlementRow = {
+  employeeId?: string;
+  leave?: { startDate?: string | Date };
+};
 
 export function monthRangeFromPayrollMonthStr(dateStr: any) {
   const start = new Date(dateStr);
@@ -92,9 +102,156 @@ export function filterLeaveDaySetToEmploymentWindow(daySet: any, effectiveStart:
   if (!effectiveStart || !effectiveEnd || effectiveStart > effectiveEnd) return new Set();
   const es = toLocalDayKey(effectiveStart);
   const ee = toLocalDayKey(effectiveEnd);
-  const out = new Set();
+  const out = new Set<string>();
   for (const k of daySet) {
     if (k >= es && k <= ee) out.add(k);
   }
   return out;
+}
+
+/** أيام الإجازة المعتمدة (كل الأنواع) لكل موظف داخل شهر المسيرة */
+export function computeApprovedLeaveDaysByEmployee(
+  leaves: PayrollLeaveRow[],
+  payrollMonthStr: string,
+): Map<string, Set<string>> {
+  const { monthStart, monthEndCal } = monthRangeFromPayrollMonthStr(payrollMonthStr);
+  const map = new Map<string, Set<string>>();
+  for (const leave of leaves || []) {
+    if (!leave?.employeeId || leave.status !== 'approved') continue;
+    const leaveStart = new Date(leave.startDate as string);
+    const leaveEnd = new Date(leave.endDate as string);
+    const overlapStart = new Date(Math.max(leaveStart.getTime(), monthStart.getTime()));
+    const overlapEnd = new Date(Math.min(leaveEnd.getTime(), monthEndCal.getTime()));
+    if (overlapStart > overlapEnd) continue;
+    const days = map.get(leave.employeeId) || new Set<string>();
+    const cursor = new Date(overlapStart);
+    cursor.setHours(0, 0, 0, 0);
+    const overlapEndDay = new Date(overlapEnd);
+    overlapEndDay.setHours(0, 0, 0, 0);
+    while (cursor <= overlapEndDay) {
+      days.add(toLocalDayKey(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    map.set(leave.employeeId, days);
+  }
+  return map;
+}
+
+/** أيام الشهر المُصرفة مسبقاً عبر تسوية راتب إجازة سنوية (من بداية الشهر/الالتحاق حتى يوم السفر) */
+export function computeSettledCalendarDayKeys(
+  employee: { joinDate?: unknown; status?: string; notes?: unknown },
+  payrollMonthStr: string,
+  leaveStartDate: string | Date,
+): Set<string> {
+  const { monthStart, monthEndCal } = monthRangeFromPayrollMonthStr(payrollMonthStr);
+  const start = new Date(leaveStartDate);
+  start.setHours(0, 0, 0, 0);
+  const join = new Date(employee.joinDate as string);
+  join.setHours(0, 0, 0, 0);
+  let rangeStart = join > monthStart ? join : monthStart;
+  let rangeEnd = start > monthEndCal ? monthEndCal : start;
+
+  if (employee.status === 'terminated') {
+    const { meta } = parseEmployeeNotesMeta(employee.notes);
+    const td = meta?.terminationDate;
+    if (td) {
+      const t = new Date(td);
+      t.setHours(0, 0, 0, 0);
+      if (t < rangeEnd) rangeEnd = t;
+    }
+  }
+
+  if (rangeStart > rangeEnd) return new Set();
+
+  const keys = new Set<string>();
+  const cursor = new Date(rangeStart);
+  cursor.setHours(0, 0, 0, 0);
+  const end = new Date(rangeEnd);
+  end.setHours(0, 0, 0, 0);
+  while (cursor <= end) {
+    keys.add(toLocalDayKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return keys;
+}
+
+export function computeSettledDaysByEmployee(
+  employees: Array<{ id?: string; joinDate?: unknown; status?: string; notes?: unknown }>,
+  payrollMonthStr: string,
+  settlements: PayrollLeaveSettlementRow[],
+): Map<string, Set<string>> {
+  const map = new Map<string, Set<string>>();
+  for (const settlement of settlements || []) {
+    if (!settlement?.employeeId || !settlement.leave?.startDate) continue;
+    const emp = employees.find((e) => e.id === settlement.employeeId);
+    if (!emp) continue;
+    const keys = computeSettledCalendarDayKeys(emp, payrollMonthStr, settlement.leave.startDate);
+    if (keys.size === 0) continue;
+    map.set(settlement.employeeId, keys);
+  }
+  return map;
+}
+
+export type PayrollPaidDaysBreakdown = {
+  paidDays: number;
+  leaveDays: number;
+  settledDays: number;
+  daysInMonth: number;
+  employedDays: number;
+};
+
+/** أيام الراتب المستحقة في المسيرة = أيام العمل في الشهر − إجازة − أيام مُصرفة بتسوية */
+export function countPayrollPaidDaysInMonth(
+  employee: { id?: string; joinDate?: unknown; status?: string; notes?: unknown },
+  payrollMonthStr: string,
+  leaveDaysByEmployee: Map<string, Set<string>>,
+  settledDaysByEmployee: Map<string, Set<string>>,
+): PayrollPaidDaysBreakdown {
+  const pr = getEmploymentProrationInMonth(employee, payrollMonthStr);
+  if (!pr.effectiveStart || !pr.effectiveEnd || pr.employedDays <= 0) {
+    return {
+      paidDays: 0,
+      leaveDays: 0,
+      settledDays: 0,
+      daysInMonth: pr.daysInMonth,
+      employedDays: 0,
+    };
+  }
+
+  const leaveSet = filterLeaveDaySetToEmploymentWindow(
+    leaveDaysByEmployee.get(employee.id as string) || new Set(),
+    pr.effectiveStart,
+    pr.effectiveEnd,
+  );
+  const settledSet = filterLeaveDaySetToEmploymentWindow(
+    settledDaysByEmployee.get(employee.id as string) || new Set(),
+    pr.effectiveStart,
+    pr.effectiveEnd,
+  );
+
+  let paidDays = 0;
+  let settledDays = 0;
+  const cursor = new Date(pr.effectiveStart);
+  cursor.setHours(0, 0, 0, 0);
+  const end = new Date(pr.effectiveEnd);
+  end.setHours(0, 0, 0, 0);
+  while (cursor <= end) {
+    const key = toLocalDayKey(cursor);
+    if (leaveSet.has(key)) {
+      // يوم إجازة — لا راتب
+    } else if (settledSet.has(key)) {
+      settledDays += 1;
+    } else {
+      paidDays += 1;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return {
+    paidDays,
+    leaveDays: leaveSet.size,
+    settledDays,
+    daysInMonth: pr.daysInMonth,
+    employedDays: pr.employedDays,
+  };
 }
