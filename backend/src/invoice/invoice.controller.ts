@@ -5,7 +5,7 @@
  *   POST → INVOICES_WRITE أو PURCHASES_WRITE
  *   PATCH (تعديل فاتورة) → المالك فقط
  *   GET → INVOICES_READ أو PURCHASES_READ
- *         (الفلترة بالـ kind تتم تلقائياً حسب ما يملكه المستخدم)
+ *         (بدون kind في الاستعلام: مبيعات فقط / صرف كامل / الاثنان معاً — انظر resolveInvoiceListKindFilter)
  */
 import {
   BadRequestException,
@@ -37,6 +37,7 @@ import { CreateInvoiceDto }      from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { UpdateInvoiceDto }      from './dto/update-invoice.dto';
 import { InvoiceService }        from './invoice.service';
+import { resolveInvoiceListKindFilter } from './invoice-list-resolved-kind.util';
 
 @Controller('invoices')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -120,14 +121,16 @@ export class InvoiceController {
 
     const canSales     = hasPermission(role, 'INVOICES_READ',  perms);
     const canPurchases = hasPermission(role, 'PURCHASES_READ', perms);
+    const canHr        =
+      hasPermission(role, PERMISSIONS.HR_READ, perms) ||
+      hasPermission(role, PERMISSIONS.HR_WRITE, perms);
 
-    // فلترة تلقائية حسب الصلاحية إذا لم يكن المستخدم يملك كلاً منهما
-    let resolvedKind = kind;
-    if (!canSales && canPurchases && !kind) {
-      resolvedKind = 'purchase';
-    } else if (canSales && !canPurchases && !kind) {
-      resolvedKind = 'sale';
-    }
+    const resolvedKind = resolveInvoiceListKindFilter({
+      requestedKind: kind,
+      canSales,
+      canPurchases,
+      canHr,
+    });
 
     const includeExecSummary = hasPermission(
       role,
