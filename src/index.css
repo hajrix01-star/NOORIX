@@ -4479,6 +4479,18 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     overflow: hidden;
     box-sizing: border-box;
   }
+  /* مسار رمادي خلف الحبات — يبرز الحبة النشطة (أبيض + أزرق) */
+  .nx-segmented-tab-bar--track {
+    background: var(--noorix-bg-muted);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid var(--noorix-border);
+    box-sizing: border-box;
+  }
+  .nx-segmented-shell--flat .nx-segmented-tab-bar--track {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--noorix-bg-muted) 88%, var(--noorix-bg-surface));
+  }
   .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented {
     flex: 1 1 0;
     min-width: 0;
@@ -4548,10 +4560,13 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     min-width: 0;
   }
   .nx-hr-view-modes {
+    width: 100%;
+    min-width: 0;
     -webkit-overflow-scrolling: touch;
   }
-  .nx-hr-view-modes .nx-btn {
-    flex-shrink: 0;
+  .nx-hr-view-modes .nx-segmented-shell--flat {
+    padding: 0;
+    border-bottom: none;
   }
   .nx-hr-workspace__body {
     position: relative;

@@ -3,7 +3,6 @@
  */
 import React, { useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { ScreenTabs, cn } from '../../../ui';
 import {
   HR_PAYROLL_TAB_IDS,
   HR_PEOPLE_TAB_IDS,
@@ -20,6 +19,7 @@ import ResidencyTab from '../tabs/ResidencyTab';
 import SalaryCalcTab from '../tabs/SalaryCalcTab';
 import EOSCalcTab from '../tabs/EOSCalcTab';
 import HrPrintDocumentsTab from '../tabs/HrPrintDocumentsTab';
+import { HrSegmentedControl } from './HrSegmentedControl';
 
 const PEOPLE_CONFIG = [
   { id: 'list', labelKey: 'hrSubTabEmployees', shortLabelKey: 'hrSubTabEmployeesShort' },
@@ -90,15 +90,10 @@ export function HrSectionSubTabs({ section, tab, onTabChange }: HrSectionSubTabs
     : TAB_IDS_BY_SECTION[section][0];
 
   return (
-    <ScreenTabs
+    <HrSegmentedControl
       items={items}
       value={activeTab}
       onChange={(id) => onTabChange(id as HrSubTabId)}
-      variant="segmented"
-      segmentedFlat
-      barClassName="nx-segmented-tab-bar--fill"
-      shellClassName="w-full min-w-0"
-      animateContent={false}
       contentClassName={HR_WORKSPACE_BODY_CLASS}
     >
       {section === 'people' && activeTab === 'list' && <StaffListScreen embedded />}
@@ -109,6 +104,6 @@ export function HrSectionSubTabs({ section, tab, onTabChange }: HrSectionSubTabs
       {section === 'tools' && activeTab === 'salary-calc' && <SalaryCalcTab />}
       {section === 'tools' && activeTab === 'eos-calc' && <EOSCalcTab />}
       {section === 'tools' && activeTab === 'print' && <HrPrintDocumentsTab />}
-    </ScreenTabs>
+    </HrSegmentedControl>
   );
 }
