@@ -41,6 +41,7 @@ import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
 import { HR_EMBEDDED_SHELL_CLASS } from './hrWorkspaceLayout';
 import { HrTabToolbar } from './components/HrTabToolbar';
+import { HrSegmentedControl } from './components/HrSegmentedControl';
 
 const PAGE_SIZE = 50;
 
@@ -72,6 +73,15 @@ export default function StaffListScreen({ embedded }: any) {
     t('terminationReasonOptionResignation'),
     t('terminationReasonOptionAbsence'),
   ];
+
+  const employeeViewModeItems = useMemo(
+    () => [
+      { id: 'active', label: t('activeEmployeesList') },
+      { id: 'terminated', label: t('terminatedEmployeesList') },
+      { id: 'archived', label: t('archivedEmployeesList') },
+    ],
+    [t],
+  );
   const queryClient = useQueryClient();
   const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
 
@@ -483,32 +493,12 @@ export default function StaffListScreen({ embedded }: any) {
 
           <HrTabToolbar
             leading={(
-              <div className="nx-hr-view-modes flex min-w-0 max-w-full gap-1 overflow-x-auto">
-                <Button
-                  size="sm"
-                  variant={viewMode === 'active' ? 'primary' : 'ghost'}
-                  className="shrink-0 whitespace-nowrap"
-                  onClick={() => setViewMode('active')}
-                >
-                  {t('activeEmployeesList')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant={viewMode === 'terminated' ? 'primary' : 'ghost'}
-                  className="shrink-0 whitespace-nowrap"
-                  onClick={() => setViewMode('terminated')}
-                >
-                  {t('terminatedEmployeesList')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant={viewMode === 'archived' ? 'primary' : 'ghost'}
-                  className="shrink-0 whitespace-nowrap"
-                  onClick={() => setViewMode('archived')}
-                >
-                  {t('archivedEmployeesList')}
-                </Button>
-              </div>
+              <HrSegmentedControl
+                className="nx-hr-view-modes min-w-0 max-w-full !border-0 !border-b-0 !bg-transparent !p-0 shadow-none"
+                items={employeeViewModeItems}
+                value={viewMode}
+                onChange={setViewMode}
+              />
             )}
             desktopActions={(
               <Button

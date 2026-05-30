@@ -102,7 +102,7 @@ export default function ScreenTabs({
               'nx-tab-btn',
               variant === 'underline' && active && 'nx-tab-btn--active',
               variant === 'segmented' && 'nx-tab-btn--segmented',
-              variant === 'segmented' && active && 'nx-tab-btn--segmented-active',
+              variant === 'segmented' && active && !getTabClassName && 'nx-tab-btn--segmented-active',
               getTabClassName?.(item, active),
             )}
             onClick={() => onChange(item.id)}
