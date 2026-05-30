@@ -3,6 +3,7 @@
  * يسار: قائمة الأقسام | يمين: صلاحيات القسم النشط | أعلى: presets.
  */
 import React, { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Button, Input, cn } from '../../../ui';
 import { normalizeModuleViewAccess } from '../../../constants/permissions';
 import { useIsMobile640 } from '../../../hooks/useMediaQuery';
@@ -93,6 +94,15 @@ export default function RoleEditorOverlay({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving) onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, isSaving, onClose]);
+
   if (!open || !activeMod) return null;
 
   const applyPreset = (presetId: string) => {
@@ -139,9 +149,9 @@ export default function RoleEditorOverlay({
     );
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[2000] flex flex-col bg-noorix-bg"
+      className="fixed inset-0 z-[var(--nx-z-lightbox,3000)] flex flex-col bg-[var(--noorix-bg-page)]"
       role="dialog"
       aria-modal="true"
       aria-label={title}
@@ -238,14 +248,14 @@ export default function RoleEditorOverlay({
         </p>
       </header>
 
-      <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
+      <div className="flex flex-1 min-h-0 min-w-0 flex-col md:flex-row">
         {!isMobile && (
-          <aside className="hidden lg:flex lg:w-64 xl:w-72 shrink-0 flex-col gap-1 border-e border-noorix-border bg-noorix-bg-muted/40 p-3 overflow-y-auto">
+          <aside className="hidden md:flex md:w-60 lg:w-72 shrink-0 flex-col gap-1 min-h-0 border-e border-noorix-border bg-noorix-surface p-3 overflow-y-auto overscroll-contain">
             {modules.map(moduleNavItem)}
           </aside>
         )}
 
-        <main className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain p-4 lg:p-6 bg-[var(--noorix-bg-page)]">
           {isMobile && (
             <div className="mb-4">
               <Input
@@ -302,6 +312,7 @@ export default function RoleEditorOverlay({
           </Button>
         )}
       </footer>
-    </div>
+    </div>,
+    document.body,
   );
 }
