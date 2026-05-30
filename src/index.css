@@ -4674,6 +4674,20 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     .nx-hr-workspace__body .nx-compact-row {
       padding-inline: 16px;
     }
+    /* قائمة الموظفين داخل HR — بدون كرت داخلي «قائمة الموظفين» على الجوال */
+    .nx-hr-workspace__body .nx-hr-table--flat-list.noorix-table-frame {
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      border-radius: 0;
+    }
+    .nx-hr-workspace__body .nx-hr-table--flat-list.noorix-table-frame--mobile-list > .flex.flex-col.gap-2 {
+      padding-inline: 0;
+      padding-block: 0;
+    }
+    .nx-hr-workspace__body .nx-hr-table--flat-list .nx-mobile-card-row {
+      border-radius: 10px;
+    }
   }
 
   .nx-tab-content {

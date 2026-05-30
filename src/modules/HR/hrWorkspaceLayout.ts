@@ -4,7 +4,7 @@ import { cn } from '../../ui/cn';
 export const HR_EMBEDDED_SHELL_CLASS = 'flex min-w-0 w-full flex-col gap-3';
 
 /** حشو أفقي موحّد داخل كرت HR (محاذاة المحتوى + الأزرار) */
-export const HR_WORKSPACE_GUTTER_X = 'px-3 sm:px-4';
+export const HR_WORKSPACE_GUTTER_X = 'px-4 sm:px-4';
 
 /** محتوى منطقة العمل داخل كرت التبويبات الرئيسية */
 export const HR_WORKSPACE_CONTENT_CLASS =

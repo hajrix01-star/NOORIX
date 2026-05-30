@@ -65,6 +65,8 @@ export type SmartTableProps<TRow = any> = {
   renderCompactRow?: (row: TRow, index: number) => ReactNode;
   stickyActionColumn?: boolean;
   tableId?: string;
+  /** صنف إضافي على غلاف noorix-table-frame */
+  frameClassName?: string;
   /** موروث — غير مستخدم داخلياً؛ يُبقي توافقاً مع شاشات قديمة */
   keyExtractor?: (row: TRow, index: number) => string | number;
 };
