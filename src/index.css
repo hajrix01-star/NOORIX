@@ -4533,12 +4533,15 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     padding: 0;
   }
   .nx-segmented-shell--flat {
+    position: relative;
+    z-index: 3;
     border: none;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
     padding: 8px 12px 10px;
     border-bottom: 1px solid var(--noorix-border);
+    pointer-events: auto;
   }
   .nx-hr-tab-toolbar {
     width: 100%;
@@ -4551,6 +4554,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     flex-shrink: 0;
   }
   .nx-hr-workspace__body {
+    position: relative;
+    z-index: 1;
     min-width: 0;
     width: 100%;
     padding: 12px;

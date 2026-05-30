@@ -105,9 +105,7 @@ export default function ScreenTabs({
               variant === 'segmented' && active && 'nx-tab-btn--segmented-active',
               getTabClassName?.(item, active),
             )}
-            onClick={() => {
-              if (item.id !== value) onChange(item.id);
-            }}
+            onClick={() => onChange(item.id)}
             data-active={active ? 'true' : 'false'}
           >
             {item.label}
@@ -135,7 +133,7 @@ export default function ScreenTabs({
   if (variant === 'segmented') {
     return (
       <div className={cn('flex w-full min-w-0 flex-col', shellClassName)}>
-        <div className={cn(shellClass, 'w-full min-w-0')}>{bar}</div>
+        <div className={cn(shellClass, 'relative z-[3] w-full min-w-0')}>{bar}</div>
         {children != null && (
           <div className={cn(contentClassName)} role="tabpanel">
             {children}
