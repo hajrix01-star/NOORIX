@@ -39,7 +39,11 @@ import { totalSalary } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
-import { HR_EMBEDDED_SHELL_CLASS, HR_WORKSPACE_TABLE_CLASS } from './hrWorkspaceLayout';
+import {
+  HR_EMBEDDED_SHELL_CLASS,
+  HR_STAFF_LIST_BLEED_CLASS,
+  HR_WORKSPACE_TABLE_CLASS,
+} from './hrWorkspaceLayout';
 import { HrTabToolbar } from './components/HrTabToolbar';
 import { HrSegmentedControl } from './components/HrSegmentedControl';
 
@@ -455,7 +459,7 @@ export default function StaffListScreen({ embedded }: any) {
         <div className="flex shrink-0 flex-col items-end gap-1 min-w-0">
           <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
             {row.jobTitle && (
-              <span className="max-w-[9.5rem] truncate text-[12px] text-noorix-muted" title={row.jobTitle}>
+              <span className="max-w-[11rem] truncate text-[12px] text-noorix-muted sm:max-w-[9.5rem]" title={row.jobTitle}>
                 {row.jobTitle}
               </span>
             )}
@@ -478,8 +482,6 @@ export default function StaffListScreen({ embedded }: any) {
   }, [STATUS_MAP, t, lang, navigate, renderStaffRowMenuItems]);
 
   const renderCompactRow = useCallback((row: any) => renderStaffMobileRow(row), [renderStaffMobileRow]);
-
-  const renderMobileCard = useCallback((row: any) => renderStaffMobileRow(row), [renderStaffMobileRow]);
 
   return (
     embedded ? (
@@ -583,34 +585,62 @@ export default function StaffListScreen({ embedded }: any) {
             />
           ) : null}
 
-          <SmartTable
-            compact
-            showRowNumbers
-            tableMinWidth={960}
-            innerPadding={embedded ? 0 : 8}
-            frameClassName={embedded ? cn(HR_WORKSPACE_TABLE_CLASS, 'nx-hr-table--flat-list') : undefined}
-            columns={columns}
-            data={tableData}
-            total={listTotal}
-            page={listPage}
-            pageSize={PAGE_SIZE}
-            onPageChange={setListPage}
-            isLoading={isLoading}
-            isError={!!employeesError}
-            errorMessage={employeesError?.message || t('employeesLoadFailed')}
-            title={embedded ? undefined : t('employeesList')}
-            badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
-            searchValue={searchInput}
-            onSearchChange={setSearchInput}
-            showSearchInHeader={!embedded}
-            sortKey={sortKey}
-            sortDir={sortDir}
-            onSort={toggleSort}
-            emptyMessage={t('noEmployees')}
-            renderCompactRow={embedded ? undefined : renderCompactRow}
-            renderMobileCard={embedded ? renderMobileCard : undefined}
-            stripeMobileCards
-          />
+          {embedded ? (
+            <div className={HR_STAFF_LIST_BLEED_CLASS}>
+              <SmartTable
+                compact
+                showRowNumbers
+                tableMinWidth={960}
+                innerPadding={0}
+                frameClassName={cn(HR_WORKSPACE_TABLE_CLASS, 'nx-hr-table--flat-list')}
+                columns={columns}
+                data={tableData}
+                total={listTotal}
+                page={listPage}
+                pageSize={PAGE_SIZE}
+                onPageChange={setListPage}
+                isLoading={isLoading}
+                isError={!!employeesError}
+                errorMessage={employeesError?.message || t('employeesLoadFailed')}
+                searchValue={searchInput}
+                onSearchChange={setSearchInput}
+                showSearchInHeader={false}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onSort={toggleSort}
+                emptyMessage={t('noEmployees')}
+                renderCompactRow={renderCompactRow}
+                stripeMobileCards
+              />
+            </div>
+          ) : (
+            <SmartTable
+              compact
+              showRowNumbers
+              tableMinWidth={960}
+              innerPadding={8}
+              columns={columns}
+              data={tableData}
+              total={listTotal}
+              page={listPage}
+              pageSize={PAGE_SIZE}
+              onPageChange={setListPage}
+              isLoading={isLoading}
+              isError={!!employeesError}
+              errorMessage={employeesError?.message || t('employeesLoadFailed')}
+              title={t('employeesList')}
+              badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
+              searchValue={searchInput}
+              onSearchChange={setSearchInput}
+              showSearchInHeader
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              emptyMessage={t('noEmployees')}
+              renderCompactRow={renderCompactRow}
+              stripeMobileCards
+            />
+          )}
         </>
       )}
 
