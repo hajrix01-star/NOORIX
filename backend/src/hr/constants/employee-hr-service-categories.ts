@@ -21,6 +21,17 @@ export function requiresIqamaNumber(category: string): boolean {
   return IQAMA_CATEGORIES.has(category as EmployeeHrServiceCategory);
 }
 
+export function usesCompanyAsSponsor(category: string): boolean {
+  return category === 'sponsorship_transfer';
+}
+
+export function companySponsorNameFromRecord(company: {
+  nameAr: string;
+  nameEn?: string | null;
+}): string {
+  return (company.nameAr || company.nameEn || '').trim();
+}
+
 export function serviceCategoryLabelAr(category: string): string {
   const map: Record<string, string> = {
     iqama_new: 'إقامة جديدة',

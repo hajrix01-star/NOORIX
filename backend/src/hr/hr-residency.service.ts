@@ -14,6 +14,8 @@ import type { ResidencyIssueInvoiceInlineDto } from './dto/create-residency-with
 import {
   requiresIqamaNumber,
   serviceCategoryLabelAr,
+  usesCompanyAsSponsor,
+  companySponsorNameFromRecord,
 } from './constants/employee-hr-service-categories';
 import { issueResidencyServiceInvoiceCore } from './hr-residency-issue-invoice.util';
 
@@ -72,6 +74,23 @@ export class HrResidencyService {
     };
   }
 
+  /** نقل الكفالة — الكفيل الجديد = اسم الشركة التي يعمل بها الموظف */
+  private async resolveReferenceLabel(
+    companyId: string,
+    category: string,
+    referenceLabel?: string,
+  ): Promise<string | null> {
+    if (!usesCompanyAsSponsor(category)) {
+      return referenceLabel?.trim() || null;
+    }
+    const company = await this.prisma.company.findFirst({
+      where: { id: companyId },
+      select: { nameAr: true, nameEn: true },
+    });
+    if (!company) throw new BadRequestException('الشركة غير موجودة.');
+    return companySponsorNameFromRecord(company) || null;
+  }
+
   async createResidency(
     dto: CreateResidencyDto,
     userId?: string,
@@ -82,6 +101,11 @@ export class HrResidencyService {
 
     const tenantId = TenantContext.getTenantId();
     const dates = this.mapDateFields(dto);
+    const referenceLabel = await this.resolveReferenceLabel(
+      dto.companyId,
+      category,
+      dto.referenceLabel,
+    );
 
     const residency = await this.prisma.employeeResidency.create({
       data: {
@@ -90,7 +114,7 @@ export class HrResidencyService {
         employeeId: dto.employeeId,
         serviceCategory: category,
         iqamaNumber: dto.iqamaNumber?.trim() || null,
-        referenceLabel: dto.referenceLabel?.trim() || null,
+        referenceLabel,
         ...dates,
         status: dto.status ?? 'active',
         notes: dto.notes,
@@ -151,12 +175,19 @@ export class HrResidencyService {
       transactionDate: dto.transactionDate,
     });
 
+    let referenceLabel: string | null | undefined;
+    if (usesCompanyAsSponsor(category)) {
+      referenceLabel = await this.resolveReferenceLabel(companyId, category);
+    } else if (dto.referenceLabel !== undefined) {
+      referenceLabel = dto.referenceLabel?.trim() || null;
+    }
+
     const updated = await this.prisma.employeeResidency.update({
       where: { id },
       data: {
         ...(dto.serviceCategory !== undefined && { serviceCategory: dto.serviceCategory }),
         ...(dto.iqamaNumber !== undefined && { iqamaNumber: dto.iqamaNumber?.trim() || null }),
-        ...(dto.referenceLabel !== undefined && { referenceLabel: dto.referenceLabel?.trim() || null }),
+        ...(referenceLabel !== undefined && { referenceLabel }),
         ...(dto.issueDate !== undefined && { issueDate: dates.issueDate }),
         ...(dto.expiryDate !== undefined && { expiryDate: dates.expiryDate }),
         ...(dto.transactionDate !== undefined && { transactionDate: dates.transactionDate }),

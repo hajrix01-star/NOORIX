@@ -20,6 +20,8 @@ import {
   requiresExpiryDate,
   showsReferenceLabel,
   referenceLabelKey,
+  usesCompanyAsSponsor,
+  companyDisplayName,
 } from '../constants/employeeHrServiceCategories';
 
 const STATUS_OPTIONS = [
@@ -47,8 +49,16 @@ export function ResidencyFormModal({
   onClose,
 }: ResidencyFormModalProps) {
   const { t, lang } = useTranslation();
-  const { activeCompanyId } = useApp();
+  const { activeCompanyId, companies } = useApp();
   const cid = companyId || activeCompanyId || '';
+  const activeCompany = useMemo(
+    () => (companies || []).find((c: { id?: string }) => c.id === cid),
+    [companies, cid],
+  );
+  const companySponsorName = useMemo(
+    () => companyDisplayName(activeCompany, lang),
+    [activeCompany, lang],
+  );
   const isEdit = !!residency;
 
   const lockEmployee = !!defaultEmployeeId && !residency;
@@ -85,6 +95,7 @@ export function ResidencyFormModal({
   const showIqama = requiresIqamaNumber(serviceCategory);
   const showExpiry = requiresExpiryDate(serviceCategory);
   const showRef = showsReferenceLabel(serviceCategory);
+  const sponsorIsCompany = usesCompanyAsSponsor(serviceCategory);
   const refLabelKey = referenceLabelKey(serviceCategory);
 
   const selectedEmployee = useMemo(
@@ -105,6 +116,11 @@ export function ResidencyFormModal({
     if (!iqamaNumber) setIqamaNumber(selectedEmployee.iqamaNumber);
   }, [lockEmployee, selectedEmployee, showIqama, iqamaNumber]);
 
+  useEffect(() => {
+    if (!sponsorIsCompany || !companySponsorName) return;
+    setReferenceLabel(companySponsorName);
+  }, [sponsorIsCompany, companySponsorName, serviceCategory]);
+
   const buildPayload = () => {
     const body: Record<string, unknown> = {
       companyId: cid,
@@ -114,7 +130,11 @@ export function ResidencyFormModal({
       transactionDate: transactionDate ? `${transactionDate}T00:00:00.000Z` : undefined,
     };
     if (showIqama) body.iqamaNumber = iqamaNumber.trim();
-    if (showRef && referenceLabel.trim()) body.referenceLabel = referenceLabel.trim();
+    if (sponsorIsCompany && companySponsorName) {
+      body.referenceLabel = companySponsorName;
+    } else if (showRef && referenceLabel.trim()) {
+      body.referenceLabel = referenceLabel.trim();
+    }
     if (issueDate) body.issueDate = `${issueDate}T00:00:00.000Z`;
     if (showExpiry && expiryDate) body.expiryDate = `${expiryDate}T00:00:00.000Z`;
     if (isEdit) body.status = status;
@@ -226,6 +246,14 @@ export function ResidencyFormModal({
             required
             placeholder="1234567890"
           />
+        )}
+
+        {sponsorIsCompany && (
+          <div className="mb-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/60 px-3 py-2.5">
+            <div className="text-[12px] text-noorix-muted mb-1">{t('hrServiceTransferSponsorCompany')}</div>
+            <div className="text-[14px] font-semibold text-noorix-text">{companySponsorName || '—'}</div>
+            <p className="text-[11px] text-noorix-muted mt-1.5 m-0">{t('hrServiceTransferSponsorHint')}</p>
+          </div>
         )}
 
         {showRef && (

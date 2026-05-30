@@ -44,13 +44,28 @@ export function requiresExpiryDate(category) {
 }
 
 export function showsReferenceLabel(category) {
-  return ['exit_reentry_visa', 'flight_ticket', 'medical_insurance', 'sponsorship_transfer'].includes(category);
+  return ['exit_reentry_visa', 'flight_ticket', 'medical_insurance'].includes(category);
+}
+
+export function isSponsorshipTransfer(category) {
+  return category === 'sponsorship_transfer';
+}
+
+/** نقل الكفالة — الكفيل الجديد دائماً الشركة النشطة (لا إدخال يدوي) */
+export function usesCompanyAsSponsor(category) {
+  return isSponsorshipTransfer(category);
 }
 
 export function referenceLabelKey(category) {
   if (category === 'flight_ticket') return 'hrServiceRouteLabel';
   if (category === 'medical_insurance') return 'hrServiceProviderLabel';
-  if (category === 'sponsorship_transfer') return 'hrServiceNewSponsorLabel';
+  if (category === 'sponsorship_transfer') return 'hrServiceTransferSponsorCompany';
   if (category === 'exit_reentry_visa') return 'hrServiceVisaDurationLabel';
   return 'referenceLabel';
+}
+
+export function companyDisplayName(company, lang = 'ar') {
+  if (!company) return '';
+  if (lang === 'en') return (company.nameEn || company.nameAr || company.name || '').trim();
+  return (company.nameAr || company.nameEn || company.name || '').trim();
 }

@@ -306,6 +306,11 @@ export default {
   hrServiceRouteLabel: { ar: 'المسار / الوجهة', en: 'Route / destination' },
   hrServiceProviderLabel: { ar: 'شركة التأمين / البوليصة', en: 'Insurer / policy' },
   hrServiceNewSponsorLabel: { ar: 'الكفيل الجديد', en: 'New sponsor' },
+  hrServiceTransferSponsorCompany: { ar: 'الكفيل الجديد (شركتكم)', en: 'New sponsor (your company)' },
+  hrServiceTransferSponsorHint: {
+    ar: 'نقل الكفالة إلى الشركة النشطة — نفس الشركة التي يعمل بها الموظف. يُعبَّأ تلقائياً من إعدادات الشركة.',
+    en: 'Sponsorship transfers to the active company — the same company employing this worker. Filled automatically from company settings.',
+  },
   hrServiceVisaDurationLabel: { ar: 'مدة التأشيرة', en: 'Visa duration' },
   hrServiceAdded: { ar: 'تمت إضافة الخدمة بنجاح', en: 'Service added successfully' },
   hrServiceUpdated: { ar: 'تم تحديث الخدمة', en: 'Service updated' },
