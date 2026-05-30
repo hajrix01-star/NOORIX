@@ -74,33 +74,38 @@ export default function RolePermissionsAccordion({
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <div
-        className="flex flex-nowrap items-center gap-2 self-end shrink-0"
-        aria-label={isAr ? 'فتح وطي الأقسام' : 'Expand and collapse sections'}
-      >
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={disabled}
-          className="shrink-0 whitespace-nowrap min-h-[36px]"
-          onClick={() => setOpenKeys(new Set(modules.map((m) => m.key)))}
+    <div className="noorix-surface-card overflow-hidden min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-noorix-border bg-noorix-bg-muted px-3 py-2 sm:px-4">
+        <h3 className="m-0 text-[14px] font-bold text-noorix-text">
+          {isAr ? 'صلاحيات الأقسام' : 'Module permissions'}
+        </h3>
+        <div
+          className="flex flex-nowrap items-center gap-2 shrink-0"
+          aria-label={isAr ? 'فتح وطي الأقسام' : 'Expand and collapse sections'}
         >
-          {isAr ? 'فتح الكل' : 'Expand all'}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={disabled}
-          className="shrink-0 whitespace-nowrap min-h-[36px]"
-          onClick={() => setOpenKeys(new Set())}
-        >
-          {isAr ? 'طي الكل' : 'Collapse all'}
-        </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={disabled}
+            className="shrink-0 whitespace-nowrap min-h-[36px]"
+            onClick={() => setOpenKeys(new Set(modules.map((m) => m.key)))}
+          >
+            {isAr ? 'فتح الكل' : 'Expand all'}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={disabled}
+            className="shrink-0 whitespace-nowrap min-h-[36px]"
+            onClick={() => setOpenKeys(new Set())}
+          >
+            {isAr ? 'طي الكل' : 'Collapse all'}
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        {modules.map((mod) => {
+      <div className="flex flex-col">
+        {modules.map((mod, index) => {
           const selected = countModuleSelected(mod, permissions);
           const total = getModulePermValues(mod).length;
           const isOpen = openKeys.has(mod.key);
@@ -109,8 +114,11 @@ export default function RolePermissionsAccordion({
           const label = isAr ? mod.labelAr : mod.labelEn;
 
           return (
-            <div key={mod.key} className="noorix-surface-card overflow-hidden">
-              <div className="flex items-stretch gap-2 p-2 sm:p-3">
+            <section
+              key={mod.key}
+              className={cn(index > 0 && 'border-t border-noorix-border')}
+            >
+              <div className="flex items-stretch gap-2 p-2 sm:px-3 sm:py-2">
                 <Button
                   variant="raw"
                   type="button"
@@ -156,7 +164,7 @@ export default function RolePermissionsAccordion({
               </div>
 
               {isOpen && (
-                <div className="border-t border-noorix-border px-3 pb-3 pt-2 sm:px-4">
+                <div className="border-t border-noorix-border bg-noorix-bg-muted/40 px-3 pb-3 pt-2 sm:px-4">
                   <ModulePermissionPanel
                     mod={mod}
                     levels={levels}
@@ -168,7 +176,7 @@ export default function RolePermissionsAccordion({
                   />
                 </div>
               )}
-            </div>
+            </section>
           );
         })}
       </div>
