@@ -4669,6 +4669,12 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border-radius: 0;
     background: transparent;
   }
+  /* قائمة HR المضغوطة — حشو أفقي أوضح (الاسم/التاريخ لا يلتصقان بحافة الكرت) */
+  @media (max-width: 768px) {
+    .nx-hr-workspace__body .nx-compact-row {
+      padding-inline: 16px;
+    }
+  }
 
   .nx-tab-content {
     padding: clamp(12px, 3vw, 24px);
