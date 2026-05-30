@@ -21,6 +21,7 @@ import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn, FmtNum, KebabMenu
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { hrKeys, invoiceKeys } from '../../../services/queryKeys';
+import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
 
 const PAGE_SIZE = 50;
 
@@ -319,7 +320,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   }, [t, settlementMap, setEditingAdvance, setSettlingAdvance]);
 
   return (
-    <ScreenShell embedded={!!embedded}>
+    <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
         <div className="nx-toolbar min-w-0 flex-1">
           <Input type="select" value={employeeFilter} onChange={(e: any) => setEmployeeFilter(e.target.value)}>

@@ -4524,6 +4524,44 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.14);
   }
 
+  /* مساحة عمل HR — كرت واحد (تبويبات رئيسية) + شريط فرعي + محتوى بنفس العرض */
+  .nx-hr-workspace {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+  }
+  .nx-segmented-shell--flat {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid var(--noorix-border);
+    background-color: var(--noorix-bg-muted);
+  }
+  .nx-hr-workspace__body {
+    min-width: 0;
+    width: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+  @media (min-width: 768px) {
+    .nx-segmented-shell--flat {
+      padding: 10px 16px 12px;
+    }
+    .nx-hr-workspace__body {
+      padding: 16px;
+    }
+  }
+  /* جدول HR داخل المساحة — نفس عرض الشريط (إزالة هامش مزدوج من الإطار) */
+  .nx-hr-workspace__body .noorix-table-frame {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
   .nx-tab-content {
     padding: clamp(12px, 3vw, 24px);
   }

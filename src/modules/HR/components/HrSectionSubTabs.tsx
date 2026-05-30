@@ -11,6 +11,7 @@ import {
   type HrSectionId,
   type HrSubTabId,
 } from '../hrScreenNavigation';
+import { HR_WORKSPACE_BODY_CLASS } from '../hrWorkspaceLayout';
 import StaffListScreen from '../StaffListScreen';
 import PayrollTab from '../tabs/PayrollTab';
 import LeaveTab from '../tabs/LeaveTab';
@@ -94,9 +95,11 @@ export function HrSectionSubTabs({ section, tab, onTabChange }: HrSectionSubTabs
       value={activeTab}
       onChange={(id) => onTabChange(id as HrSubTabId)}
       variant="segmented"
+      segmentedFlat
       barClassName="nx-segmented-tab-bar--fill"
+      shellClassName="w-full min-w-0"
       animateContent={false}
-      contentClassName={cn('min-h-[200px] pt-3')}
+      contentClassName={HR_WORKSPACE_BODY_CLASS}
     >
       {section === 'people' && activeTab === 'list' && <StaffListScreen embedded />}
       {section === 'people' && activeTab === 'leave' && <LeaveTab embedded />}

@@ -14,6 +14,7 @@ import HRSummaryCard from './components/HRSummaryCard';
 import { HrSectionSubTabs } from './components/HrSectionSubTabs';
 import { useHrScreenNavigation } from './hooks/useHrScreenNavigation';
 import { HR_SECTION_IDS, type HrSectionId } from './hrScreenNavigation';
+import { HR_WORKSPACE_CONTENT_CLASS } from './hrWorkspaceLayout';
 import { ScreenShell, ScreenTabs } from '../../ui';
 
 const MAIN_SECTIONS = [
@@ -107,7 +108,7 @@ export default function HRMainScreen() {
         items={mainTabItems}
         value={activeSection}
         onChange={(id) => setSection(id as HrSectionId)}
-        contentClassName="nx-tab-content min-h-[200px]"
+        contentClassName={HR_WORKSPACE_CONTENT_CLASS}
         animateContent={false}
       >
         <HrSectionSubTabs section={activeSection} tab={tab} onTabChange={setTab} />

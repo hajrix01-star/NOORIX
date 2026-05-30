@@ -39,6 +39,7 @@ import { totalSalary } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
+import { HR_EMBEDDED_SHELL_CLASS } from './hrWorkspaceLayout';
 
 const PAGE_SIZE = 50;
 
@@ -438,11 +439,7 @@ export default function StaffListScreen({ embedded }: any) {
   return (
     <ScreenShell
       embedded={!!embedded}
-      className={cn(
-        embedded &&
-          /* Match other HR tabs top padding when nested under ScreenShell */
-          'pt-4',
-      )}
+      className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}
     >
       {!embedded && (
         <div>
