@@ -442,8 +442,8 @@ export default function StaffListScreen({ embedded }: any) {
     return (
       <div
         className={cn(
-          'flex min-w-0 items-start justify-between gap-3',
-          embedded && 'py-3',
+          'nx-hr-staff-row__inner flex min-w-0 items-start justify-between gap-3',
+          embedded && 'px-4 py-3',
         )}
         onClick={() => navigate(`/hr/employee/${row.id}`)}
         style={{ cursor: 'pointer' }}
