@@ -169,8 +169,8 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
           </h3>
           <p className="text-[12px] text-noorix-muted m-0 mt-1">
             {isAr
-              ? 'أنشئ أدواراً مخصصة — محرّر بشاشة كاملة مع قوالب جاهزة وتجميع المحادثة'
-              : 'Create custom roles — full-screen editor with presets and grouped chat permissions'}
+              ? 'اضغط قالباً جاهزاً أو افتح قسماً وعدّل — ثم احفظ'
+              : 'Pick a preset or expand a section, then save'}
           </p>
         </div>
         <Button

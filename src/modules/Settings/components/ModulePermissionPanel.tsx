@@ -23,6 +23,8 @@ type ModulePermissionPanelProps = {
   onChange: (next: string[]) => void;
   disabled?: boolean;
   isAr: boolean;
+  /** داخل accordion — بدون شريط ملخص القسم (موجود في رأس الـ accordion) */
+  embedded?: boolean;
 };
 
 function PermRow({
@@ -105,6 +107,7 @@ export default function ModulePermissionPanel({
   onChange,
   disabled,
   isAr,
+  embedded = false,
 }: ModulePermissionPanelProps) {
   const isChecked = (perm: string) => permissions.includes(perm);
 
@@ -160,19 +163,21 @@ export default function ModulePermissionPanel({
 
   if (mod.key === 'chat') {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="m-0 text-[13px] text-noorix-muted">
-            {isAr
-              ? `${moduleSelected} / ${moduleCount} صلاحية في المحادثة`
-              : `${moduleSelected} / ${moduleCount} chat permissions`}
-          </p>
-          <Button size="sm" disabled={disabled} onClick={() => toggleModuleAll(!moduleFull)}>
-            {moduleFull
-              ? (isAr ? 'إلغاء كل المحادثة' : 'Clear all chat')
-              : (isAr ? 'تحديد كل المحادثة' : 'Select all chat')}
-          </Button>
-        </div>
+      <div className="flex flex-col gap-3">
+        {!embedded && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="m-0 text-[13px] text-noorix-muted">
+              {isAr
+                ? `${moduleSelected} / ${moduleCount} صلاحية في المحادثة`
+                : `${moduleSelected} / ${moduleCount} chat permissions`}
+            </p>
+            <Button size="sm" disabled={disabled} onClick={() => toggleModuleAll(!moduleFull)}>
+              {moduleFull
+                ? (isAr ? 'إلغاء كل المحادثة' : 'Clear all chat')
+                : (isAr ? 'تحديد كل المحادثة' : 'Select all chat')}
+            </Button>
+          </div>
+        )}
 
         {CHAT_PERMISSION_GROUPS.map((group) => {
           const keys = resolveGroupLevelKeys(mod, group);
@@ -228,21 +233,23 @@ export default function ModulePermissionPanel({
   const levelKeys = Object.keys(mod.permissions);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="m-0 text-[13px] text-noorix-muted">
-          {isAr
-            ? `${moduleSelected} / ${moduleCount} صلاحية`
-            : `${moduleSelected} / ${moduleCount} permissions`}
-        </p>
-        <Button size="sm" disabled={disabled} onClick={() => toggleModuleAll(!moduleFull)}>
-          {moduleFull
-            ? (isAr ? 'إلغاء القسم' : 'Clear module')
-            : (isAr ? 'تحديد القسم' : 'Select module')}
-        </Button>
-      </div>
+    <div className="flex flex-col gap-3">
+      {!embedded && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="m-0 text-[13px] text-noorix-muted">
+            {isAr
+              ? `${moduleSelected} / ${moduleCount} صلاحية`
+              : `${moduleSelected} / ${moduleCount} permissions`}
+          </p>
+          <Button size="sm" disabled={disabled} onClick={() => toggleModuleAll(!moduleFull)}>
+            {moduleFull
+              ? (isAr ? 'إلغاء القسم' : 'Clear module')
+              : (isAr ? 'تحديد القسم' : 'Select module')}
+          </Button>
+        </div>
+      )}
 
-      <div className="noorix-surface-card p-4">
+      <div className={embedded ? '' : 'noorix-surface-card p-4'}>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
           {levelKeys.map((k) => renderPermKey(k))}
         </div>
