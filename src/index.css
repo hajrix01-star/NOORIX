@@ -4589,6 +4589,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
   .nx-hr-subtab-inline {
     border-radius: 0;
+    border-bottom: 1px solid var(--noorix-border);
   }
   .nx-hr-workspace__body {
     position: relative;
@@ -4597,11 +4598,17 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     width: 100%;
     box-sizing: border-box;
   }
-  /* جدول HR داخل المساحة — نفس عرض الشريط (إزالة هامش مزدوج من الإطار) */
-  .nx-hr-workspace__body .noorix-table-frame {
+  /* جدول HR داخل المساحة — طبقة واحدة مع الكرت (لا noorix-table-frame مزدوج) */
+  .nx-hr-workspace__body .noorix-table-frame,
+  .nx-hr-workspace__body .nx-hr-workspace-table {
     width: 100%;
     max-width: 100%;
     margin-inline: 0;
+    padding: 0 !important;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent;
   }
 
   .nx-tab-content {

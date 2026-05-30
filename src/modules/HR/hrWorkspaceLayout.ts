@@ -21,10 +21,13 @@ export const HR_SUBTAB_SHELL_CLASS = cn(
   'nx-hr-subtab-shell w-full border-b border-noorix-border',
 );
 
-/** داخل جسم المحتوى — شريط connected مدمج */
+/** داخل جسم المحتوى — شريط connected مسطح (بدون إطار كرت) */
 export const HR_SUBTAB_INLINE_CLASS = cn(
-  'nx-hr-subtab-inline w-full min-w-0 overflow-hidden border border-noorix-border',
+  'nx-hr-subtab-inline w-full min-w-0 overflow-hidden',
 );
+
+/** جدول داخل مساحة HR — بدون إطار/ظل مزدوج (الكرت الخارجي يكفي) */
+export const HR_WORKSPACE_TABLE_CLASS = 'nx-hr-workspace-table';
 
 /** @deprecated استخدم HR_SUBTAB_SHELL_CLASS */
 export const HR_SEGMENTED_SHELL_FLAT_CLASS = 'nx-segmented-shell--flat';

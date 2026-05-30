@@ -448,10 +448,20 @@ export default function StaffListScreen({ embedded }: any) {
       setEditingEmployee, setAdvanceEmployee, setTerminatingEmployee, setTerminationForm]);
 
   return (
-    <ScreenShell
-      embedded={!!embedded}
-      className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}
-    >
+    embedded ? (
+      <div className={HR_EMBEDDED_SHELL_CLASS}>
+        {renderStaffContent()}
+      </div>
+    ) : (
+      <ScreenShell>
+        {renderStaffContent()}
+      </ScreenShell>
+    )
+  );
+
+  function renderStaffContent() {
+    return (
+      <>
       {!embedded && (
         <div>
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
@@ -531,7 +541,7 @@ export default function StaffListScreen({ embedded }: any) {
             compact
             showRowNumbers
             tableMinWidth={960}
-            innerPadding={8}
+            innerPadding={embedded ? 0 : 8}
             columns={columns}
             data={tableData}
             total={listTotal}
@@ -679,6 +689,7 @@ export default function StaffListScreen({ embedded }: any) {
           />
         </div>
       </Modal>
-    </ScreenShell>
-  );
+    </>
+    );
+  }
 }
