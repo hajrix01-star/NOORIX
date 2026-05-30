@@ -53,14 +53,14 @@ export class VatPlanningController {
 
   @Put()
   @SkipCompanyCheck()
-  @RequireAnyPermission('HAJRI_TAX_WRITE', 'REPORTS_READ')
+  @RequireAnyPermission('HAJRI_TAX_WRITE')
   async upsert(@Req() req: { user: JwtUser }, @Body() body: UpsertVatPlanningDto) {
     return this.service.upsert(req.user, body);
   }
 
   @Delete()
   @SkipCompanyCheck()
-  @RequireAnyPermission('HAJRI_TAX_WRITE', 'REPORTS_READ')
+  @RequireAnyPermission('HAJRI_TAX_WRITE')
   async remove(
     @CompanyId() companyId: string,
     @Query('year') yearStr: string,

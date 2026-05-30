@@ -201,6 +201,29 @@ export const REPORTS_COST_APPS_ACCESS = [PERMISSIONS.VIEW_REPORTS_COST_APPS, PER
 export const REPORTS_TAX_ACCESS = [PERMISSIONS.VIEW_REPORTS_TAX, PERMISSIONS.VIEW_REPORTS, PERMISSIONS.REPORTS_READ];
 export const REPORTS_BANK_ACCESS = [PERMISSIONS.VIEW_REPORTS_BANK, PERMISSIONS.VIEW_REPORTS, PERMISSIONS.REPORTS_READ];
 
+/** دخول قسم الطلبات — مدير أو موظف Staff Orders */
+export const ORDERS_APP_ACCESS = [
+  PERMISSIONS.VIEW_ORDERS,
+  PERMISSIONS.STAFF_ORDERS_SUBMIT,
+  PERMISSIONS.STAFF_ORDERS_DIGEST,
+];
+
+/** تبويبات التقارير — ترتيب redirect الافتراضي */
+export const REPORT_TAB_SEQUENCE: Array<{ path: string; required: readonly string[] }> = [
+  { path: '/reports/general', required: REPORTS_GENERAL_ACCESS },
+  { path: '/reports/cost-apps', required: REPORTS_COST_APPS_ACCESS },
+  { path: '/reports/tax', required: REPORTS_TAX_ACCESS },
+  { path: '/reports/bank-statement', required: REPORTS_BANK_ACCESS },
+];
+
+export function getFirstAccessibleReportPath(userRole: any, userPermissions: any): string {
+  if (isSuperAdmin(userRole)) return '/reports/general';
+  for (const { path, required } of REPORT_TAB_SEQUENCE) {
+    if (hasAnyOfPermissions(userRole, required, userPermissions)) return path;
+  }
+  return '/403';
+}
+
 /** HAJRI TAX — مع fallback لتقارير قديمة */
 export const HAJRI_TAX_APP_ACCESS = [PERMISSIONS.VIEW_HAJRI_TAX, PERMISSIONS.HAJRI_TAX_READ, PERMISSIONS.VIEW_REPORTS, PERMISSIONS.REPORTS_READ];
 
@@ -230,7 +253,7 @@ export const ROUTE_PERMISSION = {
   '/treasury':      PERMISSIONS.VIEW_VAULTS,
   '/expenses':      PERMISSIONS.VIEW_EXPENSES,
   '/assets':        ASSETS_APP_ACCESS,
-  '/orders':        PERMISSIONS.VIEW_ORDERS,
+  '/orders':        ORDERS_APP_ACCESS,
   '/hr':            HR_APP_ACCESS,
   '/reports':       REPORTS_APP_ACCESS,
   '/reports/general': REPORTS_GENERAL_ACCESS,
@@ -298,7 +321,7 @@ export function normalizeModuleViewAccess(
 /** أول مسار يملك المستخدم صلاحية دخوله — بعد تسجيل الدخول أو زر «عودة» من 403/404 */
 const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[] }> = [
   { path: '/sales', required: PERMISSIONS.VIEW_SALES },
-  { path: '/orders', required: PERMISSIONS.VIEW_ORDERS },
+  { path: '/orders', required: ORDERS_APP_ACCESS },
   { path: '/settings', required: [...SETTINGS_APP_ACCESS] },
   { path: '/hr', required: [...HR_APP_ACCESS] },
   { path: '/', required: PERMISSIONS.VIEW_DASHBOARD },
