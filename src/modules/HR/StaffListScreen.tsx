@@ -28,7 +28,7 @@ import {
   getEmployeesBulk,
   throwIfApiFailed,
 } from '../../services/api';
-import { Badge, Button, Modal, Input, ScreenShell, cn, FmtNum, KebabMenu, SmartTable } from '../../ui';
+import { Badge, Button, Input, Modal, ScreenShell, cn, FmtNum, KebabMenu, SmartTable } from '../../ui';
 import { HRActionsCell } from './components/HRActionsCell';
 import { StaffFormModal } from './components/StaffFormModal';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
@@ -39,7 +39,7 @@ import { totalSalary } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
-import { HR_EMBEDDED_SHELL_CLASS } from './hrWorkspaceLayout';
+import { HR_EMBEDDED_SHELL_CLASS, HR_WORKSPACE_TABLE_CLASS } from './hrWorkspaceLayout';
 import { HrTabToolbar } from './components/HrTabToolbar';
 import { HrSegmentedControl } from './components/HrSegmentedControl';
 
@@ -397,29 +397,65 @@ export default function StaffListScreen({ embedded }: any) {
     }
   }
 
-  const renderCompactRow = useCallback((row: any) => {
+  const renderStaffRowMenuItems = useCallback((row: any) => [
+    {
+      key: 'profile',
+      label: t('viewProfile'),
+      onClick: () => navigate(`/hr/employee/${row.id}`),
+    },
+    {
+      key: 'edit',
+      label: t('edit'),
+      style: { color: 'var(--noorix-accent-green)' },
+      onClick: () => setEditingEmployee(row),
+    },
+    ...(row.status === 'active' ? [{
+      key: 'advance',
+      label: t('advance'),
+      style: { color: 'var(--noorix-accent-blue)' },
+      onClick: () => setAdvanceEmployee(row),
+    }] : []),
+    ...(row.status !== 'terminated' && row.status !== 'archived' ? [{
+      key: 'terminate',
+      label: t('terminate'),
+      style: { color: 'var(--noorix-accent-amber)' },
+      onClick: () => {
+        setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
+        setTerminatingEmployee(row);
+      },
+    }] : []),
+    ...(canDeleteEmployee ? [{
+      key: 'delete',
+      label: t('permanentDelete'),
+      style: { color: 'var(--noorix-accent-red)' },
+      onClick: () => handlePermanentDelete(row),
+    }] : []),
+  ], [t, navigate, canDeleteEmployee, handlePermanentDelete,
+      setEditingEmployee, setAdvanceEmployee, setTerminatingEmployee, setTerminationForm]);
+
+  const renderStaffMobileRow = useCallback((row: any) => {
     const displayName = employeeDisplayName(row, lang);
     return (
       <div
-        className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 items-start min-w-0"
+        className="flex items-start justify-between gap-3 min-w-0"
         onClick={() => navigate(`/hr/employee/${row.id}`)}
         style={{ cursor: 'pointer' }}
       >
-        {/* الهوية — عمود البداية (يمين في RTL): الاسم + تاريخ التوظيف */}
-        <span
-          className="col-start-1 row-start-1 font-bold text-[13px] text-noorix-blue truncate min-w-0"
-          title={displayName}
-        >
-          {displayName}
-        </span>
-        <span className="col-start-1 row-start-2 nx-cr__meta min-w-0">
-          {formatSaudiDate(row.joinDate)}
-        </span>
-        {/* التفاصيل — عمود النهاية (يسار في RTL) */}
-        <div className="col-start-2 row-start-1 row-span-2 flex flex-col items-end gap-1 shrink-0 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-full">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span
+            className="font-bold text-[14px] text-noorix-blue truncate"
+            title={displayName}
+          >
+            {displayName}
+          </span>
+          <span className="text-[11px] text-noorix-muted">
+            {formatSaudiDate(row.joinDate)}
+          </span>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1 min-w-0">
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
             {row.jobTitle && (
-              <span className="nx-cr__sub truncate max-w-[9.5rem]" title={row.jobTitle}>
+              <span className="max-w-[9.5rem] truncate text-[12px] text-noorix-muted" title={row.jobTitle}>
                 {row.jobTitle}
               </span>
             )}
@@ -432,48 +468,18 @@ export default function StaffListScreen({ embedded }: any) {
             <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
               <KebabMenu
                 ariaLabel={t('actions')}
-                items={[
-                  {
-                    key: 'profile',
-                    label: t('viewProfile'),
-                    onClick: () => navigate(`/hr/employee/${row.id}`),
-                  },
-                  {
-                    key: 'edit',
-                    label: t('edit'),
-                    style: { color: 'var(--noorix-accent-green)' },
-                    onClick: () => setEditingEmployee(row),
-                  },
-                  ...(row.status === 'active' ? [{
-                    key: 'advance',
-                    label: t('advance'),
-                    style: { color: 'var(--noorix-accent-blue)' },
-                    onClick: () => setAdvanceEmployee(row),
-                  }] : []),
-                  ...(row.status !== 'terminated' && row.status !== 'archived' ? [{
-                    key: 'terminate',
-                    label: t('terminate'),
-                    style: { color: 'var(--noorix-accent-amber)' },
-                    onClick: () => {
-                      setTerminationForm({ reason: '', clause: '', date: getSaudiToday() });
-                      setTerminatingEmployee(row);
-                    },
-                  }] : []),
-                  ...(canDeleteEmployee ? [{
-                    key: 'delete',
-                    label: t('permanentDelete'),
-                    style: { color: 'var(--noorix-accent-red)' },
-                    onClick: () => handlePermanentDelete(row),
-                  }] : []),
-                ]}
+                items={renderStaffRowMenuItems(row)}
               />
             </div>
           </div>
         </div>
       </div>
     );
-  }, [STATUS_MAP, t, lang, navigate, canDeleteEmployee, handlePermanentDelete,
-      setEditingEmployee, setAdvanceEmployee, setTerminatingEmployee, setTerminationForm]);
+  }, [STATUS_MAP, t, lang, navigate, renderStaffRowMenuItems]);
+
+  const renderCompactRow = useCallback((row: any) => renderStaffMobileRow(row), [renderStaffMobileRow]);
+
+  const renderMobileCard = useCallback((row: any) => renderStaffMobileRow(row), [renderStaffMobileRow]);
 
   return (
     embedded ? (
@@ -565,11 +571,24 @@ export default function StaffListScreen({ embedded }: any) {
             }}
           />
 
+          {embedded ? (
+            <Input
+              type="search"
+              value={searchInput}
+              onChange={(e: any) => setSearchInput(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              size="sm"
+              className="w-full min-w-0"
+              aria-label={t('searchPlaceholder')}
+            />
+          ) : null}
+
           <SmartTable
             compact
             showRowNumbers
             tableMinWidth={960}
             innerPadding={embedded ? 0 : 8}
+            frameClassName={embedded ? cn(HR_WORKSPACE_TABLE_CLASS, 'nx-hr-table--flat-list') : undefined}
             columns={columns}
             data={tableData}
             total={listTotal}
@@ -579,16 +598,17 @@ export default function StaffListScreen({ embedded }: any) {
             isLoading={isLoading}
             isError={!!employeesError}
             errorMessage={employeesError?.message || t('employeesLoadFailed')}
-            title={t('employeesList')}
-            badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
+            title={embedded ? undefined : t('employeesList')}
+            badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
             searchValue={searchInput}
             onSearchChange={setSearchInput}
-            showSearchInHeader
+            showSearchInHeader={!embedded}
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={toggleSort}
             emptyMessage={t('noEmployees')}
-            renderCompactRow={renderCompactRow}
+            renderCompactRow={embedded ? undefined : renderCompactRow}
+            renderMobileCard={embedded ? renderMobileCard : undefined}
             stripeMobileCards
           />
         </>

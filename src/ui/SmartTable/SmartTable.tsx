@@ -112,6 +112,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     stickyActionColumn = true,
     /** معرف فريد للجدول — لما يُمرَّر يُفعّل السحب لتغيير عرض الأعمدة + الحفظ في localStorage */
     tableId,
+    frameClassName,
   } = props;
   const { t } = useTranslation();
   const dir = useUiDir();
@@ -258,6 +259,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
         'noorix-table-frame min-w-0 max-w-full',
         (renderCompactRow || renderMobileCard) && 'max-md:overflow-x-hidden',
         showCards && 'noorix-table-frame--mobile-list',
+        frameClassName,
       )}
       style={{ padding: innerPadding }}
     >
