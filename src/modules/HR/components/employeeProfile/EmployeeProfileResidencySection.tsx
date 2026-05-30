@@ -1,11 +1,12 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { Badge, SmartTable } from '../../../../ui';
+import { HR_SERVICE_CATEGORY_LABEL_KEYS } from '../../constants/employeeHrServiceCategories';
 
 export function EmployeeProfileResidencySection({ t, residencies, residencyProfileStatusMap }: any) {
   return (
     <div className="noorix-surface-card overflow-hidden">
       <div className="nx-section-header">
-        <span className="nx-section-header__title">{t('hrTabResidency')}</span>
+        <span className="nx-section-header__title">{t('hrEmployeeServicesProfile')}</span>
       </div>
       <SmartTable
         compact
@@ -14,10 +15,22 @@ export function EmployeeProfileResidencySection({ t, residencies, residencyProfi
         innerPadding={8}
         columns={[
           {
+            key: 'serviceCategory',
+            label: t('hrServiceCategory'),
+            width: '22%',
+            render: (_v: any, row: any) => (
+              <Badge
+                color="blue"
+                size="sm"
+                label={t(HR_SERVICE_CATEGORY_LABEL_KEYS[row.serviceCategory || 'iqama_renewal'] || 'hrServiceIqamaRenewal')}
+              />
+            ),
+          },
+          {
             key: 'iqamaNumber',
             label: t('iqamaNumber'),
-            width: '25%',
-            render: (v: any) => <span className="nx-cell-num">{v || '—'}</span>,
+            width: '20%',
+            render: (v: any, row: any) => <span className="nx-cell-num">{v || row.referenceLabel || '—'}</span>,
           },
           {
             key: 'issueDate',

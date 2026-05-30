@@ -37,8 +37,9 @@ import { UpdatePayrollRunDto, UpdatePayrollRunStatusDto } from './dto/update-pay
 import { CreateLeaveDto, UpdateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import { ReturnFromLeaveDto } from './dto/return-from-leave.dto';
 import { IssueLeaveSalarySettlementDto } from './dto/issue-leave-salary-settlement.dto';
-import { CreateResidencyDto } from './dto/create-residency.dto';
+import { CreateResidencyWithInvoiceDto } from './dto/create-residency-with-invoice.dto';
 import { UpdateResidencyDto } from './dto/update-residency.dto';
+import { IssueResidencyInvoiceDto } from './dto/issue-residency-invoice.dto';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { CreateMovementDto } from './dto/create-movement.dto';
 import { CreateAllowanceDto } from './dto/create-allowance.dto';
@@ -259,17 +260,29 @@ export class HRController {
   findResidencies(
     @CompanyId() companyId: string,
     @Query('employeeId') employeeId?: string,
+    @Query('serviceCategory') serviceCategory?: string,
   ) {
-    return this.hrService.findResidencies(companyId, employeeId);
+    return this.hrService.findResidencies(companyId, employeeId, serviceCategory);
   }
 
   @Post('residencies')
   @RequirePermission('HR_WRITE')
   createResidency(
-    @Body() dto: CreateResidencyDto,
+    @Body() dto: CreateResidencyWithInvoiceDto,
     @CurrentUser() user: JwtUser,
   ) {
-    return this.hrService.createResidency(dto, user.sub);
+    const { issueInvoice, ...createDto } = dto;
+    return this.hrService.createResidency(createDto, user.sub, issueInvoice);
+  }
+
+  @Post('residencies/:id/issue-invoice')
+  @RequirePermission('HR_WRITE')
+  issueResidencyInvoice(
+    @Param('id') id: string,
+    @Body() dto: IssueResidencyInvoiceDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.hrService.issueResidencyInvoice(id, dto, user.sub);
   }
 
   @Patch('residencies/:id')

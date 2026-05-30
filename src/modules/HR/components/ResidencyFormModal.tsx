@@ -1,19 +1,26 @@
 ﻿/**
- * ResidencyFormModal — إضافة أو تعديل إقامة مع خيار إصدار فاتورة
+ * ResidencyFormModal — إضافة/تعديل خدمة موظف (إقامة، تأشيرة، تذكرة، تأمين، …)
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useVaults } from '../../../hooks/useVaults';
-import { getEmployees } from '../../../services/api';
+import { getEmployees, createResidency, updateResidency } from '../../../services/api';
 import { employeeKeys } from '../../../services/queryKeys';
-import { createResidency, updateResidency, createInvoice } from '../../../services/api';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { assertApiOk } from '../../../utils/apiResponse';
+import {
+  HR_SERVICE_CATEGORIES,
+  HR_SERVICE_CATEGORY_LABEL_KEYS,
+  requiresIqamaNumber,
+  requiresExpiryDate,
+  showsReferenceLabel,
+  referenceLabelKey,
+} from '../constants/employeeHrServiceCategories';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -24,24 +31,33 @@ const STATUS_OPTIONS = [
 type ResidencyFormModalProps = {
   residency?: any;
   companyId: any;
+  defaultCategory?: string;
   onSuccess?: () => void;
   onClose?: () => void;
 };
 
-export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }: ResidencyFormModalProps) {
+export function ResidencyFormModal({
+  residency,
+  companyId,
+  defaultCategory = 'iqama_renewal',
+  onSuccess,
+  onClose,
+}: ResidencyFormModalProps) {
   const { t, lang } = useTranslation();
   const { activeCompanyId } = useApp();
   const cid = companyId || activeCompanyId || '';
   const isEdit = !!residency;
 
   const [employeeId, setEmployeeId] = useState(residency?.employeeId || '');
+  const [serviceCategory, setServiceCategory] = useState(residency?.serviceCategory || defaultCategory);
   const [iqamaNumber, setIqamaNumber] = useState(residency?.iqamaNumber || '');
+  const [referenceLabel, setReferenceLabel] = useState(residency?.referenceLabel || '');
   const [issueDate, setIssueDate] = useState(toYmd(residency?.issueDate));
   const [expiryDate, setExpiryDate] = useState(toYmd(residency?.expiryDate));
+  const [transactionDate, setTransactionDate] = useState(toYmd(residency?.transactionDate) || getSaudiToday());
   const [status, setStatus] = useState(residency?.status || 'active');
   const [notes, setNotes] = useState(residency?.notes || '');
-  const [residencyServiceType, setResidencyServiceType] = useState('renewal');
-  const [createInvoiceForResidency, setCreateInvoiceForResidency] = useState(false);
+  const [createInvoiceForService, setCreateInvoiceForService] = useState(false);
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [vaultId, setVaultId] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -62,61 +78,76 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
 
   const activeEmployees = (employees || []).filter((e: any) => e.status !== 'terminated' && e.status !== 'archived');
 
+  const showIqama = requiresIqamaNumber(serviceCategory);
+  const showExpiry = requiresExpiryDate(serviceCategory);
+  const showRef = showsReferenceLabel(serviceCategory);
+  const refLabelKey = referenceLabelKey(serviceCategory);
+
+  const selectedEmployee = useMemo(
+    () => activeEmployees.find((e: any) => e.id === employeeId),
+    [activeEmployees, employeeId],
+  );
+
+  const onEmployeeChange = (id: string) => {
+    setEmployeeId(id);
+    const emp = activeEmployees.find((e: any) => e.id === id);
+    if (emp?.iqamaNumber && showIqama && !iqamaNumber) {
+      setIqamaNumber(emp.iqamaNumber);
+    }
+  };
+
+  const buildPayload = () => {
+    const body: Record<string, unknown> = {
+      companyId: cid,
+      employeeId,
+      serviceCategory,
+      notes: notes || undefined,
+      transactionDate: transactionDate ? `${transactionDate}T00:00:00.000Z` : undefined,
+    };
+    if (showIqama) body.iqamaNumber = iqamaNumber.trim();
+    if (showRef && referenceLabel.trim()) body.referenceLabel = referenceLabel.trim();
+    if (issueDate) body.issueDate = `${issueDate}T00:00:00.000Z`;
+    if (showExpiry && expiryDate) body.expiryDate = `${expiryDate}T00:00:00.000Z`;
+    if (isEdit) body.status = status;
+    return body;
+  };
+
   const handleSubmit = async (e: any) => {
     e?.preventDefault?.();
     setError('');
-    if (!employeeId || !iqamaNumber || !expiryDate) {
-      setError(t('requiredFields') || 'الحقول المطلوبة ناقصة');
+    if (!employeeId) {
+      setError(t('requiredFields'));
       return;
+    }
+    if (showIqama && !/^\d{10}$/.test(iqamaNumber.trim())) {
+      setError(t('iqamaNumberInvalid') || 'رقم الإقامة 10 أرقام');
+      return;
+    }
+    if (showExpiry && !expiryDate) {
+      setError(t('requiredFields'));
+      return;
+    }
+    if (!isEdit && createInvoiceForService) {
+      if (!vaultId || !invoiceAmount || parseFloat(invoiceAmount) <= 0) {
+        setError(t('requiredFields'));
+        return;
+      }
     }
     setSubmitting(true);
     try {
       if (isEdit) {
-        const res = await updateResidency(residency.id, {
-          iqamaNumber,
-          issueDate: issueDate || undefined,
-          expiryDate: `${expiryDate}T00:00:00.000Z`,
-          status,
-          notes: notes || undefined,
-        }, cid);
+        const res = await updateResidency(residency.id, buildPayload(), cid);
         assertApiOk(res, t('saveFailed'));
       } else {
-        const res = await createResidency({
-          companyId: cid,
-          employeeId,
-          iqamaNumber,
-          issueDate: issueDate ? `${issueDate}T00:00:00.000Z` : undefined,
-          expiryDate: `${expiryDate}T00:00:00.000Z`,
-          status,
-          notes: notes || undefined,
-        });
-        assertApiOk(res, t('saveFailed'));
-
-        if (createInvoiceForResidency && invoiceAmount && parseFloat(invoiceAmount) > 0) {
-          const vId = vaultId;
-          if (!vId) {
-            setError(t('noVaults') || 'يجب إنشاء خزنة أولاً');
-            setSubmitting(false);
-            return;
-          }
-          const emp = activeEmployees.find((e: any) => e.id === employeeId);
-          const empName = emp ? employeeDisplayName(emp, 'ar', '') : '';
-          const serviceLabel = residencyServiceType === 'renewal' ? (t('opResidencyRenewal') || 'تجديد إقامة') : (t('residencyNew') || 'إقامة جديدة');
-          const notes = `${serviceLabel} موظف ${empName}`.trim() || `إقامة - ${iqamaNumber}`;
-          const amt = parseFloat(invoiceAmount);
-          const invRes = await createInvoice({
-            companyId: cid,
-            employeeId,
-            kind: 'hr_expense',
-            totalAmount: amt,
-            netAmount: amt,
-            taxAmount: 0,
-            transactionDate: getSaudiToday(),
-            vaultId: vId,
-            notes,
-          });
-          assertApiOk(invRes, t('saveFailed'));
+        const payload = buildPayload() as Record<string, unknown>;
+        if (createInvoiceForService && invoiceAmount && parseFloat(invoiceAmount) > 0) {
+          payload.issueInvoice = {
+            amount: parseFloat(invoiceAmount),
+            vaultId,
+          };
         }
+        const res = await createResidency(payload);
+        assertApiOk(res, t('saveFailed'));
       }
       onSuccess?.();
       onClose?.();
@@ -127,11 +158,13 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
     }
   };
 
+  const title = isEdit ? t('editHrService') : t('addHrService');
+
   return (
     <AdaptiveSheet
-      open={true}
+      open
       onClose={onClose}
-      title={isEdit ? t('editResidency') : t('addResidency')}
+      title={title}
       size="md"
       side="start"
       className="residency-form-drawer"
@@ -144,12 +177,24 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
         </>
       }
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-0">
+        <Input
+          type="select"
+          label={t('hrServiceCategory')}
+          value={serviceCategory}
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setServiceCategory(e.target.value)}
+          disabled={isEdit}
+        >
+          {HR_SERVICE_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>{t(HR_SERVICE_CATEGORY_LABEL_KEYS[cat])}</option>
+          ))}
+        </Input>
+
         <Input
           type="select"
           label={t('selectEmployee')}
           value={employeeId}
-          onChange={(e: any) => setEmployeeId(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onEmployeeChange(e.target.value)}
           required
           disabled={isEdit}
         >
@@ -159,75 +204,92 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
           ))}
         </Input>
 
-        <Input
-          label={t('iqamaNumber')}
-          value={iqamaNumber}
-          onChange={(e: any) => setIqamaNumber(e.target.value)}
-          required
-          placeholder="1234567890"
-        />
+        {showIqama && (
+          <Input
+            label={t('iqamaNumber')}
+            value={iqamaNumber}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setIqamaNumber(e.target.value)}
+            required
+            placeholder="1234567890"
+          />
+        )}
 
-        <div className="grid grid-cols-2 gap-3">
+        {showRef && (
+          <Input
+            label={t(refLabelKey)}
+            value={referenceLabel}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setReferenceLabel(e.target.value)}
+            placeholder={t(refLabelKey)}
+          />
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            type="date"
+            label={t('hrServiceTransactionDate')}
+            value={transactionDate}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setTransactionDate(e.target.value)}
+          />
+          {showExpiry ? (
+            <Input
+              type="date"
+              label={t('expiryDate')}
+              value={expiryDate}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setExpiryDate(e.target.value)}
+              required
+            />
+          ) : (
+            <Input
+              type="date"
+              label={t('startDate')}
+              value={issueDate}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setIssueDate(e.target.value)}
+            />
+          )}
+        </div>
+
+        {showExpiry && (
           <Input
             type="date"
             label={t('startDate')}
             value={issueDate}
-            onChange={(e: any) => setIssueDate(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setIssueDate(e.target.value)}
           />
-          <Input
-            type="date"
-            label={t('expiryDate')}
-            value={expiryDate}
-            onChange={(e: any) => setExpiryDate(e.target.value)}
-            required
-          />
-        </div>
+        )}
 
-        {!isEdit && (
+        {!isEdit && !residency?.invoiceId && (
           <>
             <label className="nx-checkbox mb-3 text-[13px]">
               <input
                 type="checkbox"
-                checked={createInvoiceForResidency}
-                onChange={(e: any) => setCreateInvoiceForResidency(e.target.checked)}
+                checked={createInvoiceForService}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCreateInvoiceForService(e.target.checked)}
               />
-              {t('residencyIssueInvoice') || 'إصدار فاتورة إقامة'}
+              {t('hrServiceIssueInvoice')}
             </label>
-            {createInvoiceForResidency && (
-              <>
+            {createInvoiceForService && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  label={t('advanceAmount')}
+                  value={invoiceAmount}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setInvoiceAmount(e.target.value)}
+                />
                 <Input
                   type="select"
-                  label={t('residencyServiceType') || 'نوع الخدمة'}
-                  value={residencyServiceType}
-                  onChange={(e: any) => setResidencyServiceType(e.target.value)}
+                  label={t('selectVault')}
+                  value={vaultId}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setVaultId(e.target.value)}
+                  required
                 >
-                  <option value="renewal">{t('opResidencyRenewal') || 'تجديد إقامة'}</option>
-                  <option value="new">{t('residencyNew') || 'إقامة جديدة'}</option>
+                  <option value="">— {t('selectVault')} —</option>
+                  {vaults.map((v: any) => (
+                    <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
+                  ))}
                 </Input>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    label={t('advanceAmount')}
-                    value={invoiceAmount}
-                    onChange={(e: any) => setInvoiceAmount(e.target.value)}
-                    placeholder="0"
-                  />
-                  <Input
-                    type="select"
-                    label={t('selectVault')}
-                    value={vaultId}
-                    onChange={(e: any) => setVaultId(e.target.value)}
-                    required
-                  >
-                    <option value="">— {t('selectVault')} —</option>
-                    {vaults.map((v: any) => (
-                      <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
-                    ))}
-                  </Input>
-                </div>
-              </>
+              </div>
             )}
           </>
         )}
@@ -237,7 +299,7 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
             type="select"
             label={t('status')}
             value={status}
-            onChange={(e: any) => setStatus(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setStatus(e.target.value)}
           >
             {STATUS_OPTIONS.map((o: any) => (
               <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
@@ -245,15 +307,22 @@ export function ResidencyFormModal({ residency, companyId, onSuccess, onClose }:
           </Input>
         )}
 
+        {residency?.invoice?.invoiceNumber && (
+          <div className="mb-3 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 text-[13px]">
+            <span className="text-noorix-muted">{t('invoiceNumber')}: </span>
+            <span className="font-semibold ltr">{residency.invoice.invoiceNumber}</span>
+          </div>
+        )}
+
         <Input
           label={t('notes')}
           value={notes}
-          onChange={(e: any) => setNotes(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setNotes(e.target.value)}
           placeholder={t('notes')}
         />
 
         {error && (
-          <div className="mb-3 rounded-lg text-[13px] p-[10px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
+          <div className="mb-3 rounded-lg text-[13px] p-[10px] bg-noorix-red/10 text-noorix-red">
             {error}
           </div>
         )}

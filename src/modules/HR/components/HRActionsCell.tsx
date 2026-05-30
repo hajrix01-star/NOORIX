@@ -25,6 +25,7 @@ export const HRActionsCell = memo(function HRActionsCell(props: HRActionsCellPro
     onPermanentDelete,
     onReturnFromLeave,
     onLeaveSalarySettlement,
+    onIssueInvoice,
   } = props;
   const { t } = useTranslation();
 
@@ -35,6 +36,7 @@ export const HRActionsCell = memo(function HRActionsCell(props: HRActionsCellPro
     { key: 'reject', label: t('statusRejected'), hidden: !onReject, style: { color: 'var(--noorix-accent-red)' }, onClick: () => onReject?.(row) },
     { key: 'returnLeave', label: t('leaveReturnFromLeave'), hidden: !onReturnFromLeave, style: { color: 'var(--noorix-accent-blue)' }, onClick: () => onReturnFromLeave?.(row) },
     { key: 'leaveSalarySettlement', label: t('leaveSalarySettlement'), hidden: !onLeaveSalarySettlement, style: { color: 'var(--noorix-accent-green)' }, onClick: () => onLeaveSalarySettlement?.(row) },
+    { key: 'issueInvoice', label: t('hrServiceIssueInvoice'), hidden: !onIssueInvoice, style: { color: 'var(--noorix-accent-blue)' }, onClick: () => onIssueInvoice?.(row) },
     { key: 'pay', label: t('payrollPay') || 'صرف المسيرة', hidden: !onPay, style: { color: 'var(--noorix-accent-blue)' }, onClick: () => onPay?.(row) },
     { key: 'advance', label: t('quickAdvance') || 'صرف سلفة', hidden: !onAdvance, style: { color: 'var(--color-noorix-amber)' }, onClick: () => onAdvance?.(row) },
     { key: 'settle', label: t('settleAdvance') || 'تسديد السلفة', hidden: !onSettle, style: { color: 'var(--noorix-accent-amber)' }, onClick: () => onSettle?.(row) },
@@ -43,7 +45,7 @@ export const HRActionsCell = memo(function HRActionsCell(props: HRActionsCellPro
     { key: 'restore', label: t('restoreEmployee'), hidden: !onRestore, style: { color: 'var(--noorix-accent-green)' }, onClick: () => onRestore?.(row) },
     { key: 'delete', label: t('delete'), hidden: !onDelete, style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDelete?.(row) },
     { key: 'permdelete', label: t('deleteEmployeePermanent'), hidden: !onPermanentDelete, style: { color: 'var(--noorix-accent-red-dark)' }, onClick: () => onPermanentDelete?.(row) },
-  ], [row, t, onView, onEdit, onApprove, onReject, onReturnFromLeave, onLeaveSalarySettlement, onPay, onAdvance, onSettle, onTerminate, onArchive, onRestore, onDelete, onPermanentDelete]);
+  ], [row, t, onView, onEdit, onApprove, onReject, onReturnFromLeave, onLeaveSalarySettlement, onIssueInvoice, onPay, onAdvance, onSettle, onTerminate, onArchive, onRestore, onDelete, onPermanentDelete]);
 
   const hasAny = items.some((x: any) => !x.hidden);
   if (!hasAny) return <span className="text-[12px] text-noorix-muted">—</span>;

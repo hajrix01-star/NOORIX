@@ -1,0 +1,46 @@
+/**
+ * أنواع خدمات الموظف — تبويبة الإقامات والخدمات
+ */
+export const HR_SERVICE_CATEGORIES = [
+  'iqama_new',
+  'iqama_renewal',
+  'sponsorship_transfer',
+  'exit_reentry_visa',
+  'flight_ticket',
+  'medical_insurance',
+];
+
+export const HR_SERVICE_CATEGORY_LABEL_KEYS = {
+  iqama_new: 'hrServiceIqamaNew',
+  iqama_renewal: 'hrServiceIqamaRenewal',
+  sponsorship_transfer: 'hrServiceSponsorshipTransfer',
+  exit_reentry_visa: 'hrServiceExitReentry',
+  flight_ticket: 'hrServiceFlightTicket',
+  medical_insurance: 'hrServiceMedicalInsurance',
+};
+
+export function requiresIqamaNumber(category) {
+  return ['iqama_new', 'iqama_renewal', 'sponsorship_transfer'].includes(category);
+}
+
+export function requiresExpiryDate(category) {
+  return [
+    'iqama_new',
+    'iqama_renewal',
+    'sponsorship_transfer',
+    'exit_reentry_visa',
+    'medical_insurance',
+  ].includes(category);
+}
+
+export function showsReferenceLabel(category) {
+  return ['exit_reentry_visa', 'flight_ticket', 'medical_insurance', 'sponsorship_transfer'].includes(category);
+}
+
+export function referenceLabelKey(category) {
+  if (category === 'flight_ticket') return 'hrServiceRouteLabel';
+  if (category === 'medical_insurance') return 'hrServiceProviderLabel';
+  if (category === 'sponsorship_transfer') return 'hrServiceNewSponsorLabel';
+  if (category === 'exit_reentry_visa') return 'hrServiceVisaDurationLabel';
+  return 'referenceLabel';
+}
