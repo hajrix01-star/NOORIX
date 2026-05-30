@@ -35,6 +35,7 @@ import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
 import { LeaveFormModal } from './components/LeaveFormModal';
+import { ResidencyFormModal } from './components/ResidencyFormModal';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap, buildPayrollRunStatusMap } from '../../constants/badgeMaps';
 import { EmployeeProfileLoading, EmployeeProfileNotFound } from './components/employeeProfile/EmployeeProfileStates';
@@ -78,6 +79,7 @@ export default function EmployeeProfileScreen() {
   const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [editProfileLeave, setEditProfileLeave] = useState<any>(null);
+  const [profileServiceAdd, setProfileServiceAdd] = useState<{ category: string } | null>(null);
   const docFileRef = React.useRef<any>(null);
 
   const { data: employee, isLoading, error } = useEmployee(id, companyId);
@@ -353,6 +355,8 @@ export default function EmployeeProfileScreen() {
           t={t}
           residencies={residencies}
           residencyProfileStatusMap={residencyProfileStatusMap}
+          canAddService={canEditHrLeave}
+          onQuickAdd={(category: string) => setProfileServiceAdd({ category })}
         />
         <EmployeeProfileDocumentsSection
           t={t}
@@ -447,6 +451,20 @@ export default function EmployeeProfileScreen() {
             showToast(t('leaveUpdated'), 'success');
           }}
           onClose={() => setEditProfileLeave(null)}
+        />
+      )}
+      {profileServiceAdd && id && (
+        <ResidencyFormModal
+          key={`${profileServiceAdd.category}-${id}`}
+          companyId={companyId}
+          defaultCategory={profileServiceAdd.category}
+          defaultEmployeeId={id}
+          onSuccess={() => {
+            invalidateAll();
+            showToast(t('hrServiceAdded'), 'success');
+            setProfileServiceAdd(null);
+          }}
+          onClose={() => setProfileServiceAdd(null)}
         />
       )}
     </ScreenShell>

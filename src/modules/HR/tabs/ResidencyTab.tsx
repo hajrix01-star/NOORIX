@@ -1,5 +1,5 @@
 ﻿/**
- * ResidencyTab — الإقامات (احترافي كامل)
+ * ResidencyTab — الإقامات وخدمات الموظف (تأشيرات، تذاكر، تأمين، …)
  */
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,17 +8,24 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getResidencies, deleteResidency } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
+import { fmt } from '../../../utils/format';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { ResidencyFormModal } from '../components/ResidencyFormModal';
+import { IssueResidencyInvoiceModal } from '../components/IssueResidencyInvoiceModal';
+import { HrServiceQuickAddBar } from '../components/HrServiceQuickAddBar';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, ScreenShell, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, Input, ScreenShell, SmartTable } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
+import {
+  HR_SERVICE_CATEGORIES,
+  HR_SERVICE_CATEGORY_LABEL_KEYS,
+} from '../constants/employeeHrServiceCategories';
 
 const PAGE_SIZE = 50;
 const EXPIRY_DAYS = 90;
@@ -40,7 +47,10 @@ export default function ResidencyTab() {
   const { activeCompanyId } = useApp();
   const companyId = activeCompanyId ?? '';
   const [showAdd, setShowAdd] = useState(false);
+  const [addDefaultCategory, setAddDefaultCategory] = useState('iqama_renewal');
   const [editingResidency, setEditingResidency] = useState<any>(null);
+  const [issueInvoiceRow, setIssueInvoiceRow] = useState<any>(null);
+  const [categoryFilter, setCategoryFilter] = useState('');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -48,7 +58,7 @@ export default function ResidencyTab() {
     queryKey: hrKeys.residencies(companyId),
     queryFn: async () => {
       const res = await getResidencies(companyId);
-      throwIfApiFailed(res, 'فشل تحميل الإقامات');
+      throwIfApiFailed(res, t('saveFailed'));
       const d = res.data;
       return Array.isArray(d) ? d : (d?.items ?? []);
     },
@@ -58,7 +68,7 @@ export default function ResidencyTab() {
   const deleteMutation = useApiMutation({
     mutationFn: (id: any) => deleteResidency(id, companyId),
     invalidateQueries: [hrKeys.residencies(companyId)],
-    successToast: () => t('residencyDeleted'),
+    successToast: () => t('hrServiceDeleted'),
     errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: () => {
       setEditingResidency(null);
@@ -67,33 +77,61 @@ export default function ResidencyTab() {
 
   const items = useMemo(() => (data ?? []).map((r: any) => ({
     ...r,
+    serviceCategory: r.serviceCategory || 'iqama_renewal',
     employeeName: employeeDisplayName(r.employee || { name: r.employeeName }, lang),
-  })), [data, lang]);
-  const expiringCount = items.filter((r: any) => isExpiringSoon(r.expiryDate)).length;
+    serviceLabel: t(HR_SERVICE_CATEGORY_LABEL_KEYS[r.serviceCategory || 'iqama_renewal'] || 'hrServiceIqamaRenewal'),
+    invoiceNumber: r.invoice?.invoiceNumber || null,
+    invoiceAmount: r.residencyInvoiceAmount ?? r.invoice?.totalAmount,
+  })), [data, lang, t]);
+
+  const filteredByCategory = useMemo(() => {
+    if (!categoryFilter) return items;
+    return items.filter((r: any) => r.serviceCategory === categoryFilter);
+  }, [items, categoryFilter]);
+
+  const expiringCount = filteredByCategory.filter((r: any) => isExpiringSoon(r.expiryDate)).length;
   const residencyStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
 
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
-    useTableFilter(items, {
-      searchKeys: ['employeeName', 'iqamaNumber'],
+    useTableFilter(filteredByCategory, {
+      searchKeys: ['employeeName', 'iqamaNumber', 'referenceLabel', 'serviceLabel', 'invoiceNumber'],
       pageSize: PAGE_SIZE,
       defaultSortKey: 'expiryDate',
       defaultSortDir: 'asc',
-      dateKeys: ['issueDate', 'expiryDate'],
+      dateKeys: ['issueDate', 'expiryDate', 'transactionDate'],
     });
 
+  const openAdd = (category = 'iqama_renewal') => {
+    setAddDefaultCategory(category);
+    setShowAdd(true);
+  };
+
+  const handleDelete = useCallback((row: any) => {
+    const msg = row.invoiceId
+      ? t('deleteHrServiceWithInvoice')
+      : t('deleteHrServiceConfirm');
+    if (window.confirm(msg)) deleteMutation.mutate(row.id);
+  }, [t, deleteMutation]);
+
   const columns = useMemo(() => [
-    { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 170,
+    { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 150,
       render: (v: any) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
-    { key: 'iqamaNumber', label: t('iqamaNumber'), sortable: true, width: 150, minWidth: 140,
-      render: (v: any) => <span className="nx-cell-num">{v || '—'}</span> },
-    { key: 'issueDate', label: t('startDate'), sortable: true, width: 120, minWidth: 115,
-      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
-    { key: 'expiryDate', label: t('expiryDate'), sortable: true, width: 140, minWidth: 130,
+    { key: 'serviceLabel', label: t('hrServiceCategory'), sortable: true, width: 140, minWidth: 130,
+      render: (v: any) => <Badge color="blue" label={v} size="sm" /> },
+    { key: 'iqamaNumber', label: t('iqamaNumber'), sortable: true, width: 130, minWidth: 120,
+      render: (v: any, row: any) => (
+        <span className="nx-cell-num">{v || row.referenceLabel || '—'}</span>
+      ) },
+    { key: 'expiryDate', label: t('expiryDate'), sortable: true, width: 130, minWidth: 120,
       render: (v: any, row: any) => {
+        const display = v || row.transactionDate;
         const soon = isExpiringSoon(v);
         return (
-          <span className="text-[12px] whitespace-nowrap" style={{ color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined }}>
-            {formatSaudiDate(v)}
+          <span
+            className="text-[12px] whitespace-nowrap"
+            style={{ color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined }}
+          >
+            {display ? formatSaudiDate(display) : '—'}
             {soon && (
               <span className="me-1.5 text-[10px] py-px px-1.5 rounded bg-noorix-amber/20">
                 {t('residencyExpiringSoon')}
@@ -102,7 +140,23 @@ export default function ResidencyTab() {
           </span>
         );
       } },
-    { key: 'status', label: t('status'), width: 120, minWidth: 110,
+    { key: 'invoiceNumber', label: t('invoiceNumber'), sortable: true, width: 120, minWidth: 110,
+      render: (v: any, row: any) => (
+        v ? (
+          <span className="nx-cell-num text-noorix-blue font-semibold">{v}</span>
+        ) : (
+          <span className="text-[12px] text-noorix-muted">{t('hrServiceNoInvoice')}</span>
+        )
+      ) },
+    { key: 'invoiceAmount', label: t('amount'), width: 100, minWidth: 90, numeric: true,
+      render: (v: any) => (
+        v != null && Number(v) > 0 ? (
+          <span className="nx-cell-num">{fmt(Number(v))} <span className="nx-sar">SR</span></span>
+        ) : (
+          <span className="text-noorix-muted">—</span>
+        )
+      ) },
+    { key: 'status', label: t('status'), width: 100, minWidth: 90,
       render: (v: any) => (
         <Badge {...Badge.fromStatus(residencyStatusKey(v), residencyStatusMap)} size="sm" />
       ) },
@@ -112,55 +166,60 @@ export default function ResidencyTab() {
           row={row}
           type="residency"
           onEdit={() => setEditingResidency(row)}
-          onDelete={() => {
-            if (window.confirm(t('deleteResidencyConfirm'))) deleteMutation.mutate(row.id);
-          }}
+          onIssueInvoice={!row.invoiceId ? () => setIssueInvoiceRow(row) : undefined}
+          onDelete={() => handleDelete(row)}
         />
       ) },
-  ], [t, deleteMutation, residencyStatusMap]);
+  ], [t, residencyStatusMap, handleDelete]);
 
   const exportData = allFilteredData.map((r: any) => ({
     employeeName: r.employeeName || '—',
-    iqamaNumber: r.iqamaNumber || '—',
-    issueDate: formatSaudiDate(r.issueDate),
-    expiryDate: formatSaudiDate(r.expiryDate),
+    service: r.serviceLabel,
+    iqamaOrRef: r.iqamaNumber || r.referenceLabel || '—',
+    expiryDate: r.expiryDate ? formatSaudiDate(r.expiryDate) : formatSaudiDate(r.transactionDate),
+    invoiceNumber: r.invoiceNumber || '—',
+    amount: r.invoiceAmount != null ? fmt(Number(r.invoiceAmount)) : '—',
     status: (residencyStatusMap as Record<string, { label?: string }>)[String(residencyStatusKey(r.status))]?.label || r.status,
-    expiringSoon: isExpiringSoon(r.expiryDate) ? t('residencyExpiringSoon') : '—',
   }));
 
   const renderMobileCard = useCallback((row: any) => {
     const soon = isExpiringSoon(row.expiryDate);
     return (
       <div>
-        <div className="flex items-center justify-between flex flex-wrap mb-1">
+        <div className="flex items-center justify-between flex-wrap mb-1 gap-2">
           <span className="font-bold text-[14px]">{row.employeeName}</span>
-          <Badge {...Badge.fromStatus(residencyStatusKey(row.status), residencyStatusMap)} size="sm" className="shrink-0" />
+          <Badge color="blue" label={row.serviceLabel} size="sm" />
         </div>
-        {row.iqamaNumber && (
-          <div className="text-[12px] text-noorix-muted mb-2 nx-font-numbers text-end">{row.iqamaNumber}</div>
-        )}
+        <div className="text-[12px] text-noorix-muted mb-2 nx-font-numbers text-end">
+          {row.iqamaNumber || row.referenceLabel || '—'}
+        </div>
         <div className="nx-mc__grid nx-mc__grid--2 mb-2.5">
-          <div>
-            <div className="nx-mc__stat-label">{t('startDate')}</div>
-            <div className="nx-mc__stat-value text-[13px]">{formatSaudiDate(row.issueDate)}</div>
-          </div>
           <div>
             <div className="nx-mc__stat-label">{t('expiryDate')}</div>
             <div
               className="nx-mc__stat-value text-[13px]"
               style={{ color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}
             >
-              {formatSaudiDate(row.expiryDate)}
-              {soon && <span className="me-1 text-[10px] px-1 py-px rounded bg-noorix-amber/20">⚠</span>}
+              {row.expiryDate ? formatSaudiDate(row.expiryDate) : '—'}
             </div>
+          </div>
+          <div>
+            <div className="nx-mc__stat-label">{t('invoiceNumber')}</div>
+            <div className="nx-mc__stat-value text-[13px] ltr">{row.invoiceNumber || '—'}</div>
           </div>
         </div>
         <div className="flex items-center justify-end">
-          <HRActionsCell row={row} type="residency" onEdit={() => setEditingResidency(row)} onDelete={() => { if (window.confirm(t('deleteResidencyConfirm'))) deleteMutation.mutate(row.id); }} />
+          <HRActionsCell
+            row={row}
+            type="residency"
+            onEdit={() => setEditingResidency(row)}
+            onIssueInvoice={!row.invoiceId ? () => setIssueInvoiceRow(row) : undefined}
+            onDelete={() => handleDelete(row)}
+          />
         </div>
       </div>
     );
-  }, [t, deleteMutation, residencyStatusMap]);
+  }, [t, handleDelete]);
 
   const renderCompactRow = useCallback((row: any) => {
     const soon = isExpiringSoon(row.expiryDate);
@@ -168,56 +227,74 @@ export default function ResidencyTab() {
       <div>
         <div className="nx-cr__line1">
           <span className="nx-cr__name">{row.employeeName}</span>
-          {row.iqamaNumber && <span className="nx-cr__sub ltr">{row.iqamaNumber}</span>}
-          <Badge {...Badge.fromStatus(residencyStatusKey(row.status), residencyStatusMap)} size="sm" />
+          <Badge color="blue" label={row.serviceLabel} size="sm" />
         </div>
         <div className="nx-cr__line2">
           <div className="nx-cr__line2-start">
-            <span className="nx-cr__meta ltr">{formatSaudiDate(row.issueDate)} → </span>
-            <span className="nx-cr__meta ltr" style={{ color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}>
-              {formatSaudiDate(row.expiryDate)}{soon && ' ⚠'}
+            <span className="nx-cr__meta ltr">{row.iqamaNumber || row.referenceLabel || '—'}</span>
+            <span className="nx-cr__meta ltr" style={{ color: soon ? 'var(--color-noorix-amber)' : undefined }}>
+              {row.expiryDate ? formatSaudiDate(row.expiryDate) : ''}
             </span>
           </div>
-          <div className="nx-cr__line2-end">
-            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-              <KebabMenu
-                ariaLabel={t('actions')}
-                items={[
-                  { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingResidency(row) },
-                  { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => { if (window.confirm(t('deleteResidencyConfirm'))) deleteMutation.mutate(row.id); } },
-                ]}
-              />
-            </div>
+          <div className="nx-cr__line2-end text-[12px] ltr text-noorix-blue">
+            {row.invoiceNumber || ''}
           </div>
         </div>
       </div>
     );
-  }, [t, deleteMutation, residencyStatusMap, setEditingResidency]);
+  }, []);
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: hrKeys.residencies(companyId) });
+    invalidateOnFinancialMutation(queryClient);
+  };
 
   return (
     <ScreenShell>
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-2">
-        <div className="nx-toolbar min-w-0 flex-1">
+        <div className="nx-toolbar min-w-0 flex-1 flex-wrap">
           {expiringCount > 0 && (
             <span className="rounded-lg text-[13px] font-semibold px-3 py-1.5 bg-noorix-amber/15 text-noorix-amber shrink-0">
               {t('residencyExpiringSoon')}: {expiringCount}
             </span>
           )}
-          <Button size="sm" onClick={() => exportToExcel(exportData, 'residencies.xlsx')}>{t('exportExcel')}</Button>
+          <Button size="sm" onClick={() => exportToExcel(exportData, 'hr-employee-services.xlsx')}>
+            {t('exportExcel')}
+          </Button>
         </div>
-        <Input
-          type="search"
-          value={searchText}
-          onChange={(e: any) => setSearch(e.target.value)}
-          placeholder={t('searchPlaceholder')}
-          size="sm"
-          className="w-full min-w-0 lg:max-w-xs lg:flex-1"
-          aria-label={t('searchPlaceholder')}
-        />
-        <Button variant="primary" size="sm" className="shrink-0" onClick={() => setShowAdd(true)}>
-          {t('addResidency')}
+        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto lg:flex-1 lg:max-w-2xl">
+          <Input
+            type="select"
+            value={categoryFilter}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setCategoryFilter(e.target.value)}
+            size="sm"
+            className="w-full sm:min-w-[160px]"
+            aria-label={t('hrServiceCategory')}
+          >
+            <option value="">{t('hrServiceFilterAll')}</option>
+            {HR_SERVICE_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>{t(HR_SERVICE_CATEGORY_LABEL_KEYS[cat])}</option>
+            ))}
+          </Input>
+          <Input
+            type="search"
+            value={searchText}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setSearch(e.target.value)}
+            placeholder={t('searchPlaceholder')}
+            size="sm"
+            className="w-full min-w-0 flex-1"
+            aria-label={t('searchPlaceholder')}
+          />
+        </div>
+        <Button variant="primary" size="sm" className="shrink-0" onClick={() => openAdd()}>
+          {t('addHrService')}
         </Button>
       </div>
+
+      <HrServiceQuickAddBar
+        className="mb-3 pb-3 border-b border-noorix-border"
+        onSelectCategory={(cat) => openAdd(cat)}
+      />
 
       <SmartTable
         compact
@@ -254,10 +331,10 @@ export default function ResidencyTab() {
       {showAdd && (
         <ResidencyFormModal
           companyId={companyId}
+          defaultCategory={addDefaultCategory}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: hrKeys.residencies(companyId) });
-            invalidateOnFinancialMutation(queryClient);
-            showToast(t('residencyAdded'), 'success');
+            invalidateAll();
+            showToast(t('hrServiceAdded'), 'success');
           }}
           onClose={() => setShowAdd(false)}
         />
@@ -268,11 +345,24 @@ export default function ResidencyTab() {
           residency={editingResidency}
           companyId={companyId}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: hrKeys.residencies(companyId) });
-            showToast(t('residencyUpdated'), 'success');
+            invalidateAll();
+            showToast(t('hrServiceUpdated'), 'success');
             setEditingResidency(null);
           }}
           onClose={() => setEditingResidency(null)}
+        />
+      )}
+
+      {issueInvoiceRow && (
+        <IssueResidencyInvoiceModal
+          row={issueInvoiceRow}
+          companyId={companyId}
+          onSuccess={() => {
+            invalidateAll();
+            showToast(t('hrServiceInvoiceIssued'), 'success');
+            setIssueInvoiceRow(null);
+          }}
+          onClose={() => setIssueInvoiceRow(null)}
         />
       )}
     </ScreenShell>

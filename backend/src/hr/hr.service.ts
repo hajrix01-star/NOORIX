@@ -150,6 +150,10 @@ export class HRService {
     return this.residency.deleteResidency(...args);
   }
 
+  issueResidencyInvoice(...args: Parameters<HrResidencyService['issueResidencyInvoice']>) {
+    return this.residency.issueResidencyInvoice(...args);
+  }
+
   // ── Documents ──
 
   findDocuments(...args: Parameters<HrDocumentService['findDocuments']>) {
@@ -190,6 +194,7 @@ export class HRService {
 
     const now = new Date();
     const expiringResidenciesCount = (residencies as any[]).filter((r) => {
+      if (!r.expiryDate) return false;
       const diff = (new Date(r.expiryDate).getTime() - now.getTime()) / 86_400_000;
       return diff >= 0 && diff <= EXPIRY_DAYS;
     }).length;

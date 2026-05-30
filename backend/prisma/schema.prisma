@@ -644,29 +644,36 @@ model LeaveSalarySettlement {
   @@map("leave_salary_settlements")
 }
 
-// ── الإقامات ───────────────────────────────────────────────
+// ── خدمات الموظف (إقامات، تأشيرات، تذاكر، تأمين، …) ───────
 model EmployeeResidency {
-  id                    String    @id @default(cuid())
-  tenantId              String    @map("tenant_id")
-  companyId             String    @map("company_id")
-  employeeId            String    @map("employee_id")
-  iqamaNumber           String    @map("iqama_number")
-  issueDate             DateTime? @map("issue_date")
-  expiryDate            DateTime  @map("expiry_date")
-  status                String    @default("active")      // active | expired | renewed
-  notes                 String?
-  invoiceId             String?   @map("invoice_id")     // ربط بفاتورة الإقامة عند الإصدار
+  id                     String    @id @default(cuid())
+  tenantId               String    @map("tenant_id")
+  companyId              String    @map("company_id")
+  employeeId             String    @map("employee_id")
+  /// iqama_new | iqama_renewal | sponsorship_transfer | exit_reentry_visa | flight_ticket | medical_insurance
+  serviceCategory        String    @default("iqama_renewal") @map("service_category")
+  iqamaNumber            String?   @map("iqama_number")
+  referenceLabel         String?   @map("reference_label")
+  issueDate              DateTime? @map("issue_date")
+  expiryDate             DateTime? @map("expiry_date")
+  transactionDate        DateTime? @map("transaction_date")
+  status                 String    @default("active")      // active | expired | renewed
+  notes                  String?
+  metadata               Json?
+  invoiceId              String?   @unique @map("invoice_id")
   residencyInvoiceAmount Decimal?  @map("residency_invoice_amount") @db.Decimal(18, 4)
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt      @map("updated_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt      @map("updated_at")
 
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  invoice  Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, employeeId])
   @@index([companyId, expiryDate])
+  @@index([companyId, serviceCategory])
   @@map("employee_residencies")
 }
 
@@ -991,6 +998,7 @@ model Invoice {
   dailySalesSummary DailySalesSummary? @relation(fields: [dailySalesSummaryId], references: [id], onDelete: SetNull)
   vaultAllocations InvoiceVaultAllocation[]
   leaveSalarySettlement LeaveSalarySettlement?
+  employeeResidency     EmployeeResidency?
   companyAssets    CompanyAsset[]
   ocrInvoicesLinkedFromOcr OcrInvoice[] @relation("OcrInvoiceLinkedPurchase")
 

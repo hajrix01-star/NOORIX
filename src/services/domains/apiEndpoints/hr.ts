@@ -126,6 +126,17 @@ export async function deleteResidency(id: string, companyId: string): Promise<Ap
   return apiDelete(`/api/v1/hr/residencies/${id}?companyId=${companyId}`);
 }
 
+export async function issueResidencyInvoice(
+  id: string,
+  companyId: string,
+  body: Record<string, unknown>,
+): Promise<ApiParsedResult> {
+  return apiPost(`/api/v1/hr/residencies/${encodeURIComponent(id)}/issue-invoice`, {
+    companyId,
+    ...body,
+  });
+}
+
 export async function getDocuments(companyId: string, employeeId?: string): Promise<ApiParsedResult> {
   const params: Record<string, string> = { companyId: String(companyId) };
   if (employeeId) params.employeeId = String(employeeId);
