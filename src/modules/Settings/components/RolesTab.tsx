@@ -156,8 +156,12 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
     }
   }, [showForm]);
 
+  const editorOpen = showForm || !!editing;
+
   return (
     <div className="grid gap-4 w-full min-w-0">
+      {!editorOpen && (
+        <>
       <div className="flex flex-col gap-3 min-[520px]:flex-row min-[520px]:items-start min-[520px]:justify-between min-[520px]:gap-4">
         <div className="min-w-0">
           <h3 className="m-0 text-[16px] font-bold">
@@ -243,6 +247,8 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
 
       <RoleEditorOverlay
