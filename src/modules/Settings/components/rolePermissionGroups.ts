@@ -8,6 +8,8 @@ export type ChatPermissionGroup = {
   labelEn: string;
   /** مفاتيح داخل mod.permissions (ليس قيم PERMISSIONS) */
   levelKeys: string[];
+  /** زر/checkbox واحد للمجموعة — بدون تفصيل الصلاحيات الفرعية */
+  singleToggle?: boolean;
 };
 
 export const CHAT_PERMISSION_GROUPS: ChatPermissionGroup[] = [
@@ -30,16 +32,12 @@ export const CHAT_PERMISSION_GROUPS: ChatPermissionGroup[] = [
     levelKeys: ['chatExpAdd', 'chatExpPay', 'chatExpEdit'],
   },
   {
-    id: 'faqLegacy',
-    labelAr: 'أسئلة جاهزة (صلاحية قديمة)',
-    labelEn: 'FAQ (legacy preset)',
-    levelKeys: ['chatFaq'],
-  },
-  {
     id: 'faq',
-    labelAr: 'أسئلة جاهزة — كل سؤال',
-    labelEn: 'FAQ — per question',
+    labelAr: 'أسئلة جاهزة',
+    labelEn: 'FAQ ready questions',
+    singleToggle: true,
     levelKeys: [
+      'chatFaq',
       'faqSalesYear',
       'faqVaults',
       'faqPnl',

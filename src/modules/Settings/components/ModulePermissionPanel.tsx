@@ -181,6 +181,29 @@ export default function ModulePermissionPanel({
           const full = isGroupFull(mod, group, permissions);
           const partial = isGroupPartial(mod, group, permissions);
 
+          if (group.singleToggle) {
+            const title = isAr ? group.labelAr : group.labelEn;
+            return (
+              <div key={group.id} className="noorix-surface-card p-4">
+                <PermRow
+                  perm={permsInGroup.join(',')}
+                  label={title}
+                  checked={full}
+                  disabled={disabled}
+                  onToggle={() => {
+                    if (full) setPerms([], permsInGroup);
+                    else setPerms(permsInGroup, []);
+                  }}
+                />
+                {partial && !full && (
+                  <p className="m-0 mt-2 text-[11px] text-noorix-muted">
+                    {isAr ? 'مفعّل جزئياً — اضغط لتفعيل كل الأسئلة' : 'Partially enabled — click to enable all FAQ'}
+                  </p>
+                )}
+              </div>
+            );
+          }
+
           return (
             <GroupBlock
               key={group.id}
