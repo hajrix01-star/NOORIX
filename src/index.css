@@ -4577,9 +4577,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     min-width: 0;
     -webkit-overflow-scrolling: touch;
   }
-  .nx-hr-segmented-inline {
-    padding: 0;
-    border: none;
+  .nx-hr-subtab-inline {
+    border-radius: 0;
   }
   .nx-hr-workspace__body {
     position: relative;
