@@ -33,19 +33,21 @@ export function requiresIqamaNumber(category) {
   return ['iqama_new', 'iqama_renewal', 'sponsorship_transfer'].includes(category);
 }
 
-export function requiresExpiryDate(category) {
-  return [
-    'iqama_new',
-    'iqama_renewal',
-    'sponsorship_transfer',
-    'exit_reentry_visa',
-    'medical_insurance',
-  ].includes(category);
+export function showsReferenceLabel(category) {
+  return ['flight_ticket', 'medical_insurance'].includes(category);
 }
 
-export function showsReferenceLabel(category) {
-  return ['exit_reentry_visa', 'flight_ticket', 'medical_insurance'].includes(category);
-}
+export {
+  requiresExpiryDate,
+  showsIssueDate,
+  showsVisaDurationMonths,
+  requiresVisaDurationMonths,
+  VISA_DURATION_MONTHS,
+  parseVisaDurationMonths,
+  visaDurationLabel,
+  formatHrServiceDetail,
+  formatHrServiceSecondaryDate,
+} from './employeeHrServiceFormFields';
 
 export function isSponsorshipTransfer(category) {
   return category === 'sponsorship_transfer';

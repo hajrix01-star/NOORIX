@@ -32,6 +32,20 @@ export function companySponsorNameFromRecord(company: {
   return (company.nameAr || company.nameEn || '').trim();
 }
 
+export function requiresExpiryDate(category: string): boolean {
+  return ['iqama_new', 'iqama_renewal', 'medical_insurance'].includes(category);
+}
+
+export function requiresVisaDurationMonths(category: string): boolean {
+  return category === 'exit_reentry_visa';
+}
+
+export function formatVisaDurationReferenceAr(months: number): string {
+  if (months === 1) return 'شهر واحد';
+  if (months === 2) return 'شهران';
+  return `${months} أشهر`;
+}
+
 export function serviceCategoryLabelAr(category: string): string {
   const map: Record<string, string> = {
     iqama_new: 'إقامة جديدة',

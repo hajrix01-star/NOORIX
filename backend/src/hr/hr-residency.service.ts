@@ -16,6 +16,9 @@ import {
   serviceCategoryLabelAr,
   usesCompanyAsSponsor,
   companySponsorNameFromRecord,
+  requiresExpiryDate,
+  requiresVisaDurationMonths,
+  formatVisaDurationReferenceAr,
 } from './constants/employee-hr-service-categories';
 import { issueResidencyServiceInvoiceCore } from './hr-residency-issue-invoice.util';
 
@@ -45,21 +48,60 @@ export class HrResidencyService {
 
   private validateServicePayload(
     category: string,
-    dto: { iqamaNumber?: string; expiryDate?: string; referenceLabel?: string },
+    dto: { iqamaNumber?: string; expiryDate?: string; visaDurationMonths?: number },
   ) {
     if (requiresIqamaNumber(category) && !dto.iqamaNumber?.trim()) {
       throw new BadRequestException('رقم الإقامة مطلوب لهذا النوع من الخدمة.');
     }
-    const needsExpiry = [
-      'iqama_new',
-      'iqama_renewal',
-      'sponsorship_transfer',
-      'exit_reentry_visa',
-      'medical_insurance',
-    ].includes(category);
-    if (needsExpiry && !dto.expiryDate) {
+    if (requiresExpiryDate(category) && !dto.expiryDate) {
       throw new BadRequestException('تاريخ الانتهاء مطلوب لهذا النوع من الخدمة.');
     }
+    if (requiresVisaDurationMonths(category)) {
+      const m = dto.visaDurationMonths;
+      if (m == null || m < 1 || m > 5) {
+        throw new BadRequestException('مدة التأشيرة مطلوبة (من شهر إلى 5 أشهر).');
+      }
+    }
+  }
+
+  private showsIssueDate(category: string): boolean {
+    return ['iqama_new', 'iqama_renewal', 'medical_insurance'].includes(category);
+  }
+
+  private async prepareCategoryFields(
+    companyId: string,
+    category: string,
+    dto: { referenceLabel?: string; visaDurationMonths?: number },
+    dates: { issueDate: Date | null; expiryDate: Date | null },
+  ): Promise<{
+    referenceLabel: string | null;
+    metadata: Prisma.InputJsonValue | null;
+    issueDate: Date | null;
+    expiryDate: Date | null;
+  }> {
+    if (usesCompanyAsSponsor(category)) {
+      return {
+        referenceLabel: await this.resolveReferenceLabel(companyId, category, dto.referenceLabel),
+        metadata: null,
+        issueDate: null,
+        expiryDate: null,
+      };
+    }
+    if (requiresVisaDurationMonths(category)) {
+      const months = dto.visaDurationMonths!;
+      return {
+        referenceLabel: formatVisaDurationReferenceAr(months),
+        metadata: { visaDurationMonths: months },
+        issueDate: null,
+        expiryDate: null,
+      };
+    }
+    return {
+      referenceLabel: dto.referenceLabel?.trim() || null,
+      metadata: null,
+      issueDate: this.showsIssueDate(category) ? dates.issueDate : null,
+      expiryDate: requiresExpiryDate(category) ? dates.expiryDate : null,
+    };
   }
 
   private mapDateFields(dto: {
@@ -101,11 +143,10 @@ export class HrResidencyService {
 
     const tenantId = TenantContext.getTenantId();
     const dates = this.mapDateFields(dto);
-    const referenceLabel = await this.resolveReferenceLabel(
-      dto.companyId,
-      category,
-      dto.referenceLabel,
-    );
+    const prepared = await this.prepareCategoryFields(dto.companyId, category, dto, {
+      issueDate: dates.issueDate,
+      expiryDate: dates.expiryDate,
+    });
 
     const residency = await this.prisma.employeeResidency.create({
       data: {
@@ -114,8 +155,11 @@ export class HrResidencyService {
         employeeId: dto.employeeId,
         serviceCategory: category,
         iqamaNumber: dto.iqamaNumber?.trim() || null,
-        referenceLabel,
-        ...dates,
+        referenceLabel: prepared.referenceLabel,
+        metadata: prepared.metadata ?? undefined,
+        issueDate: prepared.issueDate,
+        expiryDate: prepared.expiryDate,
+        transactionDate: dates.transactionDate,
         status: dto.status ?? 'active',
         notes: dto.notes,
       },
@@ -163,10 +207,17 @@ export class HrResidencyService {
     if (!existing) throw new NotFoundException(`السجل ${id} غير موجود.`);
 
     const category = dto.serviceCategory ?? existing.serviceCategory;
+    const existingMeta = (existing.metadata ?? {}) as Record<string, unknown>;
+    const mergedVisaMonths =
+      dto.visaDurationMonths ??
+      (typeof existingMeta.visaDurationMonths === 'number'
+        ? existingMeta.visaDurationMonths
+        : undefined);
+
     this.validateServicePayload(category, {
       iqamaNumber: dto.iqamaNumber ?? existing.iqamaNumber ?? undefined,
       expiryDate: dto.expiryDate ?? existing.expiryDate?.toISOString(),
-      referenceLabel: dto.referenceLabel ?? existing.referenceLabel ?? undefined,
+      visaDurationMonths: mergedVisaMonths,
     });
 
     const dates = this.mapDateFields({
@@ -175,21 +226,23 @@ export class HrResidencyService {
       transactionDate: dto.transactionDate,
     });
 
-    let referenceLabel: string | null | undefined;
-    if (usesCompanyAsSponsor(category)) {
-      referenceLabel = await this.resolveReferenceLabel(companyId, category);
-    } else if (dto.referenceLabel !== undefined) {
-      referenceLabel = dto.referenceLabel?.trim() || null;
-    }
+    const prepared = await this.prepareCategoryFields(companyId, category, {
+      referenceLabel: dto.referenceLabel,
+      visaDurationMonths: mergedVisaMonths,
+    }, {
+      issueDate: dto.issueDate !== undefined ? dates.issueDate : existing.issueDate,
+      expiryDate: dto.expiryDate !== undefined ? dates.expiryDate : existing.expiryDate,
+    });
 
     const updated = await this.prisma.employeeResidency.update({
       where: { id },
       data: {
         ...(dto.serviceCategory !== undefined && { serviceCategory: dto.serviceCategory }),
         ...(dto.iqamaNumber !== undefined && { iqamaNumber: dto.iqamaNumber?.trim() || null }),
-        ...(referenceLabel !== undefined && { referenceLabel }),
-        ...(dto.issueDate !== undefined && { issueDate: dates.issueDate }),
-        ...(dto.expiryDate !== undefined && { expiryDate: dates.expiryDate }),
+        referenceLabel: prepared.referenceLabel,
+        metadata: prepared.metadata ?? undefined,
+        issueDate: prepared.issueDate,
+        expiryDate: prepared.expiryDate,
         ...(dto.transactionDate !== undefined && { transactionDate: dates.transactionDate }),
         ...(dto.status !== undefined && { status: dto.status }),
         ...(dto.notes !== undefined && { notes: dto.notes }),

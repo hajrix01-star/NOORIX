@@ -25,6 +25,9 @@ import { hrKeys } from '../../../services/queryKeys';
 import {
   HR_SERVICE_CATEGORIES,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
+  formatHrServiceDetail,
+  formatHrServiceSecondaryDate,
+  requiresExpiryDate,
 } from '../constants/employeeHrServiceCategories';
 
 const PAGE_SIZE = 50;
@@ -89,7 +92,9 @@ export default function ResidencyTab() {
     return items.filter((r: any) => r.serviceCategory === categoryFilter);
   }, [items, categoryFilter]);
 
-  const expiringCount = filteredByCategory.filter((r: any) => isExpiringSoon(r.expiryDate)).length;
+  const expiringCount = filteredByCategory.filter(
+    (r: any) => requiresExpiryDate(r.serviceCategory) && isExpiringSoon(r.expiryDate),
+  ).length;
   const residencyStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
 
   const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
@@ -118,20 +123,20 @@ export default function ResidencyTab() {
       render: (v: any) => <span className="font-semibold text-[13px]">{v || '—'}</span> },
     { key: 'serviceLabel', label: t('hrServiceCategory'), sortable: true, width: 140, minWidth: 130,
       render: (v: any) => <Badge color="blue" label={v} size="sm" /> },
-    { key: 'iqamaNumber', label: t('iqamaNumber'), sortable: true, width: 130, minWidth: 120,
-      render: (v: any, row: any) => (
-        <span className="nx-cell-num">{v || row.referenceLabel || '—'}</span>
+    { key: 'serviceDetail', label: t('hrServiceDetailColumn'), sortable: false, width: 140, minWidth: 120,
+      render: (_v: any, row: any) => (
+        <span className="text-[12px] text-noorix-text">{formatHrServiceDetail(row, t)}</span>
       ) },
-    { key: 'expiryDate', label: t('expiryDate'), sortable: true, width: 130, minWidth: 120,
-      render: (v: any, row: any) => {
-        const display = v || row.transactionDate;
-        const soon = isExpiringSoon(v);
+    { key: 'expiryDate', label: t('hrServiceSecondaryColumn'), sortable: true, width: 130, minWidth: 120,
+      render: (_v: any, row: any) => {
+        const soon = requiresExpiryDate(row.serviceCategory) && isExpiringSoon(row.expiryDate);
+        const display = formatHrServiceSecondaryDate(row, t, formatSaudiDate);
         return (
           <span
             className="text-[12px] whitespace-nowrap"
             style={{ color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined }}
           >
-            {display ? formatSaudiDate(display) : '—'}
+            {display}
             {soon && (
               <span className="me-1.5 text-[10px] py-px px-1.5 rounded bg-noorix-amber/20">
                 {t('residencyExpiringSoon')}

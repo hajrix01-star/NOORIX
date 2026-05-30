@@ -1,6 +1,6 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { Badge, Button, SmartTable } from '../../../../ui';
-import { HR_SERVICE_CATEGORY_LABEL_KEYS } from '../../constants/employeeHrServiceCategories';
+import { HR_SERVICE_CATEGORY_LABEL_KEYS, formatHrServiceDetail, formatHrServiceSecondaryDate } from '../../constants/employeeHrServiceCategories';
 import { HrServiceQuickAddBar } from '../HrServiceQuickAddBar';
 
 export function EmployeeProfileResidencySection({
@@ -44,21 +44,23 @@ export function EmployeeProfileResidencySection({
             ),
           },
           {
-            key: 'iqamaNumber',
-            label: t('iqamaNumber'),
-            width: '20%',
-            render: (v: any, row: any) => <span className="nx-cell-num">{v || row.referenceLabel || '—'}</span>,
+            key: 'serviceDetail',
+            label: t('hrServiceDetailColumn'),
+            width: '22%',
+            render: (_v: any, row: any) => <span className="text-[12px]">{formatHrServiceDetail(row, t)}</span>,
+          },
+          {
+            key: 'secondary',
+            label: t('hrServiceSecondaryColumn'),
+            width: '22%',
+            render: (_v: any, row: any) => (
+              <span className="nx-cell-muted-sm">{formatHrServiceSecondaryDate(row, t, formatSaudiDate)}</span>
+            ),
           },
           {
             key: 'issueDate',
             label: t('startDate'),
-            width: '25%',
-            render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
-          },
-          {
-            key: 'expiryDate',
-            label: t('expiryDate'),
-            width: '25%',
+            width: '20%',
             render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
           },
           {

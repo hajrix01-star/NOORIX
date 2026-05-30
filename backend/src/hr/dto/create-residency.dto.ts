@@ -6,6 +6,9 @@ import {
   MaxLength,
   Matches,
   ValidateIf,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import {
   EMPLOYEE_HR_SERVICE_CATEGORIES,
@@ -56,4 +59,11 @@ export class CreateResidencyDto {
   @IsString()
   @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
   notes?: string;
+
+  /** تأشيرة خروج وعودة — 1 إلى 5 أشهر */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  visaDurationMonths?: number;
 }

@@ -1,5 +1,5 @@
 ﻿/**
- * ResidencyFormModal — إضافة/تعديل خدمة موظف (إقامة، تأشيرة، تذكرة، تأمين، …)
+ * ResidencyFormModal — إضافة/تعديل خدمة موظف (حقول مختلفة حسب النوع)
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -18,11 +18,11 @@ import {
   HR_SERVICE_CATEGORY_LABEL_KEYS,
   requiresIqamaNumber,
   requiresExpiryDate,
-  showsReferenceLabel,
-  referenceLabelKey,
-  usesCompanyAsSponsor,
+  requiresVisaDurationMonths,
+  parseVisaDurationMonths,
   companyDisplayName,
 } from '../constants/employeeHrServiceCategories';
+import { HrServiceFormFields } from './HrServiceFormFields';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -34,7 +34,6 @@ type ResidencyFormModalProps = {
   residency?: any;
   companyId: any;
   defaultCategory?: string;
-  /** عند الفتح من ملف الموظف — يُقفل اختيار الموظف */
   defaultEmployeeId?: string;
   onSuccess?: () => void;
   onClose?: () => void;
@@ -66,6 +65,7 @@ export function ResidencyFormModal({
   const [serviceCategory, setServiceCategory] = useState(residency?.serviceCategory || defaultCategory);
   const [iqamaNumber, setIqamaNumber] = useState(residency?.iqamaNumber || '');
   const [referenceLabel, setReferenceLabel] = useState(residency?.referenceLabel || '');
+  const [visaDurationMonths, setVisaDurationMonths] = useState(() => parseVisaDurationMonths(residency));
   const [issueDate, setIssueDate] = useState(toYmd(residency?.issueDate));
   const [expiryDate, setExpiryDate] = useState(toYmd(residency?.expiryDate));
   const [transactionDate, setTransactionDate] = useState(toYmd(residency?.transactionDate) || getSaudiToday());
@@ -91,12 +91,7 @@ export function ResidencyFormModal({
   });
 
   const activeEmployees = (employees || []).filter((e: any) => e.status !== 'terminated' && e.status !== 'archived');
-
   const showIqama = requiresIqamaNumber(serviceCategory);
-  const showExpiry = requiresExpiryDate(serviceCategory);
-  const showRef = showsReferenceLabel(serviceCategory);
-  const sponsorIsCompany = usesCompanyAsSponsor(serviceCategory);
-  const refLabelKey = referenceLabelKey(serviceCategory);
 
   const selectedEmployee = useMemo(
     () => activeEmployees.find((e: any) => e.id === employeeId),
@@ -116,11 +111,6 @@ export function ResidencyFormModal({
     if (!iqamaNumber) setIqamaNumber(selectedEmployee.iqamaNumber);
   }, [lockEmployee, selectedEmployee, showIqama, iqamaNumber]);
 
-  useEffect(() => {
-    if (!sponsorIsCompany || !companySponsorName) return;
-    setReferenceLabel(companySponsorName);
-  }, [sponsorIsCompany, companySponsorName, serviceCategory]);
-
   const buildPayload = () => {
     const body: Record<string, unknown> = {
       companyId: cid,
@@ -130,18 +120,22 @@ export function ResidencyFormModal({
       transactionDate: transactionDate ? `${transactionDate}T00:00:00.000Z` : undefined,
     };
     if (showIqama) body.iqamaNumber = iqamaNumber.trim();
-    if (sponsorIsCompany && companySponsorName) {
-      body.referenceLabel = companySponsorName;
-    } else if (showRef && referenceLabel.trim()) {
+    if (requiresVisaDurationMonths(serviceCategory)) {
+      body.visaDurationMonths = parseInt(visaDurationMonths, 10);
+    } else if (requiresExpiryDate(serviceCategory) && expiryDate) {
+      body.expiryDate = `${expiryDate}T00:00:00.000Z`;
+    }
+    if (['iqama_new', 'iqama_renewal', 'medical_insurance'].includes(serviceCategory) && issueDate) {
+      body.issueDate = `${issueDate}T00:00:00.000Z`;
+    }
+    if (['flight_ticket', 'medical_insurance'].includes(serviceCategory) && referenceLabel.trim()) {
       body.referenceLabel = referenceLabel.trim();
     }
-    if (issueDate) body.issueDate = `${issueDate}T00:00:00.000Z`;
-    if (showExpiry && expiryDate) body.expiryDate = `${expiryDate}T00:00:00.000Z`;
     if (isEdit) body.status = status;
     return body;
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e?.preventDefault?.();
     setError('');
     if (!employeeId) {
@@ -149,11 +143,15 @@ export function ResidencyFormModal({
       return;
     }
     if (showIqama && !/^\d{10}$/.test(iqamaNumber.trim())) {
-      setError(t('iqamaNumberInvalid') || 'رقم الإقامة 10 أرقام');
+      setError(t('iqamaNumberInvalid'));
       return;
     }
-    if (showExpiry && !expiryDate) {
+    if (requiresExpiryDate(serviceCategory) && !expiryDate) {
       setError(t('requiredFields'));
+      return;
+    }
+    if (requiresVisaDurationMonths(serviceCategory) && !visaDurationMonths) {
+      setError(t('hrServiceVisaDurationRequired'));
       return;
     }
     if (!isEdit && createInvoiceForService) {
@@ -238,70 +236,29 @@ export function ResidencyFormModal({
           </p>
         )}
 
-        {showIqama && (
-          <Input
-            label={t('iqamaNumber')}
-            value={iqamaNumber}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setIqamaNumber(e.target.value)}
-            required
-            placeholder="1234567890"
-          />
-        )}
-
-        {sponsorIsCompany && (
-          <div className="mb-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/60 px-3 py-2.5">
-            <div className="text-[12px] text-noorix-muted mb-1">{t('hrServiceTransferSponsorCompany')}</div>
-            <div className="text-[14px] font-semibold text-noorix-text">{companySponsorName || '—'}</div>
-            <p className="text-[11px] text-noorix-muted mt-1.5 m-0">{t('hrServiceTransferSponsorHint')}</p>
-          </div>
-        )}
-
-        {showRef && (
-          <Input
-            label={t(refLabelKey)}
-            value={referenceLabel}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setReferenceLabel(e.target.value)}
-            placeholder={t(refLabelKey)}
-          />
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input
-            type="date"
-            label={t('hrServiceTransactionDate')}
-            value={transactionDate}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setTransactionDate(e.target.value)}
-          />
-          {showExpiry ? (
-            <Input
-              type="date"
-              label={t('expiryDate')}
-              value={expiryDate}
-              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setExpiryDate(e.target.value)}
-              required
-            />
-          ) : (
-            <Input
-              type="date"
-              label={t('startDate')}
-              value={issueDate}
-              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setIssueDate(e.target.value)}
-            />
-          )}
-        </div>
-
-        {showExpiry && (
-          <Input
-            type="date"
-            label={t('startDate')}
-            value={issueDate}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setIssueDate(e.target.value)}
-          />
-        )}
+        <HrServiceFormFields
+          t={t}
+          lang={lang}
+          serviceCategory={serviceCategory}
+          companySponsorName={companySponsorName}
+          iqamaNumber={iqamaNumber}
+          setIqamaNumber={setIqamaNumber}
+          referenceLabel={referenceLabel}
+          setReferenceLabel={setReferenceLabel}
+          visaDurationMonths={visaDurationMonths}
+          setVisaDurationMonths={setVisaDurationMonths}
+          issueDate={issueDate}
+          setIssueDate={setIssueDate}
+          expiryDate={expiryDate}
+          setExpiryDate={setExpiryDate}
+          transactionDate={transactionDate}
+          setTransactionDate={setTransactionDate}
+          showIqama={showIqama}
+        />
 
         {!isEdit && !residency?.invoiceId && (
           <>
-            <label className="nx-checkbox mb-3 text-[13px]">
+            <label className="nx-checkbox mb-3 text-[13px] mt-2">
               <input
                 type="checkbox"
                 checked={createInvoiceForService}
