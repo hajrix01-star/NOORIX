@@ -75,32 +75,30 @@ export default function RolePermissionsAccordion({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
-        <div
-          className="inline-flex flex-nowrap items-stretch rounded-lg border border-noorix-border bg-noorix-surface p-0.5 gap-0.5 shrink-0 max-w-full"
-          role="group"
-          aria-label={isAr ? 'فتح وطي الأقسام' : 'Expand and collapse sections'}
+      <div
+        className="inline-flex flex-nowrap items-stretch self-end rounded-lg border border-noorix-border bg-noorix-surface p-0.5 gap-0.5 shrink-0 max-w-full"
+        role="group"
+        aria-label={isAr ? 'فتح وطي الأقسام' : 'Expand and collapse sections'}
+      >
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={disabled}
+          className="shrink-0 whitespace-nowrap rounded-md min-h-[36px] px-3"
+          onClick={() => setOpenKeys(new Set(modules.map((m) => m.key)))}
         >
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={disabled}
-            className="shrink-0 whitespace-nowrap rounded-md min-h-[36px] px-3"
-            onClick={() => setOpenKeys(new Set(modules.map((m) => m.key)))}
-          >
-            {isAr ? 'فتح الكل' : 'Expand all'}
-          </Button>
-          <span className="w-px self-stretch bg-noorix-border shrink-0" aria-hidden />
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={disabled}
-            className="shrink-0 whitespace-nowrap rounded-md min-h-[36px] px-3"
-            onClick={() => setOpenKeys(new Set())}
-          >
-            {isAr ? 'طي الكل' : 'Collapse all'}
-          </Button>
-        </div>
+          {isAr ? 'فتح الكل' : 'Expand all'}
+        </Button>
+        <span className="w-px self-stretch bg-noorix-border shrink-0" aria-hidden />
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={disabled}
+          className="shrink-0 whitespace-nowrap rounded-md min-h-[36px] px-3"
+          onClick={() => setOpenKeys(new Set())}
+        >
+          {isAr ? 'طي الكل' : 'Collapse all'}
+        </Button>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -160,7 +158,7 @@ export default function RolePermissionsAccordion({
               </div>
 
               {isOpen && (
-                <div className="border-t border-noorix-border px-3 pb-4 pt-3 sm:px-4">
+                <div className="border-t border-noorix-border px-3 pb-3 pt-2 sm:px-4">
                   <ModulePermissionPanel
                     mod={mod}
                     levels={levels}
