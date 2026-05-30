@@ -166,10 +166,16 @@ export async function getStaffDigest(companyId: string): Promise<ApiParsedResult
 
 export async function sendStaffDigest(
   companyId: string,
-  orderIds?: string[],
-  lang?: 'ar' | 'en',
+  body: {
+    orderIds?: string[];
+    lang?: 'ar' | 'en';
+    orderType?: 'external' | 'internal';
+    pettyCashAmount?: string;
+    orderDate?: string;
+    createPurchaseOrder?: boolean;
+  } = {},
 ): Promise<ApiParsedResult<StaffDigestSendResult>> {
-  return apiPost<StaffDigestSendResult>(`/api/v1/orders/staff/send-digest?companyId=${companyId}`, { orderIds, lang });
+  return apiPost<StaffDigestSendResult>(`/api/v1/orders/staff/send-digest?companyId=${companyId}`, body);
 }
 
 // ── Sections ──────────────────────────────────────────────────────

@@ -68,9 +68,25 @@ export class OrdersController {
 
   @Post('staff/send-digest')
   @RequirePermission('STAFF_ORDERS_DIGEST')
-  sendStaffDigest(@CompanyId() companyId: string, @Body() body: { orderIds?: string[]; lang?: 'ar' | 'en' }) {
+  sendStaffDigest(
+    @CompanyId() companyId: string,
+    @Body() body: {
+      orderIds?: string[];
+      lang?: 'ar' | 'en';
+      orderType?: 'external' | 'internal';
+      pettyCashAmount?: string;
+      orderDate?: string;
+      createPurchaseOrder?: boolean;
+    },
+  ) {
     if (!companyId) throw new Error('companyId مطلوب');
-    return this.staffService.sendDigest(companyId, body?.orderIds, body?.lang ?? 'ar');
+    return this.staffService.sendDigest(companyId, body?.orderIds, {
+      lang: body?.lang ?? 'ar',
+      orderType: body?.orderType,
+      pettyCashAmount: body?.pettyCashAmount,
+      orderDate: body?.orderDate,
+      createPurchaseOrder: body?.createPurchaseOrder,
+    });
   }
 
   @Patch('staff/:id')

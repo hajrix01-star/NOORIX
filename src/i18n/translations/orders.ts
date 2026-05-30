@@ -376,6 +376,11 @@ export default {
   staffDigestSendAll:       { ar: 'إرسال الكل واتساب', en: 'Send All via WhatsApp' },
   staffDigestSendSection:   { ar: 'إرسال {0} فقط', en: 'Send {0} only' },
   staffDigestSent:          { ar: 'تم الإرسال وتعليم الطلبات كمُرسلة', en: 'Sent and marked as sent' },
+  staffDigestSendConfirmTitle: { ar: 'تأكيد إرسال المشتريات', en: 'Confirm purchase send' },
+  staffDigestSendConfirmHint: { ar: 'سيتم تجميع {0} طلب قسم في طلب مشتريات واحد، وفتح واتساب للمندوب، وتسجيل العهدة إن وُجدت.', en: '{0} section order(s) will merge into one purchase order, open WhatsApp for the rep, and record petty cash if set.' },
+  staffDigestEstimatedTotal: { ar: 'الإجمالي التقديري', en: 'Estimated total' },
+  staffDigestCreatedOrder:  { ar: 'تم إنشاء طلب مشتريات #{0}', en: 'Purchase order #{0} created' },
+  staffOrderBasketTotal:    { ar: 'إجمالي الطلب', en: 'Order total' },
   sending:                  { ar: 'جارٍ الإرسال...', en: 'Sending...' },
 
   // ── كتالوج الأصناف v2 ─────────────────────────────

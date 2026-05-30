@@ -2,6 +2,9 @@
 export type StaffDigestOrderItem = {
   quantity?: number | string;
   unit?: string | null;
+  size?: string | null;
+  packaging?: string | null;
+  unitPrice?: number | string | null;
   product?: { nameAr?: string | null; nameEn?: string | null } | null;
 };
 
@@ -27,5 +30,13 @@ export type StaffDigestData = {
 
 /** POST /api/v1/orders/staff/send-digest */
 export type StaffDigestSendResult = {
+  sent?: number;
   whatsAppText?: string;
+  grandTotal?: string;
+  purchaseOrder?: {
+    id: string;
+    orderNumber: string;
+    totalAmount: number | string;
+    orderType: string;
+  } | null;
 };
