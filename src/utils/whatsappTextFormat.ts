@@ -25,11 +25,12 @@ export function waShiftSymbol(kind: SalesWaShiftKind): string {
   return SHIFT_SYMBOL[kind];
 }
 
+/** عنوان الرسالة — السطر الأول نص فقط (بدون خط فاصل؛ واتساب يعرض ━ كسطر فارغ تقريباً) */
 export function waReportHeader(title: string, companyName?: string): string {
   const head = (companyName || '').trim()
     ? `${title} — ${companyName!.trim()}`
     : title;
-  return `${SALES_WA.rule}\n${head}\n${SALES_WA.rule}`;
+  return head;
 }
 
 /** سطر تاريخ — التسمية تحتوي 📅 */

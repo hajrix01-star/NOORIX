@@ -19,10 +19,10 @@ describe('salesWhatsAppFormat', () => {
     expect(waChannelRow('بنك', '996')).toBe('  • بنك: 996 SR');
   });
 
-  it('wraps report title in rule lines', () => {
+  it('puts report title on the first line without a rule separator', () => {
     const h = waReportHeader('تقرير مبيعات يومي', 'ARZ');
-    expect(h).toContain('ARZ');
-    expect(h.startsWith(SALES_WA.rule)).toBe(true);
+    expect(h).toBe('تقرير مبيعات يومي — ARZ');
+    expect(h.startsWith(SALES_WA.rule)).toBe(false);
   });
 });
 
