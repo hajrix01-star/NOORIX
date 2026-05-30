@@ -3,7 +3,7 @@ import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { SkipCompanyCheck } from '../auth/decorators/skip-company-check.decorator';
 import { VatPlanningService, UpsertVatPlanningDto } from './vat-planning.service';
 import type { JwtUser } from '../auth/decorators/current-user.decorator';
@@ -16,7 +16,7 @@ export class VatPlanningController {
   /** سجل الإقرارات المحفوظة مع فلاتر اختيارية */
   @Get('registry')
   @SkipCompanyCheck()
-  @RequirePermission('REPORTS_READ')
+  @RequireAnyPermission('HAJRI_TAX_READ', 'REPORTS_READ')
   async listRegistry(
     @Query('year') yearStr: string | undefined,
     @Query('quarter') quarterStr: string | undefined,
@@ -37,7 +37,7 @@ export class VatPlanningController {
 
   @Get()
   @SkipCompanyCheck()
-  @RequirePermission('REPORTS_READ')
+  @RequireAnyPermission('HAJRI_TAX_READ', 'REPORTS_READ')
   async list(
     @Query('year') yearStr: string,
     @Query('quarter') quarterStr: string,
@@ -53,14 +53,14 @@ export class VatPlanningController {
 
   @Put()
   @SkipCompanyCheck()
-  @RequirePermission('REPORTS_READ')
+  @RequireAnyPermission('HAJRI_TAX_WRITE', 'REPORTS_READ')
   async upsert(@Req() req: { user: JwtUser }, @Body() body: UpsertVatPlanningDto) {
     return this.service.upsert(req.user, body);
   }
 
   @Delete()
   @SkipCompanyCheck()
-  @RequirePermission('REPORTS_READ')
+  @RequireAnyPermission('HAJRI_TAX_WRITE', 'REPORTS_READ')
   async remove(
     @CompanyId() companyId: string,
     @Query('year') yearStr: string,

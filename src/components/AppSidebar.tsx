@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, type NavLinkRenderProps } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
-import { hasPermission, hasAnyOfPermissions, HR_APP_ACCESS, SETTINGS_APP_ACCESS, INVOICES_ROUTE_ACCESS } from '../constants/permissions';
+import { hasPermission, hasAnyOfPermissions, HR_APP_ACCESS, SETTINGS_APP_ACCESS, INVOICES_ROUTE_ACCESS, REPORTS_APP_ACCESS, REPORTS_GENERAL_ACCESS, REPORTS_COST_APPS_ACCESS, REPORTS_TAX_ACCESS, REPORTS_BANK_ACCESS, HAJRI_TAX_APP_ACCESS, ASSETS_APP_ACCESS } from '../constants/permissions';
 import { prefetchRouteChunk } from '../utils/routePrefetch';
 import { canAccessThemePreview } from '../utils/themePreviewAccess';
 import { getBrandName, getBrandLogo, getBrandTagline } from '../utils/appBranding';
@@ -36,20 +36,20 @@ const SIDEBAR_LINKS = [
   { to: '/suppliers', labelKey: 'suppliersAndCategories', icon: IconTruck, permission: 'VIEW_SUPPLIERS' },
   { to: '/treasury', labelKey: 'vaults', icon: IconDollar, permission: 'VIEW_VAULTS' },
   { to: '/expenses', labelKey: 'fixedAndVariableExpenses', icon: IconWallet, permission: 'VIEW_EXPENSES' },
-  { to: '/assets', labelKey: 'assetsRegister', icon: IconMonitor, permission: 'VIEW_EXPENSES' },
+  { to: '/assets', labelKey: 'assetsRegister', icon: IconMonitor, permission: ASSETS_APP_ACCESS },
   { to: '/orders', labelKey: 'orders', icon: IconBox, permission: 'VIEW_ORDERS' },
   { to: '/hr', labelKey: 'hr', icon: IconPeople, permission: HR_APP_ACCESS },
-  { to: '/hajri-tax', labelKey: 'hajriTax', icon: IconDocument, permission: 'VIEW_REPORTS' },
+  { to: '/hajri-tax', labelKey: 'hajriTax', icon: IconDocument, permission: HAJRI_TAX_APP_ACCESS },
   {
     to: '/reports',
     labelKey: 'reports',
     icon: IconChartBar,
-    permission: 'VIEW_REPORTS',
+    permission: REPORTS_APP_ACCESS,
     children: [
-      { to: '/reports/general', labelKey: 'reportGeneralReport', icon: IconChartBar },
-      { to: '/reports/cost-apps', labelKey: 'reportCostAppsNav', icon: IconChartBar },
-      { to: '/reports/tax', labelKey: 'reportTax', icon: IconDocument },
-      { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis', icon: IconChartBar },
+      { to: '/reports/general', labelKey: 'reportGeneralReport', icon: IconChartBar, permission: REPORTS_GENERAL_ACCESS },
+      { to: '/reports/cost-apps', labelKey: 'reportCostAppsNav', icon: IconChartBar, permission: REPORTS_COST_APPS_ACCESS },
+      { to: '/reports/tax', labelKey: 'reportTax', icon: IconDocument, permission: REPORTS_TAX_ACCESS },
+      { to: '/reports/bank-statement', labelKey: 'reportBankStatementAnalysis', icon: IconChartBar, permission: REPORTS_BANK_ACCESS },
     ],
   },
   { to: '/ocr', labelKey: 'ocrTitle', icon: IconOcr, permission: 'VIEW_OCR' },
@@ -163,7 +163,14 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
                   </Button>
                   {reportsOpen && (
                     <ul className="app-nav-list app-nav-list--nested">
-                      {link.children.map((child: any) => (
+                      {link.children
+                        .filter((child: { permission?: string | readonly string[] }) => {
+                          const cp = child.permission;
+                          if (!cp) return true;
+                          if (Array.isArray(cp)) return hasAnyOfPermissions(userRole, cp, userPermissions);
+                          return hasPermission(userRole, cp, userPermissions);
+                        })
+                        .map((child: any) => (
                         <li key={child.to} className="app-nav-item">
                           <NavLink
                             to={child.to}
