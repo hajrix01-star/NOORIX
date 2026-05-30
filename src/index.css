@@ -4669,23 +4669,23 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border-radius: 0;
     background: transparent;
   }
-  /* قائمة الموظفين — صفوف بعرض الكرت؛ هامش النص فقط عبر --nx-hr-text-inset */
+  /* تبويبات HR — قائمة flat: صفوف بعرض الكرت؛ هامش النص فقط */
   @media (max-width: 768px) {
-    .nx-hr-workspace__body:not(.nx-hr-workspace__body--staff-list) .nx-compact-row {
+    .nx-hr-workspace__body:not(.nx-hr-workspace__body--flat-list) .nx-compact-row {
       padding-inline: 16px;
     }
-    .nx-hr-workspace__body--staff-list {
+    .nx-hr-workspace__body--flat-list {
       padding-inline: 0 !important;
     }
-    .nx-hr-workspace__body--staff-list .nx-hr-staff-controls {
+    .nx-hr-workspace__body--flat-list .nx-hr-tab-controls {
       padding-inline: var(--nx-hr-gutter, 1rem);
     }
-    .nx-hr-workspace__body--staff-list .nx-hr-staff-list {
+    .nx-hr-workspace__body--flat-list .nx-hr-flat-list {
       width: 100%;
       margin-inline: 0;
       max-width: none;
     }
-    .nx-hr-workspace__body--staff-list .nx-hr-staff-list .nx-hr-table--flat-list.noorix-table-frame {
+    .nx-hr-workspace__body--flat-list .nx-hr-flat-list .nx-hr-table--flat-list.noorix-table-frame {
       border: none;
       box-shadow: none;
       background: transparent;
@@ -4693,21 +4693,22 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
       overflow: visible;
       overflow-x: visible;
     }
-    .nx-hr-workspace__body--staff-list .nx-hr-staff-list .nx-hr-table--flat-list .nx-compact-row {
+    .nx-hr-workspace__body--flat-list .nx-hr-flat-list .nx-hr-table--flat-list .nx-compact-row {
       padding: 0 !important;
       margin-inline: 0;
       width: 100%;
       box-sizing: border-box;
       border-bottom: 1px solid var(--noorix-border);
     }
-    .nx-hr-workspace__body--staff-list .nx-hr-staff-list .nx-hr-table--flat-list .nx-compact-row:last-child {
+    .nx-hr-workspace__body--flat-list .nx-hr-flat-list .nx-hr-table--flat-list .nx-compact-row:last-child {
       border-bottom: none;
     }
-    .nx-hr-workspace__body--staff-list .nx-hr-staff-row__inner {
+    .nx-hr-workspace__body--flat-list .nx-compact-row > * {
       box-sizing: border-box;
-      max-width: 100%;
       width: 100%;
+      max-width: 100%;
       padding-inline: var(--nx-hr-text-inset, 1.25rem) !important;
+      padding-block: 0.75rem;
     }
   }
 

@@ -17,11 +17,12 @@ import { useTableFilter } from '../../../hooks/useTableFilter';
 import { AdvanceQuickModal } from '../components/AdvanceQuickModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, AdaptiveSheet, Input, ScreenShell, cn, FmtNum, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, Input, cn, FmtNum, KebabMenu, SmartTable } from '../../../ui';
 import { buildAdvanceSettlementStatusMap } from '../../../constants/badgeMaps';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { hrKeys } from '../../../services/queryKeys';
-import { HR_EMBEDDED_SHELL_CLASS } from '../hrWorkspaceLayout';
+import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
+import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 import { countTruthyFilters } from '../utils/hrActiveFilterCount';
 
@@ -347,52 +348,56 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   };
 
   return (
-    <ScreenShell embedded={!!embedded} className={embedded ? HR_EMBEDDED_SHELL_CLASS : undefined}>
-      <HrTabToolbar
-        filters={advanceFilters}
-        activeFilterCount={activeFilterCount}
-        onResetFilters={resetAdvanceFilters}
-        menuItems={[
-          {
-            key: 'export',
-            label: t('exportExcel'),
-            onClick: () => exportToExcel(exportData, 'advances.xlsx'),
-          },
-        ]}
-        primaryAction={{
-          label: t('payAdvance'),
-          onClick: () => setShowAdvance(true),
-        }}
-      />
-
-      <SmartTable
-        compact
-        showRowNumbers
-        rowNumberWidth="1%"
-        innerPadding={8}
-        columns={columns}
-        data={filteredData}
-        total={allFilteredData.length}
-        page={page}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPage}
-        isLoading={isLoading}
-        isError={isError}
-        title={t('hrTabAdvances')}
-        badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
-        searchValue={searchText}
-        onSearchChange={setSearch}
-        showSearchInHeader
-        sortKey={sortKey}
-        sortDir={sortDir}
-        onSort={toggleSort}
-        footerCells={footerCells}
-        emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={renderCompactRow}
-        renderMobileCard={renderMobileCard}
-        stripeMobileCards
-      />
-
+    <HrFlatListTabShell
+      embedded={embedded}
+      controls={(
+        <HrTabToolbar
+          filters={advanceFilters}
+          activeFilterCount={activeFilterCount}
+          onResetFilters={resetAdvanceFilters}
+          menuItems={[
+            {
+              key: 'export',
+              label: t('exportExcel'),
+              onClick: () => exportToExcel(exportData, 'advances.xlsx'),
+            },
+          ]}
+          primaryAction={{
+            label: t('payAdvance'),
+            onClick: () => setShowAdvance(true),
+          }}
+        />
+      )}
+      list={(
+        <SmartTable
+          compact
+          showRowNumbers
+          rowNumberWidth="1%"
+          {...hrFlatSmartTableShellProps(embedded)}
+          columns={columns}
+          data={filteredData}
+          total={allFilteredData.length}
+          page={page}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          isLoading={isLoading}
+          isError={isError}
+          title={embedded ? undefined : t('hrTabAdvances')}
+          badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
+          searchValue={searchText}
+          onSearchChange={setSearch}
+          showSearchInHeader={!embedded}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={toggleSort}
+          footerCells={footerCells}
+          emptyMessage={t('noDataInPeriod')}
+          renderCompactRow={renderCompactRow}
+          renderMobileCard={renderMobileCard}
+          stripeMobileCards
+        />
+      )}
+    >
       {showAdvance && (
         <AdvanceQuickModal
           employee={null}
@@ -432,7 +437,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
           onError={(msg: any) => showToast(msg, 'error')}
         />
       )}
-    </ScreenShell>
+    </HrFlatListTabShell>
   );
 }
 

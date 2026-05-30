@@ -40,12 +40,9 @@ import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
 import {
-  HR_EMBEDDED_SHELL_CLASS,
-  HR_STAFF_CONTROLS_CLASS,
-  HR_STAFF_LIST_CLASS,
-  HR_STAFF_ROW_INNER_PAD_CLASS,
-  HR_WORKSPACE_TABLE_CLASS,
+  hrFlatSmartTableShellProps,
 } from './hrWorkspaceLayout';
+import { HrFlatListTabShell } from './components/HrFlatListTabShell';
 import { HrTabToolbar } from './components/HrTabToolbar';
 import { HrSegmentedControl } from './components/HrSegmentedControl';
 
@@ -445,7 +442,6 @@ export default function StaffListScreen({ embedded }: any) {
       <div
         className={cn(
           'nx-hr-staff-row__inner flex min-w-0 items-start justify-between gap-3',
-          embedded && HR_STAFF_ROW_INNER_PAD_CLASS,
         )}
         onClick={() => navigate(`/hr/employee/${row.id}`)}
         style={{ cursor: 'pointer' }}
@@ -488,34 +484,59 @@ export default function StaffListScreen({ embedded }: any) {
 
   const renderCompactRow = useCallback((row: any) => renderStaffMobileRow(row), [renderStaffMobileRow]);
 
-  return (
-    embedded ? (
-      <div className={cn(HR_EMBEDDED_SHELL_CLASS, 'gap-0')}>
-        {renderStaffContent()}
-      </div>
-    ) : (
-      <ScreenShell>
-        {renderStaffContent()}
-      </ScreenShell>
-    )
+  const flatTableProps = hrFlatSmartTableShellProps(embedded);
+
+  const staffToolbar = (
+    <HrTabToolbar
+      leading={(
+        <HrSegmentedControl
+          tone="filter"
+          className="nx-hr-view-modes w-full min-w-0"
+          items={employeeViewModeItems}
+          value={viewMode}
+          onChange={setViewMode}
+        />
+      )}
+      desktopActions={(
+        <Button
+          size="sm"
+          className="hidden lg:inline-flex shrink-0 whitespace-nowrap"
+          icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+          onClick={() => setShowImportExport(true)}
+        >
+          {t('importExportLabel')}
+        </Button>
+      )}
+      menuItems={[
+        {
+          key: 'import',
+          label: t('importExportLabel'),
+          onClick: () => setShowImportExport(true),
+        },
+      ]}
+      primaryAction={{
+        label: t('addEmployee'),
+        onClick: () => {
+          setEditingEmployee(null);
+          setShowForm(true);
+        },
+      }}
+    />
   );
 
-  function renderStaffContent() {
-    return (
-      <>
+  const staffControls = (
+    <>
       {!embedded && (
         <div>
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
           <p className="text-[13px] text-noorix-muted m-0">{t('staffDesc')}</p>
         </div>
       )}
-
       {!companyId && (
         <div className="noorix-surface-card nx-empty-state">
           {t('pleaseSelectCompany')}
         </div>
       )}
-
       {companyId && (
         <>
           <ImportExportModal
@@ -541,154 +562,54 @@ export default function StaffListScreen({ embedded }: any) {
               showToast(t('employeesImportSuccessCount', String(count)), 'success');
             }}
           />
-
+          {staffToolbar}
           {embedded ? (
-            <div className={HR_STAFF_CONTROLS_CLASS}>
-              <HrTabToolbar
-                leading={(
-                  <HrSegmentedControl
-                    tone="filter"
-                    className="nx-hr-view-modes w-full min-w-0"
-                    items={employeeViewModeItems}
-                    value={viewMode}
-                    onChange={setViewMode}
-                  />
-                )}
-                desktopActions={(
-                  <Button
-                    size="sm"
-                    className="hidden lg:inline-flex shrink-0 whitespace-nowrap"
-                    icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
-                    onClick={() => setShowImportExport(true)}
-                  >
-                    {t('importExportLabel')}
-                  </Button>
-                )}
-                menuItems={[
-                  {
-                    key: 'import',
-                    label: t('importExportLabel'),
-                    onClick: () => setShowImportExport(true),
-                  },
-                ]}
-                primaryAction={{
-                  label: t('addEmployee'),
-                  onClick: () => {
-                    setEditingEmployee(null);
-                    setShowForm(true);
-                  },
-                }}
-              />
-              <Input
-                type="search"
-                value={searchInput}
-                onChange={(e: any) => setSearchInput(e.target.value)}
-                placeholder={t('searchPlaceholder')}
-                size="sm"
-                className="w-full min-w-0"
-                aria-label={t('searchPlaceholder')}
-              />
-            </div>
-          ) : (
-            <HrTabToolbar
-              leading={(
-                <HrSegmentedControl
-                  tone="filter"
-                  className="nx-hr-view-modes w-full min-w-0"
-                  items={employeeViewModeItems}
-                  value={viewMode}
-                  onChange={setViewMode}
-                />
-              )}
-              desktopActions={(
-                <Button
-                  size="sm"
-                  className="hidden lg:inline-flex shrink-0 whitespace-nowrap"
-                  icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
-                  onClick={() => setShowImportExport(true)}
-                >
-                  {t('importExportLabel')}
-                </Button>
-              )}
-              menuItems={[
-                {
-                  key: 'import',
-                  label: t('importExportLabel'),
-                  onClick: () => setShowImportExport(true),
-                },
-              ]}
-              primaryAction={{
-                label: t('addEmployee'),
-                onClick: () => {
-                  setEditingEmployee(null);
-                  setShowForm(true);
-                },
-              }}
+            <Input
+              type="search"
+              value={searchInput}
+              onChange={(e: any) => setSearchInput(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              size="sm"
+              className="w-full min-w-0"
+              aria-label={t('searchPlaceholder')}
             />
-          )}
-
-          {embedded ? (
-            <div className={HR_STAFF_LIST_CLASS}>
-              <SmartTable
-                compact
-                showRowNumbers
-                tableMinWidth={960}
-                innerPadding={0}
-                frameClassName={cn(
-                  HR_WORKSPACE_TABLE_CLASS,
-                  'nx-hr-table--flat-list noorix-table-frame--mobile-list',
-                )}
-                columns={columns}
-                data={tableData}
-                total={listTotal}
-                page={listPage}
-                pageSize={PAGE_SIZE}
-                onPageChange={setListPage}
-                isLoading={isLoading}
-                isError={!!employeesError}
-                errorMessage={employeesError?.message || t('employeesLoadFailed')}
-                searchValue={searchInput}
-                onSearchChange={setSearchInput}
-                showSearchInHeader={false}
-                sortKey={sortKey}
-                sortDir={sortDir}
-                onSort={toggleSort}
-                emptyMessage={t('noEmployees')}
-                renderCompactRow={renderCompactRow}
-                stripeMobileCards
-              />
-            </div>
-          ) : (
-            <SmartTable
-              compact
-              showRowNumbers
-              tableMinWidth={960}
-              innerPadding={8}
-              columns={columns}
-              data={tableData}
-              total={listTotal}
-              page={listPage}
-              pageSize={PAGE_SIZE}
-              onPageChange={setListPage}
-              isLoading={isLoading}
-              isError={!!employeesError}
-              errorMessage={employeesError?.message || t('employeesLoadFailed')}
-              title={t('employeesList')}
-              badge={<span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
-              searchValue={searchInput}
-              onSearchChange={setSearchInput}
-              showSearchInHeader
-              sortKey={sortKey}
-              sortDir={sortDir}
-              onSort={toggleSort}
-              emptyMessage={t('noEmployees')}
-              renderCompactRow={renderCompactRow}
-              stripeMobileCards
-            />
-          )}
+          ) : null}
         </>
       )}
+    </>
+  );
 
+  const staffList = companyId ? (
+    <SmartTable
+      compact
+      showRowNumbers
+      tableMinWidth={960}
+      {...flatTableProps}
+      columns={columns}
+      data={tableData}
+      total={listTotal}
+      page={listPage}
+      pageSize={PAGE_SIZE}
+      onPageChange={setListPage}
+      isLoading={isLoading}
+      isError={!!employeesError}
+      errorMessage={employeesError?.message || t('employeesLoadFailed')}
+      title={embedded ? undefined : t('employeesList')}
+      badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
+      searchValue={searchInput}
+      onSearchChange={setSearchInput}
+      showSearchInHeader={!embedded}
+      sortKey={sortKey}
+      sortDir={sortDir}
+      onSort={toggleSort}
+      emptyMessage={t('noEmployees')}
+      renderCompactRow={renderCompactRow}
+      stripeMobileCards
+    />
+  ) : null;
+
+  const staffModals = (
+    <>
       {showForm && (
         <StaffFormModal
           employee={null}
@@ -813,6 +734,13 @@ export default function StaffListScreen({ embedded }: any) {
         </div>
       </Modal>
     </>
-    );
-  }
+  );
+
+  const shell = (
+    <HrFlatListTabShell embedded={embedded} controls={staffControls} list={staffList}>
+      {staffModals}
+    </HrFlatListTabShell>
+  );
+
+  return embedded ? shell : <ScreenShell>{shell}</ScreenShell>;
 }

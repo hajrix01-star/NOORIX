@@ -10,7 +10,11 @@ import {
   type HrSectionId,
   type HrSubTabId,
 } from '../hrScreenNavigation';
-import { HR_WORKSPACE_BODY_CLASS, HR_WORKSPACE_BODY_STAFF_LIST_CLASS } from '../hrWorkspaceLayout';
+import {
+  HR_WORKSPACE_BODY_CLASS,
+  HR_WORKSPACE_BODY_FLAT_LIST_CLASS,
+  isHrFlatListTab,
+} from '../hrWorkspaceLayout';
 import StaffListScreen from '../StaffListScreen';
 import PayrollTab from '../tabs/PayrollTab';
 import LeaveTab from '../tabs/LeaveTab';
@@ -95,8 +99,8 @@ export function HrSectionSubTabs({ section, tab, onTabChange }: HrSectionSubTabs
       value={activeTab}
       onChange={(id) => onTabChange(id as HrSubTabId)}
       contentClassName={
-        section === 'people' && activeTab === 'list'
-          ? HR_WORKSPACE_BODY_STAFF_LIST_CLASS
+        isHrFlatListTab(section, activeTab)
+          ? HR_WORKSPACE_BODY_FLAT_LIST_CLASS
           : HR_WORKSPACE_BODY_CLASS
       }
     >
