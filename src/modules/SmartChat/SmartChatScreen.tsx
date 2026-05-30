@@ -15,7 +15,7 @@ import ExpenseFormModal from '../Expenses/components/ExpenseFormModal';
 import './SmartChatScreen.css';
 import { AdaptiveSheet, useAdaptiveSheetNarrow } from '../../ui';
 import { PERMANENT_QUESTIONS } from './utils/smartChatConstants';
-import { filterCommandGroups, filterVisibleFaqQuestions, canUseChatPresetFaq } from './utils/smartChatGuards';
+import { filterCommandGroups, filterVisibleFaqQuestions } from './utils/smartChatGuards';
 import { useSmartChatMessages } from './hooks/useSmartChatMessages';
 import { useSmartChatUploads } from './hooks/useSmartChatUploads';
 import { useSmartChatComposer } from './hooks/useSmartChatComposer';
@@ -60,8 +60,11 @@ export default function SmartChatScreen() {
     [u?.role, u?.permissions],
   );
 
-  const showFaq = canUseChatPresetFaq(can);
-  const visibleFaqQuestions = filterVisibleFaqQuestions(showFaq, PERMANENT_QUESTIONS, can);
+  const visibleFaqQuestions = useMemo(
+    () => filterVisibleFaqQuestions(PERMANENT_QUESTIONS, can),
+    [can],
+  );
+  const showFaq = visibleFaqQuestions.length > 0;
   const filteredGroups = useMemo(() => filterCommandGroups(can), [can]);
 
   const { recordUsage, getSortedQuestions } = useSmartChatUsage(activeCompanyId, userId);
@@ -113,7 +116,10 @@ export default function SmartChatScreen() {
   const handleSendTracked = useCallback(
     async (text?: string) => {
       const q = (text ?? input ?? '').trim();
-      if (q) recordUsage(q);
+      if (q) {
+        const hit = PERMANENT_QUESTIONS.find((item) => item.ar === q || item.en === q);
+        recordUsage(hit?.key ?? q);
+      }
       await handleSend(text);
     },
     [handleSend, input, recordUsage],

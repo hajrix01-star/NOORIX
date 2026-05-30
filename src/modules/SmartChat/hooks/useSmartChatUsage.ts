@@ -5,6 +5,7 @@
 import { useCallback, useMemo } from 'react';
 import type { PermanentQuestion, PermissionChecker } from '../types';
 import { PERMANENT_QUESTIONS } from '../utils/smartChatConstants';
+import { filterVisibleFaqQuestions } from '../utils/smartChatGuards';
 
 const STORAGE_PREFIX = 'noorix-chat-usage-';
 const MAX_TOP = 6;
@@ -45,10 +46,10 @@ export function useSmartChatUsage(companyId: string | undefined, userId: string 
   const getSortedQuestions = useCallback(
     (can: PermissionChecker, isAr: boolean): PermanentQuestion[] => {
       const usage = loadUsage(cid, uid);
-      const visible = PERMANENT_QUESTIONS.filter((q) => q.domain(can));
+      const visible = filterVisibleFaqQuestions(PERMANENT_QUESTIONS, can);
       const sorted = [...visible].sort((a, b) => {
-        const keyA = isAr ? a.ar : a.en;
-        const keyB = isAr ? b.ar : b.en;
+        const keyA = a.key;
+        const keyB = b.key;
         return (usage[keyB] || 0) - (usage[keyA] || 0);
       });
       return sorted.slice(0, MAX_TOP);

@@ -6,6 +6,7 @@
  */
 import { PERMISSIONS } from '../../../constants/permissions';
 import type { ChatCommandGroup, PermanentQuestion, PermissionChecker } from '../types';
+import { canUseFaqQuestion } from './smartChatFaqAccess';
 
 export const CHAT_PAGE_SIZE = 6;
 
@@ -18,70 +19,89 @@ const canEmployees = (c: PermissionChecker) => c(PERMISSIONS.VIEW_EMPLOYEES) || 
 
 export const PERMANENT_QUESTIONS: PermanentQuestion[] = [
   {
+    key: 'annualSales',
     section: 'reports',
     ar: 'كم مبيعات السنة؟',
     en: 'What are annual sales?',
     shortAr: 'مبيعات السنة',
     shortEn: 'Annual sales',
-    domain: canSales,
+    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_ANNUAL_SALES, canSales),
   },
   {
+    key: 'vaultBalances',
     section: 'reports',
     ar: 'ما أرصدة الخزائن؟',
     en: 'What are vault balances?',
     shortAr: 'أرصدة الخزائن',
     shortEn: 'Vault balances',
-    domain: canVaults,
+    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_VAULT_BALANCES, canVaults),
   },
   {
+    key: 'pnlSummary',
     section: 'reports',
     ar: 'أعطني ملخص الربح والخسارة',
     en: 'Give me P&L summary',
     shortAr: 'ملخص الربح والخسارة',
     shortEn: 'P&L summary',
-    domain: canReports,
+    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_PNL_SUMMARY, canReports),
   },
   {
+    key: 'loadVsSales',
     section: 'reports',
     ar: 'نسب الخارج على المبيعات (مشتريات، مصروفات، المجموع — حتى أمس)',
     en: 'Operating load vs sales: purchases %, expenses %, combined % (MTD through yesterday).',
     shortAr: 'نسب الخارج على المبيعات',
     shortEn: 'Load vs sales (MTD)',
-    domain: (c) => canSales(c) && canInvoices(c) && canVaults(c),
+    canUse: (c) =>
+      canUseFaqQuestion(
+        c,
+        PERMISSIONS.CHAT_FAQ_LOAD_VS_SALES,
+        (x) => canSales(x) && canInvoices(x) && canVaults(x),
+      ),
   },
   {
+    key: 'salesCompare',
     section: 'compare',
     ar: 'مبيعات الشهر الحالي مقابل الماضي (نفس الفترة)',
     en: 'This month vs last month sales (aligned partial months).',
     shortAr: 'مبيعات: الحالي vs الماضي',
     shortEn: 'Sales: this vs last month',
-    domain: canSales,
+    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_SALES_COMPARE, canSales),
   },
   {
+    key: 'invoiceCount',
     section: 'counts',
     ar: 'كم عدد الفواتير؟',
     en: 'How many invoices?',
     shortAr: 'عدد الفواتير',
     shortEn: 'Invoice count',
-    domain: canInvoices,
+    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_INVOICE_COUNT, canInvoices),
   },
   {
+    key: 'supplierCount',
     section: 'counts',
     ar: 'كم عدد الموردين؟',
     en: 'How many suppliers?',
     shortAr: 'عدد الموردين',
     shortEn: 'Supplier count',
-    domain: canSuppliers,
+    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_SUPPLIER_COUNT, canSuppliers),
   },
   {
+    key: 'employeeCount',
     section: 'counts',
     ar: 'كم عدد الموظفين؟',
     en: 'How many employees?',
     shortAr: 'عدد الموظفين',
     shortEn: 'Employee count',
-    domain: canEmployees,
+    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_EMPLOYEE_COUNT, canEmployees),
   },
-  { section: 'other', ar: 'مساعدة', en: 'Help', domain: () => true },
+  {
+    key: 'help',
+    section: 'other',
+    ar: 'مساعدة',
+    en: 'Help',
+    canUse: (c) => canUseFaqQuestion(c, PERMISSIONS.CHAT_FAQ_HELP, () => true),
+  },
 ];
 
 export const CMD_GROUPS: ChatCommandGroup[] = [
@@ -96,36 +116,35 @@ export const CMD_GROUPS: ChatCommandGroup[] = [
         labelAr: 'إضافة موظف',
         labelEn: 'Add employee',
         icon: '',
-        canUse: (c) => (c(PERMISSIONS.HR_READ) || c(PERMISSIONS.EMPLOYEES_READ)) && c(PERMISSIONS.EMPLOYEES_WRITE),
+        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_ADD_EMPLOYEE),
       },
       {
         key: 'advance',
         labelAr: 'صرف سلفة',
         labelEn: 'Pay advance',
         icon: '',
-        canUse: (c) =>
-          c(PERMISSIONS.CHAT_PRESET_ADVANCES) || c(PERMISSIONS.HR_WRITE) || c(PERMISSIONS.EMPLOYEES_WRITE),
+        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_ADVANCES),
       },
       {
         key: 'increase',
         labelAr: 'زيادة / بدل',
         labelEn: 'Raise / Allowance',
         icon: '',
-        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_INCREASES) || c(PERMISSIONS.HR_WRITE),
+        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_INCREASES),
       },
       {
         key: 'leave',
         labelAr: 'تسجيل إجازة',
         labelEn: 'Record leave',
         icon: '',
-        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_LEAVES) || c(PERMISSIONS.HR_WRITE),
+        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_LEAVES),
       },
       {
         key: 'deduction',
         labelAr: 'تسجيل خصم',
         labelEn: 'Record deduction',
         icon: '',
-        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_DEDUCTIONS) || c(PERMISSIONS.HR_WRITE),
+        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_DEDUCTIONS),
       },
     ],
   },
@@ -140,21 +159,21 @@ export const CMD_GROUPS: ChatCommandGroup[] = [
         labelAr: 'إضافة مصاريف ثابتة',
         labelEn: 'Add fixed expenses',
         icon: '',
-        canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE),
+        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_EXPENSE_ADD),
       },
       {
         key: 'payExpense',
         labelAr: 'سداد مصاريف ثابتة',
         labelEn: 'Payment of fixed expenses',
         icon: '',
-        canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE),
+        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_EXPENSE_PAY),
       },
       {
         key: 'editExpenseLine',
         labelAr: 'تعديل مصاريف ثابتة',
         labelEn: 'Edit fixed expenses',
         icon: '',
-        canUse: (c) => c(PERMISSIONS.EXPENSES_WRITE) || c(PERMISSIONS.INVOICES_WRITE),
+        canUse: (c) => c(PERMISSIONS.CHAT_PRESET_EXPENSE_EDIT),
       },
     ],
   },

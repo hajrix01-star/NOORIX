@@ -65,6 +65,21 @@ export const PERMISSIONS = {
   CHAT_PRESET_DEDUCTIONS:'CHAT_PRESET_DEDUCTIONS',
   CHAT_PRESET_FAQ:       'CHAT_PRESET_FAQ',
   CHAT_PRESET_INCREASES: 'CHAT_PRESET_INCREASES',
+  CHAT_PRESET_ADD_EMPLOYEE: 'CHAT_PRESET_ADD_EMPLOYEE',
+  CHAT_PRESET_EXPENSE_ADD:  'CHAT_PRESET_EXPENSE_ADD',
+  CHAT_PRESET_EXPENSE_PAY:  'CHAT_PRESET_EXPENSE_PAY',
+  CHAT_PRESET_EXPENSE_EDIT: 'CHAT_PRESET_EXPENSE_EDIT',
+
+  /** أسئلة جاهزة — كل سؤال صلاحية مستقلة في مصفوفة الأدوار */
+  CHAT_FAQ_ANNUAL_SALES:   'CHAT_FAQ_ANNUAL_SALES',
+  CHAT_FAQ_VAULT_BALANCES: 'CHAT_FAQ_VAULT_BALANCES',
+  CHAT_FAQ_PNL_SUMMARY:    'CHAT_FAQ_PNL_SUMMARY',
+  CHAT_FAQ_LOAD_VS_SALES:  'CHAT_FAQ_LOAD_VS_SALES',
+  CHAT_FAQ_SALES_COMPARE:  'CHAT_FAQ_SALES_COMPARE',
+  CHAT_FAQ_INVOICE_COUNT:  'CHAT_FAQ_INVOICE_COUNT',
+  CHAT_FAQ_SUPPLIER_COUNT: 'CHAT_FAQ_SUPPLIER_COUNT',
+  CHAT_FAQ_EMPLOYEE_COUNT: 'CHAT_FAQ_EMPLOYEE_COUNT',
+  CHAT_FAQ_HELP:           'CHAT_FAQ_HELP',
 
   EMPLOYEES_READ:   'EMPLOYEES_READ',
   EMPLOYEES_WRITE:  'EMPLOYEES_WRITE',
@@ -96,6 +111,19 @@ export const PERMISSIONS = {
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+/** كل صلاحيات الأسئلة الجاهزة (لتسهيل بذر الأدوار) */
+export const CHAT_FAQ_PERMISSIONS: Permission[] = [
+  PERMISSIONS.CHAT_FAQ_ANNUAL_SALES,
+  PERMISSIONS.CHAT_FAQ_VAULT_BALANCES,
+  PERMISSIONS.CHAT_FAQ_PNL_SUMMARY,
+  PERMISSIONS.CHAT_FAQ_LOAD_VS_SALES,
+  PERMISSIONS.CHAT_FAQ_SALES_COMPARE,
+  PERMISSIONS.CHAT_FAQ_INVOICE_COUNT,
+  PERMISSIONS.CHAT_FAQ_SUPPLIER_COUNT,
+  PERMISSIONS.CHAT_FAQ_EMPLOYEE_COUNT,
+  PERMISSIONS.CHAT_FAQ_HELP,
+];
 
 // ── الأدوار النظامية ──────────────────────────────────
 
@@ -185,6 +213,14 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       view: 'VIEW_CHAT', read: 'SMART_CHAT_READ',
       chatAdv: 'CHAT_PRESET_ADVANCES', chatLeave: 'CHAT_PRESET_LEAVES',
       chatDed: 'CHAT_PRESET_DEDUCTIONS', chatFaq: 'CHAT_PRESET_FAQ', chatInc: 'CHAT_PRESET_INCREASES',
+      chatEmp: 'CHAT_PRESET_ADD_EMPLOYEE',
+      chatExpAdd: 'CHAT_PRESET_EXPENSE_ADD', chatExpPay: 'CHAT_PRESET_EXPENSE_PAY',
+      chatExpEdit: 'CHAT_PRESET_EXPENSE_EDIT',
+      faqSalesYear: 'CHAT_FAQ_ANNUAL_SALES', faqVaults: 'CHAT_FAQ_VAULT_BALANCES',
+      faqPnl: 'CHAT_FAQ_PNL_SUMMARY', faqLoadSales: 'CHAT_FAQ_LOAD_VS_SALES',
+      faqCompare: 'CHAT_FAQ_SALES_COMPARE', faqInvCount: 'CHAT_FAQ_INVOICE_COUNT',
+      faqSupCount: 'CHAT_FAQ_SUPPLIER_COUNT', faqEmpCount: 'CHAT_FAQ_EMPLOYEE_COUNT',
+      faqHelp: 'CHAT_FAQ_HELP',
     },
   },
   {
@@ -222,6 +258,19 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
   chatFaq:    { ar: 'محادثة · أسئلة', en: 'Chat · FAQ' },
   chatInc:    { ar: 'محادثة · زيادات', en: 'Chat · Raises' },
+  chatEmp:    { ar: 'محادثة · إضافة موظف', en: 'Chat · Add employee' },
+  chatExpAdd: { ar: 'محادثة · إضافة مصروف ثابت', en: 'Chat · Add fixed expense' },
+  chatExpPay: { ar: 'محادثة · سداد مصروف ثابت', en: 'Chat · Pay fixed expense' },
+  chatExpEdit:{ ar: 'محادثة · تعديل مصروف ثابت', en: 'Chat · Edit fixed expense' },
+  faqSalesYear: { ar: 'سؤال · مبيعات السنة', en: 'FAQ · Annual sales' },
+  faqVaults:    { ar: 'سؤال · أرصدة الخزائن', en: 'FAQ · Vault balances' },
+  faqPnl:       { ar: 'سؤال · ملخص الربح والخسارة', en: 'FAQ · P&L summary' },
+  faqLoadSales: { ar: 'سؤال · نسب الخارج على المبيعات', en: 'FAQ · Load vs sales' },
+  faqCompare:   { ar: 'سؤال · مقارنة المبيعات', en: 'FAQ · Sales compare' },
+  faqInvCount:  { ar: 'سؤال · عدد الفواتير', en: 'FAQ · Invoice count' },
+  faqSupCount:  { ar: 'سؤال · عدد الموردين', en: 'FAQ · Supplier count' },
+  faqEmpCount:  { ar: 'سؤال · عدد الموظفين', en: 'FAQ · Employee count' },
+  faqHelp:      { ar: 'سؤال · مساعدة', en: 'FAQ · Help' },
 };
 
 // ── صلاحيات الأدوار النظامية (تُزرع في DB عند أول تشغيل) ──
@@ -251,7 +300,11 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.HR_READ, PERMISSIONS.HR_WRITE, PERMISSIONS.HR_DELETE,
       PERMISSIONS.SMART_CHAT_READ, PERMISSIONS.CHAT_PRESET_ADVANCES,
       PERMISSIONS.CHAT_PRESET_LEAVES, PERMISSIONS.CHAT_PRESET_DEDUCTIONS,
-      PERMISSIONS.CHAT_PRESET_FAQ, PERMISSIONS.CHAT_PRESET_INCREASES,
+      PERMISSIONS.CHAT_PRESET_INCREASES,
+      PERMISSIONS.CHAT_PRESET_ADD_EMPLOYEE,
+      PERMISSIONS.CHAT_PRESET_EXPENSE_ADD, PERMISSIONS.CHAT_PRESET_EXPENSE_PAY,
+      PERMISSIONS.CHAT_PRESET_EXPENSE_EDIT,
+      ...CHAT_FAQ_PERMISSIONS,
       PERMISSIONS.CREATE_INVOICE,
       PERMISSIONS.VIEW_OCR, PERMISSIONS.OCR_READ, PERMISSIONS.OCR_WRITE, PERMISSIONS.OCR_SUBMIT,
     ],
@@ -269,7 +322,11 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.INVOICES_READ, PERMISSIONS.INVOICES_WRITE, PERMISSIONS.INVOICES_ACTIONS,
       // الكاشير: عرض المشتريات فقط (بدون تعديل/حذف)
       PERMISSIONS.VIEW_PURCHASES, PERMISSIONS.PURCHASES_READ,
-      PERMISSIONS.SMART_CHAT_READ, PERMISSIONS.CHAT_PRESET_FAQ,
+      PERMISSIONS.SMART_CHAT_READ,
+      PERMISSIONS.CHAT_FAQ_ANNUAL_SALES,
+      PERMISSIONS.CHAT_FAQ_SALES_COMPARE,
+      PERMISSIONS.CHAT_FAQ_INVOICE_COUNT,
+      PERMISSIONS.CHAT_FAQ_HELP,
       PERMISSIONS.CREATE_INVOICE,
       PERMISSIONS.OCR_SUBMIT,
     ],
