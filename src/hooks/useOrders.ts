@@ -310,9 +310,20 @@ export function useDigestHistory(companyId: any, days = 30) {
 
 export function useSendStaffDigestMutation(companyId: any) {
   return useApiMutation({
-    mutationFn: ({ orderIds, lang }: { orderIds?: string[]; lang?: 'ar' | 'en' } = {}) =>
-      sendStaffDigest(companyId, orderIds, lang),
-    invalidateQueries: [orderKeys.staffDigest(companyId), orderKeys.staffMyRoot()],
+    mutationFn: (body: {
+      orderIds?: string[];
+      lang?: 'ar' | 'en';
+      orderType?: 'external' | 'internal';
+      pettyCashAmount?: string;
+      orderDate?: string;
+      createPurchaseOrder?: boolean;
+    } = {}) => sendStaffDigest(companyId, body),
+    invalidateQueries: [
+      orderKeys.staffDigest(companyId),
+      orderKeys.staffMyRoot(),
+      orderKeys.listRoot(),
+      orderKeys.summaryRoot(),
+    ],
     showErrorToast: false,
   });
 }

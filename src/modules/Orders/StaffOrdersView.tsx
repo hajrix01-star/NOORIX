@@ -4,10 +4,22 @@
  * تبويبان: طلبات | مبيعات
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import Decimal from 'decimal.js';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
 import { formatSaudiDate, getSaudiToday, toDateInputYmd } from '../../utils/saudiDate';
+import {
+  type StaffBasketLine,
+  basketTotal,
+  basketLineAmount,
+  defaultVariantModalState,
+  displayProductPrice,
+  formatVariantLabel,
+  productHasVariants,
+  resolveVariantFromModal,
+  staffBasketLineKey,
+} from './utils/staffOrderBasketUtils';
 import {
   useMyStaffOrders,
   useCreateStaffOrderMutation,
@@ -18,9 +30,6 @@ import {
   useOrderSections,
 } from '../../hooks/useOrders';
 import { Button, Badge, ScreenShell, ScreenTitle, Modal, ScreenTabs, Input, cn } from '../../ui';
-
-// ─── أنواع ────────────────────────────────────────────────────────────────────
-interface ItemRow { productId: string; quantity: number; unit: string; sectionName?: string; }
 
 /** قسم الصنف عند الإضافة — من الفلتر النشط أو من تعريف الصنف */
 function resolveItemSection(product: any, activeFilter: string): string {
@@ -49,6 +58,7 @@ function ProductCard({
 }) {
   const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
   const selected = qty > 0;
+  const priceLabel = displayProductPrice(product);
 
   return (
     <div
@@ -76,7 +86,10 @@ function ProductCard({
         <div className={`text-[13px] font-semibold leading-snug ${selected ? 'text-noorix-blue' : 'text-noorix-text'}`}>
           {name}
         </div>
-        {product.unit && (
+        {priceLabel && (
+          <div className="text-[11px] text-noorix-muted mt-0.5 ltr">{fmt(priceLabel)} <span className="nx-sar">SR</span></div>
+        )}
+        {product.unit && !priceLabel && (
           <div className="text-[11px] text-noorix-muted mt-0.5 capitalize">{product.unit}</div>
         )}
         {freqCount > 0 && !selected && (
@@ -179,9 +192,23 @@ function StaffSentOrderRow({
                       <span className="text-[11px] text-noorix-muted break-words ltr text-start">{nameEn}</span>
                     ) : null}
                   </div>
-                  <span className="font-semibold nx-font-numbers shrink-0 ltr">
-                    {fmt(it.quantity, 0)} {it.unit || ''}
-                  </span>
+                  <div className="shrink-0 text-end flex flex-col gap-0.5 items-end">
+                    {it.size || it.packaging ? (
+                      <span className="text-[10px] text-noorix-muted ltr">
+                        {formatVariantLabel(it.size, it.packaging, it.unit)}
+                      </span>
+                    ) : it.unit ? (
+                      <span className="text-[10px] text-noorix-muted capitalize">{it.unit}</span>
+                    ) : null}
+                    <span className="font-semibold nx-font-numbers ltr">
+                      {fmt(it.quantity, 0)}
+                      {it.unitPrice != null && Number(it.unitPrice) > 0 ? (
+                        <> × {fmt(it.unitPrice)} = {fmt(new Decimal(it.quantity || 0).times(it.unitPrice || 0))} <span className="nx-sar">SR</span></>
+                      ) : (
+                        <> {it.unit || ''}</>
+                      )}
+                    </span>
+                  </div>
                 </div>
               );
             })}
@@ -220,11 +247,12 @@ function StaffOrderPanel({
   const [saleDate, setSaleDate] = useState(() => getSaudiToday());
   const [notes, setNotes] = useState('');
   const [search, setSearch] = useState('');
-  const [basket, setBasket] = useState<Map<string, ItemRow>>(new Map());
+  const [basketLines, setBasketLines] = useState<StaffBasketLine[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [qtyModal, setQtyModal] = useState<{ product: any; qty: number; unit: string } | null>(null);
+  const [variantModal, setVariantModal] = useState<ReturnType<typeof defaultVariantModalState> | null>(null);
 
   // ─── تكرار الطلبات ──────────────────────────────────────────────
   const freqMap = useMemo(() => {
@@ -271,7 +299,15 @@ function StaffOrderPanel({
     });
   }, [allProducts, sectionFilter, search, freqMap, lang]);
 
-  const basketItems = useMemo(() => Array.from(basket.values()), [basket]);
+  const basketTotalAmount = useMemo(() => basketTotal(basketLines), [basketLines]);
+
+  const qtyMap = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const line of basketLines) {
+      m.set(line.productId, (m.get(line.productId) ?? 0) + line.quantity);
+    }
+    return m;
+  }, [basketLines]);
 
   // طلبات هذا النوع فقط
   const myTypedOrders = useMemo(
@@ -283,16 +319,21 @@ function StaffOrderPanel({
 
   // ─── لمس الكرت ──────────────────────────────────────────────────
   function tapProduct(product: any) {
-    const existing = basket.get(product.id);
-    const sec = resolveItemSection(product, sectionFilter);
-    if (existing) {
-      setBasket((prev) => {
-        const next = new Map(prev);
-        next.set(product.id, { ...existing, quantity: existing.quantity + 1, sectionName: existing.sectionName || sec });
+    if (productHasVariants(product)) {
+      setVariantModal(defaultVariantModalState(product));
+      return;
+    }
+    const unit = product.unit || 'piece';
+    const key = staffBasketLineKey({ productId: product.id, size: '', packaging: '', unit });
+    const idx = basketLines.findIndex((l) => staffBasketLineKey(l) === key);
+    if (idx >= 0) {
+      setBasketLines((prev) => {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       });
     } else {
-      setQtyModal({ product, qty: 1, unit: product.unit || 'piece' });
+      setQtyModal({ product, qty: 1, unit });
     }
   }
 
@@ -301,35 +342,59 @@ function StaffOrderPanel({
     const { product, qty, unit } = qtyModal;
     if (qty <= 0) { setQtyModal(null); return; }
     const sec = resolveItemSection(product, sectionFilter);
-    setBasket((prev) => {
-      const next = new Map(prev);
-      next.set(product.id, { productId: product.id, quantity: qty, unit, sectionName: sec });
-      return next;
+    const key = staffBasketLineKey({ productId: product.id, size: '', packaging: '', unit });
+    const price = product.lastPrice ? String(product.lastPrice) : '0';
+    setBasketLines((prev) => {
+      const idx = prev.findIndex((l) => staffBasketLineKey(l) === key);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: qty, unit, sectionName: sec };
+        return next;
+      }
+      return [...prev, {
+        lineId: `${product.id}-${Date.now()}`,
+        productId: product.id,
+        quantity: qty,
+        unit,
+        size: '',
+        packaging: '',
+        unitPrice: price,
+        sectionName: sec,
+      }];
     });
     setQtyModal(null);
   }
 
+  function confirmVariantModal() {
+    if (!variantModal) return;
+    const { product, quantity, unitPrice } = variantModal;
+    if (!quantity || parseFloat(quantity) <= 0) { setVariantModal(null); return; }
+    const v = resolveVariantFromModal(product, variantModal);
+    const sec = resolveItemSection(product, sectionFilter);
+    setBasketLines((prev) => [...prev, {
+      lineId: `${product.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      productId: product.id,
+      quantity: parseFloat(quantity) || 1,
+      unit: v.unit,
+      size: v.size,
+      packaging: v.packaging,
+      unitPrice: v.unitPrice,
+      sectionName: sec,
+    }]);
+    setVariantModal(null);
+  }
+
+  function removeLine(lineId: string) {
+    setBasketLines((prev) => prev.filter((l) => l.lineId !== lineId));
+  }
+
   function removeProduct(productId: string) {
-    setBasket((prev) => { const next = new Map(prev); next.delete(productId); return next; });
+    setBasketLines((prev) => prev.filter((l) => l.productId !== productId));
   }
 
-  function setQty(productId: string, qty: number) {
-    if (qty <= 0) { removeProduct(productId); return; }
-    setBasket((prev) => {
-      const next = new Map(prev);
-      const ex = next.get(productId);
-      if (ex) next.set(productId, { ...ex, quantity: qty });
-      return next;
-    });
-  }
-
-  function setUnit(productId: string, unit: string) {
-    setBasket((prev) => {
-      const next = new Map(prev);
-      const ex = next.get(productId);
-      if (ex) next.set(productId, { ...ex, unit });
-      return next;
-    });
+  function setLineQty(lineId: string, qty: number) {
+    if (qty <= 0) { removeLine(lineId); return; }
+    setBasketLines((prev) => prev.map((l) => (l.lineId === lineId ? { ...l, quantity: qty } : l)));
   }
 
   function resetForm() {
@@ -337,7 +402,7 @@ function StaffOrderPanel({
     setSaleDate(getSaudiToday());
     setNotes('');
     setSearch('');
-    setBasket(new Map());
+    setBasketLines([]);
     setEditingId(null);
     setEditingQtyId(null);
   }
@@ -352,22 +417,23 @@ function StaffOrderPanel({
     setSaleDate(order.saleDate ? toDateInputYmd(order.saleDate) : getSaudiToday());
     setNotes(order.notes || '');
     setSearch('');
-    const m = new Map<string, ItemRow>();
-    for (const it of (order.items || [])) {
-      m.set(it.productId, {
-        productId: it.productId,
-        quantity: Number(it.quantity) || 1,
-        unit: it.unit || 'piece',
-        sectionName: order.sectionName || undefined,
-      });
-    }
-    setBasket(m);
+    const lines: StaffBasketLine[] = (order.items || []).map((it: any, i: number) => ({
+      lineId: `${it.productId}-${i}`,
+      productId: it.productId,
+      quantity: Number(it.quantity) || 1,
+      unit: it.unit || 'piece',
+      size: it.size || '',
+      packaging: it.packaging || '',
+      unitPrice: it.unitPrice != null ? String(it.unitPrice) : '0',
+      sectionName: order.sectionName || undefined,
+    }));
+    setBasketLines(lines);
     setEditingId(order.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const handleSubmit = useCallback(async () => {
-    if (basket.size === 0) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
+    if (basketLines.length === 0) { showToast(t('staffOrderItemsRequired'), 'error'); return; }
     if (isSale && !saleDate) { showToast(t('staffSaleDateRequired'), 'error'); return; }
     setSubmitting(true);
     try {
@@ -377,19 +443,22 @@ function StaffOrderPanel({
         saleDate: isSale ? saleDate : undefined,
         lang,
         notes: notes.trim() || undefined,
-        items: basketItems.map((it) => {
+        items: basketLines.map((it) => {
           const p = productsById.get(it.productId);
           const sectionName = it.sectionName || (p ? resolveItemSection(p, sectionFilter) : undefined);
           return {
             productId: it.productId,
             quantity: String(it.quantity),
             unit: it.unit || undefined,
+            size: it.size || undefined,
+            packaging: it.packaging || undefined,
+            unitPrice: it.unitPrice || undefined,
             sectionName: sectionName || undefined,
           };
         }),
       };
       if (editingId) {
-        payload.sectionName = sectionFilter || basketItems[0]?.sectionName || 'عام';
+        payload.sectionName = sectionFilter || basketLines[0]?.sectionName || 'عام';
       }
       if (editingId) {
         const res: any = await updateOrder.mutateAsync({ id: editingId, body: payload });
@@ -418,7 +487,7 @@ function StaffOrderPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [sectionFilter, saleDate, notes, basket, basketItems, productsById, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder]);
+  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder]);
 
   const handleResendSale = useCallback(async (order: any) => {
     try {
@@ -493,7 +562,7 @@ function StaffOrderPanel({
               key={p.id}
               product={p}
               lang={lang}
-              qty={basket.get(p.id)?.quantity ?? 0}
+              qty={qtyMap.get(p.id) ?? 0}
               freqCount={freqMap.get(p.id) ?? 0}
               onTap={() => tapProduct(p)}
               onRemove={() => removeProduct(p.id)}
@@ -509,55 +578,72 @@ function StaffOrderPanel({
       )}
 
       {/* ── ملخص الطلب ── */}
-      {basket.size > 0 && (
+      {basketLines.length > 0 && (
         <div className="noorix-surface-card overflow-hidden">
-          <div className="px-4 py-3 border-b border-noorix-border flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue">
-              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-            <span className="text-[14px] font-bold">
-              {isSale ? t('staffSaleBasket') : t('staffOrderBasket')} ({basket.size})
-            </span>
+          <div className="px-4 py-3 border-b border-noorix-border flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              <span className="text-[14px] font-bold">
+                {isSale ? t('staffSaleBasket') : t('staffOrderBasket')} ({basketLines.length})
+              </span>
+            </div>
+            {!isSale && basketTotalAmount.gt(0) ? (
+              <span className="text-[13px] font-bold text-noorix-green ltr">
+                {fmt(basketTotalAmount.toNumber())} <span className="nx-sar">SR</span>
+              </span>
+            ) : null}
           </div>
           <div className="divide-y divide-noorix-border">
-            {basketItems.map((row) => {
+            {basketLines.map((row) => {
               const p = productsById.get(row.productId);
               const name = p ? (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn)) : row.productId;
-              const isEditingQty = editingQtyId === row.productId;
+              const variant = formatVariantLabel(row.size, row.packaging, row.unit);
+              const lineAmt = basketLineAmount(row);
+              const isEditingQty = editingQtyId === row.lineId;
               return (
-                <div key={row.productId} className="flex items-center gap-2 px-4 py-2.5">
-                  <span className="flex-1 text-[13px] text-noorix-text">{name}</span>
-                  <div className="flex items-center gap-1">
-                    <button type="button" onClick={() => setQty(row.productId, row.quantity - 1)}
-                      className="w-7 h-7 rounded-full border border-noorix-border text-[16px] flex items-center justify-center hover:bg-noorix-bg-muted">−</button>
-                    {isEditingQty ? (
-                      <input autoFocus type="number" min="1"
-                        className="w-10 h-7 text-center text-[13px] border border-noorix-blue rounded-lg bg-noorix-bg focus:outline-none"
-                        value={row.quantity}
-                        onChange={(e) => setQty(row.productId, Number(e.target.value))}
-                        onBlur={() => setEditingQtyId(null)}
-                      />
-                    ) : (
-                      <button type="button" onClick={() => setEditingQtyId(row.productId)}
-                        className="w-8 h-7 text-center text-[13px] font-bold text-noorix-blue hover:underline"
-                      >{row.quantity}</button>
-                    )}
-                    <button type="button" onClick={() => setQty(row.productId, row.quantity + 1)}
-                      className="w-7 h-7 rounded-full border border-noorix-border text-[16px] flex items-center justify-center hover:bg-noorix-bg-muted">+</button>
+                <div key={row.lineId} className="flex flex-col gap-1.5 px-4 py-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-medium text-noorix-text">{name}</div>
+                      {variant ? (
+                        <div className="text-[11px] text-noorix-muted ltr">{variant}</div>
+                      ) : null}
+                    </div>
+                    <button type="button" onClick={() => removeLine(row.lineId)}
+                      className="text-noorix-red text-[16px] shrink-0 hover:opacity-70">×</button>
                   </div>
-                  <select
-                    className="h-7 rounded-lg border border-noorix-border bg-noorix-bg px-1 text-[11px] text-noorix-text"
-                    value={row.unit}
-                    onChange={(e) => setUnit(row.productId, e.target.value)}
-                  >
-                    <option value="piece">{t('ordersUnitPiece')}</option>
-                    <option value="kg">{t('ordersUnitKg')}</option>
-                    <option value="box">{t('ordersUnitBox')}</option>
-                    <option value="dozen">{t('ordersUnitDozen')}</option>
-                  </select>
-                  <button type="button" onClick={() => removeProduct(row.productId)}
-                    className="text-noorix-red text-[16px] px-0.5 hover:opacity-70">×</button>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => setLineQty(row.lineId, row.quantity - 1)}
+                        className="w-7 h-7 rounded-full border border-noorix-border text-[16px] flex items-center justify-center hover:bg-noorix-bg-muted">−</button>
+                      {isEditingQty ? (
+                        <input autoFocus type="number" min="1"
+                          className="w-10 h-7 text-center text-[13px] border border-noorix-blue rounded-lg bg-noorix-bg focus:outline-none"
+                          value={row.quantity}
+                          onChange={(e) => setLineQty(row.lineId, Number(e.target.value))}
+                          onBlur={() => setEditingQtyId(null)}
+                        />
+                      ) : (
+                        <button type="button" onClick={() => setEditingQtyId(row.lineId)}
+                          className="w-8 h-7 text-center text-[13px] font-bold text-noorix-blue hover:underline"
+                        >{row.quantity}</button>
+                      )}
+                      <button type="button" onClick={() => setLineQty(row.lineId, row.quantity + 1)}
+                        className="w-7 h-7 rounded-full border border-noorix-border text-[16px] flex items-center justify-center hover:bg-noorix-bg-muted">+</button>
+                    </div>
+                    <div className="text-[12px] text-noorix-muted ltr text-end">
+                      {Number(row.unitPrice) > 0 ? (
+                        <>
+                          {fmt(row.unitPrice)} × {fmt(row.quantity, 0)} ={' '}
+                          <span className="font-bold text-noorix-green">{fmt(lineAmt.toNumber())}</span>{' '}
+                          <span className="nx-sar">SR</span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -618,10 +704,22 @@ function StaffOrderPanel({
                   {(o.items || []).map((it: any, i: number) => {
                     const p = it.product;
                     const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
+                    const variant = formatVariantLabel(it.size, it.packaging, it.unit);
+                    const lineTotal = new Decimal(it.quantity || 0).times(it.unitPrice || 0);
                     return (
-                      <div key={i} className="flex justify-between text-[13px]">
-                        <span>{name}</span>
-                        <span className="font-semibold nx-font-numbers">{fmt(it.quantity, 0)} {it.unit || ''}</span>
+                      <div key={i} className="flex justify-between gap-2 text-[13px]">
+                        <div className="min-w-0">
+                          <span>{name}</span>
+                          {variant ? <div className="text-[10px] text-noorix-muted ltr">{variant}</div> : null}
+                        </div>
+                        <span className="font-semibold nx-font-numbers shrink-0 ltr text-end">
+                          {fmt(it.quantity, 0)}
+                          {Number(it.unitPrice) > 0 ? (
+                            <> × {fmt(it.unitPrice)} = {fmt(lineTotal.toNumber())} <span className="nx-sar">SR</span></>
+                          ) : (
+                            <> {it.unit || ''}</>
+                          )}
+                        </span>
                       </div>
                     );
                   })}
@@ -659,7 +757,7 @@ function StaffOrderPanel({
         </section>
       )}
 
-      {!isLoading && myTypedOrders.length === 0 && basket.size === 0 && (
+      {!isLoading && myTypedOrders.length === 0 && basketLines.length === 0 && (
         <div className="noorix-surface-card p-8 text-center text-noorix-muted text-[14px]">
           {isSale ? t('staffSaleNoRecords') : t('staffOrderNoOrders')}
         </div>
@@ -702,6 +800,11 @@ function StaffOrderPanel({
               <option value="box">{t('ordersUnitBox')}</option>
               <option value="dozen">{t('ordersUnitDozen')}</option>
             </Input>
+            {qtyModal.product?.lastPrice != null && Number(qtyModal.product.lastPrice) > 0 ? (
+              <div className="text-center text-[12px] text-noorix-muted ltr">
+                {t('unitPrice')}: {fmt(qtyModal.product.lastPrice)} <span className="nx-sar">SR</span>
+              </div>
+            ) : null}
             <div className="grid grid-cols-2 gap-2 pt-1">
               <Button variant="ghost" size="md" onClick={() => setQtyModal(null)}>{t('cancel')}</Button>
               <Button variant="success" size="md" onClick={confirmQtyModal}>{t('staffOrderAddItem')}</Button>
@@ -709,7 +812,134 @@ function StaffOrderPanel({
           </div>
         </Modal>
       )}
+
+      {/* ── نافذة الحجم/المتغير ── */}
+      {variantModal && (
+        <VariantPickModal
+          variantModal={variantModal}
+          lang={lang}
+          t={t}
+          onClose={() => setVariantModal(null)}
+          onChange={setVariantModal}
+          onConfirm={confirmVariantModal}
+        />
+      )}
     </div>
+  );
+}
+
+function VariantPickModal({
+  variantModal,
+  lang,
+  t,
+  onClose,
+  onChange,
+  onConfirm,
+}: {
+  variantModal: NonNullable<ReturnType<typeof defaultVariantModalState>>;
+  lang: string;
+  t: (key: string, ...args: unknown[]) => string;
+  onClose: () => void;
+  onChange: (v: ReturnType<typeof defaultVariantModalState>) => void;
+  onConfirm: () => void;
+}) {
+  const product = variantModal.product;
+  const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
+  const variants = useMemo(() => {
+    const raw = Array.isArray(product?.variants) ? product.variants : [];
+    return raw.map((v: any, i: number) => ({
+      ...v,
+      _key: `${v.size || ''}|${v.packaging || ''}|${v.unit || 'piece'}|${i}`,
+    }));
+  }, [product]);
+  const sizes = useMemo(() => {
+    if (!product?.sizes) return [] as string[];
+    return String(product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean);
+  }, [product]);
+
+  return (
+    <Modal open onClose={onClose} title={name} size="sm">
+      <div className="flex flex-col gap-4 p-1">
+        {variants.length > 0 && (
+          <Input
+            type="select"
+            label={t('ordersProductVariants')}
+            value={variantModal.variantKey}
+            onChange={(e: any) => {
+              const key = e.target.value;
+              const v = variants.find((x: any) => x._key === key);
+              onChange({
+                ...variantModal,
+                variantKey: key,
+                size: v?.size || '',
+                packaging: v?.packaging || '',
+                unit: v?.unit || 'piece',
+                unitPrice: v?.lastPrice ? String(v.lastPrice) : variantModal.unitPrice,
+              });
+            }}
+          >
+            {variants.map((v: any) => (
+              <option key={v._key} value={v._key}>
+                {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'}
+                {v.lastPrice ? ` — ${fmt(v.lastPrice)} SR` : ''}
+              </option>
+            ))}
+          </Input>
+        )}
+        {variants.length === 0 && sizes.length > 0 && (
+          <Input
+            type="select"
+            label={t('ordersProductSize')}
+            value={variantModal.size}
+            onChange={(e: any) => onChange({ ...variantModal, size: e.target.value })}
+          >
+            <option value="">—</option>
+            {sizes.map((s: string) => <option key={s} value={s}>{s}</option>)}
+          </Input>
+        )}
+        <div className="flex flex-col gap-1">
+          <label className="text-[12px] text-noorix-muted">{t('quantity')}</label>
+          <div className="flex items-center gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => onChange({
+                ...variantModal,
+                quantity: String(Math.max(1, parseFloat(variantModal.quantity || '1') - 1)),
+              })}
+              className="w-9 h-9 rounded-full border-2 border-noorix-border text-[20px] flex items-center justify-center hover:border-noorix-blue"
+            >−</button>
+            <input
+              type="number"
+              min="1"
+              className="w-16 h-10 text-center text-[18px] font-bold border-2 border-noorix-border rounded-xl bg-noorix-bg focus:outline-none focus:border-noorix-blue"
+              value={variantModal.quantity}
+              onChange={(e) => onChange({ ...variantModal, quantity: e.target.value })}
+            />
+            <button
+              type="button"
+              onClick={() => onChange({
+                ...variantModal,
+                quantity: String(parseFloat(variantModal.quantity || '0') + 1),
+              })}
+              className="w-9 h-9 rounded-full border-2 border-noorix-border text-[20px] flex items-center justify-center hover:border-noorix-blue"
+            >+</button>
+          </div>
+        </div>
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          label={`${t('unitPrice')} SR`}
+          value={variantModal.unitPrice}
+          onChange={(e: any) => onChange({ ...variantModal, unitPrice: e.target.value })}
+          placeholder="0"
+        />
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <Button variant="ghost" size="md" onClick={onClose}>{t('cancel')}</Button>
+          <Button variant="success" size="md" onClick={onConfirm}>{t('staffOrderAddItem')}</Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

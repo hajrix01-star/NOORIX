@@ -3,16 +3,23 @@
  * يُعرض فقط لمن لديه صلاحية STAFF_ORDERS_DIGEST
  */
 import React, { useState, useCallback, useMemo } from 'react';
+import Decimal from 'decimal.js';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
+import { digestSectionsTotal, formatVariantLabel } from '../utils/staffOrderBasketUtils';
 import { useStaffDigest, useSendStaffDigestMutation } from '../../../hooks/useOrders';
 import { Button, Badge, Spinner, ScreenTabs } from '../../../ui';
 import { StaffDigestHistoryTab } from './StaffDigestHistoryTab';
+import { StaffDigestSendModal } from './StaffDigestSendModal';
 import type { StaffDigestOrderItem, StaffDigestSection } from '../../../types/api';
 
 type DisplayLang = 'ar' | 'en';
+
+function lineAmount(it: StaffDigestOrderItem): Decimal {
+  return new Decimal(it.quantity || 0).times(it.unitPrice ?? 0);
+}
 
 function SectionCard({
   section,
@@ -56,11 +63,22 @@ function SectionCard({
               </div>
               <div className="grid grid-cols-1 gap-1">
                 {(order.items || []).map((it, i) => {
-                  const unit = it.unit ? ` ${it.unit}` : '';
+                  const variant = formatVariantLabel(it.size, it.packaging, it.unit);
+                  const amt = lineAmount(it);
                   return (
-                    <div key={i} className="flex justify-between text-[13px]">
-                      <span>{itemName(it)}</span>
-                      <span className="font-bold nx-font-numbers">{fmt(it.quantity, 0)}{unit}</span>
+                    <div key={i} className="flex justify-between gap-2 text-[13px]">
+                      <div className="min-w-0">
+                        <span>{itemName(it)}</span>
+                        {variant ? <div className="text-[10px] text-noorix-muted ltr">{variant}</div> : null}
+                      </div>
+                      <span className="font-bold nx-font-numbers shrink-0 ltr text-end">
+                        {fmt(it.quantity, 0)}
+                        {Number(it.unitPrice) > 0 ? (
+                          <> × {fmt(it.unitPrice)} = {fmt(amt.toNumber())} <span className="nx-sar">SR</span></>
+                        ) : (
+                          it.unit ? ` ${it.unit}` : ''
+                        )}
+                      </span>
                     </div>
                   );
                 })}
@@ -92,6 +110,8 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
   const [sending, setSending] = useState(false);
   const [displayLang, setDisplayLang] = useState<DisplayLang>(lang as DisplayLang);
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [pendingOrderIds, setPendingOrderIds] = useState<string[] | undefined>(undefined);
 
   const tabs = useMemo(() => [
     { id: 'pending', label: t('staffDigestPending') },
@@ -100,24 +120,56 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
 
   const sections: StaffDigestSection[] = digest?.sections ?? [];
   const pendingCount: number = digest?.pendingCount ?? 0;
+  const estimatedTotal = useMemo(() => digestSectionsTotal(sections), [sections]);
+  const modalEstimatedTotal = useMemo(() => {
+    if (!pendingOrderIds?.length) return estimatedTotal;
+    const idSet = new Set(pendingOrderIds);
+    const filtered = sections.map((sec) => ({
+      ...sec,
+      orders: sec.orders.filter((o) => idSet.has(o.id)),
+    })).filter((sec) => sec.orders.length > 0);
+    return digestSectionsTotal(filtered);
+  }, [sections, pendingOrderIds, estimatedTotal]);
+  const modalPendingCount = pendingOrderIds?.length ?? pendingCount;
 
-  const handleSend = useCallback(async (orderIds?: string[]) => {
-    if (!pendingCount && !orderIds?.length) return;
+  const runSend = useCallback(async (
+    orderIds: string[] | undefined,
+    opts: { orderType: 'external' | 'internal'; pettyCashAmount?: string; orderDate: string },
+  ) => {
     setSending(true);
     try {
-      const res = await sendDigest.mutateAsync({ orderIds, lang: displayLang });
+      const res = await sendDigest.mutateAsync({
+        orderIds,
+        lang: displayLang,
+        orderType: opts.orderType,
+        pettyCashAmount: opts.pettyCashAmount,
+        orderDate: opts.orderDate,
+      });
       const whatsAppText = res.data?.whatsAppText ?? '';
       if (whatsAppText) {
-        window.open(`https://wa.me/?text=${encodeURIComponent(whatsAppText)}`, '_blank');
+        window.open(`https://wa.me/?text=${encodeURIComponent(whatsAppText)}`, '_blank', 'noopener,noreferrer');
       }
-      showToast(t('staffDigestSent'), 'success');
+      const po = res.data?.purchaseOrder;
+      if (po?.orderNumber) {
+        showToast(t('staffDigestCreatedOrder', po.orderNumber), 'success');
+      } else {
+        showToast(t('staffDigestSent'), 'success');
+      }
+      setSendModalOpen(false);
+      setPendingOrderIds(undefined);
       refetch();
     } catch (e: any) {
       showToast(e?.message || t('saveFailed'), 'error');
     } finally {
       setSending(false);
     }
-  }, [pendingCount, sendDigest, refetch, displayLang]);
+  }, [sendDigest, refetch, displayLang, t, showToast]);
+
+  const openSendModal = useCallback((orderIds?: string[]) => {
+    if (!pendingCount && !orderIds?.length) return;
+    setPendingOrderIds(orderIds);
+    setSendModalOpen(true);
+  }, [pendingCount]);
 
   return (
     <ScreenTabs
@@ -127,13 +179,17 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
     >
       {activeTab === 'pending' && (
         <div className="flex flex-col gap-4">
-          {/* شريط الإجراءات */}
           <div className="noorix-surface-card px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
               <Badge color="amber" size="sm">{pendingCount} {t('staffOrdersCount')}</Badge>
+              {estimatedTotal > 0 ? (
+                <span className="text-[12px] text-noorix-muted">
+                  {t('staffDigestEstimatedTotal')}:{' '}
+                  <span className="font-bold text-noorix-green ltr">{fmt(estimatedTotal)} <span className="nx-sar">SR</span></span>
+                </span>
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
-              {/* مبدّل لغة الإرسال */}
               <div className="inline-flex rounded-lg border border-noorix-border overflow-hidden text-[12px]">
                 <button
                   type="button"
@@ -153,7 +209,7 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => handleSend()}
+                onClick={() => openSendModal()}
                 disabled={sending || !pendingCount}
               >
                 {sending ? t('sending') : t('staffDigestSendAll')}
@@ -168,15 +224,24 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
               {t('staffDigestEmpty')}
             </div>
           ) : (
-            sections.map((sec: any) => (
+            sections.map((sec: StaffDigestSection) => (
               <SectionCard
                 key={sec.sectionName}
                 section={sec}
                 displayLang={displayLang}
-                onSendSection={(ids) => handleSend(ids)}
+                onSendSection={(ids) => openSendModal(ids)}
               />
             ))
           )}
+
+          <StaffDigestSendModal
+            open={sendModalOpen}
+            onClose={() => { setSendModalOpen(false); setPendingOrderIds(undefined); }}
+            estimatedTotal={modalEstimatedTotal}
+            pendingCount={modalPendingCount}
+            busy={sending}
+            onConfirm={(opts) => runSend(pendingOrderIds, opts)}
+          />
         </div>
       )}
 

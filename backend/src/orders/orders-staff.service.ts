@@ -1,15 +1,34 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
+import { OrdersService } from './orders.service';
+import { mapDtoItemsToOrderLines } from './orders-lines.util';
+import {
+  formatVariantLabel,
+  resolveStaffItemVariant,
+  staffLineAggregateKey,
+} from './orders-staff-pricing.util';
 
 export interface StaffOrderItemInput {
   productId: string;
   quantity: string;
   unit?: string;
+  size?: string;
+  packaging?: string;
+  unitPrice?: string;
   notes?: string;
   /** قسم الصنف — يُستنتج من تعريف المنتج إن لم يُمرَّر */
   sectionName?: string;
 }
+
+export type SendStaffDigestOptions = {
+  lang?: 'ar' | 'en';
+  orderType?: 'external' | 'internal';
+  pettyCashAmount?: string;
+  orderDate?: string;
+  createPurchaseOrder?: boolean;
+};
 
 export interface CreateStaffOrderDto {
   companyId: string;
@@ -36,7 +55,10 @@ function staffOrderDayKey(o: { saleDate?: Date | null; createdAt: Date }): strin
 
 @Injectable()
 export class OrdersStaffService {
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly ordersService: OrdersService,
+  ) {}
 
   private resolveProductSection(product: { sections?: unknown } | null | undefined): string {
     const secs = product?.sections as string[] | null;
@@ -82,6 +104,27 @@ export class OrdersStaffService {
     });
   }
 
+  private async mapStaffItemsForCreate(companyId: string, items: StaffOrderItemInput[]) {
+    const productIds = [...new Set(items.map((it) => it.productId).filter(Boolean))];
+    const products = productIds.length
+      ? await this.prisma.orderProduct.findMany({ where: { companyId, id: { in: productIds } } })
+      : [];
+    const pmap = new Map(products.map((p) => [p.id, p]));
+    const qty = this.validateItemQuantities(items);
+    return items.map((it, i) => {
+      const v = resolveStaffItemVariant(pmap.get(it.productId), it);
+      return {
+        productId: it.productId,
+        quantity: qty[i],
+        size: v.size,
+        packaging: v.packaging,
+        unit: v.unit,
+        unitPrice: v.unitPrice,
+        notes: it.notes?.trim() || null,
+      };
+    });
+  }
+
   private async createStaffOrderRecord(
     tenantId: string,
     userId: string,
@@ -92,7 +135,7 @@ export class OrdersStaffService {
     saleDate: Date | null,
     sentAt: Date | null,
   ) {
-    const qty = this.validateItemQuantities(items);
+    const mapped = await this.mapStaffItemsForCreate(dto.companyId, items);
     return this.prisma.staffOrder.create({
       data: {
         tenantId,
@@ -105,12 +148,7 @@ export class OrdersStaffService {
         status: orderType === 'sale' ? 'sent' : 'pending',
         sentAt,
         items: {
-          create: items.map((it, i) => ({
-            productId: it.productId,
-            quantity: qty[i],
-            unit: it.unit?.trim() || null,
-            notes: it.notes?.trim() || null,
-          })),
+          create: mapped,
         },
       },
       include: {
@@ -205,16 +243,9 @@ export class OrdersStaffService {
       }
       const [[sectionName, sectionItems]] = grouped.entries();
       data.sectionName = sectionName;
-      const qty = this.validateItemQuantities(sectionItems);
+      const mapped = await this.mapStaffItemsForCreate(companyId, sectionItems);
       await this.prisma.staffOrderItem.deleteMany({ where: { staffOrderId: id } });
-      data.items = {
-        create: sectionItems.map((it, i) => ({
-          productId: it.productId,
-          quantity: qty[i],
-          unit: it.unit?.trim() || null,
-          notes: it.notes?.trim() || null,
-        })),
-      };
+      data.items = { create: mapped };
     } else if (dto.sectionName?.trim()) {
       data.sectionName = dto.sectionName.trim();
     }
@@ -382,38 +413,137 @@ export class OrdersStaffService {
     return lines.join('\n').trim();
   }
 
-  /** بناء نص واتساب من الطلبات المعلّقة */
+  private fmtWaMoney(d: Prisma.Decimal | number): string {
+    const n = Number(d);
+    if (!Number.isFinite(n)) return '0';
+    return Number.isInteger(n) ? String(n) : n.toFixed(1);
+  }
+
+  /** تجميع بنود الطلبات المعلّقة لطلب مشتريات واحد */
+  private aggregateStaffOrdersToPurchaseLines(orders: any[]) {
+    type Agg = {
+      productId: string;
+      name: string;
+      size: string | null;
+      packaging: string | null;
+      unit: string | null;
+      unitPrice: Prisma.Decimal;
+      quantity: Prisma.Decimal;
+    };
+    const map = new Map<string, Agg>();
+    for (const order of orders) {
+      for (const it of order.items || []) {
+        const v = resolveStaffItemVariant(it.product, {
+          size: it.size,
+          packaging: it.packaging,
+          unit: it.unit,
+          unitPrice: it.unitPrice != null ? String(it.unitPrice) : undefined,
+        });
+        const key = staffLineAggregateKey(it.productId, v.size, v.packaging, v.unit, v.unitPrice);
+        const name = it.product?.nameAr || it.product?.nameEn || '—';
+        const q = new Prisma.Decimal(it.quantity || 0);
+        const cur = map.get(key);
+        if (cur) {
+          cur.quantity = cur.quantity.plus(q);
+        } else {
+          map.set(key, {
+            productId: it.productId,
+            name,
+            size: v.size,
+            packaging: v.packaging,
+            unit: v.unit,
+            unitPrice: v.unitPrice,
+            quantity: q,
+          });
+        }
+      }
+    }
+    return [...map.values()];
+  }
+
+  /** بناء نص واتساب من الطلبات المعلّقة (للمندوب — مع أسعار ومجموع) */
   private buildWhatsAppText(
     sections: { sectionName: string; orders: any[] }[],
     date: string,
     lang: 'ar' | 'en' = 'ar',
+    grandTotal?: Prisma.Decimal,
   ): string {
-    const header = lang === 'en' ? `Section Orders — ${date}` : `طلبات الأقسام — ${date}`;
+    const header = lang === 'en' ? `Purchase list — ${date}` : `قائمة مشتريات — ${date}`;
     const lines: string[] = [header, ''];
+    let running = new Prisma.Decimal(0);
+
     for (const sec of sections) {
       lines.push(`▪ ${sec.sectionName}`);
-      const itemMap: Record<string, { name: string; qty: number; unit: string }> = {};
+      const itemMap = new Map<string, {
+        name: string;
+        qty: Prisma.Decimal;
+        unit: string | null;
+        size: string | null;
+        packaging: string | null;
+        unitPrice: Prisma.Decimal;
+      }>();
+
       for (const order of sec.orders) {
-        for (const it of order.items) {
-          const key = `${it.productId}|${it.unit || ''}`;
+        for (const it of order.items || []) {
+          const v = resolveStaffItemVariant(it.product, {
+            size: it.size,
+            packaging: it.packaging,
+            unit: it.unit,
+            unitPrice: it.unitPrice != null ? String(it.unitPrice) : undefined,
+          });
+          const key = staffLineAggregateKey(it.productId, v.size, v.packaging, v.unit, v.unitPrice);
           const name = lang === 'en'
             ? (it.product?.nameEn || it.product?.nameAr || '—')
             : (it.product?.nameAr || it.product?.nameEn || '—');
-          if (!itemMap[key]) itemMap[key] = { name, qty: 0, unit: it.unit || '' };
-          itemMap[key].qty += Number(it.quantity);
+          const q = new Prisma.Decimal(it.quantity || 0);
+          const cur = itemMap.get(key);
+          if (cur) {
+            cur.qty = cur.qty.plus(q);
+          } else {
+            itemMap.set(key, {
+              name,
+              qty: q,
+              unit: v.unit,
+              size: v.size,
+              packaging: v.packaging,
+              unitPrice: v.unitPrice,
+            });
+          }
         }
       }
-      for (const { name, qty, unit } of Object.values(itemMap)) {
-        const unitStr = unit ? ` ${unit}` : '';
-        lines.push(`  - ${name}: ${qty}${unitStr}`);
+
+      for (const row of itemMap.values()) {
+        const amount = row.qty.times(row.unitPrice);
+        running = running.plus(amount);
+        const variant = formatVariantLabel(row.size, row.packaging, row.unit);
+        const variantPart = variant ? ` (${variant})` : '';
+        const price = this.fmtWaMoney(row.unitPrice);
+        const amt = this.fmtWaMoney(amount);
+        lines.push(
+          lang === 'en'
+            ? `  - ${row.name}${variantPart}: ${this.fmtWaMoney(row.qty)} × ${price} = ${amt} SR`
+            : `  - ${row.name}${variantPart}: ${this.fmtWaMoney(row.qty)} × ${price} = ${amt} SR`,
+        );
       }
       lines.push('');
     }
+
+    const total = grandTotal ?? running;
+    lines.push('──────────────');
+    lines.push(
+      lang === 'en'
+        ? `Total: ${this.fmtWaMoney(total)} SR`
+        : `الإجمالي: ${this.fmtWaMoney(total)} SR`,
+    );
     return lines.join('\n').trim();
   }
 
-  /** الكاشير: يرسل الملخص — يعلّم الطلبات كـ «تم الإرسال» ويعيد نص واتساب */
-  async sendDigest(companyId: string, orderIds?: string[], lang: 'ar' | 'en' = 'ar') {
+  /** الكاشير: يرسل الملخص — يعلّم الطلبات، ينشئ طلب مشتريات، ويعيد نص واتساب */
+  async sendDigest(companyId: string, orderIds?: string[], opts: SendStaffDigestOptions = {}) {
+    const lang = opts.lang === 'en' ? 'en' : 'ar';
+    const createPurchaseOrder = opts.createPurchaseOrder !== false;
+    const orderType = opts.orderType === 'internal' ? 'internal' : 'external';
+
     const where: any = { companyId, orderType: 'order', status: 'pending' };
     if (orderIds?.length) where.id = { in: orderIds };
 
@@ -424,25 +554,82 @@ export class OrdersStaffService {
 
     if (!orders.length) throw new BadRequestException('لا توجد طلبات معلّقة');
 
+    const ids = orders.map((o) => o.id);
     const sentAt = new Date();
-    await this.prisma.staffOrder.updateMany({
-      where: { id: { in: orders.map((o) => o.id) } },
-      data: { status: 'sent', sentAt },
-    });
-
-    // تجميع بالقسم لبناء النص
-    const grouped: Record<string, any[]> = {};
+    const grouped: Record<string, typeof orders> = {};
     for (const o of orders) {
       if (!grouped[o.sectionName]) grouped[o.sectionName] = [];
       grouped[o.sectionName].push(o);
     }
 
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
-    const sections = Object.entries(grouped).map(([sectionName, sOrders]) => ({ sectionName, orders: sOrders }));
-    const whatsAppText = this.buildWhatsAppText(sections, dateStr, lang);
+    const aggLines = this.aggregateStaffOrdersToPurchaseLines(orders);
+    const purchaseDtoItems = aggLines.map((row) => ({
+      productId: row.productId,
+      size: row.size || undefined,
+      packaging: row.packaging || undefined,
+      unit: row.unit || undefined,
+      quantity: row.quantity.toString(),
+      unitPrice: row.unitPrice.toString(),
+    }));
+    const mappedOrderLines = mapDtoItemsToOrderLines(purchaseDtoItems);
+    const grandTotal = mappedOrderLines.reduce((s, i) => s.plus(i.amount), new Prisma.Decimal(0));
 
-    return { sent: orders.length, whatsAppText };
+    const now = new Date();
+    const dateStr = opts.orderDate?.trim()
+      || `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+    const orderDateYmd = opts.orderDate?.trim()
+      || now.toISOString().slice(0, 10);
+
+    const sections = Object.entries(grouped).map(([sectionName, sOrders]) => ({ sectionName, orders: sOrders }));
+    const whatsAppText = this.buildWhatsAppText(sections, dateStr, lang, grandTotal);
+
+    await this.prisma.staffOrder.updateMany({
+      where: { id: { in: ids } },
+      data: { status: 'sent', sentAt },
+    });
+
+    let purchaseOrder: Awaited<ReturnType<OrdersService['create']>> | null = null;
+    if (createPurchaseOrder && purchaseDtoItems.length > 0) {
+      try {
+        purchaseOrder = await this.ordersService.create(companyId, {
+          orderDate: orderDateYmd,
+          orderType,
+          pettyCashAmount: orderType === 'external' ? opts.pettyCashAmount : undefined,
+          notes: lang === 'en'
+            ? `Consolidated from ${ids.length} section order(s)`
+            : `مجمّع من ${ids.length} طلب قسم`,
+          items: purchaseDtoItems,
+        });
+        await this.prisma.order.update({
+          where: { id: purchaseOrder.id },
+          data: { sourceStaffOrderIds: ids },
+        });
+        await this.prisma.staffOrder.updateMany({
+          where: { id: { in: ids } },
+          data: { purchaseOrderId: purchaseOrder.id },
+        });
+      } catch (e) {
+        await this.prisma.staffOrder.updateMany({
+          where: { id: { in: ids } },
+          data: { status: 'pending', sentAt: null, purchaseOrderId: null },
+        });
+        throw e;
+      }
+    }
+
+    return {
+      sent: orders.length,
+      whatsAppText,
+      purchaseOrder: purchaseOrder
+        ? {
+            id: purchaseOrder.id,
+            orderNumber: purchaseOrder.orderNumber,
+            totalAmount: purchaseOrder.totalAmount,
+            orderType: purchaseOrder.orderType,
+          }
+        : null,
+      grandTotal: grandTotal.toString(),
+    };
   }
 
   /** تقرير المبيعات — orderType = 'sale' */
