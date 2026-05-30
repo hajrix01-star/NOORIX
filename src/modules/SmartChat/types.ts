@@ -46,12 +46,13 @@ export type ExpenseMode = 'addLine' | 'pay' | 'editLine' | null;
 export type PermissionChecker = (permission: string) => boolean;
 
 export type PermanentQuestion = {
+  key: string;
   section: string;
   ar: string;
   en: string;
   shortAr?: string;
   shortEn?: string;
-  domain: (can: PermissionChecker) => boolean;
+  canUse: (can: PermissionChecker) => boolean;
 };
 
 export type ChatCommandItem = {
