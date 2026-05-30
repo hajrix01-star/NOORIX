@@ -101,7 +101,7 @@ export default function RoleEditorOverlay({
       aria-modal="true"
       aria-label={title}
     >
-      <header className="shrink-0 border-b border-noorix-border bg-noorix-surface px-4 py-3 lg:px-6">
+      <header className="shrink-0 border-b border-noorix-border bg-noorix-surface px-4 pt-3 pb-0 lg:px-6">
         <div className="flex flex-wrap items-center gap-3 mb-3">
           <Button size="sm" variant="ghost" onClick={onClose} disabled={isSaving}>
             ← {closeLabel}
@@ -172,7 +172,7 @@ export default function RoleEditorOverlay({
           </div>
         )}
 
-        <div className="rounded-lg border border-noorix-border bg-[var(--noorix-blue-7)] p-3">
+        <div className="rounded-lg border border-noorix-border bg-[var(--noorix-blue-7)] p-3 mb-0">
           <p className="m-0 mb-2 text-[13px] font-bold text-noorix-text">
             {isAr ? 'ابدأ من قالب جاهز (أسرع)' : 'Start from a preset (fastest)'}
           </p>
@@ -192,7 +192,7 @@ export default function RoleEditorOverlay({
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain p-3 lg:p-4">
+      <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain px-3 pb-3 pt-0 lg:px-4 lg:pb-4">
         <RolePermissionsAccordion
           open={open}
           modules={modules}
