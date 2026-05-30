@@ -6,6 +6,9 @@ export interface HrDashboardSummaryData {
   expiringResidenciesCount: number;
   outstandingAdvancesCount: number;
   outstandingAdvancesAmount: number;
+  activeCount: number;
+  terminatedCount: number;
+  monthlyPayrollTotal: number;
 }
 
 /**

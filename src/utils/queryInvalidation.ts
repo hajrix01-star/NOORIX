@@ -67,6 +67,7 @@ const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   ownerKeys.overviewRoot(),
   // HR — ملخص لوحة HR الموحّد
   hrKeys.dashboardSummaryRoot(),
+  hrKeys.advancesRoot(),
   // OCR — قوائم مرتبطة بالمشتريات/الفواتير بعد إبطال مالي
   ocrKeys.invoicesRoot(),
   ocrKeys.purchasesReportRoot(),
