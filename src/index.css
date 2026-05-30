@@ -4669,7 +4669,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border-radius: 0;
     background: transparent;
   }
-  /* قائمة الموظفين — صفوف على سطح الكرت؛ تحكم ونص بـ --nx-hr-gutter */
+  /* قائمة الموظفين — صفوف بعرض الكرت؛ هامش النص فقط عبر --nx-hr-text-inset */
   @media (max-width: 768px) {
     .nx-hr-workspace__body:not(.nx-hr-workspace__body--staff-list) .nx-compact-row {
       padding-inline: 16px;
@@ -4704,7 +4704,10 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
       border-bottom: none;
     }
     .nx-hr-workspace__body--staff-list .nx-hr-staff-row__inner {
-      padding-inline: var(--nx-hr-gutter, 1rem);
+      box-sizing: border-box;
+      max-width: 100%;
+      width: 100%;
+      padding-inline: var(--nx-hr-text-inset, 1rem);
     }
   }
 

@@ -13,6 +13,9 @@ export const HR_WORKSPACE_CONTENT_CLASS =
 /** متغير CSS للهامش الأفقي — يطابق HR_WORKSPACE_GUTTER_X (px-4) */
 export const HR_WORKSPACE_GUTTER_VAR_CLASS = '[--nx-hr-gutter:1rem]';
 
+/** هامش النص داخل صف الموظف فقط — مستقل عن غلاف التحكم */
+export const HR_STAFF_TEXT_INSET_VAR_CLASS = '[--nx-hr-text-inset:1rem]';
+
 export const HR_WORKSPACE_BODY_CLASS = cn(
   'nx-hr-workspace__body relative z-[1] min-w-0 w-full box-border',
   HR_WORKSPACE_GUTTER_X,
@@ -20,10 +23,11 @@ export const HR_WORKSPACE_BODY_CLASS = cn(
   'py-3 sm:py-4',
 );
 
-/** قائمة الموظفين — جوال: بدون px على الجسم؛ التحكم والنص بـ --nx-hr-gutter */
+/** قائمة الموظفين — جوال: بدون px على الجسم؛ التحكم بـ --nx-hr-gutter والنص بـ --nx-hr-text-inset */
 export const HR_WORKSPACE_BODY_STAFF_LIST_CLASS = cn(
   'nx-hr-workspace__body nx-hr-workspace__body--staff-list relative z-[1] min-w-0 w-full box-border',
   HR_WORKSPACE_GUTTER_VAR_CLASS,
+  HR_STAFF_TEXT_INSET_VAR_CLASS,
   'py-3 sm:py-4',
   'max-md:px-0 md:px-4',
 );
