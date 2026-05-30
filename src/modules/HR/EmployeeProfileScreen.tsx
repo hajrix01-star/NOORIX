@@ -23,6 +23,7 @@ import {
   downloadDocument,
   deleteEmployee,
   deleteResidency,
+  deleteRaiseMovement,
 } from '../../services/api';
 import { assertApiOk } from '../../utils/apiResponse';
 import { ScreenShell } from '../../ui';
@@ -76,6 +77,7 @@ export default function EmployeeProfileScreen() {
   const companyLogo = activeCompany?.logoUrl || '';
   const [showAdvance, setShowAdvance] = useState(false);
   const [careerModal, setCareerModal] = useState<any>(null);
+  const [editRaiseMovement, setEditRaiseMovement] = useState<any>(null);
   const [docModal, setDocModal] = useState<any>(null);
   const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
@@ -270,8 +272,29 @@ export default function EmployeeProfileScreen() {
     queryClient.invalidateQueries({ queryKey: hrKeys.leaveSalarySettlements(companyId) });
     queryClient.invalidateQueries({ queryKey: hrKeys.residenciesByEmployee(companyId, id) });
     queryClient.invalidateQueries({ queryKey: hrKeys.documents(companyId, id) });
+    queryClient.invalidateQueries({ queryKey: hrKeys.movementsByEmployee(companyId, id) });
     invalidateOnFinancialMutation(queryClient);
     queryClient.invalidateQueries({ queryKey: hrKeys.payrollRunItems(companyId, id) });
+  };
+
+  const deleteRaiseMut = useApiMutation({
+    mutationFn: (movementId: string) => deleteRaiseMovement(movementId, companyId),
+    successToast: () => t('careerRaiseDeleted'),
+    errorToast: (e: any) => e?.message || t('saveFailed'),
+    onSuccess: () => {
+      setEditRaiseMovement(null);
+      invalidateAll();
+    },
+  });
+
+  const handleEditRaise = (row: { id?: string }) => {
+    const movement = movements.find((m: any) => m.id === row.id);
+    if (movement?.movementType === 'raise') setEditRaiseMovement(movement);
+  };
+
+  const handleDeleteRaise = (row: { id?: string }) => {
+    if (!row.id || !window.confirm(t('deleteRaiseConfirm'))) return;
+    deleteRaiseMut.mutate(row.id);
   };
 
   const handleUploadDoc = async (e: any) => {
@@ -362,8 +385,11 @@ export default function EmployeeProfileScreen() {
           t={t}
           careerTableRows={careerTableRows}
           canShowCareerActions={canShowCareerActions}
+          canEditRaise={canRecordCareer}
           onOpenPromotion={() => setCareerModal('promotion')}
           onOpenRaise={() => setCareerModal('raise')}
+          onEditRaise={handleEditRaise}
+          onDeleteRaise={handleDeleteRaise}
         />
         <EmployeeProfileFinancialSection
           t={t}
@@ -458,19 +484,20 @@ export default function EmployeeProfileScreen() {
           onClose={() => setShowAdvance(false)}
         />
       )}
-      {careerModal && (
+      {(careerModal || editRaiseMovement) && (
         <EmployeeCareerMovementModal
-          kind={careerModal}
+          kind={editRaiseMovement ? 'raise' : careerModal}
           employee={employee}
           companyId={companyId}
           customAllowanceTotal={customAllowanceTotal}
-          onClose={() => setCareerModal(null)}
+          editMovement={editRaiseMovement}
+          onClose={() => {
+            setCareerModal(null);
+            setEditRaiseMovement(null);
+          }}
           onSuccess={() => {
-            invalidateOnFinancialMutation(queryClient);
-            queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id, companyId) });
-            queryClient.invalidateQueries({ queryKey: employeeKeys.byCompany(companyId) });
-            queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
-            showToast(t('careerMovementSaved'), 'success');
+            invalidateAll();
+            showToast(editRaiseMovement ? t('careerRaiseUpdated') : t('careerMovementSaved'), 'success');
           }}
         />
       )}

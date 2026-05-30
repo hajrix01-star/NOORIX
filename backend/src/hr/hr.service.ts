@@ -71,6 +71,14 @@ export class HRService {
     return this.payroll.createMovement(...args);
   }
 
+  updateRaiseMovement(...args: Parameters<HrPayrollService['updateRaiseMovement']>) {
+    return this.payroll.updateRaiseMovement(...args);
+  }
+
+  deleteRaiseMovement(...args: Parameters<HrPayrollService['deleteRaiseMovement']>) {
+    return this.payroll.deleteRaiseMovement(...args);
+  }
+
   findAllowances(...args: Parameters<HrPayrollService['findAllowances']>) {
     return this.payroll.findAllowances(...args);
   }

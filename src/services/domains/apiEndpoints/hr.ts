@@ -227,6 +227,16 @@ export async function getMovements(companyId: string, employeeId?: string): Prom
 export async function createMovement(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/hr/movements', body);
 }
+export async function updateRaiseMovement(
+  id: string,
+  companyId: string,
+  body: unknown,
+): Promise<ApiParsedResult> {
+  return apiPatch(`/api/v1/hr/movements/${id}/raise?companyId=${companyId}`, body);
+}
+export async function deleteRaiseMovement(id: string, companyId: string): Promise<ApiParsedResult> {
+  return apiDelete(`/api/v1/hr/movements/${id}/raise?companyId=${companyId}`);
+}
 
 export async function getCustomAllowances(companyId: string, employeeId?: string): Promise<ApiParsedResult> {
   const params: Record<string, string> = { companyId: String(companyId) };

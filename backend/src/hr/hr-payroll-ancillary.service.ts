@@ -2,7 +2,7 @@
  * HrPayrollAncillaryService — فواتير السلف (عرض) + حركات الموظف + البدلات + الخصومات اليدوية
  * (يُبقى مربوطاً بمسار HR نفسه بدون الدمج داخل جلسة المسير لتحسين التصفح والصيانة)
  */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -11,6 +11,8 @@ import { toMoneyDecimal2 } from '../common/utils/money-decimal';
 import type { CreateMovementDto } from './dto/create-movement.dto';
 import type { CreateAllowanceDto } from './dto/create-allowance.dto';
 import type { CreateDeductionDto } from './dto/create-deduction.dto';
+import type { UpdateRaiseMovementDto } from './dto/update-raise-movement.dto';
+import { basicSalaryFromTargetTotalInclusiveOvertime } from './utils/employee-salary-inverse.util';
 
 @Injectable()
 export class HrPayrollAncillaryService {
@@ -78,6 +80,161 @@ export class HrPayrollAncillaryService {
     });
 
     return movement;
+  }
+
+  private async sumCustomAllowances(companyId: string, employeeId: string): Promise<number> {
+    const rows = await this.prisma.employeeCustomAllowance.findMany({
+      where: { companyId, employeeId },
+      select: { amount: true },
+    });
+    return rows.reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
+  }
+
+  private async findLatestRaise(companyId: string, employeeId: string) {
+    const raises = await this.prisma.employeeMovement.findMany({
+      where: { companyId, employeeId, movementType: 'raise' },
+      orderBy: [{ effectiveDate: 'desc' }, { createdAt: 'desc' }],
+      take: 1,
+    });
+    return raises[0] ?? null;
+  }
+
+  private roundMoney2(n: number): number {
+    return Math.round(n * 100) / 100;
+  }
+
+  private async applyBasicFromTargetTotal(
+    employeeId: string,
+    companyId: string,
+    employee: {
+      basicSalary: Prisma.Decimal;
+      housingAllowance: Prisma.Decimal;
+      transportAllowance: Prisma.Decimal;
+      otherAllowance: Prisma.Decimal;
+      workHours: string | null;
+      workSchedule: string | null;
+    },
+    targetTotal: number,
+  ) {
+    const customTotal = await this.sumCustomAllowances(companyId, employeeId);
+    const { basic, inverseWarning } = basicSalaryFromTargetTotalInclusiveOvertime(
+      employee,
+      customTotal,
+      targetTotal,
+    );
+    if (inverseWarning || basic <= 0) {
+      throw new BadRequestException('لا يمكن استنتاج الراتب الأساسي من الإجمالي المطلوب.');
+    }
+    await this.prisma.employee.update({
+      where: { id: employeeId },
+      data: { basicSalary: new Prisma.Decimal(basic) },
+    });
+    return basic;
+  }
+
+  async updateRaiseMovement(
+    id: string,
+    companyId: string,
+    dto: UpdateRaiseMovementDto,
+    userId?: string,
+  ) {
+    const movement = await this.prisma.employeeMovement.findFirst({
+      where: { id, companyId },
+      include: { employee: true },
+    });
+    if (!movement) throw new NotFoundException('الحركة غير موجودة.');
+    if (movement.movementType !== 'raise') {
+      throw new BadRequestException('يمكن تعديل زيادات الراتب فقط.');
+    }
+
+    const increment = this.roundMoney2(Number(dto.increment));
+    if (!Number.isFinite(increment) || increment === 0) {
+      throw new BadRequestException('مبلغ الزيادة يجب أن يكون غير صفر.');
+    }
+
+    const prevTotal = Number(movement.previousValue);
+    if (!Number.isFinite(prevTotal)) {
+      throw new BadRequestException('لا يمكن تعديل الزيادة — الإجمالي السابق غير مسجّل.');
+    }
+
+    const newTarget = this.roundMoney2(prevTotal + increment);
+    if (newTarget <= 0) {
+      throw new BadRequestException('الإجمالي بعد الزيادة يجب أن يكون أكبر من صفر.');
+    }
+
+    const latest = await this.findLatestRaise(companyId, movement.employeeId);
+    const isLatest = latest?.id === movement.id;
+
+    if (isLatest) {
+      await this.applyBasicFromTargetTotal(
+        movement.employeeId,
+        companyId,
+        movement.employee,
+        newTarget,
+      );
+    }
+
+    const updated = await this.prisma.employeeMovement.update({
+      where: { id },
+      data: {
+        amount: increment > 0 ? new Prisma.Decimal(increment) : null,
+        newValue: String(newTarget),
+        effectiveDate: new Date(dto.effectiveDate),
+        notes: dto.notes?.trim() || null,
+      },
+      include: { employee: true },
+    });
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'update',
+      entity: 'employee_movement',
+      entityId: id,
+      newValue: { movementType: 'raise', newValue: updated.newValue },
+    });
+
+    return { ...updated, salaryUpdated: isLatest };
+  }
+
+  async deleteRaiseMovement(id: string, companyId: string, userId?: string) {
+    const movement = await this.prisma.employeeMovement.findFirst({
+      where: { id, companyId },
+      include: { employee: true },
+    });
+    if (!movement) throw new NotFoundException('الحركة غير موجودة.');
+    if (movement.movementType !== 'raise') {
+      throw new BadRequestException('يمكن حذف زيادات الراتب فقط.');
+    }
+
+    const latest = await this.findLatestRaise(companyId, movement.employeeId);
+    const isLatest = latest?.id === movement.id;
+
+    if (isLatest) {
+      const prevTotal = Number(movement.previousValue);
+      if (!Number.isFinite(prevTotal)) {
+        throw new BadRequestException('لا يمكن التراجع عن الزيادة — الإجمالي السابق غير مسجّل.');
+      }
+      await this.applyBasicFromTargetTotal(
+        movement.employeeId,
+        companyId,
+        movement.employee,
+        prevTotal,
+      );
+    }
+
+    await this.prisma.employeeMovement.delete({ where: { id } });
+
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'delete',
+      entity: 'employee_movement',
+      entityId: id,
+      oldValue: { movementType: 'raise', previousValue: movement.previousValue },
+    });
+
+    return { deleted: true, id, salaryReverted: isLatest };
   }
 
   async findAllowances(companyId: string, employeeId?: string) {

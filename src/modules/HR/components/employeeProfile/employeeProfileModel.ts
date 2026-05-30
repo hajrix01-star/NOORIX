@@ -44,6 +44,7 @@ export function buildCareerTableRows(movements: any, t: any) {
     }
     return {
       id: m.id,
+      movementType: m.movementType,
       effectiveDate: m.effectiveDate,
       typeLabel: labelFor(m.movementType),
       changeSummary,

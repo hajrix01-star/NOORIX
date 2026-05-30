@@ -42,6 +42,7 @@ import { UpdateResidencyDto } from './dto/update-residency.dto';
 import { IssueResidencyInvoiceDto } from './dto/issue-residency-invoice.dto';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { CreateMovementDto } from './dto/create-movement.dto';
+import { UpdateRaiseMovementDto } from './dto/update-raise-movement.dto';
 import { CreateAllowanceDto } from './dto/create-allowance.dto';
 import { CreateDeductionDto } from './dto/create-deduction.dto';
 import { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
@@ -428,6 +429,27 @@ export class HRController {
     @CurrentUser() user: JwtUser,
   ) {
     return this.hrService.createMovement(dto, user.sub);
+  }
+
+  @Patch('movements/:id/raise')
+  @RequirePermission('HR_WRITE')
+  updateRaiseMovement(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @Body() dto: UpdateRaiseMovementDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.hrService.updateRaiseMovement(id, companyId, dto, user.sub);
+  }
+
+  @Delete('movements/:id/raise')
+  @RequirePermission('HR_WRITE')
+  deleteRaiseMovement(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.hrService.deleteRaiseMovement(id, companyId, user.sub);
   }
 
   // ══════════════════════════════════════════════════════════

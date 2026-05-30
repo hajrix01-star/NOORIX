@@ -66,6 +66,14 @@ export class HrPayrollService {
     return this.ancillary.createMovement(...args);
   }
 
+  updateRaiseMovement(...args: Parameters<HrPayrollAncillaryService['updateRaiseMovement']>) {
+    return this.ancillary.updateRaiseMovement(...args);
+  }
+
+  deleteRaiseMovement(...args: Parameters<HrPayrollAncillaryService['deleteRaiseMovement']>) {
+    return this.ancillary.deleteRaiseMovement(...args);
+  }
+
   findAllowances(...args: Parameters<HrPayrollAncillaryService['findAllowances']>) {
     return this.ancillary.findAllowances(...args);
   }

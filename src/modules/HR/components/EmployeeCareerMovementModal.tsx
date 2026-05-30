@@ -5,9 +5,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
-import { getSaudiToday } from '../../../utils/saudiDate';
+import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { createMovement, updateEmployee } from '../../../services/api';
+import { createMovement, updateEmployee, updateRaiseMovement } from '../../../services/api';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { hrFmt } from '../utils/hrFmt';
 import {
@@ -23,10 +23,12 @@ export function EmployeeCareerMovementModal({
   employee,
   companyId,
   customAllowanceTotal = 0,
+  editMovement = null,
   onClose,
   onSuccess,
 }: any) {
   const { t } = useTranslation();
+  const isEditRaise = !!editMovement && kind === 'raise';
   const [effectiveDate, setEffectiveDate] = useState(getSaudiToday());
   const [prevJobTitle, setPrevJobTitle] = useState('');
   const [newJobTitle, setNewJobTitle] = useState('');
@@ -39,13 +41,23 @@ export function EmployeeCareerMovementModal({
 
   useEffect(() => {
     if (!employee) return;
-    setEffectiveDate(getSaudiToday());
-    setPrevJobTitle(employee.jobTitle || '');
-    setNewJobTitle('');
-    setRaiseIncrement('');
-    setNotes('');
+    if (isEditRaise && editMovement) {
+      setEffectiveDate(toDateInputYmd(editMovement.effectiveDate));
+      setRaiseIncrement(
+        editMovement.amount != null && String(editMovement.amount).trim() !== ''
+          ? String(editMovement.amount)
+          : '',
+      );
+      setNotes(editMovement.notes || '');
+    } else {
+      setEffectiveDate(getSaudiToday());
+      setPrevJobTitle(employee.jobTitle || '');
+      setNewJobTitle('');
+      setRaiseIncrement('');
+      setNotes('');
+    }
     setFormError('');
-  }, [employee, kind]);
+  }, [employee, kind, isEditRaise, editMovement]);
 
   const currentTotalAllIn = useMemo(
     () => totalSalary(employee, customTotal),
@@ -58,7 +70,12 @@ export function EmployeeCareerMovementModal({
     if (raw === '' || raw === '-' || raw === '+') return null;
     const inc = roundMoney2(raw);
     if (!Number.isFinite(inc) || inc === 0) return null;
-    const newTarget = roundMoney2(currentTotalAllIn + inc);
+
+    const baseTotal = isEditRaise && editMovement?.previousValue != null
+      ? roundMoney2(Number(editMovement.previousValue))
+      : currentTotalAllIn;
+
+    const newTarget = roundMoney2(baseTotal + inc);
     if (newTarget <= 0) return { invalidTarget: true, inc, newTarget };
     const { basic, inverseWarning } = basicSalaryFromTargetTotalInclusiveOvertime(
       employee,
@@ -70,8 +87,9 @@ export function EmployeeCareerMovementModal({
       newTarget,
       basic,
       inverseWarning,
+      baseTotal,
     };
-  }, [kind, employee, customTotal, raiseIncrement, currentTotalAllIn]);
+  }, [kind, employee, customTotal, raiseIncrement, currentTotalAllIn, isEditRaise, editMovement]);
 
   async function handleSubmit(e: any) {
     e?.preventDefault?.();
@@ -115,7 +133,10 @@ export function EmployeeCareerMovementModal({
       setFormError(t('careerRaiseIncrementNonZero'));
       return;
     }
-    const newTarget = roundMoney2(currentTotalAllIn + inc);
+    const baseTotal = isEditRaise && editMovement?.previousValue != null
+      ? roundMoney2(Number(editMovement.previousValue))
+      : currentTotalAllIn;
+    const newTarget = roundMoney2(baseTotal + inc);
     if (newTarget <= 0) {
       setFormError(t('careerRaiseNewTargetInvalid'));
       return;
@@ -125,13 +146,29 @@ export function EmployeeCareerMovementModal({
       customTotal,
       newTarget,
     );
-    if (inverseWarning || basic <= 0) {
+    if (!isEditRaise && (inverseWarning || basic <= 0)) {
+      setFormError(t('careerInverseSalaryWarn'));
+      return;
+    }
+    if (isEditRaise && inverseWarning) {
       setFormError(t('careerInverseSalaryWarn'));
       return;
     }
 
     setSaving(true);
     try {
+      if (isEditRaise && editMovement?.id) {
+        const mov = await updateRaiseMovement(editMovement.id, companyId, {
+          increment: inc,
+          effectiveDate: `${effectiveDate}T12:00:00.000Z`,
+          notes: notes.trim() || undefined,
+        });
+        rejectIfApiFailed(mov, t('saveFailed'));
+        onSuccess?.();
+        onClose?.();
+        return;
+      }
+
       const up = await updateEmployee(employee.id, { basicSalary: basic }, companyId);
       rejectIfApiFailed(up, t('updateFailed'));
       const mov = await createMovement({
@@ -158,7 +195,11 @@ export function EmployeeCareerMovementModal({
     }
   }
 
-  const title = kind === 'promotion' ? t('careerRegisterPromotion') : t('careerRegisterRaise');
+  const title = isEditRaise
+    ? t('careerEditRaise')
+    : kind === 'promotion'
+      ? t('careerRegisterPromotion')
+      : t('careerRegisterRaise');
 
   const raiseBlocked =
     kind === 'raise'
@@ -216,9 +257,9 @@ export function EmployeeCareerMovementModal({
         ) : (
           <>
             <div className="text-[13px] text-noorix-muted">
-              {t('careerCurrentTotalWithOvertime')}:{' '}
+              {isEditRaise ? t('careerRaiseEditBaseHint') : t('careerCurrentTotalWithOvertime')}:{' '}
               <span className="font-semibold text-noorix-text ltr inline-block">
-                {hrFmt(currentTotalAllIn)}
+                {hrFmt(isEditRaise && raisePreview?.baseTotal != null ? raisePreview.baseTotal : currentTotalAllIn)}
               </span>
             </div>
             <p className="text-[12px] text-noorix-muted m-0 -mt-2">{t('careerRaiseTotalHint')}</p>
