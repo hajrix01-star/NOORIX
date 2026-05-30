@@ -4669,23 +4669,30 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border-radius: 0;
     background: transparent;
   }
-  /* قائمة HR — full-bleed هجين: L6 خلفية بعرض الكرت، L6a نص بمحاذاة px-4 */
+  /* قائمة HR — full-bleed هجين: الغلاف يمتد لعرض الكرت، L6a نص بمحاذاة px-4 */
   @media (max-width: 768px) {
     .nx-hr-workspace__body .nx-compact-row {
       padding-inline: 16px;
     }
-    .nx-hr-workspace__body .nx-hr-table--flat-list.noorix-table-frame {
+    .nx-hr-workspace__body .nx-hr-staff-list {
+      --nx-hr-gutter: 1rem;
+      margin-inline: calc(-1 * var(--nx-hr-gutter));
+      width: calc(100% + 2 * var(--nx-hr-gutter));
+      max-width: none;
+      box-sizing: border-box;
+    }
+    .nx-hr-workspace__body .nx-hr-staff-list .nx-hr-table--flat-list.noorix-table-frame {
       border: none;
       box-shadow: none;
       background: transparent;
       border-radius: 0;
+      overflow: visible;
+      overflow-x: visible;
     }
     .nx-hr-workspace__body .nx-hr-staff-list .nx-hr-table--flat-list .nx-compact-row {
-      --nx-hr-gutter: 1rem;
       padding: 0 !important;
-      margin-inline: calc(-1 * var(--nx-hr-gutter));
-      width: calc(100% + 2 * var(--nx-hr-gutter));
-      max-width: none;
+      margin-inline: 0;
+      width: 100%;
       box-sizing: border-box;
       border-bottom: 1px solid var(--noorix-border);
     }
