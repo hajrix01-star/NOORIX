@@ -4557,6 +4557,16 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     width: 100%;
     padding: 0;
   }
+  /* فاصل رقيق بين شريط التبويبات الرئيسية والفرعية */
+  .nx-hr-workspace > .nx-hr-subtab-shell::before {
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    height: 3px;
+    background: var(--noorix-bg-page);
+    border-top: 1px solid var(--noorix-border);
+    box-sizing: border-box;
+  }
   .nx-segmented-shell--flat {
     position: relative;
     z-index: 3;

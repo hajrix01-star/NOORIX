@@ -16,9 +16,10 @@ export const HR_WORKSPACE_BODY_CLASS = cn(
   'py-3 sm:py-4',
 );
 
-/** غلاف التبويبات الفرعية — عرض كامل مثل الرئيسية + خط فاصل */
-export const HR_SUBTAB_SHELL_CLASS =
-  'w-full border-b border-noorix-border';
+/** غلاف التبويبات الفرعية — فاصل رقيق تحت التبويبات الرئيسية */
+export const HR_SUBTAB_SHELL_CLASS = cn(
+  'nx-hr-subtab-shell w-full border-b border-noorix-border',
+);
 
 /** داخل جسم المحتوى — شريط connected مدمج */
 export const HR_SUBTAB_INLINE_CLASS = cn(
