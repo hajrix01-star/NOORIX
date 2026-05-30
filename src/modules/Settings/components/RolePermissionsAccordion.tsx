@@ -75,23 +75,32 @@ export default function RolePermissionsAccordion({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={disabled}
-          onClick={() => setOpenKeys(new Set(modules.map((m) => m.key)))}
+      <div className="flex items-center justify-end">
+        <div
+          className="inline-flex flex-nowrap items-stretch rounded-lg border border-noorix-border bg-noorix-surface p-0.5 gap-0.5 shrink-0 max-w-full"
+          role="group"
+          aria-label={isAr ? 'فتح وطي الأقسام' : 'Expand and collapse sections'}
         >
-          {isAr ? 'فتح الكل' : 'Expand all'}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={disabled}
-          onClick={() => setOpenKeys(new Set())}
-        >
-          {isAr ? 'طي الكل' : 'Collapse all'}
-        </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={disabled}
+            className="shrink-0 whitespace-nowrap rounded-md min-h-[36px] px-3"
+            onClick={() => setOpenKeys(new Set(modules.map((m) => m.key)))}
+          >
+            {isAr ? 'فتح الكل' : 'Expand all'}
+          </Button>
+          <span className="w-px self-stretch bg-noorix-border shrink-0" aria-hidden />
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={disabled}
+            className="shrink-0 whitespace-nowrap rounded-md min-h-[36px] px-3"
+            onClick={() => setOpenKeys(new Set())}
+          >
+            {isAr ? 'طي الكل' : 'Collapse all'}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
