@@ -45,7 +45,12 @@ export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Post()
-  @RequireAnyPermission('INVOICES_WRITE', 'PURCHASES_WRITE')
+  @RequireAnyPermission(
+    'INVOICES_WRITE',
+    'PURCHASES_WRITE',
+    'CHAT_PRESET_ADVANCES',
+    'CHAT_PRESET_EXPENSE_PAY',
+  )
   async create(
     @Body()        dto:  CreateInvoiceDto,
     @CurrentUser() user: JwtUser,
