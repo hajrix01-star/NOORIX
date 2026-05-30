@@ -24,7 +24,15 @@ export class EmployeesController {
   constructor(private readonly svc: EmployeesService) {}
 
   @Get()
-  @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_INCREASES')
+  @RequireAnyPermission(
+    'EMPLOYEES_READ',
+    'HR_READ',
+    'CHAT_PRESET_ADVANCES',
+    'CHAT_PRESET_LEAVES',
+    'CHAT_PRESET_DEDUCTIONS',
+    'CHAT_PRESET_INCREASES',
+    'CHAT_PRESET_ADD_EMPLOYEE',
+  )
   findAll(
     @CompanyId() companyId: string,
     @Query('includeTerminated')  inc?: string,
@@ -57,7 +65,15 @@ export class EmployeesController {
   }
 
   @Get(':id')
-  @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ', 'CHAT_PRESET_ADVANCES', 'CHAT_PRESET_LEAVES', 'CHAT_PRESET_DEDUCTIONS', 'CHAT_PRESET_INCREASES')
+  @RequireAnyPermission(
+    'EMPLOYEES_READ',
+    'HR_READ',
+    'CHAT_PRESET_ADVANCES',
+    'CHAT_PRESET_LEAVES',
+    'CHAT_PRESET_DEDUCTIONS',
+    'CHAT_PRESET_INCREASES',
+    'CHAT_PRESET_ADD_EMPLOYEE',
+  )
   findOne(
     @Param('id')        id: string,
     @CompanyId() companyId: string,
@@ -66,7 +82,7 @@ export class EmployeesController {
   }
 
   @Post()
-  @RequirePermission('EMPLOYEES_WRITE')
+  @RequireAnyPermission('EMPLOYEES_WRITE', 'CHAT_PRESET_ADD_EMPLOYEE')
   create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: JwtUser) {
     return this.svc.create(dto, user.sub);
   }

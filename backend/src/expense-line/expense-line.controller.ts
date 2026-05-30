@@ -7,6 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { ExpenseLineService } from './expense-line.service';
 import { CreateExpenseLineDto } from './dto/create-expense-line.dto';
 import { UpdateExpenseLineDto } from './dto/update-expense-line.dto';
@@ -17,7 +18,13 @@ export class ExpenseLineController {
   constructor(private readonly expenseLineService: ExpenseLineService) {}
 
   @Get()
-  @RequirePermission('INVOICES_READ')
+  @RequireAnyPermission(
+    'INVOICES_READ',
+    'EXPENSES_READ',
+    'CHAT_PRESET_EXPENSE_ADD',
+    'CHAT_PRESET_EXPENSE_PAY',
+    'CHAT_PRESET_EXPENSE_EDIT',
+  )
   findAll(
     @CompanyId() companyId: string,
     @Query('kind') kind?: 'fixed_expense' | 'expense',
@@ -32,7 +39,13 @@ export class ExpenseLineController {
   }
 
   @Get(':id')
-  @RequirePermission('INVOICES_READ')
+  @RequireAnyPermission(
+    'INVOICES_READ',
+    'EXPENSES_READ',
+    'CHAT_PRESET_EXPENSE_ADD',
+    'CHAT_PRESET_EXPENSE_PAY',
+    'CHAT_PRESET_EXPENSE_EDIT',
+  )
   findOne(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -61,13 +74,13 @@ export class ExpenseLineController {
   }
 
   @Post()
-  @RequirePermission('INVOICES_WRITE')
+  @RequireAnyPermission('INVOICES_WRITE', 'EXPENSES_WRITE', 'CHAT_PRESET_EXPENSE_ADD')
   create(@Body() dto: CreateExpenseLineDto) {
     return this.expenseLineService.create(dto);
   }
 
   @Patch(':id')
-  @RequirePermission('INVOICES_WRITE')
+  @RequireAnyPermission('INVOICES_WRITE', 'EXPENSES_WRITE', 'CHAT_PRESET_EXPENSE_EDIT')
   update(
     @Param('id') id: string,
     @CompanyId() companyId: string,

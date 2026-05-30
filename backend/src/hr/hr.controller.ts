@@ -168,7 +168,7 @@ export class HRController {
   }
 
   @Post('leaves')
-  @RequirePermission('HR_WRITE')
+  @RequireAnyPermission('HR_WRITE', 'CHAT_PRESET_LEAVES')
   createLeave(@Body() dto: CreateLeaveDto, @CurrentUser() user: JwtUser) {
     return this.hrService.createLeave(dto, user.sub);
   }
@@ -416,7 +416,7 @@ export class HRController {
   }
 
   @Post('movements')
-  @RequirePermission('HR_WRITE')
+  @RequireAnyPermission('HR_WRITE', 'CHAT_PRESET_INCREASES')
   createMovement(
     @Body() dto: CreateMovementDto,
     @CurrentUser() user: JwtUser,
@@ -438,7 +438,7 @@ export class HRController {
   }
 
   @Post('allowances')
-  @RequirePermission('HR_WRITE')
+  @RequireAnyPermission('HR_WRITE', 'CHAT_PRESET_INCREASES')
   createAllowance(
     @Body() dto: CreateAllowanceDto,
     @CurrentUser() user: JwtUser,
@@ -470,7 +470,7 @@ export class HRController {
   }
 
   @Post('deductions')
-  @RequirePermission('HR_WRITE')
+  @RequireAnyPermission('HR_WRITE', 'CHAT_PRESET_DEDUCTIONS')
   createDeduction(
     @Body() dto: CreateDeductionDto,
     @CurrentUser() user: JwtUser,

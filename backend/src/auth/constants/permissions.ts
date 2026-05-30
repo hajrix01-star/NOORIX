@@ -65,6 +65,10 @@ export const PERMISSIONS = {
   CHAT_PRESET_DEDUCTIONS:'CHAT_PRESET_DEDUCTIONS',
   CHAT_PRESET_FAQ:       'CHAT_PRESET_FAQ',
   CHAT_PRESET_INCREASES: 'CHAT_PRESET_INCREASES',
+  CHAT_PRESET_ADD_EMPLOYEE: 'CHAT_PRESET_ADD_EMPLOYEE',
+  CHAT_PRESET_EXPENSE_ADD:  'CHAT_PRESET_EXPENSE_ADD',
+  CHAT_PRESET_EXPENSE_PAY:  'CHAT_PRESET_EXPENSE_PAY',
+  CHAT_PRESET_EXPENSE_EDIT: 'CHAT_PRESET_EXPENSE_EDIT',
 
   EMPLOYEES_READ:   'EMPLOYEES_READ',
   EMPLOYEES_WRITE:  'EMPLOYEES_WRITE',
@@ -185,6 +189,9 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       view: 'VIEW_CHAT', read: 'SMART_CHAT_READ',
       chatAdv: 'CHAT_PRESET_ADVANCES', chatLeave: 'CHAT_PRESET_LEAVES',
       chatDed: 'CHAT_PRESET_DEDUCTIONS', chatFaq: 'CHAT_PRESET_FAQ', chatInc: 'CHAT_PRESET_INCREASES',
+      chatEmp: 'CHAT_PRESET_ADD_EMPLOYEE',
+      chatExpAdd: 'CHAT_PRESET_EXPENSE_ADD', chatExpPay: 'CHAT_PRESET_EXPENSE_PAY',
+      chatExpEdit: 'CHAT_PRESET_EXPENSE_EDIT',
     },
   },
   {
@@ -222,6 +229,10 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   chatDed:    { ar: 'محادثة · خصومات', en: 'Chat · Deductions' },
   chatFaq:    { ar: 'محادثة · أسئلة', en: 'Chat · FAQ' },
   chatInc:    { ar: 'محادثة · زيادات', en: 'Chat · Raises' },
+  chatEmp:    { ar: 'محادثة · إضافة موظف', en: 'Chat · Add employee' },
+  chatExpAdd: { ar: 'محادثة · إضافة مصروف ثابت', en: 'Chat · Add fixed expense' },
+  chatExpPay: { ar: 'محادثة · سداد مصروف ثابت', en: 'Chat · Pay fixed expense' },
+  chatExpEdit:{ ar: 'محادثة · تعديل مصروف ثابت', en: 'Chat · Edit fixed expense' },
 };
 
 // ── صلاحيات الأدوار النظامية (تُزرع في DB عند أول تشغيل) ──
@@ -252,6 +263,9 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.SMART_CHAT_READ, PERMISSIONS.CHAT_PRESET_ADVANCES,
       PERMISSIONS.CHAT_PRESET_LEAVES, PERMISSIONS.CHAT_PRESET_DEDUCTIONS,
       PERMISSIONS.CHAT_PRESET_FAQ, PERMISSIONS.CHAT_PRESET_INCREASES,
+      PERMISSIONS.CHAT_PRESET_ADD_EMPLOYEE,
+      PERMISSIONS.CHAT_PRESET_EXPENSE_ADD, PERMISSIONS.CHAT_PRESET_EXPENSE_PAY,
+      PERMISSIONS.CHAT_PRESET_EXPENSE_EDIT,
       PERMISSIONS.CREATE_INVOICE,
       PERMISSIONS.VIEW_OCR, PERMISSIONS.OCR_READ, PERMISSIONS.OCR_WRITE, PERMISSIONS.OCR_SUBMIT,
     ],

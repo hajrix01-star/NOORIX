@@ -18,5 +18,5 @@ export function filterCommandGroups(can: PermissionChecker): ChatCommandGroupFil
 }
 
 export function canUseChatPresetFaq(can: PermissionChecker): boolean {
-  return can(PERMISSIONS.CHAT_PRESET_FAQ) || can(PERMISSIONS.VIEW_CHAT);
+  return can(PERMISSIONS.CHAT_PRESET_FAQ);
 }
