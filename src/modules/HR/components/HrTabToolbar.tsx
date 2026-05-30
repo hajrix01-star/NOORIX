@@ -49,60 +49,63 @@ export function HrTabToolbar({
   const hasMenu = menuItems != null && menuItems.length > 0;
   const showMenu = hasMenu && (isMobile || !desktopActions);
   const showPrimary = primaryAction && !primaryAction.hidden;
+  const hasActionsRow = hasFilters || showMenu || showPrimary || desktopActions;
 
   return (
     <>
-      <div
-        className={cn(
-          'nx-hr-tab-toolbar mb-3 flex min-h-11 flex-wrap items-center gap-2',
-          className,
-        )}
-      >
-        {leading && <div className="flex min-w-0 flex-wrap items-center gap-2">{leading}</div>}
+      <div className={cn('nx-hr-tab-toolbar mb-3 flex w-full min-w-0 flex-col gap-3', className)}>
+        {leading ? <div className="w-full min-w-0">{leading}</div> : null}
 
-        {hasFilters && isMobile && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="min-h-[44px] shrink-0"
-            onClick={() => setFilterOpen(true)}
-          >
-            {t('hrFilters')}
-            {activeFilterCount > 0 ? (
-              <span className="ms-1 rounded-full bg-noorix-blue px-1.5 py-0.5 text-[11px] font-bold text-white tabular-nums">
-                {activeFilterCount}
-              </span>
+        {hasActionsRow ? (
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+            {hasFilters && isMobile ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="min-h-[44px] shrink-0"
+                onClick={() => setFilterOpen(true)}
+              >
+                {t('hrFilters')}
+                {activeFilterCount > 0 ? (
+                  <span className="ms-1 rounded-full bg-noorix-blue px-1.5 py-0.5 text-[11px] font-bold text-white tabular-nums">
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+              </Button>
             ) : null}
-          </Button>
-        )}
 
-        {hasFilters && !isMobile && (
-          <div className="nx-toolbar min-w-0 flex-1 flex-wrap">{filters}</div>
-        )}
+            {hasFilters && !isMobile ? (
+              <div className="nx-toolbar min-w-0 flex-1 flex-wrap">{filters}</div>
+            ) : null}
 
-        {!isMobile && desktopActions}
+            {!isMobile && desktopActions}
 
-        {showMenu && (
-          <KebabMenu
-            ariaLabel={menuAriaLabel || t('actions')}
-            items={menuItems}
-            buttonClassName="min-h-[44px] min-w-[44px]"
-          />
-        )}
+            {showMenu ? (
+              <KebabMenu
+                ariaLabel={menuAriaLabel || t('actions')}
+                items={menuItems}
+                buttonClassName="min-h-[44px] min-w-[44px]"
+              />
+            ) : null}
 
-        {showPrimary && (
-          <Button
-            variant="primary"
-            size="sm"
-            className="ms-auto min-h-[44px] shrink-0 sm:ms-0"
-            onClick={primaryAction.onClick}
-          >
-            {primaryAction.label}
-          </Button>
-        )}
+            {showPrimary ? (
+              <Button
+                variant="primary"
+                size="sm"
+                className={cn(
+                  'min-h-[44px] shrink-0 whitespace-nowrap',
+                  isMobile ? 'w-full sm:w-auto' : 'ms-auto sm:ms-0',
+                )}
+                onClick={primaryAction.onClick}
+              >
+                {primaryAction.label}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      {hasFilters && isMobile && (
+      {hasFilters && isMobile ? (
         <HrFilterSheet
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
@@ -111,7 +114,7 @@ export function HrTabToolbar({
         >
           {filters}
         </HrFilterSheet>
-      )}
+      ) : null}
     </>
   );
 }

@@ -4475,7 +4475,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    gap: 4px;
+    gap: 6px;
     overflow: hidden;
     box-sizing: border-box;
   }
@@ -4483,15 +4483,28 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   .nx-segmented-tab-bar--track {
     background: var(--noorix-bg-muted);
     border-radius: 10px;
-    padding: 4px;
+    padding: 5px;
     border: 1px solid var(--noorix-border);
     box-sizing: border-box;
   }
-  .nx-segmented-shell--flat .nx-segmented-tab-bar--track {
-    border-color: transparent;
+  .nx-segmented-shell--flat .nx-segmented-tab-bar--track,
+  .nx-hr-segmented-inline .nx-segmented-tab-bar--track {
+    border-color: color-mix(in srgb, var(--noorix-border) 65%, transparent);
     background: color-mix(in srgb, var(--noorix-bg-muted) 88%, var(--noorix-bg-surface));
   }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented {
+  /* HR: الحشو عبر Tailwind في HrSegmentedControl — لا نفرض padding ضيقاً هنا */
+  .nx-segmented-tab-bar--hr.nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    text-align: center;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nx-segmented-tab-bar--fill:not(.nx-segmented-tab-bar--hr) .nx-tab-btn.nx-tab-btn--segmented {
     flex: 1 1 0;
     min-width: 0;
     max-width: none;
@@ -4505,7 +4518,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     text-overflow: ellipsis;
   }
   @media (min-width: 641px) {
-    .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented {
+    .nx-segmented-tab-bar--fill:not(.nx-segmented-tab-bar--hr) .nx-tab-btn.nx-tab-btn--segmented {
       font-size: 13px;
       padding: 0.6rem 0.75rem;
     }
@@ -4551,8 +4564,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-    padding: 8px 12px 10px;
-    border-bottom: 1px solid var(--noorix-border);
+    /* الحشو الأفقي/العمودي عبر HR_SEGMENTED_SHELL_INSET_CLASS (Tailwind) */
+    padding: 0;
     pointer-events: auto;
   }
   .nx-hr-tab-toolbar {
@@ -4564,25 +4577,16 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     min-width: 0;
     -webkit-overflow-scrolling: touch;
   }
-  .nx-hr-view-modes .nx-segmented-shell--flat {
+  .nx-hr-segmented-inline {
     padding: 0;
-    border-bottom: none;
+    border: none;
   }
   .nx-hr-workspace__body {
     position: relative;
     z-index: 1;
     min-width: 0;
     width: 100%;
-    padding: 12px;
     box-sizing: border-box;
-  }
-  @media (min-width: 768px) {
-    .nx-segmented-shell--flat {
-      padding: 10px 16px 12px;
-    }
-    .nx-hr-workspace__body {
-      padding: 16px;
-    }
   }
   /* جدول HR داخل المساحة — نفس عرض الشريط (إزالة هامش مزدوج من الإطار) */
   .nx-hr-workspace__body .noorix-table-frame {
