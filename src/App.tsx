@@ -26,6 +26,7 @@ const PurchasesBatchScreen = React.lazy(() => import('./modules/Purchases/Purcha
 const ThemePreviewScreen = React.lazy(() => import('./modules/ThemePreviewScreen'));
 const OwnerDashboardScreen = React.lazy(() => import('./modules/Owner/OwnerDashboardScreen'));
 const ReportsLayout = React.lazy(() => import('./modules/Reports/ReportsLayout'));
+const ReportsIndexRedirect = React.lazy(() => import('./modules/Reports/ReportsIndexRedirect'));
 const ReportsScreen = React.lazy(() => import('./modules/Reports/ReportsScreen'));
 const CostAccountingAppsScreen = React.lazy(() => import('./modules/Reports/CostAccountingAppsScreen'));
 const ReportsTaxScreen = React.lazy(() => import('./modules/Reports/ReportsTaxScreen'));
@@ -404,7 +405,7 @@ export default function App() {
                 <Route path="/hr" element={<HRMainScreen />} />
                 <Route path="/hr/employee/:id" element={<EmployeeProfileScreen />} />
                 <Route path="/reports" element={<ReportsLayout />}>
-                  <Route index element={<Navigate to="/reports/general" replace />} />
+                  <Route index element={<ReportsIndexRedirect />} />
                   <Route path="general" element={<ReportsScreen />} />
                   <Route path="cost-apps" element={<CostAccountingAppsScreen />} />
                   <Route path="tax" element={<ReportsTaxScreen />} />
@@ -421,8 +422,8 @@ export default function App() {
                 <Route path="/tax" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/form" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/reports" element={<Navigate to="/reports/tax" replace />} />
-                <Route path="/analytics-studio" element={<Navigate to="/reports/general" replace />} />
-                <Route path="/analytics" element={<Navigate to="/reports/general" replace />} />
+                <Route path="/analytics-studio" element={<ReportsIndexRedirect />} />
+                <Route path="/analytics" element={<ReportsIndexRedirect />} />
                 <Route path="/dashboard-studio" element={<Navigate to="/" replace />} />
                 <Route path="/" element={<DashboardScreen />} />
                 <Route path="*" element={<NotFound404 />} />

@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { DashboardService } from './dashboard.service';
 import { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';
@@ -33,7 +34,7 @@ export class DashboardController {
   // ── Calendar Data ─────────────────────────────────────
 
   @Get('calendar')
-  @RequirePermission('REPORTS_READ')
+  @RequireAnyPermission('VIEW_DASHBOARD', 'REPORTS_READ')
   async getCalendarData(
     @Query('companyId') companyId: string,
     @Query('year') year: string,
@@ -49,7 +50,7 @@ export class DashboardController {
   }
 
   @Put('calendar/targets')
-  @RequirePermission('REPORTS_READ')
+  @RequirePermission('VIEW_DASHBOARD')
   async putCalendarTargets(
     @Query('companyId') companyId: string,
     @Query('year') year: string,
@@ -69,7 +70,7 @@ export class DashboardController {
   }
 
   @Delete('calendar/targets')
-  @RequirePermission('REPORTS_READ')
+  @RequirePermission('VIEW_DASHBOARD')
   async resetCalendarTargets(
     @Query('companyId') companyId: string,
     @Query('year') year: string,
@@ -85,7 +86,7 @@ export class DashboardController {
   }
 
   @Get('calendar/saudi-occasions')
-  @RequirePermission('REPORTS_READ')
+  @RequireAnyPermission('VIEW_DASHBOARD', 'REPORTS_READ')
   @SkipCompanyCheck()
   getSaudiOccasions(@Query('year') year: string) {
     const y = parseInt(year, 10);
@@ -96,7 +97,7 @@ export class DashboardController {
   }
 
   @Post('calendar/special-days/apply-occasions')
-  @RequirePermission('REPORTS_READ')
+  @RequirePermission('VIEW_DASHBOARD')
   async applySaudiOccasions(
     @Query('companyId') companyId: string,
     @Body() body: ApplySpecialOccasionsDto,
@@ -117,7 +118,7 @@ export class DashboardController {
   }
 
   @Put('calendar/special-days')
-  @RequirePermission('REPORTS_READ')
+  @RequirePermission('VIEW_DASHBOARD')
   async putCalendarSpecialDays(
     @Query('companyId') companyId: string,
     @Query('year') year: string,
@@ -135,7 +136,7 @@ export class DashboardController {
   }
 
   @Put('calendar/day-notes')
-  @RequirePermission('REPORTS_READ')
+  @RequirePermission('VIEW_DASHBOARD')
   async putCalendarDayNotes(
     @Query('companyId') companyId: string,
     @Query('year') year: string,

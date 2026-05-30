@@ -31,19 +31,17 @@ export class RolesGuard implements CanActivate {
     const user = req.user;
     const role = (user?.role || '').toLowerCase();
 
-    // جلب الصلاحيات الحية من DB (مع كاش 60 ثانية)
-    let livePermissions = user?.permissions || [];
+    // جلب الصلاحيات الحية من DB (مع كاش 60 ثانية) — مصدر الحقيقة الوحيد
+    let livePermissions: string[] = [];
     if (role) {
       try {
-        const dbPerms = await this.permCache.getPermissions(role);
-        if (dbPerms.length > 0) {
-          livePermissions = dbPerms;
-          // حدّث الصلاحيات على الـ request حتى يستفيد باقي الكود
-          if (user) user.permissions = livePermissions;
-        }
+        livePermissions = await this.permCache.getPermissions(role);
+        if (user) user.permissions = livePermissions;
       } catch {
-        // فشل جلب DB → استخدم JWT كـ fallback
+        throw new ForbiddenException('تعذّر التحقق من الصلاحيات.');
       }
+    } else {
+      livePermissions = user?.permissions || [];
     }
 
     // ── فحص @RequirePermission ──
