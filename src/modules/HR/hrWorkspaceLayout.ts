@@ -20,6 +20,19 @@ export const HR_WORKSPACE_BODY_CLASS = cn(
   'py-3 sm:py-4',
 );
 
+/** قائمة الموظفين — جوال: بدون px على الجسم؛ التحكم والنص بـ --nx-hr-gutter */
+export const HR_WORKSPACE_BODY_STAFF_LIST_CLASS = cn(
+  'nx-hr-workspace__body nx-hr-workspace__body--staff-list relative z-[1] min-w-0 w-full box-border',
+  HR_WORKSPACE_GUTTER_VAR_CLASS,
+  'py-3 sm:py-4',
+  'max-md:px-0 sm:px-4',
+);
+
+/** أزرار + فلاتر + بحث — هامش أفقي على الجوال فقط (محاذاة أسماء الصفوف) */
+export const HR_STAFF_CONTROLS_CLASS = cn(
+  'nx-hr-staff-controls flex min-w-0 w-full flex-col gap-3 max-md:px-4',
+);
+
 /** غلاف التبويبات الفرعية — pills تحت التبويبات الرئيسية (خط واحد أسفل الشريط) */
 export const HR_SUBTAB_SHELL_CLASS = cn(
   'nx-hr-subtab-shell w-full',
@@ -37,8 +50,8 @@ export const HR_SUBTAB_INLINE_CLASS = cn(
 /** جدول داخل مساحة HR — بدون إطار/ظل مزدوج (الكرت الخارجي يكفي) */
 export const HR_WORKSPACE_TABLE_CLASS = 'nx-hr-workspace-table';
 
-/** قائمة الموظفين — full-bleed هجين: خلفية L6 لعرض الكرت، نص L6a بمحاذاة البحث */
-export const HR_STAFF_LIST_CLASS = 'nx-hr-staff-list w-full min-w-0';
+/** قائمة الموظفين — صفوف بعرض كرت HR؛ النص داخل nx-hr-staff-row__inner */
+export const HR_STAFF_LIST_CLASS = 'nx-hr-staff-list w-full min-w-0 max-md:min-h-0';
 
 /** @deprecated استخدم HR_SUBTAB_SHELL_CLASS */
 export const HR_SEGMENTED_SHELL_FLAT_CLASS = 'nx-segmented-shell--flat';

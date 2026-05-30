@@ -41,6 +41,7 @@ import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
 import {
   HR_EMBEDDED_SHELL_CLASS,
+  HR_STAFF_CONTROLS_CLASS,
   HR_STAFF_LIST_CLASS,
   HR_WORKSPACE_TABLE_CLASS,
 } from './hrWorkspaceLayout';
@@ -443,7 +444,7 @@ export default function StaffListScreen({ embedded }: any) {
       <div
         className={cn(
           'nx-hr-staff-row__inner flex min-w-0 items-start justify-between gap-3',
-          embedded && 'px-4 py-3',
+          embedded && 'py-3',
         )}
         onClick={() => navigate(`/hr/employee/${row.id}`)}
         style={{ cursor: 'pointer' }}
@@ -488,7 +489,7 @@ export default function StaffListScreen({ embedded }: any) {
 
   return (
     embedded ? (
-      <div className={HR_EMBEDDED_SHELL_CLASS}>
+      <div className={cn(HR_EMBEDDED_SHELL_CLASS, 'gap-0')}>
         {renderStaffContent()}
       </div>
     ) : (
@@ -540,53 +541,90 @@ export default function StaffListScreen({ embedded }: any) {
             }}
           />
 
-          <HrTabToolbar
-            leading={(
-              <HrSegmentedControl
-                tone="filter"
-                className="nx-hr-view-modes w-full min-w-0"
-                items={employeeViewModeItems}
-                value={viewMode}
-                onChange={setViewMode}
-              />
-            )}
-            desktopActions={(
-              <Button
-                size="sm"
-                className="hidden lg:inline-flex shrink-0 whitespace-nowrap"
-                icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
-                onClick={() => setShowImportExport(true)}
-              >
-                {t('importExportLabel')}
-              </Button>
-            )}
-            menuItems={[
-              {
-                key: 'import',
-                label: t('importExportLabel'),
-                onClick: () => setShowImportExport(true),
-              },
-            ]}
-            primaryAction={{
-              label: t('addEmployee'),
-              onClick: () => {
-                setEditingEmployee(null);
-                setShowForm(true);
-              },
-            }}
-          />
-
           {embedded ? (
-            <Input
-              type="search"
-              value={searchInput}
-              onChange={(e: any) => setSearchInput(e.target.value)}
-              placeholder={t('searchPlaceholder')}
-              size="sm"
-              className="w-full min-w-0"
-              aria-label={t('searchPlaceholder')}
+            <div className={HR_STAFF_CONTROLS_CLASS}>
+              <HrTabToolbar
+                leading={(
+                  <HrSegmentedControl
+                    tone="filter"
+                    className="nx-hr-view-modes w-full min-w-0"
+                    items={employeeViewModeItems}
+                    value={viewMode}
+                    onChange={setViewMode}
+                  />
+                )}
+                desktopActions={(
+                  <Button
+                    size="sm"
+                    className="hidden lg:inline-flex shrink-0 whitespace-nowrap"
+                    icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+                    onClick={() => setShowImportExport(true)}
+                  >
+                    {t('importExportLabel')}
+                  </Button>
+                )}
+                menuItems={[
+                  {
+                    key: 'import',
+                    label: t('importExportLabel'),
+                    onClick: () => setShowImportExport(true),
+                  },
+                ]}
+                primaryAction={{
+                  label: t('addEmployee'),
+                  onClick: () => {
+                    setEditingEmployee(null);
+                    setShowForm(true);
+                  },
+                }}
+              />
+              <Input
+                type="search"
+                value={searchInput}
+                onChange={(e: any) => setSearchInput(e.target.value)}
+                placeholder={t('searchPlaceholder')}
+                size="sm"
+                className="w-full min-w-0"
+                aria-label={t('searchPlaceholder')}
+              />
+            </div>
+          ) : (
+            <HrTabToolbar
+              leading={(
+                <HrSegmentedControl
+                  tone="filter"
+                  className="nx-hr-view-modes w-full min-w-0"
+                  items={employeeViewModeItems}
+                  value={viewMode}
+                  onChange={setViewMode}
+                />
+              )}
+              desktopActions={(
+                <Button
+                  size="sm"
+                  className="hidden lg:inline-flex shrink-0 whitespace-nowrap"
+                  icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+                  onClick={() => setShowImportExport(true)}
+                >
+                  {t('importExportLabel')}
+                </Button>
+              )}
+              menuItems={[
+                {
+                  key: 'import',
+                  label: t('importExportLabel'),
+                  onClick: () => setShowImportExport(true),
+                },
+              ]}
+              primaryAction={{
+                label: t('addEmployee'),
+                onClick: () => {
+                  setEditingEmployee(null);
+                  setShowForm(true);
+                },
+              }}
             />
-          ) : null}
+          )}
 
           {embedded ? (
             <div className={HR_STAFF_LIST_CLASS}>
@@ -595,7 +633,10 @@ export default function StaffListScreen({ embedded }: any) {
                 showRowNumbers
                 tableMinWidth={960}
                 innerPadding={0}
-                frameClassName={cn(HR_WORKSPACE_TABLE_CLASS, 'nx-hr-table--flat-list')}
+                frameClassName={cn(
+                  HR_WORKSPACE_TABLE_CLASS,
+                  'nx-hr-table--flat-list noorix-table-frame--mobile-list',
+                )}
                 columns={columns}
                 data={tableData}
                 total={listTotal}
