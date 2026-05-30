@@ -13,6 +13,7 @@ import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
 import { ResidencyFormModal } from '../components/ResidencyFormModal';
 import { IssueResidencyInvoiceModal } from '../components/IssueResidencyInvoiceModal';
+import { HrServiceQuickAddBar } from '../components/HrServiceQuickAddBar';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
@@ -289,6 +290,11 @@ export default function ResidencyTab() {
           {t('addHrService')}
         </Button>
       </div>
+
+      <HrServiceQuickAddBar
+        className="mb-3 pb-3 border-b border-noorix-border"
+        onSelectCategory={(cat) => openAdd(cat)}
+      />
 
       <SmartTable
         compact

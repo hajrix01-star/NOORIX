@@ -10,6 +10,16 @@ export const HR_SERVICE_CATEGORIES = [
   'medical_insurance',
 ];
 
+/** ترتيب أزرار الإضافة السريعة (الأكثر استخداماً أولاً) */
+export const HR_SERVICE_QUICK_ADD = [
+  'iqama_renewal',
+  'sponsorship_transfer',
+  'exit_reentry_visa',
+  'flight_ticket',
+  'medical_insurance',
+  'iqama_new',
+];
+
 export const HR_SERVICE_CATEGORY_LABEL_KEYS = {
   iqama_new: 'hrServiceIqamaNew',
   iqama_renewal: 'hrServiceIqamaRenewal',

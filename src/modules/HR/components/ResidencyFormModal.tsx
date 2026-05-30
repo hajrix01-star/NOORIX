@@ -1,7 +1,7 @@
 ﻿/**
  * ResidencyFormModal — إضافة/تعديل خدمة موظف (إقامة، تأشيرة، تذكرة، تأمين، …)
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
@@ -32,6 +32,8 @@ type ResidencyFormModalProps = {
   residency?: any;
   companyId: any;
   defaultCategory?: string;
+  /** عند الفتح من ملف الموظف — يُقفل اختيار الموظف */
+  defaultEmployeeId?: string;
   onSuccess?: () => void;
   onClose?: () => void;
 };
@@ -40,6 +42,7 @@ export function ResidencyFormModal({
   residency,
   companyId,
   defaultCategory = 'iqama_renewal',
+  defaultEmployeeId = '',
   onSuccess,
   onClose,
 }: ResidencyFormModalProps) {
@@ -48,7 +51,8 @@ export function ResidencyFormModal({
   const cid = companyId || activeCompanyId || '';
   const isEdit = !!residency;
 
-  const [employeeId, setEmployeeId] = useState(residency?.employeeId || '');
+  const lockEmployee = !!defaultEmployeeId && !residency;
+  const [employeeId, setEmployeeId] = useState(residency?.employeeId || defaultEmployeeId || '');
   const [serviceCategory, setServiceCategory] = useState(residency?.serviceCategory || defaultCategory);
   const [iqamaNumber, setIqamaNumber] = useState(residency?.iqamaNumber || '');
   const [referenceLabel, setReferenceLabel] = useState(residency?.referenceLabel || '');
@@ -95,6 +99,11 @@ export function ResidencyFormModal({
       setIqamaNumber(emp.iqamaNumber);
     }
   };
+
+  useEffect(() => {
+    if (!lockEmployee || !selectedEmployee?.iqamaNumber || !showIqama) return;
+    if (!iqamaNumber) setIqamaNumber(selectedEmployee.iqamaNumber);
+  }, [lockEmployee, selectedEmployee, showIqama, iqamaNumber]);
 
   const buildPayload = () => {
     const body: Record<string, unknown> = {
@@ -196,13 +205,18 @@ export function ResidencyFormModal({
           value={employeeId}
           onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onEmployeeChange(e.target.value)}
           required
-          disabled={isEdit}
+          disabled={isEdit || lockEmployee}
         >
           <option value="">—</option>
           {activeEmployees.map((emp: any) => (
             <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
           ))}
         </Input>
+        {lockEmployee && selectedEmployee && (
+          <p className="text-[12px] text-noorix-muted -mt-2 mb-2">
+            {employeeDisplayName(selectedEmployee, lang)}
+          </p>
+        )}
 
         {showIqama && (
           <Input

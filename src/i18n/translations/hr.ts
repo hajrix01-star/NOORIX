@@ -290,6 +290,7 @@ export default {
   },
   addResidency: { ar: '+ إضافة إقامة', en: '+ Add residency' },
   addHrService: { ar: '+ خدمة موظف', en: '+ Employee service' },
+  hrServiceQuickAdd: { ar: 'إضافة سريعة', en: 'Quick add' },
   editHrService: { ar: 'تعديل خدمة الموظف', en: 'Edit employee service' },
   hrServiceCategory: { ar: 'نوع الخدمة', en: 'Service type' },
   hrServiceFilterAll: { ar: 'كل الأنواع', en: 'All types' },
