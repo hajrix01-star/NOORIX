@@ -5,6 +5,7 @@ import { useApiMutation } from '../../../../../hooks/useApiMutation';
 import { createLeave, createDeduction, createMovement, createCustomAllowance, createAdvance } from '../../../../../services/api';
 import { invalidateOnFinancialMutation } from '../../../../../utils/queryInvalidation';
 import { invalidateHrQueries } from '../utils/hrQuickEntryInvalidation';
+import { applyCareerPromotion, applyCareerRaise } from '../../../utils/careerMovementApply';
 import type { HrQuickEntryRecordedPayload } from '../types';
 
 type Deps = {
@@ -89,7 +90,28 @@ export function useHrQuickEntryMutations({
 
   const movMut = useApiMutation({
     mutationFn: async (arg: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
-      const body = (arg as { payload?: unknown })?.payload ?? arg;
+      const body = ((arg as { payload?: unknown })?.payload ?? arg) as Record<string, unknown>;
+      const applyMode = body._applyMode as string | undefined;
+      if (applyMode === 'raise') {
+        return applyCareerRaise({
+          employee: body.employee as Record<string, unknown> & { id?: string },
+          companyId: String(body.companyId || companyId),
+          customAllowances: (body.customAllowances as never[]) || [],
+          increment: Number(body.increment),
+          effectiveDate: String(body.effectiveDate),
+          notes: body.notes ? String(body.notes) : undefined,
+        });
+      }
+      if (applyMode === 'promotion') {
+        return applyCareerPromotion({
+          employee: body.employee as Record<string, unknown> & { id?: string; jobTitle?: string },
+          companyId: String(body.companyId || companyId),
+          newJobTitle: String(body.newJobTitle || ''),
+          previousJobTitle: body.previousJobTitle ? String(body.previousJobTitle) : undefined,
+          effectiveDate: String(body.effectiveDate),
+          notes: body.notes ? String(body.notes) : undefined,
+        });
+      }
       return createMovement(body as never);
     },
     showErrorToast: false,

@@ -5,7 +5,7 @@ import React, { useRef } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { Button, AdaptiveSheet, Input } from '../../../../ui';
 import { employeeDisplayName } from '../../../../utils/employeeDisplayName';
-import { MODE_META } from './constants';
+import { useCustomAllowances } from '../../../../hooks/useCustomAllowances';
 import { useHrQuickEntryState } from './hooks/useHrQuickEntryState';
 import { useHrQuickEntryRows } from './hooks/useHrQuickEntryRows';
 import { useHrQuickEntryMutations } from './hooks/useHrQuickEntryMutations';
@@ -27,6 +27,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   onCloseRef.current = onClose;
 
   const st = useHrQuickEntryState(mode as HrQuickEntryMode, companyId);
+  const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
 
   const { activeEmployees } = useHrQuickEntryRows(st.employees as never[]);
 
@@ -74,6 +75,8 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     t,
     submitting,
     activeEmployees,
+    employees: st.employees as Array<Record<string, unknown> & { id?: string }>,
+    customAllowances,
     vaults: st.vaults as never[],
     st: stateSlice,
     advMut,

@@ -96,29 +96,47 @@ export function HrQuickEntryIncreaseForm(props: {
               <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
             </Input>
           </HrQuickEntryRow>
-          <HrQuickEntryRow id="mv-amt" label={isAr ? 'مبلغ (اختياري)' : 'Amount (optional)'}>
+          <HrQuickEntryRow id="mv-amt" label={isAr ? 'مبلغ الزيادة على الإجمالي' : 'Raise on monthly total'}>
             <Input
               id="mv-amt"
               type="number"
               inputMode="decimal"
               step="0.01"
-              min="0"
               value={mvAmount}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMvAmount(e.target.value)}
+              required={mvType === 'raise'}
             />
           </HrQuickEntryRow>
-          <HrQuickEntryRow id="mv-prev" label={isAr ? t('previousValue') : 'Previous'}>
-            <Input id="mv-prev" type="text" value={mvPrev} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMvPrev(e.target.value)} />
-          </HrQuickEntryRow>
-          <HrQuickEntryRow id="mv-new" label={isAr ? t('newValue') : 'New value'}>
-            <Input
-              id="mv-new"
-              type="text"
-              value={mvNew}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMvNew(e.target.value)}
-              placeholder={isAr ? 'مثال: 8000 → 9000' : 'e.g. 8000 → 9000'}
-            />
-          </HrQuickEntryRow>
+          {mvType === 'raise' ? (
+            <HrQuickEntryRow id="mv-new" label={isAr ? 'أو الإجمالي الجديد' : 'Or new total salary'}>
+              <Input
+                id="mv-new"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                value={mvNew}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMvNew(e.target.value)}
+                placeholder={isAr ? 'مثال: 9000' : 'e.g. 9000'}
+              />
+            </HrQuickEntryRow>
+          ) : (
+            <>
+              <HrQuickEntryRow id="mv-prev" label={isAr ? t('previousValue') : 'Previous'}>
+                <Input id="mv-prev" type="text" value={mvPrev} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMvPrev(e.target.value)} />
+              </HrQuickEntryRow>
+              <HrQuickEntryRow id="mv-new" label={isAr ? (mvType === 'promotion' ? 'المسمى الجديد' : t('newValue')) : (mvType === 'promotion' ? 'New job title' : 'New value')}>
+                <Input
+                  id="mv-new"
+                  type="text"
+                  value={mvNew}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMvNew(e.target.value)}
+                  placeholder={mvType === 'promotion' ? (isAr ? 'مثال: مشرف' : 'e.g. Supervisor') : (isAr ? 'مثال: 8000 → 9000' : 'e.g. 8000 → 9000')}
+                  required={mvType === 'promotion'}
+                />
+              </HrQuickEntryRow>
+            </>
+          )}
           <HrQuickEntryRow id="mv-eff" label={isAr ? t('effectiveDateLabel') : 'Effective date'}>
             <Input
               id="mv-eff"

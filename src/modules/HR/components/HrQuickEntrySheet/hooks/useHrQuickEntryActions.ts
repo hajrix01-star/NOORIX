@@ -9,6 +9,10 @@ import {
   buildLeavePending,
   buildMovementPending,
 } from '../utils/hrQuickEntryMappers';
+import { resolveRaiseIncrement } from '../../../utils/careerMovementApply';
+import { sumCustomAllowancesForEmployee, totalSalary } from '../../../utils/employeeSalaryMath';
+import { formatMoneyForReport } from '../utils/hrQuickEntryFormatters';
+import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 
 type TFn = (key: string, ...subst: string[]) => string;
 
@@ -55,6 +59,8 @@ export function useHrQuickEntryActions(args: {
   t: TFn;
   submitting: boolean;
   activeEmployees: EmployeeOption[];
+  employees: Array<Record<string, unknown> & { id?: string }>;
+  customAllowances: Array<{ employeeId?: string; amount?: unknown }>;
   vaults: Array<{ id?: string; nameAr?: string; nameEn?: string }>;
   st: StateSlice;
   advMut: MutRef;
@@ -73,6 +79,8 @@ export function useHrQuickEntryActions(args: {
     t,
     submitting,
     activeEmployees,
+    employees,
+    customAllowances,
     vaults,
     st,
     advMut,
@@ -181,6 +189,68 @@ export function useHrQuickEntryActions(args: {
         setFormError(t('requiredFields'));
         return;
       }
+
+      const emp = employees.find((x) => x.id === st.mvEmp);
+      if (!emp?.id) {
+        setFormError(t('requiredFields'));
+        return;
+      }
+
+      if (st.mvType === 'raise') {
+        const customTotal = sumCustomAllowancesForEmployee(customAllowances, emp.id);
+        const currentTotal = totalSalary(emp, customTotal);
+        const increment = resolveRaiseIncrement(st.mvAmount, st.mvNew, currentTotal);
+        if (increment == null || !Number.isFinite(increment) || increment === 0) {
+          setFormError(
+            isAr
+              ? 'أدخل مبلغ الزيادة على الإجمالي الشهري (أو الراتب الجديد)'
+              : 'Enter raise amount on monthly total (or new total salary)',
+          );
+          return;
+        }
+        const newTarget = currentTotal + increment;
+        const payload = {
+          _applyMode: 'raise' as const,
+          companyId,
+          employee: emp,
+          customAllowances,
+          increment,
+          effectiveDate: st.mvEff,
+          notes: st.mvNotes || undefined,
+        };
+        const report = {
+          textAr: `النوع: زيادة راتب\nالاسم: ${employeeDisplayName(emp, 'ar')}\nالإجمالي: ${formatMoneyForReport(currentTotal)} → ${formatMoneyForReport(newTarget)} SR\nالزيادة: ${formatMoneyForReport(increment)} SR\nالتاريخ: ${st.mvEff}`,
+          textEn: `Type: Salary raise\nName: ${employeeDisplayName(emp, 'en')}\nTotal: ${formatMoneyForReport(currentTotal)} → ${formatMoneyForReport(newTarget)} SAR\nRaise: ${formatMoneyForReport(increment)} SAR\nDate: ${st.mvEff}`,
+        };
+        setPendingData({ payload, report, mut: movMut });
+        setConfirmStep(true);
+        return;
+      }
+
+      if (st.mvType === 'promotion') {
+        const nextTitle = st.mvNew.trim();
+        if (!nextTitle) {
+          setFormError(isAr ? 'أدخل المسمى الوظيفي الجديد' : 'Enter new job title');
+          return;
+        }
+        const payload = {
+          _applyMode: 'promotion' as const,
+          companyId,
+          employee: emp,
+          newJobTitle: nextTitle,
+          previousJobTitle: st.mvPrev.trim() || String(emp.jobTitle || ''),
+          effectiveDate: st.mvEff,
+          notes: st.mvNotes || undefined,
+        };
+        const report = {
+          textAr: `النوع: ترقية\nالاسم: ${employeeDisplayName(emp, 'ar')}\nمن: ${payload.previousJobTitle || '—'}\nإلى: ${nextTitle}\nالتاريخ: ${st.mvEff}`,
+          textEn: `Type: Promotion\nName: ${employeeDisplayName(emp, 'en')}\nFrom: ${payload.previousJobTitle || '—'}\nTo: ${nextTitle}\nDate: ${st.mvEff}`,
+        };
+        setPendingData({ payload, report, mut: movMut });
+        setConfirmStep(true);
+        return;
+      }
+
       const { payload, report } = buildMovementPending({
         mvEmp: st.mvEmp,
         mvType: st.mvType,
@@ -195,7 +265,20 @@ export function useHrQuickEntryActions(args: {
       setPendingData({ payload, report, mut: movMut });
       setConfirmStep(true);
     },
-    [submitting, st, activeEmployees, companyId, t, movMut, setFormError, setPendingData, setConfirmStep],
+    [
+      submitting,
+      st,
+      employees,
+      customAllowances,
+      companyId,
+      isAr,
+      t,
+      activeEmployees,
+      movMut,
+      setFormError,
+      setPendingData,
+      setConfirmStep,
+    ],
   );
 
   const onSubmitAllowance = useCallback(
