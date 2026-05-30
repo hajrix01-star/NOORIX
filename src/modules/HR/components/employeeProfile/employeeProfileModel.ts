@@ -52,8 +52,13 @@ export function buildCareerTableRows(movements: any, t: any) {
   });
 }
 
-export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: any) {
+export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: any, residencies: any[] = []) {
   const recs = [];
+  const residencyByInvoiceId = new Map(
+    (residencies || [])
+      .filter((r: any) => r.invoiceId)
+      .map((r: any) => [r.invoiceId, r.id]),
+  );
   const hrInvs = (hrInvoicesData?.items ?? []).filter((i: any) => i.status !== 'cancelled');
   for (const inv of hrInvs) {
     const dt = toYmd(inv.transactionDate);
@@ -81,6 +86,7 @@ export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: a
       kind: inv.kind,
       status: inv.status,
       settledAt: inv.settledAt,
+      residencyId: inv.kind === 'hr_expense' ? residencyByInvoiceId.get(inv.id) : undefined,
     });
   }
   for (const d of deductions) {

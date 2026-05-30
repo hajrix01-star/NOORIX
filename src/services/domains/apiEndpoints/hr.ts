@@ -122,8 +122,14 @@ export async function createResidency(body: unknown): Promise<ApiParsedResult> {
 export async function updateResidency(id: string, body: unknown, companyId: string): Promise<ApiParsedResult> {
   return apiPatch(`/api/v1/hr/residencies/${id}?companyId=${companyId}`, body);
 }
-export async function deleteResidency(id: string, companyId: string): Promise<ApiParsedResult> {
-  return apiDelete(`/api/v1/hr/residencies/${id}?companyId=${companyId}`);
+export async function deleteResidency(
+  id: string,
+  companyId: string,
+  voidInvoice = false,
+): Promise<ApiParsedResult> {
+  let q = `companyId=${encodeURIComponent(companyId)}`;
+  if (voidInvoice) q += '&voidInvoice=true';
+  return apiDelete(`/api/v1/hr/residencies/${encodeURIComponent(id)}?${q}`);
 }
 
 export async function issueResidencyInvoice(

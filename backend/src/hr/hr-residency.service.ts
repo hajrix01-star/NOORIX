@@ -21,6 +21,7 @@ import {
   formatVisaDurationReferenceAr,
 } from './constants/employee-hr-service-categories';
 import { issueResidencyServiceInvoiceCore } from './hr-residency-issue-invoice.util';
+import { voidResidencyServiceInvoiceCore } from './hr-residency-void-invoice.util';
 
 const residencyInclude = {
   employee: true,
@@ -300,7 +301,12 @@ export class HrResidencyService {
     });
   }
 
-  async deleteResidency(id: string, companyId: string, userId?: string) {
+  async deleteResidency(
+    id: string,
+    companyId: string,
+    userId?: string,
+    voidInvoice?: boolean,
+  ) {
     const existing = await this.prisma.employeeResidency.findFirst({
       where: { id, companyId },
       include: { invoice: true },
@@ -308,9 +314,25 @@ export class HrResidencyService {
     if (!existing) throw new NotFoundException(`السجل ${id} غير موجود.`);
 
     if (existing.invoiceId && existing.invoice?.status === 'active') {
-      throw new BadRequestException(
-        'لا يمكن حذف سجل مرتبط بفاتورة نشطة. ألغِ الفاتورة أولاً أو ألغِ السجل محاسبياً.',
-      );
+      if (voidInvoice) {
+        await voidResidencyServiceInvoiceCore(
+          {
+            prisma: this.prisma,
+            financialCore: this.financialCore,
+            audit: this.audit,
+          },
+          id,
+          companyId,
+          existing.employeeId,
+          existing.invoiceId,
+          userId,
+          'حذف سجل خدمة موظف — إلغاء الفاتورة المرتبطة بموافقة المستخدم',
+        );
+      } else {
+        throw new BadRequestException(
+          'لا يمكن حذف سجل مرتبط بفاتورة نشطة. أرسل voidInvoice=true بعد تأكيد إلغاء الفاتورة.',
+        );
+      }
     }
 
     await this.prisma.employeeResidency.delete({ where: { id } });

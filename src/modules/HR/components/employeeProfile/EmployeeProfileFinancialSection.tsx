@@ -2,7 +2,13 @@ import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { hrFmt } from '../../utils/hrFmt';
 import { cn, SmartTable } from '../../../../ui';
 
-export function EmployeeProfileFinancialSection({ t, financialRecords }: any) {
+export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenResidency }: any) {
+  const openRow = (row: any) => {
+    if (row.residencyId && onOpenResidency) {
+      onOpenResidency(row.residencyId);
+    }
+  };
+
   return (
     <div className="noorix-surface-card overflow-hidden employee-profile-layout__wide">
       <div className="nx-section-header">
@@ -18,9 +24,38 @@ export function EmployeeProfileFinancialSection({ t, financialRecords }: any) {
             key: 'date',
             label: t('transactionDate'),
             width: '12%',
-            render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            render: (v: any, row: any) => (
+              <button
+                type="button"
+                className={cn(
+                  'nx-cell-muted-sm bg-transparent border-0 p-0 text-start',
+                  row.residencyId && 'text-noorix-blue hover:underline cursor-pointer',
+                )}
+                disabled={!row.residencyId}
+                onClick={() => openRow(row)}
+              >
+                {formatSaudiDate(v)}
+              </button>
+            ),
           },
-          { key: 'typeLabel', label: t('operationType'), width: '18%', render: (v: any) => v },
+          {
+            key: 'typeLabel',
+            label: t('operationType'),
+            width: '18%',
+            render: (v: any, row: any) => (
+              <button
+                type="button"
+                className={cn(
+                  'bg-transparent border-0 p-0 text-start',
+                  row.residencyId && 'text-noorix-blue hover:underline cursor-pointer',
+                )}
+                disabled={!row.residencyId}
+                onClick={() => openRow(row)}
+              >
+                {v}
+              </button>
+            ),
+          },
           {
             key: 'amount',
             label: t('advanceAmount') || 'المبلغ',
@@ -34,10 +69,19 @@ export function EmployeeProfileFinancialSection({ t, financialRecords }: any) {
             key: 'notes',
             label: t('invoiceNotesColumn'),
             width: '54%',
-            render: (v: any) => (
-              <span className="nx-cell-ellipsis" title={v || ''}>
+            render: (v: any, row: any) => (
+              <button
+                type="button"
+                className={cn(
+                  'nx-cell-ellipsis bg-transparent border-0 p-0 text-start w-full',
+                  row.residencyId && 'text-noorix-blue hover:underline cursor-pointer',
+                )}
+                title={v || ''}
+                disabled={!row.residencyId}
+                onClick={() => openRow(row)}
+              >
                 {v || '—'}
-              </span>
+              </button>
             ),
           },
         ]}
@@ -47,9 +91,14 @@ export function EmployeeProfileFinancialSection({ t, financialRecords }: any) {
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
         renderCompactRow={(row: any) => (
-          <div>
+          <div
+            className={cn(row.residencyId && 'cursor-pointer')}
+            onClick={row.residencyId ? () => openRow(row) : undefined}
+            role={row.residencyId ? 'button' : undefined}
+            tabIndex={row.residencyId ? 0 : undefined}
+          >
             <div className="nx-cr__line1">
-              <span className="nx-cr__name">{row.typeLabel}</span>
+              <span className={cn('nx-cr__name', row.residencyId && 'text-noorix-blue')}>{row.typeLabel}</span>
               <span className="nx-cr__meta">{formatSaudiDate(row.date)}</span>
             </div>
             <div className="nx-cr__line2">
@@ -63,10 +112,15 @@ export function EmployeeProfileFinancialSection({ t, financialRecords }: any) {
           </div>
         )}
         renderMobileCard={(row: any) => (
-          <div className="flex flex-col gap-2">
+          <div
+            className={cn('flex flex-col gap-2', row.residencyId && 'cursor-pointer')}
+            onClick={row.residencyId ? () => openRow(row) : undefined}
+            role={row.residencyId ? 'button' : undefined}
+            tabIndex={row.residencyId ? 0 : undefined}
+          >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.date)}</span>
-              <span className="text-[13px] font-semibold text-noorix-text">{row.typeLabel}</span>
+              <span className={cn('text-[13px] font-semibold', row.residencyId ? 'text-noorix-blue' : 'text-noorix-text')}>{row.typeLabel}</span>
             </div>
             <div className="nx-mc__grid nx-mc__grid--2">
               <div>

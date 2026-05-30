@@ -11,6 +11,7 @@ import { employeeKeys } from '../../../services/queryKeys';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
+import { fmt } from '../../../utils/format';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { assertApiOk } from '../../../utils/apiResponse';
 import {
@@ -37,6 +38,7 @@ type ResidencyFormModalProps = {
   defaultEmployeeId?: string;
   onSuccess?: () => void;
   onClose?: () => void;
+  onDelete?: (residency: any) => void;
 };
 
 export function ResidencyFormModal({
@@ -46,6 +48,7 @@ export function ResidencyFormModal({
   defaultEmployeeId = '',
   onSuccess,
   onClose,
+  onDelete,
 }: ResidencyFormModalProps) {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
@@ -197,6 +200,11 @@ export function ResidencyFormModal({
       className="residency-form-drawer"
       footer={
         <>
+          {isEdit && onDelete && (
+            <Button variant="danger" className="me-auto" onClick={() => onDelete(residency)}>
+              {t('delete')}
+            </Button>
+          )}
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
           <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
             {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
@@ -309,7 +317,12 @@ export function ResidencyFormModal({
         {residency?.invoice?.invoiceNumber && (
           <div className="mb-3 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 text-[13px]">
             <span className="text-noorix-muted">{t('invoiceNumber')}: </span>
-            <span className="font-semibold ltr">{residency.invoice.invoiceNumber}</span>
+            <span className="font-semibold ltr text-noorix-blue">{residency.invoice.invoiceNumber}</span>
+            {residency.residencyInvoiceAmount != null && (
+              <span className="ms-2 text-noorix-muted ltr">
+                ({fmt(Number(residency.residencyInvoiceAmount))} <span className="nx-sar">SR</span>)
+              </span>
+            )}
           </div>
         )}
 
