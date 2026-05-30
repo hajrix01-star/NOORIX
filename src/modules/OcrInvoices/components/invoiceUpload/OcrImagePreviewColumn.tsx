@@ -5,6 +5,7 @@ export function OcrImagePreviewColumn({
   t,
   isAr,
   preview,
+  submitterLabel = '',
   imageBase64,
   extracted,
   loading,
@@ -43,6 +44,15 @@ export function OcrImagePreviewColumn({
         </Button>
       </div>
       <img src={preview} alt="invoice" className="w-full rounded-lg max-h-[500px] object-contain" />
+      {!!String(submitterLabel || '').trim() && (
+        <div
+          className="mt-2 text-[12px] font-semibold text-noorix-text truncate"
+          title={submitterLabel}
+        >
+          {isAr ? 'المرسل: ' : 'Submitted by: '}
+          {submitterLabel}
+        </div>
+      )}
       <div className="mt-3 flex gap-2 flex flex-wrap">
         {!extracted && workflowMode === 'queue-submit' && (
           <Button onClick={onExtract} disabled={loading || !imageBase64} variant="primary" className="flex-1 min-w-0">

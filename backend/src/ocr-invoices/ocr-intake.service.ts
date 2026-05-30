@@ -13,7 +13,7 @@ import { OcrExtractionService } from './ocr-extraction.service';
 import { OcrInvoiceWorkflowPersistService } from './ocr-invoice-workflow-persist.service';
 import { OcrUploadsLocalStorage } from './ocr-uploads-local.storage';
 import { OCR_EXTRACTION_QUEUE } from './ocr-queue.constants';
-import { buildAutoSaveDtoFromEnriched } from './ocr-auto-finalize.util';
+import { buildAutoSaveDtoFromEnriched, shouldAutoFinalizeOcrSubmission } from './ocr-auto-finalize.util';
 import { listOcrChatReminders } from './ocr-chat-reminders.util';
 import { mergeOcrImageBuffersVertically } from './ocr-image-merge.util';
 import type { OcrSaveInvoiceCaller } from './ocr-invoices.types';
@@ -385,6 +385,10 @@ export class OcrIntakeService {
       select: { submittedByUserId: true },
     });
     const caller = await this.resolveAutoSaveCaller(inv?.submittedByUserId);
+    if (!shouldAutoFinalizeOcrSubmission(inv?.submittedByUserId, caller)) {
+      this.logger.log(`OCR auto-save skipped (${invoiceId}): submitter requires manual review`);
+      return;
+    }
     try {
       await this.persist.saveInvoice(tenantId, companyId, dto, caller);
       this.logger.log(`OCR auto-saved invoice ${invoiceId}`);
@@ -455,7 +459,7 @@ export class OcrIntakeService {
       },
       include: {
         supplier: { select: { id: true, nameAr: true } },
-        submittedBy: { select: { id: true, nameAr: true, email: true } },
+        submittedBy: { select: { id: true, nameAr: true, nameEn: true, email: true } },
         lines: { include: { item: { select: { id: true, nameAr: true } } } },
       },
       orderBy: { createdAt: 'desc' },

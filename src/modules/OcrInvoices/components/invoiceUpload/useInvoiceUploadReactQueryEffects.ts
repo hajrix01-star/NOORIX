@@ -73,6 +73,7 @@ export function usePrefillOcrInvoiceFromId({
   setBase64,
   setMimeType,
   setPrefillLoading,
+  setPrefillSubmittedBy,
 }: {
   prefillInvoiceId: any;
   onPrefillConsumed?: () => void;
@@ -95,6 +96,7 @@ export function usePrefillOcrInvoiceFromId({
   setBase64: (v: any) => void;
   setMimeType: (m: string) => void;
   setPrefillLoading: (b: boolean) => void;
+  setPrefillSubmittedBy: (v: any) => void;
 }) {
   useEffect(() => {
     if (!prefillInvoiceId) return;
@@ -125,6 +127,7 @@ export function usePrefillOcrInvoiceFromId({
           return;
         }
         setFinalizeOcrId(prefillInvoiceId);
+        setPrefillSubmittedBy(inv.submittedBy || null);
         setPrefillLinkedPurchase(inv.linkedPurchaseInvoice?.id ? inv.linkedPurchaseInvoice : null);
         setPrefillOcrSupplierId(inv.supplierId || null);
         setPurchaseSupplierInvoiceNumber(String(inv.invoiceNumber || raw?.invoiceNumber?.value || '').trim());

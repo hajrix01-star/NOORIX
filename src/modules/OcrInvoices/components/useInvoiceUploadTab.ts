@@ -248,6 +248,7 @@ export function useInvoiceUploadTab({
   const [prefillLinkedPurchase, setPrefillLinkedPurchase] = useState<any>(null);
   const [postSaveLinkedPurchase, setPostSaveLinkedPurchase] = useState<any>(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
+  const [prefillSubmittedBy, setPrefillSubmittedBy] = useState<any>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const userTouchedAccountingRef = useRef(false);
@@ -368,6 +369,7 @@ export function useInvoiceUploadTab({
     setBase64,
     setMimeType,
     setPrefillLoading,
+    setPrefillSubmittedBy,
   });
 
   const handleDrop = useCallback(
@@ -801,6 +803,7 @@ export function useInvoiceUploadTab({
     setPrefillLinkedPurchase(null);
     setPostSaveLinkedPurchase(null);
     setPrefillOcrSupplierId(null);
+    setPrefillSubmittedBy(null);
     setCreateLinkedPurchase(false);
     setAccountingSupplierId('');
     setVaultId('');
@@ -840,6 +843,7 @@ export function useInvoiceUploadTab({
     copiedStageKey,
     copiedJsonKey,
     prefillLoading,
+    prefillSubmittedBy,
     prefillLinkedPurchase,
     postSaveLinkedPurchase,
     fileRef,

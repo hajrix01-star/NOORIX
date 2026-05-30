@@ -1,4 +1,5 @@
-import { buildAutoSaveDtoFromEnriched } from './ocr-auto-finalize.util';
+import { buildAutoSaveDtoFromEnriched, shouldAutoFinalizeOcrSubmission } from './ocr-auto-finalize.util';
+import { PERMISSIONS } from '../auth/constants/permissions';
 
 describe('buildAutoSaveDtoFromEnriched', () => {
   it('returns null when no items and no total', () => {
@@ -41,5 +42,31 @@ describe('buildAutoSaveDtoFromEnriched', () => {
         }),
       ],
     });
+  });
+});
+
+describe('shouldAutoFinalizeOcrSubmission', () => {
+  it('allows auto-save when there is no submitter (legacy upload)', () => {
+    expect(shouldAutoFinalizeOcrSubmission(null, undefined)).toBe(true);
+  });
+
+  it('skips auto-save for OCR_SUBMIT-only staff', () => {
+    expect(
+      shouldAutoFinalizeOcrSubmission('user-1', {
+        userId: 'user-1',
+        role: 'cashier',
+        permissions: [PERMISSIONS.OCR_SUBMIT],
+      }),
+    ).toBe(false);
+  });
+
+  it('allows auto-save when submitter has OCR_READ', () => {
+    expect(
+      shouldAutoFinalizeOcrSubmission('user-2', {
+        userId: 'user-2',
+        role: 'accountant',
+        permissions: [PERMISSIONS.OCR_READ, PERMISSIONS.OCR_WRITE],
+      }),
+    ).toBe(true);
   });
 });
