@@ -127,5 +127,18 @@ export default function ScreenTabs({
         )
       : cn('relative nx-tab-bar-fade-wrap', className);
 
+  if (variant === 'segmented') {
+    return (
+      <div className={cn('flex flex-col', shellClassName)}>
+        <div className={shellClass}>{bar}</div>
+        {children != null && (
+          <div className={cn(contentClassName)} role="tabpanel">
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return <div className={shellClass}>{bar}</div>;
 }
