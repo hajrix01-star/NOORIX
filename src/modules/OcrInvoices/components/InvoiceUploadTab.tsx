@@ -1,5 +1,6 @@
 import React from 'react';
 import { useInvoiceUploadTab } from './useInvoiceUploadTab';
+import { ocrSubmitterLabel } from '../utils/ocrSubmitterLabel';
 import {
   OcrUploadPrefillBanner,
   OcrPrefillLinkedPurchaseBanner,
@@ -18,6 +19,8 @@ import OcrBatchUploadPanel from './OcrBatchUploadPanel';
 export default function InvoiceUploadTab(props: any) {
   const o = useInvoiceUploadTab(props);
   const isQueueSubmit = o.workflowMode === 'queue-submit';
+
+  const submitterCaption = ocrSubmitterLabel(o.prefillSubmittedBy, o.isAr);
 
   return (
     <div className="flex flex-col gap-5" dir={o.dir}>
@@ -60,6 +63,7 @@ export default function InvoiceUploadTab(props: any) {
             t={o.t}
             isAr={o.isAr}
             preview={o.preview}
+            submitterLabel={submitterCaption}
             imageBase64={o.imageBase64}
             extracted={o.extracted}
             loading={o.loading}

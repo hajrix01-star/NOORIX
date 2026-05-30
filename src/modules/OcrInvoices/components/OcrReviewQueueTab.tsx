@@ -7,6 +7,7 @@ import { ocrKeys } from '../../../services/queryKeys';
 import { AdaptiveSheet, Button } from '../../../ui';
 import OcrInvoiceThumb from './OcrInvoiceThumb';
 import InvoiceUploadTab from './InvoiceUploadTab';
+import { ocrSubmitterLabel } from '../utils/ocrSubmitterLabel';
 
 const STATUS_LABEL = {
   queued: { ar: 'في الانتظار', en: 'Queued' },
@@ -112,10 +113,16 @@ export default function OcrReviewQueueTab({
               </tr>
             </thead>
             <tbody>
-              {rows.map((inv: any) => (
+              {rows.map((inv: any) => {
+                const submitterName = ocrSubmitterLabel(inv.submittedBy, isAr) || '—';
+                return (
                 <tr key={inv.id} className="border-b border-noorix-border last:border-b-0">
-                  <td className="p-2 w-20">
-                    <OcrInvoiceThumb invoiceId={inv.id} className="w-16 h-16" />
+                  <td className="p-2 w-24">
+                    <OcrInvoiceThumb
+                      invoiceId={inv.id}
+                      className="w-16 h-16"
+                      submitterLabel={submitterName === '—' ? '' : submitterName}
+                    />
                   </td>
                   <td className="p-2">
                     {((STATUS_LABEL as Record<string, { ar: string; en: string }>)[String(inv.status)] || { ar: inv.status, en: inv.status })[isAr ? 'ar' : 'en']}
@@ -126,7 +133,7 @@ export default function OcrReviewQueueTab({
                     )}
                   </td>
                   <td className="p-2">{inv.supplier?.nameAr || '—'}</td>
-                  <td className="p-2">{inv.submittedBy?.nameAr || inv.submittedBy?.email || '—'}</td>
+                  <td className="p-2">{submitterName}</td>
                   <td className="p-2">
                     {inv.status === 'pending_review' && (
                       <Button type="button" variant="raw" size="sm" className="text-noorix-blue underline" onClick={() => setReviewInvoiceId(String(inv.id))}>
@@ -147,7 +154,8 @@ export default function OcrReviewQueueTab({
                     )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -27,7 +27,7 @@ export class OcrInvoiceWorkflowReaderService {
       include: {
         supplier: { select: { id: true, nameAr: true, taxNumber: true } },
         lines: { include: { item: { select: { id: true, nameAr: true } } } },
-        submittedBy: { select: { id: true, nameAr: true, email: true } },
+        submittedBy: { select: { id: true, nameAr: true, nameEn: true, email: true } },
         linkedPurchaseInvoice: {
           select: {
             id: true,

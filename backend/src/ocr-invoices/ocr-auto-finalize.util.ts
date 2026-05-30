@@ -1,4 +1,6 @@
 import type { SaveInvoiceDto, SaveInvoiceLineDto } from './dto/save-invoice.dto';
+import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
+import type { OcrSaveInvoiceCaller } from './ocr-invoices.types';
 
 type EnrichedItem = Record<string, unknown> & {
   name?: string;
@@ -73,4 +75,14 @@ export function buildAutoSaveDtoFromEnriched(
     rawExtraction: enriched,
     lines,
   };
+}
+
+/** يُحفظ تلقائياً فقط إذا كان المرسل يملك OCR_READ (محاسب/مالك). إرسال الموظف/الكاشير يبقى للمراجعة. */
+export function shouldAutoFinalizeOcrSubmission(
+  submittedByUserId: string | null | undefined,
+  caller?: OcrSaveInvoiceCaller | null,
+): boolean {
+  if (!submittedByUserId) return true;
+  if (!caller) return false;
+  return hasPermission(caller.role || '', PERMISSIONS.OCR_READ, caller.permissions);
 }
