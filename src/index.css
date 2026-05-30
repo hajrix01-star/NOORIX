@@ -4470,6 +4470,60 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4);
   }
 
+  /* توزيع متساوٍ على عرض السطر — تبويبات فرعية HR (2–4 حبات) */
+  .nx-segmented-tab-bar--fill {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 4px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+    padding: 0.55rem 0.5rem;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  @media (min-width: 641px) {
+    .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented {
+      font-size: 13px;
+      padding: 0.6rem 0.75rem;
+    }
+  }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) {
+    border-color: transparent;
+    background: transparent;
+    color: var(--noorix-text-muted);
+    box-shadow: none;
+  }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) {
+    color: var(--noorix-text);
+    background: color-mix(in srgb, var(--noorix-bg-surface) 55%, transparent);
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active {
+    border-color: var(--noorix-border);
+    background: var(--noorix-bg-surface);
+    color: var(--noorix-accent-blue);
+    font-weight: 700;
+    box-shadow: 0 1px 4px rgba(10, 31, 68, 0.12);
+  }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover {
+    color: var(--noorix-accent-blue);
+    background: var(--noorix-bg-surface);
+    filter: none;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.14);
+  }
+
   .nx-tab-content {
     padding: clamp(12px, 3vw, 24px);
   }

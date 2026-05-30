@@ -94,8 +94,9 @@ export function HrSectionSubTabs({ section, tab, onTabChange }: HrSectionSubTabs
       value={activeTab}
       onChange={(id) => onTabChange(id as HrSubTabId)}
       variant="segmented"
+      barClassName="nx-segmented-tab-bar--fill"
       animateContent={false}
-      contentClassName={cn('pt-3 min-h-[200px]')}
+      contentClassName={cn('min-h-[200px] pt-3')}
     >
       {section === 'people' && activeTab === 'list' && <StaffListScreen embedded />}
       {section === 'people' && activeTab === 'leave' && <LeaveTab embedded />}

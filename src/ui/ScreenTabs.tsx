@@ -122,15 +122,15 @@ export default function ScreenTabs({
   const shellClass =
     variant === 'segmented'
       ? cn(
-          'relative bg-noorix-surface rounded-xl border border-noorix-border p-1',
+          'relative w-full min-w-0 rounded-xl border border-noorix-border bg-noorix-bg-muted p-1',
           className,
         )
       : cn('relative nx-tab-bar-fade-wrap', className);
 
   if (variant === 'segmented') {
     return (
-      <div className={cn('flex flex-col', shellClassName)}>
-        <div className={shellClass}>{bar}</div>
+      <div className={cn('flex w-full min-w-0 flex-col', shellClassName)}>
+        <div className={cn(shellClass, 'w-full min-w-0')}>{bar}</div>
         {children != null && (
           <div className={cn(contentClassName)} role="tabpanel">
             {children}
