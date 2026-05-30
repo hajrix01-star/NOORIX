@@ -33,9 +33,8 @@ export const HR_SUBTAB_INLINE_CLASS = cn(
 /** جدول داخل مساحة HR — بدون إطار/ظل مزدوج (الكرت الخارجي يكفي) */
 export const HR_WORKSPACE_TABLE_CLASS = 'nx-hr-workspace-table';
 
-/** قائمة الموظفين — تمتد بعرض كرت HR على الجوال (هامش الجسم للأدوات/البحث فقط) */
-export const HR_STAFF_LIST_BLEED_CLASS =
-  'nx-hr-staff-list-bleed max-md:-mx-4 max-md:w-[calc(100%+2rem)] min-w-0';
+/** قائمة الموظفين داخل HR — نفس عرض منطقة الأدوات/البحث (بدون full-bleed) */
+export const HR_STAFF_LIST_CLASS = 'nx-hr-staff-list w-full min-w-0';
 
 /** @deprecated استخدم HR_SUBTAB_SHELL_CLASS */
 export const HR_SEGMENTED_SHELL_FLAT_CLASS = 'nx-segmented-shell--flat';

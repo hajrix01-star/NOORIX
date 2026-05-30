@@ -41,7 +41,7 @@ import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
 import {
   HR_EMBEDDED_SHELL_CLASS,
-  HR_STAFF_LIST_BLEED_CLASS,
+  HR_STAFF_LIST_CLASS,
   HR_WORKSPACE_TABLE_CLASS,
 } from './hrWorkspaceLayout';
 import { HrTabToolbar } from './components/HrTabToolbar';
@@ -441,7 +441,10 @@ export default function StaffListScreen({ embedded }: any) {
     const displayName = employeeDisplayName(row, lang);
     return (
       <div
-        className="flex items-start justify-between gap-3 min-w-0"
+        className={cn(
+          'flex min-w-0 items-start justify-between gap-3',
+          embedded && 'py-3',
+        )}
         onClick={() => navigate(`/hr/employee/${row.id}`)}
         style={{ cursor: 'pointer' }}
       >
@@ -479,7 +482,7 @@ export default function StaffListScreen({ embedded }: any) {
         </div>
       </div>
     );
-  }, [STATUS_MAP, t, lang, navigate, renderStaffRowMenuItems]);
+  }, [STATUS_MAP, t, lang, navigate, renderStaffRowMenuItems, embedded]);
 
   const renderCompactRow = useCallback((row: any) => renderStaffMobileRow(row), [renderStaffMobileRow]);
 
@@ -586,7 +589,7 @@ export default function StaffListScreen({ embedded }: any) {
           ) : null}
 
           {embedded ? (
-            <div className={HR_STAFF_LIST_BLEED_CLASS}>
+            <div className={HR_STAFF_LIST_CLASS}>
               <SmartTable
                 compact
                 showRowNumbers
