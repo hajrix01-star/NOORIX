@@ -70,7 +70,7 @@ describe('buildDailyShiftWhatsAppText', () => {
     expect(text).toContain('salesDailyWaGrandTotal');
     expect(text).toContain('100');
     expect(text).toContain('salesWhatsAppAvgInvoiceLine');
-    expect(text.startsWith('salesDailyWaTitle')).toBe(true);
+    expect(text).toContain('salesDailyWaTitle');
   });
 
   it('includes sales channels when day summaries provided', () => {

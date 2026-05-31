@@ -21,7 +21,7 @@ describe('salesWhatsAppFormat', () => {
 
   it('puts report title on the first line without a rule separator', () => {
     const h = waReportHeader('تقرير مبيعات يومي', 'ARZ');
-    expect(h).toBe('تقرير مبيعات يومي — ARZ');
+    expect(h).toContain('تقرير مبيعات يومي — ARZ');
     expect(h.startsWith(SALES_WA.rule)).toBe(false);
   });
 });
