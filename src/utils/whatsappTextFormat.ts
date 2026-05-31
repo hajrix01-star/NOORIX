@@ -4,9 +4,6 @@
 
 import { fmt } from './format';
 
-/** عرض سطر واتساب تقريبي (محاذاة وسط بتباعد — ليس CSS) */
-export const WA_LINE_WIDTH = 34;
-
 export const SALES_WA = {
   rule: '━━━━━━━━━━━━━━━━━━━━',
   ruleThin: '────────────────────',
@@ -30,43 +27,12 @@ export function waShiftSymbol(kind: SalesWaShiftKind): string {
   return SHIFT_SYMBOL[kind];
 }
 
-/** تقدير عرض العرض لمحاذاة وسط تقريبية (إيموجي أعرض) */
-export function estimateWaDisplayWidth(text: string): number {
-  let w = 0;
-  for (const ch of text) {
-    const cp = ch.codePointAt(0) ?? 0;
-    if (
-      (cp >= 0x1f300 && cp <= 0x1faff)
-      || (cp >= 0x2600 && cp <= 0x27bf)
-      || (cp >= 0x2300 && cp <= 0x23ff)
-    ) {
-      w += 2;
-    } else {
-      w += 1;
-    }
-  }
-  return w;
-}
-
-/**
- * محاذاة وسط تقريبية — واتساب لا يدعم text-align؛ تباعد بمسافات غير قابلة للكسر.
- * النتيجة تختلف قليلاً بين الجوال والويب ومع RTL.
- */
-export function waCenterLine(text: string, width = WA_LINE_WIDTH): string {
-  const trimmed = (text || '').trim();
-  if (!trimmed) return '';
-  const displayW = estimateWaDisplayWidth(trimmed);
-  if (displayW >= width) return trimmed;
-  const pad = Math.floor((width - displayW) / 2);
-  return pad > 0 ? '\u00A0'.repeat(pad) + trimmed : trimmed;
-}
-
 /** عنوان الرسالة — السطر الأول نص فقط (بدون خط فاصل؛ واتساب يعرض ━ كسطر فارغ تقريباً) */
 export function waReportHeader(title: string, companyName?: string): string {
   const head = (companyName || '').trim()
     ? `${title} — ${companyName!.trim()}`
     : title;
-  return waCenterLine(head);
+  return head;
 }
 
 /** سطر تاريخ — التسمية تحتوي 📅 */
@@ -76,13 +42,12 @@ export function waMetaLine(label: string, value: string): string {
 
 export function waShiftSectionTitle(kind: SalesWaShiftKind, shiftLabel: string): string {
   const sym = waShiftSymbol(kind);
-  const title = waCenterLine(`${sym} ${shiftLabel}`.trim());
-  return `${SALES_WA.ruleThin}\n${title}\n${SALES_WA.ruleThin}`;
+  return `${SALES_WA.ruleThin}\n${sym} ${shiftLabel}\n${SALES_WA.ruleThin}`;
 }
 
 /** عنوان فرعي — التسمية تحتوي 🏪 */
 export function waSubheading(label: string): string {
-  return waCenterLine(label);
+  return `  ${label}`;
 }
 
 /** سطر قناة: • بنك: 996 SR */
