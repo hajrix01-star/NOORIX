@@ -57,5 +57,6 @@ describe('buildDailyShiftWhatsAppText formatting', () => {
     expect(text).toContain('• نقد');
     expect(text).toContain('🌅');
     expect(text).toContain('salesWhatsAppChannelsHeader');
+    expect(text).toContain('salesWhatsAppAvgInvoiceLine');
   });
 });

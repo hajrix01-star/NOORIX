@@ -32,6 +32,7 @@ import {
   waCustomersLine,
   waMetaLine,
   waMetricLine,
+  waAvgSaleMetricLine,
   waReportHeader,
   waShiftSectionTitle,
   waSubheading,
@@ -218,7 +219,6 @@ export function useDailySalesScreen() {
   const buildWhatsAppText = useCallback((s: DailySalesSummary) => {
     const cc = s.customerCount || 0;
     const total = Number(s.totalAmount || 0);
-    const avg = cc > 0 ? (total / cc) : 0;
     const name = (companyName || '').trim();
     const dateRaw = formatSaudiDate(s.transactionDate);
     let dateWithWeekday = dateRaw;
@@ -249,7 +249,7 @@ export function useDailySalesScreen() {
       '',
       waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(total)} SR`),
       waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(cc, 0)),
-      waMetricLine(t('salesWhatsAppAvgInvoiceLine'), `${fmt(avg)} SR`),
+      waAvgSaleMetricLine(t('salesWhatsAppAvgInvoiceLine'), total, cc),
     );
 
     if (Number(s.cashOnHand) > 0) {

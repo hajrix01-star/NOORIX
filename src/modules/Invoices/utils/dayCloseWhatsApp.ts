@@ -1,5 +1,6 @@
 import { fmt } from '../../../utils/format';
 import {
+  waAvgSaleMetricLine,
   waCashLine,
   waChannelRow,
   waCustomersLine,
@@ -112,6 +113,7 @@ export function buildDayCloseWhatsAppText(p: BuildDayCloseWhatsAppParams): strin
     if (customers > 0) {
       lines.push(waCustomersLine(t('dayCloseWaCustomersLine'), fmt(customers, 0)));
     }
+    lines.push(waAvgSaleMetricLine(t('dayCloseWaAvgInvoiceLine'), salesTotal, customers));
   } else {
     lines.push(`  ${t('dayCloseWaNoSales')}`);
   }

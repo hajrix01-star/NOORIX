@@ -179,6 +179,7 @@ export default {
   dayCloseWaSectionClosing: { ar: 'الخلاصة', en: 'Summary' },
   dayCloseWaSalesTotal: { ar: '💰 الإجمالي:', en: '💰 Total:' },
   dayCloseWaCustomersLine: { ar: '👥 عدد العملاء:', en: '👥 Customers:' },
+  dayCloseWaAvgInvoiceLine: { ar: '🧾 متوسط الفاتورة:', en: '🧾 Avg. sale:' },
   dayCloseWaChannels: { ar: '🏪 قنوات البيع:', en: '🏪 Sales channels:' },
   dayCloseWaFromInvoices: { ar: 'من الفواتير:', en: 'From invoices:' },
   dayCloseWaNoSales: { ar: 'لا مبيعات مسجّلة اليوم.', en: 'No sales recorded today.' },

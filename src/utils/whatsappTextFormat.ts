@@ -2,6 +2,8 @@
  * تنسيق نص واتساب الموحّد — نفس رموز ملخص المبيعات (إيموجي قياسية)
  */
 
+import { fmt } from './format';
+
 export const SALES_WA = {
   rule: '━━━━━━━━━━━━━━━━━━━━',
   ruleThin: '────────────────────',
@@ -56,6 +58,18 @@ export function waChannelRow(vaultLabel: string, amountText: string): string {
 /** سطر مالي — التسمية تحتوي الرمز (💰 👥 💵 …) */
 export function waMetricLine(label: string, value: string): string {
   return `  ${label} ${value}`;
+}
+
+/** إجمالي ÷ عدد العملاء — معدل الطلب / متوسط الفاتورة */
+export function salesWaAvgPerCustomer(total: number, customers: number): number {
+  const cc = Number(customers) || 0;
+  const amount = Number(total) || 0;
+  return cc > 0 ? amount / cc : 0;
+}
+
+/** سطر متوسط الفاتورة في تقارير واتساب */
+export function waAvgSaleMetricLine(avgLabel: string, total: number, customers: number): string {
+  return waMetricLine(avgLabel, `${fmt(salesWaAvgPerCustomer(total, customers))} SR`);
 }
 
 /** @deprecated استخدم waMetricLine — التسمية تحتوي 👥 */

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   SALES_WA,
+  salesWaAvgPerCustomer,
+  waAvgSaleMetricLine,
   waChannelRow,
   waMetaLine,
   waReportHeader,
@@ -26,5 +28,11 @@ describe('whatsappTextFormat', () => {
     const h = waReportHeader('📊 تقرير مبيعات يومي', 'ARZ');
     expect(h).toBe('📊 تقرير مبيعات يومي — ARZ');
     expect(h.startsWith(SALES_WA.rule)).toBe(false);
+  });
+
+  it('computes average sale as total divided by customers', () => {
+    expect(salesWaAvgPerCustomer(1000, 10)).toBe(100);
+    expect(salesWaAvgPerCustomer(1000, 0)).toBe(0);
+    expect(waAvgSaleMetricLine('🧾 متوسط الفاتورة:', 300, 30)).toBe('  🧾 متوسط الفاتورة: 10 SR');
   });
 });
