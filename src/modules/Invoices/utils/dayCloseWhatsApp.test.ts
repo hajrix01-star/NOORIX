@@ -38,6 +38,7 @@ describe('buildDayCloseWhatsAppText', () => {
     expect(text).toContain('dayCloseWaSectionSales');
     expect(text).toContain('• بنك:');
     expect(text).toContain('dayCloseWaCustomersLine');
+    expect(text).toContain('dayCloseWaAvgInvoiceLine');
     expect(text).toContain('dayCloseWaSalesTotal');
     expect(text).toContain('🌅');
     expect(text).toContain('📌');

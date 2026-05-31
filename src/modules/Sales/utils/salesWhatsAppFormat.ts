@@ -1,6 +1,8 @@
 /** @deprecated استورد من `utils/whatsappTextFormat` — إعادة تصدير للتوافق */
 export {
   SALES_WA,
+  salesWaAvgPerCustomer,
+  waAvgSaleMetricLine,
   waCashLine,
   waChannelRow,
   waCustomersLine,
