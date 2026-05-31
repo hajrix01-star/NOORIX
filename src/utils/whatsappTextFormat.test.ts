@@ -3,10 +3,12 @@ import {
   SALES_WA,
   salesWaAvgPerCustomer,
   waAvgSaleMetricLine,
+  waCenterLine,
   waChannelRow,
   waMetaLine,
   waReportHeader,
   waShiftSectionTitle,
+  waSubheading,
 } from './whatsappTextFormat';
 
 describe('whatsappTextFormat', () => {
@@ -26,8 +28,21 @@ describe('whatsappTextFormat', () => {
 
   it('puts report title on the first line without a rule separator', () => {
     const h = waReportHeader('📊 تقرير مبيعات يومي', 'ARZ');
-    expect(h).toBe('📊 تقرير مبيعات يومي — ARZ');
+    expect(h).toContain('📊 تقرير مبيعات يومي — ARZ');
     expect(h.startsWith(SALES_WA.rule)).toBe(false);
+    expect(h.startsWith('\u00A0')).toBe(true);
+  });
+
+  it('centers short titles with non-breaking space padding', () => {
+    const centered = waCenterLine('عنوان');
+    expect(centered.endsWith('عنوان')).toBe(true);
+    expect(centered.startsWith('\u00A0')).toBe(true);
+    expect(waSubheading('🏪 قنوات')).toContain('🏪 قنوات');
+  });
+
+  it('does not pad titles wider than line width', () => {
+    const long = 'أ'.repeat(40);
+    expect(waCenterLine(long)).toBe(long);
   });
 
   it('computes average sale as total divided by customers', () => {
