@@ -16,6 +16,7 @@ import { HrQuickEntryAdvanceForm } from './components/HrQuickEntryAdvanceForm';
 import { HrQuickEntryLeaveForm } from './components/HrQuickEntryLeaveForm';
 import { HrQuickEntryDeductionForm } from './components/HrQuickEntryDeductionForm';
 import { HrQuickEntryIncreaseForm } from './components/HrQuickEntryIncreaseForm';
+import { MODE_META } from './constants';
 import type { HrQuickEntryMode, HrQuickEntrySheetProps } from './types';
 
 export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, variant: _variant }: HrQuickEntrySheetProps) {
