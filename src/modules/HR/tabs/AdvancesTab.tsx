@@ -107,7 +107,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     });
 
   const totalAmount = sumAmounts(allFilteredData.filter((r: any) => r.status !== 'cancelled'), 'totalAmount');
-  const outstandingCount = allFilteredData.filter((r: any) => r.status !== 'cancelled' && r.settlementStatus !== 'settled').length;
+  const outstandingOnlyCount = allFilteredData.filter((r: any) => r.status !== 'cancelled' && r.settlementStatus === 'outstanding').length;
+  const partialCount = allFilteredData.filter((r: any) => r.status !== 'cancelled' && r.settlementStatus === 'partial').length;
 
   const settlementMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
 
@@ -202,7 +203,9 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const footerCells = (
     <>
       <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">
-        {t('advancesList')} ({allFilteredData.length}) — {t('advanceOutstanding')}: {outstandingCount}
+        {t('advancesList')} ({allFilteredData.length})
+        {outstandingOnlyCount > 0 ? ` — ${t('advanceOutstanding')}: ${outstandingOnlyCount}` : ''}
+        {partialCount > 0 ? ` — ${t('advanceStatusPartial')}: ${partialCount}` : ''}
       </td>
       <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers">
         {hrFmt(totalAmount.toNumber())}
@@ -556,11 +559,10 @@ function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError 
       }
 
       const newSettledAmount = alreadySettled + amountToSettle;
-      const fullySettled = newSettledAmount >= total;
       const notes = `${advance?.notes || ''}\n[ADV_SETTLE] ${amountToSettle} @ ${settleDate}`.trim();
       const invRes = await updateInvoice(advance.id, {
         settledAmount: newSettledAmount,
-        settledAt: fullySettled ? settleDate : undefined,
+        settledAt: settleDate,
         notes,
       }, companyId);
       rejectIfApiFailed(invRes, t('saveFailed'));
