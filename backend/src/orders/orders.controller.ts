@@ -51,7 +51,7 @@ export class OrdersController {
   }
 
   @Get('sales/report')
-  @RequireAnyPermission('VIEW_SALES', 'STAFF_ORDERS_DIGEST')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'STAFF_ORDERS_DIGEST')
   getSalesReport(
     @CompanyId() companyId: string,
     @Query('days') days?: string,
@@ -122,7 +122,7 @@ export class OrdersController {
   }
 
   @Get()
-  @RequirePermission('VIEW_SALES')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ')
   findAll(
     @CompanyId() companyId: string,
     @Query('year') year: string,
@@ -136,7 +136,7 @@ export class OrdersController {
   }
 
   @Get('summary')
-  @RequirePermission('VIEW_SALES')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ')
   getSummary(
     @CompanyId() companyId: string,
     @Query('year') year: string,
@@ -150,7 +150,7 @@ export class OrdersController {
   }
 
   @Get('items-report')
-  @RequirePermission('VIEW_SALES')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ')
   getItemsReport(
     @CompanyId() companyId: string,
     @Query('year') year: string,
@@ -164,7 +164,7 @@ export class OrdersController {
   }
 
   @Get('products')
-  @RequireAnyPermission('VIEW_SALES', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
   getProducts(
     @CompanyId() companyId: string,
     @Query('section') section?: string,
@@ -231,7 +231,7 @@ export class OrdersController {
   }
 
   @Get('categories')
-  @RequireAnyPermission('VIEW_SALES', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
   getCategories(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.ordersService.getCategories(companyId);
@@ -256,7 +256,7 @@ export class OrdersController {
   // ── Sections ──────────────────────────────────────────────────────
 
   @Get('sections')
-  @RequireAnyPermission('VIEW_SALES', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
   getSections(@CompanyId() companyId: string) {
     if (!companyId) return [];
     return this.ordersService.getSections(companyId);
@@ -298,7 +298,7 @@ export class OrdersController {
   }
 
   @Get(':id')
-  @RequirePermission('VIEW_SALES')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ')
   findOne(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.ordersService.findOne(id, companyId);
   }
