@@ -59,14 +59,13 @@ export async function applyPayrollAdvanceSettlements(
         : remaining;
       const allocate = Math.min(remainingToDeduct, cap);
       const newSettled = settled + allocate;
-      const fullySettled = newSettled >= total;
       const settleNote = `${adv.notes || ''}\n[ADV_PAYROLL] run=${run.runNumber}, amount=${allocate}, date=${txDate}`.trim();
 
       await db.invoice.update({
         where: { id: adv.id },
         data: {
           settledAmount: new Prisma.Decimal(newSettled),
-          settledAt: fullySettled ? new Date(`${txDate}T00:00:00.000Z`) : adv.settledAt ?? null,
+          settledAt: new Date(`${txDate}T00:00:00.000Z`),
           notes: settleNote,
         },
       });
