@@ -20,7 +20,9 @@ import {
   useAutoPickTopAccountingSupplier,
   usePrefillOcrInvoiceFromId,
   useResetAccountingUserTouchOnSuggestKey,
+  useReviewInvoiceProgressPolling,
 } from './invoiceUpload/useInvoiceUploadReactQueryEffects';
+import type { OcrReviewInvoiceStatus } from './invoiceUpload/ocrReviewInvoiceStatus';
 import { useOcrInvoiceImagePipeline } from './invoiceUpload/useOcrInvoiceImagePipeline';
 import { useOcrInvoiceLineItems } from './invoiceUpload/useOcrInvoiceLineItems';
 import { vaultKeys, ocrKeys } from '../../../services/queryKeys';
@@ -188,6 +190,7 @@ function downloadJsonFile(filename: string, content: string) {
  */
 export function useInvoiceUploadTab({
   onSaved,
+  onDismiss,
   prefillInvoiceId,
   onPrefillConsumed,
   suppliers = [],
@@ -195,6 +198,7 @@ export function useInvoiceUploadTab({
   workflowMode = 'queue-submit',
 }: {
   onSaved?: (meta?: { invalidateFinancial?: boolean }) => void;
+  onDismiss?: () => void;
   prefillInvoiceId?: string | null;
   onPrefillConsumed?: () => void;
   suppliers?: any[];
@@ -249,6 +253,7 @@ export function useInvoiceUploadTab({
   const [postSaveLinkedPurchase, setPostSaveLinkedPurchase] = useState<any>(null);
   const [prefillLoading, setPrefillLoading] = useState(false);
   const [prefillSubmittedBy, setPrefillSubmittedBy] = useState<any>(null);
+  const [reviewInvoiceStatus, setReviewInvoiceStatus] = useState<OcrReviewInvoiceStatus | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const userTouchedAccountingRef = useRef(false);
@@ -370,6 +375,27 @@ export function useInvoiceUploadTab({
     setMimeType,
     setPrefillLoading,
     setPrefillSubmittedBy,
+    setReviewInvoiceStatus,
+    setLoading,
+    setExtractStartedAt,
+    setExtractFailureStage,
+  });
+
+  useReviewInvoiceProgressPolling({
+    workflowMode,
+    finalizeOcrId,
+    reviewInvoiceStatus,
+    activeCompanyId,
+    queryClient,
+    t,
+    setError,
+    setExtracted,
+    setEditItems,
+    setReviewInvoiceStatus,
+    setLoading,
+    setExtractStartedAt,
+    setExtractFailureStage,
+    setExtractWarning,
   });
 
   const handleDrop = useCallback(
@@ -410,60 +436,30 @@ export function useInvoiceUploadTab({
     }
   }, [activeCompanyId, imageBase64, mimeType, queryClient, t, workflowMode]);
 
-  const reloadReviewExtraction = useCallback(async (invoiceId: string) => {
-    const r = await getOcrInvoice(invoiceId);
-    if (!r.success || !r.data?.rawExtraction) {
-      setError(r.error || t('ocrExtractFailed'));
-      return false;
-    }
-    setExtracted(r.data.rawExtraction);
-    setEditItems(null);
-    setExtractWarning(null);
-    setError(null);
-    return true;
-  }, [t]);
-
   const handleRetryExtraction = useCallback(async () => {
     if (!finalizeOcrId || workflowMode !== 'review') return;
-    setLoading(true);
     setError(null);
     setExtracted(null);
     setEditItems(null);
+    setReviewInvoiceStatus('queued');
+    setExtractStartedAt(() => null);
+    setExtractFailureStage(null);
+    setLoading(false);
     try {
       const res = await retryOcrInvoiceExtraction(finalizeOcrId);
       if (!res.success) {
         setError(res.error || t('ocrRetryFailed'));
+        setReviewInvoiceStatus('extraction_failed');
+        setExtractFailureStage('request');
         return;
       }
       queryClient.invalidateQueries({ queryKey: ocrKeys.reviewQueue(activeCompanyId || '') });
-      for (let attempt = 0; attempt < 90; attempt += 1) {
-        await new Promise((resolve) => { setTimeout(resolve, 2000); });
-        const invRes = await getOcrInvoice(finalizeOcrId);
-        if (!invRes.success || !invRes.data) continue;
-        const status = String(invRes.data.status || '');
-        if (status === 'pending_review') {
-          await reloadReviewExtraction(finalizeOcrId);
-          return;
-        }
-        if (status === 'extraction_failed') {
-          setError(String(invRes.data.extractionError || t('ocrRetryFailed')));
-          return;
-        }
-      }
-      setError(t('ocrRetryFailed'));
     } catch {
       setError(t('ocrRetryFailed'));
-    } finally {
-      setLoading(false);
+      setReviewInvoiceStatus('extraction_failed');
+      setExtractFailureStage('request');
     }
-  }, [
-    activeCompanyId,
-    finalizeOcrId,
-    queryClient,
-    reloadReviewExtraction,
-    t,
-    workflowMode,
-  ]);
+  }, [activeCompanyId, finalizeOcrId, queryClient, t, workflowMode]);
 
   const handleExtract = useCallback(async () => {
     if (workflowMode === 'review') {
@@ -781,6 +777,10 @@ export function useInvoiceUploadTab({
   };
 
   const handleResetImageColumn = useCallback(() => {
+    if (workflowMode === 'review' && onDismiss) {
+      onDismiss();
+      return;
+    }
     setPreview((prev: any) => {
       revokePreviewUrl(prev);
       return null;
@@ -804,12 +804,13 @@ export function useInvoiceUploadTab({
     setPostSaveLinkedPurchase(null);
     setPrefillOcrSupplierId(null);
     setPrefillSubmittedBy(null);
+    setReviewInvoiceStatus(null);
     setCreateLinkedPurchase(false);
     setAccountingSupplierId('');
     setVaultId('');
     setPurchaseSupplierInvoiceNumber('');
     setTransactionDate(getSaudiToday());
-  }, []);
+  }, [onDismiss, workflowMode]);
 
   const onAccountingSupplierIdChange = useCallback((v: any) => {
     userTouchedAccountingRef.current = true;
@@ -844,6 +845,7 @@ export function useInvoiceUploadTab({
     copiedJsonKey,
     prefillLoading,
     prefillSubmittedBy,
+    reviewInvoiceStatus,
     prefillLinkedPurchase,
     postSaveLinkedPurchase,
     fileRef,
