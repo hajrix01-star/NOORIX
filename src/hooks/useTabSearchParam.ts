@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+function resolveTabId(
+  raw: string | undefined | null,
+  allowedIds: readonly string[],
+  aliases?: Record<string, string>,
+): string | null {
+  if (!raw) return null;
+  if (allowedIds.includes(raw)) return raw;
+  const mapped = aliases?.[raw];
+  if (mapped && allowedIds.includes(mapped)) return mapped;
+  return null;
+}
+
 /** منطق اختيار التبويب — قابل للاختبار بدون React Router */
 export function pickTabFromSearchParams(
   searchParams: URLSearchParams,
@@ -8,13 +20,14 @@ export function pickTabFromSearchParams(
   defaultId: string,
   paramName: any = 'tab',
   legacyParamName?: string | null,
+  aliases?: Record<string, string>,
 ) {
   const get = (k: string) => searchParams.get(k)?.trim();
-  const primary = get(paramName);
-  if (primary && allowedIds.includes(primary)) return primary;
+  const primary = resolveTabId(get(paramName), allowedIds, aliases);
+  if (primary) return primary;
   if (legacyParamName) {
-    const leg = get(legacyParamName);
-    if (leg && allowedIds.includes(leg)) return leg;
+    const leg = resolveTabId(get(legacyParamName), allowedIds, aliases);
+    if (leg) return leg;
   }
   if (allowedIds.includes(defaultId)) return defaultId;
   return allowedIds[0] ?? defaultId;
@@ -30,6 +43,7 @@ export function pickTabFromSearchParams(
  *   the app and other routes may leave `?tab=history` etc.; those values are ignored unless in `allowedIds`.
  * @param {string} [legacyParamName] — optional second key to read (e.g. `tab`) only if its value is in `allowedIds`;
  *   on write, `setTab` always removes `legacyParamName` so stale query keys do not hijack this screen.
+ * @param {Record<string, string>} [aliases] — short URL keys mapped to allowed tab ids (e.g. `sales` → `sales-report`)
  * @returns {[string, (id: string) => void]}
  */
 export function useTabSearchParam(
@@ -37,13 +51,15 @@ export function useTabSearchParam(
   defaultId: string,
   paramName: any = 'tab',
   legacyParamName?: string | null,
+  aliases?: Record<string, string>,
 ) {
   const [searchParams, setSearchParams] = useSearchParams();
   const allowedKey = allowedIds.join('\0');
+  const aliasKey = aliases ? JSON.stringify(aliases) : '';
 
   const resolved = useMemo(
-    () => pickTabFromSearchParams(searchParams, allowedIds, defaultId, paramName, legacyParamName),
-    [searchParams, paramName, legacyParamName, allowedKey, defaultId, allowedIds],
+    () => pickTabFromSearchParams(searchParams, allowedIds, defaultId, paramName, legacyParamName, aliases),
+    [searchParams, paramName, legacyParamName, aliasKey, allowedKey, defaultId, allowedIds, aliases],
   );
 
   const setTab = useCallback(
@@ -68,13 +84,13 @@ export function useTabSearchParam(
 
   useEffect(() => {
     const prim = searchParams.get(paramName)?.trim();
-    const badPrimary = prim != null && prim !== '' && !allowedIds.includes(prim);
+    const badPrimary = prim != null && prim !== '' && !resolveTabId(prim, allowedIds, aliases);
     const leg = legacyParamName ? searchParams.get(legacyParamName)?.trim() : undefined;
     const badLegacy =
       legacyParamName != null &&
       leg != null &&
       leg !== '' &&
-      !allowedIds.includes(leg);
+      !resolveTabId(leg, allowedIds, aliases);
     if (!badPrimary && !badLegacy) return;
     setSearchParams(
       (prev: any) => {
@@ -85,7 +101,7 @@ export function useTabSearchParam(
       },
       { replace: true },
     );
-  }, [allowedIds, allowedKey, paramName, legacyParamName, searchParams, setSearchParams]);
+  }, [allowedIds, allowedKey, aliasKey, paramName, legacyParamName, searchParams, setSearchParams, aliases]);
 
   return [resolved, setTab] as [string, (id: string) => void];
 }

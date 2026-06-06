@@ -23,4 +23,10 @@ describe('pickTabFromSearchParams (OCR + legacy tab)', () => {
     const sp = new URLSearchParams('');
     expect(pickTabFromSearchParams(sp, OCR, 'upload', 'ocrTab', 'tab')).toBe('upload');
   });
+
+  it('resolves tab aliases to allowed ids', () => {
+    const sp = new URLSearchParams('tab=sales');
+    const ids = ['orders', 'sales-report'];
+    expect(pickTabFromSearchParams(sp, ids, 'orders', 'tab', null, { sales: 'sales-report' })).toBe('sales-report');
+  });
 });
