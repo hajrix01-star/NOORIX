@@ -1,15 +1,15 @@
 ﻿/**
  * OrdersScreen — يعرض واجهة الموظف أو المدير حسب الصلاحية
  *
- * STAFF_ORDERS_SUBMIT فقط (بدون VIEW_ORDERS) → StaffOrdersView (جوال مبسّط)
- * VIEW_ORDERS → واجهة المدير الكاملة + تبويب «طلبات الأقسام» إن كان STAFF_ORDERS_DIGEST
+ * STAFF_ORDERS_SUBMIT فقط (بدون صلاحية قراءة بيانات الطلبات) → StaffOrdersView (جوال مبسّط)
+ * ORDERS_MANAGER_DATA_ACCESS → واجهة المدير الكاملة + تبويب «طلبات الأقسام» إن كان STAFF_ORDERS_DIGEST
  */
 import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
-import { PERMISSIONS } from '../../constants/permissions';
+import { ORDERS_MANAGER_DATA_ACCESS, PERMISSIONS, hasAnyOfPermissions } from '../../constants/permissions';
 import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
 import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';
@@ -17,6 +17,8 @@ import { ItemsManageTab } from './components/ItemsManageTab';
 import { StaffDigestTab } from './components/StaffDigestTab';
 import { SalesReportTab } from './components/SalesReportTab';
 import { StaffOrdersView } from './StaffOrdersView';
+
+const ORDERS_TAB_ALIASES = { sales: 'sales-report' } as const;
 
 function parseYearMonth(dateStr: any) {
   if (!dateStr || typeof dateStr !== 'string') return null;
@@ -38,11 +40,8 @@ export default function OrdersScreen() {
 
   const canSubmitStaff = isAdmin || userPermissions.includes(PERMISSIONS.STAFF_ORDERS_SUBMIT);
   const canDigest = isAdmin || userPermissions.includes(PERMISSIONS.STAFF_ORDERS_DIGEST);
-  // VIEW_ORDERS = وصول للصفحة فقط (routing)
-  // canManageOrders = يملك صلاحية جلب بيانات الطلبات من الـ API (VIEW_SALES أو ORDERS_READ)
-  const canManageOrders = isAdmin
-    || userPermissions.includes(PERMISSIONS.VIEW_SALES)
-    || userPermissions.includes(PERMISSIONS.ORDERS_READ);
+  const canManageOrders = isAdmin || hasAnyOfPermissions(userRole, ORDERS_MANAGER_DATA_ACCESS, userPermissions);
+  const canViewSalesReport = canManageOrders;
 
   // الموظف البسيط — يرى واجهة مبسّطة فقط
   if (!canManageOrders && (canSubmitStaff || canDigest)) {
@@ -56,24 +55,47 @@ export default function OrdersScreen() {
       );
   }
 
+  if (!canManageOrders && !canSubmitStaff && !canDigest) {
+    return (
+      <ScreenShell>
+        <ScreenTitle>{t('ordersTitle')}</ScreenTitle>
+        <div className="noorix-surface-card nx-empty-state flex flex-col gap-2 text-center py-10">
+          <div className="text-[16px] font-bold text-noorix-text">{t('forbidden403Title')}</div>
+          <div className="text-[13px] text-noorix-muted">{t('forbidden403Desc')}</div>
+        </div>
+      </ScreenShell>
+    );
+  }
+
   return <ManagerOrdersScreen
     companyId={companyId}
     dateFilter={dateFilter}
     canDigest={canDigest}
-    canSubmitStaff={canSubmitStaff}
+    canViewSalesReport={canViewSalesReport}
   />;
 }
 
-function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff }: any) {
+function ManagerOrdersScreen({
+  companyId,
+  dateFilter,
+  canDigest,
+  canViewSalesReport,
+}: {
+  companyId: string;
+  dateFilter: ReturnType<typeof useDateFilter>;
+  canDigest: boolean;
+  canViewSalesReport: boolean;
+}) {
   const { t } = useTranslation();
 
   const TAB_IDS = useMemo(() => {
-    const ids = ['orders', 'items-report', 'items-manage', 'sales-report'];
+    const ids = ['orders', 'items-report', 'items-manage'];
+    if (canViewSalesReport) ids.push('sales-report');
     if (canDigest) ids.push('staff-digest');
     return ids;
-  }, [canDigest]);
+  }, [canDigest, canViewSalesReport]);
 
-  const [activeTab, setActiveTab] = useTabSearchParam(TAB_IDS, 'orders');
+  const [activeTab, setActiveTab] = useTabSearchParam(TAB_IDS, 'orders', 'tab', null, ORDERS_TAB_ALIASES);
 
   const { year, month, startDate, endDate } = useMemo(() => {
     const { mode, selYear, selMonth, selDay, rangeStart } = dateFilter;
@@ -96,8 +118,10 @@ function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff 
       { id: 'orders', labelKey: 'ordersTab', shortLabelKey: 'ordersTabShort' },
       { id: 'items-report', labelKey: 'ordersItemsReportTab', shortLabelKey: 'ordersItemsReportTabShort' },
       { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
-      { id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' },
     ];
+    if (canViewSalesReport) {
+      tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
+    }
     if (canDigest) tabs.push({ id: 'staff-digest', labelKey: 'staffDigestTab', shortLabelKey: 'staffDigestTabShort' });
     return tabs.map((tab: any) => {
       const full = t(tab.labelKey);
@@ -113,7 +137,7 @@ function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff 
         );
       return { id: tab.id, label };
     });
-  }, [t, canDigest]);
+  }, [t, canDigest, canViewSalesReport]);
 
   return (
     <ScreenShell className="min-w-0">
@@ -156,7 +180,7 @@ function ManagerOrdersScreen({ companyId, dateFilter, canDigest, canSubmitStaff 
             />
           )}
           {activeTab === 'items-manage' && <ItemsManageTab companyId={companyId} />}
-          {activeTab === 'sales-report' && <SalesReportTab companyId={companyId} />}
+          {activeTab === 'sales-report' && canViewSalesReport && <SalesReportTab companyId={companyId} />}
           {activeTab === 'staff-digest' && canDigest && <StaffDigestTab companyId={companyId} />}
         </ScreenTabs>
       )}

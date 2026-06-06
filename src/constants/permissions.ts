@@ -208,6 +208,14 @@ export const ORDERS_APP_ACCESS = [
   PERMISSIONS.STAFF_ORDERS_DIGEST,
 ];
 
+/** جلب بيانات الطلبات وتقرير مبيعات الموظفين (API + واجهة المدير) */
+export const ORDERS_MANAGER_DATA_ACCESS = [
+  PERMISSIONS.VIEW_SALES,
+  PERMISSIONS.ORDERS_READ,
+  PERMISSIONS.ORDERS_WRITE,
+  PERMISSIONS.STAFF_ORDERS_DIGEST,
+] as const;
+
 /** تبويبات التقارير — ترتيب redirect الافتراضي */
 export const REPORT_TAB_SEQUENCE: Array<{ path: string; required: readonly string[] }> = [
   { path: '/reports/general', required: REPORTS_GENERAL_ACCESS },
