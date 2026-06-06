@@ -42,11 +42,11 @@ export async function learnSupplierAliasIfNeeded(
   prisma: PrismaService,
   logger: Logger,
   suppliers: SupplierMatchRow[],
-  supplierMatch: { id: string; score: number } | null,
+  supplierMatch: { id: string; score: number; status?: string } | null,
   rawAlias: string | undefined,
   seenKeys: Set<string>,
 ): Promise<void> {
-  if (!supplierMatch || supplierMatch.score < 0.9) return;
+  if (!supplierMatch || supplierMatch.score < 0.95 || supplierMatch.status !== 'auto') return;
   const matched = suppliers.find((s) => s.id === supplierMatch.id);
   if (!matched) return;
 
@@ -75,11 +75,11 @@ export async function learnItemAliasIfNeeded(
   prisma: PrismaService,
   logger: Logger,
   items: ItemMatchRow[],
-  itemMatch: { id: string; score: number } | null,
+  itemMatch: { id: string; score: number; status?: string } | null,
   rawAlias: string | undefined,
   seenKeys: Set<string>,
 ): Promise<void> {
-  if (!itemMatch || itemMatch.score < 0.9) return;
+  if (!itemMatch || itemMatch.score < 0.95 || itemMatch.status !== 'auto') return;
   const matched = items.find((i) => i.id === itemMatch.id);
   if (!matched) return;
 

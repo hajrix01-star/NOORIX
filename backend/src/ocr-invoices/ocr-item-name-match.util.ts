@@ -217,6 +217,9 @@ export function findBestItemMatch(
   const gateQueryUnit = options.queryUnit ?? extractedQueryUnit;
   const { ar: qAr, en: qEn, combined: qCombined } = normalizeItemForSearch(queryCleanName);
   const searchTerms = Array.from(new Set([queryCleanName, qAr, qEn, qCombined].filter(Boolean)));
+  const querySemanticSource = qCombined || qAr || queryCleanName;
+  const queryHasArabic = ARABIC_RANGE.test(querySemanticSource);
+  const queryHasLatin = LATIN_RANGE.test(querySemanticSource);
 
   let best: {
     item: typeof candidates[0];
@@ -237,11 +240,16 @@ export function findBestItemMatch(
       { candidateHasSizes: candidate.hasSizes },
     );
 
-    const { ar: cAr, en: cEn, combined: cCombined } = normalizeItemForSearch(
-      [candidate.nameAr, candidate.nameEn || ''].filter(Boolean).join(' '),
-    );
+    const canonicalCandidateName = [candidate.nameAr, candidate.nameEn || ''].filter(Boolean).join(' ');
+    const { ar: cAr, en: cEn, combined: cCombined } = normalizeItemForSearch(canonicalCandidateName);
+    const canonicalSemanticTarget = queryHasArabic
+      ? candidate.nameAr || canonicalCandidateName
+      : queryHasLatin
+        ? candidate.nameEn || candidate.nameAr || canonicalCandidateName
+        : cCombined || canonicalCandidateName;
+    const canonicalSemantic = computeSemanticSignals(querySemanticSource, canonicalSemanticTarget);
     const candidateNames = [
-      candidate.nameAr,
+      canonicalCandidateName,
       cAr, cEn, cCombined,
       candidate.nameEn,
       ...candidate.aliases.map((a) => a.alias),
@@ -282,14 +290,27 @@ export function findBestItemMatch(
       }
     }
 
-    const sizeAllowsAuto = sizeGate.decision === 'allow';
-    const autoEligible = maxScoreSemantic.autoEligible && sizeAllowsAuto;
+    const candidateAutoEligible = maxScoreSemantic.autoEligible && canonicalSemantic.autoEligible;
+    if (!canonicalSemantic.autoEligible) {
+      maxScore = Math.min(maxScore, 0.93);
+      maxScoreSemantic = {
+        ...maxScoreSemantic,
+        queryCoverage: canonicalSemantic.queryCoverage,
+        candidateCoverage: canonicalSemantic.candidateCoverage,
+        overlapCount: canonicalSemantic.overlapCount,
+        missingCriticalTokens: canonicalSemantic.missingCriticalTokens,
+        autoEligible: false,
+      };
+    }
 
-    if (maxScore >= 0.999) {
+    const sizeAllowsAuto = sizeGate.decision === 'allow';
+    const autoEligible = candidateAutoEligible && sizeAllowsAuto;
+
+    if (maxScore >= 0.999 && autoEligible) {
       return {
         item: candidate,
         score: 1,
-        autoEligible,
+        autoEligible: true,
         semantic: maxScoreSemantic,
         sizeGate,
       };

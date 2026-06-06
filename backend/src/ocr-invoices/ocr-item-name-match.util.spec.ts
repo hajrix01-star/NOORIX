@@ -48,6 +48,23 @@ describe('ocr-item-name-match packaging normalization', () => {
     expect(result?.score || 0).toBeLessThan(0.95);
   });
 
+  it('prevents alias poisoning from forcing auto match', () => {
+    const candidates = [
+      {
+        id: 'item-2-poisoned',
+        nameAr: 'نعناع الفاخر',
+        nameEn: 'نعناع الفاخر 500 جرام',
+        hasSizes: true,
+        aliases: [{ alias: 'عنب نعناع الفاخر' }],
+      },
+    ];
+    const result = findBestItemMatch('عنب نعناع الفاخر 500 جرام', candidates);
+    expect(result).not.toBeNull();
+    expect(result?.autoEligible).toBe(false);
+    expect((result?.semantic.missingCriticalTokens || []).includes('عنب')).toBe(true);
+    expect(result?.score || 0).toBeLessThan(0.95);
+  });
+
   it('treats جبنة and جبن as semantic-equivalent token form', () => {
     const candidates = [
       {
