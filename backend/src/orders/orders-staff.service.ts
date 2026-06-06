@@ -9,6 +9,7 @@ import {
   resolveStaffItemVariant,
   staffLineAggregateKey,
 } from './orders-staff-pricing.util';
+import { buildSalesReportSince } from './orders-staff-sales-report.util';
 
 export interface StaffOrderItemInput {
   productId: string;
@@ -634,8 +635,7 @@ export class OrdersStaffService {
 
   /** تقرير المبيعات — orderType = 'sale' */
   async getSalesReport(companyId: string, days = 30) {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
+    const since = buildSalesReportSince(days);
 
     const orders = await this.prisma.staffOrder.findMany({
       where: {

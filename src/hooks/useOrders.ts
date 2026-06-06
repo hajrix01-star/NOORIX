@@ -250,7 +250,11 @@ export function useCreateStaffOrderMutation(companyId: any) {
 export function useUpdateStaffOrderMutation(companyId: any) {
   return useApiMutation({
     mutationFn: ({ id, body }: any) => updateStaffOrder(id, companyId, body),
-    invalidateQueries: [orderKeys.staffMy(companyId), orderKeys.staffDigest(companyId)],
+    invalidateQueries: [
+      orderKeys.staffMy(companyId),
+      orderKeys.staffDigest(companyId),
+      ['salesReport', companyId],
+    ],
     showErrorToast: false,
   });
 }
@@ -258,7 +262,11 @@ export function useUpdateStaffOrderMutation(companyId: any) {
 export function useDeleteStaffOrderMutation(companyId: any) {
   return useApiMutation({
     mutationFn: (id: string) => deleteStaffOrder(id, companyId),
-    invalidateQueries: [orderKeys.staffMy(companyId), orderKeys.staffDigest(companyId)],
+    invalidateQueries: [
+      orderKeys.staffMy(companyId),
+      orderKeys.staffDigest(companyId),
+      ['salesReport', companyId],
+    ],
     showErrorToast: false,
   });
 }
@@ -289,6 +297,7 @@ export function useSalesReport(companyId: any, days = 30) {
     queryKey: ['salesReport', companyId, days],
     queryFn: async () => {
       const res = await getSalesReport(companyId, days);
+      throwIfApiFailed(res, 'فشل تحميل تقرير المبيعات');
       return res.data ?? {};
     },
     enabled: !!companyId,

@@ -55,7 +55,7 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
   const [days, setDays] = useState(30);
   const [activeView, setActiveView] = useState<'product' | 'section' | 'user' | 'day'>('product');
 
-  const { data: report, isLoading } = useSalesReport(companyId, days);
+  const { data: report, isLoading, isError, error } = useSalesReport(companyId, days);
 
   const summary = (report as any)?.summary ?? {};
   const byProduct: any[] = (report as any)?.byProduct ?? [];
@@ -133,6 +133,10 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
 
       {isLoading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
+      ) : isError ? (
+        <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 p-6 text-center text-noorix-red text-[14px]">
+          {(error as Error)?.message || t('salesReportEmpty')}
+        </div>
       ) : (
         <>
           {/* ── بطاقات KPI ── */}
