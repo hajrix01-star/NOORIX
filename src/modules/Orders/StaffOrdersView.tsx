@@ -4,11 +4,14 @@
  * تبويبان: طلبات | مبيعات
  */
 import React, { useState, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import Decimal from 'decimal.js';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
 import { formatSaudiDate, getSaudiToday, toDateInputYmd } from '../../utils/saudiDate';
+import { unwrapApiData } from '../../services/core/apiHttp';
+import { orderKeys } from '../../services/queryKeys';
 import {
   type StaffBasketLine,
   basketTotal,
@@ -232,6 +235,7 @@ function StaffOrderPanel({
 }) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: myOrders = [], isLoading } = useMyStaffOrders(companyId);
   const { data: allProducts = [] } = useOrderProducts(companyId, productType);
@@ -460,26 +464,35 @@ function StaffOrderPanel({
       if (editingId) {
         payload.sectionName = sectionFilter || basketLines[0]?.sectionName || 'عام';
       }
+
+      if (isSale) {
+        const res = editingId
+          ? await updateOrder.mutateAsync({ id: editingId, body: payload })
+          : await createOrder.mutateAsync(payload);
+        const saved = unwrapApiData(res as any, t('saveFailed')) as { id?: string; whatsAppText?: string };
+        if (!saved?.id) throw new Error(t('saveFailed'));
+
+        showToast(t('staffSaleSaved'), 'success');
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: orderKeys.staffMy(companyId) }),
+          queryClient.invalidateQueries({ queryKey: ['salesReport', companyId] }),
+          queryClient.invalidateQueries({ queryKey: orderKeys.staffDigest(companyId) }),
+        ]);
+        resetForm();
+
+        const waText = saved.whatsAppText;
+        if (waText?.trim()) {
+          window.setTimeout(() => openWhatsApp(waText), 400);
+        }
+        return;
+      }
+
       if (editingId) {
-        const res: any = await updateOrder.mutateAsync({ id: editingId, body: payload });
-        const data = res?.data ?? res;
-        if (isSale) {
-          showToast(t('staffSaleUpdated'), 'success');
-          const waText = data?.whatsAppText;
-          if (waText) openWhatsApp(waText);
-        } else {
-          showToast(t('staffOrderUpdated'), 'success');
-        }
+        await updateOrder.mutateAsync({ id: editingId, body: payload });
+        showToast(t('staffOrderUpdated'), 'success');
       } else {
-        const res: any = await createOrder.mutateAsync(payload);
-        const data = res?.data ?? res;
-        if (isSale) {
-          showToast(t('staffSaleCreated'), 'success');
-          const waText = data?.whatsAppText;
-          if (waText) openWhatsApp(waText);
-        } else {
-          showToast(t('staffOrderCreated'), 'success');
-        }
+        await createOrder.mutateAsync(payload);
+        showToast(t('staffOrderCreated'), 'success');
       }
       resetForm();
     } catch (e: any) {
@@ -487,7 +500,7 @@ function StaffOrderPanel({
     } finally {
       setSubmitting(false);
     }
-  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder]);
+  }, [sectionFilter, saleDate, notes, basketLines, productsById, editingId, companyId, productType, isSale, lang, t, showToast, createOrder, updateOrder, queryClient]);
 
   const handleResendSale = useCallback(async (order: any) => {
     try {
@@ -659,22 +672,30 @@ function StaffOrderPanel({
             )}
             <Input label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={t('optional')} />
           </div>
-          <div className="px-4 pb-4 grid grid-cols-2 gap-2">
-            <Button variant="ghost" size="md" onClick={resetForm} disabled={submitting}>{t('cancel')}</Button>
+          <div className={cn('px-4 pb-4 gap-2', isSale ? 'flex flex-col' : 'grid grid-cols-2')}>
+            {!isSale && (
+              <Button variant="ghost" size="md" onClick={resetForm} disabled={submitting}>{t('cancel')}</Button>
+            )}
             <Button
               variant={isSale ? 'success' : 'primary'}
               size="md"
+              className={isSale ? 'min-h-[44px] w-full' : undefined}
               onClick={handleSubmit}
               disabled={submitting}
             >
               {submitting
-                ? t('saving')
-                : editingId
-                  ? (isSale ? t('staffSaleUpdate') : t('staffOrderUpdate'))
-                  : isSale
-                    ? t('staffSaleSubmit')
+                ? (isSale ? t('staffSaleSaving') : t('saving'))
+                : isSale
+                  ? t('staffSaleSaveAndSend')
+                  : editingId
+                    ? t('staffOrderUpdate')
                     : t('staffOrderSubmit')}
             </Button>
+            {isSale && (
+              <Button variant="ghost" size="sm" className="w-full" onClick={resetForm} disabled={submitting}>
+                {t('cancel')}
+              </Button>
+            )}
           </div>
         </div>
       )}

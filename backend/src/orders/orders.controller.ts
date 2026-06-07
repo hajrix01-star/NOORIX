@@ -68,7 +68,7 @@ export class OrdersController {
     @CurrentUser() user: any,
   ) {
     if (!companyId) throw new BadRequestException('companyId مطلوب');
-    return this.staffService.createStaffOrder(user.sub, { ...body, companyId });
+    return this.staffService.createStaffOrder(user.sub ?? user.userId, { ...body, companyId });
   }
 
   @Post('staff/send-digest')
