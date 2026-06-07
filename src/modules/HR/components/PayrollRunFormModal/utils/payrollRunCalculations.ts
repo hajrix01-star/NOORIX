@@ -6,6 +6,7 @@ import { formatSaudiDate } from '../../../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../../../utils/moneyInput';
 import { totalSalary } from '../../../utils/employeeSalaryMath';
+import { getAdvanceBalanceParts } from '../../../utils/advanceBalance';
 import {
   computeApprovedLeaveDaysByEmployee,
   computeSettledDaysByEmployee,
@@ -130,9 +131,7 @@ export function buildAdvancesByEmployee(
   const map = new Map<string, PayrollAdvanceDueRow[]>();
   for (const inv of advances || []) {
     if (!inv?.employeeId || inv?.status === 'cancelled') continue;
-    const total = Number(inv.totalAmount ?? 0);
-    const settled = Number(inv.settledAmount ?? 0);
-    const remaining = Math.max(0, total - settled);
+    const { remainingAmount: remaining } = getAdvanceBalanceParts(inv);
     if (remaining <= 0) continue;
     const deferMonth = parseDeferredMonth(inv.notes);
     const isDeferred = !!deferMonth && deferMonth > monthStr;

@@ -162,28 +162,37 @@ export function usePayrollRunRows(state: StateShape) {
   const loadEditingItems = useCallback(() => {
     if (!editingRun) return;
     const loadedMonth = editingRun.payrollMonth ? toYmd(editingRun.payrollMonth) : defaultMonth;
+    const loadedAdvancesByEmployee = buildAdvancesByEmployee(advances as never[], loadedMonth);
     setPayrollMonth(loadedMonth);
     setNotes(editingRun.notes || '');
     const loadedItems = (editingRun.items || []).map((row) => {
       const employeeId = row.employeeId || row.employee?.id || '';
       const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
-      const advanceDates = extractAdvanceDates(row.notes);
-      const advancesDeduct = Number(row.advancesDeduct ?? 0);
+      const savedAdvanceDates = extractAdvanceDates(row.notes);
+      const savedAdvancesDeduct = Number(row.advancesDeduct ?? 0);
+      const deferAdvances = savedAdvancesDeduct <= 0 && !!parseDeferredMonth(row.notes);
+      const currentAdvanceMeta = employeeId
+        ? getAdvanceMetaForEmployee(loadedAdvancesByEmployee, employeeId)
+        : { dueAmount: 0, datesLabel: '' };
+      const advancesDeduct = deferAdvances ? 0 : Number(currentAdvanceMeta.dueAmount || 0);
+      const grossSalary = Number(row.grossSalary ?? 0);
+      const allowancesAdd = Number(row.allowancesAdd ?? 0);
+      const deductions = Number(row.deductions ?? 0);
       return {
         employeeId,
         employeeName,
-        grossSalary: Number(row.grossSalary ?? 0),
-        allowancesAdd: Number(row.allowancesAdd ?? 0),
-        deductions: Number(row.deductions ?? 0),
+        grossSalary,
+        allowancesAdd,
+        deductions,
         advancesDeduct,
-        netSalary: Number(row.netSalary ?? 0),
-        deferAdvances: advancesDeduct <= 0 && !!parseDeferredMonth(row.notes),
-        advanceDates,
+        netSalary: Math.max(0, grossSalary + allowancesAdd - deductions - advancesDeduct),
+        deferAdvances,
+        advanceDates: currentAdvanceMeta.datesLabel || savedAdvanceDates,
         notes: row.notes || '',
       };
     });
     setItems(loadedItems);
-  }, [defaultMonth, editingRun, lang, setItems, setNotes, setPayrollMonth]);
+  }, [advances, defaultMonth, editingRun, lang, setItems, setNotes, setPayrollMonth]);
 
   useEffect(() => {
     if (isEditMode) return;
