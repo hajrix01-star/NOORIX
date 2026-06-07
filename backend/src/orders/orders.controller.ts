@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthGuard } from '@nestjs/passport';
@@ -62,8 +62,13 @@ export class OrdersController {
 
   @Post('staff')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
-  createStaffOrder(@Body() body: any, @CurrentUser() user: any) {
-    return this.staffService.createStaffOrder(user.sub, body);
+  createStaffOrder(
+    @Body() body: any,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (!companyId) throw new BadRequestException('companyId مطلوب');
+    return this.staffService.createStaffOrder(user.sub, { ...body, companyId });
   }
 
   @Post('staff/send-digest')
