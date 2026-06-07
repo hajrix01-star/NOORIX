@@ -644,21 +644,22 @@ export class OrdersStaffService {
   async getSalesReport(companyId: string, days = 30) {
     const since = buildSalesReportSince(days);
 
+    // نفس نمط getMyStaffOrders المجرَّب — بدون OR nullable ولا user join في نفس الـ query
     const orders = await this.prisma.staffOrder.findMany({
-      where: {
-        companyId,
-        orderType: 'sale',
-        OR: [
-          { createdAt: { gte: since } },
-          { saleDate: { gte: since } },
-        ],
-      },
+      where: { companyId, orderType: 'sale', createdAt: { gte: since } },
       orderBy: { createdAt: 'desc' },
-      include: {
-        items: { include: { product: true } },
-        user: { select: { id: true, nameAr: true, nameEn: true } },
-      },
+      include: { items: { include: { product: true } } },
     });
+
+    // جلب بيانات المستخدمين بـ query منفصل (تجنب join قد يسبب مشكلة RLS)
+    const userIds = [...new Set(orders.map((o) => o.userId))];
+    const users = userIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, nameAr: true, nameEn: true },
+        })
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
 
     let totalOrders = 0;
     let totalQty = 0;
@@ -667,7 +668,7 @@ export class OrdersStaffService {
     const byUser: Record<string, { userId: string; nameAr: string; nameEn: string | null; ordersCount: number; qty: number }> = {};
     const byDay: Record<string, { date: string; ordersCount: number; qty: number }> = {};
 
-    for (const o of orders as any[]) {
+    for (const o of orders) {
       totalOrders++;
       const day = staffOrderDayKey(o);
 
@@ -677,7 +678,8 @@ export class OrdersStaffService {
 
       // بالمستخدم
       const uid = o.userId;
-      if (!byUser[uid]) byUser[uid] = { userId: uid, nameAr: o.user?.nameAr || '—', nameEn: o.user?.nameEn || null, ordersCount: 0, qty: 0 };
+      const uData = userMap.get(uid);
+      if (!byUser[uid]) byUser[uid] = { userId: uid, nameAr: uData?.nameAr || '—', nameEn: uData?.nameEn || null, ordersCount: 0, qty: 0 };
       byUser[uid].ordersCount++;
 
       // باليوم
