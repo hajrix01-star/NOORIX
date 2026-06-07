@@ -346,6 +346,8 @@ export default {
   staffOrderUpdate:         { ar: 'تحديث الطلب', en: 'Update Order' },
   staffOrdersTabOrders:     { ar: 'الطلبات', en: 'Orders' },
   staffOrdersTabSales:      { ar: 'المبيعات', en: 'Sales' },
+  staffSalesRecordTab:      { ar: 'تسجيل مبيعات', en: 'Record sales' },
+  staffSalesRecordTabShort: { ar: 'تسجيل', en: 'Record' },
   productType:              { ar: 'النوع', en: 'Type' },
   productTypeOrder:         { ar: 'طلبات', en: 'Orders' },
   productTypeSale:          { ar: 'مبيعات', en: 'Sales' },

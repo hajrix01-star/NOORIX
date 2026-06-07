@@ -19,9 +19,17 @@ describe('staffSaleMatchesReportWindow', () => {
     expect(ok).toBe(true);
   });
 
-  it('يستبعد saleDate قبل النافذة حتى لو createdAt أحدث', () => {
+  it('يشمل saleDate قبل النافذة إذا createdAt داخل النافذة', () => {
     const ok = staffSaleMatchesReportWindow(
       { saleDate: new Date('2026-04-01T00:00:00.000Z'), createdAt: new Date('2026-06-01T10:00:00.000Z') },
+      since,
+    );
+    expect(ok).toBe(true);
+  });
+
+  it('يستبعد إذا createdAt و saleDate كلاهما قبل النافذة', () => {
+    const ok = staffSaleMatchesReportWindow(
+      { saleDate: new Date('2026-04-01T00:00:00.000Z'), createdAt: new Date('2026-04-02T10:00:00.000Z') },
       since,
     );
     expect(ok).toBe(false);

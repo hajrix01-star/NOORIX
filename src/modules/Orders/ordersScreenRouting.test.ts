@@ -28,6 +28,27 @@ describe('resolveOrdersScreenMode', () => {
     expect(resolveOrdersScreenMode('manager', perms).mode).toBe('manager-full');
   });
 
+  it('كاشير VIEW_SALES + إرسال → manager-full مع تبويب مبيعات افتراضي', () => {
+    const perms = [
+      PERMISSIONS.VIEW_ORDERS,
+      PERMISSIONS.VIEW_SALES,
+      PERMISSIONS.STAFF_ORDERS_SUBMIT,
+      PERMISSIONS.STAFF_ORDERS_DIGEST,
+    ];
+    const r = resolveOrdersScreenMode('cashier', perms);
+    expect(r.mode).toBe('manager-full');
+    expect(r.canSubmitStaff).toBe(true);
+    expect(r.prefersStaffSalesTab).toBe(true);
+  });
+
+  it('محاسب ORDERS_READ + إرسال → manager-full بدون تبويب مبيعات افتراضي', () => {
+    const perms = [PERMISSIONS.VIEW_ORDERS, PERMISSIONS.ORDERS_READ, PERMISSIONS.STAFF_ORDERS_SUBMIT];
+    const r = resolveOrdersScreenMode('accountant', perms);
+    expect(r.mode).toBe('manager-full');
+    expect(r.canSubmitStaff).toBe(true);
+    expect(r.prefersStaffSalesTab).toBe(false);
+  });
+
   it('VIEW_ORDERS فقط → forbidden', () => {
     const perms = [PERMISSIONS.VIEW_ORDERS];
     expect(resolveOrdersScreenMode('staff', perms).mode).toBe('forbidden');
