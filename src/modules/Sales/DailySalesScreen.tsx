@@ -19,6 +19,8 @@ import { useDailySalesScreen } from './hooks/useDailySalesScreen';
 import type { DailySalesTableRow } from './hooks/useDailySalesScreen';
 import { getSalesShiftLabel } from './constants/salesShift';
 
+type SalesEntrySuccessPayload = { summaryNumber?: string | number } | Array<{ summaryNumber?: string | number }>;
+
 export default function DailySalesScreen() {
   const {
     PAGE_SIZE,
@@ -219,10 +221,15 @@ export default function DailySalesScreen() {
           vatRate={vatRate}
           createSummary={createSummary}
           createSummaryBatch={createSummaryBatch}
-          onSuccess={(summary: { summaryNumber?: string | number }) => showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success')}
+          onSuccess={(payload: SalesEntrySuccessPayload) => {
+            const summary = Array.isArray(payload) ? payload[0] : payload;
+            showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success');
+          }}
           onError={(msg: string) => showToast(msg || t('saveFailed'), 'error')}
           onClose={() => setShowEntryModal(false)}
-          onWhatsApp={openWhatsApp}
+          onWhatsApp={(summary) => {
+            if (summary.id) openWhatsApp(summary as Parameters<typeof openWhatsApp>[0]);
+          }}
           autoCloseOnSuccess={false}
         />
       )}

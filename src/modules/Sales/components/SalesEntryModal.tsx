@@ -8,6 +8,7 @@ import { useToast } from '../../../context/ToastContext';
 import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { sumObjectValues } from '../../../utils/math-engine';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import type { DailySalesChannelEntry } from './DailySalesChannelsChips';
 import { SalesShiftPicker } from './SalesShiftPicker';
 import { SalesShiftEntryCard, isShiftEntryFormValid, buildShiftEntryPayload } from './SalesShiftEntryCard';
 import { SalesDualShiftEntryReport, buildDualShiftPreviewRows } from './SalesDualShiftEntryReport';
@@ -37,7 +38,7 @@ type SavedSummary = {
   customerCount?: number;
   shift?: string;
   transactionDate?: string;
-  channels?: unknown[];
+  channels?: DailySalesChannelEntry[] | null;
 };
 
 type Props = {
@@ -309,7 +310,7 @@ export function SalesEntryModal({
               <div className="flex justify-between text-[13px]">
                 <span className="text-noorix-muted">{t('total')}</span>
                 <span dir="ltr" className="font-bold text-noorix-green nx-font-numbers">
-                  <FmtNum n={s.totalAmount} /> <span className="nx-sar">SR</span>
+                  <FmtNum n={Number(s.totalAmount ?? 0)} /> <span className="nx-sar">SR</span>
                 </span>
               </div>
             </div>

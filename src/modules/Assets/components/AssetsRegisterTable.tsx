@@ -190,7 +190,7 @@ export function AssetsRegisterTable({
         <div className="nx-cr__line2">
           <div className="nx-cr__line2-start">
             <span className="nx-cr__meta ltr">{formatAssetDate(row.purchaseDate)}</span>
-            {row.warrantyEndDate && <span className="nx-cr__meta ltr">→ {formatAssetDate(row.warrantyEndDate)}</span>}
+            {row.warrantyEndDate ? <span className="nx-cr__meta ltr">→ {String(formatAssetDate(row.warrantyEndDate))}</span> : null}
           </div>
           <div className="nx-cr__line2-end">
             {row.acquisitionCost != null && (

@@ -697,8 +697,9 @@ export function useInvoiceUploadTab({
       });
       const res = await saveOcrInvoice(payload);
       if (res.success) {
-        const lp = res.data?.linkedPurchaseInvoice;
-        const hasLedgerLink = !!(lp?.id || res.data?.linkedPurchaseInvoiceId);
+        const data = res.data as { linkedPurchaseInvoice?: { id?: string } | null; linkedPurchaseInvoiceId?: string | null } | undefined;
+        const lp = data?.linkedPurchaseInvoice;
+        const hasLedgerLink = !!(lp?.id || data?.linkedPurchaseInvoiceId);
         setSuccess(true);
         onSaved?.({ invalidateFinancial: hasLedgerLink });
         setPostSaveLinkedPurchase(lp?.id ? lp : null);

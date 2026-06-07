@@ -125,7 +125,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   }, [year, month, lastDay, dailySales, targets, specialDaysList]);
 
   const maxAmount = useMemo(() => {
-    const dowNums = Object.values(targets.byDow).map((v) => (v != null && v !== '' ? Number(v) : 0));
+    const dowNums = Object.values(targets.byDow).map((v) => (v != null ? Number(v) : 0));
     const maxFromTargets = Math.max(0, targets.overall != null ? Number(targets.overall) : 0, ...dowNums);
     return Math.max(1, ...daysInMonth.map((d: any) => d.amount), maxFromTargets);
   }, [daysInMonth, targets]);
