@@ -310,6 +310,7 @@ export function useDigestHistory(companyId: any, days = 30) {
     queryKey: ['digestHistory', companyId, days],
     queryFn: async () => {
       const res = await getDigestHistory(companyId, days);
+      throwIfApiFailed(res, 'فشل تحميل تاريخ الإرسالات');
       return res.data ?? [];
     },
     enabled: !!companyId,
