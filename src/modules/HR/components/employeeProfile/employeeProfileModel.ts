@@ -1,5 +1,6 @@
 import { hrFmt } from '../../utils/hrFmt';
 import { toYmd } from '../../../../utils/saudiDate';
+import { getAdvanceBalanceParts } from '../../utils/advanceBalance';
 
 export const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -73,6 +74,7 @@ export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: a
       typeLabel = t('invoiceKindHrExpense');
     }
     let notes = inv.notes || '';
+    const advanceBalance = inv.kind === 'advance' ? getAdvanceBalanceParts(inv) : null;
     if (inv.kind === 'advance' && inv.settledAt) {
       notes = (notes ? notes + ' — ' : '') + (t('advanceSettled') || 'تم السداد');
     }
@@ -81,11 +83,11 @@ export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: a
       date: dt,
       type: typeKey,
       typeLabel,
-      amount: Number(inv.totalAmount ?? inv.netAmount ?? 0),
+      amount: advanceBalance ? advanceBalance.remainingAmount : Number(inv.totalAmount ?? inv.netAmount ?? 0),
       notes,
       source: 'invoice',
       kind: inv.kind,
-      status: inv.status,
+      status: advanceBalance?.settlementStatus ?? inv.status,
       settledAt: inv.settledAt,
       residencyId: inv.kind === 'hr_expense' ? residencyByInvoiceId.get(inv.id) : undefined,
     });

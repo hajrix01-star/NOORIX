@@ -39,7 +39,12 @@ import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './c
 import { LeaveFormModal } from './components/LeaveFormModal';
 import { ResidencyFormModal } from './components/ResidencyFormModal';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
-import { buildLeaveRequestStatusMap, buildResidencyRecordStatusMap, buildPayrollRunStatusMap } from '../../constants/badgeMaps';
+import {
+  buildAdvanceSettlementStatusMap,
+  buildLeaveRequestStatusMap,
+  buildResidencyRecordStatusMap,
+  buildPayrollRunStatusMap,
+} from '../../constants/badgeMaps';
 import { EmployeeProfileLoading, EmployeeProfileNotFound } from './components/employeeProfile/EmployeeProfileStates';
 import { EmployeeProfileHeaderBar } from './components/employeeProfile/EmployeeProfileHeaderBar';
 import {
@@ -59,6 +64,7 @@ import {
   buildFinancialRecords,
   buildSalaryRows,
 } from './components/employeeProfile/employeeProfileModel';
+import { withAdvanceBalance } from './utils/advanceBalance';
 
 export default function EmployeeProfileScreen() {
   const { id } = useParams();
@@ -206,7 +212,11 @@ export default function EmployeeProfileScreen() {
   });
 
   const careerTableRows = useMemo(() => buildCareerTableRows(movements, t), [movements, t]);
-  const advances = invoicesData?.items ?? [];
+  const advances = useMemo(
+    () => (invoicesData?.items ?? []).map((row: any) => withAdvanceBalance(row)),
+    [invoicesData],
+  );
+  const advanceStatusMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
   const customAllowanceTotal = useMemo(
     () => customAllowances.reduce((sum: any, row: any) => sum + (Number(row.amount) || 0), 0),
     [customAllowances],
@@ -339,11 +349,6 @@ export default function EmployeeProfileScreen() {
     terminated: { color: 'red', label: t('statusTerminated') },
     archived: { color: 'gray', label: t('statusArchived') },
     on_leave: { color: 'amber', label: t('statusOnLeave') },
-  };
-  const advanceStatusMap = {
-    settled: { color: 'green', label: t('advanceSettled') },
-    cancelled: { color: 'gray', label: t('cancelled') },
-    active: { color: 'amber', label: t('advanceOutstanding') },
   };
   const canShowCareerActions = canRecordCareer && ['active', 'on_leave'].includes(employee.status);
 

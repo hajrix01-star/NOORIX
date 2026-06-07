@@ -25,6 +25,7 @@ import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
 import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 import { countTruthyFilters } from '../utils/hrActiveFilterCount';
+import { withAdvanceBalance } from '../utils/advanceBalance';
 
 const PAGE_SIZE = 50;
 
@@ -51,20 +52,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
       const res = await getHrAdvances(companyId);
       throwIfApiFailed(res, 'فشل تحميل السلف');
       const items = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
-      return items.map((i: any) => ({
-        ...i,
-        settledAmountNum: Number(i.settledAmount ?? 0),
-        totalAmountNum: Number(i.totalAmount ?? 0),
-        remainingAmount: Math.max(0, Number(i.totalAmount ?? 0) - Number(i.settledAmount ?? 0)),
-        settlementStatus:
-          i.status === 'cancelled'
-            ? 'cancelled'
-            : Number(i.settledAmount ?? 0) >= Number(i.totalAmount ?? 0)
-              ? 'settled'
-              : Number(i.settledAmount ?? 0) > 0
-                ? 'partial'
-                : 'outstanding',
-      }));
+      return items.map((i: any) => withAdvanceBalance(i));
     },
     enabled: !!companyId,
   });
@@ -106,7 +94,10 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
       dateKeys: ['transactionDate'],
     });
 
-  const totalAmount = sumAmounts(allFilteredData.filter((r: any) => r.status !== 'cancelled'), 'totalAmount');
+  const activeFilteredData = allFilteredData.filter((r: any) => r.status !== 'cancelled');
+  const totalAmount = sumAmounts(activeFilteredData, 'totalAmount');
+  const settledTotal = sumAmounts(activeFilteredData, 'settledAmountNum');
+  const remainingTotal = sumAmounts(activeFilteredData, 'remainingAmount');
   const outstandingOnlyCount = allFilteredData.filter((r: any) => r.status !== 'cancelled' && r.settlementStatus === 'outstanding').length;
   const partialCount = allFilteredData.filter((r: any) => r.status !== 'cancelled' && r.settlementStatus === 'partial').length;
 
@@ -200,19 +191,39 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
       ) },
   ], [t, settlementMap, queryClient, showToast]);
 
-  const footerCells = (
-    <>
-      <td colSpan={2} className="text-[12px] text-noorix-muted font-semibold py-1.5 px-3">
+  const footerRow = [
+    {
+      keys: ['employeeName'],
+      className: 'text-[12px] text-noorix-muted font-semibold py-1.5 px-3',
+      content: (
+        <>
         {t('advancesList')} ({allFilteredData.length})
         {outstandingOnlyCount > 0 ? ` — ${t('advanceOutstanding')}: ${outstandingOnlyCount}` : ''}
         {partialCount > 0 ? ` — ${t('advanceStatusPartial')}: ${partialCount}` : ''}
-      </td>
-      <td className="text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers">
-        {hrFmt(totalAmount.toNumber())}
-      </td>
-      <td colSpan={1} />
-    </>
-  );
+        </>
+      ),
+    },
+    {
+      keys: ['totalAmount'],
+      className: 'text-[13px] text-end py-1.5 px-3 text-noorix-blue font-black nx-font-numbers',
+      content: hrFmt(totalAmount.toNumber()),
+    },
+    {
+      keys: ['transactionDate'],
+      className: 'text-[12px] text-noorix-muted py-1.5 px-3',
+      content: null,
+    },
+    {
+      keys: ['settledAmount'],
+      className: 'text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers',
+      content: hrFmt(settledTotal.toNumber()),
+    },
+    {
+      keys: ['remainingAmount'],
+      className: 'text-[13px] text-end py-1.5 px-3 text-noorix-amber font-black nx-font-numbers',
+      content: hrFmt(remainingTotal.toNumber()),
+    },
+  ];
 
   const exportData = allFilteredData.map((r: any) => ({
     employeeName: r.employeeName || '—',
@@ -393,7 +404,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={toggleSort}
-          footerCells={footerCells}
+          footerRow={footerRow}
           emptyMessage={t('noDataInPeriod')}
           renderCompactRow={renderCompactRow}
           renderMobileCard={renderMobileCard}
