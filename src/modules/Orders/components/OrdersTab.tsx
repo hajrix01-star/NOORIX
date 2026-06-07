@@ -366,7 +366,7 @@ export function OrdersTab({
     (o: any) => {
       const isExt = o.orderType === 'external';
       const total = Number(o.totalAmount ?? 0);
-      const cumRem = cumulativeRemainingByOrderId?.[o.id];
+      const cumRem = cumulativeRemainingByOrderId?.get(o.id);
       return (
         <div onClick={() => handleView(o)} style={{ cursor: 'pointer' }}>
           <div className="nx-cr__line1">

@@ -252,8 +252,8 @@ export default function SuppliersCatalogTab({ suppliers = [], loading, onRefresh
         accountingSupplierId: linkAccId || null,
       });
       assertApiOk(res, t('saveFailed'));
-      const next = res.data;
-      if (next && typeof next === 'object' && next.id) {
+      const next = res.data as { id?: string; accountingSupplier?: { id?: string | null } } | null | undefined;
+      if (next?.id) {
         setViewing(next);
         setLinkAccId(next.accountingSupplier?.id || '');
       }

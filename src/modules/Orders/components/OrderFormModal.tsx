@@ -163,11 +163,12 @@ export function OrderFormModal({
       });
     } else {
       // يضيف مباشرة بكمية 1
-      const existIdx = items.findLastIndex?.((it: any) => it.productId === p.id) ?? items.findIndex((it: any) => it.productId === p.id);
-      if (existIdx >= 0) {
+      const existIdx = [...items].reverse().findIndex((it: any) => it.productId === p.id);
+      const actualIdx = existIdx >= 0 ? items.length - 1 - existIdx : -1;
+      if (actualIdx >= 0) {
         setItems((prev: any[]) => {
           const next = [...prev];
-          next[existIdx] = { ...next[existIdx], quantity: String((parseFloat(next[existIdx].quantity) || 0) + 1) };
+          next[actualIdx] = { ...next[actualIdx], quantity: String((parseFloat(next[actualIdx].quantity) || 0) + 1) };
           return next;
         });
       } else {

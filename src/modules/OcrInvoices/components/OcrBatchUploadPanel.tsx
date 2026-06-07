@@ -53,10 +53,11 @@ export function OcrBatchUploadPanel({ disabled = false, compact = false, company
       if (!file.type.startsWith('image/')) continue;
       try {
         const compressed = await compressImageFileToJpegDataUrl(file, { maxDim: 1600, quality: 0.82 });
+        const preview = String(compressed);
         const img: PendingImage = {
           uid: newUid(),
-          preview: compressed,
-          base64: String(compressed).split(',')[1] || '',
+          preview,
+          base64: preview.split(',')[1] || '',
           mimeType: 'image/jpeg',
           name: file.name || 'image',
         };

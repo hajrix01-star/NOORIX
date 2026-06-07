@@ -35,7 +35,7 @@ export function resolveChannelVaultRef(
   vaultById?: Map<string, DailySalesVaultRef>,
 ): DailySalesVaultRef | null {
   if (ch.vault) return ch.vault;
-  const id = ch.vaultId ?? ch.vault?.id;
+  const id = ch.vaultId;
   if (id && vaultById?.has(id)) return vaultById.get(id)!;
   return null;
 }

@@ -24,6 +24,7 @@ export type SalesSummaryLike = {
   shift?: unknown;
   totalAmount?: string | number | null;
   customerCount?: number | null;
+  notes?: unknown;
 };
 
 export type ShiftDayAggregate = {
