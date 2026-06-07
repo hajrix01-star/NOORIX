@@ -9,8 +9,9 @@ import {
   resolveStaffItemVariant,
   staffLineAggregateKey,
 } from './orders-staff-pricing.util';
-import { buildSalesReportSince } from './orders-staff-sales-report.util';
+import { buildSalesReportSince, staffSaleMatchesReportWindow } from './orders-staff-sales-report.util';
 import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
+import { toYmd } from '../common/utils/to-ymd.util';
 
 export interface StaffOrderItemInput {
   productId: string;
@@ -51,8 +52,7 @@ function parseSaleDateYmd(ymd: string): Date {
 }
 
 function staffOrderDayKey(o: { saleDate?: Date | null; createdAt: Date }): string {
-  if (o.saleDate) return o.saleDate.toISOString().slice(0, 10);
-  return o.createdAt.toISOString().slice(0, 10);
+  return toYmd(o.saleDate ?? o.createdAt);
 }
 
 @Injectable()
@@ -643,23 +643,50 @@ export class OrdersStaffService {
   /** تقرير المبيعات — orderType = 'sale' */
   async getSalesReport(companyId: string, days = 30) {
     const since = buildSalesReportSince(days);
+    const tenantId = TenantContext.tryGetTenantId();
+    const where: Prisma.StaffOrderWhereInput = { companyId, orderType: 'sale' };
+    if (tenantId) where.tenantId = tenantId;
 
-    // نفس نمط getMyStaffOrders المجرَّب — بدون OR nullable ولا user join في نفس الـ query
-    const orders = await this.prisma.staffOrder.findMany({
-      where: { companyId, orderType: 'sale', createdAt: { gte: since } },
+    // Avoid nullable DATE filters/orderBy and select only fields needed for the report.
+    // This keeps old rows with unrelated nullable columns (for example unit_price) from
+    // breaking the report while the repair migration backfills them.
+    const allSaleOrders = await this.prisma.staffOrder.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
-      include: { items: { include: { product: true } } },
+      select: {
+        userId: true,
+        sectionName: true,
+        saleDate: true,
+        createdAt: true,
+        items: {
+          select: {
+            productId: true,
+            quantity: true,
+            unit: true,
+          },
+        },
+      },
     });
+    const orders = allSaleOrders.filter((o) => staffSaleMatchesReportWindow(o, since));
 
     // جلب بيانات المستخدمين بـ query منفصل (تجنب join قد يسبب مشكلة RLS)
     const userIds = [...new Set(orders.map((o) => o.userId))];
     const users = userIds.length
       ? await this.prisma.user.findMany({
-          where: { id: { in: userIds } },
+          where: { ...(tenantId ? { tenantId } : {}), id: { in: userIds } },
           select: { id: true, nameAr: true, nameEn: true },
         })
       : [];
     const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const productIds = [...new Set(orders.flatMap((o) => o.items.map((it) => it.productId)).filter(Boolean))];
+    const products = productIds.length
+      ? await this.prisma.orderProduct.findMany({
+          where: { companyId, ...(tenantId ? { tenantId } : {}), id: { in: productIds } },
+          select: { id: true, nameAr: true, nameEn: true, unit: true },
+        })
+      : [];
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
     let totalOrders = 0;
     let totalQty = 0;
@@ -694,13 +721,14 @@ export class OrdersStaffService {
         byDay[day].qty += qty;
 
         const pid = it.productId;
+        const product = productMap.get(pid);
         if (!byProduct[pid]) {
           byProduct[pid] = {
             productId: pid,
-            nameAr: it.product?.nameAr || '—',
-            nameEn: it.product?.nameEn || null,
+            nameAr: product?.nameAr || '—',
+            nameEn: product?.nameEn || null,
             qty: 0,
-            unit: it.unit || it.product?.unit || '',
+            unit: it.unit || product?.unit || '',
             sections: new Set(),
           };
         }

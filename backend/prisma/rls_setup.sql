@@ -154,6 +154,14 @@ ALTER TABLE orders FORCE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items FORCE ROW LEVEL SECURITY;
 
+-- Staff Orders
+ALTER TABLE staff_orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE staff_orders FORCE ROW LEVEL SECURITY;
+
+-- Staff Order Items (فرعي — يرث من staff_orders)
+ALTER TABLE staff_order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE staff_order_items FORCE ROW LEVEL SECURITY;
+
 -- ── إنشاء Policies: قراءة وكتابة مقيّدة بالـ tenant_id ──────
 
 -- Companies
@@ -579,6 +587,43 @@ CREATE POLICY tenant_isolation_modify ON order_items
     EXISTS (
       SELECT 1 FROM orders o
       WHERE o.id = order_id AND o.tenant_id = current_tenant_id()
+    )
+  );
+
+-- Staff Orders
+DROP POLICY IF EXISTS tenant_isolation_select ON staff_orders;
+DROP POLICY IF EXISTS tenant_isolation_modify ON staff_orders;
+CREATE POLICY tenant_isolation_select ON staff_orders
+  FOR SELECT TO PUBLIC
+  USING (tenant_id = current_tenant_id());
+CREATE POLICY tenant_isolation_modify ON staff_orders
+  FOR ALL TO PUBLIC
+  USING (tenant_id = current_tenant_id())
+  WITH CHECK (tenant_id = current_tenant_id());
+
+-- Staff Order Items (يرث من staff_orders)
+DROP POLICY IF EXISTS tenant_isolation_select ON staff_order_items;
+DROP POLICY IF EXISTS tenant_isolation_modify ON staff_order_items;
+CREATE POLICY tenant_isolation_select ON staff_order_items
+  FOR SELECT TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM staff_orders so
+      WHERE so.id = staff_order_id AND so.tenant_id = current_tenant_id()
+    )
+  );
+CREATE POLICY tenant_isolation_modify ON staff_order_items
+  FOR ALL TO PUBLIC
+  USING (
+    EXISTS (
+      SELECT 1 FROM staff_orders so
+      WHERE so.id = staff_order_id AND so.tenant_id = current_tenant_id()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM staff_orders so
+      WHERE so.id = staff_order_id AND so.tenant_id = current_tenant_id()
     )
   );
 

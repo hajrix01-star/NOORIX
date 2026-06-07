@@ -13,6 +13,12 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 
+function parseDaysQuery(days: string | undefined, fallback = 30): number {
+  const parsed = Number.parseInt(String(days ?? ''), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(365, Math.max(1, parsed));
+}
+
 @Controller('orders')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class OrdersController {
@@ -47,7 +53,7 @@ export class OrdersController {
     @Query('days') days?: string,
   ) {
     if (!companyId) return [];
-    return this.staffService.getDigestHistory(companyId, days ? parseInt(days, 10) : 30);
+    return this.staffService.getDigestHistory(companyId, parseDaysQuery(days));
   }
 
   @Get('sales/report')
@@ -57,7 +63,7 @@ export class OrdersController {
     @Query('days') days?: string,
   ) {
     if (!companyId) return { summary: {}, byProduct: [], bySection: [], byUser: [], byDay: [] };
-    return this.staffService.getSalesReport(companyId, days ? parseInt(days, 10) : 30);
+    return this.staffService.getSalesReport(companyId, parseDaysQuery(days));
   }
 
   @Post('staff')
