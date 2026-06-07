@@ -37,6 +37,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     } else if (exception instanceof Error) {
       if (exception.name === 'PrismaClientKnownRequestError') {
         const prismaErr = exception as { code?: string; meta?: { target?: string[] } };
+        this.logger.error(`PrismaKnown P${prismaErr.code}: ${exception.message}`, exception.stack);
         if (prismaErr.code === 'P2003') {
           message = 'مرجع غير صالح (مورد أو حساب غير موجود)';
           status = HttpStatus.BAD_REQUEST;

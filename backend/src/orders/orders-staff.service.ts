@@ -653,10 +653,7 @@ export class OrdersStaffService {
           { saleDate: { gte: since } },
         ],
       },
-      orderBy: [
-        { saleDate: { sort: 'desc', nulls: 'last' } },
-        { createdAt: 'desc' },
-      ],
+      orderBy: { createdAt: 'desc' },
       include: {
         items: { include: { product: true } },
         user: { select: { id: true, nameAr: true, nameEn: true } },
