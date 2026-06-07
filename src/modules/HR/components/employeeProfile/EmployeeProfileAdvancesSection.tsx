@@ -1,13 +1,11 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
-import { sumAmounts } from '../../../../utils/format';
 import { hrFmt } from '../../utils/hrFmt';
 import { Badge, FmtNum, SmartTable } from '../../../../ui';
+import { getAdvanceTotals } from '../../utils/advanceBalance';
+import { buildAdvanceFinancialFooterRow } from '../../utils/advanceTableFooter';
 
 export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }: any) {
-  const activeAdvances = (advances || []).filter((row: any) => row.status !== 'cancelled');
-  const totalAmount = sumAmounts(activeAdvances, 'totalAmount');
-  const settledTotal = sumAmounts(activeAdvances, 'settledAmountNum');
-  const remainingTotal = sumAmounts(activeAdvances, 'remainingAmount');
+  const advanceTotals = getAdvanceTotals(advances);
 
   return (
     <div className="noorix-surface-card overflow-hidden">
@@ -87,28 +85,7 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
         total={advances.length}
         page={1}
         pageSize={50}
-        footerRow={[
-          {
-            keys: ['totalAmount'],
-            className: 'text-[13px] text-end py-1.5 px-3 text-noorix-blue font-black nx-font-numbers',
-            content: hrFmt(totalAmount.toNumber()),
-          },
-          {
-            keys: ['transactionDate'],
-            className: 'text-[12px] text-noorix-muted py-1.5 px-3',
-            content: null,
-          },
-          {
-            keys: ['settledAmount'],
-            className: 'text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers',
-            content: hrFmt(settledTotal.toNumber()),
-          },
-          {
-            keys: ['remainingAmount'],
-            className: 'text-[13px] text-end py-1.5 px-3 text-noorix-amber font-black nx-font-numbers',
-            content: hrFmt(remainingTotal.toNumber()),
-          },
-        ]}
+        footerRow={buildAdvanceFinancialFooterRow({ totals: advanceTotals })}
         emptyMessage={t('noDataInPeriod')}
         renderCompactRow={(row: any) => (
           <div>
