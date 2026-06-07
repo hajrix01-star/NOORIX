@@ -482,7 +482,7 @@ function StaffOrderPanel({
 
         const waText = saved.whatsAppText;
         if (waText?.trim()) {
-          window.setTimeout(() => openWhatsApp(waText), 400);
+          openWhatsApp(waText);
         }
         return;
       }

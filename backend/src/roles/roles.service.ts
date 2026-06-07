@@ -18,13 +18,15 @@ export class RolesService implements OnModuleInit {
   ) {}
 
   /**
-   * عند بدء التطبيق → يزرع الأدوار النظامية في DB إذا لم تكن موجودة
-   * أو يملأ صلاحياتها إذا كانت فارغة.
+   * عند بدء التطبيق → يزرع الأدوار النظامية في DB إذا لم تكن موجودة،
+   * يملأ صلاحياتها إذا كانت فارغة، أو يضيف الصلاحيات الجديدة المضافة
+   * للـ seed منذ آخر تطبيق (بدون حذف ما عدّله المدير يدوياً).
    */
   async onModuleInit() {
     for (const [name, seed] of Object.entries(SYSTEM_ROLE_SEEDS)) {
       try {
         const existing = await this.prisma.role.findFirst({ where: { name } });
+
         if (!existing) {
           await this.prisma.role.create({
             data: {
@@ -36,12 +38,37 @@ export class RolesService implements OnModuleInit {
             },
           });
           this.logger.log(`Seeded system role: ${name}`);
-        } else if (!Array.isArray(existing.permissions) || existing.permissions.length === 0) {
+          continue;
+        }
+
+        const currentPerms = Array.isArray(existing.permissions)
+          ? (existing.permissions as string[])
+          : [];
+
+        if (currentPerms.length === 0) {
           await this.prisma.role.update({
             where: { id: existing.id },
             data: { permissions: seed.permissions, lastSeedPermissions: seed.permissions, isSystem: true },
           });
           this.logger.log(`Filled permissions for system role: ${name}`);
+          continue;
+        }
+
+        // صلاحيات جديدة أُضيفت للـ seed منذ آخر تطبيق — تُضاف للدور دون المساس بما عدّله المدير
+        const lastSeedPerms = Array.isArray(existing.lastSeedPermissions)
+          ? (existing.lastSeedPermissions as string[])
+          : [];
+        const trulyNewPerms = seed.permissions.filter((p) => !lastSeedPerms.includes(p));
+
+        if (trulyNewPerms.length > 0) {
+          const mergedPerms = [...new Set([...currentPerms, ...trulyNewPerms])];
+          await this.prisma.role.update({
+            where: { id: existing.id },
+            data: { permissions: mergedPerms, lastSeedPermissions: seed.permissions },
+          });
+          this.logger.log(
+            `Merged ${trulyNewPerms.length} new perm(s) into system role: ${name} → [${trulyNewPerms.join(', ')}]`,
+          );
         }
       } catch (e) {
         this.logger.warn(`Failed to seed role ${name}: ${e.message}`);

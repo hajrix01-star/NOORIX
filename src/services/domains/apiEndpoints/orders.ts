@@ -152,7 +152,7 @@ export async function resendStaffSale(
 
 export async function getSalesReport(companyId: string, days = 30): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/sales/report', { companyId, days: String(days) });
-  return res?.success ? { ...res, data: res.data ?? {} } : { success: false, data: {} };
+  return res?.success ? { ...res, data: res.data ?? {} } : res;
 }
 
 export async function getDigestHistory(companyId: string, days = 30): Promise<ApiParsedResult> {
