@@ -2,8 +2,9 @@
  * useVaults — جلب الخزائن وCRUD كامل (إضافة/تعديل/أرشفة/حذف).
  * إبطال الكاش مركزي عبر دالة invalidate واحدة.
  */
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
+import { useApiListQuery } from './useApiQuery';
 import {
   getVaults,
   getPaymentVaults,
@@ -12,7 +13,6 @@ import {
   reorderVaults,
   archiveVault,
   deleteVault,
-  throwIfApiFailed,
 } from '../services/api';
 import { salesKeys, vaultKeys } from '../services/queryKeys';
 
@@ -22,30 +22,23 @@ import { salesKeys, vaultKeys } from '../services/queryKeys';
 export function useVaults({ companyId, includeArchived = false, startDate = null, endDate = null }: any) {
   const queryClient = useQueryClient();
 
-  const { data: vaultsList = [], isLoading, isFetching, isError } = useQuery({
+  const { data: vaultsList = [], isLoading, isFetching, isError } = useApiListQuery<any>({
     queryKey: vaultKeys.list(companyId, includeArchived, startDate ?? '', endDate ?? ''),
-    queryFn: async () => {
-      const res = await getVaults(
+    queryFn: () =>
+      getVaults(
         companyId,
         includeArchived,
         startDate || undefined,
         endDate || undefined,
-      );
-      throwIfApiFailed(res, 'فشل تحميل الخزائن');
-      const d = res.data;
-      return Array.isArray(d) ? d : (d?.items ?? []);
-    },
+      ),
+    fallbackMessage: 'فشل تحميل الخزائن',
     enabled: !!companyId,
   });
 
-  const { data: paymentVaults = [], isLoading: paymentVaultsLoading } = useQuery({
+  const { data: paymentVaults = [], isLoading: paymentVaultsLoading } = useApiListQuery<any>({
     queryKey: vaultKeys.paymentOptions(companyId),
-    queryFn: async () => {
-      const res = await getPaymentVaults(companyId);
-      throwIfApiFailed(res, 'فشل تحميل خيارات الدفع');
-      const d = res.data;
-      return Array.isArray(d) ? d : (d?.items ?? []);
-    },
+    queryFn: () => getPaymentVaults(companyId),
+    fallbackMessage: 'فشل تحميل خيارات الدفع',
     enabled: !!companyId,
   });
 

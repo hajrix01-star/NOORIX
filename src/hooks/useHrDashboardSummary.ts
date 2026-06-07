@@ -2,9 +2,9 @@
  * HR ملخص اللوحة — طلب واحد موحّد (إجازات + إقامات + سلف بالتوازي).
  * يحلّ مشكلة "تغيّر أرقام بطاقة HR" الناتجة عن 3 طلبات منفصلة.
  */
-import { useQuery } from '@tanstack/react-query';
-import { getHrDashboardSummary, type HrDashboardSummaryData, throwIfApiFailed } from '../services/api';
+import { getHrDashboardSummary, type HrDashboardSummaryData } from '../services/api';
 import { hrKeys } from '../services/queryKeys/hr';
+import { useApiQueryOr } from './useApiQuery';
 
 const EMPTY: HrDashboardSummaryData = {
   leavesCount: 0,
@@ -17,12 +17,13 @@ const EMPTY: HrDashboardSummaryData = {
 };
 
 export function useHrDashboardSummary(companyId: string) {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error } = useApiQueryOr<any, HrDashboardSummaryData>({
     queryKey: hrKeys.dashboardSummary(companyId),
-    queryFn: async (): Promise<HrDashboardSummaryData> => {
-      const res = await getHrDashboardSummary(companyId);
-      throwIfApiFailed(res, 'فشل تحميل ملخص الموارد البشرية');
-      const raw = res.data?.data ?? res.data;
+    queryFn: () => getHrDashboardSummary(companyId),
+    fallback: EMPTY,
+    fallbackMessage: 'فشل تحميل ملخص الموارد البشرية',
+    select: (payload): HrDashboardSummaryData => {
+      const raw = payload?.data ?? payload;
       return {
         leavesCount:               Number(raw?.leavesCount               ?? 0),
         expiringResidenciesCount:  Number(raw?.expiringResidenciesCount  ?? 0),
