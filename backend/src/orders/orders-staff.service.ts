@@ -649,8 +649,8 @@ export class OrdersStaffService {
         companyId,
         orderType: 'sale',
         OR: [
+          { createdAt: { gte: since } },
           { saleDate: { gte: since } },
-          { saleDate: null, createdAt: { gte: since } },
         ],
       },
       orderBy: [{ saleDate: 'desc' }, { createdAt: 'desc' }],

@@ -65,8 +65,10 @@ export default function OrdersScreen() {
     companyId={companyId}
     dateFilter={dateFilter}
     digestOnly={routing.mode === 'manager-digest-only'}
+    canSubmitStaff={routing.canSubmitStaff}
     canDigest={routing.canDigest}
     canViewSalesReport={routing.canViewSalesReport}
+    prefersStaffSalesTab={routing.prefersStaffSalesTab}
   />;
 }
 
@@ -74,14 +76,18 @@ function ManagerOrdersScreen({
   companyId,
   dateFilter,
   digestOnly,
+  canSubmitStaff,
   canDigest,
   canViewSalesReport,
+  prefersStaffSalesTab,
 }: {
   companyId: string;
   dateFilter: ReturnType<typeof useDateFilter>;
   digestOnly: boolean;
+  canSubmitStaff: boolean;
   canDigest: boolean;
   canViewSalesReport: boolean;
+  prefersStaffSalesTab: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -92,13 +98,18 @@ function ManagerOrdersScreen({
       if (canDigest) ids.push('staff-digest');
       return ids.length ? ids : ['sales-report'];
     }
-    const ids = ['orders', 'items-report', 'items-manage'];
+    const ids: string[] = [];
+    if (canSubmitStaff) ids.push('staff-sales');
+    ids.push('orders', 'items-report', 'items-manage');
     if (canViewSalesReport) ids.push('sales-report');
     if (canDigest) ids.push('staff-digest');
     return ids;
-  }, [digestOnly, canDigest, canViewSalesReport]);
+  }, [digestOnly, canDigest, canViewSalesReport, canSubmitStaff]);
 
-  const defaultTab = TAB_IDS[0] ?? 'orders';
+  const defaultTab =
+    prefersStaffSalesTab && canSubmitStaff && TAB_IDS.includes('staff-sales')
+      ? 'staff-sales'
+      : (TAB_IDS[0] ?? 'orders');
   const [activeTab, setActiveTab] = useTabSearchParam(TAB_IDS, defaultTab, 'tab', null, ORDERS_TAB_ALIASES);
 
   const { year, month, startDate, endDate } = useMemo(() => {
@@ -124,11 +135,15 @@ function ManagerOrdersScreen({
       if (canDigest) tabs.push({ id: 'staff-digest', labelKey: 'staffDigestTab', shortLabelKey: 'staffDigestTabShort' });
       return tabs.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }));
     }
-    const tabs = [
+    const tabs: Array<{ id: string; labelKey: string; shortLabelKey?: string }> = [];
+    if (canSubmitStaff) {
+      tabs.push({ id: 'staff-sales', labelKey: 'staffSalesRecordTab', shortLabelKey: 'staffSalesRecordTabShort' });
+    }
+    tabs.push(
       { id: 'orders', labelKey: 'ordersTab', shortLabelKey: 'ordersTabShort' },
       { id: 'items-report', labelKey: 'ordersItemsReportTab', shortLabelKey: 'ordersItemsReportTabShort' },
       { id: 'items-manage', labelKey: 'ordersItemsManageTab', shortLabelKey: 'ordersItemsManageTabShort' },
-    ];
+    );
     if (canViewSalesReport) {
       tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
     }
@@ -147,7 +162,7 @@ function ManagerOrdersScreen({
         );
       return { id: tab.id, label };
     });
-  }, [t, digestOnly, canDigest, canViewSalesReport]);
+  }, [t, digestOnly, canDigest, canViewSalesReport, canSubmitStaff]);
 
   return (
     <ScreenShell className="min-w-0">
@@ -169,6 +184,9 @@ function ManagerOrdersScreen({
           shellClassName="nx-orders-tabs-shell"
           contentClassName="nx-tab-content nx-orders-tab-content min-h-[200px] px-1 py-2 sm:px-3 sm:py-3"
         >
+          {activeTab === 'staff-sales' && canSubmitStaff && (
+            <StaffOrdersView companyId={companyId} embedded salesOnly />
+          )}
           {!digestOnly && activeTab === 'orders' && (
             <OrdersTab
               companyId={companyId}

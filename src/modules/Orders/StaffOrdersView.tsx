@@ -965,26 +965,47 @@ function VariantPickModal({
 }
 
 // ─── الشاشة الرئيسية ───────────────────────────────────────────────────────────
-export function StaffOrdersView({ companyId }: { companyId: string }) {
+export function StaffOrdersView({
+  companyId,
+  embedded = false,
+  salesOnly = false,
+  defaultTab = 'order',
+}: {
+  companyId: string;
+  embedded?: boolean;
+  /** داخل واجهة المدير — تبويب مبيعات فقط (كاشير) */
+  salesOnly?: boolean;
+  defaultTab?: 'order' | 'sale';
+}) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'order' | 'sale'>('order');
+  const [activeTab, setActiveTab] = useState<'order' | 'sale'>(defaultTab);
 
   const tabs = useMemo(() => [
     { id: 'order', label: t('staffOrdersTabOrders') },
     { id: 'sale',  label: t('staffOrdersTabSales') },
   ], [t]);
 
+  if (salesOnly) {
+    return <StaffOrderPanel companyId={companyId} productType="sale" />;
+  }
+
+  const tabContent = (
+    <ScreenTabs
+      items={tabs}
+      value={activeTab}
+      onChange={(v) => setActiveTab(v as 'order' | 'sale')}
+      contentClassName="px-3 pt-3 pb-4 sm:px-4"
+    >
+      <StaffOrderPanel key={activeTab} companyId={companyId} productType={activeTab} />
+    </ScreenTabs>
+  );
+
+  if (embedded) return tabContent;
+
   return (
     <ScreenShell>
       <ScreenTitle>{t('staffOrdersTitle')}</ScreenTitle>
-      <ScreenTabs
-        items={tabs}
-        value={activeTab}
-        onChange={(v) => setActiveTab(v as 'order' | 'sale')}
-        contentClassName="px-3 pt-3 pb-4 sm:px-4"
-      >
-        <StaffOrderPanel key={activeTab} companyId={companyId} productType={activeTab} />
-      </ScreenTabs>
+      {tabContent}
     </ScreenShell>
   );
 }

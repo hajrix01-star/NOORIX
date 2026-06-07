@@ -16,6 +16,8 @@ export function resolveOrdersScreenMode(
   canDigest: boolean;
   hasManagerDataAccess: boolean;
   canViewSalesReport: boolean;
+  /** كاشير: VIEW_SALES + إرسال — يفتح تبويب تسجيل المبيعات افتراضياً */
+  prefersStaffSalesTab: boolean;
 } {
   const role = String(userRole || '').toLowerCase();
   const isAdmin = role === 'owner' || role === 'super_admin';
@@ -27,15 +29,31 @@ export function resolveOrdersScreenMode(
     isAdmin || hasAnyOfPermissions(userRole, ORDERS_MANAGER_DATA_ACCESS, userPermissions);
   const canViewSalesReport =
     isAdmin || hasAnyOfPermissions(userRole, ORDERS_SALES_REPORT_ACCESS, userPermissions);
+  const hasOrdersReadWrite =
+    isAdmin ||
+    hasAnyOfPermissions(
+      userRole,
+      [PERMISSIONS.ORDERS_READ, PERMISSIONS.ORDERS_WRITE],
+      userPermissions,
+    );
+  const prefersStaffSalesTab = canSubmitStaff && hasManagerDataAccess && !hasOrdersReadWrite;
+
+  const base = {
+    canSubmitStaff,
+    canDigest,
+    hasManagerDataAccess,
+    canViewSalesReport,
+    prefersStaffSalesTab,
+  };
 
   if (hasManagerDataAccess) {
-    return { mode: 'manager-full', canSubmitStaff, canDigest, hasManagerDataAccess, canViewSalesReport };
+    return { mode: 'manager-full', ...base };
   }
   if (canSubmitStaff) {
-    return { mode: 'staff', canSubmitStaff, canDigest, hasManagerDataAccess, canViewSalesReport };
+    return { mode: 'staff', ...base };
   }
   if (canDigest) {
-    return { mode: 'manager-digest-only', canSubmitStaff, canDigest, hasManagerDataAccess, canViewSalesReport };
+    return { mode: 'manager-digest-only', ...base };
   }
-  return { mode: 'forbidden', canSubmitStaff, canDigest, hasManagerDataAccess, canViewSalesReport };
+  return { mode: 'forbidden', ...base };
 }

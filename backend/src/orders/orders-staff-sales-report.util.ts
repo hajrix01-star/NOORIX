@@ -13,6 +13,7 @@ export function staffSaleMatchesReportWindow(
   order: { saleDate?: Date | null; createdAt: Date },
   since: Date,
 ): boolean {
+  if (order.createdAt >= since) return true;
   if (order.saleDate != null) return order.saleDate >= since;
-  return order.createdAt >= since;
+  return false;
 }
