@@ -222,6 +222,24 @@ export function unwrapApiDataOr<T>(
   return res.data ?? fallback;
 }
 
+type ListEnvelope<T> = {
+  items?: T[];
+  data?: T[] | { items?: T[] } | null;
+} | T[] | null | undefined;
+
+/** يقرأ قوائم الـ API من الأشكال الشائعة: [] أو { items } أو { data: [] } أو { data: { items } }. */
+export function unwrapApiList<T>(
+  res: ApiParsedResult<ListEnvelope<T>>,
+  fallbackMessage = 'طلب فشل',
+): T[] {
+  const data = unwrapApiDataOr<ListEnvelope<T>>(res, [], fallbackMessage);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.data)) return data.data;
+  if (data?.data && !Array.isArray(data.data) && Array.isArray(data.data.items)) return data.data.items;
+  return [];
+}
+
 export function getApiBaseUrl() {
   return BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 }

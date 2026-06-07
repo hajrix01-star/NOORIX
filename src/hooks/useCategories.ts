@@ -3,8 +3,8 @@
  * يُعيد أيضاً قائمة مسطّحة (flatCategories) لاستخدامها في الـ selects.
  */
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
+import { useApiListQuery } from './useApiQuery';
 import {
   getCategories,
   createCategory,
@@ -13,20 +13,25 @@ import {
 } from '../services/api';
 import { categoryKeys } from '../services/queryKeys';
 
+type CategoryNode = {
+  id: string;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  children?: CategoryNode[];
+  [key: string]: unknown;
+};
+
 export function useCategories(companyId: string | null | undefined) {
-  const { data: categories = [], isLoading } = useQuery({
+  const { data: categories = [], isLoading } = useApiListQuery<CategoryNode>({
     queryKey: categoryKeys.list(companyId || ''),
-    queryFn: async () => {
-      const res = await getCategories(companyId as string);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : [];
-    },
+    queryFn: () => getCategories(companyId as string),
+    fallbackMessage: 'فشل تحميل التصنيفات',
     enabled: !!companyId,
   });
 
   const flatCategories = useMemo(() => {
     const list: unknown[] = [];
-    for (const cat of categories as { children?: unknown[] }[]) {
+    for (const cat of categories) {
       list.push(cat);
       for (const child of cat.children || []) list.push(child);
     }

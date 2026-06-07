@@ -3,6 +3,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
+import { useApiListQuery, useApiQueryOr } from './useApiQuery';
 import {
   getOrders,
   createOrder,
@@ -84,13 +85,11 @@ export function useCancelOrderMutation(companyId: any) {
 }
 
 export function useOrdersSummary(companyId: any, year: any, month: any) {
-  return useQuery({
+  return useApiQueryOr<Record<string, unknown>>({
     queryKey: orderKeys.summary(companyId, year, month),
-    queryFn: async () => {
-      const res = await getOrdersSummary(companyId, year, month);
-      if (!res?.success) return {};
-      return res.data ?? {};
-    },
+    queryFn: () => getOrdersSummary(companyId, year, month),
+    fallback: {},
+    fallbackMessage: 'فشل تحميل ملخص الطلبات',
     enabled: !!companyId && !!year && !!month,
   });
 }
@@ -120,25 +119,19 @@ export function useOrderCategories(companyId: any) {
 }
 
 export function useProductPurchaseHistory(companyId: any, productId: any, year: any, month: any, enabled: any = true) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: orderKeys.productPurchaseHistory(companyId, productId, year, month),
-    queryFn: async () => {
-      const res = await getProductPurchaseHistory(companyId, productId, year, month);
-      if (!res?.success) return [];
-      return res.data ?? [];
-    },
+    queryFn: () => getProductPurchaseHistory(companyId, productId, year, month),
+    fallbackMessage: 'فشل تحميل سجل مشتريات الصنف',
     enabled: !!companyId && !!productId && enabled,
   });
 }
 
 export function useCategoryPurchaseHistory(companyId: any, categoryId: any, year: any, month: any, enabled: any = true) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: orderKeys.categoryPurchaseHistory(companyId, categoryId, year, month),
-    queryFn: async () => {
-      const res = await getCategoryPurchaseHistory(companyId, categoryId, year, month);
-      if (!res?.success) return [];
-      return res.data ?? [];
-    },
+    queryFn: () => getCategoryPurchaseHistory(companyId, categoryId, year, month),
+    fallbackMessage: 'فشل تحميل سجل مشتريات الفئة',
     enabled: !!companyId && !!categoryId && enabled,
   });
 }
@@ -281,13 +274,11 @@ export function useResendStaffSaleMutation(companyId: any) {
 }
 
 export function useStaffDigest(companyId: any) {
-  return useQuery({
+  return useApiQueryOr<any>({
     queryKey: orderKeys.staffDigest(companyId),
-    queryFn: async () => {
-      const res = await getStaffDigest(companyId);
-      if (!res?.success) return { sections: [], totalOrders: 0, pendingCount: 0 };
-      return res.data ?? { sections: [], totalOrders: 0, pendingCount: 0 };
-    },
+    queryFn: () => getStaffDigest(companyId),
+    fallback: { sections: [], totalOrders: 0, pendingCount: 0 },
+    fallbackMessage: 'فشل تحميل ملخص طلبات الأقسام',
     enabled: !!companyId,
   });
 }
