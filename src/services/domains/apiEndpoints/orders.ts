@@ -129,7 +129,9 @@ export async function getMyStaffOrders(companyId: string): Promise<ApiParsedResu
 }
 
 export async function createStaffOrder(body: unknown): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/orders/staff', body);
+  const companyId = (body as { companyId?: string })?.companyId;
+  const q = companyId ? `?companyId=${encodeURIComponent(String(companyId))}` : '';
+  return apiPost(`/api/v1/orders/staff${q}`, body);
 }
 
 export async function updateStaffOrder(id: string, companyId: string, body: unknown): Promise<ApiParsedResult> {
