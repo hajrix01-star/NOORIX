@@ -653,12 +653,15 @@ export class OrdersStaffService {
           { saleDate: { gte: since } },
         ],
       },
-      orderBy: [{ saleDate: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { saleDate: { sort: 'desc', nulls: 'last' } },
+        { createdAt: 'desc' },
+      ],
       include: {
-        items: { include: { product: { include: { category: true } } } },
+        items: { include: { product: true } },
         user: { select: { id: true, nameAr: true, nameEn: true } },
       },
-    } as any);
+    });
 
     let totalOrders = 0;
     let totalQty = 0;

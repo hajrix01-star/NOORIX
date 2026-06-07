@@ -237,7 +237,7 @@ function StaffOrderPanel({
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: myOrders = [], isLoading } = useMyStaffOrders(companyId);
+  const { data: myOrders = [], isLoading, isError: ordersError } = useMyStaffOrders(companyId);
   const { data: allProducts = [] } = useOrderProducts(companyId, productType);
   const { data: sections = [] } = useOrderSections(companyId);
   const createOrder = useCreateStaffOrderMutation(companyId);
@@ -588,6 +588,13 @@ function StaffOrderPanel({
             {t('staffOrderNoProducts')}
           </div>
         )
+      )}
+
+      {/* ── خطأ تحميل المبيعات السابقة ── */}
+      {ordersError && (
+        <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-4 py-3 text-[13px] text-noorix-red">
+          {t('staffOrdersLoadError')}
+        </div>
       )}
 
       {/* ── ملخص الطلب ── */}

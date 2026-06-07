@@ -341,6 +341,7 @@ export default {
   staffOrderMyPending:      { ar: 'طلباتي (قيد الانتظار)', en: 'My Pending Orders' },
   staffOrderMySent:         { ar: 'طلباتي المُرسلة', en: 'My Sent Orders' },
   staffOrderNoOrders:       { ar: 'لا توجد طلبات بعد. أضف طلبك أعلاه.', en: 'No orders yet. Add your order above.' },
+  staffOrdersLoadError:     { ar: 'تعذّر تحميل السجلات — تحقق من اتصالك أو تواصل مع المدير', en: 'Could not load records — check your connection or contact admin' },
   staffOrderBasket:         { ar: 'الطلب', en: 'Order' },
   staffOrderNoProducts:     { ar: 'لا توجد أصناف في هذا القسم', en: 'No products in this section' },
   staffOrderUpdate:         { ar: 'تحديث الطلب', en: 'Update Order' },

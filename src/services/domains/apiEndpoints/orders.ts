@@ -8,7 +8,7 @@ export async function getOrders(
   month: string | number,
 ): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders', { companyId, year: String(year), month: String(month) });
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 export async function createOrder(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/orders', body);
@@ -25,7 +25,7 @@ export async function getOrdersSummary(
   month: string | number,
 ): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/summary', { companyId, year: String(year), month: String(month) });
-  return res?.success ? { ...res, data: res.data ?? {} } : { success: false, data: {} };
+  return res?.success ? { ...res, data: res.data ?? {} } : res;
 }
 export async function getProductPurchaseHistory(
   companyId: string,
@@ -37,7 +37,7 @@ export async function getProductPurchaseHistory(
   if (year != null && year !== '') params.year = String(year);
   if (month != null && month !== '') params.month = String(month);
   const res = await apiGet(`/api/v1/orders/product-history/${productId}`, params);
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 export async function getCategoryPurchaseHistory(
   companyId: string,
@@ -49,7 +49,7 @@ export async function getCategoryPurchaseHistory(
   if (year != null && year !== '') params.year = String(year);
   if (month != null && month !== '') params.month = String(month);
   const res = await apiGet(`/api/v1/orders/category-history/${categoryId}`, params);
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 export async function getOrdersItemsReport(
   companyId: string,
@@ -57,14 +57,14 @@ export async function getOrdersItemsReport(
   month: string | number,
 ): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/items-report', { companyId, year: String(year), month: String(month) });
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 export async function getOrderProducts(companyId: string, section?: string, type?: string): Promise<ApiParsedResult> {
   const params: Record<string, string> = { companyId };
   if (section) params.section = section;
   if (type) params.type = type;
   const res = await apiGet('/api/v1/orders/products', params);
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 export async function createOrderProduct(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/orders/products', body);
@@ -90,7 +90,7 @@ export async function updateOrderProduct(
 }
 export async function getOrderCategories(companyId: string): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/categories', { companyId });
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 export async function createOrderCategory(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/orders/categories', body);
@@ -125,7 +125,7 @@ export async function deactivateOrderCategoriesBulk(
 
 export async function getMyStaffOrders(companyId: string): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/staff/my', { companyId });
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 
 export async function createStaffOrder(body: unknown): Promise<ApiParsedResult> {
@@ -157,13 +157,13 @@ export async function getSalesReport(companyId: string, days = 30): Promise<ApiP
 
 export async function getDigestHistory(companyId: string, days = 30): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/staff/digest/history', { companyId, days: String(days) });
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 
 export async function getStaffDigest(companyId: string): Promise<ApiParsedResult<StaffDigestData>> {
   const res = await apiGet<StaffDigestData>('/api/v1/orders/staff/digest', { companyId });
   const empty: StaffDigestData = { sections: [], totalOrders: 0, pendingCount: 0 };
-  return res?.success ? { ...res, data: res.data ?? empty } : { success: false, data: empty };
+  return res?.success ? { ...res, data: res.data ?? empty } : res as ApiParsedResult<StaffDigestData>;
 }
 
 export async function sendStaffDigest(
@@ -183,7 +183,7 @@ export async function sendStaffDigest(
 // ── Sections ──────────────────────────────────────────────────────
 export async function getOrderSections(companyId: string): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/orders/sections', { companyId });
-  return res?.success ? { ...res, data: res.data ?? [] } : { success: false, data: [] };
+  return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 export async function createOrderSection(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/orders/sections', body);
