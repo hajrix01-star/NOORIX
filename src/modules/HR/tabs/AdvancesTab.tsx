@@ -10,7 +10,6 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { createDeduction, getHrAdvances, updateInvoice, throwIfApiFailed } from '../../../services/api';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
-import { sumAmounts } from '../../../utils/format';
 import { hrFmt } from '../utils/hrFmt';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { useTableFilter } from '../../../hooks/useTableFilter';
@@ -25,7 +24,8 @@ import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
 import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
 import { countTruthyFilters } from '../utils/hrActiveFilterCount';
-import { withAdvanceBalance } from '../utils/advanceBalance';
+import { getAdvanceTotals, normalizeAdvances } from '../utils/advanceBalance';
+import { buildAdvanceFinancialFooterRow } from '../utils/advanceTableFooter';
 
 const PAGE_SIZE = 50;
 
@@ -52,7 +52,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
       const res = await getHrAdvances(companyId);
       throwIfApiFailed(res, 'فشل تحميل السلف');
       const items = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
-      return items.map((i: any) => withAdvanceBalance(i));
+      return normalizeAdvances(items);
     },
     enabled: !!companyId,
   });
@@ -94,12 +94,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
       dateKeys: ['transactionDate'],
     });
 
-  const activeFilteredData = allFilteredData.filter((r: any) => r.status !== 'cancelled');
-  const totalAmount = sumAmounts(activeFilteredData, 'totalAmount');
-  const settledTotal = sumAmounts(activeFilteredData, 'settledAmountNum');
-  const remainingTotal = sumAmounts(activeFilteredData, 'remainingAmount');
-  const outstandingOnlyCount = allFilteredData.filter((r: any) => r.status !== 'cancelled' && r.settlementStatus === 'outstanding').length;
-  const partialCount = allFilteredData.filter((r: any) => r.status !== 'cancelled' && r.settlementStatus === 'partial').length;
+  const advanceTotals = useMemo(() => getAdvanceTotals(allFilteredData), [allFilteredData]);
 
   const settlementMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
 
@@ -191,39 +186,16 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
       ) },
   ], [t, settlementMap, queryClient, showToast]);
 
-  const footerRow = [
-    {
-      keys: ['employeeName'],
-      className: 'text-[12px] text-noorix-muted font-semibold py-1.5 px-3',
-      content: (
-        <>
+  const footerRow = useMemo(() => buildAdvanceFinancialFooterRow({
+    totals: advanceTotals,
+    summary: (
+      <>
         {t('advancesList')} ({allFilteredData.length})
-        {outstandingOnlyCount > 0 ? ` — ${t('advanceOutstanding')}: ${outstandingOnlyCount}` : ''}
-        {partialCount > 0 ? ` — ${t('advanceStatusPartial')}: ${partialCount}` : ''}
-        </>
-      ),
-    },
-    {
-      keys: ['totalAmount'],
-      className: 'text-[13px] text-end py-1.5 px-3 text-noorix-blue font-black nx-font-numbers',
-      content: hrFmt(totalAmount.toNumber()),
-    },
-    {
-      keys: ['transactionDate'],
-      className: 'text-[12px] text-noorix-muted py-1.5 px-3',
-      content: null,
-    },
-    {
-      keys: ['settledAmount'],
-      className: 'text-[13px] text-end py-1.5 px-3 text-noorix-green font-black nx-font-numbers',
-      content: hrFmt(settledTotal.toNumber()),
-    },
-    {
-      keys: ['remainingAmount'],
-      className: 'text-[13px] text-end py-1.5 px-3 text-noorix-amber font-black nx-font-numbers',
-      content: hrFmt(remainingTotal.toNumber()),
-    },
-  ];
+        {advanceTotals.outstandingCount > 0 ? ` — ${t('advanceOutstanding')}: ${advanceTotals.outstandingCount}` : ''}
+        {advanceTotals.partialCount > 0 ? ` — ${t('advanceStatusPartial')}: ${advanceTotals.partialCount}` : ''}
+      </>
+    ),
+  }), [advanceTotals, allFilteredData.length, t]);
 
   const exportData = allFilteredData.map((r: any) => ({
     employeeName: r.employeeName || '—',

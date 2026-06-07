@@ -64,7 +64,7 @@ import {
   buildFinancialRecords,
   buildSalaryRows,
 } from './components/employeeProfile/employeeProfileModel';
-import { withAdvanceBalance } from './utils/advanceBalance';
+import { normalizeAdvances } from './utils/advanceBalance';
 
 export default function EmployeeProfileScreen() {
   const { id } = useParams();
@@ -213,7 +213,7 @@ export default function EmployeeProfileScreen() {
 
   const careerTableRows = useMemo(() => buildCareerTableRows(movements, t), [movements, t]);
   const advances = useMemo(
-    () => (invoicesData?.items ?? []).map((row: any) => withAdvanceBalance(row)),
+    () => normalizeAdvances(invoicesData?.items ?? []),
     [invoicesData],
   );
   const advanceStatusMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
