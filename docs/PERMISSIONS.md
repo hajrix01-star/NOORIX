@@ -12,6 +12,9 @@
 | **VAT planning** (`/vat-planning`) | `HAJRI_TAX_READ` **أو** `REPORTS_READ` | `HAJRI_TAX_WRITE` فقط |
 | **تقويم لوحة التحكم** (`/dashboard/calendar`) | `VIEW_DASHBOARD` **أو** `REPORTS_READ` | `VIEW_DASHBOARD` فقط |
 | **مسار `/orders`** (frontend) | — | `VIEW_ORDERS` **أو** `STAFF_ORDERS_SUBMIT` **أو** `STAFF_ORDERS_DIGEST` |
+| **واجهة الموظف (POS)** | — | `STAFF_ORDERS_SUBMIT` **بدون** `VIEW_SALES`/`ORDERS_READ`/`ORDERS_WRITE` |
+| **واجهة المدير (طلبات/تقارير)** | — | `VIEW_SALES` **أو** `ORDERS_READ` **أو** `ORDERS_WRITE` |
+| **تقرير مبيعات الموظفين** | `VIEW_SALES`/`ORDERS_READ`/`ORDERS_WRITE`/`STAFF_ORDERS_DIGEST` | — |
 | **redirect `/reports`** | — | أول تبويب مسموح (`getFirstAccessibleReportPath`) |
 | **تبويبات التقارير** (UI) | — | فلترة حسب `VIEW_REPORTS_*` + fallbacks |
 

@@ -10,6 +10,7 @@ import {
   staffLineAggregateKey,
 } from './orders-staff-pricing.util';
 import { buildSalesReportSince } from './orders-staff-sales-report.util';
+import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 
 export interface StaffOrderItemInput {
   productId: string;
@@ -111,6 +112,10 @@ export class OrdersStaffService {
       ? await this.prisma.orderProduct.findMany({ where: { companyId, id: { in: productIds } } })
       : [];
     const pmap = new Map(products.map((p) => [p.id, p]));
+    const missing = productIds.filter((id) => !pmap.has(id));
+    if (missing.length) {
+      throw new BadRequestException('صنف غير موجود أو لا ينتمي لهذه الشركة');
+    }
     const qty = this.validateItemQuantities(items);
     return items.map((it, i) => {
       const v = resolveStaffItemVariant(pmap.get(it.productId), it);
@@ -161,15 +166,17 @@ export class OrdersStaffService {
 
   async createStaffOrder(userId: string, dto: CreateStaffOrderDto) {
     const tenantId = TenantContext.getTenantId();
+    const companyId = String(dto.companyId ?? '').trim();
+    if (!companyId) throw new BadRequestException('companyId مطلوب');
     if (!dto.items?.length) throw new BadRequestException('يجب إضافة صنف واحد على الأقل');
 
     const orderType = dto.orderType === 'sale' ? 'sale' : 'order';
     const lang: 'ar' | 'en' = dto.lang === 'en' ? 'en' : 'ar';
     const isSale = orderType === 'sale';
-    const saleDate = isSale ? parseSaleDateYmd(dto.saleDate || new Date().toISOString().slice(0, 10)) : null;
+    const saleDate = isSale ? parseSaleDateYmd(dto.saleDate || saudiDateYmd()) : null;
     const sentAt = isSale ? new Date() : null;
 
-    const grouped = await this.groupItemsBySection(dto.companyId, dto.items, dto.sectionName);
+    const grouped = await this.groupItemsBySection(companyId, dto.items, dto.sectionName);
     const sectionEntries = [...grouped.entries()];
 
     const orders: Awaited<ReturnType<typeof this.createStaffOrderRecord>>[] = [];
@@ -178,7 +185,7 @@ export class OrdersStaffService {
         await this.createStaffOrderRecord(
           tenantId,
           userId,
-          dto,
+          { ...dto, companyId },
           sectionName,
           sectionItems,
           orderType,
