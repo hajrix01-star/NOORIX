@@ -4,17 +4,19 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
 import { OrdersService } from './orders.service';
 import { mapDtoItemsToOrderLines } from './orders-lines.util';
-import {
-  formatVariantLabel,
-  resolveStaffItemVariant,
-  staffLineAggregateKey,
-} from './orders-staff-pricing.util';
+import { resolveStaffItemVariant, staffLineAggregateKey } from './orders-staff-pricing.util';
 import {
   buildStaffSaleLogRef,
   staffSaleLogRefPrefix,
   staffSaleOperationKey,
 } from './orders-staff-log-ref.util';
 import { buildSalesReportSince, staffSaleMatchesReportWindow } from './orders-staff-sales-report.util';
+import {
+  staffItemLineAmount,
+  staffSaleAvgPerOperation,
+  staffSaleAvgPerOrder,
+} from './orders-staff-amount.util';
+import { buildSalesWhatsAppTextCombined, buildStaffPurchaseWhatsAppText } from './orders-staff-whatsapp.util';
 import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { toYmd } from '../common/utils/to-ymd.util';
 
@@ -228,7 +230,7 @@ export class OrdersStaffService {
 
     if (!isSale) return orders.length === 1 ? orders[0] : { orders, count: orders.length };
 
-    const whatsAppText = this.buildSalesWhatsAppTextCombined(orders, saleDate!, lang, saleLogRef);
+    const whatsAppText = buildSalesWhatsAppTextCombined(orders, saleDate!, lang, saleLogRef);
     const primary = orders[0];
     return { ...primary, orders, count: orders.length, logRef: saleLogRef, whatsAppText };
   }
@@ -307,7 +309,7 @@ export class OrdersStaffService {
     if (!isSale) return updated;
 
     const saleDay = updated.saleDate ?? updated.createdAt;
-    const whatsAppText = this.buildSalesWhatsAppTextCombined([updated], saleDay, lang, updated.logRef);
+    const whatsAppText = buildSalesWhatsAppTextCombined([updated], saleDay, lang, updated.logRef);
     return { ...updated, whatsAppText };
   }
 
@@ -333,7 +335,7 @@ export class OrdersStaffService {
           },
         })
       : [order];
-    const whatsAppText = this.buildSalesWhatsAppTextCombined(orders, saleDay, lang, order.logRef);
+    const whatsAppText = buildSalesWhatsAppTextCombined(orders, saleDay, lang, order.logRef);
     return { whatsAppText, logRef: order.logRef };
   }
 
@@ -432,56 +434,6 @@ export class OrdersStaffService {
     };
   }
 
-  /** نص واتساب للتسجيل الداخلي — قسم واحد أو عدة أقسام في رسالة واحدة */
-  private buildSalesWhatsAppTextCombined(
-    orders: any[],
-    saleDate: Date,
-    lang: 'ar' | 'en' = 'ar',
-    logRef?: string | null,
-  ): string {
-    const d = saleDate.toISOString().slice(0, 10).replace(/-/g, '/');
-    const multi = orders.length > 1;
-    const header = lang === 'en'
-      ? (multi ? 'Internal log' : `Internal log — ${orders[0]?.sectionName || '—'}`)
-      : (multi ? 'تسجيل داخلي' : `تسجيل داخلي — ${orders[0]?.sectionName || '—'}`);
-    const dateLine = lang === 'en' ? `Date: ${d}` : `يوم التسجيل: ${d}`;
-    const refLine = logRef
-      ? (lang === 'en' ? `Ref: ${logRef}` : `رقم العملية: ${logRef}`)
-      : null;
-    const lines: string[] = [header, dateLine, ...(refLine ? [refLine] : []), '──────────────'];
-    let totalQty = 0;
-
-    for (const order of orders) {
-      if (multi) lines.push(`▪ ${order.sectionName || '—'}`);
-      for (const it of order.items || []) {
-        const name = lang === 'en'
-          ? (it.product?.nameEn || it.product?.nameAr || '—')
-          : (it.product?.nameAr || it.product?.nameEn || '—');
-        const q = Number(it.quantity);
-        totalQty += q;
-        const prefix = multi ? '  ' : '';
-        lines.push(`${prefix}• ${name}: ${q}`);
-      }
-      if (multi) lines.push('');
-    }
-
-    lines.push('──────────────');
-    lines.push(lang === 'en' ? `Total qty: ${totalQty}` : `إجمالي الكميات: ${totalQty}`);
-    const notes = orders[0]?.notes?.trim();
-    if (notes) {
-      lines.push(lang === 'en' ? `Notes: ${notes}` : `ملاحظات: ${notes}`);
-    }
-    const by = orders[0]?.user?.nameAr || orders[0]?.user?.nameEn;
-    if (by) lines.push(lang === 'en' ? `By: ${by}` : `بواسطة: ${by}`);
-    return lines.join('\n').trim();
-  }
-
-  private fmtWaMoney(d: Prisma.Decimal | number): string {
-    const n = Number(d);
-    if (!Number.isFinite(n)) return '0';
-    return Number.isInteger(n) ? String(n) : n.toFixed(1);
-  }
-
   /** تجميع بنود الطلبات المعلّقة لطلب مشتريات واحد */
   private aggregateStaffOrdersToPurchaseLines(orders: any[]) {
     type Agg = {
@@ -522,83 +474,6 @@ export class OrdersStaffService {
       }
     }
     return [...map.values()];
-  }
-
-  /** بناء نص واتساب من الطلبات المعلّقة (للمندوب — مع أسعار ومجموع) */
-  private buildWhatsAppText(
-    sections: { sectionName: string; orders: any[] }[],
-    date: string,
-    lang: 'ar' | 'en' = 'ar',
-    grandTotal?: Prisma.Decimal,
-  ): string {
-    const header = lang === 'en' ? `Purchase list — ${date}` : `قائمة مشتريات — ${date}`;
-    const lines: string[] = [header, ''];
-    let running = new Prisma.Decimal(0);
-
-    for (const sec of sections) {
-      lines.push(`▪ ${sec.sectionName}`);
-      const itemMap = new Map<string, {
-        name: string;
-        qty: Prisma.Decimal;
-        unit: string | null;
-        size: string | null;
-        packaging: string | null;
-        unitPrice: Prisma.Decimal;
-      }>();
-
-      for (const order of sec.orders) {
-        for (const it of order.items || []) {
-          const v = resolveStaffItemVariant(it.product, {
-            size: it.size,
-            packaging: it.packaging,
-            unit: it.unit,
-            unitPrice: it.unitPrice != null ? String(it.unitPrice) : undefined,
-          });
-          const key = staffLineAggregateKey(it.productId, v.size, v.packaging, v.unit, v.unitPrice);
-          const name = lang === 'en'
-            ? (it.product?.nameEn || it.product?.nameAr || '—')
-            : (it.product?.nameAr || it.product?.nameEn || '—');
-          const q = new Prisma.Decimal(it.quantity || 0);
-          const cur = itemMap.get(key);
-          if (cur) {
-            cur.qty = cur.qty.plus(q);
-          } else {
-            itemMap.set(key, {
-              name,
-              qty: q,
-              unit: v.unit,
-              size: v.size,
-              packaging: v.packaging,
-              unitPrice: v.unitPrice,
-            });
-          }
-        }
-      }
-
-      for (const row of itemMap.values()) {
-        const amount = row.qty.times(row.unitPrice);
-        running = running.plus(amount);
-        const variant = formatVariantLabel(row.size, row.packaging, row.unit);
-        const variantPart = variant ? ` (${variant})` : '';
-        const price = this.fmtWaMoney(row.unitPrice);
-        const amt = this.fmtWaMoney(amount);
-        lines.push(
-          lang === 'en'
-            ? `  - ${row.name}${variantPart}: ${this.fmtWaMoney(row.qty)} × ${price} = ${amt} SR`
-            : `  - ${row.name}${variantPart}: ${this.fmtWaMoney(row.qty)} × ${price} = ${amt} SR`,
-        );
-      }
-      lines.push('');
-    }
-
-    const total = grandTotal ?? running;
-    lines.push('──────────────');
-    lines.push(
-      lang === 'en'
-        ? `Total: ${this.fmtWaMoney(total)} SR`
-        : `الإجمالي: ${this.fmtWaMoney(total)} SR`,
-    );
-    return lines.join('\n').trim();
   }
 
   /** الكاشير: يرسل الملخص — يعلّم الطلبات، ينشئ طلب مشتريات، ويعيد نص واتساب */
@@ -644,7 +519,7 @@ export class OrdersStaffService {
       || now.toISOString().slice(0, 10);
 
     const sections = Object.entries(grouped).map(([sectionName, sOrders]) => ({ sectionName, orders: sOrders }));
-    const whatsAppText = this.buildWhatsAppText(sections, dateStr, lang, grandTotal);
+    const whatsAppText = buildStaffPurchaseWhatsAppText(sections, dateStr, lang, grandTotal);
 
     await this.prisma.staffOrder.updateMany({
       where: { id: { in: ids } },
@@ -720,6 +595,7 @@ export class OrdersStaffService {
             productId: true,
             quantity: true,
             unit: true,
+            unitPrice: true,
           },
         },
       },
@@ -746,6 +622,7 @@ export class OrdersStaffService {
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     let totalQty = 0;
+    let totalAmount = new Prisma.Decimal(0);
     const operationKeys = new Set<string>();
     const userOps: Record<string, Set<string>> = {};
     const dayOps: Record<string, Set<string>> = {};
@@ -759,6 +636,7 @@ export class OrdersStaffService {
       date: string;
       userId: string;
       qty: number;
+      totalAmount: Prisma.Decimal;
       sections: Set<string>;
     }> = {};
 
@@ -774,6 +652,7 @@ export class OrdersStaffService {
           date: day,
           userId: o.userId,
           qty: 0,
+          totalAmount: new Prisma.Decimal(0),
           sections: new Set(),
         };
       }
@@ -805,11 +684,14 @@ export class OrdersStaffService {
 
       for (const it of o.items) {
         const qty = Number(it.quantity);
+        const lineAmount = staffItemLineAmount(it);
         totalQty += qty;
+        totalAmount = totalAmount.plus(lineAmount);
         bySection[o.sectionName].qty += qty;
         byUser[uid].qty += qty;
         byDay[day].qty += qty;
         byLog[opKey].qty += qty;
+        byLog[opKey].totalAmount = byLog[opKey].totalAmount.plus(lineAmount);
 
         const pid = it.productId;
         const product = productMap.get(pid);
@@ -838,6 +720,7 @@ export class OrdersStaffService {
     const byLogRows = Object.values(byLog)
       .map((row) => {
         const uData = userMap.get(row.userId);
+        const avgPerOrder = staffSaleAvgPerOrder(row.totalAmount, row.qty);
         return {
           operationKey: row.operationKey,
           logRef: row.logRef,
@@ -846,6 +729,8 @@ export class OrdersStaffService {
           nameAr: uData?.nameAr || '—',
           nameEn: uData?.nameEn || null,
           qty: row.qty,
+          totalAmount: Number(row.totalAmount),
+          avgPerOrder: Number(avgPerOrder),
           sectionsCount: row.sections.size,
           sections: Array.from(row.sections),
         };
@@ -856,6 +741,8 @@ export class OrdersStaffService {
       summary: {
         totalOrders: operationKeys.size,
         totalQty,
+        totalAmount: Number(totalAmount),
+        avgPerOrder: Number(staffSaleAvgPerOperation(totalAmount, operationKeys.size)),
         uniqueProducts: Object.keys(byProduct).length,
         uniqueSections: Object.keys(bySection).length,
       },

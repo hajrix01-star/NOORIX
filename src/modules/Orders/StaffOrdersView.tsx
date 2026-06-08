@@ -16,6 +16,9 @@ import {
   type StaffBasketLine,
   basketTotal,
   basketLineAmount,
+  staffOrdersQty,
+  staffOrdersTotal,
+  staffSaleAvgPerOrder,
   defaultVariantModalState,
   displayProductPrice,
   formatVariantLabel,
@@ -248,6 +251,10 @@ function StaffSentSaleGroup({
   const dateLabel = primary?.saleDate ? formatSaudiDate(primary.saleDate) : formatSaudiDate(primary.createdAt);
   const totalItems = orders.reduce((n, o) => n + ((o.items || []).length), 0);
   const sectionsCount = orders.length;
+  const totalAmount = staffOrdersTotal(orders);
+  const totalQty = staffOrdersQty(orders);
+  const avgPerOrder = staffSaleAvgPerOrder(totalAmount, totalQty);
+  const showMoney = totalAmount.gt(0);
 
   return (
     <div className="rounded-lg border border-noorix-border bg-noorix-bg overflow-hidden">
@@ -288,9 +295,21 @@ function StaffSentSaleGroup({
             </div>
             {logRef ? <span className="text-[11px] text-noorix-muted">{dateLabel}</span> : null}
             {!open ? (
-              <span className="text-[11px] text-noorix-muted">
-                {totalItems} {t('staffOrderItemsCount')}
-              </span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-noorix-muted">
+                <span>{totalItems} {t('staffOrderItemsCount')}</span>
+                {showMoney ? (
+                  <>
+                    <span className="text-noorix-green font-semibold ltr">
+                      {t('total')}: {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
+                    </span>
+                    {totalQty > 0 ? (
+                      <span className="text-noorix-violet font-semibold ltr">
+                        {t('avgPerOrder')}: {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
+                      </span>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
             ) : null}
           </button>
         </div>
@@ -301,7 +320,19 @@ function StaffSentSaleGroup({
         </div>
       </div>
       {open ? (
-        <div className="px-3 pb-3 pt-0 border-t border-noorix-border flex flex-col gap-3">
+        <div className="px-3 pb-3 pt-2 border-t border-noorix-border flex flex-col gap-3">
+          {showMoney ? (
+            <div className="flex flex-wrap items-center gap-3 text-[12px]">
+              <span className="font-semibold text-noorix-green ltr">
+                {t('total')}: {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
+              </span>
+              {totalQty > 0 ? (
+                <span className="font-semibold text-noorix-violet ltr">
+                  {t('avgPerOrder')}: {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {orders.map((order) => (
             <div key={order.id} className="pt-2 flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -464,6 +495,19 @@ function StaffOrderPanel({
       (a, b) => new Date(b[0].createdAt).getTime() - new Date(a[0].createdAt).getTime(),
     );
   }, [isSale, sentOrders]);
+
+  const sentSalesSummary = useMemo(() => {
+    if (!isSale || sentSaleGroups.length === 0) {
+      return { totalAmount: new Decimal(0), avgPerOrder: new Decimal(0), operationCount: 0 };
+    }
+    const totalAmount = staffOrdersTotal(sentOrders);
+    const operationCount = sentSaleGroups.length;
+    return {
+      totalAmount,
+      avgPerOrder: operationCount > 0 ? totalAmount.div(operationCount) : new Decimal(0),
+      operationCount,
+    };
+  }, [isSale, sentSaleGroups.length, sentOrders]);
 
   const editingOrder = useMemo(
     () => (editingId ? (myOrders as any[]).find((o: any) => o.id === editingId) : null),
@@ -774,9 +818,9 @@ function StaffOrderPanel({
                 <span className="text-[13px] font-bold text-noorix-blue ltr">{basketLogRef}</span>
               </div>
             ) : null}
-            {!isSale && basketTotalAmount.gt(0) ? (
+            {basketTotalAmount.gt(0) ? (
               <span className="text-[13px] font-bold text-noorix-green ltr">
-                {fmt(basketTotalAmount.toNumber())} <span className="nx-sar">SR</span>
+                {t('total')}: {fmt(basketTotalAmount.toNumber())} <span className="nx-sar">SR</span>
               </span>
             ) : null}
           </div>
@@ -926,11 +970,25 @@ function StaffOrderPanel({
       {/* ── مُرسَل — بدون كرت خارجي إضافي؛ كل طلب مطوي افتراضياً ── */}
       {sentOrders.length > 0 && (
         <section className="flex flex-col gap-2 pt-1 border-t border-noorix-border">
-          <div className="flex items-center justify-between gap-2 px-0.5 pt-3">
-            <span className="text-[13px] font-bold text-noorix-muted">
-              {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
-            </span>
-            <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
+          <div className="flex flex-col gap-2 px-0.5 pt-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[13px] font-bold text-noorix-muted">
+                {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
+              </span>
+              <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
+            </div>
+            {isSale && sentSalesSummary.totalAmount.gt(0) ? (
+              <div className="flex flex-wrap items-center gap-3 text-[12px]">
+                <span className="font-semibold text-noorix-green ltr">
+                  {t('total')}: {fmt(sentSalesSummary.totalAmount.toNumber())} <span className="nx-sar">SR</span>
+                </span>
+                {sentSalesSummary.operationCount > 0 ? (
+                  <span className="font-semibold text-noorix-violet ltr">
+                    {t('avgPerOrder')}: {fmt(sentSalesSummary.avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <div className="flex flex-col gap-2">
             {isSale

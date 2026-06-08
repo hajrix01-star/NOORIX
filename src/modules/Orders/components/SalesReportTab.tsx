@@ -122,6 +122,8 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
       userName(row),
       row.sectionsCount ?? (row.sections?.length ?? 0),
       fmt(row.qty, 0),
+      row.totalAmount > 0 ? fmt(row.totalAmount) : '—',
+      row.avgPerOrder > 0 ? fmt(row.avgPerOrder) : '—',
       (row.sections || []).join(' · ') || '—',
     ]), [byLog, lang]);
 
@@ -165,9 +167,11 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
       ) : (
         <>
           {/* ── بطاقات KPI ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <KpiCard label={t('salesReportOrders')}   value={fmt(summary.totalOrders ?? 0, 0)}   color="text-noorix-blue" />
             <KpiCard label={t('salesReportItems')}    value={fmt(summary.totalQty ?? 0, 0)}      color="text-noorix-green" />
+            <KpiCard label={t('total')} value={summary.totalAmount > 0 ? fmt(summary.totalAmount) : '—'} color="text-noorix-green" />
+            <KpiCard label={t('avgPerOrder')} value={summary.avgPerOrder > 0 ? fmt(summary.avgPerOrder) : '—'} color="text-noorix-violet" />
             <KpiCard label={t('salesReportProducts')} value={summary.uniqueProducts ?? 0}        color="text-noorix-violet" />
             <KpiCard label={t('salesReportSections')} value={summary.uniqueSections ?? 0}        color="text-noorix-amber" />
           </div>
@@ -215,7 +219,7 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
             <div className="p-2">
               {activeView === 'log' && (
                 <SimpleTable
-                  headers={['#', t('staffSaleLogRef'), t('date'), t('employee'), t('salesReportSections'), t('quantity'), t('productSections')]}
+                  headers={['#', t('staffSaleLogRef'), t('date'), t('employee'), t('salesReportSections'), t('quantity'), t('total'), t('avgPerOrder'), t('productSections')]}
                   rows={logRows}
                   emptyMsg={t('salesReportEmpty')}
                 />

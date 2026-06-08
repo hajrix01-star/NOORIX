@@ -79,6 +79,46 @@ export function basketTotal(lines: StaffBasketLine[]): Decimal {
   return lines.reduce((sum, line) => sum.plus(basketLineAmount(line)), new Decimal(0));
 }
 
+export function staffItemLineAmount(item: { quantity?: number | string | null; unitPrice?: number | string | null }): Decimal {
+  const q = new Decimal(item.quantity || 0);
+  const p = new Decimal(item.unitPrice ?? 0);
+  return q.times(p);
+}
+
+export function staffOrdersQty(orders: { items?: { quantity?: number | string | null }[] }[]): number {
+  let qty = new Decimal(0);
+  for (const order of orders) {
+    for (const it of order.items || []) {
+      qty = qty.plus(new Decimal(it.quantity || 0));
+    }
+  }
+  return qty.toNumber();
+}
+
+export function staffOrdersTotal(orders: { items?: { quantity?: number | string | null; unitPrice?: number | string | null }[] }[]): Decimal {
+  let total = new Decimal(0);
+  for (const order of orders) {
+    for (const it of order.items || []) {
+      total = total.plus(staffItemLineAmount(it));
+    }
+  }
+  return total;
+}
+
+/** تقرير/عملية: إجمالي المبالغ ÷ عدد العمليات */
+export function staffSaleAvgPerOperation(totalAmount: Decimal | number, operationCount: number): Decimal {
+  const total = totalAmount instanceof Decimal ? totalAmount : new Decimal(totalAmount || 0);
+  const count = Number(operationCount) || 0;
+  return count > 0 ? total.div(count) : new Decimal(0);
+}
+
+/** عملية واحدة: إجمالي المبلغ ÷ إجمالي الكميات (متوسط مرجّح للوحدة) */
+export function staffSaleAvgPerOrder(totalAmount: Decimal | number, totalQty: number): Decimal {
+  const total = totalAmount instanceof Decimal ? totalAmount : new Decimal(totalAmount || 0);
+  const qty = Number(totalQty) || 0;
+  return qty > 0 ? total.div(qty) : new Decimal(0);
+}
+
 export function displayProductPrice(product: any): string | null {
   const variants = Array.isArray(product?.variants) ? product.variants : [];
   if (variants.length > 0 && variants[0]?.lastPrice) return String(variants[0].lastPrice);
@@ -97,15 +137,5 @@ export function formatVariantLabel(
 
 /** تقدير إجمالي طلبات معلّقة في ملخص الكاشير */
 export function digestSectionsTotal(sections: { orders?: { items?: { quantity?: number | string; unitPrice?: number | string | null }[] }[] }[]): number {
-  let total = new Decimal(0);
-  for (const sec of sections) {
-    for (const order of sec.orders || []) {
-      for (const it of order.items || []) {
-        const q = new Decimal(it.quantity || 0);
-        const p = new Decimal(it.unitPrice ?? 0);
-        total = total.plus(q.times(p));
-      }
-    }
-  }
-  return total.toNumber();
+  return staffOrdersTotal(sections.flatMap((sec) => sec.orders || [])).toNumber();
 }
