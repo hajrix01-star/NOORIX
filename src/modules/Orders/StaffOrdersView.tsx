@@ -190,6 +190,143 @@ function StaffSaleItemsTable({
   );
 }
 
+/** سلة التسجيل — جدول مضغوط بصف واحد لكل صنف */
+function StaffBasketTable({
+  basketLines,
+  productsById,
+  lang,
+  t,
+  showPrices,
+  editingQtyId,
+  setEditingQtyId,
+  setLineQty,
+  removeLine,
+}: {
+  basketLines: StaffBasketLine[];
+  productsById: Map<string, any>;
+  lang: string;
+  t: (key: string, ...args: unknown[]) => string;
+  showPrices: boolean;
+  editingQtyId: string | null;
+  setEditingQtyId: (id: string | null) => void;
+  setLineQty: (lineId: string, qty: number) => void;
+  removeLine: (lineId: string) => void;
+}) {
+  const totalQty = basketLines.reduce((n, l) => n + (l.quantity || 0), 0);
+  const totalAmount = basketTotal(basketLines);
+
+  return (
+    <table className="w-full text-[12px] border-collapse min-w-[300px]">
+      <thead>
+        <tr className="bg-noorix-bg-muted border-b border-noorix-border">
+          <th className="text-start py-1.5 px-2 font-bold text-[11px] text-noorix-muted">{t('product')}</th>
+          <th className="text-center py-1.5 px-1 font-bold text-[11px] text-noorix-muted w-[5.5rem]">{t('quantity')}</th>
+          {showPrices ? (
+            <>
+              <th className="text-end py-1.5 px-2 font-bold text-[11px] text-noorix-muted w-14">{t('unitPrice')}</th>
+              <th className="text-end py-1.5 px-2 font-bold text-[11px] text-noorix-muted w-[4.5rem]">{t('staffSaleGrandTotal')}</th>
+            </>
+          ) : null}
+          <th className="w-7 p-0" aria-label={t('delete')} />
+        </tr>
+      </thead>
+      <tbody>
+        {basketLines.map((row) => {
+          const p = productsById.get(row.productId);
+          const name = p ? (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn)) : row.productId;
+          const variant = formatVariantLabel(row.size, row.packaging, row.unit);
+          const lineAmt = basketLineAmount(row);
+          const isEditingQty = editingQtyId === row.lineId;
+          return (
+            <tr key={row.lineId} className="border-b border-noorix-border last:border-b-0">
+              <td className="py-1.5 px-2 align-middle text-start max-w-[9rem] sm:max-w-none">
+                <div className="font-medium text-noorix-text leading-tight truncate" title={name}>{name}</div>
+                {variant ? (
+                  <div className="text-[10px] text-noorix-muted ltr truncate" title={variant}>{variant}</div>
+                ) : null}
+              </td>
+              <td className="py-1.5 px-1 align-middle">
+                <div className="inline-flex items-center justify-center gap-0.5 w-full">
+                  <button
+                    type="button"
+                    onClick={() => setLineQty(row.lineId, row.quantity - 1)}
+                    className="w-6 h-6 rounded-md border border-noorix-border text-[14px] leading-none flex items-center justify-center hover:bg-noorix-bg-muted shrink-0"
+                  >−</button>
+                  {isEditingQty ? (
+                    <input
+                      autoFocus
+                      type="number"
+                      min="1"
+                      className="w-8 h-6 text-center text-[12px] border border-noorix-blue rounded-md bg-noorix-bg focus:outline-none nx-font-numbers"
+                      value={row.quantity}
+                      onChange={(e) => setLineQty(row.lineId, Number(e.target.value))}
+                      onBlur={() => setEditingQtyId(null)}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEditingQtyId(row.lineId)}
+                      className="min-w-[1.25rem] h-6 px-0.5 text-[12px] font-bold text-noorix-blue nx-font-numbers"
+                    >{row.quantity}</button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setLineQty(row.lineId, row.quantity + 1)}
+                    className="w-6 h-6 rounded-md border border-noorix-border text-[14px] leading-none flex items-center justify-center hover:bg-noorix-bg-muted shrink-0"
+                  >+</button>
+                </div>
+              </td>
+              {showPrices ? (
+                <>
+                  <td className="py-1.5 px-2 text-end nx-font-numbers ltr align-middle whitespace-nowrap text-[12px]">
+                    {Number(row.unitPrice) > 0 ? (
+                      <>{fmt(row.unitPrice)} <span className="nx-sar">SR</span></>
+                    ) : (
+                      <span className="text-noorix-muted">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 px-2 text-end nx-font-numbers ltr font-bold text-noorix-green align-middle whitespace-nowrap">
+                    {lineAmt.gt(0) ? (
+                      <>{fmt(lineAmt.toNumber())} <span className="nx-sar">SR</span></>
+                    ) : (
+                      <span className="text-noorix-muted">—</span>
+                    )}
+                  </td>
+                </>
+              ) : null}
+              <td className="py-1.5 px-0.5 text-center align-middle">
+                <button
+                  type="button"
+                  onClick={() => removeLine(row.lineId)}
+                  className="w-6 h-6 text-noorix-red text-[15px] leading-none hover:opacity-70"
+                  aria-label={t('delete')}
+                >×</button>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+      {showPrices && totalAmount.gt(0) ? (
+        <tfoot>
+          <tr className="bg-noorix-bg-muted/60 border-t border-noorix-border">
+            <td className="py-2 px-2 text-[11px] font-semibold text-noorix-muted whitespace-nowrap">
+              {t('staffSaleTotalQty')}:{' '}
+              <span className="text-noorix-blue nx-font-numbers ltr">{fmt(totalQty, 0)}</span>
+            </td>
+            <td colSpan={3} className="py-2 px-2 text-end text-[12px] whitespace-nowrap">
+              <span className="text-noorix-muted">{t('staffSaleGrandTotal')}: </span>
+              <span className="font-bold text-noorix-green nx-font-numbers ltr">
+                {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
+              </span>
+            </td>
+            <td />
+          </tr>
+        </tfoot>
+      ) : null}
+    </table>
+  );
+}
+
 // ─── كرت صنف واحد ─────────────────────────────────────────────────────────────
 function ProductCard({
   product, lang, qty, freqCount, onTap, onRemove,
@@ -547,8 +684,6 @@ function StaffOrderPanel({
     });
   }, [allProducts, sectionFilter, search, freqMap, lang]);
 
-  const basketTotalAmount = useMemo(() => basketTotal(basketLines), [basketLines]);
-
   const qtyMap = useMemo(() => {
     const m = new Map<string, number>();
     for (const line of basketLines) {
@@ -885,9 +1020,9 @@ function StaffOrderPanel({
       {/* ── ملخص الطلب ── */}
       {basketLines.length > 0 && (
         <div className="noorix-surface-card overflow-hidden">
-          <div className="px-4 py-3 border-b border-noorix-border flex flex-wrap items-center justify-between gap-2">
+          <div className="px-3 py-2 border-b border-noorix-border flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <div className="flex items-center gap-2 min-w-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue shrink-0">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue shrink-0">
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
               </svg>
@@ -896,70 +1031,26 @@ function StaffOrderPanel({
               </span>
             </div>
             {isSale && basketLogRef ? (
-              <div className="flex items-center gap-1.5 ms-auto">
-                <span className="text-[11px] text-noorix-muted">{t('staffSaleLogRef')}</span>
-                <span className="text-[13px] font-bold text-noorix-blue ltr">{basketLogRef}</span>
-              </div>
-            ) : null}
-            {basketTotalAmount.gt(0) ? (
-              <span className="text-[13px] font-bold text-noorix-green ltr">
-                {t('total')}: {fmt(basketTotalAmount.toNumber())} <span className="nx-sar">SR</span>
+              <span className="text-[11px] text-noorix-muted whitespace-nowrap">
+                {t('staffSaleLogRef')}:{' '}
+                <span className="font-bold text-noorix-blue ltr">{basketLogRef}</span>
               </span>
             ) : null}
           </div>
-          <div className="divide-y divide-noorix-border">
-            {basketLines.map((row) => {
-              const p = productsById.get(row.productId);
-              const name = p ? (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn)) : row.productId;
-              const variant = formatVariantLabel(row.size, row.packaging, row.unit);
-              const lineAmt = basketLineAmount(row);
-              const isEditingQty = editingQtyId === row.lineId;
-              return (
-                <div key={row.lineId} className="flex flex-col gap-1.5 px-4 py-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-medium text-noorix-text">{name}</div>
-                      {variant ? (
-                        <div className="text-[11px] text-noorix-muted ltr">{variant}</div>
-                      ) : null}
-                    </div>
-                    <button type="button" onClick={() => removeLine(row.lineId)}
-                      className="text-noorix-red text-[16px] shrink-0 hover:opacity-70">×</button>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => setLineQty(row.lineId, row.quantity - 1)}
-                        className="w-7 h-7 rounded-full border border-noorix-border text-[16px] flex items-center justify-center hover:bg-noorix-bg-muted">−</button>
-                      {isEditingQty ? (
-                        <input autoFocus type="number" min="1"
-                          className="w-10 h-7 text-center text-[13px] border border-noorix-blue rounded-lg bg-noorix-bg focus:outline-none"
-                          value={row.quantity}
-                          onChange={(e) => setLineQty(row.lineId, Number(e.target.value))}
-                          onBlur={() => setEditingQtyId(null)}
-                        />
-                      ) : (
-                        <button type="button" onClick={() => setEditingQtyId(row.lineId)}
-                          className="w-8 h-7 text-center text-[13px] font-bold text-noorix-blue hover:underline"
-                        >{row.quantity}</button>
-                      )}
-                      <button type="button" onClick={() => setLineQty(row.lineId, row.quantity + 1)}
-                        className="w-7 h-7 rounded-full border border-noorix-border text-[16px] flex items-center justify-center hover:bg-noorix-bg-muted">+</button>
-                    </div>
-                    <div className="text-[12px] text-noorix-muted ltr text-end">
-                      {Number(row.unitPrice) > 0 ? (
-                        <>
-                          {fmt(row.unitPrice)} × {fmt(row.quantity, 0)} ={' '}
-                          <span className="font-bold text-noorix-green">{fmt(lineAmt.toNumber())}</span>{' '}
-                          <span className="nx-sar">SR</span>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="overflow-x-auto">
+            <StaffBasketTable
+              basketLines={basketLines}
+              productsById={productsById}
+              lang={lang}
+              t={t}
+              showPrices={isSale}
+              editingQtyId={editingQtyId}
+              setEditingQtyId={setEditingQtyId}
+              setLineQty={setLineQty}
+              removeLine={removeLine}
+            />
           </div>
-          <div className="px-4 pb-3 pt-2 flex flex-col gap-3">
+          <div className="px-3 py-2 border-t border-noorix-border flex flex-col gap-2">
             {isSale && (
               <Input
                 type="date"
@@ -970,7 +1061,7 @@ function StaffOrderPanel({
             )}
             <Input label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={t('optional')} />
           </div>
-          <div className={cn('px-4 pb-4 gap-2', isSale ? 'flex flex-col' : 'grid grid-cols-2')}>
+          <div className={cn('px-3 pb-3 gap-2', isSale ? 'flex flex-col' : 'grid grid-cols-2')}>
             {!isSale && (
               <Button variant="ghost" size="md" onClick={resetForm} disabled={submitting}>{t('cancel')}</Button>
             )}
