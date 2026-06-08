@@ -79,10 +79,53 @@ export function basketTotal(lines: StaffBasketLine[]): Decimal {
   return lines.reduce((sum, line) => sum.plus(basketLineAmount(line)), new Decimal(0));
 }
 
-export function staffItemLineAmount(item: { quantity?: number | string | null; unitPrice?: number | string | null }): Decimal {
+type StaffAmountProduct = {
+  lastPrice?: number | string | null;
+  variants?: unknown;
+  unit?: string | null;
+};
+
+type StaffAmountItem = {
+  quantity?: number | string | null;
+  unitPrice?: number | string | null;
+  size?: string | null;
+  packaging?: string | null;
+  unit?: string | null;
+  product?: StaffAmountProduct | null;
+};
+
+/** سعر السطر — يُستخدم المحفوظ، وإن كان 0 يُستنتج من كتالوج المنتج (للسجلات القديمة) */
+export function resolveStaffItemUnitPrice(item: StaffAmountItem): Decimal {
+  const stored = new Decimal(item.unitPrice ?? 0);
+  if (stored.gt(0)) return stored;
+  const product = item.product;
+  if (!product) return stored;
+
+  const size = item.size?.trim() || null;
+  const packaging = item.packaging?.trim() || null;
+  const unit = item.unit?.trim() || 'piece';
+  const variants = Array.isArray(product.variants)
+    ? (product.variants as { size?: string; packaging?: string; unit?: string; lastPrice?: string | number }[])
+    : [];
+
+  const match = variants.find(
+    (v) => (v.size || '') === (size || '')
+      && (v.packaging || '') === (packaging || '')
+      && (v.unit || 'piece') === unit,
+  );
+  if (match?.lastPrice != null && String(match.lastPrice).trim() !== '') {
+    return new Decimal(match.lastPrice);
+  }
+  if (variants.length > 0 && !size && !packaging) {
+    const v0 = variants[0];
+    return new Decimal(v0.lastPrice ?? 0);
+  }
+  return new Decimal(product.lastPrice ?? 0);
+}
+
+export function staffItemLineAmount(item: StaffAmountItem): Decimal {
   const q = new Decimal(item.quantity || 0);
-  const p = new Decimal(item.unitPrice ?? 0);
-  return q.times(p);
+  return q.times(resolveStaffItemUnitPrice(item));
 }
 
 export function staffOrdersQty(orders: { items?: { quantity?: number | string | null }[] }[]): number {
@@ -95,7 +138,7 @@ export function staffOrdersQty(orders: { items?: { quantity?: number | string | 
   return qty.toNumber();
 }
 
-export function staffOrdersTotal(orders: { items?: { quantity?: number | string | null; unitPrice?: number | string | null }[] }[]): Decimal {
+export function staffOrdersTotal(orders: { items?: StaffAmountItem[] }[]): Decimal {
   let total = new Decimal(0);
   for (const order of orders) {
     for (const it of order.items || []) {

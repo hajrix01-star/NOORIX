@@ -1,12 +1,30 @@
 import { Prisma } from '@prisma/client';
+import { resolveStaffItemVariant } from './orders-staff-pricing.util';
 
-export function staffItemLineAmount(item: {
+type StaffAmountItem = {
   quantity?: Prisma.Decimal | number | string | null;
   unitPrice?: Prisma.Decimal | number | string | null;
-}): Prisma.Decimal {
+  size?: string | null;
+  packaging?: string | null;
+  unit?: string | null;
+  product?: Parameters<typeof resolveStaffItemVariant>[0];
+};
+
+/** سعر السطر — يُستخدم المحفوظ، وإن كان 0 يُستنتج من كتالوج المنتج (للسجلات القديمة) */
+export function resolveStaffItemUnitPrice(item: StaffAmountItem): Prisma.Decimal {
+  const stored = item.unitPrice != null ? new Prisma.Decimal(item.unitPrice) : new Prisma.Decimal(0);
+  if (stored.gt(0)) return stored;
+  if (!item.product) return stored;
+  return resolveStaffItemVariant(item.product, {
+    size: item.size,
+    packaging: item.packaging,
+    unit: item.unit,
+  }).unitPrice;
+}
+
+export function staffItemLineAmount(item: StaffAmountItem): Prisma.Decimal {
   const q = new Prisma.Decimal(item.quantity || 0);
-  const p = new Prisma.Decimal(item.unitPrice ?? 0);
-  return q.times(p);
+  return q.times(resolveStaffItemUnitPrice(item));
 }
 
 export function staffOrdersQty(orders: { items?: { quantity?: Prisma.Decimal | number | string | null }[] }[]): number {
@@ -19,9 +37,7 @@ export function staffOrdersQty(orders: { items?: { quantity?: Prisma.Decimal | n
   return Number(qty);
 }
 
-export function staffOrdersTotal(orders: {
-  items?: { quantity?: Prisma.Decimal | number | string | null; unitPrice?: Prisma.Decimal | number | string | null }[];
-}[]): Prisma.Decimal {
+export function staffOrdersTotal(orders: { items?: StaffAmountItem[] }[]): Prisma.Decimal {
   let total = new Prisma.Decimal(0);
   for (const order of orders) {
     for (const it of order.items || []) {

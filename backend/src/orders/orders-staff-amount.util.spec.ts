@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import {
+  resolveStaffItemUnitPrice,
   staffItemLineAmount,
   staffOrdersQty,
   staffOrdersTotal,
@@ -24,6 +25,16 @@ describe('orders-staff-amount.util', () => {
     expect(Number(staffItemLineAmount({ quantity: 2, unitPrice: 10 }))).toBe(20);
     expect(Number(staffOrdersTotal(orders))).toBe(37);
     expect(staffOrdersQty(orders)).toBe(6);
+  });
+
+  it('falls back to product catalog price for legacy rows with unitPrice 0', () => {
+    const item = {
+      quantity: 2,
+      unitPrice: 0,
+      product: { lastPrice: 15, variants: [] },
+    };
+    expect(Number(resolveStaffItemUnitPrice(item))).toBe(15);
+    expect(Number(staffItemLineAmount(item))).toBe(30);
   });
 
   it('computes averages', () => {

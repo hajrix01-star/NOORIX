@@ -595,6 +595,8 @@ export class OrdersStaffService {
             productId: true,
             quantity: true,
             unit: true,
+            size: true,
+            packaging: true,
             unitPrice: true,
           },
         },
@@ -616,7 +618,7 @@ export class OrdersStaffService {
     const products = productIds.length
       ? await this.prisma.orderProduct.findMany({
           where: { companyId, ...(tenantId ? { tenantId } : {}), id: { in: productIds } },
-          select: { id: true, nameAr: true, nameEn: true, unit: true },
+          select: { id: true, nameAr: true, nameEn: true, unit: true, lastPrice: true, variants: true },
         })
       : [];
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -684,7 +686,9 @@ export class OrdersStaffService {
 
       for (const it of o.items) {
         const qty = Number(it.quantity);
-        const lineAmount = staffItemLineAmount(it);
+        const pid = it.productId;
+        const product = productMap.get(pid);
+        const lineAmount = staffItemLineAmount({ ...it, product });
         totalQty += qty;
         totalAmount = totalAmount.plus(lineAmount);
         bySection[o.sectionName].qty += qty;
@@ -692,9 +696,6 @@ export class OrdersStaffService {
         byDay[day].qty += qty;
         byLog[opKey].qty += qty;
         byLog[opKey].totalAmount = byLog[opKey].totalAmount.plus(lineAmount);
-
-        const pid = it.productId;
-        const product = productMap.get(pid);
         if (!byProduct[pid]) {
           byProduct[pid] = {
             productId: pid,

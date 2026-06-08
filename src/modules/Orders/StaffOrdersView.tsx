@@ -19,6 +19,8 @@ import {
   staffOrdersQty,
   staffOrdersTotal,
   staffSaleAvgPerOrder,
+  resolveStaffItemUnitPrice,
+  staffItemLineAmount,
   defaultVariantModalState,
   displayProductPrice,
   formatVariantLabel,
@@ -55,6 +57,18 @@ function StatusBadge({ status }: { status: string }) {
       {status === 'sent' ? t('staffOrderSent') : t('staffOrderPending')}
     </Badge>
   );
+}
+
+function StaffItemPriceSuffix({ it, product }: { it: any; product?: any }) {
+  const amountItem = { ...it, product: product ?? it.product };
+  const unitPrice = resolveStaffItemUnitPrice(amountItem);
+  const lineAmt = staffItemLineAmount(amountItem);
+  if (unitPrice.gt(0)) {
+    return (
+      <> × {fmt(unitPrice.toNumber())} = {fmt(lineAmt.toNumber())} <span className="nx-sar">SR</span></>
+    );
+  }
+  return <> {it.unit || ''}</>;
 }
 
 // ─── كرت صنف واحد ─────────────────────────────────────────────────────────────
@@ -210,11 +224,7 @@ function StaffSentOrderRow({
                     ) : null}
                     <span className="font-semibold nx-font-numbers ltr">
                       {fmt(it.quantity, 0)}
-                      {it.unitPrice != null && Number(it.unitPrice) > 0 ? (
-                        <> × {fmt(it.unitPrice)} = {fmt(new Decimal(it.quantity || 0).times(it.unitPrice || 0))} <span className="nx-sar">SR</span></>
-                      ) : (
-                        <> {it.unit || ''}</>
-                      )}
+                      <StaffItemPriceSuffix it={it} product={p} />
                     </span>
                   </div>
                 </div>
@@ -365,11 +375,7 @@ function StaffSentSaleGroup({
                         ) : null}
                         <span className="font-semibold nx-font-numbers ltr">
                           {fmt(it.quantity, 0)}
-                          {it.unitPrice != null && Number(it.unitPrice) > 0 ? (
-                            <> × {fmt(it.unitPrice)} = {fmt(new Decimal(it.quantity || 0).times(it.unitPrice || 0))} <span className="nx-sar">SR</span></>
-                          ) : (
-                            <> {it.unit || ''}</>
-                          )}
+                          <StaffItemPriceSuffix it={it} product={p} />
                         </span>
                       </div>
                     </div>
@@ -941,7 +947,6 @@ function StaffOrderPanel({
                     const p = it.product;
                     const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
                     const variant = formatVariantLabel(it.size, it.packaging, it.unit);
-                    const lineTotal = new Decimal(it.quantity || 0).times(it.unitPrice || 0);
                     return (
                       <div key={i} className="flex justify-between gap-2 text-[13px]">
                         <div className="min-w-0">
@@ -950,11 +955,7 @@ function StaffOrderPanel({
                         </div>
                         <span className="font-semibold nx-font-numbers shrink-0 ltr text-end">
                           {fmt(it.quantity, 0)}
-                          {Number(it.unitPrice) > 0 ? (
-                            <> × {fmt(it.unitPrice)} = {fmt(lineTotal.toNumber())} <span className="nx-sar">SR</span></>
-                          ) : (
-                            <> {it.unit || ''}</>
-                          )}
+                          <StaffItemPriceSuffix it={it} product={p} />
                         </span>
                       </div>
                     );

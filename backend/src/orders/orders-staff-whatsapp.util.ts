@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { formatVariantLabel, resolveStaffItemVariant, staffLineAggregateKey } from './orders-staff-pricing.util';
 import {
+  resolveStaffItemUnitPrice,
   staffItemLineAmount,
   staffOrdersQty,
   staffOrdersTotal,
@@ -42,13 +43,13 @@ export function buildSalesWhatsAppTextCombined(
         : (it.product?.nameAr || it.product?.nameEn || '—');
       const q = Number(it.quantity);
       const prefix = multi ? '  ' : '';
-      const unitPrice = Number(it.unitPrice ?? 0);
-      if (unitPrice > 0) {
+      const unitPrice = resolveStaffItemUnitPrice(it);
+      if (unitPrice.gt(0)) {
         const amount = staffItemLineAmount(it);
         const variant = formatVariantLabel(it.size, it.packaging, it.unit);
         const variantPart = variant ? ` (${variant})` : '';
         lines.push(
-          `${prefix}• ${name}${variantPart}: ${fmtStaffWaMoney(q)} × ${fmtStaffWaMoney(unitPrice)} = ${fmtStaffWaMoney(amount)} SR`,
+          `${prefix}• ${name}${variantPart}: ${fmtStaffWaMoney(q)} × ${fmtStaffWaMoney(unitPrice.toNumber())} = ${fmtStaffWaMoney(amount)} SR`,
         );
       } else {
         lines.push(`${prefix}• ${name}: ${q}`);
