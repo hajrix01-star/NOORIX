@@ -113,6 +113,9 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
 
   return (
     <div className="nx-orders-tab-root flex flex-col gap-3 sm:gap-4">
+      <div className="rounded-lg border border-noorix-amber/30 bg-noorix-amber/5 px-3 py-2 text-[12px] text-noorix-muted leading-relaxed">
+        {t('staffInternalSalesReportHint')}
+      </div>
       {/* ── شريط التحكم ── */}
       <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2.5 flex flex-wrap items-center gap-2 sm:bg-noorix-surface sm:px-4 sm:py-3 sm:shadow-sm">
         <span className="text-[13px] font-semibold">{t('salesReportTitle')}</span>

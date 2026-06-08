@@ -37,7 +37,7 @@ export default {
   sectionToSalesRatio: { ar: 'نسبة من المبيعات', en: 'Share of sales' },
   dashboard: { ar: 'لوحة التحكم', en: 'Dashboard' },
   smartChat: { ar: 'المحادثة الذكية', en: 'Smart Chat' },
-  sales: { ar: 'المبيعات', en: 'Sales' },
+  sales: { ar: 'المبيعات اليومية', en: 'Daily Sales' },
   purchases: { ar: 'المشتريات', en: 'Purchases' },
   invoices: { ar: 'الفواتير', en: 'Invoices' },
   suppliersAndCategories: { ar: 'الموردين والتصنيفات', en: 'Suppliers & Categories' },

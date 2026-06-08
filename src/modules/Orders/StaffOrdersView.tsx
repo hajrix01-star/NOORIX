@@ -530,6 +530,11 @@ function StaffOrderPanel({
 
   return (
     <div className="flex flex-col gap-4">
+      {isSale ? (
+        <div className="rounded-lg border border-noorix-amber/30 bg-noorix-amber/5 px-3 py-2 text-[12px] text-noorix-muted leading-relaxed">
+          {t('staffInternalSalesHint')}
+        </div>
+      ) : null}
       {/* ── أزرار الأقسام ── */}
       <div className="flex flex-wrap gap-2">
         {(sections as any[]).map((s: any) => {
