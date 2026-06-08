@@ -140,8 +140,7 @@ function StaffSaleItemsTable({
 }) {
   if (!items?.length) return null;
   return (
-    <div className="overflow-x-auto -mx-0.5">
-      <table className="w-full text-[12px] sm:text-[13px] border-collapse min-w-[280px] border border-noorix-border rounded-lg overflow-hidden">
+    <table className="w-full text-[12px] sm:text-[13px] border-collapse min-w-[280px] border border-noorix-border rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-noorix-bg-muted border-b border-noorix-border">
             <th className="text-start py-2 px-2.5 font-bold text-[11px] text-noorix-muted">{t('product')}</th>
@@ -188,7 +187,6 @@ function StaffSaleItemsTable({
           })}
         </tbody>
       </table>
-    </div>
   );
 }
 
@@ -387,7 +385,7 @@ function StaffSentSaleGroup({
   const avgPerOrder = staffSaleAvgPerOrder(totalAmount, totalQty);
 
   return (
-    <article className="noorix-surface-card overflow-hidden p-3 sm:p-4 flex flex-col gap-2.5">
+    <article className="p-3 sm:p-4 flex flex-col gap-2 overflow-x-auto">
       <div className="flex items-start gap-2 min-w-0">
         <button
           type="button"
@@ -437,36 +435,35 @@ function StaffSentSaleGroup({
         </div>
       </div>
 
-      {open ? (
-        <div className="flex flex-col gap-3 border-t border-noorix-border pt-3">
-          {orders.map((order, orderIdx) => (
-            <div
-              key={order.id}
-              className={cn('flex flex-col gap-2', orderIdx > 0 && 'pt-3 border-t border-noorix-border/70')}
-            >
-              {sectionsCount > 1 ? (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[12px] font-bold text-noorix-text">{order.sectionName || '—'}</span>
-                  <div className="flex flex-wrap gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
-                    <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
-                  </div>
-                </div>
-              ) : null}
-              <StaffSaleItemsTable items={order.items || []} lang={lang} t={t} />
-              {sectionsCount === 1 ? (
-                <div className="flex flex-wrap gap-1 justify-end">
-                  <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
-                  <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
-                </div>
-              ) : null}
-              {order.notes ? (
-                <p className="text-[11px] text-noorix-muted italic break-words m-0">{order.notes}</p>
-              ) : null}
+      {open ? orders.map((order, orderIdx) => (
+        <div
+          key={order.id}
+          className={cn(
+            'flex flex-col gap-2 border-t border-noorix-border pt-3',
+            orderIdx > 0 && 'mt-1',
+          )}
+        >
+          {sectionsCount > 1 ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[12px] font-bold text-noorix-text">{order.sectionName || '—'}</span>
+              <div className="flex flex-wrap gap-1">
+                <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
+                <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
+              </div>
             </div>
-          ))}
+          ) : null}
+          <StaffSaleItemsTable items={order.items || []} lang={lang} t={t} />
+          {sectionsCount === 1 ? (
+            <div className="flex flex-wrap gap-1 justify-end">
+              <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
+              <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
+            </div>
+          ) : null}
+          {order.notes ? (
+            <p className="text-[11px] text-noorix-muted italic break-words m-0">{order.notes}</p>
+          ) : null}
         </div>
-      ) : null}
+      )) : null}
     </article>
   );
 }
@@ -1066,8 +1063,9 @@ function StaffOrderPanel({
               showDivider={false}
             />
           ) : null}
-          {isSale
-            ? sentSaleGroups.map((group) => (
+          {isSale ? (
+            <div className="noorix-surface-card overflow-hidden divide-y divide-noorix-border">
+              {sentSaleGroups.map((group) => (
                 <StaffSentSaleGroup
                   key={group[0].logRef || group[0].id}
                   orders={group}
@@ -1077,8 +1075,9 @@ function StaffOrderPanel({
                   onEdit={loadForEdit}
                   onDelete={handleDelete}
                 />
-              ))
-            : sentOrders.map((o: any) => (
+              ))}
+            </div>
+          ) : sentOrders.map((o: any) => (
                 <StaffSentOrderRow
                   key={o.id}
                   order={o}
