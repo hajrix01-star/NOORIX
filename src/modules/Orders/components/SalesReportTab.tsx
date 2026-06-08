@@ -6,9 +6,11 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { useSalesReport } from '../../../hooks/useOrders';
+import { useTabSearchParam } from '../../../hooks/useTabSearchParam';
 import { Badge, Input, Spinner, ScreenShell, ScreenTitle } from '../../../ui';
 
 const PERIOD_OPTIONS = [7, 14, 30, 60, 90];
+const REPORT_VIEW_IDS = ['log', 'product', 'section', 'user', 'day'] as const;
 
 // ── بطاقة KPI صغيرة ─────────────────────────────────────────────
 function KpiCard({ label, value, color }: { label: string; value: string | number; color: string }) {
@@ -53,7 +55,14 @@ function SimpleTable({ headers, rows, emptyMsg }: { headers: string[]; rows: (st
 export function SalesReportTab({ companyId }: { companyId: string }) {
   const { t, lang } = useTranslation();
   const [days, setDays] = useState(30);
-  const [activeView, setActiveView] = useState<'log' | 'product' | 'section' | 'user' | 'day'>('log');
+  const [activeView, setActiveView] = useTabSearchParam(
+    REPORT_VIEW_IDS,
+    'log',
+    'ordersReportView',
+    null,
+    undefined,
+    { persistDefault: true },
+  );
 
   const { data: report, isLoading, isError, error } = useSalesReport(companyId, days);
 

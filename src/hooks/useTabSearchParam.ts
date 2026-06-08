@@ -44,6 +44,7 @@ export function pickTabFromSearchParams(
  * @param {string} [legacyParamName] — optional second key to read (e.g. `tab`) only if its value is in `allowedIds`;
  *   on write, `setTab` always removes `legacyParamName` so stale query keys do not hijack this screen.
  * @param {Record<string, string>} [aliases] — short URL keys mapped to allowed tab ids (e.g. `sales` → `sales-report`)
+ * @param {{ persistDefault?: boolean }} [options] — when true, keep default tab in the URL too (refresh-safe)
  * @returns {[string, (id: string) => void]}
  */
 export function useTabSearchParam(
@@ -52,7 +53,9 @@ export function useTabSearchParam(
   paramName: any = 'tab',
   legacyParamName?: string | null,
   aliases?: Record<string, string>,
+  options?: { persistDefault?: boolean },
 ) {
+  const persistDefault = options?.persistDefault ?? false;
   const [searchParams, setSearchParams] = useSearchParams();
   const allowedKey = allowedIds.join('\0');
   const aliasKey = aliases ? JSON.stringify(aliases) : '';
@@ -72,15 +75,30 @@ export function useTabSearchParam(
         (prev: any) => {
           const next = new URLSearchParams(prev);
           if (legacyParamName) next.delete(legacyParamName);
-          if (nextId === defaultId) next.delete(paramName);
+          if (nextId === defaultId && !persistDefault) next.delete(paramName);
           else next.set(paramName, nextId);
           return next;
         },
         { replace: true },
       );
     },
-    [allowedIds, allowedKey, defaultId, paramName, legacyParamName, setSearchParams],
+    [allowedIds, allowedKey, defaultId, paramName, legacyParamName, persistDefault, setSearchParams],
   );
+
+  useEffect(() => {
+    if (!persistDefault) return;
+    const prim = searchParams.get(paramName)?.trim();
+    if (prim === resolved) return;
+    setSearchParams(
+      (prev: any) => {
+        const next = new URLSearchParams(prev);
+        if (legacyParamName) next.delete(legacyParamName);
+        next.set(paramName, resolved);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [persistDefault, resolved, paramName, legacyParamName, searchParams, setSearchParams]);
 
   useEffect(() => {
     const prim = searchParams.get(paramName)?.trim();

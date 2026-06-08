@@ -30,3 +30,17 @@ describe('pickTabFromSearchParams (OCR + legacy tab)', () => {
     expect(pickTabFromSearchParams(sp, ids, 'orders', 'tab', null, { sales: 'sales-report' })).toBe('sales-report');
   });
 });
+
+describe('pickTabFromSearchParams (Orders screen-specific key)', () => {
+  const ORDER_TABS = ['staff-sales', 'orders', 'sales-report'] as const;
+
+  it('prefers ordersTab over stale tab from other screens', () => {
+    const sp = new URLSearchParams('ordersTab=sales-report&tab=overview');
+    expect(pickTabFromSearchParams(sp, ORDER_TABS, 'staff-sales', 'ordersTab', 'tab')).toBe('sales-report');
+  });
+
+  it('falls back to legacy tab when ordersTab absent', () => {
+    const sp = new URLSearchParams('tab=sales-report');
+    expect(pickTabFromSearchParams(sp, ORDER_TABS, 'staff-sales', 'ordersTab', 'tab')).toBe('sales-report');
+  });
+});

@@ -110,7 +110,14 @@ function ManagerOrdersScreen({
     prefersStaffSalesTab && canSubmitStaff && TAB_IDS.includes('staff-sales')
       ? 'staff-sales'
       : (TAB_IDS[0] ?? 'orders');
-  const [activeTab, setActiveTab] = useTabSearchParam(TAB_IDS, defaultTab, 'tab', null, ORDERS_TAB_ALIASES);
+  const [activeTab, setActiveTab] = useTabSearchParam(
+    TAB_IDS,
+    defaultTab,
+    'ordersTab',
+    'tab',
+    ORDERS_TAB_ALIASES,
+    { persistDefault: true },
+  );
 
   const { year, month, startDate, endDate } = useMemo(() => {
     const { mode, selYear, selMonth, selDay, rangeStart } = dateFilter;

@@ -23,6 +23,7 @@ import {
   resolveVariantFromModal,
   staffBasketLineKey,
 } from './utils/staffOrderBasketUtils';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import {
   useMyStaffOrders,
   useStaffSaleNextLogRef,
@@ -1195,7 +1196,15 @@ export function StaffOrdersView({
   defaultTab?: 'order' | 'sale';
 }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'order' | 'sale'>(defaultTab);
+  const STAFF_VIEW_TAB_IDS = useMemo(() => ['order', 'sale'] as const, []);
+  const [activeTab, setActiveTab] = useTabSearchParam(
+    STAFF_VIEW_TAB_IDS,
+    defaultTab,
+    'staffOrderTab',
+    null,
+    undefined,
+    { persistDefault: true },
+  );
 
   const tabs = useMemo(() => [
     { id: 'order', label: t('staffOrdersTabOrders') },
@@ -1213,7 +1222,7 @@ export function StaffOrdersView({
       onChange={(v) => setActiveTab(v as 'order' | 'sale')}
       contentClassName="px-3 pt-3 pb-4 sm:px-4"
     >
-      <StaffOrderPanel key={activeTab} companyId={companyId} productType={activeTab} />
+      <StaffOrderPanel key={activeTab} companyId={companyId} productType={activeTab as 'order' | 'sale'} />
     </ScreenTabs>
   );
 
