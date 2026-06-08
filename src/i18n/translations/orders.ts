@@ -375,6 +375,8 @@ export default {
   salesReportByLog:         { ar: 'بالعملية', en: 'By operation' },
   staffSaleLogRef:          { ar: 'رقم العملية', en: 'Op. ref' },
   staffSaleSectionsCount:   { ar: '{0} أقسام', en: '{0} sections' },
+  staffSaleTotalQty:        { ar: 'إجمالي الكمية', en: 'Total qty' },
+  staffSaleGrandTotal:      { ar: 'المجموع', en: 'Grand total' },
   salesReportItems:         { ar: 'إجمالي الكميات', en: 'Total Qty' },
   salesReportProducts:      { ar: 'أصناف', en: 'Products' },
   salesReportSections:      { ar: 'أقسام', en: 'Sections' },

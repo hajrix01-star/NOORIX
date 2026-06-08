@@ -59,9 +59,9 @@ export function buildSalesWhatsAppTextCombined(
   }
 
   lines.push('──────────────');
-  lines.push(lang === 'en' ? `Total qty: ${totalQty}` : `إجمالي الكميات: ${totalQty}`);
+  lines.push(lang === 'en' ? `Total qty: ${totalQty}` : `إجمالي الكمية: ${totalQty}`);
   if (totalAmount.gt(0)) {
-    lines.push(lang === 'en' ? `Total: ${fmtStaffWaMoney(totalAmount)} SR` : `الإجمالي: ${fmtStaffWaMoney(totalAmount)} SR`);
+    lines.push(lang === 'en' ? `Grand total: ${fmtStaffWaMoney(totalAmount)} SR` : `المجموع: ${fmtStaffWaMoney(totalAmount)} SR`);
     if (totalQty > 0) {
       lines.push(
         lang === 'en'

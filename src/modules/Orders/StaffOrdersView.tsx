@@ -71,6 +71,47 @@ function StaffItemPriceSuffix({ it, product }: { it: any; product?: any }) {
   return <> {it.unit || ''}</>;
 }
 
+function StaffSaleSummaryBar({
+  totalQty,
+  totalAmount,
+  avgPerOrder,
+  t,
+  className,
+}: {
+  totalQty: number;
+  totalAmount: Decimal;
+  avgPerOrder: Decimal;
+  t: (key: string, ...args: unknown[]) => string;
+  className?: string;
+}) {
+  const showMoney = totalAmount.gt(0);
+  if (totalQty <= 0 && !showMoney) return null;
+  return (
+    <div className={cn(
+      'flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-noorix-bg-muted/60 border border-noorix-border/60 px-2.5 py-1.5 text-[12px] w-full',
+      className,
+    )}>
+      {totalQty > 0 ? (
+        <span className="font-bold text-noorix-blue ltr">
+          {t('staffSaleTotalQty')}: {fmt(totalQty, 0)}
+        </span>
+      ) : null}
+      {showMoney ? (
+        <>
+          <span className="font-bold text-noorix-green ltr">
+            {t('staffSaleGrandTotal')}: {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
+          </span>
+          {totalQty > 0 ? (
+            <span className="font-bold text-noorix-violet ltr">
+              {t('avgPerOrder')}: {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
+            </span>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 // ─── كرت صنف واحد ─────────────────────────────────────────────────────────────
 function ProductCard({
   product, lang, qty, freqCount, onTap, onRemove,
@@ -264,7 +305,6 @@ function StaffSentSaleGroup({
   const totalAmount = staffOrdersTotal(orders);
   const totalQty = staffOrdersQty(orders);
   const avgPerOrder = staffSaleAvgPerOrder(totalAmount, totalQty);
-  const showMoney = totalAmount.gt(0);
 
   return (
     <div className="rounded-lg border border-noorix-border bg-noorix-bg overflow-hidden">
@@ -307,18 +347,12 @@ function StaffSentSaleGroup({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-noorix-muted">
               <span>{totalItems} {t('staffOrderItemsCount')}</span>
             </div>
-            {showMoney ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-lg bg-noorix-bg-muted/60 border border-noorix-border/60 px-2.5 py-1.5 text-[12px] w-full">
-                <span className="font-bold text-noorix-green ltr">
-                  {t('total')}: {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
-                </span>
-                {totalQty > 0 ? (
-                  <span className="font-bold text-noorix-violet ltr">
-                    {t('avgPerOrder')}: {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
+            <StaffSaleSummaryBar
+              totalQty={totalQty}
+              totalAmount={totalAmount}
+              avgPerOrder={avgPerOrder}
+              t={t}
+            />
           </button>
         </div>
         <div className="flex flex-wrap gap-1 justify-end ps-10">
@@ -490,11 +524,13 @@ function StaffOrderPanel({
 
   const sentSalesSummary = useMemo(() => {
     if (!isSale || sentSaleGroups.length === 0) {
-      return { totalAmount: new Decimal(0), avgPerOrder: new Decimal(0), operationCount: 0 };
+      return { totalQty: 0, totalAmount: new Decimal(0), avgPerOrder: new Decimal(0), operationCount: 0 };
     }
     const totalAmount = staffOrdersTotal(sentOrders);
+    const totalQty = staffOrdersQty(sentOrders);
     const operationCount = sentSaleGroups.length;
     return {
+      totalQty,
       totalAmount,
       avgPerOrder: operationCount > 0 ? totalAmount.div(operationCount) : new Decimal(0),
       operationCount,
@@ -964,17 +1000,14 @@ function StaffOrderPanel({
               </span>
               <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
             </div>
-            {isSale && sentSalesSummary.totalAmount.gt(0) ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-lg bg-noorix-bg-muted/60 border border-noorix-border/60 px-3 py-2 text-[13px]">
-                <span className="font-bold text-noorix-green ltr">
-                  {t('total')}: {fmt(sentSalesSummary.totalAmount.toNumber())} <span className="nx-sar">SR</span>
-                </span>
-                {sentSalesSummary.operationCount > 0 ? (
-                  <span className="font-bold text-noorix-violet ltr">
-                    {t('avgPerOrder')}: {fmt(sentSalesSummary.avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
-                  </span>
-                ) : null}
-              </div>
+            {isSale && (sentSalesSummary.totalQty > 0 || sentSalesSummary.totalAmount.gt(0)) ? (
+              <StaffSaleSummaryBar
+                totalQty={sentSalesSummary.totalQty}
+                totalAmount={sentSalesSummary.totalAmount}
+                avgPerOrder={sentSalesSummary.avgPerOrder}
+                t={t}
+                className="text-[13px] px-3 py-2"
+              />
             ) : null}
           </div>
           <div className="flex flex-col gap-2">
