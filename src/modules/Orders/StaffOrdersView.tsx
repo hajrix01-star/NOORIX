@@ -216,7 +216,7 @@ function StaffBasketTable({
   const totalAmount = basketTotal(basketLines);
 
   return (
-    <table className="w-full text-[12px] border-collapse min-w-[300px]">
+    <table className="w-full text-[12px] border-collapse min-w-[300px] border border-noorix-border rounded-lg overflow-hidden">
       <thead>
         <tr className="bg-noorix-bg-muted border-b border-noorix-border">
           <th className="text-start py-1.5 px-2 font-bold text-[11px] text-noorix-muted">{t('product')}</th>
@@ -1017,10 +1017,10 @@ function StaffOrderPanel({
         </div>
       )}
 
-      {/* ── ملخص الطلب ── */}
+      {/* ── ملخص الطلب — مباشرة على الحاوية الأم بدون كرت إضافي ── */}
       {basketLines.length > 0 && (
-        <div className="noorix-surface-card overflow-hidden">
-          <div className="px-3 py-2 border-b border-noorix-border flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <div className="flex flex-col gap-3 border-t border-noorix-border pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <div className="flex items-center gap-2 min-w-0">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue shrink-0">
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
@@ -1037,7 +1037,7 @@ function StaffOrderPanel({
               </span>
             ) : null}
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-0.5 px-0.5">
             <StaffBasketTable
               basketLines={basketLines}
               productsById={productsById}
@@ -1050,7 +1050,7 @@ function StaffOrderPanel({
               removeLine={removeLine}
             />
           </div>
-          <div className="px-3 py-2 border-t border-noorix-border flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             {isSale && (
               <Input
                 type="date"
@@ -1061,7 +1061,7 @@ function StaffOrderPanel({
             )}
             <Input label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={t('optional')} />
           </div>
-          <div className={cn('px-3 pb-3 gap-2', isSale ? 'flex flex-col' : 'grid grid-cols-2')}>
+          <div className={cn('gap-2', isSale ? 'flex flex-col' : 'grid grid-cols-2')}>
             {!isSale && (
               <Button variant="ghost" size="md" onClick={resetForm} disabled={submitting}>{t('cancel')}</Button>
             )}
