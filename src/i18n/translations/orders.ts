@@ -333,7 +333,7 @@ export default {
   staffSaleSaved:           { ar: 'تم حفظ التسجيل الداخلي بنجاح', en: 'Internal log saved successfully' },
   staffSaleSavedWithRef:    { ar: 'تم الحفظ — رقم العملية {0}', en: 'Saved — operation {0}' },
   staffSaleSubmit:          { ar: 'حفظ وإرسال', en: 'Save & send' },
-  staffSaleBasket:          { ar: 'السلة الداخلية', en: 'Internal basket' },
+  staffSaleBasket:          { ar: 'سلة التسجيل', en: 'Log basket' },
   staffSaleDate:            { ar: 'يوم التسجيل', en: 'Log day' },
   staffSaleDateRequired:    { ar: 'اختر يوم التسجيل', en: 'Select the log day' },
   staffSaleCreated:         { ar: 'تم الحفظ — جاري فتح واتساب', en: 'Saved — opening WhatsApp' },

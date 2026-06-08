@@ -39,6 +39,16 @@ export class OrdersController {
     return this.staffService.getMyStaffOrders(companyId, user.sub);
   }
 
+  @Get('staff/sale-next-ref')
+  @RequirePermission('STAFF_ORDERS_SUBMIT')
+  peekStaffSaleNextLogRef(
+    @CompanyId() companyId: string,
+    @Query('saleDate') saleDate?: string,
+  ) {
+    if (!companyId || !saleDate?.trim()) return { logRef: '' };
+    return this.staffService.peekNextStaffSaleLogRef(companyId, saleDate.trim());
+  }
+
   @Get('staff/digest')
   @RequirePermission('STAFF_ORDERS_DIGEST')
   getStaffDigest(@CompanyId() companyId: string) {

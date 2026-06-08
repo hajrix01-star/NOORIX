@@ -24,6 +24,7 @@ import {
   deactivateOrderProductsBulk,
   deactivateOrderCategoriesBulk,
   getMyStaffOrders,
+  getStaffSaleNextLogRef,
   createStaffOrder,
   updateStaffOrder,
   deleteStaffOrder,
@@ -228,6 +229,19 @@ export function useMyStaffOrders(companyId: any) {
   });
 }
 
+export function useStaffSaleNextLogRef(companyId: any, saleDate: string, enabled = true) {
+  return useQuery({
+    queryKey: ['staffSaleNextLogRef', companyId, saleDate],
+    queryFn: async () => {
+      const res = await getStaffSaleNextLogRef(companyId, saleDate);
+      throwIfApiFailed(res, 'فشل تحميل رقم العملية');
+      return String((res.data as { logRef?: string })?.logRef ?? '');
+    },
+    enabled: !!companyId && !!saleDate && enabled,
+    staleTime: 15_000,
+  });
+}
+
 export function useCreateStaffOrderMutation(companyId: any) {
   return useApiMutation({
     mutationFn: createStaffOrder,
@@ -235,6 +249,7 @@ export function useCreateStaffOrderMutation(companyId: any) {
       orderKeys.staffMy(companyId),
       orderKeys.staffDigest(companyId),
       ['salesReport', companyId],
+      ['staffSaleNextLogRef', companyId],
     ],
     showErrorToast: false,
   });

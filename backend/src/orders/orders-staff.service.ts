@@ -9,7 +9,11 @@ import {
   resolveStaffItemVariant,
   staffLineAggregateKey,
 } from './orders-staff-pricing.util';
-import { buildStaffSaleLogRef, staffSaleLogRefPrefix, staffSaleOperationKey } from './orders-staff-log-ref.util';
+import {
+  buildStaffSaleLogRef,
+  staffSaleLogRefPrefix,
+  staffSaleOperationKey,
+} from './orders-staff-log-ref.util';
 import { buildSalesReportSince, staffSaleMatchesReportWindow } from './orders-staff-sales-report.util';
 import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { toYmd } from '../common/utils/to-ymd.util';
@@ -69,12 +73,26 @@ export class OrdersStaffService {
     return 'عام';
   }
 
-  private async allocateStaffSaleLogRef(companyId: string, saleDate: Date): Promise<string> {
+  private async countStaffSaleOperationsForDay(companyId: string, saleDate: Date): Promise<number> {
     const prefix = staffSaleLogRefPrefix(saleDate);
-    const existing = await this.prisma.staffOrder.count({
+    const rows = await this.prisma.staffOrder.findMany({
       where: { companyId, orderType: 'sale', logRef: { startsWith: prefix } },
+      select: { logRef: true },
+      distinct: ['logRef'],
     });
-    return buildStaffSaleLogRef(prefix, existing + 1);
+    return rows.length;
+  }
+
+  private async allocateStaffSaleLogRef(companyId: string, saleDate: Date): Promise<string> {
+    const nextSeq = (await this.countStaffSaleOperationsForDay(companyId, saleDate)) + 1;
+    return buildStaffSaleLogRef(saleDate, nextSeq);
+  }
+
+  /** معاينة الرقم التالي في سلة التسجيل — لا يحجز */
+  async peekNextStaffSaleLogRef(companyId: string, saleDateYmd: string): Promise<{ logRef: string }> {
+    const saleDate = parseSaleDateYmd(saleDateYmd);
+    const nextSeq = (await this.countStaffSaleOperationsForDay(companyId, saleDate)) + 1;
+    return { logRef: buildStaffSaleLogRef(saleDate, nextSeq) };
   }
 
   private async groupItemsBySection(

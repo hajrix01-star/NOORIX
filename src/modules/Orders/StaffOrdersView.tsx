@@ -25,6 +25,7 @@ import {
 } from './utils/staffOrderBasketUtils';
 import {
   useMyStaffOrders,
+  useStaffSaleNextLogRef,
   useCreateStaffOrderMutation,
   useUpdateStaffOrderMutation,
   useDeleteStaffOrderMutation,
@@ -462,6 +463,14 @@ function StaffOrderPanel({
     );
   }, [isSale, sentOrders]);
 
+  const editingOrder = useMemo(
+    () => (editingId ? (myOrders as any[]).find((o: any) => o.id === editingId) : null),
+    [editingId, myOrders],
+  );
+  const previewNextLogRef = isSale && basketLines.length > 0 && !editingId && !!saleDate;
+  const { data: nextLogRef } = useStaffSaleNextLogRef(companyId, saleDate, previewNextLogRef);
+  const basketLogRef = isSale ? (editingOrder?.logRef || nextLogRef || null) : null;
+
   // ─── لمس الكرت ──────────────────────────────────────────────────
   function tapProduct(product: any) {
     if (productHasVariants(product)) {
@@ -747,9 +756,9 @@ function StaffOrderPanel({
       {/* ── ملخص الطلب ── */}
       {basketLines.length > 0 && (
         <div className="noorix-surface-card overflow-hidden">
-          <div className="px-4 py-3 border-b border-noorix-border flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue">
+          <div className="px-4 py-3 border-b border-noorix-border flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-noorix-blue shrink-0">
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
               </svg>
@@ -757,6 +766,12 @@ function StaffOrderPanel({
                 {isSale ? t('staffSaleBasket') : t('staffOrderBasket')} ({basketLines.length})
               </span>
             </div>
+            {isSale && basketLogRef ? (
+              <div className="flex items-center gap-1.5 ms-auto">
+                <span className="text-[11px] text-noorix-muted">{t('staffSaleLogRef')}</span>
+                <span className="text-[13px] font-bold text-noorix-blue ltr">{basketLogRef}</span>
+              </div>
+            ) : null}
             {!isSale && basketTotalAmount.gt(0) ? (
               <span className="text-[13px] font-bold text-noorix-green ltr">
                 {fmt(basketTotalAmount.toNumber())} <span className="nx-sar">SR</span>

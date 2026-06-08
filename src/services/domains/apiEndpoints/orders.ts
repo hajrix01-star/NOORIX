@@ -128,6 +128,14 @@ export async function getMyStaffOrders(companyId: string): Promise<ApiParsedResu
   return res?.success ? { ...res, data: res.data ?? [] } : res;
 }
 
+export async function getStaffSaleNextLogRef(
+  companyId: string,
+  saleDate: string,
+): Promise<ApiParsedResult> {
+  const res = await apiGet('/api/v1/orders/staff/sale-next-ref', { companyId, saleDate });
+  return res?.success ? { ...res, data: res.data ?? { logRef: '' } } : res;
+}
+
 export async function createStaffOrder(body: unknown): Promise<ApiParsedResult> {
   const companyId = (body as { companyId?: string })?.companyId;
   const q = companyId ? `?companyId=${encodeURIComponent(String(companyId))}` : '';
