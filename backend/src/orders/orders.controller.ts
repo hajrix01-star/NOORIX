@@ -62,7 +62,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Query('days') days?: string,
   ) {
-    if (!companyId) return { summary: {}, byProduct: [], bySection: [], byUser: [], byDay: [] };
+    if (!companyId) return { summary: {}, byProduct: [], bySection: [], byUser: [], byDay: [], byLog: [] };
     return this.staffService.getSalesReport(companyId, parseDaysQuery(days));
   }
 

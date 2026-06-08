@@ -9,6 +9,7 @@ import {
   resolveStaffItemVariant,
   staffLineAggregateKey,
 } from './orders-staff-pricing.util';
+import { buildStaffSaleLogRef, staffSaleLogRefPrefix, staffSaleOperationKey } from './orders-staff-log-ref.util';
 import { buildSalesReportSince, staffSaleMatchesReportWindow } from './orders-staff-sales-report.util';
 import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
 import { toYmd } from '../common/utils/to-ymd.util';
@@ -66,6 +67,14 @@ export class OrdersStaffService {
     const secs = product?.sections as string[] | null;
     if (Array.isArray(secs) && secs.length > 0) return secs[0];
     return 'عام';
+  }
+
+  private async allocateStaffSaleLogRef(companyId: string, saleDate: Date): Promise<string> {
+    const prefix = staffSaleLogRefPrefix(saleDate);
+    const existing = await this.prisma.staffOrder.count({
+      where: { companyId, orderType: 'sale', logRef: { startsWith: prefix } },
+    });
+    return buildStaffSaleLogRef(prefix, existing + 1);
   }
 
   private async groupItemsBySection(
@@ -140,6 +149,7 @@ export class OrdersStaffService {
     orderType: 'order' | 'sale',
     saleDate: Date | null,
     sentAt: Date | null,
+    logRef: string | null = null,
   ) {
     const mapped = await this.mapStaffItemsForCreate(dto.companyId, items);
     return this.prisma.staffOrder.create({
@@ -149,6 +159,7 @@ export class OrdersStaffService {
         userId,
         sectionName,
         orderType,
+        logRef,
         saleDate,
         notes: dto.notes?.trim() || null,
         status: orderType === 'sale' ? 'sent' : 'pending',
@@ -178,6 +189,7 @@ export class OrdersStaffService {
 
     const grouped = await this.groupItemsBySection(companyId, dto.items, dto.sectionName);
     const sectionEntries = [...grouped.entries()];
+    const saleLogRef = isSale && saleDate ? await this.allocateStaffSaleLogRef(companyId, saleDate) : null;
 
     const orders: Awaited<ReturnType<typeof this.createStaffOrderRecord>>[] = [];
     for (const [sectionName, sectionItems] of sectionEntries) {
@@ -191,15 +203,16 @@ export class OrdersStaffService {
           orderType,
           saleDate,
           sentAt,
+          saleLogRef,
         ),
       );
     }
 
     if (!isSale) return orders.length === 1 ? orders[0] : { orders, count: orders.length };
 
-    const whatsAppText = this.buildSalesWhatsAppTextCombined(orders, saleDate!, lang);
+    const whatsAppText = this.buildSalesWhatsAppTextCombined(orders, saleDate!, lang, saleLogRef);
     const primary = orders[0];
-    return { ...primary, orders, count: orders.length, whatsAppText };
+    return { ...primary, orders, count: orders.length, logRef: saleLogRef, whatsAppText };
   }
 
   async getMyStaffOrders(companyId: string, userId: string, days = 30) {
@@ -276,7 +289,7 @@ export class OrdersStaffService {
     if (!isSale) return updated;
 
     const saleDay = updated.saleDate ?? updated.createdAt;
-    const whatsAppText = this.buildSalesWhatsAppTextCombined([updated], saleDay, lang);
+    const whatsAppText = this.buildSalesWhatsAppTextCombined([updated], saleDay, lang, updated.logRef);
     return { ...updated, whatsAppText };
   }
 
@@ -292,8 +305,18 @@ export class OrdersStaffService {
     if (!order) throw new NotFoundException('المبيعات غير موجودة');
     if (order.userId !== userId) throw new ForbiddenException('لا يمكن إعادة إرسال مبيعات موظف آخر');
     const saleDay = order.saleDate ?? order.createdAt;
-    const whatsAppText = this.buildSalesWhatsAppTextCombined([order], saleDay, lang);
-    return { whatsAppText };
+    const orders = order.logRef
+      ? await this.prisma.staffOrder.findMany({
+          where: { companyId, orderType: 'sale', logRef: order.logRef },
+          orderBy: { sectionName: 'asc' },
+          include: {
+            items: { include: { product: true } },
+            user: { select: { nameAr: true, nameEn: true } },
+          },
+        })
+      : [order];
+    const whatsAppText = this.buildSalesWhatsAppTextCombined(orders, saleDay, lang, order.logRef);
+    return { whatsAppText, logRef: order.logRef };
   }
 
   async deleteStaffOrder(id: string, companyId: string, userId: string) {
@@ -391,15 +414,23 @@ export class OrdersStaffService {
     };
   }
 
-  /** نص واتساب لمبيعات — قسم واحد أو عدة أقسام في رسالة واحدة */
-  private buildSalesWhatsAppTextCombined(orders: any[], saleDate: Date, lang: 'ar' | 'en' = 'ar'): string {
+  /** نص واتساب للتسجيل الداخلي — قسم واحد أو عدة أقسام في رسالة واحدة */
+  private buildSalesWhatsAppTextCombined(
+    orders: any[],
+    saleDate: Date,
+    lang: 'ar' | 'en' = 'ar',
+    logRef?: string | null,
+  ): string {
     const d = saleDate.toISOString().slice(0, 10).replace(/-/g, '/');
     const multi = orders.length > 1;
     const header = lang === 'en'
-      ? (multi ? 'Sales' : `Sales — ${orders[0]?.sectionName || '—'}`)
-      : (multi ? 'مبيعات' : `مبيعات — ${orders[0]?.sectionName || '—'}`);
-    const dateLine = lang === 'en' ? `Date: ${d}` : `تاريخ المبيعات: ${d}`;
-    const lines: string[] = [header, dateLine, '──────────────'];
+      ? (multi ? 'Internal log' : `Internal log — ${orders[0]?.sectionName || '—'}`)
+      : (multi ? 'تسجيل داخلي' : `تسجيل داخلي — ${orders[0]?.sectionName || '—'}`);
+    const dateLine = lang === 'en' ? `Date: ${d}` : `يوم التسجيل: ${d}`;
+    const refLine = logRef
+      ? (lang === 'en' ? `Ref: ${logRef}` : `رقم العملية: ${logRef}`)
+      : null;
+    const lines: string[] = [header, dateLine, ...(refLine ? [refLine] : []), '──────────────'];
     let totalQty = 0;
 
     for (const order of orders) {
@@ -660,6 +691,8 @@ export class OrdersStaffService {
       where,
       orderBy: { createdAt: 'desc' },
       select: {
+        id: true,
+        logRef: true,
         userId: true,
         sectionName: true,
         saleDate: true,
@@ -694,16 +727,39 @@ export class OrdersStaffService {
       : [];
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    let totalOrders = 0;
     let totalQty = 0;
+    const operationKeys = new Set<string>();
+    const userOps: Record<string, Set<string>> = {};
+    const dayOps: Record<string, Set<string>> = {};
     const byProduct: Record<string, { productId: string; nameAr: string; nameEn: string | null; qty: number; unit: string; sections: Set<string> }> = {};
     const bySection: Record<string, { sectionName: string; qty: number; ordersCount: number }> = {};
     const byUser: Record<string, { userId: string; nameAr: string; nameEn: string | null; ordersCount: number; qty: number }> = {};
     const byDay: Record<string, { date: string; ordersCount: number; qty: number }> = {};
+    const byLog: Record<string, {
+      operationKey: string;
+      logRef: string | null;
+      date: string;
+      userId: string;
+      qty: number;
+      sections: Set<string>;
+    }> = {};
 
     for (const o of orders) {
-      totalOrders++;
+      const opKey = staffSaleOperationKey(o);
+      operationKeys.add(opKey);
       const day = staffOrderDayKey(o);
+
+      if (!byLog[opKey]) {
+        byLog[opKey] = {
+          operationKey: opKey,
+          logRef: o.logRef,
+          date: day,
+          userId: o.userId,
+          qty: 0,
+          sections: new Set(),
+        };
+      }
+      byLog[opKey].sections.add(o.sectionName);
 
       // بالقسم
       if (!bySection[o.sectionName]) bySection[o.sectionName] = { sectionName: o.sectionName, qty: 0, ordersCount: 0 };
@@ -712,12 +768,22 @@ export class OrdersStaffService {
       // بالمستخدم
       const uid = o.userId;
       const uData = userMap.get(uid);
-      if (!byUser[uid]) byUser[uid] = { userId: uid, nameAr: uData?.nameAr || '—', nameEn: uData?.nameEn || null, ordersCount: 0, qty: 0 };
-      byUser[uid].ordersCount++;
+      if (!byUser[uid]) {
+        byUser[uid] = {
+          userId: uid,
+          nameAr: uData?.nameAr || '—',
+          nameEn: uData?.nameEn || null,
+          ordersCount: 0,
+          qty: 0,
+        };
+      }
+      if (!userOps[uid]) userOps[uid] = new Set();
+      userOps[uid].add(opKey);
 
       // باليوم
       if (!byDay[day]) byDay[day] = { date: day, ordersCount: 0, qty: 0 };
-      byDay[day].ordersCount++;
+      if (!dayOps[day]) dayOps[day] = new Set();
+      dayOps[day].add(opKey);
 
       for (const it of o.items) {
         const qty = Number(it.quantity);
@@ -725,6 +791,7 @@ export class OrdersStaffService {
         bySection[o.sectionName].qty += qty;
         byUser[uid].qty += qty;
         byDay[day].qty += qty;
+        byLog[opKey].qty += qty;
 
         const pid = it.productId;
         const product = productMap.get(pid);
@@ -743,14 +810,44 @@ export class OrdersStaffService {
       }
     }
 
+    for (const uid of Object.keys(byUser)) {
+      byUser[uid].ordersCount = userOps[uid]?.size ?? 0;
+    }
+    for (const day of Object.keys(byDay)) {
+      byDay[day].ordersCount = dayOps[day]?.size ?? 0;
+    }
+
+    const byLogRows = Object.values(byLog)
+      .map((row) => {
+        const uData = userMap.get(row.userId);
+        return {
+          operationKey: row.operationKey,
+          logRef: row.logRef,
+          date: row.date,
+          userId: row.userId,
+          nameAr: uData?.nameAr || '—',
+          nameEn: uData?.nameEn || null,
+          qty: row.qty,
+          sectionsCount: row.sections.size,
+          sections: Array.from(row.sections),
+        };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date) || (b.logRef || '').localeCompare(a.logRef || ''));
+
     return {
-      summary: { totalOrders, totalQty, uniqueProducts: Object.keys(byProduct).length, uniqueSections: Object.keys(bySection).length },
+      summary: {
+        totalOrders: operationKeys.size,
+        totalQty,
+        uniqueProducts: Object.keys(byProduct).length,
+        uniqueSections: Object.keys(bySection).length,
+      },
       byProduct: Object.values(byProduct)
         .map((p) => ({ ...p, sections: Array.from(p.sections) }))
         .sort((a, b) => b.qty - a.qty),
       bySection: Object.values(bySection).sort((a, b) => b.qty - a.qty),
       byUser: Object.values(byUser).sort((a, b) => b.qty - a.qty),
       byDay: Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)),
+      byLog: byLogRows,
     };
   }
 }

@@ -225,6 +225,135 @@ function StaffSentOrderRow({
   );
 }
 
+function StaffSentSaleGroup({
+  orders,
+  lang,
+  t,
+  onResend,
+  onEdit,
+  onDelete,
+}: {
+  orders: any[];
+  lang: string;
+  t: (key: string, ...args: unknown[]) => string;
+  onResend: (o: any) => void;
+  onEdit: (o: any) => void;
+  onDelete: (o: any) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const primary = orders[0];
+  const logRef = primary?.logRef as string | null | undefined;
+  const dateLabel = primary?.saleDate ? formatSaudiDate(primary.saleDate) : formatSaudiDate(primary.createdAt);
+  const totalItems = orders.reduce((n, o) => n + ((o.items || []).length), 0);
+  const sectionsCount = orders.length;
+
+  return (
+    <div className="rounded-lg border border-noorix-border bg-noorix-bg overflow-hidden">
+      <div className="flex flex-col gap-2 p-3">
+        <div className="flex items-start gap-2 min-w-0">
+          <button
+            type="button"
+            className="shrink-0 mt-0.5 w-8 h-8 rounded-lg border border-noorix-border bg-noorix-bg-muted/50 flex items-center justify-center text-noorix-muted hover:text-noorix-text"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label={open ? t('staffSentCollapse') : t('staffSentExpand')}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={cn('transition-transform duration-200', open && 'rotate-180')}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="flex-1 min-w-0 text-start flex flex-col gap-0.5"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-[14px] text-noorix-blue ltr">{logRef || dateLabel}</span>
+              <StatusBadge status={primary.status} />
+              {sectionsCount > 1 ? (
+                <Badge color="violet" size="sm">{t('staffSaleSectionsCount', sectionsCount)}</Badge>
+              ) : null}
+            </div>
+            {logRef ? <span className="text-[11px] text-noorix-muted">{dateLabel}</span> : null}
+            {!open ? (
+              <span className="text-[11px] text-noorix-muted">
+                {totalItems} {t('staffOrderItemsCount')}
+              </span>
+            ) : null}
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1 justify-end ps-10">
+          <Button size="sm" variant="ghost" onClick={() => onResend(primary)}>
+            {t('staffSaleResend')}
+          </Button>
+        </div>
+      </div>
+      {open ? (
+        <div className="px-3 pb-3 pt-0 border-t border-noorix-border flex flex-col gap-3">
+          {orders.map((order) => (
+            <div key={order.id} className="pt-2 flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[12px] font-semibold text-noorix-text">{order.sectionName || '—'}</span>
+                <div className="flex flex-wrap gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
+                  <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                {(order.items || []).map((it: any, i: number) => {
+                  const p = it.product;
+                  const nameAr = p?.nameAr || '—';
+                  const nameEn = p?.nameEn?.trim() || null;
+                  return (
+                    <div key={i} className="flex items-start justify-between gap-2 text-[13px]">
+                      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                        <span className="font-medium text-noorix-text break-words">{nameAr}</span>
+                        {nameEn ? (
+                          <span className="text-[11px] text-noorix-muted break-words ltr text-start">{nameEn}</span>
+                        ) : null}
+                      </div>
+                      <div className="shrink-0 text-end flex flex-col gap-0.5 items-end">
+                        {it.size || it.packaging ? (
+                          <span className="text-[10px] text-noorix-muted ltr">
+                            {formatVariantLabel(it.size, it.packaging, it.unit)}
+                          </span>
+                        ) : it.unit ? (
+                          <span className="text-[10px] text-noorix-muted capitalize">{it.unit}</span>
+                        ) : null}
+                        <span className="font-semibold nx-font-numbers ltr">
+                          {fmt(it.quantity, 0)}
+                          {it.unitPrice != null && Number(it.unitPrice) > 0 ? (
+                            <> × {fmt(it.unitPrice)} = {fmt(new Decimal(it.quantity || 0).times(it.unitPrice || 0))} <span className="nx-sar">SR</span></>
+                          ) : (
+                            <> {it.unit || ''}</>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {order.notes ? (
+                <div className="text-[11px] text-noorix-muted italic break-words">{order.notes}</div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // ─── لوح طلبات (orders أو sales) ─────────────────────────────────────────────
 function StaffOrderPanel({
   companyId,
@@ -320,6 +449,18 @@ function StaffOrderPanel({
   );
   const pendingOrders = useMemo(() => myTypedOrders.filter((o: any) => o.status === 'pending'), [myTypedOrders]);
   const sentOrders   = useMemo(() => myTypedOrders.filter((o: any) => o.status === 'sent'),    [myTypedOrders]);
+  const sentSaleGroups = useMemo(() => {
+    if (!isSale) return [] as any[][];
+    const map = new Map<string, any[]>();
+    for (const o of sentOrders) {
+      const key = o.logRef || o.id;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(o);
+    }
+    return [...map.values()].sort(
+      (a, b) => new Date(b[0].createdAt).getTime() - new Date(a[0].createdAt).getTime(),
+    );
+  }, [isSale, sentOrders]);
 
   // ─── لمس الكرت ──────────────────────────────────────────────────
   function tapProduct(product: any) {
@@ -472,7 +613,8 @@ function StaffOrderPanel({
         const saved = unwrapApiData(res as any, t('saveFailed')) as { id?: string; whatsAppText?: string };
         if (!saved?.id) throw new Error(t('saveFailed'));
 
-        showToast(t('staffSaleSaved'), 'success');
+        const savedLogRef = (saved as { logRef?: string })?.logRef;
+        showToast(savedLogRef ? t('staffSaleSavedWithRef', savedLogRef) : t('staffSaleSaved'), 'success');
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: orderKeys.staffMy(companyId) }),
           queryClient.invalidateQueries({ queryKey: ['salesReport', companyId] }),
@@ -771,21 +913,33 @@ function StaffOrderPanel({
             <span className="text-[13px] font-bold text-noorix-muted">
               {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
             </span>
-            <Badge color="green" size="sm">{sentOrders.length}</Badge>
+            <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
           </div>
           <div className="flex flex-col gap-2">
-            {sentOrders.map((o: any) => (
-              <StaffSentOrderRow
-                key={o.id}
-                order={o}
-                isSale={isSale}
-                lang={lang}
-                t={t}
-                onResend={isSale ? handleResendSale : undefined}
-                onEdit={loadForEdit}
-                onDelete={handleDelete}
-              />
-            ))}
+            {isSale
+              ? sentSaleGroups.map((group) => (
+                  <StaffSentSaleGroup
+                    key={group[0].logRef || group[0].id}
+                    orders={group}
+                    lang={lang}
+                    t={t}
+                    onResend={handleResendSale}
+                    onEdit={loadForEdit}
+                    onDelete={handleDelete}
+                  />
+                ))
+              : sentOrders.map((o: any) => (
+                  <StaffSentOrderRow
+                    key={o.id}
+                    order={o}
+                    isSale={isSale}
+                    lang={lang}
+                    t={t}
+                    onResend={undefined}
+                    onEdit={loadForEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
           </div>
         </section>
       )}

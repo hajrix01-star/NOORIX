@@ -1301,6 +1301,7 @@ model StaffOrder {
   sectionName String    @map("section_name")   // مطبخ | بار | كاشير | ...
   orderType   String    @default("order") @map("order_type")  // order | sale
   status      String    @default("pending")     // pending | sent
+  logRef      String?   @map("log_ref")         // رقم عملية مختصر للتسجيل الداخلي (L-YYMMDD-NNN)
   saleDate    DateTime? @map("sale_date") @db.Date  // يوم المبيعات (لـ orderType=sale)
   notes            String?
   sentAt           DateTime? @map("sent_at")
@@ -1316,6 +1317,7 @@ model StaffOrder {
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, status])
+  @@index([companyId, logRef])
   @@index([userId])
   @@map("staff_orders")
 }

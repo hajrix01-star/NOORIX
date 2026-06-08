@@ -53,7 +53,7 @@ function SimpleTable({ headers, rows, emptyMsg }: { headers: string[]; rows: (st
 export function SalesReportTab({ companyId }: { companyId: string }) {
   const { t, lang } = useTranslation();
   const [days, setDays] = useState(30);
-  const [activeView, setActiveView] = useState<'product' | 'section' | 'user' | 'day'>('product');
+  const [activeView, setActiveView] = useState<'log' | 'product' | 'section' | 'user' | 'day'>('log');
 
   const { data: report, isLoading, isError, error } = useSalesReport(companyId, days);
 
@@ -62,6 +62,7 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
   const bySection: any[] = (report as any)?.bySection ?? [];
   const byUser: any[]    = (report as any)?.byUser ?? [];
   const byDay: any[]     = (report as any)?.byDay ?? [];
+  const byLog: any[]     = (report as any)?.byLog ?? [];
 
   function productName(p: any): string {
     return lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
@@ -104,7 +105,19 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
       fmt(d.qty, 0),
     ]), [byDay]);
 
+  const logRows = useMemo(() =>
+    byLog.map((row, i) => [
+      i + 1,
+      row.logRef || '—',
+      row.date,
+      userName(row),
+      row.sectionsCount ?? (row.sections?.length ?? 0),
+      fmt(row.qty, 0),
+      (row.sections || []).join(' · ') || '—',
+    ]), [byLog, lang]);
+
   const views = [
+    { id: 'log',     label: t('salesReportByLog') },
     { id: 'product', label: t('salesReportByProduct') },
     { id: 'section', label: t('salesReportBySection') },
     { id: 'user',    label: t('salesReportByUser') },
@@ -191,6 +204,13 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
             </div>
 
             <div className="p-2">
+              {activeView === 'log' && (
+                <SimpleTable
+                  headers={['#', t('staffSaleLogRef'), t('date'), t('employee'), t('salesReportSections'), t('quantity'), t('productSections')]}
+                  rows={logRows}
+                  emptyMsg={t('salesReportEmpty')}
+                />
+              )}
               {activeView === 'product' && (
                 <SimpleTable
                   headers={['#', t('product'), t('quantity'), t('ordersUnit'), t('sections')]}
