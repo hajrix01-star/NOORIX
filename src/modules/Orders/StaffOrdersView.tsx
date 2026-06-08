@@ -385,6 +385,7 @@ function StaffOrderPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sendWhatsAppPrompt, setSendWhatsAppPrompt] = useState<string | null>(null);
   const [qtyModal, setQtyModal] = useState<{ product: any; qty: number; unit: string } | null>(null);
   const [variantModal, setVariantModal] = useState<ReturnType<typeof defaultVariantModalState> | null>(null);
 
@@ -631,9 +632,9 @@ function StaffOrderPanel({
         ]);
         resetForm();
 
-        const waText = saved.whatsAppText;
-        if (waText?.trim()) {
-          openWhatsApp(waText);
+        const waText = saved.whatsAppText?.trim();
+        if (waText) {
+          setSendWhatsAppPrompt(waText);
         }
         return;
       }
@@ -855,7 +856,7 @@ function StaffOrderPanel({
               {submitting
                 ? (isSale ? t('staffSaleSaving') : t('saving'))
                 : isSale
-                  ? t('staffSaleSaveAndSend')
+                  ? t('staffSaleSave')
                   : editingId
                     ? t('staffOrderUpdate')
                     : t('staffOrderSubmit')}
@@ -964,6 +965,41 @@ function StaffOrderPanel({
           {isSale ? t('staffSaleNoRecords') : t('staffOrderNoOrders')}
         </div>
       )}
+
+      {sendWhatsAppPrompt ? (
+        <Modal
+          open
+          onClose={() => setSendWhatsAppPrompt(null)}
+          title={t('staffSaleSendConfirmTitle')}
+          size="sm"
+        >
+          <div className="flex flex-col gap-4 p-1">
+            <p className="text-[13px] text-noorix-muted leading-relaxed m-0">
+              {t('staffSaleSendConfirmHint')}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={() => setSendWhatsAppPrompt(null)}
+              >
+                {t('staffSaleSendConfirmNo')}
+              </Button>
+              <Button
+                variant="success"
+                size="md"
+                onClick={() => {
+                  openWhatsApp(sendWhatsAppPrompt);
+                  setSendWhatsAppPrompt(null);
+                  showToast(t('staffSaleResent'), 'success');
+                }}
+              >
+                {t('staffSaleSendConfirmYes')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
 
       {/* ── نافذة الكمية ── */}
       {qtyModal && (
