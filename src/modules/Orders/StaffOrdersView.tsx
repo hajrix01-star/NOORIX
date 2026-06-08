@@ -71,63 +71,59 @@ function StaffItemPriceSuffix({ it, product }: { it: any; product?: any }) {
   return <> {it.unit || ''}</>;
 }
 
-/** بطاقات ملخص — كمية / مجموع / معدل */
+/** ملخص كمية / مجموع / معدل — سطر واحد داخل الكرت */
 function StaffSaleLogMetrics({
   totalQty,
   totalAmount,
   avgPerOrder,
   t,
-  size = 'md',
+  showDivider = true,
 }: {
   totalQty: number;
   totalAmount: Decimal;
   avgPerOrder: Decimal;
   t: (key: string, ...args: unknown[]) => string;
-  size?: 'sm' | 'md';
+  showDivider?: boolean;
 }) {
   const showMoney = totalAmount.gt(0);
   if (totalQty <= 0 && !showMoney) return null;
-  const valueClass = size === 'sm' ? 'text-[14px]' : 'text-[15px]';
-  const labelClass = size === 'sm' ? 'text-[10px]' : 'text-[11px]';
-  const padClass = size === 'sm' ? 'px-2 py-1.5' : 'px-2.5 py-2';
 
-  const tiles: { key: string; label: string; value: React.ReactNode; color: string }[] = [];
+  const parts: React.ReactNode[] = [];
   if (totalQty > 0) {
-    tiles.push({
-      key: 'qty',
-      label: t('staffSaleTotalQty'),
-      value: fmt(totalQty, 0),
-      color: 'text-noorix-blue',
-    });
+    parts.push(
+      <span key="qty" className="ltr whitespace-nowrap">
+        <span className="text-noorix-muted">{t('staffSaleTotalQty')}: </span>
+        <span className="font-bold text-noorix-blue nx-font-numbers">{fmt(totalQty, 0)}</span>
+      </span>,
+    );
   }
   if (showMoney) {
-    tiles.push({
-      key: 'sum',
-      label: t('staffSaleGrandTotal'),
-      value: <>{fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span></>,
-      color: 'text-noorix-green',
-    });
+    parts.push(
+      <span key="sum" className="ltr whitespace-nowrap">
+        <span className="text-noorix-muted">{t('staffSaleGrandTotal')}: </span>
+        <span className="font-bold text-noorix-green nx-font-numbers">
+          {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
+        </span>
+      </span>,
+    );
     if (totalQty > 0) {
-      tiles.push({
-        key: 'avg',
-        label: t('avgPerOrder'),
-        value: <>{fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span></>,
-        color: 'text-noorix-violet',
-      });
+      parts.push(
+        <span key="avg" className="ltr whitespace-nowrap">
+          <span className="text-noorix-muted">{t('avgPerOrder')}: </span>
+          <span className="font-bold text-noorix-violet nx-font-numbers">
+            {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
+          </span>
+        </span>,
+      );
     }
   }
 
   return (
-    <div className={cn('grid gap-2', tiles.length === 1 ? 'grid-cols-1' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
-      {tiles.map((tile) => (
-        <div
-          key={tile.key}
-          className={cn('rounded-lg border border-noorix-border bg-noorix-surface text-center', padClass)}
-        >
-          <div className={cn(labelClass, 'text-noorix-muted leading-tight')}>{tile.label}</div>
-          <div className={cn(valueClass, 'font-bold nx-font-numbers ltr mt-0.5', tile.color)}>{tile.value}</div>
-        </div>
-      ))}
+    <div className={cn(
+      'flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]',
+      showDivider && 'border-t border-noorix-border/60 pt-2',
+    )}>
+      {parts}
     </div>
   );
 }
@@ -144,8 +140,8 @@ function StaffSaleItemsTable({
 }) {
   if (!items?.length) return null;
   return (
-    <div className="overflow-x-auto rounded-lg border border-noorix-border bg-noorix-surface">
-      <table className="w-full text-[12px] sm:text-[13px] border-collapse min-w-[280px]">
+    <div className="overflow-x-auto -mx-0.5">
+      <table className="w-full text-[12px] sm:text-[13px] border-collapse min-w-[280px] border border-noorix-border rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-noorix-bg-muted border-b border-noorix-border">
             <th className="text-start py-2 px-2.5 font-bold text-[11px] text-noorix-muted">{t('product')}</th>
@@ -391,70 +387,62 @@ function StaffSentSaleGroup({
   const avgPerOrder = staffSaleAvgPerOrder(totalAmount, totalQty);
 
   return (
-    <article className="noorix-surface-card overflow-hidden flex flex-col isolate">
-      {/* رأس العملية */}
-      <div className="px-3 py-3 sm:px-4 border-b border-noorix-border bg-noorix-bg-muted/25 flex flex-col gap-3">
-        <div className="flex items-start gap-2 min-w-0">
-          <button
-            type="button"
-            className="shrink-0 w-9 h-9 rounded-lg border border-noorix-border bg-noorix-surface flex items-center justify-center text-noorix-muted hover:text-noorix-text hover:border-noorix-blue/40"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-label={open ? t('staffSentCollapse') : t('staffSentExpand')}
+    <article className="noorix-surface-card overflow-hidden p-3 sm:p-4 flex flex-col gap-2.5">
+      <div className="flex items-start gap-2 min-w-0">
+        <button
+          type="button"
+          className="shrink-0 w-9 h-9 rounded-lg border border-noorix-border flex items-center justify-center text-noorix-muted hover:text-noorix-text hover:border-noorix-blue/40"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={open ? t('staffSentCollapse') : t('staffSentExpand')}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={cn('transition-transform duration-200', open && 'rotate-180')}
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={cn('transition-transform duration-200', open && 'rotate-180')}
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div className="flex-1 min-w-0 flex flex-col gap-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2 min-w-0">
-                <span className="font-bold text-[15px] text-noorix-blue ltr leading-tight">{logRef || dateLabel}</span>
-                <StatusBadge status={primary.status} />
-                {sectionsCount > 1 ? (
-                  <Badge color="violet" size="sm">{t('staffSaleSectionsCount', sectionsCount)}</Badge>
-                ) : null}
-              </div>
-              <Button size="sm" variant="ghost" className="shrink-0" onClick={() => onResend(primary)}>
-                {t('staffSaleResend')}
-              </Button>
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <span className="font-bold text-[15px] text-noorix-blue ltr leading-tight">{logRef || dateLabel}</span>
+              <StatusBadge status={primary.status} />
+              {sectionsCount > 1 ? (
+                <Badge color="violet" size="sm">{t('staffSaleSectionsCount', sectionsCount)}</Badge>
+              ) : null}
             </div>
-            <div className="text-[11px] text-noorix-muted flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              {logRef ? <span>{dateLabel}</span> : null}
-              {logRef ? <span aria-hidden>·</span> : null}
-              <span>{totalItems} {t('staffOrderItemsCount')}</span>
-            </div>
-            <StaffSaleLogMetrics
-              totalQty={totalQty}
-              totalAmount={totalAmount}
-              avgPerOrder={avgPerOrder}
-              t={t}
-              size="sm"
-            />
+            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => onResend(primary)}>
+              {t('staffSaleResend')}
+            </Button>
           </div>
+          <div className="text-[11px] text-noorix-muted flex flex-wrap items-center gap-x-1.5">
+            {logRef ? <span>{dateLabel}</span> : null}
+            {logRef ? <span aria-hidden>·</span> : null}
+            <span>{totalItems} {t('staffOrderItemsCount')}</span>
+          </div>
+          <StaffSaleLogMetrics
+            totalQty={totalQty}
+            totalAmount={totalAmount}
+            avgPerOrder={avgPerOrder}
+            t={t}
+          />
         </div>
       </div>
 
-      {/* تفاصيل الأصناف */}
       {open ? (
-        <div className="px-3 py-3 sm:px-4 flex flex-col gap-4 bg-noorix-surface">
+        <div className="flex flex-col gap-3 border-t border-noorix-border pt-3">
           {orders.map((order, orderIdx) => (
             <div
               key={order.id}
-              className={cn(
-                'flex flex-col gap-2',
-                orderIdx > 0 && 'pt-4 border-t border-noorix-border',
-              )}
+              className={cn('flex flex-col gap-2', orderIdx > 0 && 'pt-3 border-t border-noorix-border/70')}
             >
               {sectionsCount > 1 ? (
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -467,15 +455,13 @@ function StaffSentSaleGroup({
               ) : null}
               <StaffSaleItemsTable items={order.items || []} lang={lang} t={t} />
               {sectionsCount === 1 ? (
-                <div className="flex flex-wrap gap-1 justify-end pt-1">
+                <div className="flex flex-wrap gap-1 justify-end">
                   <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
                   <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
                 </div>
               ) : null}
               {order.notes ? (
-                <div className="text-[11px] text-noorix-muted italic break-words rounded-lg bg-noorix-bg-muted/40 px-2.5 py-2 border border-noorix-border/50">
-                  {order.notes}
-                </div>
+                <p className="text-[11px] text-noorix-muted italic break-words m-0">{order.notes}</p>
               ) : null}
             </div>
           ))}
@@ -1064,49 +1050,46 @@ function StaffOrderPanel({
 
       {/* ── مُرسَل — بدون كرت خارجي إضافي؛ كل طلب مطوي افتراضياً ── */}
       {sentOrders.length > 0 && (
-        <section className="flex flex-col gap-4 pt-4 mt-1 border-t-2 border-noorix-border">
-          <div className="noorix-surface-card px-3 py-3 sm:px-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[14px] font-bold text-noorix-text">
-                {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
-              </span>
-              <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
-            </div>
-            {isSale && (sentSalesSummary.totalQty > 0 || sentSalesSummary.totalAmount.gt(0)) ? (
-              <StaffSaleLogMetrics
-                totalQty={sentSalesSummary.totalQty}
-                totalAmount={sentSalesSummary.totalAmount}
-                avgPerOrder={sentSalesSummary.avgPerOrder}
-                t={t}
-              />
-            ) : null}
+        <section className="flex flex-col gap-3 pt-4 border-t border-noorix-border">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[14px] font-bold text-noorix-text">
+              {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
+            </span>
+            <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
           </div>
-          <div className="flex flex-col gap-4">
-            {isSale
-              ? sentSaleGroups.map((group) => (
-                  <StaffSentSaleGroup
-                    key={group[0].logRef || group[0].id}
-                    orders={group}
-                    lang={lang}
-                    t={t}
-                    onResend={handleResendSale}
-                    onEdit={loadForEdit}
-                    onDelete={handleDelete}
-                  />
-                ))
-              : sentOrders.map((o: any) => (
-                  <StaffSentOrderRow
-                    key={o.id}
-                    order={o}
-                    isSale={isSale}
-                    lang={lang}
-                    t={t}
-                    onResend={undefined}
-                    onEdit={loadForEdit}
-                    onDelete={handleDelete}
-                  />
-                ))}
-          </div>
+          {isSale && sentSaleGroups.length > 1 && (sentSalesSummary.totalQty > 0 || sentSalesSummary.totalAmount.gt(0)) ? (
+            <StaffSaleLogMetrics
+              totalQty={sentSalesSummary.totalQty}
+              totalAmount={sentSalesSummary.totalAmount}
+              avgPerOrder={sentSalesSummary.avgPerOrder}
+              t={t}
+              showDivider={false}
+            />
+          ) : null}
+          {isSale
+            ? sentSaleGroups.map((group) => (
+                <StaffSentSaleGroup
+                  key={group[0].logRef || group[0].id}
+                  orders={group}
+                  lang={lang}
+                  t={t}
+                  onResend={handleResendSale}
+                  onEdit={loadForEdit}
+                  onDelete={handleDelete}
+                />
+              ))
+            : sentOrders.map((o: any) => (
+                <StaffSentOrderRow
+                  key={o.id}
+                  order={o}
+                  isSale={isSale}
+                  lang={lang}
+                  t={t}
+                  onResend={undefined}
+                  onEdit={loadForEdit}
+                  onDelete={handleDelete}
+                />
+              ))}
         </section>
       )}
 
