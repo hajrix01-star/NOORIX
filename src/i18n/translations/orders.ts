@@ -320,10 +320,6 @@ export default {
   allSections:                   { ar: 'الكل', en: 'All' },
   staffOrderAddItem:        { ar: 'إضافة صنف', en: 'Add item' },
   staffOrderSubmit:         { ar: 'إرسال الطلب', en: 'Submit Order' },
-  staffInternalSalesHint: {
-    ar: 'تسجيل داخلي للمتابعة فقط — لا يُؤثر على «المبيعات اليومية» المحاسبية في القائمة الرئيسية.',
-    en: 'Internal tracking only — does not affect accounting «Daily Sales» in the main menu.',
-  },
   staffInternalSalesReportHint: {
     ar: 'تقرير التسجيل الداخلي لموظفي الطلبات — منفصل عن ملخص المبيعات اليومية.',
     en: 'Internal staff log report — separate from daily sales summaries.',
