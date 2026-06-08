@@ -304,20 +304,18 @@ function StaffSentSaleGroup({
               ) : null}
             </div>
             {logRef ? <span className="text-[11px] text-noorix-muted">{dateLabel}</span> : null}
-            {!open ? (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-noorix-muted">
-                <span>{totalItems} {t('staffOrderItemsCount')}</span>
-                {showMoney ? (
-                  <>
-                    <span className="text-noorix-green font-semibold ltr">
-                      {t('total')}: {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
-                    </span>
-                    {totalQty > 0 ? (
-                      <span className="text-noorix-violet font-semibold ltr">
-                        {t('avgPerOrder')}: {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
-                      </span>
-                    ) : null}
-                  </>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-noorix-muted">
+              <span>{totalItems} {t('staffOrderItemsCount')}</span>
+            </div>
+            {showMoney ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-lg bg-noorix-bg-muted/60 border border-noorix-border/60 px-2.5 py-1.5 text-[12px] w-full">
+                <span className="font-bold text-noorix-green ltr">
+                  {t('total')}: {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
+                </span>
+                {totalQty > 0 ? (
+                  <span className="font-bold text-noorix-violet ltr">
+                    {t('avgPerOrder')}: {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
+                  </span>
                 ) : null}
               </div>
             ) : null}
@@ -331,18 +329,6 @@ function StaffSentSaleGroup({
       </div>
       {open ? (
         <div className="px-3 pb-3 pt-2 border-t border-noorix-border flex flex-col gap-3">
-          {showMoney ? (
-            <div className="flex flex-wrap items-center gap-3 text-[12px]">
-              <span className="font-semibold text-noorix-green ltr">
-                {t('total')}: {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
-              </span>
-              {totalQty > 0 ? (
-                <span className="font-semibold text-noorix-violet ltr">
-                  {t('avgPerOrder')}: {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
-                </span>
-              ) : null}
-            </div>
-          ) : null}
           {orders.map((order) => (
             <div key={order.id} className="pt-2 flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -979,12 +965,12 @@ function StaffOrderPanel({
               <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
             </div>
             {isSale && sentSalesSummary.totalAmount.gt(0) ? (
-              <div className="flex flex-wrap items-center gap-3 text-[12px]">
-                <span className="font-semibold text-noorix-green ltr">
+              <div className="flex flex-wrap items-center gap-3 rounded-lg bg-noorix-bg-muted/60 border border-noorix-border/60 px-3 py-2 text-[13px]">
+                <span className="font-bold text-noorix-green ltr">
                   {t('total')}: {fmt(sentSalesSummary.totalAmount.toNumber())} <span className="nx-sar">SR</span>
                 </span>
                 {sentSalesSummary.operationCount > 0 ? (
-                  <span className="font-semibold text-noorix-violet ltr">
+                  <span className="font-bold text-noorix-violet ltr">
                     {t('avgPerOrder')}: {fmt(sentSalesSummary.avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
                   </span>
                 ) : null}
