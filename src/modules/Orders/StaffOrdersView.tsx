@@ -71,43 +71,127 @@ function StaffItemPriceSuffix({ it, product }: { it: any; product?: any }) {
   return <> {it.unit || ''}</>;
 }
 
-function StaffSaleSummaryBar({
+/** بطاقات ملخص — كمية / مجموع / معدل */
+function StaffSaleLogMetrics({
   totalQty,
   totalAmount,
   avgPerOrder,
   t,
-  className,
+  size = 'md',
 }: {
   totalQty: number;
   totalAmount: Decimal;
   avgPerOrder: Decimal;
   t: (key: string, ...args: unknown[]) => string;
-  className?: string;
+  size?: 'sm' | 'md';
 }) {
   const showMoney = totalAmount.gt(0);
   if (totalQty <= 0 && !showMoney) return null;
+  const valueClass = size === 'sm' ? 'text-[14px]' : 'text-[15px]';
+  const labelClass = size === 'sm' ? 'text-[10px]' : 'text-[11px]';
+  const padClass = size === 'sm' ? 'px-2 py-1.5' : 'px-2.5 py-2';
+
+  const tiles: { key: string; label: string; value: React.ReactNode; color: string }[] = [];
+  if (totalQty > 0) {
+    tiles.push({
+      key: 'qty',
+      label: t('staffSaleTotalQty'),
+      value: fmt(totalQty, 0),
+      color: 'text-noorix-blue',
+    });
+  }
+  if (showMoney) {
+    tiles.push({
+      key: 'sum',
+      label: t('staffSaleGrandTotal'),
+      value: <>{fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span></>,
+      color: 'text-noorix-green',
+    });
+    if (totalQty > 0) {
+      tiles.push({
+        key: 'avg',
+        label: t('avgPerOrder'),
+        value: <>{fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span></>,
+        color: 'text-noorix-violet',
+      });
+    }
+  }
+
   return (
-    <div className={cn(
-      'flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-noorix-bg-muted/60 border border-noorix-border/60 px-2.5 py-1.5 text-[12px] w-full',
-      className,
-    )}>
-      {totalQty > 0 ? (
-        <span className="font-bold text-noorix-blue ltr">
-          {t('staffSaleTotalQty')}: {fmt(totalQty, 0)}
-        </span>
-      ) : null}
-      {showMoney ? (
-        <>
-          <span className="font-bold text-noorix-green ltr">
-            {t('staffSaleGrandTotal')}: {fmt(totalAmount.toNumber())} <span className="nx-sar">SR</span>
-          </span>
-          {totalQty > 0 ? (
-            <span className="font-bold text-noorix-violet ltr">
-              {t('avgPerOrder')}: {fmt(avgPerOrder.toNumber())} <span className="nx-sar">SR</span>
-            </span>
-          ) : null}
-        </>
-      ) : null}
+    <div className={cn('grid gap-2', tiles.length === 1 ? 'grid-cols-1' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
+      {tiles.map((tile) => (
+        <div
+          key={tile.key}
+          className={cn('rounded-lg border border-noorix-border bg-noorix-surface text-center', padClass)}
+        >
+          <div className={cn(labelClass, 'text-noorix-muted leading-tight')}>{tile.label}</div>
+          <div className={cn(valueClass, 'font-bold nx-font-numbers ltr mt-0.5', tile.color)}>{tile.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** جدول أصناف العملية — قراءة فقط داخل كرت السجل */
+function StaffSaleItemsTable({
+  items,
+  lang,
+  t,
+}: {
+  items: any[];
+  lang: string;
+  t: (key: string, ...args: unknown[]) => string;
+}) {
+  if (!items?.length) return null;
+  return (
+    <div className="overflow-x-auto rounded-lg border border-noorix-border bg-noorix-surface">
+      <table className="w-full text-[12px] sm:text-[13px] border-collapse min-w-[280px]">
+        <thead>
+          <tr className="bg-noorix-bg-muted border-b border-noorix-border">
+            <th className="text-start py-2 px-2.5 font-bold text-[11px] text-noorix-muted">{t('product')}</th>
+            <th className="text-end py-2 px-2.5 font-bold text-[11px] text-noorix-muted w-14">{t('quantity')}</th>
+            <th className="text-end py-2 px-2.5 font-bold text-[11px] text-noorix-muted w-16">{t('unitPrice')}</th>
+            <th className="text-end py-2 px-2.5 font-bold text-[11px] text-noorix-muted w-[4.5rem]">{t('staffSaleGrandTotal')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((it: any, i: number) => {
+            const p = it.product;
+            const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
+            const variant = formatVariantLabel(it.size, it.packaging, it.unit);
+            const amountItem = { ...it, product: p };
+            const unitPrice = resolveStaffItemUnitPrice(amountItem);
+            const lineAmt = staffItemLineAmount(amountItem);
+            return (
+              <tr key={i} className="border-b border-noorix-border last:border-b-0 hover:bg-noorix-bg-muted/30">
+                <td className="py-2 px-2.5 align-top text-start max-w-[140px] sm:max-w-none">
+                  <div className="font-medium text-noorix-text break-words leading-snug">{name}</div>
+                  {variant ? (
+                    <div className="text-[10px] text-noorix-muted ltr mt-0.5 truncate" title={variant}>{variant}</div>
+                  ) : null}
+                </td>
+                <td className="py-2 px-2.5 text-end nx-font-numbers ltr font-semibold align-top whitespace-nowrap">
+                  {fmt(it.quantity, 0)}
+                </td>
+                <td className="py-2 px-2.5 text-end nx-font-numbers ltr align-top whitespace-nowrap">
+                  {unitPrice.gt(0) ? (
+                    <>{fmt(unitPrice.toNumber())} <span className="nx-sar">SR</span></>
+                  ) : (
+                    <span className="text-noorix-muted">—</span>
+                  )}
+                </td>
+                <td className="py-2 px-2.5 text-end nx-font-numbers ltr font-bold text-noorix-green align-top whitespace-nowrap">
+                  {lineAmt.gt(0) ? (
+                    <>{fmt(lineAmt.toNumber())} <span className="nx-sar">SR</span></>
+                  ) : (
+                    <span className="text-noorix-muted">—</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -307,12 +391,13 @@ function StaffSentSaleGroup({
   const avgPerOrder = staffSaleAvgPerOrder(totalAmount, totalQty);
 
   return (
-    <div className="rounded-lg border border-noorix-border bg-noorix-bg overflow-hidden">
-      <div className="flex flex-col gap-2 p-3">
+    <article className="noorix-surface-card overflow-hidden flex flex-col isolate">
+      {/* رأس العملية */}
+      <div className="px-3 py-3 sm:px-4 border-b border-noorix-border bg-noorix-bg-muted/25 flex flex-col gap-3">
         <div className="flex items-start gap-2 min-w-0">
           <button
             type="button"
-            className="shrink-0 mt-0.5 w-8 h-8 rounded-lg border border-noorix-border bg-noorix-bg-muted/50 flex items-center justify-center text-noorix-muted hover:text-noorix-text"
+            className="shrink-0 w-9 h-9 rounded-lg border border-noorix-border bg-noorix-surface flex items-center justify-center text-noorix-muted hover:text-noorix-text hover:border-noorix-blue/40"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-label={open ? t('staffSentCollapse') : t('staffSentExpand')}
@@ -331,85 +416,72 @@ function StaffSentSaleGroup({
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
-          <button
-            type="button"
-            className="flex-1 min-w-0 text-start flex flex-col gap-0.5"
-            onClick={() => setOpen((v) => !v)}
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-[14px] text-noorix-blue ltr">{logRef || dateLabel}</span>
-              <StatusBadge status={primary.status} />
-              {sectionsCount > 1 ? (
-                <Badge color="violet" size="sm">{t('staffSaleSectionsCount', sectionsCount)}</Badge>
-              ) : null}
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2 min-w-0">
+                <span className="font-bold text-[15px] text-noorix-blue ltr leading-tight">{logRef || dateLabel}</span>
+                <StatusBadge status={primary.status} />
+                {sectionsCount > 1 ? (
+                  <Badge color="violet" size="sm">{t('staffSaleSectionsCount', sectionsCount)}</Badge>
+                ) : null}
+              </div>
+              <Button size="sm" variant="ghost" className="shrink-0" onClick={() => onResend(primary)}>
+                {t('staffSaleResend')}
+              </Button>
             </div>
-            {logRef ? <span className="text-[11px] text-noorix-muted">{dateLabel}</span> : null}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-noorix-muted">
+            <div className="text-[11px] text-noorix-muted flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+              {logRef ? <span>{dateLabel}</span> : null}
+              {logRef ? <span aria-hidden>·</span> : null}
               <span>{totalItems} {t('staffOrderItemsCount')}</span>
             </div>
-            <StaffSaleSummaryBar
+            <StaffSaleLogMetrics
               totalQty={totalQty}
               totalAmount={totalAmount}
               avgPerOrder={avgPerOrder}
               t={t}
+              size="sm"
             />
-          </button>
-        </div>
-        <div className="flex flex-wrap gap-1 justify-end ps-10">
-          <Button size="sm" variant="ghost" onClick={() => onResend(primary)}>
-            {t('staffSaleResend')}
-          </Button>
+          </div>
         </div>
       </div>
+
+      {/* تفاصيل الأصناف */}
       {open ? (
-        <div className="px-3 pb-3 pt-2 border-t border-noorix-border flex flex-col gap-3">
-          {orders.map((order) => (
-            <div key={order.id} className="pt-2 flex flex-col gap-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[12px] font-semibold text-noorix-text">{order.sectionName || '—'}</span>
-                <div className="flex flex-wrap gap-1">
+        <div className="px-3 py-3 sm:px-4 flex flex-col gap-4 bg-noorix-surface">
+          {orders.map((order, orderIdx) => (
+            <div
+              key={order.id}
+              className={cn(
+                'flex flex-col gap-2',
+                orderIdx > 0 && 'pt-4 border-t border-noorix-border',
+              )}
+            >
+              {sectionsCount > 1 ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[12px] font-bold text-noorix-text">{order.sectionName || '—'}</span>
+                  <div className="flex flex-wrap gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
+                    <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
+                  </div>
+                </div>
+              ) : null}
+              <StaffSaleItemsTable items={order.items || []} lang={lang} t={t} />
+              {sectionsCount === 1 ? (
+                <div className="flex flex-wrap gap-1 justify-end pt-1">
                   <Button size="sm" variant="ghost" onClick={() => onEdit(order)}>{t('edit')}</Button>
                   <Button size="sm" variant="danger" onClick={() => onDelete(order)}>{t('delete')}</Button>
                 </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                {(order.items || []).map((it: any, i: number) => {
-                  const p = it.product;
-                  const nameAr = p?.nameAr || '—';
-                  const nameEn = p?.nameEn?.trim() || null;
-                  return (
-                    <div key={i} className="flex items-start justify-between gap-2 text-[13px]">
-                      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-                        <span className="font-medium text-noorix-text break-words">{nameAr}</span>
-                        {nameEn ? (
-                          <span className="text-[11px] text-noorix-muted break-words ltr text-start">{nameEn}</span>
-                        ) : null}
-                      </div>
-                      <div className="shrink-0 text-end flex flex-col gap-0.5 items-end">
-                        {it.size || it.packaging ? (
-                          <span className="text-[10px] text-noorix-muted ltr">
-                            {formatVariantLabel(it.size, it.packaging, it.unit)}
-                          </span>
-                        ) : it.unit ? (
-                          <span className="text-[10px] text-noorix-muted capitalize">{it.unit}</span>
-                        ) : null}
-                        <span className="font-semibold nx-font-numbers ltr">
-                          {fmt(it.quantity, 0)}
-                          <StaffItemPriceSuffix it={it} product={p} />
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              ) : null}
               {order.notes ? (
-                <div className="text-[11px] text-noorix-muted italic break-words">{order.notes}</div>
+                <div className="text-[11px] text-noorix-muted italic break-words rounded-lg bg-noorix-bg-muted/40 px-2.5 py-2 border border-noorix-border/50">
+                  {order.notes}
+                </div>
               ) : null}
             </div>
           ))}
         </div>
       ) : null}
-    </div>
+    </article>
   );
 }
 
@@ -992,25 +1064,24 @@ function StaffOrderPanel({
 
       {/* ── مُرسَل — بدون كرت خارجي إضافي؛ كل طلب مطوي افتراضياً ── */}
       {sentOrders.length > 0 && (
-        <section className="flex flex-col gap-2 pt-1 border-t border-noorix-border">
-          <div className="flex flex-col gap-2 px-0.5 pt-3">
+        <section className="flex flex-col gap-4 pt-4 mt-1 border-t-2 border-noorix-border">
+          <div className="noorix-surface-card px-3 py-3 sm:px-4 flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[13px] font-bold text-noorix-muted">
+              <span className="text-[14px] font-bold text-noorix-text">
                 {isSale ? t('staffSaleMySent') : t('staffOrderMySent')}
               </span>
               <Badge color="green" size="sm">{isSale ? sentSaleGroups.length : sentOrders.length}</Badge>
             </div>
             {isSale && (sentSalesSummary.totalQty > 0 || sentSalesSummary.totalAmount.gt(0)) ? (
-              <StaffSaleSummaryBar
+              <StaffSaleLogMetrics
                 totalQty={sentSalesSummary.totalQty}
                 totalAmount={sentSalesSummary.totalAmount}
                 avgPerOrder={sentSalesSummary.avgPerOrder}
                 t={t}
-                className="text-[13px] px-3 py-2"
               />
             ) : null}
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             {isSale
               ? sentSaleGroups.map((group) => (
                   <StaffSentSaleGroup
