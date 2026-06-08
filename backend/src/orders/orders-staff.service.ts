@@ -202,12 +202,18 @@ export class OrdersStaffService {
     return { ...primary, orders, count: orders.length, whatsAppText };
   }
 
-  async getMyStaffOrders(companyId: string, userId: string) {
-    // طلبات المستخدم في آخر 30 يوم (لا ترحيل — كل يوم/شهر منفصل)
-    const since = new Date();
-    since.setDate(since.getDate() - 30);
+  async getMyStaffOrders(companyId: string, userId: string, days = 30) {
+    // نفس نافذة تقرير المبيعات — createdAt أو saleDate داخل الفترة
+    const since = buildSalesReportSince(days);
+    const tenantId = TenantContext.tryGetTenantId();
+    const where: Prisma.StaffOrderWhereInput = {
+      companyId,
+      userId,
+      OR: [{ createdAt: { gte: since } }, { saleDate: { gte: since } }],
+    };
+    if (tenantId) where.tenantId = tenantId;
     return this.prisma.staffOrder.findMany({
-      where: { companyId, userId, createdAt: { gte: since } },
+      where,
       orderBy: { createdAt: 'desc' },
       include: { items: { include: { product: true } } },
     });

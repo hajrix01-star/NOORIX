@@ -769,7 +769,7 @@ function StaffOrderPanel({
             <Badge color="green" size="sm">{sentOrders.length}</Badge>
           </div>
           <div className="flex flex-col gap-2">
-            {sentOrders.slice(0, 10).map((o: any) => (
+            {sentOrders.map((o: any) => (
               <StaffSentOrderRow
                 key={o.id}
                 order={o}

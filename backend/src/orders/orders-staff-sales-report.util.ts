@@ -8,7 +8,7 @@ export function buildSalesReportSince(days: number, now: Date = new Date()): Dat
   return since;
 }
 
-/** هل سجل مبيعات يقع ضمن نافذة التقرير؟ */
+/** هل سجل مبيعات يقع ضمن نافذة التقرير؟ (مكافئ OR: createdAt|saleDate >= since) */
 export function staffSaleMatchesReportWindow(
   order: { saleDate?: Date | null; createdAt: Date },
   since: Date,
