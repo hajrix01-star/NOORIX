@@ -30,6 +30,7 @@ export default {
   dashboardAppSalesPeriodTotal: { ar: 'إجمالي الفترة', en: 'Period total' },
   dashboardAppSalesColApp: { ar: 'التطبيق', en: 'App' },
   dashboardAppSalesColPeriod: { ar: 'الفترة', en: 'Period' },
+  dashboardAppSalesTotalRow: { ar: 'المجموع', en: 'Total' },
   dashboardTargetOverall: { ar: 'الهدف الشامل للشهر', en: 'Overall month target' },
   dashboardTargetByDay: { ar: 'هدف لكل يوم (أسبوعي)', en: 'Target per weekday' },
   dashboardTargetAllMonths: { ar: 'لكل الشهور', en: 'All months' },

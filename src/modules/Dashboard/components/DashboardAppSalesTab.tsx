@@ -5,9 +5,9 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
 import { fmt } from '../../../utils/format';
-import { Input, SmartTable, FmtNum } from '../../../ui';
+import { Input, SmartTable, FmtNum, type SmartTableFooterSegment } from '../../../ui';
 import { LoadingState, EmptyState } from '../../../components/states';
-import { buildDashboardAppSalesModel } from '../utils/dashboardAppSalesData';
+import { buildAppSalesTableFooter, buildDashboardAppSalesModel } from '../utils/dashboardAppSalesData';
 import { DashboardAppSalesChart } from './DashboardAppSalesChart';
 const YEARS_SPAN_OPTIONS = [1, 2, 3] as const;
 
@@ -43,6 +43,38 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
     if (yearsSpan === 1) return String(yearEnd);
     return `${yearStart} — ${yearEnd}`;
   }, [yearStart, yearEnd, yearsSpan]);
+
+  const tableFooter = useMemo(() => buildAppSalesTableFooter(model), [model]);
+
+  const footerRow = useMemo((): SmartTableFooterSegment[] | null => {
+    if (!model.channels.length) return null;
+    const monthSegments: SmartTableFooterSegment[] = model.monthSeries.map((p) => {
+      const cell = tableFooter.monthCells.find((c) => c.periodKey === p.periodKey);
+      return {
+        keys: [p.periodKey],
+        content: cell?.hasData ? (
+          <span className="nx-font-numbers font-bold text-nx-app">{fmt(cell.appPercent, 1)}%</span>
+        ) : (
+          <span className="text-noorix-muted">—</span>
+        ),
+      };
+    });
+    return [
+      {
+        keys: ['name'],
+        content: <span className="font-bold text-noorix-text">{t('dashboardAppSalesTotalRow')}</span>,
+      },
+      ...monthSegments,
+      {
+        keys: ['periodPercent'],
+        content: tableFooter.hasPeriodData ? (
+          <span className="nx-font-numbers font-bold text-nx-app">{fmt(tableFooter.periodPercent, 1)}%</span>
+        ) : (
+          <span className="text-noorix-muted">—</span>
+        ),
+      },
+    ];
+  }, [model.channels.length, model.monthSeries, tableFooter, t]);
 
   const tableColumns = useMemo(() => {
     const monthCols = model.monthSeries.map((p) => ({
@@ -160,6 +192,7 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
             data={model.channels}
             total={model.channels.length}
             pageSize={50}
+            footerRow={footerRow}
             renderMobileCard={(row) => {
               const activeMonths = model.monthSeries.filter((p) => (row.months[p.periodKey]?.amount || 0) > 0);
               return (

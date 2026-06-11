@@ -10,6 +10,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  LabelList,
   Cell,
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -101,6 +102,17 @@ export function DashboardAppSalesChart({ data }: Props) {
         {data.map((entry) => (
           <Cell key={entry.periodKey} fill={entry.appPercent > 0 ? APP_COLOR : EMPTY_BAR} />
         ))}
+        <LabelList
+          dataKey="appPercent"
+          position="top"
+          formatter={(v: number) => (Number(v) > 0 ? `${fmt(v, 1)}%` : '')}
+          style={{
+            fontSize: isNarrow ? 9 : 10,
+            fill: 'var(--noorix-text)',
+            fontFamily: 'var(--noorix-font-numbers)',
+            fontWeight: 600,
+          }}
+        />
       </Bar>
     </BarChart>
   );

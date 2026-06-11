@@ -7,6 +7,9 @@ import {
   aggregateShiftChannelWhatsAppLines,
   type SalesSummaryChannelsLike,
 } from './salesWhatsAppChannels';
+import type { DailySalesVaultRef } from '../components/DailySalesChannelsChips';
+import { computeDayAppShare, computeShiftAppShare, type AppShareResult } from './salesAppShare';
+import { appendAppShareWaLines } from './salesWhatsAppAppShare';
 import {
   waAvgSaleMetricLine,
   waCustomersLine,
@@ -123,6 +126,9 @@ type BuildDailyWaParams = {
   daySummaries?: SalesSummaryChannelsLike[];
   dayYmd?: string;
   lang?: string;
+  vaultById?: Map<string, DailySalesVaultRef>;
+  /** نسبة التطبيقات لكل الأيام المسجلة في الشهر */
+  monthAppShare?: AppShareResult;
 };
 
 function shiftBlock(
@@ -131,6 +137,7 @@ function shiftBlock(
   agg: ShiftDayAggregate,
   t: (key: string) => string,
   channelLines: string[],
+  appShare?: AppShareResult,
 ): string[] {
   const title = waShiftSectionTitle(kind, shiftLabel);
   if (agg.summaryCount === 0) {
@@ -145,42 +152,58 @@ function shiftBlock(
     waMetricLine(t('salesWhatsAppTotalLine'), `${fmt(agg.total)} SR`),
     waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(agg.customers, 0)),
     waAvgSaleMetricLine(t('salesWhatsAppAvgInvoiceLine'), agg.total, agg.customers),
-    '',
   );
+  if (appShare) {
+    appendAppShareWaLines(lines, appShare, t('salesWhatsAppAppShareLine'));
+  }
+  lines.push('');
   return lines;
 }
 
 /** نص واتساب لتقرير يومي شامل (صباحي + مسائي + يوم كامل + المجموع) */
 export function buildDailyShiftWhatsAppText(p: BuildDailyWaParams): string {
-  const { companyName, dateLabel, report, t, daySummaries, dayYmd, lang } = p;
+  const { companyName, dateLabel, report, t, daySummaries, dayYmd, lang, vaultById, monthAppShare } = p;
   const name = (companyName || '').trim();
   const day = dayYmd ? toYmd(dayYmd) : null;
   const canChannels = !!(day && daySummaries?.length && lang);
 
   const morningChannels = canChannels
-    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'morning', lang!)
+    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'morning', lang!, vaultById)
     : [];
   const eveningChannels = canChannels
-    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'evening', lang!)
+    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'evening', lang!, vaultById)
     : [];
   const fullDayChannels = canChannels
-    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'all', lang!)
+    ? aggregateShiftChannelWhatsAppLines(daySummaries!, day, 'all', lang!, vaultById)
     : [];
+
+  const morningShare = canChannels
+    ? computeShiftAppShare(daySummaries!, day, 'morning', vaultById)
+    : undefined;
+  const eveningShare = canChannels
+    ? computeShiftAppShare(daySummaries!, day, 'evening', vaultById)
+    : undefined;
+  const fullDayShare = canChannels
+    ? computeShiftAppShare(daySummaries!, day, 'all', vaultById)
+    : undefined;
+  const grandShare = canChannels
+    ? computeDayAppShare(daySummaries!, day, vaultById)
+    : undefined;
 
   const lines: string[] = [
     waReportHeader(t('salesDailyWaTitle'), name),
     waMetaLine(t('salesWhatsAppDateLine'), dateLabel),
     '',
-    ...shiftBlock('morning', t('salesShiftMorning'), report.morning, t, morningChannels),
-    ...shiftBlock('evening', t('salesShiftEvening'), report.evening, t, eveningChannels),
+    ...shiftBlock('morning', t('salesShiftMorning'), report.morning, t, morningChannels, morningShare),
+    ...shiftBlock('evening', t('salesShiftEvening'), report.evening, t, eveningChannels, eveningShare),
   ];
 
   if (report.fullDay.summaryCount > 0) {
-    lines.push(...shiftBlock('fullDay', t('salesShiftFullDay'), report.fullDay, t, fullDayChannels));
+    lines.push(...shiftBlock('fullDay', t('salesShiftFullDay'), report.fullDay, t, fullDayChannels, fullDayShare));
   }
 
   const grandChannelLines = canChannels
-    ? aggregateDayChannelWhatsAppLines(daySummaries!, day, lang!)
+    ? aggregateDayChannelWhatsAppLines(daySummaries!, day, lang!, vaultById)
     : [];
 
   lines.push(waShiftSectionTitle('grand', t('salesDailyWaGrandTotal')));
@@ -193,6 +216,12 @@ export function buildDailyShiftWhatsAppText(p: BuildDailyWaParams): string {
     waCustomersLine(t('salesWhatsAppCustomersLine'), fmt(report.grand.customers, 0)),
     waAvgSaleMetricLine(t('salesWhatsAppAvgInvoiceLine'), report.grand.total, report.grand.customers),
   );
+  if (grandShare) {
+    appendAppShareWaLines(lines, grandShare, t('salesWhatsAppAppShareLine'));
+  }
+  if (monthAppShare) {
+    appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'));
+  }
   return lines.join('\n').trim();
 }
 

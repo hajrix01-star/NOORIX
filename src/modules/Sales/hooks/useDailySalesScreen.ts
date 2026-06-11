@@ -27,6 +27,9 @@ import {
   buildSummaryChannelWhatsAppLines,
   buildVaultLookup,
 } from '../utils/salesWhatsAppChannels';
+import { computeAppShare, type AppShareResult } from '../utils/salesAppShare';
+import { appendAppShareWaLines } from '../utils/salesWhatsAppAppShare';
+import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 import {
   waCashLine,
   waCustomersLine,
@@ -216,7 +219,7 @@ export function useDailySalesScreen() {
 
   const vaultById = useMemo(() => buildVaultLookup(salesChannels), [salesChannels]);
 
-  const buildWhatsAppText = useCallback((s: DailySalesSummary) => {
+  const buildWhatsAppText = useCallback((s: DailySalesSummary, monthAppShare?: AppShareResult) => {
     const cc = s.customerCount || 0;
     const total = Number(s.totalAmount || 0);
     const name = (companyName || '').trim();
@@ -252,6 +255,12 @@ export function useDailySalesScreen() {
       waAvgSaleMetricLine(t('salesWhatsAppAvgInvoiceLine'), total, cc),
     );
 
+    const summaryShare = computeAppShare(s.channels, total, vaultById);
+    appendAppShareWaLines(lines, summaryShare, t('salesWhatsAppAppShareLine'));
+    if (monthAppShare) {
+      appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'));
+    }
+
     if (Number(s.cashOnHand) > 0) {
       lines.push(waCashLine(t('salesWhatsAppCashLine'), `${fmt(s.cashOnHand)} SR`));
     }
@@ -261,9 +270,12 @@ export function useDailySalesScreen() {
     return lines.join('\n');
   }, [companyName, lang, t, vaultById]);
 
-  const openWhatsApp = useCallback((s: DailySalesSummary) => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(s))}`, '_blank');
-  }, [buildWhatsAppText]);
+  const openWhatsApp = useCallback(async (s: DailySalesSummary) => {
+    const monthAppShare = companyId
+      ? await fetchMonthAppShare(companyId, s.transactionDate, vaultById)
+      : undefined;
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(s, monthAppShare))}`, '_blank');
+  }, [buildWhatsAppText, companyId, vaultById]);
 
   async function handleEditSave(body: DailySalesEditBody) {
     if (!editingSummary || !companyId) return;

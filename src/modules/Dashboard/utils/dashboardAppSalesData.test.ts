@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildDashboardAppSalesModel, listMonthKeys, monthShortLabel } from './dashboardAppSalesData';
+import {
+  buildAppSalesTableFooter,
+  buildDashboardAppSalesModel,
+  listMonthKeys,
+  monthShortLabel,
+} from './dashboardAppSalesData';
 
 describe('dashboardAppSalesData', () => {
   it('lists 12 months for one year', () => {
@@ -41,5 +46,10 @@ describe('dashboardAppSalesData', () => {
     const jahez = model.channels.find((c) => c.name === 'جاهز');
     expect(jahez?.months['2025-04'].percent).toBe(30);
     expect(jahez?.periodPercent).toBeCloseTo((300 / 1500) * 100, 5);
+
+    const footer = buildAppSalesTableFooter(model);
+    const aprFooter = footer.monthCells.find((c) => c.periodKey === '2025-04');
+    expect(aprFooter?.appPercent).toBe(30);
+    expect(footer.periodPercent).toBeCloseTo((400 / 1500) * 100, 5);
   });
 });

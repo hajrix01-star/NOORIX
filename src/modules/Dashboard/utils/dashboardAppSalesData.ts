@@ -51,6 +51,31 @@ export type DashboardAppSalesModel = {
   hasData: boolean;
 };
 
+export type AppSalesTableFooterCell = {
+  periodKey: string;
+  appPercent: number;
+  hasData: boolean;
+};
+
+export type AppSalesTableFooter = {
+  monthCells: AppSalesTableFooterCell[];
+  periodPercent: number;
+  hasPeriodData: boolean;
+};
+
+/** صف المجموع — نسبة التطبيقات الكلية لكل شهر والفترة (ليس مجموع نسب القنوات) */
+export function buildAppSalesTableFooter(model: DashboardAppSalesModel): AppSalesTableFooter {
+  return {
+    monthCells: model.monthSeries.map((p) => ({
+      periodKey: p.periodKey,
+      appPercent: p.appPercent,
+      hasData: p.total > 0,
+    })),
+    periodPercent: model.periodAppPercent,
+    hasPeriodData: model.periodTotal > 0,
+  };
+}
+
 function channelName(ch: AppSalesSummaryChannel, lang: string): string | null {
   const v = ch.vault;
   if (!v) return null;

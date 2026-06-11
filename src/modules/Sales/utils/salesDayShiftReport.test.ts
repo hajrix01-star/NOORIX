@@ -99,4 +99,37 @@ describe('buildDailyShiftWhatsAppText', () => {
     expect(text).toContain('• نقدي');
     expect(text).toContain('100');
   });
+
+  it('includes app share lines for shift, day, and month', () => {
+    const text = buildDailyShiftWhatsAppText({
+      companyName: 'مطعم',
+      dateLabel: '2026-05-10',
+      report: {
+        morning: { total: 1000, customers: 10, summaryCount: 1 },
+        evening: { total: 0, customers: 0, summaryCount: 0 },
+        fullDay: { total: 0, customers: 0, summaryCount: 0 },
+        grand: { total: 1000, customers: 10, summaryCount: 1 },
+      },
+      t,
+      dayYmd: '2026-05-10',
+      lang: 'ar',
+      daySummaries: [
+        {
+          status: 'active',
+          transactionDate: '2026-05-10',
+          shift: 'morning',
+          totalAmount: 1000,
+          channels: [
+            { amount: 300, vault: { type: 'app', nameAr: 'جاهز', sortOrder: 1 } },
+            { amount: 700, vault: { type: 'cash', nameAr: 'نقدي', sortOrder: 2 } },
+          ],
+        },
+      ],
+      monthAppShare: { appAmount: 500, totalAmount: 2000, appPercent: 25 },
+    });
+    expect(text).toContain('salesWhatsAppAppShareLine');
+    expect(text).toContain('30%');
+    expect(text).toContain('salesWhatsAppAppShareMonthLine');
+    expect(text).toContain('25%');
+  });
 });

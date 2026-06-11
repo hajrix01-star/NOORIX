@@ -81,3 +81,13 @@ export function waCustomersLine(label: string, countText: string): string {
 export function waCashLine(label: string, value: string): string {
   return waMetricLine(label, value);
 }
+
+/** نسبة التطبيقات من المبيعات — مثال: 26.7% (400 / 1,500 SR) */
+export function waAppShareMetricLine(
+  label: string,
+  percent: number,
+  appAmount: number,
+  totalAmount: number,
+): string {
+  return waMetricLine(label, `${fmt(percent, 1)}% (${fmt(appAmount)} / ${fmt(totalAmount)} SR)`);
+}

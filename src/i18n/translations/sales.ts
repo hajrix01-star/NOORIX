@@ -129,6 +129,11 @@ export default {
   salesWhatsAppCashLine: { ar: '💵 الصندوق:', en: '💵 Cash on hand:' },
   salesWhatsAppNoChannels: { ar: '• لا يوجد تفصيل قنوات.', en: '• No channel breakdown.' },
   salesWhatsAppChannelsHeader: { ar: '🏪 قنوات البيع:', en: '🏪 Sales channels:' },
+  salesWhatsAppAppShareLine: { ar: '📱 نسبة التطبيقات:', en: '📱 App share:' },
+  salesWhatsAppAppShareMonthLine: {
+    ar: '📱 نسبة التطبيقات (شهر الأيام المسجلة):',
+    en: '📱 App share (recorded days this month):',
+  },
   salesDailyWaTitle: { ar: '📊 تقرير مبيعات يومي', en: '📊 Daily sales report' },
   salesDailyWaPickDay: { ar: 'تاريخ التقرير', en: 'Report date' },
   salesDailyWaSend: { ar: 'إرسال تقرير يومي واتساب', en: 'Send daily WhatsApp report' },

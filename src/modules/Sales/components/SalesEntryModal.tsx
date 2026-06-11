@@ -29,7 +29,8 @@ import {
   openWhatsAppWithText,
 } from '../utils/salesDayShiftReport';
 import { buildCreateSalesSummaryApiBody } from '../utils/salesApiPayload';
-import { channelsFromEntryPayload } from '../utils/salesWhatsAppChannels';
+import { buildVaultLookup, channelsFromEntryPayload } from '../utils/salesWhatsAppChannels';
+import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 
 type SavedSummary = {
   id?: string;
@@ -151,7 +152,9 @@ export function SalesEntryModal({
     };
   }), [salesChannels]);
 
-  const openDailyWhatsApp = useCallback((
+  const vaultById = useMemo(() => buildVaultLookup(salesChannels), [salesChannels]);
+
+  const openDailyWhatsApp = useCallback(async (
     summaries: SavedSummary[],
     entryItems?: { shift: string; channels?: { vaultId: string; amount: string }[] }[] | null,
   ) => {
@@ -170,6 +173,7 @@ export function SalesEntryModal({
       const wd = formatSaudiWeekdayName(txDate, lang);
       if (wd) dateLabel = `${dateRaw} ${wd}`;
     }
+    const monthAppShare = await fetchMonthAppShare(companyId, txDate, vaultById);
     const text = buildDailyShiftWhatsAppText({
       companyName,
       dateLabel,
@@ -178,9 +182,11 @@ export function SalesEntryModal({
       daySummaries: enriched,
       dayYmd: txDate,
       lang,
+      vaultById,
+      monthAppShare,
     });
     openWhatsAppWithText(text);
-  }, [companyName, enrichSummariesWithEntryChannels, lang, t, txDate]);
+  }, [companyId, companyName, enrichSummariesWithEntryChannels, lang, t, txDate, vaultById]);
 
   const dualShiftPreviewRows = useMemo(
     () => buildDualShiftPreviewRows(

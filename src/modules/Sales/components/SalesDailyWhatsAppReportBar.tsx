@@ -12,6 +12,9 @@ import {
   openWhatsAppWithText,
 } from '../utils/salesDayShiftReport';
 import type { SalesSummaryChannelsLike } from '../utils/salesWhatsAppChannels';
+import { buildVaultLookup } from '../utils/salesWhatsAppChannels';
+import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
+import { useSalesChannels } from '../../../hooks/useSalesChannels';
 
 type Props = {
   companyId: string;
@@ -21,6 +24,8 @@ type Props = {
 
 export function SalesDailyWhatsAppReportBar({ companyId, companyName, disabled }: Props) {
   const { t, lang } = useTranslation();
+  const { salesChannels } = useSalesChannels(companyId);
+  const vaultById = buildVaultLookup(salesChannels);
   const [reportDate, setReportDate] = useState(() => getSaudiToday());
   const [loading, setLoading] = useState(false);
 
@@ -49,6 +54,7 @@ export function SalesDailyWhatsAppReportBar({ companyId, companyName, disabled }
         const wd = formatSaudiWeekdayName(reportDate, lang);
         if (wd) dateLabel = `${dateRaw} ${wd}`;
       }
+      const monthAppShare = await fetchMonthAppShare(companyId, reportDate, vaultById);
       const text = buildDailyShiftWhatsAppText({
         companyName,
         dateLabel,
@@ -57,6 +63,8 @@ export function SalesDailyWhatsAppReportBar({ companyId, companyName, disabled }
         daySummaries: list as SalesSummaryChannelsLike[],
         dayYmd: reportDate,
         lang,
+        vaultById,
+        monthAppShare,
       });
       openWhatsAppWithText(text);
     } catch (e: unknown) {
