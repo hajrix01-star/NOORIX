@@ -258,7 +258,7 @@ export function useDailySalesScreen() {
     const summaryShare = computeAppShare(s.channels, total, vaultById);
     appendAppShareWaLines(lines, summaryShare, t('salesWhatsAppAppShareLine'));
     if (monthAppShare) {
-      appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'));
+      appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'), { percentOnly: true });
     }
 
     if (Number(s.cashOnHand) > 0) {

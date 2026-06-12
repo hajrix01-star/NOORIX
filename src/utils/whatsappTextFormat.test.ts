@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   SALES_WA,
   salesWaAvgPerCustomer,
+  waAppSharePercentLine,
   waAvgSaleMetricLine,
   waChannelRow,
   waMetaLine,
@@ -34,5 +35,9 @@ describe('whatsappTextFormat', () => {
     expect(salesWaAvgPerCustomer(1000, 10)).toBe(100);
     expect(salesWaAvgPerCustomer(1000, 0)).toBe(0);
     expect(waAvgSaleMetricLine('🧾 متوسط الفاتورة:', 300, 30)).toBe('  🧾 متوسط الفاتورة: 10 SR');
+  });
+
+  it('formats app share percent without amounts', () => {
+    expect(waAppSharePercentLine('📱 نسبة التطبيقات (شهر):', 25)).toBe('  📱 نسبة التطبيقات (شهر): 25%');
   });
 });
