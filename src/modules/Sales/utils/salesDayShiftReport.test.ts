@@ -129,7 +129,11 @@ describe('buildDailyShiftWhatsAppText', () => {
     });
     expect(text).toContain('salesWhatsAppAppShareLine');
     expect(text).toContain('30%');
+    expect(text).toContain('1,000');
     expect(text).toContain('salesWhatsAppAppShareMonthLine');
     expect(text).toContain('25%');
+    const monthTail = text.split('salesWhatsAppAppShareMonthLine')[1] ?? '';
+    expect(monthTail).not.toContain('2,000');
+    expect(monthTail).not.toContain('500');
   });
 });

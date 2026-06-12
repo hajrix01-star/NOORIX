@@ -91,3 +91,8 @@ export function waAppShareMetricLine(
 ): string {
   return waMetricLine(label, `${fmt(percent, 1)}% (${fmt(appAmount)} / ${fmt(totalAmount)} SR)`);
 }
+
+/** نسبة التطبيقات فقط — مثال: 26.7% (بدون مبالغ) */
+export function waAppSharePercentLine(label: string, percent: number): string {
+  return waMetricLine(label, `${fmt(percent, 1)}%`);
+}

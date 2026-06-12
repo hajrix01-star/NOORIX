@@ -220,7 +220,7 @@ export function buildDailyShiftWhatsAppText(p: BuildDailyWaParams): string {
     appendAppShareWaLines(lines, grandShare, t('salesWhatsAppAppShareLine'));
   }
   if (monthAppShare) {
-    appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'));
+    appendAppShareWaLines(lines, monthAppShare, t('salesWhatsAppAppShareMonthLine'), { percentOnly: true });
   }
   return lines.join('\n').trim();
 }
