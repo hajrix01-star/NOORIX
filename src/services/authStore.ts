@@ -136,12 +136,13 @@ export function getStoredUser(): AuthSessionUser | null {
   return null;
 }
 
-/** مسح بيانات المصادقة — نُبقي آخر شركة نشطة (لكل مستخدم) لاستعادتها بعد الدخول */
+/** مسح كل بيانات المصادقة */
 export function clearAuth() {
   setAuthToken(null);
   setRefreshToken(null);
   setStoredUser(null);
+  setActiveCompanyId('');
   _token = null;
   _refreshToken = null;
-  // لا نمسح ACTIVE_COMPANY ولا مفاتيح noorix-last-company:* — تُحدَّث عند تبديل الشركة
+  _companyId = '';
 }
