@@ -16,6 +16,8 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 
+const ADVANCE_FORM_ID = 'advance-quick-form';
+
 export function AdvanceQuickModal({ employee: initialEmployee, companyId, createAdvance, onSuccess, onClose }: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
@@ -61,7 +63,18 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
     const empId = initialEmployee ? initialEmployee.id : employeeId;
     const selectedEmp = initialEmployee ?? activeEmployees.find((em: any) => em.id === empId);
     const empName = selectedEmp ? employeeDisplayName(selectedEmp, 'ar', '') : '';
-    if (!amt || amt <= 0 || !vaultId || !empId) return;
+    if (!empId) {
+      showToast(t('requiredFields') || 'الحقول المطلوبة ناقصة', 'error');
+      return;
+    }
+    if (!amt || amt <= 0) {
+      showToast(t('requiredFields') || 'الحقول المطلوبة ناقصة', 'error');
+      return;
+    }
+    if (!vaultId) {
+      showToast(t('selectVault') || 'اختر الخزينة', 'error');
+      return;
+    }
     try {
       await createAdvance.mutateAsync({
         employeeId: empId,
@@ -95,13 +108,13 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={createAdvance.isPending}>
+          <Button type="submit" form={ADVANCE_FORM_ID} variant="primary" disabled={createAdvance.isPending}>
             {createAdvance.isPending ? t('saving') : t('payAdvance')}
           </Button>
         </>
       }
     >
-      <form onSubmit={handleSubmit}>
+      <form id={ADVANCE_FORM_ID} onSubmit={handleSubmit}>
         {!initialEmployee && (
           <Input
             type="select"
@@ -142,6 +155,7 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
           label={t('transactionDate')}
           value={txDate}
           onChange={(e: any) => setTxDate(e.target.value)}
+          lang="en"
         />
         <Input
           type="number"

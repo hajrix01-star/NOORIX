@@ -11,7 +11,7 @@ import { employeeKeys } from '../../../services/queryKeys';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet, Modal } from '../../../ui';
 import { assertApiOk } from '../../../utils/apiResponse';
-import { toYmd } from '../../../utils/saudiDate';
+import { toDateInputYmd, getSaudiToday } from '../../../utils/saudiDate';
 
 const TYPE_MAP = {
   annual: 'leaveAnnual',
@@ -26,13 +26,15 @@ const STATUS_OPTIONS = [
   { value: 'rejected', labelKey: 'statusRejected' },
 ];
 
+const LEAVE_FORM_ID = 'leave-form-modal';
+
 /** تغيير يتطلب إلغاء تسوية الراتب (المسار الخلفي يفرّق عن تعديل الملاحظات فقط) */
 function leaveHasStructuralChange(editLeave: any, state: any) {
   if (!editLeave) return false;
   return (
     state.leaveType !== (editLeave.leaveType || 'annual') ||
-    state.startDate !== toYmd(editLeave.startDate) ||
-    state.endDate !== toYmd(editLeave.endDate) ||
+    state.startDate !== toDateInputYmd(editLeave.startDate) ||
+    state.endDate !== toDateInputYmd(editLeave.endDate) ||
     String(state.daysCount || '').trim() !== String(editLeave.daysCount ?? '').trim() ||
     state.status !== (editLeave.status || 'approved') ||
     state.employeeId !== editLeave.employeeId
@@ -69,17 +71,18 @@ export function LeaveFormModal({
     if (isEdit && editLeave) {
       setEmployeeId(editLeave.employeeId || '');
       setLeaveType(editLeave.leaveType || 'annual');
-      setStartDate(toYmd(editLeave.startDate));
-      setEndDate(toYmd(editLeave.endDate));
+      setStartDate(toDateInputYmd(editLeave.startDate));
+      setEndDate(toDateInputYmd(editLeave.endDate));
       setDaysCount(editLeave.daysCount != null ? String(editLeave.daysCount) : '');
       setStatus(editLeave.status || 'approved');
       setNotes(editLeave.notes || '');
     } else {
+      const today = getSaudiToday();
       setEmployeeId(initialEmployeeId || '');
       setLeaveType('annual');
-      setStartDate('');
-      setEndDate('');
-      setDaysCount('');
+      setStartDate(today);
+      setEndDate(today);
+      setDaysCount('1');
       setStatus('approved');
       setNotes('');
     }
@@ -201,13 +204,18 @@ export function LeaveFormModal({
         footer={
           <>
             <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-            <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
+            <Button type="submit" form={LEAVE_FORM_ID} variant="primary" disabled={submitting}>
               {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
             </Button>
           </>
         }
       >
-        <form onSubmit={handleSubmit}>
+        <form id={LEAVE_FORM_ID} onSubmit={handleSubmit}>
+          {error && (
+            <div className="mb-3 p-[10px] rounded-lg text-[13px] bg-noorix-red/10 text-noorix-red" role="alert">
+              {error}
+            </div>
+          )}
           <Input
             type="select"
             label={t('selectEmployee')}
@@ -240,6 +248,7 @@ export function LeaveFormModal({
               value={startDate}
               onChange={(e: any) => handleStartEndChange('startDate', e.target.value)}
               required
+              lang="en"
             />
             <Input
               type="date"
@@ -247,6 +256,7 @@ export function LeaveFormModal({
               value={endDate}
               onChange={(e: any) => handleStartEndChange('endDate', e.target.value)}
               required
+              lang="en"
             />
           </div>
 
@@ -277,11 +287,6 @@ export function LeaveFormModal({
             placeholder={t('notes')}
           />
 
-          {error && (
-            <div className="mb-3 p-[10px] rounded-lg text-[13px] bg-noorix-bg-muted text-noorix-red">
-              {error}
-            </div>
-          )}
         </form>
       </AdaptiveSheet>
 

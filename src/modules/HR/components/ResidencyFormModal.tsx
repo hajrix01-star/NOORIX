@@ -8,7 +8,7 @@ import { useApp } from '../../../context/AppContext';
 import { useVaults } from '../../../hooks/useVaults';
 import { getEmployees, createResidency, updateResidency } from '../../../services/api';
 import { employeeKeys } from '../../../services/queryKeys';
-import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
+import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { fmt } from '../../../utils/format';
@@ -30,6 +30,17 @@ const STATUS_OPTIONS = [
   { value: 'expired', labelKey: 'statusExpired' },
   { value: 'renewed', labelKey: 'statusRenewed' },
 ];
+
+const RESIDENCY_FORM_ID = 'residency-service-form';
+
+function buildServiceDateDefaults(residency: any, isNew: boolean) {
+  const today = getSaudiToday();
+  return {
+    transactionDate: toDateInputYmd(residency?.transactionDate) || today,
+    issueDate: toDateInputYmd(residency?.issueDate) || (isNew ? today : ''),
+    expiryDate: toDateInputYmd(residency?.expiryDate) || '',
+  };
+}
 
 type ResidencyFormModalProps = {
   residency?: any;
@@ -69,9 +80,10 @@ export function ResidencyFormModal({
   const [iqamaNumber, setIqamaNumber] = useState(residency?.iqamaNumber || '');
   const [referenceLabel, setReferenceLabel] = useState(residency?.referenceLabel || '');
   const [visaDurationMonths, setVisaDurationMonths] = useState(() => parseVisaDurationMonths(residency));
-  const [issueDate, setIssueDate] = useState(toYmd(residency?.issueDate));
-  const [expiryDate, setExpiryDate] = useState(toYmd(residency?.expiryDate));
-  const [transactionDate, setTransactionDate] = useState(toYmd(residency?.transactionDate) || getSaudiToday());
+  const initialDates = buildServiceDateDefaults(residency, !isEdit);
+  const [issueDate, setIssueDate] = useState(initialDates.issueDate);
+  const [expiryDate, setExpiryDate] = useState(initialDates.expiryDate);
+  const [transactionDate, setTransactionDate] = useState(initialDates.transactionDate);
   const [status, setStatus] = useState(residency?.status || 'active');
   const [notes, setNotes] = useState(residency?.notes || '');
   const [createInvoiceForService, setCreateInvoiceForService] = useState(false);
@@ -113,6 +125,45 @@ export function ResidencyFormModal({
     if (!lockEmployee || !selectedEmployee?.iqamaNumber || !showIqama) return;
     if (!iqamaNumber) setIqamaNumber(selectedEmployee.iqamaNumber);
   }, [lockEmployee, selectedEmployee, showIqama, iqamaNumber]);
+
+  useEffect(() => {
+    if (!transactionDate) setTransactionDate(getSaudiToday());
+  }, [transactionDate]);
+
+  useEffect(() => {
+    if (isEdit && residency) {
+      const dates = buildServiceDateDefaults(residency, false);
+      setEmployeeId(residency.employeeId || '');
+      setServiceCategory(residency.serviceCategory || defaultCategory);
+      setIqamaNumber(residency.iqamaNumber || '');
+      setReferenceLabel(residency.referenceLabel || '');
+      setVisaDurationMonths(parseVisaDurationMonths(residency));
+      setIssueDate(dates.issueDate);
+      setExpiryDate(dates.expiryDate);
+      setTransactionDate(dates.transactionDate);
+      setStatus(residency.status || 'active');
+      setNotes(residency.notes || '');
+      setError('');
+      return;
+    }
+    if (!isEdit) {
+      const dates = buildServiceDateDefaults(null, true);
+      setEmployeeId(defaultEmployeeId || '');
+      setServiceCategory(defaultCategory);
+      setIqamaNumber('');
+      setReferenceLabel('');
+      setVisaDurationMonths('');
+      setIssueDate(dates.issueDate);
+      setExpiryDate(dates.expiryDate);
+      setTransactionDate(dates.transactionDate);
+      setStatus('active');
+      setNotes('');
+      setCreateInvoiceForService(false);
+      setInvoiceAmount('');
+      setVaultId('');
+      setError('');
+    }
+  }, [isEdit, residency?.id, defaultCategory, defaultEmployeeId]);
 
   const buildPayload = () => {
     const body: Record<string, unknown> = {
@@ -206,13 +257,18 @@ export function ResidencyFormModal({
             </Button>
           )}
           <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
+          <Button type="submit" form={RESIDENCY_FORM_ID} variant="primary" disabled={submitting}>
             {submitting ? t('saving') : (isEdit ? t('save') : t('add'))}
           </Button>
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-0">
+      <form id={RESIDENCY_FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-0">
+        {error && (
+          <div className="mb-3 rounded-lg text-[13px] p-[10px] bg-noorix-red/10 text-noorix-red" role="alert">
+            {error}
+          </div>
+        )}
         <Input
           type="select"
           label={t('hrServiceCategory')}
@@ -333,11 +389,6 @@ export function ResidencyFormModal({
           placeholder={t('notes')}
         />
 
-        {error && (
-          <div className="mb-3 rounded-lg text-[13px] p-[10px] bg-noorix-red/10 text-noorix-red">
-            {error}
-          </div>
-        )}
       </form>
     </AdaptiveSheet>
   );

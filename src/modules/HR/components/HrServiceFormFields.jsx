@@ -89,6 +89,7 @@ export function HrServiceFormFields({
         label={t('hrServiceTransactionDate')}
         value={transactionDate}
         onChange={(e) => setTransactionDate(e.target.value)}
+        lang="en"
       />
 
       {showIssue && (
@@ -97,6 +98,7 @@ export function HrServiceFormFields({
           label={t('startDate')}
           value={issueDate}
           onChange={(e) => setIssueDate(e.target.value)}
+          lang="en"
         />
       )}
 
@@ -107,6 +109,7 @@ export function HrServiceFormFields({
           value={expiryDate}
           onChange={(e) => setExpiryDate(e.target.value)}
           required
+          lang="en"
         />
       )}
     </>
