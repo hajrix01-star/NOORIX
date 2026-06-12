@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getMe, getCompanies, checkApiConnection } from './services/api';
 import { setActiveCompanyId } from './services/authStore';
+import { resolvePreferredCompanyId, saveLastCompanyForUser } from './utils/activeCompanyStorage';
 import { AppContext } from './context/AppContext';
 import type { AppContextValue, CompanyListItem } from './context/appTypes';
 import { useAuth } from './context/AuthContext';
@@ -170,22 +171,26 @@ export default function App() {
     startCompanyTransition(() => {
       _setActiveCompany(id);
       try { localStorage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, id); } catch (_: any) {}
+      if (user?.id && id) saveLastCompanyForUser(user.id, id);
     });
-  }, [startCompanyTransition]);
+  }, [startCompanyTransition, user?.id]);
   useEffect(() => {
     // انتظر بيانات API الحقيقية — لا تعتمد على JWT الذي قد لا يحوي كل الشركات
     if (!Array.isArray(companiesFromApi) || companiesFromApi.length === 0) return;
+    if (!user?.id) return;
 
-    const savedId = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_COMPANY); } catch { return null; } })();
+    const allowedIds = companiesFromApi.map((c: any) => c.id);
+    const preferred = resolvePreferredCompanyId(user.id, allowedIds);
 
-    if (savedId && companiesFromApi.some((c: any) => c.id === savedId)) {
-      // الشركة المحفوظة صالحة في API → استعدها دائماً
-      if (activeCompany !== savedId) _setActiveCompany(savedId);
+    if (preferred && activeCompany !== preferred) {
+      _setActiveCompany(preferred);
+      try { localStorage.setItem(STORAGE_KEYS.ACTIVE_COMPANY, preferred); } catch (_: any) {}
     } else if (!companiesFromApi.some((c: any) => c.id === activeCompany)) {
-      // الشركة الحالية غير موجودة في API ولا توجد قيمة محفوظة صالحة → اختر الأولى
-      setActiveCompany(companiesFromApi[0].id);
+      // الشركة الحالية غير موجودة في API → اختر المفضّلة أو الأولى
+      const fallback = preferred || companiesFromApi[0].id;
+      if (fallback) setActiveCompany(fallback);
     }
-  }, [companiesFromApi]);
+  }, [companiesFromApi, user?.id]);
 
   const [language, setLanguage] = useState(getInitialLanguage); // 'ar' | 'en'
   const [cardStyle, setCardStyle] = useState(getInitialCardStyle); // 1..10

@@ -13,7 +13,7 @@ import VaultTransactionsModal from './components/VaultTransactionsModal';
 import VaultTransferModal from './components/VaultTransferModal';
 import { VaultReorderModal } from './components/VaultReorderModal';
 import { Button, ScreenShell, FmtNum } from '../../ui';
-import { vaultKeys } from '../../services/queryKeys';
+import { vaultKeys, salesKeys } from '../../services/queryKeys';
 
 export default function TreasuryScreen() {
   const { activeCompanyId } = useApp();
@@ -57,7 +57,10 @@ export default function TreasuryScreen() {
 
   const toggleSalesMutation = useApiMutation({
     mutationFn: (v: any) => updateVault(v.id, { isSalesChannel: !v.isSalesChannel }),
-    invalidateQueries: [vaultKeys.byCompany(companyId)],
+    invalidateQueries: [
+      vaultKeys.byCompany(companyId),
+      salesKeys.channels(companyId),
+    ],
     successToast: () => t('salesChannelUpdated'),
     errorToast: (e: any) => e?.message || t('updateFailed'),
   });
