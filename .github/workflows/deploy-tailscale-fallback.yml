@@ -1,11 +1,8 @@
-# نشر عبر Tailscale — بديل عند توقف self-hosted runner
+# نشر الواجهة عبر SSH — بديل عند توقف self-hosted runner
+# يستخدم الأسرار الموجودة: VPS_HOST, VPS_USERNAME, VPS_SSH_KEY
 # لا يشارك concurrency مع deploy.yml العالق في queued.
-#
-# Secrets المطلوبة (غالباً موجودة من إعداد سابق):
-#   TS_OAUTH_CLIENT_ID, TS_OAUTH_SECRET, VPS_TS_HOST,
-#   VPS_USERNAME, VPS_SSH_KEY, VPS_SSH_PORT (اختياري)
 
-name: Deploy Frontend (Tailscale)
+name: Deploy Frontend (SSH)
 
 on:
   push:
@@ -13,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-tailscale-fallback
+  group: deploy-ssh-fallback
   cancel-in-progress: false
 
 jobs:
@@ -42,17 +39,9 @@ jobs:
       - name: Pack frontend tarball
         run: tar czf noorix-frontend.tar.gz -C dist .
 
-      - name: Connect to Tailscale
-        uses: tailscale/github-action@v3
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
-          version: latest
-
       - name: Upload tarball and install frontend on VPS
         env:
-          VPS_TS_HOST: ${{ secrets.VPS_TS_HOST }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
@@ -60,8 +49,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "${VPS_TS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_KEY:-}" ]; then
-            echo "ERROR: ضبط VPS_TS_HOST / VPS_USERNAME / VPS_SSH_KEY في GitHub Secrets."
+          if [ -z "${VPS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_KEY:-}" ]; then
+            echo "ERROR: ضبط VPS_HOST / VPS_USERNAME / VPS_SSH_KEY في GitHub Secrets."
             exit 1
           fi
 
@@ -75,14 +64,16 @@ jobs:
 
           SCP_OPTS=( -o BatchMode=yes -o StrictHostKeyChecking=accept-new
                      -o ServerAliveInterval=20 -o ServerAliveCountMax=12
-                     -i "$KEY" -P "$PORT" )
+                     -o ConnectTimeout=30 -i "$KEY" -P "$PORT" )
           SSH_OPTS=( -o BatchMode=yes -o StrictHostKeyChecking=accept-new
                      -o ServerAliveInterval=20 -o ServerAliveCountMax=12
-                     -i "$KEY" -p "$PORT" )
+                     -o ConnectTimeout=30 -i "$KEY" -p "$PORT" )
+
+          echo "==> Target: ${VPS_USER}@${VPS_HOST}:${PORT}"
 
           for attempt in $(seq 1 5); do
             echo "==> SCP attempt ${attempt}/5"
-            if scp "${SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_TS_HOST}:/tmp/noorix-frontend.tar.gz"; then
+            if scp "${SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_HOST}:/tmp/noorix-frontend.tar.gz"; then
               break
             fi
             [ "$attempt" -eq 5 ] && exit 1
@@ -91,13 +82,13 @@ jobs:
 
           for attempt in $(seq 1 4); do
             echo "==> Frontend install attempt ${attempt}/4"
-            if ssh "${SSH_OPTS[@]}" "${VPS_USER}@${VPS_TS_HOST}" \
+            if ssh "${SSH_OPTS[@]}" "${VPS_USER}@${VPS_HOST}" \
                 "export DEPLOY_SHA='${DEPLOY_SHA}'; bash -s" < deploy/ci-frontend-only.sh; then
-              echo "==> Tailscale frontend deploy completed."
+              echo "==> SSH frontend deploy completed."
               exit 0
             fi
             [ "$attempt" -eq 4 ] && exit 1
-            scp "${SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_TS_HOST}:/tmp/noorix-frontend.tar.gz" || true
+            scp "${SCP_OPTS[@]}" noorix-frontend.tar.gz "${VPS_USER}@${VPS_HOST}:/tmp/noorix-frontend.tar.gz" || true
             sleep 30
           done
 
