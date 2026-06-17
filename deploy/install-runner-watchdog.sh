@@ -38,7 +38,7 @@ echo "==> Install cron watchdog (every 5 min)"
 CRON_FILE=/etc/cron.d/noorix-runner-watchdog
 echo "$CRON_LINE" > "$CRON_FILE"
 chmod 644 "$CRON_FILE"
-install -m 755 "$WATCHDOG" /var/www/noorix/deploy/runner-watchdog.sh
+chmod 755 "$WATCHDOG"
 
 echo "==> Done"
 free -h | head -2
