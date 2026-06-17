@@ -148,3 +148,7 @@ jobs:
           curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health" | head -c 500
           echo ""
           echo "==> Deployment completed successfully."
+
+      # ── ضمان استمرار runner بعد النشر (swap + watchdog) ─
+      - name: Ensure runner watchdog and swap
+        run: sudo bash "${{ github.workspace }}/deploy/install-runner-watchdog.sh"

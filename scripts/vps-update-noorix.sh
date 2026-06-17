@@ -29,7 +29,11 @@ else
   bash deploy/install-frontend.sh "$MANUAL_TAR" "$SHA"
 fi
 rm -f "$MANUAL_TAR"
-# Noorix API: من مجلد backend الحقيقي (ليس /root/backend). احذف noorix-api القديمة من PM2 مرة واحدة إن وُجدت.
-(cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
+# API عبر systemd (المسار الرسمي في deploy.yml) — تجنّب PM2 مكرر يتعارض مع الخدمة
+if systemctl list-unit-files noorix-backend.service --no-pager 2>/dev/null | grep -q noorix-backend; then
+  sudo bash deploy/install-noorix-backend-systemd.sh
+else
+  (cd backend && pm2 startOrReload ecosystem.config.cjs --update-env)
+fi
 # تطبيق منفصل (قائمة طعام/خدمة جانبية) — ليس نفس حزمة SPA الرئيسية
 pm2 restart hajri-menu --update-env 2>/dev/null || true
