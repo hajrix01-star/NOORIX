@@ -44,7 +44,10 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const [monthFilter, setMonthFilter] = useState('');
   const [settlementFilter, setSettlementFilter] = useState('all');
 
-  const { createAdvance } = useEmployees(companyId, { includeTerminated: false, fetchEnabled: false });
+  const { createAdvance, employees: activeEmployees } = useEmployees(companyId, {
+    includeTerminated: false,
+    fetchEnabled: !!companyId,
+  });
 
   const { data: rawAdvanceRows, isLoading, isError } = useQuery({
     queryKey: hrKeys.advancesForCompany(companyId),
@@ -64,17 +67,22 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
       employeeName: employeeDisplayName(emp, lang, row.employeeId),
     };
   }), [rawAdvanceRows, lang]);
-  const employeeOptions = useMemo(
-    () => [...new Set(items.map((r: any) => r.employeeName).filter(Boolean))].sort((a: any, b: any) => String(a).localeCompare(String(b))),
-    [items],
-  ) as string[];
+  const employeeFilterOptions = useMemo(
+    () => [...activeEmployees]
+      .map((emp: any) => ({
+        id: emp.id,
+        name: employeeDisplayName(emp, lang, emp.id),
+      }))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), lang === 'ar' ? 'ar' : 'en')),
+    [activeEmployees, lang],
+  );
   const monthOptions = useMemo(
     () => [...new Set(items.map((r: any) => String(r.transactionDate || '').slice(0, 7)).filter((m: any) => /^\d{4}-\d{2}$/.test(m)))].sort().reverse(),
     [items],
   ) as string[];
   const preFilteredItems = useMemo(() => {
     return items.filter((row: any) => {
-      const byEmployee = employeeFilter ? row.employeeName === employeeFilter : true;
+      const byEmployee = employeeFilter ? row.employeeId === employeeFilter : true;
       const byMonth = monthFilter ? String(row.transactionDate || '').slice(0, 7) === monthFilter : true;
       const bySettlement = settlementFilter === 'all'
         ? true
@@ -303,8 +311,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     <>
       <Input type="select" label={t('advancesFilterEmployee')} value={employeeFilter} onChange={(e: any) => setEmployeeFilter(e.target.value)} size="sm">
         <option value="">{t('advancesFilterAll')}</option>
-        {employeeOptions.map((name: string) => (
-          <option key={name} value={name}>{name}</option>
+        {employeeFilterOptions.map((emp) => (
+          <option key={emp.id} value={emp.id}>{emp.name}</option>
         ))}
       </Input>
       <Input type="select" label={t('advancesFilterMonth')} value={monthFilter} onChange={(e: any) => setMonthFilter(e.target.value)} size="sm">
