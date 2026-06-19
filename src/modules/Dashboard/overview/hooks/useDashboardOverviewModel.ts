@@ -15,8 +15,8 @@ import {
   buildPurchaseCategoriesData,
   buildTopSuppliersChartData,
   buildYearMonthlyDailyAvgRows,
-  computeRevenueDailyAvgActiveDays,
-  computeCustomerDailyAvgActiveDays,
+  computeDailyAvgForCalendarPeriod,
+  sumCustomersThroughDay,
   filterSalesThroughDay,
   sumRevenueThroughDay,
   revenueMtdEndDay as getRevenueMtdEndDay,
@@ -282,16 +282,6 @@ export function useDashboardOverviewModel(
     );
   }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
 
-  const revenueDailyAvgActiveDays = useMemo(
-    () => computeRevenueDailyAvgActiveDays(monthSalesThroughMtd),
-    [monthSalesThroughMtd],
-  );
-
-  const revenueDailyAvgPrevMonthActiveDays = useMemo(
-    () => computeRevenueDailyAvgActiveDays(prevMonthSalesThroughMtd),
-    [prevMonthSalesThroughMtd],
-  );
-
   const revenueMtdTotalSum = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
     return sumRevenueThroughDay(monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay);
@@ -308,14 +298,40 @@ export function useDashboardOverviewModel(
     );
   }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
 
+  const revenueDailyAvgActiveDays = useMemo(
+    () => computeDailyAvgForCalendarPeriod(revenueMtdTotalSum, revenueMtdEndDay),
+    [revenueMtdTotalSum, revenueMtdEndDay],
+  );
+
+  const revenueDailyAvgPrevMonthActiveDays = useMemo(
+    () => computeDailyAvgForCalendarPeriod(revenuePrevMonthTotalSum, revenueMtdEndDay),
+    [revenuePrevMonthTotalSum, revenueMtdEndDay],
+  );
+
+  const customerMtdTotalSum = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
+    return sumCustomersThroughDay(monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay);
+  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
+
+  const customerPrevMonthTotalSum = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
+    const prev = prevCalendarMonth(year, selectedMonth);
+    return sumCustomersThroughDay(
+      prevMonthSalesForDailyAvg,
+      prev.year,
+      prev.month,
+      revenueMtdEndDay,
+    );
+  }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
+
   const customerDailyAvgActiveDays = useMemo(
-    () => computeCustomerDailyAvgActiveDays(monthSalesThroughMtd),
-    [monthSalesThroughMtd],
+    () => computeDailyAvgForCalendarPeriod(customerMtdTotalSum, revenueMtdEndDay),
+    [customerMtdTotalSum, revenueMtdEndDay],
   );
 
   const customerDailyAvgPrevMonthActiveDays = useMemo(
-    () => computeCustomerDailyAvgActiveDays(prevMonthSalesThroughMtd),
-    [prevMonthSalesThroughMtd],
+    () => computeDailyAvgForCalendarPeriod(customerPrevMonthTotalSum, revenueMtdEndDay),
+    [customerPrevMonthTotalSum, revenueMtdEndDay],
   );
 
   const salesShiftPeriodTotals = useMemo(() => {

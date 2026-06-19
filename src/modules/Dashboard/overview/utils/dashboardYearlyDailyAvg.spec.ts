@@ -69,7 +69,7 @@ describe('buildYearMonthlyDailyAvgRows', () => {
     const april = rows[3];
     expect(april.month).toBe(4);
     expect(april.totalSales).toBe(2000);
-    expect(april.avgDaily).toBe(1000);
-    expect(april.activeDays).toBe(2);
+    expect(april.avgDaily).toBe(100);
+    expect(april.activeDays).toBe(20);
   });
 });

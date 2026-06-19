@@ -296,6 +296,30 @@ export function sumRevenueThroughDay(
   );
 }
 
+export function sumCustomersThroughDay(
+  monthSales: SummaryLike[] | null | undefined,
+  year: number,
+  month: number,
+  endDayInclusive: number,
+): number {
+  return sumMonthMetric(
+    monthSales,
+    year,
+    month,
+    (s) => Number(s.customerCount || 0),
+    endDayInclusive,
+  );
+}
+
+/** متوسط يومي لفترة تقويمية محددة: المجموع ÷ عدد أيام التقويم (1…endDayInclusive). */
+export function computeDailyAvgForCalendarPeriod(
+  total: number,
+  calendarDays: number,
+): number | null {
+  if (calendarDays <= 0 || total <= 0) return null;
+  return total / calendarDays;
+}
+
 export function computeRevenueDailyAvgActiveDays(
   monthSalesForDailyAvg: SummaryLike[] | null | undefined,
 ): number | null {
@@ -345,7 +369,8 @@ export type YearMonthlyDailyAvgRow = {
 
 /**
  * Monthly daily revenue averages for a calendar year, Jan → capMonth.
- * Uses the same active-day rule as computeRevenueDailyAvgActiveDays.
+ * Full months: sum ÷ active selling days (revenue &gt; 0).
+ * MTD-aligned months (current + previous): sum ÷ calendar days in the aligned period.
  * Current month naturally reflects data only through the last sales entry.
  */
 export function buildYearMonthlyDailyAvgRows(params: {
@@ -408,7 +433,16 @@ export function buildYearMonthlyDailyAvgRows(params: {
         }
       }
     }
-    const avgDaily = activeDays > 0 ? sum / activeDays : null;
+    const calendarDaysInPeriod =
+      mtdAlignDay != null ? maxDayInclusive : lastDayOfMonth(year, month);
+    const avgDaily =
+      sum > 0 && calendarDaysInPeriod > 0
+        ? mtdAlignDay != null
+          ? sum / calendarDaysInPeriod
+          : activeDays > 0
+            ? sum / activeDays
+            : null
+        : null;
     const deltaPctVsPrev =
       avgDaily != null && prevAvg != null ? revenueDailyAvgDeltaPct(avgDaily, prevAvg) : null;
 
@@ -417,7 +451,7 @@ export function buildYearMonthlyDailyAvgRows(params: {
       monthLabel: monthNames[month - 1] ?? String(month),
       totalSales: sum > 0 ? sum : null,
       avgDaily,
-      activeDays,
+      activeDays: mtdAlignDay != null ? calendarDaysInPeriod : activeDays,
       deltaPctVsPrev,
       tone: compareRevenueDailyAvgTone(avgDaily, prevAvg),
       isCurrentMonth: year === currentYear && month === currentMonth,

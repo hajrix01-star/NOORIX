@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   computeCustomerDailyAvgActiveDays,
+  computeDailyAvgForCalendarPeriod,
   computeRevenueDailyAvgActiveDays,
   countRevenueActiveSalesDays,
   lastRevenueSalesDayInMonth,
@@ -49,6 +50,22 @@ describe('revenue MTD totals and active day count', () => {
     ];
     const through = sales.filter((s) => s.transactionDate === '2026-05-10');
     expect(computeRevenueDailyAvgActiveDays(through)).toBe(1000);
+  });
+
+  it('MTD comparison uses calendar days so avg matches total ÷ period length', () => {
+    const juneTotal = 92848;
+    const mayTotal = 97859;
+    const periodDays = 18;
+    const juneAvg = computeDailyAvgForCalendarPeriod(juneTotal, periodDays);
+    const mayAvg = computeDailyAvgForCalendarPeriod(mayTotal, periodDays);
+    expect(juneAvg).toBeCloseTo(5158.22, 1);
+    expect(mayAvg).toBeCloseTo(5436.61, 1);
+    expect(computeRevenueDailyAvgActiveDays(
+      Array.from({ length: 15 }, (_, i) => ({
+        transactionDate: `2026-06-${String(i + 1).padStart(2, '0')}`,
+        totalAmount: juneTotal / 15,
+      })),
+    )).toBeCloseTo(6189.87, 0);
   });
 });
 
