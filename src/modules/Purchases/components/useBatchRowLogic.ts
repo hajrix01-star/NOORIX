@@ -3,7 +3,8 @@
  */
 import { useMemo, useId } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { calcReverseVat } from '../../../utils/format';
+import { fmt } from '../../../utils/format';
+import { splitTaxFromTotalAsNumbers, TAX_RATE } from '../../../utils/math-engine';
 import { patchForCategoryChange, patchForSupplierChange } from '../utils/batchRowModel';
 
 export const BATCH_ROW_INPUT_BASE = {
@@ -25,9 +26,18 @@ export function useBatchRowLogic({
   categories = [],
   onUpdate,
   maxInvoiceDate,
+  vatRateDecimal,
 }: any) {
   const { t, lang } = useTranslation();
-  const { net, tax } = calcReverseVat(row.totalInclusive, row.isTaxable !== false);
+  const rate = vatRateDecimal ?? TAX_RATE;
+  const { net, tax } = useMemo(() => {
+    const total = parseFloat(String(row.totalInclusive ?? '').replace(/,/g, ''));
+    if (!Number.isFinite(total) || total <= 0 || row.isTaxable === false) {
+      return { net: '', tax: '' };
+    }
+    const { net: n, tax: tx } = splitTaxFromTotalAsNumbers(total, true, rate);
+    return { net: fmt(n), tax: fmt(tx) };
+  }, [row.totalInclusive, row.isTaxable, rate]);
 
   const accountCategories = categories.filter(
     (c: any) => (c.accountId || c.account) && (c.type === 'expense' || c.type === 'purchase'),

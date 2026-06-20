@@ -23,6 +23,7 @@ export interface PurchasesBatchToolbarProps {
   onBookmark: (id: any) => void;
   onAddRow: () => void;
   t: (key: string, ...args: any[]) => string;
+  vatRateDecimal?: number;
   children?: React.ReactNode;
 }
 
@@ -47,6 +48,7 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
     onBookmark,
     onAddRow,
     t,
+    vatRateDecimal,
     children,
   } = props;
 
@@ -121,6 +123,7 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
                 onRemove={onRemoveRow}
                 onBookmark={onBookmark}
                 maxInvoiceDate={batchDate}
+                vatRateDecimal={vatRateDecimal}
               />
             ))}
           </div>
@@ -184,6 +187,7 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
                     onRemove={onRemoveRow}
                     onBookmark={onBookmark}
                     maxInvoiceDate={batchDate}
+                    vatRateDecimal={vatRateDecimal}
                   />
                 ))}
               </tbody>

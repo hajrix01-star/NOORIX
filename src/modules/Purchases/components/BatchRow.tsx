@@ -24,12 +24,12 @@ function dateErrorStyle(maxInvoiceDate: any, invoiceDate: any) {
 function BatchRowTable(props: Record<string, any>) {
   const {
     row, index, suppliers, categories, bookmarkedIds, onUpdate, onRemove, onBookmark,
-    maxInvoiceDate,
+    maxInvoiceDate, vatRateDecimal,
   } = props;
   const {
     t, lang, net, tax, categoryOptions, handleCategoryChange, handleSupplierChange, inputSm, cp,
   } = useBatchRowLogic({
-    row, index, suppliers, categories, onUpdate, maxInvoiceDate,
+    row, index, suppliers, categories, onUpdate, maxInvoiceDate, vatRateDecimal,
   });
 
   const dateTitle = useMemo(
@@ -215,13 +215,13 @@ function BatchRowTable(props: Record<string, any>) {
 function BatchRowStack(props: Record<string, any>) {
   const {
     row, index, suppliers, categories, bookmarkedIds, onUpdate, onRemove, onBookmark,
-    maxInvoiceDate,
+    maxInvoiceDate, vatRateDecimal,
   } = props;
   const ids = useBatchRowFieldIds();
   const {
     t, lang, net, tax, categoryOptions, handleCategoryChange, handleSupplierChange,
   } = useBatchRowLogic({
-    row, index, suppliers, categories, onUpdate, maxInvoiceDate,
+    row, index, suppliers, categories, onUpdate, maxInvoiceDate, vatRateDecimal,
   });
 
   const dateTitle = useMemo(

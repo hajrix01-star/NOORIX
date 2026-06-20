@@ -103,6 +103,7 @@ export default function PurchasesBatchScreen() {
                 onBookmark={actions.toggleBookmark}
                 onAddRow={state.addRow}
                 t={t}
+                vatRateDecimal={data.vatRateDecimal}
               >
                 <PurchasesBatchSummary
                   count={data.summary.count}
