@@ -42,6 +42,27 @@ export default {
     en: 'Saved, but the server is outdated and did not store shift in the database — redeploy the backend, then re-enter summaries.',
   },
   salesEntryCopyFromMorning: { ar: 'نسخ القنوات من الصباحي', en: 'Copy channels from morning' },
+  salesEntryDateBannerNone: {
+    ar: 'لا يوجد إدخال سابق — التاريخ المقترح: {0}',
+    en: 'No prior entry — suggested date: {0}',
+  },
+  salesEntryDateBannerLastSuggested: {
+    ar: 'آخر إدخال: {0} — التاريخ المقترح: {1}',
+    en: 'Last entry: {0} — suggested date: {1}',
+  },
+  salesEntryDateDiffersHint: {
+    ar: 'التاريخ المختار يختلف عن المقترح ({0})',
+    en: 'Selected date differs from suggestion ({0})',
+  },
+  salesEntryDuplicateShiftConfirm: {
+    ar: 'يوجد ملخص {0} بتاريخ {1}. هل تريد المتابعة؟',
+    en: 'A {0} summary already exists on {1}. Continue?',
+  },
+  salesEntryGapDaysConfirm: {
+    ar: 'لم يُسجَّل مبيعات في: {0}. هل تريد المتابعة بتاريخ {1}؟',
+    en: 'No sales recorded on: {0}. Continue with date {1}?',
+  },
+  salesEntryGapDaysMore: { ar: 'و{0} أيام أخرى', en: 'and {0} more days' },
   customerCount: { ar: 'عدد العملاء', en: 'Customer count' },
   cashOnHand: { ar: 'المبلغ الموجود بالصندوق', en: 'Cash on hand' },
   salesChannels: { ar: 'قنوات البيع', en: 'Sales channels' },

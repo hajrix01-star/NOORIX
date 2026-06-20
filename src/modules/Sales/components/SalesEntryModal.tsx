@@ -1,7 +1,7 @@
 ﻿/**
  * SalesEntryModal — إدخال ملخص المبيعات اليومي (ديناميكي: شفت واحد أو شفتان أو يوم كامل)
  */
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
@@ -31,6 +31,8 @@ import {
 import { buildCreateSalesSummaryApiBody } from '../utils/salesApiPayload';
 import { buildVaultLookup, channelsFromEntryPayload } from '../utils/salesWhatsAppChannels';
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
+import { useSalesEntryDateContext } from '../hooks/useSalesEntryDateContext';
+import { compareYmd } from '../utils/suggestSalesEntryDate';
 
 type SavedSummary = {
   id?: string;
@@ -88,22 +90,40 @@ export function SalesEntryModal({
 }: Props) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
-  const [txDate, setTxDate] = useState(getSaudiToday());
+  const [txDate, setTxDate] = useState('');
+  const [dateTouched, setDateTouched] = useState(false);
+  const dateAutoAppliedRef = useRef(false);
   const [selection, setSelection] = useState<SalesEntrySelection>(EMPTY_SALES_ENTRY_SELECTION);
   const [shiftForms, setShiftForms] = useState<Partial<Record<SalesShiftValue, ShiftEntryFormState>>>({});
   const [savedSummaries, setSavedSummaries] = useState<SavedSummary[] | null>(null);
   const [savedEntryItems, setSavedEntryItems] = useState<{ shift: string }[] | null>(null);
 
   const activeShifts = useMemo(() => getActiveEntryShifts(selection), [selection]);
+  const {
+    lastEntryYmd,
+    suggestedDate,
+    gapDays,
+    duplicateShifts,
+    contextLoading,
+  } = useSalesEntryDateContext(companyId, txDate || getSaudiToday(), activeShifts);
   const isBatch = activeShifts.length > 1;
   const saving = createSummary.isPending || (createSummaryBatch?.isPending ?? false);
 
   useEffect(() => {
-    setTxDate(getSaudiToday());
+    setDateTouched(false);
+    dateAutoAppliedRef.current = false;
+    setTxDate('');
     setSelection(EMPTY_SALES_ENTRY_SELECTION);
     setShiftForms({});
     setSavedSummaries(null);
   }, [companyId]);
+
+  useEffect(() => {
+    if (!suggestedDate || dateTouched || contextLoading) return;
+    if (dateAutoAppliedRef.current && txDate) return;
+    setTxDate(suggestedDate);
+    dateAutoAppliedRef.current = true;
+  }, [suggestedDate, dateTouched, contextLoading, txDate]);
 
   useEffect(() => {
     setShiftForms((prev) => ensureShiftForms(prev, activeShifts));
@@ -130,12 +150,14 @@ export function SalesEntryModal({
   );
 
   const resetForm = useCallback(() => {
-    setTxDate(getSaudiToday());
+    setDateTouched(false);
+    dateAutoAppliedRef.current = false;
+    setTxDate(suggestedDate || getSaudiToday());
     setSelection(EMPTY_SALES_ENTRY_SELECTION);
     setShiftForms({});
     setSavedSummaries(null);
     setSavedEntryItems(null);
-  }, []);
+  }, [suggestedDate]);
 
   const enrichSummariesWithEntryChannels = useCallback((
     summaries: SavedSummary[],
@@ -202,10 +224,50 @@ export function SalesEntryModal({
     || !!salesChannelsError
     || salesChannels.length === 0
     || !hasEntrySelection(selection)
-    || !allFormsValid;
+    || !allFormsValid
+    || !txDate
+    || contextLoading;
+
+  const dateBannerText = useMemo(() => {
+    const suggestedLabel = formatSaudiDate(suggestedDate);
+    if (!lastEntryYmd) {
+      return t('salesEntryDateBannerNone', suggestedLabel);
+    }
+    return t('salesEntryDateBannerLastSuggested', formatSaudiDate(lastEntryYmd), suggestedLabel);
+  }, [lastEntryYmd, suggestedDate, t]);
+
+  const showDateDiffersHint = !!txDate
+    && !!suggestedDate
+    && compareYmd(txDate, suggestedDate) !== 0;
+
+  function formatGapDaysLabel(days: string[]): string {
+    const formatted = days.slice(0, 5).map((d) => formatSaudiDate(d));
+    if (days.length > 5) {
+      formatted.push(t('salesEntryGapDaysMore', String(days.length - 5)));
+    }
+    return formatted.join(lang === 'ar' ? '، ' : ', ');
+  }
+
+  function confirmSaveWarnings(): boolean {
+    if (duplicateShifts.length > 0) {
+      const shiftLabels = duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? '، ' : ', ');
+      const msg = t('salesEntryDuplicateShiftConfirm', shiftLabels, formatSaudiDate(txDate));
+      if (!window.confirm(msg)) return false;
+    }
+    if (gapDays.length > 0) {
+      const msg = t(
+        'salesEntryGapDaysConfirm',
+        formatGapDaysLabel(gapDays),
+        formatSaudiDate(txDate),
+      );
+      if (!window.confirm(msg)) return false;
+    }
+    return true;
+  }
 
   function handleSave(sendWhatsAppAfter = false) {
-    if (!companyId || saving || !allFormsValid) return;
+    if (!companyId || saving || !allFormsValid || !txDate) return;
+    if (!confirmSaveWarnings()) return;
 
     const items = activeShifts.map((s) =>
       buildShiftEntryPayload(s, shiftForms[s]!, salesChannels),
@@ -382,13 +444,24 @@ export function SalesEntryModal({
         )
       }
     >
-      <div className="mb-4">
+      <div className="mb-4 flex flex-col gap-2">
+        <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 px-3 py-2 text-[12px] leading-relaxed text-noorix-muted">
+          {contextLoading ? t('loading') : dateBannerText}
+        </div>
         <Input
           type="date"
           label={t('transactionDate')}
           value={txDate}
-          onChange={(e: { target: { value: string } }) => setTxDate(e.target.value)}
+          onChange={(e: { target: { value: string } }) => {
+            setDateTouched(true);
+            setTxDate(e.target.value);
+          }}
         />
+        {showDateDiffersHint && (
+          <p className="m-0 text-[11px] text-noorix-amber leading-relaxed">
+            {t('salesEntryDateDiffersHint', formatSaudiDate(suggestedDate))}
+          </p>
+        )}
       </div>
 
       <SalesShiftPicker mode="entry" selection={selection} onChange={setSelection} className="mb-4" />

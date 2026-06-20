@@ -40,4 +40,10 @@ export const salesKeys = {
   summariesPagedRoot: () => ['sales-summaries-paged'] as const,
 
   channelsRoot: () => ['sales-channels'] as const,
+
+  entryLast: (companyId: string) => ['sales-entry', 'last', companyId] as const,
+
+  entryDay: (companyId: string, ymd: string) => ['sales-entry', 'day', companyId, ymd] as const,
+
+  entryContextRoot: () => ['sales-entry'] as const,
 };
