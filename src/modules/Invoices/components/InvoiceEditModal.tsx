@@ -8,6 +8,8 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
+import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
+import { useApp } from '../../../context/AppContext';
 import {
   updateInvoice,
   uploadInvoiceAttachment,
@@ -27,6 +29,11 @@ const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
 export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
+  const { companies } = useApp();
+  const vatRateDecimal = useMemo(
+    () => vatRateDecimalFromCompany(companies.find((c: any) => c.id === companyId)),
+    [companies, companyId],
+  );
   const [form, setForm] = useState({
     supplierId: '',
     supplierInvoiceNumber: '',
@@ -86,7 +93,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     if (!invoice) return;
     const taxable = invoice.isTaxable !== false;
     const total = Number(invoice.totalAmount || 0);
-    const { net, tax } = splitTaxFromTotalAsNumbers(total, taxable);
+    const { net, tax } = splitTaxFromTotalAsNumbers(total, taxable, vatRateDecimal);
     const resolvedVaultId =
       invoice.vaultAllocations?.length >= 1
         ? invoice.vaultAllocations[0].vaultId
@@ -164,7 +171,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     if (field === 'totalAmount' && value) {
       const v = parseFloat(value);
       if (!isNaN(v) && v > 0) {
-        const { net, tax } = splitTaxFromTotalAsNumbers(v, true);
+        const { net, tax } = splitTaxFromTotalAsNumbers(v, true, vatRateDecimal);
         setForm((p: any) => ({ ...p, netAmount: net.toFixed(2), taxAmount: tax.toFixed(2) }));
       }
     }

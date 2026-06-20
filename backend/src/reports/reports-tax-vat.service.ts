@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { resolveVatRateDecimal } from '../common/utils/math-engine';
 
 @Injectable()
 export class ReportsTaxVatService {
@@ -33,6 +34,13 @@ export class ReportsTaxVatService {
     const startDate = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, endMonth + 1, 0, 23, 59, 59, 999));
 
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { vatRatePercent: true },
+    });
+    const VAT_STANDARD_RATE = resolveVatRateDecimal(company?.vatRatePercent ?? null);
+    const VAT_INCLUSIVE_DIVISOR = new Decimal('1').plus(VAT_STANDARD_RATE);
+
     type VatAggRow = { kind: string; has_tax: boolean; net_sum: string; tax_sum: string };
     const vatRows = await this.prisma.$queryRaw<VatAggRow[]>`
       SELECT
@@ -52,9 +60,6 @@ export class ReportsTaxVatService {
     const exempt_sales = { amount: new Decimal(0), vat: new Decimal(0) };
     const standard_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
     const exempt_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
-
-    const VAT_STANDARD_RATE = new Decimal('0.15');
-    const VAT_INCLUSIVE_DIVISOR = new Decimal('1').plus(VAT_STANDARD_RATE);
 
     for (const row of vatRows) {
       const net = this.dec(row.net_sum);

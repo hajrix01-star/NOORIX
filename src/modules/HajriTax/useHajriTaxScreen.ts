@@ -20,6 +20,7 @@ import {
   SUMMARY_ROWS,
 } from '../../constants/taxDisclosure';
 import { fmt, fmtTax } from '../../utils/format';
+import { vatRateDecimalFromCompany } from '../../utils/vatRate';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { getTaxVatReport, getVatPlanningList, getCompanies, throwIfApiFailed, upsertVatPlanning } from '../../services/api';
@@ -55,6 +56,10 @@ export function useHajriTaxScreen() {
   const [regFilterYear, setRegFilterYear] = useState('');
   const [regFilterQuarter, setRegFilterQuarter] = useState('');
   const [detailCompanyId, setDetailCompanyId] = useState<any>(null);
+  const detailVatRateDecimal = useMemo(
+    () => vatRateDecimalFromCompany(companies?.find((c: any) => c.id === detailCompanyId)),
+    [companies, detailCompanyId],
+  );
   const [detailReadOnly, setDetailReadOnly] = useState(false);
   const [showNewDeclarationModal, setShowNewDeclarationModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
@@ -349,12 +354,12 @@ export function useHajriTaxScreen() {
         const row = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), [field]: num };
         next[key] = row;
         if (field === 'amount' && (key === 'standard_sales' || key === 'standard_purchases')) {
-          next[key] = { ...row, vat: roundMoney2(num * 0.15) };
+          next[key] = { ...row, vat: roundMoney2(num * detailVatRateDecimal) };
         }
       }
       return next;
     });
-  }, [detailReadOnly]);
+  }, [detailReadOnly, detailVatRateDecimal]);
 
   const outputTotal = useMemo(() => computeOutputTotal(draftData), [draftData]);
   const inputTotal = useMemo(() => computeInputTotal(draftData), [draftData]);
@@ -374,10 +379,11 @@ export function useHajriTaxScreen() {
     return outputTotal + priorAdj + balanceCarried - paymentTargetParsed;
   }, [outputTotal, priorAdj, balanceCarried, paymentTargetParsed]);
 
-  const simulatorEstimatedBaseAt15 = useMemo(() => {
+  const simulatorEstimatedBaseAtStandardRate = useMemo(() => {
     if (simulatorRequiredInputVat == null || simulatorRequiredInputVat <= 0) return null;
-    return +(simulatorRequiredInputVat / 0.15).toFixed(2);
-  }, [simulatorRequiredInputVat]);
+    if (detailVatRateDecimal <= 0) return null;
+    return +(simulatorRequiredInputVat / detailVatRateDecimal).toFixed(2);
+  }, [simulatorRequiredInputVat, detailVatRateDecimal]);
 
   const simulatorInvalidTarget = useMemo(() => {
     if (!Number.isFinite(paymentTargetParsed)) return false;
@@ -690,7 +696,7 @@ export function useHajriTaxScreen() {
     netVat,
     paymentTargetParsed,
     simulatorRequiredInputVat,
-    simulatorEstimatedBaseAt15,
+    simulatorEstimatedBaseAt15: simulatorEstimatedBaseAtStandardRate,
     simulatorInvalidTarget,
     handleImportFromTaxReport,
     handleBalancePayment,

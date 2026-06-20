@@ -11,6 +11,8 @@ import { useVaults } from '../../../hooks/useVaults';
 import { expenseKeys } from '../../../services/queryKeys';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
+import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
+import { useApp } from '../../../context/AppContext';
 import { canExemptThisExpensePayment, isExpensePaymentTaxable } from '../utils/expenseTax';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
@@ -29,6 +31,11 @@ const EMPTY_ROW = () => ({
 
 export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any) {
   const { lang, t } = useTranslation();
+  const { companies } = useApp();
+  const vatRateDecimal = useMemo(
+    () => vatRateDecimalFromCompany(companies.find((c: any) => c.id === companyId)),
+    [companies, companyId],
+  );
   const queryClient = useQueryClient();
   const [rows, setRows] = useState(() => [EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [batchDate, setBatchDate] = useState(getSaudiToday());
@@ -82,12 +89,12 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
       const taxable = isExpensePaymentTaxable(line, r.exemptThisPayment);
       const ti = parseFloat(r.totalInclusive);
       gross += Number.isFinite(ti) ? ti : 0;
-      const { net, tax } = splitTaxFromTotalAsNumbers(ti, taxable);
+      const { net, tax } = splitTaxFromTotalAsNumbers(ti, taxable, vatRateDecimal);
       totalNet += net;
       totalTax += tax;
     }
     return { totalNet, totalTax, total: gross, count: validRows.length };
-  }, [validRows, expenseLines]);
+  }, [validRows, expenseLines, vatRateDecimal]);
 
   const saveMutation = useApiMutation({
     mutationFn: async () => {
@@ -149,7 +156,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
   const tableData = rows.map((r: any, i: any) => {
     const line = expenseLines.find((l: any) => l.id === r.expenseLineId);
     const taxable = isExpensePaymentTaxable(line, r.exemptThisPayment);
-    const { net, tax } = splitTaxFromTotalAsNumbers(Number(r.totalInclusive), taxable);
+    const { net, tax } = splitTaxFromTotalAsNumbers(Number(r.totalInclusive), taxable, vatRateDecimal);
     return {
       ...r,
       index: i + 1,
