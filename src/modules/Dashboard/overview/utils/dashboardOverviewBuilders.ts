@@ -369,9 +369,7 @@ export type YearMonthlyDailyAvgRow = {
 
 /**
  * Monthly daily revenue averages for a calendar year, Jan → capMonth.
- * Full months: sum ÷ active selling days (revenue &gt; 0).
- * MTD-aligned months (current + previous): sum ÷ calendar days in the aligned period.
- * Current month naturally reflects data only through the last sales entry.
+ * Always: sum ÷ calendar days in the period (full month, MTD, or aligned slice).
  */
 export function buildYearMonthlyDailyAvgRows(params: {
   year: number;
@@ -380,14 +378,23 @@ export function buildYearMonthlyDailyAvgRows(params: {
   capMonth: number;
   currentYear: number;
   currentMonth: number;
+  currentDay: number;
   /**
    * When viewing the current month (MTD), cap the prior month row to the same
    * calendar day so it matches the revenue card «الشهر الماضي» comparison.
    */
   prevMonthAlignEndDay?: number;
 }): YearMonthlyDailyAvgRow[] {
-  const { year, yearSummaries, monthNames, capMonth, currentYear, currentMonth, prevMonthAlignEndDay } =
-    params;
+  const {
+    year,
+    yearSummaries,
+    monthNames,
+    capMonth,
+    currentYear,
+    currentMonth,
+    currentDay,
+    prevMonthAlignEndDay,
+  } = params;
   if (capMonth <= 0) return [];
 
   const prefix = `${year}-`;
@@ -408,8 +415,6 @@ export function buildYearMonthlyDailyAvgRows(params: {
 
   for (let month = 1; month <= capMonth; month += 1) {
     const dayMap = byMonthDay.get(month);
-    let sum = 0;
-    let activeDays = 0;
     const mtdAlignDay =
       prevMonthAlignEndDay != null &&
       year === currentYear &&
@@ -420,29 +425,20 @@ export function buildYearMonthlyDailyAvgRows(params: {
     const maxDayInclusive =
       mtdAlignDay != null
         ? Math.max(1, Math.min(mtdAlignDay, lastDayOfMonth(year, month)))
-        : lastDayOfMonth(year, month);
+        : mtdCalendarDaysInMonth(year, month, currentYear, currentMonth, currentDay);
+
+    let sum = 0;
     if (dayMap) {
       for (const [ymdStr, amt] of dayMap.entries()) {
-        if (mtdAlignDay != null) {
-          const day = parseInt(ymdStr.slice(8, 10), 10);
-          if (!Number.isFinite(day) || day < 1 || day > maxDayInclusive) continue;
-        }
-        if (amt > 0) {
-          sum += amt;
-          activeDays += 1;
-        }
+        const day = parseInt(ymdStr.slice(8, 10), 10);
+        if (!Number.isFinite(day) || day < 1 || day > maxDayInclusive) continue;
+        sum += amt;
       }
     }
-    const calendarDaysInPeriod =
-      mtdAlignDay != null ? maxDayInclusive : lastDayOfMonth(year, month);
+
+    const calendarDaysInPeriod = maxDayInclusive;
     const avgDaily =
-      sum > 0 && calendarDaysInPeriod > 0
-        ? mtdAlignDay != null
-          ? sum / calendarDaysInPeriod
-          : activeDays > 0
-            ? sum / activeDays
-            : null
-        : null;
+      sum > 0 && calendarDaysInPeriod > 0 ? sum / calendarDaysInPeriod : null;
     const deltaPctVsPrev =
       avgDaily != null && prevAvg != null ? revenueDailyAvgDeltaPct(avgDaily, prevAvg) : null;
 
@@ -451,7 +447,7 @@ export function buildYearMonthlyDailyAvgRows(params: {
       monthLabel: monthNames[month - 1] ?? String(month),
       totalSales: sum > 0 ? sum : null,
       avgDaily,
-      activeDays: mtdAlignDay != null ? calendarDaysInPeriod : activeDays,
+      activeDays: calendarDaysInPeriod,
       deltaPctVsPrev,
       tone: compareRevenueDailyAvgTone(avgDaily, prevAvg),
       isCurrentMonth: year === currentYear && month === currentMonth,

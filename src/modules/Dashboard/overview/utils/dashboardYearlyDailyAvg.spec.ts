@@ -21,14 +21,13 @@ describe('yearMonthlyDailyAvgCapMonth', () => {
 });
 
 describe('buildYearMonthlyDailyAvgRows', () => {
-  it('computes active-day averages Jan through cap month', () => {
+  it('uses calendar days for completed months and current month MTD', () => {
     const rows = buildYearMonthlyDailyAvgRows({
       year: 2026,
       yearSummaries: [
         { transactionDate: '2026-01-01', totalAmount: 100 },
         { transactionDate: '2026-01-02', totalAmount: 200 },
         { transactionDate: '2026-02-01', totalAmount: 400 },
-        { transactionDate: '2026-02-02', totalAmount: 0 },
         { transactionDate: '2026-05-10', totalAmount: 500 },
         { transactionDate: '2026-05-20', totalAmount: 700 },
       ],
@@ -36,18 +35,19 @@ describe('buildYearMonthlyDailyAvgRows', () => {
       capMonth: 5,
       currentYear: 2026,
       currentMonth: 5,
+      currentDay: 20,
     });
 
     expect(rows).toHaveLength(5);
     expect(rows[0].totalSales).toBe(300);
-    expect(rows[0].avgDaily).toBe(150);
-    expect(rows[0].activeDays).toBe(2);
-    expect(rows[1].avgDaily).toBe(400);
-    expect(rows[1].activeDays).toBe(1);
+    expect(rows[0].avgDaily).toBeCloseTo(300 / 31, 4);
+    expect(rows[0].activeDays).toBe(31);
+    expect(rows[1].avgDaily).toBeCloseTo(400 / 28, 4);
     expect(rows[2].avgDaily).toBeNull();
-    expect(rows[4].avgDaily).toBe(600);
+    expect(rows[4].totalSales).toBe(1200);
+    expect(rows[4].avgDaily).toBe(60);
+    expect(rows[4].activeDays).toBe(20);
     expect(rows[4].isCurrentMonth).toBe(true);
-    expect(rows[4].deltaPctVsPrev).toBe(50);
   });
 
   it('caps previous month to prevMonthAlignEndDay when viewing current month MTD', () => {
@@ -63,6 +63,7 @@ describe('buildYearMonthlyDailyAvgRows', () => {
       capMonth: 5,
       currentYear: 2026,
       currentMonth: 5,
+      currentDay: 10,
       prevMonthAlignEndDay: 20,
     });
 

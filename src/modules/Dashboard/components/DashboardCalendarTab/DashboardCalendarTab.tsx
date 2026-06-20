@@ -39,7 +39,7 @@ export default function DashboardCalendarTab({ companyId, year, selectedMonth, f
           t={m.t}
         />
 
-        <DashboardCalendarSalesAvgBanner salesDailyAvgOnActiveDays={m.salesDailyAvgOnActiveDays} t={m.t} />
+        <DashboardCalendarSalesAvgBanner salesDailyAvg={m.salesDailyAvgCalendarPeriod} t={m.t} />
 
         <DashboardCalendarTargetsPanel
           show={m.showTargetsPanel}

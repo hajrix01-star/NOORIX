@@ -365,9 +365,10 @@ export function useDashboardOverviewModel(
       capMonth,
       currentYear: saudiYM.year,
       currentMonth: saudiYM.month,
+      currentDay: saudiNow.day,
       prevMonthAlignEndDay: alignPrevMonthDay,
     });
-  }, [year, yearSummaries, lang, saudiYM.year, saudiYM.month, selectedMonth, revenueMtdEndDay]);
+  }, [year, yearSummaries, lang, saudiYM.year, saudiYM.month, saudiNow.day, selectedMonth, revenueMtdEndDay]);
 
   const monthName = selectedMonth
     ? lang === 'ar'
