@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import Decimal from 'decimal.js';
+import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { resolveVatRateDecimal } from '../common/utils/math-engine';
 
 @Injectable()
