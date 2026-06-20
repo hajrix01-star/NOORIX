@@ -9,6 +9,9 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import App from './App';
 import './index.css';
+import { registerPwa } from './pwa/registerPwa';
+
+registerPwa();
 
 // تطبيق هوية التطبيق باللغة المحفوظة قبل أي رسم
 const _storedLang = readStoredLanguage() || 'ar';

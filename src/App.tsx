@@ -19,6 +19,7 @@ import { STORAGE_KEYS, CARD_STYLE_KEY } from './constants/storageKeys';
 import { readStoredLanguage, writeStoredLanguage } from './utils/storedLanguage';
 import { appKeys } from './services/queryKeys';
 import { STALE_CHUNK_RELOAD_QUERY } from './utils/staleChunkRecovery';
+import { useDeployVersionGuard } from './hooks/useDeployVersionGuard';
 
 const DashboardScreen = React.lazy(() => import('./modules/Dashboard/DashboardScreen'));
 const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScreen'));
@@ -68,6 +69,8 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const isLoginPage = location.pathname === '/login';
+
+  useDeployVersionGuard();
 
   // إزالة علامة إعادة التحميل بعد نشر جديد — لا تُبقِها في شريط العنوان
   useEffect(() => {

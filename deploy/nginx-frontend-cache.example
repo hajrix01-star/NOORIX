@@ -1,4 +1,6 @@
-# انسخ المقتطفات المناسبة داخل كتلة server { ... } لموقع الواجهة.
+# انسخ المقتطفات المناسبة داخل كتلة server { ... } لموقع الواجهة، أو شغّل:
+#   sudo bash deploy/install-nginx-frontend-cache.sh
+# (ينسخ deploy/nginx-frontend-cache.snippet.conf إلى /etc/nginx/snippets/ ويضيف include تلقائياً)
 # يجب أن يطابق `root` هنا المسار نفسه المعرّف لنشر الواجهة على السيرفر (مصدر واحد):
 #   - الافتراضي في deploy/install-frontend.sh هو /var/www/noorix/dist (مطابق لـ root في Nginx لـ hajrix.com على الإنتاج الحالي)
 #   - أو سطر واحد في الملف: /etc/noorix/frontend-root (يُنشأ مرة واحدة على الـ VPS إذا كان root مختلفاً)

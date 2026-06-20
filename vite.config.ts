@@ -62,6 +62,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: null,
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'نووريكس — Noorix',
@@ -108,8 +109,21 @@ export default defineConfig({
         /* يفعّل الإصدار الجديد بسرعة بعد النشر — يقلّل بقاء واجهة قديمة بسبب الـ PWA */
         skipWaiting: true,
         clientsClaim: true,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        /* لا نخزّن index.html مسبقاً — يُجلب من الشبكة ليتزامن مع كل نشر */
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2,webmanifest}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'noorix-html-navigation',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 },
+              networkTimeoutSeconds: 5,
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             /** لا تخزّن طلبات API — يمنع بيانات مستخدم/شركة قديمة أو متسربة من الكاش */
             urlPattern: ({ url }) =>
