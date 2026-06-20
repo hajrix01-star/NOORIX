@@ -68,7 +68,7 @@ export function toHalalas(value: string | number | Decimal): Decimal {
 }
 
 /** نسبة ضريبة عشرية من vatRatePercent (مثلاً 15 → 0.15). */
-export function resolveVatRateDecimal(vatRatePercent?: number | string | null): Decimal {
+export function resolveVatRateDecimal(vatRatePercent?: number | string | Decimal | null): Decimal {
   if (vatRatePercent != null && vatRatePercent !== '') {
     const n = Number(vatRatePercent);
     if (Number.isFinite(n) && n >= 0) return new Decimal(n).div(100);
