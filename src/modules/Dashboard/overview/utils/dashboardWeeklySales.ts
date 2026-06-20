@@ -3,7 +3,7 @@
  * مع متوسط يومي لكل جزء = مجموع الجزء ÷ أيام التقويم في الجزء (ضمن حد الشهر/MTD).
  */
 import { toYmd } from '../../../../utils/saudiDate';
-import { lastDayOfMonth } from './dashboardOverviewDateUtils';
+import { lastDayOfMonth, prevCalendarMonth } from './dashboardOverviewDateUtils';
 
 export type MonthWeekBucket = {
   weekIndex: number;
@@ -19,6 +19,36 @@ export type BucketMonthIntoWeeksOptions = {
   /** للشهر الجاري: قصّ الجزء الأخير حتى هذا اليوم (شامل) */
   maxDayInclusive?: number;
 };
+
+/**
+ * يوم نهاية فترة جدول الأسابيع — يُوائَم مع كرت الإيرادات (revenueMtdEndDay) عند عرض شهر محدّد.
+ */
+export function weeklySalesMaxDayInclusive(params: {
+  panelYear: number;
+  panelMonth: number;
+  selectedYear: number | null;
+  selectedMonth: number | null;
+  revenueMtdEndDay: number;
+  saudiNow: { year: number; month: number; day: number };
+}): number | undefined {
+  const { panelYear, panelMonth, selectedYear, selectedMonth, revenueMtdEndDay, saudiNow } =
+    params;
+
+  if (selectedMonth != null && selectedYear != null && revenueMtdEndDay > 0) {
+    const isSelected = panelYear === selectedYear && panelMonth === selectedMonth;
+    const prev = prevCalendarMonth(selectedYear, selectedMonth);
+    const isPrevAligned = panelYear === prev.year && panelMonth === prev.month;
+    if (isSelected || isPrevAligned) {
+      return revenueMtdEndDay;
+    }
+  }
+
+  if (panelYear === saudiNow.year && panelMonth === saudiNow.month) {
+    return saudiNow.day;
+  }
+
+  return undefined;
+}
 
 export function bucketMonthIntoWeeks(
   year: number,

@@ -25,7 +25,7 @@ import {
   yearMonthlyDailyAvgCapMonth,
 } from '../utils/dashboardOverviewBuilders';
 import { computeSalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
-import { bucketMonthIntoWeeks, pctChangeVsBaseline } from '../utils/dashboardWeeklySales';
+import { bucketMonthIntoWeeks, pctChangeVsBaseline, weeklySalesMaxDayInclusive } from '../utils/dashboardWeeklySales';
 import type { DashboardOverviewFilter } from '../types';
 
 /** خيارات اختيارية — تستخدمها شاشة الاستوديو فقط (لا تغيّر اللوحة التقليدية). */
@@ -506,7 +506,14 @@ export function useDashboardOverviewModel(
 
   const weeklySalesWeekRows = useMemo(() => {
     const capFor = (y: number, m: number) =>
-      y === saudiNow.year && m === saudiNow.month ? saudiNow.day : undefined;
+      weeklySalesMaxDayInclusive({
+        panelYear: y,
+        panelMonth: m,
+        selectedYear: year,
+        selectedMonth,
+        revenueMtdEndDay,
+        saudiNow,
+      });
 
     const curBuckets = bucketMonthIntoWeeks(
       weeklyPanelYearA,
@@ -546,6 +553,12 @@ export function useDashboardOverviewModel(
     weeklyPanelMonthB,
     weeklyPanelYearA,
     weeklyPanelYearB,
+    year,
+    selectedMonth,
+    revenueMtdEndDay,
+    saudiNow.year,
+    saudiNow.month,
+    saudiNow.day,
   ]);
 
   const weeklySalesPanelLoading = weeklyPackALoading || weeklyPackBLoading;

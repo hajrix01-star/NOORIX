@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bucketMonthIntoWeeks, pctChangeVsBaseline } from './dashboardWeeklySales';
+import { bucketMonthIntoWeeks, pctChangeVsBaseline, weeklySalesMaxDayInclusive } from './dashboardWeeklySales';
 
 describe('dashboardWeeklySales', () => {
   it('bucketMonthIntoWeeks splits month into 7-day chunks and averages per calendar day in slice', () => {
@@ -77,5 +77,42 @@ describe('dashboardWeeklySales', () => {
     );
     const directTotal = daily.reduce((s, d) => s + Number(d.totalAmount || 0), 0);
     expect(reconstructed).toBeCloseTo(directTotal, 4);
+  });
+
+  it('weeklySalesMaxDayInclusive aligns current and prev month with revenueMtdEndDay', () => {
+    const saudiNow = { year: 2026, month: 6, day: 20 };
+    expect(
+      weeklySalesMaxDayInclusive({
+        panelYear: 2026,
+        panelMonth: 6,
+        selectedYear: 2026,
+        selectedMonth: 6,
+        revenueMtdEndDay: 18,
+        saudiNow,
+      }),
+    ).toBe(18);
+    expect(
+      weeklySalesMaxDayInclusive({
+        panelYear: 2026,
+        panelMonth: 5,
+        selectedYear: 2026,
+        selectedMonth: 6,
+        revenueMtdEndDay: 18,
+        saudiNow,
+      }),
+    ).toBe(18);
+  });
+
+  it('weeklySalesMaxDayInclusive uses today for current month without selected-month MTD', () => {
+    expect(
+      weeklySalesMaxDayInclusive({
+        panelYear: 2026,
+        panelMonth: 6,
+        selectedYear: null,
+        selectedMonth: null,
+        revenueMtdEndDay: 0,
+        saudiNow: { year: 2026, month: 6, day: 20 },
+      }),
+    ).toBe(20);
   });
 });
