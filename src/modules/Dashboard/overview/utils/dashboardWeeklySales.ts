@@ -1,6 +1,6 @@
 /**
  * تقسيم شهر إلى أسابيع متتالية (1–7، 8–14، …) من ملخصات يومية،
- * مع متوسط يومي لكل جزء = مجموع الجزء ÷ أيام البيع فقط (إيراد > 0).
+ * مع متوسط يومي لكل جزء = مجموع الجزء ÷ أيام التقويم في الجزء (ضمن حد الشهر/MTD).
  */
 import { toYmd } from '../../../../utils/saudiDate';
 import { lastDayOfMonth } from './dashboardOverviewDateUtils';
@@ -10,8 +10,9 @@ export type MonthWeekBucket = {
   dayStart: number;
   dayEnd: number;
   totalSales: number;
-  /** متوسط يوم البيع داخل هذا الجزء (أيام إيراد > 0 فقط) */
+  /** متوسط يومي = المجموع ÷ أيام التقويم في الجزء (شامل الأيام بدون مبيعات) */
   avgDailyInWeek: number;
+  calendarDaysInSlice: number;
 };
 
 export type BucketMonthIntoWeeksOptions = {
@@ -52,18 +53,18 @@ export function bucketMonthIntoWeeks(
     if (start > cap) break;
 
     let total = 0;
-    let activeDays = 0;
+    const calendarDaysInSlice = Math.max(0, effectiveEnd - start + 1);
     for (let d = start; d <= effectiveEnd; d++) {
-      const amt = byDay.get(d) || 0;
-      total += amt;
-      if (amt > 0) activeDays += 1;
+      total += byDay.get(d) || 0;
     }
     buckets.push({
       weekIndex,
       dayStart: start,
       dayEnd: end,
       totalSales: total,
-      avgDailyInWeek: activeDays > 0 ? total / activeDays : 0,
+      calendarDaysInSlice,
+      avgDailyInWeek:
+        calendarDaysInSlice > 0 && total > 0 ? total / calendarDaysInSlice : 0,
     });
     start = end + 1;
     weekIndex++;
