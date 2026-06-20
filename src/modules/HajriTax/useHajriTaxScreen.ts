@@ -415,9 +415,11 @@ export function useHajriTaxScreen() {
     const target = parseFloat(String(paymentTargetStr).replace(/,/g, ''));
     if (!Number.isFinite(target)) return;
     setDraftData((prev: any) =>
-      normalizeDisclosureDecimals(syncVatPlanningSummaryFields(scaleInputVatForPaymentTarget(prev, target))),
+      normalizeDisclosureDecimals(syncVatPlanningSummaryFields(
+        scaleInputVatForPaymentTarget(prev, target, detailVatRateDecimal),
+      )),
     );
-  }, [paymentTargetStr, detailReadOnly]);
+  }, [paymentTargetStr, detailReadOnly, detailVatRateDecimal]);
 
   const persistDetailFilingSubmitted = useCallback(
     async (next: boolean) => {

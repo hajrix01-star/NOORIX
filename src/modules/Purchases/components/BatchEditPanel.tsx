@@ -11,7 +11,7 @@ import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 import { BatchEditInvoiceLine } from './BatchEditInvoiceLine';
 
-export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSaveInvoice, onClose }: any) {
+export function BatchEditPanel({ batch, suppliers, companyId: _companyId, vatRateDecimal, onSaveInvoice, onClose }: any) {
   const { t, lang } = useTranslation();
   const narrow = useIsNarrow700();
   const invList = batch?.invoices || batch || [];
@@ -91,6 +91,7 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSave
               t={t}
               updateInv={updateInv}
               variant="card"
+              vatRateDecimal={vatRateDecimal}
             />
           ))}
         </div>
@@ -119,6 +120,7 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, onSave
                   t={t}
                   updateInv={updateInv}
                   variant="table"
+                  vatRateDecimal={vatRateDecimal}
                 />
               ))}
             </tbody>

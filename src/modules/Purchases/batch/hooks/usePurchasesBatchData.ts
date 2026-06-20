@@ -6,10 +6,11 @@ import { useCategories } from '../../../../hooks/useCategories';
 import { useVaults } from '../../../../hooks/useVaults';
 import { useTableFilter } from '../../../../hooks/useTableFilter';
 import { useBatchSummary } from '../../../../hooks/useBatchCalculation';
-import { getPurchaseBatchSummaries, throwIfApiFailed } from '../../../../services/api';
-import { purchaseKeys } from '../../../../services/queryKeys';
+import { getCompany, getPurchaseBatchSummaries, throwIfApiFailed } from '../../../../services/api';
+import { purchaseKeys, companyKeys } from '../../../../services/queryKeys';
 import { buildActiveCancelledPartialStatusMap } from '../../../../constants/badgeMaps';
 import { mapApiBatchSummaryToTableRow } from '../utils/purchasesBatchMappers';
+import { vatRateDecimalFromCompany } from '../../../../utils/vatRate';
 import { PAGE_SIZE } from '../constants';
 
 export function usePurchasesBatchData(options: {
@@ -44,6 +45,16 @@ export function usePurchasesBatchData(options: {
   );
   const { flatCategories = [] } = useCategories(companyId);
   const { paymentVaults: activeVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
+
+  const { data: companyData } = useQuery({
+    queryKey: companyKeys.single(companyId),
+    queryFn: async () => {
+      const res = await getCompany(companyId);
+      return res?.success ? res.data : null;
+    },
+    enabled: !!companyId,
+  });
+  const vatRateDecimal = vatRateDecimalFromCompany(companyData);
 
   useEffect(() => {
     setBatchVaultId('');
@@ -106,7 +117,7 @@ export function usePurchasesBatchData(options: {
   const totalTax = activeOnly.reduce((s: any, b: any) => s.plus(b.taxAmount), new Decimal(0));
   const totalAmount = activeOnly.reduce((s: any, b: any) => s.plus(b.totalAmount), new Decimal(0));
 
-  const summary = useBatchSummary(rows);
+  const summary = useBatchSummary(rows, vatRateDecimal);
 
   return {
     suppliers,
@@ -134,5 +145,6 @@ export function usePurchasesBatchData(options: {
     totalAmount,
     statusBadgeMap,
     summary,
+    vatRateDecimal,
   };
 }

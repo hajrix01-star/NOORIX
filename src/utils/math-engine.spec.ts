@@ -18,4 +18,11 @@ describe('splitTaxFromTotalAsNumbers — balanced with backend', () => {
   it('returns net only when not taxable', () => {
     expect(splitTaxFromTotalAsNumbers(500, false)).toEqual({ net: 500, tax: 0 });
   });
+
+  it('uses custom company rate 10%', () => {
+    const at10 = splitTaxFromTotalAsNumbers(1100, true, 0.1);
+    const at15 = splitTaxFromTotalAsNumbers(1100, true, 0.15);
+    expect(at10.net + at10.tax).toBeCloseTo(1100, 6);
+    expect(at10.tax).toBeLessThan(at15.tax);
+  });
 });

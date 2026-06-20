@@ -67,6 +67,14 @@ export class InvoiceService {
     private readonly vaultsService:  VaultsService,
   ) {}
 
+  private async loadCompanyVatRatePercent(companyId: string): Promise<number | null> {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { vatRatePercent: true },
+    });
+    return company?.vatRatePercent != null ? Number(company.vatRatePercent) : null;
+  }
+
   private clearInvoiceListAggCacheForCompany(companyId: string): void {
     const prefix = `v1|${companyId}|`;
     for (const key of this.invoiceListAggCache.keys()) {
@@ -76,7 +84,7 @@ export class InvoiceService {
 
   /**
    * إنشاء فاتورة — يُفوَّض بالكامل للمحرك المالي المركزي.
-   * حساب الضريبة: إن لم يُمرَّر netAmount/taxAmount، يُحسبان من totalAmount و isTaxable (15%).
+   * حساب الضريبة: إن لم يُمرَّر netAmount/taxAmount، يُحسبان من totalAmount و isTaxable ونسبة الشركة.
    */
   async createWithLedger(dto: CreateInvoiceDto, userId?: string | null) {
     assertCreateInvoiceSupplierInvoiceNumberIfRequired(dto);
@@ -94,7 +102,8 @@ export class InvoiceService {
       expenseMonthsCovered = cov.expenseMonthsCovered;
     }
 
-    const { net, tax } = computeCreateInvoiceOutflowNetAndTax(dto);
+    const vatRatePercent = await this.loadCompanyVatRatePercent(dto.companyId);
+    const { net, tax } = computeCreateInvoiceOutflowNetAndTax(dto, vatRatePercent);
     const vaultSplits =
       dto.vaultSplits?.length ?
         dto.vaultSplits.map((s) => ({ vaultId: s.vaultId, amount: String(s.amount) }))
@@ -156,6 +165,7 @@ export class InvoiceService {
         typeof dto.transactionDate === 'string' ? dto.transactionDate : new Date(dto.transactionDate),
       );
 
+      const vatRatePercent = await this.loadCompanyVatRatePercent(dto.companyId);
       const dtos = await buildOutflowDtosForInvoiceBatch(
         this.prisma,
         dto.companyId,
@@ -164,6 +174,7 @@ export class InvoiceService {
         batchId,
         dto.vaultId ?? undefined,
         batchNotesPart,
+        vatRatePercent,
       );
       const results = await this.financialCore.processOutflowBatch(
         dtos,

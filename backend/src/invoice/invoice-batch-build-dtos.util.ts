@@ -1,8 +1,8 @@
-import Decimal from 'decimal.js';
-import { splitTax } from '../common/utils/math-engine';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type { OutflowDto } from '../financial-core/dto/financial-operation.dto';
 import type { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
+import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
+import Decimal from 'decimal.js';
 
 function combineLineAndBatchNotes(lineNotes: string | undefined, batchNotesPart: string): string | undefined {
   const line = lineNotes?.trim() ?? '';
@@ -20,6 +20,7 @@ export async function buildOutflowDtosForInvoiceBatch(
   batchId: string,
   vaultId: string | undefined,
   batchNotesPart: string,
+  vatRatePercent?: number | string | null,
 ): Promise<OutflowDto[]> {
   const dtos: OutflowDto[] = [];
   for (const item of validItems) {
@@ -43,8 +44,7 @@ export async function buildOutflowDtosForInvoiceBatch(
 
     const total = new Decimal(String(item.totalAmount));
     const taxable = item.isTaxable !== false;
-    const rate = taxable ? 0.15 : 0;
-    const { net, tax } = splitTax(total, rate);
+    const { net, tax } = computeOutflowNetTaxFromTotal(total, taxable, vatRatePercent);
     dtos.push({
       companyId,
       supplierId,
@@ -53,8 +53,8 @@ export async function buildOutflowDtosForInvoiceBatch(
       supplierInvoiceNumber: item.supplierInvoiceNumber ?? item.invoiceNumber ?? undefined,
       kind,
       totalAmount: total.toFixed(4),
-      netAmount: net.toFixed(4),
-      taxAmount: tax.toFixed(4),
+      netAmount: net,
+      taxAmount: tax,
       transactionDate: txDate,
       invoiceDate: item.invoiceDate,
       batchId,

@@ -4,14 +4,14 @@
  */
 import { useMemo } from 'react';
 import Decimal from 'decimal.js';
-import { sumAmounts, splitTaxFromTotal } from '../utils/math-engine';
+import { sumAmounts, splitTaxFromTotalAsNumbers, TAX_RATE } from '../utils/math-engine';
 
 /**
  * حساب ملخص صفوف الدفعة (net, tax, total, count).
- * @param {Array<object>} rows - صفوف الإدخال (كل صف: totalInclusive, supplierId, invoiceNumber, isTaxable)
- * @returns {{ net: Decimal, tax: Decimal, total: Decimal, count: number }}
+ * @param rows - صفوف الإدخال (كل صف: totalInclusive, supplierId, invoiceNumber, isTaxable)
+ * @param vatRateDecimal - نسبة ضريبة الشركة (افتراضي 15%)
  */
-export function useBatchSummary(rows: any) {
+export function useBatchSummary(rows: any, vatRateDecimal: number = TAX_RATE) {
   return useMemo(() => {
     let net = new Decimal(0);
     let tax = new Decimal(0);
@@ -22,7 +22,7 @@ export function useBatchSummary(rows: any) {
         const t = new Decimal(r.totalInclusive || 0);
         if (t.gt(0) && r.supplierId && r.invoiceNumber) {
           const taxable = r.isTaxable !== false;
-          const { net: n, tax: tx } = splitTaxFromTotal(t, taxable);
+          const { net: n, tax: tx } = splitTaxFromTotalAsNumbers(t, taxable, vatRateDecimal);
           net = net.plus(n);
           tax = tax.plus(tx);
           total = total.plus(t);
@@ -33,5 +33,8 @@ export function useBatchSummary(rows: any) {
       }
     }
     return { net, tax, total, count };
-  }, [rows]);
+  }, [rows, vatRateDecimal]);
 }
+
+/** @deprecated use useBatchSummary — kept for barrel compatibility */
+export { sumAmounts };

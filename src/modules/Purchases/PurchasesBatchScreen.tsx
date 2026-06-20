@@ -167,6 +167,7 @@ export default function PurchasesBatchScreen() {
         editingBatch={state.editingBatch}
         suppliers={data.suppliers}
         companyId={companyId}
+        vatRateDecimal={data.vatRateDecimal}
         onClosePrint={() => state.setPrintingBatch(null)}
         onCloseEdit={() => state.setEditingBatch(null)}
         onSaveInvoice={actions.saveInvoiceEdit}

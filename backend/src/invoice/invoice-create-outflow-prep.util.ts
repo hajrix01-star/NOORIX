@@ -1,7 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import Decimal from 'decimal.js';
-import { splitTax } from '../common/utils/math-engine';
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
 
 /**
  * رقم فاتورة المورد مطلوب عند مورد/بند + أنواع معينة + خاضع للضريبة.
@@ -19,13 +18,13 @@ export function assertCreateInvoiceSupplierInvoiceNumberIfRequired(dto: CreateIn
 /**
  * يُرجع صافي وضريبة كنص (للمحرك المالي) من الإجمالي أو من الحقول الممررة.
  */
-export function computeCreateInvoiceOutflowNetAndTax(dto: CreateInvoiceDto): { net: string; tax: string } {
-  const total = new Decimal(String(dto.totalAmount));
-  const taxable = dto.isTaxable !== false;
+export function computeCreateInvoiceOutflowNetAndTax(
+  dto: CreateInvoiceDto,
+  vatRatePercent?: number | string | null,
+): { net: string; tax: string } {
   if (dto.netAmount != null && dto.taxAmount != null) {
     return { net: String(dto.netAmount), tax: String(dto.taxAmount) };
   }
-  const rate = taxable ? 0.15 : 0;
-  const { net: netDec, tax: taxDec } = splitTax(total, rate);
-  return { net: netDec.toFixed(4), tax: taxDec.toFixed(4) };
+  const taxable = dto.isTaxable !== false;
+  return computeOutflowNetTaxFromTotal(dto.totalAmount, taxable, vatRatePercent);
 }

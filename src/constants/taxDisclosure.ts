@@ -2,6 +2,7 @@
  * نموذج الإفصاح الضريبي السعودي — تعريفات وبنيات مشتركة بين تقرير الضرائب وسجل الضريبة التخطيطي.
  * لا تستورد من modules/.
  */
+import { TAX_RATE } from '../utils/math-engine';
 
 /** صفوف المخرجات/المدخلات المعروضة في الواجهة — مختصرة للاستخدام الذي لا يفرّق هذه الفئات */
 export const OUTPUT_ROWS = [
@@ -139,7 +140,11 @@ export function mergeImportedDisclosure(stored: any, imported: any) {
  * ضبط مدخلات الضريبة (الخارج) لتتوافق مع صافي مستهدف = مبلغ الدفع المرغوب.
  * netPayable = output - input + prior + balance  →  input' = output + prior + balance - netPayableTarget
  */
-export function scaleInputVatForPaymentTarget(data: any, paymentTarget: any) {
+export function scaleInputVatForPaymentTarget(
+  data: any,
+  paymentTarget: any,
+  vatRateDecimal: number = TAX_RATE,
+) {
   const target = Number(paymentTarget);
   if (!Number.isFinite(target)) return normalizeDisclosureDecimals({ ...data });
 
@@ -176,10 +181,11 @@ export function scaleInputVatForPaymentTarget(data: any, paymentTarget: any) {
     if (!next[stdKey] || typeof next[stdKey] !== 'object') {
       next[stdKey] = { amount: 0, adjustment: 0, vat: 0 };
     }
+    const rate = vatRateDecimal > 0 ? vatRateDecimal : TAX_RATE;
     next[stdKey] = {
       ...next[stdKey],
       vat: roundMoney2(desiredInput),
-      amount: roundMoney2(desiredInput / 0.15),
+      amount: roundMoney2(desiredInput / rate),
     };
     return normalizeDisclosureDecimals(next);
   }
@@ -192,8 +198,9 @@ export function scaleInputVatForPaymentTarget(data: any, paymentTarget: any) {
     const oldVat = Number(row.vat) || 0;
     const oldAmt = Number(row.amount) || 0;
     const newVat = oldVat * factor;
+    const rate = vatRateDecimal > 0 ? vatRateDecimal : TAX_RATE;
     row.vat = roundMoney2(newVat);
-    row.amount = oldAmt ? roundMoney2(oldAmt * factor) : roundMoney2(newVat / 0.15);
+    row.amount = oldAmt ? roundMoney2(oldAmt * factor) : roundMoney2(newVat / rate);
   });
 
   return normalizeDisclosureDecimals(next);

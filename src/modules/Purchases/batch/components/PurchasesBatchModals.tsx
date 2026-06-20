@@ -9,13 +9,14 @@ export interface PurchasesBatchModalsProps {
   editingBatch: any;
   suppliers: any[];
   companyId: string;
+  vatRateDecimal?: number;
   onClosePrint: () => void;
   onCloseEdit: () => void;
   onSaveInvoice: (inv: any) => Promise<unknown>;
 }
 
 export default function PurchasesBatchModals(props: PurchasesBatchModalsProps) {
-  const { printingBatch, editingBatch, suppliers, companyId, onClosePrint, onCloseEdit, onSaveInvoice } = props;
+  const { printingBatch, editingBatch, suppliers, companyId, vatRateDecimal, onClosePrint, onCloseEdit, onSaveInvoice } = props;
   const queryClient = useQueryClient();
 
   return (
@@ -26,6 +27,7 @@ export default function PurchasesBatchModals(props: PurchasesBatchModalsProps) {
           batch={editingBatch}
           suppliers={suppliers}
           companyId={companyId}
+          vatRateDecimal={vatRateDecimal}
           onSaveInvoice={onSaveInvoice}
           onClose={() => {
             onCloseEdit();

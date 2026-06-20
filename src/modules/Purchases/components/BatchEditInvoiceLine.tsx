@@ -4,7 +4,7 @@
 import React from 'react';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { Button, Input, FmtNum, Card, FormRow } from '../../../ui';
-import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
+import { splitTaxFromTotalAsNumbers, TAX_RATE } from '../../../utils/math-engine';
 import { useBatchRowFieldIds } from './useBatchRowLogic';
 
 export function BatchEditInvoiceLine({
@@ -15,7 +15,9 @@ export function BatchEditInvoiceLine({
   t,
   updateInv,
   variant,
+  vatRateDecimal,
 }: any) {
+  const rate = vatRateDecimal ?? TAX_RATE;
   const ids = useBatchRowFieldIds();
   const cancelled = inv.status === 'cancelled';
 
@@ -113,7 +115,7 @@ export function BatchEditInvoiceLine({
                   onChange={(e: any) => {
                     const v = parseFloat(e.target.value);
                     if (!Number.isNaN(v) && v > 0) {
-                      const { net, tax } = splitTaxFromTotalAsNumbers(v, true);
+                      const { net, tax } = splitTaxFromTotalAsNumbers(v, true, rate);
                       updateInv(i, { totalAmount: v, netAmount: net, taxAmount: tax });
                     }
                   }}
@@ -205,7 +207,7 @@ export function BatchEditInvoiceLine({
             onChange={(e: any) => {
               const v = parseFloat(e.target.value);
               if (!Number.isNaN(v) && v > 0) {
-                const { net, tax } = splitTaxFromTotalAsNumbers(v, true);
+                const { net, tax } = splitTaxFromTotalAsNumbers(v, true, rate);
                 updateInv(i, { totalAmount: v, netAmount: net, taxAmount: tax });
               }
             }}

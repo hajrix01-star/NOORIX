@@ -19,6 +19,7 @@ import {
 import { createInflowSaleLedgerEntries } from './financial-inflow-ledger.util';
 import type { InflowDto, SalesChannelDto, SalesShift } from './dto/financial-operation.dto';
 import { assertValidInflowBatch } from './financial-inflow-batch.util';
+import { resolveVatRateDecimal } from '../common/utils/math-engine';
 import type { TxClient } from './financial-core-helpers.util';
 
 function normalizeSalesShift(value: unknown): SalesShift {
@@ -148,9 +149,7 @@ export class FinancialInflowService {
         select: { vatEnabledForSales: true, vatRatePercent: true },
       });
       const vatEnabled = !!company?.vatEnabledForSales;
-      const vatRateDecimal = company?.vatRatePercent != null
-        ? Number(company.vatRatePercent) / 100
-        : 0.15;
+      const vatRateDecimal = resolveVatRateDecimal(company?.vatRatePercent).toNumber();
 
       // ── [B] حساب الإيراد الافتراضي وحساب الضريبة ─────────
       const revenueAccountId = await this.support.getDefaultRevenueAccount(tx, dto.companyId);
@@ -351,7 +350,7 @@ export class FinancialInflowService {
         select: { vatEnabledForSales: true, vatRatePercent: true },
       });
       const vatEnabled = !!company?.vatEnabledForSales;
-      const vatRateDecimal = company?.vatRatePercent != null ? Number(company.vatRatePercent) / 100 : 0.15;
+      const vatRateDecimal = resolveVatRateDecimal(company?.vatRatePercent).toNumber();
 
       const { channelNetTax, totalNet, totalTax } = buildChannelNetTaxForInflow(
         activeChannels,
