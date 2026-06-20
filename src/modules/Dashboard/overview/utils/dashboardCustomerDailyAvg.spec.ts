@@ -7,7 +7,7 @@ import {
   lastRevenueSalesDayInMonth,
   revenueMtdEndDay,
   sumRevenueThroughDay,
-} from './dashboardOverviewBuilders';
+} from './dashboardDailyAvg';
 import { mtdCalendarDaysInMonth } from './dashboardOverviewDateUtils';
 
 describe('revenue MTD totals and active day count', () => {

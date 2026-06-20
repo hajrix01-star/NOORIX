@@ -1,13 +1,36 @@
 import { toYmd } from '../../../../utils/saudiDate';
 import type { PlReportLike } from './dashboardOverviewCalculations';
-import { lastDayOfMonth, mtdCalendarDaysInMonth } from './dashboardOverviewDateUtils';
+import {
+  dailyAvgFromTotal,
+  resolveYearlyMonthEndDay,
+  type SalesSummaryLike,
+} from './dashboardDailyAvg';
+
+export type { SalesSummaryLike } from './dashboardDailyAvg';
+export {
+  computeCustomerDailyAvgActiveDays,
+  computeCustomerMonthDailyAvg,
+  computeDailyAvgForCalendarPeriod,
+  computeMonthMetricDailyAvg,
+  computeRevenueDailyAvgActiveDays,
+  computeRevenueMonthDailyAvg,
+  computeSliceDailyAvg,
+  countRevenueActiveSalesDays,
+  dailyAvgFromTotal,
+  filterSalesThroughDay,
+  lastRevenueSalesDayInMonth,
+  pickCustomers,
+  pickRevenue,
+  resolvePeriodEndDay,
+  resolveYearlyMonthEndDay,
+  revenueMtdEndDay,
+  sumCustomersThroughDay,
+  sumRevenueThroughDay,
+} from './dashboardDailyAvg';
 
 type TFn = (key: string) => string;
 
-type SummaryLike = {
-  transactionDate?: string | null;
-  totalAmount?: string | number | null;
-  customerCount?: number | null;
+type SummaryLike = SalesSummaryLike & {
   channels?: Array<{ amount?: string | number | null; vault?: { nameAr?: string | null; nameEn?: string | null } }>;
 };
 
@@ -162,182 +185,6 @@ export function mergePurchaseCategoriesOthers(
   ];
 }
 
-function computeDailyAvgActiveDays(
-  monthSalesForDailyAvg: SummaryLike[] | null | undefined,
-  pickDayValue: (summary: SummaryLike) => number,
-): number | null {
-  if (!monthSalesForDailyAvg?.length) return null;
-  const byDay = new Map<string, number>();
-  monthSalesForDailyAvg.forEach((s) => {
-    const d = toYmd(s.transactionDate);
-    byDay.set(d, (byDay.get(d) || 0) + pickDayValue(s));
-  });
-  let sum = 0;
-  let n = 0;
-  for (const amt of byDay.values()) {
-    if (amt > 0) {
-      sum += amt;
-      n += 1;
-    }
-  }
-  if (n === 0) return null;
-  return sum / n;
-}
-
-/** قصّ مبيعات الشهر حتى يوم تقويمي (شامل) — لـ MTD ومقارنة الشهر السابق. */
-export function filterSalesThroughDay(
-  monthSales: SummaryLike[] | null | undefined,
-  year: number,
-  month: number,
-  endDayInclusive: number,
-): SummaryLike[] {
-  const last = lastDayOfMonth(year, month);
-  const cap = Math.max(1, Math.min(endDayInclusive, last));
-  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
-  return (monthSales ?? []).filter((s) => {
-    const d = toYmd(s.transactionDate);
-    if (!d || !d.startsWith(prefix)) return false;
-    const day = parseInt(d.slice(8, 10), 10);
-    return Number.isFinite(day) && day >= 1 && day <= cap;
-  });
-}
-
-function sumMonthMetric(
-  monthSales: SummaryLike[] | null | undefined,
-  year: number,
-  month: number,
-  pick: (s: SummaryLike) => number,
-  endDayInclusive?: number,
-): number {
-  const rows =
-    endDayInclusive != null
-      ? filterSalesThroughDay(monthSales, year, month, endDayInclusive)
-      : (monthSales ?? []).filter((s) => {
-          const d = toYmd(s.transactionDate);
-          return !!d && d.startsWith(`${year}-${String(month).padStart(2, '0')}-`);
-        });
-  let total = 0;
-  for (const s of rows) {
-    total += pick(s);
-  }
-  return total;
-}
-
-/** آخر يوم تقويمي فيه مبيعات > 0 ضمن الشهر (من ملخصات التشغيل). */
-export function lastRevenueSalesDayInMonth(
-  monthSales: SummaryLike[] | null | undefined,
-  year: number,
-  month: number,
-): number {
-  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
-  let maxDay = 0;
-  for (const s of monthSales ?? []) {
-    const d = toYmd(s.transactionDate);
-    if (!d?.startsWith(prefix)) continue;
-    if (Number(s.totalAmount || 0) <= 0) continue;
-    const day = parseInt(d.slice(8, 10), 10);
-    if (Number.isFinite(day) && day > maxDay) maxDay = day;
-  }
-  return maxDay;
-}
-
-/**
- * يوم نهاية فترة MTD: لا يتجاوز اليوم التقويمي (شهر جاري) ولا يتجاوز آخر يوم مبيعات مسجّل.
- * يُستخدم لقصّ الشهر الحالي والشهر السابق بنفس اليوم (مثلاً 1–27).
- */
-export function revenueMtdEndDay(
-  year: number,
-  month: number,
-  todayYear: number,
-  todayMonth: number,
-  todayDay: number,
-  monthSales?: SummaryLike[] | null,
-): number {
-  const calendarCap = mtdCalendarDaysInMonth(year, month, todayYear, todayMonth, todayDay);
-  if (calendarCap <= 0) return 0;
-  const lastEntry = lastRevenueSalesDayInMonth(monthSales, year, month);
-  if (lastEntry <= 0) return calendarCap;
-  return Math.min(calendarCap, lastEntry);
-}
-
-/** عدد أيام التقويم (1…endDay) التي فيها إيراد مبيعات > 0 */
-export function countRevenueActiveSalesDays(
-  monthSales: SummaryLike[] | null | undefined,
-  year: number,
-  month: number,
-  endDayInclusive: number,
-): number {
-  const rows = filterSalesThroughDay(monthSales, year, month, endDayInclusive);
-  const byDay = new Map<string, number>();
-  for (const s of rows) {
-    const d = toYmd(s.transactionDate);
-    if (!d) continue;
-    byDay.set(d, (byDay.get(d) || 0) + Number(s.totalAmount || 0));
-  }
-  let n = 0;
-  for (const amt of byDay.values()) {
-    if (amt > 0) n += 1;
-  }
-  return n;
-}
-
-export function sumRevenueThroughDay(
-  monthSales: SummaryLike[] | null | undefined,
-  year: number,
-  month: number,
-  endDayInclusive: number,
-): number {
-  return sumMonthMetric(
-    monthSales,
-    year,
-    month,
-    (s) => Number(s.totalAmount || 0),
-    endDayInclusive,
-  );
-}
-
-export function sumCustomersThroughDay(
-  monthSales: SummaryLike[] | null | undefined,
-  year: number,
-  month: number,
-  endDayInclusive: number,
-): number {
-  return sumMonthMetric(
-    monthSales,
-    year,
-    month,
-    (s) => Number(s.customerCount || 0),
-    endDayInclusive,
-  );
-}
-
-/** متوسط يومي لفترة تقويمية محددة: المجموع ÷ عدد أيام التقويم (1…endDayInclusive). */
-export function computeDailyAvgForCalendarPeriod(
-  total: number,
-  calendarDays: number,
-): number | null {
-  if (calendarDays <= 0 || total <= 0) return null;
-  return total / calendarDays;
-}
-
-export function computeRevenueDailyAvgActiveDays(
-  monthSalesForDailyAvg: SummaryLike[] | null | undefined,
-): number | null {
-  return computeDailyAvgActiveDays(
-    monthSalesForDailyAvg,
-    (s) => Number(s.totalAmount || 0),
-  );
-}
-
-export function computeCustomerDailyAvgActiveDays(
-  monthSalesForDailyAvg: SummaryLike[] | null | undefined,
-): number | null {
-  return computeDailyAvgActiveDays(
-    monthSalesForDailyAvg,
-    (s) => Number(s.customerCount || 0),
-  );
-}
-
 export type RevenueDailyAvgCompareTone = 'up' | 'down' | 'neutral';
 
 /** Compare current-month daily avg to previous month (revenue: higher is better → up). */
@@ -361,7 +208,7 @@ export type YearMonthlyDailyAvgRow = {
   monthLabel: string;
   totalSales: number | null;
   avgDaily: number | null;
-  activeDays: number;
+  calendarDays: number;
   deltaPctVsPrev: number | null;
   tone: RevenueDailyAvgCompareTone;
   isCurrentMonth: boolean;
@@ -415,17 +262,15 @@ export function buildYearMonthlyDailyAvgRows(params: {
 
   for (let month = 1; month <= capMonth; month += 1) {
     const dayMap = byMonthDay.get(month);
-    const mtdAlignDay =
-      prevMonthAlignEndDay != null &&
-      year === currentYear &&
-      capMonth === currentMonth &&
-      (month === capMonth || month === capMonth - 1)
-        ? prevMonthAlignEndDay
-        : null;
-    const maxDayInclusive =
-      mtdAlignDay != null
-        ? Math.max(1, Math.min(mtdAlignDay, lastDayOfMonth(year, month)))
-        : mtdCalendarDaysInMonth(year, month, currentYear, currentMonth, currentDay);
+    const maxDayInclusive = resolveYearlyMonthEndDay({
+      year,
+      month,
+      capMonth,
+      currentYear,
+      currentMonth,
+      currentDay,
+      prevMonthAlignEndDay,
+    });
 
     let sum = 0;
     if (dayMap) {
@@ -437,8 +282,7 @@ export function buildYearMonthlyDailyAvgRows(params: {
     }
 
     const calendarDaysInPeriod = maxDayInclusive;
-    const avgDaily =
-      sum > 0 && calendarDaysInPeriod > 0 ? sum / calendarDaysInPeriod : null;
+    const avgDaily = dailyAvgFromTotal(sum, calendarDaysInPeriod);
     const deltaPctVsPrev =
       avgDaily != null && prevAvg != null ? revenueDailyAvgDeltaPct(avgDaily, prevAvg) : null;
 
@@ -447,7 +291,7 @@ export function buildYearMonthlyDailyAvgRows(params: {
       monthLabel: monthNames[month - 1] ?? String(month),
       totalSales: sum > 0 ? sum : null,
       avgDaily,
-      activeDays: calendarDaysInPeriod,
+      calendarDays: calendarDaysInPeriod,
       deltaPctVsPrev,
       tone: compareRevenueDailyAvgTone(avgDaily, prevAvg),
       isCurrentMonth: year === currentYear && month === currentMonth,

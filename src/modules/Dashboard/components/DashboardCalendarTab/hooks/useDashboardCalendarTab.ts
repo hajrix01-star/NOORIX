@@ -6,7 +6,7 @@ import { useDashboardCalendarData } from '../../../../../hooks/useDashboardCalen
 import { fmt } from '../../../../../utils/format';
 import { openPrintWindow } from '../../../../../utils/printUtils';
 import { getSaudiNow, toYmd } from '../../../../../utils/saudiDate';
-import { mtdCalendarDaysInMonth } from '../../../overview/utils/dashboardOverviewDateUtils';
+import { computeRevenueMonthDailyAvg } from '../../../overview/utils/dashboardDailyAvg';
 import {
   lastDayOfMonth,
   calendarYmd,
@@ -92,17 +92,17 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     return map;
   }, [summaries]);
 
-  /** إجمالي المبيعات ÷ أيام التقويم في الفترة (شهر كامل أو MTD للشهر الجاري) */
+  /** إجمالي المبيعات ÷ أيام التقويم — نفس مصدر لوحة التحكم (dashboardDailyAvg). */
   const salesDailyAvgCalendarPeriod = useMemo(() => {
-    const calendarDays = mtdCalendarDaysInMonth(year, month, now.year, now.month, now.day);
-    if (calendarDays <= 0) return null;
-    let sum = 0;
-    for (const amt of dailySales.values()) {
-      sum += amt;
-    }
-    if (sum <= 0) return null;
-    return sum / calendarDays;
-  }, [dailySales, year, month, now.year, now.month, now.day]);
+    return computeRevenueMonthDailyAvg({
+      monthSales: summaries,
+      year,
+      month,
+      todayYear: now.year,
+      todayMonth: now.month,
+      todayDay: now.day,
+    }).avgDaily;
+  }, [summaries, year, month, now.year, now.month, now.day]);
 
   const daysInMonth = useMemo(() => {
     const days = [];

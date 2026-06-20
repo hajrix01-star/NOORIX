@@ -33,10 +33,10 @@ type Props = {
   revenuePrevMonthTotalSum: number;
   monthName: string | null;
   prevMonthName: string;
-  revenueDailyAvgActiveDays: number | null;
-  revenueDailyAvgPrevMonthActiveDays: number | null;
-  customerDailyAvgActiveDays: number | null;
-  customerDailyAvgPrevMonthActiveDays: number | null;
+  revenueDailyAvgCalendar: number | null;
+  revenueDailyAvgPrevMonthCalendar: number | null;
+  customerDailyAvgCalendar: number | null;
+  customerDailyAvgPrevMonthCalendar: number | null;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
   kpiInsightFooters: KpiInsightFooterMap;
 };
@@ -52,10 +52,10 @@ export function DashboardOverviewKpis({
   revenuePrevMonthTotalSum,
   monthName,
   prevMonthName,
-  revenueDailyAvgActiveDays,
-  revenueDailyAvgPrevMonthActiveDays,
-  customerDailyAvgActiveDays,
-  customerDailyAvgPrevMonthActiveDays,
+  revenueDailyAvgCalendar,
+  revenueDailyAvgPrevMonthCalendar,
+  customerDailyAvgCalendar,
+  customerDailyAvgPrevMonthCalendar,
   salesShiftPeriodTotals,
   kpiInsightFooters,
 }: Props) {
@@ -149,10 +149,10 @@ export function DashboardOverviewKpis({
                   prevMonthLabel={prevMonthName}
                   currentMonthSalesTotal={revenueMtdTotalSum}
                   prevMonthSalesTotal={revenuePrevMonthTotalSum}
-                  revenueDailyAvg={revenueDailyAvgActiveDays}
-                  revenueDailyAvgPrev={revenueDailyAvgPrevMonthActiveDays}
-                  customerDailyAvg={customerDailyAvgActiveDays}
-                  customerDailyAvgPrev={customerDailyAvgPrevMonthActiveDays}
+                  revenueDailyAvg={revenueDailyAvgCalendar}
+                  revenueDailyAvgPrev={revenueDailyAvgPrevMonthCalendar}
+                  customerDailyAvg={customerDailyAvgCalendar}
+                  customerDailyAvgPrev={customerDailyAvgPrevMonthCalendar}
                   salesShiftPeriodTotals={salesShiftPeriodTotals}
                   t={t}
                 />

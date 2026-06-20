@@ -15,10 +15,9 @@ import {
   buildPurchaseCategoriesData,
   buildTopSuppliersChartData,
   buildYearMonthlyDailyAvgRows,
-  computeDailyAvgForCalendarPeriod,
-  sumCustomersThroughDay,
+  computeCustomerMonthDailyAvg,
+  computeRevenueMonthDailyAvg,
   filterSalesThroughDay,
-  sumRevenueThroughDay,
   revenueMtdEndDay as getRevenueMtdEndDay,
   mergePurchaseCategoriesOthers,
   performanceTotalForSalesKey,
@@ -266,6 +265,83 @@ export function useDashboardOverviewModel(
     );
   }, [year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day, monthSalesForDailyAvg]);
 
+  const revenueMtdDailyAvg = useMemo(() => {
+    if (selectedMonth == null) return null;
+    return computeRevenueMonthDailyAvg({
+      monthSales: monthSalesForDailyAvg,
+      year,
+      month: selectedMonth,
+      todayYear: saudiNow.year,
+      todayMonth: saudiNow.month,
+      todayDay: saudiNow.day,
+    });
+  }, [monthSalesForDailyAvg, year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day]);
+
+  const revenuePrevMonthDailyAvg = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
+    const prev = prevCalendarMonth(year, selectedMonth);
+    return computeRevenueMonthDailyAvg({
+      monthSales: prevMonthSalesForDailyAvg,
+      year: prev.year,
+      month: prev.month,
+      todayYear: saudiNow.year,
+      todayMonth: saudiNow.month,
+      todayDay: saudiNow.day,
+      endDayInclusive: revenueMtdEndDay,
+    });
+  }, [
+    prevMonthSalesForDailyAvg,
+    year,
+    selectedMonth,
+    revenueMtdEndDay,
+    saudiNow.year,
+    saudiNow.month,
+    saudiNow.day,
+  ]);
+
+  const customerMtdDailyAvg = useMemo(() => {
+    if (selectedMonth == null) return null;
+    return computeCustomerMonthDailyAvg({
+      monthSales: monthSalesForDailyAvg,
+      year,
+      month: selectedMonth,
+      todayYear: saudiNow.year,
+      todayMonth: saudiNow.month,
+      todayDay: saudiNow.day,
+      endDayInclusive: revenueMtdEndDay > 0 ? revenueMtdEndDay : undefined,
+    });
+  }, [
+    monthSalesForDailyAvg,
+    year,
+    selectedMonth,
+    revenueMtdEndDay,
+    saudiNow.year,
+    saudiNow.month,
+    saudiNow.day,
+  ]);
+
+  const customerPrevMonthDailyAvg = useMemo(() => {
+    if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
+    const prev = prevCalendarMonth(year, selectedMonth);
+    return computeCustomerMonthDailyAvg({
+      monthSales: prevMonthSalesForDailyAvg,
+      year: prev.year,
+      month: prev.month,
+      todayYear: saudiNow.year,
+      todayMonth: saudiNow.month,
+      todayDay: saudiNow.day,
+      endDayInclusive: revenueMtdEndDay,
+    });
+  }, [
+    prevMonthSalesForDailyAvg,
+    year,
+    selectedMonth,
+    revenueMtdEndDay,
+    saudiNow.year,
+    saudiNow.month,
+    saudiNow.day,
+  ]);
+
   const monthSalesThroughMtd = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return monthSalesForDailyAvg;
     return filterSalesThroughDay(monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay);
@@ -281,58 +357,6 @@ export function useDashboardOverviewModel(
       revenueMtdEndDay,
     );
   }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
-  const revenueMtdTotalSum = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
-    return sumRevenueThroughDay(monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay);
-  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
-  const revenuePrevMonthTotalSum = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
-    const prev = prevCalendarMonth(year, selectedMonth);
-    return sumRevenueThroughDay(
-      prevMonthSalesForDailyAvg,
-      prev.year,
-      prev.month,
-      revenueMtdEndDay,
-    );
-  }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
-  const revenueDailyAvgActiveDays = useMemo(
-    () => computeDailyAvgForCalendarPeriod(revenueMtdTotalSum, revenueMtdEndDay),
-    [revenueMtdTotalSum, revenueMtdEndDay],
-  );
-
-  const revenueDailyAvgPrevMonthActiveDays = useMemo(
-    () => computeDailyAvgForCalendarPeriod(revenuePrevMonthTotalSum, revenueMtdEndDay),
-    [revenuePrevMonthTotalSum, revenueMtdEndDay],
-  );
-
-  const customerMtdTotalSum = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
-    return sumCustomersThroughDay(monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay);
-  }, [monthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
-  const customerPrevMonthTotalSum = useMemo(() => {
-    if (selectedMonth == null || revenueMtdEndDay <= 0) return 0;
-    const prev = prevCalendarMonth(year, selectedMonth);
-    return sumCustomersThroughDay(
-      prevMonthSalesForDailyAvg,
-      prev.year,
-      prev.month,
-      revenueMtdEndDay,
-    );
-  }, [prevMonthSalesForDailyAvg, year, selectedMonth, revenueMtdEndDay]);
-
-  const customerDailyAvgActiveDays = useMemo(
-    () => computeDailyAvgForCalendarPeriod(customerMtdTotalSum, revenueMtdEndDay),
-    [customerMtdTotalSum, revenueMtdEndDay],
-  );
-
-  const customerDailyAvgPrevMonthActiveDays = useMemo(
-    () => computeDailyAvgForCalendarPeriod(customerPrevMonthTotalSum, revenueMtdEndDay),
-    [customerPrevMonthTotalSum, revenueMtdEndDay],
-  );
 
   const salesShiftPeriodTotals = useMemo(() => {
     if (selectedMonth == null) return computeSalesShiftPeriodTotals(yearSummaries);
@@ -589,14 +613,14 @@ export function useDashboardOverviewModel(
     topSuppliersChartData,
     purchaseCategoriesPieData,
     revenueMtdEndDay,
-    revenueDailyAvgActiveDays,
-    revenueDailyAvgPrevMonthActiveDays,
-    revenueMtdTotalSum,
-    revenuePrevMonthTotalSum,
+    revenueDailyAvgCalendar: revenueMtdDailyAvg?.avgDaily ?? null,
+    revenueDailyAvgPrevMonthCalendar: revenuePrevMonthDailyAvg?.avgDaily ?? null,
+    revenueMtdTotalSum: revenueMtdDailyAvg?.total ?? 0,
+    revenuePrevMonthTotalSum: revenuePrevMonthDailyAvg?.total ?? 0,
     monthName,
     prevMonthName,
-    customerDailyAvgActiveDays,
-    customerDailyAvgPrevMonthActiveDays,
+    customerDailyAvgCalendar: customerMtdDailyAvg?.avgDaily ?? null,
+    customerDailyAvgPrevMonthCalendar: customerPrevMonthDailyAvg?.avgDaily ?? null,
     salesShiftPeriodTotals,
     yearlyDailyAvgRows,
     hiddenSeries,
