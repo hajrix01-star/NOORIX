@@ -125,7 +125,10 @@ export async function loadPlDetailFromLedger(
 
   for (const e of entries) {
     const inv = invMap.get(e.referenceId) ?? invBySummaryId.get(e.referenceId);
-    const amt = plDec(e.amount);
+    const ledgerAmt = plDec(e.amount);
+    const displayTotal = inv ? plDec(inv.totalAmount) : ledgerAmt;
+    const displayNet = inv ? plDec(inv.netAmount) : ledgerAmt;
+    const displayTax = inv ? plDec(inv.taxAmount) : plDec(0);
     const kind = inv?.kind || e.referenceType || '—';
     result.push({
       id: e.id,
@@ -149,9 +152,9 @@ export async function loadPlDetailFromLedger(
         nameEn: ch.vault.nameEn,
         amount: formatReportMoneyInteger(plDec(ch.amount)),
       })),
-      totalAmount: formatReportMoneyInteger(amt),
-      netAmount: formatReportMoneyInteger(amt),
-      taxAmount: '0',
+      totalAmount: formatReportMoneyInteger(displayTotal),
+      netAmount: formatReportMoneyInteger(displayNet),
+      taxAmount: formatReportTaxAmount(displayTax),
       notes: inv?.notes || null,
     });
   }

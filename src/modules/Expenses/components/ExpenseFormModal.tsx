@@ -14,6 +14,8 @@ import { expenseKeys } from '../../../services/queryKeys';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
+import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
+import { useApp } from '../../../context/AppContext';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import {
@@ -26,6 +28,11 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
+  const { companies } = useApp();
+  const vatRateDecimal = useMemo(
+    () => vatRateDecimalFromCompany(companies.find((c: any) => c.id === companyId)),
+    [companies, companyId],
+  );
   const defaultYear = useMemo(() => parseInt(getSaudiToday().slice(0, 4), 10), []);
   const [form, setForm] = useState({
     expenseLineId: '',
@@ -71,8 +78,8 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   const taxPreview = useMemo(() => {
     const totalNum = parseFloat(String(form.totalAmount).replace(/,/g, ''));
     if (!Number.isFinite(totalNum) || totalNum <= 0) return null;
-    return splitTaxFromTotalAsNumbers(totalNum, isTaxable);
-  }, [form.totalAmount, isTaxable]);
+    return splitTaxFromTotalAsNumbers(totalNum, isTaxable, vatRateDecimal);
+  }, [form.totalAmount, isTaxable, vatRateDecimal]);
 
   const taxStatusKind = useMemo(() => {
     if (!selectedLine) return null;

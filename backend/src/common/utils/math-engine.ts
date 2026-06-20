@@ -67,6 +67,30 @@ export function toHalalas(value: string | number | Decimal): Decimal {
   return normalize(value).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 }
 
+/** نسبة ضريبة عشرية من vatRatePercent (مثلاً 15 → 0.15). */
+export function resolveVatRateDecimal(vatRatePercent?: number | string | null): Decimal {
+  if (vatRatePercent != null && vatRatePercent !== '') {
+    const n = Number(vatRatePercent);
+    if (Number.isFinite(n) && n >= 0) return new Decimal(n).div(100);
+  }
+  return TAX_RATE;
+}
+
+/**
+ * صافي + ضريبة مقرّبان من إجمالي شامل — نفس منطق financial-inflow-channels (ضريبة متوازنة).
+ */
+export function splitTaxBalancedHalalas(
+  totalInclusive: string | number | Decimal,
+  rate: string | number | Decimal = TAX_RATE,
+): { net: Decimal; tax: Decimal } {
+  const gross = normalize(totalInclusive);
+  if (gross.lte(0)) return { net: new Decimal(0), tax: new Decimal(0) };
+  const { net } = splitTax(gross, rate);
+  const netRounded = toHalalas(net);
+  const taxBalanced = gross.minus(netRounded);
+  return { net: netRounded, tax: taxBalanced };
+}
+
 /**
  * تحويل مدخل إلى Decimal بشكل آمن.
  */

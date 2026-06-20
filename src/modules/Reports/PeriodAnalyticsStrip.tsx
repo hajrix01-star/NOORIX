@@ -39,7 +39,10 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
       style={{ border: '1px solid var(--noorix-blue-15)', background: 'linear-gradient(135deg, var(--noorix-blue-4) 0%, var(--noorix-bg-surface) 48%)' }}
     >
       <div className="flex flex items-center justify-between flex flex-wrap gap-3">
-        <div className="text-[14px] font-extrabold">{t('periodAnalyticsTitle')}</div>
+        <div>
+          <div className="text-[14px] font-extrabold">{t('periodAnalyticsTitle')}</div>
+          <div className="text-[11px] text-noorix-muted mt-0.5">{t('periodAnalyticsHint')}</div>
+        </div>
         <div className="text-[12px] text-noorix-muted">{from} — {to}</div>
       </div>
       {isLoading && <div className="text-[13px] text-noorix-muted">{t('loading')}</div>}

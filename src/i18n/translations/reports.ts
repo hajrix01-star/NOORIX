@@ -215,6 +215,10 @@ export default {
   periodAnalyticsTitle: { ar: 'تحليل الفترة', en: 'Period insights' },
   periodAnalyticsTopSuppliers: { ar: 'أعلى الموردين (مشتريات/مصروف)', en: 'Top suppliers (purchases/expense)' },
   periodAnalyticsByKind: { ar: 'حسب نوع الفاتورة', en: 'By invoice type' },
+  periodAnalyticsHint: {
+    ar: 'ملخص سريع من الفواتير — قد يختلف قليلاً عن تقرير الربح والخسارة الرسمي (الدفتر).',
+    en: 'Quick summary from invoices — may differ slightly from the official P&L (ledger).',
+  },
   invoicesDrillBanner: { ar: 'تصفية نشطة من التقرير — يمكنك إزالتها', en: 'Active filters from report — you can clear them' },
   clearDrillFilters: { ar: 'إزالة تصفية التقرير', en: 'Clear report filters' },
 

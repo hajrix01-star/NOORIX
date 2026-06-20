@@ -62,13 +62,23 @@ export function splitTaxFromTotal(totalInclusive: any, isTaxable: any = true, ra
 
 /**
  * استخراج الصافي والضريبة كأرقام مقرّبة (للحفظ في الحالة أو API).
- * النتائج مقرّبة إلى رقمين عشريين (HALF_UP) لضمان: net + tax = total.
+ * يطابق الخادم: صافي مقرّب ثم ضريبة = الإجمالي − الصافي (net + tax = total).
  */
 export function splitTaxFromTotalAsNumbers(totalInclusive: any, isTaxable: any = true, rate: any = TAX_RATE) {
-  const { net, tax } = splitTaxFromTotal(totalInclusive, isTaxable, rate);
-  const roundedNet = roundAmount(net).toNumber();
-  const roundedTax = roundAmount(tax).toNumber();
-  return { net: roundedNet, tax: roundedTax };
+  let gross: Decimal;
+  try {
+    gross = new Decimal(totalInclusive ?? 0);
+  } catch {
+    return { net: 0, tax: 0 };
+  }
+  if (gross.lte(0)) return { net: 0, tax: 0 };
+  if (!isTaxable) return { net: roundAmount(gross).toNumber(), tax: 0 };
+
+  const { net } = splitTaxFromTotal(totalInclusive, true, rate);
+  const grossRounded = roundAmount(gross);
+  const roundedNet = roundAmount(net);
+  const roundedTax = grossRounded.minus(roundedNet);
+  return { net: roundedNet.toNumber(), tax: roundedTax.toNumber() };
 }
 
 /**

@@ -97,11 +97,7 @@ export function syncVatPlanningSummaryFields(data: any) {
 }
 
 /** تقريب مالي إلى منزلتين عشريتين (عرض وتخزين الحقول الضريبية). */
-export function roundMoney2(n: any) {
-  const x = Number(n);
-  if (!Number.isFinite(x)) return 0;
-  return Math.round(x * 100) / 100;
-}
+export { roundMoney2 } from '../utils/moneyInput';
 
 /** يطبّق منزلتين على كل المبالغ في نموذج الإفصاح بعد الاستيراد أو التعديل. */
 export function normalizeDisclosureDecimals(data: any) {

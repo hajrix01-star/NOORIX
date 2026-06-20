@@ -22,10 +22,8 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
   const queryClient = useQueryClient();
 
   /**
-   * جلب الخزائن بدون فلتر تاريخ حتى يعكس الرصيد المعروض الرصيد الكلي التراكمي،
-   * وهو نفس ما يتحقق منه السيرفر عند التحويل (getVaultBalance بدون asOfDate).
-   * استخدام startDate/endDate من الشاشة الأم كان يُظهر رصيد الفترة فقط
-   * مما يُوهم المستخدم بوجود رصيد أعلى من الحقيقي ويتسبب في خطأ "رصيد غير كافٍ".
+   * جلب الخزائن بدون فلتر تاريخ حتى يعكس الرصيد المعروض الرصيد الكلي التراكمي.
+   * التحويل لا يُرفض لنقص الرصيد (سياسة مقصودة — يُسمح بالرصيد السالب في الدفتر).
    */
   const { data: rawVaults = [], isLoading: vaultsLoading } = useQuery({
     queryKey: vaultKeys.list(companyId, false, '', ''),
