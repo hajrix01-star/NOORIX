@@ -63,6 +63,14 @@ export default {
     en: 'No sales recorded on: {0}. Continue with date {1}?',
   },
   salesEntryGapDaysMore: { ar: 'و{0} أيام أخرى', en: 'and {0} more days' },
+  salesEntryDuplicateShiftHint: {
+    ar: 'تنبيه: يوجد ملخص {0} بتاريخ {1}',
+    en: 'Note: a {0} summary already exists on {1}',
+  },
+  salesEntryGapDaysHint: {
+    ar: 'تنبيه: أيام بدون مبيعات: {0} — التاريخ المختار {1}',
+    en: 'Note: days without sales: {0} — selected date {1}',
+  },
   customerCount: { ar: 'عدد العملاء', en: 'Customer count' },
   cashOnHand: { ar: 'المبلغ الموجود بالصندوق', en: 'Cash on hand' },
   salesChannels: { ar: 'قنوات البيع', en: 'Sales channels' },

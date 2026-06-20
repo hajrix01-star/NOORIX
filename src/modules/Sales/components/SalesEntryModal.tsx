@@ -33,6 +33,8 @@ import { buildVaultLookup, channelsFromEntryPayload } from '../utils/salesWhatsA
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 import { useSalesEntryDateContext } from '../hooks/useSalesEntryDateContext';
 import { compareYmd } from '../utils/suggestSalesEntryDate';
+import { useQueryClient } from '@tanstack/react-query';
+import { salesKeys } from '../../../services/queryKeys';
 
 type SavedSummary = {
   id?: string;
@@ -90,6 +92,7 @@ export function SalesEntryModal({
 }: Props) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
   const [txDate, setTxDate] = useState('');
   const [dateTouched, setDateTouched] = useState(false);
   const dateAutoAppliedRef = useRef(false);
@@ -103,8 +106,10 @@ export function SalesEntryModal({
     lastEntryYmd,
     suggestedDate,
     gapDays,
+    gapDaysTotalCount,
     duplicateShifts,
     contextLoading,
+    daySummariesLoading,
   } = useSalesEntryDateContext(companyId, txDate || getSaudiToday(), activeShifts);
   const isBatch = activeShifts.length > 1;
   const saving = createSummary.isPending || (createSummaryBatch?.isPending ?? false);
@@ -149,15 +154,16 @@ export function SalesEntryModal({
     [activeShifts, shiftForms, salesChannels],
   );
 
-  const resetForm = useCallback(() => {
+  const resetForm = useCallback(async () => {
     setDateTouched(false);
     dateAutoAppliedRef.current = false;
-    setTxDate(suggestedDate || getSaudiToday());
+    setTxDate('');
     setSelection(EMPTY_SALES_ENTRY_SELECTION);
     setShiftForms({});
     setSavedSummaries(null);
     setSavedEntryItems(null);
-  }, [suggestedDate]);
+    await queryClient.refetchQueries({ queryKey: salesKeys.entryContextRoot() });
+  }, [queryClient]);
 
   const enrichSummariesWithEntryChannels = useCallback((
     summaries: SavedSummary[],
@@ -226,7 +232,8 @@ export function SalesEntryModal({
     || !hasEntrySelection(selection)
     || !allFormsValid
     || !txDate
-    || contextLoading;
+    || contextLoading
+    || daySummariesLoading;
 
   const dateBannerText = useMemo(() => {
     const suggestedLabel = formatSaudiDate(suggestedDate);
@@ -240,13 +247,30 @@ export function SalesEntryModal({
     && !!suggestedDate
     && compareYmd(txDate, suggestedDate) !== 0;
 
-  function formatGapDaysLabel(days: string[]): string {
+  function formatGapDaysLabel(days: string[], totalCount: number): string {
     const formatted = days.slice(0, 5).map((d) => formatSaudiDate(d));
-    if (days.length > 5) {
-      formatted.push(t('salesEntryGapDaysMore', String(days.length - 5)));
+    const remaining = Math.max(0, totalCount - formatted.length);
+    if (remaining > 0) {
+      formatted.push(t('salesEntryGapDaysMore', String(remaining)));
     }
     return formatted.join(lang === 'ar' ? '، ' : ', ');
   }
+
+  const duplicateShiftHint = duplicateShifts.length > 0
+    ? t(
+      'salesEntryDuplicateShiftHint',
+      duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? '، ' : ', '),
+      formatSaudiDate(txDate),
+    )
+    : '';
+
+  const gapDaysHint = gapDaysTotalCount > 0
+    ? t(
+      'salesEntryGapDaysHint',
+      formatGapDaysLabel(gapDays, gapDaysTotalCount),
+      formatSaudiDate(txDate),
+    )
+    : '';
 
   function confirmSaveWarnings(): boolean {
     if (duplicateShifts.length > 0) {
@@ -254,10 +278,10 @@ export function SalesEntryModal({
       const msg = t('salesEntryDuplicateShiftConfirm', shiftLabels, formatSaudiDate(txDate));
       if (!window.confirm(msg)) return false;
     }
-    if (gapDays.length > 0) {
+    if (gapDaysTotalCount > 0) {
       const msg = t(
         'salesEntryGapDaysConfirm',
-        formatGapDaysLabel(gapDays),
+        formatGapDaysLabel(gapDays, gapDaysTotalCount),
         formatSaudiDate(txDate),
       );
       if (!window.confirm(msg)) return false;
@@ -346,15 +370,15 @@ export function SalesEntryModal({
     return (
       <AdaptiveSheet
         open={true}
-        onClose={() => { resetForm(); onClose?.(); }}
+        onClose={() => { void resetForm().then(() => onClose?.()); }}
         title={t('summarySaved')}
         size="sm"
         side="start"
         className="sales-entry-success-drawer"
         footer={
           <>
-            <Button onClick={() => { resetForm(); onClose?.(); }}>{t('addNewSummary')}</Button>
-            <Button variant="ghost" onClick={() => { onClose?.(); resetForm(); }}>{t('close')}</Button>
+            <Button onClick={() => { void resetForm(); }}>{t('addNewSummary')}</Button>
+            <Button variant="ghost" onClick={() => { onClose?.(); void resetForm(); }}>{t('close')}</Button>
           </>
         }
       >
@@ -460,6 +484,16 @@ export function SalesEntryModal({
         {showDateDiffersHint && (
           <p className="m-0 text-[11px] text-noorix-amber leading-relaxed">
             {t('salesEntryDateDiffersHint', formatSaudiDate(suggestedDate))}
+          </p>
+        )}
+        {duplicateShiftHint && (
+          <p className="m-0 text-[11px] text-noorix-amber leading-relaxed">
+            {duplicateShiftHint}
+          </p>
+        )}
+        {gapDaysHint && (
+          <p className="m-0 text-[11px] text-noorix-amber leading-relaxed">
+            {gapDaysHint}
           </p>
         )}
       </div>

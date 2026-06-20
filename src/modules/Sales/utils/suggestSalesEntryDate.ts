@@ -12,64 +12,102 @@ export function compareYmd(a: string, b: string): number {
   return 0;
 }
 
-/**
- * يوم الإدخال المقترح: أول يوم ناقص بعد آخر ملخص، أو اليوم إن كان متابعاً يومياً.
- */
-export function suggestSalesEntryDate(todayYmd: string, lastEntryYmd: string | null | undefined): string {
-  const today = toYmd(todayYmd);
-  if (!today) return todayYmd;
-  const last = lastEntryYmd ? toYmd(lastEntryYmd) : '';
-  if (!last) return today;
-  if (compareYmd(last, today) >= 0) return today;
-  const next = addCalendarDaysYmd(last, 1);
-  return compareYmd(next, today) > 0 ? today : next;
-}
-
-/** أيام تقويمية بين آخر إدخال والتاريخ المختار (غير شاملة الطرفين). */
-export function listGapDaysBetween(
-  lastEntryYmd: string | null | undefined,
-  targetYmd: string,
-): string[] {
-  const target = toYmd(targetYmd);
-  const last = lastEntryYmd ? toYmd(lastEntryYmd) : '';
-  if (!target || !last || compareYmd(target, last) <= 0) return [];
-  const gaps: string[] = [];
-  let d = addCalendarDaysYmd(last, 1);
-  while (compareYmd(d, target) < 0) {
-    gaps.push(d);
-    d = addCalendarDaysYmd(d, 1);
-    if (gaps.length >= 60) break;
-  }
-  return gaps;
-}
-
 type SummaryShiftLike = {
   shift?: unknown;
   notes?: unknown;
   status?: string | null;
 };
 
+export function collectActiveShiftsOnDay(
+  daySummaries: SummaryShiftLike[] | null | undefined,
+): SalesShiftValue[] {
+  const out: SalesShiftValue[] = [];
+  for (const s of daySummaries ?? []) {
+    if (s.status === 'cancelled') continue;
+    out.push(resolveSalesSummaryShift(s));
+  }
+  return out;
+}
+
+/** هل يوم الإدخال مكتمل (يوم كامل أو شفتاً صباحي+مسائي)؟ */
+export function isDayShiftCoverageComplete(shifts: SalesShiftValue[]): boolean {
+  if (shifts.length === 0) return false;
+  if (shifts.includes('all')) return true;
+  return shifts.includes('morning') && shifts.includes('evening');
+}
+
+export function shiftConflictsWithDay(
+  existing: SalesShiftValue[],
+  candidate: SalesShiftValue,
+): boolean {
+  if (existing.length === 0) return false;
+  if (candidate === 'all') return true;
+  if (existing.includes('all')) return true;
+  return existing.includes(candidate);
+}
+
+/**
+ * يوم الإدخال المقترح:
+ * - أول يوم ناقص بعد آخر ملخص (حتى اليوم)
+ * - إذا آخر يوم فيه شفت واحد فقط → يبقى على نفس اليوم للشفت الثاني
+ */
+export function suggestSalesEntryDate(
+  todayYmd: string,
+  lastEntryYmd: string | null | undefined,
+  lastDayShifts: SalesShiftValue[] = [],
+): string {
+  const today = toYmd(todayYmd);
+  if (!today) return todayYmd;
+  const last = lastEntryYmd ? toYmd(lastEntryYmd) : '';
+  if (!last) return today;
+
+  if (!isDayShiftCoverageComplete(lastDayShifts) && lastDayShifts.length > 0) {
+    return last;
+  }
+
+  if (compareYmd(last, today) >= 0) return today;
+  const next = addCalendarDaysYmd(last, 1);
+  return compareYmd(next, today) > 0 ? today : next;
+}
+
+export type GapDaysResult = {
+  days: string[];
+  totalCount: number;
+  truncated: boolean;
+};
+
+const GAP_LIST_CAP = 60;
+
+/** أيام تقويمية بين آخر إدخال والتاريخ المختار (غير شاملة الطرفين). */
+export function listGapDaysBetween(
+  lastEntryYmd: string | null | undefined,
+  targetYmd: string,
+): GapDaysResult {
+  const target = toYmd(targetYmd);
+  const last = lastEntryYmd ? toYmd(lastEntryYmd) : '';
+  if (!target || !last || compareYmd(target, last) <= 0) {
+    return { days: [], totalCount: 0, truncated: false };
+  }
+  const days: string[] = [];
+  let d = addCalendarDaysYmd(last, 1);
+  let totalCount = 0;
+  while (compareYmd(d, target) < 0) {
+    totalCount += 1;
+    if (days.length < GAP_LIST_CAP) days.push(d);
+    d = addCalendarDaysYmd(d, 1);
+  }
+  return {
+    days,
+    totalCount,
+    truncated: totalCount > days.length,
+  };
+}
+
 export function findDuplicateShiftsForDate(
   daySummaries: SummaryShiftLike[] | null | undefined,
   activeShifts: SalesShiftValue[],
 ): SalesShiftValue[] {
-  const existing = new Set<SalesShiftValue>();
-  for (const s of daySummaries ?? []) {
-    if (s.status === 'cancelled') continue;
-    existing.add(resolveSalesSummaryShift(s));
-  }
-  return activeShifts.filter((shift) => existing.has(shift));
-}
-
-export function maxActiveSummaryYmd(
-  summaries: Array<{ transactionDate?: string | null; status?: string | null }>,
-): string | null {
-  let max: string | null = null;
-  for (const s of summaries) {
-    if (s.status === 'cancelled') continue;
-    const ymd = toYmd(s.transactionDate);
-    if (!ymd) continue;
-    if (!max || compareYmd(ymd, max) > 0) max = ymd;
-  }
-  return max;
+  const existing = collectActiveShiftsOnDay(daySummaries);
+  if (existing.length === 0) return [];
+  return activeShifts.filter((shift) => shiftConflictsWithDay(existing, shift));
 }
