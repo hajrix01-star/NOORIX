@@ -41,12 +41,12 @@ describe('buildYearMonthlyDailyAvgRows', () => {
     expect(rows).toHaveLength(5);
     expect(rows[0].totalSales).toBe(300);
     expect(rows[0].avgDaily).toBeCloseTo(300 / 31, 4);
-    expect(rows[0].activeDays).toBe(31);
+    expect(rows[0].calendarDays).toBe(31);
     expect(rows[1].avgDaily).toBeCloseTo(400 / 28, 4);
     expect(rows[2].avgDaily).toBeNull();
     expect(rows[4].totalSales).toBe(1200);
     expect(rows[4].avgDaily).toBe(60);
-    expect(rows[4].activeDays).toBe(20);
+    expect(rows[4].calendarDays).toBe(20);
     expect(rows[4].isCurrentMonth).toBe(true);
   });
 
@@ -71,6 +71,6 @@ describe('buildYearMonthlyDailyAvgRows', () => {
     expect(april.month).toBe(4);
     expect(april.totalSales).toBe(2000);
     expect(april.avgDaily).toBe(100);
-    expect(april.activeDays).toBe(20);
+    expect(april.calendarDays).toBe(20);
   });
 });

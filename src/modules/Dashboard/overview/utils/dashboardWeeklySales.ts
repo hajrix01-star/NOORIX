@@ -3,6 +3,7 @@
  * مع متوسط يومي لكل جزء = مجموع الجزء ÷ أيام التقويم في الجزء (ضمن حد الشهر/MTD).
  */
 import { toYmd } from '../../../../utils/saudiDate';
+import { computeSliceDailyAvg } from './dashboardDailyAvg';
 import { lastDayOfMonth, prevCalendarMonth } from './dashboardOverviewDateUtils';
 
 export type MonthWeekBucket = {
@@ -93,8 +94,7 @@ export function bucketMonthIntoWeeks(
       dayEnd: end,
       totalSales: total,
       calendarDaysInSlice,
-      avgDailyInWeek:
-        calendarDaysInSlice > 0 && total > 0 ? total / calendarDaysInSlice : 0,
+      avgDailyInWeek: computeSliceDailyAvg(total, calendarDaysInSlice),
     });
     start = end + 1;
     weekIndex++;

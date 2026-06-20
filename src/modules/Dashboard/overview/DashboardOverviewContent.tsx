@@ -42,10 +42,10 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         revenuePrevMonthTotalSum={m.revenuePrevMonthTotalSum}
         monthName={m.monthName}
         prevMonthName={m.prevMonthName}
-        revenueDailyAvgActiveDays={m.revenueDailyAvgActiveDays}
-        revenueDailyAvgPrevMonthActiveDays={m.revenueDailyAvgPrevMonthActiveDays}
-        customerDailyAvgActiveDays={m.customerDailyAvgActiveDays}
-        customerDailyAvgPrevMonthActiveDays={m.customerDailyAvgPrevMonthActiveDays}
+        revenueDailyAvgCalendar={m.revenueDailyAvgCalendar}
+        revenueDailyAvgPrevMonthCalendar={m.revenueDailyAvgPrevMonthCalendar}
+        customerDailyAvgCalendar={m.customerDailyAvgCalendar}
+        customerDailyAvgPrevMonthCalendar={m.customerDailyAvgPrevMonthCalendar}
         salesShiftPeriodTotals={m.salesShiftPeriodTotals}
         kpiInsightFooters={m.kpiInsightFooters}
       />
