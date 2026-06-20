@@ -141,15 +141,15 @@ jobs:
           bash "${{ github.workspace }}/deploy/wait-public-api.sh"
 
       # ── إعادة تحميل Nginx وفحص نهائي ─────────────────────
+      - name: Ensure Nginx frontend cache rules
+        run: sudo bash "${{ github.workspace }}/deploy/install-nginx-frontend-cache.sh"
+
       - name: Reload Nginx & final health check
         run: |
           sudo systemctl reload nginx
           echo "==> Public health check..."
           curl -sS -f --max-time 30 "https://hajrix.com/api/v1/health" | head -c 500
           echo ""
-
-      - name: Ensure Nginx frontend cache rules
-        run: sudo bash "${{ github.workspace }}/deploy/install-nginx-frontend-cache.sh"
 
       - name: Verify frontend cache headers
         run: bash "${{ github.workspace }}/deploy/verify-frontend-cache-headers.sh" "https://hajrix.com"

@@ -15,12 +15,19 @@ require_header_pattern() {
   local path="$1"
   local pattern="$2"
   local label="$3"
-  local hdr
-  hdr="$(curl -sSI --max-time 20 "${ORIGIN}${path}" 2>/dev/null || true)"
-  if echo "$hdr" | grep -qiE "$pattern"; then
-    log "OK: ${label}"
-    return 0
-  fi
+  local attempt hdr
+
+  for attempt in 1 2 3; do
+    hdr="$(curl -sSI --max-time 20 "${ORIGIN}${path}" 2>/dev/null || true)"
+    if echo "$hdr" | grep -qiE "$pattern"; then
+      log "OK: ${label}"
+      return 0
+    fi
+    if [[ "$attempt" -lt 3 ]]; then
+      sleep 2
+    fi
+  done
+
   log "FAIL: ${label} — لم يُعثر على Cache-Control المطلوب"
   echo "$hdr" | head -12
   fail=1
