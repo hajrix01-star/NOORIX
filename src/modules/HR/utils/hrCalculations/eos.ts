@@ -10,6 +10,15 @@ export type EosReason =
   | 'force_majeure'
   | 'maternity';
 
+export const EOS_REASON_OPTIONS: EosReason[] = [
+  'employer',
+  'article81',
+  'resignation',
+  'force_majeure',
+  'maternity',
+  'article80',
+];
+
 export type EosInput = {
   joinDate: string | Date | null | undefined;
   endDate: string | Date | null | undefined;
@@ -117,4 +126,3 @@ export function computeEosWageFromEmployee(
     .plus((employee?.otherAllowance as Decimal.Value | undefined) ?? 0)
     .plus(customAllowanceTotal || 0);
 }
-

@@ -4,10 +4,22 @@ import {
   calculateEosServiceDays,
   computeEos,
   computeEosWageFromEmployee,
+  EOS_REASON_OPTIONS,
   getEosEligibilityFactor,
 } from './eos';
 
 describe('hrCalculations/eos', () => {
+  it('exposes the shared EOS reason list used by HR screens', () => {
+    expect(EOS_REASON_OPTIONS).toEqual([
+      'employer',
+      'article81',
+      'resignation',
+      'force_majeure',
+      'maternity',
+      'article80',
+    ]);
+  });
+
   it('uses actual day difference without an inclusive +1 day', () => {
     expect(calculateEosServiceDays('2026-01-09', '2026-04-09')).toBe(90);
   });

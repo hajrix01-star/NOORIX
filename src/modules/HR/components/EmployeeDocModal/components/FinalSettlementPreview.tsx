@@ -10,6 +10,7 @@ import { DOC_GRID, DOC_SEP, DOC_BOX, DOC_H3, SETTLE_SECTION } from '../constants
 import { EmployeeDocDocumentFrame } from './EmployeeDocDocumentFrame';
 import { EmployeeDocEmployeeInfoTable } from './EmployeeDocEmployeeInfoTable';
 import { EmployeeDocSalaryBreakdownTable } from './EmployeeDocSalaryBreakdownTable';
+import { EOS_REASON_OPTIONS, type EosReason } from '../../../utils/hrCalculations/eos';
 
 type EosBundle = {
   serviceDays: number;
@@ -21,6 +22,15 @@ type EosBundle = {
   appliedEosAmount: number;
   finalTotal: number;
 };
+
+function getEosReasonLabel(reason: EosReason, t: EmployeeDocTFunction) {
+  if (reason === 'employer') return t('eosCalcReasonEmployer');
+  if (reason === 'article81') return t('eosCalcReasonArticle81');
+  if (reason === 'resignation') return t('eosCalcReasonResignation');
+  if (reason === 'force_majeure') return 'قوة قاهرة — ترك العمل لأسباب خارجة عن الإرادة';
+  if (reason === 'maternity') return 'عاملة — استقالة خلال 6 أشهر من الزواج أو 3 من الوضع';
+  return t('eosCalcReasonArticle80');
+}
 
 export function FinalSettlementPreview({
   employee,
@@ -81,10 +91,9 @@ export function FinalSettlementPreview({
           </div>
           <div>
             <Input type="select" label="سبب الانتهاء" value={eosReason} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEosReason(e.target.value)}>
-              <option value="employer">{t('eosCalcReasonEmployer')}</option>
-              <option value="resignation">{t('eosCalcReasonResignation')}</option>
-              <option value="article81">{t('eosCalcReasonArticle81')}</option>
-              <option value="article80">{t('eosCalcReasonArticle80')}</option>
+              {EOS_REASON_OPTIONS.map((reason) => (
+                <option key={reason} value={reason}>{getEosReasonLabel(reason, t)}</option>
+              ))}
             </Input>
           </div>
           <div>
