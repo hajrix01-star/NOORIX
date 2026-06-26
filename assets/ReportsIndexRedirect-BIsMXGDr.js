@@ -1,1 +1,0 @@
-import{j as o}from"./query-E0EfJOrI.js";import{l as r,O as e}from"./index-BRA1eOXo.js";import{d as s}from"./vendor-CTsGBvEK.js";import"./charts-CAWZJBsV.js";import"./pdf-DIf3FHdJ.js";function c(){const{user:t}=r();return o.jsx(s,{to:e(t==null?void 0:t.role,t==null?void 0:t.permissions),replace:!0})}export{c as default};

@@ -1,0 +1,1 @@
+import{j as t}from"./query-E0EfJOrI.js";import{j as i}from"./index-C0hMfqoG.js";import"./vendor-CTsGBvEK.js";function a({className:e,icon:r,children:s}){return t.jsxs("div",{className:i("flex flex-col items-center justify-center text-noorix-muted gap-2 text-center",e),dir:"auto",children:[r,t.jsx("div",{className:"text-[12px]",children:s})]})}export{a as E};

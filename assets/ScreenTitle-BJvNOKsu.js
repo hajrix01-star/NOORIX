@@ -1,1 +1,0 @@
-import{j as e}from"./query-E0EfJOrI.js";import{j as r}from"./index-BRA1eOXo.js";function s({children:t,className:o=""}){return e.jsx("h1",{className:r("text-[20px] font-bold text-noorix-text m-0",o),children:t})}export{s as S};

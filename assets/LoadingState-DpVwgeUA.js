@@ -1,0 +1,1 @@
+import{j as r}from"./query-E0EfJOrI.js";import{u as i,j as n}from"./index-C0hMfqoG.js";import"./vendor-CTsGBvEK.js";function x({className:t,message:e}){const{t:o}=i();return r.jsx("div",{className:n("flex items-center justify-center gap-2 text-noorix-muted text-[13px]",t),dir:"auto",children:e??o("loading")})}export{x as L};

@@ -1,1 +1,0 @@
-import{T as e}from"./math-engine-ChsUKNyT.js";function i(r){if(r!=null&&r!==""){const t=Number(r);if(Number.isFinite(t)&&t>=0)return t/100}return e}function u(r){return i(r==null?void 0:r.vatRatePercent)}export{u as v};
