@@ -10,24 +10,20 @@ import {
 import { parseEmployeeNotesMeta } from '../../../utils/employeeNotesMeta';
 import type { DocSalaryRow, TerminationSummary } from '../types';
 import { translateAllowanceToEnglish } from './employeeDocFormatters';
-import { DAY_MS } from '../constants';
+import {
+  calculateEosServiceDays,
+  getEosEligibilityFactor,
+} from '../../../utils/hrCalculations/eos';
 
 export function calculateServiceDays(joinDate: unknown, endDate: unknown) {
-  const start = new Date(joinDate as string | number | Date);
-  const end = new Date(endDate as string | number | Date);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return 0;
-  return Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+  return calculateEosServiceDays(
+    joinDate as string | Date | null | undefined,
+    endDate as string | Date | null | undefined,
+  );
 }
 
 export function getEligibilityFactor(reason: string, serviceYears: number) {
-  if (reason === 'article80') return new Decimal(0);
-  if (reason === 'employer' || reason === 'article81') return new Decimal(1);
-  if (serviceYears < 2) return new Decimal(0);
-  if (serviceYears < 5) return new Decimal(1).div(3);
-  if (serviceYears < 10) return new Decimal(2).div(3);
-  return new Decimal(1);
+  return getEosEligibilityFactor(reason, serviceYears);
 }
 
 export function mapReasonByMeta(reasonText: string | undefined | null = '', clause: string | undefined | null = '') {
@@ -35,6 +31,10 @@ export function mapReasonByMeta(reasonText: string | undefined | null = '', clau
   const legalClause = String(clause || '').toLowerCase();
   if (legalClause.includes('80') || reason.includes('80')) return 'article80';
   if (legalClause.includes('81') || reason.includes('81')) return 'article81';
+  if (reason.includes('قوة') || reason.includes('force')) return 'force_majeure';
+  if (reason.includes('زواج') || reason.includes('وضع') || reason.includes('maternity') || reason.includes('marriage')) {
+    return 'maternity';
+  }
   if (reason.includes('استقال') || reason.includes('resign')) return 'resignation';
   return 'employer';
 }

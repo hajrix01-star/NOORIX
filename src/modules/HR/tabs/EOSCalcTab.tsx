@@ -23,68 +23,10 @@ import { Button, Input , FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * عدد الأيام بين تاريخين (الفرق الفعلي — بدون +1).
- * مثال: من 09-Jan إلى 09-Apr = 90 يوماً فعلياً.
- */
-function calculateServiceDays(joinDate: any, endDate: any) {
-  const start = new Date(joinDate);
-  const end = new Date(endDate);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return 0;
-  return Math.floor((end.getTime() - start.getTime()) / DAY_MS);
-}
-
-/**
- * تفصيل مدة الخدمة بالسنوات والشهور والأيام (للعرض فقط).
- */
-function serviceComponents(joinDate: any, endDate: any) {
-  const start = new Date(joinDate);
-  const end = new Date(endDate);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
-    return { years: 0, months: 0, days: 0 };
-  }
-  let years  = end.getFullYear() - start.getFullYear();
-  let months = end.getMonth()    - start.getMonth();
-  let days   = end.getDate()     - start.getDate();
-  if (days < 0) {
-    months--;
-    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
-    days += prevMonth.getDate();
-  }
-  if (months < 0) { years--; months += 12; }
-  return { years, months, days };
-}
-
-/**
- * نسبة الاستحقاق حسب سبب إنهاء الخدمة — م84 و م85 نظام العمل السعودي
- *
- * قبل التعديل (خاطئ):
- *   resignation < 5  → ثلث   (كان يمنح الثلثين عند 5 سنوات بالضبط)
- *   resignation < 10 → ثلثان
- *   أسباب القوة القاهرة والعاملة المتزوجة = غير موجودة
- *
- * بعد التعديل (صحيح — مطابق للإنفوجرافيك الرسمي للوزارة):
- *   resignation ≤ 5  → ثلث   (يشمل 5 سنوات بالضبط = "لا تزيد على خمس")
- *   resignation > 5 و < 10 → ثلثان
- *   force_majeure / maternity → كاملة (حالات استثنائية — م85)
- */
-function getEligibilityFactor(reason: any, serviceYears: any) {
-  if (reason === 'article80')                          return new Decimal(0);
-  if (reason === 'employer'  ||
-      reason === 'article81' ||
-      reason === 'force_majeure' ||
-      reason === 'maternity')                          return new Decimal(1);
-  // استقالة عادية — م85
-  if (serviceYears < 2)   return new Decimal(0);
-  if (serviceYears <= 5)  return new Decimal(1).div(3);   // ← كان < 5 (خطأ)
-  if (serviceYears < 10)  return new Decimal(2).div(3);
-  return new Decimal(1);
-}
+import {
+  computeEos,
+  getEosServiceComponents,
+} from '../utils/hrCalculations/eos';
 
 export default function EOSCalcTab() {
   const { t, lang } = useTranslation();
@@ -128,15 +70,15 @@ export default function EOSCalcTab() {
     setLastSalary(total.toString());
   }, [selectedEmployee, employees, allowanceTotals]);
 
-  const serviceDays   = jd && ed ? calculateServiceDays(jd, ed) : 0;
-  const serviceComp   = jd && ed ? serviceComponents(jd, ed) : { years: 0, months: 0, days: 0 };
-  // ÷365 (وليس ÷360) لأن المعيار الوزاري لمدة الخدمة يعتمد السنة الميلادية
-  const serviceYears  = new Decimal(serviceDays).div(365);
-  const firstFiveYears = Decimal.min(serviceYears, 5);
-  const remainingYears = Decimal.max(serviceYears.minus(5), 0);
-  const fullAward = sal.times(firstFiveYears).times(0.5).plus(sal.times(remainingYears));
-  const eligibilityFactor = getEligibilityFactor(terminationReason, serviceYears.toNumber());
-  const eosAmount = fullAward.times(eligibilityFactor);
+  const eosCalc = computeEos({ joinDate: jd, endDate: ed, wage: sal, reason: terminationReason });
+  const serviceDays = jd && ed ? eosCalc.serviceDays : 0;
+  const serviceComp = jd && ed ? getEosServiceComponents(jd, ed) : { years: 0, months: 0, days: 0 };
+  const serviceYears = jd && ed ? eosCalc.serviceYears : new Decimal(0);
+  const firstFiveYears = eosCalc.firstFiveYears;
+  const remainingYears = eosCalc.remainingYears;
+  const fullAward = eosCalc.fullAward;
+  const eligibilityFactor = eosCalc.eligibilityFactor;
+  const eosAmount = eosCalc.eosAmount;
 
   const allowanceRows = useMemo(() => {
     if (!emp) return [];
