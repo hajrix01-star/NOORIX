@@ -56,6 +56,8 @@ export type SmartTableProps<TRow = any> = {
   rowNumberWidth?: number | string;
   getRowClassName?: (row: TRow, index: number) => string | undefined;
   getRowStyle?: (row: TRow, index: number) => CSSProperties | undefined;
+  isRowExpanded?: (row: TRow, index: number) => boolean;
+  renderExpandedRow?: (row: TRow, index: number) => ReactNode;
   renderMobileCard?: (row: TRow, index: number) => ReactNode;
   stripeMobileCards?: boolean;
   /**

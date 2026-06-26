@@ -105,6 +105,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     rowNumberWidth,
     getRowClassName,
     getRowStyle,
+    isRowExpanded,
+    renderExpandedRow,
     renderMobileCard,
     /** صفوف متناوبة الخلفية في عرض بطاقات الجوال — افتراضي مفعّل؛ عطّل بـ false */
     stripeMobileCards = true,
@@ -492,8 +494,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   </td>
                 </tr>
               ) : data.map((row: any, i: any) => (
+                <React.Fragment key={row.id ?? i}>
                 <tr
-                  key={row.id ?? i}
                   className={`border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
                   style={{ background: i % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent', ...(typeof getRowStyle === 'function' ? getRowStyle(row, i) : null) }}
                 >
@@ -539,6 +541,14 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                     );
                   })}
                 </tr>
+                {typeof renderExpandedRow === 'function' && isRowExpanded?.(row, i) && (
+                  <tr className="border-b border-noorix-border" style={{ background: 'var(--noorix-surface)' }}>
+                    <td colSpan={effectiveCols} style={{ padding: 0 }}>
+                      {renderExpandedRow(row, i)}
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
             {(footerCells || footerRow) && (

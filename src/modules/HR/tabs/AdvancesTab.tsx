@@ -1,7 +1,7 @@
 ﻿/**
  * AdvancesTab — السلفيات (احترافي كامل)
  */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
@@ -43,6 +43,8 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
   const [settlementFilter, setSettlementFilter] = useState('all');
+  const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(() => new Set());
+  const [groupPage, setGroupPage] = useState(1);
 
   const { createAdvance, employees: activeEmployees } = useEmployees(companyId, {
     includeTerminated: false,
@@ -93,7 +95,7 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     });
   }, [items, employeeFilter, monthFilter, settlementFilter]);
 
-  const { filteredData, allFilteredData, searchText, setSearch, page, setPage, sortKey, sortDir, toggleSort } =
+  const { allFilteredData, searchText, setSearch, sortKey, sortDir, toggleSort } =
     useTableFilter(preFilteredItems, {
       searchKeys: ['employeeName', 'invoiceNumber'],
       pageSize: PAGE_SIZE,
@@ -105,94 +107,124 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
   const advanceTotals = useMemo(() => getAdvanceTotals(allFilteredData), [allFilteredData]);
 
   const settlementMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
+  const toggleEmployeeExpanded = useCallback((employeeId: string) => {
+    setExpandedEmployees((prev) => {
+      const next = new Set(prev);
+      if (next.has(employeeId)) next.delete(employeeId);
+      else next.add(employeeId);
+      return next;
+    });
+  }, []);
+
+  const handleDeleteAdvance = useCallback((row: any) => {
+    if (!window.confirm(t('deleteAdvance'))) return;
+    updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res: any) => {
+      try {
+        rejectIfApiFailed(res, t('saveFailed'));
+        invalidateOnFinancialMutation(queryClient);
+        showToast(t('advanceDeleted'), 'success');
+      } catch (e: any) {
+        showToast(e?.message || t('saveFailed'), 'error');
+      }
+    });
+  }, [companyId, queryClient, showToast, t]);
+
+  const groupedRows = useMemo(() => {
+    const groups = new Map<string, any>();
+    for (const row of allFilteredData) {
+      const employeeId = String(row.employeeId || row.employeeName || 'unknown');
+      const existing = groups.get(employeeId) || {
+        id: employeeId,
+        employeeId,
+        employeeName: row.employeeName || '—',
+        advances: [],
+        totalAmount: 0,
+        totalAmountNum: 0,
+        settledAmountNum: 0,
+        remainingAmount: 0,
+        transactionDate: '',
+        advanceCount: 0,
+        outstandingCount: 0,
+        partialCount: 0,
+        settledCount: 0,
+      };
+      existing.advances.push(row);
+      existing.totalAmount += Number(row.totalAmountNum ?? row.totalAmount ?? 0);
+      existing.totalAmountNum = existing.totalAmount;
+      existing.settledAmountNum += Number(row.settledAmountNum || 0);
+      existing.remainingAmount += Number(row.remainingAmount || 0);
+      existing.advanceCount += 1;
+      if (!existing.transactionDate || String(row.transactionDate || '') > existing.transactionDate) {
+        existing.transactionDate = String(row.transactionDate || '');
+      }
+      if (row.settlementStatus === 'outstanding') existing.outstandingCount += 1;
+      if (row.settlementStatus === 'partial') existing.partialCount += 1;
+      if (row.settlementStatus === 'settled') existing.settledCount += 1;
+      groups.set(employeeId, existing);
+    }
+
+    const rows = [...groups.values()].map((group) => ({
+      ...group,
+      settlementStatus: group.remainingAmount <= 0
+        ? 'settled'
+        : group.settledAmountNum > 0
+          ? 'partial'
+          : 'outstanding',
+    }));
+
+    return rows.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === 'employeeName') cmp = String(a.employeeName || '').localeCompare(String(b.employeeName || ''), lang === 'ar' ? 'ar' : 'en');
+      else if (sortKey === 'totalAmount') cmp = Number(a.totalAmount || 0) - Number(b.totalAmount || 0);
+      else if (sortKey === 'settledAmount') cmp = Number(a.settledAmountNum || 0) - Number(b.settledAmountNum || 0);
+      else if (sortKey === 'remainingAmount') cmp = Number(a.remainingAmount || 0) - Number(b.remainingAmount || 0);
+      else cmp = new Date(a.transactionDate || 0).getTime() - new Date(b.transactionDate || 0).getTime();
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [allFilteredData, lang, sortDir, sortKey]);
+
+  useEffect(() => {
+    setGroupPage(1);
+  }, [employeeFilter, monthFilter, settlementFilter, searchText, sortKey, sortDir, allFilteredData.length]);
+
+  const groupedPageRows = useMemo(
+    () => groupedRows.slice((groupPage - 1) * PAGE_SIZE, groupPage * PAGE_SIZE),
+    [groupPage, groupedRows],
+  );
 
   const columns = useMemo(() => [
-    { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
-      render: (v: any, row: any) => (
-        <span className="font-semibold text-[13px]" style={{
-          color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit',
-          textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
-        }}
-        >
-          {v || '—'}
-        </span>
-      ) },
+    { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 220,
+      render: (v: any, row: any) => {
+        const expanded = expandedEmployees.has(row.employeeId);
+        return (
+          <button
+            type="button"
+            className="font-semibold text-[13px] text-start bg-transparent border-0 p-0 cursor-pointer text-noorix-blue hover:underline"
+            onClick={() => toggleEmployeeExpanded(row.employeeId)}
+            aria-expanded={expanded}
+          >
+            <span className="inline-block me-1.5" aria-hidden>{expanded ? '▾' : '▸'}</span>
+            {v || '—'}
+          </button>
+        );
+      } },
+    { key: 'advanceCount', label: t('advancesList'), numeric: true, width: 110, minWidth: 100,
+      render: (_: any, row: any) => <span className="nx-cell-num">{row.advanceCount}</span> },
     { key: 'totalAmount', label: t('advanceAmount'), numeric: true, sortable: true, width: 140, minWidth: 130,
-      render: (v: any, row: any) => (
-        <span className="nx-cell-num" style={{
-          color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit',
-          textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
-        }}
-        >
-          {hrFmt(row.totalAmount ?? v)}
-        </span>
-      ) },
-    { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
-      render: (v: any, row: any) => (
-        <span className="text-[12px] whitespace-nowrap" style={{
-          color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)',
-          textDecoration: row.settlementStatus === 'settled' ? 'line-through' : 'none',
-        }}
-        >
-          {formatSaudiDate(v)}
-        </span>
-      ) },
-    { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, width: 120, minWidth: 110,
-      render: (_: any, row: any) => (
-        <span className="nx-cell-num" style={{ color: row.settlementStatus === 'settled' ? 'var(--noorix-accent-red)' : 'inherit' }}>
-          {hrFmt(row.settledAmountNum || 0)}
-        </span>
-      ) },
-    { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, width: 120, minWidth: 110,
+      render: (_: any, row: any) => <span className="nx-cell-num">{hrFmt(row.totalAmount)}</span> },
+    { key: 'settledAmount', label: t('advanceSettledAmount'), numeric: true, sortable: true, width: 120, minWidth: 110,
+      render: (_: any, row: any) => <span className="nx-cell-num text-noorix-green">{hrFmt(row.settledAmountNum || 0)}</span> },
+    { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, sortable: true, width: 120, minWidth: 110,
       render: (_: any, row: any) => (
         <span className="nx-cell-num" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
           {hrFmt(row.remainingAmount || 0)}
         </span>
       ) },
-    { key: 'installmentCount', label: t('installmentInfo'), width: 110, minWidth: 100,
-      render: (_: any, row: any) => {
-        if (!row.installmentCount || row.installmentCount <= 1) return <span className="nx-cell-muted-sm">—</span>;
-        return (
-          <span className="text-[12px] text-noorix-blue font-semibold ltr">
-            {row.installmentCount} × {hrFmt(row.installmentAmount ?? 0)}
-          </span>
-        );
-      } },
-    { key: 'settledAt', label: t('advanceSettlementDate'), width: 125, minWidth: 120,
-      render: (v: any, row: any) => (
-        <span className="nx-cell-muted-sm">
-          {row.settledAt ? formatSaudiDate(row.settledAt) : '—'}
-        </span>
-      ) },
-    { key: 'status', label: t('status'), width: 120, minWidth: 110,
-      render: (_: any, row: any) => (
-        <Badge
-          {...Badge.fromStatus(row.settlementStatus, settlementMap)}
-          size="sm"
-          className={cn('shrink-0', row.settlementStatus === 'settled' && 'line-through')}
-        />
-      ) },
-    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
-      render: (_: any, row: any) => (
-        <HRActionsCell
-          row={row}
-          onEdit={() => setEditingAdvance(row)}
-          onSettle={() => setSettlingAdvance(row)}
-          onDelete={() => {
-            if (!window.confirm(t('deleteAdvance'))) return;
-            updateInvoice(row.id, { status: 'cancelled' }, companyId).then((res: any) => {
-              try {
-                rejectIfApiFailed(res, t('saveFailed'));
-                invalidateOnFinancialMutation(queryClient);
-                showToast(t('advanceDeleted'), 'success');
-              } catch (e: any) {
-                showToast(e?.message || t('saveFailed'), 'error');
-              }
-            });
-          }}
-        />
-      ) },
-  ], [t, settlementMap, queryClient, showToast]);
+    { key: 'transactionDate', label: t('advanceLoanDate'), sortable: true, width: 125, minWidth: 120,
+      render: (v: any) => <span className="nx-cell-muted-sm whitespace-nowrap">{v ? formatSaudiDate(v) : '—'}</span> },
+    { key: 'status', label: t('status'), width: 130, minWidth: 120,
+      render: (_: any, row: any) => <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className="shrink-0" /> },
+  ], [expandedEmployees, settlementMap, t, toggleEmployeeExpanded]);
 
   const footerRow = useMemo(() => buildAdvanceFinancialFooterRow({
     totals: advanceTotals,
@@ -220,28 +252,84 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
         ? t('advanceSettled')
         : r.settlementStatus === 'partial'
           ? t('advanceStatusPartial')
-          : t('advanceOutstanding'),
+        : t('advanceOutstanding'),
   }));
 
+  const renderAdvanceDetailRows = useCallback((advances: any[]) => (
+    <div className="p-3 bg-noorix-bg-muted/40">
+      <div className="overflow-x-auto rounded-lg border border-noorix-border bg-noorix-surface">
+        <table className="w-full text-[12px]" style={{ minWidth: 760 }}>
+          <thead>
+            <tr className="border-b border-noorix-border text-noorix-muted">
+              <th className="text-start px-3 py-2">{t('advanceLoanDate')}</th>
+              <th className="text-end px-3 py-2">{t('advanceAmount')}</th>
+              <th className="text-end px-3 py-2">{t('advanceSettledAmount')}</th>
+              <th className="text-end px-3 py-2">{t('advanceRemainingAmount')}</th>
+              <th className="text-start px-3 py-2">{t('installmentInfo')}</th>
+              <th className="text-start px-3 py-2">{t('advanceSettlementDate')}</th>
+              <th className="text-center px-3 py-2">{t('status')}</th>
+              <th className="text-center px-3 py-2">{t('actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {advances.map((row) => {
+              const settled = row.settlementStatus === 'settled';
+              const canSettle = row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled';
+              return (
+                <tr key={row.id} className="border-b border-noorix-border last:border-b-0">
+                  <td className={cn('px-3 py-2 whitespace-nowrap', settled && 'line-through text-noorix-muted')}>{formatSaudiDate(row.transactionDate)}</td>
+                  <td className={cn('px-3 py-2 text-end nx-font-numbers', settled && 'line-through text-noorix-muted')}>{hrFmt(row.totalAmountNum)}</td>
+                  <td className="px-3 py-2 text-end nx-font-numbers text-noorix-green">{hrFmt(row.settledAmountNum)}</td>
+                  <td className="px-3 py-2 text-end nx-font-numbers" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>{hrFmt(row.remainingAmount)}</td>
+                  <td className="px-3 py-2 text-noorix-blue font-semibold ltr">
+                    {row.installmentCount > 1 ? `${row.installmentCount} × ${hrFmt(row.installmentAmount ?? 0)}` : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-noorix-muted whitespace-nowrap">{row.settledAt ? formatSaudiDate(row.settledAt) : '—'}</td>
+                  <td className="px-3 py-2 text-center">
+                    <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className={cn('shrink-0', settled && 'line-through')} />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <HRActionsCell
+                      row={row}
+                      onEdit={() => setEditingAdvance(row)}
+                      onSettle={canSettle ? () => setSettlingAdvance(row) : undefined}
+                      onDelete={() => handleDeleteAdvance(row)}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ), [handleDeleteAdvance, settlementMap, t]);
+
   const renderMobileCard = useCallback((row: any) => {
-    const settled = row.settlementStatus === 'settled';
+    const expanded = expandedEmployees.has(row.employeeId);
     return (
       <div>
-        <div className="flex items-center justify-between flex flex-wrap mb-1">
-          <span className={cn('font-bold text-[15px]', settled && 'line-through text-noorix-red')}>
+        <button
+          type="button"
+          className="w-full flex items-center justify-between flex-wrap gap-2 mb-1 bg-transparent border-0 p-0 text-start cursor-pointer"
+          onClick={() => toggleEmployeeExpanded(row.employeeId)}
+          aria-expanded={expanded}
+        >
+          <span className="font-bold text-[15px] text-noorix-blue">
+            <span className="inline-block me-1.5" aria-hidden>{expanded ? '▾' : '▸'}</span>
             {row.employeeName}
           </span>
           <Badge
             {...Badge.fromStatus(row.settlementStatus, settlementMap)}
             size="sm"
-            className={cn('shrink-0', settled && 'line-through')}
+            className="shrink-0"
           />
-        </div>
-        <div className="text-[11px] text-noorix-muted mb-2 text-end">{formatSaudiDate(row.transactionDate)}</div>
+        </button>
+        <div className="text-[11px] text-noorix-muted mb-2 text-end">{row.advanceCount} · {formatSaudiDate(row.transactionDate)}</div>
         <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
           <div>
             <div className="nx-mc__stat-label">{t('advanceAmount')}</div>
-            <div className="nx-mc__stat-value text-[14px] font-bold">{hrFmt(row.totalAmountNum)}</div>
+            <div className="nx-mc__stat-value text-[14px] font-bold">{hrFmt(row.totalAmount)}</div>
           </div>
           <div>
             <div className="nx-mc__stat-label">{t('advanceSettledAmount')}</div>
@@ -257,55 +345,115 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
             </div>
           </div>
         </div>
-        {row.installmentCount > 1 && (
-          <div className="flex items-center gap-1.5 mb-2 text-[12px] text-noorix-blue font-semibold ltr">
-            {row.installmentCount} {t('installmentInfo')} × {hrFmt(row.installmentAmount ?? 0)}
+        {expanded && (
+          <div className="mt-3 grid gap-2">
+            {row.advances.map((advance: any) => {
+              const canSettle = advance.settlementStatus !== 'settled' && advance.settlementStatus !== 'cancelled';
+              return (
+                <div key={advance.id} className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-2.5">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[12px] text-noorix-muted">{formatSaudiDate(advance.transactionDate)}</span>
+                    <Badge {...Badge.fromStatus(advance.settlementStatus, settlementMap)} size="sm" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center mb-2">
+                    <div>
+                      <div className="nx-mc__stat-label">{t('advanceAmount')}</div>
+                      <div className="nx-mc__stat-value">{hrFmt(advance.totalAmountNum)}</div>
+                    </div>
+                    <div>
+                      <div className="nx-mc__stat-label">{t('advanceSettledAmount')}</div>
+                      <div className="nx-mc__stat-value text-noorix-green">{hrFmt(advance.settledAmountNum)}</div>
+                    </div>
+                    <div>
+                      <div className="nx-mc__stat-label">{t('advanceRemainingAmount')}</div>
+                      <div className="nx-mc__stat-value" style={{ color: advance.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+                        {hrFmt(advance.remainingAmount)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end">
+                    <HRActionsCell
+                      row={advance}
+                      onEdit={() => setEditingAdvance(advance)}
+                      onSettle={canSettle ? () => setSettlingAdvance(advance) : undefined}
+                      onDelete={() => handleDeleteAdvance(advance)}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-        <div className="flex items-center justify-end">
-          <HRActionsCell
-            row={row}
-            onEdit={() => setEditingAdvance(row)}
-            onSettle={row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled' ? () => setSettlingAdvance(row) : undefined}
-          />
-        </div>
       </div>
     );
-  }, [t, settlementMap]);
+  }, [expandedEmployees, handleDeleteAdvance, settlementMap, t, toggleEmployeeExpanded]);
 
   const renderCompactRow = useCallback((row: any) => {
-    const settled = row.settlementStatus === 'settled';
-    const canSettle = row.settlementStatus !== 'settled' && row.settlementStatus !== 'cancelled';
+    const expanded = expandedEmployees.has(row.employeeId);
     return (
       <div>
-        <div className="nx-cr__line1">
-          <span className={cn('nx-cr__name', settled && 'line-through text-noorix-muted')}>
-            {row.employeeName}
-          </span>
-          <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" />
-        </div>
-        <div className="nx-cr__line2">
-          <div className="nx-cr__line2-start">
-            <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
-          </div>
-          <div className="nx-cr__line2-end">
-            <span className="nx-cr__amount" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
-              <FmtNum n={row.remainingAmount} /> <span className="nx-sar">SR</span>
+        <button
+          type="button"
+          className="w-full bg-transparent border-0 p-0 text-start cursor-pointer"
+          onClick={() => toggleEmployeeExpanded(row.employeeId)}
+          aria-expanded={expanded}
+        >
+          <div className="nx-cr__line1">
+            <span className="nx-cr__name text-noorix-blue">
+              <span className="inline-block me-1.5" aria-hidden>{expanded ? '▾' : '▸'}</span>
+              {row.employeeName}
             </span>
-            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-              <KebabMenu
-                ariaLabel={t('actions')}
-                items={[
-                  { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingAdvance(row) },
-                  ...(canSettle ? [{ key: 'settle', label: t('settle'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => setSettlingAdvance(row) }] : []),
-                ]}
-              />
+            <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" />
+          </div>
+          <div className="nx-cr__line2">
+            <div className="nx-cr__line2-start">
+              <span className="nx-cr__meta">{row.advanceCount} · {formatSaudiDate(row.transactionDate)}</span>
+            </div>
+            <div className="nx-cr__line2-end">
+              <span className="nx-cr__amount" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+                <FmtNum n={row.remainingAmount} /> <span className="nx-sar">SR</span>
+              </span>
             </div>
           </div>
-        </div>
+        </button>
+        {expanded && (
+          <div className="mt-2 grid gap-2">
+            {row.advances.map((advance: any) => {
+              const canSettle = advance.settlementStatus !== 'settled' && advance.settlementStatus !== 'cancelled';
+              return (
+                <div key={advance.id} className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 px-2.5 py-2">
+                  <div className="nx-cr__line1">
+                    <span className="nx-cr__name text-[12px]">{formatSaudiDate(advance.transactionDate)}</span>
+                    <Badge {...Badge.fromStatus(advance.settlementStatus, settlementMap)} size="sm" />
+                  </div>
+                  <div className="nx-cr__line2">
+                    <div className="nx-cr__line2-start">
+                      <span className="nx-cr__meta">{t('advanceAmount')}: {hrFmt(advance.totalAmountNum)}</span>
+                    </div>
+                    <div className="nx-cr__line2-end">
+                      <span className="nx-cr__amount" style={{ color: advance.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+                        <FmtNum n={advance.remainingAmount} /> <span className="nx-sar">SR</span>
+                      </span>
+                      <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+                        <KebabMenu
+                          ariaLabel={t('actions')}
+                          items={[
+                            { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => setEditingAdvance(advance) },
+                            ...(canSettle ? [{ key: 'settle', label: t('settleAdvance'), style: { color: 'var(--noorix-accent-blue)' }, onClick: () => setSettlingAdvance(advance) }] : []),
+                            { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleDeleteAdvance(advance) },
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
-  }, [t, settlementMap, setEditingAdvance, setSettlingAdvance]);
+  }, [expandedEmployees, handleDeleteAdvance, settlementMap, t, toggleEmployeeExpanded]);
 
   const advanceFilters = (
     <>
@@ -369,25 +517,33 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
           rowNumberWidth="1%"
           {...hrFlatSmartTableShellProps(embedded)}
           columns={columns}
-          data={filteredData}
-          total={allFilteredData.length}
-          page={page}
+          data={groupedPageRows}
+          total={groupedRows.length}
+          page={groupPage}
           pageSize={PAGE_SIZE}
-          onPageChange={setPage}
+          onPageChange={setGroupPage}
           isLoading={isLoading}
           isError={isError}
           title={embedded ? undefined : t('hrTabAdvances')}
-          badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{allFilteredData.length}</span>}
+          badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{groupedRows.length}</span>}
           searchValue={searchText}
-          onSearchChange={setSearch}
+          onSearchChange={(value: string) => {
+            setSearch(value);
+            setGroupPage(1);
+          }}
           showSearchInHeader={!embedded}
           sortKey={sortKey}
           sortDir={sortDir}
-          onSort={toggleSort}
+          onSort={(key: string) => {
+            toggleSort(key);
+            setGroupPage(1);
+          }}
           footerRow={footerRow}
           emptyMessage={t('noDataInPeriod')}
           renderCompactRow={renderCompactRow}
           renderMobileCard={renderMobileCard}
+          isRowExpanded={(row: any) => expandedEmployees.has(row.employeeId)}
+          renderExpandedRow={(row: any) => renderAdvanceDetailRows(row.advances)}
           stripeMobileCards
         />
       )}
