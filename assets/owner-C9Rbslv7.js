@@ -1,0 +1,1 @@
+const s={reports:(e,o)=>["reports","general-profit-loss","owner",e,o],dailySales:(e,o,r)=>["owner-daily-sales",e,o,r],dailySalesRoot:()=>["owner-daily-sales"],overview:(e,o,r)=>["owner-overview",e.slice().sort().join(","),o,r],overviewRoot:()=>["owner-overview"]};export{s as o};

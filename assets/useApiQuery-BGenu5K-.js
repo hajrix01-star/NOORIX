@@ -1,0 +1,1 @@
+import{u as i}from"./query-E0EfJOrI.js";import{k as s,bc as t}from"./index-BRA1eOXo.js";function o({queryFn:r,fallback:a,fallbackMessage:u="طلب فشل",...n}){return i({...n,queryFn:async()=>s(await r(),a,u)})}function y({queryFn:r,fallbackMessage:a="طلب فشل",...u}){return i({...u,queryFn:async()=>t(await r(),a)})}export{y as a,o as u};

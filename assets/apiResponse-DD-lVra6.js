@@ -1,0 +1,1 @@
+function s(e,o="Request failed"){if(!e||typeof e!="object")return o;const r=e;return r.error||r.message||o}function c(e,o="Request failed"){if(e&&typeof e=="object"&&Object.prototype.hasOwnProperty.call(e,"success")&&e.success===!1){const r=s(e,o),t=new Error(r);throw t.apiResult=e,t}}function n(e,o="Request failed"){return c(e,o),e}export{n as a,c as r};

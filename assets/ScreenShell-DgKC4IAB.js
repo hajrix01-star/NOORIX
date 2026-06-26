@@ -1,0 +1,1 @@
+import{j as d}from"./query-E0EfJOrI.js";import{j as l}from"./index-BRA1eOXo.js";const p="flex min-w-0 flex-col gap-4 py-4 px-0 md:px-3 lg:px-6",t="flex min-w-0 flex-col gap-4";function c({children:e,className:s,variant:o="page",embedded:E=!1,...m}){const n=E||o==="embedded"?t:p;return d.jsx("div",{className:l(n,s),...m,children:e})}export{c as S};
