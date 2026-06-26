@@ -54,13 +54,14 @@ const queryClient = new QueryClient({
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
+const routerBaseName = import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '');
 
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         {/* future flags تُقلّل تحذيرات React Router v7 وتحسّن الأداء */}
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter basename={routerBaseName} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
             <ToastProvider>
               <App />
