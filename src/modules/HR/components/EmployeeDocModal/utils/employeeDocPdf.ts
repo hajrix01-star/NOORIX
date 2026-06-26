@@ -1,32 +1,51 @@
 import { uploadDocumentFile } from '../../../../../services/api';
 
+const HR_DOCUMENT_UPLOAD_SAFE_BYTES = 9.5 * 1024 * 1024;
+
 export async function renderPdfFileFromElement(element: HTMLElement, fileBaseName: string) {
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
     import('html2canvas'),
     import('jspdf'),
   ]);
   const canvas = await html2canvas(element, {
-    scale: 2,
+    scale: Math.min(1.25, window.devicePixelRatio || 1),
     backgroundColor: '#ffffff',
     useCORS: true,
   });
-  const imageData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = 210;
-  const pageHeight = 297;
-  const margin = 8;
-  const maxWidth = pageWidth - margin * 2;
-  const maxHeight = pageHeight - margin * 2;
-  let imgWidth = maxWidth;
-  let imgHeight = (canvas.height * imgWidth) / canvas.width;
-  if (imgHeight > maxHeight) {
-    imgHeight = maxHeight;
-    imgWidth = (canvas.width * imgHeight) / canvas.height;
+  const buildPdfBlob = (quality: number) => {
+    const imageData = canvas.toDataURL('image/jpeg', quality);
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 8;
+    const maxWidth = pageWidth - margin * 2;
+    const imageHeight = (canvas.height * maxWidth) / canvas.width;
+    const pageBodyHeight = pageHeight - margin * 2;
+    let remainingHeight = imageHeight;
+    let y = margin;
+
+    pdf.addImage(imageData, 'JPEG', margin, y, maxWidth, imageHeight, 'employee-doc-render', 'FAST');
+    remainingHeight -= pageBodyHeight;
+
+    while (remainingHeight > 0) {
+      pdf.addPage();
+      y = margin - (imageHeight - remainingHeight);
+      pdf.addImage(imageData, 'JPEG', margin, y, maxWidth, imageHeight, 'employee-doc-render', 'FAST');
+      remainingHeight -= pageBodyHeight;
+    }
+
+    return pdf.output('blob');
+  };
+
+  let blob = buildPdfBlob(0.78);
+  for (const quality of [0.65, 0.52]) {
+    if (blob.size <= HR_DOCUMENT_UPLOAD_SAFE_BYTES) break;
+    blob = buildPdfBlob(quality);
   }
-  const x = (pageWidth - imgWidth) / 2;
-  const y = (pageHeight - imgHeight) / 2;
-  pdf.addImage(imageData, 'PNG', x, y, imgWidth, imgHeight);
-  const blob = pdf.output('blob');
+  if (blob.size > HR_DOCUMENT_UPLOAD_SAFE_BYTES) {
+    throw new Error('تعذر حفظ المستند لأن حجم PDF لا يزال كبيرًا. جرّب تقليل حجم شعار الشركة ثم أعد الحفظ.');
+  }
+
   return new File([blob], `${fileBaseName}.pdf`, { type: 'application/pdf' });
 }
 
