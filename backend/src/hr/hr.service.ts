@@ -7,6 +7,7 @@ import { HrPayrollService } from './hr-payroll.service';
 import { HrLeaveService } from './hr-leave.service';
 import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
+import { getHrAdvanceTotals } from './hr-advance-balance.util';
 import { sumMonthlyPayrollForActiveEmployees } from './utils/employee-monthly-payroll.util';
 
 @Injectable()
@@ -248,19 +249,13 @@ export class HRService {
 
     const monthlyPayrollTotal = sumMonthlyPayrollForActiveEmployees(activeEmployees, customByEmployee);
 
-    const outstandingAdvances = (advances as any[]).filter(
-      (a) => a.status !== 'cancelled' && Number(a.settledAmount ?? 0) < Number(a.totalAmount ?? 0),
-    );
+    const advanceTotals = getHrAdvanceTotals(advances as any[]);
 
     return {
       leavesCount,
       expiringResidenciesCount,
-      outstandingAdvancesCount: outstandingAdvances.length,
-      outstandingAdvancesAmount: outstandingAdvances.reduce(
-        (s: number, a: any) =>
-          s + Math.max(0, Number(a.totalAmount ?? 0) - Number(a.settledAmount ?? 0)),
-        0,
-      ),
+      outstandingAdvancesCount: advanceTotals.remainingCount,
+      outstandingAdvancesAmount: advanceTotals.remainingAmount,
       activeCount,
       terminatedCount,
       monthlyPayrollTotal,

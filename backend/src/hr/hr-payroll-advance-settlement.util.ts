@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { getHrAdvanceBalanceParts } from './hr-advance-balance.util';
 
 type AdvanceSettlementDb = Pick<TenantPrismaService, 'invoice' | 'employeeDeduction'>;
 
@@ -48,9 +49,7 @@ export async function applyPayrollAdvanceSettlements(
       const deferMonth = parseAdvanceDeferMonth(adv.notes);
       if (deferMonth && deferMonth > runMonth) continue;
 
-      const total = Number(adv.totalAmount ?? 0);
-      const settled = Number(adv.settledAmount ?? 0);
-      const remaining = Math.max(0, total - settled);
+      const { remainingAmount: remaining, settledAmount: settled } = getHrAdvanceBalanceParts(adv);
       if (remaining <= 0) continue;
 
       // إن كانت السلفة بأقساط محددة، اقتطع القسط فقط — لا الرصيد الكامل
@@ -115,10 +114,9 @@ export async function reversePayrollAdvanceSettlementsForDelete(
     });
     if (!inv) continue;
 
-    const prevSettled = Number(inv.settledAmount ?? 0);
+    const { totalAmount: total, settledAmount: prevSettled } = getHrAdvanceBalanceParts(inv);
     const deductAmt = Number(d.amount);
     const newSettled = Math.max(0, prevSettled - deductAmt);
-    const total = Number(inv.totalAmount ?? 0);
     const newNotes = String(inv.notes || '')
       .split('\n')
       .filter((line) => !advLineRe.test(line.trim()))
