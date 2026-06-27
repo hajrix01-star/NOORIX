@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyCareerRaise, resolveRaiseIncrement } from './careerMovementApply';
-import { createMovement, updateEmployee } from '../../../services/api';
+import { createMovement } from '../../../services/api';
 
 vi.mock('../../../services/api', () => ({
   createMovement: vi.fn(),
-  updateEmployee: vi.fn(),
 }));
 
 describe('careerMovementApply', () => {
@@ -15,7 +14,6 @@ describe('careerMovementApply', () => {
   });
 
   it('applies raises from the central salary package total', async () => {
-    vi.mocked(updateEmployee).mockResolvedValue({ success: true, data: {} } as never);
     vi.mocked(createMovement).mockResolvedValue({ success: true, data: {} } as never);
 
     const result = await applyCareerRaise({
@@ -38,7 +36,6 @@ describe('careerMovementApply', () => {
 
     expect(result.currentTotalAllIn).toBe(10437.5);
     expect(result.newTarget).toBe(11437.5);
-    expect(updateEmployee).toHaveBeenCalledWith('emp-1', { basicSalary: 6727.27 }, 'co-1');
     expect(createMovement).toHaveBeenCalledWith(
       expect.objectContaining({
         companyId: 'co-1',

@@ -184,10 +184,13 @@ export default function StaffListScreen({ embedded }: any) {
     throwIfApiFailed(res, t('employeesLoadFailed'));
     const snapshotMap = new Map((res.data?.items ?? []).map((snapshot: any) => [snapshot.employeeId, snapshot]));
     const allowanceTotals = new Map(
-      (res.data?.items ?? []).map((snapshot: any) => [
-        snapshot.employeeId,
-        Number(snapshot?.salaryPackage?.customAllowanceTotal ?? snapshot?.customAllowances?.total ?? 0),
-      ]),
+      (res.data?.items ?? []).map((snapshot: any) => {
+        const customAllowanceTotal = Number(snapshot?.salaryPackage?.customAllowanceTotal);
+        if (!Number.isFinite(customAllowanceTotal)) {
+          throw new Error(t('employeesLoadFailed'));
+        }
+        return [snapshot.employeeId, customAllowanceTotal];
+      }),
     );
     const customColumn = EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS[4];
     const overtimeColumn = EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS[5];

@@ -1,7 +1,7 @@
 /**
  * تطبيق زيادة/ترقية على ملف الموظف + تسجيل الحركة — نفس منطق EmployeeCareerMovementModal.
  */
-import { createMovement, updateEmployee } from '../../../services/api';
+import { createMovement } from '../../../services/api';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import {
@@ -67,9 +67,6 @@ export async function applyCareerRaise(params: {
   if (inverseWarning || basic <= 0) {
     throw new Error('Cannot derive basic salary from target total');
   }
-
-  const up = await updateEmployee(employeeId, { basicSalary: basic }, companyId);
-  rejectIfApiFailed(up, 'Failed to update employee salary');
 
   const mov = await createMovement({
     companyId,

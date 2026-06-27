@@ -61,6 +61,10 @@ export default function EOSCalcTab() {
   const jd = joinDate || emp?.joinDate;
   const ed = endDate;
   const sal = new Decimal(lastSalary || 0);
+  const centralSalaryNumber = (value: unknown): number | null => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
 
   useEffect(() => {
     if (!selectedEmployee) return;
@@ -72,8 +76,9 @@ export default function EOSCalcTab() {
     if (!selectedEmployee) return;
     const em = employees.find((row: any) => row.id === selectedEmployee);
     if (!em || !compensationSnapshot?.salaryPackage) return;
+    const fixedTotal = centralSalaryNumber(compensationSnapshot.salaryPackage.fixedTotal);
     setJoinDate(toYmd(em.joinDate));
-    setLastSalary(String(compensationSnapshot.salaryPackage.fixedTotal ?? 0));
+    setLastSalary(fixedTotal == null ? '' : String(fixedTotal));
   }, [selectedEmployee, employees, compensationSnapshot]);
 
   const eosCalc = computeEos({ joinDate: jd, endDate: ed, wage: sal, reason: terminationReason });
@@ -89,10 +94,11 @@ export default function EOSCalcTab() {
   const allowanceRows = useMemo(() => {
     if (!emp || !compensationSnapshot?.salaryPackage) return [];
     const rows = [];
-    const housing = Number(compensationSnapshot.salaryPackage.housingAllowance || 0);
-    const transport = Number(compensationSnapshot.salaryPackage.transportAllowance || 0);
-    const other = Number(compensationSnapshot.salaryPackage.otherAllowance || 0);
-    const custom = Number(compensationSnapshot.salaryPackage.customAllowanceTotal || 0);
+    const housing = centralSalaryNumber(compensationSnapshot.salaryPackage.housingAllowance);
+    const transport = centralSalaryNumber(compensationSnapshot.salaryPackage.transportAllowance);
+    const other = centralSalaryNumber(compensationSnapshot.salaryPackage.otherAllowance);
+    const custom = centralSalaryNumber(compensationSnapshot.salaryPackage.customAllowanceTotal);
+    if (housing == null || transport == null || other == null || custom == null) return [];
     if (housing > 0) rows.push({ ar: 'بدل السكن', en: 'Housing', amount: housing });
     if (transport > 0) rows.push({ ar: 'بدل المواصلات', en: 'Transport', amount: transport });
     if (other > 0) rows.push({ ar: 'بدل آخر', en: 'Other', amount: other });

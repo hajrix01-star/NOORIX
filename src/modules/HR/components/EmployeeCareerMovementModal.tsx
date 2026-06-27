@@ -173,8 +173,6 @@ export function EmployeeCareerMovementModal({
         return;
       }
 
-      const up = await updateEmployee(employee.id, { basicSalary: basic }, companyId);
-      rejectIfApiFailed(up, t('updateFailed'));
       const mov = await createMovement({
         companyId,
         employeeId: employee.id,

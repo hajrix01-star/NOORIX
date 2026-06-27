@@ -13,13 +13,14 @@ import type { CreateAllowanceDto } from './dto/create-allowance.dto';
 import type { CreateDeductionDto } from './dto/create-deduction.dto';
 import type { UpdateRaiseMovementDto } from './dto/update-raise-movement.dto';
 import { basicSalaryFromTargetTotalInclusiveOvertime } from './utils/employee-salary-inverse.util';
-import { sumHrCustomAllowanceAmounts } from './utils/employee-salary-package.util';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 
 @Injectable()
 export class HrPayrollAncillaryService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly audit: AuditLogService,
+    private readonly compensationSnapshot: HrCompensationSnapshotService,
   ) {}
 
   async findAdvanceInvoices(companyId: string, year?: number) {
@@ -55,6 +56,10 @@ export class HrPayrollAncillaryService {
   }
 
   async createMovement(dto: CreateMovementDto, userId?: string) {
+    if (dto.movementType === 'raise') {
+      return this.createRaiseMovement(dto, userId);
+    }
+
     const tenantId = TenantContext.getTenantId();
     const movement = await this.prisma.employeeMovement.create({
       data: {
@@ -83,12 +88,112 @@ export class HrPayrollAncillaryService {
     return movement;
   }
 
-  private async sumCustomAllowances(companyId: string, employeeId: string): Promise<number> {
-    const rows = await this.prisma.employeeCustomAllowance.findMany({
-      where: { companyId, employeeId },
-      select: { amount: true },
+  private async getCentralSalaryPackage(companyId: string, employeeId: string) {
+    const snapshotResult = await this.compensationSnapshot.getCompanySnapshots(companyId, [employeeId]);
+    const snapshot = snapshotResult.items[0];
+    const salaryPackage = snapshot?.salaryPackage;
+    const total = Number(salaryPackage?.total);
+    const customAllowanceTotal = Number(salaryPackage?.customAllowanceTotal);
+    if (!salaryPackage || !Number.isFinite(total) || total <= 0 || !Number.isFinite(customAllowanceTotal)) {
+      throw new BadRequestException('تعذر تحميل راتب الموظف من المصدر المركزي.');
+    }
+    return { snapshot, salaryPackage, total, customAllowanceTotal };
+  }
+
+  private resolveRaiseIncrement(dto: CreateMovementDto, currentTotal: number): number {
+    const previousValue = Number(dto.previousValue);
+    if (Number.isFinite(previousValue) && Math.abs(previousValue - currentTotal) > 0.02) {
+      throw new BadRequestException('إجمالي الراتب السابق لا يطابق المصدر المركزي.');
+    }
+
+    const amount = Number(dto.amount);
+    if (Number.isFinite(amount) && amount > 0) {
+      const roundedAmount = this.roundMoney2(amount);
+      const requestedNewValue = Number(dto.newValue);
+      if (Number.isFinite(requestedNewValue) && Math.abs(requestedNewValue - this.roundMoney2(currentTotal + roundedAmount)) > 0.02) {
+        throw new BadRequestException('إجمالي الراتب الجديد لا يطابق المصدر المركزي.');
+      }
+      return roundedAmount;
+    }
+
+    const newValue = Number(dto.newValue);
+    if (Number.isFinite(newValue)) return this.roundMoney2(newValue - currentTotal);
+
+    throw new BadRequestException('مبلغ زيادة الراتب مطلوب من المصدر المركزي.');
+  }
+
+  private async createRaiseMovement(dto: CreateMovementDto, userId?: string) {
+    const tenantId = TenantContext.getTenantId();
+    const employee = await this.prisma.employee.findFirst({
+      where: { id: dto.employeeId, companyId: dto.companyId },
+      select: {
+        id: true,
+        basicSalary: true,
+        housingAllowance: true,
+        transportAllowance: true,
+        otherAllowance: true,
+        workHours: true,
+        workSchedule: true,
+      },
     });
-    return sumHrCustomAllowanceAmounts(rows);
+    if (!employee) throw new NotFoundException('الموظف غير موجود.');
+
+    const salarySource = await this.getCentralSalaryPackage(dto.companyId, dto.employeeId);
+    const increment = this.resolveRaiseIncrement(dto, salarySource.total);
+    if (!Number.isFinite(increment) || increment === 0) {
+      throw new BadRequestException('مبلغ الزيادة يجب أن يكون غير صفر.');
+    }
+
+    const newTarget = this.roundMoney2(salarySource.total + increment);
+    if (newTarget <= 0) {
+      throw new BadRequestException('الإجمالي بعد الزيادة يجب أن يكون أكبر من صفر.');
+    }
+
+    const { basic, inverseWarning } = basicSalaryFromTargetTotalInclusiveOvertime(
+      employee,
+      salarySource.customAllowanceTotal,
+      newTarget,
+    );
+    if (inverseWarning || basic <= 0) {
+      throw new BadRequestException('لا يمكن استنتاج الراتب الأساسي من الإجمالي المطلوب.');
+    }
+
+    const movement = await this.prisma.withTenant(async (tx) => {
+      await tx.employee.update({
+        where: { id: dto.employeeId },
+        data: { basicSalary: new Prisma.Decimal(basic) },
+      });
+      return tx.employeeMovement.create({
+        data: {
+          tenantId,
+          companyId: dto.companyId,
+          employeeId: dto.employeeId,
+          movementType: 'raise',
+          amount: increment > 0 ? new Prisma.Decimal(increment) : null,
+          previousValue: String(this.roundMoney2(salarySource.total)),
+          newValue: String(newTarget),
+          effectiveDate: new Date(dto.effectiveDate),
+          notes: dto.notes,
+        },
+        include: { employee: true },
+      });
+    });
+
+    await this.audit.log({
+      companyId: dto.companyId,
+      userId,
+      action: 'create',
+      entity: 'employee_movement',
+      entityId: movement.id,
+      newValue: {
+        movementType: 'raise',
+        source: 'hr_compensation_snapshot',
+        previousValue: movement.previousValue,
+        newValue: movement.newValue,
+      },
+    });
+
+    return { ...movement, salaryUpdated: true };
   }
 
   private async findLatestRaise(companyId: string, employeeId: string) {
@@ -117,10 +222,10 @@ export class HrPayrollAncillaryService {
     },
     targetTotal: number,
   ) {
-    const customTotal = await this.sumCustomAllowances(companyId, employeeId);
+    const salarySource = await this.getCentralSalaryPackage(companyId, employeeId);
     const { basic, inverseWarning } = basicSalaryFromTargetTotalInclusiveOvertime(
       employee,
-      customTotal,
+      salarySource.customAllowanceTotal,
       targetTotal,
     );
     if (inverseWarning || basic <= 0) {

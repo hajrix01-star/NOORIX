@@ -101,21 +101,34 @@ export default function SalaryCalcTab() {
     return map;
   }, [compensationSnapshots]);
   const selectedSnapshot = emp ? snapshotByEmployeeId.get(emp.id) : null;
+  const selectedSalaryPackage = selectedSnapshot?.salaryPackage;
+  const selectedCustomAllowanceTotal = Number(selectedSalaryPackage?.customAllowanceTotal);
+  const hasSelectedCentralSalary =
+    !emp ||
+    (
+      !!selectedSalaryPackage &&
+      Number.isFinite(Number(selectedSalaryPackage.total)) &&
+      Number.isFinite(selectedCustomAllowanceTotal)
+    );
 
   useEffect(() => {
     if (!selectedEmployee) return;
     const e = employees.find((x: any) => x.id === selectedEmployee);
     const snapshot = e ? snapshotByEmployeeId.get(e.id) : null;
-    if (!e || !snapshot?.salaryPackage) return;
+    if (!e) return;
+    if (!snapshot?.salaryPackage) {
+      if (!compensationSnapshotsLoading) setTargetTotal('');
+      return;
+    }
     const dailyHours = parseWorkHours(e.workHours);
     const wd         = parseOvertimeWorkDaysPerMonth(e);
     setHoursPerDay(String(dailyHours));
     setDaysPerMonth(String(wd));
-    setHousingAllowance(String(snapshot.salaryPackage.housingAllowance ?? 0));
-    setTransportAllowance(String(snapshot.salaryPackage.transportAllowance ?? 0));
-    setOtherAllowance(String(snapshot.salaryPackage.otherAllowance ?? 0));
-    setTargetTotal(String(snapshot.salaryPackage.total ?? 0));
-  }, [selectedEmployee, employees, snapshotByEmployeeId]);
+    setHousingAllowance(String(snapshot.salaryPackage.housingAllowance));
+    setTransportAllowance(String(snapshot.salaryPackage.transportAllowance));
+    setOtherAllowance(String(snapshot.salaryPackage.otherAllowance));
+    setTargetTotal(String(snapshot.salaryPackage.total));
+  }, [selectedEmployee, employees, snapshotByEmployeeId, compensationSnapshotsLoading]);
 
   // ── حسابات ──────────────────────────────────────────────
   const salaryCalc = computeSalaryCalculator({
@@ -126,7 +139,7 @@ export default function SalaryCalcTab() {
     housingAllowance,
     transportAllowance,
     otherAllowance,
-    customAllowanceTotal: selectedSnapshot?.salaryPackage?.customAllowanceTotal ?? 0,
+    customAllowanceTotal: emp && hasSelectedCentralSalary ? selectedCustomAllowanceTotal : 0,
     workSchedule: emp?.workSchedule || '',
   });
 
@@ -176,7 +189,7 @@ export default function SalaryCalcTab() {
   });
 
   function handleUpdateSalary() {
-    if (!emp || !companyId || totalTarget.lte(0) || inverseWarning) return;
+    if (!emp || !companyId || totalTarget.lte(0) || inverseWarning || !hasSelectedCentralSalary) return;
     updateMutation.mutate({
       id: emp.id,
       body: {
@@ -369,6 +382,11 @@ export default function SalaryCalcTab() {
               {compensationSnapshotsError instanceof Error ? compensationSnapshotsError.message : t('loadingError')}
             </div>
           )}
+          {emp && !compensationSnapshotsLoading && !hasSelectedCentralSalary && (
+            <div className="text-[11px] text-noorix-red">
+              {t('loadingError')}
+            </div>
+          )}
 
           {/* الإجمالي المستهدف */}
           <Input
@@ -447,7 +465,7 @@ export default function SalaryCalcTab() {
             <Button
               variant="primary"
               onClick={handleUpdateSalary}
-              disabled={updateMutation.isPending || basic.lte(0) || inverseWarning}
+              disabled={updateMutation.isPending || basic.lte(0) || inverseWarning || !hasSelectedCentralSalary}
               className="w-full p-3 font-bold"
             >
               {updateMutation.isPending ? t('saving') : (t('salaryCalcUpdateEmployee') || 'تحديث الراتب للموظف')}
