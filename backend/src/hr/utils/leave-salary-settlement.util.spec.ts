@@ -2,7 +2,6 @@ import {
   computeCalendarLeaveSalarySettlement,
   isPayableLeaveSalarySettlement,
   resolveLeaveSalarySettlementGrossAmount,
-  sumCustomAllowanceAmounts,
 } from './leave-salary-settlement.util';
 
 describe('leave salary settlement util', () => {
@@ -17,10 +16,6 @@ describe('leave salary settlement util', () => {
     status: 'active',
     notes: '',
   };
-
-  it('sums custom allowances safely', () => {
-    expect(sumCustomAllowanceAmounts([{ amount: '100.50' }, { amount: 50 }, { amount: 'bad' }])).toBe(150.5);
-  });
 
   it('computes calendar leave salary settlement from the central salary package', () => {
     const calc = computeCalendarLeaveSalarySettlement(employee, new Date('2026-06-10T00:00:00.000Z'), 3900);

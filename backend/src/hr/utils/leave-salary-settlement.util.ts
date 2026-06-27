@@ -1,7 +1,6 @@
 /**
  * تسوية راتب تقويمية عند إجازة سنوية — تستخدم إجمالي الراتب الشهري المركزي.
  */
-import { sumHrCustomAllowanceAmounts } from './employee-salary-package.util';
 
 export type EmployeeSalaryShape = {
   basicSalary: unknown;
@@ -52,14 +51,6 @@ export type LeaveSalarySettlementCalc = {
   calendarDaysPaid: number;
   grossAmount: number;
 };
-
-export type CustomAllowanceAmountRow = {
-  amount?: unknown;
-};
-
-export function sumCustomAllowanceAmounts(rows: CustomAllowanceAmountRow[] | null | undefined): number {
-  return sumHrCustomAllowanceAmounts(rows);
-}
 
 export function isPayableLeaveSalarySettlement(calc: LeaveSalarySettlementCalc): boolean {
   return calc.calendarDaysPaid > 0 && calc.grossAmount > 0;
