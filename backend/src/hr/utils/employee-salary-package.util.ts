@@ -28,9 +28,21 @@ export type HrEmployeeSalaryPackageBreakdown = {
   total: Decimal;
 };
 
+export type HrCustomAllowanceAmountRow = {
+  amount?: unknown;
+};
+
 function decimal(value: unknown): Decimal {
   if (value === null || value === undefined || value === '') return new Decimal(0);
   return new Decimal(String(value));
+}
+
+export function sumHrCustomAllowanceAmounts(rows: HrCustomAllowanceAmountRow[] | null | undefined): number {
+  const total = (rows ?? []).reduce((sum, row) => {
+    const amount = Number(row?.amount ?? 0);
+    return sum + (Number.isFinite(amount) ? amount : 0);
+  }, 0);
+  return Math.round(total * 100) / 100;
 }
 
 export function parseHrEmployeeWorkHours(value: string | null | undefined): number {

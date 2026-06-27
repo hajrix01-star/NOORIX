@@ -10,7 +10,7 @@ import { useEmployees } from '../../../hooks/useEmployees';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { getBrandLogo } from '../../../utils/appBranding';
-import { computeEmployeeSalaryPackageBreakdown } from '../utils/employeeSalaryMath';
+import { computeEmployeeSalaryPackageBreakdown, sumSalaryCustomAllowances } from '../utils/employeeSalaryMath';
 import { toYmd } from '../../../utils/saudiDate';
 import { n, defaultPeriodLabel } from './hrPrintDocumentsTabFormat';
 import {
@@ -86,7 +86,7 @@ export default function HrPrintDocumentsTab() {
 
   const eosWageTotal =
     n(eos.basic) + n(eos.housing) + n(eos.transport) + n(eos.other) +
-    (eos.customRows || []).reduce((s, r) => s + n(r.amount), 0);
+    sumSalaryCustomAllowances(eos.customRows);
 
   const importPayroll = useCallback(() => {
     if (!emp) return;

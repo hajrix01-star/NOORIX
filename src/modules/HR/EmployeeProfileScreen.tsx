@@ -27,7 +27,7 @@ import {
 } from '../../services/api';
 import { assertApiOk } from '../../utils/apiResponse';
 import { ScreenShell } from '../../ui';
-import { computeEmployeeSalaryPackageBreakdown } from './utils/employeeSalaryMath';
+import { computeEmployeeSalaryPackageBreakdown, sumSalaryCustomAllowances } from './utils/employeeSalaryMath';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
@@ -213,7 +213,7 @@ export default function EmployeeProfileScreen() {
   );
   const advanceStatusMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
   const customAllowanceTotal = useMemo(
-    () => customAllowances.reduce((sum: any, row: any) => sum + (Number(row.amount) || 0), 0),
+    () => sumSalaryCustomAllowances(customAllowances),
     [customAllowances],
   );
 

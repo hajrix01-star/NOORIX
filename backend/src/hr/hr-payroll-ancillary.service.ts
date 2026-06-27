@@ -13,6 +13,7 @@ import type { CreateAllowanceDto } from './dto/create-allowance.dto';
 import type { CreateDeductionDto } from './dto/create-deduction.dto';
 import type { UpdateRaiseMovementDto } from './dto/update-raise-movement.dto';
 import { basicSalaryFromTargetTotalInclusiveOvertime } from './utils/employee-salary-inverse.util';
+import { sumHrCustomAllowanceAmounts } from './utils/employee-salary-package.util';
 
 @Injectable()
 export class HrPayrollAncillaryService {
@@ -87,7 +88,7 @@ export class HrPayrollAncillaryService {
       where: { companyId, employeeId },
       select: { amount: true },
     });
-    return rows.reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
+    return sumHrCustomAllowanceAmounts(rows);
   }
 
   private async findLatestRaise(companyId: string, employeeId: string) {

@@ -1,7 +1,10 @@
 /**
  * تسوية راتب تقويمية عند إجازة سنوية — يطابق totalSalary في الواجهة (أساسي + بدلات + أوفر تايم مُقدَّر).
  */
-import { totalHrEmployeeSalaryPackageMonthly } from './employee-salary-package.util';
+import {
+  sumHrCustomAllowanceAmounts,
+  totalHrEmployeeSalaryPackageMonthly,
+} from './employee-salary-package.util';
 
 export type EmployeeSalaryShape = {
   basicSalary: unknown;
@@ -57,10 +60,7 @@ export type CustomAllowanceAmountRow = {
 };
 
 export function sumCustomAllowanceAmounts(rows: CustomAllowanceAmountRow[] | null | undefined): number {
-  return (rows ?? []).reduce((sum, row) => {
-    const amount = Number(row?.amount ?? 0);
-    return sum + (Number.isFinite(amount) ? amount : 0);
-  }, 0);
+  return sumHrCustomAllowanceAmounts(rows);
 }
 
 export function isPayableLeaveSalarySettlement(calc: LeaveSalarySettlementCalc): boolean {

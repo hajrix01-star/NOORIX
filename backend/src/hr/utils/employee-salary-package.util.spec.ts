@@ -1,5 +1,6 @@
 import {
   computeHrEmployeeSalaryPackage,
+  sumHrCustomAllowanceAmounts,
   totalHrEmployeeSalaryPackageMonthly,
 } from './employee-salary-package.util';
 
@@ -20,5 +21,9 @@ describe('employee salary package util', () => {
     expect(packageBreakdown.overtimeHoursPerDay).toBe(2);
     expect(packageBreakdown.overtimePay.toDecimalPlaces(2).toNumber()).toBe(2687.5);
     expect(totalHrEmployeeSalaryPackageMonthly(employee, 250)).toBe(10437.5);
+  });
+
+  it('sums custom allowance rows with money rounding and invalid values ignored', () => {
+    expect(sumHrCustomAllowanceAmounts([{ amount: '100.505' }, { amount: 50 }, { amount: 'bad' }])).toBe(150.51);
   });
 });

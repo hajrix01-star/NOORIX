@@ -71,10 +71,7 @@ export function parseWorkHours(str: any) {
 /** مجموع بدلات مخصصة لموظف من قائمة الـ API. */
 export function sumCustomAllowancesForEmployee(allowanceRows: any, employeeId: any) {
   if (!employeeId || !Array.isArray(allowanceRows)) return 0;
-  const raw = allowanceRows
-    .filter((row: any) => row.employeeId === employeeId)
-    .reduce((sum: any, row: any) => sum + (Number(row.amount) || 0), 0);
-  return roundMoney2(raw);
+  return sumSalaryCustomAllowances(allowanceRows.filter((row: any) => row.employeeId === employeeId));
 }
 
 /** أساسي + سكن + نقل + بدلات أخرى */
