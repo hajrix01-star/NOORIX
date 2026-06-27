@@ -1,12 +1,6 @@
-import Decimal from 'decimal.js';
 import { getText } from '../../../../../i18n/translations';
 import { formatSaudiDate } from '../../../../../utils/saudiDate';
 import { hrFmt } from '../../../utils/hrFmt';
-import {
-  parseWorkHours,
-  overtimePay,
-  SAUDI_STANDARD_HOURS,
-} from '../../../utils/employeeSalaryMath';
 import { parseEmployeeNotesMeta } from '../../../utils/employeeNotesMeta';
 import type { DocSalaryRow, TerminationSummary } from '../types';
 import { translateAllowanceToEnglish } from './employeeDocFormatters';
@@ -14,6 +8,7 @@ import {
   calculateEosServiceDays,
   getEosEligibilityFactor,
 } from '../../../utils/hrCalculations/eos';
+import { computeEmployeeSalaryPackageBreakdown } from '../../../utils/hrCalculations';
 
 export function calculateServiceDays(joinDate: unknown, endDate: unknown) {
   return calculateEosServiceDays(
@@ -44,14 +39,11 @@ export function buildSalaryRows(
   customAllowances: Array<Record<string, unknown>> = [],
 ): { rows: DocSalaryRow[]; total: number } {
   const rows: DocSalaryRow[] = [];
-  const basic = new Decimal((employee?.basicSalary as number | string | undefined) ?? 0);
-  const housing = new Decimal((employee?.housingAllowance as number | string | undefined) ?? 0);
-  const transport = new Decimal((employee?.transportAllowance as number | string | undefined) ?? 0);
-  const other = new Decimal((employee?.otherAllowance as number | string | undefined) ?? 0);
-  if (basic.gt(0)) rows.push({ ar: 'الراتب الأساسي', en: 'Basic Salary', amount: basic.toNumber() });
-  if (housing.gt(0)) rows.push({ ar: 'بدل السكن', en: 'Housing Allowance', amount: housing.toNumber() });
-  if (transport.gt(0)) rows.push({ ar: 'بدل المواصلات', en: 'Transport Allowance', amount: transport.toNumber() });
-  if (other.gt(0)) rows.push({ ar: 'بدل آخر', en: 'Other Allowance', amount: other.toNumber() });
+  const breakdown = computeEmployeeSalaryPackageBreakdown(employee, customAllowances);
+  if (breakdown.basicSalary > 0) rows.push({ ar: 'الراتب الأساسي', en: 'Basic Salary', amount: breakdown.basicSalary });
+  if (breakdown.housingAllowance > 0) rows.push({ ar: 'بدل السكن', en: 'Housing Allowance', amount: breakdown.housingAllowance });
+  if (breakdown.transportAllowance > 0) rows.push({ ar: 'بدل المواصلات', en: 'Transport Allowance', amount: breakdown.transportAllowance });
+  if (breakdown.otherAllowance > 0) rows.push({ ar: 'بدل آخر', en: 'Other Allowance', amount: breakdown.otherAllowance });
   for (const row of customAllowances) {
     const amount = Number(row.amount ?? 0);
     if (amount > 0) {
@@ -62,18 +54,14 @@ export function buildSalaryRows(
       });
     }
   }
-  const customTotal = customAllowances.reduce((s, r) => s + (Number(r.amount) || 0), 0);
-  const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
-  if (overtimeHoursPerDay > 0) {
-    const overtimeAmount = overtimePay(employee, customTotal);
+  if (breakdown.overtimeHoursPerDay > 0) {
     rows.push({
-      ar: `مقابل الأوفر تايم (${hrFmt(overtimeHoursPerDay)} ساعة/يوم)`,
-      en: `Overtime Pay (${hrFmt(overtimeHoursPerDay)} hr/day)`,
-      amount: overtimeAmount,
+      ar: `مقابل الأوفر تايم (${hrFmt(breakdown.overtimeHoursPerDay)} ساعة/يوم)`,
+      en: `Overtime Pay (${hrFmt(breakdown.overtimeHoursPerDay)} hr/day)`,
+      amount: breakdown.overtimePay,
     });
   }
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
-  return { rows, total };
+  return { rows, total: breakdown.total };
 }
 
 export function buildDocFileBaseName(prefix: string, employee: Record<string, unknown>) {

@@ -10,7 +10,7 @@ import { useEmployees } from '../../../hooks/useEmployees';
 import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { getBrandLogo } from '../../../utils/appBranding';
-import { overtimePay, sumCustomAllowancesForEmployee } from '../utils/employeeSalaryMath';
+import { computeEmployeeSalaryPackageBreakdown } from '../utils/employeeSalaryMath';
 import { toYmd } from '../../../utils/saudiDate';
 import { n, defaultPeriodLabel } from './hrPrintDocumentsTabFormat';
 import {
@@ -93,11 +93,8 @@ export default function HrPrintDocumentsTab() {
     const customRows = (customAllowances as HrCustomAllowanceRow[])
       .filter((a) => a.employeeId === emp.id)
       .map((a) => ({ key: a.id, label: a.nameAr || t('customAllowanceName'), amount: String(n(a.amount)) }));
-    const tot =
-      n(emp.basicSalary) + n(emp.housingAllowance) + n(emp.transportAllowance) + n(emp.otherAllowance) +
-      overtimePay(emp, sumCustomAllowancesForEmployee(customAllowances, emp.id)) +
-      customRows.reduce((a, r) => a + n(r.amount), 0);
-    const totStr = String(Math.round(tot * 100) / 100);
+    const salaryPackage = computeEmployeeSalaryPackageBreakdown(emp, customRows);
+    const totStr = String(salaryPackage.total);
     setPayroll({
       ...emptyPayrollDraft(),
       payrollFormat: payroll.payrollFormat,
@@ -118,7 +115,7 @@ export default function HrPrintDocumentsTab() {
       housing: String(n(emp.housingAllowance)),
       transport: String(n(emp.transportAllowance)),
       other: String(n(emp.otherAllowance)),
-      overtime: String(overtimePay(emp, sumCustomAllowancesForEmployee(customAllowances, emp.id))),
+      overtime: String(salaryPackage.overtimePay),
       customRows,
       showBreakdown: true,
     });

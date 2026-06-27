@@ -126,6 +126,61 @@ export function overtimePay(emp: any, customTotal: any = 0) {
 }
 
 /** إجمالي شهري كما في ملف الموظف (يشمل تقدير الأوفر تايم). */
+export type SalaryCustomAllowanceRow = {
+  amount?: unknown;
+};
+
+export type EmployeeSalaryPackageBreakdown = {
+  basicSalary: number;
+  housingAllowance: number;
+  transportAllowance: number;
+  otherAllowance: number;
+  customAllowanceTotal: number;
+  overtimeHoursPerDay: number;
+  overtimePay: number;
+  fixedTotal: number;
+  total: number;
+};
+
+export function sumSalaryCustomAllowances(rows: SalaryCustomAllowanceRow[] | null | undefined): number {
+  const total = (rows ?? []).reduce((sum, row) => {
+    const amount = Number(row?.amount ?? 0);
+    return sum + (Number.isFinite(amount) ? amount : 0);
+  }, 0);
+  return roundMoney2(total);
+}
+
+export function computeEmployeeSalaryPackageBreakdown(
+  employee: Record<string, unknown> | null | undefined,
+  customAllowancesOrTotal: SalaryCustomAllowanceRow[] | number | string | null | undefined = 0,
+): EmployeeSalaryPackageBreakdown {
+  const customAllowanceTotal = Array.isArray(customAllowancesOrTotal)
+    ? sumSalaryCustomAllowances(customAllowancesOrTotal)
+    : roundMoney2(Number(customAllowancesOrTotal ?? 0) || 0);
+  const basicSalary = roundMoney2(Number(employee?.basicSalary ?? 0) || 0);
+  const housingAllowance = roundMoney2(Number(employee?.housingAllowance ?? 0) || 0);
+  const transportAllowance = roundMoney2(Number(employee?.transportAllowance ?? 0) || 0);
+  const otherAllowance = roundMoney2(Number(employee?.otherAllowance ?? 0) || 0);
+  const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
+  const overtimeAmount = overtimePay(employee, customAllowanceTotal);
+  const fixedTotal = roundMoney2(
+    basicSalary + housingAllowance + transportAllowance + otherAllowance + customAllowanceTotal,
+  );
+  const total = totalSalary(employee, customAllowanceTotal);
+
+  return {
+    basicSalary,
+    housingAllowance,
+    transportAllowance,
+    otherAllowance,
+    customAllowanceTotal,
+    overtimeHoursPerDay,
+    overtimePay: overtimeAmount,
+    fixedTotal,
+    total,
+  };
+}
+
 export function totalSalaryDecimal(emp: any, customTotal: any = 0) {
   return baseSalaryComponentsDecimal(emp)
     .plus(customTotal || 0)
