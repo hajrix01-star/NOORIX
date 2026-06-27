@@ -13,7 +13,7 @@ import { ContractDocPreview } from './components/ContractDocPreview';
 
 export function ContractModal({
   employee,
-  customAllowances = [],
+  compensationSnapshot,
   companyId,
   companyName,
   companyLogo,
@@ -23,7 +23,7 @@ export function ContractModal({
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [contractEnd, setContractEnd] = useState(toYmd(employee?.contractEndDate as string | Date | undefined) || '');
-  const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
+  const { rows, total } = useMemo(() => buildSalaryRows(compensationSnapshot), [compensationSnapshot]);
 
   const { printRef, saving, handlePrint, handleSaveToDocuments } = useEmployeeDocPrintSave({
     t,

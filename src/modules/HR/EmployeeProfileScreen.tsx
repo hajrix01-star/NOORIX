@@ -7,7 +7,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useEmployee, useEmployees } from '../../hooks/useEmployees';
-import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -93,7 +92,6 @@ export default function EmployeeProfileScreen() {
 
   const { data: employee, isLoading, error } = useEmployee(id, companyId);
   const { createAdvance } = useEmployees(companyId, { includeTerminated: true });
-  const { allowances: customAllowances = [] } = useCustomAllowances(companyId, id);
   const {
     data: compensationSnapshot,
     isLoading: isCompensationSnapshotLoading,
@@ -424,7 +422,7 @@ export default function EmployeeProfileScreen() {
       {docModal === 'salary' && (
         <SalaryCertificateModal
           employee={employee}
-          customAllowances={customAllowances}
+          compensationSnapshot={compensationSnapshot}
           companyId={companyId}
           companyName={companyName}
           companyLogo={companyLogo}
@@ -438,7 +436,7 @@ export default function EmployeeProfileScreen() {
       {docModal === 'contract' && (
         <ContractModal
           employee={employee}
-          customAllowances={customAllowances}
+          compensationSnapshot={compensationSnapshot}
           companyId={companyId}
           companyName={companyName}
           companyLogo={companyLogo}
@@ -452,7 +450,7 @@ export default function EmployeeProfileScreen() {
       {docModal === 'settlement' && (
         <FinalSettlementModal
           employee={employee}
-          customAllowances={customAllowances}
+          compensationSnapshot={compensationSnapshot}
           companyId={companyId}
           companyName={companyName}
           companyLogo={companyLogo}

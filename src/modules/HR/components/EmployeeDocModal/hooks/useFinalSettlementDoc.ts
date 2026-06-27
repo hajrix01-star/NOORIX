@@ -8,32 +8,23 @@ import {
 } from '../utils/employeeDocBuilders';
 import {
   computeEos,
-  computeEosWageFromEmployee,
 } from '../../../utils/hrCalculations/eos';
-import {
-  computeEmployeeSalaryPackageBreakdown,
-  sumSalaryCustomAllowances,
-} from '../../../utils/hrCalculations/salary';
 
 export function useFinalSettlementDoc(
   employee: Record<string, unknown>,
-  customAllowances: Array<Record<string, unknown>> = [],
+  compensationSnapshot: Record<string, any>,
 ) {
-  const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
+  const { rows, total } = useMemo(() => buildSalaryRows(compensationSnapshot), [compensationSnapshot]);
   const lastMonthlyComp = total;
   const termination = useMemo(() => getTerminationSummary(employee), [employee]);
   const [includeEos, setIncludeEos] = useState(true);
   const [eosEndDate, setEosEndDate] = useState(termination.terminationDate || getSaudiToday());
   const [eosReason, setEosReason] = useState(termination.reasonCode || 'employer');
   const [eosSalary, setEosSalary] = useState(String(lastMonthlyComp || 0));
-  const salaryBreakdown = useMemo(
-    () => computeEmployeeSalaryPackageBreakdown(employee, customAllowances),
-    [employee, customAllowances],
-  );
-  const overtimeHoursPerDay = salaryBreakdown.overtimeHoursPerDay;
+  const overtimeHoursPerDay = Number(compensationSnapshot?.salaryPackage?.overtimeHoursPerDay ?? 0);
   const eosWage = useMemo(
-    () => computeEosWageFromEmployee(employee, sumSalaryCustomAllowances(customAllowances)),
-    [employee, customAllowances],
+    () => new Decimal(compensationSnapshot?.salaryPackage?.fixedTotal ?? 0),
+    [compensationSnapshot],
   );
 
   useEffect(() => {

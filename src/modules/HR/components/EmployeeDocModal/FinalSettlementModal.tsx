@@ -10,7 +10,7 @@ import { FinalSettlementPreview } from './components/FinalSettlementPreview';
 
 export function FinalSettlementModal({
   employee,
-  customAllowances = [],
+  compensationSnapshot,
   companyId,
   companyName,
   companyLogo,
@@ -19,7 +19,7 @@ export function FinalSettlementModal({
 }: FinalSettlementModalProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const doc = useFinalSettlementDoc(employee, customAllowances);
+  const doc = useFinalSettlementDoc(employee, compensationSnapshot);
 
   const { printRef, saving, handlePrint, handleSaveToDocuments } = useEmployeeDocPrintSave({
     t,

@@ -8,7 +8,6 @@ import {
   calculateEosServiceDays,
   getEosEligibilityFactor,
 } from '../../../utils/hrCalculations/eos';
-import { computeEmployeeSalaryPackageBreakdown } from '../../../utils/hrCalculations';
 
 export function calculateServiceDays(joinDate: unknown, endDate: unknown) {
   return calculateEosServiceDays(
@@ -35,16 +34,18 @@ export function mapReasonByMeta(reasonText: string | undefined | null = '', clau
 }
 
 export function buildSalaryRows(
-  employee: Record<string, unknown>,
-  customAllowances: Array<Record<string, unknown>> = [],
+  compensationSnapshot: Record<string, any>,
 ): { rows: DocSalaryRow[]; total: number } {
   const rows: DocSalaryRow[] = [];
-  const breakdown = computeEmployeeSalaryPackageBreakdown(employee, customAllowances);
+  const breakdown = compensationSnapshot?.salaryPackage;
+  if (!breakdown) {
+    throw new Error('HR compensation snapshot is required for employee documents.');
+  }
   if (breakdown.basicSalary > 0) rows.push({ ar: 'الراتب الأساسي', en: 'Basic Salary', amount: breakdown.basicSalary });
   if (breakdown.housingAllowance > 0) rows.push({ ar: 'بدل السكن', en: 'Housing Allowance', amount: breakdown.housingAllowance });
   if (breakdown.transportAllowance > 0) rows.push({ ar: 'بدل المواصلات', en: 'Transport Allowance', amount: breakdown.transportAllowance });
   if (breakdown.otherAllowance > 0) rows.push({ ar: 'بدل آخر', en: 'Other Allowance', amount: breakdown.otherAllowance });
-  for (const row of customAllowances) {
+  for (const row of compensationSnapshot?.customAllowances?.items ?? []) {
     const amount = Number(row.amount ?? 0);
     if (amount > 0) {
       rows.push({

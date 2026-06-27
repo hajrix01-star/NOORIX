@@ -11,7 +11,7 @@ import { SalaryCertificatePreview } from './components/SalaryCertificatePreview'
 
 export function SalaryCertificateModal({
   employee,
-  customAllowances = [],
+  compensationSnapshot,
   companyId,
   companyName,
   companyLogo,
@@ -20,7 +20,7 @@ export function SalaryCertificateModal({
 }: SalaryCertificateModalProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
+  const { rows, total } = useMemo(() => buildSalaryRows(compensationSnapshot), [compensationSnapshot]);
 
   const { printRef, saving, handlePrint, handleSaveToDocuments } = useEmployeeDocPrintSave({
     t,
