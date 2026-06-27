@@ -10,7 +10,7 @@ export type PrintWindowStub = {
 
 export type EmployeeDocModalBaseProps = {
   employee: Record<string, unknown>;
-  customAllowances?: Array<Record<string, unknown>>;
+  compensationSnapshot: Record<string, any>;
   companyId?: string;
   companyName?: string;
   companyLogo?: string;

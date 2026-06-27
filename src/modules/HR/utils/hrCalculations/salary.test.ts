@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  computeEmployeeSalaryPackageBreakdown,
   computeSalaryCalculator,
   employeeTargetTotalDecimal,
   mergeOvertimeWorkDaysIntoSchedule,
+  sumSalaryCustomAllowances,
 } from './salary';
 
 describe('hrCalculations/salary', () => {
@@ -106,5 +108,25 @@ describe('hrCalculations/salary', () => {
     );
 
     expect(total.toNumber()).toBeCloseTo(9403.8462, 4);
+  });
+
+  it('builds an employee salary package breakdown from the central salary source', () => {
+    const breakdown = computeEmployeeSalaryPackageBreakdown(
+      {
+        basicSalary: 6000,
+        housingAllowance: 1000,
+        transportAllowance: 500,
+        otherAllowance: 0,
+        workHours: '10',
+        workSchedule: mergeOvertimeWorkDaysIntoSchedule('Day shift', 26),
+      },
+      [{ amount: '250' }, { amount: 'bad' }],
+    );
+
+    expect(sumSalaryCustomAllowances([{ amount: '100.50' }, { amount: 50 }, { amount: 'bad' }])).toBe(150.5);
+    expect(breakdown.customAllowanceTotal).toBe(250);
+    expect(breakdown.overtimeHoursPerDay).toBe(2);
+    expect(breakdown.fixedTotal).toBe(7750);
+    expect(breakdown.total).toBeCloseTo(10437.5, 2);
   });
 });

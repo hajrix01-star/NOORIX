@@ -7,7 +7,8 @@ import { HrPayrollService } from './hr-payroll.service';
 import { HrLeaveService } from './hr-leave.service';
 import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
-import { sumMonthlyPayrollForActiveEmployees } from './utils/employee-monthly-payroll.util';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
+import { getHrAdvanceTotals } from './hr-advance-balance.util';
 
 @Injectable()
 export class HRService {
@@ -16,6 +17,7 @@ export class HRService {
     private readonly leave: HrLeaveService,
     private readonly residency: HrResidencyService,
     private readonly document: HrDocumentService,
+    private readonly compensationSnapshot: HrCompensationSnapshotService,
     private readonly prisma: TenantPrismaService,
   ) {}
 
@@ -59,6 +61,14 @@ export class HRService {
 
   findAdvanceInvoices(...args: Parameters<HrPayrollService['findAdvanceInvoices']>) {
     return this.payroll.findAdvanceInvoices(...args);
+  }
+
+  getEmployeeCompensationSnapshot(companyId: string, employeeId: string) {
+    return this.compensationSnapshot.getEmployeeSnapshot(companyId, employeeId);
+  }
+
+  getCompanyCompensationSnapshots(companyId: string, employeeIds?: string[]) {
+    return this.compensationSnapshot.getCompanySnapshots(companyId, employeeIds);
   }
 
   // ── Movements, allowances, deductions (مع المسير في نفس خدمة الرواتب) ──
@@ -208,7 +218,6 @@ export class HRService {
       expiringResidenciesCount,
       advances,
       activeEmployees,
-      customAllowanceGroups,
     ] = await Promise.all([
       this.prisma.employee.count({ where: { companyId, status: 'active' } }),
       this.prisma.employee.count({ where: { companyId, status: 'terminated' } }),
@@ -224,43 +233,29 @@ export class HRService {
       this.payroll.findAdvanceInvoices(companyId),
       this.prisma.employee.findMany({
         where: { companyId, status: 'active' },
-        select: {
-          id: true,
-          basicSalary: true,
-          housingAllowance: true,
-          transportAllowance: true,
-          otherAllowance: true,
-          workHours: true,
-          workSchedule: true,
-        },
-      }),
-      this.prisma.employeeCustomAllowance.groupBy({
-        by: ['employeeId'],
-        where: { companyId, employee: { status: 'active' } },
-        _sum: { amount: true },
+        select: { id: true },
       }),
     ]);
 
-    const customByEmployee = new Map<string, number>();
-    for (const row of customAllowanceGroups) {
-      customByEmployee.set(row.employeeId, Number(row._sum.amount ?? 0));
-    }
+    const activeEmployeeIds = activeEmployees.map((employee) => employee.id);
+    const salarySnapshots: Awaited<ReturnType<HrCompensationSnapshotService['getCompanySnapshots']>> = activeEmployeeIds.length
+      ? await this.compensationSnapshot.getCompanySnapshots(companyId, activeEmployeeIds)
+      : { source: 'database', companyId, calculatedAt: new Date().toISOString(), items: [] };
+    const monthlyPayrollTotal = salarySnapshots.items.reduce((sum, snapshot) => {
+      const total = Number(snapshot?.salaryPackage?.total);
+      if (!Number.isFinite(total)) {
+        throw new Error('تعذر تحميل ملخص الرواتب من المصدر المركزي.');
+      }
+      return sum + total;
+    }, 0);
 
-    const monthlyPayrollTotal = sumMonthlyPayrollForActiveEmployees(activeEmployees, customByEmployee);
-
-    const outstandingAdvances = (advances as any[]).filter(
-      (a) => a.status !== 'cancelled' && Number(a.settledAmount ?? 0) < Number(a.totalAmount ?? 0),
-    );
+    const advanceTotals = getHrAdvanceTotals(advances as any[]);
 
     return {
       leavesCount,
       expiringResidenciesCount,
-      outstandingAdvancesCount: outstandingAdvances.length,
-      outstandingAdvancesAmount: outstandingAdvances.reduce(
-        (s: number, a: any) =>
-          s + Math.max(0, Number(a.totalAmount ?? 0) - Number(a.settledAmount ?? 0)),
-        0,
-      ),
+      outstandingAdvancesCount: advanceTotals.remainingCount,
+      outstandingAdvancesAmount: advanceTotals.remainingAmount,
       activeCount,
       terminatedCount,
       monthlyPayrollTotal,

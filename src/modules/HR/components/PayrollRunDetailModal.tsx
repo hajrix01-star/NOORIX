@@ -3,7 +3,6 @@
  */
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getText } from '../../../i18n/translations';
@@ -17,6 +16,7 @@ import { openPrintWindow } from '../../../utils/printUtils';
 import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
 import { hrKeys } from '../../../services/queryKeys';
+import { computePayrollLineSummary, computePayrollRunTotals } from '../utils/hrCalculations/payroll';
 
 const STATUS_MAP = {
   draft: { labelKey: 'payrollDraft', badgeColor: 'gray' },
@@ -98,21 +98,19 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       : st === 'completed'
         ? { labelKey: 'payrollApproved', badgeColor: 'blue' }
         : (STATUS_MAP as Record<string, (typeof STATUS_MAP)['draft']>)[st] || STATUS_MAP.draft;
-  const totalNet = new Decimal(run.totalAmount ?? 0);
-  const totalBeforeDeduction = items.reduce((s: any, row: any) => s.plus(row.grossSalary ?? 0).plus(row.allowancesAdd ?? 0), new Decimal(0));
-  const totalDeductions      = items.reduce((s: any, row: any) => s.plus(row.deductions   ?? 0).plus(row.advancesDeduct ?? 0), new Decimal(0));
+  const payrollTotals = computePayrollRunTotals(items);
+  const totalNet = Number(run.totalAmount ?? payrollTotals.netSalary);
 
   const handlePrint = () => {
     const monthLabel = formatSaudiDate(run.payrollMonth);
     const rowsHtml = items.map((row: any, idx: any) => {
       const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
       const advanceDates = String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—';
-      const before = Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0);
-      const deductionsAll = Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0);
+      const summary = computePayrollLineSummary(row);
       return `<tr>
         <td>${idx + 1}</td><td>${employeeName}</td><td>${advanceDates}</td>
-        <td>${hrFmt(row.grossSalary ?? 0)}</td><td>${hrFmt(before)}</td>
-        <td>${hrFmt(deductionsAll)}</td><td>${hrFmt(row.netSalary ?? 0)}</td>
+        <td>${hrFmt(summary.grossSalary)}</td><td>${hrFmt(summary.beforeDeductions)}</td>
+        <td>${hrFmt(summary.totalDeductions)}</td><td>${hrFmt(summary.netSalary)}</td>
         <td class="sig-cell">&nbsp;</td>
       </tr>`;
     }).join('');
@@ -153,8 +151,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
           <tbody>${rowsHtml}</tbody>
         </table>
         <div class="summary-grid">
-          <div class="s-card"><div class="s-label">${t('payrollTotalBeforeDeductions')}</div><div class="s-value">${hrFmt(totalBeforeDeduction)}</div></div>
-          <div class="s-card"><div class="s-label">${t('payrollTotalDeductionsAll')}</div><div class="s-value">${hrFmt(totalDeductions)}</div></div>
+          <div class="s-card"><div class="s-label">${t('payrollTotalBeforeDeductions')}</div><div class="s-value">${hrFmt(payrollTotals.beforeDeductions)}</div></div>
+          <div class="s-card"><div class="s-label">${t('payrollTotalDeductionsAll')}</div><div class="s-value">${hrFmt(payrollTotals.totalDeductions)}</div></div>
           <div class="s-card"><div class="s-label">${t('payrollTotalAfterDeductions')}</div><div class="s-value">${hrFmt(totalNet)}</div></div>
         </div>
       `,
@@ -183,12 +181,12 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
     { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_: any, row: any) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
     { key: 'advanceDates', label: t('payrollAdvanceDates'), width: '16%', minWidth: 120, render: (_: any, row: any) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
     { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '9%', minWidth: 84, render: (v: any) => hrFmt(v) },
-    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: '11%', minWidth: 96, render: (_: any, row: any) => hrFmt(Number(row.grossSalary ?? 0) + Number(row.allowancesAdd ?? 0)) },
+    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: '11%', minWidth: 96, render: (_: any, row: any) => hrFmt(computePayrollLineSummary(row).beforeDeductions) },
     { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
     { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
     { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '8%', minWidth: 76, render: (v: any) => hrFmt(v ?? 0) },
-    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: '11%', minWidth: 96, render: (_: any, row: any) => hrFmt(Number(row.deductions ?? 0) + Number(row.advancesDeduct ?? 0)) },
-    { key: 'netSalary', label: t('netSalary'), numeric: true, width: '11%', minWidth: 90, render: (v: any) => hrFmt(v) },
+    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: '11%', minWidth: 96, render: (_: any, row: any) => hrFmt(computePayrollLineSummary(row).totalDeductions) },
+    { key: 'netSalary', label: t('netSalary'), numeric: true, width: '11%', minWidth: 90, render: (_: any, row: any) => hrFmt(computePayrollLineSummary(row).netSalary) },
     {
       key: 'employeeSignature',
       label: t('payrollEmployeeSignature'),

@@ -6,7 +6,6 @@ import {
   buildAdvancesByEmployee,
   buildPayrollLineForEmployee,
   computeActiveEmployees,
-  computeAllowanceTotals,
   computeDisplayEmployees,
   computeEligibleEmployees,
   computeExistingMonthSet,
@@ -22,6 +21,7 @@ import {
   parseDeferredMonth,
 } from '../utils/payrollRunMappers';
 import type { PayrollRunLineItem } from '../types';
+import { computePayrollLineNet } from '../../../utils/hrCalculations/payroll';
 
 type StateShape = {
   defaultMonth: string;
@@ -50,7 +50,7 @@ type StateShape = {
     }>;
   } | undefined;
   monthStr: string;
-  allCustomAllowances: Array<{ employeeId?: string; amount?: unknown }>;
+  compensationSnapshotByEmployeeId: Map<string, any>;
   advances: unknown[];
   leaves: unknown[];
   leaveSalarySettlements: Array<{ employeeId?: string }>;
@@ -71,13 +71,11 @@ export function usePayrollRunRows(state: StateShape) {
     existingRuns,
     editingRun,
     monthStr,
-    allCustomAllowances,
+    compensationSnapshotByEmployeeId,
     advances,
     leaves,
     leaveSalarySettlements,
   } = state;
-
-  const allowanceTotals = useMemo(() => computeAllowanceTotals(allCustomAllowances), [allCustomAllowances]);
 
   const leaveSettledEmployeeIds = useMemo(
     () => computeLeaveSettledEmployeeIds(leaveSalarySettlements),
@@ -111,6 +109,14 @@ export function usePayrollRunRows(state: StateShape) {
     [activeEmployees, payrollMonth, defaultMonth, leaveDaysByEmployee, settledDaysByEmployee],
   );
 
+  const missingCentralSalaryEmployeeIds = useMemo(
+    () =>
+      eligibleEmployees
+        .map((employee) => String(employee.id || ''))
+        .filter((employeeId) => employeeId && !compensationSnapshotByEmployeeId.has(employeeId)),
+    [eligibleEmployees, compensationSnapshotByEmployeeId],
+  );
+
   const displayEmployees = useMemo(
     () => computeDisplayEmployees(eligibleEmployees, items, employees),
     [eligibleEmployees, items, employees],
@@ -134,7 +140,7 @@ export function usePayrollRunRows(state: StateShape) {
         emp,
         payrollMonth,
         defaultMonth,
-        allowanceTotals,
+        compensationSnapshotByEmployeeId,
         leaveDaysByEmployee,
         settledDaysByEmployee,
         advancesByEmployee,
@@ -144,7 +150,7 @@ export function usePayrollRunRows(state: StateShape) {
     [
       payrollMonth,
       defaultMonth,
-      allowanceTotals,
+      compensationSnapshotByEmployeeId,
       leaveDaysByEmployee,
       settledDaysByEmployee,
       advancesByEmployee,
@@ -154,8 +160,12 @@ export function usePayrollRunRows(state: StateShape) {
   );
 
   const initItems = useCallback(() => {
+    if (missingCentralSalaryEmployeeIds.length > 0) {
+      setItems([]);
+      return;
+    }
     setItems(eligibleEmployees.map((e) => buildLineForEmployee(e as Record<string, unknown> & { id?: string })));
-  }, [eligibleEmployees, buildLineForEmployee, setItems]);
+  }, [eligibleEmployees, buildLineForEmployee, missingCentralSalaryEmployeeIds.length, setItems]);
 
   const prevPayrollMonthForInitRef = useRef(payrollMonth);
 
@@ -185,7 +195,7 @@ export function usePayrollRunRows(state: StateShape) {
         allowancesAdd,
         deductions,
         advancesDeduct,
-        netSalary: Math.max(0, grossSalary + allowancesAdd - deductions - advancesDeduct),
+        netSalary: computePayrollLineNet({ grossSalary, allowancesAdd, deductions, advancesDeduct }),
         deferAdvances,
         advanceDates: currentAdvanceMeta.datesLabel || savedAdvanceDates,
         notes: row.notes || '',
@@ -197,6 +207,7 @@ export function usePayrollRunRows(state: StateShape) {
   useEffect(() => {
     if (isEditMode) return;
     if (eligibleEmployees.length === 0) return;
+    if (missingCentralSalaryEmployeeIds.length > 0) return;
 
     if (items.length === 0) {
       initItems();
@@ -209,7 +220,7 @@ export function usePayrollRunRows(state: StateShape) {
       initItems();
       prevPayrollMonthForInitRef.current = payrollMonth;
     }
-  }, [isEditMode, eligibleEmployees.length, payrollMonth, items.length, initItems]);
+  }, [isEditMode, eligibleEmployees.length, missingCentralSalaryEmployeeIds.length, payrollMonth, items.length, initItems]);
 
   useEffect(() => {
     if (!isEditMode || !editingRun) return;
@@ -219,7 +230,6 @@ export function usePayrollRunRows(state: StateShape) {
   return {
     t,
     lang,
-    allowanceTotals,
     leaveSettledEmployeeIds,
     existingMonthSet,
     alreadyExists,
@@ -227,6 +237,7 @@ export function usePayrollRunRows(state: StateShape) {
     leaveDaysByEmployee,
     settledDaysByEmployee,
     eligibleEmployees,
+    missingCentralSalaryEmployeeIds,
     displayEmployees,
     totalNet,
     advancesByEmployee,

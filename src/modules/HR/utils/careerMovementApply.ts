@@ -1,16 +1,12 @@
 /**
  * تطبيق زيادة/ترقية على ملف الموظف + تسجيل الحركة — نفس منطق EmployeeCareerMovementModal.
  */
-import { createMovement, updateEmployee } from '../../../services/api';
+import { createMovement } from '../../../services/api';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import {
   basicSalaryFromTargetTotalInclusiveOvertime,
-  sumCustomAllowancesForEmployee,
-  totalSalary,
 } from './employeeSalaryMath';
-
-type AllowanceRow = { employeeId?: string; amount?: unknown };
 
 export function resolveRaiseIncrement(
   mvAmount: string,
@@ -42,17 +38,22 @@ export function resolveRaiseIncrement(
 export async function applyCareerRaise(params: {
   employee: Record<string, unknown> & { id?: string };
   companyId: string;
-  customAllowances: AllowanceRow[];
+  customAllowanceTotal: number;
+  currentTotalAllIn: number;
   increment: number;
   effectiveDate: string;
   notes?: string;
 }) {
-  const { employee, companyId, customAllowances, increment, effectiveDate, notes } = params;
+  const { employee, companyId, customAllowanceTotal, currentTotalAllIn, increment, effectiveDate, notes } = params;
   const employeeId = String(employee.id || '');
   if (!employeeId) throw new Error('Employee id required');
 
-  const customTotal = sumCustomAllowancesForEmployee(customAllowances, employeeId);
-  const currentTotalAllIn = totalSalary(employee, customTotal);
+  if (!Number.isFinite(currentTotalAllIn) || currentTotalAllIn <= 0) {
+    throw new Error('Central salary package is required');
+  }
+  if (!Number.isFinite(customAllowanceTotal)) {
+    throw new Error('Central custom allowance total is required');
+  }
   const newTarget = roundMoney2(currentTotalAllIn + increment);
   if (newTarget <= 0) {
     throw new Error('Invalid new salary total');
@@ -60,15 +61,12 @@ export async function applyCareerRaise(params: {
 
   const { basic, inverseWarning } = basicSalaryFromTargetTotalInclusiveOvertime(
     employee,
-    customTotal,
+    customAllowanceTotal,
     newTarget,
   );
   if (inverseWarning || basic <= 0) {
     throw new Error('Cannot derive basic salary from target total');
   }
-
-  const up = await updateEmployee(employeeId, { basicSalary: basic }, companyId);
-  rejectIfApiFailed(up, 'Failed to update employee salary');
 
   const mov = await createMovement({
     companyId,

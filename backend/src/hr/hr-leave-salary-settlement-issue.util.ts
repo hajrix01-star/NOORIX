@@ -4,9 +4,14 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
 import { TenantContext } from '../common/tenant-context';
 import { toMoneyDecimal2 } from '../common/utils/money-decimal';
-import { computeCalendarLeaveSalarySettlement } from './utils/leave-salary-settlement.util';
+import {
+  computeCalendarLeaveSalarySettlement,
+  isPayableLeaveSalarySettlement,
+  resolveLeaveSalarySettlementGrossAmount,
+} from './utils/leave-salary-settlement.util';
 import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
 import { saudiDateYmd } from './utils/hr-saudi-dates.util';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 
 export type LeaveForSalarySettlement = {
   id: string;
@@ -21,12 +26,16 @@ export type LeaveForSalarySettlement = {
  * idempotency: لا يُكرَّر إن وُجد سجل تسوية لنفس الإجازة.
  */
 export async function issueLeaveSalarySettlementCore(
-  deps: { prisma: TenantPrismaService; financialCore: FinancialCoreService },
+  deps: {
+    prisma: TenantPrismaService;
+    financialCore: FinancialCoreService;
+    compensationSnapshot: HrCompensationSnapshotService;
+  },
   leave: LeaveForSalarySettlement,
   userId: string,
   options: { vaultId?: string; grossAmountOverride?: number },
 ): Promise<void> {
-  const { prisma, financialCore } = deps;
+  const { prisma, financialCore, compensationSnapshot } = deps;
   const tenantId = TenantContext.getTenantId();
   if (leave.leaveType !== 'annual') {
     throw new BadRequestException('تسوية الراتب متاحة لإجازات سنوية فقط.');
@@ -39,33 +48,37 @@ export async function issueLeaveSalarySettlementCore(
 
   const emp = await prisma.employee.findFirst({
     where: { id: leave.employeeId, companyId: leave.companyId },
-    include: { customAllowances: true },
   });
   if (!emp) throw new BadRequestException('الموظف غير موجود.');
   if (emp.status === 'terminated') {
     throw new BadRequestException('لا يمكن صرف تسوية راتب لموظف منتهي الخدمة.');
   }
 
-  const customSum = (emp.customAllowances ?? []).reduce(
-    (s, r) => s + Number(r.amount ?? 0),
-    0,
-  );
+  const snapshot = await compensationSnapshot.getEmployeeSnapshot(leave.companyId, leave.employeeId);
+  const monthlyPackageTotal = Number(snapshot?.salaryPackage?.total);
+  if (!Number.isFinite(monthlyPackageTotal) || monthlyPackageTotal <= 0) {
+    throw new BadRequestException('تعذر تحميل إجمالي راتب الموظف من المصدر المركزي.');
+  }
 
-  const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), customSum);
+  const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), monthlyPackageTotal);
 
-  if (calc.calendarDaysPaid <= 0 || calc.grossAmount <= 0) {
+  if (!isPayableLeaveSalarySettlement(calc)) {
     throw new BadRequestException(
       'لا يمكن احتساب تسوية راتب — تاريخ بداية الإجازة خارج نطاق العمل في الشهر أو المبلغ صفر.',
     );
   }
 
   let grossFinal = calc.grossAmount;
+  let hasManualOverride = false;
   if (options.grossAmountOverride != null) {
-    const o = Number(options.grossAmountOverride);
-    if (!Number.isFinite(o) || o < 0.01) {
+    let resolvedGross: { grossAmount: number; hasManualOverride: boolean };
+    try {
+      resolvedGross = resolveLeaveSalarySettlementGrossAmount(calc, options.grossAmountOverride);
+    } catch {
       throw new BadRequestException('المبلغ غير صالح.');
     }
-    grossFinal = Math.round(o * 100) / 100;
+    grossFinal = resolvedGross.grossAmount;
+    hasManualOverride = resolvedGross.hasManualOverride;
   }
 
   const { payrollMonth, daysInMonth, calendarDaysPaid } = calc;
@@ -107,10 +120,11 @@ export async function issueLeaveSalarySettlementCore(
   const sd = new Date(leave.startDate);
   const startStrFormatted = `${sd.getFullYear()}-${String(sd.getMonth() + 1).padStart(2, '0')}-${String(sd.getDate()).padStart(2, '0')}`;
   const manualNote =
-    options.grossAmountOverride != null && Math.abs(grossFinal - calc.grossAmount) > 0.005
+    hasManualOverride
       ? ` — معدّل يدوياً (مقترح ${calc.grossAmount.toFixed(2)})`
       : '';
   const notes = `تسوية راتب حتى يوم السفر — إجازة سنوية من ${startStrFormatted} (${calendarDaysPaid}/${daysInMonth} يوم تقويمي، شهر ${ym})${manualNote}`;
+  const snapshotNote = ` [HR_COMP_SNAPSHOT:${snapshot.calculatedAt}:monthly=${monthlyPackageTotal.toFixed(2)}]`;
 
   const { invoice } = await financialCore.processOutflow(
     {
@@ -122,7 +136,7 @@ export async function issueLeaveSalarySettlementCore(
       taxAmount: '0',
       transactionDate: txDate,
       vaultSplits: [{ vaultId: vaultIdToUse, amount: amountStr }],
-      notes,
+      notes: `${notes}${snapshotNote}`.slice(0, 2000),
       idempotencyKey: `leave-salary-settlement:${leave.id}`,
     },
     userId,
@@ -154,7 +168,7 @@ export async function issueLeaveSalarySettlementCore(
       previousValue: null,
       newValue: amountStr,
       effectiveDate: new Date(`${txDate}T00:00:00.000Z`),
-      notes: `تسوية راتب إجازة سنوية (تقويمي) — ${calendarDaysPaid}/${daysInMonth} يوم — ${invoice.invoiceNumber}${manualNote}`,
+      notes: `تسوية راتب إجازة سنوية (تقويمي) — ${calendarDaysPaid}/${daysInMonth} يوم — ${invoice.invoiceNumber}${manualNote}${snapshotNote}`.slice(0, 2000),
     },
   });
 }

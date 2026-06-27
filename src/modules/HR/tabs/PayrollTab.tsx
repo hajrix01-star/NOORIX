@@ -28,6 +28,7 @@ import { hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
 import { HrFlatListTabShell } from '../components/HrFlatListTabShell';
 import { HrTabToolbar } from '../components/HrTabToolbar';
+import { computePayrollRunTotals } from '../utils/hrCalculations/payroll';
 
 const PAGE_SIZE = 50;
 
@@ -77,7 +78,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
       const raw = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
       return raw.map((run: any) => {
         const grossTotal = Array.isArray(run.items)
-          ? run.items.reduce((s: any, i: any) => s + Number(i?.grossSalary ?? 0), 0)
+          ? computePayrollRunTotals(run.items).grossSalary
           : Number(run.totalAmount ?? 0);
         return {
           id: run.id,

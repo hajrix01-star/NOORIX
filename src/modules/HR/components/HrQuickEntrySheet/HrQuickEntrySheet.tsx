@@ -2,10 +2,12 @@
  * HrQuickEntrySheet — إدخال سريع من المحادثة (حاوية)
  */
 import React, { useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { Button, AdaptiveSheet, Input } from '../../../../ui';
 import { employeeDisplayName } from '../../../../utils/employeeDisplayName';
-import { useCustomAllowances } from '../../../../hooks/useCustomAllowances';
+import { getEmployeeCompensationSnapshots, throwIfApiFailed } from '../../../../services/api';
+import { hrKeys } from '../../../../services/queryKeys';
 import { useHrQuickEntryState } from './hooks/useHrQuickEntryState';
 import { useHrQuickEntryRows } from './hooks/useHrQuickEntryRows';
 import { useHrQuickEntryMutations } from './hooks/useHrQuickEntryMutations';
@@ -28,9 +30,32 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
   onCloseRef.current = onClose;
 
   const st = useHrQuickEntryState(mode as HrQuickEntryMode, companyId);
-  const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
 
   const { activeEmployees } = useHrQuickEntryRows(st.employees as never[]);
+  const activeEmployeeIds = React.useMemo(
+    () => activeEmployees.map((emp) => String(emp.id || '')).filter(Boolean),
+    [activeEmployees],
+  );
+  const {
+    data: compensationSnapshots,
+    isLoading: compensationSnapshotsLoading,
+    error: compensationSnapshotsError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshots(companyId, activeEmployeeIds),
+    queryFn: async () => {
+      const res = await getEmployeeCompensationSnapshots(companyId, activeEmployeeIds);
+      throwIfApiFailed(res, t('loadingError'));
+      return res.data;
+    },
+    enabled: mode === 'increase' && !!companyId && activeEmployeeIds.length > 0,
+  });
+  const compensationSnapshotByEmployeeId = React.useMemo(() => {
+    const map = new Map<string, any>();
+    for (const snapshot of compensationSnapshots?.items ?? []) {
+      if (snapshot?.employeeId) map.set(String(snapshot.employeeId), snapshot);
+    }
+    return map;
+  }, [compensationSnapshots]);
 
   const { advMut, leaveMut, dedMut, movMut, alMut, submitting } = useHrQuickEntryMutations({
     companyId,
@@ -77,7 +102,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     submitting,
     activeEmployees,
     employees: st.employees as Array<Record<string, unknown> & { id?: string }>,
-    customAllowances,
+    compensationSnapshotByEmployeeId,
     vaults: st.vaults as never[],
     st: stateSlice,
     advMut,
@@ -93,7 +118,7 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
 
   const meta = (MODE_META as Record<string, { labelAr: string; labelEn: string }>)[String(mode)] || MODE_META.advance;
   const title = isAr ? meta.labelAr : meta.labelEn;
-  const dataLoading = st.dataLoading;
+  const dataLoading = st.dataLoading || (mode === 'increase' && compensationSnapshotsLoading);
 
   const empSelect = (value: string, onChange: (v: string) => void, id: string) => (
     <Input id={id} type="select" value={value} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)} required disabled={dataLoading}>
@@ -136,6 +161,17 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
             }}
           >
             {st.formError}
+          </div>
+        )}
+        {!st.confirmStep && mode === 'increase' && compensationSnapshotsError && (
+          <div
+            className="mb-4 p-3 rounded-lg text-[14px]"
+            style={{
+              background: 'var(--noorix-red-8)',
+              color: 'var(--noorix-accent-red)',
+            }}
+          >
+            {compensationSnapshotsError instanceof Error ? compensationSnapshotsError.message : t('loadingError')}
           </div>
         )}
         {!st.confirmStep && !dataLoading && mode === 'advance' && (

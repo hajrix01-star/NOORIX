@@ -11,7 +11,6 @@ import { createMovement, updateEmployee, updateRaiseMovement } from '../../../se
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { hrFmt } from '../utils/hrFmt';
 import {
-  totalSalary,
   basicSalaryFromTargetTotalInclusiveOvertime,
 } from '../utils/employeeSalaryMath';
 
@@ -23,6 +22,7 @@ export function EmployeeCareerMovementModal({
   employee,
   companyId,
   customAllowanceTotal = 0,
+  currentTotalAllIn,
   editMovement = null,
   onClose,
   onSuccess,
@@ -37,7 +37,12 @@ export function EmployeeCareerMovementModal({
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const customTotal = Number(customAllowanceTotal) || 0;
+  const customTotal = Number(customAllowanceTotal);
+  const centralCurrentTotalAllIn = Number(currentTotalAllIn);
+  const hasCentralCurrentTotal =
+    Number.isFinite(centralCurrentTotalAllIn) &&
+    centralCurrentTotalAllIn > 0 &&
+    Number.isFinite(customTotal);
 
   useEffect(() => {
     if (!employee) return;
@@ -59,11 +64,6 @@ export function EmployeeCareerMovementModal({
     setFormError('');
   }, [employee, kind, isEditRaise, editMovement]);
 
-  const currentTotalAllIn = useMemo(
-    () => totalSalary(employee, customTotal),
-    [employee, customTotal],
-  );
-
   const raisePreview = useMemo(() => {
     if (kind !== 'raise' || !employee) return null;
     const raw = String(raiseIncrement ?? '').trim().replace(',', '.');
@@ -73,7 +73,7 @@ export function EmployeeCareerMovementModal({
 
     const baseTotal = isEditRaise && editMovement?.previousValue != null
       ? roundMoney2(Number(editMovement.previousValue))
-      : currentTotalAllIn;
+      : centralCurrentTotalAllIn;
 
     const newTarget = roundMoney2(baseTotal + inc);
     if (newTarget <= 0) return { invalidTarget: true, inc, newTarget };
@@ -89,7 +89,7 @@ export function EmployeeCareerMovementModal({
       inverseWarning,
       baseTotal,
     };
-  }, [kind, employee, customTotal, raiseIncrement, currentTotalAllIn, isEditRaise, editMovement]);
+  }, [kind, employee, customTotal, raiseIncrement, centralCurrentTotalAllIn, isEditRaise, editMovement]);
 
   async function handleSubmit(e: any) {
     e?.preventDefault?.();
@@ -133,9 +133,13 @@ export function EmployeeCareerMovementModal({
       setFormError(t('careerRaiseIncrementNonZero'));
       return;
     }
+    if (!hasCentralCurrentTotal) {
+      setFormError(t('loadingError'));
+      return;
+    }
     const baseTotal = isEditRaise && editMovement?.previousValue != null
       ? roundMoney2(Number(editMovement.previousValue))
-      : currentTotalAllIn;
+      : centralCurrentTotalAllIn;
     const newTarget = roundMoney2(baseTotal + inc);
     if (newTarget <= 0) {
       setFormError(t('careerRaiseNewTargetInvalid'));
@@ -169,20 +173,18 @@ export function EmployeeCareerMovementModal({
         return;
       }
 
-      const up = await updateEmployee(employee.id, { basicSalary: basic }, companyId);
-      rejectIfApiFailed(up, t('updateFailed'));
       const mov = await createMovement({
         companyId,
         employeeId: employee.id,
         movementType: 'raise',
         amount: inc > 0 ? inc : undefined,
-        previousValue: String(roundMoney2(currentTotalAllIn)),
+        previousValue: String(roundMoney2(centralCurrentTotalAllIn)),
         newValue: String(roundMoney2(newTarget)),
         effectiveDate: `${effectiveDate}T12:00:00.000Z`,
         notes:
           notes.trim()
           || (inc < 0
-            ? `${t('careerSalaryAdjustmentNote')}: ${hrFmt(currentTotalAllIn)} → ${hrFmt(newTarget)}`
+            ? `${t('careerSalaryAdjustmentNote')}: ${hrFmt(centralCurrentTotalAllIn)} → ${hrFmt(newTarget)}`
             : undefined),
       });
       rejectIfApiFailed(mov, t('saveFailed'));
@@ -203,7 +205,7 @@ export function EmployeeCareerMovementModal({
 
   const raiseBlocked =
     kind === 'raise'
-    && (raisePreview?.invalidTarget || raisePreview?.inverseWarning);
+    && (!hasCentralCurrentTotal || raisePreview?.invalidTarget || raisePreview?.inverseWarning);
 
   return (
     <AdaptiveSheet
@@ -225,6 +227,11 @@ export function EmployeeCareerMovementModal({
         {formError ? (
           <div className="text-[13px] text-noorix-red rounded-lg px-3 py-2 bg-noorix-bg-muted border border-noorix-border">
             {formError}
+          </div>
+        ) : null}
+        {kind === 'raise' && !hasCentralCurrentTotal ? (
+          <div className="text-[13px] text-noorix-red rounded-lg px-3 py-2 bg-noorix-bg-muted border border-noorix-border">
+            {t('loadingError')}
           </div>
         ) : null}
 
@@ -259,7 +266,7 @@ export function EmployeeCareerMovementModal({
             <div className="text-[13px] text-noorix-muted">
               {isEditRaise ? t('careerRaiseEditBaseHint') : t('careerCurrentTotalWithOvertime')}:{' '}
               <span className="font-semibold text-noorix-text ltr inline-block">
-                {hrFmt(isEditRaise && raisePreview?.baseTotal != null ? raisePreview.baseTotal : currentTotalAllIn)}
+                {hrFmt(isEditRaise && raisePreview?.baseTotal != null ? raisePreview.baseTotal : centralCurrentTotalAllIn)}
               </span>
             </div>
             <p className="text-[12px] text-noorix-muted m-0 -mt-2">{t('careerRaiseTotalHint')}</p>

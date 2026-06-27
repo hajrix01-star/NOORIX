@@ -13,7 +13,8 @@ import {
   parseOvertimeWorkDaysPerMonth,
   mergeOvertimeWorkDaysIntoSchedule,
   DEFAULT_OVERTIME_WORK_DAYS,
-  totalSalary,
+  computeEmployeeSalaryPackageBreakdown,
+  sumSalaryCustomAllowances,
 } from '../utils/employeeSalaryMath';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 
@@ -118,9 +119,7 @@ export const StaffFormModal = memo(function StaffFormModal({
   };
 
   const computedCustomAllowanceTotal = useMemo(
-    () => roundMoney2(
-      customAllowances.reduce((sum: any, row: any) => sum + (roundMoney2(row.amount) || 0), 0),
-    ),
+    () => sumSalaryCustomAllowances(customAllowances),
     [customAllowances],
   );
 
@@ -147,7 +146,10 @@ export const StaffFormModal = memo(function StaffFormModal({
     overtimeWorkDays,
   ]);
 
-  const computedTotalSalary = totalSalary(salaryPreviewEmployee, computedCustomAllowanceTotal);
+  const computedTotalSalary = computeEmployeeSalaryPackageBreakdown(
+    salaryPreviewEmployee,
+    computedCustomAllowanceTotal,
+  ).total;
 
   function handleSubmit(e: any) {
     e?.preventDefault?.();

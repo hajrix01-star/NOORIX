@@ -12,10 +12,12 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import Decimal from 'decimal.js';
+import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
-import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
+import { getEmployeeCompensationSnapshot, throwIfApiFailed } from '../../../services/api';
+import { hrKeys } from '../../../services/queryKeys';
 import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
@@ -35,7 +37,6 @@ export default function EOSCalcTab() {
   const company = companies?.find((c: any) => c.id === companyId);
   const companyName = company?.nameAr || company?.name || 'الشركة';
   const { employees } = useEmployees(companyId);
-  const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
 
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [joinDate, setJoinDate] = useState('');
@@ -44,31 +45,41 @@ export default function EOSCalcTab() {
   const [terminationReason, setTerminationReason] = useState('employer');
 
   const emp = employees.find((e: any) => e.id === selectedEmployee);
-  const allowanceTotals = useMemo(() => {
-    const map = new Map();
-    for (const row of customAllowances) {
-      const employeeId = row.employeeId;
-      if (!employeeId) continue;
-      map.set(employeeId, (map.get(employeeId) || 0) + (Number(row.amount) || 0));
-    }
-    return map;
-  }, [customAllowances]);
+  const {
+    data: compensationSnapshot,
+    isLoading: compensationSnapshotLoading,
+    error: compensationSnapshotError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshot(companyId, selectedEmployee),
+    queryFn: async () => {
+      const res = await getEmployeeCompensationSnapshot(companyId, selectedEmployee);
+      throwIfApiFailed(res, t('loadingError'));
+      return res.data;
+    },
+    enabled: !!companyId && !!selectedEmployee,
+  });
   const jd = joinDate || emp?.joinDate;
   const ed = endDate;
   const sal = new Decimal(lastSalary || 0);
+  const centralSalaryNumber = (value: unknown): number | null => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  useEffect(() => {
+    if (!selectedEmployee) return;
+    setJoinDate('');
+    setLastSalary('');
+  }, [selectedEmployee]);
 
   useEffect(() => {
     if (!selectedEmployee) return;
     const em = employees.find((row: any) => row.id === selectedEmployee);
-    if (!em) return;
+    if (!em || !compensationSnapshot?.salaryPackage) return;
+    const fixedTotal = centralSalaryNumber(compensationSnapshot.salaryPackage.fixedTotal);
     setJoinDate(toYmd(em.joinDate));
-    const total = new Decimal(em.basicSalary || 0)
-      .plus(em.housingAllowance || 0)
-      .plus(em.transportAllowance || 0)
-      .plus(em.otherAllowance || 0)
-      .plus(allowanceTotals.get(em.id) || 0);
-    setLastSalary(total.toString());
-  }, [selectedEmployee, employees, allowanceTotals]);
+    setLastSalary(fixedTotal == null ? '' : String(fixedTotal));
+  }, [selectedEmployee, employees, compensationSnapshot]);
 
   const eosCalc = computeEos({ joinDate: jd, endDate: ed, wage: sal, reason: terminationReason });
   const serviceDays = jd && ed ? eosCalc.serviceDays : 0;
@@ -81,18 +92,19 @@ export default function EOSCalcTab() {
   const eosAmount = eosCalc.eosAmount;
 
   const allowanceRows = useMemo(() => {
-    if (!emp) return [];
+    if (!emp || !compensationSnapshot?.salaryPackage) return [];
     const rows = [];
-    const housing = Number(emp.housingAllowance || 0);
-    const transport = Number(emp.transportAllowance || 0);
-    const other = Number(emp.otherAllowance || 0);
-    const custom = Number(allowanceTotals.get(emp.id) || 0);
+    const housing = centralSalaryNumber(compensationSnapshot.salaryPackage.housingAllowance);
+    const transport = centralSalaryNumber(compensationSnapshot.salaryPackage.transportAllowance);
+    const other = centralSalaryNumber(compensationSnapshot.salaryPackage.otherAllowance);
+    const custom = centralSalaryNumber(compensationSnapshot.salaryPackage.customAllowanceTotal);
+    if (housing == null || transport == null || other == null || custom == null) return [];
     if (housing > 0) rows.push({ ar: 'بدل السكن', en: 'Housing', amount: housing });
     if (transport > 0) rows.push({ ar: 'بدل المواصلات', en: 'Transport', amount: transport });
     if (other > 0) rows.push({ ar: 'بدل آخر', en: 'Other', amount: other });
     if (custom > 0) rows.push({ ar: 'بدلات مخصصة', en: 'Custom allowances', amount: custom });
     return rows;
-  }, [allowanceTotals, emp]);
+  }, [compensationSnapshot, emp]);
 
   function handlePrint() {
     const reportDate = getSaudiToday();
@@ -258,7 +270,24 @@ export default function EOSCalcTab() {
       </div>
 
       <div className="mb-5">
-        <Input type="number" label={t('eosCalcSalary')} min="0" step="0.01" value={lastSalary} onChange={(e: any) => setLastSalary(e.target.value)} />
+        <Input
+          type="number"
+          label={t('eosCalcSalary')}
+          min="0"
+          step="0.01"
+          value={lastSalary}
+          onChange={(e: any) => setLastSalary(e.target.value)}
+          readOnly={!!selectedEmployee}
+          className={selectedEmployee ? 'bg-noorix-bg-muted' : undefined}
+        />
+        {selectedEmployee && compensationSnapshotLoading && (
+          <div className="mt-1.5 text-[11px] text-noorix-muted">{t('loading')}</div>
+        )}
+        {selectedEmployee && compensationSnapshotError && (
+          <div className="mt-1.5 text-[11px] text-noorix-red">
+            {compensationSnapshotError instanceof Error ? compensationSnapshotError.message : t('loadingError')}
+          </div>
+        )}
       </div>
 
       <div className="mb-5">

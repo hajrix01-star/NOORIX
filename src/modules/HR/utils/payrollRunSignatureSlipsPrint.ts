@@ -5,6 +5,7 @@ import { openPrintWindow } from '../../../utils/printUtils';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import { computePayrollLineSummary } from './hrCalculations/payroll';
 
 function esc(v: any) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -140,12 +141,7 @@ export function openPayrollRunEmployeeSlipsPrint({
       const job = esc(emp?.jobTitle || '—');
       const join = formatSaudiDate(emp?.joinDate);
 
-      const gross = Number(row.grossSalary ?? 0);
-      const add = Number(row.allowancesAdd ?? 0);
-      const ded = Number(row.deductions ?? 0);
-      const adv = Number(row.advancesDeduct ?? 0);
-      const net = Number(row.netSalary ?? 0);
-      const beforeDed = gross + add;
+      const summary = computePayrollLineSummary(row);
 
       let breakdownHtml = '';
       if (netOnly) {
@@ -157,7 +153,7 @@ export function openPayrollRunEmployeeSlipsPrint({
         <table class="ps-table">
           <thead><tr><th>${esc(labels.colItem)}</th><th>${esc(labels.colAmount)}</th></tr></thead>
           <tbody>
-            <tr><td>${esc(labels.netPayableTitle)}</td><td class="td-num">${esc(hrFmt(net))} SR</td></tr>
+            <tr><td>${esc(labels.netPayableTitle)}</td><td class="td-num">${esc(hrFmt(summary.netSalary))} SR</td></tr>
           </tbody>
         </table>
         <p class="ps-note" dir="rtl">${esc(labels.netOnlyNoteAr)}</p>
@@ -165,21 +161,21 @@ export function openPayrollRunEmployeeSlipsPrint({
       } else {
         const rows = [];
         rows.push(
-          `<tr><td>${esc(labels.rowGross)}</td><td class="td-num">${esc(hrFmt(gross))} SR</td></tr>`,
+          `<tr><td>${esc(labels.rowGross)}</td><td class="td-num">${esc(hrFmt(summary.grossSalary))} SR</td></tr>`,
         );
-        if (add > 0) {
+        if (summary.allowancesAdd > 0) {
           rows.push(
-            `<tr><td>${esc(labels.rowAllowances)}</td><td class="td-num">${esc(hrFmt(add))} SR</td></tr>`,
+            `<tr><td>${esc(labels.rowAllowances)}</td><td class="td-num">${esc(hrFmt(summary.allowancesAdd))} SR</td></tr>`,
           );
         }
         rows.push(
-          `<tr><td>${esc(labels.rowBeforeDed)}</td><td class="td-num">${esc(hrFmt(beforeDed))} SR</td></tr>`,
+          `<tr><td>${esc(labels.rowBeforeDed)}</td><td class="td-num">${esc(hrFmt(summary.beforeDeductions))} SR</td></tr>`,
         );
-        if (ded > 0) {
-          rows.push(`<tr><td>${esc(labels.rowDeductions)}</td><td class="td-num">${esc(hrFmt(ded))} SR</td></tr>`);
+        if (summary.payrollDeductions > 0) {
+          rows.push(`<tr><td>${esc(labels.rowDeductions)}</td><td class="td-num">${esc(hrFmt(summary.payrollDeductions))} SR</td></tr>`);
         }
-        if (adv > 0) {
-          rows.push(`<tr><td>${esc(labels.rowAdvances)}</td><td class="td-num">${esc(hrFmt(adv))} SR</td></tr>`);
+        if (summary.advancesDeduct > 0) {
+          rows.push(`<tr><td>${esc(labels.rowAdvances)}</td><td class="td-num">${esc(hrFmt(summary.advancesDeduct))} SR</td></tr>`);
         }
         breakdownHtml = `
         <div class="ps-sec-title">
@@ -189,7 +185,7 @@ export function openPayrollRunEmployeeSlipsPrint({
         <table class="ps-table">
           <thead><tr><th>${esc(labels.colItem)}</th><th>${esc(labels.colAmount)}</th></tr></thead>
           <tbody>${rows.join('')}</tbody>
-          <tfoot><tr><td>${esc(labels.rowNet)}</td><td class="td-num">${esc(hrFmt(net))} SR</td></tr></tfoot>
+          <tfoot><tr><td>${esc(labels.rowNet)}</td><td class="td-num">${esc(hrFmt(summary.netSalary))} SR</td></tr></tfoot>
         </table>`;
       }
 

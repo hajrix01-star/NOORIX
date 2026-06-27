@@ -5,8 +5,8 @@ import { hrFmt } from '../../../utils/hrFmt';
 import { formatSaudiDate } from '../../../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../../../utils/moneyInput';
-import { totalSalary } from '../../../utils/employeeSalaryMath';
 import { getAdvanceBalanceParts } from '../../../utils/advanceBalance';
+import { computePayrollLineNet, computePayrollRunTotals } from '../../../utils/hrCalculations/payroll';
 import {
   computeApprovedLeaveDaysByEmployee,
   computeSettledDaysByEmployee,
@@ -18,17 +18,6 @@ import {
   ceilAmount,
   parseDeferredMonth,
 } from './payrollRunMappers';
-
-type CustomAllowanceRow = { employeeId?: string; amount?: unknown };
-
-export function computeAllowanceTotals(allCustomAllowances: CustomAllowanceRow[]): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const row of allCustomAllowances) {
-    if (!row.employeeId) continue;
-    map.set(row.employeeId, (map.get(row.employeeId) || 0) + (Number(row.amount) || 0));
-  }
-  return map;
-}
 
 export function computeLeaveSettledEmployeeIds(
   leaveSalarySettlements: Array<{ employeeId?: string }>,
@@ -109,7 +98,7 @@ export function computeDisplayEmployees(
 }
 
 export function computeTotalNet(items: PayrollRunLineItem[]): number {
-  return items.reduce((s, i) => s + (i.netSalary ?? 0), 0);
+  return computePayrollRunTotals(items).netSalary;
 }
 
 type InvoiceLike = {
@@ -170,7 +159,7 @@ type BuildLineDeps = {
   emp: Record<string, unknown> & { id?: string };
   payrollMonth: string;
   defaultMonth: string;
-  allowanceTotals: Map<string, number>;
+  compensationSnapshotByEmployeeId: Map<string, any>;
   leaveDaysByEmployee: Map<string, Set<string>>;
   settledDaysByEmployee: Map<string, Set<string>>;
   advancesByEmployee: Map<string, PayrollAdvanceDueRow[]>;
@@ -183,7 +172,7 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
     emp,
     payrollMonth,
     defaultMonth,
-    allowanceTotals,
+    compensationSnapshotByEmployeeId,
     leaveDaysByEmployee,
     settledDaysByEmployee,
     advancesByEmployee,
@@ -191,8 +180,11 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
     t,
   } = deps;
   const pm = payrollMonth || defaultMonth;
-  const customSum = (emp.id && allowanceTotals.get(emp.id)) || 0;
-  const fullGross = totalSalary(emp, customSum);
+  const compensationSnapshot = emp.id ? compensationSnapshotByEmployeeId.get(String(emp.id)) : null;
+  const fullGross = Number(compensationSnapshot?.salaryPackage?.total);
+  if (!Number.isFinite(fullGross) || fullGross <= 0) {
+    throw new Error(t('loadingError'));
+  }
   const pr = getEmploymentProrationInMonth(emp, pm);
   const paidBreakdown = countPayrollPaidDaysInMonth(emp, pm, leaveDaysByEmployee, settledDaysByEmployee);
   const { paidDays, leaveDays, settledDays, daysInMonth } = paidBreakdown;
@@ -218,7 +210,12 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
       return dateStr;
     })
     .join(' ، ');
-  const netSalary = Math.max(0, grossProrated - advancesDeduct);
+  const netSalary = computePayrollLineNet({
+    grossSalary: grossProrated,
+    allowancesAdd: 0,
+    deductions: 0,
+    advancesDeduct,
+  });
   const notesParts: string[] = [];
   if (advanceDatesLabel) notesParts.push(`تواريخ السلف: ${advanceDatesLabel}`);
   if (pr.factor < 1 && pr.daysInMonth > 0) {

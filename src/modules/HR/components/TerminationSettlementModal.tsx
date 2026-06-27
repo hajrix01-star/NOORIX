@@ -7,15 +7,26 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { useApp } from '../../../context/AppContext';
-import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { useVaults } from '../../../hooks/useVaults';
-import { getInvoices, getMovements, uploadDocumentFile, createInvoice, createMovement } from '../../../services/api';
+import {
+  createInvoice,
+  createMovement,
+  getEmployeeCompensationSnapshot,
+  getInvoices,
+  getMovements,
+  throwIfApiFailed,
+  uploadDocumentFile,
+} from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
-import { totalSalary } from '../utils/employeeSalaryMath';
-import { getEmploymentProrationInMonth, toLocalDayKey } from '../utils/payrollAttendanceMath';
+import { toLocalDayKey } from '../utils/payrollAttendanceMath';
+import { getAdvanceTotals } from '../utils/advanceBalance';
+import {
+  computeTerminationSalarySettlementPreview,
+  getTerminationPayrollMonthFirstDay,
+} from '../utils/hrCalculations/termination';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
@@ -23,12 +34,6 @@ import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, Modal, FmtNum, Input } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
-
-function payrollMonthFirstDay(terminationYmd: any) {
-  const s = toYmd(terminationYmd);
-  if (s.length < 7) return null;
-  return `${s.slice(0, 7)}-01`;
-}
 
 function esc(v: any) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -113,12 +118,22 @@ export default function TerminationSettlementModal({
 
   const { paymentVaults = [] } = useVaults({ companyId });
 
-  const { allowances: customRows = [] } = useCustomAllowances(companyId, empId);
+  const {
+    data: compensationSnapshot,
+    isLoading: compensationSnapshotLoading,
+    error: compensationSnapshotError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshot(companyId, empId),
+    queryFn: async () => {
+      const res = await getEmployeeCompensationSnapshot(companyId, empId);
+      throwIfApiFailed(res, t('loadingError'));
+      return res.data;
+    },
+    enabled: open && !!companyId && !!empId,
+  });
 
-  const customSum = useMemo(
-    () => roundMoney2(customRows.reduce((s: any, r: any) => s + (Number(r.amount) || 0), 0)),
-    [customRows],
-  );
+  const monthlyPackageTotal = compensationSnapshot?.salaryPackage?.total;
+  const hasMonthlyPackageTotal = Number.isFinite(Number(monthlyPackageTotal)) && Number(monthlyPackageTotal) > 0;
 
   const { data: advanceInvoices = [] } = useQuery({
     queryKey: hrKeys.terminationAdvances(companyId, empId),
@@ -133,16 +148,10 @@ export default function TerminationSettlementModal({
   });
 
   const advancesRemaining = useMemo(() => {
-    let s = 0;
-    for (const inv of advanceInvoices) {
-      const total = Number(inv.totalAmount ?? 0);
-      const settled = Number(inv.settledAmount ?? 0);
-      s += Math.max(0, total - settled);
-    }
-    return roundMoney2(s);
+    return roundMoney2(getAdvanceTotals(advanceInvoices).remainingAmount.toNumber());
   }, [advanceInvoices]);
 
-  const monthFirst = payrollMonthFirstDay(terminationYmd);
+  const monthFirst = getTerminationPayrollMonthFirstDay(terminationYmd);
 
   const termSalaryTag = useMemo(
     () => (empId && monthFirst ? terminationSalaryInvoiceTag(empId, monthFirst) : ''),
@@ -161,18 +170,13 @@ export default function TerminationSettlementModal({
   });
 
   const preview = useMemo(() => {
-    if (!employee || !monthFirst) return null;
-    const fullMonthly = totalSalary(employee, customSum);
-    const pr = getEmploymentProrationInMonth(employee, monthFirst);
-    const grossProrated = roundMoney2(fullMonthly * pr.factor);
-    const netSuggested = Math.max(0, roundMoney2(grossProrated - advancesRemaining));
-    return {
-      fullMonthly,
-      pr,
-      grossProrated,
-      netSuggested,
-    };
-  }, [employee, monthFirst, customSum, advancesRemaining]);
+    return computeTerminationSalarySettlementPreview({
+      employee,
+      terminationDate: terminationYmd,
+      monthlyPackageTotal,
+      advancesRemaining,
+    });
+  }, [employee, terminationYmd, monthlyPackageTotal, advancesRemaining]);
 
   const lastWorkYmd = useMemo(() => {
     if (!preview || !terminationYmd) return '';
@@ -383,7 +387,15 @@ export default function TerminationSettlementModal({
       }
     >
       <p className="m-0 mb-3 text-[13px] text-noorix-muted">{t('terminationSettlementSubtitle')}</p>
-      {!monthFirst || !preview ? (
+      {compensationSnapshotLoading ? (
+        <p className="m-0 text-[13px] text-noorix-muted">{t('loading')}</p>
+      ) : compensationSnapshotError || !compensationSnapshot ? (
+        <p className="m-0 text-[13px] text-noorix-red">
+          {compensationSnapshotError instanceof Error ? compensationSnapshotError.message : t('loadingError')}
+        </p>
+      ) : !hasMonthlyPackageTotal ? (
+        <p className="m-0 text-[13px] text-noorix-red">{t('loadingError')}</p>
+      ) : !monthFirst || !preview ? (
         <p className="m-0 text-[13px] text-noorix-red">{t('terminationSettlementMissingDate')}</p>
       ) : (
         <div className="space-y-3 text-[13px]">

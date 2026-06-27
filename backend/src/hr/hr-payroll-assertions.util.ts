@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import type { PayrollRunItemDto } from './dto/create-payroll-run.dto';
+import { computeHrPayrollLineNet } from './hr-payroll-line-net.util';
 
 /** مجموع أجزاء الخزائن يجب أن يطابق صافي المسيرة (مجموع صافي السطور). */
 export function assertPayrollRunVaultSplitsMatchTotal(
@@ -20,13 +21,8 @@ export function assertPayrollItemsNetConsistent(items: PayrollRunItemDto[]): voi
   const EPS = 0.02;
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
-    const gross = Number(it.grossSalary);
-    const add = Number(it.allowancesAdd ?? 0);
-    const ded = Number(it.deductions ?? 0);
-    const adv = Number(it.advancesDeduct ?? 0);
     const net = Number(it.netSalary);
-    const raw = gross + add - ded - adv;
-    const expected = raw < 0 ? 0 : raw;
+    const expected = computeHrPayrollLineNet(it);
     if (!Number.isFinite(net) || !Number.isFinite(expected) || Math.abs(net - expected) > EPS) {
       throw new BadRequestException(
         `السطر ${i + 1}: صافي الراتب (${net}) لا يطابق الحساب (المتوقع ≈ ${expected.toFixed(2)}: إجمالي + بدلات إضافية − خصومات − سلف).`,

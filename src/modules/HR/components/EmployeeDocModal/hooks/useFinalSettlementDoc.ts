@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Decimal from 'decimal.js';
 import { getSaudiToday } from '../../../../../utils/saudiDate';
-import { parseWorkHours, SAUDI_STANDARD_HOURS } from '../../../utils/employeeSalaryMath';
 import {
   buildSalaryRows,
   buildSettlementDeclaration,
@@ -9,24 +8,23 @@ import {
 } from '../utils/employeeDocBuilders';
 import {
   computeEos,
-  computeEosWageFromEmployee,
 } from '../../../utils/hrCalculations/eos';
 
 export function useFinalSettlementDoc(
   employee: Record<string, unknown>,
-  customAllowances: Array<Record<string, unknown>> = [],
+  compensationSnapshot: Record<string, any>,
 ) {
-  const { rows, total } = useMemo(() => buildSalaryRows(employee, customAllowances), [employee, customAllowances]);
+  const { rows, total } = useMemo(() => buildSalaryRows(compensationSnapshot), [compensationSnapshot]);
   const lastMonthlyComp = total;
   const termination = useMemo(() => getTerminationSummary(employee), [employee]);
   const [includeEos, setIncludeEos] = useState(true);
   const [eosEndDate, setEosEndDate] = useState(termination.terminationDate || getSaudiToday());
   const [eosReason, setEosReason] = useState(termination.reasonCode || 'employer');
   const [eosSalary, setEosSalary] = useState(String(lastMonthlyComp || 0));
-  const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
+  const overtimeHoursPerDay = Number(compensationSnapshot?.salaryPackage?.overtimeHoursPerDay ?? 0);
   const eosWage = useMemo(
-    () => computeEosWageFromEmployee(employee, customAllowances.reduce((s, r) => s + (Number(r.amount) || 0), 0)),
-    [employee, customAllowances],
+    () => new Decimal(compensationSnapshot?.salaryPackage?.fixedTotal ?? 0),
+    [compensationSnapshot],
   );
 
   useEffect(() => {

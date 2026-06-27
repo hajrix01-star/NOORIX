@@ -10,7 +10,6 @@ import {
   buildMovementPending,
 } from '../utils/hrQuickEntryMappers';
 import { resolveRaiseIncrement } from '../../../utils/careerMovementApply';
-import { sumCustomAllowancesForEmployee, totalSalary } from '../../../utils/employeeSalaryMath';
 import { formatMoneyForReport } from '../utils/hrQuickEntryFormatters';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 
@@ -60,7 +59,7 @@ export function useHrQuickEntryActions(args: {
   submitting: boolean;
   activeEmployees: EmployeeOption[];
   employees: Array<Record<string, unknown> & { id?: string }>;
-  customAllowances: Array<{ employeeId?: string; amount?: unknown }>;
+  compensationSnapshotByEmployeeId: Map<string, any>;
   vaults: Array<{ id?: string; nameAr?: string; nameEn?: string }>;
   st: StateSlice;
   advMut: MutRef;
@@ -80,7 +79,7 @@ export function useHrQuickEntryActions(args: {
     submitting,
     activeEmployees,
     employees,
-    customAllowances,
+    compensationSnapshotByEmployeeId,
     vaults,
     st,
     advMut,
@@ -197,8 +196,17 @@ export function useHrQuickEntryActions(args: {
       }
 
       if (st.mvType === 'raise') {
-        const customTotal = sumCustomAllowancesForEmployee(customAllowances, emp.id);
-        const currentTotal = totalSalary(emp, customTotal);
+        const compensationSnapshot = compensationSnapshotByEmployeeId.get(String(emp.id));
+        const currentTotal = Number(compensationSnapshot?.salaryPackage?.total);
+        const customAllowanceTotal = Number(compensationSnapshot?.salaryPackage?.customAllowanceTotal);
+        if (
+          !Number.isFinite(currentTotal) ||
+          currentTotal <= 0 ||
+          !Number.isFinite(customAllowanceTotal)
+        ) {
+          setFormError(isAr ? 'تعذر تحميل إجمالي راتب الموظف من المصدر المركزي.' : 'Could not load the employee salary total from the central source.');
+          return;
+        }
         const increment = resolveRaiseIncrement(st.mvAmount, st.mvNew, currentTotal);
         if (increment == null || !Number.isFinite(increment) || increment === 0) {
           setFormError(
@@ -213,7 +221,8 @@ export function useHrQuickEntryActions(args: {
           _applyMode: 'raise' as const,
           companyId,
           employee: emp,
-          customAllowances,
+          customAllowanceTotal,
+          currentTotalAllIn: currentTotal,
           increment,
           effectiveDate: st.mvEff,
           notes: st.mvNotes || undefined,
@@ -269,7 +278,7 @@ export function useHrQuickEntryActions(args: {
       submitting,
       st,
       employees,
-      customAllowances,
+      compensationSnapshotByEmployeeId,
       companyId,
       isAr,
       t,

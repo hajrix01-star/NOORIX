@@ -48,6 +48,22 @@ export async function getHrAdvances(companyId: string, year?: string | number): 
   return apiGet('/api/v1/hr/advances', params);
 }
 
+export async function getEmployeeCompensationSnapshot(
+  companyId: string,
+  employeeId: string,
+): Promise<ApiParsedResult> {
+  return apiGet(`/api/v1/hr/employees/${encodeURIComponent(employeeId)}/compensation-snapshot`, { companyId });
+}
+
+export async function getEmployeeCompensationSnapshots(
+  companyId: string,
+  employeeIds: string[] = [],
+): Promise<ApiParsedResult> {
+  const params: Record<string, string> = { companyId: String(companyId) };
+  if (employeeIds.length) params.employeeIds = employeeIds.join(',');
+  return apiGet('/api/v1/hr/compensation-snapshots', params);
+}
+
 export async function getLeaves(
   companyId: string,
   employeeId?: string,
