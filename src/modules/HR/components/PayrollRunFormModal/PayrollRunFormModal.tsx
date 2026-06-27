@@ -38,7 +38,7 @@ export function PayrollRunFormModal({
     existingRuns: st.existingRuns,
     editingRun: st.editingRun as never,
     monthStr: st.monthStr,
-    allCustomAllowances: st.allCustomAllowances,
+    compensationSnapshotByEmployeeId: st.compensationSnapshotByEmployeeId,
     advances: st.advances,
     leaves: st.leaves,
     leaveSalarySettlements: st.leaveSalarySettlements,
@@ -73,8 +73,21 @@ export function PayrollRunFormModal({
   const totalLabel = t('payrollTotal');
 
   const primaryDisabled = useMemo(
-    () => st.submitting || st.items.length === 0 || rowModel.alreadyExists,
-    [st.submitting, st.items.length, rowModel.alreadyExists],
+    () =>
+      st.submitting ||
+      st.items.length === 0 ||
+      rowModel.alreadyExists ||
+      st.compensationSnapshotsLoading ||
+      !!st.compensationSnapshotsError ||
+      rowModel.missingCentralSalaryEmployeeIds.length > 0,
+    [
+      st.submitting,
+      st.items.length,
+      rowModel.alreadyExists,
+      st.compensationSnapshotsLoading,
+      st.compensationSnapshotsError,
+      rowModel.missingCentralSalaryEmployeeIds.length,
+    ],
   );
 
   if (st.isEditMode && st.isLoadingRun) {
@@ -127,10 +140,35 @@ export function PayrollRunFormModal({
           <span className="text-[13px] font-bold">
             {rowModel.t('employeesList')} ({st.items.length})
           </span>
-          <Button type="button" size="sm" onClick={st.isEditMode ? rowModel.loadEditingItems : rowModel.initItems}>
+          <Button
+            type="button"
+            size="sm"
+            disabled={
+              st.compensationSnapshotsLoading ||
+              !!st.compensationSnapshotsError ||
+              rowModel.missingCentralSalaryEmployeeIds.length > 0
+            }
+            onClick={st.isEditMode ? rowModel.loadEditingItems : rowModel.initItems}
+          >
             {rowModel.t('refresh') || 'تحديث'}
           </Button>
         </div>
+        {st.compensationSnapshotsError ? (
+          <div
+            className="text-[13px] font-semibold mt-1 rounded-lg p-3 shrink-0 bg-noorix-red/15 border border-noorix-red/25 text-noorix-red"
+            role="alert"
+          >
+            {st.compensationSnapshotsError instanceof Error ? st.compensationSnapshotsError.message : t('loadingError')}
+          </div>
+        ) : null}
+        {rowModel.missingCentralSalaryEmployeeIds.length > 0 ? (
+          <div
+            className="text-[13px] font-semibold mt-1 rounded-lg p-3 shrink-0 bg-noorix-red/15 border border-noorix-red/25 text-noorix-red"
+            role="alert"
+          >
+            {t('loadingError')}
+          </div>
+        ) : null}
 
         <PayrollRunRowsTable
           displayEmployees={rowModel.displayEmployees as { id?: string; name?: string; nameAr?: string }[]}

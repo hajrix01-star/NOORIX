@@ -24,7 +24,7 @@ describe('hrCalculations/termination', () => {
         notes: '[HR_META]{"terminationDate":"2026-06-15"}',
       },
       terminationDate: '2026-06-15',
-      customAllowanceTotal: 150,
+      monthlyPackageTotal: 3900,
       advancesRemaining: 300,
     });
 
@@ -46,6 +46,7 @@ describe('hrCalculations/termination', () => {
         notes: '[HR_META]{"terminationDate":"2026-06-30"}',
       },
       terminationDate: '2026-06-30',
+      monthlyPackageTotal: 1000,
       advancesRemaining: 5000,
     });
 
@@ -66,7 +67,7 @@ describe('hrCalculations/termination', () => {
         notes: '[HR_META]{"terminationDate":"2026-06-30"}',
       },
       terminationDate: '2026-06-30',
-      customAllowanceTotal: 250,
+      monthlyPackageTotal: 10437.5,
       advancesRemaining: 600,
     });
 

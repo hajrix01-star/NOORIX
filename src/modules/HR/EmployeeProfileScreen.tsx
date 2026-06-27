@@ -479,6 +479,7 @@ export default function EmployeeProfileScreen() {
           employee={employee}
           companyId={companyId}
           customAllowanceTotal={compensationSnapshot.customAllowances.total}
+          currentTotalAllIn={compensationSnapshot.salaryPackage.total}
           editMovement={editRaiseMovement}
           onClose={() => {
             setCareerModal(null);

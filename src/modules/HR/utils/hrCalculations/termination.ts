@@ -1,12 +1,11 @@
 import { toYmd } from '../../../../utils/saudiDate';
 import { roundMoney2 } from '../../../../utils/moneyInput';
-import { computeEmployeeSalaryPackageBreakdown } from '../employeeSalaryMath';
 import { getEmploymentProrationInMonth } from '../payrollAttendanceMath';
 
 export type TerminationSalarySettlementInput = {
   employee: Record<string, unknown> | null | undefined;
   terminationDate: unknown;
-  customAllowanceTotal?: unknown;
+  monthlyPackageTotal: unknown;
   advancesRemaining?: unknown;
 };
 
@@ -39,9 +38,9 @@ export function computeTerminationSalarySettlementPreview(
   const payrollMonthFirstDay = getTerminationPayrollMonthFirstDay(terminationDate);
   if (!payrollMonthFirstDay) return null;
 
-  const customAllowanceTotal = toMoneyNumber(input.customAllowanceTotal);
+  const fullMonthly = toMoneyNumber(input.monthlyPackageTotal);
+  if (!Number.isFinite(fullMonthly) || fullMonthly <= 0) return null;
   const advancesRemaining = roundMoney2(Math.max(0, toMoneyNumber(input.advancesRemaining)));
-  const fullMonthly = computeEmployeeSalaryPackageBreakdown(employee, customAllowanceTotal).total;
   const pr = getEmploymentProrationInMonth(employee, payrollMonthFirstDay);
   const grossProrated = roundMoney2(fullMonthly * pr.factor);
   const netSuggested = roundMoney2(Math.max(0, grossProrated - advancesRemaining));

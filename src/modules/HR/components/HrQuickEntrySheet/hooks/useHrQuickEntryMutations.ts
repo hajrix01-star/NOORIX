@@ -96,7 +96,8 @@ export function useHrQuickEntryMutations({
         return applyCareerRaise({
           employee: body.employee as Record<string, unknown> & { id?: string },
           companyId: String(body.companyId || companyId),
-          customAllowances: (body.customAllowances as never[]) || [],
+          customAllowanceTotal: Number(body.customAllowanceTotal),
+          currentTotalAllIn: Number(body.currentTotalAllIn),
           increment: Number(body.increment),
           effectiveDate: String(body.effectiveDate),
           notes: body.notes ? String(body.notes) : undefined,

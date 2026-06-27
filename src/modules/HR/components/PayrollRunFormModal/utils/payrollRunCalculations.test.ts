@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAdvancesByEmployee,
   buildPayrollLineForEmployee,
-  computeAllowanceTotals,
 } from './payrollRunCalculations';
 
 const t = (key: string, ...args: string[]) => `${key}:${args.join(',')}`;
@@ -22,7 +21,9 @@ describe('payrollRunCalculations smoke', () => {
       joinDate: '2026-01-01',
       status: 'active',
     };
-    const allowanceTotals = computeAllowanceTotals([{ employeeId: 'emp-1', amount: '250' }]);
+    const compensationSnapshotByEmployeeId = new Map([
+      ['emp-1', { employeeId: 'emp-1', salaryPackage: { total: 10437.5 } }],
+    ]);
     const advancesByEmployee = buildAdvancesByEmployee(
       [
         {
@@ -41,7 +42,7 @@ describe('payrollRunCalculations smoke', () => {
       emp,
       payrollMonth: '2026-06',
       defaultMonth: '2026-06',
-      allowanceTotals,
+      compensationSnapshotByEmployeeId,
       leaveDaysByEmployee: new Map(),
       settledDaysByEmployee: new Map(),
       advancesByEmployee,

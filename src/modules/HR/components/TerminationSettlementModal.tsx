@@ -7,9 +7,16 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { useApp } from '../../../context/AppContext';
-import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
 import { useVaults } from '../../../hooks/useVaults';
-import { getInvoices, getMovements, uploadDocumentFile, createInvoice, createMovement } from '../../../services/api';
+import {
+  createInvoice,
+  createMovement,
+  getEmployeeCompensationSnapshot,
+  getInvoices,
+  getMovements,
+  throwIfApiFailed,
+  uploadDocumentFile,
+} from '../../../services/api';
 import { assertApiOk } from '../../../utils/apiResponse';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
@@ -20,7 +27,6 @@ import {
   computeTerminationSalarySettlementPreview,
   getTerminationPayrollMonthFirstDay,
 } from '../utils/hrCalculations/termination';
-import { sumSalaryCustomAllowances } from '../utils/employeeSalaryMath';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
@@ -112,12 +118,22 @@ export default function TerminationSettlementModal({
 
   const { paymentVaults = [] } = useVaults({ companyId });
 
-  const { allowances: customRows = [] } = useCustomAllowances(companyId, empId);
+  const {
+    data: compensationSnapshot,
+    isLoading: compensationSnapshotLoading,
+    error: compensationSnapshotError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshot(companyId, empId),
+    queryFn: async () => {
+      const res = await getEmployeeCompensationSnapshot(companyId, empId);
+      throwIfApiFailed(res, t('loadingError'));
+      return res.data;
+    },
+    enabled: open && !!companyId && !!empId,
+  });
 
-  const customSum = useMemo(
-    () => sumSalaryCustomAllowances(customRows),
-    [customRows],
-  );
+  const monthlyPackageTotal = compensationSnapshot?.salaryPackage?.total;
+  const hasMonthlyPackageTotal = Number.isFinite(Number(monthlyPackageTotal)) && Number(monthlyPackageTotal) > 0;
 
   const { data: advanceInvoices = [] } = useQuery({
     queryKey: hrKeys.terminationAdvances(companyId, empId),
@@ -157,10 +173,10 @@ export default function TerminationSettlementModal({
     return computeTerminationSalarySettlementPreview({
       employee,
       terminationDate: terminationYmd,
-      customAllowanceTotal: customSum,
+      monthlyPackageTotal,
       advancesRemaining,
     });
-  }, [employee, terminationYmd, customSum, advancesRemaining]);
+  }, [employee, terminationYmd, monthlyPackageTotal, advancesRemaining]);
 
   const lastWorkYmd = useMemo(() => {
     if (!preview || !terminationYmd) return '';
@@ -371,7 +387,15 @@ export default function TerminationSettlementModal({
       }
     >
       <p className="m-0 mb-3 text-[13px] text-noorix-muted">{t('terminationSettlementSubtitle')}</p>
-      {!monthFirst || !preview ? (
+      {compensationSnapshotLoading ? (
+        <p className="m-0 text-[13px] text-noorix-muted">{t('loading')}</p>
+      ) : compensationSnapshotError || !compensationSnapshot ? (
+        <p className="m-0 text-[13px] text-noorix-red">
+          {compensationSnapshotError instanceof Error ? compensationSnapshotError.message : t('loadingError')}
+        </p>
+      ) : !hasMonthlyPackageTotal ? (
+        <p className="m-0 text-[13px] text-noorix-red">{t('loadingError')}</p>
+      ) : !monthFirst || !preview ? (
         <p className="m-0 text-[13px] text-noorix-red">{t('terminationSettlementMissingDate')}</p>
       ) : (
         <div className="space-y-3 text-[13px]">

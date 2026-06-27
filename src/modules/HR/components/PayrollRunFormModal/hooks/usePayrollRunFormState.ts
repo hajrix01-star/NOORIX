@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   getEmployees,
@@ -7,9 +7,9 @@ import {
   getPayrollRun,
   getPayrollRuns,
   getLeaveSalarySettlements,
+  getEmployeeCompensationSnapshots,
   throwIfApiFailed,
 } from '../../../../../services/api';
-import { useCustomAllowances } from '../../../../../hooks/useCustomAllowances';
 import { employeeKeys, hrKeys, invoiceKeys } from '../../../../../services/queryKeys';
 import { getDefaultPayrollMonth } from '../utils/payrollRunMappers';
 import type { PayrollRunLineItem } from '../types';
@@ -67,7 +67,31 @@ export function usePayrollRunFormState({
   const monthStart = payrollMonth ? new Date(payrollMonth) : null;
   const monthStr = monthStart ? `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}` : '';
 
-  const { allowances: allCustomAllowances = [] } = useCustomAllowances(cid);
+  const employeeIds = useMemo(
+    () => (employees as Array<{ id?: string }>).map((emp) => String(emp.id || '')).filter(Boolean),
+    [employees],
+  );
+  const {
+    data: compensationSnapshots,
+    isLoading: compensationSnapshotsLoading,
+    error: compensationSnapshotsError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshots(cid, employeeIds),
+    queryFn: async () => {
+      const res = await getEmployeeCompensationSnapshots(cid, employeeIds);
+      throwIfApiFailed(res, 'فشل تحميل بيانات الرواتب المركزية');
+      return res.data;
+    },
+    enabled: !!cid && employeeIds.length > 0,
+  });
+
+  const compensationSnapshotByEmployeeId = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const snapshot of compensationSnapshots?.items ?? []) {
+      if (snapshot?.employeeId) map.set(String(snapshot.employeeId), snapshot);
+    }
+    return map;
+  }, [compensationSnapshots]);
 
   const { data: advances = [] } = useQuery({
     queryKey: invoiceKeys.advancesForMonth(cid, monthStr),
@@ -118,7 +142,9 @@ export function usePayrollRunFormState({
     editingRun,
     isLoadingRun,
     monthStr,
-    allCustomAllowances,
+    compensationSnapshotByEmployeeId,
+    compensationSnapshotsLoading,
+    compensationSnapshotsError,
     advances,
     leaves,
     leaveSalarySettlements,
