@@ -55,6 +55,15 @@ export async function getEmployeeCompensationSnapshot(
   return apiGet(`/api/v1/hr/employees/${encodeURIComponent(employeeId)}/compensation-snapshot`, { companyId });
 }
 
+export async function getEmployeeCompensationSnapshots(
+  companyId: string,
+  employeeIds: string[] = [],
+): Promise<ApiParsedResult> {
+  const params: Record<string, string> = { companyId: String(companyId) };
+  if (employeeIds.length) params.employeeIds = employeeIds.join(',');
+  return apiGet('/api/v1/hr/compensation-snapshots', params);
+}
+
 export async function getLeaves(
   companyId: string,
   employeeId?: string,

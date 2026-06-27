@@ -68,6 +68,10 @@ export class HRService {
     return this.compensationSnapshot.getEmployeeSnapshot(companyId, employeeId);
   }
 
+  getCompanyCompensationSnapshots(companyId: string, employeeIds?: string[]) {
+    return this.compensationSnapshot.getCompanySnapshots(companyId, employeeIds);
+  }
+
   // ── Movements, allowances, deductions (مع المسير في نفس خدمة الرواتب) ──
 
   findMovements(...args: Parameters<HrPayrollService['findMovements']>) {

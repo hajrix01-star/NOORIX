@@ -6,7 +6,6 @@ import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useEmployees } from '../../hooks/useEmployees';
-import { useCustomAllowances } from '../../hooks/useCustomAllowances';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
@@ -15,7 +14,7 @@ import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ImportExportModal from '../../components/ImportExportModal';
 import {
-  buildEmployeeAllowanceTotalsMap,
+  EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS,
   EMPLOYEE_EXCEL_EXPORT_OPTS,
   formatEmployeeForExport,
 } from '../../utils/importTemplates';
@@ -24,6 +23,7 @@ import {
   deleteCustomAllowance,
   deleteEmployee,
   getCustomAllowances,
+  getEmployeeCompensationSnapshots,
   getEmployeesPaged,
   getEmployeesBulk,
   throwIfApiFailed,
@@ -35,7 +35,6 @@ import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import TerminationSettlementModal from './components/TerminationSettlementModal';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
-import { computeEmployeeSalaryPackageBreakdown } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
@@ -118,7 +117,6 @@ export default function StaffListScreen({ embedded }: any) {
   });
 
   const { create, update, createAdvance } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: false });
-  const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
 
   const [listPage, setListPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
@@ -154,33 +152,75 @@ export default function StaffListScreen({ embedded }: any) {
 
   const listTotal = pagedResult?.total ?? 0;
   const pagedItems = pagedResult?.items ?? [];
+  const pagedEmployeeIds = useMemo(() => pagedItems.map((row: any) => row.id).filter(Boolean), [pagedItems]);
+
+  const {
+    data: compensationSnapshots,
+    isLoading: compensationSnapshotsLoading,
+    error: compensationSnapshotsError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshots(companyId, pagedEmployeeIds),
+    queryFn: async () => {
+      const res = await getEmployeeCompensationSnapshots(companyId, pagedEmployeeIds);
+      throwIfApiFailed(res, t('employeesLoadFailed'));
+      return res.data;
+    },
+    enabled: !!companyId && pagedEmployeeIds.length > 0,
+  });
 
   const STATUS_MAP = useMemo(() => buildEmployeeHrStatusMap(t), [t]);
 
-  const allowanceTotals = useMemo(() => {
+  const snapshotByEmployeeId = useMemo(() => {
     const map = new Map();
-    for (const row of customAllowances) {
-      const employeeId = row.employeeId;
-      if (!employeeId) continue;
-      const next = (map.get(employeeId) || 0) + (Number(row.amount) || 0);
-      map.set(employeeId, roundMoney2(next));
+    for (const snapshot of compensationSnapshots?.items ?? []) {
+      if (snapshot?.employeeId) map.set(snapshot.employeeId, snapshot);
     }
     return map;
-  }, [customAllowances]);
+  }, [compensationSnapshots]);
+
+  async function buildCentralEmployeeExportRows(list: any[]) {
+    const ids = list.map((row: any) => row.id).filter(Boolean);
+    const res = await getEmployeeCompensationSnapshots(companyId, ids);
+    throwIfApiFailed(res, t('employeesLoadFailed'));
+    const snapshotMap = new Map((res.data?.items ?? []).map((snapshot: any) => [snapshot.employeeId, snapshot]));
+    const allowanceTotals = new Map(
+      (res.data?.items ?? []).map((snapshot: any) => [
+        snapshot.employeeId,
+        Number(snapshot?.salaryPackage?.customAllowanceTotal ?? snapshot?.customAllowances?.total ?? 0),
+      ]),
+    );
+    const customColumn = EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS[4];
+    const overtimeColumn = EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS[5];
+    const totalColumn = EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS[6];
+
+    return list.map((employee: any) => {
+      const snapshot = snapshotMap.get(employee.id) as any;
+      if (!snapshot?.salaryPackage) {
+        throw new Error(t('employeesLoadFailed'));
+      }
+      return {
+        ...formatEmployeeForExport(employee, allowanceTotals),
+        [customColumn]: snapshot.salaryPackage.customAllowanceTotal,
+        [overtimeColumn]: snapshot.salaryPackage.overtimePay,
+        [totalColumn]: snapshot.salaryPackage.total,
+      };
+    });
+  }
 
   const tableData = useMemo(() => {
     return pagedItems.map((e: any) => {
       const parsed = parseEmployeeNotesMeta(e.notes);
       const meta = parsed.meta || {};
+      const salarySnapshot = snapshotByEmployeeId.get(e.id);
       return {
         ...e,
-        totalSalary: computeEmployeeSalaryPackageBreakdown(e, allowanceTotals.get(e.id) || 0).total,
+        totalSalary: salarySnapshot?.salaryPackage?.total ?? null,
         terminationReason: meta.terminationReason || '',
         terminationClause: meta.terminationClause || '',
         terminationDate: meta.terminationDate || '',
       };
     });
-  }, [pagedItems, allowanceTotals]);
+  }, [pagedItems, snapshotByEmployeeId]);
 
   const toggleSort = useCallback((key: any) => {
     setSortKey((prev: any) => {
@@ -220,7 +260,11 @@ export default function StaffListScreen({ embedded }: any) {
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125,
       render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140,
-      render: (_: any, row: any) => <FmtNum n={row.totalSalary} className="nx-cell-num text-[13px]" /> },
+      render: (_: any, row: any) => (
+        Number.isFinite(Number(row.totalSalary))
+          ? <FmtNum n={Number(row.totalSalary)} className="nx-cell-num text-[13px]" />
+          : <span className="nx-cell-muted">—</span>
+      ) },
     { key: 'status', label: t('status'), width: 110,
       render: (v: any) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
@@ -295,11 +339,13 @@ export default function StaffListScreen({ embedded }: any) {
         showToast(res?.error || t('saveFailed'), 'error');
         return;
       }
-      const rows = (res.data || []).map((e: any) => {
+      const list = res.data || [];
+      const centralRows = await buildCentralEmployeeExportRows(list);
+      const rows = list.map((e: any, index: number) => {
         const parsed = parseEmployeeNotesMeta(e.notes);
         const meta = parsed.meta || {};
         return {
-          ...formatEmployeeForExport(e, allowanceTotals),
+          ...centralRows[index],
           [t('employeesExcelColJoinDate')]: formatSaudiDate(e.joinDate),
           [t('employeesExcelColStatus')]: (STATUS_MAP as Record<string, { label?: string }>)[String(e.status)]?.label || e.status,
           [t('employeesExcelColTerminationReason')]: meta.terminationReason || '',
@@ -468,7 +514,13 @@ export default function StaffListScreen({ embedded }: any) {
           </div>
           <div className="flex items-center gap-2">
             <span className="nx-cr__amount text-noorix-green">
-              <FmtNum n={row.totalSalary} /> <span className="nx-sar">SR</span>
+              {Number.isFinite(Number(row.totalSalary)) ? (
+                <>
+                  <FmtNum n={Number(row.totalSalary)} /> <span className="nx-sar">SR</span>
+                </>
+              ) : (
+                <span className="nx-cell-muted">—</span>
+              )}
             </span>
             <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
               <KebabMenu
@@ -550,11 +602,7 @@ export default function StaffListScreen({ embedded }: any) {
                 throw new Error(res?.error || t('saveFailed'));
               }
               const list = res.data || [];
-              const allAllow = await getCustomAllowances(companyId);
-              throwIfApiFailed(allAllow, t('loadingError'));
-              const allowanceRows = Array.isArray(allAllow.data) ? allAllow.data : (allAllow.data?.items ?? []);
-              const totalsMap = buildEmployeeAllowanceTotalsMap(allowanceRows);
-              return list.map((e: any) => formatEmployeeForExport(e, totalsMap));
+              return buildCentralEmployeeExportRows(list);
             }}
             onImportSuccess={(count: any) => {
               queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
@@ -591,9 +639,6 @@ export default function StaffListScreen({ embedded }: any) {
       page={listPage}
       pageSize={PAGE_SIZE}
       onPageChange={setListPage}
-      isLoading={isLoading}
-      isError={!!employeesError}
-      errorMessage={employeesError?.message || t('employeesLoadFailed')}
       title={embedded ? undefined : t('employeesList')}
       badge={embedded ? undefined : <span className="nx-pill nx-pill--blue nx-pill--sm">{listTotal}</span>}
       searchValue={searchInput}
@@ -605,6 +650,9 @@ export default function StaffListScreen({ embedded }: any) {
       emptyMessage={t('noEmployees')}
       renderCompactRow={renderCompactRow}
       stripeMobileCards
+      isLoading={isLoading || compensationSnapshotsLoading}
+      isError={!!employeesError || !!compensationSnapshotsError}
+      errorMessage={employeesError?.message || compensationSnapshotsError?.message || t('employeesLoadFailed')}
     />
   ) : null;
 

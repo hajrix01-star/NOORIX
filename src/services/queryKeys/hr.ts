@@ -105,6 +105,9 @@ export const hrKeys = {
   compensationSnapshot: (companyId: string, employeeId: unknown) =>
     ['hr-compensation-snapshot', companyId, employeeId] as const,
 
+  compensationSnapshots: (companyId: string, employeeIds: readonly unknown[]) =>
+    ['hr-compensation-snapshots', companyId, [...employeeIds].sort().join(',')] as const,
+
   compensationSnapshotRoot: () => ['hr-compensation-snapshot'] as const,
 
   /** ملخص لوحة HR الموحّد — إجازات + إقامات + سلف */

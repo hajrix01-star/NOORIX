@@ -79,4 +79,45 @@ describe('HrCompensationSnapshotService', () => {
 
     await expect(service.getEmployeeSnapshot('co-1', 'missing')).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('builds bulk salary snapshots for employee list consumers from the same central formula', async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      {
+        id: 'emp-1',
+        companyId: 'co-1',
+        basicSalary: 6000,
+        housingAllowance: 1000,
+        transportAllowance: 500,
+        otherAllowance: 0,
+        workHours: '10',
+        workSchedule: '[NOORIX_WD:26]',
+        customAllowances: [{ id: 'ca-1', employeeId: 'emp-1', nameAr: 'Meal', amount: 250 }],
+      },
+      {
+        id: 'emp-2',
+        companyId: 'co-1',
+        basicSalary: 4000,
+        housingAllowance: 0,
+        transportAllowance: 0,
+        otherAllowance: 0,
+        workHours: '8',
+        workSchedule: '',
+        customAllowances: [],
+      },
+    ]);
+    const service = new HrCompensationSnapshotService({
+      employee: { findMany },
+    } as any);
+
+    const result = await service.getCompanySnapshots('co-1', ['emp-1', 'emp-2']);
+
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { companyId: 'co-1', id: { in: ['emp-1', 'emp-2'] } },
+    }));
+    expect(result.source).toBe('database');
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].salaryPackage.customAllowanceTotal).toBe(250);
+    expect(result.items[0].salaryPackage.total).toBe(10437.5);
+    expect(result.items[1].salaryPackage.total).toBe(4000);
+  });
 });

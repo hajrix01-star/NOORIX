@@ -21,6 +21,72 @@ function decimalMoney(value: Prisma.Decimal | number | string | null | undefined
 export class HrCompensationSnapshotService {
   constructor(private readonly prisma: TenantPrismaService) {}
 
+  private buildSalarySnapshot(employee: {
+    id: string;
+    companyId: string;
+    basicSalary: unknown;
+    housingAllowance: unknown;
+    transportAllowance: unknown;
+    otherAllowance: unknown;
+    workHours: string | null;
+    workSchedule: string | null;
+    customAllowances?: Array<{
+      id: string;
+      employeeId: string;
+      nameAr: string;
+      amount: Prisma.Decimal | number | string | null;
+    }>;
+  }) {
+    const customAllowanceTotal = sumHrCustomAllowanceAmounts(employee.customAllowances);
+    const salaryPackage = computeHrEmployeeSalaryPackage(employee, customAllowanceTotal);
+
+    return {
+      source: 'database' as const,
+      companyId: employee.companyId,
+      employeeId: employee.id,
+      calculatedAt: new Date().toISOString(),
+      salaryPackage: {
+        basicSalary: decimalMoney(salaryPackage.basicSalary.toString()),
+        housingAllowance: decimalMoney(salaryPackage.housingAllowance.toString()),
+        transportAllowance: decimalMoney(salaryPackage.transportAllowance.toString()),
+        otherAllowance: decimalMoney(salaryPackage.otherAllowance.toString()),
+        customAllowanceTotal: decimalMoney(salaryPackage.customAllowanceTotal.toString()),
+        overtimeHoursPerDay: salaryPackage.overtimeHoursPerDay,
+        overtimePay: decimalMoney(salaryPackage.overtimePay.toString()),
+        fixedTotal: decimalMoney(salaryPackage.fixedTotal.toString()),
+        total: decimalMoney(salaryPackage.total.toString()),
+      },
+      customAllowances: {
+        total: customAllowanceTotal,
+        items: (employee.customAllowances ?? []).map((row) => ({
+          id: row.id,
+          employeeId: row.employeeId,
+          nameAr: row.nameAr,
+          amount: decimalMoney(row.amount),
+        })),
+      },
+    };
+  }
+
+  async getCompanySnapshots(companyId: string, employeeIds?: string[]) {
+    const idFilter = (employeeIds ?? []).map((id) => String(id).trim()).filter(Boolean);
+    const employees = await this.prisma.employee.findMany({
+      where: {
+        companyId,
+        ...(idFilter.length ? { id: { in: idFilter } } : {}),
+      },
+      include: { customAllowances: { orderBy: { createdAt: 'asc' } } },
+      orderBy: { name: 'asc' },
+    });
+
+    return {
+      source: 'database' as const,
+      companyId,
+      calculatedAt: new Date().toISOString(),
+      items: employees.map((employee) => this.buildSalarySnapshot(employee)),
+    };
+  }
+
   async getEmployeeSnapshot(companyId: string, employeeId: string) {
     const employee = await this.prisma.employee.findFirst({
       where: { id: employeeId, companyId },
@@ -55,8 +121,7 @@ export class HrCompensationSnapshotService {
       }),
     ]);
 
-    const customAllowanceTotal = sumHrCustomAllowanceAmounts(employee.customAllowances);
-    const salaryPackage = computeHrEmployeeSalaryPackage(employee, customAllowanceTotal);
+    const salarySnapshot = this.buildSalarySnapshot(employee);
     const runIds = [...new Set(payrollItems.map((row) => row.payrollRun.id))];
     const salaryInvoices = runIds.length
       ? await this.prisma.invoice.findMany({
@@ -105,30 +170,7 @@ export class HrCompensationSnapshotService {
     const payrollItemsSnapshot = payrollItems.map(mapPayrollItem);
 
     return {
-      source: 'database' as const,
-      companyId,
-      employeeId,
-      calculatedAt: new Date().toISOString(),
-      salaryPackage: {
-        basicSalary: decimalMoney(salaryPackage.basicSalary.toString()),
-        housingAllowance: decimalMoney(salaryPackage.housingAllowance.toString()),
-        transportAllowance: decimalMoney(salaryPackage.transportAllowance.toString()),
-        otherAllowance: decimalMoney(salaryPackage.otherAllowance.toString()),
-        customAllowanceTotal: decimalMoney(salaryPackage.customAllowanceTotal.toString()),
-        overtimeHoursPerDay: salaryPackage.overtimeHoursPerDay,
-        overtimePay: decimalMoney(salaryPackage.overtimePay.toString()),
-        fixedTotal: decimalMoney(salaryPackage.fixedTotal.toString()),
-        total: decimalMoney(salaryPackage.total.toString()),
-      },
-      customAllowances: {
-        total: customAllowanceTotal,
-        items: employee.customAllowances.map((row) => ({
-          id: row.id,
-          employeeId: row.employeeId,
-          nameAr: row.nameAr,
-          amount: decimalMoney(row.amount),
-        })),
-      },
+      ...salarySnapshot,
       advances: {
         totals: getHrAdvanceTotals(advances),
         items: advances.map((row) => ({
