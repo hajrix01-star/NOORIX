@@ -7,7 +7,7 @@ import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../../../utils/moneyInput';
 import { totalSalary } from '../../../utils/employeeSalaryMath';
 import { getAdvanceBalanceParts } from '../../../utils/advanceBalance';
-import { computePayrollLineNet } from '../../../utils/hrCalculations/payroll';
+import { computePayrollLineNet, computePayrollRunTotals } from '../../../utils/hrCalculations/payroll';
 import {
   computeApprovedLeaveDaysByEmployee,
   computeSettledDaysByEmployee,
@@ -110,7 +110,7 @@ export function computeDisplayEmployees(
 }
 
 export function computeTotalNet(items: PayrollRunLineItem[]): number {
-  return items.reduce((s, i) => s + (i.netSalary ?? 0), 0);
+  return computePayrollRunTotals(items).netSalary;
 }
 
 type InvoiceLike = {

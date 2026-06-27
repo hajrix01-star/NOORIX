@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { computePayrollLineNet, withComputedPayrollLineNet } from './payroll';
+import {
+  computePayrollLineNet,
+  computePayrollLineSummary,
+  computePayrollRunTotals,
+  withComputedPayrollLineNet,
+} from './payroll';
 
 describe('hrCalculations/payroll', () => {
   it('computes payroll line net from one central formula', () => {
@@ -37,6 +42,36 @@ describe('hrCalculations/payroll', () => {
     ).toMatchObject({
       employeeId: 'emp-1',
       netSalary: 2015,
+    });
+  });
+
+  it('computes display totals for payroll rows centrally', () => {
+    expect(
+      computePayrollLineSummary({
+        grossSalary: 3000,
+        allowancesAdd: 200,
+        deductions: 150,
+        advancesDeduct: 50,
+      }),
+    ).toMatchObject({
+      beforeDeductions: 3200,
+      totalDeductions: 200,
+      netSalary: 3000,
+    });
+  });
+
+  it('sums payroll run totals from line summaries', () => {
+    expect(
+      computePayrollRunTotals([
+        { grossSalary: 3000, allowancesAdd: 200, deductions: 150, advancesDeduct: 50 },
+        { grossSalary: 2500, allowancesAdd: 0, deductions: 0, advancesDeduct: 500 },
+      ]),
+    ).toMatchObject({
+      grossSalary: 5500,
+      allowancesAdd: 200,
+      beforeDeductions: 5700,
+      totalDeductions: 700,
+      netSalary: 5000,
     });
   });
 });
