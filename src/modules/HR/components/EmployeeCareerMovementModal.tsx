@@ -11,8 +11,8 @@ import { createMovement, updateEmployee, updateRaiseMovement } from '../../../se
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { hrFmt } from '../utils/hrFmt';
 import {
-  totalSalary,
   basicSalaryFromTargetTotalInclusiveOvertime,
+  computeEmployeeSalaryPackageBreakdown,
 } from '../utils/employeeSalaryMath';
 
 /**
@@ -60,7 +60,7 @@ export function EmployeeCareerMovementModal({
   }, [employee, kind, isEditRaise, editMovement]);
 
   const currentTotalAllIn = useMemo(
-    () => totalSalary(employee, customTotal),
+    () => computeEmployeeSalaryPackageBreakdown(employee, customTotal).total,
     [employee, customTotal],
   );
 

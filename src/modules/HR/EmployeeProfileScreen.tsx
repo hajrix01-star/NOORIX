@@ -27,12 +27,7 @@ import {
 } from '../../services/api';
 import { assertApiOk } from '../../utils/apiResponse';
 import { ScreenShell } from '../../ui';
-import {
-  parseWorkHours,
-  overtimePay,
-  totalSalary,
-  SAUDI_STANDARD_HOURS,
-} from './utils/employeeSalaryMath';
+import { computeEmployeeSalaryPackageBreakdown } from './utils/employeeSalaryMath';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
@@ -352,17 +347,12 @@ export default function EmployeeProfileScreen() {
   };
   const canShowCareerActions = canRecordCareer && ['active', 'on_leave'].includes(employee.status);
 
-  const overtimeTotal = overtimePay(employee, customAllowanceTotal);
-  const total = totalSalary(employee, customAllowanceTotal);
-  const overtimeHoursPerDay = Math.max(0, parseWorkHours(employee?.workHours) - SAUDI_STANDARD_HOURS);
-  const salaryRows = buildSalaryRows(
-    employee,
-    customAllowances,
-    overtimeTotal,
-    total,
-    overtimeHoursPerDay,
-    t,
+  const salaryPackage = useMemo(
+    () => computeEmployeeSalaryPackageBreakdown(employee, customAllowances),
+    [employee, customAllowances],
   );
+  const total = salaryPackage.total;
+  const salaryRows = buildSalaryRows(employee, customAllowances, t);
 
   return (
     <ScreenShell>

@@ -13,7 +13,7 @@ import {
   parseOvertimeWorkDaysPerMonth,
   mergeOvertimeWorkDaysIntoSchedule,
   DEFAULT_OVERTIME_WORK_DAYS,
-  totalSalary,
+  computeEmployeeSalaryPackageBreakdown,
 } from '../utils/employeeSalaryMath';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 
@@ -147,7 +147,10 @@ export const StaffFormModal = memo(function StaffFormModal({
     overtimeWorkDays,
   ]);
 
-  const computedTotalSalary = totalSalary(salaryPreviewEmployee, computedCustomAllowanceTotal);
+  const computedTotalSalary = computeEmployeeSalaryPackageBreakdown(
+    salaryPreviewEmployee,
+    computedCustomAllowanceTotal,
+  ).total;
 
   function handleSubmit(e: any) {
     e?.preventDefault?.();

@@ -10,7 +10,10 @@ import {
   buildMovementPending,
 } from '../utils/hrQuickEntryMappers';
 import { resolveRaiseIncrement } from '../../../utils/careerMovementApply';
-import { sumCustomAllowancesForEmployee, totalSalary } from '../../../utils/employeeSalaryMath';
+import {
+  computeEmployeeSalaryPackageBreakdown,
+  sumCustomAllowancesForEmployee,
+} from '../../../utils/employeeSalaryMath';
 import { formatMoneyForReport } from '../utils/hrQuickEntryFormatters';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 
@@ -198,7 +201,7 @@ export function useHrQuickEntryActions(args: {
 
       if (st.mvType === 'raise') {
         const customTotal = sumCustomAllowancesForEmployee(customAllowances, emp.id);
-        const currentTotal = totalSalary(emp, customTotal);
+        const currentTotal = computeEmployeeSalaryPackageBreakdown(emp, customTotal).total;
         const increment = resolveRaiseIncrement(st.mvAmount, st.mvNew, currentTotal);
         if (increment == null || !Number.isFinite(increment) || increment === 0) {
           setFormError(

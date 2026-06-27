@@ -5,7 +5,7 @@ import { hrFmt } from '../../../utils/hrFmt';
 import { formatSaudiDate } from '../../../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../../../utils/moneyInput';
-import { totalSalary } from '../../../utils/employeeSalaryMath';
+import { computeEmployeeSalaryPackageBreakdown } from '../../../utils/employeeSalaryMath';
 import { getAdvanceBalanceParts } from '../../../utils/advanceBalance';
 import { computePayrollLineNet, computePayrollRunTotals } from '../../../utils/hrCalculations/payroll';
 import {
@@ -193,7 +193,7 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
   } = deps;
   const pm = payrollMonth || defaultMonth;
   const customSum = (emp.id && allowanceTotals.get(emp.id)) || 0;
-  const fullGross = totalSalary(emp, customSum);
+  const fullGross = computeEmployeeSalaryPackageBreakdown(emp, customSum).total;
   const pr = getEmploymentProrationInMonth(emp, pm);
   const paidBreakdown = countPayrollPaidDaysInMonth(emp, pm, leaveDaysByEmployee, settledDaysByEmployee);
   const { paidDays, leaveDays, settledDays, daysInMonth } = paidBreakdown;

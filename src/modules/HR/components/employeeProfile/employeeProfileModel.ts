@@ -1,6 +1,7 @@
 import { hrFmt } from '../../utils/hrFmt';
 import { toYmd } from '../../../../utils/saudiDate';
 import { getAdvanceBalanceParts } from '../../utils/advanceBalance';
+import { computeEmployeeSalaryPackageBreakdown } from '../../utils/employeeSalaryMath';
 
 export const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -109,30 +110,31 @@ export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: a
   return recs;
 }
 
-export function buildSalaryRows(employee: any, customAllowances: any, overtimeTotal: any, total: any, overtimeHoursPerDay: any, t: any) {
+export function buildSalaryRows(employee: any, customAllowances: any, t: any) {
   type SalaryRow = { label: any; amount: number; strong?: boolean; total?: boolean };
-  const rows: SalaryRow[] = [{ label: t('basicSalary'), amount: Number(employee.basicSalary ?? 0), strong: true }];
-  if (Number(employee.housingAllowance ?? 0) > 0) {
-    rows.push({ label: t('housingAllowance'), amount: Number(employee.housingAllowance ?? 0) });
+  const breakdown = computeEmployeeSalaryPackageBreakdown(employee, customAllowances);
+  const rows: SalaryRow[] = [{ label: t('basicSalary'), amount: breakdown.basicSalary, strong: true }];
+  if (breakdown.housingAllowance > 0) {
+    rows.push({ label: t('housingAllowance'), amount: breakdown.housingAllowance });
   }
-  if (Number(employee.transportAllowance ?? 0) > 0) {
-    rows.push({ label: t('transportAllowance'), amount: Number(employee.transportAllowance ?? 0) });
+  if (breakdown.transportAllowance > 0) {
+    rows.push({ label: t('transportAllowance'), amount: breakdown.transportAllowance });
   }
-  if (Number(employee.otherAllowance ?? 0) > 0) {
-    rows.push({ label: t('otherAllowance'), amount: Number(employee.otherAllowance ?? 0) });
+  if (breakdown.otherAllowance > 0) {
+    rows.push({ label: t('otherAllowance'), amount: breakdown.otherAllowance });
   }
   for (const allowance of customAllowances) {
     rows.push({ label: allowance.nameAr || t('customAllowanceName'), amount: Number(allowance.amount ?? 0) });
   }
-  if (overtimeTotal > 0) {
+  if (breakdown.overtimePay > 0) {
     rows.push({
       label:
-        overtimeHoursPerDay > 0
-          ? `${t('salaryCalcOvertimePay')} (${hrFmt(overtimeHoursPerDay)} ساعة/يوم)`
+        breakdown.overtimeHoursPerDay > 0
+          ? `${t('salaryCalcOvertimePay')} (${hrFmt(breakdown.overtimeHoursPerDay)} ساعة/يوم)`
           : t('salaryCalcOvertimePay'),
-      amount: overtimeTotal,
+      amount: breakdown.overtimePay,
     });
   }
-  rows.push({ label: t('totalSalary'), amount: total, total: true });
+  rows.push({ label: t('totalSalary'), amount: breakdown.total, total: true });
   return rows;
 }
