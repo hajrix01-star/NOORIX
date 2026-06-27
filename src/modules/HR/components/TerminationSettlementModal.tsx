@@ -16,6 +16,7 @@ import { openPrintWindow } from '../../../utils/printUtils';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { totalSalary } from '../utils/employeeSalaryMath';
 import { getEmploymentProrationInMonth, toLocalDayKey } from '../utils/payrollAttendanceMath';
+import { getAdvanceTotals } from '../utils/advanceBalance';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
@@ -133,13 +134,7 @@ export default function TerminationSettlementModal({
   });
 
   const advancesRemaining = useMemo(() => {
-    let s = 0;
-    for (const inv of advanceInvoices) {
-      const total = Number(inv.totalAmount ?? 0);
-      const settled = Number(inv.settledAmount ?? 0);
-      s += Math.max(0, total - settled);
-    }
-    return roundMoney2(s);
+    return roundMoney2(getAdvanceTotals(advanceInvoices).remainingAmount.toNumber());
   }, [advanceInvoices]);
 
   const monthFirst = payrollMonthFirstDay(terminationYmd);
