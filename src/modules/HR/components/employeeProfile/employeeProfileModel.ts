@@ -1,7 +1,6 @@
 import { hrFmt } from '../../utils/hrFmt';
 import { toYmd } from '../../../../utils/saudiDate';
 import { getAdvanceBalanceParts } from '../../utils/advanceBalance';
-import { computeEmployeeSalaryPackageBreakdown } from '../../utils/employeeSalaryMath';
 
 export const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
@@ -110,9 +109,10 @@ export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: a
   return recs;
 }
 
-export function buildSalaryRows(employee: any, customAllowances: any, t: any) {
+export function buildSalaryRows(compensationSnapshot: any, t: any) {
   type SalaryRow = { label: any; amount: number; strong?: boolean; total?: boolean };
-  const breakdown = computeEmployeeSalaryPackageBreakdown(employee, customAllowances);
+  const breakdown = compensationSnapshot?.salaryPackage;
+  if (!breakdown) return [];
   const rows: SalaryRow[] = [{ label: t('basicSalary'), amount: breakdown.basicSalary, strong: true }];
   if (breakdown.housingAllowance > 0) {
     rows.push({ label: t('housingAllowance'), amount: breakdown.housingAllowance });
@@ -123,7 +123,7 @@ export function buildSalaryRows(employee: any, customAllowances: any, t: any) {
   if (breakdown.otherAllowance > 0) {
     rows.push({ label: t('otherAllowance'), amount: breakdown.otherAllowance });
   }
-  for (const allowance of customAllowances) {
+  for (const allowance of compensationSnapshot?.customAllowances?.items ?? []) {
     rows.push({ label: allowance.nameAr || t('customAllowanceName'), amount: Number(allowance.amount ?? 0) });
   }
   if (breakdown.overtimePay > 0) {

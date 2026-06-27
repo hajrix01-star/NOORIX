@@ -8,14 +8,21 @@ describe('employeeProfileModel salary rows', () => {
   it('builds salary rows from the central package without caller-side math', () => {
     const rows = buildSalaryRows(
       {
-        basicSalary: 6000,
-        housingAllowance: 1000,
-        transportAllowance: 500,
-        otherAllowance: 0,
-        workHours: '10',
-        workSchedule: '[NOORIX_WD:26]',
+        salaryPackage: {
+          basicSalary: 6000,
+          housingAllowance: 1000,
+          transportAllowance: 500,
+          otherAllowance: 0,
+          customAllowanceTotal: 250,
+          overtimeHoursPerDay: 2,
+          overtimePay: 2687.5,
+          fixedTotal: 7750,
+          total: 10437.5,
+        },
+        customAllowances: {
+          items: [{ nameAr: 'Field allowance', amount: '250' }],
+        },
       },
-      [{ nameAr: 'Field allowance', amount: '250' }],
       t,
     );
 

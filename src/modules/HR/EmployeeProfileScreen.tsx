@@ -18,7 +18,8 @@ import {
   getInvoices,
   getDeductions,
   getMovements,
-  getEmployeePayrollItems,
+  getEmployeeCompensationSnapshot,
+  throwIfApiFailed,
   uploadDocumentFile,
   downloadDocument,
   deleteEmployee,
@@ -27,7 +28,6 @@ import {
 } from '../../services/api';
 import { assertApiOk } from '../../utils/apiResponse';
 import { ScreenShell } from '../../ui';
-import { computeEmployeeSalaryPackageBreakdown, sumSalaryCustomAllowances } from './utils/employeeSalaryMath';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
 import { SalaryCertificateModal, ContractModal, FinalSettlementModal } from './components/EmployeeDocModal';
@@ -40,7 +40,11 @@ import {
   buildResidencyRecordStatusMap,
   buildPayrollRunStatusMap,
 } from '../../constants/badgeMaps';
-import { EmployeeProfileLoading, EmployeeProfileNotFound } from './components/employeeProfile/EmployeeProfileStates';
+import {
+  EmployeeProfileCentralDataError,
+  EmployeeProfileLoading,
+  EmployeeProfileNotFound,
+} from './components/employeeProfile/EmployeeProfileStates';
 import { EmployeeProfileHeaderBar } from './components/employeeProfile/EmployeeProfileHeaderBar';
 import {
   EmployeeProfileBasicInfoCard,
@@ -90,6 +94,20 @@ export default function EmployeeProfileScreen() {
   const { data: employee, isLoading, error } = useEmployee(id, companyId);
   const { createAdvance } = useEmployees(companyId, { includeTerminated: true });
   const { allowances: customAllowances = [] } = useCustomAllowances(companyId, id);
+  const {
+    data: compensationSnapshot,
+    isLoading: isCompensationSnapshotLoading,
+    error: compensationSnapshotError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshot(companyId, id),
+    queryFn: async () => {
+      if (!id) throw new Error('Employee id is required.');
+      const res = await getEmployeeCompensationSnapshot(companyId, id);
+      throwIfApiFailed(res, 'فشل تحميل بيانات HR المركزية');
+      return res.data;
+    },
+    enabled: !!companyId && !!id,
+  });
 
   const leaveProfileStatusMap = useMemo(() => buildLeaveRequestStatusMap(t), [t]);
   const residencyProfileStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
@@ -129,17 +147,6 @@ export default function EmployeeProfileScreen() {
         const bd = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
         return bd - ad;
       });
-    },
-    enabled: !!companyId && !!id,
-  });
-
-  const { data: invoicesData } = useQuery({
-    queryKey: invoiceKeys.advancesForEmployee(companyId, id),
-    queryFn: async () => {
-      const res = await getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'advance');
-      if (!res?.success) return { items: [] };
-      const items = res.data?.items ?? [];
-      return { items: items.filter((inv: any) => inv.kind === 'advance') };
     },
     enabled: !!companyId && !!id,
   });
@@ -195,27 +202,8 @@ export default function EmployeeProfileScreen() {
     enabled: !!companyId && !!id,
   });
 
-  const { data: payrollItems = [] } = useQuery({
-    queryKey: hrKeys.payrollRunItems(companyId, id),
-    queryFn: async () => {
-      if (!id) return [];
-      const res = await getEmployeePayrollItems(companyId, id);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : res.data?.items ?? [];
-    },
-    enabled: !!companyId && !!id,
-  });
-
   const careerTableRows = useMemo(() => buildCareerTableRows(movements, t), [movements, t]);
-  const advances = useMemo(
-    () => normalizeAdvances(invoicesData?.items ?? []),
-    [invoicesData],
-  );
   const advanceStatusMap = useMemo(() => buildAdvanceSettlementStatusMap(t), [t]);
-  const customAllowanceTotal = useMemo(
-    () => sumSalaryCustomAllowances(customAllowances),
-    [customAllowances],
-  );
 
   const financialRecords = useMemo(
     () => buildFinancialRecords(hrInvoicesData, deductions, t, residencies),
@@ -278,6 +266,7 @@ export default function EmployeeProfileScreen() {
     queryClient.invalidateQueries({ queryKey: hrKeys.residenciesByEmployee(companyId, id) });
     queryClient.invalidateQueries({ queryKey: hrKeys.documents(companyId, id) });
     queryClient.invalidateQueries({ queryKey: hrKeys.movementsByEmployee(companyId, id) });
+    queryClient.invalidateQueries({ queryKey: hrKeys.compensationSnapshot(companyId, id) });
     invalidateOnFinancialMutation(queryClient);
     queryClient.invalidateQueries({ queryKey: hrKeys.payrollRunItems(companyId, id) });
   };
@@ -332,11 +321,20 @@ export default function EmployeeProfileScreen() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isCompensationSnapshotLoading) {
     return <EmployeeProfileLoading t={t} />;
   }
   if (error || !employee) {
     return <EmployeeProfileNotFound t={t} onBack={() => navigate('/hr')} />;
+  }
+  if (compensationSnapshotError || !compensationSnapshot) {
+    return (
+      <EmployeeProfileCentralDataError
+        t={t}
+        onBack={() => navigate('/hr')}
+        message={compensationSnapshotError instanceof Error ? compensationSnapshotError.message : undefined}
+      />
+    );
   }
 
   const empStatusMap = {
@@ -347,12 +345,10 @@ export default function EmployeeProfileScreen() {
   };
   const canShowCareerActions = canRecordCareer && ['active', 'on_leave'].includes(employee.status);
 
-  const salaryPackage = useMemo(
-    () => computeEmployeeSalaryPackageBreakdown(employee, customAllowances),
-    [employee, customAllowances],
-  );
-  const total = salaryPackage.total;
-  const salaryRows = buildSalaryRows(employee, customAllowances, t);
+  const total = compensationSnapshot.salaryPackage.total;
+  const salaryRows = buildSalaryRows(compensationSnapshot, t);
+  const advances = normalizeAdvances(compensationSnapshot.advances.items ?? []);
+  const payrollItems = compensationSnapshot.payrollItems ?? [];
 
   return (
     <ScreenShell>
@@ -484,7 +480,7 @@ export default function EmployeeProfileScreen() {
           kind={editRaiseMovement ? 'raise' : careerModal}
           employee={employee}
           companyId={companyId}
-          customAllowanceTotal={customAllowanceTotal}
+          customAllowanceTotal={compensationSnapshot.customAllowances.total}
           editMovement={editRaiseMovement}
           onClose={() => {
             setCareerModal(null);

@@ -7,6 +7,7 @@ import { HrPayrollService } from './hr-payroll.service';
 import { HrLeaveService } from './hr-leave.service';
 import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { getHrAdvanceTotals } from './hr-advance-balance.util';
 import { sumMonthlyPayrollForActiveEmployees } from './utils/employee-monthly-payroll.util';
 
@@ -17,6 +18,7 @@ export class HRService {
     private readonly leave: HrLeaveService,
     private readonly residency: HrResidencyService,
     private readonly document: HrDocumentService,
+    private readonly compensationSnapshot: HrCompensationSnapshotService,
     private readonly prisma: TenantPrismaService,
   ) {}
 
@@ -60,6 +62,10 @@ export class HRService {
 
   findAdvanceInvoices(...args: Parameters<HrPayrollService['findAdvanceInvoices']>) {
     return this.payroll.findAdvanceInvoices(...args);
+  }
+
+  getEmployeeCompensationSnapshot(companyId: string, employeeId: string) {
+    return this.compensationSnapshot.getEmployeeSnapshot(companyId, employeeId);
   }
 
   // ── Movements, allowances, deductions (مع المسير في نفس خدمة الرواتب) ──

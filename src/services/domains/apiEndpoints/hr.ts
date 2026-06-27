@@ -48,6 +48,13 @@ export async function getHrAdvances(companyId: string, year?: string | number): 
   return apiGet('/api/v1/hr/advances', params);
 }
 
+export async function getEmployeeCompensationSnapshot(
+  companyId: string,
+  employeeId: string,
+): Promise<ApiParsedResult> {
+  return apiGet(`/api/v1/hr/employees/${encodeURIComponent(employeeId)}/compensation-snapshot`, { companyId });
+}
+
 export async function getLeaves(
   companyId: string,
   employeeId?: string,

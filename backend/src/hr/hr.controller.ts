@@ -150,6 +150,15 @@ export class HRController {
     return this.hrService.findAdvanceInvoices(companyId, Number.isFinite(year) ? year : undefined);
   }
 
+  @Get('employees/:employeeId/compensation-snapshot')
+  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
+  getEmployeeCompensationSnapshot(
+    @CompanyId() companyId: string,
+    @Param('employeeId') employeeId: string,
+  ) {
+    return this.hrService.getEmployeeCompensationSnapshot(companyId, employeeId);
+  }
+
   // ══════════════════════════════════════════════════════════
   // LEAVES
   // ══════════════════════════════════════════════════════════

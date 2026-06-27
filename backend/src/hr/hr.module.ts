@@ -16,6 +16,7 @@ import { HrPayrollAncillaryService } from './hr-payroll-ancillary.service';
 import { HrLeaveService } from './hr-leave.service';
 import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 
 const uploadDir = ensureUploadsSubdir('hr-documents');
 
@@ -46,6 +47,7 @@ const uploadDir = ensureUploadsSubdir('hr-documents');
     HrLeaveService,
     HrResidencyService,
     HrDocumentService,
+    HrCompensationSnapshotService,
     HRService,
   ],
   exports: [HRService],
