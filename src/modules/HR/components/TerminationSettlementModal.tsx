@@ -14,9 +14,12 @@ import { assertApiOk } from '../../../utils/apiResponse';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
-import { totalSalary } from '../utils/employeeSalaryMath';
-import { getEmploymentProrationInMonth, toLocalDayKey } from '../utils/payrollAttendanceMath';
+import { toLocalDayKey } from '../utils/payrollAttendanceMath';
 import { getAdvanceTotals } from '../utils/advanceBalance';
+import {
+  computeTerminationSalarySettlementPreview,
+  getTerminationPayrollMonthFirstDay,
+} from '../utils/hrCalculations/termination';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
@@ -24,12 +27,6 @@ import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, Modal, FmtNum, Input } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
-
-function payrollMonthFirstDay(terminationYmd: any) {
-  const s = toYmd(terminationYmd);
-  if (s.length < 7) return null;
-  return `${s.slice(0, 7)}-01`;
-}
 
 function esc(v: any) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -137,7 +134,7 @@ export default function TerminationSettlementModal({
     return roundMoney2(getAdvanceTotals(advanceInvoices).remainingAmount.toNumber());
   }, [advanceInvoices]);
 
-  const monthFirst = payrollMonthFirstDay(terminationYmd);
+  const monthFirst = getTerminationPayrollMonthFirstDay(terminationYmd);
 
   const termSalaryTag = useMemo(
     () => (empId && monthFirst ? terminationSalaryInvoiceTag(empId, monthFirst) : ''),
@@ -156,18 +153,13 @@ export default function TerminationSettlementModal({
   });
 
   const preview = useMemo(() => {
-    if (!employee || !monthFirst) return null;
-    const fullMonthly = totalSalary(employee, customSum);
-    const pr = getEmploymentProrationInMonth(employee, monthFirst);
-    const grossProrated = roundMoney2(fullMonthly * pr.factor);
-    const netSuggested = Math.max(0, roundMoney2(grossProrated - advancesRemaining));
-    return {
-      fullMonthly,
-      pr,
-      grossProrated,
-      netSuggested,
-    };
-  }, [employee, monthFirst, customSum, advancesRemaining]);
+    return computeTerminationSalarySettlementPreview({
+      employee,
+      terminationDate: terminationYmd,
+      customAllowanceTotal: customSum,
+      advancesRemaining,
+    });
+  }, [employee, terminationYmd, customSum, advancesRemaining]);
 
   const lastWorkYmd = useMemo(() => {
     if (!preview || !terminationYmd) return '';
