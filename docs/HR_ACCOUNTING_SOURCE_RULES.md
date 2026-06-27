@@ -7,6 +7,7 @@
 - Employee-profile documents must use `compensationSnapshot`; do not add `customAllowances` or manual salary, advance, or payroll props back to that path.
 - Annual leave salary settlements must use `HrCompensationSnapshotService` for the monthly salary package. Settlement preview/issue paths must not sum employee allowances locally.
 - Payroll run create/update paths must validate employee gross salary against `HrCompensationSnapshotService`; a frontend or script must not be able to persist a non-central salary gross amount.
+- HR dashboard monthly payroll totals must sum `HrCompensationSnapshotService` salary package totals only; do not rebuild employee salary totals from raw allowance fields in dashboard/BFF code.
 - Salary raise creation must be a backend transaction: read the central compensation snapshot, update employee basic salary, and create the movement record together. Frontend code must not update salary and then record the movement as separate requests.
 - Any new HR calculation path must use the central engine/snapshot and include a regression test proving there is no fallback.
 

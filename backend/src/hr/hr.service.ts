@@ -9,7 +9,6 @@ import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
 import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { getHrAdvanceTotals } from './hr-advance-balance.util';
-import { sumMonthlyPayrollForActiveEmployees } from './utils/employee-monthly-payroll.util';
 
 @Injectable()
 export class HRService {
@@ -219,7 +218,6 @@ export class HRService {
       expiringResidenciesCount,
       advances,
       activeEmployees,
-      customAllowanceGroups,
     ] = await Promise.all([
       this.prisma.employee.count({ where: { companyId, status: 'active' } }),
       this.prisma.employee.count({ where: { companyId, status: 'terminated' } }),
@@ -235,29 +233,21 @@ export class HRService {
       this.payroll.findAdvanceInvoices(companyId),
       this.prisma.employee.findMany({
         where: { companyId, status: 'active' },
-        select: {
-          id: true,
-          basicSalary: true,
-          housingAllowance: true,
-          transportAllowance: true,
-          otherAllowance: true,
-          workHours: true,
-          workSchedule: true,
-        },
-      }),
-      this.prisma.employeeCustomAllowance.groupBy({
-        by: ['employeeId'],
-        where: { companyId, employee: { status: 'active' } },
-        _sum: { amount: true },
+        select: { id: true },
       }),
     ]);
 
-    const customByEmployee = new Map<string, number>();
-    for (const row of customAllowanceGroups) {
-      customByEmployee.set(row.employeeId, Number(row._sum.amount ?? 0));
-    }
-
-    const monthlyPayrollTotal = sumMonthlyPayrollForActiveEmployees(activeEmployees, customByEmployee);
+    const activeEmployeeIds = activeEmployees.map((employee) => employee.id);
+    const salarySnapshots: Awaited<ReturnType<HrCompensationSnapshotService['getCompanySnapshots']>> = activeEmployeeIds.length
+      ? await this.compensationSnapshot.getCompanySnapshots(companyId, activeEmployeeIds)
+      : { source: 'database', companyId, calculatedAt: new Date().toISOString(), items: [] };
+    const monthlyPayrollTotal = salarySnapshots.items.reduce((sum, snapshot) => {
+      const total = Number(snapshot?.salaryPackage?.total);
+      if (!Number.isFinite(total)) {
+        throw new Error('تعذر تحميل ملخص الرواتب من المصدر المركزي.');
+      }
+      return sum + total;
+    }, 0);
 
     const advanceTotals = getHrAdvanceTotals(advances as any[]);
 
