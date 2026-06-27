@@ -1,10 +1,7 @@
 /**
- * تسوية راتب تقويمية عند إجازة سنوية — يطابق totalSalary في الواجهة (أساسي + بدلات + أوفر تايم مُقدَّر).
+ * تسوية راتب تقويمية عند إجازة سنوية — تستخدم إجمالي الراتب الشهري المركزي.
  */
-import {
-  sumHrCustomAllowanceAmounts,
-  totalHrEmployeeSalaryPackageMonthly,
-} from './employee-salary-package.util';
+import { sumHrCustomAllowanceAmounts } from './employee-salary-package.util';
 
 export type EmployeeSalaryShape = {
   basicSalary: unknown;
@@ -18,8 +15,9 @@ export type EmployeeSalaryShape = {
   notes?: string | null;
 };
 
-export function totalSalaryMonthly(emp: EmployeeSalaryShape, customTotal: number): number {
-  return totalHrEmployeeSalaryPackageMonthly(emp, customTotal, 4);
+function money(value: unknown): number {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
 }
 
 const HR_META = '[HR_META]';
@@ -93,7 +91,7 @@ export function resolveLeaveSalarySettlementGrossAmount(
 export function computeCalendarLeaveSalarySettlement(
   emp: EmployeeSalaryShape,
   leaveStartDate: Date,
-  customAllowanceSum: number,
+  monthlyPackageTotal: number,
 ): LeaveSalarySettlementCalc {
   const start = new Date(leaveStartDate);
   start.setHours(0, 0, 0, 0);
@@ -129,7 +127,10 @@ export function computeCalendarLeaveSalarySettlement(
 
   const calendarDaysPaid = countInclusiveCalendarDays(rangeStart, rangeEnd);
   const factor = calendarDaysPaid / daysInMonth;
-  const fullMonthly = totalSalaryMonthly(emp, customAllowanceSum);
+  const fullMonthly = money(monthlyPackageTotal);
+  if (fullMonthly <= 0) {
+    return { payrollMonth, daysInMonth, calendarDaysPaid, grossAmount: 0 };
+  }
   const grossAmount = Math.round(Math.max(0, fullMonthly * factor) * 100) / 100;
 
   return { payrollMonth, daysInMonth, calendarDaysPaid, grossAmount };

@@ -16,6 +16,7 @@ import { voidLeaveSalarySettlementCore } from './hr-leave-void-salary-settlement
 import { syncEmployeeLeavePresence } from './hr-leave-employee-presence-sync.util';
 import { returnFromLeaveCore } from './hr-leave-return-from-leave.util';
 import { updateLeaveStatusCore } from './hr-leave-update-leave-status.util';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 
 @Injectable()
 export class HrLeaveService {
@@ -23,6 +24,7 @@ export class HrLeaveService {
     private readonly prisma: TenantPrismaService,
     private readonly audit: AuditLogService,
     private readonly financialCore: FinancialCoreService,
+    private readonly compensationSnapshot: HrCompensationSnapshotService,
   ) {}
 
   // ══════════════════════════════════════════════════════════
@@ -73,7 +75,7 @@ export class HrLeaveService {
    * معاينة مبلغ تسوية الراتب التقويمي (إجازة سنوية معتمدة، بدون صرف).
    */
   async getLeaveSalarySettlementPreview(leaveId: string, companyId: string) {
-    return getLeaveSalarySettlementPreviewCore(this.prisma, leaveId, companyId);
+    return getLeaveSalarySettlementPreviewCore(this.prisma, this.compensationSnapshot, leaveId, companyId);
   }
 
   /**
@@ -97,7 +99,11 @@ export class HrLeaveService {
     }
 
     await issueLeaveSalarySettlementCore(
-      { prisma: this.prisma, financialCore: this.financialCore },
+      {
+        prisma: this.prisma,
+        financialCore: this.financialCore,
+        compensationSnapshot: this.compensationSnapshot,
+      },
       {
         id: leave.id,
         employeeId: leave.employeeId,

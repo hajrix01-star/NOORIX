@@ -3,7 +3,6 @@ import {
   isPayableLeaveSalarySettlement,
   resolveLeaveSalarySettlementGrossAmount,
   sumCustomAllowanceAmounts,
-  totalSalaryMonthly,
 } from './leave-salary-settlement.util';
 
 describe('leave salary settlement util', () => {
@@ -24,9 +23,8 @@ describe('leave salary settlement util', () => {
   });
 
   it('computes calendar leave salary settlement from the central salary package', () => {
-    const calc = computeCalendarLeaveSalarySettlement(employee, new Date('2026-06-10T00:00:00.000Z'), 150);
+    const calc = computeCalendarLeaveSalarySettlement(employee, new Date('2026-06-10T00:00:00.000Z'), 3900);
 
-    expect(totalSalaryMonthly(employee, 150)).toBe(3900);
     expect(calc.daysInMonth).toBe(30);
     expect(calc.calendarDaysPaid).toBe(10);
     expect(calc.grossAmount).toBe(1300);
@@ -34,7 +32,7 @@ describe('leave salary settlement util', () => {
   });
 
   it('normalizes manual gross amount overrides', () => {
-    const calc = computeCalendarLeaveSalarySettlement(employee, new Date('2026-06-10T00:00:00.000Z'), 150);
+    const calc = computeCalendarLeaveSalarySettlement(employee, new Date('2026-06-10T00:00:00.000Z'), 3900);
 
     expect(resolveLeaveSalarySettlementGrossAmount(calc, undefined)).toEqual({
       grossAmount: 1300,

@@ -3,14 +3,15 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import {
   computeCalendarLeaveSalarySettlement,
   isPayableLeaveSalarySettlement,
-  sumCustomAllowanceAmounts,
 } from './utils/leave-salary-settlement.util';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 
 /**
  * معاينة مبلغ تسوية الراتب التقويمي (إجازة سنوية معتمدة، بدون صرف).
  */
 export async function getLeaveSalarySettlementPreviewCore(
   prisma: TenantPrismaService,
+  compensationSnapshot: HrCompensationSnapshotService,
   leaveId: string,
   companyId: string,
 ) {
@@ -31,13 +32,16 @@ export async function getLeaveSalarySettlementPreviewCore(
 
   const emp = await prisma.employee.findFirst({
     where: { id: leave.employeeId, companyId },
-    include: { customAllowances: true },
   });
   if (!emp) throw new BadRequestException('الموظف غير موجود.');
 
-  const customSum = sumCustomAllowanceAmounts(emp.customAllowances);
+  const snapshot = await compensationSnapshot.getEmployeeSnapshot(companyId, leave.employeeId);
+  const monthlyPackageTotal = Number(snapshot?.salaryPackage?.total);
+  if (!Number.isFinite(monthlyPackageTotal) || monthlyPackageTotal <= 0) {
+    throw new BadRequestException('تعذر تحميل إجمالي راتب الموظف من المصدر المركزي.');
+  }
 
-  const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), customSum);
+  const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), monthlyPackageTotal);
 
   if (!isPayableLeaveSalarySettlement(calc)) {
     throw new BadRequestException(
@@ -50,5 +54,11 @@ export async function getLeaveSalarySettlementPreviewCore(
     payrollMonth: calc.payrollMonth.toISOString(),
     calendarDaysPaid: calc.calendarDaysPaid,
     daysInMonth: calc.daysInMonth,
+    monthlyPackageTotal,
+    compensationSnapshot: {
+      source: snapshot.source,
+      calculatedAt: snapshot.calculatedAt,
+      salaryPackage: snapshot.salaryPackage,
+    },
   };
 }
