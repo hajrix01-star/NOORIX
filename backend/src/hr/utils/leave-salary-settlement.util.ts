@@ -108,6 +108,41 @@ export type LeaveSalarySettlementCalc = {
   grossAmount: number;
 };
 
+export type CustomAllowanceAmountRow = {
+  amount?: unknown;
+};
+
+export function sumCustomAllowanceAmounts(rows: CustomAllowanceAmountRow[] | null | undefined): number {
+  return (rows ?? []).reduce((sum, row) => {
+    const amount = Number(row?.amount ?? 0);
+    return sum + (Number.isFinite(amount) ? amount : 0);
+  }, 0);
+}
+
+export function isPayableLeaveSalarySettlement(calc: LeaveSalarySettlementCalc): boolean {
+  return calc.calendarDaysPaid > 0 && calc.grossAmount > 0;
+}
+
+export function resolveLeaveSalarySettlementGrossAmount(
+  calc: LeaveSalarySettlementCalc,
+  grossAmountOverride?: number | null,
+): { grossAmount: number; hasManualOverride: boolean } {
+  if (grossAmountOverride == null) {
+    return { grossAmount: calc.grossAmount, hasManualOverride: false };
+  }
+
+  const override = Number(grossAmountOverride);
+  if (!Number.isFinite(override) || override < 0.01) {
+    throw new RangeError('Invalid leave salary settlement gross amount override.');
+  }
+
+  const grossAmount = Math.round(override * 100) / 100;
+  return {
+    grossAmount,
+    hasManualOverride: Math.abs(grossAmount - calc.grossAmount) > 0.005,
+  };
+}
+
 /**
  * راتب مستحق من أول الشهر حتى يوم بداية الإجازة (شامل) — مقسوم على أيام الشهر التقويمية.
  */

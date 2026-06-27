@@ -4,7 +4,12 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
 import { TenantContext } from '../common/tenant-context';
 import { toMoneyDecimal2 } from '../common/utils/money-decimal';
-import { computeCalendarLeaveSalarySettlement } from './utils/leave-salary-settlement.util';
+import {
+  computeCalendarLeaveSalarySettlement,
+  isPayableLeaveSalarySettlement,
+  resolveLeaveSalarySettlementGrossAmount,
+  sumCustomAllowanceAmounts,
+} from './utils/leave-salary-settlement.util';
 import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
 import { saudiDateYmd } from './utils/hr-saudi-dates.util';
 
@@ -46,26 +51,27 @@ export async function issueLeaveSalarySettlementCore(
     throw new BadRequestException('لا يمكن صرف تسوية راتب لموظف منتهي الخدمة.');
   }
 
-  const customSum = (emp.customAllowances ?? []).reduce(
-    (s, r) => s + Number(r.amount ?? 0),
-    0,
-  );
+  const customSum = sumCustomAllowanceAmounts(emp.customAllowances);
 
   const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), customSum);
 
-  if (calc.calendarDaysPaid <= 0 || calc.grossAmount <= 0) {
+  if (!isPayableLeaveSalarySettlement(calc)) {
     throw new BadRequestException(
       'لا يمكن احتساب تسوية راتب — تاريخ بداية الإجازة خارج نطاق العمل في الشهر أو المبلغ صفر.',
     );
   }
 
   let grossFinal = calc.grossAmount;
+  let hasManualOverride = false;
   if (options.grossAmountOverride != null) {
-    const o = Number(options.grossAmountOverride);
-    if (!Number.isFinite(o) || o < 0.01) {
+    let resolvedGross: { grossAmount: number; hasManualOverride: boolean };
+    try {
+      resolvedGross = resolveLeaveSalarySettlementGrossAmount(calc, options.grossAmountOverride);
+    } catch {
       throw new BadRequestException('المبلغ غير صالح.');
     }
-    grossFinal = Math.round(o * 100) / 100;
+    grossFinal = resolvedGross.grossAmount;
+    hasManualOverride = resolvedGross.hasManualOverride;
   }
 
   const { payrollMonth, daysInMonth, calendarDaysPaid } = calc;
@@ -107,7 +113,7 @@ export async function issueLeaveSalarySettlementCore(
   const sd = new Date(leave.startDate);
   const startStrFormatted = `${sd.getFullYear()}-${String(sd.getMonth() + 1).padStart(2, '0')}-${String(sd.getDate()).padStart(2, '0')}`;
   const manualNote =
-    options.grossAmountOverride != null && Math.abs(grossFinal - calc.grossAmount) > 0.005
+    hasManualOverride
       ? ` — معدّل يدوياً (مقترح ${calc.grossAmount.toFixed(2)})`
       : '';
   const notes = `تسوية راتب حتى يوم السفر — إجازة سنوية من ${startStrFormatted} (${calendarDaysPaid}/${daysInMonth} يوم تقويمي، شهر ${ym})${manualNote}`;

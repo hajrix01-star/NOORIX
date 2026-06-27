@@ -1,6 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { computeCalendarLeaveSalarySettlement } from './utils/leave-salary-settlement.util';
+import {
+  computeCalendarLeaveSalarySettlement,
+  isPayableLeaveSalarySettlement,
+  sumCustomAllowanceAmounts,
+} from './utils/leave-salary-settlement.util';
 
 /**
  * معاينة مبلغ تسوية الراتب التقويمي (إجازة سنوية معتمدة، بدون صرف).
@@ -31,14 +35,11 @@ export async function getLeaveSalarySettlementPreviewCore(
   });
   if (!emp) throw new BadRequestException('الموظف غير موجود.');
 
-  const customSum = (emp.customAllowances ?? []).reduce(
-    (s, r) => s + Number(r.amount ?? 0),
-    0,
-  );
+  const customSum = sumCustomAllowanceAmounts(emp.customAllowances);
 
   const calc = computeCalendarLeaveSalarySettlement(emp, new Date(leave.startDate), customSum);
 
-  if (calc.calendarDaysPaid <= 0 || calc.grossAmount <= 0) {
+  if (!isPayableLeaveSalarySettlement(calc)) {
     throw new BadRequestException(
       'لا يمكن احتساب تسوية راتب — تاريخ بداية الإجازة خارج نطاق العمل في الشهر أو المبلغ صفر.',
     );
