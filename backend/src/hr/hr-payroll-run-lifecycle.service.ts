@@ -20,6 +20,8 @@ import {
 } from './hr-payroll-advance-settlement.util';
 import { HrPayrollRunReaderService } from './hr-payroll-run-reader.service';
 import { saudiDateYmd } from './utils/hr-saudi-dates.util';
+import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
+import { assertPayrollItemsGrossMatchesCentralSnapshots } from './hr-payroll-gross-source.util';
 
 @Injectable()
 export class HrPayrollRunLifecycleService {
@@ -28,7 +30,35 @@ export class HrPayrollRunLifecycleService {
     private readonly audit: AuditLogService,
     private readonly financialCore: FinancialCoreService,
     private readonly reader: HrPayrollRunReaderService,
+    private readonly compensationSnapshot: HrCompensationSnapshotService,
   ) {}
+
+  private async assertPayrollGrossUsesCentralSnapshots(
+    companyId: string,
+    payrollMonth: Date,
+    items: PayrollRunItemDto[],
+  ) {
+    const employeeIds = [...new Set(items.map((item) => item.employeeId).filter(Boolean))];
+    const [employees, snapshots] = await Promise.all([
+      this.prisma.employee.findMany({
+        where: { companyId, id: { in: employeeIds } },
+        select: { id: true, joinDate: true, status: true, notes: true },
+      }),
+      this.compensationSnapshot.getCompanySnapshots(companyId, employeeIds),
+    ]);
+
+    const employeesById = new Map(employees.map((employee) => [employee.id, employee]));
+    const snapshotByEmployeeId = new Map(
+      (snapshots.items ?? []).map((snapshot) => [snapshot.employeeId, snapshot]),
+    );
+
+    assertPayrollItemsGrossMatchesCentralSnapshots({
+      items,
+      employeesById,
+      snapshotByEmployeeId,
+      payrollMonth,
+    });
+  }
 
   async createPayrollRun(dto: CreatePayrollRunDto, userId?: string) {
     const tenantId = TenantContext.getTenantId();
@@ -36,6 +66,7 @@ export class HrPayrollRunLifecycleService {
     const payrollMonth = new Date(dto.payrollMonth);
     payrollMonth.setDate(1);
     payrollMonth.setHours(0, 0, 0, 0);
+    await this.assertPayrollGrossUsesCentralSnapshots(dto.companyId, payrollMonth, dto.items);
 
     const existing = await this.prisma.payrollRun.findFirst({
       where: { companyId: dto.companyId, payrollMonth, status: { not: 'cancelled' } },
@@ -214,6 +245,11 @@ export class HrPayrollRunLifecycleService {
 
     if (dto.items) {
       assertPayrollItemsNetConsistent(dto.items as PayrollRunItemDto[]);
+      await this.assertPayrollGrossUsesCentralSnapshots(
+        companyId,
+        (data.payrollMonth as Date | undefined) ?? existing.payrollMonth,
+        dto.items as PayrollRunItemDto[],
+      );
 
       let totalAmount = 0;
       data.employeeCount = dto.items.length;
