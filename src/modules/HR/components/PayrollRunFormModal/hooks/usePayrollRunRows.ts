@@ -22,6 +22,7 @@ import {
   parseDeferredMonth,
 } from '../utils/payrollRunMappers';
 import type { PayrollRunLineItem } from '../types';
+import { computePayrollLineNet } from '../../../utils/hrCalculations/payroll';
 
 type StateShape = {
   defaultMonth: string;
@@ -185,7 +186,7 @@ export function usePayrollRunRows(state: StateShape) {
         allowancesAdd,
         deductions,
         advancesDeduct,
-        netSalary: Math.max(0, grossSalary + allowancesAdd - deductions - advancesDeduct),
+        netSalary: computePayrollLineNet({ grossSalary, allowancesAdd, deductions, advancesDeduct }),
         deferAdvances,
         advanceDates: currentAdvanceMeta.datesLabel || savedAdvanceDates,
         notes: row.notes || '',

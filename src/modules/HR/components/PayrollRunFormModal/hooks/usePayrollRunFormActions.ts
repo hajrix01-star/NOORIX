@@ -5,6 +5,7 @@ import {
   stripPayrollAdvDeferSegment,
   withPayrollAdvDeferSegment,
 } from '../utils/payrollRunMappers';
+import { withComputedPayrollLineNet } from '../../../utils/hrCalculations/payroll';
 import type { PayrollRunFormModalProps, PayrollRunLineItem } from '../types';
 
 type Args = {
@@ -52,12 +53,7 @@ export function usePayrollRunFormActions({
       setItems((prev) => {
         const next = [...prev];
         const row = { ...next[idx], [field]: num } as PayrollRunLineItem;
-        next[idx] = row;
-        const g = row.grossSalary ?? 0;
-        const add = row.allowancesAdd ?? 0;
-        const ded = row.deductions ?? 0;
-        const adv = row.advancesDeduct ?? 0;
-        next[idx] = { ...row, netSalary: Math.max(0, g + add - ded - adv) };
+        next[idx] = withComputedPayrollLineNet(row);
         return next;
       });
     },
@@ -81,12 +77,7 @@ export function usePayrollRunFormActions({
             const stripped = stripPayrollAdvDeferSegment(row.notes);
             nextRow.notes = stripped || undefined;
           }
-          const g = nextRow.grossSalary ?? 0;
-          const add = nextRow.allowancesAdd ?? 0;
-          const ded = nextRow.deductions ?? 0;
-          const adv = nextRow.advancesDeduct ?? 0;
-          nextRow.netSalary = Math.max(0, g + add - ded - adv);
-          return nextRow;
+          return withComputedPayrollLineNet(nextRow);
         }),
       );
     },

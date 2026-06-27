@@ -7,6 +7,7 @@ import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 import { roundMoney2 } from '../../../../../utils/moneyInput';
 import { totalSalary } from '../../../utils/employeeSalaryMath';
 import { getAdvanceBalanceParts } from '../../../utils/advanceBalance';
+import { computePayrollLineNet } from '../../../utils/hrCalculations/payroll';
 import {
   computeApprovedLeaveDaysByEmployee,
   computeSettledDaysByEmployee,
@@ -218,7 +219,12 @@ export function buildPayrollLineForEmployee(deps: BuildLineDeps): PayrollRunLine
       return dateStr;
     })
     .join(' ، ');
-  const netSalary = Math.max(0, grossProrated - advancesDeduct);
+  const netSalary = computePayrollLineNet({
+    grossSalary: grossProrated,
+    allowancesAdd: 0,
+    deductions: 0,
+    advancesDeduct,
+  });
   const notesParts: string[] = [];
   if (advanceDatesLabel) notesParts.push(`تواريخ السلف: ${advanceDatesLabel}`);
   if (pr.factor < 1 && pr.daysInMonth > 0) {
