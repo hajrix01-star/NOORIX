@@ -20,6 +20,7 @@ import {
   computeTerminationSalarySettlementPreview,
   getTerminationPayrollMonthFirstDay,
 } from '../utils/hrCalculations/termination';
+import { sumSalaryCustomAllowances } from '../utils/employeeSalaryMath';
 import { parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
@@ -114,7 +115,7 @@ export default function TerminationSettlementModal({
   const { allowances: customRows = [] } = useCustomAllowances(companyId, empId);
 
   const customSum = useMemo(
-    () => roundMoney2(customRows.reduce((s: any, r: any) => s + (Number(r.amount) || 0), 0)),
+    () => sumSalaryCustomAllowances(customRows),
     [customRows],
   );
 

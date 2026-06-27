@@ -35,7 +35,7 @@ import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import TerminationSettlementModal from './components/TerminationSettlementModal';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
-import { totalSalary } from './utils/employeeSalaryMath';
+import { computeEmployeeSalaryPackageBreakdown } from './utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
@@ -174,7 +174,7 @@ export default function StaffListScreen({ embedded }: any) {
       const meta = parsed.meta || {};
       return {
         ...e,
-        totalSalary: totalSalary(e, allowanceTotals.get(e.id) || 0),
+        totalSalary: computeEmployeeSalaryPackageBreakdown(e, allowanceTotals.get(e.id) || 0).total,
         terminationReason: meta.terminationReason || '',
         terminationClause: meta.terminationClause || '',
         terminationDate: meta.terminationDate || '',

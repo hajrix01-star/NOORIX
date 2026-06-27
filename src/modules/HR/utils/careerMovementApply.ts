@@ -6,8 +6,8 @@ import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import {
   basicSalaryFromTargetTotalInclusiveOvertime,
+  computeEmployeeSalaryPackageBreakdown,
   sumCustomAllowancesForEmployee,
-  totalSalary,
 } from './employeeSalaryMath';
 
 type AllowanceRow = { employeeId?: string; amount?: unknown };
@@ -52,7 +52,7 @@ export async function applyCareerRaise(params: {
   if (!employeeId) throw new Error('Employee id required');
 
   const customTotal = sumCustomAllowancesForEmployee(customAllowances, employeeId);
-  const currentTotalAllIn = totalSalary(employee, customTotal);
+  const currentTotalAllIn = computeEmployeeSalaryPackageBreakdown(employee, customTotal).total;
   const newTarget = roundMoney2(currentTotalAllIn + increment);
   if (newTarget <= 0) {
     throw new Error('Invalid new salary total');

@@ -51,4 +51,27 @@ describe('hrCalculations/termination', () => {
 
     expect(preview?.netSuggested).toBe(0);
   });
+
+  it('uses the central salary package when overtime is part of the termination month', () => {
+    const preview = computeTerminationSalarySettlementPreview({
+      employee: {
+        basicSalary: 6000,
+        housingAllowance: 1000,
+        transportAllowance: 500,
+        otherAllowance: 0,
+        workHours: '10',
+        workSchedule: '[NOORIX_WD:26]',
+        joinDate: '2026-01-01',
+        status: 'terminated',
+        notes: '[HR_META]{"terminationDate":"2026-06-30"}',
+      },
+      terminationDate: '2026-06-30',
+      customAllowanceTotal: 250,
+      advancesRemaining: 600,
+    });
+
+    expect(preview?.fullMonthly).toBe(10437.5);
+    expect(preview?.grossProrated).toBe(10437.5);
+    expect(preview?.netSuggested).toBe(9837.5);
+  });
 });
