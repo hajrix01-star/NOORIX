@@ -137,6 +137,92 @@ export function totalSalary(emp: any, customTotal: any = 0) {
   return roundMoney2(d.toString());
 }
 
+function salaryDecimal(value: any) {
+  return new Decimal(value || 0);
+}
+
+function normalizeSalaryCalcHours(value: any) {
+  return Math.max(1, Math.min(12, parseFloat(String(value)) || SAUDI_STANDARD_HOURS));
+}
+
+function normalizeSalaryCalcDays(value: any) {
+  return Math.max(1, parseFloat(String(value)) || DEFAULT_OVERTIME_WORK_DAYS);
+}
+
+export function employeeTargetTotalDecimal(employee: any, customTotal: any = 0, hoursVal?: any, workDaysVal?: any) {
+  const hours = normalizeSalaryCalcHours(hoursVal ?? parseWorkHours(employee?.workHours));
+  const workDays = normalizeSalaryCalcDays(workDaysVal ?? parseOvertimeWorkDaysPerMonth(employee));
+  const employeeForCalc = {
+    ...employee,
+    workHours: String(hours),
+    workSchedule: mergeOvertimeWorkDaysIntoSchedule(employee?.workSchedule || '', workDays),
+  };
+
+  return totalSalaryDecimal(employeeForCalc, customTotal);
+}
+
+export function computeSalaryCalculator(input: any = {}) {
+  const hours = normalizeSalaryCalcHours(input.hoursPerDay);
+  const workDays = normalizeSalaryCalcDays(input.daysPerMonth);
+  const vacDays = parseFloat(String(input.vacationDays)) || 0;
+
+  const totalTarget = salaryDecimal(input.targetTotal);
+  const housing = salaryDecimal(input.housingAllowance);
+  const transport = salaryDecimal(input.transportAllowance);
+  const other = salaryDecimal(input.otherAllowance);
+  const customAllowanceTotal = salaryDecimal(input.customAllowanceTotal);
+  const editableAllowances = housing.plus(transport).plus(other);
+  const totalAllowances = editableAllowances.plus(customAllowanceTotal);
+
+  const empForInverse = {
+    workHours: String(hours),
+    workSchedule: mergeOvertimeWorkDaysIntoSchedule(input.workSchedule || '', workDays),
+    housingAllowance: housing.toNumber(),
+    transportAllowance: transport.toNumber(),
+    otherAllowance: other.toNumber(),
+  };
+
+  const { basic: basicNum, inverseWarning } = totalTarget.gt(0)
+    ? basicSalaryFromTargetTotalInclusiveOvertime(empForInverse, customAllowanceTotal.toNumber(), totalTarget.toNumber())
+    : { basic: 0, inverseWarning: false };
+
+  const basic = salaryDecimal(basicNum);
+  const calcEmployee = {
+    ...empForInverse,
+    basicSalary: basic.toNumber(),
+  };
+  const overtime = overtimeBreakdownDecimal(calcEmployee, customAllowanceTotal);
+  const actualWage = basic.plus(totalAllowances);
+  const deduction = vacDays > 0 ? actualWage.times(vacDays).div(workDays) : new Decimal(0);
+  const calculatedTotal = actualWage.plus(overtime.totalOTValue);
+  const netSalary = calculatedTotal.minus(deduction);
+
+  return {
+    hours,
+    workDays,
+    vacDays,
+    totalActualHours: hours * workDays,
+    totalTarget,
+    housing,
+    transport,
+    other,
+    editableAllowances,
+    customAllowanceTotal,
+    totalAllowances,
+    basic,
+    inverseWarning,
+    actualWage,
+    deduction,
+    calculatedTotal,
+    netSalary,
+    hourlyRate: overtime.actualHourlyRate,
+    overtimeRate: overtime.overtimeHourlyRate,
+    hasResult: totalTarget.gt(0) && basic.gt(0),
+    hasOT: overtime.totalOT > 0,
+    ...overtime,
+  };
+}
+
 /**
  * حزمة بدون أوفرتايم (أساسي + بدلات + مخصصة) — للمقارنة أو تقارير.
  */

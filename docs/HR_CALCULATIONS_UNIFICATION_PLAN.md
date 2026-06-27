@@ -283,6 +283,7 @@ packages/hr-calculations/
 - تم نقل حسابات الراتب والأوفر تايم إلى `salary.ts` مع إبقاء `employeeSalaryMath.ts` كواجهة توافق.
 - تم نقل حسابات الحضور/المسيرة إلى `attendance.ts` مع إبقاء `payrollAttendanceMath.ts` كواجهة توافق.
 - تم نقل حسابات السلف إلى `advances.ts` مع إبقاء `advanceBalance.ts` كواجهة توافق.
+- 2026-06-27: SalaryCalcTab now uses central `computeSalaryCalculator`; added `salary.test.ts` coverage for no OT, daily OT, >26 days, custom allowances, inverse salary, warnings, and vacation deduction.
 - لم يتم تعديل قاعدة البيانات، ولم يتم تشغيل migrations، ولم يتم لمس السيرفر أو النشر.
 - تم تشغيل اختبارات HR المركزة بنجاح.
 - تم تشغيل build للواجهة بنجاح.

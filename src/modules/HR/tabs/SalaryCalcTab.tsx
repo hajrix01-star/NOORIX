@@ -9,7 +9,6 @@
  *   أيام > 26 تُعدّ «أيام راحة» — كامل ساعاتها أوفر تايم.
  */
 import React, { useMemo, useState, useEffect } from 'react';
-import Decimal from 'decimal.js';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
@@ -27,17 +26,14 @@ import {
   parseWorkHours,
   parseOvertimeWorkDaysPerMonth,
   mergeOvertimeWorkDaysIntoSchedule,
-  basicSalaryFromTargetTotalInclusiveOvertime,
+  computeSalaryCalculator,
+  employeeTargetTotalDecimal,
 } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, FormRow, FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { employeeKeys } from '../../../services/queryKeys';
 import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
-
-function toDecimal(value: any) {
-  return new Decimal(value || 0);
-}
 
 /** صف نتيجة موحّد */
 function ResultRow({ label, value, highlight = false, muted = false, divider = false }: any) {
@@ -96,98 +92,66 @@ export default function SalaryCalcTab() {
     return map;
   }, [customAllowances]);
 
-  /** حساب الإجمالي من بيانات الموظف الحالية (للعرض في القائمة المنسدلة) */
-  function computeTargetFromEmployee(employee: any, customTotal: any, hoursVal: any, workDaysVal: any) {
-    const basic  = toDecimal(employee?.basicSalary || 0);
-    const alloc  = toDecimal(employee?.housingAllowance || 0)
-      .plus(employee?.transportAllowance || 0)
-      .plus(employee?.otherAllowance || 0)
-      .plus(customTotal || 0);
-    const actual = basic.plus(alloc);
-    const h  = Math.max(1, Math.min(12, parseFloat(hoursVal)  || SAUDI_STANDARD_HOURS));
-    const wd = Math.max(1, parseFloat(workDaysVal) || DEFAULT_OVERTIME_WORK_DAYS);
-    const regularDays = Math.min(wd, SAUDI_WORK_DAYS_STANDARD);
-    const restDays    = Math.max(0, wd - SAUDI_WORK_DAYS_STANDARD);
-    const otPerDay    = Math.max(0, h - SAUDI_STANDARD_HOURS);
-    const totalOT     = otPerDay * regularDays + restDays * h;
-    if (totalOT <= 0 || actual.lte(0)) return actual;
-    // م107: أجر_ساعة_OT = (فعلي + 0.5×أساسي) / 208
-    const otHourlyRate = actual.plus(basic.times(0.5)).div(SAUDI_STANDARD_MONTHLY_HOURS);
-    return actual.plus(otHourlyRate.times(totalOT));
-  }
-
   useEffect(() => {
     if (!selectedEmployee) return;
     const e = employees.find((x: any) => x.id === selectedEmployee);
     if (!e) return;
     const dailyHours = parseWorkHours(e.workHours);
     const wd         = parseOvertimeWorkDaysPerMonth(e);
-    const customTotal = new Decimal(allowanceTotals.get(e.id) || 0);
+    const customTotal = allowanceTotals.get(e.id) || 0;
     setHoursPerDay(String(dailyHours));
     setDaysPerMonth(String(wd));
     setHousingAllowance(String(e.housingAllowance   ?? 0));
     setTransportAllowance(String(e.transportAllowance ?? 0));
     setOtherAllowance(String(e.otherAllowance ?? 0));
     setTargetTotal(
-      computeTargetFromEmployee(e, customTotal, dailyHours, wd).toDecimalPlaces(2).toString()
+      employeeTargetTotalDecimal(e, customTotal, dailyHours, wd).toDecimalPlaces(2).toString()
     );
   }, [selectedEmployee, employees, allowanceTotals]);
 
   // ── حسابات ──────────────────────────────────────────────
-  const hours    = Math.max(1, Math.min(12, parseFloat(hoursPerDay)  || SAUDI_STANDARD_HOURS));
-  const workDays = Math.max(1, parseFloat(daysPerMonth) || DEFAULT_OVERTIME_WORK_DAYS);
-  const vacDays  = parseFloat(vacationDays) || 0;
+  const salaryCalc = computeSalaryCalculator({
+    targetTotal,
+    hoursPerDay,
+    daysPerMonth,
+    vacationDays,
+    housingAllowance,
+    transportAllowance,
+    otherAllowance,
+    customAllowanceTotal: emp ? (allowanceTotals.get(emp.id) || 0) : 0,
+    workSchedule: emp?.workSchedule || '',
+  });
 
-  // تفصيل ساعات الأوفر تايم
-  const regularWorkDays     = Math.min(workDays, SAUDI_WORK_DAYS_STANDARD); // أيام عمل عادية (≤26)
-  const restDays            = Math.max(0, workDays - SAUDI_WORK_DAYS_STANDARD); // أيام راحة (>26)
-  const overtimeHoursPerDay = Math.max(0, hours - SAUDI_STANDARD_HOURS);
-  const totalActualHours    = hours * workDays;
-  const totalDailyOT        = overtimeHoursPerDay * regularWorkDays; // ساعات إضافية يومية × أيام عادية
-  const totalRestOT         = restDays * hours;                       // كامل ساعات أيام الراحة
-  const totalOT             = totalDailyOT + totalRestOT;
-
-  const totalTarget         = toDecimal(targetTotal);
-  const housing             = toDecimal(housingAllowance);
-  const transport           = toDecimal(transportAllowance);
-  const other               = toDecimal(otherAllowance);
-  const editableAllowances  = housing.plus(transport).plus(other);
-  const customAllowanceTotal = toDecimal(emp ? (allowanceTotals.get(emp.id) || 0) : 0);
-  const totalAllowances     = editableAllowances.plus(customAllowanceTotal);
-
-  // المعادلة العكسية — تعمل حتى بدون موظف محدد
-  const empForInverse = {
-    workHours:          String(hours),
-    workSchedule:       mergeOvertimeWorkDaysIntoSchedule(emp?.workSchedule || '', workDays),
-    housingAllowance:   housing.toNumber(),
-    transportAllowance: transport.toNumber(),
-    otherAllowance:     other.toNumber(),
-  };
-  const { basic: basicNum, inverseWarning } = totalTarget.gt(0)
-    ? basicSalaryFromTargetTotalInclusiveOvertime(empForInverse, customAllowanceTotal.toNumber(), totalTarget.toNumber())
-    : { basic: 0, inverseWarning: false };
-
-  const basic       = toDecimal(basicNum);
-  const actualWage  = basic.plus(totalAllowances);            // أجر ثابت (بدون OT)
-  const deduction   = vacDays > 0 ? actualWage.times(vacDays).div(workDays) : new Decimal(0);
-  // م107: أجر_الساعة_الفعلي = (أساسي+بدلات) / 208
-  const actualHourlyRate = actualWage.gt(0) ? actualWage.div(SAUDI_STANDARD_MONTHLY_HOURS) : new Decimal(0);
-  // م107: أجر_الساعة_الأساسي = أساسي / 208
-  const basicHourlyRate  = basic.gt(0)  ? basic.div(SAUDI_STANDARD_MONTHLY_HOURS)  : new Decimal(0);
-  // م107: أجر_ساعة_OT = أجر_الساعة_الفعلي + 50% × أجر_الساعة_الأساسي
-  const overtimeHourlyRate = actualHourlyRate.plus(basicHourlyRate.times(0.5));
-  const dailyOTValue    = overtimeHourlyRate.times(totalDailyOT);
-  const restOTValue     = overtimeHourlyRate.times(totalRestOT);
-  const totalOTValue    = overtimeHourlyRate.times(totalOT);
-  const calculatedTotal = actualWage.plus(totalOTValue);
-  const netSalary       = calculatedTotal.minus(deduction);
-
-  // للإسناد القديم (للعرض العام)
-  const hourlyRate   = actualHourlyRate;
-  const overtimeRate = overtimeHourlyRate;
-
-  const hasResult = totalTarget.gt(0) && basic.gt(0);
-  const hasOT     = totalOT > 0;
+  const {
+    hours,
+    workDays,
+    vacDays,
+    regularWorkDays,
+    restDays,
+    overtimeHoursPerDay,
+    totalActualHours,
+    totalDailyOT,
+    totalRestOT,
+    totalOT,
+    totalTarget,
+    housing,
+    transport,
+    other,
+    totalAllowances,
+    basic,
+    inverseWarning,
+    deduction,
+    actualHourlyRate,
+    basicHourlyRate,
+    overtimeHourlyRate,
+    dailyOTValue,
+    restOTValue,
+    totalOTValue,
+    calculatedTotal,
+    netSalary,
+    hasResult,
+    hasOT,
+  } = salaryCalc;
 
   // ── تحديث الموظف ─────────────────────────────────────────
   const updateMutation = useApiMutation({
@@ -373,8 +337,8 @@ export default function SalaryCalcTab() {
           <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e: any) => setSelectedEmployee(e.target.value)}>
             <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
             {employees.map((e: any) => {
-              const customTotal = new Decimal(allowanceTotals.get(e.id) || 0);
-              const est = computeTargetFromEmployee(e, customTotal, parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e));
+              const customTotal = allowanceTotals.get(e.id) || 0;
+              const est = employeeTargetTotalDecimal(e, customTotal, parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e));
               return (
                 <option key={e.id} value={e.id}>
                   {employeeDisplayName(e, lang, e.id)} — {hrFmt(est.toNumber())} SR
