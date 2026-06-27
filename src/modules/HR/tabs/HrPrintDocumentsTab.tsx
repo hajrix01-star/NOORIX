@@ -7,10 +7,11 @@ import { useApp } from '../../../context/AppContext';
 import type { CompanyListItem } from '../../../context/appTypes';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
-import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
+import { useQuery } from '@tanstack/react-query';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { getBrandLogo } from '../../../utils/appBranding';
-import { computeEmployeeSalaryPackageBreakdown, sumSalaryCustomAllowances } from '../utils/employeeSalaryMath';
+import { getEmployeeCompensationSnapshot, throwIfApiFailed } from '../../../services/api';
+import { hrKeys } from '../../../services/queryKeys';
 import { toYmd } from '../../../utils/saudiDate';
 import { n, defaultPeriodLabel } from './hrPrintDocumentsTabFormat';
 import {
@@ -43,6 +44,7 @@ type HrCustomAllowanceRow = {
   id: string;
   employeeId: string;
   nameAr?: string | null;
+  nameEn?: string | null;
   amount?: number | string | null;
 };
 
@@ -64,9 +66,21 @@ export default function HrPrintDocumentsTab() {
   const [printLandscape, setPrintLandscape] = useState(false);
 
   const { employees } = useEmployees(companyId, { includeTerminated: true, fetchEnabled: !!companyId });
-  const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
 
   const emp = useMemo(() => employees.find((e) => e.id === employeeId), [employees, employeeId]);
+  const {
+    data: compensationSnapshot,
+    isLoading: compensationSnapshotLoading,
+    error: compensationSnapshotError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshot(companyId, employeeId),
+    queryFn: async () => {
+      const res = await getEmployeeCompensationSnapshot(companyId, employeeId);
+      throwIfApiFailed(res, t('loadingError'));
+      return res.data;
+    },
+    enabled: !!companyId && !!employeeId,
+  });
 
   const payrollTotal = useMemo(() => {
     let sum = n(payroll.basic) + n(payroll.housing) + n(payroll.transport) + n(payroll.other) + n(payroll.overtime);
@@ -86,15 +100,14 @@ export default function HrPrintDocumentsTab() {
 
   const eosWageTotal =
     n(eos.basic) + n(eos.housing) + n(eos.transport) + n(eos.other) +
-    sumSalaryCustomAllowances(eos.customRows);
+    (eos.customRows || []).reduce((sum: number, row: any) => sum + n(row.amount), 0);
 
   const importPayroll = useCallback(() => {
-    if (!emp) return;
-    const customRows = (customAllowances as HrCustomAllowanceRow[])
-      .filter((a) => a.employeeId === emp.id)
-      .map((a) => ({ key: a.id, label: a.nameAr || t('customAllowanceName'), amount: String(n(a.amount)) }));
-    const salaryPackage = computeEmployeeSalaryPackageBreakdown(emp, customRows);
-    const totStr = String(salaryPackage.total);
+    if (!emp || !compensationSnapshot?.salaryPackage) return;
+    const salaryPackage = compensationSnapshot.salaryPackage;
+    const customRows = (compensationSnapshot.customAllowances?.items || [])
+      .map((a: HrCustomAllowanceRow) => ({ key: a.id, label: a.nameAr || a.nameEn || t('customAllowanceName'), amount: String(n(a.amount)) }));
+    const totStr = String(n(salaryPackage.total));
     setPayroll({
       ...emptyPayrollDraft(),
       payrollFormat: payroll.payrollFormat,
@@ -111,11 +124,11 @@ export default function HrPrintDocumentsTab() {
       letterEndDate: '',
       declarationSalariesAr: DEFAULT_DECL_SALARY_AR,
       declarationSalariesEn: DEFAULT_DECL_SALARY_EN,
-      basic: String(n(emp.basicSalary)),
-      housing: String(n(emp.housingAllowance)),
-      transport: String(n(emp.transportAllowance)),
-      other: String(n(emp.otherAllowance)),
-      overtime: String(salaryPackage.overtimePay),
+      basic: String(n(salaryPackage.basicSalary)),
+      housing: String(n(salaryPackage.housingAllowance)),
+      transport: String(n(salaryPackage.transportAllowance)),
+      other: String(n(salaryPackage.otherAllowance)),
+      overtime: String(n(salaryPackage.overtimePay)),
       customRows,
       showBreakdown: true,
     });
@@ -125,13 +138,13 @@ export default function HrPrintDocumentsTab() {
       amounts: Array.from({ length: 12 }, () => totStr),
       perMonthGross: totStr,
     }));
-  }, [emp, customAllowances, companyNameArDefault, companyNameEnDefault, lang, t, payroll.payrollFormat]);
+  }, [emp, compensationSnapshot, companyNameArDefault, companyNameEnDefault, lang, t, payroll.payrollFormat]);
 
   const importEos = useCallback(() => {
-    if (!emp) return;
-    const customRows = (customAllowances as HrCustomAllowanceRow[])
-      .filter((a) => a.employeeId === emp.id)
-      .map((a) => ({ key: a.id, label: a.nameAr || t('customAllowanceName'), amount: String(n(a.amount)) }));
+    if (!emp || !compensationSnapshot?.salaryPackage) return;
+    const salaryPackage = compensationSnapshot.salaryPackage;
+    const customRows = (compensationSnapshot.customAllowances?.items || [])
+      .map((a: HrCustomAllowanceRow) => ({ key: a.id, label: a.nameAr || a.nameEn || t('customAllowanceName'), amount: String(n(a.amount)) }));
     setEos({
       ...emptyEosDraft(),
       companyName: companyNameArDefault,
@@ -142,15 +155,15 @@ export default function HrPrintDocumentsTab() {
       jobTitle: emp.jobTitle || '',
       iqama: emp.iqamaNumber || '',
       joinDate: toYmd(emp.joinDate),
-      basic: String(n(emp.basicSalary)),
-      housing: String(n(emp.housingAllowance)),
-      transport: String(n(emp.transportAllowance)),
-      other: String(n(emp.otherAllowance)),
+      basic: String(n(salaryPackage.basicSalary)),
+      housing: String(n(salaryPackage.housingAllowance)),
+      transport: String(n(salaryPackage.transportAllowance)),
+      other: String(n(salaryPackage.otherAllowance)),
       customRows,
       settlementNotesAr: DEFAULT_EOS_SETTLEMENT_AR,
       settlementNotesEn: DEFAULT_EOS_SETTLEMENT_EN,
     });
-  }, [emp, customAllowances, companyNameArDefault, companyNameEnDefault, t]);
+  }, [emp, compensationSnapshot, companyNameArDefault, companyNameEnDefault, t]);
 
   const fillAnnualWithMonthlyTotal = () => {
     const s = String(Math.round(payrollTotal * 100) / 100);
@@ -264,9 +277,17 @@ export default function HrPrintDocumentsTab() {
             employeeId={employeeId}
             onEmployeeId={setEmployeeId}
             employees={employees}
-            hasEmployee={!!emp}
+            hasEmployee={!!emp && !!compensationSnapshot?.salaryPackage && !compensationSnapshotLoading && !compensationSnapshotError}
             onImportFromHr={() => (docKind === 'payroll' ? importPayroll() : importEos())}
           />
+          {employeeId && compensationSnapshotLoading && (
+            <div className="text-[11px] text-noorix-muted">{t('loading')}</div>
+          )}
+          {employeeId && compensationSnapshotError && (
+            <div className="text-[11px] text-noorix-red">
+              {compensationSnapshotError instanceof Error ? compensationSnapshotError.message : t('loadingError')}
+            </div>
+          )}
 
           {docKind === 'payroll' && (
             <HrPrintPayrollPanel

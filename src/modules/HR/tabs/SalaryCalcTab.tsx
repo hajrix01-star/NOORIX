@@ -12,9 +12,8 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
-import { useCustomAllowances } from '../../../hooks/useCustomAllowances';
-import { useQueryClient } from '@tanstack/react-query';
-import { updateEmployee } from '../../../services/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getEmployeeCompensationSnapshots, throwIfApiFailed, updateEmployee } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getSaudiToday } from '../../../utils/saudiDate';
@@ -27,12 +26,11 @@ import {
   parseOvertimeWorkDaysPerMonth,
   mergeOvertimeWorkDaysIntoSchedule,
   computeSalaryCalculator,
-  employeeTargetTotalDecimal,
 } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, FormRow, FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
-import { employeeKeys } from '../../../services/queryKeys';
+import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
 
 /** صف نتيجة موحّد */
@@ -69,7 +67,6 @@ export default function SalaryCalcTab() {
   const companyName = company?.nameAr || company?.name || 'الشركة';
   const queryClient = useQueryClient();
   const { employees } = useEmployees(companyId);
-  const { allowances: customAllowances = [] } = useCustomAllowances(companyId);
 
   const [targetTotal,      setTargetTotal]      = useState('');
   const [hoursPerDay,      setHoursPerDay]      = useState(String(SAUDI_STANDARD_HOURS));
@@ -81,33 +78,44 @@ export default function SalaryCalcTab() {
   const [selectedEmployee, setSelectedEmployee] = useState('');
 
   const emp = employees.find((e: any) => e.id === selectedEmployee);
+  const employeeIds = useMemo(() => employees.map((row: any) => row.id).filter(Boolean), [employees]);
+  const {
+    data: compensationSnapshots,
+    isLoading: compensationSnapshotsLoading,
+    error: compensationSnapshotsError,
+  } = useQuery({
+    queryKey: hrKeys.compensationSnapshots(companyId, employeeIds),
+    queryFn: async () => {
+      const res = await getEmployeeCompensationSnapshots(companyId, employeeIds);
+      throwIfApiFailed(res, t('loadingError'));
+      return res.data;
+    },
+    enabled: !!companyId && employeeIds.length > 0,
+  });
 
-  const allowanceTotals = useMemo(() => {
+  const snapshotByEmployeeId = useMemo(() => {
     const map = new Map();
-    for (const row of customAllowances) {
-      const employeeId = row.employeeId;
-      if (!employeeId) continue;
-      map.set(employeeId, (map.get(employeeId) || 0) + (Number(row.amount) || 0));
+    for (const snapshot of compensationSnapshots?.items ?? []) {
+      if (snapshot?.employeeId) map.set(snapshot.employeeId, snapshot);
     }
     return map;
-  }, [customAllowances]);
+  }, [compensationSnapshots]);
+  const selectedSnapshot = emp ? snapshotByEmployeeId.get(emp.id) : null;
 
   useEffect(() => {
     if (!selectedEmployee) return;
     const e = employees.find((x: any) => x.id === selectedEmployee);
-    if (!e) return;
+    const snapshot = e ? snapshotByEmployeeId.get(e.id) : null;
+    if (!e || !snapshot?.salaryPackage) return;
     const dailyHours = parseWorkHours(e.workHours);
     const wd         = parseOvertimeWorkDaysPerMonth(e);
-    const customTotal = allowanceTotals.get(e.id) || 0;
     setHoursPerDay(String(dailyHours));
     setDaysPerMonth(String(wd));
-    setHousingAllowance(String(e.housingAllowance   ?? 0));
-    setTransportAllowance(String(e.transportAllowance ?? 0));
-    setOtherAllowance(String(e.otherAllowance ?? 0));
-    setTargetTotal(
-      employeeTargetTotalDecimal(e, customTotal, dailyHours, wd).toDecimalPlaces(2).toString()
-    );
-  }, [selectedEmployee, employees, allowanceTotals]);
+    setHousingAllowance(String(snapshot.salaryPackage.housingAllowance ?? 0));
+    setTransportAllowance(String(snapshot.salaryPackage.transportAllowance ?? 0));
+    setOtherAllowance(String(snapshot.salaryPackage.otherAllowance ?? 0));
+    setTargetTotal(String(snapshot.salaryPackage.total ?? 0));
+  }, [selectedEmployee, employees, snapshotByEmployeeId]);
 
   // ── حسابات ──────────────────────────────────────────────
   const salaryCalc = computeSalaryCalculator({
@@ -118,7 +126,7 @@ export default function SalaryCalcTab() {
     housingAllowance,
     transportAllowance,
     otherAllowance,
-    customAllowanceTotal: emp ? (allowanceTotals.get(emp.id) || 0) : 0,
+    customAllowanceTotal: selectedSnapshot?.salaryPackage?.customAllowanceTotal ?? 0,
     workSchedule: emp?.workSchedule || '',
   });
 
@@ -162,6 +170,8 @@ export default function SalaryCalcTab() {
     onSuccess: (data: any, variables: any) => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.detail(variables.id, companyId) });
       queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
+      queryClient.invalidateQueries({ queryKey: hrKeys.compensationSnapshot(companyId, variables.id) });
+      queryClient.invalidateQueries({ queryKey: hrKeys.compensationSnapshotRoot() });
     },
   });
 
@@ -186,11 +196,11 @@ export default function SalaryCalcTab() {
     if (housing.gt(0))   rows.push({ label: t('housingAllowance'),   amount: housing.toNumber() });
     if (transport.gt(0)) rows.push({ label: t('transportAllowance'), amount: transport.toNumber() });
     if (other.gt(0))     rows.push({ label: t('otherAllowance'),     amount: other.toNumber() });
-    const customRows = customAllowances
-      .filter((row: any) => row.employeeId === emp.id && Number(row.amount) > 0)
-      .map((row: any) => ({ label: row.nameAr || t('customAllowanceName'), amount: Number(row.amount) || 0 }));
+    const customRows = (selectedSnapshot?.customAllowances?.items ?? [])
+      .filter((row: any) => Number(row.amount) > 0)
+      .map((row: any) => ({ label: row.nameAr || row.nameEn || t('customAllowanceName'), amount: Number(row.amount) || 0 }));
     return [...rows, ...customRows];
-  }, [emp, housing, transport, other, customAllowances, t]);
+  }, [emp, housing, transport, other, selectedSnapshot, t]);
 
   // ── طباعة ────────────────────────────────────────────────
   function handlePrint() {
@@ -336,9 +346,13 @@ export default function SalaryCalcTab() {
           {/* اختيار الموظف */}
           <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e: any) => setSelectedEmployee(e.target.value)}>
             <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
-            {employees.map((e: any) => {
-              const customTotal = allowanceTotals.get(e.id) || 0;
-              const est = employeeTargetTotalDecimal(e, customTotal, parseWorkHours(e.workHours), parseOvertimeWorkDaysPerMonth(e));
+            {(!compensationSnapshotsLoading && !compensationSnapshotsError
+              ? employees.filter((e: any) => snapshotByEmployeeId.has(e.id))
+              : []
+            ).map((e: any) => {
+              const snapshot = snapshotByEmployeeId.get(e.id);
+              const total = snapshot?.salaryPackage?.total;
+              const est = { toNumber: () => (Number.isFinite(Number(total)) ? Number(total) : 0) };
               return (
                 <option key={e.id} value={e.id}>
                   {employeeDisplayName(e, lang, e.id)} — {hrFmt(est.toNumber())} SR
@@ -347,6 +361,14 @@ export default function SalaryCalcTab() {
               );
             })}
           </Input>
+          {compensationSnapshotsLoading && (
+            <div className="text-[11px] text-noorix-muted">{t('loading')}</div>
+          )}
+          {compensationSnapshotsError && (
+            <div className="text-[11px] text-noorix-red">
+              {compensationSnapshotsError instanceof Error ? compensationSnapshotsError.message : t('loadingError')}
+            </div>
+          )}
 
           {/* الإجمالي المستهدف */}
           <Input

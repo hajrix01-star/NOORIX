@@ -1,5 +1,4 @@
 import { hrFmt } from '../utils/hrFmt';
-import { sumSalaryCustomAllowances } from '../utils/employeeSalaryMath';
 import {
   esc,
   n,
@@ -448,7 +447,7 @@ export function composeHrPrintDocument({
       push(r.label || HR_PRINT_EMPTY_FIELD, r.label || LABEL_PAYROLL_EN.custom, n(r.amount)),
     );
   } else {
-    const csum = sumSalaryCustomAllowances(payroll.customRows);
+    const csum = (payroll.customRows || []).reduce((sum: number, row: HrPayrollCustomRow) => sum + n(row.amount), 0);
     if (csum > 0) push(t('customAllowances'), LABEL_PAYROLL_EN.custom, csum);
   }
   const notesAr = payroll.notes?.trim() ? `<div class="doc-note" dir="rtl">${esc(payroll.notes)}</div>` : '';
