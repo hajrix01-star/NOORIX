@@ -1,6 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { normOptionalTrimmedFolderId, normOptionalTrimmedUrl } from './backup-gdrive-field-normalize.util';
 
 export type CompanyBackupConfigView = {
   companyId: string;
@@ -46,8 +45,8 @@ export async function getCompanyBackupConfigView(
     retentionCount: row.retentionCount,
     timezone: row.timezone,
     lastRunDayRiyadh: row.lastRunDayRiyadh,
-    gdriveScriptUrl: row.gdriveScriptUrl ?? null,
-    gdriveFolderId: row.gdriveFolderId ?? null,
+    gdriveScriptUrl: null,
+    gdriveFolderId: null,
   };
 }
 
@@ -79,8 +78,8 @@ export async function upsertCompanyBackupConfigView(
       ? { retentionCount: Math.min(50, Math.max(1, dto.retentionCount)) }
       : {}),
     ...(dto.timezone !== undefined ? { timezone: dto.timezone } : {}),
-    ...(dto.gdriveScriptUrl !== undefined ? { gdriveScriptUrl: normOptionalTrimmedUrl(dto.gdriveScriptUrl) } : {}),
-    ...(dto.gdriveFolderId !== undefined ? { gdriveFolderId: normOptionalTrimmedFolderId(dto.gdriveFolderId) } : {}),
+    gdriveScriptUrl: null,
+    gdriveFolderId: null,
   };
   const row = existing
     ? await prisma.companyBackupConfig.update({ where: { companyId: dto.companyId }, data: patch })
@@ -93,8 +92,8 @@ export async function upsertCompanyBackupConfigView(
           scheduleMinute: dto.scheduleMinute ?? 0,
           retentionCount: dto.retentionCount ?? 5,
           timezone: dto.timezone ?? 'Asia/Riyadh',
-          gdriveScriptUrl: normOptionalTrimmedUrl(dto.gdriveScriptUrl) ?? null,
-          gdriveFolderId: normOptionalTrimmedFolderId(dto.gdriveFolderId) ?? null,
+          gdriveScriptUrl: null,
+          gdriveFolderId: null,
         },
       });
   return {
@@ -105,7 +104,7 @@ export async function upsertCompanyBackupConfigView(
     retentionCount: row.retentionCount,
     timezone: row.timezone,
     lastRunDayRiyadh: row.lastRunDayRiyadh,
-    gdriveScriptUrl: row.gdriveScriptUrl ?? null,
-    gdriveFolderId: row.gdriveFolderId ?? null,
+    gdriveScriptUrl: null,
+    gdriveFolderId: null,
   };
 }

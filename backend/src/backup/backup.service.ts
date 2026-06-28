@@ -22,7 +22,6 @@ import {
   resolveLocalBackupFileOrThrow,
 } from './backup-restore-report.util';
 import { runManualCompanyLogicalJobVerify } from './backup-company-logical-verify-manual.util';
-import { normOptionalTrimmedFolderId, normOptionalTrimmedUrl } from './backup-gdrive-field-normalize.util';
 import { ingestUploadedSystemFullArchive as runIngestUploadedSystemFullArchive } from './backup-ingest-system-full-archive.util';
 import { runCompanyLogicalBackup } from './backup-company-logical-execute.util';
 import { runSystemFullArchiveJob } from './backup-system-full-archive-run.util';
@@ -312,8 +311,8 @@ export class BackupService {
       retentionCount: c.retentionCount,
       timezone: c.timezone,
       lastRunDayRiyadh: c.lastRunDayRiyadh,
-      gdriveScriptUrl: c.gdriveScriptUrl ?? null,
-      gdriveFolderId: c.gdriveFolderId ?? null,
+      gdriveScriptUrl: null,
+      gdriveFolderId: null,
     };
   }
 
@@ -333,8 +332,8 @@ export class BackupService {
         ...(dto.scheduleHour !== undefined ? { scheduleHour: dto.scheduleHour } : {}),
         ...(dto.scheduleMinute !== undefined ? { scheduleMinute: dto.scheduleMinute } : {}),
         ...(dto.retentionCount !== undefined ? { retentionCount: dto.retentionCount } : {}),
-        ...(dto.gdriveScriptUrl !== undefined ? { gdriveScriptUrl: normOptionalTrimmedUrl(dto.gdriveScriptUrl) } : {}),
-        ...(dto.gdriveFolderId !== undefined ? { gdriveFolderId: normOptionalTrimmedFolderId(dto.gdriveFolderId) } : {}),
+        gdriveScriptUrl: null,
+        gdriveFolderId: null,
       },
     });
   }

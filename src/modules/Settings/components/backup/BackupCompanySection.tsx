@@ -133,6 +133,8 @@ export function BackupCompanySection({
             </div>
           </div>
 
+          {false && (
+            <>
           <Divider />
 
           <div className="flex flex-col gap-2 min-w-0">
@@ -160,6 +162,8 @@ export function BackupCompanySection({
             />
             <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveFolderHint')}</p>
           </div>
+            </>
+          )}
 
           {coCfgRes?.success && coCfgRes.data?.lastRunDayRiyadh != null && (
             <p className="text-[11px] text-noorix-muted m-0">
@@ -179,8 +183,6 @@ export function BackupCompanySection({
                   scheduleHour: coForm.scheduleHour,
                   scheduleMinute: coForm.scheduleMinute,
                   retentionCount: coForm.retentionCount,
-                  gdriveScriptUrl: coForm.gdriveScriptUrl,
-                  gdriveFolderId: coForm.gdriveFolderId,
                 })
               }
             >

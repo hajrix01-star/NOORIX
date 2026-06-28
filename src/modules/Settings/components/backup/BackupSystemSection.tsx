@@ -109,6 +109,8 @@ export function BackupSystemSection({
           </p>
         )}
 
+        {false && (
+          <>
         <Divider />
 
         <div className="flex flex-col gap-2 min-w-0">
@@ -134,6 +136,8 @@ export function BackupSystemSection({
           />
           <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveFolderHint')}</p>
         </div>
+          </>
+        )}
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:items-center">
           <Button
@@ -147,8 +151,6 @@ export function BackupSystemSection({
                 scheduleHour: sysForm.scheduleHour,
                 scheduleMinute: sysForm.scheduleMinute,
                 retentionCount: sysForm.retentionCount,
-                gdriveScriptUrl: sysForm.gdriveScriptUrl,
-                gdriveFolderId: sysForm.gdriveFolderId,
               })
             }
           >

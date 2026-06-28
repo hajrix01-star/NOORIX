@@ -47,7 +47,6 @@ export function BackupJobsHistory({
             formatSaudiDateTime(j.createdAt),
             j.sizeBytes != null ? formatFileSize(j.sizeBytes) : '',
             j.durationMs != null ? `${j.durationMs} ms` : '',
-            j.externalUploaded ? t('backupExternalOk') : j.externalError ? t('backupExternalPending') : '',
           ].filter(Boolean);
           const title =
             `${scopeLabel(j.scope, t)}${j.company ? ` — ${j.company.nameAr || j.company.nameEn || ''}` : ''}${
@@ -93,12 +92,6 @@ export function BackupJobsHistory({
                         label: t('backupVerify'),
                         hidden: !(j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath),
                         onClick: () => verifyCoMut.mutate(j.id),
-                      },
-                      {
-                        key: 'retry',
-                        label: t('backupRetryExternal'),
-                        hidden: !(!j.externalUploaded && j.status === 'completed' && j.localRelativePath),
-                        onClick: () => retryMut.mutate(j.id),
                       },
                     ]}
                   />
