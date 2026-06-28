@@ -106,6 +106,7 @@ export const PERMISSIONS = {
 
   MANAGE_SETTINGS:  'MANAGE_SETTINGS',
   MANAGE_COMPANIES: 'MANAGE_COMPANIES',
+  MANAGE_TAX_SETTINGS: 'MANAGE_TAX_SETTINGS',
   MANAGE_USERS:     'MANAGE_USERS',
 
   DELETE_COMPANY:   'DELETE_COMPANY',
@@ -263,7 +264,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
   {
     key: 'companies', labelAr: 'إدارة الشركات', labelEn: 'Company Management', icon: '🏗️',
-    permissions: { write: 'MANAGE_COMPANIES', delete: 'DELETE_COMPANY' },
+    permissions: { write: 'MANAGE_COMPANIES', taxSettings: 'MANAGE_TAX_SETTINGS', delete: 'DELETE_COMPANY' },
   },
   {
     key: 'ocr', labelAr: 'OCR الفواتير (تجريبي)', labelEn: 'OCR Invoices (Beta)', icon: '🔍',
@@ -281,6 +282,7 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   view:       { ar: 'عرض الصفحة', en: 'View Page' },
   read:       { ar: 'قراءة البيانات', en: 'Read Data' },
   write:      { ar: 'إنشاء وتعديل', en: 'Create & Edit' },
+  taxSettings:{ ar: 'إدارة إعدادات الضريبة', en: 'Manage tax settings' },
   delete:     { ar: 'حذف', en: 'Delete' },
   actions:    { ar: 'إجراءات', en: 'Actions' },
   create:     { ar: 'إنشاء فاتورة', en: 'Create Invoice' },

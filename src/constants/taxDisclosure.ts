@@ -3,6 +3,7 @@
  * لا تستورد من modules/.
  */
 import { TAX_RATE } from '../utils/math-engine';
+import { roundMoney2 } from '../utils/moneyInput';
 
 /** صفوف المخرجات/المدخلات المعروضة في الواجهة — مختصرة للاستخدام الذي لا يفرّق هذه الفئات */
 export const OUTPUT_ROWS = [
@@ -98,7 +99,7 @@ export function syncVatPlanningSummaryFields(data: any) {
 }
 
 /** تقريب مالي إلى منزلتين عشريتين (عرض وتخزين الحقول الضريبية). */
-export { roundMoney2 } from '../utils/moneyInput';
+export { roundMoney2 };
 
 /** يطبّق منزلتين على كل المبالغ في نموذج الإفصاح بعد الاستيراد أو التعديل. */
 export function normalizeDisclosureDecimals(data: any) {

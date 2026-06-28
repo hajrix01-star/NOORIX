@@ -1,5 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -11,6 +11,7 @@ import {
   assertNoActiveDuplicateSupplierInvoiceDedupKey,
   patchSupplierInvoiceDedupKeyOnUpdateInput,
 } from './invoice-supplier-invoice-dedup.util';
+import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
 
 /**
  * تحديث فاتورة داخل $transaction (قيود + audit).
@@ -29,6 +30,25 @@ export async function updateInvoiceInTransaction(
     const oldInvoice = await tx.invoice.findFirstOrThrow({ where: { id, companyId } });
 
     const updateData = buildInvoiceUncheckedUpdateFromDto(dto);
+    const shouldRecomputeTax =
+      dto.totalAmount !== undefined ||
+      dto.netAmount !== undefined ||
+      dto.taxAmount !== undefined;
+    if (shouldRecomputeTax && oldInvoice.kind !== 'sale') {
+      const company = await tx.company.findUnique({
+        where: { id: companyId },
+        select: { vatRatePercent: true },
+      });
+      const total = dto.totalAmount !== undefined ? dto.totalAmount : oldInvoice.totalAmount;
+      const isTaxable = oldInvoice.taxAmount.gt(0);
+      const { net, tax } = computeOutflowNetTaxFromTotal(
+        total,
+        isTaxable,
+        company?.vatRatePercent ?? null,
+      );
+      updateData.netAmount = new Prisma.Decimal(net);
+      updateData.taxAmount = new Prisma.Decimal(tax);
+    }
     patchSupplierInvoiceDedupKeyOnUpdateInput(updateData, oldInvoice, dto);
     const mergedSupplierId =
       dto.supplierId !== undefined ? dto.supplierId : oldInvoice.supplierId;

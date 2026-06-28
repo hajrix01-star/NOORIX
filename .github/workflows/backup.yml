@@ -9,9 +9,9 @@ name: Database Backup → Google Drive
 #   VPS_DB_USER       — مستخدم postgres (افتراضي: postgres)
 #   GDRIVE_SCRIPT_URL — رابط Google Apps Script للرفع
 
+# Google Drive backups are intentionally disabled.
+# Production backups should be handled on the VPS/local backup layer, not by this workflow.
 on:
-  schedule:
-    - cron: '0 2 * * *'   # كل يوم الساعة 2 صباحاً UTC
   workflow_dispatch:
 
 jobs:

@@ -3,7 +3,7 @@ import { computeCreateInvoiceOutflowNetAndTax } from './invoice-create-outflow-p
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
 
 describe('computeCreateInvoiceOutflowNetAndTax', () => {
-  it('uses provided net/tax when passed', () => {
+  it('ignores client-provided net/tax and recomputes from the server total/rate', () => {
     const dto = {
       companyId: 'c1',
       kind: 'purchase',
@@ -14,8 +14,8 @@ describe('computeCreateInvoiceOutflowNetAndTax', () => {
       taxAmount: '100',
     } as unknown as CreateInvoiceDto;
     expect(computeCreateInvoiceOutflowNetAndTax(dto, 15)).toEqual({
-      net: '900',
-      tax: '100',
+      net: '869.5700',
+      tax: '130.4300',
     });
   });
 

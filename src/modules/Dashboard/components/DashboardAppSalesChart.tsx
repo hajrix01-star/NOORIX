@@ -105,7 +105,7 @@ export function DashboardAppSalesChart({ data }: Props) {
         <LabelList
           dataKey="appPercent"
           position="top"
-          formatter={(v: number) => (Number(v) > 0 ? `${fmt(v, 1)}%` : '')}
+          formatter={(v) => (Number(v) > 0 ? `${fmt(Number(v), 1)}%` : '')}
           style={{
             fontSize: isNarrow ? 9 : 10,
             fill: 'var(--noorix-text)',

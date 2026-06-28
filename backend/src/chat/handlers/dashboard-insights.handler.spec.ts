@@ -25,6 +25,25 @@ import { financeRatiosHandler } from './finance-ratios.handler';
 import type { ChatHandlerContext } from './types';
 import { normalizeQuery, parsePeriod } from './utils';
 
+function mkRatios(overrides: Partial<DashboardInsightsPayload['ratios']> = {}): DashboardInsightsPayload['ratios'] {
+  return {
+    purchaseToSales: null,
+    expenseToSales: null,
+    grossProfitMargin: null,
+    netProfitMargin: null,
+    trailingAvgPurchases: null,
+    purchaseChangeRatio: null,
+    trailingAvgExpenses: null,
+    expenseChangeRatio: null,
+    trailingAvgGrossProfit: null,
+    grossProfitChangeRatio: null,
+    trailingAvgNetProfit: null,
+    netProfitChangeRatio: null,
+    notes: [],
+    ...overrides,
+  };
+}
+
 function mkPayload(
   overrides: Partial<DashboardInsightsPayload> & { warnings?: DashboardInsightsPayload['warnings'] },
 ): DashboardInsightsPayload {
@@ -51,12 +70,7 @@ function mkPayload(
       },
       operational: {},
     },
-    ratios: {
-      purchaseToSales: null,
-      expenseToSales: null,
-      netProfitMargin: null,
-      notes: [],
-    },
+    ratios: mkRatios(),
     health: {
       score: 50,
       band: 'amber',
@@ -1190,12 +1204,11 @@ describe('financial overview (dashboard_insights overview focus)', () => {
         },
         operational: {},
       },
-      ratios: {
+      ratios: mkRatios({
         purchaseToSales: 0.4,
         expenseToSales: 0.2,
         netProfitMargin: 0.4,
-        notes: [],
-      },
+      }),
     });
     const ext = mkExtendedFromDashboard(dash);
     const { answerAr } = buildDashboardInsightsDeterministicAnswer('overview', ext, 2024, 3);

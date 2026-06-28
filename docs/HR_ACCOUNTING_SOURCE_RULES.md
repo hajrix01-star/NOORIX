@@ -17,3 +17,5 @@
 - HR central calculation utilities and the backend compensation snapshot are the source of accounting results.
 - Issued HR financial records should keep an audit marker for the central snapshot/calculation used at issuance when the schema does not yet have a dedicated immutable snapshot column.
 - React components are display consumers only; they may format numbers but must not recreate salary, advance, payroll, EOS, or settlement formulas.
+- HR follows the global NOORIX source-of-truth rule in `docs/NOORIX_SOURCE_OF_TRUTH_RULES.md`: the frontend may preview and display only, while official financial/HR numbers must come from the backend, database snapshots, or the ledger.
+- The only approved negative-balance exception is vault balance behavior documented in `docs/NOORIX_SOURCE_OF_TRUTH_RULES.md`; it does not allow HR payroll, settlement, advance, or EOS calculations to invent local fallback amounts.

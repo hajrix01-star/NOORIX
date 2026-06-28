@@ -1,6 +1,3 @@
-/**
- * HrPayrollRunIssueService — صرف مسير الرواتب عبر المحرك المالي
- */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -12,6 +9,17 @@ import type { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 import { assertPayrollRunVaultSplitsMatchTotal } from './hr-payroll-assertions.util';
 import { applyPayrollAdvanceSettlements } from './hr-payroll-advance-settlement.util';
 import { toYmd } from '../common/utils/to-ymd.util';
+
+type PayrollRunForIssue = NonNullable<
+  Awaited<ReturnType<TenantPrismaService['payrollRun']['findFirst']>>
+> & {
+  runVaultSplits: Array<{ vaultId: string; amount: Prisma.Decimal }>;
+  items: Array<{
+    employeeId: string;
+    advancesDeduct: Prisma.Decimal | null;
+    employee: { name: string | null } | null;
+  }>;
+};
 
 @Injectable()
 export class HrPayrollRunIssueService {
@@ -40,6 +48,7 @@ export class HrPayrollRunIssueService {
       throw new BadRequestException('يجب إكمال مسيرة الرواتب قبل إصدار الدفع.');
     }
 
+    const txDate = toYmd(dto.transactionDate);
     const existingSalaryInvoice = await this.prisma.invoice.findFirst({
       where: {
         companyId: run.companyId,
@@ -47,15 +56,17 @@ export class HrPayrollRunIssueService {
         kind: 'salary',
         status: 'active',
       },
-      select: { invoiceNumber: true },
     });
     if (existingSalaryInvoice) {
-      throw new BadRequestException(
-        `تم صرف هذه المسيرة مسبقاً (فاتورة ${existingSalaryInvoice.invoiceNumber}).`,
-      );
+      await this.completePayrollAdvanceSettlementsIfNeeded(run as PayrollRunForIssue, txDate, tenantId);
+      return {
+        payrollRunId: run.id,
+        invoicesCreated: 0,
+        invoices: [existingSalaryInvoice],
+        idempotentReplay: true,
+      };
     }
 
-    const txDate = toYmd(dto.transactionDate);
     const totalStr = String(run.totalAmount);
     const totalDec = new Prisma.Decimal(run.totalAmount);
 
@@ -120,25 +131,13 @@ export class HrPayrollRunIssueService {
       },
     ];
 
-    const results = await this.financialCore.processOutflowBatch(dtos, userId);
+    const results = await this.financialCore.processOutflowBatch(
+      dtos,
+      userId,
+      `payroll-payment:${run.id}`,
+    );
 
-    if (!run.advanceSettlementsAppliedAt) {
-      await applyPayrollAdvanceSettlements(
-        this.prisma,
-        {
-          companyId: run.companyId,
-          runNumber: run.runNumber,
-          payrollMonth: run.payrollMonth,
-          items: run.items,
-        },
-        txDate,
-        tenantId,
-      );
-      await this.prisma.payrollRun.update({
-        where: { id: run.id },
-        data: { advanceSettlementsAppliedAt: new Date() },
-      });
-    }
+    await this.completePayrollAdvanceSettlementsIfNeeded(run as PayrollRunForIssue, txDate, tenantId);
 
     await this.audit.log({
       companyId: run.companyId,
@@ -158,5 +157,37 @@ export class HrPayrollRunIssueService {
       invoicesCreated: results.length,
       invoices: results.map((r) => r.invoice),
     };
+  }
+
+  private async completePayrollAdvanceSettlementsIfNeeded(
+    run: PayrollRunForIssue,
+    txDate: string,
+    tenantId: string,
+  ): Promise<void> {
+    if (run.advanceSettlementsAppliedAt) return;
+
+    await this.prisma.$transaction(async (tx) => {
+      const lockedRun = await tx.payrollRun.findFirst({
+        where: { id: run.id },
+        select: { advanceSettlementsAppliedAt: true },
+      });
+      if (lockedRun?.advanceSettlementsAppliedAt) return;
+
+      await applyPayrollAdvanceSettlements(
+        tx,
+        {
+          companyId: run.companyId,
+          runNumber: run.runNumber,
+          payrollMonth: run.payrollMonth,
+          items: run.items,
+        },
+        txDate,
+        tenantId,
+      );
+      await tx.payrollRun.update({
+        where: { id: run.id },
+        data: { advanceSettlementsAppliedAt: new Date() },
+      });
+    });
   }
 }

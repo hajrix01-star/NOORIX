@@ -5,6 +5,25 @@ import { EXTENDED_REPORTING_INSIGHTS_SCHEMA_VERSION } from '../reporting/insight
 import type { ExtendedReportingInsightsPayload } from '../reporting/insights/reporting-insights-aggregator.types';
 import { buildDashboardInsightsDateRangeForMonth } from './handlers/dashboard-insights.handler';
 
+function mkRatios(overrides: Partial<DashboardInsightsPayload['ratios']> = {}): DashboardInsightsPayload['ratios'] {
+  return {
+    purchaseToSales: null,
+    expenseToSales: null,
+    grossProfitMargin: null,
+    netProfitMargin: null,
+    trailingAvgPurchases: null,
+    purchaseChangeRatio: null,
+    trailingAvgExpenses: null,
+    expenseChangeRatio: null,
+    trailingAvgGrossProfit: null,
+    grossProfitChangeRatio: null,
+    trailingAvgNetProfit: null,
+    netProfitChangeRatio: null,
+    notes: [],
+    ...overrides,
+  };
+}
+
 function mkInsightsPayload(): DashboardInsightsPayload {
   return {
     schemaVersion: INSIGHTS_SCHEMA_VERSION,
@@ -23,7 +42,7 @@ function mkInsightsPayload(): DashboardInsightsPayload {
       accounting: { sales: null, purchases: null, expenses: null, grossProfit: null, netProfit: null },
       operational: {},
     },
-    ratios: { purchaseToSales: null, expenseToSales: null, netProfitMargin: null, notes: [] },
+    ratios: mkRatios(),
     health: {
       score: 60,
       band: 'amber',

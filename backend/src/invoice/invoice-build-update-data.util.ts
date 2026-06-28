@@ -8,8 +8,6 @@ export function buildInvoiceUncheckedUpdateFromDto(dto: UpdateInvoiceDto): Prism
   if (dto.supplierInvoiceNumber !== undefined) updateData.supplierInvoiceNumber = dto.supplierInvoiceNumber;
   if (dto.kind !== undefined) updateData.kind = dto.kind;
   if (dto.totalAmount !== undefined) updateData.totalAmount = new Prisma.Decimal(dto.totalAmount);
-  if (dto.netAmount !== undefined) updateData.netAmount = new Prisma.Decimal(dto.netAmount);
-  if (dto.taxAmount !== undefined) updateData.taxAmount = new Prisma.Decimal(dto.taxAmount);
   if (dto.transactionDate !== undefined) updateData.transactionDate = new Date(dto.transactionDate);
   if (dto.settledAt !== undefined) updateData.settledAt = dto.settledAt ? new Date(dto.settledAt) : null;
   if (dto.settledAmount !== undefined) updateData.settledAmount = new Prisma.Decimal(dto.settledAmount);

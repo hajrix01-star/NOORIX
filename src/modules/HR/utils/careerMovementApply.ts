@@ -1,7 +1,7 @@
 /**
  * تطبيق زيادة/ترقية على ملف الموظف + تسجيل الحركة — نفس منطق EmployeeCareerMovementModal.
  */
-import { createMovement } from '../../../services/api';
+import { createMovement, updateEmployee } from '../../../services/api';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import {

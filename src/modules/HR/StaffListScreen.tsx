@@ -183,7 +183,7 @@ export default function StaffListScreen({ embedded }: any) {
     const res = await getEmployeeCompensationSnapshots(companyId, ids);
     throwIfApiFailed(res, t('employeesLoadFailed'));
     const snapshotMap = new Map((res.data?.items ?? []).map((snapshot: any) => [snapshot.employeeId, snapshot]));
-    const allowanceTotals = new Map(
+    const allowanceTotals = new Map<string, number>(
       (res.data?.items ?? []).map((snapshot: any) => {
         const customAllowanceTotal = Number(snapshot?.salaryPackage?.customAllowanceTotal);
         if (!Number.isFinite(customAllowanceTotal)) {

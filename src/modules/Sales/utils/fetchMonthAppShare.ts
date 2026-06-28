@@ -4,6 +4,7 @@ import {
   computeAppShareFromSummaries,
   monthRangeForYmd,
   type AppShareResult,
+  type SummaryForAppShare,
 } from './salesAppShare';
 import { toYmd } from '../../../utils/saudiDate';
 
@@ -26,7 +27,7 @@ export async function fetchMonthAppShare(
       false,
       'any',
     );
-    return computeAppShareFromSummaries(list, vaultById);
+    return computeAppShareFromSummaries(list as SummaryForAppShare[], vaultById);
   } catch {
     return undefined;
   }

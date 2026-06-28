@@ -14,13 +14,19 @@ export function vatRateDecimalFromPercent(vatRatePercent?: number | string | nul
   return TAX_RATE;
 }
 
-export function vatRateDecimalFromCompany(company?: { vatRatePercent?: number | null } | null): number {
-  return vatRateDecimalFromPercent(company?.vatRatePercent);
+function getCompanyVatRatePercent(company: unknown): number | string | null | undefined {
+  if (!company || typeof company !== 'object') return undefined;
+  return (company as { vatRatePercent?: number | string | null }).vatRatePercent;
 }
 
-export function vatRatePercentFromCompany(company?: { vatRatePercent?: number | null } | null): number {
-  if (company?.vatRatePercent != null && Number.isFinite(Number(company.vatRatePercent))) {
-    return Number(company.vatRatePercent);
+export function vatRateDecimalFromCompany(company?: unknown): number {
+  return vatRateDecimalFromPercent(getCompanyVatRatePercent(company));
+}
+
+export function vatRatePercentFromCompany(company?: unknown): number {
+  const vatRatePercent = getCompanyVatRatePercent(company);
+  if (vatRatePercent != null && Number.isFinite(Number(vatRatePercent))) {
+    return Number(vatRatePercent);
   }
   return DEFAULT_VAT_RATE_PERCENT;
 }

@@ -22,9 +22,6 @@ export function computeCreateInvoiceOutflowNetAndTax(
   dto: CreateInvoiceDto,
   vatRatePercent?: number | string | null,
 ): { net: string; tax: string } {
-  if (dto.netAmount != null && dto.taxAmount != null) {
-    return { net: String(dto.netAmount), tax: String(dto.taxAmount) };
-  }
   const taxable = dto.isTaxable !== false;
   return computeOutflowNetTaxFromTotal(dto.totalAmount, taxable, vatRatePercent);
 }
