@@ -5,8 +5,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast } from '../../../context/ToastContext';
 import { rejectIfApiFailed } from '../../../utils/apiResponse';
-import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { createInvoice, getExpenseLines, uploadInvoiceAttachment } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
@@ -57,12 +57,10 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
   const [receiptFile, setReceiptFile] = useState<any>(null);
   const receiptInputRef = useRef<any>(null);
 
-  const { data: expenseLines = [] } = useQuery({
+  const { data: expenseLines = [] } = useApiListQuery<any>({
     queryKey: expenseKeys.lines(companyId),
-    queryFn: async () => {
-      const res = await getExpenseLines(companyId);
-      return res?.data ?? (Array.isArray(res) ? res : []);
-    },
+    queryFn: () => getExpenseLines(companyId),
+    fallbackMessage: t('loadingError'),
     enabled: !!companyId,
   });
 

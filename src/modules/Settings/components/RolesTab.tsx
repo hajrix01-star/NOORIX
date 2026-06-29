@@ -4,8 +4,8 @@
  * ✅ محرّر بشاشة كاملة + قسم-قسم + presets + تجميع المحادثة.
  */
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { getRoles, getPermissionsSchema, createRole, updateRole, deleteRole } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button } from '../../../ui';
@@ -33,24 +33,20 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
     isSystem: boolean;
   } | null>(null);
 
-  const { data: schema } = useQuery({
+  const { data: schema } = useApiQuery<any>({
     queryKey: settingsKeys.permissionsSchema(),
-    queryFn: async () => {
-      const res = await getPermissionsSchema();
-      return res?.success ? res.data : null;
-    },
+    queryFn: getPermissionsSchema,
+    fallbackMessage: t('loadingError'),
     staleTime: 30 * 60 * 1000,
   });
 
   const modules: PermissionModuleShape[] = schema?.modules || [];
   const levels = schema?.levels || {};
 
-  const { data: roles = [], isLoading } = useQuery({
+  const { data: roles = [], isLoading, isError } = useApiListQuery<any>({
     queryKey: settingsKeys.roles(),
-    queryFn: async () => {
-      const res = await getRoles();
-      return res?.success ? (res.data ?? []) : [];
-    },
+    queryFn: getRoles,
+    fallbackMessage: t('loadingError'),
   });
 
   const createMutation = useApiMutation({
@@ -184,6 +180,8 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
 
       {isLoading ? (
         <div className="text-center text-noorix-muted p-10">{t('loading')}</div>
+      ) : isError ? (
+        <div className="text-center text-noorix-red p-10">{t('loadingError')}</div>
       ) : (
         <div className="grid gap-3">
           {roles.map((role: {

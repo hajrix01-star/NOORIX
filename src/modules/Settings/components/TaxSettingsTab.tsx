@@ -3,10 +3,10 @@
  * تفعيل ضريبة القيمة المضافة للمبيعات ونسبة الضريبة (%)
  */
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useApp } from '../../../context/AppContext';
-import { getCompany, updateCompany, throwIfApiFailed } from '../../../services/api';
+import { getCompany, updateCompany } from '../../../services/api';
 import { Button, Input } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 
@@ -16,13 +16,10 @@ export default function TaxSettingsTab() {
   const [vatEnabled, setVatEnabled] = useState(false);
   const [vatRate, setVatRate] = useState(15);
 
-  const { data: company, isLoading, isError, error } = useQuery({
+  const { data: company, isLoading, isError, error } = useApiQuery<any>({
     queryKey: companyKeys.single(activeCompanyId || ''),
-    queryFn: async () => {
-      const res = await getCompany(activeCompanyId);
-      throwIfApiFailed(res, 'تعذر تحميل إعدادات الشركة');
-      return res.data;
-    },
+    queryFn: () => getCompany(activeCompanyId),
+    fallbackMessage: 'تعذر تحميل إعدادات الشركة',
     enabled: !!activeCompanyId,
   });
 

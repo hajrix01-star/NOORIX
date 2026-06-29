@@ -2,8 +2,8 @@
  * UsersTab — إدارة المستخدمين
  */
 import React, { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser, hardDeleteUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -27,20 +27,16 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
   const [loginNameEdit, setLoginNameEdit] = useState('');
   const [confirmHardDelete, setConfirmHardDelete] = useState(false);
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, isError } = useApiListQuery<any>({
     queryKey: settingsKeys.users(),
-    queryFn: async () => {
-      const res = await getUsers();
-      return res?.success ? (res.data ?? []) : [];
-    },
+    queryFn: getUsers,
+    fallbackMessage: t('loadingError'),
   });
 
-  const { data: roles = [] } = useQuery({
+  const { data: roles = [] } = useApiListQuery<any>({
     queryKey: settingsKeys.roles(),
-    queryFn: async () => {
-      const res = await getRoles();
-      return res?.success ? (res.data ?? []) : [];
-    },
+    queryFn: getRoles,
+    fallbackMessage: t('loadingError'),
   });
 
   const createMutation = useApiMutation({
@@ -283,6 +279,7 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
           showRowNumbers
           rowNumberWidth="1%"
           isLoading={isLoading}
+          isError={isError}
           title={t('usersTab')}
           emptyMessage={
             visibleUsers.length === 0 && users.length > 0 && !showArchived

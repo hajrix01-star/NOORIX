@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
@@ -9,7 +10,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useSales } from '../../../hooks/useSales';
 import { useSalesChannels } from '../../../hooks/useSalesChannels';
 import { useDateFilter } from '../../../hooks/useDateFilter';
-import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport, throwIfApiFailed } from '../../../services/api';
+import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../../services/api';
 import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
@@ -169,7 +170,7 @@ export function useDailySalesScreen() {
     data: salesPage,
     isLoading: summariesLoading,
     error: summariesError,
-  } = useQuery({
+  } = useApiQuery<{ total?: number; items?: DailySalesSummary[] }>({
     queryKey: salesKeys.summariesPaged(
       companyId,
       dateFilter.startDate,
@@ -183,8 +184,8 @@ export function useDailySalesScreen() {
       showCancelledSales,
       selectedShift,
     ),
-    queryFn: async () => {
-      const res = await getDailySalesSummaries(
+    queryFn: () =>
+      getDailySalesSummaries(
         companyId,
         dateFilter.startDate,
         dateFilter.endDate,
@@ -195,10 +196,8 @@ export function useDailySalesScreen() {
         sortDir,
         showCancelledSales,
         selectedShift,
-      );
-      throwIfApiFailed(res, 'فشل تحميل المبيعات');
-      return res.data;
-    },
+      ),
+    fallbackMessage: 'فشل تحميل المبيعات',
     enabled: !!companyId && salesViewSummariesList,
   });
 
@@ -206,12 +205,10 @@ export function useDailySalesScreen() {
   const listTotal = salesPageData?.total ?? 0;
   const pagedSummaries = salesPageData?.items ?? [];
 
-  const { data: companyData } = useQuery({
+  const { data: companyData } = useApiQuery<any>({
     queryKey: companyKeys.single(companyId),
-    queryFn: async () => {
-      const res = await getCompany(companyId);
-      return res?.success ? res.data : null;
-    },
+    queryFn: () => getCompany(companyId),
+    fallbackMessage: t('loadingError'),
     enabled: !!companyId,
   });
   const vatEnabled = !!companyData?.vatEnabledForSales;
