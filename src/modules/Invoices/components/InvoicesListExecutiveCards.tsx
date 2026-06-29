@@ -1,5 +1,5 @@
 import React from 'react';
-import { FmtNum, cn } from '../../../ui';
+import { Badge, FmtNum, cn } from '../../../ui';
 
 /**
  * كروت ملخص الداخل/الخارج — مستخرجة من InvoicesListScreen
@@ -11,7 +11,10 @@ export function InvoicesListExecutiveCards({
   inflowByVault,
   outflowSummary,
   vaultRowLabel,
+  isRefreshing = false,
 }: any) {
+  const refreshLabel = typeof t === 'function' ? t('refreshing') : 'جاري التحديث';
+
   return (
     <div className="noorix-exec-card-grid">
       <div className="noorix-exec-card noorix-exec-card--inbound flex flex-col">
@@ -25,6 +28,9 @@ export function InvoicesListExecutiveCards({
           <span className="noorix-exec-card__title">
             {t('inbound')} — {t('categoryTypeSale')}
           </span>
+          {isRefreshing && (
+            <Badge size="sm" color="blue">{refreshLabel}</Badge>
+          )}
         </div>
         <div className="flex min-h-0 w-full flex-1 flex-col gap-2 px-1 pt-1">
           <div className="border-b border-noorix-border/50 pb-2 text-center">
@@ -114,6 +120,9 @@ export function InvoicesListExecutiveCards({
           <span className="noorix-exec-card__title">
             {t('outbound')} — {t('purchases')} / {t('categoryTypeExpense')}
           </span>
+          {isRefreshing && (
+            <Badge size="sm" color="blue">{refreshLabel}</Badge>
+          )}
         </div>
         <div className="flex min-h-0 w-full flex-1 flex-col gap-2 px-1 pt-1">
           <div className="border-b border-noorix-border/50 pb-2 text-center">

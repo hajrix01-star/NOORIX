@@ -48,7 +48,7 @@ export function useInvoices({
   createdByUserId,
   requireExpenseLine,
 }: UseInvoicesParams) {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isPlaceholderData, isError, error } = useQuery({
     queryKey: invoiceKeys.list({
       companyId,
       startDate,
@@ -92,6 +92,8 @@ export function useInvoices({
     inflowByVault: Array.isArray(data?.inflowByVault) ? data.inflowByVault : [],
     outflowSummary: data?.outflowSummary ?? zeroOutflowSummary(),
     isLoading,
+    isFetching,
+    isPlaceholderData,
     isError,
     error,
   };

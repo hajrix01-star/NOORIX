@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { roundMoney } from '@noorix/finance-core';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { TenantContext } from '../common/tenant-context';
@@ -33,7 +34,7 @@ export async function issueResidencyServiceInvoiceCore(
   if (!Number.isFinite(amount) || amount < 0.01) {
     throw new BadRequestException('المبلغ غير صالح.');
   }
-  const amountStr = (Math.round(amount * 100) / 100).toFixed(2);
+  const amountStr = roundMoney(amount).toFixed(2);
 
   await assertVaultsUsableForPayment(deps.prisma, residency.companyId, [options.vaultId]);
 

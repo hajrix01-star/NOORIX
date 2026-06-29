@@ -4,6 +4,7 @@
  */
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { roundMoney } from '@noorix/finance-core';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import { TenantContext } from '../common/tenant-context';
@@ -206,7 +207,7 @@ export class HrPayrollAncillaryService {
   }
 
   private roundMoney2(n: number): number {
-    return Math.round(n * 100) / 100;
+    return roundMoney(n);
   }
 
   private async applyBasicFromTargetTotal(

@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { roundMoney } from '@noorix/finance-core';
 import type { PayrollRunItemDto } from './dto/create-payroll-run.dto';
 
 const HR_META = '[HR_META]';
@@ -17,10 +18,6 @@ type CompensationSnapshot = {
     total?: unknown;
   };
 };
-
-function roundMoney(value: number): number {
-  return Math.round(value * 100) / 100;
-}
 
 function parseTerminationDateFromNotes(notes: string | null | undefined): Date | null {
   const raw = String(notes || '');
