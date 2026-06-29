@@ -11,10 +11,13 @@ const root = path.join(__dirname, '..');
 
 const args = process.argv.slice(2);
 let min = 400;
+let max = 1500;
 const backendOnly = args.includes('--backend-only');
 const frontendOnly = args.includes('--frontend-only');
 const minArg = args.find((a) => a.startsWith('--min='));
 if (minArg) min = parseInt(minArg.split('=')[1], 10) || min;
+const maxArg = args.find((a) => a.startsWith('--max='));
+if (maxArg) max = parseInt(maxArg.split('=')[1], 10) || max;
 
 function walk(dir, acc, ignore) {
   if (!fs.existsSync(dir)) return;
@@ -32,7 +35,16 @@ function walk(dir, acc, ignore) {
   }
 }
 
-const ignore = [/\.test\.ts$/, /\.spec\.ts$/, /\.spec\.tsx$/];
+const ignore = [
+  /\.test\.ts$/,
+  /\.test\.tsx$/,
+  /\.spec\.ts$/,
+  /\.spec\.tsx$/,
+  /\.d\.ts$/,
+  /(^|\/)i18n\/translations\//,
+  /(^|\/)_gen\//,
+  /\.monolith\.ts$/,
+];
 const acc = [];
 if (!frontendOnly) walk(path.join(root, 'backend', 'src'), acc, ignore);
 if (!backendOnly) walk(path.join(root, 'src'), acc, ignore);
@@ -44,3 +56,12 @@ for (const { lines, rel } of acc.slice(0, 80)) {
 }
 if (acc.length > 80) console.log(`\n… و${acc.length - 80} ملفاً إضافياً (قصّ العرض عند 80).`);
 console.log(`\nالإجمالي: ${acc.length} ملفاً ≥ ${min} سطراً.`);
+
+const failures = acc.filter((item) => item.lines > max);
+if (failures.length) {
+  console.error(`\nERROR: ${failures.length} file(s) exceed the hard limit of ${max} lines.`);
+  for (const { lines, rel } of failures) {
+    console.error(String(lines).padStart(5), ' ', rel);
+  }
+  process.exit(1);
+}

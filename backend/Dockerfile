@@ -20,7 +20,7 @@ COPY --from=builder /app/prisma ./prisma
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# مرفقات وOCR/HR: ربط volume خارجي بـ /app/uploads في الإنتاج وإلا تُفقد عند إعادة النشر
+# Uploaded attachments: keep /app/uploads on a persistent production volume.
 RUN mkdir -p /app/uploads
 VOLUME ["/app/uploads"]
 

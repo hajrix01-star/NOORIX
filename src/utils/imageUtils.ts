@@ -1,5 +1,5 @@
 /**
- * ضغط صورة من File إلى JPEG (data URL) — استخدام موحّد لشاشات OCR/الكاشير.
+ * Compress a File image to a JPEG data URL for upload forms.
  * @param {File} file
  * @param {{ maxDim?: number, quality?: number }} opts
  * @returns {Promise<string>} data: URL (image/jpeg)

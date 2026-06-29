@@ -16,7 +16,7 @@ export class SuppliersController {
   constructor(private readonly suppliersService: SuppliersService) {}
 
   @Get()
-  @RequireAnyPermission('SUPPLIERS_READ', 'VIEW_INVOICES', 'INVOICES_READ', 'OCR_READ', 'OCR_WRITE')
+  @RequireAnyPermission('SUPPLIERS_READ', 'VIEW_INVOICES', 'INVOICES_READ')
   async findAll(
     @CompanyId() companyId: string,
     @Query('page')     page?:     string,

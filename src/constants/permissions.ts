@@ -112,11 +112,6 @@ export const PERMISSIONS = {
 
   CREATE_INVOICE:   'CREATE_INVOICE',
 
-  VIEW_OCR:   'VIEW_OCR',
-  OCR_READ:   'OCR_READ',
-  OCR_WRITE:  'OCR_WRITE',
-  OCR_SUBMIT: 'OCR_SUBMIT',
-
   STAFF_ORDERS_SUBMIT: 'STAFF_ORDERS_SUBMIT',
   STAFF_ORDERS_DIGEST: 'STAFF_ORDERS_DIGEST',
 };
@@ -278,8 +273,6 @@ export const ROUTE_PERMISSION = {
   '/hajri-tax':     HAJRI_TAX_APP_ACCESS,
   '/settings':      SETTINGS_APP_ACCESS,
   '/theme-preview':    PERMISSIONS.VIEW_DASHBOARD,
-  '/ocr':           PERMISSIONS.VIEW_OCR,
-  '/ocr/cashier':   PERMISSIONS.OCR_SUBMIT,
 };
 
 export const REDIRECT_ONLY_PATHS = new Set([
@@ -352,8 +345,6 @@ const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[]
   { path: '/reports/bank-statement', required: REPORTS_BANK_ACCESS },
   { path: '/hajri-tax', required: HAJRI_TAX_APP_ACCESS },
   { path: '/chat', required: PERMISSIONS.VIEW_CHAT },
-  { path: '/ocr', required: PERMISSIONS.VIEW_OCR },
-  { path: '/ocr/cashier', required: PERMISSIONS.OCR_SUBMIT },
   { path: '/owner', required: PERMISSIONS.VIEW_OWNER },
 ];
 

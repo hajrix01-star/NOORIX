@@ -32,22 +32,22 @@
   --color-white-45:        rgba(255,255,255,0.45);
   --color-white-92:        rgba(255,255,255,0.92);
 
-  /* ── باليت الألوان الموحّدة (Design Tokens) ───────────────────
+  /* ?? باليت الألوان الموحّدة (Design Tokens) ???????????????????
    * المصدر الوحيد الحقيقي لجميع ألوان الكروت والمؤشرات.
    * تتولد منها تلقائياً:
    *   • Tailwind classes: text-nx-sales / bg-nx-profit / border-nx-expenses …
    *   • CSS variables:    var(--color-nx-sales)
    *
    * الدلالة المزدوجة — كل لون يخدم سياقين:
-   *   sales      → مبيعات / خزينة بنكية
-   *   profit     → ربح إجمالي / خزينة نقدية / إيداعات
-   *   net-profit → صافي ربح
-   *   purchases  → مشتريات
-   *   expenses   → مصاريف / سحوبات
-   *   app        → خزينة تطبيق / رقمي
+   *   sales      ? مبيعات / خزينة بنكية
+   *   profit     ? ربح إجمالي / خزينة نقدية / إيداعات
+   *   net-profit ? صافي ربح
+   *   purchases  ? مشتريات
+   *   expenses   ? مصاريف / سحوبات
+   *   app        ? خزينة تطبيق / رقمي
    *
    * للـ Recharts (يحتاج hex): استخدم KPI_RECHARTS_COLORS/VAULT_RECHARTS_COLORS من kpiCardTheme.js
-   * ─────────────────────────────────────────────────────────── */
+   * ??????????????????????????????????????????????????????????? */
 
   --color-nx-sales:      #185FA5;   /* مبيعات · خزينة بنكية       */
   --color-nx-profit:     #3B6D11;   /* ربح إجمالي · خزينة نقدية   */
@@ -120,7 +120,7 @@
   }
 }
 
-/* ── شريط تبويب متصل (موارد بشرية + معرض التجارب ref #3) ── */
+/* ?? شريط تبويب متصل (موارد بشرية + معرض التجارب ref #3) ?? */
 @keyframes nx-connected-tab-sparkline-move {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -215,7 +215,7 @@
   --noorix-accent-red:    #dc2626;
   --noorix-accent-red-dark: #7f1d1d;
   /* Alpha tints — استخدمها بدلاً من rgba(R,G,B,X) المشفرة مباشرة */
-  /* ── Alpha tints ── استخدمها بدلاً من rgba(R,G,B,X) المشفرة مباشرة ── */
+  /* ?? Alpha tints ?? استخدمها بدلاً من rgba(R,G,B,X) المشفرة مباشرة ?? */
   /* Blue */
   --noorix-blue-4:    color-mix(in srgb, var(--noorix-accent-blue)   4%, transparent);
   --noorix-blue-5:    color-mix(in srgb, var(--noorix-accent-blue)   5%, transparent);
@@ -367,9 +367,9 @@
   color: #1a2332;
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ???????????????????????????????????????????????????????????????
    MODAL SYSTEM — نظام النوافذ الموحد
-   ═══════════════════════════════════════════════════════════════ */
+   ??????????????????????????????????????????????????????????????? */
 
 /* متغيرات النوافذ */
 :root {
@@ -384,13 +384,13 @@
   --noorix-modal-radius:      18px;
 }
 
-/* ── خط موحد لجميع النوافذ ── */
+/* ?? خط موحد لجميع النوافذ ?? */
 .modal-overlay, .noorix-modal-overlay, .noorix-modal-backdrop,
 [role="dialog"], [aria-modal="true"] {
   font-family: var(--noorix-font-primary) !important;
 }
 
-/* ── overlay الموحد ── */
+/* ?? overlay الموحد ?? */
 .noorix-modal-overlay,
 .noorix-modal-backdrop {
   position: fixed;
@@ -406,7 +406,7 @@
   overflow-y: auto;
 }
 
-/* ── بطاقة النافذة الموحدة ── */
+/* ?? بطاقة النافذة الموحدة ?? */
 .noorix-modal-card {
   background: var(--noorix-bg-modal);
   border-radius: var(--noorix-modal-radius);
@@ -419,7 +419,7 @@
   position: relative;
 }
 
-/* ── ضمان overlay موحّد لجميع النوافذ (يشمل inline styles) ── */
+/* ?? ضمان overlay موحّد لجميع النوافذ (يشمل inline styles) ?? */
 /* أي غلاف نافذة (ملء الشاشة) — بدون تعتيم أو ضبابية خلف البطاقة */
 [aria-modal="true"]:not(.noorix-modal-card):not(.noorix-surface-card):not(.noorix-modal-card *):not(.nx-modal):not(.nx-drawer-panel) {
   background: transparent !important;
@@ -427,7 +427,7 @@
   -webkit-backdrop-filter: none !important;
 }
 
-/* ── ضمان خلفية بيضاء لـ noorix-surface-card داخل أي نافذة ── */
+/* ?? ضمان خلفية بيضاء لـ noorix-surface-card داخل أي نافذة ?? */
 [role="dialog"] .noorix-surface-card,
 [aria-modal="true"] .noorix-surface-card,
 .noorix-modal-overlay .noorix-surface-card,
@@ -453,7 +453,7 @@
   box-shadow: 0 8px 32px rgba(10, 31, 68, 0.12) !important;
 }
 
-/* ── .modal-overlay القديم — يرث من النظام الجديد ── */
+/* ?? .modal-overlay القديم — يرث من النظام الجديد ?? */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -787,9 +787,9 @@ a { color: inherit; text-decoration: none; }
 .app-main__title   { font-size: var(--noorix-text-h1); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-main__subtitle { font-size: var(--noorix-text-th); color: var(--noorix-text-muted-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ═══════════════════════════════════════════════════════════
+/* ???????????????????????????????????????????????????????????
    Topbar — شريط الهيدر العلوي الاحترافي
-   ═══════════════════════════════════════════════════════════ */
+   ??????????????????????????????????????????????????????????? */
 .noorix-topbar {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -815,7 +815,7 @@ a { color: inherit; text-decoration: none; }
   border-bottom-width: 1px;
 }
 
-/* ── يسار: زر الهامبرجر + شعار ── */
+/* ?? يسار: زر الهامبرجر + شعار ?? */
 .noorix-topbar__left {
   display: flex;
   align-items: center;
@@ -832,7 +832,7 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.85;
 }
 
-/* ── مركز: اسم الشركة ── */
+/* ?? مركز: اسم الشركة ?? */
 .noorix-topbar__center {
   display: flex;
   align-items: center;
@@ -872,7 +872,7 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.9;
 }
 
-/* ── يمين: أزرار الإجراءات + UserMenu ── */
+/* ?? يمين: أزرار الإجراءات + UserMenu ?? */
 .noorix-topbar-actions {
   direction: ltr;
   display: flex;
@@ -901,9 +901,9 @@ a { color: inherit; text-decoration: none; }
   background: var(--noorix-bg-muted);
 }
 
-/* ════════════════════════════════════════
+/* ????????????????????????????????????????
    UserMenu — قائمة المستخدم
-   ════════════════════════════════════════ */
+   ???????????????????????????????????????? */
 
 /* wrapper */
 .um-wrapper {
@@ -973,7 +973,7 @@ a { color: inherit; text-decoration: none; }
   transform: rotate(180deg);
 }
 
-/* ── القائمة المنسدلة ── */
+/* ?? القائمة المنسدلة ?? */
 .um-dropdown {
   background: var(--noorix-bg-modal, #fff);
   border: 1px solid var(--noorix-border);
@@ -1522,7 +1522,7 @@ html[data-card-style="10"] .noorix-stat-card {
   white-space: nowrap;
 }
 
-/* ── Column Visibility Button & Panel ────────────────────────── */
+/* ?? Column Visibility Button & Panel ?????????????????????????? */
 .nx-col-vis-btn {
   display: inline-flex;
   align-items: center;
@@ -1643,7 +1643,7 @@ html[data-card-style="10"] .noorix-stat-card {
   white-space: nowrap;
 }
 
-/* ── Column Resize Handle ─────────────────────────────────────── */
+/* ?? Column Resize Handle ??????????????????????????????????????? */
 .nx-col-resize-handle {
   position: absolute;
   top: 0;
@@ -1651,6 +1651,7 @@ html[data-card-style="10"] .noorix-stat-card {
   inset-inline-end: 0;
   width: 6px;
   cursor: col-resize;
+  touch-action: none;
   z-index: 2;
   border-inline-end: 2px solid transparent;
   transition: border-color 0.15s;
@@ -1745,11 +1746,11 @@ html[data-card-style="10"] .noorix-stat-card {
   padding: 8px 12px;
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ???????????????????????????????????????????????????????????????
    نظام كروت موحّد — نفس ثيم VaultCard في كل النظام
-   ═══════════════════════════════════════════════════════════════ */
+   ??????????????????????????????????????????????????????????????? */
 
-/* ── Stat Card: كرت إحصائية مفردة (مثل عدد الموظفين) ─────── */
+/* ?? Stat Card: كرت إحصائية مفردة (مثل عدد الموظفين) ??????? */
 .noorix-stat-card {
   background: var(--noorix-bg-surface);
   border: 1px solid var(--noorix-border);
@@ -1800,7 +1801,7 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-stat-card--red   .noorix-stat-card__body   { background: var(--noorix-red-4); }
 .noorix-stat-card--red   .noorix-stat-card__value   { color: var(--noorix-accent-red); }
 
-/* ── Summary Bar: شريط إحصاء أفقي متعدد الخانات ─────────── */
+/* ?? Summary Bar: شريط إحصاء أفقي متعدد الخانات ??????????? */
 .noorix-summary-bar {
   display: grid;
   border-radius: var(--noorix-card-radius);
@@ -1919,7 +1920,7 @@ html[data-card-style="10"] .noorix-stat-card {
   }
 }
 
-/* ── Result Panel: لوحة نتائج الحاسبات (راتب / EOS) ──────── */
+/* ?? Result Panel: لوحة نتائج الحاسبات (راتب / EOS) ???????? */
 .noorix-result-panel {
   border: 1px solid var(--noorix-border);
   border-radius: 12px;
@@ -2378,18 +2379,18 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
+/* ??????????????????????????????????????????????????????????????????????????
    إعدادات — التنقل
    - ديسكتوب: ScreenTabs connected (نظام عام) + .noorix-settings-card على الكرت
    - جوال: قائمة منسدلة select محلية (100% موثوقة)
-══════════════════════════════════════════════════════════════════════════ */
+?????????????????????????????????????????????????????????????????????????? */
 .noorix-settings-card {
   overflow: hidden;
   min-width: 0;
   max-width: 100%;
 }
 
-/* ── القائمة المنسدلة (جوال < 640px) ────────────────────────────────── */
+/* ?? القائمة المنسدلة (جوال < 640px) ?????????????????????????????????? */
 .noorix-settings-mobile-nav {
   position: relative;
   display: flex;
@@ -2428,7 +2429,7 @@ input:focus, select:focus, textarea:focus {
   flex-shrink: 0;
 }
 
-/* ── محتوى التبويب ───────────────────────────────────────────────────── */
+/* ?? محتوى التبويب ????????????????????????????????????????????????????? */
 /* min-width:0 يمنع تمدد شبكات/فليكس عن عرض البطاقة على الجوال */
 .noorix-settings-tab-body {
   padding: 20px;
@@ -3400,15 +3401,15 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 
 /* ========== VaultFormModal — شبكة متكيفة مع الجوال ========== */
 @media (max-width: 520px) {
-  /* شبكة اسمي الخزينة: عمودان → عمود واحد */
+  /* شبكة اسمي الخزينة: عمودان ? عمود واحد */
   .vault-form-names-grid {
     grid-template-columns: 1fr !important;
   }
-  /* شبكة أنواع الخزينة: 4 أعمدة → 2 أعمدة */
+  /* شبكة أنواع الخزينة: 4 أعمدة ? 2 أعمدة */
   .vault-type-grid {
     grid-template-columns: repeat(2, 1fr) !important;
   }
-  /* شبكة نموذج الموظف: عمودان → عمود واحد */
+  /* شبكة نموذج الموظف: عمودان ? عمود واحد */
   .staff-form-names-grid {
     grid-template-columns: 1fr !important;
   }
@@ -3476,205 +3477,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   OCR MODULE — Modern Design System 2025
-   Principles: Minimal · Spacious · Muted palette · Subtle depth
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* ── Legacy compat ── */
-.ocr-tab-content { padding: 0; }
-.ocr-items-row { display: flex; gap: 10px; }
-@media (max-width: 640px) {
-  .ocr-items-row { flex-direction: column; align-items: flex-start; }
-}
-
-/* ── Screen wrapper ── */
-.ocr-screen {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* ── Header — Clean & Minimal ── */
-.ocr-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.ocr-header-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.ocr-header-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: var(--noorix-bg-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--noorix-text-muted);
-}
-.ocr-h1 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--noorix-text);
-  line-height: 1.3;
-}
-.ocr-subtitle {
-  font-size: 13px;
-  color: var(--noorix-text-muted);
-  line-height: 1.3;
-  margin-top: 1px;
-}
-.ocr-beta-badge {
-  padding: 3px 10px;
-  border-radius: 6px;
-  background: var(--noorix-bg-muted);
-  color: var(--noorix-text-muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* Stats row */
-.ocr-stats-strip {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.ocr-stat-card {
-  flex: 1;
-  min-width: 100px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 14px 10px;
-  border-radius: var(--noorix-card-radius);
-  background: var(--noorix-bg-surface);
-  border: 1px solid var(--noorix-border);
-  box-shadow: var(--noorix-card-shadow);
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  font-family: inherit;
-}
-.ocr-stat-card:hover {
-  border-color: var(--noorix-accent-blue);
-  box-shadow: var(--noorix-card-shadow-hover);
-}
-.ocr-stat-num   { font-size: 22px; font-weight: 800; color: var(--noorix-text); line-height: 1; }
-.ocr-stat-label { font-size: 11px; color: var(--noorix-text-muted); }
-
-/* ── Main card — نفس منظومة كروت السطح ── */
-.ocr-card {
-  background: var(--noorix-bg-surface);
-  border-radius: var(--noorix-card-radius);
-  border: 1px solid var(--noorix-border);
-  box-shadow: var(--noorix-card-shadow);
-  overflow: hidden;
-}
-
-/* ── Tab bar — pill style ── */
-.ocr-tabbar {
-  display: flex;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  gap: 4px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--noorix-border);
-  background: var(--noorix-bg-muted);
-}
-.ocr-tabbar::-webkit-scrollbar { display: none; }
-
-.ocr-tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 13px;
-  white-space: nowrap;
-  color: var(--noorix-text-muted);
-  border-radius: 8px;
-  transition: all 0.18s;
-  font-family: inherit;
-}
-.ocr-tab-btn--active {
-  color: var(--noorix-text);
-  background: var(--noorix-bg-surface);
-  font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-.ocr-tab-btn:hover:not(.ocr-tab-btn--active) {
-  color: var(--noorix-text);
-  background: rgba(0,0,0,0.04);
-}
-.ocr-tab-label { }
-.ocr-tab-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: var(--noorix-accent-red);
-  color: #fff;
-  min-width: 16px;
-  text-align: center;
-  line-height: 1.4;
-}
-
-/* ── Tab body ── */
-.ocr-tab-body { padding: 22px; }
-@media (max-width: 640px) { .ocr-tab-body { padding: 14px; } }
-
-/* ── Loading / Empty states ── */
-.ocr-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 80px 20px;
-  color: var(--noorix-text-muted);
-  font-size: 13px;
-}
-.ocr-spinner {
-  width: 28px;
-  height: 28px;
-  border: 2.5px solid var(--noorix-border);
-  border-top-color: var(--noorix-text-muted);
-  border-radius: 50%;
-  animation: ocr-spin 0.8s linear infinite;
-}
-@keyframes ocr-spin { to { transform: rotate(360deg); } }
-
-.ocr-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 80px 20px;
-  text-align: center;
-}
-.ocr-empty-icon  { font-size: 28px; opacity: 0.3; color: var(--noorix-text-muted); }
-.ocr-empty-text  { font-size: 15px; font-weight: 600; color: var(--noorix-text); }
-.ocr-empty-sub   { font-size: 13px; color: var(--noorix-text-muted); max-width: 300px; }
-
-/* ═══════════════════════════════════════════════════════════════════
-   Invoice List Tab
-   ═══════════════════════════════════════════════════════════════════ */
+/* ========== Invoice List Tab ==========
+   ??????????????????????????????????????????????????????????????????? */
 .inv-list-root { display: flex; flex-direction: column; gap: 18px; }
 
 /* Toolbar */
@@ -3778,7 +3582,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .inv-delete-btn:active { opacity: 0.7; }
 .inv-delete-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Grid ── */
+/* ?? Grid ?? */
 .inv-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
@@ -3787,7 +3591,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 @media (max-width: 480px) { .inv-grid { grid-template-columns: 1fr 1fr; gap: 8px; } }
 @media (max-width: 360px) { .inv-grid { grid-template-columns: 1fr; } }
 
-/* ── Invoice Card — Minimal ── */
+/* ?? Invoice Card — Minimal ?? */
 .inv-card {
   border-radius: 12px;
   border: 1px solid var(--noorix-border);
@@ -3933,7 +3737,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   color: var(--noorix-text-muted);
 }
 
-/* ── Status badges ── */
+/* ?? Status badges ?? */
 .status-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 5px; }
 .status--pending   { background: color-mix(in srgb, var(--noorix-accent-amber) 12%, transparent); color: var(--noorix-accent-amber); }
 .status--confirmed { background: color-mix(in srgb, var(--noorix-accent-green) 12%, transparent); color: var(--noorix-accent-green); }
@@ -3958,9 +3762,9 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════
+/* ???????????????????????????????????????????????????????????????????
    Invoice Detail Modal
-   ═══════════════════════════════════════════════════════════════════ */
+   ??????????????????????????????????????????????????????????????????? */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -4104,9 +3908,9 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   font-weight: 600;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
+/* ???????????????????????????????????????????????????????????????????
    Lightbox / Image Viewer
-   ═══════════════════════════════════════════════════════════════════ */
+   ??????????????????????????????????????????????????????????????????? */
 .lb-overlay {
   position: fixed;
   inset: 0;
@@ -4213,83 +4017,10 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   color: #fff;
 }
 
-/* ── Upload tab ── */
-.ocr-upload-zone {
-  border: 2px dashed var(--noorix-border);
-  border-radius: 12px;
-  padding: 40px 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  background: var(--noorix-bg-muted);
-}
-.ocr-upload-zone:hover {
-  border-color: var(--noorix-text-muted);
-  background: var(--noorix-bg-surface);
-}
-.ocr-upload-zone--active {
-  border-color: var(--noorix-accent-blue);
-  background: var(--noorix-blue-4);
-}
-.ocr-upload-icon {
-  font-size: 32px;
-  opacity: 0.35;
-  margin-bottom: 8px;
-}
-.ocr-upload-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--noorix-text);
-  margin-bottom: 4px;
-}
-.ocr-upload-hint {
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-}
-
-/* ── Catalog tabs (Suppliers / Items) ── */
-.ocr-catalog-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.ocr-catalog-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.ocr-catalog-item:hover {
-  background: var(--noorix-bg-muted);
-}
-.ocr-catalog-item--selected {
-  background: var(--noorix-bg-muted);
-}
-.ocr-catalog-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--noorix-bg-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--noorix-text-muted);
-  flex-shrink: 0;
-}
-.ocr-catalog-name {
-  flex: 1;
-  min-width: 0;
-}
-
-/* ═══════════════════════════════════════════════════════════
+/* ???????????????????????????????????????????????????????????
    @layer components — بنية الشاشات (Tailwind-managed)
    يعني هذه الكلاسات جزء رسمي من طبقة Tailwind وتُغلب بـ utilities
-   ═══════════════════════════════════════════════════════════ */
+   ??????????????????????????????????????????????????????????? */
 @layer components {
   /* غلاف الشاشة الرئيسية */
   .nx-screen {
@@ -4297,7 +4028,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     gap: 18px;
   }
 
-  /* ─── رأس الصفحة: عنوان + شريط أدوات ─── */
+  /* ??? رأس الصفحة: عنوان + شريط أدوات ??? */
   .nx-page-header {
     display: flex;
     justify-content: space-between;
@@ -4323,7 +4054,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     color: var(--noorix-text-muted);
   }
 
-  /* ─── شريط الأدوات ─── */
+  /* ??? شريط الأدوات ??? */
   .nx-toolbar {
     display: flex;
     /* flex-end: حقول بها label فوق الحقل تبقى متماثلة مع الأزرار على سطر القواعد */
@@ -4333,7 +4064,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     flex-shrink: 0;
   }
 
-  /* ─── شريط الفلاتر ─── */
+  /* ??? شريط الفلاتر ??? */
   .nx-filter-controls {
     display: flex;
     align-items: center;
@@ -4346,7 +4077,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     white-space: nowrap;
   }
 
-  /* ─── شريط التبويبات ─── */
+  /* ??? شريط التبويبات ??? */
   .nx-tab-bar {
     display: flex;
     flex-direction: row;
@@ -4716,132 +4447,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     padding: clamp(12px, 3vw, 24px);
   }
 }
-.ocr-catalog-name-primary {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--noorix-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ocr-catalog-name-secondary {
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-}
-.ocr-catalog-badge {
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-  background: var(--noorix-bg-muted);
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.ocr-catalog-checkbox {
-  width: 15px;
-  height: 15px;
-  accent-color: var(--noorix-text);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-/* ── Price Alerts ── */
-.ocr-alerts-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
-}
-.ocr-alert-stat {
-  padding: 16px;
-  border-radius: 12px;
-  background: var(--noorix-bg-surface);
-  border: 1px solid var(--noorix-border);
-  text-align: center;
-}
-.ocr-alert-stat-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--noorix-text);
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.ocr-alert-stat-label {
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-}
-.ocr-alert-card {
-  padding: 14px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--noorix-border);
-  background: var(--noorix-bg-surface);
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.ocr-alert-card:hover {
-  border-color: var(--noorix-text-muted);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-}
-.ocr-alert-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--noorix-red-8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-.ocr-alert-content {
-  flex: 1;
-  min-width: 0;
-}
-.ocr-alert-title {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--noorix-text);
-}
-.ocr-alert-detail {
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-  margin-top: 2px;
-}
-.ocr-alert-prices {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-.ocr-alert-price {
-  text-align: center;
-}
-.ocr-alert-price-value {
-  font-size: 16px;
-  font-weight: 700;
-}
-.ocr-alert-price-label {
-  font-size: 10px;
-  color: var(--noorix-text-muted);
-}
-.ocr-alert-arrow {
-  font-size: 16px;
-  color: var(--noorix-text-muted);
-}
-.ocr-alert-pct {
-  font-size: 12px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 5px;
-  background: var(--noorix-red-8);
-  color: var(--noorix-accent-red);
-  flex-shrink: 0;
-}
-
-/* ── Compare Modal ── */
+/* ?? Compare Modal ?? */
 .compare-modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4879,7 +4485,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   color: var(--noorix-text);
 }
 
-/* ── أصناف المصاريف — جدول موحّد (سطح مكتب + جوال بتمرير أفقي) ── */
+/* ?? أصناف المصاريف — جدول موحّد (سطح مكتب + جوال بتمرير أفقي) ?? */
 .nx-expense-line-table-wrap {
   min-width: 0;
   font-size: var(--noorix-text-base);
@@ -4982,7 +4588,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
 }
 
-/* ── ملخص الطلبات — جداول داخل الكرت ── */
+/* ?? ملخص الطلبات — جداول داخل الكرت ?? */
 .nx-orders-summary-table {
   font-size: var(--noorix-text-base, 13px);
 }
@@ -5013,7 +4619,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-top: 2px solid var(--noorix-border);
 }
 
-/* ── الطلبات — جوال: تسطيح الطبقات داخل تبويبات ScreenTabs ── */
+/* ?? الطلبات — جوال: تسطيح الطبقات داخل تبويبات ScreenTabs ?? */
 @media (max-width: 640px) {
   .nx-orders-tabs-shell {
     box-shadow: none;
@@ -5069,26 +4675,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {
     padding-inline: 0;
   }
-}
-
-/* ── Responsive — OCR ── */
-@media (max-width: 640px) {
-  .ocr-h1 { font-size: 17px; }
-  .ocr-subtitle { display: none; }
-  .ocr-stats-strip { gap: 6px; }
-  .ocr-stat-card { min-width: 70px; padding: 10px 6px; }
-  .ocr-stat-num { font-size: 18px; }
-  .ocr-stat-label { font-size: 10px; }
-  .ocr-tab-btn { padding: 7px 10px; font-size: 12px; }
-  .inv-lines-thead,
-  .inv-lines-row { grid-template-columns: 2fr 1fr 1fr; }
-  .inv-lines-thead span:last-child,
-  .inv-lines-row  > div:last-child { display: none; }
-  .modal-box { border-radius: 12px; max-width: 95vw; }
-  .modal-head { padding: 14px 16px; }
-  .modal-body { padding: 14px 16px; }
-  .lb-hint { display: none; }
-  .ocr-upload-zone { padding: 30px 16px; }
 }
 
 /* ========== تحسين padding الجوال لعموم النوافذ ========== */

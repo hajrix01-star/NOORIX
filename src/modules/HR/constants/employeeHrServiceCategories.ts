@@ -20,7 +20,7 @@ export const HR_SERVICE_QUICK_ADD = [
   'iqama_new',
 ];
 
-export const HR_SERVICE_CATEGORY_LABEL_KEYS = {
+export const HR_SERVICE_CATEGORY_LABEL_KEYS: Record<string, string> = {
   iqama_new: 'hrServiceIqamaNew',
   iqama_renewal: 'hrServiceIqamaRenewal',
   sponsorship_transfer: 'hrServiceSponsorshipTransfer',
@@ -29,12 +29,12 @@ export const HR_SERVICE_CATEGORY_LABEL_KEYS = {
   medical_insurance: 'hrServiceMedicalInsurance',
 };
 
-export function requiresIqamaNumber(category) {
-  return ['iqama_new', 'iqama_renewal', 'sponsorship_transfer'].includes(category);
+export function requiresIqamaNumber(category: string | null | undefined) {
+  return ['iqama_new', 'iqama_renewal', 'sponsorship_transfer'].includes(String(category || ''));
 }
 
-export function showsReferenceLabel(category) {
-  return ['flight_ticket', 'medical_insurance'].includes(category);
+export function showsReferenceLabel(category: string | null | undefined) {
+  return ['flight_ticket', 'medical_insurance'].includes(String(category || ''));
 }
 
 export {
@@ -49,16 +49,16 @@ export {
   formatHrServiceSecondaryDate,
 } from './employeeHrServiceFormFields';
 
-export function isSponsorshipTransfer(category) {
+export function isSponsorshipTransfer(category: string | null | undefined) {
   return category === 'sponsorship_transfer';
 }
 
 /** نقل الكفالة — الكفيل الجديد دائماً الشركة النشطة (لا إدخال يدوي) */
-export function usesCompanyAsSponsor(category) {
+export function usesCompanyAsSponsor(category: string | null | undefined) {
   return isSponsorshipTransfer(category);
 }
 
-export function referenceLabelKey(category) {
+export function referenceLabelKey(category: string | null | undefined) {
   if (category === 'flight_ticket') return 'hrServiceRouteLabel';
   if (category === 'medical_insurance') return 'hrServiceProviderLabel';
   if (category === 'sponsorship_transfer') return 'hrServiceTransferSponsorCompany';
@@ -66,7 +66,10 @@ export function referenceLabelKey(category) {
   return 'referenceLabel';
 }
 
-export function companyDisplayName(company, lang = 'ar') {
+export function companyDisplayName(
+  company: { nameAr?: string | null; nameEn?: string | null; name?: string | null } | null | undefined,
+  lang = 'ar',
+) {
   if (!company) return '';
   if (lang === 'en') return (company.nameEn || company.nameAr || company.name || '').trim();
   return (company.nameAr || company.nameEn || company.name || '').trim();

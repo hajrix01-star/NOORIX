@@ -33,7 +33,6 @@ import { BankStatementsModule } from './bank-statements/bank-statements.module';
 import { OrdersModule }         from './orders/orders.module';
 import { DatabaseModule }       from './database/database.module';
 import { BackupModule }         from './backup/backup.module';
-import { OcrInvoicesModule }   from './ocr-invoices/ocr-invoices.module';
 import { CompanyAssetsModule } from './company-assets/company-assets.module';
 import { VatPlanningModule } from './vat-planning/vat-planning.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -87,7 +86,6 @@ import { getJwtSecret }        from './config/jwt.config';
     BankStatementsModule,
     OrdersModule,
     BackupModule,
-    OcrInvoicesModule,
     CompanyAssetsModule,
     VatPlanningModule,
     DashboardModule,

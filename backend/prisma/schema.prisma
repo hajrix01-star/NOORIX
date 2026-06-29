@@ -1,7 +1,7 @@
-// NOORIX — Enterprise SaaS Schema (Multi-Tenant)
-// معمارية: Tenant → Companies → All Operational Data
-// الأمان: RLS على مستوى PostgreSQL بـ app.current_tenant_id
-// مرجع: docs/NOORIX_RULES.md §2.4، §7
+// NOORIX â€” Enterprise SaaS Schema (Multi-Tenant)
+// ظ…ط¹ظ…ط§ط±ظٹط©: Tenant â†’ Companies â†’ All Operational Data
+// ط§ظ„ط£ظ…ط§ظ†: RLS ط¹ظ„ظ‰ ظ…ط³طھظˆظ‰ PostgreSQL ط¨ظ€ app.current_tenant_id
+// ظ…ط±ط¬ط¹: docs/NOORIX_RULES.md آ§2.4طŒ آ§7
 
 generator client {
   provider = "prisma-client-js"
@@ -11,21 +11,21 @@ datasource db {
   provider          = "postgresql"
   url               = env("DATABASE_URL")
   // shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // uncomment when using prisma migrate
-  // ⚠️ لا تستخدم `prisma db push --force-reset` على قاعدة البيانات الإنتاجية — يمحو البيانات كاملة
-  // بدلاً من db push: استخدم `prisma migrate dev` لإنشاء ملف migration آمن
+  // âڑ ï¸ڈ ظ„ط§ طھط³طھط®ط¯ظ… `prisma db push --force-reset` ط¹ظ„ظ‰ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¥ظ†طھط§ط¬ظٹط© â€” ظٹظ…ط­ظˆ ط§ظ„ط¨ظٹط§ظ†ط§طھ ظƒط§ظ…ظ„ط©
+  // ط¨ط¯ظ„ط§ظ‹ ظ…ظ† db push: ط§ط³طھط®ط¯ظ… `prisma migrate dev` ظ„ط¥ظ†ط´ط§ط، ظ…ظ„ظپ migration ط¢ظ…ظ†
 }
 
-// ══════════════════════════════════════════════════
-// TIER 1: TENANT (المنظمة / الاشتراك)
-// الطبقة العليا — Tenant يملك Companies
-// ══════════════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// TIER 1: TENANT (ط§ظ„ظ…ظ†ط¸ظ…ط© / ط§ظ„ط§ط´طھط±ط§ظƒ)
+// ط§ظ„ط·ط¨ظ‚ط© ط§ظ„ط¹ظ„ظٹط§ â€” Tenant ظٹظ…ظ„ظƒ Companies
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 model Tenant {
   id          String   @id @default(cuid())
-  name        String                           // اسم المنظمة (مثل: مجموعة أبو مسعود)
-  slug        String   @unique                 // معرّف URL فريد (abumasoud-group)
+  name        String                           // ط§ط³ظ… ط§ظ„ظ…ظ†ط¸ظ…ط© (ظ…ط«ظ„: ظ…ط¬ظ…ظˆط¹ط© ط£ط¨ظˆ ظ…ط³ط¹ظˆط¯)
+  slug        String   @unique                 // ظ…ط¹ط±ظ‘ظپ URL ظپط±ظٹط¯ (abumasoud-group)
   plan        String   @default("starter")     // starter | professional | enterprise
   isActive    Boolean  @default(true)  @map("is_active")
-  maxCompanies Int     @default(5)     @map("max_companies")  // حد الشركات حسب الخطة
+  maxCompanies Int     @default(5)     @map("max_companies")  // ط­ط¯ ط§ظ„ط´ط±ظƒط§طھ ط­ط³ط¨ ط§ظ„ط®ط·ط©
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt      @map("updated_at")
 
@@ -37,16 +37,16 @@ model Tenant {
   @@map("tenants")
 }
 
-// ══════════════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 // TIER 2: AUTH & PERMISSIONS
-// ══════════════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 model Role {
   id                  String   @id @default(cuid())
   name                String   @unique
   nameAr              String?  @map("name_ar")
   description         String?
   permissions         String[] @default([])
-  /// آخر مجموعة صلاحيات seed طُبّقت على هذا الدور — تُستخدم لاكتشاف الصلاحيات الجديدة فعلاً دون إعادة ما حذفه المدير
+  /// ط¢ط®ط± ظ…ط¬ظ…ظˆط¹ط© طµظ„ط§ط­ظٹط§طھ seed ط·ظڈط¨ظ‘ظ‚طھ ط¹ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ط¯ظˆط± â€” طھظڈط³طھط®ط¯ظ… ظ„ط§ظƒطھط´ط§ظپ ط§ظ„طµظ„ط§ط­ظٹط§طھ ط§ظ„ط¬ط¯ظٹط¯ط© ظپط¹ظ„ط§ظ‹ ط¯ظˆظ† ط¥ط¹ط§ط¯ط© ظ…ط§ ط­ط°ظپظ‡ ط§ظ„ظ…ط¯ظٹط±
   lastSeedPermissions String[] @default([]) @map("last_seed_permissions")
   isSystem            Boolean  @default(false) @map("is_system")
   createdAt           DateTime @default(now()) @map("created_at")
@@ -59,7 +59,7 @@ model Role {
 
 model User {
   id              String    @id @default(cuid())
-  tenantId        String    @map("tenant_id")          // ⚠️ إلزامي — المستخدم ينتمي لـ Tenant واحد
+  tenantId        String    @map("tenant_id")          // âڑ ï¸ڈ ط¥ظ„ط²ط§ظ…ظٹ â€” ط§ظ„ظ…ط³طھط®ط¯ظ… ظٹظ†طھظ…ظٹ ظ„ظ€ Tenant ظˆط§ط­ط¯
   email           String    @unique
   passwordHash    String    @map("password_hash")
   nameAr          String?   @map("name_ar")
@@ -79,19 +79,18 @@ model User {
   salesSummaries DailySalesSummary[] @relation("SalesCreatedBy")
   backupJobsCreated BackupJob[] @relation("BackupCreatedBy")
   invoicesCreated Invoice[] @relation("InvoiceCreatedBy")
-  ocrInvoicesSubmitted OcrInvoice[] @relation("OcrInvoiceSubmittedBy")
   staffOrders          StaffOrder[]
 
   @@index([tenantId])
   @@map("users")
 }
 
-// ══════════════════════════════════════════════════
-// TIER 3: COMPANY (الشركة — تحت Tenant)
-// ══════════════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// TIER 3: COMPANY (ط§ظ„ط´ط±ظƒط© â€” طھط­طھ Tenant)
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 model Company {
   id         String   @id @default(cuid())
-  tenantId   String   @map("tenant_id")              // ⚠️ إلزامي — RLS يستخدمه
+  tenantId   String   @map("tenant_id")              // âڑ ï¸ڈ ط¥ظ„ط²ط§ظ…ظٹ â€” RLS ظٹط³طھط®ط¯ظ…ظ‡
   nameAr     String   @map("name_ar")
   nameEn     String?  @map("name_en")
   logoUrl    String?  @map("logo_url")
@@ -141,19 +140,13 @@ model Company {
   companyBackupConfig  CompanyBackupConfig?
   companyInsightSettings CompanyInsightSettings?
   vatPlanningQuarters VatPlanningQuarter[]
-  ocrSuppliers        OcrSupplier[]
-  ocrItems            OcrItem[]
-  ocrInvoices         OcrInvoice[]
-  ocrPriceHistory     OcrPriceHistory[]
-  ocrCorrectionRules    OcrCorrectionRule[]
-  ocrExtractionLogs     OcrExtractionLog[]
   dashboardCalendarData DashboardCalendarData[]
 
   @@index([tenantId])
   @@map("companies")
 }
 
-/// سجل ضريبي تخطيطي معزول — لا يؤثر على القيود المحاسبية؛ يحفظ نموذج الإفصاح والتعديلات والدفع
+/// ط³ط¬ظ„ ط¶ط±ظٹط¨ظٹ طھط®ط·ظٹط·ظٹ ظ…ط¹ط²ظˆظ„ â€” ظ„ط§ ظٹط¤ط«ط± ط¹ظ„ظ‰ ط§ظ„ظ‚ظٹظˆط¯ ط§ظ„ظ…ط­ط§ط³ط¨ظٹط©ط› ظٹط­ظپط¸ ظ†ظ…ظˆط°ط¬ ط§ظ„ط¥ظپطµط§ط­ ظˆط§ظ„طھط¹ط¯ظٹظ„ط§طھ ظˆط§ظ„ط¯ظپط¹
 model VatPlanningQuarter {
   id               String    @id @default(cuid())
   tenantId         String    @map("tenant_id")
@@ -164,7 +157,7 @@ model VatPlanningQuarter {
   sourceSnapshot   Json?     @map("source_snapshot")
   paymentTarget    Decimal?  @map("payment_target") @db.Decimal(18, 4)
   notes            String?   @db.Text
-  /// اعتماد التقديم الرسمي في سجل HAJRI (يمكن إعادة فتح التحرير لاحقاً)
+  /// ط§ط¹طھظ…ط§ط¯ ط§ظ„طھظ‚ط¯ظٹظ… ط§ظ„ط±ط³ظ…ظٹ ظپظٹ ط³ط¬ظ„ HAJRI (ظٹظ…ظƒظ† ط¥ط¹ط§ط¯ط© ظپطھط­ ط§ظ„طھط­ط±ظٹط± ظ„ط§ط­ظ‚ط§ظ‹)
   filingSubmitted  Boolean   @default(false) @map("filing_submitted")
   importedAt       DateTime? @map("imported_at")
   createdAt        DateTime  @default(now()) @map("created_at")
@@ -178,9 +171,9 @@ model VatPlanningQuarter {
   @@map("vat_planning_quarters")
 }
 
-// ══════════════════════════════════════════════════
-// النسخ الاحتياطي الذكي — سجل نسخ محلي + تكامل خارجي
-// ══════════════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ط§ظ„ظ†ط³ط® ط§ظ„ط§ط­طھظٹط§ط·ظٹ ط§ظ„ط°ظƒظٹ â€” ط³ط¬ظ„ ظ†ط³ط® ظ…ط­ظ„ظٹ + طھظƒط§ظ…ظ„ ط®ط§ط±ط¬ظٹ
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 model BackupJob {
   id                String    @id @default(cuid())
   tenantId          String?   @map("tenant_id")
@@ -199,7 +192,7 @@ model BackupJob {
   createdAt         DateTime  @default(now()) @map("created_at")
   completedAt       DateTime? @map("completed_at")
   createdByUserId   String?   @map("created_by_user_id")
-  /// رقم تسلسلي للعرض: لـ database_full عالمي، لـ company_logical لكل شركة ضمن المستأجر
+  /// ط±ظ‚ظ… طھط³ظ„ط³ظ„ظٹ ظ„ظ„ط¹ط±ط¶: ظ„ظ€ database_full ط¹ط§ظ„ظ…ظٹطŒ ظ„ظ€ company_logical ظ„ظƒظ„ ط´ط±ظƒط© ط¶ظ…ظ† ط§ظ„ظ…ط³طھط£ط¬ط±
   ordinal           Int?      @map("ordinal")
   verifiedAt        DateTime? @map("verified_at")
   verifyOk          Boolean?  @map("verify_ok")
@@ -214,7 +207,7 @@ model BackupJob {
   @@map("backup_jobs")
 }
 
-/// إعدادات النسخ التلقائي لقاعدة البيانات الكاملة — صف واحد (id = singleton)
+/// ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ†ط³ط® ط§ظ„طھظ„ظ‚ط§ط¦ظٹ ظ„ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ظƒط§ظ…ظ„ط© â€” طµظپ ظˆط§ط­ط¯ (id = singleton)
 model SystemBackupConfig {
   id               String   @id @default("singleton")
   enabled          Boolean  @default(false)
@@ -223,9 +216,9 @@ model SystemBackupConfig {
   retentionCount   Int      @default(10) @map("retention_count")
   timezone         String   @default("Asia/Riyadh")
   lastRunDayRiyadh String?  @map("last_run_day_riyadh")
-  /// رابط تطبيق ويب Google Apps Script للرفع (يغلب BACKUP_GDRIVE_SCRIPT_URL إن وُجد)
+  /// ط±ط§ط¨ط· طھط·ط¨ظٹظ‚ ظˆظٹط¨ Google Apps Script ظ„ظ„ط±ظپط¹ (ظٹط؛ظ„ط¨ BACKUP_GDRIVE_SCRIPT_URL ط¥ظ† ظˆظڈط¬ط¯)
   gdriveScriptUrl  String?  @map("gdrive_script_url") @db.Text
-  /// معرّف مجلد Drive أو رابط المجلد — يُمرَّر للسكربت كـ folderId
+  /// ظ…ط¹ط±ظ‘ظپ ظ…ط¬ظ„ط¯ Drive ط£ظˆ ط±ط§ط¨ط· ط§ظ„ظ…ط¬ظ„ط¯ â€” ظٹظڈظ…ط±ظ‘ظژط± ظ„ظ„ط³ظƒط±ط¨طھ ظƒظ€ folderId
   gdriveFolderId   String?  @map("gdrive_folder_id") @db.Text
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
@@ -233,7 +226,7 @@ model SystemBackupConfig {
   @@map("system_backup_config")
 }
 
-/// إعدادات النسخ التلقائي اليومي لشركة واحدة — لقطة منطقية (company_logical)
+/// ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ†ط³ط® ط§ظ„طھظ„ظ‚ط§ط¦ظٹ ط§ظ„ظٹظˆظ…ظٹ ظ„ط´ط±ظƒط© ظˆط§ط­ط¯ط© â€” ظ„ظ‚ط·ط© ظ…ظ†ط·ظ‚ظٹط© (company_logical)
 model CompanyBackupConfig {
   id               String   @id @default(cuid())
   tenantId         String   @map("tenant_id")
@@ -256,7 +249,7 @@ model CompanyBackupConfig {
   @@map("company_backup_config")
 }
 
-/// حدود تنبيهات الرؤى المالية لكل شركة — المرحلة أ: تخزين فقط (بدون ربط سلوك الإنتاج بعد)
+/// ط­ط¯ظˆط¯ طھظ†ط¨ظٹظ‡ط§طھ ط§ظ„ط±ط¤ظ‰ ط§ظ„ظ…ط§ظ„ظٹط© ظ„ظƒظ„ ط´ط±ظƒط© â€” ط§ظ„ظ…ط±ط­ظ„ط© ط£: طھط®ط²ظٹظ† ظپظ‚ط· (ط¨ط¯ظˆظ† ط±ط¨ط· ط³ظ„ظˆظƒ ط§ظ„ط¥ظ†طھط§ط¬ ط¨ط¹ط¯)
 model CompanyInsightSettings {
   id          String   @id @default(cuid())
   companyId   String   @unique @map("company_id")
@@ -269,14 +262,14 @@ model CompanyInsightSettings {
   @@map("company_insight_settings")
 }
 
-// تحليل كشوف الحساب — كشف واحد مع حركاته
+// طھط­ظ„ظٹظ„ ظƒط´ظˆظپ ط§ظ„ط­ط³ط§ط¨ â€” ظƒط´ظپ ظˆط§ط­ط¯ ظ…ط¹ ط­ط±ظƒط§طھظ‡
 model BankStatement {
   id               String   @id @default(cuid())
   tenantId         String   @map("tenant_id")
   companyId        String   @map("company_id")
   fileName         String   @map("file_name")
   fileFormat       String   @map("file_format")   // excel | csv
-  companyName      String   @map("company_name")  // اسم صاحب الحساب
+  companyName      String   @map("company_name")  // ط§ط³ظ… طµط§ط­ط¨ ط§ظ„ط­ط³ط§ط¨
   bankName         String   @map("bank_name")
   startDate        String?  @map("start_date")
   endDate          String?  @map("end_date")
@@ -288,7 +281,7 @@ model BankStatement {
   totalDeposits    Decimal  @default(0)           @map("total_deposits")
   totalWithdrawals Decimal  @default(0)           @map("total_withdrawals")
   transactionCount Int      @default(0)           @map("transaction_count")
-  rawData          Json?    @map("raw_data")      // شبكة الملف كاملة (حتى حد الخادم) لإعادة الربط
+  rawData          Json?    @map("raw_data")      // ط´ط¨ظƒط© ط§ظ„ظ…ظ„ظپ ظƒط§ظ…ظ„ط© (ط­طھظ‰ ط­ط¯ ط§ظ„ط®ط§ط¯ظ…) ظ„ط¥ط¹ط§ط¯ط© ط§ظ„ط±ط¨ط·
   summaryJson      Json?    @map("summary_json") // opening/closing/by_category/pos_terminals (Base44)
   aiAnalysis       String?  @map("ai_analysis") @db.Text
   createdAt        DateTime @default(now())       @map("created_at")
@@ -327,7 +320,7 @@ model BankStatementTransaction {
   @@map("bank_statement_transactions")
 }
 
-// فئات شجرية + كلمات مفتاحية (مطابقة BankCategory في Base44)
+// ظپط¦ط§طھ ط´ط¬ط±ظٹط© + ظƒظ„ظ…ط§طھ ظ…ظپطھط§ط­ظٹط© (ظ…ط·ط§ط¨ظ‚ط© BankCategory ظپظٹ Base44)
 model BankTreeCategory {
   id                String   @id @default(cuid())
   tenantId          String   @map("tenant_id")
@@ -347,7 +340,7 @@ model BankTreeCategory {
   @@map("bank_tree_categories")
 }
 
-// قواعد تصنيف قديمة/بسيطة (مطابقة BankClassificationRule)
+// ظ‚ظˆط§ط¹ط¯ طھطµظ†ظٹظپ ظ‚ط¯ظٹظ…ط©/ط¨ط³ظٹط·ط© (ظ…ط·ط§ط¨ظ‚ط© BankClassificationRule)
 model BankClassificationRule {
   id                String   @id @default(cuid())
   tenantId          String   @map("tenant_id")
@@ -367,7 +360,7 @@ model BankClassificationRule {
   @@map("bank_classification_rules")
 }
 
-// قوالب أعمدة لكل بنك (مطابقة BankTemplate)
+// ظ‚ظˆط§ظ„ط¨ ط£ط¹ظ…ط¯ط© ظ„ظƒظ„ ط¨ظ†ظƒ (ظ…ط·ط§ط¨ظ‚ط© BankTemplate)
 model BankStatementTemplate {
   id             String    @id @default(cuid())
   tenantId       String    @map("tenant_id")
@@ -409,12 +402,12 @@ model BankStatementCategory {
   @@map("bank_statement_categories")
 }
 
-// الفترات المالية — قفل التسجيل في فترات مغلقة
+// ط§ظ„ظپطھط±ط§طھ ط§ظ„ظ…ط§ظ„ظٹط© â€” ظ‚ظپظ„ ط§ظ„طھط³ط¬ظٹظ„ ظپظٹ ظپطھط±ط§طھ ظ…ط؛ظ„ظ‚ط©
 model FiscalPeriod {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")     // RLS
   companyId   String   @map("company_id")
-  nameAr      String   @map("name_ar")       // مثل: "يناير 2025"
+  nameAr      String   @map("name_ar")       // ظ…ط«ظ„: "ظٹظ†ط§ظٹط± 2025"
   nameEn      String?  @map("name_en")
   startDate   DateTime @map("start_date")
   endDate     DateTime @map("end_date")
@@ -433,13 +426,13 @@ model FiscalPeriod {
   @@map("fiscal_periods")
 }
 
-// مفتاح عدم التكرار — منع تنفيذ نفس العملية مرتين
+// ظ…ظپطھط§ط­ ط¹ط¯ظ… ط§ظ„طھظƒط±ط§ط± â€” ظ…ظ†ط¹ طھظ†ظپظٹط° ظ†ظپط³ ط§ظ„ط¹ظ…ظ„ظٹط© ظ…ط±طھظٹظ†
 model IdempotencyKey {
   id           String   @id @default(cuid())
   tenantId     String   @map("tenant_id")     // RLS
   companyId    String   @map("company_id")
-  keyHash      String   @map("key_hash")      // hash من (operationType + payload)
-  resultJson   Json?    @map("result_json")   // نتيجة العملية المخزنة
+  keyHash      String   @map("key_hash")      // hash ظ…ظ† (operationType + payload)
+  resultJson   Json?    @map("result_json")   // ظ†طھظٹط¬ط© ط§ظ„ط¹ظ…ظ„ظٹط© ط§ظ„ظ…ط®ط²ظ†ط©
   expiresAt    DateTime @map("expires_at")
   createdAt    DateTime @default(now()) @map("created_at")
 
@@ -450,7 +443,7 @@ model IdempotencyKey {
   @@map("idempotency_keys")
 }
 
-// ربط المستخدم بالشركات المسموح له بها داخل الـ Tenant
+// ط±ط¨ط· ط§ظ„ظ…ط³طھط®ط¯ظ… ط¨ط§ظ„ط´ط±ظƒط§طھ ط§ظ„ظ…ط³ظ…ظˆط­ ظ„ظ‡ ط¨ظ‡ط§ ط¯ط§ط®ظ„ ط§ظ„ظ€ Tenant
 model UserCompany {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
@@ -465,30 +458,30 @@ model UserCompany {
   @@map("user_companies")
 }
 
-// ══════════════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 // TIER 4: OPERATIONAL DATA
-// كل جدول يحمل tenantId + companyId للـ RLS
-// tenantId = عزل على مستوى PostgreSQL
-// companyId = تصفية على مستوى التطبيق
-// ══════════════════════════════════════════════════
+// ظƒظ„ ط¬ط¯ظˆظ„ ظٹط­ظ…ظ„ tenantId + companyId ظ„ظ„ظ€ RLS
+// tenantId = ط¹ط²ظ„ ط¹ظ„ظ‰ ظ…ط³طھظˆظ‰ PostgreSQL
+// companyId = طھطµظپظٹط© ط¹ظ„ظ‰ ظ…ط³طھظˆظ‰ ط§ظ„طھط·ط¨ظٹظ‚
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
-// ── جدول الموظفين — نواة نظام HR المتكامل ─────────
+// â”€â”€ ط¬ط¯ظˆظ„ ط§ظ„ظ…ظˆط¸ظپظٹظ† â€” ظ†ظˆط§ط© ظ†ط¸ط§ظ… HR ط§ظ„ظ…طھظƒط§ظ…ظ„ â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model Employee {
   id                 String   @id @default(cuid())
   tenantId           String   @map("tenant_id")        // RLS
   companyId          String   @map("company_id")
-  employeeSerial     String   @map("employee_serial")  // الرقم الوظيفي (مثل MS-ST-001)
-  name               String                            // الاسم الكامل
+  employeeSerial     String   @map("employee_serial")  // ط§ظ„ط±ظ‚ظ… ط§ظ„ظˆط¸ظٹظپظٹ (ظ…ط«ظ„ MS-ST-001)
+  name               String                            // ط§ظ„ط§ط³ظ… ط§ظ„ظƒط§ظ…ظ„
   nameEn             String?  @map("name_en")
-  iqamaNumber        String?  @map("iqama_number")     // رقم الإقامة
-  jobTitle           String?  @map("job_title")        // المسمى الوظيفي
+  iqamaNumber        String?  @map("iqama_number")     // ط±ظ‚ظ… ط§ظ„ط¥ظ‚ط§ظ…ط©
+  jobTitle           String?  @map("job_title")        // ط§ظ„ظ…ط³ظ…ظ‰ ط§ظ„ظˆط¸ظٹظپظٹ
   basicSalary        Decimal  @map("basic_salary")     @db.Decimal(18, 4)
   housingAllowance   Decimal  @default(0) @map("housing_allowance")    @db.Decimal(18, 4)
   transportAllowance Decimal  @default(0) @map("transport_allowance")  @db.Decimal(18, 4)
   otherAllowance     Decimal  @default(0) @map("other_allowance")      @db.Decimal(18, 4)
-  workHours          String?  @map("work_hours")       // ساعات العمل (مثل: 8 ساعات يومياً)
-  workSchedule       String?  @map("work_schedule")    // نظام الدوام (مثل: من الأحد إلى الخميس)
-  joinDate           DateTime @map("join_date")        // أساس حساب نهاية الخدمة
+  workHours          String?  @map("work_hours")       // ط³ط§ط¹ط§طھ ط§ظ„ط¹ظ…ظ„ (ظ…ط«ظ„: 8 ط³ط§ط¹ط§طھ ظٹظˆظ…ظٹط§ظ‹)
+  workSchedule       String?  @map("work_schedule")    // ظ†ط¸ط§ظ… ط§ظ„ط¯ظˆط§ظ… (ظ…ط«ظ„: ظ…ظ† ط§ظ„ط£ط­ط¯ ط¥ظ„ظ‰ ط§ظ„ط®ظ…ظٹط³)
+  joinDate           DateTime @map("join_date")        // ط£ط³ط§ط³ ط­ط³ط§ط¨ ظ†ظ‡ط§ظٹط© ط§ظ„ط®ط¯ظ…ط©
   status             String   @default("active")       // active | terminated | on_leave
   notes              String?
   createdAt          DateTime @default(now()) @map("created_at")
@@ -513,25 +506,25 @@ model Employee {
   @@map("employees")
 }
 
-// ── مسيرة الرواتب (دفعة شهرية) ─────────────────────────────
+// â”€â”€ ظ…ط³ظٹط±ط© ط§ظ„ط±ظˆط§طھط¨ (ط¯ظپط¹ط© ط´ظ‡ط±ظٹط©) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model PayrollRun {
   id              String   @id @default(cuid())
   tenantId        String   @map("tenant_id")
   companyId       String   @map("company_id")
   runNumber       String   @map("run_number")       // PR-2026-03
-  payrollMonth    DateTime @map("payroll_month")    // أول يوم من الشهر
+  payrollMonth    DateTime @map("payroll_month")    // ط£ظˆظ„ ظٹظˆظ… ظ…ظ† ط§ظ„ط´ظ‡ط±
   totalAmount     Decimal  @map("total_amount")     @db.Decimal(18, 4)
   employeeCount   Int      @map("employee_count")
   status          String   @default("draft")        // draft | completed
   notes           String?
-  /// عند الاعتماد: تسوية خصم السلف على فواتير السلف (يُمنع التكرار عند صرف المسيرة لاحقاً)
+  /// ط¹ظ†ط¯ ط§ظ„ط§ط¹طھظ…ط§ط¯: طھط³ظˆظٹط© ط®طµظ… ط§ظ„ط³ظ„ظپ ط¹ظ„ظ‰ ظپظˆط§طھظٹط± ط§ظ„ط³ظ„ظپ (ظٹظڈظ…ظ†ط¹ ط§ظ„طھظƒط±ط§ط± ط¹ظ†ط¯ طµط±ظپ ط§ظ„ظ…ط³ظٹط±ط© ظ„ط§ط­ظ‚ط§ظ‹)
   advanceSettlementsAppliedAt DateTime? @map("advance_settlements_applied_at")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt      @map("updated_at")
 
   company Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   items   PayrollRunItem[]
-  /// توزيع صرف المسيرة على خزائن (مستوى المسيرة — فاتورة صرف واحدة عند الإصدار)
+  /// طھظˆط²ظٹط¹ طµط±ظپ ط§ظ„ظ…ط³ظٹط±ط© ط¹ظ„ظ‰ ط®ط²ط§ط¦ظ† (ظ…ط³طھظˆظ‰ ط§ظ„ظ…ط³ظٹط±ط© â€” ظپط§طھظˆط±ط© طµط±ظپ ظˆط§ط­ط¯ط© ط¹ظ†ط¯ ط§ظ„ط¥طµط¯ط§ط±)
   runVaultSplits PayrollRunVault[]
 
   @@unique([companyId, runNumber])
@@ -546,9 +539,9 @@ model PayrollRunItem {
   payrollRunId    String   @map("payroll_run_id")
   employeeId      String   @map("employee_id")
   grossSalary     Decimal  @map("gross_salary")     @db.Decimal(18, 4)
-  allowancesAdd   Decimal  @default(0) @map("allowances_add")   @db.Decimal(18, 4)  // بدلات إضافية
-  deductions      Decimal  @default(0) @map("deductions")      @db.Decimal(18, 4)  // خصومات (جزاءات وغيرها)
-  advancesDeduct  Decimal  @default(0) @map("advances_deduct") @db.Decimal(18, 4) // خصم السلف
+  allowancesAdd   Decimal  @default(0) @map("allowances_add")   @db.Decimal(18, 4)  // ط¨ط¯ظ„ط§طھ ط¥ط¶ط§ظپظٹط©
+  deductions      Decimal  @default(0) @map("deductions")      @db.Decimal(18, 4)  // ط®طµظˆظ…ط§طھ (ط¬ط²ط§ط،ط§طھ ظˆط؛ظٹط±ظ‡ط§)
+  advancesDeduct  Decimal  @default(0) @map("advances_deduct") @db.Decimal(18, 4) // ط®طµظ… ط§ظ„ط³ظ„ظپ
   netSalary       Decimal  @map("net_salary")       @db.Decimal(18, 4)
   notes           String?
 
@@ -561,7 +554,7 @@ model PayrollRunItem {
   @@map("payroll_run_items")
 }
 
-// توزيع الدفع على خزائن متعددة لكل بند في المسيرة
+// طھظˆط²ظٹط¹ ط§ظ„ط¯ظپط¹ ط¹ظ„ظ‰ ط®ط²ط§ط¦ظ† ظ…طھط¹ط¯ط¯ط© ظ„ظƒظ„ ط¨ظ†ط¯ ظپظٹ ط§ظ„ظ…ط³ظٹط±ط©
 model PayrollRunItemVault {
   id              String   @id @default(cuid())
   payrollItemId   String   @map("payroll_item_id")
@@ -576,7 +569,7 @@ model PayrollRunItemVault {
   @@map("payroll_run_item_vaults")
 }
 
-/// خزائن دفع مسيرة الرواتب (إجمالي المسيرة — ليس لكل موظف)
+/// ط®ط²ط§ط¦ظ† ط¯ظپط¹ ظ…ط³ظٹط±ط© ط§ظ„ط±ظˆط§طھط¨ (ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ظ…ط³ظٹط±ط© â€” ظ„ظٹط³ ظ„ظƒظ„ ظ…ظˆط¸ظپ)
 model PayrollRunVault {
   id           String   @id @default(cuid())
   payrollRunId String   @map("payroll_run_id")
@@ -591,7 +584,7 @@ model PayrollRunVault {
   @@map("payroll_run_vaults")
 }
 
-// ── الإجازات ───────────────────────────────────────────────
+// â”€â”€ ط§ظ„ط¥ط¬ط§ط²ط§طھ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model Leave {
   id              String   @id @default(cuid())
   tenantId        String   @map("tenant_id")
@@ -617,14 +610,14 @@ model Leave {
   @@map("leaves")
 }
 
-/// تسوية راتب تقويمية عند الموافقة على إجازة سنوية (صرف فوري؛ تُستبعد من مسيرة نهاية الشهر)
+/// طھط³ظˆظٹط© ط±ط§طھط¨ طھظ‚ظˆظٹظ…ظٹط© ط¹ظ†ط¯ ط§ظ„ظ…ظˆط§ظپظ‚ط© ط¹ظ„ظ‰ ط¥ط¬ط§ط²ط© ط³ظ†ظˆظٹط© (طµط±ظپ ظپظˆط±ظٹط› طھظڈط³طھط¨ط¹ط¯ ظ…ظ† ظ…ط³ظٹط±ط© ظ†ظ‡ط§ظٹط© ط§ظ„ط´ظ‡ط±)
 model LeaveSalarySettlement {
   id               String   @id @default(cuid())
   tenantId         String   @map("tenant_id")
   companyId        String   @map("company_id")
   leaveId          String   @unique @map("leave_id")
   employeeId       String   @map("employee_id")
-  payrollMonth     DateTime @map("payroll_month") // أول يوم من الشهر المعني
+  payrollMonth     DateTime @map("payroll_month") // ط£ظˆظ„ ظٹظˆظ… ظ…ظ† ط§ظ„ط´ظ‡ط± ط§ظ„ظ…ط¹ظ†ظٹ
   invoiceId        String   @unique @map("invoice_id")
   grossAmount      Decimal  @map("gross_amount") @db.Decimal(18, 4)
   netAmount        Decimal  @map("net_amount") @db.Decimal(18, 4)
@@ -644,7 +637,7 @@ model LeaveSalarySettlement {
   @@map("leave_salary_settlements")
 }
 
-// ── خدمات الموظف (إقامات، تأشيرات، تذاكر، تأمين، …) ───────
+// â”€â”€ ط®ط¯ظ…ط§طھ ط§ظ„ظ…ظˆط¸ظپ (ط¥ظ‚ط§ظ…ط§طھطŒ طھط£ط´ظٹط±ط§طھطŒ طھط°ط§ظƒط±طŒ طھط£ظ…ظٹظ†طŒ â€¦) â”€â”€â”€â”€â”€â”€â”€
 model EmployeeResidency {
   id                     String    @id @default(cuid())
   tenantId               String    @map("tenant_id")
@@ -677,7 +670,7 @@ model EmployeeResidency {
   @@map("employee_residencies")
 }
 
-// ── مستندات الموظف ────────────────────────────────────────
+// â”€â”€ ظ…ط³طھظ†ط¯ط§طھ ط§ظ„ظ…ظˆط¸ظپ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model EmployeeDocument {
   id              String   @id @default(cuid())
   tenantId        String   @map("tenant_id")
@@ -685,7 +678,7 @@ model EmployeeDocument {
   employeeId      String   @map("employee_id")
   documentType    String   @map("document_type")    // contract | certificate | iqama | other
   fileName        String   @map("file_name")
-  filePath        String?  @map("file_path")        // مسار التخزين أو رابط
+  filePath        String?  @map("file_path")        // ظ…ط³ط§ط± ط§ظ„طھط®ط²ظٹظ† ط£ظˆ ط±ط§ط¨ط·
   fileSize        Int?     @map("file_size")
   notes           String?
   createdAt       DateTime @default(now()) @map("created_at")
@@ -699,16 +692,16 @@ model EmployeeDocument {
   @@map("employee_documents")
 }
 
-// ── سجل الترقيات والزيادات ─────────────────────────────
+// â”€â”€ ط³ط¬ظ„ ط§ظ„طھط±ظ‚ظٹط§طھ ظˆط§ظ„ط²ظٹط§ط¯ط§طھ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model EmployeeMovement {
   id              String   @id @default(cuid())
   tenantId        String   @map("tenant_id")
   companyId       String   @map("company_id")
   employeeId      String   @map("employee_id")
   movementType    String   @map("movement_type")   // promotion | raise | other
-  amount          Decimal? @map("amount")         @db.Decimal(18, 4)  // للزيادة
-  previousValue   String?  @map("previous_value") // القيمة السابقة (مثل الراتب القديم)
-  newValue        String?  @map("new_value")      // القيمة الجديدة
+  amount          Decimal? @map("amount")         @db.Decimal(18, 4)  // ظ„ظ„ط²ظٹط§ط¯ط©
+  previousValue   String?  @map("previous_value") // ط§ظ„ظ‚ظٹظ…ط© ط§ظ„ط³ط§ط¨ظ‚ط© (ظ…ط«ظ„ ط§ظ„ط±ط§طھط¨ ط§ظ„ظ‚ط¯ظٹظ…)
+  newValue        String?  @map("new_value")      // ط§ظ„ظ‚ظٹظ…ط© ط§ظ„ط¬ط¯ظٹط¯ط©
   effectiveDate   DateTime @map("effective_date")
   notes           String?
   createdAt       DateTime @default(now()) @map("created_at")
@@ -722,7 +715,7 @@ model EmployeeMovement {
   @@map("employee_movements")
 }
 
-// ── بدلات مخصصة (إضافة/حذف) ─────────────────────────────
+// â”€â”€ ط¨ط¯ظ„ط§طھ ظ…ط®طµطµط© (ط¥ط¶ط§ظپط©/ط­ط°ظپ) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model EmployeeCustomAllowance {
   id              String   @id @default(cuid())
   tenantId        String   @map("tenant_id")
@@ -741,7 +734,7 @@ model EmployeeCustomAllowance {
   @@map("employee_custom_allowances")
 }
 
-// ── سجل الخصومات ───────────────────────────────────────
+// â”€â”€ ط³ط¬ظ„ ط§ظ„ط®طµظˆظ…ط§طھ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model EmployeeDeduction {
   id              String   @id @default(cuid())
   tenantId        String   @map("tenant_id")
@@ -751,7 +744,7 @@ model EmployeeDeduction {
   amount          Decimal  @map("amount")  @db.Decimal(18, 4)
   transactionDate DateTime @map("transaction_date")
   notes           String?
-  referenceId     String?  @map("reference_id")   // ربط بفاتورة سلفة إن وجدت
+  referenceId     String?  @map("reference_id")   // ط±ط¨ط· ط¨ظپط§طھظˆط±ط© ط³ظ„ظپط© ط¥ظ† ظˆط¬ط¯طھ
   createdAt       DateTime @default(now()) @map("created_at")
 
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -767,8 +760,8 @@ model Category {
   id        String   @id @default(cuid())
   tenantId  String   @map("tenant_id")      // RLS
   companyId String   @map("company_id")
-  accountId String?  @map("account_id")    // ربط بجدول الحسابات — للفئات المُظهرة في P&L
-  code      String?  @map("code")          // كود تحليلي: أب مثل PUR-001، فرع مثل P1-1 أو E3-2
+  accountId String?  @map("account_id")    // ط±ط¨ط· ط¨ط¬ط¯ظˆظ„ ط§ظ„ط­ط³ط§ط¨ط§طھ â€” ظ„ظ„ظپط¦ط§طھ ط§ظ„ظ…ظڈط¸ظ‡ط±ط© ظپظٹ P&L
+  code      String?  @map("code")          // ظƒظˆط¯ طھط­ظ„ظٹظ„ظٹ: ط£ط¨ ظ…ط«ظ„ PUR-001طŒ ظپط±ط¹ ظ…ط«ظ„ P1-1 ط£ظˆ E3-2
   nameAr    String   @map("name_ar")
   nameEn    String?  @map("name_en")
   parentId  String?  @map("parent_id")
@@ -802,8 +795,8 @@ model Supplier {
   nameEn             String?  @map("name_en")
   phone              String?
   taxNumber          String?  @map("tax_number")
-  categoryId         String?  @map("category_id")           // مشتريات | مصروفات (legacy)
-  supplierCategoryId String?  @map("supplier_category_id")  // FK → Category
+  categoryId         String?  @map("category_id")           // ظ…ط´طھط±ظٹط§طھ | ظ…طµط±ظˆظپط§طھ (legacy)
+  supplierCategoryId String?  @map("supplier_category_id")  // FK â†’ Category
   isBookmarked       Boolean  @default(false) @map("is_bookmarked")
   isTaxRegistered    Boolean  @default(true)  @map("is_tax_registered")
   isDeleted          Boolean  @default(false) @map("is_deleted")
@@ -815,31 +808,29 @@ model Supplier {
   invoices         Invoice[]
   expenseLines     ExpenseLine[]
   companyAssets    CompanyAsset[]
-  ocrSupplierLinks OcrSupplier[] @relation("OcrSupplierAccountingLink")
-
   @@index([tenantId])
   @@index([companyId])
   @@index([companyId, isDeleted])
   @@map("suppliers")
 }
 
-// بند مصروف — هاتف 1، كهرب 1، إيجار محل — لكل بند سجل مدفوعات خاص
+// ط¨ظ†ط¯ ظ…طµط±ظˆظپ â€” ظ‡ط§طھظپ 1طŒ ظƒظ‡ط±ط¨ 1طŒ ط¥ظٹط¬ط§ط± ظ…ط­ظ„ â€” ظ„ظƒظ„ ط¨ظ†ط¯ ط³ط¬ظ„ ظ…ط¯ظپظˆط¹ط§طھ ط®ط§طµ
 model ExpenseLine {
   id            String   @id @default(cuid())
   tenantId      String   @map("tenant_id")
   companyId     String   @map("company_id")
-  nameAr        String   @map("name_ar")         // "هاتف رقم 1"، "كهرباء الفرع 1"
+  nameAr        String   @map("name_ar")         // "ظ‡ط§طھظپ ط±ظ‚ظ… 1"طŒ "ظƒظ‡ط±ط¨ط§ط، ط§ظ„ظپط±ط¹ 1"
   nameEn        String?  @map("name_en")
   kind          String   // fixed_expense | expense
   categoryId    String   @map("category_id")
   supplierId    String   @map("supplier_id")
-  serviceNumber String?  @map("service_number")  // رقم الخدمة/العداد
-  /// مبلغ مرجعي متوقع (مثلاً لكل دفعة) — يُقترَح عند تسجيل السداد ويُسمح بتعديله حسب allowPaymentAmountOverride
+  serviceNumber String?  @map("service_number")  // ط±ظ‚ظ… ط§ظ„ط®ط¯ظ…ط©/ط§ظ„ط¹ط¯ط§ط¯
+  /// ظ…ط¨ظ„ط؛ ظ…ط±ط¬ط¹ظٹ ظ…طھظˆظ‚ط¹ (ظ…ط«ظ„ط§ظ‹ ظ„ظƒظ„ ط¯ظپط¹ط©) â€” ظٹظڈظ‚طھط±ظژط­ ط¹ظ†ط¯ طھط³ط¬ظٹظ„ ط§ظ„ط³ط¯ط§ط¯ ظˆظٹظڈط³ظ…ط­ ط¨طھط¹ط¯ظٹظ„ظ‡ ط­ط³ط¨ allowPaymentAmountOverride
   referenceAmount            Decimal? @map("reference_amount") @db.Decimal(18, 2)
   allowPaymentAmountOverride Boolean  @default(true) @map("allow_payment_amount_override")
-  /// إجمالي سنوي متوقع (مثلاً 120,000) — لاقتراح مبلغ كل دفعة مع installmentIntervalMonths
+  /// ط¥ط¬ظ…ط§ظ„ظٹ ط³ظ†ظˆظٹ ظ…طھظˆظ‚ط¹ (ظ…ط«ظ„ط§ظ‹ 120,000) â€” ظ„ط§ظ‚طھط±ط§ط­ ظ…ط¨ظ„ط؛ ظƒظ„ ط¯ظپط¹ط© ظ…ط¹ installmentIntervalMonths
   annualTotalAmount          Decimal? @map("annual_total_amount") @db.Decimal(18, 2)
-  /// فترة الدفع بالأشهر: 1،2،3،4،6،12 (يجب أن يقسم 12 بدون باقٍ)
+  /// ظپطھط±ط© ط§ظ„ط¯ظپط¹ ط¨ط§ظ„ط£ط´ظ‡ط±: 1طŒ2طŒ3طŒ4طŒ6طŒ12 (ظٹط¬ط¨ ط£ظ† ظٹظ‚ط³ظ… 12 ط¨ط¯ظˆظ† ط¨ط§ظ‚ظچ)
   installmentIntervalMonths  Int?     @map("installment_interval_months")
   notes         String?
   isActive      Boolean  @default(true) @map("is_active")
@@ -867,8 +858,8 @@ model Account {
   nameAr    String   @map("name_ar")
   nameEn    String?  @map("name_en")
   type      String   // asset | liability | equity | revenue | expense
-  icon      String?  // أيقونة للعرض (مثل: 💵، 📦)
-  taxExempt Boolean  @default(false) @map("tax_exempt")  // معفى من الضريبة افتراضياً
+  icon      String?  // ط£ظٹظ‚ظˆظ†ط© ظ„ظ„ط¹ط±ط¶ (ظ…ط«ظ„: ًں’µطŒ ًں“¦)
+  taxExempt Boolean  @default(false) @map("tax_exempt")  // ظ…ط¹ظپظ‰ ظ…ظ† ط§ظ„ط¶ط±ظٹط¨ط© ط§ظپطھط±ط§ط¶ظٹط§ظ‹
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
@@ -896,11 +887,11 @@ model Vault {
   isActive       Boolean  @default(true)  @map("is_active")
   isArchived     Boolean  @default(false) @map("is_archived")
   isSalesChannel Boolean  @default(false) @map("is_sales_channel")
-  /// عند false تُخفى من كل قوائم السداد في الواجهة والـ API (مصاريف، HR، فواتير صرف، …)
+  /// ط¹ظ†ط¯ false طھظڈط®ظپظ‰ ظ…ظ† ظƒظ„ ظ‚ظˆط§ط¦ظ… ط§ظ„ط³ط¯ط§ط¯ ظپظٹ ط§ظ„ظˆط§ط¬ظ‡ط© ظˆط§ظ„ظ€ API (ظ…طµط§ط±ظٹظپطŒ HRطŒ ظپظˆط§طھظٹط± طµط±ظپطŒ â€¦)
   showAsPaymentMethod Boolean @default(true) @map("show_as_payment_method")
   paymentMethod  String?  @map("payment_method")
   notes          String?
-  /// ترتيب العرض في الخزائن، قنوات المبيعات، وقوائم السداد (الأصغر يظهر أولاً)
+  /// طھط±طھظٹط¨ ط§ظ„ط¹ط±ط¶ ظپظٹ ط§ظ„ط®ط²ط§ط¦ظ†طŒ ظ‚ظ†ظˆط§طھ ط§ظ„ظ…ط¨ظٹط¹ط§طھطŒ ظˆظ‚ظˆط§ط¦ظ… ط§ظ„ط³ط¯ط§ط¯ (ط§ظ„ط£طµط؛ط± ظٹط¸ظ‡ط± ط£ظˆظ„ط§ظ‹)
   sortOrder      Int      @default(0) @map("sort_order")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt      @map("updated_at")
@@ -921,7 +912,7 @@ model Vault {
   @@map("vaults")
 }
 
-/// توزيع سداد فاتورة صرف واحدة على أكثر من خزنة (قيد لكل جزء)
+/// طھظˆط²ظٹط¹ ط³ط¯ط§ط¯ ظپط§طھظˆط±ط© طµط±ظپ ظˆط§ط­ط¯ط© ط¹ظ„ظ‰ ط£ظƒط«ط± ظ…ظ† ط®ط²ظ†ط© (ظ‚ظٹط¯ ظ„ظƒظ„ ط¬ط²ط،)
 model InvoiceVaultAllocation {
   id        String   @id @default(cuid())
   tenantId  String   @map("tenant_id")
@@ -943,48 +934,48 @@ model Invoice {
   id              String    @id @default(cuid())
   tenantId        String    @map("tenant_id")       // RLS
   companyId       String    @map("company_id")
-  supplierId      String?   @map("supplier_id")     // اختياري — null للرواتب/السلفيات
-  employeeId      String?   @map("employee_id")     // مرتبط بالموظف (راتب/سلفية)
-  expenseLineId   String?   @map("expense_line_id") // ربط ببند المصروف (fixed/variable)
-  categoryId      String?   @map("category_id")     // فئة المصروف — للفلترة والتقارير
+  supplierId      String?   @map("supplier_id")     // ط§ط®طھظٹط§ط±ظٹ â€” null ظ„ظ„ط±ظˆط§طھط¨/ط§ظ„ط³ظ„ظپظٹط§طھ
+  employeeId      String?   @map("employee_id")     // ظ…ط±طھط¨ط· ط¨ط§ظ„ظ…ظˆط¸ظپ (ط±ط§طھط¨/ط³ظ„ظپظٹط©)
+  expenseLineId   String?   @map("expense_line_id") // ط±ط¨ط· ط¨ط¨ظ†ط¯ ط§ظ„ظ…طµط±ظˆظپ (fixed/variable)
+  categoryId      String?   @map("category_id")     // ظپط¦ط© ط§ظ„ظ…طµط±ظˆظپ â€” ظ„ظ„ظپظ„طھط±ط© ظˆط§ظ„طھظ‚ط§ط±ظٹط±
   invoiceNumber   String    @map("invoice_number")
-  supplierInvoiceNumber String? @map("supplier_invoice_number")  // رقم الفاتورة من المورد (غير السريل الداخلي)
-  /// مفتاح تطبيع لمنع تكرار (شركة + مورد + رقم فاتورة المورد) للفواتير النشطة — داخلي
+  supplierInvoiceNumber String? @map("supplier_invoice_number")  // ط±ظ‚ظ… ط§ظ„ظپط§طھظˆط±ط© ظ…ظ† ط§ظ„ظ…ظˆط±ط¯ (ط؛ظٹط± ط§ظ„ط³ط±ظٹظ„ ط§ظ„ط¯ط§ط®ظ„ظٹ)
+  /// ظ…ظپطھط§ط­ طھط·ط¨ظٹط¹ ظ„ظ…ظ†ط¹ طھظƒط±ط§ط± (ط´ط±ظƒط© + ظ…ظˆط±ط¯ + ط±ظ‚ظ… ظپط§طھظˆط±ط© ط§ظ„ظ…ظˆط±ط¯) ظ„ظ„ظپظˆط§طھظٹط± ط§ظ„ظ†ط´ط·ط© â€” ط¯ط§ط®ظ„ظٹ
   supplierInvoiceDedupKey String? @map("supplier_invoice_dedup_key")
   kind            String    // purchase | expense | salary | advance | hr_expense | fixed_expense
   totalAmount     Decimal   @map("total_amount")     @db.Decimal(18, 4)
   netAmount       Decimal   @map("net_amount")       @db.Decimal(18, 4)
   taxAmount       Decimal   @map("tax_amount")       @db.Decimal(18, 4)
   transactionDate DateTime  @map("transaction_date")
-  invoiceDate     DateTime? @map("invoice_date")     // تاريخ الفاتورة الأصلية
+  invoiceDate     DateTime? @map("invoice_date")     // طھط§ط±ظٹط® ط§ظ„ظپط§طھظˆط±ط© ط§ظ„ط£طµظ„ظٹط©
   vaultId         String?   @map("vault_id")
   paymentMethodId String?   @map("payment_method_id")
   batchId         String?   @map("batch_id")
-  notes           String?  // ملاحظة / تفاصيل — اسم الموظف، الشهر، تفاصيل فواتير حكومية
-  /// مسار ملف الإيصال/المسح الضوئي على الخادم — لا يُعرَض للعميل في JSON (يُزال عند الإرجاع)
+  notes           String?  // ظ…ظ„ط§ط­ط¸ط© / طھظپط§طµظٹظ„ â€” ط§ط³ظ… ط§ظ„ظ…ظˆط¸ظپطŒ ط§ظ„ط´ظ‡ط±طŒ طھظپط§طµظٹظ„ ظپظˆط§طھظٹط± ط­ظƒظˆظ…ظٹط©
+  /// ظ…ط³ط§ط± ظ…ظ„ظپ ط§ظ„ط¥ظٹطµط§ظ„/ط§ظ„ظ…ط³ط­ ط§ظ„ط¶ظˆط¦ظٹ ط¹ظ„ظ‰ ط§ظ„ط®ط§ط¯ظ… â€” ظ„ط§ ظٹظڈط¹ط±ظژط¶ ظ„ظ„ط¹ظ…ظٹظ„ ظپظٹ JSON (ظٹظڈط²ط§ظ„ ط¹ظ†ط¯ ط§ظ„ط¥ط±ط¬ط§ط¹)
   attachmentPath         String? @map("attachment_path")
-  /// الاسم الأصلي للعرض والتحميل
+  /// ط§ظ„ط§ط³ظ… ط§ظ„ط£طµظ„ظٹ ظ„ظ„ط¹ط±ط¶ ظˆط§ظ„طھط­ظ…ظٹظ„
   attachmentOriginalName String? @map("attachment_original_name")
-  settledAt         DateTime? @map("settled_at")        // للسلف: تاريخ التسديد (خصم من راتب أو سداد)
-  settledAmount     Decimal?  @map("settled_amount")    @db.Decimal(18, 4) // للسلف: المبلغ المسدد
-  installmentCount  Int?      @map("installment_count") // للسلف بالأقساط: عدد الدفعات
-  installmentAmount Decimal?  @map("installment_amount") @db.Decimal(18, 4) // للسلف بالأقساط: مبلغ القسط الواحد
-  /// للمصاريف الثابتة: سنة التغطية المحاسبية للدفعة
+  settledAt         DateTime? @map("settled_at")        // ظ„ظ„ط³ظ„ظپ: طھط§ط±ظٹط® ط§ظ„طھط³ط¯ظٹط¯ (ط®طµظ… ظ…ظ† ط±ط§طھط¨ ط£ظˆ ط³ط¯ط§ط¯)
+  settledAmount     Decimal?  @map("settled_amount")    @db.Decimal(18, 4) // ظ„ظ„ط³ظ„ظپ: ط§ظ„ظ…ط¨ظ„ط؛ ط§ظ„ظ…ط³ط¯ط¯
+  installmentCount  Int?      @map("installment_count") // ظ„ظ„ط³ظ„ظپ ط¨ط§ظ„ط£ظ‚ط³ط§ط·: ط¹ط¯ط¯ ط§ظ„ط¯ظپط¹ط§طھ
+  installmentAmount Decimal?  @map("installment_amount") @db.Decimal(18, 4) // ظ„ظ„ط³ظ„ظپ ط¨ط§ظ„ط£ظ‚ط³ط§ط·: ظ…ط¨ظ„ط؛ ط§ظ„ظ‚ط³ط· ط§ظ„ظˆط§ط­ط¯
+  /// ظ„ظ„ظ…طµط§ط±ظٹظپ ط§ظ„ط«ط§ط¨طھط©: ط³ظ†ط© ط§ظ„طھط؛ط·ظٹط© ط§ظ„ظ…ط­ط§ط³ط¨ظٹط© ظ„ظ„ط¯ظپط¹ط©
   expenseCoverageYear       Int? @map("expense_coverage_year")
-  /// للمصاريف الثابتة: الربع 1–4 (إن وُجد يُشتق شهر البداية تلقائياً)
+  /// ظ„ظ„ظ…طµط§ط±ظٹظپ ط§ظ„ط«ط§ط¨طھط©: ط§ظ„ط±ط¨ط¹ 1â€“4 (ط¥ظ† ظˆظڈط¬ط¯ ظٹظڈط´طھظ‚ ط´ظ‡ط± ط§ظ„ط¨ط¯ط§ظٹط© طھظ„ظ‚ط§ط¦ظٹط§ظ‹)
   expenseCoverageQuarter    Int? @map("expense_coverage_quarter")
-  /// للمصاريف الثابتة: شهر بداية التغطية 1–12 (وضع الأشهر)
+  /// ظ„ظ„ظ…طµط§ط±ظٹظپ ط§ظ„ط«ط§ط¨طھط©: ط´ظ‡ط± ط¨ط¯ط§ظٹط© ط§ظ„طھط؛ط·ظٹط© 1â€“12 (ظˆط¶ط¹ ط§ظ„ط£ط´ظ‡ط±)
   expenseCoverageMonthStart Int? @map("expense_coverage_month_start")
-  /// للمصاريف الثابتة: عدد الأشهر المغطاة بهذه الدفعة
+  /// ظ„ظ„ظ…طµط§ط±ظٹظپ ط§ظ„ط«ط§ط¨طھط©: ط¹ط¯ط¯ ط§ظ„ط£ط´ظ‡ط± ط§ظ„ظ…ط؛ط·ط§ط© ط¨ظ‡ط°ظ‡ ط§ظ„ط¯ظپط¹ط©
   expenseMonthsCovered      Int? @map("expense_months_covered")
-  /// متابعة الضمان من المشتريات — بدون مدة هنا؛ تُكمَّل في قسم الضمان
+  /// ظ…طھط§ط¨ط¹ط© ط§ظ„ط¶ظ…ط§ظ† ظ…ظ† ط§ظ„ظ…ط´طھط±ظٹط§طھ â€” ط¨ط¯ظˆظ† ظ…ط¯ط© ظ‡ظ†ط§ط› طھظڈظƒظ…ظ‘ظژظ„ ظپظٹ ظ‚ط³ظ… ط§ظ„ط¶ظ…ط§ظ†
   warrantyFollowUp     Boolean  @default(false) @map("warranty_follow_up")
-  /// أُنجز إكمال بيانات الضمان من قسم الضمان (تُخرج من قائمة الانتظار)
+  /// ط£ظڈظ†ط¬ط² ط¥ظƒظ…ط§ظ„ ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¶ظ…ط§ظ† ظ…ظ† ظ‚ط³ظ… ط§ظ„ط¶ظ…ط§ظ† (طھظڈط®ط±ط¬ ظ…ظ† ظ‚ط§ط¦ظ…ط© ط§ظ„ط§ظ†طھط¸ط§ط±)
   warrantyFollowUpDone Boolean  @default(false) @map("warranty_follow_up_done")
-  dailySalesSummaryId String? @unique @map("daily_sales_summary_id")  // للمبيعات: ربط بملخص المبيعات اليومي (واحد لواحد)
+  dailySalesSummaryId String? @unique @map("daily_sales_summary_id")  // ظ„ظ„ظ…ط¨ظٹط¹ط§طھ: ط±ط¨ط· ط¨ظ…ظ„ط®طµ ط§ظ„ظ…ط¨ظٹط¹ط§طھ ط§ظ„ظٹظˆظ…ظٹ (ظˆط§ط­ط¯ ظ„ظˆط§ط­ط¯)
   status          String   @default("active")       // active | cancelled
-  entryDate       DateTime @map("entry_date")       // توقيت السيرفر — غير قابل للتعديل
-  /// مستخدم النظام الذي أنشأ السجل (فاتورة صرف/مبيعات)
+  entryDate       DateTime @map("entry_date")       // طھظˆظ‚ظٹطھ ط§ظ„ط³ظٹط±ظپط± â€” ط؛ظٹط± ظ‚ط§ط¨ظ„ ظ„ظ„طھط¹ط¯ظٹظ„
+  /// ظ…ط³طھط®ط¯ظ… ط§ظ„ظ†ط¸ط§ظ… ط§ظ„ط°ظٹ ط£ظ†ط´ط£ ط§ظ„ط³ط¬ظ„ (ظپط§طھظˆط±ط© طµط±ظپ/ظ…ط¨ظٹط¹ط§طھ)
   createdByUserId String?  @map("created_by_user_id")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt      @map("updated_at")
@@ -1000,8 +991,6 @@ model Invoice {
   leaveSalarySettlement LeaveSalarySettlement?
   employeeResidency     EmployeeResidency?
   companyAssets    CompanyAsset[]
-  ocrInvoicesLinkedFromOcr OcrInvoice[] @relation("OcrInvoiceLinkedPurchase")
-
   @@unique([companyId, invoiceNumber])
   @@index([tenantId])
   @@index([companyId])
@@ -1017,7 +1006,7 @@ model Invoice {
   @@map("invoices")
 }
 
-/// سجل أصول تشغيلي (بدون إهلاك) — ضمان، مدة، ربط اختياري بفاتورة/مورد
+/// ط³ط¬ظ„ ط£طµظˆظ„ طھط´ط؛ظٹظ„ظٹ (ط¨ط¯ظˆظ† ط¥ظ‡ظ„ط§ظƒ) â€” ط¶ظ…ط§ظ†طŒ ظ…ط¯ط©طŒ ط±ط¨ط· ط§ط®طھظٹط§ط±ظٹ ط¨ظپط§طھظˆط±ط©/ظ…ظˆط±ط¯
 model CompanyAsset {
   id                  String    @id @default(cuid())
   tenantId            String    @map("tenant_id")
@@ -1050,7 +1039,7 @@ model CompanyAsset {
   @@map("company_assets")
 }
 
-/// تفاصيل أصناف/بنود ضمان مرتبطة بأصل (إدخال من قسم الضمان)
+/// طھظپط§طµظٹظ„ ط£طµظ†ط§ظپ/ط¨ظ†ظˆط¯ ط¶ظ…ط§ظ† ظ…ط±طھط¨ط·ط© ط¨ط£طµظ„ (ط¥ط¯ط®ط§ظ„ ظ…ظ† ظ‚ط³ظ… ط§ظ„ط¶ظ…ط§ظ†)
 model CompanyAssetWarrantyLine {
   id             String    @id @default(cuid())
   tenantId       String    @map("tenant_id")
@@ -1085,7 +1074,7 @@ model DailySalesSummary {
   totalAmount     Decimal  @default(0)   @map("total_amount")  @db.Decimal(18, 4)
   notes           String?
   status          String   @default("active")
-  createdById     String?  @map("created_by_id")    // ✅ بصمة المستخدم — مرتبط بـ User
+  createdById     String?  @map("created_by_id")    // âœ… ط¨طµظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ… â€” ظ…ط±طھط¨ط· ط¨ظ€ User
   entryDate       DateTime @map("entry_date")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt      @map("updated_at")
@@ -1093,7 +1082,7 @@ model DailySalesSummary {
   company      Company  @relation(fields: [companyId],   references: [id], onDelete: Cascade)
   createdBy    User?    @relation("SalesCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   channels     DailySalesChannel[]
-  saleInvoice  Invoice?  // فاتورة مبيعات مرتبطة (للعرض الموحد في قسم الفواتير)
+  saleInvoice  Invoice?  // ظپط§طھظˆط±ط© ظ…ط¨ظٹط¹ط§طھ ظ…ط±طھط¨ط·ط© (ظ„ظ„ط¹ط±ط¶ ط§ظ„ظ…ظˆط­ط¯ ظپظٹ ظ‚ط³ظ… ط§ظ„ظپظˆط§طھظٹط±)
 
   @@unique([companyId, summaryNumber])
   @@index([tenantId])
@@ -1114,7 +1103,7 @@ model DailySalesChannel {
   @@map("daily_sales_channels")
 }
 
-// جدول الحركات الموحد (القيد المزدوج)
+// ط¬ط¯ظˆظ„ ط§ظ„ط­ط±ظƒط§طھ ط§ظ„ظ…ظˆط­ط¯ (ط§ظ„ظ‚ظٹط¯ ط§ظ„ظ…ط²ط¯ظˆط¬)
 model LedgerEntry {
   id              String   @id @default(cuid())
   tenantId        String   @map("tenant_id")      // RLS
@@ -1127,8 +1116,8 @@ model LedgerEntry {
   referenceType   String   @map("reference_type")  // invoice | sale | transfer | expense | salary | advance
   referenceId     String   @map("reference_id")
   vaultId         String?  @map("vault_id")
-  employeeId      String?  @map("employee_id")     // مرتبط بالموظف (راتب/سلفية)
-  createdById     String?  @map("created_by_id")   // ✅ بصمة المستخدم
+  employeeId      String?  @map("employee_id")     // ظ…ط±طھط¨ط· ط¨ط§ظ„ظ…ظˆط¸ظپ (ط±ط§طھط¨/ط³ظ„ظپظٹط©)
+  createdById     String?  @map("created_by_id")   // âœ… ط¨طµظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ…
   status          String   @default("active")       // active | cancelled
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -1150,12 +1139,12 @@ model LedgerEntry {
   @@map("ledger_entries")
 }
 
-// سجل التدقيق — يُسجّل بصمة المستخدم الحقيقية على كل حركة
+// ط³ط¬ظ„ ط§ظ„طھط¯ظ‚ظٹظ‚ â€” ظٹظڈط³ط¬ظ‘ظ„ ط¨طµظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ… ط§ظ„ط­ظ‚ظٹظ‚ظٹط© ط¹ظ„ظ‰ ظƒظ„ ط­ط±ظƒط©
 model AuditLog {
   id        String   @id @default(cuid())
   tenantId  String   @map("tenant_id")      // RLS
   companyId String   @map("company_id")
-  userId    String?  @map("user_id")        // ✅ بصمة المستخدم — لا يكون null عند الحفظ
+  userId    String?  @map("user_id")        // âœ… ط¨طµظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ… â€” ظ„ط§ ظٹظƒظˆظ† null ط¹ظ†ط¯ ط§ظ„ط­ظپط¸
   action    String   // create | update | delete | cancel
   entity    String   // invoice | ledger_entry | user | company | ...
   entityId  String   @map("entity_id")
@@ -1175,12 +1164,12 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// ── الطلبات (قسم داخلي — لا ربط محاسبي) ─────────────────────
+// â”€â”€ ط§ظ„ط·ظ„ط¨ط§طھ (ظ‚ط³ظ… ط¯ط§ط®ظ„ظٹ â€” ظ„ط§ ط±ط¨ط· ظ…ط­ط§ط³ط¨ظٹ) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model OrderCategory {
   id        String   @id @default(cuid())
   tenantId  String   @map("tenant_id")
   companyId String   @map("company_id")
-  nameAr    String   @map("name_ar")   // خضروات، لحوم، مشروبات
+  nameAr    String   @map("name_ar")   // ط®ط¶ط±ظˆط§طھطŒ ظ„ط­ظˆظ…طŒ ظ…ط´ط±ظˆط¨ط§طھ
   nameEn    String?  @map("name_en")
   sortOrder Int      @default(0) @map("sort_order")
   isActive  Boolean  @default(true) @map("is_active")
@@ -1219,13 +1208,13 @@ model OrderProduct {
   categoryId  String?  @map("category_id")
   nameAr      String   @map("name_ar")
   nameEn      String?  @map("name_en")
-  unit        String   @default("piece")  // piece | kg | box | dozen — افتراضي عند عدم وجود variants
-  sizes       String?  @map("sizes")      // أحجام متاحة: صغير,وسط,كبير (للتوافق مع الإصدارات القديمة)
-  packaging   String?  @map("packaging")  // التغليف (للتوافق مع الإصدارات القديمة)
-  lastPrice   Decimal  @default(0) @map("last_price") @db.Decimal(18, 4)  // سعر افتراضي عند عدم وجود variants
-  variants    Json?    @map("variants")   // [{size,packaging,unit,lastPrice},...] — تركيبات متعددة بأسعار
-  sections    Json?    @map("sections")   // ["مطبخ","بار",...] — أسماء للعرض والفلاتر القديمة
-  sectionIds  Json?    @map("section_ids") // ["cuid",...] — مصدر الربط الحقيقي
+  unit        String   @default("piece")  // piece | kg | box | dozen â€” ط§ظپطھط±ط§ط¶ظٹ ط¹ظ†ط¯ ط¹ط¯ظ… ظˆط¬ظˆط¯ variants
+  sizes       String?  @map("sizes")      // ط£ط­ط¬ط§ظ… ظ…طھط§ط­ط©: طµط؛ظٹط±,ظˆط³ط·,ظƒط¨ظٹط± (ظ„ظ„طھظˆط§ظپظ‚ ظ…ط¹ ط§ظ„ط¥طµط¯ط§ط±ط§طھ ط§ظ„ظ‚ط¯ظٹظ…ط©)
+  packaging   String?  @map("packaging")  // ط§ظ„طھط؛ظ„ظٹظپ (ظ„ظ„طھظˆط§ظپظ‚ ظ…ط¹ ط§ظ„ط¥طµط¯ط§ط±ط§طھ ط§ظ„ظ‚ط¯ظٹظ…ط©)
+  lastPrice   Decimal  @default(0) @map("last_price") @db.Decimal(18, 4)  // ط³ط¹ط± ط§ظپطھط±ط§ط¶ظٹ ط¹ظ†ط¯ ط¹ط¯ظ… ظˆط¬ظˆط¯ variants
+  variants    Json?    @map("variants")   // [{size,packaging,unit,lastPrice},...] â€” طھط±ظƒظٹط¨ط§طھ ظ…طھط¹ط¯ط¯ط© ط¨ط£ط³ط¹ط§ط±
+  sections    Json?    @map("sections")   // ["ظ…ط·ط¨ط®","ط¨ط§ط±",...] â€” ط£ط³ظ…ط§ط، ظ„ظ„ط¹ط±ط¶ ظˆط§ظ„ظپظ„ط§طھط± ط§ظ„ظ‚ط¯ظٹظ…ط©
+  sectionIds  Json?    @map("section_ids") // ["cuid",...] â€” ظ…طµط¯ط± ط§ظ„ط±ط¨ط· ط§ظ„ط­ظ‚ظٹظ‚ظٹ
   productType String   @default("order") @map("product_type")  // order | sale
   isActive    Boolean  @default(true) @map("is_active")
   sortOrder   Int      @default(0) @map("sort_order")
@@ -1250,7 +1239,7 @@ model Order {
   orderNumber     String   @map("order_number")   // ORD-20260315-001
   orderDate       DateTime @map("order_date")
   orderType       String   @map("order_type")    // external | internal
-  pettyCashAmount Decimal? @map("petty_cash_amount") @db.Decimal(18, 4)  // للخارجي فقط
+  pettyCashAmount Decimal? @map("petty_cash_amount") @db.Decimal(18, 4)  // ظ„ظ„ط®ط§ط±ط¬ظٹ ظپظ‚ط·
   totalAmount     Decimal  @map("total_amount")  @db.Decimal(18, 4)
   notes               String?
   sourceStaffOrderIds Json?    @map("source_staff_order_ids")
@@ -1273,9 +1262,9 @@ model OrderItem {
   id         String   @id @default(cuid())
   orderId    String   @map("order_id")
   productId  String   @map("product_id")
-  size       String?  @map("size")       // الحجم المختار
-  packaging  String?  @map("packaging")  // التغليف المختار
-  unit       String?  @map("unit")       // الوحدة المختارة (piece|kg|box|dozen)
+  size       String?  @map("size")       // ط§ظ„ط­ط¬ظ… ط§ظ„ظ…ط®طھط§ط±
+  packaging  String?  @map("packaging")  // ط§ظ„طھط؛ظ„ظٹظپ ط§ظ„ظ…ط®طھط§ط±
+  unit       String?  @map("unit")       // ط§ظ„ظˆط­ط¯ط© ط§ظ„ظ…ط®طھط§ط±ط© (piece|kg|box|dozen)
   quantity   Decimal  @db.Decimal(18, 4)
   unitPrice  Decimal  @map("unit_price") @db.Decimal(18, 4)
   amount     Decimal  @db.Decimal(18, 4)
@@ -1288,21 +1277,21 @@ model OrderItem {
   @@map("order_items")
 }
 
-// ══════════════════════════════════════════════════
-// STAFF ORDERS — طلبات الأقسام (مطبخ، بار، ...)
-// موظف يُنشئ الطلب، الكاشير يجمعها ويرسل واتساب موحّد
-// ══════════════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// STAFF ORDERS â€” ط·ظ„ط¨ط§طھ ط§ظ„ط£ظ‚ط³ط§ظ… (ظ…ط·ط¨ط®طŒ ط¨ط§ط±طŒ ...)
+// ظ…ظˆط¸ظپ ظٹظڈظ†ط´ط¦ ط§ظ„ط·ظ„ط¨طŒ ط§ظ„ظƒط§ط´ظٹط± ظٹط¬ظ…ط¹ظ‡ط§ ظˆظٹط±ط³ظ„ ظˆط§طھط³ط§ط¨ ظ…ظˆط­ظ‘ط¯
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
 model StaffOrder {
   id          String    @id @default(cuid())
   tenantId    String    @map("tenant_id")
   companyId   String    @map("company_id")
   userId      String    @map("user_id")
-  sectionName String    @map("section_name")   // مطبخ | بار | كاشير | ...
+  sectionName String    @map("section_name")   // ظ…ط·ط¨ط® | ط¨ط§ط± | ظƒط§ط´ظٹط± | ...
   orderType   String    @default("order") @map("order_type")  // order | sale
   status      String    @default("pending")     // pending | sent
-  logRef      String?   @map("log_ref")         // رقم عملية مختصر للتسجيل الداخلي (L-YYMMDD-NNN)
-  saleDate    DateTime? @map("sale_date") @db.Date  // يوم المبيعات (لـ orderType=sale)
+  logRef      String?   @map("log_ref")         // ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ظ…ط®طھطµط± ظ„ظ„طھط³ط¬ظٹظ„ ط§ظ„ط¯ط§ط®ظ„ظٹ (L-YYMMDD-NNN)
+  saleDate    DateTime? @map("sale_date") @db.Date  // ظٹظˆظ… ط§ظ„ظ…ط¨ظٹط¹ط§طھ (ظ„ظ€ orderType=sale)
   notes            String?
   sentAt           DateTime? @map("sent_at")
   purchaseOrderId  String?   @map("purchase_order_id")
@@ -1342,230 +1331,12 @@ model StaffOrderItem {
   @@map("staff_order_items")
 }
 
-// ══════════════════════════════════════════════════
-// OCR INVOICES — قسم استخراج الفواتير التجريبي
-// معزول تماماً عن باقي النظام بـ ocr_ prefix
-// ══════════════════════════════════════════════════
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 
-model OcrSupplier {
-  id          String   @id @default(cuid())
-  tenantId    String   @map("tenant_id")
-  companyId   String   @map("company_id")
-  nameAr      String   @map("name_ar")
-  nameEn      String?  @map("name_en")
-  taxNumber   String?  @map("tax_number")
-  phone       String?
-  notes       String?
-  /// تصنيف اختياري (مواد غذائية، خدمات، …) للتقارير وتجميع الموردين يدوياً
-  supplierCategory String? @map("supplier_category")
-  /// ربط اختياري بمورد المحاسبة (مورد المشتريات في Noorix) لتسريع الاقتراحات والتقارير
-  accountingSupplierId String?  @map("accounting_supplier_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt      @map("updated_at")
-
-  company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  accountingSupplier   Supplier?            @relation("OcrSupplierAccountingLink", fields: [accountingSupplierId], references: [id], onDelete: SetNull)
-  aliases              OcrSupplierAlias[]
-  invoices             OcrInvoice[]
-  correctionRules      OcrCorrectionRule[]
-  priceHistory         OcrPriceHistory[]
-  extractionLogs       OcrExtractionLog[]
-
-  @@index([tenantId])
-  @@index([tenantId, companyId])
-  @@index([companyId])
-  @@index([accountingSupplierId])
-  @@map("ocr_suppliers")
-}
-
-model OcrSupplierAlias {
-  id         String   @id @default(cuid())
-  supplierId String   @map("supplier_id")
-  alias      String
-  language   String   @default("ar")
-  addedBy    String   @default("support") @map("added_by")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  supplier OcrSupplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@index([supplierId])
-  @@map("ocr_supplier_aliases")
-}
-
-model OcrItem {
-  id        String   @id @default(cuid())
-  tenantId  String   @map("tenant_id")
-  companyId String   @map("company_id")
-  nameAr    String   @map("name_ar")
-  nameEn    String?  @map("name_en")
-  category  String?
-  unitType  String?  @map("unit_type")
-  hasSizes  Boolean  @default(false) @map("has_sizes") // هل لهذا الصنف أحجام متعددة؟
-  notes     String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
-
-  company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  aliases      OcrItemAlias[]
-  lines        OcrInvoiceLine[]
-  priceHistory OcrPriceHistory[]
-
-  @@index([tenantId])
-  @@index([tenantId, companyId])
-  @@index([companyId])
-  @@map("ocr_items")
-}
-
-model OcrItemAlias {
-  id        String   @id @default(cuid())
-  itemId    String   @map("item_id")
-  alias     String
-  language  String   @default("ar")
-  addedBy   String   @default("support") @map("added_by")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  item OcrItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
-
-  @@index([itemId])
-  @@map("ocr_item_aliases")
-}
-
-model OcrInvoice {
-  id            String    @id @default(cuid())
-  tenantId      String    @map("tenant_id")
-  companyId     String    @map("company_id")
-  supplierId    String?   @map("supplier_id")
-  invoiceNumber String?   @map("invoice_number")
-  invoiceDate   DateTime? @map("invoice_date")
-  subtotalAmount Decimal?  @map("subtotal_amount") @db.Decimal(14, 2)
-  totalAmount    Decimal?  @map("total_amount")    @db.Decimal(14, 2)
-  vatAmount      Decimal?  @map("vat_amount")      @db.Decimal(14, 2)
-  imageUrl      String?   @map("image_url")
-  rawExtraction Json?     @map("raw_extraction")
-  /// queued | extracting | pending_review | extraction_failed | pending | confirmed | rejected
-  status        String    @default("pending")
-  notes         String?
-  submittedByUserId       String?  @map("submitted_by_user_id")
-  extractionError         String?  @map("extraction_error") @db.Text
-  linkedPurchaseInvoiceId String?  @map("linked_purchase_invoice_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt      @map("updated_at")
-
-  company                 Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  supplier                OcrSupplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  submittedBy             User?          @relation("OcrInvoiceSubmittedBy", fields: [submittedByUserId], references: [id], onDelete: SetNull)
-  linkedPurchaseInvoice   Invoice?       @relation("OcrInvoiceLinkedPurchase", fields: [linkedPurchaseInvoiceId], references: [id], onDelete: SetNull)
-  lines    OcrInvoiceLine[]
-
-  @@index([tenantId])
-  @@index([tenantId, companyId])
-  @@index([companyId])
-  @@index([supplierId])
-  @@map("ocr_invoices")
-}
-
-model OcrInvoiceLine {
-  id          String   @id @default(cuid())
-  invoiceId   String   @map("invoice_id")
-  itemId      String?  @map("item_id")
-  rawName     String   @map("raw_name")   // الاسم الكامل كما في الفاتورة
-  nameAr      String?  @map("name_ar")    // الجزء العربي من الاسم
-  nameEn      String?  @map("name_en")    // الجزء الإنجليزي من الاسم
-  size        String?                     // الحجم مثل "700" أو "2"
-  sizeUnit    String?  @map("size_unit")  // وحدة الحجم مثل "g" أو "L"
-  quantity    Decimal? @db.Decimal(10, 3)
-  unitPrice   Decimal? @map("unit_price")  @db.Decimal(14, 2)
-  totalPrice  Decimal? @map("total_price") @db.Decimal(14, 2)
-  confidence  Float    @default(0)
-  matchStatus String   @default("pending") @map("match_status") // pending | matched | new | rejected
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  invoice OcrInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  item    OcrItem?   @relation(fields: [itemId],    references: [id], onDelete: SetNull)
-
-  @@index([invoiceId])
-  @@index([itemId])
-  @@map("ocr_invoice_lines")
-}
-
-model OcrPriceHistory {
-  id          String   @id @default(cuid())
-  tenantId    String   @map("tenant_id")
-  companyId   String   @map("company_id")
-  itemId      String   @map("item_id")
-  supplierId  String   @map("supplier_id")
-  price       Decimal  @db.Decimal(14, 2)
-  size        String?                    // الحجم للتتبع المنفصل لكل حجم
-  sizeUnit    String?  @map("size_unit")
-  invoiceDate DateTime @map("invoice_date")
-  invoiceId   String?  @map("invoice_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  item     OcrItem     @relation(fields: [itemId],     references: [id], onDelete: Cascade)
-  supplier OcrSupplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
-  @@index([tenantId, companyId])
-  @@index([companyId])
-  @@index([itemId])
-  @@index([supplierId])
-  @@map("ocr_price_history")
-}
-
-model OcrCorrectionRule {
-  id          String   @id @default(cuid())
-  tenantId    String   @map("tenant_id")
-  companyId   String   @map("company_id")
-  entityType  String   @map("entity_type")  // supplier | item
-  supplierId  String?  @map("supplier_id")  // supplier-scoped (null = global)
-  wrongText   String   @map("wrong_text")
-  correctText String   @map("correct_text")
-  occurrences Int      @default(1)
-  status      String   @default("pending")  // pending | confirmed | rejected
-  expiresAt   DateTime @map("expires_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt      @map("updated_at")
-
-  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  supplier OcrSupplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
-  @@index([tenantId, companyId])
-  @@index([companyId])
-  @@index([supplierId])
-  @@map("ocr_correction_rules")
-}
-
-model OcrExtractionLog {
-  id            String   @id @default(cuid())
-  tenantId      String   @map("tenant_id")
-  companyId     String   @map("company_id")
-  entityType    String   @map("entity_type")  // supplier | item
-  supplierId    String?  @map("supplier_id")
-  extractedText String   @map("extracted_text")
-  normalizedText String? @map("normalized_text")
-  resolvedToId  String?  @map("resolved_to_id")
-  resolvedText  String?  @map("resolved_text")
-  confidence    Float    @default(0)
-  occurrences   Int      @default(1)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt      @map("updated_at")
-
-  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  supplier OcrSupplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
-  @@index([tenantId, companyId])
-  @@index([companyId])
-  @@index([supplierId])
-  @@map("ocr_extraction_logs")
-}
-
-// ══════════════════════════════════════════════════
-// DASHBOARD CALENDAR — أهداف وأيام خاصة وملاحظات
-// يتم حفظها في قاعدة البيانات بدلاً من localStorage
-// ══════════════════════════════════════════════════
+// DASHBOARD CALENDAR â€” ط£ظ‡ط¯ط§ظپ ظˆط£ظٹط§ظ… ط®ط§طµط© ظˆظ…ظ„ط§ط­ط¸ط§طھ
+// ظٹطھظ… ط­ظپط¸ظ‡ط§ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ط¨ط¯ظ„ط§ظ‹ ظ…ظ† localStorage
+// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
 model DashboardCalendarData {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")

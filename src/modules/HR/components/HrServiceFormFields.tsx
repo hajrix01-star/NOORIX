@@ -14,9 +14,32 @@ import {
   visaDurationLabel,
 } from '../constants/employeeHrServiceCategories';
 
+type TFunction = (key: string, ...args: Array<string | number>) => string;
+type StringSetter = (value: string) => void;
+type InputChangeEvent = React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>;
+
+type HrServiceFormFieldsProps = {
+  t: TFunction;
+  lang?: string;
+  serviceCategory: string;
+  companySponsorName?: string;
+  iqamaNumber: string;
+  setIqamaNumber: StringSetter;
+  referenceLabel: string;
+  setReferenceLabel: StringSetter;
+  visaDurationMonths: string | number | null | undefined;
+  setVisaDurationMonths: StringSetter;
+  issueDate: string;
+  setIssueDate: StringSetter;
+  expiryDate: string;
+  setExpiryDate: StringSetter;
+  transactionDate: string;
+  setTransactionDate: StringSetter;
+  showIqama?: boolean;
+};
+
 export function HrServiceFormFields({
   t,
-  lang,
   serviceCategory,
   companySponsorName,
   iqamaNumber,
@@ -32,7 +55,7 @@ export function HrServiceFormFields({
   transactionDate,
   setTransactionDate,
   showIqama,
-}) {
+}: HrServiceFormFieldsProps) {
   const sponsorIsCompany = usesCompanyAsSponsor(serviceCategory);
   const showExpiry = requiresExpiryDate(serviceCategory);
   const showIssue = showsIssueDate(serviceCategory);
@@ -46,7 +69,7 @@ export function HrServiceFormFields({
         <Input
           label={t('iqamaNumber')}
           value={iqamaNumber}
-          onChange={(e) => setIqamaNumber(e.target.value)}
+          onChange={(e: InputChangeEvent) => setIqamaNumber(e.target.value)}
           required
           placeholder="1234567890"
         />
@@ -65,7 +88,7 @@ export function HrServiceFormFields({
           type="select"
           label={t('hrServiceVisaDurationMonths')}
           value={visaDurationMonths}
-          onChange={(e) => setVisaDurationMonths(e.target.value)}
+          onChange={(e: InputChangeEvent) => setVisaDurationMonths(e.target.value)}
           required
         >
           <option value="">{t('hrServiceVisaDurationSelect')}</option>
@@ -79,7 +102,7 @@ export function HrServiceFormFields({
         <Input
           label={t(refLabelKey)}
           value={referenceLabel}
-          onChange={(e) => setReferenceLabel(e.target.value)}
+          onChange={(e: InputChangeEvent) => setReferenceLabel(e.target.value)}
           placeholder={t(refLabelKey)}
         />
       )}
@@ -88,7 +111,7 @@ export function HrServiceFormFields({
         type="date"
         label={t('hrServiceTransactionDate')}
         value={transactionDate}
-        onChange={(e) => setTransactionDate(e.target.value)}
+        onChange={(e: InputChangeEvent) => setTransactionDate(e.target.value)}
         lang="en"
       />
 
@@ -97,7 +120,7 @@ export function HrServiceFormFields({
           type="date"
           label={t('startDate')}
           value={issueDate}
-          onChange={(e) => setIssueDate(e.target.value)}
+          onChange={(e: InputChangeEvent) => setIssueDate(e.target.value)}
           lang="en"
         />
       )}
@@ -107,7 +130,7 @@ export function HrServiceFormFields({
           type="date"
           label={t('expiryDate')}
           value={expiryDate}
-          onChange={(e) => setExpiryDate(e.target.value)}
+          onChange={(e: InputChangeEvent) => setExpiryDate(e.target.value)}
           required
           lang="en"
         />
