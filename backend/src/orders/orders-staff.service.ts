@@ -18,49 +18,9 @@ import {
 } from './orders-staff-amount.util';
 import { buildSalesWhatsAppTextCombined, buildStaffPurchaseWhatsAppText } from './orders-staff-whatsapp.util';
 import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
-import { toYmd } from '../common/utils/to-ymd.util';
-
-export interface StaffOrderItemInput {
-  productId: string;
-  quantity: string;
-  unit?: string;
-  size?: string;
-  packaging?: string;
-  unitPrice?: string;
-  notes?: string;
-  /** قسم الصنف — يُستنتج من تعريف المنتج إن لم يُمرَّر */
-  sectionName?: string;
-}
-
-export type SendStaffDigestOptions = {
-  lang?: 'ar' | 'en';
-  orderType?: 'external' | 'internal';
-  pettyCashAmount?: string;
-  orderDate?: string;
-  createPurchaseOrder?: boolean;
-};
-
-export interface CreateStaffOrderDto {
-  companyId: string;
-  /** اختياري — إن لم يُمرَّر يُجزَّأ الطلب حسب أقسام الأصناف */
-  sectionName?: string;
-  orderType?: string;  // 'order' | 'sale'
-  /** YYYY-MM-DD — يوم المبيعات (تبويبة المبيعات) */
-  saleDate?: string;
-  notes?: string;
-  items: StaffOrderItemInput[];
-  lang?: 'ar' | 'en';
-}
-
-function parseSaleDateYmd(ymd: string): Date {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd ?? '').trim());
-  if (!m) throw new BadRequestException('تاريخ المبيعات غير صالح');
-  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-}
-
-function staffOrderDayKey(o: { saleDate?: Date | null; createdAt: Date }): string {
-  return toYmd(o.saleDate ?? o.createdAt);
-}
+import { parseSaleDateYmd, staffOrderDayKey } from './orders-staff-date.util';
+import { resolveProductSection } from './orders-staff-sections.util';
+import { CreateStaffOrderDto, SendStaffDigestOptions, StaffOrderItemInput } from './orders-staff.types';
 
 @Injectable()
 export class OrdersStaffService {
@@ -68,12 +28,6 @@ export class OrdersStaffService {
     private readonly prisma: TenantPrismaService,
     private readonly ordersService: OrdersService,
   ) {}
-
-  private resolveProductSection(product: { sections?: unknown } | null | undefined): string {
-    const secs = product?.sections as string[] | null;
-    if (Array.isArray(secs) && secs.length > 0) return secs[0];
-    return 'عام';
-  }
 
   private async countStaffSaleOperationsForDay(companyId: string, saleDate: Date): Promise<number> {
     const prefix = staffSaleLogRefPrefix(saleDate);
@@ -119,7 +73,7 @@ export class OrdersStaffService {
 
     for (const it of items) {
       const fromItem = it.sectionName?.trim();
-      const fromProduct = this.resolveProductSection(productMap.get(it.productId));
+      const fromProduct = resolveProductSection(productMap.get(it.productId));
       const sec = fromItem || fromProduct;
       if (!groups.has(sec)) groups.set(sec, []);
       groups.get(sec)!.push(it);

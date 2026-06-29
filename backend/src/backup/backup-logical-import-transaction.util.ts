@@ -1,4 +1,4 @@
-import { BadRequestException, Logger } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
   importSnapshotArr as arr,
@@ -7,19 +7,9 @@ import {
 } from './backup-logical-import-helpers.util';
 import { verifyImportedCompanyVaultAllocations } from './backup-logical-import-verify-allocations.util';
 import { computeSupplierInvoiceDedupKeyForInvoiceRow } from '../invoice/invoice-supplier-invoice-dedup.util';
-
-export type BackupLogicalImportTxParams = {
-  tenantId: string;
-  newCompanyId: string;
-  data: Record<string, unknown>;
-  nameAr: string;
-  resolvedNameEn: string | null;
-  importingUserId: string;
-  co: Record<string, unknown>;
-  strictAlloc: boolean;
-  logger: Logger;
-  nid: () => string;
-};
+import { createImportedCompany } from './backup-logical-import-company.util';
+import { mapImportedLedgerRef } from './backup-logical-import-ledger-ref.util';
+import { BackupLogicalImportTxParams } from './backup-logical-import-transaction.types';
 
 /**
  * جسم الاستيراد المنطقي داخل transaction — نفس التسلسل والخرائط.
@@ -30,23 +20,7 @@ export async function runBackupLogicalImportInTransaction(
 ): Promise<string[]> {
   const { tenantId, newCompanyId, data, nameAr, resolvedNameEn, importingUserId, co, strictAlloc, logger, nid } = p;
   let allocationWarnings: string[] = [];
-        await tx.company.create({
-          data: {
-            id: newCompanyId,
-            tenantId,
-            nameAr,
-            nameEn: resolvedNameEn,
-            logoUrl: (co.logoUrl as string | null) ?? null,
-            phone: (co.phone as string | null) ?? null,
-            address: (co.address as string | null) ?? null,
-            taxNumber: (co.taxNumber as string | null) ?? null,
-            email: (co.email as string | null) ?? null,
-            isArchived: false,
-            vatEnabledForSales: Boolean(co.vatEnabledForSales),
-            vatRatePercent: dec(co.vatRatePercent ?? 15),
-            salesShiftsEnabled: Boolean(co.salesShiftsEnabled),
-          },
-        });
+        await createImportedCompany(tx, { tenantId, newCompanyId, nameAr, resolvedNameEn, co });
 
         const accountMap = new Map<string, string>();
         for (const a of arr<Record<string, unknown>>(data.accounts)) {
@@ -615,16 +589,6 @@ export async function runBackupLogicalImportInTransaction(
           });
         }
 
-        const mapLedgerRef = (type: string, refId: string): string => {
-          if (['invoice', 'salary', 'advance'].includes(type)) {
-            return invoiceMap.get(refId) ?? refId;
-          }
-          if (type === 'sale') {
-            return dailySalesSummaryMap.get(refId) ?? refId;
-          }
-          return refId;
-        };
-
         // استثناء مقصود: استيراد لقطة منطقية — إعادة قيود من النسخة الاحتياطية (لا يمر بـ processOutflow/processInflow).
         for (const le of arr<Record<string, unknown>>(data.ledgerEntries)) {
           const da = accountMap.get(String(le.debitAccountId));
@@ -633,7 +597,7 @@ export async function runBackupLogicalImportInTransaction(
           const vid = le.vaultId ? vaultMap.get(String(le.vaultId)) : undefined;
           const eid = le.employeeId ? employeeMap.get(String(le.employeeId)) : undefined;
           const refType = String(le.referenceType);
-          const refId = mapLedgerRef(refType, String(le.referenceId));
+          const refId = mapImportedLedgerRef(refType, String(le.referenceId), { invoiceMap, dailySalesSummaryMap });
           await tx.ledgerEntry.create({
             data: {
               id: nid(),

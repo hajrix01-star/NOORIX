@@ -27,11 +27,10 @@ import {
   getEmployeesBulk,
   throwIfApiFailed,
 } from '../../services/api';
-import { Badge, Button, Input, Modal, ScreenShell, cn, FmtNum, KebabMenu, SmartTable } from '../../ui';
+import { Badge, Button, Input, ScreenShell, FmtNum, SmartTable } from '../../ui';
 import { HRActionsCell } from './components/HRActionsCell';
-import { StaffFormModal } from './components/StaffFormModal';
-import { AdvanceQuickModal } from './components/AdvanceQuickModal';
-import TerminationSettlementModal from './components/TerminationSettlementModal';
+import { StaffListMobileRow } from './components/StaffListMobileRow';
+import { StaffListModals } from './components/StaffListModals';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
 import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
@@ -67,14 +66,6 @@ export default function StaffListScreen({ embedded }: any) {
   const [showImportExport, setShowImportExport] = useState(false);
   /** After termination wizard — optional settlement invoice modal */
   const [terminationSettlementEmp, setTerminationSettlementEmp] = useState<any>(null);
-  const terminationReasonOptions = [
-    t('terminationReasonOptionArt80'),
-    t('terminationReasonOptionArt77'),
-    t('terminationReasonOptionContractEnd'),
-    t('terminationReasonOptionResignation'),
-    t('terminationReasonOptionAbsence'),
-  ];
-
   const employeeViewModeItems = useMemo(
     () =>
       (
@@ -485,56 +476,16 @@ export default function StaffListScreen({ embedded }: any) {
       setEditingEmployee, setAdvanceEmployee, setTerminatingEmployee, setTerminationForm]);
 
   const renderStaffMobileRow = useCallback((row: any) => {
-    const displayName = employeeDisplayName(row, lang);
     return (
-      <div
-        className={cn(
-          'nx-hr-staff-row__inner flex min-w-0 items-start justify-between gap-3',
-        )}
-        onClick={() => navigate(`/hr/employee/${row.id}`)}
-        style={{ cursor: 'pointer' }}
-      >
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span
-            className="font-bold text-[14px] text-noorix-blue truncate"
-            title={displayName}
-          >
-            {displayName}
-          </span>
-          <span className="text-[11px] text-noorix-muted">
-            {formatSaudiDate(row.joinDate)}
-          </span>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1 min-w-0">
-          <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
-            {row.jobTitle && (
-              <span className="max-w-[11rem] truncate text-[12px] text-noorix-muted sm:max-w-[9.5rem]" title={row.jobTitle}>
-                {row.jobTitle}
-              </span>
-            )}
-            <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="nx-cr__amount text-noorix-green">
-              {Number.isFinite(Number(row.totalSalary)) ? (
-                <>
-                  <FmtNum n={Number(row.totalSalary)} /> <span className="nx-sar">SR</span>
-                </>
-              ) : (
-                <span className="nx-cell-muted">—</span>
-              )}
-            </span>
-            <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
-              <KebabMenu
-                ariaLabel={t('actions')}
-                items={renderStaffRowMenuItems(row)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <StaffListMobileRow
+        row={row}
+        lang={lang}
+        t={t}
+        statusMap={STATUS_MAP}
+        renderMenuItems={renderStaffRowMenuItems}
+      />
     );
-  }, [STATUS_MAP, t, lang, navigate, renderStaffRowMenuItems, embedded]);
+  }, [STATUS_MAP, t, lang, renderStaffRowMenuItems]);
 
   const renderCompactRow = useCallback((row: any) => renderStaffMobileRow(row), [renderStaffMobileRow]);
 
@@ -659,131 +610,29 @@ export default function StaffListScreen({ embedded }: any) {
   ) : null;
 
   const staffModals = (
-    <>
-      {showForm && (
-        <StaffFormModal
-          employee={null}
-          companyId={companyId}
-          onSave={handleSave}
-          onClose={() => setShowForm(false)}
-          isSaving={create.isPending}
-        />
-      )}
-
-      {editingEmployee && !showForm && (
-        <StaffFormModal
-          employee={editingEmployee}
-          companyId={companyId}
-          onSave={handleSave}
-          onClose={() => setEditingEmployee(null)}
-          isSaving={update.isPending}
-        />
-      )}
-
-      {advanceEmployee && (
-        <AdvanceQuickModal
-          employee={advanceEmployee}
-          companyId={companyId}
-          createAdvance={createAdvance}
-          onSuccess={() => {
-            invalidateOnFinancialMutation(queryClient);
-            showToast(t('advancePaid'), 'success');
-          }}
-          onClose={() => setAdvanceEmployee(null)}
-        />
-      )}
-      {terminationSettlementEmp && (
-        <TerminationSettlementModal
-          open
-          employee={terminationSettlementEmp}
-          companyId={companyId}
-          companyName={companyNameAr}
-          onClose={() => setTerminationSettlementEmp(null)}
-        />
-      )}
-
-      <Modal
-        open={!!terminatingEmployee}
-        onClose={() => setTerminatingEmployee(null)}
-        title={t('terminateEmployee')}
-        size="md"
-        variant="danger"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setTerminatingEmployee(null)}>{t('cancel')}</Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                if (!terminationForm.reason?.trim()) {
-                  showToast(t('terminationReasonPlaceholder'), 'error');
-                  return;
-                }
-                const parsed = parseEmployeeNotesMeta(terminatingEmployee.notes);
-                const meta = {
-                  ...(parsed.meta || {}),
-                  terminationReason: terminationForm.reason?.trim() || '',
-                  terminationClause: terminationForm.clause?.trim() || '',
-                  terminationDate: terminationForm.date || getSaudiToday(),
-                };
-                const composedNotes = composeEmployeeNotes(parsed.notesText, meta);
-                update.mutate(
-                  { id: terminatingEmployee.id, body: { status: 'terminated', notes: composedNotes } },
-                  {
-                    onSuccess: () => {
-                      showToast(t('employeeTerminated'), 'success');
-                      setTerminationSettlementEmp({
-                        ...terminatingEmployee,
-                        status: 'terminated',
-                        notes: composedNotes,
-                      });
-                      setTerminatingEmployee(null);
-                    },
-                    onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
-                  },
-                );
-              }}
-            >
-              {t('terminateEmployee')}
-            </Button>
-          </>
-        }
-      >
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-          <Input
-            type="select"
-            label={t('terminationReason')}
-            hint={t('terminationReasonExamples')}
-            value={terminationForm.reason}
-            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, reason: e.target.value }))}
-          >
-            <option value="">{t('terminationReasonPlaceholder')}</option>
-            {terminationReasonOptions.map((opt: any) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </Input>
-
-          <Input
-            type="select"
-            label={t('terminationClause')}
-            value={terminationForm.clause}
-            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, clause: e.target.value }))}
-          >
-            <option value="">{t('terminationClausePlaceholder')}</option>
-            <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
-            <option value={t('terminationClauseArt77')}>{t('terminationClauseArt77')}</option>
-            <option value={t('terminationClauseArt74')}>{t('terminationClauseArt74')}</option>
-            <option value={t('terminationClauseArt81')}>{t('terminationClauseArt81')}</option>
-          </Input>
-
-          <Input
-            type="date"
-            label={t('terminationDate')}
-            value={terminationForm.date}
-            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, date: e.target.value }))}
-          />
-        </div>
-      </Modal>
-    </>
+    <StaffListModals
+      t={t}
+      companyId={companyId}
+      companyName={companyNameAr}
+      showForm={showForm}
+      setShowForm={setShowForm}
+      editingEmployee={editingEmployee}
+      setEditingEmployee={setEditingEmployee}
+      advanceEmployee={advanceEmployee}
+      setAdvanceEmployee={setAdvanceEmployee}
+      terminatingEmployee={terminatingEmployee}
+      setTerminatingEmployee={setTerminatingEmployee}
+      terminationSettlementEmp={terminationSettlementEmp}
+      setTerminationSettlementEmp={setTerminationSettlementEmp}
+      terminationForm={terminationForm}
+      setTerminationForm={setTerminationForm}
+      handleSave={handleSave}
+      create={create}
+      update={update}
+      createAdvance={createAdvance}
+      queryClient={queryClient}
+      showToast={showToast}
+    />
   );
 
   const shell = (
