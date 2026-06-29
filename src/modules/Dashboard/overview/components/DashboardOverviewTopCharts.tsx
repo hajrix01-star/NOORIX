@@ -37,12 +37,16 @@ export function DashboardOverviewTopCharts({
   periodPurchaseTotal,
 }: Props) {
   const { t } = useTranslation();
+  const operationalLabel = lang === 'ar' ? 'تحليل تشغيلي' : 'Operational analysis';
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
       <div className="noorix-surface-card p-4 lg:p-5">
-        <div className="text-[14px] font-bold text-noorix-text mb-0.5 max-lg:text-center lg:text-start">
-          {t('periodAnalyticsTopSuppliers')}
+        <div className="mb-0.5 flex flex-wrap items-center gap-2 max-lg:justify-center lg:justify-start">
+          <span className="text-[14px] font-bold text-noorix-text">{t('periodAnalyticsTopSuppliers')}</span>
+          <span className="rounded-full bg-noorix-bg-muted px-2 py-0.5 text-[11px] font-semibold text-noorix-muted">
+            {operationalLabel}
+          </span>
         </div>
         <div className="text-[12px] text-noorix-muted mb-4 max-lg:text-center lg:text-start">
           {supplierFrom} — {supplierTo}
@@ -142,8 +146,13 @@ export function DashboardOverviewTopCharts({
       </div>
 
       <div className="noorix-surface-card p-4 lg:p-5 flex flex-col max-lg:items-center">
-        <div className="text-[14px] font-bold text-noorix-text mb-0.5 w-full max-lg:text-center lg:text-start">
-          {selectedMonth != null ? t('dashboardPurchasesByCategoryTitleMonth') : t('dashboardPurchasesByCategoryTitlePeriod')}
+        <div className="mb-0.5 flex w-full flex-wrap items-center gap-2 max-lg:justify-center lg:justify-start">
+          <span className="text-[14px] font-bold text-noorix-text">
+            {selectedMonth != null ? t('dashboardPurchasesByCategoryTitleMonth') : t('dashboardPurchasesByCategoryTitlePeriod')}
+          </span>
+          <span className="rounded-full bg-noorix-bg-muted px-2 py-0.5 text-[11px] font-semibold text-noorix-muted">
+            {operationalLabel}
+          </span>
         </div>
         <div className="text-[12px] text-noorix-muted mb-1 w-full max-lg:text-center lg:text-start">
           {supplierFrom} — {supplierTo}

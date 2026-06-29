@@ -118,7 +118,7 @@ export function ItemsReportTab({
   endDate?: string;
   dateFilter: any;
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const [filterMode, setFilterMode] = useState('all'); // all | top | bottom
   const [filterCount, setFilterCount] = useState(10);
@@ -140,6 +140,7 @@ export function ItemsReportTab({
   }, [filtered]);
 
   const maxAmount = useMemo(() => Math.max(...filtered.map((r: any) => Number(r.amount ?? 0)), 1), [filtered]);
+  const currentFilterLabel = lang === 'ar' ? 'حسب الفلتر الحالي' : 'Current filter';
 
   const handleExportExcel = async () => {
     try {
@@ -208,15 +209,15 @@ export function ItemsReportTab({
       {/* كروت الإجمالي — MetricCard الموحّد */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <MetricCard color="var(--color-nx-purchases)">
-          <MetricCard.Header label={t('ordersTotalItems')} />
+          <MetricCard.Header label={t('ordersTotalItems')} subLabel={currentFilterLabel} />
           <MetricCard.Value value={filtered.length} />
         </MetricCard>
         <MetricCard color="var(--color-nx-sales)">
-          <MetricCard.Header label={t('ordersTotalQuantity')} />
+          <MetricCard.Header label={t('ordersTotalQuantity')} subLabel={currentFilterLabel} />
           <MetricCard.Value value={fmt(totals.quantity, 0)} color="var(--color-nx-sales)" />
         </MetricCard>
         <MetricCard color="var(--color-nx-profit)">
-          <MetricCard.Header label={t('ordersTotalAmount')} />
+          <MetricCard.Header label={t('ordersTotalAmount')} subLabel={currentFilterLabel} />
           <MetricCard.Value value={totals.amount} currency="SR" color="var(--color-nx-profit)" />
         </MetricCard>
       </div>

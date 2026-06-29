@@ -45,6 +45,9 @@ export function BankAnalysisCategoryPieCard({
         : pieGrandTotals.totalCredit;
 
   const modes: PieDisplayMode[] = ['combined', 'debit', 'credit'];
+  const displayedShareLabel = t('bankPieDisplayedShare') === 'bankPieDisplayedShare'
+    ? 'النسبة من المعروض'
+    : t('bankPieDisplayedShare');
 
   return (
     <BankAnalysisCardShell
@@ -67,7 +70,10 @@ export function BankAnalysisCategoryPieCard({
           </Button>
         ))}
       </div>
-      <p className="text-[12px] text-noorix-muted m-0 mb-3.5 nx-line-145">{t('bankPieLegendHint')}</p>
+      <p className="text-[12px] text-noorix-muted m-0 mb-3.5 nx-line-145">
+        {t('bankPieLegendHint')}{' '}
+        <span className="font-semibold text-noorix-text">({displayedShareLabel} · Top 10)</span>
+      </p>
       <div className="flex flex-wrap gap-6 items-stretch">
         <div className="nx-pie-chart-wrap">
           {pieDisplayData.length > 0 ? (
@@ -139,7 +145,10 @@ export function BankAnalysisCategoryPieCard({
           )}
         </div>
         <div className="flex flex-col nx-pie-legend-aside">
-          <div className="text-[12px] font-bold text-noorix-muted mb-2.5">{t('bankPieCategoryKey')}</div>
+          <div className="mb-2.5 flex items-center justify-between gap-2 text-[12px] font-bold text-noorix-muted">
+            <span>{t('bankPieCategoryKey')}</span>
+            <span className="text-[11px] font-semibold text-noorix-muted">{displayedShareLabel}</span>
+          </div>
           <div className="rounded-xl p-3 bg-noorix-bg-muted flex-1 min-w-0 grid gap-2 border border-noorix-border">
             {pieDisplayData.length === 0 ? (
               <span className="text-[12px] text-noorix-muted text-center p-3">{t('bankNoCategoryData')}</span>
