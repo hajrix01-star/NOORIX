@@ -1,21 +1,16 @@
-/**
- * useOwnerReports — جلب تقارير ربح وخسارة لعدة شركات (لوحة المالك)
- */
-import { useQueries } from '@tanstack/react-query';
-import { getGeneralProfitLossReport, throwIfApiFailed } from '../services/api';
+import { getGeneralProfitLossReport } from '../services/api';
 import { ownerKeys } from '../services/queryKeys/owner';
+import { useApiQueries } from './useApiQuery';
 
 export function useOwnerReports({ companyIds, year }: { companyIds: string[]; year: number }) {
   const ids = companyIds || [];
-  const queries = useQueries({
+  const queries = useApiQueries({
     queries: ids.map((companyId) => ({
       queryKey: ownerKeys.reports(companyId, year),
-      queryFn: async () => {
-        const res = await getGeneralProfitLossReport(companyId, year);
-        throwIfApiFailed(res, 'Failed to load report');
-        return { companyId, data: res.data };
-      },
+      queryFn: () => getGeneralProfitLossReport(companyId, year),
+      fallbackMessage: 'Failed to load report',
       enabled: !!companyId && !!year,
+      select: (data: unknown) => ({ companyId, data }),
     })),
   });
 
