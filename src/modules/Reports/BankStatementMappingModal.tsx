@@ -6,7 +6,7 @@
  * - دمج الملاحظات مع الوصف تلقائياً عند وجود عمود ملاحظات (كما في applyTemplate بالقديم)
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementConfirmMapping, bankStatementGet, bankStatementSuggestHeaderMetadata } from '../../services/api';
 import { Button, AdaptiveSheet, Input } from '../../ui';
@@ -60,13 +60,14 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     headerAiFetchedRef.current = null;
   }, [statement?.id]);
 
-  const { data: fetched } = useQuery({
+  const { data: fetched } = useApiQuery<any>({
     queryKey: bankKeys.statementMapping(companyId, statement?.id),
     queryFn: () => bankStatementGet(companyId, statement.id),
     enabled: !!statement?.id && !!companyId && !hasFullRaw,
+    fallbackMessage: t('apiRequestFailed'),
   });
 
-  const resolvedStatement = hasFullRaw ? statement : (fetched?.data ?? fetched ?? statement);
+  const resolvedStatement = hasFullRaw ? statement : (fetched ?? statement);
   const raw = useMemo(() => {
     if (hasFullRaw && Array.isArray(statement._fullRaw)) return statement._fullRaw;
     const rd = resolvedStatement?.rawData;

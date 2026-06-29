@@ -1,8 +1,9 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { hasPermission, PERMISSIONS } from '../../constants/permissions';
@@ -184,13 +185,11 @@ export function useInvoicesListScreen() {
   );
 
   const { suppliers } = useSuppliers(companyId);
-  const { data: creatorFilterOptions = { users: [] } } = useQuery({
+  const { data: creatorFilterOptions = { users: [] } } = useApiQuery<{ users: any[] }>({
     queryKey: invoiceKeys.creatorFilterOptions(companyId),
-    queryFn: async () => {
-      const res = await getInvoiceCreatorFilterOptions(companyId);
-      return res.success ? { users: res.users } : { users: [] };
-    },
+    queryFn: () => getInvoiceCreatorFilterOptions(companyId),
     enabled: !!companyId,
+    fallbackMessage: t('loadingError'),
   });
   const creatorUsersForFilter = creatorFilterOptions.users || [];
   const { vaultsList = [], paymentVaults = [] } = useVaults({ companyId });

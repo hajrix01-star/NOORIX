@@ -3,9 +3,10 @@
  * (قيد transfer في الدفتر؛ بدون فاتورة؛ بدون أثر على P&L)
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { createVaultTransfer, getVaults, throwIfApiFailed } from '../../../services/api';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
+import { createVaultTransfer, getVaults } from '../../../services/api';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { vaultKeys } from '../../../services/queryKeys';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -25,15 +26,11 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
    * جلب الخزائن بدون فلتر تاريخ حتى يعكس الرصيد المعروض الرصيد الكلي التراكمي.
    * التحويل لا يُرفض لنقص الرصيد (سياسة مقصودة — يُسمح بالرصيد السالب في الدفتر).
    */
-  const { data: rawVaults = [], isLoading: vaultsLoading } = useQuery({
+  const { data: rawVaults = [], isLoading: vaultsLoading } = useApiListQuery<any>({
     queryKey: vaultKeys.list(companyId, false, '', ''),
-    queryFn: async () => {
-      const res = await getVaults(companyId, false, undefined, undefined);
-      throwIfApiFailed(res, t('loadMovementsFailed'));
-      const d = res.data;
-      return Array.isArray(d) ? d : (d?.items ?? []);
-    },
+    queryFn: () => getVaults(companyId, false, undefined, undefined),
     enabled: !!companyId,
+    fallbackMessage: t('loadMovementsFailed'),
   });
 
   const selectableVaults = useMemo(

@@ -254,12 +254,12 @@ export async function getInvoiceDayCloseReport(companyId: string, date: unknown)
 /** مستخدمو النظام الذين لهم فواتير في الشركة — فلتر قائمة الفواتير */
 export async function getInvoiceCreatorFilterOptions(
   companyId: string,
-): Promise<{ success: boolean; users: unknown[] }> {
+): Promise<ApiParsedResult<{ users: unknown[] }>> {
   const res = await apiGet('/api/v1/invoices/creator-filter-options', { companyId });
-  if (!res.success) return { success: false, users: [] };
+  if (!res.success) return res;
   const raw = (res.data as { data?: unknown; users?: unknown } | undefined)?.data ?? res.data;
   const r = raw as { users?: unknown[] } | null;
-  return { success: true, users: Array.isArray(r?.users) ? r.users : [] };
+  return { success: true, data: { users: Array.isArray(r?.users) ? r.users : [] } };
 }
 
 /** جلب كل فواتير دفعة واحدة (ترقيم متتابع) — للطباعة/التعديل/الإلغاء */

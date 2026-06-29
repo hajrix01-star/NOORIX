@@ -2,8 +2,9 @@
  * النسخ الاحتياطي — لقطة منطقية لكل شركة، سجل، تقرير استرجاع، إعادة رفع خارجي
  */
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
   backupTriggerCompany,
@@ -76,30 +77,47 @@ export default function BackupTab({ activeCompanies = [] }: any) {
   const systemArchiveFileRef = React.useRef<any>(null);
   const restoreFromPcFileRef = React.useRef<any>(null);
 
-  const { data: jobsRes, isLoading } = useQuery({
+  const { data: jobsData = [], isLoading, isError: jobsIsError, error: jobsError } = useApiListQuery<any>({
     queryKey: settingsKeys.backupJobs(),
-    queryFn: async () => backupListJobs(50),
+    queryFn: () => backupListJobs(50),
     refetchInterval: 15_000,
+    fallbackMessage: t('backupError'),
   });
 
-  const { data: sysCfgRes } = useQuery({
+  const { data: sysCfgData, isError: sysCfgIsError, error: sysCfgError } = useApiQuery<any>({
     queryKey: settingsKeys.backupSystemConfig(),
     queryFn: () => backupGetSystemConfig(),
     enabled: canSystemBackup,
+    fallbackMessage: t('backupError'),
   });
 
-  const { data: sysJobsRes, isLoading: sysJobsLoading } = useQuery({
+  const { data: sysJobsData = [], isLoading: sysJobsLoading, isError: sysJobsIsError, error: sysJobsError } = useApiListQuery<any>({
     queryKey: settingsKeys.backupSystemJobs(),
     queryFn: () => backupListSystemJobs(15),
     enabled: canSystemBackup,
     refetchInterval: 20_000,
+    fallbackMessage: t('backupError'),
   });
 
-  const { data: coCfgRes } = useQuery({
+  const { data: coCfgData, isError: coCfgIsError, error: coCfgError } = useApiQuery<any>({
     queryKey: settingsKeys.backupCompanyConfig(companyId),
     queryFn: () => backupGetCompanyConfig(companyId),
     enabled: !!companyId,
+    fallbackMessage: t('backupError'),
   });
+
+  const jobsRes = jobsIsError
+    ? { success: false, error: jobsError?.message || t('backupError') }
+    : { success: true, data: jobsData };
+  const sysCfgRes = sysCfgIsError
+    ? { success: false, error: sysCfgError?.message || t('backupError') }
+    : (sysCfgData ? { success: true, data: sysCfgData } : undefined);
+  const sysJobsRes = sysJobsIsError
+    ? { success: false, error: sysJobsError?.message || t('backupError') }
+    : { success: true, data: sysJobsData };
+  const coCfgRes = coCfgIsError
+    ? { success: false, error: coCfgError?.message || t('backupError') }
+    : (coCfgData ? { success: true, data: coCfgData } : undefined);
 
   React.useEffect(() => {
     if (!sysCfgRes?.success || !sysCfgRes.data) return;

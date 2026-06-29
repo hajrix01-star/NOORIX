@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiListQuery } from '../../hooks/useApiQuery';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useUpsertVatPlanning, useVatPlanningList, useVatPlanningRegistry } from '../../hooks/useVatPlanning';
@@ -99,17 +100,11 @@ export function useHajriTaxScreen() {
   const { data: registryAllRows = [] } = useVatPlanningRegistry(registryUnfilteredFilters, !detailCompanyId);
 
   /** شركات نشطة فقط — للفلتر؛ الإقرارات المؤرشفة لا تُدرَج كخيار شركة */
-  const { data: companiesActiveForFilter = [] } = useQuery({
+  const { data: companiesActiveForFilter = [] } = useApiListQuery<any>({
     queryKey: appKeys.companies(false),
-    queryFn: async () => {
-      try {
-        const r = await getCompanies(false);
-        return r?.success && Array.isArray(r.data) ? r.data : [];
-      } catch {
-        return [];
-      }
-    },
+    queryFn: () => getCompanies(false),
     staleTime: 60_000,
+    fallbackMessage: t('loadingError'),
   });
 
   /** قائمة الشركات للفلتر: نشطة من API ثم إضافة من السجل فقط إن لم تكن مؤرشفة */

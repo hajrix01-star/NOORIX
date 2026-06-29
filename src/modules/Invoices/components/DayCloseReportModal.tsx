@@ -2,7 +2,7 @@
  * تقرير نهاية اليوم — جداول موحّدة + طباعة نظيفة (بدون قوالب التطبيق)
  */
 import React, { useMemo, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport, throwIfApiFailed } from '../../../services/api';
@@ -39,15 +39,12 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
     return () => { document.body.style.overflow = prev; };
   }, [isOpen]);
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+  const { data, isLoading, isError, error, refetch, isFetching } = useApiQuery<any>({
     queryKey: invoiceKeys.dayClose(companyId, dateStr),
-    queryFn: async () => {
-      const res = await getInvoiceDayCloseReport(companyId, dateStr);
-      throwIfApiFailed(res, t('dayCloseLoadFailed'));
-      return res.data;
-    },
+    queryFn: () => getInvoiceDayCloseReport(companyId, dateStr),
     enabled: Boolean(isOpen && companyId && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)),
     staleTime: 30_000,
+    fallbackMessage: t('dayCloseLoadFailed'),
   });
 
   const kindLabel = useMemo(() => ({

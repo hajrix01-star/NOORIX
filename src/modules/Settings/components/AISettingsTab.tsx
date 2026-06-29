@@ -3,8 +3,9 @@
  * عرض حالة الاتصال، التشخيص، وزر الفحص الاحترافي
  */
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getHealth, testGemini } from '../../../services/api';
 import { Button } from '../../../ui';
@@ -18,15 +19,12 @@ export default function AISettingsTab() {
   const queryClient = useQueryClient();
   const [lastTestResult, setLastTestResult] = useState<any>(null);
 
-  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth } = useQuery({
+  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth, isError: healthIsError, error: healthError } = useApiQuery<any>({
     queryKey: settingsKeys.healthAiSettings(),
-    queryFn: async () => {
-      const res = await getHealth();
-      if (!res.success) return { error: res.error, isNetworkError: res.isNetworkError };
-      return res.data;
-    },
+    queryFn: () => getHealth(),
     refetchInterval: 60000,
     staleTime: 30000,
+    fallbackMessage: lang === 'ar' ? 'فشل فحص الاتصال' : 'Health check failed',
   });
 
   const testMutation = useApiMutation({
@@ -42,8 +40,11 @@ export default function AISettingsTab() {
     },
   });
 
-  const isOnline = healthData && !healthData.error && !healthData.isNetworkError;
-  const geminiAvailable = !!healthData?.geminiAvailable;
+  const visibleHealthData = healthIsError
+    ? { error: healthError?.message, isNetworkError: true }
+    : healthData;
+  const isOnline = visibleHealthData && !visibleHealthData.error && !visibleHealthData.isNetworkError;
+  const geminiAvailable = !!visibleHealthData?.geminiAvailable;
   const status = isOnline ? STATUS_ONLINE : STATUS_OFFLINE;
 
   const handleTest = () => {
@@ -126,7 +127,7 @@ export default function AISettingsTab() {
         <div className="grid gap-3">
           <DiagnosticRow
             label={lang === 'ar' ? 'السيرفر' : 'Backend'}
-            value={healthLoading ? (lang === 'ar' ? 'جاري التحقق...' : 'Checking...') : (isOnline ? (lang === 'ar' ? 'متصل' : 'Connected') : (healthData?.error || (lang === 'ar' ? 'غير متصل' : 'Disconnected')))}
+            value={healthLoading ? (lang === 'ar' ? 'جاري التحقق...' : 'Checking...') : (isOnline ? (lang === 'ar' ? 'متصل' : 'Connected') : (visibleHealthData?.error || (lang === 'ar' ? 'غير متصل' : 'Disconnected')))}
             ok={isOnline}
           />
           <DiagnosticRow

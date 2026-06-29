@@ -1,10 +1,10 @@
 /**
  * Company insight threshold settings — query + mutations (invalidates dashboard insights for same company).
  */
-import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { assertApiOk } from '../../../utils/apiResponse';
 import {
   getInsightThresholds,
   patchInsightThresholds,
@@ -12,7 +12,7 @@ import {
   type CompanyInsightThresholdsPayload,
   type PatchInsightThresholdsPayload,
 } from '../../../services/reportingInsightThresholdsApi';
-import { throwIfApiFailed } from '../../../services/core/apiHttp';
+import { unwrapApiDataOr } from '../../../services/api';
 import { reportingInsightThresholdsKeys } from '../../../services/queryKeys/reportingInsightThresholdsKeys';
 
 export function invalidateInsightThresholdsAndDashboardInsights(
@@ -45,12 +45,13 @@ export function useCompanyInsightThresholds(
   const id = String(companyId ?? '').trim();
   const readEnabled = options?.readEnabled !== false && !!id;
 
-  const query = useQuery({
+  const query = useApiQuery<
+    { thresholds?: CompanyInsightThresholdsPayload },
+    CompanyInsightThresholdsPayload
+  >({
     queryKey: reportingInsightThresholdsKeys.company(id),
-    queryFn: async (): Promise<CompanyInsightThresholdsPayload> => {
-      const res = await getInsightThresholds(id);
-      throwIfApiFailed(res, t('financialInsightThresholdsLoadError'));
-      const data = res.data as { thresholds?: CompanyInsightThresholdsPayload };
+    queryFn: () => getInsightThresholds(id),
+    select: (data) => {
       if (!data?.thresholds) {
         throw new Error(t('financialInsightThresholdsLoadError'));
       }
@@ -58,13 +59,18 @@ export function useCompanyInsightThresholds(
     },
     enabled: readEnabled,
     staleTime: 60_000,
+    fallbackMessage: t('financialInsightThresholdsLoadError'),
   });
 
   const patchMutation = useApiMutation({
     mutationFn: async (body: PatchInsightThresholdsPayload) => {
       const res = await patchInsightThresholds(body);
-      assertApiOk(res, t('financialInsightThresholdsSaveError'));
-      return res;
+      const data = unwrapApiDataOr(
+        res,
+        null,
+        t('financialInsightThresholdsSaveError'),
+      );
+      return { success: true, data };
     },
     invalidateQueries: [],
     showErrorToast: true,
@@ -78,8 +84,12 @@ export function useCompanyInsightThresholds(
   const resetMutation = useApiMutation({
     mutationFn: async (cid: string) => {
       const res = await resetInsightThresholds(cid);
-      assertApiOk(res, t('financialInsightThresholdsResetError'));
-      return res;
+      const data = unwrapApiDataOr(
+        res,
+        null,
+        t('financialInsightThresholdsResetError'),
+      );
+      return { success: true, data };
     },
     invalidateQueries: [],
     showErrorToast: true,

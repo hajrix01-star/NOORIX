@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useApiListQuery } from '../../../../hooks/useApiQuery';
 import {
   bankStatementTreeCategoriesList,
   bankStatementClassificationRulesList,
-  throwIfApiFailed,
 } from '../../../../services/api';
 import { bankKeys } from '../../../../services/queryKeys';
 import { normClassifications } from '../utils/bankCategoryTreeNormalize';
@@ -36,24 +35,18 @@ export function useBankCategoryTreeData(
   );
 
   const treeKey = bankKeys.treeCategories(companyId ?? '');
-  const { data: categories = [], isLoading } = useQuery({
+  const { data: categories = [], isLoading } = useApiListQuery<any>({
     queryKey: treeKey,
-    queryFn: async () => {
-      const res = await bankStatementTreeCategoriesList(companyId || '');
-      throwIfApiFailed(res, res.error || 'فشل التحميل');
-      return res.data ?? [];
-    },
+    queryFn: () => bankStatementTreeCategoriesList(companyId || ''),
     enabled: !!companyId,
+    fallbackMessage: 'فشل التحميل',
   });
 
-  const { data: flatRules = [] } = useQuery({
+  const { data: flatRules = [] } = useApiListQuery<any>({
     queryKey: bankKeys.classificationRules(companyId ?? ''),
-    queryFn: async () => {
-      const res = await bankStatementClassificationRulesList(companyId || '');
-      throwIfApiFailed(res, res.error || 'فشل التحميل');
-      return res.data ?? [];
-    },
+    queryFn: () => bankStatementClassificationRulesList(companyId || ''),
     enabled: !!companyId,
+    fallbackMessage: 'فشل التحميل',
   });
 
   const activeFlat = useMemo(
