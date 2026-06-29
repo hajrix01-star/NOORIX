@@ -8,6 +8,7 @@ import Card from '../../ui/Card';
 import { type CostAppsCommissionBase } from './costAccountingAppsModel';
 import { Field, SectionHeading } from './costAccountingApps/CostAccountingAppsUiParts';
 import { lastDayOfMonth, newLine, parseMoneyInput, ymdParts } from './costAccountingApps/costAccountingAppsScreenUtils';
+import { CostAppsActionsBar, CostAppsKpiCards, CostAppsPlSummaryTable } from './costAccountingApps/CostAccountingAppsResultPanels';
 import { useCostAccountingAppsScreen } from './costAccountingApps/useCostAccountingAppsScreen';
 
 export default function CostAccountingAppsScreen() {
@@ -562,159 +563,23 @@ export default function CostAccountingAppsScreen() {
             <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-noorix-muted">{t('reportCostAppsColumnResults')}</span>
           </div>
 
-          <div className="noorix-print-hidden grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 print:hidden">
-            <Card
-              variant="stat"
-              color="blue"
-              label={<span className="text-[11px] font-bold leading-tight text-noorix-text">{t('reportCostAppsGrossTotal')}</span>}
-              value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.grossTotal)}</span>}
-            />
-            <Card
-              variant="stat"
-              color="green"
-              label={<span className="text-[11px] font-bold leading-tight text-noorix-text">{t('reportCostAppsKpiNetWithApps')}</span>}
-              value={<span dir="ltr" className="tabular-nums">{fmt2(plWith.netProfit)}</span>}
-            />
-            <Card
-              variant="stat"
-              color="gray"
-              label={<span className="text-[11px] font-bold leading-tight text-noorix-text">{t('reportCostAppsKpiNetNoApps')}</span>}
-              value={<span dir="ltr" className="tabular-nums">{fmt2(plWithout.netProfit)}</span>}
-            />
-          </div>
+          <CostAppsKpiCards t={t} fmt2={fmt2} plWith={plWith} plWithout={plWithout} />
 
-      <Card variant="surface" padding="none" className="overflow-hidden border border-noorix-border shadow-sm print:break-inside-avoid print:shadow-none">
-        <div className="border-s-4 border-s-noorix-blue border-b border-noorix-border bg-[var(--noorix-surface-2)] px-4 py-3">
-          <h2 className="m-0 text-[15px] font-bold text-noorix-text print:text-xs">{t('reportCostAppsPlSummaryTitle')}</h2>
-        </div>
-        <div className="overflow-x-auto p-2 sm:p-0 print:p-0">
-          <table className="w-full border-collapse border border-noorix-border text-sm print:text-[11px]">
-            <thead>
-              <tr className="bg-[var(--noorix-table-header-bg)]">
-                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{t('reportItem')}</th>
-                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{withAppsScenarioLabel}</th>
-                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight">{t('reportCostAppsScenarioNoApps')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{appSalesRowLabel}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.grossApp)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.grossApp)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsPlLocalSales')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.grossLocal)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.grossLocal)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsGrossTotal')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.grossTotal)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.grossTotal)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsNetSales')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.netSales)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.netSales)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsVatExtracted')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.vatAmount)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.vatAmount)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsCommission')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.commission)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.commission)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsCogsLocal')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.cogsLocal)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.cogsLocal)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsCogsApp')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.cogsApp)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.cogsApp)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsCogsTotal')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.cogsTotal)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.cogsTotal)}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center">{t('reportCostAppsExpensesTotalRow')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWith.fixedTotal.plus(plWith.salaryTotal))}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
-                  {fmt2(plWithout.fixedTotal.plus(plWithout.salaryTotal))}
-                </td>
-              </tr>
-              <tr>
-                <td className="border border-noorix-border px-2 py-2 text-center font-bold">{t('reportCostAppsNetProfit')}</td>
-                <td className="border border-noorix-border px-2 py-2 text-center font-bold text-noorix-blue" dir="ltr">
-                  {fmt2(plWith.netProfit)}
-                </td>
-                <td className="border border-noorix-border px-2 py-2 text-center font-bold" dir="ltr">
-                  {fmt2(plWithout.netProfit)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </Card>
+          <CostAppsPlSummaryTable
+            t={t}
+            fmt2={fmt2}
+            withAppsScenarioLabel={withAppsScenarioLabel}
+            appSalesRowLabel={appSalesRowLabel}
+            plWith={plWith}
+            plWithout={plWithout}
+          />
 
-      <div className="noorix-print-hidden rounded-xl border border-noorix-border bg-[var(--noorix-surface-2)] p-4 print:hidden">
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" onClick={handlePrint}>
-            {t('reportCostAppsPrint')}
-          </Button>
-          <Button type="button" variant="secondary" onClick={handleExportExcel}>
-            {t('reportCostAppsExportExcel')}
-          </Button>
-          <Button type="button" variant="ghost" onClick={clearDraft}>
-            {t('reportCostAppsResetDraft')}
-          </Button>
-        </div>
-      </div>
-
+          <CostAppsActionsBar
+            t={t}
+            onPrint={handlePrint}
+            onExportExcel={handleExportExcel}
+            onClearDraft={clearDraft}
+          />
         </div>
       </div>
 

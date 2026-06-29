@@ -57,6 +57,25 @@ export function parseMoneyInput(s: string): Decimal {
   }
 }
 
+export function splitGrossByAppShare(params: {
+  grossTotal: Decimal;
+  appShare: Decimal;
+  currentCash: Decimal;
+  currentBank: Decimal;
+}): { ok: true; grossApp: Decimal; grossCash: Decimal; grossBank: Decimal } | { ok: false } {
+  const { grossTotal, appShare, currentCash, currentBank } = params;
+  if (grossTotal.lte(0) || appShare.lt(0) || appShare.gt(1)) return { ok: false };
+
+  const localTotal = currentCash.plus(currentBank);
+  const cashRatio = localTotal.gt(0) ? currentCash.div(localTotal) : new Decimal(0.5);
+  const grossApp = grossTotal.mul(appShare);
+  const grossLocal = grossTotal.minus(grossApp);
+  const grossCash = grossLocal.mul(cashRatio);
+  const grossBank = grossLocal.minus(grossCash);
+
+  return { ok: true, grossApp, grossCash, grossBank };
+}
+
 export function newLine(): FixedLine {
   return { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: '', amount: '' };
 }
