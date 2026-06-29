@@ -1,27 +1,27 @@
 import { describe, it, expect } from 'vitest';
 import { pickTabFromSearchParams } from './useTabSearchParam';
 
-const OCR = ['upload', 'review', 'invoices', 'suppliers', 'items', 'alerts', 'purchases'];
+const INVENTORY_TABS = ['upload', 'review', 'invoices', 'suppliers', 'items', 'alerts', 'purchases'];
 
-describe('pickTabFromSearchParams (OCR + legacy tab)', () => {
-  it('prefers ocrTab when set', () => {
-    const sp = new URLSearchParams('ocrTab=review&tab=history');
-    expect(pickTabFromSearchParams(sp, OCR, 'upload', 'ocrTab', 'tab')).toBe('review');
+describe('pickTabFromSearchParams (screen-specific + legacy tab)', () => {
+  it('prefers screen-specific tab when set', () => {
+    const sp = new URLSearchParams('inventoryTab=review&tab=history');
+    expect(pickTabFromSearchParams(sp, INVENTORY_TABS, 'upload', 'inventoryTab', 'tab')).toBe('review');
   });
 
   it('ignores stale tab=history from other screens', () => {
     const sp = new URLSearchParams('tab=history');
-    expect(pickTabFromSearchParams(sp, OCR, 'upload', 'ocrTab', 'tab')).toBe('upload');
+    expect(pickTabFromSearchParams(sp, INVENTORY_TABS, 'upload', 'inventoryTab', 'tab')).toBe('upload');
   });
 
-  it('accepts legacy tab=review when ocrTab absent', () => {
+  it('accepts legacy tab=review when screen-specific tab absent', () => {
     const sp = new URLSearchParams('tab=review');
-    expect(pickTabFromSearchParams(sp, OCR, 'upload', 'ocrTab', 'tab')).toBe('review');
+    expect(pickTabFromSearchParams(sp, INVENTORY_TABS, 'upload', 'inventoryTab', 'tab')).toBe('review');
   });
 
   it('falls back to default when empty', () => {
     const sp = new URLSearchParams('');
-    expect(pickTabFromSearchParams(sp, OCR, 'upload', 'ocrTab', 'tab')).toBe('upload');
+    expect(pickTabFromSearchParams(sp, INVENTORY_TABS, 'upload', 'inventoryTab', 'tab')).toBe('upload');
   });
 
   it('resolves tab aliases to allowed ids', () => {

@@ -114,12 +114,6 @@ export const PERMISSIONS = {
 
   CREATE_INVOICE:   'CREATE_INVOICE',
 
-  VIEW_OCR:   'VIEW_OCR',
-  OCR_READ:   'OCR_READ',
-  OCR_WRITE:  'OCR_WRITE',
-  /** رفع صورة فاتورة للاستخراج في الخلفية (كاشير) */
-  OCR_SUBMIT: 'OCR_SUBMIT',
-
   /** طلبات الأقسام — الموظف يُنشئ ويعدّل طلباته */
   STAFF_ORDERS_SUBMIT: 'STAFF_ORDERS_SUBMIT',
   /** طلبات الأقسام — الكاشير/المدير يرى الكل ويرسل الملخص */
@@ -266,14 +260,6 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     key: 'companies', labelAr: 'إدارة الشركات', labelEn: 'Company Management', icon: '🏗️',
     permissions: { write: 'MANAGE_COMPANIES', taxSettings: 'MANAGE_TAX_SETTINGS', delete: 'DELETE_COMPANY' },
   },
-  {
-    key: 'ocr', labelAr: 'OCR الفواتير (تجريبي)', labelEn: 'OCR Invoices (Beta)', icon: '🔍',
-    permissions: { view: 'VIEW_OCR', read: 'OCR_READ', write: 'OCR_WRITE', submit: 'OCR_SUBMIT' },
-  },
-  {
-    key: 'ocrCashier', labelAr: 'OCR — رفع الكاشير', labelEn: 'OCR — Cashier submit', icon: '📷',
-    permissions: { view: 'OCR_SUBMIT' },
-  },
 ];
 
 export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
@@ -351,7 +337,6 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.CHAT_PRESET_EXPENSE_EDIT,
       ...CHAT_FAQ_PERMISSIONS,
       PERMISSIONS.CREATE_INVOICE,
-      PERMISSIONS.VIEW_OCR, PERMISSIONS.OCR_READ, PERMISSIONS.OCR_WRITE, PERMISSIONS.OCR_SUBMIT,
     ],
   },
   [ROLES.CASHIER]: {
@@ -373,7 +358,6 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.CHAT_FAQ_INVOICE_COUNT,
       PERMISSIONS.CHAT_FAQ_HELP,
       PERMISSIONS.CREATE_INVOICE,
-      PERMISSIONS.OCR_SUBMIT,
     ],
   },
 };

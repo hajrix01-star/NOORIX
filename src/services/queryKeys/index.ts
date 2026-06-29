@@ -17,7 +17,6 @@ export { hrKeys } from './hr';
 export { purchaseKeys } from './purchases';
 export { assetKeys } from './assets';
 export { categoryKeys } from './categories';
-export { ocrKeys } from './ocr';
 export { appKeys } from './app';
 export { companyKeys } from './company';
 export { settingsKeys } from './settings';

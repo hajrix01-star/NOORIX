@@ -4,7 +4,6 @@
  * لضمان تحديث التقارير والقوائم واللوحات مباشرة (نفس نمط ERP/SaaS: إبطال بعد كل تغيير).
  *
  * مفاتيح **لا** تُبطل هنا (عمداً): `me`، `companies`، `users`، `roles`، `permissions-schema`،
- * `backup-*`، `health`، وبlobs الصور `ocr-invoice-image` (إعادة جلب ثقيلة؛ تبقى staleTime).
  *
  * بادئات الإبطال مَعاد صياغتها من `src/services/queryKeys` (دوال *Root) حتى تبقى أسماء المفاتيح
  * مصدرها الوحيد — دون تغيير ترتيب الاستدعاءات أو سلوك React Query.
@@ -25,7 +24,6 @@ import {
   hrKeys,
   invoiceKeys,
   ledgerKeys,
-  ocrKeys,
   orderKeys,
   ownerKeys,
   purchaseKeys,
@@ -69,16 +67,6 @@ const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   // HR — ملخص لوحة HR الموحّد
   hrKeys.dashboardSummaryRoot(),
   hrKeys.advancesRoot(),
-  // OCR — قوائم مرتبطة بالمشتريات/الفواتير بعد إبطال مالي
-  ocrKeys.invoicesRoot(),
-  ocrKeys.purchasesReportRoot(),
-  ocrKeys.suppliersRoot(),
-  ocrKeys.accountingSupplierSuggestionsRoot(),
-  ocrKeys.catalogAccountingSuggestionsRoot(),
-  ocrKeys.accountingCatalogRoot(),
-  ocrKeys.itemsRoot(),
-  ocrKeys.priceAlertsRoot(),
-  ocrKeys.reviewQueueRoot(),
   expenseKeys.linesRoot(),
   expenseKeys.lineRoot(),
   expenseKeys.linePaymentsRoot(),

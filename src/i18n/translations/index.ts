@@ -12,7 +12,6 @@ import settings from './settings';
 import reports from './reports';
 import orders from './orders';
 import dashboard from './dashboard';
-import ocr from './ocr';
 
 const t = Object.assign(
   {},
@@ -25,8 +24,7 @@ const t = Object.assign(
   settings,
   reports,
   orders,
-  dashboard,
-  ocr
+  dashboard
 );
 
 /**

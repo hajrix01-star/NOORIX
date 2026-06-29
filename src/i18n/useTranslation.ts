@@ -19,7 +19,7 @@ import { getText } from './translations';
  */
 export function useTranslation() {
   const { language } = useApp();
-  /** مرجع ثابت بين الرندرات — وضع `t` في deps لـ useEffect كان يعيد تشغيل التأثيرات بلا حد (مثلاً prefill OCR) */
+  /** مرجع ثابت بين الرندرات — وضع `t` في deps لـ useEffect كان يعيد تشغيل التأثيرات بلا حد (مثلاً prefill flows) */
   const t = useCallback((key: any, ...replacements: any[]) => getText(key, language, ...replacements), [language]);
   return { t, lang: language };
 }

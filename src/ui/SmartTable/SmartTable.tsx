@@ -137,7 +137,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
 
-    const onMove = (ev: any) => {
+    const onMove = (ev: PointerEvent) => {
       if (!resizingRef.current) return;
       const delta = (ev.clientX - resizingRef.current.startX) * dirMult;
       const newW = Math.max(40, resizingRef.current.startW + delta);
@@ -154,12 +154,14 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
         });
       }
       resizingRef.current = null;
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
     };
 
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
   }, [dir, tableId]);
 
   // ── Column Visibility ──────────────────────────────────────────
@@ -241,7 +243,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const colCount     = columns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
-  const layout       = tableLayout ?? (isWideTable ? 'fixed' : 'auto');
+  const layout       = tableLayout ?? 'fixed';
   const minW         = tableMinWidth === 0 || tableMinWidth === ''
     ? undefined
     : (tableMinWidth != null ? tableMinWidth : (isWideTable ? 1100 : undefined));
@@ -461,6 +463,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         whiteSpace: shrink || col.key === 'actions' ? 'nowrap' : 'normal',
                         overflow: resizableCol ? 'hidden' : undefined,
                       }}
+                      aria-sort={col.sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                       onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
                     >
                       {columnLabel(col)}
@@ -472,7 +475,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                       {resizableCol && (
                         <div
                           className="nx-col-resize-handle"
-                          onMouseDown={(e: any) => {
+                          onPointerDown={(e: any) => {
                             const th = e.currentTarget.parentElement;
                             handleResizeStart(e, col.key, th.offsetWidth);
                           }}

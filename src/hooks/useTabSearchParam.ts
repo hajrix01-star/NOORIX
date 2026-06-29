@@ -39,7 +39,7 @@ export function pickTabFromSearchParams(
  *
  * @param {readonly string[]} allowedIds
  * @param {string} defaultId
- * @param {string} [paramName='tab'] — use a **screen-specific** name (e.g. `ocrTab`) when `tab` is shared across
+ * @param {string} [paramName='tab'] — use a **screen-specific** name (e.g. `ordersTab`) when `tab` is shared across
  *   the app and other routes may leave `?tab=history` etc.; those values are ignored unless in `allowedIds`.
  * @param {string} [legacyParamName] — optional second key to read (e.g. `tab`) only if its value is in `allowedIds`;
  *   on write, `setTab` always removes `legacyParamName` so stale query keys do not hijack this screen.

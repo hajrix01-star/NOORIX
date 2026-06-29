@@ -13,8 +13,6 @@ export const STORAGE_KEYS = Object.freeze({
 /** مفضلات موردين — دفعات المشتريات */
 export const SUPPLIER_BOOKMARKS_KEY = 'noorix_supplier_bookmarks_v1';
 
-/** تنبيهات أسعار OCR — معرفات الصنف المُخفاة */
-export const OCR_DISMISSED_ALERTS_KEY = 'noorix-dismissed-alerts';
 
 /** ترتيب بطاقات تحليل كشف البنك */
 export const BANK_ANALYSIS_CARDS_KEY = 'noorix_bank_analysis_cards_v1';

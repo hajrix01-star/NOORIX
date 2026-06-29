@@ -46,8 +46,6 @@ const ExpensesScreen = React.lazy(() => import('./modules/Expenses/ExpensesScree
 const AssetsRegisterScreen = React.lazy(() => import('./modules/Assets/AssetsRegisterScreen'));
 const OrdersScreen = React.lazy(() => import('./modules/Orders/OrdersScreen'));
 const SmartChatScreen = React.lazy(() => import('./modules/SmartChat/SmartChatScreen'));
-const OcrInvoicesScreen = React.lazy(() => import('./modules/OcrInvoices/OcrInvoicesScreen'));
-const OcrCashierSubmitScreen = React.lazy(() => import('./modules/OcrInvoices/OcrCashierSubmitScreen'));
 function getInitialLanguage() {
   if (typeof window === 'undefined') return 'ar';
   const stored = readStoredLanguage();
@@ -420,8 +418,6 @@ export default function App() {
                   <Route path="quarters" element={<HajriTaxQuarterOverview />} />
                 </Route>
                 <Route path="/settings" element={<SettingsScreen />} />
-                <Route path="/ocr/cashier" element={<OcrCashierSubmitScreen />} />
-                <Route path="/ocr" element={<OcrInvoicesScreen />} />
                 <Route path="/tax" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/form" element={<Navigate to="/reports/tax" replace />} />
                 <Route path="/tax/reports" element={<Navigate to="/reports/tax" replace />} />
