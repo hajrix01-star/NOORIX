@@ -4,6 +4,7 @@ import { CompanyId }         from '../auth/decorators/company-id.decorator';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard }         from '../auth/guards/roles.guard';
 import { RequirePermission }  from '../auth/decorators/require-permission.decorator';
+import { requireCompanyId }   from '../common/utils/require-company-id';
 import { CategoriesService }  from './categories.service';
 
 @Controller('categories')
@@ -14,8 +15,7 @@ export class CategoriesController {
   @Get()
   @RequirePermission('SUPPLIERS_READ')
   findAll(@CompanyId() companyId: string) {
-    if (!companyId) return [];
-    return this.categoriesService.findAll(companyId);
+    return this.categoriesService.findAll(requireCompanyId(companyId));
   }
 
   @Post()
@@ -49,7 +49,7 @@ export class CategoriesController {
       isActive?:  boolean;
     },
   ) {
-    return this.categoriesService.update(id, companyId, {
+    return this.categoriesService.update(id, requireCompanyId(companyId), {
       nameAr:    body.nameAr,
       nameEn:    body.nameEn,
       type:      body.type,
@@ -66,6 +66,6 @@ export class CategoriesController {
     @Param('id')        id:        string,
     @CompanyId()        companyId: string,
   ) {
-    return this.categoriesService.remove(id, companyId);
+    return this.categoriesService.remove(id, requireCompanyId(companyId));
   }
 }

@@ -33,7 +33,7 @@ export async function issueLeaveSalarySettlementCore(
   },
   leave: LeaveForSalarySettlement,
   userId: string,
-  options: { vaultId?: string; grossAmountOverride?: number },
+  options: { vaultId?: string; grossAmountOverride?: number; manualOverrideReason?: string },
 ): Promise<void> {
   const { prisma, financialCore, compensationSnapshot } = deps;
   const tenantId = TenantContext.getTenantId();
@@ -79,6 +79,9 @@ export async function issueLeaveSalarySettlementCore(
     }
     grossFinal = resolvedGross.grossAmount;
     hasManualOverride = resolvedGross.hasManualOverride;
+    if (hasManualOverride && !options.manualOverrideReason?.trim()) {
+      throw new BadRequestException('سبب تعديل مبلغ تسوية راتب الإجازة مطلوب.');
+    }
   }
 
   const { payrollMonth, daysInMonth, calendarDaysPaid } = calc;
@@ -121,7 +124,7 @@ export async function issueLeaveSalarySettlementCore(
   const startStrFormatted = `${sd.getFullYear()}-${String(sd.getMonth() + 1).padStart(2, '0')}-${String(sd.getDate()).padStart(2, '0')}`;
   const manualNote =
     hasManualOverride
-      ? ` — معدّل يدوياً (مقترح ${calc.grossAmount.toFixed(2)})`
+      ? ` — معدّل يدوياً (مقترح ${calc.grossAmount.toFixed(2)}؛ السبب: ${options.manualOverrideReason?.trim()})`
       : '';
   const notes = `تسوية راتب حتى يوم السفر — إجازة سنوية من ${startStrFormatted} (${calendarDaysPaid}/${daysInMonth} يوم تقويمي، شهر ${ym})${manualNote}`;
   const snapshotNote = ` [HR_COMP_SNAPSHOT:${snapshot.calculatedAt}:monthly=${monthlyPackageTotal.toFixed(2)}]`;

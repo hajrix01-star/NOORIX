@@ -176,8 +176,7 @@ export function usePurchasesBatchActions(options: {
       supplierInvoiceNumber: inv.supplierInvoiceNumber ?? inv.invoiceNumber,
       kind: inv.kind,
       totalAmount: inv.totalAmount,
-      netAmount: inv.netAmount,
-      taxAmount: inv.taxAmount,
+      isTaxable: inv.isTaxable !== false,
       status: inv.status,
       ...(inv.transactionDate?.trim()
         ? { transactionDate: inv.transactionDate.trim().slice(0, 10) }

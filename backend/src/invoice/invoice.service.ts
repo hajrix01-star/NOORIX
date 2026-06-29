@@ -84,7 +84,7 @@ export class InvoiceService {
 
   /**
    * إنشاء فاتورة — يُفوَّض بالكامل للمحرك المالي المركزي.
-   * حساب الضريبة: إن لم يُمرَّر netAmount/taxAmount، يُحسبان من totalAmount و isTaxable ونسبة الشركة.
+   * حساب الضريبة: الصافي والضريبة يُحسبان دائماً من totalAmount و isTaxable ونسبة الشركة.
    */
   async createWithLedger(dto: CreateInvoiceDto, userId?: string | null) {
     assertCreateInvoiceSupplierInvoiceNumberIfRequired(dto);

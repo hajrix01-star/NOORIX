@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Min, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class IssueLeaveSalarySettlementDto {
@@ -8,6 +8,11 @@ export class IssueLeaveSalarySettlementDto {
   @Min(0.01)
   @Type(() => Number)
   grossAmount?: number;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(5)
+  manualOverrideReason?: string;
 
   @IsOptional()
   @IsString()

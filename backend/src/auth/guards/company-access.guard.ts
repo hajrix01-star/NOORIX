@@ -90,8 +90,10 @@ export class CompanyAccessGuard implements CanActivate {
    * يجلب قائمة شركات المستخدم من DB مع Cache مدته 60 ثانية.
    * هذا يحل مشكلة قِدَم companyIds في JWT دون إضافة ضغط على DB.
    */
-  private async resolveCompanyIds(userId: string, jwtCompanyIds: string[] = []): Promise<string[]> {
-    if (!userId) return jwtCompanyIds;
+  private async resolveCompanyIds(userId: string, _jwtCompanyIds: string[] = []): Promise<string[]> {
+    if (!userId) {
+      throw new ForbiddenException('تعذر التحقق من صلاحيات الشركة.');
+    }
 
     const now = Date.now();
     const cached = this.membershipCache.get(userId);
@@ -106,8 +108,7 @@ export class CompanyAccessGuard implements CanActivate {
       this.membershipCache.set(userId, { companyIds: ids, expiresAt: now + COMPANY_MEMBERSHIP_TTL_MS });
       return ids;
     } catch {
-      // fallback إلى JWT في حالة فشل قاعدة البيانات مؤقتاً
-      return jwtCompanyIds;
+      throw new ForbiddenException('تعذر التحقق من صلاحيات الشركة.');
     }
   }
 }

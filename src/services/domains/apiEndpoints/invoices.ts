@@ -72,8 +72,7 @@ export async function createAdvance({
     vaultId,
     kind: 'advance',
     totalAmount: Number(amount),
-    netAmount: Number(amount),
-    taxAmount: 0,
+    isTaxable: false,
     transactionDate: date,
     notes: notes || autoNote,
   };

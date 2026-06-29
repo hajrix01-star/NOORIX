@@ -7,7 +7,6 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getCompanies, createCompany, updateCompany, deleteCompany, resetCompanyCategories } from '../../../services/api';
 import {
   labelStyle,
-  getDeleteCode, setDeleteCode, DEFAULT_DELETE_CODE,
   fileToDataUrl,
 } from '../constants/settingsConstants';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
@@ -29,7 +28,6 @@ export default function CompaniesTab({
   const [showAddForm,        setShowAddForm]        = useState(false);
   const [editModal,          setEditModal]          = useState<any>(null);
   const [deleteConfirmCode,  setDeleteConfirmCode]  = useState('');
-  const [deleteCodeSetting,  setDeleteCodeSetting]  = useState(getDeleteCode());
 
   // نموذج الإضافة
   const [nameAr,   setNameAr]   = useState('');
@@ -152,7 +150,6 @@ export default function CompaniesTab({
       },
     });
     setDeleteConfirmCode('');
-    setDeleteCodeSetting(getDeleteCode());
   };
 
   const handleLogoFile = async (e: any, isEdit: any = false) => {
@@ -168,8 +165,11 @@ export default function CompaniesTab({
 
   const handleDelete = () => {
     if (!editModal?.id) return;
-    const code = getDeleteCode();
-    if ((deleteConfirmCode || '').trim() !== code) { alert('رقم التأكيد غير صحيح.'); return; }
+    const expected = String(editModal?.nameAr || editModal?.nameEn || '').trim();
+    if (!expected || (deleteConfirmCode || '').trim() !== expected) {
+      alert('اكتب اسم الشركة كما هو لتأكيد الحذف.');
+      return;
+    }
     if (!window.confirm('حذف الشركة نهائياً؟')) return;
     deleteMutation.mutate(editModal.id);
   };
@@ -437,16 +437,9 @@ export default function CompaniesTab({
                   {resetState.error && <p className="mt-1.5 text-[12px] text-noorix-red">{resetState.error}</p>}
                 </div>
                 <div>
-                  <label className="block mb-1 text-[11px]">رقم سر الحذف (للضبط)</label>
+                  <label className="block mb-1 text-[11px]">اكتب اسم الشركة لتأكيد الحذف</label>
                   <div className="flex gap-2 flex flex-wrap">
-                    <Input type="password" value={deleteCodeSetting} onChange={(e: any) => setDeleteCodeSetting(e.target.value)} placeholder="رقم سري" />
-                    <Button onClick={() => { const v = (deleteCodeSetting || '').trim() || DEFAULT_DELETE_CODE; setDeleteCode(v); setDeleteCodeSetting(v); }}>حفظ الرقم</Button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block mb-1 text-[11px]">أدخل رقم التأكيد لحذف الشركة</label>
-                  <div className="flex gap-2 flex flex-wrap">
-                    <Input type="password" value={deleteConfirmCode} onChange={(e: any) => setDeleteConfirmCode(e.target.value)} placeholder="رقم التأكيد" />
+                    <Input value={deleteConfirmCode} onChange={(e: any) => setDeleteConfirmCode(e.target.value)} placeholder={editModal?.nameAr || editModal?.nameEn || 'اسم الشركة'} />
                     <Button variant="danger" onClick={handleDelete} disabled={deleteMutation.isPending}>
                       {deleteMutation.isPending ? 'جاري...' : 'حذف الشركة'}
                     </Button>

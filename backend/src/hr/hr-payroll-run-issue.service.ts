@@ -131,25 +131,55 @@ export class HrPayrollRunIssueService {
       },
     ];
 
-    const results = await this.financialCore.processOutflowBatch(
-      dtos,
-      userId,
-      `payroll-payment:${run.id}`,
-    );
+    const results = await this.prisma.$transaction(async (tx) => {
+      const lockedRun = await tx.payrollRun.findFirst({
+        where: { id: run.id },
+        select: { advanceSettlementsAppliedAt: true },
+      });
+      if (!lockedRun) throw new NotFoundException('مسيرة الرواتب غير موجودة.');
 
-    await this.completePayrollAdvanceSettlementsIfNeeded(run as PayrollRunForIssue, txDate, tenantId);
+      const created = await this.financialCore.processOutflowBatchInTransaction(
+        tx,
+        dtos,
+        userId,
+        tenantId,
+      );
 
-    await this.audit.log({
-      companyId: run.companyId,
-      userId,
-      action: 'create',
-      entity: 'payroll_payment',
-      entityId: run.id,
-      newValue: {
-        payrollRunId: run.id,
-        runNumber: run.runNumber,
-        invoiceCount: results.length,
-      },
+      if (!lockedRun.advanceSettlementsAppliedAt) {
+        await applyPayrollAdvanceSettlements(
+          tx,
+          {
+            companyId: run.companyId,
+            runNumber: run.runNumber,
+            payrollMonth: run.payrollMonth,
+            items: run.items,
+          },
+          txDate,
+          tenantId,
+        );
+        await tx.payrollRun.update({
+          where: { id: run.id },
+          data: { advanceSettlementsAppliedAt: new Date() },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          tenantId,
+          companyId: run.companyId,
+          userId,
+          action: 'create',
+          entity: 'payroll_payment',
+          entityId: run.id,
+          newValue: {
+            payrollRunId: run.id,
+            runNumber: run.runNumber,
+            invoiceCount: created.length,
+          } as object,
+        },
+      });
+
+      return created;
     });
 
     return {

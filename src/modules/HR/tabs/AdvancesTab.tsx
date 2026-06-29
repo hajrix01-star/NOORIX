@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AdvancesTab — السلفيات (احترافي كامل)
  */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -613,8 +613,7 @@ function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }: any
     try {
       const payload: Record<string, any> = {
         totalAmount: val,
-        netAmount: val,
-        taxAmount: 0,
+        isTaxable: false,
         transactionDate: date,
         notes,
       };

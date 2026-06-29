@@ -6,6 +6,7 @@ import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
+import { requireCompanyId } from '../common/utils/require-company-id';
 import { OrdersService } from './orders.service';
 import { OrdersStaffService } from './orders-staff.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -35,8 +36,7 @@ export class OrdersController {
   @Get('staff/my')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
   getMyStaffOrders(@CompanyId() companyId: string, @CurrentUser() user: any) {
-    if (!companyId) return [];
-    return this.staffService.getMyStaffOrders(companyId, user.sub);
+    return this.staffService.getMyStaffOrders(requireCompanyId(companyId), user.sub);
   }
 
   @Get('staff/sale-next-ref')
@@ -45,15 +45,15 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Query('saleDate') saleDate?: string,
   ) {
-    if (!companyId || !saleDate?.trim()) return { logRef: '' };
-    return this.staffService.peekNextStaffSaleLogRef(companyId, saleDate.trim());
+    const resolvedCompanyId = requireCompanyId(companyId);
+    if (!saleDate?.trim()) return { logRef: '' };
+    return this.staffService.peekNextStaffSaleLogRef(resolvedCompanyId, saleDate.trim());
   }
 
   @Get('staff/digest')
   @RequirePermission('STAFF_ORDERS_DIGEST')
   getStaffDigest(@CompanyId() companyId: string) {
-    if (!companyId) return { sections: [], totalOrders: 0, pendingCount: 0 };
-    return this.staffService.getDigest(companyId);
+    return this.staffService.getDigest(requireCompanyId(companyId));
   }
 
   @Get('staff/digest/history')
@@ -62,8 +62,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Query('days') days?: string,
   ) {
-    if (!companyId) return [];
-    return this.staffService.getDigestHistory(companyId, parseDaysQuery(days));
+    return this.staffService.getDigestHistory(requireCompanyId(companyId), parseDaysQuery(days));
   }
 
   @Get('sales/report')
@@ -72,8 +71,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Query('days') days?: string,
   ) {
-    if (!companyId) return { summary: {}, byProduct: [], bySection: [], byUser: [], byDay: [], byLog: [] };
-    return this.staffService.getSalesReport(companyId, parseDaysQuery(days));
+    return this.staffService.getSalesReport(requireCompanyId(companyId), parseDaysQuery(days));
   }
 
   @Post('staff')
@@ -83,8 +81,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @CurrentUser() user: any,
   ) {
-    if (!companyId) throw new BadRequestException('companyId مطلوب');
-    return this.staffService.createStaffOrder(user.sub ?? user.userId, { ...body, companyId });
+    return this.staffService.createStaffOrder(user.sub ?? user.userId, { ...body, companyId: requireCompanyId(companyId) });
   }
 
   @Post('staff/send-digest')
@@ -100,8 +97,7 @@ export class OrdersController {
       createPurchaseOrder?: boolean;
     },
   ) {
-    if (!companyId) throw new Error('companyId مطلوب');
-    return this.staffService.sendDigest(companyId, body?.orderIds, {
+    return this.staffService.sendDigest(requireCompanyId(companyId), body?.orderIds, {
       lang: body?.lang ?? 'ar',
       orderType: body?.orderType,
       pettyCashAmount: body?.pettyCashAmount,
@@ -149,11 +145,12 @@ export class OrdersController {
     @Query('year') year: string,
     @Query('month') month: string,
   ) {
-    if (!companyId || !year || !month) return [];
+    const resolvedCompanyId = requireCompanyId(companyId);
+    if (!year || !month) return [];
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     if (!y || !m || m < 1 || m > 12) return [];
-    return this.ordersService.findAll(companyId, y, m);
+    return this.ordersService.findAll(resolvedCompanyId, y, m);
   }
 
   @Get('summary')
@@ -163,11 +160,12 @@ export class OrdersController {
     @Query('year') year: string,
     @Query('month') month: string,
   ) {
-    if (!companyId || !year || !month) return {};
+    const resolvedCompanyId = requireCompanyId(companyId);
+    if (!year || !month) return {};
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     if (!y || !m || m < 1 || m > 12) return {};
-    return this.ordersService.getSummary(companyId, y, m);
+    return this.ordersService.getSummary(resolvedCompanyId, y, m);
   }
 
   @Get('items-report')
@@ -177,11 +175,12 @@ export class OrdersController {
     @Query('year') year: string,
     @Query('month') month: string,
   ) {
-    if (!companyId || !year || !month) return [];
+    const resolvedCompanyId = requireCompanyId(companyId);
+    if (!year || !month) return [];
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     if (!y || !m || m < 1 || m > 12) return [];
-    return this.ordersService.getItemsReport(companyId, y, m);
+    return this.ordersService.getItemsReport(resolvedCompanyId, y, m);
   }
 
   @Get('products')
@@ -191,8 +190,7 @@ export class OrdersController {
     @Query('section') section?: string,
     @Query('type') type?: string,
   ) {
-    if (!companyId) return [];
-    return this.ordersService.getProducts(companyId, section, type);
+    return this.ordersService.getProducts(requireCompanyId(companyId), section, type);
   }
 
   @Post('products')
@@ -231,10 +229,11 @@ export class OrdersController {
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
-    if (!companyId || !productId) return [];
+    const resolvedCompanyId = requireCompanyId(companyId);
+    if (!productId) return [];
     const y = year ? parseInt(year, 10) : undefined;
     const m = month ? parseInt(month, 10) : undefined;
-    return this.ordersService.getProductPurchaseHistory(companyId, productId, y, m);
+    return this.ordersService.getProductPurchaseHistory(resolvedCompanyId, productId, y, m);
   }
 
   @Get('category-history/:categoryId')
@@ -245,17 +244,17 @@ export class OrdersController {
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
-    if (!companyId || !categoryId) return [];
+    const resolvedCompanyId = requireCompanyId(companyId);
+    if (!categoryId) return [];
     const y = year ? parseInt(year, 10) : undefined;
     const m = month ? parseInt(month, 10) : undefined;
-    return this.ordersService.getCategoryPurchaseHistory(companyId, categoryId, y, m);
+    return this.ordersService.getCategoryPurchaseHistory(resolvedCompanyId, categoryId, y, m);
   }
 
   @Get('categories')
   @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
   getCategories(@CompanyId() companyId: string) {
-    if (!companyId) return [];
-    return this.ordersService.getCategories(companyId);
+    return this.ordersService.getCategories(requireCompanyId(companyId));
   }
 
   @Post('categories')
@@ -271,7 +270,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Body() body: { nameAr?: string; nameEn?: string | null; sortOrder?: number; isActive?: boolean },
   ) {
-    return this.ordersService.updateCategory(id, companyId || '', body);
+    return this.ordersService.updateCategory(id, requireCompanyId(companyId), body);
   }
 
   // ── Sections ──────────────────────────────────────────────────────
@@ -279,8 +278,7 @@ export class OrdersController {
   @Get('sections')
   @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE', 'STAFF_ORDERS_SUBMIT', 'STAFF_ORDERS_DIGEST')
   getSections(@CompanyId() companyId: string) {
-    if (!companyId) return [];
-    return this.ordersService.getSections(companyId);
+    return this.ordersService.getSections(requireCompanyId(companyId));
   }
 
   @Post('sections')
@@ -296,13 +294,13 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Body() body: { nameAr?: string; nameEn?: string | null; sortOrder?: number },
   ) {
-    return this.ordersService.updateSection(id, companyId || '', body);
+    return this.ordersService.updateSection(id, requireCompanyId(companyId), body);
   }
 
   @Delete('sections/:id')
   @RequirePermission('VIEW_SALES')
   deleteSection(@Param('id') id: string, @CompanyId() companyId: string) {
-    return this.ordersService.deleteSection(id, companyId || '');
+    return this.ordersService.deleteSection(id, requireCompanyId(companyId));
   }
 
   @Post('products/bulk-sections')
@@ -311,7 +309,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @Body() body: { productIds: string[]; sectionNames?: string[]; sectionIds?: string[]; mode?: 'replace' | 'add' },
   ) {
-    return this.ordersService.bulkSetProductSections(companyId || '', body.productIds, {
+    return this.ordersService.bulkSetProductSections(requireCompanyId(companyId), body.productIds, {
       sectionNames: body.sectionNames,
       sectionIds: body.sectionIds,
       mode: body.mode,
@@ -321,7 +319,7 @@ export class OrdersController {
   @Get(':id')
   @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
   findOne(@Param('id') id: string, @CompanyId() companyId: string) {
-    return this.ordersService.findOne(id, companyId);
+    return this.ordersService.findOne(id, requireCompanyId(companyId));
   }
 
   @Patch(':id')
@@ -337,13 +335,13 @@ export class OrdersController {
       items?: { productId: string; size?: string; quantity: string; unitPrice: string }[];
     },
   ) {
-    return this.ordersService.update(companyId, id, body);
+    return this.ordersService.update(requireCompanyId(companyId), id, body);
   }
 
   @Delete(':id')
   @RequirePermission('VIEW_SALES')
   cancel(@Param('id') id: string, @CompanyId() companyId: string) {
-    return this.ordersService.cancel(id, companyId);
+    return this.ordersService.cancel(id, requireCompanyId(companyId));
   }
 
   @Post()

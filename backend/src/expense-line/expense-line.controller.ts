@@ -8,6 +8,7 @@ import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
+import { requireCompanyId } from '../common/utils/require-company-id';
 import { ExpenseLineService } from './expense-line.service';
 import { CreateExpenseLineDto } from './dto/create-expense-line.dto';
 import { UpdateExpenseLineDto } from './dto/update-expense-line.dto';
@@ -30,9 +31,8 @@ export class ExpenseLineController {
     @Query('kind') kind?: 'fixed_expense' | 'expense',
     @Query('includeInactive') includeInactive?: string,
   ) {
-    if (!companyId) return [];
     return this.expenseLineService.findAll(
-      companyId,
+      requireCompanyId(companyId),
       kind,
       includeInactive === 'true',
     );
@@ -50,7 +50,7 @@ export class ExpenseLineController {
     @Param('id') id: string,
     @CompanyId() companyId: string,
   ) {
-    return this.expenseLineService.findOne(id, companyId);
+    return this.expenseLineService.findOne(id, requireCompanyId(companyId));
   }
 
   @Get(':id/payments')
@@ -65,7 +65,7 @@ export class ExpenseLineController {
   ) {
     return this.expenseLineService.getPayments(
       id,
-      companyId,
+      requireCompanyId(companyId),
       startDate,
       endDate,
       page ? parseInt(page, 10) : 1,
@@ -86,7 +86,7 @@ export class ExpenseLineController {
     @CompanyId() companyId: string,
     @Body() dto: UpdateExpenseLineDto,
   ) {
-    return this.expenseLineService.update(id, companyId, dto);
+    return this.expenseLineService.update(id, requireCompanyId(companyId), dto);
   }
 
   @Patch(':id/deactivate')
@@ -95,6 +95,6 @@ export class ExpenseLineController {
     @Param('id') id: string,
     @CompanyId() companyId: string,
   ) {
-    return this.expenseLineService.deactivate(id, companyId);
+    return this.expenseLineService.deactivate(id, requireCompanyId(companyId));
   }
 }

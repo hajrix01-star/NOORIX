@@ -4,6 +4,7 @@ import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { CompanyId } from '../auth/decorators/company-id.decorator';
+import { requireCompanyId } from '../common/utils/require-company-id';
 import { LedgerService } from './ledger.service';
 
 @Controller('ledger')
@@ -23,14 +24,14 @@ export class LedgerController {
     @Query('pageSize') pageSize?: string,
     @Query('q') q?: string,
   ) {
-    if (!companyId) return { items: [], total: 0, page: 1, pageSize: 50 };
+    const resolvedCompanyId = requireCompanyId(companyId);
 
     // دعم كلا الصيغتين: startDate/endDate و fromDate/toDate
     const start = startDate || fromDate;
     const end   = endDate   || toDate;
 
     return this.ledgerService.findAll(
-      companyId,
+      resolvedCompanyId,
       start,
       end,
       page ? parseInt(page, 10) : 1,

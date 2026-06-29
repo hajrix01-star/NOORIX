@@ -7,7 +7,6 @@ import {
   IsBoolean,
   IsIn,
   IsDateString,
-  ValidateIf,
   Allow,
   IsArray,
   ValidateNested,
@@ -15,7 +14,6 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsAmountConsistent } from '../../common/validators/amount-consistency.validator';
 import { InvoiceVaultSplitDto } from './invoice-vault-split.dto';
 
 const INVOICE_KINDS = [
@@ -65,8 +63,6 @@ export class CreateInvoiceDto {
   @Min(0.01, { message: 'المبلغ يجب أن يكون أكبر من صفر' })
   @Max(10_000_000, { message: 'المبلغ الإجمالي لا يمكن أن يتجاوز 10,000,000' })
   @Type(() => Number)
-  @ValidateIf((o) => o.netAmount != null && o.taxAmount != null)
-  @IsAmountConsistent({ message: 'الصافي + الضريبة يجب أن يساويا الإجمالي بهامش 0.01' })
   totalAmount: number;
 
   /** عند true: يُحسب الصافي والضريبة من الإجمالي (15%). عند false: الصافي = الإجمالي، الضريبة = 0 */
@@ -74,22 +70,6 @@ export class CreateInvoiceDto {
   @IsBoolean()
   @Type(() => Boolean)
   isTaxable?: boolean;
-
-  /** اختياري — يُحسب من totalAmount و isTaxable إن لم يُمرَّر */
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(10_000_000, { message: 'الصافي لا يمكن أن يتجاوز 10,000,000' })
-  @Type(() => Number)
-  netAmount?: number;
-
-  /** اختياري — يُحسب من totalAmount و isTaxable إن لم يُمرَّر */
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(1_500_000, { message: 'مبلغ الضريبة لا يمكن أن يتجاوز 1,500,000' })
-  @Type(() => Number)
-  taxAmount?: number;
 
   @IsDateString()
   transactionDate: string;

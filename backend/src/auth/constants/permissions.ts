@@ -103,6 +103,7 @@ export const PERMISSIONS = {
   HR_READ:          'HR_READ',
   HR_WRITE:         'HR_WRITE',
   HR_DELETE:        'HR_DELETE',
+  HR_LEAVE_SALARY_OVERRIDE: 'HR_LEAVE_SALARY_OVERRIDE',
 
   MANAGE_SETTINGS:  'MANAGE_SETTINGS',
   MANAGE_COMPANIES: 'MANAGE_COMPANIES',
@@ -215,7 +216,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
   {
     key: 'hr', labelAr: 'الموارد البشرية (رواتب، إجازات)', labelEn: 'HR (Payroll, Leaves)', icon: '🏢',
-    permissions: { view: 'VIEW_HR', read: 'HR_READ', write: 'HR_WRITE', delete: 'HR_DELETE' },
+    permissions: { view: 'VIEW_HR', read: 'HR_READ', write: 'HR_WRITE', delete: 'HR_DELETE', leaveSalaryOverride: 'HR_LEAVE_SALARY_OVERRIDE' },
   },
   {
     key: 'reports', labelAr: 'التقارير', labelEn: 'Reports', icon: '📈',
@@ -270,6 +271,7 @@ export const PERMISSION_LEVELS: Record<string, { ar: string; en: string }> = {
   write:      { ar: 'إنشاء وتعديل', en: 'Create & Edit' },
   taxSettings:{ ar: 'إدارة إعدادات الضريبة', en: 'Manage tax settings' },
   delete:     { ar: 'حذف', en: 'Delete' },
+  leaveSalaryOverride: { ar: 'تعديل مبلغ تسوية راتب الإجازة', en: 'Override leave salary settlement' },
   actions:    { ar: 'إجراءات', en: 'Actions' },
   create:     { ar: 'إنشاء فاتورة', en: 'Create Invoice' },
   history:    { ar: 'التاريخ الكامل', en: 'Full History' },
@@ -329,6 +331,7 @@ export const SYSTEM_ROLE_SEEDS: Record<string, { nameAr: string; permissions: st
       PERMISSIONS.VIEW_HAJRI_TAX, PERMISSIONS.HAJRI_TAX_READ, PERMISSIONS.HAJRI_TAX_WRITE,
       PERMISSIONS.EMPLOYEES_READ, PERMISSIONS.EMPLOYEES_WRITE,
       PERMISSIONS.VIEW_HR, PERMISSIONS.HR_READ, PERMISSIONS.HR_WRITE, PERMISSIONS.HR_DELETE,
+      PERMISSIONS.HR_LEAVE_SALARY_OVERRIDE,
       PERMISSIONS.SMART_CHAT_READ, PERMISSIONS.CHAT_PRESET_ADVANCES,
       PERMISSIONS.CHAT_PRESET_LEAVES, PERMISSIONS.CHAT_PRESET_DEDUCTIONS,
       PERMISSIONS.CHAT_PRESET_INCREASES,

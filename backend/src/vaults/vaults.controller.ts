@@ -12,6 +12,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
+import { requireCompanyId } from '../common/utils/require-company-id';
 import { createVaultSchema, reorderVaultsSchema, updateVaultSchema } from './dto/create-vault.dto';
 import { vaultTransferSchema } from './dto/vault-transfer.dto';
 import { VaultsService } from './vaults.service';
@@ -29,9 +30,8 @@ export class VaultsController {
     @Query('startDate')      startDate?:      string,
     @Query('endDate')        endDate?:        string,
   ) {
-    if (!companyId) return [];
     return this.vaultsService.findAll(
-      companyId,
+      requireCompanyId(companyId),
       includeArchived === 'true',
       startDate,
       endDate,
@@ -40,14 +40,12 @@ export class VaultsController {
 
   @Get('sales-channels')
   async findSalesChannels(@CompanyId() companyId: string) {
-    if (!companyId) return [];
-    return this.vaultsService.findSalesChannels(companyId);
+    return this.vaultsService.findSalesChannels(requireCompanyId(companyId));
   }
 
   @Get('payment-options')
   async findPaymentOptions(@CompanyId() companyId: string) {
-    if (!companyId) return [];
-    return this.vaultsService.findPaymentOptions(companyId);
+    return this.vaultsService.findPaymentOptions(requireCompanyId(companyId));
   }
 
   @Post('transfer')
@@ -91,7 +89,7 @@ export class VaultsController {
     const size = Math.min(10000, Math.max(1, parseInt(pageSize ?? '50', 10) || 50));
     return this.vaultsService.findOneWithTransactions(
       id,
-      companyId,
+      requireCompanyId(companyId),
       startDate as string,
       endDate as string,
       pageNum,
@@ -105,12 +103,10 @@ export class VaultsController {
     @Body()         body:             unknown,
     @CompanyId()   companyId:         string,
   ) {
-    if (!companyId) {
-      throw new BadRequestException('معرف الشركة مطلوب');
-    }
+    const resolvedCompanyId = requireCompanyId(companyId);
     try {
       const dto = reorderVaultsSchema.parse(body);
-      return this.vaultsService.reorder(companyId, dto.vaultIds);
+      return this.vaultsService.reorder(resolvedCompanyId, dto.vaultIds);
     } catch (e) {
       if (e instanceof ZodError) {
         throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات الترتيب غير صحيحة');
@@ -146,7 +142,7 @@ export class VaultsController {
   ) {
     try {
       const dto = updateVaultSchema.parse(body);
-      return this.vaultsService.update(id, companyId, dto, user.sub);
+      return this.vaultsService.update(id, requireCompanyId(companyId), dto, user.sub);
     } catch (e) {
       if (e instanceof ZodError) {
         throw new BadRequestException(e.errors?.[0]?.message ?? 'بيانات غير صحيحة');
@@ -162,7 +158,7 @@ export class VaultsController {
     @CompanyId()  companyId:  string,
     @CurrentUser() user:     JwtUser,
   ) {
-    return this.vaultsService.archive(id, companyId, user.sub);
+    return this.vaultsService.archive(id, requireCompanyId(companyId), user.sub);
   }
 
   @Delete(':id')
@@ -172,6 +168,6 @@ export class VaultsController {
     @CompanyId()  companyId:  string,
     @CurrentUser() user:     JwtUser,
   ) {
-    return this.vaultsService.remove(id, companyId, user.sub);
+    return this.vaultsService.remove(id, requireCompanyId(companyId), user.sub);
   }
 }
