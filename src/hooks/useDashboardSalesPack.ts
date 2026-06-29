@@ -1,22 +1,22 @@
-/**
- * حزمة ملخصات المبيعات للوحة التحكم — طلب HTTP واحد (بدل عدة useSales).
- */
-import { useQuery } from '@tanstack/react-query';
-import { getDashboardSalesPack, throwIfApiFailed } from '../services/api';
+import { getDashboardSalesPack } from '../services/api';
 import { dashboardKeys } from '../services/queryKeys/dashboard';
+import { useApiQuery } from './useApiQuery';
 
-/**
- * @param {{
- *   companyId: string,
- *   yearStart: string,
- *   yearEnd: string,
- *   dailyStart: string | null,
- *   dailyEnd: string | null,
- *   monthStart: string | null,
- *   monthEnd: string | null,
- *   enabled?: boolean,
- * }} p
- */
+type DashboardSalesPackData = {
+  yearSummaries: any[];
+  dailySummaries: any[];
+  monthSummaries: any[];
+};
+
+function normalizeSalesPack(rawResult: any): DashboardSalesPackData {
+  const raw = rawResult?.data ?? rawResult;
+  return {
+    yearSummaries: raw?.yearSummaries ?? [],
+    dailySummaries: raw?.dailySummaries ?? [],
+    monthSummaries: raw?.monthSummaries ?? [],
+  };
+}
+
 export function useDashboardSalesPack(p: {
   companyId: string;
   yearStart: string;
@@ -38,7 +38,7 @@ export function useDashboardSalesPack(p: {
     enabled = true,
   } = p;
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error } = useApiQuery<any, DashboardSalesPackData>({
     queryKey: dashboardKeys.salesPack(
       companyId,
       yearStart,
@@ -48,25 +48,18 @@ export function useDashboardSalesPack(p: {
       monthStart,
       monthEnd,
     ),
-    queryFn: async () => {
-      const res = await getDashboardSalesPack({
-        companyId,
-        yearStart,
-        yearEnd,
-        dailyStart: dailyStart ?? undefined,
-        dailyEnd: dailyEnd ?? undefined,
-        monthStart: monthStart ?? undefined,
-        monthEnd: monthEnd ?? undefined,
-      });
-      throwIfApiFailed(res, 'فشل تحميل بيانات المبيعات للوحة التحكم');
-      const raw = res.data?.data ?? res.data;
-      return {
-        yearSummaries: raw?.yearSummaries ?? [],
-        dailySummaries: raw?.dailySummaries ?? [],
-        monthSummaries: raw?.monthSummaries ?? [],
-      };
-    },
+    queryFn: () => getDashboardSalesPack({
+      companyId,
+      yearStart,
+      yearEnd,
+      dailyStart: dailyStart ?? undefined,
+      dailyEnd: dailyEnd ?? undefined,
+      monthStart: monthStart ?? undefined,
+      monthEnd: monthEnd ?? undefined,
+    }),
+    fallbackMessage: 'Failed to load dashboard sales pack',
     enabled: !!companyId && enabled,
+    select: normalizeSalesPack,
   });
 
   return {

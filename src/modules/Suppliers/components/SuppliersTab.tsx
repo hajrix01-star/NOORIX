@@ -7,8 +7,7 @@ import { useSuppliers }        from '../../../hooks/useSuppliers';
 import { useCategories }       from '../../../hooks/useCategories';
 import { useTranslation }      from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
-import { createSupplier }      from '../../../services/api';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { createSupplier, throwIfApiFailed }      from '../../../services/api';
 import { SupplierForm }        from './SupplierForm';
 import { SupplierTable }       from './SupplierTable';
 import { SupplierEditModal }   from './SupplierEditModal';
@@ -93,7 +92,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
 
   async function handleImportOne(body: any) {
     const res = await createSupplier(body);
-    rejectIfApiFailed(res, t('addFailed'));
+    throwIfApiFailed(res, t('addFailed'));
     return res.data;
   }
 

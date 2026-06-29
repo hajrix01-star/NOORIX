@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
-import { deleteCompanyAsset } from '../../../services/api';
-import { assertApiOk } from '../../../utils/apiResponse';
+import { deleteCompanyAsset, throwIfApiFailed } from '../../../services/api';
 import { assetKeys } from '../../../services/queryKeys';
 
 export function useAssetsRegisterActions({
@@ -27,7 +26,7 @@ export function useAssetsRegisterActions({
       if (!confirm(t('assetDeleteConfirm'))) return;
       try {
         const res = await deleteCompanyAsset(row.id, companyId);
-        assertApiOk(res, t('delete'));
+        throwIfApiFailed(res, t('delete'));
         invalidateAssets();
         showToast(t('savedSuccessfully') || 'تم الحذف');
       } catch (e: unknown) {

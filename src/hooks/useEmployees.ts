@@ -1,15 +1,11 @@
-/**
- * useEmployees — جلب الموظفين وإضافتهم وتعديلهم مع Caching/Invalidation تلقائي.
- * يدعم صرف السلفة عبر createAdvance.
- */
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
+import { useApiListQuery, useApiQuery } from './useApiQuery';
 import {
   getEmployees,
   getEmployee,
   createEmployee,
   updateEmployee,
-  throwIfApiFailed,
 } from '../services/api';
 import { createAdvance } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
@@ -20,13 +16,10 @@ export type UseEmployeesOpts = { includeTerminated?: boolean; fetchEnabled?: boo
 export function useEmployees(companyId: string, { includeTerminated = false, fetchEnabled = true }: UseEmployeesOpts = {}) {
   const queryClient = useQueryClient();
 
-  const { data: employees = [], isLoading } = useQuery({
+  const { data: employees = [], isLoading } = useApiListQuery<any>({
     queryKey: employeeKeys.list(companyId, includeTerminated),
-    queryFn: async () => {
-      const res = await getEmployees(companyId, includeTerminated);
-      throwIfApiFailed(res, 'فشل تحميل الموظفين');
-      return Array.isArray(res.data) ? res.data : [];
-    },
+    queryFn: () => getEmployees(companyId, includeTerminated),
+    fallbackMessage: 'Failed to load employees',
     enabled: !!companyId && fetchEnabled,
   });
 
@@ -73,18 +66,11 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
   };
 }
 
-/**
- * @param {string} id
- * @param {string} companyId
- */
 export function useEmployee(id: any, companyId: any) {
-  return useQuery({
+  return useApiQuery<any>({
     queryKey: employeeKeys.detail(id, companyId),
-    queryFn: async () => {
-      const res = await getEmployee(id, companyId);
-      throwIfApiFailed(res, 'فشل تحميل الموظف');
-      return res.data;
-    },
+    queryFn: () => getEmployee(id, companyId),
+    fallbackMessage: 'Failed to load employee',
     enabled: !!id && !!companyId,
   });
 }

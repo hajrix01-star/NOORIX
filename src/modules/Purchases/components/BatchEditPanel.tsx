@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { Button, AdaptiveSheet } from '../../../ui';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { throwIfApiFailed } from '../../../services/api';
 import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 import { BatchEditInvoiceLine } from './BatchEditInvoiceLine';
@@ -47,7 +47,7 @@ export function BatchEditPanel({ batch, suppliers, companyId: _companyId, vatRat
     try {
       for (const inv of invoices) {
         const res = await onSaveInvoice(inv);
-        rejectIfApiFailed(res, t('saveFailed'));
+        throwIfApiFailed(res, t('saveFailed'));
       }
       onClose?.();
     } catch (e: any) {

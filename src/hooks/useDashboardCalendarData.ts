@@ -1,9 +1,4 @@
-/**
- * Hook لبيانات تقويم لوحة التحكم — نظام طبقي للأهداف:
- * - month=0: هدف افتراضي لكل الشهور
- * - month=X: تخصيص لشهر محدد (يطغى على الافتراضي)
- */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { dashboardKeys } from '../services/queryKeys/dashboard';
 import {
   getDashboardCalendarData,
@@ -14,7 +9,8 @@ import {
   type DashboardCalendarDataResult,
 } from '../services/domains/apiEndpoints/dashboard-calendar';
 import type { ApiParsedResult } from '../types/api';
-import { unwrapApiDataOr } from '../services/core/apiHttp';
+import { useApiQueryOr } from './useApiQuery';
+import { useApiMutation } from './useApiMutation';
 
 const DEFAULT_TARGETS = { overall: null as number | null, byDow: {} as Record<string, number> };
 
@@ -53,21 +49,21 @@ export function useDashboardCalendarData({ companyId, year, month, enabled = tru
   const queryClient = useQueryClient();
   const isEnabled = !!companyId && enabled;
 
-  const query = useQuery({
+  const query = useApiQueryOr<DashboardCalendarDataResult>({
     queryKey: dashboardKeys.calendar(companyId ?? '', year, month),
-    queryFn: async () => {
-      const res = await getDashboardCalendarData(companyId!, year, month);
-      return unwrapApiDataOr(res, DEFAULT_CALENDAR_DATA);
-    },
+    queryFn: () => getDashboardCalendarData(companyId!, year, month),
+    fallback: DEFAULT_CALENDAR_DATA,
+    fallbackMessage: 'Failed to load dashboard calendar data',
     enabled: isEnabled,
     staleTime: 5 * 60 * 1000,
     placeholderData: DEFAULT_CALENDAR_DATA,
   });
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: dashboardKeys.calendar(companyId ?? '', year, month) });
+  const resetCacheFromResult = (res: ApiParsedResult<DashboardCalendarDataResult>) => {
+    applyCalendarMutationCache(queryClient, companyId!, year, month, res);
+  };
 
-  const targetsMutation = useMutation({
+  const targetsMutation = useApiMutation({
     mutationFn: ({
       targets,
       applyToAll = true,
@@ -75,32 +71,28 @@ export function useDashboardCalendarData({ companyId, year, month, enabled = tru
       targets: { overall: number | null; byDow: Record<string, number> };
       applyToAll?: boolean;
     }) => putDashboardCalendarTargets(companyId!, year, month, targets, applyToAll),
-    onSuccess: (res) => {
-      applyCalendarMutationCache(queryClient, companyId!, year, month, res);
-    },
+    onSuccess: resetCacheFromResult,
+    showErrorToast: false,
   });
 
-  const resetTargetsMutation = useMutation({
+  const resetTargetsMutation = useApiMutation({
     mutationFn: () => deleteDashboardCalendarTargets(companyId!, year, month),
-    onSuccess: (res) => {
-      applyCalendarMutationCache(queryClient, companyId!, year, month, res);
-    },
+    onSuccess: resetCacheFromResult,
+    showErrorToast: false,
   });
 
-  const specialDaysMutation = useMutation({
+  const specialDaysMutation = useApiMutation({
     mutationFn: (specialDays: unknown[]) =>
       putDashboardCalendarSpecialDays(companyId!, year, month, specialDays),
-    onSuccess: (res) => {
-      applyCalendarMutationCache(queryClient, companyId!, year, month, res);
-    },
+    onSuccess: resetCacheFromResult,
+    showErrorToast: false,
   });
 
-  const dayNotesMutation = useMutation({
+  const dayNotesMutation = useApiMutation({
     mutationFn: (dayNotes: Record<string, string>) =>
       putDashboardCalendarDayNotes(companyId!, year, month, dayNotes),
-    onSuccess: (res) => {
-      applyCalendarMutationCache(queryClient, companyId!, year, month, res);
-    },
+    onSuccess: resetCacheFromResult,
+    showErrorToast: false,
   });
 
   const calendarData = query.data ?? DEFAULT_CALENDAR_DATA;
@@ -110,15 +102,12 @@ export function useDashboardCalendarData({ companyId, year, month, enabled = tru
     targets: calendarData.targets ?? DEFAULT_TARGETS,
     specialDays: calendarData.specialDays ?? [],
     dayNotes: calendarData.dayNotes ?? {},
-    /** true = يعرض الهدف الافتراضي (لكل الشهور)، false = تخصيص خاص بهذا الشهر */
     isDefaultTargets: calendarData.isDefaultTargets ?? true,
-    /** true = يوجد تخصيص خاص بهذا الشهر */
     hasMonthOverride: calendarData.hasMonthOverride ?? false,
-    /** الهدف الافتراضي المحفوظ لكل الشهور */
     defaultTargets: calendarData.defaultTargets ?? DEFAULT_TARGETS,
     saveTargets: (targets: { overall: number | null; byDow: Record<string, number> }, applyToAll?: boolean) =>
       targetsMutation.mutateAsync({ targets, applyToAll: applyToAll ?? true }),
-    resetMonthTargets: () => resetTargetsMutation.mutateAsync(),
+    resetMonthTargets: () => resetTargetsMutation.mutateAsync(undefined),
     saveSpecialDays: specialDaysMutation.mutateAsync,
     saveDayNotes: dayNotesMutation.mutateAsync,
   };

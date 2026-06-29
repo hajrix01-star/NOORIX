@@ -1,16 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
-import { getSalesChannels, throwIfApiFailed } from '../services/api';
+import { getSalesChannels } from '../services/api';
 import { salesKeys } from '../services/queryKeys';
+import { useApiListQuery } from './useApiQuery';
 
 export function useSalesChannels(companyId: any) {
-  const query = useQuery({
+  const query = useApiListQuery<any>({
     queryKey: salesKeys.channels(companyId),
-    queryFn: async () => {
-      const res = await getSalesChannels(companyId);
-      throwIfApiFailed(res, 'فشل تحميل قنوات البيع');
-      const data = res.data;
-      return Array.isArray(data) ? data : (data?.items ?? []);
-    },
+    queryFn: () => getSalesChannels(companyId),
+    fallbackMessage: 'Failed to load sales channels',
     enabled: !!companyId,
     staleTime: 15 * 1000,
   });

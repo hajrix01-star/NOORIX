@@ -1,12 +1,6 @@
-/**
- * لوحة المالك — طلب واحد موحّد بدلاً من N×2 طلبات منفصلة.
- *
- * يحلّ مشكلة "تغيّر الأرقام": P&L لكل شركة + مبيعاتها اليومية
- * تصل كلها في رد واحد، لا تظهر أرقام حتى تكتمل جميع البيانات.
- */
-import { useQuery } from '@tanstack/react-query';
-import { getOwnerOverview, throwIfApiFailed } from '../services/api';
+import { getOwnerOverview } from '../services/api';
 import { ownerKeys } from '../services/queryKeys/owner';
+import { useApiQuery } from './useApiQuery';
 
 export interface OwnerOverviewData {
   reportsByCompany: Record<string, unknown>;
@@ -14,6 +8,14 @@ export interface OwnerOverviewData {
 }
 
 const EMPTY: OwnerOverviewData = { reportsByCompany: {}, dailySalesByCompany: {} };
+
+function normalizeOwnerOverview(rawResult: any): OwnerOverviewData {
+  const raw = rawResult?.data ?? rawResult;
+  return {
+    reportsByCompany: (raw?.reportsByCompany ?? {}) as Record<string, unknown>,
+    dailySalesByCompany: (raw?.dailySalesByCompany ?? {}) as Record<string, unknown[]>,
+  };
+}
 
 export function useOwnerOverview(p: {
   companyIds: string[];
@@ -23,22 +25,16 @@ export function useOwnerOverview(p: {
 }) {
   const { companyIds, year, month, enabled = true } = p;
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error } = useApiQuery<any, OwnerOverviewData>({
     queryKey: ownerKeys.overview(companyIds, year, month),
-    queryFn: async (): Promise<OwnerOverviewData> => {
-      const res = await getOwnerOverview({ companyIds, year, month });
-      throwIfApiFailed(res, 'فشل تحميل بيانات لوحة المالك');
-      const raw = res.data?.data ?? res.data;
-      return {
-        reportsByCompany:   (raw?.reportsByCompany   ?? {}) as Record<string, unknown>,
-        dailySalesByCompany: (raw?.dailySalesByCompany ?? {}) as Record<string, unknown[]>,
-      };
-    },
+    queryFn: () => getOwnerOverview({ companyIds, year, month }),
+    fallbackMessage: 'Failed to load owner overview',
     enabled: !!companyIds.length && !!year && enabled,
+    select: normalizeOwnerOverview,
   });
 
   return {
-    data:      data ?? EMPTY,
+    data: data ?? EMPTY,
     isLoading,
     isError,
     error,

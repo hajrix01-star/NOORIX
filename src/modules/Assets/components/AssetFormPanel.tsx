@@ -4,9 +4,8 @@
 import React, { useState } from 'react';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { assertApiOk } from '../../../utils/apiResponse';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
-import { createCompanyAsset, updateCompanyAsset } from '../../../services/api';
+import { createCompanyAsset, throwIfApiFailed, updateCompanyAsset } from '../../../services/api';
 import type { AssetRegisterListItem, SupplierOption } from '../types';
 
 export type AssetFormPanelProps = {
@@ -91,10 +90,10 @@ export function AssetFormPanel({
     try {
       if (isEdit && initial?.id) {
         const res = await updateCompanyAsset(initial.id, companyId, body);
-        assertApiOk(res, t('loadingError'));
+        throwIfApiFailed(res, t('loadingError'));
       } else {
         const res = await createCompanyAsset(body);
-        assertApiOk(res, t('loadingError'));
+        throwIfApiFailed(res, t('loadingError'));
       }
       onSaved();
     } catch (e2: unknown) {

@@ -3,8 +3,8 @@ import {
   createInvoice,
   createEmployeesBatch,
   createDailySalesSummary,
+  throwIfApiFailed,
 } from '../../../services/api';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import type { ApiParsedResult } from '../../../types/api/http';
 import { appendEmployeesBatchErrors, appendEmployeesBatchWarnings } from './importExportMappers';
 import type { ImportEntityType, ImportProgressRow, ImportProgressState, ImportValidationResult } from '../types';
@@ -55,7 +55,7 @@ export async function runBatchImport({
         const rowNum = slice[idx].rowNum;
         if (res.status === 'fulfilled') {
           try {
-            rejectIfApiFailed(res.value, t('importErrorUnknown'));
+            throwIfApiFailed(res.value, t('importErrorUnknown'));
             succeeded++;
           } catch (e: unknown) {
             failed++;
@@ -139,7 +139,7 @@ export async function runBatchImport({
       const r = validResults[i];
       try {
         const sumRes = await createDailySalesSummary({ ...(r.payload as Record<string, unknown>), companyId });
-        rejectIfApiFailed(sumRes, t('importErrorUnknown'));
+        throwIfApiFailed(sumRes, t('importErrorUnknown'));
         succeeded++;
       } catch (err: unknown) {
         failed++;
