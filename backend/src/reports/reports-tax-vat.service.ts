@@ -1,15 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { resolveVatRateDecimal } from '@noorix/finance-core';
+import { TaxVatCoreService, type TaxVatAggregateRow } from '../tax-vat-core/tax-vat-core.service';
 
 @Injectable()
 export class ReportsTaxVatService {
-  constructor(private readonly prisma: TenantPrismaService) {}
-
-  private dec(value: Decimal.Value) {
-    return new Decimal(value || 0);
-  }
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly taxVatCore: TaxVatCoreService,
+  ) {}
 
   /**
    * تقرير الضرائب — تجميع مخرجات ومدخلات ضريبة القيمة المضافة من الفواتير
@@ -38,11 +36,7 @@ export class ReportsTaxVatService {
       where: { id: companyId },
       select: { vatRatePercent: true },
     });
-    const VAT_STANDARD_RATE = resolveVatRateDecimal(company?.vatRatePercent ?? null);
-    const VAT_INCLUSIVE_DIVISOR = new Decimal('1').plus(VAT_STANDARD_RATE);
-
-    type VatAggRow = { kind: string; has_tax: boolean; net_sum: string; tax_sum: string };
-    const vatRows = await this.prisma.$queryRaw<VatAggRow[]>`
+    const vatRows = await this.prisma.$queryRaw<TaxVatAggregateRow[]>`
       SELECT
         kind,
         (tax_amount > 0) AS has_tax,
@@ -56,55 +50,13 @@ export class ReportsTaxVatService {
       GROUP BY kind, has_tax
     `;
 
-    const standard_sales = { amount: new Decimal(0), vat: new Decimal(0) };
-    const exempt_sales = { amount: new Decimal(0), vat: new Decimal(0) };
-    const standard_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
-    const exempt_purchases = { amount: new Decimal(0), vat: new Decimal(0) };
-
-    for (const row of vatRows) {
-      const net = this.dec(row.net_sum);
-      const tax = this.dec(row.tax_sum);
-      if (row.kind === 'sale') {
-        if (row.has_tax) {
-          standard_sales.amount = standard_sales.amount.plus(net);
-          standard_sales.vat = standard_sales.vat.plus(tax);
-        } else if (net.gt(0)) {
-          if (salesAmountIncludesVat) {
-            const grossInclusive = net;
-            const baseExcl = grossInclusive.div(VAT_INCLUSIVE_DIVISOR);
-            const vatImputed = grossInclusive.minus(baseExcl);
-            standard_sales.amount = standard_sales.amount.plus(baseExcl);
-            standard_sales.vat = standard_sales.vat.plus(vatImputed);
-          } else {
-            const baseExcl = net;
-            const vatImputed = baseExcl.mul(VAT_STANDARD_RATE);
-            standard_sales.amount = standard_sales.amount.plus(baseExcl);
-            standard_sales.vat = standard_sales.vat.plus(vatImputed);
-          }
-        }
-      } else {
-        if (row.has_tax) {
-          standard_purchases.amount = standard_purchases.amount.plus(net);
-          standard_purchases.vat = standard_purchases.vat.plus(tax);
-        } else if (net.gt(0)) {
-          exempt_purchases.amount = exempt_purchases.amount.plus(net);
-        }
-      }
-    }
-
     return {
       success: true,
-      data: {
-        standard_sales: { amount: standard_sales.amount.toNumber(), adjustment: 0, vat: standard_sales.vat.toNumber() },
-        special_sales: { amount: 0, adjustment: 0, vat: 0 },
-        zero_rated_domestic: { amount: 0, adjustment: 0, vat: 0 },
-        exports: { amount: 0, adjustment: 0, vat: 0 },
-        exempt_sales: { amount: exempt_sales.amount.toNumber(), adjustment: 0, vat: 0 },
-        standard_purchases: { amount: standard_purchases.amount.toNumber(), adjustment: 0, vat: standard_purchases.vat.toNumber() },
-        imports_customs: { amount: 0, adjustment: 0, vat: 0 },
-        reverse_charge: { amount: 0, adjustment: 0, vat: 0 },
-        exempt_purchases: { amount: exempt_purchases.amount.toNumber(), adjustment: 0, vat: 0 },
-      },
+      data: this.taxVatCore.computeDisclosureFromInvoiceAggregates(
+        vatRows,
+        company?.vatRatePercent ?? null,
+        salesAmountIncludesVat,
+      ),
     };
   }
 }
