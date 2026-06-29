@@ -1,5 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import { spawn } from 'child_process';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
+import { randomUUID } from 'crypto';
 import { parseDatabaseUrl } from './backup-database-url.util';
 
 export async function runPgDumpToFile(outPath: string): Promise<void> {
@@ -19,6 +23,7 @@ export async function runPgDumpToFile(outPath: string): Promise<void> {
   if (primary.ok) return;
 
   if (isLocalHost(host)) {
+    const postgresOutPath = path.join(os.tmpdir(), `noorix-pg-dump-postgres-${process.pid}-${randomUUID()}.dump`);
     const localPostgres = await tryPgDump(
       'runuser',
       [
@@ -34,11 +39,18 @@ export async function runPgDumpToFile(outPath: string): Promise<void> {
         '--no-acl',
         '--format=custom',
         '-f',
-        outPath,
+        postgresOutPath,
       ],
       { ...process.env, PGSSLMODE: 'disable' },
     );
-    if (localPostgres.ok) return;
+    if (localPostgres.ok) {
+      try {
+        await fs.copyFile(postgresOutPath, outPath);
+      } finally {
+        await fs.unlink(postgresOutPath).catch(() => undefined);
+      }
+      return;
+    }
 
     throw new BadRequestException(
       `فشل pg_dump بمستخدم التطبيق: ${formatPgDumpError(primary.error)}\nفشل fallback المحلي عبر postgres: ${localPostgres.error}`,
