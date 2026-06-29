@@ -3,8 +3,8 @@
  * محاذاة جداول/أشرطة HR: شريط mb-3 min-h-11، SmartTable compact + innerPadding 8 + عنوان + شارة
  */
 import React, { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getInvoices, throwIfApiFailed, downloadInvoiceAttachment } from '../../../services/api';
+import { useApiQuery } from '../../../hooks/useApiQuery';
+import { getInvoices, downloadInvoiceAttachment } from '../../../services/api';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { useToast } from '../../../context/ToastContext';
 import DateFilterBar, { useDateFilter } from '../../../shared/components/DateFilterBar';
@@ -43,34 +43,31 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   const endDate = showAllDates ? undefined : (dateFilter.endDate ? toYmd(dateFilter.endDate) : undefined);
   const kindParam = filterKind ? filterKind : 'expense,fixed_expense';
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error } = useApiQuery<any>({
     queryKey: invoiceKeys.paymentHistoryExpense(companyId, startDate, endDate, kindParam),
-    queryFn: async () => {
-      const res = await getInvoices(
-        companyId,
-        startDate,
-        endDate,
-        1,
-        500,
-        undefined,
-        undefined,
-        kindParam,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        true,
-        undefined,
-        undefined,
-        undefined,
-        true,
-      );
-      throwIfApiFailed(res, 'فشل تحميل المدفوعات');
-      return res.data;
-    },
+    queryFn: () => getInvoices(
+      companyId,
+      startDate,
+      endDate,
+      1,
+      500,
+      undefined,
+      undefined,
+      kindParam,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      true,
+    ),
     enabled: !!companyId,
+    fallbackMessage: 'فشل تحميل المدفوعات',
   });
 
   const items = data?.items ?? [];

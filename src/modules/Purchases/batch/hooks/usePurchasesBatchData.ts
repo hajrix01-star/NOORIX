@@ -1,12 +1,12 @@
 import { useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import Decimal from 'decimal.js';
 import { useSuppliers } from '../../../../hooks/useSuppliers';
 import { useCategories } from '../../../../hooks/useCategories';
 import { useVaults } from '../../../../hooks/useVaults';
 import { useTableFilter } from '../../../../hooks/useTableFilter';
 import { useBatchSummary } from '../../../../hooks/useBatchCalculation';
-import { getCompany, getPurchaseBatchSummaries, throwIfApiFailed } from '../../../../services/api';
+import { useApiQuery, useApiQueryOr } from '../../../../hooks/useApiQuery';
+import { getCompany, getPurchaseBatchSummaries } from '../../../../services/api';
 import { purchaseKeys, companyKeys } from '../../../../services/queryKeys';
 import { buildActiveCancelledPartialStatusMap } from '../../../../constants/badgeMaps';
 import { mapApiBatchSummaryToTableRow } from '../utils/purchasesBatchMappers';
@@ -46,13 +46,12 @@ export function usePurchasesBatchData(options: {
   const { flatCategories = [] } = useCategories(companyId);
   const { paymentVaults: activeVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
 
-  const { data: companyData } = useQuery({
+  const { data: companyData } = useApiQueryOr<any>({
     queryKey: companyKeys.single(companyId),
-    queryFn: async () => {
-      const res = await getCompany(companyId);
-      return res?.success ? res.data : null;
-    },
+    queryFn: () => getCompany(companyId),
+    fallback: null,
     enabled: !!companyId,
+    fallbackMessage: t('loadingError'),
   });
   const vatRateDecimal = vatRateDecimalFromCompany(companyData);
 
@@ -69,20 +68,17 @@ export function usePurchasesBatchData(options: {
     isLoading: batchesLoading,
     isError: batchesError,
     error: batchesErr,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: purchaseKeys.batchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ, lang),
-    queryFn: async () => {
-      const res = await getPurchaseBatchSummaries(
-        companyId,
-        dateFilter.startDate,
-        dateFilter.endDate,
-        debouncedBatchQ || undefined,
-        lang,
-      );
-      throwIfApiFailed(res, t('loadBatchFailed'));
-      return res.data;
-    },
+    queryFn: () => getPurchaseBatchSummaries(
+      companyId,
+      dateFilter.startDate,
+      dateFilter.endDate,
+      debouncedBatchQ || undefined,
+      lang,
+    ),
     enabled: !!companyId && activeTab === 'history',
+    fallbackMessage: t('loadBatchFailed'),
   });
 
   const statusBadgeMap = useMemo(() => buildActiveCancelledPartialStatusMap(t), [t]);

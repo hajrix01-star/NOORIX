@@ -1,6 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { getCompanyAssets, getPendingWarrantyInvoices } from '../../../services/api';
-import { assertApiOk } from '../../../utils/apiResponse';
 import { assetKeys } from '../../../services/queryKeys';
 import { mapPendingList, mapRegisterListResponse, type RegisterListResponse } from '../utils/assetsRegisterMappers';
 
@@ -12,29 +11,23 @@ export function useAssetsRegisterData(
   pageSize: number,
   loadingErrorLabel: string,
 ) {
-  const registerQuery = useQuery({
+  const registerQuery = useApiQuery<RegisterListResponse | undefined>({
     queryKey: assetKeys.register(companyId, warrantyFilter, debouncedQ, page, pageSize),
-    queryFn: async () => {
-      const res = await getCompanyAssets(companyId, {
+    queryFn: () => getCompanyAssets(companyId, {
         warrantyFilter: warrantyFilter === 'all' ? undefined : warrantyFilter,
         q: debouncedQ || undefined,
         page,
         pageSize,
-      });
-      assertApiOk(res, loadingErrorLabel);
-      return res.data as RegisterListResponse | undefined;
-    },
+      }),
     enabled: !!companyId,
+    fallbackMessage: loadingErrorLabel,
   });
 
-  const pendingQuery = useQuery({
+  const pendingQuery = useApiQuery<any>({
     queryKey: assetKeys.pendingWarranty(companyId),
-    queryFn: async () => {
-      const res = await getPendingWarrantyInvoices(companyId);
-      assertApiOk(res, loadingErrorLabel);
-      return res.data;
-    },
+    queryFn: () => getPendingWarrantyInvoices(companyId),
     enabled: !!companyId,
+    fallbackMessage: loadingErrorLabel,
   });
 
   const { items, total, sumAll } = mapRegisterListResponse(registerQuery.data);

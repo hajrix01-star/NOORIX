@@ -1,13 +1,12 @@
 /**
  * رؤى لوحة التحكم — استعلام React Query فقط (لا واجهة هنا).
  */
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import {
   getDashboardInsights,
   type DashboardInsightsPayload,
   type GetDashboardInsightsParams,
 } from '../../../services/reportingInsightsApi';
-import { throwIfApiFailed } from '../../../services/api';
 import { reportingInsightsKeys } from '../../../services/queryKeys/reportingInsightsKeys';
 
 function hasRequiredInsightsInputs(p: GetDashboardInsightsParams): boolean {
@@ -51,14 +50,11 @@ export function useDashboardInsights(params: UseDashboardInsightsParams) {
     includeCancelledSales: rest.includeCancelledSales === true,
   };
 
-  return useQuery({
+  return useApiQuery<DashboardInsightsPayload>({
     queryKey: reportingInsightsKeys.dashboard(queryKeyInput),
-    queryFn: async (): Promise<DashboardInsightsPayload> => {
-      const res = await getDashboardInsights(rest);
-      throwIfApiFailed(res, 'فشل تحميل رؤى لوحة التحكم');
-      return res.data as DashboardInsightsPayload;
-    },
+    queryFn: () => getDashboardInsights(rest),
     enabled: hasRequiredInsightsInputs(rest) && enabled,
+    fallbackMessage: 'فشل تحميل رؤى لوحة التحكم',
     staleTime: 60_000,
   });
 }
