@@ -3,8 +3,9 @@
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
+import { useApiListQuery, useApiQuery } from '../../hooks/useApiQuery';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -56,31 +57,29 @@ export default function BankStatementAnalysisScreen() {
 
   const { showToast } = useToast();
 
-  const { data: summary, isLoading: summaryLoading } = useQuery({
+  const { data: summary, isLoading: summaryLoading } = useApiQuery<any>({
     queryKey: bankKeys.statementsSummaryByCompany(companyId),
     queryFn: () => bankStatementSummary(companyId),
     enabled: !!companyId,
+    fallbackMessage: t('apiRequestFailed'),
   });
 
-  const { data: statements = [], isLoading: listLoading } = useQuery({
+  const { data: statements = [], isLoading: listLoading } = useApiListQuery<any>({
     queryKey: bankKeys.statementsListFiltered(companyId, filterMonth, filterBank),
-    queryFn: async () => {
-      const res = await bankStatementsList(companyId, {
+    queryFn: () =>
+      bankStatementsList(companyId, {
         month: filterMonth || undefined,
         bankName: filterBank || undefined,
-      });
-      return res?.data ?? [];
-    },
+      }),
     enabled: !!companyId && (activeTab === 'statements' || !selectedStatementId),
+    fallbackMessage: t('apiRequestFailed'),
   });
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useApiListQuery<any>({
     queryKey: bankKeys.statementCategories(companyId),
-    queryFn: async () => {
-      const res = await bankStatementCategories(companyId);
-      return res?.data ?? [];
-    },
+    queryFn: () => bankStatementCategories(companyId),
     enabled: !!companyId,
+    fallbackMessage: t('apiRequestFailed'),
   });
 
   const invalidate = useCallback(() => {

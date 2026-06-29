@@ -3,8 +3,9 @@
  * الترقيم: 50 صف/صفحة. الفلترة الزمنية إلزامية (من DateFilterBar في الشاشة الأم).
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getVaultTransactions } from '../../../services/api';
+import { getVaultTransactions, throwIfApiFailed } from '../../../services/api';
+import { useApiQuery } from '../../../hooks/useApiQuery';
+import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
@@ -18,6 +19,7 @@ const PAGE_SIZE = 50;
 
 export default function VaultTransactionsModal({ vault, companyId, onClose, dateFilter }: any) {
   const { t, lang } = useTranslation();
+  const { showToast } = useToast();
   const [page, setPage] = useState(1);
   const { startDate, endDate, periodLabel } = useMemo(() => {
     if (dateFilter?.startDate && dateFilter?.endDate) {
@@ -35,18 +37,19 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
 
   useEffect(() => { setPage(1); }, [startDate, endDate]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useApiQuery({
     queryKey: vaultKeys.transactions(vault?.id, companyId, startDate, endDate, page),
     queryFn: async () => {
       const res = await getVaultTransactions(vault?.id, companyId, startDate, endDate, page, PAGE_SIZE);
-      if (!res?.success) return { items: [], total: 0, page: 1, pageSize: PAGE_SIZE };
+      if (!res?.success) return res;
       const d = res.data;
       const tx = d?.transactions;
-      if (tx?.items) return { items: tx.items, total: tx.total ?? 0, page: tx.page ?? 1, pageSize: tx.pageSize ?? PAGE_SIZE };
+      if (tx?.items) return { success: true, data: { items: tx.items, total: tx.total ?? 0, page: tx.page ?? 1, pageSize: tx.pageSize ?? PAGE_SIZE } };
       const arr = Array.isArray(d) ? d : (d?.items ?? []);
-      return { items: arr, total: arr.length, page: 1, pageSize: PAGE_SIZE };
+      return { success: true, data: { items: arr, total: arr.length, page: 1, pageSize: PAGE_SIZE } };
     },
     enabled: !!(vault?.id && companyId && startDate && endDate),
+    fallbackMessage: t('loadDataFailed'),
   });
 
   const accountId = vault?.accountId;
@@ -88,8 +91,9 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
   }, [items, vault?.totalOut, data?.total]);
 
   const handleExportExcel = useCallback(async () => {
+    try {
     const res = await getVaultTransactions(vault?.id, companyId, startDate, endDate, 1, 10000);
-    if (!res?.success) return;
+    throwIfApiFailed(res, t('loadDataFailed'));
     const tx = res.data?.transactions;
     const allItems = tx?.items ?? [];
     const accId = vault?.accountId;
@@ -119,7 +123,10 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
       });
     }
     exportToExcel(rows, `vault-transactions-${vault?.nameAr || vault?.id}-${(periodLabel || 'export').replace(/\s/g, '-')}.xlsx`);
-  }, [vault?.id, vault?.accountId, vault?.nameAr, companyId, startDate, endDate, periodLabel, t, formatVaultTransactionNotes]);
+    } catch (err: any) {
+      showToast(err?.message || t('loadDataFailed'), 'error');
+    }
+  }, [vault?.id, vault?.accountId, vault?.nameAr, companyId, startDate, endDate, periodLabel, t, formatVaultTransactionNotes, showToast]);
 
   const handlePrintPdf = () => {
     const esc = (s: any) => String(s ?? '').replace(/</g, '&lt;');
@@ -232,6 +239,8 @@ export default function VaultTransactionsModal({ vault, companyId, onClose, date
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={error?.message || t('loadDataFailed')}
         title=""
         emptyMessage={t('noDataInPeriod')}
         footerCells={footerCells}

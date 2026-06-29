@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { getVatPlanningList, throwIfApiFailed } from '../../services/api';
+import { getVatPlanningList, unwrapApiList } from '../../services/api';
 import { defaultDisclosureData, computeNetPayable } from '../../constants/taxDisclosure';
 import { fmtTax } from '../../utils/format';
 import { Button } from '../../ui';
@@ -41,8 +41,7 @@ export default function HajriTaxQuarterOverview() {
       queryFn: async () => {
         if (!companyId) return null;
         const res = await getVatPlanningList(year, q, companyId);
-        throwIfApiFailed(res, 'فشل تحميل السجل');
-        const rows = Array.isArray(res.data) ? res.data : [];
+        const rows = unwrapApiList<any>(res, 'فشل تحميل السجل');
         return rows[0] ?? null;
       },
       enabled: !!companyId,

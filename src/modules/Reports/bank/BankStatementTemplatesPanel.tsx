@@ -2,10 +2,10 @@
  * مطابق BankTemplatesManager.jsx في Base44 — بطاقة تعريف، أعمدة، تفعيل/تعطيل، حذف نهائي
  */
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete, throwIfApiFailed } from '../../../services/api';
+import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStatementTemplateDelete } from '../../../services/api';
 import { Button, Modal } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { bankKeys } from '../../../services/queryKeys';
@@ -36,14 +36,11 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
   const { t, lang } = useTranslation();
   const [deleteId, setDeleteId] = useState<any>(null);
 
-  const { data: list = [], isLoading } = useQuery({
+  const { data: list = [], isLoading, isError, error } = useApiListQuery<any>({
     queryKey: bankKeys.statementTemplates(companyId),
-    queryFn: async () => {
-      const res = await bankStatementTemplatesList(companyId);
-      throwIfApiFailed(res, res.error || 'فشل التحميل');
-      return res.data ?? [];
-    },
+    queryFn: () => bankStatementTemplatesList(companyId),
     enabled: !!companyId,
+    fallbackMessage: t('apiRequestFailed'),
   });
 
   const toggleMut = useApiMutation({
@@ -79,8 +76,9 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
       </div>
 
       {isLoading ? <p className="text-noorix-muted">{t('loading')}…</p> : null}
+      {isError ? <p className="text-noorix-red text-[13px]">{error?.message || t('apiRequestFailed')}</p> : null}
 
-      {!isLoading && !list.length ? (
+      {!isLoading && !isError && !list.length ? (
         <div className="text-center text-noorix-muted p-6">
           <div className="mb-3 text-[20px] opacity-40"></div>
           <p className="m-0 font-semibold">{t('bankTemplatesEmptyTitle')}</p>
