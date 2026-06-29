@@ -7,10 +7,10 @@ import { useApp } from '../../../context/AppContext';
 import type { CompanyListItem } from '../../../context/appTypes';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { getBrandLogo } from '../../../utils/appBranding';
-import { getEmployeeCompensationSnapshot, throwIfApiFailed } from '../../../services/api';
+import { getEmployeeCompensationSnapshot } from '../../../services/api';
 import { hrKeys } from '../../../services/queryKeys';
 import { toYmd } from '../../../utils/saudiDate';
 import { n, defaultPeriodLabel } from './hrPrintDocumentsTabFormat';
@@ -72,14 +72,11 @@ export default function HrPrintDocumentsTab() {
     data: compensationSnapshot,
     isLoading: compensationSnapshotLoading,
     error: compensationSnapshotError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.compensationSnapshot(companyId, employeeId),
-    queryFn: async () => {
-      const res = await getEmployeeCompensationSnapshot(companyId, employeeId);
-      throwIfApiFailed(res, t('loadingError'));
-      return res.data;
-    },
+    queryFn: () => getEmployeeCompensationSnapshot(companyId, employeeId),
     enabled: !!companyId && !!employeeId,
+    fallbackMessage: t('loadingError'),
   });
 
   const payrollTotal = useMemo(() => {

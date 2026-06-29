@@ -2,7 +2,8 @@
  * ResidencyTab — الإقامات وخدمات الموظف (تأشيرات، تذاكر، تأمين، …)
  */
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -19,7 +20,6 @@ import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, Input, SmartTable, KebabMenu } from '../../../ui';
-import { throwIfApiFailed } from '../../../services/api';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -63,15 +63,11 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useApiListQuery<any>({
     queryKey: hrKeys.residencies(companyId),
-    queryFn: async () => {
-      const res = await getResidencies(companyId);
-      throwIfApiFailed(res, t('saveFailed'));
-      const d = res.data;
-      return Array.isArray(d) ? d : (d?.items ?? []);
-    },
+    queryFn: () => getResidencies(companyId),
     enabled: !!companyId,
+    fallbackMessage: t('saveFailed'),
   });
 
   const deleteMutation = useApiMutation({

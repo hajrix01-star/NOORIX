@@ -3,9 +3,9 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
-import { useApiListQuery } from '../../hooks/useApiQuery';
+import { useApiListQuery, useApiQuery } from '../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useEmployee, useEmployees } from '../../hooks/useEmployees';
 import { useApp } from '../../context/AppContext';
@@ -97,15 +97,14 @@ export default function EmployeeProfileScreen() {
     data: compensationSnapshot,
     isLoading: isCompensationSnapshotLoading,
     error: compensationSnapshotError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.compensationSnapshot(companyId, id),
     queryFn: async () => {
       if (!id) throw new Error('Employee id is required.');
-      const res = await getEmployeeCompensationSnapshot(companyId, id);
-      throwIfApiFailed(res, 'فشل تحميل بيانات HR المركزية');
-      return res.data;
+      return getEmployeeCompensationSnapshot(companyId, id);
     },
     enabled: !!companyId && !!id,
+    fallbackMessage: 'فشل تحميل بيانات HR المركزية',
   });
 
   const leaveProfileStatusMap = useMemo(() => buildLeaveRequestStatusMap(t), [t]);
@@ -139,7 +138,7 @@ export default function EmployeeProfileScreen() {
     enabled: !!companyId && !!id,
   });
 
-  const { data: hrInvoicesData, error: hrInvoicesError } = useQuery({
+  const { data: hrInvoicesData, error: hrInvoicesError } = useApiQuery<{ items: any[] }>({
     queryKey: invoiceKeys.hrAllForEmployee(companyId, id),
     queryFn: async () => {
       const [advRes, hrRes, salRes] = await Promise.all([
@@ -153,9 +152,10 @@ export default function EmployeeProfileScreen() {
         ...unwrapApiList<any>(hrRes, 'فشل تحميل مصروفات HR للموظف').filter((i: any) => i.kind === 'hr_expense' && i.status !== 'cancelled'),
         ...unwrapApiList<any>(salRes, 'فشل تحميل رواتب الموظف').filter((i: any) => i.kind === 'salary' && i.status !== 'cancelled'),
       );
-      return { items };
+      return { success: true, data: { items } };
     },
     enabled: !!companyId && !!id,
+    fallbackMessage: 'فشل تحميل فواتير الموظف',
   });
 
   const { data: deductions = [], error: deductionsError } = useApiListQuery<any>({

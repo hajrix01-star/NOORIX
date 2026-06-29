@@ -3,10 +3,10 @@
  */
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getText } from '../../../i18n/translations';
-import { getPayrollRun, throwIfApiFailed } from '../../../services/api';
+import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
@@ -26,14 +26,11 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
   const [slipModalOpen, setSlipModalOpen] = useState(false);
   const [slipNetOnly, setSlipNetOnly] = useState(false);
 
-  const { data: run, isLoading } = useQuery({
+  const { data: run, isLoading } = useApiQuery<any>({
     queryKey: hrKeys.payrollRun(runId, companyId),
-    queryFn: async () => {
-      const res = await getPayrollRun(runId, companyId);
-      throwIfApiFailed(res, t('loadingError'));
-      return res.data;
-    },
+    queryFn: () => getPayrollRun(runId, companyId),
     enabled: !!runId && !!companyId,
+    fallbackMessage: t('loadingError'),
   });
 
   /** يجب أن يبقى فوق أي return مبكر — قواعد الـ Hooks */

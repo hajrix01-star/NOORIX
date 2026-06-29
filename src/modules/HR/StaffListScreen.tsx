@@ -6,8 +6,9 @@ import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useEmployees } from '../../hooks/useEmployees';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
+import { useApiQuery } from '../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
@@ -123,7 +124,7 @@ export default function StaffListScreen({ embedded }: any) {
     data: pagedResult,
     isLoading,
     error: employeesError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.employeesPaged(companyId, viewMode, listPage, PAGE_SIZE, debouncedQ, sortKey, sortDir),
     queryFn: async () => {
       const res = await getEmployeesPaged(companyId, {
@@ -134,10 +135,11 @@ export default function StaffListScreen({ embedded }: any) {
         sortBy: sortKey,
         sortDir,
       });
-      throwIfApiFailed(res, t('employeesLoadFailed'));
-      return res;
+      if (!res.success) return res;
+      return { success: true, data: res };
     },
     enabled: !!companyId,
+    fallbackMessage: t('employeesLoadFailed'),
   });
 
   const listTotal = pagedResult?.total ?? 0;
@@ -148,14 +150,11 @@ export default function StaffListScreen({ embedded }: any) {
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.compensationSnapshots(companyId, pagedEmployeeIds),
-    queryFn: async () => {
-      const res = await getEmployeeCompensationSnapshots(companyId, pagedEmployeeIds);
-      throwIfApiFailed(res, t('employeesLoadFailed'));
-      return res.data;
-    },
+    queryFn: () => getEmployeeCompensationSnapshots(companyId, pagedEmployeeIds),
     enabled: !!companyId && pagedEmployeeIds.length > 0,
+    fallbackMessage: t('employeesLoadFailed'),
   });
 
   const STATUS_MAP = useMemo(() => buildEmployeeHrStatusMap(t), [t]);
