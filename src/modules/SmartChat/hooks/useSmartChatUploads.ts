@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getEmployees, getExpenseLines, getVaults } from '../../../services/api';
+import { getEmployees, getExpenseLines, getVaults, unwrapApiList } from '../../../services/api';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys, expenseKeys, vaultKeys } from '../../../services/queryKeys';
 import type { ExpenseMode } from '../types';
 
@@ -19,26 +20,22 @@ export function useSmartChatUploads(
       queryKey: employeeKeys.list(activeCompanyId, false),
       queryFn: async () => {
         const res = await getEmployees(activeCompanyId, false);
-        return res?.success ? (res.data ?? []) : [];
+        return unwrapApiList(res, 'فشل تحميل الموظفين');
       },
     });
     qc.prefetchQuery({
       queryKey: vaultKeys.shortActive(activeCompanyId),
       queryFn: async () => {
         const res = await getVaults(activeCompanyId, false);
-        if (!res?.success) return [];
-        const d = res.data;
-        return Array.isArray(d) ? d : (d?.items ?? []);
+        return unwrapApiList(res, 'فشل تحميل الخزائن');
       },
     });
   }, [activeCompanyId, qc]);
 
-  const { data: expenseLines = [] } = useQuery({
+  const { data: expenseLines = [] } = useApiListQuery<any>({
     queryKey: expenseKeys.lines(activeCompanyId || ''),
-    queryFn: async () => {
-      const res = await getExpenseLines(activeCompanyId || '');
-      return res?.data ?? (Array.isArray(res) ? res : []);
-    },
+    queryFn: () => getExpenseLines(activeCompanyId || ''),
+    fallbackMessage: 'فشل تحميل بنود المصاريف',
     enabled: !!activeCompanyId && (expenseMode === 'editLine' || expenseMode === 'addLine' || expenseMode === 'pay'),
   });
 

@@ -3,8 +3,9 @@
  * كل صف: بند مصروف، رقم فاتورة، مبلغ، ملاحظات
  */
 import React, { useState, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { createInvoiceBatch, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
@@ -41,12 +42,10 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
   const [batchDate, setBatchDate] = useState(getSaudiToday());
   const [vaultId, setVaultId] = useState('');
 
-  const { data: expenseLines = [] } = useQuery({
+  const { data: expenseLines = [] } = useApiListQuery<any>({
     queryKey: expenseKeys.lines(companyId),
-    queryFn: async () => {
-      const res = await getExpenseLines(companyId);
-      return res?.data ?? (Array.isArray(res) ? res : []);
-    },
+    queryFn: () => getExpenseLines(companyId),
+    fallbackMessage: t('loadingError'),
     enabled: !!companyId,
   });
 

@@ -4,7 +4,8 @@
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiListQuery } from '../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
@@ -43,12 +44,10 @@ export default function ExpensesScreen() {
   const [filterKind, setFilterKind] = useState('');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
 
-  const { data: expenseLines = [], isLoading: linesLoading } = useQuery({
+  const { data: expenseLines = [], isLoading: linesLoading, isError: linesError } = useApiListQuery<any>({
     queryKey: expenseKeys.linesWithKind(companyId, filterKind),
-    queryFn: async () => {
-      const res = await getExpenseLines(companyId, filterKind || undefined);
-      return res?.data ?? (Array.isArray(res) ? res : []);
-    },
+    queryFn: () => getExpenseLines(companyId, filterKind || undefined),
+    fallbackMessage: t('loadingError'),
     enabled: !!companyId,
   });
 
@@ -139,6 +138,7 @@ export default function ExpensesScreen() {
               embedded
               expenseLines={expenseLines}
               isLoading={linesLoading}
+              isError={linesError}
               filterKind={filterKind}
               onFilterKindChange={setFilterKind}
               onCreateLine={handleCreateLine}

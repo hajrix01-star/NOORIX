@@ -5,7 +5,8 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 // ——— الحسابات والفئات ———
 export async function getAccounts(companyId: string): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/accounts', { companyId });
-  return res.success && Array.isArray(res.data) ? res : { success: true, data: [] };
+  if (!res.success) return res;
+  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
 export async function getCategories(companyId: string): Promise<ApiParsedResult> {
   return apiGet('/api/v1/categories', { companyId });
@@ -30,7 +31,8 @@ export async function getExpenseLines(
   if (kind) params.kind = String(kind);
   if (includeInactive) params.includeInactive = 'true';
   const res = await apiGet('/api/v1/expense-lines', params);
-  return res.success && Array.isArray(res.data) ? res : { success: true, data: [] };
+  if (!res.success) return res;
+  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
 export async function getExpenseLine(id: string, companyId: string): Promise<ApiParsedResult> {
   return apiGet(`/api/v1/expense-lines/${id}`, { companyId });

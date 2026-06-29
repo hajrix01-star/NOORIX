@@ -2,15 +2,15 @@
  * CompaniesTab — تبويب إدارة الشركات
  */
 import React, { useState, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import {
   getCompanies,
   createCompany,
   updateCompany,
   deleteCompany,
   resetCompanyCategories,
-  throwIfApiFailed,
 } from '../../../services/api';
 import {
   labelStyle,
@@ -45,13 +45,10 @@ export default function CompaniesTab({
   const [email,    setEmail]    = useState('');
   const [logoUrl,  setLogoUrl]  = useState('');
 
-  const { data: companiesList = [], isLoading, isError, refetch } = useQuery({
+  const { data: companiesList = [], isLoading, isError, refetch } = useApiListQuery<any>({
     queryKey:        appKeys.companies(includeArchived),
-    queryFn:         async () => {
-      const r = await getCompanies(includeArchived);
-      throwIfApiFailed(r, 'فشل تحميل الشركات');
-      return Array.isArray(r?.data) ? r.data : [];
-    },
+    queryFn:         () => getCompanies(includeArchived),
+    fallbackMessage: 'فشل تحميل الشركات',
     placeholderData: [],
     retry:           false,
   });

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getDailySalesSummaries, throwIfApiFailed } from '../../../services/api';
+import { getDailySalesSummaries } from '../../../services/api';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { salesKeys } from '../../../services/queryKeys';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import {
@@ -18,10 +18,10 @@ export function useSalesEntryDateContext(
 ) {
   const todayYmd = getSaudiToday();
 
-  const lastEntryQuery = useQuery({
+  const lastEntryQuery = useApiListQuery<{ transactionDate?: string }, string | null>({
     queryKey: salesKeys.entryLast(companyId),
-    queryFn: async () => {
-      const res = await getDailySalesSummaries(
+    queryFn: () =>
+      getDailySalesSummaries(
         companyId,
         undefined,
         todayYmd,
@@ -31,9 +31,9 @@ export function useSalesEntryDateContext(
         'transactionDate',
         'desc',
         false,
-      );
-      throwIfApiFailed(res, 'فشل تحميل آخر ملخص');
-      const items = (res.data as { items?: { transactionDate?: string }[] } | undefined)?.items ?? [];
+      ),
+    fallbackMessage: 'فشل تحميل آخر ملخص',
+    select: (items) => {
       const first = items[0];
       return first?.transactionDate ? toYmd(first.transactionDate) : null;
     },
@@ -43,10 +43,10 @@ export function useSalesEntryDateContext(
 
   const lastEntryYmd = lastEntryQuery.data ?? null;
 
-  const lastDaySummariesQuery = useQuery({
+  const lastDaySummariesQuery = useApiListQuery<unknown>({
     queryKey: salesKeys.entryDay(companyId, lastEntryYmd ?? ''),
-    queryFn: async () => {
-      const res = await getDailySalesSummaries(
+    queryFn: () =>
+      getDailySalesSummaries(
         companyId,
         lastEntryYmd!,
         lastEntryYmd!,
@@ -56,18 +56,16 @@ export function useSalesEntryDateContext(
         'transactionDate',
         'asc',
         false,
-      );
-      throwIfApiFailed(res, 'فشل تحميل ملخصات اليوم');
-      return (res.data as { items?: unknown[] } | undefined)?.items ?? [];
-    },
+      ),
+    fallbackMessage: 'فشل تحميل ملخصات اليوم',
     enabled: !!companyId && !!lastEntryYmd,
     staleTime: 15_000,
   });
 
-  const daySummariesQuery = useQuery({
+  const daySummariesQuery = useApiListQuery<unknown>({
     queryKey: salesKeys.entryDay(companyId, txDate),
-    queryFn: async () => {
-      const res = await getDailySalesSummaries(
+    queryFn: () =>
+      getDailySalesSummaries(
         companyId,
         txDate,
         txDate,
@@ -77,10 +75,8 @@ export function useSalesEntryDateContext(
         'transactionDate',
         'asc',
         false,
-      );
-      throwIfApiFailed(res, 'فشل تحميل ملخصات اليوم');
-      return (res.data as { items?: unknown[] } | undefined)?.items ?? [];
-    },
+      ),
+    fallbackMessage: 'فشل تحميل ملخصات اليوم',
     enabled: !!companyId && !!toYmd(txDate) && txDate !== lastEntryYmd,
     staleTime: 15_000,
   });

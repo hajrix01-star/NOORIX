@@ -33,7 +33,8 @@ export async function patchAllCompaniesCategories(): Promise<ApiParsedResult> {
 
 export async function getRoles(): Promise<ApiParsedResult> {
   const res = await apiGet('/api/v1/roles');
-  return { success: res.success, data: Array.isArray(res.data) ? res.data : [] };
+  if (!res.success) return res;
+  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
 
 export async function getPermissionsSchema(): Promise<ApiParsedResult> {

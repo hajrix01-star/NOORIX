@@ -6,8 +6,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useIsMobile640 } from '../../hooks/useMediaQuery';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
-import { useQuery }        from '@tanstack/react-query';
-import { getCompanies, throwIfApiFailed } from '../../services/api';
+import { useApiListQuery } from '../../hooks/useApiQuery';
+import { getCompanies } from '../../services/api';
 import { useApp }          from '../../context/AppContext';
 import { useTranslation }  from '../../i18n/useTranslation';
 import { Input, ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
@@ -62,13 +62,10 @@ export default function SettingsScreen() {
     el?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
   }, [activeTab, isMobile]);
 
-  const { data: companiesData = [] } = useQuery({
+  const { data: companiesData = [] } = useApiListQuery<any>({
     queryKey:        appKeys.companies(false),
-    queryFn:         async () => {
-      const r = await getCompanies(false);
-      throwIfApiFailed(r, t('loadingError'));
-      return Array.isArray(r?.data) ? r.data : [];
-    },
+    queryFn:         () => getCompanies(false),
+    fallbackMessage: t('loadingError'),
     placeholderData: [],
     retry:           false,
   });
