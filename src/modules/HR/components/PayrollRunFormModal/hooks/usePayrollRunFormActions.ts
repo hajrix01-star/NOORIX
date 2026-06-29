@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
-import { createPayrollRun, updatePayrollRun } from '../../../../../services/api';
-import { rejectIfApiFailed } from '../../../../../utils/apiResponse';
+import { createPayrollRun, updatePayrollRun, throwIfApiFailed } from '../../../../../services/api';
 import {
   stripPayrollAdvDeferSegment,
   withPayrollAdvDeferSegment,
@@ -136,7 +135,7 @@ export function usePayrollRunFormActions({
         const res = isEditMode
           ? await updatePayrollRun(runId as string, cid, payload)
           : await createPayrollRun(payload);
-        rejectIfApiFailed(res, t('saveFailed'));
+        throwIfApiFailed(res, t('saveFailed'));
         onCreate?.();
         onClose?.();
       } catch (err: unknown) {

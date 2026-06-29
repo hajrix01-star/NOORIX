@@ -22,7 +22,6 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, Input, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -94,7 +93,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const returnMutation = useApiMutation({
     mutationFn: async ({ id, actualReturnDate }: any) => {
       const res = await returnFromLeave(id, companyId, actualReturnDate);
-      rejectIfApiFailed(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       return res;
     },
     invalidateQueries: [
@@ -127,7 +126,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     queryKey: hrKeys.leaveSettlementPreview(companyId, settlementRow?.id),
     queryFn: async () => {
       const res = await getLeaveSalarySettlementPreview(settlementRow.id, companyId);
-      rejectIfApiFailed(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       return res.data;
     },
     enabled: !!companyId && !!settlementRow?.id,
@@ -146,7 +145,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
       const id = typeof payload === 'string' ? payload : payload.id;
       const voidSettlement = typeof payload === 'object' && payload.voidSettlement;
       const res = await deleteLeave(id, companyId, voidSettlement);
-      rejectIfApiFailed(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       return res;
     },
     invalidateQueries: [
@@ -177,7 +176,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
       const res = await issueLeaveSalarySettlement(id, companyId, isOverride
         ? { grossAmount: n, manualOverrideReason: reason }
         : {});
-      rejectIfApiFailed(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       return res;
     },
     invalidateQueries: [

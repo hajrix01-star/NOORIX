@@ -5,6 +5,9 @@ import { createMovement } from '../../../services/api';
 
 vi.mock('../../../services/api', () => ({
   createMovement: vi.fn(),
+  throwIfApiFailed: vi.fn((res, message) => {
+    if (!res?.success) throw new Error(res?.error || message);
+  }),
 }));
 
 describe('careerMovementApply', () => {

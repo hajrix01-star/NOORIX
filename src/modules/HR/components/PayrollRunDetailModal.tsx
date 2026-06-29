@@ -6,12 +6,11 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getText } from '../../../i18n/translations';
-import { getPayrollRun } from '../../../services/api';
+import { getPayrollRun, throwIfApiFailed } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Badge, Button, AdaptiveSheet, SmartTable, Modal } from '../../../ui';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -31,7 +30,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
     queryKey: hrKeys.payrollRun(runId, companyId),
     queryFn: async () => {
       const res = await getPayrollRun(runId, companyId);
-      rejectIfApiFailed(res, t('loadingError'));
+      throwIfApiFailed(res, t('loadingError'));
       return res.data;
     },
     enabled: !!runId && !!companyId,

@@ -4,11 +4,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useVaults } from '../../../hooks/useVaults';
-import { issueResidencyInvoice } from '../../../services/api';
+import { issueResidencyInvoice, throwIfApiFailed } from '../../../services/api';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, Modal } from '../../../ui';
-import { assertApiOk } from '../../../utils/apiResponse';
 import { HR_SERVICE_CATEGORY_LABEL_KEYS } from '../constants/employeeHrServiceCategories';
 
 type IssueResidencyInvoiceModalProps = {
@@ -47,7 +46,7 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
         vaultId,
         transactionDate: getSaudiToday(),
       });
-      assertApiOk(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       onSuccess?.();
       onClose?.();
     } catch (err: any) {

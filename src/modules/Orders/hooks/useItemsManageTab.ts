@@ -42,8 +42,8 @@ import {
   createOrderCategoriesBatch,
   createOrderProductsBatch,
   updateOrderProduct,
+  throwIfApiFailed,
 } from '../../../services/api';
-import { assertApiOk } from '../../../utils/apiResponse';
 import { orderKeys } from '../../../services/queryKeys';
 
 /**
@@ -325,7 +325,7 @@ export function useItemsManageTab(companyId: any) {
       let catsAdded = 0;
       if (missingCats.length) {
         const batchRes = await createOrderCategoriesBatch(companyId, missingCats.map((nameAr: any) => ({ nameAr })));
-        assertApiOk(batchRes, t('addFailed'));
+        throwIfApiFailed(batchRes, t('addFailed'));
         catsAdded = missingCats.length;
         catRes = await getOrderCategories(companyId);
         (catRes?.data ?? []).forEach((c: any) => catMap.set(String(c.nameAr ?? '').trim().toLowerCase(), c.id));
@@ -354,7 +354,7 @@ export function useItemsManageTab(companyId: any) {
         const chunk = updateTasks.slice(i, i + CHUNK);
         const results = await Promise.all(chunk.map(({ id, body }: any) => updateOrderProduct(id, body, companyId)));
         for (const r of results) {
-          assertApiOk(r, t('updateFailed'));
+          throwIfApiFailed(r, t('updateFailed'));
         }
         updated += chunk.length;
       }
@@ -374,7 +374,7 @@ export function useItemsManageTab(companyId: any) {
       let added = 0;
       if (productsPayload.length) {
         const batchRes = await createOrderProductsBatch(companyId, productsPayload);
-        assertApiOk(batchRes, t('addFailed'));
+        throwIfApiFailed(batchRes, t('addFailed'));
         added = productsPayload.length;
       }
 

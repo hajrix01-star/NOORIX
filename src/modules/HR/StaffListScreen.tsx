@@ -9,7 +9,6 @@ import { useEmployees } from '../../hooks/useEmployees';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
-import { rejectIfApiFailed } from '../../utils/apiResponse';
 import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ImportExportModal from '../../components/ImportExportModal';
@@ -372,7 +371,7 @@ export default function StaffListScreen({ embedded }: any) {
       throw new Error(t('customAllowanceMissingEmployeeId'));
     }
     const res = await getCustomAllowances(companyId, employeeId);
-    rejectIfApiFailed(res, t('loadingError'));
+    throwIfApiFailed(res, t('loadingError'));
     const currentRows = Array.isArray(res?.data) ? res.data : (res?.data?.items ?? []);
     const currentById = new Map(currentRows.map((row: any) => [row.id, row]));
     const desiredIds = new Set(desiredRows.filter((row: any) => row.id).map((row: any) => row.id));
@@ -383,7 +382,7 @@ export default function StaffListScreen({ embedded }: any) {
         && (desiredRow.nameAr !== currentRow.nameAr || !moneyAmountsEqual(desiredRow.amount, currentRow.amount));
       if (!desiredIds.has(currentRow.id) || changed) {
         const delRes = await deleteCustomAllowance(currentRow.id, companyId);
-        rejectIfApiFailed(delRes, t('deleteFailed'));
+        throwIfApiFailed(delRes, t('deleteFailed'));
       }
     }
 
@@ -399,7 +398,7 @@ export default function StaffListScreen({ embedded }: any) {
           nameAr: dr.nameAr,
           amount: roundMoney2(dr.amount),
         });
-        rejectIfApiFailed(createRes, t('saveFailed'));
+        throwIfApiFailed(createRes, t('saveFailed'));
       }
     }
 

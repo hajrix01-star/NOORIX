@@ -1,8 +1,7 @@
 /**
  * تطبيق زيادة/ترقية على ملف الموظف + تسجيل الحركة — نفس منطق EmployeeCareerMovementModal.
  */
-import { createMovement, updateEmployee } from '../../../services/api';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { createMovement, updateEmployee, throwIfApiFailed } from '../../../services/api';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import {
   basicSalaryFromTargetTotalInclusiveOvertime,
@@ -78,7 +77,7 @@ export async function applyCareerRaise(params: {
     effectiveDate: `${effectiveDate}T12:00:00.000Z`,
     notes: notes || undefined,
   });
-  rejectIfApiFailed(mov, 'Failed to record raise movement');
+  throwIfApiFailed(mov, 'Failed to record raise movement');
 
   return { basic, newTarget, currentTotalAllIn, increment };
 }
@@ -100,7 +99,7 @@ export async function applyCareerPromotion(params: {
   if (!next) throw new Error('New job title required');
 
   const up = await updateEmployee(employeeId, { jobTitle: next }, companyId);
-  rejectIfApiFailed(up, 'Failed to update job title');
+  throwIfApiFailed(up, 'Failed to update job title');
 
   const mov = await createMovement({
     companyId,
@@ -111,5 +110,5 @@ export async function applyCareerPromotion(params: {
     effectiveDate: `${effectiveDate}T12:00:00.000Z`,
     notes: notes || undefined,
   });
-  rejectIfApiFailed(mov, 'Failed to record promotion movement');
+  throwIfApiFailed(mov, 'Failed to record promotion movement');
 }

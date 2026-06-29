@@ -6,14 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useVaults } from '../../../hooks/useVaults';
-import { getEmployees, createResidency, updateResidency } from '../../../services/api';
+import { getEmployees, createResidency, updateResidency, throwIfApiFailed } from '../../../services/api';
 import { employeeKeys } from '../../../services/queryKeys';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { fmt } from '../../../utils/format';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
-import { assertApiOk } from '../../../utils/apiResponse';
 import {
   HR_SERVICE_CATEGORIES,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
@@ -218,7 +217,7 @@ export function ResidencyFormModal({
     try {
       if (isEdit) {
         const res = await updateResidency(residency.id, buildPayload(), cid);
-        assertApiOk(res, t('saveFailed'));
+        throwIfApiFailed(res, t('saveFailed'));
       } else {
         const payload = buildPayload() as Record<string, unknown>;
         if (createInvoiceForService && invoiceAmount && parseFloat(invoiceAmount) > 0) {
@@ -228,7 +227,7 @@ export function ResidencyFormModal({
           };
         }
         const res = await createResidency(payload);
-        assertApiOk(res, t('saveFailed'));
+        throwIfApiFailed(res, t('saveFailed'));
       }
       onSuccess?.();
       onClose?.();

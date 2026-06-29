@@ -6,11 +6,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
-import { getEmployees, createLeave, updateLeave } from '../../../services/api';
+import { getEmployees, createLeave, updateLeave, throwIfApiFailed } from '../../../services/api';
 import { employeeKeys } from '../../../services/queryKeys';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet, Modal } from '../../../ui';
-import { assertApiOk } from '../../../utils/apiResponse';
 import { toDateInputYmd, getSaudiToday } from '../../../utils/saudiDate';
 
 const TYPE_MAP = {
@@ -166,11 +165,11 @@ export function LeaveFormModal({
       if (isEdit) {
         const body = { ...base, ...(structural ? { voidSalarySettlement: true } : {}) };
         const res = await updateLeave(editLeave.id, cid, body);
-        assertApiOk(res, t('saveFailed'));
+        throwIfApiFailed(res, t('saveFailed'));
       } else {
         const payload = { companyId: cid, ...base };
         const res = await createLeave(payload);
-        assertApiOk(res, t('saveFailed'));
+        throwIfApiFailed(res, t('saveFailed'));
       }
       onSuccess?.();
       onClose?.();

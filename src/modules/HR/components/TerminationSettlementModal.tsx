@@ -17,7 +17,6 @@ import {
   throwIfApiFailed,
   uploadDocumentFile,
 } from '../../../services/api';
-import { assertApiOk } from '../../../utils/apiResponse';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
@@ -242,7 +241,7 @@ export default function TerminationSettlementModal({
         documentType: 'other',
         file,
       });
-      assertApiOk(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       queryClient.invalidateQueries({ queryKey: hrKeys.documents(companyId, empId) });
       queryClient.invalidateQueries({ queryKey: employeeKeys.detail(empId, companyId) });
       showToast(t('documentUploaded'), 'success');
@@ -314,7 +313,7 @@ export default function TerminationSettlementModal({
         notes,
         idempotencyKey,
       });
-      assertApiOk(invRes, t('saveFailed'));
+      throwIfApiFailed(invRes, t('saveFailed'));
       const inv = invRes.data?.invoice;
       const invoiceNumber = inv?.invoiceNumber || inv?.id || '';
       const invoiceId = inv?.id || '';
@@ -335,7 +334,7 @@ export default function TerminationSettlementModal({
               effectiveDate: `${txDay}T12:00:00.000Z`,
               notes: `صرف راتب إنهاء خدمة — ${invoiceNumber} — آخر يوم دوام ${lw}`.slice(0, 2000),
             });
-            assertApiOk(movRes, t('saveFailed'));
+            throwIfApiFailed(movRes, t('saveFailed'));
             movementOk = true;
           } catch (me: any) {
             movementErrMsg = me?.message || t('saveFailed');

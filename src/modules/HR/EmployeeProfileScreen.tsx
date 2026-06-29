@@ -25,7 +25,6 @@ import {
   deleteResidency,
   deleteRaiseMovement,
 } from '../../services/api';
-import { assertApiOk } from '../../utils/apiResponse';
 import { ScreenShell } from '../../ui';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
 import { EmployeeCareerMovementModal } from './components/EmployeeCareerMovementModal';
@@ -300,7 +299,7 @@ export default function EmployeeProfileScreen() {
         documentType: 'other',
         file,
       });
-      assertApiOk(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       invalidateAll();
       showToast(t('documentUploaded'), 'success');
     } catch (err: any) {

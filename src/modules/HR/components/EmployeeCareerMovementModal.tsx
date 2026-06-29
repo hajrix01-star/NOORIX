@@ -7,8 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { createMovement, updateEmployee, updateRaiseMovement } from '../../../services/api';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { createMovement, updateEmployee, updateRaiseMovement, throwIfApiFailed } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
 import {
   basicSalaryFromTargetTotalInclusiveOvertime,
@@ -105,7 +104,7 @@ export function EmployeeCareerMovementModal({
       setSaving(true);
       try {
         const up = await updateEmployee(employee.id, { jobTitle: nextTitle }, companyId);
-        rejectIfApiFailed(up, t('updateFailed'));
+        throwIfApiFailed(up, t('updateFailed'));
         const prev = prevJobTitle.trim();
         const mov = await createMovement({
           companyId,
@@ -116,7 +115,7 @@ export function EmployeeCareerMovementModal({
           effectiveDate: `${effectiveDate}T12:00:00.000Z`,
           notes: notes.trim() || undefined,
         });
-        rejectIfApiFailed(mov, t('saveFailed'));
+        throwIfApiFailed(mov, t('saveFailed'));
         onSuccess?.();
         onClose?.();
       } catch (err: any) {
@@ -167,7 +166,7 @@ export function EmployeeCareerMovementModal({
           effectiveDate: `${effectiveDate}T12:00:00.000Z`,
           notes: notes.trim() || undefined,
         });
-        rejectIfApiFailed(mov, t('saveFailed'));
+        throwIfApiFailed(mov, t('saveFailed'));
         onSuccess?.();
         onClose?.();
         return;
@@ -187,7 +186,7 @@ export function EmployeeCareerMovementModal({
             ? `${t('careerSalaryAdjustmentNote')}: ${hrFmt(centralCurrentTotalAllIn)} → ${hrFmt(newTarget)}`
             : undefined),
       });
-      rejectIfApiFailed(mov, t('saveFailed'));
+      throwIfApiFailed(mov, t('saveFailed'));
       onSuccess?.();
       onClose?.();
     } catch (err: any) {

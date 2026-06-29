@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from 'react';
-import { assertApiOk } from '../../../../../utils/apiResponse';
+import { throwIfApiFailed } from '../../../../../services/api';
 import { uploadRenderedDocument } from '../utils/employeeDocPdf';
 import { buildDocFileBaseName } from '../utils/employeeDocBuilders';
 import { buildPrintWindow } from '../utils/employeeDocPrint';
@@ -57,7 +57,7 @@ export function useEmployeeDocPrintSave({
         fileBaseName,
         html: printRef.current?.innerHTML || '',
       });
-      assertApiOk(res, saveFailedMessage);
+      throwIfApiFailed(res, saveFailedMessage);
       onSaved?.();
       onClose?.();
     } catch (err: unknown) {
