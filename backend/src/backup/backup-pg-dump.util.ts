@@ -18,7 +18,7 @@ export async function runPgDumpToFile(outPath: string): Promise<void> {
   );
   if (primary.ok) return;
 
-  if (isLocalHost(host) && isRowSecurityError(primary.error)) {
+  if (isLocalHost(host)) {
     const localPostgres = await tryPgDump(
       'runuser',
       [
@@ -41,7 +41,7 @@ export async function runPgDumpToFile(outPath: string): Promise<void> {
     if (localPostgres.ok) return;
 
     throw new BadRequestException(
-      `فشل pg_dump: ${formatPgDumpError(primary.error)}\nفشل fallback المحلي عبر postgres: ${localPostgres.error}`,
+      `فشل pg_dump بمستخدم التطبيق: ${formatPgDumpError(primary.error)}\nفشل fallback المحلي عبر postgres: ${localPostgres.error}`,
     );
   }
 

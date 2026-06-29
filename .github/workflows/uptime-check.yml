@@ -1,6 +1,3 @@
-# مراقبة جاهزية الـ API من الإنترنت (لا يعتمد على السيرفر)
-# — فشل الـ job يظهر في GitHub (ويمكن تفعيل إشعار البريد من إعدادات المستودع)
-# — يعيد المحاولة 3 مرات لموجات عابرة
 name: Uptime (hajrix.com API)
 
 on:
@@ -15,23 +12,71 @@ concurrency:
 jobs:
   readiness:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: GET /api/v1/health (readiness — 200 و status=ok | 503 عند تعطّل DB)
+      - name: Check public API health with tolerant retries
+        shell: bash
         run: |
-          set -e
-          ok=0
-          for i in 1 2 3; do
-            if curl -sS -f --max-time 28 "https://hajrix.com/api/v1/health" -o /tmp/h.json; then
-              ok=1
-              break
+          set -euo pipefail
+
+          check_json_field() {
+            local file="$1"
+            local field="$2"
+            local expected="$3"
+            node - "$file" "$field" "$expected" <<'NODE'
+          const fs = require('fs');
+          const [file, field, expected] = process.argv.slice(2);
+          const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+          if (String(data[field]) !== expected) {
+            console.error(`Expected ${field}=${expected}, got ${JSON.stringify(data[field])}`);
+            process.exit(1);
+          }
+          NODE
+          }
+
+          probe() {
+            local label="$1"
+            local url="$2"
+            local file="$3"
+            local expected_field="$4"
+            local expected_value="$5"
+            local attempts=8
+            local sleep_seconds=15
+
+            for i in $(seq 1 "$attempts"); do
+              echo "==> ${label}: attempt ${i}/${attempts}"
+              local code
+              code="$(
+                curl -sS -L \
+                  --connect-timeout 15 \
+                  --max-time 45 \
+                  --retry 2 \
+                  --retry-delay 3 \
+                  --retry-connrefused \
+                  -w '%{http_code} %{time_connect} %{time_starttransfer} %{time_total}' \
+                  -o "$file" \
+                  "$url" || true
+              )"
+              echo "curl metrics: ${code:-<none>}"
+
+              if [[ "${code%% *}" == "200" ]] && check_json_field "$file" "$expected_field" "$expected_value"; then
+                head -c 600 "$file"
+                echo
+                return 0
+              fi
+
+              echo "WARN: ${label} failed; waiting ${sleep_seconds}s before retry" >&2
+              sleep "$sleep_seconds"
+            done
+
+            echo "ERROR: ${label} failed after ${attempts} attempts" >&2
+            if [[ -f "$file" ]]; then
+              echo "--- last response body ---" >&2
+              head -c 1200 "$file" >&2 || true
+              echo >&2
             fi
-            echo "Attempt $i failed, retrying..." >&2
-            sleep 10
-          done
-          if [ "$ok" != 1 ]; then
-            echo "All retries failed" >&2
-            exit 1
-          fi
-          head -c 600 /tmp/h.json
-          echo ""
+            return 1
+          }
+
+          probe "liveness" "https://hajrix.com/api/v1/health/live" /tmp/noorix-health-live.json status live
+          probe "readiness" "https://hajrix.com/api/v1/health" /tmp/noorix-health-ready.json status ok
