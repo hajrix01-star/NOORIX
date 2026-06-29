@@ -7,7 +7,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useIsMobile640 } from '../../hooks/useMediaQuery';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useQuery }        from '@tanstack/react-query';
-import { getCompanies }    from '../../services/api';
+import { getCompanies, throwIfApiFailed } from '../../services/api';
 import { useApp }          from '../../context/AppContext';
 import { useTranslation }  from '../../i18n/useTranslation';
 import { Input, ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
@@ -65,8 +65,9 @@ export default function SettingsScreen() {
   const { data: companiesData = [] } = useQuery({
     queryKey:        appKeys.companies(false),
     queryFn:         async () => {
-      try { const r = await getCompanies(false); return Array.isArray(r?.data) ? r.data : []; }
-      catch { return []; }
+      const r = await getCompanies(false);
+      throwIfApiFailed(r, t('loadingError'));
+      return Array.isArray(r?.data) ? r.data : [];
     },
     placeholderData: [],
     retry:           false,

@@ -607,6 +607,9 @@ export default {
     en: 'Calendar days until travel: {0} of {1}',
   },
   leaveSalarySettlementAmountLabel: { ar: 'المبلغ المراد صرفه', en: 'Amount to pay' },
+  leaveSalarySettlementOverrideReasonLabel: { ar: 'سبب تعديل المبلغ', en: 'Override reason' },
+  leaveSalarySettlementOverrideReasonPlaceholder: { ar: 'اكتب سبب اعتماد مبلغ مختلف عن المقترح', en: 'Explain why this amount differs from the suggested amount' },
+  leaveSalarySettlementOverrideReasonRequired: { ar: 'سبب تعديل مبلغ التسوية مطلوب', en: 'Settlement override reason is required' },
   leaveSalarySettlementSaved: { ar: 'تم صرف تسوية الراتب', en: 'Salary settlement issued' },
   deleteLeaveConfirm: {
     ar: 'حذف سجل الإجازة؟ لا يمكن حذف إجازة لها تسوية راتب مُصرفة.',

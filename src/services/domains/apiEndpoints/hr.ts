@@ -107,6 +107,9 @@ export async function issueLeaveSalarySettlement(
     const n = Number(body.grossAmount);
     if (Number.isFinite(n)) payload.grossAmount = n;
   }
+  if (body.manualOverrideReason != null && String(body.manualOverrideReason).trim()) {
+    payload.manualOverrideReason = String(body.manualOverrideReason).trim();
+  }
   if (body.vaultId) payload.vaultId = body.vaultId;
   return apiPost(`/api/v1/hr/leaves/${id}/salary-settlement?companyId=${companyId}`, payload);
 }

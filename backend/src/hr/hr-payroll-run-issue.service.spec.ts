@@ -36,11 +36,11 @@ describe('HrPayrollRunIssueService', () => {
       vault: { findFirst: jest.fn().mockResolvedValue({ id: 'vault-1' }) },
       $transaction: jest.fn((fn) => fn(tx)),
     } as any;
-    const financialCore = {
-      processOutflowBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-1' } }]),
+    const accountingCore = {
+      postPayrollPaymentBatchInTransaction: jest.fn().mockResolvedValue([{ invoice: { id: 'inv-1' } }]),
     };
     const audit = { log: jest.fn().mockResolvedValue(undefined) };
-    const service = new HrPayrollRunIssueService(prisma, audit as any, financialCore as any);
+    const service = new HrPayrollRunIssueService(prisma, audit as any, accountingCore as any);
 
     const result = await service.issuePayrollPayment({
       payrollRunId: 'run-1',
@@ -48,7 +48,7 @@ describe('HrPayrollRunIssueService', () => {
     });
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(financialCore.processOutflowBatchInTransaction).toHaveBeenCalledWith(
+    expect(accountingCore.postPayrollPaymentBatchInTransaction).toHaveBeenCalledWith(
       tx,
       expect.any(Array),
       undefined,
@@ -75,9 +75,9 @@ describe('HrPayrollRunIssueService', () => {
       vault: { findFirst: jest.fn() },
       $transaction: jest.fn(),
     } as any;
-    const financialCore = { processOutflowBatchInTransaction: jest.fn() };
+    const accountingCore = { postPayrollPaymentBatchInTransaction: jest.fn() };
     const audit = { log: jest.fn() };
-    const service = new HrPayrollRunIssueService(prisma, audit as any, financialCore as any);
+    const service = new HrPayrollRunIssueService(prisma, audit as any, accountingCore as any);
 
     const result = await service.issuePayrollPayment({
       payrollRunId: 'run-1',
@@ -90,6 +90,6 @@ describe('HrPayrollRunIssueService', () => {
       invoices: [{ id: 'inv-1', invoiceNumber: 'SAL-PR-1' }],
       idempotentReplay: true,
     });
-    expect(financialCore.processOutflowBatchInTransaction).not.toHaveBeenCalled();
+    expect(accountingCore.postPayrollPaymentBatchInTransaction).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,4 @@
-/**
- * عقد استجابة الـ API الموحّد (Noorix backend).
- * معظم نقاط النهاية ترجع كائناً يحتوي `success: boolean`.
- * عند `success === false` يجب عدم اعتبار العملية ناجحة في React Query.
- */
+import { throwIfApiFailed } from '../services/core/apiHttp';
 
 /**
  * استخراج رسالة خطأ من نتيجة API.
@@ -26,14 +22,19 @@ export function getApiErrorMessage(result: any, fallback: any = 'Request failed'
  */
 export function rejectIfApiFailed(result: any, fallbackMessage: any = 'Request failed') {
   if (
-    result
-    && typeof result === 'object'
-    && Object.prototype.hasOwnProperty.call(result, 'success')
-    && /** @type {{ success: boolean }} */ (result).success === false
+    !result
+    || typeof result !== 'object'
+    || !Object.prototype.hasOwnProperty.call(result, 'success')
+    || result.success !== false
   ) {
-    const msg = getApiErrorMessage(result, fallbackMessage);
-    const err = new Error(msg) as Error & { apiResult?: unknown };
-    err.apiResult = result;
+    return;
+  }
+  try {
+    throwIfApiFailed(result, fallbackMessage);
+  } catch (err) {
+    if (err instanceof Error) {
+      (err as Error & { apiResult?: unknown }).apiResult = result;
+    }
     throw err;
   }
 }

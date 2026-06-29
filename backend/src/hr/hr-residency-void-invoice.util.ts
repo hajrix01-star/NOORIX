@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { AuditLogService } from '../audit/audit-log.service';
 
 /**
@@ -10,7 +10,7 @@ import { AuditLogService } from '../audit/audit-log.service';
 export async function voidResidencyServiceInvoiceCore(
   deps: {
     prisma: TenantPrismaService;
-    financialCore: FinancialCoreService;
+    accountingCore: AccountingCoreService;
     audit: AuditLogService;
   },
   residencyId: string,
@@ -20,7 +20,7 @@ export async function voidResidencyServiceInvoiceCore(
   userId: string | undefined,
   reason: string,
 ): Promise<void> {
-  const { prisma, financialCore, audit } = deps;
+  const { prisma, accountingCore, audit } = deps;
 
   const inv = await prisma.invoice.findFirst({
     where: { id: invoiceId, companyId },
@@ -49,7 +49,7 @@ export async function voidResidencyServiceInvoiceCore(
     });
   }
 
-  await financialCore.cancelOperation(
+  await accountingCore.reverseFinancialOperation(
     {
       companyId,
       referenceType: 'invoice',

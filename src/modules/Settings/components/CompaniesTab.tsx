@@ -4,7 +4,14 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { getCompanies, createCompany, updateCompany, deleteCompany, resetCompanyCategories } from '../../../services/api';
+import {
+  getCompanies,
+  createCompany,
+  updateCompany,
+  deleteCompany,
+  resetCompanyCategories,
+  throwIfApiFailed,
+} from '../../../services/api';
 import {
   labelStyle,
   fileToDataUrl,
@@ -41,8 +48,9 @@ export default function CompaniesTab({
   const { data: companiesList = [], isLoading, isError, refetch } = useQuery({
     queryKey:        appKeys.companies(includeArchived),
     queryFn:         async () => {
-      try { const r = await getCompanies(includeArchived); return Array.isArray(r?.data) ? r.data : []; }
-      catch { return []; }
+      const r = await getCompanies(includeArchived);
+      throwIfApiFailed(r, 'فشل تحميل الشركات');
+      return Array.isArray(r?.data) ? r.data : [];
     },
     placeholderData: [],
     retry:           false,

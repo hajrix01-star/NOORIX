@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { TenantContext } from '../common/tenant-context';
 import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
 import { saudiDateYmd } from './utils/hr-saudi-dates.util';
@@ -21,7 +21,7 @@ type ResidencyForInvoice = {
 };
 
 export async function issueResidencyServiceInvoiceCore(
-  deps: { prisma: TenantPrismaService; financialCore: FinancialCoreService },
+  deps: { prisma: TenantPrismaService; accountingCore: AccountingCoreService },
   residency: ResidencyForInvoice,
   userId: string,
   options: { amount: number; vaultId: string; transactionDate?: string },
@@ -51,7 +51,7 @@ export async function issueResidencyServiceInvoiceCore(
     referenceLabel: residency.referenceLabel,
   });
 
-  const { invoice } = await deps.financialCore.processOutflow(
+  const { invoice } = await deps.accountingCore.postHrServiceExpense(
     {
       companyId: residency.companyId,
       employeeId: residency.employeeId,
