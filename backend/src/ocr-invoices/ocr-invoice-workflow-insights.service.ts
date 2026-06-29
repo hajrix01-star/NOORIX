@@ -11,7 +11,7 @@ import {
   buildSemanticKeywordInsights,
   extractSemanticTokens,
 } from './ocr-semantic-keyword-insights.util';
-import { TAX_RATE } from '../common/utils/math-engine';
+import { TAX_RATE } from '@noorix/finance-core';
 
 type OcrAttemptTelemetry = {
   model?: string;
@@ -179,7 +179,7 @@ export class OcrInvoiceWorkflowInsightsService {
       const lowestEntry = entries.find((e) => Number(e.price) === lowestPrice)!;
       const avgPrice = allPrices.reduce((a, b) => a + b, 0) / allPrices.length;
 
-      const VAT_RATE = TAX_RATE.toNumber();
+      const VAT_RATE = TAX_RATE;
       const isVatArtifact =
         Math.abs(latestPrice / lowestPrice - (1 + VAT_RATE)) / (1 + VAT_RATE) < 0.02 ||
         Math.abs(lowestPrice / latestPrice - (1 + VAT_RATE)) / (1 + VAT_RATE) < 0.02;

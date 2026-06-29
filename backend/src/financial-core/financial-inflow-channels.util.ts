@@ -4,7 +4,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import Decimal from 'decimal.js';
-import { splitTaxBalancedHalalas } from '../common/utils/math-engine';
+import { splitTaxBalancedHalalas } from '@noorix/finance-core';
 
 export type InflowChannelInput = { vaultId: string; amount: string };
 

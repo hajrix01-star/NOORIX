@@ -1,60 +1,37 @@
 import {
-  IsOptional,
-  IsString,
-  IsNumber,
-  Min,
-  IsIn,
-  IsDateString,
-  Allow,
-  IsInt,
   IsArray,
-  ValidateNested,
-  ArrayMinSize,
   IsBoolean,
-  MaxLength,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  Min,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
+import { CreateInvoiceDto } from './create-invoice.dto';
 import { InvoiceVaultSplitDto } from './invoice-vault-split.dto';
 
-export class UpdateInvoiceDto {
-  @IsOptional()
-  @IsString()
-  supplierId?: string;
+const INVOICE_UPDATE_KINDS = [
+  'purchase',
+  'expense',
+  'hr_expense',
+  'fixed_expense',
+  'salary',
+  'advance',
+  'sale',
+] as const;
 
-  /** السيريال الداخلي — غير قابل للتعديل */
-  @IsOptional()
-  @IsString()
-  invoiceNumber?: string;
+class UpdateInvoiceBaseDto extends PartialType(
+  OmitType(CreateInvoiceDto, ['companyId', 'kind', 'idempotencyKey', 'batchId'] as const),
+) {}
 
+export class UpdateInvoiceDto extends UpdateInvoiceBaseDto {
   @IsOptional()
-  @IsString()
-  supplierInvoiceNumber?: string;
-
-  @IsOptional()
-  @IsIn(['purchase', 'expense', 'sale'])
-  kind?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0.01)
-  @Type(() => Number)
-  totalAmount?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  netAmount?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  taxAmount?: number;
-
-  @IsOptional()
-  @IsDateString()
-  transactionDate?: string;
+  @IsIn(INVOICE_UPDATE_KINDS)
+  kind?: (typeof INVOICE_UPDATE_KINDS)[number];
 
   @IsOptional()
   @IsDateString()
@@ -67,30 +44,14 @@ export class UpdateInvoiceDto {
   settledAmount?: number;
 
   @IsOptional()
-  @IsString()
-  vaultId?: string;
-
-  /** توزيع السداد على أكثر من خزنة — يتجاوز vaultId عند الإرسال */
-  @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => InvoiceVaultSplitDto)
-  vaultSplits?: InvoiceVaultSplitDto[];
-
-  @IsOptional()
-  @IsString()
-  paymentMethodId?: string;
-
-  @IsOptional()
   @IsIn(['active', 'cancelled'])
   status?: string;
 
-  @Allow()
   @IsOptional()
-  @IsString()
-  @MaxLength(2000, { message: 'الملاحظة يجب ألا تتجاوز 2000 حرف' })
-  notes?: string;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => InvoiceVaultSplitDto)
+  vaultSplits?: InvoiceVaultSplitDto[];
 
   @IsOptional()
   @IsInt()
@@ -104,7 +65,6 @@ export class UpdateInvoiceDto {
   @Type(() => Number)
   installmentAmount?: number;
 
-  /** إكمال متابعة الضمان من قسم الضمان — تُخرج الفاتورة من قائمة الانتظار */
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)

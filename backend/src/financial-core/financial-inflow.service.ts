@@ -19,7 +19,7 @@ import {
 import { createInflowSaleLedgerEntries } from './financial-inflow-ledger.util';
 import type { InflowDto, SalesChannelDto, SalesShift } from './dto/financial-operation.dto';
 import { assertValidInflowBatch } from './financial-inflow-batch.util';
-import { resolveVatRateDecimal } from '../common/utils/math-engine';
+import { resolveVatRateDecimal } from '@noorix/finance-core';
 import type { TxClient } from './financial-core-helpers.util';
 
 function normalizeSalesShift(value: unknown): SalesShift {

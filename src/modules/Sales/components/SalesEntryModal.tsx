@@ -1,12 +1,12 @@
-ï»¿/**
- * SalesEntryModal â€” Ø¥Ø¯Ø®Ø§Ù„ Ù…Ù„Ø®Øµ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª Ø§Ù„ÙŠÙˆÙ…ÙŠ (Ø¯ÙŠÙ†Ø§Ù…ÙŠÙƒÙŠ: Ø´ÙØª ÙˆØ§Ø­Ø¯ Ø£Ùˆ Ø´ÙØªØ§Ù† Ø£Ùˆ ÙŠÙˆÙ… ÙƒØ§Ù…Ù„)
+/**
+ * SalesEntryModal — ÅÏÎÇá ãáÎÕ ÇáãÈíÚÇÊ Çáíæãí (ÏíäÇãíßí: ÔÝÊ æÇÍÏ Ãæ ÔÝÊÇä Ãæ íæã ßÇãá)
  */
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
-import { sumObjectValues } from '../../../utils/math-engine';
+import { sumObjectValues } from '@noorix/finance-core';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import type { DailySalesChannelEntry } from './DailySalesChannelsChips';
 import { SalesShiftPicker } from './SalesShiftPicker';
@@ -197,7 +197,7 @@ export function SalesEntryModal({
       : aggregateSalesDayByShift(enriched, txDate);
     const dateRaw = formatSaudiDate(txDate);
     let dateLabel = dateRaw;
-    if (dateRaw !== 'â€”') {
+    if (dateRaw !== '—') {
       const wd = formatSaudiWeekdayName(txDate, lang);
       if (wd) dateLabel = `${dateRaw} ${wd}`;
     }
@@ -253,13 +253,13 @@ export function SalesEntryModal({
     if (remaining > 0) {
       formatted.push(t('salesEntryGapDaysMore', String(remaining)));
     }
-    return formatted.join(lang === 'ar' ? 'ØŒ ' : ', ');
+    return formatted.join(lang === 'ar' ? '¡ ' : ', ');
   }
 
   const duplicateShiftHint = duplicateShifts.length > 0
     ? t(
       'salesEntryDuplicateShiftHint',
-      duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? 'ØŒ ' : ', '),
+      duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? '¡ ' : ', '),
       formatSaudiDate(txDate),
     )
     : '';
@@ -274,7 +274,7 @@ export function SalesEntryModal({
 
   function confirmSaveWarnings(): boolean {
     if (duplicateShifts.length > 0) {
-      const shiftLabels = duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? 'ØŒ ' : ', ');
+      const shiftLabels = duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? '¡ ' : ', ');
       const msg = t('salesEntryDuplicateShiftConfirm', shiftLabels, formatSaudiDate(txDate));
       if (!window.confirm(msg)) return false;
     }
@@ -414,7 +414,7 @@ export function SalesEntryModal({
               className="w-full"
               onClick={() => openDailyWhatsApp(savedSummaries, savedEntryItems)}
             >
-              {t('sendWhatsApp')} â€” {t('salesDailyWaTitle')}
+              {t('sendWhatsApp')} — {t('salesDailyWaTitle')}
             </Button>
           ) : (
             <Button
@@ -434,7 +434,7 @@ export function SalesEntryModal({
                 onWhatsApp?.(enriched ?? savedSummaries[0]);
               }}
             >
-              {t('sendWhatsApp')} â€” {t('salesDailySummary')}
+              {t('sendWhatsApp')} — {t('salesDailySummary')}
             </Button>
           )}
         </div>

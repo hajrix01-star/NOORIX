@@ -1,12 +1,12 @@
-ï»¿/**
- * SalesEditModal â€” Ù†Ø§ÙØ°Ø© ØªØ¹Ø¯ÙŠÙ„ Ù…Ù„Ø®Øµ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª
- * ØªÙØªØ­ Ø§Ù„ØµÙØ­Ø©/Ø§Ù„Ù†Ù…ÙˆØ°Ø¬ ÙˆÙŠØªÙ… Ø§Ù„ØªØ¹Ø¯ÙŠÙ„ Ø¹Ù„ÙŠÙ‡Ø§
+/**
+ * SalesEditModal — äÇİĞÉ ÊÚÏíá ãáÎÕ ÇáãÈíÚÇÊ
+ * ÊİÊÍ ÇáÕİÍÉ/ÇáäãæĞÌ æíÊã ÇáÊÚÏíá ÚáíåÇ
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import Decimal from 'decimal.js';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { splitTaxFromTotal } from '../../../utils/math-engine';
+import { splitTaxFromTotal } from '@noorix/finance-core';
 import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 import { SalesShiftPicker } from './SalesShiftPicker';
@@ -14,9 +14,9 @@ import type { SalesShiftFormValue, SalesShiftValue } from '../constants/salesShi
 import { isSalesShiftValue, parseSalesShiftValue } from '../constants/salesShift';
 
 const CHANNEL_COLORS = {
-  cash: { bg: 'var(--noorix-green-8)', border: 'var(--noorix-accent-green)', icon: 'ğŸ’µ' },
-  bank: { bg: 'var(--noorix-blue-8)', border: 'var(--noorix-accent-blue)', icon: 'ğŸ¦' },
-  app:  { bg: 'var(--noorix-violet-8)', border: 'var(--noorix-accent-violet)', icon: 'ğŸ“±' },
+  cash: { bg: 'var(--noorix-green-8)', border: 'var(--noorix-accent-green)', icon: '??' },
+  bank: { bg: 'var(--noorix-blue-8)', border: 'var(--noorix-accent-blue)', icon: '??' },
+  app:  { bg: 'var(--noorix-violet-8)', border: 'var(--noorix-accent-violet)', icon: '??' },
 };
 
 export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }: any) {
@@ -51,7 +51,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       .filter((c: any) => c?.vaultId && !live.some((v: any) => v.id === c.vaultId))
       .map((c: any) => ({
         id: c.vaultId,
-        nameAr: c.vault?.nameAr || 'Ù‚Ù†Ø§Ø© Ø³Ø§Ø¨Ù‚Ø©',
+        nameAr: c.vault?.nameAr || 'ŞäÇÉ ÓÇÈŞÉ',
         type: c.vault?.type || 'cash',
         sortOrder: c.vault?.sortOrder ?? 9999,
         isLegacyDisabled: true,
@@ -75,18 +75,18 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
     setError('');
     const blockedLegacyChannels = mergedSalesChannels.filter((v: any) => v.isLegacyDisabled && parseFloat(channelAmounts[v.id]) > 0);
     if (blockedLegacyChannels.length > 0) {
-      setError('Ø¨Ø¹Ø¶ Ø§Ù„Ù‚Ù†ÙˆØ§Øª Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…Ø© Ø³Ø§Ø¨Ù‚Ø§Ù‹ Ù„Ù… ØªØ¹Ø¯ Ù…ÙØ¹Ù„Ø© ÙƒÙ‚Ù†ÙˆØ§Øª Ø¨ÙŠØ¹. Ø£Ø¹Ø¯ ØªÙØ¹ÙŠÙ„Ù‡Ø§ Ù…Ù† Ø§Ù„Ø®Ø²Ø§Ø¦Ù† Ø£Ùˆ ÙˆØ²Ù‘Ø¹ Ø§Ù„Ù…Ø¨Ù„Øº Ø¹Ù„Ù‰ Ø§Ù„Ù‚Ù†ÙˆØ§Øª Ø§Ù„Ø­Ø§Ù„ÙŠØ©.');
+      setError('ÈÚÖ ÇáŞäæÇÊ ÇáãÓÊÎÏãÉ ÓÇÈŞÇğ áã ÊÚÏ ãİÚáÉ ßŞäæÇÊ ÈíÚ. ÃÚÏ ÊİÚíáåÇ ãä ÇáÎÒÇÆä Ãæ æÒøÚ ÇáãÈáÛ Úáì ÇáŞäæÇÊ ÇáÍÇáíÉ.');
       return;
     }
     const channels = mergedSalesChannels
       .filter((v: any) => parseFloat(channelAmounts[v.id]) > 0)
       .map((v: any) => ({ vaultId: v.id, amount: channelAmounts[v.id] }));
     if (channels.length === 0) {
-      setError('ÙŠØ¬Ø¨ Ø¥Ø¯Ø®Ø§Ù„ Ù‚Ù†Ø§Ø© Ø¨ÙŠØ¹ ÙˆØ§Ø­Ø¯Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„');
+      setError('íÌÈ ÅÏÎÇá ŞäÇÉ ÈíÚ æÇÍÏÉ Úáì ÇáÃŞá');
       return;
     }
     if (totalAmount.lte(0)) {
-      setError('ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª Ø£ÙƒØ¨Ø± Ù…Ù† ØµÙØ±');
+      setError('íÌÈ Ãä íßæä ÅÌãÇáí ÇáãÈíÚÇÊ ÃßÈÑ ãä ÕİÑ');
       return;
     }
     if (!isSalesShiftValue(shift)) {
@@ -105,7 +105,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       });
       onClose?.();
     } catch (e: any) {
-      setError(e?.message || 'ÙØ´Ù„ Ø§Ù„ØªØ­Ø¯ÙŠØ«');
+      setError(e?.message || 'İÔá ÇáÊÍÏíË');
     } finally {
       setSaving(false);
     }
@@ -117,7 +117,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
     <AdaptiveSheet
       open={true}
       onClose={onClose}
-      title={`ØªØ¹Ø¯ÙŠÙ„ Ù…Ù„Ø®Øµ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª â€” ${summary.summaryNumber}`}
+      title={`ÊÚÏíá ãáÎÕ ÇáãÈíÚÇÊ — ${summary.summaryNumber}`}
       size="xl"
       side="start"
       className="sales-edit-drawer"
@@ -129,9 +129,9 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
             onClick={handleSave}
             className="flex-1 min-w-0"
           >
-            {saving ? 'Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø­ÙØ¸...' : 'Ø­ÙØ¸ Ø§Ù„ØªØ¹Ø¯ÙŠÙ„Ø§Øª'}
+            {saving ? 'ÌÇÑí ÇáÍİÙ...' : 'ÍİÙ ÇáÊÚÏíáÇÊ'}
           </Button>
-          <Button variant="ghost" onClick={onClose}>Ø¥Ù„ØºØ§Ø¡</Button>
+          <Button variant="ghost" onClick={onClose}>ÅáÛÇÁ</Button>
         </>
       }
     >
@@ -142,18 +142,18 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       )}
 
       <div className="grid gap-3.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
-        <Input type="date" label="ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¹Ù…Ù„ÙŠØ© *" value={txDate} onChange={(e: any) => setTxDate(e.target.value)} />
-        <Input type="number" min="0" label="Ø¹Ø¯Ø¯ Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡" value={customerCount} onChange={(e: any) => setCustomerCount(e.target.value)} placeholder="0" />
-        <Input type="number" min="0" step="0.01" label="Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ù…ÙˆØ¬ÙˆØ¯ Ø¨Ø§Ù„ØµÙ†Ø¯ÙˆÙ‚" value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
+        <Input type="date" label="ÊÇÑíÎ ÇáÚãáíÉ *" value={txDate} onChange={(e: any) => setTxDate(e.target.value)} />
+        <Input type="number" min="0" label="ÚÏÏ ÇáÚãáÇÁ" value={customerCount} onChange={(e: any) => setCustomerCount(e.target.value)} placeholder="0" />
+        <Input type="number" min="0" step="0.01" label="ÇáãÈáÛ ÇáãæÌæÏ ÈÇáÕäÏæŞ" value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>
 
       <SalesShiftPicker mode="form" value={shift} onChange={setShift} required className="mb-4" />
 
       <div className="mb-4">
-        <label className="text-[13px] font-bold mb-2 block">Ù‚Ù†ÙˆØ§Øª Ø§Ù„Ø¨ÙŠØ¹</label>
+        <label className="text-[13px] font-bold mb-2 block">ŞäæÇÊ ÇáÈíÚ</label>
         {salesChannelsLoading ? (
           <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px]" style={{ border: '2px dashed var(--noorix-border)' }}>
-            Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù‚Ù†ÙˆØ§Øª Ø§Ù„Ø¨ÙŠØ¹...
+            ÌÇÑí ÊÍãíá ŞäæÇÊ ÇáÈíÚ...
           </div>
         ) : salesChannelsError ? (
           <div className="p-4 text-center text-[13px] font-semibold rounded-[10px]" style={{ color: 'var(--noorix-accent-red)', background: 'var(--noorix-red-6)', border: '1px solid var(--noorix-red-20)' }}>
@@ -161,7 +161,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
           </div>
           ) : mergedSalesChannels.length === 0 ? (
           <div className="p-4 text-center text-noorix-muted text-[13px] rounded-[10px]" style={{ border: '2px dashed var(--noorix-border)' }}>
-            Ù„Ø§ ØªÙˆØ¬Ø¯ Ù‚Ù†ÙˆØ§Øª Ø¨ÙŠØ¹ Ù…ÙØ¹Ù‘Ù„Ø©.
+            áÇ ÊæÌÏ ŞäæÇÊ ÈíÚ ãİÚøáÉ.
           </div>
         ) : (
           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
@@ -176,7 +176,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
                       <div className="font-bold text-[12px]">{vaultDisplayName(v, lang)}</div>
                       {v.isLegacyDisabled && (
                         <div className="font-bold mt-[2px] text-[10px]" style={{ color: 'var(--noorix-accent-amber)' }}>
-                          Ù‚Ù†Ø§Ø© Ù‚Ø¯ÙŠÙ…Ø© ØºÙŠØ± Ù…ÙØ¹Ù„Ø© Ø­Ø§Ù„ÙŠØ§Ù‹
+                          ŞäÇÉ ŞÏíãÉ ÛíÑ ãİÚáÉ ÍÇáíÇğ
                         </div>
                       )}
                     </div>
@@ -199,32 +199,32 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       </div>
 
       <div className="mb-4">
-        <Input multiline label="Ù…Ù„Ø§Ø­Ø¸Ø§Øª" value={notes} onChange={(e: any) => setNotes(e.target.value)} rows={2} placeholder="Ø£ÙŠ Ù…Ù„Ø§Ø­Ø¸Ø§Øª..." style={{ resize: 'vertical' }} />
+        <Input multiline label="ãáÇÍÙÇÊ" value={notes} onChange={(e: any) => setNotes(e.target.value)} rows={2} placeholder="Ãí ãáÇÍÙÇÊ..." style={{ resize: 'vertical' }} />
       </div>
 
       <div className="grid gap-2.5 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
         <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-green-10)', border: '1px solid var(--noorix-green-30)' }}>
-          <div className="text-[11px] text-noorix-green">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</div>
+          <div className="text-[11px] text-noorix-green">ÇáÅÌãÇáí</div>
           <div dir="ltr" className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-green)', fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={totalAmount.toNumber()} /> <span className="nx-sar">SR</span></div>
         </div>
         {vatEnabled && totalAmount.gt(0) && (
           <>
             <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-sky-10)', border: '1px solid var(--noorix-sky-30)' }}>
-              <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>Ø§Ù„ØµØ§ÙÙŠ</div>
+              <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>ÇáÕÇİí</div>
               <div dir="ltr" className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-sky)', fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={totalNet.toNumber()} /> <span className="nx-sar">SR</span></div>
             </div>
             <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-yellow-10)', border: '1px solid var(--noorix-yellow-30)' }}>
-              <div className="text-[11px]" style={{ color: 'var(--color-noorix-amber)' }}>Ø§Ù„Ø¶Ø±ÙŠØ¨Ø©</div>
+              <div className="text-[11px]" style={{ color: 'var(--color-noorix-amber)' }}>ÇáÖÑíÈÉ</div>
               <div dir="ltr" className="text-[18px] font-black" style={{ color: 'var(--color-noorix-amber)', fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={totalTax.toNumber()} /> <span className="nx-sar">SR</span></div>
             </div>
           </>
         )}
         <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-blue-10)', border: '1px solid var(--noorix-blue-30)' }}>
-          <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡</div>
+          <div className="text-[11px]" style={{ color: 'var(--noorix-accent-blue)' }}>ÇáÚãáÇÁ</div>
           <div className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-blue)' }}>{customerCount || 0}</div>
         </div>
         <div className="rounded-xl text-center py-3 px-[14px]" style={{ background: 'var(--noorix-violet-10)', border: '1px solid var(--noorix-violet-30)' }}>
-          <div className="text-[11px]" style={{ color: 'var(--noorix-accent-violet)' }}>Ù…Ø¹Ø¯Ù„ Ø§Ù„Ø·Ù„Ø¨</div>
+          <div className="text-[11px]" style={{ color: 'var(--noorix-accent-violet)' }}>ãÚÏá ÇáØáÈ</div>
           <div dir="ltr" className="text-[18px] font-black" style={{ color: 'var(--noorix-accent-violet)', fontFamily: 'var(--noorix-font-numbers)' }}><FmtNum n={avgPerCustomer.toNumber()} /> <span className="nx-sar">SR</span></div>
         </div>
       </div>

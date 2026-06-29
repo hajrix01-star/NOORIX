@@ -10,7 +10,7 @@ import { createInvoiceBatch, getExpenseLines } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { expenseKeys } from '../../../services/queryKeys';
 import { getSaudiToday } from '../../../utils/saudiDate';
-import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
+import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import { canExemptThisExpensePayment, isExpensePaymentTaxable } from '../utils/expenseTax';

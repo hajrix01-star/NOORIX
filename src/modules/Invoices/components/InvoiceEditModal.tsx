@@ -1,5 +1,5 @@
-ï»¿/**
- * InvoiceEditModal â€” Ù†Ø§ÙØ°Ø© ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„ÙØ§ØªÙˆØ±Ø©
+/**
+ * InvoiceEditModal — äÇİĞÉ ÊÚÏíá ÇáİÇÊæÑÉ
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '../../../context/ToastContext';
@@ -7,7 +7,7 @@ import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { splitTaxFromTotalAsNumbers } from '../../../utils/math-engine';
+import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import {
@@ -21,9 +21,9 @@ import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 
-// Ø¨Ù„Ø§ Ù…ÙˆØ±Ø¯ Ù†Ù‡Ø§Ø¦ÙŠØ§Ù‹ (Ø±ÙˆØ§ØªØ¨ ÙˆØ³Ù„Ù â€” ÙÙˆØ§ØªÙŠØ± Ù†Ø¸Ø§Ù… Ø¯Ø§Ø®Ù„ÙŠØ©)
+// ÈáÇ ãæÑÏ äåÇÆíÇğ (ÑæÇÊÈ æÓáİ — İæÇÊíÑ äÙÇã ÏÇÎáíÉ)
 const NO_SUPPLIER_KINDS = new Set(['salary', 'advance']);
-// Ù…ÙˆØ±Ø¯ Ø§Ø®ØªÙŠØ§Ø±ÙŠ (Ù…ØµØ§Ø±ÙŠÙ Ø«Ø§Ø¨ØªØ© ÙˆHR)
+// ãæÑÏ ÇÎÊíÇÑí (ãÕÇÑíİ ËÇÈÊÉ æHR)
 const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
 
 export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }: any) {
@@ -51,7 +51,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
 
   const kind = invoice?.kind;
   const hasSupplier = !NO_SUPPLIER_KINDS.has(kind);           // purchase, expense, fixed_expense, hr_expense
-  const supplierRequired = !NO_SUPPLIER_KINDS.has(kind) && !OPTIONAL_SUPPLIER_KINDS.has(kind); // purchase, expense ÙÙ‚Ø·
+  const supplierRequired = !NO_SUPPLIER_KINDS.has(kind) && !OPTIONAL_SUPPLIER_KINDS.has(kind); // purchase, expense İŞØ
 
   const initialVaultKey = useMemo(() => {
     if (!invoice) return '';
@@ -202,7 +202,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       if (form.supplierInvoiceNumber?.trim()) body.supplierInvoiceNumber = form.supplierInvoiceNumber.trim();
       body.netAmount = parseFloat(form.netAmount) || 0;
       body.taxAmount = parseFloat(form.taxAmount) || 0;
-      // Ø§Ù„Ù†ÙˆØ¹ Ù‚Ø§Ø¨Ù„ Ù„Ù„ØªØ¹Ø¯ÙŠÙ„ Ù„Ù€ purchase/expense ÙÙ‚Ø·
+      // ÇáäæÚ ŞÇÈá ááÊÚÏíá áÜ purchase/expense İŞØ
       if (supplierRequired) body.kind = form.kind;
     } else {
       body.netAmount = total;
@@ -254,7 +254,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
           {attachMeta.has && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[12px] text-noorix-text truncate max-w-[200px]" title={attachMeta.name || ''}>
-                {attachMeta.name || 'â€”'}
+                {attachMeta.name || '—'}
               </span>
               <Button type="button" size="sm" variant="ghost" disabled={attachmentBusy} onClick={handleDownloadAttachment}>
                 {t('invoiceReceiptDownload')}
@@ -314,7 +314,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             type="number"
             min="0.01"
             step="0.01"
-            label={t('totalAmountInclTax') || 'Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ (Ø´Ø§Ù…Ù„ Ø§Ù„Ø¶Ø±ÙŠØ¨Ø©) *'}
+            label={t('totalAmountInclTax') || 'ÇáÅÌãÇáí (ÔÇãá ÇáÖÑíÈÉ) *'}
             value={form.totalAmount}
             onChange={(e: any) => updateField('totalAmount', e.target.value)}
             style={{ fontFamily: 'var(--noorix-font-numbers)' }}

@@ -476,7 +476,7 @@ export function buildEmployeeAllowanceTotalsMap(
 
 // ─── Export formatters (convert API response rows to Excel-friendly objects) ──
 
-type EmployeeExportSalaryRow = Parameters<typeof totalSalary>[0];
+type EmployeeExportSalaryRow = Record<string, any>;
 
 export function formatInvoiceForExport(inv: Record<string, unknown>) {
   const kindKey = String(inv.kind ?? '');

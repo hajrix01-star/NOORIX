@@ -32,7 +32,7 @@ import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }        from '../common/tenant-context';
 import { nowSaudi }             from '../common/utils/date-utils';
 import { toYmd }                from '../common/utils/to-ymd.util';
-import { splitTax }             from '../common/utils/math-engine';
+import { splitTax }             from '@noorix/finance-core';
 import { generateInvoiceSerial } from '../common/utils/invoice-serial';
 import { FiscalPeriodService }  from '../fiscal-period/fiscal-period.service';
 import { IdempotencyService }   from '../idempotency/idempotency.service';

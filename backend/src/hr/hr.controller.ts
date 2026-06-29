@@ -46,6 +46,7 @@ import { UpdateRaiseMovementDto } from './dto/update-raise-movement.dto';
 import { CreateAllowanceDto } from './dto/create-allowance.dto';
 import { CreateDeductionDto } from './dto/create-deduction.dto';
 import { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
+import { CalculateEosDto } from './dto/calculate-eos.dto';
 
 @Controller('hr')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -169,6 +170,12 @@ export class HRController {
       ? employeeIds.split(',').map((id) => id.trim()).filter(Boolean)
       : undefined;
     return this.hrService.getCompanyCompensationSnapshots(companyId, ids);
+  }
+
+  @Post('eos/calculate')
+  @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
+  calculateEos(@Body() dto: CalculateEosDto) {
+    return this.hrService.calculateEos(dto);
   }
 
   // ══════════════════════════════════════════════════════════

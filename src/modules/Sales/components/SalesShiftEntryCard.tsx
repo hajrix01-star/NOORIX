@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import Decimal from 'decimal.js';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { splitTaxFromTotal, sumObjectValues } from '../../../utils/math-engine';
+import { splitTaxFromTotal, sumObjectValues } from '@noorix/finance-core';
 import { Button, Input, FmtNum, Card } from '../../../ui';
 import type { SalesShiftValue } from '../constants/salesShift';
 import type { ShiftEntryFormState } from '../constants/salesShiftEntry';

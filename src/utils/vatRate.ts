@@ -1,7 +1,7 @@
 /**
  * نسبة ضريبة القيمة المضافة من إعدادات الشركة — مصدر واحد للواجهة.
  */
-import { TAX_RATE } from './math-engine';
+import { TAX_RATE } from '@noorix/finance-core';
 
 export const DEFAULT_VAT_RATE_PERCENT = 15;
 

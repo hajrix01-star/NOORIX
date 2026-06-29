@@ -4,7 +4,7 @@
 import React from 'react';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { Button, Input, FmtNum, Card, FormRow } from '../../../ui';
-import { splitTaxFromTotalAsNumbers, TAX_RATE } from '../../../utils/math-engine';
+import { splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
 import { useBatchRowFieldIds } from './useBatchRowLogic';
 
 export function BatchEditInvoiceLine({

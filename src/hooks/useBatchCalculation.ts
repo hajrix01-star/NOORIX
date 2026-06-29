@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react';
 import Decimal from 'decimal.js';
-import { sumAmounts, splitTaxFromTotalAsNumbers, TAX_RATE } from '../utils/math-engine';
+import { sumAmounts, splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
 
 /**
  * حساب ملخص صفوف الدفعة (net, tax, total, count).

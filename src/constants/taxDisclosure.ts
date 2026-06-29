@@ -2,7 +2,7 @@
  * نموذج الإفصاح الضريبي السعودي — تعريفات وبنيات مشتركة بين تقرير الضرائب وسجل الضريبة التخطيطي.
  * لا تستورد من modules/.
  */
-import { TAX_RATE } from '../utils/math-engine';
+import { TAX_RATE } from '@noorix/finance-core';
 import { roundMoney2 } from '../utils/moneyInput';
 
 /** صفوف المخرجات/المدخلات المعروضة في الواجهة — مختصرة للاستخدام الذي لا يفرّق هذه الفئات */

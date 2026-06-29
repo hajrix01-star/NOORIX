@@ -3,14 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "prepare": "husky",
     "predev": "powershell -ExecutionPolicy Bypass -File scripts/kill-port.ps1 -Port 5173",
     "start:dev": "npm run start:dev --prefix backend",
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build --prefix packages/finance-core && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "npm run build --prefix packages/finance-core && vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "typecheck:strict": "tsc --noEmit -p tsconfig.strict.json",
@@ -24,6 +27,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@noorix/finance-core": "file:packages/finance-core",
     "@tanstack/react-query": "^5.59.0",
     "@umalqura/core": "^0.0.7",
     "clsx": "^2.1.1",

@@ -1,5 +1,5 @@
 /** التحقق الرياضي لأصناف وإجمالي الفواتير (OCR) */
-import { TAX_RATE } from '../common/utils/math-engine';
+import { TAX_RATE } from '@noorix/finance-core';
 
 export interface MathValidationResult {
   valid: boolean;
@@ -10,7 +10,7 @@ export interface MathValidationResult {
 
 export type OcrLineTaxMode = 'exclusive' | 'inclusive' | 'unknown';
 
-export const SAUDI_VAT_RATE = TAX_RATE.toNumber();
+export const SAUDI_VAT_RATE = TAX_RATE;
 
 function amountTolerance(base: number): number {
   return Math.max(Math.abs(base), 1) * 0.03;

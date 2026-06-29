@@ -92,9 +92,9 @@ export function BatchPrintSheet({ batch, onClose }: any) {
             <tfoot>
               <tr>
                 <td colSpan={5} style={{ fontWeight: 700 }}>{t('totalSum', activeInvoices.length)}</td>
-                <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}><FmtNum n={net} /></td>
-                <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}><FmtNum n={tax} /></td>
-                <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, textAlign: 'left' }}><FmtNum n={total} /></td>
+                <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}><FmtNum n={net.toNumber()} /></td>
+                <td style={{ fontFamily: 'var(--noorix-font-numbers)', textAlign: 'left' }}><FmtNum n={tax.toNumber()} /></td>
+                <td style={{ fontFamily: 'var(--noorix-font-numbers)', fontWeight: 800, textAlign: 'left' }}><FmtNum n={total.toNumber()} /></td>
                 <td />
               </tr>
             </tfoot>

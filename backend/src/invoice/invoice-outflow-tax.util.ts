@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import {
   resolveVatRateDecimal,
   splitTaxBalancedHalalas,
-} from '../common/utils/math-engine';
+} from '@noorix/finance-core';
 
 /**
  * صافي + ضريبة لفاتورة صرف (مشتريات/مصروفات) من إجمالي شامل — متوازن + نسبة الشركة.

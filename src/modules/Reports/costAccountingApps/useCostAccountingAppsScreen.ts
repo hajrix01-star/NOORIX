@@ -11,7 +11,7 @@ import {
   throwIfApiFailed,
 } from '../../../services/api';
 import { fmt } from '../../../utils/format';
-import { TAX_RATE } from '../../../utils/math-engine';
+import { TAX_RATE } from '@noorix/finance-core';
 import { formatUiDateTime, getSaudiYearMonth } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { exportToExcel } from '../../../utils/exportUtils';

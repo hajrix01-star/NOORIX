@@ -4,7 +4,7 @@
 import { useMemo, useId } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { splitTaxFromTotalAsNumbers, TAX_RATE } from '../../../utils/math-engine';
+import { splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
 import { patchForCategoryChange, patchForSupplierChange } from '../utils/batchRowModel';
 
 export const BATCH_ROW_INPUT_BASE = {

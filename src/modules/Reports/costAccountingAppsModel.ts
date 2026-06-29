@@ -16,7 +16,7 @@
  *    **معاينة من جملة معلومة:** بإدخال G وα يُشتق صافي الربح عبر `computeCostAppsPl` (بعد توزيع المحلي بنفس نسبة النقد/البنك الحالية إن وُجدت).
  */
 import Decimal from 'decimal.js';
-import { roundAmount, splitTaxFromTotal } from '../../utils/math-engine';
+import { roundAmount, splitTaxFromTotal } from '@noorix/finance-core';
 
 export type CostAppsCommissionBase = 'gross' | 'net';
 

@@ -9,6 +9,8 @@ import { HrResidencyService } from './hr-residency.service';
 import { HrDocumentService } from './hr-document.service';
 import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 import { getHrAdvanceTotals } from './hr-advance-balance.util';
+import { computeEos } from '@noorix/finance-core';
+import { CalculateEosDto } from './dto/calculate-eos.dto';
 
 @Injectable()
 export class HRService {
@@ -69,6 +71,19 @@ export class HRService {
 
   getCompanyCompensationSnapshots(companyId: string, employeeIds?: string[]) {
     return this.compensationSnapshot.getCompanySnapshots(companyId, employeeIds);
+  }
+
+  calculateEos(dto: CalculateEosDto) {
+    const result = computeEos(dto);
+    return {
+      serviceDays: result.serviceDays,
+      serviceYears: result.serviceYears.toNumber(),
+      firstFiveYears: result.firstFiveYears.toNumber(),
+      remainingYears: result.remainingYears.toNumber(),
+      fullAward: result.fullAward.toDecimalPlaces(2).toNumber(),
+      eligibilityFactor: result.eligibilityFactor.toNumber(),
+      eosAmount: result.eosAmount.toDecimalPlaces(2).toNumber(),
+    };
   }
 
   // ── Movements, allowances, deductions (مع المسير في نفس خدمة الرواتب) ──
