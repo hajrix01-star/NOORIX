@@ -12,8 +12,9 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getEmployeeCompensationSnapshots, throwIfApiFailed, updateEmployee } from '../../../services/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
+import { getEmployeeCompensationSnapshots, updateEmployee } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { getSaudiToday } from '../../../utils/saudiDate';
@@ -83,14 +84,11 @@ export default function SalaryCalcTab() {
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.compensationSnapshots(companyId, employeeIds),
-    queryFn: async () => {
-      const res = await getEmployeeCompensationSnapshots(companyId, employeeIds);
-      throwIfApiFailed(res, t('loadingError'));
-      return res.data;
-    },
+    queryFn: () => getEmployeeCompensationSnapshots(companyId, employeeIds),
     enabled: !!companyId && employeeIds.length > 0,
+    fallbackMessage: t('loadingError'),
   });
 
   const snapshotByEmployeeId = useMemo(() => {

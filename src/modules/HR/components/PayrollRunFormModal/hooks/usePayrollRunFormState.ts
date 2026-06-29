@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import {
   getEmployees,
   getInvoices,
@@ -8,7 +7,6 @@ import {
   getPayrollRuns,
   getLeaveSalarySettlements,
   getEmployeeCompensationSnapshots,
-  throwIfApiFailed,
 } from '../../../../../services/api';
 import { useApiListQuery, useApiQuery } from '../../../../../hooks/useApiQuery';
 import { employeeKeys, hrKeys, invoiceKeys } from '../../../../../services/queryKeys';
@@ -66,14 +64,11 @@ export function usePayrollRunFormState({
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.compensationSnapshots(cid, employeeIds),
-    queryFn: async () => {
-      const res = await getEmployeeCompensationSnapshots(cid, employeeIds);
-      throwIfApiFailed(res, 'فشل تحميل بيانات الرواتب المركزية');
-      return res.data;
-    },
+    queryFn: () => getEmployeeCompensationSnapshots(cid, employeeIds),
     enabled: !!cid && employeeIds.length > 0,
+    fallbackMessage: 'فشل تحميل بيانات الرواتب المركزية',
   });
 
   const compensationSnapshotByEmployeeId = useMemo(() => {

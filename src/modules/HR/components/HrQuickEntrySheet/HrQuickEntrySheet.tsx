@@ -2,11 +2,11 @@
  * HrQuickEntrySheet — إدخال سريع من المحادثة (حاوية)
  */
 import React, { useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../../../hooks/useApiQuery';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { Button, AdaptiveSheet, Input } from '../../../../ui';
 import { employeeDisplayName } from '../../../../utils/employeeDisplayName';
-import { getEmployeeCompensationSnapshots, throwIfApiFailed } from '../../../../services/api';
+import { getEmployeeCompensationSnapshots } from '../../../../services/api';
 import { hrKeys } from '../../../../services/queryKeys';
 import { useHrQuickEntryState } from './hooks/useHrQuickEntryState';
 import { useHrQuickEntryRows } from './hooks/useHrQuickEntryRows';
@@ -40,14 +40,11 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.compensationSnapshots(companyId, activeEmployeeIds),
-    queryFn: async () => {
-      const res = await getEmployeeCompensationSnapshots(companyId, activeEmployeeIds);
-      throwIfApiFailed(res, t('loadingError'));
-      return res.data;
-    },
+    queryFn: () => getEmployeeCompensationSnapshots(companyId, activeEmployeeIds),
     enabled: mode === 'increase' && !!companyId && activeEmployeeIds.length > 0,
+    fallbackMessage: t('loadingError'),
   });
   const compensationSnapshotByEmployeeId = React.useMemo(() => {
     const map = new Map<string, any>();

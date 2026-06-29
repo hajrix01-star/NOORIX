@@ -12,11 +12,11 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import Decimal from 'decimal.js';
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEmployees } from '../../../hooks/useEmployees';
-import { getEmployeeCompensationSnapshot, throwIfApiFailed } from '../../../services/api';
+import { getEmployeeCompensationSnapshot } from '../../../services/api';
 import { hrKeys } from '../../../services/queryKeys';
 import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
@@ -49,14 +49,11 @@ export default function EOSCalcTab() {
     data: compensationSnapshot,
     isLoading: compensationSnapshotLoading,
     error: compensationSnapshotError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.compensationSnapshot(companyId, selectedEmployee),
-    queryFn: async () => {
-      const res = await getEmployeeCompensationSnapshot(companyId, selectedEmployee);
-      throwIfApiFailed(res, t('loadingError'));
-      return res.data;
-    },
+    queryFn: () => getEmployeeCompensationSnapshot(companyId, selectedEmployee),
     enabled: !!companyId && !!selectedEmployee,
+    fallbackMessage: t('loadingError'),
   });
   const jd = joinDate || emp?.joinDate;
   const ed = endDate;

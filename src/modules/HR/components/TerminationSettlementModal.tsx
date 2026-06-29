@@ -3,7 +3,8 @@
  */
 import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { useApp } from '../../../context/AppContext';
@@ -120,28 +121,23 @@ export default function TerminationSettlementModal({
     data: compensationSnapshot,
     isLoading: compensationSnapshotLoading,
     error: compensationSnapshotError,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.compensationSnapshot(companyId, empId),
-    queryFn: async () => {
-      const res = await getEmployeeCompensationSnapshot(companyId, empId);
-      throwIfApiFailed(res, t('loadingError'));
-      return res.data;
-    },
+    queryFn: () => getEmployeeCompensationSnapshot(companyId, empId),
     enabled: open && !!companyId && !!empId,
+    fallbackMessage: t('loadingError'),
   });
 
   const monthlyPackageTotal = compensationSnapshot?.salaryPackage?.total;
   const hasMonthlyPackageTotal = Number.isFinite(Number(monthlyPackageTotal)) && Number(monthlyPackageTotal) > 0;
 
-  const { data: advanceInvoices = [] } = useQuery({
+  const { data: advanceInvoices = [] } = useApiListQuery<any>({
     queryKey: hrKeys.terminationAdvances(companyId, empId),
-    queryFn: async () => {
-      const res = await getInvoices(companyId, undefined, undefined, 1, 100, null, empId, 'advance');
-      const items = unwrapApiList<any>(res, t('loadingError'));
-      return items.filter((inv: any) => inv.kind === 'advance' && inv.status !== 'cancelled');
-    },
+    queryFn: () => getInvoices(companyId, undefined, undefined, 1, 100, null, empId, 'advance'),
+    select: (items) => items.filter((inv: any) => inv.kind === 'advance' && inv.status !== 'cancelled'),
     enabled: open && !!companyId && !!empId,
     staleTime: 60 * 1000,
+    fallbackMessage: t('loadingError'),
   });
 
   const advancesRemaining = useMemo(() => {
@@ -155,15 +151,16 @@ export default function TerminationSettlementModal({
     [empId, monthFirst],
   );
 
-  const { data: hasTerminationSalaryThisMonth = false, isFetching: checkingTerminationSalaryInvoice } = useQuery({
+  const { data: hasTerminationSalaryThisMonth = false, isFetching: checkingTerminationSalaryInvoice } = useApiQuery<boolean>({
     queryKey: hrKeys.terminationSalaryExists(companyId, empId, monthFirst, termSalaryTag),
     queryFn: async () => {
-      if (!companyId || !empId || !monthFirst || !termSalaryTag) return false;
+      if (!companyId || !empId || !monthFirst || !termSalaryTag) return { success: true, data: false };
       const hit = await findTerminationSalaryInvoiceThisMonth(companyId, empId, monthFirst, termSalaryTag);
-      return !!hit;
+      return { success: true, data: !!hit };
     },
     enabled: open && !!companyId && !!empId && !!monthFirst && !!termSalaryTag,
     staleTime: 15_000,
+    fallbackMessage: t('loadingError'),
   });
 
   const preview = useMemo(() => {
