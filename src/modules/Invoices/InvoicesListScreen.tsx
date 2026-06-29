@@ -71,6 +71,7 @@ export default function InvoicesListScreen() {
               inflowByVault={s.inflowByVault}
               outflowSummary={s.outflowSummary}
               vaultRowLabel={s.vaultRowLabel}
+              isRefreshing={s.isFetching && !s.isLoading && s.isPlaceholderData}
             />
           )}
           <InvoicesListFiltersToolbar

@@ -1,3 +1,5 @@
+import { roundMoney } from '@noorix/finance-core';
+
 /**
  * تسوية راتب تقويمية عند إجازة سنوية — تستخدم إجمالي الراتب الشهري المركزي.
  */
@@ -15,8 +17,7 @@ export type EmployeeSalaryShape = {
 };
 
 function money(value: unknown): number {
-  const n = Number(value ?? 0);
-  return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+  return roundMoney(value as any);
 }
 
 const HR_META = '[HR_META]';
@@ -69,7 +70,7 @@ export function resolveLeaveSalarySettlementGrossAmount(
     throw new RangeError('Invalid leave salary settlement gross amount override.');
   }
 
-  const grossAmount = Math.round(override * 100) / 100;
+  const grossAmount = roundMoney(override);
   return {
     grossAmount,
     hasManualOverride: Math.abs(grossAmount - calc.grossAmount) > 0.005,
@@ -122,7 +123,7 @@ export function computeCalendarLeaveSalarySettlement(
   if (fullMonthly <= 0) {
     return { payrollMonth, daysInMonth, calendarDaysPaid, grossAmount: 0 };
   }
-  const grossAmount = Math.round(Math.max(0, fullMonthly * factor) * 100) / 100;
+  const grossAmount = roundMoney(Math.max(0, fullMonthly * factor));
 
   return { payrollMonth, daysInMonth, calendarDaysPaid, grossAmount };
 }

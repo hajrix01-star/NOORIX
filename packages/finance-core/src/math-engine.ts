@@ -87,6 +87,12 @@ export function roundAmountAsNumber(value: DecimalInput, dp = 2): number {
   return roundAmount(value, dp).toNumber();
 }
 
+export function roundMoney(value: DecimalInput): number {
+  return roundAmountAsNumber(value, 2);
+}
+
+export const roundMoney2 = roundMoney;
+
 export function resolveVatRateDecimal(vatRatePercent?: DecimalInput): Decimal {
   if (vatRatePercent !== null && vatRatePercent !== undefined && vatRatePercent !== '') {
     const n = Number(vatRatePercent);

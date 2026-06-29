@@ -3,7 +3,6 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '../../../context/ToastContext';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
@@ -15,6 +14,7 @@ import {
   uploadInvoiceAttachment,
   deleteInvoiceAttachment,
   downloadInvoiceAttachment,
+  throwIfApiFailed,
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
@@ -130,7 +130,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     setAttachmentBusy(true);
     try {
       const res = await uploadInvoiceAttachment(invoice.id, companyId, file);
-      rejectIfApiFailed(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       const inv = res?.data;
       setAttachMeta({
         has: !!inv?.hasInvoiceAttachment,
@@ -151,7 +151,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     setAttachmentBusy(true);
     try {
       const res = await deleteInvoiceAttachment(invoice.id, companyId);
-      rejectIfApiFailed(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       setAttachMeta({ has: false, name: null });
       showToast(t('invoiceReceiptRemoved'), 'success');
       onSaved?.();

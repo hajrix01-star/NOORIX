@@ -209,7 +209,7 @@ export function useInvoicesListScreen() {
 
   const kindForApi = filterKind || urlExtra.kind || undefined;
 
-  const { items, total, sums, inflowByVault, outflowSummary, isLoading, isError, error } = useInvoices({
+  const { items, total, sums, inflowByVault, outflowSummary, isLoading, isFetching, isPlaceholderData, isError, error } = useInvoices({
     companyId,
     startDate: invoiceQueryStartDate,
     endDate: invoiceQueryEndDate,
@@ -706,6 +706,8 @@ export function useInvoicesListScreen() {
     tableData,
     page,
     isLoading,
+    isFetching,
+    isPlaceholderData,
     isError,
     error,
     footerRow,
