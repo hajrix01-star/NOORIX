@@ -4,11 +4,10 @@
  */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast } from '../../../context/ToastContext';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { createInvoice, getExpenseLines, uploadInvoiceAttachment } from '../../../services/api';
+import { createInvoice, getExpenseLines, throwIfApiFailed, uploadInvoiceAttachment } from '../../../services/api';
 import { useVaults } from '../../../hooks/useVaults';
 import { expenseKeys } from '../../../services/queryKeys';
 import { getSaudiToday } from '../../../utils/saudiDate';
@@ -141,7 +140,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
       if (receiptFile && invId && companyId) {
         try {
           const up = await uploadInvoiceAttachment(invId, companyId, receiptFile);
-          rejectIfApiFailed(up);
+          throwIfApiFailed(up);
         } catch (e: any) {
           uploadErr = e?.message || t('invoiceReceiptUploadFailed');
         }

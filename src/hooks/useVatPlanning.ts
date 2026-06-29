@@ -1,34 +1,26 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVatPlanningList, getVatPlanningRegistry, upsertVatPlanning, throwIfApiFailed } from '../services/api';
 import { vatKeys } from '../services/queryKeys';
+import { useApiListQuery } from './useApiQuery';
 
 export function useVatPlanningList(year: any, quarter: any, companyId: any, enabled: any = true) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: vatKeys.planning(year, quarter, companyId ?? ''),
-    queryFn: async () => {
-      const res = await getVatPlanningList(year, quarter, companyId);
-      throwIfApiFailed(res, 'فشل تحميل سجل الضريبة التخطيطي');
-      const raw = res.data;
-      return Array.isArray(raw) ? raw : [];
-    },
+    queryFn: () => getVatPlanningList(year, quarter, companyId),
+    fallbackMessage: 'Failed to load VAT planning record',
     enabled: !!enabled && Number.isFinite(year) && Number.isFinite(quarter),
   });
 }
 
-/** قائمة الإقرارات المسجّلة (فلاتر اختيارية) */
 export function useVatPlanningRegistry(filters: any, enabled: any = true) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: vatKeys.registry(
       String(filters?.year ?? ''),
       String(filters?.quarter ?? ''),
       String(filters?.companyId ?? ''),
     ),
-    queryFn: async () => {
-      const res = await getVatPlanningRegistry(filters);
-      throwIfApiFailed(res, 'فشل تحميل سجل الإقرارات');
-      const raw = res.data;
-      return Array.isArray(raw) ? raw : [];
-    },
+    queryFn: () => getVatPlanningRegistry(filters),
+    fallbackMessage: 'Failed to load VAT planning registry',
     enabled: !!enabled,
   });
 }
@@ -38,7 +30,7 @@ export function useUpsertVatPlanning() {
   return useMutation<any, Error, Record<string, unknown>>({
     mutationFn: async (body: any) => {
       const res = await upsertVatPlanning(body);
-      throwIfApiFailed(res, 'فشل حفظ السجل الضريبي');
+      throwIfApiFailed(res, 'Failed to save VAT planning record');
       return res.data;
     },
     onSuccess: () => {

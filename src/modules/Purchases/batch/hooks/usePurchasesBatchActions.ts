@@ -2,13 +2,13 @@ import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../../../utils/queryInvalidation';
-import { rejectIfApiFailed } from '../../../../utils/apiResponse';
 import { useToast } from '../../../../context/ToastContext';
 import {
   createInvoiceBatch,
   updateInvoice,
   fetchAllInvoicesForBatch,
   setSupplierBookmark,
+  throwIfApiFailed,
   uploadInvoiceAttachment,
 } from '../../../../services/api';
 import { supplierKeys } from '../../../../services/queryKeys';
@@ -82,7 +82,7 @@ export function usePurchasesBatchActions(options: {
         for (const inv of invoices) {
           if (inv.status === 'active') {
             const res = await updateInvoice(inv.id, { status: 'cancelled' }, companyId);
-            rejectIfApiFailed(res, t('cancelFailed'));
+            throwIfApiFailed(res, t('cancelFailed'));
           }
         }
         invalidateOnFinancialMutation(queryClient);
@@ -129,7 +129,7 @@ export function usePurchasesBatchActions(options: {
           };
         }),
       });
-      rejectIfApiFailed(res, t('saveFailed'));
+      throwIfApiFailed(res, t('saveFailed'));
       const payload = res.data ?? { batchId: 'B-' + Date.now(), count: valid.length };
       return { payload, uploadRows: valid };
     },
@@ -144,7 +144,7 @@ export function usePurchasesBatchActions(options: {
         if (f && invId && companyId) {
           try {
             const up = await uploadInvoiceAttachment(invId, companyId, f);
-            rejectIfApiFailed(up);
+            throwIfApiFailed(up);
           } catch {
             showToast(t('invoiceReceiptUploadFailed'), 'error');
             break;

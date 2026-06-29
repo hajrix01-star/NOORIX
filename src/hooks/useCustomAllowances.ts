@@ -1,16 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
-import { getCustomAllowances, throwIfApiFailed } from '../services/api';
+import { getCustomAllowances } from '../services/api';
 import { hrKeys } from '../services/queryKeys';
+import { useApiListQuery } from './useApiQuery';
 
 export function useCustomAllowances(companyId: string, employeeId?: string | null) {
-  const query = useQuery({
+  const query = useApiListQuery<any>({
     queryKey: hrKeys.customAllowances(companyId, (employeeId || 'all') as 'all' | string),
-    queryFn: async () => {
-      const res = await getCustomAllowances(companyId, employeeId ?? undefined);
-      throwIfApiFailed(res, 'فشل تحميل البدلات المخصصة');
-      const data = res.data;
-      return Array.isArray(data) ? data : (data?.items ?? []);
-    },
+    queryFn: () => getCustomAllowances(companyId, employeeId ?? undefined),
+    fallbackMessage: 'Failed to load custom allowances',
     enabled: !!companyId,
   });
 

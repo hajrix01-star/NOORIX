@@ -3,9 +3,8 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, AdaptiveSheet, Input } from '../../../ui';
-import { assertApiOk } from '../../../utils/apiResponse';
 import { getSaudiToday, formatSaudiDate, toYmd } from '../../../utils/saudiDate';
-import { completeCompanyAssetFromInvoice } from '../../../services/api';
+import { completeCompanyAssetFromInvoice, throwIfApiFailed } from '../../../services/api';
 import type { PendingWarrantyInvoiceRow } from '../types';
 
 export type AssetWarrantyPanelProps = {
@@ -133,7 +132,7 @@ export function AssetWarrantyPanel({
     setSaving(true);
     try {
       const res = await completeCompanyAssetFromInvoice(body);
-      assertApiOk(res, t('loadingError'));
+      throwIfApiFailed(res, t('loadingError'));
       onSaved();
     } catch (e2: unknown) {
       setErr(e2 instanceof Error ? e2.message : t('loadingError'));

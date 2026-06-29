@@ -1,9 +1,6 @@
-/**
- * حالة ومنطق عرض كشف بنكي واحد — مكيّف لـ API الحالي (Nest + Prisma)
- */
 import { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
+import { useApiQuery } from './useApiQuery';
 import {
   bankStatementGet,
   bankStatementUpdateTxCategory,
@@ -23,7 +20,7 @@ import { bankKeys } from '../services/queryKeys';
 
 export const AVAILABLE_ANALYSIS_CARDS = [
   { id: 'cash_flow', nameKey: 'bankCardCashFlow', icon: '' },
-  { id: 'alerts', nameKey: 'bankCardAlerts', icon: '⚠' },
+  { id: 'alerts', nameKey: 'bankCardAlerts', icon: '!' },
   { id: 'pos_hint', nameKey: 'bankCardPosHint', icon: '' },
   { id: 'category_pie', nameKey: 'bankCardCategoryPie', icon: '' },
   { id: 'category_bar', nameKey: 'bankCardCategoryBar', icon: '' },
@@ -59,32 +56,29 @@ export default function useBankStatementView(statementId: any, companyId: any, t
   const [activeCards, setActiveCards] = useState(loadSavedCards);
   const [cardToDelete, setCardToDelete] = useState<any>(null);
 
-  const { data: rawRes, isLoading, refetch } = useQuery({
+  const { data: rawStatement, isLoading, refetch } = useApiQuery<any>({
     queryKey: bankKeys.statement(companyId, statementId),
     queryFn: () => bankStatementGet(companyId, statementId),
+    fallbackMessage: 'Failed to load bank statement',
     enabled: !!companyId && !!statementId,
   });
 
   const statement = useMemo(() => {
-    const d = rawRes?.data ?? rawRes;
+    const d = rawStatement?.data ?? rawStatement;
     return d && typeof d === 'object' && d.id ? d : null;
-  }, [rawRes]);
+  }, [rawStatement]);
 
   const reconStart = toYmd(statement?.startDate);
   const reconEnd = toYmd(statement?.endDate);
 
-  const { data: reconRaw, isLoading: reconLoading } = useQuery({
+  const { data: reconRaw, isLoading: reconLoading } = useApiQuery<any>({
     queryKey: bankKeys.reconciliationStats(companyId, reconStart, reconEnd),
-    queryFn: async () => {
-      const r = await bankStatementReconciliationStats(companyId, reconStart, reconEnd);
-      if (!r.success) throw new Error(r.error || 'recon');
-      return r.data ?? r;
-    },
+    queryFn: () => bankStatementReconciliationStats(companyId, reconStart, reconEnd),
+    fallbackMessage: 'Failed to load reconciliation stats',
     enabled: !!companyId && !!reconStart && !!reconEnd && statement?.status === 'completed',
   });
 
   const reconciliationStats = reconRaw?.system_data ?? null;
-
   const transactions = statement?.transactions ?? [];
 
   const summaryByCategory = useMemo(
@@ -110,8 +104,7 @@ export default function useBankStatementView(statementId: any, companyId: any, t
     }
     if (categoryFilter !== 'all') {
       list = list.filter((tx: any) => {
-        const name =
-          tx.category?.nameAr || tx.category?.nameEn || uncategorized;
+        const name = tx.category?.nameAr || tx.category?.nameEn || uncategorized;
         return name === categoryFilter;
       });
     }

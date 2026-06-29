@@ -1,10 +1,6 @@
-/**
- * useInvoices — جلب الفواتير مع فلترة التاريخ والتصفح.
- * placeholderData فقط داخل نفس الشركة (تصفح الصفحات/الفلاتر) — لا عرض فواتير شركة سابقة عند تبديل الشركة.
- */
-import { useQuery } from '@tanstack/react-query';
-import { getInvoices, throwIfApiFailed } from '../services/api';
+import { getInvoices } from '../services/api';
 import { invoiceKeys } from '../services/queryKeys';
+import { useApiQuery } from './useApiQuery';
 
 export type UseInvoicesParams = {
   companyId: string;
@@ -27,7 +23,6 @@ export type UseInvoicesParams = {
   requireExpenseLine?: string | boolean;
 };
 
-/** جلب الفواتير مع فلترة التاريخ والتصفح */
 export function useInvoices({
   companyId,
   startDate,
@@ -48,7 +43,7 @@ export function useInvoices({
   createdByUserId,
   requireExpenseLine,
 }: UseInvoicesParams) {
-  const { data, isLoading, isFetching, isPlaceholderData, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isPlaceholderData, isError, error } = useApiQuery<any>({
     queryKey: invoiceKeys.list({
       companyId,
       startDate,
@@ -69,11 +64,8 @@ export function useInvoices({
       createdByUserId,
       requireExpenseLine,
     }),
-    queryFn: async () => {
-      const res = await getInvoices(companyId, startDate, endDate, page, pageSize, batchId || null, null, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId, createdByUserId || undefined, requireExpenseLine);
-      throwIfApiFailed(res, 'فشل تحميل الفواتير');
-      return res.data;
-    },
+    queryFn: () => getInvoices(companyId, startDate, endDate, page, pageSize, batchId || null, null, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId, createdByUserId || undefined, requireExpenseLine),
+    fallbackMessage: 'Failed to load invoices',
     placeholderData: (previousData: any, previousQuery: any) => {
       const prevCompany = previousQuery?.queryKey?.[1];
       if (prevCompany !== companyId) return undefined;
@@ -85,9 +77,9 @@ export function useInvoices({
   const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
   const zeroOutflowSummary = () => ({ purchasesTotal: '0', expensesTotal: '0', taxTotal: '0' });
   return {
-    items:    data?.items ?? [],
-    total:    data?.total ?? 0,
-    sums:     data?.sums  ?? { all: zero(), inflow: zero(), outflow: zero() },
+    items: data?.items ?? [],
+    total: data?.total ?? 0,
+    sums: data?.sums ?? { all: zero(), inflow: zero(), outflow: zero() },
     sumsByKind: Array.isArray(data?.sumsByKind) ? data.sumsByKind : [],
     inflowByVault: Array.isArray(data?.inflowByVault) ? data.inflowByVault : [],
     outflowSummary: data?.outflowSummary ?? zeroOutflowSummary(),

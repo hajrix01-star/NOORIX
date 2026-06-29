@@ -1,9 +1,5 @@
-/**
- * useOrders — جلب الطلبات والمنتجات والفئات
- */
-import { useQuery } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
-import { useApiListQuery, useApiQueryOr } from './useApiQuery';
+import { useApiListQuery, useApiQuery, useApiQueryOr } from './useApiQuery';
 import {
   getOrders,
   createOrder,
@@ -37,18 +33,14 @@ import {
   createOrderSection,
   deleteOrderSection,
   bulkSetProductSections,
-  throwIfApiFailed,
 } from '../services/api';
 import { orderKeys } from '../services/queryKeys';
 
 export function useOrders(companyId: any, year: any, month: any) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: orderKeys.list(companyId, year, month),
-    queryFn: async () => {
-      const res = await getOrders(companyId, year, month);
-      throwIfApiFailed(res, 'فشل تحميل الطلبات');
-      return res.data ?? [];
-    },
+    queryFn: () => getOrders(companyId, year, month),
+    fallbackMessage: 'Failed to load orders',
     enabled: !!companyId && !!year && !!month,
   });
 }
@@ -90,31 +82,25 @@ export function useOrdersSummary(companyId: any, year: any, month: any) {
     queryKey: orderKeys.summary(companyId, year, month),
     queryFn: () => getOrdersSummary(companyId, year, month),
     fallback: {},
-    fallbackMessage: 'فشل تحميل ملخص الطلبات',
+    fallbackMessage: 'Failed to load orders summary',
     enabled: !!companyId && !!year && !!month,
   });
 }
 
 export function useOrderProducts(companyId: any, type?: string) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: [...orderKeys.products(companyId), type],
-    queryFn: async () => {
-      const res = await getOrderProducts(companyId, undefined, type);
-      throwIfApiFailed(res, 'فشل تحميل الأصناف');
-      return res.data ?? [];
-    },
+    queryFn: () => getOrderProducts(companyId, undefined, type),
+    fallbackMessage: 'Failed to load order products',
     enabled: !!companyId,
   });
 }
 
 export function useOrderCategories(companyId: any) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: orderKeys.categories(companyId),
-    queryFn: async () => {
-      const res = await getOrderCategories(companyId);
-      throwIfApiFailed(res, 'فشل تحميل الفئات');
-      return res.data ?? [];
-    },
+    queryFn: () => getOrderCategories(companyId),
+    fallbackMessage: 'Failed to load order categories',
     enabled: !!companyId,
   });
 }
@@ -123,7 +109,7 @@ export function useProductPurchaseHistory(companyId: any, productId: any, year: 
   return useApiListQuery<any>({
     queryKey: orderKeys.productPurchaseHistory(companyId, productId, year, month),
     queryFn: () => getProductPurchaseHistory(companyId, productId, year, month),
-    fallbackMessage: 'فشل تحميل سجل مشتريات الصنف',
+    fallbackMessage: 'Failed to load product purchase history',
     enabled: !!companyId && !!productId && enabled,
   });
 }
@@ -132,19 +118,16 @@ export function useCategoryPurchaseHistory(companyId: any, categoryId: any, year
   return useApiListQuery<any>({
     queryKey: orderKeys.categoryPurchaseHistory(companyId, categoryId, year, month),
     queryFn: () => getCategoryPurchaseHistory(companyId, categoryId, year, month),
-    fallbackMessage: 'فشل تحميل سجل مشتريات الفئة',
+    fallbackMessage: 'Failed to load category purchase history',
     enabled: !!companyId && !!categoryId && enabled,
   });
 }
 
 export function useOrdersItemsReport(companyId: any, year: any, month: any) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: orderKeys.itemsReport(companyId, year, month),
-    queryFn: async () => {
-      const res = await getOrdersItemsReport(companyId, year, month);
-      throwIfApiFailed(res, 'فشل تحميل التقرير');
-      return res.data ?? [];
-    },
+    queryFn: () => getOrdersItemsReport(companyId, year, month),
+    fallbackMessage: 'Failed to load orders items report',
     enabled: !!companyId && !!year && !!month,
   });
 }
@@ -213,32 +196,23 @@ export function useDeleteOrderCategoriesMutation(companyId: any) {
   });
 }
 
-// ══════════════════════════════════════════════════
-// Staff Orders — طلبات الأقسام
-// ══════════════════════════════════════════════════
-
 export function useMyStaffOrders(companyId: any) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: orderKeys.staffMy(companyId),
-    queryFn: async () => {
-      const res = await getMyStaffOrders(companyId);
-      throwIfApiFailed(res, 'فشل تحميل الطلبات');
-      return res.data ?? [];
-    },
+    queryFn: () => getMyStaffOrders(companyId),
+    fallbackMessage: 'Failed to load staff orders',
     enabled: !!companyId,
   });
 }
 
 export function useStaffSaleNextLogRef(companyId: any, saleDate: string, enabled = true) {
-  return useQuery({
+  return useApiQuery<{ logRef?: string }, string>({
     queryKey: ['staffSaleNextLogRef', companyId, saleDate],
-    queryFn: async () => {
-      const res = await getStaffSaleNextLogRef(companyId, saleDate);
-      throwIfApiFailed(res, 'فشل تحميل رقم العملية');
-      return String((res.data as { logRef?: string })?.logRef ?? '');
-    },
+    queryFn: () => getStaffSaleNextLogRef(companyId, saleDate),
+    fallbackMessage: 'Failed to load next staff sale reference',
     enabled: !!companyId && !!saleDate && enabled,
     staleTime: 15_000,
+    select: (data) => String(data?.logRef ?? ''),
   });
 }
 
@@ -293,32 +267,27 @@ export function useStaffDigest(companyId: any) {
     queryKey: orderKeys.staffDigest(companyId),
     queryFn: () => getStaffDigest(companyId),
     fallback: { sections: [], totalOrders: 0, pendingCount: 0 },
-    fallbackMessage: 'فشل تحميل ملخص طلبات الأقسام',
+    fallbackMessage: 'Failed to load staff digest',
     enabled: !!companyId,
   });
 }
 
 export function useSalesReport(companyId: any, days = 30) {
-  return useQuery({
+  return useApiQueryOr<Record<string, unknown>>({
     queryKey: ['salesReport', companyId, days],
-    queryFn: async () => {
-      const res = await getSalesReport(companyId, days);
-      throwIfApiFailed(res, 'فشل تحميل تقرير المبيعات');
-      return res.data ?? {};
-    },
+    queryFn: () => getSalesReport(companyId, days),
+    fallback: {},
+    fallbackMessage: 'Failed to load sales report',
     enabled: !!companyId,
     staleTime: 60_000,
   });
 }
 
 export function useDigestHistory(companyId: any, days = 30) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: ['digestHistory', companyId, days],
-    queryFn: async () => {
-      const res = await getDigestHistory(companyId, days);
-      throwIfApiFailed(res, 'فشل تحميل تاريخ الإرسالات');
-      return res.data ?? [];
-    },
+    queryFn: () => getDigestHistory(companyId, days),
+    fallbackMessage: 'Failed to load digest history',
     enabled: !!companyId,
     staleTime: 60_000,
   });
@@ -344,15 +313,11 @@ export function useSendStaffDigestMutation(companyId: any) {
   });
 }
 
-// ── Sections ──────────────────────────────────────────────────────
 export function useOrderSections(companyId: any) {
-  return useQuery({
+  return useApiListQuery<any>({
     queryKey: ['orderSections', companyId],
-    queryFn: async () => {
-      const res = await getOrderSections(companyId);
-      throwIfApiFailed(res, 'فشل تحميل الأقسام');
-      return res.data ?? [];
-    },
+    queryFn: () => getOrderSections(companyId),
+    fallbackMessage: 'Failed to load order sections',
     enabled: !!companyId,
   });
 }

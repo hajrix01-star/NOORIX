@@ -1,8 +1,6 @@
-/**
- * useSales — ملخصات المبيعات اليومية
- */
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from './useApiMutation';
+import { useApiListQuery } from './useApiQuery';
 import {
   getDailySalesSummaries,
   createDailySalesSummary,
@@ -14,32 +12,32 @@ import {
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
 import { salesKeys } from '../services/queryKeys';
 
-/**
- * @param {{ companyId: string, startDate?: string, endDate?: string, enabled?: boolean, fetchList?: boolean }} params
- * fetchList=false: لا يجلب القائمة (لشاشة المبيعات مع ترقيم منفصل) — يبقى الطفرات فقط.
- */
+async function getAllDailySalesSummaries(companyId: any, startDate: any, endDate: any) {
+  const pageSize = 150;
+  let page = 1;
+  const acc: any[] = [];
+  let reportedTotal = 0;
+
+  for (let guard = 0; guard < 25; guard += 1) {
+    const res = await getDailySalesSummaries(companyId, startDate, endDate, page, pageSize);
+    throwIfApiFailed(res, 'Failed to load daily sales summaries');
+    const { items = [], total = 0 } = res.data || {};
+    reportedTotal = Number(total) || 0;
+    acc.push(...items);
+    if (acc.length >= reportedTotal || items.length < pageSize) break;
+    page += 1;
+  }
+
+  return { success: true, data: acc };
+}
+
 export function useSales({ companyId, startDate, endDate, enabled = true, fetchList = true }: any) {
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error } = useApiListQuery<any>({
     queryKey: salesKeys.summaries(companyId, startDate, endDate),
-    queryFn: async () => {
-      const pageSize = 150;
-      let page = 1;
-      const acc = [];
-      let reportedTotal = 0;
-      /** سقف صفحات — يمنع آلاف الطلبات عند بيانات ضخمة؛ التصدير يستخدم دالة منفصلة. */
-      for (let guard = 0; guard < 25; guard++) {
-        const res = await getDailySalesSummaries(companyId, startDate, endDate, page, pageSize);
-        throwIfApiFailed(res, 'فشل تحميل ملخصات المبيعات');
-        const { items = [], total = 0 } = res.data || {};
-        reportedTotal = Number(total) || 0;
-        acc.push(...items);
-        if (acc.length >= reportedTotal || items.length < pageSize) break;
-        page += 1;
-      }
-      return acc;
-    },
+    queryFn: () => getAllDailySalesSummaries(companyId, startDate, endDate),
+    fallbackMessage: 'Failed to load daily sales summaries',
     enabled: !!companyId && enabled && fetchList,
   });
 

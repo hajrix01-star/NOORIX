@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { chatQuery, createCustomAllowance } from '../../../services/api';
-import { rejectIfApiFailed } from '../../../utils/apiResponse';
+import { chatQuery, createCustomAllowance, throwIfApiFailed } from '../../../services/api';
 import type { ChatMessage, ChatMessageInput, EntryMode, ExpenseMode, HrRecordedPayload } from '../types';
 
 type CreateEmployeeMutate = {
@@ -188,7 +187,7 @@ export function useSmartChatActions({
                   nameAr: row.nameAr,
                   amount: row.amount,
                 });
-                rejectIfApiFailed(allowRes, t('saveFailed'));
+                throwIfApiFailed(allowRes, t('saveFailed'));
               }
             }
             showToast(t('employeeAdded'), 'success');
