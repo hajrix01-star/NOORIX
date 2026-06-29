@@ -193,11 +193,11 @@ export function DashboardOverviewYearlyDailyAvgPanel({ year, rows, selectedMonth
   const accentColor = KPI_CARD_SPARKLINE_COLORS.sales;
 
   return (
-    <div className="nx-kpi-container w-full min-w-0" aria-label={t('dashboardYearlyDailyAvgTitle')}>
+    <div className="w-full min-w-0" aria-label={t('dashboardYearlyDailyAvgTitle')}>
       <MetricCard color={accentColor} className="flex w-full min-w-0 flex-col overflow-hidden">
         <MetricCard.Header label={`${t('dashboardYearlyDailyAvgTitle')} — ${year}`} />
 
-        <MetricCard.Section className="min-w-0 px-2 pb-3 pt-0 sm:px-4">
+        <MetricCard.Section className="min-w-0 px-3 pb-3 pt-0 sm:px-4">
           <YearlyDailyAvgTable rows={rows} selectedMonth={selectedMonth} t={t} />
         </MetricCard.Section>
       </MetricCard>

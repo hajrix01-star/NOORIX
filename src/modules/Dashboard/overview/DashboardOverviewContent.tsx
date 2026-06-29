@@ -15,22 +15,7 @@ export type DashboardOverviewContentProps = {
 
 export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
   return (
-    <div className="flex flex-col gap-5">
-      <DashboardOverviewWeeklySalesPanel
-        weeklyYearOptions={m.weeklyYearOptions}
-        weeklyMonthOptions={m.weeklyMonthOptions}
-        panelYearA={m.weeklyPanelYearA}
-        panelMonthA={m.weeklyPanelMonthA}
-        panelYearB={m.weeklyPanelYearB}
-        panelMonthB={m.weeklyPanelMonthB}
-        onPanelYearAChange={m.setWeeklyPanelYearA}
-        onPanelMonthAChange={m.setWeeklyPanelMonthA}
-        onPanelYearBChange={m.setWeeklyPanelYearB}
-        onPanelMonthBChange={m.setWeeklyPanelMonthB}
-        data={m.weeklySalesWeekRows}
-        isLoading={m.weeklySalesPanelLoading}
-      />
-
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 lg:gap-5">
       <DashboardOverviewKpis
         report={m.report}
         selectedMonth={m.selectedMonth}
@@ -50,11 +35,28 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         kpiInsightFooters={m.kpiInsightFooters}
       />
 
-      <DashboardOverviewYearlyDailyAvgPanel
-        year={m.year}
-        rows={m.yearlyDailyAvgRows}
-        selectedMonth={m.selectedMonth}
-      />
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start lg:gap-5">
+        <DashboardOverviewWeeklySalesPanel
+          weeklyYearOptions={m.weeklyYearOptions}
+          weeklyMonthOptions={m.weeklyMonthOptions}
+          panelYearA={m.weeklyPanelYearA}
+          panelMonthA={m.weeklyPanelMonthA}
+          panelYearB={m.weeklyPanelYearB}
+          panelMonthB={m.weeklyPanelMonthB}
+          onPanelYearAChange={m.setWeeklyPanelYearA}
+          onPanelMonthAChange={m.setWeeklyPanelMonthA}
+          onPanelYearBChange={m.setWeeklyPanelYearB}
+          onPanelMonthBChange={m.setWeeklyPanelMonthB}
+          data={m.weeklySalesWeekRows}
+          isLoading={m.weeklySalesPanelLoading}
+        />
+
+        <DashboardOverviewYearlyDailyAvgPanel
+          year={m.year}
+          rows={m.yearlyDailyAvgRows}
+          selectedMonth={m.selectedMonth}
+        />
+      </div>
 
       <DashboardOverviewTimelineSection
         lang={m.lang}

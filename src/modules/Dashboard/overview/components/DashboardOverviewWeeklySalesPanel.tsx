@@ -54,7 +54,7 @@ export function DashboardOverviewWeeklySalesPanel({
   const { t } = useTranslation();
 
   return (
-    <section className="min-w-0" aria-label={t('dashboardWeeklySalesTitle')}>
+    <section className="noorix-surface-card min-w-0 overflow-hidden p-0" aria-label={t('dashboardWeeklySalesTitle')}>
       <div className="flex flex-wrap items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted/40 px-2 py-2.5 sm:gap-3 sm:px-3 sm:py-3">
         <span className="h-7 w-1 shrink-0 rounded-full bg-noorix-blue sm:h-8" aria-hidden />
         <h2 className="m-0 min-w-0 flex-1 text-[12px] font-bold leading-snug text-noorix-text sm:text-[13px]">
@@ -62,7 +62,7 @@ export function DashboardOverviewWeeklySalesPanel({
         </h2>
       </div>
 
-      <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+      <div className="overflow-x-auto p-3 [-webkit-overflow-scrolling:touch] sm:p-4">
         {isLoading || !data ? (
           <div className="space-y-2">
             {[0, 1, 2, 3].map((i) => (
@@ -70,7 +70,7 @@ export function DashboardOverviewWeeklySalesPanel({
             ))}
           </div>
         ) : (
-          <table className="w-full min-w-[520px] border-collapse border border-noorix-border text-sm">
+          <table className="w-full min-w-[520px] border-collapse overflow-hidden rounded-lg border border-noorix-border text-sm">
             <thead>
               <tr className="bg-[var(--noorix-table-header-bg)]">
                 <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold">
