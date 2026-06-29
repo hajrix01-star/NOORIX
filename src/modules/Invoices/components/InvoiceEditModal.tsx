@@ -1,5 +1,5 @@
 /**
- * InvoiceEditModal — äÇİĞÉ ÊÚÏíá ÇáİÇÊæÑÉ
+ * InvoiceEditModal â€” Ù†Ø§ÙØ°Ø© ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„ÙØ§ØªÙˆØ±Ø©
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '../../../context/ToastContext';
@@ -21,9 +21,9 @@ import { Button, Input, AdaptiveSheet } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 
-// ÈáÇ ãæÑÏ äåÇÆíÇğ (ÑæÇÊÈ æÓáİ — İæÇÊíÑ äÙÇã ÏÇÎáíÉ)
+// Ø¨Ù„Ø§ Ù…ÙˆØ±Ø¯ Ù†Ù‡Ø§Ø¦ÙŠØ§Ù‹ (Ø±ÙˆØ§ØªØ¨ ÙˆØ³Ù„Ù â€” ÙÙˆØ§ØªÙŠØ± Ù†Ø¸Ø§Ù… Ø¯Ø§Ø®Ù„ÙŠØ©)
 const NO_SUPPLIER_KINDS = new Set(['salary', 'advance']);
-// ãæÑÏ ÇÎÊíÇÑí (ãÕÇÑíİ ËÇÈÊÉ æHR)
+// Ù…ÙˆØ±Ø¯ Ø§Ø®ØªÙŠØ§Ø±ÙŠ (Ù…ØµØ§Ø±ÙŠÙ Ø«Ø§Ø¨ØªØ© ÙˆHR)
 const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
 
 export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }: any) {
@@ -39,6 +39,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     supplierInvoiceNumber: '',
     kind: 'purchase',
     totalAmount: '',
+    isTaxable: true,
     netAmount: '',
     taxAmount: '',
     transactionDate: '',
@@ -51,7 +52,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
 
   const kind = invoice?.kind;
   const hasSupplier = !NO_SUPPLIER_KINDS.has(kind);           // purchase, expense, fixed_expense, hr_expense
-  const supplierRequired = !NO_SUPPLIER_KINDS.has(kind) && !OPTIONAL_SUPPLIER_KINDS.has(kind); // purchase, expense İŞØ
+  const supplierRequired = !NO_SUPPLIER_KINDS.has(kind) && !OPTIONAL_SUPPLIER_KINDS.has(kind); // purchase, expense ÙÙ‚Ø·
 
   const initialVaultKey = useMemo(() => {
     if (!invoice) return '';
@@ -91,7 +92,10 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
 
   useEffect(() => {
     if (!invoice) return;
-    const taxable = invoice.isTaxable !== false;
+    const taxable =
+      invoice.isTaxable !== undefined
+        ? invoice.isTaxable !== false
+        : Number(invoice.taxAmount || 0) > 0;
     const total = Number(invoice.totalAmount || 0);
     const { net, tax } = splitTaxFromTotalAsNumbers(total, taxable, vatRateDecimal);
     const resolvedVaultId =
@@ -103,6 +107,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       supplierInvoiceNumber: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '',
       kind: invoice.kind || 'purchase',
       totalAmount: total > 0 ? String(total) : '',
+      isTaxable: taxable,
       netAmount: net > 0 ? net.toFixed(2) : '',
       taxAmount: tax > 0 ? tax.toFixed(2) : '',
       transactionDate: toDateInputYmd(invoice.transactionDate),
@@ -167,16 +172,22 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
   }
 
   function updateField(field: any, value: any) {
-    setForm((p: any) => ({ ...p, [field]: value }));
-    if (field === 'totalAmount' && value) {
-      const v = parseFloat(value);
-      if (!isNaN(v) && v > 0) {
-        const { net, tax } = splitTaxFromTotalAsNumbers(v, true, vatRateDecimal);
-        setForm((p: any) => ({ ...p, netAmount: net.toFixed(2), taxAmount: tax.toFixed(2) }));
+    setForm((p: any) => {
+      const next = { ...p, [field]: value };
+      if (field === 'totalAmount' || field === 'isTaxable') {
+        const v = parseFloat(String(next.totalAmount || ''));
+        if (!isNaN(v) && v > 0) {
+          const { net, tax } = splitTaxFromTotalAsNumbers(v, next.isTaxable !== false, vatRateDecimal);
+          next.netAmount = net.toFixed(2);
+          next.taxAmount = tax.toFixed(2);
+        } else {
+          next.netAmount = '';
+          next.taxAmount = '';
+        }
       }
-    }
+      return next;
+    });
   }
-
   async function handleSave() {
     setError('');
     const total = parseFloat(form.totalAmount);
@@ -200,13 +211,11 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     if (hasSupplier) {
       body.supplierId = form.supplierId || undefined;
       if (form.supplierInvoiceNumber?.trim()) body.supplierInvoiceNumber = form.supplierInvoiceNumber.trim();
-      body.netAmount = parseFloat(form.netAmount) || 0;
-      body.taxAmount = parseFloat(form.taxAmount) || 0;
-      // ÇáäæÚ ŞÇÈá ááÊÚÏíá áÜ purchase/expense İŞØ
+      body.isTaxable = form.isTaxable !== false;
+      // Ø§Ù„Ù†ÙˆØ¹ Ù‚Ø§Ø¨Ù„ Ù„Ù„ØªØ¹Ø¯ÙŠÙ„ Ù„Ù€ purchase/expense ÙÙ‚Ø·
       if (supplierRequired) body.kind = form.kind;
     } else {
-      body.netAmount = total;
-      body.taxAmount = 0;
+      body.isTaxable = false;
     }
     if (form.vaultId) {
       if (isMultiVault || form.vaultId !== initialVaultKey) {
@@ -254,7 +263,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
           {attachMeta.has && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[12px] text-noorix-text truncate max-w-[200px]" title={attachMeta.name || ''}>
-                {attachMeta.name || '—'}
+                {attachMeta.name || 'â€”'}
               </span>
               <Button type="button" size="sm" variant="ghost" disabled={attachmentBusy} onClick={handleDownloadAttachment}>
                 {t('invoiceReceiptDownload')}
@@ -314,14 +323,24 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             type="number"
             min="0.01"
             step="0.01"
-            label={t('totalAmountInclTax') || 'ÇáÅÌãÇáí (ÔÇãá ÇáÖÑíÈÉ) *'}
+            label={t('totalAmountInclTax') || 'Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ (Ø´Ø§Ù…Ù„ Ø§Ù„Ø¶Ø±ÙŠØ¨Ø©) *'}
             value={form.totalAmount}
             onChange={(e: any) => updateField('totalAmount', e.target.value)}
             style={{ fontFamily: 'var(--noorix-font-numbers)' }}
           />
           {hasSupplier && form.totalAmount && parseFloat(form.totalAmount) > 0 && (
-            <div className="text-[12px] text-noorix-muted mt-1">
-              {t('netShort')}: {form.netAmount} | {t('tax')}: {form.taxAmount}
+            <div className="mt-2 grid gap-1.5">
+              <label className="nx-checkbox text-[12px] text-noorix-text">
+                <input
+                  type="checkbox"
+                  checked={form.isTaxable !== false}
+                  onChange={(e: any) => updateField('isTaxable', e.target.checked)}
+                />
+                {lang === 'en' ? 'Taxable invoice' : 'ÙØ§ØªÙˆØ±Ø© Ø®Ø§Ø¶Ø¹Ø© Ù„Ù„Ø¶Ø±ÙŠØ¨Ø©'}
+              </label>
+              <div className="text-[12px] text-noorix-muted">
+                {t('netShort')}: {form.netAmount} | {t('tax')}: {form.taxAmount}
+              </div>
             </div>
           )}
         </div>

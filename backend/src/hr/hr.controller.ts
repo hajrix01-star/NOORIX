@@ -16,6 +16,7 @@ import {
   Post,
   Query,
   Res,
+  ForbiddenException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -28,7 +29,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { RequireAnyPermission } from '../auth/decorators/require-any-permission.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { PAYROLL_RUN_DELETE_ROLES } from '../auth/constants/permissions';
+import { hasPermission, PAYROLL_RUN_DELETE_ROLES, PERMISSIONS } from '../auth/constants/permissions';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { HRService } from './hr.service';
@@ -252,6 +253,12 @@ export class HRController {
     @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
+    if (
+      dto.grossAmount != null &&
+      !hasPermission(user.role, PERMISSIONS.HR_LEAVE_SALARY_OVERRIDE, user.permissions)
+    ) {
+      throw new ForbiddenException('تحتاج صلاحية تعديل مبلغ تسوية راتب الإجازة.');
+    }
     return this.hrService.issueLeaveSalarySettlement(id, companyId, dto, user.sub);
   }
 

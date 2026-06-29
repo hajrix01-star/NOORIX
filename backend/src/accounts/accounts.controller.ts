@@ -4,6 +4,7 @@ import { CompanyId }         from '../auth/decorators/company-id.decorator';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard }         from '../auth/guards/roles.guard';
 import { RequirePermission }  from '../auth/decorators/require-permission.decorator';
+import { requireCompanyId }   from '../common/utils/require-company-id';
 import { AccountsService }    from './accounts.service';
 
 @Controller('accounts')
@@ -14,7 +15,6 @@ export class AccountsController {
   @Get()
   @RequirePermission('SUPPLIERS_READ')
   findAll(@CompanyId() companyId: string) {
-    if (!companyId) return [];
-    return this.accountsService.findAll(companyId);
+    return this.accountsService.findAll(requireCompanyId(companyId));
   }
 }

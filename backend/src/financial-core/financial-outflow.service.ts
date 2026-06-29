@@ -112,21 +112,41 @@ export class FinancialOutflowService {
     assertOutflowBatchNoDuplicateSupplierInvoiceKeys(dtos);
     const userId = this.support.resolveUserId(callerUserId);
     return this.db.withTenant(async (tx) => {
-      const results = [];
-      for (const dto of dtos) {
-        assertOperationNotesLength(dto.notes);
-        const { entryDate, txDate } = this.support.buildDates(dto.transactionDate);
-        const serial = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
-        const { invoice } = await persistOutflowInvoiceWithLedger(
-          tx,
-          this.support,
-          this.fiscalPeriod,
-          { tenantId, userId, dto, entryDate, txDate, invoiceNumber: serial },
-        );
-        results.push({ invoice, ledgerEntry: null });
-      }
-      return results;
+      return this.persistOutflowBatchInTransaction(tx, dtos, userId, tenantId);
     });
+  }
+
+  async processOutflowBatchInTransaction(
+    tx: TxClient,
+    dtos: OutflowDto[],
+    callerUserId?: string,
+    tenantId = this.support.resolveTenantId(),
+  ) {
+    assertOutflowBatchNoDuplicateSupplierInvoiceKeys(dtos);
+    const userId = this.support.resolveUserId(callerUserId);
+    return this.persistOutflowBatchInTransaction(tx, dtos, userId, tenantId);
+  }
+
+  private async persistOutflowBatchInTransaction(
+    tx: TxClient,
+    dtos: OutflowDto[],
+    userId: string,
+    tenantId: string,
+  ) {
+    const results = [];
+    for (const dto of dtos) {
+      assertOperationNotesLength(dto.notes);
+      const { entryDate, txDate } = this.support.buildDates(dto.transactionDate);
+      const serial = dto.invoiceNumber || await generateInvoiceSerial(tx, dto.companyId, dto.kind, txDate);
+      const { invoice } = await persistOutflowInvoiceWithLedger(
+        tx,
+        this.support,
+        this.fiscalPeriod,
+        { tenantId, userId, dto, entryDate, txDate, invoiceNumber: serial },
+      );
+      results.push({ invoice, ledgerEntry: null });
+    }
+    return results;
   }
 
   /**

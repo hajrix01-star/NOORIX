@@ -112,7 +112,11 @@ export class HrLeaveService {
         startDate: leave.startDate,
       },
       userId ?? '',
-      { vaultId: dto.vaultId, grossAmountOverride: dto.grossAmount },
+      {
+        vaultId: dto.vaultId,
+        grossAmountOverride: dto.grossAmount,
+        manualOverrideReason: dto.manualOverrideReason,
+      },
     );
 
     return this.prisma.leave.findFirst({

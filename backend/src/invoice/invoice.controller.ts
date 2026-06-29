@@ -33,6 +33,7 @@ import { RequirePermission }     from '../auth/decorators/require-permission.dec
 import { RequireAnyPermission }  from '../auth/decorators/require-any-permission.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
+import { requireCompanyId }     from '../common/utils/require-company-id';
 import { CreateInvoiceDto }      from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { UpdateInvoiceDto }      from './dto/update-invoice.dto';
@@ -76,8 +77,7 @@ export class InvoiceController {
     @Query('q')         q?:         string,
     @Query('lang')      lang?:      string,
   ) {
-    if (!companyId) return { batches: [], rowCount: 0 };
-    return this.invoiceService.findPurchaseBatchSummaries(companyId, startDate, endDate, q, lang);
+    return this.invoiceService.findPurchaseBatchSummaries(requireCompanyId(companyId), startDate, endDate, q, lang);
   }
 
   @Get('day-close-report')
@@ -86,15 +86,14 @@ export class InvoiceController {
     @CompanyId() companyId: string,
     @Query('date')     date:      string,
   ) {
-    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
-    return this.invoiceService.getDayCloseReport(companyId, date);
+    return this.invoiceService.getDayCloseReport(requireCompanyId(companyId), date);
   }
 
   /** مستخدمو النظام الظاهرون كمنشئين لفواتير الشركة — لفلتر القائمة */
   @Get('creator-filter-options')
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async creatorFilterOptions(@CompanyId() companyId: string) {
-    return this.invoiceService.getCreatorFilterOptions(companyId);
+    return this.invoiceService.getCreatorFilterOptions(requireCompanyId(companyId));
   }
 
   @Get()
@@ -121,6 +120,7 @@ export class InvoiceController {
     @Query('createdByUserId') createdByUserId?: string,
     @Query('requireExpenseLine') requireExpenseLine?: string,
   ) {
+    const resolvedCompanyId = requireCompanyId(companyId);
     const role  = (user?.role  || '').toLowerCase();
     const perms = user?.permissions || [];
 
@@ -144,7 +144,7 @@ export class InvoiceController {
     );
 
     return this.invoiceService.findAll(
-      companyId,
+      resolvedCompanyId,
       page     ? parseInt(page, 10)     : 1,
       pageSize ? parseInt(pageSize, 10) : 50,
       startDate,
@@ -174,8 +174,7 @@ export class InvoiceController {
     @CompanyId() companyId: string,
     @Res()              res:       Response,
   ) {
-    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
-    return this.invoiceService.downloadAttachment(id, companyId, res);
+    return this.invoiceService.downloadAttachment(id, requireCompanyId(companyId), res);
   }
 
   @Post(':id/attachment')
@@ -187,8 +186,7 @@ export class InvoiceController {
     @UploadedFile()    file:       Express.Multer.File,
     @CurrentUser()      user:      JwtUser,
   ) {
-    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
-    return this.invoiceService.saveAttachment(id, companyId, file, user.sub);
+    return this.invoiceService.saveAttachment(id, requireCompanyId(companyId), file, user.sub);
   }
 
   @Delete(':id/attachment')
@@ -198,8 +196,7 @@ export class InvoiceController {
     @CompanyId() companyId: string,
     @CurrentUser()      user:      JwtUser,
   ) {
-    if (!companyId?.trim()) throw new BadRequestException('companyId مطلوب');
-    return this.invoiceService.removeAttachment(id, companyId, user.sub);
+    return this.invoiceService.removeAttachment(id, requireCompanyId(companyId), user.sub);
   }
 
   @Get(':id')
@@ -208,7 +205,7 @@ export class InvoiceController {
     @Param('id')        id:        string,
     @CompanyId() companyId: string,
   ) {
-    return this.invoiceService.findOne(id, companyId);
+    return this.invoiceService.findOne(id, requireCompanyId(companyId));
   }
 
   @Patch(':id')
@@ -219,7 +216,7 @@ export class InvoiceController {
     @CompanyId() companyId: string,
     @CurrentUser()      user:      JwtUser,
   ) {
-    return this.invoiceService.update(id, dto, companyId, user.sub);
+    return this.invoiceService.update(id, dto, requireCompanyId(companyId), user.sub);
   }
 
   @Delete(':id')
@@ -229,6 +226,6 @@ export class InvoiceController {
     @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    return this.invoiceService.update(id, { status: 'cancelled' }, companyId, user.sub);
+    return this.invoiceService.update(id, { status: 'cancelled' }, requireCompanyId(companyId), user.sub);
   }
 }

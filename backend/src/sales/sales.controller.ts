@@ -14,6 +14,7 @@ import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator'
 import { RequirePermission }    from '../auth/decorators/require-permission.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { hasPermission, PERMISSIONS } from '../auth/constants/permissions';
+import { requireCompanyId } from '../common/utils/require-company-id';
 import { clampSalesSummaryDateQuery } from '../common/utils/sales-summary-date-range';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { SalesService }           from './sales.service';
@@ -83,8 +84,7 @@ export class SalesController {
     @Body()        dto:     PatchSalesSummaryShiftDto,
     @CompanyId() companyId: string,
   ) {
-    if (!companyId) throw new BadRequestException('companyId مطلوب');
-    return this.salesService.patchSummaryShift(id, companyId, dto.shift);
+    return this.salesService.patchSummaryShift(id, requireCompanyId(companyId), dto.shift);
   }
 
   @Patch('summaries/:id')
@@ -95,8 +95,7 @@ export class SalesController {
     @CompanyId() companyId: string,
     @CurrentUser() user:   JwtUser,
   ) {
-    if (!companyId) throw new Error('companyId مطلوب');
-    return this.salesService.updateSummary(id, companyId, {
+    return this.salesService.updateSummary(id, requireCompanyId(companyId), {
       transactionDate: dto.transactionDate,
       customerCount:   dto.customerCount,
       shift:           dto.shift,
@@ -113,8 +112,7 @@ export class SalesController {
     @CompanyId() companyId: string,
     @CurrentUser() user: JwtUser,
   ) {
-    if (!companyId) throw new Error('companyId مطلوب');
-    return this.salesService.cancelSummary(id, companyId, user.sub);
+    return this.salesService.cancelSummary(id, requireCompanyId(companyId), user.sub);
   }
 
   /** حزمة واحدة للوحة التحكم — سنة + يومي + شهري في طلب واحد (بدل حلقات pagination). */
@@ -131,9 +129,7 @@ export class SalesController {
     @Query('monthEnd') monthEnd?: string,
     @Query('includeCancelled') includeCancelled?: string,
   ) {
-    if (!companyId) {
-      return { yearSummaries: [], dailySummaries: [], monthSummaries: [] };
-    }
+    const resolvedCompanyId = requireCompanyId(companyId);
     if (!hasPermission(user.role, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, user.permissions)) {
       return { yearSummaries: [], dailySummaries: [], monthSummaries: [] };
     }
@@ -163,7 +159,7 @@ export class SalesController {
     }
 
     return this.salesService.findDashboardPack(
-      companyId,
+      resolvedCompanyId,
       {
         yearStart: ys,
         yearEnd: ye,
@@ -193,7 +189,7 @@ export class SalesController {
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const pageSizeNum = pageSize ? parseInt(pageSize, 10) : 30;
-    if (!companyId) return { items: [], total: 0, page: 1, pageSize: 30 };
+    const resolvedCompanyId = requireCompanyId(companyId);
 
     if (!hasPermission(user.role, PERMISSIONS.SALES_VIEW_SUMMARIES_LIST, user.permissions)) {
       return { items: [], total: 0, page: pageNum, pageSize: Math.min(200, Math.max(1, pageSizeNum)) };
@@ -208,7 +204,7 @@ export class SalesController {
     }
 
     return this.salesService.findAll(
-      companyId,
+      resolvedCompanyId,
       effStart,
       effEnd,
       pageNum,

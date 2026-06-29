@@ -11,7 +11,10 @@ import {
   assertNoActiveDuplicateSupplierInvoiceDedupKey,
   patchSupplierInvoiceDedupKeyOnUpdateInput,
 } from './invoice-supplier-invoice-dedup.util';
-import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
+import {
+  buildInvoiceOutflowTaxUpdate,
+  shouldRecomputeInvoiceOutflowTax,
+} from './invoice-update-tax.util';
 
 /**
  * تحديث فاتورة داخل $transaction (قيود + audit).
@@ -30,24 +33,16 @@ export async function updateInvoiceInTransaction(
     const oldInvoice = await tx.invoice.findFirstOrThrow({ where: { id, companyId } });
 
     const updateData = buildInvoiceUncheckedUpdateFromDto(dto);
-    const shouldRecomputeTax =
-      dto.totalAmount !== undefined ||
-      dto.netAmount !== undefined ||
-      dto.taxAmount !== undefined;
+    const shouldRecomputeTax = shouldRecomputeInvoiceOutflowTax(dto);
     if (shouldRecomputeTax && oldInvoice.kind !== 'sale') {
       const company = await tx.company.findUnique({
         where: { id: companyId },
         select: { vatRatePercent: true },
       });
-      const total = dto.totalAmount !== undefined ? dto.totalAmount : oldInvoice.totalAmount;
-      const isTaxable = oldInvoice.taxAmount.gt(0);
-      const { net, tax } = computeOutflowNetTaxFromTotal(
-        total,
-        isTaxable,
-        company?.vatRatePercent ?? null,
+      Object.assign(
+        updateData,
+        buildInvoiceOutflowTaxUpdate(oldInvoice, dto, company?.vatRatePercent?.toString() ?? null) ?? {},
       );
-      updateData.netAmount = new Prisma.Decimal(net);
-      updateData.taxAmount = new Prisma.Decimal(tax);
     }
     patchSupplierInvoiceDedupKeyOnUpdateInput(updateData, oldInvoice, dto);
     const mergedSupplierId =
