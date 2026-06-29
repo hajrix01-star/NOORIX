@@ -2,7 +2,7 @@
  * ExpenseLineDetailModal — تفاصيل بند مصروف + سجل مدفوعاته
  */
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getExpenseLine, getExpenseLinePayments } from '../../../services/api';
 import { expenseKeys } from '../../../services/queryKeys';
@@ -42,13 +42,14 @@ export default function ExpenseLineDetailModal({
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const [page, setPage] = useState(1);
 
-  const { data: lineData, isLoading: lineLoading } = useQuery({
+  const { data: lineData, isLoading: lineLoading } = useApiQuery<any>({
     queryKey: expenseKeys.line(lineId, companyId),
     queryFn: () => getExpenseLine(lineId, companyId),
     enabled: !!lineId && !!companyId,
+    fallbackMessage: t('loadingError'),
   });
 
-  const { data: paymentsData, isLoading: paymentsLoading } = useQuery({
+  const { data: paymentsData, isLoading: paymentsLoading } = useApiQuery<any>({
     queryKey: expenseKeys.linePayments(
       lineId,
       companyId,
@@ -66,11 +67,12 @@ export default function ExpenseLineDetailModal({
         20,
       ),
     enabled: !!lineId && !!companyId,
+    fallbackMessage: t('loadingError'),
   });
 
-  const line = lineData?.data ?? lineData;
-  const payments = paymentsData?.data?.items ?? paymentsData?.items ?? [];
-  const totalPaid = (paymentsData?.data?.items ?? paymentsData?.items ?? [])
+  const line = lineData;
+  const payments = paymentsData?.items ?? [];
+  const totalPaid = (paymentsData?.items ?? [])
     .reduce((s: any, i: any) => s + Number(i.totalAmount || 0), 0);
 
   const paymentColumns = [

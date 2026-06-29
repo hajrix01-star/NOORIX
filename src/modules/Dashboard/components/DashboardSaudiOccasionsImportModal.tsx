@@ -2,7 +2,8 @@
  * استيراد مناسبات سعودية (أعياد، رمضان، إجازات وطنية) وتطبيقها على التقويم.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import {
@@ -46,10 +47,14 @@ export function DashboardSaudiOccasionsImportModal({
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const occasionsQuery = useQuery({
+  const occasionsQuery = useApiQuery<SaudiOccasionDto[]>({
     queryKey: ['dashboard-saudi-occasions', companyId, year],
-    queryFn: () => fetchSaudiOccasionsCatalog(year, companyId) as Promise<SaudiOccasionDto[]>,
+    queryFn: async () => ({
+      success: true,
+      data: await fetchSaudiOccasionsCatalog(year, companyId) as SaudiOccasionDto[],
+    }),
     enabled: open && !!year && !!companyId,
+    fallbackMessage: t('dashboardImportSaudiLoadFailed'),
     staleTime: 24 * 60 * 60 * 1000,
     retry: 1,
   });
