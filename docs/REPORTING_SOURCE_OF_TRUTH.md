@@ -168,6 +168,14 @@ Relevant helpers include (among others):
 
 Official VAT figures for import remain from the **Tax VAT report** backend endpoint; helpers operate on the disclosure structure shown in the UI.
 
+## Ledger-first reports migration note
+
+The current Ledger-first report migration plan is tracked in **`docs/NOORIX_LEDGER_FIRST_REPORTS_PLAN.md`**.
+
+- P&L totals remain ledger-based.
+- VAT disclosure calculation is centralized in `TaxVatCoreService`.
+- VAT is intentionally not ledger-only yet; switching it requires VAT output/input account taxonomy and historical-period reconciliation.
+
 ## Financial Display Formatting Rules
 
 These rules describe **how amounts should appear** in executive-facing surfaces. They are **policy for documentation and UI consistency**, not a mandate to alter stored data or APIs.

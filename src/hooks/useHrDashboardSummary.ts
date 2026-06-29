@@ -4,7 +4,7 @@
  */
 import { getHrDashboardSummary, type HrDashboardSummaryData } from '../services/api';
 import { hrKeys } from '../services/queryKeys/hr';
-import { useApiQueryOr } from './useApiQuery';
+import { useApiQuery } from './useApiQuery';
 
 const EMPTY: HrDashboardSummaryData = {
   leavesCount: 0,
@@ -17,10 +17,9 @@ const EMPTY: HrDashboardSummaryData = {
 };
 
 export function useHrDashboardSummary(companyId: string) {
-  const { data, isLoading, isError, error } = useApiQueryOr<any, HrDashboardSummaryData>({
+  const { data, isLoading, isError, error } = useApiQuery<any, HrDashboardSummaryData>({
     queryKey: hrKeys.dashboardSummary(companyId),
     queryFn: () => getHrDashboardSummary(companyId),
-    fallback: EMPTY,
     fallbackMessage: 'فشل تحميل ملخص الموارد البشرية',
     select: (payload): HrDashboardSummaryData => {
       const raw = payload?.data ?? payload;
@@ -38,5 +37,5 @@ export function useHrDashboardSummary(companyId: string) {
     staleTime: 5 * 60 * 1000,
   });
 
-  return { data: data ?? EMPTY, isLoading, isError, error };
+  return { data: isError ? undefined : data ?? EMPTY, isLoading, isError, error };
 }

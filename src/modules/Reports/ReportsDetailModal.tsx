@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import { KPI_RECHARTS_COLORS } from '../../constants/kpiCardTheme';
 import { toYmd } from '../../utils/saudiDate';
+import { dailyAverage } from '../../shared/reporting/plDisplaySelectors';
 
 /** حل وسط: عرض أكثر من 8 دون إغراق النافذة؛ التصفح على البيانات المحمّلة (حتى 500 من الخادم). */
 const DETAIL_INVOICES_PAGE_SIZE = 15;
@@ -142,8 +143,8 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     if (!points.length) return '0';
     const withData = points.filter((point: any) => !isEmptyMetric(point.amount));
     const slice = withData.length ? withData : points;
-    const total = slice.reduce((sum: any, point: any) => sum + Math.abs(Number(point.amount || 0)), 0);
-    return String(total / slice.length);
+    const total = slice.reduce((sum: any, point: any) => sum + Number(point.amount || 0), 0);
+    return String(dailyAverage(total, slice.length) ?? 0);
   }, [trend]);
 
   const modalTitle = data

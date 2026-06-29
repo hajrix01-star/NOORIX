@@ -1,6 +1,15 @@
 /**
  * استخراج قيم من تقرير P&L — نفس منطق Dashboard overview السابق (عرض فقط).
  */
+import {
+  expenseRatio,
+  formatSignedPercent,
+  grossMargin,
+  percentOfSales,
+  profitMargin,
+  purchaseRatio,
+} from '../../../../shared/reporting/plDisplaySelectors';
+
 export type PlReportLike = {
   cards?: Record<string, string | number | undefined>;
   summaryRows?: Array<{ key?: string; months?: Array<string | number | undefined> }>;
@@ -31,8 +40,14 @@ export function getSectionPercentOfSales(
 ): string | null {
   if (!report || key === 'sales') return null;
   const sales = Number(getCardValue(report, 'sales', selectedMonth) || 0);
-  if (!sales || sales < 0.0000001) return null;
-  return ((Number(getCardValue(report, key, selectedMonth) || 0) / sales) * 100).toFixed(1);
+  const value = Number(getCardValue(report, key, selectedMonth) || 0);
+  const pct =
+    key === 'purchases' ? purchaseRatio(value, sales)
+    : key === 'expenses' ? expenseRatio(value, sales)
+    : key === 'grossProfit' ? grossMargin(value, sales)
+    : key === 'netProfit' ? profitMargin(value, sales)
+    : percentOfSales(value, sales);
+  return pct == null ? null : formatSignedPercent(pct);
 }
 
 export function getPctStringForCard(

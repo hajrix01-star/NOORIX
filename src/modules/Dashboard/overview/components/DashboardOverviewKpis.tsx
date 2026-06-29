@@ -14,6 +14,7 @@ import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFo
 import { DashboardOverviewKpiCardFooter } from './DashboardOverviewKpiCardFooter';
 import { DashboardOverviewRevenueMonthBody } from './DashboardOverviewRevenueMonthBody';
 import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
+import { formatPercentLabel } from '../../../../shared/reporting/plDisplaySelectors';
 
 type CardDef = {
   key: string;
@@ -96,7 +97,8 @@ export function DashboardOverviewKpis({
 
           const periodLabel = filter?.label || String(year);
           const pctLabelText = t(card.pctLabelKey);
-          const pctTitle = pctNum != null ? `${pctLabelText}: ${arrow}${Math.abs(pctNum)}%` : pctLabelText;
+          const pctText = pctNum != null ? formatPercentLabel(pctNum) : null;
+          const pctTitle = pctText != null ? `${pctLabelText}: ${arrow}${pctText}` : pctLabelText;
 
           const insightBundle =
             card.key === 'purchases' ||
@@ -122,7 +124,7 @@ export function DashboardOverviewKpis({
                   )}
                   title={pctTitle}
                 >
-                  {arrow}{Math.abs(pctNum)}%
+                  {arrow}{pctText}
                 </span>
               ) : (
                 <span className="shrink-0 text-[11px] font-medium text-noorix-muted">—</span>

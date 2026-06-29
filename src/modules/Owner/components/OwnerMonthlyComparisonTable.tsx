@@ -5,6 +5,7 @@ import { EN_MONTHS } from '../../Reports/reportHelpers';
 import { formatCompactNumber, formatNumber } from '../../../utils/money';
 import { MONTH_NAMES_AR } from '../utils/ownerDashboardCalculations';
 import type { OwnerDashboardMetric, OwnerMonthlyComparisonRow } from '../types';
+import { safePercent } from '../../../shared/reporting/plDisplaySelectors';
 
 const METRIC_COLORS = {
   sales: KPI_RECHARTS_COLORS.sales,
@@ -111,7 +112,7 @@ export function OwnerMonthlyComparisonTable({
           </thead>
           <tbody>
             {companyMonthlyData.map(({ cid, name, months, total, color }) => {
-              const pct = Math.abs(grandTotal) > 0 ? (total / Math.abs(grandTotal)) * 100 : 0;
+              const pct = safePercent(total, grandTotal) ?? 0;
               const bestMonth = Math.max(...months);
               return (
                 <tr key={cid} className="border-b border-noorix-border/40 hover:bg-noorix-bg-muted/50 transition-colors">
@@ -142,7 +143,7 @@ export function OwnerMonthlyComparisonTable({
                     {formatCompactNumber(total, lang)}
                   </td>
                   <td className="py-2.5 px-3 text-end text-[11px] text-noorix-muted tabular-nums">
-                    {formatNumber(Math.abs(pct), lang)}%
+                    {formatNumber(isNetProfit ? pct : Math.abs(pct), lang)}%
                   </td>
                 </tr>
               );

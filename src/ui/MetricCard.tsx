@@ -129,6 +129,7 @@ MetricCard.Value = function MetricCardValue({
 }) {
   const isNum = typeof value === 'number';
   const absVal = isNum ? Math.abs(value) : null;
+  const displayNumber = isNum ? (prefix != null ? absVal : Number(value)) : null;
   const strDisplay = !isNum ? value : null;
   return (
     <div
@@ -153,7 +154,7 @@ MetricCard.Value = function MetricCardValue({
         style={{ color: color || undefined, fontFamily: 'var(--noorix-font-numbers)' }}
       >
         {prefix}
-        {isNum ? <FmtNum n={Number(value)} /> : strDisplay}
+        {isNum ? <FmtNum n={Number(displayNumber)} /> : strDisplay}
         {currency && <span className="nx-sar">{currency}</span>}
       </div>
     </div>

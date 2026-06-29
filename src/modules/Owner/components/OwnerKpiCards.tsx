@@ -5,6 +5,12 @@ import { KPI_CARD_SPARKLINE_COLORS } from '../../../constants/kpiCardTheme';
 import { EN_MONTHS } from '../../Reports/reportHelpers';
 import { MONTH_NAMES_AR } from '../utils/ownerDashboardCalculations';
 import type { OwnerKpiTotals, OwnerMonthlyBucket } from '../types';
+import {
+  expenseRatio,
+  formatPercentLabel,
+  profitMargin,
+  purchaseRatio,
+} from '../../../shared/reporting/plDisplaySelectors';
 
 type CardKey = 'sales' | 'purchases' | 'expenses' | 'netProfit';
 
@@ -59,9 +65,10 @@ export function OwnerKpiCards({ aggregated, aggregatedMonthly, year, selectedMon
     <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
       {cards.map((card) => {
         const pctNum =
-          card.key !== 'sales' && aggregated.totalSales > 0
-            ? Number(((card.value / aggregated.totalSales) * 100).toFixed(1))
-            : null;
+          card.key === 'purchases' ? purchaseRatio(card.value, aggregated.totalSales)
+          : card.key === 'expenses' ? expenseRatio(card.value, aggregated.totalSales)
+          : card.key === 'netProfit' ? profitMargin(card.value, aggregated.totalSales)
+          : null;
         const isProfit = card.key === 'netProfit';
         const badgeClass =
           isProfit && pctNum != null
@@ -84,7 +91,7 @@ export function OwnerKpiCards({ aggregated, aggregatedMonthly, year, selectedMon
                 <span
                   className={`inline-flex max-w-[min(100%,140px)] shrink-0 items-center truncate rounded px-2 py-0.5 text-[11px] font-bold nx-font-numbers ltr ${badgeClass}`}
                 >
-                  {Math.abs(pctNum)}%
+                  {formatPercentLabel(pctNum)}
                 </span>
               ) : card.key === 'sales' ? (
                 <span className="text-[11px] font-medium text-noorix-muted">—</span>
