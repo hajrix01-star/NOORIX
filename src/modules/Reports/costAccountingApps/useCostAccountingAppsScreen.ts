@@ -4,7 +4,6 @@ import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { fmt } from '../../../utils/format';
-import { TAX_RATE } from '@noorix/finance-core';
 import { getSaudiYearMonth } from '../../../utils/saudiDate';
 import {
   computeCostAppsPl,
@@ -16,12 +15,14 @@ import {
 } from '../costAccountingAppsScenario';
 import {
   draftKey,
+  defaultCostAppsDraftValues,
   formatCommissionPctForColumnLabel,
   formatYearMonthLabel,
   importMonthKeyFromRange,
   lastDayOfMonth,
   newLine,
   normalizeFixedLines,
+  parseCostAppsDraft,
   parseMoneyInput,
   splitGrossByAppShare,
   ymdParts,
@@ -45,7 +46,7 @@ export function useCostAccountingAppsScreen() {
   const [grossCashStr, setGrossCashStr] = useState('');
   const [grossBankStr, setGrossBankStr] = useState('');
   const [vatInclusive, setVatInclusive] = useState(true);
-  const [vatRatePctStr, setVatRatePctStr] = useState(String(TAX_RATE * 100));
+  const [vatRatePctStr, setVatRatePctStr] = useState(() => defaultCostAppsDraftValues().vatRatePctStr);
   const [commissionPctStr, setCommissionPctStr] = useState('25');
   const [commissionBase, setCommissionBase] = useState<CostAppsCommissionBase>('gross');
   const [fixedLines, setFixedLines] = useState<FixedLine[]>(() => [newLine()]);
@@ -194,42 +195,26 @@ export function useCostAccountingAppsScreen() {
     setImporting(false);
     setImportingExpenses(false);
 
-    const sa = getSaudiYearMonth();
-    const defFrom = ymdParts(sa.year, sa.month, 1);
-    const defTo = ymdParts(sa.year, sa.month, lastDayOfMonth(sa.year, sa.month));
-
-    let o: Record<string, unknown> | null = null;
-    try {
-      const raw = localStorage.getItem(draftKey(activeCompanyId));
-      if (raw) o = JSON.parse(raw) as Record<string, unknown>;
-    } catch {
-      o = null;
-    }
-
-    const pickStr = (key: string, fallback: string) => {
-      const v = o?.[key];
-      return v != null ? String(v) : fallback;
-    };
-
-    setGrossAppStr(pickStr('grossAppStr', ''));
-    setGrossCashStr(pickStr('grossCashStr', ''));
-    setGrossBankStr(pickStr('grossBankStr', ''));
-    setVatInclusive(o && typeof o.vatInclusive === 'boolean' ? o.vatInclusive : true);
-    setVatRatePctStr(pickStr('vatRatePctStr', String(TAX_RATE * 100)));
-    setCommissionPctStr(pickStr('commissionPctStr', '25'));
-    setCommissionBase(o?.commissionBase === 'net' ? 'net' : 'gross');
-    setFixedLines(normalizeFixedLines(o?.fixedLines));
-    setSalaryStr(pickStr('salaryStr', ''));
-    setImportFrom(pickStr('importFrom', defFrom));
-    setImportTo(pickStr('importTo', defTo));
-    setCogsLocalPctStr(pickStr('cogsLocalPctStr', '0'));
-    setAppPriceMarkupPctStr(pickStr('appPriceMarkupPctStr', '0'));
-    setReverseAppSharePctStr(pickStr('reverseAppSharePctStr', '30'));
-    setTargetProfitStr(pickStr('targetProfitStr', '20000'));
-    setReverseGrossStr(pickStr('reverseGrossStr', ''));
-    setProbeSalesGrossStr(pickStr('probeSalesGrossStr', ''));
+    const draft = parseCostAppsDraft(localStorage.getItem(draftKey(activeCompanyId)));
+    setGrossAppStr(draft.grossAppStr);
+    setGrossCashStr(draft.grossCashStr);
+    setGrossBankStr(draft.grossBankStr);
+    setVatInclusive(draft.vatInclusive);
+    setVatRatePctStr(draft.vatRatePctStr);
+    setCommissionPctStr(draft.commissionPctStr);
+    setCommissionBase(draft.commissionBase);
+    setFixedLines(draft.fixedLines);
+    setSalaryStr(draft.salaryStr);
+    setImportFrom(draft.importFrom);
+    setImportTo(draft.importTo);
+    setCogsLocalPctStr(draft.cogsLocalPctStr);
+    setAppPriceMarkupPctStr(draft.appPriceMarkupPctStr);
+    setReverseAppSharePctStr(draft.reverseAppSharePctStr);
+    setTargetProfitStr(draft.targetProfitStr);
+    setReverseGrossStr(draft.reverseGrossStr);
+    setProbeSalesGrossStr(draft.probeSalesGrossStr);
     setProbePlPreview(null);
-    setAppSharePctStr(pickStr('appSharePctStr', ''));
+    setAppSharePctStr(draft.appSharePctStr);
   }, [activeCompanyId]);
 
   useEffect(() => {
@@ -579,27 +564,25 @@ export function useCostAccountingAppsScreen() {
   const clearDraft = useCallback(() => {
     if (!activeCompanyId) return;
     localStorage.removeItem(draftKey(activeCompanyId));
-    const sa = getSaudiYearMonth();
-    const defFrom = ymdParts(sa.year, sa.month, 1);
-    const defTo = ymdParts(sa.year, sa.month, lastDayOfMonth(sa.year, sa.month));
-    setGrossAppStr('');
-    setGrossCashStr('');
-    setGrossBankStr('');
-    setSalaryStr('');
-    setVatInclusive(true);
-    setVatRatePctStr(String(TAX_RATE * 100));
-    setCommissionPctStr('25');
-    setCommissionBase('gross');
-    setFixedLines([newLine()]);
-    setImportFrom(defFrom);
-    setImportTo(defTo);
-    setCogsLocalPctStr('0');
-    setAppPriceMarkupPctStr('0');
-    setReverseAppSharePctStr('30');
-    setTargetProfitStr('20000');
-    setReverseGrossStr('');
-    setAppSharePctStr('');
-    setProbeSalesGrossStr('');
+    const draft = defaultCostAppsDraftValues();
+    setGrossAppStr(draft.grossAppStr);
+    setGrossCashStr(draft.grossCashStr);
+    setGrossBankStr(draft.grossBankStr);
+    setSalaryStr(draft.salaryStr);
+    setVatInclusive(draft.vatInclusive);
+    setVatRatePctStr(draft.vatRatePctStr);
+    setCommissionPctStr(draft.commissionPctStr);
+    setCommissionBase(draft.commissionBase);
+    setFixedLines(draft.fixedLines);
+    setImportFrom(draft.importFrom);
+    setImportTo(draft.importTo);
+    setCogsLocalPctStr(draft.cogsLocalPctStr);
+    setAppPriceMarkupPctStr(draft.appPriceMarkupPctStr);
+    setReverseAppSharePctStr(draft.reverseAppSharePctStr);
+    setTargetProfitStr(draft.targetProfitStr);
+    setReverseGrossStr(draft.reverseGrossStr);
+    setAppSharePctStr(draft.appSharePctStr);
+    setProbeSalesGrossStr(draft.probeSalesGrossStr);
     setProbePlPreview(null);
     setImporting(false);
     showToast(lang === 'ar' ? 'تم المسح.' : 'Cleared.', 'success');
