@@ -188,12 +188,13 @@ export function throwIfApiFailed(res: unknown, fallbackMessage: string = 'طلب
   const r = res as {
     success?: boolean;
     error?: string;
+    message?: string;
     code?: number;
     isTransientServerError?: boolean;
     isNetworkError?: boolean;
   };
   if (r?.success) return;
-  const err = new Error(String(r?.error || fallbackMessage)) as ApiThrownError;
+  const err = new Error(String(r?.error || r?.message || fallbackMessage)) as ApiThrownError;
   if (r?.code != null) err.code = r.code;
   if (r?.isTransientServerError) err.isTransientServerError = true;
   if (r?.isNetworkError) err.isNetworkError = true;

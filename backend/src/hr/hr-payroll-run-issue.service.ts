@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { TenantContext } from '../common/tenant-context';
 import { assertVaultsUsableForPayment } from '../vaults/assert-vaults-for-payment.util';
 import type { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
@@ -26,7 +26,7 @@ export class HrPayrollRunIssueService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly audit: AuditLogService,
-    private readonly financialCore: FinancialCoreService,
+    private readonly accountingCore: AccountingCoreService,
   ) {}
 
   async issuePayrollPayment(dto: IssuePayrollPaymentDto, userId?: string) {
@@ -138,7 +138,7 @@ export class HrPayrollRunIssueService {
       });
       if (!lockedRun) throw new NotFoundException('مسيرة الرواتب غير موجودة.');
 
-      const created = await this.financialCore.processOutflowBatchInTransaction(
+      const created = await this.accountingCore.postPayrollPaymentBatchInTransaction(
         tx,
         dtos,
         userId,

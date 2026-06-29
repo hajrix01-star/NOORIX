@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import type { UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import { voidLeaveSalarySettlementCore } from './hr-leave-void-salary-settlement.util';
 import {
@@ -12,7 +12,7 @@ import {
 export async function updateLeaveStatusCore(
   deps: {
     prisma: TenantPrismaService;
-    financialCore: FinancialCoreService;
+    accountingCore: AccountingCoreService;
     audit: AuditLogService;
   },
   id: string,
@@ -20,7 +20,7 @@ export async function updateLeaveStatusCore(
   companyId: string,
   userId?: string,
 ) {
-  const { prisma, financialCore, audit } = deps;
+  const { prisma, accountingCore, audit } = deps;
   const existing = await prisma.leave.findFirst({
     where: { id, companyId },
   });
@@ -33,7 +33,7 @@ export async function updateLeaveStatusCore(
     if (st) {
       if (dto.voidSalarySettlement === true) {
         await voidLeaveSalarySettlementCore(
-          { prisma, financialCore, audit },
+          { prisma, accountingCore, audit },
           id,
           companyId,
           userId,

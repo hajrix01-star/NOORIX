@@ -5,6 +5,7 @@ import { ensureUploadsSubdir } from '../common/uploads-root';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuditModule } from '../audit/audit.module';
 import { FinancialCoreModule } from '../financial-core/financial-core.module';
+import { AccountingCoreModule } from '../accounting-core/accounting-core.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { HRController } from './hr.controller';
 import { HRService } from './hr.service';
@@ -35,6 +36,7 @@ const uploadDir = ensureUploadsSubdir('hr-documents');
     PrismaModule,
     AuditModule,
     FinancialCoreModule,
+    AccountingCoreModule,
     EmployeesModule,
   ],
   controllers: [HRController],

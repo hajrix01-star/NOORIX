@@ -5,7 +5,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { TenantContext } from '../common/tenant-context';
 import type { CreateLeaveDto, UpdateLeaveDto, UpdateLeaveStatusDto } from './dto/create-leave.dto';
 import type { ReturnFromLeaveDto } from './dto/return-from-leave.dto';
@@ -23,7 +23,7 @@ export class HrLeaveService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly audit: AuditLogService,
-    private readonly financialCore: FinancialCoreService,
+    private readonly accountingCore: AccountingCoreService,
     private readonly compensationSnapshot: HrCompensationSnapshotService,
   ) {}
 
@@ -101,7 +101,7 @@ export class HrLeaveService {
     await issueLeaveSalarySettlementCore(
       {
         prisma: this.prisma,
-        financialCore: this.financialCore,
+        accountingCore: this.accountingCore,
         compensationSnapshot: this.compensationSnapshot,
       },
       {
@@ -142,7 +142,7 @@ export class HrLeaveService {
     if (st) {
       if (voidSettlement) {
         await voidLeaveSalarySettlementCore(
-          { prisma: this.prisma, financialCore: this.financialCore, audit: this.audit },
+          { prisma: this.prisma, accountingCore: this.accountingCore, audit: this.audit },
           id,
           companyId,
           userId,
@@ -247,7 +247,7 @@ export class HrLeaveService {
       }
       if (structural && dto.voidSalarySettlement === true) {
         await voidLeaveSalarySettlementCore(
-            { prisma: this.prisma, financialCore: this.financialCore, audit: this.audit },
+            { prisma: this.prisma, accountingCore: this.accountingCore, audit: this.audit },
             id,
             companyId,
             userId,
@@ -366,7 +366,7 @@ export class HrLeaveService {
     return updateLeaveStatusCore(
       {
         prisma: this.prisma,
-        financialCore: this.financialCore,
+        accountingCore: this.accountingCore,
         audit: this.audit,
       },
       id,

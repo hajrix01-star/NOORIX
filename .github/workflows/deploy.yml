@@ -98,18 +98,19 @@ jobs:
             --exclude='node_modules' --exclude='dist' --exclude='.env' \
             backend/ "$PROD/"
 
-          echo "==> Sync shared finance-core package required by backend build"
+          echo "==> Sync shared packages required by frontend/backend builds"
           mkdir -p /var/www/noorix/packages
           rsync -a --delete \
             --exclude='node_modules' --exclude='dist' --exclude='dist-esm' \
-            packages/finance-core/ /var/www/noorix/packages/finance-core/
+            packages/ /var/www/noorix/packages/
 
           echo "==> مزامنة سكريبتات النشر (deploy/) للسيرفر"
           mkdir -p /var/www/noorix/deploy
           rsync -a deploy/ /var/www/noorix/deploy/
 
-          echo "==> npm install for shared finance-core build dependencies"
+          echo "==> npm install for shared package build dependencies"
           npm install --prefix /var/www/noorix/packages/finance-core
+          npm install --prefix /var/www/noorix/packages/permissions-core
 
           cd "$PROD"
 

@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { AuditLogService } from '../audit/audit-log.service';
 
 /**
@@ -9,7 +9,7 @@ import { AuditLogService } from '../audit/audit-log.service';
 export async function voidLeaveSalarySettlementCore(
   deps: {
     prisma: TenantPrismaService;
-    financialCore: FinancialCoreService;
+    accountingCore: AccountingCoreService;
     audit: AuditLogService;
   },
   leaveId: string,
@@ -17,7 +17,7 @@ export async function voidLeaveSalarySettlementCore(
   userId: string | undefined,
   reason: string,
 ): Promise<void> {
-  const { prisma, financialCore, audit } = deps;
+  const { prisma, accountingCore, audit } = deps;
   const st = await prisma.leaveSalarySettlement.findUnique({
     where: { leaveId },
   });
@@ -47,7 +47,7 @@ export async function voidLeaveSalarySettlementCore(
     }
   });
 
-  await financialCore.cancelOperation(
+  await accountingCore.reverseFinancialOperation(
     {
       companyId,
       referenceType: 'salary',

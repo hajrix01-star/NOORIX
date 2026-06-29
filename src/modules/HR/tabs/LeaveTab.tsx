@@ -76,6 +76,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const [returnDate, setReturnDate] = useState('');
   const [settlementRow, setSettlementRow] = useState<any>(null);
   const [settlementAmount, setSettlementAmount] = useState('');
+  const [settlementOverrideReason, setSettlementOverrideReason] = useState('');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -136,6 +137,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   useEffect(() => {
     if (settlementPreview?.suggestedAmount != null) {
       setSettlementAmount(String(settlementPreview.suggestedAmount));
+      setSettlementOverrideReason('');
     }
   }, [settlementPreview]);
 
@@ -160,13 +162,21 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   });
 
   const issueSettlementMutation = useApiMutation({
-    mutationFn: async ({ id, grossAmount }: any) => {
+    mutationFn: async ({ id, grossAmount, manualOverrideReason }: any) => {
       const raw = String(grossAmount ?? '').replace(/,/g, '').trim();
       const n = parseFloat(raw);
       if (!Number.isFinite(n) || n < 0.01) {
         throw new Error(t('requiredFields'));
       }
-      const res = await issueLeaveSalarySettlement(id, companyId, { grossAmount: n });
+      const suggested = Number(settlementPreview?.suggestedAmount ?? n);
+      const isOverride = Math.abs(n - suggested) > 0.005;
+      const reason = String(manualOverrideReason ?? '').trim();
+      if (isOverride && !reason) {
+        throw new Error(t('leaveSalarySettlementOverrideReasonRequired'));
+      }
+      const res = await issueLeaveSalarySettlement(id, companyId, isOverride
+        ? { grossAmount: n, manualOverrideReason: reason }
+        : {});
       rejectIfApiFailed(res, t('saveFailed'));
       return res;
     },
@@ -419,6 +429,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         onClose={() => {
           setSettlementRow(null);
           setSettlementAmount('');
+          setSettlementOverrideReason('');
         }}
         title={t('leaveSalarySettlementTitle')}
         size="sm"
@@ -429,6 +440,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
               onClick={() => {
                 setSettlementRow(null);
                 setSettlementAmount('');
+                setSettlementOverrideReason('');
               }}
             >
               {t('cancel')}
@@ -440,15 +452,24 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
                 || settlementPreviewLoading
                 || !settlementPreview
                 || !settlementAmount
+                || (
+                  Math.abs(Number(settlementAmount || 0) - Number(settlementPreview?.suggestedAmount ?? (settlementAmount || 0))) > 0.005
+                  && !settlementOverrideReason.trim()
+                )
               }
               onClick={() => {
                 if (!settlementRow) return;
                 issueSettlementMutation.mutate(
-                  { id: settlementRow.id, grossAmount: settlementAmount },
+                  {
+                    id: settlementRow.id,
+                    grossAmount: settlementAmount,
+                    manualOverrideReason: settlementOverrideReason,
+                  },
                   {
                     onSuccess: () => {
                       setSettlementRow(null);
                       setSettlementAmount('');
+                      setSettlementOverrideReason('');
                     },
                   },
                 );
@@ -487,6 +508,16 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
               onChange={(e: any) => setSettlementAmount(e.target.value)}
               className="ltr"
             />
+            {Math.abs(Number(settlementAmount || 0) - Number(settlementPreview.suggestedAmount ?? (settlementAmount || 0))) > 0.005 && (
+              <Input
+                multiline
+                rows={3}
+                label={t('leaveSalarySettlementOverrideReasonLabel')}
+                value={settlementOverrideReason}
+                onChange={(e: any) => setSettlementOverrideReason(e.target.value)}
+                placeholder={t('leaveSalarySettlementOverrideReasonPlaceholder')}
+              />
+            )}
           </>
         )}
       </Modal>

@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { TenantContext } from '../common/tenant-context';
 import { toMoneyDecimal2 } from '../common/utils/money-decimal';
 import {
@@ -28,14 +28,14 @@ export type LeaveForSalarySettlement = {
 export async function issueLeaveSalarySettlementCore(
   deps: {
     prisma: TenantPrismaService;
-    financialCore: FinancialCoreService;
+    accountingCore: AccountingCoreService;
     compensationSnapshot: HrCompensationSnapshotService;
   },
   leave: LeaveForSalarySettlement,
   userId: string,
   options: { vaultId?: string; grossAmountOverride?: number; manualOverrideReason?: string },
 ): Promise<void> {
-  const { prisma, financialCore, compensationSnapshot } = deps;
+  const { prisma, accountingCore, compensationSnapshot } = deps;
   const tenantId = TenantContext.getTenantId();
   if (leave.leaveType !== 'annual') {
     throw new BadRequestException('تسوية الراتب متاحة لإجازات سنوية فقط.');
@@ -129,7 +129,7 @@ export async function issueLeaveSalarySettlementCore(
   const notes = `تسوية راتب حتى يوم السفر — إجازة سنوية من ${startStrFormatted} (${calendarDaysPaid}/${daysInMonth} يوم تقويمي، شهر ${ym})${manualNote}`;
   const snapshotNote = ` [HR_COMP_SNAPSHOT:${snapshot.calculatedAt}:monthly=${monthlyPackageTotal.toFixed(2)}]`;
 
-  const { invoice } = await financialCore.processOutflow(
+  const { invoice } = await accountingCore.postLeaveSalarySettlement(
     {
       companyId: leave.companyId,
       employeeId: emp.id,

@@ -20,6 +20,30 @@ function parseDaysQuery(days: string | undefined, fallback = 30): number {
   return Math.min(365, Math.max(1, parsed));
 }
 
+function parseRequiredYearMonth(year: string | undefined, month: string | undefined): { year: number; month: number } {
+  if (!year || !month) {
+    throw new BadRequestException('year and month are required.');
+  }
+  const y = Number.parseInt(year, 10);
+  const m = Number.parseInt(month, 10);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || y < 2000 || m < 1 || m > 12) {
+    throw new BadRequestException('year or month is invalid.');
+  }
+  return { year: y, month: m };
+}
+
+function parseOptionalYearMonth(year: string | undefined, month: string | undefined): { year?: number; month?: number } {
+  const y = year ? Number.parseInt(year, 10) : undefined;
+  const m = month ? Number.parseInt(month, 10) : undefined;
+  if (year && (y === undefined || !Number.isFinite(y) || y < 2000)) {
+    throw new BadRequestException('year or month is invalid.');
+  }
+  if (month && (m === undefined || !Number.isFinite(m) || m < 1 || m > 12)) {
+    throw new BadRequestException('year or month is invalid.');
+  }
+  return { year: y, month: m };
+}
+
 @Controller('orders')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class OrdersController {
@@ -146,11 +170,8 @@ export class OrdersController {
     @Query('month') month: string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
-    if (!year || !month) return [];
-    const y = parseInt(year, 10);
-    const m = parseInt(month, 10);
-    if (!y || !m || m < 1 || m > 12) return [];
-    return this.ordersService.findAll(resolvedCompanyId, y, m);
+    const ym = parseRequiredYearMonth(year, month);
+    return this.ordersService.findAll(resolvedCompanyId, ym.year, ym.month);
   }
 
   @Get('summary')
@@ -161,11 +182,8 @@ export class OrdersController {
     @Query('month') month: string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
-    if (!year || !month) return {};
-    const y = parseInt(year, 10);
-    const m = parseInt(month, 10);
-    if (!y || !m || m < 1 || m > 12) return {};
-    return this.ordersService.getSummary(resolvedCompanyId, y, m);
+    const ym = parseRequiredYearMonth(year, month);
+    return this.ordersService.getSummary(resolvedCompanyId, ym.year, ym.month);
   }
 
   @Get('items-report')
@@ -176,11 +194,8 @@ export class OrdersController {
     @Query('month') month: string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
-    if (!year || !month) return [];
-    const y = parseInt(year, 10);
-    const m = parseInt(month, 10);
-    if (!y || !m || m < 1 || m > 12) return [];
-    return this.ordersService.getItemsReport(resolvedCompanyId, y, m);
+    const ym = parseRequiredYearMonth(year, month);
+    return this.ordersService.getItemsReport(resolvedCompanyId, ym.year, ym.month);
   }
 
   @Get('products')
@@ -230,10 +245,11 @@ export class OrdersController {
     @Query('month') month?: string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
-    if (!productId) return [];
-    const y = year ? parseInt(year, 10) : undefined;
-    const m = month ? parseInt(month, 10) : undefined;
-    return this.ordersService.getProductPurchaseHistory(resolvedCompanyId, productId, y, m);
+    if (!productId?.trim()) {
+      throw new BadRequestException('productId is required.');
+    }
+    const ym = parseOptionalYearMonth(year, month);
+    return this.ordersService.getProductPurchaseHistory(resolvedCompanyId, productId, ym.year, ym.month);
   }
 
   @Get('category-history/:categoryId')
@@ -245,10 +261,11 @@ export class OrdersController {
     @Query('month') month?: string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
-    if (!categoryId) return [];
-    const y = year ? parseInt(year, 10) : undefined;
-    const m = month ? parseInt(month, 10) : undefined;
-    return this.ordersService.getCategoryPurchaseHistory(resolvedCompanyId, categoryId, y, m);
+    if (!categoryId?.trim()) {
+      throw new BadRequestException('categoryId is required.');
+    }
+    const ym = parseOptionalYearMonth(year, month);
+    return this.ordersService.getCategoryPurchaseHistory(resolvedCompanyId, categoryId, ym.year, ym.month);
   }
 
   @Get('categories')

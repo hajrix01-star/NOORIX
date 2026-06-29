@@ -23,6 +23,26 @@ export type HrCustomAllowanceAmountRow = {
   amount?: unknown;
 };
 
+export type HrPayrollLineNetInput = {
+  grossSalary?: unknown;
+  allowancesAdd?: unknown;
+  deductions?: unknown;
+  advancesDeduct?: unknown;
+  netSalary?: unknown;
+};
+
+export type HrPayrollLineSummary = {
+  grossSalary: number;
+  allowancesAdd: number;
+  beforeDeductions: number;
+  payrollDeductions: number;
+  advancesDeduct: number;
+  totalDeductions: number;
+  netSalary: number;
+};
+
+export type HrPayrollRunTotals = HrPayrollLineSummary;
+
 export type HrEmployeeSalaryPackageBreakdown = {
   basicSalary: Decimal;
   housingAllowance: Decimal;
@@ -40,8 +60,77 @@ function decimal(value: unknown): Decimal {
   return new Decimal(String(value));
 }
 
+function toMoneyNumber(value: unknown): number {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function roundMoney2(value: Decimal.Value): number {
   return new Decimal(value || 0).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
+}
+
+export function computeHrPayrollLineNet(input: HrPayrollLineNetInput): number {
+  const gross = toMoneyNumber(input.grossSalary);
+  const add = toMoneyNumber(input.allowancesAdd);
+  const deductions = toMoneyNumber(input.deductions);
+  const advances = toMoneyNumber(input.advancesDeduct);
+  return roundMoney2(Decimal.max(new Decimal(gross).plus(add).minus(deductions).minus(advances), 0));
+}
+
+export function withComputedHrPayrollLineNet<T extends HrPayrollLineNetInput>(row: T): T & { netSalary: number } {
+  return {
+    ...row,
+    netSalary: computeHrPayrollLineNet(row),
+  };
+}
+
+export function computeHrPayrollLineSummary(input: HrPayrollLineNetInput): HrPayrollLineSummary {
+  const grossSalary = toMoneyNumber(input.grossSalary);
+  const allowancesAdd = toMoneyNumber(input.allowancesAdd);
+  const payrollDeductions = toMoneyNumber(input.deductions);
+  const advancesDeduct = toMoneyNumber(input.advancesDeduct);
+  return {
+    grossSalary,
+    allowancesAdd,
+    beforeDeductions: roundMoney2(new Decimal(grossSalary).plus(allowancesAdd)),
+    payrollDeductions,
+    advancesDeduct,
+    totalDeductions: roundMoney2(new Decimal(payrollDeductions).plus(advancesDeduct)),
+    netSalary: computeHrPayrollLineNet(input),
+  };
+}
+
+export function computeHrPayrollRunTotals(lines: HrPayrollLineNetInput[] | null | undefined): HrPayrollRunTotals {
+  const totals: HrPayrollRunTotals = {
+    grossSalary: 0,
+    allowancesAdd: 0,
+    beforeDeductions: 0,
+    payrollDeductions: 0,
+    advancesDeduct: 0,
+    totalDeductions: 0,
+    netSalary: 0,
+  };
+
+  for (const line of lines ?? []) {
+    const summary = computeHrPayrollLineSummary(line);
+    totals.grossSalary += summary.grossSalary;
+    totals.allowancesAdd += summary.allowancesAdd;
+    totals.beforeDeductions += summary.beforeDeductions;
+    totals.payrollDeductions += summary.payrollDeductions;
+    totals.advancesDeduct += summary.advancesDeduct;
+    totals.totalDeductions += summary.totalDeductions;
+    totals.netSalary += summary.netSalary;
+  }
+
+  return {
+    grossSalary: roundMoney2(totals.grossSalary),
+    allowancesAdd: roundMoney2(totals.allowancesAdd),
+    beforeDeductions: roundMoney2(totals.beforeDeductions),
+    payrollDeductions: roundMoney2(totals.payrollDeductions),
+    advancesDeduct: roundMoney2(totals.advancesDeduct),
+    totalDeductions: roundMoney2(totals.totalDeductions),
+    netSalary: roundMoney2(totals.netSalary),
+  };
 }
 
 export function stripOvertimeWorkDaysTag(schedule: unknown): string {

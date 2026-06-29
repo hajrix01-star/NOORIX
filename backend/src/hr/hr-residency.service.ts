@@ -5,7 +5,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { FinancialCoreService } from '../financial-core/financial-core.service';
+import { AccountingCoreService } from '../accounting-core/accounting-core.service';
 import { TenantContext } from '../common/tenant-context';
 import type { CreateResidencyDto } from './dto/create-residency.dto';
 import type { UpdateResidencyDto } from './dto/update-residency.dto';
@@ -33,7 +33,7 @@ export class HrResidencyService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly audit: AuditLogService,
-    private readonly financialCore: FinancialCoreService,
+    private readonly accountingCore: AccountingCoreService,
   ) {}
 
   async findResidencies(companyId: string, employeeId?: string, serviceCategory?: string) {
@@ -178,7 +178,7 @@ export class HrResidencyService {
 
     if (issueInvoice) {
       await issueResidencyServiceInvoiceCore(
-        { prisma: this.prisma, financialCore: this.financialCore },
+        { prisma: this.prisma, accountingCore: this.accountingCore },
         residency,
         userId ?? '',
         {
@@ -276,7 +276,7 @@ export class HrResidencyService {
     if (!residency) throw new NotFoundException(`السجل ${id} غير موجود.`);
 
     const result = await issueResidencyServiceInvoiceCore(
-      { prisma: this.prisma, financialCore: this.financialCore },
+      { prisma: this.prisma, accountingCore: this.accountingCore },
       residency,
       userId ?? '',
       {
@@ -318,7 +318,7 @@ export class HrResidencyService {
         await voidResidencyServiceInvoiceCore(
           {
             prisma: this.prisma,
-            financialCore: this.financialCore,
+            accountingCore: this.accountingCore,
             audit: this.audit,
           },
           id,
