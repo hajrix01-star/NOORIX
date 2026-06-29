@@ -183,20 +183,15 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
           .map((v) => String(v.id)),
       );
       const cashRows = (pack?.inflowByVault ?? []).filter((r) => r.vaultId && cashVaultIds.has(r.vaultId));
-      let summaries: unknown[] = [];
-      try {
-        summaries = await fetchAllSalesSummariesForExport(
-          companyId,
-          invoiceQueryStartDate,
-          invoiceQueryEndDate,
-          undefined,
-          'transactionDate',
-          'desc',
-          false,
-        );
-      } catch {
-        summaries = [];
-      }
+      const summaries = await fetchAllSalesSummariesForExport(
+        companyId,
+        invoiceQueryStartDate,
+        invoiceQueryEndDate,
+        undefined,
+        'transactionDate',
+        'desc',
+        false,
+      );
 
       const cashOnHandSum = (summaries as { cashOnHand?: unknown }[]).reduce(
         (acc, s) => acc + Number(s.cashOnHand ?? 0),

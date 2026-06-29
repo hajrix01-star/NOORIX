@@ -8,6 +8,7 @@ import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation'
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getPayrollRuns, updatePayrollRunStatus, issuePayrollPayment, deletePayrollRun, throwIfApiFailed } from '../../../services/api';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useVaults } from '../../../hooks/useVaults';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { formatSaudiDate, getSaudiToday, toYmd } from '../../../utils/saudiDate';
@@ -70,13 +71,12 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   const { paymentVaults = [] } = useVaults({ companyId });
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useApiListQuery<any, any[]>({
     queryKey: hrKeys.payrollRuns(companyId, year),
-    queryFn: async () => {
-      const res = await getPayrollRuns(companyId, year);
-      throwIfApiFailed(res, 'فشل تحميل مسيرات الرواتب');
-      const raw = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
-      return raw.map((run: any) => {
+    queryFn: () => getPayrollRuns(companyId, year),
+    fallbackMessage: 'فشل تحميل مسيرات الرواتب',
+    select: (runs) =>
+      runs.map((run: any) => {
         const grossTotal = Array.isArray(run.items)
           ? computePayrollRunTotals(run.items).grossSalary
           : Number(run.totalAmount ?? 0);
@@ -91,8 +91,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
           issuedInvoiceNumber: run.issuedSalaryInvoiceNumber ?? null,
           itemsCount: run.items?.length ?? 0,
         };
-      });
-    },
+      }),
     enabled: !!companyId,
   });
 

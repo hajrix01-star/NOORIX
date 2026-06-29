@@ -16,7 +16,7 @@ import {
   getInvoices,
   deleteInvoice,
   getInvoiceCreatorFilterOptions,
-  throwIfApiFailed,
+  unwrapApiList,
 } from '../../services/api';
 import { useDateFilter } from '../../shared/components/DateFilterBar';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
@@ -369,7 +369,7 @@ export function useInvoicesListScreen() {
       filterVaultId || undefined,
       filterCreatedByUserId || undefined,
     );
-    return (res?.data?.items ?? []).map(formatInvoiceForExport);
+    return unwrapApiList<any>(res, t('exportFailed')).map(formatInvoiceForExport);
   }, [
     companyId,
     dateFilter.startDate,
@@ -383,6 +383,7 @@ export function useInvoicesListScreen() {
     filterHasNotesOnly,
     filterVaultId,
     filterCreatedByUserId,
+    t,
   ]);
 
   const onImportInvoicesSuccess = useCallback(

@@ -19,6 +19,7 @@ import { LeaveFormModal } from '../components/LeaveFormModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
+import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Badge, Input, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
@@ -79,14 +80,10 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useApiListQuery<any>({
     queryKey: hrKeys.leavesForYear(companyId, year),
-    queryFn: async () => {
-      const res = await getLeaves(companyId, undefined, year);
-      throwIfApiFailed(res, 'فشل تحميل الإجازات');
-      const d = res.data;
-      return Array.isArray(d) ? d : (d?.items ?? []);
-    },
+    queryFn: () => getLeaves(companyId, undefined, year),
+    fallbackMessage: 'فشل تحميل الإجازات',
     enabled: !!companyId,
   });
 
@@ -122,13 +119,10 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     isLoading: settlementPreviewLoading,
     isError: settlementPreviewError,
     error: settlementPreviewErr,
-  } = useQuery({
+  } = useApiQuery<any>({
     queryKey: hrKeys.leaveSettlementPreview(companyId, settlementRow?.id),
-    queryFn: async () => {
-      const res = await getLeaveSalarySettlementPreview(settlementRow.id, companyId);
-      throwIfApiFailed(res, t('saveFailed'));
-      return res.data;
-    },
+    queryFn: () => getLeaveSalarySettlementPreview(settlementRow.id, companyId),
+    fallbackMessage: t('saveFailed'),
     enabled: !!companyId && !!settlementRow?.id,
     retry: false,
   });

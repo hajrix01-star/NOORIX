@@ -7,6 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useVaults } from '../../../hooks/useVaults';
 import { useQuery } from '@tanstack/react-query';
 import { getEmployees } from '../../../services/api';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
@@ -31,13 +32,10 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
   const [notes, setNotes] = useState('');
   const [installmentCount, setInstallmentCount] = useState('');
 
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useApiListQuery<any>({
     queryKey: employeeKeys.list(companyId, false),
-    queryFn: async () => {
-      const res = await getEmployees(companyId, false);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : [];
-    },
+    queryFn: () => getEmployees(companyId, false),
+    fallbackMessage: t('employeesLoadFailed'),
     enabled: !!companyId && !initialEmployee,
   });
 

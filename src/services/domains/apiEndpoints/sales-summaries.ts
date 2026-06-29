@@ -1,6 +1,6 @@
 import type { ApiParsedResult } from '../../../types/api';
 import { toYmd } from '../../../utils/saudiDate';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+import { apiGet, apiPost, apiPatch, apiDelete, throwIfApiFailed } from '../../core/apiHttp';
 import {
   createDailySalesSummariesSequential,
   postDailySalesSummaryBatch,
@@ -145,7 +145,7 @@ export async function fetchAllSalesSummariesForExport(
       includeCancelled,
       shift,
     );
-    if (!res?.success) break;
+    throwIfApiFailed(res, 'فشل تحميل ملخصات المبيعات للتصدير');
     const pack = res.data as { items?: unknown[]; total?: number } | undefined;
     const { items = [], total = 0 } = pack || {};
     acc.push(...items);

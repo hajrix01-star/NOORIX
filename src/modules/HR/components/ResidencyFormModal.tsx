@@ -2,11 +2,11 @@
  * ResidencyFormModal — إضافة/تعديل خدمة موظف (حقول مختلفة حسب النوع)
  */
 import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useVaults } from '../../../hooks/useVaults';
 import { getEmployees, createResidency, updateResidency, throwIfApiFailed } from '../../../services/api';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
@@ -94,13 +94,10 @@ export function ResidencyFormModal({
   const { paymentVaults = [] } = useVaults({ companyId: cid });
   const vaults = paymentVaults;
 
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useApiListQuery<any>({
     queryKey: employeeKeys.list(cid, false),
-    queryFn: async () => {
-      const res = await getEmployees(cid, false);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : [];
-    },
+    queryFn: () => getEmployees(cid, false),
+    fallbackMessage: t('employeesLoadFailed'),
     enabled: !!cid,
   });
 

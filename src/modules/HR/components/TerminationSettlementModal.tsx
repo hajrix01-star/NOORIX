@@ -15,6 +15,7 @@ import {
   getInvoices,
   getMovements,
   throwIfApiFailed,
+  unwrapApiList,
   uploadDocumentFile,
 } from '../../../services/api';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
@@ -62,8 +63,7 @@ async function findTerminationSalaryInvoiceThisMonth(companyId: any, employeeId:
   const from = toYmd(monthFirstYmd);
   const to = lastDayOfMonthYmd(from);
   const res = await getInvoices(companyId, from, to, 1, 100, null, employeeId, 'salary');
-  if (!res?.success) return null;
-  const items = res.data?.items ?? [];
+  const items = unwrapApiList<any>(res, 'فشل تحميل فواتير راتب إنهاء الخدمة');
   return (
     items.find(
       (inv: any) =>
@@ -77,8 +77,7 @@ async function findTerminationSalaryInvoiceThisMonth(companyId: any, employeeId:
 async function hasTerminationMovementForInvoiceNumber(companyId: any, employeeId: any, invoiceNumber: any) {
   if (!invoiceNumber) return false;
   const res = await getMovements(companyId, employeeId);
-  if (!res?.success) return false;
-  const list = Array.isArray(res.data) ? res.data : [];
+  const list = unwrapApiList<any>(res, 'فشل تحميل حركات الموظف');
   const marker = `صرف راتب إنهاء خدمة — ${invoiceNumber}`;
   return list.some((m: any) => String(m.notes || '').includes(marker));
 }
@@ -138,8 +137,7 @@ export default function TerminationSettlementModal({
     queryKey: hrKeys.terminationAdvances(companyId, empId),
     queryFn: async () => {
       const res = await getInvoices(companyId, undefined, undefined, 1, 100, null, empId, 'advance');
-      if (!res?.success) return [];
-      const items = res.data?.items ?? [];
+      const items = unwrapApiList<any>(res, t('loadingError'));
       return items.filter((inv: any) => inv.kind === 'advance' && inv.status !== 'cancelled');
     },
     enabled: open && !!companyId && !!empId,

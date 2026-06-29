@@ -3,10 +3,10 @@
  * عند وجود تسوية راتب: تعديل الملاحظات فقط دون تأكيد؛ أي تغيير جوهري يطلب موافقة على إلغاء التسوية.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getEmployees, createLeave, updateLeave, throwIfApiFailed } from '../../../services/api';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, AdaptiveSheet, Modal } from '../../../ui';
@@ -88,13 +88,10 @@ export function LeaveFormModal({
     setError('');
   }, [isEdit, editLeave?.id, initialEmployeeId]);
 
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useApiListQuery<any>({
     queryKey: employeeKeys.list(cid, false),
-    queryFn: async () => {
-      const res = await getEmployees(cid, false);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : [];
-    },
+    queryFn: () => getEmployees(cid, false),
+    fallbackMessage: t('employeesLoadFailed'),
     enabled: !!cid,
   });
 

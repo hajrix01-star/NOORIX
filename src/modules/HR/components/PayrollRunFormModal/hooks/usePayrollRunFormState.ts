@@ -10,6 +10,7 @@ import {
   getEmployeeCompensationSnapshots,
   throwIfApiFailed,
 } from '../../../../../services/api';
+import { useApiListQuery, useApiQuery } from '../../../../../hooks/useApiQuery';
 import { employeeKeys, hrKeys, invoiceKeys } from '../../../../../services/queryKeys';
 import { getDefaultPayrollMonth } from '../utils/payrollRunMappers';
 import type { PayrollRunLineItem } from '../types';
@@ -33,34 +34,24 @@ export function usePayrollRunFormState({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useApiListQuery<any>({
     queryKey: employeeKeys.list(cid, false),
-    queryFn: async () => {
-      const res = await getEmployees(cid, false);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : [];
-    },
+    queryFn: () => getEmployees(cid, false),
+    fallbackMessage: 'فشل تحميل الموظفين',
     enabled: !!cid,
   });
 
-  const { data: existingRuns = [] } = useQuery({
+  const { data: existingRuns = [] } = useApiListQuery<any>({
     queryKey: hrKeys.payrollRuns(cid, new Date(payrollMonth).getFullYear()),
-    queryFn: async () => {
-      const res = await getPayrollRuns(cid, new Date(payrollMonth).getFullYear());
-      if (!res?.success) return [];
-      const raw = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
-      return raw;
-    },
+    queryFn: () => getPayrollRuns(cid, new Date(payrollMonth).getFullYear()),
+    fallbackMessage: 'فشل تحميل مسيرات الرواتب',
     enabled: !!cid && !!payrollMonth,
   });
 
-  const { data: editingRun, isLoading: isLoadingRun } = useQuery({
+  const { data: editingRun, isLoading: isLoadingRun } = useApiQuery<any>({
     queryKey: hrKeys.payrollRun(runId, cid),
-    queryFn: async () => {
-      const res = await getPayrollRun(runId as string, cid);
-      throwIfApiFailed(res, 'فشل تحميل المسيرة');
-      return res.data;
-    },
+    queryFn: () => getPayrollRun(runId as string, cid),
+    fallbackMessage: 'فشل تحميل المسيرة',
     enabled: !!cid && !!runId,
   });
 
@@ -93,33 +84,24 @@ export function usePayrollRunFormState({
     return map;
   }, [compensationSnapshots]);
 
-  const { data: advances = [] } = useQuery({
+  const { data: advances = [] } = useApiListQuery<any>({
     queryKey: invoiceKeys.advancesForMonth(cid, monthStr),
-    queryFn: async () => {
-      const res = await getInvoices(cid, undefined, undefined, 1, 1000, null, null, 'advance');
-      if (!res?.success) return [];
-      return res.data?.items ?? [];
-    },
+    queryFn: () => getInvoices(cid, undefined, undefined, 1, 1000, null, null, 'advance'),
+    fallbackMessage: 'فشل تحميل السلف',
     enabled: !!cid,
   });
 
-  const { data: leaves = [] } = useQuery({
+  const { data: leaves = [] } = useApiListQuery<any>({
     queryKey: hrKeys.leavesPayrollForm(cid),
-    queryFn: async () => {
-      const res = await getLeaves(cid);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
-    },
+    queryFn: () => getLeaves(cid),
+    fallbackMessage: 'فشل تحميل الإجازات',
     enabled: !!cid,
   });
 
-  const { data: leaveSalarySettlements = [] } = useQuery({
+  const { data: leaveSalarySettlements = [] } = useApiListQuery<any>({
     queryKey: hrKeys.leaveSalarySettlementsForMonth(cid, payrollMonth),
-    queryFn: async () => {
-      const res = await getLeaveSalarySettlements(cid, payrollMonth || defaultMonth);
-      if (!res?.success) return [];
-      return Array.isArray(res.data) ? res.data : [];
-    },
+    queryFn: () => getLeaveSalarySettlements(cid, payrollMonth || defaultMonth),
+    fallbackMessage: 'فشل تحميل تسويات رواتب الإجازات',
     enabled: !!cid && !!payrollMonth,
   });
 
