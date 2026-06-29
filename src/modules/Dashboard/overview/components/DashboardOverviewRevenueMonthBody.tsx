@@ -20,6 +20,7 @@ type Props = {
   customerDailyAvgPrev: number | null;
   salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
   t: (key: string, vars?: Record<string, string | number>) => string;
+  standalone?: boolean;
 };
 
 type CompareRow = {
@@ -162,6 +163,7 @@ export function DashboardOverviewRevenueMonthBody({
   customerDailyAvgPrev,
   salesShiftPeriodTotals,
   t,
+  standalone = false,
 }: Props) {
   const [shiftsOpen, setShiftsOpen] = useState(false);
 
@@ -192,8 +194,8 @@ export function DashboardOverviewRevenueMonthBody({
   const hasCompare = compareRows.some((r) => r.current != null || r.prev != null);
   if (!hasCompare && !salesShiftPeriodTotals) return null;
 
-  return (
-    <div className="mx-4 mt-1 flex flex-col gap-1.5 pb-0.5">
+  const body = (
+    <div className={cn('flex flex-col gap-2', standalone ? 'p-3 sm:p-4' : 'mx-4 mt-1 pb-0.5')}>
       {hasCompare ? (
         <CompareTable
           mtdEndDay={mtdEndDay}
@@ -225,5 +227,24 @@ export function DashboardOverviewRevenueMonthBody({
         <DashboardOverviewSalesShiftPanel totals={salesShiftPeriodTotals} t={t} compact />
       </div>
     </div>
+  );
+
+  if (!standalone) return body;
+
+  return (
+    <section className="noorix-surface-card min-w-0 overflow-hidden p-0" aria-label={t('dashboardRevenueCompareSales')}>
+      <div className="flex flex-wrap items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted/35 px-3 py-3">
+        <span className="h-8 w-1 shrink-0 rounded-full bg-[var(--color-nx-sales)]" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <h2 className="m-0 text-[13px] font-bold leading-snug text-noorix-text">
+            {t('dashboardRevenueCompareSales')}
+          </h2>
+          <p className="m-0 mt-0.5 text-[11px] text-noorix-muted">
+            {currentMonthLabel} / {prevMonthLabel}
+          </p>
+        </div>
+      </div>
+      {body}
+    </section>
   );
 }

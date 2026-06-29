@@ -12,8 +12,6 @@ import {
 import type { DashboardOverviewFilter } from '../types';
 import type { KpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
 import { DashboardOverviewKpiCardFooter } from './DashboardOverviewKpiCardFooter';
-import { DashboardOverviewRevenueMonthBody } from './DashboardOverviewRevenueMonthBody';
-import type { SalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
 import { formatPercentLabel } from '../../../../shared/reporting/plDisplaySelectors';
 
 type CardDef = {
@@ -29,16 +27,6 @@ type Props = {
   cards: CardDef[];
   filter: DashboardOverviewFilter | undefined;
   year: number;
-  revenueMtdEndDay: number;
-  revenueMtdTotalSum: number;
-  revenuePrevMonthTotalSum: number;
-  monthName: string | null;
-  prevMonthName: string;
-  revenueDailyAvgCalendar: number | null;
-  revenueDailyAvgPrevMonthCalendar: number | null;
-  customerDailyAvgCalendar: number | null;
-  customerDailyAvgPrevMonthCalendar: number | null;
-  salesShiftPeriodTotals: SalesShiftPeriodTotals | null;
   kpiInsightFooters: KpiInsightFooterMap;
 };
 
@@ -48,16 +36,6 @@ export function DashboardOverviewKpis({
   cards,
   filter,
   year,
-  revenueMtdEndDay,
-  revenueMtdTotalSum,
-  revenuePrevMonthTotalSum,
-  monthName,
-  prevMonthName,
-  revenueDailyAvgCalendar,
-  revenueDailyAvgPrevMonthCalendar,
-  customerDailyAvgCalendar,
-  customerDailyAvgPrevMonthCalendar,
-  salesShiftPeriodTotals,
   kpiInsightFooters,
 }: Props) {
   const { t } = useTranslation();
@@ -108,8 +86,6 @@ export function DashboardOverviewKpis({
               : undefined;
 
           const footerRows = insightBundle?.rows;
-          const showMonthSalesBody = isSales && selectedMonth != null;
-
           const pctFallback = !isSales || !footerRows?.length ? (
             <div className="flex items-center justify-between gap-3 py-0.5 min-h-[28px]">
               <span className="min-w-0 flex-1 text-[10px] leading-snug text-noorix-muted text-start truncate">
@@ -143,22 +119,6 @@ export function DashboardOverviewKpis({
                 subLabel={isSales ? undefined : t(card.formulaKey)}
               />
               <MetricCard.Value value={amountText(rawVal)} currency="SR" className="pb-1" />
-
-              {showMonthSalesBody ? (
-                <DashboardOverviewRevenueMonthBody
-                  mtdEndDay={revenueMtdEndDay}
-                  currentMonthLabel={monthName ?? ''}
-                  prevMonthLabel={prevMonthName}
-                  currentMonthSalesTotal={revenueMtdTotalSum}
-                  prevMonthSalesTotal={revenuePrevMonthTotalSum}
-                  revenueDailyAvg={revenueDailyAvgCalendar}
-                  revenueDailyAvgPrev={revenueDailyAvgPrevMonthCalendar}
-                  customerDailyAvg={customerDailyAvgCalendar}
-                  customerDailyAvgPrev={customerDailyAvgPrevMonthCalendar}
-                  salesShiftPeriodTotals={salesShiftPeriodTotals}
-                  t={t}
-                />
-              ) : null}
 
               <DashboardOverviewKpiCardFooter
                 periodLabel={periodLabel}
