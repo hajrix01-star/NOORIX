@@ -12,6 +12,7 @@ import { useHrScreenNavigation } from './hooks/useHrScreenNavigation';
 import { HR_SECTION_IDS, type HrScreenLocation, type HrSectionId } from './hrScreenNavigation';
 import { HR_WORKSPACE_CONTENT_CLASS } from './hrWorkspaceLayout';
 import { ScreenShell, ScreenTabs } from '../../ui';
+import { ErrorState } from '../../components/states';
 
 const MAIN_SECTIONS = [
   { id: 'people', labelKey: 'hrSectionPeople', shortLabelKey: 'hrSectionPeopleShort' },
@@ -32,7 +33,12 @@ export default function HRMainScreen() {
     [navigateHrScreen],
   );
 
-  const { data: hrSummary, isLoading: summaryLoading } = useHrDashboardSummary(companyId);
+  const {
+    data: hrSummary,
+    isLoading: summaryLoading,
+    isError: summaryIsError,
+    error: summaryError,
+  } = useHrDashboardSummary(companyId);
 
   const mainTabItems = useMemo(
     () =>
@@ -61,7 +67,13 @@ export default function HRMainScreen() {
     <ScreenShell>
       <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('staffTitle')}</h1>
 
-      {companyId && (
+      {companyId && summaryIsError && (
+        <ErrorState title={t('error')} className="noorix-surface-card">
+          {summaryError?.message || 'فشل تحميل ملخص الموارد البشرية'}
+        </ErrorState>
+      )}
+
+      {companyId && !summaryIsError && hrSummary && (
         <HRSummaryCard
           isLoading={summaryLoading}
           activeCount={hrSummary.activeCount}

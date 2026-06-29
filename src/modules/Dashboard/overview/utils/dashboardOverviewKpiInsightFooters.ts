@@ -9,6 +9,7 @@ import {
   getSectionPercentOfSales,
   type PlReportLike,
 } from './dashboardOverviewCalculations';
+import { formatSignedPercent } from '../../../../shared/reporting/plDisplaySelectors';
 
 export type KpiInsightSeverity = 'info' | 'warning' | 'critical';
 
@@ -36,11 +37,8 @@ type KpiMetricKey = 'purchases' | 'expenses' | 'grossProfit' | 'netProfit';
 
 /** Max 1 decimal, drop trailing .0 */
 export function formatInsightPercentDisplay(n: number): string {
-  if (!Number.isFinite(n)) return '0';
-  const rounded = Math.round(n * 10) / 10;
-  if (Object.is(rounded, -0)) return '0';
-  if (Number.isInteger(rounded)) return String(rounded);
-  return rounded.toFixed(1);
+  const formatted = formatSignedPercent(n);
+  return formatted === '—' ? '0' : formatted;
 }
 
 export function kpiFooterRowColorClass(color: KpiFooterRowColor | undefined): string {

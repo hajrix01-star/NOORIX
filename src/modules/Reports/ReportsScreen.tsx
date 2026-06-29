@@ -28,6 +28,7 @@ import GeneralPlTable from './GeneralPlTable';
 import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
 import { profitLossPdfExportExtraCss } from './reportsPlExportPdfCss';
 import { getSaudiNow } from '../../utils/saudiDate';
+import { formatSignedPercent, grossMargin, profitMargin } from '../../shared/reporting/plDisplaySelectors';
 
 const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -101,9 +102,9 @@ export default function ReportsScreen() {
   function getCardProfitPercent(key: any) {
     if (!report || (key !== 'grossProfit' && key !== 'netProfit')) return null;
     const sales = Number(getCardValue('sales') || 0);
-    if (!sales || sales < 0.0000001) return null;
     const profit = Number(getCardValue(key) || 0);
-    return ((profit / sales) * 100).toFixed(1);
+    const pct = key === 'grossProfit' ? grossMargin(profit, sales) : profitMargin(profit, sales);
+    return pct == null ? null : formatSignedPercent(pct);
   }
 
   const { exportRows, plExportRowMeta } = useMemo(() => {
