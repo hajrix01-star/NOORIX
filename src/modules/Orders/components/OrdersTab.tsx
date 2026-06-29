@@ -2,7 +2,6 @@
  * OrdersTab — تبويبة الطلبات
  */
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
@@ -21,45 +20,23 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { salesKeys } from '../../../services/queryKeys';
+import {
+  buildOrderPrintHtml,
+  buildSingleOrderExportRows,
+  buildWhatsAppText,
+  computeCashSalesTotal,
+  computeCumulativeRemainingByOrderId,
+  computeOrdersSummaryForRange,
+  computeOrdersTotal,
+  filterOrdersByDate,
+  filterOrdersByType,
+  mergeOrderCatalogProducts,
+  resolveOrdersDateRange,
+} from '../utils/ordersTabModel';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu, FmtNum } from '../../../ui';
-
-function buildWhatsAppText(order: any, t: any) {
-  const lines = (order.items || []).map((it: any) => {
-    const name = it.product?.nameAr || it.product?.nameEn || '—';
-    const parts = [it.size, it.packaging, it.unit].filter(Boolean);
-    const variantPart = parts.length > 0 ? ` (${parts.join(' / ')})` : '';
-    return `${name}${variantPart}: ${it.quantity} × ${fmt(it.unitPrice ?? 0)} = ${fmt(it.amount ?? 0)} SR`;
-  }).join('\n');
-  const total = fmt(order.totalAmount ?? 0);
-  return `طلب ${order.orderNumber}\nالتاريخ: ${formatSaudiDate(order.orderDate)}\nالنوع: ${order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}\n\n${lines}\n\nالإجمالي: ${total} SR`;
-}
-
-function buildOrderPrintHtml(order: any, companyName: any, t: any, fmt: any, formatSaudiDate: any) {
-  const items = order.items ?? [];
-  const rows = items.map((it: any) => {
-    const parts = [it.size, it.packaging, it.unit].filter(Boolean);
-    const name = (it.product?.nameAr || it.product?.nameEn || '—') + (parts.length > 0 ? ` (${parts.join(' / ')})` : '');
-    return `<tr><td>${name}</td><td style="text-align:center">${it.quantity}</td><td>${fmt(it.unitPrice ?? 0)} SR</td><td><strong>${fmt(it.amount ?? 0)} SR</strong></td></tr>`;
-  }).join('');
-  const orderType = order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal');
-  const pettyRow = order.orderType === 'external' && order.pettyCashAmount != null
-    ? `<p style="margin:6px 0"><strong>${t('ordersPettyCashGiven')}:</strong> ${fmt(order.pettyCashAmount ?? 0)} SR</p>`
-    : '';
-  const meta = `<div style="margin-bottom:16px;font-size:13px">
-    <p style="margin:4px 0"><strong>${t('orderDate')}:</strong> ${formatSaudiDate(order.orderDate)}</p>
-    <p style="margin:4px 0"><strong>${t('orderType')}:</strong> ${orderType}</p>
-    ${pettyRow}
-  </div>`;
-  const tableHtml = `${meta}<table>
-<thead><tr><th>${t('product')}</th><th style="text-align:center">${t('quantity')}</th><th>${t('unitPrice')}</th><th>${t('total')}</th></tr></thead>
-<tbody>${rows}</tbody>
-<tfoot><tr><td colspan="3">${t('total')}</td><td>${fmt(order.totalAmount ?? 0)} SR</td></tr></tfoot>
-</table>`;
-  return tableHtml;
-}
 
 export function OrdersTab({
   companyId,
@@ -87,29 +64,16 @@ export function OrdersTab({
   const { data: orders = [], isLoading, error: ordersError } = useOrders(companyId, year, month);
   const { data: orderCatalog = [] } = useOrderProducts(companyId, 'order');
   /** طلبات المشتريات — أصناف «طلبات» فقط؛ عند التعديل نُبقي أصناف السطر الحالية حتى لو كانت مبيعات قديماً */
-  const products = useMemo(() => {
-    const byId = new Map<string, any>();
-    for (const p of orderCatalog) byId.set(p.id, p);
-    const lineItems = editingOrder?.items;
-    if (Array.isArray(lineItems)) {
-      for (const it of lineItems) {
-        const p = it.product;
-        if (p?.id && !byId.has(p.id)) byId.set(p.id, p);
-      }
-    }
-    return Array.from(byId.values());
-  }, [orderCatalog, editingOrder]);
+  const products = useMemo(() => mergeOrderCatalogProducts(orderCatalog, editingOrder), [orderCatalog, editingOrder]);
   const { data: summaryFromApi = {}, isLoading: summaryLoading } = useOrdersSummary(companyId, year, month);
   const createOrder = useCreateOrderMutation(companyId);
   const updateOrder = useUpdateOrderMutation(companyId);
   const cancelOrder = useCancelOrderMutation(companyId);
 
-  const startDate = useMemo(() => propStartDate || `${year}-${String(month).padStart(2, '0')}-01`, [propStartDate, year, month]);
-  const endDate = useMemo(() => {
-    if (propEndDate) return propEndDate;
-    const lastDay = new Date(year, month, 0).getDate();
-    return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-  }, [propEndDate, year, month]);
+  const { startDate, endDate } = useMemo(
+    () => resolveOrdersDateRange({ year, month, propStartDate, propEndDate }),
+    [propStartDate, propEndDate, year, month],
+  );
 
   const { data: salesData } = useApiQuery<any>({
     queryKey: salesKeys.summaries(companyId, startDate, endDate),
@@ -119,72 +83,34 @@ export function OrdersTab({
   });
 
   /** نقد المحل: مبيعات قناة النقد فقط (خزائن type=cash)، لا إجمالي كل القنوات */
-  const cashSalesTotal = useMemo(() => {
-    const items = salesData?.items ?? [];
-    return items.reduce((sum: any, summary: any) => {
-      const channels = summary.channels ?? [];
-      const cashOnly = channels.reduce((acc: any, ch: any) => {
-        if (ch?.vault?.type !== 'cash') return acc;
-        return acc + Number(ch.amount ?? 0);
-      }, 0);
-      return sum + cashOnly;
-    }, 0);
-  }, [salesData]);
+  const cashSalesTotal = useMemo(() => computeCashSalesTotal(salesData), [salesData]);
 
-  const dateFilteredOrders = useMemo(() => {
-    const sd = (startDate || '').split('T')[0] || startDate;
-    const ed = (endDate || '').split('T')[0] || endDate;
-    if (!sd || !ed) return orders;
-    return orders.filter((o: any) => {
-      const od = (o.orderDate || '').split('T')[0] || o.orderDate || '';
-      return od >= sd && od <= ed;
-    });
-  }, [orders, startDate, endDate]);
+  const dateFilteredOrders = useMemo(() => filterOrdersByDate(orders, startDate, endDate), [orders, startDate, endDate]);
 
-  const filteredOrders = useMemo(() => {
-    if (orderTypeFilter === 'all') return dateFilteredOrders;
-    return dateFilteredOrders.filter((o: any) => o.orderType === orderTypeFilter);
-  }, [dateFilteredOrders, orderTypeFilter]);
+  const filteredOrders = useMemo(
+    () => filterOrdersByType(dateFilteredOrders, orderTypeFilter),
+    [dateFilteredOrders, orderTypeFilter],
+  );
 
-  const filteredTotal = useMemo(() => {
-    return filteredOrders.reduce((s: any, o: any) => s + Number(o.totalAmount ?? 0), 0);
-  }, [filteredOrders]);
+  const filteredTotal = useMemo(() => computeOrdersTotal(filteredOrders), [filteredOrders]);
 
-  const summary = useMemo(() => {
-    const sd = (startDate || '').split('T')[0];
-    const ed = (endDate || '').split('T')[0];
-    const fullMonthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-    const lastD = new Date(year, month, 0).getDate();
-    const fullMonthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastD).padStart(2, '0')}`;
-    const isFullMonth = sd === fullMonthStart && ed === fullMonthEnd;
-    if (isFullMonth) return summaryFromApi;
-    const ext = dateFilteredOrders.filter((o: any) => o.orderType === 'external');
-    const pettyCash = ext.reduce((s: any, o: any) => s + Number(o.pettyCashAmount ?? 0), 0);
-    const delegatePurchases = ext.reduce((s: any, o: any) => s + Number(o.totalAmount ?? 0), 0);
-    return {
-      pettyCashTotal: pettyCash,
-      delegatePurchasesTotal: delegatePurchases,
-      delegateBalance: pettyCash - delegatePurchases,
-      localPurchasesTotal: dateFilteredOrders.filter((o: any) => o.orderType === 'internal').reduce((s: any, o: any) => s + Number(o.totalAmount ?? 0), 0),
-    };
-  }, [summaryFromApi, dateFilteredOrders, startDate, endDate, year, month]);
+  const summary = useMemo(
+    () =>
+      computeOrdersSummaryForRange({
+        summaryFromApi,
+        dateFilteredOrders,
+        startDate,
+        endDate,
+        year,
+        month,
+      }),
+    [summaryFromApi, dateFilteredOrders, startDate, endDate, year, month],
+  );
 
-  const cumulativeRemainingByOrderId = useMemo(() => {
-    const sorted = [...dateFilteredOrders].sort(
-      (a: any, b: any) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime(),
-    );
-    const map = new Map();
-    let cumPetty = 0;
-    let cumPurch = 0;
-    for (const o of sorted) {
-      if (o.orderType === 'external') {
-        cumPetty += Number(o.pettyCashAmount ?? 0);
-        cumPurch += Number(o.totalAmount ?? 0);
-        map.set(o.id, cumPetty - cumPurch);
-      }
-    }
-    return map;
-  }, [dateFilteredOrders]);
+  const cumulativeRemainingByOrderId = useMemo(
+    () => computeCumulativeRemainingByOrderId(dateFilteredOrders),
+    [dateFilteredOrders],
+  );
 
   const ordersColumns = useMemo(
     () => [
@@ -427,46 +353,7 @@ export function OrdersTab({
 
   const handleExportSingleOrder = async (order: any) => {
     try {
-      const items = order.items ?? [];
-      const rows = items.map((it: any) => ({
-        [t('orderNumber')]: order.orderNumber,
-        [t('orderDate')]: formatSaudiDate(order.orderDate),
-        [t('orderType')]: order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal'),
-        [t('product')]: it.product?.nameAr || it.product?.nameEn || '—',
-        [t('ordersProductSize')]: it.size || '—',
-        [t('ordersProductPackaging')]: it.packaging || '—',
-        [t('unit')]: it.unit || '—',
-        [t('quantity')]: it.quantity,
-        [t('unitPrice')]: fmt(it.unitPrice ?? 0),
-        [t('total')]: fmt(it.amount ?? 0),
-      }));
-      if (rows.length === 0) {
-        rows.push({
-          [t('orderNumber')]: order.orderNumber,
-          [t('orderDate')]: formatSaudiDate(order.orderDate),
-          [t('orderType')]: order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal'),
-          [t('product')]: '—',
-          [t('ordersProductSize')]: '—',
-          [t('ordersProductPackaging')]: '—',
-          [t('unit')]: '—',
-          [t('quantity')]: 0,
-          [t('unitPrice')]: '—',
-          [t('total')]: fmt(order.totalAmount ?? 0),
-        });
-      } else {
-        rows.push({
-          [t('orderNumber')]: '',
-          [t('orderDate')]: '',
-          [t('orderType')]: '',
-          [t('product')]: '',
-          [t('ordersProductSize')]: '',
-          [t('ordersProductPackaging')]: '',
-          [t('unit')]: '',
-          [t('quantity')]: '',
-          [t('unitPrice')]: '',
-          [t('total')]: t('total') + ': ' + fmt(order.totalAmount ?? 0) + ' SR',
-        });
-      }
+      const rows = buildSingleOrderExportRows(order, t);
       await exportToExcel(rows, `order-${order.orderNumber}.xlsx`);
       showToast(t('exportSuccess'), 'success');
     } catch (e: any) {
@@ -475,7 +362,7 @@ export function OrdersTab({
   };
 
   const handlePrintOrder = (order: any) => {
-    const bodyHtml = buildOrderPrintHtml(order, companyName, t, fmt, formatSaudiDate);
+    const bodyHtml = buildOrderPrintHtml(order, t);
     openPrintWindow({
       title: `${t('ordersPrintOrder')} — ${order.orderNumber}`,
       companyName,

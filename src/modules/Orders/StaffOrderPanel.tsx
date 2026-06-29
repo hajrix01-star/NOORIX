@@ -1,6 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
+﻿import React, { useCallback, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import Decimal from 'decimal.js';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useToast } from '../../context/ToastContext';
 import { fmt } from '../../utils/format';
@@ -9,14 +8,24 @@ import { unwrapApiData } from '../../services/core/apiHttp';
 import { orderKeys } from '../../services/queryKeys';
 import {
   type StaffBasketLine,
-  staffOrdersQty,
-  staffOrdersTotal,
   defaultVariantModalState,
   formatVariantLabel,
   productHasVariants,
   resolveVariantFromModal,
   staffBasketLineKey,
 } from './utils/staffOrderBasketUtils';
+import {
+  buildProductsById,
+  buildStaffOrderFrequencyMap,
+  buildStaffOrderPayload,
+  buildStaffQtyMap,
+  filterStaffOrderProducts,
+  filterStaffOrdersByType,
+  groupSentSaleOrders,
+  mapStaffOrderToBasketLines,
+  summarizeSentSales,
+  upsertPlainStaffBasketLine,
+} from './utils/staffOrderPanelModel';
 import {
   ProductCard,
   StaffBasketTable,
@@ -62,7 +71,7 @@ export function StaffOrderPanel({
   const resendSale = useResendStaffSaleMutation(companyId);
 
   const isSale = productType === 'sale';
-  /** فلتر عرض الأصناف فقط — ليس شرطاً للإرسال */
+  /** ظپظ„طھط± ط¹ط±ط¶ ط§ظ„ط£طµظ†ط§ظپ ظپظ‚ط· â€” ظ„ظٹط³ ط´ط±ط·ط§ظ‹ ظ„ظ„ط¥ط±ط³ط§ظ„ */
   const [sectionFilter, setSectionFilter] = useState('');
   const [saleDate, setSaleDate] = useState(() => getSaudiToday());
   const [notes, setNotes] = useState('');
@@ -75,93 +84,38 @@ export function StaffOrderPanel({
   const [qtyModal, setQtyModal] = useState<{ product: any; qty: number; unit: string } | null>(null);
   const [variantModal, setVariantModal] = useState<ReturnType<typeof defaultVariantModalState> | null>(null);
 
-  // ─── تكرار الطلبات ──────────────────────────────────────────────
-  const freqMap = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const o of (myOrders as any[]).filter((o: any) => (o.orderType || 'order') === productType)) {
-      for (const it of (o.items || [])) {
-        if (it.productId) m.set(it.productId, (m.get(it.productId) ?? 0) + 1);
-      }
-    }
-    return m;
-  }, [myOrders, productType]);
+  // â”€â”€â”€ طھظƒط±ط§ط± ط§ظ„ط·ظ„ط¨ط§طھ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const freqMap = useMemo(
+    () => buildStaffOrderFrequencyMap(myOrders as any[], productType),
+    [myOrders, productType],
+  );
 
-  const productsById = useMemo(() => {
-    const m = new Map<string, any>();
-    (allProducts as any[]).forEach((p: any) => m.set(p.id, p));
-    return m;
-  }, [allProducts]);
+  const productsById = useMemo(() => buildProductsById(allProducts as any[]), [allProducts]);
 
   function sectionLabel(s: any) {
     return lang === 'en' ? (s.nameEn || s.nameAr) : (s.nameAr || s.nameEn);
   }
 
-  const products = useMemo(() => {
-    let list = sectionFilter
-      ? (allProducts as any[]).filter((p: any) => {
-          const secs = p.sections as string[] | null;
-          return Array.isArray(secs) && secs.length > 0 && secs.includes(sectionFilter);
-        })
-      : (allProducts as any[]);
+  const products = useMemo(
+    () => filterStaffOrderProducts({ allProducts: allProducts as any[], sectionFilter, search, freqMap, lang }),
+    [allProducts, sectionFilter, search, freqMap, lang],
+  );
 
-    const q = search.trim().toLowerCase();
-    if (q) {
-      list = list.filter((p: any) =>
-        (p.nameAr || '').toLowerCase().includes(q) || (p.nameEn || '').toLowerCase().includes(q)
-      );
-    }
-    return [...list].sort((a: any, b: any) => {
-      const fa = freqMap.get(a.id) ?? 0;
-      const fb = freqMap.get(b.id) ?? 0;
-      if (fb !== fa) return fb - fa;
-      const na = lang === 'en' ? (a.nameEn || a.nameAr) : (a.nameAr || a.nameEn);
-      const nb = lang === 'en' ? (b.nameEn || b.nameAr) : (b.nameAr || b.nameEn);
-      return na.localeCompare(nb);
-    });
-  }, [allProducts, sectionFilter, search, freqMap, lang]);
+  const qtyMap = useMemo(() => buildStaffQtyMap(basketLines), [basketLines]);
 
-  const qtyMap = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const line of basketLines) {
-      m.set(line.productId, (m.get(line.productId) ?? 0) + line.quantity);
-    }
-    return m;
-  }, [basketLines]);
-
-  // طلبات هذا النوع فقط
+  // ط·ظ„ط¨ط§طھ ظ‡ط°ط§ ط§ظ„ظ†ظˆط¹ ظپظ‚ط·
   const myTypedOrders = useMemo(
-    () => (myOrders as any[]).filter((o: any) => (o.orderType || 'order') === productType),
-    [myOrders, productType]
+    () => filterStaffOrdersByType(myOrders as any[], productType),
+    [myOrders, productType],
   );
   const pendingOrders = useMemo(() => myTypedOrders.filter((o: any) => o.status === 'pending'), [myTypedOrders]);
   const sentOrders   = useMemo(() => myTypedOrders.filter((o: any) => o.status === 'sent'),    [myTypedOrders]);
-  const sentSaleGroups = useMemo(() => {
-    if (!isSale) return [] as any[][];
-    const map = new Map<string, any[]>();
-    for (const o of sentOrders) {
-      const key = o.logRef || o.id;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(o);
-    }
-    return [...map.values()].sort(
-      (a, b) => new Date(b[0].createdAt).getTime() - new Date(a[0].createdAt).getTime(),
-    );
-  }, [isSale, sentOrders]);
+  const sentSaleGroups = useMemo(() => groupSentSaleOrders(sentOrders, isSale), [isSale, sentOrders]);
 
-  const sentSalesSummary = useMemo(() => {
-    if (!isSale || sentSaleGroups.length === 0) {
-      return { totalQty: 0, totalAmount: new Decimal(0), avgPerOrder: new Decimal(0), operationCount: 0 };
-    }
-    const totalAmount = staffOrdersTotal(sentOrders);
-    const totalQty = staffOrdersQty(sentOrders);
-    const operationCount = sentSaleGroups.length;
-    return {
-      totalQty,
-      totalAmount,
-      avgPerOrder: operationCount > 0 ? totalAmount.div(operationCount) : new Decimal(0),
-      operationCount,
-    };
-  }, [isSale, sentSaleGroups.length, sentOrders]);
+  const sentSalesSummary = useMemo(
+    () => summarizeSentSales({ isSale, sentSaleGroups, sentOrders }),
+    [isSale, sentSaleGroups, sentOrders],
+  );
 
   const editingOrder = useMemo(
     () => (editingId ? (myOrders as any[]).find((o: any) => o.id === editingId) : null),
@@ -171,7 +125,7 @@ export function StaffOrderPanel({
   const { data: nextLogRef } = useStaffSaleNextLogRef(companyId, saleDate, previewNextLogRef);
   const basketLogRef = isSale ? (editingOrder?.logRef || nextLogRef || null) : null;
 
-  // ─── لمس الكرت ──────────────────────────────────────────────────
+  // â”€â”€â”€ ظ„ظ…ط³ ط§ظ„ظƒط±طھ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function tapProduct(product: any) {
     if (productHasVariants(product)) {
       setVariantModal(defaultVariantModalState(product));
@@ -195,26 +149,15 @@ export function StaffOrderPanel({
     if (!qtyModal) return;
     const { product, qty, unit } = qtyModal;
     if (qty <= 0) { setQtyModal(null); return; }
-    const sec = resolveItemSection(product, sectionFilter);
-    const key = staffBasketLineKey({ productId: product.id, size: '', packaging: '', unit });
-    const price = product.lastPrice ? String(product.lastPrice) : '0';
     setBasketLines((prev) => {
-      const idx = prev.findIndex((l) => staffBasketLineKey(l) === key);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = { ...next[idx], quantity: qty, unit, sectionName: sec };
-        return next;
-      }
-      return [...prev, {
-        lineId: `${product.id}-${Date.now()}`,
-        productId: product.id,
-        quantity: qty,
+      return upsertPlainStaffBasketLine({
+        currentLines: prev,
+        product,
+        qty,
         unit,
-        size: '',
-        packaging: '',
-        unitPrice: price,
-        sectionName: sec,
-      }];
+        sectionFilter,
+        lineId: `${product.id}-${Date.now()}`,
+      });
     });
     setQtyModal(null);
   }
@@ -271,17 +214,7 @@ export function StaffOrderPanel({
     setSaleDate(order.saleDate ? toDateInputYmd(order.saleDate) : getSaudiToday());
     setNotes(order.notes || '');
     setSearch('');
-    const lines: StaffBasketLine[] = (order.items || []).map((it: any, i: number) => ({
-      lineId: `${it.productId}-${i}`,
-      productId: it.productId,
-      quantity: Number(it.quantity) || 1,
-      unit: it.unit || 'piece',
-      size: it.size || '',
-      packaging: it.packaging || '',
-      unitPrice: it.unitPrice != null ? String(it.unitPrice) : '0',
-      sectionName: order.sectionName || undefined,
-    }));
-    setBasketLines(lines);
+    setBasketLines(mapStaffOrderToBasketLines(order));
     setEditingId(order.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -291,29 +224,18 @@ export function StaffOrderPanel({
     if (isSale && !saleDate) { showToast(t('staffSaleDateRequired'), 'error'); return; }
     setSubmitting(true);
     try {
-      const payload: Record<string, unknown> = {
+      const payload = buildStaffOrderPayload({
         companyId,
-        orderType: productType,
-        saleDate: isSale ? saleDate : undefined,
+        productType,
+        isSale,
+        saleDate,
         lang,
-        notes: notes.trim() || undefined,
-        items: basketLines.map((it) => {
-          const p = productsById.get(it.productId);
-          const sectionName = it.sectionName || (p ? resolveItemSection(p, sectionFilter) : undefined);
-          return {
-            productId: it.productId,
-            quantity: String(it.quantity),
-            unit: it.unit || undefined,
-            size: it.size || undefined,
-            packaging: it.packaging || undefined,
-            unitPrice: it.unitPrice || undefined,
-            sectionName: sectionName || undefined,
-          };
-        }),
-      };
-      if (editingId) {
-        payload.sectionName = sectionFilter || basketLines[0]?.sectionName || 'عام';
-      }
+        notes,
+        basketLines,
+        productsById,
+        sectionFilter,
+        editingId,
+      });
 
       if (isSale) {
         const res = editingId
@@ -381,7 +303,7 @@ export function StaffOrderPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* ── أزرار الأقسام ── */}
+      {/* â”€â”€ ط£ط²ط±ط§ط± ط§ظ„ط£ظ‚ط³ط§ظ… â”€â”€ */}
       <div className="flex flex-wrap gap-2">
         {(sections as any[]).map((s: any) => {
           const active = sectionFilter === s.nameAr;
@@ -405,7 +327,7 @@ export function StaffOrderPanel({
         })}
       </div>
 
-      {/* ── بحث ── */}
+      {/* â”€â”€ ط¨ط­ط« â”€â”€ */}
       <div className="relative">
         <svg className="absolute start-3 top-1/2 -translate-y-1/2 text-noorix-muted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -418,7 +340,7 @@ export function StaffOrderPanel({
         />
       </div>
 
-      {/* ── شبكة الكروت ── */}
+      {/* â”€â”€ ط´ط¨ظƒط© ط§ظ„ظƒط±ظˆطھ â”€â”€ */}
       {products.length > 0 ? (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
           {products.map((p: any) => (
@@ -441,14 +363,14 @@ export function StaffOrderPanel({
         )
       )}
 
-      {/* ── خطأ تحميل المبيعات السابقة ── */}
+      {/* â”€â”€ ط®ط·ط£ طھط­ظ…ظٹظ„ ط§ظ„ظ…ط¨ظٹط¹ط§طھ ط§ظ„ط³ط§ط¨ظ‚ط© â”€â”€ */}
       {ordersError && (
         <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-4 py-3 text-[13px] text-noorix-red">
           {t('staffOrdersLoadError')}
         </div>
       )}
 
-      {/* ── ملخص الطلب — مباشرة على الحاوية الأم بدون كرت إضافي ── */}
+      {/* â”€â”€ ظ…ظ„ط®طµ ط§ظ„ط·ظ„ط¨ â€” ظ…ط¨ط§ط´ط±ط© ط¹ظ„ظ‰ ط§ظ„ط­ط§ظˆظٹط© ط§ظ„ط£ظ… ط¨ط¯ظˆظ† ظƒط±طھ ط¥ط¶ط§ظپظٹ â”€â”€ */}
       {basketLines.length > 0 && (
         <div className="flex flex-col gap-3 border-t border-noorix-border pt-4">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -520,7 +442,7 @@ export function StaffOrderPanel({
         </div>
       )}
 
-      {/* ── طلباتي المعلّقة (طلبات الأقسام فقط — المبيعات تُرسل مباشرة) ── */}
+      {/* â”€â”€ ط·ظ„ط¨ط§طھظٹ ط§ظ„ظ…ط¹ظ„ظ‘ظ‚ط© (ط·ظ„ط¨ط§طھ ط§ظ„ط£ظ‚ط³ط§ظ… ظپظ‚ط· â€” ط§ظ„ظ…ط¨ظٹط¹ط§طھ طھظڈط±ط³ظ„ ظ…ط¨ط§ط´ط±ط©) â”€â”€ */}
       {!isSale && pendingOrders.length > 0 && (
         <div className="noorix-surface-card overflow-hidden">
           <div className="px-4 py-3 border-b border-noorix-border flex items-center justify-between">
@@ -544,7 +466,7 @@ export function StaffOrderPanel({
                 <div className="flex flex-col gap-1">
                   {(o.items || []).map((it: any, i: number) => {
                     const p = it.product;
-                    const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
+                    const name = lang === 'en' ? (p?.nameEn || p?.nameAr || 'â€”') : (p?.nameAr || p?.nameEn || 'â€”');
                     const variant = formatVariantLabel(it.size, it.packaging, it.unit);
                     return (
                       <div key={i} className="flex justify-between gap-2 text-[13px]">
@@ -567,7 +489,7 @@ export function StaffOrderPanel({
         </div>
       )}
 
-      {/* ── مُرسَل — بدون كرت خارجي إضافي؛ كل طلب مطوي افتراضياً ── */}
+      {/* â”€â”€ ظ…ظڈط±ط³ظژظ„ â€” ط¨ط¯ظˆظ† ظƒط±طھ ط®ط§ط±ط¬ظٹ ط¥ط¶ط§ظپظٹط› ظƒظ„ ط·ظ„ط¨ ظ…ط·ظˆظٹ ط§ظپطھط±ط§ط¶ظٹط§ظ‹ â”€â”€ */}
       {sentOrders.length > 0 && (
         <section className="flex flex-col gap-3 pt-4 border-t border-noorix-border">
           <div className="flex flex-wrap items-center justify-between gap-2">
