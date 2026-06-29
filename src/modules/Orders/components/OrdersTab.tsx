@@ -15,6 +15,7 @@ import {
   useOrderProducts,
 } from '../../../hooks/useOrders';
 import { getDailySalesSummaries } from '../../../services/api';
+import { useApiQuery } from '../../../hooks/useApiQuery';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -110,14 +111,10 @@ export function OrdersTab({
     return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
   }, [propEndDate, year, month]);
 
-  const { data: salesData } = useQuery({
+  const { data: salesData } = useApiQuery<any>({
     queryKey: salesKeys.summaries(companyId, startDate, endDate),
-    queryFn: async () => {
-      const res = await getDailySalesSummaries(companyId, startDate, endDate, 1, 200);
-      if (!res?.success) return { items: [] };
-      const items = res.data?.items ?? (Array.isArray(res.data) ? res.data : []);
-      return { items: Array.isArray(items) ? items : [] };
-    },
+    queryFn: () => getDailySalesSummaries(companyId, startDate, endDate, 1, 200),
+    fallbackMessage: t('loadingError'),
     enabled: !!companyId && !!year && !!month,
   });
 

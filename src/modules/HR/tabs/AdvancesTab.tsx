@@ -2,12 +2,13 @@
  * AdvancesTab — السلفيات (احترافي كامل)
  */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getHrAdvances, updateInvoice, throwIfApiFailed } from '../../../services/api';
+import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { useEmployees } from '../../../hooks/useEmployees';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
@@ -53,14 +54,11 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
     fetchEnabled: !!companyId,
   });
 
-  const { data: rawAdvanceRows, isLoading, isError } = useQuery({
+  const { data: rawAdvanceRows, isLoading, isError } = useApiListQuery<any, any[]>({
     queryKey: hrKeys.advancesForCompany(companyId),
-    queryFn: async () => {
-      const res = await getHrAdvances(companyId);
-      throwIfApiFailed(res, 'فشل تحميل السلف');
-      const items = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
-      return normalizeAdvances(items);
-    },
+    queryFn: () => getHrAdvances(companyId),
+    fallbackMessage: 'فشل تحميل السلف',
+    select: normalizeAdvances,
     enabled: !!companyId,
   });
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { getEmployees } from '../../../../../services/api';
+import { useApiListQuery } from '../../../../../hooks/useApiQuery';
 import { useVaults } from '../../../../../hooks/useVaults';
 import { getSaudiToday } from '../../../../../utils/saudiDate';
 import { employeeKeys } from '../../../../../services/queryKeys';
@@ -10,14 +10,10 @@ export function useHrQuickEntryState(mode: HrQuickEntryMode, companyId: string) 
   const { paymentVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
   const vaults = paymentVaults;
 
-  const { data: employees = [], isLoading: employeesLoading } = useQuery({
+  const { data: employees = [], isLoading: employeesLoading } = useApiListQuery<any>({
     queryKey: employeeKeys.list(companyId, false),
-    queryFn: async () => {
-      const res = await getEmployees(companyId, false);
-      if (!res?.success) return [];
-      const d = res.data;
-      return Array.isArray(d) ? d : [];
-    },
+    queryFn: () => getEmployees(companyId, false),
+    fallbackMessage: 'فشل تحميل الموظفين',
     enabled: !!companyId,
   });
 

@@ -5,6 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
+import { useApiListQuery } from '../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../utils/queryInvalidation';
 import { useEmployee, useEmployees } from '../../hooks/useEmployees';
 import { useApp } from '../../context/AppContext';
@@ -24,6 +25,7 @@ import {
   deleteEmployee,
   deleteResidency,
   deleteRaiseMovement,
+  unwrapApiList,
 } from '../../services/api';
 import { ScreenShell } from '../../ui';
 import { AdvanceQuickModal } from './components/AdvanceQuickModal';
@@ -110,45 +112,34 @@ export default function EmployeeProfileScreen() {
   const residencyProfileStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
   const payrollRunStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
 
-  const { data: leaves = [] } = useQuery({
+  const { data: leaves = [], error: leavesError } = useApiListQuery<any>({
     queryKey: hrKeys.leavesByEmployee(companyId, id),
-    queryFn: async () => {
-      const res = await getLeaves(companyId, id);
-      if (!res?.success) return [];
-      const d = res.data;
-      return Array.isArray(d) ? d : d?.items ?? [];
-    },
+    queryFn: () => getLeaves(companyId, id),
+    fallbackMessage: 'فشل تحميل إجازات الموظف',
     enabled: !!companyId && !!id,
   });
 
-  const { data: residencies = [] } = useQuery({
+  const { data: residencies = [], error: residenciesError } = useApiListQuery<any>({
     queryKey: hrKeys.residenciesByEmployee(companyId, id),
-    queryFn: async () => {
-      const res = await getResidencies(companyId, id);
-      if (!res?.success) return [];
-      const d = res.data;
-      return Array.isArray(d) ? d : d?.items ?? [];
-    },
+    queryFn: () => getResidencies(companyId, id),
+    fallbackMessage: 'فشل تحميل خدمات الموظف',
     enabled: !!companyId && !!id,
   });
 
-  const { data: documents = [] } = useQuery({
+  const { data: documents = [], error: documentsError } = useApiListQuery<any, any[]>({
     queryKey: hrKeys.documents(companyId, id),
-    queryFn: async () => {
-      const res = await getDocuments(companyId, id);
-      if (!res?.success) return [];
-      const d = res.data;
-      const items = Array.isArray(d) ? d : d?.items ?? [];
-      return [...items].sort((a: any, b: any) => {
+    queryFn: () => getDocuments(companyId, id),
+    fallbackMessage: 'فشل تحميل مستندات الموظف',
+    select: (items) =>
+      [...items].sort((a: any, b: any) => {
         const ad = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
         const bd = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
         return bd - ad;
-      });
-    },
+      }),
     enabled: !!companyId && !!id,
   });
 
-  const { data: hrInvoicesData } = useQuery({
+  const { data: hrInvoicesData, error: hrInvoicesError } = useQuery({
     queryKey: invoiceKeys.hrAllForEmployee(companyId, id),
     queryFn: async () => {
       const [advRes, hrRes, salRes] = await Promise.all([
@@ -157,45 +148,27 @@ export default function EmployeeProfileScreen() {
         getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'salary', undefined, undefined, undefined, undefined, undefined, undefined, false),
       ]);
       const items = [];
-      if (advRes?.success) {
-        items.push(
-          ...(advRes.data?.items ?? []).filter((i: any) => i.kind === 'advance' && i.status !== 'cancelled'),
-        );
-      }
-      if (hrRes?.success) {
-        items.push(
-          ...(hrRes.data?.items ?? []).filter((i: any) => i.kind === 'hr_expense' && i.status !== 'cancelled'),
-        );
-      }
-      if (salRes?.success) {
-        items.push(
-          ...(salRes.data?.items ?? []).filter((i: any) => i.kind === 'salary' && i.status !== 'cancelled'),
-        );
-      }
+      items.push(
+        ...unwrapApiList<any>(advRes, 'فشل تحميل سلف الموظف').filter((i: any) => i.kind === 'advance' && i.status !== 'cancelled'),
+        ...unwrapApiList<any>(hrRes, 'فشل تحميل مصروفات HR للموظف').filter((i: any) => i.kind === 'hr_expense' && i.status !== 'cancelled'),
+        ...unwrapApiList<any>(salRes, 'فشل تحميل رواتب الموظف').filter((i: any) => i.kind === 'salary' && i.status !== 'cancelled'),
+      );
       return { items };
     },
     enabled: !!companyId && !!id,
   });
 
-  const { data: deductions = [] } = useQuery({
+  const { data: deductions = [], error: deductionsError } = useApiListQuery<any>({
     queryKey: hrKeys.deductions(companyId, id),
-    queryFn: async () => {
-      const res = await getDeductions(companyId, id);
-      if (!res?.success) return [];
-      const d = res.data;
-      return Array.isArray(d) ? d : d?.items ?? [];
-    },
+    queryFn: () => getDeductions(companyId, id),
+    fallbackMessage: 'فشل تحميل خصومات الموظف',
     enabled: !!companyId && !!id,
   });
 
-  const { data: movements = [] } = useQuery({
+  const { data: movements = [], error: movementsError } = useApiListQuery<any>({
     queryKey: hrKeys.movementsByEmployee(companyId, id),
-    queryFn: async () => {
-      const res = await getMovements(companyId, id);
-      if (!res?.success) return [];
-      const d = res.data;
-      return Array.isArray(d) ? d : [];
-    },
+    queryFn: () => getMovements(companyId, id),
+    fallbackMessage: 'فشل تحميل حركات الموظف',
     enabled: !!companyId && !!id,
   });
 
@@ -330,6 +303,17 @@ export default function EmployeeProfileScreen() {
         t={t}
         onBack={() => navigate('/hr')}
         message={compensationSnapshotError instanceof Error ? compensationSnapshotError.message : undefined}
+      />
+    );
+  }
+  const profileSectionError =
+    leavesError || residenciesError || documentsError || hrInvoicesError || deductionsError || movementsError;
+  if (profileSectionError) {
+    return (
+      <EmployeeProfileCentralDataError
+        t={t}
+        onBack={() => navigate('/hr')}
+        message={profileSectionError instanceof Error ? profileSectionError.message : undefined}
       />
     );
   }
