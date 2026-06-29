@@ -8,18 +8,13 @@ import { resolveStaffItemVariant, staffLineAggregateKey } from './orders-staff-p
 import {
   buildStaffSaleLogRef,
   staffSaleLogRefPrefix,
-  staffSaleOperationKey,
 } from './orders-staff-log-ref.util';
 import { buildSalesReportSince, staffSaleMatchesReportWindow } from './orders-staff-sales-report.util';
-import {
-  staffItemLineAmount,
-  staffSaleAvgPerOperation,
-  staffSaleAvgPerOrder,
-} from './orders-staff-amount.util';
 import { buildSalesWhatsAppTextCombined, buildStaffPurchaseWhatsAppText } from './orders-staff-whatsapp.util';
 import { saudiDateYmd } from '../hr/utils/hr-saudi-dates.util';
-import { parseSaleDateYmd, staffOrderDayKey } from './orders-staff-date.util';
+import { parseSaleDateYmd } from './orders-staff-date.util';
 import { resolveProductSection } from './orders-staff-sections.util';
+import { buildStaffSalesReportModel } from './orders-staff-sales-report-builder.util';
 import { CreateStaffOrderDto, SendStaffDigestOptions, StaffOrderItemInput } from './orders-staff.types';
 
 @Injectable()
@@ -577,137 +572,6 @@ export class OrdersStaffService {
       : [];
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    let totalQty = 0;
-    let totalAmount = new Prisma.Decimal(0);
-    const operationKeys = new Set<string>();
-    const userOps: Record<string, Set<string>> = {};
-    const dayOps: Record<string, Set<string>> = {};
-    const byProduct: Record<string, { productId: string; nameAr: string; nameEn: string | null; qty: number; unit: string; sections: Set<string> }> = {};
-    const bySection: Record<string, { sectionName: string; qty: number; ordersCount: number }> = {};
-    const byUser: Record<string, { userId: string; nameAr: string; nameEn: string | null; ordersCount: number; qty: number }> = {};
-    const byDay: Record<string, { date: string; ordersCount: number; qty: number }> = {};
-    const byLog: Record<string, {
-      operationKey: string;
-      logRef: string | null;
-      date: string;
-      userId: string;
-      qty: number;
-      totalAmount: Prisma.Decimal;
-      sections: Set<string>;
-    }> = {};
-
-    for (const o of orders) {
-      const opKey = staffSaleOperationKey(o);
-      operationKeys.add(opKey);
-      const day = staffOrderDayKey(o);
-
-      if (!byLog[opKey]) {
-        byLog[opKey] = {
-          operationKey: opKey,
-          logRef: o.logRef,
-          date: day,
-          userId: o.userId,
-          qty: 0,
-          totalAmount: new Prisma.Decimal(0),
-          sections: new Set(),
-        };
-      }
-      byLog[opKey].sections.add(o.sectionName);
-
-      // بالقسم
-      if (!bySection[o.sectionName]) bySection[o.sectionName] = { sectionName: o.sectionName, qty: 0, ordersCount: 0 };
-      bySection[o.sectionName].ordersCount++;
-
-      // بالمستخدم
-      const uid = o.userId;
-      const uData = userMap.get(uid);
-      if (!byUser[uid]) {
-        byUser[uid] = {
-          userId: uid,
-          nameAr: uData?.nameAr || '—',
-          nameEn: uData?.nameEn || null,
-          ordersCount: 0,
-          qty: 0,
-        };
-      }
-      if (!userOps[uid]) userOps[uid] = new Set();
-      userOps[uid].add(opKey);
-
-      // باليوم
-      if (!byDay[day]) byDay[day] = { date: day, ordersCount: 0, qty: 0 };
-      if (!dayOps[day]) dayOps[day] = new Set();
-      dayOps[day].add(opKey);
-
-      for (const it of o.items) {
-        const qty = Number(it.quantity);
-        const pid = it.productId;
-        const product = productMap.get(pid);
-        const lineAmount = staffItemLineAmount({ ...it, product });
-        totalQty += qty;
-        totalAmount = totalAmount.plus(lineAmount);
-        bySection[o.sectionName].qty += qty;
-        byUser[uid].qty += qty;
-        byDay[day].qty += qty;
-        byLog[opKey].qty += qty;
-        byLog[opKey].totalAmount = byLog[opKey].totalAmount.plus(lineAmount);
-        if (!byProduct[pid]) {
-          byProduct[pid] = {
-            productId: pid,
-            nameAr: product?.nameAr || '—',
-            nameEn: product?.nameEn || null,
-            qty: 0,
-            unit: it.unit || product?.unit || '',
-            sections: new Set(),
-          };
-        }
-        byProduct[pid].qty += qty;
-        byProduct[pid].sections.add(o.sectionName);
-      }
-    }
-
-    for (const uid of Object.keys(byUser)) {
-      byUser[uid].ordersCount = userOps[uid]?.size ?? 0;
-    }
-    for (const day of Object.keys(byDay)) {
-      byDay[day].ordersCount = dayOps[day]?.size ?? 0;
-    }
-
-    const byLogRows = Object.values(byLog)
-      .map((row) => {
-        const uData = userMap.get(row.userId);
-        const avgPerOrder = staffSaleAvgPerOrder(row.totalAmount, row.qty);
-        return {
-          operationKey: row.operationKey,
-          logRef: row.logRef,
-          date: row.date,
-          userId: row.userId,
-          nameAr: uData?.nameAr || '—',
-          nameEn: uData?.nameEn || null,
-          qty: row.qty,
-          totalAmount: Number(row.totalAmount),
-          avgPerOrder: Number(avgPerOrder),
-          sectionsCount: row.sections.size,
-          sections: Array.from(row.sections),
-        };
-      })
-      .sort((a, b) => b.date.localeCompare(a.date) || (b.logRef || '').localeCompare(a.logRef || ''));
-
-    return {
-      summary: {
-        totalOrders: operationKeys.size,
-        totalQty,
-        totalAmount: Number(totalAmount),
-        avgPerOrder: Number(staffSaleAvgPerOperation(totalAmount, operationKeys.size)),
-        uniqueProducts: Object.keys(byProduct).length,
-        uniqueSections: Object.keys(bySection).length,
-      },
-      byProduct: Object.values(byProduct)
-        .map((p) => ({ ...p, sections: Array.from(p.sections) }))
-        .sort((a, b) => b.qty - a.qty),
-      bySection: Object.values(bySection).sort((a, b) => b.qty - a.qty),
-      byUser: Object.values(byUser).sort((a, b) => b.qty - a.qty),
-      byDay: Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)),
-      byLog: byLogRows,
-    };
+    return buildStaffSalesReportModel({ orders, users, products });
   }
 }

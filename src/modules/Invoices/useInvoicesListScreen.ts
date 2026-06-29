@@ -15,17 +15,13 @@ import { fmt } from '../../utils/format';
 import {
   getInvoices,
   deleteInvoice,
-  fetchAllInvoicesForExport,
-  fetchAllSalesSummariesForExport,
   getInvoiceCreatorFilterOptions,
   throwIfApiFailed,
 } from '../../services/api';
-import { exportToExcel } from '../../utils/exportUtils';
-import { openPrintWindow } from '../../utils/printUtils';
 import { useDateFilter } from '../../shared/components/DateFilterBar';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
 import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../constants/badgeMaps';
-import { PAGE_SIZE, MAX_VAULT_SLOTS } from './invoicesListScreenHelpers';
+import { PAGE_SIZE } from './invoicesListScreenHelpers';
 import { invoiceKeys, ledgerKeys, vaultKeys } from '../../services/queryKeys';
 import { buildInvoiceExportColumnDefs, invoiceToExportRow } from './invoicesListExportModel';
 import {
@@ -36,10 +32,7 @@ import {
 } from './invoicesListTableModel';
 import { nextInvoiceSortState } from './invoicesListSort';
 import { toYmd } from '../../utils/saudiDate';
-import {
-  buildInvoicesCashReportBody,
-  INVOICES_CASH_REPORT_PRINT_EXTRA_CSS,
-} from './utils/buildInvoicesCashReportPrint';
+import { useInvoicesListActions } from './useInvoicesListActions';
 
 /**
  * منطق شاشة قائمة الفواتير — عرض فقط يبقى في InvoicesListScreen.jsx
@@ -274,290 +267,41 @@ export function useInvoicesListScreen() {
 
   const exportColumnDefs = useMemo(() => buildInvoiceExportColumnDefs(t), [t]);
 
-  const handleExportExcel = useCallback(async () => {
-    if (!companyId || displayedTotal === 0) return;
-    setExportBusy(true);
-    try {
-      const all = await fetchAllInvoicesForExport({
-        companyId,
-        startDate: invoiceQueryStartDate,
-        endDate: invoiceQueryEndDate,
-        kind: kindForApi,
-        sortBy: sortKey,
-        sortDir,
-        supplierId: filterSupplierId || undefined,
-        q: debouncedQ || undefined,
-        categoryId: urlExtra.categoryId || undefined,
-        expenseLineId: urlExtra.expenseLineId || undefined,
-        includeCancelled: showCancelled,
-        hasNotes: filterHasNotesOnly || undefined,
-        vaultId: filterVaultId || undefined,
-        batchId: invoiceBatchIdFromUrl || undefined,
-        createdByUserId: filterCreatedByUserId || undefined,
-      });
-      const rows = all.map(mapInvoiceToExportRow);
-      const safeStart = toYmd(invoiceQueryStartDate).replace(/[^\d-]/g, '') || 'start';
-      const safeEnd = toYmd(invoiceQueryEndDate).replace(/[^\d-]/g, '') || 'end';
-      await exportToExcel({
-        data: rows,
-        filename: `invoices-${safeStart}_${safeEnd}.xlsx`,
-        title: `${t('invoicesTitle')} — ${dateFilter.label || ''}`,
-        companyName,
-        sheetName: lang === 'en' ? 'Invoices' : 'فواتير',
-        columns: exportColumnDefs,
-        rtl: true,
-      });
-      showToast(t('exportSuccess') || 'تم التصدير', 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
-    } finally {
-      setExportBusy(false);
-    }
-  }, [
-    companyId,
-    displayedTotal,
-    invoiceQueryStartDate,
-    invoiceQueryEndDate,
-    dateFilter.label,
-    kindForApi,
-    sortKey,
-    sortDir,
-    filterSupplierId,
-    debouncedQ,
-    urlExtra.categoryId,
-    urlExtra.expenseLineId,
-    showCancelled,
-    mapInvoiceToExportRow,
-    exportColumnDefs,
-    companyName,
-    t,
-    lang,
-    showToast,
-    filterHasNotesOnly,
-    filterVaultId,
-    invoiceBatchIdFromUrl,
-    filterCreatedByUserId,
-  ]);
-
   const serverAll = sums.all;
   const serverInflow = sums.inflow;
   const serverOutflow = sums.outflow;
 
-  const handlePrintCashReport = useCallback(async () => {
-    if (!companyId) return;
-    setExportBusy(true);
-    try {
-      const invRes = await getInvoices(
-        companyId,
-        invoiceQueryStartDate,
-        invoiceQueryEndDate,
-        1,
-        1,
-        null,
-        null,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        false,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-      );
-      throwIfApiFailed(invRes, t('invoicesCashReportLoadFailed'));
-      const pack = invRes.data as {
-        inflowByVault?: { vaultId: string; nameAr?: string; nameEn?: string; total: string; outflow: string; remainder: string }[];
-      };
-      const inflowByVault = pack?.inflowByVault ?? [];
-      const cashVaultIds = new Set(
-        (vaultsList as { id?: string; type?: string }[])
-          .filter((v) => String(v.type || '').toLowerCase() === 'cash')
-          .map((v) => String(v.id)),
-      );
-      const cashRows = inflowByVault.filter((r) => r.vaultId && cashVaultIds.has(r.vaultId));
-      let summaries: unknown[] = [];
-      try {
-        summaries = await fetchAllSalesSummariesForExport(
-          companyId,
-          invoiceQueryStartDate,
-          invoiceQueryEndDate,
-          undefined,
-          'transactionDate',
-          'desc',
-          false,
-        );
-      } catch {
-        summaries = [];
-      }
-      const cashOnHandSum = (summaries as { cashOnHand?: unknown }[]).reduce(
-        (acc, s) => acc + Number(s.cashOnHand ?? 0),
-        0,
-      );
-
-      const vaultRows = cashRows.map((r) => {
-        const n = lang === 'en' ? r.nameEn || r.nameAr : r.nameAr || r.nameEn;
-        return {
-          vaultName: n || '—',
-          inflow: fmt(Number(r.total ?? 0)),
-          outflow: fmt(Number(r.outflow ?? 0)),
-          remainder: fmt(Number(r.remainder ?? 0)),
-        };
-      });
-
-      let tin = 0;
-      let tout = 0;
-      let trem = 0;
-      for (const r of cashRows) {
-        tin += Number(r.total ?? 0);
-        tout += Number(r.outflow ?? 0);
-        trem += Number(r.remainder ?? 0);
-      }
-      const totals = {
-        inflow: fmt(tin),
-        outflow: fmt(tout),
-        remainder: fmt(trem),
-      };
-
-      const periodLine =
-        fromUrl && toUrl
-          ? `${fromUrl} — ${toUrl}`
-          : `${toYmd(invoiceQueryStartDate) || '—'} — ${toYmd(invoiceQueryEndDate) || '—'}`;
-
-      const labels = {
-        reportTitle: t('invoicesCashReportTitle'),
-        subtitle: t('invoicesCashReportSubtitle'),
-        periodLine,
-        scopeNote: t('invoicesCashReportScope'),
-        vaultSectionTitle: t('invoicesCashReportVaultSection'),
-        colVault: t('invoicesCashReportColVault'),
-        colIn: t('invoicesCashReportColIn'),
-        colOut: t('invoicesCashReportColOut'),
-        colRemain: t('invoicesCashReportColRemain'),
-        totalsTitle: t('invoicesCashReportTotalsRow'),
-        salesCashOnHandTitle: t('invoicesCashReportSalesCashOnHandTitle'),
-        salesCashOnHandHint: t('invoicesCashReportSalesCashOnHandHint'),
-        summariesCountLabel: t('invoicesCashReportSummariesCount'),
-        noCashVaults: t('invoicesCashReportNoCashVaults'),
-      };
-
-      const body = buildInvoicesCashReportBody(
-        labels,
-        vaultRows,
-        totals,
-        fmt(cashOnHandSum),
-        summaries.length,
-      );
-
-      openPrintWindow({
-        title: t('invoicesCashReportTitle'),
-        companyName,
-        subtitle: `${t('invoicesTitle')} — ${(fromUrl && toUrl ? `${fromUrl} — ${toUrl}` : dateFilter.label) || periodLine}`,
-        logoUrl,
-        landscape: false,
-        extraCss: INVOICES_CASH_REPORT_PRINT_EXTRA_CSS,
-        body,
-      });
-    } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : t('invoicesCashReportLoadFailed'), 'error');
-    } finally {
-      setExportBusy(false);
-    }
-  }, [
-    companyId,
-    invoiceQueryStartDate,
-    invoiceQueryEndDate,
-    vaultsList,
-    lang,
-    fmt,
-    t,
-    companyName,
-    logoUrl,
-    fromUrl,
-    toUrl,
-    dateFilter.label,
-    showToast,
-  ]);
-
-  const handlePrintInvoices = useCallback(async () => {
-    if (!companyId || displayedTotal === 0) return;
-    setExportBusy(true);
-    try {
-      const all = await fetchAllInvoicesForExport({
-        companyId,
-        startDate: invoiceQueryStartDate,
-        endDate: invoiceQueryEndDate,
-        kind: kindForApi,
-        sortBy: sortKey,
-        sortDir,
-        supplierId: filterSupplierId || undefined,
-        q: debouncedQ || undefined,
-        categoryId: urlExtra.categoryId || undefined,
-        expenseLineId: urlExtra.expenseLineId || undefined,
-        includeCancelled: showCancelled,
-        hasNotes: filterHasNotesOnly || undefined,
-        vaultId: filterVaultId || undefined,
-        batchId: invoiceBatchIdFromUrl || undefined,
-        createdByUserId: filterCreatedByUserId || undefined,
-      });
-      const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const rowsHtml = all
-        .map((inv: any) => {
-          const r = mapInvoiceToExportRow(inv);
-          return `<tr>${exportColumnDefs.map((c: any) => `<td>${esc((r as Record<string, any>)[c.key])}</td>`).join('')}</tr>`;
-        })
-        .join('');
-      const head = `<tr>${exportColumnDefs.map((c: any) => `<th>${esc(c.label)}</th>`).join('')}</tr>`;
-      const nc = exportColumnDefs.length;
-      const baseMetaCols = 6;
-      const vaultBlockCols = MAX_VAULT_SLOTS * 3;
-      const foot = `<tr><td colspan="${baseMetaCols}">${esc(t('totalInvoices', serverAll.count))}</td><td colspan="${vaultBlockCols}"></td><td>${esc(fmt(Number(serverAll.net)))} SR</td><td>${esc(fmt(Number(serverAll.tax)))} SR</td><td>${esc(fmt(Number(serverAll.total)))} SR</td><td colspan="2"></td></tr>`;
-      const table = `<table><thead>${head}</thead><tbody>${rowsHtml || `<tr><td colspan="${nc}">${esc(t('noInvoicesInPeriod'))}</td></tr>`}</tbody><tfoot>${foot}</tfoot></table>`;
-      openPrintWindow({
-        title: t('invoicesTitle'),
-        companyName,
-        subtitle: `${t('invoicesTitle')} — ${(fromUrl && toUrl ? `${fromUrl} — ${toUrl}` : dateFilter.label) || ''}`,
-        logoUrl,
-        landscape: true,
-        body: table,
-      });
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
-    } finally {
-      setExportBusy(false);
-    }
-  }, [
+  const { handleExportExcel, handlePrintCashReport, handlePrintInvoices } = useInvoicesListActions({
     companyId,
     displayedTotal,
     invoiceQueryStartDate,
     invoiceQueryEndDate,
+    dateFilterLabel: dateFilter.label,
     fromUrl,
     toUrl,
-    dateFilter.label,
     kindForApi,
     sortKey,
     sortDir,
     filterSupplierId,
     debouncedQ,
-    urlExtra.categoryId,
-    urlExtra.expenseLineId,
+    urlExtra,
     showCancelled,
-    mapInvoiceToExportRow,
-    exportColumnDefs,
-    t,
-    companyName,
-    logoUrl,
-    serverAll,
-    fmt,
-    showToast,
     filterHasNotesOnly,
     filterVaultId,
     invoiceBatchIdFromUrl,
     filterCreatedByUserId,
-  ]);
+    mapInvoiceToExportRow,
+    exportColumnDefs,
+    companyName,
+    logoUrl,
+    lang,
+    t,
+    fmt,
+    showToast,
+    setExportBusy,
+    vaultsList,
+    serverAll,
+  });
 
   const vaultRowLabel = useCallback(
     (row: any) => {
