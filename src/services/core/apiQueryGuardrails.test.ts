@@ -38,7 +38,7 @@ function scanSource(pattern: RegExp): string[] {
 
 describe('API query handling guardrails', () => {
   it('keeps module reads on centralized API query hooks', () => {
-    expect(scanSource(/\buseQuery\s*\(/)
+    expect(scanSource(/\buseQuer(?:y|ies)\s*\(/)
       .filter((file) => !ALLOWED_RAW_USE_QUERY_FILES.has(file))).toEqual([]);
   });
 

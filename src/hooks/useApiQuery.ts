@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryOptions, type QueryKey } from '@tanstack/react-query';
+import { useQueries, useQuery, type UseQueryOptions, type QueryKey } from '@tanstack/react-query';
 import type { ApiParsedResult } from '../services/api';
 import { unwrapApiData, unwrapApiDataOr, unwrapApiList } from '../services/api';
 
@@ -57,5 +57,23 @@ export function useApiListQuery<TItem, TData = TItem[]>({
   return useQuery<TItem[], Error, TData, QueryKey>({
     ...options,
     queryFn: async () => unwrapApiList<TItem>((await queryFn()) as any, fallbackMessage),
+  });
+}
+
+type ApiQueriesOptions = {
+  queries: Array<
+    Omit<UseQueryOptions<unknown, Error, unknown, QueryKey>, 'queryFn'> & {
+      queryFn: () => Promise<ApiParsedResult<unknown>>;
+      fallbackMessage?: string;
+    }
+  >;
+};
+
+export function useApiQueries({ queries }: ApiQueriesOptions) {
+  return useQueries({
+    queries: queries.map(({ queryFn, fallbackMessage = 'ط·ظ„ط¨ ظپط´ظ„', ...options }) => ({
+      ...options,
+      queryFn: async () => unwrapApiData(await queryFn(), fallbackMessage),
+    })),
   });
 }

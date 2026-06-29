@@ -3,7 +3,6 @@
  */
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueries } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getVatPlanningList, unwrapApiList } from '../../services/api';
@@ -11,6 +10,7 @@ import { defaultDisclosureData, computeNetPayable } from '../../constants/taxDis
 import { fmtTax } from '../../utils/format';
 import { Button } from '../../ui';
 import { vatKeys } from '../../services/queryKeys';
+import { useApiQueries } from '../../hooks/useApiQuery';
 
 const QUARTER_LABEL_AR = {
   1: 'الربع الأول (يناير – مارس)',
@@ -35,15 +35,16 @@ export default function HajriTaxQuarterOverview() {
 
   const years = useMemo(() => [currentYear, currentYear - 1, currentYear - 2, currentYear - 3], [currentYear]);
 
-  const quarterResults = useQueries({
+  const quarterResults = useApiQueries({
     queries: [1, 2, 3, 4].map((q: any) => ({
       queryKey: vatKeys.planning(year, q, companyId),
       queryFn: async () => {
-        if (!companyId) return null;
+        if (!companyId) return { success: true as const, data: null };
         const res = await getVatPlanningList(year, q, companyId);
         const rows = unwrapApiList<any>(res, 'فشل تحميل السجل');
-        return rows[0] ?? null;
+        return { success: true as const, data: rows[0] ?? null };
       },
+      fallbackMessage: 'Failed to load VAT planning record',
       enabled: !!companyId,
     })),
   });
@@ -131,7 +132,7 @@ export default function HajriTaxQuarterOverview() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {[1, 2, 3, 4].map((q: any, idx: any) => {
             const qr = quarterResults[idx];
-            const rec = qr?.data;
+            const rec = qr?.data as any;
             const payload =
               rec?.payload && typeof rec.payload === 'object' ? rec.payload : defaultDisclosureData();
             const net = computeNetPayable(payload);

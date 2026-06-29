@@ -2,7 +2,7 @@
  * أيام خاصة لسنة كاملة — دمج من 12 شهراً (لتبويب الأيام الخاصة بعد استيراد المناسبات).
  */
 import { useMemo } from 'react';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { dashboardKeys } from '../services/queryKeys/dashboard';
 import {
   getDashboardCalendarData,
@@ -10,6 +10,7 @@ import {
   type DashboardCalendarDataResult,
 } from '../services/domains/apiEndpoints/dashboard-calendar';
 import { unwrapApiDataOr } from '../services/core/apiHttp';
+import { useApiQueries } from './useApiQuery';
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
@@ -42,13 +43,14 @@ export function useDashboardYearSpecialDays({
   const queryClient = useQueryClient();
   const isEnabled = !!companyId && enabled;
 
-  const monthQueries = useQueries({
+  const monthQueries = useApiQueries({
     queries: MONTHS.map((month) => ({
       queryKey: dashboardKeys.calendar(companyId ?? '', year, month),
       queryFn: async () => {
         const res = await getDashboardCalendarData(companyId!, year, month);
-        return unwrapApiDataOr(res, EMPTY_CALENDAR);
+        return { success: true as const, data: unwrapApiDataOr(res, EMPTY_CALENDAR) };
       },
+      fallbackMessage: 'Failed to load dashboard calendar data',
       enabled: isEnabled,
       staleTime: 5 * 60 * 1000,
     })),
@@ -57,7 +59,8 @@ export function useDashboardYearSpecialDays({
   const specialDays = useMemo(() => {
     const rows: DashboardSpecialDayRow[] = [];
     for (const q of monthQueries) {
-      for (const sp of q.data?.specialDays ?? []) {
+      const data = (q.data ?? EMPTY_CALENDAR) as DashboardCalendarDataResult;
+      for (const sp of data.specialDays ?? []) {
         if (!sp?.id) continue;
         rows.push({
           id: sp.id,
@@ -81,7 +84,8 @@ export function useDashboardYearSpecialDays({
 
   const getMonthSpecialDays = (month: number): DashboardSpecialDayRow[] => {
     const q = monthQueries[month - 1];
-    return ((q.data?.specialDays ?? []) as DashboardSpecialDayRow[]).map((sp) => ({
+    const data = (q.data ?? EMPTY_CALENDAR) as DashboardCalendarDataResult;
+    return ((data.specialDays ?? []) as DashboardSpecialDayRow[]).map((sp) => ({
       id: sp.id,
       name: sp.name ?? '',
       fromDate: sp.fromDate,
@@ -116,7 +120,8 @@ export function useDashboardYearSpecialDays({
     await Promise.all(
       MONTHS.map(async (month) => {
         const q = monthQueries[month - 1];
-        const list = (q.data?.specialDays ?? []) as DashboardSpecialDayRow[];
+        const data = (q.data ?? EMPTY_CALENDAR) as DashboardCalendarDataResult;
+        const list = (data.specialDays ?? []) as DashboardSpecialDayRow[];
         if (!list.some((sp) => sp.id === id)) return;
         await saveMonthSpecialDays(
           month,

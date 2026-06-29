@@ -1,9 +1,6 @@
-/**
- * useOwnerDailySales — ملخصات مبيعات يومية لكل شركة ضمن شهر محدد (لوحة المالك)
- */
-import { useQueries } from '@tanstack/react-query';
 import { getDailySalesSummaries, throwIfApiFailed } from '../services/api';
 import { ownerKeys } from '../services/queryKeys/owner';
+import { useApiQueries } from './useApiQuery';
 
 function monthBounds(y: number, month1to12: number) {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -13,9 +10,34 @@ function monthBounds(y: number, month1to12: number) {
   return { start, end };
 }
 
-/**
- * @param {{ companyIds: string[], year: number, month: number | null, enabled?: boolean }} params
- */
+async function getOwnerDailySalesPageSet(companyId: string, start: string, end: string) {
+  const pageSize = 150;
+  let page = 1;
+  const acc: unknown[] = [];
+
+  for (let guard = 0; guard < 500; guard += 1) {
+    const res = await getDailySalesSummaries(
+      companyId,
+      start,
+      end,
+      page,
+      pageSize,
+      undefined,
+      'transactionDate',
+      'asc',
+      false,
+    );
+    throwIfApiFailed(res, 'Failed to load daily sales');
+    const { items = [], total = 0 } = res.data || {};
+    acc.push(...items);
+    const t = Number(total) || 0;
+    if (acc.length >= t || items.length < pageSize) break;
+    page += 1;
+  }
+
+  return { success: true as const, data: acc };
+}
+
 export function useOwnerDailySales({
   companyIds,
   year,
@@ -28,40 +50,17 @@ export function useOwnerDailySales({
   enabled?: boolean;
 }) {
   const bounds = month && year ? monthBounds(year, month) : null;
-
   const ids = companyIds || [];
   const enabled = externalEnabled && !!(bounds && ids.length && month);
 
-  const queries = useQueries({
+  const queries = useApiQueries({
     queries: ids.map((companyId) => ({
       queryKey: ownerKeys.dailySales(companyId, year, month),
-      queryFn: async () => {
-        if (!bounds) throw new Error('missing month bounds');
-        const { start, end } = bounds;
-        const pageSize = 150;
-        let page = 1;
-        const acc = [];
-        for (let guard = 0; guard < 500; guard++) {
-          const res = await getDailySalesSummaries(
-            companyId,
-            start,
-            end,
-            page,
-            pageSize,
-            undefined,
-            'transactionDate',
-            'asc',
-            false,
-          );
-          throwIfApiFailed(res, 'فشل تحميل المبيعات اليومية');
-          const { items = [], total = 0 } = res.data || {};
-          acc.push(...items);
-          const t = Number(total) || 0;
-          if (acc.length >= t || items.length < pageSize) break;
-          page += 1;
-        }
-        return acc;
+      queryFn: () => {
+        if (!bounds) return Promise.resolve({ success: true as const, data: [] });
+        return getOwnerDailySalesPageSet(companyId, bounds.start, bounds.end);
       },
+      fallbackMessage: 'Failed to load daily sales',
       enabled: enabled && !!companyId,
     })),
   });
@@ -72,7 +71,7 @@ export function useOwnerDailySales({
 
   const itemsByCompanyId: Record<string, unknown[]> = {};
   ids.forEach((cid, i) => {
-    itemsByCompanyId[cid] = queries[i]?.data ?? [];
+    itemsByCompanyId[cid] = (queries[i]?.data as unknown[]) ?? [];
   });
 
   const dataStamp = queries.reduce((acc, q) => acc + (Number(q.dataUpdatedAt) || 0), 0);
