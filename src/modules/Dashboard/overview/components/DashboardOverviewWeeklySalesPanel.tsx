@@ -9,6 +9,16 @@ import { cn } from '../../../../ui/cn';
 /** قوائم شهر/سنة مضغوطة — أنماط في index.css (.nx-dashboard-period-select) */
 const PERIOD_CONTROLS_WRAP = 'inline-flex flex-row flex-wrap items-center justify-center gap-1';
 
+const COL_WEEK = '24%';
+const COL_CURRENT = '28%';
+const COL_BASELINE = '28%';
+const COL_DELTA = '20%';
+
+const TH_CELL =
+  'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1 py-1.5 text-center text-[9px] font-bold leading-tight text-noorix-text sm:px-2 sm:py-2.5 sm:text-xs';
+const TD_CELL =
+  'border border-noorix-border px-1 py-1.5 text-center text-[10px] leading-tight sm:px-2 sm:py-2 sm:text-[13px]';
+
 export type WeeklySalesWeekRow = {
   weekIndex: number;
   dayStart: number;
@@ -62,7 +72,7 @@ export function DashboardOverviewWeeklySalesPanel({
         </h2>
       </div>
 
-      <div className="overflow-x-auto p-3 [-webkit-overflow-scrolling:touch] sm:p-4">
+      <div className="p-3 sm:p-4">
         {isLoading || !data ? (
           <div className="space-y-2">
             {[0, 1, 2, 3].map((i) => (
@@ -70,17 +80,23 @@ export function DashboardOverviewWeeklySalesPanel({
             ))}
           </div>
         ) : (
-          <table className="w-full min-w-[520px] border-collapse overflow-hidden rounded-lg border border-noorix-border text-sm">
+          <table className="w-full table-fixed border-collapse overflow-hidden rounded-lg border border-noorix-border text-[10px]">
+            <colgroup>
+              <col style={{ width: COL_WEEK }} />
+              <col style={{ width: COL_CURRENT }} />
+              <col style={{ width: COL_BASELINE }} />
+              <col style={{ width: COL_DELTA }} />
+            </colgroup>
             <thead>
-              <tr className="bg-[var(--noorix-table-header-bg)]">
-                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold">
+              <tr>
+                <th className={TH_CELL}>
                   {t('dashboardWeeklySalesWeekCol')}
                 </th>
-                <th className="border border-noorix-border px-2 py-1.5 text-center align-bottom">
-                  <div className="mb-0.5 text-[11px] font-bold leading-snug text-noorix-text">
+                <th className={cn(TH_CELL, 'align-bottom')}>
+                  <div className="mb-0.5 text-[9px] font-bold leading-tight text-noorix-text sm:text-[11px]">
                     {t('dashboardWeeklySalesPeriodMainHeader')}
                   </div>
-                  <div className="mb-1 text-[10px] font-semibold text-noorix-muted">
+                  <div className="mb-1 text-[8px] font-semibold text-noorix-muted sm:text-[10px]">
                     {t('dashboardWeeklySalesAvgDailyShort')}
                   </div>
                   <div className={PERIOD_CONTROLS_WRAP}>
@@ -120,11 +136,11 @@ export function DashboardOverviewWeeklySalesPanel({
                     </Input>
                   </div>
                 </th>
-                <th className="border border-noorix-border px-2 py-1.5 text-center align-bottom">
-                  <div className="mb-0.5 text-[11px] font-bold leading-snug text-noorix-text">
+                <th className={cn(TH_CELL, 'align-bottom')}>
+                  <div className="mb-0.5 text-[9px] font-bold leading-tight text-noorix-text sm:text-[11px]">
                     {t('dashboardWeeklySalesPeriodCompareHeader')}
                   </div>
-                  <div className="mb-1 text-[10px] font-semibold text-noorix-muted">
+                  <div className="mb-1 text-[8px] font-semibold text-noorix-muted sm:text-[10px]">
                     {t('dashboardWeeklySalesAvgDailyShort')}
                   </div>
                   <div className={PERIOD_CONTROLS_WRAP}>
@@ -164,7 +180,7 @@ export function DashboardOverviewWeeklySalesPanel({
                     </Input>
                   </div>
                 </th>
-                <th className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold">
+                <th className={TH_CELL}>
                   {t('dashboardWeeklySalesDelta')}
                 </th>
               </tr>
@@ -172,34 +188,34 @@ export function DashboardOverviewWeeklySalesPanel({
             <tbody>
               {data.rows.map((row) => (
                 <tr key={row.weekIndex} className="bg-[var(--noorix-surface-1)]">
-                  <td className="border border-noorix-border px-2 py-2 text-center text-[13px] font-medium text-noorix-text">
+                  <td className={cn(TD_CELL, 'font-medium text-noorix-text')}>
                     {t('dashboardWeeklySalesWeekRange', {
                       n: row.weekIndex,
                       from: row.dayStart,
                       to: row.dayEnd,
                     })}
                   </td>
-                  <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
+                  <td className={TD_CELL} dir="ltr">
                     <FmtNum
                       n={row.avgDailyCurrent}
                       maxDecimals={2}
                       className="font-semibold tabular-nums nx-font-numbers text-noorix-text"
                     />{' '}
-                    <span className="nx-sar text-[11px] text-noorix-muted">SR</span>
+                    <span className="nx-sar text-[8px] text-noorix-muted sm:text-[11px]">SR</span>
                   </td>
-                  <td className="border border-noorix-border px-2 py-2 text-center" dir="ltr">
+                  <td className={TD_CELL} dir="ltr">
                     <FmtNum
                       n={row.avgDailyBaseline}
                       maxDecimals={2}
                       className="font-semibold tabular-nums nx-font-numbers text-noorix-text"
                     />{' '}
-                    <span className="nx-sar text-[11px] text-noorix-muted">SR</span>
+                    <span className="nx-sar text-[8px] text-noorix-muted sm:text-[11px]">SR</span>
                   </td>
-                  <td className="border border-noorix-border px-2 py-2 text-center">
+                  <td className={TD_CELL}>
                     {row.deltaPct != null ? (
                       <span
                         className={cn(
-                          'text-[13px] font-bold tabular-nums nx-font-numbers',
+                          'font-bold tabular-nums nx-font-numbers',
                           row.deltaPct > 0 ? 'text-[#3B6D11]' : row.deltaPct < 0 ? 'text-[#A32D2D]' : 'text-noorix-muted',
                         )}
                         dir="ltr"
