@@ -74,6 +74,7 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
     : 'var(--noorix-text-muted)';
   const isArchived  = vault.isArchived;
   const balance     = Number(vault.balance ?? 0);
+  const displayBalance = Math.abs(balance);
   const totalIn     = Number(vault.totalIn ?? 0);
   const totalOut    = Number(vault.totalOut ?? 0);
 
@@ -129,7 +130,7 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
       {/* الرصيد */}
       <MetricCard.Value
         label={t('balance')}
-        value={balance}
+        value={displayBalance}
         currency="SR"
         align="center"
         size="lg"

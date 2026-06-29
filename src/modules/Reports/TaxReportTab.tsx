@@ -9,7 +9,7 @@ import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { fmtTax } from '../../utils/format';
-import { Button, Input, FmtNum } from '../../ui';
+import { Badge, Button, Input, FmtNum } from '../../ui';
 import { TAX_REPORT_STORAGE_PREFIX } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 import {
@@ -41,6 +41,7 @@ function saveStoredData(companyId: any, period: any, data: any) {
 }
 
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+type TaxDraftSource = 'system' | 'manualDraft';
 
 export default function TaxReportTab() {
   const { activeCompanyId, companies } = useApp();
@@ -51,6 +52,7 @@ export default function TaxReportTab() {
   const [salesAmountIncludesVat, setSalesAmountIncludesVat] = useState(false);
   const periodKey = `${year}-${period}`;
   const [data, setData] = useState(() => loadStoredData(activeCompanyId || '', periodKey));
+  const [draftSource, setDraftSource] = useState<TaxDraftSource>('system');
 
   const { data: importedData, isLoading: importLoading, refetch: refetchTax } = useTaxReport({
     companyId: activeCompanyId,
@@ -74,6 +76,7 @@ export default function TaxReportTab() {
       const stored = loadStoredData(activeCompanyId || '', periodKey);
       return mergeImportedDisclosure(stored, importedData);
     });
+    if (importedData) setDraftSource('system');
   }, [activeCompanyId, periodKey, importedData]);
 
   const handleImportFromSystem = () => {
@@ -83,6 +86,7 @@ export default function TaxReportTab() {
         const stored = loadStoredData(activeCompanyId || '', periodKey);
         const merged = mergeImportedDisclosure(stored, imported);
         setData(merged);
+        setDraftSource('system');
         saveStoredData(activeCompanyId || '', periodKey, merged);
       }
     });
@@ -137,6 +141,7 @@ export default function TaxReportTab() {
         next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), [field]: num };
       }
       saveStoredData(activeCompanyId || '', periodKey, next);
+      setDraftSource('manualDraft');
       return next;
     });
   };
@@ -179,6 +184,13 @@ export default function TaxReportTab() {
             {lang === 'ar' ? 'مطابق لنموذج مصلحة الزكاة والضريبة والجمارك. جميع الحقول قابلة للتعديل.' : 'Matches ZATCA tax disclosure form. All fields are editable.'}
           </p>
         </div>
+          <div className="mt-2">
+            <Badge color={draftSource === 'manualDraft' ? 'amber' : 'blue'} size="sm" dot>
+              {draftSource === 'manualDraft'
+                ? (lang === 'ar' ? 'مسودة معدلة يدوياً' : 'Manual draft')
+                : (lang === 'ar' ? 'مستورد من النظام' : 'Imported from system')}
+            </Badge>
+          </div>
         <div className="nx-toolbar flex-wrap">
           <label className="flex max-w-[min(100%,22rem)] cursor-pointer items-start gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-blue-6)] px-3 py-2 text-[11px] leading-snug text-noorix-text">
             <input
