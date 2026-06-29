@@ -2,10 +2,8 @@
  * محتوى نظرة عامة لوحة التحكم (مخططات + KPI + زمني) — يُستدعى النموذج مرة واحدة في الأب.
  */
 import React from 'react';
-import { useTranslation } from '../../../i18n/useTranslation';
 import { DashboardOverviewTopCharts } from './components/DashboardOverviewTopCharts';
 import { DashboardOverviewKpis } from './components/DashboardOverviewKpis';
-import { DashboardOverviewRevenueMonthBody } from './components/DashboardOverviewRevenueMonthBody';
 import { DashboardOverviewWeeklySalesPanel } from './components/DashboardOverviewWeeklySalesPanel';
 import { DashboardOverviewYearlyDailyAvgPanel } from './components/DashboardOverviewYearlyDailyAvgPanel';
 import { DashboardOverviewTimelineSection } from './components/DashboardOverviewTimelineSection';
@@ -16,8 +14,6 @@ export type DashboardOverviewContentProps = {
 };
 
 export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
-  const { t } = useTranslation();
-
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 lg:gap-5">
       <DashboardOverviewKpis
@@ -26,25 +22,9 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         cards={m.cards}
         filter={m.filter}
         year={m.year}
+        salesShiftPeriodTotals={m.salesShiftPeriodTotals}
         kpiInsightFooters={m.kpiInsightFooters}
       />
-
-      {m.selectedMonth != null ? (
-        <DashboardOverviewRevenueMonthBody
-          mtdEndDay={m.revenueMtdEndDay}
-          currentMonthLabel={m.monthName ?? ''}
-          prevMonthLabel={m.prevMonthName}
-          currentMonthSalesTotal={m.revenueMtdTotalSum}
-          prevMonthSalesTotal={m.revenuePrevMonthTotalSum}
-          revenueDailyAvg={m.revenueDailyAvgCalendar}
-          revenueDailyAvgPrev={m.revenueDailyAvgPrevMonthCalendar}
-          customerDailyAvg={m.customerDailyAvgCalendar}
-          customerDailyAvgPrev={m.customerDailyAvgPrevMonthCalendar}
-          salesShiftPeriodTotals={m.salesShiftPeriodTotals}
-          t={t}
-          standalone
-        />
-      ) : null}
 
       <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start lg:gap-5">
         <DashboardOverviewWeeklySalesPanel
