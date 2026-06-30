@@ -1516,6 +1516,57 @@ html[data-card-style="10"] .noorix-stat-card {
   white-space: nowrap;
   min-width: 0;
 }
+
+/* Noorix Data Grid System — column-kind driven alignment and containment */
+.noorix-table th[data-column-kind],
+.noorix-table td[data-column-kind] {
+  vertical-align: middle;
+}
+.noorix-table th[data-column-kind="text"],
+.noorix-table td[data-column-kind="text"] {
+  text-align: start !important;
+}
+.noorix-table th[data-column-kind="id"],
+.noorix-table td[data-column-kind="id"],
+.noorix-table th[data-column-kind="date"],
+.noorix-table td[data-column-kind="date"],
+.noorix-table th[data-column-kind="status"],
+.noorix-table td[data-column-kind="status"],
+.noorix-table th[data-column-kind="actions"],
+.noorix-table td[data-column-kind="actions"],
+.noorix-table th[data-column-kind="meta"],
+.noorix-table td[data-column-kind="meta"] {
+  text-align: center !important;
+}
+.noorix-table th[data-column-kind="money"],
+.noorix-table td[data-column-kind="money"],
+.noorix-table th[data-column-kind="number"],
+.noorix-table td[data-column-kind="number"] {
+  text-align: end !important;
+  font-family: var(--noorix-font-numbers) !important;
+  font-variant-numeric: tabular-nums;
+}
+.noorix-table td[data-column-kind="money"],
+.noorix-table td[data-column-kind="number"] {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.noorix-table td[data-column-kind="text"] > *,
+.noorix-table td[data-column-kind="id"] > *,
+.noorix-table td[data-column-kind="date"] > *,
+.noorix-table td[data-column-kind="meta"] > * {
+  max-width: 100%;
+}
+.noorix-table .nx-col-kind-text,
+.noorix-table .nx-col-kind-id,
+.noorix-table .nx-col-kind-date,
+.noorix-table .nx-col-kind-meta {
+  overflow: hidden;
+}
+.noorix-table .nx-col-kind-status .nx-badge,
+.noorix-table .nx-col-kind-actions .nx-actions-kebab {
+  margin-inline: auto;
+}
 /* أعمدة قابلة للانكماش — تأخذ أقل مساحة (رقم، تاريخ، حالة، إلخ) */
 .noorix-table .noorix-th-shrink,
 .noorix-table .noorix-td-shrink {
@@ -4670,6 +4721,66 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   box-shadow: none;
   background: transparent;
   border-radius: 0;
+}
+
+/* Noorix Data Grid v2 — final table system layer */
+.noorix-table-frame {
+  --nx-table-head-bg: color-mix(in srgb, var(--noorix-accent-blue) 4%, var(--noorix-bg-muted));
+  --nx-table-row-hover: color-mix(in srgb, var(--noorix-accent-blue) 5%, var(--noorix-bg-surface));
+  --nx-table-line: color-mix(in srgb, var(--noorix-border) 72%, transparent);
+  --nx-table-line-soft: color-mix(in srgb, var(--noorix-border) 42%, transparent);
+}
+.noorix-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.noorix-table thead th {
+  height: 38px;
+  background: var(--nx-table-head-bg) !important;
+  border-bottom: 1px solid var(--nx-table-line) !important;
+  border-inline-start: 0 !important;
+  border-inline-end: 0 !important;
+  color: var(--noorix-text-muted);
+  line-height: 1.35;
+}
+.noorix-table tbody td {
+  height: 42px;
+  border-bottom: 1px solid var(--nx-table-line-soft) !important;
+  border-inline-start: 0 !important;
+  border-inline-end: 0 !important;
+  line-height: 1.45;
+}
+.noorix-table tbody tr:hover td {
+  background: var(--nx-table-row-hover);
+}
+.noorix-table tfoot td {
+  background: var(--nx-table-head-bg) !important;
+  border-top: 1px solid var(--nx-table-line) !important;
+  border-bottom: 0 !important;
+  border-inline-start: 0 !important;
+  border-inline-end: 0 !important;
+}
+.noorix-table th[data-column-kind="text"],
+.noorix-table td[data-column-kind="text"] {
+  padding-inline-start: 14px !important;
+  padding-inline-end: 14px !important;
+}
+.noorix-table th[data-column-kind="money"],
+.noorix-table td[data-column-kind="money"],
+.noorix-table th[data-column-kind="number"],
+.noorix-table td[data-column-kind="number"] {
+  padding-inline-start: 10px !important;
+  padding-inline-end: 14px !important;
+}
+.noorix-table th[data-column-kind="actions"],
+.noorix-table td[data-column-kind="actions"] {
+  padding-inline: 8px !important;
+}
+.noorix-table .nx-cell-ellipsis,
+.noorix-table .noorix-cell-truncate {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
 }
 @media (max-width: 768px) {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {

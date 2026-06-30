@@ -90,4 +90,12 @@ describe('SmartTable', () => {
     expect(screen.getByText('Page 1/3')).toBeTruthy();
   });
 
+  it('applies normalized column kinds to headers and cells', () => {
+    const { container } = render(<SmartTable columns={columns} data={rows} total={2} />);
+    expect(container.querySelector('th[data-column-kind="text"]')).toBeTruthy();
+    expect(container.querySelector('td[data-column-kind="text"]')).toBeTruthy();
+    expect(container.querySelector('th[data-column-kind="money"]')).toBeTruthy();
+    expect(container.querySelector('td[data-column-kind="money"]')).toBeTruthy();
+  });
+
 });

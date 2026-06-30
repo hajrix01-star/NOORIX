@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 /** عمود جدول ذكي — مرّر `TRow` من الشاشة لتضييق نوع الصف في `render` */
 export type SmartTableColumn<TRow = any> = {
   key: string;
+  kind?: 'id' | 'text' | 'date' | 'money' | 'number' | 'status' | 'actions' | 'meta';
   label?: ReactNode;
   header?: ReactNode;
   align?: string;

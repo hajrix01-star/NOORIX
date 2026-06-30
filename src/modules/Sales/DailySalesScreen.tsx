@@ -80,14 +80,14 @@ export default function DailySalesScreen() {
   } = useDailySalesScreen();
 
   const columns = useMemo(() => [
-    { key: 'summaryNumber', label: t('summaryNumber'), sortable: true, width: '10%',
+    { key: 'summaryNumber', kind: 'id', label: t('summaryNumber'), sortable: true, width: '12ch',
       render: (_: unknown, row: DailySalesTableRow) => (
         <div className="flex flex-col items-start gap-0.5">
           <span className="nx-cell-num nx-cell-accent">{row.summaryNumbersText || row.summaryNumber}</span>
           {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
         </div>
       ) },
-    { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '10%',
+    { key: 'transactionDate', kind: 'date', label: t('transactionDate'), sortable: true, width: '13ch',
       render: (v: unknown, row: DailySalesTableRow) => (
         <div className="flex flex-col items-start gap-0.5">
           <span className="nx-cell-muted-sm">{formatSaudiDate(v as string)}</span>
@@ -96,17 +96,17 @@ export default function DailySalesScreen() {
           </span>
         </div>
       ) },
-    { key: 'channelsText', label: t('salesChannels'), sortable: false, width: '38%',
+    { key: 'channelsText', kind: 'text', label: t('salesChannels'), sortable: false, width: '38%',
       render: (_: unknown, row: DailySalesTableRow) => <DailySalesChannelsChips channels={row.channels} lang={lang} /> },
-    { key: 'customerCount', label: t('customers'), numeric: true, sortable: true, width: '7%',
+    { key: 'customerCount', kind: 'number', label: t('customers'), numeric: true, sortable: true, width: '8ch',
       render: (v: unknown) => <span className="nx-cell-num nx-cell-num--blue">{(v as number) ?? 0}</span> },
-    { key: 'totalAmount', label: t('total'), numeric: true, sortable: true, width: '10%',
+    { key: 'totalAmount', kind: 'money', label: t('total'), numeric: true, sortable: true, width: '12ch',
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--green nx-cell-bold" /> },
-    { key: 'avgPerCustomer', label: t('avgPerOrder'), numeric: true, sortable: false, width: '7%',
+    { key: 'avgPerCustomer', kind: 'money', label: t('avgPerOrder'), numeric: true, sortable: false, width: '12ch',
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
-    { key: 'status', label: t('statusLabel'), width: '8%',
+    { key: 'status', kind: 'status', label: t('statusLabel'), width: '9ch',
       render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
-    { key: 'actions', label: t('actions'), align: 'center', width: '8%',
+    { key: 'actions', kind: 'actions', label: t('actions'), align: 'center', width: '1%',
       render: (_: unknown, row: DailySalesTableRow) => (
         <SalesActionsCell
           summary={row}

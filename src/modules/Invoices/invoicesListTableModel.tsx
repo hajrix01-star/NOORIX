@@ -23,6 +23,7 @@ export function buildInvoiceListColumns({
   return [
     {
       key: 'invoiceNumber',
+      kind: 'id',
       label: t('documentNumber'),
       align: 'center',
       shrink: true,
@@ -43,6 +44,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'supplierInvoiceNumber',
+      kind: 'id',
       label: t('supplierInvoiceNumber'),
       align: 'center',
       shrink: true,
@@ -55,6 +57,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'supplierName',
+      kind: 'text',
       label: t('supplier'),
       align: 'center',
       width: '7%',
@@ -66,6 +69,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'createdByDisplayName',
+      kind: 'text',
       label: t('invoiceUserColumn'),
       align: 'center',
       width: '8%',
@@ -77,6 +81,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'notesOrEmployee',
+      kind: 'text',
       label: t('invoiceNotesColumn') || 'ملاحظة',
       align: 'center',
       width: '8%',
@@ -88,6 +93,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'kind',
+      kind: 'status',
       label: t('type'),
       align: 'center',
       shrink: true,
@@ -96,6 +102,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'vaultLabel',
+      kind: 'text',
       label: t('invoiceVaultColumn'),
       align: 'center',
       width: '20%',
@@ -139,6 +146,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'netAmount',
+      kind: 'money',
       label: t('net'),
       align: 'center',
       numeric: true,
@@ -149,6 +157,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'taxAmount',
+      kind: 'money',
       label: t('tax'),
       align: 'center',
       numeric: true,
@@ -158,6 +167,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'totalAmount',
+      kind: 'money',
       label: t('total'),
       align: 'center',
       numeric: true,
@@ -168,6 +178,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'transactionDate',
+      kind: 'date',
       label: t('date'),
       align: 'center',
       sortable: true,
@@ -177,6 +188,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'status',
+      kind: 'status',
       label: t('statusLabel'),
       align: 'center',
       shrink: true,
@@ -185,6 +197,7 @@ export function buildInvoiceListColumns({
     },
     {
       key: 'actions',
+      kind: 'actions',
       label: t('actions'),
       align: 'center',
       width: '5%',

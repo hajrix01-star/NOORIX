@@ -66,6 +66,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
     () => [
       {
         key: 'batchId',
+        kind: 'id',
         label: t('batchId'),
         sortable: true,
         width: '10%',
@@ -80,6 +81,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       },
       {
         key: 'transactionDate',
+        kind: 'date',
         label: t('transactionDate'),
         sortable: true,
         width: '8%',
@@ -91,6 +93,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       },
       {
         key: 'invoiceCount',
+        kind: 'number',
         label: t('invoicesColHeader'),
         numeric: true,
         sortable: true,
@@ -117,6 +120,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       },
       {
         key: 'supplierNames',
+        kind: 'text',
         label: t('supplier'),
         sortable: true,
         width: '20%',
@@ -124,6 +128,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       },
       {
         key: 'vaultName',
+        kind: 'text',
         label: t('vault'),
         sortable: true,
         width: '13%',
@@ -131,6 +136,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       },
       {
         key: 'netAmount',
+        kind: 'money',
         label: t('net'),
         numeric: true,
         sortable: true,
@@ -143,6 +149,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       },
       {
         key: 'taxAmount',
+        kind: 'money',
         label: t('tax'),
         numeric: true,
         sortable: true,
@@ -155,6 +162,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       },
       {
         key: 'totalAmount',
+        kind: 'money',
         label: t('total'),
         numeric: true,
         sortable: true,
@@ -167,45 +175,28 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       },
       {
         key: 'status',
+        kind: 'status',
         label: t('statusLabel'),
         width: '8%',
         render: (v: any) => <Badge {...Badge.fromStatus(v, statusBadgeMap)} size="sm" />,
       },
       {
         key: 'actions',
+        kind: 'actions',
         label: t('actions'),
         align: 'center',
-        width: '12%',
+        width: '1%',
         render: (_: any, row: any) => {
           const canCancel = row.status === 'active' || row.status === 'partial';
           return (
-            <div className="noorix-actions-row flex flex-wrap justify-center max-w-[280px]">
-              <Button
-                size="sm"
-                onClick={() => openBatchWithInvoices(row, setPrintingBatch)}
-                disabled={batchActionLoading === row.batchId}
-                title={t('print')}
-              >
-                {batchActionLoading === row.batchId ? '…' : t('print')}
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => openBatchWithInvoices(row, setEditingBatch)}
-                disabled={batchActionLoading === row.batchId}
-                title={t('edit')}
-              >
-                ✎ {batchActionLoading === row.batchId ? '…' : t('edit')}
-              </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={() => handleCancelBatch(row, setEditingBatch)}
-                disabled={!canCancel || batchActionLoading === row.batchId}
-                title={t('cancel')}
-              >
-                × {t('cancel')}
-              </Button>
-            </div>
+            <KebabMenu
+              ariaLabel={t('actions')}
+              items={[
+                { key: 'print', label: t('print'), onClick: () => openBatchWithInvoices(row, setPrintingBatch), disabled: batchActionLoading === row.batchId },
+                { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => openBatchWithInvoices(row, setEditingBatch), disabled: batchActionLoading === row.batchId },
+                ...(canCancel ? [{ key: 'cancel', label: t('cancel'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => handleCancelBatch(row, setEditingBatch), disabled: batchActionLoading === row.batchId }] : []),
+              ]}
+            />
           );
         },
       },

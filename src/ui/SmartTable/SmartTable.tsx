@@ -2,7 +2,7 @@
  * SmartTable — مكون الجداول المركزي لنظام نوركس
  * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards | Column Resize
  */
-import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useIsNarrow768 } from '../../hooks/useMediaQuery';
@@ -13,6 +13,7 @@ import { cn } from '../cn';
 import type { SmartTableProps as SmartTablePropsBase } from './types';
 import { columnLabel, getAlign } from './columnUtils';
 import { buildFooterCells } from './buildFooterCells';
+import { getColumnKindClass, normalizeSmartColumn } from './columnPresets';
 
 const COL_VIS_PANEL_MARGIN = 12;
 const COL_VIS_PANEL_GAP = 6;
@@ -118,6 +119,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   } = props;
   const { t } = useTranslation();
   const dir = useUiDir();
+  const normalizedColumns = useMemo(() => columns.map((col: any) => normalizeSmartColumn(col)), [columns]);
 
   // ── Column Resize ──────────────────────────────────────────────
   const resizingRef = useRef<any>(null);
@@ -240,7 +242,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
   const safePageSize = Math.max(1, pageSize);
   const totalPages   = Math.max(1, Math.ceil(total / safePageSize));
-  const colCount     = columns.length;
+  const colCount     = normalizedColumns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
   const layout       = tableLayout ?? 'fixed';
@@ -255,7 +257,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const showTableHeaderRow = Boolean(
     title || badge || (onSearchChange && showSearchInHeader) || (tableId && !showCards),
   );
-  const hideableCols = columns.filter((c: any) => c.key !== 'actions');
+  const hideableCols = normalizedColumns.filter((c: any) => c.key !== 'actions');
 
   return (
     <div
@@ -426,7 +428,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                 {showRowNumbers && (
                   <th style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36, textAlign: 'center' }}>#</th>
                 )}
-                {columns.map((col: any) => {
+                {normalizedColumns.map((col: any) => {
                   const isHidden = hiddenCols.has(col.key);
                   if (isHidden) {
                     return <th key={col.key} aria-hidden="true" style={{ width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' }} />;
@@ -447,6 +449,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                       key={col.key}
                       className={cn(
                         col.cellClassName,
+                        getColumnKindClass(col),
                         col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
                         col.numeric ? 'noorix-numeric-cell' : '',
                         shrink ? 'noorix-th-shrink' : '',
@@ -463,6 +466,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         whiteSpace: shrink || col.key === 'actions' ? 'nowrap' : 'normal',
                         overflow: resizableCol ? 'hidden' : undefined,
                       }}
+                      data-column-kind={col.kind}
                       aria-sort={col.sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                       onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
                     >
@@ -507,7 +511,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                       {(page - 1) * safePageSize + i + 1}
                     </td>
                   )}
-                  {columns.map((col: any) => {
+                  {normalizedColumns.map((col: any) => {
                     if (hiddenCols.has(col.key)) {
                       return <td key={col.key} aria-hidden="true" style={{ width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' }} />;
                     }
@@ -523,6 +527,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         key={col.key}
                         className={cn(
                           col.cellClassName,
+                          getColumnKindClass(col),
                           col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
                           col.numeric ? 'noorix-numeric-cell' : '',
                           shrink ? 'noorix-td-shrink' : '',
@@ -538,6 +543,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                           maxWidth: col.maxWidth,
                           whiteSpace: shrink ? 'nowrap' : undefined,
                         }}
+                        data-column-kind={col.kind}
                       >
                         {col.render ? col.render(value, row, i) : (value ?? '—')}
                       </td>
@@ -558,7 +564,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
               <tfoot>
                 <tr>
                   {footerRow
-                    ? buildFooterCells({ footerRow, columns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad })
+                    ? buildFooterCells({ footerRow, columns: normalizedColumns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad })
                     : footerCells}
                 </tr>
               </tfoot>
