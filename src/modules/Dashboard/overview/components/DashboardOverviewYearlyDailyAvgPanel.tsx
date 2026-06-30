@@ -1,11 +1,7 @@
-/**
- * المعدل اليومي لكل شهر — جدول بحدود يتسع داخل الكرت (نِسَب أعمدة ثابتة، بدون قصّ RTL).
- */
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { FmtNum, MetricCard } from '../../../../ui';
+import { FmtNum } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
-import { KPI_CARD_SPARKLINE_COLORS } from '../../../../constants/kpiCardTheme';
 import type { YearMonthlyDailyAvgRow } from '../utils/dashboardOverviewBuilders';
 
 type Props = {
@@ -14,7 +10,6 @@ type Props = {
   selectedMonth: number | null;
 };
 
-/** شهر | مبيعات | معدل | تغيّر */
 const COL_MONTH = '22%';
 const COL_SALES = '28%';
 const COL_AVG = '32%';
@@ -83,25 +78,19 @@ function AvgHeader({ t }: { t: (key: string) => string }) {
   );
 }
 
-function SalesCell({ row }: { row: YearMonthlyDailyAvgRow }) {
-  if (row.totalSales == null) {
-    return <span className="font-semibold text-noorix-muted">—</span>;
+function MoneyValue({
+  value,
+  className,
+}: {
+  value: number | null;
+  className?: string;
+}) {
+  if (value == null) {
+    return <span className="font-semibold text-noorix-muted">-</span>;
   }
   return (
     <span dir="ltr" className="inline-flex max-w-full items-baseline justify-center gap-0.5 whitespace-nowrap nx-font-numbers">
-      <FmtNum n={row.totalSales} className="font-bold text-noorix-text" />
-      <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
-    </span>
-  );
-}
-
-function AvgCell({ row }: { row: YearMonthlyDailyAvgRow }) {
-  if (row.avgDaily == null) {
-    return <span className="font-semibold text-noorix-muted">—</span>;
-  }
-  return (
-    <span dir="ltr" className="inline-flex max-w-full items-baseline justify-center gap-0.5 whitespace-nowrap nx-font-numbers">
-      <FmtNum n={row.avgDaily} className={cn('font-bold', valueToneClass(row.tone, true))} />
+      <FmtNum n={value} className={cn('font-bold', className)} />
       <span className="nx-sar text-[8px] text-noorix-muted">SR</span>
     </span>
   );
@@ -109,13 +98,13 @@ function AvgCell({ row }: { row: YearMonthlyDailyAvgRow }) {
 
 function DeltaCell({ row }: { row: YearMonthlyDailyAvgRow }) {
   if (row.deltaPctVsPrev == null) {
-    return <span className="font-semibold text-noorix-muted nx-font-numbers">—</span>;
+    return <span className="font-semibold text-noorix-muted nx-font-numbers">-</span>;
   }
   return (
     <span
       dir="ltr"
       className={cn(
-        'font-bold whitespace-nowrap nx-font-numbers tabular-nums',
+        'whitespace-nowrap font-bold tabular-nums nx-font-numbers',
         deltaToneClass(row.deltaPctVsPrev),
       )}
     >
@@ -135,7 +124,7 @@ function YearlyDailyAvgTable({
   t: (key: string) => string;
 }) {
   return (
-    <div className="w-full min-w-0 rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
+    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
       <table className="w-full table-fixed border-collapse text-[10px]">
         <colgroup>
           <col style={{ width: COL_MONTH }} />
@@ -168,10 +157,13 @@ function YearlyDailyAvgTable({
                   <MonthCell row={row} t={t} />
                 </td>
                 <td className={cn(TD_CELL, 'px-1 text-center')}>
-                  <SalesCell row={row} />
+                  <MoneyValue value={row.totalSales} className="text-noorix-text" />
                 </td>
                 <td className={cn(TD_CELL, 'px-1 text-center')}>
-                  <AvgCell row={row} />
+                  <MoneyValue
+                    value={row.avgDaily}
+                    className={valueToneClass(row.tone, row.avgDaily != null)}
+                  />
                 </td>
                 <td className={cn(TD_CELL, 'px-1 text-center')}>
                   <DeltaCell row={row} />
@@ -190,17 +182,18 @@ export function DashboardOverviewYearlyDailyAvgPanel({ year, rows, selectedMonth
 
   if (rows.length === 0) return null;
 
-  const accentColor = KPI_CARD_SPARKLINE_COLORS.sales;
-
   return (
-    <div className="w-full min-w-0" aria-label={t('dashboardYearlyDailyAvgTitle')}>
-      <MetricCard color={accentColor} className="flex w-full min-w-0 flex-col overflow-hidden">
-        <MetricCard.Header label={`${t('dashboardYearlyDailyAvgTitle')} — ${year}`} />
+    <section className="noorix-surface-card min-w-0 overflow-hidden p-0" aria-label={t('dashboardYearlyDailyAvgTitle')}>
+      <div className="flex flex-wrap items-center gap-2 border-b border-noorix-border bg-noorix-bg-muted/40 px-2 py-2.5 sm:gap-3 sm:px-3 sm:py-3">
+        <span className="h-7 w-1 shrink-0 rounded-full bg-noorix-blue sm:h-8" aria-hidden />
+        <h2 className="m-0 min-w-0 flex-1 text-[12px] font-bold leading-snug text-noorix-text sm:text-[13px]">
+          {t('dashboardYearlyDailyAvgTitle')} - {year}
+        </h2>
+      </div>
 
-        <MetricCard.Section className="min-w-0 px-3 pb-3 pt-0 sm:px-4">
-          <YearlyDailyAvgTable rows={rows} selectedMonth={selectedMonth} t={t} />
-        </MetricCard.Section>
-      </MetricCard>
-    </div>
+      <div className="p-3 sm:p-4">
+        <YearlyDailyAvgTable rows={rows} selectedMonth={selectedMonth} t={t} />
+      </div>
+    </section>
   );
 }

@@ -89,4 +89,28 @@ describe('SmartTable', () => {
     );
     expect(screen.getByText('Page 1/3')).toBeTruthy();
   });
+
+  it('freezes sibling columns while resizing one column', () => {
+    const { container } = render(
+      <SmartTable
+        tableId="resize-test"
+        columns={columns}
+        data={rows}
+        total={2}
+      />,
+    );
+    const nameHeader = container.querySelector('th[data-col-key="name"]') as HTMLTableCellElement;
+    const amountHeader = container.querySelector('th[data-col-key="amount"]') as HTMLTableCellElement;
+    Object.defineProperty(nameHeader, 'offsetWidth', { configurable: true, value: 160 });
+    Object.defineProperty(amountHeader, 'offsetWidth', { configurable: true, value: 120 });
+
+    const handle = nameHeader.querySelector('.nx-col-resize-handle') as HTMLElement;
+    fireEvent.pointerDown(handle, { clientX: 300 });
+    fireEvent.pointerMove(document, { clientX: 260 });
+    fireEvent.pointerUp(document);
+
+    const cols = container.querySelectorAll('col');
+    expect((cols[0] as HTMLTableColElement).style.width).toBe('200px');
+    expect((cols[1] as HTMLTableColElement).style.width).toBe('120px');
+  });
 });

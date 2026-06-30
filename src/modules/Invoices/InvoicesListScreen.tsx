@@ -6,6 +6,7 @@ import { ScreenShell, SmartTable } from '../../ui';
 import { InvoiceEditModal } from './components/InvoiceEditModal';
 import ImportExportModal from '../../components/ImportExportModal';
 import DayCloseReportModal from './components/DayCloseReportModal';
+import { InvoicesCashReportModal } from './components/InvoicesCashReportModal';
 import { InvoiceViewModal } from './components/InvoiceViewModal';
 import { InvoicesListExecutiveCards } from './components/InvoicesListExecutiveCards';
 import { InvoicesListFiltersToolbar } from './components/InvoicesListFiltersToolbar';
@@ -50,6 +51,23 @@ export default function InvoicesListScreen() {
           onClose={() => s.setDayCloseOpen(false)}
           defaultDateYmd={s.dayCloseDefaultYmd}
           compact
+        />
+      )}
+      {s.cashReportOpen && (
+        <InvoicesCashReportModal
+          companyId={s.companyId}
+          isOpen={s.cashReportOpen}
+          onClose={() => s.setCashReportOpen(false)}
+          invoiceQueryStartDate={s.invoiceQueryStartDate}
+          invoiceQueryEndDate={s.invoiceQueryEndDate}
+          dateFilterLabel={s.dateFilterLabel}
+          fromUrl={s.fromUrl}
+          toUrl={s.toUrl}
+          vaultsList={s.vaultsList}
+          companyName={s.companyName}
+          lang={s.lang}
+          t={s.t}
+          fmt={s.fmt}
         />
       )}
       <ImportExportModal

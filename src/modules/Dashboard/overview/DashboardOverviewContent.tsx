@@ -26,7 +26,7 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         kpiInsightFooters={m.kpiInsightFooters}
       />
 
-      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-start lg:gap-5">
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-5">
         <DashboardOverviewWeeklySalesPanel
           weeklyYearOptions={m.weeklyYearOptions}
           weeklyMonthOptions={m.weeklyMonthOptions}

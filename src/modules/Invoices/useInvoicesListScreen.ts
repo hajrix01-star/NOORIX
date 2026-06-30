@@ -75,6 +75,7 @@ export function useInvoicesListScreen() {
   const [sortDir, setSortDir] = useState('desc');
   const [showImportExport, setShowImportExport] = useState(false);
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
+  const [cashReportOpen, setCashReportOpen] = useState(false);
   const qInit = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : '';
   const [searchText, setSearchText] = useState(qInit);
   const debouncedQ = useDebouncedValue((searchText || '').trim(), 300);
@@ -270,7 +271,7 @@ export function useInvoicesListScreen() {
   const serverInflow = sums.inflow;
   const serverOutflow = sums.outflow;
 
-  const { handleExportExcel, handlePrintCashReport, handlePrintInvoices } = useInvoicesListActions({
+  const { handleExportExcel, handlePrintInvoices } = useInvoicesListActions({
     companyId,
     displayedTotal,
     invoiceQueryStartDate,
@@ -301,6 +302,10 @@ export function useInvoicesListScreen() {
     vaultsList,
     serverAll,
   });
+
+  const handlePrintCashReport = useCallback(() => {
+    setCashReportOpen(true);
+  }, []);
 
   const vaultRowLabel = useCallback(
     (row: any) => {
@@ -419,6 +424,8 @@ export function useInvoicesListScreen() {
     dayCloseDefaultYmd,
     dayCloseOpen,
     setDayCloseOpen,
+    cashReportOpen,
+    setCashReportOpen,
     showImportExport,
     setShowImportExport,
     importExportExportFetcher,
@@ -466,5 +473,11 @@ export function useInvoicesListScreen() {
     PAGE_SIZE,
     invoicesViewExecSummary,
     canFilterSaleInvoices,
+    invoiceQueryStartDate,
+    invoiceQueryEndDate,
+    dateFilterLabel: dateFilter.label,
+    fromUrl,
+    toUrl,
+    companyName,
   };
 }
