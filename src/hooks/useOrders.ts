@@ -1,5 +1,6 @@
 import { useApiMutation } from './useApiMutation';
-import { useApiListQuery, useApiQuery, useApiQueryOr } from './useApiQuery';
+import { useMemo } from 'react';
+import { useApiListQuery, useApiQueries, useApiQuery, useApiQueryOr } from './useApiQuery';
 import {
   getOrders,
   createOrder,
@@ -35,6 +36,7 @@ import {
   bulkSetProductSections,
 } from '../services/api';
 import { orderKeys } from '../services/queryKeys';
+import { listYearMonthsInRange } from '../utils/datePeriod';
 
 export function useOrders(companyId: any, year: any, month: any) {
   return useApiListQuery<any>({
@@ -43,6 +45,52 @@ export function useOrders(companyId: any, year: any, month: any) {
     fallbackMessage: 'Failed to load orders',
     enabled: !!companyId && !!year && !!month,
   });
+}
+
+function mergeOrderItemsReports(reports: any[][]) {
+  const byKey = new Map<string, any>();
+  for (const report of reports) {
+    for (const row of report ?? []) {
+      const key = [
+        row.productId ?? row.id ?? row.productNameAr ?? row.productNameEn ?? '',
+        row.categoryId ?? row.categoryNameAr ?? row.categoryNameEn ?? '',
+        row.unit ?? '',
+      ].join('|');
+      const current = byKey.get(key);
+      if (!current) {
+        byKey.set(key, { ...row });
+        continue;
+      }
+      current.quantity = Number(current.quantity ?? 0) + Number(row.quantity ?? 0);
+      current.amount = Number(current.amount ?? 0) + Number(row.amount ?? 0);
+      current.orderCount = Number(current.orderCount ?? 0) + Number(row.orderCount ?? 0);
+    }
+  }
+  return Array.from(byKey.values());
+}
+
+export function useOrdersRange(companyId: any, startDate: string, endDate: string) {
+  const months = useMemo(() => listYearMonthsInRange(startDate, endDate), [startDate, endDate]);
+  const results = useApiQueries({
+    queries: months.map(({ year, month }) => ({
+      queryKey: orderKeys.list(companyId, year, month),
+      queryFn: () => getOrders(companyId, year, month),
+      fallbackMessage: 'Failed to load orders',
+      enabled: !!companyId && months.length > 0,
+    })),
+  });
+
+  const data = useMemo(
+    () => results.flatMap((result) => (Array.isArray(result.data) ? result.data : [])),
+    [results],
+  );
+
+  return {
+    data,
+    isLoading: results.some((result) => result.isLoading),
+    isFetching: results.some((result) => result.isFetching),
+    error: results.find((result) => result.error)?.error as Error | null | undefined,
+  };
 }
 
 export function useCreateOrderMutation(companyId?: string) {
@@ -130,6 +178,29 @@ export function useOrdersItemsReport(companyId: any, year: any, month: any) {
     fallbackMessage: 'Failed to load orders items report',
     enabled: !!companyId && !!year && !!month,
   });
+}
+
+export function useOrdersItemsReportRange(companyId: any, startDate: string, endDate: string) {
+  const months = useMemo(() => listYearMonthsInRange(startDate, endDate), [startDate, endDate]);
+  const results = useApiQueries({
+    queries: months.map(({ year, month }) => ({
+      queryKey: orderKeys.itemsReport(companyId, year, month),
+      queryFn: () => getOrdersItemsReport(companyId, year, month),
+      fallbackMessage: 'Failed to load orders items report',
+      enabled: !!companyId && months.length > 0,
+    })),
+  });
+
+  const data = useMemo(
+    () => mergeOrderItemsReports(results.map((result) => (Array.isArray(result.data) ? result.data : []))),
+    [results],
+  );
+
+  return {
+    data,
+    isLoading: results.some((result) => result.isLoading),
+    error: results.find((result) => result.error)?.error as Error | null | undefined,
+  };
 }
 
 export function useCreateOrderProductMutation(companyId: any) {

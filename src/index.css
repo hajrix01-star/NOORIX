@@ -2826,185 +2826,190 @@ input:focus, select:focus, textarea:focus {
   padding-inline-end: 14px !important;
 }
 
-/* ========== DateFilterBar ========== */
 .noorix-date-filter-bar {
+  position: relative;
+  padding: 0;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  width: auto;
+}
+.ndfb-trigger {
   display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 10px;
+  min-height: 42px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 7px 12px;
   border-radius: 12px;
+  border: 1px solid var(--noorix-border);
   background: var(--noorix-bg-surface);
-  border: 1px solid var(--noorix-border);
-  box-shadow: var(--noorix-shadow);
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 100%;
-  width: max-content;
-  box-sizing: border-box;
+  color: var(--noorix-text);
+  box-shadow: var(--noorix-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
+  cursor: pointer;
+  transition: border-color 140ms, box-shadow 140ms, background 140ms;
 }
-
-/* مجموعة أزرار الوضع */
-.ndfb-mode-group {
+.ndfb-trigger:hover,
+.ndfb-trigger--open {
+  border-color: var(--noorix-accent-blue);
+  box-shadow: 0 0 0 3px var(--noorix-blue-10);
+}
+.ndfb-trigger__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--noorix-blue-8);
+  color: var(--noorix-accent-blue);
+  font-size: 15px;
+  flex: 0 0 auto;
+}
+.ndfb-trigger__text {
   display: flex;
-  border-radius: 8px;
-  border: 1px solid var(--noorix-border);
-  overflow: hidden;
-  flex-shrink: 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
 }
-.ndfb-mode-btn {
-  padding: 6px 14px;
-  border: none !important;
-  background: transparent;
+[dir="rtl"] .ndfb-trigger__text {
+  align-items: flex-end;
+}
+.ndfb-trigger__eyebrow {
+  color: var(--noorix-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+.ndfb-trigger__label {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.ndfb-trigger__chevron {
   color: var(--noorix-text-muted);
   font-size: 13px;
-  font-family: var(--noorix-font-primary);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 130ms, color 130ms;
-  white-space: nowrap;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  margin: 0 !important;
-  min-height: 34px;
+  flex: 0 0 auto;
 }
-.ndfb-mode-btn:hover { background: var(--noorix-bg-muted); color: var(--noorix-text); }
-.ndfb-mode-btn--active {
+.ndfb-popover {
+  position: absolute;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 80;
+  width: min(360px, calc(100vw - 28px));
+  border: 1px solid var(--noorix-border);
+  border-radius: 16px;
+  background: var(--noorix-bg-surface);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+  padding: 12px;
+}
+.ndfb-popover__modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.ndfb-popover .ndfb-mode-btn {
+  min-height: 34px;
+  border-radius: 9px !important;
+  border: 1px solid transparent !important;
+  padding: 6px 7px;
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.ndfb-popover .ndfb-mode-btn--active {
   background: var(--noorix-accent-blue);
   color: #fff;
 }
-.ndfb-mode-btn + .ndfb-mode-btn {
-  border-inline-start: 1px solid var(--noorix-border);
-}
-
-/* حقول الفلتر — السنة والشهر في سطر واحد دائماً */
-.ndfb-fields {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;  /* لا تكسير — يبقى كل شيء في سطر */
-  flex: 0 0 auto;
-  min-width: 0;
-}
-/* السنة + الشهر — LTR داخل الشريط العربي لتفادي تداخل السهم والنص */
-.ndfb-date-selects {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: nowrap;
-  flex: 0 0 auto;
-  flex-shrink: 0;
-  width: fit-content;
-  max-width: fit-content;
-  min-width: 0;
-}
-/* غلاف Input — min-width:0 يمنع تمدد flex حسب أطول option */
-.ndfb-date-selects .ndfb-date-select-field,
-.ndfb-date-selects .nx-input {
-  flex: 0 0 auto;
-  flex-shrink: 0;
-  width: fit-content;
-  max-width: fit-content;
-  min-width: 0;
-  margin: 0;
-}
-/* إلغاء width:100% الافتراضي على المكوّن داخل الشريط */
-.ndfb-fields .nx-input {
-  flex: 0 0 auto;
-  flex-shrink: 0;
-  width: auto;
-  max-width: none;
-  margin: 0;
-}
-.ndfb-fields .nx-input__field--select {
-  min-width: 0;
-  width: auto;
-}
-/* select السنة/الشهر — عرض ثابت (يتجاوز w-full من Input) */
-.ndfb-date-selects select.ndfb-year-select,
-.nx-input__field.ndfb-year-select {
-  width: 4.25rem !important;
-  min-width: 0 !important;
-  max-width: 4.25rem !important;
-  box-sizing: border-box;
-  padding-inline: 0.25rem 1.25rem;
-  flex: 0 0 auto;
-}
-.ndfb-date-selects select.ndfb-year-select.w-full {
-  width: 4.25rem !important;
-  max-width: 4.25rem !important;
-}
-.ndfb-date-selects select.ndfb-month-select.w-full {
-  width: 4.75rem !important;
-  max-width: 4.75rem !important;
-}
-.ndfb-date-selects select.ndfb-month-select,
-.nx-input__field.ndfb-month-select {
-  width: 4.75rem !important;
-  min-width: 0 !important;
-  max-width: 4.75rem !important;
-  box-sizing: border-box;
-  padding-inline: 0.25rem 1.25rem;
-  flex: 0 0 auto;
-}
-@media (min-width: 641px) {
-  .noorix-date-filter-bar .ndfb-date-selects select.ndfb-year-select {
-    width: 4rem !important;
-    max-width: 4rem !important;
-  }
-  .noorix-date-filter-bar .ndfb-date-selects select.ndfb-month-select {
-    width: 4.5rem !important;
-    max-width: 4.5rem !important;
-  }
-}
-/* date input */
-.ndfb-fields .nx-input__field[type="date"] { width: 150px; }
-.ndfb-fields input[type="date"],
-.ndfb-fields select {
-  transition: border-color 130ms;
-}
-.ndfb-fields input[type="date"]:focus,
-.ndfb-fields select:focus {
-  border-color: var(--noorix-accent-blue) !important;
-  box-shadow: 0 0 0 3px var(--noorix-blue-10) !important;
-}
-
-/* شارة النطاق */
-.ndfb-badge {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--noorix-blue-8);
-  border: 1px solid var(--noorix-blue-18);
-  color: var(--noorix-accent-blue);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.ndfb-badge__icon { font-size: 14px; }
-
-/* زر إعادة التعيين */
-.ndfb-reset-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid var(--noorix-border);
-  background: transparent;
-  color: var(--noorix-text-muted);
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 130ms, color 130ms;
-  flex-shrink: 0;
-  margin: 0;
-}
-.ndfb-reset-btn:hover {
+.ndfb-popover__section {
+  border-radius: 13px;
   background: var(--noorix-bg-muted);
+  padding: 10px;
+}
+.ndfb-popover__grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.ndfb-popover__grid-years {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.ndfb-popover__field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--noorix-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.ndfb-popover__field input,
+.ndfb-popover__field select,
+.ndfb-popover__select {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-primary);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 9px;
+  outline: none;
+}
+.ndfb-popover__field input:focus,
+.ndfb-popover__field select:focus {
+  border-color: var(--noorix-accent-blue);
+  box-shadow: 0 0 0 3px var(--noorix-blue-10);
+}
+.ndfb-year-chip {
+  min-height: 38px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 11px;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  font-weight: 800;
+  cursor: pointer;
+}
+.ndfb-year-chip--active {
+  border-color: var(--noorix-accent-blue);
+  background: var(--noorix-blue-8);
   color: var(--noorix-accent-blue);
+}
+.ndfb-popover__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+}
+.ndfb-popover__summary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--noorix-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.noorix-date-filter-bar .ndfb-reset-btn {
+  min-width: 42px;
+  min-height: 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--noorix-bg-surface);
 }
 
 /* صف فيه DateFilterBar + أزرار — لا يوسّع الفلتر بـ space-between */
@@ -3174,18 +3179,13 @@ input:focus, select:focus, textarea:focus {
 
 /* استجابة الجوال */
 @media (max-width: 640px) {
-  .noorix-date-filter-bar { gap: 6px; padding: 8px 10px; flex-wrap: wrap; align-items: center; }
-  .ndfb-mode-group { flex-shrink: 0; }
-  .ndfb-mode-btn { padding: 5px 10px; font-size: 13px; min-height: 40px; }
-  /* الجوال: السنة والشهر يبقيان في سطر واحد */
-  .ndfb-fields { flex-wrap: nowrap; }
-  .ndfb-date-selects select.ndfb-year-select,
-  .nx-input__field.ndfb-year-select  { width: 4.25rem !important; min-width: 0 !important; max-width: 4.25rem !important; }
-  .ndfb-date-selects select.ndfb-month-select,
-  .nx-input__field.ndfb-month-select { width: 4.75rem !important; min-width: 0 !important; max-width: 4.75rem !important; }
-  .ndfb-fields .nx-input__field[type="date"] { width: 140px !important; }
+  .noorix-date-filter-bar { gap: 6px; }
+  .ndfb-trigger { max-width: calc(100vw - 92px); min-height: 40px; }
+  .ndfb-trigger__label { max-width: 170px; }
+  .ndfb-popover { inset-inline: auto 0; width: min(340px, calc(100vw - 24px)); }
+  .ndfb-popover__modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ndfb-popover .ndfb-mode-btn { min-height: 38px; padding: 6px 8px; font-size: 12px; }
   .ndfb-reset-btn { min-width: 40px; min-height: 40px; }
-  .ndfb-badge { flex-shrink: 0; }
 
   /* Summary Bar — stack on mobile */
   .noorix-summary-bar--4,

@@ -89,7 +89,7 @@ export function computeOrdersSummaryForRange({
   const fullMonthStart = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastD = new Date(year, month, 0).getDate();
   const fullMonthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastD).padStart(2, '0')}`;
-  if (sd === fullMonthStart && ed === fullMonthEnd) return summaryFromApi;
+  if (summaryFromApi && sd === fullMonthStart && ed === fullMonthEnd) return summaryFromApi;
 
   const ext = (dateFilteredOrders ?? []).filter((o: any) => o.orderType === 'external');
   const pettyCash = ext.reduce((s: number, o: any) => s + Number(o.pettyCashAmount ?? 0), 0);

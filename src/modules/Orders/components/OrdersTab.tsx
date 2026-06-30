@@ -6,11 +6,10 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
 import {
-  useOrders,
+  useOrdersRange,
   useCreateOrderMutation,
   useUpdateOrderMutation,
   useCancelOrderMutation,
-  useOrdersSummary,
   useOrderProducts,
 } from '../../../hooks/useOrders';
 import { getDailySalesSummaries } from '../../../services/api';
@@ -61,19 +60,18 @@ export function OrdersTab({
   const [orderTypeFilter, setOrderTypeFilter] = useState('all'); // 'all' | 'external' | 'internal'
   const [viewingOrder, setViewingOrder] = useState<any>(null);
 
-  const { data: orders = [], isLoading, error: ordersError } = useOrders(companyId, year, month);
-  const { data: orderCatalog = [] } = useOrderProducts(companyId, 'order');
-  /** طلبات المشتريات — أصناف «طلبات» فقط؛ عند التعديل نُبقي أصناف السطر الحالية حتى لو كانت مبيعات قديماً */
-  const products = useMemo(() => mergeOrderCatalogProducts(orderCatalog, editingOrder), [orderCatalog, editingOrder]);
-  const { data: summaryFromApi = {}, isLoading: summaryLoading } = useOrdersSummary(companyId, year, month);
-  const createOrder = useCreateOrderMutation(companyId);
-  const updateOrder = useUpdateOrderMutation(companyId);
-  const cancelOrder = useCancelOrderMutation(companyId);
-
   const { startDate, endDate } = useMemo(
     () => resolveOrdersDateRange({ year, month, propStartDate, propEndDate }),
     [propStartDate, propEndDate, year, month],
   );
+
+  const { data: orders = [], isLoading, error: ordersError } = useOrdersRange(companyId, startDate, endDate);
+  const { data: orderCatalog = [] } = useOrderProducts(companyId, 'order');
+  /** طلبات المشتريات — أصناف «طلبات» فقط؛ عند التعديل نُبقي أصناف السطر الحالية حتى لو كانت مبيعات قديماً */
+  const products = useMemo(() => mergeOrderCatalogProducts(orderCatalog, editingOrder), [orderCatalog, editingOrder]);
+  const createOrder = useCreateOrderMutation(companyId);
+  const updateOrder = useUpdateOrderMutation(companyId);
+  const cancelOrder = useCancelOrderMutation(companyId);
 
   const { data: salesData } = useApiQuery<any>({
     queryKey: salesKeys.summaries(companyId, startDate, endDate),
@@ -97,14 +95,14 @@ export function OrdersTab({
   const summary = useMemo(
     () =>
       computeOrdersSummaryForRange({
-        summaryFromApi,
+        summaryFromApi: null,
         dateFilteredOrders,
         startDate,
         endDate,
         year,
         month,
       }),
-    [summaryFromApi, dateFilteredOrders, startDate, endDate, year, month],
+    [dateFilteredOrders, startDate, endDate, year, month],
   );
 
   const cumulativeRemainingByOrderId = useMemo(
@@ -399,7 +397,7 @@ export function OrdersTab({
         </div>
       </div>
 
-      <OrdersSummaryCard summary={summary} cashSalesTotal={cashSalesTotal} isLoading={summaryLoading} />
+      <OrdersSummaryCard summary={summary} cashSalesTotal={cashSalesTotal} isLoading={isLoading} />
 
       <SmartTable
         compact={false}

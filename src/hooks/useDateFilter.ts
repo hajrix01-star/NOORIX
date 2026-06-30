@@ -1,75 +1,63 @@
-/**
- * useDateFilter — Hook مركزي لفلترة التواريخ
- * يدعم: شهر / يوم محدد / نطاق تاريخين
- * يستخدم توقيت المملكة (Asia/Riyadh UTC+3)
- */
-import { useState, useMemo, useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { getSaudiNow } from '../utils/saudiDate';
-
-function saudiDayStart(dateStr: any) {
-  return `${dateStr}T00:00:00+03:00`;
-}
-function saudiDayEnd(dateStr: any) {
-  return `${dateStr}T23:59:59+03:00`;
-}
-function ymd(y: any, m: any, d: any) {
-  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-}
-function lastDayOfMonth(year: any, month: any) {
-  return new Date(year, month, 0).getDate();
-}
-
-const MONTH_NAMES_EN = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-function buildLabel(mode: any, selYear: any, selMonth: any, selDay: any, rangeStart: any, rangeEnd: any) {
-  if (mode === 'all')   return '—';
-  if (mode === 'month') return `${MONTH_NAMES_EN[selMonth - 1]} ${selYear}`;
-  if (mode === 'day')   return selDay.split('-').reverse().join('-');
-  const s = (rangeStart || '').split('-').reverse().join('-');
-  const e = (rangeEnd   || '').split('-').reverse().join('-');
-  return `${s} — ${e}`;
-}
+import {
+  buildDatePeriodLabel,
+  resolveDatePeriodRange,
+  ymd,
+  type DatePeriodMode,
+  type DatePeriodState,
+} from '../utils/datePeriod';
 
 export function useDateFilter() {
   const now = getSaudiNow();
 
-  const [mode, setMode] = useState('month');
-  const [selYear,  setSelYear]  = useState(now.year);
+  const [mode, setMode] = useState<DatePeriodMode>('month');
+  const [selYear, setSelYear] = useState(now.year);
   const [selMonth, setSelMonth] = useState(now.month);
-  const [selDay,   setSelDay]   = useState(ymd(now.year, now.month, now.day));
+  const [selDay, setSelDay] = useState(ymd(now.year, now.month, now.day));
   const [rangeStart, setRangeStart] = useState(ymd(now.year, now.month, 1));
-  const [rangeEnd,   setRangeEnd]   = useState(ymd(now.year, now.month, now.day));
+  const [rangeEnd, setRangeEnd] = useState(ymd(now.year, now.month, now.day));
+  const [monthRangeStartYear, setMonthRangeStartYear] = useState(now.year);
+  const [monthRangeStartMonth, setMonthRangeStartMonth] = useState(Math.max(1, now.month - 2));
+  const [monthRangeEndYear, setMonthRangeEndYear] = useState(now.year);
+  const [monthRangeEndMonth, setMonthRangeEndMonth] = useState(now.month);
 
-  const { startDate, endDate } = useMemo(() => {
-    if (mode === 'all') {
-      return {
-        startDate: saudiDayStart('2020-01-01'),
-        endDate:   saudiDayEnd(ymd(now.year + 1, 12, 31)),
-      };
-    }
-    if (mode === 'month') {
-      const last = lastDayOfMonth(selYear, selMonth);
-      return {
-        startDate: saudiDayStart(ymd(selYear, selMonth, 1)),
-        endDate:   saudiDayEnd(ymd(selYear, selMonth, last)),
-      };
-    }
-    if (mode === 'day') {
-      return {
-        startDate: saudiDayStart(selDay),
-        endDate:   saudiDayEnd(selDay),
-      };
-    }
-    const s = rangeStart || ymd(now.year, now.month, 1);
-    const e = rangeEnd   || ymd(now.year, now.month, now.day);
-    return {
-      startDate: saudiDayStart(s <= e ? s : e),
-      endDate:   saudiDayEnd(s <= e ? e : s),
-    };
-  }, [mode, selYear, selMonth, selDay, rangeStart, rangeEnd, now.year, now.month, now.day]);
+  const state: DatePeriodState = useMemo(
+    () => ({
+      mode,
+      selYear,
+      selMonth,
+      selDay,
+      rangeStart,
+      rangeEnd,
+      monthRangeStartYear,
+      monthRangeStartMonth,
+      monthRangeEndYear,
+      monthRangeEndMonth,
+    }),
+    [
+      mode,
+      selYear,
+      selMonth,
+      selDay,
+      rangeStart,
+      rangeEnd,
+      monthRangeStartYear,
+      monthRangeStartMonth,
+      monthRangeEndYear,
+      monthRangeEndMonth,
+    ],
+  );
+
+  const { startDate, endDate } = useMemo(
+    () => resolveDatePeriodRange(state, now),
+    [state, now.year, now.month, now.day],
+  );
+
+  const label = useMemo(
+    () => buildDatePeriodLabel(state, now),
+    [state, now.year, now.month, now.day],
+  );
 
   const reset = useCallback(() => {
     const n = getSaudiNow();
@@ -79,18 +67,37 @@ export function useDateFilter() {
     setSelDay(ymd(n.year, n.month, n.day));
     setRangeStart(ymd(n.year, n.month, 1));
     setRangeEnd(ymd(n.year, n.month, n.day));
+    setMonthRangeStartYear(n.year);
+    setMonthRangeStartMonth(Math.max(1, n.month - 2));
+    setMonthRangeEndYear(n.year);
+    setMonthRangeEndMonth(n.month);
   }, []);
 
   return {
-    mode, setMode,
-    selYear, setSelYear,
-    selMonth, setSelMonth,
-    selDay, setSelDay,
-    rangeStart, setRangeStart,
-    rangeEnd, setRangeEnd,
+    mode,
+    setMode,
+    selYear,
+    setSelYear,
+    selMonth,
+    setSelMonth,
+    selDay,
+    setSelDay,
+    rangeStart,
+    setRangeStart,
+    rangeEnd,
+    setRangeEnd,
+    monthRangeStartYear,
+    setMonthRangeStartYear,
+    monthRangeStartMonth,
+    setMonthRangeStartMonth,
+    monthRangeEndYear,
+    setMonthRangeEndYear,
+    monthRangeEndMonth,
+    setMonthRangeEndMonth,
     startDate,
     endDate,
+    label,
     reset,
-    label: buildLabel(mode, selYear, selMonth, selDay, rangeStart, rangeEnd),
+    state,
   };
 }

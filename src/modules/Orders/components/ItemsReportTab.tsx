@@ -5,7 +5,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
-import { useOrdersItemsReport, useProductPurchaseHistory, useCategoryPurchaseHistory } from '../../../hooks/useOrders';
+import { useOrdersItemsReportRange, useProductPurchaseHistory, useCategoryPurchaseHistory } from '../../../hooks/useOrders';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
@@ -107,8 +107,8 @@ export function ItemsReportTab({
   companyId,
   year,
   month,
-  startDate: _propStartDate,
-  endDate: _propEndDate,
+  startDate: propStartDate,
+  endDate: propEndDate,
   dateFilter,
 }: {
   companyId: any;
@@ -124,7 +124,9 @@ export function ItemsReportTab({
   const [filterCount, setFilterCount] = useState(10);
   const [historyModal, setHistoryModal] = useState<any>(null); // { product } or { category }
 
-  const { data: report = [], isLoading } = useOrdersItemsReport(companyId, year, month);
+  const startDate = propStartDate || `${year}-${String(month).padStart(2, '0')}-01`;
+  const endDate = propEndDate || `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+  const { data: report = [], isLoading } = useOrdersItemsReportRange(companyId, startDate, endDate);
 
   const filtered = useMemo(() => {
     if (filterMode === 'all') return report;
