@@ -121,7 +121,6 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
   // ── Column Resize ──────────────────────────────────────────────
   const resizingRef = useRef<any>(null);
-  const tableRef = useRef<HTMLTableElement | null>(null);
   const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
     if (!tableId) return {};
     try {
@@ -134,17 +133,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     e.preventDefault();
     e.stopPropagation();
     const dirMult = dir === 'rtl' ? -1 : 1;
-    const measured: Record<string, number> = {};
-    tableRef.current?.querySelectorAll<HTMLTableCellElement>('thead th[data-col-key]').forEach((th) => {
-      const key = th.dataset.colKey;
-      if (!key) return;
-      measured[key] = Math.max(40, Math.round(th.offsetWidth));
-    });
-    const measuredStartW = measured[colKey] ?? startW;
-    resizingRef.current = { colKey, startX: e.clientX, startW: measuredStartW };
-    if (Object.keys(measured).length > 0) {
-      setColWidths((prev: any) => ({ ...measured, ...prev, [colKey]: measuredStartW }));
-    }
+    resizingRef.current = { colKey, startX: e.clientX, startW };
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
 
@@ -258,17 +247,6 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const minW         = tableMinWidth === 0 || tableMinWidth === ''
     ? undefined
     : (tableMinWidth != null ? tableMinWidth : (isWideTable ? 1100 : undefined));
-  const visibleColumns = columns.filter((col: any) => !hiddenCols.has(col.key));
-  const sizedColumnEntries = visibleColumns
-    .map((col: any) => [col.key, colWidths[col.key]] as const)
-    .filter((entry): entry is readonly [string, number] => typeof entry[1] === 'number' && Number.isFinite(entry[1]));
-  const hasSizedColumns = sizedColumnEntries.length > 0;
-  const sizedColumnsTotalWidth = hasSizedColumns
-    ? sizedColumnEntries.reduce((sum, [, width]) => sum + width, showRowNumbers ? Number(rowNumberWidth || 36) : 0)
-    : 0;
-  const tablePixelWidth = hasSizedColumns
-    ? Math.max(sizedColumnsTotalWidth, typeof minW === 'number' ? minW : 0)
-    : undefined;
   const cellPad      = compact ? { th: '6px 12px', td: '6px 12px' } : { th: '8px 14px', td: '8px 14px' };
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
@@ -440,36 +418,9 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
       {!isLoading && !showCards && !showCompact && (
         <div className="overflow-x-auto noorix-table-scroll-wrapper">
           <table
-            ref={tableRef}
             className="noorix-table w-full"
-            style={{
-              tableLayout: layout,
-              width: tablePixelWidth ? `${tablePixelWidth}px` : undefined,
-              minWidth: tablePixelWidth ? `${tablePixelWidth}px` : minW || undefined,
-              maxWidth: !isWideTable && !tablePixelWidth ? '100%' : undefined,
-            }}
+            style={{ tableLayout: layout, minWidth: minW || undefined, maxWidth: !isWideTable ? '100%' : undefined }}
           >
-            <colgroup>
-              {showRowNumbers && (
-                <col style={{ width: rowNumberWidth || 36 }} />
-              )}
-              {columns.map((col: any) => {
-                const isHidden = hiddenCols.has(col.key);
-                const shrink = col.shrink === true;
-                const effectiveWidth = colWidths[col.key] != null
-                  ? colWidths[col.key]
-                  : (col.width ?? (shrink ? '1%' : undefined));
-                return (
-                  <col
-                    key={col.key}
-                    style={{
-                      width: isHidden ? 0 : effectiveWidth,
-                      minWidth: isHidden ? 0 : col.minWidth,
-                    }}
-                  />
-                );
-              })}
-            </colgroup>
             <thead>
               <tr style={{ textAlign: 'right' }}>
                 {showRowNumbers && (
@@ -494,7 +445,6 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   return (
                     <th
                       key={col.key}
-                      data-col-key={col.key}
                       className={cn(
                         col.cellClassName,
                         col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
