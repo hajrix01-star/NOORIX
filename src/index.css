@@ -2187,6 +2187,274 @@ html[data-card-style="10"] .noorix-stat-card {
   unicode-bidi: embed;
 }
 
+/* Invoices executive summary: balanced cards + separate vault flow strip */
+.nx-invoice-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.nx-invoice-summary__cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.nx-invoice-summary-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--noorix-border);
+  border-radius: var(--noorix-card-radius);
+  background: var(--noorix-bg-surface);
+  box-shadow: var(--noorix-card-shadow);
+}
+.nx-invoice-summary-card__stripe {
+  height: 4px;
+  background: var(--noorix-accent-blue);
+}
+.nx-invoice-summary-card--inbound .nx-invoice-summary-card__stripe {
+  background: var(--color-nx-profit);
+}
+.nx-invoice-summary-card--outbound .nx-invoice-summary-card__stripe {
+  background: var(--color-nx-sales);
+}
+.nx-invoice-summary-card__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(160px, 0.9fr);
+  grid-template-areas:
+    "head metrics"
+    "total metrics"
+    "breakdown metrics";
+  gap: 10px 16px;
+  align-items: center;
+  padding: 14px 16px;
+}
+.nx-invoice-summary-card__head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.nx-invoice-summary-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  color: var(--noorix-accent-blue);
+  background: color-mix(in srgb, var(--noorix-accent-blue) 10%, transparent);
+}
+.nx-invoice-summary-card--inbound .nx-invoice-summary-card__icon {
+  color: var(--color-nx-profit);
+  background: color-mix(in srgb, var(--color-nx-profit) 10%, transparent);
+}
+.nx-invoice-summary-card--outbound .nx-invoice-summary-card__icon {
+  color: var(--color-nx-sales);
+  background: color-mix(in srgb, var(--color-nx-sales) 10%, transparent);
+}
+.nx-invoice-summary-card__title {
+  overflow: hidden;
+  color: var(--noorix-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nx-invoice-summary-card__total {
+  grid-area: total;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  direction: ltr;
+}
+.nx-invoice-summary-card__total-number {
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-numbers);
+  font-size: clamp(22px, 2.4vw, 28px);
+  font-weight: 900;
+  line-height: 1.05;
+}
+.nx-invoice-summary-card__breakdown {
+  grid-area: breakdown;
+  min-width: 0;
+}
+.nx-invoice-summary-card__metrics {
+  grid-area: metrics;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  align-self: stretch;
+  border-inline-start: 1px solid var(--noorix-border);
+}
+.nx-invoice-summary-metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 7px 0 7px 14px;
+  border-bottom: 1px solid var(--noorix-border);
+}
+.nx-invoice-summary-metric:last-child {
+  border-bottom: 0;
+}
+.nx-invoice-summary-metric__label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--noorix-text-muted);
+  font-size: 11px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nx-invoice-summary-metric__value {
+  flex: 0 0 auto;
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-numbers);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.nx-invoice-summary-metric__value--strong {
+  color: var(--noorix-text);
+}
+.nx-invoice-summary-metric__value--amber {
+  color: var(--noorix-accent-amber);
+}
+.nx-invoice-summary-money {
+  direction: ltr;
+  font-family: var(--noorix-font-numbers);
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+.nx-invoice-summary-splits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.nx-invoice-summary-splits .nx-invoice-summary-metric {
+  padding: 7px 10px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--noorix-bg-muted) 62%, var(--noorix-bg-surface));
+}
+.nx-invoice-vault-flow {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--noorix-border);
+  border-radius: var(--noorix-card-radius);
+  background: var(--noorix-bg-surface);
+  box-shadow: var(--noorix-card-shadow);
+}
+.nx-invoice-vault-flow__head {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  border-inline-end: 1px solid var(--noorix-border);
+  padding-inline-end: 12px;
+}
+.nx-invoice-vault-flow__title {
+  color: var(--noorix-text);
+  font-size: 12px;
+  font-weight: 800;
+}
+.nx-invoice-vault-flow__hint {
+  color: var(--noorix-text-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+.nx-invoice-vault-flow__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+.nx-invoice-vault-flow__item {
+  display: grid;
+  grid-template-columns: minmax(62px, 1.1fr) repeat(3, minmax(54px, 0.8fr));
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--noorix-bg-muted) 56%, var(--noorix-bg-surface));
+}
+.nx-invoice-vault-flow__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--noorix-text);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nx-invoice-vault-flow__amount {
+  min-width: 0;
+  overflow: hidden;
+  direction: ltr;
+  font-family: var(--noorix-font-numbers);
+  font-size: 11px;
+  font-weight: 850;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nx-invoice-vault-flow__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px dashed var(--noorix-border);
+  border-radius: 8px;
+  color: var(--noorix-text-muted);
+}
+@media (max-width: 980px) {
+  .nx-invoice-summary__cards {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .nx-invoice-summary-card__body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "head"
+      "total"
+      "breakdown"
+      "metrics";
+  }
+  .nx-invoice-summary-card__metrics {
+    border-inline-start: 0;
+    border-top: 1px solid var(--noorix-border);
+    padding-top: 4px;
+  }
+  .nx-invoice-summary-metric {
+    padding-inline: 0;
+  }
+  .nx-invoice-summary-splits {
+    grid-template-columns: 1fr;
+  }
+  .nx-invoice-vault-flow {
+    grid-template-columns: 1fr;
+  }
+  .nx-invoice-vault-flow__head {
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--noorix-border);
+    padding-inline-end: 0;
+    padding-bottom: 8px;
+  }
+}
+
 /* فلاتر أنيقة */
 .noorix-exec-filters {
   display: flex;
