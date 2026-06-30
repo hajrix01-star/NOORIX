@@ -9,7 +9,7 @@ import { Badge, Button, ScreenShell, FmtNum, KebabMenu, SmartTable } from '../..
 import type { SmartTableColumn } from '../../ui/SmartTable/types';
 import DateFilterBar from '../../shared/components/DateFilterBar';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
-import { SalesEditModal } from './components/SalesEditModal';
+import { SalesDayEditModal } from './components/SalesDayEditModal';
 import { SalesEntryModal } from './components/SalesEntryModal';
 import { DailySalesChannelsChips } from './components/DailySalesChannelsChips';
 import { SalesShiftPicker } from './components/SalesShiftPicker';
@@ -81,13 +81,18 @@ export default function DailySalesScreen() {
 
   const columns = useMemo(() => [
     { key: 'summaryNumber', label: t('summaryNumber'), sortable: true, width: '10%',
-      render: (v: unknown) => <span className="nx-cell-num nx-cell-accent">{v as string | number}</span> },
+      render: (_: unknown, row: DailySalesTableRow) => (
+        <div className="flex flex-col items-start gap-0.5">
+          <span className="nx-cell-num nx-cell-accent">{row.summaryNumbersText || row.summaryNumber}</span>
+          {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
+        </div>
+      ) },
     { key: 'transactionDate', label: t('transactionDate'), sortable: true, width: '10%',
       render: (v: unknown, row: DailySalesTableRow) => (
         <div className="flex flex-col items-start gap-0.5">
           <span className="nx-cell-muted-sm">{formatSaudiDate(v as string)}</span>
           <span className="inline-flex items-center rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
-            {getSalesShiftLabel(row.shift, t)}
+            {row.shiftsText || getSalesShiftLabel(row.shift, t)}
           </span>
         </div>
       ) },
@@ -133,11 +138,11 @@ export default function DailySalesScreen() {
   const renderMobileCard = useCallback((row: DailySalesTableRow) => (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-noorix-blue ltr">#{row.summaryNumber}</span>
+        <span className="text-[14px] font-bold text-noorix-blue ltr">#{row.summaryNumbersText || row.summaryNumber}</span>
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.transactionDate)}</span>
           <span className="rounded-md bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-noorix-muted">
-            {getSalesShiftLabel(row.shift, t)}
+            {row.shiftsText || getSalesShiftLabel(row.shift, t)}
           </span>
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
         </div>
@@ -169,9 +174,9 @@ export default function DailySalesScreen() {
   const renderCompactRow = useCallback((row: DailySalesTableRow) => (
     <div onClick={() => setEditingSummary(row)} style={{ cursor: 'pointer' }}>
       <div className="nx-cr__line1">
-        <span className="nx-cr__id">#{row.summaryNumber}</span>
+        <span className="nx-cr__id">#{row.summaryNumbersText || row.summaryNumber}</span>
         <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>
-        <span className="nx-cr__meta">{getSalesShiftLabel(row.shift, t)}</span>
+        <span className="nx-cr__meta">{row.shiftsText || getSalesShiftLabel(row.shift, t)}</span>
         <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
       </div>
       <div className="nx-cr__line2">
@@ -197,12 +202,11 @@ export default function DailySalesScreen() {
   return (
     <ScreenShell>
       {editingSummary && (
-        <SalesEditModal
-          summary={editingSummary}
+        <SalesDayEditModal
+          day={editingSummary as DailySalesTableRow}
           salesChannels={salesChannels}
           salesChannelsLoading={salesChannelsLoading}
           salesChannelsError={salesChannelsErrorMessage}
-          companyId={companyId}
           vatEnabled={vatEnabled}
           vatRate={vatRate}
           onSaved={handleEditSave}

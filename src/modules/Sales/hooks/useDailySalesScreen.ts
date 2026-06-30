@@ -61,6 +61,9 @@ export type DailySalesTableRow = DailySalesSummary & {
   shift: SalesShiftValue;
   channelsText: string;
   avgPerCustomer: number;
+  summaries: DailySalesSummary[];
+  summaryNumbersText: string;
+  shiftsText: string;
 } & Record<string, unknown>;
 
 export type DailySalesEditBody = {
@@ -268,52 +271,117 @@ export function useDailySalesScreen() {
   }, [companyName, lang, t, vaultById]);
 
   const openWhatsApp = useCallback(async (s: DailySalesSummary) => {
+    const group = (s as DailySalesTableRow).summaries;
+    if (Array.isArray(group) && group.length > 1) {
+      const parts = await Promise.all(group.map(async (item) => {
+        const monthAppShare = companyId
+          ? await fetchMonthAppShare(companyId, item.transactionDate, vaultById)
+          : undefined;
+        return buildWhatsAppText(item, monthAppShare);
+      }));
+      window.open(`https://wa.me/?text=${encodeURIComponent(parts.join('\n\n'))}`, '_blank');
+      return;
+    }
     const monthAppShare = companyId
       ? await fetchMonthAppShare(companyId, s.transactionDate, vaultById)
       : undefined;
     window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(s, monthAppShare))}`, '_blank');
   }, [buildWhatsAppText, companyId, vaultById]);
 
-  async function handleEditSave(body: DailySalesEditBody) {
+  async function handleEditSave(body: DailySalesEditBody | Array<{ id: string; body: DailySalesEditBody }>) {
     if (!editingSummary || !companyId) return;
-    const res = await updateSummary.mutateAsync({
-      id: editingSummary.id,
-      body,
-      companyId,
-    });
-    if (res?.success === false) {
-      throw new Error(res?.error || t('updateFailed'));
+    if (Array.isArray(body)) {
+      for (const item of body) {
+        const res = await updateSummary.mutateAsync({
+          id: item.id,
+          body: item.body,
+          companyId,
+        });
+        if (res?.success === false) {
+          throw new Error(res?.error || t('updateFailed'));
+        }
+      }
+    } else {
+      const targetId = editingSummary.summaries?.length === 1 ? editingSummary.summaries[0].id : editingSummary.id;
+      const res = await updateSummary.mutateAsync({
+        id: targetId,
+        body,
+        companyId,
+      });
+      if (res?.success === false) {
+        throw new Error(res?.error || t('updateFailed'));
+      }
     }
     showToast(t('updateSuccess'), 'success');
     setEditingSummary(null);
   }
 
   const handleDeleteSummary = useCallback((s: DailySalesSummary) => {
-    if (!companyId || !window.confirm(t('deleteSummaryConfirm', s.summaryNumber))) return;
-    deleteSummary.mutate(
-      { id: s.id, companyId },
-      {
-        onSuccess: () => showToast(t('summaryDeleted'), 'success'),
-        onError: (e: Error) => showToast(e?.message || t('deleteFailed'), 'error'),
-      },
-    );
+    if (!companyId) return;
+    const summaries = (s as DailySalesTableRow).summaries?.length ? (s as DailySalesTableRow).summaries : [s];
+    const label = summaries.length > 1
+      ? `${formatSaudiDate(s.transactionDate)} (${summaries.map((x) => x.summaryNumber).filter(Boolean).join(', ')})`
+      : s.summaryNumber;
+    if (!window.confirm(t('deleteSummaryConfirm', label))) return;
+    Promise.all(summaries.map((item) => deleteSummary.mutateAsync({ id: item.id, companyId })))
+      .then(() => showToast(t('summaryDeleted'), 'success'))
+      .catch((e: Error) => showToast(e?.message || t('deleteFailed'), 'error'));
   }, [companyId, deleteSummary, t, showToast]);
 
   const hasCompany = !!companyId;
 
   const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
 
-  const tableData = useMemo((): DailySalesTableRow[] => pagedSummaries.map((s) => {
-    const total = Number(s.totalAmount || 0);
-    const cc = s.customerCount || 0;
-    const channelsText = (s.channels || []).map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
-    return {
-      ...s,
-      shift: resolveSalesSummaryShift(s),
-      channelsText,
-      avgPerCustomer: cc > 0 ? total / cc : 0,
-    };
-  }), [pagedSummaries, lang]);
+  const tableData = useMemo((): DailySalesTableRow[] => {
+    const groups = new Map<string, DailySalesSummary[]>();
+    for (const s of pagedSummaries) {
+      const key = toYmd(s.transactionDate || '');
+      const list = groups.get(key) || [];
+      list.push(s);
+      groups.set(key, list);
+    }
+    const shiftOrder: Record<SalesShiftValue, number> = { morning: 1, evening: 2, all: 3 };
+    return Array.from(groups.entries()).map(([dateKey, summaries]) => {
+      const ordered = [...summaries].sort((a, b) => shiftOrder[resolveSalesSummaryShift(a)] - shiftOrder[resolveSalesSummaryShift(b)]);
+      const total = ordered.reduce((sum, s) => sum + Number(s.totalAmount || 0), 0);
+      const cc = ordered.reduce((sum, s) => sum + (Number(s.customerCount) || 0), 0);
+      const cashOnHand = ordered.reduce((sum, s) => sum + Number(s.cashOnHand || 0), 0);
+      const channelsByVault = new Map<string, DailySalesChannelEntry>();
+      for (const s of ordered) {
+        for (const ch of s.channels || []) {
+          const current = channelsByVault.get(ch.vaultId);
+          channelsByVault.set(ch.vaultId, {
+            ...ch,
+            amount: Number(current?.amount || 0) + Number(ch.amount || 0),
+            vault: ch.vault || current?.vault,
+          });
+        }
+      }
+      const channels = Array.from(channelsByVault.values());
+      const channelsText = channels.map((ch) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount)}`).join(' | ');
+      const shiftsText = ordered.map((s) => getSalesShiftLabel(resolveSalesSummaryShift(s), t)).join(' / ');
+      const summaryNumbersText = ordered.map((s) => s.summaryNumber).filter(Boolean).join(' / ');
+      const hasCancelled = ordered.some((s) => s.status === 'cancelled');
+      const allCancelled = ordered.every((s) => s.status === 'cancelled');
+      return {
+        ...ordered[0],
+        id: `day-${dateKey}`,
+        summaryNumber: summaryNumbersText || ordered[0]?.summaryNumber,
+        summaryNumbersText,
+        transactionDate: dateKey,
+        shift: ordered.length === 1 ? resolveSalesSummaryShift(ordered[0]) : 'all',
+        shiftsText,
+        channels,
+        channelsText,
+        customerCount: cc,
+        cashOnHand,
+        totalAmount: total,
+        avgPerCustomer: cc > 0 ? total / cc : 0,
+        status: allCancelled ? 'cancelled' : hasCancelled ? 'active' : ordered[0]?.status,
+        summaries: ordered,
+      };
+    });
+  }, [pagedSummaries, lang, t]);
 
   const toggleSort = useCallback((key: string) => {
     if (!ALLOWED_SORT.has(key)) return;
