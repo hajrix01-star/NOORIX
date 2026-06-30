@@ -26,6 +26,7 @@ export type AppHeaderProps = {
   activeCompanyId: string;
   setActiveCompany: (id: string) => void;
   showCompanySwitcher?: boolean;
+  appVersionLabel?: string;
 };
 
 export default function AppHeader({
@@ -42,6 +43,7 @@ export default function AppHeader({
   activeCompanyId,
   setActiveCompany,
   showCompanySwitcher = false,
+  appVersionLabel = '',
 }: AppHeaderProps) {
   const { t, lang } = useTranslation();
 
@@ -143,7 +145,14 @@ export default function AppHeader({
               <rect x="1" y="12" width="14" height="1.5" rx="0.75" fill="currentColor"/>
             </svg>
           </Button>
-          <span className="text-[15px] font-extrabold text-noorix-navy tracking-tight hidden sm:block">Noorix</span>
+          <span className="hidden sm:flex items-center gap-1.5">
+            <span className="text-[15px] font-extrabold text-noorix-navy tracking-tight">Noorix</span>
+            {appVersionLabel ? (
+              <span className="rounded-full border border-noorix-border bg-noorix-bg-muted px-1.5 py-0.5 text-[10px] font-black text-noorix-muted ltr">
+                {appVersionLabel}
+              </span>
+            ) : null}
+          </span>
         </div>
 
         {/* ── وسط: مبدّل الشركة ── */}

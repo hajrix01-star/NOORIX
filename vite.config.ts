@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
+import { APP_VERSION_NUMBER } from './src/constants/appVersion';
 
 /** يُستخدم في الواجهة وفي index.html للتحقق من أن النشر يطابق الـ commit */
 const noorixBuildId =
@@ -19,6 +20,7 @@ export default defineConfig({
   },
   define: {
     __BUILD_ID__: JSON.stringify(noorixBuildId),
+    __APP_VERSION__: JSON.stringify(APP_VERSION_NUMBER),
   },
   plugins: [
     {
@@ -28,6 +30,9 @@ export default defineConfig({
         if (!out.includes('name="noorix-build"')) {
           const safe = String(noorixBuildId).replace(/"/g, '');
           out = out.replace('<head>', `<head>\n    <meta name="noorix-build" content="${safe}" />`);
+        }
+        if (!out.includes('name="noorix-version"')) {
+          out = out.replace('<head>', `<head>\n    <meta name="noorix-version" content="${APP_VERSION_NUMBER}" />`);
         }
         if (process.env.VITE_CSP === '0' || /http-equiv="Content-Security-Policy/i.test(out)) {
           return out;

@@ -12,6 +12,7 @@ import Forbidden403 from './components/Forbidden403';
 import NotFound404 from './components/NotFound404';
 import AppSidebar from './components/AppSidebar';
 import AppHeader from './components/AppHeader';
+import { AppUpdateNotice } from './components/AppUpdateNotice';
 import LoadingFallback from './components/LoadingFallback';
 import { prefetchRouteChunk } from './utils/routePrefetch';
 import { canAccessThemePreview } from './utils/themePreviewAccess';
@@ -20,6 +21,7 @@ import { readStoredLanguage, writeStoredLanguage } from './utils/storedLanguage'
 import { appKeys } from './services/queryKeys';
 import { STALE_CHUNK_RELOAD_QUERY } from './utils/staleChunkRecovery';
 import { useDeployVersionGuard } from './hooks/useDeployVersionGuard';
+import { formatAppVersion } from './constants/appVersion';
 
 const DashboardScreen = React.lazy(() => import('./modules/Dashboard/DashboardScreen'));
 const DailySalesScreen = React.lazy(() => import('./modules/Sales/DailySalesScreen'));
@@ -68,7 +70,7 @@ export default function App() {
   const navigate = useNavigate();
   const isLoginPage = location.pathname === '/login';
 
-  useDeployVersionGuard();
+  const deployVersionGuard = useDeployVersionGuard();
 
   // إزالة علامة إعادة التحميل بعد نشر جديد — لا تُبقِها في شريط العنوان
   useEffect(() => {
@@ -373,7 +375,9 @@ export default function App() {
             activeCompanyId={activeCompany}
             setActiveCompany={setActiveCompany}
             showCompanySwitcher={showCompanySwitcher}
+            appVersionLabel={deployVersionGuard.localVersion ? formatAppVersion(deployVersionGuard.localVersion) : ''}
           />
+          <AppUpdateNotice update={deployVersionGuard.update} onRefresh={deployVersionGuard.refreshNow} />
         <main className="app-main__content">
           <React.Suspense fallback={<LoadingFallback />}>
             <PermissionGuard userRole={user?.role} userPermissions={user?.permissions} isUserLoading={isUserLoading}>
