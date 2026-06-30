@@ -27,7 +27,7 @@ export function buildInvoiceListColumns({
       label: t('documentNumber'),
       align: 'center',
       shrink: true,
-      width: '12%',
+      width: '14ch',
       sortable: true,
       render: (v: any, row: any) => {
         const isInbound = row.kind === 'sale';
@@ -48,7 +48,7 @@ export function buildInvoiceListColumns({
       label: t('supplierInvoiceNumber'),
       align: 'center',
       shrink: true,
-      width: '7%',
+      width: '11ch',
       render: (v: any) => (
         <span className="nx-cell-num nx-cell-muted nx-cell-ellipsis" title={v || ''}>
           {v || '—'}
@@ -60,7 +60,7 @@ export function buildInvoiceListColumns({
       kind: 'text',
       label: t('supplier'),
       align: 'center',
-      width: '7%',
+      width: '15ch',
       render: (v: any) => (
         <span className="nx-cell-ellipsis" title={v || ''}>
           {v || '—'}
@@ -72,7 +72,7 @@ export function buildInvoiceListColumns({
       kind: 'text',
       label: t('invoiceUserColumn'),
       align: 'center',
-      width: '8%',
+      width: '14ch',
       render: (v: any) => (
         <span className="nx-cell-ellipsis" title={v || ''}>
           {v || '—'}
@@ -84,7 +84,7 @@ export function buildInvoiceListColumns({
       kind: 'text',
       label: t('invoiceNotesColumn') || 'ملاحظة',
       align: 'center',
-      width: '8%',
+      width: '18ch',
       render: (_: any, row: any) => (
         <span className="nx-cell-ellipsis" title={row.notes || ''}>
           {row.notes || '—'}
@@ -97,7 +97,7 @@ export function buildInvoiceListColumns({
       label: t('type'),
       align: 'center',
       shrink: true,
-      width: '6%',
+      width: '9ch',
       render: (v: any) => <Badge {...Badge.fromStatus(v, KIND_MAP)} size="sm" />,
     },
     {
@@ -105,7 +105,7 @@ export function buildInvoiceListColumns({
       kind: 'text',
       label: t('invoiceVaultColumn'),
       align: 'center',
-      width: '20%',
+      width: '18ch',
       render: (_: any, row: any) => {
         const a = row.vaultAllocations;
         if (a?.length > 0) {
@@ -151,7 +151,7 @@ export function buildInvoiceListColumns({
       align: 'center',
       numeric: true,
       shrink: true,
-      width: '7%',
+      width: '11ch',
       sortable: true,
       render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--green" />,
     },
@@ -162,7 +162,7 @@ export function buildInvoiceListColumns({
       align: 'center',
       numeric: true,
       shrink: true,
-      width: '6%',
+      width: '10ch',
       render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-num--amber" />,
     },
     {
@@ -172,7 +172,7 @@ export function buildInvoiceListColumns({
       align: 'center',
       numeric: true,
       shrink: true,
-      width: '7%',
+      width: '11ch',
       sortable: true,
       render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" />,
     },
@@ -183,7 +183,7 @@ export function buildInvoiceListColumns({
       align: 'center',
       sortable: true,
       shrink: true,
-      width: '7%',
+      width: '11ch',
       render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDateISO(v)}</span>,
     },
     {
@@ -192,7 +192,7 @@ export function buildInvoiceListColumns({
       label: t('statusLabel'),
       align: 'center',
       shrink: true,
-      width: '6%',
+      width: '9ch',
       render: (v: any) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" />,
     },
     {
@@ -200,7 +200,7 @@ export function buildInvoiceListColumns({
       kind: 'actions',
       label: t('actions'),
       align: 'center',
-      width: '5%',
+      width: '48px',
       shrink: true,
       render: (_: any, row: any) => (
         <InvoiceActionsCell
