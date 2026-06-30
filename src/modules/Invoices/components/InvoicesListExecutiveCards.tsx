@@ -78,6 +78,66 @@ function OutboundIcon() {
   );
 }
 
+function VaultIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <path d="M3 10h18" />
+      <path d="M5 10V8l7-4 7 4v2" />
+      <path d="M6 10v8M10 10v8M14 10v8M18 10v8" />
+      <path d="M4 18h16" />
+    </svg>
+  );
+}
+
+function VaultFlowCard({ t, inflowByVault, vaultRowLabel }: any) {
+  return (
+    <section className="nx-invoice-summary-card nx-invoice-summary-card--vault">
+      <div className="nx-invoice-summary-card__stripe" />
+      <div className="nx-invoice-summary-card__body nx-invoice-summary-card__body--vault">
+        <div className="nx-invoice-summary-card__head">
+          <div className="nx-invoice-summary-card__icon"><VaultIcon /></div>
+          <div className="min-w-0">
+            <div className="nx-invoice-summary-card__title">{t('invoicesVaultChannelFlowTitle')}</div>
+            <div className="nx-invoice-summary-card__subtitle">
+              {t('invoicesVaultFlowInAbbr')} / {t('invoicesVaultFlowOutAbbr')} / {t('invoicesVaultFlowRemainAbbr')}
+            </div>
+          </div>
+        </div>
+
+        <div className="nx-invoice-vault-flow__grid">
+          {!inflowByVault?.length ? (
+            <div className="nx-invoice-vault-flow__empty">—</div>
+          ) : (
+            inflowByVault.map((row: any) => {
+              const outNum = Number(row.outflow ?? 0);
+              const remNum = Number(row.remainder ?? 0);
+              return (
+                <div key={row.vaultId} className="nx-invoice-vault-flow__item">
+                  <span className="nx-invoice-vault-flow__name">{vaultRowLabel(row)}</span>
+                  <span className="nx-invoice-vault-flow__amount text-nx-profit">
+                    <FmtNum n={Number(row.total)} /> <span className="nx-sar">SR</span>
+                  </span>
+                  <span className="nx-invoice-vault-flow__amount text-nx-expenses">
+                    <FmtNum n={outNum} /> <span className="nx-sar">SR</span>
+                  </span>
+                  <span
+                    className={cn(
+                      'nx-invoice-vault-flow__amount',
+                      remNum > 0 ? 'text-nx-profit' : remNum < 0 ? 'text-nx-expenses' : 'text-noorix-muted',
+                    )}
+                  >
+                    <FmtNum n={remNum} /> <span className="nx-sar">SR</span>
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /**
  * Executive invoices summary: two balanced financial cards plus a separate vault movement strip.
  */
@@ -130,45 +190,8 @@ export function InvoicesListExecutiveCards({
             <SummaryMetric label={t('invoicesCardNonPurchaseOutflow')} value={<Money value={outflowSummary.expensesTotal} className="text-nx-expenses" />} />
           </div>
         </SummaryCard>
-      </div>
 
-      <div className="nx-invoice-vault-flow">
-        <div className="nx-invoice-vault-flow__head">
-          <span className="nx-invoice-vault-flow__title">{t('invoicesVaultChannelFlowTitle')}</span>
-          <span className="nx-invoice-vault-flow__hint">
-            {t('invoicesVaultFlowInAbbr')} / {t('invoicesVaultFlowOutAbbr')} / {t('invoicesVaultFlowRemainAbbr')}
-          </span>
-        </div>
-
-        <div className="nx-invoice-vault-flow__grid">
-          {!inflowByVault?.length ? (
-            <div className="nx-invoice-vault-flow__empty">—</div>
-          ) : (
-            inflowByVault.map((row: any) => {
-              const outNum = Number(row.outflow ?? 0);
-              const remNum = Number(row.remainder ?? 0);
-              return (
-                <div key={row.vaultId} className="nx-invoice-vault-flow__item">
-                  <span className="nx-invoice-vault-flow__name">{vaultRowLabel(row)}</span>
-                  <span className="nx-invoice-vault-flow__amount text-nx-profit">
-                    <FmtNum n={Number(row.total)} /> <span className="nx-sar">SR</span>
-                  </span>
-                  <span className="nx-invoice-vault-flow__amount text-nx-expenses">
-                    <FmtNum n={outNum} /> <span className="nx-sar">SR</span>
-                  </span>
-                  <span
-                    className={cn(
-                      'nx-invoice-vault-flow__amount',
-                      remNum > 0 ? 'text-nx-profit' : remNum < 0 ? 'text-nx-expenses' : 'text-noorix-muted',
-                    )}
-                  >
-                    <FmtNum n={remNum} /> <span className="nx-sar">SR</span>
-                  </span>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <VaultFlowCard t={t} inflowByVault={inflowByVault} vaultRowLabel={vaultRowLabel} />
       </div>
     </section>
   );

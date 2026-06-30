@@ -2195,7 +2195,7 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 .nx-invoice-summary__cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 .nx-invoice-summary-card {
@@ -2217,6 +2217,9 @@ html[data-card-style="10"] .noorix-stat-card {
 .nx-invoice-summary-card--outbound .nx-invoice-summary-card__stripe {
   background: var(--color-nx-sales);
 }
+.nx-invoice-summary-card--vault .nx-invoice-summary-card__stripe {
+  background: var(--noorix-accent-blue);
+}
 .nx-invoice-summary-card__body {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(160px, 0.9fr);
@@ -2227,6 +2230,13 @@ html[data-card-style="10"] .noorix-stat-card {
   gap: 10px 16px;
   align-items: center;
   padding: 14px 16px;
+}
+.nx-invoice-summary-card__body--vault {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  height: 100%;
 }
 .nx-invoice-summary-card__head {
   grid-area: head;
@@ -2254,6 +2264,10 @@ html[data-card-style="10"] .noorix-stat-card {
   color: var(--color-nx-sales);
   background: color-mix(in srgb, var(--color-nx-sales) 10%, transparent);
 }
+.nx-invoice-summary-card--vault .nx-invoice-summary-card__icon {
+  color: var(--noorix-accent-blue);
+  background: color-mix(in srgb, var(--noorix-accent-blue) 10%, transparent);
+}
 .nx-invoice-summary-card__title {
   overflow: hidden;
   color: var(--noorix-text-muted);
@@ -2261,6 +2275,13 @@ html[data-card-style="10"] .noorix-stat-card {
   font-weight: 800;
   letter-spacing: 0.03em;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nx-invoice-summary-card__subtitle {
+  margin-top: 2px;
+  color: var(--noorix-text-muted);
+  font-size: 10px;
+  font-weight: 650;
   white-space: nowrap;
 }
 .nx-invoice-summary-card__total {
@@ -2342,50 +2363,19 @@ html[data-card-style="10"] .noorix-stat-card {
   border-radius: 8px;
   background: color-mix(in srgb, var(--noorix-bg-muted) 62%, var(--noorix-bg-surface));
 }
-.nx-invoice-vault-flow {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 12px;
-  align-items: stretch;
-  min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--noorix-border);
-  border-radius: var(--noorix-card-radius);
-  background: var(--noorix-bg-surface);
-  box-shadow: var(--noorix-card-shadow);
-}
-.nx-invoice-vault-flow__head {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
-  min-width: 0;
-  border-inline-end: 1px solid var(--noorix-border);
-  padding-inline-end: 12px;
-}
-.nx-invoice-vault-flow__title {
-  color: var(--noorix-text);
-  font-size: 12px;
-  font-weight: 800;
-}
-.nx-invoice-vault-flow__hint {
-  color: var(--noorix-text-muted);
-  font-size: 10px;
-  font-weight: 650;
-}
 .nx-invoice-vault-flow__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 8px;
+  grid-template-columns: 1fr;
+  gap: 7px;
   min-width: 0;
 }
 .nx-invoice-vault-flow__item {
   display: grid;
-  grid-template-columns: minmax(62px, 1.1fr) repeat(3, minmax(54px, 0.8fr));
-  gap: 8px;
+  grid-template-columns: minmax(46px, 0.8fr) repeat(3, minmax(50px, 1fr));
+  gap: 6px;
   align-items: center;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border: 1px solid var(--noorix-border);
   border-radius: 8px;
   background: color-mix(in srgb, var(--noorix-bg-muted) 56%, var(--noorix-bg-surface));
@@ -2443,15 +2433,6 @@ html[data-card-style="10"] .noorix-stat-card {
   }
   .nx-invoice-summary-splits {
     grid-template-columns: 1fr;
-  }
-  .nx-invoice-vault-flow {
-    grid-template-columns: 1fr;
-  }
-  .nx-invoice-vault-flow__head {
-    border-inline-end: 0;
-    border-bottom: 1px solid var(--noorix-border);
-    padding-inline-end: 0;
-    padding-bottom: 8px;
   }
 }
 
