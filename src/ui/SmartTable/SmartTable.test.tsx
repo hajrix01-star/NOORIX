@@ -98,6 +98,15 @@ describe('SmartTable', () => {
     expect(container.querySelector('td[data-column-kind="money"]')).toBeTruthy();
   });
 
+  it('keeps truncation classes display-safe on table cells', () => {
+    const { container } = render(<SmartTable columns={columns} data={rows} total={2} />);
+
+    expect(container.querySelector('th.noorix-cell-truncate')).toBeNull();
+    expect(container.querySelector('td.noorix-cell-truncate')).toBeNull();
+    expect(container.querySelector('th.noorix-table-cell-truncate')).toBeTruthy();
+    expect(container.querySelector('td.noorix-table-cell-truncate')).toBeTruthy();
+  });
+
   it('removes hidden columns from the rendered table layout', () => {
     localStorage.setItem('nx-col-vis:hidden-layout-test', JSON.stringify(['amount']));
     const { container } = render(

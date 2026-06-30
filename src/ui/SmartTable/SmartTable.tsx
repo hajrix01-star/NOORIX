@@ -434,7 +434,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   const isSorted = sortKey === col.key;
                   const shrink = col.shrink === true;
                   const actionSticky = col.key === 'actions' && stickyActionColumn;
-                  // noorix-cell-truncate adds white-space:nowrap which expands cells in auto layout
+                  // Keep truncation on table cells display-safe; inner ellipsis spans can be block.
                   // only apply it in fixed layout (where width is enforced) or when col.maxWidth bounds it
                   const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
                   const resizableCol = tableId && col.key !== 'actions';
@@ -450,7 +450,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
                         col.numeric ? 'noorix-numeric-cell' : '',
                         shrink ? 'noorix-th-shrink' : '',
-                        shouldTruncate ? 'noorix-cell-truncate' : '',
+                        shouldTruncate ? 'noorix-table-cell-truncate' : '',
                       )}
                       style={{
                         padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: align as React.CSSProperties['textAlign'],
@@ -525,7 +525,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                           col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
                           col.numeric ? 'noorix-numeric-cell' : '',
                           shrink ? 'noorix-td-shrink' : '',
-                          shouldTruncate ? 'noorix-cell-truncate' : '',
+                          shouldTruncate ? 'noorix-table-cell-truncate' : '',
                         )}
                         style={{
                           padding: cellPad.td,

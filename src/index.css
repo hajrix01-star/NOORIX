@@ -4785,8 +4785,18 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   padding-inline: 8px !important;
 }
 .noorix-table .nx-cell-ellipsis,
-.noorix-table .noorix-cell-truncate {
+.noorix-table .noorix-cell-truncate:not(th):not(td) {
   display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+.noorix-table th.noorix-table-cell-truncate,
+.noorix-table td.noorix-table-cell-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.noorix-table th.noorix-table-cell-truncate > *,
+.noorix-table td.noorix-table-cell-truncate > * {
   min-width: 0;
   max-width: 100%;
 }
