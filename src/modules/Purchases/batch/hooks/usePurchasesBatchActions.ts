@@ -1,5 +1,9 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  buildPurchaseBatchIdempotencyKey,
+  normalizePurchaseBatchLine,
+} from '@noorix/finance-core';
 import { useApiMutation } from '../../../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../../../utils/queryInvalidation';
 import { useToast } from '../../../../context/ToastContext';
@@ -100,7 +104,13 @@ export function usePurchasesBatchActions(options: {
       const batchPart = batchNotes.trim();
       const valid = filterValidRowsForBatchSave(rows, batchPart);
       if (!valid.length) throw new Error(t('noValidRows'));
-      const idempotencyKey = `pur-${companyId}-${batchDate}-${Date.now()}`;
+      const idempotencyKey = buildPurchaseBatchIdempotencyKey({
+        companyId,
+        cashAccountId: batchVaultId,
+        operationDate: batchDate,
+        batchNotes: batchPart,
+        rows,
+      });
       const res = await createInvoiceBatch({
         companyId,
         transactionDate: batchDate,
@@ -108,22 +118,25 @@ export function usePurchasesBatchActions(options: {
         batchNotes: batchPart || undefined,
         idempotencyKey,
         items: valid.map((r: any) => {
-          let notes = r.notes?.trim();
-          if (r.kind === 'fixed_expense') {
+          const normalized = normalizePurchaseBatchLine(r);
+          let notes = normalized.notes;
+          if (normalized.kind === 'fixed_expense') {
             notes = notes ? `${t('fixedExpenseType')} — ${notes}` : t('fixedExpenseType');
-          } else if (r.kind === 'expense') {
+          } else if (normalized.kind === 'expense') {
             notes = notes ? `${t('expenseType')} — ${notes}` : t('expenseType');
           }
-          const kind = r.kind || 'purchase';
+          const kind = normalized.kind || 'purchase';
           return {
-            supplierId: r.supplierId || undefined,
-            supplierInvoiceNumber: r.invoiceNumber?.trim() || undefined,
+            supplierId: normalized.supplierId,
+            expenseLineId: normalized.expenseLineId,
+            invoiceNumber: normalized.invoiceNumber,
+            supplierInvoiceNumber: normalized.supplierInvoiceNumber,
             kind,
-            totalAmount: parseFloat(r.totalInclusive),
-            isTaxable: r.isTaxable !== false,
-            invoiceDate: r.invoiceDate,
-            categoryId: r.categoryId || undefined,
-            debitAccountId: r.debitAccountId || undefined,
+            totalAmount: normalized.totalAmount,
+            isTaxable: normalized.isTaxable,
+            invoiceDate: normalized.invoiceDate,
+            categoryId: normalized.categoryId,
+            debitAccountId: normalized.debitAccountId,
             notes: notes || undefined,
             ...(isWarrantyFollowUpKind(kind) && r.warrantyFollowUp ? { warrantyFollowUp: true } : {}),
           };
@@ -133,6 +146,7 @@ export function usePurchasesBatchActions(options: {
       const payload = res.data ?? { batchId: 'B-' + Date.now(), count: valid.length };
       return { payload, uploadRows: valid };
     },
+    rejectOnApiFailure: false,
     successToast: (data: any) => t('savedInvoicesCount', data.payload.count, data.payload.batchId),
     errorToast: (e: any) => e?.message || t('saveFailed'),
     onSuccess: async (data: any) => {

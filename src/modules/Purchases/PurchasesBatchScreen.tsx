@@ -33,6 +33,7 @@ export default function PurchasesBatchScreen() {
     debouncedBatchQ: state.debouncedBatchQ,
     showCancelledBatches: state.showCancelledBatches,
     rows: state.rows,
+    batchNotes: state.batchNotes,
     setBatchVaultId: state.setBatchVaultId,
     batchVaultId: state.batchVaultId,
     t,

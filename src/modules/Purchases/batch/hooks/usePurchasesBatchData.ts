@@ -21,6 +21,7 @@ export function usePurchasesBatchData(options: {
   debouncedBatchQ: string;
   showCancelledBatches: boolean;
   rows: any[];
+  batchNotes: string;
   setBatchVaultId: (v: string) => void;
   batchVaultId: string;
   t: (key: string, ...args: any[]) => string;
@@ -33,6 +34,7 @@ export function usePurchasesBatchData(options: {
     debouncedBatchQ,
     showCancelledBatches,
     rows,
+    batchNotes,
     setBatchVaultId,
     batchVaultId,
     t,
@@ -113,7 +115,7 @@ export function usePurchasesBatchData(options: {
   const totalTax = activeOnly.reduce((s: any, b: any) => s.plus(b.taxAmount), new Decimal(0));
   const totalAmount = activeOnly.reduce((s: any, b: any) => s.plus(b.totalAmount), new Decimal(0));
 
-  const summary = useBatchSummary(rows, vatRateDecimal);
+  const summary = useBatchSummary(rows, vatRateDecimal, batchNotes);
 
   return {
     suppliers,

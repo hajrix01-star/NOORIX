@@ -4,36 +4,27 @@
  */
 import { useMemo } from 'react';
 import Decimal from 'decimal.js';
-import { sumAmounts, splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
+import {
+  calculatePurchaseBatchSummary,
+  sumAmounts,
+  TAX_RATE,
+} from '@noorix/finance-core';
 
 /**
  * حساب ملخص صفوف الدفعة (net, tax, total, count).
- * @param rows - صفوف الإدخال (كل صف: totalInclusive, supplierId, invoiceNumber, isTaxable)
+ * @param rows - صفوف الإدخال.
+ * @param batchNotes - ملاحظة الدفعة التي قد تجعل المصروف/المصروف الثابت صالحاً.
  * @param vatRateDecimal - نسبة ضريبة الشركة (افتراضي 15%)
  */
-export function useBatchSummary(rows: any, vatRateDecimal: number = TAX_RATE) {
+export function useBatchSummary(rows: any, vatRateDecimal: number = TAX_RATE, batchNotes = '') {
   return useMemo(() => {
-    let net = new Decimal(0);
-    let tax = new Decimal(0);
-    let total = new Decimal(0);
-    let count = 0;
-    for (const r of rows) {
-      try {
-        const t = new Decimal(r.totalInclusive || 0);
-        if (t.gt(0) && r.supplierId && r.invoiceNumber) {
-          const taxable = r.isTaxable !== false;
-          const { net: n, tax: tx } = splitTaxFromTotalAsNumbers(t, taxable, vatRateDecimal);
-          net = net.plus(n);
-          tax = tax.plus(tx);
-          total = total.plus(t);
-          count++;
-        }
-      } catch {
-        /* skip invalid row */
-      }
-    }
+    const summary = calculatePurchaseBatchSummary(rows || [], batchNotes.trim(), vatRateDecimal);
+    const net = new Decimal(summary.net);
+    const tax = new Decimal(summary.tax);
+    const total = new Decimal(summary.total);
+    const count = summary.count;
     return { net, tax, total, count };
-  }, [rows, vatRateDecimal]);
+  }, [rows, vatRateDecimal, batchNotes]);
 }
 
 /** @deprecated use useBatchSummary — kept for barrel compatibility */
