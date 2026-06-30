@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVatPlanningList, getVatPlanningRegistry, upsertVatPlanning, throwIfApiFailed } from '../services/api';
+import { getVatPlanningList, getVatPlanningRegistry, upsertVatPlanning } from '../services/api';
 import { vatKeys } from '../services/queryKeys';
 import { useApiListQuery } from './useApiQuery';
+import { useApiMutation } from './useApiMutation';
 
 export function useVatPlanningList(year: any, quarter: any, companyId: any, enabled: any = true) {
   return useApiListQuery<any>({
@@ -26,15 +26,9 @@ export function useVatPlanningRegistry(filters: any, enabled: any = true) {
 }
 
 export function useUpsertVatPlanning() {
-  const qc = useQueryClient();
-  return useMutation<any, Error, Record<string, unknown>>({
-    mutationFn: async (body: any) => {
-      const res = await upsertVatPlanning(body);
-      throwIfApiFailed(res, 'Failed to save VAT planning record');
-      return res.data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: vatKeys.root() });
-    },
+  return useApiMutation({
+    mutationFn: (body: Record<string, unknown>) => upsertVatPlanning(body),
+    invalidateQueries: [{ queryKey: vatKeys.root() }],
+    errorToast: 'Failed to save VAT planning record',
   });
 }

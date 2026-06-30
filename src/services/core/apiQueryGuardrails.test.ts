@@ -7,6 +7,17 @@ const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx']);
 const ALLOWED_RAW_USE_QUERY_FILES = new Set([
   'src/hooks/useApiQuery.ts',
 ]);
+const ALLOWED_RAW_USE_MUTATION_FILES = new Set([
+  'src/hooks/useApiMutation.ts',
+]);
+const ALLOWED_DIRECT_FETCH_FILES = new Set([
+  // Central HTTP client.
+  'src/services/core/apiHttp.ts',
+  // Version probes and binary/download flows are intentionally outside JSON API hooks.
+  'src/utils/deployVersionGuard.ts',
+  'src/services/domains/apiEndpoints/backup.ts',
+  'src/services/domains/apiEndpoints/connection-bank.ts',
+]);
 const ALLOWED_EMPTY_LIST_CATCHES = new Set([
   // Local draft snapshots only; this is not official API/backend data.
   'src/modules/Reports/costAccountingAppsSavedSlots.ts',
@@ -40,6 +51,16 @@ describe('API query handling guardrails', () => {
   it('keeps module reads on centralized API query hooks', () => {
     expect(scanSource(/\buseQuer(?:y|ies)\s*\(/)
       .filter((file) => !ALLOWED_RAW_USE_QUERY_FILES.has(file))).toEqual([]);
+  });
+
+  it('keeps module commands on centralized API mutation hooks', () => {
+    expect(scanSource(/\buseMutation\s*\(/)
+      .filter((file) => !ALLOWED_RAW_USE_MUTATION_FILES.has(file))).toEqual([]);
+  });
+
+  it('keeps raw fetch behind the approved API/download/probe wrappers', () => {
+    expect(scanSource(/\bfetch\s*\(/)
+      .filter((file) => !ALLOWED_DIRECT_FETCH_FILES.has(file))).toEqual([]);
   });
 
   it('does not hide official data failures as empty lists', () => {
