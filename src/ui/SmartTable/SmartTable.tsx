@@ -242,7 +242,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
   const safePageSize = Math.max(1, pageSize);
   const totalPages   = Math.max(1, Math.ceil(total / safePageSize));
-  const colCount     = normalizedColumns.length;
+  const visibleColumns = normalizedColumns.filter((col: any) => !hiddenCols.has(col.key));
+  const colCount     = visibleColumns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
   const layout       = tableLayout ?? 'fixed';
@@ -428,11 +429,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                 {showRowNumbers && (
                   <th style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36, textAlign: 'center' }}>#</th>
                 )}
-                {normalizedColumns.map((col: any) => {
-                  const isHidden = hiddenCols.has(col.key);
-                  if (isHidden) {
-                    return <th key={col.key} aria-hidden="true" style={{ width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' }} />;
-                  }
+                {visibleColumns.map((col: any) => {
                   const align = getAlign(col);
                   const isSorted = sortKey === col.key;
                   const shrink = col.shrink === true;
@@ -511,10 +508,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                       {(page - 1) * safePageSize + i + 1}
                     </td>
                   )}
-                  {normalizedColumns.map((col: any) => {
-                    if (hiddenCols.has(col.key)) {
-                      return <td key={col.key} aria-hidden="true" style={{ width: 0, maxWidth: 0, padding: 0, overflow: 'hidden', border: 'none' }} />;
-                    }
+                  {visibleColumns.map((col: any) => {
                     const value  = row[col.key];
                     const align  = getAlign(col);
                     const family = col.numeric ? 'var(--noorix-font-numbers)' : undefined;
@@ -564,7 +558,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
               <tfoot>
                 <tr>
                   {footerRow
-                    ? buildFooterCells({ footerRow, columns: normalizedColumns, hiddenCols, showRowNumbers, rowNumberWidth, cellPad })
+                    ? buildFooterCells({ footerRow, columns: visibleColumns, hiddenCols: new Set<string>(), showRowNumbers, rowNumberWidth, cellPad })
                     : footerCells}
                 </tr>
               </tfoot>

@@ -30,9 +30,14 @@ export function buildFooterCells({
     );
   }
 
-  const segByFirstKey = new Map<string, SmartTableFooterSegment>();
+  const visibleColumnKeys = new Set(columns.filter((col) => !hiddenCols.has(col.key)).map((col) => col.key));
+  const segByFirstKey = new Map<string, SmartTableFooterSegment & { visibleSpan: number }>();
   footerRow.forEach((seg) => {
-    if (seg.keys?.length) segByFirstKey.set(seg.keys[0], seg);
+    if (!seg.keys?.length) return;
+    const firstVisibleKey = seg.keys.find((key) => visibleColumnKeys.has(key));
+    if (!firstVisibleKey) return;
+    const visibleSpan = seg.keys.filter((key) => visibleColumnKeys.has(key)).length;
+    segByFirstKey.set(firstVisibleKey, { ...seg, visibleSpan });
   });
 
   const items: Array<{
@@ -47,15 +52,14 @@ export function buildFooterCells({
     const col = columns[i];
     const seg = segByFirstKey.get(col.key);
     if (seg) {
-      const allHidden = seg.keys.every((k) => hiddenCols.has(k));
       items.push({
         key: col.key,
-        span: seg.keys.length,
-        hidden: allHidden,
+        span: Math.max(1, seg.visibleSpan),
+        hidden: seg.visibleSpan === 0,
         content: seg.content,
         className: seg.className,
       });
-      i += seg.keys.length;
+      i += Math.max(1, seg.visibleSpan);
     } else {
       items.push({ key: col.key, span: 1, hidden: hiddenCols.has(col.key), content: null, className: '' });
       i++;

@@ -10,7 +10,7 @@ const KIND_DEFAULTS: Record<ColumnKind, Partial<SmartTableColumn>> = {
   money: { align: 'end', numeric: true, shrink: true, width: '12ch' },
   number: { align: 'end', numeric: true, shrink: true, width: '8ch' },
   status: { align: 'center', shrink: true, width: '9ch' },
-  actions: { align: 'center', shrink: true, width: '1%' },
+  actions: { align: 'center', shrink: true, width: '48px' },
   meta: { align: 'center', shrink: true, width: '10ch' },
 };
 

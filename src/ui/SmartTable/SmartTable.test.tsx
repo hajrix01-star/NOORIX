@@ -98,4 +98,17 @@ describe('SmartTable', () => {
     expect(container.querySelector('td[data-column-kind="money"]')).toBeTruthy();
   });
 
+  it('removes hidden columns from the rendered table layout', () => {
+    localStorage.setItem('nx-col-vis:hidden-layout-test', JSON.stringify(['amount']));
+    const { container } = render(
+      <SmartTable tableId="hidden-layout-test" columns={columns} data={rows} total={2} />,
+    );
+
+    expect(container.querySelector('th[data-column-kind="money"]')).toBeNull();
+    expect(container.querySelector('td[data-column-kind="money"]')).toBeNull();
+    expect(container.querySelectorAll('thead th')).toHaveLength(1);
+    expect(container.querySelectorAll('tbody tr:first-child td')).toHaveLength(1);
+    localStorage.removeItem('nx-col-vis:hidden-layout-test');
+  });
+
 });

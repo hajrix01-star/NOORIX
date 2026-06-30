@@ -185,7 +185,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         kind: 'actions',
         label: t('actions'),
         align: 'center',
-        width: '1%',
+        width: '48px',
         render: (_: any, row: any) => {
           const canCancel = row.status === 'active' || row.status === 'partial';
           return (

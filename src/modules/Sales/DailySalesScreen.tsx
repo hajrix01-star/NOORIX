@@ -106,7 +106,7 @@ export default function DailySalesScreen() {
       render: (v: unknown) => <FmtNum n={Number(v)} className="nx-cell-num nx-cell-num--violet" /> },
     { key: 'status', kind: 'status', label: t('statusLabel'), width: '9ch',
       render: (v: unknown) => <Badge {...Badge.fromStatus(v as string, STATUS_MAP)} size="sm" /> },
-    { key: 'actions', kind: 'actions', label: t('actions'), align: 'center', width: '1%',
+    { key: 'actions', kind: 'actions', label: t('actions'), align: 'center', width: '48px',
       render: (_: unknown, row: DailySalesTableRow) => (
         <SalesActionsCell
           summary={row}
