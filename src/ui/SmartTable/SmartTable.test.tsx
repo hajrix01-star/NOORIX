@@ -107,6 +107,27 @@ describe('SmartTable', () => {
     expect(container.querySelector('td.noorix-table-cell-truncate')).toBeTruthy();
   });
 
+  it('uses the unified table frame inset by default', () => {
+    const { container } = render(<SmartTable columns={columns} data={rows} total={2} />);
+
+    const frame = container.querySelector('.noorix-table-frame') as HTMLElement;
+    expect(frame.style.padding).toBe('8px');
+  });
+
+  it('normalizes percentage row number widths to a readable fixed width', () => {
+    const { container } = render(
+      <SmartTable columns={columns} data={rows} total={2} showRowNumbers rowNumberWidth="1%" />,
+    );
+
+    const rowNumberHeader = container.querySelector('thead th') as HTMLTableCellElement;
+    const rowNumberCell = container.querySelector('tbody tr:first-child td') as HTMLTableCellElement;
+
+    expect(rowNumberHeader.style.width).toBe('40px');
+    expect(rowNumberHeader.style.minWidth).toBe('40px');
+    expect(rowNumberCell.style.width).toBe('40px');
+    expect(rowNumberCell.style.minWidth).toBe('40px');
+  });
+
   it('removes hidden columns from the rendered table layout', () => {
     localStorage.setItem('nx-col-vis:hidden-layout-test', JSON.stringify(['amount']));
     const { container } = render(

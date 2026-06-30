@@ -19,6 +19,14 @@ const COL_VIS_PANEL_MARGIN = 12;
 const COL_VIS_PANEL_GAP = 6;
 const COL_VIS_PANEL_FALLBACK_W = 220;
 const COL_VIS_PANEL_FALLBACK_H = 320;
+const DEFAULT_INNER_PADDING = 8;
+const DEFAULT_ROW_NUMBER_WIDTH = 40;
+
+function normalizeRowNumberWidth(width: SmartTablePropsBase['rowNumberWidth']): number | string {
+  if (width == null || width === '') return DEFAULT_ROW_NUMBER_WIDTH;
+  if (typeof width === 'string' && width.trim().endsWith('%')) return DEFAULT_ROW_NUMBER_WIDTH;
+  return width;
+}
 
 /** يثبّت لوحة الأعمدة داخل الشاشة (جوال RTL/LTR) */
 export function placeColVisPanel(btn: HTMLElement, panel: HTMLElement): { top: number; left: number } {
@@ -101,7 +109,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     tableMinWidth = 0,
     compact = true,
     showRowNumbers = false,
-    innerPadding = 0,
+    innerPadding = DEFAULT_INNER_PADDING,
     tableLayout,
     rowNumberWidth,
     getRowClassName,
@@ -251,6 +259,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     ? undefined
     : (tableMinWidth != null ? tableMinWidth : (isWideTable ? 1100 : undefined));
   const cellPad      = compact ? { th: '6px 12px', td: '6px 12px' } : { th: '8px 14px', td: '8px 14px' };
+  const rowNumW      = normalizeRowNumberWidth(rowNumberWidth);
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
@@ -427,7 +436,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             <thead>
               <tr style={{ textAlign: 'right' }}>
                 {showRowNumbers && (
-                  <th style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36, textAlign: 'center' }}>#</th>
+                  <th style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumW, minWidth: rowNumW, textAlign: 'center' }}>#</th>
                 )}
                 {visibleColumns.map((col: any) => {
                   const align = getAlign(col);
@@ -504,7 +513,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   style={{ background: i % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent', ...(typeof getRowStyle === 'function' ? getRowStyle(row, i) : null) }}
                 >
                   {showRowNumbers && (
-                    <td className="text-center text-noorix-muted font-semibold" style={{ padding: cellPad.td, fontSize: cellFs, width: rowNumberWidth || 36, minWidth: rowNumberWidth ? undefined : 36 }}>
+                    <td className="text-center text-noorix-muted font-semibold" style={{ padding: cellPad.td, fontSize: cellFs, width: rowNumW, minWidth: rowNumW }}>
                       {(page - 1) * safePageSize + i + 1}
                     </td>
                   )}
@@ -558,7 +567,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
               <tfoot>
                 <tr>
                   {footerRow
-                    ? buildFooterCells({ footerRow, columns: visibleColumns, hiddenCols: new Set<string>(), showRowNumbers, rowNumberWidth, cellPad })
+                    ? buildFooterCells({ footerRow, columns: visibleColumns, hiddenCols: new Set<string>(), showRowNumbers, rowNumberWidth: rowNumW, cellPad })
                     : footerCells}
                 </tr>
               </tfoot>
