@@ -6,6 +6,7 @@ import { useToast }       from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
+import FilterToolbar from '../../shared/components/FilterToolbar';
 import { sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';
 import VaultFormModal     from './components/VaultFormModal';
@@ -149,7 +150,9 @@ export default function TreasuryScreen() {
         </div>
       </div>
 
-      <DateFilterBar filter={dateFilter} />
+      <FilterToolbar>
+        <DateFilterBar filter={dateFilter} />
+      </FilterToolbar>
 
       {!hasCompany && (
         <div className="noorix-surface-card p-5 text-center text-noorix-muted">

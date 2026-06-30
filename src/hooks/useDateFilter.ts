@@ -11,14 +11,14 @@ import {
 export function useDateFilter() {
   const now = getSaudiNow();
 
-  const [mode, setMode] = useState<DatePeriodMode>('month');
+  const [mode, setMode] = useState<DatePeriodMode>('months');
   const [selYear, setSelYear] = useState(now.year);
   const [selMonth, setSelMonth] = useState(now.month);
   const [selDay, setSelDay] = useState(ymd(now.year, now.month, now.day));
   const [rangeStart, setRangeStart] = useState(ymd(now.year, now.month, 1));
   const [rangeEnd, setRangeEnd] = useState(ymd(now.year, now.month, now.day));
   const [monthRangeStartYear, setMonthRangeStartYear] = useState(now.year);
-  const [monthRangeStartMonth, setMonthRangeStartMonth] = useState(Math.max(1, now.month - 2));
+  const [monthRangeStartMonth, setMonthRangeStartMonth] = useState(now.month);
   const [monthRangeEndYear, setMonthRangeEndYear] = useState(now.year);
   const [monthRangeEndMonth, setMonthRangeEndMonth] = useState(now.month);
 
@@ -61,14 +61,14 @@ export function useDateFilter() {
 
   const reset = useCallback(() => {
     const n = getSaudiNow();
-    setMode('month');
+    setMode('months');
     setSelYear(n.year);
     setSelMonth(n.month);
     setSelDay(ymd(n.year, n.month, n.day));
     setRangeStart(ymd(n.year, n.month, 1));
     setRangeEnd(ymd(n.year, n.month, n.day));
     setMonthRangeStartYear(n.year);
-    setMonthRangeStartMonth(Math.max(1, n.month - 2));
+    setMonthRangeStartMonth(n.month);
     setMonthRangeEndYear(n.year);
     setMonthRangeEndMonth(n.month);
   }, []);

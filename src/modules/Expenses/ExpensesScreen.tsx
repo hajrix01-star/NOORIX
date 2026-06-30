@@ -14,6 +14,7 @@ import { getExpenseLines, deactivateExpenseLine } from '../../services/api';
 import { expenseKeys } from '../../services/queryKeys';
 import { Button, ScreenTabs, ScreenShell, cn } from '../../ui';
 import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
+import FilterToolbar from '../../shared/components/FilterToolbar';
 import ExpenseLineList from './components/ExpenseLineList';
 import ExpenseLineDetailModal from './components/ExpenseLineDetailModal';
 import ExpenseLineFormModal from './components/ExpenseLineFormModal';
@@ -194,11 +195,9 @@ export default function ExpensesScreen() {
               <div className="noorix-surface-card nx-empty-state">{t('pleaseSelectCompany')}</div>
             ) : (
               <>
-                <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-3">
-                  <div className="min-w-0 flex-1">
-                    <DateFilterBar filter={dateFilter} />
-                  </div>
-                </div>
+                <FilterToolbar className="mb-3 border-b border-noorix-border pb-3">
+                  <DateFilterBar filter={dateFilter} />
+                </FilterToolbar>
                 <PaymentHistoryTab companyId={companyId} dateFilter={dateFilter} />
               </>
             )}

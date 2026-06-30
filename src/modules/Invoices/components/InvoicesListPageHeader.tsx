@@ -1,10 +1,8 @@
 import React from 'react';
 import { Button } from '../../../ui';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
+import FilterToolbar from '../../../shared/components/FilterToolbar';
 
-/**
- * عنوان الشاشة + فلتر التاريخ + تصدير/طباعة — مستخرج من InvoicesListScreen
- */
 export function InvoicesListPageHeader({
   t,
   dateFilter,
@@ -22,17 +20,17 @@ export function InvoicesListPageHeader({
         <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('invoicesTitle')}</h1>
       </div>
 
-      <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
-        <DateFilterBar filter={dateFilter} />
-        {companyId && (
-          <div className="nx-toolbar">
+      <FilterToolbar
+        className="nx-page-header nx-page-header--filter-row"
+        actions={companyId && (
+          <>
             <Button
               type="button"
               size="sm"
               onClick={onExportExcel}
               disabled={exportBusy || displayedTotal === 0}
             >
-              {exportBusy ? '…' : t('exportExcel')}
+              {exportBusy ? '...' : t('exportExcel')}
             </Button>
             {showExecSummaryActions && (
               <Button
@@ -54,9 +52,11 @@ export function InvoicesListPageHeader({
             >
               {t('print')}
             </Button>
-          </div>
+          </>
         )}
-      </div>
+      >
+        <DateFilterBar filter={dateFilter} />
+      </FilterToolbar>
     </>
   );
 }

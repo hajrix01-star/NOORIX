@@ -9,6 +9,7 @@ import { useOrdersItemsReportRange, useProductPurchaseHistory, useCategoryPurcha
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
+import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { Button, Input, AdaptiveSheet, SmartTable, FmtNum, MetricCard } from '../../../ui';
 
@@ -180,33 +181,37 @@ export function ItemsReportTab({
 
   return (
     <div className="nx-orders-tab-root flex flex-col gap-3 sm:gap-4">
-      <div className="noorix-print-hide nx-page-header nx-page-header--filter-row">
-        <DateFilterBar filter={dateFilter} />
-        <div className="nx-toolbar">
-          <Input
-            type="select"
-            value={filterMode}
-            onChange={(e: any) => setFilterMode(e.target.value)}
-          >
-            <option value="all">{t('ordersFilterAll')}</option>
-            <option value="top">{t('ordersFilterTop')}</option>
-            <option value="bottom">{t('ordersFilterBottom')}</option>
-          </Input>
-          {(filterMode === 'top' || filterMode === 'bottom') && (
+      <FilterToolbar
+        className="nx-page-header nx-page-header--filter-row"
+        actions={(
+          <>
             <Input
-              type="number"
-              min={1}
-              max={50}
-              value={filterCount}
-              onChange={(e: any) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))}
-              className="w-[80px]"
-            />
-          )}
-          <Button type="button" size="sm" className="noorix-print-hide" onClick={() => window.print()} disabled={filtered.length === 0}>{t('print')}</Button>
-          <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>Excel</Button>
-          <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>طباعة / PDF</Button>
-        </div>
-      </div>
+              type="select"
+              value={filterMode}
+              onChange={(e: any) => setFilterMode(e.target.value)}
+            >
+              <option value="all">{t('ordersFilterAll')}</option>
+              <option value="top">{t('ordersFilterTop')}</option>
+              <option value="bottom">{t('ordersFilterBottom')}</option>
+            </Input>
+            {(filterMode === 'top' || filterMode === 'bottom') && (
+              <Input
+                type="number"
+                min={1}
+                max={50}
+                value={filterCount}
+                onChange={(e: any) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))}
+                className="w-[80px]"
+              />
+            )}
+            <Button type="button" size="sm" className="noorix-print-hide" onClick={() => window.print()} disabled={filtered.length === 0}>{t('print')}</Button>
+            <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>Excel</Button>
+            <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>PDF</Button>
+          </>
+        )}
+      >
+        <DateFilterBar filter={dateFilter} />
+      </FilterToolbar>
 
       {/* كروت الإجمالي — MetricCard الموحّد */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

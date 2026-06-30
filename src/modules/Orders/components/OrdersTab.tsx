@@ -33,6 +33,7 @@ import {
   resolveOrdersDateRange,
 } from '../utils/ordersTabModel';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
+import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
 import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu, FmtNum } from '../../../ui';
@@ -383,9 +384,9 @@ export function OrdersTab({
         {companyName} — {t('ordersTab')} — {printDate}
       </div>
 
-      <div className="noorix-print-hide nx-orders-filter-row nx-page-header nx-page-header--filter-row flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
-        <DateFilterBar filter={dateFilter} />
-        <div className="nx-toolbar w-full shrink-0 sm:ms-auto sm:w-auto">
+      <FilterToolbar
+        className="nx-orders-filter-row nx-page-header nx-page-header--filter-row"
+        actions={(
           <Button
             variant="primary"
             size="sm"
@@ -394,8 +395,10 @@ export function OrdersTab({
           >
             + {t('ordersNewOrder')}
           </Button>
-        </div>
-      </div>
+        )}
+      >
+        <DateFilterBar filter={dateFilter} />
+      </FilterToolbar>
 
       <OrdersSummaryCard summary={summary} cashSalesTotal={cashSalesTotal} isLoading={isLoading} />
 

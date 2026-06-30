@@ -2827,189 +2827,142 @@ input:focus, select:focus, textarea:focus {
 }
 
 .noorix-date-filter-bar {
-  position: relative;
-  padding: 0;
-  gap: 8px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  width: auto;
-}
-.ndfb-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 42px;
-  max-width: min(360px, calc(100vw - 32px));
-  padding: 7px 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
+  padding: 8px;
   border-radius: 12px;
   border: 1px solid var(--noorix-border);
   background: var(--noorix-bg-surface);
-  color: var(--noorix-text);
   box-shadow: var(--noorix-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
-  cursor: pointer;
-  transition: border-color 140ms, box-shadow 140ms, background 140ms;
+  width: fit-content;
 }
-.ndfb-trigger:hover,
-.ndfb-trigger--open {
-  border-color: var(--noorix-accent-blue);
-  box-shadow: 0 0 0 3px var(--noorix-blue-10);
-}
-.ndfb-trigger__icon {
+.ndfb-mode-group {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  background: var(--noorix-blue-8);
-  color: var(--noorix-accent-blue);
-  font-size: 15px;
-  flex: 0 0 auto;
-}
-.ndfb-trigger__text {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-}
-[dir="rtl"] .ndfb-trigger__text {
-  align-items: flex-end;
-}
-.ndfb-trigger__eyebrow {
-  color: var(--noorix-text-muted);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-}
-.ndfb-trigger__label {
-  max-width: 240px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.25;
-}
-.ndfb-trigger__chevron {
-  color: var(--noorix-text-muted);
-  font-size: 13px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 9px;
+  background: var(--noorix-bg-muted);
   flex: 0 0 auto;
 }
-.ndfb-popover {
-  position: absolute;
-  inset-block-start: calc(100% + 8px);
-  inset-inline-end: 0;
-  z-index: 80;
-  width: min(360px, calc(100vw - 28px));
-  border: 1px solid var(--noorix-border);
-  border-radius: 16px;
-  background: var(--noorix-bg-surface);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
-  padding: 12px;
-}
-.ndfb-popover__modes {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.ndfb-popover .ndfb-mode-btn {
-  min-height: 34px;
-  border-radius: 9px !important;
-  border: 1px solid transparent !important;
-  padding: 6px 7px;
-  background: var(--noorix-bg-muted);
+.ndfb-mode-btn {
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 0 !important;
   color: var(--noorix-text-muted);
   font-size: 12px;
   font-weight: 800;
+  box-shadow: none !important;
+  white-space: nowrap;
 }
-.ndfb-popover .ndfb-mode-btn--active {
+.ndfb-mode-btn + .ndfb-mode-btn {
+  border-inline-start: 1px solid var(--noorix-border);
+}
+.ndfb-mode-btn:hover {
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+}
+.ndfb-mode-btn--active,
+.ndfb-mode-btn--active:hover {
   background: var(--noorix-accent-blue);
   color: #fff;
 }
-.ndfb-popover__section {
-  border-radius: 13px;
-  background: var(--noorix-bg-muted);
-  padding: 10px;
-}
-.ndfb-popover__grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.ndfb-popover__grid-years {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-.ndfb-popover__field {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 5px;
-  color: var(--noorix-text-muted);
-  font-size: 11px;
-  font-weight: 800;
-}
-.ndfb-popover__field input,
-.ndfb-popover__field select,
-.ndfb-popover__select {
-  width: 100%;
-  min-height: 36px;
-  border: 1px solid var(--noorix-border);
-  border-radius: 10px;
-  background: var(--noorix-bg-surface);
-  color: var(--noorix-text);
-  font-family: var(--noorix-font-primary);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 6px 9px;
-  outline: none;
-}
-.ndfb-popover__field input:focus,
-.ndfb-popover__field select:focus {
-  border-color: var(--noorix-accent-blue);
-  box-shadow: 0 0 0 3px var(--noorix-blue-10);
-}
-.ndfb-year-chip {
-  min-height: 38px;
-  border: 1px solid var(--noorix-border);
-  border-radius: 11px;
-  background: var(--noorix-bg-surface);
-  color: var(--noorix-text);
-  font-weight: 800;
-  cursor: pointer;
-}
-.ndfb-year-chip--active {
-  border-color: var(--noorix-accent-blue);
-  background: var(--noorix-blue-8);
-  color: var(--noorix-accent-blue);
-}
-.ndfb-popover__footer {
-  display: flex;
+.ndfb-fields {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding-top: 12px;
-}
-.ndfb-popover__summary {
+  flex-wrap: nowrap;
+  gap: 6px;
   min-width: 0;
+}
+.ndfb-fields--months,
+.ndfb-fields--range {
+  gap: 5px;
+}
+.ndfb-field {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.ndfb-field--year {
+  width: 72px;
+}
+.ndfb-field--month {
+  width: 78px;
+}
+.ndfb-field--date {
+  width: 150px;
+}
+.ndfb-field .nx-input__field,
+.ndfb-select {
+  min-height: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 700;
+}
+.ndfb-range-separator {
+  color: var(--noorix-text-muted);
+  font-weight: 800;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.ndfb-period-badge {
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--noorix-text-muted);
+  border-radius: 999px;
+  border: 1px solid var(--noorix-blue-18);
+  background: var(--noorix-blue-8);
+  color: var(--noorix-accent-blue);
+  padding: 4px 9px;
   font-size: 12px;
   font-weight: 800;
+  line-height: 1.3;
 }
 .noorix-date-filter-bar .ndfb-reset-btn {
-  min-width: 42px;
-  min-height: 42px;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  min-width: 32px;
+  min-height: 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--noorix-border);
   background: var(--noorix-bg-surface);
+  color: var(--noorix-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0;
+}
+.noorix-date-filter-bar .ndfb-reset-btn:hover {
+  color: var(--noorix-accent-blue);
+  background: var(--noorix-blue-8);
+}
+
+.nx-filter-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+}
+.nx-filter-toolbar__filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.nx-filter-toolbar__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 /* صف فيه DateFilterBar + أزرار — لا يوسّع الفلتر بـ space-between */
@@ -3179,13 +3132,29 @@ input:focus, select:focus, textarea:focus {
 
 /* استجابة الجوال */
 @media (max-width: 640px) {
-  .noorix-date-filter-bar { gap: 6px; }
-  .ndfb-trigger { max-width: calc(100vw - 92px); min-height: 40px; }
-  .ndfb-trigger__label { max-width: 170px; }
-  .ndfb-popover { inset-inline: auto 0; width: min(340px, calc(100vw - 24px)); }
-  .ndfb-popover__modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ndfb-popover .ndfb-mode-btn { min-height: 38px; padding: 6px 8px; font-size: 12px; }
-  .ndfb-reset-btn { min-width: 40px; min-height: 40px; }
+  .noorix-date-filter-bar { width: 100%; gap: 7px; padding: 8px; }
+  .ndfb-mode-group { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .ndfb-mode-btn { min-width: 0; min-height: 38px; padding: 6px 4px; font-size: 12px; }
+  .ndfb-fields { width: 100%; flex-wrap: wrap; }
+  .ndfb-fields--months { display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; }
+  .ndfb-field,
+  .ndfb-field--year,
+  .ndfb-field--month,
+  .ndfb-field--date { width: 100%; }
+  .ndfb-field .nx-input__field,
+  .ndfb-select { min-height: 38px !important; height: 38px !important; font-size: 16px !important; }
+  .ndfb-period-badge { max-width: calc(100% - 48px); }
+  .ndfb-reset-btn { min-width: 38px; min-height: 38px; }
+  .nx-filter-toolbar,
+  .nx-filter-toolbar__filters,
+  .nx-filter-toolbar__actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+  .nx-filter-toolbar__actions .nx-btn {
+    width: 100%;
+  }
 
   /* Summary Bar — stack on mobile */
   .noorix-summary-bar--4,
@@ -4929,13 +4898,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
   .nx-orders-tab-root {
     gap: 10px;
-  }
-  .nx-orders-filter-row .noorix-date-filter-bar {
-    width: 100%;
-    max-width: 100%;
-    flex: 1 1 auto;
-    padding: 8px 10px;
-    box-shadow: none;
   }
   .nx-orders-summary-card {
     box-shadow: none;

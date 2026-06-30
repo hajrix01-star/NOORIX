@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import DateFilterBar, { useDateFilter } from './DateFilterBar';
-import { AppTestProviders } from '../../test/appTestProviders';
+import { AppTestProviders, defaultAppTestContextValue } from '../../test/appTestProviders';
 
 function Harness() {
   const filter = useDateFilter();
@@ -13,17 +13,21 @@ afterEach(() => {
 });
 
 describe('DateFilterBar', () => {
-  it('opens the central period picker and supports multi-month mode', () => {
+  it('keeps month filtering in one control and supports multi-month selection', () => {
     render(
-      <AppTestProviders>
+      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
         <Harness />
       </AppTestProviders>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /الفترة/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'عدة أشهر' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
 
-    expect(screen.getByRole('dialog', { name: /الفترة/i })).toBeTruthy();
-    expect(screen.getAllByText(/Apr 2026 - Jun 2026|[A-Z][a-z]{2} 2026 - [A-Z][a-z]{2} 2026/).length).toBeGreaterThan(0);
+    const selects = screen.getAllByRole('combobox');
+    expect(selects).toHaveLength(4);
+
+    fireEvent.change(selects[3], { target: { value: '8' } });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByText(/Jun 2026 - Aug 2026/)).toBeTruthy();
   });
 });

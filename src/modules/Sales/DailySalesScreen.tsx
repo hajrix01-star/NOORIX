@@ -8,6 +8,7 @@ import { formatSaudiDate } from '../../utils/saudiDate';
 import { Badge, Button, ScreenShell, FmtNum, KebabMenu, SmartTable } from '../../ui';
 import type { SmartTableColumn } from '../../ui/SmartTable/types';
 import DateFilterBar from '../../shared/components/DateFilterBar';
+import FilterToolbar from '../../shared/components/FilterToolbar';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
 import { SalesDayEditModal } from './components/SalesDayEditModal';
 import { SalesEntryModal } from './components/SalesEntryModal';
@@ -286,7 +287,11 @@ export default function DailySalesScreen() {
         </div>
       )}
 
-      {salesFullHistory && <DateFilterBar filter={dateFilter} />}
+      {salesFullHistory && (
+        <FilterToolbar>
+          <DateFilterBar filter={dateFilter} />
+        </FilterToolbar>
+      )}
 
       {hasCompany && salesViewSummariesList && (
         <SalesDailyWhatsAppReportBar

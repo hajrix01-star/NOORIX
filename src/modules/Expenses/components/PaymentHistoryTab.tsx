@@ -8,6 +8,7 @@ import { getInvoices, downloadInvoiceAttachment } from '../../../services/api';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { useToast } from '../../../context/ToastContext';
 import DateFilterBar, { useDateFilter } from '../../../shared/components/DateFilterBar';
+import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
@@ -169,15 +170,17 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   return (
     <div>
       {!externalDateFilter && (
-        <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-3">
-          <div className="min-w-0 flex-1">
-            <DateFilterBar filter={dateFilter} />
-          </div>
-          <label className="nx-checkbox text-[13px] shrink-0">
-            <input type="checkbox" checked={showAllDates} onChange={(e: any) => setShowAllDates(e.target.checked)} />
-            عرض الكل (بدون فلتر تاريخ)
-          </label>
-        </div>
+        <FilterToolbar
+          className="mb-3 border-b border-noorix-border pb-3"
+          actions={(
+            <label className="nx-checkbox text-[13px] shrink-0">
+              <input type="checkbox" checked={showAllDates} onChange={(e: any) => setShowAllDates(e.target.checked)} />
+              عرض الكل (بدون فلتر تاريخ)
+            </label>
+          )}
+        >
+          <DateFilterBar filter={dateFilter} />
+        </FilterToolbar>
       )}
 
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
