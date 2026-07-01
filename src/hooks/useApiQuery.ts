@@ -71,7 +71,7 @@ type ApiQueriesOptions = {
 
 export function useApiQueries({ queries }: ApiQueriesOptions) {
   return useQueries({
-    queries: queries.map(({ queryFn, fallbackMessage = 'ط·ظ„ط¨ ظپط´ظ„', ...options }) => ({
+    queries: queries.map(({ queryFn, fallbackMessage = 'طلب فشل', ...options }) => ({
       ...options,
       queryFn: async () => unwrapApiData(await queryFn(), fallbackMessage),
     })),
