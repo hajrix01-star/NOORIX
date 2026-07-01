@@ -71,7 +71,7 @@ export function DashboardOverviewWeeklySalesPanel({
       </div>
 
       <div className="p-3 sm:p-4">
-        <div className="mb-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+        <div className="mb-3 flex min-w-0 flex-col items-center justify-center gap-3 sm:flex-row">
           <DateFilterMonthPicker
             label={t('dashboardWeeklySalesPeriodMainHeader')}
             ariaLabel={t('dashboardWeeklySalesPeriodAColumn')}

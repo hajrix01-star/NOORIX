@@ -4098,11 +4098,7 @@ select option {
   margin-block-start: -4px;
 }
 .ndfb-month-popover {
-  position: absolute;
-  inset-block-start: calc(100% + 6px);
-  inset-inline-start: 0;
-  z-index: 30;
-  width: min(360px, calc(100vw - 44px));
+  z-index: 2200;
   margin: 0;
   padding: 16px;
   border: 1px solid color-mix(in srgb, var(--noorix-accent-amber) 30%, var(--noorix-border));
@@ -4110,9 +4106,21 @@ select option {
   background: var(--noorix-surface);
   box-shadow: 0 22px 44px rgba(15, 23, 42, 0.18);
 }
-[dir="rtl"] .ndfb-month-popover {
-  inset-inline-start: auto;
-  inset-inline-end: 0;
+.ndfb-month-popover--floating {
+  max-height: calc(100vh - 28px);
+  overflow-y: auto;
+  animation: ndfb-month-popover-in 120ms ease-out;
+  transform-origin: top center;
+}
+@keyframes ndfb-month-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 .ndfb-month-popover__tabs {
   display: grid;
@@ -4191,11 +4199,30 @@ select option {
   color: var(--noorix-danger, #a32d2d);
 }
 .ndfb-month-picker--dashboard {
-  width: 100%;
-  padding: 6px 8px;
-  border-radius: 12px;
+  width: auto;
+  min-width: 170px;
+  padding: 0;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+}
+.ndfb-month-picker--dashboard .ndfb-month-picker__label {
+  color: var(--noorix-text);
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+}
+.ndfb-month-picker--dashboard .ndfb-month-picker__trigger {
+  min-height: 40px;
+  padding: 7px 14px;
   border: 1px solid var(--noorix-border);
-  background: color-mix(in srgb, var(--noorix-bg-muted) 40%, #fff);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  color: var(--noorix-text);
+  font-size: 16px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 .ndfb-actions {
   display: inline-flex;
@@ -4453,16 +4480,7 @@ select option {
     font-size: 13px;
   }
   .ndfb-month-popover {
-    inset-inline-start: 50%;
-    inset-inline-end: auto;
-    width: min(344px, calc(100vw - 28px));
     padding: 14px;
-    transform: translateX(-50%);
-  }
-  [dir="rtl"] .ndfb-month-popover {
-    inset-inline-start: 50%;
-    inset-inline-end: auto;
-    transform: translateX(-50%);
   }
   .ndfb-month-popover__cell {
     min-height: 52px;
