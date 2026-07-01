@@ -54,6 +54,7 @@ export type SupplierTableProps = {
   suppliers?: any[];
   flatCategories?: any[];
   onEdit?: (s: any) => void;
+  onOpenProfile?: (s: any) => void;
   onDelete?: (s: any) => void;
   selectedIds?: Set<any>;
   onSelectChange?: (id: any, checked: boolean) => void;
@@ -65,6 +66,7 @@ export const SupplierTable = memo(function SupplierTable({
   suppliers = [],
   flatCategories = [],
   onEdit,
+  onOpenProfile,
   onDelete,
   selectedIds = new Set(),
   onSelectChange,
@@ -113,7 +115,15 @@ export const SupplierTable = memo(function SupplierTable({
       key: 'nameAr',
       label: t('name'),
       minWidth: 160,
-      render: (_: any, row: any) => <span className="font-bold">{sName(row, lang)}</span>,
+      render: (_: any, row: any) => (
+        <button
+          type="button"
+          className="font-bold text-noorix-blue hover:underline"
+          onClick={() => onOpenProfile?.(row)}
+        >
+          {sName(row, lang)}
+        </button>
+      ),
     },
     {
       key: 'nameEn',
@@ -243,7 +253,13 @@ export const SupplierTable = memo(function SupplierTable({
                   ariaLabel={`تحديد ${row.nameAr}`}
                 />
               </div>
-              <span className="nx-cr__name">{sName(row, lang)}</span>
+              <button
+                type="button"
+                className="nx-cr__name text-noorix-blue hover:underline"
+                onClick={() => onOpenProfile?.(row)}
+              >
+                {sName(row, lang)}
+              </button>
               <TypeBadge type={row.supplierType || 'purchases'} />
               {row.isTaxRegistered != null && (
                 row.isTaxRegistered
