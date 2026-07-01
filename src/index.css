@@ -2408,7 +2408,7 @@ html[data-card-style="10"] .noorix-stat-card {
   border-bottom: 1px solid var(--noorix-border);
   border-inline-start: 1px solid var(--noorix-border-muted);
   border-inline-end: 1px solid var(--noorix-border-muted);
-  text-align: center;
+  text-align: center !important;
 }
 .noorix-table-frame thead th:first-child,
 .noorix-table thead th:first-child {
@@ -2488,7 +2488,6 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-table td[data-column-kind] {
   vertical-align: middle;
 }
-.noorix-table th[data-column-kind="text"],
 .noorix-table td[data-column-kind="text"] {
   text-align: start !important;
 }
@@ -2505,8 +2504,12 @@ html[data-card-style="10"] .noorix-stat-card {
   text-align: center !important;
 }
 .noorix-table th[data-column-kind="money"],
+.noorix-table th[data-column-kind="number"] {
+  text-align: center !important;
+  font-family: var(--noorix-font-numbers) !important;
+  font-variant-numeric: tabular-nums;
+}
 .noorix-table td[data-column-kind="money"],
-.noorix-table th[data-column-kind="number"],
 .noorix-table td[data-column-kind="number"] {
   text-align: end !important;
   font-family: var(--noorix-font-numbers) !important;
@@ -4734,11 +4737,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   text-align: center !important;
   vertical-align: middle !important;
 }
-/* عمود الاسم — محاذاة بداية القراءة (مثل التصميم الأول)، لا يتوسّط */
-.nx-modal.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table thead th:first-child,
-.nx-drawer-panel.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table thead th:first-child {
-  text-align: start !important;
-}
+/* عمود الاسم — بياناته تبدأ مع القراءة، لكن عنوانه يبقى وسط مثل بقية رؤوس الجداول */
 .nx-modal.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table tbody td:first-child,
 .nx-drawer-panel.payroll-run-form-drawer .prfm-modal-scroll table.payroll-run-table tbody td:first-child {
   text-align: start !important;
@@ -5976,7 +5975,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .nx-expense-line-table-wrap .noorix-table tbody tr.nx-expense-line-tr:hover td.noorix-numeric-cell {
   background: color-mix(in srgb, var(--color-nx-expenses, #a32d2d) 8%, var(--noorix-bg-surface)) !important;
 }
-.nx-expense-line-table-wrap .noorix-table thead th:first-child,
 .nx-expense-line-table-wrap .noorix-table tbody td:first-child {
   text-align: start;
 }
@@ -6096,6 +6094,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-inline-end: 0 !important;
   color: var(--noorix-table-header-fg) !important;
   line-height: 1.35;
+  text-align: center !important;
 }
 .noorix-table tbody td {
   height: 42px;
@@ -6122,7 +6121,6 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .noorix-table tfoot td:first-child {
   border-inline-start: 0 !important;
 }
-.noorix-table th[data-column-kind="text"],
 .noorix-table td[data-column-kind="text"] {
   padding-inline-start: 14px !important;
   padding-inline-end: 14px !important;
@@ -6169,6 +6167,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   color: var(--noorix-table-header-fg) !important;
   font-size: 12px !important;
   font-weight: 700;
+  text-align: center !important;
   white-space: nowrap !important;
 }
 .noorix-invoices-table-frame .noorix-table tbody td {

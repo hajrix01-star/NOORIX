@@ -10,6 +10,6 @@ export function columnLabel(col: SmartTableColumn | null | undefined): ReactNode
 
 export function getAlign(col: SmartTableColumn | null | undefined) {
   if (col?.align) return (ALIGN_MAP as Record<string, string>)[String(col.align)] || 'start';
-  if (col?.numeric) return 'right';
+  if (col?.numeric) return 'end';
   return 'start';
 }

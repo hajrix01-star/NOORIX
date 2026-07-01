@@ -204,9 +204,10 @@ table.pl-grid thead th {
   padding: 5px 6px !important;
   border: 1px solid #0f172a !important;
   vertical-align: bottom;
+  text-align: center !important;
 }
-table.pl-grid thead th.pl-col-desc { text-align: start !important; width: 52%; }
-table.pl-grid thead th.pl-col-num { text-align: end !important; white-space: nowrap; }
+table.pl-grid thead th.pl-col-desc { width: 52%; }
+table.pl-grid thead th.pl-col-num { white-space: nowrap; }
 table.pl-grid tbody td {
   padding: 3px 6px !important;
   border: 1px solid #e2e8f0 !important;
