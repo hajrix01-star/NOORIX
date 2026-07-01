@@ -19,6 +19,7 @@
     "typecheck:strict": "tsc --noEmit -p tsconfig.strict.json",
     "ui:audit": "node scripts/ui-audit.mjs",
     "ui:audit:strict": "node scripts/ui-audit.mjs --strict",
+    "check:table-governance": "node scripts/check-table-governance.mjs",
     "verify:git-cleanliness": "node scripts/verify-git-cleanliness.mjs",
     "check:service-footprint": "node scripts/check-heavy-service-footprint.mjs",
     "check:scripts": "node scripts/check-node-scripts.mjs",

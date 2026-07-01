@@ -26,6 +26,8 @@ jobs:
 
       - run: npm run check:scripts
 
+      - run: npm run check:table-governance
+
       - run: npm run audit:large-files
 
       - run: npm run build

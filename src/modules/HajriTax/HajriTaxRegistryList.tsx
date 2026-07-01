@@ -217,7 +217,7 @@ export default function HajriTaxRegistryList({
                             {t('hajriTaxSubmittedYes')}
                           </span>
                         ) : (
-                          <span className="inline-block rounded border border-noorix-border bg-[var(--noorix-table-header-bg)] px-2 py-0.5 text-[12px] font-medium text-noorix-muted">
+                          <span className="inline-block rounded border border-noorix-border bg-[var(--noorix-table-header-bg)] px-2 py-0.5 text-[12px] font-medium text-white">
                             {t('hajriTaxSubmittedNo')}
                           </span>
                         )}

@@ -1022,7 +1022,9 @@
 
 
 /* ???????????????????????????????????????????????????????????
-   9. Table — الجداول (SmartTable)
+   9. Table — الجداول (legacy nx-table compatibility only)
+   The canonical Noorix table system lives in src/index.css under
+   "Noorix Data Grid v2" and uses the noorix table/table-frame classes.
    ??????????????????????????????????????????????????????????? */
 
 /* — الإطار الخارجي ? */
@@ -1188,41 +1190,6 @@
 
 .nx-table tbody tr:hover .nx-row-number-td,
 .nx-table tbody tr:nth-child(even) .nx-row-number-td {
-  background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
-  color: var(--noorix-table-header-fg, #ffffff) !important;
-}
-
-.noorix-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--noorix-font-primary);
-}
-
-.noorix-table thead tr {
-  background: var(--noorix-table-header-bg, #0f2f57);
-}
-
-.noorix-table thead th {
-  color: var(--noorix-table-header-fg, #ffffff);
-  background: var(--noorix-table-header-bg, #0f2f57);
-  border-bottom-color: var(--noorix-table-header-border, rgba(255, 255, 255, 0.28));
-  border-inline-start-color: var(--noorix-table-header-border, rgba(255, 255, 255, 0.18));
-}
-
-.noorix-table th.nx-table__th--sortable:hover {
-  background: var(--noorix-table-header-hover-bg, #16426f);
-}
-
-.noorix-table .nx-row-number-th,
-.noorix-table .nx-row-number-td {
-  background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
-  color: var(--noorix-table-header-fg, #ffffff) !important;
-  border-color: var(--noorix-table-header-border, rgba(255, 255, 255, 0.18)) !important;
-  font-family: var(--noorix-font-numbers);
-}
-
-.noorix-table tbody tr:hover .nx-row-number-td,
-.noorix-table tbody tr:nth-child(even) .nx-row-number-td {
   background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
   color: var(--noorix-table-header-fg, #ffffff) !important;
 }
