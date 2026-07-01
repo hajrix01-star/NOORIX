@@ -436,7 +436,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             <thead>
               <tr style={{ textAlign: 'right' }}>
                 {showRowNumbers && (
-                  <th style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumW, minWidth: rowNumW, textAlign: 'center' }}>#</th>
+                  <th className="nx-row-number-th" style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumW, minWidth: rowNumW, textAlign: 'center' }}>#</th>
                 )}
                 {visibleColumns.map((col: any) => {
                   const align = getAlign(col);
@@ -513,7 +513,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   style={{ background: i % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent', ...(typeof getRowStyle === 'function' ? getRowStyle(row, i) : null) }}
                 >
                   {showRowNumbers && (
-                    <td className="text-center text-noorix-muted font-semibold" style={{ padding: cellPad.td, fontSize: cellFs, width: rowNumW, minWidth: rowNumW }}>
+                    <td className="nx-row-number-td text-center font-semibold" style={{ padding: cellPad.td, fontSize: cellFs, width: rowNumW, minWidth: rowNumW }}>
                       {(page - 1) * safePageSize + i + 1}
                     </td>
                   )}
