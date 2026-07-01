@@ -206,7 +206,7 @@ export default function HajriTaxDetailEditor({
             <p className="m-0 border-b border-noorix-border bg-[var(--noorix-blue-6)] px-4 pb-3 text-[11px] leading-snug text-noorix-muted">
               {t('vatHajriSalesAuto15Hint')}
             </p>
-            <div className="hidden grid-cols-[minmax(0,2fr)_1fr_1fr_88px] gap-2 border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-4 py-2 text-[11px] font-bold text-noorix-muted sm:grid">
+            <div className="hidden grid-cols-[minmax(0,2fr)_1fr_1fr_88px] gap-2 border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-4 py-2 text-[11px] font-bold text-white sm:grid">
               <div>{t('reportItem')}</div>
               <div className="text-end">{t('vatColumnBase')}</div>
               <div className="text-end">{t('vatColumnVat')}</div>
@@ -219,7 +219,7 @@ export default function HajriTaxDetailEditor({
             <div className="flex items-center gap-2 border-b border-noorix-border bg-[var(--noorix-green-6)] px-4 py-3">
               <span className="text-[15px] font-bold text-noorix-green">{t('vatSectionInputTitle')}</span>
             </div>
-            <div className="hidden grid-cols-[minmax(0,2fr)_1fr_1fr_88px] gap-2 border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-4 py-2 text-[11px] font-bold text-noorix-muted sm:grid">
+            <div className="hidden grid-cols-[minmax(0,2fr)_1fr_1fr_88px] gap-2 border-b border-noorix-border bg-[var(--noorix-table-header-bg)] px-4 py-2 text-[11px] font-bold text-white sm:grid">
               <div>{t('reportItem')}</div>
               <div className="text-end">{t('vatColumnBase')}</div>
               <div className="text-end">{t('vatColumnRecoverable')}</div>

@@ -15,7 +15,7 @@ const COL_BASELINE = '28%';
 const COL_DELTA = '20%';
 
 const TH_CELL =
-  'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1 py-1.5 text-center text-[9px] font-bold leading-tight text-noorix-text sm:px-2 sm:py-2.5 sm:text-xs';
+  'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1 py-1.5 text-center text-[9px] font-bold leading-tight text-white sm:px-2 sm:py-2.5 sm:text-xs';
 const TD_CELL =
   'border border-noorix-border px-1 py-1.5 text-center text-[10px] leading-tight sm:px-2 sm:py-2 sm:text-[13px]';
 
