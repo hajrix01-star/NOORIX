@@ -71,7 +71,7 @@ export function StaffOrderPanel({
   const resendSale = useResendStaffSaleMutation(companyId);
 
   const isSale = productType === 'sale';
-  /** ظپظ„طھط± ط¹ط±ط¶ ط§ظ„ط£طµظ†ط§ظپ ظپظ‚ط· â€” ظ„ظٹط³ ط´ط±ط·ط§ظ‹ ظ„ظ„ط¥ط±ط³ط§ظ„ */
+  /** Filter item sections only; not required for submit. */
   const [sectionFilter, setSectionFilter] = useState('');
   const [saleDate, setSaleDate] = useState(() => getSaudiToday());
   const [notes, setNotes] = useState('');
@@ -84,7 +84,7 @@ export function StaffOrderPanel({
   const [qtyModal, setQtyModal] = useState<{ product: any; qty: number; unit: string } | null>(null);
   const [variantModal, setVariantModal] = useState<ReturnType<typeof defaultVariantModalState> | null>(null);
 
-  // â”€â”€â”€ طھظƒط±ط§ط± ط§ظ„ط·ظ„ط¨ط§طھ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Repeat orders
   const freqMap = useMemo(
     () => buildStaffOrderFrequencyMap(myOrders as any[], productType),
     [myOrders, productType],
@@ -103,7 +103,7 @@ export function StaffOrderPanel({
 
   const qtyMap = useMemo(() => buildStaffQtyMap(basketLines), [basketLines]);
 
-  // ط·ظ„ط¨ط§طھ ظ‡ط°ط§ ط§ظ„ظ†ظˆط¹ ظپظ‚ط·
+  // Orders of this type only
   const myTypedOrders = useMemo(
     () => filterStaffOrdersByType(myOrders as any[], productType),
     [myOrders, productType],
@@ -125,7 +125,7 @@ export function StaffOrderPanel({
   const { data: nextLogRef } = useStaffSaleNextLogRef(companyId, saleDate, previewNextLogRef);
   const basketLogRef = isSale ? (editingOrder?.logRef || nextLogRef || null) : null;
 
-  // â”€â”€â”€ ظ„ظ…ط³ ط§ظ„ظƒط±طھ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Card touch handling
   function tapProduct(product: any) {
     if (productHasVariants(product)) {
       setVariantModal(defaultVariantModalState(product));
@@ -303,7 +303,7 @@ export function StaffOrderPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* â”€â”€ ط£ط²ط±ط§ط± ط§ظ„ط£ظ‚ط³ط§ظ… â”€â”€ */}
+      {/* Section buttons */}
       <div className="flex flex-wrap gap-2">
         {(sections as any[]).map((s: any) => {
           const active = sectionFilter === s.nameAr;
@@ -327,7 +327,7 @@ export function StaffOrderPanel({
         })}
       </div>
 
-      {/* â”€â”€ ط¨ط­ط« â”€â”€ */}
+      {/* Search */}
       <div className="relative">
         <svg className="absolute start-3 top-1/2 -translate-y-1/2 text-noorix-muted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -340,7 +340,7 @@ export function StaffOrderPanel({
         />
       </div>
 
-      {/* â”€â”€ ط´ط¨ظƒط© ط§ظ„ظƒط±ظˆطھ â”€â”€ */}
+      {/* Product grid */}
       {products.length > 0 ? (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
           {products.map((p: any) => (
@@ -363,14 +363,14 @@ export function StaffOrderPanel({
         )
       )}
 
-      {/* â”€â”€ ط®ط·ط£ طھط­ظ…ظٹظ„ ط§ظ„ظ…ط¨ظٹط¹ط§طھ ط§ظ„ط³ط§ط¨ظ‚ط© â”€â”€ */}
+      {/* Previous sales load error */}
       {ordersError && (
         <div className="rounded-lg border border-noorix-red/30 bg-noorix-red/5 px-4 py-3 text-[13px] text-noorix-red">
           {t('staffOrdersLoadError')}
         </div>
       )}
 
-      {/* â”€â”€ ظ…ظ„ط®طµ ط§ظ„ط·ظ„ط¨ â€” ظ…ط¨ط§ط´ط±ط© ط¹ظ„ظ‰ ط§ظ„ط­ط§ظˆظٹط© ط§ظ„ط£ظ… ط¨ط¯ظˆظ† ظƒط±طھ ط¥ط¶ط§ظپظٹ â”€â”€ */}
+      {/* Order summary */}
       {basketLines.length > 0 && (
         <div className="flex flex-col gap-3 border-t border-noorix-border pt-4">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -442,7 +442,7 @@ export function StaffOrderPanel({
         </div>
       )}
 
-      {/* â”€â”€ ط·ظ„ط¨ط§طھظٹ ط§ظ„ظ…ط¹ظ„ظ‘ظ‚ط© (ط·ظ„ط¨ط§طھ ط§ظ„ط£ظ‚ط³ط§ظ… ظپظ‚ط· â€” ط§ظ„ظ…ط¨ظٹط¹ط§طھ طھظڈط±ط³ظ„ ظ…ط¨ط§ط´ط±ط©) â”€â”€ */}
+      {/* Pending section orders */}
       {!isSale && pendingOrders.length > 0 && (
         <div className="noorix-surface-card overflow-hidden">
           <div className="px-4 py-3 border-b border-noorix-border flex items-center justify-between">
@@ -466,7 +466,7 @@ export function StaffOrderPanel({
                 <div className="flex flex-col gap-1">
                   {(o.items || []).map((it: any, i: number) => {
                     const p = it.product;
-                    const name = lang === 'en' ? (p?.nameEn || p?.nameAr || 'â€”') : (p?.nameAr || p?.nameEn || 'â€”');
+                    const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '-') : (p?.nameAr || p?.nameEn || '-');
                     const variant = formatVariantLabel(it.size, it.packaging, it.unit);
                     return (
                       <div key={i} className="flex justify-between gap-2 text-[13px]">
@@ -489,7 +489,7 @@ export function StaffOrderPanel({
         </div>
       )}
 
-      {/* â”€â”€ ظ…ظڈط±ط³ظژظ„ â€” ط¨ط¯ظˆظ† ظƒط±طھ ط®ط§ط±ط¬ظٹ ط¥ط¶ط§ظپظٹط› ظƒظ„ ط·ظ„ط¨ ظ…ط·ظˆظٹ ط§ظپطھط±ط§ط¶ظٹط§ظ‹ â”€â”€ */}
+      {/* Sender */}
       {sentOrders.length > 0 && (
         <section className="flex flex-col gap-3 pt-4 border-t border-noorix-border">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -574,4 +574,5 @@ export function StaffOrderPanel({
     </div>
   );
 }
+
 

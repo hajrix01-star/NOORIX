@@ -1,5 +1,5 @@
 /**
- * SalesEntryModal — ÅÏÎÇá ãáÎÕ ÇáãÈíÚÇÊ Çáíæãí (ÏíäÇãíßí: ÔÝÊ æÇÍÏ Ãæ ÔÝÊÇä Ãæ íæã ßÇãá)
+ * SalesEntryModal â€” Ø¥Ø¯Ø®Ø§Ù„ Ù…Ù„Ø®Øµ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª Ø§Ù„ÙŠÙˆÙ…ÙŠ (Ø¯ÙŠÙ†Ø§Ù…ÙŠÙƒÙŠ: Ø´ÙØª ÙˆØ§Ø­Ø¯ Ø£Ùˆ Ø´ÙØªØ§Ù† Ø£Ùˆ ÙŠÙˆÙ… ÙƒØ§Ù…Ù„)
  */
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Decimal from 'decimal.js';
@@ -197,7 +197,7 @@ export function SalesEntryModal({
       : aggregateSalesDayByShift(enriched, txDate);
     const dateRaw = formatSaudiDate(txDate);
     let dateLabel = dateRaw;
-    if (dateRaw !== '—') {
+    if (dateRaw !== 'â€”') {
       const wd = formatSaudiWeekdayName(txDate, lang);
       if (wd) dateLabel = `${dateRaw} ${wd}`;
     }
@@ -253,13 +253,13 @@ export function SalesEntryModal({
     if (remaining > 0) {
       formatted.push(t('salesEntryGapDaysMore', String(remaining)));
     }
-    return formatted.join(lang === 'ar' ? '¡ ' : ', ');
+    return formatted.join(lang === 'ar' ? 'ØŒ ' : ', ');
   }
 
   const duplicateShiftHint = duplicateShifts.length > 0
     ? t(
       'salesEntryDuplicateShiftHint',
-      duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? '¡ ' : ', '),
+      duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? 'ØŒ ' : ', '),
       formatSaudiDate(txDate),
     )
     : '';
@@ -274,7 +274,7 @@ export function SalesEntryModal({
 
   function confirmSaveWarnings(): boolean {
     if (duplicateShifts.length > 0) {
-      const shiftLabels = duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? '¡ ' : ', ');
+      const shiftLabels = duplicateShifts.map((s) => getSalesShiftLabel(s, t)).join(lang === 'ar' ? 'ØŒ ' : ', ');
       const msg = t('salesEntryDuplicateShiftConfirm', shiftLabels, formatSaudiDate(txDate));
       if (!window.confirm(msg)) return false;
     }
@@ -414,7 +414,7 @@ export function SalesEntryModal({
               className="w-full"
               onClick={() => openDailyWhatsApp(savedSummaries, savedEntryItems)}
             >
-              {t('sendWhatsApp')} — {t('salesDailyWaTitle')}
+              {t('sendWhatsApp')} â€” {t('salesDailyWaTitle')}
             </Button>
           ) : (
             <Button
@@ -434,7 +434,7 @@ export function SalesEntryModal({
                 onWhatsApp?.(enriched ?? savedSummaries[0]);
               }}
             >
-              {t('sendWhatsApp')} — {t('salesDailySummary')}
+              {t('sendWhatsApp')} â€” {t('salesDailySummary')}
             </Button>
           )}
         </div>

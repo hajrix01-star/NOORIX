@@ -68,7 +68,7 @@ export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving
                   onClick={() => move(i, -1)}
                   aria-label={t('moveUp')}
                 >
-                  ظّ
+                  ↑
                 </Button>
                 <Button
                   variant="ghost"
@@ -77,7 +77,7 @@ export function VaultReorderModal({ open, onClose, vaultsList, onApply, isSaving
                   onClick={() => move(i, 1)}
                   aria-label={t('moveDown')}
                 >
-                  ظô
+                  ↓
                 </Button>
               </div>
             </li>
