@@ -1134,7 +1134,7 @@
   background: var(--noorix-table-header-bg, #0f2f57);
   border-bottom: 2px solid var(--noorix-table-header-border, rgba(255, 255, 255, 0.28));
   border-inline-start: 1px solid var(--noorix-table-header-border, rgba(255, 255, 255, 0.18));
-  text-align: start;
+  text-align: center;
   white-space: nowrap;
   user-select: none;
 }
@@ -1175,6 +1175,7 @@
   color: var(--noorix-text);
   border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border));
   vertical-align: middle;
+  text-align: start;
 }
 
 .nx-table tbody td:first-child { border-inline-start: none; }
@@ -1225,7 +1226,7 @@
 /* — أعمدة خاصة ? */
 /* مالية: محاذاة يمين دائماً */
 .nx-table .nx-col--numeric {
-  text-align: right !important;
+  text-align: end !important;
   font-family: var(--noorix-font-numbers);
   direction: ltr;
   unicode-bidi: isolate;
@@ -1250,6 +1251,7 @@
   white-space: nowrap;
   width: 1%;
   padding-inline: 6px;
+  text-align: center;
 }
 
 .nx-table .nx-col--actions.nx-col--sticky {

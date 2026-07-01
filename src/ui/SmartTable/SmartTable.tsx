@@ -434,12 +434,11 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             style={{ tableLayout: layout, minWidth: minW || undefined, maxWidth: !isWideTable ? '100%' : undefined }}
           >
             <thead>
-              <tr style={{ textAlign: 'right' }}>
+              <tr>
                 {showRowNumbers && (
                   <th className="nx-row-number-th" style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumW, minWidth: rowNumW, textAlign: 'center' }}>#</th>
                 )}
                 {visibleColumns.map((col: any) => {
-                  const align = getAlign(col);
                   const isSorted = sortKey === col.key;
                   const shrink = col.shrink === true;
                   const actionSticky = col.key === 'actions' && stickyActionColumn;
@@ -462,7 +461,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         shouldTruncate ? 'noorix-table-cell-truncate' : '',
                       )}
                       style={{
-                        padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: align as React.CSSProperties['textAlign'],
+                        padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: 'center',
                         position: resizableCol ? 'relative' : undefined,
                         width: effectiveWidth,
                         minWidth: col.minWidth,

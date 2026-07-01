@@ -62,15 +62,15 @@ export function BatchPrintSheet({ batch, onClose }: any) {
         <div className="noorix-table-frame" style={{ overflowX: 'auto', marginBottom: 16 }}>
           <table className="noorix-table" style={{ minWidth: 500 }}>
             <thead>
-              <tr style={{ textAlign: 'right' }}>
+              <tr style={{ textAlign: 'center' }}>
                 <th style={{ width: 40 }}>#</th>
                 <th style={{ minWidth: 100 }}>رقم السند</th>
                 <th style={{ minWidth: 100 }}>رقم فاتورة المورد</th>
                 <th style={{ minWidth: 140 }}>المورد</th>
                 <th style={{ width: 90 }}>النوع</th>
-                <th style={{ width: 100, textAlign: 'right' }}>الصافي</th>
-                <th style={{ width: 80, textAlign: 'right' }}>ضريبة</th>
-                <th style={{ width: 110, textAlign: 'right' }}>الإجمالي</th>
+                <th style={{ width: 100, textAlign: 'center' }}>الصافي</th>
+                <th style={{ width: 80, textAlign: 'center' }}>ضريبة</th>
+                <th style={{ width: 110, textAlign: 'center' }}>الإجمالي</th>
                 <th style={{ width: 90 }}>التاريخ</th>
               </tr>
             </thead>
