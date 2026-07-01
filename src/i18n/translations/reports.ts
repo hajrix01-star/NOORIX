@@ -20,6 +20,8 @@ export default {
   taxReportsNote: { ar: '(سيتم ربط التقارير الضريبية عند توفر البيانات والمواصفات)', en: '(Tax reports will be linked when data and specs are available)' },
   reportYear: { ar: 'السنة', en: 'Year' },
   reportMonth: { ar: 'الشهر', en: 'Month' },
+  reportPeriodYear: { ar: 'سنوي', en: 'Annual' },
+  reportPeriodMonth: { ar: 'شهري', en: 'Monthly' },
   allMonths: { ar: 'كل الأشهر', en: 'All months' },
   selectedMonth: { ar: 'الشهر المحدد', en: 'Selected month' },
   reportItem: { ar: 'البند', en: 'Item' },
@@ -86,6 +88,7 @@ export default {
   },
   reportTrendLoadError: { ar: 'تعذّر تحميل اتجاه البند.', en: 'Could not load item trend.' },
   reportAmountInclTax: { ar: 'المبلغ (شامل الضريبة)', en: 'Amount (incl. tax)' },
+  reportAmountBasisGross: { ar: 'الأرقام في التقرير العام شاملة ضريبة القيمة المضافة حسب عقد التقرير المحاسبي.', en: 'General P&L amounts are VAT-inclusive by accounting report contract.' },
   reportTimeline: { ar: 'الخط الزمني السنوي', en: 'Yearly timeline' },
   reportInvoicesCount: { ar: 'عدد الفواتير', en: 'Invoice count' },
   reportFocusedMonthDesc: {

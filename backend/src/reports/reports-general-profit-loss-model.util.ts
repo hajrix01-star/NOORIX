@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import type { GeneralPnlAmountBasis } from './reports-pl-contract.util';
 
 export type GroupKey = 'sales' | 'purchases' | 'expenses';
 export type ReportRowKey = GroupKey | 'grossProfit' | 'netProfit';
@@ -117,6 +118,7 @@ export type GeneralRowModel = {
 export type ExpenseTreeNode = GeneralRowModel & { children?: ExpenseTreeNode[] };
 
 export type GeneralProfitLossModel = {
+  amountBasis: GeneralPnlAmountBasis;
   months: Array<{ index: number; label: string }>;
   groups: Array<
     GeneralRowModel & {

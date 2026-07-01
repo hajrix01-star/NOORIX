@@ -5,6 +5,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
+import { openPrintWindow } from '../../utils/printUtils';
 import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
 import { Button, AdaptiveSheet, MetricCard, ScreenTabs, SmartTable } from '../../ui';
@@ -151,23 +152,103 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     ? `${t('reportDetails')} — ${lang === 'en' ? data.titleEn : data.titleAr}${data.monthLabel ? ` • ${data.monthLabel}` : ''}`
     : t('reportDetails');
 
-  const footerContent = drillTarget ? (
-    <Button
-      variant="primary"
-      size="md"
-      onClick={() => {
-        const qs = drillToSearchParams(drillTarget.query);
-        navigate(`${drillTarget.path}?${qs}`);
-        onClose();
-      }}
-    >
-      {drillTarget.path === '/sales' ? t('reportOpenInSales') : t('reportOpenInInvoices')}
-    </Button>
-    ) : (
-      state?.itemKey?.startsWith('account:') || state?.groupKey === 'grossProfit' || state?.groupKey === 'netProfit' ? (
-        <span className="text-[12px] text-noorix-muted">{t('reportDrillNoLink')}</span>
-      ) : null
-    );
+  function escPrintCell(value: unknown) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function handlePrintDetails() {
+    if (!data) return;
+    const htmlDir = lang === 'en' ? 'ltr' : 'rtl';
+    const htmlLang = lang === 'en' ? 'en' : 'ar';
+    const title = lang === 'en' ? data.titleEn : data.titleAr;
+    const subtitleParts = [String(year), data.monthLabel, t('reportAmountBasisGross')].filter(Boolean);
+    let body = '';
+
+    if (data.kind === 'derived') {
+      const rows = (data.items || [])
+        .map((item: any) => `
+          <tr>
+            <td>${escPrintCell(lang === 'en' ? item.labelEn : item.labelAr)}</td>
+            <td>${escPrintCell(fmt(Number(item.amount)))}</td>
+          </tr>
+        `)
+        .join('');
+      body = `<table><thead><tr><th>${escPrintCell(t('reportItem'))}</th><th>${escPrintCell(t('reportAmountInclTax'))}</th></tr></thead><tbody>${rows}</tbody></table>`;
+    } else {
+      const rows = (data.items || [])
+        .map((item: any) => {
+          const source =
+            (lang === 'en' ? item.supplierNameEn : item.supplierNameAr) ||
+            item.supplierNameAr ||
+            item.supplierNameEn ||
+            (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) ||
+            '—';
+          return `
+            <tr>
+              <td>${escPrintCell(toYmd(item.transactionDate))}</td>
+              <td>${escPrintCell(item.summaryNumber || item.invoiceNumber || '—')}</td>
+              <td>${escPrintCell(source)}</td>
+              <td>${escPrintCell(item.totalAmount)}</td>
+              <td>${escPrintCell(item.netAmount)}</td>
+              <td>${escPrintCell(item.taxAmount)}</td>
+              <td>${escPrintCell(item.notes || '—')}</td>
+            </tr>
+          `;
+        })
+        .join('');
+      body = `
+        <table>
+          <thead>
+            <tr>
+              <th>${escPrintCell(t('transactionDate'))}</th>
+              <th>${escPrintCell(t('reportInvoiceNumber'))}</th>
+              <th>${escPrintCell(t('reportSourceOrSupplier'))}</th>
+              <th>${escPrintCell(t('reportAmountInclTax'))}</th>
+              <th>${escPrintCell(t('reportNetAmount'))}</th>
+              <th>${escPrintCell(t('reportTaxAmount'))}</th>
+              <th>${escPrintCell(t('notes'))}</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    openPrintWindow({
+      title: t('reportDetails'),
+      companyName: t('reportGeneral'),
+      subtitle: `${title} · ${subtitleParts.join(' · ')}`,
+      body,
+      landscape: data.kind === 'invoices',
+      htmlDir,
+      htmlLang,
+    });
+  }
+
+  const footerContent = (
+    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+      <Button variant="default" size="md" onClick={handlePrintDetails} disabled={!data}>
+        {t('print')}
+      </Button>
+      {drillTarget ? (
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => {
+            const qs = drillToSearchParams(drillTarget.query);
+            navigate(`${drillTarget.path}?${qs}`);
+            onClose();
+          }}
+        >
+          {drillTarget.path === '/sales' ? t('reportOpenInSales') : t('reportOpenInInvoices')}
+        </Button>
+      ) : (
+        state?.itemKey?.startsWith('account:') || state?.groupKey === 'grossProfit' || state?.groupKey === 'netProfit' ? (
+          <span className="text-[12px] text-noorix-muted">{t('reportDrillNoLink')}</span>
+        ) : null
+      )}
+    </div>
+  );
 
   return (
     <AdaptiveSheet open={!!state} onClose={onClose} title={modalTitle} size="xl" side="start" className="reports-detail-drawer" footer={footerContent}>

@@ -18,6 +18,7 @@ import { buildPlCategoryHierarchy } from './reports-pl-category-hierarchy.util';
 import { buildPlInvoiceWhere, loadPlDetailFromLedger, loadPlDetailInvoices, sumInvoiceTotalAmountByMonth } from './reports-pl-invoice-detail.util';
 import { resolvePlDetailTitle } from './reports-pl-item-meta.util';
 import { loadAnnualLedgerAggregates } from './reports-pl-ledger-aggregates.util';
+import { GENERAL_PNL_AMOUNT_BASIS } from './reports-pl-contract.util';
 import { createPlGroupStates } from './reports-pl-group-states.util';
 import { resolveExpenseTreeNode } from './reports-expense-tree.util';
 import { formatReportMoneyInteger, formatReportPercentNumber } from '../common/utils/report-display-format.util';
@@ -377,6 +378,7 @@ export class ReportsService {
     });
 
     return {
+      amountBasis: GENERAL_PNL_AMOUNT_BASIS,
       months: EN_MONTHS.map((label, index) => ({ index: index + 1, label })),
       groups: groupRows,
       summaryRows: [

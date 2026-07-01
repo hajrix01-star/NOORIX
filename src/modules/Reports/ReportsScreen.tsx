@@ -29,6 +29,7 @@ import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPl
 import { profitLossPdfExportExtraCss } from './reportsPlExportPdfCss';
 import { getSaudiNow } from '../../utils/saudiDate';
 import { formatSignedPercent, grossMargin, profitMargin } from '../../shared/reporting/plDisplaySelectors';
+import type { ReportPeriodMode } from './reportTypes';
 
 const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -38,6 +39,7 @@ export default function ReportsScreen() {
   const { t, lang } = useTranslation();
   const currentYear = getSaudiNow().year;
   const [year, setYear] = useState(() => getSaudiNow().year);
+  const [periodMode, setPeriodMode] = useState<ReportPeriodMode>('year');
   const [selectedMonth, setSelectedMonth] = useState(() => String(getSaudiNow().month));
   const [detailState, setDetailState] = useState<any>(null);
   const [plDisplayLevel, setPlDisplayLevel] = useState<PlDisplayLevel>(2);
@@ -67,14 +69,22 @@ export default function ReportsScreen() {
     () => filterVisibleRowsByLabel(visibleRowsBase, rowSearch, lang),
     [visibleRowsBase, rowSearch, lang],
   );
+  const selectedMonthNumber = periodMode === 'month' ? Number(selectedMonth) : null;
+
   const monthLabelForExport = useMemo(() => {
-    if (!selectedMonth) return '';
+    if (!selectedMonthNumber) return '';
     const names = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
-    return names[Number(selectedMonth) - 1];
-  }, [selectedMonth, lang]);
+    return names[selectedMonthNumber - 1];
+  }, [selectedMonthNumber, lang]);
 
   const yearOptions = useMemo(() => Array.from({ length: 6 }, (_: any, index: any) => currentYear - index), [currentYear]);
-  const selectedMonthNumber = selectedMonth ? Number(selectedMonth) : null;
+  const periodTabItems = useMemo(
+    () => [
+      { id: 'year', label: t('reportPeriodYear') },
+      { id: 'month', label: t('reportPeriodMonth') },
+    ],
+    [t],
+  );
 
   const mobileMonthTabItems = useMemo(() => {
     const names = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
@@ -115,12 +125,12 @@ export default function ReportsScreen() {
       visibleRowsBase,
       lang,
       t,
-      selectedMonth ? Number(selectedMonth) : null,
-      selectedMonth ? { amountColumnTitle: `${monthLabelForExport} ${year}` } : undefined,
+      selectedMonthNumber,
+      selectedMonthNumber ? { amountColumnTitle: `${monthLabelForExport} ${year}` } : undefined,
     );
     const metas = buildProfitLossExportRowMeta(report, selectedMonthNumber, visibleRowsBase);
     return { exportRows: rows, plExportRowMeta: metas };
-  }, [report, visibleRowsBase, lang, t, selectedMonth, monthLabelForExport, year, selectedMonthNumber]);
+  }, [report, visibleRowsBase, lang, t, monthLabelForExport, year, selectedMonthNumber]);
 
   /** مفاتيح أعمدة المبالغ الرقمية في Excel (بما فيها أعمدة الفئات الثلاث) */
   const plExcelMoneyColumnKeys = useMemo(() => {
@@ -246,9 +256,16 @@ export default function ReportsScreen() {
           <Input type="select" label={t('reportYear')} value={year} onChange={(e: any) => setYear(Number(e.target.value))}>
             {yearOptions.map((option: any) => <option key={option} value={option}>{option}</option>)}
           </Input>
-          {!isMobile && (
+          <ScreenTabs
+            variant="segmented"
+            items={periodTabItems}
+            value={periodMode}
+            onChange={(value) => setPeriodMode(value as ReportPeriodMode)}
+            barClassName="self-end"
+            buttonSize="sm"
+          />
+          {periodMode === 'month' && !isMobile && (
             <Input type="select" label={t('reportMonth')} value={selectedMonth} onChange={(e: any) => setSelectedMonth(e.target.value)}>
-              <option value="">{t('allMonths')}</option>
               {EN_MONTHS.map((month: any, index: any) => <option key={month} value={index + 1}>{month}</option>)}
             </Input>
           )}
@@ -271,6 +288,7 @@ export default function ReportsScreen() {
           <div className="noorix-surface-card p-4 text-noorix-muted text-[13px]">
             {t('reportClickHint')}
             <div className="mt-2">{t('reportPlDetailInvoicesHint')}</div>
+            <div className="mt-2 font-semibold text-noorix-text">{t('reportAmountBasisGross')}</div>
             {selectedMonthNumber && <div className="mt-2">{t('reportFocusedMonthDesc')}</div>}
           </div>
 
@@ -300,7 +318,7 @@ export default function ReportsScreen() {
                   const valueNegative = isProfitCard && val < 0;
                   return (
                     <MetricCard
-                      key={`${year}-${selectedMonth || 'all'}-${card.key}`}
+                      key={`${year}-${selectedMonthNumber || 'year'}-${card.key}`}
                       color={accentColor}
                       className="min-h-[120px]"
                     >
@@ -355,13 +373,23 @@ export default function ReportsScreen() {
             <div className="max-w-[min(100%,1400px)] mx-auto">
               <div className="noorix-surface-card overflow-hidden p-0">
                 {isMobile && (
-                  <ScreenTabs
-                    variant="underline"
-                    items={mobileMonthTabItems}
-                    value={selectedMonth}
-                    onChange={setSelectedMonth}
-                    barClassName="border-b border-noorix-border"
-                  />
+                  <div className="border-b border-noorix-border bg-noorix-bg-surface">
+                    <ScreenTabs
+                      variant="underline"
+                      items={periodTabItems}
+                      value={periodMode}
+                      onChange={(value) => setPeriodMode(value as ReportPeriodMode)}
+                      barClassName="border-b border-noorix-border"
+                    />
+                    {periodMode === 'month' && (
+                      <ScreenTabs
+                        variant="underline"
+                        items={mobileMonthTabItems.filter((item) => item.id !== '')}
+                        value={selectedMonth}
+                        onChange={setSelectedMonth}
+                      />
+                    )}
+                  </div>
                 )}
                 <div className="flex flex-col gap-0 border-b border-noorix-border bg-noorix-bg-muted/30 px-3 py-2.5">
                   <div className="flex flex-wrap items-end gap-2">

@@ -32,6 +32,7 @@ describe('ExpenseInsightsService', () => {
     const salesMonths = Array(12).fill('0');
     salesMonths[3] = '1000';
     const pl: GeneralProfitLossModel = {
+      amountBasis: 'gross_including_vat',
       months: [],
       groups: [
         {

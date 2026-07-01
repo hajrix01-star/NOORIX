@@ -41,6 +41,7 @@ describe('PurchaseSupplierInsightsService', () => {
     m[2] = '10';
     m[3] = '100';
     const pl: GeneralProfitLossModel = {
+      amountBasis: 'gross_including_vat',
       months: [],
       groups: [
         {

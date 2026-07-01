@@ -8,6 +8,7 @@ import {
 } from '../services/api';
 import { reportKeys } from '../services/queryKeys/reports';
 import { useApiQuery } from './useApiQuery';
+import type { GeneralProfitLossReport } from '../modules/Reports/reportTypes';
 
 export function useReportsGeneralProfitLoss({
   companyId,
@@ -18,7 +19,7 @@ export function useReportsGeneralProfitLoss({
   year: number;
   enabled?: boolean;
 }) {
-  return useApiQuery<any>({
+  return useApiQuery<GeneralProfitLossReport>({
     queryKey: reportKeys.generalProfitLoss(companyId, year),
     queryFn: () => getGeneralProfitLossReport(companyId, year),
     fallbackMessage: 'Failed to load report',

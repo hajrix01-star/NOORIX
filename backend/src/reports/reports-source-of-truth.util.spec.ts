@@ -8,6 +8,15 @@ describe('reports source-of-truth guardrails', () => {
     const service = readFileSync(join(reportsDir, 'reports.service.ts'), 'utf8');
 
     expect(service).toContain('loadAnnualLedgerAggregates(this.prisma, companyId, year)');
+    expect(service).toContain('GENERAL_PNL_AMOUNT_BASIS');
+  });
+
+  it('keeps general profit/loss amount basis explicit and VAT-inclusive', () => {
+    const contract = readFileSync(join(reportsDir, 'reports-pl-contract.util.ts'), 'utf8');
+    const model = readFileSync(join(reportsDir, 'reports-general-profit-loss-model.util.ts'), 'utf8');
+
+    expect(contract).toContain("GENERAL_PNL_AMOUNT_BASIS = 'gross_including_vat'");
+    expect(model).toContain('amountBasis: GeneralPnlAmountBasis');
   });
 
   it('keeps VAT disclosure calculation centralized in TaxVatCore', () => {
