@@ -86,7 +86,34 @@ tfoot tr td { font-weight: 700; background: #f1f5f9; }
   font-size: 11px;
   color: #777;
 }
-@media print { body { padding: 0; } }
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 0 14px;
+  margin-bottom: 14px;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+.print-toolbar__button {
+  border: 0;
+  border-radius: 8px;
+  background: ${NOORIX_BLUE};
+  color: #fff;
+  padding: 9px 18px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.print-toolbar__button:hover { background: #0f4e8d; }
+@media print {
+  body { padding: 0; }
+  .print-toolbar { display: none !important; }
+}
 `.trim();
 }
 
@@ -121,6 +148,7 @@ type OpenPrintWindowOpts = {
   pageMarginMm?: number;
   htmlDir?: 'rtl' | 'ltr';
   htmlLang?: string;
+  autoPrint?: boolean;
 };
 
 export function openPrintWindow({
@@ -135,6 +163,7 @@ export function openPrintWindow({
   pageMarginMm,
   htmlDir = 'rtl',
   htmlLang = 'ar',
+  autoPrint = true,
 }: OpenPrintWindowOpts = {}) {
   const headerHtml = companyName
     ? `<div class="print-header">
@@ -148,6 +177,9 @@ export function openPrintWindow({
     htmlLang === 'en'
       ? `Printed on: ${formatPrintFooterDate('en')}`
       : `طُبع بتاريخ: ${formatPrintFooterDate('ar')}`;
+  const toolbarHtml = autoPrint
+    ? ''
+    : `<div class="print-toolbar"><button class="print-toolbar__button" type="button" onclick="window.print()">${htmlLang === 'en' ? 'Print' : 'طباعة'}</button></div>`;
 
   const html = `<!DOCTYPE html>
 <html dir="${escHtml(htmlDir)}" lang="${escHtml(htmlLang)}">
@@ -161,6 +193,7 @@ ${extraCss ? `\n/* — CSS خاص بالوثيقة — */\n${extraCss}` : ''}
 </style>
 </head>
 <body>
+${toolbarHtml}
 ${headerHtml}
 ${body}
 <div class="print-footer">${footerText}</div>
@@ -171,6 +204,8 @@ ${body}
   if (!win) return;
   win.document.write(html);
   win.document.close();
-  win.onafterprint = () => { try { win.close(); } catch (_: any) {} };
-  win.onload = () => setTimeout(() => win.print(), 300);
+  if (autoPrint) {
+    win.onafterprint = () => { try { win.close(); } catch (_: any) {} };
+    win.onload = () => setTimeout(() => win.print(), 300);
+  }
 }

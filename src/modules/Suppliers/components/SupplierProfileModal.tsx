@@ -108,6 +108,7 @@ export function SupplierProfileModal({
       body: buildInvoicesTableHtml(all, t),
       htmlLang: lang === 'en' ? 'en' : 'ar',
       htmlDir: lang === 'en' ? 'ltr' : 'rtl',
+      autoPrint: false,
     });
   }, [lang, loadAllInvoices, supplierLabel, t]);
 
@@ -141,6 +142,7 @@ export function SupplierProfileModal({
       body: profileHtml,
       htmlLang: lang === 'en' ? 'en' : 'ar',
       htmlDir: lang === 'en' ? 'ltr' : 'rtl',
+      autoPrint: false,
     });
   }, [category, lang, loadAllInvoices, supplier, supplierLabel, t]);
 

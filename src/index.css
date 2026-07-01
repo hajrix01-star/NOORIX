@@ -200,7 +200,11 @@
   --noorix-topbar-text:    #1a2332;
   --noorix-topbar-border:  #e2e8f0;
   /* جداول احترافية */
-  --noorix-table-header-bg: #f8f9fb;
+  --noorix-table-header-bg: #123159;
+  --noorix-table-header-fg: #ffffff;
+  --noorix-table-header-border: rgba(255,255,255,0.2);
+  --noorix-table-header-hover-bg: #1b3f73;
+  --noorix-table-row-number-bg: #0a1f44;
   --noorix-table-row-even: #fafbfd;
   /* ألوان تمييز */
   --noorix-accent-green:  #16a34a;

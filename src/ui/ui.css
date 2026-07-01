@@ -1121,16 +1121,17 @@
 
 /* — رأس الجدول ? */
 .nx-table thead tr {
-  background: var(--noorix-table-header-bg, #f8f9fb);
+  background: var(--noorix-table-header-bg, #0f2f57);
 }
 
 .nx-table thead th {
   padding: 10px 16px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--noorix-text);
-  border-bottom: 2px solid var(--noorix-border);
-  border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border));
+  color: var(--noorix-table-header-fg, #ffffff);
+  background: var(--noorix-table-header-bg, #0f2f57);
+  border-bottom: 2px solid var(--noorix-table-header-border, rgba(255, 255, 255, 0.28));
+  border-inline-start: 1px solid var(--noorix-table-header-border, rgba(255, 255, 255, 0.18));
   text-align: start;
   white-space: nowrap;
   user-select: none;
@@ -1141,7 +1142,7 @@
 
 /* — عمود قابل للترتيب ? */
 .nx-table th.nx-table__th--sortable { cursor: pointer; }
-.nx-table th.nx-table__th--sortable:hover { background: var(--noorix-bg-muted); }
+.nx-table th.nx-table__th--sortable:hover { background: var(--noorix-table-header-hover-bg, #16426f); }
 
 .nx-table__sort-icon {
   margin-inline-start: 4px;
@@ -1176,6 +1177,55 @@
 
 .nx-table tbody td:first-child { border-inline-start: none; }
 .nx-table tbody td:last-child  { border-inline-end: none; }
+
+.nx-table .nx-row-number-th,
+.nx-table .nx-row-number-td {
+  background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
+  color: var(--noorix-table-header-fg, #ffffff) !important;
+  border-color: var(--noorix-table-header-border, rgba(255, 255, 255, 0.18)) !important;
+  font-family: var(--noorix-font-numbers);
+}
+
+.nx-table tbody tr:hover .nx-row-number-td,
+.nx-table tbody tr:nth-child(even) .nx-row-number-td {
+  background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
+  color: var(--noorix-table-header-fg, #ffffff) !important;
+}
+
+.noorix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--noorix-font-primary);
+}
+
+.noorix-table thead tr {
+  background: var(--noorix-table-header-bg, #0f2f57);
+}
+
+.noorix-table thead th {
+  color: var(--noorix-table-header-fg, #ffffff);
+  background: var(--noorix-table-header-bg, #0f2f57);
+  border-bottom-color: var(--noorix-table-header-border, rgba(255, 255, 255, 0.28));
+  border-inline-start-color: var(--noorix-table-header-border, rgba(255, 255, 255, 0.18));
+}
+
+.noorix-table th.nx-table__th--sortable:hover {
+  background: var(--noorix-table-header-hover-bg, #16426f);
+}
+
+.noorix-table .nx-row-number-th,
+.noorix-table .nx-row-number-td {
+  background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
+  color: var(--noorix-table-header-fg, #ffffff) !important;
+  border-color: var(--noorix-table-header-border, rgba(255, 255, 255, 0.18)) !important;
+  font-family: var(--noorix-font-numbers);
+}
+
+.noorix-table tbody tr:hover .nx-row-number-td,
+.noorix-table tbody tr:nth-child(even) .nx-row-number-td {
+  background: var(--noorix-table-row-number-bg, var(--noorix-table-header-bg, #0f2f57)) !important;
+  color: var(--noorix-table-header-fg, #ffffff) !important;
+}
 
 /* — الصف الملغي ? */
 .nx-table tr.nx-table__row--cancelled td {
