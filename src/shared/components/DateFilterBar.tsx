@@ -190,11 +190,18 @@ export function DateFilterMonthPicker({
   const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
   const [open, setOpen] = useState(false);
   const [calendarYear, setCalendarYear] = useState(year);
-  const selectedLabel = `${monthNames[Math.max(0, Math.min(11, month - 1))]} ${year}`;
+  const selectedLabel = `${String(month).padStart(2, '0')}-${year}`;
+  const sortedYears = [...years].sort((a, b) => a - b);
+  const minYear = sortedYears[0] ?? year;
+  const maxYear = sortedYears[sortedYears.length - 1] ?? year;
 
   useEffect(() => {
     setCalendarYear(year);
   }, [year]);
+
+  const moveYear = (delta: number) => {
+    setCalendarYear((current) => Math.min(maxYear, Math.max(minYear, current + delta)));
+  };
 
   const selectMonth = (nextMonth: number) => {
     onChange({ year: calendarYear, month: nextMonth });
@@ -211,24 +218,42 @@ export function DateFilterMonthPicker({
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        {selectedLabel}
+        <span className="ndfb-month-picker__icon" aria-hidden />
+        <span>{selectedLabel}</span>
+        <span className="ndfb-month-picker__chevron" aria-hidden />
       </button>
 
       {open && (
-        <div className="ndfb-calendar ndfb-calendar--months ndfb-month-picker__calendar">
-          <div className="ndfb-calendar-panel">
-            <div className="ndfb-calendar-panel__head">
-              <span>{t('dateFilterYear')}</span>
-              <select
-                className="ndfb-calendar-year-select"
-                value={calendarYear}
-                onChange={(event) => setCalendarYear(Number(event.target.value))}
-                aria-label={t('dateFilterYear')}
-              >
-                {years.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </div>
-            <div className="ndfb-month-grid">
+        <div className="ndfb-month-popover" role="dialog" aria-label={ariaLabel || String(label || t('dateFilterMonth'))}>
+          <div className="ndfb-month-popover__tabs" role="tablist" aria-label={t('dateFilterPeriod')}>
+            <button type="button" className="ndfb-month-popover__tab ndfb-month-popover__tab--active" role="tab" aria-selected="true">
+              {t('dateFilterMonth')}
+            </button>
+          </div>
+
+          <div className="ndfb-month-popover__year">
+            <button
+              type="button"
+              className="ndfb-month-popover__year-btn"
+              onClick={() => moveYear(-1)}
+              disabled={calendarYear <= minYear}
+              aria-label={`${t('dateFilterYear')} -1`}
+            >
+              {'<'}
+            </button>
+            <div className="ndfb-month-popover__year-value">{calendarYear}</div>
+            <button
+              type="button"
+              className="ndfb-month-popover__year-btn"
+              onClick={() => moveYear(1)}
+              disabled={calendarYear >= maxYear}
+              aria-label={`${t('dateFilterYear')} +1`}
+            >
+              {'>'}
+            </button>
+          </div>
+
+          <div className="ndfb-month-popover__grid">
               {monthNames.map((name, index) => {
                 const itemMonth = index + 1;
                 const active = calendarYear === year && itemMonth === month;
@@ -236,16 +261,15 @@ export function DateFilterMonthPicker({
                   <button
                     key={itemMonth}
                     type="button"
-                    className={`ndfb-month-cell${active ? ' ndfb-month-cell--active' : ''}`}
+                    className={`ndfb-month-popover__cell${active ? ' ndfb-month-popover__cell--active' : ''}`}
                     aria-label={name}
                     aria-pressed={active}
                     onClick={() => selectMonth(itemMonth)}
                   >
-                    {name}
+                    {String(itemMonth).padStart(2, '0')}
                   </button>
                 );
               })}
-            </div>
           </div>
         </div>
       )}
