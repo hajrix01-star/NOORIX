@@ -163,6 +163,96 @@ function MonthCalendar({ draft, monthNames, years, updateDraft, yearLabel }: Mon
   );
 }
 
+export type DateFilterMonthPickerProps = {
+  label?: React.ReactNode;
+  ariaLabel?: string;
+  year: number;
+  month: number;
+  years?: number[];
+  onChange: (value: { year: number; month: number }) => void;
+  className?: string;
+};
+
+export function DateFilterMonthPicker({
+  label,
+  ariaLabel,
+  year,
+  month,
+  years: yearsProp,
+  onChange,
+  className = '',
+}: DateFilterMonthPickerProps) {
+  const { t, lang } = useTranslation();
+  const now = getSaudiNow();
+  const years = yearsProp?.length
+    ? yearsProp
+    : [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3];
+  const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+  const [open, setOpen] = useState(false);
+  const [calendarYear, setCalendarYear] = useState(year);
+  const selectedLabel = `${monthNames[Math.max(0, Math.min(11, month - 1))]} ${year}`;
+
+  useEffect(() => {
+    setCalendarYear(year);
+  }, [year]);
+
+  const selectMonth = (nextMonth: number) => {
+    onChange({ year: calendarYear, month: nextMonth });
+    setOpen(false);
+  };
+
+  return (
+    <div className={`noorix-date-filter-bar ndfb-month-picker ${className}`.trim()} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      {label && <span className="ndfb-month-picker__label">{label}</span>}
+      <button
+        type="button"
+        className={`ndfb-period-badge ndfb-month-picker__trigger${open ? ' ndfb-period-badge--pending' : ''}`}
+        aria-label={ariaLabel || String(label || t('dateFilterMonth'))}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {selectedLabel}
+      </button>
+
+      {open && (
+        <div className="ndfb-calendar ndfb-calendar--months ndfb-month-picker__calendar">
+          <div className="ndfb-calendar-panel">
+            <div className="ndfb-calendar-panel__head">
+              <span>{t('dateFilterYear')}</span>
+              <select
+                className="ndfb-calendar-year-select"
+                value={calendarYear}
+                onChange={(event) => setCalendarYear(Number(event.target.value))}
+                aria-label={t('dateFilterYear')}
+              >
+                {years.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </div>
+            <div className="ndfb-month-grid">
+              {monthNames.map((name, index) => {
+                const itemMonth = index + 1;
+                const active = calendarYear === year && itemMonth === month;
+                return (
+                  <button
+                    key={itemMonth}
+                    type="button"
+                    className={`ndfb-month-cell${active ? ' ndfb-month-cell--active' : ''}`}
+                    aria-label={name}
+                    aria-pressed={active}
+                    onClick={() => selectMonth(itemMonth)}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type YearCalendarProps = {
   draft: DatePeriodState;
   years: number[];

@@ -5,8 +5,8 @@ import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { FmtNum } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
+import { DateFilterMonthPicker } from '../../../../shared/components/DateFilterBar';
 
-/** Month/year comparison picker rendered without native dropdowns for consistent mobile behavior. */
 const COL_WEEK = '24%';
 const COL_CURRENT = '28%';
 const COL_BASELINE = '28%';
@@ -45,101 +45,6 @@ type Props = {
   isLoading: boolean;
 };
 
-type PeriodPickerProps = {
-  label: string;
-  ariaLabel: string;
-  yearAriaLabel: string;
-  yearOptions: number[];
-  monthOptions: ReadonlyArray<{ value: number; label: string }>;
-  year: number;
-  month: number;
-  onYearChange: (y: number) => void;
-  onMonthChange: (m: number) => void;
-};
-
-function clampToYearOptions(year: number, yearOptions: number[]) {
-  if (yearOptions.length === 0) return year;
-  const min = Math.min(...yearOptions);
-  const max = Math.max(...yearOptions);
-  return Math.min(max, Math.max(min, year));
-}
-
-function DashboardWeeklyPeriodPicker({
-  label,
-  ariaLabel,
-  yearAriaLabel,
-  yearOptions,
-  monthOptions,
-  year,
-  month,
-  onYearChange,
-  onMonthChange,
-}: PeriodPickerProps) {
-  const minYear = yearOptions.length ? Math.min(...yearOptions) : year;
-  const maxYear = yearOptions.length ? Math.max(...yearOptions) : year;
-
-  const moveYear = (delta: number) => {
-    onYearChange(clampToYearOptions(year + delta, yearOptions));
-  };
-
-  return (
-    <div
-      className="min-w-0 rounded-lg border border-noorix-border bg-noorix-surface p-2 shadow-sm sm:p-2.5"
-      role="group"
-      aria-label={ariaLabel}
-    >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="min-w-0 text-[11px] font-bold text-noorix-text sm:text-xs">{label}</div>
-        <div className="inline-flex shrink-0 items-center overflow-hidden rounded-md border border-noorix-border bg-noorix-bg-muted">
-          <button
-            type="button"
-            className="h-7 w-8 text-[15px] font-bold text-noorix-text transition hover:bg-noorix-surface disabled:cursor-not-allowed disabled:opacity-35"
-            onClick={() => moveYear(-1)}
-            disabled={year <= minYear}
-            aria-label={`${yearAriaLabel} -1`}
-          >
-            -
-          </button>
-          <div className="min-w-[4.5rem] border-x border-noorix-border px-2 text-center text-[12px] font-bold tabular-nums text-noorix-text">
-            {year}
-          </div>
-          <button
-            type="button"
-            className="h-7 w-8 text-[15px] font-bold text-noorix-text transition hover:bg-noorix-surface disabled:cursor-not-allowed disabled:opacity-35"
-            onClick={() => moveYear(1)}
-            disabled={year >= maxYear}
-            aria-label={`${yearAriaLabel} +1`}
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
-        {monthOptions.map((o) => {
-          const selected = o.value === month;
-          return (
-            <button
-              key={o.value}
-              type="button"
-              className={cn(
-                'h-8 rounded-md border px-1 text-center text-[11px] font-semibold leading-none transition sm:text-xs',
-                selected
-                  ? 'border-noorix-blue bg-noorix-blue text-white shadow-sm'
-                  : 'border-noorix-border bg-white text-noorix-text hover:border-noorix-blue hover:bg-noorix-blue/5',
-              )}
-              onClick={() => onMonthChange(o.value)}
-              aria-pressed={selected}
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export function DashboardOverviewWeeklySalesPanel({
   weeklyYearOptions,
   weeklyMonthOptions,
@@ -167,27 +72,29 @@ export function DashboardOverviewWeeklySalesPanel({
 
       <div className="p-3 sm:p-4">
         <div className="mb-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
-          <DashboardWeeklyPeriodPicker
+          <DateFilterMonthPicker
             label={t('dashboardWeeklySalesPeriodMainHeader')}
             ariaLabel={t('dashboardWeeklySalesPeriodAColumn')}
-            yearAriaLabel={t('dashboardWeeklySalesPeriodAYear')}
-            yearOptions={weeklyYearOptions}
-            monthOptions={weeklyMonthOptions}
+            years={weeklyYearOptions}
             year={panelYearA}
             month={panelMonthA}
-            onYearChange={onPanelYearAChange}
-            onMonthChange={onPanelMonthAChange}
+            onChange={({ year, month }) => {
+              onPanelYearAChange(year);
+              onPanelMonthAChange(month);
+            }}
+            className="ndfb-month-picker--dashboard"
           />
-          <DashboardWeeklyPeriodPicker
+          <DateFilterMonthPicker
             label={t('dashboardWeeklySalesPeriodCompareHeader')}
             ariaLabel={t('dashboardWeeklySalesPeriodBColumn')}
-            yearAriaLabel={t('dashboardWeeklySalesPeriodBYear')}
-            yearOptions={weeklyYearOptions}
-            monthOptions={weeklyMonthOptions}
+            years={weeklyYearOptions}
             year={panelYearB}
             month={panelMonthB}
-            onYearChange={onPanelYearBChange}
-            onMonthChange={onPanelMonthBChange}
+            onChange={({ year, month }) => {
+              onPanelYearBChange(year);
+              onPanelMonthBChange(month);
+            }}
+            className="ndfb-month-picker--dashboard"
           />
         </div>
 
