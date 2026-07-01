@@ -3,12 +3,10 @@
  */
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { FmtNum, Input } from '../../../../ui';
+import { FmtNum } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
 
-/** قوائم شهر/سنة مضغوطة — أنماط في index.css (.nx-dashboard-period-select) */
-const PERIOD_CONTROLS_WRAP = 'inline-flex flex-row flex-wrap items-center justify-center gap-1';
-
+/** Month/year comparison picker rendered without native dropdowns for consistent mobile behavior. */
 const COL_WEEK = '24%';
 const COL_CURRENT = '28%';
 const COL_BASELINE = '28%';
@@ -47,6 +45,101 @@ type Props = {
   isLoading: boolean;
 };
 
+type PeriodPickerProps = {
+  label: string;
+  ariaLabel: string;
+  yearAriaLabel: string;
+  yearOptions: number[];
+  monthOptions: ReadonlyArray<{ value: number; label: string }>;
+  year: number;
+  month: number;
+  onYearChange: (y: number) => void;
+  onMonthChange: (m: number) => void;
+};
+
+function clampToYearOptions(year: number, yearOptions: number[]) {
+  if (yearOptions.length === 0) return year;
+  const min = Math.min(...yearOptions);
+  const max = Math.max(...yearOptions);
+  return Math.min(max, Math.max(min, year));
+}
+
+function DashboardWeeklyPeriodPicker({
+  label,
+  ariaLabel,
+  yearAriaLabel,
+  yearOptions,
+  monthOptions,
+  year,
+  month,
+  onYearChange,
+  onMonthChange,
+}: PeriodPickerProps) {
+  const minYear = yearOptions.length ? Math.min(...yearOptions) : year;
+  const maxYear = yearOptions.length ? Math.max(...yearOptions) : year;
+
+  const moveYear = (delta: number) => {
+    onYearChange(clampToYearOptions(year + delta, yearOptions));
+  };
+
+  return (
+    <div
+      className="min-w-0 rounded-lg border border-noorix-border bg-noorix-surface p-2 shadow-sm sm:p-2.5"
+      role="group"
+      aria-label={ariaLabel}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="min-w-0 text-[11px] font-bold text-noorix-text sm:text-xs">{label}</div>
+        <div className="inline-flex shrink-0 items-center overflow-hidden rounded-md border border-noorix-border bg-noorix-bg-muted">
+          <button
+            type="button"
+            className="h-7 w-8 text-[15px] font-bold text-noorix-text transition hover:bg-noorix-surface disabled:cursor-not-allowed disabled:opacity-35"
+            onClick={() => moveYear(-1)}
+            disabled={year <= minYear}
+            aria-label={`${yearAriaLabel} -1`}
+          >
+            -
+          </button>
+          <div className="min-w-[4.5rem] border-x border-noorix-border px-2 text-center text-[12px] font-bold tabular-nums text-noorix-text">
+            {year}
+          </div>
+          <button
+            type="button"
+            className="h-7 w-8 text-[15px] font-bold text-noorix-text transition hover:bg-noorix-surface disabled:cursor-not-allowed disabled:opacity-35"
+            onClick={() => moveYear(1)}
+            disabled={year >= maxYear}
+            aria-label={`${yearAriaLabel} +1`}
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+        {monthOptions.map((o) => {
+          const selected = o.value === month;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              className={cn(
+                'h-8 rounded-md border px-1 text-center text-[11px] font-semibold leading-none transition sm:text-xs',
+                selected
+                  ? 'border-noorix-blue bg-noorix-blue text-white shadow-sm'
+                  : 'border-noorix-border bg-white text-noorix-text hover:border-noorix-blue hover:bg-noorix-blue/5',
+              )}
+              onClick={() => onMonthChange(o.value)}
+              aria-pressed={selected}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function DashboardOverviewWeeklySalesPanel({
   weeklyYearOptions,
   weeklyMonthOptions,
@@ -73,6 +166,31 @@ export function DashboardOverviewWeeklySalesPanel({
       </div>
 
       <div className="p-3 sm:p-4">
+        <div className="mb-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+          <DashboardWeeklyPeriodPicker
+            label={t('dashboardWeeklySalesPeriodMainHeader')}
+            ariaLabel={t('dashboardWeeklySalesPeriodAColumn')}
+            yearAriaLabel={t('dashboardWeeklySalesPeriodAYear')}
+            yearOptions={weeklyYearOptions}
+            monthOptions={weeklyMonthOptions}
+            year={panelYearA}
+            month={panelMonthA}
+            onYearChange={onPanelYearAChange}
+            onMonthChange={onPanelMonthAChange}
+          />
+          <DashboardWeeklyPeriodPicker
+            label={t('dashboardWeeklySalesPeriodCompareHeader')}
+            ariaLabel={t('dashboardWeeklySalesPeriodBColumn')}
+            yearAriaLabel={t('dashboardWeeklySalesPeriodBYear')}
+            yearOptions={weeklyYearOptions}
+            monthOptions={weeklyMonthOptions}
+            year={panelYearB}
+            month={panelMonthB}
+            onYearChange={onPanelYearBChange}
+            onMonthChange={onPanelMonthBChange}
+          />
+        </div>
+
         {isLoading || !data ? (
           <div className="space-y-2">
             {[0, 1, 2, 3].map((i) => (
@@ -93,91 +211,25 @@ export function DashboardOverviewWeeklySalesPanel({
                   {t('dashboardWeeklySalesWeekCol')}
                 </th>
                 <th className={cn(TH_CELL, 'align-bottom')}>
-                  <div className="mb-0.5 text-[9px] font-bold leading-tight text-noorix-text sm:text-[11px]">
+                  <div className="mb-0.5 text-[9px] font-bold leading-tight text-white sm:text-[11px]">
                     {t('dashboardWeeklySalesPeriodMainHeader')}
                   </div>
-                  <div className="mb-1 text-[8px] font-semibold text-noorix-muted sm:text-[10px]">
+                  <div className="mb-1 text-[8px] font-semibold text-white/75 sm:text-[10px]">
                     {t('dashboardWeeklySalesAvgDailyShort')}
                   </div>
-                  <div className={PERIOD_CONTROLS_WRAP}>
-                    <Input
-                      type="select"
-                      size="sm"
-                      containerClassName="!gap-0 w-auto shrink-0"
-                      className="nx-dashboard-period-select nx-dashboard-period-select--month"
-                      value={panelMonthA}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        onPanelMonthAChange(Number(e.target.value))
-                      }
-                      aria-label={t('dashboardWeeklySalesPeriodAColumn')}
-                    >
-                      {weeklyMonthOptions.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </Input>
-                    <Input
-                      type="select"
-                      size="sm"
-                      containerClassName="!gap-0 w-auto shrink-0"
-                      className="nx-dashboard-period-select nx-dashboard-period-select--year"
-                      value={panelYearA}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        onPanelYearAChange(Number(e.target.value))
-                      }
-                      aria-label={t('dashboardWeeklySalesPeriodAYear')}
-                    >
-                      {weeklyYearOptions.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
-                        </option>
-                      ))}
-                    </Input>
+                  <div className="text-[8px] font-bold text-white/80 sm:text-[10px]">
+                    {weeklyMonthOptions.find((o) => o.value === panelMonthA)?.label} {panelYearA}
                   </div>
                 </th>
                 <th className={cn(TH_CELL, 'align-bottom')}>
-                  <div className="mb-0.5 text-[9px] font-bold leading-tight text-noorix-text sm:text-[11px]">
+                  <div className="mb-0.5 text-[9px] font-bold leading-tight text-white sm:text-[11px]">
                     {t('dashboardWeeklySalesPeriodCompareHeader')}
                   </div>
-                  <div className="mb-1 text-[8px] font-semibold text-noorix-muted sm:text-[10px]">
+                  <div className="mb-1 text-[8px] font-semibold text-white/75 sm:text-[10px]">
                     {t('dashboardWeeklySalesAvgDailyShort')}
                   </div>
-                  <div className={PERIOD_CONTROLS_WRAP}>
-                    <Input
-                      type="select"
-                      size="sm"
-                      containerClassName="!gap-0 w-auto shrink-0"
-                      className="nx-dashboard-period-select nx-dashboard-period-select--month"
-                      value={panelMonthB}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        onPanelMonthBChange(Number(e.target.value))
-                      }
-                      aria-label={t('dashboardWeeklySalesPeriodBColumn')}
-                    >
-                      {weeklyMonthOptions.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </Input>
-                    <Input
-                      type="select"
-                      size="sm"
-                      containerClassName="!gap-0 w-auto shrink-0"
-                      className="nx-dashboard-period-select nx-dashboard-period-select--year"
-                      value={panelYearB}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        onPanelYearBChange(Number(e.target.value))
-                      }
-                      aria-label={t('dashboardWeeklySalesPeriodBYear')}
-                    >
-                      {weeklyYearOptions.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
-                        </option>
-                      ))}
-                    </Input>
+                  <div className="text-[8px] font-bold text-white/80 sm:text-[10px]">
+                    {weeklyMonthOptions.find((o) => o.value === panelMonthB)?.label} {panelYearB}
                   </div>
                 </th>
                 <th className={TH_CELL}>
