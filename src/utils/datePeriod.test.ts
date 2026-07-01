@@ -59,6 +59,22 @@ describe('datePeriod', () => {
     });
   });
 
+  it('resolves day mode as a selectable day range', () => {
+    expect(resolveDatePeriodRange(state({
+      mode: 'day',
+      rangeStart: '2026-06-10',
+      rangeEnd: '2026-06-12',
+    }), now)).toEqual({
+      startDate: '2026-06-10T00:00:00+03:00',
+      endDate: '2026-06-12T23:59:59+03:00',
+    });
+    expect(buildDatePeriodLabel(state({
+      mode: 'day',
+      rangeStart: '2026-06-10',
+      rangeEnd: '2026-06-12',
+    }), now)).toBe('10-06-2026 - 12-06-2026');
+  });
+
   it('lists year-month keys included in a date range', () => {
     expect(listYearMonthsInRange('2025-11-20', '2026-02-02').map((x) => x.key)).toEqual([
       '2025-11',

@@ -2907,7 +2907,8 @@ input:focus, select:focus, textarea:focus {
   gap: 8px;
   min-width: 0;
 }
-.ndfb-calendar--months {
+.ndfb-calendar--months,
+.ndfb-calendar--days {
   position: absolute;
   z-index: 70;
   inset-block-start: calc(100% + 8px);
@@ -2953,13 +2954,44 @@ input:focus, select:focus, textarea:focus {
   font-weight: 800;
   padding: 3px 8px;
 }
+.ndfb-calendar-month-select {
+  width: 112px;
+  min-height: 34px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 8px;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-primary);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+}
+.ndfb-calendar-head-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .ndfb-month-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
+.ndfb-weekday-grid,
+.ndfb-day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.ndfb-weekday-grid {
+  margin-bottom: 6px;
+  color: var(--noorix-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
 .ndfb-month-cell,
-.ndfb-year-cell {
+.ndfb-year-cell,
+.ndfb-day-cell {
   min-width: 0;
   min-height: 38px;
   border: 1px solid transparent;
@@ -2974,17 +3006,23 @@ input:focus, select:focus, textarea:focus {
   transition: background 140ms, border-color 140ms, color 140ms, box-shadow 140ms;
 }
 .ndfb-month-cell:hover,
-.ndfb-year-cell:hover {
+.ndfb-year-cell:hover,
+.ndfb-day-cell:hover {
   border-color: var(--noorix-blue-30);
   background: var(--noorix-blue-8);
   color: var(--noorix-accent-blue);
 }
 .ndfb-month-cell--active,
-.ndfb-year-cell--active {
+.ndfb-year-cell--active,
+.ndfb-day-cell--active {
   border-color: var(--noorix-accent-blue);
   background: var(--noorix-accent-blue);
   color: #fff;
   box-shadow: 0 3px 8px var(--noorix-blue-20);
+}
+.ndfb-day-cell--blank {
+  visibility: hidden;
+  pointer-events: none;
 }
 .ndfb-range-separator {
   color: var(--noorix-text-muted);
@@ -3246,19 +3284,22 @@ input:focus, select:focus, textarea:focus {
     grid-template-columns: 1fr;
     flex-basis: 100%;
   }
-  .ndfb-calendar--months {
+  .ndfb-calendar--months,
+  .ndfb-calendar--days {
     width: calc(100vw - 32px);
     max-width: 390px;
     inset-inline-start: 50%;
     transform: translateX(-50%);
   }
-  [dir="rtl"] .ndfb-calendar--months {
+  [dir="rtl"] .ndfb-calendar--months,
+  [dir="rtl"] .ndfb-calendar--days {
     transform: translateX(50%);
   }
   .ndfb-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ndfb-calendar--years { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ndfb-month-cell,
-  .ndfb-year-cell {
+  .ndfb-year-cell,
+  .ndfb-day-cell {
     min-height: 40px;
     font-size: 13px;
   }

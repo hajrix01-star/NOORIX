@@ -65,6 +65,15 @@ export function normalizeMonthSpan(
   };
 }
 
+export function normalizeDateSpan(startDate: string, endDate: string) {
+  const s = toYmdOnly(startDate);
+  const e = toYmdOnly(endDate);
+  if (!s && !e) return { startDate: '', endDate: '' };
+  if (!s) return { startDate: e, endDate: e };
+  if (!e) return { startDate: s, endDate: s };
+  return s <= e ? { startDate: s, endDate: e } : { startDate: e, endDate: s };
+}
+
 export function listYearMonthsInRange(startDate: string, endDate: string) {
   const start = toYmdOnly(startDate);
   const end = toYmdOnly(endDate);
@@ -125,8 +134,12 @@ export function resolveDatePeriodRange(state: DatePeriodState, now: DatePeriodNo
   }
 
   if (state.mode === 'day') {
-    const day = state.selDay || ymd(now.year, now.month, now.day);
-    return { startDate: saudiDayStart(day), endDate: saudiDayEnd(day) };
+    const fallbackDay = state.selDay || ymd(now.year, now.month, now.day);
+    const span = normalizeDateSpan(state.rangeStart || fallbackDay, state.rangeEnd || fallbackDay);
+    return {
+      startDate: saudiDayStart(span.startDate || fallbackDay),
+      endDate: saudiDayEnd(span.endDate || fallbackDay),
+    };
   }
 
   const fallbackStart = ymd(now.year, now.month, 1);
@@ -166,7 +179,14 @@ export function buildDatePeriodLabel(state: DatePeriodState, now: DatePeriodNow)
     }
     return `${formatMonth(span.startYear, span.startMonth)} - ${formatMonth(span.endYear, span.endMonth)}`;
   }
-  if (state.mode === 'day') return formatDate(state.selDay || ymd(now.year, now.month, now.day));
+  if (state.mode === 'day') {
+    const fallbackDay = state.selDay || ymd(now.year, now.month, now.day);
+    const span = normalizeDateSpan(state.rangeStart || fallbackDay, state.rangeEnd || fallbackDay);
+    if (span.startDate && span.endDate && span.startDate !== span.endDate) {
+      return `${formatDate(span.startDate)} - ${formatDate(span.endDate)}`;
+    }
+    return formatDate(span.startDate || fallbackDay);
+  }
   const range = resolveDatePeriodRange(state, now);
   return `${formatDate(range.startDate)} - ${formatDate(range.endDate)}`;
 }

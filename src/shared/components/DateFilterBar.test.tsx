@@ -46,6 +46,7 @@ describe('DateFilterBar', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByTestId('applied-label').textContent).toBe(expectedLabel);
+    expect(screen.queryByRole('button', { name: MONTH_NAMES_EN[now.month - 1] })).toBeNull();
   });
 
   it('does not update the applied period until Apply is clicked', () => {
@@ -59,5 +60,22 @@ describe('DateFilterBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(screen.getByTestId('applied-label').textContent).not.toBe(appliedLabel);
+  });
+
+  it('supports selecting a day range from the day calendar', () => {
+    renderFilter();
+
+    const now = getSaudiNow();
+    const startDate = `${now.year}-${String(now.month).padStart(2, '0')}-01`;
+    const endDate = `${now.year}-${String(now.month).padStart(2, '0')}-03`;
+    const expectedLabel = `01-${String(now.month).padStart(2, '0')}-${now.year} - 03-${String(now.month).padStart(2, '0')}-${now.year}`;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Day' }));
+    fireEvent.click(screen.getByRole('button', { name: startDate }));
+    fireEvent.click(screen.getByRole('button', { name: endDate }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByTestId('applied-label').textContent).toBe(expectedLabel);
+    expect(screen.queryByRole('button', { name: startDate })).toBeNull();
   });
 });

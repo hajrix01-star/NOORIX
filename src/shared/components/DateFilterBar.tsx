@@ -5,6 +5,8 @@ import { Button, Input } from '../../ui';
 import { getSaudiNow } from '../../utils/saudiDate';
 import {
   buildDatePeriodLabel,
+  lastDayOfMonth,
+  normalizeDateSpan,
   ymd,
   type DatePeriodMode,
   type DatePeriodState,
@@ -14,6 +16,8 @@ export { useDateFilter };
 
 const MONTH_NAMES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+const WEEKDAY_NAMES_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAY_NAMES_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
 function normalizeMode(mode: DatePeriodMode): DatePeriodMode {
   return mode === 'month' ? 'months' : mode;
@@ -64,6 +68,11 @@ type MonthCalendarProps = {
 
 function monthIndex(year: number, month: number) {
   return year * 12 + month;
+}
+
+function parseYmd(value: string) {
+  const [year, month, day] = String(value || '').split('-').map(Number);
+  return { year: year || 0, month: month || 0, day: day || 0 };
 }
 
 function isMonthInDraftRange(draft: DatePeriodState, year: number, month: number) {
@@ -169,26 +178,139 @@ function YearCalendar({ selectedYear, years, onSelect }: YearCalendarProps) {
   );
 }
 
+type DayCalendarProps = {
+  draft: DatePeriodState;
+  monthNames: string[];
+  weekdayNames: string[];
+  years: number[];
+  updateDraft: (patch: Partial<DatePeriodState>) => void;
+  yearLabel: string;
+  monthLabel: string;
+};
+
+function isDayInDraftRange(draft: DatePeriodState, date: string) {
+  const span = normalizeDateSpan(draft.rangeStart || draft.selDay, draft.rangeEnd || draft.selDay);
+  return !!span.startDate && !!span.endDate && date >= span.startDate && date <= span.endDate;
+}
+
+function DayCalendar({ draft, monthNames, weekdayNames, years, updateDraft, yearLabel, monthLabel }: DayCalendarProps) {
+  const [anchor, setAnchor] = useState<string | null>(null);
+  const parsed = parseYmd(draft.rangeStart || draft.selDay);
+  const calendarYear = parsed.year || years[1] || years[0];
+  const calendarMonth = parsed.month || 1;
+  const daysCount = lastDayOfMonth(calendarYear, calendarMonth);
+  const firstWeekday = new Date(calendarYear, calendarMonth - 1, 1).getDay();
+  const span = normalizeDateSpan(draft.rangeStart || draft.selDay, draft.rangeEnd || draft.selDay);
+  const hasRange = span.startDate !== span.endDate;
+
+  const setCalendarMonth = (year: number, month: number) => {
+    const boundedDay = Math.min(parsed.day || 1, lastDayOfMonth(year, month));
+    const date = ymd(year, month, boundedDay);
+    updateDraft({
+      selDay: date,
+      rangeStart: date,
+      rangeEnd: date,
+    });
+    setAnchor(null);
+  };
+
+  const selectDay = (day: number) => {
+    const date = ymd(calendarYear, calendarMonth, day);
+    if (!anchor || hasRange) {
+      updateDraft({ selDay: date, rangeStart: date, rangeEnd: date });
+      setAnchor(date);
+      return;
+    }
+    const next = normalizeDateSpan(anchor, date);
+    updateDraft({ selDay: next.startDate, rangeStart: next.startDate, rangeEnd: next.endDate });
+    setAnchor(null);
+  };
+
+  return (
+    <div className="ndfb-calendar ndfb-calendar--days">
+      <div className="ndfb-calendar-panel">
+        <div className="ndfb-calendar-panel__head">
+          <span>{monthLabel}</span>
+          <div className="ndfb-calendar-head-controls">
+            <select
+              className="ndfb-calendar-year-select"
+              value={calendarYear}
+              onChange={(event) => setCalendarMonth(Number(event.target.value), calendarMonth)}
+              aria-label={yearLabel}
+            >
+              {years.map((year) => <option key={year} value={year}>{year}</option>)}
+            </select>
+            <select
+              className="ndfb-calendar-month-select"
+              value={calendarMonth}
+              onChange={(event) => setCalendarMonth(calendarYear, Number(event.target.value))}
+              aria-label={monthLabel}
+            >
+              {monthNames.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="ndfb-weekday-grid" aria-hidden="true">
+          {weekdayNames.map((name) => <span key={name}>{name}</span>)}
+        </div>
+        <div className="ndfb-day-grid">
+          {Array.from({ length: firstWeekday }).map((_, index) => (
+            <span key={`blank-${index}`} className="ndfb-day-cell ndfb-day-cell--blank" />
+          ))}
+          {Array.from({ length: daysCount }).map((_, index) => {
+            const day = index + 1;
+            const date = ymd(calendarYear, calendarMonth, day);
+            const active = isDayInDraftRange(draft, date);
+            return (
+              <button
+                key={date}
+                type="button"
+                className={`ndfb-day-cell${active ? ' ndfb-day-cell--active' : ''}`}
+                aria-label={date}
+                onClick={() => selectDay(day)}
+              >
+                {day}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DateFilterBar({ filter }: any) {
   const { t, lang } = useTranslation();
   const now = getSaudiNow();
   const years = useMemo(() => [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3], [now.year]);
   const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+  const weekdayNames = lang === 'ar' ? WEEKDAY_NAMES_AR : WEEKDAY_NAMES_EN;
   const { draft, updateDraft } = useDraftDateState(filter);
+  const [openPanel, setOpenPanel] = useState<DatePeriodMode | null>(null);
   const mode = toUiMode(draft.mode);
   const draftLabel = buildDatePeriodLabel(draft, now);
   const isDirty = JSON.stringify(cloneDateState(filter.state)) !== JSON.stringify(draft);
 
   const setMode = (nextMode: DatePeriodMode) => {
-    updateDraft({ mode: normalizeMode(nextMode) });
+    const normalized = normalizeMode(nextMode);
+    if (normalized === 'day') {
+      const day = draft.selDay || ymd(now.year, now.month, now.day);
+      updateDraft({ mode: normalized, rangeStart: day, rangeEnd: day });
+      setOpenPanel('day');
+      return;
+    }
+    updateDraft({ mode: normalized });
+    setOpenPanel(nextMode === 'all' ? null : nextMode);
   };
 
   const apply = () => {
     applyDraft(filter, draft);
+    setOpenPanel(null);
   };
 
   const reset = () => {
     filter.reset();
+    setOpenPanel(null);
   };
 
   return (
@@ -215,7 +337,7 @@ export default function DateFilterBar({ filter }: any) {
         ))}
       </div>
 
-      {mode === 'month' && (
+      {mode === 'month' && openPanel === 'month' && (
         <MonthCalendar
           draft={draft}
           monthNames={monthNames}
@@ -233,18 +355,16 @@ export default function DateFilterBar({ filter }: any) {
         />
       )}
 
-      {mode === 'day' && (
-        <div className="ndfb-fields">
-          <Input
-            type="date"
-            size="sm"
-            containerClassName="ndfb-field ndfb-field--date"
-            value={draft.selDay}
-            max={ymd(now.year, now.month, now.day)}
-            onChange={(event: any) => updateDraft({ selDay: event.target.value })}
-            aria-label={t('dateFilterDay')}
-          />
-        </div>
+      {mode === 'day' && openPanel === 'day' && (
+        <DayCalendar
+          draft={draft}
+          monthNames={monthNames}
+          weekdayNames={weekdayNames}
+          years={years}
+          updateDraft={updateDraft}
+          yearLabel={t('dateFilterYear')}
+          monthLabel={t('dateFilterMonth')}
+        />
       )}
 
       {mode === 'range' && (
