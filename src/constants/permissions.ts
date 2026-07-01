@@ -118,6 +118,7 @@ export const ORDERS_SALES_REPORT_ACCESS = [
 /** تبويبات التقارير — ترتيب redirect الافتراضي */
 export const REPORT_TAB_SEQUENCE: Array<{ path: string; required: readonly string[] }> = [
   { path: '/reports/general', required: REPORTS_GENERAL_ACCESS },
+  { path: '/reports/general-v2', required: REPORTS_GENERAL_ACCESS },
   { path: '/reports/cost-apps', required: REPORTS_COST_APPS_ACCESS },
   { path: '/reports/tax', required: REPORTS_TAX_ACCESS },
   { path: '/reports/bank-statement', required: REPORTS_BANK_ACCESS },
@@ -165,6 +166,7 @@ export const ROUTE_PERMISSION = {
   '/hr':            HR_APP_ACCESS,
   '/reports':       REPORTS_APP_ACCESS,
   '/reports/general': REPORTS_GENERAL_ACCESS,
+  '/reports/general-v2': REPORTS_GENERAL_ACCESS,
   '/reports/cost-apps': REPORTS_COST_APPS_ACCESS,
   '/reports/tax':   REPORTS_TAX_ACCESS,
   '/reports/bank-statement': REPORTS_BANK_ACCESS,
@@ -238,6 +240,7 @@ const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[]
   { path: '/assets', required: ASSETS_APP_ACCESS },
   { path: '/suppliers', required: PERMISSIONS.VIEW_SUPPLIERS },
   { path: '/reports/general', required: REPORTS_GENERAL_ACCESS },
+  { path: '/reports/general-v2', required: REPORTS_GENERAL_ACCESS },
   { path: '/reports/cost-apps', required: REPORTS_COST_APPS_ACCESS },
   { path: '/reports/tax', required: REPORTS_TAX_ACCESS },
   { path: '/reports/bank-statement', required: REPORTS_BANK_ACCESS },

@@ -14,6 +14,7 @@ import { ScreenShell, ScreenTitle, cn } from '../../ui';
 
 const REPORT_TAB_LABELS: Record<string, string> = {
   '/reports/general': 'reportGeneralReport',
+  '/reports/general-v2': 'reportGeneralV2Nav',
   '/reports/cost-apps': 'reportCostAppsNav',
   '/reports/tax': 'reportTax',
   '/reports/bank-statement': 'reportBankStatementAnalysis',
@@ -23,7 +24,7 @@ export default function ReportsLayout() {
   const { t } = useTranslation();
   const { user } = useApp();
   const location = useLocation();
-  const isGeneralReport = location.pathname === '/reports/general';
+  const isGeneralReport = location.pathname === '/reports/general' || location.pathname === '/reports/general-v2';
 
   const visibleLinks = useMemo(
     () =>
