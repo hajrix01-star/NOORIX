@@ -1394,20 +1394,91 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 
 /* ========== Reports P&L table — accounting-grade grid ========== */
+.nx-reports-page-head {
+  margin-bottom: 12px;
+}
+
+.nx-reports-frame {
+  width: 100%;
+  overflow: visible;
+}
+
+.nx-reports-frame.noorix-surface-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.nx-reports-tab-bar {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--noorix-border) 84%, transparent);
+  border-radius: 8px;
+  background: var(--noorix-bg-surface);
+  padding: 6px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  -webkit-overflow-scrolling: touch;
+}
+
+.noorix-surface-card > .nx-reports-tab-bar {
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.nx-reports-tab {
+  display: inline-flex;
+  min-height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: var(--noorix-muted);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nx-reports-tab--idle:hover {
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text);
+}
+
+.nx-reports-tab--active {
+  border-color: color-mix(in srgb, var(--noorix-accent-blue) 28%, var(--noorix-border));
+  background: color-mix(in srgb, var(--noorix-accent-blue) 9%, var(--noorix-bg-surface));
+  color: var(--noorix-accent-blue);
+  box-shadow: inset 0 -2px 0 var(--noorix-accent-blue);
+}
+
+.nx-reports-content {
+  padding: 24px;
+}
+
+.nx-reports-content--general {
+  padding: 14px 0 0;
+}
+
 .nx-pl-workspace {
   width: 100%;
-  max-width: 1480px;
+  max-width: 1540px;
   margin-inline: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .nx-pl-command-center {
   border: 1px solid color-mix(in srgb, var(--noorix-border) 86%, transparent);
   border-radius: 8px;
   background: var(--noorix-bg-surface);
-  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.07);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.09);
   overflow: hidden;
 }
 
@@ -1422,8 +1493,8 @@ html[data-card-style="10"] .noorix-stat-card {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 18px;
-  padding: 16px;
+  gap: 20px;
+  padding: 18px;
 }
 
 .nx-pl-eyebrow {
@@ -1444,7 +1515,7 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 
 .nx-pl-command-center__title {
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .nx-pl-command-center__meta {
@@ -1496,7 +1567,7 @@ html[data-card-style="10"] .noorix-stat-card {
 .nx-pl-kpi-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .nx-pl-kpi-card {
@@ -1546,7 +1617,7 @@ html[data-card-style="10"] .noorix-stat-card {
   border: 1px solid color-mix(in srgb, var(--noorix-border) 86%, transparent);
   border-radius: 8px;
   background: var(--noorix-bg-surface);
-  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
 }
 
 .nx-pl-statement-head {
@@ -1752,6 +1823,22 @@ html[data-card-style="10"] .noorix-stat-card {
 }
 
 @media (max-width: 700px) {
+  .nx-reports-tab-bar {
+    margin-inline: -2px;
+    border-radius: 8px;
+    padding: 5px;
+  }
+
+  .nx-reports-tab {
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+
+  .nx-reports-content {
+    padding: 14px 0 0;
+  }
+
   .nx-pl-workspace {
     gap: 10px;
   }
