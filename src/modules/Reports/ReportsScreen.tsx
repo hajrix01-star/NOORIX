@@ -8,9 +8,8 @@ import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
-import { Button, Input, ScreenTabs, ScreenShell, cn, MetricCard } from '../../ui';
+import { ScreenShell } from '../../ui';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
-import { KPI_CARD_SPARKLINE_COLORS } from '../../constants/kpiCardTheme';
 import {
   EN_MONTHS,
   amountText,
@@ -24,15 +23,12 @@ import {
   filterVisibleRowsByLabel,
   type PlDisplayLevel,
 } from './reportHelpers';
-import GeneralPlTable from './GeneralPlTable';
+import ProfitLossReportWorkspace from './ProfitLossReportWorkspace';
+import { MONTH_NAMES_AR, MONTH_NAMES_EN } from './profitLossPresentationModel';
 import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
 import { profitLossPdfExportExtraCss } from './reportsPlExportPdfCss';
 import { getSaudiNow } from '../../utils/saudiDate';
-import { formatSignedPercent, grossMargin, profitMargin } from '../../shared/reporting/plDisplaySelectors';
 import type { ReportPeriodMode } from './reportTypes';
-
-const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export default function ReportsScreen() {
   const { activeCompanyId, companies } = useApp();
@@ -98,23 +94,6 @@ export default function ReportsScreen() {
 
   function toggleGroup(collapseKey: any) {
     setCollapsedGroups((prev: any) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
-  }
-
-  function getCardValue(key: any) {
-    if (!report) return '0';
-    if (!selectedMonthNumber) return report.cards[key] || '0';
-    if (key === 'grossProfit' || key === 'netProfit') {
-      return report.summaryRows.find((row: any) => row.key === key)?.months[selectedMonthNumber - 1] || '0';
-    }
-    return report.groups.find((row: any) => row.key === key)?.months[selectedMonthNumber - 1] || '0';
-  }
-
-  function getCardProfitPercent(key: any) {
-    if (!report || (key !== 'grossProfit' && key !== 'netProfit')) return null;
-    const sales = Number(getCardValue('sales') || 0);
-    const profit = Number(getCardValue(key) || 0);
-    const pct = key === 'grossProfit' ? grossMargin(profit, sales) : profitMargin(profit, sales);
-    return pct == null ? null : formatSignedPercent(pct);
   }
 
   const { exportRows, plExportRowMeta } = useMemo(() => {
@@ -247,202 +226,40 @@ export default function ReportsScreen() {
     <ScreenShell>
       <ReportsDetailModal state={detailState} onClose={() => setDetailState(null)} companyId={activeCompanyId} year={year} t={t} lang={lang} />
 
-      <div className="flex flex-col gap-4">
-      <div className="nx-page-header">
-        <div className="flex-1 min-w-0">
-          <h2 className="font-bold m-0 text-[18px]">{t('reportGeneral')}</h2>
-        </div>
-        <div className="flex items-end flex-wrap gap-2 flex-[0_1_auto]">
-          <Input type="select" label={t('reportYear')} value={year} onChange={(e: any) => setYear(Number(e.target.value))}>
-            {yearOptions.map((option: any) => <option key={option} value={option}>{option}</option>)}
-          </Input>
-          <ScreenTabs
-            variant="segmented"
-            items={periodTabItems}
-            value={periodMode}
-            onChange={(value) => setPeriodMode(value as ReportPeriodMode)}
-            barClassName="self-end"
-            buttonSize="sm"
-          />
-          {periodMode === 'month' && !isMobile && (
-            <Input type="select" label={t('reportMonth')} value={selectedMonth} onChange={(e: any) => setSelectedMonth(e.target.value)}>
-              {EN_MONTHS.map((month: any, index: any) => <option key={month} value={index + 1}>{month}</option>)}
-            </Input>
-          )}
-          <div className="nx-toolbar">
-            <Button size="sm" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
-            <Button size="sm" onClick={handleExportPdf} disabled={!report}>طباعة / PDF</Button>
-            <Button size="sm" onClick={handlePrint} disabled={!report}>{t('print')}</Button>
-          </div>
-        </div>
-      </div>
-
-      {!activeCompanyId && (
-        <div className="noorix-surface-card p-5 text-center text-noorix-muted">
-          {t('pleaseSelectCompany')}
-        </div>
-      )}
-
-      {activeCompanyId && (
-        <>
-          <div className="noorix-surface-card p-4 text-noorix-muted text-[13px]">
-            {t('reportClickHint')}
-            <div className="mt-2">{t('reportPlDetailInvoicesHint')}</div>
-            <div className="mt-2 font-semibold text-noorix-text">{t('reportAmountBasisGross')}</div>
-            {selectedMonthNumber && <div className="mt-2">{t('reportFocusedMonthDesc')}</div>}
-          </div>
-
-          {report && (
-            <div
-              className={cn(
-                'nx-kpi-container mt-1 transition-opacity duration-200',
-                isFetching && isPlaceholderData && 'pointer-events-none opacity-55',
-              )}
-            >
-              <div className="nx-kpi-grid">
-                {[
-                  { key: 'sales', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('revenueGroup')}` : t('annualSales') },
-                  { key: 'purchases', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('purchasesGroup')}` : t('annualPurchases') },
-                  { key: 'expenses', label: selectedMonthNumber ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} — ${t('expensesGroup')}` : t('annualExpenses') },
-                  { key: 'grossProfit', label: t('annualGrossProfit') },
-                  { key: 'netProfit', label: t('annualNetProfit') },
-                ].map((card: any) => {
-                  const profitPct = (card.key === 'grossProfit' || card.key === 'netProfit') ? getCardProfitPercent(card.key) : null;
-                  const val = Number(getCardValue(card.key) || 0);
-                  const isProfitCard = card.key === 'grossProfit' || card.key === 'netProfit';
-                  const accentColor =
-                    (KPI_CARD_SPARKLINE_COLORS as Record<string, string>)[String(card.key)] || KPI_CARD_SPARKLINE_COLORS.sales;
-                  const periodLabel = selectedMonthNumber
-                    ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} · ${year}`
-                    : String(year);
-                  const valueNegative = isProfitCard && val < 0;
-                  return (
-                    <MetricCard
-                      key={`${year}-${selectedMonthNumber || 'year'}-${card.key}`}
-                      color={accentColor}
-                      className="min-h-[120px]"
-                    >
-                      <MetricCard.Header label={card.label} />
-                      <MetricCard.Value
-                        value={amountText(getCardValue(card.key))}
-                        currency="SR"
-                        color={valueNegative ? 'var(--noorix-accent-red)' : undefined}
-                      />
-                      <div className="min-h-[10px] flex-1 shrink-0" aria-hidden />
-                      <MetricCard.Footer className="mt-3 border-t border-noorix-border pt-3 pb-3">
-                        <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-noorix-muted">{periodLabel}</span>
-                        {profitPct != null && (
-                          <span
-                            className={cn(
-                              'inline-flex max-w-[min(100%,140px)] shrink-0 truncate rounded px-2 py-0.5 text-[11px] font-bold',
-                              Number(profitPct) > 0 && 'bg-[#eaf3de] text-[#3B6D11]',
-                              Number(profitPct) < 0 && 'bg-[#FCEBEB] text-[#A32D2D]',
-                              Number(profitPct) === 0 && 'bg-noorix-bg-muted text-noorix-muted',
-                            )}
-                          >
-                            {t('reportProfitMargin')}: {profitPct}%
-                          </span>
-                        )}
-                      </MetricCard.Footer>
-                    </MetricCard>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {isLoading && (
-            <div className="noorix-surface-card text-center text-noorix-muted p-6">
-              {t('loading')}
-            </div>
-          )}
-
-          {error && (
-            <div className="noorix-surface-card p-5 text-noorix-red" style={{ background: 'var(--noorix-red-8)' }}>
-              {error.message}
-            </div>
-          )}
-
-          {!isLoading && !error && report && flatRows.length === 0 && (
-            <div className="noorix-surface-card text-center text-noorix-muted p-6">
-              {t('reportNoData')}
-            </div>
-          )}
-
-          {!isLoading && !error && report && visibleRows.length > 0 && (
-            <div className="mx-auto w-full max-w-[min(100%,1440px)]">
-              <div className="noorix-surface-card nx-pl-report-card overflow-hidden p-0">
-                {isMobile && (
-                  <div className="border-b border-noorix-border bg-noorix-bg-surface">
-                    <ScreenTabs
-                      variant="underline"
-                      items={periodTabItems}
-                      value={periodMode}
-                      onChange={(value) => setPeriodMode(value as ReportPeriodMode)}
-                      barClassName="border-b border-noorix-border"
-                    />
-                    {periodMode === 'month' && (
-                      <ScreenTabs
-                        variant="underline"
-                        items={mobileMonthTabItems.filter((item) => item.id !== '')}
-                        value={selectedMonth}
-                        onChange={setSelectedMonth}
-                      />
-                    )}
-                  </div>
-                )}
-                <div className="nx-pl-table-toolbar flex flex-col gap-0 border-b border-noorix-border px-3 py-2.5">
-                  <div className="flex flex-wrap items-end gap-2">
-                    <div className="min-w-[120px] flex-1">
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-noorix-muted">{t('reportPlToolbarPeriod')}</div>
-                      <div className="text-[14px] font-bold text-noorix-text">
-                        {selectedMonthNumber
-                          ? `${(lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN)[selectedMonthNumber - 1]} ${year}`
-                          : String(year)}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {([1, 2, 3] as const).map((lvl) => (
-                        <Button
-                          key={lvl}
-                          size="sm"
-                          variant={plDisplayLevel === lvl ? 'primary' : 'default'}
-                          type="button"
-                          onClick={() => setPlDisplayLevel(lvl)}
-                        >
-                          {lvl === 1 ? t('reportPlLevel1') : lvl === 2 ? t('reportPlLevel2') : t('reportPlLevel3')}
-                        </Button>
-                      ))}
-                    </div>
-                    <Input
-                      type="text"
-                      size="sm"
-                      className="max-w-[220px] min-w-[140px]"
-                      label={t('reportPlRowFilterPlaceholder')}
-                      value={rowSearch}
-                      onChange={(e: any) => setRowSearch(e.target.value)}
-                    />
-                  </div>
-                  <div className="mt-1.5 text-[11px] leading-snug text-noorix-muted">{t('reportPlLevelsHint')}</div>
-                </div>
-                <GeneralPlTable
-                  report={report}
-                  visibleRows={visibleRows}
-                  collapsedGroups={collapsedGroups}
-                  toggleGroup={toggleGroup}
-                  lang={lang}
-                  t={t}
-                  isMobile={isMobile}
-                  selectedMonthNumber={selectedMonthNumber}
-                  monthNames={lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN}
-                  onOpenDetail={(payload) => setDetailState(payload)}
-                />
-            </div>
-            </div>
-          )}
-        </>
-      )}
-      </div>
+      <ProfitLossReportWorkspace
+        activeCompanyId={activeCompanyId}
+        companyName={companyName}
+        report={report}
+        isLoading={isLoading}
+        error={error as Error | null}
+        isFetching={isFetching}
+        isPlaceholderData={isPlaceholderData}
+        year={year}
+        yearOptions={yearOptions}
+        periodMode={periodMode}
+        selectedMonth={selectedMonth}
+        selectedMonthNumber={selectedMonthNumber}
+        periodTabItems={periodTabItems}
+        mobileMonthTabItems={mobileMonthTabItems}
+        visibleRows={visibleRows}
+        flatRowsCount={flatRows.length}
+        collapsedGroups={collapsedGroups}
+        plDisplayLevel={plDisplayLevel}
+        rowSearch={rowSearch}
+        isMobile={isMobile}
+        lang={lang}
+        t={t}
+        onYearChange={setYear}
+        onPeriodModeChange={setPeriodMode}
+        onSelectedMonthChange={setSelectedMonth}
+        onDisplayLevelChange={setPlDisplayLevel}
+        onRowSearchChange={setRowSearch}
+        onToggleGroup={toggleGroup}
+        onOpenDetail={(payload) => setDetailState(payload)}
+        onExportExcel={handleExportExcel}
+        onExportPdf={handleExportPdf}
+        onPrint={handlePrint}
+      />
     </ScreenShell>
   );
 }
