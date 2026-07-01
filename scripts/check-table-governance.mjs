@@ -28,6 +28,10 @@ function fail(file, line, message) {
 
 const governanceDoc = '.cursor/rules/tables-audit.mdc';
 const governanceText = read(governanceDoc);
+const manualTableRegistryPath = 'scripts/table-manual-exceptions.json';
+const manualTableRegistry = JSON.parse(read(manualTableRegistryPath));
+const allowedManualTableCounts = manualTableRegistry.allowedTableCounts ?? {};
+
 for (const required of [
   'Table Governance Addendum',
   'مصدر الحقيقة النهائي للجداول',
@@ -72,6 +76,31 @@ for (const file of sourceFiles) {
       fail(file, index + 1, 'table header background must not use muted/default text color');
     }
   });
+}
+
+const currentManualTableCounts = {};
+for (const file of sourceFiles) {
+  if (file === 'src/ui/SmartTable/SmartTable.tsx') continue;
+  const count = read(file).split(/\r?\n/).filter((line) => line.includes('<table')).length;
+  if (count > 0) currentManualTableCounts[file] = count;
+}
+
+for (const [file, count] of Object.entries(currentManualTableCounts)) {
+  const allowed = allowedManualTableCounts[file] ?? 0;
+  if (count > allowed) {
+    fail(
+      file,
+      null,
+      `manual <table> count is ${count}, allowed ${allowed}; use SmartTable or update ${manualTableRegistryPath} with a documented exception`,
+    );
+  }
+}
+
+for (const [file, allowed] of Object.entries(allowedManualTableCounts)) {
+  const current = currentManualTableCounts[file] ?? 0;
+  if (current < allowed) {
+    fail(file, null, `manual <table> registry is stale: allowed ${allowed}, current ${current}`);
+  }
 }
 
 if (failures.length > 0) {

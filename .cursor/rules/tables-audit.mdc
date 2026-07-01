@@ -78,6 +78,17 @@ SmartTable = جداول بيانات (قراءة، فرز، بحث، كروت ج
 
 ### 4. سجل الاستثناءات
 
+السجل التنفيذي الرسمي للاستثناءات هو:
+
+`scripts/table-manual-exceptions.json`
+
+هذا الملف هو الـ baseline المركزي لكل استخدام يدوي لـ `<table>` خارج `SmartTable`. لا تضف جدولًا يدويًا جديدًا إلا إذا:
+
+- كان `SmartTable` غير مناسب فعليًا.
+- أضفت أو حدثت السبب في هذا القسم.
+- حدثت `scripts/table-manual-exceptions.json`.
+- نجح `npm run check:table-governance`.
+
 عند إضافة جدول يدوي جديد، أضف سطرًا هنا قبل الدمج:
 
 | File | Reason | Owner/Area | Convert to SmartTable? |
