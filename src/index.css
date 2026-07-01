@@ -1393,6 +1393,201 @@ html[data-card-style="10"] .noorix-stat-card {
   transition: background 0.15s ease;
 }
 
+/* ========== Reports P&L table — accounting-grade grid ========== */
+.nx-pl-report-card {
+  border-color: color-mix(in srgb, var(--noorix-border) 82%, transparent);
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
+}
+
+.nx-pl-table-toolbar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--noorix-accent-blue) 4%, transparent), transparent 78%),
+    var(--noorix-bg-surface);
+}
+
+.nx-pl-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--noorix-bg-surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+.nx-pl-table {
+  --nx-pl-line: color-mix(in srgb, var(--noorix-border) 72%, transparent);
+  --nx-pl-line-strong: color-mix(in srgb, var(--noorix-border) 92%, transparent);
+  --nx-pl-head-bg: color-mix(in srgb, var(--noorix-accent-blue) 5%, var(--noorix-bg-surface));
+  --nx-pl-total-bg: color-mix(in srgb, var(--noorix-accent-blue) 4%, var(--noorix-bg-surface));
+  --nx-pl-hover: color-mix(in srgb, var(--noorix-accent-blue) 5%, var(--noorix-bg-surface));
+  color: var(--noorix-text);
+  font-size: 13px;
+}
+
+.nx-pl-table__th {
+  height: 44px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--nx-pl-line-strong);
+  border-inline-start: 1px solid var(--nx-pl-line);
+  background: var(--nx-pl-head-bg);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  vertical-align: middle;
+}
+
+.nx-pl-table__th:first-child {
+  border-inline-start: none;
+}
+
+.nx-pl-table__th--item {
+  background: var(--noorix-bg-surface);
+  padding-inline: 16px;
+  text-align: start;
+  box-shadow: -1px 0 0 var(--nx-pl-line);
+}
+
+[dir="ltr"] .nx-pl-table__th--item {
+  box-shadow: 1px 0 0 var(--nx-pl-line);
+}
+
+.nx-pl-table__th--month,
+.nx-pl-table__th--amount {
+  text-align: center;
+}
+
+.nx-pl-table__th--total {
+  background: var(--nx-pl-total-bg);
+  border-inline-start: 2px solid color-mix(in srgb, var(--noorix-accent-blue) 28%, var(--noorix-border));
+  padding-inline: 14px;
+}
+
+.nx-pl-table__cell {
+  height: 46px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--nx-pl-line);
+  border-inline-start: 1px solid color-mix(in srgb, var(--noorix-border) 50%, transparent);
+  vertical-align: middle;
+}
+
+.nx-pl-table__cell:first-child {
+  border-inline-start: none;
+}
+
+.nx-pl-table__cell--item {
+  padding-inline: 16px;
+  background: var(--noorix-bg-surface);
+  box-shadow: -1px 0 0 var(--nx-pl-line);
+  font-size: 13px;
+}
+
+[dir="ltr"] .nx-pl-table__cell--item {
+  box-shadow: 1px 0 0 var(--nx-pl-line);
+}
+
+.nx-pl-table__cell--month,
+.nx-pl-table__cell--amount {
+  text-align: center;
+}
+
+.nx-pl-table__cell--total {
+  background: var(--nx-pl-total-bg);
+  border-inline-start: 2px solid color-mix(in srgb, var(--noorix-accent-blue) 28%, var(--noorix-border));
+  padding-inline: 14px;
+}
+
+.nx-pl-table__row:nth-child(even) .nx-pl-table__cell:not(.nx-pl-table__cell--item):not(.nx-pl-table__cell--total) {
+  background: color-mix(in srgb, var(--noorix-bg-muted) 48%, transparent);
+}
+
+.nx-pl-table__row:hover .nx-pl-table__cell {
+  background: var(--nx-pl-hover) !important;
+}
+
+.nx-pl-table__row--group .nx-pl-table__cell {
+  height: 50px;
+  border-top: 1px solid var(--nx-pl-line-strong);
+  font-weight: 800;
+}
+
+.nx-pl-table__row--category .nx-pl-table__cell {
+  font-weight: 700;
+}
+
+.nx-pl-table__row--summary .nx-pl-table__cell {
+  height: 52px;
+  border-top: 2px solid color-mix(in srgb, var(--noorix-accent-blue) 22%, var(--noorix-border));
+  background: color-mix(in srgb, var(--noorix-accent-blue) 6%, var(--noorix-bg-surface)) !important;
+}
+
+.nx-pl-table__amount-btn {
+  border-radius: 6px;
+  min-height: 30px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nx-pl-table__amount-btn:hover {
+  background: color-mix(in srgb, var(--noorix-accent-blue) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--noorix-accent-blue) 14%, transparent);
+}
+
+.nx-pl-table__amount {
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.nx-pl-table__percent {
+  margin-top: 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.nx-pl-table__toggle {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--noorix-border) 80%, transparent);
+  border-radius: 5px;
+  background: var(--noorix-bg-surface);
+  color: currentColor;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+@media (max-width: 700px) {
+  .nx-pl-table {
+    font-size: 12px;
+  }
+
+  .nx-pl-table__th {
+    height: 40px;
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .nx-pl-table__th--item,
+  .nx-pl-table__cell--item {
+    padding-inline: 10px;
+  }
+
+  .nx-pl-table__cell {
+    height: 44px;
+    padding: 7px 6px;
+  }
+
+  .nx-pl-table__amount {
+    font-size: 12px;
+  }
+
+  .nx-pl-table__percent {
+    font-size: 10px;
+  }
+}
+
 /* ========== إطار موحد للجداول — NOORIX UI MANIFESTO ========== */
 .noorix-table-frame {
   border-radius: var(--noorix-card-radius);

@@ -370,8 +370,8 @@ export default function ReportsScreen() {
           )}
 
           {!isLoading && !error && report && visibleRows.length > 0 && (
-            <div className="max-w-[min(100%,1400px)] mx-auto">
-              <div className="noorix-surface-card overflow-hidden p-0">
+            <div className="mx-auto w-full max-w-[min(100%,1440px)]">
+              <div className="noorix-surface-card nx-pl-report-card overflow-hidden p-0">
                 {isMobile && (
                   <div className="border-b border-noorix-border bg-noorix-bg-surface">
                     <ScreenTabs
@@ -391,7 +391,7 @@ export default function ReportsScreen() {
                     )}
                   </div>
                 )}
-                <div className="flex flex-col gap-0 border-b border-noorix-border bg-noorix-bg-muted/30 px-3 py-2.5">
+                <div className="nx-pl-table-toolbar flex flex-col gap-0 border-b border-noorix-border px-3 py-2.5">
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="min-w-[120px] flex-1">
                       <div className="text-[11px] font-semibold uppercase tracking-wide text-noorix-muted">{t('reportPlToolbarPeriod')}</div>
