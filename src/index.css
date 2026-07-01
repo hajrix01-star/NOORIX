@@ -6076,10 +6076,13 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 /* Noorix Data Grid v2 — final table system layer */
 .noorix-table-frame {
   --nx-table-head-bg: var(--noorix-table-header-bg);
+  --nx-table-foot-bg: var(--noorix-bg-muted);
+  --nx-table-foot-fg: var(--noorix-text);
   --nx-table-row-hover: color-mix(in srgb, var(--noorix-accent-blue) 4%, var(--noorix-bg-surface));
   --nx-table-line: var(--noorix-table-header-border);
-  --nx-table-line-soft: color-mix(in srgb, var(--noorix-border) 54%, transparent);
+  --nx-table-line-soft: color-mix(in srgb, var(--noorix-border) 76%, transparent);
   --nx-table-col-line: var(--noorix-table-header-border);
+  --nx-table-body-col-line: color-mix(in srgb, var(--noorix-border) 82%, transparent);
 }
 .noorix-table {
   border-collapse: separate;
@@ -6097,7 +6100,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .noorix-table tbody td {
   height: 42px;
   border-bottom: 1px solid var(--nx-table-line-soft) !important;
-  border-inline-start: 1px solid var(--nx-table-col-line) !important;
+  border-inline-start: 1px solid var(--nx-table-body-col-line) !important;
   border-inline-end: 0 !important;
   line-height: 1.45;
 }
@@ -6109,11 +6112,12 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   background: var(--nx-table-row-hover);
 }
 .noorix-table tfoot td {
-  background: var(--nx-table-head-bg) !important;
-  border-top: 1px solid var(--nx-table-line) !important;
-  border-bottom: 0 !important;
-  border-inline-start: 1px solid var(--nx-table-col-line) !important;
+  background: var(--nx-table-foot-bg) !important;
+  border-top: 1px solid var(--nx-table-line-soft) !important;
+  border-bottom: 1px solid var(--nx-table-line-soft) !important;
+  border-inline-start: 1px solid var(--nx-table-body-col-line) !important;
   border-inline-end: 0 !important;
+  color: var(--nx-table-foot-fg) !important;
 }
 .noorix-table tfoot td:first-child {
   border-inline-start: 0 !important;
@@ -6152,10 +6156,13 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .noorix-invoices-table-frame {
   --nx-table-head-bg: var(--noorix-table-header-bg);
+  --nx-table-foot-bg: var(--noorix-bg-muted);
+  --nx-table-foot-fg: var(--noorix-text);
   --nx-table-row-hover: color-mix(in srgb, var(--noorix-accent-blue) 3%, #fff);
   --nx-table-line: var(--noorix-table-header-border);
-  --nx-table-line-soft: color-mix(in srgb, var(--noorix-border) 62%, transparent);
+  --nx-table-line-soft: color-mix(in srgb, var(--noorix-border) 78%, transparent);
   --nx-table-col-line: var(--noorix-table-header-border);
+  --nx-table-body-col-line: color-mix(in srgb, var(--noorix-border) 84%, transparent);
 }
 .noorix-invoices-table-frame .noorix-table thead th {
   height: 34px;
