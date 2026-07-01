@@ -11,6 +11,7 @@ import { createSupplier, throwIfApiFailed }      from '../../../services/api';
 import { SupplierForm }        from './SupplierForm';
 import { SupplierTable }       from './SupplierTable';
 import { SupplierEditModal }   from './SupplierEditModal';
+import { SupplierProfileModal } from './SupplierProfileModal';
 import SupplierImportExport    from './SupplierImportExport';
 import { Button, Input, ScreenShell } from '../../../ui';
 
@@ -23,6 +24,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
   const [search,          setSearch]          = useState('');
   const debouncedQ = useDebouncedValue(search.trim(), 300);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
+  const [profileSupplier, setProfileSupplier] = useState<any>(null);
   const [selectedIds,     setSelectedIds]     = useState(new Set());
   const { showToast } = useToast();
 
@@ -146,6 +148,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
             suppliers={suppliers}
             flatCategories={flatCategories}
             onEdit={(s: any) => setEditingSupplier(s)}
+            onOpenProfile={(s: any) => setProfileSupplier(s)}
             onDelete={handleDelete}
             selectedIds={selectedIds}
             onSelectChange={handleSelectChange}
@@ -161,6 +164,13 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
         onSave={handleEditSave}
         onClose={() => setEditingSupplier(null)}
         isSaving={update.isPending}
+      />
+      <SupplierProfileModal
+        open={!!profileSupplier}
+        supplier={profileSupplier}
+        companyId={companyId}
+        flatCategories={flatCategories}
+        onClose={() => setProfileSupplier(null)}
       />
     </ScreenShell>
   );
