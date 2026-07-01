@@ -35,10 +35,17 @@ function escHtml(value: unknown) {
 }
 
 function groupToneClass(row: any) {
+  if (row.rowType === 'groupTotal') return 'is-group-total';
   if (NEGATIVE_GROUPS.has(String(row.groupKey || row.key || ''))) return 'is-negative';
   if (row.rowType === 'summary' && Number(row.total || 0) < 0) return 'is-negative';
   if (row.rowType === 'summary') return 'is-summary';
   return '';
+}
+
+function displayV2RowLabel(row: any, lang: string) {
+  const label = displayLabel(row, lang);
+  if (row.rowType !== 'groupTotal') return label;
+  return lang === 'en' ? `Total ${label}` : `مجموع ${label}`;
 }
 
 function buildStatementRowsForV2(rows: any[]) {
@@ -76,7 +83,7 @@ function buildV2ExportRows(rows: any[], opts: {
       ? ''
       : '  '.repeat((row.depth || 0) + 1);
     const base: Record<string, unknown> = {
-      [t('reportItem')]: `${indent}${displayLabel(row, lang)}`,
+      [t('reportItem')]: `${indent}${displayV2RowLabel(row, lang)}`,
     };
     if (selectedMonthNumber) {
       base[`${monthLabel} ${year}`] = amountText(getContextAmount(row, selectedMonthNumber));
@@ -188,7 +195,7 @@ export default function GeneralReportV2Screen() {
       const total = selectedMonthNumber ? '' : `<td class="amt${amountClass}">${escHtml(amountText(row.total))}</td>`;
       const pct = selectedMonthNumber ? getContextPercent(row, selectedMonthNumber) : row.percentOfSalesYear;
       return `<tr class="${escHtml(row.rowType)} ${escHtml(rowTone)}">
-        <td class="label" style="padding-inline-start:${10 + (row.depth || 0) * 14}px">${escHtml(displayLabel(row, lang))}</td>
+        <td class="label" style="padding-inline-start:${10 + (row.depth || 0) * 14}px">${escHtml(displayV2RowLabel(row, lang))}</td>
         ${cells}
         ${total}
         <td class="pct">${escHtml(percentText(pct))}</td>
@@ -219,7 +226,7 @@ tbody tr:nth-child(even) td { background: #f8fafc; }
 td.label { text-align: start; font-size: 12px; color: #172033; }
 td.amt, td.pct { text-align: center; direction: ltr; font-variant-numeric: tabular-nums; }
 td.neg, tr.is-negative td { color: #991b1b; }
-tr.groupTotal td { background: #fff3f3 !important; color: #991b1b; font-weight: 900; border-top: 2px solid #fecaca; }
+tr.groupTotal td { background: #eaf3ff !important; color: #0f3b68; font-weight: 900; border-top: 2px solid #9bc3ea; }
 tr.summary td { background: #eaf3ff !important; color: #0f3b68; font-size: 12px; font-weight: 900; border-top: 2px solid #9bc3ea; }
 tr.is-summary td.amt { color: #047857; }
 .footer { margin-top: 12px; text-align: center; color: #64748b; font-size: 10px; }
@@ -362,6 +369,7 @@ tr.is-summary td.amt { color: #047857; }
                         key={`${row.groupKey}-${row.itemKey || row.key}-${row.rowType}-${row.depth || 0}`}
                         className={rowTone}
                         data-row-type={row.rowType}
+                        data-depth={row.depth || 0}
                         data-group={row.groupKey}
                       >
                         <td>
@@ -372,7 +380,7 @@ tr.is-summary td.amt { color: #047857; }
                             onClick={() => canCollapse ? toggleGroup(String(collapseKey)) : setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}
                           >
                             {canCollapse && <span>{collapsedGroups[String(collapseKey)] ? '+' : '-'}</span>}
-                            {displayLabel(row, lang)}
+                            {displayV2RowLabel(row, lang)}
                           </button>
                         </td>
                         {selectedMonthNumber ? (

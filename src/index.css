@@ -1692,10 +1692,24 @@ html[data-card-style="10"] .noorix-stat-card {
 
 .nx-gr2-table tr[data-row-type="group"] td,
 .nx-gr2-table tr[data-row-type="groupTotal"] td {
-  background: #fff7ed;
-  color: #7c2d12;
-  border-top: 2px solid #fed7aa;
+  background: #eaf3ff;
+  color: #0f3b68;
+  border-top: 2px solid #9bc3ea;
   font-weight: 950;
+}
+
+.nx-gr2-table tr[data-row-type="item"][data-depth="0"] td,
+.nx-gr2-table tr[data-row-type="category"][data-depth="0"] td {
+  background: #fbfdff;
+  color: #18385f;
+  font-weight: 900;
+}
+
+.nx-gr2-table tr[data-row-type="item"]:not([data-depth="0"]) td,
+.nx-gr2-table tr[data-row-type="category"]:not([data-depth="0"]) td {
+  background: #ffffff;
+  color: #475569;
+  font-weight: 800;
 }
 
 .nx-gr2-table tr[data-row-type="summary"] td {
@@ -1710,9 +1724,11 @@ html[data-card-style="10"] .noorix-stat-card {
   color: #991b1b !important;
 }
 
-.nx-gr2-table tr[data-row-type="groupTotal"].is-negative td {
-  background: #fef2f2;
-  border-top-color: #fecaca;
+.nx-gr2-table tr[data-row-type="groupTotal"].is-negative td,
+.nx-gr2-table tr[data-row-type="groupTotal"].is-group-total td {
+  background: #eaf3ff;
+  color: #0f3b68 !important;
+  border-top-color: #9bc3ea;
 }
 
 .nx-gr2-table tr:hover td {
