@@ -1637,14 +1637,19 @@ html[data-card-style="10"] .noorix-stat-card {
   border-collapse: separate;
   border-spacing: 0;
   color: #0f172a;
-  font-size: 12px;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.nx-gr2-table.is-month {
+  min-width: 0;
 }
 
 .nx-gr2-table th,
 .nx-gr2-table td {
   border-bottom: 1px solid #e2e8f0;
   border-inline-start: 1px solid #e8eef5;
-  padding: 9px 10px;
+  padding: 11px 12px;
   text-align: center;
   vertical-align: middle;
 }
@@ -1659,22 +1664,37 @@ html[data-card-style="10"] .noorix-stat-card {
   text-align: start;
 }
 
+.nx-gr2-table th:first-child,
+.nx-gr2-table td:first-child {
+  width: 260px;
+}
+
+.nx-gr2-table.is-month th:first-child,
+.nx-gr2-table.is-month td:first-child {
+  width: 54%;
+}
+
 .nx-gr2-table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #f8fafc;
-  color: #475569;
+  background: linear-gradient(180deg, #12385f 0%, #0f2746 100%);
+  color: #fff;
+  border-bottom-color: #0f2746;
   font-weight: 900;
+  font-size: 12px;
 }
 
 .nx-gr2-table thead th:first-child {
   z-index: 3;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #12385f 0%, #0f2746 100%);
 }
 
-.nx-gr2-table tr[data-row-type="group"] td {
-  background: #f8fafc;
+.nx-gr2-table tr[data-row-type="group"] td,
+.nx-gr2-table tr[data-row-type="groupTotal"] td {
+  background: #fff7ed;
+  color: #7c2d12;
+  border-top: 2px solid #fed7aa;
   font-weight: 950;
 }
 
@@ -1682,6 +1702,17 @@ html[data-card-style="10"] .noorix-stat-card {
   border-top: 2px solid #cbd5e1;
   background: #eef6ff;
   font-weight: 950;
+}
+
+.nx-gr2-table tr.is-negative td,
+.nx-gr2-table tr.is-negative .nx-gr2-money,
+.nx-gr2-table tr.is-negative .nx-gr2-total {
+  color: #991b1b !important;
+}
+
+.nx-gr2-table tr[data-row-type="groupTotal"].is-negative td {
+  background: #fef2f2;
+  border-top-color: #fecaca;
 }
 
 .nx-gr2-table tr:hover td {
@@ -1705,7 +1736,8 @@ html[data-card-style="10"] .noorix-stat-card {
   align-items: center;
   gap: 7px;
   justify-content: flex-start;
-  font-weight: inherit;
+  font-weight: 900;
+  font-size: 13px;
 }
 
 .nx-gr2-line span {
