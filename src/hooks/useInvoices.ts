@@ -12,6 +12,7 @@ export type UseInvoicesParams = {
   sortBy?: string;
   sortDir?: 'asc' | 'desc' | string;
   supplierId?: string;
+  supplierCategoryId?: string;
   q?: string;
   categoryId?: string;
   expenseLineId?: string;
@@ -33,6 +34,7 @@ export function useInvoices({
   sortBy = 'transactionDate',
   sortDir = 'desc',
   supplierId,
+  supplierCategoryId,
   q,
   categoryId,
   expenseLineId,
@@ -54,6 +56,7 @@ export function useInvoices({
       sortBy,
       sortDir,
       supplierId,
+      supplierCategoryId,
       q,
       categoryId,
       expenseLineId,
@@ -64,7 +67,7 @@ export function useInvoices({
       createdByUserId,
       requireExpenseLine,
     }),
-    queryFn: () => getInvoices(companyId, startDate, endDate, page, pageSize, batchId || null, null, kind, sortBy, sortDir, supplierId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId, createdByUserId || undefined, requireExpenseLine),
+    queryFn: () => getInvoices(companyId, startDate, endDate, page, pageSize, batchId || null, null, kind, sortBy, sortDir, supplierId, supplierCategoryId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId, createdByUserId || undefined, requireExpenseLine),
     fallbackMessage: 'Failed to load invoices',
     placeholderData: (previousData: any, previousQuery: any) => {
       const prevCompany = previousQuery?.queryKey?.[1];

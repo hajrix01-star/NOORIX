@@ -11,6 +11,7 @@ import { useToast } from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useInvoices } from '../../hooks/useInvoices';
 import { useSuppliers } from '../../hooks/useSuppliers';
+import { useCategories } from '../../hooks/useCategories';
 import { useVaults } from '../../hooks/useVaults';
 import { fmt } from '../../utils/format';
 import {
@@ -65,6 +66,7 @@ export function useInvoicesListScreen() {
   const [viewingInvoice, setViewingInvoice] = useState<any>(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
+  const [filterSupplierCategoryId, setFilterSupplierCategoryId] = useState('');
   const [filterCreatedByUserId, setFilterCreatedByUserId] = useState('');
   const [filterVaultId, setFilterVaultId] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
@@ -97,6 +99,7 @@ export function useInvoicesListScreen() {
     dateFilter.endDate,
     filterKind,
     filterSupplierId,
+    filterSupplierCategoryId,
     filterCreatedByUserId,
     filterVaultId,
     showCancelled,
@@ -110,7 +113,7 @@ export function useInvoicesListScreen() {
   ]);
 
   useEffect(() => {
-    const keys = ['from', 'to', 'kind', 'supplierId', 'categoryId', 'expenseLineId', 'q', 'batchId'];
+    const keys = ['from', 'to', 'kind', 'supplierId', 'supplierCategoryId', 'categoryId', 'expenseLineId', 'q', 'batchId'];
     const parts = keys.map((k: any) => searchParams.get(k) || '');
     const drillKey = parts.join('\u001f');
     if (!parts.some(Boolean)) {
@@ -124,6 +127,7 @@ export function useInvoicesListScreen() {
     const to = searchParams.get('to');
     const kind = searchParams.get('kind') || '';
     const supplierId = searchParams.get('supplierId') || '';
+    const supplierCategoryId = searchParams.get('supplierCategoryId') || '';
     const categoryId = searchParams.get('categoryId') || '';
     const expenseLineId = searchParams.get('expenseLineId') || '';
     const q = searchParams.get('q') || '';
@@ -142,6 +146,7 @@ export function useInvoicesListScreen() {
       }
     }
     if (supplierId) setFilterSupplierId(supplierId);
+    if (supplierCategoryId) setFilterSupplierCategoryId(supplierCategoryId);
     if (categoryId) setUrlExtra((p: any) => ({ ...p, categoryId }));
     if (expenseLineId) setUrlExtra((p: any) => ({ ...p, expenseLineId }));
     if (q) {
@@ -186,6 +191,15 @@ export function useInvoicesListScreen() {
   );
 
   const { suppliers } = useSuppliers(companyId);
+  const { flatCategories } = useCategories(companyId);
+  const supplierCategories = useMemo(
+    () =>
+      (flatCategories || []).filter((c: any) => {
+        const type = String(c?.type || '').toLowerCase();
+        return type === 'purchase' || type === 'expense';
+      }),
+    [flatCategories],
+  );
   const { data: creatorFilterOptions = { users: [] } } = useApiQuery<{ users: any[] }>({
     queryKey: invoiceKeys.creatorFilterOptions(companyId),
     queryFn: () => getInvoiceCreatorFilterOptions(companyId),
@@ -210,6 +224,7 @@ export function useInvoicesListScreen() {
     pageSize: PAGE_SIZE,
     kind: kindForApi,
     supplierId: filterSupplierId || undefined,
+    supplierCategoryId: filterSupplierCategoryId || undefined,
     sortBy: sortKey,
     sortDir,
     q: debouncedQ || undefined,
@@ -283,6 +298,7 @@ export function useInvoicesListScreen() {
     sortKey,
     sortDir,
     filterSupplierId,
+    filterSupplierCategoryId,
     debouncedQ,
     urlExtra,
     showCancelled,
@@ -365,6 +381,7 @@ export function useInvoicesListScreen() {
       undefined,
       undefined,
       filterSupplierId || undefined,
+      filterSupplierCategoryId || undefined,
       debouncedQ || undefined,
       urlExtra.categoryId || undefined,
       urlExtra.expenseLineId || undefined,
@@ -383,6 +400,7 @@ export function useInvoicesListScreen() {
     urlExtra.categoryId,
     urlExtra.expenseLineId,
     filterSupplierId,
+    filterSupplierCategoryId,
     debouncedQ,
     filterHasNotesOnly,
     filterVaultId,
@@ -420,6 +438,7 @@ export function useInvoicesListScreen() {
     setViewingInvoice,
     queryClient,
     suppliers,
+    supplierCategories,
     paymentVaults,
     dayCloseDefaultYmd,
     dayCloseOpen,
@@ -442,6 +461,8 @@ export function useInvoicesListScreen() {
     setFilterKind,
     filterSupplierId,
     setFilterSupplierId,
+    filterSupplierCategoryId,
+    setFilterSupplierCategoryId,
     filterCreatedByUserId,
     setFilterCreatedByUserId,
     filterVaultId,

@@ -142,9 +142,9 @@ export default function EmployeeProfileScreen() {
     queryKey: invoiceKeys.hrAllForEmployee(companyId, id),
     queryFn: async () => {
       const [advRes, hrRes, salRes] = await Promise.all([
-        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'advance', undefined, undefined, undefined, undefined, undefined, undefined, false),
-        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'hr_expense', undefined, undefined, undefined, undefined, undefined, undefined, false),
-        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'salary', undefined, undefined, undefined, undefined, undefined, undefined, false),
+        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'advance', undefined, undefined, undefined, undefined, undefined, undefined, undefined, false),
+        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'hr_expense', undefined, undefined, undefined, undefined, undefined, undefined, undefined, false),
+        getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'salary', undefined, undefined, undefined, undefined, undefined, undefined, undefined, false),
       ]);
       const items = [];
       items.push(

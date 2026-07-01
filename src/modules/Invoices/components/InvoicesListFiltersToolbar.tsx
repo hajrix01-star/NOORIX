@@ -30,11 +30,14 @@ export function InvoicesListFiltersToolbar({
   setFilterKind,
   filterSupplierId,
   setFilterSupplierId,
+  filterSupplierCategoryId,
+  setFilterSupplierCategoryId,
   filterCreatedByUserId,
   setFilterCreatedByUserId,
   filterVaultId,
   setFilterVaultId,
   suppliers,
+  supplierCategories,
   creatorUsersForFilter,
   vaultsList,
   showDayClose = true,
@@ -62,6 +65,15 @@ export function InvoicesListFiltersToolbar({
         label: (lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || s.id,
       })),
     [suppliers, lang],
+  );
+
+  const supplierCategoryOptions = useMemo(
+    () =>
+      (supplierCategories || []).map((c: any) => ({
+        value: c.id,
+        label: (lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn) || c.id,
+      })),
+    [supplierCategories, lang],
   );
 
   const creatorOptions = useMemo(() => {
@@ -187,6 +199,20 @@ export function InvoicesListFiltersToolbar({
           }}
           options={supplierOptions}
           emptyLabel={t('allSuppliers')}
+          showClearAll
+        />
+        <SearchableOptionsPicker
+          mode="multiple"
+          size="sm"
+          className="noorix-exec-filters__select"
+          aria-label={t('filterBySupplierCategory')}
+          values={csvToValues(filterSupplierCategoryId)}
+          onChange={(vals) => {
+            setFilterSupplierCategoryId(valuesToCsv(vals));
+            setPage(1);
+          }}
+          options={supplierCategoryOptions}
+          emptyLabel={t('allSupplierCategories')}
           showClearAll
         />
         <span className="noorix-exec-filters__icon" title={t('invoiceUserColumn')} aria-hidden>
