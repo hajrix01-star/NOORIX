@@ -35,11 +35,13 @@ describe('DateFilterBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
 
     const now = getSaudiNow();
-    const startMonth = Math.max(1, now.month - 1);
-    const expectedLabel = `${MONTH_NAMES_EN[startMonth - 1]} ${now.year} - ${MONTH_NAMES_EN[now.month - 1]} ${now.year}`;
+    const startMonth = now.month > 1 ? now.month - 1 : now.month;
+    const expectedLabel = startMonth === now.month
+      ? `${MONTH_NAMES_EN[now.month - 1]} ${now.year}`
+      : `${MONTH_NAMES_EN[startMonth - 1]} ${now.year} - ${MONTH_NAMES_EN[now.month - 1]} ${now.year}`;
 
-    fireEvent.click(screen.getByRole('button', { name: `From ${MONTH_NAMES_EN[startMonth - 1]}` }));
-    fireEvent.click(screen.getByRole('button', { name: `To ${MONTH_NAMES_EN[now.month - 1]}` }));
+    fireEvent.click(screen.getByRole('button', { name: MONTH_NAMES_EN[startMonth - 1] }));
+    fireEvent.click(screen.getByRole('button', { name: MONTH_NAMES_EN[now.month - 1] }));
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();

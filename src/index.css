@@ -2827,6 +2827,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .noorix-date-filter-bar {
+  position: relative;
   display: inline-flex;
   align-items: flex-start;
   flex-wrap: wrap;
@@ -2907,8 +2908,17 @@ input:focus, select:focus, textarea:focus {
   min-width: 0;
 }
 .ndfb-calendar--months {
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
-  flex: 1 1 520px;
+  position: absolute;
+  z-index: 70;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-start: 0;
+  width: min(390px, calc(100vw - 32px));
+  grid-template-columns: 1fr;
+  border: 1px solid var(--noorix-border);
+  border-radius: 14px;
+  background: var(--noorix-bg-surface);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+  padding: 10px;
 }
 .ndfb-calendar--years {
   grid-template-columns: repeat(5, minmax(58px, 1fr));
@@ -2916,10 +2926,10 @@ input:focus, select:focus, textarea:focus {
 }
 .ndfb-calendar-panel {
   min-width: 0;
-  border: 1px solid var(--noorix-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--noorix-bg-muted) 58%, var(--noorix-bg-surface));
-  padding: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--noorix-bg-muted) 45%, var(--noorix-bg-surface));
+  padding: 10px;
 }
 .ndfb-calendar-panel__head {
   display: flex;
@@ -2928,12 +2938,12 @@ input:focus, select:focus, textarea:focus {
   gap: 8px;
   margin-bottom: 7px;
   color: var(--noorix-text-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 .ndfb-calendar-year-select {
-  width: 82px;
-  min-height: 30px;
+  width: 96px;
+  min-height: 34px;
   border: 1px solid var(--noorix-border);
   border-radius: 8px;
   background: var(--noorix-bg-surface);
@@ -2946,18 +2956,18 @@ input:focus, select:focus, textarea:focus {
 .ndfb-month-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
+  gap: 6px;
 }
 .ndfb-month-cell,
 .ndfb-year-cell {
   min-width: 0;
-  min-height: 32px;
+  min-height: 38px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: var(--noorix-bg-surface);
   color: var(--noorix-text);
   font-family: var(--noorix-font-primary);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   line-height: 1.2;
   cursor: pointer;
@@ -3231,11 +3241,19 @@ input:focus, select:focus, textarea:focus {
   .ndfb-field .nx-input__field,
   .ndfb-select { min-height: 38px !important; height: 38px !important; font-size: 16px !important; }
   .ndfb-calendar,
-  .ndfb-calendar--months,
   .ndfb-calendar--years {
     width: 100%;
     grid-template-columns: 1fr;
     flex-basis: 100%;
+  }
+  .ndfb-calendar--months {
+    width: calc(100vw - 32px);
+    max-width: 390px;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+  }
+  [dir="rtl"] .ndfb-calendar--months {
+    transform: translateX(50%);
   }
   .ndfb-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ndfb-calendar--years { grid-template-columns: repeat(3, minmax(0, 1fr)); }

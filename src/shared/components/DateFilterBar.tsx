@@ -59,62 +59,89 @@ type MonthCalendarProps = {
   monthNames: string[];
   years: number[];
   updateDraft: (patch: Partial<DatePeriodState>) => void;
-  fromLabel: string;
-  toLabel: string;
+  yearLabel: string;
 };
 
-function MonthCalendar({ draft, monthNames, years, updateDraft, fromLabel, toLabel }: MonthCalendarProps) {
+function monthIndex(year: number, month: number) {
+  return year * 12 + month;
+}
+
+function isMonthInDraftRange(draft: DatePeriodState, year: number, month: number) {
+  const start = monthIndex(draft.monthRangeStartYear, draft.monthRangeStartMonth);
+  const end = monthIndex(draft.monthRangeEndYear, draft.monthRangeEndMonth);
+  const value = monthIndex(year, month);
+  return value >= Math.min(start, end) && value <= Math.max(start, end);
+}
+
+function MonthCalendar({ draft, monthNames, years, updateDraft, yearLabel }: MonthCalendarProps) {
+  const [anchor, setAnchor] = useState<{ year: number; month: number } | null>(null);
+  const calendarYear = draft.monthRangeStartYear || draft.selYear;
+  const hasRange = (
+    draft.monthRangeStartYear !== draft.monthRangeEndYear
+    || draft.monthRangeStartMonth !== draft.monthRangeEndMonth
+  );
+
+  const selectYear = (year: number) => {
+    updateDraft({
+      monthRangeStartYear: year,
+      monthRangeEndYear: year,
+    });
+    setAnchor(null);
+  };
+
+  const selectMonth = (month: number) => {
+    if (!anchor || hasRange || draft.monthRangeStartYear !== calendarYear || draft.monthRangeEndYear !== calendarYear) {
+      updateDraft({
+        monthRangeStartYear: calendarYear,
+        monthRangeStartMonth: month,
+        monthRangeEndYear: calendarYear,
+        monthRangeEndMonth: month,
+      });
+      setAnchor({ year: calendarYear, month });
+      return;
+    }
+
+    updateDraft({
+      monthRangeStartYear: anchor.year,
+      monthRangeStartMonth: anchor.month,
+      monthRangeEndYear: calendarYear,
+      monthRangeEndMonth: month,
+    });
+    setAnchor(null);
+  };
+
   return (
     <div className="ndfb-calendar ndfb-calendar--months">
-      {[
-        {
-          key: 'from',
-          label: fromLabel,
-          year: draft.monthRangeStartYear,
-          month: draft.monthRangeStartMonth,
-          setYear: (year: number) => updateDraft({ monthRangeStartYear: year }),
-          setMonth: (month: number) => updateDraft({ monthRangeStartMonth: month }),
-        },
-        {
-          key: 'to',
-          label: toLabel,
-          year: draft.monthRangeEndYear,
-          month: draft.monthRangeEndMonth,
-          setYear: (year: number) => updateDraft({ monthRangeEndYear: year }),
-          setMonth: (month: number) => updateDraft({ monthRangeEndMonth: month }),
-        },
-      ].map((panel) => (
-        <div key={panel.key} className="ndfb-calendar-panel">
-          <div className="ndfb-calendar-panel__head">
-            <span>{panel.label}</span>
-            <select
-              className="ndfb-calendar-year-select"
-              value={panel.year}
-              onChange={(event) => panel.setYear(Number(event.target.value))}
-              aria-label={panel.label}
-            >
-              {years.map((year) => <option key={year} value={year}>{year}</option>)}
-            </select>
-          </div>
-          <div className="ndfb-month-grid">
-            {monthNames.map((name, index) => {
-              const month = index + 1;
-              const active = panel.month === month;
-              return (
-                <button
-                  key={month}
-                  type="button"
-                  className={`ndfb-month-cell${active ? ' ndfb-month-cell--active' : ''}`}
-                  aria-label={`${panel.label} ${name}`}
-                  onClick={() => panel.setMonth(month)}
-                >
-                  {name}
-                </button>
-              );
-            })}
-          </div>
+      <div className="ndfb-calendar-panel">
+        <div className="ndfb-calendar-panel__head">
+          <span>{yearLabel}</span>
+          <select
+            className="ndfb-calendar-year-select"
+            value={calendarYear}
+            onChange={(event) => selectYear(Number(event.target.value))}
+            aria-label={yearLabel}
+          >
+            {years.map((year) => <option key={year} value={year}>{year}</option>)}
+          </select>
         </div>
-      ))}
+        <div className="ndfb-month-grid">
+          {monthNames.map((name, index) => {
+            const month = index + 1;
+            const active = isMonthInDraftRange(draft, calendarYear, month);
+            return (
+              <button
+                key={month}
+                type="button"
+                className={`ndfb-month-cell${active ? ' ndfb-month-cell--active' : ''}`}
+                aria-label={name}
+                onClick={() => selectMonth(month)}
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -194,8 +221,7 @@ export default function DateFilterBar({ filter }: any) {
           monthNames={monthNames}
           years={years}
           updateDraft={updateDraft}
-          fromLabel={t('dateFilterFrom')}
-          toLabel={t('dateFilterTo')}
+          yearLabel={t('dateFilterYear')}
         />
       )}
 
