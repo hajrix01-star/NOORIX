@@ -1216,7 +1216,7 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--noorix-text);
-  background: var(--noorix-table-header-bg);
+  background: var(--noorix-bg-muted);
   border-top: 2px solid var(--noorix-border);
   border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border));
 }
