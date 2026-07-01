@@ -3494,6 +3494,10 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--noorix-accent-blue) !important;
   box-shadow: 0 0 0 3px var(--noorix-blue-12);
 }
+select option {
+  color: var(--noorix-text, #111827);
+  background: #fff;
+}
 
 /* لوحة — قوائم شهر/سنة مضغوطة في رأس جدول المبيعات الأسبوعية */
 .nx-dashboard-period-select {
@@ -3524,6 +3528,8 @@ input:focus, select:focus, textarea:focus {
   max-width: 4.25rem;
 }
 .nx-dashboard-period-select option {
+  color: var(--noorix-text, #111827);
+  background: #fff;
   text-align: center;
   font-size: 12px;
   font-weight: 500;
