@@ -2908,7 +2908,8 @@ input:focus, select:focus, textarea:focus {
   min-width: 0;
 }
 .ndfb-calendar--months,
-.ndfb-calendar--days {
+.ndfb-calendar--days,
+.ndfb-calendar--years {
   position: absolute;
   z-index: 70;
   inset-block-start: calc(100% + 8px);
@@ -2921,16 +2922,20 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
   padding: 10px;
 }
-.ndfb-calendar--years {
-  grid-template-columns: repeat(5, minmax(58px, 1fr));
-  flex: 0 1 360px;
-}
 .ndfb-calendar-panel {
   min-width: 0;
   border: 0;
   border-radius: 12px;
   background: color-mix(in srgb, var(--noorix-bg-muted) 45%, var(--noorix-bg-surface));
   padding: 10px;
+}
+.ndfb-calendar-panel__hint {
+  border-radius: 999px;
+  background: var(--noorix-blue-8);
+  color: var(--noorix-accent-blue);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 900;
 }
 .ndfb-calendar-panel__head {
   display: flex;
@@ -2974,6 +2979,11 @@ input:focus, select:focus, textarea:focus {
 .ndfb-month-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.ndfb-year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 .ndfb-weekday-grid,
@@ -3278,25 +3288,26 @@ input:focus, select:focus, textarea:focus {
   .ndfb-field--date { width: 100%; }
   .ndfb-field .nx-input__field,
   .ndfb-select { min-height: 38px !important; height: 38px !important; font-size: 16px !important; }
-  .ndfb-calendar,
-  .ndfb-calendar--years {
+  .ndfb-calendar {
     width: 100%;
     grid-template-columns: 1fr;
     flex-basis: 100%;
   }
   .ndfb-calendar--months,
-  .ndfb-calendar--days {
+  .ndfb-calendar--days,
+  .ndfb-calendar--years {
     width: calc(100vw - 32px);
     max-width: 390px;
     inset-inline-start: 50%;
     transform: translateX(-50%);
   }
   [dir="rtl"] .ndfb-calendar--months,
-  [dir="rtl"] .ndfb-calendar--days {
+  [dir="rtl"] .ndfb-calendar--days,
+  [dir="rtl"] .ndfb-calendar--years {
     transform: translateX(50%);
   }
   .ndfb-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .ndfb-calendar--years { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ndfb-year-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ndfb-month-cell,
   .ndfb-year-cell,
   .ndfb-day-cell {

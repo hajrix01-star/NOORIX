@@ -20,6 +20,8 @@ function state(overrides: Partial<DatePeriodState>): DatePeriodState {
     monthRangeStartMonth: 4,
     monthRangeEndYear: 2026,
     monthRangeEndMonth: 6,
+    yearRangeStart: 2026,
+    yearRangeEnd: 2026,
     ...overrides,
   };
 }
@@ -53,10 +55,31 @@ describe('datePeriod', () => {
   });
 
   it('resolves year to full year', () => {
-    expect(resolveDatePeriodRange(state({ mode: 'year', selYear: 2025 }), now)).toEqual({
+    expect(resolveDatePeriodRange(state({
+      mode: 'year',
+      selYear: 2025,
+      yearRangeStart: 2025,
+      yearRangeEnd: 2025,
+    }), now)).toEqual({
       startDate: '2025-01-01T00:00:00+03:00',
       endDate: '2025-12-31T23:59:59+03:00',
     });
+  });
+
+  it('resolves year mode as a selectable year range', () => {
+    expect(resolveDatePeriodRange(state({
+      mode: 'year',
+      yearRangeStart: 2024,
+      yearRangeEnd: 2026,
+    }), now)).toEqual({
+      startDate: '2024-01-01T00:00:00+03:00',
+      endDate: '2026-12-31T23:59:59+03:00',
+    });
+    expect(buildDatePeriodLabel(state({
+      mode: 'year',
+      yearRangeStart: 2024,
+      yearRangeEnd: 2026,
+    }), now)).toBe('2024 - 2026');
   });
 
   it('resolves day mode as a selectable day range', () => {

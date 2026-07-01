@@ -78,4 +78,24 @@ describe('DateFilterBar', () => {
     expect(screen.getByTestId('applied-label').textContent).toBe(expectedLabel);
     expect(screen.queryByRole('button', { name: startDate })).toBeNull();
   });
+
+  it('supports selecting a year range from the year calendar', () => {
+    renderFilter();
+
+    const now = getSaudiNow();
+    const startYear = now.year - 2;
+    const endYear = now.year;
+    const beforeApply = screen.getByTestId('applied-label').textContent;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Year' }));
+    fireEvent.click(screen.getByRole('button', { name: String(startYear) }));
+    fireEvent.click(screen.getByRole('button', { name: String(endYear) }));
+
+    expect(screen.getByTestId('applied-label').textContent).toBe(beforeApply);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByTestId('applied-label').textContent).toBe(`${startYear} - ${endYear}`);
+    expect(screen.queryByRole('button', { name: String(startYear) })).toBeNull();
+  });
 });

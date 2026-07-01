@@ -21,6 +21,8 @@ export function useDateFilter() {
   const [monthRangeStartMonth, setMonthRangeStartMonth] = useState(now.month);
   const [monthRangeEndYear, setMonthRangeEndYear] = useState(now.year);
   const [monthRangeEndMonth, setMonthRangeEndMonth] = useState(now.month);
+  const [yearRangeStart, setYearRangeStart] = useState(now.year);
+  const [yearRangeEnd, setYearRangeEnd] = useState(now.year);
 
   const state: DatePeriodState = useMemo(
     () => ({
@@ -34,6 +36,8 @@ export function useDateFilter() {
       monthRangeStartMonth,
       monthRangeEndYear,
       monthRangeEndMonth,
+      yearRangeStart,
+      yearRangeEnd,
     }),
     [
       mode,
@@ -46,6 +50,8 @@ export function useDateFilter() {
       monthRangeStartMonth,
       monthRangeEndYear,
       monthRangeEndMonth,
+      yearRangeStart,
+      yearRangeEnd,
     ],
   );
 
@@ -71,6 +77,8 @@ export function useDateFilter() {
     setMonthRangeStartMonth(n.month);
     setMonthRangeEndYear(n.year);
     setMonthRangeEndMonth(n.month);
+    setYearRangeStart(n.year);
+    setYearRangeEnd(n.year);
   }, []);
 
   return {
@@ -94,6 +102,10 @@ export function useDateFilter() {
     setMonthRangeEndYear,
     monthRangeEndMonth,
     setMonthRangeEndMonth,
+    yearRangeStart,
+    setYearRangeStart,
+    yearRangeEnd,
+    setYearRangeEnd,
     startDate,
     endDate,
     label,

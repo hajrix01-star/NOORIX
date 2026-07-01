@@ -11,6 +11,8 @@ export type DatePeriodState = {
   monthRangeStartMonth: number;
   monthRangeEndYear: number;
   monthRangeEndMonth: number;
+  yearRangeStart: number;
+  yearRangeEnd: number;
 };
 
 export type DatePeriodNow = {
@@ -74,6 +76,14 @@ export function normalizeDateSpan(startDate: string, endDate: string) {
   return s <= e ? { startDate: s, endDate: e } : { startDate: e, endDate: s };
 }
 
+export function normalizeYearSpan(startYear: number, endYear: number) {
+  const start = Number.isFinite(startYear) ? startYear : endYear;
+  const end = Number.isFinite(endYear) ? endYear : startYear;
+  return start <= end
+    ? { startYear: start, endYear: end }
+    : { startYear: end, endYear: start };
+}
+
 export function listYearMonthsInRange(startDate: string, endDate: string) {
   const start = toYmdOnly(startDate);
   const end = toYmdOnly(endDate);
@@ -106,9 +116,10 @@ export function resolveDatePeriodRange(state: DatePeriodState, now: DatePeriodNo
   }
 
   if (state.mode === 'year') {
+    const span = normalizeYearSpan(state.yearRangeStart || state.selYear, state.yearRangeEnd || state.selYear);
     return {
-      startDate: saudiDayStart(ymd(state.selYear, 1, 1)),
-      endDate: saudiDayEnd(ymd(state.selYear, 12, 31)),
+      startDate: saudiDayStart(ymd(span.startYear, 1, 1)),
+      endDate: saudiDayEnd(ymd(span.endYear, 12, 31)),
     };
   }
 
@@ -165,7 +176,10 @@ function formatMonth(year: number, month: number) {
 
 export function buildDatePeriodLabel(state: DatePeriodState, now: DatePeriodNow) {
   if (state.mode === 'all') return '-';
-  if (state.mode === 'year') return String(state.selYear);
+  if (state.mode === 'year') {
+    const span = normalizeYearSpan(state.yearRangeStart || state.selYear, state.yearRangeEnd || state.selYear);
+    return span.startYear === span.endYear ? String(span.startYear) : `${span.startYear} - ${span.endYear}`;
+  }
   if (state.mode === 'month') return formatMonth(state.selYear, state.selMonth);
   if (state.mode === 'months') {
     const span = normalizeMonthSpan(

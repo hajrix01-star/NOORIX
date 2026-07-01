@@ -7,6 +7,7 @@ import {
   buildDatePeriodLabel,
   lastDayOfMonth,
   normalizeDateSpan,
+  normalizeYearSpan,
   ymd,
   type DatePeriodMode,
   type DatePeriodState,
@@ -28,7 +29,12 @@ function toUiMode(mode: DatePeriodMode): DatePeriodMode {
 }
 
 function cloneDateState(state: DatePeriodState): DatePeriodState {
-  return { ...state, mode: normalizeMode(state.mode) };
+  return {
+    ...state,
+    mode: normalizeMode(state.mode),
+    yearRangeStart: state.yearRangeStart || state.selYear,
+    yearRangeEnd: state.yearRangeEnd || state.selYear,
+  };
 }
 
 function useDraftDateState(filter: any) {
@@ -56,6 +62,8 @@ function applyDraft(filter: any, draft: DatePeriodState) {
   filter.setMonthRangeStartMonth(draft.monthRangeStartMonth);
   filter.setMonthRangeEndYear(draft.monthRangeEndYear);
   filter.setMonthRangeEndMonth(draft.monthRangeEndMonth);
+  filter.setYearRangeStart?.(draft.yearRangeStart || draft.selYear);
+  filter.setYearRangeEnd?.(draft.yearRangeEnd || draft.selYear);
 }
 
 type MonthCalendarProps = {
@@ -156,24 +164,54 @@ function MonthCalendar({ draft, monthNames, years, updateDraft, yearLabel }: Mon
 }
 
 type YearCalendarProps = {
-  selectedYear: number;
+  draft: DatePeriodState;
   years: number[];
-  onSelect: (year: number) => void;
+  updateDraft: (patch: Partial<DatePeriodState>) => void;
+  yearLabel: string;
 };
 
-function YearCalendar({ selectedYear, years, onSelect }: YearCalendarProps) {
+function isYearInDraftRange(draft: DatePeriodState, year: number) {
+  const span = normalizeYearSpan(draft.yearRangeStart || draft.selYear, draft.yearRangeEnd || draft.selYear);
+  return year >= span.startYear && year <= span.endYear;
+}
+
+function YearCalendar({ draft, years, updateDraft, yearLabel }: YearCalendarProps) {
+  const [anchor, setAnchor] = useState<number | null>(null);
+  const span = normalizeYearSpan(draft.yearRangeStart || draft.selYear, draft.yearRangeEnd || draft.selYear);
+  const hasRange = span.startYear !== span.endYear;
+
+  const selectYear = (year: number) => {
+    if (anchor === null || hasRange) {
+      updateDraft({ selYear: year, yearRangeStart: year, yearRangeEnd: year });
+      setAnchor(year);
+      return;
+    }
+    const next = normalizeYearSpan(anchor, year);
+    updateDraft({ selYear: next.startYear, yearRangeStart: next.startYear, yearRangeEnd: next.endYear });
+    setAnchor(null);
+  };
+
   return (
     <div className="ndfb-calendar ndfb-calendar--years">
-      {years.map((year) => (
-        <button
-          key={year}
-          type="button"
-          className={`ndfb-year-cell${selectedYear === year ? ' ndfb-year-cell--active' : ''}`}
-          onClick={() => onSelect(year)}
-        >
-          {year}
-        </button>
-      ))}
+      <div className="ndfb-calendar-panel">
+        <div className="ndfb-calendar-panel__head">
+          <span>{yearLabel}</span>
+          <span className="ndfb-calendar-panel__hint">{span.startYear === span.endYear ? span.startYear : `${span.startYear} - ${span.endYear}`}</span>
+        </div>
+        <div className="ndfb-year-grid">
+          {years.map((year) => (
+            <button
+              key={year}
+              type="button"
+              className={`ndfb-year-cell${isYearInDraftRange(draft, year) ? ' ndfb-year-cell--active' : ''}`}
+              aria-label={String(year)}
+              onClick={() => selectYear(year)}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -299,6 +337,12 @@ export default function DateFilterBar({ filter }: any) {
       setOpenPanel('day');
       return;
     }
+    if (normalized === 'year') {
+      const year = draft.yearRangeStart || draft.selYear || now.year;
+      updateDraft({ mode: normalized, selYear: year, yearRangeStart: year, yearRangeEnd: draft.yearRangeEnd || year });
+      setOpenPanel('year');
+      return;
+    }
     updateDraft({ mode: normalized });
     setOpenPanel(nextMode === 'all' ? null : nextMode);
   };
@@ -347,11 +391,12 @@ export default function DateFilterBar({ filter }: any) {
         />
       )}
 
-      {mode === 'year' && (
+      {mode === 'year' && openPanel === 'year' && (
         <YearCalendar
-          selectedYear={draft.selYear}
+          draft={draft}
           years={years}
-          onSelect={(year) => updateDraft({ selYear: year })}
+          updateDraft={updateDraft}
+          yearLabel={t('dateFilterYear')}
         />
       )}
 
