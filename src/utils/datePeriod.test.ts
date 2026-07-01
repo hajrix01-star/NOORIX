@@ -71,4 +71,12 @@ describe('datePeriod', () => {
   it('builds a useful label for multiple months', () => {
     expect(buildDatePeriodLabel(state({ mode: 'months' }), now)).toBe('Apr 2026 - Jun 2026');
   });
+
+  it('builds a compact label when month range is one month', () => {
+    expect(buildDatePeriodLabel(state({
+      mode: 'months',
+      monthRangeStartMonth: 6,
+      monthRangeEndMonth: 6,
+    }), now)).toBe('Jun 2026');
+  });
 });

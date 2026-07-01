@@ -2828,7 +2828,7 @@ input:focus, select:focus, textarea:focus {
 
 .noorix-date-filter-bar {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 8px;
   max-width: 100%;
@@ -2837,7 +2837,7 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--noorix-border);
   background: var(--noorix-bg-surface);
   box-shadow: var(--noorix-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
-  width: fit-content;
+  width: min(100%, 980px);
 }
 .ndfb-mode-group {
   display: inline-flex;
@@ -2872,12 +2872,11 @@ input:focus, select:focus, textarea:focus {
 }
 .ndfb-fields {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: nowrap;
   gap: 6px;
   min-width: 0;
 }
-.ndfb-fields--months,
 .ndfb-fields--range {
   gap: 5px;
 }
@@ -2896,11 +2895,86 @@ input:focus, select:focus, textarea:focus {
 }
 .ndfb-field .nx-input__field,
 .ndfb-select {
-  min-height: 32px !important;
-  height: 32px !important;
+  min-height: 34px !important;
+  height: 34px !important;
   border-radius: 8px !important;
   font-size: 12px !important;
   font-weight: 700;
+}
+.ndfb-calendar {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.ndfb-calendar--months {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  flex: 1 1 520px;
+}
+.ndfb-calendar--years {
+  grid-template-columns: repeat(5, minmax(58px, 1fr));
+  flex: 0 1 360px;
+}
+.ndfb-calendar-panel {
+  min-width: 0;
+  border: 1px solid var(--noorix-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--noorix-bg-muted) 58%, var(--noorix-bg-surface));
+  padding: 8px;
+}
+.ndfb-calendar-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+  color: var(--noorix-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.ndfb-calendar-year-select {
+  width: 82px;
+  min-height: 30px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 8px;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-primary);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+}
+.ndfb-month-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+.ndfb-month-cell,
+.ndfb-year-cell {
+  min-width: 0;
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--noorix-bg-surface);
+  color: var(--noorix-text);
+  font-family: var(--noorix-font-primary);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms, color 140ms, box-shadow 140ms;
+}
+.ndfb-month-cell:hover,
+.ndfb-year-cell:hover {
+  border-color: var(--noorix-blue-30);
+  background: var(--noorix-blue-8);
+  color: var(--noorix-accent-blue);
+}
+.ndfb-month-cell--active,
+.ndfb-year-cell--active {
+  border-color: var(--noorix-accent-blue);
+  background: var(--noorix-accent-blue);
+  color: #fff;
+  box-shadow: 0 3px 8px var(--noorix-blue-20);
 }
 .ndfb-range-separator {
   color: var(--noorix-text-muted);
@@ -2921,6 +2995,20 @@ input:focus, select:focus, textarea:focus {
   font-size: 12px;
   font-weight: 800;
   line-height: 1.3;
+}
+.ndfb-period-badge--pending {
+  border-color: var(--noorix-amber-30);
+  background: var(--noorix-amber-8);
+  color: var(--noorix-accent-amber);
+}
+.ndfb-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.ndfb-apply-btn {
+  min-height: 32px;
 }
 .noorix-date-filter-bar .ndfb-reset-btn {
   min-width: 32px;
@@ -3136,14 +3224,29 @@ input:focus, select:focus, textarea:focus {
   .ndfb-mode-group { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .ndfb-mode-btn { min-width: 0; min-height: 38px; padding: 6px 4px; font-size: 12px; }
   .ndfb-fields { width: 100%; flex-wrap: wrap; }
-  .ndfb-fields--months { display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; }
   .ndfb-field,
   .ndfb-field--year,
   .ndfb-field--month,
   .ndfb-field--date { width: 100%; }
   .ndfb-field .nx-input__field,
   .ndfb-select { min-height: 38px !important; height: 38px !important; font-size: 16px !important; }
-  .ndfb-period-badge { max-width: calc(100% - 48px); }
+  .ndfb-calendar,
+  .ndfb-calendar--months,
+  .ndfb-calendar--years {
+    width: 100%;
+    grid-template-columns: 1fr;
+    flex-basis: 100%;
+  }
+  .ndfb-month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ndfb-calendar--years { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ndfb-month-cell,
+  .ndfb-year-cell {
+    min-height: 40px;
+    font-size: 13px;
+  }
+  .ndfb-period-badge { max-width: 100%; width: 100%; text-align: center; }
+  .ndfb-actions { width: 100%; }
+  .ndfb-apply-btn { flex: 1 1 auto; }
   .ndfb-reset-btn { min-width: 38px; min-height: 38px; }
   .nx-filter-toolbar,
   .nx-filter-toolbar__filters,

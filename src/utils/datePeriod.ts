@@ -161,6 +161,9 @@ export function buildDatePeriodLabel(state: DatePeriodState, now: DatePeriodNow)
       state.monthRangeEndYear,
       state.monthRangeEndMonth,
     );
+    if (span.startYear === span.endYear && span.startMonth === span.endMonth) {
+      return formatMonth(span.startYear, span.startMonth);
+    }
     return `${formatMonth(span.startYear, span.startMonth)} - ${formatMonth(span.endYear, span.endMonth)}`;
   }
   if (state.mode === 'day') return formatDate(state.selDay || ymd(now.year, now.month, now.day));

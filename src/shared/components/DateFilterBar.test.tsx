@@ -8,7 +8,20 @@ const MONTH_NAMES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 
 
 function Harness() {
   const filter = useDateFilter();
-  return <DateFilterBar filter={filter} />;
+  return (
+    <>
+      <div data-testid="applied-label">{filter.label}</div>
+      <DateFilterBar filter={filter} />
+    </>
+  );
+}
+
+function renderFilter() {
+  render(
+    <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+      <Harness />
+    </AppTestProviders>,
+  );
 }
 
 afterEach(() => {
@@ -16,26 +29,33 @@ afterEach(() => {
 });
 
 describe('DateFilterBar', () => {
-  it('keeps month filtering in one control and supports multi-month selection', () => {
-    render(
-      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
-        <Harness />
-      </AppTestProviders>,
-    );
+  it('keeps month filtering in one calendar control and supports multi-month selection', () => {
+    renderFilter();
 
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
-
-    const selects = screen.getAllByRole('combobox');
-    expect(selects).toHaveLength(4);
 
     const now = getSaudiNow();
     const startMonth = Math.max(1, now.month - 1);
     const expectedLabel = `${MONTH_NAMES_EN[startMonth - 1]} ${now.year} - ${MONTH_NAMES_EN[now.month - 1]} ${now.year}`;
 
-    fireEvent.change(selects[1], { target: { value: String(startMonth) } });
-    fireEvent.change(selects[3], { target: { value: String(now.month) } });
+    fireEvent.click(screen.getByRole('button', { name: `From ${MONTH_NAMES_EN[startMonth - 1]}` }));
+    fireEvent.click(screen.getByRole('button', { name: `To ${MONTH_NAMES_EN[now.month - 1]}` }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByText(expectedLabel)).toBeTruthy();
+    expect(screen.getByTestId('applied-label').textContent).toBe(expectedLabel);
+  });
+
+  it('does not update the applied period until Apply is clicked', () => {
+    renderFilter();
+
+    const appliedLabel = screen.getByTestId('applied-label').textContent;
+    fireEvent.click(screen.getByRole('button', { name: 'Day' }));
+
+    expect(screen.getByTestId('applied-label').textContent).toBe(appliedLabel);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByTestId('applied-label').textContent).not.toBe(appliedLabel);
   });
 });
