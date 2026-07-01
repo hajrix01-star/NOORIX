@@ -80,6 +80,7 @@ export function InvoicesCashReportModal({
           undefined,
           undefined,
           undefined,
+          undefined,
           false,
           undefined,
           undefined,

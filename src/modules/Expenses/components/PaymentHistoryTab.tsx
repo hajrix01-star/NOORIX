@@ -61,6 +61,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       undefined,
       undefined,
       undefined,
+      undefined,
       true,
       undefined,
       undefined,

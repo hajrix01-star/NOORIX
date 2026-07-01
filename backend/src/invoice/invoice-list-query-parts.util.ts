@@ -14,6 +14,13 @@ function buildSupplierFilter(supplierId?: string): Prisma.InvoiceWhereInput {
   return { supplierId: { in: ids } };
 }
 
+function buildSupplierCategoryFilter(supplierCategoryId?: string): Prisma.InvoiceWhereInput {
+  const ids = parseCsvTokens(supplierCategoryId);
+  if (!ids.length) return {};
+  if (ids.length === 1) return { supplier: { is: { supplierCategoryId: ids[0] } } };
+  return { supplier: { is: { supplierCategoryId: { in: ids } } } };
+}
+
 function buildVaultFilter(vaultId?: string): Prisma.InvoiceWhereInput {
   const ids = parseCsvTokens(vaultId);
   if (!ids.length) return {};
@@ -47,6 +54,7 @@ export function buildInvoiceListQueryParts({
   employeeId,
   kind,
   supplierId,
+  supplierCategoryId,
   categoryId,
   expenseLineId,
   vaultId,
@@ -67,6 +75,7 @@ export function buildInvoiceListQueryParts({
   employeeId?: string;
   kind?: string;
   supplierId?: string;
+  supplierCategoryId?: string;
   categoryId?: string;
   expenseLineId?: string;
   vaultId?: string;
@@ -90,6 +99,7 @@ export function buildInvoiceListQueryParts({
   const employeeFilter = employeeId ? { employeeId } : {};
   const kindFilter = kind ? { kind: { in: kind.split(',').map((k) => k.trim()) } } : {};
   const supplierFilter = buildSupplierFilter(supplierId);
+  const supplierCategoryFilter = buildSupplierCategoryFilter(supplierCategoryId);
   const categoryFilter = categoryId ? { categoryId } : {};
   const expenseLineFilter = expenseLineId ? { expenseLineId } : {};
   const expenseLinePresenceFilter: Prisma.InvoiceWhereInput =
@@ -157,6 +167,7 @@ export function buildInvoiceListQueryParts({
     ...employeeFilter,
     ...kindFilter,
     ...supplierFilter,
+    ...supplierCategoryFilter,
     ...categoryFilter,
     ...expenseLineFilter,
     ...expenseLinePresenceFilter,
@@ -191,6 +202,7 @@ export function buildInvoiceListQueryParts({
     String(employeeId ?? ''),
     String(kind ?? ''),
     String(supplierId ?? ''),
+    String(supplierCategoryId ?? ''),
     String(categoryId ?? ''),
     String(expenseLineId ?? ''),
     String(vaultId ?? ''),

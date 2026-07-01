@@ -26,6 +26,7 @@ type InvoiceListActionParams = {
   sortKey: string;
   sortDir: string;
   filterSupplierId: string;
+  filterSupplierCategoryId: string;
   debouncedQ: string;
   urlExtra: { categoryId: string; expenseLineId: string };
   showCancelled: boolean;
@@ -62,6 +63,7 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     sortKey,
     sortDir,
     filterSupplierId,
+    filterSupplierCategoryId,
     debouncedQ,
     urlExtra,
     showCancelled,
@@ -94,6 +96,7 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
         sortBy: sortKey,
         sortDir,
         supplierId: filterSupplierId || undefined,
+        supplierCategoryId: filterSupplierCategoryId || undefined,
         q: debouncedQ || undefined,
         categoryId: urlExtra.categoryId || undefined,
         expenseLineId: urlExtra.expenseLineId || undefined,
@@ -131,6 +134,7 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     sortKey,
     sortDir,
     filterSupplierId,
+    filterSupplierCategoryId,
     debouncedQ,
     urlExtra.categoryId,
     urlExtra.expenseLineId,
@@ -160,6 +164,7 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
         1,
         null,
         null,
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -291,6 +296,7 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
         sortBy: sortKey,
         sortDir,
         supplierId: filterSupplierId || undefined,
+        supplierCategoryId: filterSupplierCategoryId || undefined,
         q: debouncedQ || undefined,
         categoryId: urlExtra.categoryId || undefined,
         expenseLineId: urlExtra.expenseLineId || undefined,
@@ -336,6 +342,7 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     sortKey,
     sortDir,
     filterSupplierId,
+    filterSupplierCategoryId,
     debouncedQ,
     urlExtra.categoryId,
     urlExtra.expenseLineId,

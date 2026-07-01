@@ -108,11 +108,14 @@ export default function InvoicesListScreen() {
             setFilterKind={s.setFilterKind}
             filterSupplierId={s.filterSupplierId}
             setFilterSupplierId={s.setFilterSupplierId}
+            filterSupplierCategoryId={s.filterSupplierCategoryId}
+            setFilterSupplierCategoryId={s.setFilterSupplierCategoryId}
             filterCreatedByUserId={s.filterCreatedByUserId}
             setFilterCreatedByUserId={s.setFilterCreatedByUserId}
             filterVaultId={s.filterVaultId}
             setFilterVaultId={s.setFilterVaultId}
             suppliers={s.suppliers}
+            supplierCategories={s.supplierCategories}
             creatorUsersForFilter={s.creatorUsersForFilter}
             vaultsList={s.vaultsList}
             showSaleKindFilter={s.canFilterSaleInvoices}

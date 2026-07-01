@@ -11,6 +11,7 @@ export type InvoiceListKeyParams = {
   sortBy: string;
   sortDir: string;
   supplierId?: string;
+  supplierCategoryId?: string;
   q?: string;
   categoryId?: string;
   expenseLineId?: string;
@@ -35,6 +36,7 @@ export const invoiceKeys = {
       p.sortBy,
       p.sortDir,
       p.supplierId,
+      p.supplierCategoryId,
       p.q,
       p.categoryId,
       p.expenseLineId,

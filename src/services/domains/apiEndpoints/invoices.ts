@@ -34,6 +34,7 @@ export type FetchAllInvoicesForExportOpts = {
   sortBy?: string;
   sortDir?: string;
   supplierId?: string;
+  supplierCategoryId?: string;
   q?: string;
   categoryId?: string;
   expenseLineId?: string;
@@ -178,6 +179,7 @@ export async function getInvoices(
   sortBy?: string,
   sortDir?: string,
   supplierId?: string,
+  supplierCategoryId?: string,
   q?: string,
   categoryId?: string,
   expenseLineId?: string,
@@ -201,6 +203,7 @@ export async function getInvoices(
   if (sortBy) params.sortBy = sortBy;
   if (sortDir) params.sortDir = sortDir;
   if (supplierId) params.supplierId = supplierId;
+  if (supplierCategoryId) params.supplierCategoryId = supplierCategoryId;
   if (categoryId) params.categoryId = categoryId;
   if (expenseLineId) params.expenseLineId = expenseLineId;
   if (vaultId) params.vaultId = vaultId;
@@ -307,6 +310,7 @@ export async function fetchAllInvoicesForExport({
   sortBy = 'transactionDate',
   sortDir = 'desc',
   supplierId,
+  supplierCategoryId,
   q,
   categoryId,
   expenseLineId,
@@ -333,6 +337,7 @@ export async function fetchAllInvoicesForExport({
       sortBy,
       sortDir,
       supplierId,
+      supplierCategoryId,
       q,
       categoryId,
       expenseLineId,
