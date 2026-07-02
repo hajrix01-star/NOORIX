@@ -18,12 +18,12 @@
     "src/modules/HR/components/TerminationSettlementModal.tsx": 1,
     "src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx": 2,
     "src/modules/HR/components/PayrollRunDetailModal.tsx": 1,
-    "src/modules/Purchases/components/BatchRow.tsx": 4,
+    "src/modules/Purchases/components/BatchRow.tsx": 2,
     "src/modules/HajriTax/HajriTaxDetailEditor.tsx": 2,
     "src/modules/Sales/components/SalesDayEditModal.tsx": 1,
     "src/modules/Expenses/components/ExpenseLineFormModal.tsx": 1,
     "src/modules/Expenses/components/ExpenseFormModal.tsx": 3,
-    "src/modules/Expenses/components/ExpenseBatchTable.tsx": 4,
+    "src/modules/Expenses/components/ExpenseBatchTable.tsx": 2,
     "src/modules/Reports/BankStatementUploadModal.tsx": 1
   }
 }

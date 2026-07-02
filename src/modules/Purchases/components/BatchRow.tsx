@@ -4,7 +4,7 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, FormRow } from '../../../ui';
+import { Input, Button, Card, Checkbox, FormRow } from '../../../ui';
 import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
@@ -129,16 +129,14 @@ function BatchRowTable(props: Record<string, any>) {
 
       <td className="text-center align-middle" style={cp}>
         {isWarrantyFollowUpKind(row.kind) ? (
-          <label className="inline-flex items-center justify-center gap-1.5 cursor-pointer text-[11px] font-semibold text-noorix-muted">
-            <input
-              type="checkbox"
-              checked={!!row.warrantyFollowUp}
-              onChange={(e: any) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
-              className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
-              aria-label={`${t('warrantyFollowUpCol')} — ${t('batchRowLineAriaLabel', index + 1)}`}
-            />
-            <span className="hidden xl:inline">{t('warrantyFollowUpShort')}</span>
-          </label>
+          <Checkbox
+            checked={!!row.warrantyFollowUp}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
+            className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            aria-label={`${t('warrantyFollowUpCol')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+            label={<span className="hidden xl:inline">{t('warrantyFollowUpShort')}</span>}
+            containerClassName="inline-flex items-center justify-center gap-1.5 cursor-pointer text-[11px] font-semibold text-noorix-muted"
+          />
         ) : (
           <span className="text-noorix-muted">—</span>
         )}
@@ -346,15 +344,13 @@ function BatchRowStack(props: Record<string, any>) {
         </Input>
 
         {isWarrantyFollowUpKind(row.kind) ? (
-          <label className="flex items-center gap-2 min-h-[44px] text-[13px] font-semibold text-noorix-text cursor-pointer">
-            <input
-              type="checkbox"
-              checked={!!row.warrantyFollowUp}
-              onChange={(e: any) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
-              className="h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
-            />
-            <span>{t('warrantyFollowUpStack')}</span>
-          </label>
+          <Checkbox
+            checked={!!row.warrantyFollowUp}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
+            className="h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            label={t('warrantyFollowUpStack')}
+            containerClassName="flex items-center gap-2 min-h-[44px] text-[13px] font-semibold text-noorix-text cursor-pointer"
+          />
         ) : null}
 
         <Input

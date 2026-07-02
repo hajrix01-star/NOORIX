@@ -8,7 +8,7 @@ Status: accepted for planning, no production UI refactor in this RFC.
 
 | Metric | Before UI unification | After merged phase | Remaining decision |
 |---|---:|---:|---|
-| Raw form controls outside `src/ui` | 90 | 22 | classify before conversion |
+| Raw form controls outside `src/ui` | 90 | 18 | classify before conversion |
 | Raw buttons outside `src/ui` | 74 | 47 | handle by dedicated passes |
 | Raw tables outside `src/ui` | 61 | 53 TSX | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
@@ -26,7 +26,7 @@ Sources:
 | Group | Count | Risk | Decision |
 |---|---:|---|---|
 | Financial edit forms: invoices, sales, expenses | 11 | high | convert only in financial-form pass |
-| Purchases editable rows | 4 | high | wait for editable cell primitives |
+| Purchases attachment inputs | 2 | high | leave until file/dropzone primitive pass |
 | HR payroll and settlement documents | 4 | high | convert only in HR/payroll pass |
 | Tax/VAT | 2 | high | convert only in tax pass |
 | Reports and cost accounting | 0 | converted | delivered in report toolbar pass |
@@ -39,12 +39,12 @@ Note: counts are grouped by workflow risk, so a file can belong to a protected p
 
 | File | Raw count | Evidence lines | Type | Financial? | Editable? | Conversion decision |
 |---|---:|---|---|---|---|---|
-| `src/modules/Purchases/components/BatchRow.tsx` | 4 | 133, 189, 350, 394 | input | yes | yes | leave until `EditableNumberCell` and purchase tests |
+| `src/modules/Purchases/components/BatchRow.tsx` | 2 | 187, 390 | file | yes | no | leave until attachment file input pass |
 | `src/modules/Invoices/components/InvoiceEditModal.tsx` | 2 | 278, 334 | input | yes | yes | leave until invoice edit pass |
 | `src/modules/Sales/components/SalesDayEditModal.tsx` | 1 | 127 | input | yes | yes | leave until sales day edit pass |
 | `src/modules/Expenses/components/ExpenseFormModal.tsx` | 3 | 392, 576, 589 | input | yes | yes | leave until expense form pass |
 | `src/modules/Expenses/components/ExpenseLineFormModal.tsx` | 1 | 317 | input | yes | yes | leave until expense line pass |
-| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | 4 | 208, 254, 299, 367 | input | yes | yes | leave until editable expense grid pass |
+| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | 2 | 295, 363 | checkbox | yes | no | leave encoded desktop table checkboxes for focused pass |
 | `src/modules/HR/components/TerminationSettlementModal.tsx` | 1 | 515 | input | yes | yes | leave until settlement pass |
 | `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx` | 2 | 52, 130 | input | yes | yes | leave until payroll editable grid pass |
 | `src/modules/HR/components/PayrollRunDetailModal.tsx` | 1 | 274 | input | yes | no | leave until payroll detail pass |
@@ -118,12 +118,19 @@ Delivered order controls pass:
 | `src/modules/Orders/StaffOrdersViewParts.tsx` | basket and variant quantity inputs moved to `EditableNumberCell` |
 | `src/modules/Orders/components/OrderFormModal.tsx` | product search moved to `Input`; add-item quantity moved to `EditableNumberCell` |
 
+Delivered purchase and expense checkbox pass:
+
+| File | Change |
+|---|---|
+| `src/modules/Purchases/components/BatchRow.tsx` | warranty follow-up toggles moved to `Checkbox`; receipt file inputs left raw |
+| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | mobile exempt and warranty toggles moved to `Checkbox`; desktop encoded table toggles left raw |
+
 ## 6. What To Leave Temporarily
 
 | Scope | Reason |
 |---|---|
 | Payroll and settlement controls | payroll calculations and official HR documents are high risk |
-| Purchases and expense batch rows | editable financial grids need cell primitives first |
+| Purchase attachment inputs and expense desktop checkboxes | file/dropzone and encoded table-checkbox cases need focused passes |
 | Tax/VAT detail editing | production tax workflow, needs dedicated test pass |
 | Cost accounting calculations/editable fields | financial analysis; do not touch calculation behavior in UI-only pass |
 | Order quantity grids | quantity behavior is row-bound and should move with editable cell components |
@@ -143,4 +150,4 @@ Delivered order controls pass:
 
 Decision: incremental refactor.
 
-Reason: the remaining 22 raw controls are not random UI leftovers. They are mostly protected financial, payroll, bank, tax, or editable-grid controls. The next real improvement is to migrate one workflow at a time with focused tests.
+Reason: the remaining 18 raw controls are not random UI leftovers. They are mostly protected financial, payroll, bank, tax, file, or encoded table controls. The next real improvement is to migrate one workflow at a time with focused tests.

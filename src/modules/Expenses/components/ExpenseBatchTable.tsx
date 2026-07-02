@@ -16,7 +16,7 @@ import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import { canExemptThisExpensePayment, isExpensePaymentTaxable } from '../utils/expenseTax';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
+import { Button, Checkbox, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 
@@ -204,16 +204,14 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
           </div>
         </div>
         {showExempt ? (
-          <label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-noorix-text">
-            <input
-              type="checkbox"
-              checked={!!row.exemptThisPayment}
-              onChange={(e: any) => updateRow(i, { exemptThisPayment: e.target.checked })}
-              className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
-              aria-label={t('expenseBatchTaxExemptHint')}
-            />
-            {t('expenseBatchTaxExemptShort')}
-          </label>
+          <Checkbox
+            checked={!!row.exemptThisPayment}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRow(i, { exemptThisPayment: e.target.checked })}
+            className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            aria-label={t('expenseBatchTaxExemptHint')}
+            label={t('expenseBatchTaxExemptShort')}
+            containerClassName="cursor-pointer items-center text-[13px] font-medium text-noorix-text"
+          />
         ) : null}
         <Input
           label={lang === 'en' ? 'Supplier invoice #' : 'رقم فاتورة المورد'}
@@ -250,16 +248,14 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
           onChange={(e: any) => updateRow(i, { notes: e.target.value })}
           placeholder={lang === 'en' ? 'Optional' : 'اختياري'}
         />
-        <label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-noorix-text">
-          <input
-            type="checkbox"
-            checked={!!row.warrantyFollowUp}
-            onChange={(e: any) => updateRow(i, { warrantyFollowUp: e.target.checked })}
-            className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
-            aria-label={t('warrantyFollowUpColHint')}
-          />
-          {t('warrantyFollowUpCol')}
-        </label>
+        <Checkbox
+          checked={!!row.warrantyFollowUp}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRow(i, { warrantyFollowUp: e.target.checked })}
+          className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
+          aria-label={t('warrantyFollowUpColHint')}
+          label={t('warrantyFollowUpCol')}
+          containerClassName="cursor-pointer items-center text-[13px] font-medium text-noorix-text"
+        />
       </div>
     );
   };
