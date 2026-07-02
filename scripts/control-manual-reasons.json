@@ -84,11 +84,6 @@
       "decision": "leave",
       "reason": "payroll detail option is protected HR/payroll scope."
     },
-    "src/modules/HR/components/employeeProfile/EmployeeProfileDocumentsSection.tsx": {
-      "category": "file-input",
-      "decision": "leave",
-      "reason": "employee document upload requires central FileInput support."
-    },
     "src/modules/Purchases/components/BatchRow.tsx": {
       "category": "purchases-editable-grid",
       "decision": "leave",
@@ -188,11 +183,6 @@
       "category": "editable-order-grid-controls",
       "decision": "leave",
       "reason": "order form inputs are tied to editable item rows and quantities."
-    },
-    "src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx": {
-      "category": "catalog-editable-control",
-      "decision": "leave",
-      "reason": "catalog product form row control is part of editable catalog workflow."
     }
   }
 }
