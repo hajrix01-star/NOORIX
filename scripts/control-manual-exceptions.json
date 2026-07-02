@@ -14,11 +14,8 @@
     "src/modules/Orders/components/OrderFormModal.tsx": 6
   },
   "allowedRawFormControlCounts": {
-    "src/components/common/SearchableOptionsPicker.tsx": 1,
     "src/modules/Treasury/TreasuryScreen.tsx": 1,
-    "src/components/ImportExportModal/components/ImportUploadSection.tsx": 1,
     "src/modules/Suppliers/components/SupplierTable.tsx": 1,
-    "src/modules/Suppliers/components/SupplierImportExport.tsx": 1,
     "src/modules/Suppliers/components/SupplierForm.tsx": 1,
     "src/modules/Suppliers/components/SupplierEditModal.tsx": 1,
     "src/modules/Settings/components/UsersTab.tsx": 2,
@@ -26,7 +23,6 @@
     "src/modules/Settings/components/ModulePermissionPanel.tsx": 1,
     "src/modules/Settings/components/CompaniesTab.tsx": 3,
     "src/modules/Invoices/components/InvoiceEditModal.tsx": 2,
-    "src/modules/Settings/components/AppBrandingTab.tsx": 1,
     "src/modules/HR/tabs/HrPrintPayrollPanel.tsx": 2,
     "src/modules/HR/components/TerminationSettlementModal.tsx": 1,
     "src/modules/HR/components/ResidencyFormModal.tsx": 1,

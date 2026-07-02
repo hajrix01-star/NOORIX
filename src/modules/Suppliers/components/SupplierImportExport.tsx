@@ -9,7 +9,7 @@
  *   E: نوع المورد      (purchases | expenses)
  */
 import React, { useRef, useState } from 'react';
-import { Button } from '../../../ui';
+import { Button, FileInput } from '../../../ui';
 import { getSaudiToday } from '../../../utils/saudiDate';
 
 /* ─── ثوابت ─────────────────────────────────────────────────────────── */
@@ -155,8 +155,8 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
         >
           {importing ? 'جاري الاستيراد...' : 'استيراد CSV'}
         </Button>
-        <input
-          ref={fileRef} type="file" accept=".csv,text/csv"
+        <FileInput
+          ref={fileRef} accept=".csv,text/csv"
           className="hidden" onChange={handleFileChange}
         />
 

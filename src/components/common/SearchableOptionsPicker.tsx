@@ -12,7 +12,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button, Input } from '../../ui';
+import { Button, Checkbox, Input } from '../../ui';
 import { cn } from '../../ui/cn';
 
 export type SearchableOption = { value: string; label: string; disabled?: boolean };
@@ -293,7 +293,7 @@ export function SearchableOptionsPicker(props: SearchableOptionsPickerProps) {
                     >
                       {isMulti && (
                         <span className="me-2 inline-flex w-4 shrink-0 justify-center" aria-hidden>
-                          <input type="checkbox" readOnly checked={checked} className="pointer-events-none" tabIndex={-1} />
+                          <Checkbox readOnly checked={checked} className="pointer-events-none" tabIndex={-1} />
                         </span>
                       )}
                       <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-start">{opt.label}</span>

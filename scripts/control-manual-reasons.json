@@ -54,30 +54,15 @@
     }
   },
   "rawFormControlReasons": {
-    "src/components/common/SearchableOptionsPicker.tsx": {
-      "category": "selection-checkbox",
-      "decision": "leave",
-      "reason": "read-only checkbox mirrors multi-select state inside a custom picker."
-    },
     "src/modules/Treasury/TreasuryScreen.tsx": {
       "category": "filter-checkbox",
       "decision": "leave",
       "reason": "include-archived checkbox needs a Checkbox component before conversion."
     },
-    "src/components/ImportExportModal/components/ImportUploadSection.tsx": {
-      "category": "file-input",
-      "decision": "leave",
-      "reason": "native file input should move only after a central FileInput component exists."
-    },
     "src/modules/Suppliers/components/SupplierTable.tsx": {
       "category": "selection-checkbox",
       "decision": "leave",
       "reason": "table row selection checkbox should move with a Checkbox/Table selection pass."
-    },
-    "src/modules/Suppliers/components/SupplierImportExport.tsx": {
-      "category": "file-input",
-      "decision": "leave",
-      "reason": "supplier import file picker should move with central FileInput support."
     },
     "src/modules/Suppliers/components/SupplierForm.tsx": {
       "category": "file-input",
@@ -113,11 +98,6 @@
       "category": "financial-editable-controls",
       "decision": "leave",
       "reason": "invoice editing controls are financially sensitive and row-bound."
-    },
-    "src/modules/Settings/components/AppBrandingTab.tsx": {
-      "category": "file-input",
-      "decision": "leave",
-      "reason": "branding image upload should move after FileInput exists."
     },
     "src/modules/HR/tabs/HrPrintPayrollPanel.tsx": {
       "category": "payroll-print-controls",
