@@ -30,13 +30,17 @@ const registryPath = 'scripts/control-manual-exceptions.json';
 const registry = JSON.parse(read(registryPath));
 const allowedRawButtonCounts = registry.allowedRawButtonCounts ?? {};
 const allowedRawFormControlCounts = registry.allowedRawFormControlCounts ?? {};
+const reasonsPath = 'scripts/control-manual-reasons.json';
+const reasons = JSON.parse(read(reasonsPath));
+const rawButtonReasons = reasons.rawButtonReasons ?? {};
+const rawFormControlReasons = reasons.rawFormControlReasons ?? {};
 const sourceFiles = walk('src', (file) => /\.(tsx|jsx)$/.test(file));
 
 function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length;
 }
 
-function checkRegistry(kind, currentCounts, allowedCounts, recommendation) {
+function checkRegistry(kind, currentCounts, allowedCounts, reasonRegistry, recommendation) {
   for (const [file, count] of Object.entries(currentCounts)) {
     const allowed = allowedCounts[file] ?? 0;
     if (count > allowed) {
@@ -48,6 +52,16 @@ function checkRegistry(kind, currentCounts, allowedCounts, recommendation) {
     const current = currentCounts[file] ?? 0;
     if (current < allowed) {
       fail(file, `${kind} registry is stale: allowed ${allowed}, current ${current}`);
+    }
+    const reason = reasonRegistry[file];
+    if (!reason?.category || !reason?.decision || !reason?.reason) {
+      fail(file, `${kind} registry is missing a documented reason in ${reasonsPath}`);
+    }
+  }
+
+  for (const file of Object.keys(reasonRegistry)) {
+    if (!(file in allowedCounts)) {
+      fail(file, `${kind} reason is stale: no matching entry in ${registryPath}`);
     }
   }
 }
@@ -65,8 +79,14 @@ for (const file of sourceFiles) {
   if (rawFormControls > 0) currentRawFormControlCounts[file] = rawFormControls;
 }
 
-checkRegistry('raw <button>', currentRawButtonCounts, allowedRawButtonCounts, 'use src/ui/Button');
-checkRegistry('raw form control', currentRawFormControlCounts, allowedRawFormControlCounts, 'use src/ui/Input for simple text/number/date/search/select controls');
+checkRegistry('raw <button>', currentRawButtonCounts, allowedRawButtonCounts, rawButtonReasons, 'use src/ui/Button');
+checkRegistry(
+  'raw form control',
+  currentRawFormControlCounts,
+  allowedRawFormControlCounts,
+  rawFormControlReasons,
+  'use src/ui/Input for simple text/number/date/search/select controls',
+);
 
 if (failures.length > 0) {
   console.error('Control governance check failed:\n');

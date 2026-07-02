@@ -1,0 +1,303 @@
+{
+  "version": 1,
+  "description": "Phase 1 closure decisions for remaining raw UI controls outside src/ui. Every entry in control-manual-exceptions.json must have a reason here.",
+  "rawButtonReasons": {
+    "src/shared/components/DateFilterBar.tsx": {
+      "category": "calendar-popover",
+      "decision": "leave",
+      "reason": "calendar/month popover cells and tabs need a dedicated DateFilterBar control pass."
+    },
+    "src/modules/HR/components/useAdvanceTableModel.tsx": {
+      "category": "hr-financial-actions",
+      "decision": "leave",
+      "reason": "advance table model actions are part of an HR financial workflow."
+    },
+    "src/modules/HR/components/employeeProfile/EmployeeProfileResidencySection.tsx": {
+      "category": "profile-actions",
+      "decision": "leave",
+      "reason": "profile inline actions should move with a profile-section controls pass."
+    },
+    "src/modules/HR/components/employeeProfile/EmployeeProfileFinancialSection.tsx": {
+      "category": "profile-financial-actions",
+      "decision": "leave",
+      "reason": "employee financial profile actions are protected from UI-only conversion."
+    },
+    "src/modules/HajriTax/HajriTaxQuarterOverview.tsx": {
+      "category": "tax-protected-actions",
+      "decision": "leave",
+      "reason": "tax quarter workflow is protected and should be changed only in a tax task."
+    },
+    "src/modules/HajriTax/HajriTaxNewDeclarationModal.tsx": {
+      "category": "tax-protected-actions",
+      "decision": "leave",
+      "reason": "VAT declaration actions and year chips are protected tax workflow controls."
+    },
+    "src/modules/Reports/GeneralReportV2Screen.tsx": {
+      "category": "financial-report-actions",
+      "decision": "leave",
+      "reason": "financial report export, print, drilldown, and mode controls need a report-specific pass."
+    },
+    "src/modules/Reports/GeneralPlTable.tsx": {
+      "category": "financial-matrix-actions",
+      "decision": "leave",
+      "reason": "P&L matrix controls are tied to financial hierarchy and print behavior."
+    },
+    "src/modules/Orders/StaffOrdersViewParts.tsx": {
+      "category": "editable-order-grid-actions",
+      "decision": "leave",
+      "reason": "staff order basket buttons are tied to quantity and item editing behavior."
+    },
+    "src/modules/Orders/components/OrderFormModal.tsx": {
+      "category": "editable-order-grid-actions",
+      "decision": "leave",
+      "reason": "order form buttons are tied to editable item rows and quantity controls."
+    }
+  },
+  "rawFormControlReasons": {
+    "src/components/common/SearchableOptionsPicker.tsx": {
+      "category": "selection-checkbox",
+      "decision": "leave",
+      "reason": "read-only checkbox mirrors multi-select state inside a custom picker."
+    },
+    "src/modules/Treasury/TreasuryScreen.tsx": {
+      "category": "filter-checkbox",
+      "decision": "leave",
+      "reason": "include-archived checkbox needs a Checkbox component before conversion."
+    },
+    "src/components/ImportExportModal/components/ImportUploadSection.tsx": {
+      "category": "file-input",
+      "decision": "leave",
+      "reason": "native file input should move only after a central FileInput component exists."
+    },
+    "src/modules/Suppliers/components/SupplierTable.tsx": {
+      "category": "selection-checkbox",
+      "decision": "leave",
+      "reason": "table row selection checkbox should move with a Checkbox/Table selection pass."
+    },
+    "src/modules/Suppliers/components/SupplierImportExport.tsx": {
+      "category": "file-input",
+      "decision": "leave",
+      "reason": "supplier import file picker should move with central FileInput support."
+    },
+    "src/modules/Suppliers/components/SupplierForm.tsx": {
+      "category": "file-input",
+      "decision": "leave",
+      "reason": "supplier attachment/logo picker relies on native file input behavior."
+    },
+    "src/modules/Suppliers/components/SupplierEditModal.tsx": {
+      "category": "file-input",
+      "decision": "leave",
+      "reason": "supplier edit attachment/logo picker relies on native file input behavior."
+    },
+    "src/modules/Settings/components/UsersTab.tsx": {
+      "category": "permission-checkboxes",
+      "decision": "leave",
+      "reason": "company assignment checkboxes need a central Checkbox component."
+    },
+    "src/modules/Settings/components/TaxSettingsTab.tsx": {
+      "category": "settings-toggle-control",
+      "decision": "leave",
+      "reason": "tax settings raw control should move in a settings form pass."
+    },
+    "src/modules/Settings/components/ModulePermissionPanel.tsx": {
+      "category": "permission-checkbox",
+      "decision": "leave",
+      "reason": "permission checkbox needs central Checkbox semantics before conversion."
+    },
+    "src/modules/Settings/components/CompaniesTab.tsx": {
+      "category": "settings-file-checkbox",
+      "decision": "leave",
+      "reason": "mixes include-archived checkbox and logo file inputs; wait for Checkbox/FileInput."
+    },
+    "src/modules/Invoices/components/InvoiceEditModal.tsx": {
+      "category": "financial-editable-controls",
+      "decision": "leave",
+      "reason": "invoice editing controls are financially sensitive and row-bound."
+    },
+    "src/modules/Settings/components/AppBrandingTab.tsx": {
+      "category": "file-input",
+      "decision": "leave",
+      "reason": "branding image upload should move after FileInput exists."
+    },
+    "src/modules/HR/tabs/HrPrintPayrollPanel.tsx": {
+      "category": "payroll-print-controls",
+      "decision": "leave",
+      "reason": "payroll print options are protected HR/payroll scope."
+    },
+    "src/modules/HR/components/TerminationSettlementModal.tsx": {
+      "category": "payroll-protected-control",
+      "decision": "leave",
+      "reason": "termination settlement input is protected payroll/settlement scope."
+    },
+    "src/modules/HR/components/ResidencyFormModal.tsx": {
+      "category": "hr-document-control",
+      "decision": "leave",
+      "reason": "residency document input should move with HR document forms."
+    },
+    "src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx": {
+      "category": "editable-payroll-grid",
+      "decision": "leave",
+      "reason": "payroll row inputs are editable-grid controls with payroll calculations."
+    },
+    "src/modules/HR/components/PayrollRunDetailModal.tsx": {
+      "category": "payroll-protected-control",
+      "decision": "leave",
+      "reason": "payroll detail option is protected HR/payroll scope."
+    },
+    "src/modules/HR/components/employeeProfile/EmployeeProfileDocumentsSection.tsx": {
+      "category": "file-input",
+      "decision": "leave",
+      "reason": "employee document upload requires central FileInput support."
+    },
+    "src/modules/Purchases/components/BatchRow.tsx": {
+      "category": "purchases-editable-grid",
+      "decision": "leave",
+      "reason": "purchase batch row controls are editable and financially protected."
+    },
+    "src/modules/Settings/components/backup/BackupSystemSection.tsx": {
+      "category": "backup-file-controls",
+      "decision": "leave",
+      "reason": "backup import/export controls are system-sensitive file inputs."
+    },
+    "src/modules/Settings/components/backup/BackupSheetsAndModals.tsx": {
+      "category": "backup-file-controls",
+      "decision": "leave",
+      "reason": "backup sheet controls are system-sensitive file inputs."
+    },
+    "src/modules/Settings/components/backup/BackupCompanySection.tsx": {
+      "category": "backup-file-control",
+      "decision": "leave",
+      "reason": "company backup restore uses native file input behavior."
+    },
+    "src/modules/HajriTax/HajriTaxScreen.tsx": {
+      "category": "tax-file-input",
+      "decision": "leave",
+      "reason": "VAT JSON import file input is protected tax workflow."
+    },
+    "src/modules/HajriTax/HajriTaxDetailEditor.tsx": {
+      "category": "tax-editable-controls",
+      "decision": "leave",
+      "reason": "tax detail editor controls are protected VAT editing scope."
+    },
+    "src/modules/HajriTax/HajriTaxBulkImportModal.tsx": {
+      "category": "tax-import-control",
+      "decision": "leave",
+      "reason": "VAT bulk import control is protected tax import workflow."
+    },
+    "src/modules/Sales/components/SalesDayEditModal.tsx": {
+      "category": "sales-financial-control",
+      "decision": "leave",
+      "reason": "daily sales editing input is financially sensitive."
+    },
+    "src/modules/Expenses/components/PaymentHistoryTab.tsx": {
+      "category": "financial-filter-checkbox",
+      "decision": "leave",
+      "reason": "payment-history date visibility checkbox needs Checkbox support."
+    },
+    "src/modules/Expenses/components/ExpenseLineFormModal.tsx": {
+      "category": "expense-edit-control",
+      "decision": "leave",
+      "reason": "expense line input is part of protected expense editing."
+    },
+    "src/modules/Expenses/components/ExpenseFormModal.tsx": {
+      "category": "expense-edit-controls",
+      "decision": "leave",
+      "reason": "expense form raw controls are financially sensitive."
+    },
+    "src/modules/Expenses/components/ExpenseBatchTable.tsx": {
+      "category": "expense-editable-grid",
+      "decision": "leave",
+      "reason": "expense batch row controls are editable financial grid inputs."
+    },
+    "src/modules/Reports/TaxReportTab.tsx": {
+      "category": "tax-report-control",
+      "decision": "leave",
+      "reason": "tax report filter/control is protected financial reporting scope."
+    },
+    "src/modules/Reports/GeneralReportV2Screen.tsx": {
+      "category": "financial-report-controls",
+      "decision": "leave",
+      "reason": "year selector and row filter are tied to financial report behavior."
+    },
+    "src/modules/Reports/CostAccountingAppsScreen.tsx": {
+      "category": "cost-accounting-protected-controls",
+      "decision": "leave",
+      "reason": "cost accounting selects, file upload, and VAT checkbox are protected financial analysis scope."
+    },
+    "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": {
+      "category": "settlement-checkbox",
+      "decision": "leave",
+      "reason": "final settlement option is protected HR financial document scope."
+    },
+    "src/modules/Reports/BankStatementUploadModal.tsx": {
+      "category": "bank-file-input",
+      "decision": "leave",
+      "reason": "bank statement upload uses native file input in protected bank workflow."
+    },
+    "src/modules/HR/components/AdvanceSettlementModal.tsx": {
+      "category": "hr-financial-checkbox",
+      "decision": "leave",
+      "reason": "advance settlement salary application is protected HR financial behavior."
+    },
+    "src/modules/Reports/bank/components/BankCategoryRulesImportSheet.tsx": {
+      "category": "bank-import-controls",
+      "decision": "leave",
+      "reason": "bank category import mapping controls are protected bank workflow."
+    },
+    "src/modules/Orders/StaffOrdersViewParts.tsx": {
+      "category": "editable-order-grid-controls",
+      "decision": "leave",
+      "reason": "staff order basket inputs are tied to quantity editing."
+    },
+    "src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx": {
+      "category": "bank-filter-controls",
+      "decision": "leave",
+      "reason": "bank transaction filters are protected bank reconciliation workflow."
+    },
+    "src/modules/Reports/bank/BankCategoryCardRow.tsx": {
+      "category": "bank-category-checkbox",
+      "decision": "leave",
+      "reason": "bank category active checkbox should move with Checkbox support."
+    },
+    "src/modules/Orders/components/OrdersImportModalParts.tsx": {
+      "category": "orders-import-control",
+      "decision": "leave",
+      "reason": "orders import preview control is tied to import workflow."
+    },
+    "src/modules/Orders/components/OrdersImportModal.tsx": {
+      "category": "orders-import-controls",
+      "decision": "leave",
+      "reason": "orders import includes native file picker and import options."
+    },
+    "src/modules/Orders/components/OrderFormModal.tsx": {
+      "category": "editable-order-grid-controls",
+      "decision": "leave",
+      "reason": "order form inputs are tied to editable item rows and quantities."
+    },
+    "src/modules/Dashboard/components/DashboardSaudiOccasionsImportModal.tsx": {
+      "category": "dashboard-import-control",
+      "decision": "leave",
+      "reason": "Saudi occasions import control is part of a specialized import modal."
+    },
+    "src/modules/Orders/components/ItemsManageTabCategoriesSection.tsx": {
+      "category": "category-selection-controls",
+      "decision": "leave",
+      "reason": "category selection checkboxes and inline inputs need Checkbox/editable-grid support."
+    },
+    "src/modules/Orders/components/catalog/CatalogProductTable.tsx": {
+      "category": "catalog-editable-controls",
+      "decision": "leave",
+      "reason": "catalog table controls include selection and inline product editing."
+    },
+    "src/modules/Orders/components/catalog/CatalogProductsPanel.tsx": {
+      "category": "catalog-radio-controls",
+      "decision": "leave",
+      "reason": "bulk-mode radio controls need central Radio support."
+    },
+    "src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx": {
+      "category": "catalog-editable-control",
+      "decision": "leave",
+      "reason": "catalog product form row control is part of editable catalog workflow."
+    }
+  }
+}
