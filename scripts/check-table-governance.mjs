@@ -81,6 +81,7 @@ for (const file of sourceFiles) {
 const currentManualTableCounts = {};
 for (const file of sourceFiles) {
   if (file === 'src/ui/SmartTable/SmartTable.tsx') continue;
+  if (file === 'src/ui/SimpleTable.tsx') continue;
   const count = read(file).split(/\r?\n/).filter((line) => line.includes('<table')).length;
   if (count > 0) currentManualTableCounts[file] = count;
 }
@@ -91,7 +92,7 @@ for (const [file, count] of Object.entries(currentManualTableCounts)) {
     fail(
       file,
       null,
-      `manual <table> count is ${count}, allowed ${allowed}; use SmartTable or update ${manualTableRegistryPath} with a documented exception`,
+      `manual <table> count is ${count}, allowed ${allowed}; use SmartTable/SimpleTable or update ${manualTableRegistryPath} with a documented exception`,
     );
   }
 }

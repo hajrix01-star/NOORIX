@@ -1,7 +1,7 @@
 ﻿/** ملخص الطلبات — كرت واحد: عهدة المندوب + نقد المحل (جداول داخلية) */
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { FmtNum } from '../../../ui';
+import { FmtNum, SimpleTable } from '../../../ui';
 
 export type OrdersSummaryMetrics = {
   pettyCashTotal?: number;
@@ -34,6 +34,19 @@ function SummaryPane({
   colAmount: string;
 }) {
   const resNum = Number(result ?? 0);
+  const rows = [
+    {
+      id: 'received',
+      item: receivedLabel,
+      amount: <FmtNum n={Number(received ?? 0)} className="nx-font-numbers font-semibold text-noorix-green" />,
+    },
+    {
+      id: 'spent',
+      item: spentLabel,
+      amount: <FmtNum n={Number(spent ?? 0)} className="nx-font-numbers font-semibold text-noorix-red" />,
+    },
+  ];
+
   return (
     <div className="nx-orders-summary-pane flex min-w-0 flex-col px-3 py-3 sm:px-4 sm:py-3.5">
       <div className="mb-2.5 flex items-center gap-2">
@@ -46,48 +59,33 @@ function SummaryPane({
           {title}
         </div>
       </div>
-      <div className="overflow-hidden rounded-md border border-noorix-border">
-        <table className="nx-orders-summary-table noorix-table w-full">
-          <thead>
-            <tr>
-              <th scope="col">{colItem}</th>
-              <th scope="col">{colAmount}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>{receivedLabel}</td>
-              <td>
-                <FmtNum n={Number(received ?? 0)} className="nx-font-numbers font-semibold text-noorix-green" />
-              </td>
-            </tr>
-            <tr>
-              <td>{spentLabel}</td>
-              <td>
-                <FmtNum n={Number(spent ?? 0)} className="nx-font-numbers font-semibold text-noorix-red" />
-              </td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              <td>{resultLabel}</td>
-              <td>
-                <span
-                  dir="ltr"
-                  className="nx-font-numbers inline-flex items-baseline justify-center gap-0.5 font-bold"
-                  style={{
-                    color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
-                  }}
-                >
-                  {resNum < 0 ? '-' : ''}
-                  <FmtNum n={Math.abs(resNum)} className="text-[15px] sm:text-[16px]" />
-                  <span className="nx-sar text-[11px] font-normal">SR</span>
-                </span>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <SimpleTable
+        data={rows}
+        frameClassName="overflow-hidden rounded-md border border-noorix-border"
+        tableClassName="nx-orders-summary-table"
+        columns={[
+          { key: 'item', label: colItem },
+          { key: 'amount', label: colAmount, render: (value: any) => value },
+        ]}
+        footer={(
+          <tr>
+            <td>{resultLabel}</td>
+            <td>
+              <span
+                dir="ltr"
+                className="nx-font-numbers inline-flex items-baseline justify-center gap-0.5 font-bold"
+                style={{
+                  color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
+                }}
+              >
+                {resNum < 0 ? '-' : ''}
+                <FmtNum n={Math.abs(resNum)} className="text-[15px] sm:text-[16px]" />
+                <span className="nx-sar text-[11px] font-normal">SR</span>
+              </span>
+            </td>
+          </tr>
+        )}
+      />
     </div>
   );
 }

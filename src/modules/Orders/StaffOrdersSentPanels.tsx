@@ -3,7 +3,7 @@ import Decimal from 'decimal.js';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fmt } from '../../utils/format';
 import { formatSaudiDate } from '../../utils/saudiDate';
-import { Button, Badge, cn } from '../../ui';
+import { Button, Badge, SimpleTable, cn } from '../../ui';
 import {
   resolveStaffItemUnitPrice,
   staffItemLineAmount,
@@ -102,53 +102,71 @@ export function StaffSaleItemsTable({
 }) {
   if (!items?.length) return null;
   return (
-    <table className="w-full text-[12px] sm:text-[13px] border-collapse min-w-[280px] border border-noorix-border rounded-lg overflow-hidden">
-        <thead>
-          <tr className="bg-noorix-bg-muted border-b border-noorix-border">
-            <th className="text-start py-2 px-2.5 font-bold text-[11px] text-noorix-muted">{t('product')}</th>
-            <th className="text-end py-2 px-2.5 font-bold text-[11px] text-noorix-muted w-14">{t('quantity')}</th>
-            <th className="text-end py-2 px-2.5 font-bold text-[11px] text-noorix-muted w-16">{t('unitPrice')}</th>
-            <th className="text-end py-2 px-2.5 font-bold text-[11px] text-noorix-muted w-[4.5rem]">{t('staffSaleGrandTotal')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it: any, i: number) => {
+    <SimpleTable
+      data={items}
+      tableMinWidth={280}
+      getRowClassName={() => 'hover:bg-noorix-bg-muted/30'}
+      columns={[
+        {
+          key: 'product',
+          label: t('product'),
+          align: 'start',
+          render: (_: any, it: any) => {
             const p = it.product;
             const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
             const variant = formatVariantLabel(it.size, it.packaging, it.unit);
+            return (
+              <div className="max-w-[140px] text-start sm:max-w-none">
+                <div className="font-medium text-noorix-text break-words leading-snug">{name}</div>
+                {variant ? (
+                  <div className="text-[10px] text-noorix-muted ltr mt-0.5 truncate" title={variant}>{variant}</div>
+                ) : null}
+              </div>
+            );
+          },
+        },
+        {
+          key: 'quantity',
+          label: t('quantity'),
+          numeric: true,
+          width: '3.5rem',
+          render: (value: any) => <span className="font-semibold">{fmt(value, 0)}</span>,
+        },
+        {
+          key: 'unitPrice',
+          label: t('unitPrice'),
+          numeric: true,
+          width: '4rem',
+          render: (_: any, it: any) => {
+            const p = it.product;
             const amountItem = { ...it, product: p };
             const unitPrice = resolveStaffItemUnitPrice(amountItem);
-            const lineAmt = staffItemLineAmount(amountItem);
-            return (
-              <tr key={i} className="border-b border-noorix-border last:border-b-0 hover:bg-noorix-bg-muted/30">
-                <td className="py-2 px-2.5 align-top text-start max-w-[140px] sm:max-w-none">
-                  <div className="font-medium text-noorix-text break-words leading-snug">{name}</div>
-                  {variant ? (
-                    <div className="text-[10px] text-noorix-muted ltr mt-0.5 truncate" title={variant}>{variant}</div>
-                  ) : null}
-                </td>
-                <td className="py-2 px-2.5 text-end nx-font-numbers ltr font-semibold align-top whitespace-nowrap">
-                  {fmt(it.quantity, 0)}
-                </td>
-                <td className="py-2 px-2.5 text-end nx-font-numbers ltr align-top whitespace-nowrap">
-                  {unitPrice.gt(0) ? (
-                    <>{fmt(unitPrice.toNumber())} <span className="nx-sar">SR</span></>
-                  ) : (
-                    <span className="text-noorix-muted">—</span>
-                  )}
-                </td>
-                <td className="py-2 px-2.5 text-end nx-font-numbers ltr font-bold text-noorix-green align-top whitespace-nowrap">
-                  {lineAmt.gt(0) ? (
-                    <>{fmt(lineAmt.toNumber())} <span className="nx-sar">SR</span></>
-                  ) : (
-                    <span className="text-noorix-muted">—</span>
-                  )}
-                </td>
-              </tr>
+            return unitPrice.gt(0) ? (
+              <>{fmt(unitPrice.toNumber())} <span className="nx-sar">SR</span></>
+            ) : (
+              <span className="text-noorix-muted">—</span>
             );
-          })}
-        </tbody>
-      </table>
+          },
+        },
+        {
+          key: 'lineAmount',
+          label: t('staffSaleGrandTotal'),
+          numeric: true,
+          width: '4.5rem',
+          cellClassName: 'font-bold text-noorix-green',
+          render: (_: any, it: any) => {
+            const p = it.product;
+            const amountItem = { ...it, product: p };
+            const lineAmt = staffItemLineAmount(amountItem);
+            return lineAmt.gt(0) ? (
+              <>{fmt(lineAmt.toNumber())} <span className="nx-sar">SR</span></>
+            ) : (
+              <span className="text-noorix-muted">—</span>
+            );
+          },
+        },
+      ]}
+    />
   );
 }
 
@@ -180,8 +198,10 @@ export function StaffSentOrderRow({
     <div className="rounded-lg border border-noorix-border bg-noorix-bg overflow-hidden">
       <div className="flex flex-col gap-2 p-3">
         <div className="flex items-start gap-2 min-w-0">
-          <button
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             className="shrink-0 mt-0.5 w-8 h-8 rounded-lg border border-noorix-border bg-noorix-bg-muted/50 flex items-center justify-center text-noorix-muted hover:text-noorix-text"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
@@ -200,9 +220,11 @@ export function StaffSentOrderRow({
             >
               <path d="m6 9 6 6 6-6" />
             </svg>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             className="flex-1 min-w-0 text-start flex flex-col gap-0.5"
             onClick={() => setOpen((v) => !v)}
           >
@@ -218,7 +240,7 @@ export function StaffSentOrderRow({
                 {items.length} {t('staffOrderItemsCount')}
               </span>
             ) : null}
-          </button>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-1 justify-end ps-10">
           {isSale && onResend ? (
@@ -299,8 +321,10 @@ export function StaffSentSaleGroup({
   return (
     <article className="p-3 sm:p-4 flex flex-col gap-2 overflow-x-auto">
       <div className="flex items-start gap-2 min-w-0">
-        <button
+        <Button
           type="button"
+          variant="raw"
+          size="auto"
           className="shrink-0 w-9 h-9 rounded-lg border border-noorix-border flex items-center justify-center text-noorix-muted hover:text-noorix-text hover:border-noorix-blue/40"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
@@ -319,7 +343,7 @@ export function StaffSentSaleGroup({
           >
             <path d="m6 9 6 6 6-6" />
           </svg>
-        </button>
+        </Button>
         <div className="flex-1 min-w-0 flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2 min-w-0">

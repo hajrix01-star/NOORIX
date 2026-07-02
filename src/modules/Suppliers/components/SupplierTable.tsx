@@ -116,13 +116,15 @@ export const SupplierTable = memo(function SupplierTable({
       label: t('name'),
       minWidth: 160,
       render: (_: any, row: any) => (
-        <button
+        <Button
           type="button"
+          variant="raw"
+          size="auto"
           className="font-bold text-noorix-blue hover:underline"
           onClick={() => onOpenProfile?.(row)}
         >
           {sName(row, lang)}
-        </button>
+        </Button>
       ),
     },
     {
@@ -253,13 +255,15 @@ export const SupplierTable = memo(function SupplierTable({
                   ariaLabel={`تحديد ${row.nameAr}`}
                 />
               </div>
-              <button
+              <Button
                 type="button"
+                variant="raw"
+                size="auto"
                 className="nx-cr__name text-noorix-blue hover:underline"
                 onClick={() => onOpenProfile?.(row)}
               >
                 {sName(row, lang)}
-              </button>
+              </Button>
               <TypeBadge type={row.supplierType || 'purchases'} />
               {row.isTaxRegistered != null && (
                 row.isTaxRegistered

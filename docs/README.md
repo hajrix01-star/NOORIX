@@ -7,3 +7,5 @@
 - `NOORIX_SOURCE_OF_TRUTH_RULES.md` - global source-of-truth rule for the whole system.
 - `COMPATIBILITY_DEPRECATION_PLAN.md` - wrapper cleanup and compatibility deprecation plan.
 - `NOORIX_LEDGER_FIRST_REPORTS_PLAN.md` - ledger-first reporting plan and VAT migration rationale.
+- `FRONTEND_UI_UNIFICATION_DELIVERY_PLAN.md` - delivery plan, acceptance criteria, and definition of done for Noorix UI/table/theme unification.
+- Phase 1 control governance command: `npm.cmd run check:control-governance`.

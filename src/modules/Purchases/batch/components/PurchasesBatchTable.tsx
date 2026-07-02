@@ -2,6 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Decimal from 'decimal.js';
 import { Button, Badge, KebabMenu, SmartTable } from '../../../../ui';
+import type { SmartTableColumn } from '../../../../ui';
 import { formatSaudiDate, toYmd } from '../../../../utils/saudiDate';
 import { fmt } from '../../../../utils/format';
 import { PAGE_SIZE } from '../constants';
@@ -62,7 +63,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
     totalAmount,
   } = props;
 
-  const batchesColumns = useMemo(
+  const batchesColumns = useMemo<SmartTableColumn<any>[]>(
     () => [
       {
         key: 'batchId',

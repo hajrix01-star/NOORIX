@@ -133,14 +133,16 @@ function MonthCalendar({ draft, monthNames, years, updateDraft, yearLabel }: Mon
       <div className="ndfb-calendar-panel">
         <div className="ndfb-calendar-panel__head">
           <span>{yearLabel}</span>
-          <select
+          <Input
+            type="select"
+            containerClassName="contents"
             className="ndfb-calendar-year-select"
             value={calendarYear}
-            onChange={(event) => selectYear(Number(event.target.value))}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => selectYear(Number(event.target.value))}
             aria-label={yearLabel}
           >
             {years.map((year) => <option key={year} value={year}>{year}</option>)}
-          </select>
+          </Input>
         </div>
         <div className="ndfb-month-grid">
           {monthNames.map((name, index) => {
@@ -454,22 +456,26 @@ function DayCalendar({ draft, monthNames, weekdayNames, years, updateDraft, year
         <div className="ndfb-calendar-panel__head">
           <span>{monthLabel}</span>
           <div className="ndfb-calendar-head-controls">
-            <select
+            <Input
+              type="select"
+              containerClassName="contents"
               className="ndfb-calendar-year-select"
               value={calendarYear}
-              onChange={(event) => setCalendarMonth(Number(event.target.value), calendarMonth)}
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setCalendarMonth(Number(event.target.value), calendarMonth)}
               aria-label={yearLabel}
             >
               {years.map((year) => <option key={year} value={year}>{year}</option>)}
-            </select>
-            <select
+            </Input>
+            <Input
+              type="select"
+              containerClassName="contents"
               className="ndfb-calendar-month-select"
               value={calendarMonth}
-              onChange={(event) => setCalendarMonth(calendarYear, Number(event.target.value))}
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setCalendarMonth(calendarYear, Number(event.target.value))}
               aria-label={monthLabel}
             >
               {monthNames.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}
-            </select>
+            </Input>
           </div>
         </div>
         <div className="ndfb-weekday-grid" aria-hidden="true">

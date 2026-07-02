@@ -308,8 +308,10 @@ export function SearchableOptionsPicker(props: SearchableOptionsPickerProps) {
       : null;
 
   const trigger = (
-    <button
+    <Button
       type="button"
+      variant="raw"
+      size="auto"
       id={id}
       disabled={disabled}
       aria-expanded={open}
@@ -322,7 +324,7 @@ export function SearchableOptionsPicker(props: SearchableOptionsPickerProps) {
       <span className="shrink-0 text-noorix-muted text-[11px]" aria-hidden>
         ▼
       </span>
-    </button>
+    </Button>
   );
 
   return (

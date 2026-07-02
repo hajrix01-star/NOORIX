@@ -26,6 +26,8 @@ export { default as ScreenTitle     } from './ScreenTitle';
 export { default as KebabMenu       } from './KebabMenu';
 export { default as FilterScrollStrip } from './FilterScrollStrip';
 export { default as MetricCard      } from './MetricCard';
+export { default as SimpleTable     } from './SimpleTable';
+export type { SimpleTableColumn, SimpleTableProps } from './SimpleTable';
 export { FmtNum } from './FmtNum';
 
 /**

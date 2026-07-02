@@ -42,8 +42,10 @@ function SectionCard({
 
   return (
     <div className="noorix-surface-card overflow-hidden">
-      <button
+      <Button
         type="button"
+        variant="raw"
+        size="auto"
         className="w-full flex items-center justify-between px-4 py-3 border-b border-noorix-border hover:bg-noorix-bg-muted/50 transition-colors"
         onClick={() => setExpanded((v) => !v)}
       >
@@ -52,7 +54,7 @@ function SectionCard({
           <Badge color="amber" size="sm">{section.totalItems} {t('staffOrderItemsCount')}</Badge>
         </div>
         <span className="text-noorix-muted text-[13px]">{expanded ? '▲' : '▼'}</span>
-      </button>
+      </Button>
 
       {expanded && (
         <div className="divide-y divide-noorix-border">
@@ -191,20 +193,24 @@ export function StaffDigestTab({ companyId }: { companyId: string }) {
             </div>
             <div className="flex items-center gap-2">
               <div className="inline-flex rounded-lg border border-noorix-border overflow-hidden text-[12px]">
-                <button
+                <Button
                   type="button"
+                  variant="raw"
+                  size="auto"
                   className={`px-3 py-1.5 transition-colors ${displayLang === 'ar' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
                   onClick={() => setDisplayLang('ar')}
                 >
                   AR
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="raw"
+                  size="auto"
                   className={`px-3 py-1.5 transition-colors ${displayLang === 'en' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
                   onClick={() => setDisplayLang('en')}
                 >
                   EN
-                </button>
+                </Button>
               </div>
               <Button
                 variant="primary"

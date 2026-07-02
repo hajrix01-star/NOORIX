@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatSaudiDateISO } from '../../utils/saudiDate';
 import { Badge, FmtNum, KebabMenu, cn } from '../../ui';
+import type { SmartTableColumn } from '../../ui';
 import InvoiceActionsCell from '../../components/common/InvoiceActionsCell';
 import { PAGE_SIZE } from './invoicesListScreenHelpers';
 
@@ -19,7 +20,7 @@ export function buildInvoiceListColumns({
   setViewingInvoice,
   setEditingInvoice,
   confirmAndDeleteInvoice,
-}: any) {
+}: any): SmartTableColumn<any>[] {
   return [
     {
       key: 'invoiceNumber',

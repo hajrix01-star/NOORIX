@@ -1,5 +1,6 @@
 import React from 'react';
 import type { PermanentQuestion, PermissionChecker } from '../types';
+import { Button } from '../../../ui';
 
 type Props = {
   userName: string;
@@ -24,15 +25,17 @@ export function SmartChatWelcome({ userName, isAr, loading, topQuestions, onPick
         {topQuestions.length > 0 && (
           <div className="noorix-chat-chips">
             {topQuestions.map((q) => (
-              <button
+              <Button
                 key={isAr ? q.ar : q.en}
                 type="button"
+                variant="raw"
+                size="auto"
                 className="noorix-chat-chip"
                 disabled={loading}
                 onClick={() => onPick(isAr ? q.ar : q.en)}
               >
                 {isAr ? (q.shortAr || q.ar) : (q.shortEn || q.en)}
-              </button>
+              </Button>
             ))}
           </div>
         )}
