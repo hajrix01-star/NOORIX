@@ -2,17 +2,16 @@
   "version": 1,
   "description": "Baseline for React inline style usage. This blocks new style={{ }} growth while dynamic styles are converted gradually.",
   "limits": {
-    "total": 408,
-    "files": 93,
+    "total": 376,
+    "files": 89,
     "ui": 31,
     "uiFiles": 11,
-    "outsideUi": 377,
-    "outsideUiFiles": 82
+    "outsideUi": 345,
+    "outsideUiFiles": 78
   },
   "topFiles": {
     "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": 41,
     "src/modules/Purchases/components/BatchPrintSheet.tsx": 28,
-    "src/modules/Sales/components/SalesEditModal.tsx": 26,
     "src/modules/Reports/BankStatementMappingModal.tsx": 17,
     "src/modules/HR/components/EmployeeDocModal/components/EmployeeDocSalaryBreakdownTable.tsx": 14,
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": 14,

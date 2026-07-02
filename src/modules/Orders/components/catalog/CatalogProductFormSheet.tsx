@@ -53,7 +53,7 @@ function VariantsTable({
         <Button size="sm" onClick={addVariant}>+ {t('ordersAddVariant')}</Button>
       </div>
       <div className="rounded-lg border border-noorix-border overflow-x-auto">
-        <table className="w-full text-[12px] border-collapse" style={{ minWidth: '400px' }}>
+        <table className="w-full min-w-[400px] text-[12px] border-collapse">
           <thead>
             <tr className="bg-noorix-bg-muted border-b border-noorix-border">
               <th className="font-semibold text-right py-2 px-2.5">{t('ordersProductSize')}</th>

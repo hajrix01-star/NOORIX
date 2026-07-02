@@ -153,7 +153,7 @@ export function StaffListModals({
           </>
         )}
       >
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+        <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
           <Input
             type="select"
             label={t('terminationReason')}

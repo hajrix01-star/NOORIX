@@ -52,17 +52,12 @@ export function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, la
   ].filter(Boolean);
   return (
     <Modal open={!!invoice} onClose={onClose} size="sm" hideClose className="nx-modal--flush">
-      <div
-        className="flex items-center justify-between py-4 px-5"
-        style={{
-          background: 'linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%)',
-        }}
-      >
+      <div className="flex items-center justify-between py-4 px-5 bg-[linear-gradient(135deg,var(--noorix-accent-blue)_0%,var(--noorix-navy-mid,#1d4ed8)_100%)]">
         <div>
-          <div className="text-[11px] mb-[3px]" style={{ color: 'rgba(255,255,255,0.75)' }}>
+          <div className="text-[11px] mb-[3px] text-white/75">
             {t('invoicesTitle')}
           </div>
-          <h3 className="m-0 font-bold text-[17px]" style={{ color: 'var(--noorix-navy-text)' }}>
+          <h3 className="m-0 font-bold text-[17px] text-[var(--noorix-navy-text)]">
             {invoice.supplierInvoiceNumber || invoice.invoiceNumber || '—'}
           </h3>
         </div>

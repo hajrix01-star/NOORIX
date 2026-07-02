@@ -181,7 +181,7 @@ export default function ProfitLossReportWorkspace({
           {isLoading && <div className="noorix-surface-card text-center text-noorix-muted p-6">{t('loading')}</div>}
 
           {error && (
-            <div className="noorix-surface-card p-5 text-noorix-red" style={{ background: 'var(--noorix-red-8)' }}>
+            <div className="noorix-surface-card p-5 text-noorix-red bg-[var(--noorix-red-8)]">
               {error.message}
             </div>
           )}

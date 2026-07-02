@@ -324,7 +324,7 @@ export default function EOSCalcTab() {
             <span className="noorix-result-panel__row-value">{serviceYears.toDecimalPlaces(2).toString()} سنة</span>
           </div>
           {/* تفصيل حسابي: نصف شهر للخمس الأولى + شهر كامل لما بعدها — م84 */}
-          <div className="noorix-result-panel__row text-[12px]" style={{ opacity: 0.82 }}>
+          <div className="noorix-result-panel__row text-[12px] opacity-[0.82]">
             <span className="noorix-result-panel__row-label">
               نصف شهر × {firstFiveYears.toDecimalPlaces(2).toString()} سنة (≤5)
             </span>
@@ -333,7 +333,7 @@ export default function EOSCalcTab() {
             </span>
           </div>
           {remainingYears.gt(0) && (
-            <div className="noorix-result-panel__row text-[12px]" style={{ opacity: 0.82 }}>
+            <div className="noorix-result-panel__row text-[12px] opacity-[0.82]">
               <span className="noorix-result-panel__row-label">
                 شهر كامل × {remainingYears.toDecimalPlaces(2).toString()} سنة ({'>'}5)
               </span>
