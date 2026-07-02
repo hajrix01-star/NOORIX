@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { OrdersImportModal } from '../OrdersImportModal';
 import { ItemsCatalogPrintModal } from '../ItemsCatalogPrintModal';
 import { ItemsCatalogWeeklyPrintModal } from '../ItemsCatalogWeeklyPrintModal';
-import { Modal, Button } from '../../../../ui';
+import { Modal, Button, Checkbox, Radio } from '../../../../ui';
 import { CatalogSetupGuide } from './CatalogSetupGuide';
 import { CatalogInfoBanner } from './CatalogInfoBanner';
 import { CatalogTypeSegment } from './CatalogTypeSegment';
@@ -191,30 +191,33 @@ export function CatalogProductsPanel({ ctrl }: { ctrl: any }) {
             <div className="flex flex-col gap-2">
               <div className="text-[12px] text-noorix-muted mb-1">{t('bulkSelectSections')}</div>
               {(sections as any[]).map((s: any) => (
-                <label key={s.id} className="flex items-center gap-2 cursor-pointer text-[13px]">
-                  <input
-                    type="checkbox"
-                    checked={bulkSelectedSections.includes(s.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) setBulkSelectedSections((prev) => [...prev, s.id]);
-                      else setBulkSelectedSections((prev) => prev.filter((n) => n !== s.id));
-                    }}
-                    className="cursor-pointer"
-                  />
-                  {s.nameAr}{s.nameEn ? ` / ${s.nameEn}` : ''}
-                </label>
+                <Checkbox
+                  key={s.id}
+                  checked={bulkSelectedSections.includes(s.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) setBulkSelectedSections((prev) => [...prev, s.id]);
+                    else setBulkSelectedSections((prev) => prev.filter((n) => n !== s.id));
+                  }}
+                  label={s.nameAr + (s.nameEn ? ` / ${s.nameEn}` : '')}
+                  className="cursor-pointer"
+                  containerClassName="cursor-pointer text-[13px]"
+                />
               ))}
             </div>
           )}
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-[12px] cursor-pointer">
-              <input type="radio" checked={bulkMode === 'replace'} onChange={() => setBulkMode('replace')} />
-              {t('bulkModeReplace')}
-            </label>
-            <label className="flex items-center gap-2 text-[12px] cursor-pointer">
-              <input type="radio" checked={bulkMode === 'add'} onChange={() => setBulkMode('add')} />
-              {t('bulkModeAdd')}
-            </label>
+            <Radio
+              checked={bulkMode === 'replace'}
+              onChange={() => setBulkMode('replace')}
+              label={t('bulkModeReplace')}
+              containerClassName="text-[12px] cursor-pointer"
+            />
+            <Radio
+              checked={bulkMode === 'add'}
+              onChange={() => setBulkMode('add')}
+              label={t('bulkModeAdd')}
+              containerClassName="text-[12px] cursor-pointer"
+            />
           </div>
           <div className="flex gap-2">
             <Button variant="primary" size="sm" onClick={handleBulkApply} disabled={bulkBusy}>

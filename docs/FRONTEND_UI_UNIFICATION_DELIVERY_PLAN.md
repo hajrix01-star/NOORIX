@@ -463,3 +463,45 @@ Acceptance criteria:
 | no table regression | `npm.cmd run check:table-governance` |
 | primitives typecheck | `npm.cmd run typecheck` |
 | primitives tests | `npx.cmd vitest run src/ui/ControlPrimitives.test.tsx` |
+
+## 16. Phase 1.3 Closure: Safe Primitive Adoption
+
+Closure date: 2026-07-02
+
+Phase status: low-risk adoption of `Checkbox`, `Radio`, and `FileInput` in non-report UI.
+
+| Metric | Before | After |
+|---|---:|---:|
+| raw `<button>` outside `src/ui` | 47 | 47 |
+| raw form controls outside `src/ui` | 81 | 71 |
+| additional raw form controls removed | 0 | 10 |
+
+Adopted safely:
+
+| File | Change |
+|---|---|
+| `src/modules/Treasury/TreasuryScreen.tsx` | include-archived checkbox to `Checkbox` |
+| `src/modules/Settings/components/ModulePermissionPanel.tsx` | permission checkbox to `Checkbox` |
+| `src/modules/Settings/components/UsersTab.tsx` | company assignment checkboxes to `Checkbox` |
+| `src/modules/Settings/components/CompaniesTab.tsx` | archived checkbox and logo file inputs to `Checkbox`/`FileInput` |
+| `src/modules/Orders/components/catalog/CatalogProductsPanel.tsx` | bulk section checkbox/radio controls to `Checkbox`/`Radio` |
+
+Protected scope still not touched:
+
+| Scope | Reason |
+|---|---|
+| financial reports / P&L / cost accounting | protected financial behavior |
+| tax / VAT | protected tax behavior |
+| payroll / settlement | protected HR financial behavior |
+| bank reconciliation | protected bank workflow |
+| editable grids | requires editable-control phase |
+
+Acceptance criteria:
+
+| Condition | Verification |
+|---|---|
+| no new raw controls | `npm.cmd run check:control-governance` |
+| no table regression | `npm.cmd run check:table-governance` |
+| primitive adoption typecheck | `npm.cmd run typecheck` |
+| primitive tests still pass | `npx.cmd vitest run src/ui/ControlPrimitives.test.tsx` |
+| whitespace-safe diff | `git diff --check` |

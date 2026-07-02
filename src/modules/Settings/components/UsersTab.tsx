@@ -7,7 +7,7 @@ import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { getUsers, createUser, updateUser, archiveUser, restoreUser, hardDeleteUser } from '../../../services/api';
 import { getRoles } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, Input, AdaptiveSheet, ScreenShell, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, Checkbox, Input, AdaptiveSheet, ScreenShell, KebabMenu, SmartTable } from '../../../ui';
 import { settingsKeys } from '../../../services/queryKeys';
 
 /** الجزء المحلي من البريد الداخلي → اسم الدخول المعروض للمستخدم. */
@@ -178,10 +178,13 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
               <div><label className="text-[12px] font-semibold mb-1 block">{t('companies')}</label>
                 <div className="flex flex-col gap-1.5">
                   {activeCompanies.map((c: any) => (
-                    <label key={c.id} className="nx-checkbox">
-                      <input type="checkbox" checked={form.companyIds.includes(c.id)} onChange={(e: any) => setForm((p: any) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id: any) => id !== c.id) }))} />
-                      {c.nameAr}
-                    </label>
+                    <Checkbox
+                      key={c.id}
+                      checked={form.companyIds.includes(c.id)}
+                      onChange={(e: any) => setForm((p: any) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id: any) => id !== c.id) }))}
+                      label={c.nameAr}
+                      containerClassName="nx-checkbox"
+                    />
                   ))}
                 </div>
               </div>
@@ -237,10 +240,13 @@ export default function UsersTab({ userRole, activeCompanies = [] }: any) {
               </Input>
               <div><label className="text-[12px] font-semibold mb-1 block">{t('companies')}</label>
                 {activeCompanies.map((c: any) => (
-                  <label key={c.id} className="nx-checkbox mb-1">
-                    <input type="checkbox" checked={editing.companyIds.includes(c.id)} onChange={(e: any) => setEditing((p: any) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id: any) => id !== c.id) }))} />
-                    {c.nameAr}
-                  </label>
+                  <Checkbox
+                    key={c.id}
+                    checked={editing.companyIds.includes(c.id)}
+                    onChange={(e: any) => setEditing((p: any) => ({ ...p, companyIds: e.target.checked ? [...p.companyIds, c.id] : p.companyIds.filter((id: any) => id !== c.id) }))}
+                    label={c.nameAr}
+                    containerClassName="nx-checkbox mb-1"
+                  />
                 ))}
               </div>
             </div>

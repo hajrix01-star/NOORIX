@@ -16,7 +16,7 @@ import {
   labelStyle,
   fileToDataUrl,
 } from '../constants/settingsConstants';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Checkbox, FileInput, Input, AdaptiveSheet } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 import CompanyFinancialInsightThresholdsSection from './CompanyFinancialInsightThresholdsSection';
 import { buildCompanyUpdateBody, mergeCompanySavePatch } from '../utils/companyUpdateBody';
@@ -210,15 +210,18 @@ export default function CompaniesTab({
         <Button size="sm" variant={showAddForm ? undefined : 'primary'} onClick={() => setShowAddForm((v: any) => !v)}>
           {showAddForm ? 'إلغاء الإضافة' : 'إضافة شركة'}
         </Button>
-        <label className="nx-checkbox text-noorix-muted items-center gap-2 cursor-pointer select-none">
-          <input type="checkbox" checked={includeArchived} onChange={(e: any) => setIncludeArchived(e.target.checked)} />
-          <span>عرض المؤرشفة</span>
+        <div className="nx-checkbox text-noorix-muted items-center gap-2 cursor-pointer select-none">
+          <Checkbox
+            checked={includeArchived}
+            onChange={(e: any) => setIncludeArchived(e.target.checked)}
+            label="عرض المؤرشفة"
+          />
           {includeArchived && archivedCompanies.length > 0 && (
             <span className="text-[11px] font-medium text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-200">
               {archivedCompanies.length} مؤرشفة
             </span>
           )}
-        </label>
+        </div>
       </div>
       {resetState.msg && (
         <div className="rounded-lg p-3 text-[13px] bg-green-50 border border-green-200 text-green-800">{resetState.msg}</div>
@@ -243,7 +246,7 @@ export default function CompaniesTab({
               <Input type="url" value={logoUrl} onChange={(e: any) => setLogoUrl(e.target.value)} placeholder="https://..." />
               <label className="nx-file-label mt-1.5">
                 رفع صورة من الجهاز
-                <input type="file" accept="image/*" onChange={handleLogoFile} className="hidden" />
+                <FileInput accept="image/*" onChange={handleLogoFile} className="hidden" />
               </label>
             </div>
             <div className="nx-toolbar">
@@ -406,7 +409,7 @@ export default function CompaniesTab({
                     <Input type="url" value={editModal.logoUrl} onChange={(e: any) => setEditModal((p: any) => ({ ...p, logoUrl: e.target.value }))} placeholder="https://رابط-الصورة.com/logo.png" />
                     <label className="nx-file-label">
                       رفع صورة من الجهاز
-                      <input type="file" accept="image/*" onChange={(e: any) => handleLogoFile(e, true)} className="hidden" />
+                      <FileInput accept="image/*" onChange={(e: any) => handleLogoFile(e, true)} className="hidden" />
                     </label>
                   </div>
                 </div>
