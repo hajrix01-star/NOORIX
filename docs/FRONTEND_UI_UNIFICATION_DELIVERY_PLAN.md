@@ -384,3 +384,43 @@ npm.cmd run typecheck
 | كل استثناء له سبب | `scripts/table-manual-reasons.json` مطلوب من الحوكمة |
 | لا تحويل لملف محمي | لا تغييرات في الجداول المالية/الطباعية المحمية ضمن هذه الدفعة |
 | لا تضخيم لـ `SimpleTable` | لم تتم إضافة editable/grouped/matrix behavior |
+
+## 14. Phase 1.1 Closure: Raw Control Exception Reasons
+
+Closure date: 2026-07-02
+
+Phase status: governance hardening only. No UI behavior changes and no visual refactor.
+
+| Metric | Value |
+|---|---:|
+| remaining raw `<button>` exception files | 10 |
+| remaining raw form-control exception files | 49 |
+| raw control exceptions without a documented reason | 0 |
+| control governance | passed |
+
+Governance files:
+
+| File | Role |
+|---|---|
+| `scripts/control-manual-exceptions.json` | allowed raw control count per file |
+| `scripts/control-manual-reasons.json` | category, decision, and reason for every allowed raw control exception |
+| `scripts/check-control-governance.mjs` | blocks new raw controls, stale counts, and undocumented exceptions |
+
+Accepted remaining categories:
+
+| Category | Decision |
+|---|---|
+| `file` inputs | leave until central FileInput exists |
+| `checkbox/radio` controls | leave until central Checkbox/Radio exists |
+| calendar popover buttons | leave until a dedicated DateFilterBar pass |
+| editable-grid controls | leave until editable-control components exist |
+| financial/tax/payroll/purchases/bank controls | protected from UI-only cleanup |
+
+Acceptance criteria:
+
+| Condition | Verification |
+|---|---|
+| no new raw controls | `npm.cmd run check:control-governance` |
+| every raw control exception has a reason | `scripts/control-manual-reasons.json` is required by governance |
+| no table regression | `npm.cmd run check:table-governance` |
+| no UI behavior change | documentation and governance script changes only |
