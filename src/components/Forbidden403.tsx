@@ -10,8 +10,8 @@ export default function Forbidden403() {
   const goHome = () => navigate(getFirstAccessibleAppPath(user?.role, user?.permissions));
   return (
     <div
+      dir="rtl"
       className="flex flex-col items-center text-center p-6 min-h-[60vh]"
-      style={{ direction: 'rtl' }}
     >
       <div className="noorix-surface-card max-w-[400px] p-5">
         <div className="font-extrabold text-noorix-muted text-[52px] mb-3 leading-none tracking-[-2px]">403</div>

@@ -66,7 +66,7 @@ export function HrQuickEntryLeaveForm(props: {
             type="date"
             value={lvStart}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLvStart(e.target.value)}
-            style={{ direction: 'ltr' }}
+            dir="ltr"
             lang="en"
             required
           />
@@ -77,7 +77,7 @@ export function HrQuickEntryLeaveForm(props: {
             type="date"
             value={lvEnd}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLvEnd(e.target.value)}
-            style={{ direction: 'ltr' }}
+            dir="ltr"
             lang="en"
             required
           />

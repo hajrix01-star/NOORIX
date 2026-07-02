@@ -2,12 +2,12 @@
   "version": 1,
   "description": "Baseline for React inline style usage. This blocks new style={{ }} growth while dynamic styles are converted gradually.",
   "limits": {
-    "total": 522,
-    "files": 130,
+    "total": 510,
+    "files": 122,
     "ui": 31,
     "uiFiles": 11,
-    "outsideUi": 491,
-    "outsideUiFiles": 119
+    "outsideUi": 479,
+    "outsideUiFiles": 111
   },
   "topFiles": {
     "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": 41,

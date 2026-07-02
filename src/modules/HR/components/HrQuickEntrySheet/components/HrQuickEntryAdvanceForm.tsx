@@ -83,7 +83,7 @@ export function HrQuickEntryAdvanceForm(props: {
           type="date"
           value={advDate}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdvDate(e.target.value)}
-          style={{ direction: 'ltr' }}
+          dir="ltr"
           lang="en"
         />
       </HrQuickEntryRow>
