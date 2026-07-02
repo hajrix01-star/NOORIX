@@ -8,7 +8,7 @@ Status: accepted for planning, no production UI refactor in this RFC.
 
 | Metric | Before UI unification | After merged phase | Remaining decision |
 |---|---:|---:|---|
-| Raw form controls outside `src/ui` | 90 | 41 | classify before conversion |
+| Raw form controls outside `src/ui` | 90 | 34 | classify before conversion |
 | Raw buttons outside `src/ui` | 74 | 47 | handle by dedicated passes |
 | Raw tables outside `src/ui` | 61 | 53 TSX | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
@@ -25,12 +25,12 @@ Sources:
 
 | Group | Count | Risk | Decision |
 |---|---:|---|---|
-| Financial edit forms: invoices, sales, expenses | 12 | high | convert only in financial-form pass |
+| Financial edit forms: invoices, sales, expenses | 11 | high | convert only in financial-form pass |
 | Purchases editable rows | 4 | high | wait for editable cell primitives |
 | HR payroll, settlement, residency documents | 9 | high | convert only in HR/payroll pass |
-| Tax/VAT | 2 | high | convert only in tax pass |
-| Reports and cost accounting | 3 | high | convert only in report pass |
-| Bank upload, rules, reconciliation filters | 9 | high | convert only in bank pass |
+| Tax/VAT | 3 | high | convert only in tax pass |
+| Reports and cost accounting | 2 | high | convert only in report pass |
+| Bank upload | 1 | high | leave until drag-and-drop upload primitive exists |
 | Order editable grids | 4 | medium-high | wait for editable cell primitives |
 
 Note: counts are grouped by workflow risk, so a file can belong to a protected product area even when the raw element itself is small.
@@ -56,8 +56,6 @@ Note: counts are grouped by workflow risk, so a file can belong to a protected p
 | `src/modules/Reports/TaxReportTab.tsx` | 1 | 196 | input | yes | no | leave until tax report pass |
 | `src/modules/Reports/GeneralReportV2Screen.tsx` | 2 | 292, 345 | select/input | yes | no | leave until financial report controls pass |
 | `src/modules/Reports/BankStatementUploadModal.tsx` | 1 | 151 | file | yes | no | leave until bank upload pass |
-| `src/modules/Reports/bank/components/BankCategoryRulesImportSheet.tsx` | 5 | 59, 71, 98, 111, 120 | input/checkbox | yes | yes | leave until bank rules import pass |
-| `src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx` | 2 | 168, 178 | input | yes | no | leave until bank transaction filter pass |
 | `src/modules/Orders/StaffOrdersViewParts.tsx` | 2 | 83, 288 | input | no | yes | wait for editable order cell primitives |
 | `src/modules/Orders/components/OrderFormModal.tsx` | 2 | 418, 585 | input | no | yes | wait for editable order cell primitives |
 
@@ -80,7 +78,7 @@ Primitive foundation delivered in `src/ui` with focused tests in `src/ui/Editabl
 | 1 | safe checkbox-only controls with existing `Checkbox` | `PaymentHistoryTab.tsx`, `BankCategoryCardRow.tsx` | delivered | targeted render/smoke or manual workflow check |
 | 2 | hidden file input pattern after `FileTrigger` exists | `HajriTaxScreen.tsx`, `HajriTaxBulkImportModal.tsx`, `CostAccountingAppsScreen.tsx` | delivered | upload trigger smoke, accepted file types |
 | 3 | report toolbar controls after `InlineSelect` exists | `GeneralReportV2Screen.tsx`, `TaxReportTab.tsx` | 3 | report year/filter behavior |
-| 4 | bank rules and filters | `BankCategoryRulesImportSheet.tsx`, `BankStatementTransactionsFullTab.tsx` | 7 | bank import/filter tests or smoke |
+| 4 | bank rules and filters | `BankCategoryRulesImportSheet.tsx`, `BankStatementTransactionsFullTab.tsx` | delivered | bank import/filter tests or smoke |
 | 5 | editable financial grids | purchases, expenses, payroll, orders | 20+ | row edit tests, calculation tests, regression smoke |
 
 Delivered safe checkbox pass:
@@ -97,6 +95,13 @@ Delivered FileTrigger and inline controls pass:
 | `src/modules/HajriTax/HajriTaxScreen.tsx` | VAT JSON raw file input moved to `FileTrigger` |
 | `src/modules/HajriTax/HajriTaxBulkImportModal.tsx` | bulk import raw file input moved to `FileTrigger` |
 | `src/modules/Reports/CostAccountingAppsScreen.tsx` | CSV raw file input moved to `FileTrigger`; two selects moved to `InlineSelect`; VAT checkbox moved to `Checkbox` |
+
+Delivered bank controls pass:
+
+| File | Change |
+|---|---|
+| `src/modules/Reports/bank/components/BankCategoryRulesImportSheet.tsx` | import source and mode radios moved to `Radio`; JSON import trigger moved to `FileTrigger` |
+| `src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx` | select-all and row selection checkboxes moved to `Checkbox` |
 
 ## 6. What To Leave Temporarily
 

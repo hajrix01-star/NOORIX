@@ -139,20 +139,10 @@
       "decision": "leave",
       "reason": "advance settlement salary application is protected HR financial behavior."
     },
-    "src/modules/Reports/bank/components/BankCategoryRulesImportSheet.tsx": {
-      "category": "bank-import-controls",
-      "decision": "leave",
-      "reason": "bank category import mapping controls are protected bank workflow."
-    },
     "src/modules/Orders/StaffOrdersViewParts.tsx": {
       "category": "editable-order-grid-controls",
       "decision": "leave",
       "reason": "staff order basket inputs are tied to quantity editing."
-    },
-    "src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx": {
-      "category": "bank-filter-controls",
-      "decision": "leave",
-      "reason": "bank transaction filters are protected bank reconciliation workflow."
     },
     "src/modules/Orders/components/OrderFormModal.tsx": {
       "category": "editable-order-grid-controls",
