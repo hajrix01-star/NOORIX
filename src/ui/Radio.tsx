@@ -16,8 +16,7 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
   const id = externalId ?? generatedId;
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
-  return (
-    <label className={cn('inline-flex min-w-0 items-start gap-2 text-[13px] text-noorix-text', disabled && 'opacity-60', containerClassName)}>
+  const input = (
       <input
         ref={ref}
         id={id}
@@ -33,9 +32,16 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
         )}
         {...rest}
       />
+  );
+
+  if (!label && !hint && !error) return input;
+
+  return (
+    <label className={cn('inline-flex min-w-0 items-start gap-2 text-[13px] text-noorix-text', disabled && 'opacity-60', containerClassName)}>
+      {input}
       {(label || hint || error) && (
         <span className="min-w-0 flex-1">
-          {label && <span className="block font-medium leading-5">{label}</span>}
+          {label && <span className="block leading-5">{label}</span>}
           {hint && !error && <span id={`${id}-hint`} className="block text-[12px] text-noorix-muted">{hint}</span>}
           {error && <span id={`${id}-error`} role="alert" className="block text-[12px] font-medium text-noorix-red">{error}</span>}
         </span>

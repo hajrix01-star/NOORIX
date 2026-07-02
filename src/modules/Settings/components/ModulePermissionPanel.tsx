@@ -3,7 +3,7 @@
  * المحادثة: مجموعات HR / FAQ / مصروفات.
  */
 import React from 'react';
-import { Button, cn } from '../../../ui';
+import { Button, Checkbox, cn } from '../../../ui';
 import {
   CHAT_PERMISSION_GROUPS,
   getModulePermValues,
@@ -59,8 +59,7 @@ function PermRow({
             ),
       )}
     >
-      <input
-        type="checkbox"
+      <Checkbox
         className="shrink-0"
         checked={checked}
         disabled={disabled}

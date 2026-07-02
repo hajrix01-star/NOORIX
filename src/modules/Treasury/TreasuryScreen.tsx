@@ -13,7 +13,7 @@ import VaultFormModal     from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';
 import VaultTransferModal from './components/VaultTransferModal';
 import { VaultReorderModal } from './components/VaultReorderModal';
-import { Button, ScreenShell, FmtNum } from '../../ui';
+import { Button, Checkbox, ScreenShell, FmtNum } from '../../ui';
 import { vaultKeys } from '../../services/queryKeys';
 
 export default function TreasuryScreen() {
@@ -134,10 +134,12 @@ export default function TreasuryScreen() {
           )}
         </div>
         <div className="nx-toolbar">
-          <label className="nx-checkbox text-noorix-muted">
-            <input type="checkbox" checked={includeArchived} onChange={(e: any) => setIncludeArchived(e.target.checked)} />
-            {t('showArchived')}
-          </label>
+          <Checkbox
+            checked={includeArchived}
+            onChange={(e: any) => setIncludeArchived(e.target.checked)}
+            label={t('showArchived')}
+            containerClassName="nx-checkbox text-noorix-muted"
+          />
           <Button variant="ghost" size="sm" onClick={() => setShowReorder(true)} disabled={!hasCompany}>
             {t('vaultReorderTitle')}
           </Button>
