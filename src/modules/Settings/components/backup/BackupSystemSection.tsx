@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, Card, Divider, Badge } from '../../../../ui';
+import { Button, Checkbox, FileInput, Input, Card, Divider, Badge } from '../../../../ui';
 import { formatBackupDate, scopeLabel, statusLabel, statusBadgeColor } from './backupTabHelpers';
 
 /**
@@ -36,14 +36,12 @@ export function BackupSystemSection({
           </h3>
           <p className="text-[11px] text-noorix-muted m-0 leading-snug">{t('backupSystemIntro')}</p>
         </div>
-        <label className="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none py-0.5">
-          <input
-            type="checkbox"
-            checked={sysForm.enabled}
-            onChange={(e: any) => setSysForm((p: any) => ({ ...p, enabled: e.target.checked }))}
-          />
-          <span>{t('backupSystemEnabled')}</span>
-        </label>
+        <Checkbox
+          checked={sysForm.enabled}
+          onChange={(e: any) => setSysForm((p: any) => ({ ...p, enabled: e.target.checked }))}
+          label={t('backupSystemEnabled')}
+          containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none py-0.5"
+        />
         <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 min-w-0">
           <div className="flex flex-col gap-1 min-w-0">
             <label htmlFor="backup-h" className="text-[11px] font-bold text-noorix-muted">
@@ -173,9 +171,8 @@ export function BackupSystemSection({
 
         <p className="text-[11px] text-noorix-muted m-0 leading-relaxed min-w-0">{t('backupSystemLocalHint')}</p>
         <div className="flex flex-col gap-2 min-[380px]:flex-row min-[380px]:flex-wrap min-[380px]:items-center">
-          <input
+          <FileInput
             ref={systemArchiveFileRef}
-            type="file"
             accept=".tar.gz,.tgz,application/gzip"
             className="sr-only"
             aria-label={t('backupSystemImportFromPc')}
@@ -185,9 +182,8 @@ export function BackupSystemSection({
               if (f) uploadSysArchiveMut.mutate(f);
             }}
           />
-          <input
+          <FileInput
             ref={restoreFromPcFileRef}
-            type="file"
             accept=".tar.gz,.tgz,application/gzip"
             className="sr-only"
             aria-label={t('backupSystemRestoreFromPc')}

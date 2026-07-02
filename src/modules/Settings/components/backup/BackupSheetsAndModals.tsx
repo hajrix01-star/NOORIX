@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, AdaptiveSheet, Modal } from '../../../../ui';
+import { Button, Checkbox, Input, AdaptiveSheet, Modal } from '../../../../ui';
 import { formatBackupDate, scopeLabel } from './backupTabHelpers';
 import { BackupCountsGrid } from './BackupCountsGrid';
 
@@ -67,27 +67,25 @@ export function BackupSheetsAndModals({
           onChange={(e: any) => setImportNameAr(e.target.value)}
         />
 
-        <label className="nx-checkbox text-[13px] text-noorix-text mt-3 mb-2 leading-[1.5]">
-          <input
-            type="checkbox"
-            checked={importConfirmed}
-            onChange={(e: any) => setImportConfirmed(e.target.checked)}
-          />
+        <Checkbox
+          checked={importConfirmed}
+          onChange={(e: any) => setImportConfirmed(e.target.checked)}
+          label={(
           <span>
             {isAr
               ? 'أؤكد أنني أرغب في إنشاء شركة جديدة من هذه النسخة الاحتياطية'
               : 'I confirm I want to create a new company from this backup'}
           </span>
-        </label>
+          )}
+          containerClassName="nx-checkbox text-[13px] text-noorix-text mt-3 mb-2 leading-[1.5]"
+        />
 
-        <label className="nx-checkbox text-[13px] text-noorix-text mb-1 leading-[1.5]">
-          <input
-            type="checkbox"
-            checked={importStrictAlloc}
-            onChange={(e: any) => setImportStrictAlloc(e.target.checked)}
-          />
-          <span>{t('backupImportStrictAllocations')}</span>
-        </label>
+        <Checkbox
+          checked={importStrictAlloc}
+          onChange={(e: any) => setImportStrictAlloc(e.target.checked)}
+          label={t('backupImportStrictAllocations')}
+          containerClassName="nx-checkbox text-[13px] text-noorix-text mb-1 leading-[1.5]"
+        />
         <p className="text-[10px] text-noorix-muted m-0 mb-4 leading-snug">{t('backupImportStrictAllocationsHint')}</p>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">

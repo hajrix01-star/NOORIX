@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, Card, Divider } from '../../../../ui';
+import { Button, Checkbox, Input, Card, Divider } from '../../../../ui';
 
 /**
  * بطاقة نسخ الشركة: تشغيل يدوي + جدولة + Google Drive
@@ -61,15 +61,13 @@ export function BackupCompanySection({
               {t('backupCompanyScheduleHint')}
             </p>
           </div>
-          <label className="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none py-0.5">
-            <input
-              type="checkbox"
-              checked={coForm.enabled}
-              onChange={(e: any) => setCoForm((p: any) => ({ ...p, enabled: e.target.checked }))}
-              disabled={!companyId}
-            />
-            <span>{t('backupCompanyDailyEnabled')}</span>
-          </label>
+          <Checkbox
+            checked={coForm.enabled}
+            onChange={(e: any) => setCoForm((p: any) => ({ ...p, enabled: e.target.checked }))}
+            disabled={!companyId}
+            label={t('backupCompanyDailyEnabled')}
+            containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none py-0.5"
+          />
           <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 min-w-0">
             <div className="flex flex-col gap-1 min-w-0">
               <label htmlFor="co-backup-h" className="text-[11px] font-bold text-noorix-muted">
