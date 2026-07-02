@@ -122,9 +122,11 @@ export function DashboardOverviewTimelineSection({
               const hidden = hiddenSeries.has(s.key);
               const disabled = s.disabled;
               return (
-                <button
+                <Button
                   key={s.key}
                   type="button"
+                  variant="raw"
+                  size="auto"
                   onClick={() => !disabled && toggleSeries(s.key)}
                   title={
                     disabled ? (lang === 'ar' ? 'بيانات يومية غير متاحة' : 'Daily data unavailable') : undefined
@@ -143,7 +145,7 @@ export function DashboardOverviewTimelineSection({
                     style={{ background: hidden || disabled ? 'var(--noorix-border)' : s.color }}
                   />
                   {s.label}
-                </button>
+                </Button>
               );
             })}
           </div>

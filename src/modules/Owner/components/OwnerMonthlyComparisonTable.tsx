@@ -6,6 +6,7 @@ import { formatCompactNumber, formatNumber } from '../../../utils/money';
 import { MONTH_NAMES_AR } from '../utils/ownerDashboardCalculations';
 import type { OwnerDashboardMetric, OwnerMonthlyComparisonRow } from '../types';
 import { safePercent } from '../../../shared/reporting/plDisplaySelectors';
+import { Button } from '../../../ui';
 
 const METRIC_COLORS = {
   sales: KPI_RECHARTS_COLORS.sales,
@@ -65,8 +66,10 @@ export function OwnerMonthlyComparisonTable({
             const active = comparisonMetric === m.key;
             const color = METRIC_COLORS[m.key];
             return (
-              <button
+              <Button
                 type="button"
+                variant="raw"
+                size="auto"
                 key={m.key}
                 onClick={() => setComparisonMetric(m.key)}
                 style={{
@@ -81,7 +84,7 @@ export function OwnerMonthlyComparisonTable({
                   style={{ background: active ? color : 'var(--noorix-border)' }}
                 />
                 {m.label}
-              </button>
+              </Button>
             );
           })}
         </div>

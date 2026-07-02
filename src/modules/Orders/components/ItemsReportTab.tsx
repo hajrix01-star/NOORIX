@@ -11,7 +11,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
-import { Button, Input, AdaptiveSheet, SmartTable, FmtNum, MetricCard } from '../../../ui';
+import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard } from '../../../ui';
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
@@ -75,30 +75,28 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
       ) : history.length === 0 ? (
         <div className="text-center text-noorix-muted p-10">{t('ordersNoPurchaseHistory')}</div>
       ) : (
-        <div className="overflow-x-auto -mx-1">
-        <table className="w-full border-collapse text-[13px] min-w-[420px]">
-          <thead>
-            <tr style={{ borderBottom: '2px solid var(--noorix-border)' }}>
-              <th className="font-bold text-right py-2 px-[10px]">{t('orderNumber')}</th>
-              <th className="font-bold text-right py-2 px-[10px]">{t('orderDate')}</th>
-              <th className="font-bold text-right py-2 px-[10px]">{t('quantity')}</th>
-              <th className="font-bold text-right py-2 px-[10px]">{t('unitPrice')}</th>
-              <th className="font-bold text-right py-2 px-[10px]">{t('total')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((h: any, i: any) => (
-              <tr key={i} className="border-b border-noorix-border">
-                <td className="py-2 px-[10px]">{h.orderNumber}</td>
-                <td className="py-2 px-[10px]">{formatSaudiDate(h.orderDate)}</td>
-                <td className="py-2 px-[10px] nx-cell-num">{fmt(h.quantity)}</td>
-                <td className="py-2 px-[10px] nx-cell-num"><FmtNum n={h.unitPrice} /></td>
-                <td className="py-2 px-[10px] nx-cell-num nx-cell-num--green"><FmtNum n={h.amount} /> SR</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
+        <SimpleTable
+          data={history}
+          tableMinWidth={420}
+          columns={[
+            { key: 'orderNumber', label: t('orderNumber'), align: 'right' },
+            {
+              key: 'orderDate',
+              label: t('orderDate'),
+              align: 'right',
+              render: (value: any) => formatSaudiDate(value),
+            },
+            { key: 'quantity', label: t('quantity'), numeric: true, render: (value: any) => fmt(value) },
+            { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (value: any) => <FmtNum n={value} /> },
+            {
+              key: 'amount',
+              label: t('total'),
+              numeric: true,
+              cellClassName: 'nx-cell-num--green',
+              render: (value: any) => <><FmtNum n={value} /> SR</>,
+            },
+          ]}
+        />
       )}
     </AdaptiveSheet>
   );

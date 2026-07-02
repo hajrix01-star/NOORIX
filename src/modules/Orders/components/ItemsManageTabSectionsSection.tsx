@@ -1,8 +1,9 @@
 /**
  * Sections sub-tab — إدارة أقسام الطلبات (مطبخ، بار، كاشير...)
  */
-import React, { useState } from 'react';
-import { Button, Input } from '../../../ui';
+import React, { useMemo, useState } from 'react';
+import { Button, Input, SimpleTable } from '../../../ui';
+import type { SimpleTableColumn } from '../../../ui';
 
 export function ItemsManageTabSectionsSection({ ctrl }: any) {
   const {
@@ -33,6 +34,38 @@ export function ItemsManageTabSectionsSection({ ctrl }: any) {
     if (!window.confirm(t('sectionDeleteConfirm'))) return;
     await deleteSection.mutateAsync(id);
   }
+
+  const sectionColumns = useMemo<SimpleTableColumn<any>[]>(
+    () => [
+      {
+        key: 'nameAr',
+        label: t('sectionNameAr'),
+        render: (v: any) => <span className="font-semibold">{v}</span>,
+      },
+      {
+        key: 'nameEn',
+        label: t('sectionNameEn'),
+        render: (v: any) => <span className="text-noorix-muted">{v || '—'}</span>,
+      },
+      {
+        key: 'actions',
+        label: t('actions'),
+        align: 'center',
+        width: 96,
+        render: (_: any, row: any) => (
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={() => handleDelete(row.id)}
+            disabled={deleteSection.isPending}
+          >
+            {t('delete')}
+          </Button>
+        ),
+      },
+    ],
+    [t, deleteSection.isPending],
+  );
 
   return (
     <div className="grid gap-5">
@@ -68,38 +101,12 @@ export function ItemsManageTabSectionsSection({ ctrl }: any) {
       </div>
 
       {/* جدول الأقسام */}
-      <div className="noorix-surface-card overflow-auto">
-        <table className="w-full text-[13px] border-collapse">
-          <thead>
-            <tr className="border-b-2 border-noorix-border">
-              <th className="font-bold text-right py-[10px] px-4">{t('sectionNameAr')}</th>
-              <th className="font-bold text-right py-[10px] px-4">{t('sectionNameEn')}</th>
-              <th className="text-center font-bold py-[10px] px-4 w-20">{t('actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(sections as any[]).map((s: any) => (
-              <tr key={s.id} className="border-b border-noorix-border">
-                <td className="py-[10px] px-4 font-semibold">{s.nameAr}</td>
-                <td className="py-[10px] px-4 text-noorix-muted">{s.nameEn || '—'}</td>
-                <td className="py-[10px] px-4 text-center">
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => handleDelete(s.id)}
-                    disabled={deleteSection.isPending}
-                  >
-                    {t('delete')}
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {(sections as any[]).length === 0 && (
-          <div className="text-center text-noorix-muted p-8 text-[14px]">{t('sectionsEmpty')}</div>
-        )}
-      </div>
+      <SimpleTable
+        columns={sectionColumns}
+        data={sections as any[]}
+        tableMinWidth={420}
+        emptyMessage={t('sectionsEmpty')}
+      />
     </div>
   );
 }

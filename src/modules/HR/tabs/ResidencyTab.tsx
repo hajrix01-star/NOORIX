@@ -156,13 +156,15 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 150,
       render: (v: any, row: any) => (
-        <button
+        <Button
           type="button"
+          variant="raw"
+          size="auto"
           className="font-semibold text-[13px] text-start text-noorix-blue hover:underline cursor-pointer bg-transparent border-0 p-0"
           onClick={() => openServiceRow(row)}
         >
           {v || '—'}
-        </button>
+        </Button>
       ) },
     { key: 'serviceLabel', label: t('hrServiceCategory'), sortable: true, width: 140, minWidth: 130,
       render: (v: any) => <Badge color="blue" label={v} size="sm" /> },
@@ -191,13 +193,15 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
     { key: 'invoiceNumber', label: t('invoiceNumber'), sortable: true, width: 120, minWidth: 110,
       render: (v: any, row: any) => (
         v ? (
-          <button
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             className="nx-cell-num text-noorix-blue font-semibold hover:underline cursor-pointer bg-transparent border-0 p-0"
             onClick={() => openServiceRow(row)}
           >
             {v}
-          </button>
+          </Button>
         ) : (
           <span className="text-[12px] text-noorix-muted">{t('hrServiceNoInvoice')}</span>
         )

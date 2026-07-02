@@ -1,13 +1,14 @@
 /**
  * CalendarDayDetailPanel — تفاصيل مبيعات يوم بجانب التقويم + ملاحظة اليوم
  */
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, Input, FmtNum } from '../../../ui';
+import { Button, Input, FmtNum, SimpleTable } from '../../../ui';
+import type { SimpleTableColumn } from '../../../ui';
 
 export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, summaries, companyId, companyName, onPrint, dayNote, onSaveNote }: any) {
   const { t, lang } = useTranslation();
@@ -25,6 +26,48 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
   const daySummaries = (summaries || []).filter((s: any) => toYmd(s.transactionDate) === dateStr);
   const totalAmount = daySummaries.reduce((s: any, x: any) => s + Number(x.totalAmount || 0), 0);
   const achieved = dayTarget != null && totalAmount >= dayTarget;
+  const summaryColumns = useMemo<SimpleTableColumn<any>[]>(
+    () => [
+      {
+        key: 'summaryNumber',
+        label: t('summaryNumber'),
+        render: (v: any) => v || '—',
+      },
+      {
+        key: 'channels',
+        label: t('salesChannels'),
+        render: (_: any, row: any) => {
+          const chText = (row.channels || [])
+            .map((ch: any) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0)}`)
+            .join(' | ');
+          return (
+            <span className="nx-cell-ellipsis" title={chText || ''}>
+              {chText || '—'}
+            </span>
+          );
+        },
+      },
+      {
+        key: 'customerCount',
+        kind: 'number',
+        label: t('customers'),
+        numeric: true,
+        render: (v: any) => <span className="nx-cell-num">{v ?? 0}</span>,
+      },
+      {
+        key: 'totalAmount',
+        kind: 'money',
+        label: t('total'),
+        numeric: true,
+        render: (v: any) => (
+          <span className="nx-cell-num font-semibold text-noorix-green">
+            <FmtNum n={Number(v || 0)} />
+          </span>
+        ),
+      },
+    ],
+    [lang, t],
+  );
 
   const handleBlurNote = () => {
     const trimmed = (noteInput || '').trim();
@@ -76,32 +119,14 @@ export default function CalendarDayDetailPanel({ dateStr, dayAmount, dayTarget, 
       </div>
 
       <div className="text-[12px] font-semibold">{t('salesChannels')} / {t('summaryNumber')}</div>
-      <div className="flex-1 min-w-0 overflow-auto border border-noorix-border rounded-lg min-h-[100px]">
-        <table className="w-full border-collapse text-[12px]">
-          <thead>
-            <tr className="bg-noorix-bg-muted">
-              <th className="py-1.5 px-2 text-right font-bold">{t('summaryNumber')}</th>
-              <th className="py-1.5 px-2 text-right font-bold">{t('salesChannels')}</th>
-              <th className="py-1.5 px-2 text-right font-bold">{t('customers')}</th>
-              <th className="py-1.5 px-2 text-right font-bold">{t('total')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {daySummaries.length === 0 ? (
-              <tr><td colSpan={4} className="p-4 text-center text-noorix-muted text-[11px]">{t('noDataInPeriod')}</td></tr>
-            ) : daySummaries.map((s: any) => {
-              const chText = (s.channels || []).map((ch: any) => `${vaultDisplayName(ch.vault, lang)}: ${fmt(ch.amount || 0)}`).join(' | ');
-              return (
-                <tr key={s.id} className="border-t border-noorix-border">
-                  <td className="py-1.5 px-2">{s.summaryNumber || '—'}</td>
-                  <td className="nx-cell-ellipsis py-1.5 px-2" title={chText || ''}>{chText || '—'}</td>
-                  <td className="nx-cell-num py-1.5 px-2">{s.customerCount ?? 0}</td>
-                  <td className="nx-cell-num font-semibold text-noorix-green py-1.5 px-2"><FmtNum n={Number(s.totalAmount || 0)} /></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="flex-1 min-w-0 min-h-[100px]">
+        <SimpleTable
+          columns={summaryColumns}
+          data={daySummaries}
+          tableMinWidth={360}
+          compact
+          emptyMessage={t('noDataInPeriod')}
+        />
       </div>
     </div>
   );

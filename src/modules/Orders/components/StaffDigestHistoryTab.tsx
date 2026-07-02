@@ -46,8 +46,10 @@ function DayCard({ day, displayLang }: { day: any; displayLang: DisplayLang }) {
     <div className="noorix-surface-card overflow-hidden">
       {/* رأس البطاقة */}
       <div className="flex items-center justify-between px-4 py-3 gap-2">
-        <button
+        <Button
           type="button"
+          variant="raw"
+          size="auto"
           className="flex items-center gap-3 flex-1 text-start hover:opacity-80 transition-opacity"
           onClick={() => setExpanded((v) => !v)}
         >
@@ -55,7 +57,7 @@ function DayCard({ day, displayLang }: { day: any; displayLang: DisplayLang }) {
           <Badge color="green" size="sm">{totalOrders} {t('staffOrdersCount')}</Badge>
           <span className="text-[12px] text-noorix-muted">{day.sections.length} {t('digestHistorySections')}</span>
           <span className="text-noorix-muted text-[12px] ms-auto">{expanded ? '▲' : '▼'}</span>
-        </button>
+        </Button>
 
         {/* زر إعادة الإرسال */}
         <Button
@@ -127,20 +129,24 @@ export function StaffDigestHistoryTab({ companyId }: { companyId: string }) {
 
         {/* مبدّل لغة العرض */}
         <div className="inline-flex rounded-lg border border-noorix-border overflow-hidden text-[12px]">
-          <button
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             className={`px-3 py-1.5 transition-colors ${displayLang === 'ar' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
             onClick={() => setDisplayLang('ar')}
           >
             AR
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             className={`px-3 py-1.5 transition-colors ${displayLang === 'en' ? 'bg-noorix-blue text-white font-bold' : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
             onClick={() => setDisplayLang('en')}
           >
             EN
-          </button>
+          </Button>
         </div>
 
         <span className="text-[12px] text-noorix-muted ms-auto">

@@ -7,7 +7,8 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { useSalesReport } from '../../../hooks/useOrders';
 import { useTabSearchParam } from '../../../hooks/useTabSearchParam';
-import { Badge, Input, Spinner, ScreenShell, ScreenTitle } from '../../../ui';
+import { Badge, Button, Input, SimpleTable as UiSimpleTable, Spinner, ScreenShell, ScreenTitle } from '../../../ui';
+import type { SimpleTableColumn } from '../../../ui';
 
 const PERIOD_OPTIONS = [7, 14, 30, 60, 90];
 const REPORT_VIEW_IDS = ['log', 'product', 'section', 'user', 'day'] as const;
@@ -24,30 +25,21 @@ function KpiCard({ label, value, color }: { label: string; value: string | numbe
 
 // ── جدول بسيط ───────────────────────────────────────────────────
 function SimpleTable({ headers, rows, emptyMsg }: { headers: string[]; rows: (string | number)[][]; emptyMsg: string }) {
-  if (rows.length === 0) {
-    return <div className="text-center text-noorix-muted py-6 text-[13px]">{emptyMsg}</div>;
-  }
+  const data = rows.map((cells, index) => ({ id: index, cells }));
+  const columns: SimpleTableColumn<(typeof data)[number]>[] = headers.map((header, index) => ({
+    key: `c${index}`,
+    label: header,
+    render: (_value, row) => row.cells[index] ?? '—',
+  }));
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
-        <thead>
-          <tr className="border-b border-noorix-border">
-            {headers.map((h, i) => (
-              <th key={i} className="text-start py-2 px-3 text-[11px] text-noorix-muted font-semibold">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-noorix-border">
-          {rows.map((row, ri) => (
-            <tr key={ri} className="hover:bg-noorix-bg-muted/30 transition-colors">
-              {row.map((cell, ci) => (
-                <td key={ci} className="py-2 px-3">{cell}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <UiSimpleTable
+      columns={columns}
+      data={data}
+      tableMinWidth={Math.max(360, headers.length * 120)}
+      compact
+      emptyMessage={emptyMsg}
+      frameClassName="border-0 rounded-none shadow-none"
+    />
   );
 }
 
@@ -201,9 +193,11 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
           <div className="overflow-hidden rounded-lg border border-noorix-border bg-noorix-surface">
             <div className="flex border-b border-noorix-border overflow-x-auto">
               {views.map((v) => (
-                <button
+                <Button
                   key={v.id}
                   type="button"
+                  variant="raw"
+                  size="auto"
                   onClick={() => setActiveView(v.id as any)}
                   className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors
                     ${activeView === v.id
@@ -212,7 +206,7 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
                     }`}
                 >
                   {v.label}
-                </button>
+                </Button>
               ))}
             </div>
 

@@ -308,9 +308,11 @@ export function StaffOrderPanel({
         {(sections as any[]).map((s: any) => {
           const active = sectionFilter === s.nameAr;
           return (
-            <button
+            <Button
               key={s.id}
               type="button"
+              variant="raw"
+              size="auto"
               onClick={() => {
                 setSectionFilter(active ? '' : s.nameAr);
                 setSearch('');
@@ -322,7 +324,7 @@ export function StaffOrderPanel({
                 }`}
             >
               {sectionLabel(s)}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -332,11 +334,13 @@ export function StaffOrderPanel({
         <svg className="absolute start-3 top-1/2 -translate-y-1/2 text-noorix-muted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
-        <input
+        <Input
+          type="search"
+          containerClassName="contents"
           className="w-full h-9 rounded-xl border border-noorix-border bg-noorix-surface ps-9 pe-3 text-[13px] text-noorix-text placeholder:text-noorix-muted focus:outline-none focus:ring-1 focus:ring-noorix-blue"
           placeholder={t('staffOrderSearchProduct')}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
         />
       </div>
 

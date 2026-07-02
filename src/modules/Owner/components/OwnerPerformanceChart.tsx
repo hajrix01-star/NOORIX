@@ -303,8 +303,10 @@ function ChartControls({
         const allKeys = METRIC_FILTERS.map((f) => f.key);
         const isAllActive = allKeys.every((k) => metricFilter.has(k));
         return (
-          <button
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             onClick={() => setMetricFilter(isAllActive ? new Set(['sales']) : new Set(allKeys))}
             style={{
               borderColor: isAllActive ? 'var(--noorix-text)' : 'var(--noorix-border)',
@@ -314,15 +316,17 @@ function ChartControls({
             className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none cursor-pointer"
           >
             {lang === 'ar' ? 'الكل' : 'All'}
-          </button>
+          </Button>
         );
       })()}
       {METRIC_FILTERS.map((f) => {
         const disabled = chartGrain === 'daily' && f.key !== 'sales';
         const active = !disabled && metricFilter.has(f.key);
         return (
-          <button
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             key={f.key}
             onClick={() => !disabled && toggleMetric(f.key)}
             style={{
@@ -343,7 +347,7 @@ function ChartControls({
               style={{ background: active ? METRIC_COLORS[f.key] : 'var(--noorix-border)' }}
             />
             {f.label}
-          </button>
+          </Button>
         );
       })}
     </div>

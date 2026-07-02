@@ -302,7 +302,8 @@ export function useDailySalesScreen() {
         }
       }
     } else {
-      const targetId = editingSummary.summaries?.length === 1 ? editingSummary.summaries[0].id : editingSummary.id;
+      const editingRow = editingSummary as DailySalesTableRow;
+      const targetId = editingRow.summaries?.length === 1 ? editingRow.summaries[0].id : editingSummary.id;
       const res = await updateSummary.mutateAsync({
         id: targetId,
         body,
@@ -343,17 +344,21 @@ export function useDailySalesScreen() {
     const shiftOrder: Record<SalesShiftValue, number> = { morning: 1, evening: 2, all: 3 };
     return Array.from(groups.entries()).map(([dateKey, summaries]) => {
       const ordered = [...summaries].sort((a, b) => shiftOrder[resolveSalesSummaryShift(a)] - shiftOrder[resolveSalesSummaryShift(b)]);
+      const primary = ordered[0] as DailySalesSummary;
       const total = ordered.reduce((sum, s) => sum + Number(s.totalAmount || 0), 0);
       const cc = ordered.reduce((sum, s) => sum + (Number(s.customerCount) || 0), 0);
       const cashOnHand = ordered.reduce((sum, s) => sum + Number(s.cashOnHand || 0), 0);
       const channelsByVault = new Map<string, DailySalesChannelEntry>();
       for (const s of ordered) {
         for (const ch of s.channels || []) {
-          const current = channelsByVault.get(ch.vaultId);
-          channelsByVault.set(ch.vaultId, {
+          const vault = ch.vault ?? (ch.vaultId ? vaultById.get(ch.vaultId) ?? null : null);
+          const vaultKey = ch.vaultId ?? ch.vault?.id ?? `n:${vaultDisplayName(vault, lang)}`;
+          const current = channelsByVault.get(vaultKey);
+          channelsByVault.set(vaultKey, {
             ...ch,
+            ...(ch.vaultId || ch.vault?.id ? { vaultId: vaultKey } : {}),
             amount: Number(current?.amount || 0) + Number(ch.amount || 0),
-            vault: ch.vault || current?.vault,
+            vault: vault || current?.vault,
           });
         }
       }
@@ -364,12 +369,12 @@ export function useDailySalesScreen() {
       const hasCancelled = ordered.some((s) => s.status === 'cancelled');
       const allCancelled = ordered.every((s) => s.status === 'cancelled');
       return {
-        ...ordered[0],
+        ...primary,
         id: `day-${dateKey}`,
-        summaryNumber: summaryNumbersText || ordered[0]?.summaryNumber,
+        summaryNumber: summaryNumbersText || primary.summaryNumber,
         summaryNumbersText,
         transactionDate: dateKey,
-        shift: ordered.length === 1 ? resolveSalesSummaryShift(ordered[0]) : 'all',
+        shift: ordered.length === 1 ? resolveSalesSummaryShift(primary) : 'all',
         shiftsText,
         channels,
         channelsText,
@@ -377,7 +382,7 @@ export function useDailySalesScreen() {
         cashOnHand,
         totalAmount: total,
         avgPerCustomer: cc > 0 ? total / cc : 0,
-        status: allCancelled ? 'cancelled' : hasCancelled ? 'active' : ordered[0]?.status,
+        status: allCancelled ? 'cancelled' : hasCancelled ? 'active' : primary.status,
         summaries: ordered,
       };
     });

@@ -64,19 +64,28 @@ export function StaffQtyModal({
         <div className="flex flex-col gap-2">
           <div className="text-[13px] text-noorix-muted text-center">{t('quantity')}</div>
           <div className="flex items-center justify-center gap-4">
-            <button type="button"
+            <Button
+              type="button"
+              variant="raw"
+              size="auto"
               onClick={() => onChange({ ...qtyModal, qty: Math.max(1, qtyModal.qty - 1) })}
               className="w-10 h-10 rounded-full border-2 border-noorix-border text-[22px] flex items-center justify-center hover:border-noorix-blue hover:text-noorix-blue transition-colors"
-            >−</button>
-            <input type="number" min="1"
+            >−</Button>
+            <Input
+              type="number"
+              min="1"
+              containerClassName="contents"
               className="w-20 h-12 text-center text-[22px] font-bold border-2 border-noorix-border rounded-xl bg-noorix-bg text-noorix-text focus:outline-none focus:border-noorix-blue"
               value={qtyModal.qty}
-              onChange={(e) => onChange({ ...qtyModal, qty: Math.max(1, Number(e.target.value) || 1) })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...qtyModal, qty: Math.max(1, Number(e.target.value) || 1) })}
             />
-            <button type="button"
+            <Button
+              type="button"
+              variant="raw"
+              size="auto"
               onClick={() => onChange({ ...qtyModal, qty: qtyModal.qty + 1 })}
               className="w-10 h-10 rounded-full border-2 border-noorix-border text-[22px] flex items-center justify-center hover:border-noorix-blue hover:text-noorix-blue transition-colors"
-            >+</button>
+            >+</Button>
           </div>
         </div>
         <Input type="select" label={t('ordersUnit')} value={qtyModal.unit}

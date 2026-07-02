@@ -81,8 +81,10 @@ export default function DashboardCalendarTargetsPanel({
       <div className="flex items-center gap-3 mb-3">
         <span className="text-noorix-muted">{t('dashboardTargetScopeLabel') || 'حفظ الهدف'}:</span>
         <div className="flex items-center gap-1 bg-noorix-bg rounded-lg p-0.5 border border-noorix-border">
-          <button
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             onClick={() => onToggleApplyToAll(true)}
             className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
               applyToAll
@@ -91,9 +93,11 @@ export default function DashboardCalendarTargetsPanel({
             }`}
           >
             {t('dashboardTargetAllMonths') || 'لكل الشهور'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="raw"
+            size="auto"
             onClick={() => onToggleApplyToAll(false)}
             className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
               !applyToAll
@@ -102,7 +106,7 @@ export default function DashboardCalendarTargetsPanel({
             }`}
           >
             {t('dashboardTargetThisMonthOnly') || 'هذا الشهر فقط'}
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '../../../ui';
 
 type Chip = { label: string; text: string };
 
@@ -13,15 +14,17 @@ export function SmartChatReplyChips({ chips, loading, onPick }: Props) {
   return (
     <div className="noorix-chat-chips" style={{ marginTop: 8 }}>
       {chips.map((c) => (
-        <button
+        <Button
           key={c.text}
           type="button"
+          variant="raw"
+          size="auto"
           className="noorix-chat-chip"
           disabled={loading}
           onClick={() => onPick(c.text)}
         >
           {c.label}
-        </button>
+        </Button>
       ))}
     </div>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button } from '../../../ui';
+import { Button, SimpleTable } from '../../../ui';
+import type { SimpleTableColumn } from '../../../ui';
 
 type RowStatus = 'new' | 'duplicate' | 'invalid';
 type FilterType = 'all' | RowStatus;
@@ -123,6 +124,89 @@ export function OrdersImportPreview({
     { key: 'duplicate', label: t('importFilterDuplicate'), count: counts.duplicate },
     { key: 'invalid', label: t('importFilterInvalid'), count: counts.invalid },
   ];
+  const previewColumns: SimpleTableColumn<ParsedRow>[] = [
+    {
+      key: 'status',
+      label: t('importColStatus'),
+      width: 96,
+      render: (_: unknown, row) => (
+        <StatusBadge
+          status={row.status}
+          label={t(row.status === 'new' ? 'importStatusNew' : row.status === 'duplicate' ? 'importStatusDuplicate' : 'importStatusInvalid')}
+        />
+      ),
+    },
+    {
+      key: 'nameAr',
+      label: t('productNameAr'),
+      render: (v, row) => (
+        <span className="block max-w-[150px] truncate font-medium" title={row.nameAr}>
+          {String(v || '')}
+        </span>
+      ),
+    },
+    {
+      key: 'nameEn',
+      label: t('productNameEn'),
+      render: (v, row) => (
+        <span className="block max-w-[120px] truncate text-noorix-muted" title={row.nameEn}>
+          {String(v || '—')}
+        </span>
+      ),
+    },
+    ...(isProducts
+      ? [
+          {
+            key: 'category',
+            label: t('ordersCategories'),
+            render: (v: unknown, row: ParsedRow) => (
+              <span className="block max-w-[100px] truncate text-noorix-muted" title={row.category}>
+                {String(v || '—')}
+              </span>
+            ),
+          },
+        ]
+      : []),
+    ...(isProducts && needsImportSections
+      ? [
+          {
+            key: 'sectionsSummary',
+            label: t('productSections'),
+            render: (v: unknown, row: ParsedRow) => (
+              <span className="block max-w-[100px] truncate text-noorix-muted" title={row.sectionsSummary}>
+                {String(v || '—')}
+              </span>
+            ),
+          },
+        ]
+      : []),
+    ...(isProducts
+      ? [
+          {
+            key: 'variantsSummary',
+            label: t('ordersProductVariants'),
+            render: (v: unknown) => <span className="text-noorix-muted">{String(v || '—')}</span>,
+          },
+        ]
+      : []),
+    {
+      key: 'reason',
+      label: t('importColReason'),
+      render: (v, row) => (
+        <span
+          className={
+            row.status === 'invalid'
+              ? 'text-red-600'
+              : row.status === 'duplicate'
+                ? 'text-amber-600'
+                : 'text-noorix-muted'
+          }
+        >
+          {String(v || '—')}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-4">
@@ -161,8 +245,11 @@ export function OrdersImportPreview({
         {filterOpts.map(({ key, label, count }) => {
           if (count === 0 && key !== 'all') return null;
           return (
-            <button
+            <Button
               key={key}
+              type="button"
+              variant="raw"
+              size="auto"
               onClick={() => setFilter(key)}
               className={`px-4 py-2 text-[12px] font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                 filter === key
@@ -174,67 +261,29 @@ export function OrdersImportPreview({
               <span className={`ms-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${filter === key ? 'bg-noorix-primary/10' : 'bg-noorix-bg-muted'}`}>
                 {count}
               </span>
-            </button>
+            </Button>
           );
         })}
       </div>
 
-      <div className="overflow-auto rounded-lg border border-noorix-border" style={{ maxHeight: 320 }}>
-        <table className="w-full text-[12px] border-collapse min-w-[480px]">
-          <thead className="sticky top-0 bg-noorix-bg-muted z-10">
-            <tr className="border-b border-noorix-border">
-              <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted w-24">{t('importColStatus')}</th>
-              <th className="py-2.5 px-3 text-start font-semibold">{t('productNameAr')}</th>
-              <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('productNameEn')}</th>
-              {isProducts && <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('ordersCategories')}</th>}
-              {isProducts && needsImportSections && (
-                <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('productSections')}</th>
-              )}
-              {isProducts && <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('ordersProductVariants')}</th>}
-              <th className="py-2.5 px-3 text-start font-semibold text-noorix-muted">{t('importColReason')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRows.length === 0 ? (
-              <tr>
-                <td colSpan={isProducts ? (needsImportSections ? 7 : 6) : 4} className="py-8 text-center text-noorix-muted text-[12px]">
-                  {t('ordersNoSearchResults')}
-                </td>
-              </tr>
-            ) : filteredRows.map((row, i) => (
-              <tr
-                key={i}
-                className={`border-b border-noorix-border last:border-0 transition-colors ${
-                  row.status === 'invalid' ? 'bg-red-50/30' :
-                  row.status === 'duplicate' ? 'bg-amber-50/20' : ''
-                }`}
-              >
-                <td className="py-2 px-3">
-                  <StatusBadge
-                    status={row.status}
-                    label={t(row.status === 'new' ? 'importStatusNew' : row.status === 'duplicate' ? 'importStatusDuplicate' : 'importStatusInvalid')}
-                  />
-                </td>
-                <td className="py-2 px-3 font-medium max-w-[150px] truncate" title={row.nameAr}>{row.nameAr}</td>
-                <td className="py-2 px-3 text-noorix-muted max-w-[120px] truncate" title={row.nameEn}>{row.nameEn || '—'}</td>
-                {isProducts && <td className="py-2 px-3 text-noorix-muted max-w-[100px] truncate" title={row.category}>{row.category || '—'}</td>}
-                {isProducts && needsImportSections && (
-                  <td className="py-2 px-3 text-noorix-muted max-w-[100px] truncate" title={row.sectionsSummary}>
-                    {row.sectionsSummary}
-                  </td>
-                )}
-                {isProducts && <td className="py-2 px-3 text-noorix-muted">{row.variantsSummary}</td>}
-                <td className="py-2 px-3 text-noorix-muted text-[11px] max-w-[160px]">
-                  {row.reason ? (
-                    <span className={row.status === 'invalid' ? 'text-red-600' : row.status === 'duplicate' ? 'text-amber-600' : 'text-noorix-muted'}>
-                      {row.reason}
-                    </span>
-                  ) : '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="rounded-lg border border-noorix-border">
+        <SimpleTable
+          columns={previewColumns}
+          data={filteredRows}
+          tableMinWidth={480}
+          maxHeight={320}
+          compact
+          stickyHeader
+          frameClassName="border-0 rounded-none shadow-none"
+          emptyMessage={t('ordersNoSearchResults')}
+          getRowClassName={(row) =>
+            row.status === 'invalid'
+              ? 'bg-red-50/30'
+              : row.status === 'duplicate'
+                ? 'bg-amber-50/20'
+                : undefined
+          }
+        />
       </div>
 
       {counts.duplicate > 0 && (
