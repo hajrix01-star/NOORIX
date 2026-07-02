@@ -8,12 +8,12 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 408 |
-| files with `style={{` | 93 |
+| `style={{` total | 376 |
+| files with `style={{` | 89 |
 | inside `src/ui` | 31 |
 | `src/ui` files | 11 |
-| outside `src/ui` | 377 |
-| outside `src/ui` files | 82 |
+| outside `src/ui` | 345 |
+| outside `src/ui` files | 78 |
 
 ## Top Files
 
@@ -21,7 +21,6 @@ Status: active guardrail.
 |---|---:|
 | `src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx` | 41 |
 | `src/modules/Purchases/components/BatchPrintSheet.tsx` | 28 |
-| `src/modules/Sales/components/SalesEditModal.tsx` | 26 |
 | `src/modules/Reports/BankStatementMappingModal.tsx` | 17 |
 | `src/modules/HR/components/EmployeeDocModal/components/EmployeeDocSalaryBreakdownTable.tsx` | 14 |
 | `src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx` | 14 |
