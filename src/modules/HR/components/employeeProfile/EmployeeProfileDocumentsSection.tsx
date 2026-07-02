@@ -1,4 +1,4 @@
-import { Button, SmartTable } from '../../../../ui';
+import { Button, FileInput, SmartTable } from '../../../../ui';
 
 export function EmployeeProfileDocumentsSection({
   t,
@@ -14,9 +14,8 @@ export function EmployeeProfileDocumentsSection({
       <div className="nx-section-header">
         <span className="nx-section-header__title">{t('employeeDocuments')}</span>
         <div className="nx-section-header__actions">
-          <input
+          <FileInput
             ref={fileInputRef}
-            type="file"
             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
             className="hidden"
             onChange={onFileChange}

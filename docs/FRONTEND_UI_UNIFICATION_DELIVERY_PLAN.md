@@ -506,6 +506,43 @@ Acceptance criteria:
 | primitive tests still pass | `npx.cmd vitest run src/ui/ControlPrimitives.test.tsx` |
 | whitespace-safe diff | `git diff --check` |
 
+## 19. Phase 1.6 Closure: Final Safe Control Adoption
+
+Closure date: 2026-07-02
+
+Phase status: final safe adoption before protected financial/payroll/bank/tax and editable-grid scope.
+
+| Metric | Before | After |
+|---|---:|---:|
+| raw `<button>` outside `src/ui` | 47 | 47 |
+| raw form controls outside `src/ui` | 51 | 49 |
+| additional raw form controls removed | 0 | 2 |
+
+Adopted safely:
+
+| File | Change |
+|---|---|
+| `src/modules/HR/components/employeeProfile/EmployeeProfileDocumentsSection.tsx` | employee document file input to `FileInput` |
+| `src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx` | catalog section checkbox to `Checkbox` |
+
+Remaining protected scope:
+
+| Scope | Decision |
+|---|---|
+| reports / bank / tax | leave until protected reporting pass |
+| payroll / settlement / HR finance | leave until payroll-safe pass |
+| purchases / invoices / sales / expenses | leave until financial form pass |
+| order editable grids | leave until editable-control phase |
+
+Acceptance criteria:
+
+| Condition | Verification |
+|---|---|
+| no new raw controls | `npm.cmd run check:control-governance` |
+| no table regression | `npm.cmd run check:table-governance` |
+| adoption typecheck | `npm.cmd run typecheck` |
+| whitespace-safe diff | `git diff --check` |
+
 ## 17. Phase 1.4 Closure: Import And Catalog Control Adoption
 
 Closure date: 2026-07-02

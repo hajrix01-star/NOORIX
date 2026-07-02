@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { AdaptiveSheet, Button, Input } from '../../../../ui';
+import { AdaptiveSheet, Button, Checkbox, Input } from '../../../../ui';
 import { productHasAdvancedVariants } from './catalogProductUtils';
 
 type FormState = {
@@ -194,15 +194,14 @@ export function CatalogProductFormSheet(props: CatalogProductFormSheetProps) {
             <div className="text-[12px] text-noorix-muted mb-2">{t('productSections')}</div>
             <div className="flex flex-wrap gap-x-3 gap-y-2">
               {(sections as any[]).map((s: any) => (
-                <label key={s.id} className="flex items-center gap-1.5 text-[13px] cursor-pointer">
-                  <input
-                    type="checkbox"
+                <Checkbox
+                    key={s.id}
                     checked={(form.sectionIds || []).includes(s.id)}
                     onChange={(e) => toggleSection(s.id, e.target.checked)}
+                    label={s.nameAr}
                     className="cursor-pointer"
+                    containerClassName="text-[13px] cursor-pointer"
                   />
-                  {s.nameAr}
-                </label>
               ))}
             </div>
           </div>
