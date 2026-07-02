@@ -8,4 +8,5 @@
 - `COMPATIBILITY_DEPRECATION_PLAN.md` - wrapper cleanup and compatibility deprecation plan.
 - `NOORIX_LEDGER_FIRST_REPORTS_PLAN.md` - ledger-first reporting plan and VAT migration rationale.
 - `FRONTEND_UI_UNIFICATION_DELIVERY_PLAN.md` - delivery plan, acceptance criteria, and definition of done for Noorix UI/table/theme unification.
+- `FRONTEND_RAW_CONTROLS_RFC.md` - classification and next-pass plan for the remaining raw UI controls.
 - Phase 1 control governance command: `npm.cmd run check:control-governance`.
