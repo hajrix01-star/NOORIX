@@ -29,5 +29,59 @@
       "maxCssVariableReferences": 79,
       "maxColorMix": 11
     }
+  },
+  "selectorGroups": {
+    "src/index.css": {
+      "table": {
+        "pattern": "(noorix-table|nx-table|nx-col-|nx-row-number|nx-orders-summary-table|nx-expense-line-table)",
+        "maxMatches": 288
+      },
+      "modal": {
+        "pattern": "(modal-|nx-modal|nx-drawer|payroll-run-form-drawer|invoice-edit-modal)",
+        "maxMatches": 116
+      },
+      "shell": {
+        "pattern": "(app-main|noorix-sidebar|noorix-topbar|user-menu|app-shell)",
+        "maxMatches": 73
+      },
+      "dashboard": {
+        "pattern": "(dashboard|calendar|kpi|stat-card|summary-bar)",
+        "maxMatches": 107
+      },
+      "reports": {
+        "pattern": "(reports|nx-pl|nx-gr2|pl-|bank-analysis|costAccounting|result-panel)",
+        "maxMatches": 216
+      },
+      "invoices": {
+        "pattern": "(invoice|inv-)",
+        "maxMatches": 116
+      },
+      "orders": {
+        "pattern": "(orders|catalog|items-manage)",
+        "maxMatches": 28
+      },
+      "hr": {
+        "pattern": "(hr-|payroll|employee|staff|residency|salary|EOS|termination)",
+        "maxMatches": 93
+      },
+      "print": {
+        "pattern": "(@media print|print-)",
+        "maxMatches": 11
+      }
+    },
+    "src/ui/ui.css": {
+      "table": {
+        "pattern": "(noorix-table|nx-table|nx-col-|nx-row-number|nx-orders-summary-table|nx-expense-line-table)",
+        "maxMatches": 93
+      },
+      "modal": {
+        "pattern": "(modal-|nx-modal|nx-drawer|payroll-run-form-drawer|invoice-edit-modal)",
+        "maxMatches": 82
+      },
+      "dashboard": {
+        "pattern": "(dashboard|calendar|kpi|stat-card|summary-bar)",
+        "maxMatches": 22
+      }
+    }
   }
 }

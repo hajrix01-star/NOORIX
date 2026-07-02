@@ -44,6 +44,26 @@ for (const [rel, limits] of Object.entries(baseline.files || {})) {
   }
 }
 
+for (const [rel, groups] of Object.entries(baseline.selectorGroups || {})) {
+  const full = path.join(root, rel);
+  if (!fs.existsSync(full)) {
+    failed = true;
+    console.error(`[css-governance] missing ${rel}`);
+    continue;
+  }
+
+  const text = fs.readFileSync(full, 'utf8');
+  for (const [groupName, group] of Object.entries(groups)) {
+    const actual = count(text, new RegExp(group.pattern, 'g'));
+    const limit = group.maxMatches;
+    rows.push({ file: rel, metric: `selectorGroup:${groupName}`, actual, limit });
+    if (actual > limit) {
+      failed = true;
+      console.error(`[css-governance] ${rel} selectorGroup:${groupName} ${actual} > ${limit}`);
+    }
+  }
+}
+
 for (const row of rows) {
   console.log(`[css-governance] ${row.file} ${row.metric}: ${row.actual}/${row.limit}`);
 }

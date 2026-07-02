@@ -33,3 +33,20 @@ CI runs the same check in `.github/workflows/ci.yml`.
 | 3 | `!important` clusters | remove only with matching component coverage |
 | 4 | tokens and variables | keep stable until component consumers are mapped |
 | 5 | print CSS | leave until PrintTable phase |
+
+## Screen-Specific Baseline
+
+| File | Group | Matches |
+|---|---|---:|
+| `src/index.css` | table | 288 |
+| `src/index.css` | reports | 216 |
+| `src/index.css` | invoices | 116 |
+| `src/index.css` | dashboard | 107 |
+| `src/index.css` | modal | 116 |
+| `src/index.css` | hr | 93 |
+| `src/index.css` | shell | 73 |
+| `src/index.css` | orders | 28 |
+| `src/index.css` | print | 11 |
+| `src/ui/ui.css` | table | 93 |
+| `src/ui/ui.css` | modal | 82 |
+| `src/ui/ui.css` | dashboard | 22 |
