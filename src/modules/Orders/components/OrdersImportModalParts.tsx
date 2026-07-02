@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, SimpleTable } from '../../../ui';
+import { Button, Checkbox, SimpleTable } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
 
 type RowStatus = 'new' | 'duplicate' | 'invalid';
@@ -287,15 +287,13 @@ export function OrdersImportPreview({
       </div>
 
       {counts.duplicate > 0 && (
-        <label className="flex items-center gap-2.5 cursor-pointer text-[12px] text-noorix-text select-none w-fit">
-          <input
-            type="checkbox"
+        <Checkbox
             checked={!skipDuplicates}
             onChange={(e) => setSkipDuplicates(!e.target.checked)}
+            label={<span>{t('importOverwriteDuplicates')} <span className="text-noorix-muted">({counts.duplicate})</span></span>}
             className="cursor-pointer w-3.5 h-3.5"
+            containerClassName="cursor-pointer text-[12px] text-noorix-text select-none w-fit"
           />
-          <span>{t('importOverwriteDuplicates')} <span className="text-noorix-muted">({counts.duplicate})</span></span>
-        </label>
       )}
 
       {toImportCount === 0 && (

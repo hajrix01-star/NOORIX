@@ -32,4 +32,16 @@ describe('control primitives', () => {
     expect(input.type).toBe('file');
     expect(input.accept).toBe('.csv');
   });
+
+  it('keeps wrapper classes for unlabeled Checkbox and Radio controls', () => {
+    const { container } = render(
+      <>
+        <Checkbox aria-label="Select row" containerClassName="hit-area" />
+        <Radio aria-label="Mode" containerClassName="mode-area" />
+      </>,
+    );
+
+    expect(container.querySelector('.hit-area input')?.getAttribute('type')).toBe('checkbox');
+    expect(container.querySelector('.mode-area input')?.getAttribute('type')).toBe('radio');
+  });
 });

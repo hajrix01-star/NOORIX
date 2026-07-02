@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { SmartTable, KebabMenu, Badge } from '../../../../ui';
+import { Checkbox, SmartTable, KebabMenu, Badge } from '../../../../ui';
 import {
   parseProductDisplayNames,
   productVariantsSummary,
@@ -39,8 +39,7 @@ export function CatalogProductTable({
     return (
       <div className="flex flex-col gap-2.5 min-w-0 max-w-full">
         <div className="flex items-start gap-2 min-w-0">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={selectedIds.has(row.id)}
             onChange={() => onToggleSelect(row.id)}
             className="cursor-pointer shrink-0 mt-1"
@@ -111,8 +110,7 @@ export function CatalogProductTable({
     {
       key: '_sel',
       label: (
-        <input
-          type="checkbox"
+        <Checkbox
           checked={allSelected}
           onChange={() => onToggleAll(allIds)}
           className="cursor-pointer"
@@ -121,8 +119,7 @@ export function CatalogProductTable({
       ),
       width: 44,
       render: (_: unknown, row: any) => (
-        <input
-          type="checkbox"
+        <Checkbox
           checked={selectedIds.has(row.id)}
           onChange={() => onToggleSelect(row.id)}
           className="cursor-pointer"

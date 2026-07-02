@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { OrdersImportHelpTrigger } from './OrdersImportHelpTrigger';
 import { OrdersImportModal } from './OrdersImportModal';
-import { Button, Input } from '../../../ui';
+import { Button, Checkbox, Input } from '../../../ui';
 
 /** Categories sub-tab UI for `ItemsManageTab` (presentation + local layout only). */
 export function ItemsManageTabCategoriesSection({ ctrl }: any) {
@@ -123,8 +123,7 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
           <thead>
             <tr className="border-b-2 border-noorix-border">
               <th className="py-[10px] px-3 w-10 text-center">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={allSelected}
                   onChange={() => toggleAllCategories(allFilteredIds)}
                   aria-label={t('ordersSelectAll')}
@@ -145,7 +144,7 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
                 {editingCategory?.id === c.id ? (
                   <>
                     <td className="py-2 px-3 text-center">
-                      <input type="checkbox" checked={selectedCategoryIds.has(c.id)} onChange={() => toggleCategorySelection(c.id)} className="cursor-pointer" />
+                      <Checkbox checked={selectedCategoryIds.has(c.id)} onChange={() => toggleCategorySelection(c.id)} className="cursor-pointer" />
                     </td>
                     <td className="py-2 px-3">
                       <Input type="text" value={editingCategory.nameAr} onChange={(e: any) => setEditingCategory((x: any) => ({ ...x, nameAr: e.target.value }))} placeholder={t('categoryNameAr')} />
@@ -167,7 +166,7 @@ export function ItemsManageTabCategoriesSection({ ctrl }: any) {
                 ) : (
                   <>
                     <td className="py-[10px] px-3 text-center">
-                      <input type="checkbox" checked={selectedCategoryIds.has(c.id)} onChange={() => toggleCategorySelection(c.id)} className="cursor-pointer" />
+                      <Checkbox checked={selectedCategoryIds.has(c.id)} onChange={() => toggleCategorySelection(c.id)} className="cursor-pointer" />
                     </td>
                     <td className="py-[10px] px-3">{c.nameAr || '—'}</td>
                     <td className="nx-cell-muted py-[10px] px-3">{c.nameEn || '—'}</td>

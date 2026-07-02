@@ -17,7 +17,7 @@ import {
   fetchSaudiOccasionsCatalog,
   isSaudiOccasionsApiMissing,
 } from '../../../utils/saudiOccasionsApply';
-import { Button, Modal, Spinner } from '../../../ui';
+import { Button, Checkbox, Modal, Spinner } from '../../../ui';
 import { cn } from '../../../ui/cn';
 import { shiftYmd } from '../../../utils/shiftYmd';
 
@@ -295,8 +295,7 @@ export function DashboardSaudiOccasionsImportModal({
                       )}
                     >
                       <label className="flex cursor-pointer items-start gap-3">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           className="mt-0.5 shrink-0"
                           checked={checked}
                           onChange={() => toggle(o.id)}
