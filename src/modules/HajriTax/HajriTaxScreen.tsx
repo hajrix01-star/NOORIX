@@ -4,7 +4,7 @@
  */
 import React, { useCallback } from 'react';
 import { getRowValue, roundMoney2 } from '../../constants/taxDisclosure';
-import { Button, Input } from '../../ui';
+import { Button, FileTrigger, Input } from '../../ui';
 import HajriTaxDetailEditor from './HajriTaxDetailEditor';
 import HajriTaxRegistryList from './HajriTaxRegistryList';
 import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
@@ -125,13 +125,16 @@ export default function HajriTaxScreen() {
       <Button size="sm" variant="ghost" onClick={s.exportJsonBundle}>
         {s.t('vatJsonExport')}
       </Button>
-      <Button size="sm" variant="ghost" onClick={() => s.jsonInputRef.current?.click()}>
-        {s.t('vatJsonImport')}
-      </Button>
+      <FileTrigger
+        ref={s.jsonInputRef}
+        label={s.t('vatJsonImport')}
+        accept=".json,application/json"
+        onChange={s.onJsonImport}
+        buttonProps={{ size: 'sm', variant: 'ghost' }}
+      />
       <Button size="sm" variant="ghost" onClick={() => s.setShowBulkImportModal(true)}>
         {s.t('hajriTaxBulkImportTitle')}
       </Button>
-      <input ref={s.jsonInputRef} type="file" accept=".json,application/json" className="hidden" onChange={s.onJsonImport} />
     </>
   );
 

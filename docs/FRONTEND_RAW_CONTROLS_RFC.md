@@ -8,7 +8,7 @@ Status: accepted for planning, no production UI refactor in this RFC.
 
 | Metric | Before UI unification | After merged phase | Remaining decision |
 |---|---:|---:|---|
-| Raw form controls outside `src/ui` | 90 | 47 | classify before conversion |
+| Raw form controls outside `src/ui` | 90 | 41 | classify before conversion |
 | Raw buttons outside `src/ui` | 74 | 47 | handle by dedicated passes |
 | Raw tables outside `src/ui` | 61 | 53 TSX | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
@@ -28,8 +28,8 @@ Sources:
 | Financial edit forms: invoices, sales, expenses | 12 | high | convert only in financial-form pass |
 | Purchases editable rows | 4 | high | wait for editable cell primitives |
 | HR payroll, settlement, residency documents | 9 | high | convert only in HR/payroll pass |
-| Tax/VAT | 4 | high | convert only in tax pass |
-| Reports and cost accounting | 7 | high | convert only in report pass |
+| Tax/VAT | 2 | high | convert only in tax pass |
+| Reports and cost accounting | 3 | high | convert only in report pass |
 | Bank upload, rules, reconciliation filters | 9 | high | convert only in bank pass |
 | Order editable grids | 4 | medium-high | wait for editable cell primitives |
 
@@ -52,12 +52,9 @@ Note: counts are grouped by workflow risk, so a file can belong to a protected p
 | `src/modules/HR/components/PayrollRunDetailModal.tsx` | 1 | 274 | input | yes | no | leave until payroll detail pass |
 | `src/modules/HR/components/ResidencyFormModal.tsx` | 1 | 322 | input | no | no | safe later in HR document pass |
 | `src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx` | 1 | 82 | checkbox | yes | no | leave until settlement document pass |
-| `src/modules/HajriTax/HajriTaxScreen.tsx` | 1 | 134 | file | yes | no | leave until tax import pass |
 | `src/modules/HajriTax/HajriTaxDetailEditor.tsx` | 2 | 139, 345 | input | yes | yes | leave until VAT detail edit pass |
-| `src/modules/HajriTax/HajriTaxBulkImportModal.tsx` | 1 | 219 | file | yes | no | leave until VAT bulk import pass |
 | `src/modules/Reports/TaxReportTab.tsx` | 1 | 196 | input | yes | no | leave until tax report pass |
 | `src/modules/Reports/GeneralReportV2Screen.tsx` | 2 | 292, 345 | select/input | yes | no | leave until financial report controls pass |
-| `src/modules/Reports/CostAccountingAppsScreen.tsx` | 4 | 192, 222, 230, 248 | select/file/checkbox | yes | mixed | leave until cost accounting pass |
 | `src/modules/Reports/BankStatementUploadModal.tsx` | 1 | 151 | file | yes | no | leave until bank upload pass |
 | `src/modules/Reports/bank/components/BankCategoryRulesImportSheet.tsx` | 5 | 59, 71, 98, 111, 120 | input/checkbox | yes | yes | leave until bank rules import pass |
 | `src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx` | 2 | 168, 178 | input | yes | no | leave until bank transaction filter pass |
@@ -81,7 +78,7 @@ Primitive foundation delivered in `src/ui` with focused tests in `src/ui/Editabl
 | Priority | Scope | Files | Expected reduction | Required tests |
 |---:|---|---|---:|---|
 | 1 | safe checkbox-only controls with existing `Checkbox` | `PaymentHistoryTab.tsx`, `BankCategoryCardRow.tsx` | delivered | targeted render/smoke or manual workflow check |
-| 2 | hidden file input pattern after `FileTrigger` exists | `BankStatementUploadModal.tsx`, `HajriTaxScreen.tsx`, `HajriTaxBulkImportModal.tsx`, `CostAccountingAppsScreen.tsx` | 4 | upload trigger smoke, accepted file types |
+| 2 | hidden file input pattern after `FileTrigger` exists | `HajriTaxScreen.tsx`, `HajriTaxBulkImportModal.tsx`, `CostAccountingAppsScreen.tsx` | delivered | upload trigger smoke, accepted file types |
 | 3 | report toolbar controls after `InlineSelect` exists | `GeneralReportV2Screen.tsx`, `TaxReportTab.tsx` | 3 | report year/filter behavior |
 | 4 | bank rules and filters | `BankCategoryRulesImportSheet.tsx`, `BankStatementTransactionsFullTab.tsx` | 7 | bank import/filter tests or smoke |
 | 5 | editable financial grids | purchases, expenses, payroll, orders | 20+ | row edit tests, calculation tests, regression smoke |
@@ -93,6 +90,14 @@ Delivered safe checkbox pass:
 | `src/modules/Expenses/components/PaymentHistoryTab.tsx` | raw show-all-dates checkbox moved to `Checkbox` |
 | `src/modules/Reports/bank/BankCategoryCardRow.tsx` | raw active checkbox moved to `EditableCheckboxCell` |
 
+Delivered FileTrigger and inline controls pass:
+
+| File | Change |
+|---|---|
+| `src/modules/HajriTax/HajriTaxScreen.tsx` | VAT JSON raw file input moved to `FileTrigger` |
+| `src/modules/HajriTax/HajriTaxBulkImportModal.tsx` | bulk import raw file input moved to `FileTrigger` |
+| `src/modules/Reports/CostAccountingAppsScreen.tsx` | CSV raw file input moved to `FileTrigger`; two selects moved to `InlineSelect`; VAT checkbox moved to `Checkbox` |
+
 ## 6. What To Leave Temporarily
 
 | Scope | Reason |
@@ -100,7 +105,7 @@ Delivered safe checkbox pass:
 | Payroll and settlement controls | payroll calculations and official HR documents are high risk |
 | Purchases and expense batch rows | editable financial grids need cell primitives first |
 | Tax/VAT detail editing | production tax workflow, needs dedicated test pass |
-| Cost accounting | financial analysis and imports; do not touch in UI-only pass |
+| Cost accounting calculations/editable fields | financial analysis; do not touch calculation behavior in UI-only pass |
 | Order quantity grids | quantity behavior is row-bound and should move with editable cell components |
 
 ## 7. Acceptance Criteria For Next Implementation Pass

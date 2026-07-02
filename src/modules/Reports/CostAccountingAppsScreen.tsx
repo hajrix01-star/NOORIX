@@ -3,7 +3,7 @@
  */
 import { fmt } from '../../utils/format';
 import { formatUiDateTime } from '../../utils/saudiDate';
-import { Button, Input, cn, Modal } from '../../ui';
+import { Button, Checkbox, FileTrigger, InlineSelect, Input, cn, Modal } from '../../ui';
 import Card from '../../ui/Card';
 import { type CostAppsCommissionBase } from './costAccountingAppsModel';
 import { Field, SectionHeading } from './costAccountingApps/CostAccountingAppsUiParts';
@@ -189,7 +189,7 @@ export default function CostAccountingAppsScreen() {
             <SectionHeading tone="green">{t('reportCostAppsZoneSync')}</SectionHeading>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               <Field label={t('reportCostAppsImportMonth')} labelAlign="center" className="min-w-0 flex-1 sm:max-w-[min(100%,20rem)]">
-                <select
+                <InlineSelect
                   className={cn(
                     'min-h-10 w-full rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-center text-sm font-semibold text-noorix-text',
                   )}
@@ -209,27 +209,32 @@ export default function CostAccountingAppsScreen() {
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </InlineSelect>
               </Field>
               <div className="flex flex-wrap items-end justify-center gap-2 sm:justify-start">
                 <Button type="button" variant="secondary" size="sm" disabled={importing} onClick={handleImportSystem}>
                   {importing ? t('loading') : t('reportCostAppsImportBtn')}
                 </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => fileRef.current?.click()}>
-                  {t('reportCostAppsCsvImport')}
-                </Button>
+                <FileTrigger
+                  ref={fileRef}
+                  label={t('reportCostAppsCsvImport')}
+                  accept=".csv,text/csv"
+                  onChange={handleCsvPick}
+                  buttonProps={{ variant: 'ghost', size: 'sm' }}
+                />
               </div>
-              <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvPick} />
             </div>
           </div>
 
           {/* —— ضريبة / عمولة / COGS —— */}
           <div className="space-y-3 border-t border-noorix-border pt-5">
             <SectionHeading tone="amber">{t('reportCostAppsZoneRates')}</SectionHeading>
-            <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-noorix-border/90 bg-[var(--noorix-surface-1)] px-3 py-2 text-[13px] print:border-0 print:bg-transparent print:px-0 print:py-1">
-              <input type="checkbox" className="size-4 shrink-0 rounded border-noorix-border" checked={vatInclusive} onChange={(e) => setVatInclusive(e.target.checked)} />
-              <span>{t('reportCostAppsVatInclusive')}</span>
-            </label>
+            <Checkbox
+              label={t('reportCostAppsVatInclusive')}
+              checked={vatInclusive}
+              onChange={(e) => setVatInclusive(e.target.checked)}
+              containerClassName="flex cursor-pointer items-center gap-2.5 rounded-lg border border-noorix-border/90 bg-[var(--noorix-surface-1)] px-3 py-2 text-[13px] print:border-0 print:bg-transparent print:px-0 print:py-1"
+            />
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <Field labelAlign="center" label={t('reportCostAppsVatRate')}>
                 <Input value={vatRatePctStr} onChange={(e: any) => setVatRatePctStr(e.target.value)} inputMode="decimal" dir="ltr" className="min-h-10 w-full text-center tabular-nums" />
@@ -245,7 +250,7 @@ export default function CostAccountingAppsScreen() {
               </Field>
             </div>
             <Field labelAlign="center" label={t('reportCostAppsCommissionBase')}>
-              <select
+              <InlineSelect
                 className={cn(
                   'min-h-10 w-full max-w-xl rounded-md border border-noorix-border bg-[var(--noorix-surface-1)] px-3 py-2 text-center text-sm font-medium',
                 )}
@@ -254,7 +259,7 @@ export default function CostAccountingAppsScreen() {
               >
                 <option value="gross">{t('reportCostAppsCommissionOnGross')}</option>
                 <option value="net">{t('reportCostAppsCommissionOnNet')}</option>
-              </select>
+              </InlineSelect>
             </Field>
 
           </div>
