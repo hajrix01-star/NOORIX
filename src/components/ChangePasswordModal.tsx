@@ -126,13 +126,13 @@ export default function ChangePasswordModal({ onClose, onSuccess }: ChangePasswo
               autoComplete="new-password"
             />
             {confirmPassword && confirmPassword !== newPassword && (
-              <span className="text-[11px] mt-1 block" style={{ color: 'var(--noorix-accent-red)' }}>
+              <span className="text-[11px] mt-1 block text-noorix-red">
                 كلمتا المرور غير متطابقتين
               </span>
             )}
           </div>
           {error && (
-            <div className="p-2.5 rounded-lg text-[13px]" style={{ background: 'var(--noorix-red-10)', color: 'var(--noorix-accent-red)' }}>
+            <div className="p-2.5 rounded-lg text-[13px] bg-[var(--noorix-red-10)] text-noorix-red">
               {error}
             </div>
           )}

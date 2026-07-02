@@ -16,7 +16,7 @@ export default function DashboardCalendarSelectionBar({
 }: DashboardCalendarSelectionBarProps) {
   if (selectedCount <= 0) return null;
   return (
-    <div className="mt-3 rounded-lg p-2.5" style={{ background: 'var(--noorix-blue-8)', border: '1px solid var(--noorix-blue-20)' }}>
+    <div className="mt-3 rounded-lg p-2.5 bg-[var(--noorix-blue-8)] border border-[var(--noorix-blue-20)]">
       <div className="text-[11px] font-bold mb-1.5">
         {t('dashboardSelectedDays')}: {selectedCount}
       </div>

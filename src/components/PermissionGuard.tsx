@@ -32,7 +32,7 @@ export default function PermissionGuard({
 
   if (isUserLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] text-[14px]" style={{ color: 'var(--noorix-text-muted)' }}>
+      <div className="flex items-center justify-center min-h-[50vh] text-[14px] text-noorix-muted">
         جاري التحقق...
       </div>
     );

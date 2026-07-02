@@ -79,7 +79,7 @@ export const SupplierTable = memo(function SupplierTable({
 
   if (suppliers.length === 0) {
     return (
-      <div className="text-center text-noorix-muted p-5 rounded-xl" style={{ border: '2px dashed var(--noorix-border)' }}>
+      <div className="text-center text-noorix-muted p-5 rounded-xl border-2 border-dashed border-noorix-border">
         <div className="mb-2 text-noorix-muted text-[20px]">—</div>
         <p className="m-0 text-[13px]">{t('noSuppliers')}</p>
       </div>
@@ -242,7 +242,7 @@ export const SupplierTable = memo(function SupplierTable({
         const catName = cat ? (lang === 'en' ? cat.nameEn || cat.nameAr : cat.nameAr || cat.nameEn) : null;
         const checked = selectedIds.has(row.id);
         return (
-          <div style={{ background: checked ? 'var(--noorix-green-4)' : 'transparent', margin: '-9px -14px', padding: '9px 14px' }}>
+          <div className={`-my-[9px] -mx-[14px] py-[9px] px-[14px] ${checked ? 'bg-[var(--noorix-green-4)]' : 'bg-transparent'}`}>
             {/* السطر الأول: checkbox + الاسم + نوع + حالة الضريبة */}
             <div className="nx-cr__line1">
               <div onClick={(e) => e.stopPropagation()}>

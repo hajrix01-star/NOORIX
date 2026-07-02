@@ -171,11 +171,8 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
 
       {/* ── نتيجة الاستيراد ── */}
       {result && (
-        <div className="py-[10px] px-[14px] rounded-[10px] text-[13px]" style={{
-          background: result.failed === 0 ? 'var(--noorix-green-7)' : 'var(--noorix-yellow-7)',
-          border: `1px solid ${result.failed === 0 ? 'var(--noorix-green-25)' : 'var(--noorix-yellow-35)'}`,
-        }}>
-          <div className="font-bold" style={{ marginBottom: result.errors.length ? 6 : 0 }}>
+        <div className={`py-[10px] px-[14px] rounded-[10px] text-[13px] border ${result.failed === 0 ? 'bg-[var(--noorix-green-7)] border-[var(--noorix-green-25)]' : 'bg-[var(--noorix-yellow-7)] border-[var(--noorix-yellow-35)]'}`}>
+          <div className={`font-bold ${result.errors.length ? 'mb-1.5' : ''}`}>
             {result.failed === 0
               ? `تم استيراد ${result.success} مورد بنجاح`
               : `تم استيراد ${result.success} بنجاح — فشل ${result.failed}`}

@@ -72,30 +72,16 @@ export default function AISettingsTab() {
       </div>
 
       {/* ─── بطاقة الحالة والتشخيص ─── */}
-      <div
-        className="noorix-surface-card p-5"
-        style={{ background: 'var(--noorix-bg)' }}
-      >
+      <div className="noorix-surface-card p-5 bg-noorix-bg">
         {/* شريط الحالة: أونلاين / أوفلاين */}
         <div className="flex flex-col gap-3 min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between border-b border-noorix-border mb-5 pb-4 min-w-0">
           <div className="flex gap-2.5 min-w-0 items-center">
             <span
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                background: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
-                boxShadow: status === STATUS_ONLINE
-                  ? '0 0 8px var(--noorix-green-50)'
-                  : '0 0 8px rgba(var(--noorix-accent-red-rgb,220,38,38),0.5)',
-              }}
+              className={`h-2.5 w-2.5 rounded-full ${status === STATUS_ONLINE ? 'bg-noorix-green shadow-[0_0_8px_var(--noorix-green-50)]' : 'bg-noorix-red shadow-[0_0_8px_rgba(var(--noorix-accent-red-rgb,220,38,38),0.5)]'}`}
               title={status === STATUS_ONLINE ? 'متصل' : 'غير متصل'}
             />
             <span
-              className="text-[15px] font-semibold"
-              style={{
-                color: status === STATUS_ONLINE ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
-              }}
+              className={`text-[15px] font-semibold ${status === STATUS_ONLINE ? 'text-noorix-green' : 'text-noorix-red'}`}
             >
               {status === STATUS_ONLINE
                 ? (lang === 'ar' ? 'أونلاين' : 'Online')
@@ -152,10 +138,7 @@ export default function AISettingsTab() {
 
       {/* تلميح إعداد المفتاح */}
       {!geminiAvailable && isOnline && (
-        <div
-          className="p-3 rounded-lg text-[13px] text-noorix-text"
-          style={{ background: 'var(--noorix-yellow-12)', border: '1px solid var(--noorix-yellow-40)' }}
-        >
+        <div className="p-3 rounded-lg text-[13px] text-noorix-text bg-[var(--noorix-yellow-12)] border border-[var(--noorix-yellow-40)]">
           {lang === 'ar'
             ? 'لتفعيل Gemini: أضف GEMINI_API_KEY في backend/.env ثم أعد تشغيل السيرفر. احصل على المفتاح من: https://aistudio.google.com/app/apikey'
             : 'To enable Gemini: Add GEMINI_API_KEY in backend/.env then restart the server. Get key from: https://aistudio.google.com/app/apikey'}
@@ -167,21 +150,17 @@ export default function AISettingsTab() {
 
 function DiagnosticRow({ label, value, ok, pending = false }: { label: string; value: any; ok: boolean; pending?: boolean }) {
   return (
-    <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between border border-noorix-border rounded-lg py-[10px] px-3 min-w-0" style={{ background: 'var(--noorix-surface)' }}>
+    <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between border border-noorix-border rounded-lg py-[10px] px-3 min-w-0 bg-noorix-surface">
       <span className="text-[13px] font-medium text-noorix-muted shrink-0">{label}</span>
       <div className="flex gap-2 min-w-0 justify-end items-center">
         <span
-          className="text-[13px] font-medium text-end break-words min-w-0"
-          style={{
-            color: pending ? 'var(--noorix-text-muted)' : ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
-          }}
+          className={`text-[13px] font-medium text-end break-words min-w-0 ${pending ? 'text-noorix-muted' : ok ? 'text-noorix-green' : 'text-noorix-red'}`}
         >
           {value}
         </span>
         {!pending && (
           <span
-            className="w-[6px] h-[6px] rounded-full"
-            style={{ background: ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}
+            className={`w-[6px] h-[6px] rounded-full ${ok ? 'bg-noorix-green' : 'bg-noorix-red'}`}
           />
         )}
       </div>

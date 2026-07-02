@@ -70,7 +70,7 @@ export function EmployeeImportPreviewTable({
       key: 'status',
       label: headers[4],
       render: (_v, row) => (
-        <span className="font-bold" style={{ color: row.ok ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)' }}>
+        <span className={`font-bold ${row.ok ? 'text-noorix-green' : 'text-noorix-red'}`}>
           {row.status}
         </span>
       ),

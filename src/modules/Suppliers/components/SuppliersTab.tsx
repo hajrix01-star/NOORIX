@@ -137,7 +137,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
         ? <p className="text-noorix-muted text-[13px]">{t('loading')}</p>
         : isError
         ? (
-          <div className="rounded-xl border border-noorix-red p-4 text-[13px] text-noorix-red" style={{ background: 'color-mix(in srgb, var(--noorix-accent-red) 8%, transparent)' }}>
+          <div className="rounded-xl border border-noorix-red p-4 text-[13px] text-noorix-red bg-noorix-red/10">
             <strong>{t('suppliersLoadFailedTitle')}</strong>
             {error?.message && <p className="m-0 mt-1 text-[12px] opacity-80">{error.message}</p>}
             <p className="m-0 mt-1 text-[12px] opacity-70">{t('suppliersLoadFailedHint')}</p>

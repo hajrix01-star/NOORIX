@@ -231,8 +231,8 @@ export const CategoriesManager = memo(function CategoriesManager({
             className={[
               'flex items-center gap-1 text-right',
               row._level === 0 ? 'font-bold text-noorix-text' : 'font-medium text-noorix-muted',
+              row._level === 1 ? 'pe-7' : '',
             ].join(' ')}
-            style={{ paddingRight: row._level === 1 ? 28 : 0 }}
           >
             {row._level === 1 && <span className="text-noorix-muted text-[11px] shrink-0">↳</span>}
             {row.icon ? <span>{row.icon}</span> : null}
