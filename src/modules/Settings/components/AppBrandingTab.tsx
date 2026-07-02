@@ -2,7 +2,7 @@
  * AppBrandingTab — إعدادات هوية التطبيق بدعم ثنائي اللغة (عربي / إنجليزي).
  */
 import React, { useState, useRef } from 'react';
-import { Button, Input } from '../../../ui';
+import { Button, FileInput, Input } from '../../../ui';
 import {
   getBrandNameAr, getBrandNameEn,
   getBrandTaglineAr, getBrandTaglineEn,
@@ -169,7 +169,7 @@ export default function AppBrandingTab() {
             <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
               رفع صورة من الجهاز
             </Button>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+            <FileInput ref={fileRef} accept="image/*" onChange={handleFile} className="hidden" />
             {logoUrl && (
               <Button type="button" size="sm" variant="danger" onClick={() => setLogoUrl('')}>
                 ✕ إزالة الشعار

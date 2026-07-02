@@ -1,6 +1,6 @@
 import React from 'react';
 import type { CSSProperties, DragEvent, ChangeEvent } from 'react';
-import { Button } from '../../../ui';
+import { Button, FileInput } from '../../../ui';
 import type { ImportEntityType } from '../types';
 import type { ImportExportStyles } from '../types';
 
@@ -48,9 +48,8 @@ export function ImportUploadSection({
         </div>
         <div className="text-[12px] text-noorix-muted">xlsx / xls / csv</div>
       </div>
-      <input
+      <FileInput
         ref={fileInputRef as React.RefObject<HTMLInputElement>}
-        type="file"
         accept=".xlsx,.xls,.csv"
         className="hidden"
         onChange={(e: ChangeEvent<HTMLInputElement>) => onPickFile(e.target.files?.[0])}

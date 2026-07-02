@@ -424,3 +424,42 @@ Acceptance criteria:
 | every raw control exception has a reason | `scripts/control-manual-reasons.json` is required by governance |
 | no table regression | `npm.cmd run check:table-governance` |
 | no UI behavior change | documentation and governance script changes only |
+
+## 15. Phase 1.2 Closure: Control Primitives
+
+Closure date: 2026-07-02
+
+Phase status: central primitives added with limited low-risk adoption.
+
+| Metric | Before | After |
+|---|---:|---:|
+| raw `<button>` outside `src/ui` | 47 | 47 |
+| raw form controls outside `src/ui` | 85 | 81 |
+| new central primitives | 0 | 3 |
+| new primitive tests | 0 | 3 |
+
+Added UI primitives:
+
+| Component | File |
+|---|---|
+| `Checkbox` | `src/ui/Checkbox.tsx` |
+| `Radio` | `src/ui/Radio.tsx` |
+| `FileInput` | `src/ui/FileInput.tsx` |
+
+Adopted safely:
+
+| File | Change |
+|---|---|
+| `src/components/common/SearchableOptionsPicker.tsx` | raw checkbox to `Checkbox` |
+| `src/components/ImportExportModal/components/ImportUploadSection.tsx` | raw file input to `FileInput` |
+| `src/modules/Settings/components/AppBrandingTab.tsx` | raw file input to `FileInput` |
+| `src/modules/Suppliers/components/SupplierImportExport.tsx` | raw file input to `FileInput` |
+
+Acceptance criteria:
+
+| Condition | Verification |
+|---|---|
+| no new raw controls | `npm.cmd run check:control-governance` |
+| no table regression | `npm.cmd run check:table-governance` |
+| primitives typecheck | `npm.cmd run typecheck` |
+| primitives tests | `npx.cmd vitest run src/ui/ControlPrimitives.test.tsx` |
