@@ -5,7 +5,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementUpload } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
-import { Button, AdaptiveSheet } from '../../ui';
+import { Button, AdaptiveSheet, FileTrigger } from '../../ui';
 
 const STEPS = [
   { id: 'upload', labelKey: 'bankStatementStepUpload' },
@@ -148,7 +148,13 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           <div className="text-[12px] text-noorix-muted mt-1">
             Excel (.xlsx, .xls) أو CSV
           </div>
-          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleInputChange} hidden />
+          <FileTrigger
+            ref={fileInputRef}
+            accept=".xlsx,.xls,.csv"
+            onChange={handleInputChange}
+            label=""
+            buttonProps={{ className: 'hidden', 'aria-hidden': true, tabIndex: -1 }}
+          />
         </div>
       ) : (
         <div className="grid gap-3">

@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { OUTPUT_ROWS, INPUT_ROWS, roundMoney2 } from '../../constants/taxDisclosure';
 import { fmtTax } from '../../utils/format';
-import { Button, Input, FmtNum } from '../../ui';
+import { Button, Checkbox, Input, FmtNum } from '../../ui';
 
 export default function HajriTaxDetailEditor({
   t,
@@ -136,8 +136,7 @@ export default function HajriTaxDetailEditor({
         <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
           {!readOnly ? (
             <label className="flex max-w-xl cursor-pointer items-start gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-blue-6)] px-3 py-2 text-[12px] leading-snug text-noorix-text">
-              <input
-                type="checkbox"
+              <Checkbox
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
                 checked={salesAmountIncludesVat}
                 onChange={(e: any) => setSalesAmountIncludesVat(e.target.checked)}
@@ -342,8 +341,7 @@ export default function HajriTaxDetailEditor({
               <span className="text-[14px] font-bold text-noorix-text">{t('vatSimulatorTitle')}</span>
               {!readOnly ? (
                 <label className="flex cursor-pointer items-center gap-2 text-[12px] text-noorix-muted">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     className="h-4 w-4 rounded border-noorix-border"
                     checked={showSimulator}
                     onChange={(e: any) => setShowSimulator(e.target.checked)}

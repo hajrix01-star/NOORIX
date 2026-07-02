@@ -8,7 +8,7 @@ Status: accepted for planning, no production UI refactor in this RFC.
 
 | Metric | Before UI unification | After merged phase | Remaining decision |
 |---|---:|---:|---|
-| Raw form controls outside `src/ui` | 90 | 18 | classify before conversion |
+| Raw form controls outside `src/ui` | 90 | 0 | closed by central primitives |
 | Raw buttons outside `src/ui` | 74 | 47 | handle by dedicated passes |
 | Raw tables outside `src/ui` | 61 | 53 TSX | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
@@ -25,31 +25,31 @@ Sources:
 
 | Group | Count | Risk | Decision |
 |---|---:|---|---|
-| Financial edit forms: invoices, sales, expenses | 11 | high | convert only in financial-form pass |
-| Purchases attachment inputs | 2 | high | leave until file/dropzone primitive pass |
-| HR payroll and settlement documents | 4 | high | convert only in HR/payroll pass |
-| Tax/VAT | 2 | high | convert only in tax pass |
+| Financial edit forms: invoices, sales, expenses | 0 | closed | converted with `Input`, `Checkbox`, and `FileTrigger` |
+| Purchases attachment inputs | 0 | closed | converted with `FileTrigger` |
+| HR payroll and settlement documents | 0 | closed | converted with `Checkbox`, `Input`, and `FileTrigger` |
+| Tax/VAT | 0 | closed | converted with `Checkbox` |
 | Reports and cost accounting | 0 | converted | delivered in report toolbar pass |
-| Bank upload | 1 | high | leave until drag-and-drop upload primitive exists |
+| Bank upload | 0 | converted | delivered with `FileTrigger` while preserving dropzone trigger |
 | Order editable grids | 0 | converted | delivered in order controls pass |
 
 Note: counts are grouped by workflow risk, so a file can belong to a protected product area even when the raw element itself is small.
 
 ## 3. Decision Table
 
-| File | Raw count | Evidence lines | Type | Financial? | Editable? | Conversion decision |
+| File | Previous raw count | Evidence lines | Type | Financial? | Editable? | Conversion decision |
 |---|---:|---|---|---|---|---|
-| `src/modules/Purchases/components/BatchRow.tsx` | 2 | 187, 390 | file | yes | no | leave until attachment file input pass |
-| `src/modules/Invoices/components/InvoiceEditModal.tsx` | 2 | 278, 334 | input | yes | yes | leave until invoice edit pass |
-| `src/modules/Sales/components/SalesDayEditModal.tsx` | 1 | 127 | input | yes | yes | leave until sales day edit pass |
-| `src/modules/Expenses/components/ExpenseFormModal.tsx` | 3 | 392, 576, 589 | input | yes | yes | leave until expense form pass |
-| `src/modules/Expenses/components/ExpenseLineFormModal.tsx` | 1 | 317 | input | yes | yes | leave until expense line pass |
-| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | 2 | 295, 363 | checkbox | yes | no | leave encoded desktop table checkboxes for focused pass |
-| `src/modules/HR/components/TerminationSettlementModal.tsx` | 1 | 515 | input | yes | yes | leave until settlement pass |
-| `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx` | 2 | 52, 130 | input | yes | yes | leave until payroll editable grid pass |
-| `src/modules/HR/components/PayrollRunDetailModal.tsx` | 1 | 274 | input | yes | no | leave until payroll detail pass |
-| `src/modules/HajriTax/HajriTaxDetailEditor.tsx` | 2 | 139, 345 | input | yes | yes | leave until VAT detail edit pass |
-| `src/modules/Reports/BankStatementUploadModal.tsx` | 1 | 151 | file | yes | no | leave until bank upload pass |
+| `src/modules/Purchases/components/BatchRow.tsx` | 2 | 187, 390 | file | yes | no | converted to `FileTrigger` |
+| `src/modules/Invoices/components/InvoiceEditModal.tsx` | 2 | 278, 334 | input | yes | yes | converted to `FileTrigger` and `Checkbox` |
+| `src/modules/Sales/components/SalesDayEditModal.tsx` | 1 | 127 | input | yes | yes | converted to `Input` |
+| `src/modules/Expenses/components/ExpenseFormModal.tsx` | 3 | 392, 576, 589 | input | yes | yes | converted to `Checkbox` and `FileTrigger` |
+| `src/modules/Expenses/components/ExpenseLineFormModal.tsx` | 1 | 317 | input | yes | yes | converted to `Checkbox` |
+| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | 2 | 295, 363 | checkbox | yes | no | converted to `Checkbox` |
+| `src/modules/HR/components/TerminationSettlementModal.tsx` | 1 | 515 | input | yes | yes | converted to `FileTrigger` |
+| `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx` | 2 | 52, 130 | input | yes | yes | converted to `Checkbox` |
+| `src/modules/HR/components/PayrollRunDetailModal.tsx` | 1 | 274 | input | yes | no | converted to `Checkbox` |
+| `src/modules/HajriTax/HajriTaxDetailEditor.tsx` | 2 | 139, 345 | input | yes | yes | converted to `Checkbox` |
+| `src/modules/Reports/BankStatementUploadModal.tsx` | 1 | 151 | file | yes | no | converted to `FileTrigger` |
 
 ## 4. Missing UI Primitives
 
@@ -122,16 +122,30 @@ Delivered purchase and expense checkbox pass:
 
 | File | Change |
 |---|---|
-| `src/modules/Purchases/components/BatchRow.tsx` | warranty follow-up toggles moved to `Checkbox`; receipt file inputs left raw |
-| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | mobile exempt and warranty toggles moved to `Checkbox`; desktop encoded table toggles left raw |
+| `src/modules/Purchases/components/BatchRow.tsx` | warranty follow-up toggles moved to `Checkbox`; receipt file inputs later moved to `FileTrigger` |
+| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | mobile exempt and warranty toggles moved to `Checkbox`; desktop toggles later moved to `Checkbox` |
+
+Delivered raw form controls closure pass:
+
+| File | Change |
+|---|---|
+| `src/modules/Sales/components/SalesDayEditModal.tsx` | transaction date moved to `Input` |
+| `src/modules/Invoices/components/InvoiceEditModal.tsx` | receipt upload moved to `FileTrigger`; taxable toggle moved to `Checkbox` |
+| `src/modules/HR/components/PayrollRunDetailModal.tsx` | net-only slip toggle moved to `Checkbox` |
+| `src/modules/HR/components/TerminationSettlementModal.tsx` | hidden settlement document upload moved to `FileTrigger` |
+| `src/modules/Reports/BankStatementUploadModal.tsx` | hidden bank statement upload input moved to `FileTrigger` |
+| `src/modules/Expenses/components/ExpenseFormModal.tsx` | exempt, warranty, and receipt controls moved to central primitives |
+| `src/modules/Expenses/components/ExpenseLineFormModal.tsx` | amount override toggle moved to `Checkbox` |
+| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | desktop exempt and warranty toggles moved to `Checkbox` |
+| `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx` | include/defer payroll row toggles moved to `Checkbox` |
+| `src/modules/HajriTax/HajriTaxDetailEditor.tsx` | VAT inclusive and simulator toggles moved to `Checkbox` |
 
 ## 6. What To Leave Temporarily
 
 | Scope | Reason |
 |---|---|
-| Payroll and settlement controls | payroll calculations and official HR documents are high risk |
-| Purchase attachment inputs and expense desktop checkboxes | file/dropzone and encoded table-checkbox cases need focused passes |
-| Tax/VAT detail editing | production tax workflow, needs dedicated test pass |
+| Raw form controls | none remain outside `src/ui`; governance now blocks reintroduction |
+| Payroll, settlement, purchase, expense, tax, and bank workflows | converted only at the control-shell level; calculation and save behavior must remain covered by workflow tests |
 | Cost accounting calculations/editable fields | financial analysis; do not touch calculation behavior in UI-only pass |
 | Order quantity grids | quantity behavior is row-bound and should move with editable cell components |
 
@@ -150,4 +164,4 @@ Delivered purchase and expense checkbox pass:
 
 Decision: incremental refactor.
 
-Reason: the remaining 18 raw controls are not random UI leftovers. They are mostly protected financial, payroll, bank, tax, file, or encoded table controls. The next real improvement is to migrate one workflow at a time with focused tests.
+Reason: raw form controls are now closed at the screen layer, while raw buttons and raw tables still need incremental workflow-specific passes. The next real improvement is to migrate one remaining workflow at a time with focused tests.

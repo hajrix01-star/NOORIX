@@ -17,7 +17,7 @@ import {
   throwIfApiFailed,
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Checkbox, FileTrigger, Input, AdaptiveSheet } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 
@@ -275,12 +275,12 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
           )}
           <div>
             <div className="text-[11px] font-semibold text-noorix-muted mb-1">{t('invoiceReceiptChooseFile')}</div>
-            <input
-              type="file"
+            <FileTrigger
               disabled={attachmentBusy}
               accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-              className="text-[13px] max-w-full disabled:opacity-50"
               onChange={handleAttachmentFileChange}
+              label={t('invoiceReceiptChooseFile')}
+              buttonProps={{ variant: 'secondary', size: 'sm', disabled: attachmentBusy, className: 'max-w-full' }}
             />
           </div>
           {attachmentBusy && <span className="text-[11px] text-noorix-muted">{t('invoiceReceiptUploading')}</span>}
@@ -331,10 +331,9 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
           {hasSupplier && form.totalAmount && parseFloat(form.totalAmount) > 0 && (
             <div className="mt-2 grid gap-1.5">
               <label className="nx-checkbox text-[12px] text-noorix-text">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={form.isTaxable !== false}
-                  onChange={(e: any) => updateField('isTaxable', e.target.checked)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField('isTaxable', e.target.checked)}
                 />
                 {lang === 'en' ? 'Taxable invoice' : 'فاتورة خاضعة للضريبة'}
               </label>

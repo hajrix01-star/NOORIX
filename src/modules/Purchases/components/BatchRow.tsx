@@ -4,7 +4,7 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, Checkbox, FormRow } from '../../../ui';
+import { Input, Button, Card, Checkbox, FileTrigger, FormRow } from '../../../ui';
 import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
@@ -184,12 +184,12 @@ function BatchRowTable(props: Record<string, any>) {
           ) : (
             <span className="text-[10px] text-noorix-muted leading-none">·</span>
           )}
-          <input
-            type="file"
+          <FileTrigger
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-            className="w-full max-w-[96px] text-[9px] file:mr-1"
             aria-label={`${t('invoiceReceiptAttachment')} — ${t('batchRowLineAriaLabel', index + 1)}`}
             onChange={(e: any) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+            label={row.attachmentFile ? row.attachmentFile.name : t('invoiceReceiptAttachment')}
+            buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-[96px] truncate text-[9px] px-1' }}
           />
         </div>
       </td>
@@ -387,11 +387,11 @@ function BatchRowStack(props: Record<string, any>) {
 
         <div className="rounded-lg border border-noorix-border border-dashed px-2 py-2 bg-noorix-bg-muted/30">
           <div className="text-[11px] font-semibold text-noorix-muted mb-1">{t('invoiceReceiptAttachment')}</div>
-          <input
-            type="file"
+          <FileTrigger
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-            className="text-[12px] max-w-full"
             onChange={(e: any) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+            label={row.attachmentFile ? row.attachmentFile.name : t('invoiceReceiptChooseFile')}
+            buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-full truncate' }}
           />
           {row.attachmentFile ? (
             <span className="text-[10px] text-noorix-muted truncate block mt-1" title={row.attachmentFile.name}>

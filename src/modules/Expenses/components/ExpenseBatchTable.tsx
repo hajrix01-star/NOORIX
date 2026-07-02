@@ -292,8 +292,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
         if (!show) return <span className="nx-cell-muted text-[11px]">—</span>;
         return (
           <label className="inline-flex cursor-pointer items-center justify-center p-1">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={!!row.exemptThisPayment}
               onChange={(e: any) => updateRow(row.index - 1, { exemptThisPayment: e.target.checked })}
               className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
@@ -360,8 +359,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
       align: 'center',
       render: (_: any, row: any) => (
         <label className="inline-flex items-center justify-center gap-1 cursor-pointer">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={!!row.warrantyFollowUp}
             onChange={(e: any) => updateRow(row.index - 1, { warrantyFollowUp: e.target.checked })}
             className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"

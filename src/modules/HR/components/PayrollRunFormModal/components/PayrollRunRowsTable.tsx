@@ -1,6 +1,6 @@
 import React from 'react';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
-import { Input, cn, FmtNum } from '../../../../../ui';
+import { Checkbox, Input, cn, FmtNum } from '../../../../../ui';
 import type { PayrollRunLineItem } from '../types';
 
 type Emp = { id?: string; name?: string; nameAr?: string };
@@ -49,8 +49,7 @@ export function PayrollRunRowsTable({
               <tr key={emp.id}>
                 <td className="min-w-0 text-start">
                   <label className="nx-checkbox nx-checkbox--tight min-w-0">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={included}
                       onChange={() => toggleInclude(emp as Record<string, unknown> & { id?: string })}
                       aria-label={t('employeeName')}
@@ -127,8 +126,7 @@ export function PayrollRunRowsTable({
                     </td>
                     <td className="text-center px-1">
                       <label className="nx-checkbox nx-checkbox--cell-center inline-flex justify-center">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={!!items[idx].deferAdvances}
                           onChange={() => toggleDefer(emp.id as string)}
                           aria-label={t('payrollDeferAdvanceDeduct')}

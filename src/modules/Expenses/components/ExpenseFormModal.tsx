@@ -15,7 +15,7 @@ import { fmt } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
-import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { Button, AdaptiveSheet, Checkbox, FileTrigger, Input } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import {
   canExemptThisExpensePayment,
@@ -389,8 +389,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
 
         {selectedLine && canExemptThisExpensePayment(selectedLine) && (
           <label className="flex items-start gap-2.5 min-h-[44px] cursor-pointer rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2.5">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={exemptThisPayment}
               onChange={(e: any) => setExemptThisPayment(e.target.checked)}
               className="mt-0.5 h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
@@ -573,12 +572,12 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
         <div className="rounded-xl border border-noorix-border bg-noorix-surface px-3 py-2.5 flex flex-col gap-2">
           <div className="text-[12px] font-semibold text-noorix-text">{t('invoiceReceiptAttachment')}</div>
           <p className="text-[11px] text-noorix-muted m-0">{t('invoiceReceiptAttachmentHint')}</p>
-          <input
+          <FileTrigger
             ref={receiptInputRef}
-            type="file"
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-            className="text-[13px] max-w-full"
             onChange={(e: any) => setReceiptFile(e.target.files?.[0] || null)}
+            label={receiptFile ? receiptFile.name : t('invoiceReceiptChooseFile')}
+            buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-full truncate' }}
           />
           {receiptFile ? (
             <span className="text-[11px] text-noorix-muted truncate" title={receiptFile.name}>{receiptFile.name}</span>
@@ -586,8 +585,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
         </div>
 
         <label className="flex items-start gap-2.5 min-h-[44px] cursor-pointer rounded-lg border border-noorix-border bg-noorix-surface px-3 py-2.5">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={!!form.warrantyFollowUp}
             onChange={(e: any) => setForm((p: any) => ({ ...p, warrantyFollowUp: e.target.checked }))}
             className="mt-0.5 h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"

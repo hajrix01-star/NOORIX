@@ -8,7 +8,7 @@ import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { Button, AdaptiveSheet, Checkbox, Input } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 
 const INSTALLMENT_INTERVALS = [1, 2, 3, 4, 6, 12];
@@ -314,8 +314,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
             />
             <p className="text-[11px] text-noorix-muted -mt-2 mb-1">{t('expenseLineReferenceAmountHint')}</p>
             <label className="flex items-start gap-2.5 text-[13px] text-noorix-text cursor-pointer">
-              <input
-                type="checkbox"
+              <Checkbox
                 className="mt-0.5 shrink-0"
                 checked={form.allowPaymentAmountOverride}
                 onChange={(e: any) => setForm((p: any) => ({ ...p, allowPaymentAmountOverride: e.target.checked }))}

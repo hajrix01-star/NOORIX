@@ -33,7 +33,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { Button, Modal, FmtNum, Input } from '../../../ui';
+import { Button, FileTrigger, Modal, FmtNum, Input } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
 function esc(v: any) {
@@ -512,12 +512,12 @@ export default function TerminationSettlementModal({
             <Button type="button" size="sm" variant="default" disabled={uploading} onClick={() => fileRef.current?.click()}>
               {uploading ? '…' : t('terminationSettlementUploadDoc')}
             </Button>
-            <input
+            <FileTrigger
               ref={fileRef}
-              type="file"
-              className="hidden"
               accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
               onChange={handleFile}
+              label=""
+              buttonProps={{ className: 'hidden', 'aria-hidden': true, tabIndex: -1 }}
             />
           </div>
           <p className="m-0 text-[11px] text-noorix-muted">{t('terminationSettlementUploadHint')}</p>

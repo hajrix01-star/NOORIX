@@ -10,7 +10,7 @@ import { getPayrollRun } from '../../../services/api';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Badge, Button, AdaptiveSheet, SmartTable, Modal } from '../../../ui';
+import { Badge, Button, AdaptiveSheet, Checkbox, SmartTable, Modal } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -271,11 +271,10 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
         }
       >
         <label className="flex cursor-pointer items-start gap-3 text-[13px] leading-snug text-noorix-text">
-          <input
-            type="checkbox"
+          <Checkbox
             className="mt-1 h-4 w-4 shrink-0 rounded border-noorix-border"
             checked={slipNetOnly}
-            onChange={(e: any) => setSlipNetOnly(e.target.checked)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSlipNetOnly(e.target.checked)}
           />
           <span>
             <span className="font-semibold block">{t('payrollSlipNetOnlyOption')}</span>
