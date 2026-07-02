@@ -9,7 +9,7 @@ import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { fmtTax } from '../../utils/format';
-import { Badge, Button, Input, FmtNum } from '../../ui';
+import { Badge, Button, Checkbox, Input, FmtNum } from '../../ui';
 import { TAX_REPORT_STORAGE_PREFIX } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 import {
@@ -193,8 +193,7 @@ export default function TaxReportTab() {
           </div>
         <div className="nx-toolbar flex-wrap">
           <label className="flex max-w-[min(100%,22rem)] cursor-pointer items-start gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-blue-6)] px-3 py-2 text-[11px] leading-snug text-noorix-text">
-            <input
-              type="checkbox"
+            <Checkbox
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
               checked={salesAmountIncludesVat}
               onChange={(e: any) => setSalesAmountIncludesVat(e.target.checked)}

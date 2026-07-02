@@ -5,6 +5,7 @@ import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import { getSaudiNow } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ReportsDetailModal from './ReportsDetailModal';
+import { InlineSelect, Input } from '../../ui';
 import {
   amountText,
   percentText,
@@ -289,9 +290,9 @@ tr.is-summary td.amt { color: #047857; }
           </div>
         </div>
         <div className="nx-gr2-controls">
-          <select value={year} onChange={(event) => setYear(Number(event.target.value))} aria-label={t('reportYear')}>
+          <InlineSelect value={year} onChange={(event) => setYear(Number(event.target.value))} aria-label={t('reportYear')}>
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-          </select>
+          </InlineSelect>
           <div className="nx-gr2-segment" role="group" aria-label={t('reportPlToolbarPeriod')}>
             <button type="button" className={periodMode === 'year' ? 'is-active' : ''} onClick={() => setPeriodMode('year')}>{t('reportPeriodYear')}</button>
             <button type="button" className={periodMode === 'month' ? 'is-active' : ''} onClick={() => setPeriodMode('month')}>{t('reportPeriodMonth')}</button>
@@ -342,7 +343,7 @@ tr.is-summary td.amt { color: #047857; }
                     {level === 1 ? t('reportPlLevel1') : level === 2 ? t('reportPlLevel2') : t('reportPlLevel3')}
                   </button>
                 ))}
-                <input value={rowSearch} onChange={(event) => setRowSearch(event.target.value)} placeholder={t('reportPlRowFilterPlaceholder')} />
+                <Input value={rowSearch} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setRowSearch(event.target.value)} placeholder={t('reportPlRowFilterPlaceholder')} />
               </div>
             </div>
 

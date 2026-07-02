@@ -114,16 +114,6 @@
       "decision": "leave",
       "reason": "expense batch row controls are editable financial grid inputs."
     },
-    "src/modules/Reports/TaxReportTab.tsx": {
-      "category": "tax-report-control",
-      "decision": "leave",
-      "reason": "tax report filter/control is protected financial reporting scope."
-    },
-    "src/modules/Reports/GeneralReportV2Screen.tsx": {
-      "category": "financial-report-controls",
-      "decision": "leave",
-      "reason": "year selector and row filter are tied to financial report behavior."
-    },
     "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": {
       "category": "settlement-checkbox",
       "decision": "leave",
