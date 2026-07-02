@@ -31,6 +31,8 @@ const governanceText = read(governanceDoc);
 const manualTableRegistryPath = 'scripts/table-manual-exceptions.json';
 const manualTableRegistry = JSON.parse(read(manualTableRegistryPath));
 const allowedManualTableCounts = manualTableRegistry.allowedTableCounts ?? {};
+const manualTableReasonsPath = 'scripts/table-manual-reasons.json';
+const manualTableReasons = JSON.parse(read(manualTableReasonsPath)).reasons ?? {};
 
 for (const required of [
   'Table Governance Addendum',
@@ -101,6 +103,16 @@ for (const [file, allowed] of Object.entries(allowedManualTableCounts)) {
   const current = currentManualTableCounts[file] ?? 0;
   if (current < allowed) {
     fail(file, null, `manual <table> registry is stale: allowed ${allowed}, current ${current}`);
+  }
+  const reason = manualTableReasons[file];
+  if (!reason?.category || !reason?.decision || !reason?.reason) {
+    fail(file, null, `manual <table> registry is missing a documented reason in ${manualTableReasonsPath}`);
+  }
+}
+
+for (const file of Object.keys(manualTableReasons)) {
+  if (!(file in allowedManualTableCounts)) {
+    fail(file, null, `manual <table> reason is stale: no matching entry in ${manualTableRegistryPath}`);
   }
 }
 
