@@ -28,7 +28,7 @@ export function ImportExportStatBadge({
         minWidth: 90,
       }}
     >
-      <div className="text-[26px] font-black" style={{ color, fontFamily: 'var(--noorix-font-numbers)' }}>
+      <div className="text-[26px] font-black nx-font-numbers" style={{ color }}>
         {count}
       </div>
       <div className="text-[12px] text-noorix-muted mt-0.5">{label}</div>

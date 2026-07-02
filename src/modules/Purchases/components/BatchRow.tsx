@@ -180,7 +180,7 @@ function BatchRowTable(props: Record<string, any>) {
       <td className="text-center align-middle p-1" style={cp} title={t('invoiceReceiptAttachment')}>
         <div className="flex flex-col items-center gap-0.5 min-h-[36px] justify-center">
           {row.attachmentFile ? (
-            <span className="text-[10px] font-bold leading-none" style={{ color: 'var(--noorix-accent-green)' }}>✓</span>
+            <span className="text-[10px] font-bold leading-none text-noorix-green">✓</span>
           ) : (
             <span className="text-[10px] text-noorix-muted leading-none">·</span>
           )}

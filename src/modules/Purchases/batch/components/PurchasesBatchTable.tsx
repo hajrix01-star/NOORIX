@@ -72,10 +72,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         sortable: true,
         width: '10%',
         render: (v: any) => (
-          <span
-            className="font-bold nx-cell-ellipsis"
-            style={{ color: 'var(--noorix-accent-blue)', fontFamily: 'var(--noorix-font-numbers)' }}
-          >
+          <span className="font-bold nx-cell-ellipsis text-noorix-blue nx-font-numbers">
             {v}
           </span>
         ),
@@ -87,7 +84,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         sortable: true,
         width: '8%',
         render: (v: any) => (
-          <span className="text-[12px] text-noorix-muted" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <span className="text-[12px] text-noorix-muted nx-font-numbers">
             {formatSaudiDate(v)}
           </span>
         ),
@@ -143,7 +140,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         sortable: true,
         width: '8%',
         render: (v: any) => (
-          <span className="text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <span className="text-noorix-green nx-font-numbers">
             {fmt(v)}
           </span>
         ),
@@ -156,7 +153,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         sortable: true,
         width: '7%',
         render: (v: any) => (
-          <span className="text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <span className="text-noorix-amber nx-font-numbers">
             {fmt(v)}
           </span>
         ),
@@ -169,7 +166,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         sortable: true,
         width: '8%',
         render: (v: any) => (
-          <span className="font-bold" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <span className="font-bold nx-font-numbers">
             {fmt(v)}
           </span>
         ),
@@ -256,7 +253,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       return (
         <div>
           <div className="flex mb-1 justify-between items-start">
-            <span className="font-bold text-[14px] text-noorix-blue" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+            <span className="font-bold text-[14px] text-noorix-blue nx-font-numbers">
               {row.batchId}
             </span>
             <Badge {...Badge.fromStatus(row.status, statusBadgeMap)} size="sm" />

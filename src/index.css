@@ -6406,6 +6406,42 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 [class*="bg-[var(--noorix-table-header-bg)]"] * {
   color: inherit;
 }
+.employee-doc-preview-drawer .bilingual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  column-gap: 10px;
+  direction: ltr;
+  align-items: stretch;
+}
+.employee-doc-preview-drawer .hr-bilingual-sep {
+  background: #cbd5e1;
+  border-radius: 999px;
+  width: 1px;
+  min-width: 1px;
+  align-self: stretch;
+}
+.employee-doc-preview-drawer .hr-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: fixed;
+}
+.employee-doc-preview-drawer .hr-doc-th {
+  background: #f1f5f9;
+  border: 1px solid #dbe1e8;
+  padding: 5px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  color: #334155;
+}
+.employee-doc-preview-drawer .hr-doc-td {
+  border: 1px solid #e2e8f0;
+  padding: 5px 7px;
+  font-size: 11px;
+  vertical-align: top;
+  word-break: break-word;
+}
 @media (max-width: 768px) {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {
     padding-inline: 0;

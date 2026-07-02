@@ -89,13 +89,13 @@ export function BatchNetTaxReadonly({ net, tax, variant = 'table', t }: any) {
       <div className="grid grid-cols-2 gap-2 rounded-lg bg-noorix-bg py-2 px-2.5">
         <div>
           <div className="text-[10px] text-noorix-muted mb-0.5">{t('net')}</div>
-          <div className="text-[13px] font-semibold text-noorix-text" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div className="text-[13px] font-semibold text-noorix-text nx-font-numbers">
             {net || '—'}
           </div>
         </div>
         <div>
           <div className="text-[10px] text-noorix-muted mb-0.5">{t('tax')}</div>
-          <div className="text-[13px] font-semibold text-noorix-amber" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div className="text-[13px] font-semibold text-noorix-amber nx-font-numbers">
             {tax || '—'}
           </div>
         </div>
@@ -103,9 +103,9 @@ export function BatchNetTaxReadonly({ net, tax, variant = 'table', t }: any) {
     );
   }
   return (
-    <div className="text-[11px]" style={{ fontFamily: 'var(--noorix-font-numbers)', lineHeight: 1.5 }}>
+    <div className="text-[11px] leading-[1.5] nx-font-numbers">
       <div className="text-noorix-muted">{net || '—'}</div>
-      <div style={{ color: 'var(--noorix-accent-amber)' }}>{tax || '—'}</div>
+      <div className="text-noorix-amber">{tax || '—'}</div>
     </div>
   );
 }
