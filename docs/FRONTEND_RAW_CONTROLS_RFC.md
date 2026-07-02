@@ -155,6 +155,16 @@ Delivered raw React button closure pass:
 | `src/modules/Reports/GeneralReportV2Screen.tsx` | report toolbar, month, level, line, and amount buttons moved to `Button variant="raw"` |
 | `src/modules/Reports/GeneralPlTable.tsx` | P&L amount buttons moved to `Button variant="raw"` |
 
+Delivered bank analysis table pass:
+
+| File | Change |
+|---|---|
+| `src/ui/SimpleTable.tsx` | added accessible `onRowClick` support for clickable rows |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisAlertsCard.tsx` | manual table moved to `SimpleTable` |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisCategoryTableCard.tsx` | manual table moved to `SimpleTable` |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisDepositsTableCard.tsx` | manual table moved to `SimpleTable` |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisPosTerminalsCard.tsx` | manual table moved to `SimpleTable` |
+
 ## 6. What To Leave Temporarily
 
 | Scope | Reason |

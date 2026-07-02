@@ -25,6 +25,7 @@ export type SimpleTableProps<TRow = any> = {
   footer?: React.ReactNode;
   getRowClassName?: (row: TRow, index: number) => string | undefined;
   getRowStyle?: (row: TRow, index: number) => React.CSSProperties | undefined;
+  onRowClick?: (row: TRow, index: number) => void;
 };
 
 export default function SimpleTable<TRow extends Record<string, any> = any>({
@@ -40,6 +41,7 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
   footer,
   getRowClassName,
   getRowStyle,
+  onRowClick,
 }: SimpleTableProps<TRow>) {
   const cellPadding = compact ? '6px 12px' : '8px 14px';
 
@@ -84,6 +86,15 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
                   key={row.id ?? row.key ?? rowIndex}
                   className={getRowClassName?.(row, rowIndex)}
                   style={getRowStyle?.(row, rowIndex)}
+                  onClick={onRowClick ? () => onRowClick(row, rowIndex) : undefined}
+                  role={onRowClick ? 'button' : undefined}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  onKeyDown={onRowClick ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onRowClick(row, rowIndex);
+                    }
+                  } : undefined}
                 >
                   {columns.map((col) => (
                     <td

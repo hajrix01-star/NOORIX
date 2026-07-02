@@ -207,26 +207,6 @@
       "decision": "leave",
       "reason": "bank statement print/export HTML generator."
     },
-    "src/modules/Reports/bank/components/analysis/BankAnalysisAlertsCard.tsx": {
-      "category": "bank-protected",
-      "decision": "leave",
-      "reason": "bank analysis alert table; protected bank analytics scope."
-    },
-    "src/modules/Reports/bank/components/analysis/BankAnalysisCategoryTableCard.tsx": {
-      "category": "bank-protected",
-      "decision": "leave",
-      "reason": "bank category analysis table; protected bank analytics scope."
-    },
-    "src/modules/Reports/bank/components/analysis/BankAnalysisDepositsTableCard.tsx": {
-      "category": "bank-protected",
-      "decision": "leave",
-      "reason": "bank deposits analysis table; protected bank analytics scope."
-    },
-    "src/modules/Reports/bank/components/analysis/BankAnalysisPosTerminalsCard.tsx": {
-      "category": "bank-protected",
-      "decision": "leave",
-      "reason": "bank POS terminal analysis table; protected bank analytics scope."
-    },
     "src/modules/Reports/costAccountingApps/CostAccountingAppsResultPanels.tsx": {
       "category": "financial-report",
       "decision": "leave",
