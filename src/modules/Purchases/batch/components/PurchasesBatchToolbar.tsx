@@ -131,19 +131,19 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
           <div className="noorix-table-frame batch-purchases-table w-full overflow-x-auto">
             <table className="noorix-table w-full table-fixed min-w-[1040px]">
               <colgroup>
-                <col style={{ width: '3%' }} />
-                <col style={{ width: '17%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '8%' }} />
-                <col style={{ width: '8%' }} />
-                <col style={{ width: '7%' }} />
-                <col style={{ width: '7%' }} />
-                <col style={{ width: '7%' }} />
-                <col style={{ width: '9%' }} />
-                <col style={{ width: '5%' }} />
-                <col style={{ width: '11%' }} />
-                <col style={{ width: '5%' }} />
-                <col style={{ width: '3%' }} />
+                <col className="w-[3%]" />
+                <col className="w-[17%]" />
+                <col className="w-[10%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[7%]" />
+                <col className="w-[7%]" />
+                <col className="w-[7%]" />
+                <col className="w-[9%]" />
+                <col className="w-[5%]" />
+                <col className="w-[11%]" />
+                <col className="w-[5%]" />
+                <col className="w-[3%]" />
               </colgroup>
               <thead>
                 <tr>

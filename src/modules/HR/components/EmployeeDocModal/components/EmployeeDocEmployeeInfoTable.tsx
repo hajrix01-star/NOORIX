@@ -1,7 +1,6 @@
 import React from 'react';
 import { formatSaudiDate } from '../../../../../utils/saudiDate';
 import { displayJobTitleEn } from '../utils/employeeDocFormatters';
-import { DOC_GRID, DOC_SEP, DOC_TABLE_BASE, DOC_TH, DOC_TD } from '../constants';
 
 export function EmployeeDocEmployeeInfoTable({
   employee,
@@ -57,36 +56,36 @@ export function EmployeeDocEmployeeInfoTable({
       ]
     : baseRows;
   return (
-    <div className="bilingual" style={DOC_GRID}>
-      <table style={{ ...DOC_TABLE_BASE, direction: 'ltr' }}>
+    <div className="bilingual">
+      <table className="hr-doc-table" dir="ltr">
         <thead>
           <tr>
-            <th style={{ ...DOC_TH, width: '38%' }}>Item</th>
-            <th style={{ ...DOC_TH, width: '62%' }}>Value</th>
+            <th className="hr-doc-th w-[38%]">Item</th>
+            <th className="hr-doc-th w-[62%]">Value</th>
           </tr>
         </thead>
         <tbody>
           {infoRows.map((row) => (
             <tr key={row.enLabel}>
-              <td style={{ ...DOC_TD, textAlign: 'left', direction: 'ltr' }}>{row.enLabel}</td>
-              <td style={{ ...DOC_TD, textAlign: 'left', direction: 'ltr' }}>{row.enVal}</td>
+              <td className="hr-doc-td text-left" dir="ltr">{row.enLabel}</td>
+              <td className="hr-doc-td text-left" dir="ltr">{row.enVal}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
-      <table style={{ ...DOC_TABLE_BASE, direction: 'rtl' }}>
+      <div className="hr-bilingual-sep" aria-hidden />
+      <table className="hr-doc-table" dir="rtl">
         <thead>
           <tr>
-            <th style={{ ...DOC_TH, width: '38%' }}>العنصر</th>
-            <th style={{ ...DOC_TH, width: '62%' }}>البيان</th>
+            <th className="hr-doc-th w-[38%]">العنصر</th>
+            <th className="hr-doc-th w-[62%]">البيان</th>
           </tr>
         </thead>
         <tbody>
           {infoRows.map((row) => (
             <tr key={row.arLabel}>
-              <td style={{ ...DOC_TD, textAlign: 'right' }}>{row.arLabel}</td>
-              <td style={{ ...DOC_TD, textAlign: 'right' }}>{row.arVal}</td>
+              <td className="hr-doc-td text-right">{row.arLabel}</td>
+              <td className="hr-doc-td text-right">{row.arVal}</td>
             </tr>
           ))}
         </tbody>
