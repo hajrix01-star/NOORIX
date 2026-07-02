@@ -344,3 +344,43 @@ npm.cmd run typecheck
 | calendar cell buttons | تترك داخل `DateFilterBar` حتى RFC مصغر للتقويم |
 | editable-grid controls | تؤجل إلى مرحلة editable controls |
 | Reports/Tax/HR/Purchases/Bank | محمية من تنظيف المرحلة الآمنة |
+
+## 13. إغلاق المرحلة الثانية: الجداول البسيطة
+
+تاريخ الإغلاق: 2026-07-02
+
+حالة المرحلة: مغلقة مهنيًا كتصنيف وحوكمة. لم يتم تحويل جداول جديدة في هذه الدفعة لأن الفحص لم يجد جدول عرض بسيطًا آمنًا خارج ما تم تحويله سابقًا.
+
+| المؤشر | القيمة |
+|---|---:|
+| raw `<table>` خارج `src/ui` في ملفات `tsx` | 53 |
+| raw `<table>` خارج `src/ui` في ملفات `tsx/ts` حسب الحوكمة | 76 |
+| جداول خام بلا سبب موثق | 0 |
+| حوكمة الجداول | passed |
+
+قرار المرحلة:
+
+| نوع الجدول المتبقي | القرار |
+|---|---|
+| print/export HTML | يترك حتى مرحلة `PrintTable` |
+| تقارير مالية/P&L/Cost/Tax/Bank | محمي ولا يلمس في تنظيف واجهة آمن |
+| editable grids | يترك حتى مرحلة مكونات editable controls |
+| dashboard/owner matrix tables | يترك حتى `MatrixTable` أو RFC مخصص |
+| dynamic generated tables | يترك لأن مصدر الأعمدة ديناميكي |
+
+ملفات الحوكمة:
+
+| ملف | دور |
+|---|---|
+| `scripts/table-manual-exceptions.json` | عدد الجداول الخام المسموح بها لكل ملف |
+| `scripts/table-manual-reasons.json` | سبب وقرار كل استثناء |
+| `scripts/check-table-governance.mjs` | يمنع الجداول الخام الجديدة ويمنع أي استثناء بلا سبب |
+
+تعريف قبول المرحلة الثانية:
+
+| شرط | تحقق |
+|---|---|
+| لا جدول خام جديد | `npm.cmd run check:table-governance` |
+| كل استثناء له سبب | `scripts/table-manual-reasons.json` مطلوب من الحوكمة |
+| لا تحويل لملف محمي | لا تغييرات في الجداول المالية/الطباعية المحمية ضمن هذه الدفعة |
+| لا تضخيم لـ `SimpleTable` | لم تتم إضافة editable/grouped/matrix behavior |

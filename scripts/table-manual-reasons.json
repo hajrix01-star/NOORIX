@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "description": "Phase 2 closure decisions for remaining manual <table> usages. Every entry in table-manual-exceptions.json must have a reason here.",
+  "reasons": {
+    "src/modules/Dashboard/components/DashboardCalendarTab/hooks/useDashboardCalendarTab.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "builds calendar print/export HTML strings; not an app data grid."
+    },
+    "src/modules/Dashboard/overview/components/DashboardOverviewWeeklySalesPanel.tsx": {
+      "category": "dashboard-matrix",
+      "decision": "leave",
+      "reason": "compact weekly comparison matrix with colgroup and micro responsive typography."
+    },
+    "src/modules/Dashboard/overview/components/DashboardOverviewYearlyDailyAvgPanel.tsx": {
+      "category": "dashboard-matrix",
+      "decision": "leave",
+      "reason": "compact yearly monthly matrix with fixed columns and dense dashboard-specific layout."
+    },
+    "src/modules/Expenses/components/ExpenseLineDetailModal.tsx": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "builds printable payment detail HTML; should move only with a PrintTable phase."
+    },
+    "src/modules/Expenses/components/ExpenseLineList.tsx": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "builds expense line export/print HTML; not a rendered app table."
+    },
+    "src/modules/Expenses/components/PaymentHistoryTab.tsx": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "builds payment history print HTML; protected until PrintTable."
+    },
+    "src/modules/HR/components/EmployeeDocModal/components/EmployeeDocEmployeeInfoTable.tsx": {
+      "category": "document-print",
+      "decision": "leave",
+      "reason": "employee document table with fixed print/document layout."
+    },
+    "src/modules/HR/components/EmployeeDocModal/components/EmployeeDocSalaryBreakdownTable.tsx": {
+      "category": "document-print",
+      "decision": "leave",
+      "reason": "salary document table with fixed print/document layout."
+    },
+    "src/modules/HR/components/PayrollRunDetailModal.tsx": {
+      "category": "payroll-protected",
+      "decision": "leave",
+      "reason": "payroll detail summary; financial HR scope protected from UI-only conversion."
+    },
+    "src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx": {
+      "category": "editable-grid",
+      "decision": "leave",
+      "reason": "payroll run rows contain editable inputs and payroll calculations."
+    },
+    "src/modules/HR/components/TerminationSettlementModal.tsx": {
+      "category": "payroll-protected",
+      "decision": "leave",
+      "reason": "termination settlement is financially sensitive and printable."
+    },
+    "src/modules/HR/components/useAdvanceTableModel.tsx": {
+      "category": "hr-financial",
+      "decision": "leave",
+      "reason": "advance actions/summary table model in HR financial flow."
+    },
+    "src/modules/HR/tabs/EOSCalcTab.tsx": {
+      "category": "payroll-protected",
+      "decision": "leave",
+      "reason": "end-of-service calculation output; financial HR protected scope."
+    },
+    "src/modules/HR/tabs/PayrollTab.tsx": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "payroll print/export HTML string."
+    },
+    "src/modules/HR/tabs/SalaryCalcTab.tsx": {
+      "category": "payroll-protected",
+      "decision": "leave",
+      "reason": "salary calculation tables are HR financial outputs."
+    },
+    "src/modules/HR/tabs/hrPrintDocumentsTabPrintHtml.ts": {
+      "category": "document-print",
+      "decision": "leave",
+      "reason": "dedicated HR print HTML generator."
+    },
+    "src/modules/HR/utils/payrollRunSignatureSlipsPrint.ts": {
+      "category": "document-print",
+      "decision": "leave",
+      "reason": "dedicated payroll signature slip print HTML."
+    },
+    "src/modules/HajriTax/HajriTaxRegistryList.tsx": {
+      "category": "tax-protected",
+      "decision": "leave",
+      "reason": "tax registry wide table; protected tax scope."
+    },
+    "src/modules/HajriTax/useHajriTaxScreen.ts": {
+      "category": "tax-print",
+      "decision": "leave",
+      "reason": "VAT print/export HTML strings; protected tax scope."
+    },
+    "src/modules/Invoices/components/DayCloseReportBody.tsx": {
+      "category": "print-financial",
+      "decision": "leave",
+      "reason": "day-close report and print layout; production-sensitive."
+    },
+    "src/modules/Invoices/useInvoicesListActions.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "invoice export/print HTML string."
+    },
+    "src/modules/Invoices/utils/buildInvoicesCashReportPrint.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "cash report print HTML generator."
+    },
+    "src/modules/Orders/StaffOrdersViewParts.tsx": {
+      "category": "editable-grid",
+      "decision": "leave",
+      "reason": "staff basket table includes quantity editing controls."
+    },
+    "src/modules/Orders/components/ItemsManageTabCategoriesSection.tsx": {
+      "category": "editable-grid",
+      "decision": "leave",
+      "reason": "category management table includes selection checkboxes and inline editing."
+    },
+    "src/modules/Orders/components/OrderFormModal.tsx": {
+      "category": "editable-grid",
+      "decision": "leave",
+      "reason": "order form item table includes product inputs and editable quantities/prices."
+    },
+    "src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx": {
+      "category": "editable-grid",
+      "decision": "leave",
+      "reason": "product variants table contains editable select and number controls."
+    },
+    "src/modules/Orders/utils/itemsCatalogPrint.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "catalog print HTML generator."
+    },
+    "src/modules/Orders/utils/itemsCatalogWeeklyPrint.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "weekly catalog print HTML generator."
+    },
+    "src/modules/Orders/utils/ordersTabModel.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "orders tab print/export HTML string."
+    },
+    "src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx": {
+      "category": "matrix-table",
+      "decision": "leave",
+      "reason": "wide 12-month owner comparison matrix with totals and dynamic heat styling."
+    },
+    "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": {
+      "category": "purchases-protected",
+      "decision": "leave",
+      "reason": "purchases batch print/summary table; protected purchases scope."
+    },
+    "src/modules/Purchases/components/BatchEditPanel.tsx": {
+      "category": "editable-grid",
+      "decision": "leave",
+      "reason": "purchase batch editing table; protected purchases scope."
+    },
+    "src/modules/Purchases/components/BatchPrintSheet.tsx": {
+      "category": "print-financial",
+      "decision": "leave",
+      "reason": "purchase batch print sheet; protected financial print layout."
+    },
+    "src/modules/Reports/BankStatementMappingModal.tsx": {
+      "category": "bank-protected",
+      "decision": "leave",
+      "reason": "bank statement mapping preview; protected bank workflow."
+    },
+    "src/modules/Reports/CostAccountingAppsScreen.tsx": {
+      "category": "financial-report",
+      "decision": "leave",
+      "reason": "cost accounting report table; protected financial analysis scope."
+    },
+    "src/modules/Reports/GeneralPlTable.tsx": {
+      "category": "matrix-table",
+      "decision": "leave",
+      "reason": "P&L matrix table with hierarchy, sticky/grouping, and print behavior."
+    },
+    "src/modules/Reports/GeneralReportV2Screen.tsx": {
+      "category": "financial-report",
+      "decision": "leave",
+      "reason": "general report v2 contains financial hierarchy and print/export HTML."
+    },
+    "src/modules/Reports/ReportsDetailModal.tsx": {
+      "category": "print-financial",
+      "decision": "leave",
+      "reason": "report detail print/financial table output."
+    },
+    "src/modules/Reports/ReportsScreen.tsx": {
+      "category": "print-financial",
+      "decision": "leave",
+      "reason": "report print/export HTML string."
+    },
+    "src/modules/Reports/TaxReportTab.tsx": {
+      "category": "tax-protected",
+      "decision": "leave",
+      "reason": "tax report financial table and print HTML; protected tax scope."
+    },
+    "src/modules/Reports/bank/bankStatementExportPrint.ts": {
+      "category": "bank-print",
+      "decision": "leave",
+      "reason": "bank statement print/export HTML generator."
+    },
+    "src/modules/Reports/bank/components/analysis/BankAnalysisAlertsCard.tsx": {
+      "category": "bank-protected",
+      "decision": "leave",
+      "reason": "bank analysis alert table; protected bank analytics scope."
+    },
+    "src/modules/Reports/bank/components/analysis/BankAnalysisCategoryTableCard.tsx": {
+      "category": "bank-protected",
+      "decision": "leave",
+      "reason": "bank category analysis table; protected bank analytics scope."
+    },
+    "src/modules/Reports/bank/components/analysis/BankAnalysisDepositsTableCard.tsx": {
+      "category": "bank-protected",
+      "decision": "leave",
+      "reason": "bank deposits analysis table; protected bank analytics scope."
+    },
+    "src/modules/Reports/bank/components/analysis/BankAnalysisPosTerminalsCard.tsx": {
+      "category": "bank-protected",
+      "decision": "leave",
+      "reason": "bank POS terminal analysis table; protected bank analytics scope."
+    },
+    "src/modules/Reports/costAccountingApps/CostAccountingAppsResultPanels.tsx": {
+      "category": "financial-report",
+      "decision": "leave",
+      "reason": "cost accounting result table; protected financial analysis scope."
+    },
+    "src/modules/Reports/costAccountingApps/costAccountingAppsScreenActions.ts": {
+      "category": "print-financial",
+      "decision": "leave",
+      "reason": "cost accounting print/export HTML strings."
+    },
+    "src/modules/Reports/reportsPlMonthPrint.ts": {
+      "category": "print-financial",
+      "decision": "leave",
+      "reason": "P&L month print HTML generator."
+    },
+    "src/modules/Sales/hooks/useDailySalesScreen.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "daily sales print/export HTML string."
+    },
+    "src/modules/SmartChat/components/SmartChatReportCard.tsx": {
+      "category": "dynamic-generated-table",
+      "decision": "leave",
+      "reason": "renders tabular blocks parsed dynamically from chat answers."
+    },
+    "src/modules/Suppliers/components/SupplierProfileModal.tsx": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "supplier profile print/export HTML tables."
+    },
+    "src/modules/Treasury/components/VaultTransactionsModal.tsx": {
+      "category": "print-financial",
+      "decision": "leave",
+      "reason": "vault transactions print/export HTML string."
+    },
+    "src/utils/pdfTableExport.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "generic PDF table export HTML builder."
+    }
+  }
+}
