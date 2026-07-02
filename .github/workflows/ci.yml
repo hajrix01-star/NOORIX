@@ -30,6 +30,8 @@ jobs:
 
       - run: npm run check:css-governance
 
+      - run: npm run check:inline-style-governance
+
       - run: npm run audit:large-files
 
       - run: npm run build
