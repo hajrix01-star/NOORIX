@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getTxKey } from './bankAnalysisUtils';
 import { FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button, Input, SmartTable , FmtNum } from '../../../ui';
+import { Button, Checkbox, Input, SmartTable , FmtNum } from '../../../ui';
 
 export default function BankStatementTransactionsFullTab({
   statement,
@@ -164,23 +164,17 @@ export default function BankStatementTransactionsFullTab({
             shrink: true,
             width: 36,
             label: (
-              <label className="nx-checkbox">
-                <input
-                  type="checkbox"
-                  aria-label={t('bankSelectAll')}
-                  checked={allSelected}
-                  onChange={toggleAllFiltered}
-                />
-              </label>
+              <Checkbox
+                aria-label={t('bankSelectAll')}
+                checked={allSelected}
+                onChange={toggleAllFiltered}
+              />
             ),
             render: (_: any, tx: any) => (
-              <label className="nx-checkbox">
-                <input
-                  type="checkbox"
-                  checked={selectedTxIds.has(getTxKey(tx))}
-                  onChange={() => toggleTxSelection(tx)}
-                />
-              </label>
+              <Checkbox
+                checked={selectedTxIds.has(getTxKey(tx))}
+                onChange={() => toggleTxSelection(tx)}
+              />
             ),
           },
           {

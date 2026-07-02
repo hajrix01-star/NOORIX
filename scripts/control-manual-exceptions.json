@@ -31,9 +31,7 @@
     "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": 1,
     "src/modules/Reports/BankStatementUploadModal.tsx": 1,
     "src/modules/HR/components/AdvanceSettlementModal.tsx": 1,
-    "src/modules/Reports/bank/components/BankCategoryRulesImportSheet.tsx": 5,
     "src/modules/Orders/StaffOrdersViewParts.tsx": 2,
-    "src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx": 2,
     "src/modules/Orders/components/OrderFormModal.tsx": 2
   }
 }

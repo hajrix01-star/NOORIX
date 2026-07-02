@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, AdaptiveSheet } from '../../../../ui';
+import { AdaptiveSheet, Button, FileTrigger, Input, Radio } from '../../../../ui';
 import type { CompanyOption } from '../hooks/useBankCategoryTreeData';
 
 export function BankCategoryRulesImportSheet({
@@ -55,27 +55,21 @@ export function BankCategoryRulesImportSheet({
     >
       <div className="grid gap-3 mt-3">
         {otherCompanies.length > 0 ? (
-          <label className="nx-checkbox">
-            <input
-              type="radio"
-              name="impSrc"
-              checked={importSource === 'company'}
-              onChange={() => setImportSource('company')}
-            />
-            {t('bankRulesImportSourceCompany')}
-          </label>
+          <Radio
+            name="impSrc"
+            checked={importSource === 'company'}
+            onChange={() => setImportSource('company')}
+            label={t('bankRulesImportSourceCompany')}
+          />
         ) : (
           <p className="text-[12px] text-noorix-muted m-0">{t('bankRulesNoOtherCompanies')}</p>
         )}
-        <label className="nx-checkbox">
-          <input
-            type="radio"
-            name="impSrc"
-            checked={importSource === 'file'}
-            onChange={() => setImportSource('file')}
-          />
-          {t('bankRulesImportSourceFile')}
-        </label>
+        <Radio
+          name="impSrc"
+          checked={importSource === 'file'}
+          onChange={() => setImportSource('file')}
+          label={t('bankRulesImportSourceFile')}
+        />
         {importSource === 'company' && otherCompanies.length > 0 ? (
           <Input
             type="select"
@@ -94,37 +88,29 @@ export function BankCategoryRulesImportSheet({
         ) : null}
         {importSource === 'file' ? (
           <div>
-            <label className="nx-file-label inline-flex max-w-full">
-              <input
-                type="file"
-                accept="application/json,.json"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setImportFile(e.target.files?.[0] || null)
-                }
-              />
-              {importFile ? importFile.name : t('bankRulesChooseFile') || 'اختر ملف JSON'}
-            </label>
+            <FileTrigger
+              accept="application/json,.json"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setImportFile(e.target.files?.[0] || null)
+              }
+              label={importFile ? importFile.name : t('bankRulesChooseFile') || 'اختر ملف JSON'}
+              buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-full justify-start' }}
+            />
           </div>
         ) : null}
         <div className="grid gap-2 border-t border-noorix-border pt-2.5">
-          <label className="nx-checkbox">
-            <input
-              type="radio"
-              name="impMode"
-              checked={importMode === 'merge'}
-              onChange={() => setImportMode('merge')}
-            />
-            {t('bankRulesImportModeMerge')}
-          </label>
-          <label className="nx-checkbox">
-            <input
-              type="radio"
-              name="impMode"
-              checked={importMode === 'replace'}
-              onChange={() => setImportMode('replace')}
-            />
-            {t('bankRulesImportModeReplace')}
-          </label>
+          <Radio
+            name="impMode"
+            checked={importMode === 'merge'}
+            onChange={() => setImportMode('merge')}
+            label={t('bankRulesImportModeMerge')}
+          />
+          <Radio
+            name="impMode"
+            checked={importMode === 'replace'}
+            onChange={() => setImportMode('replace')}
+            label={t('bankRulesImportModeReplace')}
+          />
         </div>
       </div>
     </AdaptiveSheet>
