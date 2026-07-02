@@ -103,6 +103,20 @@ describe('dashboardWeeklySales', () => {
     ).toBe(18);
   });
 
+  it('weeklySalesMaxDayInclusive does not cap manually selected comparison months to selected MTD', () => {
+    expect(
+      weeklySalesMaxDayInclusive({
+        panelYear: 2026,
+        panelMonth: 6,
+        selectedYear: 2026,
+        selectedMonth: 7,
+        revenueMtdEndDay: 2,
+        saudiNow: { year: 2026, month: 7, day: 2 },
+        alignSelectedPeriod: false,
+      }),
+    ).toBeUndefined();
+  });
+
   it('weeklySalesMaxDayInclusive uses today for current month without selected-month MTD', () => {
     expect(
       weeklySalesMaxDayInclusive({

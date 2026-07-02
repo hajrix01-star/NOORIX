@@ -31,11 +31,12 @@ export function weeklySalesMaxDayInclusive(params: {
   selectedMonth: number | null;
   revenueMtdEndDay: number;
   saudiNow: { year: number; month: number; day: number };
+  alignSelectedPeriod?: boolean;
 }): number | undefined {
-  const { panelYear, panelMonth, selectedYear, selectedMonth, revenueMtdEndDay, saudiNow } =
+  const { panelYear, panelMonth, selectedYear, selectedMonth, revenueMtdEndDay, saudiNow, alignSelectedPeriod = true } =
     params;
 
-  if (selectedMonth != null && selectedYear != null && revenueMtdEndDay > 0) {
+  if (alignSelectedPeriod && selectedMonth != null && selectedYear != null && revenueMtdEndDay > 0) {
     const isSelected = panelYear === selectedYear && panelMonth === selectedMonth;
     const prev = prevCalendarMonth(selectedYear, selectedMonth);
     const isPrevAligned = panelYear === prev.year && panelMonth === prev.month;
