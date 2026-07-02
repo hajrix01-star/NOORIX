@@ -34,7 +34,10 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
       />
   );
 
-  if (!label && !hint && !error) return input;
+  if (!label && !hint && !error) {
+    if (!containerClassName) return input;
+    return <span className={cn('inline-flex', containerClassName)}>{input}</span>;
+  }
 
   return (
     <label className={cn('inline-flex min-w-0 items-start gap-2 text-[13px] text-noorix-text', disabled && 'opacity-60', containerClassName)}>

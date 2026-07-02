@@ -4,7 +4,7 @@
  * Handles both products and categories with duplicate detection.
  */
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { AdaptiveSheet, Button } from '../../../ui';
+import { AdaptiveSheet, Button, Checkbox, FileInput } from '../../../ui';
 import { useTranslation } from '../../../i18n/useTranslation';
 import {
   importFromExcel,
@@ -136,19 +136,18 @@ export function OrdersImportModal({
         <p className="text-[11px] text-noorix-muted m-0 mb-2">{t('importChooseSectionsHint')}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           {knownSectionNames.map((nameAr) => (
-            <label key={nameAr} className="flex items-center gap-2 text-[12px] cursor-pointer">
-              <input
-                type="checkbox"
+            <Checkbox
+                key={nameAr}
                 checked={importSections.includes(nameAr)}
                 onChange={(e) => {
                   setImportSections((prev) =>
                     e.target.checked ? [...new Set([...prev, nameAr])] : prev.filter((n) => n !== nameAr),
                   );
                 }}
+                label={nameAr}
                 className="cursor-pointer"
+                containerClassName="text-[12px] cursor-pointer"
               />
-              {nameAr}
-            </label>
           ))}
         </div>
       </div>
@@ -425,7 +424,7 @@ export function OrdersImportModal({
           </Button>
           <p className="text-[11px] text-noorix-muted m-0">{t('importDropZoneHint')}</p>
         </div>
-        <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFileInput} className="hidden" />
+        <FileInput ref={fileRef} accept=".xlsx,.xls" onChange={handleFileInput} className="hidden" />
         <p className="text-[11px] text-noorix-muted m-0 text-center">{t('importDropZoneNote')}</p>
       </div>
     );

@@ -54,21 +54,6 @@
     }
   },
   "rawFormControlReasons": {
-    "src/modules/Suppliers/components/SupplierTable.tsx": {
-      "category": "selection-checkbox",
-      "decision": "leave",
-      "reason": "table row selection checkbox should move with a Checkbox/Table selection pass."
-    },
-    "src/modules/Suppliers/components/SupplierForm.tsx": {
-      "category": "file-input",
-      "decision": "leave",
-      "reason": "supplier attachment/logo picker relies on native file input behavior."
-    },
-    "src/modules/Suppliers/components/SupplierEditModal.tsx": {
-      "category": "file-input",
-      "decision": "leave",
-      "reason": "supplier edit attachment/logo picker relies on native file input behavior."
-    },
     "src/modules/Settings/components/TaxSettingsTab.tsx": {
       "category": "settings-toggle-control",
       "decision": "leave",
@@ -219,35 +204,10 @@
       "decision": "leave",
       "reason": "bank category active checkbox should move with Checkbox support."
     },
-    "src/modules/Orders/components/OrdersImportModalParts.tsx": {
-      "category": "orders-import-control",
-      "decision": "leave",
-      "reason": "orders import preview control is tied to import workflow."
-    },
-    "src/modules/Orders/components/OrdersImportModal.tsx": {
-      "category": "orders-import-controls",
-      "decision": "leave",
-      "reason": "orders import includes native file picker and import options."
-    },
     "src/modules/Orders/components/OrderFormModal.tsx": {
       "category": "editable-order-grid-controls",
       "decision": "leave",
       "reason": "order form inputs are tied to editable item rows and quantities."
-    },
-    "src/modules/Dashboard/components/DashboardSaudiOccasionsImportModal.tsx": {
-      "category": "dashboard-import-control",
-      "decision": "leave",
-      "reason": "Saudi occasions import control is part of a specialized import modal."
-    },
-    "src/modules/Orders/components/ItemsManageTabCategoriesSection.tsx": {
-      "category": "category-selection-controls",
-      "decision": "leave",
-      "reason": "category selection checkboxes and inline inputs need Checkbox/editable-grid support."
-    },
-    "src/modules/Orders/components/catalog/CatalogProductTable.tsx": {
-      "category": "catalog-editable-controls",
-      "decision": "leave",
-      "reason": "catalog table controls include selection and inline product editing."
     },
     "src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx": {
       "category": "catalog-editable-control",

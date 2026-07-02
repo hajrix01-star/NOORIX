@@ -6,7 +6,7 @@
  */
 import React, { memo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Badge, Button, SmartTable, KebabMenu } from '../../../ui';
+import { Badge, Button, Checkbox, SmartTable, KebabMenu } from '../../../ui';
 
 const sName = (s: any, lang: any) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
 
@@ -37,16 +37,14 @@ function TypeBadge({ type }: any) {
 /* ── checkbox مُنسَّق ── */
 function CB({ checked, indeterminate, onChange, ariaLabel }: any) {
   return (
-    <label className="nx-checkbox nx-checkbox--hit-36 nx-checkbox--accent-green p-1">
-      <input
-        type="checkbox"
-        checked={checked}
-        ref={(el: any) => { if (el) el.indeterminate = !!indeterminate; }}
-        onChange={(e: any) => onChange(e.target.checked)}
-        aria-label={ariaLabel}
-        className="cursor-pointer"
-      />
-    </label>
+    <Checkbox
+      checked={checked}
+      ref={(el: any) => { if (el) el.indeterminate = !!indeterminate; }}
+      onChange={(e: any) => onChange(e.target.checked)}
+      aria-label={ariaLabel}
+      className="cursor-pointer"
+      containerClassName="nx-checkbox nx-checkbox--hit-36 nx-checkbox--accent-green p-1"
+    />
   );
 }
 

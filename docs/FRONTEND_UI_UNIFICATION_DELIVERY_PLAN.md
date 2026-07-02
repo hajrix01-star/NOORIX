@@ -505,3 +505,39 @@ Acceptance criteria:
 | primitive adoption typecheck | `npm.cmd run typecheck` |
 | primitive tests still pass | `npx.cmd vitest run src/ui/ControlPrimitives.test.tsx` |
 | whitespace-safe diff | `git diff --check` |
+
+## 17. Phase 1.4 Closure: Import And Catalog Control Adoption
+
+Closure date: 2026-07-02
+
+Phase status: safe adoption in supplier selection, order import, catalog selection, and dashboard occasion import controls.
+
+| Metric | Before | After |
+|---|---:|---:|
+| raw `<button>` outside `src/ui` | 47 | 47 |
+| raw form controls outside `src/ui` | 71 | 58 |
+| additional raw form controls removed | 0 | 13 |
+| primitive tests | 3 | 4 |
+
+Adopted safely:
+
+| File | Change |
+|---|---|
+| `src/modules/Suppliers/components/SupplierTable.tsx` | row/header selection checkbox to `Checkbox` |
+| `src/modules/Suppliers/components/SupplierForm.tsx` | tax registration checkbox to `Checkbox` |
+| `src/modules/Suppliers/components/SupplierEditModal.tsx` | tax registration checkbox to `Checkbox` |
+| `src/modules/Orders/components/ItemsManageTabCategoriesSection.tsx` | category selection checkboxes to `Checkbox` |
+| `src/modules/Orders/components/OrdersImportModal.tsx` | import-section checkboxes and file input to `Checkbox`/`FileInput` |
+| `src/modules/Orders/components/OrdersImportModalParts.tsx` | overwrite-duplicates checkbox to `Checkbox` |
+| `src/modules/Orders/components/catalog/CatalogProductTable.tsx` | product selection checkboxes to `Checkbox` |
+| `src/modules/Dashboard/components/DashboardSaudiOccasionsImportModal.tsx` | occasion selection checkbox to `Checkbox` |
+
+Acceptance criteria:
+
+| Condition | Verification |
+|---|---|
+| no new raw controls | `npm.cmd run check:control-governance` |
+| no table regression | `npm.cmd run check:table-governance` |
+| adoption typecheck | `npm.cmd run typecheck` |
+| primitive tests include unlabeled wrapper support | `npx.cmd vitest run src/ui/ControlPrimitives.test.tsx` |
+| whitespace-safe diff | `git diff --check` |
