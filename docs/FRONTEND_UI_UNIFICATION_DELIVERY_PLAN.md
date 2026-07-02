@@ -541,3 +541,34 @@ Acceptance criteria:
 | adoption typecheck | `npm.cmd run typecheck` |
 | primitive tests include unlabeled wrapper support | `npx.cmd vitest run src/ui/ControlPrimitives.test.tsx` |
 | whitespace-safe diff | `git diff --check` |
+
+## 18. Phase 1.5 Closure: Settings And Backup Control Adoption
+
+Closure date: 2026-07-02
+
+Phase status: settings-only adoption of `Checkbox` and `FileInput` without changing backup or tax behavior.
+
+| Metric | Before | After |
+|---|---:|---:|
+| raw `<button>` outside `src/ui` | 47 | 47 |
+| raw form controls outside `src/ui` | 58 | 51 |
+| additional raw form controls removed | 0 | 7 |
+
+Adopted safely:
+
+| File | Change |
+|---|---|
+| `src/modules/Settings/components/TaxSettingsTab.tsx` | VAT enabled checkbox to `Checkbox` |
+| `src/modules/Settings/components/backup/BackupSystemSection.tsx` | system backup checkbox and archive file inputs to `Checkbox`/`FileInput` |
+| `src/modules/Settings/components/backup/BackupSheetsAndModals.tsx` | backup import confirmation checkboxes to `Checkbox` |
+| `src/modules/Settings/components/backup/BackupCompanySection.tsx` | company backup schedule checkbox to `Checkbox` |
+
+Acceptance criteria:
+
+| Condition | Verification |
+|---|---|
+| no new raw controls | `npm.cmd run check:control-governance` |
+| no table regression | `npm.cmd run check:table-governance` |
+| settings adoption typecheck | `npm.cmd run typecheck` |
+| primitive tests still pass | `npx.cmd vitest run src/ui/ControlPrimitives.test.tsx` |
+| whitespace-safe diff | `git diff --check` |

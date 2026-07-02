@@ -7,7 +7,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useApp } from '../../../context/AppContext';
 import { getCompany, updateCompany } from '../../../services/api';
-import { Button, Input } from '../../../ui';
+import { Button, Checkbox, Input } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 
 export default function TaxSettingsTab() {
@@ -89,14 +89,12 @@ export default function TaxSettingsTab() {
           {/* مفتاح التفعيل */}
           <div className="flex flex-col gap-3 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between rounded-xl border border-noorix-border bg-noorix-bg-muted py-3 px-[14px]">
             <label className="block text-[14px] font-semibold m-0 min-w-0">تفعيل ضريبة القيمة المضافة للمبيعات</label>
-            <label className="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green">
-              <input
-                type="checkbox"
-                checked={vatEnabled}
-                onChange={(e: any) => setVatEnabled(e.target.checked)}
-              />
-              <span className="text-[13px] text-noorix-muted">{vatEnabled ? 'مفعّل' : 'معطّل'}</span>
-            </label>
+            <Checkbox
+              checked={vatEnabled}
+              onChange={(e: any) => setVatEnabled(e.target.checked)}
+              label={<span className="text-[13px] text-noorix-muted">{vatEnabled ? 'مفعّل' : 'معطّل'}</span>}
+              containerClassName="nx-checkbox m-0 nx-checkbox--tight nx-checkbox--accent-green"
+            />
           </div>
 
           {/* نسبة الضريبة */}

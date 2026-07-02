@@ -14,7 +14,6 @@
     "src/modules/Orders/components/OrderFormModal.tsx": 6
   },
   "allowedRawFormControlCounts": {
-    "src/modules/Settings/components/TaxSettingsTab.tsx": 1,
     "src/modules/Invoices/components/InvoiceEditModal.tsx": 2,
     "src/modules/HR/tabs/HrPrintPayrollPanel.tsx": 2,
     "src/modules/HR/components/TerminationSettlementModal.tsx": 1,
@@ -23,9 +22,6 @@
     "src/modules/HR/components/PayrollRunDetailModal.tsx": 1,
     "src/modules/HR/components/employeeProfile/EmployeeProfileDocumentsSection.tsx": 1,
     "src/modules/Purchases/components/BatchRow.tsx": 4,
-    "src/modules/Settings/components/backup/BackupSystemSection.tsx": 3,
-    "src/modules/Settings/components/backup/BackupSheetsAndModals.tsx": 2,
-    "src/modules/Settings/components/backup/BackupCompanySection.tsx": 1,
     "src/modules/HajriTax/HajriTaxScreen.tsx": 1,
     "src/modules/HajriTax/HajriTaxDetailEditor.tsx": 2,
     "src/modules/HajriTax/HajriTaxBulkImportModal.tsx": 1,

@@ -54,11 +54,6 @@
     }
   },
   "rawFormControlReasons": {
-    "src/modules/Settings/components/TaxSettingsTab.tsx": {
-      "category": "settings-toggle-control",
-      "decision": "leave",
-      "reason": "tax settings raw control should move in a settings form pass."
-    },
     "src/modules/Invoices/components/InvoiceEditModal.tsx": {
       "category": "financial-editable-controls",
       "decision": "leave",
@@ -98,21 +93,6 @@
       "category": "purchases-editable-grid",
       "decision": "leave",
       "reason": "purchase batch row controls are editable and financially protected."
-    },
-    "src/modules/Settings/components/backup/BackupSystemSection.tsx": {
-      "category": "backup-file-controls",
-      "decision": "leave",
-      "reason": "backup import/export controls are system-sensitive file inputs."
-    },
-    "src/modules/Settings/components/backup/BackupSheetsAndModals.tsx": {
-      "category": "backup-file-controls",
-      "decision": "leave",
-      "reason": "backup sheet controls are system-sensitive file inputs."
-    },
-    "src/modules/Settings/components/backup/BackupCompanySection.tsx": {
-      "category": "backup-file-control",
-      "decision": "leave",
-      "reason": "company backup restore uses native file input behavior."
     },
     "src/modules/HajriTax/HajriTaxScreen.tsx": {
       "category": "tax-file-input",
