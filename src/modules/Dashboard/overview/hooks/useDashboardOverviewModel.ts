@@ -530,6 +530,15 @@ export function useDashboardOverviewModel(
     lang === 'ar' ? MONTH_NAMES_AR[chartMonthForDaily - 1] : MONTH_NAMES_EN[chartMonthForDaily - 1];
 
   const weeklySalesWeekRows = useMemo(() => {
+    const selectedPrevMonth = selectedMonth != null ? prevCalendarMonth(year, selectedMonth) : null;
+    const isAutoSelectedPair =
+      selectedMonth != null &&
+      weeklyPanelYearA === year &&
+      weeklyPanelMonthA === selectedMonth &&
+      selectedPrevMonth != null &&
+      weeklyPanelYearB === selectedPrevMonth.year &&
+      weeklyPanelMonthB === selectedPrevMonth.month;
+
     const capFor = (y: number, m: number) =>
       weeklySalesMaxDayInclusive({
         panelYear: y,
@@ -538,6 +547,7 @@ export function useDashboardOverviewModel(
         selectedMonth,
         revenueMtdEndDay,
         saudiNow,
+        alignSelectedPeriod: isAutoSelectedPair,
       });
 
     const curBuckets = bucketMonthIntoWeeks(
