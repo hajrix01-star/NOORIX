@@ -8,6 +8,9 @@ import { fmt } from '../../../utils/format';
 import { KPI_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { ChatAnswerExtras } from '../types';
 import { formatMiniChartTooltipValue, formatMiniChartYAxisTick } from '../utils/smartChatFormatters';
+import { SimpleTable } from '../../../ui';
+
+type ChatReportTableRow = { id: number } & Record<string, string | number>;
 
 /** أسطر tab بنفس عدد الأعمدة (≥2) ولها صفّان على الأقل → جدول */
 function tryParseTabularBlock(
@@ -39,6 +42,20 @@ function ReportDataTable({ rows, isAr }: { rows: string[][]; isAr: boolean }) {
   const cellNumericClass = (cell: string) =>
     /^[\d۰-۹٠-٩,.%\s—–-]+$/.test(cell.replace(/,/g, '')) ? 'nx-ltr tabular-nums' : '';
 
+  const columns = header.map((h, index) => ({
+    key: `c${index}`,
+    label: h,
+    cellClassName: 'min-w-0',
+    render: (_value: unknown, row: ChatReportTableRow) => {
+      const cell = String(row[`c${index}`] || '');
+      return <span className={index > 0 ? cellNumericClass(cell) : undefined}>{cell}</span>;
+    },
+  }));
+  const data: ChatReportTableRow[] = body.map((row, rowIndex) => ({
+    id: rowIndex,
+    ...Object.fromEntries(row.map((cell, cellIndex) => [`c${cellIndex}`, cell])),
+  }));
+
   return (
     <div
       className="noorix-chat-report-table-wrap"
@@ -46,28 +63,12 @@ function ReportDataTable({ rows, isAr }: { rows: string[][]; isAr: boolean }) {
       role="region"
       aria-label={isAr ? 'جدول بيانات' : 'Data table'}
     >
-      <table className="noorix-chat-report-table">
-        <thead>
-          <tr>
-            {header.map((h, j) => (
-              <th key={j} scope="col">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {body.map((row, ri) => (
-            <tr key={ri}>
-              {row.map((cell, ci) => (
-                <td key={ci} className={ci > 0 ? `min-w-0 ${cellNumericClass(cell)}` : 'min-w-0'}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <SimpleTable
+        columns={columns}
+        data={data}
+        tableClassName="noorix-chat-report-table"
+        frameClassName="border-0 shadow-none"
+      />
     </div>
   );
 }

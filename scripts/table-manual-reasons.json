@@ -227,11 +227,6 @@
       "decision": "leave",
       "reason": "daily sales print/export HTML string."
     },
-    "src/modules/SmartChat/components/SmartChatReportCard.tsx": {
-      "category": "dynamic-generated-table",
-      "decision": "leave",
-      "reason": "renders tabular blocks parsed dynamically from chat answers."
-    },
     "src/modules/Suppliers/components/SupplierProfileModal.tsx": {
       "category": "print-export-html",
       "decision": "leave",

@@ -10,7 +10,7 @@ Status: accepted for planning, no production UI refactor in this RFC.
 |---|---:|---:|---|
 | Raw form controls outside `src/ui` | 90 | 0 | closed by central primitives |
 | Raw buttons outside `src/ui` | 74 | 1 governed TSX string | React UI closed; only printable HTML string remains |
-| Raw tables outside `src/ui` | 61 | 53 TSX | governed exceptions |
+| Raw tables outside `src/ui` | 61 | 71 occurrences in 48 files | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
 
 Sources:
@@ -164,6 +164,12 @@ Delivered bank analysis table pass:
 | `src/modules/Reports/bank/components/analysis/BankAnalysisCategoryTableCard.tsx` | manual table moved to `SimpleTable` |
 | `src/modules/Reports/bank/components/analysis/BankAnalysisDepositsTableCard.tsx` | manual table moved to `SimpleTable` |
 | `src/modules/Reports/bank/components/analysis/BankAnalysisPosTerminalsCard.tsx` | manual table moved to `SimpleTable` |
+
+Delivered SmartChat dynamic table pass:
+
+| File | Change |
+|---|---|
+| `src/modules/SmartChat/components/SmartChatReportCard.tsx` | tab-delimited generated answer table moved to `SimpleTable` while preserving dynamic columns |
 
 ## 6. What To Leave Temporarily
 
