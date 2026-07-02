@@ -316,7 +316,7 @@ export const StaffFormModal = memo(function StaffFormModal({
           </div>
           <div className="col-span-2 rounded-xl border border-noorix-border bg-noorix-bg-muted/40 px-3.5 py-3">
             <div className="text-[11px] text-noorix-muted mb-1">{t('totalSalary')}</div>
-            <div className="text-[18px] font-bold ltr text-noorix-text" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+            <div className="text-[18px] font-bold ltr text-noorix-text nx-font-numbers">
               <FmtNum n={computedTotalSalary} />
             </div>
           </div>

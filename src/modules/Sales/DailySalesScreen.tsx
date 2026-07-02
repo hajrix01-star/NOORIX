@@ -173,7 +173,7 @@ export default function DailySalesScreen() {
   ), [STATUS_MAP, userRole, t, handleDeleteSummary, lang, openWhatsApp, setEditingSummary]);
 
   const renderCompactRow = useCallback((row: DailySalesTableRow) => (
-    <div onClick={() => setEditingSummary(row)} style={{ cursor: 'pointer' }}>
+    <div className="cursor-pointer" onClick={() => setEditingSummary(row)}>
       <div className="nx-cr__line1">
         <span className="nx-cr__id">#{row.summaryNumbersText || row.summaryNumber}</span>
         <span className="nx-cr__meta">{formatSaudiDate(row.transactionDate)}</span>

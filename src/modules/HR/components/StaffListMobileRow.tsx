@@ -24,9 +24,8 @@ export function StaffListMobileRow({
 
   return (
     <div
-      className={cn('nx-hr-staff-row__inner flex min-w-0 items-start justify-between gap-3')}
+      className={cn('nx-hr-staff-row__inner flex min-w-0 cursor-pointer items-start justify-between gap-3')}
       onClick={() => navigate(`/hr/employee/${row.id}`)}
-      style={{ cursor: 'pointer' }}
     >
       <div className="flex min-w-0 flex-col gap-0.5">
         <span

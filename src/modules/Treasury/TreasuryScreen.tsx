@@ -181,7 +181,7 @@ export default function TreasuryScreen() {
                 { label: t('inbound'),      value: totalIn,      color: 'var(--noorix-accent-green)', sign: '' },
                 { label: t('outbound'),     value: totalOut,     color: 'var(--noorix-text)', sign: '' },
               ].map(({ label, value, color, sign }: any, i: any) => (
-                <div key={label} className="text-center p-4" style={{ borderRight: i < 2 ? '1px solid var(--noorix-border)' : 'none' }}>
+                <div key={label} className={`text-center p-4 ${i < 2 ? 'border-r border-noorix-border' : ''}`}>
                   <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
                   <div dir="ltr" className="font-extrabold text-[20px] nx-font-numbers" style={{ color }}>
                     {sign}<FmtNum n={Math.abs(value)} />

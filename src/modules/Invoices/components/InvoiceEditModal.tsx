@@ -326,7 +326,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             label={t('totalAmountInclTax') || 'الإجمالي (شامل الضريبة) *'}
             value={form.totalAmount}
             onChange={(e: any) => updateField('totalAmount', e.target.value)}
-            style={{ fontFamily: 'var(--noorix-font-numbers)' }}
+            className="nx-font-numbers"
           />
           {hasSupplier && form.totalAmount && parseFloat(form.totalAmount) > 0 && (
             <div className="mt-2 grid gap-1.5">

@@ -152,18 +152,18 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
             </svg>
             {t('inbound')}
           </div>
-          <div dir="ltr" className="text-[13px] font-bold text-noorix-green" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div dir="ltr" className="text-[13px] font-bold text-noorix-green nx-font-numbers">
             <FmtNum n={totalIn} /> <span className="nx-sar">SR</span>
           </div>
         </div>
-        <div className="text-left pr-2" style={{ borderRight: '1px solid var(--noorix-border)' }}>
+        <div className="text-left pr-2 border-r border-noorix-border">
           <div className="flex items-center gap-4 text-noorix-muted text-[10px] mb-[3px] justify-end">
             {t('outbound')}
             <svg viewBox="0 0 12 12" fill="none" stroke="var(--noorix-accent-red)" strokeWidth="2" width="10" height="10">
               <path d="M6 2v8M2 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <div dir="ltr" className="text-[13px] font-bold text-noorix-text text-right" style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <div dir="ltr" className="text-[13px] font-bold text-noorix-text text-right nx-font-numbers">
             <FmtNum n={totalOut} /> <span className="nx-sar">SR</span>
           </div>
         </div>
@@ -184,7 +184,7 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
             return <Badge color="gray" size="sm">{pmLabel}</Badge>;
           })()}
           {vault.account?.code && (
-            <Badge color="gray" size="sm" style={{ marginRight: 'auto' }}>{vault.account.code}</Badge>
+            <Badge color="gray" size="sm" className="me-auto">{vault.account.code}</Badge>
           )}
           {isArchived && (
             <Badge color="amber" size="sm">{t('archived')}</Badge>

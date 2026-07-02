@@ -34,8 +34,10 @@ export function buildInvoiceListColumns({
         const isInbound = row.kind === 'sale';
         return (
           <span
-            className="nx-cell-num nx-cell-ellipsis"
-            style={{ color: isInbound ? 'var(--color-nx-sales)' : 'var(--color-nx-expenses)', fontWeight: 700 }}
+            className={cn(
+              'nx-cell-num nx-cell-ellipsis font-bold',
+              isInbound ? 'text-nx-sales' : 'text-nx-expenses',
+            )}
             title={v || ''}
           >
             {v || '—'}
@@ -227,7 +229,7 @@ export function buildInvoiceListFooterRow({ t, serverAll, total }: any) {
         <>
           {t('totalInvoices', serverAll.count)}
           {total > PAGE_SIZE && (
-            <span className="text-[11px]" style={{ opacity: 0.65 }}>
+            <span className="text-[11px] opacity-[0.65]">
               {' '}
               ({t('allPages')})
             </span>
@@ -273,7 +275,7 @@ export function createInvoiceCompactRowRenderer({
     const isInbound = row.kind === 'sale';
     const amountColor = isInbound ? 'var(--color-nx-sales)' : 'var(--color-nx-expenses)';
     return (
-      <div onClick={() => setViewingInvoice?.(row)} style={{ cursor: 'pointer' }}>
+      <div className="cursor-pointer" onClick={() => setViewingInvoice?.(row)}>
         {/* السطر الأول */}
         <div className="nx-cr__line1">
           <span className="nx-cr__id" style={{ color: amountColor }}>

@@ -168,13 +168,7 @@ export default function AppHeader({
                 title={coName}
               >
                 {/* أيقونة الشركة */}
-                <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 overflow-hidden text-[11px] font-extrabold text-white"
-                  style={{
-                    background: coLogo
-                      ? 'transparent'
-                      : 'linear-gradient(135deg,var(--noorix-navy-light),var(--noorix-navy))',
-                  }}
-                >
+                <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 overflow-hidden text-[11px] font-extrabold text-white ${coLogo ? 'bg-transparent' : 'bg-[linear-gradient(135deg,var(--noorix-navy-light),var(--noorix-navy))]'}`}>
                   {coLogo
                     ? <img src={coLogo} alt={coName} className="w-full h-full object-cover" />
                     : coInitial}
@@ -227,12 +221,7 @@ export default function AppHeader({
                         className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-start border-b border-noorix-border last:border-b-0 transition-colors hover:bg-noorix-bg-muted ${isActive ? 'bg-[var(--noorix-blue-8)] font-bold text-noorix-blue' : 'bg-transparent font-medium text-noorix-text'}`}
                       >
                         <div
-                          className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-[11px] font-extrabold text-white overflow-hidden"
-                          style={{
-                            background: c.logoUrl
-                              ? 'transparent'
-                              : 'linear-gradient(135deg,var(--noorix-navy-light),var(--noorix-navy))',
-                          }}
+                          className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-[11px] font-extrabold text-white overflow-hidden ${c.logoUrl ? 'bg-transparent' : 'bg-[linear-gradient(135deg,var(--noorix-navy-light),var(--noorix-navy))]'}`}
                         >
                           {c.logoUrl
                             ? <img src={c.logoUrl} alt={cName} className="w-full h-full object-cover" />

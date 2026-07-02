@@ -18,7 +18,7 @@ export function HrQuickEntryRow({
       </label>
       {children}
       {error && (
-        <div className="mt-1 text-[12px]" style={{ color: 'var(--noorix-accent-red)' }}>
+        <div className="mt-1 text-[12px] text-noorix-red">
           {error}
         </div>
       )}

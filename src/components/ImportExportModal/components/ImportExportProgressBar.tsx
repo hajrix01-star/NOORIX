@@ -3,7 +3,7 @@ import React from 'react';
 export function ImportExportProgressBar({ pct }: { pct: number }) {
   return (
     <div className="h-[10px] rounded-full overflow-hidden bg-noorix-border">
-      <div className="nx-progress-fill" style={{ width: `${pct}%`, background: 'var(--noorix-accent-blue)' }} />
+      <div className="nx-progress-fill bg-noorix-blue" style={{ width: `${pct}%` }} />
     </div>
   );
 }

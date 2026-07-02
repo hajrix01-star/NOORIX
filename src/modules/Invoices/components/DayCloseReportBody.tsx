@@ -71,7 +71,7 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
     <div className="grid gap-3.5">
       <div className="day-close-screen-only flex gap-2 justify-between items-baseline flex-wrap pb-2 border-b border-noorix-border">
         <div>
-          <div className="text-[11px]" style={{ color: 'var(--noorix-text-muted)' }}>{t('dayCloseReportDate')}</div>
+          <div className="text-[11px] text-noorix-muted">{t('dayCloseReportDate')}</div>
           <div className="text-[15px] font-extrabold">{reportDateLabel}</div>
         </div>
         <div className="text-[10px] text-[var(--noorix-text-muted-2)] max-w-[340px] text-right leading-[1.45]">
@@ -305,7 +305,7 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
       <div>
         <SectionTitle>{t('dayCloseOperationsTable')} — {data.meta?.invoiceCountAll ?? 0}</SectionTitle>
         <div className="day-close-ops-wrap">
-          <table className="dc-table m-0" style={{ border: 'none' }}>
+          <table className="dc-table m-0 border-0">
             <thead>
               <tr>
                 <th>{t('documentNumber')}</th>
@@ -321,11 +321,11 @@ export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, 
                 <tr><td colSpan={6} className="dc-empty">—</td></tr>
               )}
               {(data.operations || []).map((op: any) => (
-                <tr key={op.id} style={{ opacity: op.status === 'cancelled' ? 0.55 : 1 }}>
+                <tr key={op.id} className={op.status === 'cancelled' ? 'opacity-[0.55]' : undefined}>
                   <td className="font-bold">{op.invoiceNumber}</td>
                   <td>{kindLabel[op.kind] || op.kind}</td>
                   <td className="dc-num">{fmt(Number(op.totalAmount))}</td>
-                  <td className="dc-muted" style={{ maxWidth: 200 }}>
+                  <td className="dc-muted max-w-[200px]">
                     {counterpartyLabel(op, lang)}
                   </td>
                   <td>{pickBilingual(lang, op.vaultNameAr ?? op.vaultName, op.vaultNameEn)}</td>

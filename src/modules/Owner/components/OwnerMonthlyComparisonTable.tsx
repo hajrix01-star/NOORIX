@@ -91,7 +91,7 @@ export function OwnerMonthlyComparisonTable({
       </div>
 
       <div className="overflow-x-auto -mx-5 px-5">
-        <table style={{ minWidth: 860 }} className="w-full text-[12px] border-collapse">
+        <table className="w-full min-w-[860px] text-[12px] border-collapse">
           <thead>
             <tr>
               <th className="text-start py-2 px-3 text-[11px] text-noorix-muted font-semibold w-36 border-b border-noorix-border">

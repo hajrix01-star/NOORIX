@@ -8,12 +8,12 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 445 |
-| files with `style={{` | 105 |
+| `style={{` total | 408 |
+| files with `style={{` | 93 |
 | inside `src/ui` | 31 |
 | `src/ui` files | 11 |
-| outside `src/ui` | 414 |
-| outside `src/ui` files | 94 |
+| outside `src/ui` | 377 |
+| outside `src/ui` files | 82 |
 
 ## Top Files
 
@@ -23,12 +23,12 @@ Status: active guardrail.
 | `src/modules/Purchases/components/BatchPrintSheet.tsx` | 28 |
 | `src/modules/Sales/components/SalesEditModal.tsx` | 26 |
 | `src/modules/Reports/BankStatementMappingModal.tsx` | 17 |
-| `src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx` | 14 |
 | `src/modules/HR/components/EmployeeDocModal/components/EmployeeDocSalaryBreakdownTable.tsx` | 14 |
-| `src/ui/SmartTable/SmartTable.tsx` | 13 |
+| `src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx` | 14 |
 | `src/modules/HR/components/EmployeeDocModal/components/ContractDocPreview.tsx` | 13 |
-| `src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx` | 12 |
+| `src/ui/SmartTable/SmartTable.tsx` | 13 |
 | `src/modules/HR/components/EmployeeDocModal/components/SalaryCertificatePreview.tsx` | 12 |
+| `src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx` | 12 |
 
 ## Rule
 

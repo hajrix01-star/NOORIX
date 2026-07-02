@@ -109,10 +109,7 @@ export default function DashboardCalendarDayCell({
         </span>
       )}
       {hasNote && (
-        <span
-          className="text-[8px] w-[6px] h-[6px] rounded-full inline-block"
-          style={{ color: 'var(--noorix-accent-blue)', background: 'var(--noorix-accent-blue)' }}
-        />
+        <span className="text-[8px] w-[6px] h-[6px] rounded-full inline-block bg-noorix-blue text-noorix-blue" />
       )}
       {special && specialColor && (
         <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-md" style={{ background: specialColor }} />

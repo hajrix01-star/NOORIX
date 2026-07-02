@@ -43,8 +43,7 @@ export function SmartChatExpenseLinePickSheet({
           .map((line) => (
             <Button
               key={line.id}
-              className="w-full justify-start py-3 px-[14px]"
-              style={{ textAlign: isAr ? 'right' : 'left' }}
+              className={`w-full justify-start py-3 px-[14px] ${isAr ? 'text-right' : 'text-left'}`}
               onClick={() => onPickLine(line)}
             >
               {line.nameAr || line.nameEn || line.name || '—'}
