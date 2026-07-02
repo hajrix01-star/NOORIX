@@ -8,7 +8,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { ProductSearchInput } from '../../../components/common/ProductSearchInput';
-import { Button, Input, AdaptiveSheet, FmtNum, Modal } from '../../../ui';
+import { Button, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal } from '../../../ui';
 import { useOrderSections } from '../../../hooks/useOrders';
 
 // ─── كرت صنف ──────────────────────────────────────────────────────────────────
@@ -414,13 +414,13 @@ export function OrderFormModal({
 
               {/* بحث */}
               <div className="relative mb-3">
-                <span className="absolute inset-y-0 start-3 flex items-center text-noorix-muted pointer-events-none text-[14px]">🔍</span>
-                <input
-                  type="text"
+                <Input
+                  type="search"
                   value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProductSearch(e.target.value)}
                   placeholder={t('staffOrderSearchPlaceholder')}
-                  className="w-full h-9 rounded-xl border border-noorix-border bg-noorix-surface ps-9 pe-3 text-[13px] text-noorix-text placeholder:text-noorix-muted focus:outline-none focus:ring-1 focus:ring-noorix-blue"
+                  prefix="🔍"
+                  className="rounded-xl ps-9"
                 />
               </div>
 
@@ -582,10 +582,12 @@ export function OrderFormModal({
                   onClick={() => setAddModal((m: any) => m ? { ...m, quantity: String(Math.max(1, parseFloat(m.quantity || '1') - 1)) } : m)}
                   className="w-9 h-9 rounded-full border-2 border-noorix-border text-[20px] flex items-center justify-center hover:border-noorix-blue"
                 >−</button>
-                <input type="number" min="1"
+                <EditableNumberCell
+                  min="1"
+                  align="start"
                   className="w-16 h-10 text-center text-[18px] font-bold border-2 border-noorix-border rounded-xl bg-noorix-bg focus:outline-none focus:border-noorix-blue"
                   value={addModal.quantity}
-                  onChange={(e) => setAddModal((m: any) => m ? { ...m, quantity: e.target.value } : m)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddModal((m: any) => m ? { ...m, quantity: e.target.value } : m)}
                 />
                 <button type="button"
                   onClick={() => setAddModal((m: any) => m ? { ...m, quantity: String(parseFloat(m.quantity || '0') + 1) } : m)}

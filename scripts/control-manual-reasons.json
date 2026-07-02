@@ -59,20 +59,10 @@
       "decision": "leave",
       "reason": "invoice editing controls are financially sensitive and row-bound."
     },
-    "src/modules/HR/tabs/HrPrintPayrollPanel.tsx": {
-      "category": "payroll-print-controls",
-      "decision": "leave",
-      "reason": "payroll print options are protected HR/payroll scope."
-    },
     "src/modules/HR/components/TerminationSettlementModal.tsx": {
       "category": "payroll-protected-control",
       "decision": "leave",
       "reason": "termination settlement input is protected payroll/settlement scope."
-    },
-    "src/modules/HR/components/ResidencyFormModal.tsx": {
-      "category": "hr-document-control",
-      "decision": "leave",
-      "reason": "residency document input should move with HR document forms."
     },
     "src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx": {
       "category": "editable-payroll-grid",
@@ -114,30 +104,10 @@
       "decision": "leave",
       "reason": "expense batch row controls are editable financial grid inputs."
     },
-    "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": {
-      "category": "settlement-checkbox",
-      "decision": "leave",
-      "reason": "final settlement option is protected HR financial document scope."
-    },
     "src/modules/Reports/BankStatementUploadModal.tsx": {
       "category": "bank-file-input",
       "decision": "leave",
       "reason": "bank statement upload uses native file input in protected bank workflow."
-    },
-    "src/modules/HR/components/AdvanceSettlementModal.tsx": {
-      "category": "hr-financial-checkbox",
-      "decision": "leave",
-      "reason": "advance settlement salary application is protected HR financial behavior."
-    },
-    "src/modules/Orders/StaffOrdersViewParts.tsx": {
-      "category": "editable-order-grid-controls",
-      "decision": "leave",
-      "reason": "staff order basket inputs are tied to quantity editing."
-    },
-    "src/modules/Orders/components/OrderFormModal.tsx": {
-      "category": "editable-order-grid-controls",
-      "decision": "leave",
-      "reason": "order form inputs are tied to editable item rows and quantities."
     }
   }
 }

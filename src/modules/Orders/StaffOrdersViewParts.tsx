@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { fmt } from '../../utils/format';
-import { Button, Modal, Input } from '../../ui';
+import { Button, EditableNumberCell, Modal, Input } from '../../ui';
 import {
   type StaffBasketLine,
   basketTotal,
@@ -80,13 +80,13 @@ export function StaffBasketTable({
                     className="w-6 h-6 rounded-md border border-noorix-border text-[14px] leading-none flex items-center justify-center hover:bg-noorix-bg-muted shrink-0"
                   >−</button>
                   {isEditingQty ? (
-                    <input
+                    <EditableNumberCell
                       autoFocus
-                      type="number"
                       min="1"
+                      align="start"
                       className="w-8 h-6 text-center text-[12px] border border-noorix-blue rounded-md bg-noorix-bg focus:outline-none nx-font-numbers"
                       value={row.quantity}
-                      onChange={(e) => setLineQty(row.lineId, Number(e.target.value))}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLineQty(row.lineId, Number(e.target.value))}
                       onBlur={() => setEditingQtyId(null)}
                     />
                   ) : (
@@ -285,12 +285,12 @@ export function VariantPickModal({
               })}
               className="w-9 h-9 rounded-full border-2 border-noorix-border text-[20px] flex items-center justify-center hover:border-noorix-blue"
             >−</button>
-            <input
-              type="number"
+            <EditableNumberCell
               min="1"
+              align="start"
               className="w-16 h-10 text-center text-[18px] font-bold border-2 border-noorix-border rounded-xl bg-noorix-bg focus:outline-none focus:border-noorix-blue"
               value={variantModal.quantity}
-              onChange={(e) => onChange({ ...variantModal, quantity: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...variantModal, quantity: e.target.value })}
             />
             <button
               type="button"

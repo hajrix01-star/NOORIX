@@ -1,7 +1,7 @@
 import React from 'react';
 import Decimal from 'decimal.js';
 import { formatSaudiDate } from '../../../../../utils/saudiDate';
-import { Input } from '../../../../../ui';
+import { Checkbox, Input } from '../../../../../ui';
 import { hrFmt } from '../../../utils/hrFmt';
 import { parseWorkHours } from '../../../utils/employeeSalaryMath';
 import type { DocSalaryRow } from '../types';
@@ -78,10 +78,11 @@ export function FinalSettlementPreview({
       englishTitle="Final Settlement & Clearance"
     >
       <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--noorix-border)', background: '#f8fafc' }}>
-        <label className="nx-checkbox">
-          <input type="checkbox" checked={includeEos} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIncludeEos(e.target.checked)} />
-          {includeEos ? t('includeEosInSettlement') : t('excludeEosInSettlement')}
-        </label>
+        <Checkbox
+          checked={includeEos}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIncludeEos(e.target.checked)}
+          label={includeEos ? t('includeEosInSettlement') : t('excludeEosInSettlement')}
+        />
       </div>
       <div style={{ padding: '12px 22px', borderBottom: '1px solid var(--noorix-border)', background: '#f8fafc' }}>
         <div className="font-bold mb-2">حاسبة نهاية الخدمة (تفصيل قبل الطباعة) / EOS Calculator (before print)</div>
