@@ -89,20 +89,10 @@
       "decision": "leave",
       "reason": "purchase batch row controls are editable and financially protected."
     },
-    "src/modules/HajriTax/HajriTaxScreen.tsx": {
-      "category": "tax-file-input",
-      "decision": "leave",
-      "reason": "VAT JSON import file input is protected tax workflow."
-    },
     "src/modules/HajriTax/HajriTaxDetailEditor.tsx": {
       "category": "tax-editable-controls",
       "decision": "leave",
       "reason": "tax detail editor controls are protected VAT editing scope."
-    },
-    "src/modules/HajriTax/HajriTaxBulkImportModal.tsx": {
-      "category": "tax-import-control",
-      "decision": "leave",
-      "reason": "VAT bulk import control is protected tax import workflow."
     },
     "src/modules/Sales/components/SalesDayEditModal.tsx": {
       "category": "sales-financial-control",
@@ -133,11 +123,6 @@
       "category": "financial-report-controls",
       "decision": "leave",
       "reason": "year selector and row filter are tied to financial report behavior."
-    },
-    "src/modules/Reports/CostAccountingAppsScreen.tsx": {
-      "category": "cost-accounting-protected-controls",
-      "decision": "leave",
-      "reason": "cost accounting selects, file upload, and VAT checkbox are protected financial analysis scope."
     },
     "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": {
       "category": "settlement-checkbox",

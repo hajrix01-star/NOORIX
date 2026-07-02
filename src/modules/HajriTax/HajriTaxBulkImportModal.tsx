@@ -3,7 +3,7 @@
  */
 import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Modal, Button } from '../../ui';
+import { Modal, Button, FileTrigger } from '../../ui';
 import { exportToExcel, importFromExcel } from '../../utils/exportUtils';
 import { disclosureFromBulkFlatRow, roundMoney2 } from '../../constants/taxDisclosure';
 import { upsertVatPlanning, throwIfApiFailed } from '../../services/api';
@@ -204,29 +204,19 @@ export default function HajriTaxBulkImportModal({ open, onClose, companies, lang
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
             {t('cancel')}
           </Button>
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            loading={busy}
-            onClick={() => fileRef.current?.click()}
-          >
-            {t('hajriTaxBulkImportChooseFile')}
-          </Button>
+          <FileTrigger
+            ref={fileRef}
+            label={t('hajriTaxBulkImportChooseFile')}
+            accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            onChange={(e: any) => {
+              const f = e.target.files?.[0];
+              void processFile(f);
+            }}
+            buttonProps={{ variant: 'primary', size: 'sm', loading: busy }}
+          />
         </div>
       }
     >
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        className="hidden"
-        onChange={(e: any) => {
-          const f = e.target.files?.[0];
-          void processFile(f);
-        }}
-      />
-
       <div className="grid gap-4 text-start">
         <p className="m-0 text-[13px] leading-relaxed text-noorix-muted">{t('hajriTaxBulkImportIntro')}</p>
 
