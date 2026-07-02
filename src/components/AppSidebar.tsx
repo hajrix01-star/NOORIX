@@ -117,11 +117,10 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
         <div className="app-sidebar__header">
           <div className="app-sidebar__logo">
             <div
-              className="app-sidebar__logo-mark"
-              style={brandLogo ? { padding: 0, overflow: 'hidden' } : {}}
+              className={`app-sidebar__logo-mark${brandLogo ? ' overflow-hidden p-0' : ''}`}
             >
               {brandLogo
-                ? <img src={brandLogo} alt={brandName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                ? <img src={brandLogo} alt={brandName} className="h-full w-full object-cover rounded-[inherit]" />
                 : (brandName?.[0] || 'N')
               }
             </div>

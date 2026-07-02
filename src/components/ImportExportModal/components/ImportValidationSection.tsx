@@ -75,7 +75,7 @@ export function ImportValidationSection({
                   <span className="font-bold text-noorix-amber">
                     {t('importValidationRowPrefix')} {r.rowNum}
                   </span>
-                  <span style={{ color: 'var(--noorix-accent-amber)' }}>{msg}</span>
+                  <span className="text-noorix-amber">{msg}</span>
                 </div>
               ))}
             </div>

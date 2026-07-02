@@ -41,23 +41,14 @@ export default function Toast({ message, type = 'success', visible, onDismiss }:
       role="alert"
       aria-live="assertive"
       aria-atomic="true"
-      className="py-[10px] px-[14px] rounded-[10px] font-semibold text-[14px] flex items-start gap-[10px] break-words text-white"
+      className="fixed top-4 end-4 z-[9999] max-w-[min(360px,calc(100vw-32px))] py-[10px] px-[14px] rounded-[10px] font-semibold text-[14px] flex items-start gap-[10px] break-words text-white shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
       style={{
-        position: 'fixed',
-        top: 16,
-        insetInlineEnd: 16,
-        maxWidth: 'min(360px, calc(100vw - 32px))',
         background: style.background,
-        fontFamily: 'var(--noorix-font-primary)',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-        zIndex: 9999,
-        direction: 'inherit',
       }}
     >
       <span
         aria-hidden="true"
-        className="shrink-0 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[12px] font-extrabold mt-px"
-        style={{ background: 'rgba(255,255,255,0.2)' }}
+        className="shrink-0 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[12px] font-extrabold mt-px bg-white/20"
       >
         {style.icon}
       </span>

@@ -290,7 +290,7 @@ export function OrdersTab({
       const total = Number(o.totalAmount ?? 0);
       const cumRem = cumulativeRemainingByOrderId?.get(o.id);
       return (
-        <div onClick={() => handleView(o)} style={{ cursor: 'pointer' }}>
+        <div className="cursor-pointer" onClick={() => handleView(o)}>
           <div className="nx-cr__line1">
             <span className="nx-cr__id">#{o.orderNumber}</span>
             <Badge color={isExt ? 'blue' : 'green'} size="sm">
@@ -529,8 +529,8 @@ export function OrdersTab({
             showRowNumbers={false}
             footerCells={
               <>
-                <td colSpan={4} className="font-bold text-end" style={{ padding: '10px 16px' }}>{t('total')}</td>
-                <td className="nx-cell-num font-bold text-[15px]" style={{ padding: '10px 16px', textAlign: 'right' }}><FmtNum n={viewingOrder.totalAmount ?? 0} /> SR</td>
+                <td colSpan={4} className="font-bold text-end py-2.5 px-4">{t('total')}</td>
+                <td className="nx-cell-num font-bold text-[15px] py-2.5 px-4 text-right"><FmtNum n={viewingOrder.totalAmount ?? 0} /> SR</td>
               </>
             }
           />

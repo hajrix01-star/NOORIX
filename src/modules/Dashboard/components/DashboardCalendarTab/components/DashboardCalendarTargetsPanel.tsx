@@ -130,7 +130,7 @@ export default function DashboardCalendarTargetsPanel({
         </div>
       ) : (
         <div className="flex items-center gap-8 mb-[10px]">
-          <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+          <span className="nx-font-numbers">
             {targets.overall != null ? fmt(targets.overall) : '—'} <span className="nx-sar">SR</span>
           </span>
           <Button onClick={onStartEditOverall}>{t('edit')}</Button>

@@ -52,7 +52,7 @@ export function ImportResultPanel({
               <span className="font-bold text-noorix-amber">
                 {t('importValidationRowPrefix')} {w.rowNum}
               </span>
-              <span style={{ color: 'var(--noorix-accent-amber)' }}>{w.message}</span>
+              <span className="text-noorix-amber">{w.message}</span>
             </div>
           ))}
           {warnings.length > 20 && (

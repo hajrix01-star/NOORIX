@@ -43,11 +43,7 @@ export function OrdersImportHelpTrigger({ t, variant, productType = 'order' }: a
           e.stopPropagation();
           setPinned((p: any) => !p);
         }}
-        className="text-[12px] font-semibold py-1.5 px-3 rounded-full"
-        style={{
-          border: '1px solid var(--noorix-border)',
-          background: pinned ? 'var(--noorix-green-12)' : 'var(--noorix-bg-muted)',
-        }}
+        className={`text-[12px] font-semibold py-1.5 px-3 rounded-full border border-noorix-border ${pinned ? 'bg-[var(--noorix-green-12)]' : 'bg-noorix-bg-muted'}`}
       >
         ⓘ {t('ordersImportHelpBadge')}
       </Button>
@@ -55,16 +51,7 @@ export function OrdersImportHelpTrigger({ t, variant, productType = 'order' }: a
         <div
           role="region"
           aria-label={title}
-          className="noorix-print-hide text-[12px] text-noorix-text bg-noorix-surface rounded-xl absolute overflow-y-auto py-[14px] px-4 leading-[1.65] text-start"
-          style={{
-            top: 'calc(100% + 8px)',
-            insetInlineEnd: 0,
-            width: 'min(420px, calc(100vw - 24px))',
-            maxHeight: 'min(440px, 72vh)',
-            zIndex: 50,
-            border: '1px solid var(--noorix-border)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-          }}
+          className="noorix-print-hide text-[12px] text-noorix-text bg-noorix-surface rounded-xl absolute overflow-y-auto py-[14px] px-4 leading-[1.65] text-start top-[calc(100%+8px)] end-0 w-[min(420px,calc(100vw-24px))] max-h-[min(440px,72vh)] z-50 border border-noorix-border shadow-[0_12px_40px_rgba(0,0,0,0.15)]"
           onMouseDown={(e: any) => e.stopPropagation()}
         >
           <div className="font-extrabold text-[13px] mb-[10px]">{title}</div>

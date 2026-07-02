@@ -73,10 +73,7 @@ function SummaryPane({
             <td>
               <span
                 dir="ltr"
-                className="nx-font-numbers inline-flex items-baseline justify-center gap-0.5 font-bold"
-                style={{
-                  color: resNum < 0 ? 'var(--color-nx-expenses)' : 'var(--noorix-text)',
-                }}
+                className={`nx-font-numbers inline-flex items-baseline justify-center gap-0.5 font-bold ${resNum < 0 ? 'text-[var(--color-nx-expenses)]' : 'text-noorix-text'}`}
               >
                 {resNum < 0 ? '-' : ''}
                 <FmtNum n={Math.abs(resNum)} className="text-[15px] sm:text-[16px]" />

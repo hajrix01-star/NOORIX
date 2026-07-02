@@ -164,13 +164,7 @@ export default function AppHeader({
                 variant="raw"
                 size="auto"
                 onClick={showCompanySwitcher ? () => { updateCoDropPos(); setCoDropOpen((v: any) => !v); } : undefined}
-                className="flex items-center gap-2 px-3 h-9 rounded-lg transition-colors max-w-[260px]"
-                style={{
-                  background: coDropOpen ? 'var(--noorix-bg-muted)' : 'transparent',
-                  border: '1px solid transparent',
-                  cursor: showCompanySwitcher ? 'pointer' : 'default',
-                  ...(showCompanySwitcher && { borderColor: coDropOpen ? 'var(--noorix-border)' : 'transparent' }),
-                }}
+                className={`flex items-center gap-2 px-3 h-9 rounded-lg border transition-colors max-w-[260px] ${coDropOpen ? 'bg-noorix-bg-muted border-noorix-border' : 'bg-transparent border-transparent'} ${showCompanySwitcher ? 'cursor-pointer' : 'cursor-default'}`}
                 title={coName}
               >
                 {/* أيقونة الشركة */}
@@ -194,8 +188,7 @@ export default function AppHeader({
                   <svg
                     viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                     width="12" height="12"
-                    className="shrink-0 text-noorix-muted transition-transform duration-150"
-                    style={{ transform: coDropOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    className={`shrink-0 text-noorix-muted transition-transform duration-150 ${coDropOpen ? 'rotate-180' : 'rotate-0'}`}
                     aria-hidden="true"
                   >
                     <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -231,12 +224,7 @@ export default function AppHeader({
                         role="option"
                         aria-selected={isActive}
                         onClick={() => handleCompanySelect(c.id)}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-start border-b border-noorix-border last:border-b-0 transition-colors hover:bg-noorix-bg-muted"
-                        style={{
-                          background: isActive ? 'var(--noorix-blue-8)' : 'transparent',
-                          fontWeight: isActive ? 700 : 500,
-                          color: isActive ? 'var(--noorix-accent-blue)' : 'var(--noorix-text)',
-                        }}
+                        className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-start border-b border-noorix-border last:border-b-0 transition-colors hover:bg-noorix-bg-muted ${isActive ? 'bg-[var(--noorix-blue-8)] font-bold text-noorix-blue' : 'bg-transparent font-medium text-noorix-text'}`}
                       >
                         <div
                           className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-[11px] font-extrabold text-white overflow-hidden"

@@ -13,31 +13,31 @@ export default function DashboardCalendarLegend({ lang, targetsOverall, t }: Das
       <div className="font-bold mb-2 text-noorix-text">{lang === 'ar' ? 'دليل الألوان' : 'Color legend'}</div>
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-8">
-          <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--noorix-border)', border: '1px solid var(--noorix-border)' }} />
+          <span className="w-[14px] h-[14px] rounded shrink-0 bg-noorix-border border border-noorix-border" />
           <span>{t('dashboardLegendGray')}</span>
         </div>
         <div className="flex items-center gap-8">
-          <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--color-nx-expenses)' }} />
+          <span className="w-[14px] h-[14px] rounded shrink-0 bg-[var(--color-nx-expenses)]" />
           <span>{t('dashboardLegendRed')}</span>
         </div>
         <div className="flex items-center gap-8">
-          <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--noorix-accent-amber)' }} />
+          <span className="w-[14px] h-[14px] rounded shrink-0 bg-noorix-amber" />
           <span>{t('dashboardLegendYellow')}</span>
         </div>
         <div className="flex items-center gap-8">
-          <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--color-nx-profit)' }} />
+          <span className="w-[14px] h-[14px] rounded shrink-0 bg-[var(--color-nx-profit)]" />
           <span>{t('dashboardLegendGreen')}</span>
         </div>
         <div className="flex items-center gap-8">
-          <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--color-nx-sales)' }} />
+          <span className="w-[14px] h-[14px] rounded shrink-0 bg-[var(--color-nx-sales)]" />
           <span>{t('dashboardLegendBlue')}</span>
         </div>
         <div className="flex items-center gap-8">
-          <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'color-mix(in srgb, var(--color-nx-profit) 45%, transparent)' }} />
+          <span className="w-[14px] h-[14px] rounded shrink-0 bg-[color-mix(in_srgb,var(--color-nx-profit)_45%,transparent)]" />
           <span>{t('dashboardLegendGreenNoTarget')}</span>
         </div>
         <div className="flex items-center gap-8">
-          <span className="w-[14px] h-[14px] rounded shrink-0" style={{ background: 'var(--noorix-violet-50)' }} />
+          <span className="w-[14px] h-[14px] rounded shrink-0 bg-[var(--noorix-violet-50)]" />
           <span>{t('dashboardLegendSpecial')}</span>
         </div>
       </div>
