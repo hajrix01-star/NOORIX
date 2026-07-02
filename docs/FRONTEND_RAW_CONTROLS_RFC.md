@@ -68,13 +68,15 @@ Note: counts are grouped by workflow risk, so a file can belong to a protected p
 
 ## 4. Missing UI Primitives
 
-| Needed component | Why it is needed | Unlocks |
-|---|---|---|
-| `EditableNumberCell` | repeated row-bound number inputs with min/max, disabled state, and compact layout | purchases, expenses, payroll, orders |
-| `EditableTextCell` | compact row-bound text inputs without full form spacing | bank rules, editable grids |
-| `EditableCheckboxCell` | checkbox in dense table/card rows without label wrapper shift | bank category, payment history, settlement toggles |
-| `InlineSelect` or `EditableSelectCell` | compact selects inside toolbars or rows | reports, cost accounting, bank filters |
-| `HiddenFileInput` or `FileTrigger` | current `FileInput` is visible; several flows use hidden file input behind a custom button | tax import, bank upload, cost CSV import |
+| Needed component | Status | Why it is needed | Unlocks |
+|---|---|---|---|
+| `EditableNumberCell` | added | repeated row-bound number inputs with min/max, disabled state, and compact layout | purchases, expenses, payroll, orders |
+| `EditableTextCell` | added | compact row-bound text inputs without full form spacing | bank rules, editable grids |
+| `EditableCheckboxCell` | added | checkbox in dense table/card rows without label wrapper shift | bank category, payment history, settlement toggles |
+| `InlineSelect` | added | compact selects inside toolbars or rows | reports, cost accounting, bank filters |
+| `FileTrigger` | added | hidden file input behind a custom Noorix button | tax import, bank upload, cost CSV import |
+
+Primitive foundation delivered in `src/ui` with focused tests in `src/ui/EditableControlPrimitives.test.tsx`.
 
 ## 5. What To Convert First
 
