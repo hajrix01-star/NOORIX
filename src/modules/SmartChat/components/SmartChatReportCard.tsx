@@ -102,7 +102,7 @@ function ChatMiniChart({
       aria-label={isAr ? 'مخطط مقارنة مبيعات الشهرين' : 'Bar chart comparing the two months'}
     >
       {!isHighlight ? (
-        <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+        <div dir={isAr ? 'rtl' : 'ltr'} className="text-[11px] font-semibold text-noorix-muted mb-2">
           {isAr ? 'مقارنة بصرية' : 'Visual comparison'}
         </div>
       ) : null}
@@ -167,7 +167,7 @@ function ChatFinanceRatiosStrip({
       role="img"
       aria-label={isAr ? 'شريط نسب الخارج التشغيلي من المبيعات' : 'Operating load as share of revenue'}
     >
-      <div className="text-[11px] font-semibold text-noorix-muted mb-2" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+      <div dir={isAr ? 'rtl' : 'ltr'} className="text-[11px] font-semibold text-noorix-muted mb-2">
         {isAr ? 'توزيع الخارج التشغيلي من الإيراد' : 'Operating load vs revenue'}
       </div>
       <div
@@ -186,7 +186,7 @@ function ChatFinanceRatiosStrip({
           <div className="noorix-chat-finance-ratios__remainder flex-1 min-w-0 h-full bg-noorix-bg-page/90" />
         ) : null}
       </div>
-      <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-noorix-muted list-none m-0 p-0" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+      <ul dir={isAr ? 'rtl' : 'ltr'} className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-noorix-muted list-none m-0 p-0">
         {segments.map((s: { key: string; pct: unknown }) => (
           <li key={s.key} className="inline-flex items-center gap-1.5">
             <span className="inline-block size-2 rounded-sm shrink-0" style={{ backgroundColor: fillFor(s.key) }} aria-hidden />
@@ -239,7 +239,7 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
       <div
         key={i}
         className={`noorix-chat-report-card__grid${isPeriod ? ' noorix-chat-report-card__grid--period' : ''}`}
-        style={{ direction: isAr ? 'rtl' : 'ltr' }}
+        dir={isAr ? 'rtl' : 'ltr'}
       >
         {label ? (
           <>
@@ -328,7 +328,7 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
       {lines.length > 0 ? (
         <div
           className={`flex flex-col w-full min-w-0${monthCompareChart ? ' gap-2.5' : ' gap-3'}`}
-          style={{ direction: isAr ? 'rtl' : 'ltr' }}
+        dir={isAr ? 'rtl' : 'ltr'}
         >
           {renderBody()}
         </div>

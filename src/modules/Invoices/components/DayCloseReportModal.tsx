@@ -134,12 +134,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
       <style>{DAY_CLOSE_REPORT_STYLES}</style>
 
       <div
-        className="day-close-print-root w-full"
+        className="day-close-print-root relative w-full"
         dir={lang === 'ar' ? 'rtl' : 'ltr'}
         data-print-mode={multiDayPrint?.length ? 'multi' : 'single'}
-        style={{
-          position: 'relative',
-        }}
       >
         <div className="day-close-report">
           <div className="day-close-no-print flex flex-col gap-3 mb-[14px]">
@@ -212,7 +209,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
             <p className="m-0 text-[13px] text-noorix-muted">{t('dayCloseLoading')}</p>
           )}
           {isError && (
-            <p className="m-0 text-[13px]" style={{ color: 'var(--noorix-accent-red)' }}>{error?.message || t('dayCloseLoadFailed')}</p>
+            <p className="m-0 text-[13px] text-noorix-red">{error?.message || t('dayCloseLoadFailed')}</p>
           )}
 
           {data && !isLoading && (

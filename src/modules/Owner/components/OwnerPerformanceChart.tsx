@@ -53,17 +53,9 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div
-      style={{
-        background: 'var(--noorix-bg-surface)',
-        border: '1px solid var(--noorix-border)',
-        borderRadius: 6,
-        padding: '8px 12px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-        fontSize: 12,
-        minWidth: 140,
-      }}
+      className="min-w-[140px] rounded-md border border-noorix-border bg-noorix-surface py-2 px-3 text-[12px] shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
     >
-      <div style={{ fontWeight: 700, marginBottom: 5, color: 'var(--noorix-text)', fontSize: 11 }}>
+      <div className="mb-[5px] text-[11px] font-bold text-noorix-text">
         {label != null ? String(label) : ''}
       </div>
       {payload.map((p) => {
@@ -87,7 +79,7 @@ function ChartTooltip({
             }}
           >
             <span>{name}</span>
-            <span style={{ fontFamily: 'var(--noorix-font-numbers)' }}>
+            <span className="nx-font-numbers">
               {formatMoney(p.value, lang)} <span className="nx-sar">SR</span>
             </span>
           </div>

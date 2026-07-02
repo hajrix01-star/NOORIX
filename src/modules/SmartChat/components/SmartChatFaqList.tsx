@@ -27,18 +27,14 @@ export function SmartChatFaqList({
         if (!qs.length) return null;
         return (
           <div key={sec.id} className="min-w-0">
-            <div
-              className={sectionHeaderClassName}
-              style={{ textAlign: isAr ? 'right' : 'left' }}
-            >
+            <div className={`${sectionHeaderClassName} ${isAr ? 'text-right' : 'text-left'}`}>
               {isAr ? sec.labelAr : sec.labelEn}
             </div>
             <div className="flex flex-col gap-2">
               {qs.map((q, i) => (
                 <Button
                   key={`${sec.id}-${i}`}
-                  className={buttonClassName}
-                  style={{ textAlign: isAr ? 'right' : 'left' }}
+                  className={`${buttonClassName} ${isAr ? 'text-right' : 'text-left'}`}
                   onClick={() => onPickQuestion(isAr ? q.ar : q.en)}
                 >
                   {isAr ? (q.shortAr || q.ar) : (q.shortEn || q.en)}

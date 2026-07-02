@@ -269,8 +269,7 @@ export default function CompaniesTab({
               tabIndex={0}
               onClick={(e: any) => openEdit(c, e)}
               onKeyDown={(e: any) => { if (e.key === 'Enter' || e.key === ' ') openEdit(c, e); }}
-              className="noorix-exec-card noorix-exec-card--inbound cursor-pointer"
-              style={{ opacity: c.isArchived ? 0.75 : 1 }}
+              className={`noorix-exec-card noorix-exec-card--inbound cursor-pointer ${c.isArchived ? 'opacity-75' : ''}`}
             >
               <div className="noorix-exec-card__stripe" />
               <div className="noorix-exec-card__header">

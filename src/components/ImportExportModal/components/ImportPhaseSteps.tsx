@@ -30,13 +30,9 @@ export function ImportPhaseSteps({
         <React.Fragment key={s.n}>
           {i > 0 && <span className="text-noorix-muted text-[12px] select-none">{t('importStepSep')}</span>}
           <span
-            className="text-[12px] rounded-lg whitespace-nowrap"
-            style={{
-              fontWeight: active === s.n ? 800 : 500,
-              color: active === s.n ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)',
-              padding: '4px 8px',
-              background: active === s.n ? 'var(--noorix-blue-10)' : 'transparent',
-            }}
+            className={`whitespace-nowrap rounded-lg px-2 py-1 text-[12px] ${
+              active === s.n ? 'bg-noorix-blue/10 font-extrabold text-noorix-blue' : 'font-medium text-noorix-muted'
+            }`}
           >
             {s.n}. {s.label}
           </span>
