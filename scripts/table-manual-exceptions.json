@@ -4,7 +4,6 @@
   "allowedTableCounts": {
     "src/modules/Dashboard/components/DashboardCalendarTab/hooks/useDashboardCalendarTab.ts": 2,
     "src/modules/Dashboard/overview/components/DashboardOverviewWeeklySalesPanel.tsx": 1,
-    "src/modules/Dashboard/overview/components/DashboardOverviewYearlyDailyAvgPanel.tsx": 1,
     "src/modules/Expenses/components/ExpenseLineDetailModal.tsx": 1,
     "src/modules/Expenses/components/ExpenseLineList.tsx": 1,
     "src/modules/Expenses/components/PaymentHistoryTab.tsx": 1,

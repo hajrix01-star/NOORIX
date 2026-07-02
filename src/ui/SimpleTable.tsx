@@ -8,6 +8,7 @@ export type SimpleTableColumn<TRow = any> = {
   minWidth?: React.CSSProperties['minWidth'];
   align?: React.CSSProperties['textAlign'];
   numeric?: boolean;
+  headerClassName?: string;
   cellClassName?: string;
   render?: (value: unknown, row: TRow, index: number) => React.ReactNode;
 };
@@ -19,6 +20,7 @@ export type SimpleTableProps<TRow = any> = {
   tableMinWidth?: React.CSSProperties['minWidth'];
   maxHeight?: React.CSSProperties['maxHeight'];
   compact?: boolean;
+  cellPadding?: React.CSSProperties['padding'];
   stickyHeader?: boolean;
   frameClassName?: string;
   tableClassName?: string;
@@ -35,6 +37,7 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
   tableMinWidth = 0,
   maxHeight,
   compact = true,
+  cellPadding,
   stickyHeader = false,
   frameClassName = '',
   tableClassName = '',
@@ -43,7 +46,7 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
   getRowStyle,
   onRowClick,
 }: SimpleTableProps<TRow>) {
-  const cellPadding = compact ? '6px 12px' : '8px 14px';
+  const resolvedCellPadding = cellPadding ?? (compact ? '6px 12px' : '8px 14px');
 
   return (
     <div className={cn('noorix-table-frame min-w-0 max-w-full', frameClassName)}>
@@ -60,10 +63,11 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
               {columns.map((col) => (
                 <th
                   key={col.key}
+                  className={cn(col.headerClassName)}
                   style={{
                     width: col.width,
                     minWidth: col.minWidth,
-                    padding: cellPadding,
+                    padding: resolvedCellPadding,
                     textAlign: col.align || (col.numeric ? 'end' : 'center'),
                     ...(stickyHeader ? { position: 'sticky', top: 0, zIndex: 2 } : null),
                   }}
@@ -104,7 +108,7 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
                       style={{
                         width: col.width,
                         minWidth: col.minWidth,
-                        padding: cellPadding,
+                        padding: resolvedCellPadding,
                         textAlign: col.align || (col.numeric ? 'end' : undefined),
                       }}
                     >

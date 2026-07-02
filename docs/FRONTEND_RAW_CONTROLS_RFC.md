@@ -10,7 +10,7 @@ Status: accepted for planning, no production UI refactor in this RFC.
 |---|---:|---:|---|
 | Raw form controls outside `src/ui` | 90 | 0 | closed by central primitives |
 | Raw buttons outside `src/ui` | 74 | 1 governed TSX string | React UI closed; only printable HTML string remains |
-| Raw tables outside `src/ui` | 61 | 71 occurrences in 48 files | governed exceptions |
+| Raw tables outside `src/ui` | 61 | 70 occurrences in 47 files | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
 
 Sources:
@@ -170,6 +170,13 @@ Delivered SmartChat dynamic table pass:
 | File | Change |
 |---|---|
 | `src/modules/SmartChat/components/SmartChatReportCard.tsx` | tab-delimited generated answer table moved to `SimpleTable` while preserving dynamic columns |
+
+Delivered dashboard matrix table pass:
+
+| File | Change |
+|---|---|
+| `src/ui/SimpleTable.tsx` | added `headerClassName` and `cellPadding` hooks for dense matrix tables |
+| `src/modules/Dashboard/overview/components/DashboardOverviewYearlyDailyAvgPanel.tsx` | yearly daily-average matrix moved to `SimpleTable` with existing cell renderers |
 
 ## 6. What To Leave Temporarily
 

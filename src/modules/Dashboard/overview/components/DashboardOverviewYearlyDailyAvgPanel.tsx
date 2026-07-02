@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { FmtNum } from '../../../../ui';
+import { FmtNum, SimpleTable } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
 import type { YearMonthlyDailyAvgRow } from '../utils/dashboardOverviewBuilders';
 
@@ -125,54 +125,52 @@ function YearlyDailyAvgTable({
 }) {
   return (
     <div className="w-full min-w-0 overflow-hidden rounded-lg border border-noorix-border bg-noorix-bg-muted/25">
-      <table className="w-full table-fixed border-collapse text-[10px]">
-        <colgroup>
-          <col style={{ width: COL_MONTH }} />
-          <col style={{ width: COL_SALES }} />
-          <col style={{ width: COL_AVG }} />
-          <col style={{ width: COL_DELTA }} />
-        </colgroup>
-        <thead>
-          <tr>
-            <th scope="col" className={cn(TH_CELL, 'px-1.5 text-center')}>
-              {t('dashboardYearlyDailyAvgMonthCol')}
-            </th>
-            <th scope="col" className={cn(TH_CELL, 'px-1 text-center')}>
-              {t('dashboardYearlyDailyAvgSalesCol')}
-            </th>
-            <th scope="col" className={cn(TH_CELL, 'px-1 text-center')}>
-              <AvgHeader t={t} />
-            </th>
-            <th scope="col" className={cn(TH_CELL, 'px-1 text-center')}>
-              {t('dashboardWeeklySalesDelta')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const isSelected = selectedMonth != null && selectedMonth === row.month;
-            return (
-              <tr key={row.month} className={rowHighlightClass(row, isSelected)}>
-                <td className={cn(TD_CELL, 'px-1.5 text-center')}>
-                  <MonthCell row={row} t={t} />
-                </td>
-                <td className={cn(TD_CELL, 'px-1 text-center')}>
-                  <MoneyValue value={row.totalSales} className="text-noorix-text" />
-                </td>
-                <td className={cn(TD_CELL, 'px-1 text-center')}>
-                  <MoneyValue
-                    value={row.avgDaily}
-                    className={valueToneClass(row.tone, row.avgDaily != null)}
-                  />
-                </td>
-                <td className={cn(TD_CELL, 'px-1 text-center')}>
-                  <DeltaCell row={row} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <SimpleTable
+        columns={[
+          {
+            key: 'month',
+            label: t('dashboardYearlyDailyAvgMonthCol'),
+            width: COL_MONTH,
+            headerClassName: cn(TH_CELL, 'px-1.5 text-center'),
+            cellClassName: cn(TD_CELL, 'px-1.5 text-center'),
+            render: (_value, row) => <MonthCell row={row} t={t} />,
+          },
+          {
+            key: 'totalSales',
+            label: t('dashboardYearlyDailyAvgSalesCol'),
+            width: COL_SALES,
+            headerClassName: cn(TH_CELL, 'px-1 text-center'),
+            cellClassName: cn(TD_CELL, 'px-1 text-center'),
+            render: (_value, row) => <MoneyValue value={row.totalSales} className="text-noorix-text" />,
+          },
+          {
+            key: 'avgDaily',
+            label: <AvgHeader t={t} />,
+            width: COL_AVG,
+            headerClassName: cn(TH_CELL, 'px-1 text-center'),
+            cellClassName: cn(TD_CELL, 'px-1 text-center'),
+            render: (_value, row) => (
+              <MoneyValue
+                value={row.avgDaily}
+                className={valueToneClass(row.tone, row.avgDaily != null)}
+              />
+            ),
+          },
+          {
+            key: 'deltaPctVsPrev',
+            label: t('dashboardWeeklySalesDelta'),
+            width: COL_DELTA,
+            headerClassName: cn(TH_CELL, 'px-1 text-center'),
+            cellClassName: cn(TD_CELL, 'px-1 text-center'),
+            render: (_value, row) => <DeltaCell row={row} />,
+          },
+        ]}
+        data={rows}
+        tableClassName="w-full table-fixed border-collapse text-[10px]"
+        frameClassName="border-0 bg-transparent shadow-none"
+        cellPadding="0"
+        getRowClassName={(row) => rowHighlightClass(row, selectedMonth != null && selectedMonth === row.month)}
+      />
     </div>
   );
 }
