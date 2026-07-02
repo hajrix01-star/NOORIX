@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "description": "Baseline for central CSS footprint. This check blocks unreviewed CSS growth while the theme cleanup runs incrementally.",
+  "files": {
+    "src/index.css": {
+      "maxLines": 6423,
+      "maxMediaQueries": 51,
+      "maxImportant": 215,
+      "maxKeyframes": 12,
+      "maxCssVariableDefinitions": 233,
+      "maxCssVariableReferences": 811,
+      "maxColorMix": 146
+    },
+    "src/ui/ui.css": {
+      "maxLines": 2326,
+      "maxMediaQueries": 6,
+      "maxImportant": 22,
+      "maxKeyframes": 8,
+      "maxCssVariableDefinitions": 12,
+      "maxCssVariableReferences": 273,
+      "maxColorMix": 1
+    },
+    "src/modules/SmartChat/SmartChatScreen.css": {
+      "maxLines": 945,
+      "maxMediaQueries": 5,
+      "maxImportant": 8,
+      "maxKeyframes": 3,
+      "maxCssVariableDefinitions": 0,
+      "maxCssVariableReferences": 79,
+      "maxColorMix": 11
+    }
+  }
+}
