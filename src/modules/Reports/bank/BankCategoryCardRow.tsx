@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '../../../ui';
+import { Button, EditableCheckboxCell } from '../../../ui';
 import { getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
 import { normParentKeywords, normClassifications } from './utils/bankCategoryTreeNormalize';
 
@@ -99,7 +99,7 @@ export function BankCategoryCardRow({
         </div>
         <div className="flex flex-col gap-1.5 shrink-0 items-end">
           <label className="nx-checkbox">
-            <input type="checkbox" checked={active} onChange={() => onToggle()} />
+            <EditableCheckboxCell checked={active} onChange={() => onToggle()} />
             {t('bankTreeActive')}
           </label>
           <Button size="sm" onClick={onEdit}>
