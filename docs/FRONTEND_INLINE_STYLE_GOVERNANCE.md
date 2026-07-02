@@ -8,12 +8,12 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 522 |
-| files with `style={{` | 130 |
+| `style={{` total | 510 |
+| files with `style={{` | 122 |
 | inside `src/ui` | 31 |
 | `src/ui` files | 11 |
-| outside `src/ui` | 491 |
-| outside `src/ui` files | 119 |
+| outside `src/ui` | 479 |
+| outside `src/ui` files | 111 |
 
 ## Top Files
 

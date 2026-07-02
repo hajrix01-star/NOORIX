@@ -84,14 +84,14 @@ export default function AppBrandingTab() {
           {/* نصوص */}
           <div className="grid gap-1 flex-1 min-w-0">
             <div className="flex gap-2.5 flex flex-wrap items-baseline">
-              <span className="text-[16px] font-extrabold text-noorix-text" style={{ direction: 'rtl' }}>{nameAr || 'نووريكس'}</span>
+              <span dir="rtl" className="text-[16px] font-extrabold text-noorix-text">{nameAr || 'نووريكس'}</span>
               <span className="text-[12px] text-noorix-muted">·</span>
               <span className="text-[13px] font-semibold text-noorix-text nx-ltr">{nameEn || 'Noorix'}</span>
             </div>
           <div className="flex flex flex-wrap gap-2">
-            <span className="text-[12px] text-noorix-muted" style={{ direction: 'rtl' }}>{taglineAr || 'الجملة بالعربي'}</span>
+            <span dir="rtl" className="text-[12px] text-noorix-muted">{taglineAr || 'الجملة بالعربي'}</span>
               <span className="text-[12px] text-noorix-muted">·</span>
-              <span className="text-[12px] text-noorix-muted" style={{ direction: 'ltr' }}>{taglineEn || 'English tagline'}</span>
+              <span dir="ltr" className="text-[12px] text-noorix-muted">{taglineEn || 'English tagline'}</span>
             </div>
           </div>
         </div>

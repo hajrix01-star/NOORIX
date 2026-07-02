@@ -44,8 +44,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       return (
         <div
           role="alert"
+          dir="rtl"
           className="flex flex-col items-center text-center p-6 min-h-[60vh] [font-family:var(--noorix-font-arabic),sans-serif]"
-          style={{ direction: 'rtl' }}
         >
           <div
             className="noorix-surface-card max-w-[420px] p-5"

@@ -143,7 +143,7 @@ export function HrQuickEntryIncreaseForm(props: {
               type="date"
               value={mvEff}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMvEff(e.target.value)}
-              style={{ direction: 'ltr' }}
+              dir="ltr"
               lang="en"
               required
             />

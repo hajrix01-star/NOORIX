@@ -12,7 +12,7 @@ type Props = {
 export function SmartChatReplyChips({ chips, loading, onPick }: Props) {
   if (!chips.length) return null;
   return (
-    <div className="noorix-chat-chips" style={{ marginTop: 8 }}>
+    <div className="noorix-chat-chips mt-2">
       {chips.map((c) => (
         <Button
           key={c.text}

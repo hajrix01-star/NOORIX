@@ -70,7 +70,7 @@ export function HrQuickEntryDeductionForm(props: {
           type="date"
           value={ddDate}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDdDate(e.target.value)}
-          style={{ direction: 'ltr' }}
+          dir="ltr"
           lang="en"
         />
       </HrQuickEntryRow>
