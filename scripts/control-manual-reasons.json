@@ -2,55 +2,10 @@
   "version": 1,
   "description": "Phase 1 closure decisions for remaining raw UI controls outside src/ui. Every entry in control-manual-exceptions.json must have a reason here.",
   "rawButtonReasons": {
-    "src/shared/components/DateFilterBar.tsx": {
-      "category": "calendar-popover",
-      "decision": "leave",
-      "reason": "calendar/month popover cells and tabs need a dedicated DateFilterBar control pass."
-    },
-    "src/modules/HR/components/useAdvanceTableModel.tsx": {
-      "category": "hr-financial-actions",
-      "decision": "leave",
-      "reason": "advance table model actions are part of an HR financial workflow."
-    },
-    "src/modules/HR/components/employeeProfile/EmployeeProfileResidencySection.tsx": {
-      "category": "profile-actions",
-      "decision": "leave",
-      "reason": "profile inline actions should move with a profile-section controls pass."
-    },
-    "src/modules/HR/components/employeeProfile/EmployeeProfileFinancialSection.tsx": {
-      "category": "profile-financial-actions",
-      "decision": "leave",
-      "reason": "employee financial profile actions are protected from UI-only conversion."
-    },
-    "src/modules/HajriTax/HajriTaxQuarterOverview.tsx": {
-      "category": "tax-protected-actions",
-      "decision": "leave",
-      "reason": "tax quarter workflow is protected and should be changed only in a tax task."
-    },
-    "src/modules/HajriTax/HajriTaxNewDeclarationModal.tsx": {
-      "category": "tax-protected-actions",
-      "decision": "leave",
-      "reason": "VAT declaration actions and year chips are protected tax workflow controls."
-    },
     "src/modules/Reports/GeneralReportV2Screen.tsx": {
-      "category": "financial-report-actions",
+      "category": "print-html-string",
       "decision": "leave",
-      "reason": "financial report export, print, drilldown, and mode controls need a report-specific pass."
-    },
-    "src/modules/Reports/GeneralPlTable.tsx": {
-      "category": "financial-matrix-actions",
-      "decision": "leave",
-      "reason": "P&L matrix controls are tied to financial hierarchy and print behavior."
-    },
-    "src/modules/Orders/StaffOrdersViewParts.tsx": {
-      "category": "editable-order-grid-actions",
-      "decision": "leave",
-      "reason": "staff order basket buttons are tied to quantity and item editing behavior."
-    },
-    "src/modules/Orders/components/OrderFormModal.tsx": {
-      "category": "editable-order-grid-actions",
-      "decision": "leave",
-      "reason": "order form buttons are tied to editable item rows and quantity controls."
+      "reason": "the remaining raw button is inside generated printable HTML, not mounted React UI."
     }
   },
   "rawFormControlReasons": {}

@@ -58,14 +58,15 @@ export default function HajriTaxNewDeclarationModal({
               const nm = lang === 'en' ? (c.nameEn || c.nameAr) : c.nameAr;
               const active = companyId === c.id;
               return (
-                <button
+                <Button
+                  variant="raw"
                   key={c.id}
                   type="button"
                   onClick={() => setCompanyId(c.id)}
                   className={active ? chipActive : chipIdle}
                 >
                   {nm}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -75,9 +76,9 @@ export default function HajriTaxNewDeclarationModal({
           <p className="mb-2 text-[13px] font-semibold text-noorix-text">{t('reportYear')}</p>
           <div className="flex flex-wrap gap-2">
             {years.map((y: any) => (
-              <button key={y} type="button" onClick={() => setYear(y)} className={year === y ? chipActive : chipIdle}>
+              <Button variant="raw" key={y} type="button" onClick={() => setYear(y)} className={year === y ? chipActive : chipIdle}>
                 {y}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -86,14 +87,15 @@ export default function HajriTaxNewDeclarationModal({
           <p className="mb-2 text-[13px] font-semibold text-noorix-text">{t('vatQuarter')}</p>
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3, 4].map((q: any) => (
-              <button
+              <Button
+                variant="raw"
                 key={q}
                 type="button"
                 onClick={() => setQuarter(q)}
                 className={quarter === q ? chipActive : chipIdle}
               >
                 Q{q}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

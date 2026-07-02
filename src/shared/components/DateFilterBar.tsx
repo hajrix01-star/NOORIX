@@ -149,7 +149,8 @@ function MonthCalendar({ draft, monthNames, years, updateDraft, yearLabel }: Mon
             const month = index + 1;
             const active = isMonthInDraftRange(draft, calendarYear, month);
             return (
-              <button
+              <Button
+                variant="raw"
                 key={month}
                 type="button"
                 className={`ndfb-month-cell${active ? ' ndfb-month-cell--active' : ''}`}
@@ -157,7 +158,7 @@ function MonthCalendar({ draft, monthNames, years, updateDraft, yearLabel }: Mon
                 onClick={() => selectMonth(month)}
               >
                 {name}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -278,13 +279,14 @@ export function DateFilterMonthPicker({
         style={popoverStyle}
       >
         <div className="ndfb-month-popover__tabs" role="tablist" aria-label={t('dateFilterPeriod')}>
-          <button type="button" className="ndfb-month-popover__tab ndfb-month-popover__tab--active" role="tab" aria-selected="true">
+          <Button variant="raw" type="button" className="ndfb-month-popover__tab ndfb-month-popover__tab--active" role="tab" aria-selected="true">
             {t('dateFilterMonth')}
-          </button>
+          </Button>
         </div>
 
         <div className="ndfb-month-popover__year">
-          <button
+          <Button
+            variant="raw"
             type="button"
             className="ndfb-month-popover__year-btn"
             onClick={() => moveYear(-1)}
@@ -292,9 +294,10 @@ export function DateFilterMonthPicker({
             aria-label={`${t('dateFilterYear')} -1`}
           >
             {'<'}
-          </button>
+          </Button>
           <div className="ndfb-month-popover__year-value">{calendarYear}</div>
-          <button
+          <Button
+            variant="raw"
             type="button"
             className="ndfb-month-popover__year-btn"
             onClick={() => moveYear(1)}
@@ -302,7 +305,7 @@ export function DateFilterMonthPicker({
             aria-label={`${t('dateFilterYear')} +1`}
           >
             {'>'}
-          </button>
+          </Button>
         </div>
 
         <div className="ndfb-month-popover__grid">
@@ -310,7 +313,8 @@ export function DateFilterMonthPicker({
             const itemMonth = index + 1;
             const active = calendarYear === year && itemMonth === month;
             return (
-              <button
+              <Button
+                variant="raw"
                 key={itemMonth}
                 type="button"
                 className={`ndfb-month-popover__cell${active ? ' ndfb-month-popover__cell--active' : ''}`}
@@ -319,7 +323,7 @@ export function DateFilterMonthPicker({
                 onClick={() => selectMonth(itemMonth)}
               >
                 {String(itemMonth).padStart(2, '0')}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -331,7 +335,8 @@ export function DateFilterMonthPicker({
   return (
     <div className={`noorix-date-filter-bar ndfb-month-picker ${className}`.trim()} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {label && <span className="ndfb-month-picker__label">{label}</span>}
-      <button
+      <Button
+        variant="raw"
         ref={triggerRef}
         type="button"
         className={`ndfb-period-badge ndfb-month-picker__trigger${open ? ' ndfb-period-badge--pending' : ''}`}
@@ -342,7 +347,7 @@ export function DateFilterMonthPicker({
         <span className="ndfb-month-picker__icon" aria-hidden />
         <span>{selectedLabel}</span>
         <span className="ndfb-month-picker__chevron" aria-hidden />
-      </button>
+      </Button>
 
       {popover}
     </div>
@@ -386,7 +391,8 @@ function YearCalendar({ draft, years, updateDraft, yearLabel }: YearCalendarProp
         </div>
         <div className="ndfb-year-grid">
           {years.map((year) => (
-            <button
+            <Button
+              variant="raw"
               key={year}
               type="button"
               className={`ndfb-year-cell${isYearInDraftRange(draft, year) ? ' ndfb-year-cell--active' : ''}`}
@@ -394,7 +400,7 @@ function YearCalendar({ draft, years, updateDraft, yearLabel }: YearCalendarProp
               onClick={() => selectYear(year)}
             >
               {year}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -490,7 +496,8 @@ function DayCalendar({ draft, monthNames, weekdayNames, years, updateDraft, year
             const date = ymd(calendarYear, calendarMonth, day);
             const active = isDayInDraftRange(draft, date);
             return (
-              <button
+              <Button
+                variant="raw"
                 key={date}
                 type="button"
                 className={`ndfb-day-cell${active ? ' ndfb-day-cell--active' : ''}`}
@@ -498,7 +505,7 @@ function DayCalendar({ draft, monthNames, weekdayNames, years, updateDraft, year
                 onClick={() => selectDay(day)}
               >
                 {day}
-              </button>
+              </Button>
             );
           })}
         </div>

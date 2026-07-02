@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { Badge, cn, FmtNum, KebabMenu } from '../../../ui';
+import { Badge, Button, cn, FmtNum, KebabMenu } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { HRActionsCell } from './HRActionsCell';
@@ -18,7 +18,8 @@ export function useAdvanceTableModel({
       render: (v: any, row: any) => {
         const expanded = expandedEmployees.has(row.employeeId);
         return (
-          <button
+          <Button
+            variant="raw"
             type="button"
             className="font-semibold text-[13px] text-start bg-transparent border-0 p-0 cursor-pointer text-noorix-blue hover:underline"
             onClick={() => toggleEmployeeExpanded(row.employeeId)}
@@ -26,7 +27,7 @@ export function useAdvanceTableModel({
           >
             <span className="inline-block me-1.5" aria-hidden>{expanded ? '▾' : '▸'}</span>
             {v || '—'}
-          </button>
+          </Button>
         );
       } },
     { key: 'advanceCount', label: t('advancesList'), numeric: true, width: 110, minWidth: 100,
@@ -101,7 +102,8 @@ export function useAdvanceTableModel({
     const expanded = expandedEmployees.has(row.employeeId);
     return (
       <div>
-        <button
+        <Button
+          variant="raw"
           type="button"
           className="w-full flex items-center justify-between flex-wrap gap-2 mb-1 bg-transparent border-0 p-0 text-start cursor-pointer"
           onClick={() => toggleEmployeeExpanded(row.employeeId)}
@@ -112,7 +114,7 @@ export function useAdvanceTableModel({
             {row.employeeName}
           </span>
           <Badge {...Badge.fromStatus(row.settlementStatus, settlementMap)} size="sm" className="shrink-0" />
-        </button>
+        </Button>
         <div className="text-[11px] text-noorix-muted mb-2 text-end">{row.advanceCount} · {formatSaudiDate(row.transactionDate)}</div>
         <div className="nx-mc__grid nx-mc__grid--3 mb-2.5">
           <div>
@@ -177,7 +179,8 @@ export function useAdvanceTableModel({
     const expanded = expandedEmployees.has(row.employeeId);
     return (
       <div>
-        <button
+        <Button
+          variant="raw"
           type="button"
           className="w-full bg-transparent border-0 p-0 text-start cursor-pointer"
           onClick={() => toggleEmployeeExpanded(row.employeeId)}
@@ -200,7 +203,7 @@ export function useAdvanceTableModel({
               </span>
             </div>
           </div>
-        </button>
+        </Button>
         {expanded && (
           <div className="mt-2 grid gap-2">
             {row.advances.map((advance: any) => {

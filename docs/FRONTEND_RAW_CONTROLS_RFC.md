@@ -9,7 +9,7 @@ Status: accepted for planning, no production UI refactor in this RFC.
 | Metric | Before UI unification | After merged phase | Remaining decision |
 |---|---:|---:|---|
 | Raw form controls outside `src/ui` | 90 | 0 | closed by central primitives |
-| Raw buttons outside `src/ui` | 74 | 47 | handle by dedicated passes |
+| Raw buttons outside `src/ui` | 74 | 1 governed TSX string | React UI closed; only printable HTML string remains |
 | Raw tables outside `src/ui` | 61 | 53 TSX | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
 
@@ -140,11 +140,28 @@ Delivered raw form controls closure pass:
 | `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx` | include/defer payroll row toggles moved to `Checkbox` |
 | `src/modules/HajriTax/HajriTaxDetailEditor.tsx` | VAT inclusive and simulator toggles moved to `Checkbox` |
 
+Delivered raw React button closure pass:
+
+| File | Change |
+|---|---|
+| `src/shared/components/DateFilterBar.tsx` | month/day/year/calendar buttons moved to `Button variant="raw"` |
+| `src/modules/Orders/StaffOrdersViewParts.tsx` | POS quantity and remove buttons moved to `Button variant="raw"` |
+| `src/modules/Orders/components/OrderFormModal.tsx` | product card, section chips, order type, and quantity buttons moved to `Button variant="raw"` |
+| `src/modules/HR/components/useAdvanceTableModel.tsx` | employee expand buttons moved to `Button variant="raw"` |
+| `src/modules/HR/components/employeeProfile/EmployeeProfileResidencySection.tsx` | profile table link-buttons moved to `Button variant="raw"` |
+| `src/modules/HR/components/employeeProfile/EmployeeProfileFinancialSection.tsx` | financial record link-buttons moved to `Button variant="raw"` |
+| `src/modules/HajriTax/HajriTaxQuarterOverview.tsx` | company/year chips moved to `Button variant="raw"` |
+| `src/modules/HajriTax/HajriTaxNewDeclarationModal.tsx` | company/year/quarter chips moved to `Button variant="raw"` |
+| `src/modules/Reports/GeneralReportV2Screen.tsx` | report toolbar, month, level, line, and amount buttons moved to `Button variant="raw"` |
+| `src/modules/Reports/GeneralPlTable.tsx` | P&L amount buttons moved to `Button variant="raw"` |
+
 ## 6. What To Leave Temporarily
 
 | Scope | Reason |
 |---|---|
 | Raw form controls | none remain outside `src/ui`; governance now blocks reintroduction |
+| Raw React buttons | none remain outside `src/ui`; governance now blocks reintroduction |
+| Printable HTML buttons | two remain in generated HTML strings: `src/modules/Reports/GeneralReportV2Screen.tsx` and `src/utils/printUtils.ts` |
 | Payroll, settlement, purchase, expense, tax, and bank workflows | converted only at the control-shell level; calculation and save behavior must remain covered by workflow tests |
 | Cost accounting calculations/editable fields | financial analysis; do not touch calculation behavior in UI-only pass |
 | Order quantity grids | quantity behavior is row-bound and should move with editable cell components |

@@ -29,14 +29,15 @@ function PosProductCard({
         }`}
     >
       {selected && (
-        <button
+        <Button
+          variant="raw"
           type="button"
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           className="absolute top-1 end-1 w-5 h-5 rounded-full bg-noorix-red text-white text-[12px] font-bold flex items-center justify-center leading-none hover:opacity-75 transition-opacity"
           tabIndex={-1}
         >
           ×
-        </button>
+        </Button>
       )}
       {selected && (
         <span className="absolute top-1 start-1 bg-noorix-blue text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none">
@@ -345,7 +346,8 @@ export function OrderFormModal({
             <label className="text-[11px] text-noorix-muted font-medium">{t('orderType')} *</label>
             <div className="inline-flex rounded-xl border border-noorix-border overflow-hidden text-[12px] h-[38px]">
               {(['external', 'internal'] as const).map((type) => (
-                <button
+                <Button
+                  variant="raw"
                   key={type}
                   type="button"
                   onClick={() => setOrderType(type)}
@@ -355,7 +357,7 @@ export function OrderFormModal({
                       : 'bg-noorix-surface text-noorix-muted hover:bg-noorix-bg-muted'}`}
                 >
                   {type === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -383,7 +385,8 @@ export function OrderFormModal({
               {/* أزرار الأقسام */}
               {(sections as any[]).length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
-                  <button
+                  <Button
+                    variant="raw"
                     type="button"
                     onClick={() => setSectionFilter('')}
                     className={`px-3 py-1 rounded-xl text-[12px] font-semibold border transition-all
@@ -392,11 +395,12 @@ export function OrderFormModal({
                         : 'bg-noorix-surface text-noorix-text border-noorix-border hover:border-noorix-blue/50'}`}
                   >
                     {t('allSections')}
-                  </button>
+                  </Button>
                   {(sections as any[]).map((s: any) => {
                     const label = lang === 'en' ? (s.nameEn || s.nameAr) : (s.nameAr || s.nameEn);
                     return (
-                      <button
+                      <Button
+                        variant="raw"
                         key={s.id}
                         type="button"
                         onClick={() => setSectionFilter(sectionFilter === s.nameAr ? '' : s.nameAr)}
@@ -406,7 +410,7 @@ export function OrderFormModal({
                             : 'bg-noorix-surface text-noorix-text border-noorix-border hover:border-noorix-blue/50'}`}
                       >
                         {label}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -578,10 +582,10 @@ export function OrderFormModal({
             <div className="flex flex-col gap-1">
               <label className="text-[12px] text-noorix-muted">{t('quantity')}</label>
               <div className="flex items-center gap-3 justify-center">
-                <button type="button"
+                <Button variant="raw" type="button"
                   onClick={() => setAddModal((m: any) => m ? { ...m, quantity: String(Math.max(1, parseFloat(m.quantity || '1') - 1)) } : m)}
                   className="w-9 h-9 rounded-full border-2 border-noorix-border text-[20px] flex items-center justify-center hover:border-noorix-blue"
-                >−</button>
+                >−</Button>
                 <EditableNumberCell
                   min="1"
                   align="start"
@@ -589,10 +593,10 @@ export function OrderFormModal({
                   value={addModal.quantity}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddModal((m: any) => m ? { ...m, quantity: e.target.value } : m)}
                 />
-                <button type="button"
+                <Button variant="raw" type="button"
                   onClick={() => setAddModal((m: any) => m ? { ...m, quantity: String(parseFloat(m.quantity || '0') + 1) } : m)}
                   className="w-9 h-9 rounded-full border-2 border-noorix-border text-[20px] flex items-center justify-center hover:border-noorix-blue"
-                >+</button>
+                >+</Button>
               </div>
             </div>
             {/* سعر الوحدة */}

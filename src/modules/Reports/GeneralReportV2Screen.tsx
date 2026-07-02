@@ -5,7 +5,7 @@ import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import { getSaudiNow } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ReportsDetailModal from './ReportsDetailModal';
-import { InlineSelect, Input } from '../../ui';
+import { Button, InlineSelect, Input } from '../../ui';
 import {
   amountText,
   percentText,
@@ -294,13 +294,13 @@ tr.is-summary td.amt { color: #047857; }
             {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </InlineSelect>
           <div className="nx-gr2-segment" role="group" aria-label={t('reportPlToolbarPeriod')}>
-            <button type="button" className={periodMode === 'year' ? 'is-active' : ''} onClick={() => setPeriodMode('year')}>{t('reportPeriodYear')}</button>
-            <button type="button" className={periodMode === 'month' ? 'is-active' : ''} onClick={() => setPeriodMode('month')}>{t('reportPeriodMonth')}</button>
+            <Button variant="raw" type="button" className={periodMode === 'year' ? 'is-active' : ''} onClick={() => setPeriodMode('year')}>{t('reportPeriodYear')}</Button>
+            <Button variant="raw" type="button" className={periodMode === 'month' ? 'is-active' : ''} onClick={() => setPeriodMode('month')}>{t('reportPeriodMonth')}</Button>
           </div>
           <div className="nx-gr2-actions">
-            <button type="button" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</button>
-            <button type="button" onClick={handleExportPdf} disabled={!report}>PDF</button>
-            <button type="button" onClick={handlePrint} disabled={!report}>{t('print')}</button>
+            <Button variant="raw" type="button" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
+            <Button variant="raw" type="button" onClick={handleExportPdf} disabled={!report}>PDF</Button>
+            <Button variant="raw" type="button" onClick={handlePrint} disabled={!report}>{t('print')}</Button>
           </div>
         </div>
       </header>
@@ -308,9 +308,9 @@ tr.is-summary td.amt { color: #047857; }
       {periodMode === 'month' && (
         <div className="nx-gr2-months" aria-label={t('reportMonth')}>
           {monthNames.map((name, index) => (
-            <button key={name} type="button" className={selectedMonth === String(index + 1) ? 'is-active' : ''} onClick={() => setSelectedMonth(String(index + 1))}>
+            <Button variant="raw" key={name} type="button" className={selectedMonth === String(index + 1) ? 'is-active' : ''} onClick={() => setSelectedMonth(String(index + 1))}>
               {name}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -339,9 +339,9 @@ tr.is-summary td.amt { color: #047857; }
               </div>
               <div className="nx-gr2-statement__tools">
                 {[1, 2, 3].map((level) => (
-                  <button key={level} type="button" className={displayLevel === level ? 'is-active' : ''} onClick={() => setDisplayLevel(level as PlDisplayLevel)}>
+                  <Button variant="raw" key={level} type="button" className={displayLevel === level ? 'is-active' : ''} onClick={() => setDisplayLevel(level as PlDisplayLevel)}>
                     {level === 1 ? t('reportPlLevel1') : level === 2 ? t('reportPlLevel2') : t('reportPlLevel3')}
-                  </button>
+                  </Button>
                 ))}
                 <Input value={rowSearch} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setRowSearch(event.target.value)} placeholder={t('reportPlRowFilterPlaceholder')} />
               </div>
@@ -374,7 +374,8 @@ tr.is-summary td.amt { color: #047857; }
                         data-group={row.groupKey}
                       >
                         <td>
-                          <button
+                          <Button
+                            variant="raw"
                             type="button"
                             className="nx-gr2-line"
                             style={{ paddingInlineStart: row.rowType === 'groupTotal' || row.rowType === 'summary' ? 12 : 12 + ((row.depth || 0) + 1) * 18 }}
@@ -382,20 +383,20 @@ tr.is-summary td.amt { color: #047857; }
                           >
                             {canCollapse && <span>{collapsedGroups[String(collapseKey)] ? '+' : '-'}</span>}
                             {displayV2RowLabel(row, lang)}
-                          </button>
+                          </Button>
                         </td>
                         {selectedMonthNumber ? (
                           <td>
-                            <button type="button" className="nx-gr2-money" onClick={() => setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}>
+                            <Button variant="raw" type="button" className="nx-gr2-money" onClick={() => setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}>
                               {amountText(amount)}
-                            </button>
+                            </Button>
                           </td>
                         ) : (
                           (row.months ?? []).map((value: any, index: number) => (
                             <td key={index}>
-                              <button type="button" className="nx-gr2-money" onClick={() => setDetailState({ month: index + 1, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}>
+                              <Button variant="raw" type="button" className="nx-gr2-money" onClick={() => setDetailState({ month: index + 1, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}>
                                 {amountText(value)}
-                              </button>
+                              </Button>
                             </td>
                           ))
                         )}

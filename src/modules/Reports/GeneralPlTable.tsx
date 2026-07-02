@@ -176,7 +176,8 @@ export default function GeneralPlTable({
                       color: resolveAmountColor(row, rowTone, isSummary, getContextAmount(row, selectedMonthNumber)),
                     }}
                   >
-                    <button
+                    <Button
+                      variant="raw"
                       type="button"
                       className="nx-pl-table__amount-btn block w-full cursor-pointer border-0 bg-transparent p-0 text-inherit"
                       onClick={() =>
@@ -192,7 +193,7 @@ export default function GeneralPlTable({
                       <div className="nx-pl-table__percent" style={{ color: PERCENT_COLOR }}>
                         {percentText(getContextPercent(row, selectedMonthNumber))}
                       </div>
-                    </button>
+                    </Button>
                   </td>
                 )}
 
@@ -202,7 +203,8 @@ export default function GeneralPlTable({
                       key={`${row.groupKey}-${index}`}
                       className="nx-pl-table__cell nx-pl-table__cell--month text-center nx-font-numbers"
                     >
-                      <button
+                      <Button
+                        variant="raw"
                         type="button"
                         className="nx-pl-table__amount-btn block w-full cursor-pointer border-0 bg-transparent p-0"
                         style={{
@@ -224,7 +226,7 @@ export default function GeneralPlTable({
                         <div className="nx-pl-table__percent" style={{ color: PERCENT_COLOR }}>
                           {percentText(row.percentOfSalesMonths?.[index])}
                         </div>
-                      </button>
+                      </Button>
                     </td>
                   ))}
 

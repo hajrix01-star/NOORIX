@@ -81,7 +81,8 @@ export default function HajriTaxQuarterOverview() {
             const nm = lang === 'en' ? (c.nameEn || c.nameAr) : c.nameAr;
             const active = companyId === c.id;
             return (
-              <button
+              <Button
+                variant="raw"
                 key={c.id}
                 type="button"
                 onClick={() => setCompanyId(c.id)}
@@ -92,7 +93,7 @@ export default function HajriTaxQuarterOverview() {
                 }
               >
                 {nm}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -102,7 +103,8 @@ export default function HajriTaxQuarterOverview() {
         <p className="text-[13px] font-semibold text-noorix-text mb-2">{t('reportYear')}</p>
         <div className="flex flex-wrap gap-2">
           {years.map((y: any) => (
-            <button
+            <Button
+              variant="raw"
               key={y}
               type="button"
               onClick={() => setYear(y)}
@@ -113,7 +115,7 @@ export default function HajriTaxQuarterOverview() {
               }
             >
               {y}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
