@@ -8,7 +8,7 @@ Status: accepted for planning, no production UI refactor in this RFC.
 
 | Metric | Before UI unification | After merged phase | Remaining decision |
 |---|---:|---:|---|
-| Raw form controls outside `src/ui` | 90 | 49 | classify before conversion |
+| Raw form controls outside `src/ui` | 90 | 47 | classify before conversion |
 | Raw buttons outside `src/ui` | 74 | 47 | handle by dedicated passes |
 | Raw tables outside `src/ui` | 61 | 53 TSX | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
@@ -45,7 +45,6 @@ Note: counts are grouped by workflow risk, so a file can belong to a protected p
 | `src/modules/Expenses/components/ExpenseFormModal.tsx` | 3 | 392, 576, 589 | input | yes | yes | leave until expense form pass |
 | `src/modules/Expenses/components/ExpenseLineFormModal.tsx` | 1 | 317 | input | yes | yes | leave until expense line pass |
 | `src/modules/Expenses/components/ExpenseBatchTable.tsx` | 4 | 208, 254, 299, 367 | input | yes | yes | leave until editable expense grid pass |
-| `src/modules/Expenses/components/PaymentHistoryTab.tsx` | 1 | 178 | checkbox | yes | no | safe later after payment-history smoke test |
 | `src/modules/HR/tabs/HrPrintPayrollPanel.tsx` | 2 | 78, 171 | checkbox/input | yes | no | leave until payroll print pass |
 | `src/modules/HR/components/TerminationSettlementModal.tsx` | 1 | 515 | input | yes | yes | leave until settlement pass |
 | `src/modules/HR/components/AdvanceSettlementModal.tsx` | 1 | 96 | checkbox | yes | no | safe only in HR finance pass |
@@ -62,7 +61,6 @@ Note: counts are grouped by workflow risk, so a file can belong to a protected p
 | `src/modules/Reports/BankStatementUploadModal.tsx` | 1 | 151 | file | yes | no | leave until bank upload pass |
 | `src/modules/Reports/bank/components/BankCategoryRulesImportSheet.tsx` | 5 | 59, 71, 98, 111, 120 | input/checkbox | yes | yes | leave until bank rules import pass |
 | `src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx` | 2 | 168, 178 | input | yes | no | leave until bank transaction filter pass |
-| `src/modules/Reports/bank/BankCategoryCardRow.tsx` | 1 | 102 | checkbox | yes | no | safe only with bank category tests |
 | `src/modules/Orders/StaffOrdersViewParts.tsx` | 2 | 83, 288 | input | no | yes | wait for editable order cell primitives |
 | `src/modules/Orders/components/OrderFormModal.tsx` | 2 | 418, 585 | input | no | yes | wait for editable order cell primitives |
 
@@ -82,11 +80,18 @@ Primitive foundation delivered in `src/ui` with focused tests in `src/ui/Editabl
 
 | Priority | Scope | Files | Expected reduction | Required tests |
 |---:|---|---|---:|---|
-| 1 | safe checkbox-only controls with existing `Checkbox` | `PaymentHistoryTab.tsx`, `BankCategoryCardRow.tsx` | 2 | targeted render/smoke or manual workflow check |
+| 1 | safe checkbox-only controls with existing `Checkbox` | `PaymentHistoryTab.tsx`, `BankCategoryCardRow.tsx` | delivered | targeted render/smoke or manual workflow check |
 | 2 | hidden file input pattern after `FileTrigger` exists | `BankStatementUploadModal.tsx`, `HajriTaxScreen.tsx`, `HajriTaxBulkImportModal.tsx`, `CostAccountingAppsScreen.tsx` | 4 | upload trigger smoke, accepted file types |
 | 3 | report toolbar controls after `InlineSelect` exists | `GeneralReportV2Screen.tsx`, `TaxReportTab.tsx` | 3 | report year/filter behavior |
 | 4 | bank rules and filters | `BankCategoryRulesImportSheet.tsx`, `BankStatementTransactionsFullTab.tsx` | 7 | bank import/filter tests or smoke |
 | 5 | editable financial grids | purchases, expenses, payroll, orders | 20+ | row edit tests, calculation tests, regression smoke |
+
+Delivered safe checkbox pass:
+
+| File | Change |
+|---|---|
+| `src/modules/Expenses/components/PaymentHistoryTab.tsx` | raw show-all-dates checkbox moved to `Checkbox` |
+| `src/modules/Reports/bank/BankCategoryCardRow.tsx` | raw active checkbox moved to `EditableCheckboxCell` |
 
 ## 6. What To Leave Temporarily
 

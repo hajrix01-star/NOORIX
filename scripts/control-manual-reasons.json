@@ -109,11 +109,6 @@
       "decision": "leave",
       "reason": "daily sales editing input is financially sensitive."
     },
-    "src/modules/Expenses/components/PaymentHistoryTab.tsx": {
-      "category": "financial-filter-checkbox",
-      "decision": "leave",
-      "reason": "payment-history date visibility checkbox needs Checkbox support."
-    },
     "src/modules/Expenses/components/ExpenseLineFormModal.tsx": {
       "category": "expense-edit-control",
       "decision": "leave",
@@ -173,11 +168,6 @@
       "category": "bank-filter-controls",
       "decision": "leave",
       "reason": "bank transaction filters are protected bank reconciliation workflow."
-    },
-    "src/modules/Reports/bank/BankCategoryCardRow.tsx": {
-      "category": "bank-category-checkbox",
-      "decision": "leave",
-      "reason": "bank category active checkbox should move with Checkbox support."
     },
     "src/modules/Orders/components/OrderFormModal.tsx": {
       "category": "editable-order-grid-controls",

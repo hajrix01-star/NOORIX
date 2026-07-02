@@ -14,7 +14,7 @@ import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, FmtNum, SmartTable } from '../../../ui';
+import { Button, Badge, Checkbox, FmtNum, SmartTable } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
@@ -174,10 +174,12 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
         <FilterToolbar
           className="mb-3 border-b border-noorix-border pb-3"
           actions={(
-            <label className="nx-checkbox text-[13px] shrink-0">
-              <input type="checkbox" checked={showAllDates} onChange={(e: any) => setShowAllDates(e.target.checked)} />
-              عرض الكل (بدون فلتر تاريخ)
-            </label>
+            <Checkbox
+              label="عرض الكل (بدون فلتر تاريخ)"
+              checked={showAllDates}
+              onChange={(e) => setShowAllDates(e.target.checked)}
+              containerClassName="shrink-0"
+            />
           )}
         >
           <DateFilterBar filter={dateFilter} />
