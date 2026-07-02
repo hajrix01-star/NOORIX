@@ -4,7 +4,6 @@
   "allowedTableCounts": {
     "src/modules/Dashboard/components/DashboardCalendarTab/hooks/useDashboardCalendarTab.ts": 2,
     "src/modules/Dashboard/overview/components/DashboardOverviewWeeklySalesPanel.tsx": 1,
-    "src/modules/Dashboard/overview/components/DashboardOverviewYearlyDailyAvgPanel.tsx": 1,
     "src/modules/Expenses/components/ExpenseLineDetailModal.tsx": 1,
     "src/modules/Expenses/components/ExpenseLineList.tsx": 1,
     "src/modules/Expenses/components/PaymentHistoryTab.tsx": 1,
@@ -43,15 +42,10 @@
     "src/modules/Reports/ReportsScreen.tsx": 1,
     "src/modules/Reports/TaxReportTab.tsx": 2,
     "src/modules/Reports/bank/bankStatementExportPrint.ts": 1,
-    "src/modules/Reports/bank/components/analysis/BankAnalysisAlertsCard.tsx": 1,
-    "src/modules/Reports/bank/components/analysis/BankAnalysisCategoryTableCard.tsx": 1,
-    "src/modules/Reports/bank/components/analysis/BankAnalysisDepositsTableCard.tsx": 1,
-    "src/modules/Reports/bank/components/analysis/BankAnalysisPosTerminalsCard.tsx": 1,
     "src/modules/Reports/costAccountingApps/CostAccountingAppsResultPanels.tsx": 1,
     "src/modules/Reports/costAccountingApps/costAccountingAppsScreenActions.ts": 2,
     "src/modules/Reports/reportsPlMonthPrint.ts": 2,
     "src/modules/Sales/hooks/useDailySalesScreen.ts": 1,
-    "src/modules/SmartChat/components/SmartChatReportCard.tsx": 1,
     "src/modules/Suppliers/components/SupplierProfileModal.tsx": 3,
     "src/modules/Treasury/components/VaultTransactionsModal.tsx": 1,
     "src/utils/pdfTableExport.ts": 1

@@ -12,7 +12,7 @@ import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { fmt } from '../../../utils/format';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Checkbox, Input, AdaptiveSheet } from '../../../ui';
 import {
   HR_SERVICE_CATEGORIES,
   HR_SERVICE_CATEGORY_LABEL_KEYS,
@@ -318,14 +318,12 @@ export function ResidencyFormModal({
 
         {!isEdit && !residency?.invoiceId && (
           <>
-            <label className="nx-checkbox mb-3 text-[13px] mt-2">
-              <input
-                type="checkbox"
-                checked={createInvoiceForService}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCreateInvoiceForService(e.target.checked)}
-              />
-              {t('hrServiceIssueInvoice')}
-            </label>
+            <Checkbox
+              checked={createInvoiceForService}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCreateInvoiceForService(e.target.checked)}
+              label={t('hrServiceIssueInvoice')}
+              containerClassName="mb-3 text-[13px] mt-2"
+            />
             {createInvoiceForService && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <Input

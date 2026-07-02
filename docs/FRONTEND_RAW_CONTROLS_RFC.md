@@ -8,9 +8,9 @@ Status: accepted for planning, no production UI refactor in this RFC.
 
 | Metric | Before UI unification | After merged phase | Remaining decision |
 |---|---:|---:|---|
-| Raw form controls outside `src/ui` | 90 | 31 | classify before conversion |
-| Raw buttons outside `src/ui` | 74 | 47 | handle by dedicated passes |
-| Raw tables outside `src/ui` | 61 | 53 TSX | governed exceptions |
+| Raw form controls outside `src/ui` | 90 | 0 | closed by central primitives |
+| Raw buttons outside `src/ui` | 74 | 1 governed TSX string | React UI closed; only printable HTML string remains |
+| Raw tables outside `src/ui` | 61 | 70 occurrences in 47 files | governed exceptions |
 | `style={{` outside `src/ui` | 527 | 494 | separate CSS/theme phase |
 
 Sources:
@@ -25,37 +25,31 @@ Sources:
 
 | Group | Count | Risk | Decision |
 |---|---:|---|---|
-| Financial edit forms: invoices, sales, expenses | 11 | high | convert only in financial-form pass |
-| Purchases editable rows | 4 | high | wait for editable cell primitives |
-| HR payroll, settlement, residency documents | 9 | high | convert only in HR/payroll pass |
-| Tax/VAT | 2 | high | convert only in tax pass |
+| Financial edit forms: invoices, sales, expenses | 0 | closed | converted with `Input`, `Checkbox`, and `FileTrigger` |
+| Purchases attachment inputs | 0 | closed | converted with `FileTrigger` |
+| HR payroll and settlement documents | 0 | closed | converted with `Checkbox`, `Input`, and `FileTrigger` |
+| Tax/VAT | 0 | closed | converted with `Checkbox` |
 | Reports and cost accounting | 0 | converted | delivered in report toolbar pass |
-| Bank upload | 1 | high | leave until drag-and-drop upload primitive exists |
-| Order editable grids | 4 | medium-high | wait for editable cell primitives |
+| Bank upload | 0 | converted | delivered with `FileTrigger` while preserving dropzone trigger |
+| Order editable grids | 0 | converted | delivered in order controls pass |
 
 Note: counts are grouped by workflow risk, so a file can belong to a protected product area even when the raw element itself is small.
 
 ## 3. Decision Table
 
-| File | Raw count | Evidence lines | Type | Financial? | Editable? | Conversion decision |
+| File | Previous raw count | Evidence lines | Type | Financial? | Editable? | Conversion decision |
 |---|---:|---|---|---|---|---|
-| `src/modules/Purchases/components/BatchRow.tsx` | 4 | 133, 189, 350, 394 | input | yes | yes | leave until `EditableNumberCell` and purchase tests |
-| `src/modules/Invoices/components/InvoiceEditModal.tsx` | 2 | 278, 334 | input | yes | yes | leave until invoice edit pass |
-| `src/modules/Sales/components/SalesDayEditModal.tsx` | 1 | 127 | input | yes | yes | leave until sales day edit pass |
-| `src/modules/Expenses/components/ExpenseFormModal.tsx` | 3 | 392, 576, 589 | input | yes | yes | leave until expense form pass |
-| `src/modules/Expenses/components/ExpenseLineFormModal.tsx` | 1 | 317 | input | yes | yes | leave until expense line pass |
-| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | 4 | 208, 254, 299, 367 | input | yes | yes | leave until editable expense grid pass |
-| `src/modules/HR/tabs/HrPrintPayrollPanel.tsx` | 2 | 78, 171 | checkbox/input | yes | no | leave until payroll print pass |
-| `src/modules/HR/components/TerminationSettlementModal.tsx` | 1 | 515 | input | yes | yes | leave until settlement pass |
-| `src/modules/HR/components/AdvanceSettlementModal.tsx` | 1 | 96 | checkbox | yes | no | safe only in HR finance pass |
-| `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx` | 2 | 52, 130 | input | yes | yes | leave until payroll editable grid pass |
-| `src/modules/HR/components/PayrollRunDetailModal.tsx` | 1 | 274 | input | yes | no | leave until payroll detail pass |
-| `src/modules/HR/components/ResidencyFormModal.tsx` | 1 | 322 | input | no | no | safe later in HR document pass |
-| `src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx` | 1 | 82 | checkbox | yes | no | leave until settlement document pass |
-| `src/modules/HajriTax/HajriTaxDetailEditor.tsx` | 2 | 139, 345 | input | yes | yes | leave until VAT detail edit pass |
-| `src/modules/Reports/BankStatementUploadModal.tsx` | 1 | 151 | file | yes | no | leave until bank upload pass |
-| `src/modules/Orders/StaffOrdersViewParts.tsx` | 2 | 83, 288 | input | no | yes | wait for editable order cell primitives |
-| `src/modules/Orders/components/OrderFormModal.tsx` | 2 | 418, 585 | input | no | yes | wait for editable order cell primitives |
+| `src/modules/Purchases/components/BatchRow.tsx` | 2 | 187, 390 | file | yes | no | converted to `FileTrigger` |
+| `src/modules/Invoices/components/InvoiceEditModal.tsx` | 2 | 278, 334 | input | yes | yes | converted to `FileTrigger` and `Checkbox` |
+| `src/modules/Sales/components/SalesDayEditModal.tsx` | 1 | 127 | input | yes | yes | converted to `Input` |
+| `src/modules/Expenses/components/ExpenseFormModal.tsx` | 3 | 392, 576, 589 | input | yes | yes | converted to `Checkbox` and `FileTrigger` |
+| `src/modules/Expenses/components/ExpenseLineFormModal.tsx` | 1 | 317 | input | yes | yes | converted to `Checkbox` |
+| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | 2 | 295, 363 | checkbox | yes | no | converted to `Checkbox` |
+| `src/modules/HR/components/TerminationSettlementModal.tsx` | 1 | 515 | input | yes | yes | converted to `FileTrigger` |
+| `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx` | 2 | 52, 130 | input | yes | yes | converted to `Checkbox` |
+| `src/modules/HR/components/PayrollRunDetailModal.tsx` | 1 | 274 | input | yes | no | converted to `Checkbox` |
+| `src/modules/HajriTax/HajriTaxDetailEditor.tsx` | 2 | 139, 345 | input | yes | yes | converted to `Checkbox` |
+| `src/modules/Reports/BankStatementUploadModal.tsx` | 1 | 151 | file | yes | no | converted to `FileTrigger` |
 
 ## 4. Missing UI Primitives
 
@@ -108,13 +102,90 @@ Delivered report toolbar controls pass:
 | `src/modules/Reports/TaxReportTab.tsx` | sales-inclusive VAT checkbox moved to `Checkbox` |
 | `src/modules/Reports/GeneralReportV2Screen.tsx` | year selector moved to `InlineSelect`; row filter moved to `Input` |
 
+Delivered HR checkbox controls pass:
+
+| File | Change |
+|---|---|
+| `src/modules/HR/components/AdvanceSettlementModal.tsx` | salary deduction toggle moved to `Checkbox` |
+| `src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx` | include EOS toggle moved to `Checkbox` |
+| `src/modules/HR/components/ResidencyFormModal.tsx` | issue invoice toggle moved to `Checkbox` |
+| `src/modules/HR/tabs/HrPrintPayrollPanel.tsx` | allowance detail and annual month toggles moved to `Checkbox` |
+
+Delivered order controls pass:
+
+| File | Change |
+|---|---|
+| `src/modules/Orders/StaffOrdersViewParts.tsx` | basket and variant quantity inputs moved to `EditableNumberCell` |
+| `src/modules/Orders/components/OrderFormModal.tsx` | product search moved to `Input`; add-item quantity moved to `EditableNumberCell` |
+
+Delivered purchase and expense checkbox pass:
+
+| File | Change |
+|---|---|
+| `src/modules/Purchases/components/BatchRow.tsx` | warranty follow-up toggles moved to `Checkbox`; receipt file inputs later moved to `FileTrigger` |
+| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | mobile exempt and warranty toggles moved to `Checkbox`; desktop toggles later moved to `Checkbox` |
+
+Delivered raw form controls closure pass:
+
+| File | Change |
+|---|---|
+| `src/modules/Sales/components/SalesDayEditModal.tsx` | transaction date moved to `Input` |
+| `src/modules/Invoices/components/InvoiceEditModal.tsx` | receipt upload moved to `FileTrigger`; taxable toggle moved to `Checkbox` |
+| `src/modules/HR/components/PayrollRunDetailModal.tsx` | net-only slip toggle moved to `Checkbox` |
+| `src/modules/HR/components/TerminationSettlementModal.tsx` | hidden settlement document upload moved to `FileTrigger` |
+| `src/modules/Reports/BankStatementUploadModal.tsx` | hidden bank statement upload input moved to `FileTrigger` |
+| `src/modules/Expenses/components/ExpenseFormModal.tsx` | exempt, warranty, and receipt controls moved to central primitives |
+| `src/modules/Expenses/components/ExpenseLineFormModal.tsx` | amount override toggle moved to `Checkbox` |
+| `src/modules/Expenses/components/ExpenseBatchTable.tsx` | desktop exempt and warranty toggles moved to `Checkbox` |
+| `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx` | include/defer payroll row toggles moved to `Checkbox` |
+| `src/modules/HajriTax/HajriTaxDetailEditor.tsx` | VAT inclusive and simulator toggles moved to `Checkbox` |
+
+Delivered raw React button closure pass:
+
+| File | Change |
+|---|---|
+| `src/shared/components/DateFilterBar.tsx` | month/day/year/calendar buttons moved to `Button variant="raw"` |
+| `src/modules/Orders/StaffOrdersViewParts.tsx` | POS quantity and remove buttons moved to `Button variant="raw"` |
+| `src/modules/Orders/components/OrderFormModal.tsx` | product card, section chips, order type, and quantity buttons moved to `Button variant="raw"` |
+| `src/modules/HR/components/useAdvanceTableModel.tsx` | employee expand buttons moved to `Button variant="raw"` |
+| `src/modules/HR/components/employeeProfile/EmployeeProfileResidencySection.tsx` | profile table link-buttons moved to `Button variant="raw"` |
+| `src/modules/HR/components/employeeProfile/EmployeeProfileFinancialSection.tsx` | financial record link-buttons moved to `Button variant="raw"` |
+| `src/modules/HajriTax/HajriTaxQuarterOverview.tsx` | company/year chips moved to `Button variant="raw"` |
+| `src/modules/HajriTax/HajriTaxNewDeclarationModal.tsx` | company/year/quarter chips moved to `Button variant="raw"` |
+| `src/modules/Reports/GeneralReportV2Screen.tsx` | report toolbar, month, level, line, and amount buttons moved to `Button variant="raw"` |
+| `src/modules/Reports/GeneralPlTable.tsx` | P&L amount buttons moved to `Button variant="raw"` |
+
+Delivered bank analysis table pass:
+
+| File | Change |
+|---|---|
+| `src/ui/SimpleTable.tsx` | added accessible `onRowClick` support for clickable rows |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisAlertsCard.tsx` | manual table moved to `SimpleTable` |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisCategoryTableCard.tsx` | manual table moved to `SimpleTable` |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisDepositsTableCard.tsx` | manual table moved to `SimpleTable` |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisPosTerminalsCard.tsx` | manual table moved to `SimpleTable` |
+
+Delivered SmartChat dynamic table pass:
+
+| File | Change |
+|---|---|
+| `src/modules/SmartChat/components/SmartChatReportCard.tsx` | tab-delimited generated answer table moved to `SimpleTable` while preserving dynamic columns |
+
+Delivered dashboard matrix table pass:
+
+| File | Change |
+|---|---|
+| `src/ui/SimpleTable.tsx` | added `headerClassName` and `cellPadding` hooks for dense matrix tables |
+| `src/modules/Dashboard/overview/components/DashboardOverviewYearlyDailyAvgPanel.tsx` | yearly daily-average matrix moved to `SimpleTable` with existing cell renderers |
+
 ## 6. What To Leave Temporarily
 
 | Scope | Reason |
 |---|---|
-| Payroll and settlement controls | payroll calculations and official HR documents are high risk |
-| Purchases and expense batch rows | editable financial grids need cell primitives first |
-| Tax/VAT detail editing | production tax workflow, needs dedicated test pass |
+| Raw form controls | none remain outside `src/ui`; governance now blocks reintroduction |
+| Raw React buttons | none remain outside `src/ui`; governance now blocks reintroduction |
+| Printable HTML buttons | two remain in generated HTML strings: `src/modules/Reports/GeneralReportV2Screen.tsx` and `src/utils/printUtils.ts` |
+| Payroll, settlement, purchase, expense, tax, and bank workflows | converted only at the control-shell level; calculation and save behavior must remain covered by workflow tests |
 | Cost accounting calculations/editable fields | financial analysis; do not touch calculation behavior in UI-only pass |
 | Order quantity grids | quantity behavior is row-bound and should move with editable cell components |
 
@@ -133,4 +204,4 @@ Delivered report toolbar controls pass:
 
 Decision: incremental refactor.
 
-Reason: the remaining 49 raw controls are not random UI leftovers. They are mostly protected financial, payroll, bank, tax, or editable-grid controls. The next real improvement is to add the missing compact/editable primitives, then migrate one workflow at a time with tests.
+Reason: raw form controls are now closed at the screen layer, while raw buttons and raw tables still need incremental workflow-specific passes. The next real improvement is to migrate one remaining workflow at a time with focused tests.

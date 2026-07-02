@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, FmtNum } from '../../../ui';
+import { Button, Checkbox, Input, FmtNum } from '../../../ui';
 import { HR_MONTH_LABELS_AR } from './hrPrintDocumentsTabFormat';
 import type { HrAnnualDraftState, HrPayrollDraftState } from './hrPrintDocumentsTabDrafts';
 
@@ -74,10 +74,13 @@ export function HrPrintPayrollPanel({
               onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ overtime: e.target.value })}
             />
           </div>
-          <label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium">
-            <input type="checkbox" checked={payroll.showBreakdown} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePayroll({ showBreakdown: e.target.checked })} className="h-4 w-4 accent-noorix-blue" />
-            {t('hrPrintShowAllowanceDetail')}
-          </label>
+          <Checkbox
+            checked={payroll.showBreakdown}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePayroll({ showBreakdown: e.target.checked })}
+            label={t('hrPrintShowAllowanceDetail')}
+            containerClassName="cursor-pointer items-center text-[13px] font-medium"
+            className="h-4 w-4 accent-noorix-blue"
+          />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-semibold">{t('customAllowances')}</span>
@@ -168,8 +171,7 @@ export function HrPrintPayrollPanel({
             <div className="grid grid-cols-3 gap-x-2 gap-y-2 sm:grid-cols-4 md:grid-cols-6">
               {HR_MONTH_LABELS_AR.map((label, i) => (
                 <label key={i} className="flex cursor-pointer items-center gap-2 rounded-md border border-noorix-border/60 bg-white/80 px-2 py-1.5 text-[12px] shadow-sm">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={annual.monthOn[i]}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const checked = e.target.checked;

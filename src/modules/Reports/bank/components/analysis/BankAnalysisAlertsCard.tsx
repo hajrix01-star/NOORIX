@@ -1,7 +1,9 @@
 import React from 'react';
-import { Button, FmtNum } from '../../../../../ui';
+import { Button, FmtNum, SimpleTable } from '../../../../../ui';
 import type { AnalysisCardId } from '../../bankAnalysisTab.types';
 import { BankAnalysisCardShell } from './BankAnalysisCardShell';
+
+type AlertRow = { id: number; txDate?: string; description?: string; debit?: unknown };
 
 export function BankAnalysisAlertsCard({
   cardId,
@@ -20,11 +22,13 @@ export function BankAnalysisAlertsCard({
   setTypeFilter: (v: string) => void;
   setActiveTab: (tab: string) => void;
 }) {
+  const rows: AlertRow[] = alerts.map((tx, index) => ({ ...tx, id: index }));
+
   return (
     <BankAnalysisCardShell
       cardId={cardId}
       title={t('bankCardAlerts')}
-      icon="⚠"
+      icon="!"
       onRemove={onRemoveCard}
       removeLabel={removeLabel}
     >
@@ -32,44 +36,53 @@ export function BankAnalysisAlertsCard({
         <p className="text-noorix-muted text-[13px]">لا توجد سحوبات.</p>
       ) : (
         <div className="grid gap-2.5">
-          <div className="overflow-auto rounded-lg border border-noorix-border">
-            <table className="w-full text-[12px] nx-table-collapse">
-              <thead>
-                <tr className="bg-noorix-bg-muted border-b border-noorix-border">
-                  <th className="font-bold nx-th-pad">التاريخ</th>
-                  <th className="font-bold nx-th-pad">الوصف</th>
-                  <th className="font-bold whitespace-nowrap nx-th-pad">المبلغ</th>
-                  <th className="font-bold nx-th-pad-center w-[100px]">إجراء</th>
-                </tr>
-              </thead>
-              <tbody>
-                {alerts.map((tx, i) => (
-                  <tr key={i} className={`nx-bank-row ${i % 2 ? 'nx-bank-row--b' : 'nx-bank-row--a'}`}>
-                    <td className="text-noorix-muted whitespace-nowrap nx-td-pad">{tx.txDate}</td>
-                    <td className="nx-td-pad max-w-[360px]">
-                      <div className="truncate" title={tx.description || ''}>
-                        {tx.description || '—'}
-                      </div>
-                    </td>
-                    <td className="text-end nx-ltr font-extrabold text-noorix-red whitespace-nowrap nx-td-pad">
-                      <FmtNum n={Number(tx.debit)} />
-                    </td>
-                    <td className="text-center nx-td-pad">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setTypeFilter('debit');
-                          setActiveTab('transactions');
-                        }}
-                      >
-                        {t('bankViewTransactions')}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SimpleTable<AlertRow>
+            data={rows}
+            tableClassName="text-[12px] nx-table-collapse"
+            frameClassName="rounded-lg border border-noorix-border"
+            getRowClassName={(_tx, index) => `nx-bank-row ${index % 2 ? 'nx-bank-row--b' : 'nx-bank-row--a'}`}
+            columns={[
+              {
+                key: 'txDate',
+                label: 'التاريخ',
+                cellClassName: 'text-noorix-muted whitespace-nowrap nx-td-pad',
+              },
+              {
+                key: 'description',
+                label: 'الوصف',
+                cellClassName: 'nx-td-pad max-w-[360px]',
+                render: (value) => (
+                  <div className="truncate" title={String(value || '')}>
+                    {String(value || '-')}
+                  </div>
+                ),
+              },
+              {
+                key: 'debit',
+                label: 'المبلغ',
+                numeric: true,
+                cellClassName: 'text-end nx-ltr font-extrabold text-noorix-red whitespace-nowrap nx-td-pad',
+                render: (value) => <FmtNum n={Number(value)} />,
+              },
+              {
+                key: 'action',
+                label: 'إجراء',
+                align: 'center',
+                cellClassName: 'text-center nx-td-pad',
+                render: () => (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setTypeFilter('debit');
+                      setActiveTab('transactions');
+                    }}
+                  >
+                    {t('bankViewTransactions')}
+                  </Button>
+                ),
+              },
+            ]}
+          />
         </div>
       )}
     </BankAnalysisCardShell>

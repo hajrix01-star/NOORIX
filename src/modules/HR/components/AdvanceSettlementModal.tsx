@@ -3,7 +3,7 @@ import { createDeduction, updateInvoice, throwIfApiFailed } from '../../../servi
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { hrFmt } from '../utils/hrFmt';
-import { AdaptiveSheet, Button, Input } from '../../../ui';
+import { AdaptiveSheet, Button, Checkbox, Input } from '../../../ui';
 
 export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError }: any) {
   const { t } = useTranslation();
@@ -92,10 +92,11 @@ export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, o
         ) : (
           <>
             <Input type="date" label={t('advanceSettlementDate')} value={settleDate} onChange={(e: any) => setSettleDate(e.target.value)} />
-            <label className="nx-checkbox">
-              <input type="checkbox" checked={applyToSalary} onChange={(e: any) => setApplyToSalary(e.target.checked)} />
-              {t('applyToSalaryDeduction')}
-            </label>
+            <Checkbox
+              checked={applyToSalary}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApplyToSalary(e.target.checked)}
+              label={t('applyToSalaryDeduction')}
+            />
           </>
         )}
       </div>

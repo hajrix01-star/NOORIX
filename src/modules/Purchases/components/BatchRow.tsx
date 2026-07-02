@@ -4,7 +4,7 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, FormRow } from '../../../ui';
+import { Input, Button, Card, Checkbox, FileTrigger, FormRow } from '../../../ui';
 import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
@@ -129,16 +129,14 @@ function BatchRowTable(props: Record<string, any>) {
 
       <td className="text-center align-middle" style={cp}>
         {isWarrantyFollowUpKind(row.kind) ? (
-          <label className="inline-flex items-center justify-center gap-1.5 cursor-pointer text-[11px] font-semibold text-noorix-muted">
-            <input
-              type="checkbox"
-              checked={!!row.warrantyFollowUp}
-              onChange={(e: any) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
-              className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
-              aria-label={`${t('warrantyFollowUpCol')} — ${t('batchRowLineAriaLabel', index + 1)}`}
-            />
-            <span className="hidden xl:inline">{t('warrantyFollowUpShort')}</span>
-          </label>
+          <Checkbox
+            checked={!!row.warrantyFollowUp}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
+            className="h-4 w-4 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            aria-label={`${t('warrantyFollowUpCol')} — ${t('batchRowLineAriaLabel', index + 1)}`}
+            label={<span className="hidden xl:inline">{t('warrantyFollowUpShort')}</span>}
+            containerClassName="inline-flex items-center justify-center gap-1.5 cursor-pointer text-[11px] font-semibold text-noorix-muted"
+          />
         ) : (
           <span className="text-noorix-muted">—</span>
         )}
@@ -186,12 +184,12 @@ function BatchRowTable(props: Record<string, any>) {
           ) : (
             <span className="text-[10px] text-noorix-muted leading-none">·</span>
           )}
-          <input
-            type="file"
+          <FileTrigger
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-            className="w-full max-w-[96px] text-[9px] file:mr-1"
             aria-label={`${t('invoiceReceiptAttachment')} — ${t('batchRowLineAriaLabel', index + 1)}`}
             onChange={(e: any) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+            label={row.attachmentFile ? row.attachmentFile.name : t('invoiceReceiptAttachment')}
+            buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-[96px] truncate text-[9px] px-1' }}
           />
         </div>
       </td>
@@ -346,15 +344,13 @@ function BatchRowStack(props: Record<string, any>) {
         </Input>
 
         {isWarrantyFollowUpKind(row.kind) ? (
-          <label className="flex items-center gap-2 min-h-[44px] text-[13px] font-semibold text-noorix-text cursor-pointer">
-            <input
-              type="checkbox"
-              checked={!!row.warrantyFollowUp}
-              onChange={(e: any) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
-              className="h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
-            />
-            <span>{t('warrantyFollowUpStack')}</span>
-          </label>
+          <Checkbox
+            checked={!!row.warrantyFollowUp}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, 'warrantyFollowUp', e.target.checked)}
+            className="h-5 w-5 shrink-0 rounded border-noorix-border accent-noorix-blue"
+            label={t('warrantyFollowUpStack')}
+            containerClassName="flex items-center gap-2 min-h-[44px] text-[13px] font-semibold text-noorix-text cursor-pointer"
+          />
         ) : null}
 
         <Input
@@ -391,11 +387,11 @@ function BatchRowStack(props: Record<string, any>) {
 
         <div className="rounded-lg border border-noorix-border border-dashed px-2 py-2 bg-noorix-bg-muted/30">
           <div className="text-[11px] font-semibold text-noorix-muted mb-1">{t('invoiceReceiptAttachment')}</div>
-          <input
-            type="file"
+          <FileTrigger
             accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp"
-            className="text-[12px] max-w-full"
             onChange={(e: any) => onUpdate(index, 'attachmentFile', e.target.files?.[0] ?? null)}
+            label={row.attachmentFile ? row.attachmentFile.name : t('invoiceReceiptChooseFile')}
+            buttonProps={{ variant: 'secondary', size: 'sm', className: 'max-w-full truncate' }}
           />
           {row.attachmentFile ? (
             <span className="text-[10px] text-noorix-muted truncate block mt-1" title={row.attachmentFile.name}>

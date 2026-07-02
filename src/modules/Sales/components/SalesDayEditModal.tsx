@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { sumObjectValues } from '@noorix/finance-core';
-import { Button, AdaptiveSheet } from '../../../ui';
+import { Button, AdaptiveSheet, Input } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { DailySalesEditBody, DailySalesTableRow } from '../hooks/useDailySalesScreen';
@@ -124,10 +124,10 @@ export function SalesDayEditModal({
       <div className="mb-4 grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-3 items-end">
         <label className="flex flex-col gap-1 text-[13px] font-bold text-noorix-text">
           تاريخ العملية *
-          <input
+          <Input
             type="date"
             value={txDate}
-            onChange={(e) => setTxDate(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTxDate(e.target.value)}
             className="nx-input"
           />
         </label>

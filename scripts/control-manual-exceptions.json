@@ -1,35 +1,8 @@
 {
   "version": 1,
-  "description": "Phase 1 closure registry for remaining raw UI controls outside src/ui. Button/Input are preferred for simple controls. Remaining raw controls are limited to protected, print/report, file, checkbox/radio, calendar cell, or editable-grid cases.",
+  "description": "Phase 1 closure registry for remaining raw UI controls outside src/ui. React UI buttons and form controls outside src/ui are not allowed. Only documented non-React HTML string buttons may remain.",
   "allowedRawButtonCounts": {
-    "src/shared/components/DateFilterBar.tsx": 8,
-    "src/modules/HR/components/useAdvanceTableModel.tsx": 3,
-    "src/modules/HR/components/employeeProfile/EmployeeProfileResidencySection.tsx": 2,
-    "src/modules/HR/components/employeeProfile/EmployeeProfileFinancialSection.tsx": 3,
-    "src/modules/HajriTax/HajriTaxQuarterOverview.tsx": 2,
-    "src/modules/HajriTax/HajriTaxNewDeclarationModal.tsx": 3,
-    "src/modules/Reports/GeneralReportV2Screen.tsx": 11,
-    "src/modules/Reports/GeneralPlTable.tsx": 2,
-    "src/modules/Orders/StaffOrdersViewParts.tsx": 7,
-    "src/modules/Orders/components/OrderFormModal.tsx": 6
+    "src/modules/Reports/GeneralReportV2Screen.tsx": 1
   },
-  "allowedRawFormControlCounts": {
-    "src/modules/Invoices/components/InvoiceEditModal.tsx": 2,
-    "src/modules/HR/tabs/HrPrintPayrollPanel.tsx": 2,
-    "src/modules/HR/components/TerminationSettlementModal.tsx": 1,
-    "src/modules/HR/components/ResidencyFormModal.tsx": 1,
-    "src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx": 2,
-    "src/modules/HR/components/PayrollRunDetailModal.tsx": 1,
-    "src/modules/Purchases/components/BatchRow.tsx": 4,
-    "src/modules/HajriTax/HajriTaxDetailEditor.tsx": 2,
-    "src/modules/Sales/components/SalesDayEditModal.tsx": 1,
-    "src/modules/Expenses/components/ExpenseLineFormModal.tsx": 1,
-    "src/modules/Expenses/components/ExpenseFormModal.tsx": 3,
-    "src/modules/Expenses/components/ExpenseBatchTable.tsx": 4,
-    "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": 1,
-    "src/modules/Reports/BankStatementUploadModal.tsx": 1,
-    "src/modules/HR/components/AdvanceSettlementModal.tsx": 1,
-    "src/modules/Orders/StaffOrdersViewParts.tsx": 2,
-    "src/modules/Orders/components/OrderFormModal.tsx": 2
-  }
+  "allowedRawFormControlCounts": {}
 }

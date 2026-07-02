@@ -1,6 +1,6 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { hrFmt } from '../../utils/hrFmt';
-import { cn, SmartTable } from '../../../../ui';
+import { Button, cn, SmartTable } from '../../../../ui';
 
 export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenResidency }: any) {
   const openRow = (row: any) => {
@@ -25,7 +25,8 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             label: t('transactionDate'),
             width: '12%',
             render: (v: any, row: any) => (
-              <button
+              <Button
+                variant="raw"
                 type="button"
                 className={cn(
                   'nx-cell-muted-sm bg-transparent border-0 p-0 text-start',
@@ -35,7 +36,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
                 onClick={() => openRow(row)}
               >
                 {formatSaudiDate(v)}
-              </button>
+              </Button>
             ),
           },
           {
@@ -43,7 +44,8 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             label: t('operationType'),
             width: '18%',
             render: (v: any, row: any) => (
-              <button
+              <Button
+                variant="raw"
                 type="button"
                 className={cn(
                   'bg-transparent border-0 p-0 text-start',
@@ -53,7 +55,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
                 onClick={() => openRow(row)}
               >
                 {v}
-              </button>
+              </Button>
             ),
           },
           {
@@ -70,7 +72,8 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             label: t('invoiceNotesColumn'),
             width: '54%',
             render: (v: any, row: any) => (
-              <button
+              <Button
+                variant="raw"
                 type="button"
                 className={cn(
                   'nx-cell-ellipsis bg-transparent border-0 p-0 text-start w-full',
@@ -81,7 +84,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
                 onClick={() => openRow(row)}
               >
                 {v || '—'}
-              </button>
+              </Button>
             ),
           },
         ]}

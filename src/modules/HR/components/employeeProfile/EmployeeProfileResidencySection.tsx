@@ -75,13 +75,14 @@ export function EmployeeProfileResidencySection({
             label: t('hrServiceDetailColumn'),
             width: '18%',
             render: (_v: any, row: any) => (
-              <button
+              <Button
+                variant="raw"
                 type="button"
                 className="text-[12px] text-start text-noorix-blue hover:underline cursor-pointer bg-transparent border-0 p-0"
                 onClick={() => onOpenService?.(row)}
               >
                 {formatHrServiceDetail(row, t)}
-              </button>
+              </Button>
             ),
           },
           {
@@ -98,13 +99,14 @@ export function EmployeeProfileResidencySection({
             width: '14%',
             render: (_v: any, row: any) => (
               row.invoiceNumber ? (
-                <button
+                <Button
+                  variant="raw"
                   type="button"
                   className="nx-cell-num text-noorix-blue font-semibold hover:underline cursor-pointer bg-transparent border-0 p-0"
                   onClick={() => onOpenService?.(row)}
                 >
                   {row.invoiceNumber}
-                </button>
+                </Button>
               ) : (
                 <span className="text-noorix-muted text-[12px]">{t('hrServiceNoInvoice')}</span>
               )
