@@ -8,24 +8,27 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 328 |
-| files with `style={{` | 86 |
+| `style={{` total | 214 |
+| files with `style={{` | 78 |
 | inside `src/ui` | 31 |
 | `src/ui` files | 11 |
-| outside `src/ui` | 297 |
-| outside `src/ui` files | 75 |
+| outside `src/ui` | 183 |
+| outside `src/ui` files | 67 |
 
 ## Top Files
 
 | File | Count |
 |---|---:|
-| `src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx` | 41 |
-| `src/modules/Purchases/components/BatchPrintSheet.tsx` | 28 |
 | `src/modules/Reports/BankStatementMappingModal.tsx` | 17 |
-| `src/modules/HR/components/EmployeeDocModal/components/ContractDocPreview.tsx` | 13 |
 | `src/ui/SmartTable/SmartTable.tsx` | 13 |
-| `src/modules/HR/components/EmployeeDocModal/components/SalaryCertificatePreview.tsx` | 12 |
 | `src/modules/Reports/bank/BankStatementTransactionsFullTab.tsx` | 12 |
+| `src/modules/Reports/GeneralPlTable.tsx` | 11 |
+| `src/modules/Treasury/components/VaultFormModal.tsx` | 7 |
+| `src/modules/HR/components/useAdvanceTableModel.tsx` | 7 |
+| `src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx` | 7 |
+| `src/modules/Reports/bank/BankStatementTemplatesPanel.tsx` | 6 |
+| `src/components/UserMenu.tsx` | 6 |
+| `src/modules/Purchases/components/BatchRow.tsx` | 6 |
 
 ## Rule
 

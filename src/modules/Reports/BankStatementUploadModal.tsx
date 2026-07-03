@@ -108,10 +108,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
         {STEPS.map((s: any, i: any) => (
           <div
             key={s.id}
-            className="flex-1 min-w-0 h-1 rounded-sm"
-            style={{
-              background: i <= step ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)',
-            }}
+            className={`flex-1 min-w-0 h-1 rounded-sm ${i <= step ? 'bg-noorix-blue' : 'bg-noorix-border'}`}
             title={t(s.labelKey)}
           />
         ))}
@@ -119,11 +116,7 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
 
       {error && (
         <div
-          className="p-3 mb-4 rounded-lg text-[13px]"
-          style={{
-            background: 'var(--noorix-red-10)',
-            color: 'var(--noorix-error)',
-          }}
+          className="p-3 mb-4 rounded-lg text-[13px] bg-[var(--noorix-red-10)] text-noorix-red"
         >
           {error}
         </div>
@@ -135,11 +128,9 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-xl text-center cursor-pointer p-10"
-          style={{
-            border: `2px dashed ${isDragging ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)'}`,
-            background: isDragging ? 'var(--noorix-blue-5)' : 'var(--noorix-bg-muted)',
-          }}
+          className={`rounded-xl text-center cursor-pointer p-10 border-2 border-dashed ${
+            isDragging ? 'border-noorix-blue bg-[var(--noorix-blue-5)]' : 'border-noorix-border bg-noorix-bg-muted'
+          }`}
         >
           <div className="mb-2 text-[36px]"></div>
           <div className="text-[15px] font-semibold text-noorix-text">
@@ -167,15 +158,12 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
               </div>
             </div>
             {step >= 4 && (
-              <span className="text-[14px]" style={{ color: 'var(--noorix-success)' }}>✓</span>
+              <span className="text-[14px] text-noorix-green">✓</span>
             )}
           </div>
           {result?.status === 'mapping' && (
             <div
-            className="p-3 rounded-lg text-[13px] text-noorix-text"
-            style={{
-              background: 'var(--noorix-green-10)',
-            }}
+            className="p-3 rounded-lg text-[13px] text-noorix-text bg-[var(--noorix-green-10)]"
             >
               {t('bankStatementMappingRequired')}
             </div>
