@@ -257,11 +257,20 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
   const showCompact  = isNarrow && typeof renderCompactRow === 'function';
   const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
-  const safePageSize = Math.max(1, pageSize);
-  const totalPages   = Math.max(1, Math.ceil(total / safePageSize));
   const visibleColumns = normalizedColumns.filter((col: any) => !hiddenCols.has(col.key));
-  const tableEngine = useSmartTableEngine({ columns: visibleColumns, data });
+  const tableEngine = useSmartTableEngine({
+    columns: visibleColumns,
+    data,
+    sortKey,
+    sortDir,
+    page,
+    pageSize,
+    total,
+    onSort,
+    onPageChange,
+  });
   const engineRows = tableEngine.rows;
+  const { safePageSize, totalPages } = tableEngine.pagination;
   const colCount     = visibleColumns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
@@ -499,7 +508,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   <th className="nx-row-number-th nx-smart-row-number-cell nx-smart-header-cell-vars" style={rowNumberHeaderStyle}>#</th>
                 )}
                 {visibleColumns.map((col: any) => {
-                  const isSorted = sortKey === col.key;
+                  const columnState = tableEngine.getColumnState(col.key);
                   const shrink = col.shrink === true;
                   const actionSticky = col.key === 'actions' && stickyActionColumn;
                   // Keep truncation on table cells display-safe; inner ellipsis spans can be block.
@@ -522,13 +531,13 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                       )}
                       style={headerCellStyle(col, effectiveWidth, resizableCol, shrink)}
                       data-column-kind={col.kind}
-                      aria-sort={col.sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
-                      onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
+                      aria-sort={col.sortable ? columnState.ariaSort : undefined}
+                      onClick={columnState.canSort ? () => tableEngine.toggleSort(col.key) : undefined}
                     >
                       {columnLabel(col)}
                       {col.sortable && (
-                        <span className={cn('text-[13px] ms-1', isSorted ? 'opacity-100' : 'opacity-30')}>
-                          {isSorted ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                        <span className={cn('text-[13px] ms-1', columnState.isSorted ? 'opacity-100' : 'opacity-30')}>
+                          {columnState.sortIndicator}
                         </span>
                       )}
                       {resizableCol && (
@@ -621,7 +630,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
       {/* ── تصفح الصفحات ── */}
       {!isLoading && onPageChange && (
-        <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} t={t} />
+        <Pagination page={page} totalPages={totalPages} onPageChange={tableEngine.setPage} t={t} />
       )}
 
       {children}

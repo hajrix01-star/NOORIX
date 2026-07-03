@@ -1,15 +1,15 @@
 # SmartTable Compatibility Audit
 
-Date: 2026-07-03
+Date: 2026-07-04
 
-Status: phase 2 compatibility audit implemented; no feature expansion.
+Status: phase 2 compatibility audit implemented; TanStack now owns internal controlled sorting and pagination state without public API changes.
 
 ## Scope
 
 | Item | Result |
 |---|---|
 | Public `SmartTable` API | unchanged |
-| TanStack role | still hidden read-only row/column engine |
+| TanStack role | hidden row/column engine plus controlled sorting/pagination state |
 | Noorix JSX/CSS rendering | unchanged |
 | Sorting contract | external `onSort`, `sortKey`, `sortDir` unchanged |
 | Pagination contract | external `page`, `pageSize`, `onPageChange` unchanged |
@@ -27,19 +27,22 @@ Status: phase 2 compatibility audit implemented; no feature expansion.
 | Expanded rows | `isRowExpanded` and `renderExpandedRow` still render below the row |
 | Compact mobile rows | narrow-layout `renderCompactRow` keeps the same ordered row model |
 | Legacy row keys | `keyExtractor` now drives React row keys when provided |
+| Sorting state bridge | `sortKey` and `sortDir` map into TanStack sorting state while `onSort` remains external |
+| Pagination state bridge | `page`, `pageSize`, and `total` map into TanStack pagination state while `onPageChange` remains external |
 
 ## Small Fix
 
 | File | Fix |
 |---|---|
 | `src/ui/SmartTable/SmartTable.tsx` | uses existing `keyExtractor` prop for table, compact, and mobile row keys |
+| `src/ui/SmartTable/tableEngine.ts` | centralizes SmartTable sorting and pagination adapter state over TanStack |
 
 ## Non-Goals
 
 | Item | Decision |
 |---|---|
-| Move sorting logic into TanStack | not done |
-| Move pagination logic into TanStack | not done |
+| Replace external sorting contract | not done |
+| Replace external pagination contract | not done |
 | Editable cells | not done; requires EditableTable RFC |
 | Grouped/tree rows | not done; requires financial hierarchy decision |
 | Protected payroll/tax/bank/purchases conversions | not touched |
