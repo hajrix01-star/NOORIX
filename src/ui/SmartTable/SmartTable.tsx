@@ -2,7 +2,7 @@
  * SmartTable — مكون الجداول المركزي لنظام نوركس
  * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards | Column Resize
  */
-import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
+import React, { memo, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useIsNarrow768 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
@@ -15,22 +15,19 @@ import { getColumnKindClass, normalizeSmartColumn } from './columnPresets';
 import { useSmartTableEngine } from './tableEngine';
 import SmartTablePagination from './SmartTablePagination';
 import SmartTableColumnVisibility, { placeColVisPanel } from './SmartTableColumnVisibility';
-
-const DEFAULT_INNER_PADDING = 8;
-const DEFAULT_ROW_NUMBER_WIDTH = 40;
-
-type SmartTableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
-
-function normalizeRowNumberWidth(width: SmartTablePropsBase['rowNumberWidth']): number | string {
-  if (width == null || width === '') return DEFAULT_ROW_NUMBER_WIDTH;
-  if (typeof width === 'string' && width.trim().endsWith('%')) return DEFAULT_ROW_NUMBER_WIDTH;
-  return width;
-}
-
-function cssLength(value: number | string | undefined): string | undefined {
-  if (value == null || value === '') return undefined;
-  return typeof value === 'number' ? `${value}px` : value;
-}
+import { useSmartTableColumnResize } from './useSmartTableColumnResize';
+import { useSmartTableColumnVisibility } from './useSmartTableColumnVisibility';
+import {
+  DEFAULT_INNER_PADDING,
+  buildBodyCellStyle,
+  buildFrameStyle,
+  buildHeaderCellStyle,
+  buildRowNumberCellStyle,
+  buildRowNumberHeaderStyle,
+  buildRowStyle,
+  buildTableStyle,
+  normalizeRowNumberWidth,
+} from './smartTableStyles';
 
 export { placeColVisPanel };
 
@@ -89,85 +86,20 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const dir = useUiDir();
   const normalizedColumns = useMemo(() => columns.map((col: any) => normalizeSmartColumn(col)), [columns]);
 
-  // ── Column Resize ──────────────────────────────────────────────
-  const resizingRef = useRef<any>(null);
-  const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
-    if (!tableId) return {};
-    try {
-      const saved = localStorage.getItem(`nx-col-widths:${tableId}`);
-      return saved ? (JSON.parse(saved) as Record<string, number>) : {};
-    } catch { return {}; }
-  });
-
-  const handleResizeStart = useCallback((e: any, colKey: any, startW: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const dirMult = dir === 'rtl' ? -1 : 1;
-    resizingRef.current = { colKey, startX: e.clientX, startW };
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-
-    const onMove = (ev: PointerEvent) => {
-      if (!resizingRef.current) return;
-      const delta = (ev.clientX - resizingRef.current.startX) * dirMult;
-      const newW = Math.max(40, resizingRef.current.startW + delta);
-      setColWidths((prev: any) => ({ ...prev, [colKey]: Math.round(newW) }));
-    };
-
-    const onUp = () => {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      if (tableId) {
-        setColWidths((prev: any) => {
-          try { localStorage.setItem(`nx-col-widths:${tableId}`, JSON.stringify(prev)); } catch { /* noop */ }
-          return prev;
-        });
-      }
-      resizingRef.current = null;
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointercancel', onUp);
-    };
-
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-    document.addEventListener('pointercancel', onUp);
-  }, [dir, tableId]);
-
-  const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
-    if (!tableId) return new Set<string>();
-    try {
-      const saved = localStorage.getItem(`nx-col-vis:${tableId}`);
-      return saved ? new Set(JSON.parse(saved) as string[]) : new Set<string>();
-    } catch {
-      return new Set<string>();
-    }
-  });
-
-  const toggleColVis = useCallback((colKey: string) => {
-    setHiddenCols((prev: Set<string>) => {
-      const next = new Set<string>(prev);
-      if (next.has(colKey)) next.delete(colKey); else next.add(colKey);
-      if (tableId) {
-        try { localStorage.setItem(`nx-col-vis:${tableId}`, JSON.stringify([...next])); } catch { /* noop */ }
-      }
-      return next;
-    });
-  }, [tableId]);
-
-  const resetColVis = useCallback(() => {
-    setHiddenCols(new Set<string>());
-    if (tableId) {
-      try { localStorage.removeItem(`nx-col-vis:${tableId}`); } catch { /* noop */ }
-    }
-  }, [tableId]);
+  const { colWidths, handleResizeStart } = useSmartTableColumnResize({ dir, tableId });
+  const {
+    hiddenCols,
+    visibleColumns,
+    hideableCols,
+    toggleColVis,
+    resetColVis,
+  } = useSmartTableColumnVisibility({ columns: normalizedColumns, tableId });
 
   /** محاذاة مع @media (max-width: 768px) — تجنّب جدول عريض + فراغ أبيض على تابلت/جوال */
   const isNarrow = useIsNarrow768();
 
   const showCompact  = isNarrow && typeof renderCompactRow === 'function';
   const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
-  const visibleColumns = normalizedColumns.filter((col: any) => !hiddenCols.has(col.key));
   const tableEngine = useSmartTableEngine({
     columns: visibleColumns,
     data,
@@ -194,59 +126,14 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
-  const frameStyle: SmartTableCssVars = { '--nx-smart-frame-padding': cssLength(innerPadding) };
-  const tableStyle: SmartTableCssVars = {
-    '--nx-smart-table-layout': layout,
-    '--nx-smart-table-min-width': cssLength(minW),
-    '--nx-smart-table-max-width': !isWideTable ? '100%' : undefined,
-  };
-  const rowNumberHeaderStyle: SmartTableCssVars = {
-    '--nx-smart-cell-padding': cellPad.th,
-    '--nx-smart-cell-font-size': cssLength(compact ? 11 : 12),
-    '--nx-smart-row-number-width': cssLength(rowNumW),
-  };
-  const rowNumberCellStyle: SmartTableCssVars = {
-    '--nx-smart-cell-padding': cellPad.td,
-    '--nx-smart-cell-font-size': cssLength(cellFs),
-    '--nx-smart-row-number-width': cssLength(rowNumW),
-  };
-  const headerCellStyle = (col: any, effectiveWidth: any, resizableCol: boolean, shrink: boolean): SmartTableCssVars => ({
-    '--nx-smart-cell-padding': cellPad.th,
-    '--nx-smart-cell-font-size': cssLength(compact ? 12 : 13),
-    '--nx-smart-cell-position': resizableCol ? 'relative' : undefined,
-    '--nx-smart-cell-width': cssLength(effectiveWidth),
-    '--nx-smart-cell-min-width': cssLength(col.minWidth),
-    '--nx-smart-cell-max-width': resizableCol ? undefined : cssLength(col.maxWidth),
-    '--nx-smart-cell-cursor': col.sortable ? 'pointer' : 'default',
-    '--nx-smart-cell-user-select': col.sortable ? 'none' : 'auto',
-    '--nx-smart-cell-white-space': shrink || col.key === 'actions' ? 'nowrap' : 'normal',
-    '--nx-smart-cell-overflow': resizableCol ? 'hidden' : undefined,
-  });
-  const bodyCellStyle = (
-    col: any,
-    tdEffectiveWidth: any,
-    align: React.CSSProperties['textAlign'],
-    family: string | undefined,
-    shrink: boolean,
-  ): SmartTableCssVars => ({
-    '--nx-smart-cell-padding': cellPad.td,
-    '--nx-smart-cell-font-size': cssLength(cellFs),
-    '--nx-smart-cell-align': align,
-    '--nx-smart-cell-font-family': family,
-    '--nx-smart-cell-width': cssLength(tdEffectiveWidth),
-    '--nx-smart-cell-min-width': cssLength(col.minWidth),
-    '--nx-smart-cell-max-width': cssLength(col.maxWidth),
-    '--nx-smart-cell-white-space': shrink ? 'nowrap' : undefined,
-  });
-  const rowStyle = (row: any, index: number): SmartTableCssVars => ({
-    '--nx-smart-row-bg': index % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent',
-    ...(typeof getRowStyle === 'function' ? getRowStyle(row, index) : null),
-  });
+  const frameStyle = buildFrameStyle(innerPadding);
+  const tableStyle = buildTableStyle({ layout, minW, isWideTable });
+  const rowNumberHeaderStyle = buildRowNumberHeaderStyle({ cellPad, compact, rowNumW });
+  const rowNumberCellStyle = buildRowNumberCellStyle({ cellPad, cellFs, rowNumW });
   /** على الجوال مع بطاقات فقط: لا نعرض شريط إخفاء الأعمدة (يضيق المحتوى ويبدو كزر عائم) */
   const showTableHeaderRow = Boolean(
     title || badge || (onSearchChange && showSearchInHeader) || (tableId && !showCards),
   );
-  const hideableCols = normalizedColumns.filter((c: any) => c.key !== 'actions');
   const rowKey = (row: any, index: number) => keyExtractor?.(row, index) ?? row.id ?? index;
 
   return (
@@ -395,7 +282,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         shrink ? 'noorix-th-shrink' : '',
                         shouldTruncate ? 'noorix-table-cell-truncate' : '',
                       )}
-                      style={headerCellStyle(col, effectiveWidth, resizableCol, shrink)}
+                      style={buildHeaderCellStyle({ col, effectiveWidth, resizableCol, shrink, cellPad, compact })}
                       data-column-kind={col.kind}
                       aria-sort={col.sortable ? columnState.ariaSort : undefined}
                       onClick={columnState.canSort ? () => tableEngine.toggleSort(col.key) : undefined}
@@ -437,7 +324,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                 <React.Fragment key={rowKey(row, i)}>
                 <tr
                   className={`nx-smart-row-vars border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
-                  style={rowStyle(row, i)}
+                  style={buildRowStyle({ row, index: i, getRowStyle })}
                 >
                   {showRowNumbers && (
                     <td className="nx-row-number-td nx-smart-row-number-cell nx-smart-body-cell-vars text-center font-semibold" style={rowNumberCellStyle}>
@@ -463,7 +350,15 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                           shrink ? 'noorix-td-shrink' : '',
                           shouldTruncate ? 'noorix-table-cell-truncate' : '',
                         )}
-                        style={bodyCellStyle(col, tdEffectiveWidth, align as React.CSSProperties['textAlign'], family, shrink)}
+                        style={buildBodyCellStyle({
+                          col,
+                          tdEffectiveWidth,
+                          align: align as React.CSSProperties['textAlign'],
+                          family,
+                          shrink,
+                          cellPad,
+                          cellFs,
+                        })}
                         data-column-kind={col.kind}
                       >
                         {col.render ? col.render(value, row, i) : (value ?? '—')}

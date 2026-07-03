@@ -39,6 +39,9 @@ Status: phase 2 compatibility audit implemented; TanStack now owns internal cont
 | `src/ui/SmartTable/tableEngine.ts` | centralizes SmartTable sorting and pagination adapter state over TanStack |
 | `src/ui/SmartTable/SmartTablePagination.tsx` | isolates the internal pagination bar from the large SmartTable renderer |
 | `src/ui/SmartTable/SmartTableColumnVisibility.tsx` | isolates the internal column visibility trigger, portal, and viewport placement logic |
+| `src/ui/SmartTable/useSmartTableColumnResize.ts` | isolates column resize pointer state and persisted widths |
+| `src/ui/SmartTable/useSmartTableColumnVisibility.ts` | isolates hidden-column persistence and derived visible/hideable columns |
+| `src/ui/SmartTable/smartTableStyles.ts` | isolates SmartTable CSS variable builders and row-number sizing helpers |
 
 ## Non-Goals
 

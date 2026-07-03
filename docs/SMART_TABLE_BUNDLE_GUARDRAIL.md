@@ -12,12 +12,15 @@ TanStack remains accepted only as the hidden `SmartTable` row/column engine. Do 
 
 | Artifact | Raw | Gzip | Notes |
 |---|---:|---:|---|
-| main app chunk `assets/index-*.js` | 458.95 kB | 149.69 kB | includes hidden TanStack adapter plus controlled sorting/pagination state, navigation guards, and isolated column-visibility panel |
+| main app chunk `assets/index-*.js` | 459.91 kB | 149.93 kB | includes hidden TanStack adapter plus controlled sorting/pagination state, navigation guards, isolated column visibility, resize state, and style builders |
 | `vendor-*.js` | 165.74 kB | 53.96 kB | unchanged shared vendor chunk |
 | `query-*.js` | 45.63 kB | 13.80 kB | unchanged query chunk |
-| `src/ui/SmartTable/SmartTable.tsx` source size | 519 lines | n/a | pagination UI and column visibility UI extracted; keep reducing central file responsibility |
+| `src/ui/SmartTable/SmartTable.tsx` source size | 414 lines | n/a | below large-file warning target after extracting pagination, column visibility, resize, and style responsibilities |
 | `src/ui/SmartTable/SmartTablePagination.tsx` source size | 51 lines | n/a | isolated internal pagination bar |
 | `src/ui/SmartTable/SmartTableColumnVisibility.tsx` source size | 147 lines | n/a | isolated internal column visibility button, portal, and placement logic |
+| `src/ui/SmartTable/useSmartTableColumnResize.ts` source size | 60 lines | n/a | isolated column resize state and pointer handling |
+| `src/ui/SmartTable/useSmartTableColumnVisibility.ts` source size | 56 lines | n/a | isolated column visibility persistence and derived columns |
+| `src/ui/SmartTable/smartTableStyles.ts` source size | 143 lines | n/a | isolated CSS variable builders |
 | `src/ui/SmartTable/tableEngine.ts` source size | 178 lines | n/a | TanStack adapter state and navigation guards now centralized here |
 
 ## Guardrail
