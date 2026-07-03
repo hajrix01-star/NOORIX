@@ -10,5 +10,6 @@
 - `FRONTEND_UI_UNIFICATION_DELIVERY_PLAN.md` - delivery plan, acceptance criteria, and definition of done for Noorix UI/table/theme unification.
 - `UI_TABLE_GOVERNANCE_CLOSEOUT_AND_NEXT_RFC.md` - current UI/table governance closeout, production evidence, and next RFC boundary.
 - `SMART_TABLE_COMPATIBILITY_AUDIT.md` - compatibility audit for the TanStack-backed SmartTable adapter.
+- `SMART_TABLE_BUNDLE_GUARDRAIL.md` - bundle guardrail for future TanStack-powered SmartTable work.
 - `FRONTEND_RAW_CONTROLS_RFC.md` - classification and next-pass plan for the remaining raw UI controls.
 - Phase 1 control governance command: `npm.cmd run check:control-governance`.
