@@ -13,6 +13,8 @@ Status: closed for safe cleanup; future changes require RFC or targeted implemen
 | Outside `src/ui` | 30 | documented runtime exceptions |
 | Files with inline styles | 30 | every file has a reason |
 | `src/index.css` lines | 6894 | baseline lowered after safe compaction |
+| Manual `<table>` outside `src/ui` | 70 | governed and classified |
+| Files with manual tables outside `src/ui` | 47 | every file has a reason |
 
 ## Remaining Inline Categories
 
@@ -32,6 +34,7 @@ Status: closed for safe cleanup; future changes require RFC or targeted implemen
 | Remaining inline-style audit | `scripts/inline-style-manual-reasons.json` |
 | CSS footprint | latest helper classes compacted |
 | CI protection | inline, CSS, table, and control governance |
+| Table exception classification | `docs/FRONTEND_TABLE_GOVERNANCE_STATUS.md` |
 
 ## Not In Scope For Safe Cleanup
 
