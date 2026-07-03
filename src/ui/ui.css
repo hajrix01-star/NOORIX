@@ -498,33 +498,11 @@
   direction: ltr;
   unicode-bidi: isolate;
 }
-.nx-card-exec__footer {
-  padding-top: 10px;
-  border-top: 1px solid var(--noorix-border);
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+.nx-card-exec__footer { padding-top: 10px; border-top: 1px solid var(--noorix-border); font-size: 12px; color: var(--noorix-text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 /* ? Stat ? */
-.nx-card--stat {
-  background: var(--noorix-bg-surface);
-  border: 1px solid var(--noorix-border);
-  border-radius: 12px;
-  box-shadow: var(--noorix-shadow-sm);
-  overflow: hidden;
-  position: relative;
-}
-
-.nx-card-stat__stripe {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  width: 4px;
-}
+.nx-card--stat { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: 12px; box-shadow: var(--noorix-shadow-sm); overflow: hidden; position: relative; }
+.nx-card-stat__stripe { position: absolute; inset-block: 0; inset-inline-start: 0; width: 4px; }
 
 .nx-card--stat-blue   .nx-card-stat__stripe { background: var(--noorix-accent-blue);  }
 .nx-card--stat-green  .nx-card-stat__stripe { background: var(--noorix-accent-green); }
@@ -533,46 +511,14 @@
 .nx-card--stat-violet .nx-card-stat__stripe { background: var(--noorix-accent-violet);}
 .nx-card--stat-gray   .nx-card-stat__stripe { background: var(--noorix-text-muted);   }
 
-.nx-card-stat__body {
-  padding: 14px 16px 14px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.nx-card-stat__icon {
-  font-size: 24px;
-  flex-shrink: 0;
-  opacity: 0.85;
-}
+.nx-card-stat__body { padding: 14px 16px 14px 20px; display: flex; align-items: center; gap: 12px; }
+.nx-card-stat__icon { font-size: 24px; flex-shrink: 0; opacity: 0.85; }
 
 .nx-card-stat__content { flex: 1; min-width: 0; }
 
-.nx-card-stat__label {
-  margin: 0 0 2px;
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.nx-card-stat__value {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--noorix-text);
-  font-family: var(--noorix-font-numbers);
-  direction: ltr;
-  unicode-bidi: isolate;
-}
-
-.nx-card-stat__delta {
-  margin: 2px 0 0;
-  font-size: 11px;
-  font-weight: 700;
-}
+.nx-card-stat__label { margin: 0 0 2px; font-size: 12px; color: var(--noorix-text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nx-card-stat__value { margin: 0; font-size: 20px; font-weight: 800; color: var(--noorix-text); font-family: var(--noorix-font-numbers); direction: ltr; unicode-bidi: isolate; }
+.nx-card-stat__delta { margin: 2px 0 0; font-size: 11px; font-weight: 700; }
 .nx-card-stat__delta--up   { color: var(--noorix-accent-green); }
 .nx-card-stat__delta--down { color: var(--noorix-accent-rose); }
 
@@ -580,32 +526,9 @@
 /* ???????????????????????????????????????????????????????????
    5. Badge — شارات الحالة
    ??????????????????????????????????????????????????????????? */
-.nx-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 9px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: var(--noorix-font-primary);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  line-height: 1.5;
-}
-
-.nx-badge--sm {
-  padding: 1px 7px;
-  font-size: 10px;
-}
-
-.nx-badge__dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+.nx-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; font-family: var(--noorix-font-primary); letter-spacing: 0.02em; white-space: nowrap; line-height: 1.5; }
+.nx-badge--sm { padding: 1px 7px; font-size: 10px; }
+.nx-badge__dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
 
 /* ???????????????????????????????????????????????????????????
@@ -686,15 +609,7 @@
   background: var(--noorix-modal-header-bg, #ffffff);
 }
 
-.nx-modal__title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--noorix-text);
-  line-height: 1.4;
-  flex: 1;
-  min-width: 0;
-}
+.nx-modal__title { margin: 0; font-size: 16px; font-weight: 700; color: var(--noorix-text); line-height: 1.4; flex: 1; min-width: 0; }
 
 .nx-modal__close {
   display: flex;
@@ -719,15 +634,7 @@
 .nx-modal__close:active { transform: scale(0.95); }
 
 /* ?? Body — أبيض نقي ?? */
-.nx-modal__body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 22px;
-  min-height: 0;
-  background: var(--noorix-bg-modal, #ffffff);
-  scrollbar-width: thin;
-  scrollbar-color: var(--noorix-border) transparent;
-}
+.nx-modal__body { flex: 1; overflow-y: auto; padding: 22px; min-height: 0; background: var(--noorix-bg-modal, #ffffff); scrollbar-width: thin; scrollbar-color: var(--noorix-border) transparent; }
 .nx-modal__body::-webkit-scrollbar { width: 6px; }
 .nx-modal__body::-webkit-scrollbar-track { background: transparent; }
 .nx-modal__body::-webkit-scrollbar-thumb { background: rgba(180,200,225,0.5); border-radius: 3px; }
@@ -789,16 +696,7 @@
 /* ???????????????????????????????????????????????????????????
    6b. Drawer — لوح جانبي (نفس طبقة z مثل Modal)
    ??????????????????????????????????????????????????????????? */
-.nx-drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: var(--nx-z-backdrop);
-  background: rgba(8, 16, 32, 0.5);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  -webkit-tap-highlight-color: transparent;
-  animation: nx-backdrop-in 0.2s ease;
-}
+.nx-drawer-backdrop { position: fixed; inset: 0; z-index: var(--nx-z-backdrop); background: rgba(8, 16, 32, 0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); -webkit-tap-highlight-color: transparent; animation: nx-backdrop-in 0.2s ease; }
 
 .nx-drawer-panel {
   position: fixed;
@@ -819,24 +717,14 @@
     );
 }
 
-.nx-drawer-panel--start {
-  inset-inline-start: 0;
-  border-radius: 0 var(--noorix-modal-radius, 18px) var(--noorix-modal-radius, 18px) 0;
-}
-
-.nx-drawer-panel--end {
-  inset-inline-end: 0;
-  border-radius: var(--noorix-modal-radius, 18px) 0 0 var(--noorix-modal-radius, 18px);
-}
+.nx-drawer-panel--start { inset-inline-start: 0; border-radius: 0 var(--noorix-modal-radius, 18px) var(--noorix-modal-radius, 18px) 0; }
+.nx-drawer-panel--end { inset-inline-end: 0; border-radius: var(--noorix-modal-radius, 18px) 0 0 var(--noorix-modal-radius, 18px); }
 
 .nx-drawer--sm   { width: min(100vw, 320px); }
 .nx-drawer--md   { width: min(100vw, 400px); }
 .nx-drawer--lg   { width: min(100vw, 560px); }
 .nx-drawer--xl   { width: min(100vw, 920px); }
-.nx-drawer--full {
-  width: 100vw;
-  border-radius: 0;
-}
+.nx-drawer--full { width: 100vw; border-radius: 0; }
 
 /* أنيميشن الدخول حسب اتجاه الصفحة وجانب اللوح */
 [dir="rtl"] .nx-drawer-panel--start {
@@ -882,15 +770,7 @@
   background: var(--noorix-modal-header-bg, #ffffff);
 }
 
-.nx-drawer__title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--noorix-text);
-  line-height: 1.4;
-  flex: 1;
-  min-width: 0;
-}
+.nx-drawer__title { margin: 0; font-size: 16px; font-weight: 700; color: var(--noorix-text); line-height: 1.4; flex: 1; min-width: 0; }
 
 .nx-drawer__close {
   display: flex;
@@ -914,16 +794,7 @@
 }
 .nx-drawer__close:active { transform: scale(0.95); }
 
-.nx-drawer__body {
-  flex: 1;
-  overflow-x: auto;
-  overflow-y: auto;
-  padding: 18px;
-  min-height: 0;
-  background: var(--noorix-bg-modal, #ffffff);
-  scrollbar-width: thin;
-  scrollbar-color: var(--noorix-border) transparent;
-}
+.nx-drawer__body { flex: 1; overflow-x: auto; overflow-y: auto; padding: 18px; min-height: 0; background: var(--noorix-bg-modal, #ffffff); scrollbar-width: thin; scrollbar-color: var(--noorix-border) transparent; }
 .nx-drawer__body::-webkit-scrollbar { width: 6px; }
 .nx-drawer__body::-webkit-scrollbar-track { background: transparent; }
 .nx-drawer__body::-webkit-scrollbar-thumb { background: rgba(180, 200, 225, 0.5); border-radius: 3px; }
@@ -957,35 +828,10 @@
 /* ???????????????????????????????????????????????????????????
    7. Divider — الفاصل
    ??????????????????????????????????????????????????????????? */
-.nx-divider {
-  border: none;
-  border-top: 1px solid var(--noorix-border);
-  margin: 16px 0;
-  width: 100%;
-}
-
-.nx-divider--vertical {
-  display: inline-block;
-  width: 1px;
-  min-height: 1em;
-  background: var(--noorix-border);
-  border: none;
-  margin: 0 8px;
-  vertical-align: middle;
-}
-
-.nx-divider--labeled {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 16px 0;
-  border: none;
-}
-.nx-divider__line {
-  flex: 1;
-  height: 1px;
-  background: var(--noorix-border);
-}
+.nx-divider { border: none; border-top: 1px solid var(--noorix-border); margin: 16px 0; width: 100%; }
+.nx-divider--vertical { display: inline-block; width: 1px; min-height: 1em; background: var(--noorix-border); border: none; margin: 0 8px; vertical-align: middle; }
+.nx-divider--labeled { display: flex; align-items: center; gap: 10px; margin: 16px 0; border: none; }
+.nx-divider__line { flex: 1; height: 1px; background: var(--noorix-border); }
 .nx-divider__label {
   font-size: 12px;
   color: var(--noorix-text-muted);
@@ -1052,45 +898,16 @@
   flex-shrink: 0;
 }
 
-.nx-table-header__badges {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  flex: 1 1 auto;
-  min-width: 0;
-}
+.nx-table-header__badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
 
 /* — حقل البحث داخل الجدول ? */
-.nx-table-search {
-  margin-inline-start: auto;
-  min-width: 120px;
-  width: 100%;
-  max-width: 220px;
-  flex: 0 1 auto;
-}
+.nx-table-search { margin-inline-start: auto; min-width: 120px; width: 100%; max-width: 220px; flex: 0 1 auto; }
 
 /* — رسالة الخطأ ? */
-.nx-table-error {
-  margin: 12px;
-  padding: 12px 16px;
-  background: rgba(239, 68, 68, 0.08);
-  border-radius: 10px;
-  color: var(--noorix-accent-red, #dc2626);
-  font-size: 14px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.nx-table-error { margin: 12px; padding: 12px 16px; background: rgba(239, 68, 68, 0.08); border-radius: 10px; color: var(--noorix-accent-red, #dc2626); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
 /* — Skeleton Loading ? */
-.nx-table-skeleton {
-  padding: 20px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.nx-table-skeleton { padding: 20px 16px; display: flex; flex-direction: column; gap: 8px; }
 
 .nx-table-skeleton__bar {
   height: 40px;
@@ -1105,9 +922,7 @@
   animation: shimmer 1.5s infinite;
 }
 
-.nx-smart-table-loading-spinner {
-  animation: noorix-spin 0.8s linear infinite;
-}
+.nx-smart-table-loading-spinner { animation: noorix-spin 0.8s linear infinite; }
 
 .nx-smart-table-skeleton-line {
   background: linear-gradient(
@@ -1121,20 +936,10 @@
 }
 
 /* — Wrapper تمرير أفقي ? */
-.nx-table-scroll {
-  overflow-x: auto;
-  overflow-y: visible;
-  -webkit-overflow-scrolling: touch;
-  flex: 1;
-  min-width: 0;
-}
+.nx-table-scroll { overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; flex: 1; min-width: 0; }
 
 /* — الجدول الفعلي ? */
-.nx-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--noorix-font-primary);
-}
+.nx-table { width: 100%; border-collapse: collapse; font-family: var(--noorix-font-primary); }
 
 /* — رأس الجدول ? */
 .nx-table thead tr {
@@ -1170,18 +975,9 @@
 .nx-table th.nx-table__th--sorted .nx-table__sort-icon { opacity: 1; }
 
 /* — خلايا الجسم ? */
-.nx-table tbody tr {
-  border-bottom: 1px solid var(--noorix-border);
-  transition: background 80ms;
-}
-
-.nx-table tbody tr:nth-child(even) {
-  background: var(--noorix-table-row-even, var(--noorix-bg-page));
-}
-
-.nx-table tbody tr:hover {
-  background: var(--noorix-bg-muted);
-}
+.nx-table tbody tr { border-bottom: 1px solid var(--noorix-border); transition: background 80ms; }
+.nx-table tbody tr:nth-child(even) { background: var(--noorix-table-row-even, var(--noorix-bg-page)); }
+.nx-table tbody tr:hover { background: var(--noorix-bg-muted); }
 
 .nx-table tbody td {
   padding: 10px 16px;
@@ -1211,133 +1007,48 @@
 }
 
 /* — الصف الملغي ? */
-.nx-table tr.nx-table__row--cancelled td {
-  text-decoration: line-through;
-  color: var(--noorix-text-muted);
-  opacity: 0.7;
-}
+.nx-table tr.nx-table__row--cancelled td { text-decoration: line-through; color: var(--noorix-text-muted); opacity: 0.7; }
 
 /* — حالة فارغة ? */
-.nx-table tbody .nx-table__empty td {
-  padding: 36px 16px;
-  text-align: center;
-  color: var(--noorix-text-muted);
-  font-size: 14px;
-  border: none;
-}
+.nx-table tbody .nx-table__empty td { padding: 36px 16px; text-align: center; color: var(--noorix-text-muted); font-size: 14px; border: none; }
 
 /* — تذييل الجدول (الإجماليات) ? */
-.nx-table tfoot td {
-  padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--noorix-text);
-  background: var(--noorix-bg-muted);
-  border-top: 2px solid var(--noorix-border);
-  border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border));
-}
+.nx-table tfoot td { padding: 8px 12px; font-size: 14px; font-weight: 700; color: var(--noorix-text); background: var(--noorix-bg-muted); border-top: 2px solid var(--noorix-border); border-inline-start: 1px solid var(--noorix-border-muted, var(--noorix-border)); }
 .nx-table tfoot td:first-child { border-inline-start: none; }
 
 /* — أعمدة خاصة ? */
 /* مالية: محاذاة يمين دائماً */
-.nx-table .nx-col--numeric {
-  text-align: end !important;
-  font-family: var(--noorix-font-numbers);
-  direction: ltr;
-  unicode-bidi: isolate;
-}
+.nx-table .nx-col--numeric { text-align: end !important; font-family: var(--noorix-font-numbers); direction: ltr; unicode-bidi: isolate; }
 
 /* نصية: تقطع مع ellipsis */
-.nx-table .nx-col--truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
-}
+.nx-table .nx-col--truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
 
 /* انكماش تلقائي */
-.nx-table .nx-col--shrink {
-  white-space: nowrap;
-  width: 1%;
-}
+.nx-table .nx-col--shrink { white-space: nowrap; width: 1%; }
 
 /* — عمود الإجراءات: sticky ? */
-.nx-table .nx-col--actions {
-  white-space: nowrap;
-  width: 1%;
-  padding-inline: 6px;
-  text-align: center;
-}
+.nx-table .nx-col--actions { white-space: nowrap; width: 1%; padding-inline: 6px; text-align: center; }
 
-.nx-table .nx-col--actions.nx-col--sticky {
-  position: sticky;
-  inset-inline-end: 0;
-  z-index: 2;
-  background: var(--noorix-bg-surface);
-  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.06);
-}
+.nx-table .nx-col--actions.nx-col--sticky { position: sticky; inset-inline-end: 0; z-index: 2; background: var(--noorix-bg-surface); box-shadow: -3px 0 8px rgba(0, 0, 0, 0.06); }
 
-.nx-table tbody tr:nth-child(even) .nx-col--actions.nx-col--sticky {
-  background: var(--noorix-table-row-even, var(--noorix-bg-page));
-}
-
-.nx-table tbody tr:hover .nx-col--actions.nx-col--sticky {
-  background: var(--noorix-bg-muted);
-}
+.nx-table tbody tr:nth-child(even) .nx-col--actions.nx-col--sticky { background: var(--noorix-table-row-even, var(--noorix-bg-page)); }
+.nx-table tbody tr:hover .nx-col--actions.nx-col--sticky { background: var(--noorix-bg-muted); }
 
 /* أزرار الإجراءات في صف أفقي */
 .nx-table .nx-col--actions > div,
-.nx-actions-row {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: 5px;
-  align-items: center;
-  justify-content: center;
-}
+.nx-actions-row { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 5px; align-items: center; justify-content: center; }
 
 /* — ترقيم الصفحات ? */
-.nx-table-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  padding: 10px 16px;
-  border-top: 1px solid var(--noorix-border);
-  flex-shrink: 0;
-}
-
-.nx-table-pagination__label {
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-  padding: 0 6px;
-  white-space: nowrap;
-}
+.nx-table-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--noorix-border); flex-shrink: 0; }
+.nx-table-pagination__label { font-size: 12px; color: var(--noorix-text-muted); padding: 0 6px; white-space: nowrap; }
 
 /* — رقم الصف ? */
-.nx-table .nx-col--rownum {
-  text-align: center;
-  color: var(--noorix-text-muted);
-  font-size: 12px;
-  width: 36px;
-  min-width: 36px;
-}
+.nx-table .nx-col--rownum { text-align: center; color: var(--noorix-text-muted); font-size: 12px; width: 36px; min-width: 36px; }
 
 /* — بطاقات الجوال ? */
-.nx-table-mobile-cards {
-  display: flex;
-  flex-direction: column;
-}
-
-.nx-table-mobile-card {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--noorix-border);
-}
-
-.nx-table-mobile-card:last-child {
-  border-bottom: none;
-}
+.nx-table-mobile-cards { display: flex; flex-direction: column; }
+.nx-table-mobile-card { padding: 12px 16px; border-bottom: 1px solid var(--noorix-border); }
+.nx-table-mobile-card:last-child { border-bottom: none; }
 
 /* — استجابة للجوال ? */
 @media (max-width: 640px) {
@@ -1372,27 +1083,9 @@
    nx-tab-bar, nx-tab-btn, nx-tab-btn--active ? src/index.css */
 
 /* ??? حالات فارغة وأخطاء ??? */
-.nx-empty-state {
-  padding: 20px;
-  text-align: center;
-  color: var(--noorix-text-muted);
-  font-size: 14px;
-}
+.nx-empty-state { padding: 20px; text-align: center; color: var(--noorix-text-muted); font-size: 14px; }
 
-.nx-error-banner {
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  background: rgba(239, 68, 68, 0.06);
-  color: var(--noorix-accent-red);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  font-weight: 600;
-}
+.nx-error-banner { padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.06); color: var(--noorix-accent-red); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; font-weight: 600; }
 
 
 /* ???????????????????????????????????????????????????????????
@@ -1400,12 +1093,7 @@
    ??????????????????????????????????????????????????????????? */
 
 /* رقمية */
-.nx-cell-num {
-  font-family: var(--noorix-font-numbers);
-  white-space: nowrap;
-  direction: ltr;
-  unicode-bidi: isolate;
-}
+.nx-cell-num { font-family: var(--noorix-font-numbers); white-space: nowrap; direction: ltr; unicode-bidi: isolate; }
 
 .nx-cell-num--blue   { color: var(--noorix-accent-blue); }
 .nx-cell-num--green  { color: var(--noorix-accent-green); }
@@ -1420,19 +1108,8 @@
 .nx-cell-muted-sm { color: var(--noorix-text-muted); font-size: 12px; white-space: nowrap; }
 
 /* تذييل الجدول */
-.nx-tfoot-label {
-  font-size: 13px !important;
-  font-weight: 700;
-  color: var(--noorix-text);
-  text-align: end;
-}
-
-.nx-tfoot-num {
-  font-family: var(--noorix-font-numbers);
-  font-size: 14px !important;
-  font-weight: 800 !important;
-  text-align: end;
-}
+.nx-tfoot-label { font-size: 13px !important; font-weight: 700; color: var(--noorix-text); text-align: end; }
+.nx-tfoot-num { font-family: var(--noorix-font-numbers); font-size: 14px !important; font-weight: 800 !important; text-align: end; }
 
 
 /* ???????????????????????????????????????????????????????????
@@ -1440,206 +1117,60 @@
    ??????????????????????????????????????????????????????????? */
 
 /* صفوف SmartTable في عرض الجوال: حدود نحيفة واضحة + خلفية متناوبة */
-.nx-mobile-card-row {
-  border-radius: 0.625rem;
-  border: 1px solid var(--noorix-border-strong);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-  box-sizing: border-box;
-  min-width: 0;
-  max-width: 100%;
-}
-.nx-mobile-card-row--base {
-  background: var(--noorix-bg);
-}
-.nx-mobile-card-row--stripe {
-  background: var(--noorix-blue-10);
-}
+.nx-mobile-card-row { border-radius: 0.625rem; border: 1px solid var(--noorix-border-strong); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); box-sizing: border-box; min-width: 0; max-width: 100%; }
+.nx-mobile-card-row--base { background: var(--noorix-bg); }
+.nx-mobile-card-row--stripe { background: var(--noorix-blue-10); }
 
-.nx-mc__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 6px;
-}
+.nx-mc__header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.nx-mc__meta { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 
-.nx-mc__meta {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.nx-mc__grid {
-  display: grid;
-  gap: 6px;
-  background: var(--noorix-bg-muted);
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-}
+.nx-mc__grid { display: grid; gap: 6px; background: var(--noorix-bg-muted); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
 
 .nx-mc__grid--3 { grid-template-columns: 1fr 1fr 1fr; }
 .nx-mc__grid--2 { grid-template-columns: 1fr 1fr; }
 
 /* خلية إحصاء: تسمية + قيمة في عمود واحد بمحاذاة متسقة (وسط) */
-.nx-mc__grid > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  min-width: 0;
-}
+.nx-mc__grid > div { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-width: 0; }
 
-.nx-mc__stat-label {
-  font-size: 10px;
-  color: var(--noorix-text-muted);
-  margin-bottom: 2px;
-  width: 100%;
-  text-align: center;
-}
+.nx-mc__stat-label { font-size: 10px; color: var(--noorix-text-muted); margin-bottom: 2px; width: 100%; text-align: center; }
+.nx-mc__stat-value { font-size: 14px; font-weight: 700; font-family: var(--noorix-font-numbers); direction: ltr; unicode-bidi: isolate; width: 100%; text-align: center; }
 
-.nx-mc__stat-value {
-  font-size: 14px;
-  font-weight: 700;
-  font-family: var(--noorix-font-numbers);
-  direction: ltr;
-  unicode-bidi: isolate;
-  width: 100%;
-  text-align: center;
-}
+.nx-mc__actions { display: flex; justify-content: flex-end; }
 
-.nx-mc__actions {
-  display: flex;
-  justify-content: flex-end;
-}
+.nx-mc__channels { font-size: 12px; color: var(--noorix-text-muted); margin-bottom: 8px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
-.nx-mc__channels {
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-  margin-bottom: 8px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.nx-mc__name {
-  font-weight: 700;
-  font-size: 15px;
-  margin-bottom: 3px;
-}
-
-.nx-mc__subtitle {
-  font-size: 13px;
-  color: var(--noorix-text-muted);
-  margin-bottom: 8px;
-}
+.nx-mc__name { font-weight: 700; font-size: 15px; margin-bottom: 3px; }
+.nx-mc__subtitle { font-size: 13px; color: var(--noorix-text-muted); margin-bottom: 8px; }
 
 
 /* ??? Compact List Row — نمط السطر المضغوط للجوال (List-Row pattern) ??? */
-.nx-compact-row {
-  position: relative;
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--noorix-border);
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-.nx-compact-row:last-child {
-  border-bottom: none;
-}
+.nx-compact-row { position: relative; padding: 9px 14px; border-bottom: 1px solid var(--noorix-border); -webkit-tap-highlight-color: transparent; user-select: none; }
+.nx-compact-row:last-child { border-bottom: none; }
 .nx-compact-row--base   { background: var(--noorix-bg); }
 .nx-compact-row--stripe { background: var(--noorix-blue-10); }
 .nx-compact-row:active  { background: var(--noorix-bg-muted) !important; }
 
 /* السطر الأول: رقم + نوع + اسم + حالة */
-.nx-cr__line1 {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 4px;
-  min-width: 0;
-}
+.nx-cr__line1 { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; min-width: 0; }
 /* السطر الثاني: تفاصيل ثانوية + مبلغ + كباب */
-.nx-cr__line2 {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-.nx-cr__line2-start {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  flex: 1;
-}
-.nx-cr__line2-end {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
+.nx-cr__line2 { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.nx-cr__line2-start { display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1; }
+.nx-cr__line2-end { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 /* الاسم/المورد: يأخذ المساحة المتبقية ويقطع بـ … */
-.nx-cr__name {
-  font-weight: 700;
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-.nx-cr__sub {
-  font-size: 12px;
-  color: var(--noorix-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 1;
-  min-width: 0;
-}
-.nx-cr__id {
-  font-family: var(--noorix-font-numbers);
-  font-weight: 700;
-  font-size: 13px;
-  direction: ltr;
-  unicode-bidi: isolate;
-  flex-shrink: 0;
-}
-.nx-cr__amount {
-  font-family: var(--noorix-font-numbers);
-  font-weight: 700;
-  font-size: 13px;
-  direction: ltr;
-  unicode-bidi: isolate;
-  white-space: nowrap;
-}
-.nx-cr__meta {
-  font-size: 11px;
-  color: var(--noorix-text-muted);
-  white-space: nowrap;
-}
+.nx-cr__name { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+.nx-cr__sub { font-size: 12px; color: var(--noorix-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 1; min-width: 0; }
+.nx-cr__id { font-family: var(--noorix-font-numbers); font-weight: 700; font-size: 13px; direction: ltr; unicode-bidi: isolate; flex-shrink: 0; }
+.nx-cr__amount { font-family: var(--noorix-font-numbers); font-weight: 700; font-size: 13px; direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+.nx-cr__meta { font-size: 11px; color: var(--noorix-text-muted); white-space: nowrap; }
 /* منطقة الكباب — يمنع فقاعة الحدث إلى onClick الصف */
-.nx-cr__kebab {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
+.nx-cr__kebab { flex-shrink: 0; display: flex; align-items: center; }
 
 
 /* ???????????????????????????????????????????????????????????
    13. Pill Badge — شارة مضمّنة خفيفة (للاستخدام في الجداول)
    ??????????????????????????????????????????????????????????? */
 
-.nx-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
+.nx-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; white-space: nowrap; }
 
 .nx-pill--blue { background: color-mix(in srgb, var(--noorix-accent-blue) 10%, transparent); color: var(--noorix-accent-blue); }
 .nx-pill--sm   { font-size: 11px; padding: 2px 8px; }
@@ -1684,15 +1215,7 @@
 /* ???????????????????????????????????????????????????????????
    15. Checkbox & File — عناصر النماذج الأصلية
    ??????????????????????????????????????????????????????????? */
-.nx-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--noorix-text);
-  cursor: pointer;
-  user-select: none;
-}
+.nx-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--noorix-text); cursor: pointer; user-select: none; }
 
 .nx-checkbox input[type="checkbox"],
 .nx-checkbox input[type="radio"] {
@@ -1703,9 +1226,7 @@
   flex-shrink: 0;
 }
 
-.nx-checkbox--tight {
-  line-height: 1.45;
-}
+.nx-checkbox--tight { line-height: 1.45; }
 .nx-checkbox--tight input[type="checkbox"],
 .nx-checkbox--tight input[type="radio"] {
   width: 18px;
@@ -1713,59 +1234,27 @@
   margin-top: 2px;
 }
 
-.nx-checkbox--cell-center {
-  justify-content: center;
-  padding: 6px 4px;
-}
+.nx-checkbox--cell-center { justify-content: center; padding: 6px 4px; }
 .nx-checkbox--cell-center input[type="checkbox"],
 .nx-checkbox--cell-center input[type="radio"] {
   width: 18px;
   height: 18px;
 }
 
-.nx-checkbox--hit-36 {
-  justify-content: center;
-  min-height: 36px;
-  min-width: 36px;
-  padding: 4px;
-}
+.nx-checkbox--hit-36 { justify-content: center; min-height: 36px; min-width: 36px; padding: 4px; }
 
 .nx-checkbox--accent-green input[type="checkbox"],
 .nx-checkbox--accent-green input[type="radio"] {
   accent-color: var(--noorix-accent-green);
 }
 
-.nx-max-w-160 {
-  max-width: 160px;
-}
+.nx-max-w-160 { max-width: 160px; }
+.nx-line-145 { line-height: 1.45; }
 
-.nx-line-145 {
-  line-height: 1.45;
-}
+.nx-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 4px; border: 1px dashed var(--noorix-border); background: var(--noorix-bg-muted); font-size: 13px; color: var(--noorix-text-muted); cursor: pointer; transition: border-color 150ms, background 150ms; }
 
-.nx-file-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 4px;
-  border: 1px dashed var(--noorix-border);
-  background: var(--noorix-bg-muted);
-  font-size: 13px;
-  color: var(--noorix-text-muted);
-  cursor: pointer;
-  transition: border-color 150ms, background 150ms;
-}
-
-.nx-file-label:hover {
-  border-color: var(--noorix-accent-blue);
-  background: rgba(37,99,235,0.05);
-  color: var(--noorix-accent-blue);
-}
-
-.nx-file-label input[type="file"] {
-  display: none;
-}
+.nx-file-label:hover { border-color: var(--noorix-accent-blue); background: rgba(37,99,235,0.05); color: var(--noorix-accent-blue); }
+.nx-file-label input[type="file"] { display: none; }
 
 /* ???????????????????????????????????????????????????????????
    16. Gradient Header Close — زر إغلاق داخل هيدر ملوّن
@@ -1781,9 +1270,7 @@
   transition: background 150ms;
 }
 
-.nx-gradient-close-btn:hover:not(:disabled) {
-  background: rgba(255,255,255,0.30) !important;
-}
+.nx-gradient-close-btn:hover:not(:disabled) { background: rgba(255,255,255,0.30) !important; }
 
 /* ???????????????????????????????????????????????????????????
    17. Layout Shell Buttons — أزرار القشرة (Sidebar/Header/Toast)
