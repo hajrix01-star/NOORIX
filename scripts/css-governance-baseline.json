@@ -3,7 +3,7 @@
   "description": "Baseline for central CSS footprint. This check blocks unreviewed CSS growth while the theme cleanup runs incrementally.",
   "files": {
     "src/index.css": {
-      "maxLines": 7211,
+      "maxLines": 7177,
       "maxMediaQueries": 51,
       "maxImportant": 215,
       "maxKeyframes": 12,

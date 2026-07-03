@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "description": "Closure decisions for remaining React style={{ }} usages. Every file with remaining inline style usage must have a reason here.",
+  "inlineStyleReasons": {
+    "src/components/AppHeader.tsx": {
+      "category": "popover-positioning",
+      "decision": "leave",
+      "reason": "runtime dropdown positioning is computed from viewport/header measurements."
+    },
+    "src/components/UserMenu.tsx": {
+      "category": "popover-positioning-and-css-var",
+      "decision": "leave",
+      "reason": "menu position and role color CSS variable are runtime values used by the shared account menu."
+    },
+    "src/components/common/ProductSearchInput.tsx": {
+      "category": "popover-positioning",
+      "decision": "leave",
+      "reason": "search results popup uses runtime anchor geometry and viewport bounds."
+    },
+    "src/components/common/SearchableOptionsPicker.tsx": {
+      "category": "popover-positioning",
+      "decision": "leave",
+      "reason": "options popup uses runtime anchor geometry and viewport bounds."
+    },
+    "src/components/common/SupplierSelect.tsx": {
+      "category": "popover-positioning",
+      "decision": "leave",
+      "reason": "supplier picker popup uses runtime anchor geometry and viewport bounds."
+    },
+    "src/modules/Dashboard/components/DashboardCalendarTab/components/DashboardCalendarDayCell.tsx": {
+      "category": "data-driven-calendar-color",
+      "decision": "leave",
+      "reason": "calendar day background/accent color is computed from day intensity and special-day data."
+    },
+    "src/modules/Dashboard/components/DashboardSaudiOccasionsImportModal.tsx": {
+      "category": "data-driven-color",
+      "decision": "leave",
+      "reason": "occasion color is imported/user data and must remain runtime-driven."
+    },
+    "src/modules/Dashboard/components/DashboardSpecialDaysTab.tsx": {
+      "category": "data-driven-color",
+      "decision": "leave",
+      "reason": "special day color is user data and must remain runtime-driven."
+    },
+    "src/modules/Dashboard/overview/components/DashboardOverviewBreakdownTable.tsx": {
+      "category": "chart-series-color",
+      "decision": "leave",
+      "reason": "breakdown row color comes from chart/series data."
+    },
+    "src/modules/Dashboard/overview/components/DashboardOverviewTopCharts.tsx": {
+      "category": "chart-tooltip-color",
+      "decision": "leave",
+      "reason": "tooltip label color comes from the active chart payload."
+    },
+    "src/modules/Orders/components/ItemsReportTab.tsx": {
+      "category": "data-visualization-style",
+      "decision": "leave",
+      "reason": "item report mini chart uses runtime percentage/color values."
+    },
+    "src/modules/Orders/components/SalesReportTab.tsx": {
+      "category": "data-visualization-style",
+      "decision": "leave",
+      "reason": "sales report bar height is computed from live quantity ratios."
+    },
+    "src/modules/Owner/components/OwnerFilterBar.tsx": {
+      "category": "chart-series-color",
+      "decision": "leave",
+      "reason": "owner filter chip color is derived from company/series data."
+    },
+    "src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx": {
+      "category": "matrix-heat-style",
+      "decision": "leave",
+      "reason": "company dot and best-month heat background use company-specific runtime colors."
+    },
+    "src/modules/Owner/components/OwnerPerformanceChart.tsx": {
+      "category": "chart-tooltip-and-series-color",
+      "decision": "leave",
+      "reason": "tooltip rows and legend dots use Recharts payload/company series runtime colors."
+    },
+    "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": {
+      "category": "table-print-alignment",
+      "decision": "leave",
+      "reason": "print/summary column alignment is selected from column metadata."
+    },
+    "src/modules/Reports/BankStatementMappingModal.tsx": {
+      "category": "bank-preview-layout",
+      "decision": "leave",
+      "reason": "bank statement preview min-width is computed from detected/imported columns."
+    },
+    "src/modules/Reports/GeneralPlTable.tsx": {
+      "category": "financial-matrix-runtime-tone",
+      "decision": "leave",
+      "reason": "P&L row and sticky backgrounds are runtime hierarchy tones in a protected financial matrix."
+    },
+    "src/modules/Reports/ReportsDetailModal.tsx": {
+      "category": "chart-payload-style",
+      "decision": "leave",
+      "reason": "report detail chart cell styling is derived from selected chart payload data."
+    },
+    "src/modules/Reports/bank/BankCategoryCardRow.tsx": {
+      "category": "bank-category-color",
+      "decision": "leave",
+      "reason": "bank category type colors come from category/type metadata."
+    },
+    "src/modules/Reports/bank/components/analysis/BankAnalysisCardShell.tsx": {
+      "category": "progress-data-style",
+      "decision": "leave",
+      "reason": "progress width and color are runtime values from analysis ratios."
+    },
+    "src/modules/Reports/bank/components/analysis/BankAnalysisCategoryBarCard.tsx": {
+      "category": "chart-dimension",
+      "decision": "leave",
+      "reason": "bar chart height is computed from rendered category count."
+    },
+    "src/modules/Reports/bank/components/analysis/BankAnalysisCategoryPieCard.tsx": {
+      "category": "chart-series-color",
+      "decision": "leave",
+      "reason": "pie legend dot uses chart/category series color."
+    },
+    "src/modules/Reports/bank/components/analysis/BankAnalysisPieTooltip.tsx": {
+      "category": "chart-tooltip-color",
+      "decision": "leave",
+      "reason": "tooltip title color comes from Recharts payload fill."
+    },
+    "src/modules/Settings/components/AppBrandingTab.tsx": {
+      "category": "theme-preview-color",
+      "decision": "leave",
+      "reason": "branding preview swatch uses the selected runtime brand color."
+    },
+    "src/ui/KebabMenu.tsx": {
+      "category": "ui-core-positioning",
+      "decision": "leave",
+      "reason": "shared kebab menu position and height are computed from trigger geometry and viewport."
+    },
+    "src/ui/MetricCard.tsx": {
+      "category": "ui-core-custom-color",
+      "decision": "leave",
+      "reason": "MetricCard supports an explicit runtime color prop as part of its public API."
+    },
+    "src/ui/SimpleTable.tsx": {
+      "category": "ui-core-table-sizing",
+      "decision": "leave",
+      "reason": "SimpleTable exposes runtime maxHeight/minWidth and column alignment/padding knobs."
+    },
+    "src/ui/SmartTable/SmartTable.tsx": {
+      "category": "ui-core-table-engine",
+      "decision": "leave",
+      "reason": "SmartTable computes runtime sizing, padding, row numbering, row styling, and sortable header states."
+    },
+    "src/ui/SmartTable/buildFooterCells.tsx": {
+      "category": "ui-core-table-footer",
+      "decision": "leave",
+      "reason": "SmartTable footer row-number cell mirrors runtime table padding and width."
+    }
+  }
+}
