@@ -2,7 +2,7 @@
 
 Date: 2026-07-03
 
-Status: RFC only. Do not implement conversions from this document until a separate implementation PR is approved.
+Status: accepted planning boundary. Do not implement conversions from this document until a separate implementation PR is approved.
 
 ## Goal
 
@@ -44,10 +44,10 @@ Close the next table-governance planning step after the safe PrintTable conversi
 
 | Priority | Work | Why First | Output |
 |---:|---|---|---|
-| 1 | MatrixTable hardening | owner conversion exists; remaining P&L matrix needs financial visual baseline | row tone/style API and one protected-report decision |
-| 2 | EditableTable RFC | editable grids cannot safely fit `SmartTable`/`SimpleTable` as-is | cell/edit lifecycle contract |
-| 3 | Financial PrintTable RFC | remaining print tables are financial/tax/bank/payroll sensitive | print-safe rules and acceptance tests |
-| 4 | SmartTable v2 compatibility RFC | TanStack evaluation depends on knowing MatrixTable/EditTable boundaries | compatibility matrix and pilot criteria |
+| 1 | SmartTable v2 compatibility RFC | TanStack is already hidden behind `SmartTable`; expansion must be controlled | compatibility matrix, bundle impact, rollback criteria |
+| 2 | MatrixTable hardening | owner conversion exists; remaining P&L matrix needs financial visual baseline | row tone/style API and one protected-report decision |
+| 3 | EditableTable RFC | editable grids cannot safely fit `SmartTable`/`SimpleTable` as-is | cell/edit lifecycle contract |
+| 4 | Financial PrintTable RFC | remaining print tables are financial/tax/bank/payroll sensitive | print-safe rules and acceptance tests |
 | 5 | Protected-domain conversion tickets | payroll, tax, bank, purchases | separate ticket per domain with owner review |
 
 ## MatrixTable Scope
@@ -120,7 +120,7 @@ Close the next table-governance planning step after the safe PrintTable conversi
 
 ## SmartTable v2 Dependency
 
-Do not start TanStack/SmartTable v2 implementation before these are true:
+TanStack has started only as a hidden read-only engine adapter inside `SmartTable`. Do not expand SmartTable v2 beyond compatibility work before these are true:
 
 | Dependency | Required Evidence |
 |---|---|
@@ -128,7 +128,8 @@ Do not start TanStack/SmartTable v2 implementation before these are true:
 | EditableTable boundary decided | EditableTable RFC accepted |
 | Protected print boundary decided | payroll/tax/bank/financial PrintTable RFCs accepted |
 | Compatibility tests exist | sorting, pagination, row numbers, footer, mobile cards |
-| Rollback plan exists | old `SmartTable` remains available during the compatibility pilot |
+| Bundle impact reviewed | TanStack cost and chunk placement documented before enabling more features |
+| Rollback plan exists | adapter can be bypassed or reverted without changing current `SmartTable` callers |
 
 ## Implementation Rules For Next PRs
 
@@ -149,10 +150,11 @@ Do not start TanStack/SmartTable v2 implementation before these are true:
 |---|---|---:|---|
 | A | MatrixTable RFC acceptance and visual baseline | 0 | low |
 | B | MatrixTable conversion on `OwnerMonthlyComparisonTable` | done: -1 | completed |
-| C | MatrixTable hardening and optional `GeneralPlTable` conversion | 1 | high |
-| D | EditableTable RFC and non-payroll conversion | 0-1 | medium |
-| E | Financial PrintTable RFCs by domain | 0 | low |
-| F | Protected domain conversions | case-by-case | high/critical |
+| C | SmartTable v2 compatibility audit and bundle decision | 0 | low |
+| D | MatrixTable hardening and optional `GeneralPlTable` conversion | 1 | high |
+| E | EditableTable RFC and non-payroll conversion | 0-1 | medium |
+| F | Financial PrintTable RFCs by domain | 0 | low |
+| G | Protected domain conversions | case-by-case | high/critical |
 
 ## Acceptance For This RFC
 

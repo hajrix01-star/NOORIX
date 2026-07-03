@@ -2,11 +2,23 @@
 
 Date: 2026-07-03
 
-Status: phase 1 implemented behind the current `SmartTable` API.
+Status: phase 1 implemented behind the current `SmartTable` API; phase 2 is RFC-only.
 
 ## Decision
 
 Keep `SmartTable` as the Noorix official table API. TanStack Table is now introduced as an internal row/column model engine only; Noorix rendering, CSS, mobile cards, manual sorting, manual pagination, and protected table boundaries remain unchanged.
+
+## Current Production Baseline
+
+| Metric | Count |
+|---|---:|
+| `SmartTable` JSX usages | 46 |
+| Files using `SmartTable` JSX | 36 |
+| `SmartTable` usages outside `src/ui` | 36 |
+| Files using `SmartTable` outside `src/ui` | 35 |
+| Public API breaks after TanStack adapter | 0 |
+| `src/ui` direct `style={{` usages after closure | 0 |
+| Governed manual tables remaining outside `src/ui` | 53 |
 
 ## Why Not In This Cleanup
 
@@ -53,6 +65,29 @@ Keep `SmartTable` as the Noorix official table API. TanStack Table is now introd
 | Mobile cards/compact rows | unchanged, powered by engine row model |
 | Protected financial/report tables | untouched |
 
+## Phase 2 Scope
+
+| Candidate | Decision |
+|---|---|
+| Move sorting calculation to TanStack internally | allowed only with compatibility tests |
+| Move pagination row model to TanStack internally | allowed only if current manual/external API remains unchanged |
+| Column visibility/presets | keep Noorix storage/API; TanStack may only assist row model |
+| Column sizing/resizing | RFC first; no CSS token break |
+| Selection/actions | keep current Noorix render contract |
+| Mobile cards | keep current Noorix markup |
+| Editable cells | out of scope; belongs to EditableTable RFC |
+| Grouped/tree rows | out of scope until financial hierarchy decision |
+| Print-safe mode | out of scope until PrintTable/financial print RFCs |
+
+## Bundle Guardrail
+
+| Item | Requirement |
+|---|---|
+| TanStack dependency | accepted as internal engine foundation |
+| Further feature activation | must document bundle/chunk impact before merge |
+| Regression threshold | no unexplained main chunk growth |
+| Mitigation path | lazy-load heavy table features or keep them out of `SmartTable` core |
+
 ## Acceptance For Any Future Implementation
 
 | Check | Required |
@@ -62,4 +97,5 @@ Keep `SmartTable` as the Noorix official table API. TanStack Table is now introd
 | Financial/report tables untouched unless specifically scoped | yes |
 | Visual smoke for desktop/mobile | yes |
 | CI build, financial tests, and table tests | yes |
+| Bundle impact documented for any new TanStack-powered feature | yes |
 
