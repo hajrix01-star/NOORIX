@@ -43,10 +43,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             numeric: true,
             width: '11%',
             render: (v: any) => (
-              <span
-                className="nx-cell-num"
-                style={{ color: Number(v) > 0 ? 'var(--noorix-accent-red)' : undefined }}
-              >
+              <span className={Number(v) > 0 ? 'nx-cell-num text-noorix-red' : 'nx-cell-num'}>
                 {hrFmt(v)}
               </span>
             ),
@@ -57,10 +54,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             numeric: true,
             width: '11%',
             render: (v: any) => (
-              <span
-                className="nx-cell-num"
-                style={{ color: Number(v) > 0 ? 'var(--color-noorix-amber)' : undefined }}
-              >
+              <span className={Number(v) > 0 ? 'nx-cell-num text-noorix-amber' : 'nx-cell-num'}>
                 {hrFmt(v)}
               </span>
             ),
@@ -163,23 +157,13 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
                 </div>
                 <div>
                   <div className="nx-mc__stat-label">{t('payrollDeductions')}</div>
-                  <div
-                    className="text-[12px] font-semibold ltr"
-                    style={{
-                      color: Number(row.deductions) > 0 ? 'var(--noorix-accent-red)' : undefined,
-                    }}
-                  >
+                  <div className={Number(row.deductions) > 0 ? 'text-[12px] font-semibold ltr text-noorix-red' : 'text-[12px] font-semibold ltr'}>
                     {hrFmt(row.deductions)}
                   </div>
                 </div>
                 <div>
                   <div className="nx-mc__stat-label">{t('payrollAdvances')}</div>
-                  <div
-                    className="text-[12px] font-semibold ltr"
-                    style={{
-                      color: Number(row.advancesDeduct) > 0 ? 'var(--color-noorix-amber)' : undefined,
-                    }}
-                  >
+                  <div className={Number(row.advancesDeduct) > 0 ? 'text-[12px] font-semibold ltr text-noorix-amber' : 'text-[12px] font-semibold ltr'}>
                     {hrFmt(row.advancesDeduct)}
                   </div>
                 </div>

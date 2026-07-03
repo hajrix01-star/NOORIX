@@ -21,6 +21,11 @@ export const ANALYSIS_CARD_COLORS = [
   '#84cc16',
 ];
 
+export function analysisCardColorClass(index: number) {
+  const safeIndex = Number.isFinite(index) ? index : 0;
+  return `nx-analysis-color-${Math.abs(safeIndex) % ANALYSIS_CARD_COLORS.length}`;
+}
+
 export const RED_PIE_TINTS = [
   'var(--noorix-accent-red)',
   'var(--noorix-accent-red)',

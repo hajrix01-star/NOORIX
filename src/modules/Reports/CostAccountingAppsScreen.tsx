@@ -409,14 +409,12 @@ export default function CostAccountingAppsScreen() {
                   {t('reportCostAppsLineLabel')}
                 </th>
                 <th
-                  className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight print:px-1 print:py-1"
-                  style={{ width: '120px' }}
+                  className="w-[120px] border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight print:px-1 print:py-1"
                 >
                   {t('reportCostAppsLineMonthlyAmount')}
                 </th>
                 <th
-                  className="border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight print:px-1 print:py-1"
-                  style={{ width: '120px' }}
+                  className="w-[120px] border border-noorix-border px-2 py-2.5 text-center text-xs font-bold leading-tight print:px-1 print:py-1"
                 >
                   {t('reportCostAppsLineAnnualAmount')}
                 </th>

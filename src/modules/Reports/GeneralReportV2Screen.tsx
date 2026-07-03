@@ -21,12 +21,12 @@ import {
 import { MONTH_NAMES_AR, MONTH_NAMES_EN, getProfitLossCardRawValue } from './profitLossPresentationModel';
 import type { ReportPeriodMode } from './reportTypes';
 
-const GROUP_TONES: Record<string, string> = {
-  sales: 'var(--color-nx-sales)',
-  purchases: '#991b1b',
-  expenses: '#991b1b',
-  grossProfit: 'var(--color-nx-profit)',
-  netProfit: 'var(--color-nx-net-profit)',
+const GROUP_TONE_CLASSES: Record<string, string> = {
+  sales: 'nx-gr2-score--sales',
+  purchases: 'nx-gr2-score--negative',
+  expenses: 'nx-gr2-score--negative',
+  grossProfit: 'nx-gr2-score--gross-profit',
+  netProfit: 'nx-gr2-score--net-profit',
 };
 
 const NEGATIVE_GROUPS = new Set(['purchases', 'expenses']);
@@ -41,6 +41,12 @@ function groupToneClass(row: any) {
   if (row.rowType === 'summary' && Number(row.total || 0) < 0) return 'is-negative';
   if (row.rowType === 'summary') return 'is-summary';
   return '';
+}
+
+function lineIndentClass(row: any) {
+  if (row.rowType === 'groupTotal' || row.rowType === 'summary') return 'nx-gr2-line--indent-total';
+  const depth = Math.max(0, Math.min(4, Number(row.depth || 0)));
+  return `nx-gr2-line--indent-${depth}`;
 }
 
 function displayV2RowLabel(row: any, lang: string) {
@@ -145,11 +151,11 @@ export default function GeneralReportV2Screen() {
     const netProfit = getProfitLossCardRawValue(report, 'netProfit', selectedMonthNumber);
     const ratio = (value: number) => (sales ? `${((value / sales) * 100).toFixed(1)}%` : '-');
     return [
-      { key: 'sales', label: selectedMonthNumber ? `${t('revenueGroup')} ${monthLabel}` : t('annualSales'), value: sales, meta: selectedMonthNumber ? monthLabel : String(year), tone: GROUP_TONES.sales },
-      { key: 'grossProfit', label: t('annualGrossProfit'), value: grossProfit, meta: ratio(grossProfit), tone: GROUP_TONES.grossProfit },
-      { key: 'netProfit', label: t('annualNetProfit'), value: netProfit, meta: ratio(netProfit), tone: GROUP_TONES.netProfit },
-      { key: 'purchases', label: selectedMonthNumber ? `${t('purchasesGroup')} ${monthLabel}` : t('annualPurchases'), value: purchases, meta: ratio(purchases), tone: GROUP_TONES.purchases },
-      { key: 'expenses', label: selectedMonthNumber ? `${t('expensesGroup')} ${monthLabel}` : t('annualExpenses'), value: expenses, meta: ratio(expenses), tone: GROUP_TONES.expenses },
+      { key: 'sales', label: selectedMonthNumber ? `${t('revenueGroup')} ${monthLabel}` : t('annualSales'), value: sales, meta: selectedMonthNumber ? monthLabel : String(year), toneClass: GROUP_TONE_CLASSES.sales },
+      { key: 'grossProfit', label: t('annualGrossProfit'), value: grossProfit, meta: ratio(grossProfit), toneClass: GROUP_TONE_CLASSES.grossProfit },
+      { key: 'netProfit', label: t('annualNetProfit'), value: netProfit, meta: ratio(netProfit), toneClass: GROUP_TONE_CLASSES.netProfit },
+      { key: 'purchases', label: selectedMonthNumber ? `${t('purchasesGroup')} ${monthLabel}` : t('annualPurchases'), value: purchases, meta: ratio(purchases), toneClass: GROUP_TONE_CLASSES.purchases },
+      { key: 'expenses', label: selectedMonthNumber ? `${t('expensesGroup')} ${monthLabel}` : t('annualExpenses'), value: expenses, meta: ratio(expenses), toneClass: GROUP_TONE_CLASSES.expenses },
     ];
   }, [monthLabel, report, selectedMonthNumber, t, year]);
 
@@ -323,7 +329,7 @@ tr.is-summary td.amt { color: #047857; }
         <>
           <section className="nx-gr2-scoreboard" aria-label={t('reportPlExecutiveSummary')}>
             {kpis.map((card) => (
-              <article key={card.key} className="nx-gr2-score" style={{ '--tone': card.tone } as React.CSSProperties}>
+              <article key={card.key} className={`nx-gr2-score ${card.toneClass}`}>
                 <span>{card.label}</span>
                 <strong dir="ltr">{amountText(card.value)} <small>SR</small></strong>
                 <em>{card.meta}</em>
@@ -377,8 +383,7 @@ tr.is-summary td.amt { color: #047857; }
                           <Button
                             variant="raw"
                             type="button"
-                            className="nx-gr2-line"
-                            style={{ paddingInlineStart: row.rowType === 'groupTotal' || row.rowType === 'summary' ? 12 : 12 + ((row.depth || 0) + 1) * 18 }}
+                            className={`nx-gr2-line ${lineIndentClass(row)}`}
                             onClick={() => canCollapse ? toggleGroup(String(collapseKey)) : setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}
                           >
                             {canCollapse && <span>{collapsedGroups[String(collapseKey)] ? '+' : '-'}</span>}

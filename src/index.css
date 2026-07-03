@@ -1569,6 +1569,19 @@ html[data-card-style="10"] .noorix-stat-card {
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
+.nx-gr2-score--sales {
+  --tone: var(--color-nx-sales);
+}
+.nx-gr2-score--negative {
+  --tone: #991b1b;
+}
+.nx-gr2-score--gross-profit {
+  --tone: var(--color-nx-profit);
+}
+.nx-gr2-score--net-profit {
+  --tone: var(--color-nx-net-profit);
+}
+
 .nx-gr2-score span {
   display: block;
   color: #64748b;
@@ -1758,7 +1771,7 @@ html[data-card-style="10"] .noorix-stat-card {
   border: 0 !important;
   background: transparent !important;
   color: inherit !important;
-  padding: 0 !important;
+  padding: 0;
   text-align: inherit;
   box-shadow: none !important;
 }
@@ -1770,6 +1783,25 @@ html[data-card-style="10"] .noorix-stat-card {
   justify-content: flex-start;
   font-weight: 900;
   font-size: 13px;
+}
+
+.nx-gr2-line--indent-total {
+  padding-inline-start: 12px;
+}
+.nx-gr2-line--indent-0 {
+  padding-inline-start: 30px;
+}
+.nx-gr2-line--indent-1 {
+  padding-inline-start: 48px;
+}
+.nx-gr2-line--indent-2 {
+  padding-inline-start: 66px;
+}
+.nx-gr2-line--indent-3 {
+  padding-inline-start: 84px;
+}
+.nx-gr2-line--indent-4 {
+  padding-inline-start: 102px;
 }
 
 .nx-gr2-line span {
@@ -2268,7 +2300,19 @@ html[data-card-style="10"] .noorix-stat-card {
   font-weight: 700;
   line-height: 1;
   opacity: 0.9;
+  color: #0d9488;
 }
+
+.nx-pl-indent-0 { padding-inline-start: 0; }
+.nx-pl-indent-20 { padding-inline-start: 20px; }
+.nx-pl-indent-22 { padding-inline-start: 22px; }
+.nx-pl-indent-42 { padding-inline-start: 42px; }
+.nx-pl-indent-44 { padding-inline-start: 44px; }
+.nx-pl-indent-64 { padding-inline-start: 64px; }
+.nx-pl-indent-66 { padding-inline-start: 66px; }
+.nx-pl-indent-86 { padding-inline-start: 86px; }
+.nx-pl-indent-88 { padding-inline-start: 88px; }
+.nx-pl-indent-108 { padding-inline-start: 108px; }
 
 .nx-pl-table__toggle {
   display: inline-grid;
@@ -6880,6 +6924,50 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border: 1px solid var(--noorix-yellow-35);
   background: var(--noorix-yellow-12);
 }
+.bank-map-badge--date {
+  background: var(--noorix-blue-18);
+  color: var(--noorix-accent-blue);
+}
+.bank-map-badge--desc,
+.bank-map-badge--notes {
+  background: var(--noorix-violet-15);
+  color: var(--noorix-accent-violet);
+}
+.bank-map-badge--debit {
+  background: var(--noorix-red-15);
+  color: var(--noorix-accent-red);
+}
+.bank-map-badge--credit {
+  background: var(--noorix-green-15);
+  color: var(--noorix-accent-green);
+}
+.bank-map-badge--balance {
+  background: var(--noorix-amber-18);
+  color: var(--noorix-accent-amber);
+}
+.bank-map-badge--ref {
+  background: var(--noorix-muted-15);
+  color: var(--noorix-text);
+}
+.bank-map-cell--date {
+  background: color-mix(in srgb, var(--noorix-accent-blue) 6%, transparent);
+}
+.bank-map-cell--desc,
+.bank-map-cell--notes {
+  background: color-mix(in srgb, var(--noorix-accent-violet) 6%, transparent);
+}
+.bank-map-cell--debit {
+  background: color-mix(in srgb, var(--noorix-accent-red) 6%, transparent);
+}
+.bank-map-cell--credit {
+  background: color-mix(in srgb, var(--noorix-accent-green) 6%, transparent);
+}
+.bank-map-cell--balance {
+  background: color-mix(in srgb, var(--noorix-accent-amber) 6%, transparent);
+}
+.bank-map-cell--ref {
+  background: color-mix(in srgb, var(--noorix-text) 6%, transparent);
+}
 .bank-transactions-filter-grid {
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 }
@@ -7042,6 +7130,69 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .nx-sales-channel-input--legacy {
   background: var(--noorix-bg-muted);
+}
+.nx-touch-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+.nx-analysis-color-0 {
+  background: var(--noorix-accent-blue);
+}
+.nx-analysis-color-1 {
+  background: var(--noorix-accent-green);
+}
+.nx-analysis-color-2 {
+  background: #ca8a04;
+}
+.nx-analysis-color-3 {
+  background: var(--noorix-accent-red);
+}
+.nx-analysis-color-4,
+.nx-analysis-color-7 {
+  background: var(--noorix-accent-violet);
+}
+.nx-analysis-color-5 {
+  background: #0891b2;
+}
+.nx-analysis-color-6 {
+  background: #db2777;
+}
+.nx-analysis-color-8 {
+  background: #ea580c;
+}
+.nx-analysis-color-9 {
+  background: #84cc16;
+}
+.nx-owner-metric--sales {
+  border-color: var(--color-nx-sales);
+  color: var(--color-nx-sales);
+  background: color-mix(in srgb, var(--color-nx-sales) 8%, transparent);
+}
+.nx-owner-metric--purchases {
+  border-color: var(--color-nx-purchases);
+  color: var(--color-nx-purchases);
+  background: color-mix(in srgb, var(--color-nx-purchases) 8%, transparent);
+}
+.nx-owner-metric--expenses {
+  border-color: var(--color-nx-expenses);
+  color: var(--color-nx-expenses);
+  background: color-mix(in srgb, var(--color-nx-expenses) 8%, transparent);
+}
+.nx-owner-metric--net-profit {
+  border-color: var(--color-nx-net-profit);
+  color: var(--color-nx-net-profit);
+  background: color-mix(in srgb, var(--color-nx-net-profit) 8%, transparent);
+}
+.nx-owner-dot--sales { background: var(--color-nx-sales); }
+.nx-owner-dot--purchases { background: var(--color-nx-purchases); }
+.nx-owner-dot--expenses { background: var(--color-nx-expenses); }
+.nx-owner-dot--net-profit { background: var(--color-nx-net-profit); }
+.nx-owner-text--sales { color: var(--color-nx-sales); }
+.nx-owner-text--purchases { color: var(--color-nx-purchases); }
+.nx-owner-text--expenses { color: var(--color-nx-expenses); }
+.nx-owner-text--net-profit { color: var(--color-nx-net-profit); }
+.nx-batch-row-date-error {
+  border-color: var(--noorix-accent-red);
+  background: var(--noorix-red-8, #fef2f2);
 }
 @media (max-width: 768px) {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {

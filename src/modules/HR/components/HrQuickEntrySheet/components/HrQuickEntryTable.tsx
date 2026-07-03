@@ -11,10 +11,7 @@ export function HrQuickEntryTable({
   return (
     <div
       dir={dir}
-      className="overflow-y-auto"
-      style={{
-        WebkitOverflowScrolling: 'touch',
-      }}
+      className="overflow-y-auto nx-touch-scroll"
     >
       {children}
     </div>

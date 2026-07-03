@@ -48,12 +48,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
         </div>
       </div>
 
-      <div
-        className="noorix-surface-card p-4"
-        style={{
-          borderLeft: `4px solid ${okAgg ? 'var(--noorix-accent-green)' : '#ca8a04'}`,
-        }}
-      >
+      <div className={`noorix-surface-card p-4 border-l-4 ${okAgg ? 'border-l-noorix-green' : 'border-l-[var(--color-noorix-amber)]'}`}>
         <strong>{t('bankReconAggregateCheck')}</strong>
         <p className="text-[14px] mt-2 mb-0">
           {okAgg ? t('bankReconAggregateOk') : t('bankReconAggregateDiff')}
@@ -65,12 +60,7 @@ export default function BankStatementReconciliationTab({ balanceVerification, re
         </p>
       </div>
 
-      <div
-        className="noorix-surface-card p-4"
-        style={{
-          borderLeft: `4px solid ${okSeq ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)'}`,
-        }}
-      >
+      <div className={`noorix-surface-card p-4 border-l-4 ${okSeq ? 'border-l-noorix-green' : 'border-l-noorix-red'}`}>
         <strong>{t('bankReconBalanceSequence')}</strong>
         <p className="text-[14px] mt-2 mb-0">
           {okSeq ? t('bankReconSequenceOk') : t('bankReconSequenceIssues')}

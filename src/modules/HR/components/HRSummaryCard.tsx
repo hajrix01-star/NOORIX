@@ -108,10 +108,7 @@ export default function HRSummaryCard({
         />
         {outstandingAdvancesAmount > 0 && (
           <MetricCard.Footer className="pb-3 pt-1">
-            <span
-              className="text-[12px] font-bold tabular-nums"
-              style={{ color: COLOR_ADVANCES }}
-            >
+            <span className="text-[12px] font-bold tabular-nums text-[var(--color-nx-expenses)]">
               {fmt(outstandingAdvancesAmount)} <span className="nx-sar">SR</span>
             </span>
           </MetricCard.Footer>

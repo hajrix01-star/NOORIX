@@ -4,7 +4,7 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, Checkbox, FileTrigger, FormRow } from '../../../ui';
+import { Input, Button, Card, Checkbox, FileTrigger, FormRow, cn } from '../../../ui';
 import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
@@ -15,10 +15,8 @@ import {
 } from './BatchRowParts';
 import { isWarrantyFollowUpKind } from '../utils/batchRowModel';
 
-function dateErrorStyle(maxInvoiceDate: any, invoiceDate: any) {
-  return maxInvoiceDate && invoiceDate > maxInvoiceDate
-    ? { borderColor: 'var(--noorix-accent-red)', background: 'var(--noorix-red-8, #fef2f2)' }
-    : {};
+function dateErrorClass(maxInvoiceDate: any, invoiceDate: any) {
+  return maxInvoiceDate && invoiceDate > maxInvoiceDate ? 'nx-batch-row-date-error' : '';
 }
 
 function BatchRowTable(props: Record<string, any>) {
@@ -38,12 +36,12 @@ function BatchRowTable(props: Record<string, any>) {
   );
 
   return (
-    <tr style={{ borderBottom: '1px solid var(--noorix-border)' }}>
+    <tr className="border-b border-noorix-border">
       <td className="text-center text-[11px] text-noorix-muted font-semibold" style={cp}>
         {index + 1}
       </td>
 
-      <td style={{ ...cp }}>
+      <td style={cp}>
         <BatchSupplierPickInner
           suppliers={suppliers}
           row={row}
@@ -74,13 +72,13 @@ function BatchRowTable(props: Record<string, any>) {
           value={row.totalInclusive}
           onChange={(e: any) => onUpdate(index, 'totalInclusive', e.target.value)}
           placeholder={t('amountPlaceholderZero')}
-          className="font-bold text-[13px] w-full"
-          style={{ ...inputSm, textAlign: 'right', fontFamily: 'var(--noorix-font-numbers)' }}
+          className="font-bold text-[13px] w-full text-right nx-font-numbers"
+          style={inputSm}
           aria-label={`${t('total')} — ${t('batchRowLineAriaLabel', index + 1)}`}
         />
       </td>
 
-      <td className="text-[11px]" style={{ ...cp, fontFamily: 'var(--noorix-font-numbers)', lineHeight: 1.5 }}>
+      <td className="text-[11px] nx-font-numbers leading-[1.5]" style={cp}>
         <BatchNetTaxReadonly net={net} tax={tax} variant="table" t={t} />
       </td>
 
@@ -98,11 +96,8 @@ function BatchRowTable(props: Record<string, any>) {
               onUpdate(index, 'invoiceDate', v);
             }
           }}
-          className="text-center w-full"
-          style={{
-            ...inputSm,
-            ...dateErrorStyle(maxInvoiceDate, row.invoiceDate),
-          }}
+          className={cn('text-center w-full', dateErrorClass(maxInvoiceDate, row.invoiceDate))}
+          style={inputSm}
           title={dateTitle}
           aria-label={`${t('date')} — ${t('batchRowLineAriaLabel', index + 1)}`}
         />
@@ -317,10 +312,7 @@ function BatchRowStack(props: Record<string, any>) {
               onUpdate(index, 'invoiceDate', v);
             }
           }}
-          className="w-full"
-          style={{
-            ...dateErrorStyle(maxInvoiceDate, row.invoiceDate),
-          }}
+          className={cn('w-full', dateErrorClass(maxInvoiceDate, row.invoiceDate))}
           title={dateTitle}
         />
 

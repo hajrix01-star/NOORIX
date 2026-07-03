@@ -12,19 +12,23 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, cn } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
 import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
-import { KPI_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import { formatCompactNumber, formatMoney } from '../../../utils/money';
 import type { OwnerCompanySeries, OwnerChartPoint } from '../types';
 import type { CompanyListItem } from '../../../context/appTypes';
 
-const METRIC_COLORS = {
-  sales: KPI_RECHARTS_COLORS.sales,
-  purchases: KPI_RECHARTS_COLORS.purchases,
-  expenses: KPI_RECHARTS_COLORS.expenses,
-  netProfit: KPI_RECHARTS_COLORS.netProfit,
+type MetricFilterKey = 'sales' | 'purchases' | 'expenses';
+
+const OWNER_METRIC_BUTTON_CLASSES: Record<MetricFilterKey, string> = {
+  sales: 'nx-owner-metric--sales',
+  purchases: 'nx-owner-metric--purchases',
+  expenses: 'nx-owner-metric--expenses',
 };
 
-type MetricFilterKey = 'sales' | 'purchases' | 'expenses';
+const OWNER_METRIC_DOT_CLASSES: Record<MetricFilterKey, string> = {
+  sales: 'nx-owner-dot--sales',
+  purchases: 'nx-owner-dot--purchases',
+  expenses: 'nx-owner-dot--expenses',
+};
 
 type DailySalesQueryShape = {
   isLoading: boolean;
@@ -300,12 +304,10 @@ function ChartControls({
             variant="raw"
             size="auto"
             onClick={() => setMetricFilter(isAllActive ? new Set(['sales']) : new Set(allKeys))}
-            style={{
-              borderColor: isAllActive ? 'var(--noorix-text)' : 'var(--noorix-border)',
-              color: isAllActive ? 'var(--noorix-text)' : 'var(--noorix-text-muted)',
-              background: isAllActive ? 'var(--noorix-bg-muted)' : 'transparent',
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none cursor-pointer"
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none cursor-pointer',
+              isAllActive ? 'border-noorix-text bg-noorix-bg-muted text-noorix-text' : 'border-noorix-border bg-transparent text-noorix-muted',
+            )}
           >
             {lang === 'ar' ? 'الكل' : 'All'}
           </Button>
@@ -321,22 +323,17 @@ function ChartControls({
             size="auto"
             key={f.key}
             onClick={() => !disabled && toggleMetric(f.key)}
-            style={{
-              borderColor: active ? METRIC_COLORS[f.key] : 'var(--noorix-border)',
-              color: active
-                ? METRIC_COLORS[f.key]
-                : disabled
-                  ? 'var(--noorix-border)'
-                  : 'var(--noorix-text-muted)',
-              background: active ? `${METRIC_COLORS[f.key]}14` : 'transparent',
-              opacity: disabled ? 0.35 : 1,
-              cursor: disabled ? 'not-allowed' : 'pointer',
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none"
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none',
+              active ? OWNER_METRIC_BUTTON_CLASSES[f.key] : 'border-noorix-border bg-transparent text-noorix-muted',
+              disabled ? 'cursor-not-allowed opacity-[0.35] text-noorix-border' : 'cursor-pointer',
+            )}
           >
             <span
-              className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
-              style={{ background: active ? METRIC_COLORS[f.key] : 'var(--noorix-border)' }}
+              className={cn(
+                'inline-block h-2.5 w-2.5 shrink-0 rounded-sm',
+                active ? OWNER_METRIC_DOT_CLASSES[f.key] : 'bg-noorix-border',
+              )}
             />
             {f.label}
           </Button>
