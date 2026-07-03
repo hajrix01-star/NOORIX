@@ -41,7 +41,7 @@ The 2026-07-03 local batch reduced the governed count from 88 to 44 by moving sa
 
 The closure batch added `scripts/inline-style-manual-reasons.json`. CI now requires every remaining inline-style file to have a category, decision, and reason; stale reasons also fail the check.
 
-The MatrixTable owner prototype moved owner monthly comparison runtime styles into `src/ui/MatrixTable.tsx`. This intentionally shifts matrix sizing, row accent, and heat-cell style exceptions into the central UI system while reducing outside-UI inline styles.
+The MatrixTable owner conversion moved owner monthly comparison runtime styles into `src/ui/MatrixTable.tsx`. This intentionally shifts matrix sizing, row accent, and heat-cell style exceptions into the central UI system while reducing outside-UI inline styles.
 
 ## Rule
 

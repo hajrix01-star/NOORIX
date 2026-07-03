@@ -47,7 +47,7 @@ Each phase must define:
 |---|---|
 | PrintTable | next large phase, not tiny PRs |
 | MatrixTable | separate large phase after RFC |
-| SmartTable v2 | RFC/prototype phase only, not mixed with cleanup |
+| SmartTable v2 | RFC/compatibility pilot phase only, not mixed with cleanup |
 | CSS reduction | batch by section, not one helper at a time |
 | Docs/governance | bundle unless CI requires the rule immediately |
 

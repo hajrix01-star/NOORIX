@@ -1,8 +1,8 @@
-# MatrixTable Owner Prototype
+# MatrixTable Owner Conversion
 
 Date: 2026-07-03
 
-Status: implemented as the first MatrixTable prototype.
+Status: implemented as the first MatrixTable conversion.
 
 ## Scope
 
