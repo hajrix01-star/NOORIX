@@ -8,12 +8,12 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 98 |
-| files with `style={{` | 46 |
+| `style={{` total | 88 |
+| files with `style={{` | 43 |
 | inside `src/ui` | 14 |
 | `src/ui` files | 5 |
-| outside `src/ui` | 84 |
-| outside `src/ui` files | 41 |
+| outside `src/ui` | 74 |
+| outside `src/ui` files | 38 |
 
 ## Top Files
 
@@ -24,16 +24,15 @@ Status: active guardrail.
 | `src/ui/SmartTable/SmartTable.tsx` | 7 |
 | `src/modules/Purchases/components/BatchRow.tsx` | 6 |
 | `src/modules/Owner/components/OwnerPerformanceChart.tsx` | 5 |
-| `src/modules/Reports/TaxReportTab.tsx` | 5 |
 | `src/modules/HR/components/employeeProfile/EmployeeProfilePayrollSection.tsx` | 4 |
 | `src/ui/SimpleTable.tsx` | 4 |
-| `src/modules/Reports/bank/BankCategoryFormModal.tsx` | 3 |
 | `src/modules/Reports/BankStatementMappingModal.tsx` | 3 |
 | `src/components/UserMenu.tsx` | 2 |
 | `src/modules/Dashboard/components/DashboardCalendarTab/components/DashboardCalendarDayCell.tsx` | 2 |
 | `src/modules/HR/components/HrQuickEntrySheet/HrQuickEntrySheet.tsx` | 2 |
-| `src/modules/Reports/bank/BankStatementPieDrilldownModal.tsx` | 2 |
 | `src/modules/Reports/bank/BankStatementReconciliationTab.tsx` | 2 |
+| `src/modules/Reports/CostAccountingAppsScreen.tsx` | 2 |
+| `src/modules/Reports/GeneralReportV2Screen.tsx` | 2 |
 
 ## Rule
 

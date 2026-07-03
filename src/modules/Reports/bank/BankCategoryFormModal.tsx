@@ -220,8 +220,7 @@ export function BankCategoryFormModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => setParentKeywords((p) => p.filter((_, i) => i !== idx))}
-                  className="ms-1.5 text-noorix-red px-1"
-                  style={{ minHeight: 'auto' }}
+                  className="ms-1.5 text-noorix-red px-1 min-h-[auto]"
                 >
                   ×
                 </Button>
@@ -261,13 +260,11 @@ export function BankCategoryFormModal({
               key={idx}
               role="presentation"
               onClick={() => setActiveClassIdx(idx)}
-              style={{
-                padding: 12,
-                marginBottom: 8,
-                borderRadius: 10,
-                border: activeClassIdx === idx ? '2px solid var(--noorix-blue-45)' : '1px solid var(--noorix-border)',
-                background: activeClassIdx === idx ? 'var(--noorix-blue-6)' : 'var(--noorix-bg-muted)',
-              }}
+              className={`mb-2 rounded-[10px] p-3 ${
+                activeClassIdx === idx
+                  ? 'border-2 border-[var(--noorix-blue-45)] bg-[var(--noorix-blue-6)]'
+                  : 'border border-noorix-border bg-noorix-bg-muted'
+              }`}
             >
               <div className="flex gap-2 mb-2">
                 <div className="flex-1 min-w-0">
@@ -314,8 +311,7 @@ export function BankCategoryFormModal({
                           ),
                         );
                       }}
-                      className="ms-1 px-1"
-                      style={{ minHeight: 'auto' }}
+                      className="ms-1 px-1 min-h-[auto]"
                     >
                       ×
                     </Button>
