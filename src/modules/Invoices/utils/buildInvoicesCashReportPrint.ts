@@ -2,6 +2,8 @@
  * HTML + CSS لتقرير الكاش — طباعة A4 عمودي (openPrintWindow).
  */
 
+import { buildPrintTableHtml } from '../../../utils/printTableHtml';
+
 function esc(v: unknown) {
   return String(v ?? '')
     .replace(/&/g, '&amp;')
@@ -72,6 +74,8 @@ export const INVOICES_CASH_REPORT_PRINT_EXTRA_CSS = `
 .cash-table-wrap { overflow: hidden; border-radius: 10px; border: 1px solid #e2e8f0; }
 .cash-table-wrap table { margin: 0; }
 .cash-table-wrap th { background: #185FA5; }
+.cash-table-strong { font-weight: 800; }
+.cash-table-number { direction: ltr; unicode-bidi: plaintext; }
 .cash-empty { text-align: center; padding: 20px; color: #64748b; font-size: 13px; border: 1px dashed #cbd5e1; border-radius: 10px; }
 @media print {
   .cash-kpi .num { font-size: 18px; }
@@ -92,27 +96,22 @@ export function buildInvoicesCashReportBody(
   const vaultTable =
     vaultRows.length === 0
       ? `<div class="cash-empty">${esc(labels.noCashVaults)}</div>`
-      : `<div class="cash-table-wrap"><table>
-        <thead><tr>
-          <th>${esc(labels.colVault)}</th>
-          <th>${esc(labels.colIn)}</th>
-          <th>${esc(labels.colOut)}</th>
-          <th>${esc(labels.colRemain)}</th>
-        </tr></thead>
-        <tbody>
-          ${vaultRows
-            .map(
-              (r) =>
-                `<tr><td>${esc(r.vaultName)}</td><td style="direction:ltr;text-align:right">${esc(r.inflow)}</td>` +
-                `<td style="direction:ltr;text-align:right">${esc(r.outflow)}</td>` +
-                `<td style="direction:ltr;text-align:right"><strong>${esc(r.remainder)}</strong></td></tr>`,
-            )
-            .join('')}
-          <tr><td><strong>${esc(labels.totalsTitle)}</strong></td>` +
-        `<td style="direction:ltr;text-align:right"><strong>${esc(totals.inflow)}</strong></td>` +
-        `<td style="direction:ltr;text-align:right"><strong>${esc(totals.outflow)}</strong></td>` +
-        `<td style="direction:ltr;text-align:right"><strong>${esc(totals.remainder)}</strong></td></tr>
-        </tbody></table></div>`;
+      : buildPrintTableHtml({
+          columns: [
+            { key: 'vaultName', header: labels.colVault },
+            { key: 'inflow', header: labels.colIn, align: 'right', cellClassName: 'cash-table-number' },
+            { key: 'outflow', header: labels.colOut, align: 'right', cellClassName: 'cash-table-number' },
+            { key: 'remainder', header: labels.colRemain, align: 'right', cellClassName: 'cash-table-number cash-table-strong' },
+          ],
+          rows: vaultRows,
+          wrapperClassName: 'cash-table-wrap',
+          footerRows: [[
+            { value: labels.totalsTitle, className: 'cash-table-strong' },
+            { value: totals.inflow, align: 'right', className: 'cash-table-number cash-table-strong' },
+            { value: totals.outflow, align: 'right', className: 'cash-table-number cash-table-strong' },
+            { value: totals.remainder, align: 'right', className: 'cash-table-number cash-table-strong' },
+          ]],
+        });
 
   return `
 <div class="cash-report-wrap">

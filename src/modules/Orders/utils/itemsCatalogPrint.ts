@@ -1,4 +1,5 @@
 import { openPrintWindow } from '../../../utils/printUtils';
+import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../../utils/printTableHtml';
 
 export type ItemsCatalogPrintFilters = {
   section: string;
@@ -34,14 +35,16 @@ export function renderCatalogProductName(nameAr: string, nameEn: string) {
   return `<span class="name-ar">${esc(nameAr)}</span>`;
 }
 
-function renderPrintRow(r: PrintRow) {
-  return `<tr>
-  <td class="col-num">${r.num}</td>
-  <td class="col-name">${renderCatalogProductName(r.nameAr, r.nameEn)}</td>
-  <td class="col-spec">${esc(r.spec)}</td>
-  <td class="col-qty"></td>
-  <td class="col-notes"></td>
-</tr>`;
+function buildPrintRow(r: PrintRow): PrintHtmlTableRow {
+  return {
+    cells: [
+      { value: r.num, className: 'col-num' },
+      { html: renderCatalogProductName(r.nameAr, r.nameEn), className: 'col-name' },
+      { value: r.spec, className: 'col-spec' },
+      { value: '', className: 'col-qty' },
+      { value: '', className: 'col-notes' },
+    ],
+  };
 }
 
 export type CategoryPrintGroup = {
@@ -157,13 +160,14 @@ export function buildItemsCatalogPrintHtml(
   groupByCategory: boolean,
 ) {
   let num = 0;
-  const bodyParts: string[] = [];
+  const bodyRows: PrintHtmlTableRow[] = [];
 
   for (const group of groups) {
     if (groupByCategory) {
-      bodyParts.push(
-        `<tr class="cat-header"><td colspan="5">${esc(t('category'))}: ${esc(group.categoryName)}</td></tr>`,
-      );
+      bodyRows.push({
+        className: 'cat-header',
+        cells: [{ value: `${t('category')}: ${group.categoryName}`, colSpan: 5 }],
+      });
     }
 
     const groupRows = group.products.map((p) => ({
@@ -174,23 +178,26 @@ export function buildItemsCatalogPrintHtml(
 
     groupRows.forEach((row) => {
       num += 1;
-      bodyParts.push(renderPrintRow({ num, ...row }));
+      bodyRows.push(buildPrintRow({ num, ...row }));
     });
   }
 
   return `<p class="print-hint">${esc(t('ordersPrintCatalogFillQty'))}</p>
-<table class="catalog-table">
-<thead>
-<tr>
-  <th class="col-num">#</th>
-  <th class="col-name">${esc(t('productNameAr'))}</th>
-  <th class="col-spec">${esc(t('ordersPrintCatalogSpec'))}</th>
-  <th class="col-qty">${esc(t('quantity'))}</th>
-  <th class="col-notes">${esc(t('ordersPrintCatalogNotes'))}</th>
-</tr>
-</thead>
-<tbody>${bodyParts.join('')}</tbody>
-</table>`;
+${buildPrintHtmlTable({
+  tableClassName: 'catalog-table',
+  wrapperClassName: null,
+  headerRows: [{
+    cells: [
+      { value: '#', className: 'col-num' },
+      { value: t('productNameAr'), className: 'col-name' },
+      { value: t('ordersPrintCatalogSpec'), className: 'col-spec' },
+      { value: t('quantity'), className: 'col-qty' },
+      { value: t('ordersPrintCatalogNotes'), className: 'col-notes' },
+    ],
+  }],
+  bodyRows,
+  emptyColSpan: 5,
+})}`;
 }
 
 const CATALOG_PRINT_EXTRA_CSS = `

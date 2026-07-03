@@ -8,6 +8,7 @@ import {
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { toYmd } from '../../utils/saudiDate';
+import { buildPrintTableHtml } from '../../utils/printTableHtml';
 import { MAX_VAULT_SLOTS } from './invoicesListScreenHelpers';
 import {
   buildInvoicesCashReportBody,
@@ -46,9 +47,6 @@ type InvoiceListActionParams = {
   vaultsList: Array<{ id?: string; type?: string }>;
   serverAll: { count: number; net: unknown; tax: unknown; total: unknown };
 };
-
-const escapeHtml = (value: any) =>
-  String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export function useInvoicesListActions(params: InvoiceListActionParams) {
   const {
@@ -306,17 +304,22 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
         batchId: invoiceBatchIdFromUrl || undefined,
         createdByUserId: filterCreatedByUserId || undefined,
       });
-      const rowsHtml = all
-        .map((inv: any) => {
-          const row = mapInvoiceToExportRow(inv);
-          return `<tr>${exportColumnDefs.map((col) => `<td>${escapeHtml(row[col.key])}</td>`).join('')}</tr>`;
-        })
-        .join('');
-      const head = `<tr>${exportColumnDefs.map((col) => `<th>${escapeHtml(col.label)}</th>`).join('')}</tr>`;
+      const rows = all.map((inv: any) => mapInvoiceToExportRow(inv));
       const baseMetaCols = 6;
       const vaultBlockCols = MAX_VAULT_SLOTS * 3;
-      const foot = `<tr><td colspan="${baseMetaCols}">${escapeHtml(t('totalInvoices', serverAll.count))}</td><td colspan="${vaultBlockCols}"></td><td>${escapeHtml(fmt(Number(serverAll.net)))} SR</td><td>${escapeHtml(fmt(Number(serverAll.tax)))} SR</td><td>${escapeHtml(fmt(Number(serverAll.total)))} SR</td><td colspan="2"></td></tr>`;
-      const table = `<table><thead>${head}</thead><tbody>${rowsHtml || `<tr><td colspan="${exportColumnDefs.length}">${escapeHtml(t('noInvoicesInPeriod'))}</td></tr>`}</tbody><tfoot>${foot}</tfoot></table>`;
+      const table = buildPrintTableHtml({
+        columns: exportColumnDefs.map((col) => ({ key: col.key, header: col.label })),
+        rows,
+        emptyMessage: t('noInvoicesInPeriod'),
+        footerRows: [[
+          { value: t('totalInvoices', serverAll.count), colSpan: baseMetaCols },
+          { value: '', colSpan: vaultBlockCols },
+          { value: `${fmt(Number(serverAll.net))} SR` },
+          { value: `${fmt(Number(serverAll.tax))} SR` },
+          { value: `${fmt(Number(serverAll.total))} SR` },
+          { value: '', colSpan: 2 },
+        ]],
+      });
       openPrintWindow({
         title: t('invoicesTitle'),
         companyName,

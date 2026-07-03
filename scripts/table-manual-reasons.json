@@ -2,16 +2,6 @@
   "version": 1,
   "description": "Phase 2 closure decisions for remaining manual <table> usages. Every entry in table-manual-exceptions.json must have a reason here.",
   "reasons": {
-    "src/modules/Dashboard/components/DashboardCalendarTab/hooks/useDashboardCalendarTab.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "builds calendar print/export HTML strings; not an app data grid."
-    },
-    "src/modules/Dashboard/overview/components/DashboardOverviewWeeklySalesPanel.tsx": {
-      "category": "dashboard-matrix",
-      "decision": "leave",
-      "reason": "compact weekly comparison matrix with colgroup and micro responsive typography."
-    },
     "src/modules/HR/components/EmployeeDocModal/components/EmployeeDocEmployeeInfoTable.tsx": {
       "category": "document-print",
       "decision": "leave",
@@ -82,16 +72,6 @@
       "decision": "leave",
       "reason": "day-close report and print layout; production-sensitive."
     },
-    "src/modules/Invoices/useInvoicesListActions.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "invoice export/print HTML string."
-    },
-    "src/modules/Invoices/utils/buildInvoicesCashReportPrint.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "cash report print HTML generator."
-    },
     "src/modules/Orders/StaffOrdersViewParts.tsx": {
       "category": "editable-grid",
       "decision": "leave",
@@ -111,16 +91,6 @@
       "category": "editable-grid",
       "decision": "leave",
       "reason": "product variants table contains editable select and number controls."
-    },
-    "src/modules/Orders/utils/itemsCatalogPrint.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "catalog print HTML generator."
-    },
-    "src/modules/Orders/utils/itemsCatalogWeeklyPrint.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "weekly catalog print HTML generator."
     },
     "src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx": {
       "category": "matrix-table",
@@ -196,11 +166,6 @@
       "category": "print-financial",
       "decision": "leave",
       "reason": "P&L month print HTML generator."
-    },
-    "src/modules/Suppliers/components/SupplierProfileModal.tsx": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "supplier profile print/export HTML tables."
     },
     "src/modules/Treasury/components/VaultTransactionsModal.tsx": {
       "category": "print-financial",

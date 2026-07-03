@@ -1,3 +1,4 @@
+import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import {
   buildItemsCatalogPrintSubtitle,
@@ -16,26 +17,28 @@ export const WEEKLY_SHEET_TOTAL_COLS = 3 + WEEKLY_SHEET_DAY_COUNT * 2;
 
 const DAY_NUMBERS = [1, 2, 3, 4, 5, 6, 7] as const;
 
-function esc(v: unknown) {
-  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function esc(value: unknown) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function emptyDayCells() {
-  return DAY_NUMBERS.map(() => '<td class="col-day"></td>').join('');
-}
-
-function renderWeeklyProductRow(num: number, nameAr: string, nameEn: string, spec: string) {
-  return `<tr>
-  <td class="col-num">${num}</td>
-  <td class="col-name">${renderCatalogProductName(nameAr, nameEn)}</td>
-  <td class="col-spec">${esc(spec)}</td>
-  ${emptyDayCells()}
-  ${emptyDayCells()}
-</tr>`;
+  return DAY_NUMBERS.map(() => ({ value: '', className: 'col-day' }));
 }
 
 function buildWeeklyDayHeaderCells() {
-  return DAY_NUMBERS.map((d) => `<th class="col-day">${d}</th>`).join('');
+  return DAY_NUMBERS.map((day) => ({ value: day, className: 'col-day' }));
+}
+
+function buildWeeklyProductRow(num: number, nameAr: string, nameEn: string, spec: string): PrintHtmlTableRow {
+  return {
+    cells: [
+      { value: num, className: 'col-num' },
+      { html: renderCatalogProductName(nameAr, nameEn), className: 'col-name' },
+      { value: spec, className: 'col-spec' },
+      ...emptyDayCells(),
+      ...emptyDayCells(),
+    ],
+  };
 }
 
 export function buildItemsCatalogWeeklyPrintHtml(
@@ -45,49 +48,56 @@ export function buildItemsCatalogWeeklyPrintHtml(
   groupByCategory: boolean,
 ) {
   let num = 0;
-  const bodyParts: string[] = [];
+  const bodyRows: PrintHtmlTableRow[] = [];
 
   for (const group of groups) {
     if (groupByCategory) {
-      bodyParts.push(
-        `<tr class="cat-header"><td colspan="${WEEKLY_SHEET_TOTAL_COLS}">${esc(t('category'))}: ${esc(group.categoryName)}</td></tr>`,
-      );
+      bodyRows.push({
+        className: 'cat-header',
+        cells: [{ value: `${t('category')}: ${group.categoryName}`, colSpan: WEEKLY_SHEET_TOTAL_COLS }],
+      });
     }
 
-    for (const p of group.products) {
+    for (const product of group.products) {
       num += 1;
-      bodyParts.push(
-        renderWeeklyProductRow(
+      bodyRows.push(
+        buildWeeklyProductRow(
           num,
-          p.nameAr || '—',
-          p.nameEn || '',
-          buildProductSpec(p, unitLabel),
+          product.nameAr || '-',
+          product.nameEn || '',
+          buildProductSpec(product, unitLabel),
         ),
       );
     }
   }
+
+  const tableHtml = buildPrintHtmlTable({
+    tableClassName: 'catalog-table weekly-table',
+    wrapperClassName: null,
+    headerRows: [{
+      cells: [
+        { value: '#', rowSpan: 2, className: 'col-num' },
+        { value: t('productNameAr'), rowSpan: 2, className: 'col-name' },
+        { value: t('ordersPrintCatalogSpec'), rowSpan: 2, className: 'col-spec' },
+        { value: t('ordersPrintWeeklyStock'), colSpan: WEEKLY_SHEET_DAY_COUNT, className: 'group-stock' },
+        { value: t('ordersPrintWeeklyOrder'), colSpan: WEEKLY_SHEET_DAY_COUNT, className: 'group-order' },
+      ],
+    }, {
+      cells: [
+        ...buildWeeklyDayHeaderCells(),
+        ...buildWeeklyDayHeaderCells(),
+      ],
+    }],
+    bodyRows,
+    emptyColSpan: WEEKLY_SHEET_TOTAL_COLS,
+  });
 
   return `<div class="week-meta">
   <span>${esc(t('ordersPrintWeeklyWeekFrom'))}: _______________</span>
   <span>${esc(t('ordersPrintWeeklyWeekTo'))}: _______________</span>
 </div>
 <p class="print-hint">${esc(t('ordersPrintWeeklyFillHint'))}</p>
-<table class="catalog-table weekly-table">
-<thead>
-<tr>
-  <th rowspan="2" class="col-num">#</th>
-  <th rowspan="2" class="col-name">${esc(t('productNameAr'))}</th>
-  <th rowspan="2" class="col-spec">${esc(t('ordersPrintCatalogSpec'))}</th>
-  <th colspan="${WEEKLY_SHEET_DAY_COUNT}" class="group-stock">${esc(t('ordersPrintWeeklyStock'))}</th>
-  <th colspan="${WEEKLY_SHEET_DAY_COUNT}" class="group-order">${esc(t('ordersPrintWeeklyOrder'))}</th>
-</tr>
-<tr>
-  ${buildWeeklyDayHeaderCells()}
-  ${buildWeeklyDayHeaderCells()}
-</tr>
-</thead>
-<tbody>${bodyParts.join('')}</tbody>
-</table>`;
+${tableHtml}`;
 }
 
 const WEEKLY_PRINT_EXTRA_CSS = `
@@ -167,13 +177,13 @@ export function buildItemsCatalogWeeklyPdfFilename(
 
   if (filters.section === '__none__') parts.push('no-section');
   else if (filters.section) {
-    const sec = sections.find((s) => s.nameAr === filters.section);
-    parts.push(slugPart(sec?.nameAr || sec?.nameEn || filters.section));
+    const section = sections.find((item) => item.nameAr === filters.section);
+    parts.push(slugPart(section?.nameAr || section?.nameEn || filters.section));
   }
 
   if (filters.categoryId) {
-    const cat = categories.find((c) => c.id === filters.categoryId);
-    parts.push(slugPart(cat?.nameAr || cat?.nameEn || 'category'));
+    const category = categories.find((item) => item.id === filters.categoryId);
+    parts.push(slugPart(category?.nameAr || category?.nameEn || 'category'));
   }
 
   parts.push(new Date().toISOString().slice(0, 10));
@@ -199,7 +209,7 @@ function prepareItemsCatalogWeeklyDocument(opts: ItemsCatalogOutputOpts) {
     opts.sections,
     opts.t,
   );
-  const subtitle = [opts.productTypeLabel, filterSubtitle].filter(Boolean).join(' — ');
+  const subtitle = [opts.productTypeLabel, filterSubtitle].filter(Boolean).join(' - ');
 
   return {
     empty: false as const,
