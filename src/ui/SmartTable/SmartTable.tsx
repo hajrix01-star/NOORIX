@@ -58,11 +58,28 @@ export function placeColVisPanel(btn: HTMLElement, panel: HTMLElement): { top: n
 type PaginationBarProps = {
   page: number;
   totalPages: number;
+  canPreviousPage: boolean;
+  canNextPage: boolean;
+  firstPage: number;
+  previousPage: number;
+  nextPage: number;
+  lastPage: number;
   onPageChange: (p: number) => void;
   t: (key: string, ...args: unknown[]) => string;
 };
 
-const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t }: PaginationBarProps) {
+const Pagination = memo(function Pagination({
+  page,
+  totalPages,
+  canPreviousPage,
+  canNextPage,
+  firstPage,
+  previousPage,
+  nextPage,
+  lastPage,
+  onPageChange,
+  t,
+}: PaginationBarProps) {
   const go = useCallback(
     (p: number) => {
       if (p >= 1 && p <= totalPages) onPageChange(p);
@@ -72,13 +89,13 @@ const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t 
   if (totalPages <= 1) return null;
   return (
     <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-noorix-border">
-      <Button size="sm" onClick={() => go(1)}        disabled={page === 1}>«</Button>
-      <Button size="sm" onClick={() => go(page - 1)} disabled={page === 1}>‹</Button>
+      <Button size="sm" onClick={() => go(firstPage)} disabled={!canPreviousPage}>«</Button>
+      <Button size="sm" onClick={() => go(previousPage)} disabled={!canPreviousPage}>‹</Button>
       <span className="text-[13px] text-noorix-muted font-medium px-2">
         {t('pageLabel', page, totalPages)}
       </span>
-      <Button size="sm" onClick={() => go(page + 1)} disabled={page === totalPages}>›</Button>
-      <Button size="sm" onClick={() => go(totalPages)} disabled={page === totalPages}>»</Button>
+      <Button size="sm" onClick={() => go(nextPage)} disabled={!canNextPage}>›</Button>
+      <Button size="sm" onClick={() => go(lastPage)} disabled={!canNextPage}>»</Button>
     </div>
   );
 });
@@ -630,7 +647,18 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
       {/* ── تصفح الصفحات ── */}
       {!isLoading && onPageChange && (
-        <Pagination page={page} totalPages={totalPages} onPageChange={tableEngine.setPage} t={t} />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          canPreviousPage={tableEngine.pagination.canPreviousPage}
+          canNextPage={tableEngine.pagination.canNextPage}
+          firstPage={tableEngine.pagination.firstPage}
+          previousPage={tableEngine.pagination.previousPage}
+          nextPage={tableEngine.pagination.nextPage}
+          lastPage={tableEngine.pagination.lastPage}
+          onPageChange={tableEngine.setPage}
+          t={t}
+        />
       )}
 
       {children}

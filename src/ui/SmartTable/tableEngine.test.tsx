@@ -99,6 +99,16 @@ function EngineProbe({
       <span data-testid="engine-pagination">
         {`${engine.pagination.page}:${engine.pagination.pageIndex}:${engine.pagination.safePageSize}:${engine.pagination.totalPages}`}
       </span>
+      <span data-testid="pagination-navigation">
+        {[
+          engine.pagination.canPreviousPage ? 'prev' : 'no-prev',
+          engine.pagination.canNextPage ? 'next' : 'no-next',
+          engine.pagination.firstPage,
+          engine.pagination.previousPage,
+          engine.pagination.nextPage,
+          engine.pagination.lastPage,
+        ].join(':')}
+      </span>
       <button type="button" onClick={() => engine.toggleSort('name')}>
         sort-name
       </button>
@@ -178,6 +188,7 @@ describe('useSmartTableEngine', () => {
 
     expect(screen.getByTestId('table-pagination').textContent).toBe('2:25');
     expect(screen.getByTestId('engine-pagination').textContent).toBe('3:2:25:5');
+    expect(screen.getByTestId('pagination-navigation').textContent).toBe('prev:next:1:2:4:5');
   });
 
   it('keeps pagination changes delegated to the external SmartTable callback', () => {
@@ -196,5 +207,15 @@ describe('useSmartTableEngine', () => {
 
     expect(screen.getByTestId('table-pagination').textContent).toBe('1:1');
     expect(screen.getByTestId('engine-pagination').textContent).toBe('2:1:1:3');
+  });
+
+  it('derives pagination boundary guards from the TanStack table state', () => {
+    const { rerender } = render(<EngineProbe page={1} pageSize={25} total={120} />);
+
+    expect(screen.getByTestId('pagination-navigation').textContent).toBe('no-prev:next:1:1:2:5');
+
+    rerender(<EngineProbe page={5} pageSize={25} total={120} />);
+
+    expect(screen.getByTestId('pagination-navigation').textContent).toBe('prev:no-next:1:4:5:5');
   });
 });

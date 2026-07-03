@@ -2,14 +2,14 @@
 
 Date: 2026-07-04
 
-Status: phase 2 compatibility audit implemented; TanStack now owns internal controlled sorting and pagination state without public API changes.
+Status: phase 2 compatibility audit implemented; TanStack now owns internal controlled sorting, pagination state, and pagination navigation guards without public API changes.
 
 ## Scope
 
 | Item | Result |
 |---|---|
 | Public `SmartTable` API | unchanged |
-| TanStack role | hidden row/column engine plus controlled sorting/pagination state |
+| TanStack role | hidden row/column engine plus controlled sorting/pagination state and navigation guards |
 | Noorix JSX/CSS rendering | unchanged |
 | Sorting contract | external `onSort`, `sortKey`, `sortDir` unchanged |
 | Pagination contract | external `page`, `pageSize`, `onPageChange` unchanged |
@@ -29,6 +29,7 @@ Status: phase 2 compatibility audit implemented; TanStack now owns internal cont
 | Legacy row keys | `keyExtractor` now drives React row keys when provided |
 | Sorting state bridge | `sortKey` and `sortDir` map into TanStack sorting state while `onSort` remains external |
 | Pagination state bridge | `page`, `pageSize`, and `total` map into TanStack pagination state while `onPageChange` remains external |
+| Pagination guard bridge | previous/next disabled states and boundary pages derive from TanStack table state |
 
 ## Small Fix
 

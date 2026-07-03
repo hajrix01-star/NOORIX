@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   getCoreRowModel,
   useReactTable,
@@ -33,6 +33,12 @@ export type SmartTableEnginePagination = {
   safePageSize: number;
   totalPages: number;
   pageIndex: number;
+  canPreviousPage: boolean;
+  canNextPage: boolean;
+  firstPage: number;
+  previousPage: number;
+  nextPage: number;
+  lastPage: number;
 };
 
 export type SmartTableEngineResult<TRow> = {
@@ -118,7 +124,7 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
     tanstackRow: row,
   }));
 
-  const getColumnState = (key: string): SmartTableEngineColumnState => {
+  const getColumnState = useCallback((key: string): SmartTableEngineColumnState => {
     const column = table.getColumn(key);
     const isSorted = sortKey === key;
     const normalizedSortDir = isSorted && sortDir === 'asc' ? 'asc' : (isSorted ? 'desc' : undefined);
@@ -130,19 +136,24 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
       ariaSort: isSorted ? (normalizedSortDir === 'asc' ? 'ascending' : 'descending') : 'none',
       sortIndicator: isSorted ? (normalizedSortDir === 'asc' ? '▲' : '▼') : '⇅',
     };
-  };
+  }, [onSort, sortDir, sortKey, table]);
 
-  const toggleSort = (key: string) => {
+  const toggleSort = useCallback((key: string) => {
     if (table.getColumn(key)?.getCanSort()) {
       onSort?.(key);
     }
-  };
+  }, [onSort, table]);
 
-  const setPage = (nextPage: number) => {
-    if (nextPage >= 1 && nextPage <= totalPages) {
+  const setPage = useCallback((nextPage: number) => {
+    const pageCount = table.getPageCount();
+    if (nextPage >= 1 && nextPage <= pageCount) {
       onPageChange?.(nextPage);
     }
-  };
+  }, [onPageChange, table]);
+
+  const pageCount = table.getPageCount();
+  const canPreviousPage = table.getCanPreviousPage();
+  const canNextPage = table.getCanNextPage();
 
   return {
     table,
@@ -151,8 +162,14 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
     pagination: {
       page,
       safePageSize,
-      totalPages,
+      totalPages: pageCount,
       pageIndex: pagination.pageIndex,
+      canPreviousPage,
+      canNextPage,
+      firstPage: 1,
+      previousPage: Math.max(1, page - 1),
+      nextPage: Math.min(pageCount, page + 1),
+      lastPage: pageCount,
     },
     getColumnState,
     toggleSort,

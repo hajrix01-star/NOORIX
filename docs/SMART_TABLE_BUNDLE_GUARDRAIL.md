@@ -2,7 +2,7 @@
 
 Date: 2026-07-04
 
-Status: active guardrail after internal TanStack sorting/pagination state bridge.
+Status: active guardrail after internal TanStack sorting/pagination state and navigation guard bridge.
 
 ## Decision
 
@@ -12,11 +12,11 @@ TanStack remains accepted only as the hidden `SmartTable` row/column engine. Do 
 
 | Artifact | Raw | Gzip | Notes |
 |---|---:|---:|---|
-| main app chunk `assets/index-*.js` | 458.26 kB | 149.46 kB | includes hidden TanStack adapter plus controlled sorting/pagination state |
+| main app chunk `assets/index-*.js` | 458.82 kB | 149.63 kB | includes hidden TanStack adapter plus controlled sorting/pagination state and navigation guards |
 | `vendor-*.js` | 165.74 kB | 53.96 kB | unchanged shared vendor chunk |
 | `query-*.js` | 45.63 kB | 13.80 kB | unchanged query chunk |
-| `src/ui/SmartTable/SmartTable.tsx` source size | 642 lines | n/a | large central UI file; avoid feature creep |
-| `src/ui/SmartTable/tableEngine.ts` source size | 161 lines | n/a | TanStack adapter state now centralized here |
+| `src/ui/SmartTable/SmartTable.tsx` source size | 670 lines | n/a | large central UI file; avoid feature creep |
+| `src/ui/SmartTable/tableEngine.ts` source size | 178 lines | n/a | TanStack adapter state and navigation guards now centralized here |
 
 ## Guardrail
 
