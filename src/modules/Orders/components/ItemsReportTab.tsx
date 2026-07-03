@@ -11,7 +11,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import DateFilterBar from '../../../shared/components/DateFilterBar';
 import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
-import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard } from '../../../ui';
+import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard, DataBar } from '../../../ui';
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
@@ -26,14 +26,10 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
             {getLabel(r)}
           </span>
           <div className="flex-1 min-w-0 bg-noorix-bg-muted overflow-hidden h-5 rounded">
-            <div
-              style={{
-                width: `${Math.min(100, (Number(r[valueKey]) / m) * 100)}%`,
-                height: '100%',
-                background: color,
-                borderRadius: 4,
-                transition: 'width 300ms',
-              }}
+            <DataBar
+              className="h-full rounded transition-[width] duration-300"
+              widthPercent={(Number(r[valueKey]) / m) * 100}
+              color={color}
             />
           </div>
           <span className="text-[12px] min-w-[60px] text-left nx-font-numbers">

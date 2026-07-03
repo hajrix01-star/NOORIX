@@ -2,7 +2,7 @@
  * AppBrandingTab — إعدادات هوية التطبيق بدعم ثنائي اللغة (عربي / إنجليزي).
  */
 import React, { useState, useRef } from 'react';
-import { Button, FileInput, Input } from '../../../ui';
+import { Button, ColorSwatch, FileInput, Input } from '../../../ui';
 import {
   getBrandNameAr, getBrandNameEn,
   getBrandTaglineAr, getBrandTaglineEn,
@@ -75,12 +75,12 @@ export default function AppBrandingTab() {
         </div>
         <div className="flex items-center flex flex-wrap gap-4">
           {/* أيقونة */}
-          <div className="overflow-hidden w-14 h-14 rounded-[14px] shrink-0 flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.18)]" style={{ background: color }}>
+          <ColorSwatch as="div" className="overflow-hidden w-14 h-14 rounded-[14px] shrink-0 flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.18)]" color={color}>
             {logoUrl
               ? <img src={logoUrl} alt="" className="w-full h-full object-cover" />
               : <span className="font-extrabold text-[22px] text-white">{nameAr?.[0] || 'ن'}</span>
             }
-          </div>
+          </ColorSwatch>
           {/* نصوص */}
           <div className="grid gap-1 flex-1 min-w-0">
             <div className="flex gap-2.5 flex flex-wrap items-baseline">

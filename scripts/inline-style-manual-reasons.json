@@ -32,35 +32,10 @@
       "decision": "leave",
       "reason": "calendar day background/accent color is computed from day intensity and special-day data."
     },
-    "src/modules/Dashboard/components/DashboardSaudiOccasionsImportModal.tsx": {
-      "category": "data-driven-color",
-      "decision": "leave",
-      "reason": "occasion color is imported/user data and must remain runtime-driven."
-    },
-    "src/modules/Dashboard/components/DashboardSpecialDaysTab.tsx": {
-      "category": "data-driven-color",
-      "decision": "leave",
-      "reason": "special day color is user data and must remain runtime-driven."
-    },
-    "src/modules/Dashboard/overview/components/DashboardOverviewBreakdownTable.tsx": {
-      "category": "chart-series-color",
-      "decision": "leave",
-      "reason": "breakdown row color comes from chart/series data."
-    },
     "src/modules/Dashboard/overview/components/DashboardOverviewTopCharts.tsx": {
       "category": "chart-tooltip-color",
       "decision": "leave",
       "reason": "tooltip label color comes from the active chart payload."
-    },
-    "src/modules/Orders/components/ItemsReportTab.tsx": {
-      "category": "data-visualization-style",
-      "decision": "leave",
-      "reason": "item report mini chart uses runtime percentage/color values."
-    },
-    "src/modules/Orders/components/SalesReportTab.tsx": {
-      "category": "data-visualization-style",
-      "decision": "leave",
-      "reason": "sales report bar height is computed from live quantity ratios."
     },
     "src/modules/Owner/components/OwnerFilterBar.tsx": {
       "category": "chart-series-color",
@@ -116,11 +91,6 @@
       "category": "chart-tooltip-color",
       "decision": "leave",
       "reason": "tooltip title color comes from Recharts payload fill."
-    },
-    "src/modules/Settings/components/AppBrandingTab.tsx": {
-      "category": "theme-preview-color",
-      "decision": "leave",
-      "reason": "branding preview swatch uses the selected runtime brand color."
     },
     "src/ui/KebabMenu.tsx": {
       "category": "ui-core-positioning",

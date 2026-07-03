@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { useSalesReport } from '../../../hooks/useOrders';
 import { useTabSearchParam } from '../../../hooks/useTabSearchParam';
-import { Badge, Button, Input, SimpleTable as UiSimpleTable, Spinner, ScreenShell, ScreenTitle } from '../../../ui';
+import { Badge, Button, DataBar, Input, SimpleTable as UiSimpleTable, Spinner, ScreenShell, ScreenTitle } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
 
 const PERIOD_OPTIONS = [7, 14, 30, 60, 90];
@@ -177,9 +177,9 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
                   const maxQty = Math.max(...byDay.map((d: any) => d.qty), 1);
                   return byDay.map((d: any) => (
                     <div key={d.date} className="flex flex-col items-center gap-0.5 shrink-0" title={`${d.date}: ${d.qty}`}>
-                      <div
+                      <DataBar
                         className="w-5 rounded-t-sm bg-noorix-blue/70 transition-all"
-                        style={{ height: `${Math.max(4, (d.qty / maxQty) * 56)}px` }}
+                        heightPx={Math.max(4, (d.qty / maxQty) * 56)}
                       />
                       <div className="text-[9px] text-noorix-muted">{d.date.slice(5)}</div>
                     </div>
