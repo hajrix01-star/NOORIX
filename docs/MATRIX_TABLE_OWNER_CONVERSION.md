@@ -34,6 +34,7 @@ Status: implemented as the first MatrixTable conversion.
 | Grand monthly totals row | yes |
 | Percentage column | yes |
 | Horizontal overflow | yes |
+| Central row tones/styles for future matrices | yes |
 
 ## No-Touch Scope
 

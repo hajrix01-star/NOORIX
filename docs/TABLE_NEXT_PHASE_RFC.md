@@ -44,7 +44,7 @@ Close the next table-governance planning step after the safe PrintTable conversi
 
 | Priority | Work | Why First | Output |
 |---:|---|---|---|
-| 1 | MatrixTable hardening | owner conversion exists; remaining P&L matrix needs financial visual baseline | API hardening and one protected-report decision |
+| 1 | MatrixTable hardening | owner conversion exists; remaining P&L matrix needs financial visual baseline | row tone/style API and one protected-report decision |
 | 2 | EditableTable RFC | editable grids cannot safely fit `SmartTable`/`SimpleTable` as-is | cell/edit lifecycle contract |
 | 3 | Financial PrintTable RFC | remaining print tables are financial/tax/bank/payroll sensitive | print-safe rules and acceptance tests |
 | 4 | SmartTable v2 compatibility RFC | TanStack evaluation depends on knowing MatrixTable/EditTable boundaries | compatibility matrix and pilot criteria |
