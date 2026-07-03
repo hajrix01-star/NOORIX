@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import SmartTable from './SmartTable';
 import type { SmartTableColumn } from './types';
+
+const mediaState = vi.hoisted(() => ({ isNarrow: false }));
 
 vi.mock('../../i18n/useTranslation', () => ({
   useTranslation: () => ({
@@ -12,7 +14,7 @@ vi.mock('../../i18n/useTranslation', () => ({
 }));
 
 vi.mock('../../hooks/useMediaQuery', () => ({
-  useIsNarrow768: () => false,
+  useIsNarrow768: () => mediaState.isNarrow,
 }));
 
 vi.mock('../../hooks/useUiDir', () => ({
@@ -37,6 +39,16 @@ const rows: Row[] = [
 ];
 
 describe('SmartTable', () => {
+  beforeEach(() => {
+    mediaState.isNarrow = false;
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders rows and column headers', () => {
     render(<SmartTable columns={columns} data={rows} total={2} title="Test table" />);
     expect(screen.getByText('Test table')).toBeTruthy();
@@ -90,6 +102,44 @@ describe('SmartTable', () => {
     expect(screen.getByText('Page 1/3')).toBeTruthy();
   });
 
+  it('calls onPageChange from pagination controls without changing the external page contract', () => {
+    const onPageChange = vi.fn();
+    render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        total={120}
+        page={2}
+        pageSize={50}
+        onPageChange={onPageChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('‹'));
+    fireEvent.click(screen.getByText('›'));
+
+    expect(onPageChange).toHaveBeenCalledWith(1);
+    expect(onPageChange).toHaveBeenCalledWith(3);
+  });
+
+  it('keeps search input controlled by the caller', () => {
+    const onSearchChange = vi.fn();
+    render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        total={2}
+        searchValue="Al"
+        onSearchChange={onSearchChange}
+      />,
+    );
+
+    const input = screen.getByLabelText('searchPlaceholder') as HTMLInputElement;
+    expect(input.value).toBe('Al');
+    fireEvent.change(input, { target: { value: 'Beta' } });
+    expect(onSearchChange).toHaveBeenCalledWith('Beta');
+  });
+
   it('applies normalized column kinds to headers and cells', () => {
     const { container } = render(<SmartTable columns={columns} data={rows} total={2} />);
     expect(container.querySelector('th[data-column-kind="text"]')).toBeTruthy();
@@ -137,6 +187,75 @@ describe('SmartTable', () => {
     expect(container.querySelectorAll('thead th')).toHaveLength(1);
     expect(container.querySelectorAll('tbody tr:first-child td')).toHaveLength(1);
     localStorage.removeItem('nx-col-vis:hidden-layout-test');
+  });
+
+  it('builds footerRow colspans against visible columns only', () => {
+    localStorage.setItem('nx-col-vis:footer-layout-test', JSON.stringify(['amount']));
+    const { container } = render(
+      <SmartTable
+        tableId="footer-layout-test"
+        columns={columns}
+        data={rows}
+        total={2}
+        footerRow={[{ keys: ['name'], content: 'Visible total' }]}
+      />,
+    );
+
+    expect(screen.getByText('Visible total')).toBeTruthy();
+    expect(container.querySelectorAll('tfoot td')).toHaveLength(1);
+    expect((container.querySelector('tfoot td') as HTMLTableCellElement).colSpan).toBe(1);
+  });
+
+  it('preserves row class, row style, and expanded row contracts', () => {
+    const { container } = render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        total={2}
+        getRowClassName={(row) => (row.id === '1' ? 'is-first-row' : undefined)}
+        getRowStyle={(row) => (row.id === '1' ? { '--nx-test-row-tone': 'gold' } as any : undefined)}
+        isRowExpanded={(row) => row.id === '1'}
+        renderExpandedRow={(row) => <div>Expanded {row.name}</div>}
+      />,
+    );
+
+    const firstRow = container.querySelector('tbody tr.is-first-row') as HTMLTableRowElement;
+    expect(firstRow).toBeTruthy();
+    expect(firstRow.style.getPropertyValue('--nx-test-row-tone')).toBe('gold');
+    expect(screen.getByText('Expanded Alpha')).toBeTruthy();
+  });
+
+  it('uses keyExtractor for rows without id and avoids React duplicate key warnings', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(
+      <SmartTable
+        columns={columns}
+        data={[
+          { name: 'Alpha', amount: 100 },
+          { name: 'Alpha', amount: 200 },
+        ] as Row[]}
+        total={2}
+        keyExtractor={(row, index) => `${row.name}-${index}`}
+      />,
+    );
+
+    expect(screen.getAllByText('Alpha')).toHaveLength(2);
+    expect(consoleError).not.toHaveBeenCalledWith(expect.stringContaining('Encountered two children with the same key'));
+  });
+
+  it('keeps compact row rendering powered by the same ordered row model on narrow screens', () => {
+    mediaState.isNarrow = true;
+    render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        total={2}
+        renderCompactRow={(row, index) => <span>{index}:{row.name}</span>}
+      />,
+    );
+
+    expect(screen.getByText('0:Alpha')).toBeTruthy();
+    expect(screen.getByText('1:Beta')).toBeTruthy();
   });
 
 });
