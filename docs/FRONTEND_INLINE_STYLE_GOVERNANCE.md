@@ -8,20 +8,20 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 118 |
-| files with `style={{` | 55 |
-| inside `src/ui` | 20 |
+| `style={{` total | 110 |
+| files with `style={{` | 53 |
+| inside `src/ui` | 14 |
 | `src/ui` files | 5 |
-| outside `src/ui` | 98 |
-| outside `src/ui` files | 50 |
+| outside `src/ui` | 96 |
+| outside `src/ui` files | 48 |
 
 ## Top Files
 
 | File | Count |
 |---|---:|
-| `src/ui/SmartTable/SmartTable.tsx` | 13 |
 | `src/modules/Reports/GeneralPlTable.tsx` | 11 |
 | `src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx` | 7 |
+| `src/ui/SmartTable/SmartTable.tsx` | 7 |
 | `src/modules/Purchases/components/BatchRow.tsx` | 6 |
 | `src/modules/Owner/components/OwnerPerformanceChart.tsx` | 5 |
 | `src/modules/Reports/TaxReportTab.tsx` | 5 |
@@ -31,6 +31,9 @@ Status: active guardrail.
 | `src/modules/Reports/bank/BankCategoryFormModal.tsx` | 3 |
 | `src/modules/Reports/BankStatementMappingModal.tsx` | 3 |
 | `src/components/UserMenu.tsx` | 2 |
+| `src/modules/Dashboard/overview/components/DashboardOverviewTopCharts.tsx` | 2 |
+| `src/modules/HR/components/HrQuickEntrySheet/HrQuickEntrySheet.tsx` | 2 |
+| `src/modules/Invoices/invoicesListTableModel.tsx` | 2 |
 
 ## Rule
 

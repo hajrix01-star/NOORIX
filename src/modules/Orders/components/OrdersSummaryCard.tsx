@@ -18,7 +18,7 @@ function SummaryPane({
   receivedLabel,
   spentLabel,
   resultLabel,
-  accentColor,
+  accentTone,
   colItem,
   colAmount,
 }: {
@@ -29,7 +29,7 @@ function SummaryPane({
   receivedLabel: string;
   spentLabel: string;
   resultLabel: string;
-  accentColor: string;
+  accentTone: 'sales' | 'profit';
   colItem: string;
   colAmount: string;
 }) {
@@ -51,8 +51,7 @@ function SummaryPane({
     <div className="nx-orders-summary-pane flex min-w-0 flex-col px-3 py-3 sm:px-4 sm:py-3.5">
       <div className="mb-2.5 flex items-center gap-2">
         <span
-          className="h-4 w-1 shrink-0 rounded-full"
-          style={{ background: accentColor || 'var(--color-nx-sales)' }}
+          className={`h-4 w-1 shrink-0 rounded-full ${accentTone === 'profit' ? 'bg-[var(--color-nx-profit)]' : 'bg-[var(--color-nx-sales)]'}`}
           aria-hidden
         />
         <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-noorix-muted">
@@ -136,7 +135,7 @@ export function OrdersSummaryCard({
           receivedLabel={t('ordersReceived')}
           spentLabel={t('ordersDelegatePurchases')}
           resultLabel={t('ordersDelegateBalance')}
-          accentColor="var(--color-nx-sales)"
+          accentTone="sales"
           colItem={colItem}
           colAmount={colAmount}
         />
@@ -148,7 +147,7 @@ export function OrdersSummaryCard({
           receivedLabel={t('ordersCashSales')}
           spentLabel={t('ordersLocalPurchases')}
           resultLabel={t('ordersCashRemaining')}
-          accentColor="var(--color-nx-profit)"
+          accentTone="profit"
           colItem={colItem}
           colAmount={colAmount}
         />

@@ -361,8 +361,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="w-6 h-6 rounded-full border-2 border-noorix-border border-t-noorix-blue"
-              style={{ animation: 'noorix-spin 0.8s linear infinite' }}
+              className="w-6 h-6 rounded-full border-2 border-noorix-border border-t-noorix-blue nx-smart-table-loading-spinner"
             />
             <span className="text-noorix-muted text-[14px] font-medium">{t('loading')}</span>
           </div>
@@ -370,12 +369,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             {[1, 2, 3, 4, 5].map((i: any) => (
               <div
                 key={i}
-                className="rounded-lg h-11"
-                style={{
-                  background: 'linear-gradient(90deg, var(--noorix-bg-muted) 25%, var(--noorix-border-muted) 50%, var(--noorix-bg-muted) 75%)',
-                  backgroundSize: '200% 100%',
-                  animation: 'shimmer 1.5s infinite',
-                }}
+                className="rounded-lg h-11 nx-smart-table-skeleton-line"
               />
             ))}
           </div>
@@ -477,7 +471,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                     >
                       {columnLabel(col)}
                       {col.sortable && (
-                        <span className="text-[13px] opacity-30 ms-1" style={{ opacity: isSorted ? 1 : 0.3 }}>
+                        <span className={cn('text-[13px] ms-1', isSorted ? 'opacity-100' : 'opacity-30')}>
                           {isSorted ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                         </span>
                       )}
@@ -498,10 +492,13 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan={effectiveCols} className="text-center text-noorix-muted" style={{
-                    padding: compact ? '24px 16px' : '36px',
-                    fontSize: compact ? 13 : 15,
-                  }}>
+                  <td
+                    colSpan={effectiveCols}
+                    className={cn(
+                      'text-center text-noorix-muted',
+                      compact ? 'px-4 py-6 text-[13px]' : 'p-9 text-[15px]',
+                    )}
+                  >
                     {emptyMsg}
                   </td>
                 </tr>
@@ -553,8 +550,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   })}
                 </tr>
                 {typeof renderExpandedRow === 'function' && isRowExpanded?.(row, i) && (
-                  <tr className="border-b border-noorix-border" style={{ background: 'var(--noorix-surface)' }}>
-                    <td colSpan={effectiveCols} style={{ padding: 0 }}>
+                  <tr className="border-b border-noorix-border bg-noorix-surface">
+                    <td colSpan={effectiveCols} className="p-0">
                       {renderExpandedRow(row, i)}
                     </td>
                   </tr>

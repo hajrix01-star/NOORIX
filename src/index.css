@@ -6935,6 +6935,70 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .bank-sales-compare-grid {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
+.nx-theme-card-preview {
+  transition: all 0.2s ease;
+}
+.nx-theme-card-preview--selected {
+  outline: 2px solid var(--noorix-accent-blue);
+  outline-offset: 2px;
+}
+.nx-theme-card-preview--1 {
+  border: 1px solid var(--noorix-border);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.nx-theme-card-preview--2 {
+  border: 1px solid var(--noorix-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+.nx-theme-card-preview--3 {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+.nx-theme-card-preview--4 {
+  border: none;
+  border-radius: 16px;
+  background: var(--noorix-bg-surface);
+  box-shadow: 6px 6px 14px rgba(0, 0, 0, 0.08), -6px -6px 14px rgba(255, 255, 255, 0.9);
+}
+.nx-theme-card-preview--5 {
+  border: 1px solid var(--noorix-border);
+  border-inline-start: 4px solid #16a34a;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.nx-theme-card-preview--6 {
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background:
+    linear-gradient(var(--noorix-bg-surface), var(--noorix-bg-surface)) padding-box,
+    linear-gradient(135deg, #16a34a, #2563eb) border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.nx-theme-card-preview--7 {
+  border: 1px solid var(--noorix-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+.nx-theme-card-preview--8 {
+  border: 1px solid var(--noorix-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.nx-theme-card-preview--9 {
+  border: 1px solid var(--noorix-blue-20);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px var(--noorix-blue-8), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.nx-theme-card-preview--10 {
+  border: 2px solid var(--noorix-border);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--noorix-border-muted);
+}
 @media (max-width: 768px) {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {
     padding-inline: 0;

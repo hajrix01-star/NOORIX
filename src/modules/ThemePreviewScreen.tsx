@@ -12,31 +12,11 @@ import ThemeUILabTab from './themePreview/ThemeUILabTab';
 function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSelect, lang }: any) {
   const name = lang === 'ar' ? nameAr : nameEn;
   const desc = lang === 'ar' ? descAr : descEn;
-
-  const previewStyles = {
-    1: { borderRadius: 14, border: '1px solid var(--noorix-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
-    2: { borderRadius: 16, border: '1px solid var(--noorix-border)', boxShadow: '0 4px 14px rgba(0,0,0,0.08)' },
-    3: { borderRadius: 16, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' },
-    4: { borderRadius: 16, border: 'none', background: 'var(--noorix-bg-surface)', boxShadow: '6px 6px 14px rgba(0,0,0,0.08), -6px -6px 14px rgba(255,255,255,0.9)' },
-    5: { borderRadius: 14, border: '1px solid var(--noorix-border)', borderInlineStart: '4px solid #16a34a', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
-    6: { borderRadius: 14, border: '2px solid transparent', background: 'linear-gradient(var(--noorix-bg-surface), var(--noorix-bg-surface)) padding-box, linear-gradient(135deg, #16a34a, #2563eb) border-box', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-    7: { borderRadius: 16, border: '1px solid var(--noorix-border)', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' },
-    8: { borderRadius: 4, border: '1px solid var(--noorix-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' },
-    9: { borderRadius: 16, border: '1px solid var(--noorix-blue-20)', boxShadow: '0 2px 12px var(--noorix-blue-8), inset 0 1px 0 rgba(255,255,255,0.5)' },
-    10: { borderRadius: 12, border: '2px solid var(--noorix-border)', boxShadow: 'inset 0 0 0 1px var(--noorix-border-muted)' },
-  };
-
-  const s = (previewStyles as Record<number, (typeof previewStyles)[1]>)[Number(styleId)] || previewStyles[1];
+  const previewClass = `nx-theme-card-preview nx-theme-card-preview--${Number(styleId) || 1}${isSelected ? ' nx-theme-card-preview--selected' : ''}`;
 
   return (
     <div
-      className="bg-noorix-surface p-5 flex flex-col cursor-pointer min-h-[140px] justify-between"
-      style={{
-        transition: 'all 0.2s ease',
-        outline: isSelected ? '2px solid var(--noorix-accent-blue)' : 'none',
-        outlineOffset: 2,
-        ...s,
-      }}
+      className={`${previewClass} bg-noorix-surface p-5 flex flex-col cursor-pointer min-h-[140px] justify-between`}
       onClick={() => onSelect(styleId)}
       role="button"
       tabIndex={0}
