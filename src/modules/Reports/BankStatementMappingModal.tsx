@@ -247,7 +247,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
         <div className="flex flex flex-wrap flex items-center justify-between gap-3 w-full">
           <div>
             {!canConfirm ? (
-              <div className="flex gap-1.5 text-[13px] items-center" style={{ color: 'var(--noorix-accent-amber)' }}>
+              <div className="bank-map-warning flex gap-1.5 text-[13px] items-center">
                 <span>⚠</span>
                 <span>{t('bankMapRequiredWarningStrict')}</span>
               </div>
@@ -264,33 +264,27 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
     >
         <p className="text-[13px] text-noorix-muted m-0 mb-3.5">{t('bankMapSubtitle')}</p>
 
-        <div
-          className="rounded-lg p-3.5 mb-3.5"
-          style={{
-            background: 'rgba(37, 99, 235, 0.08)',
-            border: '1px solid rgba(37, 99, 235, 0.25)',
-          }}
-        >
+        <div className="bank-map-info-panel rounded-lg p-3.5 mb-3.5">
           <div className="flex items-center flex flex-wrap gap-2 mb-2.5">
-            <span className="font-bold text-[13px]" style={{ color: 'var(--noorix-accent-blue)' }}>{t('bankMapStatementInfo')}</span>
+            <span className="bank-map-info-title font-bold text-[13px]">{t('bankMapStatementInfo')}</span>
             {aiHeaderLoading ? (
-              <span className="text-[11px] py-px px-2 rounded-md" style={{ background: 'color-mix(in srgb, var(--noorix-accent-blue) 12%, var(--noorix-bg-surface))', color: 'var(--noorix-accent-blue)' }}>
+              <span className="bank-map-chip bank-map-chip--blue text-[11px] py-px px-2 rounded-md">
                 {t('bankMapAiReading')}
               </span>
             ) : null}
-            <span className="ms-auto text-[11px] py-px px-2 rounded-md border border-noorix-border" style={{ background: 'var(--noorix-bg-surface)' }}>
+            <span className="bank-map-chip bank-map-chip--surface ms-auto text-[11px] py-px px-2 rounded-md border border-noorix-border">
               {totalDataRows} {t('bankMapOperationsCount')}
             </span>
-            <span className="text-[11px] py-px px-2 rounded-md border border-noorix-border" style={{ background: 'var(--noorix-bg-surface)' }}>
+            <span className="bank-map-chip bank-map-chip--surface text-[11px] py-px px-2 rounded-md border border-noorix-border">
               {t('bankMapHeaderRowBadge', String(headerRow + 1))}
             </span>
             {isAutoDetected ? (
-              <span className="text-[11px] py-px px-2 rounded-md" style={{ background: 'color-mix(in srgb, var(--noorix-accent-green) 12%, var(--noorix-bg-surface))', color: 'var(--noorix-accent-green)' }}>
+              <span className="bank-map-chip bank-map-chip--green text-[11px] py-px px-2 rounded-md">
                 ✓ {t('bankMapColumnsDetected')}
               </span>
             ) : null}
           </div>
-          <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+          <div className="bank-map-metadata-grid grid gap-2.5">
             <Input
               type="text"
               label={t('bankMapCustomerLabel')}
@@ -321,31 +315,20 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
         </div>
 
         {!Object.values(columnMapping).some((v: any) => typeof v === 'number' && v >= 0) && raw.length > 0 ? (
-          <div
-            className="rounded-lg text-[13px] mb-3 p-[10px]"
-            style={{
-              background: 'var(--noorix-yellow-12)',
-              border: '1px solid var(--noorix-yellow-35)',
-            }}
-          >
+          <div className="bank-map-auto-detect-warning rounded-lg text-[13px] mb-3 p-[10px]">
             {t('bankStatementNoAutoDetect')}
           </div>
         ) : null}
 
         <div className="border border-noorix-border rounded-lg p-3.5 mb-[14px]">
           <div className="text-[14px] font-bold mb-2.5">{t('bankStatementMapColumns')}</div>
-          <div
-            className="grid gap-3"
-            style={{
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-            }}
-          >
+          <div className="bank-map-columns-grid grid gap-3">
             {COLUMN_FIELD_DEFS.map((col: any) => (
               <div key={col.key}>
                 <label className="flex items-center gap-6 text-[12px] font-semibold mb-1">
                   <span>
                     {t(col.labelKey)}
-                    {col.required ? <span style={{ color: 'var(--noorix-error)' }}> *</span> : null}
+                    {col.required ? <span className="text-noorix-red"> *</span> : null}
                   </span>
                   {(columnMapping as Record<string, number>)[col.key] >= 0 ? <span className="text-noorix-green">✓</span> : null}
                 </label>
@@ -369,12 +352,12 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
         <div className="border border-noorix-border rounded-lg overflow-hidden mb-4">
           <div className="bg-noorix-bg-muted border-b border-noorix-border font-semibold text-[13px] px-3 py-2">
             {t('bankMapPreviewTitle')}{' '}
-            <span className="font-normal text-[12px]" style={{ color: 'var(--noorix-text-muted)' }}>{t('bankMapPreviewHint')}</span>
+            <span className="font-normal text-[12px] text-noorix-muted">{t('bankMapPreviewHint')}</span>
           </div>
           <div className="overflow-auto max-h-[300px]">
             <table className="w-full border-collapse text-[12px]" style={{ minWidth: previewTableMinWidth }}>
               <thead>
-                <tr style={{ background: 'var(--noorix-bg-muted)' }}>
+                <tr className="bg-noorix-bg-muted">
                   <th className="py-2 px-1.5 w-9">#</th>
                   {headers.map((h: any) => {
                     const badge = getColumnBadge(h.index);
@@ -399,7 +382,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
               </thead>
               <tbody>
                 {previewRows.map((row: any, rowIdx: any) => (
-                  <tr key={rowIdx} style={{ borderTop: '1px solid var(--noorix-border)' }}>
+                  <tr key={rowIdx} className="border-t border-noorix-border">
                     <td className="p-1.5 text-noorix-muted">{rowIdx + 1}</td>
                     {headers.map((h: any) => {
                       const badge = getColumnBadge(h.index);

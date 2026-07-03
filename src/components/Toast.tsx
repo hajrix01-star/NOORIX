@@ -35,16 +35,15 @@ export default function Toast({ message, type = 'success', visible, onDismiss }:
   if (!visible || !message) return null;
 
   const style = TYPE_STYLES[type as keyof typeof TYPE_STYLES] ?? TYPE_STYLES.info;
+  const toastStyle = { '--toast-bg': style.background } as React.CSSProperties;
 
   return (
     <div
       role="alert"
       aria-live="assertive"
       aria-atomic="true"
-      className="fixed top-4 end-4 z-[9999] max-w-[min(360px,calc(100vw-32px))] py-[10px] px-[14px] rounded-[10px] font-semibold text-[14px] flex items-start gap-[10px] break-words text-white shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
-      style={{
-        background: style.background,
-      }}
+      className="nx-toast fixed top-4 end-4 z-[9999] max-w-[min(360px,calc(100vw-32px))] py-[10px] px-[14px] rounded-[10px] font-semibold text-[14px] flex items-start gap-[10px] break-words text-white shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
+      style={toastStyle}
     >
       <span
         aria-hidden="true"

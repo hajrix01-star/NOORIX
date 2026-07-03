@@ -3,13 +3,13 @@
   "description": "Baseline for central CSS footprint. This check blocks unreviewed CSS growth while the theme cleanup runs incrementally.",
   "files": {
     "src/index.css": {
-      "maxLines": 6761,
+      "maxLines": 6940,
       "maxMediaQueries": 51,
       "maxImportant": 215,
       "maxKeyframes": 12,
       "maxCssVariableDefinitions": 233,
-      "maxCssVariableReferences": 836,
-      "maxColorMix": 150
+      "maxCssVariableReferences": 892,
+      "maxColorMix": 153
     },
     "src/ui/ui.css": {
       "maxLines": 2326,
@@ -46,7 +46,7 @@
       },
       "dashboard": {
         "pattern": "(dashboard|calendar|kpi|stat-card|summary-bar)",
-        "maxMatches": 107
+        "maxMatches": 123
       },
       "reports": {
         "pattern": "(reports|nx-pl|nx-gr2|pl-|bank-analysis|costAccounting|result-panel)",

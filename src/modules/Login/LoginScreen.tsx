@@ -30,6 +30,9 @@ export default function LoginScreen() {
   const brandName    = getBrandName(lang);
   const brandTagline = getBrandTagline(lang);
   const brandColor   = getBrandColor();
+  const brandLogoStyle = !brandLogo
+    ? ({ '--login-brand-color': brandColor } as React.CSSProperties)
+    : undefined;
   /** بريد كامل أو اسم مستخدم + النطاق الرسمي فقط (مطابق لـ OFFICIAL_EMAIL_DOMAIN / VITE_OFFICIAL_EMAIL_DOMAIN؛ الجزء المحلي بحروف صغيرة كما في DB). */
   const resolveLoginIdentifier = (raw: any) => {
     const s = raw.trim();
@@ -66,14 +69,7 @@ export default function LoginScreen() {
   return (
     <div
       dir={isEnglish ? 'ltr' : 'rtl'}
-      className="min-h-screen flex items-center justify-center px-4 py-8"
-      style={{
-        background: `
-          radial-gradient(circle at 20% 20%, var(--noorix-blue-10) 0%, transparent 50%),
-          radial-gradient(circle at 80% 80%, var(--noorix-green-8) 0%, transparent 50%),
-          var(--noorix-bg-muted, #f1f5f9)
-        `,
-      }}
+      className="noorix-login-screen min-h-screen flex items-center justify-center px-4 py-8"
     >
       <div className="w-full max-w-[420px]">
 
@@ -81,11 +77,11 @@ export default function LoginScreen() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3.5">
             <div
-              className="w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center overflow-hidden"
-              style={{
-                background: brandLogo ? 'transparent' : `linear-gradient(135deg, ${brandColor} 0%, #0f172a 100%)`,
-                boxShadow: '0 10px 28px rgba(37,99,235,0.22)',
-              }}
+              className={cn(
+                'noorix-login-logo w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center overflow-hidden',
+                brandLogo ? 'noorix-login-logo--image' : 'noorix-login-logo--fallback',
+              )}
+              style={brandLogoStyle}
             >
               {brandLogo
                 ? <img src={brandLogo} alt={brandName} className="w-full h-full object-cover" />

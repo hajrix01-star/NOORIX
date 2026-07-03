@@ -6744,6 +6744,185 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   right: 2px;
   left: auto;
 }
+.noorix-login-screen {
+  background:
+    radial-gradient(circle at 20% 20%, var(--noorix-blue-10) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, var(--noorix-green-8) 0%, transparent 50%),
+    var(--noorix-bg-muted, #f1f5f9);
+}
+.noorix-login-logo {
+  box-shadow: 0 10px 28px rgba(37,99,235,0.22);
+}
+.noorix-login-logo--image {
+  background: transparent;
+}
+.noorix-login-logo--fallback {
+  background: linear-gradient(135deg, var(--login-brand-color, var(--noorix-accent-blue)) 0%, #0f172a 100%);
+}
+.nx-import-progress-fill {
+  width: var(--import-progress-pct, 0%);
+}
+.nx-import-stat-badge {
+  min-width: 90px;
+  padding: 10px 20px;
+  border: 1px solid var(--import-stat-border, var(--noorix-border));
+  border-radius: 10px;
+  background: var(--import-stat-bg, var(--noorix-bg-muted));
+}
+.nx-import-stat-badge__count {
+  color: var(--import-stat-color, var(--noorix-text));
+}
+.password-strength-bar {
+  background: var(--noorix-border);
+}
+.password-strength-bar--active {
+  background: var(--password-strength-color, var(--noorix-border));
+}
+.password-strength-label {
+  color: var(--password-strength-color, var(--noorix-muted));
+}
+.nx-supplier-option--selected {
+  background: var(--noorix-blue-8);
+}
+.nx-product-search-option {
+  border-bottom: 1px solid var(--noorix-border);
+}
+.nx-product-search-option:last-child {
+  border-bottom: 0;
+}
+.nx-product-search-option--highlight {
+  background: var(--noorix-bg-muted);
+}
+.noorix-chat-mini-chart__canvas {
+  width: 100%;
+  height: 132px;
+}
+.noorix-chat-mini-chart__canvas--highlight {
+  height: 120px;
+}
+.noorix-chat-finance-ratios__seg {
+  width: var(--chat-ratio-width, 0%);
+  background-color: var(--chat-ratio-fill, var(--noorix-accent-blue));
+}
+.noorix-chat-finance-ratios__dot {
+  background-color: var(--chat-ratio-fill, var(--noorix-accent-blue));
+}
+.noorix-chat-report-card:not(.noorix-chat-report-card--numeric) {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.noorix-chat-report-card__grid-full {
+  grid-column: 1 / -1;
+}
+.dashboard-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+  color: var(--dashboard-tooltip-color, var(--noorix-text));
+  font-weight: 600;
+}
+.dashboard-tooltip-title {
+  color: var(--dashboard-tooltip-color, var(--noorix-text));
+  font-weight: 700;
+}
+.dashboard-series-toggle {
+  border-color: var(--dashboard-series-color, var(--noorix-border));
+  color: var(--dashboard-series-color, var(--noorix-text));
+  background: color-mix(in srgb, var(--dashboard-series-color, var(--noorix-accent-blue)) 8%, transparent);
+  cursor: pointer;
+}
+.dashboard-series-toggle--hidden {
+  color: var(--noorix-text-muted);
+  background: transparent;
+}
+.dashboard-series-toggle--disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.dashboard-series-toggle__dot {
+  background: var(--dashboard-series-color, var(--noorix-border));
+}
+.dashboard-series-toggle--hidden .dashboard-series-toggle__dot,
+.dashboard-series-toggle--disabled .dashboard-series-toggle__dot {
+  background: var(--noorix-border);
+}
+.nx-toast {
+  background: var(--toast-bg, var(--noorix-accent-blue));
+}
+.bank-map-warning {
+  color: var(--noorix-accent-amber);
+}
+.bank-map-info-panel {
+  border: 1px solid rgba(37,99,235,0.25);
+  background: rgba(37,99,235,0.08);
+}
+.bank-map-info-title,
+.bank-map-chip--blue {
+  color: var(--noorix-accent-blue);
+}
+.bank-map-chip--blue {
+  background: color-mix(in srgb, var(--noorix-accent-blue) 12%, var(--noorix-bg-surface));
+}
+.bank-map-chip--surface {
+  background: var(--noorix-bg-surface);
+}
+.bank-map-chip--green {
+  color: var(--noorix-accent-green);
+  background: color-mix(in srgb, var(--noorix-accent-green) 12%, var(--noorix-bg-surface));
+}
+.bank-map-metadata-grid {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+.bank-map-columns-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+.bank-map-auto-detect-warning {
+  border: 1px solid var(--noorix-yellow-35);
+  background: var(--noorix-yellow-12);
+}
+.bank-transactions-filter-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+.bank-transactions-search-wrap {
+  position: relative;
+}
+.bank-transactions-search-icon {
+  position: absolute;
+  inset-inline-start: 10px;
+  top: 50%;
+  color: var(--noorix-text-muted);
+  font-size: 14px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.bank-transactions-search-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 8px;
+  background: var(--noorix-bg);
+  font-size: 13px;
+}
+.bank-transactions-new-category-input {
+  flex: 1 1 200px;
+  width: 100%;
+  max-width: 200px;
+  padding: 6px 10px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.bank-transactions-note-input {
+  width: 150px;
+  padding: 4px 6px;
+  border: 1px solid var(--noorix-border);
+  border-radius: 6px;
+  font-size: 11px;
+}
+.bank-transactions-footer-cell {
+  padding: 10px 12px;
+}
 @media (max-width: 768px) {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {
     padding-inline: 0;

@@ -106,7 +106,7 @@ function ChatMiniChart({
           {isAr ? 'مقارنة بصرية' : 'Visual comparison'}
         </div>
       ) : null}
-      <div className="nx-ltr" style={{ width: '100%', height: isHighlight ? 120 : 132 }}>
+      <div className={`nx-ltr noorix-chat-mini-chart__canvas${isHighlight ? ' noorix-chat-mini-chart__canvas--highlight' : ''}`}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barCategoryGap="28%">
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--noorix-text-muted)' }} axisLine={false} tickLine={false} />
@@ -174,27 +174,36 @@ function ChatFinanceRatiosStrip({
         className="noorix-chat-finance-ratios__track nx-ltr flex h-[10px] rounded-full overflow-hidden border border-noorix-border/80 bg-noorix-bg-muted"
         aria-hidden
       >
-        {segments.map((s: { key: string; pct: unknown }) => (
-          <div
-            key={s.key}
-            className="noorix-chat-finance-ratios__seg h-full min-w-0 transition-[width] duration-300"
-            style={{ width: `${Math.max(0, Math.min(100, Number(s.pct) || 0))}%`, backgroundColor: fillFor(s.key) }}
-            title={`${labelFor(s.key)}: ${fmt(Number(s.pct), 1)}%`}
-          />
-        ))}
+        {segments.map((s: { key: string; pct: unknown }) => {
+          const segmentStyle = {
+            '--chat-ratio-width': `${Math.max(0, Math.min(100, Number(s.pct) || 0))}%`,
+            '--chat-ratio-fill': fillFor(s.key),
+          } as React.CSSProperties;
+          return (
+            <div
+              key={s.key}
+              className="noorix-chat-finance-ratios__seg h-full min-w-0 transition-[width] duration-300"
+              style={segmentStyle}
+              title={`${labelFor(s.key)}: ${fmt(Number(s.pct), 1)}%`}
+            />
+          );
+        })}
         {remainder > 0.05 ? (
           <div className="noorix-chat-finance-ratios__remainder flex-1 min-w-0 h-full bg-noorix-bg-page/90" />
         ) : null}
       </div>
       <ul dir={isAr ? 'rtl' : 'ltr'} className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-noorix-muted list-none m-0 p-0">
-        {segments.map((s: { key: string; pct: unknown }) => (
-          <li key={s.key} className="inline-flex items-center gap-1.5">
-            <span className="inline-block size-2 rounded-sm shrink-0" style={{ backgroundColor: fillFor(s.key) }} aria-hidden />
-            <span>
-              {labelFor(s.key)}: <span className="font-semibold text-noorix-text nx-ltr">{fmt(Number(s.pct), 1)}%</span>
-            </span>
-          </li>
-        ))}
+        {segments.map((s: { key: string; pct: unknown }) => {
+          const dotStyle = { '--chat-ratio-fill': fillFor(s.key) } as React.CSSProperties;
+          return (
+            <li key={s.key} className="inline-flex items-center gap-1.5">
+              <span className="noorix-chat-finance-ratios__dot inline-block size-2 rounded-sm shrink-0" style={dotStyle} aria-hidden />
+              <span>
+                {labelFor(s.key)}: <span className="font-semibold text-noorix-text nx-ltr">{fmt(Number(s.pct), 1)}%</span>
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -211,6 +220,8 @@ const NUMBERED_SECTION = /^([٠-٩]+|\d+)[\).\]]\s+/;
 const DEFINITION_LINE = /^(تعريف|Definition)\s*:/i;
 
 /** رد يحوي أرقاماً/مبالغ/نسباً — يُبرز إطار الكرت لتمييزه عن الخلفية */
+const LTR_VALUE_CLASS_NAME = 'nx-ltr [unicode-bidi:isolate]';
+
 function answerLooksNumericOrMetrics(text: string): boolean {
   const s = String(text || '');
   if (!/[\d۰-۹]/.test(s)) return false;
@@ -233,7 +244,6 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
     const label = hasLabel ? line.slice(0, colonIdx).trim() : null;
     const value = hasLabel ? line.slice(colonIdx + 1).trim() : line;
     const isNumericValue = /^\d/.test(value) || /\d{4}-\d{2}-\d{2}/.test(value);
-    const valueStyle: React.CSSProperties = isNumericValue ? { direction: 'ltr', unicodeBidi: 'isolate' } : {};
     const isPeriod = /^(الفترة|Period)\s*:/i.test(line);
     return (
       <div
@@ -244,10 +254,10 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
         {label ? (
           <>
             <span className="text-[13px] text-noorix-muted font-semibold">{label}:</span>
-            <span style={valueStyle}>{value}</span>
+            <span className={isNumericValue ? LTR_VALUE_CLASS_NAME : undefined}>{value}</span>
           </>
         ) : (
-          <span style={{ gridColumn: '1 / -1', ...valueStyle }}>{value || line}</span>
+          <span className={`noorix-chat-report-card__grid-full${isNumericValue ? ` ${LTR_VALUE_CLASS_NAME}` : ''}`}>{value || line}</span>
         )}
       </div>
     );
@@ -320,9 +330,6 @@ export function SmartChatReportCard({ text, isAr, createdAt, extras }: SmartChat
   return (
     <div
       className={`noorix-chat-report-card bg-noorix-surface text-noorix-text text-[14px] md:text-[15px] py-3.5 px-3 md:py-4 md:px-5 rounded-[14px] border border-noorix-border leading-[1.7] break-words w-full min-w-0 max-w-full${emphasizeDataCard ? ' noorix-chat-report-card--numeric' : ''}${monthCompareChart ? ' noorix-chat-report-card--month-compare' : ''}`}
-      style={{
-        boxShadow: emphasizeDataCard ? undefined : '0 2px 8px rgba(0,0,0,0.04)',
-      }}
     >
       {monthCompareChart ? <ChatMiniChart chart={monthCompareChart} isAr={isAr} variant="highlight" /> : null}
       {lines.length > 0 ? (

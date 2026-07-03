@@ -235,8 +235,7 @@ export function SupplierSelect({
                   aria-selected={s.id === value}
                   onMouseDown={(e: any) => e.preventDefault()}
                   onClick={() => selectSupplier(s)}
-                  className="nx-supplier-option"
-                  style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}
+                  className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >
                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                     {supplierLabel(s, lang)}
@@ -260,8 +259,7 @@ export function SupplierSelect({
                   aria-selected={s.id === value}
                   onMouseDown={(e: any) => e.preventDefault()}
                   onClick={() => selectSupplier(s)}
-                  className="nx-supplier-option"
-                  style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}
+                  className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >
                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                     {supplierLabel(s, lang)}
@@ -287,8 +285,7 @@ export function SupplierSelect({
                   aria-selected={s.id === value}
                   onMouseDown={(e: any) => e.preventDefault()}
                   onClick={() => selectSupplier(s)}
-                  className="nx-supplier-option"
-                  style={s.id === value ? { background: 'var(--noorix-blue-8)' } : undefined}
+                  className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >
                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                     {supplierLabel(s, lang)}

@@ -1,9 +1,10 @@
 import React from 'react';
 
 export function ImportExportProgressBar({ pct }: { pct: number }) {
+  const progressStyle = { '--import-progress-pct': `${pct}%` } as React.CSSProperties;
   return (
     <div className="h-[10px] rounded-full overflow-hidden bg-noorix-border">
-      <div className="nx-progress-fill bg-noorix-blue" style={{ width: `${pct}%` }} />
+      <div className="nx-progress-fill nx-import-progress-fill bg-noorix-blue" style={progressStyle} />
     </div>
   );
 }
@@ -17,18 +18,17 @@ export function ImportExportStatBadge({
   label: string;
   color: string;
 }) {
+  const badgeStyle = {
+    '--import-stat-color': color,
+    '--import-stat-bg': `${color}14`,
+    '--import-stat-border': `${color}30`,
+  } as React.CSSProperties;
   return (
     <div
-      className="text-center"
-      style={{
-        padding: '10px 20px',
-        borderRadius: 10,
-        background: color + '14',
-        border: `1px solid ${color}30`,
-        minWidth: 90,
-      }}
+      className="nx-import-stat-badge text-center"
+      style={badgeStyle}
     >
-      <div className="text-[26px] font-black nx-font-numbers" style={{ color }}>
+      <div className="nx-import-stat-badge__count text-[26px] font-black nx-font-numbers">
         {count}
       </div>
       <div className="text-[12px] text-noorix-muted mt-0.5">{label}</div>
