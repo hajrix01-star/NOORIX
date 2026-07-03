@@ -36,7 +36,7 @@ Keep `SmartTable` as the Noorix official table API. Evaluate TanStack Table as a
 | 0 | Accept `docs/TABLE_NEXT_PHASE_RFC.md` so MatrixTable, EditableTable, and protected print boundaries are known |
 | 1 | Freeze current `SmartTable` API and document runtime inline exceptions |
 | 2 | Add compatibility tests for sorting, row numbers, padding, compact mode, footer cells, mobile cards |
-| 3 | Prototype TanStack engine behind `SmartTable` in one non-financial table |
+| 3 | Run a TanStack compatibility pilot behind `SmartTable` in one non-financial table |
 | 4 | Decide whether to graduate to `SmartTableV2` or keep current engine |
 
 ## Acceptance For Any Future Implementation

@@ -130,7 +130,7 @@
     "src/ui/MatrixTable.tsx": {
       "category": "ui-core-matrix-table-engine",
       "decision": "leave",
-      "reason": "MatrixTable centralizes runtime matrix sizing, numeric alignment, fixed first column, row accents, and heat cell styling."
+      "reason": "MatrixTable centralizes runtime matrix sizing, numeric alignment, fixed first column, row tones, row accents, and heat cell styling."
     },
     "src/ui/MetricCard.tsx": {
       "category": "ui-core-custom-color",

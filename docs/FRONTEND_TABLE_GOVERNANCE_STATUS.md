@@ -46,7 +46,7 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | Catalog PrintTable Conversion | Convert catalog print sheets through central complex print builder | 2 manual catalog tables removed |
 | Dashboard Calendar PrintTable Conversion | Convert calendar print matrix through central complex print builder | 1 manual calendar print table removed |
 | MatrixTable RFC | Define wide financial/dashboard matrix rules | P&L, owner, dashboard matrices stay protected |
-| MatrixTable Owner Prototype | Convert safest owner monthly matrix | 1 manual matrix table removed; financial/P&L/payroll/tax/bank/purchases stay untouched |
+| MatrixTable Owner Conversion | Convert safest owner monthly matrix | 1 manual matrix table removed; financial/P&L/payroll/tax/bank/purchases stay untouched |
 | Editable table controls | Define editable cells and row actions | no payroll/purchases conversion without tests |
 | Safe conversion pass | Only non-financial display tables with no inputs, no print, no rowspan/colspan | `check:table-governance` stays green |
 
@@ -64,4 +64,4 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `docs/CATALOG_PRINT_TABLE_CONVERSION.md` | records the catalog print-table conversion |
 | `docs/DASHBOARD_CALENDAR_PRINT_TABLE_CONVERSION.md` | records the dashboard calendar print-table conversion |
 | `docs/TABLE_NEXT_PHASE_RFC.md` | defines the next MatrixTable/EditTable/financial-print phase boundaries |
-| `docs/MATRIX_TABLE_OWNER_PROTOTYPE.md` | records the first MatrixTable prototype conversion |
+| `docs/MATRIX_TABLE_OWNER_CONVERSION.md` | records the first MatrixTable conversion |

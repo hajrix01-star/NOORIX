@@ -8,6 +8,7 @@ type MatrixRow = {
   january: number;
   total: number;
   color: string;
+  kind?: 'group' | 'summary' | 'total';
 };
 
 const rows: MatrixRow[] = [
@@ -61,15 +62,26 @@ describe('MatrixTable', () => {
   });
 
   it('applies table sizing and data-driven cell styles centrally', () => {
-    const { container } = render(<MatrixTable columns={columns} data={rows} tableMinWidth={860} maxHeight={240} />);
+    const { container } = render(
+      <MatrixTable
+        columns={columns}
+        data={rows}
+        tableMinWidth={860}
+        maxHeight={240}
+        stickyHeader
+      />,
+    );
 
     const wrapper = container.querySelector('.noorix-table-scroll-wrapper') as HTMLElement;
     const table = container.querySelector('table') as HTMLElement;
+    const header = container.querySelector('thead th') as HTMLElement;
     const hotCell = container.querySelector('tbody td[data-numeric="true"]') as HTMLElement;
 
     expect(wrapper.style.maxHeight).toBe('240px');
     expect(wrapper.style.overflowY).toBe('auto');
     expect(table.style.minWidth).toBe('860px');
+    expect(header.style.position).toBe('sticky');
+    expect(header.style.top).toBe('0px');
     expect(hotCell.style.background).toBe('rgba(14, 165, 233, 0.08)');
   });
 
@@ -96,5 +108,31 @@ describe('MatrixTable', () => {
     );
 
     expect(screen.getByText('400')).toBeTruthy();
+  });
+
+  it('supports row tones, row styles, row headers, captions, and aria labels', () => {
+    const { container } = render(
+      <MatrixTable
+        ariaLabel="Owner comparison matrix"
+        caption="Owner monthly comparison"
+        columns={columns}
+        data={[{ ...rows[0], kind: 'group' }]}
+        firstColumnAsHeader
+        getRowTone={(row) => row.kind}
+        getRowStyle={() => ({ background: 'rgba(15, 47, 87, 0.04)' })}
+      />,
+    );
+
+    const table = screen.getByLabelText('Owner comparison matrix');
+    const caption = screen.getByText('Owner monthly comparison');
+    const row = container.querySelector('tbody tr') as HTMLElement;
+    const rowHeader = container.querySelector('tbody th[scope="row"]') as HTMLElement;
+
+    expect(table).toBeTruthy();
+    expect(caption.className).toContain('sr-only');
+    expect(row.className).toContain('font-bold');
+    expect(row.style.background).toBe('rgba(15, 47, 87, 0.04)');
+    expect(rowHeader).toBeTruthy();
+    expect(rowHeader.textContent).toContain('Alpha');
   });
 });
