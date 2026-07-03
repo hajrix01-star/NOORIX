@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input } from '../../../ui';
+import { Button, DateField } from '../../../ui';
 import { FAQ_SECTION_ORDER } from '../smartChatFaq';
 import type { SmartChatMobileToolsBodyProps } from '../types';
 
@@ -22,12 +22,11 @@ export function SmartChatMobileToolsBody({
           {t('chatFilterByDate')}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Input
-            type="date"
+          <DateField
             size="sm"
             className="noorix-smart-chat-date-input flex-1 min-w-0"
             value={dateFilter}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFilter(e.target.value || '')}
+            onValueChange={(value) => setDateFilter(value || '')}
             lang="en"
             title={isAr ? 'تصفية بالتاريخ' : 'Filter by date'}
           />

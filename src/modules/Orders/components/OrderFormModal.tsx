@@ -8,7 +8,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { ProductSearchInput } from '../../../components/common/ProductSearchInput';
-import { Button, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal } from '../../../ui';
+import { Button, DateField, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal } from '../../../ui';
 import { useOrderSections } from '../../../hooks/useOrders';
 
 // ─── كرت صنف ──────────────────────────────────────────────────────────────────
@@ -338,7 +338,7 @@ export function OrderFormModal({
           {/* التاريخ */}
           <div className="flex flex-col gap-1 min-w-[130px] flex-1">
             <label className="text-[11px] text-noorix-muted font-medium">{t('orderDate')} *</label>
-            <Input type="date" value={orderDate} onChange={(e: any) => setOrderDate(e.target.value)} />
+            <DateField value={orderDate} onValueChange={setOrderDate} />
           </div>
 
           {/* نوع الطلب — أزرار */}

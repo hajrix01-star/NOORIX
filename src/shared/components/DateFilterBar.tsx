@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
-import { Button, Input } from '../../ui';
+import { Button, DateRangeField, Input } from '../../ui';
 import { getSaudiNow } from '../../utils/saudiDate';
 import {
   buildDatePeriodLabel,
@@ -610,26 +610,19 @@ export default function DateFilterBar({ filter }: any) {
       )}
 
       {mode === 'range' && (
-        <div className="ndfb-fields ndfb-fields--range">
-          <Input
-            type="date"
-            size="sm"
-            containerClassName="ndfb-field ndfb-field--date"
-            value={draft.rangeStart}
-            onChange={(event: any) => updateDraft({ rangeStart: event.target.value })}
-            aria-label={t('dateFilterFrom')}
-          />
-          <span className="ndfb-range-separator" aria-hidden="true">-</span>
-          <Input
-            type="date"
-            size="sm"
-            containerClassName="ndfb-field ndfb-field--date"
-            value={draft.rangeEnd}
-            min={draft.rangeStart}
-            onChange={(event: any) => updateDraft({ rangeEnd: event.target.value })}
-            aria-label={t('dateFilterTo')}
-          />
-        </div>
+        <DateRangeField
+          className="ndfb-fields ndfb-fields--range"
+          separatorClassName="ndfb-range-separator"
+          startContainerClassName="ndfb-field ndfb-field--date"
+          endContainerClassName="ndfb-field ndfb-field--date"
+          startValue={draft.rangeStart}
+          endValue={draft.rangeEnd}
+          minEnd={draft.rangeStart}
+          onStartChange={(value) => updateDraft({ rangeStart: value })}
+          onEndChange={(value) => updateDraft({ rangeEnd: value })}
+          startAriaLabel={t('dateFilterFrom')}
+          endAriaLabel={t('dateFilterTo')}
+        />
       )}
 
       {mode !== 'all' && (

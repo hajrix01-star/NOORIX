@@ -50,7 +50,7 @@ import {
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
-import { Badge, Button, Input, cn } from '../../ui';
+import { Badge, Button, DateField, Input, cn } from '../../ui';
 export function StaffOrderPanel({
   companyId,
   productType,
@@ -409,11 +409,10 @@ export function StaffOrderPanel({
           </div>
           <div className="flex flex-col gap-2">
             {isSale && (
-              <Input
-                type="date"
+              <DateField
                 label={t('staffSaleDate')}
                 value={saleDate}
-                onChange={(e: any) => setSaleDate(e.target.value)}
+                onValueChange={setSaleDate}
               />
             )}
             <Input label={t('notes')} value={notes} onChange={(e: any) => setNotes(e.target.value)} placeholder={t('optional')} />

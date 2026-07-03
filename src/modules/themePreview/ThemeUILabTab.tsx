@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import {
   Badge,
   Button,
+  DateField,
   Divider,
   Input,
   KebabMenu,
@@ -144,7 +145,7 @@ export default function ThemeUILabTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <Input type="text" label={t('themePreviewLab5Text')} placeholder="…" />
           <Input type="number" label={t('themePreviewLab5Number')} />
-          <Input type="date" label={t('themePreviewLab5Date')} />
+          <DateField label={t('themePreviewLab5Date')} />
           <Input type="select" label={t('themePreviewLab5Select')}>
             <option value="">{t('themePreviewLab5SelectPh')}</option>
             <option value="1">1</option>
