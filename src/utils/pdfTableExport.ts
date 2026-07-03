@@ -1,13 +1,7 @@
-/**
- * تصدير جداول إلى PDF عبر نافذة الطباعة
- */
-import { openPrintWindow } from './printUtils';
 import { normalizeColumnDefs } from './exportNormalize';
+import { buildPrintTableHtml, type PrintTableColumn, type PrintTableRowMeta } from './printTableHtml';
+import { openPrintWindow } from './printUtils';
 
-/**
- * exportTableToPdf — يفتح نافذة طباعة HTML (المتصفح يتولى التحويل لـ PDF)
- * @param {{ columns?, data, title?, companyName?, subtitle?, filename?, landscape? }} opts
- */
 export type ProfitLossPdfRowMeta = {
   rowType?: string;
   groupKey?: string | null;
@@ -24,14 +18,12 @@ type ExportTableToPdfOpts = {
   filename?: string;
   landscape?: boolean;
   logoUrl?: string;
-  /** CSS إضافي (مثل تنسيق تقرير ربح وخسارة) */
   extraCss?: string;
   htmlDir?: 'rtl' | 'ltr';
   htmlLang?: string;
   tableClass?: string;
   showPageCounter?: boolean;
   pageMarginMm?: number;
-  /** صف واحد لكل صف بيانات — لأصناف الصفوف في PDF */
   pdfRowMetas?: ProfitLossPdfRowMeta[];
 };
 
@@ -45,6 +37,13 @@ function buildPlPdfTrClass(meta: ProfitLossPdfRowMeta | undefined): string {
     else if (meta.tone === 'neg') cls += ' pl-pdf-net-negative';
   }
   return cls;
+}
+
+function buildPrintTableColumns(labels: unknown[], keys: unknown[]): PrintTableColumn[] {
+  return labels.map((label, index) => ({
+    key: String(keys[index] ?? index),
+    header: label,
+  }));
 }
 
 export function exportTableToPdf({
@@ -64,8 +63,8 @@ export function exportTableToPdf({
   pageMarginMm,
   pdfRowMetas,
 }: ExportTableToPdfOpts) {
-  let colLabels;
-  let colKeys;
+  let colLabels: unknown[];
+  let colKeys: unknown[];
   if (Array.isArray(columns) && columns.length) {
     const norm = normalizeColumnDefs(columns);
     colLabels = norm.labels;
@@ -78,22 +77,17 @@ export function exportTableToPdf({
     colKeys = [];
   }
 
-  const esc = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  const headRow = `<tr>${colLabels.map((l: any) => `<th>${esc(l)}</th>`).join('')}</tr>`;
-  const bodyRows = data.length
-    ? data.map((row: any, ri: number) => {
-        const cells = Array.isArray(row)
-          ? row.map((c: any) => `<td>${esc(c)}</td>`).join('')
-          : colKeys.map((k: any) => `<td>${esc(row[k])}</td>`).join('');
-        const trCls = Array.isArray(pdfRowMetas) && pdfRowMetas[ri] ? buildPlPdfTrClass(pdfRowMetas[ri]) : '';
-        const trClsAttr = trCls ? trCls.replace(/"/g, '') : '';
-        return `<tr${trClsAttr ? ` class="${trClsAttr}"` : ''}>${cells}</tr>`;
-      }).join('')
-    : `<tr><td colspan="${colLabels.length || 1}" style="text-align:center;color:#888">لا توجد بيانات</td></tr>`;
-
   const tblCls = ['pl-pdf-export-table', tableClass].filter(Boolean).join(' ');
-  const tableHtml = `<div class="pl-pdf-export-wrap"><table class="${esc(tblCls)}"><thead>${headRow}</thead><tbody>${bodyRows}</tbody></table></div>`;
+  const tableHtml = buildPrintTableHtml({
+    columns: buildPrintTableColumns(colLabels, colKeys),
+    rows: data,
+    wrapperClassName: 'pl-pdf-export-wrap',
+    tableClassName: tblCls,
+    emptyMessage: htmlLang === 'en' ? 'No data' : 'لا توجد بيانات',
+    rowMetas: Array.isArray(pdfRowMetas)
+      ? (pdfRowMetas.map((meta) => ({ className: buildPlPdfTrClass(meta) })) satisfies PrintTableRowMeta[])
+      : [],
+  });
 
   openPrintWindow({
     title: title || filename.replace('.pdf', ''),
@@ -111,8 +105,8 @@ export function exportTableToPdf({
 }
 
 export function exportToPdf(
-  opts: string | Omit<ExportTableToPdfOpts, 'columns'> & { columns?: unknown },
-  filename: any = 'export.pdf',
+  opts: string | (Omit<ExportTableToPdfOpts, 'columns'> & { columns?: unknown }),
+  filename: string = 'export.pdf',
 ) {
   if (typeof opts === 'string') {
     exportTableToPdf({ columns: undefined, data: [], title: opts, filename });

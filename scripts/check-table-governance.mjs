@@ -35,6 +35,8 @@ const manualTableReasonsPath = 'scripts/table-manual-reasons.json';
 const manualTableReasons = JSON.parse(read(manualTableReasonsPath)).reasons ?? {};
 const tableStatusDocPath = 'docs/FRONTEND_TABLE_GOVERNANCE_STATUS.md';
 const tableStatusText = read(tableStatusDocPath);
+const printTableFoundationDocPath = 'docs/PRINT_TABLE_FOUNDATION.md';
+const printTableFoundationText = read(printTableFoundationDocPath);
 const allowedManualTableCategories = new Set([
   'bank-print',
   'bank-protected',
@@ -105,10 +107,16 @@ for (const file of sourceFiles) {
   });
 }
 
+const centralTableBuilderFiles = new Set([
+  'src/ui/SmartTable/SmartTable.tsx',
+  'src/ui/SimpleTable.tsx',
+  'src/utils/printTableHtml.ts',
+  'src/utils/printTableHtml.test.ts',
+]);
+
 const currentManualTableCounts = {};
 for (const file of sourceFiles) {
-  if (file === 'src/ui/SmartTable/SmartTable.tsx') continue;
-  if (file === 'src/ui/SimpleTable.tsx') continue;
+  if (centralTableBuilderFiles.has(file)) continue;
   const count = read(file).split(/\r?\n/).filter((line) => line.includes('<table')).length;
   if (count > 0) currentManualTableCounts[file] = count;
 }
@@ -158,9 +166,22 @@ for (const required of [
   '`scripts/table-manual-exceptions.json`',
   '`scripts/table-manual-reasons.json`',
   '`scripts/check-table-governance.mjs`',
+  '`docs/PRINT_TABLE_FOUNDATION.md`',
 ]) {
   if (!tableStatusText.includes(required)) {
     fail(tableStatusDocPath, null, `table governance status doc is stale or missing: ${required}`);
+  }
+}
+
+for (const required of [
+  'Status: foundation implemented; broad table conversion is not started.',
+  '`src/utils/printTableHtml.ts`',
+  '`src/utils/pdfTableExport.ts`',
+  'Tax/VAT print documents',
+  'This phase closes the foundation only. It does not claim that all 70 manual tables are converted.',
+]) {
+  if (!printTableFoundationText.includes(required)) {
+    fail(printTableFoundationDocPath, null, `print table foundation doc is stale or missing: ${required}`);
   }
 }
 

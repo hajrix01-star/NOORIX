@@ -1,0 +1,58 @@
+---
+description: Noorix delivery batching policy - large scoped batches, fewer PRs, fewer live deploys
+alwaysApply: true
+---
+
+# Noorix Delivery Batching Policy
+
+This rule has higher priority than automatic publish habits.
+
+## Default Execution Rule
+
+Work in large, scoped batches. Do not split related safe work into many small PRs.
+
+Each batch must have:
+
+| Item | Required |
+|---|---|
+| Scope | one clear phase, not scattered opportunistic fixes |
+| Definition of done | explicit before implementation |
+| Verification | commands matched to the change |
+| Risk boundary | protected financial/tax/payroll/bank/print areas identified |
+| Delivery | one PR for the batch, one merge, one live deploy only when needed |
+
+## PR and Deploy Rules
+
+| Case | Action |
+|---|---|
+| Runtime or production behavior changed | PR, CI, merge, deploy, live verification |
+| Docs/governance only | do not deploy by itself; bundle with the next large batch unless explicitly requested |
+| Small typo or isolated note | keep local or bundle; no standalone PR unless blocking CI |
+| Emergency production fix | small PR allowed |
+| User explicitly asks to publish now | publish after verification |
+
+## Forbidden Pattern
+
+Do not do this:
+
+```txt
+small edit -> PR -> CI -> merge -> deploy
+small doc -> PR -> CI -> merge -> deploy
+small governance tweak -> PR -> CI -> merge -> deploy
+```
+
+Use this instead:
+
+```txt
+plan phase -> implement complete batch -> run relevant checks -> one PR -> CI -> merge -> one deploy if runtime changed
+```
+
+## Stop Condition
+
+When a phase is closed, do not open a new adjacent improvement automatically. Report:
+
+- what is complete
+- what remains
+- whether the next item is a new phase
+- whether it should wait for user approval
+

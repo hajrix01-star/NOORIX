@@ -64,6 +64,16 @@ th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: right; }
 th { background: ${NOORIX_BLUE}; color: #fff; font-weight: 700; }
 tr:nth-child(even) td { background: #f8fafc; }
 tfoot tr td { font-weight: 700; background: #f1f5f9; }
+.print-table__cell--start { text-align: start; }
+.print-table__cell--center { text-align: center; }
+.print-table__cell--end { text-align: end; }
+.print-table__cell--left { text-align: left; }
+.print-table__cell--right { text-align: right; }
+.print-table__empty-cell {
+  text-align: center;
+  color: #64748b;
+  padding: 18px 12px;
+}
 .print-header {
   text-align: center;
   border-bottom: 2px solid ${NOORIX_BLUE};

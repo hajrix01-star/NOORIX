@@ -3,7 +3,7 @@ import type { MoneyLang } from '../../../../../utils/money';
 import { formatNumber } from '../../../../../utils/money';
 import { FmtNum, SimpleTable } from '../../../../../ui';
 import type { AnalysisCardId, CategoryTableRow } from '../../bankAnalysisTab.types';
-import { analysisCardColorClass } from '../../bankAnalysisConstants';
+import { ANALYSIS_CARD_COLORS, analysisCardColorClass } from '../../bankAnalysisConstants';
 import { BankAnalysisCardShell, BankAnalysisProgressBar } from './BankAnalysisCardShell';
 
 type CategoryRow = CategoryTableRow & { id: string };

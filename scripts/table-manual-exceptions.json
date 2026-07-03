@@ -47,7 +47,6 @@
     "src/modules/Reports/reportsPlMonthPrint.ts": 2,
     "src/modules/Sales/hooks/useDailySalesScreen.ts": 1,
     "src/modules/Suppliers/components/SupplierProfileModal.tsx": 3,
-    "src/modules/Treasury/components/VaultTransactionsModal.tsx": 1,
-    "src/utils/pdfTableExport.ts": 1
+    "src/modules/Treasury/components/VaultTransactionsModal.tsx": 1
   }
 }
