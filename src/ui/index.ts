@@ -36,6 +36,8 @@ export { default as FilterScrollStrip } from './FilterScrollStrip';
 export { default as MetricCard      } from './MetricCard';
 export { default as SimpleTable     } from './SimpleTable';
 export type { SimpleTableColumn, SimpleTableProps } from './SimpleTable';
+export { default as MatrixTable     } from './MatrixTable';
+export type { MatrixTableColumn, MatrixTableProps } from './MatrixTable';
 export { FmtNum } from './FmtNum';
 
 /**

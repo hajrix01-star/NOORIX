@@ -92,11 +92,6 @@
       "decision": "leave",
       "reason": "product variants table contains editable select and number controls."
     },
-    "src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx": {
-      "category": "matrix-table",
-      "decision": "leave",
-      "reason": "wide 12-month owner comparison matrix with totals and dynamic heat styling."
-    },
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": {
       "category": "purchases-protected",
       "decision": "leave",

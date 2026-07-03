@@ -120,6 +120,7 @@ for (const file of sourceFiles) {
 const centralTableBuilderFiles = new Set([
   'src/ui/SmartTable/SmartTable.tsx',
   'src/ui/SimpleTable.tsx',
+  'src/ui/MatrixTable.tsx',
   'src/utils/printTableHtml.ts',
   'src/utils/printTableHtml.test.ts',
 ]);
