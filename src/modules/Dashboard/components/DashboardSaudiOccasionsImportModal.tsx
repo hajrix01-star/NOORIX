@@ -17,7 +17,7 @@ import {
   fetchSaudiOccasionsCatalog,
   isSaudiOccasionsApiMissing,
 } from '../../../utils/saudiOccasionsApply';
-import { Button, Checkbox, Modal, Spinner } from '../../../ui';
+import { Button, Checkbox, ColorSwatch, Modal, Spinner } from '../../../ui';
 import { cn } from '../../../ui/cn';
 import { shiftYmd } from '../../../utils/shiftYmd';
 
@@ -300,11 +300,7 @@ export function DashboardSaudiOccasionsImportModal({
                           checked={checked}
                           onChange={() => toggle(o.id)}
                         />
-                        <span
-                          className="mt-1 h-3 w-3 shrink-0 rounded-sm"
-                          style={{ background: o.color }}
-                          aria-hidden
-                        />
+                        <ColorSwatch className="mt-1 h-3 w-3 shrink-0 rounded-sm" color={o.color} aria-hidden />
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-1.5">
                             <span className="text-[13px] font-semibold text-noorix-text">{labelFor(o)}</span>

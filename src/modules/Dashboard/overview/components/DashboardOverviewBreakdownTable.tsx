@@ -1,5 +1,5 @@
 import React from 'react';
-import { FmtNum } from '../../../../ui';
+import { ColorSwatch, FmtNum } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
 
 export type DashboardBreakdownRow = {
@@ -103,9 +103,9 @@ export function DashboardOverviewBreakdownTable({
             <div className={cn(tdClass(compact), 'min-w-0')}>
               <div className="mx-auto flex max-w-full items-center justify-center gap-1.5">
                 {row.color ? (
-                  <span
+                  <ColorSwatch
                     className={cn('shrink-0 rounded-full', compact ? 'h-1.5 w-1.5' : 'h-2 w-2')}
-                    style={{ background: row.color }}
+                    color={row.color}
                     aria-hidden
                   />
                 ) : null}

@@ -4,7 +4,7 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useDashboardYearSpecialDays } from '../../../hooks/useDashboardYearSpecialDays';
-import { Button, Input } from '../../../ui';
+import { Button, ColorSwatch, Input } from '../../../ui';
 import { toYmd } from '../../../utils/saudiDate';
 import { getSaudiNow } from '../../../utils/saudiDate';
 import { DashboardSaudiOccasionsImportModal } from './DashboardSaudiOccasionsImportModal';
@@ -185,7 +185,7 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         )}
         {specialDaysList.map((sp) => (
           <div key={`${sp.id}-${sp.fromDate}-${sp.toDate}`} className="noorix-surface-card flex items-center gap-3 p-3.5">
-            <div className="w-3 h-3 rounded-md shrink-0" style={{ background: sp.color || '#8b5cf6' }} />
+            <ColorSwatch className="w-3 h-3 rounded-md shrink-0" color={sp.color} fallbackColor="#8b5cf6" />
             {editingId === sp.id ? (
               <>
                 <Input

@@ -2,12 +2,12 @@
   "version": 1,
   "description": "Baseline for React inline style usage. This blocks new style={{ }} growth while dynamic styles are converted gradually.",
   "limits": {
-    "total": 47,
-    "files": 30,
+    "total": 39,
+    "files": 24,
     "ui": 19,
     "uiFiles": 6,
-    "outsideUi": 28,
-    "outsideUiFiles": 24
+    "outsideUi": 20,
+    "outsideUiFiles": 18
   },
   "topFiles": {
     "src/ui/SmartTable/SmartTable.tsx": 7,

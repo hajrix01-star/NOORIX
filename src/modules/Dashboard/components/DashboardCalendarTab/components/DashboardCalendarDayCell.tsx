@@ -1,4 +1,5 @@
 import React from 'react';
+import { ColorSwatch } from '../../../../../ui';
 import { fmt } from '../../../../../utils/format';
 import { ACHIEVEMENT_BG, achievementBandFromRatio } from '../utils/calendarAchievementUtils';
 
@@ -111,7 +112,7 @@ export default function DashboardCalendarDayCell({
         <span className="text-[8px] w-[6px] h-[6px] rounded-full inline-block bg-noorix-blue text-noorix-blue" />
       )}
       {special && specialColor && (
-        <div className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-md" style={{ background: specialColor }} />
+        <ColorSwatch className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-md" color={specialColor} />
       )}
     </div>
   );

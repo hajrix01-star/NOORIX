@@ -9,7 +9,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, cn } from '../../../ui';
+import { Button, ColorSwatch, cn } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
 import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
 import { formatCompactNumber, formatMoney } from '../../../utils/money';
@@ -221,7 +221,7 @@ export function OwnerPerformanceChart({
       <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">
         {companySeries.map((s) => (
           <div key={s.key} className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: s.color }} />
+            <ColorSwatch className="w-2.5 h-2.5 rounded-sm shrink-0" color={s.color} />
             <span className="text-[12px]">{s.label}</span>
           </div>
         ))}
