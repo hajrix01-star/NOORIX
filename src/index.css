@@ -6893,33 +6893,21 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .nx-toast {
   background: var(--toast-bg, var(--noorix-accent-blue));
 }
-.bank-map-warning {
-  color: var(--noorix-accent-amber);
-}
+.bank-map-warning { color: var(--noorix-accent-amber); }
 .bank-map-info-panel {
   border: 1px solid rgba(37,99,235,0.25);
   background: rgba(37,99,235,0.08);
 }
 .bank-map-info-title,
-.bank-map-chip--blue {
-  color: var(--noorix-accent-blue);
-}
-.bank-map-chip--blue {
-  background: color-mix(in srgb, var(--noorix-accent-blue) 12%, var(--noorix-bg-surface));
-}
-.bank-map-chip--surface {
-  background: var(--noorix-bg-surface);
-}
+.bank-map-chip--blue { color: var(--noorix-accent-blue); }
+.bank-map-chip--blue { background: color-mix(in srgb, var(--noorix-accent-blue) 12%, var(--noorix-bg-surface)); }
+.bank-map-chip--surface { background: var(--noorix-bg-surface); }
 .bank-map-chip--green {
   color: var(--noorix-accent-green);
   background: color-mix(in srgb, var(--noorix-accent-green) 12%, var(--noorix-bg-surface));
 }
-.bank-map-metadata-grid {
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-}
-.bank-map-columns-grid {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
+.bank-map-metadata-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.bank-map-columns-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .bank-map-auto-detect-warning {
   border: 1px solid var(--noorix-yellow-35);
   background: var(--noorix-yellow-12);
@@ -6949,31 +6937,15 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   background: var(--noorix-muted-15);
   color: var(--noorix-text);
 }
-.bank-map-cell--date {
-  background: color-mix(in srgb, var(--noorix-accent-blue) 6%, transparent);
-}
+.bank-map-cell--date { background: color-mix(in srgb, var(--noorix-accent-blue) 6%, transparent); }
 .bank-map-cell--desc,
-.bank-map-cell--notes {
-  background: color-mix(in srgb, var(--noorix-accent-violet) 6%, transparent);
-}
-.bank-map-cell--debit {
-  background: color-mix(in srgb, var(--noorix-accent-red) 6%, transparent);
-}
-.bank-map-cell--credit {
-  background: color-mix(in srgb, var(--noorix-accent-green) 6%, transparent);
-}
-.bank-map-cell--balance {
-  background: color-mix(in srgb, var(--noorix-accent-amber) 6%, transparent);
-}
-.bank-map-cell--ref {
-  background: color-mix(in srgb, var(--noorix-text) 6%, transparent);
-}
-.bank-transactions-filter-grid {
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-}
-.bank-transactions-search-wrap {
-  position: relative;
-}
+.bank-map-cell--notes { background: color-mix(in srgb, var(--noorix-accent-violet) 6%, transparent); }
+.bank-map-cell--debit { background: color-mix(in srgb, var(--noorix-accent-red) 6%, transparent); }
+.bank-map-cell--credit { background: color-mix(in srgb, var(--noorix-accent-green) 6%, transparent); }
+.bank-map-cell--balance { background: color-mix(in srgb, var(--noorix-accent-amber) 6%, transparent); }
+.bank-map-cell--ref { background: color-mix(in srgb, var(--noorix-text) 6%, transparent); }
+.bank-transactions-filter-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.bank-transactions-search-wrap { position: relative; }
 .bank-transactions-search-icon {
   position: absolute;
   inset-inline-start: 10px;
@@ -7008,57 +6980,18 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-radius: 6px;
   font-size: 11px;
 }
-.bank-transactions-footer-cell {
-  padding: 10px 12px;
-}
-.nx-import-result-panel--success {
-  border: 1px solid color-mix(in srgb, var(--noorix-accent-green) 25%, transparent);
-}
-.nx-import-result-panel--warning {
-  border: 1px solid color-mix(in srgb, var(--color-noorix-amber) 25%, transparent);
-}
-.dashboard-calendar-header-title {
-  color: var(--color-nx-sales);
-}
-.bank-sales-compare-grid {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
-.nx-theme-card-preview {
-  transition: all 0.2s ease;
-}
-.nx-theme-card-preview--selected {
-  outline: 2px solid var(--noorix-accent-blue);
-  outline-offset: 2px;
-}
-.nx-theme-card-preview--1 {
-  border: 1px solid var(--noorix-border);
-  border-radius: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-.nx-theme-card-preview--2 {
-  border: 1px solid var(--noorix-border);
-  border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-}
-.nx-theme-card-preview--3 {
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-.nx-theme-card-preview--4 {
-  border: none;
-  border-radius: 16px;
-  background: var(--noorix-bg-surface);
-  box-shadow: 6px 6px 14px rgba(0, 0, 0, 0.08), -6px -6px 14px rgba(255, 255, 255, 0.9);
-}
-.nx-theme-card-preview--5 {
-  border: 1px solid var(--noorix-border);
-  border-inline-start: 4px solid #16a34a;
-  border-radius: 14px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-}
+.bank-transactions-footer-cell { padding: 10px 12px; }
+.nx-import-result-panel--success { border: 1px solid color-mix(in srgb, var(--noorix-accent-green) 25%, transparent); }
+.nx-import-result-panel--warning { border: 1px solid color-mix(in srgb, var(--color-noorix-amber) 25%, transparent); }
+.dashboard-calendar-header-title { color: var(--color-nx-sales); }
+.bank-sales-compare-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.nx-theme-card-preview { transition: all 0.2s ease; }
+.nx-theme-card-preview--selected { outline: 2px solid var(--noorix-accent-blue); outline-offset: 2px; }
+.nx-theme-card-preview--1 { border: 1px solid var(--noorix-border); border-radius: 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+.nx-theme-card-preview--2 { border: 1px solid var(--noorix-border); border-radius: 16px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); }
+.nx-theme-card-preview--3 { border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 16px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
+.nx-theme-card-preview--4 { border: none; border-radius: 16px; background: var(--noorix-bg-surface); box-shadow: 6px 6px 14px rgba(0, 0, 0, 0.08), -6px -6px 14px rgba(255, 255, 255, 0.9); }
+.nx-theme-card-preview--5 { border: 1px solid var(--noorix-border); border-inline-start: 4px solid #16a34a; border-radius: 14px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06); }
 .nx-theme-card-preview--6 {
   border: 2px solid transparent;
   border-radius: 14px;
@@ -7067,42 +7000,14 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     linear-gradient(135deg, #16a34a, #2563eb) border-box;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
-.nx-theme-card-preview--7 {
-  border: 1px solid var(--noorix-border);
-  border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-}
-.nx-theme-card-preview--8 {
-  border: 1px solid var(--noorix-border);
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-.nx-theme-card-preview--9 {
-  border: 1px solid var(--noorix-blue-20);
-  border-radius: 16px;
-  box-shadow: 0 2px 12px var(--noorix-blue-8), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-.nx-theme-card-preview--10 {
-  border: 2px solid var(--noorix-border);
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 1px var(--noorix-border-muted);
-}
-.nx-vault-card-icon--archived {
-  background: var(--noorix-bg-muted);
-  color: var(--noorix-text-muted);
-}
-.nx-vault-card-icon--cash {
-  background: color-mix(in srgb, var(--color-nx-profit) 10%, transparent);
-  color: var(--color-nx-profit);
-}
-.nx-vault-card-icon--bank {
-  background: color-mix(in srgb, var(--color-nx-sales) 10%, transparent);
-  color: var(--color-nx-sales);
-}
-.nx-vault-card-icon--app {
-  background: color-mix(in srgb, var(--color-nx-app) 10%, transparent);
-  color: var(--color-nx-app);
-}
+.nx-theme-card-preview--7 { border: 1px solid var(--noorix-border); border-radius: 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); }
+.nx-theme-card-preview--8 { border: 1px solid var(--noorix-border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
+.nx-theme-card-preview--9 { border: 1px solid var(--noorix-blue-20); border-radius: 16px; box-shadow: 0 2px 12px var(--noorix-blue-8), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+.nx-theme-card-preview--10 { border: 2px solid var(--noorix-border); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--noorix-border-muted); }
+.nx-vault-card-icon--archived { background: var(--noorix-bg-muted); color: var(--noorix-text-muted); }
+.nx-vault-card-icon--cash { background: color-mix(in srgb, var(--color-nx-profit) 10%, transparent); color: var(--color-nx-profit); }
+.nx-vault-card-icon--bank { background: color-mix(in srgb, var(--color-nx-sales) 10%, transparent); color: var(--color-nx-sales); }
+.nx-vault-card-icon--app { background: color-mix(in srgb, var(--color-nx-app) 10%, transparent); color: var(--color-nx-app); }
 .nx-sales-channel-card--cash {
   border: 1px solid color-mix(in srgb, var(--noorix-accent-green) 27%, transparent);
   background: var(--noorix-green-8);
@@ -7115,25 +7020,12 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border: 1px solid color-mix(in srgb, var(--noorix-accent-violet) 27%, transparent);
   background: var(--noorix-violet-8);
 }
-.nx-sales-channel-input {
-  color: var(--noorix-text);
-  background: var(--noorix-bg-surface);
-}
-.nx-sales-channel-input--cash {
-  border-color: color-mix(in srgb, var(--noorix-accent-green) 33%, transparent);
-}
-.nx-sales-channel-input--bank {
-  border-color: color-mix(in srgb, var(--noorix-accent-blue) 33%, transparent);
-}
-.nx-sales-channel-input--app {
-  border-color: color-mix(in srgb, var(--noorix-accent-violet) 33%, transparent);
-}
-.nx-sales-channel-input--legacy {
-  background: var(--noorix-bg-muted);
-}
-.nx-touch-scroll {
-  -webkit-overflow-scrolling: touch;
-}
+.nx-sales-channel-input { color: var(--noorix-text); background: var(--noorix-bg-surface); }
+.nx-sales-channel-input--cash { border-color: color-mix(in srgb, var(--noorix-accent-green) 33%, transparent); }
+.nx-sales-channel-input--bank { border-color: color-mix(in srgb, var(--noorix-accent-blue) 33%, transparent); }
+.nx-sales-channel-input--app { border-color: color-mix(in srgb, var(--noorix-accent-violet) 33%, transparent); }
+.nx-sales-channel-input--legacy { background: var(--noorix-bg-muted); }
+.nx-touch-scroll { -webkit-overflow-scrolling: touch; }
 .nx-analysis-color-0 { background: var(--noorix-accent-blue); }
 .nx-analysis-color-1 { background: var(--noorix-accent-green); }
 .nx-analysis-color-2 { background: #ca8a04; }
@@ -7156,10 +7048,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .nx-owner-text--purchases { color: var(--color-nx-purchases); }
 .nx-owner-text--expenses { color: var(--color-nx-expenses); }
 .nx-owner-text--net-profit { color: var(--color-nx-net-profit); }
-.nx-batch-row-date-error {
-  border-color: var(--noorix-accent-red);
-  background: var(--noorix-red-8, #fef2f2);
-}
+.nx-batch-row-date-error { border-color: var(--noorix-accent-red); background: var(--noorix-red-8, #fef2f2); }
 @media (max-width: 768px) {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {
     padding-inline: 0;
