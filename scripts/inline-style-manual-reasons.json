@@ -2,30 +2,10 @@
   "version": 1,
   "description": "Closure decisions for remaining React style={{ }} usages. Every file with remaining inline style usage must have a reason here.",
   "inlineStyleReasons": {
-    "src/components/AppHeader.tsx": {
-      "category": "popover-positioning",
-      "decision": "leave",
-      "reason": "runtime dropdown positioning is computed from viewport/header measurements."
-    },
     "src/components/UserMenu.tsx": {
-      "category": "popover-positioning-and-css-var",
+      "category": "runtime-css-var",
       "decision": "leave",
-      "reason": "menu position and role color CSS variable are runtime values used by the shared account menu."
-    },
-    "src/components/common/ProductSearchInput.tsx": {
-      "category": "popover-positioning",
-      "decision": "leave",
-      "reason": "search results popup uses runtime anchor geometry and viewport bounds."
-    },
-    "src/components/common/SearchableOptionsPicker.tsx": {
-      "category": "popover-positioning",
-      "decision": "leave",
-      "reason": "options popup uses runtime anchor geometry and viewport bounds."
-    },
-    "src/components/common/SupplierSelect.tsx": {
-      "category": "popover-positioning",
-      "decision": "leave",
-      "reason": "supplier picker popup uses runtime anchor geometry and viewport bounds."
+      "reason": "shared account trigger sets a runtime role color CSS variable."
     },
     "src/modules/Dashboard/components/DashboardCalendarTab/components/DashboardCalendarDayCell.tsx": {
       "category": "data-driven-calendar-color",

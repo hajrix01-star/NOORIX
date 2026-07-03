@@ -9,7 +9,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fmt } from '../../utils/format';
-import { Input } from '../../ui';
+import { FloatingPanel, Input } from '../../ui';
 
 type ProductVariant = {
   size?: string;
@@ -200,16 +200,15 @@ export function ProductSearchInput({
       {open &&
         dropdownRect &&
         createPortal(
-          <div
+          <FloatingPanel
             data-product-search-dropdown
-            className="fixed max-h-[280px] overflow-y-auto overflow-x-hidden rounded-lg bg-noorix-surface border border-noorix-border"
-            style={{
-              top: dropdownRect.top,
-              left: dropdownRect.left,
-              width: dropdownRect.width,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-              zIndex: 10001,
-            }}
+            className="overflow-y-auto overflow-x-hidden rounded-lg bg-noorix-surface border border-noorix-border"
+            top={dropdownRect.top}
+            left={dropdownRect.left}
+            width={dropdownRect.width}
+            maxHeight={280}
+            zIndex={10001}
+            boxShadow="0 8px 24px rgba(0,0,0,0.12)"
           >
             {loading ? (
               <div className="p-4 text-noorix-muted text-[13px] text-center flex items-center justify-center gap-2">
@@ -252,7 +251,7 @@ export function ProductSearchInput({
                 );
               })
             )}
-          </div>,
+          </FloatingPanel>,
           document.body,
         )}
     </div>

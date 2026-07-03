@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '../i18n/useTranslation';
 import ChangePasswordModal from './ChangePasswordModal';
 import { useToast } from '../context/ToastContext';
-import { Button } from '../ui';
+import { Button, FloatingPanel } from '../ui';
 import { useIsNarrow768 } from '../hooks/useMediaQuery';
 
 const ROLE_KEYS = {
@@ -100,20 +100,17 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }: a
   const email        = user?.email || '';
   /* ── القائمة المنسدلة ── */
   const dropdown = open && (
-    <div
+    <FloatingPanel
       ref={menuRef}
       role="menu"
       aria-label={t('userAccount')}
       className="um-dropdown"
-      style={{
-        position: 'fixed',
-        zIndex: 'var(--nx-z-menu, 2500)',
-        top: pos.top,
-        left: pos.left,
-        width: Math.min(MENU_WIDTH, (typeof window !== 'undefined' ? window.innerWidth : 320) - VIEWPORT_GAP * 2),
-        maxHeight: pos.maxMenuH || 480,
-        direction: lang === 'ar' ? 'rtl' : 'ltr',
-      }}
+      top={pos.top}
+      left={pos.left}
+      width={Math.min(MENU_WIDTH, (typeof window !== 'undefined' ? window.innerWidth : 320) - VIEWPORT_GAP * 2)}
+      maxHeight={pos.maxMenuH || 480}
+      zIndex="var(--nx-z-menu, 2500)"
+      direction={lang === 'ar' ? 'rtl' : 'ltr'}
     >
       {/* رأس القائمة — معلومات المستخدم */}
       <div className="um-header">
@@ -189,7 +186,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }: a
           <span className="um-item-label">{t('logout')}</span>
         </Button>
       </div>
-    </div>
+    </FloatingPanel>
   );
 
   return (
