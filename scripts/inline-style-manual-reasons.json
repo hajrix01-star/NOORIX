@@ -7,25 +7,10 @@
       "decision": "leave",
       "reason": "shared account trigger sets a runtime role color CSS variable."
     },
-    "src/modules/Dashboard/components/DashboardCalendarTab/components/DashboardCalendarDayCell.tsx": {
-      "category": "data-driven-calendar-color",
-      "decision": "leave",
-      "reason": "calendar day background/accent color is computed from day intensity and special-day data."
-    },
-    "src/modules/Dashboard/overview/components/DashboardOverviewTopCharts.tsx": {
-      "category": "chart-tooltip-color",
-      "decision": "leave",
-      "reason": "tooltip label color comes from the active chart payload."
-    },
     "src/modules/Owner/components/OwnerFilterBar.tsx": {
       "category": "chart-series-color",
       "decision": "leave",
       "reason": "owner filter chip color is derived from company/series data."
-    },
-    "src/modules/Owner/components/OwnerPerformanceChart.tsx": {
-      "category": "chart-tooltip-and-series-color",
-      "decision": "leave",
-      "reason": "tooltip rows and legend dots use Recharts payload/company series runtime colors."
     },
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": {
       "category": "table-print-alignment",

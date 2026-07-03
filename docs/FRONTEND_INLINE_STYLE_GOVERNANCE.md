@@ -8,12 +8,12 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 34 |
-| files with `style={{` | 20 |
+| `style={{` total | 31 |
+| files with `style={{` | 17 |
 | inside `src/ui` | 19 |
 | `src/ui` files | 6 |
-| outside `src/ui` | 15 |
-| outside `src/ui` files | 14 |
+| outside `src/ui` | 12 |
+| outside `src/ui` files | 11 |
 
 ## Top Files
 
@@ -24,10 +24,7 @@ Status: active guardrail.
 | `src/ui/SimpleTable.tsx` | 4 |
 | `src/modules/Reports/GeneralPlTable.tsx` | 2 |
 | `src/components/UserMenu.tsx` | 1 |
-| `src/modules/Dashboard/components/DashboardCalendarTab/components/DashboardCalendarDayCell.tsx` | 1 |
-| `src/modules/Dashboard/overview/components/DashboardOverviewTopCharts.tsx` | 1 |
 | `src/modules/Owner/components/OwnerFilterBar.tsx` | 1 |
-| `src/modules/Owner/components/OwnerPerformanceChart.tsx` | 1 |
 | `src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx` | 1 |
 | `src/modules/Reports/BankStatementMappingModal.tsx` | 1 |
 | `src/ui/SmartTable/buildFooterCells.tsx` | 1 |
@@ -45,6 +42,8 @@ The MatrixTable owner conversion moved owner monthly comparison runtime styles i
 The runtime visual primitives batch added `ColorSwatch` and `DataBar` to `src/ui`, moving repeated chart dots, color swatches, and report bars out of Dashboard, Orders, Owner, and Settings screens. This reduced the governed count from 47 to 39 without touching payroll, tax, bank, purchases, or financial report flows.
 
 The floating panel batch added `FloatingPanel` to `src/ui`, moving shared portal positioning styles out of AppHeader, product search, searchable option pickers, supplier select, and the account menu. This reduced the governed count from 39 to 34 and outside-UI usage from 20 to 15.
+
+The runtime surface batch added `RuntimeStyleBox` to `src/ui`, moving data-driven background, border, and color styles out of Dashboard calendar cells, Dashboard supplier tooltips, and Owner chart tooltips. This reduced the governed count from 34 to 31 and outside-UI usage from 15 to 12.
 
 ## Rule
 

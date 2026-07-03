@@ -1,5 +1,5 @@
 import React from 'react';
-import { ColorSwatch } from '../../../../../ui';
+import { ColorSwatch, RuntimeStyleBox } from '../../../../../ui';
 import { fmt } from '../../../../../utils/format';
 import { ACHIEVEMENT_BG, achievementBandFromRatio } from '../utils/calendarAchievementUtils';
 
@@ -81,7 +81,7 @@ export default function DashboardCalendarDayCell({
       : 'text-[var(--color-nx-profit)]';
 
   return (
-    <div
+    <RuntimeStyleBox
       role="button"
       tabIndex={0}
       onClick={(e: React.MouseEvent) => onDayClick(item, e.shiftKey)}
@@ -89,10 +89,8 @@ export default function DashboardCalendarDayCell({
         if (e.key === 'Enter' || e.key === ' ') onDayClick(item, e.shiftKey);
       }}
       className="aspect-square rounded-md flex flex-col items-center justify-center p-px min-h-10 sm:min-h-12 cursor-pointer relative max-md:text-[10px]"
-      style={{
-        background: bg,
-        border: cellBorder,
-      }}
+      background={bg}
+      border={cellBorder}
       title={`${dateStr}: ${fmt(amount)} SR${dayTarget != null ? ` | ${t('dashboardSalesTarget')}: ${fmt(dayTarget)}` : ''}${special ? ` | ${special.name || ''}` : ''}${hasNote ? ` | ${hasNote}` : ''}`}
     >
       <span className="text-[12px] max-md:text-[10px] font-bold text-noorix-text leading-none">{day}</span>
@@ -114,6 +112,6 @@ export default function DashboardCalendarDayCell({
       {special && specialColor && (
         <ColorSwatch className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-md" color={specialColor} />
       )}
-    </div>
+    </RuntimeStyleBox>
   );
 }
