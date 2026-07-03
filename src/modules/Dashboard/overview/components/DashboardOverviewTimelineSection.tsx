@@ -121,6 +121,9 @@ export function DashboardOverviewTimelineSection({
             {SERIES.map((s) => {
               const hidden = hiddenSeries.has(s.key);
               const disabled = s.disabled;
+              const seriesStyle = {
+                '--dashboard-series-color': s.color,
+              } as React.CSSProperties;
               return (
                 <Button
                   key={s.key}
@@ -131,18 +134,15 @@ export function DashboardOverviewTimelineSection({
                   title={
                     disabled ? (lang === 'ar' ? 'بيانات يومية غير متاحة' : 'Daily data unavailable') : undefined
                   }
-                  style={{
-                    borderColor: s.color,
-                    color: hidden || disabled ? 'var(--noorix-text-muted)' : s.color,
-                    background: hidden || disabled ? 'transparent' : `${s.color}14`,
-                    opacity: disabled ? 0.4 : 1,
-                    cursor: disabled ? 'not-allowed' : 'pointer',
-                  }}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-600 rounded border transition-all duration-150 select-none"
+                  style={seriesStyle}
+                  className={cn(
+                    'dashboard-series-toggle flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-600 rounded border transition-all duration-150 select-none',
+                    hidden && 'dashboard-series-toggle--hidden',
+                    disabled && 'dashboard-series-toggle--disabled',
+                  )}
                 >
                   <span
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
-                    style={{ background: hidden || disabled ? 'var(--noorix-border)' : s.color }}
+                    className="dashboard-series-toggle__dot inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
                   />
                   {s.label}
                 </Button>

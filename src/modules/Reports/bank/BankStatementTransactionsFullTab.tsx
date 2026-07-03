@@ -58,25 +58,10 @@ export default function BankStatementTransactionsFullTab({
   return (
     <div className="grid gap-3.5">
       {/* ── شريط الفلاتر ── */}
-      <div
-        className="grid gap-2.5 bg-noorix-bg-muted rounded-xl p-3 border border-noorix-border"
-        style={{
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-        }}
-      >
+      <div className="bank-transactions-filter-grid grid gap-2.5 bg-noorix-bg-muted rounded-xl p-3 border border-noorix-border">
         {/* بحث */}
-        <div style={{ position: 'relative' }}>
-          <span
-            style={{
-              position: 'absolute',
-              insetInlineStart: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: 14,
-              pointerEvents: 'none',
-              color: 'var(--noorix-text-muted)',
-            }}
-          >
+        <div className="bank-transactions-search-wrap">
+          <span className="bank-transactions-search-icon">
             
           </span>
           <Input
@@ -84,15 +69,7 @@ export default function BankStatementTransactionsFullTab({
             placeholder={t('bankSearchTransactions')}
             value={searchTerm}
             onChange={(e: any) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px 8px 32px',
-              borderRadius: 8,
-              border: '1px solid var(--noorix-border)',
-              background: 'var(--noorix-bg)',
-              fontSize: 13,
-              boxSizing: 'border-box',
-            }}
+            className="bank-transactions-search-input"
           />
         </div>
 
@@ -143,15 +120,7 @@ export default function BankStatementTransactionsFullTab({
           value={newCategoryName}
           onChange={(e: any) => setNewCategoryName(e.target.value)}
           placeholder={t('bankStatementCategoryName')}
-          style={{
-            padding: '6px 10px',
-            borderRadius: 8,
-            border: '1px solid var(--noorix-border)',
-            width: '100%',
-            maxWidth: 200,
-            flex: '1 1 200px',
-            fontSize: 13,
-          }}
+          className="bank-transactions-new-category-input"
         />
         <Button variant="primary" size="sm" onClick={onCreateCategory}>{t('bankStatementAddCategory')}</Button>
       </div>
@@ -272,7 +241,7 @@ export default function BankStatementTransactionsFullTab({
                   <Input
                     value={editingNote}
                     onChange={(e: any) => setEditingNote(e.target.value)}
-                    style={{ fontSize: 11, padding: '4px 6px', borderRadius: 6, border: '1px solid var(--noorix-border)', width: 150 }}
+                    className="bank-transactions-note-input"
                   />
                   <div className="flex gap-1">
                     <Button variant="primary" size="sm" disabled={updateNoteMutation.isPending} onClick={() => handleNoteChange(tx.id)}>
@@ -284,7 +253,7 @@ export default function BankStatementTransactionsFullTab({
               ) : (
                 <Button
                   size="sm"
-                  style={{ color: v ? 'var(--noorix-accent-blue)' : 'var(--noorix-text-muted)' }}
+                  className={v ? 'text-noorix-blue' : 'text-noorix-muted'}
                   onClick={() => { setEditingNoteId(tx.id); setEditingNote(v || ''); }}
                 >
                   {v ? `${(v || '').slice(0, 20)}…` : '+ ملاحظة'}
@@ -305,19 +274,18 @@ export default function BankStatementTransactionsFullTab({
         }
         footerCells={
           <>
-            <td colSpan={4} className="text-[12px] text-noorix-muted" style={{ padding: '10px 12px' }}>
+            <td colSpan={4} className="bank-transactions-footer-cell text-[12px] text-noorix-muted">
               {t('bankColumnTotalsFiltered')} ({filteredTransactions.length} عملية)
             </td>
-            <td className="text-right" style={{ padding: '10px 12px' }}>
+            <td className="bank-transactions-footer-cell text-right">
               <FmtNum n={columnTotals.debit} className="nx-ltr inline-block text-noorix-red text-[13px] font-extrabold" />
             </td>
-            <td className="text-right" style={{ padding: '10px 12px' }}>
+            <td className="bank-transactions-footer-cell text-right">
               <FmtNum n={columnTotals.credit} className="nx-ltr inline-block text-noorix-green text-[13px] font-extrabold" />
             </td>
-            <td colSpan={2} className="text-right text-[12px]" style={{ padding: '10px 12px' }}>
+            <td colSpan={2} className="bank-transactions-footer-cell text-right text-[12px]">
               <span
-                className="nx-ltr inline-block font-[800]"
-                style={{ color: columnTotals.credit - columnTotals.debit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
+                className={`nx-ltr inline-block font-[800]${columnTotals.credit - columnTotals.debit >= 0 ? ' text-noorix-green' : ' text-noorix-red'}`}
               >
                 {columnTotals.credit - columnTotals.debit >= 0 ? '+' : ''}<FmtNum n={columnTotals.credit - columnTotals.debit} />
               </span>

@@ -8,7 +8,7 @@ Status: active guardrail.
 
 | File | Lines | @media | !important | @keyframes | CSS vars | var refs | color-mix |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `src/index.css` | 6423 | 51 | 215 | 12 | 233 | 811 | 146 |
+| `src/index.css` | 6940 | 51 | 215 | 12 | 233 | 892 | 153 |
 | `src/ui/ui.css` | 2326 | 6 | 22 | 8 | 12 | 273 | 1 |
 | `src/modules/SmartChat/SmartChatScreen.css` | 945 | 5 | 8 | 3 | 0 | 79 | 11 |
 
@@ -41,12 +41,12 @@ CI runs the same check in `.github/workflows/ci.yml`.
 | `src/index.css` | table | 288 |
 | `src/index.css` | reports | 216 |
 | `src/index.css` | invoices | 116 |
-| `src/index.css` | dashboard | 107 |
+| `src/index.css` | dashboard | 123 |
 | `src/index.css` | modal | 116 |
-| `src/index.css` | hr | 93 |
+| `src/index.css` | hr | 184 |
 | `src/index.css` | shell | 73 |
 | `src/index.css` | orders | 28 |
-| `src/index.css` | print | 11 |
+| `src/index.css` | print | 29 |
 | `src/ui/ui.css` | table | 93 |
 | `src/ui/ui.css` | modal | 82 |
 | `src/ui/ui.css` | dashboard | 22 |

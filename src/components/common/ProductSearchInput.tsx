@@ -237,11 +237,7 @@ export function ProductSearchInput({
                       ev.preventDefault();
                       selectProduct(p);
                     }}
-                    className="py-[10px] px-[14px] cursor-pointer flex justify-between items-center gap-3 flex-nowrap min-w-0"
-                    style={{
-                      borderBottom: i < filtered.length - 1 ? '1px solid var(--noorix-border)' : 'none',
-                      background: isHighlight ? 'var(--noorix-bg-muted)' : 'transparent',
-                    }}
+                    className={`nx-product-search-option py-[10px] px-[14px] cursor-pointer flex justify-between items-center gap-3 flex-nowrap min-w-0${isHighlight ? ' nx-product-search-option--highlight' : ''}`}
                   >
                     <span className="font-medium flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
                       {p.nameAr || p.nameEn || p.id}
