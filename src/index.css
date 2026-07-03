@@ -910,84 +910,32 @@ a { color: inherit; text-decoration: none; }
    ???????????????????????????????????????? */
 
 /* wrapper */
-.um-wrapper {
-  position: relative;
-}
+.um-wrapper { position: relative; }
 
 /* زر الأفاتار المضغوط */
-.um-trigger {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  border: 1.5px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 150ms, border-color 150ms;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.um-trigger:hover {
-  background: var(--noorix-bg-muted);
-  border-color: var(--noorix-border);
-}
-.um-trigger:focus-visible {
-  outline: 2px solid var(--noorix-accent-blue);
-  outline-offset: 2px;
-}
+.um-trigger { display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; border: 1.5px solid transparent; background: transparent; cursor: pointer; font-family: inherit; transition: background 150ms, border-color 150ms; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.um-trigger:hover { background: var(--noorix-bg-muted); border-color: var(--noorix-border); }
+.um-trigger:focus-visible { outline: 2px solid var(--noorix-accent-blue); outline-offset: 2px; }
 
 /* دائرة الأفاتار — أيقونة شخص (بدون أحرف) */
-.um-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%);
-  border: 2px solid transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  line-height: 0;
-  transition: border-color 150ms;
-}
+.um-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--noorix-accent-blue) 0%, var(--noorix-navy-mid, #1d4ed8) 100%); border: 2px solid transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 0; transition: border-color 150ms; }
 .um-trigger .um-avatar,
 .um-avatar-lg {
   border-color: var(--role-color, transparent);
 }
-.um-role-label {
-  color: var(--role-color, var(--noorix-text-muted));
-}
+.um-role-label { color: var(--role-color, var(--noorix-text-muted)); }
 .um-role-badge {
   background: color-mix(in srgb, var(--role-color, var(--noorix-accent-blue)) 10%, transparent);
   color: var(--role-color, var(--noorix-accent-blue));
   border-color: color-mix(in srgb, var(--role-color, var(--noorix-accent-blue)) 27%, transparent);
 }
-.um-avatar-icon {
-  width: 18px;
-  height: 18px;
-  color: #fff;
-  opacity: 0.95;
-  flex-shrink: 0;
-}
-.um-avatar-icon--lg {
-  width: 22px;
-  height: 22px;
-}
-.um-trigger:hover .um-avatar {
-  border-color: var(--role-color, #2563eb);
-}
+.um-avatar-icon { width: 18px; height: 18px; color: #fff; opacity: 0.95; flex-shrink: 0; }
+.um-avatar-icon--lg { width: 22px; height: 22px; }
+.um-trigger:hover .um-avatar { border-color: var(--role-color, #2563eb); }
 
 /* سهم الشيفرون */
-.um-chevron {
-  color: var(--noorix-text-muted);
-  transition: transform 200ms cubic-bezier(0.4,0,0.2,1);
-  flex-shrink: 0;
-}
-.um-chevron--open {
-  transform: rotate(180deg);
-}
+.um-chevron { color: var(--noorix-text-muted); transition: transform 200ms cubic-bezier(0.4,0,0.2,1); flex-shrink: 0; }
+.um-chevron--open { transform: rotate(180deg); }
 
 /* ?? القائمة المنسدلة ?? */
 .um-dropdown {
@@ -1019,10 +967,7 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
   line-height: 0;
 }
-.um-header-info {
-  flex: 1;
-  min-width: 0;
-}
+.um-header-info { flex: 1; min-width: 0; }
 .um-name {
   font-size: 13px;
   font-weight: 700;
