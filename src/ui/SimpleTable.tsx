@@ -3,6 +3,11 @@ import { cn } from './cn';
 
 type TableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
 
+function cssLength(value: React.CSSProperties['width'] | undefined): string | number | undefined {
+  if (value == null || value === '') return undefined;
+  return typeof value === 'number' ? `${value}px` : value;
+}
+
 export type SimpleTableColumn<TRow = any> = {
   key: string;
   label?: React.ReactNode;
@@ -51,22 +56,22 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
   const resolvedCellPadding = cellPadding ?? (compact ? '6px 12px' : '8px 14px');
   const scrollStyle: TableCssVars | undefined = maxHeight
     ? {
-        '--nx-dg-scroll-max-height': maxHeight,
+        '--nx-dg-scroll-max-height': cssLength(maxHeight),
         '--nx-dg-scroll-overflow-y': 'auto',
       }
     : undefined;
   const tableStyle: TableCssVars | undefined = tableMinWidth
-    ? { '--nx-dg-min-width': tableMinWidth }
+    ? { '--nx-dg-min-width': cssLength(tableMinWidth) }
     : undefined;
   const headerStyle = (col: SimpleTableColumn<TRow>): TableCssVars => ({
-    '--nx-dg-cell-width': col.width,
-    '--nx-dg-cell-min-width': col.minWidth,
+    '--nx-dg-cell-width': cssLength(col.width),
+    '--nx-dg-cell-min-width': cssLength(col.minWidth),
     '--nx-dg-cell-padding': resolvedCellPadding,
     '--nx-dg-cell-align': col.align || (col.numeric ? 'end' : 'center'),
   });
   const cellStyle = (col: SimpleTableColumn<TRow>): TableCssVars => ({
-    '--nx-dg-cell-width': col.width,
-    '--nx-dg-cell-min-width': col.minWidth,
+    '--nx-dg-cell-width': cssLength(col.width),
+    '--nx-dg-cell-min-width': cssLength(col.minWidth),
     '--nx-dg-cell-padding': resolvedCellPadding,
     '--nx-dg-cell-align': col.align || (col.numeric ? 'end' : undefined),
   });
