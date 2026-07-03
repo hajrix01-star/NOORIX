@@ -2,6 +2,8 @@ import React from 'react';
 import type { SmartTableColumn, SmartTableFooterSegment } from './types';
 import { columnLabel } from './columnUtils';
 
+type FooterCellCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
+
 export { columnLabel, getAlign } from './columnUtils';
 
 /**
@@ -23,10 +25,14 @@ export function buildFooterCells({
   cellPad: { th: string; td: string };
 }): React.ReactNode[] {
   const cells: React.ReactNode[] = [];
+  const rowNumberStyle: FooterCellCssVars = {
+    '--nx-smart-footer-rn-width': rowNumberWidth || 36,
+    '--nx-smart-footer-rn-padding': cellPad.td,
+  };
 
   if (showRowNumbers) {
     cells.push(
-      <td key="__num__" style={{ width: rowNumberWidth || 36, padding: cellPad.td }} />,
+      <td key="__num__" className="nx-smart-footer-rn-cell" style={rowNumberStyle} />,
     );
   }
 

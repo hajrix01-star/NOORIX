@@ -1191,6 +1191,14 @@
 /* SmartTable مدمج داخل noorix-surface-card — يحذف الإطار الداخلي المزدوج (أي عمق) */
 .noorix-surface-card .noorix-table-frame { border: none; box-shadow: none; border-radius: 0; }
 
+.nx-dg-scroll-vars { max-height: var(--nx-dg-scroll-max-height, none); overflow-y: var(--nx-dg-scroll-overflow-y, visible); }
+.nx-dg-vars { min-width: var(--nx-dg-min-width, 0); }
+.nx-dg-var-cell { width: var(--nx-dg-cell-width, auto); min-width: var(--nx-dg-cell-min-width, 0); padding: var(--nx-dg-cell-padding, inherit); text-align: var(--nx-dg-cell-align, inherit); }
+.nx-dg-var-th--sticky { position: sticky; top: 0; z-index: var(--nx-dg-sticky-z, 2); }
+.nx-dg-accent-dot { background: var(--nx-dg-accent-color, currentColor); }
+.nx-smart-footer-rn-cell { width: var(--nx-smart-footer-rn-width, 36px); padding: var(--nx-smart-footer-rn-padding, 8px 12px); }
+.metric-card-value { color: var(--metric-card-value-color, var(--noorix-text)); font-family: var(--noorix-font-numbers); }
+
 /* ???????????????????????????????????????????????????????????
    14. Vault Type Selector — شبكة اختيار نوع الخزينة
    ??????????????????????????????????????????????????????????? */
@@ -1295,6 +1303,14 @@
 .nx-actions-menu { position: fixed; z-index: var(--nx-z-menu); min-width: 150px; width: 176px; max-height: 220px; overflow-y: auto; padding: 6px; border-radius: 6px; background: var(--noorix-bg-surface); color: var(--noorix-text); border: 1px solid var(--noorix-border); box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18); }
 
 .nx-actions-menu-item { display: flex; width: 100%; padding: 8px 12px; font-size: 13px; font-weight: 500; background: transparent; border-radius: 4px; white-space: nowrap; min-height: unset; justify-content: flex-start; }
+
+.nx-smart-frame-vars { padding: var(--nx-smart-frame-padding, 0); }
+.nx-col-vis-panel--viewport { top: var(--nx-col-vis-panel-top, auto); left: var(--nx-col-vis-panel-left, auto); }
+.nx-smart-table-vars { table-layout: var(--nx-smart-table-layout, auto); min-width: var(--nx-smart-table-min-width, 0); max-width: var(--nx-smart-table-max-width, none); }
+.nx-smart-row-vars { background: var(--nx-smart-row-bg, inherit); }
+.nx-smart-row-number-cell { padding: var(--nx-smart-cell-padding, inherit); font-size: var(--nx-smart-cell-font-size, inherit); width: var(--nx-smart-row-number-width, 40px); min-width: var(--nx-smart-row-number-width, 40px); }
+.nx-smart-header-cell-vars { padding: var(--nx-smart-cell-padding, inherit); font-weight: 700; font-size: var(--nx-smart-cell-font-size, inherit); text-align: center; position: var(--nx-smart-cell-position, static); width: var(--nx-smart-cell-width, auto); min-width: var(--nx-smart-cell-min-width, 0); max-width: var(--nx-smart-cell-max-width, none); cursor: var(--nx-smart-cell-cursor, default); user-select: var(--nx-smart-cell-user-select, auto); white-space: var(--nx-smart-cell-white-space, normal); overflow: var(--nx-smart-cell-overflow, visible); }
+.nx-smart-body-cell-vars { padding: var(--nx-smart-cell-padding, inherit); font-size: var(--nx-smart-cell-font-size, inherit); text-align: var(--nx-smart-cell-align, inherit); font-family: var(--nx-smart-cell-font-family, inherit); width: var(--nx-smart-cell-width, auto); min-width: var(--nx-smart-cell-min-width, 0); max-width: var(--nx-smart-cell-max-width, none); white-space: var(--nx-smart-cell-white-space, normal); }
 
 /* ???????????????????????????????????????????????????????????
    19. Supplier Dropdown — قائمة بحث الموردين

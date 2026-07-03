@@ -2,11 +2,11 @@
 
 Date: 2026-07-03
 
-Status: RFC only. Do not implement inside cleanup batches.
+Status: phase 1 implemented behind the current `SmartTable` API.
 
 ## Decision
 
-Keep `SmartTable` as the Noorix official table API. Evaluate TanStack Table as an internal engine only after compatibility coverage exists.
+Keep `SmartTable` as the Noorix official table API. TanStack Table is now introduced as an internal row/column model engine only; Noorix rendering, CSS, mobile cards, manual sorting, manual pagination, and protected table boundaries remain unchanged.
 
 ## Why Not In This Cleanup
 
@@ -34,10 +34,24 @@ Keep `SmartTable` as the Noorix official table API. Evaluate TanStack Table as a
 | Phase | Work |
 |---|---|
 | 0 | Accept `docs/TABLE_NEXT_PHASE_RFC.md` so MatrixTable, EditableTable, and protected print boundaries are known |
-| 1 | Freeze current `SmartTable` API and document runtime inline exceptions |
+| 1 | Implement TanStack as a read-only row/column engine behind the existing `SmartTable` API |
 | 2 | Add compatibility tests for sorting, row numbers, padding, compact mode, footer cells, mobile cards |
-| 3 | Run a TanStack compatibility pilot behind `SmartTable` in one non-financial table |
-| 4 | Decide whether to graduate to `SmartTableV2` or keep current engine |
+| 3 | Move sorting state to TanStack internally while keeping `onSort`, `sortKey`, and `sortDir` compatible |
+| 4 | Evaluate column sizing/resizing through TanStack without changing Noorix CSS tokens |
+| 5 | Decide whether to graduate to `SmartTableV2` or keep the adapter hidden inside `SmartTable` |
+
+## Implemented Phase 1
+
+| Item | Result |
+|---|---|
+| Dependency | `@tanstack/react-table` |
+| Internal adapter | `src/ui/SmartTable/tableEngine.ts` |
+| Public API break | none |
+| Rendering ownership | still Noorix JSX/CSS |
+| Sorting | still manual/external-compatible |
+| Pagination | still manual/external-compatible |
+| Mobile cards/compact rows | unchanged, powered by engine row model |
+| Protected financial/report tables | untouched |
 
 ## Acceptance For Any Future Implementation
 

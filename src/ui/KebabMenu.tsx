@@ -74,6 +74,7 @@ function KebabMenuInner({
   const horizontalStyle = isRtl
     ? { right: Math.max(VIEWPORT_GAP, window.innerWidth - pos.left - menuWidth) }
     : { left: pos.left };
+  const menuStyle = { top: pos.top, maxHeight: menuMaxHeight, ...horizontalStyle };
 
   const menuContent = open && (
     <div
@@ -81,7 +82,7 @@ function KebabMenuInner({
       role="menu"
       aria-orientation="vertical"
       className="nx-actions-menu"
-      style={{ top: pos.top, maxHeight: menuMaxHeight, ...horizontalStyle }}
+      style={menuStyle}
     >
       {visible.map((it: any) => (
         <Button

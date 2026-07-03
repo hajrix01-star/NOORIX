@@ -8,6 +8,21 @@ const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, 'inline-style-g
 const reasonsPath = path.join(__dirname, 'inline-style-manual-reasons.json');
 const reasons = JSON.parse(fs.readFileSync(reasonsPath, 'utf8'));
 const inlineStyleReasons = reasons.inlineStyleReasons ?? {};
+const allowedInlineStyleCategories = new Set([
+  'bank-category-color',
+  'bank-preview-layout',
+  'chart-dimension',
+  'chart-payload-style',
+  'chart-series-color',
+  'chart-tooltip-color',
+  'financial-matrix-runtime-tone',
+  'progress-data-style',
+  'table-print-alignment',
+]);
+const allowedInlineStyleDecisions = new Set([
+  'leave',
+  'future-runtime-primitive',
+]);
 
 function walk(dir, out = []) {
   for (const name of fs.readdirSync(dir)) {
@@ -63,6 +78,15 @@ for (const [file] of entries) {
   if (!reason?.category || !reason?.decision || !reason?.reason) {
     failed = true;
     console.error(`[inline-style-governance] ${file} is missing a documented reason in scripts/inline-style-manual-reasons.json`);
+  } else {
+    if (!allowedInlineStyleCategories.has(reason.category)) {
+      failed = true;
+      console.error(`[inline-style-governance] ${file} category "${reason.category}" is not in the governed category allowlist`);
+    }
+    if (!allowedInlineStyleDecisions.has(reason.decision)) {
+      failed = true;
+      console.error(`[inline-style-governance] ${file} decision "${reason.decision}" is not in the governed decision allowlist`);
+    }
   }
 }
 

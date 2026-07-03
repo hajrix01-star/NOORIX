@@ -48,10 +48,9 @@ describe('SimpleTable', () => {
     const wrapper = container.querySelector('.noorix-table-scroll-wrapper') as HTMLElement;
     const header = container.querySelector('thead th') as HTMLElement;
 
-    expect(wrapper.style.maxHeight).toBe('120px');
-    expect(wrapper.style.overflowY).toBe('auto');
-    expect(header.style.position).toBe('sticky');
-    expect(header.style.top).toBe('0px');
+    expect(wrapper.style.getPropertyValue('--nx-dg-scroll-max-height')).toBe('120px');
+    expect(wrapper.style.getPropertyValue('--nx-dg-scroll-overflow-y')).toBe('auto');
+    expect(header.className).toContain('nx-dg-var-th--sticky');
   });
 
   it('renders footer rows when provided', () => {

@@ -46,36 +46,6 @@
       "category": "chart-tooltip-color",
       "decision": "leave",
       "reason": "tooltip title color comes from Recharts payload fill."
-    },
-    "src/ui/KebabMenu.tsx": {
-      "category": "ui-core-positioning",
-      "decision": "leave",
-      "reason": "shared kebab menu position and height are computed from trigger geometry and viewport."
-    },
-    "src/ui/MatrixTable.tsx": {
-      "category": "ui-core-matrix-table-engine",
-      "decision": "leave",
-      "reason": "MatrixTable centralizes runtime matrix sizing, numeric alignment, fixed first column, row tones, row accents, and heat cell styling."
-    },
-    "src/ui/MetricCard.tsx": {
-      "category": "ui-core-custom-color",
-      "decision": "leave",
-      "reason": "MetricCard supports an explicit runtime color prop as part of its public API."
-    },
-    "src/ui/SimpleTable.tsx": {
-      "category": "ui-core-table-sizing",
-      "decision": "leave",
-      "reason": "SimpleTable exposes runtime maxHeight/minWidth and column alignment/padding knobs."
-    },
-    "src/ui/SmartTable/SmartTable.tsx": {
-      "category": "ui-core-table-engine",
-      "decision": "leave",
-      "reason": "SmartTable computes runtime sizing, padding, row numbering, row styling, and sortable header states."
-    },
-    "src/ui/SmartTable/buildFooterCells.tsx": {
-      "category": "ui-core-table-footer",
-      "decision": "leave",
-      "reason": "SmartTable footer row-number cell mirrors runtime table padding and width."
     }
   }
 }

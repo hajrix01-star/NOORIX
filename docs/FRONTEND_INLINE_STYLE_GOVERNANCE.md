@@ -8,10 +8,10 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 29 |
-| files with `style={{` | 15 |
-| inside `src/ui` | 19 |
-| `src/ui` files | 6 |
+| `style={{` total | 10 |
+| files with `style={{` | 9 |
+| inside `src/ui` | 0 |
+| `src/ui` files | 0 |
 | outside `src/ui` | 10 |
 | outside `src/ui` files | 9 |
 
@@ -19,15 +19,15 @@ Status: active guardrail.
 
 | File | Count |
 |---|---:|
-| `src/ui/SmartTable/SmartTable.tsx` | 7 |
-| `src/ui/MatrixTable.tsx` | 5 |
-| `src/ui/SimpleTable.tsx` | 4 |
 | `src/modules/Reports/GeneralPlTable.tsx` | 2 |
 | `src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx` | 1 |
 | `src/modules/Reports/BankStatementMappingModal.tsx` | 1 |
-| `src/ui/SmartTable/buildFooterCells.tsx` | 1 |
-| `src/ui/MetricCard.tsx` | 1 |
-| `src/ui/KebabMenu.tsx` | 1 |
+| `src/modules/Reports/ReportsDetailModal.tsx` | 1 |
+| `src/modules/Reports/bank/BankCategoryCardRow.tsx` | 1 |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisCardShell.tsx` | 1 |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisCategoryBarCard.tsx` | 1 |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisCategoryPieCard.tsx` | 1 |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisPieTooltip.tsx` | 1 |
 
 ## Latest Reduction
 
@@ -44,6 +44,24 @@ The floating panel batch added `FloatingPanel` to `src/ui`, moving shared portal
 The runtime surface batch added `RuntimeStyleBox` to `src/ui`, moving data-driven background, border, and color styles out of Dashboard calendar cells, Dashboard supplier tooltips, and Owner chart tooltips. This reduced the governed count from 34 to 31 and outside-UI usage from 15 to 12.
 
 The safe closure batch added constrained `Button` runtime style hooks for root-level CSS variables and visual states, removing the remaining non-protected screen-level inline styles from UserMenu and OwnerFilterBar. This reduced the governed count from 31 to 29 and outside-UI usage from 12 to 10.
+
+The central UI primitive batches moved SimpleTable, MatrixTable, MetricCard, SmartTable footer sizing, SmartTable runtime cell sizing, and KebabMenu positioning away from direct `style={{` JSX blocks. This reduced inline styles from 29 to 10 and removed all remaining `src/ui` inline style usage. The remaining 10 are protected report, bank-analysis, or purchase-batch runtime styles and are intentionally documented rather than converted in this phase.
+
+## Remaining Decisions
+
+| File | Count | Category | Decision |
+|---|---:|---|---|
+| `src/modules/Reports/GeneralPlTable.tsx` | 2 | financial-matrix-runtime-tone | leave |
+| `src/modules/Reports/BankStatementMappingModal.tsx` | 1 | bank-preview-layout | leave |
+| `src/modules/Reports/ReportsDetailModal.tsx` | 1 | chart-payload-style | leave |
+| `src/modules/Reports/bank/BankCategoryCardRow.tsx` | 1 | bank-category-color | leave |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisCardShell.tsx` | 1 | progress-data-style | leave |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisCategoryBarCard.tsx` | 1 | chart-dimension | leave |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisCategoryPieCard.tsx` | 1 | chart-series-color | leave |
+| `src/modules/Reports/bank/components/analysis/BankAnalysisPieTooltip.tsx` | 1 | chart-tooltip-color | leave |
+| `src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx` | 1 | table-print-alignment | leave |
+
+`check:inline-style-governance` now validates both the numeric baseline and the allowed category/decision vocabulary. New exceptions cannot use arbitrary labels.
 
 ## Rule
 

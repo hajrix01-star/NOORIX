@@ -58,7 +58,7 @@ describe('MatrixTable', () => {
     expect(screen.getByText('320')).toBeTruthy();
     expect(container.querySelector('.noorix-table-frame')).toBeTruthy();
     expect(container.querySelector('td[data-numeric="true"]')).toBeTruthy();
-    expect((container.querySelector('tbody span span') as HTMLElement).style.background).toBe('#0ea5e9');
+    expect((container.querySelector('tbody span span') as HTMLElement).style.getPropertyValue('--nx-dg-accent-color')).toBe('#0ea5e9');
   });
 
   it('applies table sizing and data-driven cell styles centrally', () => {
@@ -77,11 +77,10 @@ describe('MatrixTable', () => {
     const header = container.querySelector('thead th') as HTMLElement;
     const hotCell = container.querySelector('tbody td[data-numeric="true"]') as HTMLElement;
 
-    expect(wrapper.style.maxHeight).toBe('240px');
-    expect(wrapper.style.overflowY).toBe('auto');
-    expect(table.style.minWidth).toBe('860px');
-    expect(header.style.position).toBe('sticky');
-    expect(header.style.top).toBe('0px');
+    expect(wrapper.style.getPropertyValue('--nx-dg-scroll-max-height')).toBe('240px');
+    expect(wrapper.style.getPropertyValue('--nx-dg-scroll-overflow-y')).toBe('auto');
+    expect(table.style.getPropertyValue('--nx-dg-min-width')).toBe('860px');
+    expect(header.className).toContain('nx-dg-var-th--sticky');
     expect(hotCell.style.background).toBe('rgba(14, 165, 233, 0.08)');
   });
 
