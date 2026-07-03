@@ -6999,6 +6999,50 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-radius: 12px;
   box-shadow: inset 0 0 0 1px var(--noorix-border-muted);
 }
+.nx-vault-card-icon--archived {
+  background: var(--noorix-bg-muted);
+  color: var(--noorix-text-muted);
+}
+.nx-vault-card-icon--cash {
+  background: color-mix(in srgb, var(--color-nx-profit) 10%, transparent);
+  color: var(--color-nx-profit);
+}
+.nx-vault-card-icon--bank {
+  background: color-mix(in srgb, var(--color-nx-sales) 10%, transparent);
+  color: var(--color-nx-sales);
+}
+.nx-vault-card-icon--app {
+  background: color-mix(in srgb, var(--color-nx-app) 10%, transparent);
+  color: var(--color-nx-app);
+}
+.nx-sales-channel-card--cash {
+  border: 1px solid color-mix(in srgb, var(--noorix-accent-green) 27%, transparent);
+  background: var(--noorix-green-8);
+}
+.nx-sales-channel-card--bank {
+  border: 1px solid color-mix(in srgb, var(--noorix-accent-blue) 27%, transparent);
+  background: var(--noorix-blue-8);
+}
+.nx-sales-channel-card--app {
+  border: 1px solid color-mix(in srgb, var(--noorix-accent-violet) 27%, transparent);
+  background: var(--noorix-violet-8);
+}
+.nx-sales-channel-input {
+  color: var(--noorix-text);
+  background: var(--noorix-bg-surface);
+}
+.nx-sales-channel-input--cash {
+  border-color: color-mix(in srgb, var(--noorix-accent-green) 33%, transparent);
+}
+.nx-sales-channel-input--bank {
+  border-color: color-mix(in srgb, var(--noorix-accent-blue) 33%, transparent);
+}
+.nx-sales-channel-input--app {
+  border-color: color-mix(in srgb, var(--noorix-accent-violet) 33%, transparent);
+}
+.nx-sales-channel-input--legacy {
+  background: var(--noorix-bg-muted);
+}
 @media (max-width: 768px) {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {
     padding-inline: 0;

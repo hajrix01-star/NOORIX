@@ -177,13 +177,22 @@ export default function TreasuryScreen() {
                 {dateFilter?.label || t('allMonths')}
               </div>
               {[
-                { label: t('totalBalance'), value: totalBalance, color: totalBalance < 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text)', sign: totalBalance < 0 ? '−' : '' },
-                { label: t('inbound'),      value: totalIn,      color: 'var(--noorix-accent-green)', sign: '' },
-                { label: t('outbound'),     value: totalOut,     color: 'var(--noorix-text)', sign: '' },
-              ].map(({ label, value, color, sign }: any, i: any) => (
+                { label: t('totalBalance'), value: totalBalance, tone: totalBalance < 0 ? 'negative' : 'default', sign: totalBalance < 0 ? '−' : '' },
+                { label: t('inbound'),      value: totalIn,      tone: 'positive', sign: '' },
+                { label: t('outbound'),     value: totalOut,     tone: 'default', sign: '' },
+              ].map(({ label, value, tone, sign }: any, i: any) => (
                 <div key={label} className={`text-center p-4 ${i < 2 ? 'border-r border-noorix-border' : ''}`}>
                   <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
-                  <div dir="ltr" className="font-extrabold text-[20px] nx-font-numbers" style={{ color }}>
+                  <div
+                    dir="ltr"
+                    className={`font-extrabold text-[20px] nx-font-numbers ${
+                      tone === 'negative'
+                        ? 'text-noorix-red'
+                        : tone === 'positive'
+                          ? 'text-noorix-green'
+                          : 'text-noorix-text'
+                    }`}
+                  >
                     {sign}<FmtNum n={Math.abs(value)} />
                     <span className="nx-sar me-[3px]">SR</span>
                   </div>

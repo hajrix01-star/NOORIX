@@ -2,7 +2,7 @@
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { PAYMENT_METHODS } from '../constants/treasuryConstants';
-import { VAULT_TYPE_COLORS, VAULT_TYPE_BG } from '../../../constants/kpiCardTheme';
+import { VAULT_TYPE_COLORS } from '../../../constants/kpiCardTheme';
 import { Badge, FmtNum, MetricCard, KebabMenu } from '../../../ui';
 
 /* ── استخراج بيانات النوع المخصص من قيمة type ─────────────── */
@@ -88,6 +88,15 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
   const typeLabel   = typeLabels[String(vault.type)] || vault.type;
   const displayName = vaultDisplayName(vault, lang);
   const subName     = lang === 'en' ? (vault.nameAr || typeLabel) : (vault.nameEn || typeLabel);
+  const iconToneClass = isArchived
+    ? 'nx-vault-card-icon--archived'
+    : vault.type === 'cash'
+      ? 'nx-vault-card-icon--cash'
+      : vault.type === 'bank'
+        ? 'nx-vault-card-icon--bank'
+        : vault.type === 'app'
+          ? 'nx-vault-card-icon--app'
+          : 'nx-vault-card-icon--archived';
 
   const hasBadges = vault.isSalesChannel || vault.account?.code || isArchived || vault.showAsPaymentMethod === false;
 
@@ -104,11 +113,7 @@ const VaultCard = memo(function VaultCard(props: Record<string, any>) {
         subLabel={subName}
         icon={
           <div
-            className="flex items-center justify-center w-[38px] h-[38px] rounded-[10px] shrink-0"
-            style={{
-              background: isArchived ? 'var(--noorix-bg-muted)' : ((VAULT_TYPE_BG as Record<string, string>)[String(vault.type)] || 'var(--noorix-bg-muted)'),
-              color: isArchived ? 'var(--noorix-text-muted)' : accentColor,
-            }}
+            className={`flex items-center justify-center w-[38px] h-[38px] rounded-[10px] shrink-0 ${iconToneClass}`}
           >
             {isCustom
               ? <span className="text-[20px] leading-none">{customEmoji}</span>

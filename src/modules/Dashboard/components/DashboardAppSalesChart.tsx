@@ -26,6 +26,16 @@ const EMPTY_BAR = '#d4d4d8';
 const Y_AXIS_W = 40;
 const CHART_H_NARROW = 248;
 const CHART_H_WIDE = 272;
+const APP_LABEL_STYLE_NARROW: React.CSSProperties = {
+  fontSize: 9,
+  fill: 'var(--noorix-text)',
+  fontFamily: 'var(--noorix-font-numbers)',
+  fontWeight: 600,
+};
+const APP_LABEL_STYLE_WIDE: React.CSSProperties = {
+  ...APP_LABEL_STYLE_NARROW,
+  fontSize: 10,
+};
 
 type Props = {
   data: AppSalesMonthPoint[];
@@ -106,12 +116,7 @@ export function DashboardAppSalesChart({ data }: Props) {
           dataKey="appPercent"
           position="top"
           formatter={(v) => (Number(v) > 0 ? `${fmt(Number(v), 1)}%` : '')}
-          style={{
-            fontSize: isNarrow ? 9 : 10,
-            fill: 'var(--noorix-text)',
-            fontFamily: 'var(--noorix-font-numbers)',
-            fontWeight: 600,
-          }}
+          style={isNarrow ? APP_LABEL_STYLE_NARROW : APP_LABEL_STYLE_WIDE}
         />
       </Bar>
     </BarChart>

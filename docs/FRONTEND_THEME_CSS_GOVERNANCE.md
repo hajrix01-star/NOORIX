@@ -8,11 +8,13 @@ Status: active guardrail.
 
 | File | Lines | @media | !important | @keyframes | CSS vars | var refs | color-mix |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `src/index.css` | 7016 | 51 | 215 | 12 | 233 | 908 | 155 |
+| `src/index.css` | 7060 | 51 | 215 | 12 | 233 | 928 | 164 |
 | `src/ui/ui.css` | 2378 | 6 | 22 | 8 | 12 | 298 | 1 |
 | `src/modules/SmartChat/SmartChatScreen.css` | 945 | 5 | 8 | 3 | 0 | 79 | 11 |
 
 Note: the 2026-07-03 batch moved static SmartTable loading styles and ThemePreview card variants from TSX inline style objects into governed CSS. This raises CSS line/var-reference limits while lowering the inline-style baseline.
+
+Note: the later 2026-07-03 local batch moved safe Treasury vault icon tones and Sales channel tones from JSX inline style objects into governed CSS classes. This raises the CSS baseline while lowering raw inline styles.
 
 ## Rule
 

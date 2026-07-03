@@ -273,12 +273,12 @@ export function createInvoiceCompactRowRenderer({
 }: any) {
   return (row: any) => {
     const isInbound = row.kind === 'sale';
-    const amountColor = isInbound ? 'var(--color-nx-sales)' : 'var(--color-nx-expenses)';
+    const amountToneClass = isInbound ? 'text-[var(--color-nx-sales)]' : 'text-[var(--color-nx-expenses)]';
     return (
       <div className="cursor-pointer" onClick={() => setViewingInvoice?.(row)}>
         {/* السطر الأول */}
         <div className="nx-cr__line1">
-          <span className="nx-cr__id" style={{ color: amountColor }}>
+          <span className={`nx-cr__id ${amountToneClass}`}>
             {row.invoiceNumber || '—'}
           </span>
           <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
@@ -291,7 +291,7 @@ export function createInvoiceCompactRowRenderer({
             <span className="nx-cr__meta">{formatSaudiDateISO(row.transactionDate)}</span>
           </div>
           <div className="nx-cr__line2-end">
-            <span className="nx-cr__amount" style={{ color: amountColor }}>
+            <span className={`nx-cr__amount ${amountToneClass}`}>
               <FmtNum n={row.totalAmount} /> <span className="nx-sar">SR</span>
             </span>
             <div
