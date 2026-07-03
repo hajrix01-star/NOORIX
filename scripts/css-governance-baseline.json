@@ -12,12 +12,12 @@
       "maxColorMix": 174
     },
     "src/ui/ui.css": {
-      "maxLines": 1697,
+      "maxLines": 1705,
       "maxMediaQueries": 6,
       "maxImportant": 22,
       "maxKeyframes": 8,
       "maxCssVariableDefinitions": 12,
-      "maxCssVariableReferences": 312,
+      "maxCssVariableReferences": 341,
       "maxColorMix": 1
     },
     "src/modules/SmartChat/SmartChatScreen.css": {
@@ -72,7 +72,7 @@
     "src/ui/ui.css": {
       "table": {
         "pattern": "(noorix-table|nx-table|nx-col-|nx-row-number|nx-orders-summary-table|nx-expense-line-table)",
-        "maxMatches": 93
+        "maxMatches": 96
       },
       "modal": {
         "pattern": "(modal-|nx-modal|nx-drawer|payroll-run-form-drawer|invoice-edit-modal)",

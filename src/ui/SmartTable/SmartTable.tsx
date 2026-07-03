@@ -22,6 +22,8 @@ const COL_VIS_PANEL_FALLBACK_H = 320;
 const DEFAULT_INNER_PADDING = 8;
 const DEFAULT_ROW_NUMBER_WIDTH = 40;
 
+type SmartTableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
+
 function normalizeRowNumberWidth(width: SmartTablePropsBase['rowNumberWidth']): number | string {
   if (width == null || width === '') return DEFAULT_ROW_NUMBER_WIDTH;
   if (typeof width === 'string' && width.trim().endsWith('%')) return DEFAULT_ROW_NUMBER_WIDTH;
@@ -263,6 +265,60 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
+  const frameStyle: SmartTableCssVars = { '--nx-smart-frame-padding': innerPadding };
+  const tableStyle: SmartTableCssVars = {
+    '--nx-smart-table-layout': layout,
+    '--nx-smart-table-min-width': minW || undefined,
+    '--nx-smart-table-max-width': !isWideTable ? '100%' : undefined,
+  };
+  const rowNumberHeaderStyle: SmartTableCssVars = {
+    '--nx-smart-cell-padding': cellPad.th,
+    '--nx-smart-cell-font-size': compact ? 11 : 12,
+    '--nx-smart-row-number-width': rowNumW,
+  };
+  const rowNumberCellStyle: SmartTableCssVars = {
+    '--nx-smart-cell-padding': cellPad.td,
+    '--nx-smart-cell-font-size': cellFs,
+    '--nx-smart-row-number-width': rowNumW,
+  };
+  const colPanelStyle: SmartTableCssVars | undefined = colPanelPos
+    ? {
+        '--nx-col-vis-panel-top': colPanelPos.top,
+        '--nx-col-vis-panel-left': colPanelPos.left,
+      }
+    : undefined;
+  const headerCellStyle = (col: any, effectiveWidth: any, resizableCol: boolean, shrink: boolean): SmartTableCssVars => ({
+    '--nx-smart-cell-padding': cellPad.th,
+    '--nx-smart-cell-font-size': compact ? 12 : 13,
+    '--nx-smart-cell-position': resizableCol ? 'relative' : undefined,
+    '--nx-smart-cell-width': effectiveWidth,
+    '--nx-smart-cell-min-width': col.minWidth,
+    '--nx-smart-cell-max-width': resizableCol ? undefined : col.maxWidth,
+    '--nx-smart-cell-cursor': col.sortable ? 'pointer' : 'default',
+    '--nx-smart-cell-user-select': col.sortable ? 'none' : 'auto',
+    '--nx-smart-cell-white-space': shrink || col.key === 'actions' ? 'nowrap' : 'normal',
+    '--nx-smart-cell-overflow': resizableCol ? 'hidden' : undefined,
+  });
+  const bodyCellStyle = (
+    col: any,
+    tdEffectiveWidth: any,
+    align: React.CSSProperties['textAlign'],
+    family: string | undefined,
+    shrink: boolean,
+  ): SmartTableCssVars => ({
+    '--nx-smart-cell-padding': cellPad.td,
+    '--nx-smart-cell-font-size': cellFs,
+    '--nx-smart-cell-align': align,
+    '--nx-smart-cell-font-family': family,
+    '--nx-smart-cell-width': tdEffectiveWidth,
+    '--nx-smart-cell-min-width': col.minWidth,
+    '--nx-smart-cell-max-width': col.maxWidth,
+    '--nx-smart-cell-white-space': shrink ? 'nowrap' : undefined,
+  });
+  const rowStyle = (row: any, index: number): SmartTableCssVars => ({
+    '--nx-smart-row-bg': index % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent',
+    ...(typeof getRowStyle === 'function' ? getRowStyle(row, index) : null),
+  });
   /** على الجوال مع بطاقات فقط: لا نعرض شريط إخفاء الأعمدة (يضيق المحتوى ويبدو كزر عائم) */
   const showTableHeaderRow = Boolean(
     title || badge || (onSearchChange && showSearchInHeader) || (tableId && !showCards),
@@ -272,12 +328,12 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   return (
     <div
       className={cn(
-        'noorix-table-frame min-w-0 max-w-full',
+        'noorix-table-frame nx-smart-frame-vars min-w-0 max-w-full',
         (renderCompactRow || renderMobileCard) && 'max-md:overflow-x-hidden',
         showCards && 'noorix-table-frame--mobile-list',
         frameClassName,
       )}
-      style={{ padding: innerPadding }}
+      style={frameStyle}
     >
       {/* ── رأس الجدول ── */}
       {showTableHeaderRow && (
@@ -320,7 +376,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   <div
                     ref={colPanelRef}
                     className={cn('nx-col-vis-panel', 'nx-col-vis-panel--viewport', !colPanelPos && 'nx-col-vis-panel--measuring')}
-                    style={colPanelPos ? { top: colPanelPos.top, left: colPanelPos.left } : undefined}
+                    style={colPanelStyle}
                     role="dialog"
                     aria-label="إظهار / إخفاء الأعمدة"
                   >
@@ -424,13 +480,13 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
       {!isLoading && !showCards && !showCompact && (
         <div className="overflow-x-auto noorix-table-scroll-wrapper">
           <table
-            className="noorix-table w-full"
-            style={{ tableLayout: layout, minWidth: minW || undefined, maxWidth: !isWideTable ? '100%' : undefined }}
+            className="noorix-table nx-smart-table-vars w-full"
+            style={tableStyle}
           >
             <thead>
               <tr>
                 {showRowNumbers && (
-                  <th className="nx-row-number-th" style={{ padding: cellPad.th, fontWeight: 700, fontSize: compact ? 11 : 12, width: rowNumW, minWidth: rowNumW, textAlign: 'center' }}>#</th>
+                  <th className="nx-row-number-th nx-smart-row-number-cell nx-smart-header-cell-vars" style={rowNumberHeaderStyle}>#</th>
                 )}
                 {visibleColumns.map((col: any) => {
                   const isSorted = sortKey === col.key;
@@ -439,7 +495,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   // Keep truncation on table cells display-safe; inner ellipsis spans can be block.
                   // only apply it in fixed layout (where width is enforced) or when col.maxWidth bounds it
                   const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
-                  const resizableCol = tableId && col.key !== 'actions';
+                  const resizableCol = Boolean(tableId && col.key !== 'actions');
                   const effectiveWidth = colWidths[col.key] != null
                     ? colWidths[col.key]
                     : (col.width ?? (shrink ? '1%' : undefined));
@@ -454,17 +510,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         shrink ? 'noorix-th-shrink' : '',
                         shouldTruncate ? 'noorix-table-cell-truncate' : '',
                       )}
-                      style={{
-                        padding: cellPad.th, fontWeight: 700, fontSize: compact ? 12 : 13, textAlign: 'center',
-                        position: resizableCol ? 'relative' : undefined,
-                        width: effectiveWidth,
-                        minWidth: col.minWidth,
-                        maxWidth: resizableCol ? undefined : col.maxWidth,
-                        cursor: col.sortable ? 'pointer' : 'default',
-                        userSelect: col.sortable ? 'none' : 'auto',
-                        whiteSpace: shrink || col.key === 'actions' ? 'nowrap' : 'normal',
-                        overflow: resizableCol ? 'hidden' : undefined,
-                      }}
+                      style={headerCellStyle(col, effectiveWidth, resizableCol, shrink)}
                       data-column-kind={col.kind}
                       aria-sort={col.sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                       onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
@@ -505,11 +551,11 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
               ) : data.map((row: any, i: any) => (
                 <React.Fragment key={row.id ?? i}>
                 <tr
-                  className={`border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
-                  style={{ background: i % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent', ...(typeof getRowStyle === 'function' ? getRowStyle(row, i) : null) }}
+                  className={`nx-smart-row-vars border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
+                  style={rowStyle(row, i)}
                 >
                   {showRowNumbers && (
-                    <td className="nx-row-number-td text-center font-semibold" style={{ padding: cellPad.td, fontSize: cellFs, width: rowNumW, minWidth: rowNumW }}>
+                    <td className="nx-row-number-td nx-smart-row-number-cell nx-smart-body-cell-vars text-center font-semibold" style={rowNumberCellStyle}>
                       {(page - 1) * safePageSize + i + 1}
                     </td>
                   )}
@@ -532,16 +578,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                           shrink ? 'noorix-td-shrink' : '',
                           shouldTruncate ? 'noorix-table-cell-truncate' : '',
                         )}
-                        style={{
-                          padding: cellPad.td,
-                          fontSize: cellFs,
-                          textAlign: align as React.CSSProperties['textAlign'],
-                          fontFamily: family,
-                          width: tdEffectiveWidth,
-                          minWidth: col.minWidth,
-                          maxWidth: col.maxWidth,
-                          whiteSpace: shrink ? 'nowrap' : undefined,
-                        }}
+                        style={bodyCellStyle(col, tdEffectiveWidth, align as React.CSSProperties['textAlign'], family, shrink)}
                         data-column-kind={col.kind}
                       >
                         {col.render ? col.render(value, row, i) : (value ?? '—')}

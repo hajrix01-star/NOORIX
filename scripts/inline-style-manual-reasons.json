@@ -46,16 +46,6 @@
       "category": "chart-tooltip-color",
       "decision": "leave",
       "reason": "tooltip title color comes from Recharts payload fill."
-    },
-    "src/ui/KebabMenu.tsx": {
-      "category": "ui-core-positioning",
-      "decision": "leave",
-      "reason": "shared kebab menu position and height are computed from trigger geometry and viewport."
-    },
-    "src/ui/SmartTable/SmartTable.tsx": {
-      "category": "ui-core-table-engine",
-      "decision": "leave",
-      "reason": "SmartTable computes runtime sizing, padding, row numbering, row styling, and sortable header states."
     }
   }
 }

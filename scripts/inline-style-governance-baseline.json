@@ -2,15 +2,14 @@
   "version": 1,
   "description": "Baseline for React inline style usage. This blocks new style={{ }} growth while dynamic styles are converted gradually.",
   "limits": {
-    "total": 18,
-    "files": 11,
-    "ui": 8,
-    "uiFiles": 2,
+    "total": 10,
+    "files": 9,
+    "ui": 0,
+    "uiFiles": 0,
     "outsideUi": 10,
     "outsideUiFiles": 9
   },
   "topFiles": {
-    "src/ui/SmartTable/SmartTable.tsx": 7,
     "src/modules/Reports/GeneralPlTable.tsx": 2,
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": 1,
     "src/modules/Reports/bank/BankCategoryCardRow.tsx": 1,
@@ -19,7 +18,6 @@
     "src/modules/Reports/bank/components/analysis/BankAnalysisCategoryPieCard.tsx": 1,
     "src/modules/Reports/bank/components/analysis/BankAnalysisPieTooltip.tsx": 1,
     "src/modules/Reports/BankStatementMappingModal.tsx": 1,
-    "src/modules/Reports/ReportsDetailModal.tsx": 1,
-    "src/ui/KebabMenu.tsx": 1
+    "src/modules/Reports/ReportsDetailModal.tsx": 1
   }
 }
