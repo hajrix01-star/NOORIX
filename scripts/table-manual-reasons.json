@@ -231,11 +231,6 @@
       "category": "print-financial",
       "decision": "leave",
       "reason": "vault transactions print/export HTML string."
-    },
-    "src/utils/pdfTableExport.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "generic PDF table export HTML builder."
     }
   }
 }

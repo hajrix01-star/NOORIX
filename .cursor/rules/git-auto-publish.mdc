@@ -1,14 +1,38 @@
 ---
-description: Noorix — نشر تلقائي بعد التعديلات على المستودع
+description: Noorix git publish rule, constrained by delivery batching
 alwaysApply: true
 ---
 
-# نشر Git بعد المهام
+# Git Publish Rule
 
-عند إكمال تعديلات على ملفات المشروع (كود، قواعد، ترجمة، إلخ):
+Before publishing, apply `.cursor/rules/delivery-batching.mdc`.
 
-1. نفّذ `git add -A` ثم `git commit` برسالة واضحة بالإنجليزية (أو العربية عند المناسبة).
-2. نفّذ `git push origin main` على الفرع الحالي إن كان `main` متتبعاً لـ `origin`.
-3. **لا تنتظر** طلب المستخدم «انشر» ما لم يطلب صراحةً عدم الدفع أو الإبقاء محلياً.
+## Default
 
-استثناء: إذا أبلغ المستخدم أن التعديل تجريبي أو يريد مراجعة قبل الدفع، أوقف النشر حتى يوافق.
+Do not create tiny standalone PRs or live deploys for every small edit.
+
+Use one PR and one deploy per meaningful phase whenever safe.
+
+## Publish Immediately Only When
+
+| Case | Action |
+|---|---|
+| runtime behavior changed and the phase is complete | PR, CI, merge, deploy, live verification |
+| production outage or CI blocker | small PR allowed |
+| user explicitly asks to publish now | publish after verification |
+
+## Bundle Instead When
+
+| Case | Action |
+|---|---|
+| docs-only change | bundle with the next large phase |
+| governance-only change | bundle unless it blocks CI or prevents regression |
+| adjacent small cleanup | wait for the next scoped batch |
+
+## Report
+
+Every final report must state whether the change was:
+
+- published now
+- bundled for a later batch
+- kept local pending the next phase
