@@ -8,12 +8,12 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 39 |
-| files with `style={{` | 24 |
+| `style={{` total | 34 |
+| files with `style={{` | 20 |
 | inside `src/ui` | 19 |
 | `src/ui` files | 6 |
-| outside `src/ui` | 20 |
-| outside `src/ui` files | 18 |
+| outside `src/ui` | 15 |
+| outside `src/ui` files | 14 |
 
 ## Top Files
 
@@ -22,12 +22,8 @@ Status: active guardrail.
 | `src/ui/SmartTable/SmartTable.tsx` | 7 |
 | `src/ui/MatrixTable.tsx` | 5 |
 | `src/ui/SimpleTable.tsx` | 4 |
-| `src/components/UserMenu.tsx` | 2 |
 | `src/modules/Reports/GeneralPlTable.tsx` | 2 |
-| `src/components/AppHeader.tsx` | 1 |
-| `src/components/common/ProductSearchInput.tsx` | 1 |
-| `src/components/common/SearchableOptionsPicker.tsx` | 1 |
-| `src/components/common/SupplierSelect.tsx` | 1 |
+| `src/components/UserMenu.tsx` | 1 |
 | `src/modules/Dashboard/components/DashboardCalendarTab/components/DashboardCalendarDayCell.tsx` | 1 |
 | `src/modules/Dashboard/overview/components/DashboardOverviewTopCharts.tsx` | 1 |
 | `src/modules/Owner/components/OwnerFilterBar.tsx` | 1 |
@@ -47,6 +43,8 @@ The closure batch added `scripts/inline-style-manual-reasons.json`. CI now requi
 The MatrixTable owner conversion moved owner monthly comparison runtime styles into `src/ui/MatrixTable.tsx`. This intentionally shifts matrix sizing, row tone, row accent, and heat-cell style exceptions into the central UI system while reducing outside-UI inline styles.
 
 The runtime visual primitives batch added `ColorSwatch` and `DataBar` to `src/ui`, moving repeated chart dots, color swatches, and report bars out of Dashboard, Orders, Owner, and Settings screens. This reduced the governed count from 47 to 39 without touching payroll, tax, bank, purchases, or financial report flows.
+
+The floating panel batch added `FloatingPanel` to `src/ui`, moving shared portal positioning styles out of AppHeader, product search, searchable option pickers, supplier select, and the account menu. This reduced the governed count from 39 to 34 and outside-UI usage from 20 to 15.
 
 ## Rule
 

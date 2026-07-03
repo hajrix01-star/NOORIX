@@ -37,6 +37,8 @@ export { default as ColorSwatch    } from './ColorSwatch';
 export type { ColorSwatchProps     } from './ColorSwatch';
 export { default as DataBar        } from './DataBar';
 export type { DataBarProps         } from './DataBar';
+export { default as FloatingPanel  } from './FloatingPanel';
+export type { FloatingPanelProps   } from './FloatingPanel';
 export { default as MetricCard      } from './MetricCard';
 export { default as SimpleTable     } from './SimpleTable';
 export type { SimpleTableColumn, SimpleTableProps } from './SimpleTable';

@@ -12,7 +12,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Input, Button } from '../../ui';
+import { Input, Button, FloatingPanel } from '../../ui';
 import { SUPPLIER_USAGE_KEY } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 
@@ -209,18 +209,16 @@ export function SupplierSelect({
 
   const menuContent = showMenu && typeof document !== 'undefined'
     ? createPortal(
-        <div
+        <FloatingPanel
           ref={menuRef}
           role="listbox"
-          className="fixed overflow-y-auto rounded-[10px] border border-noorix-border bg-noorix-surface"
-          style={{
-            zIndex: 10060,
-            top: menuPos.top,
-            left: menuPos.left,
-            width: menuPos.width,
-            maxHeight: menuPos.maxHeight,
-            boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
-          }}
+          className="overflow-y-auto rounded-[10px] border border-noorix-border bg-noorix-surface"
+          top={menuPos.top}
+          left={menuPos.left}
+          width={menuPos.width}
+          maxHeight={menuPos.maxHeight}
+          zIndex={10060}
+          boxShadow="0 12px 32px rgba(0,0,0,0.18)"
         >
           {/* ── قسم المفضلة ── */}
           {favoritesSection.length > 0 && (
@@ -301,7 +299,7 @@ export function SupplierSelect({
               {suppliers.length ? 'لا يوجد مورد مطابق' : 'لا يوجد موردون متاحون حالياً'}
             </div>
           )}
-        </div>,
+        </FloatingPanel>,
         document.body,
       )
     : null;

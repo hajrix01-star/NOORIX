@@ -8,7 +8,7 @@ import type { CompanyListItem } from '../context/appTypes';
 import type { AuthSessionUser } from '../types/api';
 import { useTranslation } from '../i18n/useTranslation';
 import UserMenu from './UserMenu';
-import { Button, Modal } from '../ui';
+import { Button, FloatingPanel, Modal } from '../ui';
 
 const MENU_WIDTH = 220;
 
@@ -192,19 +192,17 @@ export default function AppHeader({
 
               {/* قائمة الشركات */}
               {showCompanySwitcher && coDropOpen && createPortal(
-                <div
+                <FloatingPanel
                   ref={coDropMenuRef}
                   role="listbox"
                   aria-label={t('activeCompany')}
-                  className="fixed bg-noorix-surface rounded border border-noorix-border overflow-y-auto"
-                  style={{
-                    zIndex: 9999,
-                    top: coDropPos.top,
-                    left: coDropPos.left,
-                    width: coDropPos.width,
-                    maxHeight: 280,
-                    boxShadow: '0 8px 32px rgba(10,31,68,0.16)',
-                  }}
+                  className="bg-noorix-surface rounded border border-noorix-border overflow-y-auto"
+                  top={coDropPos.top}
+                  left={coDropPos.left}
+                  width={coDropPos.width}
+                  maxHeight={280}
+                  zIndex={9999}
+                  boxShadow="0 8px 32px rgba(10,31,68,0.16)"
                 >
                   {companies.map((c: any) => {
                     const cName = lang === 'en' ? (c.nameEn || c.nameAr) : (c.nameAr || c.nameEn) || c.id;
@@ -236,7 +234,7 @@ export default function AppHeader({
                       </Button>
                     );
                   })}
-                </div>,
+                </FloatingPanel>,
                 document.body,
               )}
             </div>

@@ -12,7 +12,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Button, Checkbox, Input } from '../../ui';
+import { Button, Checkbox, FloatingPanel, Input } from '../../ui';
 import { cn } from '../../ui/cn';
 
 export type SearchableOption = { value: string; label: string; disabled?: boolean };
@@ -219,17 +219,16 @@ export function SearchableOptionsPicker(props: SearchableOptionsPickerProps) {
   const menuContent =
     open && typeof document !== 'undefined'
       ? createPortal(
-          <div
+          <FloatingPanel
             ref={menuRef}
             role="listbox"
             aria-multiselectable={isMulti || undefined}
-            className="fixed z-[10060] flex flex-col overflow-hidden rounded-[10px] border border-noorix-border bg-noorix-surface shadow-lg"
-            style={{
-              top: menuPos.top,
-              left: menuPos.left,
-              width: menuPos.width,
-              maxHeight: menuPos.maxHeight,
-            }}
+            className="flex flex-col overflow-hidden rounded-[10px] border border-noorix-border bg-noorix-surface shadow-lg"
+            top={menuPos.top}
+            left={menuPos.left}
+            width={menuPos.width}
+            maxHeight={menuPos.maxHeight}
+            zIndex={10060}
           >
             <div className="shrink-0 border-b border-noorix-border p-2">
               <Input
@@ -302,7 +301,7 @@ export function SearchableOptionsPicker(props: SearchableOptionsPickerProps) {
                 })
               )}
             </div>
-          </div>,
+          </FloatingPanel>,
           document.body,
         )
       : null;
