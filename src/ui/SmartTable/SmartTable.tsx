@@ -2,86 +2,36 @@
  * SmartTable — مكون الجداول المركزي لنظام نوركس
  * Pagination | Global Search | Sorting | Empty State | Loading | Mobile Cards | Column Resize
  */
-import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { memo, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useIsNarrow768 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
-import Button from '../Button';
-import Input from '../Input';
 import { cn } from '../cn';
 import type { SmartTableProps as SmartTablePropsBase } from './types';
 import { columnLabel, getAlign } from './columnUtils';
 import { buildFooterCells } from './buildFooterCells';
 import { getColumnKindClass, normalizeSmartColumn } from './columnPresets';
 import { useSmartTableEngine } from './tableEngine';
+import SmartTablePagination from './SmartTablePagination';
+import { placeColVisPanel } from './SmartTableColumnVisibility';
+import SmartTableHeader from './SmartTableHeader';
+import { SmartTableErrorState, SmartTableLoadingState } from './SmartTableStates';
+import { SmartTableCompactRows, SmartTableMobileCards } from './SmartTableResponsiveRows';
+import { useSmartTableColumnResize } from './useSmartTableColumnResize';
+import { useSmartTableColumnVisibility } from './useSmartTableColumnVisibility';
+import {
+  DEFAULT_INNER_PADDING,
+  buildBodyCellStyle,
+  buildFrameStyle,
+  buildHeaderCellStyle,
+  buildRowNumberCellStyle,
+  buildRowNumberHeaderStyle,
+  buildRowStyle,
+  buildTableStyle,
+  normalizeRowNumberWidth,
+} from './smartTableStyles';
 
-const COL_VIS_PANEL_MARGIN = 12;
-const COL_VIS_PANEL_GAP = 6;
-const COL_VIS_PANEL_FALLBACK_W = 220;
-const COL_VIS_PANEL_FALLBACK_H = 320;
-const DEFAULT_INNER_PADDING = 8;
-const DEFAULT_ROW_NUMBER_WIDTH = 40;
-
-type SmartTableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
-
-function normalizeRowNumberWidth(width: SmartTablePropsBase['rowNumberWidth']): number | string {
-  if (width == null || width === '') return DEFAULT_ROW_NUMBER_WIDTH;
-  if (typeof width === 'string' && width.trim().endsWith('%')) return DEFAULT_ROW_NUMBER_WIDTH;
-  return width;
-}
-
-function cssLength(value: number | string | undefined): string | undefined {
-  if (value == null || value === '') return undefined;
-  return typeof value === 'number' ? `${value}px` : value;
-}
-
-/** يثبّت لوحة الأعمدة داخل الشاشة (جوال RTL/LTR) */
-export function placeColVisPanel(btn: HTMLElement, panel: HTMLElement): { top: number; left: number } {
-  const rect = btn.getBoundingClientRect();
-  const w = panel.offsetWidth || COL_VIS_PANEL_FALLBACK_W;
-  const h = panel.offsetHeight || COL_VIS_PANEL_FALLBACK_H;
-  const maxLeft = window.innerWidth - COL_VIS_PANEL_MARGIN - w;
-  const isRtl = typeof document !== 'undefined'
-    && (document.documentElement.dir === 'rtl'
-      || getComputedStyle(document.documentElement).direction === 'rtl');
-  let left = isRtl ? rect.left : rect.right - w;
-  left = Math.max(COL_VIS_PANEL_MARGIN, Math.min(left, maxLeft));
-  let top = rect.bottom + COL_VIS_PANEL_GAP;
-  if (top + h > window.innerHeight - COL_VIS_PANEL_MARGIN) {
-    top = Math.max(COL_VIS_PANEL_MARGIN, rect.top - h - COL_VIS_PANEL_GAP);
-  }
-  return { top, left };
-}
-
-// ── Pagination ───────────────────────────────────────────────
-type PaginationBarProps = {
-  page: number;
-  totalPages: number;
-  onPageChange: (p: number) => void;
-  t: (key: string, ...args: unknown[]) => string;
-};
-
-const Pagination = memo(function Pagination({ page, totalPages, onPageChange, t }: PaginationBarProps) {
-  const go = useCallback(
-    (p: number) => {
-      if (p >= 1 && p <= totalPages) onPageChange(p);
-    },
-    [totalPages, onPageChange],
-  );
-  if (totalPages <= 1) return null;
-  return (
-    <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-noorix-border">
-      <Button size="sm" onClick={() => go(1)}        disabled={page === 1}>«</Button>
-      <Button size="sm" onClick={() => go(page - 1)} disabled={page === 1}>‹</Button>
-      <span className="text-[13px] text-noorix-muted font-medium px-2">
-        {t('pageLabel', page, totalPages)}
-      </span>
-      <Button size="sm" onClick={() => go(page + 1)} disabled={page === totalPages}>›</Button>
-      <Button size="sm" onClick={() => go(totalPages)} disabled={page === totalPages}>»</Button>
-    </div>
-  );
-});
+export { placeColVisPanel };
 
 // ── SmartTable ───────────────────────────────────────────────
 const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
@@ -138,130 +88,34 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const dir = useUiDir();
   const normalizedColumns = useMemo(() => columns.map((col: any) => normalizeSmartColumn(col)), [columns]);
 
-  // ── Column Resize ──────────────────────────────────────────────
-  const resizingRef = useRef<any>(null);
-  const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
-    if (!tableId) return {};
-    try {
-      const saved = localStorage.getItem(`nx-col-widths:${tableId}`);
-      return saved ? (JSON.parse(saved) as Record<string, number>) : {};
-    } catch { return {}; }
-  });
-
-  const handleResizeStart = useCallback((e: any, colKey: any, startW: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const dirMult = dir === 'rtl' ? -1 : 1;
-    resizingRef.current = { colKey, startX: e.clientX, startW };
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-
-    const onMove = (ev: PointerEvent) => {
-      if (!resizingRef.current) return;
-      const delta = (ev.clientX - resizingRef.current.startX) * dirMult;
-      const newW = Math.max(40, resizingRef.current.startW + delta);
-      setColWidths((prev: any) => ({ ...prev, [colKey]: Math.round(newW) }));
-    };
-
-    const onUp = () => {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      if (tableId) {
-        setColWidths((prev: any) => {
-          try { localStorage.setItem(`nx-col-widths:${tableId}`, JSON.stringify(prev)); } catch { /* noop */ }
-          return prev;
-        });
-      }
-      resizingRef.current = null;
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointercancel', onUp);
-    };
-
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-    document.addEventListener('pointercancel', onUp);
-  }, [dir, tableId]);
-
-  // ── Column Visibility ──────────────────────────────────────────
-  const [showColPanel, setShowColPanel] = useState(false);
-  const [colPanelPos, setColPanelPos] = useState<{ top: number; left: number } | null>(null);
-  const colBtnRef  = useRef<HTMLButtonElement | null>(null);
-  const colPanelRef = useRef<HTMLDivElement | null>(null);
-
-  const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
-    if (!tableId) return new Set<string>();
-    try {
-      const saved = localStorage.getItem(`nx-col-vis:${tableId}`);
-      return saved ? new Set(JSON.parse(saved) as string[]) : new Set<string>();
-    } catch {
-      return new Set<string>();
-    }
-  });
-
-  const syncColPanelPosition = useCallback(() => {
-    const btn = colBtnRef.current;
-    const panel = colPanelRef.current;
-    if (!btn || !panel) return;
-    setColPanelPos(placeColVisPanel(btn, panel));
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!showColPanel) {
-      setColPanelPos(null);
-      return undefined;
-    }
-    syncColPanelPosition();
-    const onReflow = () => syncColPanelPosition();
-    window.addEventListener('resize', onReflow);
-    window.addEventListener('scroll', onReflow, true);
-    return () => {
-      window.removeEventListener('resize', onReflow);
-      window.removeEventListener('scroll', onReflow, true);
-    };
-  }, [showColPanel, syncColPanelPosition, hiddenCols.size]);
-
-  useEffect(() => {
-    if (!showColPanel) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node | null;
-      if (!colPanelRef.current?.contains(target) && !colBtnRef.current?.contains(target)) {
-        setShowColPanel(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showColPanel]);
-
-  const toggleColVis = useCallback((colKey: string) => {
-    setHiddenCols((prev: Set<string>) => {
-      const next = new Set<string>(prev);
-      if (next.has(colKey)) next.delete(colKey); else next.add(colKey);
-      if (tableId) {
-        try { localStorage.setItem(`nx-col-vis:${tableId}`, JSON.stringify([...next])); } catch { /* noop */ }
-      }
-      return next;
-    });
-  }, [tableId]);
-
-  const resetColVis = useCallback(() => {
-    setHiddenCols(new Set<string>());
-    if (tableId) {
-      try { localStorage.removeItem(`nx-col-vis:${tableId}`); } catch { /* noop */ }
-    }
-    setShowColPanel(false);
-  }, [tableId]);
+  const { colWidths, handleResizeStart } = useSmartTableColumnResize({ dir, tableId });
+  const {
+    hiddenCols,
+    visibleColumns,
+    hideableCols,
+    toggleColVis,
+    resetColVis,
+  } = useSmartTableColumnVisibility({ columns: normalizedColumns, tableId });
 
   /** محاذاة مع @media (max-width: 768px) — تجنّب جدول عريض + فراغ أبيض على تابلت/جوال */
   const isNarrow = useIsNarrow768();
 
   const showCompact  = isNarrow && typeof renderCompactRow === 'function';
   const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
-  const safePageSize = Math.max(1, pageSize);
-  const totalPages   = Math.max(1, Math.ceil(total / safePageSize));
-  const visibleColumns = normalizedColumns.filter((col: any) => !hiddenCols.has(col.key));
-  const tableEngine = useSmartTableEngine({ columns: visibleColumns, data });
+  const tableEngine = useSmartTableEngine({
+    columns: visibleColumns,
+    data,
+    sortKey,
+    sortDir,
+    page,
+    pageSize,
+    total,
+    onSort,
+    onPageChange,
+  });
   const engineRows = tableEngine.rows;
+  const pagination = tableEngine.pagination;
+  const { safePageSize, totalPages } = pagination;
   const colCount     = visibleColumns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
@@ -274,65 +128,14 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
-  const frameStyle: SmartTableCssVars = { '--nx-smart-frame-padding': cssLength(innerPadding) };
-  const tableStyle: SmartTableCssVars = {
-    '--nx-smart-table-layout': layout,
-    '--nx-smart-table-min-width': cssLength(minW),
-    '--nx-smart-table-max-width': !isWideTable ? '100%' : undefined,
-  };
-  const rowNumberHeaderStyle: SmartTableCssVars = {
-    '--nx-smart-cell-padding': cellPad.th,
-    '--nx-smart-cell-font-size': cssLength(compact ? 11 : 12),
-    '--nx-smart-row-number-width': cssLength(rowNumW),
-  };
-  const rowNumberCellStyle: SmartTableCssVars = {
-    '--nx-smart-cell-padding': cellPad.td,
-    '--nx-smart-cell-font-size': cssLength(cellFs),
-    '--nx-smart-row-number-width': cssLength(rowNumW),
-  };
-  const colPanelStyle: SmartTableCssVars | undefined = colPanelPos
-    ? {
-        '--nx-col-vis-panel-top': cssLength(colPanelPos.top),
-        '--nx-col-vis-panel-left': cssLength(colPanelPos.left),
-      }
-    : undefined;
-  const headerCellStyle = (col: any, effectiveWidth: any, resizableCol: boolean, shrink: boolean): SmartTableCssVars => ({
-    '--nx-smart-cell-padding': cellPad.th,
-    '--nx-smart-cell-font-size': cssLength(compact ? 12 : 13),
-    '--nx-smart-cell-position': resizableCol ? 'relative' : undefined,
-    '--nx-smart-cell-width': cssLength(effectiveWidth),
-    '--nx-smart-cell-min-width': cssLength(col.minWidth),
-    '--nx-smart-cell-max-width': resizableCol ? undefined : cssLength(col.maxWidth),
-    '--nx-smart-cell-cursor': col.sortable ? 'pointer' : 'default',
-    '--nx-smart-cell-user-select': col.sortable ? 'none' : 'auto',
-    '--nx-smart-cell-white-space': shrink || col.key === 'actions' ? 'nowrap' : 'normal',
-    '--nx-smart-cell-overflow': resizableCol ? 'hidden' : undefined,
-  });
-  const bodyCellStyle = (
-    col: any,
-    tdEffectiveWidth: any,
-    align: React.CSSProperties['textAlign'],
-    family: string | undefined,
-    shrink: boolean,
-  ): SmartTableCssVars => ({
-    '--nx-smart-cell-padding': cellPad.td,
-    '--nx-smart-cell-font-size': cssLength(cellFs),
-    '--nx-smart-cell-align': align,
-    '--nx-smart-cell-font-family': family,
-    '--nx-smart-cell-width': cssLength(tdEffectiveWidth),
-    '--nx-smart-cell-min-width': cssLength(col.minWidth),
-    '--nx-smart-cell-max-width': cssLength(col.maxWidth),
-    '--nx-smart-cell-white-space': shrink ? 'nowrap' : undefined,
-  });
-  const rowStyle = (row: any, index: number): SmartTableCssVars => ({
-    '--nx-smart-row-bg': index % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent',
-    ...(typeof getRowStyle === 'function' ? getRowStyle(row, index) : null),
-  });
+  const frameStyle = buildFrameStyle(innerPadding);
+  const tableStyle = buildTableStyle({ layout, minW, isWideTable });
+  const rowNumberHeaderStyle = buildRowNumberHeaderStyle({ cellPad, compact, rowNumW });
+  const rowNumberCellStyle = buildRowNumberCellStyle({ cellPad, cellFs, rowNumW });
   /** على الجوال مع بطاقات فقط: لا نعرض شريط إخفاء الأعمدة (يضيق المحتوى ويبدو كزر عائم) */
   const showTableHeaderRow = Boolean(
     title || badge || (onSearchChange && showSearchInHeader) || (tableId && !showCards),
   );
-  const hideableCols = normalizedColumns.filter((c: any) => c.key !== 'actions');
   const rowKey = (row: any, index: number) => keyExtractor?.(row, index) ?? row.id ?? index;
 
   return (
@@ -347,143 +150,53 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     >
       {/* ── رأس الجدول ── */}
       {showTableHeaderRow && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap px-4 py-2.5 border-b border-noorix-border">
-          <div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-0">
-            {title && <span className="font-bold text-[15px] shrink-0">{title}</span>}
-            {badge && <div className="flex items-center gap-2 flex-wrap min-w-0">{badge}</div>}
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {onSearchChange && showSearchInHeader && (
-              <Input
-                type="search"
-                value={searchValue ?? ''}
-                onChange={(e: any) => onSearchChange(e.target.value)}
-                placeholder={t('searchPlaceholder')}
-                size="sm"
-                className="noorix-table-search"
-                aria-label={t('searchPlaceholder')}
-              />
-            )}
-            {tableId && (
-              <div className="relative">
-                <button
-                  ref={colBtnRef}
-                  className={`nx-col-vis-btn${hiddenCols.size > 0 ? ' nx-col-vis-btn--active' : ''}`}
-                  title="إظهار / إخفاء الأعمدة"
-                  aria-label="إظهار / إخفاء الأعمدة"
-                  onClick={() => setShowColPanel((v: any) => !v)}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <line x1="9" y1="3" x2="9" y2="21" />
-                    <line x1="15" y1="3" x2="15" y2="21" />
-                  </svg>
-                  {hiddenCols.size > 0 && (
-                    <span className="nx-col-vis-badge">{hiddenCols.size}</span>
-                  )}
-                </button>
-                {showColPanel && typeof document !== 'undefined' && createPortal(
-                  <div
-                    ref={colPanelRef}
-                    className={cn('nx-col-vis-panel', 'nx-col-vis-panel--viewport', !colPanelPos && 'nx-col-vis-panel--measuring')}
-                    style={colPanelStyle}
-                    role="dialog"
-                    aria-label="إظهار / إخفاء الأعمدة"
-                  >
-                    <div className="nx-col-vis-panel__header">
-                      <span>الأعمدة</span>
-                      {hiddenCols.size > 0 && (
-                        <button type="button" className="nx-col-vis-reset" onClick={resetColVis}>إعادة تعيين</button>
-                      )}
-                    </div>
-                    {hideableCols.map((col: any) => (
-                      <label key={col.key} className="nx-col-vis-item">
-                        <input
-                          type="checkbox"
-                          checked={!hiddenCols.has(col.key)}
-                          onChange={() => toggleColVis(col.key)}
-                        />
-                        <span>{columnLabel(col)}</span>
-                      </label>
-                    ))}
-                  </div>,
-                  document.body,
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+        <SmartTableHeader
+          title={title}
+          badge={badge}
+          searchValue={searchValue}
+          onSearchChange={onSearchChange}
+          showSearchInHeader={showSearchInHeader}
+          tableId={tableId}
+          showColumnVisibility={!showCards}
+          hideableCols={hideableCols}
+          hiddenCols={hiddenCols}
+          onToggleColumn={toggleColVis}
+          onResetColumns={resetColVis}
+          t={t}
+        />
       )}
 
       {/* ── خطأ ── */}
       {isError && (
-        <div className="m-3 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-noorix-red">
-          ⚠ {errMsg}
-        </div>
+        <SmartTableErrorState message={errMsg} />
       )}
 
       {/* ── تحميل — Skeleton ── */}
       {isLoading && (
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="w-6 h-6 rounded-full border-2 border-noorix-border border-t-noorix-blue nx-smart-table-loading-spinner"
-            />
-            <span className="text-noorix-muted text-[14px] font-medium">{t('loading')}</span>
-          </div>
-          <div className="flex flex-col gap-2">
-            {[1, 2, 3, 4, 5].map((i: any) => (
-              <div
-                key={i}
-                className="rounded-lg h-11 nx-smart-table-skeleton-line"
-              />
-            ))}
-          </div>
-        </div>
+        <SmartTableLoadingState loadingLabel={t('loading')} />
       )}
 
       {/* ── صفوف مضغوطة (List-Row pattern) ── */}
       {!isLoading && showCompact && (
-        <div>
-          {data.length === 0 ? (
-            <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
-              {emptyMsg}
-            </div>
-          ) : engineRows.map(({ original: row, index: i }) => (
-            <div
-              key={rowKey(row, i)}
-              className={cn(
-                'nx-compact-row',
-                i % 2 === 1 ? 'nx-compact-row--stripe' : 'nx-compact-row--base',
-              )}
-            >
-              {renderCompactRow!(row, i)}
-            </div>
-          ))}
-        </div>
+        <SmartTableCompactRows
+          rows={engineRows}
+          dataLength={data.length}
+          emptyMsg={emptyMsg}
+          rowKey={rowKey}
+          renderCompactRow={renderCompactRow!}
+        />
       )}
 
       {/* ── بطاقات الجوال — حدود مستقلة + شريط أزرق فاتح متناوب (token: --noorix-blue-10) ── */}
       {!isLoading && showCards && (
-        <div className="flex flex-col gap-2 py-2 px-2 sm:px-3 min-w-0 max-w-full box-border">
-          {data.length === 0 ? (
-            <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
-              {emptyMsg}
-            </div>
-          ) : engineRows.map(({ original: row, index: i }) => (
-            <div
-              key={rowKey(row, i)}
-              className={cn(
-                'nx-mobile-card-row px-4 py-3',
-                stripeMobileCards
-                  ? (i % 2 === 1 ? 'nx-mobile-card-row--stripe' : 'nx-mobile-card-row--base')
-                  : 'nx-mobile-card-row--base',
-              )}
-            >
-              {renderMobileCard(row, i)}
-            </div>
-          ))}
-        </div>
+        <SmartTableMobileCards
+          rows={engineRows}
+          dataLength={data.length}
+          emptyMsg={emptyMsg}
+          rowKey={rowKey}
+          renderMobileCard={renderMobileCard}
+          stripeMobileCards={stripeMobileCards}
+        />
       )}
 
       {/* ── الجدول ── */}
@@ -499,7 +212,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   <th className="nx-row-number-th nx-smart-row-number-cell nx-smart-header-cell-vars" style={rowNumberHeaderStyle}>#</th>
                 )}
                 {visibleColumns.map((col: any) => {
-                  const isSorted = sortKey === col.key;
+                  const columnState = tableEngine.getColumnState(col.key);
                   const shrink = col.shrink === true;
                   const actionSticky = col.key === 'actions' && stickyActionColumn;
                   // Keep truncation on table cells display-safe; inner ellipsis spans can be block.
@@ -520,15 +233,15 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                         shrink ? 'noorix-th-shrink' : '',
                         shouldTruncate ? 'noorix-table-cell-truncate' : '',
                       )}
-                      style={headerCellStyle(col, effectiveWidth, resizableCol, shrink)}
+                      style={buildHeaderCellStyle({ col, effectiveWidth, resizableCol, shrink, cellPad, compact })}
                       data-column-kind={col.kind}
-                      aria-sort={col.sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
-                      onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
+                      aria-sort={col.sortable ? columnState.ariaSort : undefined}
+                      onClick={columnState.canSort ? () => tableEngine.toggleSort(col.key) : undefined}
                     >
                       {columnLabel(col)}
                       {col.sortable && (
-                        <span className={cn('text-[13px] ms-1', isSorted ? 'opacity-100' : 'opacity-30')}>
-                          {isSorted ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                        <span className={cn('text-[13px] ms-1', columnState.isSorted ? 'opacity-100' : 'opacity-30')}>
+                          {columnState.sortIndicator}
                         </span>
                       )}
                       {resizableCol && (
@@ -562,7 +275,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                 <React.Fragment key={rowKey(row, i)}>
                 <tr
                   className={`nx-smart-row-vars border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
-                  style={rowStyle(row, i)}
+                  style={buildRowStyle({ row, index: i, getRowStyle })}
                 >
                   {showRowNumbers && (
                     <td className="nx-row-number-td nx-smart-row-number-cell nx-smart-body-cell-vars text-center font-semibold" style={rowNumberCellStyle}>
@@ -588,7 +301,15 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                           shrink ? 'noorix-td-shrink' : '',
                           shouldTruncate ? 'noorix-table-cell-truncate' : '',
                         )}
-                        style={bodyCellStyle(col, tdEffectiveWidth, align as React.CSSProperties['textAlign'], family, shrink)}
+                        style={buildBodyCellStyle({
+                          col,
+                          tdEffectiveWidth,
+                          align: align as React.CSSProperties['textAlign'],
+                          family,
+                          shrink,
+                          cellPad,
+                          cellFs,
+                        })}
                         data-column-kind={col.kind}
                       >
                         {col.render ? col.render(value, row, i) : (value ?? '—')}
@@ -621,7 +342,18 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
       {/* ── تصفح الصفحات ── */}
       {!isLoading && onPageChange && (
-        <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} t={t} />
+        <SmartTablePagination
+          page={page}
+          totalPages={totalPages}
+          canPreviousPage={pagination.canPreviousPage}
+          canNextPage={pagination.canNextPage}
+          firstPage={pagination.firstPage}
+          previousPage={pagination.previousPage}
+          nextPage={pagination.nextPage}
+          lastPage={pagination.lastPage}
+          onPageChange={tableEngine.setPage}
+          t={t}
+        />
       )}
 
       {children}
