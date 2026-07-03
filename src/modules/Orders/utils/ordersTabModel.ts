@@ -1,4 +1,5 @@
 import { fmt } from '../../../utils/format';
+import { buildPrintTableHtml } from '../../../utils/printTableHtml';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 
 export function mergeOrderCatalogProducts(orderCatalog: any[], editingOrder: any): any[] {
@@ -138,17 +139,18 @@ export function buildWhatsAppText(order: any, t: any): string {
 
 export function buildOrderPrintHtml(order: any, t: any): string {
   const items = order.items ?? [];
-  const rows = items
-    .map((it: any) => {
-      const parts = [it.size, it.packaging, it.unit].filter(Boolean);
-      const name =
-        (it.product?.nameAr || it.product?.nameEn || '—') +
-        (parts.length > 0 ? ` (${parts.join(' / ')})` : '');
-      return `<tr><td>${name}</td><td style="text-align:center">${it.quantity}</td><td>${fmt(
-        it.unitPrice ?? 0,
-      )} SR</td><td><strong>${fmt(it.amount ?? 0)} SR</strong></td></tr>`;
-    })
-    .join('');
+  const rows = items.map((it: any) => {
+    const parts = [it.size, it.packaging, it.unit].filter(Boolean);
+    const name =
+      (it.product?.nameAr || it.product?.nameEn || '—') +
+      (parts.length > 0 ? ` (${parts.join(' / ')})` : '');
+    return {
+      product: name,
+      quantity: it.quantity,
+      unitPrice: `${fmt(it.unitPrice ?? 0)} SR`,
+      total: `${fmt(it.amount ?? 0)} SR`,
+    };
+  });
   const orderType = order.orderType === 'external' ? t('orderTypeExternal') : t('orderTypeInternal');
   const pettyRow =
     order.orderType === 'external' && order.pettyCashAmount != null
@@ -161,13 +163,19 @@ export function buildOrderPrintHtml(order: any, t: any): string {
     <p style="margin:4px 0"><strong>${t('orderType')}:</strong> ${orderType}</p>
     ${pettyRow}
   </div>`;
-  return `${meta}<table>
-<thead><tr><th>${t('product')}</th><th style="text-align:center">${t('quantity')}</th><th>${t(
-    'unitPrice',
-  )}</th><th>${t('total')}</th></tr></thead>
-<tbody>${rows}</tbody>
-<tfoot><tr><td colspan="3">${t('total')}</td><td>${fmt(order.totalAmount ?? 0)} SR</td></tr></tfoot>
-</table>`;
+  return `${meta}${buildPrintTableHtml({
+    columns: [
+      { key: 'product', header: t('product') },
+      { key: 'quantity', header: t('quantity'), align: 'center' },
+      { key: 'unitPrice', header: t('unitPrice'), align: 'end' },
+      { key: 'total', header: t('total'), align: 'end' },
+    ],
+    rows,
+    footerRows: [[
+      { value: t('total'), colSpan: 3 },
+      { value: `${fmt(order.totalAmount ?? 0)} SR`, align: 'end' },
+    ]],
+  })}`;
 }
 
 export function buildSingleOrderExportRows(order: any, t: any): any[] {

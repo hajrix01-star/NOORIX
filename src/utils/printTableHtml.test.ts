@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPrintTableHtml, escapePrintHtml, sanitizePrintClassName } from './printTableHtml';
+import { buildPrintRecordsTableHtml, buildPrintTableHtml, escapePrintHtml, sanitizePrintClassName } from './printTableHtml';
 
 describe('printTableHtml', () => {
   it('escapes text content and attribute-sensitive characters', () => {
@@ -52,5 +52,18 @@ describe('printTableHtml', () => {
 
     expect(html).toContain('<tr class="summary-row">');
     expect(html).toContain('<tfoot><tr><td class="print-table__cell--right footer-total">Grand total</td></tr></tfoot>');
+  });
+
+  it('builds record tables with inferred keys, labels, and numeric alignment', () => {
+    const html = buildPrintRecordsTableHtml({
+      records: [{ name: 'Sale <A>', total: '120.00' }],
+      columnLabels: { name: 'Name', total: 'Total' },
+      numericKeys: ['total'],
+    });
+
+    expect(html).toContain('<th>Name</th>');
+    expect(html).toContain('<th class="print-table__cell--end">Total</th>');
+    expect(html).toContain('<td>Sale &lt;A&gt;</td>');
+    expect(html).toContain('<td class="print-table__cell--end">120.00</td>');
   });
 });

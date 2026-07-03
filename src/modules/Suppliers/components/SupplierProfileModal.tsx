@@ -5,6 +5,7 @@ import { fetchAllInvoicesForExport } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO, getSaudiToday } from '../../../utils/saudiDate';
+import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 
 const PAGE_SIZE = 10;
@@ -22,31 +23,22 @@ function categoryName(category: any, lang: string) {
 }
 
 function buildInvoicesTableHtml(invoices: any[], t: (key: string, ...args: any[]) => string) {
-  const rows = invoices
-    .map((inv: any) => `<tr>
-      <td>${esc(inv.supplierInvoiceNumber || inv.invoiceNumber || '-')}</td>
-      <td>${esc(inv.invoiceNumber || '-')}</td>
-      <td>${esc(inv.kind || '-')}</td>
-      <td>${esc(inv.transactionDate ? formatSaudiDateISO(inv.transactionDate) : '-')}</td>
-      <td>${esc(fmt(Number(inv.netAmount || 0)))} SR</td>
-      <td>${esc(fmt(Number(inv.taxAmount || 0)))} SR</td>
-      <td>${esc(fmt(Number(inv.totalAmount || 0)))} SR</td>
-    </tr>`)
-    .join('');
-  return `<table>
-    <thead>
-      <tr>
-        <th>${esc(t('supplierInvoiceNumber'))}</th>
-        <th>${esc(t('documentNumber'))}</th>
-        <th>${esc(t('type'))}</th>
-        <th>${esc(t('date'))}</th>
-        <th>${esc(t('net'))}</th>
-        <th>${esc(t('tax'))}</th>
-        <th>${esc(t('total'))}</th>
-      </tr>
-    </thead>
-    <tbody>${rows || `<tr><td colspan="7">${esc(t('noInvoicesInPeriod'))}</td></tr>`}</tbody>
-  </table>`;
+  const netKey = t('net');
+  const taxKey = t('tax');
+  const totalKey = t('total');
+  return buildPrintRecordsTableHtml({
+    records: invoices.map((inv: any) => ({
+      [t('supplierInvoiceNumber')]: inv.supplierInvoiceNumber || inv.invoiceNumber || '-',
+      [t('documentNumber')]: inv.invoiceNumber || '-',
+      [t('type')]: inv.kind || '-',
+      [t('date')]: inv.transactionDate ? formatSaudiDateISO(inv.transactionDate) : '-',
+      [netKey]: `${fmt(Number(inv.netAmount || 0))} SR`,
+      [taxKey]: `${fmt(Number(inv.taxAmount || 0))} SR`,
+      [totalKey]: `${fmt(Number(inv.totalAmount || 0))} SR`,
+    })),
+    emptyMessage: t('noInvoicesInPeriod'),
+    numericKeys: [netKey, taxKey, totalKey],
+  });
 }
 
 export type SupplierProfileModalProps = {

@@ -15,6 +15,7 @@ import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toYmd } from '.
 import { fmt, sumAmounts } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel, exportToPdf } from '../../../utils/exportUtils';
+import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { formatSalesForExport } from '../../../utils/importTemplates';
 import { hasPermission, PERMISSIONS } from '../../../constants/permissions';
@@ -517,18 +518,31 @@ export function useDailySalesScreen() {
     } finally {
       setExportBusy(false);
     }
-    const channelsRows = allFilteredData.map((s) => {
+    const printRows = allFilteredData.map((s) => {
       const ch = (s.channels || []).map((c) => `${vaultDisplayName(c.vault, lang)}: ${fmt(c.amount)}`).join(' | ');
       const total = Number(s.totalAmount || 0);
       const cc = s.customerCount || 0;
-      return `<tr><td>${String(s.summaryNumber ?? '').replace(/</g, '&lt;')}</td><td>${formatSaudiDate(s.transactionDate)}</td><td>${getSalesShiftLabel(resolveSalesSummaryShift(s), t)}</td><td>${(ch || '—').replace(/</g, '&lt;')}</td><td>${cc}</td><td>${fmt(total)}</td><td>${cc > 0 ? fmt(total / cc) : '0.00'}</td><td>${s.status === 'cancelled' ? t('statusCancelled') : t('statusActive')}</td></tr>`;
-    }).join('');
+      return {
+        [t('summaryNumber')]: String(s.summaryNumber ?? ''),
+        [t('transactionDate')]: formatSaudiDate(s.transactionDate),
+        [t('salesShiftLabel')]: getSalesShiftLabel(resolveSalesSummaryShift(s), t),
+        [t('salesChannels')]: ch || '—',
+        [t('customers')]: cc,
+        [t('total')]: fmt(total),
+        [t('avgPerOrder')]: cc > 0 ? fmt(total / cc) : '0.00',
+        [t('statusLabel')]: s.status === 'cancelled' ? t('statusCancelled') : t('statusActive'),
+      };
+    });
     openPrintWindow({
       title: t('salesDailySummary'),
       companyName: companyName || 'الشركة',
       subtitle: `${t('salesDailySummary')} — ${dateFilter.label || ''}`,
       logoUrl: logoUrl || '',
-      body: `<table><thead><tr><th>${t('summaryNumber')}</th><th>${t('transactionDate')}</th><th>${t('salesShiftLabel')}</th><th>${t('salesChannels')}</th><th>${t('customers')}</th><th>${t('total')}</th><th>${t('avgPerOrder')}</th><th>${t('statusLabel')}</th></tr></thead><tbody>${channelsRows || '<tr><td colspan="8">' + t('noSummariesInPeriod') + '</td></tr>'}</tbody></table>`,
+      body: buildPrintRecordsTableHtml({
+        records: printRows,
+        emptyMessage: t('noSummariesInPeriod'),
+        numericKeys: [t('customers'), t('total'), t('avgPerOrder')],
+      }),
     });
   }
 

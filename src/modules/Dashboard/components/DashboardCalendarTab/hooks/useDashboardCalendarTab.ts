@@ -4,6 +4,7 @@ import { useApp } from '../../../../../context/AppContext';
 import { useDashboardSalesPack } from '../../../../../hooks/useDashboardSalesPack';
 import { useDashboardCalendarData } from '../../../../../hooks/useDashboardCalendarData';
 import { fmt } from '../../../../../utils/format';
+import { buildPrintTableHtml } from '../../../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../../../utils/printUtils';
 import { getSaudiNow, toYmd } from '../../../../../utils/saudiDate';
 import { computeRevenueMonthDailyAvg } from '../../../overview/utils/dashboardDailyAvg';
@@ -241,23 +242,37 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
 
   const handlePrintDayDetails = useCallback(
     (dateStr: any, dayTarget: any, daySummaries: any, totalAmount: any, achieved: any) => {
-      const rows = daySummaries
-        .map((s: any) => {
-          const chText = (s.channels || [])
-            .map((ch: any) => `${ch.vault?.nameAr || ch.vault?.nameEn || '—'}: ${fmt(ch.amount || 0)}`)
-            .join(' | ');
-          return `<tr><td>${(s.summaryNumber || '—').replace(/</g, '&lt;')}</td><td>${chText.replace(/</g, '&lt;')}</td><td>${s.customerCount ?? 0}</td><td>${fmt(Number(s.totalAmount || 0))}</td></tr>`;
-        })
-        .join('');
+      const printRows = daySummaries.map((s: any) => ({
+        summaryNumber: s.summaryNumber || '—',
+        channels: (s.channels || [])
+          .map((ch: any) => `${ch.vault?.nameAr || ch.vault?.nameEn || '—'}: ${fmt(ch.amount || 0)}`)
+          .join(' | ') || '—',
+        customers: s.customerCount ?? 0,
+        total: fmt(Number(s.totalAmount || 0)),
+      }));
       const targetInfo = `<div style="background:#eff6ff;padding:12px;border-radius:8px;margin:12px 0;font-size:13px">
       <strong>${t('dashboardSalesTarget')}:</strong> ${dayTarget != null ? fmt(dayTarget) : '—'} SR &nbsp;|&nbsp;
       <strong>${t('total')}:</strong> <span style="color:${achieved ? '#16a34a' : 'inherit'}">${fmt(totalAmount)} SR${achieved ? ' ✓' : ''}</span>
     </div>`;
+      const tableHtml = buildPrintTableHtml({
+        columns: [
+          { key: 'summaryNumber', header: t('summaryNumber') },
+          { key: 'channels', header: t('salesChannels') },
+          { key: 'customers', header: t('customers'), align: 'end' },
+          { key: 'total', header: t('total'), align: 'end' },
+        ],
+        rows: printRows,
+        emptyMessage: t('noDataInPeriod'),
+        footerRows: [[
+          { value: t('total'), colSpan: 3 },
+          { value: `${fmt(totalAmount)} SR`, align: 'end' },
+        ]],
+      });
       openPrintWindow({
         title: `${t('transactions')} — ${dateStr}`,
         companyName: companyName || '',
         subtitle: `${t('dashboardCalendar')} — ${dateStr}`,
-        body: `${targetInfo}<table><thead><tr><th>${t('summaryNumber')}</th><th>${t('salesChannels')}</th><th>${t('customers')}</th><th>${t('total')}</th></tr></thead><tbody>${rows || '<tr><td colspan="4">' + t('noDataInPeriod') + '</td></tr>'}</tbody><tfoot><tr><td colspan="3">${t('total')}</td><td>${fmt(totalAmount)} SR</td></tr></tfoot></table>`,
+        body: `${targetInfo}${tableHtml}`,
       });
     },
     [t, companyName],
