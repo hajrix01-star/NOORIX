@@ -12,6 +12,7 @@ import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Badge, Checkbox, FmtNum, SmartTable } from '../../../ui';
@@ -94,18 +95,15 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   [activeItems, kindBadgeMap, lang, t]);
 
   function handlePrint() {
-    const attachLabel = String(t('invoiceReceiptCol')).replace(/</g, '&lt;');
-    const rows = activeItems.map((inv: any) => {
-      const attachCell = inv.hasInvoiceAttachment
-        ? String(inv.attachmentOriginalName || '—').replace(/</g, '&lt;')
-        : '—';
-      return `<tr><td>${(inv.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(inv.supplier?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(inv.expenseLine?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${String((kindBadgeMap as Record<string, { label?: string }>)[String(inv.kind)]?.label || inv.kind).replace(/</g, '&lt;')}</td><td>${attachCell}</td><td>${formatSaudiDate(inv.transactionDate).replace(/</g, '&lt;')}</td><td>${fmt(inv.netAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.taxAmount).replace(/</g, '&lt;')}</td><td>${fmt(inv.totalAmount).replace(/</g, '&lt;')}</td></tr>`;
-    }).join('');
     openPrintWindow({
       title: 'سجل المدفوعات',
       companyName,
       subtitle: `سجل المدفوعات (ثابت + متغير) | الإجمالي: ${fmt(totalAmount)} SR`,
-      body: `<table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>المورد</th><th>بند المصروف</th><th>النوع</th><th>${attachLabel}</th><th>التاريخ</th><th>الصافي</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${rows || '<tr><td colspan="10">لا توجد مدفوعات</td></tr>'}</tbody></table>`,
+      body: buildPrintRecordsTableHtml({
+        records: exportData,
+        emptyMessage: 'لا توجد مدفوعات',
+        numericKeys: ['الصافي', 'الضريبة', 'الإجمالي'],
+      }),
     });
   }
 

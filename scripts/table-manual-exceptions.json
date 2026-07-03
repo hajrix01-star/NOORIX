@@ -2,11 +2,8 @@
   "version": 1,
   "description": "Baseline registry for existing manual <table> usages. SmartTable and SimpleTable are allowed separately. Any new manual table must update this file with a documented reason.",
   "allowedTableCounts": {
-    "src/modules/Dashboard/components/DashboardCalendarTab/hooks/useDashboardCalendarTab.ts": 2,
+    "src/modules/Dashboard/components/DashboardCalendarTab/hooks/useDashboardCalendarTab.ts": 1,
     "src/modules/Dashboard/overview/components/DashboardOverviewWeeklySalesPanel.tsx": 1,
-    "src/modules/Expenses/components/ExpenseLineDetailModal.tsx": 1,
-    "src/modules/Expenses/components/ExpenseLineList.tsx": 1,
-    "src/modules/Expenses/components/PaymentHistoryTab.tsx": 1,
     "src/modules/HR/components/EmployeeDocModal/components/EmployeeDocEmployeeInfoTable.tsx": 2,
     "src/modules/HR/components/EmployeeDocModal/components/EmployeeDocSalaryBreakdownTable.tsx": 2,
     "src/modules/HR/components/PayrollRunDetailModal.tsx": 1,
@@ -29,7 +26,6 @@
     "src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx": 1,
     "src/modules/Orders/utils/itemsCatalogPrint.ts": 1,
     "src/modules/Orders/utils/itemsCatalogWeeklyPrint.ts": 1,
-    "src/modules/Orders/utils/ordersTabModel.ts": 1,
     "src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx": 1,
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": 1,
     "src/modules/Purchases/components/BatchEditPanel.tsx": 1,
@@ -45,8 +41,7 @@
     "src/modules/Reports/costAccountingApps/CostAccountingAppsResultPanels.tsx": 1,
     "src/modules/Reports/costAccountingApps/costAccountingAppsScreenActions.ts": 2,
     "src/modules/Reports/reportsPlMonthPrint.ts": 2,
-    "src/modules/Sales/hooks/useDailySalesScreen.ts": 1,
-    "src/modules/Suppliers/components/SupplierProfileModal.tsx": 3,
+    "src/modules/Suppliers/components/SupplierProfileModal.tsx": 2,
     "src/modules/Treasury/components/VaultTransactionsModal.tsx": 1
   }
 }

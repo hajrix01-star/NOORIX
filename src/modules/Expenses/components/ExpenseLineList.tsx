@@ -4,6 +4,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { fmt } from '../../../utils/format';
 import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, KebabMenu } from '../../../ui';
@@ -271,22 +272,16 @@ export default function ExpenseLineList({
   function handlePrint() {
     const thMonthly = t('expenseLineListMonthlyAmount');
     const thAnnual = t('expenseLineListAnnualAmount');
-    const rows = tableData
-      .map((r: any) => {
-        const { monthly, annual } = monthlyAnnualForExpenseLineRow(r);
-        const mCell = monthly != null ? fmt(monthly) : '—';
-        const aCell = annual != null ? fmt(annual) : '—';
-        const kindLabel = expenseLineKindShortLabel(r.kind, t);
-        const cat = r.categoryName && r.categoryName !== '—' ? r.categoryName : '—';
-        return `<tr><td>${(r.displayName || '—').replace(/</g, '&lt;')}</td><td>${kindLabel.replace(/</g, '&lt;')}</td><td>${cat.replace(/</g, '&lt;')}</td><td>${(r.supplierName || '—').replace(/</g, '&lt;')}</td><td>${(r.serviceNumber || '—').replace(/</g, '&lt;')}</td><td style="text-align:end" dir="ltr">${String(mCell).replace(/</g, '&lt;')}</td><td style="text-align:end" dir="ltr">${String(aCell).replace(/</g, '&lt;')}</td></tr>`;
-      })
-      .join('');
     const printTitle = t('expenseLinesPrintTitle') || 'بنود المصاريف';
     openPrintWindow({
       title: printTitle,
       companyName,
       subtitle: printTitle,
-      body: `<table><thead><tr><th>${t('expenseLineNameCol')}</th><th>${t('expenseLineKindCol')}</th><th>${t('category')}</th><th>${t('supplier')}</th><th>${t('expenseLineServiceNumberCol')}</th><th>${thMonthly}</th><th>${thAnnual}</th></tr></thead><tbody>${rows || '<tr><td colspan="7">لا توجد بيانات</td></tr>'}</tbody></table>`,
+      body: buildPrintRecordsTableHtml({
+        records: exportData,
+        emptyMessage: 'لا توجد بيانات',
+        numericKeys: [thMonthly, thAnnual],
+      }),
     });
   }
 

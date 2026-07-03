@@ -9,6 +9,7 @@ import { expenseKeys } from '../../../services/queryKeys';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
+import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { Button, AdaptiveSheet , FmtNum, SmartTable } from '../../../ui';
 import { useApp } from '../../../context/AppContext';
@@ -103,15 +104,16 @@ export default function ExpenseLineDetailModal({
   }));
 
   function handlePrintPayments() {
-    const rows = payments.map((p: any) =>
-      `<tr><td>${(p.invoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(p.supplierInvoiceNumber || '—').replace(/</g, '&lt;')}</td><td>${(formatSaudiDate(p.transactionDate) || '—').replace(/</g, '&lt;')}</td><td>${String(formatInvoiceCoverage(p)).replace(/</g, '&lt;')}</td><td>${fmt(p.totalAmount).replace(/</g, '&lt;')}</td><td>${(p.vaultName || p.vault?.nameAr || '—').replace(/</g, '&lt;')}</td><td>${(p.notes || '—').replace(/</g, '&lt;')}</td></tr>`,
-    ).join('');
     const lineName = line?.nameAr || line?.nameEn || '—';
     openPrintWindow({
       title: `سجل مدفوعات — ${lineName}`,
       companyName,
       subtitle: `سجل مدفوعات — ${lineName} | الإجمالي: ${fmt(totalPaid)} SR`,
-      body: `<table><thead><tr><th>رقم السند</th><th>رقم فاتورة المورد</th><th>التاريخ</th><th>التغطية</th><th>المبلغ</th><th>الخزنة</th><th>ملاحظات</th></tr></thead><tbody>${rows || '<tr><td colspan="7">لا توجد مدفوعات</td></tr>'}</tbody></table>`,
+      body: buildPrintRecordsTableHtml({
+        records: paymentExportData,
+        emptyMessage: 'لا توجد مدفوعات',
+        numericKeys: ['المبلغ'],
+      }),
     });
   }
 

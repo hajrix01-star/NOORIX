@@ -30,6 +30,14 @@ export type BuildPrintTableHtmlOptions<Row = unknown> = {
   footerRows?: PrintTableFooterCell[][];
 };
 
+export type BuildPrintRecordsTableHtmlOptions<Row extends Record<string, unknown> = Record<string, unknown>> =
+  Omit<BuildPrintTableHtmlOptions<Row>, 'columns' | 'rows'> & {
+    records?: Row[];
+    columnKeys?: string[];
+    columnLabels?: Record<string, unknown>;
+    numericKeys?: string[];
+  };
+
 const ALIGN_CLASS: Record<PrintTableAlign, string> = {
   start: 'print-table__cell--start',
   center: 'print-table__cell--center',
@@ -136,4 +144,24 @@ export function buildPrintTableHtml<Row = unknown>({
     : '';
 
   return `<div${classAttr(wrapperClassName)}><table${classAttr(tableClassName)}><thead>${headRow}</thead><tbody>${bodyRows}</tbody>${footRows}</table></div>`;
+}
+
+export function buildPrintRecordsTableHtml<Row extends Record<string, unknown> = Record<string, unknown>>({
+  records = [],
+  columnKeys,
+  columnLabels = {},
+  numericKeys = [],
+  ...rest
+}: BuildPrintRecordsTableHtmlOptions<Row>): string {
+  const keys = columnKeys?.length ? columnKeys : records[0] ? Object.keys(records[0]) : [];
+  const numericKeySet = new Set(numericKeys);
+  return buildPrintTableHtml<Row>({
+    ...rest,
+    columns: keys.map((key) => ({
+      key,
+      header: columnLabels[key] ?? key,
+      align: numericKeySet.has(key) ? 'end' : undefined,
+    })),
+    rows: records,
+  });
 }

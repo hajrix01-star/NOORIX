@@ -59,4 +59,4 @@ Before converting any existing manual print table, classify it with:
 
 ## Completion Boundary
 
-This phase closes the foundation only. It does not claim that all 70 manual tables are converted.
+This phase closes the foundation only. It does not claim that all remaining manual tables are converted.

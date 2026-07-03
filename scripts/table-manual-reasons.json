@@ -12,21 +12,6 @@
       "decision": "leave",
       "reason": "compact weekly comparison matrix with colgroup and micro responsive typography."
     },
-    "src/modules/Expenses/components/ExpenseLineDetailModal.tsx": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "builds printable payment detail HTML; should move only with a PrintTable phase."
-    },
-    "src/modules/Expenses/components/ExpenseLineList.tsx": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "builds expense line export/print HTML; not a rendered app table."
-    },
-    "src/modules/Expenses/components/PaymentHistoryTab.tsx": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "builds payment history print HTML; protected until PrintTable."
-    },
     "src/modules/HR/components/EmployeeDocModal/components/EmployeeDocEmployeeInfoTable.tsx": {
       "category": "document-print",
       "decision": "leave",
@@ -137,11 +122,6 @@
       "decision": "leave",
       "reason": "weekly catalog print HTML generator."
     },
-    "src/modules/Orders/utils/ordersTabModel.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "orders tab print/export HTML string."
-    },
     "src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx": {
       "category": "matrix-table",
       "decision": "leave",
@@ -216,11 +196,6 @@
       "category": "print-financial",
       "decision": "leave",
       "reason": "P&L month print HTML generator."
-    },
-    "src/modules/Sales/hooks/useDailySalesScreen.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "daily sales print/export HTML string."
     },
     "src/modules/Suppliers/components/SupplierProfileModal.tsx": {
       "category": "print-export-html",

@@ -37,6 +37,8 @@ const tableStatusDocPath = 'docs/FRONTEND_TABLE_GOVERNANCE_STATUS.md';
 const tableStatusText = read(tableStatusDocPath);
 const printTableFoundationDocPath = 'docs/PRINT_TABLE_FOUNDATION.md';
 const printTableFoundationText = read(printTableFoundationDocPath);
+const printTableBatch1DocPath = 'docs/PRINT_TABLE_CONVERSION_BATCH_1.md';
+const printTableBatch1Text = read(printTableBatch1DocPath);
 const allowedManualTableCategories = new Set([
   'bank-print',
   'bank-protected',
@@ -167,6 +169,7 @@ for (const required of [
   '`scripts/table-manual-reasons.json`',
   '`scripts/check-table-governance.mjs`',
   '`docs/PRINT_TABLE_FOUNDATION.md`',
+  '`docs/PRINT_TABLE_CONVERSION_BATCH_1.md`',
 ]) {
   if (!tableStatusText.includes(required)) {
     fail(tableStatusDocPath, null, `table governance status doc is stale or missing: ${required}`);
@@ -178,10 +181,22 @@ for (const required of [
   '`src/utils/printTableHtml.ts`',
   '`src/utils/pdfTableExport.ts`',
   'Tax/VAT print documents',
-  'This phase closes the foundation only. It does not claim that all 70 manual tables are converted.',
+  'This phase closes the foundation only. It does not claim that all remaining manual tables are converted.',
 ]) {
   if (!printTableFoundationText.includes(required)) {
     fail(printTableFoundationDocPath, null, `print table foundation doc is stale or missing: ${required}`);
+  }
+}
+
+for (const required of [
+  '| Manual `<table>` outside `src/ui` | 69 | 62 | -7 |',
+  '`src/modules/Expenses/components/ExpenseLineDetailModal.tsx`',
+  '`src/modules/Sales/hooks/useDailySalesScreen.ts`',
+  '`src/modules/Orders/utils/itemsCatalogWeeklyPrint.ts`',
+  '`npm.cmd run check:table-governance`',
+]) {
+  if (!printTableBatch1Text.includes(required)) {
+    fail(printTableBatch1DocPath, null, `print table batch 1 doc is stale or missing: ${required}`);
   }
 }
 
