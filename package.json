@@ -23,6 +23,7 @@
     "check:control-governance": "node scripts/check-control-governance.mjs",
     "check:css-governance": "node scripts/check-css-governance.mjs",
     "check:inline-style-governance": "node scripts/check-inline-style-governance.mjs",
+    "check:workflow-governance": "node scripts/check-workflow-governance.mjs",
     "verify:git-cleanliness": "node scripts/verify-git-cleanliness.mjs",
     "check:service-footprint": "node scripts/check-heavy-service-footprint.mjs",
     "check:scripts": "node scripts/check-node-scripts.mjs",
