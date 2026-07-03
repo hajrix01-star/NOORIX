@@ -2,12 +2,12 @@
   "version": 1,
   "description": "Baseline for React inline style usage. This blocks new style={{ }} growth while dynamic styles are converted gradually.",
   "limits": {
-    "total": 135,
-    "files": 65,
-    "ui": 31,
-    "uiFiles": 11,
-    "outsideUi": 104,
-    "outsideUiFiles": 54
+    "total": 118,
+    "files": 55,
+    "ui": 20,
+    "uiFiles": 5,
+    "outsideUi": 98,
+    "outsideUiFiles": 50
   },
   "topFiles": {
     "src/ui/SmartTable/SmartTable.tsx": 13,
@@ -16,11 +16,11 @@
     "src/modules/Purchases/components/BatchRow.tsx": 6,
     "src/modules/Owner/components/OwnerPerformanceChart.tsx": 5,
     "src/modules/Reports/TaxReportTab.tsx": 5,
-    "src/ui/SimpleTable.tsx": 5,
     "src/modules/Dashboard/components/DashboardCalendarTab/components/DashboardCalendarDayCell.tsx": 4,
     "src/modules/HR/components/employeeProfile/EmployeeProfilePayrollSection.tsx": 4,
-    "src/modules/HR/tabs/ResidencyTab.tsx": 3,
+    "src/ui/SimpleTable.tsx": 4,
     "src/modules/Reports/bank/BankCategoryFormModal.tsx": 3,
-    "src/modules/Reports/BankStatementMappingModal.tsx": 3
+    "src/modules/Reports/BankStatementMappingModal.tsx": 3,
+    "src/components/UserMenu.tsx": 2
   }
 }

@@ -6923,6 +6923,18 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .bank-transactions-footer-cell {
   padding: 10px 12px;
 }
+.nx-import-result-panel--success {
+  border: 1px solid color-mix(in srgb, var(--noorix-accent-green) 25%, transparent);
+}
+.nx-import-result-panel--warning {
+  border: 1px solid color-mix(in srgb, var(--color-noorix-amber) 25%, transparent);
+}
+.dashboard-calendar-header-title {
+  color: var(--color-nx-sales);
+}
+.bank-sales-compare-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
 @media (max-width: 768px) {
   .nx-catalog-products-list .noorix-table-frame > .flex.flex-col.gap-2 {
     padding-inline: 0;

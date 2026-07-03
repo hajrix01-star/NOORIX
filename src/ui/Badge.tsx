@@ -23,21 +23,24 @@ const SIZE_CLASS = {
 
 export default function Badge({ color = 'gray', size = 'md', dot = false, className = '', children, ...rest }: any) {
   const palette = BADGE_COLORS[color as keyof typeof BADGE_COLORS] ?? BADGE_COLORS.gray;
+  const badgeStyle = {
+    '--nx-badge-bg': palette.bg,
+    '--nx-badge-color': palette.color,
+  } as React.CSSProperties;
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full font-semibold whitespace-nowrap',
+        'nx-badge inline-flex items-center gap-1 rounded-full font-semibold whitespace-nowrap',
         SIZE_CLASS[size as keyof typeof SIZE_CLASS] ?? SIZE_CLASS.md,
         className,
       )}
-      style={{ background: palette.bg, color: palette.color }}
+      style={badgeStyle}
       {...rest}
     >
       {dot && (
         <span
-          className="w-1.5 h-1.5 rounded-full shrink-0"
-          style={{ background: palette.color }}
+          className="nx-badge-dot w-1.5 h-1.5 rounded-full shrink-0"
           aria-hidden="true"
         />
       )}

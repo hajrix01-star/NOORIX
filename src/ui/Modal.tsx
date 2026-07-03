@@ -94,8 +94,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="nx-modal-backdrop fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(8,16,32,0.55)] backdrop-blur-sm"
-      style={{ animation: 'nx-backdrop-in 0.2s ease' }}
+      className="nx-modal-backdrop nx-modal-backdrop-animate fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(8,16,32,0.55)] backdrop-blur-sm"
       role="presentation"
       onClick={closeOnBackdrop ? onClose : undefined}
     >

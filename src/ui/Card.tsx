@@ -105,22 +105,26 @@ export type StatCardProps = {
 
 export function StatCard({ color = 'blue', label, value, delta, icon, className = '', children, ...rest }: StatCardProps) {
   const palette = STAT_COLOR[color as keyof typeof STAT_COLOR] ?? STAT_COLOR.blue;
+  const statStyle = {
+    '--nx-stat-accent': palette.accent,
+    '--nx-stat-bg': palette.bg,
+  } as React.CSSProperties;
   return (
     <div
       className={cn('noorix-stat-card p-4', className)}
+      style={statStyle}
       {...rest}
     >
       <div className="flex items-center gap-3">
         {icon && (
           <span
-            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-[18px]"
-            style={{ background: palette.bg, color: palette.accent }}
+            className="nx-stat-card-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-[18px]"
             aria-hidden="true"
           >{icon}</span>
         )}
         <div className="min-w-0 flex-1">
           {label !== undefined && <p className="text-[12px] text-noorix-muted truncate">{label}</p>}
-          {value !== undefined && <p className="text-[18px] font-bold" style={{ color: palette.accent }}>{value}</p>}
+          {value !== undefined && <p className="nx-stat-card-value text-[18px] font-bold">{value}</p>}
           {delta !== undefined && (
             <p className={`text-[11px] font-semibold ${Number(delta) >= 0 ? 'text-noorix-green' : 'text-noorix-red'}`}>
               {Number(delta) >= 0 ? '↑' : '↓'} {Math.abs(Number(delta))}%

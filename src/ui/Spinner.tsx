@@ -27,6 +27,12 @@ function Spinner({ size = 'md', color = 'primary', label, className = '', ...res
   const px      = SIZE_PX[size]   ?? SIZE_PX.md;
   const border  = BORDER_PX[size] ?? BORDER_PX.md;
   const palette = COLOR_MAP[color] ?? COLOR_MAP.primary;
+  const spinnerStyle = {
+    '--nx-spinner-size': `${px}px`,
+    '--nx-spinner-border-width': `${border}px`,
+    '--nx-spinner-border': palette.border,
+    '--nx-spinner-top': palette.top,
+  } as React.CSSProperties;
 
   return (
     <span
@@ -37,13 +43,8 @@ function Spinner({ size = 'md', color = 'primary', label, className = '', ...res
     >
       <span
         aria-hidden="true"
-        className="rounded-full shrink-0"
-        style={{
-          width: px, height: px,
-          border: `${border}px solid ${palette.border}`,
-          borderTopColor: palette.top,
-          animation: 'noorix-spin 0.7s linear infinite',
-        }}
+        className="nx-spinner rounded-full shrink-0"
+        style={spinnerStyle}
       />
       {label && <span className="text-noorix-muted text-[13px]">{label}</span>}
     </span>

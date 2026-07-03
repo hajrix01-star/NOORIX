@@ -22,10 +22,10 @@ export function ImportResultPanel({
 }) {
   const warnings = progress.warnings || [];
   const errs = progress.errors;
+  const resultToneClass = progress.failed === 0 ? 'nx-import-result-panel--success' : 'nx-import-result-panel--warning';
   return (
     <div
-      className="rounded-xl p-4 flex flex-col gap-3"
-      style={{ border: `1px solid ${progress.failed === 0 ? 'var(--noorix-accent-green)' : 'var(--color-noorix-amber)'}40` }}
+      className={`nx-import-result-panel ${resultToneClass} rounded-xl p-4 flex flex-col gap-3`}
     >
       <p className="text-[13px] font-bold text-noorix-muted uppercase tracking-[0.05em] mb-2">{t('importDoneTitle')}</p>
       <div className="flex flex-wrap gap-3">

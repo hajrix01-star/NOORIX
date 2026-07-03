@@ -80,7 +80,7 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
           <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length || 1} className="text-center text-noorix-muted" style={{ padding: compact ? '24px 16px' : '36px' }}>
+                <td colSpan={columns.length || 1} className={cn('text-center text-noorix-muted', compact ? 'p-[24px_16px]' : 'p-9')}>
                   {emptyMessage}
                 </td>
               </tr>
