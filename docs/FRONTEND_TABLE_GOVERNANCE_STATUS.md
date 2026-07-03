@@ -60,3 +60,4 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `docs/SIMPLE_TABLE_DASHBOARD_CONVERSION.md` | records the safe dashboard SimpleTable conversion |
 | `docs/CATALOG_PRINT_TABLE_CONVERSION.md` | records the catalog print-table conversion |
 | `docs/DASHBOARD_CALENDAR_PRINT_TABLE_CONVERSION.md` | records the dashboard calendar print-table conversion |
+| `docs/TABLE_NEXT_PHASE_RFC.md` | defines the next MatrixTable/EditTable/financial-print phase boundaries |
