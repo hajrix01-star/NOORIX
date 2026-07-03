@@ -4,6 +4,8 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { HRActionsCell } from './HRActionsCell';
 
+const remainingClass = (amount: number) => amount > 0 ? 'text-noorix-amber' : 'text-noorix-green';
+
 export function useAdvanceTableModel({
   t,
   expandedEmployees,
@@ -38,7 +40,7 @@ export function useAdvanceTableModel({
       render: (_: any, row: any) => <span className="nx-cell-num text-noorix-green">{hrFmt(row.settledAmountNum || 0)}</span> },
     { key: 'remainingAmount', label: t('advanceRemainingAmount'), numeric: true, sortable: true, width: 120, minWidth: 110,
       render: (_: any, row: any) => (
-        <span className="nx-cell-num" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+        <span className={cn('nx-cell-num', remainingClass(row.remainingAmount || 0))}>
           {hrFmt(row.remainingAmount || 0)}
         </span>
       ) },
@@ -51,7 +53,7 @@ export function useAdvanceTableModel({
   const renderAdvanceDetailRows = useCallback((advances: any[]) => (
     <div className="p-3 bg-noorix-bg-muted/40">
       <div className="overflow-x-auto rounded-lg border border-noorix-border bg-noorix-surface">
-        <table className="w-full text-[12px]" style={{ minWidth: 760 }}>
+        <table className="w-full min-w-[760px] text-[12px]">
           <thead>
             <tr className="border-b border-noorix-border text-noorix-muted">
               <th className="text-start px-3 py-2">{t('advanceLoanDate')}</th>
@@ -73,7 +75,7 @@ export function useAdvanceTableModel({
                   <td className={cn('px-3 py-2 whitespace-nowrap', settled && 'line-through text-noorix-muted')}>{formatSaudiDate(row.transactionDate)}</td>
                   <td className={cn('px-3 py-2 text-end nx-font-numbers', settled && 'line-through text-noorix-muted')}>{hrFmt(row.totalAmountNum)}</td>
                   <td className="px-3 py-2 text-end nx-font-numbers text-noorix-green">{hrFmt(row.settledAmountNum)}</td>
-                  <td className="px-3 py-2 text-end nx-font-numbers" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>{hrFmt(row.remainingAmount)}</td>
+                  <td className={cn('px-3 py-2 text-end nx-font-numbers', remainingClass(row.remainingAmount || 0))}>{hrFmt(row.remainingAmount)}</td>
                   <td className="px-3 py-2 text-noorix-blue font-semibold ltr">
                     {row.installmentCount > 1 ? `${row.installmentCount} × ${hrFmt(row.installmentAmount ?? 0)}` : '—'}
                   </td>
@@ -127,7 +129,7 @@ export function useAdvanceTableModel({
           </div>
           <div>
             <div className="nx-mc__stat-label">{t('advanceRemainingAmount')}</div>
-            <div className="nx-mc__stat-value text-[13px]" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+            <div className={cn('nx-mc__stat-value text-[13px]', remainingClass(row.remainingAmount || 0))}>
               {hrFmt(row.remainingAmount)}
             </div>
           </div>
@@ -153,7 +155,7 @@ export function useAdvanceTableModel({
                     </div>
                     <div>
                       <div className="nx-mc__stat-label">{t('advanceRemainingAmount')}</div>
-                      <div className="nx-mc__stat-value" style={{ color: advance.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+                      <div className={cn('nx-mc__stat-value', remainingClass(advance.remainingAmount || 0))}>
                         {hrFmt(advance.remainingAmount)}
                       </div>
                     </div>
@@ -198,7 +200,7 @@ export function useAdvanceTableModel({
               <span className="nx-cr__meta">{row.advanceCount} · {formatSaudiDate(row.transactionDate)}</span>
             </div>
             <div className="nx-cr__line2-end">
-              <span className="nx-cr__amount" style={{ color: row.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+              <span className={cn('nx-cr__amount', remainingClass(row.remainingAmount || 0))}>
                 <FmtNum n={row.remainingAmount} /> <span className="nx-sar">SR</span>
               </span>
             </div>
@@ -219,7 +221,7 @@ export function useAdvanceTableModel({
                       <span className="nx-cr__meta">{t('advanceAmount')}: {hrFmt(advance.totalAmountNum)}</span>
                     </div>
                     <div className="nx-cr__line2-end">
-                      <span className="nx-cr__amount" style={{ color: advance.remainingAmount > 0 ? 'var(--color-noorix-amber)' : 'var(--noorix-accent-green)' }}>
+                      <span className={cn('nx-cr__amount', remainingClass(advance.remainingAmount || 0))}>
                         <FmtNum n={advance.remainingAmount} /> <span className="nx-sar">SR</span>
                       </span>
                       <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>

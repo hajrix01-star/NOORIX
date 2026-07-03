@@ -19,10 +19,7 @@ export function BatchSupplierBookmarkButton({
         size="sm"
         onClick={() => onBookmark(row.supplierId)}
         title={title}
-        className="min-h-[40px] min-w-[40px]"
-        style={{
-          background: isOn ? 'var(--noorix-yellow-15)' : 'var(--noorix-bg-page)',
-        }}
+        className={`min-h-[40px] min-w-[40px] ${isOn ? 'bg-[var(--noorix-yellow-15)]' : 'bg-noorix-bg-page'}`}
         aria-pressed={isOn}
       >
         {isOn ? '★' : '☆'}
@@ -34,10 +31,7 @@ export function BatchSupplierBookmarkButton({
       type="button"
       onClick={() => onBookmark(row.supplierId)}
       title={title}
-      className="text-[14px] w-8 h-8 min-w-8 min-h-8 rounded-md shrink-0"
-      style={{
-        background: isOn ? 'var(--noorix-yellow-15)' : 'var(--noorix-bg-page)',
-      }}
+      className={`text-[14px] w-8 h-8 min-w-8 min-h-8 rounded-md shrink-0 ${isOn ? 'bg-[var(--noorix-yellow-15)]' : 'bg-noorix-bg-page'}`}
       aria-pressed={isOn}
     >
       {isOn ? '★' : '☆'}
@@ -124,15 +118,13 @@ export function BatchTaxToggleButton({ row, index, onUpdate, t, density = 'table
           type="button"
           variant="raw"
           onClick={() => onUpdate(index, 'isTaxable', active ? false : true)}
-          className="w-full min-h-[44px] text-[12px] font-bold"
+          className={`w-full min-h-[44px] text-[12px] font-bold rounded-lg border ${
+            active
+              ? 'border-noorix-amber bg-[var(--noorix-amber-8)] text-noorix-amber'
+              : 'border-noorix-border bg-noorix-bg-page text-noorix-muted'
+          }`}
           title={title}
           aria-pressed={active}
-          style={{
-            borderRadius: 8,
-            border: `1px solid ${!active ? 'var(--noorix-border)' : 'var(--noorix-accent-amber)'}`,
-            background: !active ? 'var(--noorix-bg-page)' : 'var(--noorix-amber-8)',
-            color: !active ? 'var(--noorix-text-muted)' : 'var(--noorix-accent-amber)',
-          }}
         >
           {label}
         </Button>
@@ -144,16 +136,13 @@ export function BatchTaxToggleButton({ row, index, onUpdate, t, density = 'table
     <Button
       type="button"
       onClick={() => onUpdate(index, 'isTaxable', active ? false : true)}
-      className="w-full text-[11px] font-bold whitespace-nowrap"
+      className={`w-full text-[11px] font-bold whitespace-nowrap py-[5px] px-1 rounded-[5px] border ${
+        active
+          ? 'border-noorix-amber bg-[var(--noorix-amber-8)] text-noorix-amber'
+          : 'border-noorix-border bg-noorix-bg-page text-noorix-muted'
+      }`}
       title={title}
       aria-pressed={active}
-      style={{
-        padding: '5px 4px',
-        borderRadius: 5,
-        border: `1px solid ${!active ? 'var(--noorix-border)' : 'var(--noorix-accent-amber)'}`,
-        background: !active ? 'var(--noorix-bg-page)' : 'var(--noorix-amber-8)',
-        color: !active ? 'var(--noorix-text-muted)' : 'var(--noorix-accent-amber)',
-      }}
     >
       {label}
     </Button>

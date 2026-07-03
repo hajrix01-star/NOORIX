@@ -146,26 +146,13 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         </div>
 
         {/* قناة البيع */}
-        <div style={{
-          padding: 14, borderRadius: 10,
-          border: `1px solid ${form.isSalesChannel ? '#16a34a44' : 'var(--noorix-border)'}`,
-          background: form.isSalesChannel ? 'var(--noorix-green-5)' : 'transparent',
-          transition: 'all 150ms',
-        }}>
-          <label className="flex items-center gap-10 cursor-pointer" style={{ marginBottom: form.isSalesChannel ? 12 : 0 }}>
+        <div className={`nx-toggle-panel${form.isSalesChannel ? ' nx-toggle-panel--green' : ''}`}>
+          <label className={`flex items-center gap-10 cursor-pointer${form.isSalesChannel ? ' mb-3' : ''}`}>
             <div
               onClick={() => set('isSalesChannel', !form.isSalesChannel)}
-              style={{
-                width: 40, height: 22, borderRadius: 999, position: 'relative', cursor: 'pointer', flexShrink: 0,
-                background: form.isSalesChannel ? 'var(--noorix-accent-green)' : 'var(--noorix-border)', transition: 'background 200ms',
-              }}
+              className={`nx-toggle-switch${form.isSalesChannel ? ' nx-toggle-switch--green' : ''}`}
             >
-              <div style={{
-                position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: 'white',
-                transition: 'right 200ms, left 200ms',
-                ...(form.isSalesChannel ? { right: 2, left: 'auto' } : { left: 2, right: 'auto' }),
-                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-              }} />
+              <div className={`nx-toggle-knob${form.isSalesChannel ? ' nx-toggle-knob--on' : ''}`} />
             </div>
             <span className="font-bold text-[13px]">{t('enableAsSalesChannel')}</span>
             {form.isSalesChannel && <span className="text-[12px] font-semibold text-noorix-green">{t('enabled')}</span>}
@@ -173,26 +160,13 @@ export default function VaultFormModal({ initial, onClose, onSave, isSaving, sav
         </div>
 
         {/* إظهار كطريقة سداد في المبيعات والمشتريات */}
-        <div style={{
-          padding: 14, borderRadius: 10,
-          border: `1px solid ${form.showAsPaymentMethod ? 'var(--noorix-border)' : '#f59e0b44'}`,
-          background: form.showAsPaymentMethod ? 'transparent' : 'var(--noorix-yellow-6)',
-          transition: 'all 150ms',
-        }}>
+        <div className={`nx-toggle-panel${form.showAsPaymentMethod ? '' : ' nx-toggle-panel--amber'}`}>
           <label className="flex items-center gap-10 cursor-pointer">
             <div
               onClick={() => setShowAsPaymentMethod(!form.showAsPaymentMethod)}
-              style={{
-                width: 40, height: 22, borderRadius: 999, position: 'relative', cursor: 'pointer', flexShrink: 0,
-                background: form.showAsPaymentMethod ? 'var(--noorix-accent-blue)' : 'var(--noorix-border)', transition: 'background 200ms',
-              }}
+              className={`nx-toggle-switch${form.showAsPaymentMethod ? ' nx-toggle-switch--blue' : ''}`}
             >
-              <div style={{
-                position: 'absolute', top: 2, width: 18, height: 18, borderRadius: '50%', background: 'white',
-                transition: 'right 200ms, left 200ms',
-                ...(form.showAsPaymentMethod ? { right: 2, left: 'auto' } : { left: 2, right: 'auto' }),
-                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-              }} />
+              <div className={`nx-toggle-knob${form.showAsPaymentMethod ? ' nx-toggle-knob--on' : ''}`} />
             </div>
             <span className="font-bold text-[13px]">{t('showAsPaymentMethodLabel')}</span>
             {!form.showAsPaymentMethod && (

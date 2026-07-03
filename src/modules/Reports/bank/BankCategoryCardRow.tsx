@@ -34,17 +34,13 @@ export function BankCategoryCardRow({
   const active = category.isActive !== false;
 
   return (
-    <div className="noorix-surface-card p-3.5" style={{ opacity: active ? 1 : 0.55 }}>
+    <div className={`noorix-surface-card p-3.5${active ? '' : ' opacity-[0.55]'}`}>
       <div className="flex gap-3 flex-wrap justify-between items-start">
         <div className="flex-1 min-w-0">
           <div className="flex items-center flex flex-wrap gap-2 mb-2">
             {index != null ? (
               <span
-                className="text-[11px] font-extrabold w-[26px] h-[26px] rounded-full inline-flex items-center justify-center"
-                style={{
-                  color: 'white',
-                  background: 'linear-gradient(135deg,var(--noorix-navy-light),var(--noorix-navy))',
-                }}
+                className="text-[11px] font-extrabold w-[26px] h-[26px] rounded-full inline-flex items-center justify-center text-white bg-gradient-to-br from-[var(--noorix-navy-light)] to-[var(--noorix-navy)]"
               >
                 {index}
               </span>
@@ -58,14 +54,9 @@ export function BankCategoryCardRow({
             </span>
             {category.transactionSide && category.transactionSide !== 'any' ? (
               <span
-                style={{
-                  fontSize: 10,
-                  padding: '2px 8px',
-                  borderRadius: 6,
-                  border: '1px solid var(--noorix-border)',
-                  background:
-                    category.transactionSide === 'debit' ? 'var(--noorix-red-8)' : 'var(--noorix-green-8)',
-                }}
+                className={`text-[10px] py-[2px] px-2 rounded-md border border-noorix-border ${
+                  category.transactionSide === 'debit' ? 'bg-[var(--noorix-red-8)]' : 'bg-[var(--noorix-green-8)]'
+                }`}
               >
                 {sideInfo.icon} {t(sideInfo.labelKey)}
               </span>
