@@ -132,6 +132,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     /** معرف فريد للجدول — لما يُمرَّر يُفعّل السحب لتغيير عرض الأعمدة + الحفظ في localStorage */
     tableId,
     frameClassName,
+    keyExtractor,
   } = props;
   const { t } = useTranslation();
   const dir = useUiDir();
@@ -332,6 +333,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     title || badge || (onSearchChange && showSearchInHeader) || (tableId && !showCards),
   );
   const hideableCols = normalizedColumns.filter((c: any) => c.key !== 'actions');
+  const rowKey = (row: any, index: number) => keyExtractor?.(row, index) ?? row.id ?? index;
 
   return (
     <div
@@ -449,7 +451,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             </div>
           ) : engineRows.map(({ original: row, index: i }) => (
             <div
-              key={row.id ?? i}
+              key={rowKey(row, i)}
               className={cn(
                 'nx-compact-row',
                 i % 2 === 1 ? 'nx-compact-row--stripe' : 'nx-compact-row--base',
@@ -470,7 +472,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             </div>
           ) : engineRows.map(({ original: row, index: i }) => (
             <div
-              key={row.id ?? i}
+              key={rowKey(row, i)}
               className={cn(
                 'nx-mobile-card-row px-4 py-3',
                 stripeMobileCards
@@ -557,7 +559,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   </td>
                 </tr>
               ) : engineRows.map(({ original: row, index: i }) => (
-                <React.Fragment key={row.id ?? i}>
+                <React.Fragment key={rowKey(row, i)}>
                 <tr
                   className={`nx-smart-row-vars border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
                   style={rowStyle(row, i)}
