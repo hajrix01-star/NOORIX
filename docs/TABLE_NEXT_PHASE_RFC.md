@@ -130,6 +130,19 @@ Do not start TanStack/SmartTable v2 implementation before these are true:
 | Compatibility tests exist | sorting, pagination, row numbers, footer, mobile cards |
 | Rollback plan exists | old `SmartTable` remains available during the compatibility pilot |
 
+## Post Inline-Style Closure Update
+
+The non-protected screen-level inline-style cleanup is closed. Remaining `style={{` usage is either UI core or protected domain work.
+
+| Group | Decision |
+|---|---|
+| `src/ui/SmartTable/**` | SmartTable v2 RFC/compatibility pilot only |
+| `src/ui/SimpleTable.tsx` | UI-core sizing contract |
+| `src/ui/MatrixTable.tsx` | Matrix/report boundary |
+| Reports/P&L/bank/purchases | protected domain tickets only |
+
+This means the next table phase should not chase raw counts. It should choose one family, define visual/behavioral acceptance, and keep rollback simple.
+
 ## Implementation Rules For Next PRs
 
 | Rule | Required |

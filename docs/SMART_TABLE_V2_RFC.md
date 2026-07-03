@@ -16,6 +16,19 @@ Keep `SmartTable` as the Noorix official table API. Evaluate TanStack Table as a
 | `SimpleTable` and `SmartTable` have tests tied to current behavior | direct refactor may break CI |
 | Financial/report tables need MatrixTable/PrintTable decisions first | avoids accidental financial layout regressions |
 
+## Current UI-Core Inline Baseline
+
+| Component | Remaining `style={{` | Decision |
+|---|---:|---|
+| `SmartTable` | 7 |
+| `SmartTable/buildFooterCells` | 1 |
+| `SimpleTable` | 4 |
+| `MatrixTable` | 5 |
+| `KebabMenu` | 1 |
+| `MetricCard` | 1 |
+
+These are central UI exceptions, not screen-level drift. Reducing them is allowed only through component API work with compatibility tests, not through one-off CSS moves.
+
 ## Required Capabilities Before v2
 
 | Capability | Needed For |
