@@ -1105,6 +1105,21 @@
   animation: shimmer 1.5s infinite;
 }
 
+.nx-smart-table-loading-spinner {
+  animation: noorix-spin 0.8s linear infinite;
+}
+
+.nx-smart-table-skeleton-line {
+  background: linear-gradient(
+    90deg,
+    var(--noorix-bg-muted) 25%,
+    var(--noorix-border-muted) 50%,
+    var(--noorix-bg-muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
 /* — Wrapper تمرير أفقي ? */
 .nx-table-scroll {
   overflow-x: auto;

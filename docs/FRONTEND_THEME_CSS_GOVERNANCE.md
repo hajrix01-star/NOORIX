@@ -8,9 +8,11 @@ Status: active guardrail.
 
 | File | Lines | @media | !important | @keyframes | CSS vars | var refs | color-mix |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `src/index.css` | 6952 | 51 | 215 | 12 | 233 | 895 | 155 |
-| `src/ui/ui.css` | 2363 | 6 | 22 | 8 | 12 | 295 | 1 |
+| `src/index.css` | 7016 | 51 | 215 | 12 | 233 | 908 | 155 |
+| `src/ui/ui.css` | 2378 | 6 | 22 | 8 | 12 | 298 | 1 |
 | `src/modules/SmartChat/SmartChatScreen.css` | 945 | 5 | 8 | 3 | 0 | 79 | 11 |
+
+Note: the 2026-07-03 batch moved static SmartTable loading styles and ThemePreview card variants from TSX inline style objects into governed CSS. This raises CSS line/var-reference limits while lowering the inline-style baseline.
 
 ## Rule
 
