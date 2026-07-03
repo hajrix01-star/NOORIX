@@ -93,6 +93,7 @@ export function OwnerFilterBar({
           </Button>
           {companyList.map((c, i) => {
             const isVisible = allSelected ? true : selectedCompanyIds.has(c.id);
+            const companyColor = COLORS[i % COLORS.length];
             return (
               <Button
                 key={c.id}
@@ -100,10 +101,10 @@ export function OwnerFilterBar({
                 className="owner-company-card flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-lg"
                 onClick={() => onToggleCompany(c.id)}
                 title={isVisible ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'عرض' : 'Show')}
-                style={{
-                  border: `1px solid ${isVisible ? COLORS[i % COLORS.length] : 'var(--noorix-border)'}`,
-                  background: isVisible ? `${COLORS[i % COLORS.length]}18` : 'var(--noorix-bg-muted)',
-                  color: isVisible ? COLORS[i % COLORS.length] : 'var(--noorix-text-muted)',
+                runtimeStyle={{
+                  border: `1px solid ${isVisible ? companyColor : 'var(--noorix-border)'}`,
+                  background: isVisible ? `${companyColor}18` : 'var(--noorix-bg-muted)',
+                  color: isVisible ? companyColor : 'var(--noorix-text-muted)',
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

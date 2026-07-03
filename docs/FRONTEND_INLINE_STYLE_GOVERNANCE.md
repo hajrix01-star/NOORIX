@@ -8,12 +8,12 @@ Status: active guardrail.
 
 | Metric | Count |
 |---|---:|
-| `style={{` total | 31 |
-| files with `style={{` | 17 |
+| `style={{` total | 29 |
+| files with `style={{` | 15 |
 | inside `src/ui` | 19 |
 | `src/ui` files | 6 |
-| outside `src/ui` | 12 |
-| outside `src/ui` files | 11 |
+| outside `src/ui` | 10 |
+| outside `src/ui` files | 9 |
 
 ## Top Files
 
@@ -23,8 +23,6 @@ Status: active guardrail.
 | `src/ui/MatrixTable.tsx` | 5 |
 | `src/ui/SimpleTable.tsx` | 4 |
 | `src/modules/Reports/GeneralPlTable.tsx` | 2 |
-| `src/components/UserMenu.tsx` | 1 |
-| `src/modules/Owner/components/OwnerFilterBar.tsx` | 1 |
 | `src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx` | 1 |
 | `src/modules/Reports/BankStatementMappingModal.tsx` | 1 |
 | `src/ui/SmartTable/buildFooterCells.tsx` | 1 |
@@ -44,6 +42,8 @@ The runtime visual primitives batch added `ColorSwatch` and `DataBar` to `src/ui
 The floating panel batch added `FloatingPanel` to `src/ui`, moving shared portal positioning styles out of AppHeader, product search, searchable option pickers, supplier select, and the account menu. This reduced the governed count from 39 to 34 and outside-UI usage from 20 to 15.
 
 The runtime surface batch added `RuntimeStyleBox` to `src/ui`, moving data-driven background, border, and color styles out of Dashboard calendar cells, Dashboard supplier tooltips, and Owner chart tooltips. This reduced the governed count from 34 to 31 and outside-UI usage from 15 to 12.
+
+The safe closure batch added constrained `Button` runtime style hooks for root-level CSS variables and visual states, removing the remaining non-protected screen-level inline styles from UserMenu and OwnerFilterBar. This reduced the governed count from 31 to 29 and outside-UI usage from 12 to 10.
 
 ## Rule
 

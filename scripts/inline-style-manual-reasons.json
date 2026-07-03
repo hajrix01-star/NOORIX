@@ -2,16 +2,6 @@
   "version": 1,
   "description": "Closure decisions for remaining React style={{ }} usages. Every file with remaining inline style usage must have a reason here.",
   "inlineStyleReasons": {
-    "src/components/UserMenu.tsx": {
-      "category": "runtime-css-var",
-      "decision": "leave",
-      "reason": "shared account trigger sets a runtime role color CSS variable."
-    },
-    "src/modules/Owner/components/OwnerFilterBar.tsx": {
-      "category": "chart-series-color",
-      "decision": "leave",
-      "reason": "owner filter chip color is derived from company/series data."
-    },
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": {
       "category": "table-print-alignment",
       "decision": "leave",
