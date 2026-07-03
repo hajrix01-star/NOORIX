@@ -14,9 +14,9 @@ import type { SalesShiftFormValue, SalesShiftValue } from '../constants/salesShi
 import { isSalesShiftValue, parseSalesShiftValue } from '../constants/salesShift';
 
 const CHANNEL_COLORS = {
-  cash: { bg: 'var(--noorix-green-8)', border: 'var(--noorix-accent-green)', icon: '??' },
-  bank: { bg: 'var(--noorix-blue-8)', border: 'var(--noorix-accent-blue)', icon: '??' },
-  app:  { bg: 'var(--noorix-violet-8)', border: 'var(--noorix-accent-violet)', icon: '??' },
+  cash: { icon: '??' },
+  bank: { icon: '??' },
+  app:  { icon: '??' },
 };
 
 export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = false, salesChannelsError = '', companyId, vatEnabled = false, vatRate = 0.15, onSaved, onClose }: any) {
@@ -166,10 +166,11 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
         ) : (
           <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
             {mergedSalesChannels.map((v: any) => {
-              const c = (CHANNEL_COLORS as Record<string, (typeof CHANNEL_COLORS)['cash']>)[String(v.type)] || CHANNEL_COLORS.cash;
+              const channelTone = ['cash', 'bank', 'app'].includes(String(v.type)) ? String(v.type) : 'cash';
+              const c = (CHANNEL_COLORS as Record<string, (typeof CHANNEL_COLORS)['cash']>)[channelTone] || CHANNEL_COLORS.cash;
               const amt = channelAmounts[v.id] ?? '';
               return (
-                <div key={v.id} className="py-[10px] px-3 rounded-[10px]" style={{ background: c.bg, border: `1px solid ${c.border}44` }}>
+                <div key={v.id} className={`py-[10px] px-3 rounded-[10px] nx-sales-channel-card nx-sales-channel-card--${channelTone}`}>
                   <div className="flex items-center gap-6 mb-1.5">
                     <span className="text-[16px]">{c.icon}</span>
                     <div className="flex-1 min-w-0">
@@ -188,8 +189,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
                     value={amt}
                     onChange={(e: any) => setChannelAmounts((p: any) => ({ ...p, [v.id]: e.target.value }))}
                     placeholder="0.00"
-                    className="w-full py-1.5 px-2 rounded-[7px] text-[15px] font-extrabold text-right"
-                    style={{ fontFamily: 'var(--noorix-font-numbers)', border: `1px solid ${c.border}55`, background: v.isLegacyDisabled ? 'var(--noorix-bg-muted)' : 'var(--noorix-bg-surface)', color: 'var(--noorix-text)' }}
+                    className={`w-full py-1.5 px-2 rounded-[7px] text-[15px] font-extrabold text-right nx-font-numbers nx-sales-channel-input nx-sales-channel-input--${channelTone}${v.isLegacyDisabled ? ' nx-sales-channel-input--legacy' : ''}`}
                   />
                 </div>
               );

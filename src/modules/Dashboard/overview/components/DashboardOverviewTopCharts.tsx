@@ -5,6 +5,12 @@ import { formatCompactNumber, formatNumber } from '../../../../utils/money';
 import { LoadingState, EmptyState } from '../../../../components/states';
 import { DashboardOverviewBreakdownTable } from './DashboardOverviewBreakdownTable';
 
+const TOP_SUPPLIER_LABEL_STYLE: React.CSSProperties = {
+  fontSize: 10,
+  fill: 'var(--noorix-text-muted)',
+  fontFamily: 'var(--noorix-font-numbers)',
+};
+
 type TopSuppliersRow = {
   name: string;
   value: number;
@@ -124,7 +130,7 @@ export function DashboardOverviewTopCharts({
                         { minFractionDigits: 0, maxFractionDigits: 0 },
                       )
                     }
-                    style={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-numbers)' }}
+                    style={TOP_SUPPLIER_LABEL_STYLE}
                   />
                 </Bar>
               </BarChart>

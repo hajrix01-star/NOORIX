@@ -448,8 +448,9 @@ export default function SalaryCalcTab() {
               {employeeAllowanceRows.map((row: any, idx: any) => (
                 <div
                   key={`${row.label}-${idx}`}
-                  className="grid gap-3 py-2.5 px-3 text-[12px] [grid-template-columns:1.2fr_1fr]"
-                  style={{ borderBottom: idx === employeeAllowanceRows.length - 1 ? 'none' : '1px solid var(--noorix-border)' }}
+                  className={`grid gap-3 py-2.5 px-3 text-[12px] [grid-template-columns:1.2fr_1fr] ${
+                    idx === employeeAllowanceRows.length - 1 ? '' : 'border-b border-noorix-border'
+                  }`}
                 >
                   <div className="text-noorix-muted">{row.label}</div>
                   <div className="font-semibold text-right tabular-nums">{hrFmt(row.amount)}</div>

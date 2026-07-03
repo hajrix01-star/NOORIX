@@ -24,8 +24,7 @@ export function BankAnalysisDailyTooltip({ active, payload, label }: DailyToolti
         سحوبات: <FmtNum n={wit} className="nx-num-bold" />
       </div>
       <div
-        className="font-bold nx-recharts-tooltip-footer"
-        style={{ color: dep - wit >= 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-rose)' }}
+        className={`font-bold nx-recharts-tooltip-footer ${dep - wit >= 0 ? 'text-noorix-green' : 'text-[var(--noorix-accent-rose)]'}`}
       >
         الصافي: <FmtNum n={dep - wit} className="inline-block ltr" />
       </div>

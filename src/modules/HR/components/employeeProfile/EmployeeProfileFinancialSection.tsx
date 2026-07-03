@@ -109,7 +109,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
                 {row.notes && <span className="nx-cr__sub">{row.notes}</span>}
               </div>
               <div className="nx-cr__line2-end">
-                <span className="nx-cr__amount" style={{ color: row.amount < 0 ? 'var(--noorix-accent-red)' : undefined }}>{hrFmt(row.amount)} <span className="nx-sar">SR</span></span>
+                <span className={`nx-cr__amount ${row.amount < 0 ? 'text-noorix-red' : ''}`}>{hrFmt(row.amount)} <span className="nx-sar">SR</span></span>
               </div>
             </div>
           </div>

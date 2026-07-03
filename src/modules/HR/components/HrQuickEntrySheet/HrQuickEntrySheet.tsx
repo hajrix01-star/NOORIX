@@ -150,24 +150,12 @@ export function HrQuickEntrySheet({ mode, companyId, onClose, onRecorded, varian
           <div className="text-center p-6 text-noorix-muted">{isAr ? 'جاري التحميل...' : 'Loading...'}</div>
         )}
         {!st.confirmStep && st.formError && (
-          <div
-            className="mb-4 p-3 rounded-lg text-[14px]"
-            style={{
-              background: 'var(--noorix-red-8)',
-              color: 'var(--noorix-accent-red)',
-            }}
-          >
+          <div className="mb-4 p-3 rounded-lg text-[14px] bg-[var(--noorix-red-8)] text-noorix-red">
             {st.formError}
           </div>
         )}
         {!st.confirmStep && mode === 'increase' && compensationSnapshotsError && (
-          <div
-            className="mb-4 p-3 rounded-lg text-[14px]"
-            style={{
-              background: 'var(--noorix-red-8)',
-              color: 'var(--noorix-accent-red)',
-            }}
-          >
+          <div className="mb-4 p-3 rounded-lg text-[14px] bg-[var(--noorix-red-8)] text-noorix-red">
             {compensationSnapshotsError instanceof Error ? compensationSnapshotsError.message : t('loadingError')}
           </div>
         )}

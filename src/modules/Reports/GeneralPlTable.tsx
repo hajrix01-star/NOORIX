@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button, cn } from '../../ui';
 import {
-  PERCENT_COLOR,
   amountText,
   percentText,
   displayLabel,
@@ -43,11 +42,10 @@ export default function GeneralPlTable({
   const stickyEdge = lang === 'en' ? 'left' : 'right';
   const isMonthlyMode = selectedMonthNumber != null;
   const visibleMonthColumns = isMonthlyMode ? [] : (report?.months ?? []);
-  const minWidth: number | string = isMobile ? '100%' : isMonthlyMode ? 760 : 1320;
 
   return (
     <div className="nx-pl-table-scroll">
-      <table className="nx-pl-table w-full table-fixed border-collapse" style={{ minWidth }}>
+      <table className={cn('nx-pl-table w-full table-fixed border-collapse', plMinWidthClass(isMobile, isMonthlyMode))}>
         <colgroup>
           <col className={isMobile ? 'w-[46%]' : isMonthlyMode ? 'w-[340px]' : 'w-[260px]'} />
           {isMonthlyMode && <col className={isMobile ? 'w-[27%]' : 'w-[210px]'} />}
@@ -94,7 +92,6 @@ export default function GeneralPlTable({
             const collapseKey = isGroup ? row.groupKey : row.collapseKey;
             const isCollapsed = !!collapseKey && !!collapsedGroups[String(collapseKey)];
             const canCollapse = isGroup || isCategory;
-            const indent = (row.depth || 0) * 22;
             const rowTone = getRowTone(row);
 
             return (
@@ -126,8 +123,9 @@ export default function GeneralPlTable({
                         'flex w-full min-w-0 cursor-pointer items-center gap-2 border-0 bg-transparent p-0 font-primary',
                         lang === 'en' ? 'text-left' : 'text-right',
                         isCategory ? 'font-bold' : 'font-extrabold',
+                        plAmountColorClass(row, rowTone, isSummary, row.total),
+                        plIndentClass(row.depth || 0, 0),
                       )}
-                      style={{ color: rowTone.accent, paddingInlineStart: indent }}
                       title={`${displayLabel(row, lang)} - ${isCollapsed ? t('expand') : t('collapse')}`}
                     >
                       <span className="nx-pl-table__toggle" aria-hidden>
@@ -152,15 +150,9 @@ export default function GeneralPlTable({
                         lang === 'en' ? 'text-left' : 'text-right',
                         isSummary ? 'font-extrabold' : 'font-medium',
                         canOpenItem ? 'cursor-pointer' : 'cursor-default',
+                        plAmountColorClass(row, rowTone, isSummary, row.total),
+                        plIndentClass(row.depth || 0, row.rowType === 'item' ? 20 : 0),
                       )}
-                      style={{
-                        color: isSummary
-                          ? rowTone.accent
-                          : row.groupKey === 'purchases' || row.groupKey === 'expenses'
-                            ? rowTone.accent
-                            : 'var(--noorix-text)',
-                        paddingInlineStart: indent + (row.rowType === 'item' ? 20 : 0),
-                      }}
                       title={canOpenItem ? `${displayLabel(row, lang)} - ${t('reportOpenTrend')}` : displayLabel(row, lang)}
                     >
                       {row.rowType === 'item' && <span className="w-3 shrink-0 text-sm leading-none text-noorix-muted">-</span>}
@@ -171,10 +163,10 @@ export default function GeneralPlTable({
 
                 {isMonthlyMode && (
                   <td
-                    className="nx-pl-table__cell nx-pl-table__cell--amount text-center font-bold nx-font-numbers"
-                    style={{
-                      color: resolveAmountColor(row, rowTone, isSummary, getContextAmount(row, selectedMonthNumber)),
-                    }}
+                    className={cn(
+                      'nx-pl-table__cell nx-pl-table__cell--amount text-center font-bold nx-font-numbers',
+                      plAmountColorClass(row, rowTone, isSummary, getContextAmount(row, selectedMonthNumber)),
+                    )}
                   >
                     <Button
                       variant="raw"
@@ -190,7 +182,7 @@ export default function GeneralPlTable({
                       }
                     >
                       <div className="nx-pl-table__amount">{amountText(getContextAmount(row, selectedMonthNumber))}</div>
-                      <div className="nx-pl-table__percent" style={{ color: PERCENT_COLOR }}>
+                      <div className="nx-pl-table__percent">
                         {percentText(getContextPercent(row, selectedMonthNumber))}
                       </div>
                     </Button>
@@ -206,11 +198,11 @@ export default function GeneralPlTable({
                       <Button
                         variant="raw"
                         type="button"
-                        className="nx-pl-table__amount-btn block w-full cursor-pointer border-0 bg-transparent p-0"
-                        style={{
-                          color: resolveAmountColor(row, rowTone, isSummary, value),
-                          fontWeight: isSummary || isGroup ? 800 : isCategory ? 700 : 600,
-                        }}
+                        className={cn(
+                          'nx-pl-table__amount-btn block w-full cursor-pointer border-0 bg-transparent p-0',
+                          plAmountColorClass(row, rowTone, isSummary, value),
+                          isSummary || isGroup ? 'font-extrabold' : isCategory ? 'font-bold' : 'font-semibold',
+                        )}
                         onClick={() =>
                           onOpenDetail({
                             month: index + 1,
@@ -223,7 +215,7 @@ export default function GeneralPlTable({
                         <div className={cn('nx-pl-table__amount', isGroup || isSummary ? 'text-[13px]' : 'text-xs')}>
                           {amountText(value)}
                         </div>
-                        <div className="nx-pl-table__percent" style={{ color: PERCENT_COLOR }}>
+                        <div className="nx-pl-table__percent">
                           {percentText(row.percentOfSalesMonths?.[index])}
                         </div>
                       </Button>
@@ -231,15 +223,15 @@ export default function GeneralPlTable({
                   ))}
 
                 <td
-                  className="nx-pl-table__cell nx-pl-table__cell--total text-end font-extrabold nx-font-numbers"
-                  style={{
-                    color: resolveAmountColor(row, rowTone, isSummary, row.total),
-                  }}
+                  className={cn(
+                    'nx-pl-table__cell nx-pl-table__cell--total text-end font-extrabold nx-font-numbers',
+                    plAmountColorClass(row, rowTone, isSummary, row.total),
+                  )}
                 >
                   <div className={cn('nx-pl-table__amount', isGroup || isSummary ? 'text-sm' : 'text-[13px]')}>
                     {amountText(row.total)}
                   </div>
-                  <div className="nx-pl-table__percent" style={{ color: PERCENT_COLOR }}>
+                  <div className="nx-pl-table__percent">
                     {percentText(row.percentOfSalesYear)}
                   </div>
                 </td>
@@ -252,11 +244,32 @@ export default function GeneralPlTable({
   );
 }
 
-function resolveAmountColor(row: any, rowTone: any, isSummary: boolean, value: unknown) {
+function plMinWidthClass(isMobile: boolean, isMonthlyMode: boolean) {
+  if (isMobile) return 'min-w-full';
+  return isMonthlyMode ? 'min-w-[760px]' : 'min-w-[1320px]';
+}
+
+function plIndentClass(depth: number, extra: number) {
+  const px = Math.min(Math.max(depth * 22 + extra, 0), 108);
+  if (px <= 0) return 'nx-pl-indent-0';
+  if (px <= 20) return 'nx-pl-indent-20';
+  if (px <= 22) return 'nx-pl-indent-22';
+  if (px <= 42) return 'nx-pl-indent-42';
+  if (px <= 44) return 'nx-pl-indent-44';
+  if (px <= 64) return 'nx-pl-indent-64';
+  if (px <= 66) return 'nx-pl-indent-66';
+  if (px <= 86) return 'nx-pl-indent-86';
+  if (px <= 88) return 'nx-pl-indent-88';
+  return 'nx-pl-indent-108';
+}
+
+function plAmountColorClass(row: any, rowTone: any, isSummary: boolean, value: unknown) {
   if (isSummary) {
-    return Number(value || 0) >= 0 ? 'var(--noorix-accent-blue)' : 'var(--noorix-accent-red)';
+    return Number(value || 0) >= 0 ? 'text-noorix-blue' : 'text-noorix-red';
   }
-  if (Number(value || 0) < 0) return 'var(--noorix-accent-red)';
-  if (row.groupKey === 'purchases' || row.groupKey === 'expenses') return rowTone.accent;
-  return 'var(--noorix-text)';
+  if (Number(value || 0) < 0) return 'text-noorix-red';
+  if (row.groupKey === 'purchases') return 'text-noorix-red';
+  if (row.groupKey === 'expenses') return 'text-noorix-amber';
+  if (rowTone?.accent === 'var(--noorix-text)') return 'text-noorix-text';
+  return 'text-noorix-blue';
 }

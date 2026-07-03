@@ -5,7 +5,7 @@
  *
  * Usage:
  *   const { accent, bg, border } = CARD_COLORS.sales;
- *   <div style={{ background: bg, border: `1px solid ${border}`, color: accent }} />
+ *   Bind these values through a governed component class or CSS custom property.
  */
 
 export const CARD_BORDER_RADIUS = 14;

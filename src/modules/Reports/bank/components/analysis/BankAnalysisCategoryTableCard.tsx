@@ -3,7 +3,7 @@ import type { MoneyLang } from '../../../../../utils/money';
 import { formatNumber } from '../../../../../utils/money';
 import { FmtNum, SimpleTable } from '../../../../../ui';
 import type { AnalysisCardId, CategoryTableRow } from '../../bankAnalysisTab.types';
-import { ANALYSIS_CARD_COLORS } from '../../bankAnalysisConstants';
+import { analysisCardColorClass } from '../../bankAnalysisConstants';
 import { BankAnalysisCardShell, BankAnalysisProgressBar } from './BankAnalysisCardShell';
 
 type CategoryRow = CategoryTableRow & { id: string };
@@ -56,10 +56,7 @@ export function BankAnalysisCategoryTableCard({
             cellClassName: 'nx-td-pad-9',
             render: (value, _row, index) => (
               <div className="flex items-center gap-7">
-                <span
-                  className="nx-bank-dot-8"
-                  style={{ background: ANALYSIS_CARD_COLORS[index % ANALYSIS_CARD_COLORS.length] }}
-                />
+                <span className={`nx-bank-dot-8 ${analysisCardColorClass(index)}`} />
                 {String(value)}
               </div>
             ),

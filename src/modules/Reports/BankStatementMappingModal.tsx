@@ -23,13 +23,13 @@ import { bankKeys } from '../../services/queryKeys';
 
 /** مطابق COLUMN_TYPES في Base44 (بدون amount) */
 const COLUMN_FIELD_DEFS = [
-  { key: 'dateCol', labelKey: 'bankMapColDate', required: true, badgeBg: 'var(--noorix-blue-18)', badgeColor: 'var(--noorix-accent-blue)' },
-  { key: 'descCol', labelKey: 'bankMapColDescription', required: true, badgeBg: 'var(--noorix-violet-15)', badgeColor: 'var(--noorix-accent-violet)' },
-  { key: 'debitCol', labelKey: 'bankMapColDebit', required: true, badgeBg: 'var(--noorix-red-15)', badgeColor: 'var(--noorix-accent-red)' },
-  { key: 'creditCol', labelKey: 'bankMapColCredit', required: true, badgeBg: 'var(--noorix-green-15)', badgeColor: 'var(--noorix-accent-green)' },
-  { key: 'balanceCol', labelKey: 'bankMapColBalance', required: false, badgeBg: 'var(--noorix-amber-18)', badgeColor: 'var(--noorix-accent-amber)' },
-  { key: 'refCol', labelKey: 'bankMapColReference', required: false, badgeBg: 'var(--noorix-muted-15)', badgeColor: 'var(--noorix-text)' },
-  { key: 'notesCol', labelKey: 'bankMapColNotes', required: false, badgeBg: 'var(--noorix-violet-15)', badgeColor: 'var(--noorix-accent-violet)' },
+  { key: 'dateCol', labelKey: 'bankMapColDate', required: true, badgeClass: 'bank-map-badge--date', cellClass: 'bank-map-cell--date' },
+  { key: 'descCol', labelKey: 'bankMapColDescription', required: true, badgeClass: 'bank-map-badge--desc', cellClass: 'bank-map-cell--desc' },
+  { key: 'debitCol', labelKey: 'bankMapColDebit', required: true, badgeClass: 'bank-map-badge--debit', cellClass: 'bank-map-cell--debit' },
+  { key: 'creditCol', labelKey: 'bankMapColCredit', required: true, badgeClass: 'bank-map-badge--credit', cellClass: 'bank-map-cell--credit' },
+  { key: 'balanceCol', labelKey: 'bankMapColBalance', required: false, badgeClass: 'bank-map-badge--balance', cellClass: 'bank-map-cell--balance' },
+  { key: 'refCol', labelKey: 'bankMapColReference', required: false, badgeClass: 'bank-map-badge--ref', cellClass: 'bank-map-cell--ref' },
+  { key: 'notesCol', labelKey: 'bankMapColNotes', required: false, badgeClass: 'bank-map-badge--notes', cellClass: 'bank-map-cell--notes' },
 ];
 
 function normalizeDateForInput(v: any) {
@@ -366,11 +366,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
                         <div className="font-semibold">{h.label}</div>
                         {badge ? (
                           <div
-                            className="mt-1 text-[10px] font-bold py-px px-1.5 rounded inline-block"
-                            style={{
-                              background: badge.badgeBg,
-                              color: badge.badgeColor,
-                            }}
+                            className={`mt-1 text-[10px] font-bold py-px px-1.5 rounded inline-block ${badge.badgeClass}`}
                           >
                             {t(badge.labelKey)}
                           </div>
@@ -389,11 +385,7 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
                       return (
                         <td
                           key={h.index}
-                          className="p-1.5 max-w-[140px]"
-                          style={{
-                            fontWeight: badge ? 600 : 400,
-                            background: badge ? badge.badgeBg.replace('0.15', '0.06').replace('0.18', '0.08') : undefined,
-                          }}
+                          className={`p-1.5 max-w-[140px] ${badge ? `font-semibold ${badge.cellClass}` : 'font-normal'}`}
                         >
                           {formatCell(row[h.index])}
                         </td>

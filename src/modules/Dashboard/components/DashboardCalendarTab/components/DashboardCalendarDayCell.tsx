@@ -60,6 +60,24 @@ export default function DashboardCalendarDayCell({
     else if (special && specialColor) cellBorder = `2px solid ${specialColor}`;
   } else if (special && specialColor) cellBorder = `2px solid ${specialColor}`;
   const hasNote = dayNotes[dateStr];
+  const amountClass =
+    amount <= 0
+      ? 'text-noorix-muted'
+      : special
+        ? 'text-noorix-text'
+        : ratioVsTarget != null && ratioVsTarget >= 1.2
+          ? 'text-[var(--color-nx-sales)]'
+          : ratioVsTarget != null && ratioVsTarget >= 1
+            ? 'text-[var(--color-nx-profit)]'
+            : ratioVsTarget != null && ratioVsTarget >= 0.8
+              ? 'text-[var(--noorix-accent-amber)]'
+              : ratioVsTarget != null
+                ? 'text-[var(--color-nx-expenses)]'
+                : 'text-[var(--color-nx-profit)]';
+  const achievedClass =
+    ratioVsTarget != null && ratioVsTarget >= 1.2
+      ? 'text-[var(--color-nx-sales)]'
+      : 'text-[var(--color-nx-profit)]';
 
   return (
     <div
@@ -78,32 +96,13 @@ export default function DashboardCalendarDayCell({
     >
       <span className="text-[12px] max-md:text-[10px] font-bold text-noorix-text leading-none">{day}</span>
       <span
-        className="text-[11px] max-md:text-[9px] nx-font-numbers leading-tight"
-        style={{
-          color:
-            amount <= 0
-              ? 'var(--noorix-text-muted)'
-              : special
-                ? 'var(--noorix-text)'
-                : ratioVsTarget != null && ratioVsTarget >= 1.2
-                  ? 'var(--color-nx-sales)'
-                  : ratioVsTarget != null && ratioVsTarget >= 1
-                    ? 'var(--color-nx-profit)'
-                    : ratioVsTarget != null && ratioVsTarget >= 0.8
-                      ? 'var(--noorix-accent-amber)'
-                      : ratioVsTarget != null
-                        ? 'var(--color-nx-expenses)'
-                        : 'var(--color-nx-profit)',
-        }}
+        className={`text-[11px] max-md:text-[9px] nx-font-numbers leading-tight ${amountClass}`}
       >
         {fmt(amount, 0)}
       </span>
       {achieved && (
         <span
-          className="text-[8px]"
-          style={{
-            color: ratioVsTarget != null && ratioVsTarget >= 1.2 ? 'var(--color-nx-sales)' : 'var(--color-nx-profit)',
-          }}
+          className={`text-[8px] ${achievedClass}`}
         >
           ✓
         </span>

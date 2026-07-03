@@ -255,8 +255,8 @@ export default function TaxReportTab() {
                   </td>
                 </tr>
                 {OUTPUT_ROWS.map((r: any) => (
-                  <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
-                    <td className="border-b border-noorix-border py-[10px] px-3" style={{ fontWeight: r.isTotal ? 700 : 500 }}>
+                  <tr key={r.key} className={r.isTotal ? 'bg-[var(--noorix-navy-4)]' : undefined}>
+                    <td className={`border-b border-noorix-border py-[10px] px-3 ${r.isTotal ? 'font-bold' : 'font-medium'}`}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
                     <td className="text-center border-b border-noorix-border py-2 px-3">
@@ -276,8 +276,8 @@ export default function TaxReportTab() {
                   </td>
                 </tr>
                 {INPUT_ROWS.map((r: any) => (
-                  <tr key={r.key} style={{ background: r.isTotal ? 'var(--noorix-navy-4)' : undefined }}>
-                    <td className="border-b border-noorix-border py-[10px] px-3" style={{ fontWeight: r.isTotal ? 700 : 500 }}>
+                  <tr key={r.key} className={r.isTotal ? 'bg-[var(--noorix-navy-4)]' : undefined}>
+                    <td className={`border-b border-noorix-border py-[10px] px-3 ${r.isTotal ? 'font-bold' : 'font-medium'}`}>
                       {lang === 'ar' ? r.labelAr : r.labelEn}
                     </td>
                     <td className="text-center border-b border-noorix-border py-2 px-3">
@@ -322,7 +322,7 @@ export default function TaxReportTab() {
                 </tr>
                 <tr className="bg-[var(--noorix-blue-8)] border-t-2 border-noorix-blue">
                   <td className="font-extrabold p-3">{lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td>
-                  <td colSpan={3} className="text-end nx-font-numbers font-extrabold p-3" style={{ color: netPayable >= 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-accent-green)' }}>
+                  <td colSpan={3} className={`text-end nx-font-numbers font-extrabold p-3 ${netPayable >= 0 ? 'text-noorix-red' : 'text-noorix-green'}`}>
                     <FmtNum n={netPayable} tax /> <span className="nx-sar">SR</span> {netPayable >= 0 ? (lang === 'ar' ? '(مستحقة)' : '(payable)') : (lang === 'ar' ? '(مطالب بها)' : '(refundable)')}
                   </td>
                 </tr>

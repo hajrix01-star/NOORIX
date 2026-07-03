@@ -85,13 +85,13 @@ export default function BankStatementPieDrilldownModal({
               render: (v: any) => <div className="truncate text-noorix-text" title={v}>{v}</div> },
             { key: 'debit', label: t('bankStatementColDebit'), numeric: true,
               render: (v: any) => (
-                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? 'var(--noorix-accent-red)' : 'var(--noorix-text-muted)' }}>
+                <span className={`nx-ltr ${Number(v) > 0 ? 'font-bold text-noorix-red' : 'font-normal text-noorix-muted'}`}>
                   {Number(v) > 0 ? fmt(Number(v)) : '—'}
                 </span>
               ) },
             { key: 'credit', label: t('bankStatementColCredit'), numeric: true,
               render: (v: any) => (
-                <span className="nx-ltr" style={{ fontWeight: Number(v) > 0 ? 700 : 400, color: Number(v) > 0 ? 'var(--noorix-accent-green)' : 'var(--noorix-text-muted)' }}>
+                <span className={`nx-ltr ${Number(v) > 0 ? 'font-bold text-noorix-green' : 'font-normal text-noorix-muted'}`}>
                   {Number(v) > 0 ? fmt(Number(v)) : '—'}
                 </span>
               ) },

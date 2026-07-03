@@ -36,17 +36,17 @@ export function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, la
     {
       label: t('net'),
       value: invoice.netAmount != null ? `${fmt(invoice.netAmount)} SR` : '—',
-      highlight: 'var(--noorix-accent-green)',
+      tone: 'green',
     },
     {
       label: t('tax'),
       value: invoice.taxAmount != null ? `${fmt(invoice.taxAmount)} SR` : '—',
-      highlight: 'var(--noorix-accent-amber)',
+      tone: 'amber',
     },
     {
       label: t('total'),
       value: invoice.totalAmount != null ? `${fmt(invoice.totalAmount)} SR` : '—',
-      highlight: 'var(--noorix-accent-blue)',
+      tone: 'blue',
       bold: true,
     },
   ].filter(Boolean);
@@ -66,16 +66,19 @@ export function InvoiceViewModal({ invoice, companyId, showToast, onClose, t, la
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-2.5 p-5">
-        {fields.map(({ label, value, highlight, bold }: any) => (
+        {fields.map(({ label, value, tone, bold }: any) => (
           <div key={label} className="bg-noorix-bg-muted py-[10px] px-3 rounded-[10px] border border-noorix-border">
             <div className="text-noorix-muted mb-1 text-[10px] uppercase tracking-[0.05em]">{label}</div>
             <div
-              className="text-[14px]"
-              style={{
-                fontWeight: bold ? 700 : 600,
-                color: highlight || 'var(--noorix-text)',
-                fontFamily: 'var(--noorix-font-numbers)',
-              }}
+              className={`text-[14px] nx-font-numbers ${bold ? 'font-bold' : 'font-semibold'} ${
+                tone === 'green'
+                  ? 'text-noorix-green'
+                  : tone === 'amber'
+                    ? 'text-noorix-amber'
+                    : tone === 'blue'
+                      ? 'text-noorix-blue'
+                      : 'text-noorix-text'
+              }`}
             >
               {value}
             </div>
