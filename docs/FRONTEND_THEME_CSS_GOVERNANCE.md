@@ -8,8 +8,8 @@ Status: active guardrail.
 
 | File | Lines | @media | !important | @keyframes | CSS vars | var refs | color-mix |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `src/index.css` | 6894 | 51 | 214 | 12 | 237 | 975 | 174 |
-| `src/ui/ui.css` | 2378 | 6 | 22 | 8 | 12 | 298 | 1 |
+| `src/index.css` | 6839 | 51 | 214 | 12 | 237 | 975 | 174 |
+| `src/ui/ui.css` | 2307 | 6 | 22 | 8 | 12 | 298 | 1 |
 | `src/modules/SmartChat/SmartChatScreen.css` | 945 | 5 | 8 | 3 | 0 | 79 | 11 |
 
 Note: the 2026-07-03 batch moved static SmartTable loading styles and ThemePreview card variants from TSX inline style objects into governed CSS. This raises CSS line/var-reference limits while lowering the inline-style baseline.
@@ -23,6 +23,8 @@ Note: the closure batch compacted the newest governed helper classes, reducing `
 Note: the follow-up safe compaction batch compacted bank mapping, theme preview, vault, sales-channel, and helper CSS declarations, reducing `src/index.css` from 7177 to 7066 lines without changing selectors or visual behavior.
 
 Note: the next safe compaction batch compacted scoped HR document preview, batch-print, toggle, bank mapping, and sales-channel helper declarations, reducing `src/index.css` from 7066 to 6894 lines without changing selectors or visual behavior.
+
+Note: the 2026-07-03 CSS compaction batch compacted UserMenu, section header, vault selector, and vault icon helper declarations, reducing `src/index.css` from 6894 to 6839 lines and `src/ui/ui.css` from 2378 to 2307 lines without changing selectors or visual behavior.
 
 ## Rule
 

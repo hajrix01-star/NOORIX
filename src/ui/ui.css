@@ -1651,100 +1651,29 @@
 }
 
 /* رأس قسم (header + badge) داخل بطاقة الجدول */
-.nx-section-header {
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--noorix-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+.nx-section-header { padding: 16px 24px; border-bottom: 1px solid var(--noorix-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 
-.nx-section-header__title {
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--noorix-text);
-}
+.nx-section-header__title { font-weight: 700; font-size: 15px; color: var(--noorix-text); }
 
-.nx-section-header__actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+.nx-section-header__actions { display: flex; gap: 8px; align-items: center; }
 
 /* SmartTable مدمج داخل noorix-surface-card — يحذف الإطار الداخلي المزدوج (أي عمق) */
-.noorix-surface-card .noorix-table-frame {
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
-}
+.noorix-surface-card .noorix-table-frame { border: none; box-shadow: none; border-radius: 0; }
 
 /* ???????????????????????????????????????????????????????????
    14. Vault Type Selector — شبكة اختيار نوع الخزينة
    ??????????????????????????????????????????????????????????? */
-.nx-vault-type-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 10px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 2px solid var(--noorix-border);
-  background: transparent;
-  color: var(--noorix-text-muted);
-  cursor: pointer;
-  transition: border-color 150ms, background 150ms, color 150ms;
-  min-height: unset;
-  height: auto;
-  width: 100%;
-}
+.nx-vault-type-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; border: 2px solid var(--noorix-border); background: transparent; color: var(--noorix-text-muted); cursor: pointer; transition: border-color 150ms, background 150ms, color 150ms; min-height: unset; height: auto; width: 100%; }
 
-.nx-vault-type-btn:hover:not(:disabled) {
-  border-color: var(--noorix-accent-blue);
-  color: var(--noorix-accent-blue);
-}
+.nx-vault-type-btn:hover:not(:disabled) { border-color: var(--noorix-accent-blue); color: var(--noorix-accent-blue); }
 
-.nx-vault-type-btn .nx-btn__label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
+.nx-vault-type-btn .nx-btn__label { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
-.nx-vault-icon-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 10px;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--noorix-border);
-  background: var(--noorix-bg-muted);
-}
+.nx-vault-icon-picker { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; padding: 14px; border-radius: 12px; border: 1px solid var(--noorix-border); background: var(--noorix-bg-muted); }
 
-.nx-vault-icon-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 800;
-  background: var(--noorix-bg-surface);
-  color: var(--noorix-text);
-  transition: all 120ms;
-  min-height: unset;
-  padding: 0;
-}
+.nx-vault-icon-btn { width: 38px; height: 38px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; font-size: 15px; font-weight: 800; background: var(--noorix-bg-surface); color: var(--noorix-text); transition: all 120ms; min-height: unset; padding: 0; }
 
-.nx-vault-icon-btn:hover:not(:disabled) {
-  background: var(--noorix-blue-8);
-  border-color: var(--noorix-accent-blue);
-}
+.nx-vault-icon-btn:hover:not(:disabled) { background: var(--noorix-blue-8); border-color: var(--noorix-accent-blue); }
 
 .nx-vault-icon-btn--active {
   background: rgba(37,99,235,0.15) !important;
