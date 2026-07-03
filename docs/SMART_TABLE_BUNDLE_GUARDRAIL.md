@@ -12,11 +12,12 @@ TanStack remains accepted only as the hidden `SmartTable` row/column engine. Do 
 
 | Artifact | Raw | Gzip | Notes |
 |---|---:|---:|---|
-| main app chunk `assets/index-*.js` | 458.76 kB | 149.65 kB | includes hidden TanStack adapter plus controlled sorting/pagination state and navigation guards |
+| main app chunk `assets/index-*.js` | 458.95 kB | 149.69 kB | includes hidden TanStack adapter plus controlled sorting/pagination state, navigation guards, and isolated column-visibility panel |
 | `vendor-*.js` | 165.74 kB | 53.96 kB | unchanged shared vendor chunk |
 | `query-*.js` | 45.63 kB | 13.80 kB | unchanged query chunk |
-| `src/ui/SmartTable/SmartTable.tsx` source size | 625 lines | n/a | pagination UI extracted; keep reducing central file responsibility |
+| `src/ui/SmartTable/SmartTable.tsx` source size | 519 lines | n/a | pagination UI and column visibility UI extracted; keep reducing central file responsibility |
 | `src/ui/SmartTable/SmartTablePagination.tsx` source size | 51 lines | n/a | isolated internal pagination bar |
+| `src/ui/SmartTable/SmartTableColumnVisibility.tsx` source size | 147 lines | n/a | isolated internal column visibility button, portal, and placement logic |
 | `src/ui/SmartTable/tableEngine.ts` source size | 178 lines | n/a | TanStack adapter state and navigation guards now centralized here |
 
 ## Guardrail
