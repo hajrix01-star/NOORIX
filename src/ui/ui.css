@@ -2323,4 +2323,41 @@
   display: inline-block;
 }
 
+.nx-stat-card-icon {
+  color: var(--nx-stat-accent, var(--noorix-accent-blue));
+  background: var(--nx-stat-bg, var(--noorix-blue-8));
+}
+.nx-stat-card-value {
+  color: var(--nx-stat-accent, var(--noorix-accent-blue));
+}
+.nx-badge {
+  color: var(--nx-badge-color, var(--noorix-text-muted));
+  background: var(--nx-badge-bg, var(--noorix-muted-10));
+}
+.nx-badge-dot {
+  background: var(--nx-badge-color, var(--noorix-text-muted));
+}
+.nx-button-spinner,
+.nx-spinner {
+  animation: noorix-spin 0.7s linear infinite;
+}
+.nx-spinner {
+  width: var(--nx-spinner-size, 24px);
+  height: var(--nx-spinner-size, 24px);
+  border: var(--nx-spinner-border-width, 3px) solid var(--nx-spinner-border, var(--noorix-blue-20));
+  border-top-color: var(--nx-spinner-top, var(--noorix-accent-blue));
+}
+.nx-modal-backdrop-animate {
+  animation: nx-backdrop-in 0.2s ease;
+}
+.nx-drawer-backdrop-animate {
+  animation: nx-backdrop-in 0.12s ease;
+}
+.metric-card-root {
+  opacity: var(--metric-card-opacity, 1);
+}
+.metric-card-bar {
+  background: var(--metric-card-bar, var(--noorix-accent-blue));
+}
+
 } /* end @layer components */

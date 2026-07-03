@@ -33,7 +33,7 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
     <div className="grid gap-4">
       <p className="text-[13px] text-noorix-muted m-0">{t('bankSalesCompareDescServer')}</p>
 
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+      <div className="bank-sales-compare-grid grid gap-3">
         <MetricCard color="var(--color-nx-profit)">
           <MetricCard.Header label={t('bankStatementBankCredits')} />
           <MetricCard.Value value={<FmtNum n={bankCredits} />} />

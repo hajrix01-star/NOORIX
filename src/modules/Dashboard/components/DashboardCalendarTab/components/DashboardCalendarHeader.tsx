@@ -1,5 +1,4 @@
 import React from 'react';
-import { CARD_COLORS } from '../../../../../utils/cardStyles';
 import { Button } from '../../../../../ui';
 
 export interface DashboardCalendarHeaderProps {
@@ -23,7 +22,7 @@ export default function DashboardCalendarHeader({
 }: DashboardCalendarHeaderProps) {
   return (
     <div className="flex items-center justify-between flex flex-wrap gap-2 mb-3">
-      <div className="text-[13px] font-bold" style={{ color: CARD_COLORS.sales.accent }}>
+      <div className="dashboard-calendar-header-title text-[13px] font-bold">
         {t('dashboardCalendar')} — {monthLabel} {year}
       </div>
       <div className="nx-toolbar">

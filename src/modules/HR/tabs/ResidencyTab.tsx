@@ -19,7 +19,7 @@ import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, SmartTable, KebabMenu } from '../../../ui';
+import { Button, Badge, Input, SmartTable, KebabMenu, cn } from '../../../ui';
 import { buildResidencyRecordStatusMap } from '../../../constants/badgeMaps';
 import { hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -178,8 +178,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         const display = formatHrServiceSecondaryDate(row, t, formatSaudiDate);
         return (
           <span
-            className="text-[12px] whitespace-nowrap"
-            style={{ color: soon ? 'var(--color-noorix-amber)' : 'var(--noorix-text-muted)', fontWeight: soon ? 700 : undefined }}
+            className={cn('text-[12px] whitespace-nowrap', soon ? 'text-noorix-amber font-bold' : 'text-noorix-muted')}
           >
             {display}
             {soon && (
@@ -262,8 +261,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           <div>
             <div className="nx-mc__stat-label">{t('expiryDate')}</div>
             <div
-              className="nx-mc__stat-value text-[13px]"
-              style={{ color: soon ? 'var(--color-noorix-amber)' : undefined, fontWeight: soon ? 700 : undefined }}
+              className={cn('nx-mc__stat-value text-[13px]', soon && 'text-noorix-amber font-bold')}
             >
               {row.expiryDate ? formatSaudiDate(row.expiryDate) : '—'}
             </div>
@@ -297,7 +295,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         <div className="nx-cr__line2">
           <div className="nx-cr__line2-start">
             <span className="nx-cr__meta ltr">{row.iqamaNumber || row.referenceLabel || '—'}</span>
-            <span className="nx-cr__meta ltr" style={{ color: soon ? 'var(--color-noorix-amber)' : undefined }}>
+            <span className={cn('nx-cr__meta ltr', soon && 'text-noorix-amber')}>
               {row.expiryDate ? formatSaudiDate(row.expiryDate) : ''}
             </span>
           </div>

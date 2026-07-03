@@ -71,8 +71,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
     >
       {loading && (
         <span
-          className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white shrink-0"
-          style={{ animation: 'noorix-spin 0.7s linear infinite' }}
+          className="nx-button-spinner w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white shrink-0"
           aria-hidden="true"
         />
       )}

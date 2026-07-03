@@ -3,21 +3,21 @@
   "description": "Baseline for central CSS footprint. This check blocks unreviewed CSS growth while the theme cleanup runs incrementally.",
   "files": {
     "src/index.css": {
-      "maxLines": 6940,
+      "maxLines": 6952,
       "maxMediaQueries": 51,
       "maxImportant": 215,
       "maxKeyframes": 12,
       "maxCssVariableDefinitions": 233,
-      "maxCssVariableReferences": 892,
-      "maxColorMix": 153
+      "maxCssVariableReferences": 895,
+      "maxColorMix": 155
     },
     "src/ui/ui.css": {
-      "maxLines": 2326,
+      "maxLines": 2363,
       "maxMediaQueries": 6,
       "maxImportant": 22,
       "maxKeyframes": 8,
       "maxCssVariableDefinitions": 12,
-      "maxCssVariableReferences": 273,
+      "maxCssVariableReferences": 295,
       "maxColorMix": 1
     },
     "src/modules/SmartChat/SmartChatScreen.css": {
@@ -46,11 +46,11 @@
       },
       "dashboard": {
         "pattern": "(dashboard|calendar|kpi|stat-card|summary-bar)",
-        "maxMatches": 123
+        "maxMatches": 125
       },
       "reports": {
         "pattern": "(reports|nx-pl|nx-gr2|pl-|bank-analysis|costAccounting|result-panel)",
-        "maxMatches": 216
+        "maxMatches": 218
       },
       "invoices": {
         "pattern": "(invoice|inv-)",
@@ -76,11 +76,11 @@
       },
       "modal": {
         "pattern": "(modal-|nx-modal|nx-drawer|payroll-run-form-drawer|invoice-edit-modal)",
-        "maxMatches": 82
+        "maxMatches": 84
       },
       "dashboard": {
         "pattern": "(dashboard|calendar|kpi|stat-card|summary-bar)",
-        "maxMatches": 22
+        "maxMatches": 24
       }
     }
   }
