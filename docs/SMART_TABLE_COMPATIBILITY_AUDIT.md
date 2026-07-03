@@ -37,6 +37,7 @@ Status: phase 2 compatibility audit implemented; TanStack now owns internal cont
 |---|---|
 | `src/ui/SmartTable/SmartTable.tsx` | uses existing `keyExtractor` prop for table, compact, and mobile row keys |
 | `src/ui/SmartTable/tableEngine.ts` | centralizes SmartTable sorting and pagination adapter state over TanStack |
+| `src/ui/SmartTable/SmartTablePagination.tsx` | isolates the internal pagination bar from the large SmartTable renderer |
 
 ## Non-Goals
 

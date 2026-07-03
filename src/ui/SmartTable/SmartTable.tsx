@@ -7,7 +7,6 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useIsNarrow768 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
-import Button from '../Button';
 import Input from '../Input';
 import { cn } from '../cn';
 import type { SmartTableProps as SmartTablePropsBase } from './types';
@@ -15,6 +14,7 @@ import { columnLabel, getAlign } from './columnUtils';
 import { buildFooterCells } from './buildFooterCells';
 import { getColumnKindClass, normalizeSmartColumn } from './columnPresets';
 import { useSmartTableEngine } from './tableEngine';
+import SmartTablePagination from './SmartTablePagination';
 
 const COL_VIS_PANEL_MARGIN = 12;
 const COL_VIS_PANEL_GAP = 6;
@@ -53,52 +53,6 @@ export function placeColVisPanel(btn: HTMLElement, panel: HTMLElement): { top: n
   }
   return { top, left };
 }
-
-// ── Pagination ───────────────────────────────────────────────
-type PaginationBarProps = {
-  page: number;
-  totalPages: number;
-  canPreviousPage: boolean;
-  canNextPage: boolean;
-  firstPage: number;
-  previousPage: number;
-  nextPage: number;
-  lastPage: number;
-  onPageChange: (p: number) => void;
-  t: (key: string, ...args: unknown[]) => string;
-};
-
-const Pagination = memo(function Pagination({
-  page,
-  totalPages,
-  canPreviousPage,
-  canNextPage,
-  firstPage,
-  previousPage,
-  nextPage,
-  lastPage,
-  onPageChange,
-  t,
-}: PaginationBarProps) {
-  const go = useCallback(
-    (p: number) => {
-      if (p >= 1 && p <= totalPages) onPageChange(p);
-    },
-    [totalPages, onPageChange],
-  );
-  if (totalPages <= 1) return null;
-  return (
-    <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-noorix-border">
-      <Button size="sm" onClick={() => go(firstPage)} disabled={!canPreviousPage}>«</Button>
-      <Button size="sm" onClick={() => go(previousPage)} disabled={!canPreviousPage}>‹</Button>
-      <span className="text-[13px] text-noorix-muted font-medium px-2">
-        {t('pageLabel', page, totalPages)}
-      </span>
-      <Button size="sm" onClick={() => go(nextPage)} disabled={!canNextPage}>›</Button>
-      <Button size="sm" onClick={() => go(lastPage)} disabled={!canNextPage}>»</Button>
-    </div>
-  );
-});
 
 // ── SmartTable ───────────────────────────────────────────────
 const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
@@ -287,7 +241,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     onPageChange,
   });
   const engineRows = tableEngine.rows;
-  const { safePageSize, totalPages } = tableEngine.pagination;
+  const pagination = tableEngine.pagination;
+  const { safePageSize, totalPages } = pagination;
   const colCount     = visibleColumns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
@@ -647,15 +602,15 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
       {/* ── تصفح الصفحات ── */}
       {!isLoading && onPageChange && (
-        <Pagination
+        <SmartTablePagination
           page={page}
           totalPages={totalPages}
-          canPreviousPage={tableEngine.pagination.canPreviousPage}
-          canNextPage={tableEngine.pagination.canNextPage}
-          firstPage={tableEngine.pagination.firstPage}
-          previousPage={tableEngine.pagination.previousPage}
-          nextPage={tableEngine.pagination.nextPage}
-          lastPage={tableEngine.pagination.lastPage}
+          canPreviousPage={pagination.canPreviousPage}
+          canNextPage={pagination.canNextPage}
+          firstPage={pagination.firstPage}
+          previousPage={pagination.previousPage}
+          nextPage={pagination.nextPage}
+          lastPage={pagination.lastPage}
           onPageChange={tableEngine.setPage}
           t={t}
         />
