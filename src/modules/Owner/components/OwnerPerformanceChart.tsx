@@ -9,7 +9,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, ColorSwatch, cn } from '../../../ui';
+import { Button, ColorSwatch, RuntimeStyleBox, cn } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
 import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
 import { formatCompactNumber, formatMoney } from '../../../utils/money';
@@ -71,22 +71,16 @@ function ChartTooltip({
             : company.nameEn || company.nameAr
           : p.name;
         return (
-          <div
+          <RuntimeStyleBox
             key={dataKey}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              gap: 12,
-              color: p.color,
-              fontWeight: 600,
-              marginTop: 2,
-            }}
+            className="mt-0.5 flex justify-between gap-3 font-semibold"
+            color={p.color}
           >
             <span>{name}</span>
             <span className="nx-font-numbers">
               {formatMoney(p.value, lang)} <span className="nx-sar">SR</span>
             </span>
-          </div>
+          </RuntimeStyleBox>
         );
       })}
     </div>

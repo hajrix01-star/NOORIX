@@ -1,6 +1,7 @@
 import React from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, Cell } from 'recharts';
 import { useTranslation } from '../../../../i18n/useTranslation';
+import { RuntimeStyleBox } from '../../../../ui';
 import { formatCompactNumber, formatNumber } from '../../../../utils/money';
 import { LoadingState, EmptyState } from '../../../../components/states';
 import { DashboardOverviewBreakdownTable } from './DashboardOverviewBreakdownTable';
@@ -102,7 +103,7 @@ export function DashboardOverviewTopCharts({
                       <div
                         className="min-w-[160px] rounded-md border border-noorix-border bg-noorix-surface py-2 px-3 text-[12px] shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
                       >
-                        <div style={{ fontWeight: 700, marginBottom: 4, color: d?.fill }}>{d?.name}</div>
+                        <RuntimeStyleBox className="mb-1 font-bold" color={d?.fill}>{d?.name}</RuntimeStyleBox>
                         <div
                           className="font-semibold text-noorix-text nx-font-numbers"
                         >
