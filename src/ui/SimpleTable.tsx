@@ -1,6 +1,8 @@
 import React from 'react';
 import { cn } from './cn';
 
+type TableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
+
 export type SimpleTableColumn<TRow = any> = {
   key: string;
   label?: React.ReactNode;
@@ -47,30 +49,45 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
   onRowClick,
 }: SimpleTableProps<TRow>) {
   const resolvedCellPadding = cellPadding ?? (compact ? '6px 12px' : '8px 14px');
+  const scrollStyle: TableCssVars | undefined = maxHeight
+    ? {
+        '--nx-dg-scroll-max-height': maxHeight,
+        '--nx-dg-scroll-overflow-y': 'auto',
+      }
+    : undefined;
+  const tableStyle: TableCssVars | undefined = tableMinWidth
+    ? { '--nx-dg-min-width': tableMinWidth }
+    : undefined;
+  const headerStyle = (col: SimpleTableColumn<TRow>): TableCssVars => ({
+    '--nx-dg-cell-width': col.width,
+    '--nx-dg-cell-min-width': col.minWidth,
+    '--nx-dg-cell-padding': resolvedCellPadding,
+    '--nx-dg-cell-align': col.align || (col.numeric ? 'end' : 'center'),
+  });
+  const cellStyle = (col: SimpleTableColumn<TRow>): TableCssVars => ({
+    '--nx-dg-cell-width': col.width,
+    '--nx-dg-cell-min-width': col.minWidth,
+    '--nx-dg-cell-padding': resolvedCellPadding,
+    '--nx-dg-cell-align': col.align || (col.numeric ? 'end' : undefined),
+  });
 
   return (
     <div className={cn('noorix-table-frame min-w-0 max-w-full', frameClassName)}>
       <div
-        className="noorix-table-scroll-wrapper"
-        style={{ maxHeight, overflowY: maxHeight ? 'auto' : undefined }}
+        className="noorix-table-scroll-wrapper nx-dg-scroll-vars"
+        style={scrollStyle}
       >
         <table
-          className={cn('noorix-table w-full', tableClassName)}
-          style={{ minWidth: tableMinWidth || undefined }}
+          className={cn('noorix-table nx-dg-vars w-full', tableClassName)}
+          style={tableStyle}
         >
           <thead>
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={cn(col.headerClassName)}
-                  style={{
-                    width: col.width,
-                    minWidth: col.minWidth,
-                    padding: resolvedCellPadding,
-                    textAlign: col.align || (col.numeric ? 'end' : 'center'),
-                    ...(stickyHeader ? { position: 'sticky', top: 0, zIndex: 2 } : null),
-                  }}
+                  className={cn('nx-dg-var-cell', stickyHeader && 'nx-dg-var-th--sticky', col.headerClassName)}
+                  style={headerStyle(col)}
                 >
                   {col.label}
                 </th>
@@ -103,14 +120,9 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={cn(col.numeric && 'noorix-numeric-cell', col.cellClassName)}
+                      className={cn('nx-dg-var-cell', col.numeric && 'noorix-numeric-cell', col.cellClassName)}
                       data-numeric={col.numeric ? 'true' : undefined}
-                      style={{
-                        width: col.width,
-                        minWidth: col.minWidth,
-                        padding: resolvedCellPadding,
-                        textAlign: col.align || (col.numeric ? 'end' : undefined),
-                      }}
+                      style={cellStyle(col)}
                     >
                       {col.render ? col.render(row[col.key], row, rowIndex) : row[col.key]}
                     </td>

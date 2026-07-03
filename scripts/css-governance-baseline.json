@@ -12,12 +12,12 @@
       "maxColorMix": 174
     },
     "src/ui/ui.css": {
-      "maxLines": 1689,
+      "maxLines": 1697,
       "maxMediaQueries": 6,
       "maxImportant": 22,
       "maxKeyframes": 8,
       "maxCssVariableDefinitions": 12,
-      "maxCssVariableReferences": 298,
+      "maxCssVariableReferences": 312,
       "maxColorMix": 1
     },
     "src/modules/SmartChat/SmartChatScreen.css": {

@@ -134,6 +134,9 @@ MetricCard.Value = function MetricCardValue({
   const absVal = isNum ? Math.abs(value) : null;
   const displayNumber = isNum ? (prefix != null ? absVal : Number(value)) : null;
   const strDisplay = !isNum ? value : null;
+  const valueStyle = {
+    '--metric-card-value-color': color || undefined,
+  } as React.CSSProperties;
   return (
     <div
       className={cn(
@@ -150,11 +153,11 @@ MetricCard.Value = function MetricCardValue({
       <div
         dir="ltr"
         className={cn(
-          'nx-font-numbers leading-tight tracking-[-0.5px] text-noorix-text text-start inline-flex items-baseline gap-x-1 flex-wrap',
+          'metric-card-value nx-font-numbers leading-tight tracking-[-0.5px] text-start inline-flex items-baseline gap-x-1 flex-wrap',
           size === 'lg' ? 'text-[26px] font-extrabold' : 'text-[22px] font-bold',
           align === 'center' && 'justify-center w-full',
         )}
-        style={{ color: color || undefined, fontFamily: 'var(--noorix-font-numbers)' }}
+        style={valueStyle}
       >
         {prefix}
         {isNum ? <FmtNum n={Number(displayNumber)} /> : strDisplay}

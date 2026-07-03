@@ -1191,6 +1191,14 @@
 /* SmartTable مدمج داخل noorix-surface-card — يحذف الإطار الداخلي المزدوج (أي عمق) */
 .noorix-surface-card .noorix-table-frame { border: none; box-shadow: none; border-radius: 0; }
 
+.nx-dg-scroll-vars { max-height: var(--nx-dg-scroll-max-height, none); overflow-y: var(--nx-dg-scroll-overflow-y, visible); }
+.nx-dg-vars { min-width: var(--nx-dg-min-width, 0); }
+.nx-dg-var-cell { width: var(--nx-dg-cell-width, auto); min-width: var(--nx-dg-cell-min-width, 0); padding: var(--nx-dg-cell-padding, inherit); text-align: var(--nx-dg-cell-align, inherit); }
+.nx-dg-var-th--sticky { position: sticky; top: 0; z-index: var(--nx-dg-sticky-z, 2); }
+.nx-dg-accent-dot { background: var(--nx-dg-accent-color, currentColor); }
+.nx-smart-footer-rn-cell { width: var(--nx-smart-footer-rn-width, 36px); padding: var(--nx-smart-footer-rn-padding, 8px 12px); }
+.metric-card-value { color: var(--metric-card-value-color, var(--noorix-text)); font-family: var(--noorix-font-numbers); }
+
 /* ???????????????????????????????????????????????????????????
    14. Vault Type Selector — شبكة اختيار نوع الخزينة
    ??????????????????????????????????????????????????????????? */

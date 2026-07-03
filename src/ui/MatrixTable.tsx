@@ -1,6 +1,8 @@
 import React from 'react';
 import { cn } from './cn';
 
+type TableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
+
 export type MatrixTableColumn<TRow = any> = {
   key: string;
   label?: React.ReactNode;
@@ -67,15 +69,40 @@ export default function MatrixTable<TRow extends Record<string, any> = any>({
   getRowStyle,
   getRowAccentColor,
 }: MatrixTableProps<TRow>) {
+  const scrollStyle: TableCssVars | undefined = maxHeight
+    ? {
+        '--nx-dg-scroll-max-height': maxHeight,
+        '--nx-dg-scroll-overflow-y': 'auto',
+      }
+    : undefined;
+  const tableStyle: TableCssVars | undefined = tableMinWidth
+    ? { '--nx-dg-min-width': tableMinWidth }
+    : undefined;
+  const headerStyle = (col: MatrixTableColumn<TRow>, firstColumn: boolean): TableCssVars => ({
+    '--nx-dg-cell-width': col.width,
+    '--nx-dg-cell-min-width': col.minWidth,
+    '--nx-dg-cell-align': col.align || (col.numeric ? 'end' : 'center'),
+    '--nx-dg-sticky-z': firstColumn ? 4 : 3,
+  });
+  const cellStyle = (col: MatrixTableColumn<TRow>, row: TRow, rowIndex: number): TableCssVars => ({
+    '--nx-dg-cell-width': col.width,
+    '--nx-dg-cell-min-width': col.minWidth,
+    '--nx-dg-cell-align': col.align || (col.numeric ? 'end' : undefined),
+    ...col.getCellStyle?.(row, rowIndex),
+  });
+  const accentStyle = (accentColor: string): TableCssVars => ({
+    '--nx-dg-accent-color': accentColor,
+  });
+
   return (
     <div className={cn('noorix-table-frame min-w-0 max-w-full', frameClassName)}>
       <div
-        className={cn('noorix-table-scroll-wrapper', scrollClassName)}
-        style={{ maxHeight, overflowY: maxHeight ? 'auto' : undefined }}
+        className={cn('noorix-table-scroll-wrapper nx-dg-scroll-vars', scrollClassName)}
+        style={scrollStyle}
       >
         <table
-          className={cn('noorix-table w-full border-collapse', tableClassName)}
-          style={{ minWidth: tableMinWidth || undefined }}
+          className={cn('noorix-table nx-dg-vars w-full border-collapse', tableClassName)}
+          style={tableStyle}
           aria-label={ariaLabel}
         >
           {caption ? <caption className="sr-only">{caption}</caption> : null}
@@ -87,15 +114,12 @@ export default function MatrixTable<TRow extends Record<string, any> = any>({
                   <th
                     key={col.key}
                     className={cn(
+                      'nx-dg-var-cell',
                       firstColumn && 'sticky start-0 z-[3]',
+                      stickyHeader && 'nx-dg-var-th--sticky',
                       col.headerClassName,
                     )}
-                    style={{
-                      width: col.width,
-                      minWidth: col.minWidth,
-                      textAlign: col.align || (col.numeric ? 'end' : 'center'),
-                      ...(stickyHeader ? { position: 'sticky', top: 0, zIndex: firstColumn ? 4 : 3 } : null),
-                    }}
+                    style={headerStyle(col, firstColumn)}
                   >
                     {col.label}
                   </th>
@@ -138,23 +162,19 @@ export default function MatrixTable<TRow extends Record<string, any> = any>({
                           key={col.key}
                           scope={useRowHeader ? 'row' : undefined}
                           className={cn(
+                            'nx-dg-var-cell',
                             col.numeric && 'noorix-numeric-cell tabular-nums',
                             firstColumn && 'sticky start-0 z-[1]',
                             cellClassName,
                           )}
                           data-numeric={col.numeric ? 'true' : undefined}
-                          style={{
-                            width: col.width,
-                            minWidth: col.minWidth,
-                            textAlign: col.align || (col.numeric ? 'end' : undefined),
-                            ...col.getCellStyle?.(row, rowIndex),
-                          }}
+                          style={cellStyle(col, row, rowIndex)}
                         >
                           {firstColumn && accentColor ? (
                             <span className="inline-flex min-w-0 items-center gap-2">
                               <span
-                                className="h-2 w-2 shrink-0 rounded-sm"
-                                style={{ background: accentColor }}
+                                className="nx-dg-accent-dot h-2 w-2 shrink-0 rounded-sm"
+                                style={accentStyle(accentColor)}
                               />
                               <span className="min-w-0">
                                 {col.render ? col.render(row[col.key], row, rowIndex) : row[col.key]}
