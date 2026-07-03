@@ -2591,21 +2591,8 @@ html[data-card-style="10"] .noorix-stat-card {
    ??????????????????????????????????????????????????????????????? */
 
 /* ?? Stat Card: كرت إحصائية مفردة (مثل عدد الموظفين) ??????? */
-.noorix-stat-card {
-  background: var(--noorix-bg-surface);
-  border: 1px solid var(--noorix-border);
-  border-radius: var(--noorix-card-radius);
-  overflow: hidden;
-  box-shadow: var(--noorix-card-shadow);
-  display: flex;
-  flex-direction: column;
-  min-width: 130px;
-  transition: box-shadow var(--noorix-transition), transform var(--noorix-transition);
-}
-.noorix-stat-card:hover {
-  box-shadow: var(--noorix-card-shadow-hover);
-  transform: translateY(-2px);
-}
+.noorix-stat-card { background: var(--noorix-bg-surface); border: 1px solid var(--noorix-border); border-radius: var(--noorix-card-radius); overflow: hidden; box-shadow: var(--noorix-card-shadow); display: flex; flex-direction: column; min-width: 130px; transition: box-shadow var(--noorix-transition), transform var(--noorix-transition); }
+.noorix-stat-card:hover { box-shadow: var(--noorix-card-shadow-hover); transform: translateY(-2px); }
 .noorix-stat-card__stripe { height: 4px; }
 .noorix-stat-card--blue   .noorix-stat-card__stripe { background: var(--noorix-accent-blue); }
 .noorix-stat-card--green  .noorix-stat-card__stripe { background: var(--noorix-accent-green); }
@@ -2614,27 +2601,9 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-stat-card--purple .noorix-stat-card__stripe { background: var(--noorix-accent-violet); }
 .noorix-stat-card--slate  .noorix-stat-card__stripe { background: var(--noorix-text-muted); }
 .noorix-stat-card__body { padding: 12px 16px; }
-.noorix-stat-card__label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--noorix-text-muted);
-  letter-spacing: 0.04em;
-  margin-bottom: 5px;
-  text-transform: uppercase;
-}
-.noorix-stat-card__value {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--noorix-text);
-  font-family: var(--noorix-font-numbers);
-  letter-spacing: -0.3px;
-  line-height: 1.2;
-}
-.noorix-stat-card__sub {
-  font-size: 11px;
-  color: var(--noorix-text-muted);
-  margin-top: 3px;
-}
+.noorix-stat-card__label { font-size: 11px; font-weight: 600; color: var(--noorix-text-muted); letter-spacing: 0.04em; margin-bottom: 5px; text-transform: uppercase; }
+.noorix-stat-card__value { font-size: 22px; font-weight: 800; color: var(--noorix-text); font-family: var(--noorix-font-numbers); letter-spacing: -0.3px; line-height: 1.2; }
+.noorix-stat-card__sub { font-size: 11px; color: var(--noorix-text-muted); margin-top: 3px; }
 /* Amber warning variant: tinted background */
 .noorix-stat-card--amber .noorix-stat-card__body  { background: rgba(245,158,11,0.04); }
 .noorix-stat-card--amber .noorix-stat-card__value  { color: var(--noorix-accent-amber); }
@@ -2642,40 +2611,15 @@ html[data-card-style="10"] .noorix-stat-card {
 .noorix-stat-card--red   .noorix-stat-card__value   { color: var(--noorix-accent-red); }
 
 /* ?? Summary Bar: شريط إحصاء أفقي متعدد الخانات ??????????? */
-.noorix-summary-bar {
-  display: grid;
-  border-radius: var(--noorix-card-radius);
-  border: 1px solid var(--noorix-border);
-  background: var(--noorix-bg-surface);
-  overflow: hidden;
-  box-shadow: var(--noorix-card-shadow);
-}
+.noorix-summary-bar { display: grid; border-radius: var(--noorix-card-radius); border: 1px solid var(--noorix-border); background: var(--noorix-bg-surface); overflow: hidden; box-shadow: var(--noorix-card-shadow); }
 .noorix-summary-bar--5 { grid-template-columns: repeat(5, 1fr); }
 .noorix-summary-bar--4 { grid-template-columns: repeat(4, 1fr); }
 .noorix-summary-bar--3 { grid-template-columns: repeat(3, 1fr); }
 .noorix-summary-bar--2 { grid-template-columns: repeat(2, 1fr); }
-.noorix-summary-bar__item {
-  padding: 12px 16px;
-  border-inline-start: 1px solid var(--noorix-border);
-}
+.noorix-summary-bar__item { padding: 12px 16px; border-inline-start: 1px solid var(--noorix-border); }
 .noorix-summary-bar__item:first-child { border-inline-start: none; }
-.noorix-summary-bar__label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--noorix-text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.noorix-summary-bar__value {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--noorix-text);
-  font-family: var(--noorix-font-numbers);
-  white-space: nowrap;
-  direction: ltr;
-  unicode-bidi: isolate;
-}
+.noorix-summary-bar__label { font-size: 10px; font-weight: 600; color: var(--noorix-text-muted); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+.noorix-summary-bar__value { font-size: 15px; font-weight: 700; color: var(--noorix-text); font-family: var(--noorix-font-numbers); white-space: nowrap; direction: ltr; unicode-bidi: isolate; }
 .noorix-summary-bar__value--green  { color: var(--noorix-accent-green); }
 .noorix-summary-bar__value--blue   { color: var(--noorix-accent-blue); }
 .noorix-summary-bar__value--amber  { color: var(--noorix-accent-amber); }
@@ -3496,16 +3440,7 @@ select option {
   background: var(--noorix-green-5);
   min-height: 52px;
 }
-.noorix-settings-mobile-nav__label {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--noorix-accent-green);
-  pointer-events: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.noorix-settings-mobile-nav__label { flex: 1; font-size: 14px; font-weight: 700; color: var(--noorix-accent-green); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .noorix-settings-mobile-nav__select {
   position: absolute;
   inset: 0;
@@ -3517,20 +3452,11 @@ select option {
   border: none;
   background: transparent;
 }
-.noorix-settings-mobile-nav__chevron {
-  font-size: 13px;
-  color: var(--noorix-accent-green);
-  pointer-events: none;
-  flex-shrink: 0;
-}
+.noorix-settings-mobile-nav__chevron { font-size: 13px; color: var(--noorix-accent-green); pointer-events: none; flex-shrink: 0; }
 
 /* ?? محتوى التبويب ????????????????????????????????????????????????????? */
 /* min-width:0 يمنع تمدد شبكات/فليكس عن عرض البطاقة على الجوال */
-.noorix-settings-tab-body {
-  padding: 20px;
-  min-width: 0;
-  box-sizing: border-box;
-}
+.noorix-settings-tab-body { padding: 20px; min-width: 0; box-sizing: border-box; }
 
 @media (max-width: 767px) {
   .noorix-settings-tab-body { padding: 16px; }
@@ -3540,66 +3466,30 @@ select option {
 }
 
 /* ========== تقويم لوحة التحكم — عرض كامل وتمرير على الجوال ========== */
-.noorix-calendar-layout {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  min-width: 0;
-  width: 100%;
-}
+.noorix-calendar-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; min-width: 0; width: 100%; }
 @media (max-width: 768px) {
-  .noorix-calendar-layout {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .noorix-calendar-card {
-    max-width: 100% !important;
-  }
-  .noorix-calendar-side {
-    min-width: 0 !important;
-    width: 100%;
-  }
+  .noorix-calendar-layout { flex-direction: column; gap: 12px; }
+  .noorix-calendar-card { max-width: 100% !important; }
+  .noorix-calendar-side { min-width: 0 !important; width: 100%; }
   /* شبكة 7 أيام بعرض الشاشة — بدون تمرير أفقي إجباري */
   .noorix-calendar-grid-scroll {
     overflow-x: visible;
     margin: 0;
     padding: 0 0 4px;
   }
-  .noorix-calendar-grid-scroll-inner {
-    min-width: 0;
-    width: 100%;
-  }
-  .noorix-calendar-grid-scroll .grid {
-    gap: 0.25rem;
-  }
+  .noorix-calendar-grid-scroll-inner { min-width: 0; width: 100%; }
+  .noorix-calendar-grid-scroll .grid { gap: 0.25rem; }
   .noorix-calendar-grid-scroll .grid > div:nth-child(-n+7) {
     font-size: 10px;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
   }
 }
-.noorix-calendar-grid-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-  touch-action: pan-x pan-y;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  margin: 0 -2px;
-  padding: 0 2px 4px;
-}
-.noorix-calendar-grid-scroll-inner {
-  min-width: 272px;
-}
+.noorix-calendar-grid-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; touch-action: pan-x pan-y; width: 100%; max-width: 100%; min-width: 0; margin: 0 -2px; padding: 0 2px 4px; }
+.noorix-calendar-grid-scroll-inner { min-width: 272px; }
 
 /* ========== شبكة استجابة ========== */
-.noorix-grid-12 {
-  display: grid;
-  grid-template-columns: repeat(12,minmax(0,1fr));
-  gap: 10px;
-}
+.noorix-grid-12 { display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); gap: 10px; }
 .noorix-span-2  { grid-column: span 2; }
 .noorix-span-4  { grid-column: span 4; }
 .noorix-span-12 { grid-column: span 12; }
@@ -3621,29 +3511,8 @@ select option {
   padding-inline-end: 14px !important;
 }
 
-.noorix-date-filter-bar {
-  position: relative;
-  display: inline-flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-width: 100%;
-  padding: 8px;
-  border-radius: 12px;
-  border: 1px solid var(--noorix-border);
-  background: var(--noorix-bg-surface);
-  box-shadow: var(--noorix-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
-  width: min(100%, 980px);
-}
-.ndfb-mode-group {
-  display: inline-flex;
-  align-items: center;
-  overflow: hidden;
-  border: 1px solid var(--noorix-border);
-  border-radius: 9px;
-  background: var(--noorix-bg-muted);
-  flex: 0 0 auto;
-}
+.noorix-date-filter-bar { position: relative; display: inline-flex; align-items: flex-start; flex-wrap: wrap; gap: 8px; max-width: 100%; padding: 8px; border-radius: 12px; border: 1px solid var(--noorix-border); background: var(--noorix-bg-surface); box-shadow: var(--noorix-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06)); width: min(100%, 980px); }
+.ndfb-mode-group { display: inline-flex; align-items: center; overflow: hidden; border: 1px solid var(--noorix-border); border-radius: 9px; background: var(--noorix-bg-muted); flex: 0 0 auto; }
 .ndfb-mode-btn {
   min-height: 32px;
   padding: 6px 12px;
@@ -3654,13 +3523,8 @@ select option {
   box-shadow: none !important;
   white-space: nowrap;
 }
-.ndfb-mode-btn + .ndfb-mode-btn {
-  border-inline-start: 1px solid var(--noorix-border);
-}
-.ndfb-mode-btn:hover {
-  background: var(--noorix-bg-surface);
-  color: var(--noorix-text);
-}
+.ndfb-mode-btn + .ndfb-mode-btn { border-inline-start: 1px solid var(--noorix-border); }
+.ndfb-mode-btn:hover { background: var(--noorix-bg-surface); color: var(--noorix-text); }
 .ndfb-mode-btn--active,
 .ndfb-mode-btn--active:hover {
   background: var(--noorix-accent-blue);
@@ -3742,58 +3606,18 @@ select option {
   font-size: 12px;
   font-weight: 800;
 }
-.ndfb-calendar-year-select {
-  width: 96px;
-  min-height: 34px;
-  border: 1px solid var(--noorix-border);
-  border-radius: 8px;
-  background: var(--noorix-bg-surface);
-  color: var(--noorix-text);
-  font-family: var(--noorix-font-primary);
-  font-size: 12px;
-  font-weight: 800;
-  padding: 3px 8px;
-}
-.ndfb-calendar-month-select {
-  width: 112px;
-  min-height: 34px;
-  border: 1px solid var(--noorix-border);
-  border-radius: 8px;
-  background: var(--noorix-bg-surface);
-  color: var(--noorix-text);
-  font-family: var(--noorix-font-primary);
-  font-size: 12px;
-  font-weight: 800;
-  padding: 3px 8px;
-}
-.ndfb-calendar-head-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.ndfb-month-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-}
-.ndfb-year-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
+.ndfb-calendar-year-select { width: 96px; min-height: 34px; border: 1px solid var(--noorix-border); border-radius: 8px; background: var(--noorix-bg-surface); color: var(--noorix-text); font-family: var(--noorix-font-primary); font-size: 12px; font-weight: 800; padding: 3px 8px; }
+.ndfb-calendar-month-select { width: 112px; min-height: 34px; border: 1px solid var(--noorix-border); border-radius: 8px; background: var(--noorix-bg-surface); color: var(--noorix-text); font-family: var(--noorix-font-primary); font-size: 12px; font-weight: 800; padding: 3px 8px; }
+.ndfb-calendar-head-controls { display: inline-flex; align-items: center; gap: 6px; }
+.ndfb-month-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.ndfb-year-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .ndfb-weekday-grid,
 .ndfb-day-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 5px;
 }
-.ndfb-weekday-grid {
-  margin-bottom: 6px;
-  color: var(--noorix-text-muted);
-  font-size: 10px;
-  font-weight: 800;
-  text-align: center;
-}
+.ndfb-weekday-grid { margin-bottom: 6px; color: var(--noorix-text-muted); font-size: 10px; font-weight: 800; text-align: center; }
 .ndfb-month-cell,
 .ndfb-year-cell,
 .ndfb-day-cell {
@@ -3825,16 +3649,8 @@ select option {
   color: #fff;
   box-shadow: 0 3px 8px var(--noorix-blue-20);
 }
-.ndfb-day-cell--blank {
-  visibility: hidden;
-  pointer-events: none;
-}
-.ndfb-range-separator {
-  color: var(--noorix-text-muted);
-  font-weight: 800;
-  line-height: 1;
-  flex: 0 0 auto;
-}
+.ndfb-day-cell--blank { visibility: hidden; pointer-events: none; }
+.ndfb-range-separator { color: var(--noorix-text-muted); font-weight: 800; line-height: 1; flex: 0 0 auto; }
 .ndfb-period-badge {
   max-width: 220px;
   overflow: hidden;
@@ -3849,23 +3665,9 @@ select option {
   font-weight: 800;
   line-height: 1.3;
 }
-.ndfb-period-badge--pending {
-  border-color: var(--noorix-amber-30);
-  background: var(--noorix-amber-8);
-  color: var(--noorix-accent-amber);
-}
-.ndfb-month-picker {
-  position: relative;
-  align-items: stretch;
-  gap: 8px;
-}
-.ndfb-month-picker__label {
-  display: block;
-  color: var(--noorix-text);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.3;
-}
+.ndfb-period-badge--pending { border-color: var(--noorix-amber-30); background: var(--noorix-amber-8); color: var(--noorix-accent-amber); }
+.ndfb-month-picker { position: relative; align-items: stretch; gap: 8px; }
+.ndfb-month-picker__label { display: block; color: var(--noorix-text); font-size: 12px; font-weight: 800; line-height: 1.3; }
 .ndfb-month-picker__trigger {
   display: inline-flex;
   align-items: center;
@@ -3882,56 +3684,18 @@ select option {
   font-size: 14px;
   letter-spacing: 0;
 }
-.ndfb-month-picker__icon {
-  position: relative;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-  border: 2px solid var(--noorix-accent-blue);
-  border-radius: 4px;
-  box-sizing: border-box;
-}
+.ndfb-month-picker__icon { position: relative; width: 16px; height: 16px; flex: 0 0 16px; border: 2px solid var(--noorix-accent-blue); border-radius: 4px; box-sizing: border-box; }
 .ndfb-month-picker__icon::before,
 .ndfb-month-picker__icon::after {
   content: "";
   position: absolute;
   inset-inline: 2px;
 }
-.ndfb-month-picker__icon::before {
-  top: 3px;
-  border-top: 2px solid var(--noorix-accent-blue);
-}
-.ndfb-month-picker__icon::after {
-  top: -4px;
-  width: 8px;
-  height: 4px;
-  margin-inline: auto;
-  border-inline: 2px solid var(--noorix-accent-blue);
-}
-.ndfb-month-picker__chevron {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 8px;
-  border-inline-end: 2px solid var(--noorix-text-muted);
-  border-block-end: 2px solid var(--noorix-text-muted);
-  transform: rotate(45deg);
-  margin-block-start: -4px;
-}
-.ndfb-month-popover {
-  z-index: 2200;
-  margin: 0;
-  padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--noorix-accent-amber) 30%, var(--noorix-border));
-  border-radius: 18px;
-  background: var(--noorix-surface);
-  box-shadow: 0 22px 44px rgba(15, 23, 42, 0.18);
-}
-.ndfb-month-popover--floating {
-  max-height: calc(100vh - 28px);
-  overflow-y: auto;
-  animation: ndfb-month-popover-in 120ms ease-out;
-  transform-origin: top center;
-}
+.ndfb-month-picker__icon::before { top: 3px; border-top: 2px solid var(--noorix-accent-blue); }
+.ndfb-month-picker__icon::after { top: -4px; width: 8px; height: 4px; margin-inline: auto; border-inline: 2px solid var(--noorix-accent-blue); }
+.ndfb-month-picker__chevron { width: 8px; height: 8px; flex: 0 0 8px; border-inline-end: 2px solid var(--noorix-text-muted); border-block-end: 2px solid var(--noorix-text-muted); transform: rotate(45deg); margin-block-start: -4px; }
+.ndfb-month-popover { z-index: 2200; margin: 0; padding: 16px; border: 1px solid color-mix(in srgb, var(--noorix-accent-amber) 30%, var(--noorix-border)); border-radius: 18px; background: var(--noorix-surface); box-shadow: 0 22px 44px rgba(15, 23, 42, 0.18); }
+.ndfb-month-popover--floating { max-height: calc(100vh - 28px); overflow-y: auto; animation: ndfb-month-popover-in 120ms ease-out; transform-origin: top center; }
 @keyframes ndfb-month-popover-in {
   from {
     opacity: 0;
@@ -3942,36 +3706,10 @@ select option {
     transform: translateY(0) scale(1);
   }
 }
-.ndfb-month-popover__tabs {
-  display: grid;
-  grid-template-columns: 1fr;
-  margin-bottom: 16px;
-}
-.ndfb-month-popover__tab {
-  min-height: 46px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--noorix-table-header-bg);
-  color: var(--noorix-table-header-fg);
-  font-size: 15px;
-  font-weight: 900;
-  cursor: default;
-}
-.ndfb-month-popover__year {
-  display: grid;
-  grid-template-columns: 42px 1fr 42px;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.ndfb-month-popover__year-value {
-  text-align: center;
-  color: var(--noorix-text);
-  font-size: 22px;
-  font-weight: 900;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
+.ndfb-month-popover__tabs { display: grid; grid-template-columns: 1fr; margin-bottom: 16px; }
+.ndfb-month-popover__tab { min-height: 46px; border: 0; border-radius: 12px; background: var(--noorix-table-header-bg); color: var(--noorix-table-header-fg); font-size: 15px; font-weight: 900; cursor: default; }
+.ndfb-month-popover__year { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; gap: 8px; margin-bottom: 16px; }
+.ndfb-month-popover__year-value { text-align: center; color: var(--noorix-text); font-size: 22px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .ndfb-month-popover__year-btn {
   width: 38px;
   height: 38px;
@@ -3984,18 +3722,9 @@ select option {
   line-height: 1;
   cursor: pointer;
 }
-.ndfb-month-popover__year-btn:hover {
-  background: var(--noorix-bg-muted);
-}
-.ndfb-month-popover__year-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.35;
-}
-.ndfb-month-popover__grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
+.ndfb-month-popover__year-btn:hover { background: var(--noorix-bg-muted); }
+.ndfb-month-popover__year-btn:disabled { cursor: not-allowed; opacity: 0.35; }
+.ndfb-month-popover__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .ndfb-month-popover__cell {
   min-height: 56px;
   border: 1px solid var(--noorix-border);
@@ -4008,51 +3737,14 @@ select option {
   box-shadow: 0 2px 7px rgba(15, 23, 42, 0.05);
   cursor: pointer;
 }
-.ndfb-month-popover__cell:hover {
-  border-color: color-mix(in srgb, var(--noorix-accent-blue) 35%, var(--noorix-border));
-  background: color-mix(in srgb, var(--noorix-accent-blue) 5%, #fff);
-}
+.ndfb-month-popover__cell:hover { border-color: color-mix(in srgb, var(--noorix-accent-blue) 35%, var(--noorix-border)); background: color-mix(in srgb, var(--noorix-accent-blue) 5%, #fff); }
 .ndfb-month-popover__cell--active,
-.ndfb-month-popover__cell--active:hover {
-  border-color: color-mix(in srgb, var(--noorix-accent-amber) 36%, transparent);
-  background: color-mix(in srgb, var(--noorix-accent-amber) 18%, #fff);
-  color: var(--noorix-danger, #a32d2d);
-}
-.ndfb-month-picker--dashboard {
-  width: auto;
-  min-width: 170px;
-  padding: 0;
-  border-radius: 999px;
-  border: 0;
-  background: transparent;
-}
-.ndfb-month-picker--dashboard .ndfb-month-picker__label {
-  color: var(--noorix-text);
-  font-size: 13px;
-  font-weight: 900;
-  text-align: center;
-}
-.ndfb-month-picker--dashboard .ndfb-month-picker__trigger {
-  min-height: 40px;
-  padding: 7px 14px;
-  border: 1px solid var(--noorix-border);
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-  color: var(--noorix-text);
-  font-size: 16px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-}
-.ndfb-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-}
-.ndfb-apply-btn {
-  min-height: 32px;
-}
+.ndfb-month-popover__cell--active:hover { border-color: color-mix(in srgb, var(--noorix-accent-amber) 36%, transparent); background: color-mix(in srgb, var(--noorix-accent-amber) 18%, #fff); color: var(--noorix-danger, #a32d2d); }
+.ndfb-month-picker--dashboard { width: auto; min-width: 170px; padding: 0; border-radius: 999px; border: 0; background: transparent; }
+.ndfb-month-picker--dashboard .ndfb-month-picker__label { color: var(--noorix-text); font-size: 13px; font-weight: 900; text-align: center; }
+.ndfb-month-picker--dashboard .ndfb-month-picker__trigger { min-height: 40px; padding: 7px 14px; border: 1px solid var(--noorix-border); border-radius: 999px; background: #fff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06); color: var(--noorix-text); font-size: 16px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.ndfb-actions { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.ndfb-apply-btn { min-height: 32px; }
 .noorix-date-filter-bar .ndfb-reset-btn {
   min-width: 32px;
   min-height: 32px;
@@ -4066,55 +3758,18 @@ select option {
   font-weight: 800;
   padding: 0;
 }
-.noorix-date-filter-bar .ndfb-reset-btn:hover {
-  color: var(--noorix-accent-blue);
-  background: var(--noorix-blue-8);
-}
+.noorix-date-filter-bar .ndfb-reset-btn:hover { color: var(--noorix-accent-blue); background: var(--noorix-blue-8); }
 
-.nx-filter-toolbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-  width: 100%;
-}
-.nx-filter-toolbar__filters {
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 10px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-.nx-filter-toolbar__actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-  flex: 0 0 auto;
-}
+.nx-filter-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; min-width: 0; width: 100%; }
+.nx-filter-toolbar__filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.nx-filter-toolbar__actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; flex: 0 0 auto; }
 
 /* صف فيه DateFilterBar + أزرار — لا يوسّع الفلتر بـ space-between */
-.nx-page-header.nx-page-header--filter-row {
-  align-items: flex-end;
-  justify-content: flex-start;
-  gap: 12px;
-}
-.nx-page-header.nx-page-header--filter-row > .nx-toolbar {
-  margin-inline-start: auto;
-  flex-shrink: 0;
-}
+.nx-page-header.nx-page-header--filter-row { align-items: flex-end; justify-content: flex-start; gap: 12px; }
+.nx-page-header.nx-page-header--filter-row > .nx-toolbar { margin-inline-start: auto; flex-shrink: 0; }
 
 /* تبويبات شاشة الطلبات (بدون أنماط مضمّنة) */
-.orders-screen-tab-strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0;
-  border-bottom: 2px solid var(--noorix-border);
-}
+.orders-screen-tab-strip { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0; border-bottom: 2px solid var(--noorix-border); }
 .orders-screen-tab.nx-btn {
   border-radius: 0;
   border: none;
@@ -4128,23 +3783,11 @@ select option {
   color: var(--noorix-text-muted);
   border-bottom: 2px solid transparent;
 }
-.orders-screen-tab.nx-btn:hover:not(:disabled) {
-  background: var(--noorix-bg-muted);
-  color: var(--noorix-text);
-}
-.orders-screen-tab--active.nx-btn {
-  font-weight: 700;
-  color: var(--noorix-accent-green);
-  background: rgba(22, 163, 74, 0.07);
-  border-bottom-color: var(--noorix-accent-green);
-}
+.orders-screen-tab.nx-btn:hover:not(:disabled) { background: var(--noorix-bg-muted); color: var(--noorix-text); }
+.orders-screen-tab--active.nx-btn { font-weight: 700; color: var(--noorix-accent-green); background: rgba(22, 163, 74, 0.07); border-bottom-color: var(--noorix-accent-green); }
 
 /* بحث الموردين — عرض محدود، ارتفاع عادي (size sm من المكوّن) */
-.suppliers-tab-search.nx-input {
-  flex: 1 1 200px;
-  max-width: 320px;
-  min-width: 160px;
-}
+.suppliers-tab-search.nx-input { flex: 1 1 200px; max-width: 320px; min-width: 160px; }
 
 /* —— إدخال دفعة مشتريات: تاريخ + خزنة بنفس الارتفاع والعرض —— */
 .batch-purchases-entry-toolbar {
@@ -4273,11 +3916,7 @@ select option {
   .ndfb-field--date { width: 100%; }
   .ndfb-field .nx-input__field,
   .ndfb-select { min-height: 38px !important; height: 38px !important; font-size: 16px !important; }
-  .ndfb-calendar {
-    width: 100%;
-    grid-template-columns: 1fr;
-    flex-basis: 100%;
-  }
+  .ndfb-calendar { width: 100%; grid-template-columns: 1fr; flex-basis: 100%; }
   .ndfb-calendar--months,
   .ndfb-calendar--days,
   .ndfb-calendar--years {
@@ -4295,20 +3934,10 @@ select option {
   .ndfb-year-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ndfb-month-cell,
   .ndfb-year-cell,
-  .ndfb-day-cell {
-    min-height: 40px;
-    font-size: 13px;
-  }
-  .ndfb-month-popover {
-    padding: 14px;
-  }
-  .ndfb-month-popover__cell {
-    min-height: 52px;
-    font-size: 16px;
-  }
-  .ndfb-month-popover__year-value {
-    font-size: 21px;
-  }
+  .ndfb-day-cell { min-height: 40px; font-size: 13px; }
+  .ndfb-month-popover { padding: 14px; }
+  .ndfb-month-popover__cell { min-height: 52px; font-size: 16px; }
+  .ndfb-month-popover__year-value { font-size: 21px; }
   .ndfb-period-badge { max-width: 100%; width: 100%; text-align: center; }
   .ndfb-actions { width: 100%; }
   .ndfb-apply-btn { flex: 1 1 auto; }
@@ -4320,9 +3949,7 @@ select option {
     flex-direction: column;
     width: 100%;
   }
-  .nx-filter-toolbar__actions .nx-btn {
-    width: 100%;
-  }
+  .nx-filter-toolbar__actions .nx-btn { width: 100%; }
 
   /* Summary Bar — stack on mobile */
   .noorix-summary-bar--4,
@@ -4358,66 +3985,30 @@ select option {
 
 /* ========== Mobile toolbar / action buttons — wrap & full-width ========== */
 @media (max-width: 640px) {
-  .noorix-mobile-toolbar {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-  .noorix-mobile-toolbar > * {
-    width: 100%;
-    min-width: 0;
-  }
+  .noorix-mobile-toolbar { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .noorix-mobile-toolbar > * { width: 100%; min-width: 0; }
   .noorix-mobile-toolbar-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
     gap: 6px;
     width: 100%;
   }
-  .noorix-mobile-toolbar-row > * {
-    min-width: 0;
-    text-align: center;
-    justify-content: center;
-  }
+  .noorix-mobile-toolbar-row > * { min-width: 0; text-align: center; justify-content: center; }
 }
 
 /* Floating Action Button — mobile only */
 /* تمرير أفقي للتبويبات — يعمل عبر جميع المتصفحات بما فيها iOS Safari */
-.noorix-tab-bar {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  touch-action: pan-x;
-}
+.noorix-tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: none; touch-action: pan-x; }
 .noorix-tab-bar::-webkit-scrollbar { display: none; }
 /* شريط التبويبات من الموارد البشرية */
 .noorix-tab-bar-pill::-webkit-scrollbar { display: none; }
 
 /* مبيعات — هيدر + شريط إجراءات ثابت على الجوال */
-.noorix-daily-sales-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.noorix-daily-sales-header__titles {
-  min-width: 0;
-  flex: 1 1 200px;
-}
-.noorix-daily-sales-header__toolbar {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  align-items: center;
-}
+.noorix-daily-sales-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+.noorix-daily-sales-header__titles { min-width: 0; flex: 1 1 200px; }
+.noorix-daily-sales-header__toolbar { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
 @media (max-width: 700px) {
-  .noorix-daily-sales-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  .noorix-daily-sales-header { flex-direction: column; align-items: stretch; }
   .noorix-daily-sales-header__toolbar {
     position: sticky;
     top: 0;
@@ -4430,11 +4021,7 @@ select option {
     box-shadow: 0 6px 16px rgba(0,0,0,0.06);
   }
   .noorix-daily-sales-header__toolbar .noorix-btn-nav,
-  .noorix-daily-sales-header__toolbar .noorix-btn-primary {
-    flex: 1 1 auto;
-    justify-content: center;
-    min-height: 44px;
-  }
+  .noorix-daily-sales-header__toolbar .noorix-btn-primary { flex: 1 1 auto; justify-content: center; min-height: 44px; }
 }
 
 /* إخفاء زر الإضافة الرئيسي على الجوال حين يوجد FAB */
@@ -4443,9 +4030,7 @@ select option {
   .noorix-mobile-hide { display: none !important; }
 }
 
-.noorix-fab {
-  display: none;
-}
+.noorix-fab { display: none; }
 @media (max-width: 768px) {
   .noorix-fab {
     display: flex;
@@ -4471,15 +4056,11 @@ select option {
     white-space: nowrap;
     transition: transform 150ms, box-shadow 150ms;
   }
-  .noorix-fab:active {
-    transform: translateX(-50%) scale(0.96);
-  }
+  .noorix-fab:active { transform: translateX(-50%) scale(0.96); }
 }
 
 /* ترويسة الطباعة — مخفية على الشاشة، تظهر عند الطباعة فقط */
-.noorix-print-header {
-  display: none;
-}
+.noorix-print-header { display: none; }
 
 /* ========== الطباعة الاحترافية — قانون موحد لجميع أقسام النظام ==========
    docs/PRINT_RULES.md
@@ -5546,9 +5127,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   }
 
   /* غلاف تبويبات: تلاشي خفيف عند الحافة (مؤشر تمرير على الجوال) */
-  .nx-tab-bar-fade-wrap {
-    position: relative;
-  }
+  .nx-tab-bar-fade-wrap { position: relative; }
   .nx-tab-bar-fade-wrap::after {
     content: '';
     position: absolute;
@@ -5581,16 +5160,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     transition: color var(--noorix-transition), border-color var(--noorix-transition), background var(--noorix-transition);
     margin: 0;
   }
-  .nx-tab-btn:hover {
-    color: var(--noorix-accent-blue);
-    background: rgba(37, 99, 235, 0.04);
-  }
-  .nx-tab-btn--active {
-    color: var(--noorix-accent-blue);
-    border-bottom-color: var(--noorix-accent-blue);
-    background: rgba(37, 99, 235, 0.07);
-    font-weight: 700;
-  }
+  .nx-tab-btn:hover { color: var(--noorix-accent-blue); background: rgba(37, 99, 235, 0.04); }
+  .nx-tab-btn--active { color: var(--noorix-accent-blue); border-bottom-color: var(--noorix-accent-blue); background: rgba(37, 99, 235, 0.07); font-weight: 700; }
 
   /* شريط تبويبات segmented (حبات داخل كرت — مثل الموارد البشرية) */
   .nx-segmented-tab-bar {
@@ -5611,9 +5182,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     z-index: 2;
     isolation: isolate;
   }
-  .nx-segmented-tab-bar::-webkit-scrollbar {
-    display: none;
-  }
+  .nx-segmented-tab-bar::-webkit-scrollbar { display: none; }
   .nx-tab-btn.nx-tab-btn--segmented {
     border-bottom: none;
     border-radius: 0.625rem;
@@ -5628,31 +5197,10 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     box-sizing: border-box;
   }
   /* غير نشط: سطح أبيض + حد واضح + ظل — يبرز فوق شريط الخلفية المموّه */
-  .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) {
-    border-color: var(--noorix-border);
-    background: var(--noorix-bg-surface);
-    color: var(--noorix-text-muted);
-    box-shadow: 0 1px 2px rgba(10, 31, 68, 0.07);
-  }
-  .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) {
-    color: var(--noorix-text);
-    background: var(--noorix-bg-surface);
-    border-color: var(--noorix-accent-blue);
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
-  }
-  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active {
-    border-color: #15803d;
-    background: var(--noorix-accent-green);
-    color: #fff;
-    font-weight: 700;
-    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35);
-  }
-  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover {
-    color: #fff;
-    background: var(--noorix-accent-green);
-    filter: brightness(1.03);
-    box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4);
-  }
+  .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) { border-color: var(--noorix-border); background: var(--noorix-bg-surface); color: var(--noorix-text-muted); box-shadow: 0 1px 2px rgba(10, 31, 68, 0.07); }
+  .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) { color: var(--noorix-text); background: var(--noorix-bg-surface); border-color: var(--noorix-accent-blue); box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12); }
+  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: #15803d; background: var(--noorix-accent-green); color: #fff; font-weight: 700; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35); }
+  .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: #fff; background: var(--noorix-accent-green); filter: brightness(1.03); box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4); }
 
   /* توزيع متساوٍ على عرض السطر — تبويبات فرعية HR (2–4 حبات) */
   .nx-segmented-tab-bar--fill {
@@ -5672,10 +5220,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
     box-sizing: border-box;
   }
   .nx-segmented-shell--flat .nx-segmented-tab-bar--track,
-  .nx-hr-segmented-inline .nx-segmented-tab-bar--track {
-    border-color: color-mix(in srgb, var(--noorix-border) 65%, transparent);
-    background: color-mix(in srgb, var(--noorix-bg-muted) 88%, var(--noorix-bg-surface));
-  }
+  .nx-hr-segmented-inline .nx-segmented-tab-bar--track { border-color: color-mix(in srgb, var(--noorix-border) 65%, transparent); background: color-mix(in srgb, var(--noorix-bg-muted) 88%, var(--noorix-bg-surface)); }
   /* HR: الحشو عبر Tailwind في HrSegmentedControl — لا نفرض padding ضيقاً هنا */
   .nx-segmented-tab-bar--hr.nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented {
     flex: 1 1 0;
@@ -5707,66 +5252,23 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
       padding: 0.6rem 0.75rem;
     }
   }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) {
-    border-color: transparent;
-    background: transparent;
-    color: var(--noorix-text-muted);
-    box-shadow: none;
-  }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) {
-    color: var(--noorix-text);
-    background: color-mix(in srgb, var(--noorix-bg-surface) 55%, transparent);
-    border-color: transparent;
-    box-shadow: none;
-  }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active {
-    border-color: var(--noorix-border);
-    background: var(--noorix-bg-surface);
-    color: var(--noorix-accent-blue);
-    font-weight: 700;
-    box-shadow: 0 1px 4px rgba(10, 31, 68, 0.12);
-  }
-  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover {
-    color: var(--noorix-accent-blue);
-    background: var(--noorix-bg-surface);
-    filter: none;
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.14);
-  }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:not(.nx-tab-btn--segmented-active) { border-color: transparent; background: transparent; color: var(--noorix-text-muted); box-shadow: none; }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented:hover:not(.nx-tab-btn--segmented-active) { color: var(--noorix-text); background: color-mix(in srgb, var(--noorix-bg-surface) 55%, transparent); border-color: transparent; box-shadow: none; }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active { border-color: var(--noorix-border); background: var(--noorix-bg-surface); color: var(--noorix-accent-blue); font-weight: 700; box-shadow: 0 1px 4px rgba(10, 31, 68, 0.12); }
+  .nx-segmented-tab-bar--fill .nx-tab-btn.nx-tab-btn--segmented.nx-tab-btn--segmented-active:hover { color: var(--noorix-accent-blue); background: var(--noorix-bg-surface); filter: none; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.14); }
 
   /* مساحة عمل HR — كرت واحد (تبويبات رئيسية) + pills فرعية + محتوى */
-  .nx-hr-workspace {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    width: 100%;
-    padding: 0;
-  }
+  .nx-hr-workspace { display: flex; flex-direction: column; min-width: 0; width: 100%; padding: 0; }
   /* تبويبات فرعية — pills تحت الرئيسي (بدون sparkline، خط واحد أسفل الشريط) */
   .nx-hr-subtab-section > .nx-segmented-shell--flat {
     border-bottom: 1px solid var(--noorix-border);
     padding-bottom: 0.625rem;
     margin-bottom: 0;
   }
-  .nx-hr-subtab-section .nx-segmented-tab-bar--track {
-    border-color: color-mix(in srgb, var(--noorix-border) 70%, transparent);
-    background: color-mix(in srgb, var(--noorix-bg-muted) 90%, var(--noorix-bg-surface));
-  }
+  .nx-hr-subtab-section .nx-segmented-tab-bar--track { border-color: color-mix(in srgb, var(--noorix-border) 70%, transparent); background: color-mix(in srgb, var(--noorix-bg-muted) 90%, var(--noorix-bg-surface)); }
   /* فلاتر داخل الشاشة (نشطون | مفصولين | …) — pills صغيرة بدون track */
-  .nx-hr-filter-shell {
-    border: none;
-    background: transparent;
-    box-shadow: none;
-  }
-  .nx-hr-filter-pills {
-    width: 100%;
-    min-width: 0;
-    gap: 6px;
-    padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    overflow: visible;
-  }
+  .nx-hr-filter-shell { border: none; background: transparent; box-shadow: none; }
+  .nx-hr-filter-pills { width: 100%; min-width: 0; gap: 6px; padding: 0; background: transparent; border: none; box-shadow: none; overflow: visible; }
   .nx-hr-filter-pills .nx-tab-btn.nx-tab-btn--segmented {
     flex: 1 1 0;
     min-width: 0;
