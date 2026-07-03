@@ -33,6 +33,31 @@ const manualTableRegistry = JSON.parse(read(manualTableRegistryPath));
 const allowedManualTableCounts = manualTableRegistry.allowedTableCounts ?? {};
 const manualTableReasonsPath = 'scripts/table-manual-reasons.json';
 const manualTableReasons = JSON.parse(read(manualTableReasonsPath)).reasons ?? {};
+const tableStatusDocPath = 'docs/FRONTEND_TABLE_GOVERNANCE_STATUS.md';
+const tableStatusText = read(tableStatusDocPath);
+const allowedManualTableCategories = new Set([
+  'bank-print',
+  'bank-protected',
+  'dashboard-matrix',
+  'document-print',
+  'editable-grid',
+  'financial-report',
+  'hr-financial',
+  'matrix-table',
+  'payroll-protected',
+  'print-export-html',
+  'print-financial',
+  'purchases-protected',
+  'tax-print',
+  'tax-protected',
+]);
+const allowedManualTableDecisions = new Set([
+  'leave',
+  'convert-to-simple-table',
+  'convert-to-smart-table',
+  'future-print-table',
+  'future-matrix-table',
+]);
 
 for (const required of [
   'Table Governance Addendum',
@@ -107,12 +132,35 @@ for (const [file, allowed] of Object.entries(allowedManualTableCounts)) {
   const reason = manualTableReasons[file];
   if (!reason?.category || !reason?.decision || !reason?.reason) {
     fail(file, null, `manual <table> registry is missing a documented reason in ${manualTableReasonsPath}`);
+  } else {
+    if (!allowedManualTableCategories.has(reason.category)) {
+      fail(file, null, `manual <table> category "${reason.category}" is not in the governed category allowlist`);
+    }
+    if (!allowedManualTableDecisions.has(reason.decision)) {
+      fail(file, null, `manual <table> decision "${reason.decision}" is not in the governed decision allowlist`);
+    }
   }
 }
 
 for (const file of Object.keys(manualTableReasons)) {
   if (!(file in allowedManualTableCounts)) {
     fail(file, null, `manual <table> reason is stale: no matching entry in ${manualTableRegistryPath}`);
+  }
+}
+
+const manualTableFileCount = Object.keys(allowedManualTableCounts).length;
+const manualTableTotal = Object.values(allowedManualTableCounts).reduce((sum, count) => sum + count, 0);
+for (const required of [
+  'Manual `<table>` outside `src/ui`',
+  'Files with manual tables outside `src/ui`',
+  `| Manual \`<table>\` outside \`src/ui\` | ${manualTableTotal} |`,
+  `| Files with manual tables outside \`src/ui\` | ${manualTableFileCount} |`,
+  '`scripts/table-manual-exceptions.json`',
+  '`scripts/table-manual-reasons.json`',
+  '`scripts/check-table-governance.mjs`',
+]) {
+  if (!tableStatusText.includes(required)) {
+    fail(tableStatusDocPath, null, `table governance status doc is stale or missing: ${required}`);
   }
 }
 
