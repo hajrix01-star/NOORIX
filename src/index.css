@@ -534,234 +534,53 @@ a { color: inherit; text-decoration: none; }
 
 /* ========== App Shell ========== */
 /* Desktop: flex row — السايدبار عرض ثابت، المحتوى الرئيسي flex-1 */
-.app-shell {
-  display: flex;
-  flex-direction: row;
-  min-height: 100vh;
-  background: var(--noorix-bg-page);
-  overflow-x: hidden;
-}
+.app-shell { display: flex; flex-direction: row; min-height: 100vh; background: var(--noorix-bg-page); overflow-x: hidden; }
 
 /* ========== سايدبار ========== */
-.app-sidebar {
-  flex-shrink: 0;
-  width: var(--noorix-sidebar-width, 232px);
-  min-height: 100vh;
-  background: var(--noorix-sidebar-bg);
-  display: flex;
-  flex-direction: column;
-  z-index: var(--nx-z-sidebar, 200);
-  overflow: hidden;
-}
-[dir='rtl'] .app-sidebar {
-  border-left: 1px solid rgba(255,255,255,0.06);
-}
-[dir='ltr'] .app-sidebar {
-  border-right: 1px solid rgba(255,255,255,0.06);
-}
+.app-sidebar { flex-shrink: 0; width: var(--noorix-sidebar-width, 232px); min-height: 100vh; background: var(--noorix-sidebar-bg); display: flex; flex-direction: column; z-index: var(--nx-z-sidebar, 200); overflow: hidden; }
+[dir='rtl'] .app-sidebar { border-left: 1px solid rgba(255,255,255,0.06); }
+[dir='ltr'] .app-sidebar { border-right: 1px solid rgba(255,255,255,0.06); }
 
-.app-sidebar__header {
-  flex-shrink: 0;
-  padding: 20px 18px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-.app-sidebar__logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.app-sidebar__logo-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--noorix-accent-green) 60%, #fff), var(--noorix-accent-green));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 900;
-  font-size: 18px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px var(--noorix-green-35), inset 0 1px 0 rgba(255,255,255,0.2);
-}
+.app-sidebar__header { flex-shrink: 0; padding: 20px 18px 14px; display: flex; flex-direction: column; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.app-sidebar__logo { display: flex; align-items: center; gap: 10px; }
+.app-sidebar__logo-mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(145deg, color-mix(in srgb, var(--noorix-accent-green) 60%, #fff), var(--noorix-accent-green)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 18px; flex-shrink: 0; box-shadow: 0 2px 8px var(--noorix-green-35), inset 0 1px 0 rgba(255,255,255,0.2); }
 .app-sidebar__title { display: flex; flex-direction: column; gap: 1px; }
-.app-sidebar__title-main {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: var(--noorix-sidebar-text);
-}
-.app-sidebar__title-sub {
-  font-size: 13px;
-  color: var(--noorix-sidebar-text-sub);
-  letter-spacing: 0.03em;
-}
+.app-sidebar__title-main { font-size: 18px; font-weight: 800; letter-spacing: 0.02em; color: var(--noorix-sidebar-text); }
+.app-sidebar__title-sub { font-size: 13px; color: var(--noorix-sidebar-text-sub); letter-spacing: 0.03em; }
 
 /* التمرير داخل السايدبار */
-.app-sidebar__nav {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 10px 10px 6px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.12) transparent;
-}
+.app-sidebar__nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 10px 10px 6px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.12) transparent; }
 .app-sidebar__nav::-webkit-scrollbar { width: 4px; }
-.app-sidebar__nav::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.14);
-  border-radius: 4px;
-}
+.app-sidebar__nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 4px; }
 
-.app-sidebar__section-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.45);
-  letter-spacing: 0.12em;
-  padding: 14px 8px 5px;
-  display: block;
-  font-weight: 600;
-}
-.app-nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.app-nav-list--nested {
-  padding-inline-start: 10px;
-  margin-top: 4px;
-  border-inline-start: 1px solid rgba(255,255,255,0.12);
-}
+.app-sidebar__section-label { font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.45); letter-spacing: 0.12em; padding: 14px 8px 5px; display: block; font-weight: 600; }
+.app-nav-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.app-nav-list--nested { padding-inline-start: 10px; margin-top: 4px; border-inline-start: 1px solid rgba(255,255,255,0.12); }
 .app-nav-item { border-radius: 10px; overflow: hidden; }
 .app-nav-item--has-children .app-nav-link { width: 100%; text-align: inherit; cursor: pointer; justify-content: flex-start; }
-.app-nav-link {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 10px;
-  color: #ffffff;
-  font-family: var(--noorix-font-primary);
-  font-size: var(--noorix-text-base);
-  font-weight: 500;
-  border: 1px solid transparent;
-  background: transparent;
-  transition: background var(--noorix-transition), border-color var(--noorix-transition), box-shadow var(--noorix-transition);
-}
-.app-nav-link:hover {
-  background: rgba(255,255,255,0.09);
-  color: #fff;
-  border-color: rgba(255,255,255,0.08);
-}
-.app-nav-link--active {
-  background: var(--noorix-green-15);
-  color: #fff;
-  font-weight: 700;
-  border-color: rgba(22,163,74,0.22);
-  border-right: 3px solid var(--noorix-accent-green);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
-}
-[dir='ltr'] .app-nav-link--active {
-  border-right: none;
-  border-left: 3px solid var(--noorix-accent-green);
-}
-.app-nav-link__label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
+.app-nav-link { display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 9px 12px; border-radius: 10px; color: #ffffff; font-family: var(--noorix-font-primary); font-size: var(--noorix-text-base); font-weight: 500; border: 1px solid transparent; background: transparent; transition: background var(--noorix-transition), border-color var(--noorix-transition), box-shadow var(--noorix-transition); }
+.app-nav-link:hover { background: rgba(255,255,255,0.09); color: #fff; border-color: rgba(255,255,255,0.08); }
+.app-nav-link--active { background: var(--noorix-green-15); color: #fff; font-weight: 700; border-color: rgba(22,163,74,0.22); border-right: 3px solid var(--noorix-accent-green); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }
+[dir='ltr'] .app-nav-link--active { border-right: none; border-left: 3px solid var(--noorix-accent-green); }
+.app-nav-link__label { display: flex; align-items: center; gap: 10px; min-width: 0; }
 /* السهم بجانب التسمية وليس داخلها — محاذاة الأيقونة مع باقي القائمة */
-.app-nav-item--has-children .app-nav-link__label {
-  flex: 1;
-}
-.app-nav-link__chevron {
-  flex-shrink: 0;
-  font-size: 10px;
-  line-height: 1;
-  opacity: 0.85;
-  width: 1em;
-  text-align: center;
-}
-.app-sidebar .app-nav-link.nx-btn {
-  min-height: 0;
-}
+.app-nav-item--has-children .app-nav-link__label { flex: 1; }
+.app-nav-link__chevron { flex-shrink: 0; font-size: 10px; line-height: 1; opacity: 0.85; width: 1em; text-align: center; }
+.app-sidebar .app-nav-link.nx-btn { min-height: 0; }
 /* Button يلفّ المحتوى في .nx-btn__label — نجعله صفاً بعرض كامل لمحاذاة الأيقونة والسهم */
-.app-sidebar .app-nav-link.nx-btn .nx-btn__label {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  width: 100%;
-  min-width: 0;
-  gap: 6px;
-}
-.app-nav-link__label svg {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  opacity: 0.85;
-}
+.app-sidebar .app-nav-link.nx-btn .nx-btn__label { display: flex; align-items: center; flex: 1; width: 100%; min-width: 0; gap: 6px; }
+.app-nav-link__label svg { flex-shrink: 0; width: 18px; height: 18px; opacity: 0.85; }
 .app-nav-link--active .app-nav-link__label svg { opacity: 1; }
 
-.app-sidebar__footer {
-  flex-shrink: 0;
-  padding: 12px 18px;
-  font-size: 13px;
-  color: rgba(255,255,255,0.3);
-  border-top: 1px solid rgba(255,255,255,0.06);
-  letter-spacing: 0.03em;
-}
+.app-sidebar__footer { flex-shrink: 0; padding: 12px 18px; font-size: 13px; color: rgba(255,255,255,0.3); border-top: 1px solid rgba(255,255,255,0.06); letter-spacing: 0.03em; }
 
-.app-sidebar-select {
-  width: 100%;
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(0,0,0,0.25);
-  color: rgba(255,255,255,0.85);
-  font-size: 13px;
-  cursor: pointer;
-  font-family: var(--noorix-font-primary);
-}
+.app-sidebar-select { width: 100%; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.25); color: rgba(255,255,255,0.85); font-size: 13px; cursor: pointer; font-family: var(--noorix-font-primary); }
 
 /* ========== محتوى رئيسي — flex-1 w-full overflow-hidden ========== */
-.app-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  /* padding-top = 16px ثابت لجميع الأقسام على نفس المستوى */
-  padding: 16px clamp(12px, 2.5vw, 24px) clamp(16px, 3vw, 24px);
-  gap: 14px;
-  min-height: 100vh;
-  min-width: 0;
-  width: 100%;
-  overflow-x: hidden;
-  box-sizing: border-box;
-}
-.app-main__content {
-  flex: 1;
-  min-width: 0;
-  max-width: 1560px;
-  width: 100%;
-  padding-left: max(12px, env(safe-area-inset-left, 0px));
-  padding-right: max(12px, env(safe-area-inset-right, 0px));
-}
-[dir='rtl'] .app-main__content {
-  margin-right: 0;
-  margin-left: auto;
-}
-[dir='ltr'] .app-main__content {
-  margin-left: 0;
-  margin-right: auto;
-}
+.app-main { flex: 1; display: flex; flex-direction: column; padding: 16px clamp(12px, 2.5vw, 24px) clamp(16px, 3vw, 24px); gap: 14px; min-height: 100vh; min-width: 0; width: 100%; overflow-x: hidden; box-sizing: border-box; }
+.app-main__content { flex: 1; min-width: 0; max-width: 1560px; width: 100%; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+[dir='rtl'] .app-main__content { margin-right: 0; margin-left: auto; }
+[dir='ltr'] .app-main__content { margin-left: 0; margin-right: auto; }
 
 .app-main__menu-button {
   height: 36px;
