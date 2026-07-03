@@ -39,6 +39,14 @@ const printTableFoundationDocPath = 'docs/PRINT_TABLE_FOUNDATION.md';
 const printTableFoundationText = read(printTableFoundationDocPath);
 const printTableBatch1DocPath = 'docs/PRINT_TABLE_CONVERSION_BATCH_1.md';
 const printTableBatch1Text = read(printTableBatch1DocPath);
+const printTableBatch2DocPath = 'docs/PRINT_TABLE_CONVERSION_BATCH_2.md';
+const printTableBatch2Text = read(printTableBatch2DocPath);
+const simpleTableDashboardDocPath = 'docs/SIMPLE_TABLE_DASHBOARD_CONVERSION.md';
+const simpleTableDashboardText = read(simpleTableDashboardDocPath);
+const catalogPrintTableDocPath = 'docs/CATALOG_PRINT_TABLE_CONVERSION.md';
+const catalogPrintTableText = read(catalogPrintTableDocPath);
+const dashboardCalendarPrintTableDocPath = 'docs/DASHBOARD_CALENDAR_PRINT_TABLE_CONVERSION.md';
+const dashboardCalendarPrintTableText = read(dashboardCalendarPrintTableDocPath);
 const allowedManualTableCategories = new Set([
   'bank-print',
   'bank-protected',
@@ -170,6 +178,10 @@ for (const required of [
   '`scripts/check-table-governance.mjs`',
   '`docs/PRINT_TABLE_FOUNDATION.md`',
   '`docs/PRINT_TABLE_CONVERSION_BATCH_1.md`',
+  '`docs/PRINT_TABLE_CONVERSION_BATCH_2.md`',
+  '`docs/SIMPLE_TABLE_DASHBOARD_CONVERSION.md`',
+  '`docs/CATALOG_PRINT_TABLE_CONVERSION.md`',
+  '`docs/DASHBOARD_CALENDAR_PRINT_TABLE_CONVERSION.md`',
 ]) {
   if (!tableStatusText.includes(required)) {
     fail(tableStatusDocPath, null, `table governance status doc is stale or missing: ${required}`);
@@ -197,6 +209,52 @@ for (const required of [
 ]) {
   if (!printTableBatch1Text.includes(required)) {
     fail(printTableBatch1DocPath, null, `print table batch 1 doc is stale or missing: ${required}`);
+  }
+}
+
+for (const required of [
+  '| Manual `<table>` outside `src/ui` | 62 | 58 | -4 |',
+  '`src/modules/Invoices/useInvoicesListActions.ts`',
+  '`src/modules/Invoices/utils/buildInvoicesCashReportPrint.ts`',
+  '`src/modules/Suppliers/components/SupplierProfileModal.tsx`',
+  '`npm.cmd run check:table-governance`',
+]) {
+  if (!printTableBatch2Text.includes(required)) {
+    fail(printTableBatch2DocPath, null, `print table batch 2 doc is stale or missing: ${required}`);
+  }
+}
+
+for (const required of [
+  '| Manual `<table>` outside `src/ui` | 58 | 57 | -1 |',
+  '`src/modules/Dashboard/overview/components/DashboardOverviewWeeklySalesPanel.tsx`',
+  '`SimpleTable`',
+  '`npm.cmd run check:table-governance`',
+]) {
+  if (!simpleTableDashboardText.includes(required)) {
+    fail(simpleTableDashboardDocPath, null, `simple table dashboard conversion doc is stale or missing: ${required}`);
+  }
+}
+
+for (const required of [
+  '| Manual `<table>` outside `src/ui` | 57 | 55 | -2 |',
+  '`src/modules/Orders/utils/itemsCatalogPrint.ts`',
+  '`src/modules/Orders/utils/itemsCatalogWeeklyPrint.ts`',
+  '`buildPrintHtmlTable`',
+  '`npm.cmd run test -- itemsCatalogPrint itemsCatalogWeeklyPrint printTableHtml`',
+]) {
+  if (!catalogPrintTableText.includes(required)) {
+    fail(catalogPrintTableDocPath, null, `catalog print table conversion doc is stale or missing: ${required}`);
+  }
+}
+
+for (const required of [
+  '| Manual `<table>` outside `src/ui` | 55 | 54 | -1 |',
+  '`src/modules/Dashboard/components/DashboardCalendarTab/hooks/useDashboardCalendarTab.ts`',
+  '`buildPrintHtmlTable`',
+  '`npm.cmd run check:table-governance`',
+]) {
+  if (!dashboardCalendarPrintTableText.includes(required)) {
+    fail(dashboardCalendarPrintTableDocPath, null, `dashboard calendar print table conversion doc is stale or missing: ${required}`);
   }
 }
 

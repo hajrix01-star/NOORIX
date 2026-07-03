@@ -1,10 +1,6 @@
-/**
- * متوسط يومي المبيعات لكل جزء أسبوعي داخل الشهر (1–7، 8–14، …) مقارنة بمرجع.
- */
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { FmtNum } from '../../../../ui';
-import { cn } from '../../../../ui/cn';
+import { FmtNum, SimpleTable, cn } from '../../../../ui';
 import { DateFilterMonthPicker } from '../../../../shared/components/DateFilterBar';
 
 const TH_CELL =
@@ -40,6 +36,64 @@ type Props = {
   isLoading: boolean;
 };
 
+function MonthHeader({
+  title,
+  subtitle,
+  monthLabel,
+  year,
+}: {
+  title: React.ReactNode;
+  subtitle: React.ReactNode;
+  monthLabel: React.ReactNode;
+  year: number;
+}) {
+  return (
+    <>
+      <div className="mb-0.5 text-[9px] font-bold leading-tight text-white sm:text-[11px]">
+        {title}
+      </div>
+      <div className="mb-1 text-[8px] font-semibold text-white/75 sm:text-[10px]">
+        {subtitle}
+      </div>
+      <div className="text-[8px] font-bold text-white/80 sm:text-[10px]">
+        {monthLabel} {year}
+      </div>
+    </>
+  );
+}
+
+function MoneyCell({ value }: { value: number }) {
+  return (
+    <span dir="ltr">
+      <FmtNum
+        n={value}
+        maxDecimals={2}
+        className="font-semibold tabular-nums nx-font-numbers text-noorix-text"
+      />{' '}
+      <span className="nx-sar text-[8px] text-noorix-muted sm:text-[11px]">SR</span>
+    </span>
+  );
+}
+
+function DeltaCell({ value }: { value: number | null }) {
+  if (value == null) {
+    return <span className="text-[13px] font-semibold text-noorix-muted">-</span>;
+  }
+
+  return (
+    <span
+      className={cn(
+        'font-bold tabular-nums nx-font-numbers',
+        value > 0 ? 'text-[#3B6D11]' : value < 0 ? 'text-[#A32D2D]' : 'text-noorix-muted',
+      )}
+      dir="ltr"
+    >
+      {value > 0 ? '+' : ''}
+      {Math.round(value * 10) / 10}%
+    </span>
+  );
+}
+
 export function DashboardOverviewWeeklySalesPanel({
   weeklyYearOptions,
   weeklyMonthOptions,
@@ -55,6 +109,8 @@ export function DashboardOverviewWeeklySalesPanel({
   isLoading,
 }: Props) {
   const { t } = useTranslation();
+  const monthALabel = weeklyMonthOptions.find((option) => option.value === panelMonthA)?.label;
+  const monthBLabel = weeklyMonthOptions.find((option) => option.value === panelMonthB)?.label;
 
   return (
     <section className="noorix-surface-card min-w-0 overflow-hidden p-0" aria-label={t('dashboardWeeklySalesTitle')}>
@@ -95,96 +151,71 @@ export function DashboardOverviewWeeklySalesPanel({
 
         {isLoading || !data ? (
           <div className="space-y-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-10 animate-pulse rounded-lg bg-[var(--noorix-surface-2)]" />
+            {[0, 1, 2, 3].map((item) => (
+              <div key={item} className="h-10 animate-pulse rounded-lg bg-[var(--noorix-surface-2)]" />
             ))}
           </div>
         ) : (
-          <table className="w-full table-fixed border-collapse overflow-hidden rounded-lg border border-noorix-border text-[10px]">
-            <colgroup>
-              <col className="w-[24%]" />
-              <col className="w-[28%]" />
-              <col className="w-[28%]" />
-              <col className="w-[20%]" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th className={TH_CELL}>
-                  {t('dashboardWeeklySalesWeekCol')}
-                </th>
-                <th className={cn(TH_CELL, 'align-bottom')}>
-                  <div className="mb-0.5 text-[9px] font-bold leading-tight text-white sm:text-[11px]">
-                    {t('dashboardWeeklySalesPeriodMainHeader')}
-                  </div>
-                  <div className="mb-1 text-[8px] font-semibold text-white/75 sm:text-[10px]">
-                    {t('dashboardWeeklySalesAvgDailyShort')}
-                  </div>
-                  <div className="text-[8px] font-bold text-white/80 sm:text-[10px]">
-                    {weeklyMonthOptions.find((o) => o.value === panelMonthA)?.label} {panelYearA}
-                  </div>
-                </th>
-                <th className={cn(TH_CELL, 'align-bottom')}>
-                  <div className="mb-0.5 text-[9px] font-bold leading-tight text-white sm:text-[11px]">
-                    {t('dashboardWeeklySalesPeriodCompareHeader')}
-                  </div>
-                  <div className="mb-1 text-[8px] font-semibold text-white/75 sm:text-[10px]">
-                    {t('dashboardWeeklySalesAvgDailyShort')}
-                  </div>
-                  <div className="text-[8px] font-bold text-white/80 sm:text-[10px]">
-                    {weeklyMonthOptions.find((o) => o.value === panelMonthB)?.label} {panelYearB}
-                  </div>
-                </th>
-                <th className={TH_CELL}>
-                  {t('dashboardWeeklySalesDelta')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.rows.map((row) => (
-                <tr key={row.weekIndex} className="bg-[var(--noorix-surface-1)]">
-                  <td className={cn(TD_CELL, 'font-medium text-noorix-text')}>
-                    {t('dashboardWeeklySalesWeekRange', {
-                      n: row.weekIndex,
-                      from: row.dayStart,
-                      to: row.dayEnd,
-                    })}
-                  </td>
-                  <td className={TD_CELL} dir="ltr">
-                    <FmtNum
-                      n={row.avgDailyCurrent}
-                      maxDecimals={2}
-                      className="font-semibold tabular-nums nx-font-numbers text-noorix-text"
-                    />{' '}
-                    <span className="nx-sar text-[8px] text-noorix-muted sm:text-[11px]">SR</span>
-                  </td>
-                  <td className={TD_CELL} dir="ltr">
-                    <FmtNum
-                      n={row.avgDailyBaseline}
-                      maxDecimals={2}
-                      className="font-semibold tabular-nums nx-font-numbers text-noorix-text"
-                    />{' '}
-                    <span className="nx-sar text-[8px] text-noorix-muted sm:text-[11px]">SR</span>
-                  </td>
-                  <td className={TD_CELL}>
-                    {row.deltaPct != null ? (
-                      <span
-                        className={cn(
-                          'font-bold tabular-nums nx-font-numbers',
-                          row.deltaPct > 0 ? 'text-[#3B6D11]' : row.deltaPct < 0 ? 'text-[#A32D2D]' : 'text-noorix-muted',
-                        )}
-                        dir="ltr"
-                      >
-                        {row.deltaPct > 0 ? '+' : ''}
-                        {Math.round(row.deltaPct * 10) / 10}%
-                      </span>
-                    ) : (
-                      <span className="text-[13px] font-semibold text-noorix-muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <SimpleTable<WeeklySalesWeekRow>
+            compact
+            tableClassName="table-fixed overflow-hidden rounded-lg border border-noorix-border text-[10px]"
+            frameClassName="border-0"
+            cellPadding="6px 8px"
+            columns={[
+              {
+                key: 'weekIndex',
+                label: t('dashboardWeeklySalesWeekCol'),
+                width: '24%',
+                headerClassName: TH_CELL,
+                cellClassName: cn(TD_CELL, 'font-medium text-noorix-text'),
+                render: (_value, row) => t('dashboardWeeklySalesWeekRange', {
+                  n: row.weekIndex,
+                  from: row.dayStart,
+                  to: row.dayEnd,
+                }),
+              },
+              {
+                key: 'avgDailyCurrent',
+                label: (
+                  <MonthHeader
+                    title={t('dashboardWeeklySalesPeriodMainHeader')}
+                    subtitle={t('dashboardWeeklySalesAvgDailyShort')}
+                    monthLabel={monthALabel}
+                    year={panelYearA}
+                  />
+                ),
+                width: '28%',
+                headerClassName: cn(TH_CELL, 'align-bottom'),
+                cellClassName: TD_CELL,
+                render: (_value, row) => <MoneyCell value={row.avgDailyCurrent} />,
+              },
+              {
+                key: 'avgDailyBaseline',
+                label: (
+                  <MonthHeader
+                    title={t('dashboardWeeklySalesPeriodCompareHeader')}
+                    subtitle={t('dashboardWeeklySalesAvgDailyShort')}
+                    monthLabel={monthBLabel}
+                    year={panelYearB}
+                  />
+                ),
+                width: '28%',
+                headerClassName: cn(TH_CELL, 'align-bottom'),
+                cellClassName: TD_CELL,
+                render: (_value, row) => <MoneyCell value={row.avgDailyBaseline} />,
+              },
+              {
+                key: 'deltaPct',
+                label: t('dashboardWeeklySalesDelta'),
+                width: '20%',
+                headerClassName: TH_CELL,
+                cellClassName: TD_CELL,
+                render: (_value, row) => <DeltaCell value={row.deltaPct} />,
+              },
+            ]}
+            data={data.rows}
+            getRowClassName={() => 'bg-[var(--noorix-surface-1)]'}
+          />
         )}
       </div>
     </section>

@@ -4,7 +4,7 @@ import { useApp } from '../../../../../context/AppContext';
 import { useDashboardSalesPack } from '../../../../../hooks/useDashboardSalesPack';
 import { useDashboardCalendarData } from '../../../../../hooks/useDashboardCalendarData';
 import { fmt } from '../../../../../utils/format';
-import { buildPrintTableHtml } from '../../../../../utils/printTableHtml';
+import { buildPrintHtmlTable, buildPrintTableHtml } from '../../../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../../../utils/printUtils';
 import { getSaudiNow, toYmd } from '../../../../../utils/saudiDate';
 import { computeRevenueMonthDailyAvg } from '../../../overview/utils/dashboardDailyAvg';
@@ -301,28 +301,38 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
           bg = hexToRgba(KPI_RECHARTS_COLORS.grossProfit, 0.2 + intensity * 0.28);
         }
       }
-      return `<td style="padding:6px;text-align:center;border:1px solid #ddd;background:${bg}">${day}<br><span style="font-weight:700">${fmt(amount, 0)}</span>${achieved ? ' ✓' : ''}</td>`;
+      return {
+        html: `${day}<br><span style="font-weight:700">${fmt(amount, 0)}</span>${achieved ? ' ✓' : ''}`,
+        style: `padding:6px;text-align:center;border:1px solid #ddd;background:${bg}`,
+      };
     });
     const firstDow = new Date(year, month - 1, 1).getDay();
-    const blanks = Array(firstDow).fill('<td></td>').join('');
-    const rows: string[] = [];
-    let row = blanks;
-    cells.forEach((cell: string, i: number) => {
-      row += cell;
+    const rows: Array<{ cells: Array<{ value?: string; html?: string; style?: string }> }> = [];
+    let row: Array<{ value?: string; html?: string; style?: string }> = Array(firstDow).fill(null).map(() => ({ value: '' }));
+    cells.forEach((cell: { html: string; style: string }, i: number) => {
+      row.push(cell);
       if ((firstDow + i + 1) % 7 === 0) {
-        rows.push(`<tr>${row}</tr>`);
-        row = '';
+        rows.push({ cells: row });
+        row = [];
       }
     });
-    if (row) rows.push(`<tr>${row}</tr>`);
+    if (row.length) rows.push({ cells: row });
     const dowHeader = lang === 'ar' ? DOW_LABELS_AR : DOW_LABELS;
     const dowOrder = [0, 1, 2, 3, 4, 5, 6] as const;
-    const headerRow = `<tr>${dowOrder.map((d) => `<th>${dowHeader[d]}</th>`).join('')}</tr>`;
+    const tableHtml = buildPrintHtmlTable({
+      tableClassName: 'dashboard-calendar-print-table',
+      wrapperClassName: null,
+      headerRows: [{
+        cells: dowOrder.map((day) => ({ value: dowHeader[day] })),
+      }],
+      bodyRows: rows,
+      emptyColSpan: 7,
+    });
     openPrintWindow({
       title: t('dashboardCalendar'),
       companyName: companyName || '',
       subtitle: `${t('dashboardCalendar')} — ${monthLabel} ${year}`,
-      body: `<table><thead>${headerRow}</thead><tbody>${rows.join('')}</tbody></table>`,
+      body: tableHtml,
     });
   }, [daysInMonth, year, month, monthLabel, companyName, t, lang, maxAmount]);
 

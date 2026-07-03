@@ -5,7 +5,7 @@ import { fetchAllInvoicesForExport } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO, getSaudiToday } from '../../../utils/saudiDate';
-import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
+import { buildPrintDefinitionTableHtml, buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 
 const PAGE_SIZE = 10;
@@ -38,6 +38,14 @@ function buildInvoicesTableHtml(invoices: any[], t: (key: string, ...args: any[]
     })),
     emptyMessage: t('noInvoicesInPeriod'),
     numericKeys: [netKey, taxKey, totalKey],
+  });
+}
+
+function buildSupplierProfileDefinitionHtml(entries: Array<{ label: unknown; value: unknown }>) {
+  return buildPrintDefinitionTableHtml({
+    entries,
+    tableClassName: 'supplier-profile-print-table',
+    wrapperClassName: 'supplier-profile-print-table-wrap',
   });
 }
 
@@ -110,20 +118,20 @@ export function SupplierProfileModal({
     const profileHtml = `
       <section>
         <h2>${esc(t('supplierProfile'))}</h2>
-        <table><tbody>
-          <tr><th>${esc(t('name'))}</th><td>${esc(supplierLabel)}</td></tr>
-          <tr><th>${esc(t('category'))}</th><td>${esc(categoryName(category, lang))}</td></tr>
-          <tr><th>${esc(t('taxNumber'))}</th><td>${esc(supplier?.taxNumber || '-')}</td></tr>
-          <tr><th>${esc(t('phone'))}</th><td>${esc(supplier?.phone || '-')}</td></tr>
-          <tr><th>${esc(t('taxRegisteredCol'))}</th><td>${esc(supplier?.isTaxRegistered ? t('taxRegisteredBadgeYes') : t('taxRegisteredBadgeNo'))}</td></tr>
-        </tbody></table>
+        ${buildSupplierProfileDefinitionHtml([
+          { label: t('name'), value: supplierLabel },
+          { label: t('category'), value: categoryName(category, lang) },
+          { label: t('taxNumber'), value: supplier?.taxNumber || '-' },
+          { label: t('phone'), value: supplier?.phone || '-' },
+          { label: t('taxRegisteredCol'), value: supplier?.isTaxRegistered ? t('taxRegisteredBadgeYes') : t('taxRegisteredBadgeNo') },
+        ])}
         <h2>${esc(t('supplierProfileSummary'))}</h2>
-        <table><tbody>
-          <tr><th>${esc(t('supplierProfileInvoiceCount'))}</th><td>${esc(String(all.length))}</td></tr>
-          <tr><th>${esc(t('net'))}</th><td>${esc(fmt(sum('netAmount')))} SR</td></tr>
-          <tr><th>${esc(t('tax'))}</th><td>${esc(fmt(sum('taxAmount')))} SR</td></tr>
-          <tr><th>${esc(t('total'))}</th><td>${esc(fmt(sum('totalAmount')))} SR</td></tr>
-        </tbody></table>
+        ${buildSupplierProfileDefinitionHtml([
+          { label: t('supplierProfileInvoiceCount'), value: String(all.length) },
+          { label: t('net'), value: `${fmt(sum('netAmount'))} SR` },
+          { label: t('tax'), value: `${fmt(sum('taxAmount'))} SR` },
+          { label: t('total'), value: `${fmt(sum('totalAmount'))} SR` },
+        ])}
         <h2>${esc(t('supplierProfileInvoicesTab'))}</h2>
         ${buildInvoicesTableHtml(all, t)}
       </section>`;
