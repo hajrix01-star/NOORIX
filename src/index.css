@@ -7134,54 +7134,20 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .nx-touch-scroll {
   -webkit-overflow-scrolling: touch;
 }
-.nx-analysis-color-0 {
-  background: var(--noorix-accent-blue);
-}
-.nx-analysis-color-1 {
-  background: var(--noorix-accent-green);
-}
-.nx-analysis-color-2 {
-  background: #ca8a04;
-}
-.nx-analysis-color-3 {
-  background: var(--noorix-accent-red);
-}
+.nx-analysis-color-0 { background: var(--noorix-accent-blue); }
+.nx-analysis-color-1 { background: var(--noorix-accent-green); }
+.nx-analysis-color-2 { background: #ca8a04; }
+.nx-analysis-color-3 { background: var(--noorix-accent-red); }
 .nx-analysis-color-4,
-.nx-analysis-color-7 {
-  background: var(--noorix-accent-violet);
-}
-.nx-analysis-color-5 {
-  background: #0891b2;
-}
-.nx-analysis-color-6 {
-  background: #db2777;
-}
-.nx-analysis-color-8 {
-  background: #ea580c;
-}
-.nx-analysis-color-9 {
-  background: #84cc16;
-}
-.nx-owner-metric--sales {
-  border-color: var(--color-nx-sales);
-  color: var(--color-nx-sales);
-  background: color-mix(in srgb, var(--color-nx-sales) 8%, transparent);
-}
-.nx-owner-metric--purchases {
-  border-color: var(--color-nx-purchases);
-  color: var(--color-nx-purchases);
-  background: color-mix(in srgb, var(--color-nx-purchases) 8%, transparent);
-}
-.nx-owner-metric--expenses {
-  border-color: var(--color-nx-expenses);
-  color: var(--color-nx-expenses);
-  background: color-mix(in srgb, var(--color-nx-expenses) 8%, transparent);
-}
-.nx-owner-metric--net-profit {
-  border-color: var(--color-nx-net-profit);
-  color: var(--color-nx-net-profit);
-  background: color-mix(in srgb, var(--color-nx-net-profit) 8%, transparent);
-}
+.nx-analysis-color-7 { background: var(--noorix-accent-violet); }
+.nx-analysis-color-5 { background: #0891b2; }
+.nx-analysis-color-6 { background: #db2777; }
+.nx-analysis-color-8 { background: #ea580c; }
+.nx-analysis-color-9 { background: #84cc16; }
+.nx-owner-metric--sales { border-color: var(--color-nx-sales); color: var(--color-nx-sales); background: color-mix(in srgb, var(--color-nx-sales) 8%, transparent); }
+.nx-owner-metric--purchases { border-color: var(--color-nx-purchases); color: var(--color-nx-purchases); background: color-mix(in srgb, var(--color-nx-purchases) 8%, transparent); }
+.nx-owner-metric--expenses { border-color: var(--color-nx-expenses); color: var(--color-nx-expenses); background: color-mix(in srgb, var(--color-nx-expenses) 8%, transparent); }
+.nx-owner-metric--net-profit { border-color: var(--color-nx-net-profit); color: var(--color-nx-net-profit); background: color-mix(in srgb, var(--color-nx-net-profit) 8%, transparent); }
 .nx-owner-dot--sales { background: var(--color-nx-sales); }
 .nx-owner-dot--purchases { background: var(--color-nx-purchases); }
 .nx-owner-dot--expenses { background: var(--color-nx-expenses); }

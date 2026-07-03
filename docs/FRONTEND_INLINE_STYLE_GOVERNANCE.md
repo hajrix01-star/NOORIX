@@ -39,6 +39,8 @@ Status: active guardrail.
 
 The 2026-07-03 local batch reduced the governed count from 88 to 44 by moving safe display-only styles from HR, reports, owner analytics, bank analysis, and purchase batch rows into CSS/classes. Remaining inline styles are primarily dynamic UI core sizing, popover positioning, chart/data colors, and report runtime backgrounds.
 
+The closure batch added `scripts/inline-style-manual-reasons.json`. CI now requires every remaining inline-style file to have a category, decision, and reason; stale reasons also fail the check.
+
 ## Rule
 
 Run:
