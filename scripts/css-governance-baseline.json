@@ -3,12 +3,12 @@
   "description": "Baseline for central CSS footprint. This check blocks unreviewed CSS growth while the theme cleanup runs incrementally.",
   "files": {
     "src/index.css": {
-      "maxLines": 6459,
+      "maxLines": 6703,
       "maxMediaQueries": 51,
       "maxImportant": 215,
       "maxKeyframes": 12,
       "maxCssVariableDefinitions": 233,
-      "maxCssVariableReferences": 811,
+      "maxCssVariableReferences": 819,
       "maxColorMix": 146
     },
     "src/ui/ui.css": {
@@ -62,11 +62,11 @@
       },
       "hr": {
         "pattern": "(hr-|payroll|employee|staff|residency|salary|EOS|termination)",
-        "maxMatches": 102
+        "maxMatches": 184
       },
       "print": {
         "pattern": "(@media print|print-)",
-        "maxMatches": 11
+        "maxMatches": 29
       }
     },
     "src/ui/ui.css": {

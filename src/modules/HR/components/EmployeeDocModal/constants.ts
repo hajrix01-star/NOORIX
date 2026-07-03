@@ -103,5 +103,42 @@ export const EMPLOYEE_DOC_EXTRA_CSS = `
   .footer{padding:10px 14px}
   .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
   .sig{padding-top:24px;border-top:1px solid #cbd5e1;font-size:10px}
+  .hr-doc-frame{border:1px solid #d6dbe3;border-radius:14px;overflow:hidden;background:#fff}
+  .hr-doc-frame-compact{border-radius:10px;max-width:190mm;margin:0 auto}
+  .hr-doc-frame-header{padding:18px 22px;border-bottom:2px solid #0f172a;background:#f8fafc}
+  .hr-doc-frame-compact .hr-doc-frame-header{padding:10px 14px}
+  .hr-doc-logo-wrap{display:flex;justify-content:center;margin-bottom:8px}
+  .hr-doc-frame-compact .hr-doc-logo-wrap{margin-bottom:4px}
+  .hr-doc-logo{max-height:56px;object-fit:contain}
+  .hr-doc-frame-compact .hr-doc-logo{max-height:40px}
+  .hr-doc-company-name{text-align:center;font-size:20px;font-weight:800}
+  .hr-doc-frame-compact .hr-doc-company-name{font-size:15px}
+  .hr-doc-company-en{text-align:center;margin-top:6px;color:#475569}
+  .hr-doc-frame-compact .hr-doc-company-en{margin-top:2px;font-size:11px}
+  .hr-doc-title-ar{text-align:center;margin-top:14px;font-size:20px;font-weight:800}
+  .hr-doc-frame-compact .hr-doc-title-ar{margin-top:8px;font-size:14px}
+  .hr-doc-title-en{text-align:center;color:#475569;margin-top:2px;font-size:12px}
+  .hr-doc-frame-compact .hr-doc-title-en{font-size:11px}
+  .hr-doc-frame-date{text-align:center;margin-top:2px;color:#64748b;font-size:12px}
+  .hr-doc-frame-compact .hr-doc-frame-date{font-size:10px}
+  .hr-doc-section{padding:18px 22px;border-bottom:1px solid #e5e7eb}
+  .hr-doc-section-compact{padding:10px 14px;border-bottom:1px solid #e5e7eb}
+  .hr-doc-panel-section{padding:12px 22px;border-bottom:1px solid #e5e7eb;background:#f8fafc}
+  .hr-doc-box{padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}
+  .hr-doc-h3{margin:0 0 6px;font-size:12px;font-weight:800;text-align:center;color:#0f172a}
+  .hr-doc-copy{line-height:1.45;margin:0;font-size:10.5px}
+  .hr-doc-copy-follow{line-height:1.45;margin-top:8px;font-size:10.5px}
+  .hr-doc-terms{margin:0;padding-inline-start:18px;line-height:1.45;font-size:10.5px}
+  .hr-doc-calc-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:10.5px;line-height:1.3}
+  .hr-doc-num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hr-doc-num-rtl{font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr;unicode-bidi:embed}
+  .hr-doc-signatures-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:22px;direction:ltr}
+  .hr-doc-signatures-2{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:22px}
+  .hr-doc-signature{padding-top:32px;border-top:1px solid #cbd5e1}
+  .hr-doc-signature-sm{padding-top:20px;border-top:1px solid #cbd5e1;font-size:10px;text-align:center}
+  .hr-doc-date{color:#64748b;font-size:12px}
+  .hr-doc-date-sm{color:#64748b;font-size:10px;text-align:center}
+  .hr-doc-footer{padding:18px 22px}
+  .hr-doc-footer-compact{padding:10px 14px}
   @media print{.doc{border:none;border-radius:0}}
 `;

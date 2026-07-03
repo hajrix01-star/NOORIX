@@ -7,11 +7,6 @@ import { FmtNum } from '../../../../ui';
 import { cn } from '../../../../ui/cn';
 import { DateFilterMonthPicker } from '../../../../shared/components/DateFilterBar';
 
-const COL_WEEK = '24%';
-const COL_CURRENT = '28%';
-const COL_BASELINE = '28%';
-const COL_DELTA = '20%';
-
 const TH_CELL =
   'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1 py-1.5 text-center text-[9px] font-bold leading-tight text-white sm:px-2 sm:py-2.5 sm:text-xs';
 const TD_CELL =
@@ -107,10 +102,10 @@ export function DashboardOverviewWeeklySalesPanel({
         ) : (
           <table className="w-full table-fixed border-collapse overflow-hidden rounded-lg border border-noorix-border text-[10px]">
             <colgroup>
-              <col style={{ width: COL_WEEK }} />
-              <col style={{ width: COL_CURRENT }} />
-              <col style={{ width: COL_BASELINE }} />
-              <col style={{ width: COL_DELTA }} />
+              <col className="w-[24%]" />
+              <col className="w-[28%]" />
+              <col className="w-[28%]" />
+              <col className="w-[20%]" />
             </colgroup>
             <thead>
               <tr>

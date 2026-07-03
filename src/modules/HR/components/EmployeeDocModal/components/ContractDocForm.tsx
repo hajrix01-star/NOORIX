@@ -9,7 +9,7 @@ export function ContractDocForm({
   setContractEnd: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-12" style={{ padding: '8px 4px 12px', flexWrap: 'wrap' }}>
+    <div className="flex items-center gap-12 flex-wrap pt-2 px-1 pb-3">
       <Input
         type="date"
         label="تاريخ انتهاء العقد (اختياري)"
@@ -17,7 +17,7 @@ export function ContractDocForm({
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setContractEnd(e.target.value)}
       />
       {contractEnd ? (
-        <Button type="button" variant="ghost" onClick={() => setContractEnd('')} style={{ fontSize: 11, color: 'var(--noorix-accent-red)' }}>
+        <Button type="button" variant="ghost" onClick={() => setContractEnd('')} className="text-[11px] text-noorix-red">
           ✕ إزالة
         </Button>
       ) : null}

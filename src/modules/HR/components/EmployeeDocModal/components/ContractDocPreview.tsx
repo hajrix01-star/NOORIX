@@ -1,7 +1,6 @@
 import React from 'react';
 import { formatSaudiDate } from '../../../../../utils/saudiDate';
 import type { DocSalaryRow } from '../types';
-import { DOC_GRID, DOC_SEP, DOC_BOX, DOC_H3 } from '../constants';
 import { displayJobTitleEn } from '../utils/employeeDocFormatters';
 import { EmployeeDocEmployeeInfoTable } from './EmployeeDocEmployeeInfoTable';
 import { EmployeeDocSalaryBreakdownTable } from './EmployeeDocSalaryBreakdownTable';
@@ -19,21 +18,21 @@ export function ContractDocPreview({
 }) {
   return (
     <>
-      <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
+      <div className="hr-doc-section">
         <EmployeeDocEmployeeInfoTable
           employee={employee}
           workHoursValue={employee?.workHours ? `${employee.workHours} ساعة / ${employee.workHours} hr` : '8 ساعات / 8 hr'}
           contractEnd={contractEnd}
         />
       </div>
-      <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--noorix-border)' }}>
+      <div className="hr-doc-section">
         <EmployeeDocSalaryBreakdownTable rows={rows} total={total} />
       </div>
-      <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--noorix-border)' }}>
-        <div className="bilingual" style={DOC_GRID}>
-          <div style={{ ...DOC_BOX, direction: 'ltr', textAlign: 'left' }}>
-            <h3 style={DOC_H3}>Key Terms</h3>
-            <ol style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.45, fontSize: 10.5 }}>
+      <div className="hr-doc-section-compact">
+        <div className="bilingual">
+          <div className="hr-doc-box text-left" dir="ltr">
+            <h3 className="hr-doc-h3">Key Terms</h3>
+            <ol className="hr-doc-terms">
               <li>The employee is appointed as {displayJobTitleEn(employee)}.</li>
               <li>The work location shall be as assigned by the company according to operational needs.</li>
               <li>Regular working hours are 8 hours per day. Any hours above that are treated as overtime, subject to employee approval and Saudi Labor Law.</li>
@@ -41,10 +40,10 @@ export function ContractDocPreview({
               <li>This contract is governed by the applicable labor laws of the Kingdom of Saudi Arabia.</li>
             </ol>
           </div>
-          <div className="hr-bilingual-sep" style={DOC_SEP} aria-hidden />
-          <div style={{ ...DOC_BOX, direction: 'rtl', textAlign: 'right' }}>
-            <h3 style={DOC_H3}>بنود أساسية</h3>
-            <ol style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.45, fontSize: 10.5 }}>
+          <div className="hr-bilingual-sep" aria-hidden />
+          <div className="hr-doc-box text-right" dir="rtl">
+            <h3 className="hr-doc-h3">بنود أساسية</h3>
+            <ol className="hr-doc-terms">
               <li>تم تعيين الموظف في وظيفة {String(employee?.jobTitle || '—')}.</li>
               <li>يكون مكان العمل حسب متطلبات الشركة وتعليماتها التنظيمية.</li>
               <li>ساعات العمل الأساسية 8 ساعات يومياً، وأي ساعات إضافية فوق ذلك تعد أوفر تايم وتحسب وفق نظام العمل السعودي وبعد موافقة الموظف.</li>
@@ -54,12 +53,12 @@ export function ContractDocPreview({
           </div>
         </div>
       </div>
-      <div style={{ padding: '18px 22px' }}>
-        <div style={{ color: '#64748b', fontSize: 12 }}>تاريخ الإصدار / Issue Date: {formatSaudiDate(new Date())}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, marginTop: 22 }}>
-          <div style={{ paddingTop: 32, borderTop: '1px solid #cbd5e1' }}>صاحب العمل / Employer</div>
-          <div style={{ paddingTop: 32, borderTop: '1px solid #cbd5e1' }}>الموظف / Employee</div>
-          <div style={{ paddingTop: 32, borderTop: '1px solid #cbd5e1' }}>الختم / Company Stamp</div>
+      <div className="hr-doc-footer">
+        <div className="hr-doc-date">تاريخ الإصدار / Issue Date: {formatSaudiDate(new Date())}</div>
+        <div className="hr-doc-signatures-3">
+          <div className="hr-doc-signature">صاحب العمل / Employer</div>
+          <div className="hr-doc-signature">الموظف / Employee</div>
+          <div className="hr-doc-signature">الختم / Company Stamp</div>
         </div>
       </div>
     </>
