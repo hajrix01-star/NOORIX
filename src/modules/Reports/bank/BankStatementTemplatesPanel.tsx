@@ -65,14 +65,10 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
   return (
     <div className="p-4 max-w-[800px] mx-auto">
       <div
-        className="rounded-lg p-3.5 mb-4"
-        style={{
-          background: 'rgba(37, 99, 235, 0.08)',
-          border: '1px solid rgba(37, 99, 235, 0.25)',
-        }}
+        className="rounded-lg p-3.5 mb-4 bg-noorix-blue/8 border border-noorix-blue/25"
       >
-        <div className="font-bold text-[15px] mb-1.5" style={{ color: 'var(--noorix-accent-blue)' }}>{t('bankTemplatesIntroTitle')}</div>
-        <p className="m-0 text-[13px] leading-[1.5]" style={{ color: 'var(--noorix-accent-blue)' }}>{t('bankTemplatesIntroBody')}</p>
+        <div className="font-bold text-[15px] mb-1.5 text-noorix-blue">{t('bankTemplatesIntroTitle')}</div>
+        <p className="m-0 text-[13px] leading-[1.5] text-noorix-blue">{t('bankTemplatesIntroBody')}</p>
       </div>
 
       {isLoading ? <p className="text-noorix-muted">{t('loading')}…</p> : null}
@@ -93,8 +89,7 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
           return (
             <div
               key={tpl.id}
-              className="noorix-surface-card p-4"
-              style={{ opacity: tpl.isActive ? 1 : 0.6 }}
+              className={`noorix-surface-card p-4${tpl.isActive ? '' : ' opacity-60'}`}
             >
                 <div className="flex flex-wrap gap-3 justify-between items-start">
                   <div className="flex-1 min-w-0">
@@ -104,19 +99,14 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
                       <span className="text-[11px] py-px px-2 rounded-md border border-noorix-border">{tpl.customerName}</span>
                     ) : null}
                     <span
-                      style={{
-                        fontSize: 11,
-                        padding: '2px 10px',
-                        borderRadius: 6,
-                        fontWeight: 700,
-                        background: tpl.isActive ? 'var(--noorix-green-15)' : 'var(--noorix-red-12)',
-                        color: tpl.isActive ? 'var(--noorix-accent-green)' : 'var(--noorix-accent-red)',
-                      }}
+                      className={`text-[11px] py-0.5 px-2.5 rounded-md font-bold ${
+                        tpl.isActive ? 'bg-[var(--noorix-green-15)] text-noorix-green' : 'bg-[var(--noorix-red-12)] text-noorix-red'
+                      }`}
                     >
                       {tpl.isActive ? t('bankTemplatesStatusActive') : t('bankTemplatesStatusInactive')}
                     </span>
                   </div>
-                  <div className="grid gap-2 text-[12px] text-noorix-muted mb-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+                  <div className="grid gap-2 text-[12px] text-noorix-muted mb-2.5 [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]">
                     <span>
                       # {t('bankStatementHeaderRow')}: {tpl.headerRow ?? '—'}
                     </span>

@@ -117,14 +117,13 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }: a
     >
       {/* رأس القائمة — معلومات المستخدم */}
       <div className="um-header">
-        <div className="um-avatar-lg" style={{ borderColor: roleColor }}>
+        <div className="um-avatar-lg">
           <UserSilhouetteIcon className="um-avatar-icon um-avatar-icon--lg" />
         </div>
         <div className="um-header-info">
           <div className="um-name">{displayName}</div>
           <div className="um-email">{email}</div>
-          <span className="um-role-badge"
-            style={{ background: roleColor + '1a', color: roleColor, borderColor: roleColor + '44' }}>
+          <span className="um-role-badge">
             {roleLabel}
           </span>
         </div>
@@ -207,13 +206,13 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }: a
         aria-label={displayName}
         style={{ ['--role-color' as string]: roleColor } as React.CSSProperties}
       >
-        <span className="um-avatar" style={{ borderColor: roleColor }}>
+        <span className="um-avatar">
           <UserSilhouetteIcon className="um-avatar-icon" />
         </span>
         {/* الاسم — يظهر من الشاشة المتوسطة فصاعداً */}
         <span className="hidden md:flex flex-col items-start leading-none gap-0.5 max-w-[120px]">
           <span className="text-[12px] font-semibold text-noorix-text truncate w-full">{displayName}</span>
-          <span className="text-[10px] truncate w-full" style={{ color: roleColor }}>{roleLabel}</span>
+          <span className="text-[10px] truncate w-full um-role-label">{roleLabel}</span>
         </span>
         <svg
           className={`um-chevron hidden sm:block${open ? ' um-chevron--open' : ''}`}

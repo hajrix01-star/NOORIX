@@ -185,7 +185,7 @@ export default function BankStatementAnalysisScreen() {
       </div>
 
       {completedStatements.length > 0 && (
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+        <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(160px,1fr))]">
           {[
             { label: t('bankStatementCardCount'),       value: String(completedStatements.length),    color: 'var(--color-nx-sales)'      },
             { label: t('bankStatementCardDeposits'),    value: fmt(quickStats.totalDeposits),   color: 'var(--color-nx-profit)'   },
@@ -218,8 +218,7 @@ export default function BankStatementAnalysisScreen() {
             <>
               {!summaryLoading && statements.length > 0 && completedStatements.length === 0 && (
                 <div
-                  className="grid gap-3 mb-5"
-                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
+                  className="grid gap-3 mb-5 [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]"
                 >
                   {[
                     { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.data?.statementCount ?? 0, f: (v: any) => String(v) },
@@ -240,8 +239,7 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length === 0 && (
                 <div
-                  className="text-center bg-noorix-bg-muted rounded-xl py-12 px-6"
-                  style={{ border: '1px dashed var(--noorix-border)' }}
+                  className="text-center bg-noorix-bg-muted rounded-xl py-12 px-6 border border-dashed border-noorix-border"
                 >
                   <div className="text-[48px] mb-3 opacity-50"></div>
                   <div className="text-[16px] font-semibold mb-1.5">{t('bankStatementEmptyTitle')}</div>
@@ -298,8 +296,7 @@ export default function BankStatementAnalysisScreen() {
                           tabIndex={0}
                           onClick={() => handleSelectStatement(stmt)}
                           onKeyDown={(e: any) => e.key === 'Enter' && handleSelectStatement(stmt)}
-                          className="flex gap-4 p-3.5 border border-noorix-border rounded-lg cursor-pointer items-center"
-                          style={{ background: 'var(--noorix-bg)' }}
+                          className="flex gap-4 p-3.5 border border-noorix-border rounded-lg cursor-pointer items-center bg-noorix-bg"
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex gap-2 items-center mb-1">
