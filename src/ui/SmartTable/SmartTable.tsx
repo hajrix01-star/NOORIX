@@ -14,6 +14,7 @@ import type { SmartTableProps as SmartTablePropsBase } from './types';
 import { columnLabel, getAlign } from './columnUtils';
 import { buildFooterCells } from './buildFooterCells';
 import { getColumnKindClass, normalizeSmartColumn } from './columnPresets';
+import { useSmartTableEngine } from './tableEngine';
 
 const COL_VIS_PANEL_MARGIN = 12;
 const COL_VIS_PANEL_GAP = 6;
@@ -28,6 +29,11 @@ function normalizeRowNumberWidth(width: SmartTablePropsBase['rowNumberWidth']): 
   if (width == null || width === '') return DEFAULT_ROW_NUMBER_WIDTH;
   if (typeof width === 'string' && width.trim().endsWith('%')) return DEFAULT_ROW_NUMBER_WIDTH;
   return width;
+}
+
+function cssLength(value: number | string | undefined): string | undefined {
+  if (value == null || value === '') return undefined;
+  return typeof value === 'number' ? `${value}px` : value;
 }
 
 /** يثبّت لوحة الأعمدة داخل الشاشة (جوال RTL/LTR) */
@@ -253,6 +259,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const safePageSize = Math.max(1, pageSize);
   const totalPages   = Math.max(1, Math.ceil(total / safePageSize));
   const visibleColumns = normalizedColumns.filter((col: any) => !hiddenCols.has(col.key));
+  const tableEngine = useSmartTableEngine({ columns: visibleColumns, data });
+  const engineRows = tableEngine.rows;
   const colCount     = visibleColumns.length;
   const effectiveCols = colCount + (showRowNumbers ? 1 : 0);
   const isWideTable  = effectiveCols > 6;
@@ -265,35 +273,35 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
-  const frameStyle: SmartTableCssVars = { '--nx-smart-frame-padding': innerPadding };
+  const frameStyle: SmartTableCssVars = { '--nx-smart-frame-padding': cssLength(innerPadding) };
   const tableStyle: SmartTableCssVars = {
     '--nx-smart-table-layout': layout,
-    '--nx-smart-table-min-width': minW || undefined,
+    '--nx-smart-table-min-width': cssLength(minW),
     '--nx-smart-table-max-width': !isWideTable ? '100%' : undefined,
   };
   const rowNumberHeaderStyle: SmartTableCssVars = {
     '--nx-smart-cell-padding': cellPad.th,
-    '--nx-smart-cell-font-size': compact ? 11 : 12,
-    '--nx-smart-row-number-width': rowNumW,
+    '--nx-smart-cell-font-size': cssLength(compact ? 11 : 12),
+    '--nx-smart-row-number-width': cssLength(rowNumW),
   };
   const rowNumberCellStyle: SmartTableCssVars = {
     '--nx-smart-cell-padding': cellPad.td,
-    '--nx-smart-cell-font-size': cellFs,
-    '--nx-smart-row-number-width': rowNumW,
+    '--nx-smart-cell-font-size': cssLength(cellFs),
+    '--nx-smart-row-number-width': cssLength(rowNumW),
   };
   const colPanelStyle: SmartTableCssVars | undefined = colPanelPos
     ? {
-        '--nx-col-vis-panel-top': colPanelPos.top,
-        '--nx-col-vis-panel-left': colPanelPos.left,
+        '--nx-col-vis-panel-top': cssLength(colPanelPos.top),
+        '--nx-col-vis-panel-left': cssLength(colPanelPos.left),
       }
     : undefined;
   const headerCellStyle = (col: any, effectiveWidth: any, resizableCol: boolean, shrink: boolean): SmartTableCssVars => ({
     '--nx-smart-cell-padding': cellPad.th,
-    '--nx-smart-cell-font-size': compact ? 12 : 13,
+    '--nx-smart-cell-font-size': cssLength(compact ? 12 : 13),
     '--nx-smart-cell-position': resizableCol ? 'relative' : undefined,
-    '--nx-smart-cell-width': effectiveWidth,
-    '--nx-smart-cell-min-width': col.minWidth,
-    '--nx-smart-cell-max-width': resizableCol ? undefined : col.maxWidth,
+    '--nx-smart-cell-width': cssLength(effectiveWidth),
+    '--nx-smart-cell-min-width': cssLength(col.minWidth),
+    '--nx-smart-cell-max-width': resizableCol ? undefined : cssLength(col.maxWidth),
     '--nx-smart-cell-cursor': col.sortable ? 'pointer' : 'default',
     '--nx-smart-cell-user-select': col.sortable ? 'none' : 'auto',
     '--nx-smart-cell-white-space': shrink || col.key === 'actions' ? 'nowrap' : 'normal',
@@ -307,12 +315,12 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     shrink: boolean,
   ): SmartTableCssVars => ({
     '--nx-smart-cell-padding': cellPad.td,
-    '--nx-smart-cell-font-size': cellFs,
+    '--nx-smart-cell-font-size': cssLength(cellFs),
     '--nx-smart-cell-align': align,
     '--nx-smart-cell-font-family': family,
-    '--nx-smart-cell-width': tdEffectiveWidth,
-    '--nx-smart-cell-min-width': col.minWidth,
-    '--nx-smart-cell-max-width': col.maxWidth,
+    '--nx-smart-cell-width': cssLength(tdEffectiveWidth),
+    '--nx-smart-cell-min-width': cssLength(col.minWidth),
+    '--nx-smart-cell-max-width': cssLength(col.maxWidth),
     '--nx-smart-cell-white-space': shrink ? 'nowrap' : undefined,
   });
   const rowStyle = (row: any, index: number): SmartTableCssVars => ({
@@ -439,7 +447,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
               {emptyMsg}
             </div>
-          ) : data.map((row: any, i: any) => (
+          ) : engineRows.map(({ original: row, index: i }) => (
             <div
               key={row.id ?? i}
               className={cn(
@@ -460,7 +468,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
               {emptyMsg}
             </div>
-          ) : data.map((row: any, i: any) => (
+          ) : engineRows.map(({ original: row, index: i }) => (
             <div
               key={row.id ?? i}
               className={cn(
@@ -548,7 +556,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                     {emptyMsg}
                   </td>
                 </tr>
-              ) : data.map((row: any, i: any) => (
+              ) : engineRows.map(({ original: row, index: i }) => (
                 <React.Fragment key={row.id ?? i}>
                 <tr
                   className={`nx-smart-row-vars border-b border-noorix-border${typeof getRowClassName === 'function' && getRowClassName(row, i) ? ` ${getRowClassName(row, i)}` : ''}`}
