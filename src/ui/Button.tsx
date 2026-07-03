@@ -35,6 +35,8 @@ export type ButtonProps = React.ComponentPropsWithoutRef<'button'> & {
   fullWidth?: boolean;
   icon?: ReactNode;
   iconEnd?: ReactNode;
+  runtimeStyle?: Pick<React.CSSProperties, 'background' | 'border' | 'color'>;
+  styleVars?: Record<`--${string}`, string | number | undefined>;
 };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -46,6 +48,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
     fullWidth = false,
     icon,
     iconEnd,
+    runtimeStyle,
+    styleVars,
+    style,
     type = 'button',
     className = '',
     children,
@@ -53,6 +58,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   }: any,
   ref: any,
 ) {
+  const buttonStyle = {
+    ...(styleVars || null),
+    ...(runtimeStyle || null),
+    ...(style || null),
+  } as React.CSSProperties;
+  const hasButtonStyle = Object.keys(buttonStyle).length > 0;
+
   return (
     <button
       ref={ref}
@@ -67,6 +79,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
       )}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
+      style={hasButtonStyle ? buttonStyle : undefined}
       {...rest}
     >
       {loading && (

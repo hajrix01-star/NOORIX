@@ -201,7 +201,7 @@ export default function UserMenu({ user, onLogout, language, toggleLanguage }: a
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={displayName}
-        style={{ ['--role-color' as string]: roleColor } as React.CSSProperties}
+        styleVars={{ '--role-color': roleColor }}
       >
         <span className="um-avatar">
           <UserSilhouetteIcon className="um-avatar-icon" />
