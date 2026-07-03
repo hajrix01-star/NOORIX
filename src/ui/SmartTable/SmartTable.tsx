@@ -6,7 +6,6 @@ import React, { memo, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useIsNarrow768 } from '../../hooks/useMediaQuery';
 import { useUiDir } from '../../hooks/useUiDir';
-import Input from '../Input';
 import { cn } from '../cn';
 import type { SmartTableProps as SmartTablePropsBase } from './types';
 import { columnLabel, getAlign } from './columnUtils';
@@ -14,7 +13,10 @@ import { buildFooterCells } from './buildFooterCells';
 import { getColumnKindClass, normalizeSmartColumn } from './columnPresets';
 import { useSmartTableEngine } from './tableEngine';
 import SmartTablePagination from './SmartTablePagination';
-import SmartTableColumnVisibility, { placeColVisPanel } from './SmartTableColumnVisibility';
+import { placeColVisPanel } from './SmartTableColumnVisibility';
+import SmartTableHeader from './SmartTableHeader';
+import { SmartTableErrorState, SmartTableLoadingState } from './SmartTableStates';
+import { SmartTableCompactRows, SmartTableMobileCards } from './SmartTableResponsiveRows';
 import { useSmartTableColumnResize } from './useSmartTableColumnResize';
 import { useSmartTableColumnVisibility } from './useSmartTableColumnVisibility';
 import {
@@ -148,104 +150,53 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     >
       {/* ── رأس الجدول ── */}
       {showTableHeaderRow && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap px-4 py-2.5 border-b border-noorix-border">
-          <div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-0">
-            {title && <span className="font-bold text-[15px] shrink-0">{title}</span>}
-            {badge && <div className="flex items-center gap-2 flex-wrap min-w-0">{badge}</div>}
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {onSearchChange && showSearchInHeader && (
-              <Input
-                type="search"
-                value={searchValue ?? ''}
-                onChange={(e: any) => onSearchChange(e.target.value)}
-                placeholder={t('searchPlaceholder')}
-                size="sm"
-                className="noorix-table-search"
-                aria-label={t('searchPlaceholder')}
-              />
-            )}
-            {tableId && (
-              <SmartTableColumnVisibility
-                columns={hideableCols}
-                hiddenCols={hiddenCols}
-                onToggleColumn={toggleColVis}
-                onResetColumns={resetColVis}
-              />
-            )}
-          </div>
-        </div>
+        <SmartTableHeader
+          title={title}
+          badge={badge}
+          searchValue={searchValue}
+          onSearchChange={onSearchChange}
+          showSearchInHeader={showSearchInHeader}
+          tableId={tableId}
+          showColumnVisibility={!showCards}
+          hideableCols={hideableCols}
+          hiddenCols={hiddenCols}
+          onToggleColumn={toggleColVis}
+          onResetColumns={resetColVis}
+          t={t}
+        />
       )}
 
       {/* ── خطأ ── */}
       {isError && (
-        <div className="m-3 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-noorix-red">
-          ⚠ {errMsg}
-        </div>
+        <SmartTableErrorState message={errMsg} />
       )}
 
       {/* ── تحميل — Skeleton ── */}
       {isLoading && (
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="w-6 h-6 rounded-full border-2 border-noorix-border border-t-noorix-blue nx-smart-table-loading-spinner"
-            />
-            <span className="text-noorix-muted text-[14px] font-medium">{t('loading')}</span>
-          </div>
-          <div className="flex flex-col gap-2">
-            {[1, 2, 3, 4, 5].map((i: any) => (
-              <div
-                key={i}
-                className="rounded-lg h-11 nx-smart-table-skeleton-line"
-              />
-            ))}
-          </div>
-        </div>
+        <SmartTableLoadingState loadingLabel={t('loading')} />
       )}
 
       {/* ── صفوف مضغوطة (List-Row pattern) ── */}
       {!isLoading && showCompact && (
-        <div>
-          {data.length === 0 ? (
-            <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
-              {emptyMsg}
-            </div>
-          ) : engineRows.map(({ original: row, index: i }) => (
-            <div
-              key={rowKey(row, i)}
-              className={cn(
-                'nx-compact-row',
-                i % 2 === 1 ? 'nx-compact-row--stripe' : 'nx-compact-row--base',
-              )}
-            >
-              {renderCompactRow!(row, i)}
-            </div>
-          ))}
-        </div>
+        <SmartTableCompactRows
+          rows={engineRows}
+          dataLength={data.length}
+          emptyMsg={emptyMsg}
+          rowKey={rowKey}
+          renderCompactRow={renderCompactRow!}
+        />
       )}
 
       {/* ── بطاقات الجوال — حدود مستقلة + شريط أزرق فاتح متناوب (token: --noorix-blue-10) ── */}
       {!isLoading && showCards && (
-        <div className="flex flex-col gap-2 py-2 px-2 sm:px-3 min-w-0 max-w-full box-border">
-          {data.length === 0 ? (
-            <div className="text-center text-noorix-muted text-[13px] py-6 px-4">
-              {emptyMsg}
-            </div>
-          ) : engineRows.map(({ original: row, index: i }) => (
-            <div
-              key={rowKey(row, i)}
-              className={cn(
-                'nx-mobile-card-row px-4 py-3',
-                stripeMobileCards
-                  ? (i % 2 === 1 ? 'nx-mobile-card-row--stripe' : 'nx-mobile-card-row--base')
-                  : 'nx-mobile-card-row--base',
-              )}
-            >
-              {renderMobileCard(row, i)}
-            </div>
-          ))}
-        </div>
+        <SmartTableMobileCards
+          rows={engineRows}
+          dataLength={data.length}
+          emptyMsg={emptyMsg}
+          rowKey={rowKey}
+          renderMobileCard={renderMobileCard}
+          stripeMobileCards={stripeMobileCards}
+        />
       )}
 
       {/* ── الجدول ── */}

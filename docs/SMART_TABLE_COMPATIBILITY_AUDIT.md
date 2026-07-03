@@ -38,6 +38,9 @@ Status: phase 2 compatibility audit implemented; TanStack now owns internal cont
 | `src/ui/SmartTable/SmartTable.tsx` | uses existing `keyExtractor` prop for table, compact, and mobile row keys |
 | `src/ui/SmartTable/tableEngine.ts` | centralizes SmartTable sorting and pagination adapter state over TanStack |
 | `src/ui/SmartTable/SmartTablePagination.tsx` | isolates the internal pagination bar from the large SmartTable renderer |
+| `src/ui/SmartTable/SmartTableHeader.tsx` | isolates title, badge, search, and column-visibility toolbar rendering |
+| `src/ui/SmartTable/SmartTableStates.tsx` | isolates loading and error UI states |
+| `src/ui/SmartTable/SmartTableResponsiveRows.tsx` | isolates compact-row and mobile-card renderers |
 | `src/ui/SmartTable/SmartTableColumnVisibility.tsx` | isolates the internal column visibility trigger, portal, and viewport placement logic |
 | `src/ui/SmartTable/useSmartTableColumnResize.ts` | isolates column resize pointer state and persisted widths |
 | `src/ui/SmartTable/useSmartTableColumnVisibility.ts` | isolates hidden-column persistence and derived visible/hideable columns |
