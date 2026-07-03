@@ -20,7 +20,6 @@
     "src/modules/Orders/components/ItemsManageTabCategoriesSection.tsx": 1,
     "src/modules/Orders/components/OrderFormModal.tsx": 1,
     "src/modules/Orders/components/catalog/CatalogProductFormSheet.tsx": 1,
-    "src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx": 1,
     "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": 1,
     "src/modules/Purchases/components/BatchEditPanel.tsx": 1,
     "src/modules/Purchases/components/BatchPrintSheet.tsx": 1,

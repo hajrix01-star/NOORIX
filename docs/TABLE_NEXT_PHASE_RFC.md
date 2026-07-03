@@ -12,12 +12,14 @@ Close the next table-governance planning step after the safe PrintTable conversi
 
 | Metric | Count |
 |---|---:|
-| Manual `<table>` outside `src/ui` | 54 |
-| Files with manual tables outside `src/ui` | 34 |
+| Manual `<table>` outside `src/ui` | 53 |
+| Files with manual tables outside `src/ui` | 33 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |
 | Files using `SimpleTable` JSX | 16 |
+| `MatrixTable` JSX usages | 1 |
+| Files using `MatrixTable` JSX | 1 |
 | Remaining `print-export-html` tables | 1 |
 
 ## Remaining Table Families
@@ -31,7 +33,7 @@ Close the next table-governance planning step after the safe PrintTable conversi
 | `financial-report` | 3 | 4 | critical | require MatrixTable/financial-report RFC |
 | `tax-protected` | 2 | 3 | critical | no conversion without tax acceptance tests |
 | `tax-print` | 1 | 2 | critical | require tax PrintTable RFC |
-| `matrix-table` | 2 | 2 | high | first candidate for MatrixTable RFC/prototype |
+| `matrix-table` | 1 | 1 | high | remaining P&L matrix requires financial visual baseline |
 | `bank-print` | 1 | 1 | high | require bank print RFC |
 | `bank-protected` | 1 | 1 | critical | no conversion in UI cleanup |
 | `hr-financial` | 1 | 1 | high | leave until HR financial acceptance exists |
@@ -42,7 +44,7 @@ Close the next table-governance planning step after the safe PrintTable conversi
 
 | Priority | Work | Why First | Output |
 |---:|---|---|---|
-| 1 | MatrixTable RFC/prototype | unlocks P&L and owner/dashboard matrices without touching payroll/tax/bank | API, visual rules, one non-payroll prototype |
+| 1 | MatrixTable prototype hardening | owner prototype exists; remaining P&L matrix needs financial visual baseline | API hardening and one protected-report decision |
 | 2 | EditableTable RFC | editable grids cannot safely fit `SmartTable`/`SimpleTable` as-is | cell/edit lifecycle contract |
 | 3 | Financial PrintTable RFC | remaining print tables are financial/tax/bank/payroll sensitive | print-safe rules and acceptance tests |
 | 4 | SmartTable v2 compatibility RFC | TanStack evaluation depends on knowing MatrixTable/EditTable boundaries | compatibility matrix and prototype criteria |
@@ -55,7 +57,7 @@ Close the next table-governance planning step after the safe PrintTable conversi
 | File | Tables | Current Category | Candidate Decision |
 |---|---:|---|---|
 | `src/modules/Reports/GeneralPlTable.tsx` | 1 | `matrix-table` | prototype only after visual baseline |
-| `src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx` | 1 | `matrix-table` | safer first prototype than P&L |
+| `src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx` | 0 | converted to `MatrixTable` | completed prototype |
 | `src/modules/Reports/CostAccountingAppsScreen.tsx` | 1 | `financial-report` | leave until financial-report phase |
 | `src/modules/Reports/costAccountingApps/CostAccountingAppsResultPanels.tsx` | 1 | `financial-report` | leave until financial-report phase |
 | `src/modules/Reports/GeneralReportV2Screen.tsx` | 2 | `financial-report` | leave until hierarchy and print rules exist |
@@ -122,7 +124,7 @@ Do not start TanStack/SmartTable v2 implementation before these are true:
 
 | Dependency | Required Evidence |
 |---|---|
-| MatrixTable boundary decided | this RFC accepted and a MatrixTable prototype approved |
+| MatrixTable boundary decided | this RFC accepted and the owner MatrixTable prototype approved |
 | EditableTable boundary decided | EditableTable RFC accepted |
 | Protected print boundary decided | payroll/tax/bank/financial PrintTable RFCs accepted |
 | Compatibility tests exist | sorting, pagination, row numbers, footer, mobile cards |
@@ -146,7 +148,7 @@ Do not start TanStack/SmartTable v2 implementation before these are true:
 | Phase | Scope | Expected Manual Table Reduction | Risk |
 |---|---|---:|---|
 | A | MatrixTable RFC acceptance and visual baseline | 0 | low |
-| B | MatrixTable prototype on `OwnerMonthlyComparisonTable` | 1 | medium |
+| B | MatrixTable prototype on `OwnerMonthlyComparisonTable` | done: -1 | completed |
 | C | MatrixTable hardening and optional `GeneralPlTable` prototype | 1 | high |
 | D | EditableTable RFC and non-payroll prototype | 0-1 | medium |
 | E | Financial PrintTable RFCs by domain | 0 | low |

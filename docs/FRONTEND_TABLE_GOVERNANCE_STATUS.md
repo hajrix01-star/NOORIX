@@ -8,12 +8,14 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Metric | Count |
 |---|---:|
-| Manual `<table>` outside `src/ui` | 54 |
-| Files with manual tables outside `src/ui` | 34 |
+| Manual `<table>` outside `src/ui` | 53 |
+| Files with manual tables outside `src/ui` | 33 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |
 | Files using `SimpleTable` JSX | 16 |
+| `MatrixTable` JSX usages | 1 |
+| Files using `MatrixTable` JSX | 1 |
 
 ## Classified Manual Tables
 
@@ -27,7 +29,7 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `financial-report` | 3 | 4 | protected report scope |
 | `tax-protected` | 2 | 3 | protected tax scope |
 | `tax-print` | 1 | 2 | leave until `PrintTable` phase |
-| `matrix-table` | 2 | 2 | leave until `MatrixTable` phase |
+| `matrix-table` | 1 | 1 | leave until `MatrixTable` phase |
 | `bank-print` | 1 | 1 | leave until `PrintTable` phase |
 | `bank-protected` | 1 | 1 | protected bank workflow |
 | `hr-financial` | 1 | 1 | protected HR financial scope |
@@ -44,6 +46,7 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | Catalog PrintTable Conversion | Convert catalog print sheets through central complex print builder | 2 manual catalog tables removed |
 | Dashboard Calendar PrintTable Conversion | Convert calendar print matrix through central complex print builder | 1 manual calendar print table removed |
 | MatrixTable RFC | Define wide financial/dashboard matrix rules | P&L, owner, dashboard matrices stay protected |
+| MatrixTable Owner Prototype | Convert safest owner monthly matrix | 1 manual matrix table removed; financial/P&L/payroll/tax/bank/purchases stay untouched |
 | Editable table controls | Define editable cells and row actions | no payroll/purchases conversion without tests |
 | Safe conversion pass | Only non-financial display tables with no inputs, no print, no rowspan/colspan | `check:table-governance` stays green |
 
@@ -61,3 +64,4 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `docs/CATALOG_PRINT_TABLE_CONVERSION.md` | records the catalog print-table conversion |
 | `docs/DASHBOARD_CALENDAR_PRINT_TABLE_CONVERSION.md` | records the dashboard calendar print-table conversion |
 | `docs/TABLE_NEXT_PHASE_RFC.md` | defines the next MatrixTable/EditTable/financial-print phase boundaries |
+| `docs/MATRIX_TABLE_OWNER_PROTOTYPE.md` | records the first MatrixTable prototype conversion |
