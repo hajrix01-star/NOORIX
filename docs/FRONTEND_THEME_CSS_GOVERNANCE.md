@@ -8,7 +8,7 @@ Status: active guardrail.
 
 | File | Lines | @media | !important | @keyframes | CSS vars | var refs | color-mix |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `src/index.css` | 7177 | 51 | 214 | 12 | 237 | 975 | 174 |
+| `src/index.css` | 7066 | 51 | 214 | 12 | 237 | 975 | 174 |
 | `src/ui/ui.css` | 2378 | 6 | 22 | 8 | 12 | 298 | 1 |
 | `src/modules/SmartChat/SmartChatScreen.css` | 945 | 5 | 8 | 3 | 0 | 79 | 11 |
 
@@ -19,6 +19,8 @@ Note: the later 2026-07-03 local batch moved safe Treasury vault icon tones and 
 Note: the latest 2026-07-03 local batch moved safe HR payroll tones, bank/report display tones, owner metric controls, P&L text/indent styles, and purchase batch date-error styling from JSX inline style objects into governed CSS classes. This raises the `src/index.css` line/var/color-mix/reports-selector baseline while reducing inline styles from 88 to 44.
 
 Note: the closure batch compacted the newest governed helper classes, reducing `src/index.css` from 7211 to 7177 lines without changing selectors or visual behavior.
+
+Note: the follow-up safe compaction batch compacted bank mapping, theme preview, vault, sales-channel, and helper CSS declarations, reducing `src/index.css` from 7177 to 7066 lines without changing selectors or visual behavior.
 
 ## Rule
 

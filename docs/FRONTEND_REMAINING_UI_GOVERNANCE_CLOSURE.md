@@ -12,7 +12,7 @@ Status: closed for safe cleanup; future changes require RFC or targeted implemen
 | Inside `src/ui` | 14 | leave until UI-core refactor |
 | Outside `src/ui` | 30 | documented runtime exceptions |
 | Files with inline styles | 30 | every file has a reason |
-| `src/index.css` lines | 7177 | baseline lowered after compaction |
+| `src/index.css` lines | 7066 | baseline lowered after safe compaction |
 
 ## Remaining Inline Categories
 
