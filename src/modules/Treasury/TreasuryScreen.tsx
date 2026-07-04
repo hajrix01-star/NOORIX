@@ -5,7 +5,7 @@ import { useApp }         from '../../context/AppContext';
 import { useToast }       from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
-import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
+import { DateFilterBar, useDateFilter } from '../../ui/date';
 import FilterToolbar from '../../shared/components/FilterToolbar';
 import { sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';

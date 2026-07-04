@@ -4,7 +4,7 @@
  */
 import React, { memo, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
-import { useIsNarrow768 } from '../../hooks/useMediaQuery';
+import { useIsNarrow768 } from '../responsive';
 import { useUiDir } from '../../hooks/useUiDir';
 import { cn } from '../cn';
 import type { SmartTableProps as SmartTablePropsBase } from './types';

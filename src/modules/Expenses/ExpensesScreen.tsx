@@ -13,7 +13,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { getExpenseLines, deactivateExpenseLine } from '../../services/api';
 import { expenseKeys } from '../../services/queryKeys';
 import { Button, ScreenTabs, ScreenShell, cn } from '../../ui';
-import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
+import { DateFilterBar, useDateFilter } from '../../ui/date';
 import FilterToolbar from '../../shared/components/FilterToolbar';
 import ExpenseLineList from './components/ExpenseLineList';
 import ExpenseLineDetailModal from './components/ExpenseLineDetailModal';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type DatePeriodState } from '../../utils/datePeriod';
+import { type DatePeriodState } from './datePeriod';
 import { getDatePeriodModeChange } from './datePeriodDraft';
 
 const baseDraft: DatePeriodState = {

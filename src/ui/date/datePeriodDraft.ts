@@ -3,7 +3,7 @@ import {
   ymd,
   type DatePeriodMode,
   type DatePeriodState,
-} from '../../utils/datePeriod';
+} from './datePeriod';
 
 export type DatePeriodDraftFilter = {
   state: DatePeriodState;

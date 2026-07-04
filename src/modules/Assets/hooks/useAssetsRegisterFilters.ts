@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
+import { useDebouncedValue } from '../../../ui';
 
 export const ASSETS_REGISTER_PAGE_SIZE = 50;
 

@@ -1,6 +1,6 @@
 ﻿/** Staff list: full employee directory (active, terminated, archived). */
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useDebouncedValue } from '../../ui';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';

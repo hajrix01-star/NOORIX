@@ -9,7 +9,7 @@ import { openPrintWindow } from '../../utils/printUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
 import { ScreenShell } from '../../ui';
-import { useIsNarrow700 } from '../../hooks/useMediaQuery';
+import { useIsNarrow700 } from '../../ui';
 import {
   EN_MONTHS,
   amountText,

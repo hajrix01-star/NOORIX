@@ -8,7 +8,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useOrdersItemsReportRange, useProductPurchaseHistory, useCategoryPurchaseHistory } from '../../../hooks/useOrders';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import DateFilterBar from '../../../shared/components/DateFilterBar';
+import { DateFilterBar } from '../../../ui/date';
 import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard, DataBar } from '../../../ui';

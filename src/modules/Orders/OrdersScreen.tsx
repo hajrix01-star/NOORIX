@@ -9,7 +9,7 @@ import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
-import { useDateFilter } from '../../hooks/useDateFilter';
+import { useDateFilter } from '../../ui/date';
 import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
 import { OrdersTab } from './components/OrdersTab';
 import { ItemsReportTab } from './components/ItemsReportTab';

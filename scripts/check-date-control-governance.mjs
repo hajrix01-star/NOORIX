@@ -37,6 +37,8 @@ const reasonsPath = 'scripts/date-control-reasons.json';
 const reasons = JSON.parse(read(reasonsPath));
 const dateInputReasons = reasons.dateInputReasons ?? {};
 const sourceFiles = walk('src', (file) => /\.(tsx|jsx)$/.test(file));
+const importSourceFiles = walk('src', (file) => /\.(tsx|ts|jsx|js)$/.test(file));
+const docsFiles = walk('docs', (file) => /\.md$/.test(file));
 const currentDateInputCounts = {};
 
 for (const file of sourceFiles) {
@@ -67,6 +69,32 @@ for (const [file, allowed] of Object.entries(allowedDateInputCounts)) {
 for (const file of Object.keys(dateInputReasons)) {
   if (!(file in allowedDateInputCounts)) {
     fail(file, `${file} reason is stale: no matching entry in ${registryPath}`);
+  }
+}
+
+for (const file of importSourceFiles) {
+  const text = read(file);
+  const normalized = file.replaceAll('\\', '/');
+  const isDateFilterShim = normalized === 'src/shared/components/DateFilterBar.tsx';
+  const isDateFilterShimTest = normalized === 'src/shared/components/DateFilterBar.test.tsx';
+  const isDateUiIndex = normalized === 'src/ui/date/index.ts';
+
+  if (!isDateFilterShim && !isDateFilterShimTest && text.includes('shared/components/DateFilterBar')) {
+    fail(file, 'DateFilterBar imports must use src/ui/date, not src/shared/components/DateFilterBar');
+  }
+
+  if (!isDateUiIndex && text.includes('hooks/useDateFilter')) {
+    fail(file, 'useDateFilter must be re-exported through src/ui/date; do not import hooks/useDateFilter directly');
+  }
+}
+
+for (const file of docsFiles) {
+  const text = read(file);
+  if (text.includes('src/hooks/useDateFilter.js') || text.includes('useDateFilter.js')) {
+    fail(file, 'date filter docs are stale: use src/ui/date/useDateFilter.ts');
+  }
+  if (text.includes('src/shared/components/DateFilterBar.jsx') || text.includes('DateFilterBar.jsx')) {
+    fail(file, 'date filter docs are stale: use src/ui/date/DateFilterBar.tsx');
   }
 }
 

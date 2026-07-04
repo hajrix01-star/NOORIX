@@ -4,7 +4,7 @@
  * - على الديسكتوب: تبويبات متصلة (نفس النظام العام — ScreenTabs / ConnectedTabStrip)
  */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useIsMobile640 } from '../../hooks/useMediaQuery';
+import { useIsMobile640 } from '../../ui';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useApiListQuery } from '../../hooks/useApiQuery';
 import { getCompanies } from '../../services/api';

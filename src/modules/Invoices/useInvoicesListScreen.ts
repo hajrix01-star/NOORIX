@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useDebouncedValue } from '../../ui';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
@@ -20,7 +20,7 @@ import {
   getInvoiceCreatorFilterOptions,
   unwrapApiList,
 } from '../../services/api';
-import { useDateFilter } from '../../shared/components/DateFilterBar';
+import { useDateFilter } from '../../ui/date';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
 import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../constants/badgeMaps';
 import { PAGE_SIZE } from './invoicesListScreenHelpers';

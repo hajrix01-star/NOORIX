@@ -12,9 +12,12 @@ Improve daily user experience by centralizing repeated interactions without repl
 | --- | --- |
 | Noorix UI | Remains the official UI kit |
 | shadcn/ui | Reference for composition, accessibility, and primitive patterns only |
+| Responsive hooks | Use `src/ui/responsive.ts` as the official breakpoint/hook source |
+| Timing hooks | Use `src/ui/timing.ts` as the official debounce/timing hook source |
 | Date inputs | Use Noorix `DateField` instead of direct `Input type="date"` in safe screens |
 | Date ranges | Use Noorix `DateRangeField` for from/to pairs |
 | Period filters | Keep `DateFilterBar` behavior and migrate internals gradually |
+| Date filter import path | Use `src/ui/date` as the official home for `DateFilterBar`, `DateFilterMonthPicker`, and `useDateFilter` |
 | Date labels | Generate Gregorian month/weekday labels centrally via `src/ui/date/dateLocale.ts` |
 | Date governance | Block new direct `type="date"` usage outside documented exceptions |
 | Protected domains | Skip payroll, tax, bank, purchases, invoices, sales, expenses, treasury, and reports in this batch |
@@ -24,17 +27,29 @@ Improve daily user experience by centralizing repeated interactions without repl
 | Component | Purpose |
 | --- | --- |
 | `src/ui/date/DateField.tsx` | Central date input wrapper preserving `YYYY-MM-DD` values |
+| `src/ui/responsive.ts` | Central responsive breakpoints and media-query hooks for UI and screens |
+| `src/ui/timing.ts` | Central debounce/timing hooks for search and UI interactions |
 | `src/ui/date/DateRangeField.tsx` | Central from/to date wrapper with explicit end min boundary |
+| `src/ui/date/DateFilterBar.tsx` | Official Noorix period filter bar used by screens |
+| `src/ui/date/useDateFilter.ts` | Official period filter controller hook used by date-aware screens |
 | `src/ui/date/MonthPicker.tsx` | Central floating month picker behind the old `DateFilterMonthPicker` API |
 | `src/ui/date/PeriodCalendars.tsx` | Central month/year/day range calendars used by `DateFilterBar` |
 | `src/ui/date/DatePeriodControls.tsx` | Central period mode buttons, pending badge, and apply/reset actions |
 | `src/ui/date/useFloatingPopover.ts` | Central fixed-position popover behavior with outside-click and Escape handling |
 | `src/ui/date/dateLocale.ts` | Central Gregorian month/weekday labels without duplicated literals |
+| `src/ui/date/datePeriod.ts` | UI-date facade for shared period math while preserving external utility compatibility |
 | `src/ui/date/datePeriodDraft.ts` | Central draft/apply/dirty/mode-change state helpers for period filters |
 | `src/ui/date/DateField.test.tsx` | Unit coverage for emitted date values and range boundaries |
+| `src/ui/date/DateFilterBar.test.tsx` | Official behavior coverage for period filter month/day/year flows |
 | `src/ui/date/datePeriodDraft.test.ts` | Unit coverage for period mode-change behavior |
-| `src/ui/index.ts` | Exposes date components through the official UI kit |
-| `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"` usage |
+| `src/ui/index.ts` | Exposes `DateField`, `DateRangeField`, `DateFilterBar`, `DateFilterMonthPicker`, and `useDateFilter` through the official UI kit |
+| `src/shared/components/DateFilterBar.tsx` | Backward-compatible shim only; new imports should use `src/ui/date` |
+| `src/hooks/useDateFilter.ts` | Backward-compatible hook shim only; new imports should use `src/ui/date` |
+| `src/hooks/useMediaQuery.ts` | Backward-compatible responsive shim only; new imports should use `src/ui` |
+| `src/hooks/useDebouncedValue.ts` | Backward-compatible timing shim only; new imports should use `src/ui` |
+| `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"`, old `DateFilterBar` imports, and direct `hooks/useDateFilter` imports |
+| `scripts/check-responsive-governance.mjs` | Prevents new direct responsive imports from `src/hooks/useMediaQuery` and stale responsive docs |
+| `scripts/check-timing-governance.mjs` | Prevents new direct debounce imports from `src/hooks/useDebouncedValue` and stale timing docs |
 
 ## Migration Priority
 

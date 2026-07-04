@@ -7,7 +7,7 @@ import { useApiQuery } from '../../../hooks/useApiQuery';
 import { getInvoices, downloadInvoiceAttachment } from '../../../services/api';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { useToast } from '../../../context/ToastContext';
-import DateFilterBar, { useDateFilter } from '../../../shared/components/DateFilterBar';
+import { DateFilterBar, useDateFilter } from '../../../ui/date';
 import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';

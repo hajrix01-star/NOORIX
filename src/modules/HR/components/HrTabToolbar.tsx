@@ -3,7 +3,7 @@
  */
 import React, { useState, type ReactNode } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useIsMobile640 } from '../../../hooks/useMediaQuery';
+import { useIsMobile640 } from '../../../ui';
 import { Button, KebabMenu, cn } from '../../../ui';
 
 export type HrTabToolbarMenuItem = {

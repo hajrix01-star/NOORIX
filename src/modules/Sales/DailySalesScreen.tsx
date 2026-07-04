@@ -7,7 +7,7 @@ import React, { useMemo, useCallback } from 'react';
 import { formatSaudiDate } from '../../utils/saudiDate';
 import { Badge, Button, ScreenShell, FmtNum, KebabMenu, SmartTable } from '../../ui';
 import type { SmartTableColumn } from '../../ui/SmartTable/types';
-import DateFilterBar from '../../shared/components/DateFilterBar';
+import { DateFilterBar } from '../../ui/date';
 import FilterToolbar from '../../shared/components/FilterToolbar';
 import { SalesActionsCell } from '../../components/common/SalesActionsCell';
 import { SalesDayEditModal } from './components/SalesDayEditModal';

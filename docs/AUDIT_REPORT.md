@@ -11,7 +11,7 @@
 
 | الملف | الأسطر | الوظيفة |
 |-------|--------|----------|
-| `useDateFilter.js` | 88 | فلترة التواريخ (شهر/يوم/نطاق) |
+| `src/ui/date/useDateFilter.ts` | 117 | فلترة التواريخ (شهر/يوم/نطاق) — official UI-date hook |
 | `useTableFilter.js` | 113 | بحث، ترتيب، تصفح للجداول |
 | `useDataManager.js` | 67 | جلب بيانات مرجعية مع كاش |
 | `useInvoices.js` | 39 | جلب وإدارة الفواتير |
@@ -34,8 +34,8 @@
 
 ### 1.3 موقع `useDateFilter`
 
-- **المصدر:** `src/hooks/useDateFilter.js`
-- **إعادة التصدير:** `DateFilterBar.jsx` يعيد تصديره: `export { useDateFilter };`
+- **المصدر:** `src/ui/date/useDateFilter.ts`
+- **إعادة التصدير:** `src/hooks/useDateFilter.ts` shim only; new imports use `src/ui/date`.
 - **الاستخدام:** 4 شاشات (PurchasesBatchScreen، InvoicesListScreen، TreasuryScreen، DailySalesScreen)
 
 **التقييم: ممتاز**
@@ -81,7 +81,7 @@
 
 | النوع | الموقع | الاستخدام |
 |-------|--------|-----------|
-| **useDateFilter** | `src/hooks/useDateFilter.js` | 4 شاشات |
+| **useDateFilter** | `src/ui/date/useDateFilter.ts` | date-aware screens via `src/ui/date` |
 | **useTableFilter** | `src/hooks/useTableFilter.js` | شاشة واحدة: InvoicesListScreen |
 | **فلترة يدوية** | `SuppliersTab.jsx` | `useMemo` + `filter` على suppliers |
 

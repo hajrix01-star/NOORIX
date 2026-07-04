@@ -12,8 +12,8 @@ import './ui.css';
 
 export { default as Button          } from './Button';
 export { default as Input           } from './Input';
-export { DateField, DateRangeField, DateFilterMonthPicker } from './date';
-export type { DateFieldProps, DateRangeFieldProps, DateFilterMonthPickerProps } from './date';
+export { DateField, DateRangeField, DateFilterBar, DateFilterMonthPicker, useDateFilter } from './date';
+export type { DateFieldProps, DateRangeFieldProps, DateFilterBarProps, DateFilterController, DateFilterMonthPickerProps } from './date';
 export { default as Checkbox        } from './Checkbox';
 export { default as Radio           } from './Radio';
 export { default as FileInput       } from './FileInput';
@@ -26,7 +26,17 @@ export { default as Card            } from './Card';
 export { default as Badge           } from './Badge';
 export { default as Modal           } from './Modal';
 export { default as AdaptiveSheet   } from './AdaptiveSheet';
-export { useAdaptiveSheetNarrow } from './AdaptiveSheet';
+export { useAdaptiveSheetNarrow } from './responsive';
+export {
+  NOORIX_BREAKPOINTS,
+  maxWidthQuery,
+  useIsMobile640,
+  useIsNarrow700,
+  useIsNarrow768,
+  useMaxWidth,
+  useMediaQuery,
+} from './responsive';
+export { NOORIX_DEFAULT_DEBOUNCE_MS, useDebouncedValue } from './timing';
 export { default as Spinner         } from './Spinner';
 export { default as Divider         } from './Divider';
 export { default as FormRow         } from './FormRow';
