@@ -76,7 +76,7 @@ export default function DateFilterBar({
     const change = getDatePeriodModeChange(draft, fallbackMode, now);
     updateDraft(change.patch);
     setOpenPanel(null);
-  }, [availableModes, draft, fallbackMode, mode, now]);
+  }, [availableModes, draft, fallbackMode, mode, now, updateDraft]);
 
   const apply = () => {
     applyDatePeriodDraft(filter, draft);

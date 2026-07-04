@@ -37,6 +37,14 @@ function renderFilter() {
   );
 }
 
+function renderConfigurableFilter() {
+  render(
+    <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+      <ConfigurableHarness />
+    </AppTestProviders>,
+  );
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -113,11 +121,7 @@ describe('DateFilterBar', () => {
   });
 
   it('can limit visible modes without creating a custom date filter', () => {
-    render(
-      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
-        <ConfigurableHarness />
-      </AppTestProviders>,
-    );
+    renderConfigurableFilter();
 
     expect(screen.getByRole('button', { name: 'Month' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Range' })).toBeTruthy();
@@ -127,21 +131,13 @@ describe('DateFilterBar', () => {
   });
 
   it('activates the first allowed mode when the current filter mode is not visible', () => {
-    render(
-      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
-        <ConfigurableHarness />
-      </AppTestProviders>,
-    );
+    renderConfigurableFilter();
 
     expect(screen.getByRole('button', { name: 'Month' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('can hide actions and pending badge for composed filter layouts', () => {
-    render(
-      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
-        <ConfigurableHarness />
-      </AppTestProviders>,
-    );
+    renderConfigurableFilter();
 
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
 
