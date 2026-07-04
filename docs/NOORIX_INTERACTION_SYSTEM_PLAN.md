@@ -35,9 +35,9 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/datePeriodDraft.ts` | Central draft/apply/dirty/mode-change state helpers for period filters |
 | `src/ui/date/DateField.test.tsx` | Unit coverage for emitted date values and range boundaries |
 | `src/ui/date/datePeriodDraft.test.ts` | Unit coverage for period mode-change behavior |
-| `src/ui/index.ts` | Exposes date components through the official UI kit |
+| `src/ui/index.ts` | Exposes `DateField`, `DateRangeField`, `DateFilterBar`, `DateFilterMonthPicker`, and `useDateFilter` through the official UI kit |
 | `src/shared/components/DateFilterBar.tsx` | Backward-compatible shim only; new imports should use `src/ui/date` |
-| `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"` usage |
+| `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"`, old `DateFilterBar` imports, and direct `hooks/useDateFilter` imports |
 
 ## Migration Priority
 
