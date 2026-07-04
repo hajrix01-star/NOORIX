@@ -6,7 +6,8 @@ export { default as DateFilterMonthPicker } from './MonthPicker';
 export type { DateFilterMonthPickerProps } from './MonthPicker';
 export { default as DateFilterBar } from './DateFilterBar';
 export type { DateFilterBarProps } from './DateFilterBar';
-export { useDateFilter } from '../../hooks/useDateFilter';
+export { useDateFilter } from './useDateFilter';
+export type { DateFilterController } from './useDateFilter';
 export { DayRangeCalendar, MonthRangeCalendar, YearRangeCalendar } from './PeriodCalendars';
 export type {
   DayRangeCalendarProps,

@@ -27,6 +27,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/DateField.tsx` | Central date input wrapper preserving `YYYY-MM-DD` values |
 | `src/ui/date/DateRangeField.tsx` | Central from/to date wrapper with explicit end min boundary |
 | `src/ui/date/DateFilterBar.tsx` | Official Noorix period filter bar used by screens |
+| `src/ui/date/useDateFilter.ts` | Official period filter controller hook used by date-aware screens |
 | `src/ui/date/MonthPicker.tsx` | Central floating month picker behind the old `DateFilterMonthPicker` API |
 | `src/ui/date/PeriodCalendars.tsx` | Central month/year/day range calendars used by `DateFilterBar` |
 | `src/ui/date/DatePeriodControls.tsx` | Central period mode buttons, pending badge, and apply/reset actions |
@@ -38,6 +39,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/datePeriodDraft.test.ts` | Unit coverage for period mode-change behavior |
 | `src/ui/index.ts` | Exposes `DateField`, `DateRangeField`, `DateFilterBar`, `DateFilterMonthPicker`, and `useDateFilter` through the official UI kit |
 | `src/shared/components/DateFilterBar.tsx` | Backward-compatible shim only; new imports should use `src/ui/date` |
+| `src/hooks/useDateFilter.ts` | Backward-compatible hook shim only; new imports should use `src/ui/date` |
 | `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"`, old `DateFilterBar` imports, and direct `hooks/useDateFilter` imports |
 
 ## Migration Priority
