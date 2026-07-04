@@ -14,7 +14,7 @@
 | المنطقة | الموقع / الملاحظة |
 |--------|-------------------|
 | مكتبة UI | `src/ui/` — `Button`, `Input`, `Modal`, `Drawer`, `AdaptiveSheet`, `SmartTable`, `ScreenTabs`, `Badge`, … |
-| شريط التاريخ | `src/shared/components/DateFilterBar.jsx` ومستهلكون متعددون |
+| شريط التاريخ | `src/ui/date/DateFilterBar.tsx` is official; `src/shared/components/DateFilterBar.tsx` is shim only |
 | هوكات المجال | `src/hooks/` — `useInvoices`, `useSuppliers`, `useTableFilter`, `useDateFilter`, … |
 | الترجمة | `useTranslation` + `src/i18n/` — النمط متسق |
 | مفتاح نمط البطاقات | `CARD_STYLE_KEY` من `src/constants/cardStyles.js` (يُستورد من `ThemePreviewScreen`؛ `App.jsx` يعرّف نفس القيمة محلياً — تفضيل استيراد من `cardStyles.js` أو من `storageKeys` موحّد) |

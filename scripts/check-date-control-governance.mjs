@@ -38,6 +38,7 @@ const reasons = JSON.parse(read(reasonsPath));
 const dateInputReasons = reasons.dateInputReasons ?? {};
 const sourceFiles = walk('src', (file) => /\.(tsx|jsx)$/.test(file));
 const importSourceFiles = walk('src', (file) => /\.(tsx|ts|jsx|js)$/.test(file));
+const docsFiles = walk('docs', (file) => /\.md$/.test(file));
 const currentDateInputCounts = {};
 
 for (const file of sourceFiles) {
@@ -84,6 +85,16 @@ for (const file of importSourceFiles) {
 
   if (!isDateUiIndex && text.includes('hooks/useDateFilter')) {
     fail(file, 'useDateFilter must be re-exported through src/ui/date; do not import hooks/useDateFilter directly');
+  }
+}
+
+for (const file of docsFiles) {
+  const text = read(file);
+  if (text.includes('src/hooks/useDateFilter.js') || text.includes('useDateFilter.js')) {
+    fail(file, 'date filter docs are stale: use src/ui/date/useDateFilter.ts');
+  }
+  if (text.includes('src/shared/components/DateFilterBar.jsx') || text.includes('DateFilterBar.jsx')) {
+    fail(file, 'date filter docs are stale: use src/ui/date/DateFilterBar.tsx');
   }
 }
 
