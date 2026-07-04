@@ -17,7 +17,7 @@ import {
   throwIfApiFailed,
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, Checkbox, FileTrigger, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Checkbox, DateField, FileTrigger, Input, AdaptiveSheet } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 
@@ -344,11 +344,10 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
           )}
         </div>
 
-        <Input
-          type="date"
+        <DateField
           label={t('transactionDateLabel')}
           value={form.transactionDate}
-          onChange={(e: any) => updateField('transactionDate', e.target.value)}
+          onValueChange={(value) => updateField('transactionDate', value)}
         />
 
         {vaultsList.length > 0 && (

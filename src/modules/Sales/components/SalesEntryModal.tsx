@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
 import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { sumObjectValues } from '@noorix/finance-core';
-import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import { Button, DateField, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import type { DailySalesChannelEntry } from './DailySalesChannelsChips';
 import { SalesShiftPicker } from './SalesShiftPicker';
 import { SalesShiftEntryCard, isShiftEntryFormValid, buildShiftEntryPayload } from './SalesShiftEntryCard';
@@ -472,13 +472,12 @@ export function SalesEntryModal({
         <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/50 px-3 py-2 text-[12px] leading-relaxed text-noorix-muted">
           {contextLoading ? t('loading') : dateBannerText}
         </div>
-        <Input
-          type="date"
+        <DateField
           label={t('transactionDate')}
           value={txDate}
-          onChange={(e: { target: { value: string } }) => {
+          onValueChange={(value) => {
             setDateTouched(true);
-            setTxDate(e.target.value);
+            setTxDate(value);
           }}
         />
         {showDateDiffersHint && (

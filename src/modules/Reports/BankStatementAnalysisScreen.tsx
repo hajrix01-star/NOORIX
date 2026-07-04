@@ -18,9 +18,9 @@ import {
 } from '../../services/api';
 import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
-import { toYmd } from '../../utils/saudiDate';
+import { getSaudiNow, toYmd } from '../../utils/saudiDate';
 import { bankKeys } from '../../services/queryKeys';
-import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, cn } from '../../ui';
+import { Button, Badge, DateMonthScopePicker, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
@@ -33,8 +33,6 @@ const TABS = [
   { id: 'templates', labelKey: 'bankStatementTabTemplates' },
 ];
 const BANK_STATEMENT_TAB_IDS = TABS.map((tab: any) => tab.id);
-
-const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
 export default function BankStatementAnalysisScreen() {
   const { activeCompanyId, companies } = useApp();
@@ -51,6 +49,8 @@ export default function BankStatementAnalysisScreen() {
   const [activeTab, setActiveTab] = useTabSearchParam(BANK_STATEMENT_TAB_IDS, 'statements');
   const [showUpload, setShowUpload] = useState(false);
   const [mappingStatement, setMappingStatement] = useState<any>(null);
+  const now = getSaudiNow();
+  const [filterYear, setFilterYear] = useState(now.year);
   const [filterMonth, setFilterMonth] = useState('');
   const [filterBank, setFilterBank] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<any>(null);
@@ -135,7 +135,21 @@ export default function BankStatementAnalysisScreen() {
   }, [completedStatements]);
 
   const banks = [...new Set(statements.map((s: any) => s.bankName).filter(Boolean))].sort() as string[];
-  const months = [...new Set(statements.map((s: any) => s.startDate?.slice(0, 7)).filter(Boolean))].sort().reverse() as string[];
+  const filterMonthNumber = filterMonth ? Number(filterMonth.slice(5, 7)) : null;
+  const filterYears = [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3];
+  const setBankFilterYear = (nextYear: number) => {
+    setFilterYear(nextYear);
+    if (filterMonthNumber) {
+      setFilterMonth(`${nextYear}-${String(filterMonthNumber).padStart(2, '0')}`);
+    }
+  };
+  const setBankFilterMonth = (nextMonth: string) => {
+    if (!nextMonth) {
+      setFilterMonth('');
+      return;
+    }
+    setFilterMonth(`${filterYear}-${String(Number(nextMonth)).padStart(2, '0')}`);
+  };
 
   if (selectedStatementId) {
     return (
@@ -254,22 +268,16 @@ export default function BankStatementAnalysisScreen() {
               {!listLoading && statements.length > 0 && (
                 <>
                   <div className="flex flex-wrap gap-3 mb-4 items-center">
-                    <Input
-                      type="select"
-                      value={filterMonth}
-                      onChange={(e: any) => setFilterMonth(e.target.value)}
-                    >
-                      <option value="">{t('allMonths')}</option>
-                      {months.map((m: any) => {
-                        const [y, mo] = m.split('-');
-                        const label = `${AR_MONTHS[parseInt(mo, 10) - 1] || mo} ${y}`;
-                        return (
-                          <option key={m} value={m}>
-                            {label}
-                          </option>
-                        );
-                      })}
-                    </Input>
+                    <DateMonthScopePicker
+                      year={filterYear}
+                      years={filterYears}
+                      month={filterMonthNumber ? String(filterMonthNumber) : ''}
+                      allowAll
+                      allowYear={false}
+                      fallbackMonth={now.month}
+                      onYearChange={setBankFilterYear}
+                      onMonthChange={setBankFilterMonth}
+                    />
                     <Input
                       type="select"
                       value={filterBank}

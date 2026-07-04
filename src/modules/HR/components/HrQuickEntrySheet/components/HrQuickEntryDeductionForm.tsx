@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input } from '../../../../../ui';
+import { Button, DateField, Input } from '../../../../../ui';
 import { HrQuickEntryRow } from './HrQuickEntryRow';
 
 type TFn = (key: string, ...subst: string[]) => string;
@@ -65,11 +65,10 @@ export function HrQuickEntryDeductionForm(props: {
         />
       </HrQuickEntryRow>
       <HrQuickEntryRow id="dd-date" label={t('transactionDate')}>
-        <Input
+        <DateField
           id="dd-date"
-          type="date"
           value={ddDate}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDdDate(e.target.value)}
+          onValueChange={setDdDate}
           dir="ltr"
           lang="en"
         />

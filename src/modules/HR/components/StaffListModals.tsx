@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, Modal } from '../../../ui';
+import { Button, DateField, Input, Modal } from '../../../ui';
 import { StaffFormModal } from './StaffFormModal';
 import { AdvanceQuickModal } from './AdvanceQuickModal';
 import TerminationSettlementModal from './TerminationSettlementModal';
@@ -180,11 +180,10 @@ export function StaffListModals({
             <option value={t('terminationClauseArt81')}>{t('terminationClauseArt81')}</option>
           </Input>
 
-          <Input
-            type="date"
+          <DateField
             label={t('terminationDate')}
             value={terminationForm.date}
-            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, date: e.target.value }))}
+            onValueChange={(value) => setTerminationForm((p: any) => ({ ...p, date: value }))}
           />
         </div>
       </Modal>

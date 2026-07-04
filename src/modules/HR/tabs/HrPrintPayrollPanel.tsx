@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Checkbox, Input, FmtNum } from '../../../ui';
+import { Button, Checkbox, DateField, Input, FmtNum } from '../../../ui';
 import { HR_MONTH_LABELS_AR } from './hrPrintDocumentsTabFormat';
 import type { HrAnnualDraftState, HrPayrollDraftState } from './hrPrintDocumentsTabDrafts';
 
@@ -53,7 +53,7 @@ export function HrPrintPayrollPanel({
           <Input type="text" label={t('employeeSerial')} value={payroll.employeeSerial} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ employeeSerial: e.target.value })} />
           <Input type="text" label={t('jobTitle')} value={payroll.jobTitle} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ jobTitle: e.target.value })} />
           <Input type="text" label={t('iqamaNumber')} value={payroll.iqama} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ iqama: e.target.value })} />
-          <Input type="date" label={t('joinDate')} value={payroll.joinDate} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ joinDate: e.target.value })} />
+          <DateField label={t('joinDate')} value={payroll.joinDate} onValueChange={(value) => updatePayroll({ joinDate: value })} />
         </div>
       </div>
 
@@ -137,8 +137,8 @@ export function HrPrintPayrollPanel({
             <div className="space-y-3 rounded-lg border border-dashed border-noorix-blue/30 bg-noorix-bg-muted/20 p-3 sm:p-4">
               <p className="m-0 text-[12px] font-semibold text-noorix-text">{t('hrPrintFormatSalaryLetter')}</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input type="date" label={t('hrPrintLetterStart')} value={payroll.letterStartDate} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ letterStartDate: e.target.value })} />
-                <Input type="date" label={t('hrPrintLetterEnd')} value={payroll.letterEndDate} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ letterEndDate: e.target.value })} />
+                <DateField label={t('hrPrintLetterStart')} value={payroll.letterStartDate} onValueChange={(value) => updatePayroll({ letterStartDate: value })} />
+                <DateField label={t('hrPrintLetterEnd')} value={payroll.letterEndDate} onValueChange={(value) => updatePayroll({ letterEndDate: value })} />
               </div>
               <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclAr')} value={payroll.declarationSalariesAr} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ declarationSalariesAr: e.target.value })} />
               <Input multiline rows={4} label={t('hrPrintSalaryLetterDeclEn')} value={payroll.declarationSalariesEn} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updatePayroll({ declarationSalariesEn: e.target.value })} />

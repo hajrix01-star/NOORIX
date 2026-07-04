@@ -16,7 +16,7 @@ import {
   computeEmployeeSalaryPackageBreakdown,
   sumSalaryCustomAllowances,
 } from '../utils/employeeSalaryMath';
-import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import { Button, DateField, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 
 const EMPTY = {
   name: '', nameEn: '', jobTitle: '', iqamaNumber: '',
@@ -243,11 +243,10 @@ export const StaffFormModal = memo(function StaffFormModal({
             onChange={(e: any) => set('jobTitle', e.target.value)}
             placeholder={t('jobTitlePlaceholder')}
           />
-          <Input
-            type="date"
+          <DateField
             label={t('joinDate')}
             value={form.joinDate}
-            onChange={(e: any) => set('joinDate', e.target.value)}
+            onValueChange={(value) => set('joinDate', value)}
             required
           />
           <Input
@@ -364,11 +363,10 @@ export const StaffFormModal = memo(function StaffFormModal({
               <option value={t('terminationClauseArt74')}>{t('terminationClauseArt74')}</option>
               <option value={t('terminationClauseArt81')}>{t('terminationClauseArt81')}</option>
             </Input>
-            <Input
-              type="date"
+            <DateField
               label={t('terminationDate')}
               value={form.terminationDate || ''}
-              onChange={(e: any) => set('terminationDate', e.target.value)}
+              onValueChange={(value) => set('terminationDate', value)}
             />
           </div>
         )}

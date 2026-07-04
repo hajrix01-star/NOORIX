@@ -7,7 +7,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useApp } from '../context/AppContext';
 import { CARD_STYLES, CARD_STYLE_KEY } from '../constants/cardStyles';
 import { ScreenShell, ScreenTitle, ScreenTabs } from '../ui';
-import ThemeUILabTab from './themePreview/ThemeUILabTab';
+import ThemeUILabTab, { ShadcnInspiredDateFilterSamples } from './themePreview/ThemeUILabTab';
 
 function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSelect, lang }: any) {
   const name = lang === 'ar' ? nameAr : nameEn;
@@ -35,16 +35,17 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
   );
 }
 
-const THEME_PREVIEW_TAB_IDS = ['cards', 'uilab'];
+const THEME_PREVIEW_TAB_IDS = ['filters', 'cards', 'uilab'];
 
 export default function ThemePreviewScreen() {
   const { t, lang } = useTranslation();
   const { cardStyle, setCardStyle } = useApp();
   const currentStyle = cardStyle ?? 1;
-  const [activeTab, setActiveTab] = useTabSearchParam(THEME_PREVIEW_TAB_IDS, 'cards');
+  const [activeTab, setActiveTab] = useTabSearchParam(THEME_PREVIEW_TAB_IDS, 'filters');
 
   const tabItems = useMemo(
     () => [
+      { id: 'filters', label: t('themePreviewTabFilters') },
       { id: 'cards', label: t('themePreviewTabCards') },
       { id: 'uilab', label: t('themePreviewTabUILab') },
     ],
@@ -71,6 +72,12 @@ export default function ThemePreviewScreen() {
         onChange={setActiveTab}
         contentClassName="nx-tab-content p-4 md:p-5"
       >
+        {activeTab === 'filters' && (
+          <div className="flex flex-col gap-4">
+            <p className="text-[14px] text-noorix-muted m-0">{t('themePreviewLab13Hint')}</p>
+            <ShadcnInspiredDateFilterSamples t={t} />
+          </div>
+        )}
         {activeTab === 'cards' && (
           <div className="flex flex-col gap-5">
             <p className="text-[14px] text-noorix-muted m-0">{t('themePreviewCardsIntro')}</p>

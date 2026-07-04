@@ -4,6 +4,8 @@ export { default as DateRangeField } from './DateRangeField';
 export type { DateRangeFieldProps } from './DateRangeField';
 export { default as DateFilterMonthPicker } from './MonthPicker';
 export type { DateFilterMonthPickerProps } from './MonthPicker';
+export { default as DateMonthScopePicker } from './MonthScopePicker';
+export type { DateMonthScopeMode, DateMonthScopePickerProps } from './MonthScopePicker';
 export { default as DateFilterBar } from './DateFilterBar';
 export type { DateFilterBarProps } from './DateFilterBar';
 export { useDateFilter } from './useDateFilter';

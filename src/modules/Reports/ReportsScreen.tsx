@@ -74,21 +74,6 @@ export default function ReportsScreen() {
   }, [selectedMonthNumber, lang]);
 
   const yearOptions = useMemo(() => Array.from({ length: 6 }, (_: any, index: any) => currentYear - index), [currentYear]);
-  const periodTabItems = useMemo(
-    () => [
-      { id: 'year', label: t('reportPeriodYear') },
-      { id: 'month', label: t('reportPeriodMonth') },
-    ],
-    [t],
-  );
-
-  const mobileMonthTabItems = useMemo(() => {
-    const names = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
-    return [
-      { id: '', label: t('allMonths') },
-      ...names.map((name: any, i: any) => ({ id: String(i + 1), label: name })),
-    ];
-  }, [t, lang]);
 
   const isMobile = useIsNarrow700();
 
@@ -239,8 +224,6 @@ export default function ReportsScreen() {
         periodMode={periodMode}
         selectedMonth={selectedMonth}
         selectedMonthNumber={selectedMonthNumber}
-        periodTabItems={periodTabItems}
-        mobileMonthTabItems={mobileMonthTabItems}
         visibleRows={visibleRows}
         flatRowsCount={flatRows.length}
         collapsedGroups={collapsedGroups}

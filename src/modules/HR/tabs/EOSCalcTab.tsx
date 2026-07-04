@@ -21,7 +21,7 @@ import { hrKeys } from '../../../services/queryKeys';
 import { hrFmt } from '../utils/hrFmt';
 import { parseWorkHours } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input , FmtNum } from '../../../ui';
+import { Button, DateField, Input , FmtNum } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
@@ -259,11 +259,11 @@ export default function EOSCalcTab() {
       </div>
 
       <div className="mb-4">
-        <Input type="date" label={t('eosCalcJoinDate')} value={jd ? toYmd(jd) : ''} onChange={(e: any) => setJoinDate(e.target.value)} />
+        <DateField label={t('eosCalcJoinDate')} value={jd ? toYmd(jd) : ''} onValueChange={setJoinDate} />
       </div>
 
       <div className="mb-4">
-        <Input type="date" label={t('eosCalcEndDate')} value={ed ? toYmd(ed) : ''} onChange={(e: any) => setEndDate(e.target.value)} />
+        <DateField label={t('eosCalcEndDate')} value={ed ? toYmd(ed) : ''} onValueChange={setEndDate} />
       </div>
 
       <div className="mb-5">

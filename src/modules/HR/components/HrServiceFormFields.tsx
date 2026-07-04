@@ -2,7 +2,7 @@
  * حقول النموذج الديناميكية حسب نوع خدمة الموظف
  */
 import React from 'react';
-import { Input } from '../../../ui';
+import { DateField, Input } from '../../../ui';
 import {
   requiresExpiryDate,
   showsIssueDate,
@@ -107,30 +107,27 @@ export function HrServiceFormFields({
         />
       )}
 
-      <Input
-        type="date"
+      <DateField
         label={t('hrServiceTransactionDate')}
         value={transactionDate}
-        onChange={(e: InputChangeEvent) => setTransactionDate(e.target.value)}
+        onValueChange={setTransactionDate}
         lang="en"
       />
 
       {showIssue && (
-        <Input
-          type="date"
+        <DateField
           label={t('startDate')}
           value={issueDate}
-          onChange={(e: InputChangeEvent) => setIssueDate(e.target.value)}
+          onValueChange={setIssueDate}
           lang="en"
         />
       )}
 
       {showExpiry && (
-        <Input
-          type="date"
+        <DateField
           label={t('expiryDate')}
           value={expiryDate}
-          onChange={(e: InputChangeEvent) => setExpiryDate(e.target.value)}
+          onValueChange={setExpiryDate}
           required
           lang="en"
         />

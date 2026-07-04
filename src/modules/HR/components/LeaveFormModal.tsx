@@ -9,7 +9,7 @@ import { getEmployees, createLeave, updateLeave, throwIfApiFailed } from '../../
 import { useApiListQuery } from '../../../hooks/useApiQuery';
 import { employeeKeys } from '../../../services/queryKeys';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Input, AdaptiveSheet, Modal } from '../../../ui';
+import { Button, DateField, Input, AdaptiveSheet, Modal } from '../../../ui';
 import { toDateInputYmd, getSaudiToday } from '../../../utils/saudiDate';
 
 const TYPE_MAP = {
@@ -238,19 +238,17 @@ export function LeaveFormModal({
           </Input>
 
           <div className="grid grid-cols-2 gap-3">
-            <Input
-              type="date"
+            <DateField
               label={t('startDate')}
               value={startDate}
-              onChange={(e: any) => handleStartEndChange('startDate', e.target.value)}
+              onValueChange={(value) => handleStartEndChange('startDate', value)}
               required
               lang="en"
             />
-            <Input
-              type="date"
+            <DateField
               label={t('endDate')}
               value={endDate}
-              onChange={(e: any) => handleStartEndChange('endDate', e.target.value)}
+              onValueChange={(value) => handleStartEndChange('endDate', value)}
               required
               lang="en"
             />

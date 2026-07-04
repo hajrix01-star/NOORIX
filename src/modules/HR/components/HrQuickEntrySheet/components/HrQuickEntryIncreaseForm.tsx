@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input } from '../../../../../ui';
+import { Button, DateField, Input } from '../../../../../ui';
 import { HrQuickEntryRow } from './HrQuickEntryRow';
 import { HrQuickEntryToolbar } from './HrQuickEntryToolbar';
 
@@ -138,11 +138,10 @@ export function HrQuickEntryIncreaseForm(props: {
             </>
           )}
           <HrQuickEntryRow id="mv-eff" label={isAr ? t('effectiveDateLabel') : 'Effective date'}>
-            <Input
+            <DateField
               id="mv-eff"
-              type="date"
               value={mvEff}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMvEff(e.target.value)}
+              onValueChange={setMvEff}
               dir="ltr"
               lang="en"
               required

@@ -1,8 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, cn, ScreenTitle } from '../../../ui';
+import { Button, DateMonthScopePicker, cn, ScreenTitle } from '../../../ui';
 import { useIsNarrow700 } from '../../../ui';
-import { EN_MONTHS } from '../../Reports/reportHelpers';
 import { SERIES_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { CompanyListItem } from '../../../context/appTypes';
 
@@ -41,6 +40,7 @@ export function OwnerFilterBar({
 }: OwnerFilterBarProps) {
   const { t, lang } = useTranslation();
   const isMobile = useIsNarrow700();
+  const years = [currentYear, currentYear - 1, currentYear - 2];
 
   return (
     <>
@@ -50,29 +50,15 @@ export function OwnerFilterBar({
           <p className="text-[13px] text-noorix-muted m-0">{t('ownerDashboardDesc')}</p>
         </div>
         <div className="nx-toolbar">
-          <Input
-            type="select"
-            value={year}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setYear(Number(e.target.value))}
-          >
-            {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </Input>
-          <Input
-            type="select"
-            value={selectedMonth}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedMonth(e.target.value)}
-          >
-            <option value="">{t('allMonths')}</option>
-            {EN_MONTHS.map((m, i) => (
-              <option key={i} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </Input>
+          <DateMonthScopePicker
+            year={year}
+            years={years}
+            month={selectedMonth}
+            allowAll
+            allowYear={false}
+            onYearChange={setYear}
+            onMonthChange={setSelectedMonth}
+          />
           <Button variant="primary" onClick={onExportExcel} size="sm">
             Excel
           </Button>

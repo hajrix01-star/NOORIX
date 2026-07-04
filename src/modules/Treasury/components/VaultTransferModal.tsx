@@ -15,7 +15,7 @@ import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
 import { useToast } from '../../../context/ToastContext';
-import { Button, Input, AdaptiveSheet } from '../../../ui';
+import { Button, DateField, Input, AdaptiveSheet } from '../../../ui';
 
 export default function VaultTransferModal({ companyId, onClose }: any) {
   const { t, lang } = useTranslation();
@@ -184,7 +184,7 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
           required
         />
 
-        <Input type="date" label={t('vaultTransferDate')} value={txDate} onChange={(e: any) => setTxDate(e.target.value)} required />
+        <DateField label={t('vaultTransferDate')} value={txDate} onValueChange={setTxDate} required />
 
         <Input
           type="text"

@@ -3,7 +3,7 @@ import { createDeduction, updateInvoice, throwIfApiFailed } from '../../../servi
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { hrFmt } from '../utils/hrFmt';
-import { AdaptiveSheet, Button, Checkbox, Input } from '../../../ui';
+import { AdaptiveSheet, Button, Checkbox, DateField, Input } from '../../../ui';
 
 export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, onError }: any) {
   const { t } = useTranslation();
@@ -91,7 +91,7 @@ export function AdvanceSettlementModal({ advance, companyId, onClose, onSaved, o
           <Input type="month" label="شهر التأجيل" value={deferMonth} onChange={(e: any) => setDeferMonth(e.target.value)} />
         ) : (
           <>
-            <Input type="date" label={t('advanceSettlementDate')} value={settleDate} onChange={(e: any) => setSettleDate(e.target.value)} />
+            <DateField label={t('advanceSettlementDate')} value={settleDate} onValueChange={setSettleDate} />
             <Checkbox
               checked={applyToSalary}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApplyToSalary(e.target.checked)}

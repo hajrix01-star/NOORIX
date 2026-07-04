@@ -4,7 +4,7 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, Checkbox, FileTrigger, FormRow, cn } from '../../../ui';
+import { Input, Button, Card, Checkbox, DateField, FileTrigger, FormRow, cn } from '../../../ui';
 import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
@@ -83,13 +83,11 @@ function BatchRowTable(props: Record<string, any>) {
       </td>
 
       <td style={cp}>
-        <Input
-          type="date"
+        <DateField
           dir="ltr"
           value={row.invoiceDate}
           max={maxInvoiceDate || undefined}
-          onChange={(e: any) => {
-            const v = e.target.value;
+          onValueChange={(v) => {
             if (maxInvoiceDate && v > maxInvoiceDate) {
               onUpdate(index, 'invoiceDate', maxInvoiceDate);
             } else {
@@ -297,15 +295,13 @@ function BatchRowStack(props: Record<string, any>) {
 
         <BatchNetTaxReadonly net={net} tax={tax} variant="stack" t={t} />
 
-        <Input
+        <DateField
           id={ids.invoiceDate}
           label={t('date')}
-          type="date"
           size="sm"
           value={row.invoiceDate}
           max={maxInvoiceDate || undefined}
-          onChange={(e: any) => {
-            const v = e.target.value;
+          onValueChange={(v) => {
             if (maxInvoiceDate && v > maxInvoiceDate) {
               onUpdate(index, 'invoiceDate', maxInvoiceDate);
             } else {

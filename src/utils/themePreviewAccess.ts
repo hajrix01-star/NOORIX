@@ -4,5 +4,5 @@
  */
 export function canAccessThemePreview(userRole: string | undefined): boolean {
   if (import.meta.env.DEV) return true;
-  return String(userRole || '').toLowerCase() === 'super_admin';
+  return ['owner', 'super_admin'].includes(String(userRole || '').toLowerCase());
 }

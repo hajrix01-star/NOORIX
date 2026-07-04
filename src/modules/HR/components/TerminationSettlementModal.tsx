@@ -33,7 +33,7 @@ import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { hrFmt } from '../utils/hrFmt';
 import { roundMoney2 } from '../../../utils/moneyInput';
-import { Button, FileTrigger, Modal, FmtNum, Input } from '../../../ui';
+import { Button, DateField, FileTrigger, Modal, FmtNum, Input } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
 function esc(v: any) {
@@ -455,11 +455,10 @@ export default function TerminationSettlementModal({
                   <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
                 ))}
               </Input>
-              <Input
-                type="date"
+              <DateField
                 label={t('terminationSettlementTransactionDate')}
                 value={toYmd(txDateStr)}
-                onChange={(e: any) => setTxDateStr(e.target.value)}
+                onValueChange={setTxDateStr}
               />
               <Input
                 type="number"

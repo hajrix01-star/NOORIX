@@ -200,8 +200,7 @@ export function usePurchasesBatchActions(options: {
   }
 
   const handleBatchDateChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newDate = e.target.value;
+    (newDate: string) => {
       const prevOp = prevBatchDateRef.current;
       setBatchDate(newDate);
       if (!newDate) return;
