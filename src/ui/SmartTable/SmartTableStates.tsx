@@ -6,8 +6,8 @@ export const SmartTableErrorState = memo(function SmartTableErrorState({
   message: string;
 }) {
   return (
-    <div className="m-3 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-noorix-red">
-      ⚠ {message}
+    <div role="alert" className="m-3 p-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-noorix-red">
+      {message}
     </div>
   );
 });
@@ -26,7 +26,7 @@ export const SmartTableLoadingState = memo(function SmartTableLoadingState({
         <span className="text-noorix-muted text-[14px] font-medium">{loadingLabel}</span>
       </div>
       <div className="flex flex-col gap-2">
-        {[1, 2, 3, 4, 5].map((i: any) => (
+        {[1, 2, 3, 4, 5].map((i: number) => (
           <div
             key={i}
             className="rounded-lg h-11 nx-smart-table-skeleton-line"

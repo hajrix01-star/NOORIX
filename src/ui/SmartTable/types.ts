@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 
-/** عمود جدول ذكي — مرّر `TRow` من الشاشة لتضييق نوع الصف في `render` */
+export type SmartTableDataMode = 'manual' | 'client';
+
 export type SmartTableColumn<TRow = any> = {
   key: string;
   kind?: 'id' | 'text' | 'date' | 'money' | 'number' | 'status' | 'actions' | 'meta';
@@ -13,7 +14,6 @@ export type SmartTableColumn<TRow = any> = {
   width?: CSSProperties['width'];
   minWidth?: number | string;
   maxWidth?: number | string;
-  /** صنف CSS على th/td — لعرض أعمدة مرِن (em/ch) */
   cellClassName?: string;
   render?: (value: unknown, row: TRow, index: number) => ReactNode;
 };
@@ -30,6 +30,10 @@ export type SmartTableProps<TRow = any> = {
   total?: number;
   page?: number;
   pageSize?: number;
+  dataMode?: SmartTableDataMode;
+  sortingMode?: SmartTableDataMode;
+  paginationMode?: SmartTableDataMode;
+  filteringMode?: SmartTableDataMode;
   onPageChange?: (p: number) => void;
   isLoading?: boolean;
   isError?: boolean;
@@ -43,11 +47,9 @@ export type SmartTableProps<TRow = any> = {
   showSearchInHeader?: boolean;
   emptyMessage?: string;
   sortKey?: string;
-  /** بعض الشاشات تمرّر اتجاهًا كنص ديناميكي */
   sortDir?: 'asc' | 'desc' | string;
   onSort?: (key: string) => void;
   children?: ReactNode;
-  /** أسفل الإطار — بعض الشاشات القديمة تعرض ملخصًا خارج tbody بدلاً من children */
   footer?: ReactNode;
   tableMinWidth?: number | string;
   compact?: boolean;
@@ -61,15 +63,9 @@ export type SmartTableProps<TRow = any> = {
   renderExpandedRow?: (row: TRow, index: number) => ReactNode;
   renderMobileCard?: (row: TRow, index: number) => ReactNode;
   stripeMobileCards?: boolean;
-  /**
-   * بديل renderMobileCard — يعرض كل سجل كسطرين مضغوطَين (List-Row pattern).
-   * عند تمريره يُعطى الأولوية على renderMobileCard في العروض الضيقة.
-   */
   renderCompactRow?: (row: TRow, index: number) => ReactNode;
   stickyActionColumn?: boolean;
   tableId?: string;
-  /** صنف إضافي على غلاف noorix-table-frame */
   frameClassName?: string;
-  /** موروث — غير مستخدم داخلياً؛ يُبقي توافقاً مع شاشات قديمة */
   keyExtractor?: (row: TRow, index: number) => string | number;
 };

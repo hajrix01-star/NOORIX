@@ -37,13 +37,21 @@ const SmartTablePagination = memo(function SmartTablePagination({
 
   return (
     <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-noorix-border">
-      <Button size="sm" onClick={() => go(firstPage)} disabled={!canPreviousPage}>«</Button>
-      <Button size="sm" onClick={() => go(previousPage)} disabled={!canPreviousPage}>‹</Button>
+      <Button size="sm" onClick={() => go(firstPage)} disabled={!canPreviousPage} aria-label={t('firstPage')}>
+        «
+      </Button>
+      <Button size="sm" onClick={() => go(previousPage)} disabled={!canPreviousPage} aria-label={t('previousPage')}>
+        ‹
+      </Button>
       <span className="text-[13px] text-noorix-muted font-medium px-2">
         {t('pageLabel', page, totalPages)}
       </span>
-      <Button size="sm" onClick={() => go(nextPage)} disabled={!canNextPage}>›</Button>
-      <Button size="sm" onClick={() => go(lastPage)} disabled={!canNextPage}>»</Button>
+      <Button size="sm" onClick={() => go(nextPage)} disabled={!canNextPage} aria-label={t('nextPage')}>
+        ›
+      </Button>
+      <Button size="sm" onClick={() => go(lastPage)} disabled={!canNextPage} aria-label={t('lastPage')}>
+        »
+      </Button>
     </div>
   );
 });

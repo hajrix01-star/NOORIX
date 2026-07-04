@@ -41,10 +41,14 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     total = 0,
     page = 1,
     pageSize = 50,
+    dataMode = 'manual',
+    sortingMode,
+    paginationMode,
+    filteringMode,
     onPageChange,
     isLoading = false,
     isError = false,
-    errorMessage = 'فشل تحميل البيانات',
+    errorMessage,
     footerCells = null,
     /**
      * بديل footerCells المدرك لإخفاء الأعمدة.
@@ -102,6 +106,9 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
 
   const showCompact  = isNarrow && typeof renderCompactRow === 'function';
   const showCards    = isNarrow && !showCompact && typeof renderMobileCard === 'function';
+  const effectiveSortingMode = sortingMode ?? dataMode;
+  const effectivePaginationMode = paginationMode ?? dataMode;
+  const effectiveFilteringMode = filteringMode ?? dataMode;
   const tableEngine = useSmartTableEngine({
     columns: visibleColumns,
     data,
@@ -110,6 +117,11 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     page,
     pageSize,
     total,
+    sortingMode: effectiveSortingMode,
+    paginationMode: effectivePaginationMode,
+    filteringMode: effectiveFilteringMode,
+    searchValue,
+    onSearchChange,
     onSort,
     onPageChange,
   });
@@ -134,7 +146,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const rowNumberCellStyle = buildRowNumberCellStyle({ cellPad, cellFs, rowNumW });
   /** على الجوال مع بطاقات فقط: لا نعرض شريط إخفاء الأعمدة (يضيق المحتوى ويبدو كزر عائم) */
   const showTableHeaderRow = Boolean(
-    title || badge || (onSearchChange && showSearchInHeader) || (tableId && !showCards),
+    title || badge || ((onSearchChange || effectiveFilteringMode === 'client') && showSearchInHeader) || (tableId && !showCards),
   );
   const rowKey = (row: any, index: number) => keyExtractor?.(row, index) ?? row.id ?? index;
 
@@ -153,8 +165,8 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
         <SmartTableHeader
           title={title}
           badge={badge}
-          searchValue={searchValue}
-          onSearchChange={onSearchChange}
+          searchValue={tableEngine.search.value}
+          onSearchChange={onSearchChange || (effectiveFilteringMode === 'client' ? tableEngine.search.setValue : undefined)}
           showSearchInHeader={showSearchInHeader}
           tableId={tableId}
           showColumnVisibility={!showCards}
@@ -180,7 +192,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
       {!isLoading && showCompact && (
         <SmartTableCompactRows
           rows={engineRows}
-          dataLength={data.length}
+          dataLength={engineRows.length}
           emptyMsg={emptyMsg}
           rowKey={rowKey}
           renderCompactRow={renderCompactRow!}
@@ -191,7 +203,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
       {!isLoading && showCards && (
         <SmartTableMobileCards
           rows={engineRows}
-          dataLength={data.length}
+          dataLength={engineRows.length}
           emptyMsg={emptyMsg}
           rowKey={rowKey}
           renderMobileCard={renderMobileCard}
@@ -259,7 +271,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
               </tr>
             </thead>
             <tbody>
-              {data.length === 0 ? (
+              {engineRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={effectiveCols}
@@ -279,7 +291,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                 >
                   {showRowNumbers && (
                     <td className="nx-row-number-td nx-smart-row-number-cell nx-smart-body-cell-vars text-center font-semibold" style={rowNumberCellStyle}>
-                      {(page - 1) * safePageSize + i + 1}
+                      {(pagination.page - 1) * safePageSize + i + 1}
                     </td>
                   )}
                   {visibleColumns.map((col: any) => {
@@ -341,9 +353,9 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
       )}
 
       {/* ── تصفح الصفحات ── */}
-      {!isLoading && onPageChange && (
+      {!isLoading && (onPageChange || effectivePaginationMode === 'client') && (
         <SmartTablePagination
-          page={page}
+          page={pagination.page}
           totalPages={totalPages}
           canPreviousPage={pagination.canPreviousPage}
           canNextPage={pagination.canNextPage}

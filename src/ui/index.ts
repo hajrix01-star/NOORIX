@@ -67,6 +67,7 @@ export { FmtNum } from './FmtNum';
 export {
   default as SmartTable,
   type SmartTableColumn,
+  type SmartTableDataMode,
   type SmartTableFooterSegment,
   type SmartTableProps,
 } from './SmartTable';

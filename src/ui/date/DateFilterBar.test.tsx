@@ -16,10 +16,31 @@ function Harness() {
   );
 }
 
+function ConfigurableHarness() {
+  const filter = useDateFilter();
+  return (
+    <DateFilterBar
+      filter={filter}
+      modes={['month', 'range']}
+      showActions={false}
+      showBadge={false}
+      className="test-date-filter"
+    />
+  );
+}
+
 function renderFilter() {
   render(
     <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
       <Harness />
+    </AppTestProviders>,
+  );
+}
+
+function renderConfigurableFilter() {
+  render(
+    <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+      <ConfigurableHarness />
     </AppTestProviders>,
   );
 }
@@ -97,5 +118,32 @@ describe('DateFilterBar', () => {
 
     expect(screen.getByTestId('applied-label').textContent).toBe(`${startYear} - ${endYear}`);
     expect(screen.queryByRole('button', { name: String(startYear) })).toBeNull();
+  });
+
+  it('can limit visible modes without creating a custom date filter', () => {
+    renderConfigurableFilter();
+
+    expect(screen.getByRole('button', { name: 'Month' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Range' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Year' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Day' })).toBeNull();
+  });
+
+  it('activates the first allowed mode when the current filter mode is not visible', () => {
+    renderConfigurableFilter();
+
+    expect(screen.getByRole('button', { name: 'Month' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('can hide actions and pending badge for composed filter layouts', () => {
+    renderConfigurableFilter();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+
+    expect(screen.queryByRole('button', { name: 'Apply' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
+    expect(document.querySelector('.test-date-filter')).toBeTruthy();
+    expect(document.querySelector('.ndfb-period-badge')).toBeNull();
   });
 });
