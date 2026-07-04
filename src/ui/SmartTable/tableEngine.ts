@@ -1,6 +1,9 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
   type ColumnDef,
   type PaginationState,
@@ -12,6 +15,7 @@ import type { SmartTableColumn } from './types';
 import { columnLabel } from './columnUtils';
 
 export type SmartTableEngineSortDir = 'asc' | 'desc' | string;
+export type SmartTableEngineMode = 'manual' | 'client';
 
 export type SmartTableEngineRow<TRow> = {
   id: string;
@@ -41,11 +45,17 @@ export type SmartTableEnginePagination = {
   lastPage: number;
 };
 
+export type SmartTableEngineSearch = {
+  value: string;
+  setValue: (value: string) => void;
+};
+
 export type SmartTableEngineResult<TRow> = {
   table: Table<TRow>;
   rows: SmartTableEngineRow<TRow>[];
   columns: SmartTableColumn<TRow>[];
   pagination: SmartTableEnginePagination;
+  search: SmartTableEngineSearch;
   getColumnState: (key: string) => SmartTableEngineColumnState;
   toggleSort: (key: string) => void;
   setPage: (page: number) => void;
@@ -63,6 +73,10 @@ function toPaginationState(page: number, safePageSize: number): PaginationState 
   };
 }
 
+function cellMatchesQuery(value: unknown, query: string) {
+  return String(value ?? '').toLowerCase().includes(query);
+}
+
 export function useSmartTableEngine<TRow extends Record<string, any>>({
   columns,
   data,
@@ -71,6 +85,11 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
   page = 1,
   pageSize = 50,
   total = data.length,
+  sortingMode = 'manual',
+  paginationMode = 'manual',
+  filteringMode = 'manual',
+  searchValue = '',
+  onSearchChange,
   onSort,
   onPageChange,
 }: {
@@ -81,16 +100,54 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
   page?: number;
   pageSize?: number;
   total?: number;
+  sortingMode?: SmartTableEngineMode;
+  paginationMode?: SmartTableEngineMode;
+  filteringMode?: SmartTableEngineMode;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   onSort?: (key: string) => void;
   onPageChange?: (page: number) => void;
 }): SmartTableEngineResult<TRow> {
   const safePageSize = Math.max(1, pageSize);
   const totalPages = Math.max(1, Math.ceil(total / safePageSize));
-  const pagination = useMemo(
+  const [clientSorting, setClientSorting] = useState<SortingState>(() => toSortingState(sortKey, sortDir));
+  const [clientPagination, setClientPagination] = useState<PaginationState>(() => toPaginationState(page, safePageSize));
+  const [clientSearchValue, setClientSearchValue] = useState(searchValue);
+
+  const controlledPagination = useMemo(
     () => toPaginationState(page, safePageSize),
     [page, safePageSize],
   );
-  const sorting = useMemo(() => toSortingState(sortKey, sortDir), [sortKey, sortDir]);
+  const controlledSorting = useMemo(() => toSortingState(sortKey, sortDir), [sortKey, sortDir]);
+  const pagination = paginationMode === 'client' && !onPageChange ? clientPagination : controlledPagination;
+  const sorting = sortingMode === 'client' && !onSort ? clientSorting : controlledSorting;
+  const globalFilter = filteringMode === 'client' && !onSearchChange ? clientSearchValue : searchValue;
+
+  useEffect(() => {
+    if (paginationMode === 'client' && !onPageChange) {
+      setClientPagination((current) => (
+        current.pageSize === safePageSize ? current : { ...current, pageSize: safePageSize }
+      ));
+    }
+  }, [onPageChange, paginationMode, safePageSize]);
+
+  useEffect(() => {
+    if (sortingMode !== 'client' || onSort) {
+      setClientSorting(controlledSorting);
+    }
+  }, [controlledSorting, onSort, sortingMode]);
+
+  useEffect(() => {
+    if (paginationMode !== 'client' || onPageChange) {
+      setClientPagination(controlledPagination);
+    }
+  }, [controlledPagination, onPageChange, paginationMode]);
+
+  useEffect(() => {
+    if (filteringMode !== 'client' || onSearchChange) {
+      setClientSearchValue(searchValue);
+    }
+  }, [filteringMode, onSearchChange, searchValue]);
 
   const columnDefs = useMemo<Array<ColumnDef<TRow, unknown>>>(
     () =>
@@ -99,6 +156,7 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
         accessorFn: (row) => row[col.key],
         header: () => columnLabel(col),
         enableSorting: Boolean(col.sortable),
+        enableGlobalFilter: col.key !== 'actions',
         meta: { noorixColumn: col },
       })),
     [columns],
@@ -108,12 +166,44 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
     data,
     columns: columnDefs,
     getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    pageCount: totalPages,
+    getFilteredRowModel: filteringMode === 'client' ? getFilteredRowModel() : undefined,
+    getSortedRowModel: sortingMode === 'client' ? getSortedRowModel() : undefined,
+    getPaginationRowModel: paginationMode === 'client' ? getPaginationRowModel() : undefined,
+    manualFiltering: filteringMode === 'manual',
+    manualPagination: paginationMode === 'manual',
+    manualSorting: sortingMode === 'manual',
+    pageCount: paginationMode === 'manual' ? totalPages : undefined,
     state: {
+      globalFilter,
       pagination,
       sorting,
+    },
+    globalFilterFn: (row, columnId, filterValue) => {
+      const query = String(filterValue ?? '').trim().toLowerCase();
+      return !query || cellMatchesQuery(row.getValue(columnId), query);
+    },
+    onGlobalFilterChange: (value) => {
+      const next = String(value ?? '');
+      if (onSearchChange) {
+        onSearchChange(next);
+      } else {
+        setClientSearchValue(next);
+      }
+      if (paginationMode === 'client' && !onPageChange) {
+        setClientPagination((current) => ({ ...current, pageIndex: 0 }));
+      }
+    },
+    onPaginationChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(pagination) : updater;
+      if (onPageChange) {
+        onPageChange(next.pageIndex + 1);
+        return;
+      }
+      setClientPagination(next);
+    },
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater;
+      setClientSorting(next);
     },
   });
 
@@ -126,50 +216,65 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
 
   const getColumnState = useCallback((key: string): SmartTableEngineColumnState => {
     const column = table.getColumn(key);
-    const isSorted = sortKey === key;
-    const normalizedSortDir = isSorted && sortDir === 'asc' ? 'asc' : (isSorted ? 'desc' : undefined);
+    const activeSort = sorting.find((item) => item.id === key);
+    const isSorted = Boolean(activeSort);
+    const normalizedSortDir = isSorted && activeSort?.desc === false ? 'asc' : (isSorted ? 'desc' : undefined);
 
     return {
       isSorted,
       sortDir: normalizedSortDir,
-      canSort: Boolean(column?.getCanSort() && onSort),
+      canSort: Boolean(column?.getCanSort() && (onSort || sortingMode === 'client')),
       ariaSort: isSorted ? (normalizedSortDir === 'asc' ? 'ascending' : 'descending') : 'none',
-      sortIndicator: isSorted ? (normalizedSortDir === 'asc' ? '▲' : '▼') : '⇅',
+      sortIndicator: isSorted ? (normalizedSortDir === 'asc' ? '^' : 'v') : '-',
     };
-  }, [onSort, sortDir, sortKey, table]);
+  }, [onSort, sorting, sortingMode, table]);
 
   const toggleSort = useCallback((key: string) => {
-    if (table.getColumn(key)?.getCanSort()) {
-      onSort?.(key);
+    const column = table.getColumn(key);
+    if (!column?.getCanSort()) return;
+    if (onSort) {
+      onSort(key);
+      return;
     }
-  }, [onSort, table]);
+    if (sortingMode === 'client') {
+      column.toggleSorting();
+    }
+  }, [onSort, sortingMode, table]);
 
   const setPage = useCallback((nextPage: number) => {
     const pageCount = table.getPageCount();
-    if (nextPage >= 1 && nextPage <= pageCount) {
-      onPageChange?.(nextPage);
+    if (nextPage < 1 || nextPage > pageCount) return;
+    if (onPageChange) {
+      onPageChange(nextPage);
+      return;
     }
-  }, [onPageChange, table]);
+    if (paginationMode === 'client') {
+      table.setPageIndex(nextPage - 1);
+    }
+  }, [onPageChange, paginationMode, table]);
 
   const pageCount = table.getPageCount();
-  const canPreviousPage = table.getCanPreviousPage();
-  const canNextPage = table.getCanNextPage();
+  const currentPage = pagination.pageIndex + 1;
 
   return {
     table,
     rows,
     columns,
     pagination: {
-      page,
+      page: currentPage,
       safePageSize,
       totalPages: pageCount,
       pageIndex: pagination.pageIndex,
-      canPreviousPage,
-      canNextPage,
+      canPreviousPage: table.getCanPreviousPage(),
+      canNextPage: table.getCanNextPage(),
       firstPage: 1,
-      previousPage: Math.max(1, page - 1),
-      nextPage: Math.min(pageCount, page + 1),
+      previousPage: Math.max(1, currentPage - 1),
+      nextPage: Math.min(pageCount, currentPage + 1),
       lastPage: pageCount,
+    },
+    search: {
+      value: String(globalFilter ?? ''),
+      setValue: table.setGlobalFilter,
     },
     getColumnState,
     toggleSort,

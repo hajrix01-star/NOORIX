@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getSaudiNow } from '../../utils/saudiDate';
 import {
@@ -8,6 +8,7 @@ import {
 import DateRangeField from './DateRangeField';
 import { DayRangeCalendar, MonthRangeCalendar, YearRangeCalendar } from './PeriodCalendars';
 import { DatePeriodActions, DatePeriodBadge, DatePeriodModeGroup, type DatePeriodModeOption } from './DatePeriodControls';
+import { cn } from '../cn';
 import {
   applyDatePeriodDraft,
   areDatePeriodStatesEqual,
@@ -20,9 +21,21 @@ import { getGregorianMonthNames, getGregorianWeekdayNames } from './dateLocale';
 
 export type DateFilterBarProps = {
   filter: DatePeriodDraftFilter;
+  modes?: DatePeriodMode[];
+  showBadge?: boolean;
+  showActions?: boolean;
+  className?: string;
 };
 
-export default function DateFilterBar({ filter }: DateFilterBarProps) {
+const DEFAULT_MODES: DatePeriodMode[] = ['all', 'month', 'year', 'day', 'range'];
+
+export default function DateFilterBar({
+  filter,
+  modes = DEFAULT_MODES,
+  showBadge = true,
+  showActions = true,
+  className = '',
+}: DateFilterBarProps) {
   const { t, lang } = useTranslation();
   const now = getSaudiNow();
   const years = useMemo(() => [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3], [now.year]);
@@ -34,19 +47,36 @@ export default function DateFilterBar({ filter }: DateFilterBarProps) {
   const draftLabel = buildDatePeriodLabel(draft, now);
   const isDirty = !areDatePeriodStatesEqual(filter.state, draft);
 
-  const modeOptions = useMemo<DatePeriodModeOption[]>(() => [
-    { id: 'all', label: t('dateFilterAll') },
-    { id: 'month', label: t('dateFilterMonth') },
-    { id: 'year', label: t('dateFilterYear') },
-    { id: 'day', label: t('dateFilterDay') },
-    { id: 'range', label: t('dateFilterRange') },
-  ], [t]);
+  const availableModes = useMemo(
+    () => new Set(modes.map((item) => toDatePeriodUiMode(item))),
+    [modes],
+  );
+  const fallbackMode = modeOptionsFallback(modes);
+
+  const modeOptions = useMemo<DatePeriodModeOption[]>(() => {
+    const options: DatePeriodModeOption[] = [
+      { id: 'all', label: t('dateFilterAll') },
+      { id: 'month', label: t('dateFilterMonth') },
+      { id: 'year', label: t('dateFilterYear') },
+      { id: 'day', label: t('dateFilterDay') },
+      { id: 'range', label: t('dateFilterRange') },
+    ];
+    return options.filter((item) => availableModes.has(item.id));
+  }, [availableModes, t]);
 
   const setMode = (nextMode: DatePeriodMode) => {
+    if (!availableModes.has(toDatePeriodUiMode(nextMode))) return;
     const change = getDatePeriodModeChange(draft, nextMode, now);
     updateDraft(change.patch);
     setOpenPanel(change.openPanel);
   };
+
+  useEffect(() => {
+    if (availableModes.has(mode) || !fallbackMode) return;
+    const change = getDatePeriodModeChange(draft, fallbackMode, now);
+    updateDraft(change.patch);
+    setOpenPanel(null);
+  }, [availableModes, draft, fallbackMode, mode, now]);
 
   const apply = () => {
     applyDatePeriodDraft(filter, draft);
@@ -59,7 +89,7 @@ export default function DateFilterBar({ filter }: DateFilterBarProps) {
   };
 
   return (
-    <div className="noorix-date-filter-bar" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={cn('noorix-date-filter-bar', className)} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <DatePeriodModeGroup
         mode={mode}
         options={modeOptions}
@@ -114,15 +144,21 @@ export default function DateFilterBar({ filter }: DateFilterBarProps) {
         />
       )}
 
-      {mode !== 'all' && <DatePeriodBadge label={draftLabel} pending={isDirty} />}
+      {showBadge && mode !== 'all' && <DatePeriodBadge label={draftLabel} pending={isDirty} />}
 
-      <DatePeriodActions
-        applyLabel={t('dateFilterApply')}
-        resetLabel={t('dateFilterReset')}
-        canApply={isDirty}
-        onApply={apply}
-        onReset={reset}
-      />
+      {showActions && (
+        <DatePeriodActions
+          applyLabel={t('dateFilterApply')}
+          resetLabel={t('dateFilterReset')}
+          canApply={isDirty}
+          onApply={apply}
+          onReset={reset}
+        />
+      )}
     </div>
   );
+}
+
+function modeOptionsFallback(modes: DatePeriodMode[]): DatePeriodMode | null {
+  return modes.length > 0 ? toDatePeriodUiMode(modes[0]) : null;
 }

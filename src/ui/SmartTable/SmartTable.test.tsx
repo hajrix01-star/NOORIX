@@ -61,6 +61,11 @@ describe('SmartTable', () => {
     expect(screen.getByText('No rows')).toBeTruthy();
   });
 
+  it('uses the central translated load error by default', () => {
+    render(<SmartTable columns={columns} data={[]} isError />);
+    expect(screen.getByRole('alert').textContent).toBe('loadDataFailed');
+  });
+
   it('calls onSort when sortable header clicked', () => {
     const onSort = vi.fn();
     const { container } = render(
@@ -73,7 +78,7 @@ describe('SmartTable', () => {
   });
 
   it('portals column visibility panel to document body', () => {
-    render(
+    const { container } = render(
       <SmartTable
         tableId="test-cols"
         columns={columns}
@@ -82,10 +87,14 @@ describe('SmartTable', () => {
         title="Cols"
       />,
     );
-    fireEvent.click(screen.getByLabelText('إظهار / إخفاء الأعمدة'));
+    const trigger = container.querySelector('.nx-col-vis-btn') as HTMLButtonElement;
+    expect(trigger).toBeTruthy();
+
+    fireEvent.click(trigger);
+
     const panel = document.body.querySelector('.nx-col-vis-panel--viewport');
     expect(panel).toBeTruthy();
-    expect(screen.getByText('الأعمدة')).toBeTruthy();
+    expect(panel?.querySelectorAll('.nx-col-vis-item')).toHaveLength(2);
   });
 
   it('renders pagination when total exceeds pageSize', () => {
@@ -102,6 +111,19 @@ describe('SmartTable', () => {
     expect(screen.getByText('Page 1/3')).toBeTruthy();
   });
 
+  it('renders internal pagination when client pagination is enabled without external callbacks', () => {
+    render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        pageSize={1}
+        paginationMode="client"
+      />,
+    );
+
+    expect(screen.getByText('Page 1/2')).toBeTruthy();
+  });
+
   it('calls onPageChange from pagination controls without changing the external page contract', () => {
     const onPageChange = vi.fn();
     render(
@@ -115,8 +137,8 @@ describe('SmartTable', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('‹'));
-    fireEvent.click(screen.getByText('›'));
+    fireEvent.click(screen.getByLabelText('previousPage'));
+    fireEvent.click(screen.getByLabelText('nextPage'));
 
     expect(onPageChange).toHaveBeenCalledWith(1);
     expect(onPageChange).toHaveBeenCalledWith(3);
@@ -138,6 +160,66 @@ describe('SmartTable', () => {
     expect(input.value).toBe('Al');
     fireEvent.change(input, { target: { value: 'Beta' } });
     expect(onSearchChange).toHaveBeenCalledWith('Beta');
+  });
+
+  it('can search rows internally when client filtering is enabled', () => {
+    render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        filteringMode="client"
+      />,
+    );
+
+    const input = screen.getByLabelText('searchPlaceholder') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'bet' } });
+
+    expect(screen.queryByText('Alpha')).toBeNull();
+    expect(screen.getByText('Beta')).toBeTruthy();
+  });
+
+  it('enables client filtering through the single dataMode shortcut', () => {
+    render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        dataMode="client"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('searchPlaceholder'), { target: { value: 'alp' } });
+
+    expect(screen.getByText('Alpha')).toBeTruthy();
+    expect(screen.queryByText('Beta')).toBeNull();
+    expect(screen.queryByText('Page 1/2')).toBeNull();
+  });
+
+  it('lets explicit modes override the dataMode shortcut', () => {
+    render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        dataMode="client"
+        filteringMode="manual"
+      />,
+    );
+
+    expect(screen.queryByLabelText('searchPlaceholder')).toBeNull();
+  });
+
+  it('shows the empty state when client filtering has no matching rows', () => {
+    render(
+      <SmartTable
+        columns={columns}
+        data={rows}
+        filteringMode="client"
+        emptyMessage="No matches"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('searchPlaceholder'), { target: { value: 'zzz' } });
+
+    expect(screen.getByText('No matches')).toBeTruthy();
   });
 
   it('applies normalized column kinds to headers and cells', () => {
@@ -257,5 +339,4 @@ describe('SmartTable', () => {
     expect(screen.getByText('0:Alpha')).toBeTruthy();
     expect(screen.getByText('1:Beta')).toBeTruthy();
   });
-
 });

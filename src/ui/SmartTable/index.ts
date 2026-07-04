@@ -1,11 +1,13 @@
 export { default } from './SmartTable';
-export type { SmartTableColumn, SmartTableFooterSegment, SmartTableProps } from './types';
+export type { SmartTableColumn, SmartTableDataMode, SmartTableFooterSegment, SmartTableProps } from './types';
 export { useSmartTableEngine } from './tableEngine';
 export type {
   SmartTableEngineColumnState,
+  SmartTableEngineMode,
   SmartTableEnginePagination,
   SmartTableEngineResult,
   SmartTableEngineRow,
+  SmartTableEngineSearch,
   SmartTableEngineSortDir,
 } from './tableEngine';
 export {
