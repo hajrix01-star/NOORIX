@@ -13,7 +13,7 @@ vi.mock('../../i18n/useTranslation', () => ({
   }),
 }));
 
-vi.mock('../../hooks/useMediaQuery', () => ({
+vi.mock('../responsive', () => ({
   useIsNarrow768: () => mediaState.isNarrow,
 }));
 

@@ -20,7 +20,7 @@
 
 ## مرحلة 2 — `useMediaQuery` و `useDebouncedValue`
 
-- [x] `src/hooks/useMediaQuery.js` + `useIsMobile640` / `useIsNarrow700` / `useIsNarrow768`.
+- [x] `src/ui/responsive.ts` + `useIsMobile640` / `useIsNarrow700` / `useIsNarrow768`; `src/hooks/useMediaQuery.ts` shim only.
 - [x] توثيق العتبات: [`MEDIA_QUERY_BREAKPOINTS.md`](./MEDIA_QUERY_BREAKPOINTS.md) + إحالة لمعايير Cursor.
 - [x] استبدال المنطق في: `SettingsScreen`, `ReportsScreen`, `OwnerDashboardScreen`, `ReportsDetailModal`, `SmartTable`, `SupplierTable`.
 - [x] `UserMenu.jsx` — `useIsNarrow768`.

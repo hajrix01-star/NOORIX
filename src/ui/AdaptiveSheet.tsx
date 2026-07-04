@@ -1,34 +1,9 @@
-/**
- * AdaptiveSheet — نماذج ومعالجات: Modal مركزي على الشاشات العريضة، Drawer على الضيقة.
- *
- * نقطة القطع الافتراضية 900px (أعرض من الجوال والتابلت العمودي ≈ سطح مكتب).
- * يستخدم useSyncExternalStore مع matchMedia لتفادي وميض التصيير ودعم تغيير حجم النافذة.
- */
-import React, { useSyncExternalStore, type ReactNode } from 'react';
-import Modal from './Modal';
+import React, { type ReactNode } from 'react';
 import Drawer from './Drawer';
+import Modal from './Modal';
+import { NOORIX_BREAKPOINTS, useAdaptiveSheetNarrow } from './responsive';
 
-/** عرض أقصى (بكسل) يُعتبر «ضيقاً» → Drawer */
-export const ADAPTIVE_SHEET_BREAKPOINT_PX = 900;
-
-function subscribeNarrow(breakpointPx: any, onStoreChange: any) {
-  const mq = window.matchMedia(`(max-width: ${breakpointPx}px)`);
-  mq.addEventListener('change', onStoreChange);
-  return () => mq.removeEventListener('change', onStoreChange);
-}
-
-function getNarrowSnapshot(breakpointPx: any) {
-  return window.matchMedia(`(max-width: ${breakpointPx}px)`).matches;
-}
-
-/** خطاف اختياري إن احتجت منطقاً مشروطاً خارج المكوّن */
-export function useAdaptiveSheetNarrow(breakpointPx: any = ADAPTIVE_SHEET_BREAKPOINT_PX) {
-  return useSyncExternalStore(
-    (cb: any) => subscribeNarrow(breakpointPx, cb),
-    () => getNarrowSnapshot(breakpointPx),
-    () => false,
-  );
-}
+export const ADAPTIVE_SHEET_BREAKPOINT_PX = NOORIX_BREAKPOINTS.adaptiveSheet;
 
 function drawerSizeFromProp(size: any) {
   if (size === '2xl') return 'xl';

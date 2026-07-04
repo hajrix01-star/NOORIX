@@ -14,7 +14,7 @@ import {
   Cell,
 } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useIsNarrow768 } from '../../../hooks/useMediaQuery';
+import { useIsNarrow768 } from '../../../ui';
 import { VAULT_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import { fmt } from '../../../utils/format';
 import { FmtNum } from '../../../ui';

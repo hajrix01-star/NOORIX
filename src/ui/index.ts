@@ -26,7 +26,16 @@ export { default as Card            } from './Card';
 export { default as Badge           } from './Badge';
 export { default as Modal           } from './Modal';
 export { default as AdaptiveSheet   } from './AdaptiveSheet';
-export { useAdaptiveSheetNarrow } from './AdaptiveSheet';
+export { useAdaptiveSheetNarrow } from './responsive';
+export {
+  NOORIX_BREAKPOINTS,
+  maxWidthQuery,
+  useIsMobile640,
+  useIsNarrow700,
+  useIsNarrow768,
+  useMaxWidth,
+  useMediaQuery,
+} from './responsive';
 export { default as Spinner         } from './Spinner';
 export { default as Divider         } from './Divider';
 export { default as FormRow         } from './FormRow';

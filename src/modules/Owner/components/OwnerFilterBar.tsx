@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, cn, ScreenTitle } from '../../../ui';
-import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
+import { useIsNarrow700 } from '../../../ui';
 import { EN_MONTHS } from '../../Reports/reportHelpers';
 import { SERIES_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { CompanyListItem } from '../../../context/appTypes';

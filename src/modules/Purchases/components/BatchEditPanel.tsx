@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { Button, AdaptiveSheet } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
-import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
+import { useIsNarrow700 } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 import { BatchEditInvoiceLine } from './BatchEditInvoiceLine';
 

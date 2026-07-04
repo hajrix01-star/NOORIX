@@ -10,7 +10,7 @@
 | `useIsNarrow700` | `< 700px` مقابل `700px+` | بطاقات جدول `SmartTable` |
 | `useIsNarrow768` | `< 768px` مقابل `768px+` | قائمة المستخدم، سايدبار |
 
-التعريفات في `src/hooks/useMediaQuery.js`.
+التعريفات الرسمية في `src/ui/responsive.ts`; `src/hooks/useMediaQuery.ts` shim only.
 
 ## توافق مع `app-main`
 

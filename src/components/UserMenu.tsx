@@ -4,7 +4,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import ChangePasswordModal from './ChangePasswordModal';
 import { useToast } from '../context/ToastContext';
 import { Button, FloatingPanel } from '../ui';
-import { useIsNarrow768 } from '../hooks/useMediaQuery';
+import { useIsNarrow768 } from '../ui';
 
 const ROLE_KEYS = {
   owner:       'roleOwner',

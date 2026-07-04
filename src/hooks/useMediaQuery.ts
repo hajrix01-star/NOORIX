@@ -1,37 +1,10 @@
-import { useSyncExternalStore } from 'react';
-
-function subscribeMediaQuery(query: any, onChange: any) {
-  const mq = window.matchMedia(query);
-  mq.addEventListener('change', onChange);
-  return () => mq.removeEventListener('change', onChange);
-}
-
-function getMediaQuerySnapshot(query: any) {
-  return window.matchMedia(query).matches;
-}
-
-/**
- * @param {string} query استعلام CSS كامل، مثل '(max-width: 700px)'
- */
-export function useMediaQuery(query: any) {
-  return useSyncExternalStore(
-    (cb: any) => subscribeMediaQuery(query, cb),
-    () => getMediaQuerySnapshot(query),
-    () => false,
-  );
-}
-
-/** محاذاة مع Tailwind: جوال حتى 640px */
-export function useIsMobile640() {
-  return useMediaQuery('(max-width: 640px)');
-}
-
-/** مطابقة SmartTable / SupplierTable السابقة */
-export function useIsNarrow700() {
-  return useMediaQuery('(max-width: 700px)');
-}
-
-/** مطابقة UserMenu السابقة (تابلت صغير) */
-export function useIsNarrow768() {
-  return useMediaQuery('(max-width: 768px)');
-}
+export {
+  NOORIX_BREAKPOINTS,
+  maxWidthQuery,
+  useAdaptiveSheetNarrow,
+  useIsMobile640,
+  useIsNarrow700,
+  useIsNarrow768,
+  useMaxWidth,
+  useMediaQuery,
+} from '../ui/responsive';

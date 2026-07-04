@@ -11,7 +11,7 @@ import {
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, ColorSwatch, RuntimeStyleBox, cn } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
-import { useIsNarrow700 } from '../../../hooks/useMediaQuery';
+import { useIsNarrow700 } from '../../../ui';
 import { formatCompactNumber, formatMoney } from '../../../utils/money';
 import type { OwnerCompanySeries, OwnerChartPoint } from '../types';
 import type { CompanyListItem } from '../../../context/appTypes';
