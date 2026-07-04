@@ -33,6 +33,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/DatePeriodControls.tsx` | Central period mode buttons, pending badge, and apply/reset actions |
 | `src/ui/date/useFloatingPopover.ts` | Central fixed-position popover behavior with outside-click and Escape handling |
 | `src/ui/date/dateLocale.ts` | Central Gregorian month/weekday labels without duplicated literals |
+| `src/ui/date/datePeriod.ts` | UI-date facade for shared period math while preserving external utility compatibility |
 | `src/ui/date/datePeriodDraft.ts` | Central draft/apply/dirty/mode-change state helpers for period filters |
 | `src/ui/date/DateField.test.tsx` | Unit coverage for emitted date values and range boundaries |
 | `src/ui/date/DateFilterBar.test.tsx` | Official behavior coverage for period filter month/day/year flows |

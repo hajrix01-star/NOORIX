@@ -5,7 +5,7 @@ import {
   normalizeYearSpan,
   ymd,
   type DatePeriodState,
-} from '../../utils/datePeriod';
+} from './datePeriod';
 import Button from '../Button';
 import { DatePeriodSelect, type DatePeriodSelectOption } from './DatePeriodControls';
 

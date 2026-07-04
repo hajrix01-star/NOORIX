@@ -6,7 +6,7 @@ import {
   ymd,
   type DatePeriodMode,
   type DatePeriodState,
-} from '../../utils/datePeriod';
+} from './datePeriod';
 
 export function useDateFilter() {
   const now = getSaudiNow();

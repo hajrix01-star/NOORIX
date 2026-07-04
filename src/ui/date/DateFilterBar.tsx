@@ -4,7 +4,7 @@ import { getSaudiNow } from '../../utils/saudiDate';
 import {
   buildDatePeriodLabel,
   type DatePeriodMode,
-} from '../../utils/datePeriod';
+} from './datePeriod';
 import DateRangeField from './DateRangeField';
 import { DayRangeCalendar, MonthRangeCalendar, YearRangeCalendar } from './PeriodCalendars';
 import { DatePeriodActions, DatePeriodBadge, DatePeriodModeGroup, type DatePeriodModeOption } from './DatePeriodControls';

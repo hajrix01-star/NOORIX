@@ -28,6 +28,21 @@ export type { FloatingPopoverOptions } from './useFloatingPopover';
 export { getGregorianMonthNames, getGregorianWeekdayNames } from './dateLocale';
 export type { NoorixDateLanguage } from './dateLocale';
 export {
+  buildDatePeriodLabel,
+  compareYearMonth,
+  lastDayOfMonth,
+  listYearMonthsInRange,
+  normalizeDateSpan,
+  normalizeMonthSpan,
+  normalizeYearSpan,
+  resolveDatePeriodRange,
+  saudiDayEnd,
+  saudiDayStart,
+  toYmdOnly,
+  ymd,
+} from './datePeriod';
+export type { DatePeriodMode, DatePeriodState } from './datePeriod';
+export {
   applyDatePeriodDraft,
   areDatePeriodStatesEqual,
   cloneDatePeriodState,
