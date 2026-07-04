@@ -7,7 +7,7 @@ import {
   type DatePeriodState,
 } from '../../utils/datePeriod';
 import Button from '../Button';
-import Input from '../Input';
+import { DatePeriodSelect, type DatePeriodSelectOption } from './DatePeriodControls';
 
 export type DatePeriodCalendarProps = {
   draft: DatePeriodState;
@@ -38,6 +38,14 @@ function monthIndex(year: number, month: number) {
 function parseYmd(value: string) {
   const [year, month, day] = String(value || '').split('-').map(Number);
   return { year: year || 0, month: month || 0, day: day || 0 };
+}
+
+function yearOptions(years: number[]): DatePeriodSelectOption[] {
+  return years.map((year) => ({ value: year, label: year }));
+}
+
+function monthOptions(monthNames: string[]): DatePeriodSelectOption[] {
+  return monthNames.map((name, index) => ({ value: index + 1, label: name }));
 }
 
 function isMonthInDraftRange(draft: DatePeriodState, year: number, month: number) {
@@ -95,16 +103,13 @@ export function MonthRangeCalendar({
       <div className="ndfb-calendar-panel">
         <div className="ndfb-calendar-panel__head">
           <span>{yearLabel}</span>
-          <Input
-            type="select"
-            containerClassName="contents"
+          <DatePeriodSelect
+            label={yearLabel}
             className="ndfb-calendar-year-select"
             value={calendarYear}
-            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => selectYear(Number(event.target.value))}
-            aria-label={yearLabel}
-          >
-            {years.map((year) => <option key={year} value={year}>{year}</option>)}
-          </Input>
+            options={yearOptions(years)}
+            onValueChange={(value) => selectYear(Number(value))}
+          />
         </div>
         <div className="ndfb-month-grid">
           {monthNames.map((name, index) => {
@@ -228,26 +233,20 @@ export function DayRangeCalendar({
         <div className="ndfb-calendar-panel__head">
           <span>{monthLabel}</span>
           <div className="ndfb-calendar-head-controls">
-            <Input
-              type="select"
-              containerClassName="contents"
+            <DatePeriodSelect
+              label={yearLabel}
               className="ndfb-calendar-year-select"
               value={calendarYear}
-              onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setCalendarMonth(Number(event.target.value), calendarMonth)}
-              aria-label={yearLabel}
-            >
-              {years.map((year) => <option key={year} value={year}>{year}</option>)}
-            </Input>
-            <Input
-              type="select"
-              containerClassName="contents"
+              options={yearOptions(years)}
+              onValueChange={(value) => setCalendarMonth(Number(value), calendarMonth)}
+            />
+            <DatePeriodSelect
+              label={monthLabel}
               className="ndfb-calendar-month-select"
               value={calendarMonth}
-              onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setCalendarMonth(calendarYear, Number(event.target.value))}
-              aria-label={monthLabel}
-            >
-              {monthNames.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}
-            </Input>
+              options={monthOptions(monthNames)}
+              onValueChange={(value) => setCalendarMonth(calendarYear, Number(value))}
+            />
           </div>
         </div>
         <div className="ndfb-weekday-grid" aria-hidden="true">

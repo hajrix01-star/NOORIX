@@ -1,5 +1,6 @@
 import React from 'react';
 import Button from '../Button';
+import Input from '../Input';
 import { type DatePeriodMode } from '../../utils/datePeriod';
 
 export type DatePeriodModeOption = {
@@ -88,8 +89,44 @@ export function DatePeriodActions({
         title={resetLabel}
         aria-label={resetLabel}
       >
-        {'↺'}
+        {String.fromCharCode(0x21ba)}
       </Button>
     </div>
+  );
+}
+
+export type DatePeriodSelectOption = {
+  value: number | string;
+  label: React.ReactNode;
+};
+
+export type DatePeriodSelectProps = {
+  label: string;
+  value: number | string;
+  options: DatePeriodSelectOption[];
+  className: string;
+  onValueChange: (value: string) => void;
+};
+
+export function DatePeriodSelect({
+  label,
+  value,
+  options,
+  className,
+  onValueChange,
+}: DatePeriodSelectProps) {
+  return (
+    <Input
+      type="select"
+      containerClassName="contents"
+      className={className}
+      value={value}
+      onChange={(event: React.ChangeEvent<HTMLSelectElement>) => onValueChange(event.target.value)}
+      aria-label={label}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>{option.label}</option>
+      ))}
+    </Input>
   );
 }

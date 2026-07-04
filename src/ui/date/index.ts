@@ -10,13 +10,17 @@ export type {
   MonthRangeCalendarProps,
   YearRangeCalendarProps,
 } from './PeriodCalendars';
-export { DatePeriodActions, DatePeriodBadge, DatePeriodModeGroup } from './DatePeriodControls';
+export { DatePeriodActions, DatePeriodBadge, DatePeriodModeGroup, DatePeriodSelect } from './DatePeriodControls';
 export type {
   DatePeriodActionsProps,
   DatePeriodBadgeProps,
   DatePeriodModeGroupProps,
   DatePeriodModeOption,
+  DatePeriodSelectOption,
+  DatePeriodSelectProps,
 } from './DatePeriodControls';
+export { useFloatingPopover } from './useFloatingPopover';
+export type { FloatingPopoverOptions } from './useFloatingPopover';
 export { getGregorianMonthNames, getGregorianWeekdayNames } from './dateLocale';
 export type { NoorixDateLanguage } from './dateLocale';
 export {

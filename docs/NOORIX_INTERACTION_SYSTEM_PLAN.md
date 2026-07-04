@@ -28,6 +28,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/MonthPicker.tsx` | Central floating month picker behind the old `DateFilterMonthPicker` API |
 | `src/ui/date/PeriodCalendars.tsx` | Central month/year/day range calendars used by `DateFilterBar` |
 | `src/ui/date/DatePeriodControls.tsx` | Central period mode buttons, pending badge, and apply/reset actions |
+| `src/ui/date/useFloatingPopover.ts` | Central fixed-position popover behavior with outside-click and Escape handling |
 | `src/ui/date/dateLocale.ts` | Central Gregorian month/weekday labels without duplicated literals |
 | `src/ui/date/datePeriodDraft.ts` | Central draft/apply/dirty/mode-change state helpers for period filters |
 | `src/ui/date/DateField.test.tsx` | Unit coverage for emitted date values and range boundaries |
@@ -58,3 +59,11 @@ Improve daily user experience by centralizing repeated interactions without repl
 ## Next RFC
 
 Future work should extract a `CalendarPopover`, `MonthPicker`, and `YearPicker` from `DateFilterBar` only after this low-risk wrapper layer is stable.
+
+## Test Cadence
+
+| Stage | Verification |
+| --- | --- |
+| During a large local batch | Use code inspection and targeted `rg` only |
+| End of the batch | Run typecheck, targeted tests, governance checks, and build once |
+| Before push/merge/deploy | Repeat the full verification gate |

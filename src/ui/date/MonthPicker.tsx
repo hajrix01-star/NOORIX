@@ -1,10 +1,10 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getSaudiNow } from '../../utils/saudiDate';
 import Button from '../Button';
 import { getGregorianMonthNames } from './dateLocale';
-
+import { useFloatingPopover } from './useFloatingPopover';
 
 export type DateFilterMonthPickerProps = {
   label?: React.ReactNode;
@@ -31,15 +31,20 @@ export default function DateFilterMonthPicker({
     ? yearsProp
     : [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3];
   const monthNames = getGregorianMonthNames(lang);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const popoverRef = useRef<HTMLDivElement | null>(null);
-  const [open, setOpen] = useState(false);
+  const {
+    triggerRef,
+    popoverRef,
+    open,
+    popoverStyle,
+    closePopover,
+    togglePopover,
+  } = useFloatingPopover();
   const [calendarYear, setCalendarYear] = useState(year);
-  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties | null>(null);
   const selectedLabel = `${String(month).padStart(2, '0')}-${year}`;
   const sortedYears = [...years].sort((a, b) => a - b);
   const minYear = sortedYears[0] ?? year;
   const maxYear = sortedYears[sortedYears.length - 1] ?? year;
+  const pickerLabel = ariaLabel || String(label || t('dateFilterMonth'));
 
   useEffect(() => {
     setCalendarYear(year);
@@ -49,62 +54,9 @@ export default function DateFilterMonthPicker({
     setCalendarYear((current) => Math.min(maxYear, Math.max(minYear, current + delta)));
   };
 
-  useEffect(() => {
-    if (!open) return;
-
-    const updatePopoverPosition = () => {
-      const trigger = triggerRef.current;
-      if (!trigger) return;
-
-      const rect = trigger.getBoundingClientRect();
-      const margin = 14;
-      const width = Math.min(360, window.innerWidth - margin * 2);
-      const left = Math.min(Math.max(rect.left + rect.width / 2 - width / 2, margin), window.innerWidth - width - margin);
-      const top = Math.min(rect.bottom + 8, window.innerHeight - margin);
-
-      setPopoverStyle({
-        position: 'fixed',
-        top,
-        left,
-        width,
-      });
-    };
-
-    updatePopoverPosition();
-    window.addEventListener('resize', updatePopoverPosition);
-    window.addEventListener('scroll', updatePopoverPosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updatePopoverPosition);
-      window.removeEventListener('scroll', updatePopoverPosition, true);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (triggerRef.current?.contains(target) || popoverRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open]);
-
   const selectMonth = (nextMonth: number) => {
     onChange({ year: calendarYear, month: nextMonth });
-    setOpen(false);
+    closePopover();
   };
 
   const popover = open && popoverStyle
@@ -113,7 +65,7 @@ export default function DateFilterMonthPicker({
         ref={popoverRef}
         className="ndfb-month-popover ndfb-month-popover--floating"
         role="dialog"
-        aria-label={ariaLabel || String(label || t('dateFilterMonth'))}
+        aria-label={pickerLabel}
         dir={lang === 'ar' ? 'rtl' : 'ltr'}
         style={popoverStyle}
       >
@@ -179,9 +131,9 @@ export default function DateFilterMonthPicker({
         ref={triggerRef}
         type="button"
         className={`ndfb-period-badge ndfb-month-picker__trigger${open ? ' ndfb-period-badge--pending' : ''}`}
-        aria-label={ariaLabel || String(label || t('dateFilterMonth'))}
+        aria-label={pickerLabel}
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        onClick={togglePopover}
       >
         <span className="ndfb-month-picker__icon" aria-hidden />
         <span>{selectedLabel}</span>
