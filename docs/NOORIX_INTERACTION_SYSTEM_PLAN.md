@@ -15,6 +15,8 @@ Improve daily user experience by centralizing repeated interactions without repl
 | Date inputs | Use Noorix `DateField` instead of direct `Input type="date"` in safe screens |
 | Date ranges | Use Noorix `DateRangeField` for from/to pairs |
 | Period filters | Keep `DateFilterBar` behavior and migrate internals gradually |
+| Date labels | Generate Gregorian month/weekday labels centrally via `src/ui/date/dateLocale.ts` |
+| Date governance | Block new direct `type="date"` usage outside documented exceptions |
 | Protected domains | Skip payroll, tax, bank, purchases, invoices, sales, expenses, treasury, and reports in this batch |
 
 ## Implemented Foundation
@@ -25,8 +27,11 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/DateRangeField.tsx` | Central from/to date wrapper with explicit end min boundary |
 | `src/ui/date/MonthPicker.tsx` | Central floating month picker behind the old `DateFilterMonthPicker` API |
 | `src/ui/date/PeriodCalendars.tsx` | Central month/year/day range calendars used by `DateFilterBar` |
+| `src/ui/date/dateLocale.ts` | Central Gregorian month/weekday labels without duplicated literals |
+| `src/ui/date/datePeriodDraft.ts` | Central draft/apply/dirty state helpers for period filters |
 | `src/ui/date/DateField.test.tsx` | Unit coverage for emitted date values and range boundaries |
 | `src/ui/index.ts` | Exposes date components through the official UI kit |
+| `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"` usage |
 
 ## Migration Priority
 
@@ -38,6 +43,15 @@ Improve daily user experience by centralizing repeated interactions without repl
 | 4 | Dashboard special days | Convert now |
 | 5 | Assets dates | Convert now |
 | 6 | Financial/protected modules | Defer |
+
+## Current Deferred Date Baseline
+
+| Scope | Decision |
+| --- | --- |
+| HR/payroll/EOS/leave | Defer to dedicated HR date workflow pass |
+| Sales/invoices/expenses/treasury | Defer to financial date workflow pass |
+| Purchases/batch | Defer to purchase import/batch date pass |
+| Reports/bank | Defer to bank reconciliation date pass |
 
 ## Next RFC
 

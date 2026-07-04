@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppTestProviders, defaultAppTestContextValue } from '../../test/appTestProviders';
-import { DateField, DateFilterMonthPicker, DateRangeField } from './index';
+import { DateField, DateFilterMonthPicker, DateRangeField, getGregorianMonthNames } from './index';
 
 describe('Noorix date fields', () => {
   it('emits plain YYYY-MM-DD values', () => {
@@ -48,5 +48,12 @@ describe('Noorix date fields', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Jan' }));
 
     expect(onChange).toHaveBeenCalledWith({ year: 2026, month: 1 });
+  });
+
+  it('centralizes Arabic Gregorian month labels without mojibake literals', () => {
+    const months = getGregorianMonthNames('ar');
+
+    expect(months).toHaveLength(12);
+    expect(months.join(' ')).not.toContain('ظ');
   });
 });

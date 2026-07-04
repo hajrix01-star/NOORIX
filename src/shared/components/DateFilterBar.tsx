@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
 import { Button, DateRangeField } from '../../ui';
@@ -7,6 +7,13 @@ import {
   DateFilterMonthPicker,
   MonthRangeCalendar,
   YearRangeCalendar,
+  applyDatePeriodDraft,
+  areDatePeriodStatesEqual,
+  getGregorianMonthNames,
+  getGregorianWeekdayNames,
+  normalizeDatePeriodMode,
+  toDatePeriodUiMode,
+  useDatePeriodDraft,
   type DateFilterMonthPickerProps,
 } from '../../ui/date';
 import { getSaudiNow } from '../../utils/saudiDate';
@@ -14,78 +21,27 @@ import {
   buildDatePeriodLabel,
   ymd,
   type DatePeriodMode,
-  type DatePeriodState,
 } from '../../utils/datePeriod';
 
 export { useDateFilter };
 export { DateFilterMonthPicker };
 export type { DateFilterMonthPickerProps };
 
-const MONTH_NAMES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-const WEEKDAY_NAMES_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const WEEKDAY_NAMES_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-
-function normalizeMode(mode: DatePeriodMode): DatePeriodMode {
-  return mode === 'month' ? 'months' : mode;
-}
-
-function toUiMode(mode: DatePeriodMode): DatePeriodMode {
-  return mode === 'months' ? 'month' : mode;
-}
-
-function cloneDateState(state: DatePeriodState): DatePeriodState {
-  return {
-    ...state,
-    mode: normalizeMode(state.mode),
-    yearRangeStart: state.yearRangeStart || state.selYear,
-    yearRangeEnd: state.yearRangeEnd || state.selYear,
-  };
-}
-
-function useDraftDateState(filter: any) {
-  const [draft, setDraft] = useState<DatePeriodState>(() => cloneDateState(filter.state));
-
-  useEffect(() => {
-    setDraft(cloneDateState(filter.state));
-  }, [filter.state]);
-
-  const updateDraft = (patch: Partial<DatePeriodState>) => {
-    setDraft((current) => ({ ...current, ...patch }));
-  };
-
-  return { draft, updateDraft, setDraft };
-}
-
-function applyDraft(filter: any, draft: DatePeriodState) {
-  filter.setMode(normalizeMode(draft.mode));
-  filter.setSelYear(draft.selYear);
-  filter.setSelMonth(draft.selMonth);
-  filter.setSelDay(draft.selDay);
-  filter.setRangeStart(draft.rangeStart);
-  filter.setRangeEnd(draft.rangeEnd);
-  filter.setMonthRangeStartYear(draft.monthRangeStartYear);
-  filter.setMonthRangeStartMonth(draft.monthRangeStartMonth);
-  filter.setMonthRangeEndYear(draft.monthRangeEndYear);
-  filter.setMonthRangeEndMonth(draft.monthRangeEndMonth);
-  filter.setYearRangeStart?.(draft.yearRangeStart || draft.selYear);
-  filter.setYearRangeEnd?.(draft.yearRangeEnd || draft.selYear);
-}
 
 export default function DateFilterBar({ filter }: any) {
   const { t, lang } = useTranslation();
   const now = getSaudiNow();
   const years = useMemo(() => [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3], [now.year]);
-  const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
-  const weekdayNames = lang === 'ar' ? WEEKDAY_NAMES_AR : WEEKDAY_NAMES_EN;
-  const { draft, updateDraft } = useDraftDateState(filter);
+  const monthNames = useMemo(() => getGregorianMonthNames(lang), [lang]);
+  const weekdayNames = useMemo(() => getGregorianWeekdayNames(lang), [lang]);
+  const { draft, updateDraft } = useDatePeriodDraft(filter);
   const [openPanel, setOpenPanel] = useState<DatePeriodMode | null>(null);
-  const mode = toUiMode(draft.mode);
+  const mode = toDatePeriodUiMode(draft.mode);
   const draftLabel = buildDatePeriodLabel(draft, now);
-  const isDirty = JSON.stringify(cloneDateState(filter.state)) !== JSON.stringify(draft);
+  const isDirty = !areDatePeriodStatesEqual(filter.state, draft);
 
   const setMode = (nextMode: DatePeriodMode) => {
-    const normalized = normalizeMode(nextMode);
+    const normalized = normalizeDatePeriodMode(nextMode);
     if (normalized === 'day') {
       const day = draft.selDay || ymd(now.year, now.month, now.day);
       updateDraft({ mode: normalized, rangeStart: day, rangeEnd: day });
@@ -103,7 +59,7 @@ export default function DateFilterBar({ filter }: any) {
   };
 
   const apply = () => {
-    applyDraft(filter, draft);
+    applyDatePeriodDraft(filter, draft);
     setOpenPanel(null);
   };
 
@@ -209,7 +165,7 @@ export default function DateFilterBar({ filter }: any) {
           title={t('dateFilterReset')}
           aria-label={t('dateFilterReset')}
         >
-          ↺
+          â†؛
         </Button>
       </div>
     </div>

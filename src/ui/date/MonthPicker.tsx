@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { getSaudiNow } from '../../utils/saudiDate';
 import Button from '../Button';
+import { getGregorianMonthNames } from './dateLocale';
 
-const MONTH_NAMES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONTH_NAMES_AR = ['ظٹظ†ط§ظٹط±', 'ظپط¨ط±ط§ظٹط±', 'ظ…ط§ط±ط³', 'ط£ط¨ط±ظٹظ„', 'ظ…ط§ظٹظˆ', 'ظٹظˆظ†ظٹظˆ', 'ظٹظˆظ„ظٹظˆ', 'ط£ط؛ط³ط·ط³', 'ط³ط¨طھظ…ط¨ط±', 'ط£ظƒطھظˆط¨ط±', 'ظ†ظˆظپظ…ط¨ط±', 'ط¯ظٹط³ظ…ط¨ط±'];
 
 export type DateFilterMonthPickerProps = {
   label?: React.ReactNode;
@@ -31,7 +30,7 @@ export default function DateFilterMonthPicker({
   const years = yearsProp?.length
     ? yearsProp
     : [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3];
-  const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+  const monthNames = getGregorianMonthNames(lang);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
