@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  ymd,
   type DatePeriodMode,
   type DatePeriodState,
 } from '../../utils/datePeriod';
@@ -69,4 +70,44 @@ export function applyDatePeriodDraft(filter: DatePeriodDraftFilter, draft: DateP
   filter.setMonthRangeEndMonth(draft.monthRangeEndMonth);
   filter.setYearRangeStart?.(draft.yearRangeStart || draft.selYear);
   filter.setYearRangeEnd?.(draft.yearRangeEnd || draft.selYear);
+}
+
+export type DatePeriodNow = {
+  year: number;
+  month: number;
+  day: number;
+};
+
+export function getDatePeriodModeChange(
+  draft: DatePeriodState,
+  nextMode: DatePeriodMode,
+  now: DatePeriodNow,
+): { patch: Partial<DatePeriodState>; openPanel: DatePeriodMode | null } {
+  const normalized = normalizeDatePeriodMode(nextMode);
+
+  if (normalized === 'day') {
+    const day = draft.selDay || ymd(now.year, now.month, now.day);
+    return {
+      patch: { mode: normalized, rangeStart: day, rangeEnd: day },
+      openPanel: 'day',
+    };
+  }
+
+  if (normalized === 'year') {
+    const year = draft.yearRangeStart || draft.selYear || now.year;
+    return {
+      patch: {
+        mode: normalized,
+        selYear: year,
+        yearRangeStart: year,
+        yearRangeEnd: draft.yearRangeEnd || year,
+      },
+      openPanel: 'year',
+    };
+  }
+
+  return {
+    patch: { mode: normalized },
+    openPanel: nextMode === 'all' ? null : nextMode,
+  };
 }

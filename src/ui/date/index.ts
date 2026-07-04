@@ -10,14 +10,22 @@ export type {
   MonthRangeCalendarProps,
   YearRangeCalendarProps,
 } from './PeriodCalendars';
+export { DatePeriodActions, DatePeriodBadge, DatePeriodModeGroup } from './DatePeriodControls';
+export type {
+  DatePeriodActionsProps,
+  DatePeriodBadgeProps,
+  DatePeriodModeGroupProps,
+  DatePeriodModeOption,
+} from './DatePeriodControls';
 export { getGregorianMonthNames, getGregorianWeekdayNames } from './dateLocale';
 export type { NoorixDateLanguage } from './dateLocale';
 export {
   applyDatePeriodDraft,
   areDatePeriodStatesEqual,
   cloneDatePeriodState,
+  getDatePeriodModeChange,
   normalizeDatePeriodMode,
   toDatePeriodUiMode,
   useDatePeriodDraft,
 } from './datePeriodDraft';
-export type { DatePeriodDraftFilter } from './datePeriodDraft';
+export type { DatePeriodDraftFilter, DatePeriodNow } from './datePeriodDraft';

@@ -1,25 +1,28 @@
 ﻿import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDateFilter } from '../../hooks/useDateFilter';
-import { Button, DateRangeField } from '../../ui';
+import { DateRangeField } from '../../ui';
 import {
   DayRangeCalendar,
   DateFilterMonthPicker,
+  DatePeriodActions,
+  DatePeriodBadge,
+  DatePeriodModeGroup,
   MonthRangeCalendar,
   YearRangeCalendar,
   applyDatePeriodDraft,
   areDatePeriodStatesEqual,
+  getDatePeriodModeChange,
   getGregorianMonthNames,
   getGregorianWeekdayNames,
-  normalizeDatePeriodMode,
   toDatePeriodUiMode,
   useDatePeriodDraft,
   type DateFilterMonthPickerProps,
+  type DatePeriodModeOption,
 } from '../../ui/date';
 import { getSaudiNow } from '../../utils/saudiDate';
 import {
   buildDatePeriodLabel,
-  ymd,
   type DatePeriodMode,
 } from '../../utils/datePeriod';
 
@@ -40,22 +43,18 @@ export default function DateFilterBar({ filter }: any) {
   const draftLabel = buildDatePeriodLabel(draft, now);
   const isDirty = !areDatePeriodStatesEqual(filter.state, draft);
 
+  const modeOptions = useMemo<DatePeriodModeOption[]>(() => [
+    { id: 'all', label: t('dateFilterAll') },
+    { id: 'month', label: t('dateFilterMonth') },
+    { id: 'year', label: t('dateFilterYear') },
+    { id: 'day', label: t('dateFilterDay') },
+    { id: 'range', label: t('dateFilterRange') },
+  ], [t]);
+
   const setMode = (nextMode: DatePeriodMode) => {
-    const normalized = normalizeDatePeriodMode(nextMode);
-    if (normalized === 'day') {
-      const day = draft.selDay || ymd(now.year, now.month, now.day);
-      updateDraft({ mode: normalized, rangeStart: day, rangeEnd: day });
-      setOpenPanel('day');
-      return;
-    }
-    if (normalized === 'year') {
-      const year = draft.yearRangeStart || draft.selYear || now.year;
-      updateDraft({ mode: normalized, selYear: year, yearRangeStart: year, yearRangeEnd: draft.yearRangeEnd || year });
-      setOpenPanel('year');
-      return;
-    }
-    updateDraft({ mode: normalized });
-    setOpenPanel(nextMode === 'all' ? null : nextMode);
+    const change = getDatePeriodModeChange(draft, nextMode, now);
+    updateDraft(change.patch);
+    setOpenPanel(change.openPanel);
   };
 
   const apply = () => {
@@ -70,27 +69,12 @@ export default function DateFilterBar({ filter }: any) {
 
   return (
     <div className="noorix-date-filter-bar" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="ndfb-mode-group" role="group" aria-label={t('dateFilterPeriod')}>
-        {[
-          { id: 'all', label: t('dateFilterAll') },
-          { id: 'month', label: t('dateFilterMonth') },
-          { id: 'year', label: t('dateFilterYear') },
-          { id: 'day', label: t('dateFilterDay') },
-          { id: 'range', label: t('dateFilterRange') },
-        ].map((item) => (
-          <Button
-            key={item.id}
-            type="button"
-            size="auto"
-            variant="raw"
-            className={`ndfb-mode-btn${mode === item.id ? ' ndfb-mode-btn--active' : ''}`}
-            aria-pressed={mode === item.id}
-            onClick={() => setMode(item.id as DatePeriodMode)}
-          >
-            {item.label}
-          </Button>
-        ))}
-      </div>
+      <DatePeriodModeGroup
+        mode={mode}
+        options={modeOptions}
+        ariaLabel={t('dateFilterPeriod')}
+        onModeChange={setMode}
+      />
 
       {mode === 'month' && openPanel === 'month' && (
         <MonthRangeCalendar
@@ -139,35 +123,15 @@ export default function DateFilterBar({ filter }: any) {
         />
       )}
 
-      {mode !== 'all' && (
-        <span className={`ndfb-period-badge${isDirty ? ' ndfb-period-badge--pending' : ''}`} title={draftLabel}>
-          {draftLabel}
-        </span>
-      )}
+      {mode !== 'all' && <DatePeriodBadge label={draftLabel} pending={isDirty} />}
 
-      <div className="ndfb-actions">
-        <Button
-          type="button"
-          size="sm"
-          variant="primary"
-          className="ndfb-apply-btn"
-          onClick={apply}
-          disabled={!isDirty}
-        >
-          {t('dateFilterApply')}
-        </Button>
-        <Button
-          type="button"
-          size="auto"
-          variant="raw"
-          className="ndfb-reset-btn"
-          onClick={reset}
-          title={t('dateFilterReset')}
-          aria-label={t('dateFilterReset')}
-        >
-          â†؛
-        </Button>
-      </div>
+      <DatePeriodActions
+        applyLabel={t('dateFilterApply')}
+        resetLabel={t('dateFilterReset')}
+        canApply={isDirty}
+        onApply={apply}
+        onReset={reset}
+      />
     </div>
   );
 }

@@ -27,9 +27,11 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/DateRangeField.tsx` | Central from/to date wrapper with explicit end min boundary |
 | `src/ui/date/MonthPicker.tsx` | Central floating month picker behind the old `DateFilterMonthPicker` API |
 | `src/ui/date/PeriodCalendars.tsx` | Central month/year/day range calendars used by `DateFilterBar` |
+| `src/ui/date/DatePeriodControls.tsx` | Central period mode buttons, pending badge, and apply/reset actions |
 | `src/ui/date/dateLocale.ts` | Central Gregorian month/weekday labels without duplicated literals |
-| `src/ui/date/datePeriodDraft.ts` | Central draft/apply/dirty state helpers for period filters |
+| `src/ui/date/datePeriodDraft.ts` | Central draft/apply/dirty/mode-change state helpers for period filters |
 | `src/ui/date/DateField.test.tsx` | Unit coverage for emitted date values and range boundaries |
+| `src/ui/date/datePeriodDraft.test.ts` | Unit coverage for period mode-change behavior |
 | `src/ui/index.ts` | Exposes date components through the official UI kit |
 | `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"` usage |
 
