@@ -23,6 +23,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | --- | --- |
 | `src/ui/date/DateField.tsx` | Central date input wrapper preserving `YYYY-MM-DD` values |
 | `src/ui/date/DateRangeField.tsx` | Central from/to date wrapper with explicit end min boundary |
+| `src/ui/date/MonthPicker.tsx` | Central floating month picker behind the old `DateFilterMonthPicker` API |
 | `src/ui/date/DateField.test.tsx` | Unit coverage for emitted date values and range boundaries |
 | `src/ui/index.ts` | Exposes date components through the official UI kit |
 

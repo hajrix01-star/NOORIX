@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { DateField, DateRangeField } from './index';
+import { AppTestProviders, defaultAppTestContextValue } from '../../test/appTestProviders';
+import { DateField, DateFilterMonthPicker, DateRangeField } from './index';
 
 describe('Noorix date fields', () => {
   it('emits plain YYYY-MM-DD values', () => {
@@ -33,5 +34,19 @@ describe('Noorix date fields', () => {
 
     expect(onStartChange).toHaveBeenCalledWith('2026-07-02');
     expect(onEndChange).toHaveBeenCalledWith('2026-07-06');
+  });
+
+  it('keeps the month picker behavior behind the central date export', () => {
+    const onChange = vi.fn();
+    render(
+      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+        <DateFilterMonthPicker year={2026} month={7} onChange={onChange} years={[2025, 2026]} />
+      </AppTestProviders>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Jan' }));
+
+    expect(onChange).toHaveBeenCalledWith({ year: 2026, month: 1 });
   });
 });
