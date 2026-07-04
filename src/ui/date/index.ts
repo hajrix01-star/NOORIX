@@ -4,6 +4,9 @@ export { default as DateRangeField } from './DateRangeField';
 export type { DateRangeFieldProps } from './DateRangeField';
 export { default as DateFilterMonthPicker } from './MonthPicker';
 export type { DateFilterMonthPickerProps } from './MonthPicker';
+export { default as DateFilterBar } from './DateFilterBar';
+export type { DateFilterBarProps } from './DateFilterBar';
+export { useDateFilter } from '../../hooks/useDateFilter';
 export { DayRangeCalendar, MonthRangeCalendar, YearRangeCalendar } from './PeriodCalendars';
 export type {
   DayRangeCalendarProps,

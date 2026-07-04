@@ -20,7 +20,7 @@ import {
   getInvoiceCreatorFilterOptions,
   unwrapApiList,
 } from '../../services/api';
-import { useDateFilter } from '../../shared/components/DateFilterBar';
+import { useDateFilter } from '../../ui/date';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
 import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../constants/badgeMaps';
 import { PAGE_SIZE } from './invoicesListScreenHelpers';

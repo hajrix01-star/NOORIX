@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { FmtNum, SimpleTable, cn } from '../../../../ui';
-import { DateFilterMonthPicker } from '../../../../shared/components/DateFilterBar';
+import { DateFilterMonthPicker } from '../../../../ui/date';
 
 const TH_CELL =
   'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1 py-1.5 text-center text-[9px] font-bold leading-tight text-white sm:px-2 sm:py-2.5 sm:text-xs';

@@ -32,7 +32,7 @@ import {
   mergeOrderCatalogProducts,
   resolveOrdersDateRange,
 } from '../utils/ordersTabModel';
-import DateFilterBar from '../../../shared/components/DateFilterBar';
+import { DateFilterBar } from '../../../ui/date';
 import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';

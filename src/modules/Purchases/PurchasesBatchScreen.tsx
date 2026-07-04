@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import { ScreenTabs, ScreenShell } from '../../ui';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
-import { useDateFilter } from '../../shared/components/DateFilterBar';
+import { useDateFilter } from '../../ui/date';
 import { useIsNarrow700 } from '../../hooks/useMediaQuery';
 import { getPurchaseBatchTabs } from './batch/constants';
 import { usePurchasesBatchState } from './batch/hooks/usePurchasesBatchState';

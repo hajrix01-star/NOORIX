@@ -9,7 +9,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useSales } from '../../../hooks/useSales';
 import { useSalesChannels } from '../../../hooks/useSalesChannels';
-import { useDateFilter } from '../../../hooks/useDateFilter';
+import { useDateFilter } from '../../../ui/date';
 import { getCompany, getDailySalesSummaries, fetchAllSalesSummariesForExport } from '../../../services/api';
 import { formatSaudiDate, formatSaudiWeekdayName, getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';

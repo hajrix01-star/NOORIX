@@ -11,7 +11,7 @@ import {
   ScreenTabs,
   SmartTable,
 } from '../../ui';
-import DateFilterBar, { useDateFilter } from '../../shared/components/DateFilterBar';
+import { DateFilterBar, useDateFilter } from '../../ui/date';
 import { useTranslation } from '../../i18n/useTranslation';
 
 function LabBlock({ num, title, hint, children }: any) {
