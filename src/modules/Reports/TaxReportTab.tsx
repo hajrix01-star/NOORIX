@@ -9,7 +9,7 @@ import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { fmtTax } from '../../utils/format';
-import { Badge, Button, Checkbox, Input, FmtNum } from '../../ui';
+import { Badge, Button, Checkbox, DateMonthScopePicker, Input, FmtNum } from '../../ui';
 import { TAX_REPORT_STORAGE_PREFIX } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 import {
@@ -203,9 +203,16 @@ export default function TaxReportTab() {
               <span className="block text-noorix-muted mt-0.5">{t('taxImportSalesInclusiveHint')}</span>
             </span>
           </label>
-          <Input type="select" label={t('reportYear')} value={year} onChange={(e: any) => setYear(Number(e.target.value))}>
-            {[currentYear, currentYear - 1, currentYear - 2].map((y: any) => <option key={y} value={y}>{y}</option>)}
-          </Input>
+          <DateMonthScopePicker
+            year={year}
+            years={[currentYear, currentYear - 1, currentYear - 2]}
+            mode="year"
+            allowAll={false}
+            allowYear
+            allowMonth={false}
+            onYearChange={setYear}
+            onMonthChange={() => {}}
+          />
           <Input type="select" label={lang === 'ar' ? 'الفترة' : 'Period'} value={period} onChange={(e: any) => setPeriod(e.target.value)}>
             {periodOptions.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </Input>

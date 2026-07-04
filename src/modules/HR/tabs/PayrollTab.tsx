@@ -21,7 +21,7 @@ import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, Input, Modal, FmtNum, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, DateField, DateMonthScopePicker, Input, Modal, FmtNum, KebabMenu, SmartTable } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -356,14 +356,16 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
   }
 
   const yearLeading = (
-    <>
-      <label className="text-[13px] font-semibold shrink-0 text-noorix-muted">{t('dateFilterYear')}</label>
-      <Input type="select" value={year} onChange={(e: any) => setYear(parseInt(e.target.value, 10))} size="sm" aria-label={t('dateFilterYear')}>
-        {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y: number) => (
-          <option key={y} value={y}>{y}</option>
-        ))}
-      </Input>
-    </>
+    <DateMonthScopePicker
+      year={year}
+      years={[new Date().getFullYear(), new Date().getFullYear() - 1]}
+      mode="year"
+      allowAll={false}
+      allowYear
+      allowMonth={false}
+      onYearChange={setYear}
+      onMonthChange={() => {}}
+    />
   );
 
   return (
@@ -532,11 +534,10 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
             <label className="mb-1.5 block text-[12px] font-semibold text-noorix-muted" htmlFor="payroll-issue-date">
               {t('transactionDate')}
             </label>
-            <Input
+            <DateField
               id="payroll-issue-date"
-              type="date"
               value={payTransactionDate}
-              onChange={(e: any) => setPayTransactionDate(e.target.value)}
+              onValueChange={setPayTransactionDate}
             />
           </div>
 

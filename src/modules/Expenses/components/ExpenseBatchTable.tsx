@@ -16,7 +16,7 @@ import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import { canExemptThisExpensePayment, isExpensePaymentTaxable } from '../utils/expenseTax';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
+import { Button, Checkbox, DateField, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 
@@ -398,13 +398,12 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: any)
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between lg:gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="min-w-0 w-full sm:w-[min(100%,11rem)]">
-            <Input
+            <DateField
               label="تاريخ العملية"
-              type="date"
               size="sm"
               className="w-full min-w-0 max-w-full"
               value={batchDate}
-              onChange={(e: any) => setBatchDate(e.target.value)}
+              onValueChange={setBatchDate}
             />
           </div>
           <div className="min-w-0 w-full sm:w-[min(100%,14rem)] sm:max-w-xs">

@@ -1,7 +1,7 @@
 import React from 'react';
 import Decimal from 'decimal.js';
 import { formatSaudiDate } from '../../../../../utils/saudiDate';
-import { Checkbox, Input } from '../../../../../ui';
+import { Checkbox, DateField, Input } from '../../../../../ui';
 import { hrFmt } from '../../../utils/hrFmt';
 import { parseWorkHours } from '../../../utils/employeeSalaryMath';
 import type { DocSalaryRow } from '../types';
@@ -87,7 +87,7 @@ export function FinalSettlementPreview({
         <div className="font-bold mb-2">حاسبة نهاية الخدمة (تفصيل قبل الطباعة) / EOS Calculator (before print)</div>
         <div className="grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
           <div>
-            <Input type="date" label="تاريخ نهاية الخدمة" value={eosEndDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEosEndDate(e.target.value)} />
+            <DateField label="تاريخ نهاية الخدمة" value={eosEndDate} onValueChange={setEosEndDate} />
           </div>
           <div>
             <Input type="select" label="سبب الانتهاء" value={eosReason} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEosReason(e.target.value)}>

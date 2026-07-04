@@ -7,7 +7,7 @@ import Decimal from 'decimal.js';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { splitTaxFromTotal } from '@noorix/finance-core';
-import { Button, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import { Button, DateField, Input, AdaptiveSheet, FmtNum } from '../../../ui';
 import { toDateInputYmd } from '../../../utils/saudiDate';
 import { SalesShiftPicker } from './SalesShiftPicker';
 import type { SalesShiftFormValue, SalesShiftValue } from '../constants/salesShift';
@@ -142,7 +142,7 @@ export function SalesEditModal({ summary, salesChannels, salesChannelsLoading = 
       )}
 
       <div className="grid gap-3.5 mb-4 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
-        <Input type="date" label="تاريخ العملية *" value={txDate} onChange={(e: any) => setTxDate(e.target.value)} />
+        <DateField label="تاريخ العملية *" value={txDate} onValueChange={setTxDate} />
         <Input type="number" min="0" label="عدد العملاء" value={customerCount} onChange={(e: any) => setCustomerCount(e.target.value)} placeholder="0" />
         <Input type="number" min="0" step="0.01" label="المبلغ الموجود بالصندوق" value={cashOnHand} onChange={(e: any) => setCashOnHand(e.target.value)} placeholder="0.00" />
       </div>

@@ -22,7 +22,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, Input, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, DateField, DateMonthScopePicker, Input, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -337,14 +337,16 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   ), [t, deleteLeaveMutation, setReturnRow, setSettlementRow, setEditLeave, canShowLeaveReturnRow, canShowSalarySettlement]);
 
   const yearLeading = (
-    <>
-      <label className="text-[13px] font-semibold shrink-0 text-noorix-muted">{t('dateFilterYear')}</label>
-      <Input type="select" value={year} onChange={(e: any) => setYear(parseInt(e.target.value, 10))} size="sm" aria-label={t('dateFilterYear')}>
-        {[new Date().getFullYear(), new Date().getFullYear() - 1].map((y: number) => (
-          <option key={y} value={y}>{y}</option>
-        ))}
-      </Input>
-    </>
+    <DateMonthScopePicker
+      year={year}
+      years={[new Date().getFullYear(), new Date().getFullYear() - 1]}
+      mode="year"
+      allowAll={false}
+      allowYear
+      allowMonth={false}
+      onYearChange={setYear}
+      onMonthChange={() => {}}
+    />
   );
 
   return (
@@ -543,13 +545,12 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
       >
         <p className="text-[13px] text-noorix-muted mb-3">{t('leaveReturnEarlyHint')}</p>
         {returnRow && (
-          <Input
-            type="date"
+          <DateField
             label={t('leaveActualReturnDate')}
             value={returnDate}
             min={toDateInputYmd(returnRow.startDate)}
             max={toDateInputYmd(returnRow.endDate)}
-            onChange={(e: any) => setReturnDate(e.target.value)}
+            onValueChange={setReturnDate}
             lang="en"
           />
         )}

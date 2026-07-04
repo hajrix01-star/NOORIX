@@ -15,7 +15,7 @@ import { fmt } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
-import { Button, AdaptiveSheet, Checkbox, FileTrigger, Input } from '../../../ui';
+import { Button, AdaptiveSheet, Checkbox, DateField, FileTrigger, Input } from '../../../ui';
 import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
 import {
   canExemptThisExpensePayment,
@@ -485,11 +485,10 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: any) {
           </div>
         )}
 
-        <Input
-          type="date"
+        <DateField
           label={lang === 'en' ? 'Transaction date *' : 'تاريخ العملية *'}
           value={form.transactionDate}
-          onChange={(e: any) => setForm((p: any) => ({ ...p, transactionDate: e.target.value }))}
+          onValueChange={(value) => setForm((p: any) => ({ ...p, transactionDate: value }))}
           required
         />
 

@@ -5,7 +5,7 @@ import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import { getSaudiNow } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ReportsDetailModal from './ReportsDetailModal';
-import { Button, InlineSelect, Input } from '../../ui';
+import { Button, DateMonthScopePicker, Input } from '../../ui';
 import {
   amountText,
   percentText,
@@ -296,13 +296,18 @@ tr.is-summary td.amt { color: #047857; }
           </div>
         </div>
         <div className="nx-gr2-controls">
-          <InlineSelect value={year} onChange={(event) => setYear(Number(event.target.value))} aria-label={t('reportYear')}>
-            {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-          </InlineSelect>
-          <div className="nx-gr2-segment" role="group" aria-label={t('reportPlToolbarPeriod')}>
-            <Button variant="raw" type="button" className={periodMode === 'year' ? 'is-active' : ''} onClick={() => setPeriodMode('year')}>{t('reportPeriodYear')}</Button>
-            <Button variant="raw" type="button" className={periodMode === 'month' ? 'is-active' : ''} onClick={() => setPeriodMode('month')}>{t('reportPeriodMonth')}</Button>
-          </div>
+          <DateMonthScopePicker
+            year={year}
+            years={yearOptions}
+            month={selectedMonth}
+            mode={periodMode}
+            allowAll={false}
+            allowYear
+            fallbackMonth={selectedMonthNumber || 1}
+            onYearChange={setYear}
+            onMonthChange={setSelectedMonth}
+            onModeChange={(value) => setPeriodMode(value as ReportPeriodMode)}
+          />
           <div className="nx-gr2-actions">
             <Button variant="raw" type="button" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
             <Button variant="raw" type="button" onClick={handleExportPdf} disabled={!report}>PDF</Button>
@@ -310,16 +315,6 @@ tr.is-summary td.amt { color: #047857; }
           </div>
         </div>
       </header>
-
-      {periodMode === 'month' && (
-        <div className="nx-gr2-months" aria-label={t('reportMonth')}>
-          {monthNames.map((name, index) => (
-            <Button variant="raw" key={name} type="button" className={selectedMonth === String(index + 1) ? 'is-active' : ''} onClick={() => setSelectedMonth(String(index + 1))}>
-              {name}
-            </Button>
-          ))}
-        </div>
-      )}
 
       {!activeCompanyId && <div className="nx-gr2-empty">{t('pleaseSelectCompany')}</div>}
       {isLoading && <div className="nx-gr2-empty">{t('loading')}</div>}

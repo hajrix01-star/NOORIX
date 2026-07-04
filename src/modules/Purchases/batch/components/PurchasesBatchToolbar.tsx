@@ -1,12 +1,12 @@
 import React from 'react';
-import { Button, Input } from '../../../../ui';
+import { Button, DateField, Input } from '../../../../ui';
 import { vaultDisplayName } from '../../../../utils/vaultDisplay';
 import { BatchRow } from '../../components/BatchRow';
 
 export interface PurchasesBatchToolbarProps {
   language: string;
   batchDate: string;
-  onBatchDateChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBatchDateChange: (value: string) => void;
   batchVaultId: string;
   onBatchVaultChange: (v: string) => void;
   batchNotes: string;
@@ -59,11 +59,10 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
           <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-date">
             {t('transactionDateLabel')}
           </label>
-          <Input
+          <DateField
             id="batch-purchase-date"
-            type="date"
             value={batchDate}
-            onChange={onBatchDateChange}
+            onValueChange={onBatchDateChange}
             className="nx-font-numbers"
           />
         </div>

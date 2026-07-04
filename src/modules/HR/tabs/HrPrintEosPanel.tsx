@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, FmtNum } from '../../../ui';
+import { Button, DateField, Input, FmtNum } from '../../../ui';
 import type { HrEosDraftState } from './hrPrintDocumentsTabDrafts';
 
 type Translate = (key: string) => string;
@@ -31,12 +31,11 @@ export function HrPrintEosPanel({
         <Input type="text" label={t('employeeSerial')} value={eos.employeeSerial} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updateEos({ employeeSerial: e.target.value })} />
         <Input type="text" label={t('jobTitle')} value={eos.jobTitle} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updateEos({ jobTitle: e.target.value })} />
         <Input type="text" label={t('iqamaNumber')} value={eos.iqama} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updateEos({ iqama: e.target.value })} />
-        <Input type="date" label={t('joinDate')} value={eos.joinDate} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updateEos({ joinDate: e.target.value })} />
-        <Input
-          type="date"
+        <DateField label={t('joinDate')} value={eos.joinDate} onValueChange={(value) => updateEos({ joinDate: value })} />
+        <DateField
           label={lang === 'ar' ? 'تاريخ نهاية الخدمة' : 'End of service date'}
           value={eos.endDate}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => updateEos({ endDate: e.target.value })}
+          onValueChange={(value) => updateEos({ endDate: value })}
         />
       </div>
       <p className="m-0 text-[11px] text-noorix-muted">{t('hrPrintEosWageHint')}</p>

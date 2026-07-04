@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { Button, DateField, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
 import { createMovement, updateEmployee, updateRaiseMovement, throwIfApiFailed } from '../../../services/api';
@@ -234,11 +234,10 @@ export function EmployeeCareerMovementModal({
           </div>
         ) : null}
 
-        <Input
-          type="date"
+        <DateField
           label={t('careerEffectiveDate')}
           value={effectiveDate}
-          onChange={(e: any) => setEffectiveDate(e.target.value)}
+          onValueChange={setEffectiveDate}
           lang="en"
         />
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { updateInvoice, throwIfApiFailed } from '../../../services/api';
 import { toYmd } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { AdaptiveSheet, Button, FmtNum, Input } from '../../../ui';
+import { AdaptiveSheet, Button, DateField, FmtNum, Input } from '../../../ui';
 
 export function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError }: any) {
   const { t } = useTranslation();
@@ -64,7 +64,7 @@ export function AdvanceEditModal({ advance, companyId, onClose, onSaved, onError
     >
       <div className="grid gap-2.5">
         <Input type="number" label={t('advanceAmount')} min="0.01" step="0.01" value={amount} onChange={(e: any) => setAmount(e.target.value)} />
-        <Input type="date" label={t('advanceLoanDate')} value={date} onChange={(e: any) => setDate(e.target.value)} />
+        <DateField label={t('advanceLoanDate')} value={date} onValueChange={setDate} />
         <Input
           type="number"
           min="1"

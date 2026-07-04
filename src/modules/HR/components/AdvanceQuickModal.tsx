@@ -14,7 +14,7 @@ import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, Input, AdaptiveSheet , FmtNum } from '../../../ui';
+import { Button, DateField, Input, AdaptiveSheet , FmtNum } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 
 const ADVANCE_FORM_ID = 'advance-quick-form';
@@ -148,11 +148,10 @@ export function AdvanceQuickModal({ employee: initialEmployee, companyId, create
             <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
           ))}
         </Input>
-        <Input
-          type="date"
+        <DateField
           label={t('transactionDate')}
           value={txDate}
-          onChange={(e: any) => setTxDate(e.target.value)}
+          onValueChange={setTxDate}
           lang="en"
         />
         <Input

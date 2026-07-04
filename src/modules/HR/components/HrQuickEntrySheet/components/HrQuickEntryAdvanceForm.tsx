@@ -1,6 +1,6 @@
 import React from 'react';
 import { vaultDisplayName } from '../../../../../utils/vaultDisplay';
-import { Button, Input } from '../../../../../ui';
+import { Button, DateField, Input } from '../../../../../ui';
 import { HrQuickEntryRow } from './HrQuickEntryRow';
 
 type TFn = (key: string, ...subst: string[]) => string;
@@ -78,11 +78,10 @@ export function HrQuickEntryAdvanceForm(props: {
         </Input>
       </HrQuickEntryRow>
       <HrQuickEntryRow id="adv-date" label={t('transactionDate')}>
-        <Input
+        <DateField
           id="adv-date"
-          type="date"
           value={advDate}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdvDate(e.target.value)}
+          onValueChange={setAdvDate}
           dir="ltr"
           lang="en"
         />

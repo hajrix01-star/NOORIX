@@ -1,37 +1,3 @@
 {
-  "allowedDateInputCounts": {
-    "src/modules/Expenses/components/ExpenseBatchTable.tsx": 1,
-    "src/modules/Expenses/components/ExpenseFormModal.tsx": 1,
-    "src/modules/HR/components/AdvanceEditModal.tsx": 1,
-    "src/modules/HR/components/AdvanceQuickModal.tsx": 1,
-    "src/modules/HR/components/AdvanceSettlementModal.tsx": 1,
-    "src/modules/HR/components/EmployeeCareerMovementModal.tsx": 1,
-    "src/modules/HR/components/EmployeeDocModal/components/ContractDocForm.tsx": 1,
-    "src/modules/HR/components/EmployeeDocModal/components/FinalSettlementPreview.tsx": 1,
-    "src/modules/HR/components/HrQuickEntrySheet/components/HrQuickEntryAdvanceForm.tsx": 1,
-    "src/modules/HR/components/HrQuickEntrySheet/components/HrQuickEntryDeductionForm.tsx": 1,
-    "src/modules/HR/components/HrQuickEntrySheet/components/HrQuickEntryIncreaseForm.tsx": 1,
-    "src/modules/HR/components/HrQuickEntrySheet/components/HrQuickEntryLeaveForm.tsx": 2,
-    "src/modules/HR/components/HrServiceFormFields.tsx": 3,
-    "src/modules/HR/components/LeaveFormModal.tsx": 2,
-    "src/modules/HR/components/StaffFormModal.tsx": 2,
-    "src/modules/HR/components/StaffListModals.tsx": 1,
-    "src/modules/HR/components/TerminationSettlementModal.tsx": 1,
-    "src/modules/HR/tabs/EOSCalcTab.tsx": 2,
-    "src/modules/HR/tabs/HrPrintEosPanel.tsx": 2,
-    "src/modules/HR/tabs/HrPrintPayrollPanel.tsx": 3,
-    "src/modules/HR/tabs/LeaveTab.tsx": 1,
-    "src/modules/HR/tabs/PayrollTab.tsx": 1,
-    "src/modules/Invoices/components/DayCloseReportModal.tsx": 3,
-    "src/modules/Invoices/components/InvoiceEditModal.tsx": 1,
-    "src/modules/Purchases/batch/components/PurchasesBatchToolbar.tsx": 1,
-    "src/modules/Purchases/components/BatchEditInvoiceLine.tsx": 2,
-    "src/modules/Purchases/components/BatchRow.tsx": 2,
-    "src/modules/Reports/BankStatementMappingModal.tsx": 2,
-    "src/modules/Sales/components/SalesDailyWhatsAppReportBar.tsx": 1,
-    "src/modules/Sales/components/SalesDayEditModal.tsx": 1,
-    "src/modules/Sales/components/SalesEditModal.tsx": 1,
-    "src/modules/Sales/components/SalesEntryModal.tsx": 1,
-    "src/modules/Treasury/components/VaultTransferModal.tsx": 1
-  }
+  "allowedDateInputCounts": {}
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input } from '../../../../../ui';
+import { Button, DateField } from '../../../../../ui';
 
 export function ContractDocForm({
   contractEnd,
@@ -10,11 +10,10 @@ export function ContractDocForm({
 }) {
   return (
     <div className="flex items-center gap-12 flex-wrap pt-2 px-1 pb-3">
-      <Input
-        type="date"
+      <DateField
         label="تاريخ انتهاء العقد (اختياري)"
         value={contractEnd}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setContractEnd(e.target.value)}
+        onValueChange={setContractEnd}
       />
       {contractEnd ? (
         <Button type="button" variant="ghost" onClick={() => setContractEnd('')} className="text-[11px] text-noorix-red">

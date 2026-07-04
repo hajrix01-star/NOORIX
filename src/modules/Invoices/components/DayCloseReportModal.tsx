@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport, throwIfApiFailed } from '../../../services/api';
 import { formatSaudiDateISO, getSaudiToday, toYmd } from '../../../utils/saudiDate';
-import { Button, Modal, Input, cn } from '../../../ui';
+import { Button, Modal, DateField, Input, cn } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { buildDayCloseWhatsAppText, openDayCloseWhatsApp } from '../utils/dayCloseWhatsApp';
@@ -145,10 +145,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 <h2 id="day-close-title" className="m-0 font-extrabold text-[17px]">{reportTitle}</h2>
                 <label className="flex items-center gap-3 text-[13px]">
                   <span className="text-noorix-muted">{t('date')}</span>
-                  <Input
-                    type="date"
+                  <DateField
                     value={dateStr}
-                    onChange={(e: any) => setDateStr(e.target.value)}
+                    onValueChange={setDateStr}
                     className="rounded-lg py-1 px-2 border border-noorix-border"
                   />
                 </label>
@@ -183,19 +182,17 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               <span className="text-[12px] font-bold text-noorix-text">{t('dayClosePrintRangeSection')}</span>
               <label className="flex items-center gap-2 text-[13px]">
                 <span className="text-noorix-muted">{t('dayClosePrintRangeFrom')}</span>
-                <Input
-                  type="date"
+                <DateField
                   value={rangeFrom}
-                  onChange={(e: any) => setRangeFrom(e.target.value)}
+                  onValueChange={setRangeFrom}
                   className="rounded-lg py-1 px-2 border border-noorix-border"
                 />
               </label>
               <label className="flex items-center gap-2 text-[13px]">
                 <span className="text-noorix-muted">{t('dayClosePrintRangeTo')}</span>
-                <Input
-                  type="date"
+                <DateField
                   value={rangeTo}
-                  onChange={(e: any) => setRangeTo(e.target.value)}
+                  onValueChange={setRangeTo}
                   className="rounded-lg py-1 px-2 border border-noorix-border"
                 />
               </label>

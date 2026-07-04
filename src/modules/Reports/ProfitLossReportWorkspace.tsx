@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, MetricCard, ScreenTabs, cn } from '../../ui';
+import { Button, DateMonthScopePicker, Input, MetricCard, cn } from '../../ui';
 import GeneralPlTable from './GeneralPlTable';
 import type { PlDisplayLevel } from './reportHelpers';
 import type { GeneralProfitLossReport, ReportPeriodMode } from './reportTypes';
@@ -18,8 +18,6 @@ type ProfitLossReportWorkspaceProps = {
   periodMode: ReportPeriodMode;
   selectedMonth: string;
   selectedMonthNumber: number | null;
-  periodTabItems: Array<{ id: string; label: string }>;
-  mobileMonthTabItems: Array<{ id: string; label: string }>;
   visibleRows: any[];
   flatRowsCount: number;
   collapsedGroups: Record<string, boolean>;
@@ -53,8 +51,6 @@ export default function ProfitLossReportWorkspace({
   periodMode,
   selectedMonth,
   selectedMonthNumber,
-  periodTabItems,
-  mobileMonthTabItems,
   visibleRows,
   flatRowsCount,
   collapsedGroups,
@@ -100,30 +96,18 @@ export default function ProfitLossReportWorkspace({
           </div>
 
           <div className="nx-pl-command-center__controls">
-            <Input type="select" label={t('reportYear')} value={year} onChange={(event: any) => onYearChange(Number(event.target.value))}>
-              {yearOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </Input>
-            <ScreenTabs
-              variant="segmented"
-              items={periodTabItems}
-              value={periodMode}
-              onChange={(value) => onPeriodModeChange(value as ReportPeriodMode)}
-              barClassName="self-end"
-              buttonSize="sm"
+            <DateMonthScopePicker
+              year={year}
+              years={yearOptions}
+              month={selectedMonth}
+              mode={periodMode}
+              allowAll={false}
+              allowYear
+              fallbackMonth={selectedMonthNumber || 1}
+              onYearChange={onYearChange}
+              onMonthChange={onSelectedMonthChange}
+              onModeChange={(value) => onPeriodModeChange(value as ReportPeriodMode)}
             />
-            {periodMode === 'month' && !isMobile && (
-              <Input type="select" label={t('reportMonth')} value={selectedMonth} onChange={(event: any) => onSelectedMonthChange(event.target.value)}>
-                {monthNames.map((month, index) => (
-                  <option key={month} value={index + 1}>
-                    {month}
-                  </option>
-                ))}
-              </Input>
-            )}
             <div className="nx-pl-actions">
               <Button size="sm" onClick={onExportExcel} disabled={!report}>
                 {t('exportExcel')}
@@ -221,26 +205,6 @@ export default function ProfitLossReportWorkspace({
                   />
                 </div>
               </div>
-
-              {isMobile && (
-                <div className="nx-pl-mobile-period">
-                  <ScreenTabs
-                    variant="underline"
-                    items={periodTabItems}
-                    value={periodMode}
-                    onChange={(value) => onPeriodModeChange(value as ReportPeriodMode)}
-                    barClassName="border-b border-noorix-border"
-                  />
-                  {periodMode === 'month' && (
-                    <ScreenTabs
-                      variant="underline"
-                      items={mobileMonthTabItems.filter((item) => item.id !== '')}
-                      value={selectedMonth}
-                      onChange={onSelectedMonthChange}
-                    />
-                  )}
-                </div>
-              )}
 
               <GeneralPlTable
                 report={report}

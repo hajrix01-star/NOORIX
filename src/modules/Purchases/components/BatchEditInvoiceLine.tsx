@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { Button, Input, FmtNum, Card, FormRow } from '../../../ui';
+import { Button, DateField, Input, FmtNum, Card, FormRow } from '../../../ui';
 import { splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
 import { useBatchRowFieldIds } from './useBatchRowLogic';
 
@@ -72,12 +72,11 @@ export function BatchEditInvoiceLine({
             {cancelled ? (
               <span className="nx-cell-muted text-[13px] nx-font-numbers">{inv.transactionDate || '—'}</span>
             ) : (
-              <Input
+              <DateField
                 id={ids.invoiceDate}
-                type="date"
                 size="sm"
                 value={inv.transactionDate ?? ''}
-                onChange={(e: any) => updateInv(i, 'transactionDate', e.target.value)}
+                onValueChange={(value) => updateInv(i, 'transactionDate', value)}
                 className="nx-font-numbers"
               />
             )}
@@ -171,11 +170,10 @@ export function BatchEditInvoiceLine({
         {cancelled ? (
           <span className="nx-cell-muted nx-font-numbers">{inv.transactionDate || '—'}</span>
         ) : (
-          <Input
-            type="date"
+          <DateField
             size="sm"
             value={inv.transactionDate ?? ''}
-            onChange={(e: any) => updateInv(i, 'transactionDate', e.target.value)}
+            onValueChange={(value) => updateInv(i, 'transactionDate', value)}
             className="w-full nx-font-numbers"
             aria-label={`${t('batchEditInvoiceDate')} — ${t('batchRowLineAriaLabel', i + 1)}`}
           />

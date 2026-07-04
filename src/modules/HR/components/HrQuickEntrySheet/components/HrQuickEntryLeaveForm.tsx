@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input } from '../../../../../ui';
+import { Button, DateField, Input } from '../../../../../ui';
 import { HrQuickEntryRow } from './HrQuickEntryRow';
 import { TYPE_MAP } from '../constants';
 
@@ -61,22 +61,20 @@ export function HrQuickEntryLeaveForm(props: {
       </HrQuickEntryRow>
       <div className="grid grid-cols-2 gap-3 mb-4">
         <HrQuickEntryRow id="lv-start" label={t('startDate')}>
-          <Input
+          <DateField
             id="lv-start"
-            type="date"
             value={lvStart}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLvStart(e.target.value)}
+            onValueChange={setLvStart}
             dir="ltr"
             lang="en"
             required
           />
         </HrQuickEntryRow>
         <HrQuickEntryRow id="lv-end" label={t('endDate')}>
-          <Input
+          <DateField
             id="lv-end"
-            type="date"
             value={lvEnd}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLvEnd(e.target.value)}
+            onValueChange={setLvEnd}
             dir="ltr"
             lang="en"
             required
