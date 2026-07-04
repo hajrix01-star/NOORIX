@@ -12,6 +12,8 @@ import './ui.css';
 
 export { default as Button          } from './Button';
 export { default as Input           } from './Input';
+export { DateField, DateRangeField, DateFilterMonthPicker } from './date';
+export type { DateFieldProps, DateRangeFieldProps, DateFilterMonthPickerProps } from './date';
 export { default as Checkbox        } from './Checkbox';
 export { default as Radio           } from './Radio';
 export { default as FileInput       } from './FileInput';

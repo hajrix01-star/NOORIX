@@ -2,7 +2,7 @@
  * إكمال أصل من فاتورة — لوحة/درج (AdaptiveSheet) لقائمة انتظار الضمان.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, AdaptiveSheet, Input } from '../../../ui';
+import { Button, AdaptiveSheet, DateField, Input } from '../../../ui';
 import { getSaudiToday, formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { completeCompanyAssetFromInvoice, throwIfApiFailed } from '../../../services/api';
 import type { PendingWarrantyInvoiceRow } from '../types';
@@ -215,13 +215,10 @@ export function AssetWarrantyPanel({
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input
-            type="date"
+          <DateField
             label={t('assetPurchaseDate')}
             value={form.purchaseDate}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm((p) => ({ ...p, purchaseDate: e.target.value }))
-            }
+            onValueChange={(value) => setForm((p) => ({ ...p, purchaseDate: value }))}
           />
           <Input
             type="number"
@@ -250,21 +247,15 @@ export function AssetWarrantyPanel({
             }
             className="ltr"
           />
-          <Input
-            type="date"
+          <DateField
             label={t('assetWarrantyStart')}
             value={form.warrantyStartDate}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm((p) => ({ ...p, warrantyStartDate: e.target.value }))
-            }
+            onValueChange={(value) => setForm((p) => ({ ...p, warrantyStartDate: value }))}
           />
-          <Input
-            type="date"
+          <DateField
             label={t('assetWarrantyEnd')}
             value={form.warrantyEndDate}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm((p) => ({ ...p, warrantyEndDate: e.target.value }))
-            }
+            onValueChange={(value) => setForm((p) => ({ ...p, warrantyEndDate: value }))}
           />
         </div>
         <p className="text-[11px] text-noorix-muted m-0">{t('assetWarrantyEndHint')}</p>

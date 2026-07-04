@@ -4,7 +4,7 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useDashboardYearSpecialDays } from '../../../hooks/useDashboardYearSpecialDays';
-import { Button, ColorSwatch, Input } from '../../../ui';
+import { Button, ColorSwatch, DateRangeField, Input } from '../../../ui';
 import { toYmd } from '../../../utils/saudiDate';
 import { getSaudiNow } from '../../../utils/saudiDate';
 import { DashboardSaudiOccasionsImportModal } from './DashboardSaudiOccasionsImportModal';
@@ -148,14 +148,18 @@ export default function DashboardSpecialDaysTab({ companyId, year, selectedMonth
         <div className="p-5 mb-5 bg-noorix-bg-muted border border-noorix-border rounded-lg">
           <div className="font-bold mb-3">{t('dashboardSpecialDaysFromTo')}</div>
           <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-3 items-start">
-              <div className="flex-1 min-w-[140px]">
-                <Input type="date" label={t('dateFilterFrom')} value={newFrom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewFrom(e.target.value)} />
-              </div>
-              <div className="flex-1 min-w-[140px]">
-                <Input type="date" label={t('dateFilterTo')} value={newTo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTo(e.target.value)} />
-              </div>
-            </div>
+            <DateRangeField
+              className="flex flex-wrap gap-3 items-start"
+              startContainerClassName="flex-1 min-w-[140px]"
+              endContainerClassName="flex-1 min-w-[140px]"
+              startLabel={t('dateFilterFrom')}
+              endLabel={t('dateFilterTo')}
+              startValue={newFrom}
+              endValue={newTo}
+              minEnd={newFrom}
+              onStartChange={setNewFrom}
+              onEndChange={setNewTo}
+            />
             <Input
               label={t('dashboardSpecialDayName')}
               value={newName}

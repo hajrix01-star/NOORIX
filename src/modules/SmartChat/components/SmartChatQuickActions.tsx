@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input } from '../../../ui';
+import { Button, DateField } from '../../../ui';
 import type { ChatCommandGroupFiltered } from '../types';
 
 export type SmartChatQuickActionsProps = {
@@ -72,11 +72,10 @@ export function SmartChatQuickActions({
       <header className="noorix-smart-chat-header" dir={isAr ? 'rtl' : 'ltr'}>
         <h1 className="noorix-smart-chat-title">{headerTitle}</h1>
         <div className="noorix-smart-chat-header-actions">
-          <Input
-            type="date"
+          <DateField
             className="noorix-smart-chat-date-input"
             value={dateFilter}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFilter(e.target.value || '')}
+            onValueChange={(value) => setDateFilter(value || '')}
             lang="en"
             title={filterDateInputTitle}
           />
