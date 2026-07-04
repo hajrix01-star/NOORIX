@@ -25,7 +25,7 @@ describe('DateFilterBar shared shim', () => {
       </AppTestProviders>,
     );
 
-    expect(screen.getByRole('button', { name: 'Month' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Month' })).toBeTruthy();
     expect(screen.getByTestId('applied-label').textContent).toBeTruthy();
   });
 });
