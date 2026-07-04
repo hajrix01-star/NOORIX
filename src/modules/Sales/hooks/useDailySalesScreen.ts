@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
+import { useDebouncedValue } from '../../../ui';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '../../../hooks/useApiQuery';

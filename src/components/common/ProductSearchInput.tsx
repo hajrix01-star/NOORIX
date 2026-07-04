@@ -5,7 +5,7 @@
  * يدعم debounce 300ms، loading state، RTL، وجوال (font-size ≥ 16px)
  */
 import React, { useState, useRef, useEffect, useMemo, type ChangeEvent, type CSSProperties } from 'react';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useDebouncedValue } from '../../ui';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fmt } from '../../utils/format';

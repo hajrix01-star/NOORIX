@@ -13,6 +13,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | Noorix UI | Remains the official UI kit |
 | shadcn/ui | Reference for composition, accessibility, and primitive patterns only |
 | Responsive hooks | Use `src/ui/responsive.ts` as the official breakpoint/hook source |
+| Timing hooks | Use `src/ui/timing.ts` as the official debounce/timing hook source |
 | Date inputs | Use Noorix `DateField` instead of direct `Input type="date"` in safe screens |
 | Date ranges | Use Noorix `DateRangeField` for from/to pairs |
 | Period filters | Keep `DateFilterBar` behavior and migrate internals gradually |
@@ -27,6 +28,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | --- | --- |
 | `src/ui/date/DateField.tsx` | Central date input wrapper preserving `YYYY-MM-DD` values |
 | `src/ui/responsive.ts` | Central responsive breakpoints and media-query hooks for UI and screens |
+| `src/ui/timing.ts` | Central debounce/timing hooks for search and UI interactions |
 | `src/ui/date/DateRangeField.tsx` | Central from/to date wrapper with explicit end min boundary |
 | `src/ui/date/DateFilterBar.tsx` | Official Noorix period filter bar used by screens |
 | `src/ui/date/useDateFilter.ts` | Official period filter controller hook used by date-aware screens |
@@ -44,8 +46,10 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/shared/components/DateFilterBar.tsx` | Backward-compatible shim only; new imports should use `src/ui/date` |
 | `src/hooks/useDateFilter.ts` | Backward-compatible hook shim only; new imports should use `src/ui/date` |
 | `src/hooks/useMediaQuery.ts` | Backward-compatible responsive shim only; new imports should use `src/ui` |
+| `src/hooks/useDebouncedValue.ts` | Backward-compatible timing shim only; new imports should use `src/ui` |
 | `scripts/check-date-control-governance.mjs` | Prevents new ungoverned `type="date"`, old `DateFilterBar` imports, and direct `hooks/useDateFilter` imports |
 | `scripts/check-responsive-governance.mjs` | Prevents new direct responsive imports from `src/hooks/useMediaQuery` and stale responsive docs |
+| `scripts/check-timing-governance.mjs` | Prevents new direct debounce imports from `src/hooks/useDebouncedValue` and stale timing docs |
 
 ## Migration Priority
 

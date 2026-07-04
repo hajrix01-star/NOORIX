@@ -24,7 +24,7 @@
 - [x] توثيق العتبات: [`MEDIA_QUERY_BREAKPOINTS.md`](./MEDIA_QUERY_BREAKPOINTS.md) + إحالة لمعايير Cursor.
 - [x] استبدال المنطق في: `SettingsScreen`, `ReportsScreen`, `OwnerDashboardScreen`, `ReportsDetailModal`, `SmartTable`, `SupplierTable`.
 - [x] `UserMenu.jsx` — `useIsNarrow768`.
-- [x] `useDebouncedValue` + ربط: فواتير، مبيعات، موظفين، مشتريات، موردين، `ProductSearchInput`.
+- [x] `src/ui/timing.ts` + `useDebouncedValue`; `src/hooks/useDebouncedValue.ts` shim only.
 
 ## مرحلة 3 — هيكل الشاشة
 

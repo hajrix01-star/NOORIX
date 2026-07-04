@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useTabSearchParam } from '../../../../hooks/useTabSearchParam';
-import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { useDebouncedValue } from '../../../../ui';
 import { PURCHASE_TAB_IDS, createEmptyPurchasesBatchRow } from '../constants';
 import { getSaudiToday } from '../../../../utils/saudiDate';
 

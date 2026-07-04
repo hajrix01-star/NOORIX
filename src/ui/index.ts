@@ -36,6 +36,7 @@ export {
   useMaxWidth,
   useMediaQuery,
 } from './responsive';
+export { NOORIX_DEFAULT_DEBOUNCE_MS, useDebouncedValue } from './timing';
 export { default as Spinner         } from './Spinner';
 export { default as Divider         } from './Divider';
 export { default as FormRow         } from './FormRow';

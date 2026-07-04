@@ -2,7 +2,7 @@
  * Suppliers tab: list, add, edit, bulk delete, CSV import/export.
  */
 import React, { useState, memo, useCallback } from 'react';
-import { useDebouncedValue } from '../../../hooks/useDebouncedValue';
+import { useDebouncedValue } from '../../../ui';
 import { useSuppliers }        from '../../../hooks/useSuppliers';
 import { useCategories }       from '../../../hooks/useCategories';
 import { useTranslation }      from '../../../i18n/useTranslation';
