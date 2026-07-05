@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getTxKey } from './bankAnalysisUtils';
 import { FALLBACK_CATEGORIES } from './bankAnalysisUtils';
-import { Button, Checkbox, Input, SmartTable , FmtNum } from '../../../ui';
+import { Button, Checkbox, FilterToolbar, Input, SearchableOptionsPicker, SmartTable , FmtNum } from '../../../ui';
 
 export default function BankStatementTransactionsFullTab({
   statement,
@@ -58,7 +58,7 @@ export default function BankStatementTransactionsFullTab({
   return (
     <div className="grid gap-3.5">
       {/* ── شريط الفلاتر ── */}
-      <div className="bank-transactions-filter-grid grid gap-2.5 bg-noorix-bg-muted rounded-xl p-3 border border-noorix-border">
+      <FilterToolbar variant="bare" className="bank-transactions-filter-grid grid gap-2.5 bg-noorix-bg-muted rounded-xl p-3 border border-noorix-border">
         {/* بحث */}
         <div className="bank-transactions-search-wrap">
           <span className="bank-transactions-search-icon">
@@ -74,27 +74,27 @@ export default function BankStatementTransactionsFullTab({
         </div>
 
         {/* فلتر الفئة */}
-        <Input
-          type="select"
+        <SearchableOptionsPicker
           value={categoryFilter}
-          onChange={(e: any) => setCategoryFilter(e.target.value)}
-        >
-          <option value="all">{t('bankFilterAllCategories')}</option>
-          {categoryNames.map((n: any) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </Input>
+          onChange={setCategoryFilter}
+          options={[
+            { value: 'all', label: t('bankFilterAllCategories') },
+            ...categoryNames.map((n: any) => ({ value: n, label: n })),
+          ]}
+          aria-label={t('bankFilterAllCategories')}
+        />
 
         {/* فلتر النوع */}
-        <Input
-          type="select"
+        <SearchableOptionsPicker
           value={typeFilter}
-          onChange={(e: any) => setTypeFilter(e.target.value)}
-        >
-          <option value="all">{t('bankTypeAll')}</option>
-          <option value="debit">{t('bankTypeWithdrawals')}</option>
-          <option value="credit">{t('bankTypeDeposits')}</option>
-        </Input>
+          onChange={setTypeFilter}
+          options={[
+            { value: 'all', label: t('bankTypeAll') },
+            { value: 'debit', label: t('bankTypeWithdrawals') },
+            { value: 'credit', label: t('bankTypeDeposits') },
+          ]}
+          aria-label={t('bankTypeAll')}
+        />
 
         {/* إحصاء */}
         <div className="noorix-surface-card flex items-center gap-10 px-3 py-1 text-[12px]">
@@ -107,7 +107,7 @@ export default function BankStatementTransactionsFullTab({
             </span>
           )}
         </div>
-      </div>
+      </FilterToolbar>
 
       {/* ── إضافة فئة جديدة ── */}
       <div
@@ -167,16 +167,15 @@ export default function BankStatementTransactionsFullTab({
             render: (catId: any, tx: any) =>
               editingTxId === tx.id ? (
                 <div className="flex flex-col gap-1">
-                  <Input
-                    type="select"
+                  <SearchableOptionsPicker
+                    allowEmpty
+                    emptyValue=""
+                    emptyLabel={t('uncategorized')}
                     value={editingCategory}
-                    onChange={(e: any) => setEditingCategory(e.target.value)}
-                  >
-                    <option value="">{t('uncategorized')}</option>
-                    {allCategoryOptions.map((c: any) => (
-                      <option key={c.id} value={c.id}>{c.label}</option>
-                    ))}
-                  </Input>
+                    onChange={setEditingCategory}
+                    options={allCategoryOptions.map((c: any) => ({ value: c.id, label: c.label }))}
+                    aria-label={t('bankStatementCategories')}
+                  />
                   <div className="flex gap-1">
                     <Button
                       variant="primary"

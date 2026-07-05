@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, DateMonthScopePicker, cn, ScreenTitle } from '../../../ui';
+import { Button, DateMonthScopePicker, FilterToolbar, cn, ScreenTitle } from '../../../ui';
 import { useIsNarrow700 } from '../../../ui';
 import { SERIES_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { CompanyListItem } from '../../../context/appTypes';
@@ -49,7 +49,19 @@ export function OwnerFilterBar({
           <ScreenTitle>{t('ownerDashboard')}</ScreenTitle>
           <p className="text-[13px] text-noorix-muted m-0">{t('ownerDashboardDesc')}</p>
         </div>
-        <div className="nx-toolbar">
+        <FilterToolbar
+          className="max-w-full"
+          actions={(
+            <>
+              <Button variant="primary" onClick={onExportExcel} size="sm">
+                Excel
+              </Button>
+              <Button onClick={onExportPdf} size="sm">
+                طباعة / PDF
+              </Button>
+            </>
+          )}
+        >
           <DateMonthScopePicker
             year={year}
             years={years}
@@ -59,13 +71,7 @@ export function OwnerFilterBar({
             onYearChange={setYear}
             onMonthChange={setSelectedMonth}
           />
-          <Button variant="primary" onClick={onExportExcel} size="sm">
-            Excel
-          </Button>
-          <Button onClick={onExportPdf} size="sm">
-            طباعة / PDF
-          </Button>
-        </div>
+        </FilterToolbar>
       </div>
 
       <div className={cn('noorix-surface-card', isMobile ? 'p-3' : 'p-4')}>

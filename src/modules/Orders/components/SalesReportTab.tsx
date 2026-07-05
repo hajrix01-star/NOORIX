@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { useSalesReport } from '../../../hooks/useOrders';
 import { useTabSearchParam } from '../../../hooks/useTabSearchParam';
-import { Badge, Button, DataBar, Input, SimpleTable as UiSimpleTable, Spinner, ScreenShell, ScreenTitle } from '../../../ui';
+import { Badge, Button, DataBar, FilterToolbar, SearchableOptionsPicker, SimpleTable as UiSimpleTable, Spinner, ScreenShell, ScreenTitle } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
 
 const PERIOD_OPTIONS = [7, 14, 30, 60, 90];
@@ -133,22 +133,23 @@ export function SalesReportTab({ companyId }: { companyId: string }) {
         {t('staffInternalSalesReportHint')}
       </div>
       {/* ── شريط التحكم ── */}
-      <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2.5 flex flex-wrap items-center gap-2 sm:bg-noorix-surface sm:px-4 sm:py-3 sm:shadow-sm">
+      <FilterToolbar variant="bare" className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2.5 flex flex-wrap items-center gap-2 sm:bg-noorix-surface sm:px-4 sm:py-3 sm:shadow-sm">
         <span className="text-[13px] font-semibold">{t('salesReportTitle')}</span>
-        <Input
-          type="select"
-          value={String(days)}
-          onChange={(e: any) => setDays(Number(e.target.value))}
-          className="w-[140px]"
-        >
-          {PERIOD_OPTIONS.map((d) => (
-            <option key={d} value={d}>{t('salesReportLast')} {d} {t('salesReportDays')}</option>
-          ))}
-        </Input>
+        <div className="w-[160px]">
+          <SearchableOptionsPicker
+            value={String(days)}
+            onChange={(value) => setDays(Number(value))}
+            options={PERIOD_OPTIONS.map((d) => ({
+              value: String(d),
+              label: `${t('salesReportLast')} ${d} ${t('salesReportDays')}`,
+            }))}
+            aria-label={t('salesReportTitle')}
+          />
+        </div>
         <span className="text-[12px] text-noorix-muted ms-auto">
           {isLoading ? '...' : `${byDay.length} ${t('salesReportDays')}`}
         </span>
-      </div>
+      </FilterToolbar>
 
       {isLoading ? (
         <div className="flex justify-center py-16"><Spinner /></div>

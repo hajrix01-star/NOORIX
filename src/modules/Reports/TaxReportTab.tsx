@@ -9,7 +9,7 @@ import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { fmtTax } from '../../utils/format';
-import { Badge, Button, Checkbox, DateMonthScopePicker, Input, FmtNum } from '../../ui';
+import { Badge, Button, Checkbox, DateMonthScopePicker, FilterToolbar, Input, SearchableOptionsPicker, FmtNum } from '../../ui';
 import { TAX_REPORT_STORAGE_PREFIX } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
 import {
@@ -191,7 +191,7 @@ export default function TaxReportTab() {
                 : (lang === 'ar' ? 'مستورد من النظام' : 'Imported from system')}
             </Badge>
           </div>
-        <div className="nx-toolbar flex-wrap">
+        <FilterToolbar filtersClassName="nx-toolbar flex-wrap">
           <label className="flex max-w-[min(100%,22rem)] cursor-pointer items-start gap-2 rounded-lg border border-noorix-border bg-[var(--noorix-blue-6)] px-3 py-2 text-[11px] leading-snug text-noorix-text">
             <Checkbox
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
@@ -213,15 +213,21 @@ export default function TaxReportTab() {
             onYearChange={setYear}
             onMonthChange={() => {}}
           />
-          <Input type="select" label={lang === 'ar' ? 'الفترة' : 'Period'} value={period} onChange={(e: any) => setPeriod(e.target.value)}>
-            {periodOptions.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </Input>
+          <div className="w-full min-w-0 sm:w-[min(100%,11rem)]">
+            <SearchableOptionsPicker
+              label={lang === 'ar' ? 'الفترة' : 'Period'}
+              value={period}
+              onChange={setPeriod}
+              options={periodOptions}
+              aria-label={lang === 'ar' ? 'الفترة' : 'Period'}
+            />
+          </div>
           <Button size="sm" onClick={handleImportFromSystem} disabled={!activeCompanyId || importLoading}>
             {importLoading ? t('loading') : (lang === 'ar' ? 'استيراد من النظام' : 'Import from system')}
           </Button>
           <Button size="sm" onClick={handlePrint}>{t('print')}</Button>
           <Button size="sm" onClick={handleExportExcel}>{t('exportExcel')}</Button>
-        </div>
+        </FilterToolbar>
       </div>
 
       {!activeCompanyId ? (

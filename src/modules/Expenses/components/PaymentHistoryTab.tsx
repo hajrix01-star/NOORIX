@@ -8,15 +8,13 @@ import { getInvoices, downloadInvoiceAttachment } from '../../../services/api';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { useToast } from '../../../context/ToastContext';
 import { DateFilterBar, useDateFilter } from '../../../ui/date';
-import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
 import { fmt, sumAmounts } from '../../../utils/format';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Badge, Checkbox, FmtNum, SmartTable } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, Badge, Checkbox, FilterToolbar, FmtNum, SmartTable, SearchableOptionsPicker } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 
@@ -184,8 +182,10 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
         </FilterToolbar>
       )}
 
-      <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
-        <div className="nx-toolbar min-w-0 flex-1">
+      <FilterToolbar
+        className="mb-3 min-h-11 border-b border-noorix-border pb-3"
+        filtersClassName="nx-toolbar min-w-0 flex-1"
+      >
           <div className="w-full min-w-0 sm:w-[min(100%,14rem)] shrink-0">
             <SearchableOptionsPicker
               size="sm"
@@ -208,8 +208,7 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: 'سجل المدفوعات (ثابت + متغير)', companyName, filename: 'payment-history.pdf' })} disabled={!activeItems.length}>
             طباعة / PDF
           </Button>
-        </div>
-      </div>
+      </FilterToolbar>
 
       <SmartTable
         compact

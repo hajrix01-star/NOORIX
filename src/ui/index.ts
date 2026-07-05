@@ -44,6 +44,14 @@ export { default as ScreenTabs      } from './ScreenTabs';
 export { default as ScreenShell     } from './ScreenShell';
 export { default as ScreenTitle     } from './ScreenTitle';
 export { default as KebabMenu       } from './KebabMenu';
+export { FilterToolbar, SearchableOptionsPicker, csvToFilterValues, filterValuesToCsv } from './filters';
+export type { FilterToolbarProps } from './filters';
+export type {
+  SearchableOption,
+  SearchableOptionsPickerMultiProps,
+  SearchableOptionsPickerProps,
+  SearchableOptionsPickerSingleProps,
+} from './filters';
 export { default as FilterScrollStrip } from './FilterScrollStrip';
 export { default as ColorSwatch    } from './ColorSwatch';
 export type { ColorSwatchProps     } from './ColorSwatch';

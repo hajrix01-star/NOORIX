@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '../../../../ui';
 import { DateFilterBar } from '../../../../ui/date';
-import FilterToolbar from '../../../../shared/components/FilterToolbar';
+import { FilterToolbar } from '../../../../ui';
 
 export interface PurchasesBatchFiltersProps {
   dateFilter: any;

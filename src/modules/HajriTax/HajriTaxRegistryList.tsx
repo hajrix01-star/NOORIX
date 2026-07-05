@@ -2,7 +2,7 @@
  * سجل الإقرارات الضريبية — فلاتر + جدول صفوف + إقرار جديد
  */
 import React, { useMemo } from 'react';
-import { Button, Input } from '../../ui';
+import { Button, FilterToolbar, SearchableOptionsPicker } from '../../ui';
 import { fmt, fmtTax } from '../../utils/format';
 import { computeNetPayable } from '../../constants/taxDisclosure';
 import {
@@ -63,59 +63,58 @@ export default function HajriTaxRegistryList({
 
       <div className="noorix-surface-card p-4">
         <p className="mb-3 text-[13px] font-semibold text-noorix-text">{t('hajriTaxRegistryFilters')}</p>
-        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:gap-4">
-          <Input
-            type="select"
-            label={t('vatFilterCompany')}
-            value={filterCompanyId}
-            onChange={(e: any) => setFilterCompanyId(e.target.value)}
-            className="min-w-[200px]"
-          >
-            <option value="">{t('vatAllCompanies')}</option>
-            {companyFilterOptions.map((opt: any) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label}
-              </option>
-            ))}
-          </Input>
-          <Input
-            type="select"
-            label={t('reportYear')}
-            value={filterYear === '' ? '' : String(filterYear)}
-            onChange={(e: any) => {
-              const v = e.target.value;
-              setFilterYear(v === '' ? '' : Number(v));
-            }}
-            className="min-w-[120px]"
-          >
-            <option value="">{t('hajriTaxFilterAllYears')}</option>
-            {yearOptions.filter((y: any) => y !== '').map((y: any) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </Input>
-          <Input
-            type="select"
-            label={t('vatQuarter')}
-            value={filterQuarter === '' ? '' : String(filterQuarter)}
-            onChange={(e: any) => {
-              const v = e.target.value;
-              setFilterQuarter(v === '' ? '' : Number(v));
-            }}
-            className="min-w-[120px]"
-          >
-            <option value="">{t('hajriTaxFilterAllQuarters')}</option>
-            {[1, 2, 3, 4].map((q: any) => (
-              <option key={q} value={q}>
-                {lang === 'ar' ? `الربع ${q}` : `Q${q}`}
-              </option>
-            ))}
-          </Input>
-        </div>
+        <FilterToolbar
+          filtersClassName="gap-4 lg:items-end"
+        >
+          <div className="w-full min-w-0 lg:w-[min(100%,16rem)]">
+            <SearchableOptionsPicker
+              label={t('vatFilterCompany')}
+              allowEmpty
+              emptyValue=""
+              emptyLabel={t('vatAllCompanies')}
+              value={filterCompanyId}
+              onChange={setFilterCompanyId}
+              options={companyFilterOptions.map((opt: any) => ({ value: opt.id, label: opt.label }))}
+              aria-label={t('vatFilterCompany')}
+            />
+          </div>
+          <div className="w-full min-w-0 lg:w-32">
+            <SearchableOptionsPicker
+              label={t('reportYear')}
+              allowEmpty
+              emptyValue=""
+              emptyLabel={t('hajriTaxFilterAllYears')}
+              value={filterYear === '' ? '' : String(filterYear)}
+              onChange={(v) => setFilterYear(v === '' ? '' : Number(v))}
+              options={yearOptions
+                .filter((y: any) => y !== '')
+                .map((y: any) => ({ value: String(y), label: String(y) }))}
+              aria-label={t('reportYear')}
+            />
+          </div>
+          <div className="w-full min-w-0 lg:w-36">
+            <SearchableOptionsPicker
+              label={t('vatQuarter')}
+              allowEmpty
+              emptyValue=""
+              emptyLabel={t('hajriTaxFilterAllQuarters')}
+              value={filterQuarter === '' ? '' : String(filterQuarter)}
+              onChange={(v) => setFilterQuarter(v === '' ? '' : Number(v))}
+              options={[1, 2, 3, 4].map((q: any) => ({
+                value: String(q),
+                label: lang === 'ar' ? `الربع ${q}` : `Q${q}`,
+              }))}
+              aria-label={t('vatQuarter')}
+            />
+          </div>
+        </FilterToolbar>
       </div>
 
-      {jsonToolbar ? <div className="flex flex-wrap gap-2 items-center">{jsonToolbar}</div> : null}
+      {jsonToolbar ? (
+        <FilterToolbar variant="execution">
+          {jsonToolbar}
+        </FilterToolbar>
+      ) : null}
 
       {registryLoading ? (
         <div className="text-[14px] text-noorix-muted">{t('loading')}</div>

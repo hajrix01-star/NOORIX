@@ -5,7 +5,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
 import { fmt } from '../../../utils/format';
-import { Input, SmartTable, FmtNum, type SmartTableFooterSegment } from '../../../ui';
+import { FilterToolbar, SearchableOptionsPicker, SmartTable, FmtNum, type SmartTableFooterSegment } from '../../../ui';
 import { LoadingState, EmptyState } from '../../../components/states';
 import { buildAppSalesTableFooter, buildDashboardAppSalesModel } from '../utils/dashboardAppSalesData';
 import { DashboardAppSalesChart } from './DashboardAppSalesChart';
@@ -153,23 +153,21 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
             (<FmtNum n={model.periodApp} /> / <FmtNum n={model.periodTotal} /> <span className="nx-sar">SR</span>)
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <FilterToolbar variant="bare" className="flex items-center gap-2">
           <span className="text-[12px] text-noorix-muted">{t('dashboardAppSalesYearsSpan')}</span>
-          <Input
-            type="select"
-            size="sm"
-            value={yearsSpan}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setYearsSpan(Number(e.target.value) as (typeof YEARS_SPAN_OPTIONS)[number])
-            }
-          >
-            {YEARS_SPAN_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {t(n === 1 ? 'dashboardAppSalesYears1' : n === 2 ? 'dashboardAppSalesYears2' : 'dashboardAppSalesYears3')}
-              </option>
-            ))}
-          </Input>
-        </div>
+          <div className="w-[150px]">
+            <SearchableOptionsPicker
+              size="sm"
+              value={String(yearsSpan)}
+              onChange={(value) => setYearsSpan(Number(value) as (typeof YEARS_SPAN_OPTIONS)[number])}
+              options={YEARS_SPAN_OPTIONS.map((n) => ({
+                value: String(n),
+                label: t(n === 1 ? 'dashboardAppSalesYears1' : n === 2 ? 'dashboardAppSalesYears2' : 'dashboardAppSalesYears3'),
+              }))}
+              aria-label={t('dashboardAppSalesYearsSpan')}
+            />
+          </div>
+        </FilterToolbar>
       </div>
 
       <div className="noorix-surface-card p-3 sm:p-4 lg:p-5">

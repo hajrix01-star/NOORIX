@@ -5,8 +5,8 @@ import { useApp }         from '../../context/AppContext';
 import { useToast }       from '../../context/ToastContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useVaults } from '../../hooks/useVaults';
+import { FilterToolbar } from '../../ui';
 import { DateFilterBar, useDateFilter } from '../../ui/date';
-import FilterToolbar from '../../shared/components/FilterToolbar';
 import { sumAmounts } from '../../utils/format';
 import VaultCard          from './components/VaultCard';
 import VaultFormModal     from './components/VaultFormModal';
@@ -133,7 +133,7 @@ export default function TreasuryScreen() {
             </p>
           )}
         </div>
-        <div className="nx-toolbar">
+        <FilterToolbar variant="bare" className="nx-toolbar">
           <Checkbox
             checked={includeArchived}
             onChange={(e: any) => setIncludeArchived(e.target.checked)}
@@ -149,7 +149,7 @@ export default function TreasuryScreen() {
           <Button variant="primary" size="sm" onClick={() => { setShowAddForm(true); setSaveError(''); }}>
             {t('addVaultBtn')}
           </Button>
-        </div>
+        </FilterToolbar>
       </div>
 
       <FilterToolbar>

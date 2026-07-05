@@ -4,8 +4,7 @@
  */
 import React, { useState, useEffect, memo, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, Input, AdaptiveSheet, FormRow } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, Checkbox, Input, AdaptiveSheet, FormRow, SearchableOptionsPicker } from '../../../ui';
 
 export type SupplierEditModalProps = {
   supplier: any;

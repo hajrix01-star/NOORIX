@@ -16,8 +16,7 @@ import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import { canExemptThisExpensePayment, isExpensePaymentTaxable } from '../utils/expenseTax';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, DateField, Input, ScreenShell, cn , FmtNum, SmartTable } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, Checkbox, DateField, Input, ScreenShell, cn , FmtNum, SmartTable, SearchableOptionsPicker } from '../../../ui';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 
 const EMPTY_ROW = () => ({

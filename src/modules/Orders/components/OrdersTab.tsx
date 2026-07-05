@@ -33,10 +33,9 @@ import {
   resolveOrdersDateRange,
 } from '../utils/ordersTabModel';
 import { DateFilterBar } from '../../../ui/date';
-import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { OrderFormModal } from './OrderFormModal';
 import { OrdersSummaryCard } from './OrdersSummaryCard';
-import { Button, Badge, AdaptiveSheet, SmartTable, KebabMenu, FmtNum } from '../../../ui';
+import { Button, Badge, AdaptiveSheet, FilterToolbar, SmartTable, KebabMenu, FmtNum } from '../../../ui';
 
 export function OrdersTab({
   companyId,
@@ -430,7 +429,7 @@ export function OrdersTab({
         badge={
           <div className="noorix-print-hide flex flex-wrap items-center gap-2 w-full min-w-0">
             <span className="text-[13px] font-semibold text-noorix-muted shrink-0">{t('ordersFilterByType')}:</span>
-            <div className="nx-toolbar flex-wrap">
+            <FilterToolbar variant="bare" className="nx-toolbar flex-wrap">
               {['all', 'external', 'internal'].map((v: any) => (
                 <Button
                   key={v}
@@ -442,7 +441,7 @@ export function OrdersTab({
                   {v === 'all' ? t('ordersFilterAll') : v === 'external' ? t('orderTypeExternal') : t('orderTypeInternal')}
                 </Button>
               ))}
-            </div>
+            </FilterToolbar>
             <span className="text-[14px] font-bold nx-font-numbers ms-auto shrink-0">
               {t('ordersFilteredTotal')}: <FmtNum n={filteredTotal} /> SR
             </span>

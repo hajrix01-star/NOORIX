@@ -16,7 +16,7 @@ import {
   labelStyle,
   fileToDataUrl,
 } from '../constants/settingsConstants';
-import { Button, Checkbox, FileInput, Input, AdaptiveSheet } from '../../../ui';
+import { Button, Checkbox, FileInput, Input, AdaptiveSheet, FilterToolbar } from '../../../ui';
 import { appKeys, companyKeys } from '../../../services/queryKeys';
 import CompanyFinancialInsightThresholdsSection from './CompanyFinancialInsightThresholdsSection';
 import { buildCompanyUpdateBody, mergeCompanySavePatch } from '../utils/companyUpdateBody';
@@ -206,7 +206,7 @@ export default function CompaniesTab({
         </div>
       )}
 
-      <div className="nx-toolbar flex-wrap">
+      <FilterToolbar variant="bare" className="nx-toolbar flex-wrap">
         <Button size="sm" variant={showAddForm ? undefined : 'primary'} onClick={() => setShowAddForm((v: any) => !v)}>
           {showAddForm ? 'إلغاء الإضافة' : 'إضافة شركة'}
         </Button>
@@ -222,7 +222,7 @@ export default function CompaniesTab({
             </span>
           )}
         </div>
-      </div>
+      </FilterToolbar>
       {resetState.msg && (
         <div className="rounded-lg p-3 text-[13px] bg-green-50 border border-green-200 text-green-800">{resetState.msg}</div>
       )}

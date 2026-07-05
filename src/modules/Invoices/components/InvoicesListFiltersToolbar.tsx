@@ -1,15 +1,6 @@
 import React, { useMemo } from 'react';
-import { Button } from '../../../ui';
+import { Button, FilterToolbar, SearchableOptionsPicker, csvToFilterValues, filterValuesToCsv } from '../../../ui';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
-
-function csvToValues(s: string) {
-  return (s || '').split(',').map((x) => x.trim()).filter(Boolean);
-}
-
-function valuesToCsv(values: string[]) {
-  return [...new Set(values)].join(',');
-}
 
 /**
  * لافتة الحفر + شريط الفلاتر التنفيذي — مستخرج من InvoicesListScreen
@@ -109,7 +100,7 @@ export function InvoicesListFiltersToolbar({
           </Button>
         </div>
       )}
-      <div className="noorix-exec-filters noorix-exec-filters--scroll">
+      <FilterToolbar variant="execution" scroll>
         {showDayClose && (
           <Button
             size="sm"
@@ -177,9 +168,9 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('filterByType')}
-          values={csvToValues(filterKind)}
+          values={csvToFilterValues(filterKind)}
           onChange={(vals) => {
-            setFilterKind(valuesToCsv(vals));
+            setFilterKind(filterValuesToCsv(vals));
             setUrlExtra((p: any) => ({ ...p, kind: '' }));
             setPage(1);
           }}
@@ -192,9 +183,9 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('allSuppliers')}
-          values={csvToValues(filterSupplierId)}
+          values={csvToFilterValues(filterSupplierId)}
           onChange={(vals) => {
-            setFilterSupplierId(valuesToCsv(vals));
+            setFilterSupplierId(filterValuesToCsv(vals));
             setPage(1);
           }}
           options={supplierOptions}
@@ -206,9 +197,9 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('filterBySupplierCategory')}
-          values={csvToValues(filterSupplierCategoryId)}
+          values={csvToFilterValues(filterSupplierCategoryId)}
           onChange={(vals) => {
-            setFilterSupplierCategoryId(valuesToCsv(vals));
+            setFilterSupplierCategoryId(filterValuesToCsv(vals));
             setPage(1);
           }}
           options={supplierCategoryOptions}
@@ -226,9 +217,9 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('invoiceUserColumn')}
-          values={csvToValues(filterCreatedByUserId)}
+          values={csvToFilterValues(filterCreatedByUserId)}
           onChange={(vals) => {
-            setFilterCreatedByUserId(valuesToCsv(vals));
+            setFilterCreatedByUserId(filterValuesToCsv(vals));
             setPage(1);
           }}
           options={creatorOptions}
@@ -246,16 +237,16 @@ export function InvoicesListFiltersToolbar({
           size="sm"
           className="noorix-exec-filters__select"
           aria-label={t('invoiceVaultColumn')}
-          values={csvToValues(filterVaultId)}
+          values={csvToFilterValues(filterVaultId)}
           onChange={(vals) => {
-            setFilterVaultId(valuesToCsv(vals));
+            setFilterVaultId(filterValuesToCsv(vals));
             setPage(1);
           }}
           options={vaultOptions}
           emptyLabel={t('invoicesFilterVaultAll')}
           showClearAll
         />
-      </div>
+      </FilterToolbar>
     </>
   );
 }

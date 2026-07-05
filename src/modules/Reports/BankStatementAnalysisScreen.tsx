@@ -20,7 +20,7 @@ import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import { getSaudiNow, toYmd } from '../../utils/saudiDate';
 import { bankKeys } from '../../services/queryKeys';
-import { Button, Badge, DateMonthScopePicker, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, cn } from '../../ui';
+import { Button, Badge, DateMonthScopePicker, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, FilterToolbar, SearchableOptionsPicker, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
@@ -267,7 +267,7 @@ export default function BankStatementAnalysisScreen() {
 
               {!listLoading && statements.length > 0 && (
                 <>
-                  <div className="flex flex-wrap gap-3 mb-4 items-center">
+                  <FilterToolbar className="mb-4">
                     <DateMonthScopePicker
                       year={filterYear}
                       years={filterYears}
@@ -278,19 +278,18 @@ export default function BankStatementAnalysisScreen() {
                       onYearChange={setBankFilterYear}
                       onMonthChange={setBankFilterMonth}
                     />
-                    <Input
-                      type="select"
-                      value={filterBank}
-                      onChange={(e: any) => setFilterBank(e.target.value)}
-                    >
-                      <option value="">{t('bankStatementAllBanks')}</option>
-                      {banks.map((b: any) => (
-                        <option key={b} value={b}>
-                          {b}
-                        </option>
-                      ))}
-                    </Input>
-                  </div>
+                    <div className="w-full min-w-0 sm:w-[min(100%,14rem)]">
+                      <SearchableOptionsPicker
+                        allowEmpty
+                        emptyValue=""
+                        emptyLabel={t('bankStatementAllBanks')}
+                        value={filterBank}
+                        onChange={setFilterBank}
+                        options={banks.map((b: any) => ({ value: b, label: b }))}
+                        aria-label={t('bankStatementAllBanks')}
+                      />
+                    </div>
+                  </FilterToolbar>
 
                   <div className="grid gap-2.5">
                     {statements.map((stmt: any) => {

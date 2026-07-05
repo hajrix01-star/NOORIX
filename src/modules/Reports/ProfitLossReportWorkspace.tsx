@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, DateMonthScopePicker, Input, MetricCard, cn } from '../../ui';
+import { Button, DateMonthScopePicker, FilterToolbar, Input, MetricCard, cn } from '../../ui';
 import GeneralPlTable from './GeneralPlTable';
 import type { PlDisplayLevel } from './reportHelpers';
 import type { GeneralProfitLossReport, ReportPeriodMode } from './reportTypes';
@@ -95,7 +95,7 @@ export default function ProfitLossReportWorkspace({
             </div>
           </div>
 
-          <div className="nx-pl-command-center__controls">
+          <FilterToolbar variant="bare" className="nx-pl-command-center__controls">
             <DateMonthScopePicker
               year={year}
               years={yearOptions}
@@ -119,7 +119,7 @@ export default function ProfitLossReportWorkspace({
                 {t('print')}
               </Button>
             </div>
-          </div>
+          </FilterToolbar>
         </div>
       </section>
 
@@ -181,7 +181,7 @@ export default function ProfitLossReportWorkspace({
                   <div className="nx-pl-eyebrow">{t('reportPlToolbarPeriod')}</div>
                   <h3 className="nx-pl-statement-title">{periodLabel}</h3>
                 </div>
-                <div className="nx-pl-statement-tools">
+                <FilterToolbar variant="bare" className="nx-pl-statement-tools">
                   <div className="nx-pl-level-group">
                     {([1, 2, 3] as const).map((level) => (
                       <Button
@@ -203,7 +203,7 @@ export default function ProfitLossReportWorkspace({
                     value={rowSearch}
                     onChange={(event: any) => onRowSearchChange(event.target.value)}
                   />
-                </div>
+                </FilterToolbar>
               </div>
 
               <GeneralPlTable

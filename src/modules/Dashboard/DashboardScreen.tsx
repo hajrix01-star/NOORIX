@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
-import { DateMonthScopePicker, ScreenTabs, ScreenShell } from '../../ui';
+import { DateMonthScopePicker, FilterToolbar, ScreenTabs, ScreenShell } from '../../ui';
 import DashboardOverviewTab from './overview/DashboardOverviewTab';
 import DashboardCalendarTab from './components/DashboardCalendarTab';
 import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
@@ -67,16 +67,18 @@ export default function DashboardScreen() {
           <h1 className="text-[20px] font-bold text-noorix-text m-0">{t('dashboard')}</h1>
           <p className="text-[13px] text-noorix-muted mt-1 m-0">{t('dashboardDesc')}</p>
         </div>
-        <DateMonthScopePicker
-          year={year}
-          years={years}
-          month={selectedMonth}
-          allowAll
-          allowYear={false}
-          fallbackMonth={now.month}
-          onYearChange={setYear}
-          onMonthChange={setSelectedMonth}
-        />
+        <FilterToolbar className="max-w-full">
+          <DateMonthScopePicker
+            year={year}
+            years={years}
+            month={selectedMonth}
+            allowAll
+            allowYear={false}
+            fallbackMonth={now.month}
+            onYearChange={setYear}
+            onMonthChange={setSelectedMonth}
+          />
+        </FilterToolbar>
       </div>
 
       <ScreenTabs

@@ -9,9 +9,8 @@ import { useOrdersItemsReportRange, useProductPurchaseHistory, useCategoryPurcha
 import { fmt } from '../../../utils/format';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { DateFilterBar } from '../../../ui/date';
-import FilterToolbar from '../../../shared/components/FilterToolbar';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
-import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard, DataBar } from '../../../ui';
+import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard, DataBar, FilterToolbar, SearchableOptionsPicker } from '../../../ui';
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
@@ -179,15 +178,18 @@ export function ItemsReportTab({
         className="nx-page-header nx-page-header--filter-row"
         actions={(
           <>
-            <Input
-              type="select"
-              value={filterMode}
-              onChange={(e: any) => setFilterMode(e.target.value)}
-            >
-              <option value="all">{t('ordersFilterAll')}</option>
-              <option value="top">{t('ordersFilterTop')}</option>
-              <option value="bottom">{t('ordersFilterBottom')}</option>
-            </Input>
+            <div className="w-full min-w-0 sm:w-[min(100%,12rem)]">
+              <SearchableOptionsPicker
+                value={filterMode}
+                onChange={setFilterMode}
+                options={[
+                  { value: 'all', label: t('ordersFilterAll') },
+                  { value: 'top', label: t('ordersFilterTop') },
+                  { value: 'bottom', label: t('ordersFilterBottom') },
+                ]}
+                aria-label={t('ordersFilterAll')}
+              />
+            </div>
             {(filterMode === 'top' || filterMode === 'bottom') && (
               <Input
                 type="number"

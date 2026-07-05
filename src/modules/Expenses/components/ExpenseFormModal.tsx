@@ -15,8 +15,7 @@ import { fmt } from '../../../utils/format';
 import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
-import { Button, AdaptiveSheet, Checkbox, DateField, FileTrigger, Input } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, AdaptiveSheet, Checkbox, DateField, FileTrigger, Input, SearchableOptionsPicker } from '../../../ui';
 import {
   canExemptThisExpensePayment,
   isExpensePaymentTaxable,

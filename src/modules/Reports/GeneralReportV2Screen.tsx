@@ -5,7 +5,7 @@ import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import { getSaudiNow } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ReportsDetailModal from './ReportsDetailModal';
-import { Button, DateMonthScopePicker, Input } from '../../ui';
+import { Button, DateMonthScopePicker, FilterToolbar, Input } from '../../ui';
 import {
   amountText,
   percentText,
@@ -295,7 +295,7 @@ tr.is-summary td.amt { color: #047857; }
             <span>{t('reportAmountBasisGrossShort')}</span>
           </div>
         </div>
-        <div className="nx-gr2-controls">
+        <FilterToolbar variant="bare" className="nx-gr2-controls">
           <DateMonthScopePicker
             year={year}
             years={yearOptions}
@@ -313,7 +313,7 @@ tr.is-summary td.amt { color: #047857; }
             <Button variant="raw" type="button" onClick={handleExportPdf} disabled={!report}>PDF</Button>
             <Button variant="raw" type="button" onClick={handlePrint} disabled={!report}>{t('print')}</Button>
           </div>
-        </div>
+        </FilterToolbar>
       </header>
 
       {!activeCompanyId && <div className="nx-gr2-empty">{t('pleaseSelectCompany')}</div>}
@@ -338,14 +338,14 @@ tr.is-summary td.amt { color: #047857; }
                 <span>{t('reportPlToolbarPeriod')}</span>
                 <strong>{selectedMonthNumber ? `${monthLabel} ${year}` : year}</strong>
               </div>
-              <div className="nx-gr2-statement__tools">
+              <FilterToolbar variant="bare" className="nx-gr2-statement__tools">
                 {[1, 2, 3].map((level) => (
                   <Button variant="raw" key={level} type="button" className={displayLevel === level ? 'is-active' : ''} onClick={() => setDisplayLevel(level as PlDisplayLevel)}>
                     {level === 1 ? t('reportPlLevel1') : level === 2 ? t('reportPlLevel2') : t('reportPlLevel3')}
                   </Button>
                 ))}
                 <Input value={rowSearch} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setRowSearch(event.target.value)} placeholder={t('reportPlRowFilterPlaceholder')} />
-              </div>
+              </FilterToolbar>
             </div>
 
             <div className="nx-gr2-table-scroll">

@@ -4,8 +4,7 @@
  */
 import React, { useState, memo, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, Input, Card, FormRow } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, Checkbox, Input, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
 
 const EMPTY = { nameAr: '', nameEn: '', taxNumber: '', phone: '', supplierCategoryId: '', supplierType: 'purchases', isTaxRegistered: true };
 

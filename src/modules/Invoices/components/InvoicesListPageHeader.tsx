@@ -1,7 +1,6 @@
 import React from 'react';
-import { Button } from '../../../ui';
+import { Button, FilterToolbar } from '../../../ui';
 import { DateFilterBar } from '../../../ui/date';
-import FilterToolbar from '../../../shared/components/FilterToolbar';
 
 export function InvoicesListPageHeader({
   t,

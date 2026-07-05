@@ -8,8 +8,7 @@ import { useCategories } from '../../../hooks/useCategories';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { Button, AdaptiveSheet, Checkbox, Input } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, AdaptiveSheet, Checkbox, Input, SearchableOptionsPicker } from '../../../ui';
 
 const INSTALLMENT_INTERVALS = [1, 2, 3, 4, 6, 12];
 

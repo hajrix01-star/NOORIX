@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { Button, Input, KebabMenu } from '../../../../ui';
+import { Button, FilterToolbar, Input, KebabMenu, SearchableOptionsPicker } from '../../../../ui';
 
 type CatalogToolbarProps = {
   productType: 'order' | 'sale';
@@ -94,7 +94,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 min-w-0 max-w-full">
+      <FilterToolbar filtersClassName="gap-2" className="min-w-0 max-w-full">
         <Input
           type="search"
           value={productSearchQuery}
@@ -103,33 +103,37 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
           aria-label={t('ordersSearchProducts')}
           className="w-full min-w-0 sm:flex-1 sm:max-w-[280px]"
         />
-        <Input
-          type="select"
-          value={productFilterSection}
-          onChange={(e: any) => setProductFilterSection(e.target.value)}
-          className="w-full min-w-0 sm:w-auto sm:min-w-[140px]"
-          aria-label={t('productSections')}
-        >
-          <option value="">{t('filterAllSections')}</option>
-          <option value="__none__">{t('filterNoSection')}</option>
-          {(sections as any[]).map((s: any) => (
-            <option key={s.id} value={s.nameAr}>
-              {s.nameAr}{s.nameEn ? ` / ${s.nameEn}` : ''}
-            </option>
-          ))}
-        </Input>
-        <Input
-          type="select"
-          value={productFilterCategory}
-          onChange={(e: any) => setProductFilterCategory(e.target.value)}
-          className="w-full min-w-0 sm:w-auto sm:min-w-[140px]"
-          aria-label={t('category')}
-        >
-          <option value="">{t('filterAllCategories')}</option>
-          {(categories as any[]).map((c: any) => (
-            <option key={c.id} value={c.id}>{c.nameAr || c.nameEn}</option>
-          ))}
-        </Input>
+        <div className="w-full min-w-0 sm:w-[min(100%,12rem)]">
+          <SearchableOptionsPicker
+            allowEmpty
+            emptyValue=""
+            emptyLabel={t('filterAllSections')}
+            value={productFilterSection}
+            onChange={setProductFilterSection}
+            options={[
+              { value: '__none__', label: t('filterNoSection') },
+              ...(sections as any[]).map((s: any) => ({
+                value: s.nameAr,
+                label: `${s.nameAr}${s.nameEn ? ` / ${s.nameEn}` : ''}`,
+              })),
+            ]}
+            aria-label={t('productSections')}
+          />
+        </div>
+        <div className="w-full min-w-0 sm:w-[min(100%,12rem)]">
+          <SearchableOptionsPicker
+            allowEmpty
+            emptyValue=""
+            emptyLabel={t('filterAllCategories')}
+            value={productFilterCategory}
+            onChange={setProductFilterCategory}
+            options={(categories as any[]).map((c: any) => ({
+              value: c.id,
+              label: c.nameAr || c.nameEn || c.id,
+            }))}
+            aria-label={t('category')}
+          />
+        </div>
         {(productFilterSection || productFilterCategory) && (
           <Button
             size="sm"
@@ -142,7 +146,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
         <span className="text-[12px] text-noorix-muted shrink-0 sm:ms-auto">
           {filteredCount} / {totalCount}
         </span>
-      </div>
+      </FilterToolbar>
     </div>
   );
 }

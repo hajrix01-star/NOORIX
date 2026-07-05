@@ -7,8 +7,7 @@ import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { fmt } from '../../../utils/format';
-import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, KebabMenu } from '../../../ui';
-import { SearchableOptionsPicker } from '../../../components/common/SearchableOptionsPicker';
+import { Button, Badge, ScreenShell, cn, SmartTable, FmtNum, KebabMenu, FilterToolbar, SearchableOptionsPicker } from '../../../ui';
 import { buildExpenseLineKindBadgeMap } from '../../../constants/badgeMaps';
 import { useApp } from '../../../context/AppContext';
 import { monthlyAmountFromExpenseLine } from '../../Reports/costAccountingAppsFixedExpenseImport';
@@ -287,8 +286,15 @@ export default function ExpenseLineList({
 
   return (
     <ScreenShell embedded={!!embedded} className={cn(embedded && 'pt-4')}>
-      <div className="mb-3 flex min-h-11 min-w-0 flex-col gap-3 border-b border-noorix-border pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
-        <div className="nx-toolbar min-w-0 max-w-full flex-1 overflow-x-auto pb-0.5">
+      <FilterToolbar
+        className="mb-3 min-h-11 min-w-0 border-b border-noorix-border pb-3"
+        filtersClassName="nx-toolbar min-w-0 max-w-full flex-1 overflow-x-auto pb-0.5"
+        actions={(
+          <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={onCreateLine}>
+            {t('addExpenseLine')}
+          </Button>
+        )}
+      >
           <div className="w-full min-w-0 sm:w-[min(100%,11rem)] shrink-0">
             <SearchableOptionsPicker
               size="sm"
@@ -314,11 +320,7 @@ export default function ExpenseLineList({
           <Button size="sm" className="shrink-0 whitespace-nowrap" onClick={() => exportTableToPdf({ data: exportData, title: t('expenseLinesPrintTitle'), filename: 'expense-lines.pdf' })} disabled={!tableData.length}>
             {t('exportPdf')}
           </Button>
-        </div>
-        <Button variant="primary" size="sm" className="shrink-0 whitespace-nowrap" onClick={onCreateLine}>
-          {t('addExpenseLine')}
-        </Button>
-      </div>
+      </FilterToolbar>
 
       <div className="nx-expense-line-table-wrap min-w-0">
         <SmartTable
