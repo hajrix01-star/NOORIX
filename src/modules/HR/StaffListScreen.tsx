@@ -37,6 +37,7 @@ import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
+import { normalizeEmployeesPagedQueryInput } from '../../services/domains/apiEndpoints/hr-query';
 import {
   hrFlatSmartTableShellProps,
 } from './hrWorkspaceLayout';
@@ -115,6 +116,19 @@ export default function StaffListScreen({ embedded }: any) {
   const [sortKey, setSortKey] = useState('joinDate');
   const [sortDir, setSortDir] = useState('desc');
   const [exporting, setExporting] = useState(false);
+  const employeesPagedQuery = useMemo(
+    () =>
+      normalizeEmployeesPagedQueryInput({
+        companyId,
+        tab: viewMode,
+        page: listPage,
+        pageSize: PAGE_SIZE,
+        q: debouncedQ,
+        sortBy: sortKey,
+        sortDir,
+      }),
+    [companyId, debouncedQ, listPage, sortDir, sortKey, viewMode],
+  );
 
   useEffect(() => {
     setListPage(1);
@@ -125,15 +139,15 @@ export default function StaffListScreen({ embedded }: any) {
     isLoading,
     error: employeesError,
   } = useApiQuery<any>({
-    queryKey: hrKeys.employeesPaged(companyId, viewMode, listPage, PAGE_SIZE, debouncedQ, sortKey, sortDir),
+    queryKey: hrKeys.employeesPaged(employeesPagedQuery),
     queryFn: async () => {
       const res = await getEmployeesPaged(companyId, {
-        tab: viewMode,
-        page: listPage,
-        pageSize: PAGE_SIZE,
-        q: debouncedQ,
-        sortBy: sortKey,
-        sortDir,
+        tab: employeesPagedQuery.tab,
+        page: employeesPagedQuery.page,
+        pageSize: employeesPagedQuery.pageSize,
+        q: employeesPagedQuery.q,
+        sortBy: employeesPagedQuery.sortBy,
+        sortDir: employeesPagedQuery.sortDir,
       });
       if (!res.success) return res;
       return { success: true, data: res };

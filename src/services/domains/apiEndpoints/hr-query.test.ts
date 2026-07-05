@@ -5,6 +5,7 @@ import {
   companyEmployeeQuery,
   companyQuery,
   companyYearQuery,
+  normalizeEmployeesPagedQueryInput,
   withHrApiQuery,
 } from './hr-query';
 
@@ -33,17 +34,26 @@ describe('hr-query', () => {
   });
 
   it('builds employees paged params centrally', () => {
-    expect(
-      buildEmployeesPagedApiQuery({
-        companyId: ' company-1 ',
-        tab: 'terminated',
-        page: 2,
-        pageSize: 25,
-        q: '  Ali  ',
-        sortBy: 'nameAr',
-        sortDir: 'asc',
-      }),
-    ).toEqual({
+    const source = {
+      companyId: ' company-1 ',
+      tab: 'terminated',
+      page: 2,
+      pageSize: 25,
+      q: '  Ali  ',
+      sortBy: 'nameAr',
+      sortDir: 'asc',
+    };
+
+    expect(normalizeEmployeesPagedQueryInput(source)).toEqual({
+      companyId: 'company-1',
+      tab: 'terminated',
+      page: 2,
+      pageSize: 25,
+      q: 'Ali',
+      sortBy: 'nameAr',
+      sortDir: 'asc',
+    });
+    expect(buildEmployeesPagedApiQuery(source)).toEqual({
       companyId: 'company-1',
       tab: 'terminated',
       page: '2',
@@ -51,6 +61,27 @@ describe('hr-query', () => {
       q: 'Ali',
       sortBy: 'nameAr',
       sortDir: 'asc',
+    });
+  });
+
+  it('defaults and clamps employees paged params centrally', () => {
+    expect(
+      normalizeEmployeesPagedQueryInput({
+        companyId: 'company-1',
+        tab: 'other',
+        page: -10,
+        pageSize: 500,
+        q: 'x'.repeat(140),
+        sortDir: 'down',
+      }),
+    ).toEqual({
+      companyId: 'company-1',
+      tab: 'active',
+      page: 1,
+      pageSize: 200,
+      q: 'x'.repeat(120),
+      sortBy: 'joinDate',
+      sortDir: 'desc',
     });
   });
 });

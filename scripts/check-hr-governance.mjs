@@ -29,6 +29,9 @@ const requiredFiles = [
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'employees.ts'),
   path.join(root, 'src', 'services', 'queryKeys', 'hr.ts'),
   path.join(root, 'src', 'services', 'queryKeys', 'employees.ts'),
+  path.join(root, 'backend', 'src', 'employees', 'dto', 'employee-list-query.dto.ts'),
+  path.join(root, 'backend', 'src', 'employees', 'employee-list-query-contract.util.ts'),
+  path.join(root, 'backend', 'src', 'employees', 'employee-list-query-contract.util.spec.ts'),
 ];
 
 function report(filePath, message) {
@@ -82,10 +85,41 @@ for (const apiFile of [
 const hrQueryPath = path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'hr-query.ts');
 if (fs.existsSync(hrQueryPath)) {
   const source = fs.readFileSync(hrQueryPath, 'utf8');
-  for (const symbol of ['buildHrApiQuery', 'withHrApiQuery', 'companyQuery', 'buildEmployeesPagedApiQuery']) {
+  for (const symbol of ['buildHrApiQuery', 'withHrApiQuery', 'companyQuery', 'normalizeEmployeesPagedQueryInput', 'buildEmployeesPagedApiQuery']) {
     if (!source.includes(symbol)) {
       report(hrQueryPath, `missing central HR query helper: ${symbol}.`);
     }
+  }
+}
+
+const staffListPath = path.join(hrRoot, 'StaffListScreen.tsx');
+if (fs.existsSync(staffListPath)) {
+  const source = fs.readFileSync(staffListPath, 'utf8');
+  if (!source.includes('normalizeEmployeesPagedQueryInput')) {
+    report(staffListPath, 'staff list must normalize paged employee query input centrally.');
+  }
+  if (!source.includes('hrKeys.employeesPaged(employeesPagedQuery)')) {
+    report(staffListPath, 'staff list query key must use the normalized employeesPagedQuery object.');
+  }
+}
+
+const hrQueryKeysPath = path.join(root, 'src', 'services', 'queryKeys', 'hr.ts');
+if (fs.existsSync(hrQueryKeysPath)) {
+  const source = fs.readFileSync(hrQueryKeysPath, 'utf8');
+  if (!source.includes('EmployeesPagedQueryInput')) {
+    report(hrQueryKeysPath, 'HR query keys must type employeesPaged with EmployeesPagedQueryInput.');
+  }
+}
+
+const employeesControllerPath = path.join(root, 'backend', 'src', 'employees', 'employees.controller.ts');
+if (fs.existsSync(employeesControllerPath)) {
+  const source = fs.readFileSync(employeesControllerPath, 'utf8');
+  const findAllBlock = source.match(/findAll\([\s\S]*?\n\s*\}\n\s*\n\s*\/\*\*/)?.[0] ?? source;
+  if (!findAllBlock.includes('EmployeeListQueryDto') || !findAllBlock.includes('normalizeEmployeeListQuery')) {
+    report(employeesControllerPath, 'employees list route must use EmployeeListQueryDto and normalizeEmployeeListQuery.');
+  }
+  if (/@Query\('(?:includeTerminated|page|pageSize|tab|q|sortBy|sortDir|bulk)'/.test(findAllBlock)) {
+    report(employeesControllerPath, 'employees list route must not define per-field @Query decorators.');
   }
 }
 

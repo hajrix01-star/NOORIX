@@ -1,3 +1,5 @@
+import type { EmployeesPagedQueryInput } from '../domains/apiEndpoints/hr-query';
+
 /**
  * مفاتيح React Query — الموارد البشرية (إجازات، إقامات، مسيرات، مستندات، …)
  */
@@ -55,16 +57,8 @@ export const hrKeys = {
   terminationSalaryExistsByEmployee: (companyId: string, empId: unknown) =>
     ['termination-settlement-salary-exists', companyId, empId] as const,
 
-  employeesPaged: (
-    companyId: string,
-    viewMode: string,
-    listPage: number,
-    pageSize: number,
-    debouncedQ: string,
-    sortKey: string,
-    sortDir: string,
-  ) =>
-    ['employees-paged', companyId, viewMode, listPage, pageSize, debouncedQ, sortKey, sortDir] as const,
+  employeesPaged: (query: EmployeesPagedQueryInput) =>
+    ['employees-paged', query.companyId, query.tab, query.page, query.pageSize, query.q, query.sortBy, query.sortDir] as const,
 
   customAllowances: (companyId: string, employeeId: string | 'all') =>
     ['custom-allowances', companyId, employeeId] as const,
