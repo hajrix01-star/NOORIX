@@ -35,6 +35,7 @@ import {
 import { nextInvoiceSortState } from './invoicesListSort';
 import { toYmd } from '../../utils/saudiDate';
 import { useInvoicesListActions } from './useInvoicesListActions';
+import { buildInvoiceListFetchParams } from './invoicesListQueryModel';
 
 /**
  * منطق شاشة قائمة الفواتير — عرض فقط يبقى في InvoicesListScreen.jsx
@@ -216,25 +217,50 @@ export function useInvoicesListScreen() {
 
   const kindForApi = filterKind || urlExtra.kind || undefined;
 
+  const invoiceListFetchParams = useMemo(
+    () =>
+      buildInvoiceListFetchParams({
+        companyId,
+        startDate: invoiceQueryStartDate,
+        endDate: invoiceQueryEndDate,
+        kind: kindForApi,
+        sortBy: sortKey,
+        sortDir,
+        supplierId: filterSupplierId,
+        supplierCategoryId: filterSupplierCategoryId,
+        q: debouncedQ,
+        categoryId: urlExtra.categoryId,
+        expenseLineId: urlExtra.expenseLineId,
+        includeCancelled: showCancelled,
+        hasNotes: filterHasNotesOnly,
+        vaultId: filterVaultId,
+        batchId: invoiceBatchIdFromUrl,
+        createdByUserId: filterCreatedByUserId,
+      }),
+    [
+      companyId,
+      invoiceQueryStartDate,
+      invoiceQueryEndDate,
+      kindForApi,
+      sortKey,
+      sortDir,
+      filterSupplierId,
+      filterSupplierCategoryId,
+      debouncedQ,
+      urlExtra.categoryId,
+      urlExtra.expenseLineId,
+      showCancelled,
+      filterHasNotesOnly,
+      filterVaultId,
+      invoiceBatchIdFromUrl,
+      filterCreatedByUserId,
+    ],
+  );
+
   const { items, total, sums, inflowByVault, outflowSummary, isLoading, isFetching, isPlaceholderData, isError, error } = useInvoices({
-    companyId,
-    startDate: invoiceQueryStartDate,
-    endDate: invoiceQueryEndDate,
+    ...invoiceListFetchParams,
     page,
     pageSize: PAGE_SIZE,
-    kind: kindForApi,
-    supplierId: filterSupplierId || undefined,
-    supplierCategoryId: filterSupplierCategoryId || undefined,
-    sortBy: sortKey,
-    sortDir,
-    q: debouncedQ || undefined,
-    categoryId: urlExtra.categoryId || undefined,
-    expenseLineId: urlExtra.expenseLineId || undefined,
-    includeCancelled: showCancelled,
-    hasNotes: filterHasNotesOnly || undefined,
-    vaultId: filterVaultId || undefined,
-    batchId: invoiceBatchIdFromUrl || undefined,
-    createdByUserId: filterCreatedByUserId || undefined,
   });
 
   const tableData = useMemo(
@@ -315,7 +341,6 @@ export function useInvoicesListScreen() {
     fmt,
     showToast,
     setExportBusy,
-    vaultsList,
     serverAll,
   });
 
@@ -368,33 +393,52 @@ export function useInvoicesListScreen() {
   );
 
   const importExportExportFetcher = useCallback(async () => {
-    const kindForExport = filterKind || (urlExtra.kind ? urlExtra.kind.split(',')[0] : '');
-    const res = await getInvoices(
+    const importExportFetchParams = buildInvoiceListFetchParams({
       companyId,
-      dateFilter.startDate,
-      dateFilter.endDate,
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      kind: filterKind || (urlExtra.kind ? urlExtra.kind.split(',')[0] : ''),
+      sortBy: sortKey,
+      sortDir,
+      supplierId: filterSupplierId,
+      supplierCategoryId: filterSupplierCategoryId,
+      q: debouncedQ,
+      categoryId: urlExtra.categoryId,
+      expenseLineId: urlExtra.expenseLineId,
+      includeCancelled: true,
+      hasNotes: filterHasNotesOnly,
+      vaultId: filterVaultId,
+      batchId: invoiceBatchIdFromUrl,
+      createdByUserId: filterCreatedByUserId,
+    });
+    const res = await getInvoices(
+      importExportFetchParams.companyId,
+      importExportFetchParams.startDate,
+      importExportFetchParams.endDate,
       1,
       2000,
+      importExportFetchParams.batchId || null,
       undefined,
-      undefined,
-      kindForExport || undefined,
-      undefined,
-      undefined,
-      filterSupplierId || undefined,
-      filterSupplierCategoryId || undefined,
-      debouncedQ || undefined,
-      urlExtra.categoryId || undefined,
-      urlExtra.expenseLineId || undefined,
-      true,
-      filterHasNotesOnly || undefined,
-      filterVaultId || undefined,
-      filterCreatedByUserId || undefined,
+      importExportFetchParams.kind,
+      importExportFetchParams.sortBy,
+      importExportFetchParams.sortDir,
+      importExportFetchParams.supplierId,
+      importExportFetchParams.supplierCategoryId,
+      importExportFetchParams.q,
+      importExportFetchParams.categoryId,
+      importExportFetchParams.expenseLineId,
+      importExportFetchParams.includeCancelled,
+      importExportFetchParams.hasNotes,
+      importExportFetchParams.vaultId,
+      importExportFetchParams.createdByUserId,
     );
     return unwrapApiList<any>(res, t('exportFailed')).map(formatInvoiceForExport);
   }, [
     companyId,
     dateFilter.startDate,
     dateFilter.endDate,
+    sortKey,
+    sortDir,
     filterKind,
     urlExtra.kind,
     urlExtra.categoryId,
@@ -404,6 +448,7 @@ export function useInvoicesListScreen() {
     debouncedQ,
     filterHasNotesOnly,
     filterVaultId,
+    invoiceBatchIdFromUrl,
     filterCreatedByUserId,
     t,
   ]);

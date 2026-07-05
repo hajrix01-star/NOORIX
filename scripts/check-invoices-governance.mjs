@@ -20,6 +20,8 @@ const violations = [];
 const requiredFiles = [
   path.join(invoicesRoot, 'invoicesListFilterModel.ts'),
   path.join(invoicesRoot, 'invoicesListFilterModel.test.ts'),
+  path.join(invoicesRoot, 'invoicesListQueryModel.ts'),
+  path.join(invoicesRoot, 'invoicesListQueryModel.test.ts'),
 ];
 
 function walk(dir) {
@@ -63,6 +65,14 @@ function inspectFile(filePath) {
   if (!allowedPrintHtmlFiles.has(filePath) && /buildPrintTableHtml\b/.test(source)) {
     report(filePath, 'print table HTML generation must stay in approved invoice print builders/actions only.');
   }
+
+  if (
+    /filter(?:SupplierId|SupplierCategoryId|VaultId|CreatedByUserId|HasNotesOnly)\s*\|\|\s*undefined/.test(source) ||
+    /urlExtra\.(?:categoryId|expenseLineId)\s*\|\|\s*undefined/.test(source) ||
+    /debouncedQ\s*\|\|\s*undefined/.test(source)
+  ) {
+    report(filePath, 'invoice filter normalization must stay in invoicesListQueryModel.');
+  }
 }
 
 for (const requiredFile of requiredFiles) {
@@ -79,11 +89,33 @@ if (fs.existsSync(filtersToolbarPath)) {
   }
 }
 
+const listScreenHookPath = path.join(invoicesRoot, 'useInvoicesListScreen.ts');
+if (fs.existsSync(listScreenHookPath)) {
+  const listScreenSource = fs.readFileSync(listScreenHookPath, 'utf8');
+  if (!listScreenSource.includes('./invoicesListQueryModel')) {
+    report(listScreenHookPath, 'invoice list hook must normalize API filters through invoicesListQueryModel.');
+  }
+}
+
+const listActionsPath = path.join(invoicesRoot, 'useInvoicesListActions.ts');
+if (fs.existsSync(listActionsPath)) {
+  const listActionsSource = fs.readFileSync(listActionsPath, 'utf8');
+  if (!listActionsSource.includes('./invoicesListQueryModel')) {
+    report(listActionsPath, 'invoice export and print actions must normalize API filters through invoicesListQueryModel.');
+  }
+  if (/handlePrintCashReport/.test(listActionsSource)) {
+    report(listActionsPath, 'cash report printing is owned by InvoicesCashReportModal; do not keep duplicate action handlers.');
+  }
+}
+
 const roadmapPath = path.join(root, 'docs', 'FILTER_CENTRALITY_ROADMAP.md');
 if (fs.existsSync(roadmapPath)) {
   const roadmap = fs.readFileSync(roadmapPath, 'utf8');
   if (!roadmap.includes('invoicesListFilterModel')) {
     report(roadmapPath, 'roadmap must document the invoice filter option model.');
+  }
+  if (!roadmap.includes('invoicesListQueryModel')) {
+    report(roadmapPath, 'roadmap must document the invoice query model.');
   }
 }
 

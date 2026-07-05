@@ -10,6 +10,7 @@ export {
   buildInvoiceSupplierFilterOptions,
   buildInvoiceVaultFilterOptions,
 } from './invoicesListFilterModel';
+export { buildInvoiceListFetchParams } from './invoicesListQueryModel';
 export {
   buildInvoiceListColumns,
   buildInvoiceListFooterRow,
