@@ -12,6 +12,7 @@ import { buildActiveCancelledPartialStatusMap } from '../../../../constants/badg
 import { mapApiBatchSummaryToTableRow } from '../utils/purchasesBatchMappers';
 import { vatRateDecimalFromCompany } from '../../../../utils/vatRate';
 import { PAGE_SIZE } from '../constants';
+import { normalizePurchaseBatchSummariesQueryInput } from '../../../../services/domains/apiEndpoints/purchase-batch-query';
 
 export function usePurchasesBatchData(options: {
   companyId: string;
@@ -71,7 +72,15 @@ export function usePurchasesBatchData(options: {
     isError: batchesError,
     error: batchesErr,
   } = useApiQuery<any>({
-    queryKey: purchaseKeys.batchSummaries(companyId, dateFilter.startDate, dateFilter.endDate, debouncedBatchQ, lang),
+    queryKey: purchaseKeys.batchSummaries(
+      normalizePurchaseBatchSummariesQueryInput({
+        companyId,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        q: debouncedBatchQ,
+        lang,
+      }),
+    ),
     queryFn: () => getPurchaseBatchSummaries(
       companyId,
       dateFilter.startDate,

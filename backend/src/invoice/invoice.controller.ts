@@ -38,9 +38,11 @@ import { CreateInvoiceDto }      from './dto/create-invoice.dto';
 import { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { UpdateInvoiceDto }      from './dto/update-invoice.dto';
 import { InvoiceListQueryDto } from './dto/invoice-list-query.dto';
+import { PurchaseBatchSummariesQueryDto } from './dto/purchase-batch-summaries-query.dto';
 import { InvoiceService }        from './invoice.service';
 import { resolveInvoiceListKindFilter } from './invoice-list-resolved-kind.util';
 import { normalizeInvoiceListQuery } from './invoice-list-query-contract.util';
+import { normalizePurchaseBatchSummariesQuery } from './purchase-batch-summaries-query-contract.util';
 
 @Controller('invoices')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -74,12 +76,11 @@ export class InvoiceController {
   @RequireAnyPermission('INVOICES_READ', 'PURCHASES_READ')
   async purchaseBatchSummaries(
     @CompanyId() companyId: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate')   endDate?:   string,
-    @Query('q')         q?:         string,
-    @Query('lang')      lang?:      string,
+    @Query() query: PurchaseBatchSummariesQueryDto,
   ) {
-    return this.invoiceService.findPurchaseBatchSummaries(requireCompanyId(companyId), startDate, endDate, q, lang);
+    return this.invoiceService.findPurchaseBatchSummaries(
+      normalizePurchaseBatchSummariesQuery(requireCompanyId(companyId), query),
+    );
   }
 
   @Get('day-close-report')

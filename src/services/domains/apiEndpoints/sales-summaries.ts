@@ -9,6 +9,7 @@ import {
 import { postSalesSummaryWithCompat } from '../../../modules/Sales/utils/salesApiCompat';
 import type { SalesListShiftFilter } from '../../../modules/Sales/constants/salesShift';
 import { listShiftFilterToApiParam } from '../../../modules/Sales/constants/salesShift';
+import { buildPurchaseBatchSummariesApiQuery } from './purchase-batch-query';
 
 // ——— ملخصات المبيعات اليومية ———
 export async function createDailySalesSummary(body: unknown): Promise<ApiParsedResult> {
@@ -164,11 +165,7 @@ export async function getPurchaseBatchSummaries(
   q?: string,
   lang?: string,
 ): Promise<ApiParsedResult> {
-  const params: Record<string, string> = { companyId: String(companyId) };
-  if (startDate) params.startDate = toYmd(startDate);
-  if (endDate) params.endDate = toYmd(endDate);
-  if (q && String(q).trim()) params.q = String(q).trim();
-  if (lang) params.lang = lang;
+  const params = buildPurchaseBatchSummariesApiQuery({ companyId, startDate, endDate, q, lang });
   const res = await apiGet('/api/v1/invoices/purchase-batch-summaries', params);
   if (!res.success) return { success: false, error: res.error, data: { batches: [], rowCount: 0 } };
   const raw = res.data?.data ?? res.data;

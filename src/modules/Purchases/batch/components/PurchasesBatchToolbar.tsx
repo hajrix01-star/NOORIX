@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, DateField, Input } from '../../../../ui';
+import { Button, DateField, Input, SearchableOptionsPicker } from '../../../../ui';
 import { vaultDisplayName } from '../../../../utils/vaultDisplay';
 import { BatchRow } from '../../components/BatchRow';
 
@@ -51,6 +51,10 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
     vatRateDecimal,
     children,
   } = props;
+  const vaultOptions = activeVaults.map((v: any) => ({
+    value: v.id,
+    label: vaultDisplayName(v, language),
+  }));
 
   return (
     <div>
@@ -70,19 +74,18 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
           <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-vault">
             {t('batchPurchasesPayVault')}
           </label>
-          <Input
+          <SearchableOptionsPicker
             id="batch-purchase-vault"
-            type="select"
+            mode="single"
             value={batchVaultId}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onBatchVaultChange(e.target.value)}
-          >
-            <option value="">{t('batchPurchasesVaultPlaceholder')}</option>
-            {activeVaults.map((v: any) => (
-              <option key={v.id} value={v.id}>
-                {vaultDisplayName(v, language)}
-              </option>
-            ))}
-          </Input>
+            onChange={onBatchVaultChange}
+            options={vaultOptions}
+            allowEmpty
+            emptyValue=""
+            emptyLabel={t('batchPurchasesVaultPlaceholder')}
+            disabled={vaultsLoading}
+            size="md"
+          />
         </div>
         <div className="batch-purchases-entry-toolbar__control batch-purchases-entry-toolbar__control--grow min-w-0 flex-1 basis-[min(100%,280px)]">
           <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-batch-notes">

@@ -22,6 +22,7 @@ import { resolveFixedExpenseCoverageForCreate } from './invoice-fixed-expense-co
 import { toPublicInvoiceView } from './invoice-to-public.util';
 import { buildInvoiceListQueryParts } from './invoice-list-query-parts.util';
 import type { InvoiceListQueryContract } from './invoice-list-query-contract.util';
+import type { PurchaseBatchSummariesQueryContract } from './purchase-batch-summaries-query-contract.util';
 import {
   rollupKindAggForInvoiceList,
   computeOutflowSummaryFromSumsByKind,
@@ -342,8 +343,8 @@ export class InvoiceService {
     return loadInvoiceDayCloseReport(this.prisma, this.vaultsService, companyId, dateStr);
   }
 
-  async findPurchaseBatchSummaries(companyId: string, startDate?: string, endDate?: string, q?: string, lang = 'ar') {
-    return loadPurchaseBatchSummaries(this.prisma, companyId, startDate, endDate, q, lang);
+  async findPurchaseBatchSummaries(query: PurchaseBatchSummariesQueryContract) {
+    return loadPurchaseBatchSummaries(this.prisma, query);
   }
 
   async saveAttachment(

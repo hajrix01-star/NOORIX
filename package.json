@@ -24,6 +24,7 @@
     "check:date-control-governance": "node scripts/check-date-control-governance.mjs",
     "check:dashboard-governance": "node scripts/check-dashboard-governance.mjs",
     "check:invoices-governance": "node scripts/check-invoices-governance.mjs",
+    "check:purchases-governance": "node scripts/check-purchases-governance.mjs",
     "check:responsive-governance": "node scripts/check-responsive-governance.mjs",
     "check:timing-governance": "node scripts/check-timing-governance.mjs",
     "check:filter-governance": "node scripts/check-filter-governance.mjs",

@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { buildInvoiceTransactionDateFilter } from './invoice-transaction-date-filter.util';
+import type { PurchaseBatchSummariesQueryContract } from './purchase-batch-summaries-query-contract.util';
 
 const MAX_ROWS = 60_000;
 
@@ -11,12 +12,9 @@ const MAX_ROWS = 60_000;
  */
 export async function loadPurchaseBatchSummaries(
   prisma: TenantPrismaService,
-  companyId: string,
-  startDate?: string,
-  endDate?: string,
-  q?: string,
-  lang = 'ar',
+  query: PurchaseBatchSummariesQueryContract,
 ) {
+  const { companyId, startDate, endDate, q, lang } = query;
   const dateFilter = buildInvoiceTransactionDateFilter(startDate, endDate);
   const where: Prisma.InvoiceWhereInput = {
     companyId,

@@ -20,6 +20,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Dashboard period model | Use `src/modules/Dashboard/dashboardPeriodModel.ts` for dashboard year/month UI period state and labels. |
 | Dashboard API period query | Use `src/services/domains/apiEndpoints/dashboard-period-query.ts` for dashboard overview and dashboard insights query serialization, query-key normalization, and request readiness checks. |
 | Dashboard backend period DTO | Use `backend/src/common/dto/dashboard-period-query.dto.ts` and `DashboardPeriodQueryDto` for dashboard overview and reporting insights validation. |
+| Purchase batch query contract | Use `src/services/domains/apiEndpoints/purchase-batch-query.ts` for frontend purchase batch query serialization/cache keys and `PurchaseBatchSummariesQueryDto` plus `PurchaseBatchSummariesQueryContract` for backend validation/normalization. |
 | Legacy filter imports | Keep `src/shared/components/FilterToolbar.tsx` as a compatibility shim only. |
 | Legacy searchable picker imports | Keep `src/components/common/SearchableOptionsPicker.tsx` as a compatibility shim only. |
 | Domain filters | Keep screen-owned state and API parameters for now; centralize helpers and layout first. |
@@ -55,7 +56,8 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | --- | --- | --- |
 | Invoices | `SmartTable`, `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `DateField`, `Toolbar`, `invoicesListFilterModel`, `invoicesListQueryModel`, `invoice-list-query`, `InvoiceListQueryDto`, `InvoiceListQueryContract`, print table builders. | Closed for frontend/backend query centrality; visual harmonization waits for the final visual pass. |
 | Dashboard | `FilterToolbar`, `DateMonthScopePicker`, `SearchableOptionsPicker`, `SmartTable`, `Toolbar`, `dashboardPeriodModel`, `dashboard-period-query`, `DashboardPeriodQueryDto`, protected calendar print table builder. | Current section pass; keep calendar print generation protected and action bars centralized. |
-| Orders and purchases | Pending section pass. | Reuse invoice filter composition where behavior matches. |
+| Purchases | `DateFilterBar`, `FilterToolbar`, `SearchableOptionsPicker`, `SmartTable`, `purchase-batch-query`, `PurchaseBatchSummariesQueryDto`, `PurchaseBatchSummariesQueryContract`. | Current section pass; editable batch-entry grid is protected until a dedicated table-editor design pass. |
+| Orders | Pending section pass. | Reuse invoice filter composition where behavior matches. |
 | HR | Pending section pass. | Keep payroll/residency financial behavior protected. |
 | Financial reports | Pending section pass. | Convert only with protected report-specific review. |
 
@@ -67,5 +69,6 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | `npm.cmd run check:date-control-governance` | Passes. |
 | `npm.cmd run check:dashboard-governance` | Passes when the dashboard section is touched. |
 | `npm.cmd run check:invoices-governance` | Passes. |
+| `npm.cmd run check:purchases-governance` | Passes when the purchases section is touched. |
 | `npm.cmd run check:table-governance` | Passes. |
 | TypeScript | Passes. |

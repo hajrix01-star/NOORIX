@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { Button, DateField, Input, FmtNum, Card, FormRow } from '../../../ui';
+import { Button, DateField, Input, FmtNum, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
 import { splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
 import { useBatchRowFieldIds } from './useBatchRowLogic';
 
@@ -20,6 +20,10 @@ export function BatchEditInvoiceLine({
   const rate = vatRateDecimal ?? TAX_RATE;
   const ids = useBatchRowFieldIds();
   const cancelled = inv.status === 'cancelled';
+  const kindOptions = [
+    { value: 'purchase', label: t('purchaseType') },
+    { value: 'expense', label: t('expenseType') },
+  ];
 
   if (variant === 'card') {
     return (
@@ -130,17 +134,15 @@ export function BatchEditInvoiceLine({
               <span className="nx-cell-muted-sm">{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</span>
             </div>
           ) : (
-            <Input
+            <SearchableOptionsPicker
               id={ids.kind}
               label={t('kind')}
-              type="select"
-              size="sm"
+              mode="single"
               value={inv.kind || 'purchase'}
-              onChange={(e: any) => updateInv(i, 'kind', e.target.value)}
-            >
-              <option value="purchase">{t('purchaseType')}</option>
-              <option value="expense">{t('expenseType')}</option>
-            </Input>
+              onChange={(value: string) => updateInv(i, 'kind', value)}
+              options={kindOptions}
+              size="sm"
+            />
           )}
         </div>
       </Card>
@@ -218,17 +220,15 @@ export function BatchEditInvoiceLine({
         {cancelled ? (
           <span className="nx-cell-muted-sm">{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</span>
         ) : (
-          <Input
-            type="select"
+          <SearchableOptionsPicker
+            mode="single"
             size="sm"
             value={inv.kind || 'purchase'}
-            onChange={(e: any) => updateInv(i, 'kind', e.target.value)}
+            onChange={(value: string) => updateInv(i, 'kind', value)}
+            options={kindOptions}
             className="w-full"
             aria-label={`${t('kind')} — ${t('batchRowLineAriaLabel', i + 1)}`}
-          >
-            <option value="purchase">{t('purchaseType')}</option>
-            <option value="expense">{t('expenseType')}</option>
-          </Input>
+          />
         )}
       </td>
       <td className="p-1.5">

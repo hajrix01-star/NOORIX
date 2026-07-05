@@ -4,14 +4,13 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, Checkbox, DateField, FileTrigger, FormRow, cn } from '../../../ui';
+import { Input, Button, Card, Checkbox, DateField, FileTrigger, FormRow, SearchableOptionsPicker, cn } from '../../../ui';
 import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
   BatchSupplierBookmarkButton,
   BatchNetTaxReadonly,
   BatchTaxToggleButton,
-  BatchKindOptions,
 } from './BatchRowParts';
 import { isWarrantyFollowUpKind } from '../utils/batchRowModel';
 
@@ -33,6 +32,22 @@ function BatchRowTable(props: Record<string, any>) {
   const dateTitle = useMemo(
     () => (maxInvoiceDate ? `${t('date')} — ${maxInvoiceDate}` : undefined),
     [maxInvoiceDate, t],
+  );
+  const kindOptions = useMemo(
+    () => [
+      { value: 'purchase', label: t('purchaseType') },
+      { value: 'expense', label: t('expenseType') },
+      { value: 'fixed_expense', label: t('fixedExpenseType') },
+    ],
+    [t],
+  );
+  const categoryPickerOptions = useMemo(
+    () =>
+      categoryOptions.map((c: any) => ({
+        value: c.id,
+        label: `${c.icon || ''} ${lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}`.trim(),
+      })),
+    [categoryOptions, lang],
   );
 
   return (
@@ -102,11 +117,10 @@ function BatchRowTable(props: Record<string, any>) {
       </td>
 
       <td style={cp}>
-        <Input
-          type="select"
+        <SearchableOptionsPicker
+          mode="single"
           value={row.kind}
-          onChange={(e: any) => {
-            const kind = e.target.value;
+          onChange={(kind: string) => {
             onUpdate(index, {
               kind,
               categoryId: '',
@@ -114,10 +128,10 @@ function BatchRowTable(props: Record<string, any>) {
               warrantyFollowUp: isWarrantyFollowUpKind(kind) ? !!row.warrantyFollowUp : false,
             });
           }}
+          options={kindOptions}
+          size="sm"
           aria-label={`${t('type')} — ${t('batchRowLineAriaLabel', index + 1)}`}
-        >
-          <BatchKindOptions t={t} />
-        </Input>
+        />
       </td>
 
       <td className="text-center align-middle" style={cp}>
@@ -136,22 +150,20 @@ function BatchRowTable(props: Record<string, any>) {
       </td>
 
       <td style={cp}>
-        <Input
-          type="select"
+        <SearchableOptionsPicker
+          mode="single"
           value={row.categoryId || ''}
-          onChange={(e: any) => {
-            const cat = categoryOptions.find((c: any) => c.id === e.target.value);
+          onChange={(value: string) => {
+            const cat = categoryOptions.find((c: any) => c.id === value);
             handleCategoryChange(cat || null);
           }}
+          options={categoryPickerOptions}
+          allowEmpty
+          emptyValue=""
+          emptyLabel={t('categoryPlaceholder')}
+          size="sm"
           aria-label={`${t('category')} — ${t('batchRowLineAriaLabel', index + 1)}`}
-        >
-          <option value="">{t('categoryPlaceholder')}</option>
-          {categoryOptions.map((c: any) => (
-            <option key={c.id} value={c.id}>
-              {(c.icon || '')} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
-            </option>
-          ))}
-        </Input>
+        />
       </td>
 
       <td className="text-center" style={cp}>
@@ -218,6 +230,22 @@ function BatchRowStack(props: Record<string, any>) {
   const dateTitle = useMemo(
     () => (maxInvoiceDate ? `${t('date')} — ≤ ${maxInvoiceDate}` : undefined),
     [maxInvoiceDate, t],
+  );
+  const kindOptions = useMemo(
+    () => [
+      { value: 'purchase', label: t('purchaseType') },
+      { value: 'expense', label: t('expenseType') },
+      { value: 'fixed_expense', label: t('fixedExpenseType') },
+    ],
+    [t],
+  );
+  const categoryPickerOptions = useMemo(
+    () =>
+      categoryOptions.map((c: any) => ({
+        value: c.id,
+        label: `${c.icon || ''} ${lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}`.trim(),
+      })),
+    [categoryOptions, lang],
   );
 
   return (
@@ -312,14 +340,12 @@ function BatchRowStack(props: Record<string, any>) {
           title={dateTitle}
         />
 
-        <Input
+        <SearchableOptionsPicker
           id={ids.kind}
           label={t('type')}
-          type="select"
-          size="sm"
+          mode="single"
           value={row.kind}
-          onChange={(e: any) => {
-            const kind = e.target.value;
+          onChange={(kind: string) => {
             onUpdate(index, {
               kind,
               categoryId: '',
@@ -327,9 +353,9 @@ function BatchRowStack(props: Record<string, any>) {
               warrantyFollowUp: isWarrantyFollowUpKind(kind) ? !!row.warrantyFollowUp : false,
             });
           }}
-        >
-          <BatchKindOptions t={t} />
-        </Input>
+          options={kindOptions}
+          size="sm"
+        />
 
         {isWarrantyFollowUpKind(row.kind) ? (
           <Checkbox
@@ -341,24 +367,21 @@ function BatchRowStack(props: Record<string, any>) {
           />
         ) : null}
 
-        <Input
+        <SearchableOptionsPicker
           id={ids.category}
           label={t('category')}
-          type="select"
-          size="sm"
+          mode="single"
           value={row.categoryId || ''}
-          onChange={(e: any) => {
-            const cat = categoryOptions.find((c: any) => c.id === e.target.value);
+          onChange={(value: string) => {
+            const cat = categoryOptions.find((c: any) => c.id === value);
             handleCategoryChange(cat || null);
           }}
-        >
-          <option value="">{t('categoryPlaceholder')}</option>
-          {categoryOptions.map((c: any) => (
-            <option key={c.id} value={c.id}>
-              {(c.icon || '')} {lang === 'en' ? c.nameEn || c.nameAr : c.nameAr || c.nameEn}
-            </option>
-          ))}
-        </Input>
+          options={categoryPickerOptions}
+          allowEmpty
+          emptyValue=""
+          emptyLabel={t('categoryPlaceholder')}
+          size="sm"
+        />
 
         <BatchTaxToggleButton row={row} index={index} onUpdate={onUpdate} t={t} density="stack" />
 
