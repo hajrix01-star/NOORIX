@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Modal } from '../../../ui';
+import { Button, Modal, Toolbar } from '../../../ui';
 import {
   fetchAllSalesSummariesForExport,
   getInvoices,
@@ -200,22 +200,22 @@ export function InvoicesCashReportModal({
       <style>{DAY_CLOSE_REPORT_STYLES}</style>
       <style>{INVOICES_CASH_REPORT_PRINT_EXTRA_CSS}</style>
       <div className="day-close-print-root w-full" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <div className="day-close-no-print mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Toolbar className="day-close-no-print mb-4 gap-3" justify="between">
           <div>
             <h2 className="m-0 text-[17px] font-extrabold text-noorix-text">{t('invoicesCashReportTitle')}</h2>
             <p className="m-0 mt-1 text-[12px] text-noorix-muted">
               {companyName || '—'} · {(fromUrl && toUrl ? periodLine : dateFilterLabel) || periodLine}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <Toolbar className="gap-2" printHidden={false}>
             <Button size="sm" onClick={() => window.print()} disabled={state.status !== 'success'}>
               {t('print')}
             </Button>
             <Button size="sm" onClick={onClose}>
               {t('dayCloseClose')}
             </Button>
-          </div>
-        </div>
+          </Toolbar>
+        </Toolbar>
 
         {state.status === 'loading' && (
           <p className="m-0 text-[13px] text-noorix-muted">{t('dayCloseLoading')}</p>

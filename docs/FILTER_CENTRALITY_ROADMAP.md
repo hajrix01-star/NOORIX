@@ -13,11 +13,13 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Filter row layout | Use `src/ui/filters/FilterToolbar` as the official filter-row layout, including `variant="execution"` for invoice-style action/filter strips and `variant="bare"` when a domain-specific layout must preserve direct-child CSS. |
 | Searchable filter inputs | Use `src/ui/filters/SearchableOptionsPicker` as the official searchable single/multi select. |
 | Multi-select CSV values | Use `csvToFilterValues` and `filterValuesToCsv` for comma-separated filter query values. |
+| General action toolbars | Use `src/ui/Toolbar` for non-filter action bars; do not stretch `FilterToolbar` to cover actions that are not filters. |
 | Legacy filter imports | Keep `src/shared/components/FilterToolbar.tsx` as a compatibility shim only. |
 | Legacy searchable picker imports | Keep `src/components/common/SearchableOptionsPicker.tsx` as a compatibility shim only. |
 | Domain filters | Keep screen-owned state and API parameters for now; centralize helpers and layout first. |
 | Visual unification | Defer until screens are routed through the central filter surfaces. |
 | Build from scratch | If a filter surface is cleaner to rebuild centrally than patch locally, build the central version from scratch and migrate usage to it. |
+| Section-by-section execution | Finish one section at a time, starting with invoices, before moving to dashboard, orders, purchases, HR, and reports. |
 
 ## First Implementation Batch
 
@@ -41,11 +43,22 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Financial reports | Convert only after a dedicated protected-report decision. | Do not refactor financial table semantics casually. |
 | Visual pass | Harmonize spacing, responsive behavior, icons, and empty/reset affordances from the central layer. | Final phase only. |
 
+## Section Execution Ledger
+
+| Section | Current central surfaces | Remaining protected work |
+| --- | --- | --- |
+| Invoices | `SmartTable`, `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `DateField`, `Toolbar`, print table builders. | Keep print-only day-close tables protected; visual harmonization waits for the final visual pass. |
+| Dashboard | Pending section pass. | Do not start until invoices governance is stable. |
+| Orders and purchases | Pending section pass. | Reuse invoice filter composition where behavior matches. |
+| HR | Pending section pass. | Keep payroll/residency financial behavior protected. |
+| Financial reports | Pending section pass. | Convert only with protected report-specific review. |
+
 ## Acceptance Checks
 
 | Check | Expected |
 | --- | --- |
 | `npm.cmd run check:filter-governance` | Passes. |
 | `npm.cmd run check:date-control-governance` | Passes. |
+| `npm.cmd run check:invoices-governance` | Passes. |
 | `npm.cmd run check:table-governance` | Passes. |
 | TypeScript | Passes. |

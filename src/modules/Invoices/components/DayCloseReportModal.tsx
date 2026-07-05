@@ -7,7 +7,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport, throwIfApiFailed } from '../../../services/api';
 import { formatSaudiDateISO, getSaudiToday, toYmd } from '../../../utils/saudiDate';
-import { Button, Modal, DateField, Input, cn } from '../../../ui';
+import { Button, Modal, DateField, Toolbar, cn } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { buildDayCloseWhatsAppText, openDayCloseWhatsApp } from '../utils/dayCloseWhatsApp';
@@ -139,9 +139,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
         data-print-mode={multiDayPrint?.length ? 'multi' : 'single'}
       >
         <div className="day-close-report">
-          <div className="day-close-no-print flex flex-col gap-3 mb-[14px]">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-6 flex-wrap">
+          <Toolbar className="day-close-no-print gap-3 mb-[14px]" direction="column" align="stretch">
+            <Toolbar className="gap-2" justify="between">
+              <Toolbar className="gap-6" printHidden={false}>
                 <h2 id="day-close-title" className="m-0 font-extrabold text-[17px]">{reportTitle}</h2>
                 <label className="flex items-center gap-3 text-[13px]">
                   <span className="text-noorix-muted">{t('date')}</span>
@@ -154,8 +154,8 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 <Button size="sm" onClick={() => refetch()} disabled={isFetching}>
                   {t('dayCloseRefresh')}
                 </Button>
-              </div>
-              <div className="flex gap-2 flex-wrap">
+              </Toolbar>
+              <Toolbar className="gap-2" printHidden={false}>
                 <Button
                   size="sm"
                   variant="success"
@@ -176,9 +176,9 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
                 <Button size="sm" onClick={onClose}>
                   {t('dayCloseClose')}
                 </Button>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-end gap-3 pt-1 border-t border-noorix-border border-dashed">
+              </Toolbar>
+            </Toolbar>
+            <Toolbar className="gap-3 pt-1 border-t border-noorix-border border-dashed" align="end">
               <span className="text-[12px] font-bold text-noorix-text">{t('dayClosePrintRangeSection')}</span>
               <label className="flex items-center gap-2 text-[13px]">
                 <span className="text-noorix-muted">{t('dayClosePrintRangeFrom')}</span>
@@ -199,8 +199,8 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
               <Button size="sm" variant="primary" onClick={handlePrintRange} disabled={rangePrintLoading}>
                 {rangePrintLoading ? t('dayClosePrintRangeLoading') : t('dayClosePrintRange')}
               </Button>
-            </div>
-          </div>
+            </Toolbar>
+          </Toolbar>
 
           {isLoading && (
             <p className="m-0 text-[13px] text-noorix-muted">{t('dayCloseLoading')}</p>

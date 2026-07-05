@@ -43,6 +43,8 @@ export { default as FormRow         } from './FormRow';
 export { default as ScreenTabs      } from './ScreenTabs';
 export { default as ScreenShell     } from './ScreenShell';
 export { default as ScreenTitle     } from './ScreenTitle';
+export { default as Toolbar         } from './Toolbar';
+export type { ToolbarProps          } from './Toolbar';
 export { default as KebabMenu       } from './KebabMenu';
 export { FilterToolbar, SearchableOptionsPicker, csvToFilterValues, filterValuesToCsv } from './filters';
 export type { FilterToolbarProps } from './filters';
