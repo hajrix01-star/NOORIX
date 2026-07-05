@@ -17,6 +17,11 @@ const allowedPrintHtmlFiles = new Set([
 
 const violations = [];
 
+const requiredFiles = [
+  path.join(invoicesRoot, 'invoicesListFilterModel.ts'),
+  path.join(invoicesRoot, 'invoicesListFilterModel.test.ts'),
+];
+
 function walk(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, entry.name);
@@ -57,6 +62,28 @@ function inspectFile(filePath) {
 
   if (!allowedPrintHtmlFiles.has(filePath) && /buildPrintTableHtml\b/.test(source)) {
     report(filePath, 'print table HTML generation must stay in approved invoice print builders/actions only.');
+  }
+}
+
+for (const requiredFile of requiredFiles) {
+  if (!fs.existsSync(requiredFile)) {
+    report(requiredFile, 'required invoice centrality file is missing.');
+  }
+}
+
+const filtersToolbarPath = path.join(invoicesRoot, 'components', 'InvoicesListFiltersToolbar.tsx');
+if (fs.existsSync(filtersToolbarPath)) {
+  const filtersToolbarSource = fs.readFileSync(filtersToolbarPath, 'utf8');
+  if (!filtersToolbarSource.includes('../invoicesListFilterModel')) {
+    report(filtersToolbarPath, 'invoice filter toolbar must source option lists from invoicesListFilterModel.');
+  }
+}
+
+const roadmapPath = path.join(root, 'docs', 'FILTER_CENTRALITY_ROADMAP.md');
+if (fs.existsSync(roadmapPath)) {
+  const roadmap = fs.readFileSync(roadmapPath, 'utf8');
+  if (!roadmap.includes('invoicesListFilterModel')) {
+    report(roadmapPath, 'roadmap must document the invoice filter option model.');
   }
 }
 

@@ -14,6 +14,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Searchable filter inputs | Use `src/ui/filters/SearchableOptionsPicker` as the official searchable single/multi select. |
 | Multi-select CSV values | Use `csvToFilterValues` and `filterValuesToCsv` for comma-separated filter query values. |
 | General action toolbars | Use `src/ui/Toolbar` for non-filter action bars; do not stretch `FilterToolbar` to cover actions that are not filters. |
+| Invoice filter option model | Use `src/modules/Invoices/invoicesListFilterModel.ts` for invoice filter option construction; UI components should not rebuild these option lists inline. |
 | Legacy filter imports | Keep `src/shared/components/FilterToolbar.tsx` as a compatibility shim only. |
 | Legacy searchable picker imports | Keep `src/components/common/SearchableOptionsPicker.tsx` as a compatibility shim only. |
 | Domain filters | Keep screen-owned state and API parameters for now; centralize helpers and layout first. |
@@ -47,7 +48,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 
 | Section | Current central surfaces | Remaining protected work |
 | --- | --- | --- |
-| Invoices | `SmartTable`, `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `DateField`, `Toolbar`, print table builders. | Keep print-only day-close tables protected; visual harmonization waits for the final visual pass. |
+| Invoices | `SmartTable`, `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `DateField`, `Toolbar`, `invoicesListFilterModel`, print table builders. | Keep print-only day-close tables protected; visual harmonization waits for the final visual pass. |
 | Dashboard | Pending section pass. | Do not start until invoices governance is stable. |
 | Orders and purchases | Pending section pass. | Reuse invoice filter composition where behavior matches. |
 | HR | Pending section pass. | Keep payroll/residency financial behavior protected. |
