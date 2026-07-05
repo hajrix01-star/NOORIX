@@ -17,7 +17,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Invoice filter option model | Use `src/modules/Invoices/invoicesListFilterModel.ts` for invoice filter option construction; UI components should not rebuild these option lists inline. |
 | Invoice query model | Use `src/modules/Invoices/invoicesListQueryModel.ts` for invoice filter-to-API normalization across list, export, and print paths. |
 | Dashboard period model | Use `src/modules/Dashboard/dashboardPeriodModel.ts` for dashboard year/month UI period state and labels. |
-| Dashboard API period query | Use `src/services/domains/apiEndpoints/dashboard-period-query.ts` for dashboard overview and dashboard insights query serialization. |
+| Dashboard API period query | Use `src/services/domains/apiEndpoints/dashboard-period-query.ts` for dashboard overview and dashboard insights query serialization, query-key normalization, and request readiness checks. |
 | Dashboard backend period DTO | Use `backend/src/common/dto/dashboard-period-query.dto.ts` and `DashboardPeriodQueryDto` for dashboard overview and reporting insights validation. |
 | Legacy filter imports | Keep `src/shared/components/FilterToolbar.tsx` as a compatibility shim only. |
 | Legacy searchable picker imports | Keep `src/components/common/SearchableOptionsPicker.tsx` as a compatibility shim only. |

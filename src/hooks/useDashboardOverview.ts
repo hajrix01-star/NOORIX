@@ -3,6 +3,10 @@ import { dashboardKeys } from '../services/queryKeys/dashboard';
 import type { DashboardInsightsPayload } from '../services/reportingInsightsApi';
 import type { PlReportLike } from '../modules/Dashboard/overview/utils/dashboardOverviewCalculations';
 import { useApiQuery } from './useApiQuery';
+import {
+  hasRequiredDashboardPeriodParams,
+  normalizeDashboardPeriodKeyInput,
+} from '../services/domains/apiEndpoints/dashboard-period-query';
 
 export type DashboardSummaryLike = {
   transactionDate?: string | null;
@@ -70,22 +74,24 @@ export function useDashboardOverview(
     includeCancelledSales = false,
     enabled = true,
   } = p;
+  const dashboardPeriodParams = {
+    companyId,
+    year,
+    yearStart,
+    yearEnd,
+    periodStart,
+    periodEnd,
+    dailyStart,
+    dailyEnd,
+    monthStart,
+    monthEnd,
+    selectedMonth,
+    includeCancelledSales,
+  };
+  const queryKeyInput = normalizeDashboardPeriodKeyInput(dashboardPeriodParams);
 
   const { data, isLoading, isError, error } = useApiQuery<any, DashboardOverviewData>({
-    queryKey: dashboardKeys.overview(
-      companyId,
-      year,
-      yearStart,
-      yearEnd,
-      periodStart,
-      periodEnd,
-      dailyStart ?? null,
-      dailyEnd ?? null,
-      monthStart ?? null,
-      monthEnd ?? null,
-      selectedMonth ?? null,
-      includeCancelledSales ?? false,
-    ),
+    queryKey: dashboardKeys.overview(queryKeyInput),
     queryFn: () => getDashboardOverview({
       companyId,
       year,
@@ -101,7 +107,7 @@ export function useDashboardOverview(
       includeCancelledSales,
     }),
     fallbackMessage: 'Failed to load dashboard overview',
-    enabled: !!companyId && !!year && !!yearStart && !!yearEnd && !!periodStart && !!periodEnd && enabled,
+    enabled: hasRequiredDashboardPeriodParams(dashboardPeriodParams) && enabled,
     select: normalizeDashboardOverview,
   });
 

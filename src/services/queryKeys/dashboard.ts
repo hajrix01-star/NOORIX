@@ -1,3 +1,5 @@
+import type { DashboardPeriodQueryKeyInput } from '../domains/apiEndpoints/dashboard-period-query';
+
 /**
  * مفاتيح React Query — لوحة التحكم (Dashboard)
  * لا تغيّر ترتيب أو ثوابت المصفوفات دون تحديث queryInvalidation إن لزم.
@@ -18,34 +20,21 @@ export const dashboardKeys = {
   salesPackRoot: () => ['sales-dashboard-pack'] as const,
 
   /** نظرة عامة موحّدة — P&L + Sales Pack + Insights + Period Analytics في طلب واحد */
-  overview: (
-    companyId: string,
-    year: number,
-    yearStart: string,
-    yearEnd: string,
-    periodStart: string,
-    periodEnd: string,
-    dailyStart: string | null,
-    dailyEnd: string | null,
-    monthStart: string | null,
-    monthEnd: string | null,
-    selectedMonth: number | null,
-    includeCancelledSales: boolean,
-  ) =>
+  overview: (p: DashboardPeriodQueryKeyInput) =>
     [
       'dashboard-overview',
-      companyId,
-      year,
-      yearStart,
-      yearEnd,
-      periodStart,
-      periodEnd,
-      dailyStart,
-      dailyEnd,
-      monthStart,
-      monthEnd,
-      selectedMonth,
-      includeCancelledSales,
+      p.companyId,
+      p.year,
+      p.yearStart,
+      p.yearEnd,
+      p.periodStart,
+      p.periodEnd,
+      p.dailyStart,
+      p.dailyEnd,
+      p.monthStart,
+      p.monthEnd,
+      p.selectedMonth,
+      p.includeCancelledSales,
     ] as const,
 
   overviewRoot: () => ['dashboard-overview'] as const,

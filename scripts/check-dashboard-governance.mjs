@@ -114,6 +114,41 @@ if (fs.existsSync(reportingInsightsApiPath)) {
   }
 }
 
+const dashboardOverviewHookPath = path.join(root, 'src', 'hooks', 'useDashboardOverview.ts');
+if (fs.existsSync(dashboardOverviewHookPath)) {
+  const source = fs.readFileSync(dashboardOverviewHookPath, 'utf8');
+  if (!source.includes('normalizeDashboardPeriodKeyInput') || !source.includes('hasRequiredDashboardPeriodParams')) {
+    report(dashboardOverviewHookPath, 'dashboard overview hook must use central dashboard period key and readiness helpers.');
+  }
+}
+
+const dashboardInsightsHookPath = path.join(dashboardRoot, 'hooks', 'useDashboardInsights.ts');
+if (fs.existsSync(dashboardInsightsHookPath)) {
+  const source = fs.readFileSync(dashboardInsightsHookPath, 'utf8');
+  if (!source.includes('normalizeDashboardPeriodKeyInput') || !source.includes('hasRequiredDashboardPeriodParams')) {
+    report(dashboardInsightsHookPath, 'dashboard insights hook must use central dashboard period key and readiness helpers.');
+  }
+  if (/function\s+hasRequiredInsightsInputs/.test(source)) {
+    report(dashboardInsightsHookPath, 'dashboard insights hook must not define local query readiness validation.');
+  }
+}
+
+const dashboardQueryKeysPath = path.join(root, 'src', 'services', 'queryKeys', 'dashboard.ts');
+if (fs.existsSync(dashboardQueryKeysPath)) {
+  const source = fs.readFileSync(dashboardQueryKeysPath, 'utf8');
+  if (!source.includes('DashboardPeriodQueryKeyInput')) {
+    report(dashboardQueryKeysPath, 'dashboard query keys must use the shared dashboard period key input type.');
+  }
+}
+
+const reportingInsightsKeysPath = path.join(root, 'src', 'services', 'queryKeys', 'reportingInsightsKeys.ts');
+if (fs.existsSync(reportingInsightsKeysPath)) {
+  const source = fs.readFileSync(reportingInsightsKeysPath, 'utf8');
+  if (!source.includes('DashboardPeriodQueryKeyInput')) {
+    report(reportingInsightsKeysPath, 'reporting insights query keys must use the shared dashboard period key input type.');
+  }
+}
+
 const dashboardOverviewDtoPath = path.join(root, 'backend', 'src', 'dashboard', 'dto', 'dashboard-overview-query.dto.ts');
 if (fs.existsSync(dashboardOverviewDtoPath)) {
   const source = fs.readFileSync(dashboardOverviewDtoPath, 'utf8');

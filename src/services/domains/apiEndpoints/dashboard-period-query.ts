@@ -15,38 +15,92 @@ export interface DashboardPeriodApiParams {
   includeCancelledSales?: boolean;
 }
 
-export function buildDashboardPeriodQuery(params: DashboardPeriodApiParams): Record<string, string | number | boolean> {
-  const query: Record<string, string | number | boolean> = {
-    companyId: String(params.companyId),
+export interface DashboardPeriodQueryKeyInput {
+  companyId: string;
+  year: number;
+  yearStart: string;
+  yearEnd: string;
+  periodStart: string;
+  periodEnd: string;
+  dailyStart: string | null;
+  dailyEnd: string | null;
+  monthStart: string | null;
+  monthEnd: string | null;
+  selectedMonth: number | null;
+  includeCancelledSales: boolean;
+}
+
+export function normalizeDashboardPeriodKeyInput(params: DashboardPeriodApiParams): DashboardPeriodQueryKeyInput {
+  return {
+    companyId: String(params.companyId ?? '').trim(),
     year: params.year,
     yearStart: toYmd(params.yearStart),
     yearEnd: toYmd(params.yearEnd),
     periodStart: toYmd(params.periodStart),
     periodEnd: toYmd(params.periodEnd),
+    dailyStart: optionalYmd(params.dailyStart),
+    dailyEnd: optionalYmd(params.dailyEnd),
+    monthStart: optionalYmd(params.monthStart),
+    monthEnd: optionalYmd(params.monthEnd),
+    selectedMonth:
+      params.selectedMonth != null && params.selectedMonth >= 1 && params.selectedMonth <= 12
+        ? params.selectedMonth
+        : null,
+    includeCancelledSales: params.includeCancelledSales === true,
+  };
+}
+
+export function hasRequiredDashboardPeriodParams(params: DashboardPeriodApiParams): boolean {
+  const query = normalizeDashboardPeriodKeyInput(params);
+  return (
+    !!query.companyId &&
+    Number.isFinite(query.year) &&
+    query.year >= 2000 &&
+    query.year <= 2100 &&
+    !!query.yearStart &&
+    !!query.yearEnd &&
+    !!query.periodStart &&
+    !!query.periodEnd
+  );
+}
+
+export function buildDashboardPeriodQuery(params: DashboardPeriodApiParams): Record<string, string | number | boolean> {
+  const normalized = normalizeDashboardPeriodKeyInput(params);
+  const query: Record<string, string | number | boolean> = {
+    companyId: normalized.companyId,
+    year: normalized.year,
+    yearStart: normalized.yearStart,
+    yearEnd: normalized.yearEnd,
+    periodStart: normalized.periodStart,
+    periodEnd: normalized.periodEnd,
   };
 
-  addOptionalYmd(query, 'dailyStart', params.dailyStart);
-  addOptionalYmd(query, 'dailyEnd', params.dailyEnd);
-  addOptionalYmd(query, 'monthStart', params.monthStart);
-  addOptionalYmd(query, 'monthEnd', params.monthEnd);
+  addOptionalQueryValue(query, 'dailyStart', normalized.dailyStart);
+  addOptionalQueryValue(query, 'dailyEnd', normalized.dailyEnd);
+  addOptionalQueryValue(query, 'monthStart', normalized.monthStart);
+  addOptionalQueryValue(query, 'monthEnd', normalized.monthEnd);
 
-  if (params.selectedMonth != null && params.selectedMonth >= 1 && params.selectedMonth <= 12) {
-    query.selectedMonth = params.selectedMonth;
+  if (normalized.selectedMonth != null) {
+    query.selectedMonth = normalized.selectedMonth;
   }
-  if (params.includeCancelledSales === true) {
+  if (normalized.includeCancelledSales) {
     query.includeCancelledSales = true;
   }
 
   return query;
 }
 
-function addOptionalYmd(
+function optionalYmd(value: string | null | undefined): string | null {
+  const ymd = value != null && value !== '' ? toYmd(value) : '';
+  return ymd || null;
+}
+
+function addOptionalQueryValue(
   query: Record<string, string | number | boolean>,
   key: 'dailyStart' | 'dailyEnd' | 'monthStart' | 'monthEnd',
-  value: string | null | undefined,
+  value: string | null,
 ) {
-  const ymd = value != null && value !== '' ? toYmd(value) : '';
-  if (ymd) {
-    query[key] = ymd;
+  if (value) {
+    query[key] = value;
   }
 }

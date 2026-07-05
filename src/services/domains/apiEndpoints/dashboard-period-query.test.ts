@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildDashboardPeriodQuery } from './dashboard-period-query';
+import {
+  buildDashboardPeriodQuery,
+  hasRequiredDashboardPeriodParams,
+  normalizeDashboardPeriodKeyInput,
+} from './dashboard-period-query';
 
 describe('buildDashboardPeriodQuery', () => {
   it('normalizes shared dashboard date query params', () => {
@@ -44,5 +48,56 @@ describe('buildDashboardPeriodQuery', () => {
         selectedMonth: 13,
       }),
     ).not.toHaveProperty('selectedMonth');
+  });
+
+  it('builds a normalized query key input for dashboard cache keys', () => {
+    expect(
+      normalizeDashboardPeriodKeyInput({
+        companyId: '  company-1  ',
+        year: 2026,
+        yearStart: '2026-01-01T00:00:00.000Z',
+        yearEnd: '2026-12-31T00:00:00.000Z',
+        periodStart: '2026-01-01',
+        periodEnd: '2026-12-31',
+        selectedMonth: 0,
+      }),
+    ).toEqual({
+      companyId: 'company-1',
+      year: 2026,
+      yearStart: '2026-01-01',
+      yearEnd: '2026-12-31',
+      periodStart: '2026-01-01',
+      periodEnd: '2026-12-31',
+      dailyStart: null,
+      dailyEnd: null,
+      monthStart: null,
+      monthEnd: null,
+      selectedMonth: null,
+      includeCancelledSales: false,
+    });
+  });
+
+  it('validates required dashboard period query inputs centrally', () => {
+    expect(
+      hasRequiredDashboardPeriodParams({
+        companyId: 'company-1',
+        year: 2026,
+        yearStart: '2026-01-01',
+        yearEnd: '2026-12-31',
+        periodStart: '2026-01-01',
+        periodEnd: '2026-12-31',
+      }),
+    ).toBe(true);
+
+    expect(
+      hasRequiredDashboardPeriodParams({
+        companyId: '',
+        year: 1999,
+        yearStart: '2026-01-01',
+        yearEnd: '2026-12-31',
+        periodStart: '2026-01-01',
+        periodEnd: '2026-12-31',
+      }),
+    ).toBe(false);
   });
 });
