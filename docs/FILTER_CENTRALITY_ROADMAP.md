@@ -49,8 +49,8 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 
 | Section | Current central surfaces | Remaining protected work |
 | --- | --- | --- |
-| Invoices | `SmartTable`, `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `DateField`, `Toolbar`, `invoicesListFilterModel`, `invoicesListQueryModel`, print table builders. | Keep print-only day-close tables protected; visual harmonization waits for the final visual pass. |
-| Dashboard | Pending section pass. | Do not start until invoices governance is stable. |
+| Invoices | `SmartTable`, `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `DateField`, `Toolbar`, `invoicesListFilterModel`, `invoicesListQueryModel`, print table builders. | Closed for centrality; visual harmonization waits for the final visual pass. |
+| Dashboard | `FilterToolbar`, `DateMonthScopePicker`, `SearchableOptionsPicker`, `SmartTable`, `Toolbar`, `dashboardPeriodModel`, protected calendar print table builder. | Current section pass; keep calendar print generation protected and action bars centralized. |
 | Orders and purchases | Pending section pass. | Reuse invoice filter composition where behavior matches. |
 | HR | Pending section pass. | Keep payroll/residency financial behavior protected. |
 | Financial reports | Pending section pass. | Convert only with protected report-specific review. |
@@ -61,6 +61,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | --- | --- |
 | `npm.cmd run check:filter-governance` | Passes. |
 | `npm.cmd run check:date-control-governance` | Passes. |
+| `npm.cmd run check:dashboard-governance` | Passes when the dashboard section is touched. |
 | `npm.cmd run check:invoices-governance` | Passes. |
 | `npm.cmd run check:table-governance` | Passes. |
 | TypeScript | Passes. |

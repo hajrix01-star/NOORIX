@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '../../../../../ui';
+import { Button, Toolbar } from '../../../../../ui';
 
 export interface DashboardCalendarSelectionBarProps {
   selectedCount: number;
@@ -20,14 +20,14 @@ export default function DashboardCalendarSelectionBar({
       <div className="text-[11px] font-bold mb-1.5">
         {t('dashboardSelectedDays')}: {selectedCount}
       </div>
-      <div className="nx-toolbar">
+      <Toolbar className="gap-2" printHidden={false}>
         <Button size="sm" variant="primary" onClick={onAddSpecial}>
           + {t('dashboardAddAsSpecialDays')}
         </Button>
         <Button size="sm" onClick={onClearSelection}>
           {t('cancel')}
         </Button>
-      </div>
+      </Toolbar>
     </div>
   );
 }

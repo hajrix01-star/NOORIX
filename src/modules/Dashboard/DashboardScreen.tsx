@@ -12,6 +12,11 @@ import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
 import DashboardAppSalesTab from './components/DashboardAppSalesTab';
 import { getSaudiNow } from '../../utils/saudiDate';
 import { getGregorianMonthNames } from '../../ui/date';
+import {
+  buildDashboardPeriodFilter,
+  buildDashboardYearOptions,
+  parseDashboardMonthValue,
+} from './dashboardPeriodModel';
 
 const DASHBOARD_TABS = [
   { id: 'overview', labelKey: 'dashboardOverview', shortLabelKey: 'dashboardOverviewShort' },
@@ -28,17 +33,14 @@ export default function DashboardScreen() {
   const [activeTab, setActiveTab] = useTabSearchParam(DASHBOARD_TAB_IDS, 'overview');
   const [year, setYear]                   = useState(now.year);
   const [selectedMonth, setSelectedMonth] = useState(String(now.month));
-  const selectedMonthNumber = selectedMonth ? Number(selectedMonth) : null;
-  const years = useMemo(() => [now.year, now.year - 1, now.year - 2], [now.year]);
+  const selectedMonthNumber = useMemo(() => parseDashboardMonthValue(selectedMonth), [selectedMonth]);
+  const years = useMemo(() => buildDashboardYearOptions(now.year), [now.year]);
   const monthNames = useMemo(() => getGregorianMonthNames(lang), [lang]);
 
-  const filter = useMemo(() => ({
-    year,
-    selectedMonth: selectedMonthNumber,
-    label: selectedMonthNumber
-      ? `${monthNames[selectedMonthNumber - 1]} ${year}`
-      : `${year}`,
-  }), [monthNames, year, selectedMonthNumber]);
+  const filter = useMemo(
+    () => buildDashboardPeriodFilter(year, selectedMonthNumber, monthNames),
+    [monthNames, year, selectedMonthNumber],
+  );
 
   const dashboardTabItems = useMemo(
     () =>

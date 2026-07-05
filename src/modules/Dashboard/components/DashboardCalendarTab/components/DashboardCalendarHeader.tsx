@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '../../../../../ui';
+import { Button, Toolbar } from '../../../../../ui';
 
 export interface DashboardCalendarHeaderProps {
   monthLabel: string;
@@ -25,7 +25,7 @@ export default function DashboardCalendarHeader({
       <div className="dashboard-calendar-header-title text-[13px] font-bold">
         {t('dashboardCalendar')} — {monthLabel} {year}
       </div>
-      <div className="nx-toolbar">
+      <Toolbar className="gap-2" printHidden={false}>
         <Button size="sm" variant={isSelectionMode ? 'primary' : undefined} onClick={onToggleSelectionMode}>
           {isSelectionMode ? '✓ ' + t('dashboardSelectDaysModeOff') : '☑ ' + t('dashboardSelectDaysMode')}
         </Button>
@@ -35,7 +35,7 @@ export default function DashboardCalendarHeader({
         <Button size="sm" variant="primary" onClick={onPrintCalendar}>
           {t('print')}
         </Button>
-      </div>
+      </Toolbar>
     </div>
   );
 }
