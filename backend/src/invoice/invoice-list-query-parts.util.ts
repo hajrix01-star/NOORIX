@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { buildInvoiceTransactionDateFilter } from './invoice-transaction-date-filter.util';
+import type { InvoiceListQueryContract } from './invoice-list-query-contract.util';
 
 function parseCsvTokens(raw?: string): string[] {
   const s = (raw || '').trim();
@@ -65,28 +66,7 @@ export function buildInvoiceListQueryParts({
   includeCancelled,
   hasNotes,
   requireExpenseLine,
-}: {
-  companyId: string;
-  page: number;
-  pageSize: number;
-  startDate?: string;
-  endDate?: string;
-  batchId?: string;
-  employeeId?: string;
-  kind?: string;
-  supplierId?: string;
-  supplierCategoryId?: string;
-  categoryId?: string;
-  expenseLineId?: string;
-  vaultId?: string;
-  createdByUserId?: string;
-  sortBy: string;
-  sortDir: 'asc' | 'desc' | string;
-  q?: string;
-  includeCancelled: boolean;
-  hasNotes?: string | boolean;
-  requireExpenseLine?: boolean;
-}): {
+}: InvoiceListQueryContract): {
   where: Prisma.InvoiceWhereInput;
   orderBy: Prisma.InvoiceOrderByWithRelationInput[];
   size: number;

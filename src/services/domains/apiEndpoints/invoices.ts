@@ -11,6 +11,7 @@ import {
   throwIfApiFailed,
 } from '../../core/apiHttp';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
+import { buildInvoiceListApiQuery } from './invoice-list-query';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -189,29 +190,29 @@ export async function getInvoices(
   createdByUserId?: string,
   requireExpenseLine?: string | boolean,
 ): Promise<ApiParsedResult> {
-  const params: Record<string, string> = {
-    companyId: String(companyId),
-    page: String(page),
-    pageSize: String(pageSize),
-  };
+  const params = buildInvoiceListApiQuery({
+    companyId,
+    startDate,
+    endDate,
+    page,
+    pageSize,
+    batchId,
+    employeeId,
+    kind,
+    sortBy,
+    sortDir,
+    supplierId,
+    supplierCategoryId,
+    q,
+    categoryId,
+    expenseLineId,
+    includeCancelled,
+    hasNotes,
+    vaultId,
+    createdByUserId,
+    requireExpenseLine,
+  });
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
-  if (startDate) params.startDate = toYmd(startDate);
-  if (endDate) params.endDate = toYmd(endDate);
-  if (batchId) params.batchId = batchId;
-  if (employeeId) params.employeeId = employeeId;
-  if (kind) params.kind = kind;
-  if (sortBy) params.sortBy = sortBy;
-  if (sortDir) params.sortDir = sortDir;
-  if (supplierId) params.supplierId = supplierId;
-  if (supplierCategoryId) params.supplierCategoryId = supplierCategoryId;
-  if (categoryId) params.categoryId = categoryId;
-  if (expenseLineId) params.expenseLineId = expenseLineId;
-  if (vaultId) params.vaultId = vaultId;
-  if (createdByUserId) params.createdByUserId = createdByUserId;
-  if (requireExpenseLine) params.requireExpenseLine = 'true';
-  params.includeCancelled = includeCancelled ? 'true' : 'false';
-  if (q && String(q).trim()) params.q = String(q).trim();
-  if (hasNotes === true) params.hasNotes = 'true';
   const res = await apiGet('/api/v1/invoices', params);
   if (!res.success) return res;
   const data = (res.data as { data?: unknown } | undefined)?.data ?? res.data;

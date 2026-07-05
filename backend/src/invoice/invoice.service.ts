@@ -21,6 +21,7 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { resolveFixedExpenseCoverageForCreate } from './invoice-fixed-expense-coverage.util';
 import { toPublicInvoiceView } from './invoice-to-public.util';
 import { buildInvoiceListQueryParts } from './invoice-list-query-parts.util';
+import type { InvoiceListQueryContract } from './invoice-list-query-contract.util';
 import {
   rollupKindAggForInvoiceList,
   computeOutflowSummaryFromSumsByKind,
@@ -261,51 +262,9 @@ export class InvoiceService {
     return { users };
   }
 
-  async findAll(
-    companyId: string,
-    page = 1,
-    pageSize = 50,
-    startDate?: string,
-    endDate?: string,
-    batchId?: string,
-    employeeId?: string,
-    kind?: string,
-    supplierId?: string,
-    supplierCategoryId?: string,
-    categoryId?: string,
-    expenseLineId?: string,
-    vaultId?: string,
-    createdByUserId?: string,
-    sortBy = 'transactionDate',
-    sortDir: 'asc' | 'desc' | string = 'desc',
-    q?: string,
-    includeCancelled = true,
-    hasNotes?: string | boolean,
-    requireExpenseLine?: boolean,
-    includeExecSummary = true,
-  ) {
-    const { where, orderBy, size, p, aggKey, activeWhere } = buildInvoiceListQueryParts({
-      companyId,
-      page,
-      pageSize,
-      startDate,
-      endDate,
-      batchId,
-      employeeId,
-      kind,
-      supplierId,
-      supplierCategoryId,
-      categoryId,
-      expenseLineId,
-      vaultId,
-      createdByUserId,
-      sortBy,
-      sortDir,
-      q,
-      includeCancelled,
-      hasNotes,
-      requireExpenseLine,
-    });
+  async findAll(query: InvoiceListQueryContract, includeExecSummary = true) {
+    const { companyId } = query;
+    const { where, orderBy, size, p, aggKey, activeWhere } = buildInvoiceListQueryParts(query);
     const aggTtlMs = 60_000;
     const aggNow = Date.now();
     const hitAgg = this.invoiceListAggCache.get(aggKey);

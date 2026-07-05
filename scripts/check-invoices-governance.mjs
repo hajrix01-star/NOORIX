@@ -22,6 +22,11 @@ const requiredFiles = [
   path.join(invoicesRoot, 'invoicesListFilterModel.test.ts'),
   path.join(invoicesRoot, 'invoicesListQueryModel.ts'),
   path.join(invoicesRoot, 'invoicesListQueryModel.test.ts'),
+  path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoice-list-query.ts'),
+  path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoice-list-query.test.ts'),
+  path.join(root, 'backend', 'src', 'invoice', 'dto', 'invoice-list-query.dto.ts'),
+  path.join(root, 'backend', 'src', 'invoice', 'invoice-list-query-contract.util.ts'),
+  path.join(root, 'backend', 'src', 'invoice', 'invoice-list-query-contract.util.spec.ts'),
 ];
 
 function walk(dir) {
@@ -108,6 +113,45 @@ if (fs.existsSync(listActionsPath)) {
   }
 }
 
+const invoicesApiPath = path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoices.ts');
+if (fs.existsSync(invoicesApiPath)) {
+  const source = fs.readFileSync(invoicesApiPath, 'utf8');
+  if (!source.includes('buildInvoiceListApiQuery')) {
+    report(invoicesApiPath, 'GET invoices API must build query params through invoice-list-query.');
+  }
+  if (/const\s+params\s*:\s*Record<string,\s*string>\s*=\s*\{/.test(source)) {
+    report(invoicesApiPath, 'GET invoices API must not rebuild query params inline.');
+  }
+}
+
+const invoiceControllerPath = path.join(root, 'backend', 'src', 'invoice', 'invoice.controller.ts');
+if (fs.existsSync(invoiceControllerPath)) {
+  const source = fs.readFileSync(invoiceControllerPath, 'utf8');
+  if (!source.includes('InvoiceListQueryDto') || !source.includes('normalizeInvoiceListQuery')) {
+    report(invoiceControllerPath, 'invoice controller must use InvoiceListQueryDto and normalizeInvoiceListQuery for list queries.');
+  }
+  const findAllBlock = source.match(/async\s+findAll\([\s\S]*?\n\s*\}\n\n\s*@Get\(':id\/attachment\/download'\)/)?.[0] ?? '';
+  if (/@Query\('(?:page|pageSize|startDate|endDate|kind|supplierId|supplierCategoryId|categoryId|expenseLineId|vaultId|sortBy|sortDir|includeCancelled|hasNotes|createdByUserId|requireExpenseLine)'/.test(findAllBlock)) {
+    report(invoiceControllerPath, 'invoice list controller must not define long per-field @Query decorators.');
+  }
+}
+
+const invoiceServicePath = path.join(root, 'backend', 'src', 'invoice', 'invoice.service.ts');
+if (fs.existsSync(invoiceServicePath)) {
+  const source = fs.readFileSync(invoiceServicePath, 'utf8');
+  if (!source.includes('InvoiceListQueryContract')) {
+    report(invoiceServicePath, 'invoice service must receive the central InvoiceListQueryContract for list queries.');
+  }
+}
+
+const invoiceQueryPartsPath = path.join(root, 'backend', 'src', 'invoice', 'invoice-list-query-parts.util.ts');
+if (fs.existsSync(invoiceQueryPartsPath)) {
+  const source = fs.readFileSync(invoiceQueryPartsPath, 'utf8');
+  if (!source.includes('InvoiceListQueryContract')) {
+    report(invoiceQueryPartsPath, 'invoice query parts builder must consume InvoiceListQueryContract.');
+  }
+}
+
 const roadmapPath = path.join(root, 'docs', 'FILTER_CENTRALITY_ROADMAP.md');
 if (fs.existsSync(roadmapPath)) {
   const roadmap = fs.readFileSync(roadmapPath, 'utf8');
@@ -116,6 +160,12 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('invoicesListQueryModel')) {
     report(roadmapPath, 'roadmap must document the invoice query model.');
+  }
+  if (!roadmap.includes('invoice-list-query')) {
+    report(roadmapPath, 'roadmap must document the frontend invoice API query helper.');
+  }
+  if (!roadmap.includes('InvoiceListQueryDto')) {
+    report(roadmapPath, 'roadmap must document the backend invoice list DTO.');
   }
 }
 
