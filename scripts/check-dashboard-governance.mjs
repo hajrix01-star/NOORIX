@@ -16,6 +16,10 @@ const violations = [];
 const requiredFiles = [
   path.join(dashboardRoot, 'dashboardPeriodModel.ts'),
   path.join(dashboardRoot, 'dashboardPeriodModel.test.ts'),
+  path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'dashboard-period-query.ts'),
+  path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'dashboard-period-query.test.ts'),
+  path.join(root, 'backend', 'src', 'common', 'dto', 'dashboard-period-query.dto.ts'),
+  path.join(root, 'backend', 'src', 'common', 'dto', 'dashboard-period-query.dto.util.spec.ts'),
 ];
 
 function report(filePath, message) {
@@ -88,6 +92,50 @@ if (fs.existsSync(appSalesTabPath)) {
   }
 }
 
+const dashboardOverviewApiPath = path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'dashboard-overview.ts');
+if (fs.existsSync(dashboardOverviewApiPath)) {
+  const source = fs.readFileSync(dashboardOverviewApiPath, 'utf8');
+  if (!source.includes('buildDashboardPeriodQuery')) {
+    report(dashboardOverviewApiPath, 'dashboard overview API must build query params through dashboard-period-query.');
+  }
+  if (/Record<[^>]*>\s*=\s*\{[\s\S]*yearStart/.test(source)) {
+    report(dashboardOverviewApiPath, 'dashboard overview API must not rebuild dashboard date query params inline.');
+  }
+}
+
+const reportingInsightsApiPath = path.join(root, 'src', 'services', 'reportingInsightsApi.ts');
+if (fs.existsSync(reportingInsightsApiPath)) {
+  const source = fs.readFileSync(reportingInsightsApiPath, 'utf8');
+  if (!source.includes('buildDashboardPeriodQuery')) {
+    report(reportingInsightsApiPath, 'reporting insights API must share dashboard-period-query.');
+  }
+  if (/toYmd\(/.test(source)) {
+    report(reportingInsightsApiPath, 'reporting insights API must not normalize dashboard dates locally.');
+  }
+}
+
+const dashboardOverviewDtoPath = path.join(root, 'backend', 'src', 'dashboard', 'dto', 'dashboard-overview-query.dto.ts');
+if (fs.existsSync(dashboardOverviewDtoPath)) {
+  const source = fs.readFileSync(dashboardOverviewDtoPath, 'utf8');
+  if (!source.includes('DashboardPeriodQueryDto')) {
+    report(dashboardOverviewDtoPath, 'dashboard overview DTO must extend the shared DashboardPeriodQueryDto.');
+  }
+  if (source.includes('class-validator') || source.includes('@Matches')) {
+    report(dashboardOverviewDtoPath, 'dashboard overview DTO must not duplicate shared dashboard validation decorators.');
+  }
+}
+
+const dashboardInsightsDtoPath = path.join(root, 'backend', 'src', 'reporting', 'dto', 'dashboard-insights-query.dto.ts');
+if (fs.existsSync(dashboardInsightsDtoPath)) {
+  const source = fs.readFileSync(dashboardInsightsDtoPath, 'utf8');
+  if (!source.includes('DashboardPeriodQueryDto')) {
+    report(dashboardInsightsDtoPath, 'dashboard insights DTO must extend the shared DashboardPeriodQueryDto.');
+  }
+  if (source.includes('class-validator') || source.includes('@Matches')) {
+    report(dashboardInsightsDtoPath, 'dashboard insights DTO must not duplicate shared dashboard validation decorators.');
+  }
+}
+
 const roadmapPath = path.join(root, 'docs', 'FILTER_CENTRALITY_ROADMAP.md');
 if (fs.existsSync(roadmapPath)) {
   const roadmap = fs.readFileSync(roadmapPath, 'utf8');
@@ -96,6 +144,12 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('dashboardPeriodModel')) {
     report(roadmapPath, 'roadmap must document the dashboard period model.');
+  }
+  if (!roadmap.includes('dashboard-period-query')) {
+    report(roadmapPath, 'roadmap must document the dashboard API period query helper.');
+  }
+  if (!roadmap.includes('DashboardPeriodQueryDto')) {
+    report(roadmapPath, 'roadmap must document the shared backend dashboard period DTO.');
   }
 }
 

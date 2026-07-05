@@ -16,6 +16,9 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | General action toolbars | Use `src/ui/Toolbar` for non-filter action bars; do not stretch `FilterToolbar` to cover actions that are not filters. |
 | Invoice filter option model | Use `src/modules/Invoices/invoicesListFilterModel.ts` for invoice filter option construction; UI components should not rebuild these option lists inline. |
 | Invoice query model | Use `src/modules/Invoices/invoicesListQueryModel.ts` for invoice filter-to-API normalization across list, export, and print paths. |
+| Dashboard period model | Use `src/modules/Dashboard/dashboardPeriodModel.ts` for dashboard year/month UI period state and labels. |
+| Dashboard API period query | Use `src/services/domains/apiEndpoints/dashboard-period-query.ts` for dashboard overview and dashboard insights query serialization. |
+| Dashboard backend period DTO | Use `backend/src/common/dto/dashboard-period-query.dto.ts` and `DashboardPeriodQueryDto` for dashboard overview and reporting insights validation. |
 | Legacy filter imports | Keep `src/shared/components/FilterToolbar.tsx` as a compatibility shim only. |
 | Legacy searchable picker imports | Keep `src/components/common/SearchableOptionsPicker.tsx` as a compatibility shim only. |
 | Domain filters | Keep screen-owned state and API parameters for now; centralize helpers and layout first. |
@@ -50,7 +53,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Section | Current central surfaces | Remaining protected work |
 | --- | --- | --- |
 | Invoices | `SmartTable`, `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `DateField`, `Toolbar`, `invoicesListFilterModel`, `invoicesListQueryModel`, print table builders. | Closed for centrality; visual harmonization waits for the final visual pass. |
-| Dashboard | `FilterToolbar`, `DateMonthScopePicker`, `SearchableOptionsPicker`, `SmartTable`, `Toolbar`, `dashboardPeriodModel`, protected calendar print table builder. | Current section pass; keep calendar print generation protected and action bars centralized. |
+| Dashboard | `FilterToolbar`, `DateMonthScopePicker`, `SearchableOptionsPicker`, `SmartTable`, `Toolbar`, `dashboardPeriodModel`, `dashboard-period-query`, `DashboardPeriodQueryDto`, protected calendar print table builder. | Current section pass; keep calendar print generation protected and action bars centralized. |
 | Orders and purchases | Pending section pass. | Reuse invoice filter composition where behavior matches. |
 | HR | Pending section pass. | Keep payroll/residency financial behavior protected. |
 | Financial reports | Pending section pass. | Convert only with protected report-specific review. |
