@@ -3,6 +3,9 @@
  */
 import { toYmd } from '../../../utils/saudiDate';
 
+export const DASHBOARD_APP_SALES_YEAR_SPAN_OPTIONS = [1, 2, 3] as const;
+export type DashboardAppSalesYearSpan = (typeof DASHBOARD_APP_SALES_YEAR_SPAN_OPTIONS)[number];
+
 const MONTH_NAMES_AR = [
   'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
@@ -62,6 +65,26 @@ export type AppSalesTableFooter = {
   periodPercent: number;
   hasPeriodData: boolean;
 };
+
+export function parseDashboardAppSalesYearSpan(value: unknown): DashboardAppSalesYearSpan {
+  const parsed = Number(value);
+  return DASHBOARD_APP_SALES_YEAR_SPAN_OPTIONS.includes(parsed as DashboardAppSalesYearSpan)
+    ? (parsed as DashboardAppSalesYearSpan)
+    : 1;
+}
+
+export function buildDashboardAppSalesYearSpanOptions(t: (key: string) => string) {
+  return DASHBOARD_APP_SALES_YEAR_SPAN_OPTIONS.map((span) => ({
+    value: String(span),
+    label: t(
+      span === 1
+        ? 'dashboardAppSalesYears1'
+        : span === 2
+          ? 'dashboardAppSalesYears2'
+          : 'dashboardAppSalesYears3',
+    ),
+  }));
+}
 
 /** صف المجموع — نسبة التطبيقات الكلية لكل شهر والفترة (ليس مجموع نسب القنوات) */
 export function buildAppSalesTableFooter(model: DashboardAppSalesModel): AppSalesTableFooter {

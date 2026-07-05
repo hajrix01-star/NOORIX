@@ -1,12 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildDashboardAppSalesYearSpanOptions,
   buildAppSalesTableFooter,
   buildDashboardAppSalesModel,
   listMonthKeys,
   monthShortLabel,
+  parseDashboardAppSalesYearSpan,
 } from './dashboardAppSalesData';
 
 describe('dashboardAppSalesData', () => {
+  it('normalizes year span filter values and builds picker options', () => {
+    const t = (key: string) => key;
+
+    expect(parseDashboardAppSalesYearSpan('2')).toBe(2);
+    expect(parseDashboardAppSalesYearSpan(3)).toBe(3);
+    expect(parseDashboardAppSalesYearSpan('4')).toBe(1);
+    expect(buildDashboardAppSalesYearSpanOptions(t)).toEqual([
+      { value: '1', label: 'dashboardAppSalesYears1' },
+      { value: '2', label: 'dashboardAppSalesYears2' },
+      { value: '3', label: 'dashboardAppSalesYears3' },
+    ]);
+  });
+
   it('lists 12 months for one year', () => {
     expect(listMonthKeys(2025, 1)).toHaveLength(12);
     expect(listMonthKeys(2025, 1)[0].periodKey).toBe('2025-01');

@@ -77,6 +77,17 @@ if (fs.existsSync(dashboardScreenPath)) {
   }
 }
 
+const appSalesTabPath = path.join(dashboardRoot, 'components', 'DashboardAppSalesTab.tsx');
+if (fs.existsSync(appSalesTabPath)) {
+  const appSalesTabSource = fs.readFileSync(appSalesTabPath, 'utf8');
+  if (!appSalesTabSource.includes('buildDashboardAppSalesYearSpanOptions')) {
+    report(appSalesTabPath, 'dashboard app sales year-span options must be sourced from dashboardAppSalesData.');
+  }
+  if (/YEARS_SPAN_OPTIONS/.test(appSalesTabSource)) {
+    report(appSalesTabPath, 'dashboard app sales tab must not define local year-span option constants.');
+  }
+}
+
 const roadmapPath = path.join(root, 'docs', 'FILTER_CENTRALITY_ROADMAP.md');
 if (fs.existsSync(roadmapPath)) {
   const roadmap = fs.readFileSync(roadmapPath, 'utf8');

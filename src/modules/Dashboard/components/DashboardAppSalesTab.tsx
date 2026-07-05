@@ -7,9 +7,14 @@ import { useDashboardSalesPack } from '../../../hooks/useDashboardSalesPack';
 import { fmt } from '../../../utils/format';
 import { FilterToolbar, SearchableOptionsPicker, SmartTable, FmtNum, type SmartTableFooterSegment } from '../../../ui';
 import { LoadingState, EmptyState } from '../../../components/states';
-import { buildAppSalesTableFooter, buildDashboardAppSalesModel } from '../utils/dashboardAppSalesData';
+import {
+  buildAppSalesTableFooter,
+  buildDashboardAppSalesModel,
+  buildDashboardAppSalesYearSpanOptions,
+  parseDashboardAppSalesYearSpan,
+  type DashboardAppSalesYearSpan,
+} from '../utils/dashboardAppSalesData';
 import { DashboardAppSalesChart } from './DashboardAppSalesChart';
-const YEARS_SPAN_OPTIONS = [1, 2, 3] as const;
 
 type Props = {
   companyId: string | null | undefined;
@@ -18,7 +23,7 @@ type Props = {
 
 export default function DashboardAppSalesTab({ companyId, year }: Props) {
   const { t, lang } = useTranslation();
-  const [yearsSpan, setYearsSpan] = useState<(typeof YEARS_SPAN_OPTIONS)[number]>(1);
+  const [yearsSpan, setYearsSpan] = useState<DashboardAppSalesYearSpan>(1);
 
   const yearEnd = year;
   const yearStart = yearEnd - yearsSpan + 1;
@@ -45,6 +50,7 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
   }, [yearStart, yearEnd, yearsSpan]);
 
   const tableFooter = useMemo(() => buildAppSalesTableFooter(model), [model]);
+  const yearsSpanOptions = useMemo(() => buildDashboardAppSalesYearSpanOptions(t), [t]);
 
   const footerRow = useMemo((): SmartTableFooterSegment[] | null => {
     if (!model.channels.length) return null;
@@ -159,11 +165,8 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
             <SearchableOptionsPicker
               size="sm"
               value={String(yearsSpan)}
-              onChange={(value) => setYearsSpan(Number(value) as (typeof YEARS_SPAN_OPTIONS)[number])}
-              options={YEARS_SPAN_OPTIONS.map((n) => ({
-                value: String(n),
-                label: t(n === 1 ? 'dashboardAppSalesYears1' : n === 2 ? 'dashboardAppSalesYears2' : 'dashboardAppSalesYears3'),
-              }))}
+              onChange={(value) => setYearsSpan(parseDashboardAppSalesYearSpan(value))}
+              options={yearsSpanOptions}
               aria-label={t('dashboardAppSalesYearsSpan')}
             />
           </div>
