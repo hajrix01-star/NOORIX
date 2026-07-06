@@ -50,16 +50,15 @@ import {
   buildInvoiceImportSuccessMessage,
   filterInvoiceSupplierCategories,
   getInvoiceListErrorMessage,
+  isInvoiceListRawInvoice,
   mapInvoicesToListTableRows,
   normalizeInvoiceCreatorFilterOptions,
   resolveInvoiceListCompanyDisplay,
   resolveInvoiceListVaultRowLabel,
   toInvoiceListViewSource,
-  type InvoiceListCategorySource,
   type InvoiceListCreatorFilterOptions,
   type InvoiceListCreatorFilterOptionsResponse,
   type InvoiceListRawInvoice,
-  type InvoiceListVaultFlowLabelRow,
 } from './invoicesListScreenModel';
 
 /**
@@ -209,7 +208,7 @@ export function useInvoicesListScreen() {
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories } = useCategories(companyId);
   const supplierCategories = useMemo(
-    () => filterInvoiceSupplierCategories(flatCategories as InvoiceListCategorySource[]),
+    () => filterInvoiceSupplierCategories(flatCategories),
     [flatCategories],
   );
   const { data: creatorFilterOptions = { users: [] } } = useApiQuery<
@@ -279,7 +278,7 @@ export function useInvoicesListScreen() {
   });
 
   const tableData = useMemo(
-    () => mapInvoicesToListTableRows({ invoices: items as InvoiceListRawInvoice[], t, lang }),
+    () => mapInvoicesToListTableRows({ invoices: items.filter(isInvoiceListRawInvoice), t, lang }),
     [items, t, lang],
   );
 
@@ -345,7 +344,7 @@ export function useInvoicesListScreen() {
   const vaultRowLabel = useCallback(
     (row: InvoiceExecutiveVaultFlowRow) =>
       resolveInvoiceListVaultRowLabel({
-        row: row as InvoiceListVaultFlowLabelRow,
+        row,
         lang,
         unassignedLabel: t('invoicesSalesUnassignedVault'),
       }),

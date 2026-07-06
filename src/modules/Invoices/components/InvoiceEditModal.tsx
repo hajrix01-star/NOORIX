@@ -53,6 +53,22 @@ type InvoiceAttachmentResponseData = {
   attachmentOriginalName?: string | null;
 };
 
+function normalizeAttachmentResponseData(value: unknown): InvoiceAttachmentResponseData {
+  if (!value || typeof value !== 'object') return {};
+  const hasInvoiceAttachment =
+    'hasInvoiceAttachment' in value && typeof value.hasInvoiceAttachment === 'boolean'
+      ? value.hasInvoiceAttachment
+      : undefined;
+  const attachmentOriginalName =
+    'attachmentOriginalName' in value && value.attachmentOriginalName != null
+      ? String(value.attachmentOriginalName)
+      : undefined;
+  return {
+    hasInvoiceAttachment,
+    attachmentOriginalName,
+  };
+}
+
 export function InvoiceEditModal({
   invoice,
   suppliers,
@@ -127,7 +143,7 @@ export function InvoiceEditModal({
     try {
       const res = await uploadInvoiceAttachment(invoice.id, companyId, file);
       throwIfApiFailed(res, t('saveFailed'));
-      const inv = (res?.data || {}) as InvoiceAttachmentResponseData;
+      const inv = normalizeAttachmentResponseData(res?.data);
       setAttachMeta({
         has: !!inv?.hasInvoiceAttachment,
         name: inv?.attachmentOriginalName || file.name,

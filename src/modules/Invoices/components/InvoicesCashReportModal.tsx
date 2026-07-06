@@ -36,6 +36,12 @@ type CashReportState =
   | { status: 'success'; body: string; error: string }
   | { status: 'error'; body: string; error: string };
 
+type CashOnHandSummary = { cashOnHand?: unknown };
+
+function isCashOnHandSummary(value: unknown): value is CashOnHandSummary {
+  return Boolean(value && typeof value === 'object');
+}
+
 export function InvoicesCashReportModal({
   companyId,
   isOpen,
@@ -95,17 +101,7 @@ export function InvoicesCashReportModal({
         );
         throwIfApiFailed(invRes, t('invoicesCashReportLoadFailed'));
 
-        const pack = invRes.data as {
-          inflowByVault?: {
-            vaultId: string;
-            nameAr?: string;
-            nameEn?: string;
-            total: string;
-            outflow: string;
-            remainder: string;
-          }[];
-        };
-        const cashRows = filterCashVaultRows(pack?.inflowByVault, vaultsList);
+        const cashRows = filterCashVaultRows(invRes.data?.inflowByVault, vaultsList);
         const summaries = await fetchAllSalesSummariesForExport(
           companyId,
           invoiceQueryStartDate,
@@ -134,7 +130,7 @@ export function InvoicesCashReportModal({
             noCashVaults: t('invoicesCashReportNoCashVaults'),
           },
           cashRows,
-          summaries: summaries as { cashOnHand?: unknown }[],
+          summaries: summaries.filter(isCashOnHandSummary),
           lang,
           fmt,
         });

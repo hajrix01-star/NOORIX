@@ -1,4 +1,5 @@
 import type { CompanyListItem } from '../../context/appTypes';
+import type { InvoiceListItem } from '../../services/domains/apiEndpoints/invoice-list-response';
 import type { InvoiceExecutiveVaultFlowRow } from './invoiceExecutiveCardsModel';
 import type { InvoiceViewSource } from './invoiceViewModel';
 import {
@@ -25,16 +26,16 @@ export type InvoiceListCreatorFilterOptionsResponse = {
 };
 
 export type InvoiceListCategorySource = {
+  id?: string | null;
+  name?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
   type?: string | null;
   [key: string]: unknown;
 };
 
-export type InvoiceListRawInvoice = InvoiceTableRow & {
-  id?: string | null;
-  supplier?: InvoiceTableNamedEntity | null;
-  createdByUser?: InvoiceListCreatorUser | null;
+export type InvoiceListRawInvoice = InvoiceListItem & InvoiceTableRow & {
   notesOrEmployee?: string | null;
-  [key: string]: unknown;
 };
 
 export type InvoiceListTableRow = InvoiceListRawInvoice & {
@@ -69,13 +70,11 @@ export function resolveInvoiceListCompanyDisplay(input: {
   };
 }
 
-export function filterInvoiceSupplierCategories<TCategory extends InvoiceListCategorySource>(
-  categories?: TCategory[] | null,
-) {
+export function filterInvoiceSupplierCategories(categories?: unknown[] | null): InvoiceListCategorySource[] {
   return (categories ?? []).filter((category) => {
-    const type = String(category.type || '').toLowerCase();
+    const type = String(readRecordField(category, 'type') || '').toLowerCase();
     return type === 'purchase' || type === 'expense';
-  });
+  }).filter(isInvoiceListCategorySource);
 }
 
 export function normalizeInvoiceCreatorFilterOptions(
@@ -87,6 +86,14 @@ export function normalizeInvoiceCreatorFilterOptions(
 }
 
 function isInvoiceListCreatorUser(value: unknown): value is InvoiceListCreatorUser {
+  return Boolean(value && typeof value === 'object');
+}
+
+function isInvoiceListCategorySource(value: unknown): value is InvoiceListCategorySource {
+  return Boolean(value && typeof value === 'object');
+}
+
+export function isInvoiceListRawInvoice(value: unknown): value is InvoiceListRawInvoice {
   return Boolean(value && typeof value === 'object');
 }
 
@@ -134,18 +141,34 @@ export function mapInvoicesToListTableRows(input: {
   );
 }
 
-export function toInvoiceListViewSource(row: InvoiceTableRow | null): InvoiceViewSource | null {
+export function toInvoiceListViewSource(row: InvoiceListRawInvoice | InvoiceTableRow | null): InvoiceViewSource | null {
   if (!row?.id) return null;
-  return row as InvoiceViewSource;
+  return {
+    id: row.id,
+    invoiceNumber: row.invoiceNumber,
+    supplierInvoiceNumber: row.supplierInvoiceNumber,
+    transactionDate: row.transactionDate,
+    kind: row.kind,
+    status: row.status,
+    supplier: readNamedEntity(row, 'supplier'),
+    vault: row.vault,
+    vaultAllocations: row.vaultAllocations,
+    netAmount: row.netAmount,
+    taxAmount: row.taxAmount,
+    totalAmount: row.totalAmount,
+    notes: row.notes,
+    hasInvoiceAttachment: readBooleanField(row, 'hasInvoiceAttachment'),
+    attachmentOriginalName: readStringField(row, 'attachmentOriginalName'),
+  };
 }
 
 export function resolveInvoiceListVaultRowLabel(input: {
-  row: InvoiceListVaultFlowLabelRow;
+  row: InvoiceExecutiveVaultFlowRow | InvoiceListVaultFlowLabelRow;
   lang: InvoiceTableLang;
   unassignedLabel: string;
 }) {
-  if (input.row.unassigned) return input.unassignedLabel;
-  return pickInvoiceTableName(input.lang, input.row, '');
+  if (readBooleanField(input.row, 'unassigned')) return input.unassignedLabel;
+  return pickInvoiceTableName(input.lang, readNamedEntity(input.row), '');
 }
 
 export function buildInvoiceImportSuccessMessage(count: number) {
@@ -154,4 +177,29 @@ export function buildInvoiceImportSuccessMessage(count: number) {
 
 export function getInvoiceListErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function readRecordField(value: unknown, key: string) {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>)[key] : undefined;
+}
+
+function readNamedEntity(value: unknown, key?: string): InvoiceTableNamedEntity | null {
+  const source = key ? readRecordField(value, key) : value;
+  if (!source || typeof source !== 'object') return null;
+  return {
+    name: readStringField(source, 'name'),
+    nameAr: readStringField(source, 'nameAr'),
+    nameEn: readStringField(source, 'nameEn'),
+    type: readStringField(source, 'type'),
+  };
+}
+
+function readStringField(value: unknown, key: string): string | undefined {
+  const field = readRecordField(value, key);
+  return field == null || field === '' ? undefined : String(field);
+}
+
+function readBooleanField(value: unknown, key: string): boolean | undefined {
+  const field = readRecordField(value, key);
+  return typeof field === 'boolean' ? field : undefined;
 }

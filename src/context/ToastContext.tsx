@@ -16,6 +16,12 @@ export type ToastContextValue = {
   dismiss: () => void;
 };
 
+type ToastState = {
+  visible: boolean;
+  message: string;
+  type: ToastType;
+};
+
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 /** تجاهل تكرار نفس الرسالة ونفس النوع خلال هذه المدة (يقلّل الوميض المزدوج). */
@@ -25,7 +31,7 @@ const DEDUPE_MS = 2200;
  * إشعارات عائمة موحّدة عبر التطبيق (بدلاً من useState + Toast في كل شاشة).
  */
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState({ visible: false, message: '', type: 'success' });
+  const [state, setState] = useState<ToastState>({ visible: false, message: '', type: 'success' });
   const lastRef = useRef({ key: '', at: 0 });
 
   const showToast = useCallback((message: unknown, type: ToastType = 'success') => {
@@ -40,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const dismiss = useCallback(() => {
-    setState((s: any) => ({ ...s, visible: false }));
+    setState((s) => ({ ...s, visible: false }));
   }, []);
 
   const value = useMemo<ToastContextValue>(() => ({ showToast, dismiss }), [showToast, dismiss]);

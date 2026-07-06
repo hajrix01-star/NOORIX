@@ -66,8 +66,10 @@ export function pickInvoiceTableName(
   return selected || fallback;
 }
 
-export function formatInvoiceTableDate(value?: string | Date | null) {
-  return value ? formatSaudiDateISO(value) : EMPTY_INVOICE_TABLE_VALUE;
+export function formatInvoiceTableDate(value?: unknown) {
+  return typeof value === 'string' || value instanceof Date
+    ? formatSaudiDateISO(value)
+    : EMPTY_INVOICE_TABLE_VALUE;
 }
 
 export function getInvoiceTableAmountToneClass(row: InvoiceTableRow) {

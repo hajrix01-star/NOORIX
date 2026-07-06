@@ -13,6 +13,7 @@ import {
 import type { InvoiceExportColumnDef, InvoiceExportRow } from './invoicesListExportModel';
 import {
   getInvoiceListErrorMessage,
+  isInvoiceListRawInvoice,
   type InvoiceListRawInvoice,
 } from './invoicesListScreenModel';
 
@@ -78,7 +79,7 @@ function mapRawInvoicesForExport(
   invoices: unknown[],
   mapInvoiceToExportRow: (invoice: InvoiceListRawInvoice) => InvoiceExportRow,
 ) {
-  return (invoices as InvoiceListRawInvoice[]).map(mapInvoiceToExportRow);
+  return invoices.filter(isInvoiceListRawInvoice).map(mapInvoiceToExportRow);
 }
 
 export function useInvoicesListActions(params: InvoiceListActionParams) {

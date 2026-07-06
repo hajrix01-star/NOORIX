@@ -213,6 +213,14 @@ export function isValidDayCloseDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+export function isDayCloseReportData(value: unknown): value is DayCloseReportData {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+export function normalizeDayCloseReportData(value: unknown): DayCloseReportData {
+  return isDayCloseReportData(value) ? value : {};
+}
+
 export function getEmptyDayCloseValue() {
   return EMPTY_REPORT_VALUE;
 }

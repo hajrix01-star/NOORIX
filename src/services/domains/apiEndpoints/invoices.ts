@@ -19,6 +19,20 @@ import {
 
 type JsonRecord = Record<string, unknown>;
 
+function readJsonRecord(value: unknown): JsonRecord {
+  return value && typeof value === 'object' ? (value as JsonRecord) : {};
+}
+
+function unwrapApiEnvelope(value: unknown) {
+  const record = readJsonRecord(value);
+  return 'data' in record ? record.data : value;
+}
+
+function readUnknownArrayField(value: unknown, key: string) {
+  const field = readJsonRecord(value)[key];
+  return Array.isArray(field) ? field : [];
+}
+
 export type CreateAdvanceParams = {
   employeeId: string;
   companyId: string;
@@ -145,7 +159,7 @@ export async function downloadInvoiceAttachment(invoiceId: string, companyId: st
   try {
     const res = await safeFetch(url.toString(), { method: 'GET', headers: h });
     if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as JsonRecord;
+      const data = readJsonRecord(await res.json().catch(() => ({})));
       throw new Error(String(data?.message ?? res.statusText ?? 'فشل التحميل'));
     }
     const blob = await res.blob();
@@ -231,8 +245,7 @@ export async function getInvoiceDayCloseReport(companyId: string, date: unknown)
     date: toYmd(date),
   });
   if (!res.success) return res;
-  const data = (res.data as { data?: unknown } | undefined)?.data ?? res.data;
-  return { success: true, data };
+  return { success: true, data: unwrapApiEnvelope(res.data) };
 }
 
 /** مستخدمو النظام الذين لهم فواتير في الشركة — فلتر قائمة الفواتير */
@@ -241,9 +254,8 @@ export async function getInvoiceCreatorFilterOptions(
 ): Promise<ApiParsedResult<{ users: unknown[] }>> {
   const res = await apiGet('/api/v1/invoices/creator-filter-options', { companyId });
   if (!res.success) return res;
-  const raw = (res.data as { data?: unknown; users?: unknown } | undefined)?.data ?? res.data;
-  const r = raw as { users?: unknown[] } | null;
-  return { success: true, data: { users: Array.isArray(r?.users) ? r.users : [] } };
+  const raw = unwrapApiEnvelope(res.data);
+  return { success: true, data: { users: readUnknownArrayField(raw, 'users') } };
 }
 
 /** جلب كل فواتير دفعة واحدة (ترقيم متتابع) — للطباعة/التعديل/الإلغاء */
@@ -273,9 +285,8 @@ export async function fetchAllInvoicesForBatch(
       'asc',
     );
     throwIfApiFailed(res, 'فشل تحميل فواتير الدفعة');
-    const pack = res.data as { items?: unknown[]; total?: number } | undefined;
-    const items = pack?.items ?? [];
-    total = Number(pack?.total) ?? all.length + items.length;
+    const items = res.data?.items ?? [];
+    total = Number(res.data?.total) || all.length + items.length;
     all.push(...items);
     if (!items.length || items.length < pageSize) break;
     page += 1;
@@ -329,8 +340,8 @@ export async function fetchAllInvoicesForExport({
       undefined,
     );
     throwIfApiFailed(res, 'فشل تحميل الفواتير للتصدير');
-    const pack = res.data as { items?: unknown[]; total?: number } | undefined;
-    const { items = [], total = 0 } = pack || {};
+    const items = res.data?.items ?? [];
+    const total = res.data?.total ?? 0;
     acc.push(...items);
     const t = Number(total) || 0;
     if (acc.length >= t || items.length < pageSize) break;

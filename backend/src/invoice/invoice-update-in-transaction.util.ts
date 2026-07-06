@@ -44,13 +44,13 @@ export async function updateInvoiceInTransaction(
         buildInvoiceOutflowTaxUpdate(oldInvoice, dto, company?.vatRatePercent?.toString() ?? null) ?? {},
       );
     }
-    patchSupplierInvoiceDedupKeyOnUpdateInput(updateData, oldInvoice, dto);
+    const supplierInvoiceDedupKey = patchSupplierInvoiceDedupKeyOnUpdateInput(updateData, oldInvoice, dto);
     const mergedSupplierId =
       dto.supplierId !== undefined ? dto.supplierId : oldInvoice.supplierId;
     await assertNoActiveDuplicateSupplierInvoiceDedupKey(tx, {
       companyId,
       supplierId: mergedSupplierId,
-      dedupKey: (updateData.supplierInvoiceDedupKey as string | null | undefined) ?? null,
+      dedupKey: supplierInvoiceDedupKey,
       excludeInvoiceId: id,
     });
 
@@ -129,12 +129,8 @@ export async function updateInvoiceInTransaction(
         action: 'update',
         entity: 'invoice',
         entityId: id,
-        oldValue: AuditLogService.invoiceToSnapshot(
-          oldInvoice as Parameters<typeof AuditLogService.invoiceToSnapshot>[0],
-        ) as object,
-        newValue: AuditLogService.invoiceToSnapshot(
-          newInvoice as Parameters<typeof AuditLogService.invoiceToSnapshot>[0],
-        ) as object,
+        oldValue: AuditLogService.invoiceToSnapshot(oldInvoice),
+        newValue: AuditLogService.invoiceToSnapshot(newInvoice),
         createdAt: nowSaudi(),
       },
     });

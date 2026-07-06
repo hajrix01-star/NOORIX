@@ -251,7 +251,7 @@ export function buildInvoiceListColumns({
       sortable: true,
       shrink: true,
       width: '11ch',
-      render: (value: unknown) => <span className="nx-cell-muted-sm">{formatInvoiceTableDate(value as string | Date | null)}</span>,
+      render: (value: unknown) => <span className="nx-cell-muted-sm">{formatInvoiceTableDate(value)}</span>,
     },
     {
       key: 'status',

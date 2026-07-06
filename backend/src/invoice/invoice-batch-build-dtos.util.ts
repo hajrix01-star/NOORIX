@@ -26,7 +26,7 @@ export async function buildOutflowDtosForInvoiceBatch(
   for (const item of validItems) {
     let supplierId = item.supplierId || undefined;
     let categoryId = item.categoryId || undefined;
-    let kind = item.kind as 'purchase' | 'expense' | 'hr_expense' | 'fixed_expense';
+    let kind = item.kind;
     let debitAccountId = (item.debitAccountId && item.debitAccountId.trim()) ? item.debitAccountId : undefined;
 
     if (item.expenseLineId) {
@@ -37,7 +37,7 @@ export async function buildOutflowDtosForInvoiceBatch(
       if (line) {
         supplierId = line.supplierId;
         categoryId = line.categoryId;
-        kind = line.kind as 'fixed_expense' | 'expense';
+        kind = line.kind;
         debitAccountId = debitAccountId || line.category?.accountId || undefined;
       }
     }

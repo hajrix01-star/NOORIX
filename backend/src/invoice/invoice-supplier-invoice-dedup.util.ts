@@ -13,6 +13,12 @@ export const INVOICE_KINDS_SUPPLIER_INVOICE_DEDUP = [
 
 export type InvoiceKindWithSupplierInvoiceDedup = (typeof INVOICE_KINDS_SUPPLIER_INVOICE_DEDUP)[number];
 
+export function isInvoiceKindWithSupplierInvoiceDedup(
+  kind: string,
+): kind is InvoiceKindWithSupplierInvoiceDedup {
+  return INVOICE_KINDS_SUPPLIER_INVOICE_DEDUP.some((dedupKind) => dedupKind === kind);
+}
+
 const EASTERN_ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
 const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
 
@@ -36,7 +42,7 @@ export function computeSupplierInvoiceDedupKeyForInvoiceRow(p: {
 }): string | null {
   if (p.status !== 'active') return null;
   if (!p.supplierId) return null;
-  if (!INVOICE_KINDS_SUPPLIER_INVOICE_DEDUP.includes(p.kind as InvoiceKindWithSupplierInvoiceDedup)) {
+  if (!isInvoiceKindWithSupplierInvoiceDedup(p.kind)) {
     return null;
   }
   return normalizeSupplierInvoiceDedupKey(p.supplierInvoiceNumber);
@@ -112,20 +118,22 @@ export function patchSupplierInvoiceDedupKeyOnUpdateInput(
     status: string;
   },
   dto: UpdateInvoiceDto,
-): void {
+): string | null {
   const merged = {
-    supplierId: dto.supplierId !== undefined ? (dto.supplierId as string | null) : oldInvoice.supplierId,
+    supplierId: dto.supplierId !== undefined ? dto.supplierId : oldInvoice.supplierId,
     supplierInvoiceNumber:
       dto.supplierInvoiceNumber !== undefined ?
-        (dto.supplierInvoiceNumber as string | null)
+        dto.supplierInvoiceNumber
       : oldInvoice.supplierInvoiceNumber,
-    kind: dto.kind !== undefined ? (dto.kind as string) : oldInvoice.kind,
-    status: dto.status !== undefined ? (dto.status as string) : oldInvoice.status,
+    kind: dto.kind !== undefined ? dto.kind : oldInvoice.kind,
+    status: dto.status !== undefined ? dto.status : oldInvoice.status,
   };
-  updateData.supplierInvoiceDedupKey = computeSupplierInvoiceDedupKeyForInvoiceRow({
+  const dedupKey = computeSupplierInvoiceDedupKeyForInvoiceRow({
     supplierId: merged.supplierId,
     kind: merged.kind,
     supplierInvoiceNumber: merged.supplierInvoiceNumber,
     status: merged.status,
   });
+  updateData.supplierInvoiceDedupKey = dedupKey;
+  return dedupKey;
 }

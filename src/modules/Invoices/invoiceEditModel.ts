@@ -110,7 +110,7 @@ export function updateInvoiceEditFormField(
   value: unknown,
   vatRateDecimal: number,
 ): InvoiceEditForm {
-  const next = { ...form, [field]: value } as InvoiceEditForm;
+  const next = assignInvoiceEditFormField(form, field, value);
   if (field !== 'totalAmount' && field !== 'isTaxable') return next;
 
   const total = Number.parseFloat(String(next.totalAmount || ''));
@@ -128,6 +128,29 @@ export function updateInvoiceEditFormField(
     netAmount: '',
     taxAmount: '',
   };
+}
+
+function assignInvoiceEditFormField(
+  form: InvoiceEditForm,
+  field: keyof InvoiceEditForm,
+  value: unknown,
+): InvoiceEditForm {
+  switch (field) {
+    case 'isTaxable':
+      return { ...form, isTaxable: value !== false };
+    case 'supplierId':
+    case 'supplierInvoiceNumber':
+    case 'kind':
+    case 'totalAmount':
+    case 'netAmount':
+    case 'taxAmount':
+    case 'transactionDate':
+    case 'notes':
+    case 'vaultId':
+      return { ...form, [field]: String(value ?? '') };
+    default:
+      return form;
+  }
 }
 
 export function validateInvoiceEditForm(input: {

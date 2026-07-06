@@ -49,7 +49,8 @@ export async function loadPurchaseBatchSummaries(
 
   const byBatch = new Map<string, typeof rows>();
   for (const r of rows) {
-    const bid = r.batchId as string;
+    if (!r.batchId) continue;
+    const bid = r.batchId;
     if (!byBatch.has(bid)) byBatch.set(bid, []);
     byBatch.get(bid)!.push(r);
   }

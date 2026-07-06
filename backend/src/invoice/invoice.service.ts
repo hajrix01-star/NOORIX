@@ -119,7 +119,7 @@ export class InvoiceService {
         expenseLineId:   dto.expenseLineId ?? undefined,
         categoryId:      dto.categoryId ?? undefined,
         supplierInvoiceNumber: dto.supplierInvoiceNumber ?? undefined,
-        kind:                  dto.kind as 'purchase' | 'expense' | 'hr_expense' | 'fixed_expense' | 'salary' | 'advance',
+        kind:            dto.kind,
         totalAmount:     String(dto.totalAmount),
         netAmount:       net,
         taxAmount:       tax,
@@ -244,7 +244,7 @@ export class InvoiceService {
    * مستخدمو النظام الذين لهم فواتير في الشركة — لقائمة فلتر «منشئ السجل».
    */
   async getCreatorFilterOptions(companyId: string) {
-    if (!companyId?.trim()) return { users: [] as { id: string; nameAr: string | null; nameEn: string | null; email: string }[] };
+    if (!companyId?.trim()) return { users: [] };
     const distinct = await this.prisma.invoice.findMany({
       where: { companyId, createdByUserId: { not: null } },
       select: { createdByUserId: true },
@@ -321,7 +321,7 @@ export class InvoiceService {
       ]);
       items = loadedItems;
       total = counted;
-      kindAggRows = grouped as InvoiceKindAggRow[];
+      kindAggRows = grouped;
       this.invoiceListAggCache.set(aggKey, { exp: aggNow + aggTtlMs, total, kindAggRows });
     }
     const { sums, sumsByKind } = rollupKindAggForInvoiceList(kindAggRows);

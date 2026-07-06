@@ -18,6 +18,7 @@ import {
   getEmptyDayCloseValue,
   isValidDayCloseDate,
   MAX_DAY_CLOSE_RANGE_DAYS,
+  normalizeDayCloseReportData,
   resolveDayCloseCompanyName,
 } from '../dayCloseReportModel';
 
@@ -28,8 +29,6 @@ type DayCloseReportModalProps = {
   defaultDateYmd?: unknown;
   compact?: boolean;
 };
-
-type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
 function resolveInitialDayCloseDate(defaultDateYmd: unknown) {
   return toYmd(defaultDateYmd) || getSaudiToday();
@@ -126,7 +125,7 @@ export default function DayCloseReportModal({
   const reportDateLabel = formatDayCloseReportDateLabel(dateStr);
   const printMode = multiDayPrint?.length ? 'multi' : 'single';
 
-  const toastError = (message: string) => showToast(message, 'error' as ToastVariant);
+  const toastError = (message: string) => showToast(message, 'error');
 
   const handleWhatsApp = () => {
     if (!data) {
@@ -168,7 +167,7 @@ export default function DayCloseReportModal({
       for (const date of dates) {
         const response = await getInvoiceDayCloseReport(companyId, date);
         throwIfApiFailed(response, t('dayCloseLoadFailed'));
-        rows.push({ date, data: response.data as DayCloseReportData });
+        rows.push({ date, data: normalizeDayCloseReportData(response.data) });
       }
       setMultiDayPrint(rows);
       await waitForPrintFrame();

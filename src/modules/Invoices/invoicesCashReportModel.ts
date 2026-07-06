@@ -4,9 +4,9 @@ import { buildInvoicesCashReportBody } from './utils/buildInvoicesCashReportPrin
 const EMPTY_REPORT_VALUE = '\u2014';
 
 export type InvoiceCashVaultRowSource = {
-  vaultId?: string;
-  nameAr?: string;
-  nameEn?: string;
+  vaultId?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
   total?: unknown;
   outflow?: unknown;
   remainder?: unknown;

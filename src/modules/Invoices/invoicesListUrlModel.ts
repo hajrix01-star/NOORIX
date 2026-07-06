@@ -36,9 +36,20 @@ const INVOICE_LIST_DRILL_KEYS = [
 ] as const;
 
 export function parseInvoiceListUrlState(searchParams: URLSearchParams): InvoiceListUrlState {
-  const values = Object.fromEntries(
-    INVOICE_LIST_DRILL_KEYS.map((key) => [key, searchParams.get(key)?.trim() || '']),
-  ) as Record<(typeof INVOICE_LIST_DRILL_KEYS)[number], string>;
+  const values: Record<(typeof INVOICE_LIST_DRILL_KEYS)[number], string> = {
+    from: '',
+    to: '',
+    kind: '',
+    supplierId: '',
+    supplierCategoryId: '',
+    categoryId: '',
+    expenseLineId: '',
+    q: '',
+    batchId: '',
+  };
+  for (const key of INVOICE_LIST_DRILL_KEYS) {
+    values[key] = searchParams.get(key)?.trim() || '';
+  }
   const drillParts = INVOICE_LIST_DRILL_KEYS.map((key) => values[key]);
 
   return {

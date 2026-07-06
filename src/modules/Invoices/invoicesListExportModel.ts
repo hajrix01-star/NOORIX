@@ -58,7 +58,7 @@ export function invoiceToExportRow(invoice: InvoiceListRawInvoice, context: Invo
   const { t, lang, kindMap, statusMap } = context;
   const kindLabel = getExportBadgeLabel(kindMap, invoice.kind);
   const statusLabel = getExportBadgeLabel(statusMap, invoice.status);
-  const allocations = getAllocationsForExport(invoice as InvoiceExportVaultSource, lang, t);
+  const allocations = getAllocationsForExport(invoice, lang, t);
   const row: InvoiceExportRow = {
     invoiceNumber: scalarExportValue(invoice.invoiceNumber),
     supplierInvoiceNumber: scalarExportValue(invoice.supplierInvoiceNumber),

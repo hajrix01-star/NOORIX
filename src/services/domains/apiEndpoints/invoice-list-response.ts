@@ -39,10 +39,43 @@ export type InvoiceListItem = {
   transactionDate?: string | Date | null;
   kind?: string | null;
   status?: string | null;
+  supplierId?: string | null;
+  supplier?: {
+    name?: string | null;
+    nameAr?: string | null;
+    nameEn?: string | null;
+  } | null;
+  vaultId?: string | null;
+  vault?: {
+    name?: string | null;
+    nameAr?: string | null;
+    nameEn?: string | null;
+    type?: string | null;
+  } | null;
+  vaultAllocations?: Array<{
+    id?: string | null;
+    amount?: string | number | null;
+    vaultId?: string | null;
+    vault?: {
+      name?: string | null;
+      nameAr?: string | null;
+      nameEn?: string | null;
+      type?: string | null;
+    } | null;
+  }> | null;
+  createdByUser?: {
+    id?: string | null;
+    name?: string | null;
+    nameAr?: string | null;
+    nameEn?: string | null;
+    email?: string | null;
+  } | null;
   netAmount?: string | number | null;
   taxAmount?: string | number | null;
   totalAmount?: string | number | null;
   notes?: string | null;
+  hasInvoiceAttachment?: boolean | null;
+  attachmentOriginalName?: string | null;
   [key: string]: unknown;
 };
 
