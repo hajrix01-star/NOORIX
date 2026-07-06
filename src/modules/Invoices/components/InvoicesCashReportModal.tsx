@@ -5,12 +5,15 @@ import {
   getInvoices,
   throwIfApiFailed,
 } from '../../../services/api';
-import { toYmd } from '../../../utils/saudiDate';
 import {
-  buildInvoicesCashReportBody,
   INVOICES_CASH_REPORT_PRINT_EXTRA_CSS,
 } from '../utils/buildInvoicesCashReportPrint';
 import { DAY_CLOSE_REPORT_STYLES } from './dayCloseReportStyles';
+import {
+  buildInvoicesCashReportHtml,
+  filterCashVaultRows,
+  resolveInvoicesCashReportPeriodLine,
+} from '../invoicesCashReportModel';
 
 type Props = {
   companyId: string;
@@ -52,9 +55,12 @@ export function InvoicesCashReportModal({
 
   const periodLine = useMemo(
     () =>
-      fromUrl && toUrl
-        ? `${fromUrl} — ${toUrl}`
-        : `${toYmd(invoiceQueryStartDate) || '—'} — ${toYmd(invoiceQueryEndDate) || '—'}`,
+      resolveInvoicesCashReportPeriodLine({
+        fromUrl,
+        toUrl,
+        invoiceQueryStartDate,
+        invoiceQueryEndDate,
+      }),
     [fromUrl, toUrl, invoiceQueryStartDate, invoiceQueryEndDate],
   );
 
@@ -99,12 +105,7 @@ export function InvoicesCashReportModal({
             remainder: string;
           }[];
         };
-        const cashVaultIds = new Set(
-          vaultsList
-            .filter((v) => String(v.type || '').toLowerCase() === 'cash')
-            .map((v) => String(v.id)),
-        );
-        const cashRows = (pack?.inflowByVault ?? []).filter((r) => r.vaultId && cashVaultIds.has(r.vaultId));
+        const cashRows = filterCashVaultRows(pack?.inflowByVault, vaultsList);
         const summaries = await fetchAllSalesSummariesForExport(
           companyId,
           invoiceQueryStartDate,
@@ -115,34 +116,11 @@ export function InvoicesCashReportModal({
           false,
         );
 
-        const cashOnHandSum = (summaries as { cashOnHand?: unknown }[]).reduce(
-          (acc, s) => acc + Number(s.cashOnHand ?? 0),
-          0,
-        );
-        const vaultRows = cashRows.map((r) => {
-          const n = lang === 'en' ? r.nameEn || r.nameAr : r.nameAr || r.nameEn;
-          return {
-            vaultName: n || '—',
-            inflow: fmt(Number(r.total ?? 0)),
-            outflow: fmt(Number(r.outflow ?? 0)),
-            remainder: fmt(Number(r.remainder ?? 0)),
-          };
-        });
-
-        const totals = cashRows.reduce(
-          (acc, row) => ({
-            inflow: acc.inflow + Number(row.total ?? 0),
-            outflow: acc.outflow + Number(row.outflow ?? 0),
-            remainder: acc.remainder + Number(row.remainder ?? 0),
-          }),
-          { inflow: 0, outflow: 0, remainder: 0 },
-        );
-
-        const body = buildInvoicesCashReportBody(
-          {
+        const body = buildInvoicesCashReportHtml({
+          periodLine,
+          labels: {
             reportTitle: t('invoicesCashReportTitle'),
             subtitle: t('invoicesCashReportSubtitle'),
-            periodLine,
             scopeNote: t('invoicesCashReportScope'),
             vaultSectionTitle: t('invoicesCashReportVaultSection'),
             colVault: t('invoicesCashReportColVault'),
@@ -155,15 +133,11 @@ export function InvoicesCashReportModal({
             summariesCountLabel: t('invoicesCashReportSummariesCount'),
             noCashVaults: t('invoicesCashReportNoCashVaults'),
           },
-          vaultRows,
-          {
-            inflow: fmt(totals.inflow),
-            outflow: fmt(totals.outflow),
-            remainder: fmt(totals.remainder),
-          },
-          fmt(cashOnHandSum),
-          summaries.length,
-        );
+          cashRows,
+          summaries: summaries as { cashOnHand?: unknown }[],
+          lang,
+          fmt,
+        });
 
         if (!cancelled) setState({ status: 'success', body, error: '' });
       } catch (e) {
