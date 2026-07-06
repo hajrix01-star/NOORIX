@@ -35,12 +35,32 @@ import { useInvoicesListActions } from './useInvoicesListActions';
 import { buildInvoiceListFetchParams } from './invoicesListQueryModel';
 import {
   EMPTY_INVOICE_LIST_URL_EXTRA,
+  type InvoiceListUrlExtra,
   applyInvoiceListKindDrill,
   parseInvoiceListUrlState,
   resolveInvoiceListDateRange,
   resolveInvoiceListKindForApi,
 } from './invoicesListUrlModel';
 import { fetchInvoicesForImportExportExport } from './invoicesListImportExportModel';
+import type { InvoiceViewSource } from './invoiceViewModel';
+import type { InvoiceTableRow } from './invoiceTableRowModel';
+import type { InvoiceListSortDir } from './invoicesListQueryModel';
+import type { InvoiceExecutiveVaultFlowRow } from './invoiceExecutiveCardsModel';
+import {
+  buildInvoiceImportSuccessMessage,
+  filterInvoiceSupplierCategories,
+  getInvoiceListErrorMessage,
+  mapInvoicesToListTableRows,
+  normalizeInvoiceCreatorFilterOptions,
+  resolveInvoiceListCompanyDisplay,
+  resolveInvoiceListVaultRowLabel,
+  toInvoiceListViewSource,
+  type InvoiceListCategorySource,
+  type InvoiceListCreatorFilterOptions,
+  type InvoiceListCreatorFilterOptionsResponse,
+  type InvoiceListRawInvoice,
+  type InvoiceListVaultFlowLabelRow,
+} from './invoicesListScreenModel';
 
 /**
  * منطق شاشة قائمة الفواتير — عرض فقط يبقى في InvoicesListScreen.jsx
@@ -65,12 +85,12 @@ export function useInvoicesListScreen() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [exportBusy, setExportBusy] = useState(false);
-  const activeCo = companies?.find((c: any) => c.id === activeCompanyId);
-  const companyName =
-    (lang === 'en' ? activeCo?.nameEn || activeCo?.nameAr : activeCo?.nameAr || activeCo?.nameEn) || '';
-  const logoUrl = activeCo?.logoUrl || '';
-  const [editingInvoice, setEditingInvoice] = useState<any>(null);
-  const [viewingInvoice, setViewingInvoice] = useState<any>(null);
+  const { companyName, logoUrl } = useMemo(
+    () => resolveInvoiceListCompanyDisplay({ companies, activeCompanyId, lang }),
+    [companies, activeCompanyId, lang],
+  );
+  const [editingInvoice, setEditingInvoice] = useState<InvoiceViewSource | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<InvoiceViewSource | null>(null);
   const [filterKind, setFilterKind] = useState('');
   const [filterSupplierId, setFilterSupplierId] = useState('');
   const [filterSupplierCategoryId, setFilterSupplierCategoryId] = useState('');
@@ -78,10 +98,10 @@ export function useInvoicesListScreen() {
   const [filterVaultId, setFilterVaultId] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
   const [filterHasNotesOnly, setFilterHasNotesOnly] = useState(false);
-  const [urlExtra, setUrlExtra] = useState(EMPTY_INVOICE_LIST_URL_EXTRA);
+  const [urlExtra, setUrlExtra] = useState<InvoiceListUrlExtra>(EMPTY_INVOICE_LIST_URL_EXTRA);
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
-  const [sortDir, setSortDir] = useState('desc');
+  const [sortDir, setSortDir] = useState<InvoiceListSortDir>('desc');
   const [showImportExport, setShowImportExport] = useState(false);
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const [cashReportOpen, setCashReportOpen] = useState(false);
@@ -138,12 +158,12 @@ export function useInvoicesListScreen() {
     if (urlState.kind) {
       const kindDrill = applyInvoiceListKindDrill(urlState.kind);
       setFilterKind(kindDrill.filterKind);
-      setUrlExtra((p: any) => ({ ...p, kind: kindDrill.kind }));
+      setUrlExtra((prev) => ({ ...prev, kind: kindDrill.kind }));
     }
     if (urlState.supplierId) setFilterSupplierId(urlState.supplierId);
     if (urlState.supplierCategoryId) setFilterSupplierCategoryId(urlState.supplierCategoryId);
-    if (urlState.categoryId) setUrlExtra((p: any) => ({ ...p, categoryId: urlState.categoryId }));
-    if (urlState.expenseLineId) setUrlExtra((p: any) => ({ ...p, expenseLineId: urlState.expenseLineId }));
+    if (urlState.categoryId) setUrlExtra((prev) => ({ ...prev, categoryId: urlState.categoryId }));
+    if (urlState.expenseLineId) setUrlExtra((prev) => ({ ...prev, expenseLineId: urlState.expenseLineId }));
     if (urlState.q) {
       setSearchText(urlState.q);
     }
@@ -154,14 +174,15 @@ export function useInvoicesListScreen() {
   const KIND_MAP = useMemo(() => buildInvoiceKindBadgeMap(t), [t]);
 
   const deleteInvoiceMut = useApiMutation({
-    mutationFn: ({ id }: any) => deleteInvoice(id, companyId),
+    mutationFn: ({ id }: { id: string }) => deleteInvoice(id, companyId),
     invalidateQueries: [invoiceKeys.root(), vaultKeys.root(), ledgerKeys.root()],
     successToast: () => t('invoiceDeleted'),
-    errorToast: (e: any) => e?.message || t('deleteFailed'),
+    errorToast: (error: unknown) => getInvoiceListErrorMessage(error, t('deleteFailed')),
   });
 
   const confirmAndDeleteInvoice = useCallback(
-    (r: any) => {
+    (r: InvoiceTableRow) => {
+      if (!r.id) return;
       if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
       deleteInvoiceMut.mutate({ id: r.id });
     },
@@ -178,8 +199,8 @@ export function useInvoicesListScreen() {
         KIND_MAP,
         userRole,
         companyId,
-        setViewingInvoice,
-        setEditingInvoice,
+        setViewingInvoice: (row) => setViewingInvoice(toInvoiceListViewSource(row)),
+        setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
         confirmAndDeleteInvoice,
       }),
     [userRole, companyId, t, lang, STATUS_MAP, KIND_MAP, confirmAndDeleteInvoice, fmt],
@@ -188,16 +209,16 @@ export function useInvoicesListScreen() {
   const { suppliers } = useSuppliers(companyId);
   const { flatCategories } = useCategories(companyId);
   const supplierCategories = useMemo(
-    () =>
-      (flatCategories || []).filter((c: any) => {
-        const type = String(c?.type || '').toLowerCase();
-        return type === 'purchase' || type === 'expense';
-      }),
+    () => filterInvoiceSupplierCategories(flatCategories as InvoiceListCategorySource[]),
     [flatCategories],
   );
-  const { data: creatorFilterOptions = { users: [] } } = useApiQuery<{ users: any[] }>({
+  const { data: creatorFilterOptions = { users: [] } } = useApiQuery<
+    InvoiceListCreatorFilterOptionsResponse,
+    InvoiceListCreatorFilterOptions
+  >({
     queryKey: invoiceKeys.creatorFilterOptions(companyId),
     queryFn: () => getInvoiceCreatorFilterOptions(companyId),
+    select: normalizeInvoiceCreatorFilterOptions,
     enabled: !!companyId,
     fallbackMessage: t('loadingError'),
   });
@@ -258,35 +279,14 @@ export function useInvoicesListScreen() {
   });
 
   const tableData = useMemo(
-    () =>
-      (items || []).map((inv: any) => ({
-        ...inv,
-        supplierName:
-          inv.kind === 'sale'
-            ? t('categoryTypeSale') || 'مبيعات'
-            : lang === 'en'
-              ? inv.supplier?.nameEn || inv.supplier?.nameAr || ''
-              : inv.supplier?.nameAr || inv.supplier?.nameEn || '',
-        createdByDisplayName: inv.createdByUser
-          ? lang === 'en'
-            ? inv.createdByUser.nameEn ||
-              inv.createdByUser.nameAr ||
-              inv.createdByUser.email ||
-              ''
-            : inv.createdByUser.nameAr ||
-              inv.createdByUser.nameEn ||
-              inv.createdByUser.email ||
-              ''
-          : '',
-        notesOrEmployee: inv.notes || '',
-      })),
+    () => mapInvoicesToListTableRows({ invoices: items as InvoiceListRawInvoice[], t, lang }),
     [items, t, lang],
   );
 
   const displayedTotal = total || 0;
 
   const toggleSort = useCallback(
-    (key: any) => {
+    (key: string) => {
       setPage(1);
       const next = nextInvoiceSortState(sortKey, sortDir, key);
       setSortKey(next.sortKey);
@@ -296,7 +296,7 @@ export function useInvoicesListScreen() {
   );
 
   const mapInvoiceToExportRow = useCallback(
-    (inv: any) => invoiceToExportRow(inv, { t, lang, kindMap: KIND_MAP, statusMap: STATUS_MAP }),
+    (inv: InvoiceListRawInvoice) => invoiceToExportRow(inv, { t, lang, kindMap: KIND_MAP, statusMap: STATUS_MAP }),
     [KIND_MAP, STATUS_MAP, t, lang],
   );
 
@@ -343,11 +343,12 @@ export function useInvoicesListScreen() {
   }, []);
 
   const vaultRowLabel = useCallback(
-    (row: any) => {
-      if (row.unassigned) return t('invoicesSalesUnassignedVault');
-      const n = lang === 'en' ? row.nameEn || row.nameAr : row.nameAr || row.nameEn;
-      return n || '—';
-    },
+    (row: InvoiceExecutiveVaultFlowRow) =>
+      resolveInvoiceListVaultRowLabel({
+        row: row as InvoiceListVaultFlowLabelRow,
+        lang,
+        unassignedLabel: t('invoicesSalesUnassignedVault'),
+      }),
     [t, lang],
   );
 
@@ -365,7 +366,7 @@ export function useInvoicesListScreen() {
         KIND_MAP,
         userRole,
         companyId,
-        setEditingInvoice,
+        setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
         confirmAndDeleteInvoice,
       }),
     [KIND_MAP, STATUS_MAP, userRole, companyId, t, lang, confirmAndDeleteInvoice],
@@ -379,8 +380,8 @@ export function useInvoicesListScreen() {
         KIND_MAP,
         userRole,
         companyId,
-        setViewingInvoice,
-        setEditingInvoice,
+        setViewingInvoice: (row) => setViewingInvoice(toInvoiceListViewSource(row)),
+        setEditingInvoice: (row) => setEditingInvoice(toInvoiceListViewSource(row)),
         confirmAndDeleteInvoice,
       }),
     [KIND_MAP, STATUS_MAP, userRole, companyId, t, confirmAndDeleteInvoice],
@@ -425,9 +426,9 @@ export function useInvoicesListScreen() {
   ]);
 
   const onImportInvoicesSuccess = useCallback(
-    (count: any) => {
+    (count: number) => {
       invalidateOnFinancialMutation(queryClient);
-      showToast(`تم استيراد ${count} فاتورة بنجاح`, 'success');
+      showToast(buildInvoiceImportSuccessMessage(count), 'success');
     },
     [queryClient, showToast],
   );
