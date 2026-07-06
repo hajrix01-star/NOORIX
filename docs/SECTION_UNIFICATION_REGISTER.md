@@ -1,6 +1,6 @@
 # Section Unification Register
 
-Last updated: 2026-07-06
+Last updated: 2026-07-07
 
 This register tracks every section that has been closed through the deep section-by-section cleanup process. Its purpose is to avoid losing unification decisions before the final system-wide unification phase.
 
@@ -23,6 +23,7 @@ A section is considered closed only when all of the following are true:
 | Invoices | `485ce7e6 finalize invoice section cleanup` | Closed | Centralized list contracts, export/actions, display models, cash/day-close models, backend invoice contracts, vault display fallback. |
 | Purchases | `f3e600a0 finalize purchases section cleanup` | Closed | Centralized batch query contract, batch state/actions/data split, guarded editable/print surfaces, purchase batch display/action/number models. |
 | Dashboard | `796a2557 finalize dashboard section cleanup` | Closed | Centralized period contracts, reporting/dashboard contracts, backend-derived metrics, calendar/special-days models, KPI/chart display helpers. |
+| Owner Dashboard | Pending local commit | Closed in workspace | Rebuilt official owner overview model in backend; frontend is display-only for KPIs, charts, comparison, and exports. |
 
 ## Invoices
 
@@ -165,6 +166,61 @@ A section is considered closed only when all of the following are true:
 - Backend Dashboard/Reporting tests passed: 7 suites, 27 tests.
 - `check:dashboard-governance`, `check:table-governance`, `check:filter-governance`, `check:date-control-governance`, and `check:responsive-governance` passed.
 - `audit:large-files` still reports existing large files, including Dashboard model/hook files. These are tracked as future architecture candidates, not blockers for this section closure.
+
+## Owner Dashboard
+
+### Centralized
+
+- Official backend overview model:
+  - `backend/src/owner/owner-overview-model.util.ts`
+  - `backend/src/owner/owner.service.ts`
+  - `backend/src/owner/owner.controller.ts`
+- Frontend API contract:
+  - `src/types/api/domains/owner.ts`
+  - `src/services/domains/apiEndpoints/owner-overview.ts`
+  - `src/hooks/useOwnerOverview.ts`
+  - `src/services/queryKeys/owner.ts`
+- Frontend display-only models:
+  - `src/modules/Owner/utils/ownerDashboardDisplay.ts`
+  - `src/modules/Owner/utils/ownerDashboardExportRows.ts`
+  - `src/modules/Owner/hooks/useOwnerDashboardData.ts`
+  - `src/modules/Owner/hooks/useOwnerDashboardFilters.ts`
+  - `src/modules/Owner/hooks/useOwnerDashboardExports.ts`
+- UI surfaces:
+  - `src/modules/Owner/components/OwnerKpiCards.tsx`
+  - `src/modules/Owner/components/OwnerPerformanceChart.tsx`
+  - `src/modules/Owner/components/OwnerMonthlyComparisonTable.tsx`
+  - `src/modules/Owner/components/OwnerFilterBar.tsx`
+
+### Accounting and Metrics Rules
+
+- Owner Dashboard official values are built in the backend owner overview model.
+- Frontend does not aggregate sales, purchases, expenses, net profit, daily sales, monthly totals, or ratios.
+- Frontend export rows use backend-provided official values and ratios; it only formats numbers for Excel/PDF.
+- The owner endpoint permission is aligned with the owner route permission: `VIEW_OWNER`.
+- Legacy frontend calculation paths were removed:
+  - `src/modules/Owner/utils/ownerDashboardCalculations.ts`
+  - `src/hooks/useOwnerReports.ts`
+  - `src/hooks/useOwnerDailySales.ts`
+
+### Protected Exceptions
+
+- Owner chart and table layout remain section-owned until the final system chart/table visual unification pass.
+- Chart tooltip formatting remains frontend-owned because it is display-only.
+- Company visibility selection remains frontend state because it controls view filtering, not official accounting values.
+
+### Final System Unification Candidates
+
+- Migrate owner KPI cards to the future central financial KPI/card primitive.
+- Migrate owner analytical chart states to the future central chart state primitive.
+- Consider moving owner export layout into a future central financial export layer once more report exports are unified.
+
+### Closure Checks
+
+- `npm run typecheck` passed.
+- Frontend Owner tests passed: 2 files, 4 tests.
+- Backend Owner model/service/controller tests passed: 2 suites, 6 tests.
+- `check:owner-governance`, `check:table-governance`, `check:filter-governance`, `check:date-control-governance`, and `check:responsive-governance` passed.
 
 ## System-Wide Final Unification Backlog
 

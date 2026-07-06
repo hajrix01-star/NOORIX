@@ -62,7 +62,6 @@ const FINANCIAL_QUERY_PREFIXES: readonly QueryKey[] = [
   bankKeys.treeCategoriesRoot(),
   bankKeys.statementMappingRoot(),
   // لوحة المالك — تجميع مبيعات يومية + overview موحّد
-  ownerKeys.dailySalesRoot(),
   ownerKeys.overviewRoot(),
   // HR — ملخص لوحة HR الموحّد
   hrKeys.dashboardSummaryRoot(),

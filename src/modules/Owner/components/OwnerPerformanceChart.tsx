@@ -1,46 +1,31 @@
 import React from 'react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, ColorSwatch, RuntimeStyleBox, cn } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
 import { useIsNarrow700 } from '../../../ui';
 import { formatCompactNumber, formatMoney } from '../../../utils/money';
-import type { OwnerCompanySeries, OwnerChartPoint } from '../types';
-import type { CompanyListItem } from '../../../context/appTypes';
+import type { OwnerCompanySeries, OwnerOverviewChartPoint, OwnerOverviewMetric } from '../types';
 
-type MetricFilterKey = 'sales' | 'purchases' | 'expenses';
-
-const OWNER_METRIC_BUTTON_CLASSES: Record<MetricFilterKey, string> = {
+const OWNER_METRIC_BUTTON_CLASSES: Record<OwnerOverviewMetric, string> = {
   sales: 'nx-owner-metric--sales',
   purchases: 'nx-owner-metric--purchases',
   expenses: 'nx-owner-metric--expenses',
+  netProfit: 'nx-owner-metric--net-profit',
 };
 
-const OWNER_METRIC_DOT_CLASSES: Record<MetricFilterKey, string> = {
+const OWNER_METRIC_DOT_CLASSES: Record<OwnerOverviewMetric, string> = {
   sales: 'nx-owner-dot--sales',
   purchases: 'nx-owner-dot--purchases',
   expenses: 'nx-owner-dot--expenses',
-};
-
-type DailySalesQueryShape = {
-  isLoading: boolean;
-  isError: boolean;
-  error: unknown;
+  netProfit: 'nx-owner-dot--net-profit',
 };
 
 function ChartTooltip({
   active,
   payload,
   label,
-  companyList,
+  companySeries,
   lang,
 }: {
   active?: boolean;
@@ -49,36 +34,29 @@ function ChartTooltip({
     name?: string;
     value?: number;
     color?: string;
-  }> | undefined;
+  }>;
   label?: string | number;
-  companyList: CompanyListItem[];
+  companySeries: OwnerCompanySeries[];
   lang: string;
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div
-      className="min-w-[140px] rounded-md border border-noorix-border bg-noorix-surface py-2 px-3 text-[12px] shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
-    >
+    <div className="min-w-[140px] rounded-md border border-noorix-border bg-noorix-surface py-2 px-3 text-[12px] shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
       <div className="mb-[5px] text-[11px] font-bold text-noorix-text">
         {label != null ? String(label) : ''}
       </div>
-      {payload.map((p) => {
-        const dataKey = String(p.dataKey ?? '');
-        const company = companyList.find((c) => c.id === dataKey);
-        const name = company
-          ? lang === 'ar'
-            ? company.nameAr || company.nameEn
-            : company.nameEn || company.nameAr
-          : p.name;
+      {payload.map((point) => {
+        const dataKey = String(point.dataKey ?? '');
+        const company = companySeries.find((item) => item.key === dataKey);
         return (
           <RuntimeStyleBox
             key={dataKey}
             className="mt-0.5 flex justify-between gap-3 font-semibold"
-            color={p.color}
+            color={point.color}
           >
-            <span>{name}</span>
+            <span>{company?.label ?? point.name}</span>
             <span className="nx-font-numbers">
-              {formatMoney(p.value, lang)} <span className="nx-sar">SR</span>
+              {formatMoney(point.value, lang)} <span className="nx-sar">SR</span>
             </span>
           </RuntimeStyleBox>
         );
@@ -87,44 +65,36 @@ function ChartTooltip({
   );
 }
 
-function queryErrorMessage(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  return '';
-}
-
 type OwnerPerformanceChartProps = {
   chartGrain: string;
-  setChartGrain: (g: 'monthly' | 'daily' | string) => void;
-  metricFilter: Set<string>;
-  setMetricFilter: React.Dispatch<React.SetStateAction<Set<string>>>;
-  toggleMetric: (key: string) => void;
-  performanceData: OwnerChartPoint[];
+  setChartGrain: (grain: string) => void;
+  chartMetric: OwnerOverviewMetric;
+  setChartMetric: (metric: OwnerOverviewMetric) => void;
+  monthlyPerformance: Record<OwnerOverviewMetric, OwnerOverviewChartPoint[]>;
+  dailyPerformance: OwnerOverviewChartPoint[];
   companySeries: OwnerCompanySeries[];
-  companyList: CompanyListItem[];
-  dailySalesQuery: DailySalesQueryShape;
   chartSubtitle: string;
 };
 
 export function OwnerPerformanceChart({
   chartGrain,
   setChartGrain,
-  metricFilter,
-  setMetricFilter,
-  toggleMetric,
-  performanceData,
+  chartMetric,
+  setChartMetric,
+  monthlyPerformance,
+  dailyPerformance,
   companySeries,
-  companyList,
-  dailySalesQuery,
   chartSubtitle,
 }: OwnerPerformanceChartProps) {
   const { t, lang } = useTranslation();
   const uiDir = useUiDir();
   const isMobile = useIsNarrow700();
-
-  const METRIC_FILTERS: { key: MetricFilterKey; label: string }[] = [
+  const performanceData = chartGrain === 'daily' ? dailyPerformance : monthlyPerformance[chartMetric];
+  const metrics: { key: OwnerOverviewMetric; label: string }[] = [
     { key: 'sales', label: t('annualSales') },
     { key: 'purchases', label: t('annualPurchases') },
     { key: 'expenses', label: t('annualExpenses') },
+    { key: 'netProfit', label: t('ownerTotalNetProfit') },
   ];
 
   return (
@@ -137,25 +107,14 @@ export function OwnerPerformanceChart({
         <ChartControls
           chartGrain={chartGrain}
           setChartGrain={setChartGrain}
-          metricFilter={metricFilter}
-          setMetricFilter={setMetricFilter}
-          toggleMetric={toggleMetric}
-          METRIC_FILTERS={METRIC_FILTERS}
+          chartMetric={chartMetric}
+          setChartMetric={setChartMetric}
+          metrics={metrics}
           uiDir={uiDir}
-          lang={lang}
         />
       </div>
 
-      {chartGrain === 'daily' && dailySalesQuery.isLoading && (
-        <div className="text-center text-noorix-muted py-12">{t('loading')}</div>
-      )}
-      {chartGrain === 'daily' && dailySalesQuery.isError && (
-        <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted px-4 py-3 text-[13px] text-noorix-red">
-          {queryErrorMessage(dailySalesQuery.error) || t('loadingError')}
-        </div>
-      )}
-
-      {!(chartGrain === 'daily' && (dailySalesQuery.isLoading || dailySalesQuery.isError)) && (
+      {performanceData.length > 0 ? (
         <ResponsiveContainer width="100%" height={240}>
           <BarChart
             data={performanceData}
@@ -171,7 +130,7 @@ export function OwnerPerformanceChart({
               tickLine={false}
             />
             <YAxis
-              tickFormatter={(n: number) => formatCompactNumber(n, lang)}
+              tickFormatter={(value: number) => formatCompactNumber(value, lang)}
               tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
               axisLine={false}
               tickLine={false}
@@ -192,17 +151,17 @@ export function OwnerPerformanceChart({
                       | undefined
                   }
                   label={props.label}
-                  companyList={companyList}
+                  companySeries={companySeries}
                   lang={lang}
                 />
               )}
             />
-            {companySeries.map((s) => (
+            {companySeries.map((series) => (
               <Bar
-                key={s.key}
-                dataKey={s.key}
-                name={s.label}
-                fill={s.color}
+                key={series.key}
+                dataKey={series.key}
+                name={series.label}
+                fill={series.color}
                 fillOpacity={0.9}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={chartGrain === 'monthly' ? 28 : 12}
@@ -210,13 +169,15 @@ export function OwnerPerformanceChart({
             ))}
           </BarChart>
         </ResponsiveContainer>
+      ) : (
+        <div className="text-center text-noorix-muted py-12">{t('noData')}</div>
       )}
 
       <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">
-        {companySeries.map((s) => (
-          <div key={s.key} className="flex items-center gap-1.5">
-            <ColorSwatch className="w-2.5 h-2.5 rounded-sm shrink-0" color={s.color} />
-            <span className="text-[12px]">{s.label}</span>
+        {companySeries.map((series) => (
+          <div key={series.key} className="flex items-center gap-1.5">
+            <ColorSwatch className="w-2.5 h-2.5 rounded-sm shrink-0" color={series.color} />
+            <span className="text-[12px]">{series.label}</span>
           </div>
         ))}
       </div>
@@ -226,24 +187,20 @@ export function OwnerPerformanceChart({
 
 type ChartControlsProps = {
   chartGrain: string;
-  setChartGrain: (g: string) => void;
-  metricFilter: Set<string>;
-  setMetricFilter: React.Dispatch<React.SetStateAction<Set<string>>>;
-  toggleMetric: (key: string) => void;
-  METRIC_FILTERS: { key: MetricFilterKey; label: string }[];
+  setChartGrain: (grain: string) => void;
+  chartMetric: OwnerOverviewMetric;
+  setChartMetric: (metric: OwnerOverviewMetric) => void;
+  metrics: { key: OwnerOverviewMetric; label: string }[];
   uiDir: string;
-  lang: string;
 };
 
 function ChartControls({
   chartGrain,
   setChartGrain,
-  metricFilter,
-  setMetricFilter,
-  toggleMetric,
-  METRIC_FILTERS,
+  chartMetric,
+  setChartMetric,
+  metrics,
   uiDir,
-  lang,
 }: ChartControlsProps) {
   const { t } = useTranslation();
   return (
@@ -265,7 +222,6 @@ function ChartControls({
               ? 'bg-noorix-surface text-noorix-text shadow-sm'
               : 'text-noorix-muted hover:bg-noorix-surface/60 hover:text-noorix-text',
           )}
-          data-active={chartGrain === 'monthly' ? 'true' : 'false'}
           onClick={() => setChartGrain('monthly')}
         >
           {t('dashboardTimelineMonthly')}
@@ -282,54 +238,35 @@ function ChartControls({
               ? 'bg-noorix-surface text-noorix-text shadow-sm'
               : 'text-noorix-muted hover:bg-noorix-surface/60 hover:text-noorix-text',
           )}
-          data-active={chartGrain === 'daily' ? 'true' : 'false'}
           onClick={() => setChartGrain('daily')}
         >
           {t('dashboardTimelineDaily')}
         </Button>
       </div>
 
-      {chartGrain === 'monthly' && (() => {
-        const allKeys = METRIC_FILTERS.map((f) => f.key);
-        const isAllActive = allKeys.every((k) => metricFilter.has(k));
+      {metrics.map((metric) => {
+        const disabled = chartGrain === 'daily' && metric.key !== 'sales';
+        const active = !disabled && chartMetric === metric.key;
         return (
           <Button
             type="button"
             variant="raw"
             size="auto"
-            onClick={() => setMetricFilter(isAllActive ? new Set(['sales']) : new Set(allKeys))}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none cursor-pointer',
-              isAllActive ? 'border-noorix-text bg-noorix-bg-muted text-noorix-text' : 'border-noorix-border bg-transparent text-noorix-muted',
-            )}
-          >
-            {lang === 'ar' ? 'الكل' : 'All'}
-          </Button>
-        );
-      })()}
-      {METRIC_FILTERS.map((f) => {
-        const disabled = chartGrain === 'daily' && f.key !== 'sales';
-        const active = !disabled && metricFilter.has(f.key);
-        return (
-          <Button
-            type="button"
-            variant="raw"
-            size="auto"
-            key={f.key}
-            onClick={() => !disabled && toggleMetric(f.key)}
+            key={metric.key}
+            onClick={() => !disabled && setChartMetric(metric.key)}
             className={cn(
               'flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded border transition-all duration-150 select-none',
-              active ? OWNER_METRIC_BUTTON_CLASSES[f.key] : 'border-noorix-border bg-transparent text-noorix-muted',
+              active ? OWNER_METRIC_BUTTON_CLASSES[metric.key] : 'border-noorix-border bg-transparent text-noorix-muted',
               disabled ? 'cursor-not-allowed opacity-[0.35] text-noorix-border' : 'cursor-pointer',
             )}
           >
             <span
               className={cn(
                 'inline-block h-2.5 w-2.5 shrink-0 rounded-sm',
-                active ? OWNER_METRIC_DOT_CLASSES[f.key] : 'bg-noorix-border',
+                active ? OWNER_METRIC_DOT_CLASSES[metric.key] : 'bg-noorix-border',
               )}
             />
-            {f.label}
+            {metric.label}
           </Button>
         );
       })}

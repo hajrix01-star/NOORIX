@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -7,6 +7,8 @@ import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator'
 import { SkipCompanyCheck } from '../auth/decorators/skip-company-check.decorator';
 import { OwnerService } from './owner.service';
 import { OwnerOverviewQueryDto } from './dto/owner-overview-query.dto';
+
+type OwnerOverviewReader = Pick<OwnerService, 'getOverview'>;
 
 /**
  * GET /api/v1/owner/overview
@@ -20,11 +22,11 @@ import { OwnerOverviewQueryDto } from './dto/owner-overview-query.dto';
 @Controller('owner')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class OwnerController {
-  constructor(private readonly ownerService: OwnerService) {}
+  constructor(@Inject(OwnerService) private readonly ownerService: OwnerOverviewReader) {}
 
   @Get('overview')
   @SkipCompanyCheck()
-  @RequirePermission('REPORTS_READ')
+  @RequirePermission('VIEW_OWNER')
   async getOverview(
     @Query() query: OwnerOverviewQueryDto,
     @CurrentUser() user: JwtUser,

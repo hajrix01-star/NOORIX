@@ -1,32 +1,32 @@
 import { useCallback } from 'react';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { buildOwnerExcelRows, buildOwnerPdfColumns, buildOwnerPdfData, ownerExcelFilename, ownerPdfFilename } from '../utils/ownerDashboardExportRows';
-import type { OwnerKpiTotals } from '../types';
+import type { OwnerOverviewExportRow } from '../../../types/api';
 
 type TFunction = (key: string) => string;
 
 export function useOwnerDashboardExports(
-  aggregated: OwnerKpiTotals,
+  exportRows: OwnerOverviewExportRow[],
   lang: string,
   year: number,
   selectedMonthNum: number | null,
   t: TFunction,
 ) {
   const handleExportExcel = useCallback(() => {
-    const rows = buildOwnerExcelRows(aggregated, lang);
+    const rows = buildOwnerExcelRows(exportRows, lang);
     exportToExcel(rows, ownerExcelFilename(year, selectedMonthNum));
-  }, [aggregated, lang, year, selectedMonthNum]);
+  }, [exportRows, lang, year, selectedMonthNum]);
 
   const handleExportPdf = useCallback(() => {
     const cols = buildOwnerPdfColumns(lang);
-    const data = buildOwnerPdfData(aggregated, lang);
+    const data = buildOwnerPdfData(exportRows, lang);
     exportTableToPdf({
       title: `${t('ownerDashboard')} — ${year}`,
       filename: ownerPdfFilename(year),
       columns: cols,
       data,
     });
-  }, [aggregated, lang, t, year]);
+  }, [exportRows, lang, t, year]);
 
   return { handleExportExcel, handleExportPdf };
 }

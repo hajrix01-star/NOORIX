@@ -30,3 +30,15 @@ export type {
   DashboardPeriodDataLike,
   DashboardOverviewData,
 } from './domains/dashboard';
+export type {
+  OwnerOverviewChartPoint,
+  OwnerOverviewComparison,
+  OwnerOverviewComparisonRow,
+  OwnerOverviewCompany,
+  OwnerOverviewCompanyRow,
+  OwnerOverviewData,
+  OwnerOverviewExportRow,
+  OwnerOverviewKpi,
+  OwnerOverviewMetric,
+  OwnerOverviewMonthlyBucket,
+} from './domains/owner';

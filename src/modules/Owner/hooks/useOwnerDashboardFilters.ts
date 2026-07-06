@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { CompanyListItem } from '../../../context/appTypes';
 import { getSaudiYearMonth } from '../../../utils/saudiDate';
-import type { OwnerDashboardMetric } from '../types';
+import type { OwnerOverviewMetric } from '../types';
 
 export function useOwnerDashboardFilters(companies: CompanyListItem[]) {
   const currentYear = new Date().getFullYear();
@@ -9,21 +9,8 @@ export function useOwnerDashboardFilters(companies: CompanyListItem[]) {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedCompanyIds, setSelectedCompanyIds] = useState(() => new Set(companies?.map((c) => c.id) || []));
   const [chartGrain, setChartGrain] = useState('monthly');
-  const [metricFilter, setMetricFilter] = useState(() => new Set<string>(['sales']));
-  const [comparisonMetric, setComparisonMetric] = useState<OwnerDashboardMetric>('sales');
-
-  const toggleMetric = (key: string) => {
-    setMetricFilter((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        if (next.size === 1) return prev;
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
+  const [chartMetric, setChartMetric] = useState<OwnerOverviewMetric>('sales');
+  const [comparisonMetric, setComparisonMetric] = useState<OwnerOverviewMetric>('sales');
 
   const companyList = useMemo(
     () => companies?.filter((c) => !(c as { isArchived?: boolean }).isArchived) || [],
@@ -61,9 +48,8 @@ export function useOwnerDashboardFilters(companies: CompanyListItem[]) {
     setSelectedCompanyIds,
     chartGrain,
     setChartGrain,
-    metricFilter,
-    setMetricFilter,
-    toggleMetric,
+    chartMetric,
+    setChartMetric,
     comparisonMetric,
     setComparisonMetric,
     companyList,
