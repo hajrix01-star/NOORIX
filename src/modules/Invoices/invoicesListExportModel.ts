@@ -1,25 +1,49 @@
 import { formatSaudiDateISO } from '../../utils/saudiDate';
-import { MAX_VAULT_SLOTS, getAllocationsForExport } from './invoicesListScreenHelpers';
+import {
+  MAX_VAULT_SLOTS,
+  getAllocationsForExport,
+  type InvoiceExportTranslate,
+  type InvoiceExportVaultSource,
+} from './invoicesListScreenHelpers';
+import {
+  getInvoiceListCreatedByDisplayName,
+  getInvoiceListSupplierName,
+  type InvoiceListRawInvoice,
+} from './invoicesListScreenModel';
+import type { InvoiceTableLang } from './invoiceTableRowModel';
 
-/**
- * أعمدة تصدير/طباعة Excel للفواتير — منطق خالص من InvoicesListScreen
- */
+export type InvoiceExportColumnDef = {
+  key: string;
+  label: string;
+};
 
-export function buildInvoiceExportColumnDefs(t: any) {
-  const vaultCols = [];
-  for (let s = 1; s <= MAX_VAULT_SLOTS; s++) {
+export type InvoiceExportBadgeMap = Record<string, { label?: unknown } | undefined>;
+
+export type InvoiceExportRow = Record<string, string | number>;
+
+export type InvoiceExportContext = {
+  t: InvoiceExportTranslate;
+  lang: InvoiceTableLang;
+  kindMap: InvoiceExportBadgeMap;
+  statusMap: InvoiceExportBadgeMap;
+};
+
+export function buildInvoiceExportColumnDefs(t: InvoiceExportTranslate): InvoiceExportColumnDef[] {
+  const vaultCols: InvoiceExportColumnDef[] = [];
+  for (let slot = 1; slot <= MAX_VAULT_SLOTS; slot += 1) {
     vaultCols.push(
-      { key: `vault${s}Name`, label: t('invoicesExportVaultSlotName', s) },
-      { key: `vault${s}Type`, label: t('invoicesExportVaultSlotType', s) },
-      { key: `vault${s}Amount`, label: t('invoicesExportVaultSlotAmount', s) },
+      { key: `vault${slot}Name`, label: t('invoicesExportVaultSlotName', slot) },
+      { key: `vault${slot}Type`, label: t('invoicesExportVaultSlotType', slot) },
+      { key: `vault${slot}Amount`, label: t('invoicesExportVaultSlotAmount', slot) },
     );
   }
+
   return [
     { key: 'invoiceNumber', label: t('documentNumber') },
     { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber') },
     { key: 'supplierName', label: t('supplier') },
     { key: 'createdByUserName', label: t('invoiceUserColumn') },
-    { key: 'notes', label: t('invoiceNotesColumn') || 'ملاحظة' },
+    { key: 'notes', label: t('invoiceNotesColumn') || 'Notes' },
     { key: 'kind', label: t('type') },
     ...vaultCols,
     { key: 'netAmount', label: t('net') },
@@ -30,44 +54,41 @@ export function buildInvoiceExportColumnDefs(t: any) {
   ];
 }
 
-/**
- * @param {object} inv — فاتورة خام من الـ API
- * @param {{ t: Function, lang: string, kindMap: object, statusMap: object }} ctx
- */
-export function invoiceToExportRow(inv: any, { t, lang, kindMap, statusMap }: any) {
-  const supplierName =
-    inv.kind === 'sale'
-      ? t('categoryTypeSale') || 'مبيعات'
-      : lang === 'en'
-        ? inv.supplier?.nameEn || inv.supplier?.nameAr || ''
-        : inv.supplier?.nameAr || inv.supplier?.nameEn || '';
-  const createdByUserName = inv.createdByUser
-    ? lang === 'en'
-      ? inv.createdByUser.nameEn || inv.createdByUser.nameAr || inv.createdByUser.email || ''
-      : inv.createdByUser.nameAr || inv.createdByUser.nameEn || inv.createdByUser.email || ''
-    : '';
-  const kindLabel = kindMap[inv.kind]?.label ?? inv.kind ?? '—';
-  const statusLabel = statusMap[inv.status]?.label ?? inv.status ?? '—';
-  const allocs = getAllocationsForExport(inv, lang, t);
-  const row: Record<string, any> = {
-    invoiceNumber: inv.invoiceNumber ?? '',
-    supplierInvoiceNumber: inv.supplierInvoiceNumber ?? '',
-    supplierName: supplierName || '—',
-    createdByUserName: createdByUserName || '—',
-    notes: inv.notes ?? '',
-    kind: kindLabel,
-    netAmount: Number(inv.netAmount ?? 0),
-    taxAmount: Number(inv.taxAmount ?? 0),
-    totalAmount: Number(inv.totalAmount ?? 0),
-    transactionDate: inv.transactionDate ? formatSaudiDateISO(inv.transactionDate) : '—',
-    status: statusLabel,
+export function invoiceToExportRow(invoice: InvoiceListRawInvoice, context: InvoiceExportContext) {
+  const { t, lang, kindMap, statusMap } = context;
+  const kindLabel = getExportBadgeLabel(kindMap, invoice.kind);
+  const statusLabel = getExportBadgeLabel(statusMap, invoice.status);
+  const allocations = getAllocationsForExport(invoice as InvoiceExportVaultSource, lang, t);
+  const row: InvoiceExportRow = {
+    invoiceNumber: scalarExportValue(invoice.invoiceNumber),
+    supplierInvoiceNumber: scalarExportValue(invoice.supplierInvoiceNumber),
+    supplierName: getInvoiceListSupplierName({ invoice, lang, t }) || '\u2014',
+    createdByUserName: getInvoiceListCreatedByDisplayName(invoice.createdByUser, lang) || '\u2014',
+    notes: invoice.notes ?? '',
+    kind: kindLabel || invoice.kind || '\u2014',
+    netAmount: Number(invoice.netAmount ?? 0),
+    taxAmount: Number(invoice.taxAmount ?? 0),
+    totalAmount: Number(invoice.totalAmount ?? 0),
+    transactionDate: invoice.transactionDate ? formatSaudiDateISO(invoice.transactionDate) : '\u2014',
+    status: statusLabel || invoice.status || '\u2014',
   };
-  for (let i = 0; i < MAX_VAULT_SLOTS; i++) {
-    const slot = i + 1;
-    const al = allocs[i];
-    row[`vault${slot}Name`] = al?.name ?? '';
-    row[`vault${slot}Type`] = al?.type ?? '';
-    row[`vault${slot}Amount`] = al != null ? al.amount : '';
+
+  for (let index = 0; index < MAX_VAULT_SLOTS; index += 1) {
+    const slot = index + 1;
+    const allocation = allocations[index];
+    row[`vault${slot}Name`] = allocation?.name ?? '';
+    row[`vault${slot}Type`] = allocation?.type ?? '';
+    row[`vault${slot}Amount`] = allocation ? allocation.amount : '';
   }
   return row;
+}
+
+function getExportBadgeLabel(map: InvoiceExportBadgeMap, key: unknown) {
+  if (!key) return '';
+  const label = map[String(key)]?.label;
+  return label == null || label === '' ? '' : String(label);
+}
+
+function scalarExportValue(value: unknown) {
+  return value == null ? '' : String(value);
 }

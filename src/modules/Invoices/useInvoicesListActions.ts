@@ -5,7 +5,21 @@ import { openPrintWindow } from '../../utils/printUtils';
 import { toYmd } from '../../utils/saudiDate';
 import { buildPrintTableHtml } from '../../utils/printTableHtml';
 import { MAX_VAULT_SLOTS } from './invoicesListScreenHelpers';
-import { buildInvoiceListFetchParams } from './invoicesListQueryModel';
+import {
+  buildInvoiceListFetchParams,
+  type InvoiceListFetchParams,
+  type InvoiceListSortDir,
+} from './invoicesListQueryModel';
+import type { InvoiceExportColumnDef, InvoiceExportRow } from './invoicesListExportModel';
+import {
+  getInvoiceListErrorMessage,
+  type InvoiceListRawInvoice,
+} from './invoicesListScreenModel';
+
+type Translate = (key: string, ...args: unknown[]) => string;
+type ToastVariant = 'success' | 'error' | 'info' | 'warning' | string;
+type UrlExtraFilters = { categoryId: string; expenseLineId: string };
+type InvoiceListActionTotals = { count: number; net: unknown; tax: unknown; total: unknown };
 
 type InvoiceListActionParams = {
   companyId: string;
@@ -17,27 +31,55 @@ type InvoiceListActionParams = {
   toUrl: string;
   kindForApi: string | undefined;
   sortKey: string;
-  sortDir: string;
+  sortDir: InvoiceListSortDir;
   filterSupplierId: string;
   filterSupplierCategoryId: string;
   debouncedQ: string;
-  urlExtra: { categoryId: string; expenseLineId: string };
+  urlExtra: UrlExtraFilters;
   showCancelled: boolean;
   filterHasNotesOnly: boolean;
   filterVaultId: string;
   invoiceBatchIdFromUrl: string;
   filterCreatedByUserId: string;
-  mapInvoiceToExportRow: (invoice: any) => Record<string, any>;
-  exportColumnDefs: Array<{ key: string; label: string }>;
+  mapInvoiceToExportRow: (invoice: InvoiceListRawInvoice) => InvoiceExportRow;
+  exportColumnDefs: InvoiceExportColumnDef[];
   companyName: string;
   logoUrl: string;
   lang: string;
-  t: (key: string, ...args: any[]) => string;
+  t: Translate;
   fmt: (value: number) => string;
-  showToast: (message: string, variant?: any) => void;
+  showToast: (message: string, variant?: ToastVariant) => void;
   setExportBusy: (value: boolean) => void;
-  serverAll: { count: number; net: unknown; tax: unknown; total: unknown };
+  serverAll: InvoiceListActionTotals;
 };
+
+function buildExportFetchParams(params: InvoiceListActionParams): InvoiceListFetchParams {
+  return buildInvoiceListFetchParams({
+    companyId: params.companyId,
+    startDate: params.invoiceQueryStartDate,
+    endDate: params.invoiceQueryEndDate,
+    kind: params.kindForApi,
+    sortBy: params.sortKey,
+    sortDir: params.sortDir,
+    supplierId: params.filterSupplierId,
+    supplierCategoryId: params.filterSupplierCategoryId,
+    q: params.debouncedQ,
+    categoryId: params.urlExtra.categoryId,
+    expenseLineId: params.urlExtra.expenseLineId,
+    includeCancelled: params.showCancelled,
+    hasNotes: params.filterHasNotesOnly,
+    vaultId: params.filterVaultId,
+    batchId: params.invoiceBatchIdFromUrl,
+    createdByUserId: params.filterCreatedByUserId,
+  });
+}
+
+function mapRawInvoicesForExport(
+  invoices: unknown[],
+  mapInvoiceToExportRow: (invoice: InvoiceListRawInvoice) => InvoiceExportRow,
+) {
+  return (invoices as InvoiceListRawInvoice[]).map(mapInvoiceToExportRow);
+}
 
 export function useInvoicesListActions(params: InvoiceListActionParams) {
   const {
@@ -76,25 +118,8 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     if (!companyId || displayedTotal === 0) return;
     setExportBusy(true);
     try {
-      const all = await fetchAllInvoicesForExport(buildInvoiceListFetchParams({
-        companyId,
-        startDate: invoiceQueryStartDate,
-        endDate: invoiceQueryEndDate,
-        kind: kindForApi,
-        sortBy: sortKey,
-        sortDir,
-        supplierId: filterSupplierId,
-        supplierCategoryId: filterSupplierCategoryId,
-        q: debouncedQ,
-        categoryId: urlExtra.categoryId,
-        expenseLineId: urlExtra.expenseLineId,
-        includeCancelled: showCancelled,
-        hasNotes: filterHasNotesOnly,
-        vaultId: filterVaultId,
-        batchId: invoiceBatchIdFromUrl,
-        createdByUserId: filterCreatedByUserId,
-      }));
-      const rows = all.map(mapInvoiceToExportRow);
+      const all = await fetchAllInvoicesForExport(buildExportFetchParams(params));
+      const rows = mapRawInvoicesForExport(all, mapInvoiceToExportRow);
       const safeStart = toYmd(invoiceQueryStartDate).replace(/[^\d-]/g, '') || 'start';
       const safeEnd = toYmd(invoiceQueryEndDate).replace(/[^\d-]/g, '') || 'end';
       await exportToExcel({
@@ -107,8 +132,8 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
         rtl: true,
       });
       showToast(t('exportSuccess') || 'تم التصدير', 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error: unknown) {
+      showToast(getInvoiceListErrorMessage(error, t('exportFailed')), 'error');
     } finally {
       setExportBusy(false);
     }
@@ -144,25 +169,8 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
     if (!companyId || displayedTotal === 0) return;
     setExportBusy(true);
     try {
-      const all = await fetchAllInvoicesForExport(buildInvoiceListFetchParams({
-        companyId,
-        startDate: invoiceQueryStartDate,
-        endDate: invoiceQueryEndDate,
-        kind: kindForApi,
-        sortBy: sortKey,
-        sortDir,
-        supplierId: filterSupplierId,
-        supplierCategoryId: filterSupplierCategoryId,
-        q: debouncedQ,
-        categoryId: urlExtra.categoryId,
-        expenseLineId: urlExtra.expenseLineId,
-        includeCancelled: showCancelled,
-        hasNotes: filterHasNotesOnly,
-        vaultId: filterVaultId,
-        batchId: invoiceBatchIdFromUrl,
-        createdByUserId: filterCreatedByUserId,
-      }));
-      const rows = all.map((inv: any) => mapInvoiceToExportRow(inv));
+      const all = await fetchAllInvoicesForExport(buildExportFetchParams(params));
+      const rows = mapRawInvoicesForExport(all, mapInvoiceToExportRow);
       const baseMetaCols = 6;
       const vaultBlockCols = MAX_VAULT_SLOTS * 3;
       const table = buildPrintTableHtml({
@@ -186,8 +194,8 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
         landscape: true,
         body: table,
       });
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error: unknown) {
+      showToast(getInvoiceListErrorMessage(error, t('exportFailed')), 'error');
     } finally {
       setExportBusy(false);
     }

@@ -1,35 +1,70 @@
-import { vaultDisplayName } from '../../utils/vaultDisplay';
+import {
+  pickInvoiceTableName,
+  type InvoiceTableLang,
+  type InvoiceTableNamedEntity,
+} from './invoiceTableRowModel';
 
 export const PAGE_SIZE = 50;
-
-/** أقصى عدد أعمدة خزائن في تصدير Excel (اسم + نوع + مبلغ لكل خزينة) */
 export const MAX_VAULT_SLOTS = 5;
 
-export function vaultTypeLabelForExport(type: any, t: any) {
-  const map: Record<string, string> = { cash: 'vaultTypeCash', bank: 'vaultTypeBank', app: 'vaultTypeApp' };
-  const k = map[String(type)];
-  return k ? t(k) : type ? String(type) : '—';
+export type InvoiceExportTranslate = (key: string, ...args: unknown[]) => string;
+
+export type InvoiceExportVault = InvoiceTableNamedEntity & {
+  type?: string | null;
+};
+
+export type InvoiceExportVaultAllocation = {
+  id?: string | null;
+  amount?: number | string | null;
+  vault?: InvoiceExportVault | null;
+};
+
+export type InvoiceExportVaultSource = {
+  totalAmount?: number | string | null;
+  vault?: InvoiceExportVault | null;
+  vaultAllocations?: InvoiceExportVaultAllocation[] | null;
+};
+
+export type InvoiceExportVaultRow = {
+  name: string;
+  type: string;
+  amount: number;
+};
+
+export function vaultTypeLabelForExport(type: unknown, t: InvoiceExportTranslate) {
+  const map: Record<string, string> = {
+    cash: 'vaultTypeCash',
+    bank: 'vaultTypeBank',
+    app: 'vaultTypeApp',
+  };
+  const key = map[String(type)];
+  return key ? t(key) : type ? String(type) : '\u2014';
 }
 
-export function getAllocationsForExport(inv: any, lang: any, t: any) {
-  const out = [];
-  const a = inv.vaultAllocations;
-  if (Array.isArray(a) && a.length > 0) {
-    for (const al of a) {
-      out.push({
-        name: vaultDisplayName(al.vault, lang),
-        type: vaultTypeLabelForExport(al.vault?.type, t),
-        amount: Number(al.amount ?? 0),
+export function getAllocationsForExport(
+  invoice: InvoiceExportVaultSource,
+  lang: InvoiceTableLang,
+  t: InvoiceExportTranslate,
+) {
+  const rows: InvoiceExportVaultRow[] = [];
+  const allocations = invoice.vaultAllocations;
+  if (Array.isArray(allocations) && allocations.length > 0) {
+    for (const allocation of allocations) {
+      rows.push({
+        name: pickInvoiceTableName(lang, allocation.vault),
+        type: vaultTypeLabelForExport(allocation.vault?.type, t),
+        amount: Number(allocation.amount ?? 0),
       });
     }
-    return out;
+    return rows;
   }
-  if (inv.vault) {
-    out.push({
-      name: vaultDisplayName(inv.vault, lang),
-      type: vaultTypeLabelForExport(inv.vault?.type, t),
-      amount: Number(inv.totalAmount ?? 0),
+
+  if (invoice.vault) {
+    rows.push({
+      name: pickInvoiceTableName(lang, invoice.vault),
+      type: vaultTypeLabelForExport(invoice.vault.type, t),
+      amount: Number(invoice.totalAmount ?? 0),
     });
   }
-  return out;
+  return rows;
 }

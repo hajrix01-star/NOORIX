@@ -8,6 +8,7 @@ export type InvoiceTableNamedEntity = {
   name?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
+  type?: string | null;
 };
 
 export type InvoiceTableVaultAllocation = {
