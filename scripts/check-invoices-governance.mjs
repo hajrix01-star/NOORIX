@@ -28,6 +28,8 @@ const requiredFiles = [
   path.join(invoicesRoot, 'invoicesListImportExportModel.test.ts'),
   path.join(invoicesRoot, 'invoiceEditModel.ts'),
   path.join(invoicesRoot, 'invoiceEditModel.test.ts'),
+  path.join(invoicesRoot, 'invoiceViewModel.ts'),
+  path.join(invoicesRoot, 'invoiceViewModel.test.ts'),
   path.join(invoicesRoot, 'invoicesCashReportModel.ts'),
   path.join(invoicesRoot, 'invoicesCashReportModel.test.ts'),
   path.join(invoicesRoot, 'dayCloseReportModel.ts'),
@@ -146,6 +148,17 @@ if (fs.existsSync(editModalPath)) {
   }
 }
 
+const viewModalPath = path.join(invoicesRoot, 'components', 'InvoiceViewModal.tsx');
+if (fs.existsSync(viewModalPath)) {
+  const viewModalSource = fs.readFileSync(viewModalPath, 'utf8');
+  if (!viewModalSource.includes('../invoiceViewModel')) {
+    report(viewModalPath, 'invoice view modal must delegate display shaping to invoiceViewModel.');
+  }
+  if (/formatSaudiDate|supplierName|vaultSummary|const\s+fields\s*=\s*\[|\bany\b/.test(viewModalSource)) {
+    report(viewModalPath, 'invoice view modal must not rebuild display fields, names, vault summary, or use any.');
+  }
+}
+
 const cashReportModalPath = path.join(invoicesRoot, 'components', 'InvoicesCashReportModal.tsx');
 if (fs.existsSync(cashReportModalPath)) {
   const cashReportSource = fs.readFileSync(cashReportModalPath, 'utf8');
@@ -246,6 +259,9 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('invoiceEditModel')) {
     report(roadmapPath, 'roadmap must document the invoice edit model.');
+  }
+  if (!roadmap.includes('invoiceViewModel')) {
+    report(roadmapPath, 'roadmap must document the invoice view model.');
   }
   if (!roadmap.includes('invoicesCashReportModel')) {
     report(roadmapPath, 'roadmap must document the invoice cash report model.');
