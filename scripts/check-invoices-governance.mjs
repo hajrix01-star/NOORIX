@@ -22,6 +22,10 @@ const requiredFiles = [
   path.join(invoicesRoot, 'invoicesListFilterModel.test.ts'),
   path.join(invoicesRoot, 'invoicesListQueryModel.ts'),
   path.join(invoicesRoot, 'invoicesListQueryModel.test.ts'),
+  path.join(invoicesRoot, 'invoicesListUrlModel.ts'),
+  path.join(invoicesRoot, 'invoicesListUrlModel.test.ts'),
+  path.join(invoicesRoot, 'invoicesListImportExportModel.ts'),
+  path.join(invoicesRoot, 'invoicesListImportExportModel.test.ts'),
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoice-list-query.ts'),
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoice-list-query.test.ts'),
   path.join(root, 'backend', 'src', 'invoice', 'dto', 'invoice-list-query.dto.ts'),
@@ -100,6 +104,18 @@ if (fs.existsSync(listScreenHookPath)) {
   if (!listScreenSource.includes('./invoicesListQueryModel')) {
     report(listScreenHookPath, 'invoice list hook must normalize API filters through invoicesListQueryModel.');
   }
+  if (!listScreenSource.includes('./invoicesListUrlModel')) {
+    report(listScreenHookPath, 'invoice list hook must read drilldown URL state through invoicesListUrlModel.');
+  }
+  if (!listScreenSource.includes('./invoicesListImportExportModel')) {
+    report(listScreenHookPath, 'invoice list hook must delegate ImportExport fetching to invoicesListImportExportModel.');
+  }
+  if (/searchParams\.get\(/.test(listScreenSource)) {
+    report(listScreenHookPath, 'invoice list hook must not parse URL params inline; use invoicesListUrlModel.');
+  }
+  if (/getInvoices\(/.test(listScreenSource) || /unwrapApiList\b/.test(listScreenSource)) {
+    report(listScreenHookPath, 'invoice list hook must not call invoice APIs directly for ImportExport exports.');
+  }
 }
 
 const listActionsPath = path.join(invoicesRoot, 'useInvoicesListActions.ts');
@@ -160,6 +176,12 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('invoicesListQueryModel')) {
     report(roadmapPath, 'roadmap must document the invoice query model.');
+  }
+  if (!roadmap.includes('invoicesListUrlModel')) {
+    report(roadmapPath, 'roadmap must document the invoice URL drilldown model.');
+  }
+  if (!roadmap.includes('invoicesListImportExportModel')) {
+    report(roadmapPath, 'roadmap must document the invoice ImportExport model.');
   }
   if (!roadmap.includes('invoice-list-query')) {
     report(roadmapPath, 'roadmap must document the frontend invoice API query helper.');

@@ -15,13 +15,10 @@ import { useCategories } from '../../hooks/useCategories';
 import { useVaults } from '../../hooks/useVaults';
 import { fmt } from '../../utils/format';
 import {
-  getInvoices,
   deleteInvoice,
   getInvoiceCreatorFilterOptions,
-  unwrapApiList,
 } from '../../services/api';
 import { useDateFilter } from '../../ui/date';
-import { formatInvoiceForExport } from '../../utils/importTemplates';
 import { buildActiveCancelledStatusMap, buildInvoiceKindBadgeMap } from '../../constants/badgeMaps';
 import { PAGE_SIZE } from './invoicesListScreenHelpers';
 import { invoiceKeys, ledgerKeys, vaultKeys } from '../../services/queryKeys';
@@ -36,6 +33,14 @@ import { nextInvoiceSortState } from './invoicesListSort';
 import { toYmd } from '../../utils/saudiDate';
 import { useInvoicesListActions } from './useInvoicesListActions';
 import { buildInvoiceListFetchParams } from './invoicesListQueryModel';
+import {
+  EMPTY_INVOICE_LIST_URL_EXTRA,
+  applyInvoiceListKindDrill,
+  parseInvoiceListUrlState,
+  resolveInvoiceListDateRange,
+  resolveInvoiceListKindForApi,
+} from './invoicesListUrlModel';
+import { fetchInvoicesForImportExportExport } from './invoicesListImportExportModel';
 
 /**
  * منطق شاشة قائمة الفواتير — عرض فقط يبقى في InvoicesListScreen.jsx
@@ -50,9 +55,10 @@ export function useInvoicesListScreen() {
   const canFilterSaleInvoices = hasPermission(userRole, PERMISSIONS.VIEW_INVOICES, userPermissions);
   const { t, lang } = useTranslation();
   const [searchParams] = useSearchParams();
-  const fromUrl = toYmd(searchParams.get('from'));
-  const toUrl = toYmd(searchParams.get('to'));
-  const invoiceBatchIdFromUrl = searchParams.get('batchId')?.trim() || '';
+  const urlState = useMemo(() => parseInvoiceListUrlState(searchParams), [searchParams]);
+  const fromUrl = urlState.from;
+  const toUrl = urlState.to;
+  const invoiceBatchIdFromUrl = urlState.batchId;
   const urlDrillKeyRef = useRef('');
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
@@ -72,25 +78,28 @@ export function useInvoicesListScreen() {
   const [filterVaultId, setFilterVaultId] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
   const [filterHasNotesOnly, setFilterHasNotesOnly] = useState(false);
-  const [urlExtra, setUrlExtra] = useState({ kind: '', categoryId: '', expenseLineId: '' });
+  const [urlExtra, setUrlExtra] = useState(EMPTY_INVOICE_LIST_URL_EXTRA);
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('transactionDate');
   const [sortDir, setSortDir] = useState('desc');
   const [showImportExport, setShowImportExport] = useState(false);
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const [cashReportOpen, setCashReportOpen] = useState(false);
-  const qInit = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : '';
-  const [searchText, setSearchText] = useState(qInit);
+  const [searchText, setSearchText] = useState(urlState.q);
   const debouncedQ = useDebouncedValue((searchText || '').trim(), 300);
 
-  const invoiceQueryStartDate = useMemo(
-    () => (fromUrl && toUrl ? fromUrl : dateFilter.startDate),
-    [fromUrl, toUrl, dateFilter.startDate],
+  const invoiceQueryDateRange = useMemo(
+    () =>
+      resolveInvoiceListDateRange({
+        fromUrl,
+        toUrl,
+        fallbackStartDate: dateFilter.startDate,
+        fallbackEndDate: dateFilter.endDate,
+      }),
+    [fromUrl, toUrl, dateFilter.startDate, dateFilter.endDate],
   );
-  const invoiceQueryEndDate = useMemo(
-    () => (fromUrl && toUrl ? toUrl : dateFilter.endDate),
-    [fromUrl, toUrl, dateFilter.endDate],
-  );
+  const invoiceQueryStartDate = invoiceQueryDateRange.startDate;
+  const invoiceQueryEndDate = invoiceQueryDateRange.endDate;
 
   useEffect(() => {
     setPage(1);
@@ -114,47 +123,32 @@ export function useInvoicesListScreen() {
   ]);
 
   useEffect(() => {
-    const keys = ['from', 'to', 'kind', 'supplierId', 'supplierCategoryId', 'categoryId', 'expenseLineId', 'q', 'batchId'];
-    const parts = keys.map((k: any) => searchParams.get(k) || '');
-    const drillKey = parts.join('\u001f');
-    if (!parts.some(Boolean)) {
+    if (!urlState.hasDrillValues) {
       urlDrillKeyRef.current = '';
       return;
     }
-    if (urlDrillKeyRef.current === drillKey) return;
-    urlDrillKeyRef.current = drillKey;
+    if (urlDrillKeyRef.current === urlState.drillKey) return;
+    urlDrillKeyRef.current = urlState.drillKey;
 
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const kind = searchParams.get('kind') || '';
-    const supplierId = searchParams.get('supplierId') || '';
-    const supplierCategoryId = searchParams.get('supplierCategoryId') || '';
-    const categoryId = searchParams.get('categoryId') || '';
-    const expenseLineId = searchParams.get('expenseLineId') || '';
-    const q = searchParams.get('q') || '';
-    if (from && to) {
+    if (urlState.from && urlState.to) {
       dateFilter.setMode('range');
-      dateFilter.setRangeStart(toYmd(from));
-      dateFilter.setRangeEnd(toYmd(to));
+      dateFilter.setRangeStart(urlState.from);
+      dateFilter.setRangeEnd(urlState.to);
     }
-    if (kind) {
-      if (kind.includes(',')) {
-        setFilterKind('');
-        setUrlExtra((p: any) => ({ ...p, kind }));
-      } else {
-        setFilterKind(kind);
-        setUrlExtra((p: any) => ({ ...p, kind: '' }));
-      }
+    if (urlState.kind) {
+      const kindDrill = applyInvoiceListKindDrill(urlState.kind);
+      setFilterKind(kindDrill.filterKind);
+      setUrlExtra((p: any) => ({ ...p, kind: kindDrill.kind }));
     }
-    if (supplierId) setFilterSupplierId(supplierId);
-    if (supplierCategoryId) setFilterSupplierCategoryId(supplierCategoryId);
-    if (categoryId) setUrlExtra((p: any) => ({ ...p, categoryId }));
-    if (expenseLineId) setUrlExtra((p: any) => ({ ...p, expenseLineId }));
-    if (q) {
-      setSearchText(q);
+    if (urlState.supplierId) setFilterSupplierId(urlState.supplierId);
+    if (urlState.supplierCategoryId) setFilterSupplierCategoryId(urlState.supplierCategoryId);
+    if (urlState.categoryId) setUrlExtra((p: any) => ({ ...p, categoryId: urlState.categoryId }));
+    if (urlState.expenseLineId) setUrlExtra((p: any) => ({ ...p, expenseLineId: urlState.expenseLineId }));
+    if (urlState.q) {
+      setSearchText(urlState.q);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- نقرأ فقط دوال فلتر التاريخ المستقرة
-  }, [searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read stable date filter setters only
+  }, [urlState]);
 
   const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
   const KIND_MAP = useMemo(() => buildInvoiceKindBadgeMap(t), [t]);
@@ -215,7 +209,7 @@ export function useInvoicesListScreen() {
     [dateFilter.endDate, dateFilter.startDate],
   );
 
-  const kindForApi = filterKind || urlExtra.kind || undefined;
+  const kindForApi = resolveInvoiceListKindForApi(filterKind, urlExtra.kind);
 
   const invoiceListFetchParams = useMemo(
     () =>
@@ -393,46 +387,23 @@ export function useInvoicesListScreen() {
   );
 
   const importExportExportFetcher = useCallback(async () => {
-    const importExportFetchParams = buildInvoiceListFetchParams({
+    return fetchInvoicesForImportExportExport({
       companyId,
       startDate: dateFilter.startDate,
       endDate: dateFilter.endDate,
-      kind: filterKind || (urlExtra.kind ? urlExtra.kind.split(',')[0] : ''),
+      filterKind,
+      urlExtra,
       sortBy: sortKey,
       sortDir,
       supplierId: filterSupplierId,
       supplierCategoryId: filterSupplierCategoryId,
       q: debouncedQ,
-      categoryId: urlExtra.categoryId,
-      expenseLineId: urlExtra.expenseLineId,
-      includeCancelled: true,
       hasNotes: filterHasNotesOnly,
       vaultId: filterVaultId,
       batchId: invoiceBatchIdFromUrl,
       createdByUserId: filterCreatedByUserId,
+      exportFailedMessage: t('exportFailed'),
     });
-    const res = await getInvoices(
-      importExportFetchParams.companyId,
-      importExportFetchParams.startDate,
-      importExportFetchParams.endDate,
-      1,
-      2000,
-      importExportFetchParams.batchId || null,
-      undefined,
-      importExportFetchParams.kind,
-      importExportFetchParams.sortBy,
-      importExportFetchParams.sortDir,
-      importExportFetchParams.supplierId,
-      importExportFetchParams.supplierCategoryId,
-      importExportFetchParams.q,
-      importExportFetchParams.categoryId,
-      importExportFetchParams.expenseLineId,
-      importExportFetchParams.includeCancelled,
-      importExportFetchParams.hasNotes,
-      importExportFetchParams.vaultId,
-      importExportFetchParams.createdByUserId,
-    );
-    return unwrapApiList<any>(res, t('exportFailed')).map(formatInvoiceForExport);
   }, [
     companyId,
     dateFilter.startDate,
