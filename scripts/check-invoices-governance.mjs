@@ -174,6 +174,9 @@ if (fs.existsSync(dayCloseBodyPath)) {
   if (!dayCloseBodySource.includes('../dayCloseReportModel')) {
     report(dayCloseBodyPath, 'day close report body must delegate report rules to dayCloseReportModel.');
   }
+  if (/function\s+(?:pickBilingual|counterpartyLabel|getDayCloseCashKpis|enumerateYmdDates|pad2)\b/.test(dayCloseBodySource)) {
+    report(dayCloseBodyPath, 'day close report body must not keep local report-rule helpers.');
+  }
 }
 
 const dayCloseWhatsappPath = path.join(invoicesRoot, 'utils', 'dayCloseWhatsApp.ts');
