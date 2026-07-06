@@ -10,49 +10,20 @@ import {
   waShiftSectionTitle,
   waSubheading,
 } from '../../../utils/whatsappTextFormat';
-import { pickDayCloseBilingualName } from '../dayCloseReportModel';
-
-export type DayCloseKindLabels = Record<string, string>;
+import {
+  type DayCloseKindLabels,
+  type DayCloseKindRow,
+  type DayCloseReportData,
+  type DayCloseSalesSummary,
+  pickDayCloseBilingualName,
+} from '../dayCloseReportModel';
 
 type Translate = (key: string, ...args: unknown[]) => string;
-
-type DayCloseKindRow = {
-  kind?: string | null;
-  total?: number | string | null;
-  count?: number | string | null;
-};
-
-type DayCloseSalesChannel = {
-  amount?: number | string | null;
-  vaultNameAr?: string | null;
-  vaultNameEn?: string | null;
-  vaultType?: string | null;
-};
-
-type DayCloseSalesSummary = {
-  totalAmount?: number | string | null;
-  customerCount?: number | string | null;
-  channels?: DayCloseSalesChannel[];
-};
-
-type DayCloseWhatsAppData = {
-  byKind?: DayCloseKindRow[];
-  salesSummaries?: DayCloseSalesSummary[];
-  sums?: {
-    inflow?: { total?: number | string | null; count?: number | string | null };
-    outflow?: { total?: number | string | null; count?: number | string | null };
-  };
-  cash?: {
-    dayTotalIn?: number | string | null;
-    dayTotalOut?: number | string | null;
-    netDay?: number | string | null;
-  };
-};
 
 export type BuildDayCloseWhatsAppParams = {
   companyName: string;
   dateLabel: string;
-  data: DayCloseWhatsAppData;
+  data: DayCloseReportData;
   kindLabel: DayCloseKindLabels;
   lang: string;
   t: Translate;

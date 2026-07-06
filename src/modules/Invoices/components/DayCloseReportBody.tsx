@@ -2,6 +2,9 @@ import React from 'react';
 import { fmt } from '../../../utils/format';
 import {
   calculateDayCloseCashKpis,
+  type DayCloseKindLabels,
+  type DayCloseReportData,
+  type DayCloseSalesChannel,
   formatDayCloseMonthStartLabel,
   getEmptyDayCloseValue,
   pickDayCloseBilingualName,
@@ -12,100 +15,6 @@ const SEPARATOR = '\u2014';
 const CHANNEL_SEPARATOR = ' \u00b7 ';
 
 type Translate = (key: string, ...args: unknown[]) => string;
-type DayCloseKindLabels = Record<string, string>;
-
-type DayCloseTotalRow = {
-  count?: number | string | null;
-  total?: number | string | null;
-};
-
-type DayCloseKindRow = DayCloseTotalRow & {
-  kind: string;
-};
-
-type DayClosePaymentRow = DayCloseTotalRow & {
-  vaultId?: string | null;
-  label?: string | null;
-  nameAr?: string | null;
-  nameEn?: string | null;
-};
-
-type DayCloseSalesChannel = {
-  amount?: number | string | null;
-  vaultName?: string | null;
-  vaultNameAr?: string | null;
-  vaultNameEn?: string | null;
-};
-
-type DayCloseSalesSummary = {
-  id: string;
-  summaryNumber?: string | number | null;
-  customerCount?: number | string | null;
-  cashOnHand?: number | string | null;
-  totalAmount?: number | string | null;
-  channels?: DayCloseSalesChannel[];
-};
-
-type DayCloseVaultMovementRow = {
-  id: string;
-  nameAr?: string | null;
-  nameEn?: string | null;
-  type?: string | null;
-  totalIn?: number | string | null;
-  totalOut?: number | string | null;
-  netDay?: number | string | null;
-};
-
-type DayCloseOperationRow = {
-  id: string;
-  invoiceNumber?: string | number | null;
-  kind?: string | null;
-  totalAmount?: number | string | null;
-  status?: string | null;
-  supplierName?: string | null;
-  supplierNameAr?: string | null;
-  supplierNameEn?: string | null;
-  employeeName?: string | null;
-  expenseLineName?: string | null;
-  expenseLineNameAr?: string | null;
-  expenseLineNameEn?: string | null;
-  vaultName?: string | null;
-  vaultNameAr?: string | null;
-  vaultNameEn?: string | null;
-  notes?: string | null;
-};
-
-type DayCloseReportData = {
-  meta?: {
-    cashMonthScopeStart?: unknown;
-    invoicesTruncated?: boolean;
-    operationsReturned?: number | string | null;
-    invoiceCountAll?: number | string | null;
-  };
-  sums?: {
-    inflow?: DayCloseTotalRow;
-    outflow?: DayCloseTotalRow;
-  };
-  cash?: {
-    netDay?: number | string | null;
-    dayTotalIn?: number | string | null;
-    dayTotalOut?: number | string | null;
-    balanceLifetimeCashVaultsEod?: unknown;
-    balanceEndOfDayCashVaults?: unknown;
-    availableCashMonthScoped?: unknown;
-  };
-  transfers?: {
-    volume?: number | string | null;
-    count?: number | string | null;
-  };
-  byKind?: DayCloseKindRow[];
-  outflowByPaymentMethod?: DayClosePaymentRow[];
-  salesSummaries?: DayCloseSalesSummary[];
-  vaults?: {
-    movementOnDayByVault?: DayCloseVaultMovementRow[];
-  };
-  operations?: DayCloseOperationRow[];
-};
 
 type DayCloseReportBodyProps = {
   data: DayCloseReportData;
@@ -320,9 +229,9 @@ export function DayCloseReportBody({
               {byKind.length === 0 ? (
                 <EmptyRow colSpan={3} />
               ) : (
-                byKind.map((row) => (
-                  <tr key={row.kind}>
-                    <td>{kindLabel[row.kind] || row.kind}</td>
+                byKind.map((row, index) => (
+                  <tr key={row.kind ?? `kind-${index}`}>
+                    <td>{row.kind ? kindLabel[row.kind] || row.kind : getEmptyDayCloseValue()}</td>
                     <td className="dc-num">{count(row.count)}</td>
                     <td className="dc-num">{money(row.total)}</td>
                   </tr>

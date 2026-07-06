@@ -166,6 +166,9 @@ if (fs.existsSync(dayCloseModalPath)) {
   if (/enumerateYmdDates|companies\?\.find|\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\\\$\/\.test/.test(dayCloseModalSource)) {
     report(dayCloseModalPath, 'day close modal must not rebuild date or company-name rules inline.');
   }
+  if (/\bany\b|formatSaudiDateISO\(\s*`\$\{/.test(dayCloseModalSource)) {
+    report(dayCloseModalPath, 'day close modal must stay typed and use dayCloseReportModel date formatting.');
+  }
 }
 
 const dayCloseBodyPath = path.join(invoicesRoot, 'components', 'DayCloseReportBody.tsx');

@@ -42,6 +42,96 @@ export type DayCloseCashKpis = {
   showLifetimeFootnote: boolean;
 };
 
+export type DayCloseKindLabels = Record<string, string>;
+
+export type DayCloseTotalRow = {
+  count?: number | string | null;
+  total?: number | string | null;
+};
+
+export type DayCloseKindRow = DayCloseTotalRow & {
+  kind?: string | null;
+};
+
+export type DayClosePaymentRow = DayCloseTotalRow & {
+  vaultId?: string | null;
+  label?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+};
+
+export type DayCloseSalesChannel = {
+  amount?: number | string | null;
+  vaultName?: string | null;
+  vaultNameAr?: string | null;
+  vaultNameEn?: string | null;
+  vaultType?: string | null;
+};
+
+export type DayCloseSalesSummary = {
+  id?: string;
+  summaryNumber?: string | number | null;
+  customerCount?: number | string | null;
+  cashOnHand?: number | string | null;
+  totalAmount?: number | string | null;
+  channels?: DayCloseSalesChannel[];
+};
+
+export type DayCloseVaultMovementRow = {
+  id: string;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  type?: string | null;
+  totalIn?: number | string | null;
+  totalOut?: number | string | null;
+  netDay?: number | string | null;
+};
+
+export type DayCloseOperationRow = DayCloseOperationSource & {
+  id: string;
+  invoiceNumber?: string | number | null;
+  kind?: string | null;
+  totalAmount?: number | string | null;
+  status?: string | null;
+  vaultName?: string | null;
+  vaultNameAr?: string | null;
+  vaultNameEn?: string | null;
+};
+
+export type DayCloseReportData = {
+  meta?: {
+    cashMonthScopeStart?: unknown;
+    invoicesTruncated?: boolean;
+    operationsReturned?: number | string | null;
+    invoiceCountAll?: number | string | null;
+  };
+  sums?: {
+    inflow?: DayCloseTotalRow;
+    outflow?: DayCloseTotalRow;
+  };
+  cash?: DayCloseCashSource & {
+    netDay?: number | string | null;
+    dayTotalIn?: number | string | null;
+    dayTotalOut?: number | string | null;
+  };
+  transfers?: {
+    volume?: number | string | null;
+    count?: number | string | null;
+  };
+  byKind?: DayCloseKindRow[];
+  outflowByPaymentMethod?: DayClosePaymentRow[];
+  salesSummaries?: DayCloseSalesSummary[];
+  vaults?: {
+    movementOnDayByVault?: DayCloseVaultMovementRow[];
+  };
+  operations?: DayCloseOperationRow[];
+};
+
+export type DayClosePrintRow = {
+  date: string;
+  data: DayCloseReportData;
+};
+
 export function padDayCloseNumber(value: number) {
   return String(value).padStart(2, '0');
 }
@@ -125,4 +215,8 @@ export function isValidDayCloseDate(value: string) {
 
 export function getEmptyDayCloseValue() {
   return EMPTY_REPORT_VALUE;
+}
+
+export function formatDayCloseReportDateLabel(dateYmd: string) {
+  return formatSaudiDateISO(`${dateYmd}T12:00:00.000Z`);
 }
