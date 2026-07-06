@@ -77,7 +77,8 @@ export function buildInvoiceListQueryParts({
   const dateFilter = buildInvoiceTransactionDateFilter(startDate, endDate);
   const batchFilter = batchId ? { batchId } : {};
   const employeeFilter = employeeId ? { employeeId } : {};
-  const kindFilter = kind ? { kind: { in: kind.split(',').map((k) => k.trim()) } } : {};
+  const kindIds = parseCsvTokens(kind);
+  const kindFilter = kindIds.length ? { kind: { in: kindIds } } : {};
   const supplierFilter = buildSupplierFilter(supplierId);
   const supplierCategoryFilter = buildSupplierCategoryFilter(supplierCategoryId);
   const categoryFilter = categoryId ? { categoryId } : {};
@@ -87,11 +88,7 @@ export function buildInvoiceListQueryParts({
   const vaultFilter = buildVaultFilter(vaultId);
   const createdByFilter = buildCreatedByUserFilter(createdByUserId);
 
-  const wantHasNotesOnly =
-    hasNotes === true ||
-    hasNotes === 'true' ||
-    hasNotes === '1' ||
-    String(hasNotes || '').toLowerCase() === 'yes';
+  const wantHasNotesOnly = hasNotes === true;
   const notesPresenceFilter: Prisma.InvoiceWhereInput = wantHasNotesOnly
     ? { AND: [{ notes: { not: null } }, { NOT: { notes: { equals: '' } } }] }
     : {};

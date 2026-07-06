@@ -1,14 +1,31 @@
-/**
- * vaultDisplay — عرض أسماء الخزائن حسب لغة الواجهة
- */
+const EMPTY_DISPLAY_VALUE = '\u2014';
 
-/**
- * اسم الخزينة للعرض حسب اللغة
- * @param {object} vault - كائن الخزينة { nameAr, nameEn }
- * @param {string} lang - 'ar' | 'en'
- * @returns {string}
- */
-export function vaultDisplayName(vault: any, lang: any) {
-  if (!vault) return '—';
-  return lang === 'en' ? (vault.nameEn || vault.nameAr || '—') : (vault.nameAr || vault.nameEn || '—');
+export type LocalizedDisplaySource = {
+  name?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+};
+
+export type VaultDisplaySource = LocalizedDisplaySource;
+
+function cleanDisplayPart(value: string | null | undefined) {
+  return value != null ? String(value).trim() : '';
+}
+
+export function localizedDisplayName(
+  source: LocalizedDisplaySource | null | undefined,
+  lang: string,
+  fallback = EMPTY_DISPLAY_VALUE,
+) {
+  if (!source) return fallback;
+
+  const name = cleanDisplayPart(source.name);
+  const ar = cleanDisplayPart(source.nameAr) || name;
+  const en = cleanDisplayPart(source.nameEn) || name;
+
+  return (lang === 'en' ? en || ar : ar || en) || fallback;
+}
+
+export function vaultDisplayName(vault: VaultDisplaySource | null | undefined, lang: string) {
+  return localizedDisplayName(vault, lang);
 }

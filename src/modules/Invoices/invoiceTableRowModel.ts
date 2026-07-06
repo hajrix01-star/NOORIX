@@ -1,4 +1,6 @@
 import { formatSaudiDateISO } from '../../utils/saudiDate';
+import { localizedDisplayName } from '../../utils/vaultDisplay';
+import { toInvoiceFiniteNumber } from './invoiceNumberModel';
 
 const EMPTY_INVOICE_TABLE_VALUE = '\u2014';
 
@@ -51,7 +53,7 @@ export function asInvoiceTableText(value: unknown) {
 }
 
 export function asInvoiceTableNumber(value: unknown) {
-  return Number(value ?? 0);
+  return toInvoiceFiniteNumber(value);
 }
 
 export function pickInvoiceTableName(
@@ -59,11 +61,7 @@ export function pickInvoiceTableName(
   entity?: InvoiceTableNamedEntity | null,
   fallback = EMPTY_INVOICE_TABLE_VALUE,
 ) {
-  if (!entity) return fallback;
-  const ar = entity.nameAr || entity.name || '';
-  const en = entity.nameEn || entity.name || '';
-  const selected = lang === 'en' ? en || ar : ar || en;
-  return selected || fallback;
+  return localizedDisplayName(entity, lang, fallback);
 }
 
 export function formatInvoiceTableDate(value?: unknown) {

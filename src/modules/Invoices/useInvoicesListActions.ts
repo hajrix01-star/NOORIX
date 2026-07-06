@@ -16,6 +16,7 @@ import {
   isInvoiceListRawInvoice,
   type InvoiceListRawInvoice,
 } from './invoicesListScreenModel';
+import { toInvoiceFiniteNumber } from './invoiceNumberModel';
 
 type Translate = (key: string, ...args: unknown[]) => string;
 type ToastVariant = 'success' | 'error' | 'info' | 'warning' | string;
@@ -181,9 +182,9 @@ export function useInvoicesListActions(params: InvoiceListActionParams) {
         footerRows: [[
           { value: t('totalInvoices', serverAll.count), colSpan: baseMetaCols },
           { value: '', colSpan: vaultBlockCols },
-          { value: `${fmt(Number(serverAll.net))} SR` },
-          { value: `${fmt(Number(serverAll.tax))} SR` },
-          { value: `${fmt(Number(serverAll.total))} SR` },
+          { value: `${fmt(toInvoiceFiniteNumber(serverAll.net))} SR` },
+          { value: `${fmt(toInvoiceFiniteNumber(serverAll.tax))} SR` },
+          { value: `${fmt(toInvoiceFiniteNumber(serverAll.total))} SR` },
           { value: '', colSpan: 2 },
         ]],
       });

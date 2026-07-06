@@ -16,6 +16,7 @@ import {
   type InvoiceTableLang,
   type InvoiceTableRow,
 } from './invoiceTableRowModel';
+import { printCurrentInvoiceWindow } from './invoicePrintModel';
 
 type Translate = (key: string, ...args: unknown[]) => string;
 type StatusMap = Record<string, unknown>;
@@ -275,7 +276,7 @@ export function buildInvoiceListColumns({
           userRole={userRole}
           companyId={companyId}
           onView={(invoiceRow: InvoiceTableRow) => setViewingInvoice(invoiceRow)}
-          onPrint={() => window.print()}
+          onPrint={printCurrentInvoiceWindow}
           onEdit={(invoiceRow: InvoiceTableRow) => setEditingInvoice(invoiceRow)}
           onDelete={confirmAndDeleteInvoice}
         />
@@ -444,7 +445,7 @@ export function createInvoiceListMobileCardRenderer({
           row={row}
           userRole={userRole}
           companyId={companyId}
-          onPrint={() => window.print()}
+          onPrint={printCurrentInvoiceWindow}
           onEdit={(invoiceRow: InvoiceTableRow) => setEditingInvoice(invoiceRow)}
           onDelete={confirmAndDeleteInvoice}
         />

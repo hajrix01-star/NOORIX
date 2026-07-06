@@ -16,9 +16,11 @@ import { useTranslation } from '../../i18n/useTranslation';
 import { Input, Button, FloatingPanel } from '../../ui';
 import { SUPPLIER_USAGE_KEY } from '../../constants/storageKeys';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
+import { localizedDisplayName } from '../../utils/vaultDisplay';
 
 export type SupplierOptionRow = {
   id: string;
+  name?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
   code?: string | null;
@@ -28,9 +30,8 @@ export type SupplierOptionRow = {
 type SupplierSelectLang = 'ar' | 'en' | string;
 type SupplierUsageMap = Record<string, number>;
 
-function supplierLabel(supplier: SupplierOptionRow | null | undefined, lang: SupplierSelectLang = 'ar') {
-  if (lang === 'en') return supplier?.nameEn || supplier?.nameAr || supplier?.id || '';
-  return supplier?.nameAr || supplier?.nameEn || supplier?.id || '';
+export function getSupplierSelectLabel(supplier: SupplierOptionRow | null | undefined, lang: SupplierSelectLang = 'ar') {
+  return localizedDisplayName(supplier, lang, supplier?.id || '');
 }
 
 function readSupplierUsage(): SupplierUsageMap {
@@ -62,6 +63,7 @@ function matchesQuery(s: SupplierOptionRow, normalized: string) {
   if (
     String(s.nameAr || '').toLowerCase().includes(normalized) ||
     String(s.nameEn || '').toLowerCase().includes(normalized) ||
+    String(s.name || '').toLowerCase().includes(normalized) ||
     String(s.code || '').toLowerCase().includes(normalized)
   ) {
     return true;
@@ -106,7 +108,7 @@ export function SupplierSelect({
 
   useEffect(() => {
     if (!open) {
-      setQuery(selectedSupplier ? supplierLabel(selectedSupplier, lang) : '');
+      setQuery(selectedSupplier ? getSupplierSelectLabel(selectedSupplier, lang) : '');
     }
   }, [selectedSupplier, open, lang]);
 
@@ -133,13 +135,13 @@ export function SupplierSelect({
     }
 
     favorites.sort((a, b) =>
-      supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), localeOpts),
+      getSupplierSelectLabel(a, lang).localeCompare(getSupplierSelectLabel(b, lang), localeOpts),
     );
     mostUsed.sort((a, b) =>
       Number(usage[b.id] || 0) - Number(usage[a.id] || 0),
     );
     regular.sort((a, b) =>
-      supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), localeOpts),
+      getSupplierSelectLabel(a, lang).localeCompare(getSupplierSelectLabel(b, lang), localeOpts),
     );
 
     return {
@@ -211,7 +213,7 @@ export function SupplierSelect({
 
   function selectSupplier(supplier: SupplierOptionRow) {
     onChange?.(supplier.id);
-    setQuery(supplierLabel(supplier));
+    setQuery(getSupplierSelectLabel(supplier, lang));
     setOpen(false);
     trackSupplierUsage(supplier.id);
     setUsageVersion((version) => version + 1);
@@ -248,7 +250,7 @@ export function SupplierSelect({
                   className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >
                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                    {supplierLabel(s, lang)}
+                    {getSupplierSelectLabel(s, lang)}
                   </span>
                   <span className="shrink-0 text-noorix-amber text-[13px]">★</span>
                 </Button>
@@ -272,7 +274,7 @@ export function SupplierSelect({
                   className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >
                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                    {supplierLabel(s, lang)}
+                    {getSupplierSelectLabel(s, lang)}
                   </span>
                   <span className="text-[11px] text-noorix-blue shrink-0">الأكثر</span>
                 </Button>
@@ -298,7 +300,7 @@ export function SupplierSelect({
                   className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >
                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                    {supplierLabel(s, lang)}
+                    {getSupplierSelectLabel(s, lang)}
                   </span>
                 </Button>
               ))}

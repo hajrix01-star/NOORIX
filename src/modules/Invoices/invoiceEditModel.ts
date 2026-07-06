@@ -1,5 +1,6 @@
 import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
 import { toDateInputYmd } from '../../utils/saudiDate';
+import { toInvoiceFiniteNumber } from './invoiceNumberModel';
 
 export type InvoiceEditForm = {
   supplierId: string;
@@ -86,8 +87,8 @@ export function buildInvoiceEditInitialForm(invoice: InvoiceEditSource | null | 
   const taxable =
     invoice.isTaxable !== undefined
       ? invoice.isTaxable !== false
-      : Number(invoice.taxAmount || 0) > 0;
-  const total = Number(invoice.totalAmount || 0);
+      : toInvoiceFiniteNumber(invoice.taxAmount) > 0;
+  const total = toInvoiceFiniteNumber(invoice.totalAmount);
   const { net, tax } = splitTaxFromTotalAsNumbers(total, taxable, vatRateDecimal);
 
   return {
@@ -113,8 +114,8 @@ export function updateInvoiceEditFormField(
   const next = assignInvoiceEditFormField(form, field, value);
   if (field !== 'totalAmount' && field !== 'isTaxable') return next;
 
-  const total = Number.parseFloat(String(next.totalAmount || ''));
-  if (!Number.isNaN(total) && total > 0) {
+  const total = toInvoiceFiniteNumber(next.totalAmount, Number.NaN);
+  if (Number.isFinite(total) && total > 0) {
     const { net, tax } = splitTaxFromTotalAsNumbers(total, next.isTaxable !== false, vatRateDecimal);
     return {
       ...next,
@@ -163,11 +164,11 @@ export function validateInvoiceEditForm(input: {
     selectVault: string;
   };
 }): string {
-  const total = Number.parseFloat(input.form.totalAmount);
+  const total = toInvoiceFiniteNumber(input.form.totalAmount, Number.NaN);
   if (input.supplierRequired && !input.form.supplierInvoiceNumber?.trim()) {
     return input.messages.invoiceNumberRequired;
   }
-  if (Number.isNaN(total) || total <= 0) {
+  if (!Number.isFinite(total) || total <= 0) {
     return input.messages.totalMustBePositiveShort;
   }
   if (input.hasVaults && !String(input.form.vaultId || '').trim()) {
@@ -183,7 +184,7 @@ export function buildInvoiceEditUpdateBody(input: {
   isMultiVault: boolean;
   initialVaultKey: string;
 }) {
-  const total = Number.parseFloat(input.form.totalAmount);
+  const total = toInvoiceFiniteNumber(input.form.totalAmount);
   const body: InvoiceEditUpdateBody = {
     totalAmount: total,
     transactionDate: input.form.transactionDate || undefined,
@@ -209,6 +210,6 @@ export function buildInvoiceEditUpdateBody(input: {
 }
 
 export function hasPositiveInvoiceEditTotal(totalAmount: string): boolean {
-  const total = Number.parseFloat(totalAmount);
-  return !Number.isNaN(total) && total > 0;
+  const total = toInvoiceFiniteNumber(totalAmount, Number.NaN);
+  return Number.isFinite(total) && total > 0;
 }

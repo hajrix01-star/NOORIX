@@ -14,6 +14,7 @@ import {
   filterCashVaultRows,
   resolveInvoicesCashReportPeriodLine,
 } from '../invoicesCashReportModel';
+import { printCurrentInvoiceWindow } from '../invoicePrintModel';
 
 type Props = {
   companyId: string;
@@ -178,7 +179,7 @@ export function InvoicesCashReportModal({
             </p>
           </div>
           <Toolbar className="gap-2" printHidden={false}>
-            <Button size="sm" onClick={() => window.print()} disabled={state.status !== 'success'}>
+            <Button size="sm" onClick={printCurrentInvoiceWindow} disabled={state.status !== 'success'}>
               {t('print')}
             </Button>
             <Button size="sm" onClick={onClose}>

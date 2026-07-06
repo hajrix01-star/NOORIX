@@ -1,4 +1,6 @@
 import { formatSaudiDateISO } from '../../utils/saudiDate';
+import { localizedDisplayName } from '../../utils/vaultDisplay';
+import { toInvoiceFiniteNumber } from './invoiceNumberModel';
 
 const EMPTY_REPORT_VALUE = '\u2014';
 
@@ -159,10 +161,7 @@ export function pickDayCloseBilingualName(
   nameAr?: string | null,
   nameEn?: string | null,
 ) {
-  const ar = nameAr != null && String(nameAr).trim() !== '' ? String(nameAr).trim() : '';
-  const en = nameEn != null && String(nameEn).trim() !== '' ? String(nameEn).trim() : '';
-  if (lang === 'en') return en || ar || EMPTY_REPORT_VALUE;
-  return ar || en || EMPTY_REPORT_VALUE;
+  return localizedDisplayName({ nameAr, nameEn }, lang, EMPTY_REPORT_VALUE);
 }
 
 export function resolveDayCloseCompanyName(input: {
@@ -173,9 +172,7 @@ export function resolveDayCloseCompanyName(input: {
 }) {
   const company = input.companies?.find((item) => item.id === (input.activeCompanyId || input.companyId));
   if (!company) return '';
-  return input.lang === 'en'
-    ? company.nameEn || company.nameAr || company.name || ''
-    : company.nameAr || company.nameEn || company.name || '';
+  return localizedDisplayName(company, input.lang, '');
 }
 
 export function formatDayCloseMonthStartLabel(monthStartYmd?: unknown) {
@@ -185,9 +182,9 @@ export function formatDayCloseMonthStartLabel(monthStartYmd?: unknown) {
 }
 
 export function calculateDayCloseCashKpis(cash?: DayCloseCashSource): DayCloseCashKpis {
-  const lifetime = Number(cash?.balanceLifetimeCashVaultsEod ?? cash?.balanceEndOfDayCashVaults ?? 0);
+  const lifetime = toInvoiceFiniteNumber(cash?.balanceLifetimeCashVaultsEod ?? cash?.balanceEndOfDayCashVaults);
   const raw = cash?.availableCashMonthScoped;
-  const monthScoped = raw != null && raw !== '' ? Number(raw) : lifetime;
+  const monthScoped = raw != null && raw !== '' ? toInvoiceFiniteNumber(raw) : lifetime;
   return {
     monthScoped,
     lifetime,

@@ -46,6 +46,7 @@ import type { InvoiceViewSource } from './invoiceViewModel';
 import type { InvoiceTableRow } from './invoiceTableRowModel';
 import type { InvoiceListSortDir } from './invoicesListQueryModel';
 import type { InvoiceExecutiveVaultFlowRow } from './invoiceExecutiveCardsModel';
+import { buildInvoiceDeleteConfirmationMessage, canDeleteInvoiceRow } from './invoiceDeleteModel';
 import {
   buildInvoiceImportSuccessMessage,
   filterInvoiceSupplierCategories,
@@ -185,8 +186,8 @@ export function useInvoicesListScreen() {
 
   const confirmAndDeleteInvoice = useCallback(
     (r: InvoiceTableRow) => {
-      if (!r.id) return;
-      if (!confirm(t('deleteInvoiceConfirm', r.invoiceNumber || ''))) return;
+      if (!canDeleteInvoiceRow(r)) return;
+      if (!confirm(buildInvoiceDeleteConfirmationMessage(t, r))) return;
       deleteInvoiceMut.mutate({ id: r.id });
     },
     [t, deleteInvoiceMut],

@@ -10,6 +10,7 @@ import { invoiceKeys } from '../../../services/queryKeys';
 import { buildDayCloseWhatsAppText, openDayCloseWhatsApp } from '../utils/dayCloseWhatsApp';
 import { DayCloseReportBody } from './DayCloseReportBody';
 import { DAY_CLOSE_REPORT_STYLES } from './dayCloseReportStyles';
+import { printCurrentInvoiceWindow, printCurrentInvoiceWindowNextFrame } from '../invoicePrintModel';
 import {
   type DayClosePrintRow,
   type DayCloseReportData,
@@ -146,7 +147,7 @@ export default function DayCloseReportModal({
 
   const handlePrintSingleDay = () => {
     setMultiDayPrint(null);
-    requestAnimationFrame(() => window.print());
+    printCurrentInvoiceWindowNextFrame();
   };
 
   const handlePrintRange = async () => {
@@ -171,7 +172,7 @@ export default function DayCloseReportModal({
       }
       setMultiDayPrint(rows);
       await waitForPrintFrame();
-      window.print();
+      printCurrentInvoiceWindow();
     } catch (caughtError: unknown) {
       toastError(getErrorMessage(caughtError, t('dayCloseLoadFailed')));
       setMultiDayPrint(null);

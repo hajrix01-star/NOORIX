@@ -102,10 +102,7 @@ export function getInvoiceListCreatedByDisplayName(
   lang: InvoiceTableLang,
 ) {
   if (!user) return '';
-  const ar = user.nameAr || user.name || '';
-  const en = user.nameEn || user.name || '';
-  const selected = lang === 'en' ? en || ar : ar || en;
-  return selected || user.email || '';
+  return pickInvoiceTableName(lang, user, '') || String(user.email ?? '').trim();
 }
 
 export function getInvoiceListSupplierName(input: {

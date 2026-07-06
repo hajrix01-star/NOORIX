@@ -1,4 +1,6 @@
 import { toYmd } from '../../utils/saudiDate';
+import { localizedDisplayName } from '../../utils/vaultDisplay';
+import { toInvoiceFiniteNumber } from './invoiceNumberModel';
 import { buildInvoicesCashReportBody } from './utils/buildInvoicesCashReportPrint';
 
 const EMPTY_REPORT_VALUE = '\u2014';
@@ -68,7 +70,7 @@ export function filterCashVaultRows(
 }
 
 export function sumSalesCashOnHand(summaries: Array<{ cashOnHand?: unknown }>) {
-  return summaries.reduce((acc, summary) => acc + Number(summary.cashOnHand ?? 0), 0);
+  return summaries.reduce((acc, summary) => acc + toInvoiceFiniteNumber(summary.cashOnHand), 0);
 }
 
 export function mapCashReportVaultRows(input: {
@@ -77,12 +79,11 @@ export function mapCashReportVaultRows(input: {
   fmt: (value: number) => string;
 }) {
   return input.rows.map((row) => {
-    const name = input.lang === 'en' ? row.nameEn || row.nameAr : row.nameAr || row.nameEn;
     return {
-      vaultName: name || EMPTY_REPORT_VALUE,
-      inflow: input.fmt(Number(row.total ?? 0)),
-      outflow: input.fmt(Number(row.outflow ?? 0)),
-      remainder: input.fmt(Number(row.remainder ?? 0)),
+      vaultName: localizedDisplayName(row, input.lang, EMPTY_REPORT_VALUE),
+      inflow: input.fmt(toInvoiceFiniteNumber(row.total)),
+      outflow: input.fmt(toInvoiceFiniteNumber(row.outflow)),
+      remainder: input.fmt(toInvoiceFiniteNumber(row.remainder)),
     };
   });
 }
@@ -90,9 +91,9 @@ export function mapCashReportVaultRows(input: {
 export function calculateCashReportTotals(rows: InvoiceCashVaultRowSource[]): InvoiceCashReportTotals {
   return rows.reduce<InvoiceCashReportTotals>(
     (acc, row) => ({
-      inflow: acc.inflow + Number(row.total ?? 0),
-      outflow: acc.outflow + Number(row.outflow ?? 0),
-      remainder: acc.remainder + Number(row.remainder ?? 0),
+      inflow: acc.inflow + toInvoiceFiniteNumber(row.total),
+      outflow: acc.outflow + toInvoiceFiniteNumber(row.outflow),
+      remainder: acc.remainder + toInvoiceFiniteNumber(row.remainder),
     }),
     { inflow: 0, outflow: 0, remainder: 0 },
   );

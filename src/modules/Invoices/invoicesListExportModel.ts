@@ -10,6 +10,7 @@ import {
   getInvoiceListSupplierName,
   type InvoiceListRawInvoice,
 } from './invoicesListScreenModel';
+import { toInvoiceFiniteNumber } from './invoiceNumberModel';
 import type { InvoiceTableLang } from './invoiceTableRowModel';
 
 export type InvoiceExportColumnDef = {
@@ -66,9 +67,9 @@ export function invoiceToExportRow(invoice: InvoiceListRawInvoice, context: Invo
     createdByUserName: getInvoiceListCreatedByDisplayName(invoice.createdByUser, lang) || '\u2014',
     notes: invoice.notes ?? '',
     kind: kindLabel || invoice.kind || '\u2014',
-    netAmount: Number(invoice.netAmount ?? 0),
-    taxAmount: Number(invoice.taxAmount ?? 0),
-    totalAmount: Number(invoice.totalAmount ?? 0),
+    netAmount: toInvoiceFiniteNumber(invoice.netAmount),
+    taxAmount: toInvoiceFiniteNumber(invoice.taxAmount),
+    totalAmount: toInvoiceFiniteNumber(invoice.totalAmount),
     transactionDate: invoice.transactionDate ? formatSaudiDateISO(invoice.transactionDate) : '\u2014',
     status: statusLabel || invoice.status || '\u2014',
   };

@@ -1,6 +1,3 @@
-/**
- * InvoiceEditModal — نافذة تعديل الفاتورة
- */
 import React, { useState, useEffect, useMemo, type ChangeEvent } from 'react';
 import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -33,6 +30,11 @@ import {
 } from '../invoiceEditModel';
 import { getInvoiceListErrorMessage } from '../invoicesListScreenModel';
 import type { InvoiceVaultFilterEntity } from '../invoicesListFilterModel';
+import {
+  getInvoiceAttachmentMeta,
+  normalizeInvoiceAttachmentResponseData,
+  type InvoiceAttachmentMeta,
+} from '../invoiceAttachmentModel';
 
 type InvoiceEditModalProps = {
   invoice: InvoiceEditSource | null;
@@ -42,32 +44,6 @@ type InvoiceEditModalProps = {
   onSaved?: () => void;
   onClose?: () => void;
 };
-
-type InvoiceAttachmentMeta = {
-  has: boolean;
-  name: string | null;
-};
-
-type InvoiceAttachmentResponseData = {
-  hasInvoiceAttachment?: boolean | null;
-  attachmentOriginalName?: string | null;
-};
-
-function normalizeAttachmentResponseData(value: unknown): InvoiceAttachmentResponseData {
-  if (!value || typeof value !== 'object') return {};
-  const hasInvoiceAttachment =
-    'hasInvoiceAttachment' in value && typeof value.hasInvoiceAttachment === 'boolean'
-      ? value.hasInvoiceAttachment
-      : undefined;
-  const attachmentOriginalName =
-    'attachmentOriginalName' in value && value.attachmentOriginalName != null
-      ? String(value.attachmentOriginalName)
-      : undefined;
-  return {
-    hasInvoiceAttachment,
-    attachmentOriginalName,
-  };
-}
 
 export function InvoiceEditModal({
   invoice,
@@ -130,10 +106,7 @@ export function InvoiceEditModal({
 
   useEffect(() => {
     if (!invoice) return;
-    setAttachMeta({
-      has: !!invoice.hasInvoiceAttachment,
-      name: invoice.attachmentOriginalName || null,
-    });
+    setAttachMeta(getInvoiceAttachmentMeta(invoice));
   }, [invoice]);
 
   async function handleAttachmentFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -143,7 +116,7 @@ export function InvoiceEditModal({
     try {
       const res = await uploadInvoiceAttachment(invoice.id, companyId, file);
       throwIfApiFailed(res, t('saveFailed'));
-      const inv = normalizeAttachmentResponseData(res?.data);
+      const inv = normalizeInvoiceAttachmentResponseData(res?.data);
       setAttachMeta({
         has: !!inv?.hasInvoiceAttachment,
         name: inv?.attachmentOriginalName || file.name,

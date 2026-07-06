@@ -22,9 +22,10 @@ describe('dayCloseReportModel', () => {
   it('resolves bilingual names and company labels deterministically', () => {
     expect(pickDayCloseBilingualName('en', 'Arabic Name', 'English Name')).toBe('English Name');
     expect(pickDayCloseBilingualName('ar', 'Arabic Name', 'English Name')).toBe('Arabic Name');
+    expect(pickDayCloseBilingualName('en', ' Arabic fallback ', '  ')).toBe('Arabic fallback');
     expect(
       resolveDayCloseCompanyName({
-        companies: [{ id: 'c1', nameAr: 'Arabic Co', nameEn: 'English Co' }],
+        companies: [{ id: 'c1', name: 'Fallback Co', nameAr: 'Arabic Co', nameEn: 'English Co' }],
         activeCompanyId: 'c1',
         companyId: 'fallback',
         lang: 'en',

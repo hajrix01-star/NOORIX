@@ -1,3 +1,5 @@
+import { toInvoiceFiniteNumber } from './invoiceNumberModel';
+
 const EMPTY_EXECUTIVE_VALUE = '\u2014';
 
 export type InvoiceExecutiveNumber = number | string | null | undefined;
@@ -31,7 +33,7 @@ export type InvoiceExecutiveVaultFlowViewRow = {
 };
 
 export function asInvoiceExecutiveNumber(value: InvoiceExecutiveNumber) {
-  return Number(value ?? 0);
+  return toInvoiceFiniteNumber(value);
 }
 
 export function asInvoiceExecutiveCount(value: InvoiceExecutiveNumber) {

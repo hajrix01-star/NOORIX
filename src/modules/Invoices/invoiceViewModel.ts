@@ -1,4 +1,6 @@
 import { formatSaudiDate } from '../../utils/saudiDate';
+import { localizedDisplayName } from '../../utils/vaultDisplay';
+import { hasInvoiceNumericValue, toInvoiceFiniteNumber } from './invoiceNumberModel';
 
 const EMPTY_INVOICE_VIEW_VALUE = '\u2014';
 
@@ -70,11 +72,7 @@ export function pickInvoiceViewName(
   entity?: InvoiceViewNamedEntity | null,
   fallback = EMPTY_INVOICE_VIEW_VALUE,
 ) {
-  if (!entity) return fallback;
-  const ar = entity.nameAr || entity.name || '';
-  const en = entity.nameEn || entity.name || '';
-  const selected = lang === 'en' ? en || ar : ar || en;
-  return selected || fallback;
+  return localizedDisplayName(entity, lang, fallback);
 }
 
 export function formatInvoiceViewDate(value?: string | Date | null) {
@@ -82,7 +80,7 @@ export function formatInvoiceViewDate(value?: string | Date | null) {
 }
 
 export function formatInvoiceViewMoney(value: unknown, fmt: (value: number) => string) {
-  return value != null && value !== '' ? `${fmt(Number(value))} SR` : EMPTY_INVOICE_VIEW_VALUE;
+  return hasInvoiceNumericValue(value) ? `${fmt(toInvoiceFiniteNumber(value))} SR` : EMPTY_INVOICE_VIEW_VALUE;
 }
 
 export function getInvoiceViewDocumentNumber(invoice: InvoiceViewSource) {
@@ -169,7 +167,7 @@ export function getInvoiceViewVaultSplits(invoice: InvoiceViewSource, lang: Invo
   return (invoice.vaultAllocations ?? []).map<InvoiceViewVaultSplit>((allocation, index) => ({
     key: allocation.id || `vault-allocation-${index}`,
     vaultName: pickInvoiceViewName(lang, allocation.vault),
-    amount: Number(allocation.amount ?? 0),
+    amount: toInvoiceFiniteNumber(allocation.amount),
   }));
 }
 

@@ -10,6 +10,7 @@ import {
   waShiftSectionTitle,
   waSubheading,
 } from '../../../utils/whatsappTextFormat';
+import { toInvoiceFiniteNumber } from '../invoiceNumberModel';
 import {
   type DayCloseKindLabels,
   type DayCloseKindRow,
@@ -32,18 +33,20 @@ export type BuildDayCloseWhatsAppParams = {
 const PURCHASE_KIND = 'purchase';
 const EXPENSE_KINDS = new Set(['expense', 'fixed_expense', 'hr_expense', 'salary', 'advance']);
 
-function asNumber(value: unknown) {
-  return Number(value || 0);
-}
-
 function sumByKinds(byKind: DayCloseKindRow[], kinds: Set<string> | string): number {
   const set = typeof kinds === 'string' ? new Set([kinds]) : kinds;
-  return byKind.reduce((sum, row) => (row.kind && set.has(row.kind) ? sum + asNumber(row.total) : sum), 0);
+  return byKind.reduce(
+    (sum, row) => (row.kind && set.has(row.kind) ? sum + toInvoiceFiniteNumber(row.total) : sum),
+    0,
+  );
 }
 
 function countByKinds(byKind: DayCloseKindRow[], kinds: Set<string> | string): number {
   const set = typeof kinds === 'string' ? new Set([kinds]) : kinds;
-  return byKind.reduce((sum, row) => (row.kind && set.has(row.kind) ? sum + asNumber(row.count) : sum), 0);
+  return byKind.reduce(
+    (sum, row) => (row.kind && set.has(row.kind) ? sum + toInvoiceFiniteNumber(row.count) : sum),
+    0,
+  );
 }
 
 function aggregateSalesChannels(salesSummaries: DayCloseSalesSummary[], lang: string) {
@@ -51,10 +54,10 @@ function aggregateSalesChannels(salesSummaries: DayCloseSalesSummary[], lang: st
   let total = 0;
 
   for (const summary of salesSummaries) {
-    total += asNumber(summary.totalAmount);
+    total += toInvoiceFiniteNumber(summary.totalAmount);
     for (const channel of summary.channels ?? []) {
-      const label = pickDayCloseBilingualName(lang, channel.vaultNameAr, channel.vaultNameEn);
-      const amount = asNumber(channel.amount);
+      const label = pickDayCloseBilingualName(lang, channel.vaultNameAr ?? channel.vaultName, channel.vaultNameEn);
+      const amount = toInvoiceFiniteNumber(channel.amount);
       if (amount <= 0) continue;
 
       const vaultType = channel.vaultType != null ? String(channel.vaultType) : null;
@@ -74,7 +77,7 @@ function aggregateSalesChannels(salesSummaries: DayCloseSalesSummary[], lang: st
 }
 
 function salesCustomersTotal(salesSummaries: DayCloseSalesSummary[]) {
-  return salesSummaries.reduce((sum, summary) => sum + asNumber(summary.customerCount), 0);
+  return salesSummaries.reduce((sum, summary) => sum + toInvoiceFiniteNumber(summary.customerCount), 0);
 }
 
 export function buildDayCloseWhatsAppText(params: BuildDayCloseWhatsAppParams): string {
@@ -83,23 +86,23 @@ export function buildDayCloseWhatsAppText(params: BuildDayCloseWhatsAppParams): 
   const byKind = data.byKind ?? [];
   const salesSummaries = data.salesSummaries ?? [];
 
-  const inflowTotal = asNumber(data.sums?.inflow?.total);
-  const outflowTotal = asNumber(data.sums?.outflow?.total);
+  const inflowTotal = toInvoiceFiniteNumber(data.sums?.inflow?.total);
+  const outflowTotal = toInvoiceFiniteNumber(data.sums?.outflow?.total);
   const netDay = inflowTotal - outflowTotal;
 
   const { lines: channelLines, total: channelsSum } = aggregateSalesChannels(salesSummaries, lang);
   const salesTotal =
     salesSummaries.length > 0
-      ? channelsSum || salesSummaries.reduce((sum, summary) => sum + asNumber(summary.totalAmount), 0)
+      ? channelsSum || salesSummaries.reduce((sum, summary) => sum + toInvoiceFiniteNumber(summary.totalAmount), 0)
       : inflowTotal;
   const customers = salesSummaries.length > 0 ? salesCustomersTotal(salesSummaries) : countByKinds(byKind, 'sale');
 
   const purchasesTotal = sumByKinds(byKind, PURCHASE_KIND);
   const expensesTotal = sumByKinds(byKind, EXPENSE_KINDS);
 
-  const cashIn = asNumber(data.cash?.dayTotalIn);
-  const cashOut = asNumber(data.cash?.dayTotalOut);
-  const cashAvailable = asNumber(data.cash?.netDay ?? cashIn - cashOut);
+  const cashIn = toInvoiceFiniteNumber(data.cash?.dayTotalIn);
+  const cashOut = toInvoiceFiniteNumber(data.cash?.dayTotalOut);
+  const cashAvailable = toInvoiceFiniteNumber(data.cash?.netDay ?? cashIn - cashOut);
 
   const lines: string[] = [
     waReportHeader(t('dayCloseWaTitle'), name),

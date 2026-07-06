@@ -27,6 +27,7 @@ describe('invoiceViewModel', () => {
   it('resolves names and document numbers deterministically', () => {
     expect(pickInvoiceViewName('en', { nameAr: 'Arabic', nameEn: 'English' })).toBe('English');
     expect(pickInvoiceViewName('ar', { nameAr: 'Arabic', nameEn: 'English' })).toBe('Arabic');
+    expect(pickInvoiceViewName('en', { name: 'Fallback', nameAr: '  ', nameEn: '' })).toBe('Fallback');
     expect(getInvoiceViewDocumentNumber({ id: 'i1', supplierInvoiceNumber: 'S-1', invoiceNumber: 'I-1' })).toBe(
       'S-1',
     );

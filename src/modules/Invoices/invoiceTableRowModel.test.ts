@@ -15,6 +15,7 @@ describe('invoiceTableRowModel', () => {
     expect(asInvoiceTableText('')).toBe('\u2014');
     expect(pickInvoiceTableName('en', { nameAr: 'Arabic', nameEn: 'English' })).toBe('English');
     expect(pickInvoiceTableName('ar', { nameAr: 'Arabic', nameEn: 'English' })).toBe('Arabic');
+    expect(pickInvoiceTableName('en', { name: 'Fallback', nameAr: ' ', nameEn: '' })).toBe('Fallback');
   });
 
   it('maps vault chips with formatted titles', () => {

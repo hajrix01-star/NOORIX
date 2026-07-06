@@ -15,6 +15,7 @@ import {
   buildInvoiceOutflowTaxUpdate,
   shouldRecomputeInvoiceOutflowTax,
 } from './invoice-update-tax.util';
+import { parseInvoiceDate } from './invoice-date.util';
 
 /**
  * تحديث فاتورة داخل $transaction (قيود + audit).
@@ -57,7 +58,7 @@ export async function updateInvoiceInTransaction(
     const newInvoice = await tx.invoice.update({ where: { id }, data: updateData });
 
     if (dto.transactionDate !== undefined) {
-      const newDate = new Date(dto.transactionDate);
+      const newDate = parseInvoiceDate(dto.transactionDate);
       const period = await tx.fiscalPeriod.findFirst({
         where: {
           companyId,

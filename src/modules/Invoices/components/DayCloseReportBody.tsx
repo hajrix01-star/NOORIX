@@ -10,6 +10,7 @@ import {
   pickDayCloseBilingualName,
   resolveDayCloseCounterpartyLabel,
 } from '../dayCloseReportModel';
+import { toInvoiceFiniteNumber } from '../invoiceNumberModel';
 
 const SEPARATOR = '\u2014';
 const CHANNEL_SEPARATOR = ' \u00b7 ';
@@ -30,7 +31,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 function money(value: unknown) {
-  return fmt(Number(value ?? 0));
+  return fmt(toInvoiceFiniteNumber(value));
 }
 
 function count(value: unknown): string | number {

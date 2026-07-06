@@ -3,6 +3,7 @@ import {
   type InvoiceTableLang,
   type InvoiceTableNamedEntity,
 } from './invoiceTableRowModel';
+import { toInvoiceFiniteNumber } from './invoiceNumberModel';
 
 export const PAGE_SIZE = 50;
 export const MAX_VAULT_SLOTS = 5;
@@ -53,7 +54,7 @@ export function getAllocationsForExport(
       rows.push({
         name: pickInvoiceTableName(lang, allocation.vault),
         type: vaultTypeLabelForExport(allocation.vault?.type, t),
-        amount: Number(allocation.amount ?? 0),
+        amount: toInvoiceFiniteNumber(allocation.amount),
       });
     }
     return rows;
@@ -63,7 +64,7 @@ export function getAllocationsForExport(
     rows.push({
       name: pickInvoiceTableName(lang, invoice.vault),
       type: vaultTypeLabelForExport(invoice.vault.type, t),
-      amount: Number(invoice.totalAmount ?? 0),
+      amount: toInvoiceFiniteNumber(invoice.totalAmount),
     });
   }
   return rows;
