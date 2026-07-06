@@ -23,7 +23,7 @@ A section is considered closed only when all of the following are true:
 | Invoices | `485ce7e6 finalize invoice section cleanup` | Closed | Centralized list contracts, export/actions, display models, cash/day-close models, backend invoice contracts, vault display fallback. |
 | Purchases | `f3e600a0 finalize purchases section cleanup` | Closed | Centralized batch query contract, batch state/actions/data split, guarded editable/print surfaces, purchase batch display/action/number models. |
 | Dashboard | `796a2557 finalize dashboard section cleanup` | Closed | Centralized period contracts, reporting/dashboard contracts, backend-derived metrics, calendar/special-days models, KPI/chart display helpers. |
-| Owner Dashboard | Pending local commit | Closed in workspace | Rebuilt official owner overview model in backend; frontend is display-only for KPIs, charts, comparison, and exports. |
+| Owner Dashboard | 3ecfc325 | Closed | Rebuilt official owner overview model in backend; frontend is display-only for KPIs, charts, comparison, and exports. |
 
 ## Invoices
 
