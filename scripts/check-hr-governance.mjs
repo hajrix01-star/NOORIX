@@ -29,6 +29,9 @@ const requiredFiles = [
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'employees.ts'),
   path.join(root, 'src', 'services', 'queryKeys', 'hr.ts'),
   path.join(root, 'src', 'services', 'queryKeys', 'employees.ts'),
+  path.join(root, 'backend', 'src', 'hr', 'dto', 'hr-query.dto.ts'),
+  path.join(root, 'backend', 'src', 'hr', 'hr-query-contract.util.ts'),
+  path.join(root, 'backend', 'src', 'hr', 'hr-query-contract.util.spec.ts'),
   path.join(root, 'backend', 'src', 'employees', 'dto', 'employee-list-query.dto.ts'),
   path.join(root, 'backend', 'src', 'employees', 'employee-list-query-contract.util.ts'),
   path.join(root, 'backend', 'src', 'employees', 'employee-list-query-contract.util.spec.ts'),
@@ -123,6 +126,31 @@ if (fs.existsSync(employeesControllerPath)) {
   }
 }
 
+const hrControllerPath = path.join(root, 'backend', 'src', 'hr', 'hr.controller.ts');
+if (fs.existsSync(hrControllerPath)) {
+  const source = fs.readFileSync(hrControllerPath, 'utf8');
+  for (const symbol of [
+    'HrEmployeeQueryDto',
+    'HrYearQueryDto',
+    'HrLeavesQueryDto',
+    'HrResidenciesQueryDto',
+    'HrDeleteLeaveQueryDto',
+    'HrDeleteResidencyQueryDto',
+    'normalizeHrEmployeeQuery',
+    'normalizeHrLeavesQuery',
+    'normalizeHrResidenciesQuery',
+    'normalizeHrYearQuery',
+    'parseHrCsvIds',
+  ]) {
+    if (!source.includes(symbol)) {
+      report(hrControllerPath, `HR controller must use central backend query contract symbol: ${symbol}.`);
+    }
+  }
+  if (/@Query\('(?:employeeId|year|employeeIds|voidSettlement|payrollMonth|serviceCategory|voidInvoice)'/.test(source)) {
+    report(hrControllerPath, 'HR controller must not define per-field tab query decorators; use HR query DTOs.');
+  }
+}
+
 const roadmapPath = path.join(root, 'docs', 'FILTER_CENTRALITY_ROADMAP.md');
 if (fs.existsSync(roadmapPath)) {
   const roadmap = fs.readFileSync(roadmapPath, 'utf8');
@@ -131,6 +159,9 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('check:hr-governance')) {
     report(roadmapPath, 'roadmap must document HR governance.');
+  }
+  if (!roadmap.includes('HrLeavesQueryDto') || !roadmap.includes('hr-query-contract')) {
+    report(roadmapPath, 'roadmap must document the HR backend tab query contract.');
   }
 }
 

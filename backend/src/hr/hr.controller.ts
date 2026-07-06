@@ -48,6 +48,24 @@ import { CreateAllowanceDto } from './dto/create-allowance.dto';
 import { CreateDeductionDto } from './dto/create-deduction.dto';
 import { IssuePayrollPaymentDto } from './dto/issue-payroll-payment.dto';
 import { CalculateEosDto } from './dto/calculate-eos.dto';
+import {
+  HrCompensationSnapshotsQueryDto,
+  HrDeleteLeaveQueryDto,
+  HrDeleteResidencyQueryDto,
+  HrEmployeeQueryDto,
+  HrLeaveSalarySettlementsQueryDto,
+  HrLeavesQueryDto,
+  HrPayrollRunItemsQueryDto,
+  HrResidenciesQueryDto,
+  HrYearQueryDto,
+} from './dto/hr-query.dto';
+import {
+  normalizeHrEmployeeQuery,
+  normalizeHrLeavesQuery,
+  normalizeHrResidenciesQuery,
+  normalizeHrYearQuery,
+  parseHrCsvIds,
+} from './hr-query-contract.util';
 
 @Controller('hr')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -62,21 +80,19 @@ export class HRController {
   @RequirePermission('HR_READ')
   findPayrollRunItemsByEmployee(
     @CompanyId() companyId: string,
-    @Query('employeeId') employeeId: string,
+    @Query() query: HrPayrollRunItemsQueryDto,
   ) {
-    return this.hrService.findPayrollRunItemsByEmployee(companyId, employeeId);
+    return this.hrService.findPayrollRunItemsByEmployee(companyId, query.employeeId);
   }
 
   @Get('payroll-runs')
   @RequirePermission('HR_READ')
   findPayrollRuns(
     @CompanyId() companyId: string,
-    @Query('year') year?: string,
+    @Query() query: HrYearQueryDto,
   ) {
-    return this.hrService.findPayrollRuns(
-      companyId,
-      year ? parseInt(year, 10) : undefined,
-    );
+    const normalized = normalizeHrYearQuery(companyId, query);
+    return this.hrService.findPayrollRuns(normalized.companyId, normalized.year);
   }
 
   @Get('payroll-runs/:id')
@@ -146,10 +162,10 @@ export class HRController {
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findAdvances(
     @CompanyId() companyId: string,
-    @Query('year') yearStr?: string,
+    @Query() query: HrYearQueryDto,
   ) {
-    const year = yearStr ? parseInt(yearStr, 10) : undefined;
-    return this.hrService.findAdvanceInvoices(companyId, Number.isFinite(year) ? year : undefined);
+    const normalized = normalizeHrYearQuery(companyId, query);
+    return this.hrService.findAdvanceInvoices(normalized.companyId, normalized.year);
   }
 
   @Get('employees/:employeeId/compensation-snapshot')
@@ -165,12 +181,9 @@ export class HRController {
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   getCompanyCompensationSnapshots(
     @CompanyId() companyId: string,
-    @Query('employeeIds') employeeIds?: string,
+    @Query() query: HrCompensationSnapshotsQueryDto,
   ) {
-    const ids = employeeIds
-      ? employeeIds.split(',').map((id) => id.trim()).filter(Boolean)
-      : undefined;
-    return this.hrService.getCompanyCompensationSnapshots(companyId, ids);
+    return this.hrService.getCompanyCompensationSnapshots(companyId, parseHrCsvIds(query.employeeIds));
   }
 
   @Post('eos/calculate')
@@ -187,14 +200,10 @@ export class HRController {
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findLeaves(
     @CompanyId() companyId: string,
-    @Query('employeeId') employeeId?: string,
-    @Query('year') year?: string,
+    @Query() query: HrLeavesQueryDto,
   ) {
-    return this.hrService.findLeaves(
-      companyId,
-      employeeId,
-      year ? parseInt(year, 10) : undefined,
-    );
+    const normalized = normalizeHrLeavesQuery(companyId, query);
+    return this.hrService.findLeaves(normalized.companyId, normalized.employeeId, normalized.year);
   }
 
   @Post('leaves')
@@ -267,14 +276,14 @@ export class HRController {
   deleteLeave(
     @Param('id') id: string,
     @CompanyId() companyId: string,
-    @Query('voidSettlement') voidSettlement: string | undefined,
+    @Query() query: HrDeleteLeaveQueryDto,
     @CurrentUser() user: JwtUser,
   ) {
     return this.hrService.deleteLeave(
       id,
       companyId,
       user.sub,
-      voidSettlement === 'true',
+      query.voidSettlement === true,
     );
   }
 
@@ -282,9 +291,9 @@ export class HRController {
   @RequirePermission('HR_READ')
   findLeaveSalarySettlements(
     @CompanyId() companyId: string,
-    @Query('payrollMonth') payrollMonth: string,
+    @Query() query: HrLeaveSalarySettlementsQueryDto,
   ) {
-    return this.hrService.findLeaveSalarySettlements(companyId, payrollMonth);
+    return this.hrService.findLeaveSalarySettlements(companyId, query.payrollMonth);
   }
 
   // ══════════════════════════════════════════════════════════
@@ -295,10 +304,10 @@ export class HRController {
   @RequirePermission('HR_READ')
   findResidencies(
     @CompanyId() companyId: string,
-    @Query('employeeId') employeeId?: string,
-    @Query('serviceCategory') serviceCategory?: string,
+    @Query() query: HrResidenciesQueryDto,
   ) {
-    return this.hrService.findResidencies(companyId, employeeId, serviceCategory);
+    const normalized = normalizeHrResidenciesQuery(companyId, query);
+    return this.hrService.findResidencies(normalized.companyId, normalized.employeeId, normalized.serviceCategory);
   }
 
   @Post('residencies')
@@ -337,14 +346,14 @@ export class HRController {
   deleteResidency(
     @Param('id') id: string,
     @CompanyId() companyId: string,
-    @Query('voidInvoice') voidInvoice: string | undefined,
+    @Query() query: HrDeleteResidencyQueryDto,
     @CurrentUser() user: JwtUser,
   ) {
     return this.hrService.deleteResidency(
       id,
       companyId,
       user.sub,
-      voidInvoice === 'true',
+      query.voidInvoice === true,
     );
   }
 
@@ -356,9 +365,10 @@ export class HRController {
   @RequirePermission('HR_READ')
   findDocuments(
     @CompanyId() companyId: string,
-    @Query('employeeId') employeeId?: string,
+    @Query() query: HrEmployeeQueryDto,
   ) {
-    return this.hrService.findDocuments(companyId, employeeId);
+    const normalized = normalizeHrEmployeeQuery(companyId, query);
+    return this.hrService.findDocuments(normalized.companyId, normalized.employeeId);
   }
 
   @Post('documents')
@@ -452,9 +462,10 @@ export class HRController {
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findMovements(
     @CompanyId() companyId: string,
-    @Query('employeeId') employeeId?: string,
+    @Query() query: HrEmployeeQueryDto,
   ) {
-    return this.hrService.findMovements(companyId, employeeId);
+    const normalized = normalizeHrEmployeeQuery(companyId, query);
+    return this.hrService.findMovements(normalized.companyId, normalized.employeeId);
   }
 
   @Post('movements')
@@ -495,9 +506,10 @@ export class HRController {
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findAllowances(
     @CompanyId() companyId: string,
-    @Query('employeeId') employeeId?: string,
+    @Query() query: HrEmployeeQueryDto,
   ) {
-    return this.hrService.findAllowances(companyId, employeeId);
+    const normalized = normalizeHrEmployeeQuery(companyId, query);
+    return this.hrService.findAllowances(normalized.companyId, normalized.employeeId);
   }
 
   @Post('allowances')
@@ -527,9 +539,10 @@ export class HRController {
   @RequireAnyPermission('HR_READ', 'EMPLOYEES_READ')
   findDeductions(
     @CompanyId() companyId: string,
-    @Query('employeeId') employeeId?: string,
+    @Query() query: HrEmployeeQueryDto,
   ) {
-    return this.hrService.findDeductions(companyId, employeeId);
+    const normalized = normalizeHrEmployeeQuery(companyId, query);
+    return this.hrService.findDeductions(normalized.companyId, normalized.employeeId);
   }
 
   @Post('deductions')

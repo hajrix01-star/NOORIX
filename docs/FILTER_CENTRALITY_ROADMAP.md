@@ -21,7 +21,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Dashboard API period query | Use `src/services/domains/apiEndpoints/dashboard-period-query.ts` for dashboard overview and dashboard insights query serialization, query-key normalization, and request readiness checks. |
 | Dashboard backend period DTO | Use `backend/src/common/dto/dashboard-period-query.dto.ts` and `DashboardPeriodQueryDto` for dashboard overview and reporting insights validation. |
 | Purchase batch query contract | Use `src/services/domains/apiEndpoints/purchase-batch-query.ts` for frontend purchase batch query serialization/cache keys and `PurchaseBatchSummariesQueryDto` plus `PurchaseBatchSummariesQueryContract` for backend validation/normalization. |
-| HR API query contract | Use `src/services/domains/apiEndpoints/hr-query.ts` for HR and employees query serialization, encoded mutation paths, and employees paged list params. Use `EmployeeListQueryDto` plus `EmployeeListQueryContract` for employees list backend validation/normalization. |
+| HR API query contract | Use `src/services/domains/apiEndpoints/hr-query.ts` for HR and employees query serialization, encoded mutation paths, and employees paged list params. Use `EmployeeListQueryDto` plus `EmployeeListQueryContract` for employees list backend validation/normalization. Use `HrEmployeeQueryDto`, `HrYearQueryDto`, `HrLeavesQueryDto`, `HrResidenciesQueryDto`, and `hr-query-contract` for HR tab backend validation/normalization. |
 | Legacy filter imports | Keep `src/shared/components/FilterToolbar.tsx` as a compatibility shim only. |
 | Legacy searchable picker imports | Keep `src/components/common/SearchableOptionsPicker.tsx` as a compatibility shim only. |
 | Domain filters | Keep screen-owned state and API parameters for now; centralize helpers and layout first. |
@@ -47,7 +47,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Domain filter model | Centralize reset/apply contracts around the existing screen-owned API parameters. | Keep API behavior unchanged. |
 | Invoice filter reference | Use invoices as the reference for complex domain filters. | Type, supplier, category, creator, vault, notes, cancelled. |
 | Orders and purchases | Apply the same central filter composition pattern. | Lower risk than financial reports. |
-| HR filters | Convert after orders/purchases because payroll and leave flows are more sensitive. | Keep payroll math untouched. |
+| HR filters | Backend/frontend query contracts are centralized for employee list and HR tabs; visual filter harmonization remains deferred. | Keep payroll math untouched. |
 | Financial reports | Convert only after a dedicated protected-report decision. | Do not refactor financial table semantics casually. |
 | Visual pass | Harmonize spacing, responsive behavior, icons, and empty/reset affordances from the central layer. | Final phase only. |
 
@@ -59,7 +59,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Dashboard | `FilterToolbar`, `DateMonthScopePicker`, `SearchableOptionsPicker`, `SmartTable`, `Toolbar`, `dashboardPeriodModel`, `dashboard-period-query`, `DashboardPeriodQueryDto`, protected calendar print table builder. | Current section pass; keep calendar print generation protected and action bars centralized. |
 | Purchases | `DateFilterBar`, `FilterToolbar`, `SearchableOptionsPicker`, `SmartTable`, `purchase-batch-query`, `PurchaseBatchSummariesQueryDto`, `PurchaseBatchSummariesQueryContract`. | Current section pass; editable batch-entry grid is protected until a dedicated table-editor design pass. |
 | Orders | Pending section pass. | Reuse invoice filter composition where behavior matches. |
-| HR | `SearchableOptionsPicker`, `DateField`, `hr-query`, `EmployeeListQueryDto`, `EmployeeListQueryContract`, `hrKeys`, `employeeKeys`, protected payroll/document/settlement tables. | Employees + employee profile contract pass closed; payroll/residency financial behavior and raw print/document tables stay protected until their dedicated tab pass. |
+| HR | `SearchableOptionsPicker`, `DateField`, `hr-query`, `EmployeeListQueryDto`, `EmployeeListQueryContract`, `HrEmployeeQueryDto`, `HrYearQueryDto`, `HrLeavesQueryDto`, `HrResidenciesQueryDto`, `hr-query-contract`, `hrKeys`, `employeeKeys`, protected payroll/document/settlement tables. | Query centrality closed for employees, payroll runs, advances, compensation snapshots, leaves, leave salary settlements, residencies, documents, movements, allowances, and deductions; visual harmonization waits for the final visual pass. |
 | Financial reports | Pending section pass. | Convert only with protected report-specific review. |
 
 ## Acceptance Checks
