@@ -17,12 +17,12 @@ export type { Permission };
  * hasPermission — يتحقق من صلاحيات DB فقط (لا fallback).
  * الأدوار النظامية تُزرع في DB عند أول تشغيل — لا حاجة لـ hardcoded defaults.
  */
-export function hasPermission(roleOrPermissions: any, permission: any, userPermissions: any) {
+export function hasPermission(roleOrPermissions: unknown, permission: unknown, userPermissions: unknown) {
   if (Array.isArray(roleOrPermissions)) {
     return roleOrPermissions.includes(permission);
   }
 
-  const role = (roleOrPermissions || '').toLowerCase();
+  const role = String(roleOrPermissions || '').toLowerCase();
   if (role === 'super_admin' || role === 'owner') return true;
 
   if (!Array.isArray(userPermissions)) return false;
@@ -30,19 +30,19 @@ export function hasPermission(roleOrPermissions: any, permission: any, userPermi
 }
 
 /** أي صلاحية من القائمة (منطق OR) — للقائمة الجانبية ومسارات متعددة المداخل */
-export function hasAnyOfPermissions(userRole: any, required: readonly string[], userPermissions: any): boolean {
+export function hasAnyOfPermissions(userRole: unknown, required: readonly string[], userPermissions: unknown): boolean {
   if (!required.length) return false;
   return required.some((p) => hasPermission(userRole, p, userPermissions));
 }
 
-export function isSuperAdmin(role: any) {
-  const r = (role || '').toLowerCase();
+export function isSuperAdmin(role: unknown) {
+  const r = String(role || '').toLowerCase();
   return r === 'super_admin' || r === 'owner';
 }
 
 /** حذف مسيرة رواتب — المالك، المشرف العام، أو دور manager (مخصّص) */
-export function canDeletePayrollRunRole(role: any) {
-  const r = (role || '').toLowerCase();
+export function canDeletePayrollRunRole(role: unknown) {
+  const r = String(role || '').toLowerCase();
   return r === 'owner' || r === 'super_admin' || r === 'manager';
 }
 
@@ -63,7 +63,7 @@ function decodeJwtRole() {
 }
 
 /** دور المستخدم للعرض: السياق أولاً ثم JWT. */
-export function resolveUserRole(primary: any) {
+export function resolveUserRole(primary: unknown) {
   const p = String(primary || '').toLowerCase();
   if (p) return p;
   return decodeJwtRole();
@@ -124,7 +124,7 @@ export const REPORT_TAB_SEQUENCE: Array<{ path: string; required: readonly strin
   { path: '/reports/bank-statement', required: REPORTS_BANK_ACCESS },
 ];
 
-export function getFirstAccessibleReportPath(userRole: any, userPermissions: any): string {
+export function getFirstAccessibleReportPath(userRole: unknown, userPermissions: unknown): string {
   if (isSuperAdmin(userRole)) return '/reports/general';
   for (const { path, required } of REPORT_TAB_SEQUENCE) {
     if (hasAnyOfPermissions(userRole, required, userPermissions)) return path;
@@ -180,27 +180,28 @@ export const REDIRECT_ONLY_PATHS = new Set([
   '/403',
 ]);
 
-export function getRouteRequiredPermissions(pathname: any) {
-  if (REDIRECT_ONLY_PATHS.has(pathname)) return null;
-  const direct = (ROUTE_PERMISSION as Record<string, string | string[] | undefined>)[String(pathname)];
+export function getRouteRequiredPermissions(pathname: unknown) {
+  const path = String(pathname);
+  if (REDIRECT_ONLY_PATHS.has(path)) return null;
+  const direct = (ROUTE_PERMISSION as Record<string, string | string[] | undefined>)[path];
   if (direct != null) {
     return Array.isArray(direct) ? direct : [direct];
   }
-  if (pathname.startsWith('/hr/')) {
+  if (path.startsWith('/hr/')) {
     const hr = ROUTE_PERMISSION['/hr'];
     return Array.isArray(hr) ? [...hr] : [hr];
   }
-  if (pathname.startsWith('/purchases')) {
+  if (path.startsWith('/purchases')) {
     return [PERMISSIONS.VIEW_PURCHASES];
   }
-  if (pathname.startsWith('/reports/')) {
-    const sub = (ROUTE_PERMISSION as Record<string, string | string[] | undefined>)[pathname];
+  if (path.startsWith('/reports/')) {
+    const sub = (ROUTE_PERMISSION as Record<string, string | string[] | undefined>)[path];
     if (sub != null) {
       return Array.isArray(sub) ? sub : [sub];
     }
     return [...REPORTS_APP_ACCESS];
   }
-  if (pathname.startsWith('/hajri-tax')) {
+  if (path.startsWith('/hajri-tax')) {
     return [...HAJRI_TAX_APP_ACCESS];
   }
   return null;
@@ -249,7 +250,7 @@ const APP_HOME_ROUTE_SEQUENCE: Array<{ path: string; required: string | string[]
   { path: '/owner', required: PERMISSIONS.VIEW_OWNER },
 ];
 
-export function getFirstAccessibleAppPath(userRole: any, userPermissions: any): string {
+export function getFirstAccessibleAppPath(userRole: unknown, userPermissions: unknown): string {
   if (isSuperAdmin(userRole)) return '/';
   for (const { path, required } of APP_HOME_ROUTE_SEQUENCE) {
     const list = Array.isArray(required) ? required : [required];

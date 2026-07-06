@@ -9,6 +9,7 @@ import React, {
   useRef,
   useState,
   type ChangeEvent,
+  type MouseEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -24,14 +25,25 @@ export type SupplierOptionRow = {
   taxNumber?: string | null;
 };
 
-function supplierLabel(supplier: SupplierOptionRow | null | undefined, lang: any = 'ar') {
+type SupplierSelectLang = 'ar' | 'en' | string;
+type SupplierUsageMap = Record<string, number>;
+
+function supplierLabel(supplier: SupplierOptionRow | null | undefined, lang: SupplierSelectLang = 'ar') {
   if (lang === 'en') return supplier?.nameEn || supplier?.nameAr || supplier?.id || '';
   return supplier?.nameAr || supplier?.nameEn || supplier?.id || '';
 }
 
-function readSupplierUsage() {
+function readSupplierUsage(): SupplierUsageMap {
   const parsed = readJsonStorage(SUPPLIER_USAGE_KEY, {});
-  return parsed && typeof parsed === 'object' ? parsed : {};
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+  const usage: SupplierUsageMap = {};
+  for (const [supplierId, count] of Object.entries(parsed)) {
+    const numericCount = Number(count);
+    if (supplierId && Number.isFinite(numericCount) && numericCount > 0) {
+      usage[supplierId] = numericCount;
+    }
+  }
+  return usage;
 }
 
 function trackSupplierUsage(supplierId: string) {
@@ -88,7 +100,7 @@ export function SupplierSelect({
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 280, maxHeight: 320 });
 
   const selectedSupplier = useMemo(
-    () => suppliers.find((s: any) => s.id === value) || null,
+    () => suppliers.find((supplier) => supplier.id === value) || null,
     [suppliers, value],
   );
 
@@ -105,9 +117,9 @@ export function SupplierSelect({
     const bookmarked = new Set(bookmarkedIds);
     const localeOpts = lang === 'en' ? 'en' : 'ar';
 
-    const favorites = [];
-    const mostUsed  = [];
-    const regular   = [];
+    const favorites: SupplierOptionRow[] = [];
+    const mostUsed: SupplierOptionRow[] = [];
+    const regular: SupplierOptionRow[] = [];
 
     for (const s of suppliers) {
       if (!matchesQuery(s, normalized)) continue;
@@ -120,13 +132,13 @@ export function SupplierSelect({
       }
     }
 
-    favorites.sort((a: any, b: any) =>
+    favorites.sort((a, b) =>
       supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), localeOpts),
     );
-    mostUsed.sort((a: any, b: any) =>
+    mostUsed.sort((a, b) =>
       Number(usage[b.id] || 0) - Number(usage[a.id] || 0),
     );
-    regular.sort((a: any, b: any) =>
+    regular.sort((a, b) =>
       supplierLabel(a, lang).localeCompare(supplierLabel(b, lang), localeOpts),
     );
 
@@ -202,7 +214,7 @@ export function SupplierSelect({
     setQuery(supplierLabel(supplier));
     setOpen(false);
     trackSupplierUsage(supplier.id);
-    setUsageVersion((v: any) => v + 1);
+    setUsageVersion((version) => version + 1);
   }
 
   const ph = placeholder && placeholder !== '—' ? placeholder : t('supplierSelectSearchPlaceholder');
@@ -226,12 +238,12 @@ export function SupplierSelect({
               <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-amber bg-noorix-bg border-b border-noorix-border">
                 ★ المفضلة
               </div>
-              {favoritesSection.map((s: any) => (
+              {favoritesSection.map((s) => (
                 <Button
                   key={`fav-${s.id}`}
                   role="option"
                   aria-selected={s.id === value}
-                  onMouseDown={(e: any) => e.preventDefault()}
+                  onMouseDown={(event: MouseEvent<HTMLButtonElement>) => event.preventDefault()}
                   onClick={() => selectSupplier(s)}
                   className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >
@@ -250,12 +262,12 @@ export function SupplierSelect({
               <div className="pt-2 px-3 pb-1.5 text-[11px] font-bold text-noorix-muted bg-noorix-bg border-b border-noorix-border">
                 الأكثر استخداماً
               </div>
-              {mostUsedSection.map((s: any) => (
+              {mostUsedSection.map((s) => (
                 <Button
                   key={`used-${s.id}`}
                   role="option"
                   aria-selected={s.id === value}
-                  onMouseDown={(e: any) => e.preventDefault()}
+                  onMouseDown={(event: MouseEvent<HTMLButtonElement>) => event.preventDefault()}
                   onClick={() => selectSupplier(s)}
                   className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >
@@ -276,12 +288,12 @@ export function SupplierSelect({
                   جميع الموردين
                 </div>
               )}
-              {regularSection.map((s: any) => (
+              {regularSection.map((s) => (
                 <Button
                   key={s.id}
                   role="option"
                   aria-selected={s.id === value}
-                  onMouseDown={(e: any) => e.preventDefault()}
+                  onMouseDown={(event: MouseEvent<HTMLButtonElement>) => event.preventDefault()}
                   onClick={() => selectSupplier(s)}
                   className={`nx-supplier-option${s.id === value ? ' nx-supplier-option--selected' : ''}`}
                 >

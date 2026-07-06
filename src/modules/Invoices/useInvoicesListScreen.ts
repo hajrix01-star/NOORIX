@@ -81,6 +81,11 @@ export function useInvoicesListScreen() {
   const urlDrillKeyRef = useRef('');
   const companyId = activeCompanyId ?? '';
   const dateFilter = useDateFilter();
+  const {
+    setMode: setDateFilterMode,
+    setRangeStart: setDateFilterRangeStart,
+    setRangeEnd: setDateFilterRangeEnd,
+  } = dateFilter;
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [exportBusy, setExportBusy] = useState(false);
@@ -150,9 +155,9 @@ export function useInvoicesListScreen() {
     urlDrillKeyRef.current = urlState.drillKey;
 
     if (urlState.from && urlState.to) {
-      dateFilter.setMode('range');
-      dateFilter.setRangeStart(urlState.from);
-      dateFilter.setRangeEnd(urlState.to);
+      setDateFilterMode('range');
+      setDateFilterRangeStart(urlState.from);
+      setDateFilterRangeEnd(urlState.to);
     }
     if (urlState.kind) {
       const kindDrill = applyInvoiceListKindDrill(urlState.kind);
@@ -166,8 +171,7 @@ export function useInvoicesListScreen() {
     if (urlState.q) {
       setSearchText(urlState.q);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- read stable date filter setters only
-  }, [urlState]);
+  }, [setDateFilterMode, setDateFilterRangeEnd, setDateFilterRangeStart, urlState]);
 
   const STATUS_MAP = useMemo(() => buildActiveCancelledStatusMap(t), [t]);
   const KIND_MAP = useMemo(() => buildInvoiceKindBadgeMap(t), [t]);
