@@ -6,7 +6,6 @@ import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { splitTaxFromTotalAsNumbers } from '@noorix/finance-core';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import {
@@ -18,12 +17,17 @@ import {
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { Button, Checkbox, DateField, FileTrigger, Input, AdaptiveSheet, SearchableOptionsPicker } from '../../../ui';
-import { toDateInputYmd } from '../../../utils/saudiDate';
 
-// بلا مورد نهائياً (رواتب وسلف — فواتير نظام داخلية)
-const NO_SUPPLIER_KINDS = new Set(['salary', 'advance']);
-// مورد اختياري (مصاريف ثابتة وHR)
-const OPTIONAL_SUPPLIER_KINDS = new Set(['fixed_expense', 'hr_expense']);
+import {
+  EMPTY_INVOICE_EDIT_FORM,
+  buildInvoiceEditInitialForm,
+  buildInvoiceEditUpdateBody,
+  getInvoiceEditSupplierPolicy,
+  hasPositiveInvoiceEditTotal,
+  resolveInvoiceEditInitialVaultId,
+  updateInvoiceEditFormField,
+  validateInvoiceEditForm,
+} from '../invoiceEditModel';
 
 export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }: any) {
   const { t, lang } = useTranslation();
@@ -33,32 +37,15 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     () => vatRateDecimalFromCompany(companies.find((c: any) => c.id === companyId)),
     [companies, companyId],
   );
-  const [form, setForm] = useState({
-    supplierId: '',
-    supplierInvoiceNumber: '',
-    kind: 'purchase',
-    totalAmount: '',
-    isTaxable: true,
-    netAmount: '',
-    taxAmount: '',
-    transactionDate: '',
-    notes: '',
-    vaultId: '',
-  });
+  const [form, setForm] = useState(EMPTY_INVOICE_EDIT_FORM);
   const [error, setError] = useState('');
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachMeta, setAttachMeta] = useState({ has: false, name: null });
 
   const kind = invoice?.kind;
-  const hasSupplier = !NO_SUPPLIER_KINDS.has(kind);           // purchase, expense, fixed_expense, hr_expense
-  const supplierRequired = !NO_SUPPLIER_KINDS.has(kind) && !OPTIONAL_SUPPLIER_KINDS.has(kind); // purchase, expense فقط
+  const { hasSupplier, supplierRequired } = getInvoiceEditSupplierPolicy(kind);
 
-  const initialVaultKey = useMemo(() => {
-    if (!invoice) return '';
-    const allocs = invoice.vaultAllocations;
-    if (allocs?.length >= 1) return allocs[0].vaultId || '';
-    return invoice.vaultId || '';
-  }, [invoice]);
+  const initialVaultKey = useMemo(() => resolveInvoiceEditInitialVaultId(invoice), [invoice]);
 
   const isMultiVault = (invoice?.vaultAllocations?.length || 0) > 1;
 
@@ -91,29 +78,8 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
 
   useEffect(() => {
     if (!invoice) return;
-    const taxable =
-      invoice.isTaxable !== undefined
-        ? invoice.isTaxable !== false
-        : Number(invoice.taxAmount || 0) > 0;
-    const total = Number(invoice.totalAmount || 0);
-    const { net, tax } = splitTaxFromTotalAsNumbers(total, taxable, vatRateDecimal);
-    const resolvedVaultId =
-      invoice.vaultAllocations?.length >= 1
-        ? invoice.vaultAllocations[0].vaultId
-        : invoice.vaultId || '';
-    setForm({
-      supplierId: invoice.supplierId || '',
-      supplierInvoiceNumber: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '',
-      kind: invoice.kind || 'purchase',
-      totalAmount: total > 0 ? String(total) : '',
-      isTaxable: taxable,
-      netAmount: net > 0 ? net.toFixed(2) : '',
-      taxAmount: tax > 0 ? tax.toFixed(2) : '',
-      transactionDate: toDateInputYmd(invoice.transactionDate),
-      notes: invoice.notes || '',
-      vaultId: resolvedVaultId || '',
-    });
-  }, [invoice]);
+    setForm(buildInvoiceEditInitialForm(invoice, vatRateDecimal));
+  }, [invoice, vatRateDecimal]);
 
   useEffect(() => {
     if (!invoice) return;
@@ -171,56 +137,31 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
   }
 
   function updateField(field: any, value: any) {
-    setForm((p: any) => {
-      const next = { ...p, [field]: value };
-      if (field === 'totalAmount' || field === 'isTaxable') {
-        const v = parseFloat(String(next.totalAmount || ''));
-        if (!isNaN(v) && v > 0) {
-          const { net, tax } = splitTaxFromTotalAsNumbers(v, next.isTaxable !== false, vatRateDecimal);
-          next.netAmount = net.toFixed(2);
-          next.taxAmount = tax.toFixed(2);
-        } else {
-          next.netAmount = '';
-          next.taxAmount = '';
-        }
-      }
-      return next;
-    });
+    setForm((p: any) => updateInvoiceEditFormField(p, field, value, vatRateDecimal));
   }
   async function handleSave() {
     setError('');
-    const total = parseFloat(form.totalAmount);
-    if (supplierRequired && !form.supplierInvoiceNumber?.trim()) {
-      setError(t('invoiceNumberRequired'));
+    const validationError = validateInvoiceEditForm({
+      form,
+      supplierRequired,
+      hasVaults: vaultsList.length > 0,
+      messages: {
+        invoiceNumberRequired: t('invoiceNumberRequired'),
+        totalMustBePositiveShort: t('totalMustBePositiveShort'),
+        selectVault: t('selectVault'),
+      },
+    });
+    if (validationError) {
+      setError(validationError);
       return;
     }
-    if (isNaN(total) || total <= 0) {
-      setError(t('totalMustBePositiveShort'));
-      return;
-    }
-    if (vaultsList.length > 0 && !String(form.vaultId || '').trim()) {
-      setError(t('selectVault'));
-      return;
-    }
-    const body: Record<string, any> = {
-      totalAmount: total,
-      transactionDate: form.transactionDate || undefined,
-      notes: form.notes?.trim() || undefined,
-    };
-    if (hasSupplier) {
-      body.supplierId = form.supplierId || undefined;
-      if (form.supplierInvoiceNumber?.trim()) body.supplierInvoiceNumber = form.supplierInvoiceNumber.trim();
-      body.isTaxable = form.isTaxable !== false;
-      // النوع قابل للتعديل لـ purchase/expense فقط
-      if (supplierRequired) body.kind = form.kind;
-    } else {
-      body.isTaxable = false;
-    }
-    if (form.vaultId) {
-      if (isMultiVault || form.vaultId !== initialVaultKey) {
-        body.vaultId = form.vaultId;
-      }
-    }
+    const body = buildInvoiceEditUpdateBody({
+      form,
+      hasSupplier,
+      supplierRequired,
+      isMultiVault,
+      initialVaultKey,
+    });
     saveMutation.mutate({ id: invoice.id, body });
   }
 
@@ -327,7 +268,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             onChange={(e: any) => updateField('totalAmount', e.target.value)}
             className="nx-font-numbers"
           />
-          {hasSupplier && form.totalAmount && parseFloat(form.totalAmount) > 0 && (
+          {hasSupplier && hasPositiveInvoiceEditTotal(form.totalAmount) && (
             <div className="mt-2 grid gap-1.5">
               <label className="nx-checkbox text-[12px] text-noorix-text">
                 <Checkbox

@@ -26,6 +26,8 @@ const requiredFiles = [
   path.join(invoicesRoot, 'invoicesListUrlModel.test.ts'),
   path.join(invoicesRoot, 'invoicesListImportExportModel.ts'),
   path.join(invoicesRoot, 'invoicesListImportExportModel.test.ts'),
+  path.join(invoicesRoot, 'invoiceEditModel.ts'),
+  path.join(invoicesRoot, 'invoiceEditModel.test.ts'),
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoice-list-query.ts'),
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoice-list-query.test.ts'),
   path.join(root, 'backend', 'src', 'invoice', 'dto', 'invoice-list-query.dto.ts'),
@@ -129,6 +131,17 @@ if (fs.existsSync(listActionsPath)) {
   }
 }
 
+const editModalPath = path.join(invoicesRoot, 'components', 'InvoiceEditModal.tsx');
+if (fs.existsSync(editModalPath)) {
+  const editModalSource = fs.readFileSync(editModalPath, 'utf8');
+  if (!editModalSource.includes('../invoiceEditModel')) {
+    report(editModalPath, 'invoice edit modal must delegate financial form rules to invoiceEditModel.');
+  }
+  if (/splitTaxFromTotalAsNumbers|parseFloat\(form\.totalAmount\)|Number\.parseFloat\(form\.totalAmount\)/.test(editModalSource)) {
+    report(editModalPath, 'invoice edit modal must not calculate tax or validate totals inline.');
+  }
+}
+
 const invoicesApiPath = path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoices.ts');
 if (fs.existsSync(invoicesApiPath)) {
   const source = fs.readFileSync(invoicesApiPath, 'utf8');
@@ -182,6 +195,9 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('invoicesListImportExportModel')) {
     report(roadmapPath, 'roadmap must document the invoice ImportExport model.');
+  }
+  if (!roadmap.includes('invoiceEditModel')) {
+    report(roadmapPath, 'roadmap must document the invoice edit model.');
   }
   if (!roadmap.includes('invoice-list-query')) {
     report(roadmapPath, 'roadmap must document the frontend invoice API query helper.');
