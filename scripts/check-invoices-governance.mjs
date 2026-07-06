@@ -30,6 +30,8 @@ const requiredFiles = [
   path.join(invoicesRoot, 'invoiceEditModel.test.ts'),
   path.join(invoicesRoot, 'invoiceViewModel.ts'),
   path.join(invoicesRoot, 'invoiceViewModel.test.ts'),
+  path.join(invoicesRoot, 'invoiceTableRowModel.ts'),
+  path.join(invoicesRoot, 'invoiceTableRowModel.test.ts'),
   path.join(invoicesRoot, 'invoicesCashReportModel.ts'),
   path.join(invoicesRoot, 'invoicesCashReportModel.test.ts'),
   path.join(invoicesRoot, 'dayCloseReportModel.ts'),
@@ -159,6 +161,17 @@ if (fs.existsSync(viewModalPath)) {
   }
 }
 
+const listTableModelPath = path.join(invoicesRoot, 'invoicesListTableModel.tsx');
+if (fs.existsSync(listTableModelPath)) {
+  const listTableModelSource = fs.readFileSync(listTableModelPath, 'utf8');
+  if (!listTableModelSource.includes('./invoiceTableRowModel')) {
+    report(listTableModelPath, 'invoice list table model must delegate row display rules to invoiceTableRowModel.');
+  }
+  if (/formatSaudiDateISO|nameEn\s*\|\|\s*.*nameAr|nameAr\s*\|\|\s*.*nameEn|\bany\b/.test(listTableModelSource)) {
+    report(listTableModelPath, 'invoice list table model must not rebuild date/name rules or use any.');
+  }
+}
+
 const cashReportModalPath = path.join(invoicesRoot, 'components', 'InvoicesCashReportModal.tsx');
 if (fs.existsSync(cashReportModalPath)) {
   const cashReportSource = fs.readFileSync(cashReportModalPath, 'utf8');
@@ -262,6 +275,9 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('invoiceViewModel')) {
     report(roadmapPath, 'roadmap must document the invoice view model.');
+  }
+  if (!roadmap.includes('invoiceTableRowModel')) {
+    report(roadmapPath, 'roadmap must document the invoice table row model.');
   }
   if (!roadmap.includes('invoicesCashReportModel')) {
     report(roadmapPath, 'roadmap must document the invoice cash report model.');
