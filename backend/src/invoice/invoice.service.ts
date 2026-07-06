@@ -1,13 +1,5 @@
-/**
- * InvoiceService — طبقة رفيعة (Thin Layer) فوق FinancialCoreService
- *
- * لا يحتوي على منطق مالي مباشر — يُفوَّض بالكامل للمحرك المركزي.
- * المسؤوليات المتبقية هنا:
- *   - findAll, findOne (قراءة فقط)
- *   - update (AuditLog + مزامنة تاريخ القيود عبر FinancialCoreService)
- *   - createWithLedger يُفوَّض → FinancialCoreService.processOutflow
- */
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import type { Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
@@ -56,7 +48,6 @@ type InvoiceKindAggRow = {
 
 @Injectable()
 export class InvoiceService {
-  /** كاش 60 ثانية لـ count + groupBy بنفس فلاتر القائمة (باستثناء رقم الصفحة) لتخفيف الاستعلامات الثقيلة. */
   private readonly invoiceListAggCache = new Map<
     string,
     { exp: number; total: number; kindAggRows: InvoiceKindAggRow[] }
@@ -84,10 +75,6 @@ export class InvoiceService {
     }
   }
 
-  /**
-   * إنشاء فاتورة — يُفوَّض بالكامل للمحرك المالي المركزي.
-   * حساب الضريبة: الصافي والضريبة يُحسبان دائماً من totalAmount و isTaxable ونسبة الشركة.
-   */
   async createWithLedger(dto: CreateInvoiceDto, userId?: string | null) {
     assertCreateInvoiceSupplierInvoiceNumberIfRequired(dto);
 
@@ -152,16 +139,13 @@ export class InvoiceService {
     };
   }
 
-  /**
-   * إنشاء دفعة فواتير في transaction واحدة — Rollback الكل عند فشل أي فاتورة.
-   */
   async createBatchWithLedger(dto: CreateInvoiceBatchDto, userId?: string | null) {
     try {
-      const batchId = `B-${Date.now()}`;
+      const batchId = `B-${randomUUID()}`;
       const batchNotesPart = dto.batchNotes?.trim() || '';
       const validItems = filterValidInvoiceBatchLineItems(dto.items, batchNotesPart);
       if (validItems.length === 0) {
-        throw new BadRequestException('لا توجد صفوف صالحة للحفظ.');
+        throw new BadRequestException('لا توجد فواتير صالحة للحفظ.');
       }
       const txDate = toYmd(
         typeof dto.transactionDate === 'string' ? dto.transactionDate : new Date(dto.transactionDate),
@@ -192,23 +176,18 @@ export class InvoiceService {
     } catch (err) {
       if (err instanceof BadRequestException || err instanceof NotFoundException) throw err;
       throw new BadRequestException(
-        err instanceof Error ? err.message : 'فشل حفظ الدفعة. تأكد من وجود خزنة وحسابات مصروفات للشركة.',
+        err instanceof Error ? err.message : 'فشل حفظ الدفعة. تحقق من بيانات فواتير المشتريات.',
       );
     }
   }
 
-  /**
-   * تعديل فاتورة مع تسجيل القيمة القديمة والجديدة في AuditLog.
-   * عند status: 'cancelled' → يُستدعى cancelOperation لإلغاء الفاتورة والقيود معاً
-   *    (لا تُحتسب الفاتورة الملغاة في الميزانية ولا التقارير).
-   */
   async update(id: string, dto: UpdateInvoiceDto, companyId: string, userId?: string | null) {
     if (dto.status === 'cancelled') {
       const inv = await this.prisma.invoice.findFirstOrThrow({ where: { id, companyId } });
       const refType = resolveInvoiceCancelReferenceType(inv.kind);
       const referenceId = resolveInvoiceCancelReferenceId(inv.kind, id, inv.dailySalesSummaryId);
       await this.financialCore.cancelOperation(
-        { companyId, referenceType: refType, referenceId, reason: 'إلغاء من واجهة الفواتير' },
+        { companyId, referenceType: refType, referenceId, reason: 'إلغاء من شاشة الفواتير' },
         userId ?? undefined,
       );
       this.clearInvoiceListAggCacheForCompany(companyId);
@@ -240,9 +219,6 @@ export class InvoiceService {
     return toPublicInvoiceView(inv);
   }
 
-  /**
-   * مستخدمو النظام الذين لهم فواتير في الشركة — لقائمة فلتر «منشئ السجل».
-   */
   async getCreatorFilterOptions(companyId: string) {
     if (!companyId?.trim()) return { users: [] };
     const distinct = await this.prisma.invoice.findMany({

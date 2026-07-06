@@ -1,8 +1,8 @@
+import Decimal from 'decimal.js';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import type { OutflowDto } from '../financial-core/dto/financial-operation.dto';
 import type { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
-import Decimal from 'decimal.js';
 
 function combineLineAndBatchNotes(lineNotes: string | undefined, batchNotesPart: string): string | undefined {
   const line = lineNotes?.trim() ?? '';
@@ -11,7 +11,6 @@ function combineLineAndBatchNotes(lineNotes: string | undefined, batchNotesPart:
   return `${line} + ${batchNotesPart}`;
 }
 
-/** يبني مصفوفة `OutflowDto` لدفعة فواتير (استعلام expense line لكل بند عند الحاجة). */
 export async function buildOutflowDtosForInvoiceBatch(
   prisma: TenantPrismaService,
   companyId: string,
@@ -27,7 +26,7 @@ export async function buildOutflowDtosForInvoiceBatch(
     let supplierId = item.supplierId || undefined;
     let categoryId = item.categoryId || undefined;
     let kind = item.kind;
-    let debitAccountId = (item.debitAccountId && item.debitAccountId.trim()) ? item.debitAccountId : undefined;
+    let debitAccountId = item.debitAccountId?.trim() || undefined;
 
     if (item.expenseLineId) {
       const line = await prisma.expenseLine.findFirst({

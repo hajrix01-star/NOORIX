@@ -1,18 +1,21 @@
-/**
- * منطق نقي لصف دفعة المشتريات — مصدر واحد للاختبارات ولـ useBatchRowLogic
- */
+import type {
+  PurchaseBatchEntryRow,
+  PurchaseBatchKind,
+  PurchaseBatchSupplier,
+  PurchaseBatchSupplierCategory,
+  PurchaseBatchUpdateRowPatch,
+} from '../batch/purchaseBatchTypes';
 
-/**
- * @param {string} supplierId
- * @param {Array<object>} suppliers
- * @param {Array<object>} categories
- * @returns {object} كائن التحديث الكامل للصف
- */
-export function patchForSupplierChange(supplierId: any, suppliers: any, categories: any) {
+export function patchForSupplierChange(
+  supplierId: string,
+  suppliers: PurchaseBatchSupplier[],
+  categories: PurchaseBatchSupplierCategory[],
+): PurchaseBatchUpdateRowPatch {
   if (!supplierId) {
     return { supplierId: '', categoryId: '', debitAccountId: '', kind: 'purchase' };
   }
-  const supplier = suppliers.find((s: any) => s.id === supplierId);
+
+  const supplier = suppliers.find((candidate) => candidate.id === supplierId);
   if (!supplier) {
     return {
       supplierId,
@@ -22,41 +25,43 @@ export function patchForSupplierChange(supplierId: any, suppliers: any, categori
       isTaxable: true,
     };
   }
-  const cat =
-    supplier?.supplierCategory ??
-    (supplier?.supplierCategoryId ? categories.find((c: any) => c.id === supplier.supplierCategoryId) : null);
-  const kind = cat?.type === 'expense' ? 'expense' : 'purchase';
-  const isTaxable = supplier?.isTaxRegistered !== false;
+
+  const category =
+    supplier.supplierCategory ??
+    (supplier.supplierCategoryId
+      ? categories.find((candidate) => candidate.id === supplier.supplierCategoryId)
+      : null);
+  const kind: PurchaseBatchKind = category?.type === 'expense' ? 'expense' : 'purchase';
 
   return {
     supplierId,
     kind,
-    categoryId: cat ? cat.id : '',
-    debitAccountId: cat ? cat.accountId || cat.account?.id || '' : '',
-    isTaxable,
+    categoryId: category?.id ?? '',
+    debitAccountId: category?.accountId || category?.account?.id || '',
+    isTaxable: supplier.isTaxRegistered !== false,
   };
 }
 
-/**
- * @param {object|null} cat فئة محاسبية أو null لمسح الحقل
- * @param {object} row صف الفاتورة الحالي
- * @returns {object}
- */
-export function patchForCategoryChange(cat: any, row: any) {
-  if (!cat) {
+export function patchForCategoryChange(
+  category: PurchaseBatchSupplierCategory | null,
+  row: Pick<PurchaseBatchEntryRow, 'supplierId'>,
+): PurchaseBatchUpdateRowPatch {
+  if (!category) {
     return { categoryId: '', debitAccountId: '' };
   }
-  const patch: Record<string, unknown> = {
-    categoryId: cat.id,
-    debitAccountId: cat.accountId || cat.account?.id,
+
+  const patch: PurchaseBatchUpdateRowPatch = {
+    categoryId: category.id ?? '',
+    debitAccountId: category.accountId || category.account?.id || '',
   };
+
   if (!row.supplierId) {
-    patch.isTaxable = !(cat.account?.taxExempt ?? false);
+    patch.isTaxable = !(category.account?.taxExempt ?? false);
   }
+
   return patch;
 }
 
-/** أنواع السطر التي تدعم «متابعة ضمان» في دفعة الموردين (مشتريات / مصروفات / مصروف ثابت) */
-export function isWarrantyFollowUpKind(kind: any) {
+export function isWarrantyFollowUpKind(kind: string | null | undefined): kind is PurchaseBatchKind {
   return kind === 'purchase' || kind === 'expense' || kind === 'fixed_expense';
 }

@@ -9,23 +9,55 @@ import { useApiQuery, useApiQueryOr } from '../../../../hooks/useApiQuery';
 import { getCompany, getPurchaseBatchSummaries } from '../../../../services/api';
 import { purchaseKeys, companyKeys } from '../../../../services/queryKeys';
 import { buildActiveCancelledPartialStatusMap } from '../../../../constants/badgeMaps';
-import { mapApiBatchSummaryToTableRow } from '../utils/purchasesBatchMappers';
+import {
+  mapApiBatchSummaryToTableRow,
+  type PurchaseBatchSummaryApiRow,
+} from '../utils/purchasesBatchMappers';
 import { vatRateDecimalFromCompany } from '../../../../utils/vatRate';
 import { PAGE_SIZE } from '../constants';
 import { normalizePurchaseBatchSummariesQueryInput } from '../../../../services/domains/apiEndpoints/purchase-batch-query';
+import type {
+  BatchTranslateFn,
+  PurchaseBatchEntryRow,
+  PurchaseBatchSupplier,
+  PurchaseBatchSupplierCategory,
+  PurchaseBatchSummaryRow,
+  PurchaseBatchVault,
+} from '../purchaseBatchTypes';
+
+type PurchasesBatchDateFilter = {
+  startDate: string;
+  endDate: string;
+};
+
+type PurchaseBatchSummariesResponse = {
+  batches?: PurchaseBatchSummaryApiRow[];
+};
+
+function isPurchaseBatchSupplierCategory(value: unknown): value is PurchaseBatchSupplierCategory {
+  return typeof value === 'object' && value !== null;
+}
+
+function isPurchaseBatchSupplier(value: unknown): value is PurchaseBatchSupplier {
+  return typeof value === 'object' && value !== null && 'id' in value && typeof value.id === 'string';
+}
+
+function isPurchaseBatchVault(value: unknown): value is PurchaseBatchVault {
+  return typeof value === 'object' && value !== null && 'id' in value && typeof value.id === 'string';
+}
 
 export function usePurchasesBatchData(options: {
   companyId: string;
   lang: string;
   activeTab: string;
-  dateFilter: { startDate: string; endDate: string };
+  dateFilter: PurchasesBatchDateFilter;
   debouncedBatchQ: string;
   showCancelledBatches: boolean;
-  rows: any[];
+  rows: PurchaseBatchEntryRow[];
   batchNotes: string;
-  setBatchVaultId: (v: string) => void;
+  setBatchVaultId: (value: string) => void;
   batchVaultId: string;
-  t: (key: string, ...args: any[]) => string;
+  t: BatchTranslateFn;
 }) {
   const {
     companyId,
@@ -41,15 +73,20 @@ export function usePurchasesBatchData(options: {
     t,
   } = options;
 
-  const { suppliers } = useSuppliers(companyId);
+  const { suppliers: rawSuppliers } = useSuppliers(companyId);
+  const suppliers = rawSuppliers.filter(isPurchaseBatchSupplier);
   const bookmarks = useMemo(
-    () => suppliers.filter((s: any) => s.isBookmarked).map((s: any) => s.id),
+    () => suppliers.filter((supplier) => supplier.isBookmarked).map((supplier) => supplier.id),
     [suppliers],
   );
-  const { flatCategories = [] } = useCategories(companyId);
-  const { paymentVaults: activeVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
 
-  const { data: companyData } = useApiQueryOr<any>({
+  const { flatCategories: rawFlatCategories = [] } = useCategories(companyId);
+  const flatCategories = rawFlatCategories.filter(isPurchaseBatchSupplierCategory);
+
+  const { paymentVaults: rawActiveVaults = [], isLoading: vaultsLoading } = useVaults({ companyId });
+  const activeVaults = rawActiveVaults.filter(isPurchaseBatchVault);
+
+  const { data: companyData } = useApiQueryOr<unknown | null>({
     queryKey: companyKeys.single(companyId),
     queryFn: () => getCompany(companyId),
     fallback: null,
@@ -63,7 +100,7 @@ export function usePurchasesBatchData(options: {
   }, [companyId, setBatchVaultId]);
 
   useEffect(() => {
-    if (batchVaultId && !activeVaults.some((v: any) => v.id === batchVaultId)) setBatchVaultId('');
+    if (batchVaultId && !activeVaults.some((vault) => vault.id === batchVaultId)) setBatchVaultId('');
   }, [activeVaults, batchVaultId, setBatchVaultId]);
 
   const {
@@ -71,7 +108,7 @@ export function usePurchasesBatchData(options: {
     isLoading: batchesLoading,
     isError: batchesError,
     error: batchesErr,
-  } = useApiQuery<any>({
+  } = useApiQuery<PurchaseBatchSummariesResponse>({
     queryKey: purchaseKeys.batchSummaries(
       normalizePurchaseBatchSummariesQueryInput({
         companyId,
@@ -81,27 +118,28 @@ export function usePurchasesBatchData(options: {
         lang,
       }),
     ),
-    queryFn: () => getPurchaseBatchSummaries(
-      companyId,
-      dateFilter.startDate,
-      dateFilter.endDate,
-      debouncedBatchQ || undefined,
-      lang,
-    ),
+    queryFn: () =>
+      getPurchaseBatchSummaries(
+        companyId,
+        dateFilter.startDate,
+        dateFilter.endDate,
+        debouncedBatchQ || undefined,
+        lang,
+      ),
     enabled: !!companyId && activeTab === 'history',
     fallbackMessage: t('loadBatchFailed'),
   });
 
   const statusBadgeMap = useMemo(() => buildActiveCancelledPartialStatusMap(t), [t]);
 
-  const batchesTableData = useMemo(() => {
-    const list = batchSummaryData?.batches || [];
-    return list.map((b: any) => mapApiBatchSummaryToTableRow(b));
+  const batchesTableData = useMemo<PurchaseBatchSummaryRow[]>(() => {
+    const list = batchSummaryData?.batches ?? [];
+    return list.map((batch) => mapApiBatchSummaryToTableRow(batch));
   }, [batchSummaryData]);
 
   const batchesForTable = useMemo(() => {
     if (showCancelledBatches) return batchesTableData;
-    return batchesTableData.filter((b: any) => b.status !== 'cancelled');
+    return batchesTableData.filter((batch) => batch.status !== 'cancelled');
   }, [batchesTableData, showCancelledBatches]);
 
   const { filteredData, allFilteredData, page, setPage, sortKey, sortDir, toggleSort } = useTableFilter(
@@ -118,11 +156,13 @@ export function usePurchasesBatchData(options: {
     setPage(1);
   }, [debouncedBatchQ, showCancelledBatches, setPage]);
 
-  const activeOnly = allFilteredData.filter((b: any) => b.status !== 'cancelled');
-  const displayedTotal = allFilteredData.length;
-  const totalNet = activeOnly.reduce((s: any, b: any) => s.plus(b.netAmount), new Decimal(0));
-  const totalTax = activeOnly.reduce((s: any, b: any) => s.plus(b.taxAmount), new Decimal(0));
-  const totalAmount = activeOnly.reduce((s: any, b: any) => s.plus(b.totalAmount), new Decimal(0));
+  const filteredPurchaseBatches: PurchaseBatchSummaryRow[] = filteredData;
+  const allFilteredPurchaseBatches: PurchaseBatchSummaryRow[] = allFilteredData;
+  const activeOnly = allFilteredPurchaseBatches.filter((batch) => batch.status !== 'cancelled');
+  const displayedTotal = allFilteredPurchaseBatches.length;
+  const totalNet = activeOnly.reduce((sum, batch) => sum.plus(batch.netAmount), new Decimal(0));
+  const totalTax = activeOnly.reduce((sum, batch) => sum.plus(batch.taxAmount), new Decimal(0));
+  const totalAmount = activeOnly.reduce((sum, batch) => sum.plus(batch.totalAmount), new Decimal(0));
 
   const summary = useBatchSummary(rows, vatRateDecimal, batchNotes);
 
@@ -138,8 +178,8 @@ export function usePurchasesBatchData(options: {
     batchesErr,
     batchesTableData,
     batchesForTable,
-    filteredData,
-    allFilteredData,
+    filteredData: filteredPurchaseBatches,
+    allFilteredData: allFilteredPurchaseBatches,
     page,
     setPage,
     sortKey,

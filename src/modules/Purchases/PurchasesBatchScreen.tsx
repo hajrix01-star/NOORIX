@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Batch entry for supplier invoices: table layout, bookmarks, compact summary.
  */
 import React, { useMemo } from 'react';
@@ -58,7 +58,17 @@ export default function PurchasesBatchScreen() {
   const batchEntryNarrow = useIsNarrow700();
 
   const purchaseBatchTabItems = useMemo(
-    () => getPurchaseBatchTabs(t).map((tab: any) => ({ id: tab.id, label: tab.icon ? <>{tab.icon} {tab.label}</> : tab.label })),
+    () =>
+      getPurchaseBatchTabs(t).map((tab) => ({
+        id: tab.id,
+        label: tab.icon ? (
+          <>
+            {tab.icon} {tab.label}
+          </>
+        ) : (
+          tab.label
+        ),
+      })),
     [t],
   );
 
@@ -151,9 +161,9 @@ export default function PurchasesBatchScreen() {
                 statusBadgeMap={data.statusBadgeMap}
                 batchActionLoading={state.batchActionLoading}
                 openBatchWithInvoices={actions.openBatchWithInvoices}
-                handleCancelBatch={actions.handleCancelBatch}
                 setPrintingBatch={state.setPrintingBatch}
                 setEditingBatch={state.setEditingBatch}
+                setCancellingBatch={state.setCancellingBatch}
                 activeOnlyLength={data.activeOnly.length}
                 totalNet={data.totalNet}
                 totalTax={data.totalTax}
@@ -167,12 +177,19 @@ export default function PurchasesBatchScreen() {
       <PurchasesBatchModals
         printingBatch={state.printingBatch}
         editingBatch={state.editingBatch}
+        cancellingBatch={state.cancellingBatch}
         suppliers={data.suppliers}
         companyId={companyId}
         vatRateDecimal={data.vatRateDecimal}
         onClosePrint={() => state.setPrintingBatch(null)}
         onCloseEdit={() => state.setEditingBatch(null)}
+        onCloseCancel={() => state.setCancellingBatch(null)}
         onSaveInvoice={actions.saveInvoiceEdit}
+        onConfirmCancel={() => {
+          if (!state.cancellingBatch) return Promise.resolve();
+          return actions.handleCancelBatch(state.cancellingBatch, state.setEditingBatch)
+            .then(() => state.setCancellingBatch(null));
+        }}
       />
     </ScreenShell>
   );

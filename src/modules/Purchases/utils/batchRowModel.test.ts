@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { patchForSupplierChange, patchForCategoryChange, isWarrantyFollowUpKind } from './batchRowModel';
+import type { PurchaseBatchSupplierCategory } from '../batch/purchaseBatchTypes';
 
 describe('patchForSupplierChange', () => {
   it('clears supplier-related fields when empty', () => {
@@ -23,7 +24,7 @@ describe('patchForSupplierChange', () => {
         },
       },
     ];
-    const categories: any[] = [];
+    const categories: PurchaseBatchSupplierCategory[] = [];
     expect(patchForSupplierChange('s1', suppliers, categories)).toEqual({
       supplierId: 's1',
       kind: 'purchase',

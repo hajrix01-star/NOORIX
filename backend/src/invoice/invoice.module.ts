@@ -1,5 +1,6 @@
 import { Module }               from '@nestjs/common';
 import { MulterModule }         from '@nestjs/platform-express';
+import { randomUUID }           from 'crypto';
 import { diskStorage }          from 'multer';
 import { AuthModule }           from '../auth/auth.module';
 import { AuditModule }          from '../audit/audit.module';
@@ -17,8 +18,9 @@ const invoiceAttachDir = ensureUploadsSubdir('invoice-attachments');
       storage: diskStorage({
         destination: invoiceAttachDir,
         filename: (_req, file, cb) => {
-          const ext = (file.originalname || '').split('.').pop() || 'bin';
-          cb(null, `inv-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`);
+          const rawExt = (file.originalname || '').split('.').pop() || 'bin';
+          const ext = rawExt.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12) || 'bin';
+          cb(null, `inv-${randomUUID()}.${ext}`);
         },
       }),
       limits: { fileSize: 10 * 1024 * 1024 },

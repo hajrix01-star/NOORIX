@@ -1,11 +1,58 @@
-/**
- * سطر واحد في لوحة تعديل الدفعة — جدول أو بطاقة (مصدر واحد للمنطق)
- */
-import React from 'react';
+import type { ChangeEvent } from 'react';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { Button, DateField, Input, FmtNum, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
 import { splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
 import { useBatchRowFieldIds } from './useBatchRowLogic';
+import { purchaseBatchDisplayName } from '../batch/purchaseBatchDisplayModel';
+import { toPurchaseBatchFiniteNumber, toPurchaseBatchPositiveNumber } from '../batch/purchaseBatchNumberModel';
+import type {
+  BatchTranslateFn,
+  PurchaseBatchEditableInvoice,
+  PurchaseBatchSupplier,
+} from '../batch/purchaseBatchTypes';
+
+type BatchEditInvoicePatch = Partial<PurchaseBatchEditableInvoice>;
+type BatchEditInvoiceField = keyof PurchaseBatchEditableInvoice;
+export type BatchEditInvoiceUpdater = (
+  index: number,
+  fieldOrPatch: BatchEditInvoiceField | BatchEditInvoicePatch,
+  value?: PurchaseBatchEditableInvoice[BatchEditInvoiceField],
+) => void;
+
+export type BatchEditInvoiceLineProps = {
+  inv: PurchaseBatchEditableInvoice;
+  i: number;
+  suppliers: PurchaseBatchSupplier[];
+  lang: string;
+  t: BatchTranslateFn;
+  updateInv: BatchEditInvoiceUpdater;
+  variant: 'card' | 'table';
+  vatRateDecimal?: number;
+};
+
+function kindOptions(t: BatchTranslateFn) {
+  return [
+    { value: 'purchase', label: t('purchaseType') },
+    { value: 'expense', label: t('expenseType') },
+    { value: 'fixed_expense', label: t('fixedExpenseType') },
+  ];
+}
+
+function kindLabel(kind: string | null | undefined, t: BatchTranslateFn) {
+  if (kind === 'purchase') return t('purchaseType');
+  if (kind === 'fixed_expense') return t('fixedExpenseType');
+  return t('expenseType');
+}
+
+function amountPatch(value: string, rate: number): BatchEditInvoicePatch {
+  const totalAmount = toPurchaseBatchPositiveNumber(value);
+  if (totalAmount == null) {
+    return { totalAmount: value, netAmount: 0, taxAmount: 0 };
+  }
+
+  const { net, tax } = splitTaxFromTotalAsNumbers(totalAmount, true, rate);
+  return { totalAmount, netAmount: net, taxAmount: tax };
+}
 
 export function BatchEditInvoiceLine({
   inv,
@@ -16,14 +63,15 @@ export function BatchEditInvoiceLine({
   updateInv,
   variant,
   vatRateDecimal,
-}: any) {
+}: BatchEditInvoiceLineProps) {
   const rate = vatRateDecimal ?? TAX_RATE;
   const ids = useBatchRowFieldIds();
   const cancelled = inv.status === 'cancelled';
-  const kindOptions = [
-    { value: 'purchase', label: t('purchaseType') },
-    { value: 'expense', label: t('expenseType') },
-  ];
+  const options = kindOptions(t);
+
+  function handleAmountChange(event: ChangeEvent<HTMLInputElement>) {
+    updateInv(i, amountPatch(event.target.value, rate));
+  }
 
   if (variant === 'card') {
     return (
@@ -55,14 +103,14 @@ export function BatchEditInvoiceLine({
             </label>
             {cancelled ? (
               <span className="nx-cell-muted text-[13px]">
-                {(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}
+                {purchaseBatchDisplayName(inv.supplier, lang)}
               </span>
             ) : (
               <SupplierSelect
                 id={ids.supplier}
                 suppliers={suppliers}
                 value={inv.supplierId || ''}
-                onChange={(v: any) => updateInv(i, 'supplierId', v)}
+                onChange={(value) => updateInv(i, 'supplierId', value)}
                 bookmarkedIds={[]}
                 placeholder={t('selectSupplierPlaceholder')}
               />
@@ -74,12 +122,12 @@ export function BatchEditInvoiceLine({
               {t('batchEditInvoiceDate')}
             </label>
             {cancelled ? (
-              <span className="nx-cell-muted text-[13px] nx-font-numbers">{inv.transactionDate || '—'}</span>
+              <span className="nx-cell-muted text-[13px] nx-font-numbers">{inv.transactionDate || '-'}</span>
             ) : (
               <DateField
                 id={ids.invoiceDate}
                 size="sm"
-                value={inv.transactionDate ?? ''}
+                value={inv.transactionDate}
                 onValueChange={(value) => updateInv(i, 'transactionDate', value)}
                 className="nx-font-numbers"
               />
@@ -95,7 +143,7 @@ export function BatchEditInvoiceLine({
                 </div>
                 <div>
                   <span className="text-[11px] font-semibold text-noorix-muted mb-1 block">{t('total')}</span>
-                  <FmtNum n={inv.totalAmount} className="nx-cell-num" />
+                  <FmtNum n={toPurchaseBatchFiniteNumber(inv.totalAmount)} className="nx-cell-num" />
                 </div>
               </>
             ) : (
@@ -105,7 +153,9 @@ export function BatchEditInvoiceLine({
                   label={t('supplierInvoiceNumber')}
                   size="sm"
                   value={inv.supplierInvoiceNumber ?? inv.invoiceNumber ?? ''}
-                  onChange={(e: any) => updateInv(i, 'supplierInvoiceNumber', e.target.value)}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                    updateInv(i, 'supplierInvoiceNumber', event.target.value)
+                  }
                 />
                 <Input
                   id={ids.totalInclusive}
@@ -114,14 +164,8 @@ export function BatchEditInvoiceLine({
                   min="0"
                   step="0.1"
                   size="sm"
-                  value={inv.totalAmount ?? ''}
-                  onChange={(e: any) => {
-                    const v = parseFloat(e.target.value);
-                    if (!Number.isNaN(v) && v > 0) {
-                      const { net, tax } = splitTaxFromTotalAsNumbers(v, true, rate);
-                      updateInv(i, { totalAmount: v, netAmount: net, taxAmount: tax });
-                    }
-                  }}
+                  value={inv.totalAmount}
+                  onChange={handleAmountChange}
                   className="nx-font-numbers"
                 />
               </>
@@ -131,7 +175,7 @@ export function BatchEditInvoiceLine({
           {cancelled ? (
             <div>
               <span className="text-[11px] font-semibold text-noorix-muted mb-1 block">{t('kind')}</span>
-              <span className="nx-cell-muted-sm">{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</span>
+              <span className="nx-cell-muted-sm">{kindLabel(inv.kind, t)}</span>
             </div>
           ) : (
             <SearchableOptionsPicker
@@ -140,7 +184,7 @@ export function BatchEditInvoiceLine({
               mode="single"
               value={inv.kind || 'purchase'}
               onChange={(value: string) => updateInv(i, 'kind', value)}
-              options={kindOptions}
+              options={options}
               size="sm"
             />
           )}
@@ -149,20 +193,17 @@ export function BatchEditInvoiceLine({
     );
   }
 
-  /* جدول */
   return (
-    <tr
-      className={`border-b border-noorix-border ${cancelled ? 'opacity-50 bg-noorix-bg' : ''}`}
-    >
+    <tr className={`border-b border-noorix-border ${cancelled ? 'opacity-50 bg-noorix-bg' : ''}`}>
       <td className="text-center text-noorix-muted font-semibold p-1.5">{i + 1}</td>
       <td className="p-1.5">
         {cancelled ? (
-          <span className="nx-cell-muted">{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</span>
+          <span className="nx-cell-muted">{purchaseBatchDisplayName(inv.supplier, lang)}</span>
         ) : (
           <SupplierSelect
             suppliers={suppliers}
             value={inv.supplierId || ''}
-            onChange={(v: any) => updateInv(i, 'supplierId', v)}
+            onChange={(value) => updateInv(i, 'supplierId', value)}
             bookmarkedIds={[]}
             placeholder={t('selectSupplierPlaceholder')}
           />
@@ -170,14 +211,14 @@ export function BatchEditInvoiceLine({
       </td>
       <td className="p-1.5">
         {cancelled ? (
-          <span className="nx-cell-muted nx-font-numbers">{inv.transactionDate || '—'}</span>
+          <span className="nx-cell-muted nx-font-numbers">{inv.transactionDate || '-'}</span>
         ) : (
           <DateField
             size="sm"
-            value={inv.transactionDate ?? ''}
+            value={inv.transactionDate}
             onValueChange={(value) => updateInv(i, 'transactionDate', value)}
             className="w-full nx-font-numbers"
-            aria-label={`${t('batchEditInvoiceDate')} — ${t('batchRowLineAriaLabel', i + 1)}`}
+            aria-label={`${t('batchEditInvoiceDate')} - ${t('batchRowLineAriaLabel', i + 1)}`}
           />
         )}
       </td>
@@ -188,46 +229,42 @@ export function BatchEditInvoiceLine({
           <Input
             size="sm"
             value={inv.supplierInvoiceNumber ?? inv.invoiceNumber ?? ''}
-            onChange={(e: any) => updateInv(i, 'supplierInvoiceNumber', e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              updateInv(i, 'supplierInvoiceNumber', event.target.value)
+            }
             className="w-full"
-            aria-label={`${t('supplierInvoiceNumber')} — ${t('batchRowLineAriaLabel', i + 1)}`}
+            aria-label={`${t('supplierInvoiceNumber')} - ${t('batchRowLineAriaLabel', i + 1)}`}
           />
         )}
       </td>
       <td className="p-1.5">
         {cancelled ? (
-          <FmtNum n={inv.totalAmount} className="nx-cell-num" />
+          <FmtNum n={toPurchaseBatchFiniteNumber(inv.totalAmount)} className="nx-cell-num" />
         ) : (
           <Input
             type="number"
             min="0"
             step="0.1"
             size="sm"
-            value={inv.totalAmount ?? ''}
-            onChange={(e: any) => {
-              const v = parseFloat(e.target.value);
-              if (!Number.isNaN(v) && v > 0) {
-                const { net, tax } = splitTaxFromTotalAsNumbers(v, true, rate);
-                updateInv(i, { totalAmount: v, netAmount: net, taxAmount: tax });
-              }
-            }}
+            value={inv.totalAmount}
+            onChange={handleAmountChange}
             className="w-full nx-font-numbers text-end"
-            aria-label={`${t('total')} — ${t('batchRowLineAriaLabel', i + 1)}`}
+            aria-label={`${t('total')} - ${t('batchRowLineAriaLabel', i + 1)}`}
           />
         )}
       </td>
       <td className="p-1.5">
         {cancelled ? (
-          <span className="nx-cell-muted-sm">{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</span>
+          <span className="nx-cell-muted-sm">{kindLabel(inv.kind, t)}</span>
         ) : (
           <SearchableOptionsPicker
             mode="single"
             size="sm"
             value={inv.kind || 'purchase'}
             onChange={(value: string) => updateInv(i, 'kind', value)}
-            options={kindOptions}
+            options={options}
             className="w-full"
-            aria-label={`${t('kind')} — ${t('batchRowLineAriaLabel', i + 1)}`}
+            aria-label={`${t('kind')} - ${t('batchRowLineAriaLabel', i + 1)}`}
           />
         )}
       </td>
@@ -239,7 +276,7 @@ export function BatchEditInvoiceLine({
             size="sm"
             variant="danger"
             onClick={() => updateInv(i, 'status', 'cancelled')}
-            aria-label={`${t('cancel')} — ${t('batchRowLineAriaLabel', i + 1)}`}
+            aria-label={`${t('cancel')} - ${t('batchRowLineAriaLabel', i + 1)}`}
           >
             {t('cancel')}
           </Button>

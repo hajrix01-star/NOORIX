@@ -79,6 +79,7 @@ export default {
   issueInvoiceBtnShort: { ar: 'إصدار فاتورة', en: 'Issue invoice' },
   issueInvoicesBtn: { ar: 'إصدار الفواتير', en: 'Issue invoices' },
   amountAndVaultRequired: { ar: 'المبلغ والخزينة مطلوبان', en: 'Amount and vault are required' },
+  purchaseBatchAmountMustBePositive: { ar: 'أدخل مبلغًا صحيحًا أكبر من صفر لكل فاتورة نشطة', en: 'Enter a valid amount greater than zero for every active invoice' },
   paymentInvoicesIssued: { ar: 'تم إصدار فواتير الدفع بنجاح', en: 'Payment invoices issued successfully' },
   invoiceNotesPlaceholder: { ar: 'اسم العملية — اسم الموظف أو الخدمة (مثال: سداد فاتورة — شركة الكهرباء)', en: 'Operation name — employee or service (e.g. invoice payment — Electric Co)' },
   notesLabel: { ar: 'ملاحظة', en: 'Notes' },

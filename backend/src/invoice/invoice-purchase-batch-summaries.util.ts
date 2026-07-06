@@ -6,7 +6,7 @@ import { buildInvoiceTransactionDateFilter } from './invoice-transaction-date-fi
 import type { PurchaseBatchSummariesQueryContract } from './purchase-batch-summaries-query-contract.util';
 
 const MAX_ROWS = 60_000;
-const EMPTY_LABEL = '—';
+const EMPTY_LABEL = '-';
 
 type PurchaseBatchSummaryRow = Awaited<ReturnType<typeof loadPurchaseBatchRows>>[number];
 
@@ -49,7 +49,7 @@ async function loadPurchaseBatchRows(prisma: TenantPrismaService, where: Prisma.
 
   if (rows.length > MAX_ROWS) {
     throw new BadRequestException(
-      `عدد فواتير الدفعات في الفترة يتجاوز الحد المسموح (${MAX_ROWS}). ضيّق نطاق التاريخ.`,
+      `عدد فواتير الدفعات في الفترة يتجاوز الحد المسموح (${MAX_ROWS}). ضيق نطاق التاريخ.`,
     );
   }
 

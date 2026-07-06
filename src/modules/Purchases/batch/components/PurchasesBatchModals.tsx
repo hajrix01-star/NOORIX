@@ -3,21 +3,40 @@ import { useQueryClient } from '@tanstack/react-query';
 import { invalidateOnFinancialMutation } from '../../../../utils/queryInvalidation';
 import { BatchPrintSheet } from '../../components/BatchPrintSheet';
 import { BatchEditPanel } from '../../components/BatchEditPanel';
+import { Button, Modal } from '../../../../ui';
+import type { PurchaseBatchInvoice, PurchaseBatchSupplier, PurchaseBatchSummaryRow } from '../purchaseBatchTypes';
+import { useTranslation } from '../../../../i18n/useTranslation';
 
 export interface PurchasesBatchModalsProps {
-  printingBatch: any;
-  editingBatch: any;
-  suppliers: any[];
+  printingBatch: PurchaseBatchSummaryRow | null;
+  editingBatch: PurchaseBatchSummaryRow | null;
+  cancellingBatch: PurchaseBatchSummaryRow | null;
+  suppliers: PurchaseBatchSupplier[];
   companyId: string;
   vatRateDecimal?: number;
   onClosePrint: () => void;
   onCloseEdit: () => void;
-  onSaveInvoice: (inv: any) => Promise<unknown>;
+  onCloseCancel: () => void;
+  onSaveInvoice: (invoice: PurchaseBatchInvoice) => Promise<unknown>;
+  onConfirmCancel: () => Promise<void>;
 }
 
 export default function PurchasesBatchModals(props: PurchasesBatchModalsProps) {
-  const { printingBatch, editingBatch, suppliers, companyId, vatRateDecimal, onClosePrint, onCloseEdit, onSaveInvoice } = props;
+  const {
+    printingBatch,
+    editingBatch,
+    cancellingBatch,
+    suppliers,
+    companyId,
+    vatRateDecimal,
+    onClosePrint,
+    onCloseEdit,
+    onCloseCancel,
+    onSaveInvoice,
+    onConfirmCancel,
+  } = props;
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -35,6 +54,21 @@ export default function PurchasesBatchModals(props: PurchasesBatchModalsProps) {
           }}
         />
       )}
+      {cancellingBatch ? (
+        <Modal open onClose={onCloseCancel} title={t('cancel')} size="sm">
+          <p className="text-[14px] text-noorix-muted m-0">
+            {t('cancelBatchConfirm', cancellingBatch.batchId, cancellingBatch.invoiceCount)}
+          </p>
+          <div className="flex justify-end gap-2 mt-5">
+            <Button type="button" variant="ghost" onClick={onCloseCancel}>
+              {t('close')}
+            </Button>
+            <Button type="button" variant="danger" onClick={onConfirmCancel}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </Modal>
+      ) : null}
     </>
   );
 }

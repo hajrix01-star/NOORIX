@@ -1,28 +1,36 @@
-﻿/**
- * BatchPrintSheet — طباعة احترافية لدفعة الفواتير
- * عند الطباعة: يعرض الجدول والملخص فقط — بدون أزرار أو عناصر خارجية
- */
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Modal, FmtNum } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import { fmt, sumAmounts } from '../../../utils/format';
+import { sumAmounts } from '../../../utils/format';
+import { purchaseBatchDisplayName } from '../batch/purchaseBatchDisplayModel';
+import { toPurchaseBatchFiniteNumber } from '../batch/purchaseBatchNumberModel';
+import { printCurrentPurchaseBatchWindowAfterDelay } from '../batch/purchaseBatchPrintModel';
+import type { PurchaseBatchInvoice, PurchaseBatchSummaryRow } from '../batch/purchaseBatchTypes';
 
-export function BatchPrintSheet({ batch, onClose }: any) {
+export type BatchPrintSheetProps = {
+  batch: PurchaseBatchSummaryRow;
+  onClose: () => void;
+};
+
+function invoiceKindLabel(invoice: PurchaseBatchInvoice, t: (key: string, ...args: unknown[]) => string) {
+  return invoice.kind === 'purchase' ? t('purchaseType') : t('expenseType');
+}
+
+export function BatchPrintSheet({ batch, onClose }: BatchPrintSheetProps) {
   const { t, lang } = useTranslation();
+
   useEffect(() => {
-    const timer = setTimeout(() => window.print(), 300);
+    const timer = printCurrentPurchaseBatchWindowAfterDelay();
     return () => clearTimeout(timer);
   }, []);
 
-  const invList = batch?.invoices || [];
-  const activeInvoices = invList.filter((i: any) => i.status !== 'cancelled');
+  const invoices = batch.invoices;
+  const activeInvoices = invoices.filter((invoice) => invoice.status !== 'cancelled');
   const net = sumAmounts(activeInvoices, 'netAmount');
   const tax = sumAmounts(activeInvoices, 'taxAmount');
   const total = sumAmounts(activeInvoices, 'totalAmount');
-  const dateStr = invList[0]?.transactionDate
-    ? formatSaudiDate(invList[0].transactionDate)
-    : '—';
+  const dateStr = invoices[0]?.transactionDate ? formatSaudiDate(invoices[0].transactionDate) : '-';
 
   return (
     <Modal open={true} onClose={onClose} size="xl" closeOnBackdrop={false} hideClose>
@@ -47,13 +55,13 @@ export function BatchPrintSheet({ batch, onClose }: any) {
       `}</style>
 
       <div className="batch-print-actions no-print">
-        <span className="batch-print-title">{t('batchLabel', batch?.batchId)}</span>
-        <Button onClick={onClose}>إغلاق</Button>
+        <span className="batch-print-title">{t('batchLabel', batch.batchId)}</span>
+        <Button onClick={onClose}>{t('close')}</Button>
       </div>
 
       <div id="batch-print-content" className="batch-print-content">
         <div className="batch-print-header">
-          <h2>{t('batchLabel', batch?.batchId)}</h2>
+          <h2>{t('batchLabel', batch.batchId)}</h2>
           <p className="batch-print-subtitle">
             {t('batchPrintSubtitle', dateStr, activeInvoices.length)}
           </p>
@@ -64,28 +72,28 @@ export function BatchPrintSheet({ batch, onClose }: any) {
             <thead>
               <tr className="batch-print-table-head-row">
                 <th className="batch-print-row-number">#</th>
-                <th className="batch-print-min-100">رقم السند</th>
-                <th className="batch-print-min-100">رقم فاتورة المورد</th>
-                <th className="batch-print-min-140">المورد</th>
-                <th className="batch-print-w-90">النوع</th>
-                <th className="batch-print-w-100 text-center">الصافي</th>
-                <th className="batch-print-w-80 text-center">ضريبة</th>
-                <th className="batch-print-w-110 text-center">الإجمالي</th>
-                <th className="batch-print-w-90">التاريخ</th>
+                <th className="batch-print-min-100">{t('documentNumber')}</th>
+                <th className="batch-print-min-100">{t('supplierInvoiceNumber')}</th>
+                <th className="batch-print-min-140">{t('supplier')}</th>
+                <th className="batch-print-w-90">{t('kind')}</th>
+                <th className="batch-print-w-100 text-center">{t('net')}</th>
+                <th className="batch-print-w-80 text-center">{t('tax')}</th>
+                <th className="batch-print-w-110 text-center">{t('total')}</th>
+                <th className="batch-print-w-90">{t('date')}</th>
               </tr>
             </thead>
             <tbody>
-              {activeInvoices.map((inv: any, i: any) => (
-                <tr key={inv.id}>
-                  <td className="text-center">{i + 1}</td>
-                  <td className="font-semibold">{inv.invoiceNumber}</td>
-                  <td className="batch-print-muted">{inv.supplierInvoiceNumber || '—'}</td>
-                  <td>{(lang === 'en' ? inv.supplier?.nameEn || inv.supplier?.nameAr : inv.supplier?.nameAr || inv.supplier?.nameEn) || '—'}</td>
-                  <td>{inv.kind === 'purchase' ? t('purchaseType') : t('expenseType')}</td>
-                  <td className="batch-print-num"><FmtNum n={inv.netAmount} /></td>
-                  <td className="batch-print-num"><FmtNum n={inv.taxAmount} /></td>
-                  <td className="batch-print-num font-bold"><FmtNum n={inv.totalAmount} /></td>
-                  <td className="batch-print-date-cell">{formatSaudiDate(inv.transactionDate)}</td>
+              {activeInvoices.map((invoice, index) => (
+                <tr key={invoice.id}>
+                  <td className="text-center">{index + 1}</td>
+                  <td className="font-semibold">{invoice.invoiceNumber}</td>
+                  <td className="batch-print-muted">{invoice.supplierInvoiceNumber || '-'}</td>
+                  <td>{purchaseBatchDisplayName(invoice.supplier, lang)}</td>
+                  <td>{invoiceKindLabel(invoice, t)}</td>
+                  <td className="batch-print-num"><FmtNum n={toPurchaseBatchFiniteNumber(invoice.netAmount)} /></td>
+                  <td className="batch-print-num"><FmtNum n={toPurchaseBatchFiniteNumber(invoice.taxAmount)} /></td>
+                  <td className="batch-print-num font-bold"><FmtNum n={toPurchaseBatchFiniteNumber(invoice.totalAmount)} /></td>
+                  <td className="batch-print-date-cell">{formatSaudiDate(invoice.transactionDate)}</td>
                 </tr>
               ))}
             </tbody>

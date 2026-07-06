@@ -1,20 +1,23 @@
 import { getSaudiToday } from '../../../utils/saudiDate';
+import type { BatchTranslateFn, PurchaseBatchEntryRow } from './purchaseBatchTypes';
 
 export const PAGE_SIZE = 50;
 
 export const PURCHASE_TAB_IDS = ['entry', 'history'] as const;
 
-export function getPurchaseBatchTabs(t: (key: string, ...args: unknown[]) => string) {
+let purchaseBatchRowKeySeed = 0;
+
+export function getPurchaseBatchTabs(t: BatchTranslateFn) {
   return [
     { id: 'entry', label: t('tabNewBatch'), icon: '' },
     { id: 'history', label: t('tabSavedBatches'), icon: '' },
-  ];
+  ] satisfies Array<{ id: (typeof PURCHASE_TAB_IDS)[number]; label: string; icon: string }>;
 }
 
-/** Row factory — same shape as legacy EMPTY_ROW */
-export function createEmptyPurchasesBatchRow() {
+export function createEmptyPurchasesBatchRow(): PurchaseBatchEntryRow {
+  purchaseBatchRowKeySeed += 1;
   return {
-    key: `${Date.now()}-${Math.random()}`,
+    key: `purchase-batch-row-${purchaseBatchRowKeySeed}`,
     supplierId: '',
     invoiceNumber: '',
     totalInclusive: '',
@@ -25,6 +28,6 @@ export function createEmptyPurchasesBatchRow() {
     debitAccountId: '',
     notes: '',
     warrantyFollowUp: false,
-    attachmentFile: null as File | null,
+    attachmentFile: null,
   };
 }

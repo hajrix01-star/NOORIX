@@ -1,9 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  buildPurchaseBatchIdempotencyKey,
-  normalizePurchaseBatchLine,
-} from '@noorix/finance-core';
+import { buildPurchaseBatchIdempotencyKey } from '@noorix/finance-core';
 import { useApiMutation } from '../../../../hooks/useApiMutation';
 import { invalidateOnFinancialMutation } from '../../../../utils/queryInvalidation';
 import { useToast } from '../../../../context/ToastContext';
@@ -16,24 +13,59 @@ import {
   uploadInvoiceAttachment,
 } from '../../../../services/api';
 import { supplierKeys } from '../../../../services/queryKeys';
-import { isWarrantyFollowUpKind } from '../../utils/batchRowModel';
 import { filterValidRowsForBatchSave } from '../utils/purchasesBatchGuards';
 import { createEmptyPurchasesBatchRow } from '../constants';
+import {
+  buildPurchaseBatchInvoiceUpdatePayload,
+  buildPurchaseBatchItemPayload,
+  normalizeFetchedPurchaseBatchInvoices,
+  requirePurchaseBatchSaveResult,
+  rowWithAdjustedInvoiceDate,
+} from '../purchaseBatchActionModel';
+import type { CreateInvoiceBatchResult } from '../../../../types/api';
+import type {
+  BatchTranslateFn,
+  PurchaseBatchEntryRow,
+  PurchaseBatchInvoice,
+  PurchaseBatchSummaryRow,
+} from '../purchaseBatchTypes';
+
+type PurchasesBatchDateFilter = {
+  startDate: string;
+  endDate: string;
+};
+
+type PurchaseBatchSaveResult = {
+  payload: CreateInvoiceBatchResult;
+  uploadRows: PurchaseBatchEntryRow[];
+};
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function createInitialRows() {
+  return [
+    createEmptyPurchasesBatchRow(),
+    createEmptyPurchasesBatchRow(),
+    createEmptyPurchasesBatchRow(),
+  ];
+}
 
 export function usePurchasesBatchActions(options: {
   companyId: string;
-  t: (key: string, ...args: any[]) => string;
-  rows: any[];
-  setRows: React.Dispatch<React.SetStateAction<any[]>>;
-  setBatchNotes: (v: string) => void;
+  t: BatchTranslateFn;
+  rows: PurchaseBatchEntryRow[];
+  setRows: Dispatch<SetStateAction<PurchaseBatchEntryRow[]>>;
+  setBatchNotes: (value: string) => void;
   batchNotes: string;
   batchDate: string;
   batchVaultId: string;
-  prevBatchDateRef: React.MutableRefObject<string>;
-  setBatchDate: (v: string) => void;
-  dateFilter: { startDate: string; endDate: string };
+  prevBatchDateRef: MutableRefObject<string>;
+  setBatchDate: (value: string) => void;
+  dateFilter: PurchasesBatchDateFilter;
   bookmarks: string[];
-  setBatchActionLoading: (v: any) => void;
+  setBatchActionLoading: (value: string | null) => void;
 }) {
   const {
     companyId,
@@ -55,14 +87,19 @@ export function usePurchasesBatchActions(options: {
   const { showToast } = useToast();
 
   const openBatchWithInvoices = useCallback(
-    async (row: any, setter: any) => {
-      if (!companyId || !row?.batchId) return;
+    async (
+      row: PurchaseBatchSummaryRow,
+      setter: Dispatch<SetStateAction<PurchaseBatchSummaryRow | null>>,
+    ) => {
+      if (!companyId || !row.batchId) return;
       setBatchActionLoading(row.batchId);
       try {
-        const invoices = await fetchAllInvoicesForBatch(companyId, row.batchId, dateFilter.startDate, dateFilter.endDate);
+        const invoices = normalizeFetchedPurchaseBatchInvoices(
+          await fetchAllInvoicesForBatch(companyId, row.batchId, dateFilter.startDate, dateFilter.endDate),
+        );
         setter({ ...row, batchId: row.batchId, invoices });
-      } catch (e: any) {
-        showToast(e?.message || t('loadDataFailed'), 'error');
+      } catch (error) {
+        showToast(errorMessage(error, t('loadDataFailed')), 'error');
       } finally {
         setBatchActionLoading(null);
       }
@@ -71,39 +108,45 @@ export function usePurchasesBatchActions(options: {
   );
 
   const handleCancelBatch = useCallback(
-    async (batch: any, setEditingBatch: (v: any) => void) => {
+    async (
+      batch: PurchaseBatchSummaryRow,
+      setEditingBatch: Dispatch<SetStateAction<PurchaseBatchSummaryRow | null>>,
+    ) => {
       let invoices = batch.invoices;
-      if (!invoices?.length) {
+      if (!invoices.length) {
         try {
-          invoices = await fetchAllInvoicesForBatch(companyId, batch.batchId, dateFilter.startDate, dateFilter.endDate);
-        } catch (e: any) {
-          showToast(e?.message || t('loadDataFailed'), 'error');
+          invoices = normalizeFetchedPurchaseBatchInvoices(
+            await fetchAllInvoicesForBatch(companyId, batch.batchId, dateFilter.startDate, dateFilter.endDate),
+          );
+        } catch (error) {
+          showToast(errorMessage(error, t('loadDataFailed')), 'error');
           return;
         }
       }
-      if (!confirm(t('cancelBatchConfirm', batch.batchId, invoices.length))) return;
+
       try {
-        for (const inv of invoices) {
-          if (inv.status === 'active') {
-            const res = await updateInvoice(inv.id, { status: 'cancelled' }, companyId);
-            throwIfApiFailed(res, t('cancelFailed'));
+        for (const invoice of invoices) {
+          if (invoice.status === 'active') {
+            const result = await updateInvoice(invoice.id, { status: 'cancelled' }, companyId);
+            throwIfApiFailed(result, t('cancelFailed'));
           }
         }
         invalidateOnFinancialMutation(queryClient);
         showToast(t('batchCancelled'), 'success');
         setEditingBatch(null);
-      } catch (e: any) {
-        showToast(e?.message || t('cancelFailed'), 'error');
+      } catch (error) {
+        showToast(errorMessage(error, t('cancelFailed')), 'error');
       }
     },
     [companyId, dateFilter.startDate, dateFilter.endDate, queryClient, t, showToast],
   );
 
   const saveMutation = useApiMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<PurchaseBatchSaveResult> => {
       const batchPart = batchNotes.trim();
-      const valid = filterValidRowsForBatchSave(rows, batchPart);
-      if (!valid.length) throw new Error(t('noValidRows'));
+      const validRows = filterValidRowsForBatchSave(rows, batchPart);
+      if (!validRows.length) throw new Error(t('noValidRows'));
+
       const idempotencyKey = buildPurchaseBatchIdempotencyKey({
         companyId,
         cashAccountId: batchVaultId,
@@ -111,54 +154,35 @@ export function usePurchasesBatchActions(options: {
         batchNotes: batchPart,
         rows,
       });
-      const res = await createInvoiceBatch({
+
+      const result = await createInvoiceBatch({
         companyId,
         transactionDate: batchDate,
         vaultId: batchVaultId || undefined,
         batchNotes: batchPart || undefined,
         idempotencyKey,
-        items: valid.map((r: any) => {
-          const normalized = normalizePurchaseBatchLine(r);
-          let notes = normalized.notes;
-          if (normalized.kind === 'fixed_expense') {
-            notes = notes ? `${t('fixedExpenseType')} — ${notes}` : t('fixedExpenseType');
-          } else if (normalized.kind === 'expense') {
-            notes = notes ? `${t('expenseType')} — ${notes}` : t('expenseType');
-          }
-          const kind = normalized.kind || 'purchase';
-          return {
-            supplierId: normalized.supplierId,
-            expenseLineId: normalized.expenseLineId,
-            invoiceNumber: normalized.invoiceNumber,
-            supplierInvoiceNumber: normalized.supplierInvoiceNumber,
-            kind,
-            totalAmount: normalized.totalAmount,
-            isTaxable: normalized.isTaxable,
-            invoiceDate: normalized.invoiceDate,
-            categoryId: normalized.categoryId,
-            debitAccountId: normalized.debitAccountId,
-            notes: notes || undefined,
-            ...(isWarrantyFollowUpKind(kind) && r.warrantyFollowUp ? { warrantyFollowUp: true } : {}),
-          };
-        }),
+        items: validRows.map((row) => buildPurchaseBatchItemPayload(row, t)),
       });
-      throwIfApiFailed(res, t('saveFailed'));
-      const payload = res.data ?? { batchId: 'B-' + Date.now(), count: valid.length };
-      return { payload, uploadRows: valid };
+      throwIfApiFailed(result, t('saveFailed'));
+
+      return {
+        payload: requirePurchaseBatchSaveResult(result.data, t('saveFailed')),
+        uploadRows: validRows,
+      };
     },
     rejectOnApiFailure: false,
-    successToast: (data: any) => t('savedInvoicesCount', data.payload.count, data.payload.batchId),
-    errorToast: (e: any) => e?.message || t('saveFailed'),
-    onSuccess: async (data: any) => {
-      const invoices = data.payload?.invoices || [];
-      const rowsWithFiles = data.uploadRows || [];
-      for (let i = 0; i < rowsWithFiles.length; i++) {
-        const f = rowsWithFiles[i]?.attachmentFile;
-        const invId = invoices[i]?.id;
-        if (f && invId && companyId) {
+    successToast: (data: PurchaseBatchSaveResult) =>
+      t('savedInvoicesCount', data.payload.count, data.payload.batchId),
+    errorToast: (error: unknown) => errorMessage(error, t('saveFailed')),
+    onSuccess: async (data: PurchaseBatchSaveResult) => {
+      const invoices = data.payload.invoices ?? [];
+      for (let index = 0; index < data.uploadRows.length; index += 1) {
+        const file = data.uploadRows[index]?.attachmentFile;
+        const invoiceId = invoices[index]?.id;
+        if (file && invoiceId && companyId) {
           try {
-            const up = await uploadInvoiceAttachment(invId, companyId, f);
-            throwIfApiFailed(up);
+            const uploadResult = await uploadInvoiceAttachment(invoiceId, companyId, file);
+            throwIfApiFailed(uploadResult);
           } catch {
             showToast(t('invoiceReceiptUploadFailed'), 'error');
             break;
@@ -166,13 +190,13 @@ export function usePurchasesBatchActions(options: {
         }
       }
       invalidateOnFinancialMutation(queryClient);
-      setRows([createEmptyPurchasesBatchRow(), createEmptyPurchasesBatchRow(), createEmptyPurchasesBatchRow()]);
+      setRows(createInitialRows());
       setBatchNotes('');
     },
   });
 
   const toggleBookmark = useCallback(
-    async (id: any) => {
+    async (id: string) => {
       const current = bookmarks.includes(id);
       try {
         await setSupplierBookmark(id, !current);
@@ -184,38 +208,17 @@ export function usePurchasesBatchActions(options: {
     [bookmarks, companyId, queryClient, showToast, t],
   );
 
-  async function saveInvoiceEdit(inv: any) {
-    const payload = {
-      supplierId: inv.supplierId,
-      supplierInvoiceNumber: inv.supplierInvoiceNumber ?? inv.invoiceNumber,
-      kind: inv.kind,
-      totalAmount: inv.totalAmount,
-      isTaxable: inv.isTaxable !== false,
-      status: inv.status,
-      ...(inv.transactionDate?.trim()
-        ? { transactionDate: inv.transactionDate.trim().slice(0, 10) }
-        : {}),
-    };
-    return updateInvoice(inv.id, payload, companyId);
+  async function saveInvoiceEdit(invoice: PurchaseBatchInvoice) {
+    return updateInvoice(invoice.id, buildPurchaseBatchInvoiceUpdatePayload(invoice), companyId);
   }
 
   const handleBatchDateChange = useCallback(
     (newDate: string) => {
-      const prevOp = prevBatchDateRef.current;
+      const previousDate = prevBatchDateRef.current;
       setBatchDate(newDate);
       if (!newDate) return;
-      setRows((prevRows: any) =>
-        prevRows.map((r: any) => {
-          let inv = r.invoiceDate;
-          if (prevOp && newDate !== prevOp) {
-            if (newDate < prevOp) {
-              if (inv && inv > newDate) inv = newDate;
-            } else if (newDate > prevOp) {
-              if (inv === prevOp) inv = newDate;
-            }
-          }
-          return { ...r, invoiceDate: inv };
-        }),
+      setRows((previousRows) =>
+        previousRows.map((row) => rowWithAdjustedInvoiceDate(row, previousDate, newDate)),
       );
       prevBatchDateRef.current = newDate;
     },
