@@ -16,7 +16,7 @@ import { buildExpenseCategoryBreakdownForMonth } from '../shared/overview-pl-bre
  */
 @Injectable()
 export class ExpenseInsightsService {
-  constructor(private readonly reportingFacade: ReportingFacade) {}
+  constructor(private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>) {}
 
   async buildExpenseInsights(
     companyId: string,

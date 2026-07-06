@@ -23,6 +23,10 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         filter={m.filter}
         year={m.year}
         salesShiftPeriodTotals={m.salesShiftPeriodTotals}
+        revenueDailyAvgCalendar={m.revenueDailyAvgCalendar}
+        revenueDailyAvgPrevMonthCalendar={m.revenueDailyAvgPrevMonthCalendar}
+        customerDailyAvgCalendar={m.customerDailyAvgCalendar}
+        customerDailyAvgPrevMonthCalendar={m.customerDailyAvgPrevMonthCalendar}
         kpiInsightFooters={m.kpiInsightFooters}
       />
 
@@ -55,7 +59,7 @@ export function DashboardOverviewContent({ m }: DashboardOverviewContentProps) {
         setTimelineGrain={m.setTimelineGrain}
         timelineMonthName={m.timelineMonthName}
         year={m.year}
-        performanceData={m.performanceData as Record<string, string | number>[]}
+        performanceData={m.performanceData}
         perfTotal={m.perfTotal}
         channelData={m.channelData}
         channelPeriodLabel={m.channelPeriodLabel}

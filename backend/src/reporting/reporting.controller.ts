@@ -14,6 +14,12 @@ import { PatchInsightThresholdsDto } from './dto/patch-insight-thresholds.dto';
 import { ResetInsightThresholdsDto } from './dto/reset-insight-thresholds.dto';
 
 type JwtUser = { userId?: string; sub?: string };
+type ReportingInsightsReader = Pick<DashboardInsightsService, 'buildDashboardInsights'>;
+type ReportingThresholdSettings = Pick<
+  CompanyInsightThresholdSettingsService,
+  'getResolvedThresholds' | 'updateStoredThresholds' | 'resetStoredThresholds'
+>;
+type ReportingAuditLog = Pick<AuditLogService, 'log' | 'logUpdate'>;
 
 /**
  * Read-only reporting endpoints. Insights delegate to {@link DashboardInsightsService} without transforming payloads.
@@ -22,9 +28,9 @@ type JwtUser = { userId?: string; sub?: string };
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class ReportingController {
   constructor(
-    private readonly dashboardInsightsService: DashboardInsightsService,
-    private readonly companyInsightThresholdSettings: CompanyInsightThresholdSettingsService,
-    private readonly auditLog: AuditLogService,
+    private readonly dashboardInsightsService: ReportingInsightsReader,
+    private readonly companyInsightThresholdSettings: ReportingThresholdSettings,
+    private readonly auditLog: ReportingAuditLog,
   ) {}
 
   /** GET /api/v1/reporting/insights/thresholds */

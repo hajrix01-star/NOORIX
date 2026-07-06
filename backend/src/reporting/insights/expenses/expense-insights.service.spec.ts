@@ -17,7 +17,7 @@ describe('ExpenseInsightsService', () => {
       salesPack: {},
       periodAnalytics: {},
     });
-    const facade = { getDashboardSummary } as unknown as import('../../reporting.facade').ReportingFacade;
+    const facade = { getDashboardSummary };
     const svc = new ExpenseInsightsService(facade);
     await svc.buildExpenseInsights('c1', dateRange, null);
     expect(getDashboardSummary).toHaveBeenCalledTimes(1);
@@ -101,7 +101,7 @@ describe('ExpenseInsightsService', () => {
       salesPack: {},
       periodAnalytics: {},
     });
-    const facade = { getDashboardSummary } as unknown as import('../../reporting.facade').ReportingFacade;
+    const facade = { getDashboardSummary };
     const svc = new ExpenseInsightsService(facade);
     const out = await svc.buildExpenseInsights('c1', dateRange, 4);
     expect(out.schemaVersion).toBe(1);
@@ -120,7 +120,7 @@ describe('ExpenseInsightsService', () => {
       salesPack: {},
       periodAnalytics: {},
     });
-    const facade = { getDashboardSummary } as unknown as import('../../reporting.facade').ReportingFacade;
+    const facade = { getDashboardSummary };
     const svc = new ExpenseInsightsService(facade);
     const out = await svc.buildExpenseInsights('c1', dateRange, 6);
     expect(out.warnings).toEqual([]);

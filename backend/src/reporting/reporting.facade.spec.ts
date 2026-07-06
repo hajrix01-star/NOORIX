@@ -20,10 +20,7 @@ describe('ReportingFacade (parity)', () => {
     salesService = {
       findDashboardPack: jest.fn(),
     };
-    facade = new ReportingFacade(
-      reportsService as unknown as ReportsService,
-      salesService as unknown as SalesService,
-    );
+    facade = new ReportingFacade(reportsService, salesService);
   });
 
   describe('getProfitLossReport', () => {

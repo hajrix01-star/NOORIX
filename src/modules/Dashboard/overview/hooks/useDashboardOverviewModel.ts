@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { useDashboardOverview, type DashboardSummaryLike } from '../../../../hooks/useDashboardOverview';
+import { useDashboardOverview } from '../../../../hooks/useDashboardOverview';
 import { useDashboardSalesPack } from '../../../../hooks/useDashboardSalesPack';
 import { monthDateBounds } from '../../../../utils/reportDrillLinks';
 import { buildKpiInsightFooterMap } from '../utils/dashboardOverviewKpiInsightFooters';
@@ -26,6 +26,7 @@ import {
 import { computeSalesShiftPeriodTotals } from '../utils/dashboardSalesShiftTotals';
 import { bucketMonthIntoWeeks, pctChangeVsBaseline, weeklySalesMaxDayInclusive } from '../utils/dashboardWeeklySales';
 import type { DashboardOverviewFilter } from '../types';
+import type { DashboardSalesMetricChannel, DashboardSalesMetricDay, DashboardSalesSummary } from '../../../../types/api/domains/dashboard';
 
 /** خيارات اختيارية — تستخدمها شاشة الاستوديو فقط (لا تغيّر اللوحة التقليدية). */
 export type UseDashboardOverviewModelOptions = {
@@ -52,6 +53,43 @@ const PIE_COLORS = [
   '#0891b2',
   '#db2777',
 ];
+
+function metricDaysToSummaries(rows: readonly DashboardSalesMetricDay[] | null | undefined): DashboardSalesSummary[] {
+  return (rows ?? []).map((row, index) => ({
+    id: `metric-day-${row.transactionDate}-${row.shift ?? 'all'}-${index}`,
+    transactionDate: row.transactionDate,
+    totalAmount: row.totalAmount,
+    customerCount: row.customerCount,
+    channels: [],
+  }));
+}
+
+function metricChannelsToSummaries(rows: readonly DashboardSalesMetricChannel[] | null | undefined): DashboardSalesSummary[] {
+  return (rows ?? []).map((row, index) => ({
+    id: `metric-channel-${row.periodKey}-${row.vaultId}-${index}`,
+    transactionDate: `${row.periodKey}-01`,
+    totalAmount: row.amount,
+    customerCount: 0,
+    channels: [
+      {
+        amount: row.amount,
+        vault: {
+          id: row.vaultId,
+          nameAr: row.nameAr,
+          nameEn: row.nameEn ?? null,
+          name: row.nameAr || row.nameEn || row.vaultId,
+        },
+      },
+    ],
+  }));
+}
+
+function pickMetricSummaries(
+  metricRows: readonly DashboardSalesMetricDay[] | null | undefined,
+  fallbackRows: DashboardSalesSummary[],
+): DashboardSalesSummary[] {
+  return metricRows && metricRows.length > 0 ? metricDaysToSummaries(metricRows) : fallbackRows;
+}
 
 export function useDashboardOverviewModel(
   companyId: string,
@@ -163,9 +201,16 @@ export function useDashboardOverviewModel(
   });
 
   const report = overviewData.report;
-  const dailySummaries = overviewData.salesPack.dailySummaries;
-  const yearSummaries = overviewData.salesPack.yearSummaries;
-  const monthSalesForDailyAvg = overviewData.salesPack.monthSummaries;
+  const salesMetrics = overviewData.salesPack.metrics;
+  const dailySummaries = pickMetricSummaries(salesMetrics?.dailyDaily, overviewData.salesPack.dailySummaries);
+  const yearSummaries = pickMetricSummaries(salesMetrics?.yearDaily, overviewData.salesPack.yearSummaries);
+  const monthSalesForDailyAvg = pickMetricSummaries(salesMetrics?.monthDaily, overviewData.salesPack.monthSummaries);
+  const channelYearSummaries = salesMetrics?.yearChannels?.length
+    ? metricChannelsToSummaries(salesMetrics.yearChannels)
+    : overviewData.salesPack.yearSummaries;
+  const channelDailySummaries = salesMetrics?.dailyChannels?.length
+    ? metricChannelsToSummaries(salesMetrics.dailyChannels)
+    : overviewData.salesPack.dailySummaries;
   const periodData = overviewData.periodData;
 
   const kpiInsightFooters = useMemo(
@@ -207,7 +252,7 @@ export function useDashboardOverviewModel(
     [weeklyPanelYearB],
   );
 
-  const { dailySummaries: weeklyDailySummariesA, isLoading: weeklyPackALoading } = useDashboardSalesPack({
+  const { dailySummaries: weeklyRowsA, metrics: weeklyMetricsA, isLoading: weeklyPackALoading } = useDashboardSalesPack({
     companyId,
     yearStart: weeklyPackYearSpanA.yearStart,
     yearEnd: weeklyPackYearSpanA.yearEnd,
@@ -218,7 +263,7 @@ export function useDashboardOverviewModel(
     enabled: !!companyId,
   });
 
-  const { dailySummaries: weeklyDailySummariesB, isLoading: weeklyPackBLoading } = useDashboardSalesPack({
+  const { dailySummaries: weeklyRowsB, metrics: weeklyMetricsB, isLoading: weeklyPackBLoading } = useDashboardSalesPack({
     companyId,
     yearStart: weeklyPackYearSpanB.yearStart,
     yearEnd: weeklyPackYearSpanB.yearEnd,
@@ -240,7 +285,7 @@ export function useDashboardOverviewModel(
     [prevMonthSalesAvgBounds.year],
   );
 
-  const { monthSummaries: prevMonthSalesForDailyAvg } = useDashboardSalesPack({
+  const { monthSummaries: prevMonthRowsForDailyAvg, metrics: prevMonthMetrics } = useDashboardSalesPack({
     companyId,
     yearStart: prevMonthPackYearSpan?.yearStart ?? `${year}-01-01`,
     yearEnd: prevMonthPackYearSpan?.yearEnd ?? `${year}-12-31`,
@@ -250,6 +295,9 @@ export function useDashboardOverviewModel(
     monthEnd: prevMonthSalesAvgBounds.end,
     enabled: !!companyId && selectedMonth != null && !!prevMonthSalesAvgBounds.start,
   });
+  const prevMonthSalesForDailyAvg = pickMetricSummaries(prevMonthMetrics?.monthDaily, prevMonthRowsForDailyAvg);
+  const weeklyDailySummariesA = pickMetricSummaries(weeklyMetricsA?.dailyDaily, weeklyRowsA);
+  const weeklyDailySummariesB = pickMetricSummaries(weeklyMetricsB?.dailyDaily, weeklyRowsB);
 
   const saudiNow = getSaudiNow();
 
@@ -267,6 +315,13 @@ export function useDashboardOverviewModel(
 
   const revenueMtdDailyAvg = useMemo(() => {
     if (selectedMonth == null) return null;
+    if (salesMetrics?.monthAverage) {
+      return {
+        avgDaily: salesMetrics.monthAverage.revenueAvgDaily,
+        total: salesMetrics.monthAverage.total,
+        calendarDays: salesMetrics.monthAverage.calendarDays,
+      };
+    }
     return computeRevenueMonthDailyAvg({
       monthSales: monthSalesForDailyAvg,
       year,
@@ -275,10 +330,17 @@ export function useDashboardOverviewModel(
       todayMonth: saudiNow.month,
       todayDay: saudiNow.day,
     });
-  }, [monthSalesForDailyAvg, year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day]);
+  }, [salesMetrics?.monthAverage, monthSalesForDailyAvg, year, selectedMonth, saudiNow.year, saudiNow.month, saudiNow.day]);
 
   const revenuePrevMonthDailyAvg = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
+    if (prevMonthMetrics?.monthAverage) {
+      return {
+        avgDaily: prevMonthMetrics.monthAverage.revenueAvgDaily,
+        total: prevMonthMetrics.monthAverage.total,
+        calendarDays: prevMonthMetrics.monthAverage.calendarDays,
+      };
+    }
     const prev = prevCalendarMonth(year, selectedMonth);
     return computeRevenueMonthDailyAvg({
       monthSales: prevMonthSalesForDailyAvg,
@@ -290,6 +352,7 @@ export function useDashboardOverviewModel(
       endDayInclusive: revenueMtdEndDay,
     });
   }, [
+    prevMonthMetrics?.monthAverage,
     prevMonthSalesForDailyAvg,
     year,
     selectedMonth,
@@ -301,6 +364,13 @@ export function useDashboardOverviewModel(
 
   const customerMtdDailyAvg = useMemo(() => {
     if (selectedMonth == null) return null;
+    if (salesMetrics?.monthAverage) {
+      return {
+        avgDaily: salesMetrics.monthAverage.customerAvgDaily,
+        total: salesMetrics.monthAverage.customerCount,
+        calendarDays: salesMetrics.monthAverage.calendarDays,
+      };
+    }
     return computeCustomerMonthDailyAvg({
       monthSales: monthSalesForDailyAvg,
       year,
@@ -311,6 +381,7 @@ export function useDashboardOverviewModel(
       endDayInclusive: revenueMtdEndDay > 0 ? revenueMtdEndDay : undefined,
     });
   }, [
+    salesMetrics?.monthAverage,
     monthSalesForDailyAvg,
     year,
     selectedMonth,
@@ -322,6 +393,13 @@ export function useDashboardOverviewModel(
 
   const customerPrevMonthDailyAvg = useMemo(() => {
     if (selectedMonth == null || revenueMtdEndDay <= 0) return null;
+    if (prevMonthMetrics?.monthAverage) {
+      return {
+        avgDaily: prevMonthMetrics.monthAverage.customerAvgDaily,
+        total: prevMonthMetrics.monthAverage.customerCount,
+        calendarDays: prevMonthMetrics.monthAverage.calendarDays,
+      };
+    }
     const prev = prevCalendarMonth(year, selectedMonth);
     return computeCustomerMonthDailyAvg({
       monthSales: prevMonthSalesForDailyAvg,
@@ -333,6 +411,7 @@ export function useDashboardOverviewModel(
       endDayInclusive: revenueMtdEndDay,
     });
   }, [
+    prevMonthMetrics?.monthAverage,
     prevMonthSalesForDailyAvg,
     year,
     selectedMonth,
@@ -372,6 +451,19 @@ export function useDashboardOverviewModel(
   ]);
 
   const yearlyDailyAvgRows = useMemo(() => {
+    if (salesMetrics?.yearMonthlyDailyAverages?.length) {
+      const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+      return salesMetrics.yearMonthlyDailyAverages.map((row) => ({
+        month: row.month,
+        monthLabel: monthNames[row.month - 1] ?? String(row.month),
+        totalSales: row.totalSales,
+        avgDaily: row.avgDaily,
+        calendarDays: row.calendarDays,
+        deltaPctVsPrev: row.deltaPctVsPrev,
+        tone: row.tone,
+        isCurrentMonth: row.isCurrentMonth,
+      }));
+    }
     const capMonth = yearMonthlyDailyAvgCapMonth(year, saudiYM.year, saudiYM.month);
     const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
     const alignPrevMonthDay =
@@ -392,7 +484,7 @@ export function useDashboardOverviewModel(
       currentDay: saudiNow.day,
       prevMonthAlignEndDay: alignPrevMonthDay,
     });
-  }, [year, yearSummaries, lang, saudiYM.year, saudiYM.month, saudiNow.day, selectedMonth, revenueMtdEndDay]);
+  }, [salesMetrics?.yearMonthlyDailyAverages, year, yearSummaries, lang, saudiYM.year, saudiYM.month, saudiNow.day, selectedMonth, revenueMtdEndDay]);
 
   const monthName = selectedMonth
     ? lang === 'ar'
@@ -421,6 +513,12 @@ export function useDashboardOverviewModel(
         label: monthName ? `${t('purchasesGroup')} — ${monthName}` : t('annualPurchases'),
         formulaKey: 'dashboardKpiFormulaPurchases',
         pctLabelKey: 'purchasesToSalesRatio',
+      },
+      {
+        key: 'grossProfit',
+        label: monthName ? `${t('annualGrossProfit')} — ${monthName}` : t('annualGrossProfit'),
+        formulaKey: 'dashboardKpiFormulaGrossProfit',
+        pctLabelKey: 'dashboardKpiPctGrossProfit',
       },
       {
         key: 'expenses',
@@ -462,12 +560,12 @@ export function useDashboardOverviewModel(
   const channelData = useMemo(
     () =>
       buildChannelPieRows({
-        yearSummaries,
-        dailySummaries,
+        yearSummaries: channelYearSummaries,
+        dailySummaries: channelDailySummaries,
         selectedMonth,
         lang,
       }),
-    [yearSummaries, dailySummaries, selectedMonth, lang],
+    [channelYearSummaries, channelDailySummaries, selectedMonth, lang],
   );
 
   const salesSeries = t('annualSales');
@@ -476,7 +574,7 @@ export function useDashboardOverviewModel(
   const isAnnualChart = timelineGrain === 'monthly';
 
   const perfTotal = useMemo(
-    () => performanceTotalForSalesKey(performanceData as Record<string, string | number>[], salesSeries),
+    () => performanceTotalForSalesKey(performanceData, salesSeries),
     [performanceData, salesSeries],
   );
 
@@ -550,18 +648,22 @@ export function useDashboardOverviewModel(
         alignSelectedPeriod: isAutoSelectedPair,
       });
 
-    const curBuckets = bucketMonthIntoWeeks(
-      weeklyPanelYearA,
-      weeklyPanelMonthA,
-      weeklyDailySummariesA,
-      { maxDayInclusive: capFor(weeklyPanelYearA, weeklyPanelMonthA) },
-    );
-    const baseBuckets = bucketMonthIntoWeeks(
-      weeklyPanelYearB,
-      weeklyPanelMonthB,
-      weeklyDailySummariesB,
-      { maxDayInclusive: capFor(weeklyPanelYearB, weeklyPanelMonthB) },
-    );
+    const curBuckets = weeklyMetricsA?.dailyWeekly?.length
+      ? weeklyMetricsA.dailyWeekly
+      : bucketMonthIntoWeeks(
+          weeklyPanelYearA,
+          weeklyPanelMonthA,
+          weeklyDailySummariesA,
+          { maxDayInclusive: capFor(weeklyPanelYearA, weeklyPanelMonthA) },
+        );
+    const baseBuckets = weeklyMetricsB?.dailyWeekly?.length
+      ? weeklyMetricsB.dailyWeekly
+      : bucketMonthIntoWeeks(
+          weeklyPanelYearB,
+          weeklyPanelMonthB,
+          weeklyDailySummariesB,
+          { maxDayInclusive: capFor(weeklyPanelYearB, weeklyPanelMonthB) },
+        );
 
     const maxW = Math.max(curBuckets.length, baseBuckets.length);
     const rows = [];
@@ -584,6 +686,8 @@ export function useDashboardOverviewModel(
   }, [
     weeklyDailySummariesA,
     weeklyDailySummariesB,
+    weeklyMetricsA?.dailyWeekly,
+    weeklyMetricsB?.dailyWeekly,
     weeklyPanelMonthA,
     weeklyPanelMonthB,
     weeklyPanelYearA,

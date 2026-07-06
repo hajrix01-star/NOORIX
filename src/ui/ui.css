@@ -1384,10 +1384,10 @@
   height: 100%;
 }
 
-/* ? 1100px من عرض الحاوية: 5 أعمدة (تقارير وغيرها) — لوحة التحكم: 4 كروت */
+/* ? 1100px من عرض الحاوية: 5 أعمدة (تقارير وغيرها) — لوحة التحكم: 5 كروت */
 @container kpi-section (min-width: 1100px) {
   .nx-kpi-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; }
-  .nx-kpi-grid--dashboard { grid-template-columns: repeat(4, 1fr); }
+  .nx-kpi-grid--dashboard { grid-template-columns: repeat(5, 1fr); }
 }
 
 /* 700px – 1099px: 3 أعمدة — أوسع وأجمل على معظم الشاشات */

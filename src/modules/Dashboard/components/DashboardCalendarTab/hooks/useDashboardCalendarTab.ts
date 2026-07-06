@@ -1,13 +1,24 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../../../i18n/useTranslation';
 import { useApp } from '../../../../../context/AppContext';
+import { useToast } from '../../../../../context/ToastContext';
 import { useDashboardSalesPack } from '../../../../../hooks/useDashboardSalesPack';
 import { useDashboardCalendarData } from '../../../../../hooks/useDashboardCalendarData';
 import { fmt } from '../../../../../utils/format';
 import { buildPrintHtmlTable, buildPrintTableHtml } from '../../../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../../../utils/printUtils';
 import { getSaudiNow, toYmd } from '../../../../../utils/saudiDate';
+import { vaultDisplayName } from '../../../../../utils/vaultDisplay';
+import type {
+  DashboardCalendarDay,
+  DashboardCalendarTargets,
+  DashboardSalesSummary,
+  DashboardSpecialDay,
+} from '../../../../../types/api/domains/dashboard';
 import { computeRevenueMonthDailyAvg } from '../../../overview/utils/dashboardDailyAvg';
+import { toDashboardNonNegativeNumber, toDashboardNumber } from '../../../utils/dashboardNumberModel';
+import { dashboardDisplayName } from '../../../utils/dashboardDisplayName';
+import { createDashboardSpecialDayId } from '../../../utils/dashboardSpecialDayId';
 import {
   lastDayOfMonth,
   calendarYmd,
@@ -23,9 +34,26 @@ import { KPI_RECHARTS_COLORS } from '../../../../../constants/kpiCardTheme';
 import { DEFAULT_COLORS, DOW_LABELS, DOW_LABELS_AR, MONTH_LABELS_EN } from '../constants';
 import type { DashboardCalendarTabProps } from '../types';
 
+type PrintCalendarCell = {
+  html: string;
+  style: string;
+};
+
+function normalizeTargets(targets: DashboardCalendarTargets): DashboardCalendarTargets {
+  return {
+    overall: targets.overall ?? null,
+    byDow: targets.byDow ?? {},
+  };
+}
+
+function totalSummaryAmount(summary: DashboardSalesSummary): number {
+  return toDashboardNumber(summary.totalAmount);
+}
+
 export function useDashboardCalendarTab({ companyId, year, selectedMonth }: DashboardCalendarTabProps) {
   const { t, lang } = useTranslation();
   const { companies } = useApp();
+  const { showToast } = useToast();
   const now = getSaudiNow();
   const month = selectedMonth || now.month;
   const lastDay = lastDayOfMonth(year, month);
@@ -37,7 +65,7 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     dailySummaries: summaries,
     isLoading: salesLoading,
   } = useDashboardSalesPack({
-    companyId: companyId as string,
+    companyId: companyId ?? '',
     yearStart: `${year}-01-01`,
     yearEnd: `${year}-12-31`,
     dailyStart: startDate,
@@ -65,35 +93,27 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   const [editingTarget, setEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState('');
   const [targetsVersion, setTargetsVersion] = useState(0);
-  /** true = الهدف لكل الشهور (الافتراضي)، false = لهذا الشهر فقط */
   const [applyToAll, setApplyToAll] = useState(true);
   const [showTargetsPanel, setShowTargetsPanel] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<any>(null);
+  const [selectedDay, setSelectedDay] = useState<DashboardCalendarDay | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState<Set<string>>(() => new Set<string>());
-  const [lastClickedDate, setLastClickedDate] = useState<any>(null);
+  const [lastClickedDate, setLastClickedDate] = useState<string | null>(null);
   const [showAddSpecialModal, setShowAddSpecialModal] = useState(false);
   const [newSpecialName, setNewSpecialName] = useState('');
 
-  const targets = useMemo(
-    () => ({
-      overall: storedTargets?.overall ?? null,
-      byDow: storedTargets?.byDow ?? {},
-    }),
-    [storedTargets],
-  );
+  const targets = useMemo(() => normalizeTargets(storedTargets), [storedTargets]);
 
   const dailySales = useMemo(() => {
-    const map = new Map();
-    (summaries || []).forEach((s: any) => {
-      const d = toYmd(s.transactionDate);
-      const amt = Number(s.totalAmount || 0);
-      map.set(d, (map.get(d) || 0) + amt);
+    const map = new Map<string, number>();
+    summaries.forEach((summary) => {
+      const date = toYmd(summary.transactionDate);
+      const amount = totalSummaryAmount(summary);
+      map.set(date, (map.get(date) ?? 0) + amount);
     });
     return map;
   }, [summaries]);
 
-  /** إجمالي المبيعات ÷ أيام التقويم — نفس مصدر لوحة التحكم (dashboardDailyAvg). */
   const salesDailyAvgCalendarPeriod = useMemo(() => {
     return computeRevenueMonthDailyAvg({
       monthSales: summaries,
@@ -105,111 +125,120 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     }).avgDaily;
   }, [summaries, year, month, now.year, now.month, now.day]);
 
-  const daysInMonth = useMemo(() => {
-    const days = [];
-    for (let d = 1; d <= lastDay; d++) {
-      const dateStr = calendarYmd(year, month, d);
-      const dow = getDayOfWeek(year, month, d);
-      const dayTarget = targets.byDow[dow] != null ? Number(targets.byDow[dow]) : targets.overall;
-      const special = specialDaysList.find((sp: any) => dateInRange(dateStr, sp.fromDate, sp.toDate));
+  const daysInMonth = useMemo<DashboardCalendarDay[]>(() => {
+    const days: DashboardCalendarDay[] = [];
+    for (let day = 1; day <= lastDay; day += 1) {
+      const dateStr = calendarYmd(year, month, day);
+      const dow = getDayOfWeek(year, month, day);
+      const targetByDow = targets.byDow[dow];
+      const dayTarget = targetByDow != null ? toDashboardNumber(targetByDow) : targets.overall;
+      const special = specialDaysList.find((sp) => dateInRange(dateStr, sp.fromDate, sp.toDate)) ?? null;
       days.push({
-        day: d,
+        day,
         dateStr,
         dow,
-        amount: dailySales.get(dateStr) || 0,
-        dayTarget: dayTarget != null ? Number(dayTarget) : null,
-        special: special || null,
+        amount: dailySales.get(dateStr) ?? 0,
+        dayTarget: dayTarget != null ? toDashboardNumber(dayTarget) : null,
+        special,
       });
     }
     return days;
   }, [year, month, lastDay, dailySales, targets, specialDaysList]);
 
   const maxAmount = useMemo(() => {
-    const dowNums = Object.values(targets.byDow).map((v) => (v != null ? Number(v) : 0));
-    const maxFromTargets = Math.max(0, targets.overall != null ? Number(targets.overall) : 0, ...dowNums);
-    return Math.max(1, ...daysInMonth.map((d: any) => d.amount), maxFromTargets);
+    const dowNumbers = Object.values(targets.byDow).map((value) => toDashboardNumber(value));
+    const maxFromTargets = Math.max(0, targets.overall ?? 0, ...dowNumbers);
+    return Math.max(1, ...daysInMonth.map((day) => day.amount), maxFromTargets);
   }, [daysInMonth, targets]);
 
-  const company = companies?.find((c: any) => c.id === companyId);
-  const companyName = lang === 'en' ? company?.nameEn || company?.nameAr || '' : company?.nameAr || company?.nameEn || '';
+  const company = companies.find((item) => item.id === companyId);
+  const companyName = dashboardDisplayName(company, lang);
+
+  const showSaveError = useCallback(
+    (error: unknown) => {
+      const message = error instanceof Error ? error.message : t('saveFailed');
+      showToast(message, 'error');
+    },
+    [showToast, t],
+  );
 
   const handleSaveOverallTarget = useCallback(async () => {
-    const v = parseFloat(String(targetInput).replace(/,/g, ''));
-    if (!Number.isNaN(v) && v >= 0) {
-      const newTargets = { ...targets, byDow: { ...targets.byDow }, overall: v };
-      try {
-        await saveTargets(newTargets, applyToAll);
-        setTargetInput('');
-        setEditingTarget(false);
-        setTargetsVersion((x) => x + 1);
-      } catch {
-        // no-op — حالة الفشل تُعاد برقم مؤقت
-      }
+    const value = toDashboardNonNegativeNumber(targetInput);
+    if (value === null) return;
+    const newTargets: DashboardCalendarTargets = { ...targets, byDow: { ...targets.byDow }, overall: value };
+    try {
+      await saveTargets(newTargets, applyToAll);
+      setTargetInput('');
+      setEditingTarget(false);
+      setTargetsVersion((current) => current + 1);
+    } catch (error) {
+      showSaveError(error);
     }
-  }, [targets, targetInput, saveTargets, applyToAll]);
+  }, [targets, targetInput, saveTargets, applyToAll, showSaveError]);
 
   const handleSaveDowTarget = useCallback(
     async (dow: number, value: unknown) => {
-      const str = String(value || '').trim();
-      const v = str === '' ? null : parseFloat(str.replace(/,/g, ''));
-      if (v === null || (!Number.isNaN(v) && v >= 0)) {
-        const newByDow = { ...targets.byDow };
-        if (v === null) delete newByDow[dow];
-        else newByDow[dow] = v;
-        const newTargets = { ...targets, byDow: newByDow };
-        try {
-          await saveTargets(newTargets, applyToAll);
-          setTargetsVersion((x) => x + 1);
-        } catch {
-          // no-op
-        }
+      const textValue = String(value ?? '').trim();
+      const targetValue = textValue === '' ? null : toDashboardNonNegativeNumber(textValue);
+      if (textValue !== '' && targetValue === null) return;
+      const newByDow = { ...targets.byDow };
+      if (targetValue === null) delete newByDow[dow];
+      else newByDow[dow] = targetValue;
+      const newTargets: DashboardCalendarTargets = { ...targets, byDow: newByDow };
+      try {
+        await saveTargets(newTargets, applyToAll);
+        setTargetsVersion((current) => current + 1);
+      } catch (error) {
+        showSaveError(error);
       }
     },
-    [targets, saveTargets, applyToAll],
+    [targets, saveTargets, applyToAll, showSaveError],
   );
 
   const handleResetMonthTargets = useCallback(async () => {
     try {
       await resetMonthTargets();
-      setTargetsVersion((x) => x + 1);
-    } catch {
-      // no-op
+      setTargetsVersion((current) => current + 1);
+    } catch (error) {
+      showSaveError(error);
     }
-  }, [resetMonthTargets]);
+  }, [resetMonthTargets, showSaveError]);
 
   const handleSaveDayNote = useCallback(
-    async (dateStr: string, note: unknown) => {
+    async (dateStr: string, note: string) => {
+      const trimmed = note.trim();
       const newNotes = { ...dayNotes };
-      if (note) newNotes[dateStr] = note as string;
+      if (trimmed) newNotes[dateStr] = trimmed;
       else delete newNotes[dateStr];
       try {
         await saveDayNotes(newNotes);
-      } catch {
-        // no-op
+      } catch (error) {
+        showSaveError(error);
       }
     },
-    [dayNotes, saveDayNotes],
+    [dayNotes, saveDayNotes, showSaveError],
   );
 
   const handleDayClick = useCallback(
-    (item: any, isShift: boolean) => {
+    (item: DashboardCalendarDay, isShift: boolean) => {
       const dateStr = item.dateStr;
       setSelectedDay(item);
-      if (!isSelectionMode) {
-        return;
-      }
+      if (!isSelectionMode) return;
+
       if (isShift && lastClickedDate) {
-        const dates = [...daysInMonth.map((d: any) => d.dateStr)];
-        const i1 = dates.indexOf(lastClickedDate);
-        const i2 = dates.indexOf(dateStr);
-        if (i1 >= 0 && i2 >= 0) {
-          const [from, to] = i1 <= i2 ? [i1, i2] : [i2, i1];
-          const range = new Set<string>(dates.slice(from, to + 1));
-          setSelectedDates(range);
+        const dates = daysInMonth.map((day) => day.dateStr);
+        const firstIndex = dates.indexOf(lastClickedDate);
+        const secondIndex = dates.indexOf(dateStr);
+        if (firstIndex >= 0 && secondIndex >= 0) {
+          const [from, to] = firstIndex <= secondIndex
+            ? [firstIndex, secondIndex]
+            : [secondIndex, firstIndex];
+          setSelectedDates(new Set<string>(dates.slice(from, to + 1)));
           setLastClickedDate(dateStr);
           return;
         }
       }
+
       setLastClickedDate(dateStr);
       setSelectedDates((prev) => {
         const next = new Set<string>(prev);
@@ -222,36 +251,47 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
   );
 
   const handleAddSelectedAsSpecial = useCallback(async () => {
-    const sorted = [...selectedDates].filter((d: string) => d >= startDate && d <= endDate).sort();
-    if (sorted.length === 0) return;
+    const sorted = [...selectedDates].filter((date) => date >= startDate && date <= endDate).sort();
+    if (!sorted.length) return;
     const from = sorted[0];
     const to = sorted[sorted.length - 1];
     const name = (newSpecialName || t('dashboardSpecialDay')).trim();
-    const id = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const color = DEFAULT_COLORS[specialDaysList.length % DEFAULT_COLORS.length];
-    const newList = [...specialDaysList, { id, name, fromDate: from, toDate: to, color }];
+    const newSpecialDay: DashboardSpecialDay = {
+      id: createDashboardSpecialDayId(),
+      name,
+      fromDate: from,
+      toDate: to,
+      color,
+    };
     try {
-      await saveSpecialDays(newList);
+      await saveSpecialDays([...specialDaysList, newSpecialDay]);
       setSelectedDates(new Set<string>());
       setShowAddSpecialModal(false);
       setNewSpecialName('');
-    } catch {
-      // no-op
+    } catch (error) {
+      showSaveError(error);
     }
-  }, [companyId, year, month, selectedDates, startDate, endDate, newSpecialName, t, specialDaysList, saveSpecialDays]);
+  }, [selectedDates, startDate, endDate, newSpecialName, t, specialDaysList, saveSpecialDays, showSaveError]);
 
   const handlePrintDayDetails = useCallback(
-    (dateStr: any, dayTarget: any, daySummaries: any, totalAmount: any, achieved: any) => {
-      const printRows = daySummaries.map((s: any) => ({
-        summaryNumber: s.summaryNumber || '—',
-        channels: (s.channels || [])
-          .map((ch: any) => `${ch.vault?.nameAr || ch.vault?.nameEn || '—'}: ${fmt(ch.amount || 0)}`)
-          .join(' | ') || '—',
-        customers: s.customerCount ?? 0,
-        total: fmt(Number(s.totalAmount || 0)),
+    (
+      dateStr: string,
+      dayTarget: number | null,
+      daySummaries: DashboardSalesSummary[],
+      totalAmount: number,
+      achieved: boolean,
+    ) => {
+      const printRows = daySummaries.map((summary) => ({
+        summaryNumber: summary.summaryNumber || '-',
+        channels: (summary.channels ?? [])
+          .map((channel) => `${vaultDisplayName(channel.vault, lang)}: ${fmt(channel.amount || 0)}`)
+          .join(' | ') || '-',
+        customers: summary.customerCount ?? 0,
+        total: fmt(totalSummaryAmount(summary)),
       }));
       const targetInfo = `<div style="background:#eff6ff;padding:12px;border-radius:8px;margin:12px 0;font-size:13px">
-      <strong>${t('dashboardSalesTarget')}:</strong> ${dayTarget != null ? fmt(dayTarget) : '—'} SR &nbsp;|&nbsp;
+      <strong>${t('dashboardSalesTarget')}:</strong> ${dayTarget != null ? fmt(dayTarget) : '-'} SR &nbsp;|&nbsp;
       <strong>${t('total')}:</strong> <span style="color:${achieved ? '#16a34a' : 'inherit'}">${fmt(totalAmount)} SR${achieved ? ' ✓' : ''}</span>
     </div>`;
       const tableHtml = buildPrintTableHtml({
@@ -269,30 +309,30 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
         ]],
       });
       openPrintWindow({
-        title: `${t('transactions')} — ${dateStr}`,
-        companyName: companyName || '',
-        subtitle: `${t('dashboardCalendar')} — ${dateStr}`,
+        title: `${t('transactions')} - ${dateStr}`,
+        companyName,
+        subtitle: `${t('dashboardCalendar')} - ${dateStr}`,
         body: `${targetInfo}${tableHtml}`,
       });
     },
-    [t, companyName],
+    [t, companyName, lang],
   );
 
   const monthLabel = MONTH_LABELS_EN[month - 1];
 
   const handlePrintCalendar = useCallback(() => {
-    const cells = daysInMonth.map((item: any) => {
-      const { day, dateStr, amount, dayTarget, special } = item;
+    const cells: PrintCalendarCell[] = daysInMonth.map((item) => {
+      const { day, amount, dayTarget, special } = item;
       const ratio = dayTarget != null && dayTarget > 0 ? amount / dayTarget : 0;
       const achieved = dayTarget != null && amount >= dayTarget;
       let bg = '#f8fafc';
       if (amount > 0) {
         if (special) {
           const hex = (special.color || '#8b5cf6').replace('#', '');
-          const r = parseInt(hex.slice(0, 2), 16);
-          const g = parseInt(hex.slice(2, 4), 16);
-          const b = parseInt(hex.slice(4, 6), 16);
-          bg = `rgba(${r},${g},${b},0.35)`;
+          const red = parseInt(hex.slice(0, 2), 16);
+          const green = parseInt(hex.slice(2, 4), 16);
+          const blue = parseInt(hex.slice(4, 6), 16);
+          bg = `rgba(${red},${green},${blue},0.35)`;
         } else if (dayTarget != null && dayTarget > 0) {
           const band = achievementBandFromRatio(ratio);
           bg = achievementBgForPrint(band);
@@ -309,9 +349,9 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     const firstDow = new Date(year, month - 1, 1).getDay();
     const rows: Array<{ cells: Array<{ value?: string; html?: string; style?: string }> }> = [];
     let row: Array<{ value?: string; html?: string; style?: string }> = Array(firstDow).fill(null).map(() => ({ value: '' }));
-    cells.forEach((cell: { html: string; style: string }, i: number) => {
+    cells.forEach((cell, index) => {
       row.push(cell);
-      if ((firstDow + i + 1) % 7 === 0) {
+      if ((firstDow + index + 1) % 7 === 0) {
         rows.push({ cells: row });
         row = [];
       }
@@ -330,14 +370,14 @@ export function useDashboardCalendarTab({ companyId, year, selectedMonth }: Dash
     });
     openPrintWindow({
       title: t('dashboardCalendar'),
-      companyName: companyName || '',
-      subtitle: `${t('dashboardCalendar')} — ${monthLabel} ${year}`,
+      companyName,
+      subtitle: `${t('dashboardCalendar')} - ${monthLabel} ${year}`,
       body: tableHtml,
     });
   }, [daysInMonth, year, month, monthLabel, companyName, t, lang, maxAmount]);
 
   const selectedDatesSorted = useMemo(
-    () => [...selectedDates].filter((d: string) => d >= startDate && d <= endDate).sort(),
+    () => [...selectedDates].filter((date) => date >= startDate && date <= endDate).sort(),
     [selectedDates, startDate, endDate],
   );
 

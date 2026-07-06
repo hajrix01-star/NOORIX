@@ -66,8 +66,7 @@ export function useCostAccountingAppsImports(params: {
         dailyEnd: importTo,
       });
       throwIfApiFailed(res, t('reportCostAppsImportEmpty'));
-      const raw = res.data?.data ?? res.data;
-      const daily = raw?.dailySummaries ?? [];
+      const daily = res.data?.dailySummaries ?? [];
       const agg = aggregateSalesChannelsInRange(daily, importFrom, importTo);
       if (agg.grossApp.plus(agg.grossLocalCash).plus(agg.grossLocalBank).lte(0)) {
         showToast(t('reportCostAppsImportEmpty'), 'error');

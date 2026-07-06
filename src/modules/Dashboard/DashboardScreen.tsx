@@ -24,7 +24,7 @@ const DASHBOARD_TABS = [
   { id: 'specialDays', labelKey: 'dashboardSpecialDays' },
   { id: 'appSales', labelKey: 'dashboardAppSales', shortLabelKey: 'dashboardAppSalesShort' },
 ];
-const DASHBOARD_TAB_IDS = DASHBOARD_TABS.map((tab: any) => tab.id);
+const DASHBOARD_TAB_IDS = DASHBOARD_TABS.map((tab) => tab.id);
 
 export default function DashboardScreen() {
   const { t, lang } = useTranslation();
@@ -44,7 +44,7 @@ export default function DashboardScreen() {
 
   const dashboardTabItems = useMemo(
     () =>
-      DASHBOARD_TABS.map((tab: any) => {
+      DASHBOARD_TABS.map((tab) => {
         const full = t(tab.labelKey);
         const short = tab.shortLabelKey ? t(tab.shortLabelKey) : full;
         const label =

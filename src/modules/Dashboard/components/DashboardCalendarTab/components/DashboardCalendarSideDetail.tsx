@@ -1,20 +1,22 @@
 import React from 'react';
 import { toYmd } from '../../../../../utils/saudiDate';
+import type { DashboardCalendarDay, DashboardSalesSummary } from '../../../../../types/api/domains/dashboard';
+import { toDashboardNumber } from '../../../utils/dashboardNumberModel';
 import CalendarDayDetailPanel from '../../CalendarDayDetailPanel';
 
 export interface DashboardCalendarSideDetailProps {
-  selectedDay: any;
-  summaries: any[] | undefined;
+  selectedDay: DashboardCalendarDay | null;
+  summaries: DashboardSalesSummary[];
   companyId: string;
   companyName: string;
   dayNotes: Record<string, string>;
-  onSaveNote: (dateStr: string, note: unknown) => void;
+  onSaveNote: (dateStr: string, note: string) => void;
   onPrintDayDetails: (
-    dateStr: any,
-    dayTarget: any,
-    daySummaries: any,
-    totalAmount: any,
-    achieved: any,
+    dateStr: string,
+    dayTarget: number | null,
+    daySummaries: DashboardSalesSummary[],
+    totalAmount: number,
+    achieved: boolean,
   ) => void;
 }
 
@@ -37,10 +39,10 @@ export default function DashboardCalendarSideDetail({
       companyId={companyId}
       companyName={companyName}
       dayNote={dayNotes[selectedDay.dateStr]}
-      onSaveNote={(note: unknown) => onSaveNote(selectedDay.dateStr, note)}
+      onSaveNote={(note: string) => onSaveNote(selectedDay.dateStr, note)}
       onPrint={() => {
-        const daySummaries = (summaries || []).filter((s: any) => toYmd(s.transactionDate) === selectedDay.dateStr);
-        const totalAmount = daySummaries.reduce((s: number, x: any) => s + Number(x.totalAmount || 0), 0);
+        const daySummaries = summaries.filter((summary) => toYmd(summary.transactionDate) === selectedDay.dateStr);
+        const totalAmount = daySummaries.reduce((sum, summary) => sum + toDashboardNumber(summary.totalAmount), 0);
         const achieved = selectedDay.dayTarget != null && totalAmount >= selectedDay.dayTarget;
         onPrintDayDetails(selectedDay.dateStr, selectedDay.dayTarget, daySummaries, totalAmount, achieved);
       }}

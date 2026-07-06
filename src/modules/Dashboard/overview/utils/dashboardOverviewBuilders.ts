@@ -29,6 +29,7 @@ export {
 } from './dashboardDailyAvg';
 
 type TFn = (key: string) => string;
+export type DashboardPerformanceRow = Record<string, string | number>;
 
 type SummaryLike = SalesSummaryLike & {
   channels?: Array<{ amount?: string | number | null; vault?: { nameAr?: string | null; nameEn?: string | null } }>;
@@ -314,7 +315,7 @@ export function yearMonthlyDailyAvgCapMonth(
 }
 
 export function performanceTotalForSalesKey(
-  performanceData: Record<string, string | number>[],
+  performanceData: DashboardPerformanceRow[],
   salesKey: string,
 ): number {
   return performanceData.reduce((s, p) => s + Number(p[salesKey] || 0), 0);

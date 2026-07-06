@@ -15,7 +15,7 @@ import {
 } from './reports-general-profit-loss-model.util';
 import { plDec, plPercentOfSales, plSumMonths, plZeroMonths } from './reports-pl-math.util';
 import { buildPlCategoryHierarchy } from './reports-pl-category-hierarchy.util';
-import { buildPlInvoiceWhere, loadPlDetailFromLedger, loadPlDetailInvoices, sumInvoiceTotalAmountByMonth } from './reports-pl-invoice-detail.util';
+import { loadPlDetailFromLedger, loadPlDetailInvoices, sumInvoiceTotalAmountByMonth } from './reports-pl-invoice-detail.util';
 import { resolvePlDetailTitle } from './reports-pl-item-meta.util';
 import { loadAnnualLedgerAggregates } from './reports-pl-ledger-aggregates.util';
 import { GENERAL_PNL_AMOUNT_BASIS } from './reports-pl-contract.util';
@@ -125,29 +125,21 @@ export class ReportsService {
     }>;
 
     const useInvoiceGross = !!itemKey && !itemKey.startsWith('account:') && !ledgerAccountItemKey;
-    let yearAgg: { _sum: { totalAmount: unknown } } | null = null;
-    let monthAgg: { _sum: { totalAmount: unknown } } | null = null;
+    let invoiceGrossMonths: Decimal[] | null = null;
 
     if (itemKey?.startsWith('account:')) {
       detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, itemKey);
     } else if (ledgerAccountItemKey) {
       detailItems = await loadPlDetailFromLedger(this.prisma, companyId, year, month, groupKey as GroupKey, ledgerAccountItemKey);
     } else {
-      const yearWhere = useInvoiceGross ? buildPlInvoiceWhere(companyId, year, undefined, groupKey as GroupKey, itemKey, categories) : null;
-      const monthWhere =
-        useInvoiceGross && month != null ? buildPlInvoiceWhere(companyId, year, month, groupKey as GroupKey, itemKey, categories) : null;
-      const [detailResult, yAgg, mAgg] = await Promise.all([
+      const [detailResult, grossMonths] = await Promise.all([
         loadPlDetailInvoices(this.prisma, companyId, year, month, groupKey, itemKey, categories),
-        useInvoiceGross && yearWhere
-          ? this.prisma.invoice.aggregate({ where: yearWhere, _sum: { totalAmount: true } })
-          : Promise.resolve(null),
-        useInvoiceGross && monthWhere
-          ? this.prisma.invoice.aggregate({ where: monthWhere, _sum: { totalAmount: true } })
+        useInvoiceGross
+          ? sumInvoiceTotalAmountByMonth(this.prisma, companyId, year, groupKey as GroupKey, itemKey, categories)
           : Promise.resolve(null),
       ]);
       detailItems = detailResult;
-      yearAgg = yAgg;
-      monthAgg = mAgg;
+      invoiceGrossMonths = grossMonths;
     }
 
     const allGroup = report.groups.find((row) => row.key === groupKey);
@@ -169,13 +161,13 @@ export class ReportsService {
     let annualPercentOfSales = selectedRow?.percentOfSalesYear ?? '0';
 
     /** إجمالي الفاتورة (شامل الضريبة) عند تفصيل بند من الفواتير — يتوافق مع جدول التفاصيل */
-    if (useInvoiceGross && yearAgg) {
-      const yVal = plDec(String(yearAgg._sum.totalAmount ?? 0));
+    if (useInvoiceGross && invoiceGrossMonths) {
+      const yVal = invoiceGrossMonths.reduce((sum, value) => sum.plus(value), new Decimal(0));
       annualAmount = formatReportMoneyInteger(yVal);
       const salesYear = parseFloat(salesGroup?.total ?? '0');
       annualPercentOfSales = salesYear > 0.0001 ? formatReportPercentNumber(yVal.div(salesYear).mul(100)) : '0';
-      if (month != null && monthAgg) {
-        const mVal = plDec(String(monthAgg._sum.totalAmount ?? 0));
+      if (month != null) {
+        const mVal = invoiceGrossMonths[month - 1] ?? new Decimal(0);
         contextAmount = formatReportMoneyInteger(mVal);
         const salesM = parseFloat(salesGroup?.months?.[month - 1] ?? '0');
         contextPercentOfSales = salesM > 0.0001 ? formatReportPercentNumber(mVal.div(salesM).mul(100)) : '0';

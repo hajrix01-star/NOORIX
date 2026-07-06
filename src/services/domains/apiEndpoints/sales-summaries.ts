@@ -10,10 +10,11 @@ import { postSalesSummaryWithCompat } from '../../../modules/Sales/utils/salesAp
 import type { SalesListShiftFilter } from '../../../modules/Sales/constants/salesShift';
 import { listShiftFilterToApiParam } from '../../../modules/Sales/constants/salesShift';
 import { buildPurchaseBatchSummariesApiQuery } from './purchase-batch-query';
+import type { DashboardSalesPackData } from '../../../types/api/domains/dashboard';
 
 // ——— ملخصات المبيعات اليومية ———
-export async function createDailySalesSummary(body: unknown): Promise<ApiParsedResult> {
-  return postSalesSummaryWithCompat(body as Record<string, unknown>);
+export async function createDailySalesSummary(body: Record<string, unknown>): Promise<ApiParsedResult> {
+  return postSalesSummaryWithCompat(body);
 }
 
 export async function createDailySalesSummaryBatch(body: unknown): Promise<ApiParsedResult> {
@@ -64,7 +65,7 @@ export async function getDashboardSalesPack({
   dailyEnd?: string;
   monthStart?: string;
   monthEnd?: string;
-}): Promise<ApiParsedResult> {
+}): Promise<ApiParsedResult<DashboardSalesPackData>> {
   const params: Record<string, string> = {
     companyId: String(companyId),
     yearStart: toYmd(yearStart),
@@ -81,8 +82,8 @@ export async function getDailySalesSummaries(
   companyId: string,
   startDate?: string,
   endDate?: string,
-  page: any = 1,
-  pageSize: any = 50,
+  page: number = 1,
+  pageSize: number = 50,
   q?: string,
   sortBy?: string,
   sortDir?: string,
@@ -125,9 +126,9 @@ export async function fetchAllSalesSummariesForExport(
   startDate: string | undefined,
   endDate: string | undefined,
   q: string | undefined,
-  sortBy: any = 'transactionDate',
-  sortDir: any = 'desc',
-  includeCancelled: any = true,
+  sortBy: string = 'transactionDate',
+  sortDir: string = 'desc',
+  includeCancelled: boolean = true,
   shift: SalesListShiftFilter = 'any',
 ): Promise<unknown[]> {
   const pageSize = 150;

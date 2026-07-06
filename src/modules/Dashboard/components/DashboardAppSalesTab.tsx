@@ -10,15 +10,25 @@ import { LoadingState, EmptyState } from '../../../components/states';
 import {
   buildAppSalesTableFooter,
   buildDashboardAppSalesModel,
+  buildDashboardAppSalesModelFromMetrics,
   buildDashboardAppSalesYearSpanOptions,
   parseDashboardAppSalesYearSpan,
   type DashboardAppSalesYearSpan,
 } from '../utils/dashboardAppSalesData';
 import { DashboardAppSalesChart } from './DashboardAppSalesChart';
+import type { DashboardSalesPackMetrics } from '../../../types/api/domains/dashboard';
 
 type Props = {
   companyId: string | null | undefined;
   year: number;
+};
+
+const EMPTY_METRICS: DashboardSalesPackMetrics = {
+  yearDaily: [],
+  yearChannels: [],
+  dailyDaily: [],
+  dailyChannels: [],
+  monthDaily: [],
 };
 
 export default function DashboardAppSalesTab({ companyId, year }: Props) {
@@ -28,7 +38,7 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
   const yearEnd = year;
   const yearStart = yearEnd - yearsSpan + 1;
 
-  const { yearSummaries, isLoading } = useDashboardSalesPack({
+  const { yearSummaries, metrics, isLoading } = useDashboardSalesPack({
     companyId: companyId || '',
     yearStart: `${yearStart}-01-01`,
     yearEnd: `${yearEnd}-12-31`,
@@ -38,10 +48,14 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
     monthEnd: null,
     enabled: !!companyId,
   });
+  const salesMetrics = metrics ?? EMPTY_METRICS;
 
   const model = useMemo(
-    () => buildDashboardAppSalesModel(yearSummaries, lang, yearEnd, yearsSpan),
-    [yearSummaries, lang, yearEnd, yearsSpan],
+    () =>
+      salesMetrics.yearDaily.length || salesMetrics.yearChannels.length
+        ? buildDashboardAppSalesModelFromMetrics(salesMetrics.yearDaily, salesMetrics.yearChannels, lang, yearEnd, yearsSpan)
+        : buildDashboardAppSalesModel(yearSummaries, lang, yearEnd, yearsSpan),
+    [salesMetrics.yearDaily, salesMetrics.yearChannels, yearSummaries, lang, yearEnd, yearsSpan],
   );
 
   const periodLabel = useMemo(() => {

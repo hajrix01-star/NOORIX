@@ -9,7 +9,7 @@ export function DashboardAreaTooltip({
   lang,
 }: {
   active?: boolean;
-  payload?: ReadonlyArray<{ dataKey?: string | number; name?: string; value?: number; color?: string }>;
+  payload?: ReadonlyArray<{ dataKey?: unknown; name?: string | number; value?: unknown; color?: string }>;
   label?: string | number;
   lang: string;
 }) {
@@ -29,9 +29,9 @@ export function DashboardAreaTooltip({
             className="dashboard-tooltip-row"
             style={rowStyle}
           >
-            <span>{p.name}</span>
+            <span>{p.name != null ? String(p.name) : ''}</span>
             <span className="nx-font-numbers">
-              {formatNumber(p.value, lang, { minFractionDigits: 0, maxFractionDigits: 0 })}{' '}
+              {formatNumber(Number(p.value) || 0, lang, { minFractionDigits: 0, maxFractionDigits: 0 })}{' '}
               <span className="nx-sar">SR</span>
             </span>
           </div>

@@ -2,6 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { ReportsService } from '../reports/reports.service';
 import { SalesService } from '../sales/sales.service';
 
+type ReportingFacadeReportsReader = Pick<
+  ReportsService,
+  'getGeneralProfitLoss' | 'getTaxVatReport' | 'getPeriodAnalytics'
+>;
+type ReportingFacadeSalesReader = Pick<SalesService, 'findDashboardPack'>;
+
 /**
  * Phase 1 reporting facade — delegates only; no calculations or transformations.
  * Callers supply date ranges that match existing dashboard/report contracts.
@@ -24,8 +30,8 @@ export type DashboardSummaryDateRange = {
 @Injectable()
 export class ReportingFacade {
   constructor(
-    private readonly reportsService: ReportsService,
-    private readonly salesService: SalesService,
+    private readonly reportsService: ReportingFacadeReportsReader,
+    private readonly salesService: ReportingFacadeSalesReader,
   ) {}
 
   /** Wraps `ReportsService.getGeneralProfitLoss` — returns the same promise/value. */

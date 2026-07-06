@@ -1,4 +1,5 @@
 import type { GeneralProfitLossModel } from '../../../reports/reports-general-profit-loss-model.util';
+import { GENERAL_PNL_AMOUNT_BASIS } from '../../../reports/reports-pl-contract.util';
 import {
   ruleMissingSupplierBreakdown,
   rulePurchaseCategoryConcentration,
@@ -23,6 +24,7 @@ function plPurchasesCategory(monthsByCat: Record<string, string[]>): GeneralProf
     percentOfSalesYear: '0',
   }));
   return {
+    amountBasis: GENERAL_PNL_AMOUNT_BASIS,
     months: [],
     groups: [
       {
@@ -130,8 +132,8 @@ describe('purchase-supplier-insights.rules', () => {
       const w = rulePurchaseCategorySpike(pl, 4);
       expect(w).not.toBeNull();
       expect(w!.id).toBe('purchase_category_spike_warning');
-      expect((w!.values as any).monthsUsed).toBeGreaterThanOrEqual(2);
-      expect((w!.values as any).increaseRatio).toBeGreaterThanOrEqual(0.4);
+      expect(Number(w?.values?.monthsUsed)).toBeGreaterThanOrEqual(2);
+      expect(Number(w?.values?.increaseRatio)).toBeGreaterThanOrEqual(0.4);
     });
 
     it('does not fire with fewer than 2 valid prior months', () => {

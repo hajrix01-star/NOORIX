@@ -27,7 +27,7 @@ export type SupplierCategoryBreakdownRow = {
 };
 
 function parseDecimalString(s: unknown): number {
-  const n = parseFloat(String(s ?? '0'));
+  const n = Number(String(s ?? '0').replace(/,/g, '').trim());
   return Number.isFinite(n) ? n : 0;
 }
 

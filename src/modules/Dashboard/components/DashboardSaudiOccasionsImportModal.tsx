@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
+import { useToast } from '../../../context/ToastContext';
 import {
   applyDashboardSpecialOccasions,
   type SaudiOccasionDto,
@@ -39,6 +40,7 @@ export function DashboardSaudiOccasionsImportModal({
   onApplied,
 }: Props) {
   const { t, lang } = useTranslation();
+  const { showToast } = useToast();
   const { companies } = useApp();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>('pick');
@@ -163,11 +165,12 @@ export function DashboardSaudiOccasionsImportModal({
         data.monthsUpdated > 0
           ? t('dashboardImportSaudiSuccessMonths', { 0: String(data.monthsUpdated) })
           : '';
-      window.alert(
+      showToast(
         `${t('dashboardImportSaudiSuccess', {
           0: String(data.occasionCount || selected.size),
           1: String(data.companies || 1),
-        })}${monthsHint ? `\n${monthsHint}` : ''}`,
+        })}${monthsHint ? ` ${monthsHint}` : ''}`,
+        'success',
       );
       onClose();
     } catch (e: unknown) {

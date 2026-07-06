@@ -17,7 +17,7 @@ import { PURCHASE_SUPPLIER_INSIGHTS_SCHEMA_VERSION } from './purchase-supplier-i
  */
 @Injectable()
 export class PurchaseSupplierInsightsService {
-  constructor(private readonly reportingFacade: ReportingFacade) {}
+  constructor(private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>) {}
 
   async buildPurchaseSupplierInsights(
     companyId: string,

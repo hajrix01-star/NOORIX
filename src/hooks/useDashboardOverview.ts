@@ -1,58 +1,56 @@
 import { getDashboardOverview, type DashboardOverviewParams } from '../services/api';
 import { dashboardKeys } from '../services/queryKeys/dashboard';
-import type { DashboardInsightsPayload } from '../services/reportingInsightsApi';
-import type { PlReportLike } from '../modules/Dashboard/overview/utils/dashboardOverviewCalculations';
+import type { DashboardOverviewData } from '../types/api/domains/dashboard';
 import { useApiQuery } from './useApiQuery';
 import {
   hasRequiredDashboardPeriodParams,
   normalizeDashboardPeriodKeyInput,
 } from '../services/domains/apiEndpoints/dashboard-period-query';
 
-export type DashboardSummaryLike = {
-  transactionDate?: string | null;
-  totalAmount?: string | number | null;
-  customerCount?: number | null;
-  channels?: Array<{
-    amount?: string | number | null;
-    vault?: { nameAr?: string | null; nameEn?: string | null };
-  }>;
-};
-
-export type DashboardPeriodDataLike = {
-  topSuppliers?: Array<Record<string, unknown>>;
-  purchaseCategoryBreakdown?: Array<Record<string, unknown>>;
-  purchaseCategoryTotal?: unknown;
-} | null;
-
-export interface DashboardOverviewData {
-  report: PlReportLike | null;
-  salesPack: {
-    yearSummaries: DashboardSummaryLike[];
-    dailySummaries: DashboardSummaryLike[];
-    monthSummaries: DashboardSummaryLike[];
-  };
-  insights: DashboardInsightsPayload | null;
-  periodData: DashboardPeriodDataLike;
-}
-
 const EMPTY_OVERVIEW: DashboardOverviewData = {
   report: null,
-  salesPack: { yearSummaries: [], dailySummaries: [], monthSummaries: [] },
+  salesPack: {
+    yearSummaries: [],
+    dailySummaries: [],
+    monthSummaries: [],
+    metrics: {
+      yearDaily: [],
+      yearChannels: [],
+      dailyDaily: [],
+      dailyChannels: [],
+      monthDaily: [],
+      monthAverage: undefined,
+      dailyWeekly: [],
+      yearMonthlyDailyAverages: [],
+    },
+  },
   insights: null,
   periodData: null,
 };
 
-function normalizeDashboardOverview(rawResult: any): DashboardOverviewData {
-  const raw = rawResult?.data ?? rawResult;
+function normalizeDashboardOverview(raw: DashboardOverviewData | null | undefined): DashboardOverviewData {
+  if (!raw) return EMPTY_OVERVIEW;
+  const salesPack = raw.salesPack ?? EMPTY_OVERVIEW.salesPack;
+  const metrics = salesPack.metrics ?? EMPTY_OVERVIEW.salesPack.metrics;
   return {
-    report: (raw?.report ?? null) as PlReportLike | null,
+    report: raw.report ?? null,
     salesPack: {
-      yearSummaries: (raw?.salesPack?.yearSummaries ?? []) as DashboardSummaryLike[],
-      dailySummaries: (raw?.salesPack?.dailySummaries ?? []) as DashboardSummaryLike[],
-      monthSummaries: (raw?.salesPack?.monthSummaries ?? []) as DashboardSummaryLike[],
+      yearSummaries: Array.isArray(salesPack.yearSummaries) ? salesPack.yearSummaries : [],
+      dailySummaries: Array.isArray(salesPack.dailySummaries) ? salesPack.dailySummaries : [],
+      monthSummaries: Array.isArray(salesPack.monthSummaries) ? salesPack.monthSummaries : [],
+      metrics: {
+        yearDaily: Array.isArray(metrics?.yearDaily) ? metrics.yearDaily : [],
+        yearChannels: Array.isArray(metrics?.yearChannels) ? metrics.yearChannels : [],
+        dailyDaily: Array.isArray(metrics?.dailyDaily) ? metrics.dailyDaily : [],
+        dailyChannels: Array.isArray(metrics?.dailyChannels) ? metrics.dailyChannels : [],
+        monthDaily: Array.isArray(metrics?.monthDaily) ? metrics.monthDaily : [],
+        monthAverage: metrics?.monthAverage,
+        dailyWeekly: Array.isArray(metrics?.dailyWeekly) ? metrics.dailyWeekly : [],
+        yearMonthlyDailyAverages: Array.isArray(metrics?.yearMonthlyDailyAverages) ? metrics.yearMonthlyDailyAverages : [],
+      },
     },
-    insights: (raw?.insights ?? null) as DashboardInsightsPayload | null,
-    periodData: (raw?.periodData ?? null) as DashboardPeriodDataLike,
+    insights: raw.insights ?? null,
+    periodData: raw.periodData ?? null,
   };
 }
 
@@ -90,7 +88,7 @@ export function useDashboardOverview(
   };
   const queryKeyInput = normalizeDashboardPeriodKeyInput(dashboardPeriodParams);
 
-  const { data, isLoading, isError, error } = useApiQuery<any, DashboardOverviewData>({
+  const { data, isLoading, isError, error } = useApiQuery<DashboardOverviewData, DashboardOverviewData>({
     queryKey: dashboardKeys.overview(queryKeyInput),
     queryFn: () => getDashboardOverview({
       companyId,

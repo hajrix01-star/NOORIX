@@ -3,6 +3,7 @@ import {
   buildDashboardAppSalesYearSpanOptions,
   buildAppSalesTableFooter,
   buildDashboardAppSalesModel,
+  buildDashboardAppSalesModelFromMetrics,
   listMonthKeys,
   monthShortLabel,
   parseDashboardAppSalesYearSpan,
@@ -35,14 +36,14 @@ describe('dashboardAppSalesData', () => {
           transactionDate: '2025-04-15',
           totalAmount: 1000,
           channels: [
-            { amount: 300, vault: { type: 'app', nameAr: 'جاهز', nameEn: 'Jahez' } },
+            { amount: 300, vault: { id: 'app-jahez', type: 'app', nameAr: 'جاهز', nameEn: 'Jahez' } },
             { amount: 700, vault: { type: 'bank', nameAr: 'بنك', nameEn: 'Bank' } },
           ],
         },
         {
           transactionDate: '2025-05-10',
           totalAmount: 500,
-          channels: [{ amount: 100, vault: { type: 'app', nameAr: 'هنقر', nameEn: 'Hunger' } }],
+          channels: [{ amount: 100, vault: { id: 'app-hunger', type: 'app', nameAr: 'هنقر', nameEn: 'Hunger' } }],
         },
       ],
       'ar',
@@ -59,6 +60,7 @@ describe('dashboardAppSalesData', () => {
     expect(model.periodAppPercent).toBeCloseTo((400 / 1500) * 100, 5);
 
     const jahez = model.channels.find((c) => c.name === 'جاهز');
+    expect(jahez?.id).toBe('app-jahez');
     expect(jahez?.months['2025-04'].percent).toBe(30);
     expect(jahez?.periodPercent).toBeCloseTo((300 / 1500) * 100, 5);
 
@@ -66,5 +68,49 @@ describe('dashboardAppSalesData', () => {
     const aprFooter = footer.monthCells.find((c) => c.periodKey === '2025-04');
     expect(aprFooter?.appPercent).toBe(30);
     expect(footer.periodPercent).toBeCloseTo((400 / 1500) * 100, 5);
+  });
+
+  it('keeps app channels separate when display names match but vault ids differ', () => {
+    const model = buildDashboardAppSalesModel(
+      [
+        {
+          transactionDate: '2025-04-15',
+          totalAmount: 1000,
+          channels: [
+            { amount: 150, vault: { id: 'app-1', type: 'app', nameAr: 'تطبيق', nameEn: 'App' } },
+            { amount: 250, vault: { id: 'app-2', type: 'app', nameAr: 'تطبيق', nameEn: 'App' } },
+          ],
+        },
+      ],
+      'ar',
+      2025,
+      1,
+    );
+
+    expect(model.channels).toHaveLength(2);
+    expect(model.channels.map((c) => c.id).sort()).toEqual(['app-1', 'app-2']);
+  });
+
+  it('builds app sales from backend metrics without requiring raw summary rows', () => {
+    const model = buildDashboardAppSalesModelFromMetrics(
+      [
+        { transactionDate: '2025-04-01', totalAmount: 1000 },
+        { transactionDate: '2025-05-01', totalAmount: 500 },
+      ],
+      [
+        { periodKey: '2025-04', vaultId: 'app-jahez', type: 'app', nameAr: 'Ø¬Ø§Ù‡Ø²', nameEn: 'Jahez', amount: 250 },
+        { periodKey: '2025-04', vaultId: 'bank', type: 'bank', nameAr: 'Ø¨Ù†Ùƒ', nameEn: 'Bank', amount: 750 },
+        { periodKey: '2025-05', vaultId: 'app-jahez', type: 'app', nameAr: 'Ø¬Ø§Ù‡Ø²', nameEn: 'Jahez', amount: 100 },
+      ],
+      'ar',
+      2025,
+      1,
+    );
+
+    expect(model.periodTotal).toBe(1500);
+    expect(model.periodApp).toBe(350);
+    expect(model.periodAppPercent).toBeCloseTo((350 / 1500) * 100, 5);
+    expect(model.channels).toHaveLength(1);
+    expect(model.channels[0].months['2025-04'].percent).toBe(25);
   });
 });

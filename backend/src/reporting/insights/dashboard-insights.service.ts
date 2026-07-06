@@ -29,8 +29,8 @@ import { CompanyInsightThresholdSettingsService } from './company-insight-thresh
 @Injectable()
 export class DashboardInsightsService {
   constructor(
-    private readonly reportingFacade: ReportingFacade,
-    private readonly companyInsightThresholdSettings: CompanyInsightThresholdSettingsService,
+    private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>,
+    private readonly companyInsightThresholdSettings: Pick<CompanyInsightThresholdSettingsService, 'getResolvedThresholds'>,
   ) {}
 
   async buildDashboardInsights(

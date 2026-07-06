@@ -7,8 +7,8 @@ import { dashboardKeys } from '../services/queryKeys/dashboard';
 import {
   getDashboardCalendarData,
   putDashboardCalendarSpecialDays,
-  type DashboardCalendarDataResult,
 } from '../services/domains/apiEndpoints/dashboard-calendar';
+import type { DashboardCalendarDataResult, DashboardSpecialDay } from '../types/api/domains/dashboard';
 import { unwrapApiDataOr } from '../services/core/apiHttp';
 import { useApiQueries } from './useApiQuery';
 
@@ -30,6 +30,35 @@ export type DashboardSpecialDayRow = {
   toDate: string;
   color: string;
 };
+
+function normalizeSpecialDayRow(sp: DashboardSpecialDay): DashboardSpecialDayRow {
+  return {
+    id: sp.id,
+    name: sp.name ?? '',
+    fromDate: sp.fromDate,
+    toDate: sp.toDate,
+    color: sp.color ?? '#8b5cf6',
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  if (value == null || typeof value !== 'object') return false;
+  return true;
+}
+
+function isDashboardCalendarDataResult(value: unknown): value is DashboardCalendarDataResult {
+  if (!isRecord(value)) return false;
+  return (
+    Array.isArray(value.specialDays) &&
+    isRecord(value.targets) &&
+    isRecord(value.defaultTargets) &&
+    isRecord(value.dayNotes)
+  );
+}
+
+function calendarDataOrEmpty(value: unknown): DashboardCalendarDataResult {
+  return isDashboardCalendarDataResult(value) ? value : EMPTY_CALENDAR;
+}
 
 export function useDashboardYearSpecialDays({
   companyId,
@@ -59,16 +88,10 @@ export function useDashboardYearSpecialDays({
   const specialDays = useMemo(() => {
     const rows: DashboardSpecialDayRow[] = [];
     for (const q of monthQueries) {
-      const data = (q.data ?? EMPTY_CALENDAR) as DashboardCalendarDataResult;
+      const data = calendarDataOrEmpty(q.data);
       for (const sp of data.specialDays ?? []) {
         if (!sp?.id) continue;
-        rows.push({
-          id: sp.id,
-          name: sp.name ?? '',
-          fromDate: sp.fromDate,
-          toDate: sp.toDate,
-          color: sp.color ?? '#8b5cf6',
-        });
+        rows.push(normalizeSpecialDayRow(sp));
       }
     }
     return rows.sort(
@@ -84,14 +107,8 @@ export function useDashboardYearSpecialDays({
 
   const getMonthSpecialDays = (month: number): DashboardSpecialDayRow[] => {
     const q = monthQueries[month - 1];
-    const data = (q.data ?? EMPTY_CALENDAR) as DashboardCalendarDataResult;
-    return ((data.specialDays ?? []) as DashboardSpecialDayRow[]).map((sp) => ({
-      id: sp.id,
-      name: sp.name ?? '',
-      fromDate: sp.fromDate,
-      toDate: sp.toDate,
-      color: sp.color ?? '#8b5cf6',
-    }));
+    const data = calendarDataOrEmpty(q.data);
+    return (data.specialDays ?? []).map(normalizeSpecialDayRow);
   };
 
   const saveMonthSpecialDays = async (month: number, specialDaysList: DashboardSpecialDayRow[]) => {
@@ -120,8 +137,8 @@ export function useDashboardYearSpecialDays({
     await Promise.all(
       MONTHS.map(async (month) => {
         const q = monthQueries[month - 1];
-        const data = (q.data ?? EMPTY_CALENDAR) as DashboardCalendarDataResult;
-        const list = (data.specialDays ?? []) as DashboardSpecialDayRow[];
+        const data = calendarDataOrEmpty(q.data);
+        const list = (data.specialDays ?? []).map(normalizeSpecialDayRow);
         if (!list.some((sp) => sp.id === id)) return;
         await saveMonthSpecialDays(
           month,

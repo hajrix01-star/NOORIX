@@ -2,7 +2,7 @@
  * Maps dashboard insights payload + P&L report to KPI footer table rows (display-only).
  * Each non-sales KPI card shows 3 rows in month view: ratio%, prior month, change vs prior month.
  */
-import type { DashboardInsightsPayload } from '../../../../services/reportingInsightsApi';
+import type { DashboardInsightItem, DashboardInsightsPayload } from '../../../../types/api/domains/dashboard';
 import { fmt } from '../../../../utils/format';
 import {
   getMonthlyData,
@@ -10,6 +10,7 @@ import {
   type PlReportLike,
 } from './dashboardOverviewCalculations';
 import { formatSignedPercent } from '../../../../shared/reporting/plDisplaySelectors';
+import { toDashboardOptionalNumber } from '../../utils/dashboardNumberModel';
 
 export type KpiInsightSeverity = 'info' | 'warning' | 'critical';
 
@@ -58,39 +59,22 @@ function num(v: unknown): number | null {
 }
 
 function parseAmount(value: unknown): number | null {
-  if (value == null || value === '') return null;
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  const n = parseFloat(String(value).replace(/,/g, ''));
-  return Number.isFinite(n) ? n : null;
+  return toDashboardOptionalNumber(value);
 }
 
-function collectRawInsights(payload: DashboardInsightsPayload | undefined): unknown[] {
+function collectRawInsights(payload: DashboardInsightsPayload | undefined): DashboardInsightItem[] {
   if (!payload) return [];
   const w = Array.isArray(payload.warnings) ? payload.warnings : [];
   const i = Array.isArray(payload.insights) ? payload.insights : [];
   return [...w, ...i];
 }
 
-function findRawById(items: unknown[], id: string): Record<string, unknown> | null {
-  for (const x of items) {
-    if (x && typeof x === 'object' && String((x as Record<string, unknown>).id) === id) {
-      return x as Record<string, unknown>;
-    }
-  }
-  return null;
+function findRawById(items: DashboardInsightItem[], id: string): DashboardInsightItem | null {
+  return items.find((item) => item.id === id) ?? null;
 }
 
-function readValues(raw: Record<string, unknown>): Record<string, unknown> {
-  const v = raw.values;
-  if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
-  return {};
-}
-
-function readSeverity(raw: Record<string, unknown>): KpiInsightSeverity {
-  const s = raw.severity;
-  if (s === 'critical') return 'critical';
-  if (s === 'warning') return 'warning';
-  return 'info';
+function readSeverity(raw: DashboardInsightItem): KpiInsightSeverity {
+  return raw.severity;
 }
 
 function fmtChange(changeRatio: number): string {
@@ -106,7 +90,7 @@ function costChangeColor(changeRatio: number): KpiFooterRowColor {
   return changeRatio > 0 ? 'warning' : 'positive';
 }
 
-function ratioColorFromThreshold(thresholdInsight: Record<string, unknown> | null): KpiFooterRowColor {
+function ratioColorFromThreshold(thresholdInsight: DashboardInsightItem | null): KpiFooterRowColor {
   if (!thresholdInsight) return 'info';
   const sev = readSeverity(thresholdInsight);
   if (sev === 'critical') return 'critical';
@@ -121,8 +105,8 @@ function marginFractionFromReport(
 ): number | null {
   const pct = getSectionPercentOfSales(report, key, selectedMonth);
   if (pct == null) return null;
-  const n = parseFloat(pct);
-  return Number.isFinite(n) ? n / 100 : null;
+  const n = toDashboardOptionalNumber(pct);
+  return n != null ? n / 100 : null;
 }
 
 function priorMonthFromReport(
@@ -222,44 +206,41 @@ export function buildKpiInsightFooterMap(
   const all = collectRawInsights(payload);
   const out: KpiInsightFooterMap = {};
 
-  const ratios =
-    payload?.ratios && typeof payload.ratios === 'object' && !Array.isArray(payload.ratios)
-      ? (payload.ratios as Record<string, unknown>)
-      : {};
+  const ratios = payload?.ratios ?? null;
 
   const rawPurchaseToSales =
-    num(ratios.purchaseToSales) ?? marginFractionFromReport(report, 'purchases', selectedMonth ?? null);
+    num(ratios?.purchaseToSales) ?? marginFractionFromReport(report, 'purchases', selectedMonth ?? null);
   const rawExpenseToSales =
-    num(ratios.expenseToSales) ?? marginFractionFromReport(report, 'expenses', selectedMonth ?? null);
+    num(ratios?.expenseToSales) ?? marginFractionFromReport(report, 'expenses', selectedMonth ?? null);
   const rawGrossProfitMargin =
-    num(ratios.grossProfitMargin) ?? marginFractionFromReport(report, 'grossProfit', selectedMonth ?? null);
+    num(ratios?.grossProfitMargin) ?? marginFractionFromReport(report, 'grossProfit', selectedMonth ?? null);
   const rawNetProfitMargin =
-    num(ratios.netProfitMargin) ?? marginFractionFromReport(report, 'netProfit', selectedMonth ?? null);
+    num(ratios?.netProfitMargin) ?? marginFractionFromReport(report, 'netProfit', selectedMonth ?? null);
 
   const purchasesTrail = pickTrailing(
-    num(ratios.trailingAvgPurchases),
-    num(ratios.purchaseChangeRatio),
+    num(ratios?.trailingAvgPurchases),
+    num(ratios?.purchaseChangeRatio),
     report,
     selectedMonth ?? null,
     'purchases',
   );
   const expensesTrail = pickTrailing(
-    num(ratios.trailingAvgExpenses),
-    num(ratios.expenseChangeRatio),
+    num(ratios?.trailingAvgExpenses),
+    num(ratios?.expenseChangeRatio),
     report,
     selectedMonth ?? null,
     'expenses',
   );
   const grossTrail = pickTrailing(
-    num(ratios.trailingAvgGrossProfit),
-    num(ratios.grossProfitChangeRatio),
+    num(ratios?.trailingAvgGrossProfit),
+    num(ratios?.grossProfitChangeRatio),
     report,
     selectedMonth ?? null,
     'grossProfit',
   );
   const netTrail = pickTrailing(
-    num(ratios.trailingAvgNetProfit),
-    num(ratios.netProfitChangeRatio),
+    num(ratios?.trailingAvgNetProfit),
+    num(ratios?.netProfitChangeRatio),
     report,
     selectedMonth ?? null,
     'netProfit',

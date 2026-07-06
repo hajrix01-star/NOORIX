@@ -119,6 +119,9 @@ export function DashboardOverviewWeeklySalesPanel({
         <h2 className="m-0 min-w-0 flex-1 text-[12px] font-bold leading-snug text-noorix-text sm:text-[13px]">
           {t('dashboardWeeklySalesTitle')}
         </h2>
+        <span className="shrink-0 rounded bg-noorix-bg-muted px-2 py-1 text-[10px] font-bold text-noorix-muted">
+          {t('reportAmountBasisGrossShort')}
+        </span>
       </div>
 
       <div className="p-3 sm:p-4">

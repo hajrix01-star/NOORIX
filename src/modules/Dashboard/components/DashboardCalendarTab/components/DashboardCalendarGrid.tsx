@@ -1,5 +1,6 @@
 import React from 'react';
 import { DOW_LABELS, DOW_LABELS_AR } from '../constants';
+import type { DashboardCalendarDay } from '../../../../../types/api/domains/dashboard';
 import DashboardCalendarDayCell from './DashboardCalendarDayCell';
 
 export interface DashboardCalendarGridProps {
@@ -7,14 +8,14 @@ export interface DashboardCalendarGridProps {
   month: number;
   lang: string;
   isLoading: boolean;
-  daysInMonth: any[];
+  daysInMonth: DashboardCalendarDay[];
   isSelectionMode: boolean;
   selectedDates: Set<string>;
-  selectedDay: any;
+  selectedDay: DashboardCalendarDay | null;
   dayNotes: Record<string, string>;
   maxAmount: number;
   t: (key: string, ...args: unknown[]) => string;
-  onDayClick: (item: any, isShift: boolean) => void;
+  onDayClick: (item: DashboardCalendarDay, isShift: boolean) => void;
 }
 
 export default function DashboardCalendarGrid({
@@ -36,8 +37,8 @@ export default function DashboardCalendarGrid({
   }
 
   const firstDow = new Date(year, month - 1, 1).getDay();
-  const blanks = Array(firstDow).fill(null);
-  const cells = [...blanks, ...daysInMonth];
+  const blanks: null[] = Array(firstDow).fill(null);
+  const cells: Array<DashboardCalendarDay | null> = [...blanks, ...daysInMonth];
 
   return (
     <div className="noorix-calendar-grid-scroll">
@@ -48,7 +49,7 @@ export default function DashboardCalendarGrid({
               {lang === 'ar' ? DOW_LABELS_AR[d] : DOW_LABELS[d]}
             </div>
           ))}
-          {cells.map((item: any, i: number) => {
+          {cells.map((item, i) => {
             if (!item) return <div key={`b-${i}`} />;
             return (
               <DashboardCalendarDayCell

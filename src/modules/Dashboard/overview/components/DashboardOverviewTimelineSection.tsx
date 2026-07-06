@@ -14,6 +14,7 @@ import { formatCompactNumber } from '../../../../utils/money';
 import { EmptyState } from '../../../../components/states';
 import { DashboardAreaTooltip } from './DashboardOverviewChartTooltips';
 import { DashboardOverviewBreakdownTable } from './DashboardOverviewBreakdownTable';
+import type { DashboardPerformanceRow } from '../utils/dashboardOverviewBuilders';
 
 type SeriesRow = {
   key: string;
@@ -25,15 +26,13 @@ type SeriesRow = {
 
 type ChannelRow = { name: string; value: number; pct: string };
 
-type PerfRow = Record<string, string | number>;
-
 type Props = {
   lang: string;
   timelineGrain: string;
   setTimelineGrain: Dispatch<SetStateAction<string>>;
   timelineMonthName: string;
   year: number;
-  performanceData: PerfRow[];
+  performanceData: DashboardPerformanceRow[];
   perfTotal: number;
   channelData: ChannelRow[];
   channelPeriodLabel: string;
@@ -184,7 +183,7 @@ export function DashboardOverviewTimelineSection({
                 tickLine={false}
                 width={46}
               />
-              <Tooltip content={(tp) => <DashboardAreaTooltip {...(tp as any)} lang={lang} />} />
+              <Tooltip content={(props) => <DashboardAreaTooltip {...props} lang={lang} />} />
               {SERIES.map((s) =>
                 !hiddenSeries.has(s.key) && !s.disabled ? (
                   <Bar

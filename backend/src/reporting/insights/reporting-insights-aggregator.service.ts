@@ -36,10 +36,10 @@ function dedupeKey(w: InsightItem): string {
 @Injectable()
 export class ReportingInsightsAggregatorService {
   constructor(
-    private readonly reportingFacade: ReportingFacade,
-    private readonly dashboardInsightsService: DashboardInsightsService,
-    private readonly purchaseSupplierInsightsService: PurchaseSupplierInsightsService,
-    private readonly expenseInsightsService: ExpenseInsightsService,
+    private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>,
+    private readonly dashboardInsightsService: Pick<DashboardInsightsService, 'buildDashboardInsights'>,
+    private readonly purchaseSupplierInsightsService: Pick<PurchaseSupplierInsightsService, 'buildPurchaseSupplierInsights'>,
+    private readonly expenseInsightsService: Pick<ExpenseInsightsService, 'buildExpenseInsights'>,
   ) {}
 
   /**
