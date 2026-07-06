@@ -1,4 +1,5 @@
 import { getInvoices, unwrapApiList } from '../../services/api';
+import type { InvoiceListItem } from '../../services/domains/apiEndpoints/invoice-list-response';
 import { formatInvoiceForExport } from '../../utils/importTemplates';
 import { buildInvoiceListFetchParams, type InvoiceListFetchParams } from './invoicesListQueryModel';
 
@@ -73,5 +74,5 @@ export async function fetchInvoicesForImportExportExport(
     params.vaultId,
     params.createdByUserId,
   );
-  return unwrapApiList<any>(res, input.exportFailedMessage).map(formatInvoiceForExport);
+  return unwrapApiList<InvoiceListItem>(res, input.exportFailedMessage).map(formatInvoiceForExport);
 }

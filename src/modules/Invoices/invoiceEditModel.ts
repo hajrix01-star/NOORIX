@@ -14,6 +14,41 @@ export type InvoiceEditForm = {
   vaultId: string;
 };
 
+export type InvoiceEditVaultAllocationSource = {
+  id?: string | null;
+  vaultId?: string | null;
+  amount?: string | number | null;
+  vault?: unknown;
+};
+
+export type InvoiceEditSource = {
+  id?: string | null;
+  supplierId?: string | null;
+  supplierInvoiceNumber?: string | number | null;
+  invoiceNumber?: string | number | null;
+  kind?: string | null;
+  totalAmount?: string | number | null;
+  isTaxable?: boolean | null;
+  taxAmount?: string | number | null;
+  transactionDate?: string | Date | null;
+  notes?: string | null;
+  vaultId?: string | null;
+  vaultAllocations?: InvoiceEditVaultAllocationSource[] | null;
+  hasInvoiceAttachment?: boolean | null;
+  attachmentOriginalName?: string | null;
+};
+
+export type InvoiceEditUpdateBody = {
+  totalAmount: number;
+  transactionDate?: string;
+  notes?: string;
+  supplierId?: string;
+  supplierInvoiceNumber?: string;
+  isTaxable?: boolean;
+  kind?: string;
+  vaultId?: string;
+};
+
 export const EMPTY_INVOICE_EDIT_FORM: InvoiceEditForm = {
   supplierId: '',
   supplierInvoiceNumber: '',
@@ -39,14 +74,14 @@ export function getInvoiceEditSupplierPolicy(kind: unknown) {
   };
 }
 
-export function resolveInvoiceEditInitialVaultId(invoice: any): string {
+export function resolveInvoiceEditInitialVaultId(invoice?: InvoiceEditSource | null): string {
   if (!invoice) return '';
   const allocs = invoice.vaultAllocations;
-  if (allocs?.length >= 1) return allocs[0].vaultId || '';
+  if (Array.isArray(allocs) && allocs.length >= 1) return allocs[0].vaultId || '';
   return invoice.vaultId || '';
 }
 
-export function buildInvoiceEditInitialForm(invoice: any, vatRateDecimal: number): InvoiceEditForm {
+export function buildInvoiceEditInitialForm(invoice: InvoiceEditSource | null | undefined, vatRateDecimal: number): InvoiceEditForm {
   if (!invoice) return EMPTY_INVOICE_EDIT_FORM;
   const taxable =
     invoice.isTaxable !== undefined
@@ -57,7 +92,7 @@ export function buildInvoiceEditInitialForm(invoice: any, vatRateDecimal: number
 
   return {
     supplierId: invoice.supplierId || '',
-    supplierInvoiceNumber: invoice.supplierInvoiceNumber || invoice.invoiceNumber || '',
+    supplierInvoiceNumber: String(invoice.supplierInvoiceNumber || invoice.invoiceNumber || ''),
     kind: invoice.kind || 'purchase',
     totalAmount: total > 0 ? String(total) : '',
     isTaxable: taxable,
@@ -126,7 +161,7 @@ export function buildInvoiceEditUpdateBody(input: {
   initialVaultKey: string;
 }) {
   const total = Number.parseFloat(input.form.totalAmount);
-  const body: Record<string, any> = {
+  const body: InvoiceEditUpdateBody = {
     totalAmount: total,
     transactionDate: input.form.transactionDate || undefined,
     notes: input.form.notes?.trim() || undefined,

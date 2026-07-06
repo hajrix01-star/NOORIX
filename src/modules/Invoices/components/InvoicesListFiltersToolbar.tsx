@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, type Dispatch, type SetStateAction } from 'react';
 import { Button, FilterToolbar, SearchableOptionsPicker, csvToFilterValues, filterValuesToCsv } from '../../../ui';
 import {
   buildInvoiceCreatorFilterOptions,
@@ -6,11 +6,46 @@ import {
   buildInvoiceSupplierCategoryFilterOptions,
   buildInvoiceSupplierFilterOptions,
   buildInvoiceVaultFilterOptions,
+  type InvoiceFilterLang,
+  type InvoiceFilterTranslate,
+  type InvoiceNamedEntity,
+  type InvoiceVaultFilterEntity,
 } from '../invoicesListFilterModel';
+import type { InvoiceListUrlExtra } from '../invoicesListUrlModel';
 
 /**
  * لافتة الحفر + شريط الفلاتر التنفيذي — مستخرج من InvoicesListScreen
  */
+export type InvoicesListFiltersToolbarProps = {
+  t: InvoiceFilterTranslate;
+  lang: InvoiceFilterLang;
+  urlExtra: InvoiceListUrlExtra;
+  setUrlExtra: Dispatch<SetStateAction<InvoiceListUrlExtra>>;
+  setPage: (page: number) => void;
+  setDayCloseOpen: (open: boolean) => void;
+  setShowImportExport: (open: boolean) => void;
+  filterHasNotesOnly: boolean;
+  setFilterHasNotesOnly: Dispatch<SetStateAction<boolean>>;
+  showCancelled: boolean;
+  setShowCancelled: Dispatch<SetStateAction<boolean>>;
+  filterKind: string;
+  setFilterKind: (value: string) => void;
+  filterSupplierId: string;
+  setFilterSupplierId: (value: string) => void;
+  filterSupplierCategoryId: string;
+  setFilterSupplierCategoryId: (value: string) => void;
+  filterCreatedByUserId: string;
+  setFilterCreatedByUserId: (value: string) => void;
+  filterVaultId: string;
+  setFilterVaultId: (value: string) => void;
+  suppliers?: InvoiceNamedEntity[] | null;
+  supplierCategories?: InvoiceNamedEntity[] | null;
+  creatorUsersForFilter?: InvoiceNamedEntity[] | null;
+  vaultsList?: InvoiceVaultFilterEntity[] | null;
+  showDayClose?: boolean;
+  showSaleKindFilter?: boolean;
+};
+
 export function InvoicesListFiltersToolbar({
   t,
   lang,
@@ -39,7 +74,7 @@ export function InvoicesListFiltersToolbar({
   vaultsList,
   showDayClose = true,
   showSaleKindFilter = true,
-}: any) {
+}: InvoicesListFiltersToolbarProps) {
   const kindOptions = useMemo(
     () => buildInvoiceKindFilterOptions(t, showSaleKindFilter),
     [t, showSaleKindFilter],
@@ -118,7 +153,7 @@ export function InvoicesListFiltersToolbar({
           variant={filterHasNotesOnly ? 'primary' : 'ghost'}
           aria-pressed={filterHasNotesOnly}
           onClick={() => {
-            setFilterHasNotesOnly((v: any) => !v);
+            setFilterHasNotesOnly((value) => !value);
             setPage(1);
           }}
         >
@@ -126,7 +161,7 @@ export function InvoicesListFiltersToolbar({
         </Button>
         <Button
           size="sm"
-          onClick={() => setShowCancelled((v: any) => !v)}
+          onClick={() => setShowCancelled((value) => !value)}
           style={
             showCancelled
               ? {
@@ -152,7 +187,7 @@ export function InvoicesListFiltersToolbar({
           values={csvToFilterValues(filterKind)}
           onChange={(vals) => {
             setFilterKind(filterValuesToCsv(vals));
-            setUrlExtra((p: any) => ({ ...p, kind: '' }));
+            setUrlExtra((previous) => ({ ...previous, kind: '' }));
             setPage(1);
           }}
           options={kindOptions}

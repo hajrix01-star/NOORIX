@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import type { ReactNode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { AppTestProviders } from '../../test/appTestProviders';
 import { useInvoicesListScreen } from './useInvoicesListScreen';
 
-function TestProviders({ children }: any) {
+function TestProviders({ children }: { children: ReactNode }) {
   return <AppTestProviders initialEntries={['/invoices']}>{children}</AppTestProviders>;
 }
 

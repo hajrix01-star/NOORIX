@@ -6,14 +6,14 @@ import {
 } from './invoicesListTableModel';
 
 const noop = () => {};
-const t = (k: any, ...args: any[]) => (args.length ? `${k}:${args.join(',')}` : k);
+const t = (key: string, ...args: unknown[]) => (args.length ? `${key}:${args.join(',')}` : key);
 
 describe('invoicesListTableModel', () => {
   it('buildInvoiceListColumns returns stable column keys', () => {
     const cols = buildInvoiceListColumns({
       t,
       lang: 'ar',
-      fmt: (n: any) => String(n),
+      fmt: (value: number) => String(value),
       STATUS_MAP: {},
       KIND_MAP: {},
       userRole: 'admin',
@@ -22,7 +22,7 @@ describe('invoicesListTableModel', () => {
       setEditingInvoice: noop,
       confirmAndDeleteInvoice: noop,
     });
-    expect(cols.map((c: any) => c.key)).toEqual([
+    expect(cols.map((column) => column.key)).toEqual([
       'invoiceNumber',
       'supplierInvoiceNumber',
       'supplierName',

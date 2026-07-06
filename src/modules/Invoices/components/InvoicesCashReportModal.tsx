@@ -27,7 +27,7 @@ type Props = {
   vaultsList: Array<{ id?: string; type?: string }>;
   companyName: string;
   lang: string;
-  t: (key: string, ...args: any[]) => string;
+  t: (key: string, ...args: unknown[]) => string;
   fmt: (value: number) => string;
 };
 

@@ -1,11 +1,11 @@
 /**
  * InvoiceEditModal — نافذة تعديل الفاتورة
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, type ChangeEvent } from 'react';
 import { useToast } from '../../../context/ToastContext';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { SupplierSelect } from '../../../components/common/SupplierSelect';
+import { SupplierSelect, type SupplierOptionRow } from '../../../components/common/SupplierSelect';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import {
@@ -25,22 +25,53 @@ import {
   getInvoiceEditSupplierPolicy,
   hasPositiveInvoiceEditTotal,
   resolveInvoiceEditInitialVaultId,
+  type InvoiceEditForm,
+  type InvoiceEditSource,
+  type InvoiceEditUpdateBody,
   updateInvoiceEditFormField,
   validateInvoiceEditForm,
 } from '../invoiceEditModel';
+import { getInvoiceListErrorMessage } from '../invoicesListScreenModel';
+import type { InvoiceVaultFilterEntity } from '../invoicesListFilterModel';
 
-export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [], onSaved, onClose }: any) {
+type InvoiceEditModalProps = {
+  invoice: InvoiceEditSource | null;
+  suppliers?: SupplierOptionRow[] | null;
+  companyId: string;
+  vaultsList?: InvoiceVaultFilterEntity[];
+  onSaved?: () => void;
+  onClose?: () => void;
+};
+
+type InvoiceAttachmentMeta = {
+  has: boolean;
+  name: string | null;
+};
+
+type InvoiceAttachmentResponseData = {
+  hasInvoiceAttachment?: boolean | null;
+  attachmentOriginalName?: string | null;
+};
+
+export function InvoiceEditModal({
+  invoice,
+  suppliers,
+  companyId,
+  vaultsList = [],
+  onSaved,
+  onClose,
+}: InvoiceEditModalProps) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { companies } = useApp();
   const vatRateDecimal = useMemo(
-    () => vatRateDecimalFromCompany(companies.find((c: any) => c.id === companyId)),
+    () => vatRateDecimalFromCompany(companies.find((company) => company.id === companyId)),
     [companies, companyId],
   );
   const [form, setForm] = useState(EMPTY_INVOICE_EDIT_FORM);
   const [error, setError] = useState('');
   const [attachmentBusy, setAttachmentBusy] = useState(false);
-  const [attachMeta, setAttachMeta] = useState({ has: false, name: null });
+  const [attachMeta, setAttachMeta] = useState<InvoiceAttachmentMeta>({ has: false, name: null });
 
   const kind = invoice?.kind;
   const { hasSupplier, supplierRequired } = getInvoiceEditSupplierPolicy(kind);
@@ -59,21 +90,21 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
 
   const vaultPickerOptions = useMemo(
     () =>
-      vaultsList.map((v: any) => ({
-        value: v.id,
-        label: vaultDisplayName(v, lang) || v.id,
+      vaultsList.map((vault) => ({
+        value: String(vault.id || ''),
+        label: vaultDisplayName(vault, lang) || String(vault.id || ''),
       })),
     [vaultsList, lang],
   );
 
   const saveMutation = useApiMutation({
-    mutationFn: ({ id, body }: any) => updateInvoice(id, body, companyId),
+    mutationFn: ({ id, body }: { id: string; body: InvoiceEditUpdateBody }) => updateInvoice(id, body, companyId),
     showErrorToast: false,
     onSuccess: () => {
       onSaved?.();
       onClose?.();
     },
-    onError: (e: any) => setError(e?.message || t('saveFailed')),
+    onError: (err: unknown) => setError(getInvoiceListErrorMessage(err, t('saveFailed'))),
   });
 
   useEffect(() => {
@@ -89,22 +120,22 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     });
   }, [invoice]);
 
-  async function handleAttachmentFileChange(e: any) {
+  async function handleAttachmentFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !invoice?.id || !companyId) return;
     setAttachmentBusy(true);
     try {
       const res = await uploadInvoiceAttachment(invoice.id, companyId, file);
       throwIfApiFailed(res, t('saveFailed'));
-      const inv = res?.data;
+      const inv = (res?.data || {}) as InvoiceAttachmentResponseData;
       setAttachMeta({
         has: !!inv?.hasInvoiceAttachment,
         name: inv?.attachmentOriginalName || file.name,
       });
       showToast(t('documentUploaded'), 'success');
       onSaved?.();
-    } catch (err: any) {
-      showToast(err?.message || t('saveFailed'), 'error');
+    } catch (err: unknown) {
+      showToast(getInvoiceListErrorMessage(err, t('saveFailed')), 'error');
     } finally {
       setAttachmentBusy(false);
       e.target.value = '';
@@ -120,8 +151,8 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
       setAttachMeta({ has: false, name: null });
       showToast(t('invoiceReceiptRemoved'), 'success');
       onSaved?.();
-    } catch (err: any) {
-      showToast(err?.message || t('saveFailed'), 'error');
+    } catch (err: unknown) {
+      showToast(getInvoiceListErrorMessage(err, t('saveFailed')), 'error');
     } finally {
       setAttachmentBusy(false);
     }
@@ -131,15 +162,16 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
     if (!invoice?.id || !companyId) return;
     try {
       await downloadInvoiceAttachment(invoice.id, companyId);
-    } catch (err: any) {
-      showToast(err?.message || t('saveFailed'), 'error');
+    } catch (err: unknown) {
+      showToast(getInvoiceListErrorMessage(err, t('saveFailed')), 'error');
     }
   }
 
-  function updateField(field: any, value: any) {
-    setForm((p: any) => updateInvoiceEditFormField(p, field, value, vatRateDecimal));
+  function updateField(field: keyof InvoiceEditForm, value: unknown) {
+    setForm((previous) => updateInvoiceEditFormField(previous, field, value, vatRateDecimal));
   }
   async function handleSave() {
+    if (!invoice?.id) return;
     setError('');
     const validationError = validateInvoiceEditForm({
       form,
@@ -231,9 +263,9 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             <div>
               <label className="text-[12px] font-semibold mb-1 block">{t('supplier')}</label>
               <SupplierSelect
-                suppliers={suppliers}
+                suppliers={suppliers || undefined}
                 value={form.supplierId}
-                onChange={(v: any) => updateField('supplierId', v)}
+                onChange={(value: string) => updateField('supplierId', value)}
                 bookmarkedIds={[]}
                 placeholder={t('selectSupplier')}
               />
@@ -242,7 +274,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             <Input
               label={supplierRequired ? `${t('supplierInvoiceNumber')} *` : t('supplierInvoiceNumber')}
               value={form.supplierInvoiceNumber}
-              onChange={(e: any) => updateField('supplierInvoiceNumber', e.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('supplierInvoiceNumber', event.target.value)}
               placeholder={t('invoiceNumberPlaceholder')}
             />
 
@@ -265,7 +297,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
             step="0.01"
             label={t('totalAmountInclTax') || 'الإجمالي (شامل الضريبة) *'}
             value={form.totalAmount}
-            onChange={(e: any) => updateField('totalAmount', e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('totalAmount', event.target.value)}
             className="nx-font-numbers"
           />
           {hasSupplier && hasPositiveInvoiceEditTotal(form.totalAmount) && (
@@ -313,7 +345,7 @@ export function InvoiceEditModal({ invoice, suppliers, companyId, vaultsList = [
         <Input
           label={t('notesLabel')}
           value={form.notes}
-          onChange={(e: any) => updateField('notes', e.target.value)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => updateField('notes', event.target.value)}
           placeholder={t('invoiceNotesPlaceholder')}
         />
       </div>

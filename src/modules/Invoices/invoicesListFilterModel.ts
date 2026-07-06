@@ -2,18 +2,19 @@ import type { SearchableOption } from '../../ui';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
 
 export type InvoiceFilterLang = 'ar' | 'en' | string;
-export type InvoiceFilterTranslate = (key: string, ...args: any[]) => string;
+export type InvoiceFilterTranslate = (key: string, ...args: unknown[]) => string;
 
 export type InvoiceNamedEntity = {
-  id?: string;
-  name?: string;
-  nameAr?: string;
-  nameEn?: string;
-  email?: string;
+  id?: string | null;
+  name?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  email?: string | null;
+  [key: string]: unknown;
 };
 
 export type InvoiceVaultFilterEntity = InvoiceNamedEntity & {
-  type?: string;
+  type?: string | null;
 };
 
 function localizedName(entity: InvoiceNamedEntity | null | undefined, lang: InvoiceFilterLang, fallback = '') {
@@ -57,7 +58,7 @@ export function buildInvoiceSupplierFilterOptions(
 ): SearchableOption[] {
   return (suppliers || [])
     .map((supplier) => optionFromEntity(supplier, lang))
-    .filter(Boolean) as SearchableOption[];
+    .filter(isSearchableOption);
 }
 
 export function buildInvoiceSupplierCategoryFilterOptions(
@@ -66,7 +67,7 @@ export function buildInvoiceSupplierCategoryFilterOptions(
 ): SearchableOption[] {
   return (supplierCategories || [])
     .map((category) => optionFromEntity(category, lang))
-    .filter(Boolean) as SearchableOption[];
+    .filter(isSearchableOption);
 }
 
 export function buildInvoiceCreatorFilterOptions(
@@ -76,7 +77,7 @@ export function buildInvoiceCreatorFilterOptions(
 ): SearchableOption[] {
   const users = (creatorUsers || [])
     .map((user) => optionFromEntity(user, lang))
-    .filter(Boolean) as SearchableOption[];
+    .filter(isSearchableOption);
 
   return [{ value: '__none__', label: t('invoicesFilterCreatorUnrecorded') }, ...users];
 }
@@ -94,5 +95,9 @@ export function buildInvoiceVaultFilterOptions(
         label: vaultDisplayName(vault, lang) || value,
       };
     })
-    .filter(Boolean) as SearchableOption[];
+    .filter(isSearchableOption);
+}
+
+function isSearchableOption(value: SearchableOption | null): value is SearchableOption {
+  return Boolean(value);
 }
