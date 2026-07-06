@@ -12,6 +12,10 @@ import {
 } from '../../core/apiHttp';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
 import { buildInvoiceListApiQuery } from './invoice-list-query';
+import {
+  normalizeInvoiceListResponse,
+  type InvoiceListResponse,
+} from './invoice-list-response';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -172,8 +176,8 @@ export async function getInvoices(
   companyId: string,
   startDate?: string,
   endDate?: string,
-  page: any = 1,
-  pageSize: any = 50,
+  page: number | string = 1,
+  pageSize: number | string = 50,
   batchId?: string | null,
   employeeId?: string | null,
   kind?: string,
@@ -184,12 +188,12 @@ export async function getInvoices(
   q?: string,
   categoryId?: string,
   expenseLineId?: string,
-  includeCancelled: any = true,
+  includeCancelled: boolean | string | number = true,
   hasNotes?: boolean,
   vaultId?: string,
   createdByUserId?: string,
   requireExpenseLine?: string | boolean,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<InvoiceListResponse>> {
   const params = buildInvoiceListApiQuery({
     companyId,
     startDate,
@@ -215,33 +219,9 @@ export async function getInvoices(
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
   const res = await apiGet('/api/v1/invoices', params);
   if (!res.success) return res;
-  const data = (res.data as { data?: unknown } | undefined)?.data ?? res.data;
-  const d = data as {
-    items?: unknown;
-    total?: number;
-    page?: number;
-    pageSize?: number;
-    sums?: unknown;
-    sumsByKind?: unknown;
-    inflowByVault?: unknown;
-    outflowSummary?: unknown;
-  };
   return {
     success: true,
-    data: {
-      items: d?.items ?? data ?? [],
-      total: d?.total ?? 0,
-      page: d?.page ?? page,
-      pageSize: d?.pageSize ?? pageSize,
-      sums: d?.sums,
-      sumsByKind: Array.isArray(d?.sumsByKind) ? d.sumsByKind : [],
-      inflowByVault: Array.isArray(d?.inflowByVault) ? d.inflowByVault : [],
-      outflowSummary: d?.outflowSummary ?? {
-        purchasesTotal: '0',
-        expensesTotal: '0',
-        taxTotal: '0',
-      },
-    },
+    data: normalizeInvoiceListResponse(res.data, { page, pageSize }),
   };
 }
 

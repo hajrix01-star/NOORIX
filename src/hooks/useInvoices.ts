@@ -1,5 +1,10 @@
 import { getInvoices } from '../services/api';
 import { invoiceKeys } from '../services/queryKeys';
+import type { InvoiceListResponse } from '../services/domains/apiEndpoints/invoice-list-response';
+import {
+  zeroInvoiceListOutflowSummary,
+  zeroInvoiceListSums,
+} from '../services/domains/apiEndpoints/invoice-list-response';
 import { useApiQuery } from './useApiQuery';
 
 export type UseInvoicesParams = {
@@ -45,7 +50,7 @@ export function useInvoices({
   createdByUserId,
   requireExpenseLine,
 }: UseInvoicesParams) {
-  const { data, isLoading, isFetching, isPlaceholderData, isError, error } = useApiQuery<any>({
+  const { data, isLoading, isFetching, isPlaceholderData, isError, error } = useApiQuery<InvoiceListResponse>({
     queryKey: invoiceKeys.list({
       companyId,
       startDate,
@@ -69,7 +74,7 @@ export function useInvoices({
     }),
     queryFn: () => getInvoices(companyId, startDate, endDate, page, pageSize, batchId || null, null, kind, sortBy, sortDir, supplierId, supplierCategoryId, q, categoryId, expenseLineId, includeCancelled, hasNotes, vaultId, createdByUserId || undefined, requireExpenseLine),
     fallbackMessage: 'Failed to load invoices',
-    placeholderData: (previousData: any, previousQuery: any) => {
+    placeholderData: (previousData, previousQuery) => {
       const prevCompany = previousQuery?.queryKey?.[1];
       if (prevCompany !== companyId) return undefined;
       return previousData;
@@ -77,15 +82,13 @@ export function useInvoices({
     enabled: !!companyId,
   });
 
-  const zero = () => ({ net: '0', tax: '0', total: '0', count: 0 });
-  const zeroOutflowSummary = () => ({ purchasesTotal: '0', expensesTotal: '0', taxTotal: '0' });
   return {
     items: data?.items ?? [],
     total: data?.total ?? 0,
-    sums: data?.sums ?? { all: zero(), inflow: zero(), outflow: zero() },
-    sumsByKind: Array.isArray(data?.sumsByKind) ? data.sumsByKind : [],
-    inflowByVault: Array.isArray(data?.inflowByVault) ? data.inflowByVault : [],
-    outflowSummary: data?.outflowSummary ?? zeroOutflowSummary(),
+    sums: data?.sums ?? zeroInvoiceListSums(),
+    sumsByKind: data?.sumsByKind ?? [],
+    inflowByVault: data?.inflowByVault ?? [],
+    outflowSummary: data?.outflowSummary ?? zeroInvoiceListOutflowSummary(),
     isLoading,
     isFetching,
     isPlaceholderData,
