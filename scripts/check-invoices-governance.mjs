@@ -32,6 +32,8 @@ const requiredFiles = [
   path.join(invoicesRoot, 'invoiceViewModel.test.ts'),
   path.join(invoicesRoot, 'invoiceTableRowModel.ts'),
   path.join(invoicesRoot, 'invoiceTableRowModel.test.ts'),
+  path.join(invoicesRoot, 'invoiceExecutiveCardsModel.ts'),
+  path.join(invoicesRoot, 'invoiceExecutiveCardsModel.test.ts'),
   path.join(invoicesRoot, 'invoicesCashReportModel.ts'),
   path.join(invoicesRoot, 'invoicesCashReportModel.test.ts'),
   path.join(invoicesRoot, 'dayCloseReportModel.ts'),
@@ -172,6 +174,17 @@ if (fs.existsSync(listTableModelPath)) {
   }
 }
 
+const executiveCardsPath = path.join(invoicesRoot, 'components', 'InvoicesListExecutiveCards.tsx');
+if (fs.existsSync(executiveCardsPath)) {
+  const executiveCardsSource = fs.readFileSync(executiveCardsPath, 'utf8');
+  if (!executiveCardsSource.includes('../invoiceExecutiveCardsModel')) {
+    report(executiveCardsPath, 'invoice executive cards must delegate number and vault-row shaping to invoiceExecutiveCardsModel.');
+  }
+  if (/\bany\b|Number\(row\.|remainder\s*>|remainder\s*</.test(executiveCardsSource)) {
+    report(executiveCardsPath, 'invoice executive cards must not calculate vault row numbers or use any inline.');
+  }
+}
+
 const cashReportModalPath = path.join(invoicesRoot, 'components', 'InvoicesCashReportModal.tsx');
 if (fs.existsSync(cashReportModalPath)) {
   const cashReportSource = fs.readFileSync(cashReportModalPath, 'utf8');
@@ -278,6 +291,9 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('invoiceTableRowModel')) {
     report(roadmapPath, 'roadmap must document the invoice table row model.');
+  }
+  if (!roadmap.includes('invoiceExecutiveCardsModel')) {
+    report(roadmapPath, 'roadmap must document the invoice executive cards model.');
   }
   if (!roadmap.includes('invoicesCashReportModel')) {
     report(roadmapPath, 'roadmap must document the invoice cash report model.');
