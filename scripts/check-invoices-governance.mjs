@@ -30,6 +30,8 @@ const requiredFiles = [
   path.join(invoicesRoot, 'invoiceEditModel.test.ts'),
   path.join(invoicesRoot, 'invoicesCashReportModel.ts'),
   path.join(invoicesRoot, 'invoicesCashReportModel.test.ts'),
+  path.join(invoicesRoot, 'dayCloseReportModel.ts'),
+  path.join(invoicesRoot, 'dayCloseReportModel.test.ts'),
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoice-list-query.ts'),
   path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoice-list-query.test.ts'),
   path.join(root, 'backend', 'src', 'invoice', 'dto', 'invoice-list-query.dto.ts'),
@@ -155,6 +157,33 @@ if (fs.existsSync(cashReportModalPath)) {
   }
 }
 
+const dayCloseModalPath = path.join(invoicesRoot, 'components', 'DayCloseReportModal.tsx');
+if (fs.existsSync(dayCloseModalPath)) {
+  const dayCloseModalSource = fs.readFileSync(dayCloseModalPath, 'utf8');
+  if (!dayCloseModalSource.includes('../dayCloseReportModel')) {
+    report(dayCloseModalPath, 'day close modal must delegate range/company/date rules to dayCloseReportModel.');
+  }
+  if (/enumerateYmdDates|companies\?\.find|\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\\\$\/\.test/.test(dayCloseModalSource)) {
+    report(dayCloseModalPath, 'day close modal must not rebuild date or company-name rules inline.');
+  }
+}
+
+const dayCloseBodyPath = path.join(invoicesRoot, 'components', 'DayCloseReportBody.tsx');
+if (fs.existsSync(dayCloseBodyPath)) {
+  const dayCloseBodySource = fs.readFileSync(dayCloseBodyPath, 'utf8');
+  if (!dayCloseBodySource.includes('../dayCloseReportModel')) {
+    report(dayCloseBodyPath, 'day close report body must delegate report rules to dayCloseReportModel.');
+  }
+}
+
+const dayCloseWhatsappPath = path.join(invoicesRoot, 'utils', 'dayCloseWhatsApp.ts');
+if (fs.existsSync(dayCloseWhatsappPath)) {
+  const dayCloseWhatsappSource = fs.readFileSync(dayCloseWhatsappPath, 'utf8');
+  if (!dayCloseWhatsappSource.includes('../dayCloseReportModel')) {
+    report(dayCloseWhatsappPath, 'day close WhatsApp summary must reuse dayCloseReportModel naming rules.');
+  }
+}
+
 const invoicesApiPath = path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'invoices.ts');
 if (fs.existsSync(invoicesApiPath)) {
   const source = fs.readFileSync(invoicesApiPath, 'utf8');
@@ -214,6 +243,9 @@ if (fs.existsSync(roadmapPath)) {
   }
   if (!roadmap.includes('invoicesCashReportModel')) {
     report(roadmapPath, 'roadmap must document the invoice cash report model.');
+  }
+  if (!roadmap.includes('dayCloseReportModel')) {
+    report(roadmapPath, 'roadmap must document the invoice day close report model.');
   }
   if (!roadmap.includes('invoice-list-query')) {
     report(roadmapPath, 'roadmap must document the frontend invoice API query helper.');

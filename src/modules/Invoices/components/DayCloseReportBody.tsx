@@ -1,6 +1,7 @@
 import React from 'react';
 import { fmt } from '../../../utils/format';
 import { formatSaudiDateISO } from '../../../utils/saudiDate';
+import { calculateDayCloseCashKpis } from '../dayCloseReportModel';
 function SectionTitle({ children }: any) {
   return (
     <div className="dc-section-title">
@@ -47,25 +48,13 @@ function counterpartyLabel(op: any, lang: any) {
 }
 
 /** قيم عرض كرت الكاش: صافي الشهر إن وُجد من الـ API، وإلا الرصيد التراكمي (توافق خلفي). */
-function getDayCloseCashKpis(cash: any) {
-  const lifetime = Number(cash?.balanceLifetimeCashVaultsEod ?? cash?.balanceEndOfDayCashVaults ?? 0);
-  const raw = cash?.availableCashMonthScoped;
-  const hasMonthScoped = raw != null && raw !== '';
-  const monthScoped = hasMonthScoped ? Number(raw) : lifetime;
-  return { monthScoped, lifetime };
-}
-
 export function DayCloseReportBody({ data, kindLabel, t, reportDateLabel, lang, compact = false }: any) {
   const monthStartYmd = data.meta?.cashMonthScopeStart;
   const monthStartLabel =
     monthStartYmd && /^\d{4}-\d{2}-\d{2}$/.test(String(monthStartYmd))
       ? formatSaudiDateISO(`${monthStartYmd}T12:00:00.000Z`)
       : '—';
-  const { monthScoped, lifetime } = getDayCloseCashKpis(data.cash);
-  const showLifetimeFootnote =
-    Number.isFinite(monthScoped) &&
-    Number.isFinite(lifetime) &&
-    Math.abs(monthScoped - lifetime) > 1e-6;
+  const { monthScoped, lifetime, showLifetimeFootnote } = calculateDayCloseCashKpis(data.cash);
 
   return (
     <div className="grid gap-3.5">

@@ -10,6 +10,7 @@ import {
   waShiftSectionTitle,
   waSubheading,
 } from '../../../utils/whatsappTextFormat';
+import { pickDayCloseBilingualName } from '../dayCloseReportModel';
 
 export type DayCloseKindLabels = Record<string, string>;
 
@@ -39,7 +40,7 @@ function aggregateSalesChannels(salesSummaries: any[], lang: string): { lines: s
   for (const s of salesSummaries || []) {
     total += Number(s.totalAmount || 0);
     for (const ch of s.channels || []) {
-      const label = pickBilingual(lang, ch.vaultNameAr, ch.vaultNameEn);
+      const label = pickDayCloseBilingualName(lang, ch.vaultNameAr, ch.vaultNameEn);
       const amt = Number(ch.amount || 0);
       if (amt <= 0) continue;
       const vaultType = ch.vaultType != null ? String(ch.vaultType) : null;

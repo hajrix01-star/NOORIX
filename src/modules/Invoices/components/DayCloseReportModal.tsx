@@ -11,8 +11,14 @@ import { Button, Modal, DateField, Toolbar, cn } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { buildDayCloseWhatsAppText, openDayCloseWhatsApp } from '../utils/dayCloseWhatsApp';
-import { DayCloseReportBody, MAX_DAY_CLOSE_RANGE_DAYS, enumerateYmdDates } from './DayCloseReportBody';
+import { DayCloseReportBody } from './DayCloseReportBody';
 import { DAY_CLOSE_REPORT_STYLES } from './dayCloseReportStyles';
+import {
+  enumerateDayCloseYmdDates,
+  isValidDayCloseDate,
+  MAX_DAY_CLOSE_RANGE_DAYS,
+  resolveDayCloseCompanyName,
+} from '../dayCloseReportModel';
 
 export default function DayCloseReportModal({ companyId, isOpen, onClose, defaultDateYmd, compact = false }: any) {
   const { t, lang } = useTranslation();
@@ -20,13 +26,10 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
   const { companies, activeCompanyId } = useApp();
   const [dateStr, setDateStr] = useState(() => toYmd(defaultDateYmd) || getSaudiToday());
 
-  const companyName = useMemo(() => {
-    const c = companies?.find((x: any) => x.id === (activeCompanyId || companyId));
-    if (!c) return '';
-    return lang === 'en'
-      ? (c.nameEn || c.nameAr || c.name || '')
-      : (c.nameAr || c.nameEn || c.name || '');
-  }, [companies, activeCompanyId, companyId, lang]);
+  const companyName = useMemo(
+    () => resolveDayCloseCompanyName({ companies, activeCompanyId, companyId, lang }),
+    [companies, activeCompanyId, companyId, lang],
+  );
 
   useEffect(() => {
     if (isOpen) setDateStr(toYmd(defaultDateYmd) || getSaudiToday());
@@ -42,7 +45,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
   const { data, isLoading, isError, error, refetch, isFetching } = useApiQuery<any>({
     queryKey: invoiceKeys.dayClose(companyId, dateStr),
     queryFn: () => getInvoiceDayCloseReport(companyId, dateStr),
-    enabled: Boolean(isOpen && companyId && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)),
+    enabled: Boolean(isOpen && companyId && isValidDayCloseDate(dateStr)),
     staleTime: 30_000,
     fallbackMessage: t('dayCloseLoadFailed'),
   });
@@ -74,7 +77,7 @@ export default function DayCloseReportModal({ companyId, isOpen, onClose, defaul
   }, [isOpen, defaultDateYmd]);
 
   const handlePrintRange = async () => {
-    const dates = enumerateYmdDates(rangeFrom, rangeTo);
+    const dates = enumerateDayCloseYmdDates(rangeFrom, rangeTo);
     if (dates.length === 0) {
       showToast(t('dayClosePrintRangeInvalid'), 'error');
       return;
