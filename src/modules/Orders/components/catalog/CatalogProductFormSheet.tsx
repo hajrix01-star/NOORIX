@@ -1,37 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { type ChangeEvent, useEffect, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { AdaptiveSheet, Button, Checkbox, Input } from '../../../../ui';
+import type { OrderCategory, OrderProductType, OrderProductVariant, OrderSection } from '../../../../types/api';
 import { productHasAdvancedVariants } from './catalogProductUtils';
 
-type FormState = {
+export type CatalogProductFormState = {
   id?: string;
   nameAr: string;
   nameEn: string;
   categoryId: string;
   sectionIds: string[];
-  productType: 'order' | 'sale';
+  productType: OrderProductType;
   simpleLastPrice: string;
-  variants: Array<{ size: string; packaging: string; unit: string; lastPrice: string }>;
+  variants: OrderProductVariant[];
   _advanced?: boolean;
+};
+
+type CatalogOption = {
+  ar: string;
+  en?: string;
 };
 
 type CatalogProductFormSheetProps = {
   open: boolean;
   mode: 'create' | 'edit';
-  productType: 'order' | 'sale';
-  form: FormState | null;
-  setForm: React.Dispatch<React.SetStateAction<any>>;
-  categories: any[];
-  sections: any[];
-  sizesOptions: any[];
-  packagingOptions: any[];
+  productType: OrderProductType;
+  form: CatalogProductFormState | null;
+  setForm: React.Dispatch<React.SetStateAction<CatalogProductFormState | null>>;
+  categories: OrderCategory[];
+  sections: OrderSection[];
+  sizesOptions: CatalogOption[];
+  packagingOptions: CatalogOption[];
   saving: boolean;
   onClose: () => void;
   onSave: () => void;
   onAddSize: () => void;
   onAddPackaging: () => void;
   addVariant: () => void;
-  updateVariant: (idx: number, field: string, value: string) => void;
+  updateVariant: (idx: number, field: keyof OrderProductVariant, value: string) => void;
   removeVariant: (idx: number) => void;
 };
 
@@ -45,62 +51,93 @@ function VariantsTable({
   onAddSize,
   onAddPackaging,
   addVariant,
-}: any) {
+}: {
+  t: (key: string) => string;
+  variants: OrderProductVariant[];
+  sizesOptions: CatalogOption[];
+  packagingOptions: CatalogOption[];
+  updateVariant: (idx: number, field: keyof OrderProductVariant, value: string) => void;
+  removeVariant: (idx: number) => void;
+  onAddSize: () => void;
+  onAddPackaging: () => void;
+  addVariant: () => void;
+}) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <label className="text-[12px] text-noorix-muted">{t('ordersProductVariants')}</label>
-        <Button size="sm" onClick={addVariant}>+ {t('ordersAddVariant')}</Button>
+        <Button type="button" size="sm" onClick={addVariant}>+ {t('ordersAddVariant')}</Button>
       </div>
-      <div className="rounded-lg border border-noorix-border overflow-x-auto">
-        <table className="w-full min-w-[400px] text-[12px] border-collapse">
+      <div className="overflow-x-auto rounded-lg border border-noorix-border">
+        <table className="w-full min-w-[400px] border-collapse text-[12px]">
           <thead>
-            <tr className="bg-noorix-bg-muted border-b border-noorix-border">
-              <th className="font-semibold text-right py-2 px-2.5">{t('ordersProductSize')}</th>
-              <th className="font-semibold text-right py-2 px-2.5">{t('ordersProductPackaging')}</th>
-              <th className="font-semibold text-right py-2 px-2.5">{t('unit')}</th>
-              <th className="font-semibold text-right py-2 px-2.5">{t('ordersVariantPrice')}</th>
-              <th className="w-10 py-2 px-1" />
+            <tr className="border-b border-noorix-border bg-noorix-bg-muted">
+              <th className="px-2.5 py-2 text-right font-semibold">{t('ordersProductSize')}</th>
+              <th className="px-2.5 py-2 text-right font-semibold">{t('ordersProductPackaging')}</th>
+              <th className="px-2.5 py-2 text-right font-semibold">{t('unit')}</th>
+              <th className="px-2.5 py-2 text-right font-semibold">{t('ordersVariantPrice')}</th>
+              <th className="w-10 px-1 py-2" />
             </tr>
           </thead>
           <tbody>
-            {(variants || []).map((v: any, idx: number) => (
-              <tr key={idx} className="border-b border-noorix-border">
-                <td className="py-1.5 px-2">
+            {variants.map((variant, index) => (
+              <tr key={`${index}-${variant.size}-${variant.packaging}`} className="border-b border-noorix-border">
+                <td className="px-2 py-1.5">
                   <div className="flex gap-1">
-                    <Input type="select" value={v.size} onChange={(e: any) => updateVariant(idx, 'size', e.target.value)} className="flex-1 min-w-0">
-                      <option value="">—</option>
-                      {sizesOptions.map((s: any) => (
-                        <option key={s.ar} value={s.ar}>{s.ar}</option>
+                    <Input
+                      type="select"
+                      value={variant.size}
+                      onChange={(event: ChangeEvent<HTMLSelectElement>) => updateVariant(index, 'size', event.target.value)}
+                      className="min-w-0 flex-1"
+                    >
+                      <option value="">-</option>
+                      {sizesOptions.map((option) => (
+                        <option key={option.ar} value={option.ar}>{option.ar}</option>
                       ))}
                     </Input>
-                    <Button size="sm" onClick={onAddSize} title={t('add')}>+</Button>
+                    <Button type="button" size="sm" onClick={onAddSize} title={t('add')}>+</Button>
                   </div>
                 </td>
-                <td className="py-1.5 px-2">
+                <td className="px-2 py-1.5">
                   <div className="flex gap-1">
-                    <Input type="select" value={v.packaging} onChange={(e: any) => updateVariant(idx, 'packaging', e.target.value)} className="flex-1 min-w-0">
-                      <option value="">—</option>
-                      {packagingOptions.map((s: any) => (
-                        <option key={s.ar} value={s.ar}>{s.ar}</option>
+                    <Input
+                      type="select"
+                      value={variant.packaging}
+                      onChange={(event: ChangeEvent<HTMLSelectElement>) => updateVariant(index, 'packaging', event.target.value)}
+                      className="min-w-0 flex-1"
+                    >
+                      <option value="">-</option>
+                      {packagingOptions.map((option) => (
+                        <option key={option.ar} value={option.ar}>{option.ar}</option>
                       ))}
                     </Input>
-                    <Button size="sm" onClick={onAddPackaging} title={t('add')}>+</Button>
+                    <Button type="button" size="sm" onClick={onAddPackaging} title={t('add')}>+</Button>
                   </div>
                 </td>
-                <td className="py-1.5 px-2">
-                  <Input type="select" value={v.unit} onChange={(e: any) => updateVariant(idx, 'unit', e.target.value)}>
+                <td className="px-2 py-1.5">
+                  <Input
+                    type="select"
+                    value={variant.unit}
+                    onChange={(event: ChangeEvent<HTMLSelectElement>) => updateVariant(index, 'unit', event.target.value)}
+                  >
                     <option value="piece">{t('ordersUnitPiece')}</option>
                     <option value="kg">{t('ordersUnitKg')}</option>
                     <option value="box">{t('ordersUnitBox')}</option>
                     <option value="dozen">{t('ordersUnitDozen')}</option>
                   </Input>
                 </td>
-                <td className="py-1.5 px-2">
-                  <Input type="number" min="0" step="0.01" value={v.lastPrice} onChange={(e: any) => updateVariant(idx, 'lastPrice', e.target.value)} className="w-20" />
+                <td className="px-2 py-1.5">
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={variant.lastPrice}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => updateVariant(index, 'lastPrice', event.target.value)}
+                    className="w-20"
+                  />
                 </td>
-                <td className="py-1.5 px-1">
-                  <Button size="sm" variant="danger" onClick={() => removeVariant(idx)}>×</Button>
+                <td className="px-1 py-1.5">
+                  <Button type="button" size="sm" variant="danger" onClick={() => removeVariant(index)}>x</Button>
                 </td>
               </tr>
             ))}
@@ -111,44 +148,48 @@ function VariantsTable({
   );
 }
 
-export function CatalogProductFormSheet(props: CatalogProductFormSheetProps) {
+export function CatalogProductFormSheet({
+  open,
+  mode,
+  form,
+  setForm,
+  categories,
+  sections,
+  sizesOptions,
+  packagingOptions,
+  saving,
+  onClose,
+  onSave,
+  onAddSize,
+  onAddPackaging,
+  addVariant,
+  updateVariant,
+  removeVariant,
+}: CatalogProductFormSheetProps) {
   const { t } = useTranslation();
-  const {
-    open,
-    mode,
-    productType,
-    form,
-    setForm,
-    categories,
-    sections,
-    sizesOptions,
-    packagingOptions,
-    saving,
-    onClose,
-    onSave,
-    onAddSize,
-    onAddPackaging,
-    addVariant,
-    updateVariant,
-    removeVariant,
-  } = props;
-
   const [advanced, setAdvanced] = useState(false);
 
   useEffect(() => {
     if (!open || !form) return;
-    setAdvanced(!!form._advanced || productHasAdvancedVariants(form));
-  }, [open, form?.id, form?._advanced]);
+    setAdvanced(Boolean(form._advanced) || productHasAdvancedVariants(form));
+  }, [open, form]);
 
   if (!form) return null;
 
   const title = mode === 'edit' ? t('ordersEditProduct') : t('ordersAddProduct');
 
+  function updateForm(patch: Partial<CatalogProductFormState>) {
+    setForm((current) => (current ? { ...current, ...patch } : current));
+  }
+
   function toggleSection(sectionId: string, checked: boolean) {
-    setForm((f: FormState) => {
-      const cur = Array.isArray(f.sectionIds) ? [...f.sectionIds] : [];
-      const next = checked ? [...new Set([...cur, sectionId])] : cur.filter((id) => id !== sectionId);
-      return { ...f, sectionIds: next };
+    setForm((current) => {
+      if (!current) return current;
+      const currentIds = Array.isArray(current.sectionIds) ? current.sectionIds : [];
+      const sectionIds = checked
+        ? [...new Set([...currentIds, sectionId])]
+        : currentIds.filter((id) => id !== sectionId);
+      return { ...current, sectionIds };
     });
   }
 
@@ -159,49 +200,49 @@ export function CatalogProductFormSheet(props: CatalogProductFormSheetProps) {
       title={title}
       size="lg"
       side="start"
-      footer={
-        <div className="grid grid-cols-2 gap-2 w-full">
-          <Button variant="ghost" size="md" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
-          <Button variant="primary" size="md" onClick={onSave} loading={saving} disabled={saving}>{t('save')}</Button>
+      footer={(
+        <div className="grid w-full grid-cols-2 gap-2">
+          <Button type="button" variant="ghost" size="md" onClick={onClose} disabled={saving}>{t('cancel')}</Button>
+          <Button type="button" variant="primary" size="md" onClick={onSave} loading={saving} disabled={saving}>{t('save')}</Button>
         </div>
-      }
+      )}
     >
       <div className="flex flex-col gap-4">
         <Input
           label={`${t('productNameAr')} *`}
           value={form.nameAr}
-          onChange={(e: any) => setForm((f: FormState) => ({ ...f, nameAr: e.target.value }))}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => updateForm({ nameAr: event.target.value })}
         />
         <Input
           label={t('productNameEn')}
           value={form.nameEn}
-          onChange={(e: any) => setForm((f: FormState) => ({ ...f, nameEn: e.target.value }))}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => updateForm({ nameEn: event.target.value })}
         />
         <Input
           type="select"
           label={t('category')}
           value={form.categoryId}
-          onChange={(e: any) => setForm((f: FormState) => ({ ...f, categoryId: e.target.value }))}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => updateForm({ categoryId: event.target.value })}
         >
-          <option value="">—</option>
-          {categories.map((c: any) => (
-            <option key={c.id} value={c.id}>{c.nameAr || c.nameEn}</option>
+          <option value="">-</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>{category.nameAr || category.nameEn}</option>
           ))}
         </Input>
 
-        {(sections as any[]).length > 0 && (
+        {sections.length > 0 && (
           <div>
-            <div className="text-[12px] text-noorix-muted mb-2">{t('productSections')}</div>
+            <div className="mb-2 text-[12px] text-noorix-muted">{t('productSections')}</div>
             <div className="flex flex-wrap gap-x-3 gap-y-2">
-              {(sections as any[]).map((s: any) => (
+              {sections.map((section) => (
                 <Checkbox
-                    key={s.id}
-                    checked={(form.sectionIds || []).includes(s.id)}
-                    onChange={(e) => toggleSection(s.id, e.target.checked)}
-                    label={s.nameAr}
-                    className="cursor-pointer"
-                    containerClassName="text-[13px] cursor-pointer"
-                  />
+                  key={section.id}
+                  checked={(form.sectionIds || []).includes(section.id)}
+                  onChange={(event) => toggleSection(section.id, event.target.checked)}
+                  label={section.nameAr}
+                  className="cursor-pointer"
+                  containerClassName="cursor-pointer text-[13px]"
+                />
               ))}
             </div>
           </div>
@@ -215,9 +256,9 @@ export function CatalogProductFormSheet(props: CatalogProductFormSheetProps) {
               step="0.01"
               label={t('ordersProductSimplePrice')}
               value={form.simpleLastPrice}
-              onChange={(e: any) => setForm((f: FormState) => ({ ...f, simpleLastPrice: e.target.value }))}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => updateForm({ simpleLastPrice: event.target.value })}
             />
-            <Button size="sm" variant="ghost" onClick={() => setAdvanced(true)}>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setAdvanced(true)}>
               {t('ordersProductAdvanced')}
             </Button>
           </>
@@ -234,7 +275,7 @@ export function CatalogProductFormSheet(props: CatalogProductFormSheetProps) {
               onAddPackaging={onAddPackaging}
               addVariant={addVariant}
             />
-            <Button size="sm" variant="ghost" onClick={() => setAdvanced(false)}>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setAdvanced(false)}>
               {t('ordersProductSimplePrice')}
             </Button>
           </>

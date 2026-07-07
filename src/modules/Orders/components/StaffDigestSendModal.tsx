@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { type ChangeEvent, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday } from '../../../utils/saudiDate';
@@ -67,7 +67,7 @@ export function StaffDigestSendModal({
             type="number"
             label={t('ordersPettyCashGiven')}
             value={pettyCashAmount}
-            onChange={(e: any) => setPettyCashAmount(e.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setPettyCashAmount(event.target.value)}
             placeholder={t('optional')}
           />
         )}

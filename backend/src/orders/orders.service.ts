@@ -5,7 +5,7 @@ import { TenantContext } from '../common/tenant-context';
 import { utcBoundsForGregorianMonth } from './orders-month-range.util';
 import { mapDtoItemsToOrderLines, orderLinesToLastPriceInputs } from './orders-lines.util';
 import { orderGregorianDateToNumberPrefix, buildOrderNumberFromPrefix } from './orders-order-number.util';
-import { aggregateOrdersMonthSummary } from './orders-month-summary.util';
+import { aggregateOrdersMonthSummary, aggregateOrdersRangeSummary } from './orders-month-summary.util';
 import { aggregateOrderItemsByProductForReport } from './orders-items-report-aggregate.util';
 import {
   enrichProductWithSectionIds,
@@ -15,6 +15,7 @@ import {
 } from './orders-product-sections.util';
 
 type OrderItemInput = { productId: string; size?: string | null; packaging?: string | null; unit?: string | null; unitPrice: Prisma.Decimal };
+type OrderProductWithSections = { sections?: unknown; sectionIds?: unknown };
 
 @Injectable()
 export class OrdersService {
@@ -192,6 +193,29 @@ export class OrdersService {
     return aggregateOrdersMonthSummary(orders);
   }
 
+  async getRangeSummary(companyId: string, startDate: string, endDate: string) {
+    const start = new Date(`${startDate}T00:00:00.000Z`);
+    const end = new Date(`${endDate}T23:59:59.999Z`);
+    const [orders, cashSales] = await Promise.all([
+      this.prisma.order.findMany({
+        where: { companyId, status: 'active', orderDate: { gte: start, lte: end } },
+        select: { orderType: true, pettyCashAmount: true, totalAmount: true },
+      }),
+      this.prisma.dailySalesChannel.aggregate({
+        _sum: { amount: true },
+        where: {
+          vault: { type: 'cash' },
+          summary: {
+            companyId,
+            status: 'active',
+            transactionDate: { gte: start, lte: end },
+          },
+        },
+      }),
+    ]);
+    return aggregateOrdersRangeSummary(orders, cashSales._sum.amount ?? 0);
+  }
+
   async getItemsReport(companyId: string, year: number, month: number) {
     const { start, end } = utcBoundsForGregorianMonth(year, month);
     const items = await this.prisma.orderItem.findMany({
@@ -262,7 +286,7 @@ export class OrdersService {
     });
   }
 
-  private async enrichProductsList(companyId: string, products: any[]) {
+  private async enrichProductsList<T extends OrderProductWithSections>(companyId: string, products: T[]) {
     const sectionList = await this.loadSectionList(companyId);
     return products.map((p) => enrichProductWithSectionIds(p, sectionList));
   }
@@ -385,8 +409,8 @@ export class OrdersService {
         sections: sec.sections?.length ? sec.sections : Prisma.DbNull,
         sectionIds: sec.sectionIds?.length ? sec.sectionIds : Prisma.DbNull,
         productType: dto.productType || 'order',
-        variants: variantsData as object,
-      } as any,
+        variants: variantsData === null ? Prisma.DbNull : variantsData as Prisma.InputJsonValue,
+      },
       include: { category: true },
     });
     return enrichProductWithSectionIds(created, sectionList);

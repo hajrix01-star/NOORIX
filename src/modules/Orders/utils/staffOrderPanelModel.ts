@@ -6,10 +6,11 @@ import {
   staffOrdersTotal,
 } from './staffOrderBasketUtils';
 import { resolveItemSection } from '../StaffOrdersViewParts';
+import type { DisplayLanguage, OrderProduct, StaffOrder, StaffOrderPayload } from '../../../types/api';
 
-export function buildStaffOrderFrequencyMap(myOrders: any[], productType: 'order' | 'sale'): Map<string, number> {
+export function buildStaffOrderFrequencyMap(myOrders: StaffOrder[], productType: 'order' | 'sale'): Map<string, number> {
   const map = new Map<string, number>();
-  for (const order of (myOrders ?? []).filter((o: any) => (o.orderType || 'order') === productType)) {
+  for (const order of (myOrders ?? []).filter((o) => (o.orderType || 'order') === productType)) {
     for (const item of order.items || []) {
       if (item.productId) map.set(item.productId, (map.get(item.productId) ?? 0) + 1);
     }
@@ -17,9 +18,9 @@ export function buildStaffOrderFrequencyMap(myOrders: any[], productType: 'order
   return map;
 }
 
-export function buildProductsById(products: any[]): Map<string, any> {
-  const map = new Map<string, any>();
-  (products ?? []).forEach((product: any) => map.set(product.id, product));
+export function buildProductsById(products: OrderProduct[]): Map<string, OrderProduct> {
+  const map = new Map<string, OrderProduct>();
+  (products ?? []).forEach((product) => map.set(product.id, product));
   return map;
 }
 
@@ -30,32 +31,32 @@ export function filterStaffOrderProducts({
   freqMap,
   lang,
 }: {
-  allProducts: any[];
+  allProducts: OrderProduct[];
   sectionFilter: string;
   search: string;
   freqMap: Map<string, number>;
   lang: string;
-}): any[] {
+}): OrderProduct[] {
   let list = sectionFilter
-    ? (allProducts ?? []).filter((product: any) => {
-        const sections = product.sections as string[] | null;
+    ? (allProducts ?? []).filter((product) => {
+        const sections = product.sections;
         return Array.isArray(sections) && sections.length > 0 && sections.includes(sectionFilter);
       })
     : (allProducts ?? []);
 
   const q = search.trim().toLowerCase();
   if (q) {
-    list = list.filter((product: any) =>
+    list = list.filter((product) =>
       (product.nameAr || '').toLowerCase().includes(q) || (product.nameEn || '').toLowerCase().includes(q),
     );
   }
 
-  return [...list].sort((a: any, b: any) => {
+  return [...list].sort((a, b) => {
     const fa = freqMap.get(a.id) ?? 0;
     const fb = freqMap.get(b.id) ?? 0;
     if (fb !== fa) return fb - fa;
-    const na = lang === 'en' ? (a.nameEn || a.nameAr) : (a.nameAr || a.nameEn);
-    const nb = lang === 'en' ? (b.nameEn || b.nameAr) : (b.nameAr || b.nameEn);
+    const na = (lang === 'en' ? (a.nameEn || a.nameAr) : (a.nameAr || a.nameEn)) || '';
+    const nb = (lang === 'en' ? (b.nameEn || b.nameAr) : (b.nameAr || b.nameEn)) || '';
     return na.localeCompare(nb);
   });
 }
@@ -68,20 +69,20 @@ export function buildStaffQtyMap(basketLines: StaffBasketLine[]): Map<string, nu
   return map;
 }
 
-export function filterStaffOrdersByType(myOrders: any[], productType: 'order' | 'sale'): any[] {
-  return (myOrders ?? []).filter((order: any) => (order.orderType || 'order') === productType);
+export function filterStaffOrdersByType(myOrders: StaffOrder[], productType: 'order' | 'sale'): StaffOrder[] {
+  return (myOrders ?? []).filter((order) => (order.orderType || 'order') === productType);
 }
 
-export function groupSentSaleOrders(sentOrders: any[], isSale: boolean): any[][] {
+export function groupSentSaleOrders(sentOrders: StaffOrder[], isSale: boolean): StaffOrder[][] {
   if (!isSale) return [];
-  const map = new Map<string, any[]>();
+  const map = new Map<string, StaffOrder[]>();
   for (const order of sentOrders ?? []) {
     const key = order.logRef || order.id;
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(order);
   }
   return [...map.values()].sort(
-    (a, b) => new Date(b[0].createdAt).getTime() - new Date(a[0].createdAt).getTime(),
+    (a, b) => new Date(b[0]?.createdAt || '').getTime() - new Date(a[0]?.createdAt || '').getTime(),
   );
 }
 
@@ -91,8 +92,8 @@ export function summarizeSentSales({
   sentOrders,
 }: {
   isSale: boolean;
-  sentSaleGroups: any[][];
-  sentOrders: any[];
+  sentSaleGroups: StaffOrder[][];
+  sentOrders: StaffOrder[];
 }): { totalQty: number; totalAmount: Decimal; avgPerOrder: Decimal; operationCount: number } {
   if (!isSale || sentSaleGroups.length === 0) {
     return { totalQty: 0, totalAmount: new Decimal(0), avgPerOrder: new Decimal(0), operationCount: 0 };
@@ -108,8 +109,8 @@ export function summarizeSentSales({
   };
 }
 
-export function mapStaffOrderToBasketLines(order: any): StaffBasketLine[] {
-  return (order.items || []).map((item: any, index: number) => ({
+export function mapStaffOrderToBasketLines(order: StaffOrder): StaffBasketLine[] {
+  return (order.items || []).map((item, index) => ({
     lineId: `${item.productId}-${index}`,
     productId: item.productId,
     quantity: Number(item.quantity) || 1,
@@ -130,7 +131,7 @@ export function upsertPlainStaffBasketLine({
   lineId,
 }: {
   currentLines: StaffBasketLine[];
-  product: any;
+  product: OrderProduct;
   qty: number;
   unit: string;
   sectionFilter: string;
@@ -175,14 +176,14 @@ export function buildStaffOrderPayload({
   productType: 'order' | 'sale';
   isSale: boolean;
   saleDate: string;
-  lang: string;
+  lang: DisplayLanguage;
   notes: string;
   basketLines: StaffBasketLine[];
-  productsById: Map<string, any>;
+  productsById: Map<string, OrderProduct>;
   sectionFilter: string;
   editingId: string | null;
-}): Record<string, unknown> {
-  const payload: Record<string, unknown> = {
+}): StaffOrderPayload {
+  const payload: StaffOrderPayload = {
     companyId,
     orderType: productType,
     saleDate: isSale ? saleDate : undefined,

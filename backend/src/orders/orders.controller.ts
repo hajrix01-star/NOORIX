@@ -13,6 +13,9 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductsBatchDto } from './dto/create-products-batch.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateStaffOrderDto } from './orders-staff.types';
+
+type CurrentAuthUser = { sub?: string; userId?: string };
 
 function parseDaysQuery(days: string | undefined, fallback = 30): number {
   const parsed = Number.parseInt(String(days ?? ''), 10);
@@ -44,6 +47,17 @@ function parseOptionalYearMonth(year: string | undefined, month: string | undefi
   return { year: y, month: m };
 }
 
+function parseRequiredDateRange(startDate: string | undefined, endDate: string | undefined): { startDate: string; endDate: string } {
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!startDate || !endDate || !datePattern.test(startDate) || !datePattern.test(endDate)) {
+    throw new BadRequestException('startDate and endDate are required as YYYY-MM-DD.');
+  }
+  if (startDate > endDate) {
+    throw new BadRequestException('startDate must be before or equal to endDate.');
+  }
+  return { startDate, endDate };
+}
+
 @Controller('orders')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class OrdersController {
@@ -59,7 +73,7 @@ export class OrdersController {
 
   @Get('staff/my')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
-  getMyStaffOrders(@CompanyId() companyId: string, @CurrentUser() user: any) {
+  getMyStaffOrders(@CompanyId() companyId: string, @CurrentUser() user: CurrentAuthUser) {
     return this.staffService.getMyStaffOrders(requireCompanyId(companyId), user.sub);
   }
 
@@ -101,9 +115,9 @@ export class OrdersController {
   @Post('staff')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
   createStaffOrder(
-    @Body() body: any,
+    @Body() body: CreateStaffOrderDto,
     @CompanyId() companyId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentAuthUser,
   ) {
     return this.staffService.createStaffOrder(user.sub ?? user.userId, { ...body, companyId: requireCompanyId(companyId) });
   }
@@ -135,8 +149,8 @@ export class OrdersController {
   updateStaffOrder(
     @Param('id') id: string,
     @CompanyId() companyId: string,
-    @CurrentUser() user: any,
-    @Body() body: any,
+    @CurrentUser() user: CurrentAuthUser,
+    @Body() body: Partial<CreateStaffOrderDto>,
   ) {
     return this.staffService.updateStaffOrder(id, companyId, user.sub, body);
   }
@@ -146,7 +160,7 @@ export class OrdersController {
   resendStaffSale(
     @Param('id') id: string,
     @CompanyId() companyId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentAuthUser,
     @Body() body: { lang?: 'ar' | 'en' },
   ) {
     return this.staffService.resendStaffSale(id, companyId, user.sub, body?.lang ?? 'ar');
@@ -157,7 +171,7 @@ export class OrdersController {
   deleteStaffOrder(
     @Param('id') id: string,
     @CompanyId() companyId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentAuthUser,
   ) {
     return this.staffService.deleteStaffOrder(id, companyId, user.sub);
   }
@@ -184,6 +198,18 @@ export class OrdersController {
     const resolvedCompanyId = requireCompanyId(companyId);
     const ym = parseRequiredYearMonth(year, month);
     return this.ordersService.getSummary(resolvedCompanyId, ym.year, ym.month);
+  }
+
+  @Get('range-summary')
+  @RequireAnyPermission('VIEW_SALES', 'ORDERS_READ', 'ORDERS_WRITE')
+  getRangeSummary(
+    @CompanyId() companyId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const resolvedCompanyId = requireCompanyId(companyId);
+    const range = parseRequiredDateRange(startDate, endDate);
+    return this.ordersService.getRangeSummary(resolvedCompanyId, range.startDate, range.endDate);
   }
 
   @Get('items-report')

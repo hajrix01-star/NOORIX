@@ -11,6 +11,7 @@ import {
   type ItemsCatalogOutputOpts,
   type ItemsCatalogPrintFilters,
 } from './itemsCatalogPrint';
+import type { OrderCategory, OrderSection } from '../../../types/api';
 
 export const WEEKLY_SHEET_DAY_COUNT = 7;
 export const WEEKLY_SHEET_TOTAL_COLS = 3 + WEEKLY_SHEET_DAY_COUNT * 2;
@@ -170,8 +171,8 @@ function slugPart(value: string) {
 
 export function buildItemsCatalogWeeklyPdfFilename(
   filters: ItemsCatalogPrintFilters,
-  categories: any[],
-  sections: any[],
+  categories: OrderCategory[],
+  sections: OrderSection[],
 ) {
   const parts = ['items-weekly', filters.productType];
 

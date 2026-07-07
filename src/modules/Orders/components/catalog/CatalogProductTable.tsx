@@ -6,14 +6,15 @@ import {
   productVariantsSummary,
   productPriceLineShort,
 } from './catalogProductUtils';
+import type { OrderProduct } from '../../../../types/api';
 
 type CatalogProductTableProps = {
-  rows: any[];
+  rows: OrderProduct[];
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onToggleAll: (ids: string[]) => void;
-  onEdit: (row: any) => void;
-  onDeactivate: (row: any) => void;
+  onEdit: (row: OrderProduct) => void;
+  onDeactivate: (row: OrderProduct) => void;
   isLoading?: boolean;
 };
 
@@ -30,7 +31,7 @@ export function CatalogProductTable({
   const allIds = useMemo(() => rows.map((r) => r.id), [rows]);
   const allSelected = allIds.length > 0 && selectedIds.size === allIds.length;
 
-  const renderMobileCard = useCallback((row: any) => {
+  const renderMobileCard = useCallback((row: OrderProduct) => {
     const secs = Array.isArray(row.sections) && row.sections.length > 0 ? row.sections : [];
     const priceFull = productVariantsSummary(row);
     const priceShort = productPriceLineShort(row);
@@ -118,7 +119,7 @@ export function CatalogProductTable({
         />
       ),
       width: 44,
-      render: (_: unknown, row: any) => (
+      render: (_: unknown, row: OrderProduct) => (
         <Checkbox
           checked={selectedIds.has(row.id)}
           onChange={() => onToggleSelect(row.id)}
@@ -130,26 +131,26 @@ export function CatalogProductTable({
     {
       key: 'nameAr',
       label: t('productNameAr'),
-      render: (_: unknown, row: any) => (
+      render: (_: unknown, row: OrderProduct) => (
         <span className="font-semibold text-[13px] truncate block max-w-[200px]" title={row.nameAr}>{row.nameAr || '—'}</span>
       ),
     },
     {
       key: 'nameEn',
       label: t('productNameEn'),
-      render: (_: unknown, row: any) => (
-        <span className="text-noorix-muted text-[12px] truncate block max-w-[160px]" title={row.nameEn}>{row.nameEn || '—'}</span>
+      render: (_: unknown, row: OrderProduct) => (
+        <span className="text-noorix-muted text-[12px] truncate block max-w-[160px]" title={row.nameEn || undefined}>{row.nameEn || '—'}</span>
       ),
     },
     {
       key: 'category',
       label: t('category'),
-      render: (_: unknown, row: any) => row.category?.nameAr || row.category?.nameEn || '—',
+      render: (_: unknown, row: OrderProduct) => row.category?.nameAr || row.category?.nameEn || '—',
     },
     {
       key: 'sections',
       label: t('productSections'),
-      render: (_: unknown, row: any) => {
+      render: (_: unknown, row: OrderProduct) => {
         const secs = Array.isArray(row.sections) ? row.sections : [];
         if (!secs.length) return <span className="text-noorix-muted">—</span>;
         return (
@@ -163,7 +164,7 @@ export function CatalogProductTable({
       key: 'price',
       label: t('ordersVariantPrice'),
       numeric: true,
-      render: (_: unknown, row: any) => (
+      render: (_: unknown, row: OrderProduct) => (
         <span className="nx-font-numbers ltr">{productVariantsSummary(row)}</span>
       ),
     },
@@ -171,7 +172,7 @@ export function CatalogProductTable({
       key: 'actions',
       label: t('actions'),
       align: 'center',
-      render: (_: unknown, row: any) => (
+      render: (_: unknown, row: OrderProduct) => (
         <KebabMenu
           ariaLabel={t('actions')}
           items={[

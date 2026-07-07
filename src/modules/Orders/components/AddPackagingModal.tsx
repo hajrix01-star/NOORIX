@@ -5,7 +5,21 @@ import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Button, Input, AdaptiveSheet } from '../../../ui';
 
-export function AddPackagingModal({ visible, onClose, value, onChange, onAdd }: any) {
+type CustomOptionDraft = { ar: string; en: string };
+
+export function AddPackagingModal({
+  visible,
+  onClose,
+  value,
+  onChange,
+  onAdd,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  value: CustomOptionDraft;
+  onChange: React.Dispatch<React.SetStateAction<CustomOptionDraft>>;
+  onAdd: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <AdaptiveSheet
@@ -26,13 +40,13 @@ export function AddPackagingModal({ visible, onClose, value, onChange, onAdd }: 
         <Input
           label={`${t('productNameAr')} *`}
           value={value.ar}
-          onChange={(e: any) => onChange((s: any) => ({ ...s, ar: e.target.value }))}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange((s) => ({ ...s, ar: e.target.value }))}
           placeholder="علبة"
         />
         <Input
           label={t('productNameEn')}
           value={value.en}
-          onChange={(e: any) => onChange((s: any) => ({ ...s, en: e.target.value }))}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange((s) => ({ ...s, en: e.target.value }))}
           placeholder="Box"
         />
       </div>

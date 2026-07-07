@@ -1,11 +1,11 @@
-/**
- * Sections sub-tab — إدارة أقسام الطلبات (مطبخ، بار، كاشير...)
- */
-import React, { useMemo, useState } from 'react';
+import React, { type ChangeEvent, useMemo, useState } from 'react';
 import { Button, Input, SimpleTable } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
+import type { OrderSection } from '../../../types/api';
+import type { ItemsManageTabController } from '../hooks/useItemsManageTab';
+import { OrderConfirmModal } from './OrderConfirmModal';
 
-export function ItemsManageTabSectionsSection({ ctrl }: any) {
+export function ItemsManageTabSectionsSection({ ctrl }: { ctrl: ItemsManageTabController }) {
   const {
     t,
     companyId,
@@ -17,6 +17,7 @@ export function ItemsManageTabSectionsSection({ ctrl }: any) {
   const [nameAr, setNameAr] = useState('');
   const [nameEn, setNameEn] = useState('');
   const [busy, setBusy] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   async function handleAdd() {
     if (!nameAr.trim()) return;
@@ -30,33 +31,35 @@ export function ItemsManageTabSectionsSection({ ctrl }: any) {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm(t('sectionDeleteConfirm'))) return;
-    await deleteSection.mutateAsync(id);
+  async function confirmDelete() {
+    if (!pendingDeleteId) return;
+    await deleteSection.mutateAsync(pendingDeleteId);
+    setPendingDeleteId(null);
   }
 
-  const sectionColumns = useMemo<SimpleTableColumn<any>[]>(
+  const sectionColumns = useMemo<SimpleTableColumn<OrderSection>[]>(
     () => [
       {
         key: 'nameAr',
         label: t('sectionNameAr'),
-        render: (v: any) => <span className="font-semibold">{v}</span>,
+        render: (_value, row) => <span className="font-semibold">{row.nameAr}</span>,
       },
       {
         key: 'nameEn',
         label: t('sectionNameEn'),
-        render: (v: any) => <span className="text-noorix-muted">{v || '—'}</span>,
+        render: (_value, row) => <span className="text-noorix-muted">{row.nameEn || '-'}</span>,
       },
       {
         key: 'actions',
         label: t('actions'),
         align: 'center',
         width: 96,
-        render: (_: any, row: any) => (
+        render: (_value, row) => (
           <Button
+            type="button"
             size="sm"
             variant="danger"
-            onClick={() => handleDelete(row.id)}
+            onClick={() => setPendingDeleteId(row.id)}
             disabled={deleteSection.isPending}
           >
             {t('delete')}
@@ -69,15 +72,25 @@ export function ItemsManageTabSectionsSection({ ctrl }: any) {
 
   return (
     <div className="grid gap-5">
-      {/* نموذج الإضافة */}
+      <OrderConfirmModal
+        open={!!pendingDeleteId}
+        title={t('confirmDelete')}
+        message={t('sectionDeleteConfirm')}
+        confirmLabel={t('delete')}
+        cancelLabel={t('cancel')}
+        busy={deleteSection.isPending}
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
+
       <div className="noorix-surface-card p-4">
         <h4 className="m-0 mb-3 text-[15px]">+ {t('sectionAdd')}</h4>
-        <div className="flex flex-wrap gap-3 items-end">
+        <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[160px] flex-1">
             <Input
               label={`${t('sectionNameAr')} *`}
               value={nameAr}
-              onChange={(e: any) => setNameAr(e.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setNameAr(event.target.value)}
               placeholder={t('sectionNameArPlaceholder')}
             />
           </div>
@@ -85,11 +98,12 @@ export function ItemsManageTabSectionsSection({ ctrl }: any) {
             <Input
               label={t('sectionNameEn')}
               value={nameEn}
-              onChange={(e: any) => setNameEn(e.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setNameEn(event.target.value)}
               placeholder={t('sectionNameEnPlaceholder')}
             />
           </div>
           <Button
+            type="button"
             variant="primary"
             size="sm"
             onClick={handleAdd}
@@ -100,10 +114,9 @@ export function ItemsManageTabSectionsSection({ ctrl }: any) {
         </div>
       </div>
 
-      {/* جدول الأقسام */}
       <SimpleTable
         columns={sectionColumns}
-        data={sections as any[]}
+        data={sections}
         tableMinWidth={420}
         emptyMessage={t('sectionsEmpty')}
       />

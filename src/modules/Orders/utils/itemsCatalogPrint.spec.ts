@@ -6,15 +6,16 @@ import {
   groupProductsByCategory,
   sortProductsForCatalogPrint,
 } from './itemsCatalogPrint';
+import type { OrderCategory, OrderProduct, OrderSection } from '../../../types/api';
 
-const unitLabel = (u: string) => u;
+const unitLabel = (unit: string) => unit;
 
 describe('filterProductsForCatalogPrint', () => {
-  const products = [
-    { id: '1', nameAr: 'ب', productType: 'order', categoryId: 'c1', sections: ['مطبخ'] },
-    { id: '2', nameAr: 'أ', productType: 'order', categoryId: 'c2', sections: ['بار'] },
-    { id: '3', nameAr: 'ج', productType: 'sale', categoryId: 'c1', sections: ['مطبخ'] },
-    { id: '4', nameAr: 'د', productType: 'order', categoryId: 'c1', sections: [] },
+  const products: OrderProduct[] = [
+    { id: '1', nameAr: 'B', productType: 'order', categoryId: 'c1', sections: ['kitchen'] },
+    { id: '2', nameAr: 'A', productType: 'order', categoryId: 'c2', sections: ['bar'] },
+    { id: '3', nameAr: 'C', productType: 'sale', categoryId: 'c1', sections: ['kitchen'] },
+    { id: '4', nameAr: 'D', productType: 'order', categoryId: 'c1', sections: [] },
   ];
 
   it('filters by product type', () => {
@@ -23,16 +24,16 @@ describe('filterProductsForCatalogPrint', () => {
       categoryId: '',
       productType: 'order',
     });
-    expect(result.map((p) => p.id)).toEqual(['2', '1', '4']);
+    expect(result.map((product) => product.id)).toEqual(['2', '1', '4']);
   });
 
   it('filters by section and category', () => {
     const result = filterProductsForCatalogPrint(products, {
-      section: 'مطبخ',
+      section: 'kitchen',
       categoryId: 'c1',
       productType: 'order',
     });
-    expect(result.map((p) => p.id)).toEqual(['1']);
+    expect(result.map((product) => product.id)).toEqual(['1']);
   });
 
   it('filters products without section', () => {
@@ -41,29 +42,29 @@ describe('filterProductsForCatalogPrint', () => {
       categoryId: '',
       productType: 'order',
     });
-    expect(result.map((p) => p.id)).toEqual(['4']);
+    expect(result.map((product) => product.id)).toEqual(['4']);
   });
 });
 
 describe('groupProductsByCategory', () => {
   it('groups and orders categories by sortOrder then product name', () => {
-    const categories = [
-      { id: 'c1', nameAr: 'لحوم', sortOrder: 2 },
-      { id: 'c2', nameAr: 'خضروات', sortOrder: 1 },
+    const categories: OrderCategory[] = [
+      { id: 'c1', nameAr: 'Meat', sortOrder: 2 },
+      { id: 'c2', nameAr: 'Vegetables', sortOrder: 1 },
     ];
-    const products = [
-      { id: '1', nameAr: 'ب', categoryId: 'c1' },
-      { id: '2', nameAr: 'أ', categoryId: 'c2' },
-      { id: '3', nameAr: 'ج', categoryId: 'c2' },
-      { id: '4', nameAr: 'د', categoryId: null },
+    const products: OrderProduct[] = [
+      { id: '1', nameAr: 'B', categoryId: 'c1' },
+      { id: '2', nameAr: 'A', categoryId: 'c2' },
+      { id: '3', nameAr: 'C', categoryId: 'c2' },
+      { id: '4', nameAr: 'D', categoryId: null },
     ];
 
-    const groups = groupProductsByCategory(products, categories, 'بدون فئة');
+    const groups = groupProductsByCategory(products, categories, 'No category');
 
-    expect(groups.map((g) => g.categoryName)).toEqual(['خضروات', 'لحوم', 'بدون فئة']);
-    expect(groups[0].products.map((p) => p.id)).toEqual(['2', '3']);
-    expect(groups[1].products.map((p) => p.id)).toEqual(['1']);
-    expect(groups[2].products.map((p) => p.id)).toEqual(['4']);
+    expect(groups.map((group) => group.categoryName)).toEqual(['Vegetables', 'Meat', 'No category']);
+    expect(groups[0].products.map((product) => product.id)).toEqual(['2', '3']);
+    expect(groups[1].products.map((product) => product.id)).toEqual(['1']);
+    expect(groups[2].products.map((product) => product.id)).toEqual(['4']);
   });
 });
 
@@ -71,24 +72,24 @@ describe('sortProductsForCatalogPrint', () => {
   it('sorts products within the same category alphabetically', () => {
     const sorted = sortProductsForCatalogPrint(
       [
-        { nameAr: 'تفاح', categoryId: 'c1' },
-        { nameAr: 'أناناس', categoryId: 'c1' },
+        { id: 'p1', nameAr: 'Apple', categoryId: 'c1' },
+        { id: 'p2', nameAr: 'Pineapple', categoryId: 'c1' },
       ],
-      [{ id: 'c1', nameAr: 'فواكه', sortOrder: 0 }],
+      [{ id: 'c1', nameAr: 'Fruit', sortOrder: 0 }],
     );
 
-    expect(sorted.map((p) => p.nameAr)).toEqual(['أناناس', 'تفاح']);
+    expect(sorted.map((product) => product.nameAr)).toEqual(['Apple', 'Pineapple']);
   });
 });
 
 describe('buildItemsCatalogPdfFilename', () => {
   it('builds a stable filename from filters', () => {
     const name = buildItemsCatalogPdfFilename(
-      { section: 'مطبخ', categoryId: 'c1', productType: 'order' },
-      [{ id: 'c1', nameAr: 'لحوم' }],
-      [{ id: 's1', nameAr: 'مطبخ' }],
+      { section: 'Kitchen', categoryId: 'c1', productType: 'order' },
+      [{ id: 'c1', nameAr: 'Meat' }],
+      [{ id: 's1', nameAr: 'Kitchen' } satisfies OrderSection],
     );
-    expect(name).toMatch(/^items-catalog-order-مطبخ-لحوم-\d{4}-\d{2}-\d{2}\.pdf$/);
+    expect(name).toMatch(/^items-catalog-order-kitchen-meat-\d{4}-\d{2}-\d{2}\.pdf$/);
   });
 });
 
@@ -97,21 +98,22 @@ describe('expandProductsToPrintRows', () => {
     const rows = expandProductsToPrintRows(
       [
         {
-          nameAr: 'دجاج',
+          id: 'p1',
+          nameAr: 'Chicken',
           nameEn: 'Chicken',
           variants: [
-            { size: 'صغير', packaging: 'كيس', unit: 'kg' },
-            { size: 'كبير', packaging: 'كرتون', unit: 'box' },
+            { size: 'small', packaging: 'bag', unit: 'kg' },
+            { size: 'large', packaging: 'box', unit: 'box' },
           ],
         },
-        { nameAr: 'ملح', unit: 'piece' },
+        { id: 'p2', nameAr: 'Salt', unit: 'piece' },
       ],
       unitLabel,
     );
 
     expect(rows).toHaveLength(2);
-    expect(rows[0].nameAr).toBe('دجاج');
-    expect(rows[0].spec).toContain('صغير / كيس / kg');
+    expect(rows[0].nameAr).toBe('Chicken');
+    expect(rows[0].spec).toContain('small / bag / kg');
     expect(rows[0].spec).toContain('·');
     expect(rows[1].spec).toBe('piece');
   });

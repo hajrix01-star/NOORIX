@@ -9,9 +9,12 @@ import {
   formatVariantLabel,
   defaultVariantModalState,
 } from './utils/staffOrderBasketUtils';
+import type { OrderProduct, OrderProductVariant } from '../../types/api';
 
-export function resolveItemSection(product: any, activeFilter: string): string {
-  const secs = product?.sections as string[] | null | undefined;
+type SelectableOrderProductVariant = OrderProductVariant & { _key: string };
+
+export function resolveItemSection(product: OrderProduct | null | undefined, activeFilter: string): string {
+  const secs = product?.sections;
   if (activeFilter && Array.isArray(secs) && secs.includes(activeFilter)) return activeFilter;
   if (Array.isArray(secs) && secs.length === 1) return secs[0];
   if (Array.isArray(secs) && secs.length > 0) return secs[0];
@@ -30,7 +33,7 @@ export function StaffBasketTable({
   removeLine,
 }: {
   basketLines: StaffBasketLine[];
-  productsById: Map<string, any>;
+  productsById: Map<string, OrderProduct>;
   lang: string;
   t: (key: string, ...args: unknown[]) => string;
   showPrices: boolean;
@@ -60,7 +63,7 @@ export function StaffBasketTable({
       <tbody>
         {basketLines.map((row) => {
           const p = productsById.get(row.productId);
-          const name = p ? (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn)) : row.productId;
+          const name = (p ? (lang === 'en' ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn)) : row.productId) || '—';
           const variant = formatVariantLabel(row.size, row.packaging, row.unit);
           const lineAmt = basketLineAmount(row);
           const isEditingQty = editingQtyId === row.lineId;
@@ -162,7 +165,7 @@ export function StaffBasketTable({
 export function ProductCard({
   product, lang, qty, freqCount, onTap, onRemove,
 }: {
-  product: any; lang: string; qty: number; freqCount: number;
+  product: OrderProduct; lang: string; qty: number; freqCount: number;
   onTap: () => void; onRemove: () => void;
 }) {
   const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
@@ -229,7 +232,7 @@ export function VariantPickModal({
   const name = lang === 'en' ? (product.nameEn || product.nameAr) : (product.nameAr || product.nameEn);
   const variants = useMemo(() => {
     const raw = Array.isArray(product?.variants) ? product.variants : [];
-    return raw.map((v: any, i: number) => ({
+    return (raw as OrderProductVariant[]).map<SelectableOrderProductVariant>((v, i) => ({
       ...v,
       _key: `${v.size || ''}|${v.packaging || ''}|${v.unit || 'piece'}|${i}`,
     }));
@@ -247,9 +250,9 @@ export function VariantPickModal({
             type="select"
             label={t('ordersProductVariants')}
             value={variantModal.variantKey}
-            onChange={(e: any) => {
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
               const key = e.target.value;
-              const v = variants.find((x: any) => x._key === key);
+              const v = variants.find((x) => x._key === key);
               onChange({
                 ...variantModal,
                 variantKey: key,
@@ -260,7 +263,7 @@ export function VariantPickModal({
               });
             }}
           >
-            {variants.map((v: any) => (
+            {variants.map((v) => (
               <option key={v._key} value={v._key}>
                 {[v.size, v.packaging, v.unit].filter(Boolean).join(' / ') || '—'}
                 {v.lastPrice ? ` — ${fmt(v.lastPrice)} SR` : ''}
@@ -273,7 +276,7 @@ export function VariantPickModal({
             type="select"
             label={t('ordersProductSize')}
             value={variantModal.size}
-            onChange={(e: any) => onChange({ ...variantModal, size: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange({ ...variantModal, size: e.target.value })}
           >
             <option value="">—</option>
             {sizes.map((s: string) => <option key={s} value={s}>{s}</option>)}
@@ -315,7 +318,7 @@ export function VariantPickModal({
           step="0.01"
           label={`${t('unitPrice')} SR`}
           value={variantModal.unitPrice}
-          onChange={(e: any) => onChange({ ...variantModal, unitPrice: e.target.value })}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...variantModal, unitPrice: e.target.value })}
           placeholder="0"
         />
         <div className="grid grid-cols-2 gap-2 pt-1">

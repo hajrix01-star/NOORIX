@@ -8,14 +8,14 @@ import {
 
 const t = (key: string) => {
   const map: Record<string, string> = {
-    category: 'الفئة',
-    productNameAr: 'الصنف',
-    ordersPrintCatalogSpec: 'المواصفات',
-    ordersPrintWeeklyStock: 'الموجود',
-    ordersPrintWeeklyOrder: 'المطلوب',
-    ordersPrintWeeklyWeekFrom: 'أسبوع من',
-    ordersPrintWeeklyWeekTo: 'إلى',
-    ordersPrintWeeklyFillHint: 'تلميح',
+    category: 'Category',
+    productNameAr: 'Product',
+    ordersPrintCatalogSpec: 'Spec',
+    ordersPrintWeeklyStock: 'Stock',
+    ordersPrintWeeklyOrder: 'Order',
+    ordersPrintWeeklyWeekFrom: 'Week from',
+    ordersPrintWeeklyWeekTo: 'To',
+    ordersPrintWeeklyFillHint: 'Hint',
   };
   return map[key] || key;
 };
@@ -25,18 +25,18 @@ describe('buildItemsCatalogWeeklyPrintHtml', () => {
     const html = buildItemsCatalogWeeklyPrintHtml(
       [{
         categoryId: 'c1',
-        categoryName: 'لحوم',
-        products: [{ nameAr: 'دجاج', nameEn: '', unit: 'piece' }],
+        categoryName: 'Meat',
+        products: [{ id: 'p1', nameAr: 'Chicken', nameEn: '', unit: 'piece' }],
       }],
       t,
-      (u) => u,
+      (unit) => unit,
       true,
     );
 
     expect(html).toContain(`colspan="${WEEKLY_SHEET_DAY_COUNT}"`);
-    expect(html).toContain('الموجود');
-    expect(html).toContain('المطلوب');
-    expect(html).not.toContain('ملاحظات');
+    expect(html).toContain('Stock');
+    expect(html).toContain('Order');
+    expect(html).not.toContain('Notes');
     expect((html.match(/<th class="col-day">/g) || []).length).toBe(WEEKLY_SHEET_DAY_COUNT * 2);
     expect((html.match(/class="col-day"><\/td>/g) || []).length).toBe(WEEKLY_SHEET_DAY_COUNT * 2);
     expect(html).toContain(`colspan="${WEEKLY_SHEET_TOTAL_COLS}"`);
@@ -46,10 +46,10 @@ describe('buildItemsCatalogWeeklyPrintHtml', () => {
 describe('buildItemsCatalogWeeklyPdfFilename', () => {
   it('uses weekly prefix', () => {
     const name = buildItemsCatalogWeeklyPdfFilename(
-      { section: 'مطبخ', categoryId: '', productType: 'order' },
+      { section: 'Kitchen', categoryId: '', productType: 'order' },
       [],
-      [{ id: 's1', nameAr: 'مطبخ' }],
+      [{ id: 's1', nameAr: 'Kitchen' }],
     );
-    expect(name).toMatch(/^items-weekly-order-مطبخ-\d{4}-\d{2}-\d{2}\.pdf$/);
+    expect(name).toMatch(/^items-weekly-order-kitchen-\d{4}-\d{2}-\d{2}\.pdf$/);
   });
 });

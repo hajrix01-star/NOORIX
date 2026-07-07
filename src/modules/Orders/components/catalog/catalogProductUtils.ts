@@ -1,4 +1,5 @@
 import { fmt } from '../../../../utils/format';
+import type { OrderProduct, OrderProductVariant } from '../../../../types/api';
 
 /** يفصل الاسم عن العلامة/الشركة إن وُجدت بين قوسين — مثل: Vanilla Ice Cream (Saudia) */
 export function parseProductDisplayNames(row: { nameAr?: string | null; nameEn?: string | null }) {
@@ -23,11 +24,11 @@ export function parseProductDisplayNames(row: { nameAr?: string | null; nameEn?:
   };
 }
 
-export function productVariantsSummary(p: any): string {
+export function productVariantsSummary(p: OrderProduct): string {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
   if (variants.length > 0) {
     return variants
-      .map((v: any) => `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0)}`)
+      .map((v: OrderProductVariant) => `${v.size || '—'}/${v.packaging || '—'}/${v.unit || 'piece'}: ${fmt(v.lastPrice ?? 0)}`)
       .join(' | ');
   }
   if (p?.lastPrice != null && Number(p.lastPrice) > 0) return fmt(p.lastPrice);
@@ -35,11 +36,11 @@ export function productVariantsSummary(p: any): string {
 }
 
 /** ملخص سعر مختصر للجوال (سطر واحد) */
-export function productPriceLineShort(p: any): string {
+export function productPriceLineShort(p: OrderProduct): string {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
   if (variants.length > 1) {
     const prices = variants
-      .map((v: any) => parseFloat(v.lastPrice))
+      .map((v: OrderProductVariant) => Number.parseFloat(String(v.lastPrice ?? '')))
       .filter((n: number) => !Number.isNaN(n) && n > 0);
     if (prices.length > 0) {
       const min = Math.min(...prices);
@@ -50,7 +51,7 @@ export function productPriceLineShort(p: any): string {
   return productVariantsSummary(p);
 }
 
-export function productHasAdvancedVariants(p: any): boolean {
+export function productHasAdvancedVariants(p: { variants?: OrderProductVariant[] | unknown }): boolean {
   const variants = Array.isArray(p?.variants) ? p.variants : [];
-  return variants.some((v: any) => v.size || v.packaging || parseFloat(v.lastPrice) > 0);
+  return variants.some((v: OrderProductVariant) => v.size || v.packaging || Number.parseFloat(String(v.lastPrice ?? '')) > 0);
 }

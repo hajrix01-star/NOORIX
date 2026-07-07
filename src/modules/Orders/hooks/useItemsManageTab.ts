@@ -47,21 +47,34 @@ import {
 import { orderKeys } from '../../../services/queryKeys';
 import {
   buildOrderProductPayload,
+  type OrderProductForm,
   filterOrderCategoriesForManageTab,
   filterOrderProductsForManageTab,
 } from '../utils/itemsManageModel';
+import type { OrderCategory, OrderProduct, OrderProductPayload, OrderProductType, OrderProductVariant } from '../../../types/api';
+
+type EditableOrderProduct = OrderProductForm & {
+  id?: string;
+  _advanced?: boolean;
+};
+
+type ImportWorkbookRow = Record<string, unknown>;
+
+function normalizeOrderProductType(value: unknown, fallback: OrderProductType): OrderProductType {
+  return value === 'sale' || value === 'order' ? value : fallback;
+}
 
 /**
  * State and handlers for the Orders «manage items» tab (products + categories).
  */
-export function useItemsManageTab(companyId: any) {
+export function useItemsManageTab(companyId: string) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [activeSubTab, setActiveSubTab] = useState('sections');
   const [catalogProductType, setCatalogProductType] = useState<'order' | 'sale'>('order');
   const { showToast } = useToast();
-  const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<EditableOrderProduct | null>(null);
+  const [editingCategory, setEditingCategory] = useState<OrderCategory | null>(null);
   const [newProduct, setNewProduct] = useState({
     nameAr: '',
     nameEn: '',
@@ -100,24 +113,24 @@ export function useItemsManageTab(companyId: any) {
   const createSection = useCreateOrderSectionMutation(companyId);
   const deleteSection = useDeleteOrderSectionMutation(companyId);
   const bulkSetSections = useBulkSetProductSectionsMutation(companyId);
-  const fileInputProducts = useRef<any>(null);
-  const fileInputCategories = useRef<any>(null);
+  const fileInputProducts = useRef<HTMLInputElement | null>(null);
+  const fileInputCategories = useRef<HTMLInputElement | null>(null);
 
   const sizesOptions = useMemo(() => getSizesOptions(companyId || ''), [companyId, sizesKey]);
   const packagingOptions = useMemo(() => getPackagingOptions(companyId || ''), [companyId, packagingKey]);
 
   const filteredProducts = useMemo(
-    () => filterOrderProductsForManageTab(products as any[], productSearchQuery, productFilterSection, productFilterCategory),
+    () => filterOrderProductsForManageTab(products, productSearchQuery, productFilterSection, productFilterCategory),
     [products, productSearchQuery, productFilterSection, productFilterCategory],
   );
 
   const catalogFilteredProducts = useMemo(
-    () => (filteredProducts as any[]).filter((p: any) => (p.productType || 'order') === catalogProductType),
+    () => filteredProducts.filter((p) => (p.productType || 'order') === catalogProductType),
     [filteredProducts, catalogProductType],
   );
 
   const filteredCategories = useMemo(
-    () => filterOrderCategoriesForManageTab(categories as any[], categorySearchQuery),
+    () => filterOrderCategoriesForManageTab(categories, categorySearchQuery),
     [categories, categorySearchQuery],
   );
 
@@ -148,7 +161,7 @@ export function useItemsManageTab(companyId: any) {
         resetNewProductForm(newProduct.productType || catalogProductType);
         onDone?.();
       },
-      onError: (e: any) => {
+      onError: (e: Error & { error?: string }) => {
         showToast((e as Error)?.message || (e as { error?: string })?.error || t('addFailed'), 'error');
       },
     });
@@ -158,7 +171,7 @@ export function useItemsManageTab(companyId: any) {
     if (!editingProduct?.id) return;
     const built = buildOrderProductPayload(editingProduct, editingProduct.productType || catalogProductType);
     const validVariants = (editingProduct.variants || []).filter(
-      (v: any) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || parseFloat(v.lastPrice) > 0,
+      (v) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || Number.parseFloat(String(v.lastPrice ?? '')) > 0,
     );
     const body = {
       nameAr: built.nameAr,
@@ -168,9 +181,9 @@ export function useItemsManageTab(companyId: any) {
       productType: built.productType,
       ...(validVariants.length > 0
         ? {
-            variants: (built as any).variants ?? [],
+            variants: built.variants ?? [],
           }
-        : { variants: [], lastPrice: (built as any).lastPrice || '0' }),
+        : { variants: [], lastPrice: built.lastPrice || '0' }),
     };
     updateProductMutation.mutate(
       { id: editingProduct.id, body },
@@ -180,17 +193,17 @@ export function useItemsManageTab(companyId: any) {
           setEditingProduct(null);
           onDone?.();
         },
-        onError: (e: any) => {
+        onError: (e: Error & { error?: string }) => {
           showToast((e as Error)?.message || (e as { error?: string })?.error || t('updateFailed'), 'error');
         },
       },
     );
   }
 
-  function openEditProduct(p: any) {
+  function openEditProduct(p: OrderProduct) {
     const variants = Array.isArray(p.variants) ? p.variants : [];
     const hasVariants = variants.some(
-      (v: any) => v.size || v.packaging || parseFloat(v.lastPrice) > 0,
+      (v) => v.size || v.packaging || Number.parseFloat(String(v.lastPrice ?? '')) > 0,
     );
     setEditingProduct({
       id: p.id,
@@ -198,10 +211,10 @@ export function useItemsManageTab(companyId: any) {
       nameEn: p.nameEn || '',
       categoryId: p.categoryId || '',
       sectionIds: Array.isArray(p.sectionIds) ? [...p.sectionIds] : [],
-      productType: p.productType || catalogProductType,
+      productType: normalizeOrderProductType(p.productType, catalogProductType),
       simpleLastPrice: hasVariants ? '' : String(p.lastPrice ?? ''),
       variants: hasVariants
-        ? variants.map((v: any) => ({
+        ? (variants as OrderProductVariant[]).map((v) => ({
             size: v.size || '',
             packaging: v.packaging || '',
             unit: v.unit || 'piece',
@@ -224,7 +237,7 @@ export function useItemsManageTab(companyId: any) {
           showToast(t('ordersCategoryAdded'), 'success');
           setNewCategory({ nameAr: '', nameEn: '' });
         },
-        onError: (e: any) => showToast(e?.message || t('addFailed'), 'error'),
+        onError: (e: Error) => showToast(e?.message || t('addFailed'), 'error'),
       },
     );
   }
@@ -236,7 +249,7 @@ export function useItemsManageTab(companyId: any) {
       return;
     }
     addCustomSize(companyId, ar, newSize.en);
-    setSizesKey((k: any) => k + 1);
+    setSizesKey((k) => k + 1);
     setNewSize({ ar: '', en: '' });
     setAddSizeModal(false);
     showToast(t('ordersSizeAdded'), 'success');
@@ -249,7 +262,7 @@ export function useItemsManageTab(companyId: any) {
       return;
     }
     addCustomPackaging(companyId, ar, newPackaging.en);
-    setPackagingKey((k: any) => k + 1);
+    setPackagingKey((k) => k + 1);
     setNewPackaging({ ar: '', en: '' });
     setAddPackagingModal(false);
     showToast(t('ordersPackagingAdded'), 'success');
@@ -260,21 +273,21 @@ export function useItemsManageTab(companyId: any) {
     setPresetBusy(true);
     try {
       let catRes = await getOrderCategories(companyId);
-      const catMap = new Map((catRes?.data ?? []).map((c: any) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]));
-      const presetCategoryNames = [...new Set(BROASTED_PRESET_ORDER_PRODUCTS.map((p: any) => p.categoryAr))];
-      const missingCats = presetCategoryNames.filter((n: any) => !catMap.has(String(n).trim().toLowerCase()));
+      const catMap = new Map((catRes?.data ?? []).map((c) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]));
+      const presetCategoryNames = [...new Set(BROASTED_PRESET_ORDER_PRODUCTS.map((p) => p.categoryAr))];
+      const missingCats = presetCategoryNames.filter((n) => !catMap.has(String(n).trim().toLowerCase()));
       let catsAdded = 0;
       if (missingCats.length) {
-        const batchRes = await createOrderCategoriesBatch(companyId, missingCats.map((nameAr: any) => ({ nameAr })));
+        const batchRes = await createOrderCategoriesBatch(companyId, missingCats.map((nameAr) => ({ nameAr })));
         throwIfApiFailed(batchRes, t('addFailed'));
         catsAdded = missingCats.length;
         catRes = await getOrderCategories(companyId);
-        (catRes?.data ?? []).forEach((c: any) => catMap.set(String(c.nameAr ?? '').trim().toLowerCase(), c.id));
+        (catRes?.data ?? []).forEach((c) => catMap.set(String(c.nameAr ?? '').trim().toLowerCase(), c.id));
       }
 
       const prodRes = await getOrderProducts(companyId);
       const productList = prodRes?.data ?? [];
-      const byNameLower = new Map(productList.map((p: any) => [String(p.nameAr ?? '').trim().toLowerCase(), p]));
+      const byNameLower = new Map(productList.map((p) => [String(p.nameAr ?? '').trim().toLowerCase(), p]));
 
       const updateTasks = [];
       for (const row of BROASTED_PRESET_ORDER_PRODUCTS) {
@@ -293,15 +306,15 @@ export function useItemsManageTab(companyId: any) {
       let updated = 0;
       for (let i = 0; i < updateTasks.length; i += CHUNK) {
         const chunk = updateTasks.slice(i, i + CHUNK);
-        const results = await Promise.all(chunk.map(({ id, body }: any) => updateOrderProduct(id, body, companyId)));
+        const results = await Promise.all(chunk.map(({ id, body }) => updateOrderProduct(id, body, companyId)));
         for (const r of results) {
           throwIfApiFailed(r, t('updateFailed'));
         }
         updated += chunk.length;
       }
 
-      const existingKeys = new Set(productList.map((p: any) => String(p.nameAr ?? '').trim().toLowerCase()));
-      const productsPayload = BROASTED_PRESET_ORDER_PRODUCTS.filter((p: any) => !existingKeys.has(p.nameAr.trim().toLowerCase())).map((p: any) => {
+      const existingKeys = new Set(productList.map((p) => String(p.nameAr ?? '').trim().toLowerCase()));
+      const productsPayload = BROASTED_PRESET_ORDER_PRODUCTS.filter((p) => !existingKeys.has(p.nameAr.trim().toLowerCase())).map((p) => {
         const { variants, lastPrice, unit } = presetRowToProductPayload(p);
         return {
           nameAr: p.nameAr,
@@ -327,8 +340,8 @@ export function useItemsManageTab(companyId: any) {
       } else {
         showToast(t('ordersPresetDone', String(added), String(updated), String(catsAdded)), 'success');
       }
-    } catch (e: any) {
-      showToast(e?.message || t('addFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('addFailed'), 'error');
     } finally {
       setPresetBusy(false);
     }
@@ -342,8 +355,8 @@ export function useItemsManageTab(companyId: any) {
           : 'order-products-import-template.xlsx';
       await exportOrdersProductsImportTemplate(filename, productType);
       showToast(t('ordersImportTemplateReady'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('exportFailed'), 'error');
     }
   }
 
@@ -351,19 +364,19 @@ export function useItemsManageTab(companyId: any) {
     try {
       await exportOrdersCategoriesImportTemplate('order-categories-import-template.xlsx');
       showToast(t('ordersImportTemplateReady'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('exportFailed'), 'error');
     }
   }
 
   async function handleExportProducts(productType: 'order' | 'sale' = 'order') {
     try {
-      const scoped = (products as any[]).filter((p) => (p.productType || 'order') === productType);
+      const scoped = products.filter((p) => (p.productType || 'order') === productType);
       const filename = productType === 'sale' ? 'sale-products.xlsx' : 'order-products.xlsx';
       await exportOrderProductsWorkbook(scoped, filename);
       showToast(t('exportSuccess'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('exportFailed'), 'error');
     }
   }
 
@@ -371,18 +384,18 @@ export function useItemsManageTab(companyId: any) {
     try {
       await exportOrderCategoriesWorkbook(categories, 'order-categories.xlsx');
       showToast(t('exportSuccess'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('exportFailed'), 'error');
     }
   }
 
-  async function handleImportProducts(e: any, productType: 'order' | 'sale' = 'order') {
+  async function handleImportProducts(e: React.ChangeEvent<HTMLInputElement>, productType: 'order' | 'sale' = 'order') {
     const file = e?.target?.files?.[0];
     if (!file) return;
     try {
       const rawRows = await importFromExcel(file);
       const filtered = filterOrderProductsTemplateRows(rawRows, productType);
-      const catByName = new Map(categories.map((c: any) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]));
+      const catByName = new Map(categories.map((c) => [String(c.nameAr ?? '').trim().toLowerCase(), c.id]));
       const groups = groupOrderProductImportRows(filtered);
       const toCreate = orderProductImportGroupsToPayload(groups, catByName, productType);
       if (toCreate.length === 0) {
@@ -390,43 +403,45 @@ export function useItemsManageTab(companyId: any) {
         return;
       }
       createProductsBatch.mutate(toCreate, {
-        onSuccess: (data: any) => {
-          showToast(t('ordersImportSuccess', data?.length ?? toCreate.length), 'success');
+        onSuccess: (data: unknown) => {
+          const count = Array.isArray(data) ? data.length : toCreate.length;
+          showToast(t('ordersImportSuccess', count), 'success');
           if (fileInputProducts.current) fileInputProducts.current.value = '';
         },
-        onError: (err: any) => showToast((err as Error)?.message || (err as { error?: string })?.error || t('importFailed'), 'error'),
+        onError: (err: Error & { error?: string }) => showToast(err.message || err.error || t('importFailed'), 'error'),
       });
-    } catch (err: any) {
-      showToast(err?.message || t('importFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('importFailed'), 'error');
     }
   }
 
-  async function handleImportCategories(e: any) {
+  async function handleImportCategories(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e?.target?.files?.[0];
     if (!file) return;
     try {
       const rows = await importFromExcel(file);
       const filtered = filterOrderCategoriesTemplateRows(rows);
       const toCreate = filtered
-        .filter((r: any) => r.nameAr || r.name_ar)
-        .map((r: any) => ({
+        .filter((r: ImportWorkbookRow) => r.nameAr || r.name_ar)
+        .map((r: ImportWorkbookRow) => ({
           nameAr: String(r.nameAr ?? r.name_ar ?? '').trim(),
           nameEn: String(r.nameEn ?? r.name_en ?? '').trim() || undefined,
         }))
-        .filter((r: any) => r.nameAr);
+        .filter((r) => r.nameAr);
       if (toCreate.length === 0) {
         showToast(t('ordersImportNoValidRows'), 'error');
         return;
       }
       createCategoriesBatch.mutate(toCreate, {
-        onSuccess: (data: any) => {
-          showToast(t('ordersImportSuccess', data?.length ?? toCreate.length), 'success');
+        onSuccess: (data: unknown) => {
+          const count = Array.isArray(data) ? data.length : toCreate.length;
+          showToast(t('ordersImportSuccess', count), 'success');
           if (fileInputCategories.current) fileInputCategories.current.value = '';
         },
-        onError: (err: any) => showToast(err?.message || t('importFailed'), 'error'),
+        onError: (err: Error) => showToast(err?.message || t('importFailed'), 'error'),
       });
-    } catch (err: any) {
-      showToast(err?.message || t('importFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('importFailed'), 'error');
     }
   }
 
@@ -439,7 +454,7 @@ export function useItemsManageTab(companyId: any) {
           showToast(t('ordersCategoryUpdated'), 'success');
           setEditingCategory(null);
         },
-        onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
+        onError: (e: Error) => showToast(e?.message || t('updateFailed'), 'error'),
       },
     );
   }
@@ -475,14 +490,13 @@ export function useItemsManageTab(companyId: any) {
   function handleDeleteSelectedProducts() {
     const ids = [...selectedProductIds];
     if (!ids.length) return;
-    if (!window.confirm(t('ordersProductDeactivateConfirm'))) return;
     deleteProductsMutation.mutate(ids, {
-      onSuccess: (res: any) => {
+      onSuccess: (res: { data?: { deleted?: number } }) => {
         const n = res?.data?.deleted ?? ids.length;
         showToast(t('ordersProductsDeleted', String(n)), 'success');
         setSelectedProductIds(new Set());
       },
-      onError: (e: any) => showToast(e?.message || t('deleteFailed'), 'error'),
+      onError: (e: Error) => showToast(e?.message || t('deleteFailed'), 'error'),
     });
   }
 
@@ -490,24 +504,24 @@ export function useItemsManageTab(companyId: any) {
     const ids = [...selectedCategoryIds];
     if (!ids.length) return;
     deleteCategoriesMutation.mutate(ids, {
-      onSuccess: (res: any) => {
+      onSuccess: (res: { data?: { deleted?: number } }) => {
         const n = res?.data?.deleted ?? ids.length;
         showToast(t('ordersCategoriesDeleted', String(n)), 'success');
         setSelectedCategoryIds(new Set());
       },
-      onError: (e: any) => showToast(e?.message || t('deleteFailed'), 'error'),
+      onError: (e: Error) => showToast(e?.message || t('deleteFailed'), 'error'),
     });
   }
 
   function addVariantToProduct() {
-    setNewProduct((p: any) => ({
+    setNewProduct((p) => ({
       ...p,
       variants: [...(p.variants || []), { size: '', packaging: '', unit: 'piece', lastPrice: '' }],
     }));
   }
 
-  function updateNewProductVariant(idx: any, field: any, value: any) {
-    setNewProduct((p: any) => {
+  function updateNewProductVariant(idx: number, field: keyof OrderProductVariant, value: string) {
+    setNewProduct((p) => {
       const v = [...(p.variants || [])];
       if (!v[idx]) return p;
       v[idx] = { ...v[idx], [field]: value };
@@ -515,12 +529,13 @@ export function useItemsManageTab(companyId: any) {
     });
   }
 
-  function removeNewProductVariant(idx: any) {
-    setNewProduct((p: any) => ({ ...p, variants: (p.variants || []).filter((_: any, i: any) => i !== idx) }));
+  function removeNewProductVariant(idx: number) {
+    setNewProduct((p) => ({ ...p, variants: (p.variants || []).filter((_, i) => i !== idx) }));
   }
 
-  function updateEditingVariant(idx: any, field: any, value: any) {
-    setEditingProduct((p: any) => {
+  function updateEditingVariant(idx: number, field: keyof OrderProductVariant, value: string) {
+    setEditingProduct((p) => {
+      if (!p) return p;
       const v = [...(p.variants || [])];
       if (!v[idx]) return p;
       v[idx] = { ...v[idx], [field]: value };
@@ -528,8 +543,8 @@ export function useItemsManageTab(companyId: any) {
     });
   }
 
-  function removeEditingVariant(idx: any) {
-    setEditingProduct((p: any) => ({ ...p, variants: (p.variants || []).filter((_: any, i: any) => i !== idx) }));
+  function removeEditingVariant(idx: number) {
+    setEditingProduct((p) => p ? ({ ...p, variants: (p.variants || []).filter((_, i) => i !== idx) }) : p);
   }
 
   return {
@@ -614,3 +629,5 @@ export function useItemsManageTab(companyId: any) {
     bulkSetSections,
   };
 }
+
+export type ItemsManageTabController = ReturnType<typeof useItemsManageTab>;

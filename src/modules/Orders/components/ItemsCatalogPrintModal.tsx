@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { type ChangeEvent, useMemo, useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
@@ -9,15 +9,16 @@ import {
   printItemsCatalog,
   type ItemsCatalogPrintFilters,
 } from '../utils/itemsCatalogPrint';
+import type { OrderCategory, OrderProduct, OrderProductType, OrderSection } from '../../../types/api';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   companyId: string;
-  products: any[];
-  categories: any[];
-  sections: any[];
-  productTypeFilter: 'order' | 'sale';
+  products: OrderProduct[];
+  categories: OrderCategory[];
+  sections: OrderSection[];
+  productTypeFilter: OrderProductType;
   initialSection?: string;
   initialCategoryId?: string;
 };
@@ -62,7 +63,7 @@ export function ItemsCatalogPrintModal({
   );
 
   const companyName = useMemo(() => {
-    const c = companies.find((x: any) => x.id === companyId);
+    const c = companies.find((company) => company.id === companyId);
     return c?.nameAr || c?.nameEn || '';
   }, [companies, companyId]);
 
@@ -120,11 +121,11 @@ export function ItemsCatalogPrintModal({
           type="select"
           label={t('ordersPrintCatalogSection')}
           value={printSection}
-          onChange={(e: any) => setPrintSection(e.target.value)}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => setPrintSection(event.target.value)}
         >
           <option value="">{t('filterAllSections')}</option>
           <option value="__none__">{t('filterNoSection')}</option>
-          {(sections as any[]).map((s: any) => (
+          {sections.map((s) => (
             <option key={s.id} value={s.nameAr}>
               {s.nameAr}
               {s.nameEn ? ` / ${s.nameEn}` : ''}
@@ -136,10 +137,10 @@ export function ItemsCatalogPrintModal({
           type="select"
           label={t('category')}
           value={printCategory}
-          onChange={(e: any) => setPrintCategory(e.target.value)}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => setPrintCategory(event.target.value)}
         >
           <option value="">{t('filterAllCategories')}</option>
-          {(categories as any[]).map((c: any) => (
+          {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nameAr || c.nameEn}
             </option>

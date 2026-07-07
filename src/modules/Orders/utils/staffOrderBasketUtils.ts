@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import type { OrderProduct, OrderProductVariant } from '../../../types/api';
 
 export type StaffBasketLine = {
   lineId: string;
@@ -15,13 +16,13 @@ export function staffBasketLineKey(line: Pick<StaffBasketLine, 'productId' | 'si
   return `${line.productId}|${line.size}|${line.packaging}|${line.unit}`;
 }
 
-export function productHasVariants(product: any): boolean {
+export function productHasVariants(product: OrderProduct): boolean {
   const variants = Array.isArray(product?.variants) ? product.variants : [];
   const sizes = product?.sizes ? String(product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean) : [];
   return variants.length > 0 || sizes.length > 0;
 }
 
-export function defaultVariantModalState(product: any) {
+export function defaultVariantModalState(product: OrderProduct) {
   const variants = Array.isArray(product?.variants) ? product.variants : [];
   const sizes = product?.sizes ? String(product.sizes).split(/[,،]/).map((x: string) => x.trim()).filter(Boolean) : [];
   const hasVariants = variants.length > 0;
@@ -41,7 +42,7 @@ export function defaultVariantModalState(product: any) {
 }
 
 export function resolveVariantFromModal(
-  product: any,
+  product: OrderProduct,
   modal: { variantKey: string; size: string; packaging: string; unit: string; unitPrice: string },
 ) {
   const variants = Array.isArray(product?.variants) ? product.variants : [];
@@ -50,7 +51,7 @@ export function resolveVariantFromModal(
   let unit = modal.unit || 'piece';
   let unitPrice = modal.unitPrice;
   if (modal.variantKey && variants.length > 0) {
-    const v = variants.find((x: any, i: number) =>
+    const v = (variants as OrderProductVariant[]).find((x, i) =>
       `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}|${i}` === modal.variantKey
       || `${x.size || ''}|${x.packaging || ''}|${x.unit || ''}` === modal.variantKey.split('|').slice(0, 3).join('|'),
     ) || variants[0];
@@ -162,7 +163,7 @@ export function staffSaleAvgPerOrder(totalAmount: Decimal | number, totalQty: nu
   return qty > 0 ? total.div(qty) : new Decimal(0);
 }
 
-export function displayProductPrice(product: any): string | null {
+export function displayProductPrice(product: OrderProduct): string | null {
   const variants = Array.isArray(product?.variants) ? product.variants : [];
   if (variants.length > 0 && variants[0]?.lastPrice) return String(variants[0].lastPrice);
   if (product?.lastPrice != null && Number(product.lastPrice) > 0) return String(product.lastPrice);

@@ -11,15 +11,29 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { DateFilterBar } from '../../../ui/date';
 import { exportToExcel, exportTableToPdf } from '../../../utils/exportUtils';
 import { Button, Input, AdaptiveSheet, SmartTable, SimpleTable, FmtNum, MetricCard, DataBar, FilterToolbar, SearchableOptionsPicker } from '../../../ui';
+import { computeItemsReportDisplayTotals, sliceItemsReportByMode } from '../utils/ordersReportModel';
+import type { OrderItemsReportRow, OrderPurchaseHistoryRow } from '../../../types/api';
 
 const CHART_COLORS = ['var(--noorix-accent-blue)', 'var(--noorix-accent-green)', 'var(--noorix-accent-amber)', 'var(--noorix-accent-red)', 'var(--noorix-accent-violet)', '#0891b2'];
 
-function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-accent-blue)' }: any) {
+function BarChart({
+  data,
+  maxVal,
+  labelKey,
+  valueKey,
+  color = 'var(--noorix-accent-blue)',
+}: {
+  data: OrderItemsReportRow[];
+  maxVal: number;
+  labelKey: keyof OrderItemsReportRow;
+  valueKey: keyof Pick<OrderItemsReportRow, 'amount' | 'quantity' | 'orderCount'>;
+  color?: string;
+}) {
   const m = maxVal > 0 ? maxVal : 1;
-  const getLabel = (r: any) => r[labelKey] || r.productNameEn || r.categoryNameEn || '—';
+  const getLabel = (r: OrderItemsReportRow) => String(r[labelKey] || r.productNameEn || r.categoryNameEn || '—');
   return (
     <div className="flex flex-col gap-1.5">
-      {data.slice(0, 10).map((r: any, i: any) => (
+      {data.slice(0, 10).map((r, i) => (
         <div key={i} className="flex items-center gap-8">
           <span className="text-[12px] truncate min-w-[80px]" title={getLabel(r)}>
             {getLabel(r)}
@@ -40,10 +54,26 @@ function BarChart({ data, maxVal, labelKey, valueKey, color = 'var(--noorix-acce
   );
 }
 
-function PurchaseHistoryModal({ companyId, year, month, product, category, onClose, t }: any) {
+function PurchaseHistoryModal({
+  companyId,
+  year,
+  month,
+  product,
+  category,
+  onClose,
+  t,
+}: {
+  companyId: string;
+  year: number;
+  month: number;
+  product?: OrderItemsReportRow | null;
+  category?: { id?: string; nameAr?: string | null; nameEn?: string | null } | null;
+  onClose: () => void;
+  t: (key: string) => string;
+}) {
   const isProduct = !!product;
-  const productId = product?.id ?? product?.productId;
-  const categoryId = category?.id;
+  const productId = product?.id ?? product?.productId ?? '';
+  const categoryId = category?.id ?? '';
 
   const { data: productHistory = [], isLoading: productLoading } = useProductPurchaseHistory(
     companyId, productId, year, month, isProduct,
@@ -52,7 +82,7 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
     companyId, categoryId, year, month, !isProduct,
   );
 
-  const history = isProduct ? productHistory : categoryHistory;
+  const history: OrderPurchaseHistoryRow[] = isProduct ? productHistory : categoryHistory;
   const isLoading = isProduct ? productLoading : categoryLoading;
   const title = isProduct ? (product?.productNameAr || product?.nameAr || product?.productNameEn || product?.nameEn || productId) : (category?.nameAr || category?.nameEn || categoryId);
 
@@ -79,16 +109,16 @@ function PurchaseHistoryModal({ companyId, year, month, product, category, onClo
               key: 'orderDate',
               label: t('orderDate'),
               align: 'right',
-              render: (value: any) => formatSaudiDate(value),
+              render: (_value: unknown, row: OrderPurchaseHistoryRow) => formatSaudiDate(row.orderDate),
             },
-            { key: 'quantity', label: t('quantity'), numeric: true, render: (value: any) => fmt(value) },
-            { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (value: any) => <FmtNum n={value} /> },
+            { key: 'quantity', label: t('quantity'), numeric: true, render: (_value: unknown, row: OrderPurchaseHistoryRow) => fmt(row.quantity) },
+            { key: 'unitPrice', label: t('unitPrice'), numeric: true, render: (_value: unknown, row: OrderPurchaseHistoryRow) => <FmtNum n={row.unitPrice} /> },
             {
               key: 'amount',
               label: t('total'),
               numeric: true,
               cellClassName: 'nx-cell-num--green',
-              render: (value: any) => <><FmtNum n={value} /> SR</>,
+              render: (_value: unknown, row: OrderPurchaseHistoryRow) => <><FmtNum n={row.amount} /> SR</>,
             },
           ]}
         />
@@ -105,42 +135,35 @@ export function ItemsReportTab({
   endDate: propEndDate,
   dateFilter,
 }: {
-  companyId: any;
-  year: any;
-  month: any;
+  companyId: string;
+  year: number;
+  month: number;
   startDate?: string;
   endDate?: string;
-  dateFilter: any;
+  dateFilter: React.ComponentProps<typeof DateFilterBar>['filter'];
 }) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const [filterMode, setFilterMode] = useState('all'); // all | top | bottom
   const [filterCount, setFilterCount] = useState(10);
-  const [historyModal, setHistoryModal] = useState<any>(null); // { product } or { category }
+  const [historyModal, setHistoryModal] = useState<{ product?: OrderItemsReportRow; category?: { id?: string; nameAr?: string | null; nameEn?: string | null } } | null>(null);
 
   const startDate = propStartDate || `${year}-${String(month).padStart(2, '0')}-01`;
   const endDate = propEndDate || `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
   const { data: report = [], isLoading } = useOrdersItemsReportRange(companyId, startDate, endDate);
 
   const filtered = useMemo(() => {
-    if (filterMode === 'all') return report;
-    const sorted = [...report].sort((a: any, b: any) => (b.orderCount ?? 0) - (a.orderCount ?? 0));
-    if (filterMode === 'top') return sorted.slice(0, filterCount);
-    return sorted.slice(-filterCount).reverse();
+    return sliceItemsReportByMode(report, filterMode, filterCount);
   }, [report, filterMode, filterCount]);
 
-  const totals = useMemo(() => {
-    const qty = filtered.reduce((s: any, r: any) => s + Number(r.quantity ?? 0), 0);
-    const amt = filtered.reduce((s: any, r: any) => s + Number(r.amount ?? 0), 0);
-    return { quantity: qty, amount: amt };
-  }, [filtered]);
+  const totals = useMemo(() => computeItemsReportDisplayTotals(filtered), [filtered]);
 
-  const maxAmount = useMemo(() => Math.max(...filtered.map((r: any) => Number(r.amount ?? 0)), 1), [filtered]);
+  const maxAmount = useMemo(() => Math.max(...filtered.map((r) => Number(r.amount ?? 0)), 1), [filtered]);
   const currentFilterLabel = lang === 'ar' ? 'حسب الفلتر الحالي' : 'Current filter';
 
   const handleExportExcel = async () => {
     try {
-      const rows = filtered.map((r: any) => ({
+      const rows = filtered.map((r) => ({
         [t('product')]: r.productNameAr || r.productNameEn || '—',
         [t('category')]: r.categoryNameAr || r.categoryNameEn || '—',
         [t('unit')]: r.unit || '—',
@@ -150,15 +173,15 @@ export function ItemsReportTab({
       }));
       await exportToExcel(rows, `orders-items-report-${year}-${month}.xlsx`);
       showToast(t('exportSuccess'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('exportFailed'), 'error');
     }
   };
 
   const handleExportPdf = async () => {
     try {
       const cols = [t('product'), t('category'), t('quantity'), t('total'), t('ordersOrderCount')];
-      const data = filtered.map((r: any) => ({
+      const data = filtered.map((r) => ({
         [t('product')]: r.productNameAr || r.productNameEn || '—',
         [t('category')]: r.categoryNameAr || r.categoryNameEn || '—',
         [t('quantity')]: fmt(r.quantity ?? 0),
@@ -167,8 +190,8 @@ export function ItemsReportTab({
       }));
       await exportTableToPdf({ columns: cols, data, title: `${t('ordersItemsReportTab')} — ${year}/${month}`, filename: `orders-items-${year}-${month}.pdf` });
       showToast(t('exportSuccess'), 'success');
-    } catch (e: any) {
-      showToast(e?.message || t('exportFailed'), 'error');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('exportFailed'), 'error');
     }
   };
 
@@ -196,11 +219,11 @@ export function ItemsReportTab({
                 min={1}
                 max={50}
                 value={filterCount}
-                onChange={(e: any) => setFilterCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 5)))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterCount(Math.max(1, Math.min(50, Number.parseInt(e.target.value, 10) || 5)))}
                 className="w-[80px]"
               />
             )}
-            <Button type="button" size="sm" className="noorix-print-hide" onClick={() => window.print()} disabled={filtered.length === 0}>{t('print')}</Button>
+            <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>{t('print')}</Button>
             <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportExcel} disabled={filtered.length === 0}>Excel</Button>
             <Button type="button" size="sm" className="noorix-print-hide" onClick={handleExportPdf} disabled={filtered.length === 0}>PDF</Button>
           </>
@@ -238,7 +261,7 @@ export function ItemsReportTab({
             </div>
             <div>
               <div className="text-[12px] mb-2 text-noorix-muted">{t('ordersChartByOrders')}</div>
-              <BarChart data={filtered} maxVal={Math.max(...filtered.map((r: any) => r.orderCount ?? 0), 1)} labelKey="productNameAr" valueKey="orderCount" color="#16a34a" />
+              <BarChart data={filtered} maxVal={Math.max(...filtered.map((r) => r.orderCount ?? 0), 1)} labelKey="productNameAr" valueKey="orderCount" color="#16a34a" />
             </div>
           </div>
         </div>
@@ -250,7 +273,7 @@ export function ItemsReportTab({
           {
             key: 'productNameAr',
             label: t('product'),
-            render: (_: any, r: any) => (
+            render: (_: unknown, r: OrderItemsReportRow) => (
               <Button
                 variant="ghost"
                 type="button"
@@ -264,26 +287,26 @@ export function ItemsReportTab({
           {
             key: 'categoryNameAr',
             label: t('category'),
-            render: (_: any, r: any) => r.categoryId ? (
+            render: (_: unknown, r: OrderItemsReportRow) => r.categoryId ? (
               <Button
                 variant="ghost"
                 type="button"
-                onClick={() => setHistoryModal({ category: { id: r.categoryId, nameAr: r.categoryNameAr, nameEn: r.categoryNameEn } })}
+                onClick={() => setHistoryModal({ category: { id: r.categoryId || undefined, nameAr: r.categoryNameAr || undefined, nameEn: r.categoryNameEn || undefined } })}
                 className="text-[13px] text-noorix-blue underline"
               >
                 {r.categoryNameAr || r.categoryNameEn || '—'}
               </Button>
             ) : <span className="nx-cell-muted">—</span>,
           },
-          { key: 'unit', label: t('unit'), render: (v: any) => <span className="nx-cell-muted">{v || '—'}</span> },
-          { key: 'quantity', label: t('quantity'), numeric: true, render: (v: any) => fmt(v ?? 0) },
+          { key: 'unit', label: t('unit'), render: (_value: unknown, row: OrderItemsReportRow) => <span className="nx-cell-muted">{row.unit || '—'}</span> },
+          { key: 'quantity', label: t('quantity'), numeric: true, render: (_value: unknown, row: OrderItemsReportRow) => fmt(row.quantity ?? 0) },
           {
             key: 'amount',
             label: t('total'),
             numeric: true,
-            render: (v: any) => <span className="nx-cell-num--green"><FmtNum n={v ?? 0} /> SR</span>,
+            render: (_value: unknown, row: OrderItemsReportRow) => <span className="nx-cell-num--green"><FmtNum n={row.amount ?? 0} /> SR</span>,
           },
-          { key: 'orderCount', label: t('ordersOrderCount'), numeric: true, render: (v: any) => v ?? 0 },
+          { key: 'orderCount', label: t('ordersOrderCount'), numeric: true, render: (_value: unknown, row: OrderItemsReportRow) => row.orderCount ?? 0 },
         ]}
         data={filtered}
         isLoading={isLoading}
@@ -296,7 +319,7 @@ export function ItemsReportTab({
             <td className="py-2 px-3" />
           </>
         ) : null}
-        renderCompactRow={(r: any) => (
+        renderCompactRow={(r: OrderItemsReportRow) => (
           <div className="cursor-pointer" onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })}>
             <div className="nx-cr__line1">
               <span className="nx-cr__name text-noorix-blue">{r.productNameAr || r.productNameEn || '—'}</span>
@@ -314,7 +337,7 @@ export function ItemsReportTab({
             </div>
           </div>
         )}
-        renderMobileCard={(r: any) => (
+        renderMobileCard={(r: OrderItemsReportRow) => (
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-2">
               <Button variant="ghost" type="button" onClick={() => setHistoryModal({ product: { ...r, id: r.productId } })} className="font-bold text-noorix-blue underline text-[13px]">

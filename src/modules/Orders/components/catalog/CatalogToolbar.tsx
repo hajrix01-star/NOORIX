@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import { Button, FilterToolbar, Input, KebabMenu, SearchableOptionsPicker } from '../../../../ui';
+import type { OrderCategory, OrderSection } from '../../../../types/api';
 
 type CatalogToolbarProps = {
   productType: 'order' | 'sale';
@@ -10,8 +11,8 @@ type CatalogToolbarProps = {
   setProductFilterSection: (v: string) => void;
   productFilterCategory: string;
   setProductFilterCategory: (v: string) => void;
-  sections: any[];
-  categories: any[];
+  sections: OrderSection[];
+  categories: OrderCategory[];
   filteredCount: number;
   totalCount: number;
   selectedCount: number;
@@ -98,7 +99,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
         <Input
           type="search"
           value={productSearchQuery}
-          onChange={(e: any) => setProductSearchQuery(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProductSearchQuery(e.target.value)}
           placeholder={t('ordersSearchProducts')}
           aria-label={t('ordersSearchProducts')}
           className="w-full min-w-0 sm:flex-1 sm:max-w-[280px]"
@@ -112,7 +113,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
             onChange={setProductFilterSection}
             options={[
               { value: '__none__', label: t('filterNoSection') },
-              ...(sections as any[]).map((s: any) => ({
+              ...sections.map((s) => ({
                 value: s.nameAr,
                 label: `${s.nameAr}${s.nameEn ? ` / ${s.nameEn}` : ''}`,
               })),
@@ -127,7 +128,7 @@ export function CatalogToolbar(props: CatalogToolbarProps) {
             emptyLabel={t('filterAllCategories')}
             value={productFilterCategory}
             onChange={setProductFilterCategory}
-            options={(categories as any[]).map((c: any) => ({
+            options={categories.map((c) => ({
               value: c.id,
               label: c.nameAr || c.nameEn || c.id,
             }))}

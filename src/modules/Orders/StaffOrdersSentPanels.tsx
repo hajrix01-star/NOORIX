@@ -12,7 +12,8 @@ import {
   staffOrdersQty,
   staffSaleAvgPerOrder,
 } from './utils/staffOrderBasketUtils';
-export function StatusBadge({ status }: { status: string }) {
+import type { OrderProduct, StaffOrder, StaffOrderItem } from '../../types/api';
+export function StatusBadge({ status }: { status?: string | null }) {
   const { t } = useTranslation();
   return (
     <Badge color={status === 'sent' ? 'green' : 'amber'} size="sm">
@@ -21,7 +22,7 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export function StaffItemPriceSuffix({ it, product }: { it: any; product?: any }) {
+export function StaffItemPriceSuffix({ it, product }: { it: StaffOrderItem; product?: OrderProduct | null }) {
   const amountItem = { ...it, product: product ?? it.product };
   const unitPrice = resolveStaffItemUnitPrice(amountItem);
   const lineAmt = staffItemLineAmount(amountItem);
@@ -96,7 +97,7 @@ export function StaffSaleItemsTable({
   lang,
   t,
 }: {
-  items: any[];
+  items: StaffOrderItem[];
   lang: string;
   t: (key: string, ...args: unknown[]) => string;
 }) {
@@ -111,7 +112,7 @@ export function StaffSaleItemsTable({
           key: 'product',
           label: t('product'),
           align: 'start',
-          render: (_: any, it: any) => {
+          render: (_: unknown, it: StaffOrderItem) => {
             const p = it.product;
             const name = lang === 'en' ? (p?.nameEn || p?.nameAr || '—') : (p?.nameAr || p?.nameEn || '—');
             const variant = formatVariantLabel(it.size, it.packaging, it.unit);
@@ -130,14 +131,14 @@ export function StaffSaleItemsTable({
           label: t('quantity'),
           numeric: true,
           width: '3.5rem',
-          render: (value: any) => <span className="font-semibold">{fmt(value, 0)}</span>,
+          render: (_value: unknown, item: StaffOrderItem) => <span className="font-semibold">{fmt(item.quantity, 0)}</span>,
         },
         {
           key: 'unitPrice',
           label: t('unitPrice'),
           numeric: true,
           width: '4rem',
-          render: (_: any, it: any) => {
+          render: (_: unknown, it: StaffOrderItem) => {
             const p = it.product;
             const amountItem = { ...it, product: p };
             const unitPrice = resolveStaffItemUnitPrice(amountItem);
@@ -154,7 +155,7 @@ export function StaffSaleItemsTable({
           numeric: true,
           width: '4.5rem',
           cellClassName: 'font-bold text-noorix-green',
-          render: (_: any, it: any) => {
+          render: (_: unknown, it: StaffOrderItem) => {
             const p = it.product;
             const amountItem = { ...it, product: p };
             const lineAmt = staffItemLineAmount(amountItem);
@@ -180,17 +181,17 @@ export function StaffSentOrderRow({
   onEdit,
   onDelete,
 }: {
-  order: any;
+  order: StaffOrder;
   isSale: boolean;
   lang: string;
   t: (key: string, ...args: unknown[]) => string;
-  onResend?: (o: any) => void;
-  onEdit: (o: any) => void;
-  onDelete: (o: any) => void;
+  onResend?: (o: StaffOrder) => void;
+  onEdit: (o: StaffOrder) => void;
+  onDelete: (o: StaffOrder) => void;
 }) {
   const [open, setOpen] = useState(false);
   const items = order.items || [];
-  const dateLabel = order.saleDate ? formatSaudiDate(order.saleDate) : formatSaudiDate(order.createdAt);
+  const dateLabel = order.saleDate ? formatSaudiDate(order.saleDate) : formatSaudiDate(order.createdAt || '');
   const title = isSale ? dateLabel : (order.sectionName || '—');
   const subtitle = isSale ? null : dateLabel;
 
@@ -255,7 +256,7 @@ export function StaffSentOrderRow({
       {open && (
         <div className="px-3 pb-3 pt-0 border-t border-noorix-border flex flex-col gap-2">
           <div className="flex flex-col gap-2 pt-2">
-            {items.map((it: any, i: number) => {
+            {items.map((it, i) => {
               const p = it.product;
               const nameAr = p?.nameAr || '—';
               const nameEn = p?.nameEn?.trim() || null;
@@ -301,17 +302,18 @@ export function StaffSentSaleGroup({
   onEdit,
   onDelete,
 }: {
-  orders: any[];
+  orders: StaffOrder[];
   lang: string;
   t: (key: string, ...args: unknown[]) => string;
-  onResend: (o: any) => void;
-  onEdit: (o: any) => void;
-  onDelete: (o: any) => void;
+  onResend: (o: StaffOrder) => void;
+  onEdit: (o: StaffOrder) => void;
+  onDelete: (o: StaffOrder) => void;
 }) {
   const [open, setOpen] = useState(false);
   const primary = orders[0];
+  if (!primary) return null;
   const logRef = primary?.logRef as string | null | undefined;
-  const dateLabel = primary?.saleDate ? formatSaudiDate(primary.saleDate) : formatSaudiDate(primary.createdAt);
+  const dateLabel = primary.saleDate ? formatSaudiDate(primary.saleDate) : formatSaudiDate(primary.createdAt || '');
   const totalItems = orders.reduce((n, o) => n + ((o.items || []).length), 0);
   const sectionsCount = orders.length;
   const totalAmount = staffOrdersTotal(orders);

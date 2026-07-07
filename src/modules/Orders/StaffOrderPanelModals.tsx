@@ -1,6 +1,7 @@
 import React from 'react';
 import { fmt } from '../../utils/format';
 import { Button, Input, Modal } from '../../ui';
+import type { OrderProduct } from '../../types/api';
 
 type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
 
@@ -43,10 +44,10 @@ export function StaffQtyModal({
   onClose,
   onConfirm,
 }: {
-  qtyModal: { product: any; qty: number; unit: string } | null;
+  qtyModal: { product: OrderProduct; qty: number; unit: string } | null;
   lang: string;
   t: TranslateFn;
-  onChange: (next: { product: any; qty: number; unit: string } | null) => void;
+  onChange: (next: { product: OrderProduct; qty: number; unit: string } | null) => void;
   onClose: () => void;
   onConfirm: () => void;
 }) {
@@ -89,7 +90,7 @@ export function StaffQtyModal({
           </div>
         </div>
         <Input type="select" label={t('ordersUnit')} value={qtyModal.unit}
-          onChange={(e: any) => onChange({ ...qtyModal, unit: e.target.value })}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange({ ...qtyModal, unit: e.target.value })}
         >
           <option value="piece">{t('ordersUnitPiece')}</option>
           <option value="kg">{t('ordersUnitKg')}</option>

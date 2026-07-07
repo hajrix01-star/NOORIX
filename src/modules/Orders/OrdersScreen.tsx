@@ -20,8 +20,9 @@ import { StaffOrdersView } from './StaffOrdersView';
 import { resolveOrdersScreenMode } from './ordersScreenRouting';
 
 const ORDERS_TAB_ALIASES = { sales: 'sales-report' } as const;
+type OrdersTabDescriptor = { id: string; labelKey: string; shortLabelKey?: string };
 
-function parseYearMonth(dateStr: any) {
+function parseYearMonth(dateStr: unknown) {
   if (!dateStr || typeof dateStr !== 'string') return null;
   const parts = dateStr.split('-');
   if (parts.length < 2) return null;
@@ -155,7 +156,7 @@ function ManagerOrdersScreen({
       tabs.push({ id: 'sales-report', labelKey: 'salesReportTab', shortLabelKey: 'salesReportTabShort' });
     }
     if (canDigest) tabs.push({ id: 'staff-digest', labelKey: 'staffDigestTab', shortLabelKey: 'staffDigestTabShort' });
-    return tabs.map((tab: any) => {
+    return tabs.map((tab) => {
       const full = t(tab.labelKey);
       const short = tab.shortLabelKey ? t(tab.shortLabelKey) : full;
       const label =

@@ -18,6 +18,9 @@ export const orderKeys = {
   summary: (companyId: string, year: unknown, month: unknown) =>
     ['orders-summary', companyId, year, month] as const,
 
+  rangeSummary: (companyId: string, startDate: unknown, endDate: unknown) =>
+    ['orders-range-summary', companyId, startDate, endDate] as const,
+
   products: (companyId: string) => ['order-products', companyId] as const,
 
   categories: (companyId: string) => ['order-categories', companyId] as const,

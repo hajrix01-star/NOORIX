@@ -31,6 +31,7 @@
     "check:assets-governance": "node scripts/check-assets-governance.mjs",
     "check:expenses-governance": "node scripts/check-expenses-governance.mjs",
     "check:vaults-governance": "node scripts/check-vaults-governance.mjs",
+    "check:orders-governance": "node scripts/check-orders-governance.mjs",
     "check:owner-governance": "node scripts/check-owner-governance.mjs",
     "check:purchases-governance": "node scripts/check-purchases-governance.mjs",
     "check:sales-governance": "node scripts/check-sales-governance.mjs",

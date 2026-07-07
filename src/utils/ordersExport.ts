@@ -6,17 +6,35 @@ import {
   getOrderProductsTemplateMarkerAr,
   type OrderCatalogProductType,
 } from '../modules/Orders/constants/importTemplate';
+import type { OrderCategory, OrderProduct, OrderProductPayload, OrderProductVariant } from '../types/api';
 
-function setSheetColWidths(ws: any, widths: any) {
-  ws['!cols'] = widths.map((wch: any) => ({ wch }));
+type WorksheetCellLike = { s?: unknown };
+type WorksheetLike = Record<string, WorksheetCellLike | unknown> & { '!cols'?: { wch: number }[]; '!views'?: Array<{ rightToLeft?: boolean }> };
+type XlsxLike = {
+  default?: XlsxLike;
+  utils: {
+    encode_cell: (cell: { r: number; c: number }) => string;
+    aoa_to_sheet: (rows: unknown[][]) => WorksheetLike;
+    book_new: () => unknown;
+    book_append_sheet: (wb: unknown, ws: WorksheetLike, name: string) => void;
+  };
+  writeFile: (wb: unknown, filename: string) => void;
+};
+export type ImportRow = Record<string, unknown>;
+export type OrderProductImportGroup =
+  | { type: 'legacy'; row: ImportRow }
+  | { type: 'flat'; nameAr: string; nameEn: string; category: string; sectionsRaw: string; variantRows: ImportRow[] };
+
+function setSheetColWidths(ws: WorksheetLike, widths: number[]) {
+  ws['!cols'] = widths.map((wch) => ({ wch }));
 }
 
-function setSheetRTL(ws: any) {
+function setSheetRTL(ws: WorksheetLike) {
   if (!ws['!views']) ws['!views'] = [{}];
   ws['!views'][0].rightToLeft = true;
 }
 
-function styleHeaderRow(XLSXmod: any, ws: any, rowIdx: any, colCount: any) {
+function styleHeaderRow(XLSXmod: XlsxLike, ws: WorksheetLike, rowIdx: number, colCount: number) {
   const XLSX = XLSXmod.default ?? XLSXmod;
   const HEADER_S = {
     fill: { patternType: 'solid', fgColor: { rgb: '185FA5' } },
@@ -25,8 +43,9 @@ function styleHeaderRow(XLSXmod: any, ws: any, rowIdx: any, colCount: any) {
   };
   for (let ci = 0; ci < colCount; ci++) {
     const addr = XLSX.utils.encode_cell({ r: rowIdx, c: ci });
-    if (!ws[addr]) continue;
-    ws[addr].s = HEADER_S;
+    const cell = ws[addr];
+    if (!cell || typeof cell !== 'object') continue;
+    (cell as WorksheetCellLike).s = HEADER_S;
   }
 }
 
@@ -61,13 +80,13 @@ export function parseOrderProductSectionsCell(
 
 export const ORDER_CATEGORIES_EXCEL_HEADERS = ['nameAr', 'nameEn'];
 
-export function flattenOrderProductsToAoA(products: any) {
-  const aoa = [ORDER_PRODUCTS_EXCEL_HEADERS];
+export function flattenOrderProductsToAoA(products: OrderProduct[]) {
+  const aoa: unknown[][] = [ORDER_PRODUCTS_EXCEL_HEADERS];
   for (const p of products || []) {
     const cat = p.category?.nameAr || p.category?.nameEn || '';
     const variants = Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : null;
     if (variants) {
-      variants.forEach((v: any, i: any) => {
+      (variants as OrderProductVariant[]).forEach((v, i) => {
         aoa.push([
           i === 0 ? (p.nameAr ?? '') : '',
           i === 0 ? (p.nameEn ?? '') : '',
@@ -75,7 +94,7 @@ export function flattenOrderProductsToAoA(products: any) {
           v.size ?? '',
           v.packaging ?? '',
           v.unit ?? 'piece',
-          parseFloat(v.lastPrice ?? 0) || 0,
+          parseFloat(String(v.lastPrice ?? 0)) || 0,
           i === 0 && Array.isArray(p.sections) && p.sections.length ? (p.sections as string[]).join('، ') : '',
         ]);
       });
@@ -87,7 +106,7 @@ export function flattenOrderProductsToAoA(products: any) {
         '',
         '',
         p.unit ?? 'piece',
-        parseFloat(p.lastPrice ?? 0) || 0,
+        parseFloat(String(p.lastPrice ?? 0)) || 0,
         Array.isArray(p.sections) && p.sections.length ? (p.sections as string[]).join('، ') : '',
       ]);
     }
@@ -95,12 +114,12 @@ export function flattenOrderProductsToAoA(products: any) {
   return aoa;
 }
 
-export function flattenOrderCategoriesToAoA(categories: any) {
-  return [ORDER_CATEGORIES_EXCEL_HEADERS, ...(categories || []).map((c: any) => [c.nameAr ?? '', c.nameEn ?? ''])];
+export function flattenOrderCategoriesToAoA(categories: OrderCategory[]) {
+  return [ORDER_CATEGORIES_EXCEL_HEADERS, ...(categories || []).map((c) => [c.nameAr ?? '', c.nameEn ?? ''])];
 }
 
-export async function exportOrderProductsWorkbook(products: any, filename: any = 'order-products.xlsx') {
-  const XLSXmod = await import('xlsx-js-style');
+export async function exportOrderProductsWorkbook(products: OrderProduct[], filename = 'order-products.xlsx') {
+  const XLSXmod = await import('xlsx-js-style') as XlsxLike;
   const XLSX = XLSXmod.default ?? XLSXmod;
   const aoa = flattenOrderProductsToAoA(products);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -112,8 +131,8 @@ export async function exportOrderProductsWorkbook(products: any, filename: any =
   XLSX.writeFile(wb, filename);
 }
 
-export async function exportOrderCategoriesWorkbook(categories: any, filename: any = 'order-categories.xlsx') {
-  const XLSXmod = await import('xlsx-js-style');
+export async function exportOrderCategoriesWorkbook(categories: OrderCategory[], filename = 'order-categories.xlsx') {
+  const XLSXmod = await import('xlsx-js-style') as XlsxLike;
   const XLSX = XLSXmod.default ?? XLSXmod;
   const aoa = flattenOrderCategoriesToAoA(categories);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -125,7 +144,7 @@ export async function exportOrderCategoriesWorkbook(categories: any, filename: a
   XLSX.writeFile(wb, filename);
 }
 
-function rowHasOrderProductVariantData(r: any) {
+function rowHasOrderProductVariantData(r: ImportRow) {
   const lp = parseFloat(String(r.lastPrice ?? r.last_price ?? '').replace(',', '.'));
   return Boolean(
     String(r.size ?? '').trim()
@@ -136,14 +155,14 @@ function rowHasOrderProductVariantData(r: any) {
 }
 
 export function filterOrderProductsTemplateRows(
-  rows: any,
+  rows: ImportRow[],
   productTypeOrMarker: OrderCatalogProductType | string = 'order',
 ) {
   const markerAr =
     productTypeOrMarker === 'order' || productTypeOrMarker === 'sale'
       ? getOrderProductsTemplateMarkerAr(productTypeOrMarker)
       : productTypeOrMarker;
-  const out = [];
+  const out: ImportRow[] = [];
   let afterMarker = false;
   for (const r of rows) {
     const nameAr = String(r.nameAr ?? r.name_ar ?? '').trim();
@@ -165,11 +184,11 @@ export function filterOrderProductsTemplateRows(
   return out;
 }
 
-export function filterOrderCategoriesTemplateRows(rows: any, markerAr: any = ORDER_CATEGORIES_TEMPLATE_MARKER_AR) {
-  return rows.filter((r: any) => String(r.nameAr ?? r.name_ar ?? '').trim() !== markerAr);
+export function filterOrderCategoriesTemplateRows(rows: ImportRow[], markerAr: string = ORDER_CATEGORIES_TEMPLATE_MARKER_AR) {
+  return rows.filter((r) => String(r.nameAr ?? r.name_ar ?? '').trim() !== markerAr);
 }
 
-function looksLikeLegacyVariantsCell(val: any) {
+function looksLikeLegacyVariantsCell(val: unknown) {
   const s = String(val ?? '').trim();
   if (!s || s[0] !== '[') return false;
   try {
@@ -180,13 +199,13 @@ function looksLikeLegacyVariantsCell(val: any) {
   }
 }
 
-export function groupOrderProductImportRows(rows: any) {
-  const groups = [];
-  let flat = null;
+export function groupOrderProductImportRows(rows: ImportRow[]): OrderProductImportGroup[] {
+  const groups: OrderProductImportGroup[] = [];
+  let flat: Extract<OrderProductImportGroup, { type: 'flat' }> | null = null;
   for (const r of rows) {
     if (looksLikeLegacyVariantsCell(r.variants)) {
       if (flat) {
-        groups.push({ type: 'flat', ...flat });
+        groups.push(flat);
         flat = null;
       }
       groups.push({ type: 'legacy', row: r });
@@ -194,8 +213,9 @@ export function groupOrderProductImportRows(rows: any) {
     }
     const nameAr = String(r.nameAr ?? r.name_ar ?? '').trim();
     if (nameAr) {
-      if (flat) groups.push({ type: 'flat', ...flat });
+      if (flat) groups.push(flat);
       flat = {
+        type: 'flat',
         nameAr,
         nameEn: String(r.nameEn ?? r.name_en ?? '').trim(),
         category: String(r.category ?? r.categoryName ?? '').trim(),
@@ -206,19 +226,19 @@ export function groupOrderProductImportRows(rows: any) {
       flat.variantRows.push(r);
     }
   }
-  if (flat) groups.push({ type: 'flat', ...flat });
+  if (flat) groups.push(flat);
   return groups;
 }
 
 export function orderProductImportGroupsToPayload(
-  groups: any,
-  catByName: any,
+  groups: OrderProductImportGroup[],
+  catByName: Map<string, string>,
   productType: OrderCatalogProductType = 'order',
   opts: { knownSectionNames?: string[]; defaultSections?: string[] } = {},
-) {
+): OrderProductPayload[] {
   const knownSectionNames = opts.knownSectionNames ?? [];
   const defaultSections = opts.defaultSections ?? [];
-  const out = [];
+  const out: OrderProductPayload[] = [];
   for (const g of groups) {
     if (g.type === 'legacy') {
       const r = g.row;
@@ -226,14 +246,14 @@ export function orderProductImportGroupsToPayload(
       if (!nameAr) continue;
       const catName = String(r.category ?? r.categoryName ?? '').trim().toLowerCase();
       const categoryId = catName ? catByName.get(catName) : undefined;
-      let variants;
+      let variants: OrderProductVariant[] | undefined;
       try {
         const parsed = JSON.parse(String(r.variants).trim());
         if (Array.isArray(parsed)) {
-          variants = parsed.map((v: any) => ({
-            size: v.size || '',
-            packaging: v.packaging || '',
-            unit: v.unit || 'piece',
+          variants = (parsed as ImportRow[]).map((v) => ({
+            size: String(v.size ?? ''),
+            packaging: String(v.packaging ?? ''),
+            unit: String(v.unit ?? 'piece') || 'piece',
             lastPrice: String(v.lastPrice ?? 0),
           }));
         }
@@ -257,14 +277,14 @@ export function orderProductImportGroupsToPayload(
     }
     const catName = g.category.trim().toLowerCase();
     const categoryId = catName ? catByName.get(catName) : undefined;
-    const variants = g.variantRows.map((r: any) => ({
+    const variants = g.variantRows.map((r) => ({
       size: String(r.size ?? '').trim(),
       packaging: String(r.packaging ?? '').trim(),
       unit: String(r.unit ?? 'piece').trim() || 'piece',
       lastPrice: String(r.lastPrice ?? r.last_price ?? 0),
     }));
     const nonEmpty = variants.filter(
-      (v: any) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || parseFloat(v.lastPrice) > 0,
+      (v) => v.size || v.packaging || (v.unit && v.unit !== 'piece') || Number.parseFloat(v.lastPrice) > 0,
     );
     const finalVariants = nonEmpty.length > 0 ? nonEmpty : [{ size: '', packaging: '', unit: 'piece', lastPrice: variants[0] ? variants[0].lastPrice : '0' }];
     const sections = parseOrderProductSectionsCell(g.sectionsRaw, knownSectionNames, defaultSections);
@@ -277,14 +297,14 @@ export function orderProductImportGroupsToPayload(
       variants: finalVariants,
     });
   }
-  return out.filter((p: any) => p.nameAr);
+  return out.filter((p) => p.nameAr);
 }
 
 export async function exportOrdersProductsImportTemplate(
-  filename: any = 'order-products-import-template.xlsx',
+  filename = 'order-products-import-template.xlsx',
   productType: OrderCatalogProductType = 'order',
 ) {
-  const XLSXmod = await import('xlsx-js-style');
+  const XLSXmod = await import('xlsx-js-style') as XlsxLike;
   const XLSX = XLSXmod.default ?? XLSXmod;
   const markerAr = getOrderProductsTemplateMarkerAr(productType);
   const typeLabelAr = productType === 'sale' ? 'مبيعات' : 'طلبات';
@@ -333,8 +353,8 @@ export async function exportOrdersProductsImportTemplate(
   XLSX.writeFile(wb, filename);
 }
 
-export async function exportOrdersCategoriesImportTemplate(filename: any = 'order-categories-import-template.xlsx') {
-  const XLSXmod = await import('xlsx-js-style');
+export async function exportOrdersCategoriesImportTemplate(filename = 'order-categories-import-template.xlsx') {
+  const XLSXmod = await import('xlsx-js-style') as XlsxLike;
   const XLSX = XLSXmod.default ?? XLSXmod;
   const aoa = [
     ORDER_CATEGORIES_EXCEL_HEADERS,

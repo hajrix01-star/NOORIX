@@ -2,6 +2,7 @@
  * قيم افتراضية للأحجام والتغليف — متعارف عليها بالسعودية
  */
 import { readJsonStorage, writeJsonStorage } from '../../../utils/jsonStorage';
+export type OrderOption = { ar: string; en: string; isDefault?: boolean };
 export const DEFAULT_SIZES = [
   { ar: 'صغير', en: 'Small' },
   { ar: 'وسط', en: 'Medium' },
@@ -27,23 +28,23 @@ export const DEFAULT_PACKAGING = [
 const STORAGE_KEY_SIZES = 'noorix_order_sizes';
 const STORAGE_KEY_PACKAGING = 'noorix_order_packaging';
 
-function loadCustom(companyId: any, key: any) {
+function loadCustom(companyId: string, key: string): OrderOption[] {
   const parsed = readJsonStorage(`${key}_${companyId}`, null);
-  return Array.isArray(parsed) ? parsed : [];
+  return Array.isArray(parsed) ? parsed.filter((item): item is OrderOption => typeof item === 'object' && item !== null && 'ar' in item) : [];
 }
 
-function saveCustom(companyId: any, key: any, items: any) {
+function saveCustom(companyId: string, key: string, items: OrderOption[]) {
   if (!writeJsonStorage(`${key}_${companyId}`, items)) {
     console.warn('Failed to save order defaults to localStorage');
   }
 }
 
-export function getSizesOptions(companyId: any) {
+export function getSizesOptions(companyId: string): OrderOption[] {
   const custom = loadCustom(companyId, STORAGE_KEY_SIZES);
-  const defaults = DEFAULT_SIZES.map((d: any) => ({ ar: d.ar, en: d.en, isDefault: true }));
-  const customMapped = custom.map((c: any) => ({ ar: c.ar, en: c.en || '', isDefault: false }));
-  const seen = new Set();
-  return [...defaults, ...customMapped].filter((x: any) => {
+  const defaults = DEFAULT_SIZES.map((d) => ({ ar: d.ar, en: d.en, isDefault: true }));
+  const customMapped = custom.map((c) => ({ ar: c.ar, en: c.en || '', isDefault: false }));
+  const seen = new Set<string>();
+  return [...defaults, ...customMapped].filter((x) => {
     const k = (x.ar || '').trim().toLowerCase();
     if (!k || seen.has(k)) return false;
     seen.add(k);
@@ -51,12 +52,12 @@ export function getSizesOptions(companyId: any) {
   });
 }
 
-export function getPackagingOptions(companyId: any) {
+export function getPackagingOptions(companyId: string): OrderOption[] {
   const custom = loadCustom(companyId, STORAGE_KEY_PACKAGING);
-  const defaults = DEFAULT_PACKAGING.map((d: any) => ({ ar: d.ar, en: d.en, isDefault: true }));
-  const customMapped = custom.map((c: any) => ({ ar: c.ar, en: c.en || '', isDefault: false }));
-  const seen = new Set();
-  return [...defaults, ...customMapped].filter((x: any) => {
+  const defaults = DEFAULT_PACKAGING.map((d) => ({ ar: d.ar, en: d.en, isDefault: true }));
+  const customMapped = custom.map((c) => ({ ar: c.ar, en: c.en || '', isDefault: false }));
+  const seen = new Set<string>();
+  return [...defaults, ...customMapped].filter((x) => {
     const k = (x.ar || '').trim().toLowerCase();
     if (!k || seen.has(k)) return false;
     seen.add(k);
@@ -64,20 +65,20 @@ export function getPackagingOptions(companyId: any) {
   });
 }
 
-export function addCustomSize(companyId: any, ar: any, en: any) {
+export function addCustomSize(companyId: string, ar: string, en?: string) {
   const custom = loadCustom(companyId, STORAGE_KEY_SIZES);
   const trimmed = (ar || '').trim();
   if (!trimmed) return;
-  if (custom.some((c: any) => (c.ar || '').toLowerCase() === trimmed.toLowerCase())) return;
+  if (custom.some((c) => (c.ar || '').toLowerCase() === trimmed.toLowerCase())) return;
   custom.push({ ar: trimmed, en: (en || '').trim() });
   saveCustom(companyId, STORAGE_KEY_SIZES, custom);
 }
 
-export function addCustomPackaging(companyId: any, ar: any, en: any) {
+export function addCustomPackaging(companyId: string, ar: string, en?: string) {
   const custom = loadCustom(companyId, STORAGE_KEY_PACKAGING);
   const trimmed = (ar || '').trim();
   if (!trimmed) return;
-  if (custom.some((c: any) => (c.ar || '').toLowerCase() === trimmed.toLowerCase())) return;
+  if (custom.some((c) => (c.ar || '').toLowerCase() === trimmed.toLowerCase())) return;
   custom.push({ ar: trimmed, en: (en || '').trim() });
   saveCustom(companyId, STORAGE_KEY_PACKAGING, custom);
 }
