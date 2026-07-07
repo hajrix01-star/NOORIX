@@ -35,6 +35,7 @@
     "check:orders-governance": "node scripts/check-orders-governance.mjs",
     "check:chat-governance": "node scripts/check-chat-governance.mjs",
     "check:login-theme-governance": "node scripts/check-login-theme-governance.mjs",
+    "check:system-core-governance": "node scripts/check-system-core-governance.mjs",
     "check:owner-governance": "node scripts/check-owner-governance.mjs",
     "check:purchases-governance": "node scripts/check-purchases-governance.mjs",
     "check:sales-governance": "node scripts/check-sales-governance.mjs",

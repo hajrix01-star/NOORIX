@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 import Toast from '../components/Toast';
 
-export type ToastType = 'success' | 'error' | string;
+export type ToastType = 'success' | 'error' | 'warning' | 'info' | string;
 
 export type ToastContextValue = {
   showToast: (message: unknown, type?: ToastType) => void;

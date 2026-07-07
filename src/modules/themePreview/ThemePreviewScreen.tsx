@@ -2,14 +2,24 @@
  * ThemePreviewScreen — معاينة الثيم: أشكال الكروت + معرض مكوّنات مرقّم للمرجعية
  */
 import React, { useMemo } from 'react';
-import { useTabSearchParam } from '../hooks/useTabSearchParam';
-import { useTranslation } from '../i18n/useTranslation';
-import { useApp } from '../context/AppContext';
-import { CARD_STYLES, CARD_STYLE_KEY } from '../constants/cardStyles';
-import { ScreenShell, ScreenTitle, ScreenTabs } from '../ui';
-import ThemeUILabTab, { ShadcnInspiredDateFilterSamples } from './themePreview/ThemeUILabTab';
+import { useTabSearchParam } from '../../hooks/useTabSearchParam';
+import { useTranslation } from '../../i18n/useTranslation';
+import { useApp } from '../../context/AppContext';
+import { CARD_STYLES, CARD_STYLE_KEY } from '../../constants/cardStyles';
+import type { CardStyleDefinition, CardStyleId } from '../../constants/cardStyles';
+import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
+import ThemeUILabTab, { ShadcnInspiredDateFilterSamples } from './ThemeUILabTab';
 
-function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSelect, lang }: any) {
+type ThemePreviewTabId = 'filters' | 'cards' | 'uilab';
+
+type CardPreviewProps = CardStyleDefinition & {
+  styleId: CardStyleId;
+  isSelected: boolean;
+  onSelect: (id: CardStyleId) => void;
+  lang: string;
+};
+
+function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSelect, lang }: CardPreviewProps) {
   const name = lang === 'ar' ? nameAr : nameEn;
   const desc = lang === 'ar' ? descAr : descEn;
   const previewClass = `nx-theme-card-preview nx-theme-card-preview--${Number(styleId) || 1}${isSelected ? ' nx-theme-card-preview--selected' : ''}`;
@@ -20,7 +30,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
       onClick={() => onSelect(styleId)}
       role="button"
       tabIndex={0}
-      onKeyDown={(e: any) => { if (e.key === 'Enter' || e.key === ' ') onSelect(styleId); }}
+      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => { if (e.key === 'Enter' || e.key === ' ') onSelect(styleId); }}
     >
       <div>
         <div className="text-[11px] font-bold text-noorix-muted mb-1 tracking-[0.05em]">#{styleId}</div>
@@ -35,7 +45,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
   );
 }
 
-const THEME_PREVIEW_TAB_IDS = ['filters', 'cards', 'uilab'];
+const THEME_PREVIEW_TAB_IDS: readonly ThemePreviewTabId[] = ['filters', 'cards', 'uilab'];
 
 export default function ThemePreviewScreen() {
   const { t, lang } = useTranslation();
@@ -52,11 +62,11 @@ export default function ThemePreviewScreen() {
     [t],
   );
 
-  const handleSelect = (id: any) => {
+  const handleSelect = (id: CardStyleId) => {
     setCardStyle(id);
     try {
       localStorage.setItem(CARD_STYLE_KEY, String(id));
-    } catch (_: any) {}
+    } catch {}
   };
 
   return (
@@ -82,9 +92,10 @@ export default function ThemePreviewScreen() {
           <div className="flex flex-col gap-5">
             <p className="text-[14px] text-noorix-muted m-0">{t('themePreviewCardsIntro')}</p>
             <div className="grid gap-5 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
-              {CARD_STYLES.map((item: any) => (
+              {CARD_STYLES.map((item) => (
                 <CardPreview
                   key={item.id}
+                  id={item.id}
                   styleId={item.id}
                   nameAr={item.nameAr}
                   nameEn={item.nameEn}

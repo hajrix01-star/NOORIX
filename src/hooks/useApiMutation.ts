@@ -43,7 +43,7 @@ export function useApiMutation(options: any) {
   return useMutation<any, Error, any, unknown>({
     mutationFn: wrappedMutationFn,
     ...rest,
-    onSuccess: async (data: any, variables: any, context: any) => {
+    onSuccess: async (data, variables, context) => {
       if (typeof userOnSuccess === 'function') {
         await userOnSuccess(data, variables, context);
       }
@@ -59,7 +59,7 @@ export function useApiMutation(options: any) {
         if (msg) showToast(msg, 'success');
       }
     },
-    onError: async (error: any, variables: any, context: any) => {
+    onError: async (error, variables, context) => {
       if (typeof userOnError === 'function') {
         await userOnError(error, variables, context);
       }

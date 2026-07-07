@@ -29,7 +29,7 @@ const STORAGE_KEY_SIZES = 'noorix_order_sizes';
 const STORAGE_KEY_PACKAGING = 'noorix_order_packaging';
 
 function loadCustom(companyId: string, key: string): OrderOption[] {
-  const parsed = readJsonStorage(`${key}_${companyId}`, null);
+  const parsed = readJsonStorage<unknown>(`${key}_${companyId}`, null);
   return Array.isArray(parsed) ? parsed.filter((item): item is OrderOption => typeof item === 'object' && item !== null && 'ar' in item) : [];
 }
 

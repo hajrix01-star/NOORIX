@@ -15,7 +15,9 @@ export { sumAmounts } from './math-engine';
  * @param {number|Decimal|null|undefined} n - القيمة
  * @param {number} maxDecimals - الحد الأقصى للخانات العشرية (1 افتراضي)
  */
-export function fmt(n: any, maxDecimals: any = 1) {
+type FormatNumberInput = unknown;
+
+export function fmt(n: FormatNumberInput, maxDecimals: number = 1) {
   const raw = n instanceof Decimal ? n.toNumber() : Number(n ?? 0);
   const num = Number.isFinite(raw) ? raw : 0;
   return num.toLocaleString('en', {
@@ -27,7 +29,7 @@ export function fmt(n: any, maxDecimals: any = 1) {
 /**
  * تنسيق مبالغ الضريبة في واجهات الإفصاح (Hajri + تقرير الضريبة) — خانة عشرية كحد أقصى.
  */
-export function fmtTax(n: any) {
+export function fmtTax(n: FormatNumberInput) {
   const raw = n instanceof Decimal ? n.toNumber() : Number(n ?? 0);
   const num = Number.isFinite(raw) ? raw : 0;
   return num.toLocaleString('en', {
@@ -39,11 +41,17 @@ export function fmtTax(n: any) {
 /**
  * حساب الضريبة العكسية للتنسيق والعرض.
  */
-export function calcReverseVat(totalInclusive: any, isTaxable: any) {
+export function calcReverseVat(totalInclusive: FormatNumberInput, isTaxable: boolean) {
   try {
-    const { net, tax } = splitTaxFromTotal(totalInclusive, isTaxable);
+    const amount =
+      totalInclusive instanceof Decimal ||
+      typeof totalInclusive === 'number' ||
+      typeof totalInclusive === 'string'
+        ? totalInclusive
+        : 0;
+    const { net, tax } = splitTaxFromTotal(amount, isTaxable);
     if (net.lte(0) && tax.lte(0)) return { net: '', tax: '' };
-    const smartStr = (d: any) => {
+    const smartStr = (d: Decimal) => {
       const v = d.toNumber();
       return v.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
     };

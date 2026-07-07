@@ -1,9 +1,10 @@
 import type { ApiParsedResult } from '../../../types/api';
+import type { CompanyListItem } from '../../../context/appTypes';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
 // ——— موارد ———
-export async function getCompanies(includeArchived: any = false): Promise<ApiParsedResult> {
-  return apiGet('/api/v1/companies', includeArchived ? { includeArchived: 'true' } : {});
+export async function getCompanies(includeArchived = false): Promise<ApiParsedResult<CompanyListItem[]>> {
+  return apiGet<CompanyListItem[]>('/api/v1/companies', includeArchived ? { includeArchived: 'true' } : {});
 }
 
 export async function getCompany(id: string): Promise<ApiParsedResult> {
@@ -91,8 +92,8 @@ export async function getLedgerEntries(
   companyId: string,
   fromDate: string,
   toDate: string,
-  page: any = 1,
-  pageSize: any = 50,
+  page: number = 1,
+  pageSize: number = 50,
   q?: string,
 ): Promise<ApiParsedResult> {
   const params: Record<string, string> = {

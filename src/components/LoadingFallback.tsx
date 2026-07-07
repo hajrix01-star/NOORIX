@@ -9,7 +9,11 @@ import React from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import Spinner from '../ui/Spinner';
 
-export default function LoadingFallback({ fullScreen = false }: any) {
+type LoadingFallbackProps = {
+  fullScreen?: boolean;
+};
+
+export default function LoadingFallback({ fullScreen = false }: LoadingFallbackProps) {
   const { t } = useTranslation();
 
   return (

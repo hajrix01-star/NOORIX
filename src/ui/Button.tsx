@@ -55,8 +55,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
     className = '',
     children,
     ...rest
-  }: any,
-  ref: any,
+  },
+  ref,
 ) {
   const buttonStyle = {
     ...(styleVars || null),

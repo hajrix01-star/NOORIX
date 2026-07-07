@@ -58,7 +58,7 @@ const TIMEOUT_MS = 12000;
 export async function safeFetch(
   url: string,
   options: RequestInit = {},
-  timeout: any = TIMEOUT_MS,
+  timeout: number = TIMEOUT_MS,
 ) {
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeout);
@@ -148,7 +148,7 @@ const TRANSIENT_HTTP = new Set([502, 503, 504]);
 const API_GET_TRANSIENT_ATTEMPTS = 3;
 
 function sleepMs(ms: number) {
-  return new Promise((resolve: any) => setTimeout(resolve, ms));
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
 export async function parseResponse<T = any>(
@@ -181,7 +181,7 @@ export async function parseResponse<T = any>(
       : (data?.message || data?.error || res.statusText);
     return { success: false, error: String(msg || 'خطأ'), code: res.status };
   }
-  return { success: true, data: data?.data ?? data };
+  return { success: true, data: (data?.data ?? data) as T };
 }
 
 export function throwIfApiFailed(res: unknown, fallbackMessage: string = 'طلب فشل'): void {
@@ -250,7 +250,7 @@ export async function apiGet<T = any>(
   params: Record<string, string | number | boolean | null | undefined> = {},
 ): Promise<ApiParsedResult<T>> {
   const url = new URL(path, getApiBaseUrl());
-  Object.entries(params).forEach(([k, v]: any) => {
+  Object.entries(params).forEach(([k, v]) => {
     if (v != null && v !== '') url.searchParams.set(k, String(v));
   });
 
@@ -259,7 +259,7 @@ export async function apiGet<T = any>(
   for (let attempt = 0; attempt < API_GET_TRANSIENT_ATTEMPTS; attempt++) {
     const doFetch = async () => {
       const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
-      return parseResponse(res);
+      return parseResponse<T>(res);
     };
     try {
       const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });

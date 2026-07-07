@@ -3,7 +3,17 @@
  */
 export const CARD_STYLE_KEY = 'noorix-card-style';
 
-export const CARD_STYLES = [
+export type CardStyleId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+export type CardStyleDefinition = {
+  id: CardStyleId;
+  nameAr: string;
+  nameEn: string;
+  descAr: string;
+  descEn: string;
+};
+
+export const CARD_STYLES: readonly CardStyleDefinition[] = [
   { id: 1, nameAr: 'بسيط نظيف', nameEn: 'Minimal Clean', descAr: 'حدود رفيعة وظل خفيف', descEn: 'Thin borders, subtle shadow' },
   { id: 2, nameAr: 'مرتفع ناعم', nameEn: 'Elevated Soft', descAr: 'ظل ناعم وزوايا دائرية', descEn: 'Soft shadow, rounded corners' },
   { id: 3, nameAr: 'زجاجي', nameEn: 'Glass Morphism', descAr: 'تأثير زجاج ضبابي', descEn: 'Frosted glass effect' },

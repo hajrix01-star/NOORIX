@@ -56,7 +56,7 @@ export function useApiListQuery<TItem, TData = TItem[]>({
 }: ApiListQueryOptions<TItem, TData>) {
   return useQuery<TItem[], Error, TData, QueryKey>({
     ...options,
-    queryFn: async () => unwrapApiList<TItem>((await queryFn()) as any, fallbackMessage),
+    queryFn: async () => unwrapApiList<TItem>((await queryFn()) as ApiParsedResult<any>, fallbackMessage),
   });
 }
 

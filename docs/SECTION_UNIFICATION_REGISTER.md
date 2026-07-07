@@ -1156,6 +1156,82 @@ Closed on 2026-07-07 with local commit `92d85884 finalize login and theme previe
   - `check-node-scripts` passed after adding Login/Theme governance.
   - Strict Login/Theme scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the closure scope.
 
+## System Core / Shared Foundation
+
+Closed on 2026-07-07 with local commit `Pending local commit`.
+
+### Scope
+
+- App shell and route prefetch:
+  - `src/App.tsx`
+  - `src/utils/routePrefetch.ts`
+- Theme Preview placement and card style contract:
+  - `src/modules/themePreview/ThemePreviewScreen.tsx`
+  - `src/constants/cardStyles.ts`
+- Shared typing/display helpers:
+  - `src/i18n`
+  - `src/utils/format.ts`
+  - `src/utils/moneyInput.ts`
+  - `src/utils/jsonStorage.ts`
+  - `src/utils/exportNormalize.ts`
+  - `src/utils/storedLanguage.ts`
+- Shared UI primitives tightened in this pass:
+  - `Button`
+  - `Badge`
+  - `AdaptiveSheet`
+  - `FilterScrollStrip`
+  - `SparkLine`
+  - `Toast`
+  - `LoadingFallback`
+  - `SidebarIcons`
+- Governance:
+  - `scripts/check-system-core-governance.mjs`
+
+### Centralized
+
+- Theme Preview is no longer an orphan file under `src/modules`; it now lives under `src/modules/themePreview`.
+- App route lazy-loading and route prefetch now point to the same Theme Preview module folder.
+- Card style ids and definitions now have a central typed contract.
+- Translation helpers now expose typed language/replacement contracts while keeping compatibility with existing `t(key, ...args)` call sites.
+- Money/display helpers no longer use local `any` in the cleaned system-core strict files.
+- JSON storage helpers now use a generic read contract instead of untyped values.
+- Badge status rendering remains backward-compatible through `Badge.fromStatus`, but the component itself now has typed props.
+- System Core governance now protects the cleaned shared files from reintroducing real `any`, suppression comments, TODO/FIXME, or the orphan Theme Preview file.
+
+### Official Numbers
+
+- This pass did not move official financial formulas because the section closures already moved the known official accounting flows to backend or documented domain models.
+- `format`, `fmtTax`, and `calcReverseVat` remain display/draft-format helpers only.
+- The System Core pass confirms that the app shell, translation layer, route prefetch, theme preview, and cleaned UI primitives do not own official accounting, tax, or operational totals.
+
+### Protected Compatibility Boundaries
+
+- `src/types/api/http.ts`
+- `src/services/core/apiHttp.ts`
+- `src/hooks/useApiMutation.ts`
+- `src/hooks/useApiQuery.ts`
+
+These files still preserve legacy API compatibility where some older endpoints and mutations are not fully domain-typed yet. They are now treated as protected compatibility boundaries, not a pattern for new code. Future endpoint tightening should be done endpoint-by-endpoint with tests, not by silently widening section code.
+
+### Final System Unification Candidates
+
+- Replace the remaining loose API response defaults with strict endpoint contracts gradually by domain.
+- Convert `useApiMutation` callers to a single result convention: either API envelope everywhere or unwrapped data everywhere.
+- Continue shrinking shared UI primitive `any` in SmartTable, import/export utilities, and older shell components.
+- Promote print/export and editable-grid exceptions to central primitives after the compatibility boundaries are tightened.
+
+### Closure Checks
+
+- 2026-07-07 System Core technical closure:
+  - `tsc --noEmit` passed.
+  - `check:system-core-governance` passed.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - `check-node-scripts` passed after adding System Core governance.
+  - Strict System Core scan found no real `any`, `as any`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` in the files protected by `check:system-core-governance`.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:

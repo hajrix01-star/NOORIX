@@ -21,7 +21,28 @@ const SIZE_CLASS = {
   md: 'text-[12px] px-2.5 py-0.5',
 };
 
-export default function Badge({ color = 'gray', size = 'md', dot = false, className = '', children, ...rest }: any) {
+export type BadgeColor = keyof typeof BADGE_COLORS | string;
+export type BadgeSize = keyof typeof SIZE_CLASS;
+
+export type BadgeProps = React.ComponentPropsWithoutRef<'span'> & {
+  color?: BadgeColor;
+  size?: BadgeSize;
+  dot?: boolean;
+  label?: React.ReactNode;
+};
+
+export type BadgeStatusMap = Record<string, { color?: BadgeColor; label?: React.ReactNode } | unknown>;
+
+export type BadgeFromStatusResult = {
+  color: BadgeColor;
+  children: React.ReactNode;
+};
+
+type BadgeComponent = ((props: BadgeProps) => React.ReactElement) & {
+  fromStatus: (status: unknown, map?: BadgeStatusMap) => BadgeFromStatusResult;
+};
+
+function BadgeBase({ color = 'gray', size = 'md', dot = false, className = '', children, label, ...rest }: BadgeProps) {
   const palette = BADGE_COLORS[color as keyof typeof BADGE_COLORS] ?? BADGE_COLORS.gray;
   const badgeStyle = {
     '--nx-badge-bg': palette.bg,
@@ -44,12 +65,21 @@ export default function Badge({ color = 'gray', size = 'md', dot = false, classN
           aria-hidden="true"
         />
       )}
-      {children}
+      {children ?? label}
     </span>
   );
 }
 
-Badge.fromStatus = function fromStatus(status: any, map: any) {
-  const entry = map?.[status];
-  return { color: entry?.color ?? 'gray', children: entry?.label ?? status ?? '—' };
+const Badge = BadgeBase as BadgeComponent;
+
+Badge.fromStatus = function fromStatus(status: unknown, map?: BadgeStatusMap) {
+  const key = status == null ? '' : String(status);
+  const rawEntry = map?.[key];
+  const entry = rawEntry && typeof rawEntry === 'object'
+    ? rawEntry as { color?: BadgeColor; label?: React.ReactNode }
+    : undefined;
+  const children = entry?.label ?? (status == null ? '—' : String(status));
+  return { color: entry?.color ?? 'gray', children };
 };
+
+export default Badge;

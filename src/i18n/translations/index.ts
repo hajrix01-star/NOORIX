@@ -27,6 +27,11 @@ const t = Object.assign(
   dashboard
 );
 
+export type TranslationKey = keyof typeof t;
+export type TranslationLanguage = 'ar' | 'en';
+export type TranslationReplacement = unknown;
+export type TranslationNamedReplacements = Record<string, TranslationReplacement>;
+
 /**
  * استرجاع النص حسب اللغة
  * @param {keyof typeof t} key - مفتاح الترجمة
@@ -36,7 +41,11 @@ const t = Object.assign(
  *   - وإلا → استبدال ترتيبي:               t('key', lang, 'أحمد', 3)    → {0} {1}
  * @returns {string}
  */
-export function getText(key: any, lang: any = 'ar', ...replacements: any[]) {
+export function getText(
+  key: TranslationKey | string,
+  lang: TranslationLanguage = 'ar',
+  ...replacements: Array<TranslationReplacement | TranslationNamedReplacements>
+) : string {
   const entry = t[key];
   let text = entry ? (entry[lang] ?? entry.ar ?? String(key)) : String(key);
 
@@ -46,10 +55,10 @@ export function getText(key: any, lang: any = 'ar', ...replacements: any[]) {
     typeof replacements[0] === 'object' &&
     !Array.isArray(replacements[0])
   ) {
-    const vars = replacements[0];
-    text = text.replace(/\{(\w+)\}/g, (_: any, k: any) => String(vars[k] ?? ''));
+    const vars = replacements[0] as TranslationNamedReplacements;
+    text = text.replace(/\{(\w+)\}/g, (_match: string, k: string) => String(vars[k] ?? ''));
   } else {
-    replacements.forEach((val: any, i: any) => {
+    replacements.forEach((val, i) => {
       text = text.replace(new RegExp(`\\{${i}\\}`, 'g'), String(val ?? ''));
     });
   }
