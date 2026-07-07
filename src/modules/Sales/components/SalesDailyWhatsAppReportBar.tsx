@@ -11,7 +11,6 @@ import {
   buildDailyShiftWhatsAppText,
   openWhatsAppWithText,
 } from '../utils/salesDayShiftReport';
-import type { SalesSummaryChannelsLike } from '../utils/salesWhatsAppChannels';
 import { buildVaultLookup } from '../utils/salesWhatsAppChannels';
 import { fetchMonthAppShare } from '../utils/fetchMonthAppShare';
 import { useSalesChannels } from '../../../hooks/useSalesChannels';
@@ -43,7 +42,7 @@ export function SalesDailyWhatsAppReportBar({ companyId, companyName, disabled }
         false,
         'any',
       );
-      const report = aggregateSalesDayByShift(list as any[], reportDate);
+      const report = aggregateSalesDayByShift(list, reportDate);
       if (report.grand.summaryCount === 0) {
         window.alert(t('salesDailyWaNoDataForDay'));
         return;
@@ -60,7 +59,7 @@ export function SalesDailyWhatsAppReportBar({ companyId, companyName, disabled }
         dateLabel,
         report,
         t,
-        daySummaries: list as SalesSummaryChannelsLike[],
+        daySummaries: list,
         dayYmd: reportDate,
         lang,
         vaultById,

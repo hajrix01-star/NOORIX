@@ -2,22 +2,13 @@ import React from 'react';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { cn } from '../../../ui';
+import type { SalesChannelEntry, SalesVaultRef } from '../../../types/api/domains/sales';
 
 /** مرجع خزينة مضمّن في قناة المبيعات */
-export type DailySalesVaultRef = {
-  id?: string;
-  nameAr?: string | null;
-  nameEn?: string | null;
-  sortOrder?: number | null;
-  type?: string | null;
-};
+export type DailySalesVaultRef = SalesVaultRef;
 
 /** قناة بيع في ملخص يومي (عرض/جدول) */
-export type DailySalesChannelEntry = {
-  vaultId?: string;
-  amount?: number | string | null;
-  vault?: DailySalesVaultRef | null;
-};
+export type DailySalesChannelEntry = SalesChannelEntry;
 
 export type DailySalesChannelsChipsProps = {
   channels?: DailySalesChannelEntry[] | null;

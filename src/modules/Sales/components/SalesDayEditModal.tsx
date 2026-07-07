@@ -5,13 +5,13 @@ import { toDateInputYmd } from '../../../utils/saudiDate';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { DailySalesEditBody, DailySalesTableRow } from '../hooks/useDailySalesScreen';
 import type { ShiftEntryFormState } from '../constants/salesShiftEntry';
-import type { SalesShiftValue } from '../constants/salesShift';
 import { getSalesShiftLabel, resolveSalesSummaryShift } from '../constants/salesShift';
 import { SalesShiftEntryCard, buildShiftEntryPayload, isShiftEntryFormValid } from './SalesShiftEntryCard';
+import type { SalesInputVaultRef, SalesSummaryItem } from '../../../types/api/domains/sales';
 
 type Props = {
   day: DailySalesTableRow;
-  salesChannels: any[];
+  salesChannels: SalesInputVaultRef[];
   salesChannelsLoading?: boolean;
   salesChannelsError?: string;
   vatEnabled?: boolean;
@@ -20,12 +20,12 @@ type Props = {
   onClose: () => void;
 };
 
-function formFromSummary(summary: any): ShiftEntryFormState {
+function formFromSummary(summary: SalesSummaryItem): ShiftEntryFormState {
   return {
     customerCount: String(summary.customerCount ?? 0),
     cashOnHand: String(summary.cashOnHand ?? 0),
     notes: summary.notes || '',
-    channelAmounts: (summary.channels || []).reduce((acc: Record<string, string>, ch: any) => {
+    channelAmounts: (summary.channels || []).reduce((acc: Record<string, string>, ch) => {
       if (ch?.vaultId) acc[ch.vaultId] = String(ch.amount ?? 0);
       return acc;
     }, {}),
@@ -52,19 +52,19 @@ export function SalesDayEditModal({
 
   useEffect(() => {
     setTxDate(toDateInputYmd(day.transactionDate));
-    setForms(Object.fromEntries(summaries.map((summary: any) => [summary.id, formFromSummary(summary)])));
+    setForms(Object.fromEntries(summaries.map((summary) => [summary.id, formFromSummary(summary)])));
   }, [day, summaries]);
 
   const valid = useMemo(() => {
     if (salesChannelsLoading || !!salesChannelsError || summaries.length === 0) return false;
-    return summaries.every((summary: any) => {
+    return summaries.every((summary) => {
       const form = forms[summary.id];
       return form ? isShiftEntryFormValid(form, salesChannels) : false;
     });
   }, [forms, salesChannels, salesChannelsError, salesChannelsLoading, summaries]);
 
   const dayTotal = useMemo(
-    () => summaries.reduce((sum: any, summary: any) => sum.plus(sumObjectValues(forms[summary.id]?.channelAmounts)), sumObjectValues({})),
+    () => summaries.reduce((sum, summary) => sum.plus(sumObjectValues(forms[summary.id]?.channelAmounts)), sumObjectValues({})),
     [forms, summaries],
   );
 
@@ -76,7 +76,7 @@ export function SalesDayEditModal({
     }
     setSaving(true);
     try {
-      await onSaved(summaries.map((summary: any) => {
+      await onSaved(summaries.map((summary) => {
         const shift = resolveSalesSummaryShift(summary);
         return {
           id: summary.id,
@@ -87,8 +87,8 @@ export function SalesDayEditModal({
         };
       }));
       onClose();
-    } catch (e: any) {
-      setError(e?.message || 'فشل التحديث');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'فشل التحديث');
     } finally {
       setSaving(false);
     }
@@ -136,8 +136,8 @@ export function SalesDayEditModal({
       </div>
 
       <div className="flex flex-col gap-3">
-        {summaries.map((summary: any) => {
-          const shift = resolveSalesSummaryShift(summary) as SalesShiftValue;
+        {summaries.map((summary) => {
+          const shift = resolveSalesSummaryShift(summary);
           return (
             <div key={summary.id} className="flex flex-col gap-2">
               <div className="text-[12px] font-bold text-noorix-muted">

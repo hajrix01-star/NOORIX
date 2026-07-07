@@ -10,6 +10,7 @@ import { TenantPrismaService }   from '../prisma/tenant-prisma.service';
 import { FinancialCoreService } from '../financial-core/financial-core.service';
 import { toYmd } from '../common/utils/to-ymd.util';
 import { nowSaudi } from '../common/utils/date-utils';
+import { buildSalesSummaryListModel } from './sales-summary-list-model.util';
 
 type DashboardDailyMetricRow = {
   transactionDate: string;
@@ -511,7 +512,8 @@ export class SalesService {
       this.prisma.dailySalesSummary.count({ where: whereWithShift }),
     ]);
 
-    return { items, total, page: p, pageSize: size };
+    const model = buildSalesSummaryListModel(items);
+    return { ...model, total, page: p, pageSize: size };
   }
 
   /** تحديث شفت الملخص فقط — لا يمس القيود أو القنوات */

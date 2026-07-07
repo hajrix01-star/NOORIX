@@ -10,6 +10,7 @@ export type SalesSummaryChannelsLike = {
   status?: string;
   transactionDate?: string | null;
   shift?: unknown;
+  totalAmount?: number | string | null;
   notes?: unknown;
   channels?: DailySalesChannelEntry[] | null;
 };

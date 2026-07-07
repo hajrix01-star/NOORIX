@@ -19,8 +19,6 @@ import { useDailySalesScreen } from './hooks/useDailySalesScreen';
 import type { DailySalesTableRow } from './hooks/useDailySalesScreen';
 import { getSalesShiftLabel } from './constants/salesShift';
 
-type SalesEntrySuccessPayload = { summaryNumber?: string | number } | Array<{ summaryNumber?: string | number }>;
-
 export default function DailySalesScreen() {
   const {
     PAGE_SIZE,
@@ -67,10 +65,11 @@ export default function DailySalesScreen() {
     handleDeleteSummary,
     STATUS_MAP,
     tableData,
-    activeOnly,
+    activeRowCount,
     displayedTotal,
     totalAmountSum,
     totalCustomers,
+    avgPerCustomer,
     handleExportExcel,
     handleExportPdf,
     handlePrint,
@@ -123,14 +122,14 @@ export default function DailySalesScreen() {
     <>
       <td />
       <td colSpan={3} className="nx-tfoot-label">
-        {t('totalSummaries', activeOnly.length)}
+        {t('totalSummaries', activeRowCount)}
         {displayedTotal > PAGE_SIZE ? (
           <span className="nx-cell-muted-sm me-1.5"> (إجمالي الصفحة الحالية)</span>
         ) : null}
       </td>
       <td className="nx-tfoot-num nx-cell-num--blue">{totalCustomers.toLocaleString('en')}</td>
-      <td className="nx-tfoot-num nx-cell-num--green"><FmtNum n={totalAmountSum.toNumber()} /></td>
-      <td className="nx-tfoot-num nx-cell-num--violet">{totalCustomers > 0 ? <FmtNum n={totalAmountSum.toNumber() / totalCustomers} /> : '0.00'}</td>
+      <td className="nx-tfoot-num nx-cell-num--green"><FmtNum n={totalAmountSum} /></td>
+      <td className="nx-tfoot-num nx-cell-num--violet"><FmtNum n={avgPerCustomer} /></td>
       <td colSpan={2} />
     </>
   );
@@ -203,7 +202,7 @@ export default function DailySalesScreen() {
     <ScreenShell>
       {editingSummary && (
         <SalesDayEditModal
-          day={editingSummary as DailySalesTableRow}
+          day={editingSummary}
           salesChannels={salesChannels}
           salesChannelsLoading={salesChannelsLoading}
           salesChannelsError={salesChannelsErrorMessage}
@@ -225,7 +224,7 @@ export default function DailySalesScreen() {
           vatRate={vatRate}
           createSummary={createSummary}
           createSummaryBatch={createSummaryBatch}
-          onSuccess={(payload: SalesEntrySuccessPayload) => {
+          onSuccess={(payload) => {
             const summary = Array.isArray(payload) ? payload[0] : payload;
             showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success');
           }}

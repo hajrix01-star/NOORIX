@@ -10,14 +10,13 @@ import type { SalesShiftValue } from '../constants/salesShift';
 import type { ShiftEntryFormState } from '../constants/salesShiftEntry';
 import { shiftEntryTitleKey } from '../constants/salesShiftEntry';
 import { formatSalesApiAmount } from '../utils/salesApiPayload';
-
-type VaultRow = { id: string; nameAr?: string; nameEn?: string; [key: string]: unknown };
+import type { SalesInputVaultRef } from '../../../types/api/domains/sales';
 
 type Props = {
   shift: SalesShiftValue;
   form: ShiftEntryFormState;
   onChange: (next: ShiftEntryFormState) => void;
-  salesChannels: VaultRow[];
+  salesChannels: SalesInputVaultRef[];
   salesChannelsLoading?: boolean;
   salesChannelsError?: string;
   lang: string;
@@ -187,7 +186,7 @@ export function SalesShiftEntryCard({
 /** هل بطاقة الشفت جاهزة للحفظ؟ */
 export function isShiftEntryFormValid(
   form: ShiftEntryFormState,
-  salesChannels: VaultRow[],
+  salesChannels: SalesInputVaultRef[],
 ): boolean {
   const cc = parseInt(form.customerCount, 10) || 0;
   if (cc <= 0) return false;
@@ -200,7 +199,7 @@ export function isShiftEntryFormValid(
 export function buildShiftEntryPayload(
   shift: SalesShiftValue,
   form: ShiftEntryFormState,
-  salesChannels: VaultRow[],
+  salesChannels: SalesInputVaultRef[],
 ) {
   const channels = salesChannels
     .map((v) => ({

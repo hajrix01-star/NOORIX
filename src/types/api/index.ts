@@ -42,3 +42,31 @@ export type {
   OwnerOverviewMetric,
   OwnerOverviewMonthlyBucket,
 } from './domains/owner';
+export type {
+  CreateSalesSummaryBody,
+  DailySalesBatchItem,
+  DailySalesBatchPayload,
+  SalesChannelEntry,
+  SalesInputVaultRef,
+  SalesListShiftFilter,
+  SalesMutationResult,
+  SalesShiftValue,
+  SalesSummariesPage,
+  SalesSummaryChannelPayload,
+  SalesSummaryDayRow,
+  SalesSummaryItem,
+  SalesSummaryPageSummary,
+  SalesVaultRef,
+  UpdateSalesSummaryBody,
+} from './domains/sales';
+export type {
+  HrCompensationSnapshot,
+  HrCompensationSnapshotsResult,
+  HrDocumentUploadResult,
+  HrEmployee,
+  HrEmployeeStatus,
+  HrEmployeeTab,
+  HrEmployeesPagedResult,
+  HrMoneyLike,
+  HrMutationPayload,
+} from './domains/hr';

@@ -1,35 +1,15 @@
-/**
- * حفظ دفعة ملخصات — متسلسل عبر /summary (متوافق مع خادم بدون summary-batch).
- */
 import type { ApiParsedResult } from '../../../types/api';
+import type {
+  DailySalesBatchItem,
+  DailySalesBatchPayload,
+  SalesSummaryItem,
+} from '../../../types/api/domains/sales';
 import { toYmd } from '../../../utils/saudiDate';
 import { apiPost } from '../../core/apiHttp';
-import { postSalesSummaryWithCompat } from '../../../modules/Sales/utils/salesApiCompat';
 import {
   buildCreateSalesSummaryApiBody,
   type CreateSalesSummaryBodyInput,
 } from '../../../modules/Sales/utils/salesApiPayload';
-
-export type DailySalesBatchItem = {
-  shift: string;
-  customerCount: number;
-  cashOnHand?: string;
-  channels: { vaultId: string; amount: string }[];
-  notes?: string;
-};
-
-export type DailySalesBatchPayload = {
-  companyId: string;
-  transactionDate: string;
-  items: DailySalesBatchItem[];
-  batchIdempotencyKey?: string;
-};
-
-function extractSummaryFromInflowResponse(data: unknown): unknown {
-  if (!data || typeof data !== 'object') return data;
-  const d = data as { summary?: unknown };
-  return d.summary ?? data;
-}
 
 function itemToBodyInput(
   batch: DailySalesBatchPayload,
@@ -59,50 +39,24 @@ export function buildBatchItemApiPayload(
   return buildCreateSalesSummaryApiBody(itemToBodyInput(batch, item, index));
 }
 
-/** حفظ متسلسل — طلب /summary لكل شفت */
-export async function createDailySalesSummariesSequential(
-  body: DailySalesBatchPayload,
-): Promise<ApiParsedResult<{ summaries: unknown[]; usedLegacyNoShift?: boolean }>> {
-  const summaries: unknown[] = [];
-  let usedLegacyNoShift = false;
-
-  for (let i = 0; i < body.items.length; i++) {
-    const item = body.items[i];
-    const payload = buildBatchItemApiPayload(body, item, i);
-    const res = await postSalesSummaryWithCompat(payload);
-    if (!res.success) {
-      return {
-        success: false,
-        error: res.error ?? 'فشل حفظ أحد الملخصات',
-        code: res.code,
-      };
-    }
-    if (res.usedLegacyNoShift) usedLegacyNoShift = true;
-    summaries.push(extractSummaryFromInflowResponse(res.data));
-  }
-
-  return { success: true, data: { summaries, usedLegacyNoShift } };
-}
-
-/** POST /sales/summary-batch — عند تفعيل VITE_SALES_USE_BATCH */
 export async function postDailySalesSummaryBatch(
   body: DailySalesBatchPayload,
-): Promise<ApiParsedResult<{ summaries: unknown[] }>> {
+): Promise<ApiParsedResult<{ summaries: SalesSummaryItem[] }>> {
   const items = body.items.map((item, i) => buildBatchItemApiPayload(body, item, i));
   const res = await apiPost('/api/v1/sales/summary-batch', {
     companyId: body.companyId,
     transactionDate: toYmd(body.transactionDate) || body.transactionDate,
     items: items.map((p) => ({
-      shift: p.shift as string,
-      customerCount: p.customerCount as number,
-      cashOnHand: p.cashOnHand as string,
-      channels: p.channels as { vaultId: string; amount: string }[],
-      notes: p.notes as string | undefined,
+      shift: String(p.shift),
+      customerCount: Number(p.customerCount),
+      cashOnHand: String(p.cashOnHand ?? '0'),
+      channels: Array.isArray(p.channels) ? p.channels : [],
+      notes: typeof p.notes === 'string' ? p.notes : undefined,
     })),
     batchIdempotencyKey: body.batchIdempotencyKey,
   });
-  if (!res.success) return res as ApiParsedResult<{ summaries: unknown[] }>;
-  const raw = res.data as { summaries?: unknown[] } | undefined;
+  if (!res.success) return res;
+  const raw = res.data as { summaries?: SalesSummaryItem[] } | undefined;
   const summaries = raw?.summaries ?? (Array.isArray(raw) ? raw : []);
   return { success: true, data: { summaries } };
 }

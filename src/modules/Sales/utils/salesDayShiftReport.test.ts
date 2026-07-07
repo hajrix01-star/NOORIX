@@ -123,7 +123,7 @@ describe('buildDailyShiftWhatsAppText', () => {
             { amount: 300, vault: { type: 'app', nameAr: 'جاهز', sortOrder: 1 } },
             { amount: 700, vault: { type: 'cash', nameAr: 'نقدي', sortOrder: 2 } },
           ],
-        } as any,
+        },
       ],
       monthAppShare: { appAmount: 500, totalAmount: 2000, appPercent: 25 },
     });

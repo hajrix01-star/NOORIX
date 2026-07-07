@@ -1,5 +1,6 @@
 import { toYmd } from '../../../utils/saudiDate';
 import { roundMoney2 } from '../../../utils/moneyInput';
+import type { CreateSalesSummaryBody } from '../../../types/api/domains/sales';
 
 /** مبلغ بصيغة يقبلها الخادم: `^\d+(\.\d{1,2})?$` */
 export function formatSalesApiAmount(value: unknown): string {
@@ -42,13 +43,13 @@ export type CreateSalesSummaryBodyInput = {
 };
 
 /** جسم طلب POST /sales/summary بعد التطبيع */
-export function buildCreateSalesSummaryApiBody(input: CreateSalesSummaryBodyInput): Record<string, unknown> {
+export function buildCreateSalesSummaryApiBody(input: CreateSalesSummaryBodyInput): CreateSalesSummaryBody {
   const channels = normalizeSalesSummaryChannels(input.channels);
-  const body: Record<string, unknown> = {
+  const body: CreateSalesSummaryBody = {
     companyId: String(input.companyId),
     transactionDate: toYmd(input.transactionDate) || input.transactionDate,
     customerCount: Math.max(0, Math.trunc(Number(input.customerCount) || 0)),
-    shift: input.shift,
+    shift: input.shift === 'morning' || input.shift === 'evening' || input.shift === 'all' ? input.shift : 'all',
     cashOnHand: formatSalesApiAmount(input.cashOnHand || '0') || '0',
     channels,
   };
