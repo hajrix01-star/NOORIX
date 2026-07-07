@@ -27,10 +27,14 @@ A section is considered closed only when all of the following are true:
 | Sales | `cb1aed9f finalize sales section cleanup` | Closed | Centralized sales API contracts, backend official list/day/page model, typed hooks/actions, removed legacy shift fallback and dead edit modal. |
 | HR | `18e71122 finalize hr section cleanup` | Closed | Centralized HR/employee contracts, payroll salary snapshots, typed tabs/modals/actions, backend payroll/settlement guards, strict HR governance. |
 | Reports | `48dba7ea finalize reports section cleanup` | Closed | Centralized reports query contract, typed P&L/tax/bank/cost/detail boundaries, print/export/model split, strict reports governance across `src/modules/Reports`. |
+| Suppliers | `a5f88246 finalize suppliers section cleanup` | Closed | Centralized supplier contracts, display/form/import/export/profile-print models, typed supplier hooks, strict suppliers governance. |
+| Settings | `a1605347 finalize settings section governance closure` | Closed | Centralized settings contracts, screen/company/user/backup models, typed settings surfaces, strict settings governance. |
 | Vaults | `bd73bc55 finalize vaults section cleanup` | Closed | Centralized vault API contracts, treasury display models, typed vault hooks/components, backend period totals, safe deletion guard, strict vaults governance. |
 | Expenses | `4046f04e finalize expenses section cleanup` | Closed | Centralized expense API contracts, frontend display/draft models, backend official payment summaries, fixed/variable payment guards, strict expenses governance. |
 | Assets Register | `4fae199e finalize assets register section cleanup` | Closed | Centralized asset API contracts, asset form/warranty models, backend filtered acquisition summaries, typed warranty queue, strict assets governance. |
-| Hajri Tax | Pending local commit `finalize hajri tax section cleanup` | Technically closed | Centralized Hajri/VAT planning contracts, typed registry/editor/import flows, backend-normalized planning payload summaries, strict Hajri Tax governance. |
+| Orders | `2614d598 finalize orders section cleanup` | Closed | Centralized orders contracts, import/export helpers, order report models, backend official range summaries, strict orders governance. |
+| Smart Chat | `93ffdf87 finalize chat section cleanup` | Closed | Centralized chat contracts/endpoints, backend-owned official financial metrics, typed chat frontend, strict chat governance. |
+| Hajri Tax | `c646dc07 finalize hajri tax section cleanup` | Closed | Centralized Hajri/VAT planning contracts, typed registry/editor/import flows, backend registry metadata endpoint, strict Hajri Tax governance. |
 
 ## Invoices
 
@@ -860,7 +864,7 @@ Closed on 2026-07-07 with `4fae199e finalize assets register section cleanup`.
 
 ## Orders
 
-Closed on 2026-07-07 with pending local commit `finalize orders section cleanup`.
+Closed on 2026-07-07 with local commit `2614d598 finalize orders section cleanup`.
 
 ### Scope
 
@@ -940,7 +944,7 @@ Closed on 2026-07-07 with pending local commit `finalize orders section cleanup`
 
 ## Smart Chat
 
-Closed on 2026-07-07 with pending local commit `finalize chat section cleanup`.
+Closed on 2026-07-07 with local commit `93ffdf87 finalize chat section cleanup`.
 
 ### Scope
 
@@ -1011,7 +1015,7 @@ Closed on 2026-07-07 with pending local commit `finalize chat section cleanup`.
 
 ## Hajri Tax
 
-Technically closed on 2026-07-07 with pending local commit `finalize hajri tax section cleanup`.
+Closed on 2026-07-07 with local commit `c646dc07 finalize hajri tax section cleanup`.
 
 ### Scope
 
