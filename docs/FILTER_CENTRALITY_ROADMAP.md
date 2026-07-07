@@ -28,7 +28,9 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Dashboard API period query | Use `src/services/domains/apiEndpoints/dashboard-period-query.ts` for dashboard overview and dashboard insights query serialization, query-key normalization, and request readiness checks. |
 | Dashboard backend period DTO | Use `backend/src/common/dto/dashboard-period-query.dto.ts` and `DashboardPeriodQueryDto` for dashboard overview and reporting insights validation. |
 | Purchase batch query contract | Use `src/services/domains/apiEndpoints/purchase-batch-query.ts` for frontend purchase batch query serialization/cache keys and `PurchaseBatchSummariesQueryDto` plus `PurchaseBatchSummariesQueryContract` for backend validation/normalization. |
-| HR API query contract | Use `src/services/domains/apiEndpoints/hr-query.ts` for HR and employees query serialization, encoded mutation paths, and employees paged list params. Use `EmployeeListQueryDto` plus `EmployeeListQueryContract` for employees list backend validation/normalization. Use `HrEmployeeQueryDto`, `HrYearQueryDto`, `HrLeavesQueryDto`, `HrResidenciesQueryDto`, and `hr-query-contract` for HR tab backend validation/normalization. |
+| HR API query contract | Use `src/services/domains/apiEndpoints/hr-query.ts` for HR and employees query serialization, encoded mutation paths, employees paged list params, employee/year filters, compensation snapshot batches, payroll month filters, and delete flags. Use `EmployeeListQueryDto` plus `EmployeeListQueryContract` for employees list backend validation/normalization. Use `HrEmployeeQueryDto`, `HrYearQueryDto`, `HrLeavesQueryDto`, `HrResidenciesQueryDto`, and `hr-query-contract` for HR tab backend validation/normalization. |
+| Reports API query contract | Use `src/services/domains/apiEndpoints/reports-query.ts` for P&L, P&L detail/trend, VAT report, VAT planning, and period analytics query serialization. `reports.ts` must not hand-build report query strings. Reports governance now scans the full Reports module closure scope. |
+| Suppliers API query contract | Use `src/services/domains/apiEndpoints/suppliers-query.ts` for supplier list query serialization and `backend/src/suppliers/suppliers-query-contract.util.ts` for backend supplier list query parsing. `suppliers.ts` and `suppliers.controller.ts` must not rebuild supplier list params inline. |
 | Legacy filter imports | Keep `src/shared/components/FilterToolbar.tsx` as a compatibility shim only. |
 | Legacy searchable picker imports | Keep `src/components/common/SearchableOptionsPicker.tsx` as a compatibility shim only. |
 | Domain filters | Keep screen-owned state and API parameters for now; centralize helpers and layout first. |
@@ -55,7 +57,8 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Invoice filter reference | Use invoices as the reference for complex domain filters. | Type, supplier, category, creator, vault, notes, cancelled. |
 | Orders and purchases | Apply the same central filter composition pattern. | Lower risk than financial reports. |
 | HR filters | Backend/frontend query contracts are centralized for employee list and HR tabs; visual filter harmonization remains deferred. | Keep payroll math untouched. |
-| Financial reports | Convert only after a dedicated protected-report decision. | Do not refactor financial table semantics casually. |
+| Financial reports | Reports query centrality, P&L print/export shaping, tax model helpers, bank analysis/mapping helpers, and cost-accounting model boundaries are protected by `check:reports-governance`. | Do not refactor financial table semantics casually. |
+| Suppliers | Supplier list query contract, CSV import/export model, add/edit form model, display model, and profile print model are protected by `check:suppliers-governance`. | Supplier profile invoice numbers and totals stay sourced from invoices backend responses. |
 | Visual pass | Harmonize spacing, responsive behavior, icons, and empty/reset affordances from the central layer. | Final phase only. |
 
 ## Section Execution Ledger
@@ -66,8 +69,9 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Dashboard | `FilterToolbar`, `DateMonthScopePicker`, `SearchableOptionsPicker`, `SmartTable`, `Toolbar`, `dashboardPeriodModel`, `dashboard-period-query`, `DashboardPeriodQueryDto`, protected calendar print table builder. | Current section pass; keep calendar print generation protected and action bars centralized. |
 | Purchases | `DateFilterBar`, `FilterToolbar`, `SearchableOptionsPicker`, `SmartTable`, `purchase-batch-query`, `PurchaseBatchSummariesQueryDto`, `PurchaseBatchSummariesQueryContract`. | Current section pass; editable batch-entry grid is protected until a dedicated table-editor design pass. |
 | Orders | Pending section pass. | Reuse invoice filter composition where behavior matches. |
-| HR | `SearchableOptionsPicker`, `DateField`, `hr-query`, `EmployeeListQueryDto`, `EmployeeListQueryContract`, `HrEmployeeQueryDto`, `HrYearQueryDto`, `HrLeavesQueryDto`, `HrResidenciesQueryDto`, `hr-query-contract`, `hrKeys`, `employeeKeys`, protected payroll/document/settlement tables. | Query centrality closed for employees, payroll runs, advances, compensation snapshots, leaves, leave salary settlements, residencies, documents, movements, allowances, and deductions; visual harmonization waits for the final visual pass. |
-| Financial reports | Pending section pass. | Convert only with protected report-specific review. |
+| HR | `SearchableOptionsPicker`, `DateField`, `hr-query`, `EmployeeListQueryDto`, `EmployeeListQueryContract`, `HrEmployeeQueryDto`, `HrYearQueryDto`, `HrLeavesQueryDto`, `HrResidenciesQueryDto`, `hr-query-contract`, `hrKeys`, `employeeKeys`, protected payroll/document/settlement tables. | Query centrality closed for employees, payroll runs, advances, compensation snapshots, leaves, leave salary settlements, residencies, documents, movements, allowances, and deductions. 2026-07-07 audit passed `typecheck`, `check:hr-governance`, and full frontend test suite; visual harmonization waits for the final visual pass. |
+| Financial reports | `reports-query`, `reportKeys`, `reportHelpers`, `generalReportV2Model`, `reportsPlMonthPrint`, `taxReportTabModel`, bank analysis/mapping/export helpers, cost-accounting model/hooks, protected financial tables, `check:reports-governance`. | Reports typed/query/print/model centrality closed in workspace on 2026-07-07; visual harmonization waits for the final visual pass. |
+| Suppliers | `suppliers-query`, `supplierKeys`, `supplierDisplayModel`, `supplierFormModel`, `supplierImportExportModel`, `supplierProfilePrint`, backend `suppliers-query-contract`, `SmartTable`, central print table helpers, `check:suppliers-governance`. | Suppliers typed/query/import/export/profile-print boundaries closed in workspace on 2026-07-07; visual harmonization waits for the final visual pass. |
 
 ## Acceptance Checks
 
@@ -78,6 +82,8 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | `npm.cmd run check:dashboard-governance` | Passes when the dashboard section is touched. |
 | `npm.cmd run check:invoices-governance` | Passes. |
 | `npm.cmd run check:hr-governance` | Passes when the HR section is touched. |
+| `npm.cmd run check:reports-governance` | Passes when the reports section is touched. |
+| `npm.cmd run check:suppliers-governance` | Passes when the suppliers section is touched. |
 | `npm.cmd run check:purchases-governance` | Passes when the purchases section is touched. |
 | `npm.cmd run check:table-governance` | Passes. |
 | TypeScript | Passes. |

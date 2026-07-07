@@ -57,10 +57,21 @@ Purpose: make NOORIX's centralization rule auditable. Official accounting number
 - [x] `docs/COMPATIBILITY_DEPRECATION_PLAN.md` lists compatibility wrappers and replacements.
 - [x] Frontend/backend math wrappers are documented as temporary compatibility layers.
 - [x] HR payroll wrappers are documented as temporary compatibility layers.
+- [x] HR closure is registered with system-wide centrality boundaries in `docs/SECTION_UNIFICATION_REGISTER.md`.
+- [x] Reports closure is registered with query centrality, typed P&L/tax/bank/cost/detail boundaries, and print/export ownership boundaries.
 - [ ] Migrate trivial wrapper callers directly to `@noorix/finance-core` when risk is low.
 - [ ] Delete wrappers only after `rg` confirms no production imports remain.
 
-### E. Done Definition
+### E. Section Centrality Readiness
+
+- [x] Invoices, Purchases, Dashboard, Owner Dashboard, Sales, HR, and Reports have section entries in `docs/SECTION_UNIFICATION_REGISTER.md`.
+- [x] HR has explicit final-system migration boundaries for official calculations, query contracts, employee display, documents, editable payroll rows, and draft previews.
+- [x] HR final workspace audit passed on 2026-07-07: `npm run typecheck`, `npm run check:hr-governance`, and `npm test` with 131 files / 521 tests.
+- [x] Reports workspace audit passed on 2026-07-07: `npm run typecheck`, `npm run check:reports-governance`, `npm run check:table-governance`, targeted Reports tests 11 files / 39 tests, and full `npm test` 134 files / 531 tests.
+- [ ] Add the same final-system migration boundary table when closing each remaining section.
+- [ ] Promote a repeated pattern into `src/ui`, shared services, or backend/core only after it appears in three or more closed sections and has a governance path.
+
+### F. Done Definition
 
 This file is complete for a release when:
 

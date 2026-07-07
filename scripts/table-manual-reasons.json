@@ -22,10 +22,10 @@
       "decision": "leave",
       "reason": "payroll run rows contain editable inputs and payroll calculations."
     },
-    "src/modules/HR/components/TerminationSettlementModal.tsx": {
+    "src/modules/HR/components/terminationSettlementHelpers.ts": {
       "category": "payroll-protected",
       "decision": "leave",
-      "reason": "termination settlement is financially sensitive and printable."
+      "reason": "termination settlement print table extracted from modal; financially sensitive HR print output."
     },
     "src/modules/HR/components/useAdvanceTableModel.tsx": {
       "category": "hr-financial",
@@ -37,20 +37,20 @@
       "decision": "leave",
       "reason": "end-of-service calculation output; financial HR protected scope."
     },
-    "src/modules/HR/tabs/PayrollTab.tsx": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "payroll print/export HTML string."
-    },
-    "src/modules/HR/tabs/SalaryCalcTab.tsx": {
-      "category": "payroll-protected",
-      "decision": "leave",
-      "reason": "salary calculation tables are HR financial outputs."
-    },
     "src/modules/HR/tabs/hrPrintDocumentsTabPrintHtml.ts": {
       "category": "document-print",
       "decision": "leave",
       "reason": "dedicated HR print HTML generator."
+    },
+    "src/modules/HR/tabs/payrollTabModel.ts": {
+      "category": "print-export-html",
+      "decision": "leave",
+      "reason": "payroll run print/export table builder extracted from PayrollTab."
+    },
+    "src/modules/HR/tabs/salaryCalcPrint.ts": {
+      "category": "payroll-protected",
+      "decision": "leave",
+      "reason": "salary calculator print HTML extracted from SalaryCalcTab; protected HR financial print output."
     },
     "src/modules/HR/utils/payrollRunSignatureSlipsPrint.ts": {
       "category": "document-print",
@@ -125,7 +125,12 @@
     "src/modules/Reports/GeneralReportV2Screen.tsx": {
       "category": "financial-report",
       "decision": "leave",
-      "reason": "general report v2 contains financial hierarchy and print/export HTML."
+      "reason": "general report v2 contains the live financial hierarchy matrix; printable HTML moved to generalReportV2Model."
+    },
+    "src/modules/Reports/generalReportV2Model.ts": {
+      "category": "print-financial",
+      "decision": "leave",
+      "reason": "general report v2 print/export HTML builder extracted from the screen; protected financial report output."
     },
     "src/modules/Reports/ReportsDetailModal.tsx": {
       "category": "print-financial",
@@ -140,7 +145,12 @@
     "src/modules/Reports/TaxReportTab.tsx": {
       "category": "tax-protected",
       "decision": "leave",
-      "reason": "tax report financial table and print HTML; protected tax scope."
+      "reason": "tax report financial table; print HTML is extracted to taxReportTabModel."
+    },
+    "src/modules/Reports/taxReportTabModel.ts": {
+      "category": "tax-print",
+      "decision": "leave",
+      "reason": "tax report print HTML builder extracted from TaxReportTab; protected tax print output."
     },
     "src/modules/Reports/bank/bankStatementExportPrint.ts": {
       "category": "bank-print",

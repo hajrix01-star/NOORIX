@@ -1,6 +1,6 @@
 # Frontend Table Governance Status
 
-Date: 2026-07-03
+Date: 2026-07-07
 
 Status: governed; no new raw table is allowed without registry count and reason.
 
@@ -9,7 +9,7 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | Metric | Count |
 |---|---:|
 | Manual `<table>` outside `src/ui` | 53 |
-| Files with manual tables outside `src/ui` | 33 |
+| Files with manual tables outside `src/ui` | 35 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |
@@ -22,13 +22,13 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | Category | Files | Tables | Decision |
 |---|---:|---:|---|
 | `print-export-html` | 1 | 1 | leave remaining protected payroll print/export layout |
-| `print-financial` | 7 | 15 | protected financial print/export |
+| `print-financial` | 8 | 16 | protected financial print/export |
 | `document-print` | 4 | 11 | leave fixed document layout |
 | `editable-grid` | 6 | 6 | leave until editable table/control phase |
 | `payroll-protected` | 4 | 6 | protected HR financial scope |
-| `financial-report` | 3 | 4 | protected report scope |
-| `tax-protected` | 2 | 3 | protected tax scope |
-| `tax-print` | 1 | 2 | leave until `PrintTable` phase |
+| `financial-report` | 3 | 3 | protected report scope |
+| `tax-protected` | 2 | 2 | protected tax scope |
+| `tax-print` | 2 | 3 | leave until `PrintTable` phase |
 | `matrix-table` | 1 | 1 | leave until `MatrixTable` phase |
 | `bank-print` | 1 | 1 | leave until `PrintTable` phase |
 | `bank-protected` | 1 | 1 | protected bank workflow |

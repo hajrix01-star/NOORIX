@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   buildEmployeesPagedApiQuery,
   buildHrApiQuery,
+  companyDeleteLeaveQuery,
+  companyDeleteResidencyQuery,
+  companyEmployeeIdsQuery,
   companyEmployeeQuery,
+  companyEmployeeYearQuery,
+  companyPayrollMonthQuery,
   companyQuery,
   companyYearQuery,
   normalizeEmployeesPagedQueryInput,
@@ -31,6 +36,27 @@ describe('hr-query', () => {
       employeeId: 'employee-1',
     });
     expect(companyYearQuery(' company-1 ', 2026)).toEqual({ companyId: 'company-1', year: '2026' });
+    expect(companyEmployeeYearQuery(' company-1 ', ' employee-1 ', 2026)).toEqual({
+      companyId: 'company-1',
+      employeeId: 'employee-1',
+      year: '2026',
+    });
+    expect(companyEmployeeIdsQuery(' company-1 ', [' employee-1 ', '', 'employee-2'])).toEqual({
+      companyId: 'company-1',
+      employeeIds: 'employee-1,employee-2',
+    });
+    expect(companyPayrollMonthQuery(' company-1 ', '2026-07')).toEqual({
+      companyId: 'company-1',
+      payrollMonth: '2026-07',
+    });
+    expect(companyDeleteLeaveQuery(' company-1 ', true)).toEqual({
+      companyId: 'company-1',
+      voidSettlement: 'true',
+    });
+    expect(companyDeleteResidencyQuery(' company-1 ', true)).toEqual({
+      companyId: 'company-1',
+      voidInvoice: 'true',
+    });
   });
 
   it('builds employees paged params centrally', () => {
