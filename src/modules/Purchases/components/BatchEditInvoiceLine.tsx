@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { Button, DateField, Input, FmtNum, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
+import { Button, DateField, EditableNumberCell, Input, FmtNum, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
 import { splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
 import { useBatchRowFieldIds } from './useBatchRowLogic';
 import { purchaseBatchDisplayName } from '../batch/purchaseBatchDisplayModel';
@@ -241,11 +241,8 @@ export function BatchEditInvoiceLine({
         {cancelled ? (
           <FmtNum n={toPurchaseBatchFiniteNumber(inv.totalAmount)} className="nx-cell-num" />
         ) : (
-          <Input
-            type="number"
-            min="0"
+          <EditableNumberCell
             step="0.1"
-            size="sm"
             value={inv.totalAmount}
             onChange={handleAmountChange}
             className="w-full nx-font-numbers text-end"

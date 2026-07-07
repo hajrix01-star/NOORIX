@@ -40,6 +40,7 @@
     "check:kpi-summary-governance": "node scripts/check-kpi-summary-governance.mjs",
     "check:chart-state-governance": "node scripts/check-chart-state-governance.mjs",
     "check:print-export-governance": "node scripts/check-print-export-governance.mjs",
+    "check:editable-grid-governance": "node scripts/check-editable-grid-governance.mjs",
     "check:owner-governance": "node scripts/check-owner-governance.mjs",
     "check:purchases-governance": "node scripts/check-purchases-governance.mjs",
     "check:sales-governance": "node scripts/check-sales-governance.mjs",

@@ -21,7 +21,19 @@ describe('editable control primitives', () => {
 
     expect(screen.getByLabelText('Name').getAttribute('type')).toBe('text');
     expect(screen.getByLabelText('Qty').getAttribute('type')).toBe('number');
+    expect(screen.getByLabelText('Qty').getAttribute('inputmode')).toBe('decimal');
+    expect(screen.getByLabelText('Qty').getAttribute('min')).toBe('0');
     expect(screen.getByLabelText('Qty').classList.contains('text-end')).toBe(true);
+  });
+
+  it('selects number cell content on focus when requested', () => {
+    const select = vi.spyOn(HTMLInputElement.prototype, 'select').mockImplementation(() => undefined);
+    render(<EditableNumberCell aria-label="Amount" value="123" readOnly selectOnFocus />);
+
+    const input = screen.getByLabelText('Amount') as HTMLInputElement;
+    input.focus();
+
+    expect(select).toHaveBeenCalledOnce();
   });
 
   it('marks invalid editable controls with aria-invalid', () => {

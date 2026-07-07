@@ -1448,12 +1448,65 @@ Closed on 2026-07-08 as the governed print/export foundation hardening pass. Clo
   - `check:responsive-governance` passed.
   - Targeted print utility, invoice, purchase, and HR tests passed.
 
+## Editable Grid Foundation Finalization
+
+Closed on 2026-07-08 as the governed editable-grid foundation hardening pass. Closure commit is pending local commit.
+
+### Scope
+
+- Central editable cell primitives:
+  - `src/ui/EditableTextCell.tsx`
+  - `src/ui/EditableNumberCell.tsx`
+  - `src/ui/EditableCheckboxCell.tsx`
+  - `src/ui/EditableControlPrimitives.test.tsx`
+- Migrated editable row-entry surfaces:
+  - `src/modules/HR/components/PayrollRunFormModal/components/PayrollRunRowsTable.tsx`
+  - `src/modules/Purchases/components/BatchEditInvoiceLine.tsx`
+- Governance:
+  - `scripts/check-editable-grid-governance.mjs`
+  - `package.json` script `check:editable-grid-governance`
+
+### Centralized
+
+- `EditableNumberCell` now owns governed row-entry number defaults:
+  - numeric input type
+  - decimal input mode
+  - non-negative default minimum
+  - optional `selectOnFocus`
+- Payroll run editable money cells now use `EditableNumberCell` instead of local `Input type="number"` controls.
+- Purchase batch editable table total cell now uses `EditableNumberCell`.
+- Editable-grid governance now protects the closed payroll and purchase row-entry boundaries from drifting back to local numeric controls.
+
+### Protected Exceptions
+
+- Full forms with labels remain on `Input`; this pass targets editable row/cell contexts, not every numeric form field.
+- Official payroll, purchase, tax, and accounting calculations remain owned by backend or existing domain models.
+- Complex editable financial grids that also own row creation, deletion, validation, or document semantics remain section-owned until each family receives a dedicated conversion pass.
+
+### Final System Unification Candidates
+
+- Convert additional safe editable row-entry controls in Orders, Expenses, Sales, HR quick entry, and Assets after their exact row semantics are confirmed.
+- Consider a central editable row action cluster only after repeated add/remove/cancel patterns converge.
+- Add stricter governance against new local `Input type="number"` inside governed row-entry tables once the remaining protected grids are migrated.
+
+### Closure Checks
+
+- 2026-07-08 Editable-grid foundation closure:
+  - `tsc --noEmit` passed.
+  - `check:editable-grid-governance` passed.
+  - `check-node-scripts` passed after adding Editable-grid governance.
+  - `check:hr-governance` passed.
+  - `check:purchases-governance` passed.
+  - `check:table-governance` passed.
+  - `check:responsive-governance` passed.
+  - Targeted UI, payroll, and purchase tests passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
 
 - Continue print/export conversion for protected financial document bodies one family at a time.
-- Central editable-grid standard for financial row-entry screens.
+- Continue editable-grid conversion for protected financial row-entry screens one family at a time.
 - Central name display helper adoption across all sections: `nameAr`, `nameEn`, `name`.
 - Central official-number rule: backend or shared domain model owns accounting values; frontend owns presentation only.
 - Expanded governance that prevents new local financial formulas, local date query serialization, raw filters, or section-specific card primitives once final system primitives exist.
