@@ -1559,6 +1559,49 @@ Closed on 2026-07-08 as the governed display-name foundation pass. Closure commi
   - `check:hajri-tax-governance` passed.
   - Targeted display-name and affected-section tests passed.
 
+## Official Numbers Governance Finalization
+
+Closed on 2026-07-08 as the governed official-number boundary pass. Closure commit is pending local commit.
+
+### Scope
+
+- System-wide official-number governance:
+  - `scripts/check-official-numbers-governance.mjs`
+  - `package.json` script `check:official-numbers-governance`
+- Protected frontend boundaries that are allowed to use finance formulas only as documented draft/model/print exceptions:
+  - purchase batch draft/edit/print surfaces
+  - sales entry and edit draft previews
+  - expense, invoice, treasury, reports, and HR calculation models/wrappers
+
+### Centralized
+
+- The system rule is now executable governance, not only a written convention:
+  - backend or shared domain model owns official accounting, tax, payroll, and operational values
+  - frontend owns presentation only
+  - local frontend fallbacks must not invent official figures when backend/model authority is unavailable
+- New direct formula use in screens, components, or hooks must either move to backend/a central model or be added as an explicit protected draft/print/model boundary.
+- Suspicious fallback aggregation around official-number helpers is now blocked in screen/hook files.
+
+### Protected Exceptions
+
+- Draft entry previews remain allowed where the user needs immediate input feedback before save; persisted official values still come from backend/domain authority.
+- Protected print surfaces may total already-authoritative rows for document layout until each print family is converted to a stronger backend/document model.
+- Compatibility calculation wrappers remain allowed only as pass-through boundaries to `@noorix/finance-core`; they must not grow new local business logic.
+
+### Final System Unification Candidates
+
+- Move remaining protected draft previews to backend preview endpoints or shared draft models when the same pattern appears across more sections.
+- Convert protected print totals to backend/document models one document family at a time.
+- Expand the governance from formula imports to AST-level formula classification if future frontend calculation patterns become more complex.
+
+### Closure Checks
+
+- 2026-07-08 Official-number governance closure:
+  - `tsc --noEmit` passed.
+  - `check:official-numbers-governance` passed.
+  - `check-node-scripts` passed after adding Official-number governance.
+  - Existing protected exceptions were reviewed and documented as draft, model, wrapper, or print boundaries.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
@@ -1566,7 +1609,6 @@ These items should wait until more sections are closed, unless a future section 
 - Continue print/export conversion for protected financial document bodies one family at a time.
 - Continue editable-grid conversion for protected financial row-entry screens one family at a time.
 - Continue display-name helper adoption across remaining display-only surfaces.
-- Central official-number rule: backend or shared domain model owns accounting values; frontend owns presentation only.
 - Expanded governance that prevents new local financial formulas, local date query serialization, raw filters, or section-specific card primitives once final system primitives exist.
 
 ## Open Decisions For Future Sections
