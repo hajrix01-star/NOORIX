@@ -27,6 +27,7 @@ A section is considered closed only when all of the following are true:
 | Sales | `cb1aed9f finalize sales section cleanup` | Closed | Centralized sales API contracts, backend official list/day/page model, typed hooks/actions, removed legacy shift fallback and dead edit modal. |
 | HR | `18e71122 finalize hr section cleanup` | Closed | Centralized HR/employee contracts, payroll salary snapshots, typed tabs/modals/actions, backend payroll/settlement guards, strict HR governance. |
 | Reports | `48dba7ea finalize reports section cleanup` | Closed | Centralized reports query contract, typed P&L/tax/bank/cost/detail boundaries, print/export/model split, strict reports governance across `src/modules/Reports`. |
+| Vaults | `bd73bc55 finalize vaults section cleanup` | Closed | Centralized vault API contracts, treasury display models, typed vault hooks/components, backend period totals, safe deletion guard, strict vaults governance. |
 
 ## Invoices
 
@@ -647,6 +648,63 @@ Extracted Settings ownership files:
 | `src/modules/Settings/components/backup/backupTabHelpers.ts` | Backup display labels, counts, dates, and badge colors |
 | `src/services/domains/apiEndpoints/backup.ts` | Backup endpoint operations, safe blob downloads, and archive uploads |
 
+## Vaults
+
+Closed on 2026-07-07 with `bd73bc55 finalize vaults section cleanup`.
+
+### Scope
+
+- Frontend treasury section:
+  - `src/modules/Treasury`
+- Shared vault hook and API boundary:
+  - `src/hooks/useVaults.ts`
+  - `src/services/domains/apiEndpoints/vaults.ts`
+  - `src/services/queryKeys/vaults.ts`
+  - `src/types/api/domains/vaults.ts`
+- Shared display helper:
+  - `src/utils/vaultDisplay.ts`
+- Backend vault accounting boundary:
+  - `backend/src/vaults`
+  - `backend/src/vault-balance`
+- Governance:
+  - `scripts/check-vaults-governance.mjs`
+
+### Ownership Rules
+
+- Official vault balances, inbound totals, outbound totals, and transaction period totals are sourced from backend ledger queries.
+- `TreasuryScreen.tsx` composes the screen and delegates grouping, display totals, form payloads, and transaction row shaping to `treasuryModels.ts`.
+- `useVaults.ts` owns the typed vault read/write hook and invalidates vault lists, payment options, and sales channel consumers together.
+- `VaultTransactionsModal.tsx` uses backend `periodTotalIn` and `periodTotalOut`; it does not derive official period totals from the visible page.
+- Vault transaction date ranges must come from the central date filter. The transaction modal no longer creates a silent local current-month fallback.
+- Vault create/update is limited to the backend-supported vault types: `cash`, `bank`, and `app`.
+- Inter-vault transfers remain backend-owned through `FinancialCoreService.processTransfer`, which posts one balanced transfer ledger entry and checks fiscal-period openness.
+- Deleting a vault is blocked when any active ledger entry references its vault id or its account on either the debit or credit side.
+
+### Protected Exceptions
+
+- `vaultDisplay.ts` keeps a display fallback for missing names only; it is not a financial-number fallback.
+- `VaultCard` keeps section-specific vault icons until final system-wide icon/card unification.
+- `VaultTransactionsModal` export currently requests up to the backend page-size ceiling for one export pass; larger export streaming can be revisited in the final reporting/export pass.
+
+### Final System Unification Candidates
+
+- Promote treasury summary tiles to the future central financial KPI/card primitive.
+- Revisit vault export as part of the future central export layer if streaming or background exports become system-wide.
+- Move the remaining vault-specific icon set into a central icon registry if more sections adopt the same asset vocabulary.
+
+### Closure Checks
+
+- 2026-07-07 Vaults closure:
+  - `tsc --noEmit` passed.
+  - `vitest run src/modules/Treasury/treasuryModels.test.ts` passed: 1 file, 4 tests.
+  - `jest --config backend/jest.config.cjs vaults-find-one-with-transactions.util.spec.ts vaults.service.spec.ts` passed: 2 files, 2 tests.
+  - `check:vaults-governance` passed.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - Strict vaults scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the vaults closure scope after cleanup.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
@@ -664,3 +722,4 @@ These items should wait until more sections are closed, unless a future section 
 - Do not force visual unification before section cleanup is complete.
 - Do not convert protected financial print/editing surfaces without a specific design standard and tests.
 - When a repeated pattern appears in three or more closed sections, promote it to a system primitive during the final unification phase.
+
