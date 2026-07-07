@@ -16,6 +16,7 @@ import {
 } from '../../constants/taxDisclosure';
 import { fmtTax } from '../../utils/format';
 import { readJsonStorage, writeJsonStorage } from '../../utils/jsonStorage';
+import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../utils/printTableHtml';
 
 export type TaxDraftSource = 'system' | 'manualDraft';
 
@@ -102,27 +103,106 @@ export function buildTaxReportPrintBody(params: {
 }): string {
   const { data, totals, lang, t } = params;
   const label = (row: TaxDisclosureLineRow) => (lang === 'ar' ? row.labelAr : row.labelEn);
-  const outRows = OUTPUT_ROWS.map((row) => {
+  const arabic = {
+    adjustments: '\u0627\u0644\u062a\u0639\u062f\u064a\u0644\u0627\u062a',
+    vat: '\u0636\u0631\u064a\u0628\u0629 \u0627\u0644\u0642\u064a\u0645\u0629 \u0627\u0644\u0645\u0636\u0627\u0641\u0629',
+    outputVatSales: '\u0645\u062e\u0631\u062c\u0627\u062a \u0636\u0631\u064a\u0628\u0629 \u0627\u0644\u0642\u064a\u0645\u0629 \u0627\u0644\u0645\u0636\u0627\u0641\u0629 (\u0627\u0644\u0645\u0628\u064a\u0639\u0627\u062a)',
+    inputVatRecorded: '\u0636\u0631\u064a\u0628\u0629 \u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a \u0648\u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062a (\u0645\u0627 \u0633\u062c\u0644\u062a \u0636\u0631\u064a\u0628\u062a\u0647 \u0641\u0642\u0637)',
+    summary: '\u0627\u0644\u0645\u0644\u062e\u0635',
+  };
+  const sectionRow = (value: string, background: string): PrintHtmlTableRow => ({
+    cells: [{ value, colSpan: 4, style: 'background:' + background + ';font-weight:700' }],
+  });
+  const summaryLabel = (key: TaxDisclosureRowKey, fallbackAr: string, fallbackEn: string): string => {
+    const row = SUMMARY_ROWS.find((item) => item.key === key);
+    if (!row) return lang === 'ar' ? fallbackAr : fallbackEn;
+    return lang === 'ar' ? row.labelAr : row.labelEn;
+  };
+  const outputRows = OUTPUT_ROWS.map((row) => {
     const amt = row.isTotal ? totals.outputTotal : getRowValue(data, row.key, 'amount');
     const vat = row.isTotal ? totals.outputTotal : getRowValue(data, row.key, 'vat');
-    return `<tr><td>${esc(label(row))}</td><td>${fmtTax(amt)}</td><td>${row.isTotal ? '-' : fmtTax(getRowValue(data, row.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
-  }).join('');
-  const inRows = INPUT_ROWS.map((row) => {
+    return {
+      cells: [
+        { value: label(row) },
+        { value: fmtTax(amt), align: 'end' as const },
+        { value: row.isTotal ? '-' : fmtTax(getRowValue(data, row.key, 'adjustment')), align: 'end' as const },
+        { value: fmtTax(vat), align: 'end' as const },
+      ],
+    };
+  });
+  const inputRows = INPUT_ROWS.map((row) => {
     const amt = row.isTotal ? totals.inputTotal : getRowValue(data, row.key, 'amount');
     const vat = row.isTotal ? totals.inputTotal : getRowValue(data, row.key, 'vat');
-    return `<tr><td>${esc(label(row))}</td><td>${fmtTax(amt)}</td><td>${row.isTotal ? '-' : fmtTax(getRowValue(data, row.key, 'adjustment'))}</td><td>${fmtTax(vat)}</td></tr>`;
-  }).join('');
-  return `<table><thead><tr><th>${esc(t('reportItem'))}</th><th>Amount (SR)</th><th>${lang === 'ar' ? 'التعديلات' : 'Adjustments'}</th><th>${lang === 'ar' ? 'ضريبة القيمة المضافة' : 'VAT'}</th></tr></thead>
-<tbody><tr><td colspan="4" style="background:#f0fdf4;font-weight:700">${lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة (المبيعات)' : 'Output VAT (Sales)'}</td></tr>${outRows}
-<tr><td colspan="4" style="background:#fef2f2;font-weight:700">${lang === 'ar' ? 'ضريبة المشتريات والمصروفات (ما سجلت ضريبته فقط)' : 'Purchases & expenses VAT (tax lines only)'}</td></tr>${inRows}
-<tr><td colspan="4" style="background:#eff6ff;font-weight:700">${lang === 'ar' ? 'الملخص' : 'Summary'}</td></tr>
-<tr><td>${lang === 'ar' ? 'إجمالي الضريبة المستحقة' : 'Total VAT due'}</td><td colspan="3">${fmtTax(totals.outputTotal)} SR</td></tr>
-<tr><td>${lang === 'ar' ? 'إجمالي ضريبة المشتريات والمصروفات (مسجلة فقط)' : 'Total VAT on purchases & expenses (recorded only)'}</td><td colspan="3">${fmtTax(totals.inputTotal)} SR</td></tr>
-<tr><td>${lang === 'ar' ? 'صافي الضريبة' : 'Net VAT'}</td><td colspan="3">${fmtTax(totals.netVat)} SR</td></tr>
-<tr><td>${lang === 'ar' ? 'تصحيحات من الفترة السابقة' : 'Prior period adjustments'}</td><td colspan="3">${fmtTax(totals.priorAdj)}</td></tr>
-<tr><td>${lang === 'ar' ? 'رصيد مرحلة' : 'Balance carried forward'}</td><td colspan="3">${fmtTax(totals.balanceCarried)}</td></tr>
-<tr style="background:#dbeafe;font-weight:800"><td>${lang === 'ar' ? 'صافي الضريبة المستحقة أو المطالب بها' : 'Net VAT payable or refundable'}</td><td colspan="3">${fmtTax(totals.netPayable)} SR</td></tr>
-</tbody></table>`;
+    return {
+      cells: [
+        { value: label(row) },
+        { value: fmtTax(amt), align: 'end' as const },
+        { value: row.isTotal ? '-' : fmtTax(getRowValue(data, row.key, 'adjustment')), align: 'end' as const },
+        { value: fmtTax(vat), align: 'end' as const },
+      ],
+    };
+  });
+  const summaryRows: PrintHtmlTableRow[] = [
+    {
+      cells: [
+        { value: summaryLabel('vat_due', '', 'Total VAT due') },
+        { value: fmtTax(totals.outputTotal) + ' SR', colSpan: 3, align: 'end' },
+      ],
+    },
+    {
+      cells: [
+        { value: summaryLabel('vat_recoverable', '', 'Total VAT on purchases & expenses (recorded only)') },
+        { value: fmtTax(totals.inputTotal) + ' SR', colSpan: 3, align: 'end' },
+      ],
+    },
+    {
+      cells: [
+        { value: summaryLabel('net_vat', '', 'Net VAT') },
+        { value: fmtTax(totals.netVat) + ' SR', colSpan: 3, align: 'end' },
+      ],
+    },
+    {
+      cells: [
+        { value: summaryLabel('prior_adjustments', '', 'Prior period adjustments') },
+        { value: fmtTax(totals.priorAdj), colSpan: 3, align: 'end' },
+      ],
+    },
+    {
+      cells: [
+        { value: summaryLabel('balance_carried', '', 'Balance carried forward') },
+        { value: fmtTax(totals.balanceCarried), colSpan: 3, align: 'end' },
+      ],
+    },
+    {
+      cells: [
+        {
+          value: summaryLabel('net_payable_refund', '', 'Net VAT payable or refundable'),
+          style: 'font-weight:800;background:#dbeafe',
+        },
+        { value: fmtTax(totals.netPayable) + ' SR', colSpan: 3, align: 'end', style: 'font-weight:800;background:#dbeafe' },
+      ],
+    },
+  ];
+
+  return buildPrintHtmlTable({
+    wrapperClassName: null,
+    headerRows: [{
+      cells: [
+        { value: t('reportItem') },
+        { value: 'Amount (SR)', align: 'end' },
+        { value: lang === 'ar' ? arabic.adjustments : 'Adjustments', align: 'end' },
+        { value: lang === 'ar' ? arabic.vat : 'VAT', align: 'end' },
+      ],
+    }],
+    bodyRows: [
+      sectionRow(lang === 'ar' ? arabic.outputVatSales : 'Output VAT (Sales)', '#f0fdf4'),
+      ...outputRows,
+      sectionRow(lang === 'ar' ? arabic.inputVatRecorded : 'Purchases & expenses VAT (tax lines only)', '#fef2f2'),
+      ...inputRows,
+      sectionRow(lang === 'ar' ? arabic.summary : 'Summary', '#eff6ff'),
+      ...summaryRows,
+    ],
+  });
 }
 
 export function buildTaxReportExportRows(params: {
@@ -153,8 +233,4 @@ export function buildTaxReportExportRows(params: {
   const finalRow = SUMMARY_ROWS.find((row) => row.key === 'net_payable_refund');
   rows.push({ [t('reportItem')]: finalRow ? (lang === 'ar' ? finalRow.labelAr : finalRow.labelEn) : undefined, [amountKey]: totals.netPayable });
   return rows;
-}
-
-function esc(value: unknown): string {
-  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

@@ -5,6 +5,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReportDetails, useReportTrend } from '../../hooks/useReports';
 import { fmt } from '../../utils/format';
+import { buildPrintHtmlTable } from '../../utils/printTableHtml';
 import { openPrintWindow } from '../../utils/printUtils';
 import { percentText, truncateText, isEmptyMetric, metricCardAmountValue } from './reportHelpers';
 import { buildReportDrillLink, drillToSearchParams } from '../../utils/reportDrillLinks';
@@ -225,10 +226,6 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
     ? `${t('reportDetails')} — ${lang === 'en' ? data.titleEn : data.titleAr}${data.monthLabel ? ` • ${data.monthLabel}` : ''}`
     : t('reportDetails');
 
-  function escPrintCell(value: unknown) {
-    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
   function handlePrintDetails() {
     if (!data) return;
     const htmlDir = lang === 'en' ? 'ltr' : 'rtl';
@@ -239,53 +236,55 @@ export default function ReportsDetailModal({ state, onClose, companyId, year, t,
 
     const detailItems = (data.items || []) as ReportDetailItem[];
     if (data.kind === 'derived') {
-      const rows = detailItems
-        .map((item) => `
-          <tr>
-            <td>${escPrintCell(lang === 'en' ? item.labelEn : item.labelAr)}</td>
-            <td>${escPrintCell(fmt(Number(item.amount)))}</td>
-          </tr>
-        `)
-        .join('');
-      body = `<table><thead><tr><th>${escPrintCell(t('reportItem'))}</th><th>${escPrintCell(t('reportAmountInclTax'))}</th></tr></thead><tbody>${rows}</tbody></table>`;
+      body = buildPrintHtmlTable({
+        wrapperClassName: null,
+        headerRows: [{
+          cells: [
+            { value: t('reportItem') },
+            { value: t('reportAmountInclTax'), align: 'end' },
+          ],
+        }],
+        bodyRows: detailItems.map((item) => ({
+          cells: [
+            { value: lang === 'en' ? item.labelEn : item.labelAr },
+            { value: fmt(Number(item.amount)), align: 'end' },
+          ],
+        })),
+      });
     } else {
-      const rows = detailItems
-        .map((item) => {
+      body = buildPrintHtmlTable({
+        wrapperClassName: null,
+        headerRows: [{
+          cells: [
+            { value: t('transactionDate') },
+            { value: t('reportInvoiceNumber') },
+            { value: t('reportSourceOrSupplier') },
+            { value: t('reportAmountInclTax'), align: 'end' },
+            { value: t('reportNetAmount'), align: 'end' },
+            { value: t('reportTaxAmount'), align: 'end' },
+            { value: t('notes') },
+          ],
+        }],
+        bodyRows: detailItems.map((item) => {
           const source =
             (lang === 'en' ? item.supplierNameEn : item.supplierNameAr) ||
             item.supplierNameAr ||
             item.supplierNameEn ||
             (lang === 'en' ? item.itemLabelEn : item.itemLabelAr) ||
             '—';
-          return `
-            <tr>
-              <td>${escPrintCell(toYmd(item.transactionDate))}</td>
-              <td>${escPrintCell(item.summaryNumber || item.invoiceNumber || '—')}</td>
-              <td>${escPrintCell(source)}</td>
-              <td>${escPrintCell(item.totalAmount)}</td>
-              <td>${escPrintCell(item.netAmount)}</td>
-              <td>${escPrintCell(item.taxAmount)}</td>
-              <td>${escPrintCell(item.notes || '—')}</td>
-            </tr>
-          `;
-        })
-        .join('');
-      body = `
-        <table>
-          <thead>
-            <tr>
-              <th>${escPrintCell(t('transactionDate'))}</th>
-              <th>${escPrintCell(t('reportInvoiceNumber'))}</th>
-              <th>${escPrintCell(t('reportSourceOrSupplier'))}</th>
-              <th>${escPrintCell(t('reportAmountInclTax'))}</th>
-              <th>${escPrintCell(t('reportNetAmount'))}</th>
-              <th>${escPrintCell(t('reportTaxAmount'))}</th>
-              <th>${escPrintCell(t('notes'))}</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      `;
+          return {
+            cells: [
+              { value: toYmd(item.transactionDate) },
+              { value: item.summaryNumber || item.invoiceNumber || '—' },
+              { value: source },
+              { value: item.totalAmount, align: 'end' },
+              { value: item.netAmount, align: 'end' },
+              { value: item.taxAmount, align: 'end' },
+              { value: item.notes || '—' },
+            ],
+          };
+        }),
+      });
     }
 
     openPrintWindow({

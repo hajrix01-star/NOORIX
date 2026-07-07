@@ -127,55 +127,15 @@
       "decision": "leave",
       "reason": "general report v2 contains the live financial hierarchy matrix; printable HTML moved to generalReportV2Model."
     },
-    "src/modules/Reports/generalReportV2Model.ts": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "general report v2 print/export HTML builder extracted from the screen; protected financial report output."
-    },
-    "src/modules/Reports/ReportsDetailModal.tsx": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "report detail print/financial table output."
-    },
-    "src/modules/Reports/ReportsScreen.tsx": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "report print/export HTML string."
-    },
     "src/modules/Reports/TaxReportTab.tsx": {
       "category": "tax-protected",
       "decision": "leave",
       "reason": "tax report financial table; print HTML is extracted to taxReportTabModel."
     },
-    "src/modules/Reports/taxReportTabModel.ts": {
-      "category": "tax-print",
-      "decision": "leave",
-      "reason": "tax report print HTML builder extracted from TaxReportTab; protected tax print output."
-    },
-    "src/modules/Reports/bank/bankStatementExportPrint.ts": {
-      "category": "bank-print",
-      "decision": "leave",
-      "reason": "bank statement print/export HTML generator."
-    },
     "src/modules/Reports/costAccountingApps/CostAccountingAppsResultPanels.tsx": {
       "category": "financial-report",
       "decision": "leave",
       "reason": "cost accounting result table; protected financial analysis scope."
-    },
-    "src/modules/Reports/costAccountingApps/costAccountingAppsScreenActions.ts": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "cost accounting print/export HTML strings."
-    },
-    "src/modules/Reports/reportsPlMonthPrint.ts": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "P&L month print HTML generator."
-    },
-    "src/modules/Treasury/components/VaultTransactionsModal.tsx": {
-      "category": "print-financial",
-      "decision": "leave",
-      "reason": "vault transactions print/export HTML string."
     }
   }
 }

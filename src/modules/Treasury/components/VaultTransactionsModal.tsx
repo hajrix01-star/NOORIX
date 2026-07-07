@@ -7,6 +7,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { fmt } from '../../../utils/format';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
 import { exportToExcel } from '../../../utils/exportUtils';
+import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { vaultKeys } from '../../../services/queryKeys';
 import { Button, AdaptiveSheet, FmtNum, SmartTable } from '../../../ui';
@@ -52,10 +53,6 @@ function unwrapTransactionsPage(payload: VaultWithTransactionsResult | VaultTran
   if (!payload) return emptyTransactionsPage(page);
   if ('transactions' in payload) return payload.transactions;
   return payload;
-}
-
-function escapeHtml(value: unknown) {
-  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 export default function VaultTransactionsModal({
@@ -139,16 +136,45 @@ export default function VaultTransactionsModal({
   }, [vault.id, vault.accountId, vault.nameAr, companyId, startDate, endDate, periodLabel, t, formatVaultTransactionNotes, showToast]);
 
   const handlePrintPdf = () => {
-    const rows = items.map((row) =>
-      `<tr><td>${escapeHtml(row.documentNumber || row.referenceId || '-')}</td><td>${escapeHtml(formatSaudiDate(row.transactionDate))}</td><td>${escapeHtml(row.referenceType === 'transfer' ? t('vaultLedgerTypeTransfer') : (row.referenceType || '-'))}</td><td>${escapeHtml(row.notesDisplay || '-')}</td><td>${row.debit != null ? fmt(row.debit) : '-'}</td><td>${row.credit != null ? fmt(row.credit) : '-'}</td></tr>`,
-    ).join('');
-    const totalRow = rows ? `<tr><td colspan="4">${t('total')}</td><td>${fmt(data.periodTotalIn)}</td><td>${fmt(data.periodTotalOut)}</td></tr>` : '';
     const vaultName = vaultDisplayName(vault, lang) || '';
     openPrintWindow({
       title: `${vaultName} - ${t('transactions')}`,
       companyName: vaultName,
       subtitle: `${t('transactions')}${periodLabel ? ` - ${periodLabel}` : ''}`,
-      body: `<table><thead><tr><th>${t('documentNumber')}</th><th>${t('date')}</th><th>${t('type')}</th><th>${t('notes')}</th><th>${t('debit')}</th><th>${t('credit')}</th></tr></thead><tbody>${rows || '<tr><td colspan="6">' + t('noDataInPeriod') + '</td></tr>'}${totalRow}</tbody></table>`,
+      body: buildPrintHtmlTable({
+        wrapperClassName: null,
+        emptyMessage: t('noDataInPeriod'),
+        emptyColSpan: 6,
+        headerRows: [{
+          cells: [
+            { value: t('documentNumber') },
+            { value: t('date') },
+            { value: t('type') },
+            { value: t('notes') },
+            { value: t('debit'), align: 'end' },
+            { value: t('credit'), align: 'end' },
+          ],
+        }],
+        bodyRows: items.map((row) => ({
+          cells: [
+            { value: row.documentNumber || row.referenceId || '-' },
+            { value: formatSaudiDate(row.transactionDate) },
+            { value: row.referenceType === 'transfer' ? t('vaultLedgerTypeTransfer') : (row.referenceType || '-') },
+            { value: row.notesDisplay || '-' },
+            { value: row.debit != null ? fmt(row.debit) : '-', align: 'end' },
+            { value: row.credit != null ? fmt(row.credit) : '-', align: 'end' },
+          ],
+        })),
+        footerRows: items.length
+          ? [{
+              cells: [
+                { value: t('total'), colSpan: 4 },
+                { value: fmt(data.periodTotalIn), align: 'end' },
+                { value: fmt(data.periodTotalOut), align: 'end' },
+              ],
+            }]
+          : [],
+      }),
     });
   };
 

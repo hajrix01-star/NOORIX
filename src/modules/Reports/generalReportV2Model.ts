@@ -1,5 +1,6 @@
 import { amountText, displayLabel, getContextAmount, getContextPercent, percentText } from './reportHelpers';
 import type { GeneralProfitLossReport, PlDisplayRow } from './reportTypes';
+import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../utils/printTableHtml';
 
 const NEGATIVE_GROUPS = new Set(['purchases', 'expenses']);
 
@@ -93,24 +94,35 @@ export function buildPrintableGeneralReportV2Html(params: {
 }): string {
   const { report, visibleRows, selectedMonthNumber, monthLabel, year, lang, t, companyName } = params;
   const period = selectedMonthNumber ? `${monthLabel} ${year}` : String(year);
-  const monthHeaders = selectedMonthNumber
-    ? `<th>${escReportHtml(monthLabel)}</th>`
-    : report.months.map((month) => `<th>${escReportHtml(month.label)}</th>`).join('');
-  const rows = visibleRows.map((row) => {
+  const headerCells = [
+    { value: t('reportItem') },
+    ...(selectedMonthNumber ? [{ value: monthLabel }] : report.months.map((month) => ({ value: month.label }))),
+    ...(selectedMonthNumber ? [] : [{ value: t('reportAnnualTotal') }]),
+    { value: '%' },
+  ];
+  const tableRows: PrintHtmlTableRow[] = visibleRows.map((row) => {
     const rowTone = groupToneClass(row);
     const amountClass = rowTone === 'is-negative' ? ' neg' : '';
-    const cells = selectedMonthNumber
-      ? `<td class="amt${amountClass}">${escReportHtml(amountText(getContextAmount(row, selectedMonthNumber)))}</td>`
-      : row.months.map((value) => `<td class="amt${amountClass}">${escReportHtml(amountText(value))}</td>`).join('');
-    const total = selectedMonthNumber ? '' : `<td class="amt${amountClass}">${escReportHtml(amountText(row.total))}</td>`;
+    const amountCells = selectedMonthNumber
+      ? [{ value: amountText(getContextAmount(row, selectedMonthNumber)), className: `amt${amountClass}` }]
+      : row.months.map((value) => ({ value: amountText(value), className: `amt${amountClass}` }));
+    const totalCell = selectedMonthNumber ? [] : [{ value: amountText(row.total), className: `amt${amountClass}` }];
     const pct = selectedMonthNumber ? getContextPercent(row, selectedMonthNumber) : row.percentOfSalesYear;
-    return `<tr class="${escReportHtml(row.rowType)} ${escReportHtml(rowTone)}">
-        <td class="label" style="padding-inline-start:${10 + (row.depth || 0) * 14}px">${escReportHtml(displayV2RowLabel(row, lang))}</td>
-        ${cells}
-        ${total}
-        <td class="pct">${escReportHtml(percentText(pct))}</td>
-      </tr>`;
-  }).join('');
+    return {
+      className: `${row.rowType} ${rowTone}`,
+      cells: [
+        { value: displayV2RowLabel(row, lang), className: 'label', style: `padding-inline-start:${10 + (row.depth || 0) * 14}px` },
+        ...amountCells,
+        ...totalCell,
+        { value: percentText(pct), className: 'pct' },
+      ],
+    };
+  });
+  const reportTable = buildPrintHtmlTable({
+    wrapperClassName: null,
+    headerRows: [{ cells: headerCells }],
+    bodyRows: tableRows,
+  });
   return `<!DOCTYPE html>
 <html dir="${lang === 'en' ? 'ltr' : 'rtl'}" lang="${lang === 'en' ? 'en' : 'ar'}">
 <head>
@@ -157,10 +169,7 @@ tr.is-summary td.amt { color: #047857; }
     </div>
     <div class="brand">${escReportHtml(companyName || t('reports'))}</div>
   </header>
-  <table>
-    <thead><tr><th>${escReportHtml(t('reportItem'))}</th>${monthHeaders}${selectedMonthNumber ? '' : `<th>${escReportHtml(t('reportAnnualTotal'))}</th>`}<th>%</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  ${reportTable}
   <div class="footer">${escReportHtml(period)}</div>
 </main>
 </body>

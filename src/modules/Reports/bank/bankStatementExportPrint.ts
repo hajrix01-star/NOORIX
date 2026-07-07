@@ -1,5 +1,6 @@
 import { fmt } from '../../../utils/format';
 import { toYmd } from '../../../utils/saudiDate';
+import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import type { BankCategoryAgg } from './bankAnalysisUtils';
 import type { BankColumnTotals, BankStatementLite, BankTransactionLite } from './bankAnalysisTab.types';
@@ -73,14 +74,6 @@ function styleSummaryCell(XLSX: XlsxModule, ws: Worksheet, rowIdx: number, colCo
       alignment: { horizontal: 'right', vertical: 'center' },
     };
   }
-}
-
-function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 export async function exportBankStatementExcel({
@@ -162,25 +155,37 @@ export function printBankStatement({
 }: BankStatementPrintArgs): void {
   if (!statement) return;
   const period = `${toYmd(statement.startDate)} — ${toYmd(statement.endDate)}`;
-  const rows = filteredTransactions
-    .map(
-      (tx) => `<tr>
-      <td>${escapeHtml(tx.txDate)}</td>
-      <td>${escapeHtml(tx.description)}</td>
-      <td>${escapeHtml(tx.category?.nameAr || tx.category?.nameEn || '—')}</td>
-      <td>${fmt(Number(tx.debit) || 0)}</td>
-      <td>${fmt(Number(tx.credit) || 0)}</td>
-    </tr>`,
-    )
-    .join('');
   openPrintWindow({
     title: `كشف حساب — ${companyName || ''}`,
     companyName: companyName || '',
     subtitle: `${statement.bankName || ''} — ${period} | الملف: ${statement.fileName || ''}`,
-    body: `<table>
-<thead><tr><th>التاريخ</th><th>الوصف</th><th>التصنيف</th><th>مدين</th><th>دائن</th></tr></thead>
-<tbody>${rows}</tbody>
-<tfoot><tr><td colspan="3">مجموع المعروض</td><td>${fmt(columnTotals.debit)}</td><td>${fmt(columnTotals.credit)}</td></tr></tfoot>
-</table>`,
+    body: buildPrintHtmlTable({
+      wrapperClassName: null,
+      headerRows: [{
+        cells: [
+          { value: 'التاريخ' },
+          { value: 'الوصف' },
+          { value: 'التصنيف' },
+          { value: 'مدين' },
+          { value: 'دائن' },
+        ],
+      }],
+      bodyRows: filteredTransactions.map((tx) => ({
+        cells: [
+          { value: tx.txDate },
+          { value: tx.description },
+          { value: tx.category?.nameAr || tx.category?.nameEn || '—' },
+          { value: fmt(Number(tx.debit) || 0) },
+          { value: fmt(Number(tx.credit) || 0) },
+        ],
+      })),
+      footerRows: [{
+        cells: [
+          { value: 'مجموع المعروض', colSpan: 3 },
+          { value: fmt(columnTotals.debit) },
+          { value: fmt(columnTotals.credit) },
+        ],
+      }],
+    }),
   });
 }

@@ -1695,6 +1695,50 @@ Closed on 2026-07-08 as the first system-governance umbrella pass. Closure commi
   - `check-node-scripts` passed after adding the consolidated governance script.
   - `git diff --check` passed.
 
+## Print Table Conversion Batch 3
+
+Closed on 2026-07-08 as a safe print/export conversion batch. Closure commit awaits this batch commit.
+
+### Scope
+
+- Converted remaining safe print/export table bodies in:
+  - treasury vault transactions print
+  - reports annual print
+  - report detail print
+  - tax report print model
+  - cost-accounting apps print action
+  - bank statement print
+  - general report v2 printable statement
+  - monthly P&L printable statement
+
+### Centralized
+
+- 11 manual `<table>` usages now route through `src/utils/printTableHtml.ts`.
+- Local print escaping helpers were removed from the converted files.
+- Table alignment, empty state, footer totals, and tax section rows now use the central print-table primitive.
+
+### Protected Exceptions
+
+- No official financial, tax, vault, or P&L calculation was changed.
+- Remaining protected payroll, HR document, purchases, invoice day-close, tax registry/detail, and matrix tables stay governed in the table exception registry.
+- Editable grids remain outside this batch and require a dedicated editable-grid conversion phase.
+
+### Final System Unification Candidates
+
+- Continue print-table conversion for the remaining protected financial print families only with targeted tests.
+- Convert editable grids family by family after their cell/action model is stable.
+- Keep `scripts/table-manual-exceptions.json` as the executable boundary until the remaining protected families are converted.
+
+### Closure Checks
+
+- 2026-07-08 PrintTable batch 3 closure:
+  - `tsc --noEmit` passed.
+  - `check:table-governance` passed.
+  - `check:print-export-governance` passed.
+  - `check:system-governance-consolidated` passed.
+  - `check-node-scripts` passed.
+  - `git diff --check` passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:

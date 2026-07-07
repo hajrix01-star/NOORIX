@@ -5,6 +5,7 @@ import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { exportTableToPdf, exportToExcel } from '../../utils/exportUtils';
+import { buildPrintHtmlTable } from '../../utils/printTableHtml';
 import { openPrintWindow } from '../../utils/printUtils';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import ReportsDetailModal from './ReportsDetailModal';
@@ -148,10 +149,6 @@ export default function ReportsScreen() {
     });
   }
 
-  function escPrintCell(s: string) {
-    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
   function handlePrint() {
     if (!report) return;
     const printFlat = buildFlatRows(report, collapsedGroups);
@@ -187,15 +184,6 @@ export default function ReportsScreen() {
       return;
     }
 
-    const head = `${EN_MONTHS.map((month) => `<th>${escPrintCell(month)}</th>`).join('')}<th>${escPrintCell(t('reportAnnualTotal'))}</th><th>${escPrintCell(t('reportSalesShareYear'))}</th>`;
-    const bodyRows = printRowsForDoc
-      .map((row: PlDisplayRow) => {
-        const firstCell = escPrintCell(displayLabel(row, lang));
-        const monthsCells = (row.months ?? []).map((value) => `<td>${amountText(value)}</td>`).join('');
-        return `<tr><td>${firstCell}</td>${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
-      })
-      .join('');
-
     openPrintWindow({
       title: t('reportGeneral'),
       companyName: companyName || t('reports'),
@@ -203,7 +191,25 @@ export default function ReportsScreen() {
       landscape: true,
       htmlLang: printLang,
       htmlDir: printDir,
-      body: `<table><thead><tr><th>${escPrintCell(t('reportItem'))}</th>${head}</tr></thead><tbody>${bodyRows}</tbody></table>`,
+      body: buildPrintHtmlTable({
+        wrapperClassName: null,
+        headerRows: [{
+          cells: [
+            { value: t('reportItem') },
+            ...EN_MONTHS.map((month) => ({ value: month, align: 'end' as const })),
+            { value: t('reportAnnualTotal'), align: 'end' },
+            { value: t('reportSalesShareYear'), align: 'end' },
+          ],
+        }],
+        bodyRows: printRowsForDoc.map((row: PlDisplayRow) => ({
+          cells: [
+            { value: displayLabel(row, lang) },
+            ...(row.months ?? []).map((value) => ({ value: amountText(value), align: 'end' as const })),
+            { value: amountText(row.total), align: 'end' },
+            { value: percentText(row.percentOfSalesYear), align: 'end' },
+          ],
+        })),
+      }),
     });
   }
 

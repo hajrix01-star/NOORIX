@@ -77,7 +77,7 @@ describe('generalReportV2Model', () => {
       companyName: 'Noorix',
     });
 
-    expect(html).toContain('<' + 'table>');
+    expect(html).toContain('<' + 'table class="print-table">');
     expect(html).toContain('Noorix');
     expect(html).toContain('Jan 2026');
   });
