@@ -37,6 +37,7 @@
     "check:login-theme-governance": "node scripts/check-login-theme-governance.mjs",
     "check:system-core-governance": "node scripts/check-system-core-governance.mjs",
     "check:api-contracts-governance": "node scripts/check-api-contracts-governance.mjs",
+    "check:system-governance-consolidated": "node scripts/check-system-governance-consolidated.mjs",
     "check:kpi-summary-governance": "node scripts/check-kpi-summary-governance.mjs",
     "check:chart-state-governance": "node scripts/check-chart-state-governance.mjs",
     "check:print-export-governance": "node scripts/check-print-export-governance.mjs",

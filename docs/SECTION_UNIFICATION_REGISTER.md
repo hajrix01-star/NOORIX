@@ -1286,7 +1286,7 @@ These files are no longer allowed to hide compatibility with `any`. Mutations us
 
 ## KPI / Summary Primitive Finalization
 
-Closed on 2026-07-07 as the first governed system-wide KPI and summary primitive pass. Closure commit is pending local commit.
+Closed on 2026-07-07 with local commit `f7a56bf4`.
 
 ### Scope
 
@@ -1342,7 +1342,7 @@ Closed on 2026-07-07 as the first governed system-wide KPI and summary primitive
 
 ## Chart State Primitive Finalization
 
-Closed on 2026-07-08 as the first governed chart-state primitive pass. Closure commit is pending local commit.
+Closed on 2026-07-08 with local commit `ad2a160c`.
 
 ### Scope
 
@@ -1392,7 +1392,7 @@ Closed on 2026-07-08 as the first governed chart-state primitive pass. Closure c
 
 ## Print / Export Foundation Finalization
 
-Closed on 2026-07-08 as the governed print/export foundation hardening pass. Closure commit is pending local commit.
+Closed on 2026-07-08 with local commit `6c535623`.
 
 ### Scope
 
@@ -1450,7 +1450,7 @@ Closed on 2026-07-08 as the governed print/export foundation hardening pass. Clo
 
 ## Editable Grid Foundation Finalization
 
-Closed on 2026-07-08 as the governed editable-grid foundation hardening pass. Closure commit is pending local commit.
+Closed on 2026-07-08 with local commit `6e48e1ba`.
 
 ### Scope
 
@@ -1503,7 +1503,7 @@ Closed on 2026-07-08 as the governed editable-grid foundation hardening pass. Cl
 
 ## Display Name Foundation Finalization
 
-Closed on 2026-07-08 as the governed display-name foundation pass. Closure commit is pending local commit.
+Closed on 2026-07-08 with local commit `4e3fd085`.
 
 ### Scope
 
@@ -1561,7 +1561,7 @@ Closed on 2026-07-08 as the governed display-name foundation pass. Closure commi
 
 ## Official Numbers Governance Finalization
 
-Closed on 2026-07-08 as the governed official-number boundary pass. Closure commit is pending local commit.
+Closed on 2026-07-08 with local commit `f2a1487f`.
 
 ### Scope
 
@@ -1604,7 +1604,7 @@ Closed on 2026-07-08 as the governed official-number boundary pass. Closure comm
 
 ## Query / Date Boundary Governance Finalization
 
-Closed on 2026-07-08 as the governed query/date serialization boundary pass. Closure commit is pending local commit.
+Closed on 2026-07-08 with local commit `628c5629`.
 
 ### Scope
 
@@ -1648,6 +1648,53 @@ Closed on 2026-07-08 as the governed query/date serialization boundary pass. Clo
   - `check-node-scripts` passed after adding Query/date governance.
   - Existing URL/date exceptions were reviewed and documented as navigation, endpoint, metadata, export, or payload boundaries.
 
+## System Governance Consolidation Batch
+
+Closed on 2026-07-08 as the first system-governance umbrella pass. Closure commit awaits this batch commit.
+
+### Scope
+
+- System-governance umbrella:
+  - `scripts/check-system-governance-consolidated.mjs`
+  - `package.json` script `check:system-governance-consolidated`
+- The umbrella check runs the already-closed governance boundaries as one batch:
+  - system core
+  - API contracts
+  - KPI/summary primitive
+  - chart state primitive
+  - print/export foundation
+  - editable-grid foundation
+  - display-name foundation
+  - official-number boundary
+  - query/date boundary
+  - table, filter, date-control, and responsive governance
+
+### Centralized
+
+- Final-system governance now has one fast command for daily/closing use instead of requiring each boundary to be remembered manually.
+- The register now records the actual local closure commits for the system-wide primitive passes that were previously marked as pending.
+- The stale backlog item for expanded formula/date/filter/card governance was removed because it is now covered by executable governance.
+
+### Protected Exceptions
+
+- This batch does not claim every protected print body, editable financial grid, or display-only name fallback has been converted.
+- Section-specific protected exceptions remain governed by their section checks and the relevant primitive checks.
+- Deep refactors that touch official financial logic remain outside this speed batch unless they have their own tests.
+
+### Final System Unification Candidates
+
+- Keep using `check:system-governance-consolidated` as the fast gate before larger final-system batches.
+- Add future primitives to this umbrella only after their individual governance check exists and passes independently.
+- Convert the remaining protected print/editable/display surfaces family by family, then reduce their exception registries.
+
+### Closure Checks
+
+- 2026-07-08 System governance consolidation closure:
+  - `tsc --noEmit` passed.
+  - `check:system-governance-consolidated` passed.
+  - `check-node-scripts` passed after adding the consolidated governance script.
+  - `git diff --check` passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
@@ -1655,7 +1702,6 @@ These items should wait until more sections are closed, unless a future section 
 - Continue print/export conversion for protected financial document bodies one family at a time.
 - Continue editable-grid conversion for protected financial row-entry screens one family at a time.
 - Continue display-name helper adoption across remaining display-only surfaces.
-- Expanded governance that prevents new local financial formulas, local date query serialization, raw filters, or section-specific card primitives once final system primitives exist.
 
 ## Open Decisions For Future Sections
 
