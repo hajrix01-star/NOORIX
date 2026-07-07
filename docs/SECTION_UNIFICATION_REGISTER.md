@@ -30,6 +30,7 @@ A section is considered closed only when all of the following are true:
 | Vaults | `bd73bc55 finalize vaults section cleanup` | Closed | Centralized vault API contracts, treasury display models, typed vault hooks/components, backend period totals, safe deletion guard, strict vaults governance. |
 | Expenses | `4046f04e finalize expenses section cleanup` | Closed | Centralized expense API contracts, frontend display/draft models, backend official payment summaries, fixed/variable payment guards, strict expenses governance. |
 | Assets Register | `4fae199e finalize assets register section cleanup` | Closed | Centralized asset API contracts, asset form/warranty models, backend filtered acquisition summaries, typed warranty queue, strict assets governance. |
+| Hajri Tax | Pending local commit `finalize hajri tax section cleanup` | Technically closed | Centralized Hajri/VAT planning contracts, typed registry/editor/import flows, backend-normalized planning payload summaries, strict Hajri Tax governance. |
 
 ## Invoices
 
@@ -1007,6 +1008,94 @@ Closed on 2026-07-07 with pending local commit `finalize chat section cleanup`.
   - `check:responsive-governance` passed.
   - `check-node-scripts` passed after adding chat governance.
   - Strict chat scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, `FIXME`, `window.confirm`, or `window.print` across the chat closure scope after cleanup.
+
+## Hajri Tax
+
+Technically closed on 2026-07-07 with pending local commit `finalize hajri tax section cleanup`.
+
+### Scope
+
+- Frontend Hajri Tax section:
+  - `src/modules/HajriTax`
+- Shared VAT planning hooks and API boundary:
+  - `src/hooks/useVatPlanning.ts`
+  - `src/services/domains/apiEndpoints/reports.ts`
+  - `src/services/domains/apiEndpoints/reports-query.ts`
+  - `src/services/queryKeys/vat.ts`
+  - `src/types/api/domains/hajriTax.ts`
+- Shared VAT disclosure model touched by Hajri Tax:
+  - `src/constants/taxDisclosure.ts`
+- Backend VAT planning and official VAT report boundary:
+  - `backend/src/vat-planning`
+  - `backend/src/tax-vat-core`
+  - `backend/src/reports/reports-tax-vat.service.ts`
+- Governance:
+  - `scripts/check-hajri-tax-governance.mjs`
+
+### Centralized
+
+- Hajri Tax / VAT planning API contracts:
+  - `HajriTaxQuarter`
+  - `HajriTaxCompanyRef`
+  - `VatPlanningRecord`
+  - `VatPlanningRegistryFilters`
+  - `VatPlanningUpsertPayload`
+  - `VatPlanningSourceSnapshot`
+- VAT planning hooks now use typed records and payloads instead of `any`.
+- Registry metrics and company display labels are centralized in `hajriRegistryMetrics.ts`.
+- Registry filter metadata now comes from the backend endpoint `GET /api/v1/vat-planning/registry/metadata` instead of loading unfiltered registry rows.
+- Registry data orchestration is isolated in `useHajriTaxRegistryData.ts`.
+- Payment-target simulator math is isolated in `useHajriTaxPaymentSimulator.ts` and remains a draft preview only.
+- Print/export actions are isolated in `useHajriTaxExports.ts`.
+- Detail editor declaration rows and summary/sidebar surfaces are split into dedicated display components.
+- Print/export safety helpers are centralized in `hajriTaxScreenHelpers.ts`, including full HTML escaping for print-bound text.
+- Bulk Excel import is typed and now resolves companies deterministically by id or exact name only.
+- JSON import validates records before save instead of passing raw unknown objects through.
+- Backend `VatPlanningService` normalizes planning payload line values and summary fields before persistence.
+- A dedicated Hajri Tax governance script now blocks real `any`, suppression comments, untyped VAT planning hooks, and raw backend planning payload persistence.
+
+### Accounting and VAT Rules
+
+- Official VAT report calculations remain backend-owned through `TaxVatCoreService` and `ReportsTaxVatService`.
+- Hajri Tax saved records are planning/declaration registry records. They may display saved planning payload values, but they do not replace the official VAT report source.
+- Backend normalizes the saved planning payload summary fields before persistence:
+  - `vat_due`
+  - `vat_recoverable`
+  - `net_vat`
+  - `prior_adjustments`
+  - `balance_carried`
+  - `net_payable_refund`
+- Frontend editor calculations are draft/planning previews for the open declaration surface.
+- Frontend does not silently fabricate VAT planning API records; missing records become empty draft disclosure data until saved.
+- Payment-target balancing remains a draft planning simulator, not an official accounting posting.
+
+### Protected Exceptions
+
+- Hajri Tax registry table remains a manual wide financial table until the final editable/wide-financial-table primitive exists.
+- The detail editor remains section-specific because it is a specialized VAT declaration input surface.
+- Print/export layouts remain section-owned until the final system print/export layer is unified.
+- `useHajriTaxScreen.ts` remains above the large-file watch threshold because it coordinates editor state, import/save actions, and declaration draft flow; it is tracked for future workflow-controller decomposition, not as an active closure blocker.
+
+### Final System Unification Candidates
+
+- Promote wide financial declaration tables to a central controlled table/editable-grid primitive.
+- Move Hajri Tax print/export layout into the future central financial print/export layer.
+- Extract Hajri Tax import/save/detail actions into smaller workflow hooks if future changes touch the declaration controller again.
+- Consider a backend draft-preview endpoint if other sections need server-side financial draft simulations before save.
+
+### Closure Checks
+
+- 2026-07-07 Hajri Tax technical closure:
+  - `tsc --noEmit` passed.
+  - `vitest run src/modules/HajriTax/hajriRegistryMetrics.test.ts` passed: 1 file, 4 tests.
+  - `jest --config backend/jest.config.cjs vat-planning.service.spec.ts tax-vat-core.service.spec.ts` passed: 2 files, 12 tests.
+  - `check:hajri-tax-governance` passed.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - `check-node-scripts` passed after adding Hajri Tax governance.
+  - Strict Hajri Tax scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the Hajri Tax closure scope after cleanup. Remaining textual matches are documented false positives such as `RequireAnyPermission` and governance regex literals.
 
 ## System-Wide Final Unification Backlog
 
