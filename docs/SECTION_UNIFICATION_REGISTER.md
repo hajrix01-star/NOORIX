@@ -35,7 +35,7 @@ A section is considered closed only when all of the following are true:
 | Orders | `2614d598 finalize orders section cleanup` | Closed | Centralized orders contracts, import/export helpers, order report models, backend official range summaries, strict orders governance. |
 | Smart Chat | `93ffdf87 finalize chat section cleanup` | Closed | Centralized chat contracts/endpoints, backend-owned official financial metrics, typed chat frontend, strict chat governance. |
 | Hajri Tax | `c646dc07 finalize hajri tax section cleanup` | Closed | Centralized Hajri/VAT planning contracts, typed registry/editor/import flows, backend registry metadata endpoint, strict Hajri Tax governance. |
-| Login And Theme Preview | Pending local commit `finalize login and theme preview cleanup` | Technically closed | Centralized login identifier/session helpers, typed theme preview lab model, strict Login/Theme governance. |
+| Login And Theme Preview | `92d85884 finalize login and theme preview cleanup` | Closed | Centralized login identifier/session helpers, typed theme preview lab model, strict Login/Theme governance. |
 
 ## Invoices
 
@@ -1104,7 +1104,7 @@ Closed on 2026-07-07 with local commit `c646dc07 finalize hajri tax section clea
 
 ## Login And Theme Preview
 
-Technically closed on 2026-07-07 with pending local commit `finalize login and theme preview cleanup`.
+Closed on 2026-07-07 with local commit `92d85884 finalize login and theme preview cleanup`.
 
 ### Scope
 
