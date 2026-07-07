@@ -1,4 +1,5 @@
 import { getSaudiToday } from '../../../utils/saudiDate';
+import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { hrFmt } from '../utils/hrFmt';
@@ -64,19 +65,37 @@ function row(label: string, value: string, extraClass = ''): string {
   return `<div class="row ${extraClass}"><span class="muted">${esc(label)}</span><span class="num">${value}</span></div>`;
 }
 
-function buildAllowanceRows(rows: SalaryCalcPrintAllowanceRow[]): string {
-  if (!rows.length) {
-    return '<tr><td>No allowances</td><td class="num">0</td></tr>';
-  }
-  return rows
-    .map((allowance) => `<tr><td>${esc(allowance.label)}</td><td class="num">${money(allowance.amount)}</td></tr>`)
-    .join('');
+function buildAllowanceTable(rows: SalaryCalcPrintAllowanceRow[], labelHeader: string, amountHeader: string): string {
+  return buildPrintHtmlTable({
+    wrapperClassName: null,
+    emptyMessage: 'No allowances',
+    emptyColSpan: 2,
+    headerRows: [{
+      cells: [
+        { value: labelHeader },
+        { value: amountHeader, className: 'num', align: 'end' },
+      ],
+    }],
+    bodyRows: rows.length
+      ? rows.map((allowance) => ({
+          cells: [
+            { value: allowance.label },
+            { value: money(allowance.amount), className: 'num', align: 'end' as const },
+          ],
+        }))
+      : [{ cells: [{ value: 'No allowances' }, { value: '0', className: 'num', align: 'end' }] }],
+  });
 }
 
 export function openSalaryCalcPrintWindow(model: SalaryCalcPrintModel): void {
   const employeeAr = model.employee ? employeeDisplayName(model.employee, 'ar') : '-';
   const employeeEn = model.employee ? employeeDisplayName(model.employee, 'en') : '-';
-  const allowanceRowsHtml = buildAllowanceRows(model.allowanceRows);
+  const allowanceTableAr = buildAllowanceTable(
+    model.allowanceRows,
+    '\u0627\u0644\u0628\u062f\u0644',
+    '\u0627\u0644\u0642\u064a\u0645\u0629 (SR)',
+  );
+  const allowanceTableEn = buildAllowanceTable(model.allowanceRows, 'Allowance', 'Amount (SR)');
   const hasDeduction = model.deduction.gt(0);
 
   const extraCss = `
@@ -181,12 +200,12 @@ export function openSalaryCalcPrintWindow(model: SalaryCalcPrintModel): void {
         <div class="bi">
           <div class="box">
             <div class="box-title">تفاصيل البدلات</div>
-            <table><thead><tr><th>البدل</th><th>القيمة (SR)</th></tr></thead><tbody>${allowanceRowsHtml}</tbody></table>
+            ${allowanceTableAr}
           </div>
           <div class="sep"></div>
           <div class="box en">
             <div class="box-title">Allowances Breakdown</div>
-            <table><thead><tr><th>Allowance</th><th>Amount (SR)</th></tr></thead><tbody>${allowanceRowsHtml}</tbody></table>
+            ${allowanceTableEn}
           </div>
         </div>
       </div>

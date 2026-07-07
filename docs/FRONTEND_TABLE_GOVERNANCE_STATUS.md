@@ -8,8 +8,8 @@ Status: governed; no new raw table is allowed without registry count and reason.
 
 | Metric | Count |
 |---|---:|
-| Manual `<table>` outside `src/ui` | 42 |
-| Files with manual tables outside `src/ui` | 27 |
+| Manual `<table>` outside `src/ui` | 38 |
+| Files with manual tables outside `src/ui` | 24 |
 | `SmartTable` JSX usages | 46 |
 | Files using `SmartTable` JSX | 36 |
 | `SimpleTable` JSX usages | 23 |
@@ -24,14 +24,13 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `document-print` | 4 | 11 | leave fixed document layout |
 | `print-financial` | 2 | 7 | protected financial print/export |
 | `editable-grid` | 6 | 6 | leave until editable table/control phase |
-| `payroll-protected` | 4 | 6 | protected HR financial scope |
+| `payroll-protected` | 2 | 3 | protected HR financial scope |
 | `financial-report` | 3 | 3 | protected report scope |
 | `tax-print` | 1 | 2 | leave until `PrintTable` phase |
 | `tax-protected` | 2 | 2 | protected tax scope |
 | `bank-protected` | 1 | 1 | protected bank workflow |
 | `hr-financial` | 1 | 1 | protected HR financial scope |
 | `matrix-table` | 1 | 1 | leave until `MatrixTable` phase |
-| `print-export-html` | 1 | 1 | leave remaining protected payroll print/export layout |
 | `purchases-protected` | 1 | 1 | protected purchases workflow |
 
 ## Next Target
@@ -47,6 +46,7 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | MatrixTable RFC | Define wide financial/dashboard matrix rules | P&L, owner, dashboard matrices stay protected |
 | MatrixTable Owner Conversion | Convert safest owner monthly matrix | 1 manual matrix table removed; financial/P&L/payroll/tax/bank/purchases stay untouched |
 | PrintTable Conversion Batch 3 | Convert safe print/export tables in reports, treasury, bank, and tax print model | 11 manual tables removed; official numbers and calculations stay untouched |
+| HR Protected Print Conversion | Convert safe HR payroll/settlement print tables | 4 manual tables removed; editable payroll and signature slips stay protected |
 | Editable table controls | Define editable cells and row actions | no payroll/purchases conversion without tests |
 | Safe conversion pass | Only non-financial display tables with no inputs, no print, no rowspan/colspan | `check:table-governance` stays green |
 
@@ -66,3 +66,4 @@ Status: governed; no new raw table is allowed without registry count and reason.
 | `docs/TABLE_NEXT_PHASE_RFC.md` | defines the next MatrixTable/EditTable/financial-print phase boundaries |
 | `docs/MATRIX_TABLE_OWNER_CONVERSION.md` | records the first MatrixTable conversion |
 | `docs/PRINT_TABLE_CONVERSION_BATCH_3.md` | records the third safe print/export conversion batch |
+| `docs/HR_PROTECTED_PRINT_TABLE_CONVERSION.md` | records the safe HR protected print-table conversion |

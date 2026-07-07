@@ -1,4 +1,5 @@
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
+import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
 import { hrFmt } from '../utils/hrFmt';
 import { computePayrollRunTotals } from '../utils/hrCalculations/payroll';
 
@@ -99,20 +100,34 @@ export function buildPayrollRunExportRows(
   }));
 }
 
-function htmlCell(value: unknown): string {
-  return String(value ?? '-').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 export function buildPayrollRunPrintTable(
   rows: PayrollRunRow[],
   payrollStatusMap: Record<string, { label?: string }>,
   t: Translate,
 ): string {
-  const bodyRows = rows
-    .map((row) =>
-      `<tr><td>${htmlCell(row.runNumber)}</td><td>${htmlCell(row.month)}</td><td>${htmlCell(hrFmt(row.grossTotal))}</td><td>${htmlCell(hrFmt(row.netTotal))}</td><td>${htmlCell(payrollRunExportStatusLabel(row, payrollStatusMap, t))}</td><td>${htmlCell(row.issuedInvoiceNumber)}</td></tr>`,
-    )
-    .join('');
-
-  return `<table><thead><tr><th>${htmlCell(t('payrollRunNumber'))}</th><th>${htmlCell(t('payrollMonth'))}</th><th>${htmlCell(t('payrollGross'))}</th><th>${htmlCell(t('payrollNet'))}</th><th>${htmlCell(t('payrollStatus'))}</th><th>${htmlCell(t('payrollIssuedInvoiceNumber'))}</th></tr></thead><tbody>${bodyRows || `<tr><td colspan="6">${htmlCell(t('noDataInPeriod'))}</td></tr>`}</tbody></table>`;
+  return buildPrintHtmlTable({
+    wrapperClassName: null,
+    emptyMessage: t('noDataInPeriod'),
+    emptyColSpan: 6,
+    headerRows: [{
+      cells: [
+        { value: t('payrollRunNumber') },
+        { value: t('payrollMonth') },
+        { value: t('payrollGross'), align: 'end' },
+        { value: t('payrollNet'), align: 'end' },
+        { value: t('payrollStatus') },
+        { value: t('payrollIssuedInvoiceNumber') },
+      ],
+    }],
+    bodyRows: rows.map((row) => ({
+      cells: [
+        { value: row.runNumber },
+        { value: row.month },
+        { value: hrFmt(row.grossTotal), align: 'end' },
+        { value: hrFmt(row.netTotal), align: 'end' },
+        { value: payrollRunExportStatusLabel(row, payrollStatusMap, t) },
+        { value: row.issuedInvoiceNumber },
+      ],
+    })),
+  });
 }

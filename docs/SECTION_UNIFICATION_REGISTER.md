@@ -1739,6 +1739,44 @@ Closed on 2026-07-08 as a safe print/export conversion batch. Closure commit awa
   - `check-node-scripts` passed.
   - `git diff --check` passed.
 
+## HR Protected Print Table Conversion
+
+Closed on 2026-07-08 as a safe HR print-table conversion batch. Closure commit awaits this batch commit.
+
+### Scope
+
+- Converted safe HR print-only table builders in:
+  - payroll run print table model
+  - salary calculator print allowance tables
+  - termination settlement print summary table
+
+### Centralized
+
+- 4 manual `<table>` usages now route through `src/utils/printTableHtml.ts`.
+- HR print escaping, empty table state, numeric alignment, and definition-style rows now use the central print-table primitive.
+- `scripts/table-manual-exceptions.json` dropped from 42 manual tables in 27 files to 38 manual tables in 24 files.
+
+### Protected Exceptions
+
+- Payroll run editable rows remain protected under editable-grid governance.
+- Payroll signature slips remain protected document output until the HR document print family has a dedicated conversion pass.
+- No official payroll, overtime, advance, deduction, or settlement calculations were changed.
+
+### Final System Unification Candidates
+
+- Convert remaining HR document-print tables as one HR document family once print visual parity tests exist.
+- Keep editable payroll and purchase grids for the editable-grid phase.
+- Continue shrinking table exceptions only through tested print/document families.
+
+### Closure Checks
+
+- 2026-07-08 HR protected print conversion closure:
+  - `tsc --noEmit` passed.
+  - `check:table-governance` passed.
+  - `check:hr-governance` passed.
+  - `check:system-governance-consolidated` passed.
+  - `git diff --check` passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:

@@ -4,6 +4,7 @@ import {
   unwrapApiList,
 } from '../../../services/api';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
+import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { toLocalDayKey } from '../utils/payrollAttendanceMath';
@@ -111,27 +112,32 @@ export function openTerminationSettlementPrintWindow(input: {
   const endDisplay = formatSaudiDate(preview.pr.effectiveEnd || terminationYmd);
   const monthDisplay = formatSaudiDate(monthFirst);
   const rows = [
-    [`${t('employeeName')} / Employee`, esc(name)],
-    [`${t('terminationDate')} / Termination`, esc(formatSaudiDate(terminationYmd))],
-    [`${t('payrollMonth')} / Payroll month`, esc(monthDisplay)],
-    [`${t('terminationSettlementMonthlyTotal')} / Monthly package`, `${esc(hrFmt(preview.fullMonthly))} SR`],
-    [`${t('terminationSettlementEmployedDays')} / Days in month`, `${esc(String(preview.pr.employedDays))} / ${esc(String(preview.pr.daysInMonth))}`],
-    [`${t('terminationSettlementEffectiveEnd')} / Last work day`, esc(endDisplay)],
-    [`${t('terminationSettlementProratedGross')} / Prorated gross (est.)`, `${esc(hrFmt(preview.grossProrated))} SR`],
-    [`${t('terminationSettlementAdvancesOutstanding')} / Advances`, `${esc(hrFmt(advancesRemaining))} SR`],
-    [`${t('terminationSettlementSuggestedNet')} / Net (estimate)`, `${esc(hrFmt(preview.netSuggested))} SR`],
+    [`${t('employeeName')} / Employee`, name],
+    [`${t('terminationDate')} / Termination`, formatSaudiDate(terminationYmd)],
+    [`${t('payrollMonth')} / Payroll month`, monthDisplay],
+    [`${t('terminationSettlementMonthlyTotal')} / Monthly package`, `${hrFmt(preview.fullMonthly)} SR`],
+    [`${t('terminationSettlementEmployedDays')} / Days in month`, `${String(preview.pr.employedDays)} / ${String(preview.pr.daysInMonth)}`],
+    [`${t('terminationSettlementEffectiveEnd')} / Last work day`, endDisplay],
+    [`${t('terminationSettlementProratedGross')} / Prorated gross (est.)`, `${hrFmt(preview.grossProrated)} SR`],
+    [`${t('terminationSettlementAdvancesOutstanding')} / Advances`, `${hrFmt(advancesRemaining)} SR`],
+    [`${t('terminationSettlementSuggestedNet')} / Net (estimate)`, `${hrFmt(preview.netSuggested)} SR`],
   ];
+  const settlementTable = buildPrintHtmlTable({
+    wrapperClassName: null,
+    bodyRows: rows.map(([label, value]) => ({
+      cells: [
+        { value: label, style: 'font-weight:600;width:42%' },
+        { value },
+      ],
+    })),
+  });
 
   const body = `
     <div style="font-family:Cairo,Tahoma,sans-serif;direction:rtl;padding:16px;max-width:720px;margin:0 auto">
       <h1 style="font-size:18px;margin:0 0 8px">${esc(t('terminationSettlementTitle'))}</h1>
       <p style="font-size:12px;color:#64748b;margin:0 0 16px">${esc(t('terminationSettlementDisclaimer'))}</p>
       <p style="font-size:13px;margin:0 0 8px"><strong>${esc(t('terminationSettlementCompany'))}:</strong> ${esc(companyName || '-')}</p>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <tbody>
-          ${rows.map(([a, b]) => `<tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;width:42%">${a}</td><td style="border:1px solid #ddd;padding:8px">${b}</td></tr>`).join('')}
-        </tbody>
-      </table>
+      ${settlementTable}
     </div>`;
 
   openPrintWindow({

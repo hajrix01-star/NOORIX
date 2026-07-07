@@ -22,11 +22,6 @@
       "decision": "leave",
       "reason": "payroll run rows contain editable inputs and payroll calculations."
     },
-    "src/modules/HR/components/terminationSettlementHelpers.ts": {
-      "category": "payroll-protected",
-      "decision": "leave",
-      "reason": "termination settlement print table extracted from modal; financially sensitive HR print output."
-    },
     "src/modules/HR/components/useAdvanceTableModel.tsx": {
       "category": "hr-financial",
       "decision": "leave",
@@ -41,16 +36,6 @@
       "category": "document-print",
       "decision": "leave",
       "reason": "dedicated HR print HTML generator."
-    },
-    "src/modules/HR/tabs/payrollTabModel.ts": {
-      "category": "print-export-html",
-      "decision": "leave",
-      "reason": "payroll run print/export table builder extracted from PayrollTab."
-    },
-    "src/modules/HR/tabs/salaryCalcPrint.ts": {
-      "category": "payroll-protected",
-      "decision": "leave",
-      "reason": "salary calculator print HTML extracted from SalaryCalcTab; protected HR financial print output."
     },
     "src/modules/HR/utils/payrollRunSignatureSlipsPrint.ts": {
       "category": "document-print",
