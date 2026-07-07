@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, ColorSwatch, RuntimeStyleBox, cn } from '../../../ui';
+import { Button, ChartState, ColorSwatch, RuntimeStyleBox, cn } from '../../../ui';
 import { useUiDir } from '../../../hooks/useUiDir';
 import { useIsNarrow700 } from '../../../ui';
 import { formatCompactNumber, formatMoney } from '../../../utils/money';
@@ -170,7 +170,9 @@ export function OwnerPerformanceChart({
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <div className="text-center text-noorix-muted py-12">{t('noData')}</div>
+        <ChartState kind="noData" className="min-h-[240px] border-0 bg-transparent">
+          {t('noData')}
+        </ChartState>
       )}
 
       <div className="flex flex-wrap gap-4 mt-4 border-t border-noorix-border pt-3">

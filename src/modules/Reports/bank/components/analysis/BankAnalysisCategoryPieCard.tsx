@@ -1,6 +1,6 @@
 import React from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { Button, FmtNum } from '../../../../../ui';
+import { Button, ChartState, FmtNum } from '../../../../../ui';
 import type { AnalysisCardId, PieDisplayMode, PieSliceRow } from '../../bankAnalysisTab.types';
 import { pieSliceFill } from '../../bankAnalysisHelpers';
 import { BankAnalysisCardShell } from './BankAnalysisCardShell';
@@ -139,9 +139,9 @@ export function BankAnalysisCategoryPieCard({
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center bg-noorix-bg-muted rounded-xl text-[14px] text-noorix-muted h-[320px] nx-pie-empty-box">
+            <ChartState kind="empty" className="h-[320px] min-h-[320px] text-[14px] nx-pie-empty-box">
               {t('bankNoCategoryData')}
-            </div>
+            </ChartState>
           )}
         </div>
         <div className="flex flex-col nx-pie-legend-aside">
@@ -151,7 +151,9 @@ export function BankAnalysisCategoryPieCard({
           </div>
           <div className="rounded-xl p-3 bg-noorix-bg-muted flex-1 min-w-0 grid gap-2 border border-noorix-border">
             {pieDisplayData.length === 0 ? (
-              <span className="text-[12px] text-noorix-muted text-center p-3">{t('bankNoCategoryData')}</span>
+              <ChartState kind="empty" className="min-h-[120px] border-0 bg-transparent p-3 text-[12px]">
+                {t('bankNoCategoryData')}
+              </ChartState>
             ) : (
               pieDisplayData.map((item, i) => {
                 const dot = pieSliceFill(pieMode, i, item);

@@ -66,6 +66,8 @@ export type { RuntimeStyleBoxProps } from './RuntimeStyleBox';
 export { default as MetricCard      } from './MetricCard';
 export { default as SummaryBar      } from './SummaryBar';
 export type { SummaryBarItem, SummaryBarProps, SummaryBarTone } from './SummaryBar';
+export { default as ChartState      } from './ChartState';
+export type { ChartStateKind, ChartStateProps } from './ChartState';
 export { default as SimpleTable     } from './SimpleTable';
 export type { SimpleTableColumn, SimpleTableProps } from './SimpleTable';
 export { default as MatrixTable     } from './MatrixTable';

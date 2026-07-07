@@ -1340,11 +1340,60 @@ Closed on 2026-07-07 as the first governed system-wide KPI and summary primitive
   - `check:responsive-governance` passed.
   - Targeted UI and affected-section tests passed.
 
+## Chart State Primitive Finalization
+
+Closed on 2026-07-08 as the first governed chart-state primitive pass. Closure commit is pending local commit.
+
+### Scope
+
+- Central chart state primitive:
+  - `src/ui/ChartState.tsx`
+  - `src/ui/ChartState.test.tsx`
+  - `src/ui/index.ts`
+- Migrated chart/analysis surfaces:
+  - `src/modules/Dashboard/overview/components/DashboardOverviewTopCharts.tsx`
+  - `src/modules/Owner/components/OwnerPerformanceChart.tsx`
+  - `src/modules/Reports/bank/components/analysis/BankAnalysisCategoryPieCard.tsx`
+- Governance:
+  - `scripts/check-chart-state-governance.mjs`
+  - `package.json` script `check:chart-state-governance`
+
+### Centralized
+
+- `ChartState` is now the shared primitive for chart panel loading, empty, error, and no-data surfaces.
+- Dashboard top supplier and purchase-category chart states no longer use local chart-state markup.
+- Owner performance chart no-data state uses the shared primitive.
+- Bank category pie empty chart and empty legend state use the shared primitive.
+
+### Protected Exceptions
+
+- Recharts rendering, tooltip content, legends, and analytical calculations remain section-owned.
+- Bank analysis cards that intentionally disappear when no relevant data exists remain unchanged until a broader analysis-card behavior pass.
+- `ChartState` is presentation-only; it does not own metrics, filters, or official numbers.
+
+### Final System Unification Candidates
+
+- Extend `ChartState` to remaining analytical panels after each panel's behavior is confirmed.
+- Consider a central analytical card shell if Dashboard, Owner, Reports, and SmartChat converge further.
+- Promote chart tooltip styling only after the print/export and analysis card passes settle shared vocabulary.
+
+### Closure Checks
+
+- 2026-07-08 Chart State primitive closure:
+  - `tsc --noEmit` passed.
+  - `check:chart-state-governance` passed.
+  - `check-node-scripts` passed after adding Chart State governance.
+  - `check:css-governance` passed without increasing CSS baseline.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - Targeted UI, Dashboard, Owner, Reports, and affected chart tests passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
 
-- Central chart state primitives for loading, empty, error, and no-data states.
 - Central print/export layout layer for financial documents that are safe to unify.
 - Central editable-grid standard for financial row-entry screens.
 - Central name display helper adoption across all sections: `nameAr`, `nameEn`, `name`.

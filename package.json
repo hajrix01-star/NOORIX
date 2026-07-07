@@ -38,6 +38,7 @@
     "check:system-core-governance": "node scripts/check-system-core-governance.mjs",
     "check:api-contracts-governance": "node scripts/check-api-contracts-governance.mjs",
     "check:kpi-summary-governance": "node scripts/check-kpi-summary-governance.mjs",
+    "check:chart-state-governance": "node scripts/check-chart-state-governance.mjs",
     "check:owner-governance": "node scripts/check-owner-governance.mjs",
     "check:purchases-governance": "node scripts/check-purchases-governance.mjs",
     "check:sales-governance": "node scripts/check-sales-governance.mjs",
