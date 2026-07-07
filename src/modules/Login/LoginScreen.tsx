@@ -1,19 +1,20 @@
 ﻿/**
  * LoginScreen — شاشة تسجيل الدخول
  */
-import React, { useState } from 'react';
+import React, { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getText } from '../../i18n/translations';
 import { login as apiLogin } from '../../services/api';
-import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor, getResolvedLoginEmailDomain } from '../../utils/appBranding';
+import { getBrandName, getBrandLogo, getBrandTagline, getBrandColor } from '../../utils/appBranding';
 import { Button, Input, cn } from '../../ui';
 import { getFirstAccessibleAppPath } from '../../constants/permissions';
+import { loginErrorMessage, resolveLoginIdentifier, type LoginSessionPayload } from './loginModel';
 
 function getLang() {
   return (typeof document !== 'undefined' && document.documentElement?.lang === 'en') ? 'en' : 'ar';
 }
-function t(key: any) { return getText(key, getLang()); }
+function t(key: string) { return getText(key, getLang()); }
 
 export default function LoginScreen() {
   const { setToken, setUser } = useAuth();
@@ -33,16 +34,7 @@ export default function LoginScreen() {
   const brandLogoStyle = !brandLogo
     ? ({ '--login-brand-color': brandColor } as React.CSSProperties)
     : undefined;
-  /** بريد كامل أو اسم مستخدم + النطاق الرسمي فقط (مطابق لـ OFFICIAL_EMAIL_DOMAIN / VITE_OFFICIAL_EMAIL_DOMAIN؛ الجزء المحلي بحروف صغيرة كما في DB). */
-  const resolveLoginIdentifier = (raw: any) => {
-    const s = raw.trim();
-    if (!s) return s;
-    if (s.includes('@')) return s.toLowerCase();
-    const domain = getResolvedLoginEmailDomain();
-    return `${s.toLowerCase()}@${domain}`;
-  };
-
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     if (!email.trim() || !password) { setError(t('invalidCredentials')); return; }
@@ -53,14 +45,14 @@ export default function LoginScreen() {
         setError(res.isNetworkError ? t('serverConnectionError') : (res.error || t('invalidCredentials')));
         return;
       }
-      const { access_token, user } = res.data || {};
+      const { access_token, user } = (res.data || {}) as LoginSessionPayload;
       if (!access_token || !user) { setError(t('invalidCredentials')); return; }
       setToken(access_token);
       setUser(user);
       const dest = getFirstAccessibleAppPath(user?.role, user?.permissions);
       navigate(dest, { replace: true });
-    } catch (err: any) {
-      setError(err?.message || t('serverConnectionError'));
+    } catch (err: unknown) {
+      setError(loginErrorMessage(err, t('serverConnectionError')));
     } finally {
       setLoading(false);
     }
@@ -122,7 +114,7 @@ export default function LoginScreen() {
                   type="text"
                   size="lg"
                   value={email}
-                  onChange={(e: any) => setEmail(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                   autoComplete="username"
                   dir="ltr"
                   className="text-left"
@@ -139,7 +131,7 @@ export default function LoginScreen() {
                     type={showPassword ? 'text' : 'password'}
                     size="lg"
                     value={password}
-                    onChange={(e: any) => setPassword(e.target.value)}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                     autoComplete="current-password"
                     dir="ltr"
                     className={cn('pe-20 text-left')}
@@ -148,7 +140,7 @@ export default function LoginScreen() {
                     type="button"
                     variant="raw"
                     size="sm"
-                    onClick={() => setShowPassword((v: any) => !v)}
+                    onClick={() => setShowPassword((value) => !value)}
                     className="absolute end-2.5 top-1/2 -translate-y-1/2 px-2 font-bold text-noorix-muted hover:text-noorix-text hover:bg-noorix-bg-muted"
                   >
                     {showPassword ? t('hidePassword') : t('showPassword')}
