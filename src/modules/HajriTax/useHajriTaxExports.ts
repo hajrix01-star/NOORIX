@@ -10,10 +10,19 @@ import {
 } from '../../constants/taxDisclosure';
 import { exportToExcel } from '../../utils/exportUtils';
 import { fmt, fmtTax } from '../../utils/format';
+import { buildPrintHtmlTable, type PrintHtmlTableRow } from '../../utils/printTableHtml';
 import { openPrintWindow } from '../../utils/printUtils';
 import type { HajriTaxLanguage, HajriTaxTranslate, VatPlanningRecord } from '../../types/api/domains/hajriTax';
-import { companyDisplayName, isHajriDeclarationSubmitted, registryInputVat, registryOutputVat, registryPayload, registryPurchasesAmount, registrySalesAmount } from './hajriRegistryMetrics';
-import { escapeHtml, fmtDisclosurePrintCell } from './hajriTaxScreenHelpers';
+import {
+  companyDisplayName,
+  isHajriDeclarationSubmitted,
+  registryInputVat,
+  registryOutputVat,
+  registryPayload,
+  registryPurchasesAmount,
+  registrySalesAmount,
+} from './hajriRegistryMetrics';
+import { fmtDisclosurePrintCell } from './hajriTaxScreenHelpers';
 
 type CompanyMeta = (id: string | null) => { name: string; tax: string };
 
@@ -32,9 +41,50 @@ type HajriTaxExportsParams = {
   currentYear: number;
 };
 
+const AR = {
+  planningNoAccountingImpact: '\u062a\u062e\u0637\u064a\u0637 \u0636\u0631\u064a\u0628\u064a \u0644\u0627 \u064a\u0624\u062b\u0631 \u0639\u0644\u0649 \u0627\u0644\u0645\u062d\u0627\u0633\u0628\u0629',
+  targetPayment: '\u0645\u0628\u0644\u063a \u0627\u0644\u062f\u0641\u0639 \u0627\u0644\u0645\u0633\u062a\u0647\u062f\u0641:',
+  adjustment: '\u062a\u0639\u062f\u064a\u0644',
+  outputVat: '\u0645\u062e\u0631\u062c\u0627\u062a \u0636\u0631\u064a\u0628\u0629 \u0627\u0644\u0642\u064a\u0645\u0629 \u0627\u0644\u0645\u0636\u0627\u0641\u0629',
+  inputVat: '\u0645\u062f\u062e\u0644\u0627\u062a \u0636\u0631\u064a\u0628\u0629 \u0627\u0644\u0642\u064a\u0645\u0629 \u0627\u0644\u0645\u0636\u0627\u0641\u0629',
+  netPayable: '\u0635\u0627\u0641\u064a \u0645\u0633\u062a\u062d\u0642',
+  registry: '\u0627\u0644\u0633\u062c\u0644',
+  company: '\u0627\u0644\u0634\u0631\u0643\u0629',
+  year: '\u0627\u0644\u0633\u0646\u0629',
+};
+
 function parseDisplayPaymentTarget(value: string): number | null {
   const parsed = parseFloat(String(value).replace(/,/g, ''));
   return Number.isFinite(parsed) && Math.abs(parsed) > 1e-9 ? parsed : null;
+}
+
+function taxLineRows(params: {
+  rows: readonly TaxDisclosureLineRow[];
+  data: TaxDisclosureData;
+  total: number;
+  lang: HajriTaxLanguage;
+}): PrintHtmlTableRow[] {
+  const { rows, data, total, lang } = params;
+  const label = (row: TaxDisclosureLineRow) => (lang === 'ar' ? row.labelAr : row.labelEn);
+  return rows.map((row) => {
+    const amount = row.isTotal ? total : getRowValue(data, row.key, 'amount');
+    const vat = row.isTotal ? total : getRowValue(data, row.key, 'vat');
+    const adjustment = row.isTotal ? '-' : fmtDisclosurePrintCell(getRowValue(data, row.key, 'adjustment'));
+    return {
+      cells: [
+        { value: label(row) },
+        { value: fmtDisclosurePrintCell(amount), align: 'end' },
+        { value: adjustment, align: 'end' },
+        { value: fmtDisclosurePrintCell(vat), align: 'end' },
+      ],
+    };
+  });
+}
+
+function taxSectionRow(label: string, background: string): PrintHtmlTableRow {
+  return {
+    cells: [{ value: label, colSpan: 4, style: `background:${background};font-weight:700` }],
+  };
 }
 
 export function useHajriTaxExports({
@@ -53,29 +103,31 @@ export function useHajriTaxExports({
 }: HajriTaxExportsParams) {
   const printDetail = useCallback(() => {
     const { name } = companyMeta(detailCompanyId);
-    const label = (row: TaxDisclosureLineRow) => (lang === 'ar' ? row.labelAr : row.labelEn);
-    const outRows = OUTPUT_ROWS.map((row) => {
-      const amount = row.isTotal ? outputTotal : getRowValue(draftData, row.key, 'amount');
-      const vat = row.isTotal ? outputTotal : getRowValue(draftData, row.key, 'vat');
-      const adjustment = row.isTotal ? '-' : fmtDisclosurePrintCell(getRowValue(draftData, row.key, 'adjustment'));
-      return `<tr><td>${escapeHtml(label(row))}</td><td>${fmtDisclosurePrintCell(amount)}</td><td>${adjustment}</td><td>${fmtDisclosurePrintCell(vat)}</td></tr>`;
-    }).join('');
-    const inRows = INPUT_ROWS.map((row) => {
-      const amount = row.isTotal ? inputTotal : getRowValue(draftData, row.key, 'amount');
-      const vat = row.isTotal ? inputTotal : getRowValue(draftData, row.key, 'vat');
-      const adjustment = row.isTotal ? '-' : fmtDisclosurePrintCell(getRowValue(draftData, row.key, 'adjustment'));
-      return `<tr><td>${escapeHtml(label(row))}</td><td>${fmtDisclosurePrintCell(amount)}</td><td>${adjustment}</td><td>${fmtDisclosurePrintCell(vat)}</td></tr>`;
-    }).join('');
     const paymentTarget = parseDisplayPaymentTarget(paymentTargetStr);
+    const detailTable = buildPrintHtmlTable({
+      wrapperClassName: null,
+      headerRows: [{
+        cells: [
+          { value: t('reportItem') },
+          { value: 'SR', align: 'end' },
+          { value: lang === 'ar' ? AR.adjustment : 'Adj.', align: 'end' },
+          { value: 'VAT', align: 'end' },
+        ],
+      }],
+      bodyRows: [
+        taxSectionRow(lang === 'ar' ? AR.outputVat : 'Output VAT', '#f0fdf4'),
+        ...taxLineRows({ rows: OUTPUT_ROWS, data: draftData, total: outputTotal, lang }),
+        taxSectionRow(lang === 'ar' ? AR.inputVat : 'Input VAT', '#fef2f2'),
+        ...taxLineRows({ rows: INPUT_ROWS, data: draftData, total: inputTotal, lang }),
+      ],
+    });
     openPrintWindow({
       title: t('hajriTax'),
       companyName: name || '',
-      subtitle: `${periodLabel} - ${lang === 'ar' ? 'تخطيط ضريبي لا يؤثر على المحاسبة' : 'Planning only, no accounting impact'}`,
-      body: `<p>${lang === 'ar' ? 'مبلغ الدفع المستهدف:' : 'Target payment:'} ${paymentTarget == null ? '-' : `${fmtTax(paymentTarget)} SR`}</p>
-<table><thead><tr><th>${t('reportItem')}</th><th>SR</th><th>${lang === 'ar' ? 'تعديل' : 'Adj.'}</th><th>VAT</th></tr></thead>
-<tbody><tr><td colspan="4" style="background:#f0fdf4;font-weight:700">${lang === 'ar' ? 'مخرجات ضريبة القيمة المضافة' : 'Output VAT'}</td></tr>${outRows}
-<tr><td colspan="4" style="background:#fef2f2;font-weight:700">${lang === 'ar' ? 'مدخلات ضريبة القيمة المضافة' : 'Input VAT'}</td></tr>${inRows}</tbody></table>
-<p><b>${lang === 'ar' ? 'صافي مستحق' : 'Net payable'}:</b> ${fmtTax(netPayableDraft)} SR</p>`,
+      subtitle: `${periodLabel} - ${lang === 'ar' ? AR.planningNoAccountingImpact : 'Planning only, no accounting impact'}`,
+      body: `<p>${lang === 'ar' ? AR.targetPayment : 'Target payment:'} ${paymentTarget == null ? '-' : `${fmtTax(paymentTarget)} SR`}</p>
+${detailTable}
+<p><b>${lang === 'ar' ? AR.netPayable : 'Net payable'}:</b> ${fmtTax(netPayableDraft)} SR</p>`,
     });
   }, [companyMeta, detailCompanyId, draftData, inputTotal, lang, netPayableDraft, outputTotal, paymentTargetStr, periodLabel, t]);
 
@@ -88,7 +140,7 @@ export function useHajriTaxExports({
     INPUT_ROWS.forEach((row) => {
       if (!row.isTotal) rows.push({ Item: label(row), Amount: getRowValue(draftData, row.key, 'amount'), VAT: getRowValue(draftData, row.key, 'vat') });
     });
-    rows.push({ Item: lang === 'ar' ? 'صافي مستحق' : 'Net payable', Amount: '', VAT: netPayableDraft });
+    rows.push({ Item: lang === 'ar' ? AR.netPayable : 'Net payable', Amount: '', VAT: netPayableDraft });
     exportToExcel(rows, `hajri-tax-${detailCompanyId}-${periodLabel}.xlsx`);
   }, [detailCompanyId, draftData, lang, netPayableDraft, periodLabel]);
 
@@ -98,7 +150,7 @@ export function useHajriTaxExports({
       const paymentTarget = row.paymentTarget != null ? parseFloat(String(row.paymentTarget)) : null;
       const submitted = isHajriDeclarationSubmitted(row);
       return {
-        [lang === 'ar' ? 'الشركة' : 'Company']: companyDisplayName(row.company, lang),
+        [lang === 'ar' ? AR.company : 'Company']: companyDisplayName(row.company, lang),
         Year: row.year,
         Quarter: `Q${row.quarter}`,
         [t('hajriTaxColSales')]: registrySalesAmount(payload),
@@ -116,17 +168,49 @@ export function useHajriTaxExports({
   }, [currentYear, lang, registryRows, t]);
 
   const printConsolidated = useCallback(() => {
-    const bodyRows = registryRows.map((row) => {
-      const payload = registryPayload(row);
-      const paymentTarget = row.paymentTarget != null ? parseFloat(String(row.paymentTarget)) : null;
-      const submitted = isHajriDeclarationSubmitted(row);
-      return `<tr><td>${escapeHtml(companyDisplayName(row.company, lang))}</td><td>${row.year}</td><td>Q${row.quarter}</td><td>${fmt(registrySalesAmount(payload), 2)} SR</td><td>${fmt(registryPurchasesAmount(payload), 2)} SR</td><td>${fmtTax(registryOutputVat(payload))} SR</td><td>${fmtTax(registryInputVat(payload))} SR</td><td>${fmtTax(computeNetPayable(payload))} SR</td><td>${paymentTarget != null && Number.isFinite(paymentTarget) ? `${fmtTax(paymentTarget)} SR` : '-'}</td><td>${escapeHtml(submitted ? t('hajriTaxSubmittedYes') : t('hajriTaxSubmittedNo'))}</td><td>${escapeHtml(row.notes || '')}</td></tr>`;
-    }).join('');
     openPrintWindow({
-      title: `${t('hajriTax')} - ${lang === 'ar' ? 'السجل' : 'Registry'}`,
+      title: `${t('hajriTax')} - ${lang === 'ar' ? AR.registry : 'Registry'}`,
       companyName: '',
       subtitle: '',
-      body: `<table class="w-full"><thead><tr><th>${lang === 'ar' ? 'الشركة' : 'Company'}</th><th>${lang === 'ar' ? 'السنة' : 'Year'}</th><th>${t('vatQuarter')}</th><th>${t('hajriTaxColSales')}</th><th>${t('hajriTaxColPurchases')}</th><th>${t('hajriTaxColOutputVat')}</th><th>${t('hajriTaxColInputVat')}</th><th>${t('vatNetPayable')}</th><th>${t('vatPaymentTarget')}</th><th>${t('hajriTaxColFiling')}</th><th>${t('vatNotes')}</th></tr></thead><tbody>${bodyRows}</tbody></table>`,
+      body: buildPrintHtmlTable({
+        tableClassName: 'w-full',
+        wrapperClassName: null,
+        headerRows: [{
+          cells: [
+            { value: lang === 'ar' ? AR.company : 'Company' },
+            { value: lang === 'ar' ? AR.year : 'Year' },
+            { value: t('vatQuarter') },
+            { value: t('hajriTaxColSales'), align: 'end' },
+            { value: t('hajriTaxColPurchases'), align: 'end' },
+            { value: t('hajriTaxColOutputVat'), align: 'end' },
+            { value: t('hajriTaxColInputVat'), align: 'end' },
+            { value: t('vatNetPayable'), align: 'end' },
+            { value: t('vatPaymentTarget'), align: 'end' },
+            { value: t('hajriTaxColFiling') },
+            { value: t('vatNotes') },
+          ],
+        }],
+        bodyRows: registryRows.map((row) => {
+          const payload = registryPayload(row);
+          const paymentTarget = row.paymentTarget != null ? parseFloat(String(row.paymentTarget)) : null;
+          const submitted = isHajriDeclarationSubmitted(row);
+          return {
+            cells: [
+              { value: companyDisplayName(row.company, lang) },
+              { value: row.year },
+              { value: `Q${row.quarter}` },
+              { value: `${fmt(registrySalesAmount(payload), 2)} SR`, align: 'end' },
+              { value: `${fmt(registryPurchasesAmount(payload), 2)} SR`, align: 'end' },
+              { value: `${fmtTax(registryOutputVat(payload))} SR`, align: 'end' },
+              { value: `${fmtTax(registryInputVat(payload))} SR`, align: 'end' },
+              { value: `${fmtTax(computeNetPayable(payload))} SR`, align: 'end' },
+              { value: paymentTarget != null && Number.isFinite(paymentTarget) ? `${fmtTax(paymentTarget)} SR` : '-', align: 'end' },
+              { value: submitted ? t('hajriTaxSubmittedYes') : t('hajriTaxSubmittedNo') },
+              { value: row.notes || '' },
+            ],
+          };
+        }),
+      }),
     });
   }, [lang, registryRows, t]);
 

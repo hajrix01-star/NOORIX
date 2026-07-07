@@ -1777,6 +1777,39 @@ Closed on 2026-07-08 as a safe HR print-table conversion batch. Closure commit a
   - `check:system-governance-consolidated` passed.
   - `git diff --check` passed.
 
+## Hajri Tax Print Table Conversion
+
+Closed on 2026-07-08 as a safe tax print/export conversion batch. Closure commit awaits this batch commit.
+
+### Scope
+
+- Converted Hajri Tax print/export table bodies in `src/modules/HajriTax/useHajriTaxExports.ts`.
+
+### Centralized
+
+- 2 manual `<table>` usages now route through `src/utils/printTableHtml.ts`.
+- Tax section rows, registry print rows, numeric alignment, and HTML escaping now use the central print-table primitive.
+- `scripts/table-manual-exceptions.json` dropped from 38 manual tables in 24 files to 36 manual tables in 23 files.
+
+### Protected Exceptions
+
+- `src/modules/HajriTax/HajriTaxRegistryList.tsx` remains a protected wide tax registry table.
+- No tax disclosure calculation, registry payload, filing status, payment target, or JSON export logic was changed.
+
+### Final System Unification Candidates
+
+- Convert the protected Hajri registry screen only when the wide tax registry table primitive is ready.
+- Keep tax calculation changes out of print-table conversion batches unless backed by targeted tax tests.
+
+### Closure Checks
+
+- 2026-07-08 Hajri Tax print conversion closure:
+  - `tsc --noEmit` passed.
+  - `check:table-governance` passed.
+  - `check:hajri-tax-governance` passed.
+  - `check:system-governance-consolidated` passed.
+  - `git diff --check` passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
