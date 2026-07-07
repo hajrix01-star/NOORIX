@@ -14,6 +14,21 @@ import { normalizeModuleViewAccess } from '../../../constants/permissions';
 import RoleEditorOverlay, { type RoleEditorFormState } from './RoleEditorOverlay';
 import type { PermissionModuleShape } from './rolePermissionGroups';
 
+type PermissionSchema = {
+  modules?: PermissionModuleShape[];
+  levels?: Record<string, { ar: string; en: string }>;
+};
+
+type SettingsRoleListItem = {
+  id: string;
+  name: string;
+  nameAr?: string;
+  description?: string;
+  permissions?: string[];
+  isSystem?: boolean;
+  _count?: { users?: number };
+};
+
 const EMPTY_FORM: RoleEditorFormState = {
   name: '',
   nameAr: '',
@@ -33,7 +48,7 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
     isSystem: boolean;
   } | null>(null);
 
-  const { data: schema } = useApiQuery<any>({
+  const { data: schema } = useApiQuery<PermissionSchema>({
     queryKey: settingsKeys.permissionsSchema(),
     queryFn: getPermissionsSchema,
     fallbackMessage: t('loadingError'),
@@ -43,7 +58,7 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
   const modules: PermissionModuleShape[] = schema?.modules || [];
   const levels = schema?.levels || {};
 
-  const { data: roles = [], isLoading, isError } = useApiListQuery<any>({
+  const { data: roles = [], isLoading, isError } = useApiListQuery<SettingsRoleListItem>({
     queryKey: settingsKeys.roles(),
     queryFn: getRoles,
     fallbackMessage: t('loadingError'),
@@ -184,15 +199,7 @@ export default function RolesTab({ language }: { userRole?: string; language?: s
         <div className="text-center text-noorix-red p-10">{t('loadingError')}</div>
       ) : (
         <div className="grid gap-3">
-          {roles.map((role: {
-            id: string;
-            name: string;
-            nameAr?: string;
-            description?: string;
-            permissions?: string[];
-            isSystem?: boolean;
-            _count?: { users?: number };
-          }) => (
+          {roles.map((role) => (
             <div
               key={role.id}
               role="button"

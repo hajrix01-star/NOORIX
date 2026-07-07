@@ -1,8 +1,9 @@
 ﻿/**
  * AppBrandingTab — إعدادات هوية التطبيق بدعم ثنائي اللغة (عربي / إنجليزي).
  */
-import React, { useState, useRef } from 'react';
+import React, { type ChangeEvent, useState, useRef } from 'react';
 import { Button, ColorSwatch, FileInput, Input } from '../../../ui';
+import { fileToDataUrl } from '../constants/settingsConstants';
 import {
   getBrandNameAr, getBrandNameEn,
   getBrandTaglineAr, getBrandTaglineEn,
@@ -21,15 +22,13 @@ export default function AppBrandingTab() {
   const [logoUrl,     setLogoUrl]     = useState(getBrandLogo);
   const [color,       setColor]       = useState(getBrandColor);
   const [saved,       setSaved]       = useState(false);
-  const fileRef = useRef<any>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const officialLoginDomain = getResolvedLoginEmailDomain();
 
-  const handleFile = (e: any) => {
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (ev: any) => setLogoUrl(ev.target.result);
-    reader.readAsDataURL(file);
+    setLogoUrl(await fileToDataUrl(file));
   };
 
   const handleSave = () => {
@@ -105,7 +104,7 @@ export default function AppBrandingTab() {
             type="text"
             label="بالعربي"
             value={nameAr}
-            onChange={(e: any) => setNameAr(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setNameAr(e.target.value)}
             placeholder="نووريكس"
             maxLength={40}
           />
@@ -113,7 +112,7 @@ export default function AppBrandingTab() {
             type="text"
             label="In English"
             value={nameEn}
-            onChange={(e: any) => setNameEn(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setNameEn(e.target.value)}
             placeholder="Noorix"
             maxLength={40}
           />
@@ -131,7 +130,7 @@ export default function AppBrandingTab() {
             type="text"
             label="بالعربي"
             value={taglineAr}
-            onChange={(e: any) => setTaglineAr(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setTaglineAr(e.target.value)}
             placeholder="نظام إدارة متكامل"
             maxLength={60}
           />
@@ -139,7 +138,7 @@ export default function AppBrandingTab() {
             type="text"
             label="In English"
             value={taglineEn}
-            onChange={(e: any) => setTaglineEn(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setTaglineEn(e.target.value)}
             placeholder="Business Management System"
             maxLength={60}
           />
@@ -163,7 +162,7 @@ export default function AppBrandingTab() {
             <Input
               type="url"
               value={logoUrl}
-              onChange={(e: any) => setLogoUrl(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setLogoUrl(e.target.value)}
               placeholder="https://رابط-الشعار.com/logo.png"
             />
             <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
@@ -204,13 +203,13 @@ export default function AppBrandingTab() {
           <Input
             type="color"
             value={color}
-            onChange={(e: any) => setColor(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setColor(e.target.value)}
             className="cursor-pointer bg-noorix-surface w-12 h-[42px] p-[3px] rounded-[10px] border border-noorix-border shrink-0"
           />
           <Input
             type="text"
             value={color}
-            onChange={(e: any) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColor(e.target.value)}
             className="text-[13px] w-full min-w-0 max-w-[7.5rem] font-mono"
             placeholder="#0a1f44"
             maxLength={7}

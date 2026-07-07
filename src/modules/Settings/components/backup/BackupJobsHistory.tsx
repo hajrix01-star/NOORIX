@@ -1,6 +1,12 @@
 import React from 'react';
 import { Card, Badge, KebabMenu } from '../../../../ui';
 import { formatSaudiDateTime } from '../../../../utils/saudiDate';
+import type {
+  BackupImportModal,
+  BackupJob,
+  SettingsMutationLike,
+  TranslationFn,
+} from '../../settingsTypes';
 import {
   formatFileSize,
   defaultImportCompanyName,
@@ -9,9 +15,19 @@ import {
   statusBadgeColor,
 } from './backupTabHelpers';
 
-/**
- * سجل مهام النسخ الاحتياطي للشركات (من الجدول العام)
- */
+type BackupJobsHistoryProps = {
+  t: TranslationFn;
+  lang: string;
+  isLoading: boolean;
+  jobs: BackupJob[];
+  reportMut: SettingsMutationLike<string>;
+  downloadMut: SettingsMutationLike<string>;
+  verifyCoMut: SettingsMutationLike<string>;
+  setImportNameAr: (value: string) => void;
+  setImportConfirmed: (value: boolean) => void;
+  setImportModal: (value: BackupImportModal | null) => void;
+};
+
 export function BackupJobsHistory({
   t,
   lang,
@@ -20,11 +36,10 @@ export function BackupJobsHistory({
   reportMut,
   downloadMut,
   verifyCoMut,
-  retryMut,
   setImportNameAr,
   setImportConfirmed,
   setImportModal,
-}: any) {
+}: BackupJobsHistoryProps) {
   return (
     <section className="flex flex-col gap-3 min-w-0 w-full" aria-labelledby="backup-log-title">
       <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
@@ -42,23 +57,24 @@ export function BackupJobsHistory({
       {isLoading && <p className="text-[12px] text-noorix-muted m-0">{t('loading')}</p>}
       {!isLoading && jobs.length === 0 && <p className="text-[12px] text-noorix-muted m-0">{t('backupNoJobs')}</p>}
       <div className="flex flex-col gap-2 overflow-x-auto min-w-0 -mx-0.5 px-0.5">
-        {jobs.map((j: any) => {
+        {jobs.map((job) => {
           const metaParts = [
-            formatSaudiDateTime(j.createdAt),
-            j.sizeBytes != null ? formatFileSize(j.sizeBytes) : '',
-            j.durationMs != null ? `${j.durationMs} ms` : '',
+            formatSaudiDateTime(job.createdAt),
+            job.sizeBytes != null ? formatFileSize(job.sizeBytes) : '',
+            job.durationMs != null ? `${job.durationMs} ms` : '',
           ].filter(Boolean);
           const title =
-            `${scopeLabel(j.scope, t)}${j.company ? ` — ${j.company.nameAr || j.company.nameEn || ''}` : ''}${
-              j.ordinal != null ? ` · ${t('backupOrdinalLabel')} ${j.ordinal}` : ''
+            `${scopeLabel(job.scope, t)}${job.company ? ` - ${job.company.nameAr || job.company.nameEn || ''}` : ''}${
+              job.ordinal != null ? ` - ${t('backupOrdinalLabel')} ${job.ordinal}` : ''
             }`;
+
           return (
-            <Card key={j.id} padding="sm" className="flex flex-col gap-2.5 min-w-0">
+            <Card key={job.id} padding="sm" className="flex flex-col gap-2.5 min-w-0">
               <div className="flex items-start gap-2 min-w-0">
                 <div className="min-w-0 flex-1 flex flex-wrap items-center gap-2">
                   <span className="text-[13px] font-semibold text-noorix-text break-words min-w-0">{title}</span>
-                  <Badge color={statusBadgeColor(j.status)} size="sm" className="shrink-0">
-                    {statusLabel(j.status, t)}
+                  <Badge color={statusBadgeColor(job.status)} size="sm" className="shrink-0">
+                    {statusLabel(job.status, t)}
                   </Badge>
                 </div>
                 <div className="shrink-0 pt-0.5 min-h-[44px] min-w-[44px] flex items-start justify-center">
@@ -69,43 +85,43 @@ export function BackupJobsHistory({
                       {
                         key: 'report',
                         label: t('backupRestoreReport'),
-                        onClick: () => reportMut.mutate(j.id),
+                        onClick: () => reportMut.mutate(job.id),
                       },
                       {
                         key: 'download',
                         label: t('backupDownload'),
-                        hidden: !(j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath),
-                        onClick: () => downloadMut.mutate(j.id),
+                        hidden: !(job.scope === 'company_logical' && job.status === 'completed' && job.localRelativePath),
+                        onClick: () => downloadMut.mutate(job.id),
                       },
                       {
                         key: 'import',
                         label: t('backupImportNewCompany'),
-                        hidden: !(j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath),
+                        hidden: !(job.scope === 'company_logical' && job.status === 'completed' && job.localRelativePath),
                         onClick: () => {
-                          setImportNameAr(defaultImportCompanyName(j, t, lang));
+                          setImportNameAr(defaultImportCompanyName(job, t, lang));
                           setImportConfirmed(false);
-                          setImportModal({ jobId: j.id });
+                          setImportModal({ jobId: job.id });
                         },
                       },
                       {
                         key: 'verify',
                         label: t('backupVerify'),
-                        hidden: !(j.scope === 'company_logical' && j.status === 'completed' && j.localRelativePath),
-                        onClick: () => verifyCoMut.mutate(j.id),
+                        hidden: !(job.scope === 'company_logical' && job.status === 'completed' && job.localRelativePath),
+                        onClick: () => verifyCoMut.mutate(job.id),
                       },
                     ]}
                   />
                 </div>
               </div>
-              <p className="text-[11px] text-noorix-muted m-0 leading-snug break-words">{metaParts.join(' · ')}</p>
-              {j.errorMessage && (
-                <p className="text-[11px] text-noorix-red m-0 break-words">{j.errorMessage}</p>
+              <p className="text-[11px] text-noorix-muted m-0 leading-snug break-words">{metaParts.join(' - ')}</p>
+              {job.errorMessage && (
+                <p className="text-[11px] text-noorix-red m-0 break-words">{job.errorMessage}</p>
               )}
-              {j.verifyOk === true && (
+              {job.verifyOk === true && (
                 <p className="text-[11px] text-noorix-green m-0 font-medium">{t('backupVerifyOk')}</p>
               )}
-              {j.verifyOk === false && j.verifyError && (
-                <p className="text-[11px] text-noorix-red m-0 break-words">{j.verifyError}</p>
+              {job.verifyOk === false && job.verifyError && (
+                <p className="text-[11px] text-noorix-red m-0 break-words">{job.verifyError}</p>
               )}
             </Card>
           );

@@ -2,7 +2,7 @@
  * AISettingsTab — الذكاء المستخدم (Gemini)
  * عرض حالة الاتصال، التشخيص، وزر الفحص الاحترافي
  */
-import React, { useState } from 'react';
+import React, { type ReactNode, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiQuery } from '../../../hooks/useApiQuery';
@@ -14,12 +14,28 @@ import { settingsKeys } from '../../../services/queryKeys';
 const STATUS_ONLINE = 'online';
 const STATUS_OFFLINE = 'offline';
 
+type AiHealthData = {
+  error?: string;
+  isNetworkError?: boolean;
+  geminiAvailable?: boolean;
+};
+
+type GeminiTestResult = {
+  success?: boolean;
+  error?: string;
+  data?: {
+    ok?: boolean;
+    intent?: string;
+    error?: string;
+  };
+};
+
 export default function AISettingsTab() {
   const { lang } = useTranslation();
   const queryClient = useQueryClient();
-  const [lastTestResult, setLastTestResult] = useState<any>(null);
+  const [lastTestResult, setLastTestResult] = useState<GeminiTestResult | null>(null);
 
-  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth, isError: healthIsError, error: healthError } = useApiQuery<any>({
+  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth, isError: healthIsError, error: healthError } = useApiQuery<AiHealthData>({
     queryKey: settingsKeys.healthAiSettings(),
     queryFn: () => getHealth(),
     refetchInterval: 60000,
@@ -32,7 +48,7 @@ export default function AISettingsTab() {
     invalidateQueries: [settingsKeys.healthAiSettings()],
     showErrorToast: false,
     rejectOnApiFailure: false,
-    onSuccess: (res: any) => {
+    onSuccess: (res: GeminiTestResult) => {
       setLastTestResult(res);
     },
     onError: () => {
@@ -43,7 +59,7 @@ export default function AISettingsTab() {
   const visibleHealthData = healthIsError
     ? { error: healthError?.message, isNetworkError: true }
     : healthData;
-  const isOnline = visibleHealthData && !visibleHealthData.error && !visibleHealthData.isNetworkError;
+  const isOnline = !!visibleHealthData && !visibleHealthData.error && !visibleHealthData.isNetworkError;
   const geminiAvailable = !!visibleHealthData?.geminiAvailable;
   const status = isOnline ? STATUS_ONLINE : STATUS_OFFLINE;
 
@@ -148,7 +164,7 @@ export default function AISettingsTab() {
   );
 }
 
-function DiagnosticRow({ label, value, ok, pending = false }: { label: string; value: any; ok: boolean; pending?: boolean }) {
+function DiagnosticRow({ label, value, ok, pending = false }: { label: string; value: ReactNode; ok: boolean; pending?: boolean }) {
   return (
     <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between border border-noorix-border rounded-lg py-[10px] px-3 min-w-0 bg-noorix-surface">
       <span className="text-[13px] font-medium text-noorix-muted shrink-0">{label}</span>

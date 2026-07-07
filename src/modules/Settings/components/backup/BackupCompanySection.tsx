@@ -1,9 +1,28 @@
-import React from 'react';
+import React, { type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
 import { Button, Checkbox, Input, Card, Divider } from '../../../../ui';
+import type {
+  BackupConfigData,
+  BackupSchedulePatch,
+  BackupScheduleForm,
+  SettingsApiResult,
+  SettingsCompany,
+  SettingsMutationLike,
+  SettingsVoidMutationLike,
+  TranslationFn,
+} from '../../settingsTypes';
 
-/**
- * بطاقة نسخ الشركة: تشغيل يدوي + جدولة + Google Drive
- */
+type BackupCompanySectionProps = {
+  t: TranslationFn;
+  activeCompanies: SettingsCompany[];
+  companyId: string;
+  setCompanyId: (value: string) => void;
+  coForm: BackupScheduleForm;
+  setCoForm: Dispatch<SetStateAction<BackupScheduleForm>>;
+  coCfgRes?: SettingsApiResult<BackupConfigData>;
+  triggerMut: SettingsVoidMutationLike;
+  saveCoMut: SettingsMutationLike<BackupSchedulePatch & { companyId: string }>;
+};
+
 export function BackupCompanySection({
   t,
   activeCompanies,
@@ -14,7 +33,7 @@ export function BackupCompanySection({
   coCfgRes,
   triggerMut,
   saveCoMut,
-}: any) {
+}: BackupCompanySectionProps) {
   return (
     <section className="min-w-0 flex flex-col gap-0" aria-labelledby="backup-company-title">
       <Card padding="sm" className="flex flex-col gap-4 min-w-0">
@@ -28,13 +47,13 @@ export function BackupCompanySection({
                 type="select"
                 label={t('backupCompanyPick')}
                 value={companyId}
-                onChange={(e: any) => setCompanyId(e.target.value)}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) => setCompanyId(event.target.value)}
                 disabled={!activeCompanies.length}
                 aria-label={t('backupCompanySection')}
               >
-                {activeCompanies.map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nameAr || c.nameEn || c.id}
+                {activeCompanies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.nameAr || company.nameEn || company.id}
                   </option>
                 ))}
               </Input>
@@ -63,105 +82,43 @@ export function BackupCompanySection({
           </div>
           <Checkbox
             checked={coForm.enabled}
-            onChange={(e: any) => setCoForm((p: any) => ({ ...p, enabled: e.target.checked }))}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setCoForm((previous) => ({ ...previous, enabled: event.target.checked }))}
             disabled={!companyId}
             label={t('backupCompanyDailyEnabled')}
             containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none py-0.5"
           />
           <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 min-w-0">
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor="co-backup-h" className="text-[11px] font-bold text-noorix-muted">
-                {t('backupSystemHour')}
-              </label>
-              <Input
-                id="co-backup-h"
-                type="number"
-                min={0}
-                max={23}
-                className="noorix-bank-filter"
-                value={coForm.scheduleHour}
-                onChange={(e: any) =>
-                  setCoForm((p: any) => ({
-                    ...p,
-                    scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
-                  }))
-                }
-                disabled={!companyId}
-              />
-            </div>
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor="co-backup-m" className="text-[11px] font-bold text-noorix-muted">
-                {t('backupSystemMinute')}
-              </label>
-              <Input
-                id="co-backup-m"
-                type="number"
-                min={0}
-                max={59}
-                className="noorix-bank-filter"
-                value={coForm.scheduleMinute}
-                onChange={(e: any) =>
-                  setCoForm((p: any) => ({
-                    ...p,
-                    scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)),
-                  }))
-                }
-                disabled={!companyId}
-              />
-            </div>
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor="co-backup-ret" className="text-[11px] font-bold text-noorix-muted">
-                {t('backupCompanyRetention')}
-              </label>
-              <Input
-                id="co-backup-ret"
-                type="number"
-                min={1}
-                max={50}
-                className="noorix-bank-filter"
-                value={coForm.retentionCount}
-                onChange={(e: any) =>
-                  setCoForm((p: any) => ({
-                    ...p,
-                    retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 5)),
-                  }))
-                }
-                disabled={!companyId}
-              />
-            </div>
-          </div>
-
-          {false && (
-            <>
-          <Divider />
-
-          <div className="flex flex-col gap-2 min-w-0">
-            <p className="text-[12px] font-semibold text-noorix-text m-0">{t('backupGdriveSectionTitle')}</p>
-            <Input
-              type="text"
-              label={t('backupGdriveScriptUrlLabel')}
-              value={coForm.gdriveScriptUrl}
-              onChange={(e: any) => setCoForm((p: any) => ({ ...p, gdriveScriptUrl: e.target.value }))}
+            <ScheduleNumberInput
+              id="co-backup-h"
+              label={t('backupSystemHour')}
+              value={coForm.scheduleHour}
+              min={0}
+              max={23}
+              fallback={0}
               disabled={!companyId}
-              placeholder="https://script.google.com/macros/s/…/exec"
-              className="nx-ltr text-left"
-              dir="ltr"
+              onValue={(scheduleHour) => setCoForm((previous) => ({ ...previous, scheduleHour }))}
             />
-            <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveScriptUrlHint')}</p>
-            <Input
-              type="text"
-              label={t('backupGdriveFolderLabel')}
-              value={coForm.gdriveFolderId}
-              onChange={(e: any) => setCoForm((p: any) => ({ ...p, gdriveFolderId: e.target.value }))}
+            <ScheduleNumberInput
+              id="co-backup-m"
+              label={t('backupSystemMinute')}
+              value={coForm.scheduleMinute}
+              min={0}
+              max={59}
+              fallback={0}
               disabled={!companyId}
-              placeholder="folderId أو رابط المجلد"
-              className="nx-ltr text-left"
-              dir="ltr"
+              onValue={(scheduleMinute) => setCoForm((previous) => ({ ...previous, scheduleMinute }))}
             />
-            <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveFolderHint')}</p>
+            <ScheduleNumberInput
+              id="co-backup-ret"
+              label={t('backupCompanyRetention')}
+              value={coForm.retentionCount}
+              min={1}
+              max={50}
+              fallback={5}
+              disabled={!companyId}
+              onValue={(retentionCount) => setCoForm((previous) => ({ ...previous, retentionCount }))}
+            />
           </div>
-            </>
-          )}
 
           {coCfgRes?.success && coCfgRes.data?.lastRunDayRiyadh != null && (
             <p className="text-[11px] text-noorix-muted m-0">
@@ -204,5 +161,38 @@ export function BackupCompanySection({
         </details>
       </Card>
     </section>
+  );
+}
+
+type ScheduleNumberInputProps = {
+  id: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  fallback: number;
+  disabled?: boolean;
+  onValue: (value: number) => void;
+};
+
+function ScheduleNumberInput({ id, label, value, min, max, fallback, disabled, onValue }: ScheduleNumberInputProps) {
+  return (
+    <div className="flex flex-col gap-1 min-w-0">
+      <label htmlFor={id} className="text-[11px] font-bold text-noorix-muted">
+        {label}
+      </label>
+      <Input
+        id={id}
+        type="number"
+        min={min}
+        max={max}
+        className="noorix-bank-filter"
+        value={value}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onValue(Math.min(max, Math.max(min, Number(event.target.value) || fallback)))
+        }
+        disabled={disabled}
+      />
+    </div>
   );
 }

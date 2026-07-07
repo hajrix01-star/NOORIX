@@ -11,16 +11,69 @@ import {
   handleUnauthorized,
 } from '../../core/apiHttp';
 
+type BackupDownloadResult = { success: boolean; error?: string };
+
 function errMsg(err: unknown): string {
   return err instanceof Error ? err.message : String(err ?? '');
 }
 
-// ——— النسخ الاحتياطي الذكي ———
+async function downloadBackupBlob({
+  path,
+  fallbackName,
+  timeout = 180000,
+}: {
+  path: string;
+  fallbackName: string;
+  timeout?: number;
+}): Promise<BackupDownloadResult> {
+  try {
+    const url = new URL(path, getApiBaseUrl());
+    const res = await safeFetch(url.toString(), { method: 'GET', headers: getAuthHeaders() }, timeout);
+    if (res.status === 401) {
+      handleUnauthorized();
+      return { success: false, error: 'غير مصرح' };
+    }
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || res.statusText };
+    }
+    const blob = await res.blob();
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = fallbackName;
+    anchor.rel = 'noopener';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(anchor.href);
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: errMsg(err) || 'فشل التنزيل' };
+  }
+}
+
+function authHeaders() {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+async function uploadBackupForm(path: string, formData: FormData): Promise<ApiParsedResult> {
+  const url = new URL(path, getApiBaseUrl());
+  try {
+    const res = await safeFetch(url.toString(), { method: 'POST', headers: authHeaders(), body: formData }, 600000);
+    return parseResponse(res);
+  } catch (err: unknown) {
+    return { success: false, error: errMsg(err) || 'خطأ في الاتصال', isNetworkError: true };
+  }
+}
+
 export async function backupTriggerCompany(companyId: string): Promise<ApiParsedResult> {
   return apiPost('/api/v1/backup/trigger', { scope: 'company', companyId }, { timeout: 180000 });
 }
 
-export async function backupListJobs(limit: any = 40): Promise<ApiParsedResult> {
+export async function backupListJobs(limit = 40): Promise<ApiParsedResult> {
   return apiGet('/api/v1/backup/jobs', { limit: String(limit) });
 }
 
@@ -32,36 +85,14 @@ export async function backupRetryExternal(jobId: string): Promise<ApiParsedResul
   return apiPost(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/retry-external`, {}, { timeout: 120000 });
 }
 
-/** تنزيل ملف النسخة (.json.gz) — يستخدم التوكن من authStore */
 export async function backupDownloadJobFile(
   jobId: string,
   suggestedName?: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const url = new URL(`/api/v1/backup/jobs/${encodeURIComponent(jobId)}/download`, getApiBaseUrl());
-    const res = await fetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
-    if (res.status === 401) {
-      handleUnauthorized();
-      return { success: false, error: 'غير مصرح' };
-    }
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      return { success: false, error: errText || res.statusText };
-    }
-    const blob = await res.blob();
-    const name = suggestedName || `noorix-backup-${jobId}.json.gz`;
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(a.href);
-    return { success: true };
-  } catch (err: unknown) {
-    return { success: false, error: errMsg(err) || 'فشل التنزيل' };
-  }
+): Promise<BackupDownloadResult> {
+  return downloadBackupBlob({
+    path: `/api/v1/backup/jobs/${encodeURIComponent(jobId)}/download`,
+    fallbackName: suggestedName || `noorix-backup-${jobId}.json.gz`,
+  });
 }
 
 export async function backupImportFromJob(body: unknown): Promise<ApiParsedResult> {
@@ -76,16 +107,14 @@ export async function backupPatchSystemConfig(body: unknown): Promise<ApiParsedR
   return apiPatch('/api/v1/backup/system/config', body);
 }
 
-export async function backupListSystemJobs(limit: any = 20): Promise<ApiParsedResult> {
+export async function backupListSystemJobs(limit = 20): Promise<ApiParsedResult> {
   return apiGet('/api/v1/backup/system/jobs', { limit: String(limit) });
 }
 
-/** نسخ نظام كامل (أرشيف tar.gz) — يُفضّل استخدام run-full-archive مباشرة */
 export async function backupRunSystemNow(): Promise<ApiParsedResult> {
   return apiPost('/api/v1/backup/system/run-full-archive', {}, { timeout: 600000 });
 }
 
-/** أرشيف نظام: قاعدة (pg_dump custom) + مجلد uploads — قد يستغرق وقتاً */
 export async function backupRunSystemFullArchive(): Promise<ApiParsedResult> {
   return apiPost('/api/v1/backup/system/run-full-archive', {}, { timeout: 600000 });
 }
@@ -106,7 +135,6 @@ export async function backupPatchCompanyConfig(body: unknown): Promise<ApiParsed
   return apiPatch('/api/v1/backup/company/config', body);
 }
 
-/** استرداد قاعدة كاملة من نسخة نظام — خطير؛ يتطلب عبارة تأكيد */
 export async function backupRestoreSystemFull(
   jobId: string,
   confirmPhrase: string,
@@ -118,72 +146,30 @@ export async function backupRestoreSystemFull(
   );
 }
 
-/** تنزيل ملف نسخة القاعدة الكاملة (.dump.gz) — مالك/مدير نظام */
 export async function backupDownloadSystemJobFile(
   jobId: string,
   suggestedName?: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const url = new URL(`/api/v1/backup/system/jobs/${encodeURIComponent(jobId)}/download`, getApiBaseUrl());
-    const res = await fetch(url.toString(), { method: 'GET', headers: getAuthHeaders() });
-    if (res.status === 401) {
-      handleUnauthorized();
-      return { success: false, error: 'غير مصرح' };
-    }
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      return { success: false, error: errText || res.statusText };
-    }
-    const blob = await res.blob();
-    const name = suggestedName || `noorix-full-db-${jobId}.dump.gz`;
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(a.href);
-    return { success: true };
-  } catch (err: unknown) {
-    return { success: false, error: errMsg(err) || 'فشل التنزيل' };
-  }
+): Promise<BackupDownloadResult> {
+  return downloadBackupBlob({
+    path: `/api/v1/backup/system/jobs/${encodeURIComponent(jobId)}/download`,
+    fallbackName: suggestedName || `noorix-full-db-${jobId}.dump.gz`,
+  });
 }
 
-/** رفع أرشيف نظام (.tar.gz) من الجهاز — يتحقق الخادم ثم يضيفه لسجل نسخ النظام */
 export async function backupUploadSystemFullArchive(file: File | null | undefined): Promise<ApiParsedResult> {
-  if (!file) return { success: false, error: 'لم يُختر ملف' };
-  const url = new URL('/api/v1/backup/system/upload-full-archive', getApiBaseUrl());
+  if (!file) return { success: false, error: 'لم يختر ملف' };
   const formData = new FormData();
   formData.append('file', file);
-  const token = getAuthToken();
-  const h: Record<string, string> = {};
-  if (token) h.Authorization = `Bearer ${token}`;
-  try {
-    const res = await safeFetch(url.toString(), { method: 'POST', headers: h, body: formData }, 600000);
-    return parseResponse(res);
-  } catch (err: unknown) {
-    return { success: false, error: errMsg(err) || 'خطأ في الاتصال', isNetworkError: true };
-  }
+  return uploadBackupForm('/api/v1/backup/system/upload-full-archive', formData);
 }
 
-/** استرداد مباشر من أرشيف .tar.gz على الجهاز — خطير؛ يتطلب عبارة التأكيد */
 export async function backupRestoreSystemFromUpload(
   file: File | null | undefined,
   confirmPhrase: string,
 ): Promise<ApiParsedResult> {
-  if (!file) return { success: false, error: 'لم يُختر ملف' };
-  const url = new URL('/api/v1/backup/system/restore-upload', getApiBaseUrl());
+  if (!file) return { success: false, error: 'لم يختر ملف' };
   const formData = new FormData();
   formData.append('file', file);
   formData.append('confirmPhrase', confirmPhrase || '');
-  const token = getAuthToken();
-  const h: Record<string, string> = {};
-  if (token) h.Authorization = `Bearer ${token}`;
-  try {
-    const res = await safeFetch(url.toString(), { method: 'POST', headers: h, body: formData }, 600000);
-    return parseResponse(res);
-  } catch (err: unknown) {
-    return { success: false, error: errMsg(err) || 'خطأ في الاتصال', isNetworkError: true };
-  }
+  return uploadBackupForm('/api/v1/backup/system/restore-upload', formData);
 }

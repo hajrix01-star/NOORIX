@@ -10,7 +10,6 @@ import {
   backupTriggerCompany,
   backupListJobs,
   backupRestoreReport,
-  backupRetryExternal,
   backupDownloadJobFile,
   backupImportFromJob,
   refreshAuthSession,
@@ -38,8 +37,37 @@ import {
   BackupSheetsAndModals,
 } from './backup';
 import { appKeys, settingsKeys } from '../../../services/queryKeys';
+import type {
+  BackupConfigData,
+  BackupImportModal,
+  BackupImportReport,
+  BackupJob,
+  BackupReportModal,
+  BackupReportPayload,
+  BackupRestoreModal,
+  BackupRestorePcModal,
+  BackupSchedulePatch,
+  BackupScheduleForm,
+  SettingsApiResult,
+  SettingsCompany,
+} from '../settingsTypes';
 
-export default function BackupTab({ activeCompanies = [] }: any) {
+type BackupTabProps = {
+  activeCompanies?: SettingsCompany[];
+};
+
+type ApiDataEnvelope<TData> = {
+  data?: TData;
+};
+
+type BackupUploadResult = ApiDataEnvelope<{ status?: string | null }>;
+
+type BackupRestoreResult = ApiDataEnvelope<{
+  messageAr?: string | null;
+  messageEn?: string | null;
+}>;
+
+export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
   const { t, lang } = useTranslation();
   const { user, setToken, setUser } = useAuth();
   const canSystemBackup = ['owner', 'super_admin'].includes(String(user?.role || '').toLowerCase());
@@ -48,13 +76,13 @@ export default function BackupTab({ activeCompanies = [] }: any) {
   const qc = useQueryClient();
   const [companyId, setCompanyId] = useState(() => activeCompanies[0]?.id || '');
   const { showToast } = useToast();
-  const [reportModal, setReportModal] = useState<any>(null);
-  const [importModal, setImportModal] = useState<any>(null);
-  const [importReportModal, setImportReportModal] = useState<any>(null);
+  const [reportModal, setReportModal] = useState<BackupReportModal | null>(null);
+  const [importModal, setImportModal] = useState<BackupImportModal | null>(null);
+  const [importReportModal, setImportReportModal] = useState<BackupImportReport | null>(null);
   const [importNameAr, setImportNameAr] = useState('');
   const [importConfirmed, setImportConfirmed] = useState(false);
   const [importStrictAlloc, setImportStrictAlloc] = useState(false);
-  const [sysForm, setSysForm] = useState({
+  const [sysForm, setSysForm] = useState<BackupScheduleForm>({
     enabled: false,
     scheduleHour: 6,
     scheduleMinute: 0,
@@ -62,7 +90,7 @@ export default function BackupTab({ activeCompanies = [] }: any) {
     gdriveScriptUrl: '',
     gdriveFolderId: '',
   });
-  const [coForm, setCoForm] = useState({
+  const [coForm, setCoForm] = useState<BackupScheduleForm>({
     enabled: false,
     scheduleHour: 6,
     scheduleMinute: 0,
@@ -70,28 +98,28 @@ export default function BackupTab({ activeCompanies = [] }: any) {
     gdriveScriptUrl: '',
     gdriveFolderId: '',
   });
-  const [restoreModal, setRestoreModal] = useState<any>(null);
+  const [restoreModal, setRestoreModal] = useState<BackupRestoreModal | null>(null);
   const [restorePhrase, setRestorePhrase] = useState('');
-  const [restorePcModal, setRestorePcModal] = useState<any>(null);
+  const [restorePcModal, setRestorePcModal] = useState<BackupRestorePcModal | null>(null);
   const [restorePcPhrase, setRestorePcPhrase] = useState('');
-  const systemArchiveFileRef = React.useRef<any>(null);
-  const restoreFromPcFileRef = React.useRef<any>(null);
+  const systemArchiveFileRef = React.useRef<HTMLInputElement>(null);
+  const restoreFromPcFileRef = React.useRef<HTMLInputElement>(null);
 
-  const { data: jobsData = [], isLoading, isError: jobsIsError, error: jobsError } = useApiListQuery<any>({
+  const { data: jobsData = [], isLoading, isError: jobsIsError, error: jobsError } = useApiListQuery<BackupJob>({
     queryKey: settingsKeys.backupJobs(),
     queryFn: () => backupListJobs(50),
     refetchInterval: 15_000,
     fallbackMessage: t('backupError'),
   });
 
-  const { data: sysCfgData, isError: sysCfgIsError, error: sysCfgError } = useApiQuery<any>({
+  const { data: sysCfgData, isError: sysCfgIsError, error: sysCfgError } = useApiQuery<BackupConfigData>({
     queryKey: settingsKeys.backupSystemConfig(),
     queryFn: () => backupGetSystemConfig(),
     enabled: canSystemBackup,
     fallbackMessage: t('backupError'),
   });
 
-  const { data: sysJobsData = [], isLoading: sysJobsLoading, isError: sysJobsIsError, error: sysJobsError } = useApiListQuery<any>({
+  const { data: sysJobsData = [], isLoading: sysJobsLoading, isError: sysJobsIsError, error: sysJobsError } = useApiListQuery<BackupJob>({
     queryKey: settingsKeys.backupSystemJobs(),
     queryFn: () => backupListSystemJobs(15),
     enabled: canSystemBackup,
@@ -99,23 +127,23 @@ export default function BackupTab({ activeCompanies = [] }: any) {
     fallbackMessage: t('backupError'),
   });
 
-  const { data: coCfgData, isError: coCfgIsError, error: coCfgError } = useApiQuery<any>({
+  const { data: coCfgData, isError: coCfgIsError, error: coCfgError } = useApiQuery<BackupConfigData>({
     queryKey: settingsKeys.backupCompanyConfig(companyId),
     queryFn: () => backupGetCompanyConfig(companyId),
     enabled: !!companyId,
     fallbackMessage: t('backupError'),
   });
 
-  const jobsRes = jobsIsError
+  const jobsRes: SettingsApiResult<BackupJob[]> = jobsIsError
     ? { success: false, error: jobsError?.message || t('backupError') }
     : { success: true, data: jobsData };
-  const sysCfgRes = sysCfgIsError
+  const sysCfgRes: SettingsApiResult<BackupConfigData> | undefined = sysCfgIsError
     ? { success: false, error: sysCfgError?.message || t('backupError') }
     : (sysCfgData ? { success: true, data: sysCfgData } : undefined);
-  const sysJobsRes = sysJobsIsError
+  const sysJobsRes: SettingsApiResult<BackupJob[]> = sysJobsIsError
     ? { success: false, error: sysJobsError?.message || t('backupError') }
     : { success: true, data: sysJobsData };
-  const coCfgRes = coCfgIsError
+  const coCfgRes: SettingsApiResult<BackupConfigData> | undefined = coCfgIsError
     ? { success: false, error: coCfgError?.message || t('backupError') }
     : (coCfgData ? { success: true, data: coCfgData } : undefined);
 
@@ -153,38 +181,38 @@ export default function BackupTab({ activeCompanies = [] }: any) {
     });
   }, [coCfgRes]);
 
-  const jobs = jobsRes?.success ? (Array.isArray(jobsRes.data) ? jobsRes.data : []) : [];
+  const jobs = jobsRes.success ? jobsRes.data : [];
 
   const triggerMut = useApiMutation({
     mutationFn: () => backupTriggerCompany(companyId),
     invalidateQueries: [settingsKeys.backupJobs()],
     successToast: () => t('backupStarted'),
-    errorToast: (e: any) => e?.message || t('backupError'),
+    errorToast: (error: Error) => error.message || t('backupError'),
   });
 
   const reportMut = useApiMutation({
-    mutationFn: (jobId: any) => backupRestoreReport(jobId),
+    mutationFn: (jobId: string) => backupRestoreReport(jobId),
     successToast: false,
     showErrorToast: true,
-    errorToast: (e: any) => e?.message || t('backupError'),
-    onSuccess: (res: any, jobId: any) => {
+    errorToast: (error: Error) => error.message || t('backupError'),
+    onSuccess: (res: ApiDataEnvelope<BackupReportPayload>, jobId: string) => {
       setReportModal({ jobId, payload: res.data });
     },
   });
 
   const downloadMut = useApiMutation({
-    mutationFn: (jobId: any) => backupDownloadJobFile(jobId),
+    mutationFn: (jobId: string) => backupDownloadJobFile(jobId),
     successToast: () => t('backupDownloadOk'),
-    errorToast: (e: any) => e?.message || t('backupError'),
+    errorToast: (error: Error) => error.message || t('backupError'),
   });
 
   const importMut = useApiMutation({
-    mutationFn: ({ jobId, nameAr, failOnAllocationWarnings }: any) =>
+    mutationFn: ({ jobId, nameAr, failOnAllocationWarnings }: { jobId: string; nameAr: string; failOnAllocationWarnings: boolean }) =>
       backupImportFromJob({ jobId, nameAr, failOnAllocationWarnings }),
     successToast: false,
     showErrorToast: true,
-    errorToast: (e: any) => e?.message || t('backupError'),
-    onSuccess: async (res: any) => {
+    errorToast: (error: Error) => error.message || t('backupError'),
+    onSuccess: async (res: ApiDataEnvelope<BackupImportReport>) => {
       setImportModal(null);
       setImportNameAr('');
       setImportStrictAlloc(false);
@@ -208,54 +236,47 @@ export default function BackupTab({ activeCompanies = [] }: any) {
     },
   });
 
-  const retryMut = useApiMutation({
-    mutationFn: (jobId: any) => backupRetryExternal(jobId),
-    invalidateQueries: [settingsKeys.backupJobs()],
-    successToast: () => t('backupRetryOk'),
-    errorToast: (e: any) => e?.message || t('backupError'),
-  });
-
   const saveSysMut = useApiMutation({
-    mutationFn: (body: any) => backupPatchSystemConfig(body),
+    mutationFn: (body: BackupSchedulePatch) => backupPatchSystemConfig(body),
     invalidateQueries: [settingsKeys.backupSystemConfig()],
     successToast: () => t('backupSettingsSaved'),
-    errorToast: (e: any) => e?.message || t('backupError'),
+    errorToast: (error: Error) => error.message || t('backupError'),
   });
 
   const runFullArchiveMut = useApiMutation({
     mutationFn: () => backupRunSystemFullArchive(),
     invalidateQueries: [settingsKeys.backupSystemJobs(), settingsKeys.backupJobs()],
     successToast: () => t('backupStarted'),
-    errorToast: (e: any) => e?.message || t('backupError'),
+    errorToast: (error: Error) => error.message || t('backupError'),
   });
 
   const verifySysMut = useApiMutation({
-    mutationFn: (jobId: any) => backupVerifySystemJob(jobId),
+    mutationFn: (jobId: string) => backupVerifySystemJob(jobId),
     invalidateQueries: [settingsKeys.backupSystemJobs()],
     successToast: () => t('backupVerifyOk'),
-    errorToast: (e: any) => e?.message || t('backupVerifyBad'),
+    errorToast: (error: Error) => error.message || t('backupVerifyBad'),
   });
 
   const downloadSysMut = useApiMutation({
-    mutationFn: ({ jobId, suggestedName }: any) => backupDownloadSystemJobFile(jobId, suggestedName),
+    mutationFn: ({ jobId, suggestedName }: { jobId: string; suggestedName?: string }) => backupDownloadSystemJobFile(jobId, suggestedName),
     successToast: () => t('backupDownloadOk'),
-    errorToast: (e: any) => e?.message || t('backupError'),
+    errorToast: (error: Error) => error.message || t('backupError'),
   });
 
   const uploadSysArchiveMut = useApiMutation({
-    mutationFn: (file: any) => backupUploadSystemFullArchive(file),
+    mutationFn: (file: File) => backupUploadSystemFullArchive(file),
     invalidateQueries: [settingsKeys.backupSystemJobs()],
-    successToast: (res: any) =>
+    successToast: (res: BackupUploadResult) =>
       res?.data?.status === 'skipped_duplicate' ? t('backupSystemUploadDup') : t('backupSystemUploadOk'),
-    errorToast: (e: any) => e?.message || t('backupError'),
+    errorToast: (error: Error) => error.message || t('backupError'),
   });
 
   const restorePcMut = useApiMutation({
-    mutationFn: ({ file, confirmPhrase }: any) => backupRestoreSystemFromUpload(file, confirmPhrase),
+    mutationFn: ({ file, confirmPhrase }: { file: File; confirmPhrase: string }) => backupRestoreSystemFromUpload(file, confirmPhrase),
     invalidateQueries: [settingsKeys.backupSystemJobs(), settingsKeys.backupJobs()],
     successToast: false,
-    errorToast: (e: any) => e?.message || t('backupError'),
-    onSuccess: (res: any) => {
+    errorToast: (error: Error) => error.message || t('backupError'),
+    onSuccess: (res: BackupRestoreResult) => {
       setRestorePcModal(null);
       setRestorePcPhrase('');
       const msg = res?.data?.messageAr || res?.data?.messageEn || t('backupSystemRestoreOk');
@@ -264,24 +285,24 @@ export default function BackupTab({ activeCompanies = [] }: any) {
   });
 
   const verifyCoMut = useApiMutation({
-    mutationFn: (jobId: any) => backupVerifyCompanyJob(jobId),
+    mutationFn: (jobId: string) => backupVerifyCompanyJob(jobId),
     invalidateQueries: [settingsKeys.backupJobs()],
     successToast: () => t('backupVerifyOk'),
-    errorToast: (e: any) => e?.message || t('backupVerifyBad'),
+    errorToast: (error: Error) => error.message || t('backupVerifyBad'),
   });
 
   const saveCoMut = useApiMutation({
-    mutationFn: (body: any) => backupPatchCompanyConfig(body),
+    mutationFn: (body: BackupSchedulePatch & { companyId: string }) => backupPatchCompanyConfig(body),
     invalidateQueries: [settingsKeys.backupCompanyConfig(companyId)],
     successToast: () => t('backupSettingsSaved'),
-    errorToast: (e: any) => e?.message || t('backupError'),
+    errorToast: (error: Error) => error.message || t('backupError'),
   });
 
   const restoreMut = useApiMutation({
-    mutationFn: ({ jobId, confirmPhrase }: any) => backupRestoreSystemFull(jobId, confirmPhrase),
+    mutationFn: ({ jobId, confirmPhrase }: { jobId: string; confirmPhrase: string }) => backupRestoreSystemFull(jobId, confirmPhrase),
     successToast: false,
-    errorToast: (e: any) => e?.message || t('backupError'),
-    onSuccess: (res: any) => {
+    errorToast: (error: Error) => error.message || t('backupError'),
+    onSuccess: (res: BackupRestoreResult) => {
       setRestoreModal(null);
       setRestorePhrase('');
       const msg = res?.data?.messageAr || res?.data?.messageEn || t('backupSystemRestoreOk');
@@ -347,7 +368,6 @@ export default function BackupTab({ activeCompanies = [] }: any) {
         reportMut={reportMut}
         downloadMut={downloadMut}
         verifyCoMut={verifyCoMut}
-        retryMut={retryMut}
         setImportNameAr={setImportNameAr}
         setImportConfirmed={setImportConfirmed}
         setImportModal={setImportModal}

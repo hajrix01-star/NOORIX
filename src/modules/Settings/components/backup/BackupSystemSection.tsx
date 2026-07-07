@@ -1,13 +1,46 @@
-import React from 'react';
+import React, { type ChangeEvent, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { Button, Checkbox, FileInput, Input, Card, Divider, Badge } from '../../../../ui';
+import type {
+  BackupConfigData,
+  BackupJob,
+  BackupRestoreModal,
+  BackupRestorePcModal,
+  BackupSchedulePatch,
+  BackupScheduleForm,
+  BackupSystemDownloadVariables,
+  SettingsApiResult,
+  SettingsMutationLike,
+  SettingsVoidMutationLike,
+  TranslationFn,
+} from '../../settingsTypes';
 import { formatBackupDate, scopeLabel, statusLabel, statusBadgeColor } from './backupTabHelpers';
 
-/**
- * بطاقة نسخ النظام الكامل — للمالك / المدير العام فقط
- */
+type BackupSystemSectionProps = {
+  t: TranslationFn;
+  lang: string;
+  sysForm: BackupScheduleForm;
+  setSysForm: Dispatch<SetStateAction<BackupScheduleForm>>;
+  sysCfgRes?: SettingsApiResult<BackupConfigData>;
+  saveSysMut: SettingsMutationLike<BackupSchedulePatch>;
+  runFullArchiveMut: SettingsVoidMutationLike;
+  systemArchiveFileRef: RefObject<HTMLInputElement>;
+  restoreFromPcFileRef: RefObject<HTMLInputElement>;
+  uploadSysArchiveMut: SettingsMutationLike<File>;
+  restorePcMut: SettingsMutationLike<{ file: File; confirmPhrase: string }>;
+  setRestorePcPhrase: (value: string) => void;
+  setRestorePcModal: (value: BackupRestorePcModal | null) => void;
+  sysJobsLoading: boolean;
+  sysJobsRes: SettingsApiResult<BackupJob[]>;
+  downloadSysMut: SettingsMutationLike<BackupSystemDownloadVariables>;
+  verifySysMut: SettingsMutationLike<string>;
+  restoreMut: SettingsMutationLike<{ jobId: string; confirmPhrase: string }>;
+  setRestorePhrase: (value: string) => void;
+  setRestoreModal: (value: BackupRestoreModal | null) => void;
+};
+
 export function BackupSystemSection({
   t,
-  lang,
+  lang: _lang,
   sysForm,
   setSysForm,
   sysCfgRes,
@@ -26,7 +59,9 @@ export function BackupSystemSection({
   restoreMut,
   setRestorePhrase,
   setRestoreModal,
-}: any) {
+}: BackupSystemSectionProps) {
+  const systemJobs = sysJobsRes.success ? sysJobsRes.data : [];
+
   return (
     <section className="min-w-0 flex flex-col gap-0" aria-labelledby="backup-system-title">
       <Card padding="sm" className="flex flex-col gap-4 min-w-0 border-l-[3px] border-l-nx-profit">
@@ -38,103 +73,43 @@ export function BackupSystemSection({
         </div>
         <Checkbox
           checked={sysForm.enabled}
-          onChange={(e: any) => setSysForm((p: any) => ({ ...p, enabled: e.target.checked }))}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setSysForm((previous) => ({ ...previous, enabled: event.target.checked }))}
           label={t('backupSystemEnabled')}
           containerClassName="nx-checkbox flex items-center gap-2.5 text-[13px] font-medium text-noorix-text cursor-pointer select-none py-0.5"
         />
         <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 min-w-0">
-          <div className="flex flex-col gap-1 min-w-0">
-            <label htmlFor="backup-h" className="text-[11px] font-bold text-noorix-muted">
-              {t('backupSystemHour')}
-            </label>
-            <Input
-              id="backup-h"
-              type="number"
-              min={0}
-              max={23}
-              className="noorix-bank-filter"
-              value={sysForm.scheduleHour}
-              onChange={(e: any) =>
-                setSysForm((p: any) => ({
-                  ...p,
-                  scheduleHour: Math.min(23, Math.max(0, Number(e.target.value) || 0)),
-                }))
-              }
-            />
-          </div>
-          <div className="flex flex-col gap-1 min-w-0">
-            <label htmlFor="backup-m" className="text-[11px] font-bold text-noorix-muted">
-              {t('backupSystemMinute')}
-            </label>
-            <Input
-              id="backup-m"
-              type="number"
-              min={0}
-              max={59}
-              className="noorix-bank-filter"
-              value={sysForm.scheduleMinute}
-              onChange={(e: any) =>
-                setSysForm((p: any) => ({
-                  ...p,
-                  scheduleMinute: Math.min(59, Math.max(0, Number(e.target.value) || 0)),
-                }))
-              }
-            />
-          </div>
-          <div className="flex flex-col gap-1 min-w-0">
-            <label htmlFor="backup-ret" className="text-[11px] font-bold text-noorix-muted">
-              {t('backupSystemRetention')}
-            </label>
-            <Input
-              id="backup-ret"
-              type="number"
-              min={1}
-              max={50}
-              className="noorix-bank-filter"
-              value={sysForm.retentionCount}
-              onChange={(e: any) =>
-                setSysForm((p: any) => ({
-                  ...p,
-                  retentionCount: Math.min(50, Math.max(1, Number(e.target.value) || 10)),
-                }))
-              }
-            />
-          </div>
+          <ScheduleNumberInput
+            id="backup-h"
+            label={t('backupSystemHour')}
+            value={sysForm.scheduleHour}
+            min={0}
+            max={23}
+            fallback={0}
+            onValue={(scheduleHour) => setSysForm((previous) => ({ ...previous, scheduleHour }))}
+          />
+          <ScheduleNumberInput
+            id="backup-m"
+            label={t('backupSystemMinute')}
+            value={sysForm.scheduleMinute}
+            min={0}
+            max={59}
+            fallback={0}
+            onValue={(scheduleMinute) => setSysForm((previous) => ({ ...previous, scheduleMinute }))}
+          />
+          <ScheduleNumberInput
+            id="backup-ret"
+            label={t('backupSystemRetention')}
+            value={sysForm.retentionCount}
+            min={1}
+            max={50}
+            fallback={10}
+            onValue={(retentionCount) => setSysForm((previous) => ({ ...previous, retentionCount }))}
+          />
         </div>
         {sysCfgRes?.success && sysCfgRes.data?.lastRunDayRiyadh != null && (
           <p className="text-[11px] text-noorix-muted m-0">
             {t('backupSystemLastRun')}: <strong dir="ltr">{sysCfgRes.data.lastRunDayRiyadh}</strong>
           </p>
-        )}
-
-        {false && (
-          <>
-        <Divider />
-
-        <div className="flex flex-col gap-2 min-w-0">
-          <p className="text-[12px] font-semibold text-noorix-text m-0">{t('backupGdriveSectionTitle')}</p>
-          <Input
-            type="text"
-            label={t('backupGdriveScriptUrlLabel')}
-            value={sysForm.gdriveScriptUrl}
-            onChange={(e: any) => setSysForm((p: any) => ({ ...p, gdriveScriptUrl: e.target.value }))}
-            placeholder="https://script.google.com/macros/s/…/exec"
-            className="nx-ltr text-left"
-            dir="ltr"
-          />
-          <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveScriptUrlHint')}</p>
-          <Input
-            type="text"
-            label={t('backupGdriveFolderLabel')}
-            value={sysForm.gdriveFolderId}
-            onChange={(e: any) => setSysForm((p: any) => ({ ...p, gdriveFolderId: e.target.value }))}
-            placeholder="folderId أو رابط المجلد"
-            className="nx-ltr text-left"
-            dir="ltr"
-          />
-          <p className="text-[10px] text-noorix-muted m-0 leading-snug">{t('backupGdriveFolderHint')}</p>
-        </div>
-          </>
         )}
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:items-center">
@@ -176,10 +151,10 @@ export function BackupSystemSection({
             accept=".tar.gz,.tgz,application/gzip"
             className="sr-only"
             aria-label={t('backupSystemImportFromPc')}
-            onChange={(e: any) => {
-              const f = e.target.files?.[0];
-              e.target.value = '';
-              if (f) uploadSysArchiveMut.mutate(f);
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (file) uploadSysArchiveMut.mutate(file);
             }}
           />
           <FileInput
@@ -187,12 +162,12 @@ export function BackupSystemSection({
             accept=".tar.gz,.tgz,application/gzip"
             className="sr-only"
             aria-label={t('backupSystemRestoreFromPc')}
-            onChange={(e: any) => {
-              const f = e.target.files?.[0];
-              e.target.value = '';
-              if (f) {
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (file) {
                 setRestorePcPhrase('');
-                setRestorePcModal({ file: f });
+                setRestorePcModal({ file });
               }
             }}
           />
@@ -223,35 +198,34 @@ export function BackupSystemSection({
             {t('backupSystemJobs')}
           </h4>
           {sysJobsLoading && <p className="text-[12px] text-noorix-muted m-0">{t('loading')}</p>}
-          {!sysJobsLoading &&
-            (!sysJobsRes?.success || !(Array.isArray(sysJobsRes.data) ? sysJobsRes.data : []).length) && (
-              <p className="text-[12px] text-noorix-muted m-0">{t('backupSystemNoJobs')}</p>
-            )}
+          {!sysJobsLoading && (!sysJobsRes.success || !systemJobs.length) && (
+            <p className="text-[12px] text-noorix-muted m-0">{t('backupSystemNoJobs')}</p>
+          )}
           <div className="flex flex-col gap-2 max-h-[min(50vh,360px)] overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y pr-0.5 -mr-0.5 min-w-0">
-            {(Array.isArray(sysJobsRes?.data) ? sysJobsRes.data : []).map((sj: any) => (
+            {systemJobs.map((systemJob) => (
               <div
-                key={sj.id}
+                key={systemJob.id}
                 className="flex flex-col gap-3 rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-3 min-[520px]:flex-row min-[520px]:items-stretch min-[520px]:justify-between"
               >
                 <div className="flex flex-col gap-1.5 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <span dir="ltr" className="text-[13px] font-semibold text-noorix-text tabular-nums break-all">
-                      {sj.ordinal != null ? `#${sj.ordinal} · ` : ''}
-                      {formatBackupDate(sj.createdAt)}
+                      {systemJob.ordinal != null ? `#${systemJob.ordinal} - ` : ''}
+                      {formatBackupDate(systemJob.createdAt)}
                     </span>
-                    <Badge color={statusBadgeColor(sj.status)} size="sm" className="shrink-0">
-                      {statusLabel(sj.status, t)}
+                    <Badge color={statusBadgeColor(systemJob.status)} size="sm" className="shrink-0">
+                      {statusLabel(systemJob.status, t)}
                     </Badge>
-                    {sj.verifyOk === true && (
+                    {systemJob.verifyOk === true && (
                       <span className="text-[11px] text-noorix-green font-medium shrink-0">{t('backupVerifyOk')}</span>
                     )}
                   </div>
-                  {sj.verifyOk === false && sj.verifyError && (
-                    <span className="text-[11px] text-noorix-red break-words min-w-0">{sj.verifyError}</span>
+                  {systemJob.verifyOk === false && systemJob.verifyError && (
+                    <span className="text-[11px] text-noorix-red break-words min-w-0">{systemJob.verifyError}</span>
                   )}
-                  <span className="text-[10px] text-noorix-muted">{scopeLabel(sj.scope, t)}</span>
+                  <span className="text-[10px] text-noorix-muted">{scopeLabel(systemJob.scope, t)}</span>
                 </div>
-                {sj.status === 'completed' && sj.localRelativePath && (
+                {systemJob.status === 'completed' && systemJob.localRelativePath && (
                   <div className="flex flex-col gap-2 min-[520px]:shrink-0 min-[520px]:flex-row min-[520px]:flex-wrap min-[520px]:items-center min-[520px]:justify-end min-[520px]:gap-1.5">
                     <Button
                       type="button"
@@ -261,8 +235,8 @@ export function BackupSystemSection({
                       disabled={downloadSysMut.isPending}
                       onClick={() =>
                         downloadSysMut.mutate({
-                          jobId: sj.id,
-                          suggestedName: `noorix-system-archive-${sj.ordinal ?? 'na'}-${sj.id}.tar.gz`,
+                          jobId: systemJob.id,
+                          suggestedName: `noorix-system-archive-${systemJob.ordinal ?? 'na'}-${systemJob.id}.tar.gz`,
                         })
                       }
                     >
@@ -274,7 +248,7 @@ export function BackupSystemSection({
                       variant="ghost"
                       className="w-full min-h-[44px] justify-center min-[520px]:w-auto min-[520px]:min-h-0"
                       disabled={verifySysMut.isPending}
-                      onClick={() => verifySysMut.mutate(sj.id)}
+                      onClick={() => verifySysMut.mutate(systemJob.id)}
                     >
                       {t('backupVerify')}
                     </Button>
@@ -286,7 +260,7 @@ export function BackupSystemSection({
                       disabled={restoreMut.isPending || restorePcMut.isPending}
                       onClick={() => {
                         setRestorePhrase('');
-                        setRestoreModal({ jobId: sj.id });
+                        setRestoreModal({ jobId: systemJob.id });
                       }}
                     >
                       {t('backupSystemRestore')}
@@ -299,5 +273,36 @@ export function BackupSystemSection({
         </div>
       </Card>
     </section>
+  );
+}
+
+type ScheduleNumberInputProps = {
+  id: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  fallback: number;
+  onValue: (value: number) => void;
+};
+
+function ScheduleNumberInput({ id, label, value, min, max, fallback, onValue }: ScheduleNumberInputProps) {
+  return (
+    <div className="flex flex-col gap-1 min-w-0">
+      <label htmlFor={id} className="text-[11px] font-bold text-noorix-muted">
+        {label}
+      </label>
+      <Input
+        id={id}
+        type="number"
+        min={min}
+        max={max}
+        className="noorix-bank-filter"
+        value={value}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          onValue(Math.min(max, Math.max(min, Number(event.target.value) || fallback)))
+        }
+      />
+    </div>
   );
 }
