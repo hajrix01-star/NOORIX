@@ -221,6 +221,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const handleDeleteService = (row: HrProfileRecord) => {
+    if (!row.id) return;
     const msg = row.invoiceId
       ? t('deleteHrServiceWithInvoice')
       : t('deleteHrServiceConfirm');

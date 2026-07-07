@@ -198,6 +198,7 @@ export type StaffOrder = {
   orderType?: StaffOrderType | string;
   status?: StaffOrderStatus | string;
   logRef?: string | null;
+  whatsAppText?: string | null;
   saleDate?: string | null;
   sentAt?: string | null;
   createdAt?: string;
@@ -315,5 +316,6 @@ export type DigestHistoryDay = {
 export type OrderCatalogBatchCreateResult = {
   created?: number;
   count?: number;
+  items?: Array<OrderProduct | OrderCategory>;
   [key: string]: unknown;
-};
+} | Array<OrderProduct | OrderCategory>;

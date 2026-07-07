@@ -192,7 +192,13 @@ export default function BankStatementAnalysisScreen() {
           footer={
             <>
               <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmId(null)}>{t('cancel')}</Button>
-              <Button variant="danger" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteConfirmId)}>
+              <Button
+                variant="danger"
+                disabled={deleteMutation.isPending || !deleteConfirmId}
+                onClick={() => {
+                  if (deleteConfirmId) deleteMutation.mutate(deleteConfirmId);
+                }}
+              >
                 {deleteMutation.isPending ? t('loading') : t('delete')}
               </Button>
             </>

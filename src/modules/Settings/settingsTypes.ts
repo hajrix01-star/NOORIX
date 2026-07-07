@@ -52,7 +52,7 @@ export type SettingsMutationLike<TVariables> = {
 
 export type SettingsVoidMutationLike = {
   isPending: boolean;
-  mutate: (variables?: unknown) => void;
+  mutate: () => void;
 };
 
 export type SettingsApiResult<TData> =

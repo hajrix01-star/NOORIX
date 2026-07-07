@@ -1215,8 +1215,7 @@ These files still preserve legacy API compatibility where some older endpoints a
 
 ### Final System Unification Candidates
 
-- Replace the remaining loose API response defaults with strict endpoint contracts gradually by domain.
-- Convert `useApiMutation` callers to a single result convention: either API envelope everywhere or unwrapped data everywhere.
+- API response defaults and `useApiMutation` convention were closed in the API Contracts Finalization pass.
 - Continue shrinking shared UI primitive `any` in SmartTable, import/export utilities, and older shell components.
 - Promote print/export and editable-grid exceptions to central primitives after the compatibility boundaries are tightened.
 
@@ -1234,7 +1233,7 @@ These files still preserve legacy API compatibility where some older endpoints a
 
 ## API Contracts Finalization
 
-Closed on 2026-07-07 as a governed strict endpoint-contract pass. Closure commit is pending local commit.
+Closed on 2026-07-07 as a governed strict API contract and mutation-envelope pass. Closure commit is pending local commit.
 
 ### Scope
 
@@ -1248,30 +1247,34 @@ Closed on 2026-07-07 as a governed strict endpoint-contract pass. Closure commit
   - `scripts/check-api-contracts-governance.mjs`
   - `package.json` script `check:api-contracts-governance`
 - Endpoint return contracts tightened across the remaining loose frontend API files, including HR, employees, suppliers, vaults, reports, invoices, sales summaries, backup, settings/company roles, bank/auth, and related purchase-batch summary bridges.
+- Mutation result convention: API envelope.
 
 ### Centralized
 
-- API compatibility boundaries are now explicit instead of implicit.
+- API core boundaries are now explicit instead of implicit.
+- `ApiParsedResult`, `parseResponse`, `apiGet`, `apiPost`, `apiPatch`, `apiPut`, and `apiDelete` now default unspecified payloads to `unknown`.
+- `useApiMutation` is typed with generics and no longer uses untyped options or `useMutation<any>`.
 - `useApiQuery` list unwrapping no longer uses a direct `any` cast in its list envelope bridge.
 - API contracts governance now prevents:
   - Reintroducing untyped `Promise<ApiParsedResult>` signatures.
-  - Adding `ApiParsedResult<any>` outside protected API compatibility files.
-  - Adding `useMutation<any>` outside protected API compatibility files.
+  - Adding `ApiParsedResult<any>`.
+  - Adding `useMutation<any>`.
+  - Reintroducing `any` generic defaults in API core boundaries.
 - Loose API response signatures baseline: 0.
 
-### Protected Compatibility Boundaries
+### API Core Boundaries
 
 - `src/types/api/http.ts`
 - `src/services/core/apiHttp.ts`
 - `src/hooks/useApiMutation.ts`
 - `src/hooks/useApiQuery.ts`
 
-These files are protected because older sections still mix two mutation/query result conventions: raw API envelope in some flows and unwrapped data in others. Tightening them globally before endpoint-by-endpoint contracts are finalized breaks closed sections. They are not approved as a pattern for new section code.
+These files are no longer allowed to hide compatibility with `any`. Mutations use the API envelope convention; query hooks continue to unwrap query data intentionally for read-side ergonomics.
 
 ### Final System Unification Candidates
 
-- Choose and enforce one mutation result convention across the app: API envelope everywhere or unwrapped data everywhere.
-- Remove the remaining protected compatibility defaults from `ApiParsedResult`, `apiGet/Post/Patch/Put/Delete`, and `useApiMutation` after the mutation convention is unified.
+- Move shared endpoint-facing types that still live under `src/modules` into `src/types/api/domains` where appropriate.
+- Continue shrinking shared UI primitive `any` in SmartTable, import/export utilities, and older shell components.
 
 ### Closure Checks
 
@@ -1279,6 +1282,7 @@ These files are protected because older sections still mix two mutation/query re
   - `tsc --noEmit` passed.
   - `check:api-contracts-governance` passed.
   - Loose `Promise<ApiParsedResult>` signatures: 0.
+  - `useApiMutation` and API core generic defaults are typed without real `any`.
 
 ## System-Wide Final Unification Backlog
 

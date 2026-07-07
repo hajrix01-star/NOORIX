@@ -287,8 +287,8 @@ export function StaffOrderPanel({
 
   const handleResendSale = useCallback(async (order: StaffOrder) => {
     try {
-      const res = await resendSale.mutateAsync({ id: order.id, lang });
-      const data = res?.data ?? res;
+      const res = await resendSale.mutateAsync({ id: order.id, lang: displayLang });
+      const data = res.data;
       const waText = data?.whatsAppText;
       if (waText) {
         openWhatsApp(waText);
@@ -297,7 +297,7 @@ export function StaffOrderPanel({
     } catch (error) {
       showToast(error instanceof Error ? error.message : t('saveFailed'), 'error');
     }
-  }, [lang, resendSale, t, showToast]);
+  }, [displayLang, resendSale, t, showToast]);
 
   const handleDelete = useCallback(async (order: StaffOrder) => {
     setDeleteTarget(order);

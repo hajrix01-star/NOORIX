@@ -37,6 +37,7 @@ import {
   BackupSheetsAndModals,
 } from './backup';
 import { appKeys, settingsKeys } from '../../../services/queryKeys';
+import type { ApiParsedResult } from '../../../types/api';
 import type {
   BackupConfigData,
   BackupImportModal,
@@ -60,12 +61,26 @@ type ApiDataEnvelope<TData> = {
   data?: TData;
 };
 
-type BackupUploadResult = ApiDataEnvelope<{ status?: string | null }>;
+type BackupUploadData = { status?: string | null };
 
-type BackupRestoreResult = ApiDataEnvelope<{
+type BackupRestoreData = {
   messageAr?: string | null;
   messageEn?: string | null;
-}>;
+};
+
+type BackupUploadResult = ApiParsedResult<BackupUploadData | BackupRestoreData>;
+type BackupRestoreResult = ApiParsedResult<BackupUploadData | BackupRestoreData>;
+
+function backupUploadStatus(res: BackupUploadResult): string | null | undefined {
+  const data = res.data;
+  return data && 'status' in data ? data.status : undefined;
+}
+
+function backupRestoreMessage(res: BackupRestoreResult): string | null | undefined {
+  const data = res.data;
+  if (!data || !('messageAr' in data || 'messageEn' in data)) return undefined;
+  return data.messageAr || data.messageEn;
+}
 
 export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
   const { t, lang } = useTranslation();
@@ -267,7 +282,7 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
     mutationFn: (file: File) => backupUploadSystemFullArchive(file),
     invalidateQueries: [settingsKeys.backupSystemJobs()],
     successToast: (res: BackupUploadResult) =>
-      res?.data?.status === 'skipped_duplicate' ? t('backupSystemUploadDup') : t('backupSystemUploadOk'),
+      backupUploadStatus(res) === 'skipped_duplicate' ? t('backupSystemUploadDup') : t('backupSystemUploadOk'),
     errorToast: (error: Error) => error.message || t('backupError'),
   });
 
@@ -279,7 +294,7 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
     onSuccess: (res: BackupRestoreResult) => {
       setRestorePcModal(null);
       setRestorePcPhrase('');
-      const msg = res?.data?.messageAr || res?.data?.messageEn || t('backupSystemRestoreOk');
+      const msg = backupRestoreMessage(res) || t('backupSystemRestoreOk');
       showToast(msg, 'success');
     },
   });
@@ -305,7 +320,7 @@ export default function BackupTab({ activeCompanies = [] }: BackupTabProps) {
     onSuccess: (res: BackupRestoreResult) => {
       setRestoreModal(null);
       setRestorePhrase('');
-      const msg = res?.data?.messageAr || res?.data?.messageEn || t('backupSystemRestoreOk');
+      const msg = backupRestoreMessage(res) || t('backupSystemRestoreOk');
       showToast(msg, 'success');
     },
   });

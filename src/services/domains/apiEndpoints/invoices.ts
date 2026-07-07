@@ -56,7 +56,7 @@ export type CreateAdvanceParams = {
   notes?: string;
   employeeName?: string;
   installmentCount?: number;
-  installmentAmount?: number;
+  installmentAmount?: number | null;
 };
 
 export type FetchAllInvoicesForExportOpts = {
@@ -245,8 +245,8 @@ export async function getInvoices(
     requireExpenseLine,
   });
   // إرسال التاريخ بصيغة YYYY-MM-DD فقط (مثل المبيعات) لتجنب مشاكل الترميز والتوقيت
-  const res = await apiGet('/api/v1/invoices', params);
-  if (!res.success) return res;
+  const res = await apiGet<InvoiceListResponse>('/api/v1/invoices', params);
+  if (!res.success) return { success: false, error: res.error };
   return {
     success: true,
     data: normalizeInvoiceListResponse(res.data, { page, pageSize }),
@@ -254,11 +254,11 @@ export async function getInvoices(
 }
 
 export async function getInvoiceDayCloseReport(companyId: string, date: unknown): Promise<ApiParsedResult<DayCloseReportData>> {
-  const res = await apiGet('/api/v1/invoices/day-close-report', {
+  const res = await apiGet<DayCloseReportData | { data?: DayCloseReportData }>('/api/v1/invoices/day-close-report', {
     companyId,
     date: toYmd(date),
   });
-  if (!res.success) return res;
+  if (!res.success) return { success: false, error: res.error };
   return { success: true, data: normalizeDayCloseReportData(unwrapApiEnvelope(res.data)) };
 }
 
@@ -266,8 +266,8 @@ export async function getInvoiceDayCloseReport(companyId: string, date: unknown)
 export async function getInvoiceCreatorFilterOptions(
   companyId: string,
 ): Promise<ApiParsedResult<{ users: unknown[] }>> {
-  const res = await apiGet('/api/v1/invoices/creator-filter-options', { companyId });
-  if (!res.success) return res;
+  const res = await apiGet<{ users?: unknown[] } | { data?: { users?: unknown[] } }>('/api/v1/invoices/creator-filter-options', { companyId });
+  if (!res.success) return { success: false, error: res.error };
   const raw = unwrapApiEnvelope(res.data);
   return { success: true, data: { users: readUnknownArrayField(raw, 'users') } };
 }

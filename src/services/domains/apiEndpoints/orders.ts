@@ -146,20 +146,20 @@ export async function updateOrderCategory(
 export async function deactivateOrderProductsBulk(
   companyId: string,
   ids: string[],
-): Promise<{ deleted: number }> {
+): Promise<ApiParsedResult<{ deleted: number }>> {
   const results = await Promise.all(
     ids.map((id) => apiPatch(`/api/v1/orders/products/${id}?companyId=${companyId}`, { isActive: false })),
   );
-  return { deleted: results.filter((r) => r?.success).length };
+  return { success: true, data: { deleted: results.filter((r) => r?.success).length } };
 }
 export async function deactivateOrderCategoriesBulk(
   companyId: string,
   ids: string[],
-): Promise<{ deleted: number }> {
+): Promise<ApiParsedResult<{ deleted: number }>> {
   const results = await Promise.all(
     ids.map((id) => apiPatch(`/api/v1/orders/categories/${id}?companyId=${companyId}`, { isActive: false })),
   );
-  return { deleted: results.filter((r) => r?.success).length };
+  return { success: true, data: { deleted: results.filter((r) => r?.success).length } };
 }
 
 // ——— طلبات الأقسام (Staff Orders) ———

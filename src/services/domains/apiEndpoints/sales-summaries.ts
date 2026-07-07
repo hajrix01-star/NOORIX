@@ -50,6 +50,18 @@ type PurchaseBatchSummariesResult = {
   }>;
   rowCount: number;
 };
+type SalesSummariesApiResponse = SalesSummariesPage | { data?: SalesSummariesPage };
+type PurchaseBatchSummariesApiResponse = PurchaseBatchSummariesResult | { data?: PurchaseBatchSummariesResult };
+
+type DataEnvelope<T> = { data?: T };
+
+function isDataEnvelope<T>(value: T | DataEnvelope<T> | undefined): value is DataEnvelope<T> {
+  return !!value && typeof value === 'object' && 'data' in value;
+}
+
+function unwrapDataEnvelope<T>(value: T | DataEnvelope<T> | undefined): T | undefined {
+  return isDataEnvelope(value) ? value.data : value;
+}
 export async function updateDailySalesSummary(
   id: string,
   body: UpdateSalesSummaryBody,
@@ -129,9 +141,9 @@ export async function getDailySalesSummaries(
   if (includeCancelled) params.includeCancelled = '1';
   const shiftParam = shift != null ? listShiftFilterToApiParam(shift) : undefined;
   if (shiftParam) params.shift = shiftParam;
-  const res = await apiGet('/api/v1/sales/summaries', params);
-  if (!res.success) return res;
-  const raw = res.data?.data ?? res.data;
+  const res = await apiGet<SalesSummariesApiResponse>('/api/v1/sales/summaries', params);
+  if (!res.success) return { success: false, error: res.error };
+  const raw = unwrapDataEnvelope(res.data);
   if (!isObjectRecord(raw)) {
     return { success: false, error: 'استجابة ملخصات المبيعات غير مطابقة للعقد الرسمي' };
   }
@@ -202,9 +214,9 @@ export async function getPurchaseBatchSummaries(
   lang?: string,
 ): Promise<ApiParsedResult<PurchaseBatchSummariesResult>> {
   const params = buildPurchaseBatchSummariesApiQuery({ companyId, startDate, endDate, q, lang });
-  const res = await apiGet('/api/v1/invoices/purchase-batch-summaries', params);
+  const res = await apiGet<PurchaseBatchSummariesApiResponse>('/api/v1/invoices/purchase-batch-summaries', params);
   if (!res.success) return { success: false, error: res.error, data: { batches: [], rowCount: 0 } };
-  const raw = res.data?.data ?? res.data;
+  const raw = unwrapDataEnvelope(res.data);
   return {
     success: true,
     data: {

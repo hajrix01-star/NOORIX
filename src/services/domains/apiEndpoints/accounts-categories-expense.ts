@@ -19,7 +19,7 @@ type AccountRef = {
 };
 
 export async function getAccounts(companyId: string): Promise<ApiParsedResult<AccountRef[]>> {
-  const res = await apiGet('/api/v1/accounts', { companyId });
+  const res = await apiGet<AccountRef[]>('/api/v1/accounts', { companyId });
   if (!res.success) return res;
   return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
@@ -45,7 +45,7 @@ export async function getExpenseLines(
   const params: Record<string, string> = { companyId: String(companyId) };
   if (kind) params.kind = String(kind);
   if (includeInactive) params.includeInactive = 'true';
-  const res = await apiGet('/api/v1/expense-lines', params);
+  const res = await apiGet<ExpenseLineRecord[]>('/api/v1/expense-lines', params);
   if (!res.success) return res;
   return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }

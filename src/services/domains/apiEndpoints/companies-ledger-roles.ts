@@ -35,83 +35,83 @@ export async function getCompanies(includeArchived = false): Promise<ApiParsedRe
 
 export async function getCompany(id: string): Promise<ApiParsedResult<SettingsCompany>> {
   if (!id) return { success: false, error: 'معرف الشركة مطلوب' };
-  return apiGet(`/api/v1/companies/${id}`);
+  return apiGet<SettingsCompany>(`/api/v1/companies/${id}`);
 }
 
 /** إعادة تهيئة فئات شركة واحدة — super_admin فقط */
 export async function resetCompanyCategories(companyId: string): Promise<ApiParsedResult<ResetCompanyCategoriesResult['data']>> {
-  return apiPost(`/api/v1/accounting-init/reset-categories/${companyId}`, {});
+  return apiPost<ResetCompanyCategoriesResult['data']>(`/api/v1/accounting-init/reset-categories/${companyId}`, {});
 }
 
 /** إعادة تهيئة فئات جميع الشركات — super_admin فقط */
 export async function resetAllCompaniesCategories(): Promise<ApiParsedResult<ResetCompanyCategoriesResult['data']>> {
-  return apiPost('/api/v1/accounting-init/reset-all-categories', {});
+  return apiPost<ResetCompanyCategoriesResult['data']>('/api/v1/accounting-init/reset-all-categories', {});
 }
 
 /** إضافة الفئات الناقصة فقط لشركة — بدون حذف أي فئة موجودة */
 export async function patchCompanyCategories(companyId: string): Promise<ApiParsedResult<ResetCompanyCategoriesResult['data']>> {
-  return apiPost(`/api/v1/accounting-init/patch-categories/${companyId}`, {});
+  return apiPost<ResetCompanyCategoriesResult['data']>(`/api/v1/accounting-init/patch-categories/${companyId}`, {});
 }
 
 /** إضافة الفئات الناقصة لجميع الشركات — بدون حذف */
 export async function patchAllCompaniesCategories(): Promise<ApiParsedResult<ResetCompanyCategoriesResult['data']>> {
-  return apiPost('/api/v1/accounting-init/patch-all-categories', {});
+  return apiPost<ResetCompanyCategoriesResult['data']>('/api/v1/accounting-init/patch-all-categories', {});
 }
 
 export async function getRoles(): Promise<ApiParsedResult<SettingsRole[]>> {
-  const res = await apiGet('/api/v1/roles');
+  const res = await apiGet<SettingsRole[]>('/api/v1/roles');
   if (!res.success) return res;
   return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
 
 export async function getPermissionsSchema(): Promise<ApiParsedResult<PermissionSchemaResult>> {
-  return apiGet('/api/v1/roles/permissions-schema');
+  return apiGet<PermissionSchemaResult>('/api/v1/roles/permissions-schema');
 }
 
 export async function createRole(body: unknown): Promise<ApiParsedResult<SettingsRole>> {
-  return apiPost('/api/v1/roles', body);
+  return apiPost<SettingsRole>('/api/v1/roles', body);
 }
 export async function updateRole(id: string, body: unknown): Promise<ApiParsedResult<SettingsRole>> {
-  return apiPatch(`/api/v1/roles/${id}`, body);
+  return apiPatch<SettingsRole>(`/api/v1/roles/${id}`, body);
 }
 export async function deleteRole(id: string): Promise<ApiParsedResult<{ success?: boolean }>> {
-  return apiDelete(`/api/v1/roles/${id}`);
+  return apiDelete<{ success?: boolean }>(`/api/v1/roles/${id}`);
 }
 
 export async function getUsers(): Promise<ApiParsedResult<SettingsUser[]>> {
-  const res = await apiGet('/api/v1/users');
+  const res = await apiGet<SettingsUser[]>('/api/v1/users');
   if (!res.success) return { success: false, error: res.error, data: [] };
   return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
 export async function createUser(body: unknown): Promise<ApiParsedResult<CreateUserResult['data']>> {
-  return apiPost('/api/v1/users', body);
+  return apiPost<CreateUserResult['data']>('/api/v1/users', body);
 }
 export async function updateUser(id: string, body: UserUpdateVariables['body']): Promise<ApiParsedResult<SettingsUser>> {
-  return apiPatch(`/api/v1/users/${id}`, body);
+  return apiPatch<SettingsUser>(`/api/v1/users/${id}`, body);
 }
 export async function archiveUser(id: string): Promise<ApiParsedResult<SettingsUser>> {
-  return apiPatch(`/api/v1/users/${id}/archive`, {});
+  return apiPatch<SettingsUser>(`/api/v1/users/${id}/archive`, {});
 }
 export async function restoreUser(id: string): Promise<ApiParsedResult<SettingsUser>> {
-  return apiPatch(`/api/v1/users/${id}/restore`, {});
+  return apiPatch<SettingsUser>(`/api/v1/users/${id}/restore`, {});
 }
 export async function deleteUser(id: string): Promise<ApiParsedResult<{ success?: boolean }>> {
-  return apiDelete(`/api/v1/users/${id}`);
+  return apiDelete<{ success?: boolean }>(`/api/v1/users/${id}`);
 }
 export async function hardDeleteUser(id: string): Promise<ApiParsedResult<{ success?: boolean }>> {
-  return apiDelete(`/api/v1/users/${id}/permanent`);
+  return apiDelete<{ success?: boolean }>(`/api/v1/users/${id}/permanent`);
 }
 
 export async function createCompany(body: CompanyCreateBody): Promise<ApiParsedResult<CompanyMutationResult['data']>> {
-  return apiPost('/api/v1/companies', body);
+  return apiPost<CompanyMutationResult['data']>('/api/v1/companies', body);
 }
 export async function updateCompany(id: string, body: unknown): Promise<ApiParsedResult<SettingsCompany>> {
   if (!id) return { success: false, error: 'معرف الشركة مطلوب' };
-  return apiPatch(`/api/v1/companies/${id}`, body);
+  return apiPatch<SettingsCompany>(`/api/v1/companies/${id}`, body);
 }
 export async function deleteCompany(id: string): Promise<ApiParsedResult<{ success?: boolean }>> {
   if (!id) return { success: false, error: 'معرف الشركة مطلوب' };
-  return apiDelete(`/api/v1/companies/${id}`);
+  return apiDelete<{ success?: boolean }>(`/api/v1/companies/${id}`);
 }
 
 export async function getLedgerEntries(

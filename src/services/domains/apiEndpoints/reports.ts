@@ -28,6 +28,16 @@ import type {
 } from '../../../modules/Reports/reportTypes';
 
 // ——— التقارير ———
+type DataEnvelope<T> = { data?: T };
+
+function isDataEnvelope<T>(value: T | DataEnvelope<T> | undefined): value is DataEnvelope<T> {
+  return !!value && typeof value === 'object' && 'data' in value;
+}
+
+function unwrapDataEnvelope<T>(value: T | DataEnvelope<T> | undefined): T | undefined {
+  return isDataEnvelope(value) ? value.data : value;
+}
+
 export async function getGeneralProfitLossReport(
   companyId: string,
   year: string | number,
@@ -106,8 +116,8 @@ export async function getPeriodAnalytics(
   startDate: unknown,
   endDate: unknown,
 ): Promise<ApiParsedResult<PeriodAnalyticsData>> {
-  const res = await apiGet('/api/v1/reports/period-analytics', periodAnalyticsQuery(companyId, startDate, endDate));
-  if (!res.success) return res;
-  const raw = res.data?.data ?? res.data;
+  const res = await apiGet<PeriodAnalyticsData | { data?: PeriodAnalyticsData }>('/api/v1/reports/period-analytics', periodAnalyticsQuery(companyId, startDate, endDate));
+  if (!res.success) return { success: false, error: res.error };
+  const raw = unwrapDataEnvelope(res.data);
   return { success: true, data: raw };
 }

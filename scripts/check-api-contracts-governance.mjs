@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const failures = [];
 
-const protectedCompatibilityFiles = new Set([
+const apiCoreFiles = new Set([
   'src/types/api/http.ts',
   'src/services/core/apiHttp.ts',
   'src/hooks/useApiMutation.ts',
@@ -41,8 +41,8 @@ function fail(message) {
   failures.push(message);
 }
 
-for (const rel of protectedCompatibilityFiles) {
-  if (!exists(rel)) fail(`${rel}: protected API compatibility boundary is missing.`);
+for (const rel of apiCoreFiles) {
+  if (!exists(rel)) fail(`${rel}: API core boundary is missing.`);
 }
 
 const register = read('docs/SECTION_UNIFICATION_REGISTER.md');
@@ -50,6 +50,7 @@ for (const required of [
   '## API Contracts Finalization',
   '`check:api-contracts-governance`',
   'Loose API response signatures baseline: 0',
+  'Mutation result convention: API envelope',
   'src/hooks/useApiMutation.ts',
 ]) {
   if (!register.includes(required)) {
@@ -64,12 +65,18 @@ for (const file of sourceFiles) {
   const matches = source.match(/Promise<ApiParsedResult>(?!<)/g);
   if (matches) looseApiResultSignatures += matches.length;
 
-  if (!protectedCompatibilityFiles.has(file)) {
-    if (/ApiParsedResult<[^>\n]*\bany\b[^>\n]*>/.test(source)) {
-      fail(`${file}: ApiParsedResult<any> is not allowed outside protected API compatibility boundaries.`);
+  if (/ApiParsedResult<[^>\n]*\bany\b[^>\n]*>/.test(source)) {
+    fail(`${file}: ApiParsedResult<any> is not allowed.`);
+  }
+  if (/useMutation<any\b/.test(source)) {
+    fail(`${file}: useMutation<any> is not allowed.`);
+  }
+  if (apiCoreFiles.has(file)) {
+    if (/<[^>\n=]+=\s*any\b/.test(source)) {
+      fail(`${file}: generic defaults must not use any in API core boundaries.`);
     }
-    if (/useMutation<any\b/.test(source)) {
-      fail(`${file}: useMutation<any> is not allowed outside protected API compatibility boundaries.`);
+    if (/options:\s*any\b/.test(source)) {
+      fail(`${file}: API hook options must be typed, not any.`);
     }
   }
 }

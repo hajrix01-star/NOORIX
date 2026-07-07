@@ -36,6 +36,8 @@ import type {
   OrderProductType,
   OrderProductVariant,
   OrderSection,
+  OrderCatalogBatchCreateResult,
+  ApiParsedResult,
 } from '../../../types/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -71,27 +73,31 @@ interface Props {
   companyId: string;
   products: OrderProduct[];
   categories: OrderCategory[];
-  createProductsBatch: BatchMutation<OrderProductPayload, OrderProduct[]>;
-  createCategoriesBatch: BatchMutation<OrderCategoryPayload, OrderCategory[]>;
+  createProductsBatch: BatchMutation<OrderProductPayload>;
+  createCategoriesBatch: BatchMutation<OrderCategoryPayload>;
   onClose: () => void;
 }
 
-type BatchMutation<TPayload, TResult> = {
+type BatchMutation<TPayload> = {
   mutate: (
     payload: TPayload[],
     options: {
-      onSuccess: (data: TResult | { data?: TResult }) => void;
+      onSuccess: (data: ApiParsedResult<OrderCatalogBatchCreateResult>) => void;
       onError: (error: Error) => void;
     },
   ) => void;
   isPending?: boolean;
 };
 
-function mutationResultData<TResult>(value: TResult | { data?: TResult }): TResult {
-  if (value && typeof value === 'object' && 'data' in value && value.data !== undefined) {
-    return value.data;
-  }
-  return value as TResult;
+function mutationCreatedCount(value: ApiParsedResult<OrderCatalogBatchCreateResult>, fallback: number): number {
+  if (Array.isArray(value.data)) return value.data.length;
+  const created = Number(value.data?.created ?? value.data?.count);
+  return Number.isFinite(created) ? created : fallback;
+}
+
+function mutationCreatedItems(value: ApiParsedResult<OrderCatalogBatchCreateResult>): Array<OrderProduct | OrderCategory> {
+  if (Array.isArray(value.data)) return value.data;
+  return Array.isArray(value.data?.items) ? value.data.items : [];
 }
 
 function errorMessage(error: unknown, fallback: string): string {
@@ -369,12 +375,13 @@ export function OrdersImportModal({
       // ── Step 1: auto-create missing categories (products only) ─────────────
       if (isProducts && newCategoriesToCreate.length > 0) {
         const newCatPayloads = newCategoriesToCreate.map(nameAr => ({ nameAr }));
-        const catRes = await new Promise<OrderCategory[] | { data?: OrderCategory[] }>((resolve, reject) => {
+        const catRes = await new Promise<ApiParsedResult<OrderCatalogBatchCreateResult>>((resolve, reject) => {
           createCategoriesBatch.mutate(newCatPayloads, { onSuccess: resolve, onError: reject });
         });
-        // Inject new IDs into catByNameRef so product payloads can reference them
-        const created = mutationResultData(catRes) ?? [];
-        for (const cat of created) {
+        if (!catRes.success) {
+          throw new Error(catRes.error || t('importDoneError'));
+        }
+        for (const cat of mutationCreatedItems(catRes)) {
           const key = String(cat.nameAr ?? '').trim().toLowerCase();
           if (key && cat.id) catByNameRef.current.set(key, cat.id);
         }
@@ -399,14 +406,16 @@ export function OrdersImportModal({
 
       // ── Step 3: create items ────────────────────────────────────────────────
       const itemRes = isProducts
-        ? await new Promise<OrderProduct[] | { data?: OrderProduct[] }>((resolve, reject) => {
+        ? await new Promise<ApiParsedResult<OrderCatalogBatchCreateResult>>((resolve, reject) => {
             createProductsBatch.mutate(payloads as OrderProductPayload[], { onSuccess: resolve, onError: reject });
           })
-        : await new Promise<OrderCategory[] | { data?: OrderCategory[] }>((resolve, reject) => {
+        : await new Promise<ApiParsedResult<OrderCatalogBatchCreateResult>>((resolve, reject) => {
             createCategoriesBatch.mutate(payloads as OrderCategoryPayload[], { onSuccess: resolve, onError: reject });
           });
-      const importedData = mutationResultData(itemRes);
-      const imported = Array.isArray(importedData) ? importedData.length : payloads.length;
+      if (!itemRes.success) {
+        throw new Error(itemRes.error || t('importDoneError'));
+      }
+      const imported = mutationCreatedCount(itemRes, payloads.length);
 
       // ── Step 4: persist new sizes & packaging into localStorage ────────────
       if (isProducts && companyId) {

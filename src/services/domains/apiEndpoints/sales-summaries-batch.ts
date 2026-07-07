@@ -43,7 +43,7 @@ export async function postDailySalesSummaryBatch(
   body: DailySalesBatchPayload,
 ): Promise<ApiParsedResult<{ summaries: SalesSummaryItem[] }>> {
   const items = body.items.map((item, i) => buildBatchItemApiPayload(body, item, i));
-  const res = await apiPost('/api/v1/sales/summary-batch', {
+  const res = await apiPost<{ summaries?: SalesSummaryItem[] } | SalesSummaryItem[]>('/api/v1/sales/summary-batch', {
     companyId: body.companyId,
     transactionDate: toYmd(body.transactionDate) || body.transactionDate,
     items: items.map((p) => ({
@@ -55,7 +55,7 @@ export async function postDailySalesSummaryBatch(
     })),
     batchIdempotencyKey: body.batchIdempotencyKey,
   });
-  if (!res.success) return res;
+  if (!res.success) return { success: false, error: res.error };
   const raw = res.data as { summaries?: SalesSummaryItem[] } | undefined;
   const summaries = raw?.summaries ?? (Array.isArray(raw) ? raw : []);
   return { success: true, data: { summaries } };

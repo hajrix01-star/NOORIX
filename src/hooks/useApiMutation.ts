@@ -1,16 +1,35 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  type InvalidateQueryFilters,
+  type QueryKey,
+  type UseMutationOptions,
+} from '@tanstack/react-query';
 import { useToast } from '../context/ToastContext';
 import { throwIfApiFailed } from '../services/api';
 
-/**
- * طبقة رفيعة فوق useMutation:
- * - يحوّل استجابة { success: false } إلى خطأ (قابل للتعطيل).
- * - يبطل مفاتيح استعلام بعد النجاح.
- * - يعرض Toast للنجاح/الخطأ عند التفعيل.
- *
- * هذا hook يبقى حد توافق محميًا إلى أن تُشدّد كل endpoints القديمة لتعيد عقودًا مصنفة.
- */
-export function useApiMutation(options: any) {
+type InvalidateSpec = QueryKey | InvalidateQueryFilters;
+type ToastMessage = string | false | null | undefined;
+
+function isQueryKeyInvalidateSpec(spec: InvalidateSpec): spec is QueryKey {
+  return Array.isArray(spec);
+}
+
+export type ApiMutationOptions<TData, TVariables = void, TContext = unknown> =
+  Omit<UseMutationOptions<TData, Error, TVariables, TContext>, 'mutationFn' | 'onSuccess' | 'onError'> & {
+    mutationFn: (variables: TVariables) => Promise<TData>;
+    invalidateQueries?: InvalidateSpec[];
+    successToast?: ToastMessage | ((data: TData, variables: TVariables) => ToastMessage);
+    showErrorToast?: boolean;
+    errorToast?: ToastMessage | ((error: Error, variables: TVariables) => ToastMessage);
+    rejectOnApiFailure?: boolean;
+    onSuccess?: UseMutationOptions<TData, Error, TVariables, TContext>['onSuccess'];
+    onError?: UseMutationOptions<TData, Error, TVariables, TContext>['onError'];
+  };
+
+export function useApiMutation<TData = unknown, TVariables = void, TContext = unknown>(
+  options: ApiMutationOptions<TData, TVariables, TContext>,
+) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -26,7 +45,7 @@ export function useApiMutation(options: any) {
     ...rest
   } = options;
 
-  const wrappedMutationFn = async (variables: unknown) => {
+  const wrappedMutationFn = async (variables: TVariables): Promise<TData> => {
     const result = await rawMutationFn(variables);
     if (rejectOnApiFailure) {
       throwIfApiFailed(result);
@@ -34,17 +53,17 @@ export function useApiMutation(options: any) {
     return result;
   };
 
-  return useMutation<any, Error, any, unknown>({
+  return useMutation<TData, Error, TVariables, TContext>({
     mutationFn: wrappedMutationFn,
     ...rest,
-    onSuccess: async (data, variables, context) => {
+    onSuccess: async (data, variables, onMutateResult, context) => {
       if (typeof userOnSuccess === 'function') {
-        await userOnSuccess(data, variables, context);
+        await userOnSuccess(data, variables, onMutateResult, context);
       }
       for (const spec of invalidateQueries) {
-        if (Array.isArray(spec)) {
+        if (isQueryKeyInvalidateSpec(spec)) {
           queryClient.invalidateQueries({ queryKey: spec });
-        } else if (spec && typeof spec === 'object') {
+        } else {
           queryClient.invalidateQueries(spec);
         }
       }
@@ -53,14 +72,14 @@ export function useApiMutation(options: any) {
         if (msg) showToast(msg, 'success');
       }
     },
-    onError: async (error, variables, context) => {
+    onError: async (error, variables, onMutateResult, context) => {
       if (typeof userOnError === 'function') {
-        await userOnError(error, variables, context);
+        await userOnError(error, variables, onMutateResult, context);
       }
       if (showErrorToast) {
         const msg = typeof errorToast === 'function'
           ? errorToast(error, variables)
-          : (errorToast || error?.message || '');
+          : (errorToast || error.message || '');
         if (msg) showToast(msg, 'error');
       }
     },
