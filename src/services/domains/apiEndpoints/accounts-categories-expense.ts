@@ -1,5 +1,6 @@
 import type { ApiParsedResult } from '../../../types/api';
 import type {
+  ExpenseCategoryRef,
   ExpenseLineCreatePayload,
   ExpenseLinePaymentsPage,
   ExpenseLineRecord,
@@ -9,21 +10,29 @@ import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
 // ——— الحسابات والفئات ———
-export async function getAccounts(companyId: string): Promise<ApiParsedResult> {
+type AccountRef = {
+  id: string;
+  code?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+  [key: string]: unknown;
+};
+
+export async function getAccounts(companyId: string): Promise<ApiParsedResult<AccountRef[]>> {
   const res = await apiGet('/api/v1/accounts', { companyId });
   if (!res.success) return res;
   return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
-export async function getCategories(companyId: string): Promise<ApiParsedResult> {
+export async function getCategories(companyId: string): Promise<ApiParsedResult<ExpenseCategoryRef[]>> {
   return apiGet('/api/v1/categories', { companyId });
 }
-export async function createCategory(body: unknown): Promise<ApiParsedResult> {
+export async function createCategory(body: unknown): Promise<ApiParsedResult<ExpenseCategoryRef>> {
   return apiPost('/api/v1/categories', body);
 }
-export async function updateCategory(id: string, body: unknown): Promise<ApiParsedResult> {
+export async function updateCategory(id: string, body: unknown): Promise<ApiParsedResult<ExpenseCategoryRef>> {
   return apiPatch(`/api/v1/categories/${id}`, body);
 }
-export async function deleteCategory(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function deleteCategory(id: string, companyId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
   return apiDelete(`/api/v1/categories/${id}?companyId=${companyId}`);
 }
 

@@ -19,12 +19,19 @@ import type {
   VatPlanningRegistryFilters,
   VatPlanningUpsertPayload,
 } from '../../../types/api/domains/hajriTax';
+import type {
+  GeneralProfitLossReport,
+  PeriodAnalyticsData,
+  ReportDetailsData,
+  ReportTrendData,
+  TaxDisclosureData,
+} from '../../../modules/Reports/reportTypes';
 
 // ——— التقارير ———
 export async function getGeneralProfitLossReport(
   companyId: string,
   year: string | number,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<GeneralProfitLossReport>> {
   return apiGet('/api/v1/reports/general-profit-loss', generalProfitLossQuery(companyId, year));
 }
 export async function getGeneralProfitLossDetails(
@@ -33,7 +40,7 @@ export async function getGeneralProfitLossDetails(
   month: string | number | null | undefined,
   groupKey: string,
   itemKey?: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<ReportDetailsData>> {
   return apiGet(
     '/api/v1/reports/general-profit-loss/details',
     generalProfitLossDetailsQuery(companyId, year, month, groupKey, itemKey),
@@ -44,7 +51,7 @@ export async function getGeneralProfitLossTrend(
   year: string | number,
   groupKey: string,
   itemKey?: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<ReportTrendData>> {
   return apiGet(
     '/api/v1/reports/general-profit-loss/trend',
     generalProfitLossTrendQuery(companyId, year, groupKey, itemKey),
@@ -57,7 +64,7 @@ export async function getTaxVatReport(
   year: string | number,
   period: string,
   opts: TaxVatReportQueryOptions = {},
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<TaxDisclosureData>> {
   return apiGet('/api/v1/reports/tax-vat', taxVatReportQuery(companyId, year, period, opts));
 }
 
@@ -89,7 +96,7 @@ export async function deleteVatPlanning(
   companyId: string,
   year: string | number,
   quarter: string | number,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<{ success?: boolean }>> {
   return apiDelete(withReportsApiQuery('/api/v1/vat-planning', vatPlanningDeleteQuery(companyId, year, quarter)));
 }
 
@@ -98,7 +105,7 @@ export async function getPeriodAnalytics(
   companyId: string,
   startDate: unknown,
   endDate: unknown,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<PeriodAnalyticsData>> {
   const res = await apiGet('/api/v1/reports/period-analytics', periodAnalyticsQuery(companyId, startDate, endDate));
   if (!res.success) return res;
   const raw = res.data?.data ?? res.data;

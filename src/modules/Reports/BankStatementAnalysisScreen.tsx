@@ -38,12 +38,10 @@ const BANK_STATEMENT_TAB_IDS = TABS.map((tab) => tab.id);
 
 type AppCompany = { id?: string; nameAr?: string | null; nameEn?: string | null; name?: string | null };
 type BankSummaryData = {
-  data?: {
-    statementCount?: number | string | null;
-    totalDeposits?: number | string | null;
-    totalWithdrawals?: number | string | null;
-    netFlow?: number | string | null;
-  };
+  statementCount?: number | string | null;
+  totalDeposits?: number | string | null;
+  totalWithdrawals?: number | string | null;
+  netFlow?: number | string | null;
 };
 type MappingStatement = BankStatementLite & { _fullRaw?: BankSheetData };
 type MetricItem = { label: string; value: string; color: string };
@@ -254,10 +252,10 @@ export default function BankStatementAnalysisScreen() {
                   className="grid gap-3 mb-5 [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]"
                 >
                   {([
-                    { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.data?.statementCount ?? 0, format: (value) => String(value ?? 0) },
-                    { key: 'dep', labelKey: 'bankStatementCardDeposits', value: summary?.data?.totalDeposits ?? 0, format: (value) => fmt(Number(value)) },
-                    { key: 'wdr', labelKey: 'bankStatementCardWithdrawals', value: summary?.data?.totalWithdrawals ?? 0, format: (value) => fmt(Number(value)) },
-                    { key: 'net', labelKey: 'bankStatementCardNetFlow', value: summary?.data?.netFlow ?? 0, format: (value) => fmt(Number(value)) },
+                    { key: 'count', labelKey: 'bankStatementCardCount', value: summary?.statementCount ?? 0, format: (value) => String(value ?? 0) },
+                    { key: 'dep', labelKey: 'bankStatementCardDeposits', value: summary?.totalDeposits ?? 0, format: (value) => fmt(Number(value)) },
+                    { key: 'wdr', labelKey: 'bankStatementCardWithdrawals', value: summary?.totalWithdrawals ?? 0, format: (value) => fmt(Number(value)) },
+                    { key: 'net', labelKey: 'bankStatementCardNetFlow', value: summary?.netFlow ?? 0, format: (value) => fmt(Number(value)) },
                   ] satisfies SummaryMetricItem[]).map((c) => (
                     <div
                       key={c.key}

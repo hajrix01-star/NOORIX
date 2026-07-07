@@ -81,6 +81,10 @@ export default function BankCategoryTreePanel({
   });
 
   const runMigrate = async () => {
+    if (!companyId) {
+      showToast(t('selectCompanyFirst'), 'error');
+      return;
+    }
     setMigrating(true);
     try {
       let order = 10;

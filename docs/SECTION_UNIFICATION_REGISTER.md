@@ -1234,7 +1234,7 @@ These files still preserve legacy API compatibility where some older endpoints a
 
 ## API Contracts Finalization
 
-Closed on 2026-07-07 as a governed baseline pass. Closure commit is pending local commit.
+Closed on 2026-07-07 as a governed strict endpoint-contract pass. Closure commit is pending local commit.
 
 ### Scope
 
@@ -1247,16 +1247,17 @@ Closed on 2026-07-07 as a governed baseline pass. Closure commit is pending loca
 - API governance:
   - `scripts/check-api-contracts-governance.mjs`
   - `package.json` script `check:api-contracts-governance`
+- Endpoint return contracts tightened across the remaining loose frontend API files, including HR, employees, suppliers, vaults, reports, invoices, sales summaries, backup, settings/company roles, bank/auth, and related purchase-batch summary bridges.
 
 ### Centralized
 
 - API compatibility boundaries are now explicit instead of implicit.
 - `useApiQuery` list unwrapping no longer uses a direct `any` cast in its list envelope bridge.
 - API contracts governance now prevents:
-  - Increasing untyped `Promise<ApiParsedResult>` signatures beyond the current baseline.
+  - Reintroducing untyped `Promise<ApiParsedResult>` signatures.
   - Adding `ApiParsedResult<any>` outside protected API compatibility files.
   - Adding `useMutation<any>` outside protected API compatibility files.
-- Loose API response signatures baseline: 150.
+- Loose API response signatures baseline: 0.
 
 ### Protected Compatibility Boundaries
 
@@ -1269,16 +1270,15 @@ These files are protected because older sections still mix two mutation/query re
 
 ### Final System Unification Candidates
 
-- Reduce the loose API response signatures from 150 toward zero by domain.
-- Convert each endpoint file to explicit `ApiParsedResult<DomainContract>` return types.
 - Choose and enforce one mutation result convention across the app: API envelope everywhere or unwrapped data everywhere.
-- After the endpoint contracts are strict, remove the `any` defaults from `ApiParsedResult`, `apiGet/Post/Patch/Put/Delete`, and `useApiMutation`.
+- Remove the remaining protected compatibility defaults from `ApiParsedResult`, `apiGet/Post/Patch/Put/Delete`, and `useApiMutation` after the mutation convention is unified.
 
 ### Closure Checks
 
 - 2026-07-07 API Contracts baseline closure:
   - `tsc --noEmit` passed.
   - `check:api-contracts-governance` passed.
+  - Loose `Promise<ApiParsedResult>` signatures: 0.
 
 ## System-Wide Final Unification Backlog
 

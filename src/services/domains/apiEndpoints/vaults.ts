@@ -50,7 +50,7 @@ export async function updateVault(id: string, body: VaultUpdatePayload): Promise
   return apiPatch(`/api/v1/vaults/${id}`, body);
 }
 /** ترتيب الخزائن النشطة — الجسم: { vaultIds: string[] } */
-export async function reorderVaults(vaultIds: string[]): Promise<ApiParsedResult> {
+export async function reorderVaults(vaultIds: string[]): Promise<ApiParsedResult<VaultRecord[]>> {
   return apiPatch('/api/v1/vaults/reorder', { vaultIds });
 }
 export async function archiveVault(id: string): Promise<ApiParsedResult<VaultRecord>> {

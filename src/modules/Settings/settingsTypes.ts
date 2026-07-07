@@ -18,6 +18,8 @@ export type SettingsCompany = {
   email?: string | null;
   logoUrl?: string | null;
   isArchived?: boolean | null;
+  vatEnabledForSales?: boolean | null;
+  vatRatePercent?: number | string | null;
 };
 
 export type TranslationFn = (key: string, ...args: string[]) => string;

@@ -22,7 +22,7 @@ type BankStatementDetailViewProps = {
   categories?: BankCategoryLite[];
   onBack: () => void;
   onDelete?: () => void;
-  createCategory: (body: BankCreateCategoryBody) => Promise<ApiParsedResult>;
+  createCategory: (body: BankCreateCategoryBody) => Promise<ApiParsedResult<BankCategoryLite>>;
   showToast: (message: string, type?: string) => void;
   onRefresh?: () => void;
 };

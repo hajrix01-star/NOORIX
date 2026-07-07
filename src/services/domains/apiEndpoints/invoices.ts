@@ -16,8 +16,22 @@ import {
   normalizeInvoiceListResponse,
   type InvoiceListResponse,
 } from './invoice-list-response';
+import {
+  normalizeDayCloseReportData,
+  type DayCloseReportData,
+} from '../../../modules/Invoices/dayCloseReportModel';
 
 type JsonRecord = Record<string, unknown>;
+
+type InvoiceMutationResult = {
+  id?: string;
+  invoiceNumber?: string | null;
+  invoice?: {
+    id?: string;
+    invoiceNumber?: string | null;
+  };
+  [key: string]: unknown;
+};
 
 function readJsonRecord(value: unknown): JsonRecord {
   return value && typeof value === 'object' ? (value as JsonRecord) : {};
@@ -65,7 +79,7 @@ export type FetchAllInvoicesForExportOpts = {
 };
 
 // ——— الفواتير ———
-export async function createInvoice(body: unknown): Promise<ApiParsedResult> {
+export async function createInvoice(body: unknown): Promise<ApiParsedResult<InvoiceMutationResult>> {
   return apiPost('/api/v1/invoices', body);
 }
 export async function createInvoiceBatch(body: unknown): Promise<ApiParsedResult<CreateInvoiceBatchResult>> {
@@ -83,7 +97,7 @@ export async function createAdvance({
   employeeName,
   installmentCount,
   installmentAmount,
-}: CreateAdvanceParams): Promise<ApiParsedResult> {
+}: CreateAdvanceParams): Promise<ApiParsedResult<InvoiceMutationResult>> {
   const date = transactionDate || getSaudiToday();
   const autoNote = employeeName ? `سلفة — ${employeeName}` : 'سلفة';
   const payload: Record<string, unknown> = {
@@ -108,10 +122,10 @@ export async function updateInvoice(
   id: string,
   body: unknown,
   companyId: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<InvoiceMutationResult>> {
   return apiPatch(`/api/v1/invoices/${id}?companyId=${companyId}`, body);
 }
-export async function deleteInvoice(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function deleteInvoice(id: string, companyId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
   return apiDelete(`/api/v1/invoices/${id}?companyId=${companyId}`);
 }
 
@@ -120,7 +134,7 @@ export async function uploadInvoiceAttachment(
   invoiceId: string,
   companyId: string,
   file: File | null | undefined,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<InvoiceMutationResult>> {
   if (!file) return { success: false, error: 'لم يُختر ملف' };
   const url = new URL(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment`, getApiBaseUrl());
   url.searchParams.set('companyId', companyId);
@@ -142,7 +156,7 @@ export async function uploadInvoiceAttachment(
 export async function deleteInvoiceAttachment(
   invoiceId: string,
   companyId: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<{ success?: boolean }>> {
   const q = encodeURIComponent(companyId);
   return apiDelete(`/api/v1/invoices/${encodeURIComponent(invoiceId)}/attachment?companyId=${q}`);
 }
@@ -239,13 +253,13 @@ export async function getInvoices(
   };
 }
 
-export async function getInvoiceDayCloseReport(companyId: string, date: unknown): Promise<ApiParsedResult> {
+export async function getInvoiceDayCloseReport(companyId: string, date: unknown): Promise<ApiParsedResult<DayCloseReportData>> {
   const res = await apiGet('/api/v1/invoices/day-close-report', {
     companyId,
     date: toYmd(date),
   });
   if (!res.success) return res;
-  return { success: true, data: unwrapApiEnvelope(res.data) };
+  return { success: true, data: normalizeDayCloseReportData(unwrapApiEnvelope(res.data)) };
 }
 
 /** مستخدمو النظام الذين لهم فواتير في الشركة — فلتر قائمة الفواتير */

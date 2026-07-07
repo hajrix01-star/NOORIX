@@ -13,7 +13,7 @@ const protectedCompatibilityFiles = new Set([
   'src/hooks/useApiQuery.ts',
 ]);
 
-const maxLooseApiResultSignatures = 150;
+const maxLooseApiResultSignatures = 0;
 
 function read(rel) {
   return fs.readFileSync(path.join(root, rel), 'utf8');
@@ -49,7 +49,7 @@ const register = read('docs/SECTION_UNIFICATION_REGISTER.md');
 for (const required of [
   '## API Contracts Finalization',
   '`check:api-contracts-governance`',
-  'Loose API response signatures baseline: 150',
+  'Loose API response signatures baseline: 0',
   'src/hooks/useApiMutation.ts',
 ]) {
   if (!register.includes(required)) {

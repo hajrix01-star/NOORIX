@@ -75,32 +75,34 @@ export async function getEmployeesBulk(companyId: string, tab: HrEmployeeTab = '
 }
 
 /** مجموع الراتب الشهري من حقول الموظفين النشطين (أساسي + بدلات) — للتقديرات وحاسبة التكاليف */
-export async function getEmployeesMonthlySalaryContractTotal(companyId: string): Promise<ApiParsedResult> {
+export async function getEmployeesMonthlySalaryContractTotal(
+  companyId: string,
+): Promise<ApiParsedResult<{ total?: number | string }>> {
   if (!companyId) return { success: false, error: 'معرف الشركة مطلوب' };
   return apiGet('/api/v1/employees/monthly-salary-contract-total', companyQuery(companyId));
 }
 
-export async function getEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function getEmployee(id: string, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiGet(`/api/v1/employees/${encodeURIComponent(id)}`, companyQuery(companyId));
 }
-export async function createEmployee(body: unknown): Promise<ApiParsedResult> {
+export async function createEmployee(body: unknown): Promise<ApiParsedResult<HrEmployee>> {
   return apiPost('/api/v1/employees', body);
 }
-export async function createEmployeesBatch(body: unknown): Promise<ApiParsedResult> {
+export async function createEmployeesBatch(body: unknown): Promise<ApiParsedResult<{ items?: HrEmployee[]; created?: number }>> {
   return apiPost('/api/v1/employees/batch', body);
 }
-export async function updateEmployee(id: string, body: unknown, companyId: string): Promise<ApiParsedResult> {
+export async function updateEmployee(id: string, body: unknown, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiPatch(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}`, companyQuery(companyId)), body);
 }
-export async function terminateEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function terminateEmployee(id: string, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiPatch(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/terminate`, companyQuery(companyId)), {});
 }
 
 /** حذف الموظف نهائياً من قاعدة البيانات — يتطلب صلاحية EMPLOYEES_DELETE */
-export async function deleteEmployee(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function deleteEmployee(id: string, companyId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiDelete(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}`, companyQuery(companyId)));
 }

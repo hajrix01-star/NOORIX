@@ -3,6 +3,7 @@ import type {
   CreateSalesSummaryBody,
   DailySalesBatchPayload,
   SalesListShiftFilter,
+  SalesMutationResult,
   SalesSummariesPage,
   SalesSummaryItem,
   SalesSummaryPageSummary,
@@ -14,13 +15,17 @@ import { postDailySalesSummaryBatch } from './sales-summaries-batch';
 import { listShiftFilterToApiParam } from '../../../modules/Sales/constants/salesShift';
 import { buildPurchaseBatchSummariesApiQuery } from './purchase-batch-query';
 import type { DashboardSalesPackData } from '../../../types/api/domains/dashboard';
+import type {
+  PurchaseBatchInvoice,
+  PurchaseBatchStatus,
+} from '../../../modules/Purchases/batch/purchaseBatchTypes';
 
 // ——— ملخصات المبيعات اليومية ———
-export async function createDailySalesSummary(body: CreateSalesSummaryBody | Record<string, unknown>): Promise<ApiParsedResult> {
+export async function createDailySalesSummary(body: CreateSalesSummaryBody | Record<string, unknown>): Promise<ApiParsedResult<SalesMutationResult>> {
   return apiPost('/api/v1/sales/summary', body);
 }
 
-export async function createDailySalesSummaryBatch(body: DailySalesBatchPayload): Promise<ApiParsedResult> {
+export async function createDailySalesSummaryBatch(body: DailySalesBatchPayload): Promise<ApiParsedResult<SalesMutationResult>> {
   const batch = body;
   if (!Array.isArray(batch?.items) || batch.items.length === 0) {
     return { success: false, error: 'لا توجد ملخصات للحفظ' };
@@ -30,17 +35,32 @@ export async function createDailySalesSummaryBatch(body: DailySalesBatchPayload)
 }
 
 export type { DailySalesBatchPayload, DailySalesBatchItem } from '../../../types/api/domains/sales';
+type PurchaseBatchSummariesResult = {
+  batches: Array<{
+    batchId: string;
+    invoices?: PurchaseBatchInvoice[] | null;
+    transactionDate: string;
+    invoiceCount: number;
+    supplierNames?: string | null;
+    vaultName?: string | null;
+    netAmount?: number | string | null;
+    taxAmount?: number | string | null;
+    totalAmount?: number | string | null;
+    status: PurchaseBatchStatus;
+  }>;
+  rowCount: number;
+};
 export async function updateDailySalesSummary(
   id: string,
   body: UpdateSalesSummaryBody,
   companyId: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<SalesMutationResult>> {
   return apiPatch(`/api/v1/sales/summaries/${id}?companyId=${companyId}`, body);
 }
-export async function cancelDailySalesSummary(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function cancelDailySalesSummary(id: string, companyId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
   return apiDelete(`/api/v1/sales/summaries/${id}?companyId=${companyId}`);
 }
-export async function deleteDailySalesSummary(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function deleteDailySalesSummary(id: string, companyId: string): Promise<ApiParsedResult<{ success?: boolean }>> {
   return apiDelete(`/api/v1/sales/summaries/${id}?companyId=${companyId}`);
 }
 /** حزمة ملخصات مبيعات للوحة التحكم — سنة + نطاق يومي + نطاق شهري في استجابة واحدة */
@@ -180,7 +200,7 @@ export async function getPurchaseBatchSummaries(
   endDate?: string,
   q?: string,
   lang?: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<PurchaseBatchSummariesResult>> {
   const params = buildPurchaseBatchSummariesApiQuery({ companyId, startDate, endDate, q, lang });
   const res = await apiGet('/api/v1/invoices/purchase-batch-summaries', params);
   if (!res.success) return { success: false, error: res.error, data: { batches: [], rowCount: 0 } };
