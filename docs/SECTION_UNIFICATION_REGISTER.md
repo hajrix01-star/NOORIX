@@ -1232,6 +1232,54 @@ These files still preserve legacy API compatibility where some older endpoints a
   - `check-node-scripts` passed after adding System Core governance.
   - Strict System Core scan found no real `any`, `as any`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` in the files protected by `check:system-core-governance`.
 
+## API Contracts Finalization
+
+Closed on 2026-07-07 as a governed baseline pass. Closure commit is pending local commit.
+
+### Scope
+
+- API response envelope contract:
+  - `src/types/api/http.ts`
+  - `src/services/core/apiHttp.ts`
+- API query/mutation bridge hooks:
+  - `src/hooks/useApiQuery.ts`
+  - `src/hooks/useApiMutation.ts`
+- API governance:
+  - `scripts/check-api-contracts-governance.mjs`
+  - `package.json` script `check:api-contracts-governance`
+
+### Centralized
+
+- API compatibility boundaries are now explicit instead of implicit.
+- `useApiQuery` list unwrapping no longer uses a direct `any` cast in its list envelope bridge.
+- API contracts governance now prevents:
+  - Increasing untyped `Promise<ApiParsedResult>` signatures beyond the current baseline.
+  - Adding `ApiParsedResult<any>` outside protected API compatibility files.
+  - Adding `useMutation<any>` outside protected API compatibility files.
+- Loose API response signatures baseline: 150.
+
+### Protected Compatibility Boundaries
+
+- `src/types/api/http.ts`
+- `src/services/core/apiHttp.ts`
+- `src/hooks/useApiMutation.ts`
+- `src/hooks/useApiQuery.ts`
+
+These files are protected because older sections still mix two mutation/query result conventions: raw API envelope in some flows and unwrapped data in others. Tightening them globally before endpoint-by-endpoint contracts are finalized breaks closed sections. They are not approved as a pattern for new section code.
+
+### Final System Unification Candidates
+
+- Reduce the loose API response signatures from 150 toward zero by domain.
+- Convert each endpoint file to explicit `ApiParsedResult<DomainContract>` return types.
+- Choose and enforce one mutation result convention across the app: API envelope everywhere or unwrapped data everywhere.
+- After the endpoint contracts are strict, remove the `any` defaults from `ApiParsedResult`, `apiGet/Post/Patch/Put/Delete`, and `useApiMutation`.
+
+### Closure Checks
+
+- 2026-07-07 API Contracts baseline closure:
+  - `tsc --noEmit` passed.
+  - `check:api-contracts-governance` passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:

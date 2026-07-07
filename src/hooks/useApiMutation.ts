@@ -8,13 +8,7 @@ import { throwIfApiFailed } from '../services/api';
  * - يبطل مفاتيح استعلام بعد النجاح.
  * - يعرض Toast للنجاح/الخطأ عند التفعيل.
  *
- * @param {object} options — نفس خيارات useMutation مع الإضافات:
- * @param {import('@tanstack/react-query').UseMutationOptions['mutationFn']} options.mutationFn
- * @param {Array<Array|import('@tanstack/react-query').InvalidateQueryFilters>} [options.invalidateQueries]
- * @param {string|function(data, variables): string|null|undefined|false} [options.successToast] — نص أو دالة؛ null/false/undefined من الدالة = لا إشعار
- * @param {boolean} [options.showErrorToast=true]
- * @param {string|function(error, variables): string} [options.errorToast]
- * @param {boolean} [options.rejectOnApiFailure=true] — عند false لا يُرمى خطأ عند success === false
+ * هذا hook يبقى حد توافق محميًا إلى أن تُشدّد كل endpoints القديمة لتعيد عقودًا مصنفة.
  */
 export function useApiMutation(options: any) {
   const queryClient = useQueryClient();

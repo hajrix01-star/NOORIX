@@ -254,7 +254,7 @@ export async function apiGet<T = any>(
     if (v != null && v !== '') url.searchParams.set(k, String(v));
   });
 
-  let lastFailure: ApiParsedResult = { success: false, error: 'خطأ في الاتصال' };
+  let lastFailure: ApiParsedResult<T> = { success: false, error: 'خطأ في الاتصال' };
 
   for (let attempt = 0; attempt < API_GET_TRANSIENT_ATTEMPTS; attempt++) {
     const doFetch = async () => {
