@@ -28,6 +28,7 @@ A section is considered closed only when all of the following are true:
 | HR | `18e71122 finalize hr section cleanup` | Closed | Centralized HR/employee contracts, payroll salary snapshots, typed tabs/modals/actions, backend payroll/settlement guards, strict HR governance. |
 | Reports | `48dba7ea finalize reports section cleanup` | Closed | Centralized reports query contract, typed P&L/tax/bank/cost/detail boundaries, print/export/model split, strict reports governance across `src/modules/Reports`. |
 | Vaults | `bd73bc55 finalize vaults section cleanup` | Closed | Centralized vault API contracts, treasury display models, typed vault hooks/components, backend period totals, safe deletion guard, strict vaults governance. |
+| Expenses | `4046f04e finalize expenses section cleanup` | Closed | Centralized expense API contracts, frontend display/draft models, backend official payment summaries, fixed/variable payment guards, strict expenses governance. |
 
 ## Invoices
 
@@ -704,6 +705,86 @@ Closed on 2026-07-07 with `bd73bc55 finalize vaults section cleanup`.
   - `check:date-control-governance` passed.
   - `check:responsive-governance` passed.
   - Strict vaults scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the vaults closure scope after cleanup.
+
+## Expenses
+
+Closed on 2026-07-07 with `4046f04e finalize expenses section cleanup`.
+
+### Scope
+
+- Frontend expenses section:
+  - `src/modules/Expenses`
+- Shared expense contracts and API boundary:
+  - `src/types/api/domains/expenses.ts`
+  - `src/services/domains/apiEndpoints/accounts-categories-expense.ts`
+  - `src/services/queryKeys/expenses.ts`
+  - `src/services/domains/apiEndpoints/invoice-list-response.ts`
+- SmartChat integration touched by expense-line editing:
+  - `src/modules/SmartChat/SmartChatScreen.tsx`
+  - `src/modules/SmartChat/components/SmartChatExpenseLinePickSheet.tsx`
+  - `src/modules/SmartChat/hooks/useSmartChatUploads.ts`
+  - `src/modules/SmartChat/hooks/useSmartChatActions.ts`
+  - `src/modules/SmartChat/hooks/useSmartChatExpenseModalHandlers.ts`
+- Backend fixed/variable expense boundary:
+  - `backend/src/expense-line`
+- Governance:
+  - `scripts/check-expenses-governance.mjs`
+
+### Centralized
+
+- Expense API/domain contracts:
+  - `ExpenseLineRecord`
+  - `ExpenseLineCreatePayload`
+  - `ExpenseLineUpdatePayload`
+  - `ExpenseLinePaymentRecord`
+  - `ExpenseLinePaymentSummary`
+  - `ExpenseLinePaymentsPage`
+  - `ExpensePaymentCreatePayload`
+  - `ExpenseBatchCreatePayload`
+- Expense frontend display and draft models:
+  - `src/modules/Expenses/expenseModels.ts`
+  - `src/modules/Expenses/utils/expenseTax.ts`
+- Fixed/variable expense form, batch, detail, and history screens now use typed models instead of local ad hoc calculations.
+- Backend expense-line payment history now returns official period summary values from aggregate queries.
+- Payment history totals use backend invoice-list `sums.outflow` instead of summing the visible page.
+
+### Accounting and Metrics Rules
+
+- Expense payment history, detail totals, and period totals are official backend values.
+- Frontend is display-only for official totals; draft tax splitting in forms and batch rows is labeled and contained in `expenseModels.ts`.
+- Fixed expense payment locks, coverage validation, installment cadence, and reference amount checks are centralized in the expense model.
+- Variable expense payments remain flexible, but official net/tax/total posting remains backend-owned.
+- Pagination does not redefine official totals: summaries represent the filtered period/query, not the current visible page.
+
+### Removed Dead Code
+
+- `src/modules/Expenses/components/expenseLineTableUtils.ts`
+
+### Protected Exceptions
+
+- Draft VAT preview remains frontend-owned because it is an input preview before save, not an official posted accounting number.
+- Expense batch row UI remains section-owned until the future central editable-grid standard exists.
+- Expense cards and compact summaries remain section-specific until the future central financial KPI/card primitive is adopted.
+- SmartChat expense picker remains section-adjacent because it depends directly on expense-line selection and edit flows.
+
+### Final System Unification Candidates
+
+- Migrate expense summary cards to the future central financial KPI/card primitive.
+- Revisit expense batch table after a central editable-grid standard is created.
+- Move export formatting into a future central financial export layer if system-wide export primitives are introduced.
+
+### Closure Checks
+
+- 2026-07-07 Expenses closure:
+  - `tsc --noEmit` passed.
+  - `vitest run src/modules/Expenses/expenseModels.test.ts src/services/domains/apiEndpoints/accounts-categories-expense.test.ts` passed: 2 files, 5 tests.
+  - `jest --config backend/jest.config.cjs expense-line.service.spec.ts` passed: 1 file, 1 test.
+  - `check:expenses-governance` passed.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - Strict expenses scan found no real `any`, `as any`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the expenses closure scope after cleanup. Remaining textual matches are documented false positives such as `RequireAnyPermission`, `as const`, and governance regex literals.
 
 ## System-Wide Final Unification Backlog
 
