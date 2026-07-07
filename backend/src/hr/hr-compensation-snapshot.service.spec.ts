@@ -1,9 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
+import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { HrCompensationSnapshotService } from './hr-compensation-snapshot.service';
 
 describe('HrCompensationSnapshotService', () => {
   it('builds a read-only employee compensation snapshot from database rows and central formulas', async () => {
-    const prisma = {
+    const prisma: TenantPrismaService = Object.assign(Object.create(TenantPrismaService.prototype), {
       employee: {
         findFirst: jest.fn().mockResolvedValue({
           id: 'emp-1',
@@ -57,7 +58,7 @@ describe('HrCompensationSnapshotService', () => {
           },
         ]),
       },
-    } as any;
+    });
 
     const service = new HrCompensationSnapshotService(prisma);
     const snapshot = await service.getEmployeeSnapshot('co-1', 'emp-1');
@@ -73,9 +74,10 @@ describe('HrCompensationSnapshotService', () => {
   });
 
   it('throws when the employee is not in the requested company', async () => {
-    const service = new HrCompensationSnapshotService({
+    const prisma: TenantPrismaService = Object.assign(Object.create(TenantPrismaService.prototype), {
       employee: { findFirst: jest.fn().mockResolvedValue(null) },
-    } as any);
+    });
+    const service = new HrCompensationSnapshotService(prisma);
 
     await expect(service.getEmployeeSnapshot('co-1', 'missing')).rejects.toBeInstanceOf(NotFoundException);
   });
@@ -105,9 +107,10 @@ describe('HrCompensationSnapshotService', () => {
         customAllowances: [],
       },
     ]);
-    const service = new HrCompensationSnapshotService({
+    const prisma: TenantPrismaService = Object.assign(Object.create(TenantPrismaService.prototype), {
       employee: { findMany },
-    } as any);
+    });
+    const service = new HrCompensationSnapshotService(prisma);
 
     const result = await service.getCompanySnapshots('co-1', ['emp-1', 'emp-2']);
 

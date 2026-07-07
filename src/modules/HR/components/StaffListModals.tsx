@@ -2,33 +2,57 @@ import React from 'react';
 import { Button, DateField, Input, Modal } from '../../../ui';
 import { StaffFormModal } from './StaffFormModal';
 import { AdvanceQuickModal } from './AdvanceQuickModal';
+import type { AdvanceCreateMutation } from './AdvanceQuickModal';
 import TerminationSettlementModal from './TerminationSettlementModal';
 import { getSaudiToday } from '../../../utils/saudiDate';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from '../utils/employeeNotesMeta';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
+import type { QueryClient } from '@tanstack/react-query';
+import type { HrEmployee, HrMutationPayload } from '../../../types/api';
+
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+type ToastVariant = 'success' | 'error' | 'info' | 'warning';
+type TerminationFormState = { reason: string; clause: string; date: string };
+type TerminationFormUpdater = TerminationFormState | ((previous: TerminationFormState) => TerminationFormState);
+type MutationCallbacks = {
+  onSuccess?: () => void;
+  onError?: (error: unknown) => void;
+};
+type MutationLike<TVariables> = {
+  isPending?: boolean;
+  mutate: (variables: TVariables, callbacks?: MutationCallbacks) => void;
+};
+type EmployeeUpdateVariables = {
+  id: string;
+  body: HrMutationPayload;
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 type StaffListModalsProps = {
-  t: (key: string, ...args: any[]) => string;
+  t: TranslationFn;
   companyId: string;
   companyName: string;
   showForm: boolean;
   setShowForm: (value: boolean) => void;
-  editingEmployee: any;
-  setEditingEmployee: (value: any) => void;
-  advanceEmployee: any;
-  setAdvanceEmployee: (value: any) => void;
-  terminatingEmployee: any;
-  setTerminatingEmployee: (value: any) => void;
-  terminationSettlementEmp: any;
-  setTerminationSettlementEmp: (value: any) => void;
-  terminationForm: { reason: string; clause: string; date: string };
-  setTerminationForm: (updater: any) => void;
-  handleSave: (payload: any) => void;
-  create: any;
-  update: any;
-  createAdvance: any;
-  queryClient: any;
-  showToast: (message: string, variant?: any) => void;
+  editingEmployee: HrEmployee | null;
+  setEditingEmployee: (value: HrEmployee | null) => void;
+  advanceEmployee: HrEmployee | null;
+  setAdvanceEmployee: (value: HrEmployee | null) => void;
+  terminatingEmployee: HrEmployee | null;
+  setTerminatingEmployee: (value: HrEmployee | null) => void;
+  terminationSettlementEmp: HrEmployee | null;
+  setTerminationSettlementEmp: (value: HrEmployee | null) => void;
+  terminationForm: TerminationFormState;
+  setTerminationForm: (updater: TerminationFormUpdater) => void;
+  handleSave: (payload: Record<string, unknown>) => void;
+  create: { isPending?: boolean };
+  update: MutationLike<EmployeeUpdateVariables>;
+  createAdvance: AdvanceCreateMutation;
+  queryClient: QueryClient;
+  showToast: (message: string, variant?: ToastVariant) => void;
 };
 
 export function StaffListModals({
@@ -70,7 +94,7 @@ export function StaffListModals({
           companyId={companyId}
           onSave={handleSave}
           onClose={() => setShowForm(false)}
-          isSaving={create.isPending}
+          isSaving={Boolean(create.isPending)}
         />
       )}
 
@@ -80,7 +104,7 @@ export function StaffListModals({
           companyId={companyId}
           onSave={handleSave}
           onClose={() => setEditingEmployee(null)}
-          isSaving={update.isPending}
+          isSaving={Boolean(update.isPending)}
         />
       )}
 
@@ -119,11 +143,16 @@ export function StaffListModals({
             <Button
               variant="danger"
               onClick={() => {
+                const employeeForTermination = terminatingEmployee;
+                if (!employeeForTermination?.id) {
+                  showToast(t('updateFailed'), 'error');
+                  return;
+                }
                 if (!terminationForm.reason?.trim()) {
                   showToast(t('terminationReasonPlaceholder'), 'error');
                   return;
                 }
-                const parsed = parseEmployeeNotesMeta(terminatingEmployee.notes);
+                const parsed = parseEmployeeNotesMeta(employeeForTermination.notes);
                 const meta = {
                   ...(parsed.meta || {}),
                   terminationReason: terminationForm.reason?.trim() || '',
@@ -132,18 +161,18 @@ export function StaffListModals({
                 };
                 const composedNotes = composeEmployeeNotes(parsed.notesText, meta);
                 update.mutate(
-                  { id: terminatingEmployee.id, body: { status: 'terminated', notes: composedNotes } },
+                  { id: employeeForTermination.id, body: { status: 'terminated', notes: composedNotes } },
                   {
                     onSuccess: () => {
                       showToast(t('employeeTerminated'), 'success');
                       setTerminationSettlementEmp({
-                        ...terminatingEmployee,
+                        ...employeeForTermination,
                         status: 'terminated',
                         notes: composedNotes,
                       });
                       setTerminatingEmployee(null);
                     },
-                    onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
+                    onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
                   },
                 );
               }}
@@ -159,10 +188,12 @@ export function StaffListModals({
             label={t('terminationReason')}
             hint={t('terminationReasonExamples')}
             value={terminationForm.reason}
-            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, reason: e.target.value }))}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+              setTerminationForm((p) => ({ ...p, reason: e.target.value }));
+            }}
           >
             <option value="">{t('terminationReasonPlaceholder')}</option>
-            {terminationReasonOptions.map((opt: any) => (
+            {terminationReasonOptions.map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
           </Input>
@@ -171,7 +202,9 @@ export function StaffListModals({
             type="select"
             label={t('terminationClause')}
             value={terminationForm.clause}
-            onChange={(e: any) => setTerminationForm((p: any) => ({ ...p, clause: e.target.value }))}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+              setTerminationForm((p) => ({ ...p, clause: e.target.value }));
+            }}
           >
             <option value="">{t('terminationClausePlaceholder')}</option>
             <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
@@ -183,7 +216,7 @@ export function StaffListModals({
           <DateField
             label={t('terminationDate')}
             value={terminationForm.date}
-            onValueChange={(value) => setTerminationForm((p: any) => ({ ...p, date: value }))}
+            onValueChange={(value) => setTerminationForm((p) => ({ ...p, date: value }))}
           />
         </div>
       </Modal>

@@ -1,4 +1,4 @@
-import type { ApiParsedResult } from '../../../types/api';
+import type { ApiParsedResult, HrEmployee, HrEmployeeTab } from '../../../types/api';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 import {
   buildEmployeesPagedApiQuery,
@@ -8,7 +8,7 @@ import {
 } from './hr-query';
 
 type EmployeesPagedOpts = {
-  tab?: string;
+  tab?: HrEmployeeTab;
   page?: number;
   pageSize?: number;
   q?: string;
@@ -16,15 +16,20 @@ type EmployeesPagedOpts = {
   sortDir?: string;
 };
 
+function isHrEmployeeTab(value: unknown): value is HrEmployeeTab {
+  return value === 'active' || value === 'terminated' || value === 'archived';
+}
+
 // ——— الموظفون ———
 /** قائمة كاملة (حدّ السيرفر) — للتوافق مع الشاشات التي لا ترسل page */
-export async function getEmployees(companyId: string, includeTerminated: any = false): Promise<ApiParsedResult> {
+export async function getEmployees(companyId: string, includeTerminated: boolean = false): Promise<ApiParsedResult<HrEmployee[]>> {
   const res = await apiGet('/api/v1/employees', buildHrApiQuery({
     companyId: companyId || '',
     includeTerminated: includeTerminated ? true : undefined,
   }));
   if (!res.success) return { success: false, error: res.error, data: [] };
-  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
+  if (!Array.isArray(res.data)) return { success: false, error: 'استجابة الموظفين غير مطابقة للعقد الرسمي', data: [] };
+  return { success: true, data: res.data as HrEmployee[] };
 }
 
 /** ترقيم من السيرفر — tab: active | terminated | archived */
@@ -38,13 +43,13 @@ export async function getEmployeesPaged(
     sortBy,
     sortDir,
   }: EmployeesPagedOpts = {},
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<{ items: HrEmployee[]; total: number; page: number; pageSize: number }, HrEmployee[]>> {
   const params = buildEmployeesPagedApiQuery({ companyId, tab, page, pageSize, q, sortBy, sortDir });
   const res = await apiGet('/api/v1/employees', params);
   if (!res.success) {
     return { success: false, error: res.error, items: [], total: 0, page: 1, pageSize };
   }
-  const d = res.data as { items?: unknown[]; total?: number; page?: number; pageSize?: number } | undefined;
+  const d = res.data as { items?: HrEmployee[]; total?: number; page?: number; pageSize?: number } | undefined;
   if (d && typeof d === 'object' && Array.isArray(d.items)) {
     return {
       success: true,
@@ -54,18 +59,19 @@ export async function getEmployeesPaged(
       pageSize: Number(d.pageSize) || pageSize,
     };
   }
-  return { success: true, items: [], total: 0, page: 1, pageSize };
+  return { success: false, error: 'استجابة قائمة الموظفين المرقمة غير مطابقة للعقد الرسمي', items: [], total: 0, page: 1, pageSize };
 }
 
 /** تحميل مجمّع للتصدير (حد أقصى من السيرفر) */
-export async function getEmployeesBulk(companyId: string, tab: any = 'active'): Promise<ApiParsedResult> {
+export async function getEmployeesBulk(companyId: string, tab: HrEmployeeTab = 'active'): Promise<ApiParsedResult<HrEmployee[]>> {
   const res = await apiGet('/api/v1/employees', buildHrApiQuery({
     companyId: companyId || '',
     bulk: 1,
-    tab,
+    tab: isHrEmployeeTab(tab) ? tab : 'active',
   }));
   if (!res.success) return { success: false, error: res.error, data: [] };
-  return { success: true, data: Array.isArray(res.data) ? res.data : [] };
+  if (!Array.isArray(res.data)) return { success: false, error: 'استجابة تصدير الموظفين غير مطابقة للعقد الرسمي', data: [] };
+  return { success: true, data: res.data as HrEmployee[] };
 }
 
 /** مجموع الراتب الشهري من حقول الموظفين النشطين (أساسي + بدلات) — للتقديرات وحاسبة التكاليف */

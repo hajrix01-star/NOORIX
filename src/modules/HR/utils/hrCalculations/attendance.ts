@@ -18,8 +18,15 @@ export type PayrollLeaveSettlementRow = {
   leave?: { startDate?: string | Date };
 };
 
-export function monthRangeFromPayrollMonthStr(dateStr: any) {
-  const start = new Date(dateStr);
+type DateInput = unknown;
+type PayrollEmployeeProrationSource = Record<string, unknown> & {
+  joinDate?: DateInput;
+  status?: string;
+  notes?: unknown;
+};
+
+export function monthRangeFromPayrollMonthStr(dateStr: DateInput) {
+  const start = new Date(dateStr as string | number | Date);
   start.setDate(1);
   start.setHours(0, 0, 0, 0);
   const endCal = new Date(start.getFullYear(), start.getMonth() + 1, 0);
@@ -27,18 +34,18 @@ export function monthRangeFromPayrollMonthStr(dateStr: any) {
   return { monthStart: start, monthEndCal: endCal };
 }
 
-export function countInclusiveLocalDays(startDate: any, endDate: any) {
-  const a = new Date(startDate);
+export function countInclusiveLocalDays(startDate: DateInput, endDate: DateInput) {
+  const a = new Date(startDate as string | number | Date);
   a.setHours(0, 0, 0, 0);
-  const b = new Date(endDate);
+  const b = new Date(endDate as string | number | Date);
   b.setHours(0, 0, 0, 0);
   if (b < a) return 0;
   return Math.round((b.getTime() - a.getTime()) / (24 * 60 * 60 * 1000)) + 1;
 }
 
 /** مفتاح يوم محلي YYYY-MM-DD (يتوافق مع عدّ أيام الإجازة في المسيرة) */
-export function toLocalDayKey(d: any) {
-  const x = new Date(d);
+export function toLocalDayKey(d: DateInput) {
+  const x = new Date(d as string | number | Date);
   const y = x.getFullYear();
   const m = String(x.getMonth() + 1).padStart(2, '0');
   const day = String(x.getDate()).padStart(2, '0');
@@ -49,7 +56,7 @@ export function toLocalDayKey(d: any) {
  * عامل التناسب = أيام العمل (تقريباً) في الشهر / أيام الشهر التقويمية.
  * يعتمد على joinDate و(إن وُجد) terminationDate للموظف المفصول.
  */
-export function getEmploymentProrationInMonth(employee: any, payrollMonthStr: any) {
+export function getEmploymentProrationInMonth(employee: PayrollEmployeeProrationSource, payrollMonthStr: DateInput) {
   const { monthStart, monthEndCal } = monthRangeFromPayrollMonthStr(payrollMonthStr);
   const daysInMonth = countInclusiveLocalDays(monthStart, monthEndCal);
   if (daysInMonth <= 0) {
@@ -62,7 +69,7 @@ export function getEmploymentProrationInMonth(employee: any, payrollMonthStr: an
     };
   }
 
-  const join = new Date(employee.joinDate);
+  const join = new Date(employee.joinDate as string | number | Date);
   join.setHours(0, 0, 0, 0);
   let effectiveStart = join > monthStart ? join : monthStart;
 
@@ -98,7 +105,7 @@ export function getEmploymentProrationInMonth(employee: any, payrollMonthStr: an
   };
 }
 
-export function filterLeaveDaySetToEmploymentWindow(daySet: any, effectiveStart: any, effectiveEnd: any) {
+export function filterLeaveDaySetToEmploymentWindow(daySet: Set<string>, effectiveStart: Date | null, effectiveEnd: Date | null) {
   if (!effectiveStart || !effectiveEnd || effectiveStart > effectiveEnd) return new Set();
   const es = toLocalDayKey(effectiveStart);
   const ee = toLocalDayKey(effectiveEnd);

@@ -7,15 +7,25 @@ const root = path.resolve(__dirname, '..');
 const hrRoot = path.join(root, 'src', 'modules', 'HR');
 
 const violations = [];
+const strictCodeRoots = [
+  hrRoot,
+  path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'hr.ts'),
+  path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'employees.ts'),
+  path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'hr-query.ts'),
+  path.join(root, 'src', 'hooks', 'useEmployees.ts'),
+  path.join(root, 'src', 'utils', 'employeeDisplayName.ts'),
+  path.join(root, 'backend', 'src', 'hr'),
+  path.join(root, 'backend', 'src', 'employees'),
+];
 
 const allowedRawTableFiles = new Set([
   path.join(hrRoot, 'tabs', 'EOSCalcTab.tsx'),
   path.join(hrRoot, 'tabs', 'hrPrintDocumentsTabPrintHtml.ts'),
-  path.join(hrRoot, 'tabs', 'PayrollTab.tsx'),
-  path.join(hrRoot, 'tabs', 'SalaryCalcTab.tsx'),
+  path.join(hrRoot, 'tabs', 'payrollTabModel.ts'),
+  path.join(hrRoot, 'tabs', 'salaryCalcPrint.ts'),
   path.join(hrRoot, 'components', 'PayrollRunDetailModal.tsx'),
   path.join(hrRoot, 'components', 'PayrollRunFormModal', 'components', 'PayrollRunRowsTable.tsx'),
-  path.join(hrRoot, 'components', 'TerminationSettlementModal.tsx'),
+  path.join(hrRoot, 'components', 'terminationSettlementHelpers.ts'),
   path.join(hrRoot, 'components', 'useAdvanceTableModel.tsx'),
   path.join(hrRoot, 'components', 'EmployeeDocModal', 'components', 'EmployeeDocEmployeeInfoTable.tsx'),
   path.join(hrRoot, 'components', 'EmployeeDocModal', 'components', 'EmployeeDocSalaryBreakdownTable.tsx'),
@@ -53,6 +63,23 @@ function inspectHrFile(filePath) {
   }
 }
 
+function inspectStrictCodeFile(filePath) {
+  const source = fs.readFileSync(filePath, 'utf8');
+  const checks = [
+    { pattern: /:\s*any\b/, message: 'explicit any type is not allowed in HR closure scope.' },
+    { pattern: /as\s+any\b/, message: 'as any is not allowed in HR closure scope.' },
+    { pattern: /Record<[^>\n]*\bany\b[^>\n]*>/, message: 'Record<string, any> style contracts are not allowed in HR closure scope.' },
+    { pattern: /as\s+(unknown|never)\b/, message: 'unknown/never casts are not allowed as HR escape hatches.' },
+    { pattern: /@ts-ignore|@ts-expect-error|eslint-disable/, message: 'compiler/lint suppression is not allowed in HR closure scope.' },
+    { pattern: /\bTODO\b|\bFIXME\b/, message: 'TODO/FIXME markers are not allowed in HR closure scope.' },
+  ];
+  for (const check of checks) {
+    if (check.pattern.test(source)) {
+      report(filePath, check.message);
+    }
+  }
+}
+
 function walk(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, entry.name);
@@ -65,10 +92,31 @@ function walk(dir) {
   }
 }
 
+function walkStrictTarget(targetPath) {
+  if (!fs.existsSync(targetPath)) return;
+  const stat = fs.statSync(targetPath);
+  if (stat.isDirectory()) {
+    for (const entry of fs.readdirSync(targetPath, { withFileTypes: true })) {
+      const fullPath = path.join(targetPath, entry.name);
+      if (entry.isDirectory()) {
+        walkStrictTarget(fullPath);
+        continue;
+      }
+      if (/\.(tsx?|jsx?)$/.test(entry.name)) inspectStrictCodeFile(fullPath);
+    }
+    return;
+  }
+  if (/\.(tsx?|jsx?)$/.test(targetPath)) inspectStrictCodeFile(targetPath);
+}
+
 for (const requiredFile of requiredFiles) {
   if (!fs.existsSync(requiredFile)) {
     report(requiredFile, 'required HR centrality file is missing.');
   }
+}
+
+for (const strictRoot of strictCodeRoots) {
+  walkStrictTarget(strictRoot);
 }
 
 for (const apiFile of [
@@ -85,10 +133,41 @@ for (const apiFile of [
   }
 }
 
+const hrApiPath = path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'hr.ts');
+if (fs.existsSync(hrApiPath)) {
+  const source = fs.readFileSync(hrApiPath, 'utf8');
+  for (const symbol of [
+    'companyEmployeeYearQuery',
+    'companyEmployeeIdsQuery',
+    'companyPayrollMonthQuery',
+    'companyDeleteLeaveQuery',
+    'companyDeleteResidencyQuery',
+  ]) {
+    if (!source.includes(symbol)) {
+      report(hrApiPath, `HR API endpoints must use central helper: ${symbol}.`);
+    }
+  }
+  if (/const\s+params:\s*Record<string,\s*string>\s*=\s*companyQuery\(/.test(source)) {
+    report(hrApiPath, 'HR API endpoints must not extend companyQuery with ad hoc params; add a central hr-query helper.');
+  }
+}
+
 const hrQueryPath = path.join(root, 'src', 'services', 'domains', 'apiEndpoints', 'hr-query.ts');
 if (fs.existsSync(hrQueryPath)) {
   const source = fs.readFileSync(hrQueryPath, 'utf8');
-  for (const symbol of ['buildHrApiQuery', 'withHrApiQuery', 'companyQuery', 'normalizeEmployeesPagedQueryInput', 'buildEmployeesPagedApiQuery']) {
+  for (const symbol of [
+    'buildHrApiQuery',
+    'withHrApiQuery',
+    'companyQuery',
+    'companyEmployeeQuery',
+    'companyEmployeeYearQuery',
+    'companyEmployeeIdsQuery',
+    'companyPayrollMonthQuery',
+    'companyDeleteLeaveQuery',
+    'companyDeleteResidencyQuery',
+    'normalizeEmployeesPagedQueryInput',
+    'buildEmployeesPagedApiQuery',
+  ]) {
     if (!source.includes(symbol)) {
       report(hrQueryPath, `missing central HR query helper: ${symbol}.`);
     }

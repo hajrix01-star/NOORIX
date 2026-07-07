@@ -237,8 +237,8 @@ export class EmployeesService {
         const fullDto: CreateEmployeeDto = { ...item, companyId: dto.companyId };
         await this.create(fullDto, userId);
         results.created++;
-      } catch (e: any) {
-        const msg = String(e?.message || '');
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : '';
         const dupIqama =
           !!item.iqamaNumber?.trim() &&
           (msg.includes('مسجل مسبقاً') || msg.includes('already registered') || msg.includes('رقم الإقامة'));
@@ -256,12 +256,12 @@ export class EmployeesService {
               name: item.name || '',
               message: `رقم الإقامة ${item.iqamaNumber} مسجل مسبقاً — تم إنشاء الموظف بدون رقم إقامة (يمكنك إضافته من التعديل).`,
             });
-          } catch (e2: any) {
+          } catch (e2: unknown) {
             results.failed++;
             results.errors.push({
               index: i,
               name: item.name || '',
-              message: e2?.message || 'خطأ',
+              message: e2 instanceof Error ? e2.message : 'خطأ',
             });
           }
         } else {

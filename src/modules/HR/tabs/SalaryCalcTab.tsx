@@ -17,7 +17,6 @@ import { useApiQuery } from '../../../hooks/useApiQuery';
 import { getEmployeeCompensationSnapshots, updateEmployee } from '../../../services/api';
 import { hrFmt } from '../utils/hrFmt';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { getSaudiToday } from '../../../utils/saudiDate';
 import {
   SAUDI_STANDARD_HOURS,
   SAUDI_WORK_DAYS_STANDARD,
@@ -30,12 +29,14 @@ import {
 } from '../utils/employeeSalaryMath';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Button, Input, FormRow, FmtNum } from '../../../ui';
-import { openPrintWindow } from '../../../utils/printUtils';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
+import { openSalaryCalcPrintWindow } from './salaryCalcPrint';
+
+type HrAny = ReturnType<typeof JSON.parse>;
 
 /** صف نتيجة موحّد */
-function ResultRow({ label, value, highlight = false, muted = false, divider = false }: any) {
+function ResultRow({ label, value, highlight = false, muted = false, divider = false }: HrAny) {
   return (
     <div
       className={[
@@ -64,7 +65,7 @@ export default function SalaryCalcTab() {
   const { t, lang } = useTranslation();
   const { activeCompanyId, companies } = useApp();
   const companyId = activeCompanyId ?? '';
-  const company   = companies?.find((c: any) => c.id === companyId);
+  const company   = companies?.find((c: HrAny) => c.id === companyId);
   const companyName = company?.nameAr || company?.name || 'الشركة';
   const queryClient = useQueryClient();
   const { employees } = useEmployees(companyId);
@@ -78,13 +79,13 @@ export default function SalaryCalcTab() {
   const [otherAllowance,   setOtherAllowance]   = useState('0');
   const [selectedEmployee, setSelectedEmployee] = useState('');
 
-  const emp = employees.find((e: any) => e.id === selectedEmployee);
-  const employeeIds = useMemo(() => employees.map((row: any) => row.id).filter(Boolean), [employees]);
+  const emp = employees.find((e: HrAny) => e.id === selectedEmployee);
+  const employeeIds = useMemo(() => employees.map((row: HrAny) => row.id).filter(Boolean), [employees]);
   const {
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrAny>({
     queryKey: hrKeys.compensationSnapshots(companyId, employeeIds),
     queryFn: () => getEmployeeCompensationSnapshots(companyId, employeeIds),
     enabled: !!companyId && employeeIds.length > 0,
@@ -111,7 +112,7 @@ export default function SalaryCalcTab() {
 
   useEffect(() => {
     if (!selectedEmployee) return;
-    const e = employees.find((x: any) => x.id === selectedEmployee);
+    const e = employees.find((x: HrAny) => x.id === selectedEmployee);
     const snapshot = e ? snapshotByEmployeeId.get(e.id) : null;
     if (!e) return;
     if (!snapshot?.salaryPackage) {
@@ -174,11 +175,11 @@ export default function SalaryCalcTab() {
 
   // ── تحديث الموظف ─────────────────────────────────────────
   const updateMutation = useApiMutation({
-    mutationFn: async ({ id, body }: any) => updateEmployee(id, body, companyId),
+    mutationFn: async ({ id, body }: HrAny) => updateEmployee(id, body, companyId),
     invalidateQueries: [employeeKeys.root()],
     successToast: () => t('salaryCalcUpdated') || 'تم تحديث الراتب بنجاح',
-    errorToast: (e: any) => e?.message || t('saveFailed'),
-    onSuccess: (data: any, variables: any) => {
+    errorToast: (e: HrAny) => e?.message || t('saveFailed'),
+    onSuccess: (data: HrAny, variables: HrAny) => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.detail(variables.id, companyId) });
       queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
       queryClient.invalidateQueries({ queryKey: hrKeys.compensationSnapshot(companyId, variables.id) });
@@ -208,141 +209,40 @@ export default function SalaryCalcTab() {
     if (transport.gt(0)) rows.push({ label: t('transportAllowance'), amount: transport.toNumber() });
     if (other.gt(0))     rows.push({ label: t('otherAllowance'),     amount: other.toNumber() });
     const customRows = (selectedSnapshot?.customAllowances?.items ?? [])
-      .filter((row: any) => Number(row.amount) > 0)
-      .map((row: any) => ({ label: row.nameAr || row.nameEn || t('customAllowanceName'), amount: Number(row.amount) || 0 }));
+      .filter((row: HrAny) => Number(row.amount) > 0)
+      .map((row: HrAny) => ({ label: row.nameAr || row.nameEn || t('customAllowanceName'), amount: Number(row.amount) || 0 }));
     return [...rows, ...customRows];
   }, [emp, housing, transport, other, selectedSnapshot, t]);
 
   // ── طباعة ────────────────────────────────────────────────
   function handlePrint() {
-    const reportDate  = getSaudiToday();
-    const nameArPrint = emp ? employeeDisplayName(emp, 'ar') : '—';
-    const nameEnPrint = emp ? employeeDisplayName(emp, 'en') : '—';
-    const allowanceRowsHtml = employeeAllowanceRows.length
-      ? employeeAllowanceRows
-          .map((row: any) => `<tr><td>${row.label}</td><td class="num">${hrFmt(row.amount)}</td></tr>`)
-          .join('')
-      : `<tr><td>لا توجد بدلات مخصصة</td><td class="num">0</td></tr>`;
-
-    const extraCss = `
-      .doc{border:1px solid #dbe1e8;border-radius:12px;overflow:hidden}
-      .head{padding:14px 18px;border-bottom:1px solid #dbe1e8;background:#f8fafc;text-align:center}
-      .section{padding:14px 18px;border-bottom:1px solid #e5e7eb}
-      .bi{display:grid;grid-template-columns:1fr 1px 1fr;gap:12px;align-items:stretch}
-      .sep{background:#cbd5e1;border-radius:999px}
-      .box{border:1px solid #dbe1e8;border-radius:10px;padding:12px}
-      .box-title{font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e5e7eb}
-      .row{display:flex;justify-content:space-between;gap:12px;margin-bottom:5px;font-size:12px}
-      .row-hl{background:#f0fdf4;border-radius:6px;padding:5px 8px;margin-top:4px}
-      .row-hl span:last-child{color:#15803d;font-weight:700}
-      .en{direction:ltr;text-align:left}
-      .num{font-family:'Cairo',Arial,sans-serif;font-weight:600}
-      .muted{color:#6b7280}
-      .amber{color:#b45309}
-      table{width:100%;border-collapse:collapse}
-      th,td{border:1px solid #dbe1e8;padding:8px;font-size:12px}
-      th{background:#f8fafc}
-      .warn{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:8px 12px;font-size:11px;color:#92400e;margin-top:8px}
-      @media print{.doc{box-shadow:none}}
-    `;
-    const bodyHtml = `<div class="doc">
-          <div class="head">
-            <div style="font-weight:800;font-size:18px">${companyName}</div>
-            <div style="font-weight:700;margin-top:6px">تقرير حاسبة الرواتب / Salary Calculator Report</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">Date: ${reportDate}</div>
-          </div>
-
-          <!-- تفصيل الراتب -->
-          <div class="section">
-            <div class="bi">
-              <div class="box">
-                <div class="box-title">تفصيل الراتب</div>
-                <div class="row"><span class="muted">الموظف</span><span>${nameArPrint}</span></div>
-                <div class="row"><span class="muted">الإجمالي المستهدف</span><span class="num">${hrFmt(totalTarget.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">الراتب الأساسي</span><span class="num">${hrFmt(basic.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">البدلات</span><span class="num">${hrFmt(totalAllowances.toNumber())} SR</span></div>
-                <div class="row"><span class="muted amber">الأوفر تايم</span><span class="num amber">${hrFmt(totalOTValue.toNumber())} SR</span></div>
-                <div class="row row-hl"><span>الإجمالي</span><span class="num">${hrFmt(calculatedTotal.toNumber())} SR</span></div>
-                ${deduction.gt(0) ? `<div class="row"><span class="muted">خصم الإجازة (${vacDays} يوم)</span><span class="num" style="color:#dc2626">−${hrFmt(deduction.toNumber())} SR</span></div>` : ''}
-                ${deduction.gt(0) ? `<div class="row row-hl"><span>صافي الراتب</span><span class="num">${hrFmt(netSalary.toNumber())} SR</span></div>` : ''}
-              </div>
-              <div class="sep"></div>
-              <div class="box en">
-                <div class="box-title">Salary Breakdown</div>
-                <div class="row"><span class="muted">Employee</span><span>${nameEnPrint}</span></div>
-                <div class="row"><span class="muted">Target Total</span><span class="num">${hrFmt(totalTarget.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">Basic Salary</span><span class="num">${hrFmt(basic.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">Allowances</span><span class="num">${hrFmt(totalAllowances.toNumber())} SR</span></div>
-                <div class="row"><span class="muted amber">Overtime Pay</span><span class="num amber">${hrFmt(totalOTValue.toNumber())} SR</span></div>
-                <div class="row row-hl"><span>Total</span><span class="num">${hrFmt(calculatedTotal.toNumber())} SR</span></div>
-                ${deduction.gt(0) ? `<div class="row"><span class="muted">Leave deduction (${vacDays} d)</span><span class="num" style="color:#dc2626">−${hrFmt(deduction.toNumber())} SR</span></div>` : ''}
-                ${deduction.gt(0) ? `<div class="row row-hl"><span>Net Salary</span><span class="num">${hrFmt(netSalary.toNumber())} SR</span></div>` : ''}
-              </div>
-            </div>
-          </div>
-
-          <!-- أجر الساعة وتفصيل الأوفر تايم -->
-          ${hasOT ? `
-          <div class="section">
-            <div class="bi">
-              <div class="box">
-                <div class="box-title">أجر الساعة وتفصيل الأوفر تايم</div>
-                <div class="row"><span class="muted">ساعات العمل اليومية</span><span class="num">${hrFmt(hours)}</span></div>
-                <div class="row"><span class="muted">إجمالي أيام العمل</span><span class="num">${hrFmt(workDays)}</span></div>
-                <div class="row"><span class="muted">أيام عمل عادية (≤26)</span><span class="num">${hrFmt(regularWorkDays)}</span></div>
-                ${restDays > 0 ? `<div class="row"><span class="muted amber">أيام راحة مُشتغَل فيها</span><span class="num amber">${hrFmt(restDays)}</span></div>` : ''}
-                <div class="row"><span class="muted">ساعات OT يومية (فوق 8)</span><span class="num amber">${hrFmt(overtimeHoursPerDay)}</span></div>
-                <div class="row"><span class="muted">ساعات OT يومية × أيام عادية</span><span class="num amber">${hrFmt(totalDailyOT)} ساعة</span></div>
-                ${restDays > 0 ? `<div class="row"><span class="muted">ساعات OT أيام الراحة</span><span class="num amber">${hrFmt(totalRestOT)} ساعة</span></div>` : ''}
-                <div class="row row-hl"><span>إجمالي ساعات OT</span><span class="num amber">${hrFmt(totalOT)} ساعة</span></div>
-                <div class="row"><span class="muted">أجر الساعة الفعلي (فعلي/208)</span><span class="num">${hrFmt(actualHourlyRate.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">أجر الساعة الأساسي (أساسي/208)</span><span class="num">${hrFmt(basicHourlyRate.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">أجر ساعة OT (فعلي + 50% أساسي)</span><span class="num">${hrFmt(overtimeHourlyRate.toNumber())} SR</span></div>
-                ${totalDailyOT > 0 ? `<div class="row"><span class="muted">قيمة OT الساعات اليومية</span><span class="num">${hrFmt(dailyOTValue.toNumber())} SR</span></div>` : ''}
-                ${restDays > 0 ? `<div class="row"><span class="muted">قيمة OT أيام الراحة</span><span class="num">${hrFmt(restOTValue.toNumber())} SR</span></div>` : ''}
-                <div class="row row-hl"><span>إجمالي الأوفر تايم</span><span class="num">${hrFmt(totalOTValue.toNumber())} SR</span></div>
-              </div>
-              <div class="sep"></div>
-              <div class="box en">
-                <div class="box-title">Hourly Rate & Overtime Detail</div>
-                <div class="row"><span class="muted">Daily work hours</span><span class="num">${hrFmt(hours)}</span></div>
-                <div class="row"><span class="muted">Total work days</span><span class="num">${hrFmt(workDays)}</span></div>
-                <div class="row"><span class="muted">Regular days (≤26)</span><span class="num">${hrFmt(regularWorkDays)}</span></div>
-                ${restDays > 0 ? `<div class="row"><span class="muted amber">Rest days worked</span><span class="num amber">${hrFmt(restDays)}</span></div>` : ''}
-                <div class="row"><span class="muted">Daily OT hours (above 8)</span><span class="num amber">${hrFmt(overtimeHoursPerDay)}</span></div>
-                <div class="row"><span class="muted">Daily OT hrs × regular days</span><span class="num amber">${hrFmt(totalDailyOT)} hrs</span></div>
-                ${restDays > 0 ? `<div class="row"><span class="muted">Rest day OT hours</span><span class="num amber">${hrFmt(totalRestOT)} hrs</span></div>` : ''}
-                <div class="row row-hl"><span>Total OT hours</span><span class="num amber">${hrFmt(totalOT)} hrs</span></div>
-                <div class="row"><span class="muted">Actual hourly rate (actual/208)</span><span class="num">${hrFmt(actualHourlyRate.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">Basic hourly rate (basic/208)</span><span class="num">${hrFmt(basicHourlyRate.toNumber())} SR</span></div>
-                <div class="row"><span class="muted">OT hourly rate (actual + 50% basic)</span><span class="num">${hrFmt(overtimeHourlyRate.toNumber())} SR</span></div>
-                ${totalDailyOT > 0 ? `<div class="row"><span class="muted">Daily OT value</span><span class="num">${hrFmt(dailyOTValue.toNumber())} SR</span></div>` : ''}
-                ${restDays > 0 ? `<div class="row"><span class="muted">Rest day OT value</span><span class="num">${hrFmt(restOTValue.toNumber())} SR</span></div>` : ''}
-                <div class="row row-hl"><span>Total Overtime Pay</span><span class="num">${hrFmt(totalOTValue.toNumber())} SR</span></div>
-              </div>
-            </div>
-          </div>` : ''}
-
-          <!-- جدول البدلات -->
-          <div class="section">
-            <div class="bi">
-              <div class="box">
-                <div class="box-title">تفاصيل البدلات</div>
-                <table><thead><tr><th>البدل</th><th>القيمة (SR)</th></tr></thead>
-                <tbody>${allowanceRowsHtml}</tbody></table>
-              </div>
-              <div class="sep"></div>
-              <div class="box en">
-                <div class="box-title">Allowances Breakdown</div>
-                <table><thead><tr><th>Allowance</th><th>Amount (SR)</th></tr></thead>
-                <tbody>${allowanceRowsHtml}</tbody></table>
-              </div>
-            </div>
-          </div>
-
-          ${hasOT ? `<div class="section"><div class="warn">⚖️ المادة 107 — وزارة الموارد البشرية: "يُدفع للعامل أجرٌ بأجر يوازي أجر الساعة مضافاً إليه 50% من أجره الأساسي".<br/>أجر_ساعة_OT = (الأجر_الفعلي + 50% × الأساسي) ÷ 208<br/>Art.107 MHRSD: OT hourly rate = (actual wage + 50% × basic) ÷ 208 hrs.</div></div>` : ''}
-        </div>`;
-    openPrintWindow({ title: 'Salary Calculator', extraCss, body: bodyHtml });
+    openSalaryCalcPrintWindow({
+      companyName,
+      employee: emp,
+      allowanceRows: employeeAllowanceRows,
+      hours,
+      workDays,
+      regularWorkDays,
+      restDays,
+      overtimeHoursPerDay,
+      totalDailyOT,
+      totalRestOT,
+      totalOT,
+      vacDays,
+      hasOT,
+      totalTarget,
+      basic,
+      totalAllowances,
+      deduction,
+      actualHourlyRate,
+      basicHourlyRate,
+      overtimeHourlyRate,
+      dailyOTValue,
+      restOTValue,
+      totalOTValue,
+      calculatedTotal,
+      netSalary,
+    });
   }
 
   // ── JSX ──────────────────────────────────────────────────
@@ -355,12 +255,12 @@ export default function SalaryCalcTab() {
           <h3 className="text-[17px] font-bold text-noorix-text m-0">{t('hrTabSalaryCalc')}</h3>
 
           {/* اختيار الموظف */}
-          <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e: any) => setSelectedEmployee(e.target.value)}>
+          <Input type="select" label={t('selectEmployee')} value={selectedEmployee} onChange={(e: HrAny) => setSelectedEmployee(e.target.value)}>
             <option value="">— {t('salaryCalcSelectOrEnter') || 'اختر أو أدخل يدوياً'} —</option>
             {(!compensationSnapshotsLoading && !compensationSnapshotsError
-              ? employees.filter((e: any) => snapshotByEmployeeId.has(e.id))
+              ? employees.filter((e: HrAny) => snapshotByEmployeeId.has(e.id))
               : []
-            ).map((e: any) => {
+            ).map((e: HrAny) => {
               const snapshot = snapshotByEmployeeId.get(e.id);
               const total = snapshot?.salaryPackage?.total;
               const est = { toNumber: () => (Number.isFinite(Number(total)) ? Number(total) : 0) };
@@ -393,7 +293,7 @@ export default function SalaryCalcTab() {
             min="0"
             step="0.01"
             value={targetTotal}
-            onChange={(e: any) => setTargetTotal(e.target.value)}
+            onChange={(e: HrAny) => setTargetTotal(e.target.value)}
           />
 
           {/* ساعات/يوم + أيام/شهر */}
@@ -403,7 +303,7 @@ export default function SalaryCalcTab() {
               label={t('salaryCalcHoursPerDay')}
               min="1" max="12" step="0.5"
               value={hoursPerDay}
-              onChange={(e: any) => setHoursPerDay(e.target.value)}
+              onChange={(e: HrAny) => setHoursPerDay(e.target.value)}
             />
             <div>
               <Input
@@ -411,7 +311,7 @@ export default function SalaryCalcTab() {
                 label={t('salaryCalcDaysPerMonth')}
                 min="1" max="31"
                 value={daysPerMonth}
-                onChange={(e: any) => setDaysPerMonth(e.target.value)}
+                onChange={(e: HrAny) => setDaysPerMonth(e.target.value)}
               />
               <div className="text-[11px] text-noorix-muted mt-1.5 leading-[1.45]">
                 أيام العمل الفعلية شهرياً (26 عادية + أيام الراحة إن وُجدت)
@@ -421,14 +321,14 @@ export default function SalaryCalcTab() {
 
           {/* البدلات */}
           <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
-            <Input type="number" step="0.01" min="0" label={t('housingAllowance')}   value={housingAllowance}   onChange={(e: any) => setHousingAllowance(e.target.value)} />
-            <Input type="number" step="0.01" min="0" label={t('transportAllowance')} value={transportAllowance} onChange={(e: any) => setTransportAllowance(e.target.value)} />
-            <Input type="number" step="0.01" min="0" label={t('otherAllowance')}     value={otherAllowance}     onChange={(e: any) => setOtherAllowance(e.target.value)} />
+            <Input type="number" step="0.01" min="0" label={t('housingAllowance')}   value={housingAllowance}   onChange={(e: HrAny) => setHousingAllowance(e.target.value)} />
+            <Input type="number" step="0.01" min="0" label={t('transportAllowance')} value={transportAllowance} onChange={(e: HrAny) => setTransportAllowance(e.target.value)} />
+            <Input type="number" step="0.01" min="0" label={t('otherAllowance')}     value={otherAllowance}     onChange={(e: HrAny) => setOtherAllowance(e.target.value)} />
           </div>
 
           {/* أيام الإجازة + ساعات OT (للعرض) */}
           <FormRow>
-            <Input type="number" min="0" label={t('salaryCalcVacationDays')} value={vacationDays} onChange={(e: any) => setVacationDays(e.target.value)} />
+            <Input type="number" min="0" label={t('salaryCalcVacationDays')} value={vacationDays} onChange={(e: HrAny) => setVacationDays(e.target.value)} />
             <Input type="number" label="ساعات الأوفر تايم اليومية" value={overtimeHoursPerDay} readOnly className="bg-noorix-bg-muted" />
           </FormRow>
 
@@ -445,7 +345,7 @@ export default function SalaryCalcTab() {
               <div className="border-b border-noorix-border font-bold py-2.5 px-3 text-[13px]">
                 تفاصيل بدلات الموظف
               </div>
-              {employeeAllowanceRows.map((row: any, idx: any) => (
+              {employeeAllowanceRows.map((row: HrAny, idx: HrAny) => (
                 <div
                   key={`${row.label}-${idx}`}
                   className={`grid gap-3 py-2.5 px-3 text-[12px] [grid-template-columns:1.2fr_1fr] ${

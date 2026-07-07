@@ -5,6 +5,32 @@ import { HRActionsCell } from '../HRActionsCell';
 import { HR_SERVICE_CATEGORY_LABEL_KEYS, formatHrServiceDetail, formatHrServiceSecondaryDate } from '../../constants/employeeHrServiceCategories';
 import { HrServiceQuickAddBar } from '../HrServiceQuickAddBar';
 
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+type ProfileResidencyRow = Record<string, unknown> & {
+  id?: string | null;
+  serviceCategory?: string | null;
+  iqamaNumber?: string | null;
+  referenceLabel?: string | null;
+  issueDate?: string | null;
+  expiryDate?: string | null;
+  status?: string | null;
+  invoiceId?: string | null;
+  invoice?: { invoiceNumber?: string | number | null; totalAmount?: number | string | null } | null;
+  invoiceNumber?: string | number | null;
+  residencyInvoiceAmount?: number | string | null;
+  invoiceAmount?: number | string | null;
+};
+type EmployeeProfileResidencySectionProps = {
+  t: TranslationFn;
+  residencies: ProfileResidencyRow[];
+  residencyProfileStatusMap: Record<string, unknown>;
+  canAddService?: boolean;
+  canEditService?: boolean;
+  onQuickAdd?: (category: string) => void;
+  onOpenService?: (row: ProfileResidencyRow) => void;
+  onDeleteService?: (row: ProfileResidencyRow) => void;
+};
+
 export function EmployeeProfileResidencySection({
   t,
   residencies,
@@ -14,14 +40,14 @@ export function EmployeeProfileResidencySection({
   onQuickAdd,
   onOpenService,
   onDeleteService,
-}: any) {
-  const enrichedRows = (residencies || []).map((row: any) => ({
+}: EmployeeProfileResidencySectionProps) {
+  const enrichedRows = (residencies || []).map((row) => ({
     ...row,
     invoiceNumber: row.invoice?.invoiceNumber || null,
     invoiceAmount: row.residencyInvoiceAmount ?? row.invoice?.totalAmount,
   }));
 
-  const serviceKebabItems = (row: any) => [
+  const serviceKebabItems = (row: ProfileResidencyRow) => [
     { key: 'view', label: t('view'), onClick: () => onOpenService?.(row) },
     {
       key: 'edit',
@@ -62,7 +88,7 @@ export function EmployeeProfileResidencySection({
             key: 'serviceCategory',
             label: t('hrServiceCategory'),
             width: '18%',
-            render: (_v: any, row: any) => (
+            render: (_v: unknown, row: ProfileResidencyRow) => (
               <Badge
                 color="blue"
                 size="sm"
@@ -74,7 +100,7 @@ export function EmployeeProfileResidencySection({
             key: 'serviceDetail',
             label: t('hrServiceDetailColumn'),
             width: '18%',
-            render: (_v: any, row: any) => (
+            render: (_v: unknown, row: ProfileResidencyRow) => (
               <Button
                 variant="raw"
                 type="button"
@@ -89,7 +115,7 @@ export function EmployeeProfileResidencySection({
             key: 'secondary',
             label: t('hrServiceSecondaryColumn'),
             width: '16%',
-            render: (_v: any, row: any) => (
+            render: (_v: unknown, row: ProfileResidencyRow) => (
               <span className="nx-cell-muted-sm">{formatHrServiceSecondaryDate(row, t, formatSaudiDate)}</span>
             ),
           },
@@ -97,7 +123,7 @@ export function EmployeeProfileResidencySection({
             key: 'invoiceNumber',
             label: t('invoiceNumber'),
             width: '14%',
-            render: (_v: any, row: any) => (
+            render: (_v: unknown, row: ProfileResidencyRow) => (
               row.invoiceNumber ? (
                 <Button
                   variant="raw"
@@ -116,7 +142,7 @@ export function EmployeeProfileResidencySection({
             key: 'status',
             label: t('status'),
             width: '14%',
-            render: (v: any) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" />,
+            render: (v: unknown) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" />,
           },
           ...(canEditService
             ? [{
@@ -124,7 +150,7 @@ export function EmployeeProfileResidencySection({
                 label: t('actions'),
                 width: '10%',
                 align: 'center',
-                render: (_: any, row: any) => (
+                render: (_: unknown, row: ProfileResidencyRow) => (
                   <HRActionsCell
                     row={row}
                     type="residency"
@@ -141,7 +167,7 @@ export function EmployeeProfileResidencySection({
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: any) => (
+        renderCompactRow={(row: ProfileResidencyRow) => (
           <div
             className={cn(canEditService && 'cursor-pointer')}
             onClick={canEditService ? () => onOpenService?.(row) : undefined}
@@ -176,7 +202,7 @@ export function EmployeeProfileResidencySection({
             </div>
           </div>
         )}
-        renderMobileCard={(row: any) => (
+        renderMobileCard={(row: ProfileResidencyRow) => (
           <div
             className={cn('flex flex-col gap-2', canEditService && 'cursor-pointer')}
             onClick={canEditService ? () => onOpenService?.(row) : undefined}

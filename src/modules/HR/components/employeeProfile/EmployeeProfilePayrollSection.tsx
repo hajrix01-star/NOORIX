@@ -2,7 +2,9 @@ import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { hrFmt } from '../../utils/hrFmt';
 import { Badge, FmtNum, SmartTable } from '../../../../ui';
 
-export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatusMap }: any) {
+type HrAny = ReturnType<typeof JSON.parse>;
+
+export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatusMap }: HrAny) {
   return (
     <div className="noorix-surface-card overflow-hidden employee-profile-layout__wide">
       <div className="nx-section-header">
@@ -18,7 +20,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             key: 'payrollRun.runNumber',
             label: t('payrollRunNumber'),
             width: '14%',
-            render: (_: any, row: any) => (
+            render: (_: HrAny, row: HrAny) => (
               <span className="nx-cell-num nx-cell-accent text-[12px]">{row.payrollRun?.runNumber || '—'}</span>
             ),
           },
@@ -26,7 +28,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             key: 'payrollRun.payrollMonth',
             label: t('payrollMonth'),
             width: '14%',
-            render: (_: any, row: any) => (
+            render: (_: HrAny, row: HrAny) => (
               <span className="nx-cell-muted-sm">{formatSaudiDate(row.payrollRun?.payrollMonth)}</span>
             ),
           },
@@ -35,14 +37,14 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             label: t('grossSalary'),
             numeric: true,
             width: '12%',
-            render: (v: any) => <FmtNum n={v} className="nx-cell-num" />,
+            render: (v: HrAny) => <FmtNum n={v} className="nx-cell-num" />,
           },
           {
             key: 'deductions',
             label: t('payrollDeductions'),
             numeric: true,
             width: '11%',
-            render: (v: any) => (
+            render: (v: HrAny) => (
               <span className={Number(v) > 0 ? 'nx-cell-num text-noorix-red' : 'nx-cell-num'}>
                 {hrFmt(v)}
               </span>
@@ -53,7 +55,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             label: t('payrollAdvances'),
             numeric: true,
             width: '11%',
-            render: (v: any) => (
+            render: (v: HrAny) => (
               <span className={Number(v) > 0 ? 'nx-cell-num text-noorix-amber' : 'nx-cell-num'}>
                 {hrFmt(v)}
               </span>
@@ -64,13 +66,13 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             label: t('netSalary'),
             numeric: true,
             width: '12%',
-            render: (v: any) => <FmtNum n={v} className="nx-cell-num font-bold text-noorix-green" />,
+            render: (v: HrAny) => <FmtNum n={v} className="nx-cell-num font-bold text-noorix-green" />,
           },
           {
             key: 'payrollRun.status',
             label: t('payrollStatus'),
             width: '12%',
-            render: (_: any, row: any) => {
+            render: (_: HrAny, row: HrAny) => {
               const pr = row.payrollRun;
               const st = String(pr?.status || '').toLowerCase();
               const badgeProps =
@@ -84,7 +86,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             key: 'notes',
             label: t('invoiceNotesColumn'),
             width: '14%',
-            render: (v: any) => (
+            render: (v: HrAny) => (
               <span className="nx-cell-ellipsis text-[11px]" title={v || ''}>
                 {v || '—'}
               </span>
@@ -96,7 +98,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: any) => {
+        renderCompactRow={(row: HrAny) => {
           const pr = row.payrollRun;
           const stPr = String(pr?.status || '').toLowerCase();
           const payrollBadgeProps =
@@ -121,7 +123,7 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
             </div>
           );
         }}
-        renderMobileCard={(row: any) => {
+        renderMobileCard={(row: HrAny) => {
           const pr = row.payrollRun;
           const stPr = String(pr?.status || '').toLowerCase();
           const payrollBadgeProps =

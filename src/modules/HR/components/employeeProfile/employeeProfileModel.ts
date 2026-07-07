@@ -1,23 +1,60 @@
 import { hrFmt } from '../../utils/hrFmt';
 import { toYmd } from '../../../../utils/saudiDate';
 import { getAdvanceBalanceParts } from '../../utils/advanceBalance';
+import type { HrCompensationSnapshot } from '../../../../types/api';
 
 export const TYPE_MAP = { annual: 'leaveAnnual', sick: 'leaveSick', unpaid: 'leaveUnpaid', other: 'leaveOther' };
 
-export function getInitials(name: any) {
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+type CareerMovementRecord = Record<string, unknown> & {
+  id?: string | null;
+  movementType?: string | null;
+  previousValue?: string | number | null;
+  newValue?: string | number | null;
+  amount?: string | number | null;
+  effectiveDate?: string | null;
+  notes?: string | null;
+};
+type FinancialInvoiceRecord = Record<string, unknown> & {
+  id?: string | null;
+  transactionDate?: string | Date | null;
+  status?: string | null;
+  kind?: string | null;
+  notes?: string | null;
+  totalAmount?: string | number | null;
+  netAmount?: string | number | null;
+  settledAt?: string | null;
+};
+type DeductionRecord = Record<string, unknown> & {
+  id?: string | null;
+  transactionDate?: string | Date | null;
+  amount?: string | number | null;
+  notes?: string | null;
+  deductionType?: string | null;
+};
+type ResidencyRecord = {
+  id?: string | null;
+  invoiceId?: string | null;
+};
+type FinancialRecordsSource = {
+  items?: FinancialInvoiceRecord[];
+};
+type SalaryRowsSnapshot = Pick<HrCompensationSnapshot, 'salaryPackage' | 'customAllowances'>;
+
+export function getInitials(name: unknown) {
   if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
+  const parts = String(name).trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] || '') + (parts[1][0] || '');
   return (parts[0] || '').slice(0, 2) || '?';
 }
 
-export function buildCareerTableRows(movements: any, t: any) {
-  const labelFor = (mt: any) => {
+export function buildCareerTableRows(movements: CareerMovementRecord[], t: TranslationFn) {
+  const labelFor = (mt: unknown) => {
     if (mt === 'promotion') return t('movementTypePromotion');
     if (mt === 'raise') return t('movementTypeRaise');
     return t('movementTypeOther');
   };
-  return movements.map((m: any) => {
+  return movements.map((m) => {
     let changeSummary = '—';
     if (m.movementType === 'promotion') {
       const a = m.previousValue || '—';
@@ -44,7 +81,7 @@ export function buildCareerTableRows(movements: any, t: any) {
             : '—';
     }
     return {
-      id: m.id,
+      id: m.id ? String(m.id) : undefined,
       movementType: m.movementType,
       effectiveDate: m.effectiveDate,
       typeLabel: labelFor(m.movementType),
@@ -54,14 +91,19 @@ export function buildCareerTableRows(movements: any, t: any) {
   });
 }
 
-export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: any, residencies: any[] = []) {
-  const recs = [];
+export function buildFinancialRecords(
+  hrInvoicesData: FinancialRecordsSource | null | undefined,
+  deductions: DeductionRecord[] = [],
+  t: TranslationFn,
+  residencies: ResidencyRecord[] = [],
+) {
+  const recs: Array<Record<string, unknown> & { date: string }> = [];
   const residencyByInvoiceId = new Map(
     (residencies || [])
-      .filter((r: any) => r.invoiceId)
-      .map((r: any) => [r.invoiceId, r.id]),
+      .filter((r) => r.invoiceId)
+      .map((r) => [r.invoiceId, r.id]),
   );
-  const hrInvs = (hrInvoicesData?.items ?? []).filter((i: any) => i.status !== 'cancelled');
+  const hrInvs = (hrInvoicesData?.items ?? []).filter((i) => i.status !== 'cancelled');
   for (const inv of hrInvs) {
     const dt = toYmd(inv.transactionDate);
     let typeKey = 'opAdvance';
@@ -105,12 +147,12 @@ export function buildFinancialRecords(hrInvoicesData: any, deductions: any, t: a
       deductionType: d.deductionType,
     });
   }
-  recs.sort((a: any, b: any) => (b.date || '').localeCompare(a.date || ''));
+  recs.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   return recs;
 }
 
-export function buildSalaryRows(compensationSnapshot: any, t: any) {
-  type SalaryRow = { label: any; amount: number; strong?: boolean; total?: boolean };
+export function buildSalaryRows(compensationSnapshot: SalaryRowsSnapshot | null | undefined, t: TranslationFn) {
+  type SalaryRow = { label: string; amount: number; strong?: boolean; total?: boolean };
   const breakdown = compensationSnapshot?.salaryPackage;
   if (!breakdown) return [];
   const rows: SalaryRow[] = [{ label: t('basicSalary'), amount: breakdown.basicSalary, strong: true }];

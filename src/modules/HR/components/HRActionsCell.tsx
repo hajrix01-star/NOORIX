@@ -5,7 +5,26 @@ import React, { memo, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { KebabMenu } from '../../../ui';
 
-export type HRActionsCellProps = Record<string, any>;
+type HrActionHandler = { handle(row: unknown): void }['handle'];
+export type HRActionsCellProps = {
+  row: unknown;
+  type?: string;
+  onView?: HrActionHandler;
+  onEdit?: HrActionHandler;
+  onApprove?: HrActionHandler;
+  onReject?: HrActionHandler;
+  onPay?: HrActionHandler;
+  onAdvance?: HrActionHandler;
+  onSettle?: HrActionHandler;
+  onTerminate?: HrActionHandler;
+  onArchive?: HrActionHandler;
+  onRestore?: HrActionHandler;
+  onDelete?: HrActionHandler;
+  onPermanentDelete?: HrActionHandler;
+  onReturnFromLeave?: HrActionHandler;
+  onLeaveSalarySettlement?: HrActionHandler;
+  onIssueInvoice?: HrActionHandler;
+};
 
 export const HRActionsCell = memo(function HRActionsCell(props: HRActionsCellProps) {
   const {
@@ -47,7 +66,7 @@ export const HRActionsCell = memo(function HRActionsCell(props: HRActionsCellPro
     { key: 'permdelete', label: t('deleteEmployeePermanent'), hidden: !onPermanentDelete, style: { color: 'var(--noorix-accent-red-dark)' }, onClick: () => onPermanentDelete?.(row) },
   ], [row, t, onView, onEdit, onApprove, onReject, onReturnFromLeave, onLeaveSalarySettlement, onIssueInvoice, onPay, onAdvance, onSettle, onTerminate, onArchive, onRestore, onDelete, onPermanentDelete]);
 
-  const hasAny = items.some((x: any) => !x.hidden);
+  const hasAny = items.some((x) => !x.hidden);
   if (!hasAny) return <span className="text-[12px] text-noorix-muted">—</span>;
 
   return (

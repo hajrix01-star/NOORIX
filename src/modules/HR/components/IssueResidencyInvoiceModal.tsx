@@ -11,11 +11,25 @@ import { Button, Input, Modal } from '../../../ui';
 import { HR_SERVICE_CATEGORY_LABEL_KEYS } from '../constants/employeeHrServiceCategories';
 
 type IssueResidencyInvoiceModalProps = {
-  row: any;
+  row: {
+    id: string;
+    serviceCategory?: string | null;
+    employeeName?: string | null;
+    residencyInvoiceAmount?: number | string | null;
+  };
   companyId: string;
   onSuccess?: () => void;
   onClose?: () => void;
 };
+type VaultOption = {
+  id?: string | null;
+  name?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+};
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose }: IssueResidencyInvoiceModalProps) {
   const { t, lang } = useTranslation();
@@ -49,8 +63,8 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
       throwIfApiFailed(res, t('saveFailed'));
       onSuccess?.();
       onClose?.();
-    } catch (err: any) {
-      setError(err?.message || t('saveFailed'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('saveFailed')));
     } finally {
       setSubmitting(false);
     }
@@ -79,8 +93,8 @@ export function IssueResidencyInvoiceModal({ row, companyId, onSuccess, onClose 
           required
         >
           <option value="">— {t('selectVault')} —</option>
-          {paymentVaults.map((v: any) => (
-            <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
+          {(paymentVaults as VaultOption[]).map((v) => (
+            <option key={v.id || ''} value={v.id || ''}>{vaultDisplayName(v, lang)}</option>
           ))}
         </Input>
         {error && (

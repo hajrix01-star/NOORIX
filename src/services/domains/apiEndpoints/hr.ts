@@ -12,7 +12,12 @@ import {
   getAuthHeaders,
 } from '../../core/apiHttp';
 import {
+  companyDeleteLeaveQuery,
+  companyDeleteResidencyQuery,
+  companyEmployeeIdsQuery,
   companyEmployeeQuery,
+  companyEmployeeYearQuery,
+  companyPayrollMonthQuery,
   companyQuery,
   companyYearQuery,
   withHrApiQuery,
@@ -61,9 +66,7 @@ export async function getEmployeeCompensationSnapshots(
   companyId: string,
   employeeIds: string[] = [],
 ): Promise<ApiParsedResult> {
-  const params: Record<string, string> = companyQuery(companyId);
-  if (employeeIds.length) params.employeeIds = employeeIds.join(',');
-  return apiGet('/api/v1/hr/compensation-snapshots', params);
+  return apiGet('/api/v1/hr/compensation-snapshots', companyEmployeeIdsQuery(companyId, employeeIds));
 }
 
 export async function getLeaves(
@@ -71,10 +74,7 @@ export async function getLeaves(
   employeeId?: string,
   year?: string | number,
 ): Promise<ApiParsedResult> {
-  const params: Record<string, string> = companyQuery(companyId);
-  if (employeeId) params.employeeId = String(employeeId);
-  if (year != null && year !== '') params.year = String(year);
-  return apiGet('/api/v1/hr/leaves', params);
+  return apiGet('/api/v1/hr/leaves', companyEmployeeYearQuery(companyId, employeeId, year));
 }
 export async function createLeave(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/hr/leaves', body);
@@ -92,10 +92,7 @@ export async function getLeaveSalarySettlements(
   companyId: string,
   payrollMonth: string | number,
 ): Promise<ApiParsedResult> {
-  return apiGet('/api/v1/hr/leave-salary-settlements', {
-    ...companyQuery(companyId),
-    payrollMonth: String(payrollMonth),
-  });
+  return apiGet('/api/v1/hr/leave-salary-settlements', companyPayrollMonthQuery(companyId, payrollMonth));
 }
 
 export async function getLeaveSalarySettlementPreview(id: string, companyId: string): Promise<ApiParsedResult> {
@@ -119,11 +116,8 @@ export async function issueLeaveSalarySettlement(
   return apiPost(withHrApiQuery(`/api/v1/hr/leaves/${encodeURIComponent(id)}/salary-settlement`, companyQuery(companyId)), payload);
 }
 
-export async function deleteLeave(id: string, companyId: string, voidSettlement: any = false): Promise<ApiParsedResult> {
-  return apiDelete(withHrApiQuery(`/api/v1/hr/leaves/${encodeURIComponent(id)}`, {
-    ...companyQuery(companyId),
-    voidSettlement: !!voidSettlement || undefined,
-  }));
+export async function deleteLeave(id: string, companyId: string, voidSettlement: boolean = false): Promise<ApiParsedResult> {
+  return apiDelete(withHrApiQuery(`/api/v1/hr/leaves/${encodeURIComponent(id)}`, companyDeleteLeaveQuery(companyId, voidSettlement)));
 }
 
 export async function returnFromLeave(
@@ -137,9 +131,7 @@ export async function returnFromLeave(
 }
 
 export async function getResidencies(companyId: string, employeeId?: string): Promise<ApiParsedResult> {
-  const params: Record<string, string> = companyQuery(companyId);
-  if (employeeId) params.employeeId = String(employeeId);
-  return apiGet('/api/v1/hr/residencies', params);
+  return apiGet('/api/v1/hr/residencies', companyEmployeeQuery(companyId, employeeId));
 }
 export async function createResidency(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/hr/residencies', body);
@@ -152,10 +144,7 @@ export async function deleteResidency(
   companyId: string,
   voidInvoice = false,
 ): Promise<ApiParsedResult> {
-  return apiDelete(withHrApiQuery(`/api/v1/hr/residencies/${encodeURIComponent(id)}`, {
-    ...companyQuery(companyId),
-    voidInvoice: voidInvoice || undefined,
-  }));
+  return apiDelete(withHrApiQuery(`/api/v1/hr/residencies/${encodeURIComponent(id)}`, companyDeleteResidencyQuery(companyId, voidInvoice)));
 }
 
 export async function issueResidencyInvoice(
@@ -170,9 +159,7 @@ export async function issueResidencyInvoice(
 }
 
 export async function getDocuments(companyId: string, employeeId?: string): Promise<ApiParsedResult> {
-  const params: Record<string, string> = companyQuery(companyId);
-  if (employeeId) params.employeeId = String(employeeId);
-  return apiGet('/api/v1/hr/documents', params);
+  return apiGet('/api/v1/hr/documents', companyEmployeeQuery(companyId, employeeId));
 }
 export async function createDocument(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/hr/documents', body);
@@ -248,9 +235,7 @@ export async function deleteDocument(id: string, companyId: string): Promise<Api
 }
 
 export async function getMovements(companyId: string, employeeId?: string): Promise<ApiParsedResult> {
-  const params: Record<string, string> = companyQuery(companyId);
-  if (employeeId) params.employeeId = String(employeeId);
-  return apiGet('/api/v1/hr/movements', params);
+  return apiGet('/api/v1/hr/movements', companyEmployeeQuery(companyId, employeeId));
 }
 export async function createMovement(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/hr/movements', body);
@@ -267,9 +252,7 @@ export async function deleteRaiseMovement(id: string, companyId: string): Promis
 }
 
 export async function getCustomAllowances(companyId: string, employeeId?: string): Promise<ApiParsedResult> {
-  const params: Record<string, string> = companyQuery(companyId);
-  if (employeeId) params.employeeId = String(employeeId);
-  return apiGet('/api/v1/hr/allowances', params);
+  return apiGet('/api/v1/hr/allowances', companyEmployeeQuery(companyId, employeeId));
 }
 export async function createCustomAllowance(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/hr/allowances', body);
@@ -279,9 +262,7 @@ export async function deleteCustomAllowance(id: string, companyId: string): Prom
 }
 
 export async function getDeductions(companyId: string, employeeId?: string): Promise<ApiParsedResult> {
-  const params: Record<string, string> = companyQuery(companyId);
-  if (employeeId) params.employeeId = String(employeeId);
-  return apiGet('/api/v1/hr/deductions', params);
+  return apiGet('/api/v1/hr/deductions', companyEmployeeQuery(companyId, employeeId));
 }
 export async function createDeduction(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/hr/deductions', body);

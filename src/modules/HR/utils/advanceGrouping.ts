@@ -1,8 +1,26 @@
+import type { AdvanceSettlementStatus } from './hrCalculations/advances';
+
+export type AdvanceRow = Record<string, unknown> & {
+  id?: string | null;
+  employeeId?: string | null;
+  employeeName?: string | null;
+  invoiceNumber?: string | null;
+  transactionDate?: string | null;
+  totalAmount?: number | string | null;
+  totalAmountNum?: number;
+  settledAmountNum?: number;
+  remainingAmount?: number;
+  installmentCount?: number;
+  installmentAmount?: number | string | null;
+  settledAt?: string | null;
+  settlementStatus: AdvanceSettlementStatus | string;
+};
+
 export type AdvanceGroupRow = {
   id: string;
   employeeId: string;
   employeeName: string;
-  advances: any[];
+  advances: AdvanceRow[];
   totalAmount: number;
   totalAmountNum: number;
   settledAmountNum: number;
@@ -12,11 +30,11 @@ export type AdvanceGroupRow = {
   outstandingCount: number;
   partialCount: number;
   settledCount: number;
-  settlementStatus: 'settled' | 'partial' | 'outstanding';
+  settlementStatus: Exclude<AdvanceSettlementStatus, 'cancelled'>;
 };
 
 export function buildGroupedAdvanceRows(
-  rows: any[],
+  rows: AdvanceRow[],
   sortKey: string,
   sortDir: string,
   locale: string,

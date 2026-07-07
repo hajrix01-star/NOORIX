@@ -7,17 +7,54 @@ import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { computePayrollLineSummary } from './hrCalculations/payroll';
 
-function esc(v: any) {
+type PayrollSlipEmployee = {
+  iqamaNumber?: string | number | null;
+  employeeSerial?: string | number | null;
+  jobTitle?: string | null;
+  joinDate?: string | Date | null;
+  name?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+};
+
+type PayrollSlipLine = {
+  employee?: PayrollSlipEmployee | null;
+  employeeName?: string | null;
+  grossSalary?: number | string | null;
+  allowancesAdd?: number | string | null;
+  deductions?: number | string | null;
+  advancesDeduct?: number | string | null;
+  netSalary?: number | string | null;
+  notes?: string | null;
+};
+
+type PayrollSlipRun = {
+  runNumber?: string | number | null;
+  payrollMonth?: string | Date | null;
+  items?: PayrollSlipLine[] | null;
+};
+
+type PayrollSlipPrintOptions = {
+  run: PayrollSlipRun;
+  companyName?: string;
+  companyNameEn?: string;
+  companyLogo?: string;
+  lang: string;
+  labels: Record<string, string>;
+  netOnly: boolean;
+};
+
+function esc(v: unknown) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function safeImgSrc(url: any) {
+function safeImgSrc(url: unknown) {
   const u = String(url || '').trim();
   if (!u) return '';
   return u.replace(/"/g, '%22').replace(/'/g, '%27');
 }
 
-function buildLogoInner(logoUrl: any) {
+function buildLogoInner(logoUrl: unknown) {
   const u = safeImgSrc(logoUrl);
   if (u.startsWith('http') || u.startsWith('data:image')) return `<img src="${u}" alt="" />`;
   return `<div class="ps-logo-ph">شعار<br/><span>Logo</span></div>`;
@@ -117,7 +154,7 @@ export function openPayrollRunEmployeeSlipsPrint({
   lang,
   labels,
   netOnly,
-}: any) {
+}: PayrollSlipPrintOptions) {
   const items = Array.isArray(run?.items) ? run.items : [];
   if (!items.length) return;
 
@@ -133,7 +170,7 @@ export function openPayrollRunEmployeeSlipsPrint({
   const enLine = coEn ? `<div class="ps-co-en">${coEn}</div>` : '';
 
   const pages = items
-    .map((row: any) => {
+    .map((row) => {
       const emp = row.employee;
       const displayName = employeeDisplayName(emp || { name: row.employeeName }, lang);
       const iqama = esc(emp?.iqamaNumber || '—');
@@ -260,7 +297,7 @@ export function openPayrollRunEmployeeSlipsPrint({
   const body = `<div class="ps-wrap">${pages}</div>`;
 
   openPrintWindow({
-    title: labels.windowTitle || run.runNumber || 'Payroll slips',
+    title: labels.windowTitle || String(run.runNumber || 'Payroll slips'),
     companyName: '',
     subtitle: '',
     landscape: false,

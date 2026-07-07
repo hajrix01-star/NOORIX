@@ -64,6 +64,34 @@ import {
   buildSalaryRows,
 } from './components/employeeProfile/employeeProfileModel';
 import { normalizeAdvances } from './utils/advanceBalance';
+import type { HrCompensationSnapshot } from '../../types/api';
+
+type HrProfileCompanyRef = {
+  id?: string | null;
+  name?: string | null;
+  nameAr?: string | null;
+  logoUrl?: string | null;
+};
+
+type HrProfileRecord = Record<string, unknown> & {
+  id?: string | null;
+  invoiceId?: string | null;
+  kind?: string | null;
+  status?: string | null;
+  movementType?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+type HrProfileCompensationSnapshot = HrCompensationSnapshot & {
+  advances?: { items?: HrProfileRecord[] };
+  payrollItems?: HrProfileRecord[];
+  customAllowances?: { total?: number; items?: HrProfileRecord[] };
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 export default function EmployeeProfileScreen() {
   const { id } = useParams();
@@ -77,19 +105,19 @@ export default function EmployeeProfileScreen() {
     Array.isArray(userPermissions) &&
     userPermissions.includes('EMPLOYEES_WRITE') &&
     userPermissions.includes('HR_WRITE');
-  const activeCompany = companies?.find((c: any) => c.id === companyId);
+  const activeCompany = (companies as HrProfileCompanyRef[] | undefined)?.find((c) => c.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
   const [showAdvance, setShowAdvance] = useState(false);
-  const [careerModal, setCareerModal] = useState<any>(null);
-  const [editRaiseMovement, setEditRaiseMovement] = useState<any>(null);
-  const [docModal, setDocModal] = useState<any>(null);
+  const [careerModal, setCareerModal] = useState<'movement' | 'promotion' | 'raise' | null>(null);
+  const [editRaiseMovement, setEditRaiseMovement] = useState<HrProfileRecord | null>(null);
+  const [docModal, setDocModal] = useState<'salary' | 'contract' | 'settlement' | null>(null);
   const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
-  const [editProfileLeave, setEditProfileLeave] = useState<any>(null);
-  const [editProfileResidency, setEditProfileResidency] = useState<any>(null);
+  const [editProfileLeave, setEditProfileLeave] = useState<HrProfileRecord | null>(null);
+  const [editProfileResidency, setEditProfileResidency] = useState<HrProfileRecord | null>(null);
   const [profileServiceAdd, setProfileServiceAdd] = useState<{ category: string } | null>(null);
-  const docFileRef = React.useRef<any>(null);
+  const docFileRef = React.useRef<HTMLInputElement | null>(null);
 
   const { data: employee, isLoading, error } = useEmployee(id, companyId);
   const { createAdvance } = useEmployees(companyId, { includeTerminated: true });
@@ -97,7 +125,7 @@ export default function EmployeeProfileScreen() {
     data: compensationSnapshot,
     isLoading: isCompensationSnapshotLoading,
     error: compensationSnapshotError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrProfileCompensationSnapshot>({
     queryKey: hrKeys.compensationSnapshot(companyId, id),
     queryFn: async () => {
       if (!id) throw new Error('Employee id is required.');
@@ -111,34 +139,34 @@ export default function EmployeeProfileScreen() {
   const residencyProfileStatusMap = useMemo(() => buildResidencyRecordStatusMap(t), [t]);
   const payrollRunStatusMap = useMemo(() => buildPayrollRunStatusMap(t), [t]);
 
-  const { data: leaves = [], error: leavesError } = useApiListQuery<any>({
+  const { data: leaves = [], error: leavesError } = useApiListQuery<HrProfileRecord>({
     queryKey: hrKeys.leavesByEmployee(companyId, id),
     queryFn: () => getLeaves(companyId, id),
     fallbackMessage: 'فشل تحميل إجازات الموظف',
     enabled: !!companyId && !!id,
   });
 
-  const { data: residencies = [], error: residenciesError } = useApiListQuery<any>({
+  const { data: residencies = [], error: residenciesError } = useApiListQuery<HrProfileRecord>({
     queryKey: hrKeys.residenciesByEmployee(companyId, id),
     queryFn: () => getResidencies(companyId, id),
     fallbackMessage: 'فشل تحميل خدمات الموظف',
     enabled: !!companyId && !!id,
   });
 
-  const { data: documents = [], error: documentsError } = useApiListQuery<any, any[]>({
+  const { data: documents = [], error: documentsError } = useApiListQuery<HrProfileRecord, HrProfileRecord[]>({
     queryKey: hrKeys.documents(companyId, id),
     queryFn: () => getDocuments(companyId, id),
     fallbackMessage: 'فشل تحميل مستندات الموظف',
     select: (items) =>
-      [...items].sort((a: any, b: any) => {
-        const ad = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
-        const bd = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
+      [...items].sort((a, b) => {
+        const ad = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const bd = new Date(b.updatedAt || b.createdAt || 0).getTime();
         return bd - ad;
       }),
     enabled: !!companyId && !!id,
   });
 
-  const { data: hrInvoicesData, error: hrInvoicesError } = useApiQuery<{ items: any[] }>({
+  const { data: hrInvoicesData, error: hrInvoicesError } = useApiQuery<{ items: HrProfileRecord[] }>({
     queryKey: invoiceKeys.hrAllForEmployee(companyId, id),
     queryFn: async () => {
       const [advRes, hrRes, salRes] = await Promise.all([
@@ -146,11 +174,11 @@ export default function EmployeeProfileScreen() {
         getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'hr_expense', undefined, undefined, undefined, undefined, undefined, undefined, undefined, false),
         getInvoices(companyId, undefined, undefined, 1, 100, null, id, 'salary', undefined, undefined, undefined, undefined, undefined, undefined, undefined, false),
       ]);
-      const items = [];
+      const items: HrProfileRecord[] = [];
       items.push(
-        ...unwrapApiList<any>(advRes, 'فشل تحميل سلف الموظف').filter((i: any) => i.kind === 'advance' && i.status !== 'cancelled'),
-        ...unwrapApiList<any>(hrRes, 'فشل تحميل مصروفات HR للموظف').filter((i: any) => i.kind === 'hr_expense' && i.status !== 'cancelled'),
-        ...unwrapApiList<any>(salRes, 'فشل تحميل رواتب الموظف').filter((i: any) => i.kind === 'salary' && i.status !== 'cancelled'),
+        ...unwrapApiList<HrProfileRecord>(advRes, 'فشل تحميل سلف الموظف').filter((i) => i.kind === 'advance' && i.status !== 'cancelled'),
+        ...unwrapApiList<HrProfileRecord>(hrRes, 'فشل تحميل مصروفات HR للموظف').filter((i) => i.kind === 'hr_expense' && i.status !== 'cancelled'),
+        ...unwrapApiList<HrProfileRecord>(salRes, 'فشل تحميل رواتب الموظف').filter((i) => i.kind === 'salary' && i.status !== 'cancelled'),
       );
       return { success: true, data: { items } };
     },
@@ -158,14 +186,14 @@ export default function EmployeeProfileScreen() {
     fallbackMessage: 'فشل تحميل فواتير الموظف',
   });
 
-  const { data: deductions = [], error: deductionsError } = useApiListQuery<any>({
+  const { data: deductions = [], error: deductionsError } = useApiListQuery<HrProfileRecord>({
     queryKey: hrKeys.deductions(companyId, id),
     queryFn: () => getDeductions(companyId, id),
     fallbackMessage: 'فشل تحميل خصومات الموظف',
     enabled: !!companyId && !!id,
   });
 
-  const { data: movements = [], error: movementsError } = useApiListQuery<any>({
+  const { data: movements = [], error: movementsError } = useApiListQuery<HrProfileRecord>({
     queryKey: hrKeys.movementsByEmployee(companyId, id),
     queryFn: () => getMovements(companyId, id),
     fallbackMessage: 'فشل تحميل حركات الموظف',
@@ -185,14 +213,14 @@ export default function EmployeeProfileScreen() {
     mutationFn: ({ serviceId, voidInvoice }: { serviceId: string; voidInvoice?: boolean }) =>
       deleteResidency(serviceId, companyId, !!voidInvoice),
     successToast: () => t('hrServiceDeleted'),
-    errorToast: (e: any) => e?.message || t('saveFailed'),
+    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
     onSuccess: () => {
       setEditProfileResidency(null);
       invalidateAll();
     },
   });
 
-  const handleDeleteService = (row: any) => {
+  const handleDeleteService = (row: HrProfileRecord) => {
     const msg = row.invoiceId
       ? t('deleteHrServiceWithInvoice')
       : t('deleteHrServiceConfirm');
@@ -200,17 +228,17 @@ export default function EmployeeProfileScreen() {
     deleteServiceMutation.mutate({ serviceId: row.id, voidInvoice: !!row.invoiceId });
   };
 
-  const openProfileResidency = (rowOrId: any) => {
+  const openProfileResidency = (rowOrId: string | HrProfileRecord) => {
     const target = typeof rowOrId === 'string'
-      ? residencies.find((r: any) => r.id === rowOrId)
+      ? residencies.find((r) => r.id === rowOrId)
       : rowOrId;
     if (target) setEditProfileResidency(target);
   };
 
   const permanentDeleteEmployeeMut = useApiMutation({
-    mutationFn: ({ empId }: any) => deleteEmployee(empId, companyId),
+    mutationFn: ({ empId }: { empId: string }) => deleteEmployee(empId, companyId),
     successToast: () => t('employeeDeletedPermanent'),
-    errorToast: (e: any) => e?.message || t('updateFailed'),
+    errorToast: (e: unknown) => getErrorMessage(e, t('updateFailed')),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id, companyId) });
       queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
@@ -244,7 +272,7 @@ export default function EmployeeProfileScreen() {
   const deleteRaiseMut = useApiMutation({
     mutationFn: (movementId: string) => deleteRaiseMovement(movementId, companyId),
     successToast: () => t('careerRaiseDeleted'),
-    errorToast: (e: any) => e?.message || t('saveFailed'),
+    errorToast: (e: unknown) => getErrorMessage(e, t('saveFailed')),
     onSuccess: () => {
       setEditRaiseMovement(null);
       invalidateAll();
@@ -252,7 +280,7 @@ export default function EmployeeProfileScreen() {
   });
 
   const handleEditRaise = (row: { id?: string }) => {
-    const movement = movements.find((m: any) => m.id === row.id);
+    const movement = movements.find((m) => m.id === row.id);
     if (movement?.movementType === 'raise') setEditRaiseMovement(movement);
   };
 
@@ -261,8 +289,8 @@ export default function EmployeeProfileScreen() {
     deleteRaiseMut.mutate(row.id);
   };
 
-  const handleUploadDoc = async (e: any) => {
-    const file = e?.target?.files?.[0];
+  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file || !id || !companyId) return;
     setUploading(true);
     try {
@@ -275,19 +303,19 @@ export default function EmployeeProfileScreen() {
       throwIfApiFailed(res, t('saveFailed'));
       invalidateAll();
       showToast(t('documentUploaded'), 'success');
-    } catch (err: any) {
-      showToast(err?.message || t('saveFailed'), 'error');
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err, t('saveFailed')), 'error');
     } finally {
       setUploading(false);
       if (docFileRef.current) docFileRef.current.value = '';
     }
   };
 
-  const handleDownloadDoc = async (docId: any) => {
+  const handleDownloadDoc = async (docId: string) => {
     try {
       await downloadDocument(docId, companyId);
-    } catch (err: any) {
-      showToast(err?.message || 'فشل التحميل', 'error');
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err, 'فشل التحميل'), 'error');
     }
   };
 
@@ -324,11 +352,12 @@ export default function EmployeeProfileScreen() {
     archived: { color: 'gray', label: t('statusArchived') },
     on_leave: { color: 'amber', label: t('statusOnLeave') },
   };
-  const canShowCareerActions = canRecordCareer && ['active', 'on_leave'].includes(employee.status);
+  const employeeStatus = String(employee.status ?? '');
+  const canShowCareerActions = canRecordCareer && ['active', 'on_leave'].includes(employeeStatus);
 
   const total = compensationSnapshot.salaryPackage.total;
   const salaryRows = buildSalaryRows(compensationSnapshot, t);
-  const advances = normalizeAdvances(compensationSnapshot.advances.items ?? []);
+  const advances = normalizeAdvances(compensationSnapshot.advances?.items ?? []);
   const payrollItems = compensationSnapshot.payrollItems ?? [];
 
   return (
@@ -461,7 +490,7 @@ export default function EmployeeProfileScreen() {
           kind={editRaiseMovement ? 'raise' : careerModal}
           employee={employee}
           companyId={companyId}
-          customAllowanceTotal={compensationSnapshot.customAllowances.total}
+          customAllowanceTotal={compensationSnapshot.customAllowances?.total ?? 0}
           currentTotalAllIn={compensationSnapshot.salaryPackage.total}
           editMovement={editRaiseMovement}
           onClose={() => {

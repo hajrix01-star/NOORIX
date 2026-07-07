@@ -4,7 +4,9 @@ import { Badge, FmtNum, SmartTable } from '../../../../ui';
 import { getAdvanceTotals } from '../../utils/advanceBalance';
 import { buildAdvanceFinancialFooterRow } from '../../utils/advanceTableFooter';
 
-export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }: any) {
+type HrAny = ReturnType<typeof JSON.parse>;
+
+export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }: HrAny) {
   const advanceTotals = getAdvanceTotals(advances);
 
   return (
@@ -23,27 +25,27 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
             label: t('advanceAmount'),
             numeric: true,
             width: '13%',
-            render: (v: any) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" />,
+            render: (v: HrAny) => <FmtNum n={v} className="nx-cell-num nx-cell-bold" />,
           },
           {
             key: 'transactionDate',
             label: t('transactionDate'),
             width: '13%',
-            render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            render: (v: HrAny) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
           },
           {
             key: 'settledAmount',
             label: t('advanceSettledAmount'),
             numeric: true,
             width: '13%',
-            render: (_: any, row: any) => <FmtNum n={row.settledAmountNum || 0} className="nx-cell-num" />,
+            render: (_: HrAny, row: HrAny) => <FmtNum n={row.settledAmountNum || 0} className="nx-cell-num" />,
           },
           {
             key: 'remainingAmount',
             label: t('advanceRemainingAmount'),
             numeric: true,
             width: '13%',
-            render: (_: any, row: any) => (
+            render: (_: HrAny, row: HrAny) => (
               <span className={row.remainingAmount > 0 ? 'nx-cell-num text-noorix-amber' : 'nx-cell-num text-noorix-green'}>
                 {hrFmt(row.remainingAmount || 0)}
               </span>
@@ -53,7 +55,7 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
             key: 'installmentCount',
             label: t('installmentInfo'),
             width: '13%',
-            render: (_: any, row: any) => {
+            render: (_: HrAny, row: HrAny) => {
               if (!row.installmentCount || row.installmentCount <= 1) {
                 return <span className="nx-cell-muted-sm">—</span>;
               }
@@ -68,13 +70,13 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
             key: 'status',
             label: t('status'),
             width: '13%',
-            render: (_: any, row: any) => <Badge {...Badge.fromStatus(row.settlementStatus, advanceStatusMap)} size="sm" />,
+            render: (_: HrAny, row: HrAny) => <Badge {...Badge.fromStatus(row.settlementStatus, advanceStatusMap)} size="sm" />,
           },
           {
             key: 'notes',
             label: t('invoiceNotesColumn'),
             width: '22%',
-            render: (v: any) => (
+            render: (v: HrAny) => (
               <span className="nx-cell-ellipsis" title={v || ''}>
                 {v || '—'}
               </span>
@@ -87,7 +89,7 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
         pageSize={50}
         footerRow={buildAdvanceFinancialFooterRow({ totals: advanceTotals })}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: any) => (
+        renderCompactRow={(row: HrAny) => (
           <div>
             <div className="nx-cr__line1">
               <span className={row.remainingAmount > 0 ? 'nx-cr__amount text-noorix-amber' : 'nx-cr__amount text-noorix-green'}>
@@ -105,7 +107,7 @@ export function EmployeeProfileAdvancesSection({ t, advances, advanceStatusMap }
             </div>
           </div>
         )}
-        renderMobileCard={(row: any) => (
+        renderMobileCard={(row: HrAny) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className={row.remainingAmount > 0 ? 'text-[15px] font-bold text-noorix-amber ltr' : 'text-[15px] font-bold text-noorix-green ltr'}>

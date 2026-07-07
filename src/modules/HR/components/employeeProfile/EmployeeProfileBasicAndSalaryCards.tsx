@@ -4,8 +4,30 @@ import { hrFmt } from '../../utils/hrFmt';
 import { Badge } from '../../../../ui';
 import { ProfileInfoRow } from './ProfileInfoRow';
 import { getInitials } from './employeeProfileModel';
+import type { HrEmployee } from '../../../../types/api';
 
-export function EmployeeProfileBasicInfoCard({ employee, lang, empStatusMap, t }: any) {
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+type EmployeeProfileEmployee = HrEmployee & {
+  terminationDate?: string | null;
+};
+type SalaryRow = {
+  label: string;
+  amount: number;
+  strong?: boolean;
+  total?: boolean;
+};
+
+export function EmployeeProfileBasicInfoCard({
+  employee,
+  lang,
+  empStatusMap,
+  t,
+}: {
+  employee: EmployeeProfileEmployee;
+  lang: string;
+  empStatusMap: Record<string, unknown>;
+  t: TranslationFn;
+}) {
   return (
     <div className="noorix-surface-card p-4 md:p-6">
       <div className="flex items-start gap-4 mb-5">
@@ -40,7 +62,15 @@ export function EmployeeProfileBasicInfoCard({ employee, lang, empStatusMap, t }
   );
 }
 
-export function EmployeeProfileSalaryCard({ t, salaryRows, total }: any) {
+export function EmployeeProfileSalaryCard({
+  t,
+  salaryRows,
+  total,
+}: {
+  t: TranslationFn;
+  salaryRows: SalaryRow[];
+  total: number;
+}) {
   return (
     <div className="noorix-surface-card p-4 md:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 mb-4">
@@ -52,8 +82,8 @@ export function EmployeeProfileSalaryCard({ t, salaryRows, total }: any) {
       </div>
       <div className="border border-noorix-border rounded-xl overflow-hidden">
         {salaryRows
-          .filter((r: any) => !r.total)
-          .map((row: any, idx: any) => (
+          .filter((r) => !r.total)
+          .map((row, idx) => (
             <div key={`${row.label}-${idx}`} className="employee-profile-salary-row">
               <div
                 className={

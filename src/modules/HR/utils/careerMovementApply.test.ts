@@ -17,7 +17,7 @@ describe('careerMovementApply', () => {
   });
 
   it('applies raises from the central salary package total', async () => {
-    vi.mocked(createMovement).mockResolvedValue({ success: true, data: {} } as never);
+    vi.mocked(createMovement).mockResolvedValue({ success: true, data: {} });
 
     const result = await applyCareerRaise({
       employee: {

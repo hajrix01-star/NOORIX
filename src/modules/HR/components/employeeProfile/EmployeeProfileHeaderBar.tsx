@@ -1,5 +1,17 @@
 import { Button } from '../../../../ui';
 
+type EmployeeProfileHeaderBarProps = {
+  t: (key: string) => string;
+  onBack: () => void;
+  onSalaryCert: () => void;
+  onContract: () => void;
+  onSettlement: () => void;
+  onPayAdvance: () => void;
+  onPermanentDelete: () => void;
+  canDelete: boolean;
+  canPayAdvance: boolean;
+};
+
 export function EmployeeProfileHeaderBar({
   t,
   onBack,
@@ -10,7 +22,7 @@ export function EmployeeProfileHeaderBar({
   onPermanentDelete,
   canDelete,
   canPayAdvance,
-}: any) {
+}: EmployeeProfileHeaderBarProps) {
   return (
     <div className="nx-page-header employee-profile-header-bar">
       <Button size="sm" onClick={onBack}>

@@ -21,6 +21,7 @@ import {
   parseDeferredMonth,
 } from '../utils/payrollRunMappers';
 import type { PayrollRunLineItem } from '../types';
+import type { HrCompensationSnapshot } from '../../../../../types/api';
 import { computePayrollLineNet } from '../../../utils/hrCalculations/payroll';
 
 type StateShape = {
@@ -50,9 +51,15 @@ type StateShape = {
     }>;
   } | undefined;
   monthStr: string;
-  compensationSnapshotByEmployeeId: Map<string, any>;
-  advances: unknown[];
-  leaves: unknown[];
+  compensationSnapshotByEmployeeId: Map<string, HrCompensationSnapshot>;
+  advances: Array<Record<string, unknown>>;
+  leaves: Array<{
+    employeeId?: string;
+    status?: string;
+    leaveType?: string;
+    startDate?: string | Date;
+    endDate?: string | Date;
+  }>;
   leaveSalarySettlements: Array<{ employeeId?: string }>;
 };
 
@@ -95,7 +102,7 @@ export function usePayrollRunRows(state: StateShape) {
   const activeEmployees = useMemo(() => computeActiveEmployees(employees), [employees]);
 
   const leaveDaysByEmployee = useMemo(
-    () => computeUnpaidLeaveDaysByEmployee(leaves as never[], payrollMonth, defaultMonth),
+    () => computeUnpaidLeaveDaysByEmployee(leaves, payrollMonth, defaultMonth),
     [leaves, payrollMonth, defaultMonth],
   );
 
@@ -125,7 +132,7 @@ export function usePayrollRunRows(state: StateShape) {
   const totalNet = useMemo(() => computeTotalNet(items), [items]);
 
   const advancesByEmployee = useMemo(
-    () => buildAdvancesByEmployee(advances as never[], monthStr),
+    () => buildAdvancesByEmployee(advances, monthStr),
     [advances, monthStr],
   );
 
@@ -172,7 +179,7 @@ export function usePayrollRunRows(state: StateShape) {
   const loadEditingItems = useCallback(() => {
     if (!editingRun) return;
     const loadedMonth = editingRun.payrollMonth ? toYmd(editingRun.payrollMonth) : defaultMonth;
-    const loadedAdvancesByEmployee = buildAdvancesByEmployee(advances as never[], loadedMonth);
+    const loadedAdvancesByEmployee = buildAdvancesByEmployee(advances, loadedMonth);
     setPayrollMonth(loadedMonth);
     setNotes(editingRun.notes || '');
     const loadedItems = (editingRun.items || []).map((row) => {

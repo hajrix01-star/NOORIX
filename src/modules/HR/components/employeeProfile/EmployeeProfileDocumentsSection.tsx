@@ -1,5 +1,21 @@
 import { Button, FileInput, SmartTable } from '../../../../ui';
 
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+type ProfileDocumentRow = {
+  id?: string | null;
+  fileName?: string | null;
+  documentType?: string | null;
+};
+type EmployeeProfileDocumentsSectionProps = {
+  t: TranslationFn;
+  documents: ProfileDocumentRow[];
+  uploading: boolean;
+  fileInputRef: React.Ref<HTMLInputElement>;
+  onFileChange: React.ChangeEventHandler<HTMLInputElement>;
+  onPickFile: () => void;
+  onDownload: (id: string) => void;
+};
+
 export function EmployeeProfileDocumentsSection({
   t,
   documents,
@@ -8,7 +24,7 @@ export function EmployeeProfileDocumentsSection({
   onFileChange,
   onPickFile,
   onDownload,
-}: any) {
+}: EmployeeProfileDocumentsSectionProps) {
   return (
     <div className="noorix-surface-card overflow-hidden">
       <div className="nx-section-header">
@@ -35,7 +51,7 @@ export function EmployeeProfileDocumentsSection({
             key: 'fileName',
             label: t('documentType') || 'المستند',
             width: '75%',
-            render: (v: any, row: any) => (
+            render: (_v: unknown, row: ProfileDocumentRow) => (
               <span className="nx-cell-ellipsis" title={row.fileName || row.documentType || ''}>
                 {row.fileName || row.documentType || 'مستند'}
               </span>
@@ -46,8 +62,8 @@ export function EmployeeProfileDocumentsSection({
             label: t('actions'),
             width: '24%',
             align: 'center',
-            render: (_: any, row: any) => (
-              <Button size="sm" onClick={() => onDownload(row.id)}>
+            render: (_: unknown, row: ProfileDocumentRow) => (
+              <Button size="sm" disabled={!row.id} onClick={() => row.id && onDownload(row.id)}>
                 {t('download')}
               </Button>
             ),
@@ -58,7 +74,7 @@ export function EmployeeProfileDocumentsSection({
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: any) => (
+        renderCompactRow={(row: ProfileDocumentRow) => (
           <div>
             <div className="nx-cr__line1">
               <span className="nx-cr__name">{row.fileName || row.documentType || 'مستند'}</span>
@@ -67,13 +83,13 @@ export function EmployeeProfileDocumentsSection({
               <div className="nx-cr__line2-start" />
               <div className="nx-cr__line2-end">
                 <div onClick={(e) => e.stopPropagation()}>
-                  <Button size="sm" onClick={() => onDownload(row.id)}>{t('download')}</Button>
+                  <Button size="sm" disabled={!row.id} onClick={() => row.id && onDownload(row.id)}>{t('download')}</Button>
                 </div>
               </div>
             </div>
           </div>
         )}
-        renderMobileCard={(row: any) => (
+        renderMobileCard={(row: ProfileDocumentRow) => (
           <div className="flex flex-col gap-2">
             <div>
               <div className="nx-mc__stat-label">{t('documentType')}</div>
@@ -85,7 +101,8 @@ export function EmployeeProfileDocumentsSection({
               <Button
                 size="sm"
                 className="min-h-[44px] sm:min-h-0"
-                onClick={() => onDownload(row.id)}
+                disabled={!row.id}
+                onClick={() => row.id && onDownload(row.id)}
               >
                 {t('download')}
               </Button>

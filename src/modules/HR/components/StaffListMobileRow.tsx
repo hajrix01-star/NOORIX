@@ -3,13 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { Badge, cn, FmtNum, KebabMenu } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
+import type { HrEmployee } from '../../../types/api';
+
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+type StaffMobileRow = HrEmployee & {
+  totalSalary?: number | null;
+};
+type StaffMenuItem = {
+  key: string;
+  label: string;
+  onClick: () => void;
+  style?: React.CSSProperties;
+};
 
 type StaffListMobileRowProps = {
-  row: any;
+  row: StaffMobileRow;
   lang: string;
-  t: (key: string, ...args: any[]) => string;
-  statusMap: Record<string, any>;
-  renderMenuItems: (row: any) => any[];
+  t: TranslationFn;
+  statusMap: Record<string, unknown>;
+  renderMenuItems: (row: StaffMobileRow) => StaffMenuItem[];
 };
 
 export function StaffListMobileRow({

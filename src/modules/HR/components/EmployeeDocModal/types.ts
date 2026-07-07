@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import type { HrCompensationSnapshot } from '../../../../types/api';
 
 /** كائن يشبه نافذة الطباعة — الحقول قابلة للتعيين بعد `openPrintWindow` الداخلي */
 export type PrintWindowStub = {
@@ -10,7 +11,7 @@ export type PrintWindowStub = {
 
 export type EmployeeDocModalBaseProps = {
   employee: Record<string, unknown>;
-  compensationSnapshot: Record<string, any>;
+  compensationSnapshot: HrCompensationSnapshot;
   companyId?: string;
   companyName?: string;
   companyLogo?: string;

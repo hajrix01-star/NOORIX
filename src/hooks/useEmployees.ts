@@ -10,13 +10,14 @@ import {
 import { createAdvance } from '../services/api';
 import { invalidateOnFinancialMutation } from '../utils/queryInvalidation';
 import { employeeKeys, invoiceKeys, vaultKeys } from '../services/queryKeys';
+import type { HrEmployee, HrMutationPayload } from '../types/api';
 
 export type UseEmployeesOpts = { includeTerminated?: boolean; fetchEnabled?: boolean };
 
 export function useEmployees(companyId: string, { includeTerminated = false, fetchEnabled = true }: UseEmployeesOpts = {}) {
   const queryClient = useQueryClient();
 
-  const { data: employees = [], isLoading } = useApiListQuery<any>({
+  const { data: employees = [], isLoading } = useApiListQuery<HrEmployee>({
     queryKey: employeeKeys.list(companyId, includeTerminated),
     queryFn: () => getEmployees(companyId, includeTerminated),
     fallbackMessage: 'Failed to load employees',
@@ -35,7 +36,7 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }: any) => updateEmployee(id, body, companyId),
+    mutationFn: ({ id, body }: { id: string; body: HrMutationPayload }) => updateEmployee(id, body, companyId),
     invalidateQueries: [
       employeeKeys.byCompany(companyId),
       employeeKeys.pagedByCompany(companyId),
@@ -66,11 +67,13 @@ export function useEmployees(companyId: string, { includeTerminated = false, fet
   };
 }
 
-export function useEmployee(id: any, companyId: any) {
-  return useApiQuery<any>({
-    queryKey: employeeKeys.detail(id, companyId),
-    queryFn: () => getEmployee(id, companyId),
+export function useEmployee(id: string | null | undefined, companyId: string | null | undefined) {
+  const employeeId = id ?? '';
+  const activeCompanyId = companyId ?? '';
+  return useApiQuery<HrEmployee>({
+    queryKey: employeeKeys.detail(employeeId, activeCompanyId),
+    queryFn: () => getEmployee(employeeId, activeCompanyId),
     fallbackMessage: 'Failed to load employee',
-    enabled: !!id && !!companyId,
+    enabled: !!employeeId && !!activeCompanyId,
   });
 }

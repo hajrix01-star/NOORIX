@@ -14,6 +14,12 @@ import { formatMoneyForReport } from '../utils/hrQuickEntryFormatters';
 import { employeeDisplayName } from '../../../../../utils/employeeDisplayName';
 
 type TFn = (key: string, ...subst: string[]) => string;
+type HrQuickEntryCompensationSnapshot = {
+  salaryPackage?: {
+    total?: unknown;
+    customAllowanceTotal?: unknown;
+  };
+};
 
 type StateSlice = {
   advEmp: string;
@@ -59,7 +65,7 @@ export function useHrQuickEntryActions(args: {
   submitting: boolean;
   activeEmployees: EmployeeOption[];
   employees: Array<Record<string, unknown> & { id?: string }>;
-  compensationSnapshotByEmployeeId: Map<string, any>;
+  compensationSnapshotByEmployeeId: Map<string, HrQuickEntryCompensationSnapshot>;
   vaults: Array<{ id?: string; nameAr?: string; nameEn?: string }>;
   st: StateSlice;
   advMut: MutRef;

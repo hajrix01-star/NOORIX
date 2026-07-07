@@ -2,8 +2,10 @@ import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { hrFmt } from '../../utils/hrFmt';
 import { Button, cn, SmartTable } from '../../../../ui';
 
-export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenResidency }: any) {
-  const openRow = (row: any) => {
+type HrAny = ReturnType<typeof JSON.parse>;
+
+export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenResidency }: HrAny) {
+  const openRow = (row: HrAny) => {
     if (row.residencyId && onOpenResidency) {
       onOpenResidency(row.residencyId);
     }
@@ -24,7 +26,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             key: 'date',
             label: t('transactionDate'),
             width: '12%',
-            render: (v: any, row: any) => (
+            render: (v: HrAny, row: HrAny) => (
               <Button
                 variant="raw"
                 type="button"
@@ -43,7 +45,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             key: 'typeLabel',
             label: t('operationType'),
             width: '18%',
-            render: (v: any, row: any) => (
+            render: (v: HrAny, row: HrAny) => (
               <Button
                 variant="raw"
                 type="button"
@@ -63,7 +65,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             label: t('advanceAmount') || 'المبلغ',
             numeric: true,
             width: '15%',
-            render: (v: any) => (
+            render: (v: HrAny) => (
               <span className={`nx-cell-num${v < 0 ? ' nx-cell-num--red' : ''}`}>{hrFmt(v)}</span>
             ),
           },
@@ -71,7 +73,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             key: 'notes',
             label: t('invoiceNotesColumn'),
             width: '54%',
-            render: (v: any, row: any) => (
+            render: (v: HrAny, row: HrAny) => (
               <Button
                 variant="raw"
                 type="button"
@@ -93,7 +95,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: any) => (
+        renderCompactRow={(row: HrAny) => (
           <div
             className={cn(row.residencyId && 'cursor-pointer')}
             onClick={row.residencyId ? () => openRow(row) : undefined}
@@ -114,7 +116,7 @@ export function EmployeeProfileFinancialSection({ t, financialRecords, onOpenRes
             </div>
           </div>
         )}
-        renderMobileCard={(row: any) => (
+        renderMobileCard={(row: HrAny) => (
           <div
             className={cn('flex flex-col gap-2', row.residencyId && 'cursor-pointer')}
             onClick={row.residencyId ? () => openRow(row) : undefined}

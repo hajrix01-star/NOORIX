@@ -25,6 +25,13 @@ export function PayrollRunFormModal({
 
   const st = usePayrollRunFormState({ companyId, activeCompanyId, runId });
 
+  const payrollEmployees = st.employees.map((employee) => ({
+    ...employee,
+    status: employee.status || undefined,
+    name: employee.name || undefined,
+    nameAr: employee.nameAr || undefined,
+  }));
+
   const rowModel = usePayrollRunRows({
     defaultMonth: st.defaultMonth,
     payrollMonth: st.payrollMonth,
@@ -34,9 +41,9 @@ export function PayrollRunFormModal({
     items: st.items,
     isEditMode: st.isEditMode,
     runId: st.runId,
-    employees: st.employees as never[],
+    employees: payrollEmployees,
     existingRuns: st.existingRuns,
-    editingRun: st.editingRun as never,
+    editingRun: st.editingRun,
     monthStr: st.monthStr,
     compensationSnapshotByEmployeeId: st.compensationSnapshotByEmployeeId,
     advances: st.advances,

@@ -23,6 +23,7 @@ import {
   companyDisplayName,
 } from '../constants/employeeHrServiceCategories';
 import { HrServiceFormFields } from './HrServiceFormFields';
+import type { HrEmployee } from '../../../types/api';
 
 const STATUS_OPTIONS = [
   { value: 'active', labelKey: 'statusActive' },
@@ -31,8 +32,35 @@ const STATUS_OPTIONS = [
 ];
 
 const RESIDENCY_FORM_ID = 'residency-service-form';
+type ResidencyRecord = Record<string, unknown> & {
+  id?: string | null;
+  employeeId?: string | null;
+  serviceCategory?: string | null;
+  iqamaNumber?: string | null;
+  referenceLabel?: string | null;
+  issueDate?: string | Date | null;
+  expiryDate?: string | Date | null;
+  transactionDate?: string | Date | null;
+  status?: string | null;
+  notes?: string | null;
+  invoiceId?: string | null;
+  invoice?: { invoiceNumber?: string | number | null } | null;
+  residencyInvoiceAmount?: number | string | null;
+  metadata?: Record<string, unknown> | null;
+};
+type VaultOption = {
+  id?: string | null;
+  name?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+};
+type ResidencyInputChange = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
 
-function buildServiceDateDefaults(residency: any, isNew: boolean) {
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function buildServiceDateDefaults(residency: ResidencyRecord | null | undefined, isNew: boolean) {
   const today = getSaudiToday();
   return {
     transactionDate: toDateInputYmd(residency?.transactionDate) || today,
@@ -42,13 +70,13 @@ function buildServiceDateDefaults(residency: any, isNew: boolean) {
 }
 
 type ResidencyFormModalProps = {
-  residency?: any;
-  companyId: any;
+  residency?: ResidencyRecord | null;
+  companyId: string;
   defaultCategory?: string;
   defaultEmployeeId?: string;
   onSuccess?: () => void;
   onClose?: () => void;
-  onDelete?: (residency: any) => void;
+  onDelete?: (residency: ResidencyRecord) => void;
 };
 
 export function ResidencyFormModal({
@@ -92,26 +120,26 @@ export function ResidencyFormModal({
   const [error, setError] = useState('');
 
   const { paymentVaults = [] } = useVaults({ companyId: cid });
-  const vaults = paymentVaults;
+  const vaults = paymentVaults as VaultOption[];
 
-  const { data: employees = [] } = useApiListQuery<any>({
+  const { data: employees = [] } = useApiListQuery<HrEmployee>({
     queryKey: employeeKeys.list(cid, false),
     queryFn: () => getEmployees(cid, false),
     fallbackMessage: t('employeesLoadFailed'),
     enabled: !!cid,
   });
 
-  const activeEmployees = (employees || []).filter((e: any) => e.status !== 'terminated' && e.status !== 'archived');
+  const activeEmployees = (employees || []).filter((e) => e.status !== 'terminated' && e.status !== 'archived');
   const showIqama = requiresIqamaNumber(serviceCategory);
 
   const selectedEmployee = useMemo(
-    () => activeEmployees.find((e: any) => e.id === employeeId),
+    () => activeEmployees.find((e) => e.id === employeeId),
     [activeEmployees, employeeId],
   );
 
   const onEmployeeChange = (id: string) => {
     setEmployeeId(id);
-    const emp = activeEmployees.find((e: any) => e.id === id);
+    const emp = activeEmployees.find((e) => e.id === id);
     if (emp?.iqamaNumber && showIqama && !iqamaNumber) {
       setIqamaNumber(emp.iqamaNumber);
     }
@@ -213,6 +241,10 @@ export function ResidencyFormModal({
     setSubmitting(true);
     try {
       if (isEdit) {
+        if (!residency?.id) {
+          setError(t('saveFailed'));
+          return;
+        }
         const res = await updateResidency(residency.id, buildPayload(), cid);
         throwIfApiFailed(res, t('saveFailed'));
       } else {
@@ -228,8 +260,8 @@ export function ResidencyFormModal({
       }
       onSuccess?.();
       onClose?.();
-    } catch (err: any) {
-      setError(err?.message || t('saveFailed'));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t('saveFailed')));
     } finally {
       setSubmitting(false);
     }
@@ -269,7 +301,7 @@ export function ResidencyFormModal({
           type="select"
           label={t('hrServiceCategory')}
           value={serviceCategory}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setServiceCategory(e.target.value)}
+          onChange={(e: ResidencyInputChange) => setServiceCategory(e.target.value)}
           disabled={isEdit}
         >
           {HR_SERVICE_CATEGORIES.map((cat) => (
@@ -281,12 +313,12 @@ export function ResidencyFormModal({
           type="select"
           label={t('selectEmployee')}
           value={employeeId}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onEmployeeChange(e.target.value)}
+          onChange={(e: ResidencyInputChange) => onEmployeeChange(e.target.value)}
           required
           disabled={isEdit || lockEmployee}
         >
           <option value="">—</option>
-          {activeEmployees.map((emp: any) => (
+          {activeEmployees.map((emp) => (
             <option key={emp.id} value={emp.id}>{employeeDisplayName(emp, lang)}</option>
           ))}
         </Input>
@@ -316,7 +348,7 @@ export function ResidencyFormModal({
           showIqama={showIqama}
         />
 
-        {!isEdit && !residency?.invoiceId && (
+        {!isEdit && (
           <>
             <Checkbox
               checked={createInvoiceForService}
@@ -332,18 +364,18 @@ export function ResidencyFormModal({
                   min="0"
                   label={t('advanceAmount')}
                   value={invoiceAmount}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setInvoiceAmount(e.target.value)}
+                  onChange={(e: ResidencyInputChange) => setInvoiceAmount(e.target.value)}
                 />
                 <Input
                   type="select"
                   label={t('selectVault')}
                   value={vaultId}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setVaultId(e.target.value)}
+                  onChange={(e: ResidencyInputChange) => setVaultId(e.target.value)}
                   required
                 >
                   <option value="">— {t('selectVault')} —</option>
-                  {vaults.map((v: any) => (
-                    <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
+                  {vaults.map((v) => (
+                    <option key={v.id || ''} value={v.id || ''}>{vaultDisplayName(v, lang)}</option>
                   ))}
                 </Input>
               </div>
@@ -356,9 +388,9 @@ export function ResidencyFormModal({
             type="select"
             label={t('status')}
             value={status}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setStatus(e.target.value)}
+            onChange={(e: ResidencyInputChange) => setStatus(e.target.value)}
           >
-            {STATUS_OPTIONS.map((o: any) => (
+            {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
             ))}
           </Input>
@@ -379,7 +411,7 @@ export function ResidencyFormModal({
         <Input
           label={t('notes')}
           value={notes}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setNotes(e.target.value)}
+          onChange={(e: ResidencyInputChange) => setNotes(e.target.value)}
           placeholder={t('notes')}
         />
 

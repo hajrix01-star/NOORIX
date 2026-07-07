@@ -1,4 +1,5 @@
 export type HrQueryValue = string | number | boolean | null | undefined;
+export type HrEmployeeTabQuery = 'active' | 'terminated' | 'archived';
 
 export type HrQueryParams = Record<string, HrQueryValue>;
 
@@ -28,10 +29,50 @@ export function companyEmployeeQuery(companyId: string, employeeId?: string): Re
   });
 }
 
+export function companyEmployeeYearQuery(
+  companyId: string,
+  employeeId?: string,
+  year?: string | number,
+): Record<string, string> {
+  return buildHrApiQuery({
+    companyId: String(companyId ?? '').trim(),
+    employeeId: String(employeeId ?? '').trim(),
+    year,
+  });
+}
+
+export function companyEmployeeIdsQuery(companyId: string, employeeIds: readonly string[] = []): Record<string, string> {
+  return buildHrApiQuery({
+    companyId: String(companyId ?? '').trim(),
+    employeeIds: employeeIds.map((id) => String(id).trim()).filter(Boolean).join(','),
+  });
+}
+
 export function companyYearQuery(companyId: string, year?: string | number): Record<string, string> {
   return buildHrApiQuery({
     companyId: String(companyId ?? '').trim(),
     year,
+  });
+}
+
+export function companyPayrollMonthQuery(companyId: string, payrollMonth: string | number): Record<string, string> {
+  return buildHrApiQuery({
+    companyId: String(companyId ?? '').trim(),
+    payrollMonth,
+  });
+}
+
+export function companyDeleteLeaveQuery(companyId: string, voidSettlement = false): Record<string, string> {
+  return buildHrApiQuery({
+    companyId: String(companyId ?? '').trim(),
+    voidSettlement: voidSettlement || undefined,
+  });
+}
+
+export function companyDeleteResidencyQuery(companyId: string, voidInvoice = false): Record<string, string> {
+  return buildHrApiQuery({
+    companyId: String(companyId ?? '').trim(),
+    voidInvoice: voidInvoice || undefined,
   });
 }
 
@@ -47,7 +88,7 @@ export type EmployeesPagedQuerySource = {
 
 export type EmployeesPagedQueryInput = {
   companyId: string;
-  tab: string;
+  tab: HrEmployeeTabQuery;
   page: number;
   pageSize: number;
   q: string;
@@ -74,7 +115,7 @@ export function buildEmployeesPagedApiQuery(source: EmployeesPagedQuerySource): 
   return buildHrApiQuery(normalized);
 }
 
-function normalizeEmployeeTab(value: unknown): string {
+function normalizeEmployeeTab(value: unknown): HrEmployeeTabQuery {
   return value === 'terminated' || value === 'archived' ? value : 'active';
 }
 

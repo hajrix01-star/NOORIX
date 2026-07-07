@@ -39,10 +39,11 @@ import { HrPrintEosPanel } from './HrPrintEosPanel';
 import { HrPrintPreviewPanel } from './HrPrintPreviewPanel';
 import { HrPrintDocumentsTabToolbar } from './HrPrintDocumentsTabToolbar';
 import { HR_TOOLS_ROOT_CLASS } from '../hrWorkspaceLayout';
+import type { HrCompensationSnapshot } from '../../../types/api';
 
 type HrCustomAllowanceRow = {
-  id: string;
-  employeeId: string;
+  id?: string | null;
+  employeeId?: string | null;
   nameAr?: string | null;
   nameEn?: string | null;
   amount?: number | string | null;
@@ -72,7 +73,7 @@ export default function HrPrintDocumentsTab() {
     data: compensationSnapshot,
     isLoading: compensationSnapshotLoading,
     error: compensationSnapshotError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrCompensationSnapshot>({
     queryKey: hrKeys.compensationSnapshot(companyId, employeeId),
     queryFn: () => getEmployeeCompensationSnapshot(companyId, employeeId),
     enabled: !!companyId && !!employeeId,
@@ -97,13 +98,17 @@ export default function HrPrintDocumentsTab() {
 
   const eosWageTotal =
     n(eos.basic) + n(eos.housing) + n(eos.transport) + n(eos.other) +
-    (eos.customRows || []).reduce((sum: number, row: any) => sum + n(row.amount), 0);
+    (eos.customRows || []).reduce((sum: number, row: HrPayrollCustomRow) => sum + n(row.amount), 0);
 
   const importPayroll = useCallback(() => {
     if (!emp || !compensationSnapshot?.salaryPackage) return;
     const salaryPackage = compensationSnapshot.salaryPackage;
     const customRows = (compensationSnapshot.customAllowances?.items || [])
-      .map((a: HrCustomAllowanceRow) => ({ key: a.id, label: a.nameAr || a.nameEn || t('customAllowanceName'), amount: String(n(a.amount)) }));
+      .map((a: HrCustomAllowanceRow, index) => ({
+        key: a.id || `custom-${index}`,
+        label: a.nameAr || a.nameEn || t('customAllowanceName'),
+        amount: String(n(a.amount)),
+      }));
     const totStr = String(n(salaryPackage.total));
     setPayroll({
       ...emptyPayrollDraft(),
@@ -113,7 +118,7 @@ export default function HrPrintDocumentsTab() {
       companyNameEn: companyNameEnDefault,
       nameAr: String(emp.nameAr || emp.name || '').trim(),
       nameEn: String(emp.nameEn || '').trim(),
-      employeeSerial: emp.employeeSerial || '',
+      employeeSerial: String(emp.employeeSerial || ''),
       jobTitle: emp.jobTitle || '',
       iqama: emp.iqamaNumber || '',
       joinDate: toYmd(emp.joinDate),
@@ -141,14 +146,18 @@ export default function HrPrintDocumentsTab() {
     if (!emp || !compensationSnapshot?.salaryPackage) return;
     const salaryPackage = compensationSnapshot.salaryPackage;
     const customRows = (compensationSnapshot.customAllowances?.items || [])
-      .map((a: HrCustomAllowanceRow) => ({ key: a.id, label: a.nameAr || a.nameEn || t('customAllowanceName'), amount: String(n(a.amount)) }));
+      .map((a: HrCustomAllowanceRow, index) => ({
+        key: a.id || `custom-${index}`,
+        label: a.nameAr || a.nameEn || t('customAllowanceName'),
+        amount: String(n(a.amount)),
+      }));
     setEos({
       ...emptyEosDraft(),
       companyName: companyNameArDefault,
       companyNameEn: companyNameEnDefault,
       nameAr: String(emp.nameAr || emp.name || '').trim(),
       nameEn: String(emp.nameEn || '').trim(),
-      employeeSerial: emp.employeeSerial || '',
+      employeeSerial: String(emp.employeeSerial || ''),
       jobTitle: emp.jobTitle || '',
       iqama: emp.iqamaNumber || '',
       joinDate: toYmd(emp.joinDate),

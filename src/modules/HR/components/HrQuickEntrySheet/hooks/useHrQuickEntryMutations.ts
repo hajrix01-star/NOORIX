@@ -8,6 +8,10 @@ import { invalidateHrQueries } from '../utils/hrQuickEntryInvalidation';
 import { applyCareerPromotion, applyCareerRaise } from '../../../utils/careerMovementApply';
 import type { HrQuickEntryRecordedPayload } from '../types';
 
+function payloadRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : {};
+}
+
 type Deps = {
   companyId: string;
   onCloseRef: MutableRefObject<(() => void) | undefined>;
@@ -51,7 +55,17 @@ export function useHrQuickEntryMutations({
   const advMut = useApiMutation({
     mutationFn: async (arg: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
       const p = (arg as { payload?: unknown })?.payload ?? arg;
-      return createAdvance(p as never);
+      const payload = payloadRecord(p);
+      return createAdvance({
+        employeeId: String(payload.employeeId || ''),
+        companyId: String(payload.companyId || companyId),
+        vaultId: String(payload.vaultId || ''),
+        amount: Number(payload.amount || 0),
+        transactionDate: payload.transactionDate ? String(payload.transactionDate) : undefined,
+        notes: payload.notes ? String(payload.notes) : undefined,
+        installmentCount: payload.installmentCount ? Number(payload.installmentCount) : undefined,
+        installmentAmount: payload.installmentAmount ? Number(payload.installmentAmount) : undefined,
+      });
     },
     showErrorToast: false,
     onSuccess: (_: unknown, variables: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
@@ -65,7 +79,7 @@ export function useHrQuickEntryMutations({
   const leaveMut = useApiMutation({
     mutationFn: async (arg: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
       const body = (arg as { payload?: unknown })?.payload ?? arg;
-      return createLeave(body as never);
+      return createLeave(payloadRecord(body));
     },
     showErrorToast: false,
     onSuccess: (_: unknown, variables: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
@@ -78,7 +92,7 @@ export function useHrQuickEntryMutations({
   const dedMut = useApiMutation({
     mutationFn: async (arg: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
       const body = (arg as { payload?: unknown })?.payload ?? arg;
-      return createDeduction(body as never);
+      return createDeduction(payloadRecord(body));
     },
     showErrorToast: false,
     onSuccess: (_: unknown, variables: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
@@ -113,7 +127,7 @@ export function useHrQuickEntryMutations({
           notes: body.notes ? String(body.notes) : undefined,
         });
       }
-      return createMovement(body as never);
+      return createMovement(body);
     },
     showErrorToast: false,
     onSuccess: (_: unknown, variables: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
@@ -129,7 +143,7 @@ export function useHrQuickEntryMutations({
   const alMut = useApiMutation({
     mutationFn: async (arg: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {
       const body = (arg as { payload?: unknown })?.payload ?? arg;
-      return createCustomAllowance(body as never);
+      return createCustomAllowance(payloadRecord(body));
     },
     showErrorToast: false,
     onSuccess: (_: unknown, variables: { payload: unknown; report: HrQuickEntryRecordedPayload }) => {

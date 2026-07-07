@@ -13,16 +13,12 @@ import {
   createInvoice,
   createMovement,
   getEmployeeCompensationSnapshot,
-  getInvoices,
-  getMovements,
-  throwIfApiFailed,
-  unwrapApiList,
+  getInvoices,
+  throwIfApiFailed,
   uploadDocumentFile,
 } from '../../../services/api';
 import { formatSaudiDate, toYmd } from '../../../utils/saudiDate';
-import { openPrintWindow } from '../../../utils/printUtils';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
-import { toLocalDayKey } from '../utils/payrollAttendanceMath';
 import { getAdvanceTotals } from '../utils/advanceBalance';
 import {
   computeTerminationSalarySettlementPreview,
@@ -36,52 +32,14 @@ import { roundMoney2 } from '../../../utils/moneyInput';
 import { Button, DateField, FileTrigger, Modal, FmtNum, Input } from '../../../ui';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 
-function esc(v: any) {
-  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function effectiveEndYmd(pr: any, fallbackYmd: any) {
-  if (pr?.effectiveEnd) return toLocalDayKey(new Date(pr.effectiveEnd));
-  return toYmd(fallbackYmd);
-}
-
-function lastDayOfMonthYmd(monthFirstYmd: any) {
-  const s = toYmd(monthFirstYmd);
-  const parts = s.split('-');
-  const y = Number(parts[0]);
-  const m = Number(parts[1]);
-  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) return s;
-  return toLocalDayKey(new Date(y, m, 0));
-}
-
-/** وسم في ملاحظة الفاتورة لمنع أكثر من تسوية إنهاء لنفس الموظف ونفس شهر المسيرة */
-function terminationSalaryInvoiceTag(employeeId: any, monthFirstYmd: any) {
-  const ym = toYmd(monthFirstYmd).slice(0, 7);
-  return `[NOORIX_TERM_SALARY:${employeeId}:${ym}]`;
-}
-
-async function findTerminationSalaryInvoiceThisMonth(companyId: any, employeeId: any, monthFirstYmd: any, tag: any) {
-  const from = toYmd(monthFirstYmd);
-  const to = lastDayOfMonthYmd(from);
-  const res = await getInvoices(companyId, from, to, 1, 100, null, employeeId, 'salary');
-  const items = unwrapApiList<any>(res, 'فشل تحميل فواتير راتب إنهاء الخدمة');
-  return (
-    items.find(
-      (inv: any) =>
-        inv.kind === 'salary' &&
-        inv.status !== 'cancelled' &&
-        String(inv.notes || '').includes(tag),
-    ) || null
-  );
-}
-
-async function hasTerminationMovementForInvoiceNumber(companyId: any, employeeId: any, invoiceNumber: any) {
-  if (!invoiceNumber) return false;
-  const res = await getMovements(companyId, employeeId);
-  const list = unwrapApiList<any>(res, 'فشل تحميل حركات الموظف');
-  const marker = `صرف راتب إنهاء خدمة — ${invoiceNumber}`;
-  return list.some((m: any) => String(m.notes || '').includes(marker));
-}
+type HrAny = ReturnType<typeof JSON.parse>;
+import {
+  effectiveEndYmd,
+  findTerminationSalaryInvoiceThisMonth,
+  hasTerminationMovementForInvoiceNumber,
+  openTerminationSettlementPrintWindow,
+  terminationSalaryInvoiceTag,
+} from './terminationSettlementHelpers';
 
 export default function TerminationSettlementModal({
   open,
@@ -90,19 +48,19 @@ export default function TerminationSettlementModal({
   employee,
   companyId,
   companyName = '',
-}: any) {
+}: HrAny) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { userPermissions = [] } = useApp();
   const queryClient = useQueryClient();
-  const fileRef = useRef<any>(null);
+  const fileRef = useRef<HrAny>(null);
   const issuingLockRef = useRef(false);
   const [uploading, setUploading] = useState(false);
   const [vaultId, setVaultId] = useState('');
   const [payoutAmountStr, setPayoutAmountStr] = useState('');
   const [txDateStr, setTxDateStr] = useState('');
   const [issuing, setIssuing] = useState(false);
-  const [issuedInvoice, setIssuedInvoice] = useState<any>(null);
+  const [issuedInvoice, setIssuedInvoice] = useState<HrAny>(null);
 
   const canIssueInvoice =
     Array.isArray(userPermissions) &&
@@ -121,7 +79,7 @@ export default function TerminationSettlementModal({
     data: compensationSnapshot,
     isLoading: compensationSnapshotLoading,
     error: compensationSnapshotError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrAny>({
     queryKey: hrKeys.compensationSnapshot(companyId, empId),
     queryFn: () => getEmployeeCompensationSnapshot(companyId, empId),
     enabled: open && !!companyId && !!empId,
@@ -131,10 +89,10 @@ export default function TerminationSettlementModal({
   const monthlyPackageTotal = compensationSnapshot?.salaryPackage?.total;
   const hasMonthlyPackageTotal = Number.isFinite(Number(monthlyPackageTotal)) && Number(monthlyPackageTotal) > 0;
 
-  const { data: advanceInvoices = [] } = useApiListQuery<any>({
+  const { data: advanceInvoices = [] } = useApiListQuery<HrAny>({
     queryKey: hrKeys.terminationAdvances(companyId, empId),
     queryFn: () => getInvoices(companyId, undefined, undefined, 1, 100, null, empId, 'advance'),
-    select: (items) => items.filter((inv: any) => inv.kind === 'advance' && inv.status !== 'cancelled'),
+    select: (items) => items.filter((inv: HrAny) => inv.kind === 'advance' && inv.status !== 'cancelled'),
     enabled: open && !!companyId && !!empId,
     staleTime: 60 * 1000,
     fallbackMessage: t('loadingError'),
@@ -191,41 +149,20 @@ export default function TerminationSettlementModal({
   }, [open, companyId, empId, paymentVaults]);
 
   const handlePrint = useCallback(() => {
-    if (!employee || !preview || !terminationYmd) return;
-    const name = employeeDisplayName(employee, lang);
-    const co = esc(companyName || '—');
-    const endDisp = formatSaudiDate(preview.pr.effectiveEnd || terminationYmd);
-    const monthDisp = formatSaudiDate(monthFirst);
-    const rows = [
-      [`${t('employeeName')} / Employee`, esc(name)],
-      [`${t('terminationDate')} / Termination`, esc(formatSaudiDate(terminationYmd))],
-      [`${t('payrollMonth')} / Payroll month`, esc(monthDisp)],
-      [`${t('terminationSettlementMonthlyTotal')} / Monthly package`, `${esc(hrFmt(preview.fullMonthly))} SR`],
-      [`${t('terminationSettlementEmployedDays')} / Days in month`, `${esc(String(preview.pr.employedDays))} / ${esc(String(preview.pr.daysInMonth))}`],
-      [`${t('terminationSettlementEffectiveEnd')} / Last work day`, esc(endDisp)],
-      [`${t('terminationSettlementProratedGross')} / Prorated gross (est.)`, `${esc(hrFmt(preview.grossProrated))} SR`],
-      [`${t('terminationSettlementAdvancesOutstanding')} / Advances`, `${esc(hrFmt(advancesRemaining))} SR`],
-      [`${t('terminationSettlementSuggestedNet')} / Net (estimate)`, `${esc(hrFmt(preview.netSuggested))} SR`],
-    ];
-    const body = `
-      <div style="font-family:Cairo,Tahoma,sans-serif;direction:rtl;padding:16px;max-width:720px;margin:0 auto">
-        <h1 style="font-size:18px;margin:0 0 8px">${esc(t('terminationSettlementTitle'))}</h1>
-        <p style="font-size:12px;color:#64748b;margin:0 0 16px">${esc(t('terminationSettlementDisclaimer'))}</p>
-        <p style="font-size:13px;margin:0 0 8px"><strong>${esc(t('terminationSettlementCompany'))}:</strong> ${co}</p>
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <tbody>
-            ${rows.map(([a, b]: any) => `<tr><td style="border:1px solid #ddd;padding:8px;font-weight:600;width:42%">${a}</td><td style="border:1px solid #ddd;padding:8px">${b}</td></tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`;
-    openPrintWindow({
-      title: t('terminationSettlementTitle'),
-      companyName: companyName || undefined,
-      body,
+    if (!employee || !preview || !terminationYmd || !monthFirst) return;
+    openTerminationSettlementPrintWindow({
+      employee,
+      lang,
+      companyName,
+      terminationYmd,
+      monthFirst,
+      preview,
+      advancesRemaining,
+      t,
     });
   }, [employee, preview, advancesRemaining, companyName, lang, t, monthFirst, terminationYmd]);
 
-  const handleFile = async (e: any) => {
+  const handleFile = async (e: HrAny) => {
     const file = e?.target?.files?.[0];
     if (!file || !empId || !companyId) return;
     setUploading(true);
@@ -240,7 +177,7 @@ export default function TerminationSettlementModal({
       queryClient.invalidateQueries({ queryKey: hrKeys.documents(companyId, empId) });
       queryClient.invalidateQueries({ queryKey: employeeKeys.detail(empId, companyId) });
       showToast(t('documentUploaded'), 'success');
-    } catch (err: any) {
+    } catch (err: HrAny) {
       showToast(err?.message || t('saveFailed'), 'error');
     } finally {
       setUploading(false);
@@ -331,7 +268,7 @@ export default function TerminationSettlementModal({
             });
             throwIfApiFailed(movRes, t('saveFailed'));
             movementOk = true;
-          } catch (me: any) {
+          } catch (me: HrAny) {
             movementErrMsg = me?.message || t('saveFailed');
           }
         }
@@ -354,7 +291,7 @@ export default function TerminationSettlementModal({
           'success',
         );
       }
-    } catch (err: any) {
+    } catch (err: HrAny) {
       showToast(err?.message || t('saveFailed'), 'error');
     } finally {
       issuingLockRef.current = false;
@@ -448,10 +385,10 @@ export default function TerminationSettlementModal({
                 type="select"
                 label={t('terminationSettlementSelectVault')}
                 value={vaultId}
-                onChange={(e: any) => setVaultId(e.target.value)}
+                onChange={(e: HrAny) => setVaultId(e.target.value)}
               >
                 <option value="">—</option>
-                {paymentVaults.map((v: any) => (
+                {paymentVaults.map((v: HrAny) => (
                   <option key={v.id} value={v.id}>{vaultDisplayName(v, lang)}</option>
                 ))}
               </Input>
@@ -466,7 +403,7 @@ export default function TerminationSettlementModal({
                 min="0.01"
                 label={t('terminationSettlementPayoutAmount')}
                 value={payoutAmountStr}
-                onChange={(e: any) => setPayoutAmountStr(e.target.value)}
+                onChange={(e: HrAny) => setPayoutAmountStr(e.target.value)}
               />
               <Button
                 type="button"

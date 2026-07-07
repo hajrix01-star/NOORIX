@@ -9,10 +9,11 @@ import {
 import {
   computeEos,
 } from '../../../utils/hrCalculations/eos';
+import type { HrCompensationSnapshot } from '../../../../../types/api';
 
 export function useFinalSettlementDoc(
   employee: Record<string, unknown>,
-  compensationSnapshot: Record<string, any>,
+  compensationSnapshot: HrCompensationSnapshot,
 ) {
   const { rows, total } = useMemo(() => buildSalaryRows(compensationSnapshot), [compensationSnapshot]);
   const lastMonthlyComp = total;

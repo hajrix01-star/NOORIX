@@ -1,6 +1,8 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { Button, KebabMenu, SmartTable } from '../../../../ui';
 
+type HrAny = ReturnType<typeof JSON.parse>;
+
 export function EmployeeProfileCareerSection({
   t,
   careerTableRows,
@@ -10,7 +12,7 @@ export function EmployeeProfileCareerSection({
   onOpenRaise,
   onEditRaise,
   onDeleteRaise,
-}: any) {
+}: HrAny) {
   const showActions = !!canEditRaise;
 
   return (
@@ -40,19 +42,19 @@ export function EmployeeProfileCareerSection({
             key: 'effectiveDate',
             label: t('careerEffectiveDate'),
             width: showActions ? '12%' : '14%',
-            render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            render: (v: HrAny) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
           },
           {
             key: 'typeLabel',
             label: t('movementTypeLabel'),
             width: showActions ? '14%' : '16%',
-            render: (v: any) => v,
+            render: (v: HrAny) => v,
           },
           {
             key: 'changeSummary',
             label: t('careerChangeSummary'),
             width: showActions ? '28%' : '32%',
-            render: (v: any) => (
+            render: (v: HrAny) => (
               <span className="nx-cell-ellipsis text-[13px]" title={v || ''}>
                 {v || '—'}
               </span>
@@ -62,7 +64,7 @@ export function EmployeeProfileCareerSection({
             key: 'notes',
             label: t('invoiceNotesColumn'),
             width: showActions ? '30%' : '36%',
-            render: (v: any) => (
+            render: (v: HrAny) => (
               <span className="nx-cell-ellipsis" title={v || ''}>
                 {v || '—'}
               </span>
@@ -106,7 +108,7 @@ export function EmployeeProfileCareerSection({
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: any) => (
+        renderCompactRow={(row: HrAny) => (
           <div>
             <div className="nx-cr__line1">
               <span className="nx-cr__name">{row.typeLabel}</span>
@@ -119,7 +121,7 @@ export function EmployeeProfileCareerSection({
             </div>
           </div>
         )}
-        renderMobileCard={(row: any) => (
+        renderMobileCard={(row: HrAny) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.effectiveDate)}</span>

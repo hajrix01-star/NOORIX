@@ -264,7 +264,7 @@ export class HRService {
       return sum + total;
     }, 0);
 
-    const advanceTotals = getHrAdvanceTotals(advances as any[]);
+    const advanceTotals = getHrAdvanceTotals(advances);
 
     return {
       leavesCount,

@@ -14,26 +14,25 @@ import { getSaudiToday, formatSaudiDate } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ImportExportModal from '../../components/ImportExportModal';
 import {
-  EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS,
   EMPLOYEE_EXCEL_EXPORT_OPTS,
-  formatEmployeeForExport,
 } from '../../utils/importTemplates';
 import {
-  createCustomAllowance,
-  deleteCustomAllowance,
   deleteEmployee,
-  getCustomAllowances,
   getEmployeeCompensationSnapshots,
   getEmployeesPaged,
   getEmployeesBulk,
-  throwIfApiFailed,
 } from '../../services/api';
 import { Badge, Button, Input, ScreenShell, FmtNum, SmartTable } from '../../ui';
 import { HRActionsCell } from './components/HRActionsCell';
 import { StaffListMobileRow } from './components/StaffListMobileRow';
 import { StaffListModals } from './components/StaffListModals';
+import {
+  buildCentralEmployeeExportRows,
+  getCreatedEmployeeId,
+  syncCustomAllowanceRows,
+  type HrStaffSavePayload,
+} from './staffListDataOps';
 import { composeEmployeeNotes, parseEmployeeNotesMeta } from './utils/employeeNotesMeta';
-import { moneyAmountsEqual, roundMoney2 } from '../../utils/moneyInput';
 import { employeeDisplayName } from '../../utils/employeeDisplayName';
 import { buildEmployeeHrStatusMap } from '../../constants/badgeMaps';
 import { employeeKeys, hrKeys } from '../../services/queryKeys';
@@ -44,22 +43,62 @@ import {
 import { HrFlatListTabShell } from './components/HrFlatListTabShell';
 import { HrTabToolbar } from './components/HrTabToolbar';
 import { HrSegmentedControl } from './components/HrSegmentedControl';
+import type {
+  ApiParsedResult,
+  HrCompensationSnapshot,
+  HrCompensationSnapshotsResult,
+  HrEmployee,
+  HrEmployeeTab,
+} from '../../types/api';
 
 const PAGE_SIZE = 50;
 
-export default function StaffListScreen({ embedded }: any) {
+type StaffListScreenProps = {
+  embedded?: boolean;
+};
+
+type HrCompanyRef = {
+  id?: string | null;
+  name?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+};
+
+type EmployeeMutationVariables = {
+  id: string;
+};
+
+type HrStaffTableRow = HrEmployee & {
+  totalSalary?: number | null;
+  terminationReason?: string;
+  terminationClause?: string;
+  terminationDate?: string;
+};
+
+type HrEmployeesPagedView = {
+  items: HrEmployee[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+export default function StaffListScreen({ embedded }: StaffListScreenProps) {
   const navigate = useNavigate();
   const { activeCompanyId, companies, userPermissions } = useApp();
-  const activeCompany = companies?.find((c: any) => c.id === activeCompanyId);
+  const activeCompany = (companies as HrCompanyRef[] | undefined)?.find((c) => c.id === activeCompanyId);
   const companyNameAr = activeCompany?.nameAr || activeCompany?.name || '';
   const { t, lang } = useTranslation();
   const companyId = activeCompanyId ?? '';
   const { showToast } = useToast();
   const [showForm, setShowForm] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<any>(null);
-  const [advanceEmployee, setAdvanceEmployee] = useState<any>(null);
-  const [terminatingEmployee, setTerminatingEmployee] = useState<any>(null);
-  const [viewMode, setViewMode] = useState('active');
+  const [editingEmployee, setEditingEmployee] = useState<HrEmployee | null>(null);
+  const [advanceEmployee, setAdvanceEmployee] = useState<HrEmployee | null>(null);
+  const [terminatingEmployee, setTerminatingEmployee] = useState<HrEmployee | null>(null);
+  const [viewMode, setViewMode] = useState<HrEmployeeTab>('active');
   const [terminationForm, setTerminationForm] = useState({
     reason: '',
     clause: '',
@@ -67,7 +106,7 @@ export default function StaffListScreen({ embedded }: any) {
   });
   const [showImportExport, setShowImportExport] = useState(false);
   /** After termination wizard — optional settlement invoice modal */
-  const [terminationSettlementEmp, setTerminationSettlementEmp] = useState<any>(null);
+  const [terminationSettlementEmp, setTerminationSettlementEmp] = useState<HrEmployee | null>(null);
   const employeeViewModeItems = useMemo(
     () =>
       (
@@ -96,10 +135,10 @@ export default function StaffListScreen({ embedded }: any) {
   const canDeleteEmployee = Array.isArray(userPermissions) && userPermissions.includes('EMPLOYEES_DELETE');
 
   const permanentDeleteEmployeeMut = useApiMutation({
-    mutationFn: ({ id }: any) => deleteEmployee(id, companyId),
+    mutationFn: ({ id }: EmployeeMutationVariables) => deleteEmployee(id, companyId),
     successToast: () => t('employeeDeletedPermanent'),
-    errorToast: (e: any) => e?.message || t('updateFailed'),
-    onSuccess: (_data: any, variables: any) => {
+    errorToast: (e: unknown) => getErrorMessage(e, t('updateFailed')),
+    onSuccess: (_data: ApiParsedResult, variables: EmployeeMutationVariables) => {
       const id = variables.id;
       queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
       queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
@@ -138,7 +177,7 @@ export default function StaffListScreen({ embedded }: any) {
     data: pagedResult,
     isLoading,
     error: employeesError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrEmployeesPagedView>({
     queryKey: hrKeys.employeesPaged(employeesPagedQuery),
     queryFn: async () => {
       const res = await getEmployeesPaged(companyId, {
@@ -150,7 +189,15 @@ export default function StaffListScreen({ embedded }: any) {
         sortDir: employeesPagedQuery.sortDir,
       });
       if (!res.success) return res;
-      return { success: true, data: res };
+      return {
+        success: true,
+        data: {
+          items: res.items ?? [],
+          total: res.total ?? 0,
+          page: res.page ?? employeesPagedQuery.page,
+          pageSize: res.pageSize ?? employeesPagedQuery.pageSize,
+        },
+      };
     },
     enabled: !!companyId,
     fallbackMessage: t('employeesLoadFailed'),
@@ -158,13 +205,13 @@ export default function StaffListScreen({ embedded }: any) {
 
   const listTotal = pagedResult?.total ?? 0;
   const pagedItems = pagedResult?.items ?? [];
-  const pagedEmployeeIds = useMemo(() => pagedItems.map((row: any) => row.id).filter(Boolean), [pagedItems]);
+  const pagedEmployeeIds = useMemo(() => pagedItems.map((row) => row.id).filter(Boolean), [pagedItems]);
 
   const {
     data: compensationSnapshots,
     isLoading: compensationSnapshotsLoading,
     error: compensationSnapshotsError,
-  } = useApiQuery<any>({
+  } = useApiQuery<HrCompensationSnapshotsResult>({
     queryKey: hrKeys.compensationSnapshots(companyId, pagedEmployeeIds),
     queryFn: () => getEmployeeCompensationSnapshots(companyId, pagedEmployeeIds),
     enabled: !!companyId && pagedEmployeeIds.length > 0,
@@ -174,47 +221,15 @@ export default function StaffListScreen({ embedded }: any) {
   const STATUS_MAP = useMemo(() => buildEmployeeHrStatusMap(t), [t]);
 
   const snapshotByEmployeeId = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, HrCompensationSnapshot>();
     for (const snapshot of compensationSnapshots?.items ?? []) {
       if (snapshot?.employeeId) map.set(snapshot.employeeId, snapshot);
     }
     return map;
   }, [compensationSnapshots]);
 
-  async function buildCentralEmployeeExportRows(list: any[]) {
-    const ids = list.map((row: any) => row.id).filter(Boolean);
-    const res = await getEmployeeCompensationSnapshots(companyId, ids);
-    throwIfApiFailed(res, t('employeesLoadFailed'));
-    const snapshotMap = new Map((res.data?.items ?? []).map((snapshot: any) => [snapshot.employeeId, snapshot]));
-    const allowanceTotals = new Map<string, number>(
-      (res.data?.items ?? []).map((snapshot: any) => {
-        const customAllowanceTotal = Number(snapshot?.salaryPackage?.customAllowanceTotal);
-        if (!Number.isFinite(customAllowanceTotal)) {
-          throw new Error(t('employeesLoadFailed'));
-        }
-        return [snapshot.employeeId, customAllowanceTotal];
-      }),
-    );
-    const customColumn = EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS[4];
-    const overtimeColumn = EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS[5];
-    const totalColumn = EMPLOYEE_EXCEL_MONEY_COLUMN_KEYS[6];
-
-    return list.map((employee: any) => {
-      const snapshot = snapshotMap.get(employee.id) as any;
-      if (!snapshot?.salaryPackage) {
-        throw new Error(t('employeesLoadFailed'));
-      }
-      return {
-        ...formatEmployeeForExport(employee, allowanceTotals),
-        [customColumn]: snapshot.salaryPackage.customAllowanceTotal,
-        [overtimeColumn]: snapshot.salaryPackage.overtimePay,
-        [totalColumn]: snapshot.salaryPackage.total,
-      };
-    });
-  }
-
   const tableData = useMemo(() => {
-    return pagedItems.map((e: any) => {
+    return pagedItems.map((e) => {
       const parsed = parseEmployeeNotesMeta(e.notes);
       const meta = parsed.meta || {};
       const salarySnapshot = snapshotByEmployeeId.get(e.id);
@@ -228,10 +243,10 @@ export default function StaffListScreen({ embedded }: any) {
     });
   }, [pagedItems, snapshotByEmployeeId]);
 
-  const toggleSort = useCallback((key: any) => {
-    setSortKey((prev: any) => {
+  const toggleSort = useCallback((key: string) => {
+    setSortKey((prev) => {
       if (prev === key) {
-        setSortDir((d: any) => (d === 'asc' ? 'desc' : 'asc'));
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
         return key;
       }
       setSortDir('asc');
@@ -240,7 +255,7 @@ export default function StaffListScreen({ embedded }: any) {
     setListPage(1);
   }, []);
 
-  const handlePermanentDelete = useCallback((row: any) => {
+  const handlePermanentDelete = useCallback((row: HrStaffTableRow) => {
     if (!companyId || !row?.id) return;
     if (!window.confirm(t('deleteEmployeePermanentConfirm', employeeDisplayName(row, lang, '')))) return;
     if (!window.confirm(t('deleteEmployeePermanentSecond'))) return;
@@ -249,9 +264,9 @@ export default function StaffListScreen({ embedded }: any) {
 
   const columns = useMemo(() => [
     { key: 'employeeSerial', label: t('employeeSerial'), sortable: true, width: 120,
-      render: (v: any) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={v || ''}>{v || '—'}</span> },
+      render: (v: unknown) => <span className="nx-cell-num nx-cell-bold nx-cell-ellipsis text-[13px]" title={String(v || '')}>{String(v || '—')}</span> },
     { key: 'name', label: t('employeeName'), sortable: true, width: 200,
-      render: (_: any, row: any) => (
+      render: (_: unknown, row: HrStaffTableRow) => (
         <Button
           variant="raw"
           size="auto"
@@ -262,35 +277,35 @@ export default function StaffListScreen({ embedded }: any) {
         </Button>
       ) },
     { key: 'jobTitle', label: t('jobTitle'), sortable: true, width: 170,
-      render: (v: any) => <span className="nx-cell-muted">{v || '—'}</span> },
+      render: (v: unknown) => <span className="nx-cell-muted">{String(v || '—')}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125,
-      render: (v: any) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span> },
+      render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span> },
     { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140,
-      render: (_: any, row: any) => (
+      render: (_: unknown, row: HrStaffTableRow) => (
         Number.isFinite(Number(row.totalSalary))
           ? <FmtNum n={Number(row.totalSalary)} className="nx-cell-num text-[13px]" />
           : <span className="nx-cell-muted">—</span>
       ) },
     { key: 'status', label: t('status'), width: 110,
-      render: (v: any) => <Badge {...Badge.fromStatus(v, STATUS_MAP)} size="sm" /> },
+      render: (v: unknown) => <Badge {...Badge.fromStatus(String(v || ''), STATUS_MAP)} size="sm" /> },
     ...(viewMode === 'terminated' || viewMode === 'archived'
       ? [
           {
             key: 'terminationReason',
             label: t('terminationReason'),
             width: 190,
-            render: (v: any) => <span className="nx-cell-muted">{v || '—'}</span>,
+            render: (v: unknown) => <span className="nx-cell-muted">{String(v || '—')}</span>,
           },
           {
             key: 'terminationClause',
             label: t('terminationClause'),
             width: 140,
-            render: (v: any) => <span className="nx-cell-muted">{v || '—'}</span>,
+            render: (v: unknown) => <span className="nx-cell-muted">{String(v || '—')}</span>,
           },
         ]
       : []),
     { key: 'actions', label: t('actions'), width: 60, align: 'center',
-      render: (_: any, row: any) => (
+      render: (_: unknown, row: HrStaffTableRow) => (
         <HRActionsCell
           row={row}
           onEdit={() => setEditingEmployee(row)}
@@ -311,7 +326,7 @@ export default function StaffListScreen({ embedded }: any) {
                   },
                   {
                     onSuccess: () => showToast(t('employeeArchived'), 'success'),
-                    onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
+                    onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
                   },
                 );
               }
@@ -326,7 +341,7 @@ export default function StaffListScreen({ embedded }: any) {
                   },
                   {
                     onSuccess: () => showToast(t('employeeRestored'), 'success'),
-                    onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
+                    onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
                   },
                 );
               }
@@ -346,8 +361,8 @@ export default function StaffListScreen({ embedded }: any) {
         return;
       }
       const list = res.data || [];
-      const centralRows = await buildCentralEmployeeExportRows(list);
-      const rows = list.map((e: any, index: number) => {
+      const centralRows = await buildCentralEmployeeExportRows(companyId, list, t);
+      const rows = list.map((e, index: number) => {
         const parsed = parseEmployeeNotesMeta(e.notes);
         const meta = parsed.meta || {};
         return {
@@ -360,60 +375,16 @@ export default function StaffListScreen({ embedded }: any) {
         };
       });
       exportToExcel(rows, 'employees.xlsx', EMPLOYEE_EXCEL_EXPORT_OPTS);
-    } catch (e: any) {
-      showToast(e?.message || t('saveFailed'), 'error');
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, t('saveFailed')), 'error');
     } finally {
       setExporting(false);
     }
   }
 
-  async function syncCustomAllowanceRows(
-    employeeId: string,
-    desiredRows: Array<{ id?: string; nameAr: string; amount: unknown }> = [],
-  ) {
-    if (!companyId || !employeeId) {
-      throw new Error(t('customAllowanceMissingEmployeeId'));
-    }
-    const res = await getCustomAllowances(companyId, employeeId);
-    throwIfApiFailed(res, t('loadingError'));
-    const currentRows = Array.isArray(res?.data) ? res.data : (res?.data?.items ?? []);
-    const currentById = new Map(currentRows.map((row: any) => [row.id, row]));
-    const desiredIds = new Set(desiredRows.filter((row: any) => row.id).map((row: any) => row.id));
-
-    for (const currentRow of currentRows) {
-      const desiredRow = desiredRows.find((row: any) => row.id === currentRow.id);
-      const changed = desiredRow
-        && (desiredRow.nameAr !== currentRow.nameAr || !moneyAmountsEqual(desiredRow.amount, currentRow.amount));
-      if (!desiredIds.has(currentRow.id) || changed) {
-        const delRes = await deleteCustomAllowance(currentRow.id, companyId);
-        throwIfApiFailed(delRes, t('deleteFailed'));
-      }
-    }
-
-    for (const row of desiredRows) {
-      const dr = row as { id?: string; nameAr: string; amount: unknown };
-      const existing = dr.id ? currentById.get(dr.id) as { nameAr?: string; amount?: unknown } | undefined : null;
-      const changed = existing
-        && (dr.nameAr !== existing.nameAr || !moneyAmountsEqual(dr.amount, existing.amount));
-      if (!dr.id || changed) {
-        const createRes = await createCustomAllowance({
-          companyId,
-          employeeId,
-          nameAr: dr.nameAr,
-          amount: roundMoney2(dr.amount),
-        });
-        throwIfApiFailed(createRes, t('saveFailed'));
-      }
-    }
-
-    queryClient.invalidateQueries({ queryKey: hrKeys.customAllowancesByCompany(companyId) });
-    queryClient.invalidateQueries({ queryKey: employeeKeys.byCompany(companyId) });
-    queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
-  }
-
-  function handleSave(payload: any) {
+  function handleSave(payload: HrStaffSavePayload | Record<string, unknown>) {
     const { employeeBody, customAllowances: customRows = [] } = payload?.employeeBody
-      ? payload
+      ? payload as HrStaffSavePayload
       : { employeeBody: payload, customAllowances: [] };
     if (!companyId) {
       showToast(t('pleaseSelectCompany'), 'error');
@@ -425,34 +396,34 @@ export default function StaffListScreen({ embedded }: any) {
         {
           onSuccess: async () => {
             try {
-              await syncCustomAllowanceRows(editingEmployee.id, customRows);
+              await syncCustomAllowanceRows({ companyId, employeeId: editingEmployee.id, desiredRows: customRows, queryClient, t });
               showToast(t('employeeUpdated'), 'success');
               setEditingEmployee(null);
-            } catch (e: any) {
-              showToast(e?.message || t('saveFailed'), 'error');
+            } catch (e: unknown) {
+              showToast(getErrorMessage(e, t('saveFailed')), 'error');
             }
           },
-          onError: (e: any) => showToast(e?.message || t('updateFailed'), 'error'),
+          onError: (e: unknown) => showToast(getErrorMessage(e, t('updateFailed')), 'error'),
         },
       );
     } else {
       create.mutate(employeeBody, {
-        onSuccess: async (res: any) => {
+        onSuccess: async (res: ApiParsedResult<HrEmployee> | HrEmployee) => {
           try {
-            const employeeId = res?.data?.id || res?.id;
-            await syncCustomAllowanceRows(employeeId, customRows);
+            const employeeId = getCreatedEmployeeId(res);
+            await syncCustomAllowanceRows({ companyId, employeeId, desiredRows: customRows, queryClient, t });
             showToast(t('employeeAdded'), 'success');
             setShowForm(false);
-          } catch (e: any) {
-            showToast(e?.message || t('saveFailed'), 'error');
+          } catch (e: unknown) {
+            showToast(getErrorMessage(e, t('saveFailed')), 'error');
           }
         },
-        onError: (e: any) => showToast(e?.message || t('addFailed'), 'error'),
+        onError: (e: unknown) => showToast(getErrorMessage(e, t('addFailed')), 'error'),
       });
     }
   }
 
-  const renderStaffRowMenuItems = useCallback((row: any) => [
+  const renderStaffRowMenuItems = useCallback((row: HrStaffTableRow) => [
     {
       key: 'profile',
       label: t('viewProfile'),
@@ -488,7 +459,7 @@ export default function StaffListScreen({ embedded }: any) {
   ], [t, navigate, canDeleteEmployee, handlePermanentDelete,
       setEditingEmployee, setAdvanceEmployee, setTerminatingEmployee, setTerminationForm]);
 
-  const renderStaffMobileRow = useCallback((row: any) => {
+  const renderStaffMobileRow = useCallback((row: HrStaffTableRow) => {
     return (
       <StaffListMobileRow
         row={row}
@@ -500,9 +471,14 @@ export default function StaffListScreen({ embedded }: any) {
     );
   }, [STATUS_MAP, t, lang, renderStaffRowMenuItems]);
 
-  const renderCompactRow = useCallback((row: any) => renderStaffMobileRow(row), [renderStaffMobileRow]);
+  const renderCompactRow = useCallback((row: HrStaffTableRow) => renderStaffMobileRow(row), [renderStaffMobileRow]);
 
   const flatTableProps = hrFlatSmartTableShellProps(embedded);
+  const handleViewModeChange = useCallback((id: string) => {
+    if (id === 'active' || id === 'terminated' || id === 'archived') {
+      setViewMode(id);
+    }
+  }, []);
 
   const staffToolbar = (
     <HrTabToolbar
@@ -512,7 +488,7 @@ export default function StaffListScreen({ embedded }: any) {
           className="nx-hr-view-modes w-full min-w-0"
           items={employeeViewModeItems}
           value={viewMode}
-          onChange={setViewMode}
+          onChange={handleViewModeChange}
         />
       )}
       desktopActions={(
@@ -568,9 +544,9 @@ export default function StaffListScreen({ embedded }: any) {
                 throw new Error(res?.error || t('saveFailed'));
               }
               const list = res.data || [];
-              return buildCentralEmployeeExportRows(list);
+              return buildCentralEmployeeExportRows(companyId, list, t);
             }}
-            onImportSuccess={(count: any) => {
+            onImportSuccess={(count: number) => {
               queryClient.invalidateQueries({ queryKey: employeeKeys.root() });
               queryClient.invalidateQueries({ queryKey: employeeKeys.pagedByCompany(companyId) });
               showToast(t('employeesImportSuccessCount', String(count)), 'success');
@@ -581,7 +557,7 @@ export default function StaffListScreen({ embedded }: any) {
             <Input
               type="search"
               value={searchInput}
-              onChange={(e: any) => setSearchInput(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchInput(e.target.value)}
               placeholder={t('searchPlaceholder')}
               size="sm"
               className="w-full min-w-0"

@@ -1,6 +1,8 @@
 import { Button, ScreenShell } from '../../../../ui';
 
-export function EmployeeProfileLoading({ t }: any) {
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+
+export function EmployeeProfileLoading({ t }: { t: TranslationFn }) {
   return (
     <ScreenShell>
       <div className="mx-auto w-full max-w-[1160px] space-y-4 py-6">
@@ -9,7 +11,7 @@ export function EmployeeProfileLoading({ t }: any) {
           <div className="h-40 rounded-xl bg-noorix-bg-muted animate-pulse" />
           <div className="h-40 rounded-xl bg-noorix-bg-muted animate-pulse" />
         </div>
-        {[1, 2, 3].map((k: any) => (
+        {[1, 2, 3].map((k) => (
           <div key={k} className="h-36 rounded-xl bg-noorix-bg-muted animate-pulse" />
         ))}
         <p className="m-0 text-center text-[13px] font-medium text-noorix-muted">{t('loading')}</p>
@@ -18,7 +20,7 @@ export function EmployeeProfileLoading({ t }: any) {
   );
 }
 
-export function EmployeeProfileNotFound({ t, onBack }: any) {
+export function EmployeeProfileNotFound({ t, onBack }: { t: TranslationFn; onBack: () => void }) {
   return (
     <ScreenShell>
       <div className="noorix-surface-card p-8 flex flex-col items-center gap-4 text-center">
@@ -31,7 +33,15 @@ export function EmployeeProfileNotFound({ t, onBack }: any) {
   );
 }
 
-export function EmployeeProfileCentralDataError({ t, onBack, message }: any) {
+export function EmployeeProfileCentralDataError({
+  t,
+  onBack,
+  message,
+}: {
+  t: TranslationFn;
+  onBack: () => void;
+  message?: string;
+}) {
   return (
     <ScreenShell>
       <div className="noorix-surface-card p-8 flex flex-col items-center gap-4 text-center">

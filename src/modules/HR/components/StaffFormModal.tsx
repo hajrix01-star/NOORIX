@@ -1,4 +1,4 @@
-﻿/**
+/**
  * StaffFormModal — نافذة إضافة/تعديل موظف.
  * Props: employee (null للإضافة), companyId, onSave(body), onClose, isSaving
  */
@@ -17,6 +17,7 @@ import {
   sumSalaryCustomAllowances,
 } from '../utils/employeeSalaryMath';
 import { Button, DateField, Input, AdaptiveSheet, FmtNum } from '../../../ui';
+import type { HrEmployee } from '../../../types/api';
 
 const EMPTY = {
   name: '', nameEn: '', jobTitle: '', iqamaNumber: '',
@@ -33,14 +34,34 @@ const ALLOWANCE_TEMPLATES = [
   { key: 'overtime', labelKey: 'allowanceTemplateOvertime' },
 ];
 
+type StaffFormState = typeof EMPTY;
+type StaffFormKey = keyof StaffFormState;
+type StaffInputChange = React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>;
+type CustomAllowanceRow = {
+  id?: string;
+  rowId: string;
+  nameAr: string;
+  amount: string;
+};
+type PreparedAllowanceRow = {
+  id?: string;
+  nameAr: string;
+  amount: number;
+  hasAnyValue: boolean;
+};
+type StaffFormSavePayload = {
+  employeeBody: Record<string, unknown>;
+  customAllowances: Array<{ id?: string; nameAr: string; amount: number }>;
+};
+
 function makeRowId() {
   return `allowance-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export type StaffFormModalProps = {
-  employee: any;
-  companyId: any;
-  onSave: (payload: any) => void;
+  employee: HrEmployee | null;
+  companyId: string;
+  onSave: (payload: StaffFormSavePayload) => void;
   onClose: () => void;
   isSaving: boolean;
 };
@@ -58,7 +79,7 @@ export const StaffFormModal = memo(function StaffFormModal({
   ];
   const isEdit = !!employee;
   const [form, setForm] = useState(EMPTY);
-  const [customAllowances, setCustomAllowances] = useState<any[]>([]);
+  const [customAllowances, setCustomAllowances] = useState<CustomAllowanceRow[]>([]);
   const [allowanceError, setAllowanceError] = useState('');
   const [overtimeWorkDays, setOvertimeWorkDays] = useState(String(DEFAULT_OVERTIME_WORK_DAYS));
   const { allowances } = useCustomAllowances(companyId, employee?.id);
@@ -98,7 +119,7 @@ export const StaffFormModal = memo(function StaffFormModal({
       return;
     }
     setCustomAllowances(
-      (allowances || []).map((row: any) => ({
+      (allowances || []).map((row: { id?: string; nameAr?: string | null; amount?: unknown }) => ({
         id: row.id,
         rowId: row.id || makeRowId(),
         nameAr: row.nameAr || '',
@@ -107,15 +128,15 @@ export const StaffFormModal = memo(function StaffFormModal({
     );
   }, [employee, allowances]);
 
-  const set = (k: any, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
-  const setAllowance = (rowId: any, patch: any) => {
-    setCustomAllowances((prev: any) => prev.map((row: any) => (row.rowId === rowId ? { ...row, ...patch } : row)));
+  const set = (k: StaffFormKey, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  const setAllowance = (rowId: string, patch: Partial<CustomAllowanceRow>) => {
+    setCustomAllowances((prev) => prev.map((row) => (row.rowId === rowId ? { ...row, ...patch } : row)));
   };
-  const addAllowanceRow = (nameAr: any = '') => {
-    setCustomAllowances((prev: any) => [...prev, { rowId: makeRowId(), nameAr, amount: '' }]);
+  const addAllowanceRow = (nameAr: string = '') => {
+    setCustomAllowances((prev) => [...prev, { rowId: makeRowId(), nameAr, amount: '' }]);
   };
-  const removeAllowanceRow = (rowId: any) => {
-    setCustomAllowances((prev: any) => prev.filter((row: any) => row.rowId !== rowId));
+  const removeAllowanceRow = (rowId: string) => {
+    setCustomAllowances((prev) => prev.filter((row) => row.rowId !== rowId));
   };
 
   const computedCustomAllowanceTotal = useMemo(
@@ -151,8 +172,8 @@ export const StaffFormModal = memo(function StaffFormModal({
     computedCustomAllowanceTotal,
   ).total;
 
-  function handleSubmit(e: any) {
-    e?.preventDefault?.();
+  function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
     setAllowanceError('');
     if (!form.name.trim()) return;
     const basic = roundMoney2(form.basicSalary);
@@ -161,7 +182,7 @@ export const StaffFormModal = memo(function StaffFormModal({
     const other = roundMoney2(form.otherAllowance);
     if (basic < 0 || housing < 0 || transport < 0 || other < 0) return;
 
-    const body: Record<string, any> = {
+    const body: Record<string, unknown> = {
       name: form.name.trim(),
       nameEn: form.nameEn.trim() || undefined,
       jobTitle: form.jobTitle.trim() || undefined,
@@ -187,20 +208,20 @@ export const StaffFormModal = memo(function StaffFormModal({
     };
     body.notes = composeEmployeeNotes(form.notes, meta) || undefined;
     if (!isEdit) body.companyId = companyId;
-    const preparedAllowances = customAllowances.map((row: any) => ({
+    const preparedAllowances: PreparedAllowanceRow[] = customAllowances.map((row) => ({
       id: row.id,
       nameAr: String(row.nameAr || '').trim(),
       amount: roundMoney2(row.amount),
       hasAnyValue: !!String(row.nameAr || '').trim() || !!String(row.amount || '').trim(),
     }));
-    const invalidAllowance = preparedAllowances.find((row: any) => row.hasAnyValue && (!row.nameAr || row.amount <= 0));
+    const invalidAllowance = preparedAllowances.find((row) => row.hasAnyValue && (!row.nameAr || row.amount <= 0));
     if (invalidAllowance) {
       setAllowanceError('يجب إدخال اسم البدل ومبلغ أكبر من صفر لكل بدل مضاف.');
       return;
     }
     const normalizedAllowances = preparedAllowances
-      .filter((row: any) => row.nameAr && row.amount > 0)
-      .map(({ id, nameAr, amount }: any) => ({ id, nameAr, amount }));
+      .filter((row) => row.nameAr && row.amount > 0)
+      .map(({ id, nameAr, amount }) => ({ id, nameAr, amount }));
     onSave({ employeeBody: body, customAllowances: normalizedAllowances });
   }
 
@@ -226,21 +247,21 @@ export const StaffFormModal = memo(function StaffFormModal({
           <Input
             label={`${t('employeeName')} *`}
             value={form.name}
-            onChange={(e: any) => set('name', e.target.value)}
+            onChange={(e: StaffInputChange) => set('name', e.target.value)}
             placeholder={t('employeeNamePlaceholder')}
             required
           />
           <Input
             label="Name (English)"
             value={form.nameEn}
-            onChange={(e: any) => set('nameEn', e.target.value)}
+            onChange={(e: StaffInputChange) => set('nameEn', e.target.value)}
             placeholder="Employee name in English"
             className="nx-ltr text-start"
           />
           <Input
             label={t('jobTitle')}
             value={form.jobTitle}
-            onChange={(e: any) => set('jobTitle', e.target.value)}
+            onChange={(e: StaffInputChange) => set('jobTitle', e.target.value)}
             placeholder={t('jobTitlePlaceholder')}
           />
           <DateField
@@ -252,7 +273,7 @@ export const StaffFormModal = memo(function StaffFormModal({
           <Input
             label={t('iqamaNumber')}
             value={form.iqamaNumber}
-            onChange={(e: any) => set('iqamaNumber', e.target.value)}
+            onChange={(e: StaffInputChange) => set('iqamaNumber', e.target.value)}
             placeholder="1234567890"
           />
           <Input
@@ -261,7 +282,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             min="0"
             label={t('basicSalary')}
             value={form.basicSalary}
-            onChange={(e: any) => set('basicSalary', e.target.value)}
+            onChange={(e: StaffInputChange) => set('basicSalary', e.target.value)}
             required
           />
           <Input
@@ -270,7 +291,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             min="0"
             label={t('housingAllowance')}
             value={form.housingAllowance}
-            onChange={(e: any) => set('housingAllowance', e.target.value)}
+            onChange={(e: StaffInputChange) => set('housingAllowance', e.target.value)}
           />
           <Input
             type="number"
@@ -278,7 +299,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             min="0"
             label={t('transportAllowance')}
             value={form.transportAllowance}
-            onChange={(e: any) => set('transportAllowance', e.target.value)}
+            onChange={(e: StaffInputChange) => set('transportAllowance', e.target.value)}
           />
           <Input
             type="number"
@@ -286,18 +307,18 @@ export const StaffFormModal = memo(function StaffFormModal({
             min="0"
             label={t('otherAllowance')}
             value={form.otherAllowance}
-            onChange={(e: any) => set('otherAllowance', e.target.value)}
+            onChange={(e: StaffInputChange) => set('otherAllowance', e.target.value)}
           />
           <Input
             label={t('workHours')}
             value={form.workHours}
-            onChange={(e: any) => set('workHours', e.target.value)}
+            onChange={(e: StaffInputChange) => set('workHours', e.target.value)}
             placeholder={t('workHoursPlaceholder')}
           />
           <Input
             label={t('workSchedule')}
             value={form.workSchedule}
-            onChange={(e: any) => set('workSchedule', e.target.value)}
+            onChange={(e: StaffInputChange) => set('workSchedule', e.target.value)}
             placeholder={t('workSchedulePlaceholder')}
           />
           <div>
@@ -307,7 +328,7 @@ export const StaffFormModal = memo(function StaffFormModal({
               max={31}
               label={t('overtimeWorkDaysPerMonth')}
               value={overtimeWorkDays}
-              onChange={(e: any) => setOvertimeWorkDays(e.target.value)}
+              onChange={(e: StaffInputChange) => setOvertimeWorkDays(e.target.value)}
             />
             <div className="text-[11px] text-noorix-muted mt-1 leading-[1.45]">
               {t('overtimeWorkDaysHelp')}
@@ -324,7 +345,7 @@ export const StaffFormModal = memo(function StaffFormModal({
               type="select"
               label={t('status')}
               value={form.status}
-              onChange={(e: any) => set('status', e.target.value)}
+              onChange={(e: StaffInputChange) => set('status', e.target.value)}
             >
               <option value="active">{t('statusActive')}</option>
               <option value="on_leave">{t('statusOnLeave')}</option>
@@ -340,10 +361,10 @@ export const StaffFormModal = memo(function StaffFormModal({
                 type="select"
                 label={t('terminationReason')}
                 value={form.terminationReason}
-                onChange={(e: any) => set('terminationReason', e.target.value)}
+                onChange={(e: StaffInputChange) => set('terminationReason', e.target.value)}
               >
                 <option value="">{t('terminationReasonPlaceholder')}</option>
-                {terminationReasonOptions.map((opt: any) => (
+                {terminationReasonOptions.map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </Input>
@@ -355,7 +376,7 @@ export const StaffFormModal = memo(function StaffFormModal({
               type="select"
               label={t('terminationClause')}
               value={form.terminationClause}
-              onChange={(e: any) => set('terminationClause', e.target.value)}
+              onChange={(e: StaffInputChange) => set('terminationClause', e.target.value)}
             >
               <option value="">{t('terminationClausePlaceholder')}</option>
               <option value={t('terminationClauseArt80')}>{t('terminationClauseArt80')}</option>
@@ -375,7 +396,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             multiline
             label={t('notes')}
             value={form.notes}
-            onChange={(e: any) => set('notes', e.target.value)}
+            onChange={(e: StaffInputChange) => set('notes', e.target.value)}
             rows={2}
             className="resize-y"
           />
@@ -388,7 +409,7 @@ export const StaffFormModal = memo(function StaffFormModal({
             </Button>
           </div>
           <div className="flex flex flex-wrap gap-2 mb-3">
-            {ALLOWANCE_TEMPLATES.map((item: any) => (
+            {ALLOWANCE_TEMPLATES.map((item) => (
               <Button
                 key={item.key}
                 type="button"
@@ -403,12 +424,12 @@ export const StaffFormModal = memo(function StaffFormModal({
             <div className="text-[12px] text-noorix-muted">{t('noCustomAllowances')}</div>
           )}
           <div className="grid gap-2">
-            {customAllowances.map((row: any) => (
+            {customAllowances.map((row) => (
               <div key={row.rowId} className="grid gap-2 items-end [grid-template-columns:1.4fr_1fr_auto]">
                 <Input
                   label={t('customAllowanceName')}
                   value={row.nameAr}
-                  onChange={(e: any) => setAllowance(row.rowId, { nameAr: e.target.value })}
+                  onChange={(e: StaffInputChange) => setAllowance(row.rowId, { nameAr: e.target.value })}
                 />
                 <Input
                   type="number"
@@ -416,7 +437,7 @@ export const StaffFormModal = memo(function StaffFormModal({
                   step="0.01"
                   label={t('customAllowanceAmount')}
                   value={row.amount}
-                  onChange={(e: any) => setAllowance(row.rowId, { amount: e.target.value })}
+                  onChange={(e: StaffInputChange) => setAllowance(row.rowId, { amount: e.target.value })}
                 />
                 <Button type="button" variant="danger" size="sm" onClick={() => removeAllowanceRow(row.rowId)}>
                   {t('delete') || 'حذف'}

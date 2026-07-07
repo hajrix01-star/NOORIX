@@ -1,4 +1,4 @@
-import { roundMoney } from '@noorix/finance-core';
+import { roundMoney, type DecimalInput } from '@noorix/finance-core';
 
 /**
  * تسوية راتب تقويمية عند إجازة سنوية — تستخدم إجمالي الراتب الشهري المركزي.
@@ -16,8 +16,8 @@ export type EmployeeSalaryShape = {
   notes?: string | null;
 };
 
-function money(value: unknown): number {
-  return roundMoney(value as any);
+function money(value: DecimalInput): number {
+  return roundMoney(value);
 }
 
 const HR_META = '[HR_META]';
