@@ -24,9 +24,9 @@ A section is considered closed only when all of the following are true:
 | Purchases | `f3e600a0 finalize purchases section cleanup` | Closed | Centralized batch query contract, batch state/actions/data split, guarded editable/print surfaces, purchase batch display/action/number models. |
 | Dashboard | `796a2557 finalize dashboard section cleanup` | Closed | Centralized period contracts, reporting/dashboard contracts, backend-derived metrics, calendar/special-days models, KPI/chart display helpers. |
 | Owner Dashboard | 3ecfc325 | Closed | Rebuilt official owner overview model in backend; frontend is display-only for KPIs, charts, comparison, and exports. |
-| Sales | Pending local commit | Closed in workspace | Centralized sales API contracts, backend official list/day/page model, typed hooks/actions, removed legacy shift fallback and dead edit modal. |
-| HR | Pending local commit | Closed in workspace | Centralized HR/employee contracts, payroll salary snapshots, typed tabs/modals/actions, backend payroll/settlement guards, strict HR governance. |
-| Reports | Pending local commit | Closed in workspace | Centralized reports query contract, typed P&L/tax/bank/cost/detail boundaries, print/export/model split, strict reports governance across `src/modules/Reports`. |
+| Sales | `cb1aed9f finalize sales section cleanup` | Closed | Centralized sales API contracts, backend official list/day/page model, typed hooks/actions, removed legacy shift fallback and dead edit modal. |
+| HR | `18e71122 finalize hr section cleanup` | Closed | Centralized HR/employee contracts, payroll salary snapshots, typed tabs/modals/actions, backend payroll/settlement guards, strict HR governance. |
+| Reports | `48dba7ea finalize reports section cleanup` | Closed | Centralized reports query contract, typed P&L/tax/bank/cost/detail boundaries, print/export/model split, strict reports governance across `src/modules/Reports`. |
 
 ## Invoices
 

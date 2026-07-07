@@ -52,7 +52,10 @@ function inspectStrictCodeFile(filePath) {
   const checks = [
     { pattern: /:\s*any\b/, message: 'explicit any type is not allowed in reports closure scope.' },
     { pattern: /\bany\[\]/, message: 'any[] is not allowed in reports closure scope.' },
+    { pattern: /<\s*any\s*>/, message: 'generic any is not allowed in reports closure scope.' },
     { pattern: /as\s+any\b/, message: 'as any is not allowed in reports closure scope.' },
+    { pattern: /as\s+never\b/, message: 'as never is not allowed in reports closure scope.' },
+    { pattern: /as\s+unknown\b/, message: 'as unknown is not allowed in reports closure scope.' },
     { pattern: /Record<[^>\n]*\bany\b[^>\n]*>/, message: 'Record<string, any> style contracts are not allowed in reports closure scope.' },
     { pattern: /@ts-ignore|@ts-expect-error|eslint-disable/, message: 'compiler/lint suppression is not allowed in reports closure scope.' },
     { pattern: /\bTODO\b|\bFIXME\b/, message: 'TODO/FIXME markers are not allowed in reports closure scope.' },

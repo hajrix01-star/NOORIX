@@ -26,6 +26,7 @@ import {
   useBankCategoryTreeData,
   type CompanyOption,
 } from './hooks/useBankCategoryTreeData';
+import type { BankTreeCategory, BankTreeCategoryPatch } from './bankCategoryTree.types';
 
 export type BankCategoryTreePanelProps = {
   companyId?: string;
@@ -40,7 +41,7 @@ export default function BankCategoryTreePanel({
   const { showToast } = useToast();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
+  const [editing, setEditing] = useState<BankTreeCategory | null>(null);
   const [showMigrate, setShowMigrate] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -61,7 +62,7 @@ export default function BankCategoryTreePanel({
   });
 
   const updateMut = useApiMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Record<string, unknown> }) =>
+    mutationFn: ({ id, patch }: { id: string; patch: BankTreeCategoryPatch }) =>
       bankStatementTreeCategoryUpdate(companyId || '', id, patch),
     invalidateQueries: [data.treeKey],
     showErrorToast: true,
@@ -113,7 +114,7 @@ export default function BankCategoryTreePanel({
     setShowForm(true);
   }, []);
 
-  const openEdit = useCallback((cat: Record<string, unknown>) => {
+  const openEdit = useCallback((cat: BankTreeCategory) => {
     setEditing(cat);
     setShowForm(true);
   }, []);
@@ -232,14 +233,14 @@ export default function BankCategoryTreePanel({
       <BankCategoryTreePanelContent
         t={t}
         isLoading={isLoading}
-        sortedCategories={sortedCategories as Array<Record<string, unknown>>}
-        inactiveCategories={inactiveCategories as Array<Record<string, unknown>>}
+        sortedCategories={sortedCategories}
+        inactiveCategories={inactiveCategories}
         totalKeywords={totalKeywords}
         totalClassifications={totalClassifications}
         openNew={openNew}
         seedDefaultsMut={seedDefaultsMut}
         activeFlat={activeFlat}
-        categories={categories as unknown[]}
+        categories={categories}
         setShowMigrate={setShowMigrate}
         handleExportRules={handleExportRules}
         exportBusy={exportBusy}
@@ -256,7 +257,7 @@ export default function BankCategoryTreePanel({
           setEditing(null);
         }}
         category={editing}
-        existingCategories={categories as unknown[]}
+        existingCategories={categories}
         companyId={companyId}
         t={t}
       />

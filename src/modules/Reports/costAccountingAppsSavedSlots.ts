@@ -22,7 +22,7 @@ export function readSavedSlots(companyId: string): CostAppsSavedSlot[] {
   try {
     const raw = localStorage.getItem(savedSlotsStorageKey(companyId));
     if (!raw) return [];
-    const data = JSON.parse(raw) as unknown;
+    const data: unknown = JSON.parse(raw);
     if (!Array.isArray(data)) return [];
     const out: CostAppsSavedSlot[] = [];
     for (const item of data) {

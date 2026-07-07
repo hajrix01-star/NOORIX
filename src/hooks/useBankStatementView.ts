@@ -45,7 +45,7 @@ type UpdateCategoryVariables = { txId: string; categoryId: string | null };
 type UpdateNoteVariables = { txId: string; note: string };
 
 function loadSavedCards(): AnalysisCardId[] {
-  const parsed = readJsonStorage(BANK_ANALYSIS_CARDS_KEY, null) as unknown;
+  const parsed: unknown = readJsonStorage(BANK_ANALYSIS_CARDS_KEY, null);
   if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_ACTIVE_CARDS;
   const allowed = new Set<AnalysisCardId>(AVAILABLE_ANALYSIS_CARDS.map((card) => card.id));
   const ids = parsed.filter((id): id is AnalysisCardId => typeof id === 'string' && allowed.has(id as AnalysisCardId));

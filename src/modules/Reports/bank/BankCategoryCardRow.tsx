@@ -3,9 +3,10 @@ import { Button, EditableCheckboxCell } from '../../../ui';
 import { getTransactionTypeInfo, getTransactionSideInfo } from './bankRuleConstants';
 import { normParentKeywords, normClassifications } from './utils/bankCategoryTreeNormalize';
 import type { BankTransactionSide } from './bankAnalysisTab.types';
+import type { BankTreeCategory } from './bankCategoryTree.types';
 
 export type BankCategoryCardRowProps = {
-  category: Record<string, unknown>;
+  category: BankTreeCategory;
   index?: number;
   t: (k: string, ...args: string[]) => string;
   onEdit: () => void;
@@ -26,7 +27,7 @@ export function BankCategoryCardRow({
   onToggle,
 }: BankCategoryCardRowProps) {
   const typeInfo = getTransactionTypeInfo(
-    category.transactionType as string | undefined,
+    category.transactionType ?? undefined,
     t,
   );
   const transactionSide = toTransactionSide(category.transactionSide);
