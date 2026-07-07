@@ -70,6 +70,12 @@ export type InvoiceListItem = {
     nameEn?: string | null;
     email?: string | null;
   } | null;
+  expenseLine?: {
+    id?: string | null;
+    nameAr?: string | null;
+    nameEn?: string | null;
+    kind?: string | null;
+  } | null;
   netAmount?: string | number | null;
   taxAmount?: string | number | null;
   totalAmount?: string | number | null;

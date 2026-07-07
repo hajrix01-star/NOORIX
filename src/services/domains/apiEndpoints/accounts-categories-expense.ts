@@ -1,4 +1,10 @@
 import type { ApiParsedResult } from '../../../types/api';
+import type {
+  ExpenseLineCreatePayload,
+  ExpenseLinePaymentsPage,
+  ExpenseLineRecord,
+  ExpenseLineUpdatePayload,
+} from '../../../types/api';
 import { toYmd } from '../../../utils/saudiDate';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
 
@@ -25,8 +31,8 @@ export async function deleteCategory(id: string, companyId: string): Promise<Api
 export async function getExpenseLines(
   companyId: string,
   kind?: string | null,
-  includeInactive: any = false,
-): Promise<ApiParsedResult> {
+  includeInactive = false,
+): Promise<ApiParsedResult<ExpenseLineRecord[]>> {
   const params: Record<string, string> = { companyId: String(companyId) };
   if (kind) params.kind = String(kind);
   if (includeInactive) params.includeInactive = 'true';
@@ -34,7 +40,7 @@ export async function getExpenseLines(
   if (!res.success) return res;
   return { success: true, data: Array.isArray(res.data) ? res.data : [] };
 }
-export async function getExpenseLine(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function getExpenseLine(id: string, companyId: string): Promise<ApiParsedResult<ExpenseLineRecord>> {
   return apiGet(`/api/v1/expense-lines/${id}`, { companyId });
 }
 export async function getExpenseLinePayments(
@@ -42,9 +48,9 @@ export async function getExpenseLinePayments(
   companyId: string,
   startDate: string | undefined,
   endDate: string | undefined,
-  page: any = 1,
-  pageSize: any = 50,
-): Promise<ApiParsedResult> {
+  page = 1,
+  pageSize = 50,
+): Promise<ApiParsedResult<ExpenseLinePaymentsPage>> {
   const params: Record<string, string> = {
     companyId: String(companyId),
     page: String(page),
@@ -54,16 +60,16 @@ export async function getExpenseLinePayments(
   if (endDate) params.endDate = toYmd(endDate);
   return apiGet(`/api/v1/expense-lines/${id}/payments`, params);
 }
-export async function createExpenseLine(body: unknown): Promise<ApiParsedResult> {
+export async function createExpenseLine(body: ExpenseLineCreatePayload): Promise<ApiParsedResult<ExpenseLineRecord>> {
   return apiPost('/api/v1/expense-lines', body);
 }
 export async function updateExpenseLine(
   id: string,
-  body: unknown,
+  body: ExpenseLineUpdatePayload,
   companyId: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<ExpenseLineRecord>> {
   return apiPatch(`/api/v1/expense-lines/${id}?companyId=${companyId}`, body);
 }
-export async function deactivateExpenseLine(id: string, companyId: string): Promise<ApiParsedResult> {
+export async function deactivateExpenseLine(id: string, companyId: string): Promise<ApiParsedResult<ExpenseLineRecord>> {
   return apiPatch(`/api/v1/expense-lines/${id}/deactivate?companyId=${companyId}`, {});
 }

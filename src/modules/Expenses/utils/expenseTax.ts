@@ -1,21 +1,14 @@
-/**
- * منطق خاضعية ضريبة القيمة المضافة لمصروف (ثابت/متغير):
- * — الحساب المعفى (taxExempt) يمنع الضريبة دائماً.
- * — وإلا: يُفترض الخضوع إذا كان المورد مسجّلاً في الضريبة (isTaxRegistered !== false).
- * — المستخدم يمكنه «إعفاء هذه الدفعة» استثناءً عندما كان الخضوع ممكناً افتراضياً.
- */
+import type { ExpenseLineRecord, ExpenseSupplierRef } from '../../../types/api';
 
-/** @param {{ isTaxRegistered?: boolean } | null | undefined} supplier */
-export function supplierAppliesVat(supplier: any) {
+export function supplierAppliesVat(supplier: ExpenseSupplierRef | null | undefined): boolean {
   if (!supplier) return true;
   return supplier.isTaxRegistered !== false;
 }
 
-/**
- * @param {{ category?: { account?: { taxExempt?: boolean } } | null }; supplier?: { isTaxRegistered?: boolean } | null } | null | undefined} line
- * @param {boolean} exemptThisPayment — إعفاء استثنائي لهذه الدفعة فقط
- */
-export function isExpensePaymentTaxable(line: any, exemptThisPayment: any) {
+export function isExpensePaymentTaxable(
+  line: Pick<ExpenseLineRecord, 'category' | 'supplier'> | null | undefined,
+  exemptThisPayment: boolean,
+): boolean {
   if (!line) return false;
   if (line.category?.account?.taxExempt) return false;
   if (!supplierAppliesVat(line.supplier)) return false;
@@ -23,8 +16,9 @@ export function isExpensePaymentTaxable(line: any, exemptThisPayment: any) {
   return true;
 }
 
-/** هل يُعرض خيار «إعفاء هذه الدفعة» (لا معنى له إن كان المورد غير مسجّل أو الحساب معفى). */
-export function canExemptThisExpensePayment(line: any) {
+export function canExemptThisExpensePayment(
+  line: Pick<ExpenseLineRecord, 'category' | 'supplier'> | null | undefined,
+): boolean {
   if (!line) return false;
   if (line.category?.account?.taxExempt) return false;
   return supplierAppliesVat(line.supplier);

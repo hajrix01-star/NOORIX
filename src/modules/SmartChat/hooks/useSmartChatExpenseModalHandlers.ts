@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { expenseKeys } from '../../../services/queryKeys';
 import type { Dispatch, SetStateAction } from 'react';
+import type { ExpenseLineRecord } from '../../../types/api';
 import type { ChatMessageInput, ExpenseMode } from '../types';
 
 /**
@@ -19,7 +20,7 @@ export function useSmartChatExpenseModalHandlers({
   showToast: (msg: string, type?: string) => void;
   addMessage: (msg: ChatMessageInput) => void;
   setExpenseMode: Dispatch<SetStateAction<ExpenseMode>>;
-  setExpenseEditLine: Dispatch<SetStateAction<unknown>>;
+  setExpenseEditLine: Dispatch<SetStateAction<ExpenseLineRecord | null | undefined>>;
 }) {
   const qc = useQueryClient();
 

@@ -73,6 +73,20 @@ export type {
   VaultWithTransactionsResult,
 } from './domains/vaults';
 export type {
+  ExpenseBatchCreatePayload,
+  ExpenseBatchItemPayload,
+  ExpenseCategoryRef,
+  ExpenseLineCreatePayload,
+  ExpenseLineKind,
+  ExpenseLinePaymentRecord,
+  ExpenseLinePaymentSummary,
+  ExpenseLinePaymentsPage,
+  ExpenseLineRecord,
+  ExpenseLineUpdatePayload,
+  ExpensePaymentCreatePayload,
+  ExpenseSupplierRef,
+} from './domains/expenses';
+export type {
   HrCompensationSnapshot,
   HrCompensationSnapshotsResult,
   HrDocumentUploadResult,

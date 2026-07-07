@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { chatQuery, createCustomAllowance, throwIfApiFailed } from '../../../services/api';
+import type { ExpenseLineRecord } from '../../../types/api';
 import type { ChatMessage, ChatMessageInput, EntryMode, ExpenseMode, HrRecordedPayload } from '../types';
 
 type CreateEmployeeMutate = {
@@ -31,7 +32,7 @@ export type UseSmartChatActionsParams = {
   setAddEmployeeOpen: (v: boolean) => void;
   setEntryMode: (v: EntryMode | null) => void;
   setExpenseMode: (v: ExpenseMode) => void;
-  setExpenseEditLine: (v: unknown) => void;
+  setExpenseEditLine: (v: ExpenseLineRecord | null | undefined) => void;
   create: CreateEmployeeMutate;
 };
 

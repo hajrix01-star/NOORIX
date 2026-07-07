@@ -1,22 +1,15 @@
 import React from 'react';
 import { Button, AdaptiveSheet } from '../../../ui';
-
-export type ExpenseLineRow = {
-  id: string;
-  nameAr?: string;
-  nameEn?: string;
-  name?: string;
-  isActive?: boolean;
-};
+import type { ExpenseLineRecord } from '../../../types/api';
 
 export type SmartChatExpenseLinePickSheetProps = {
   open: boolean;
   title: string;
   isAr: boolean;
   narrow: boolean;
-  expenseLines: ExpenseLineRow[];
+  expenseLines: ExpenseLineRecord[];
   onClose: () => void;
-  onPickLine: (line: ExpenseLineRow) => void;
+  onPickLine: (line: ExpenseLineRecord) => void;
 };
 
 export function SmartChatExpenseLinePickSheet({

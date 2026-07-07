@@ -1,7 +1,4 @@
-﻿/**
- * ExpenseLineFormModal — نموذج إنشاء/تعديل بند مصروف (هاتف 1، كهرب 1، إيجار محل)
- */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { createExpenseLine, updateExpenseLine } from '../../../services/api';
 import { useCategories } from '../../../hooks/useCategories';
@@ -9,261 +6,181 @@ import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { Button, AdaptiveSheet, Checkbox, Input, SearchableOptionsPicker } from '../../../ui';
+import type {
+  ExpenseLineCreatePayload,
+  ExpenseLineRecord,
+  ExpenseLineUpdatePayload,
+  ExpenseSupplierRef,
+} from '../../../types/api';
+import {
+  buildExpenseLinePayload,
+  emptyExpenseLineForm,
+  EXPENSE_INSTALLMENT_INTERVALS,
+  expenseCategoryDisplayName,
+  expenseLineKindLabel,
+  expenseSupplierDisplayName,
+  initExpenseLineForm,
+  isExpenseCategoryRef,
+  suggestedExpenseLinePaymentAmount,
+  validateExpenseLineForm,
+  type ExpenseLineFormState,
+} from '../expenseModels';
 
-const INSTALLMENT_INTERVALS = [1, 2, 3, 4, 6, 12];
+type ExpenseLineFormModalProps = {
+  companyId: string;
+  editing: ExpenseLineRecord | null;
+  onClose: () => void;
+  onSaved: () => void;
+};
 
-export default function ExpenseLineFormModal({ companyId, editing, onClose, onSaved }: any) {
+type CategoryOption = { value: string; label: string };
+type SupplierOption = { value: string; label: string };
+
+export default function ExpenseLineFormModal({
+  companyId,
+  editing,
+  onClose,
+  onSaved,
+}: ExpenseLineFormModalProps) {
   const { lang, t } = useTranslation();
-  const [form, setForm] = useState({
-    nameAr: '',
-    nameEn: '',
-    kind: 'expense',
-    categoryId: '',
-    supplierId: '',
-    serviceNumber: '',
-    notes: '',
-    referenceAmount: '',
-    allowPaymentAmountOverride: true,
-    annualTotalAmount: '',
-    installmentIntervalMonths: '',
-  });
+  const [form, setForm] = useState<ExpenseLineFormState>(() => editing ? initExpenseLineForm(editing) : emptyExpenseLineForm());
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (editing) {
-      const ref = editing.referenceAmount;
-      const refNum = ref != null && ref !== '' ? Number(ref) : NaN;
-      const ann = editing.annualTotalAmount;
-      const annNum = ann != null && ann !== '' ? Number(ann) : NaN;
-      setForm({
-        nameAr: editing.nameAr || '',
-        nameEn: editing.nameEn || '',
-        kind: editing.kind || 'expense',
-        categoryId: editing.categoryId || '',
-        supplierId: editing.supplierId || '',
-        serviceNumber: editing.serviceNumber || '',
-        notes: editing.notes || '',
-        referenceAmount: Number.isFinite(refNum) ? String(refNum) : '',
-        allowPaymentAmountOverride: editing.allowPaymentAmountOverride !== false,
-        annualTotalAmount: Number.isFinite(annNum) ? String(annNum) : '',
-        installmentIntervalMonths:
-          editing.installmentIntervalMonths != null ? String(editing.installmentIntervalMonths) : '',
-      });
-    } else {
-      setForm({
-        nameAr: '',
-        nameEn: '',
-        kind: 'expense',
-        categoryId: '',
-        supplierId: '',
-        serviceNumber: '',
-        notes: '',
-        referenceAmount: '',
-        allowPaymentAmountOverride: true,
-        annualTotalAmount: '',
-        installmentIntervalMonths: '',
-      });
-    }
-  }, [editing]);
-
-  const suggestedPerPayment = useMemo(() => {
-    const annual = parseFloat(form.annualTotalAmount);
-    const interval = parseInt(form.installmentIntervalMonths, 10);
-    if (!Number.isFinite(annual) || annual <= 0 || !Number.isFinite(interval) || interval <= 0) return null;
-    if (12 % interval !== 0) return null;
-    const periods = 12 / interval;
-    return Math.round((annual / periods) * 100) / 100;
-  }, [form.annualTotalAmount, form.installmentIntervalMonths]);
 
   const { categories = [] } = useCategories(companyId);
   const { suppliers = [] } = useSuppliers(companyId);
-  const expenseCategoriesGrouped = categories.filter((c: any) => c.type === 'expense');
+  const expenseCategories = categories
+    .filter(isExpenseCategoryRef)
+    .filter((category) => category.type === 'expense');
+  const supplierOptions: ExpenseSupplierRef[] = suppliers;
 
   const expenseKindOptions = useMemo(
     () => [
-      { value: 'expense', label: lang === 'en' ? 'Variable' : 'متغير' },
-      { value: 'fixed_expense', label: lang === 'en' ? 'Fixed' : 'ثابت' },
+      { value: 'expense', label: expenseLineKindLabel('expense', lang) },
+      { value: 'fixed_expense', label: expenseLineKindLabel('fixed_expense', lang) },
     ],
     [lang],
   );
 
-  const categoryPickerOptions = useMemo(() => {
-    const out: { value: string; label: string }[] = [];
-    for (const parent of expenseCategoriesGrouped) {
-      const pn = parent.nameAr || parent.nameEn || '—';
-      out.push({ value: parent.id, label: `${pn} — ${lang === 'en' ? 'main' : 'رئيسية'}` });
+  const categoryPickerOptions = useMemo<CategoryOption[]>(() => {
+    const out: CategoryOption[] = [];
+    for (const parent of expenseCategories) {
+      out.push({ value: parent.id, label: `${expenseCategoryDisplayName(parent, lang)} - ${lang === 'en' ? 'main' : 'رئيسية'}` });
       for (const child of parent.children || []) {
-        const cn = child.nameAr || child.nameEn || '—';
-        out.push({ value: child.id, label: `↳ ${cn} — ${lang === 'en' ? 'sub' : 'فرعية'}` });
+        out.push({ value: child.id, label: `↳ ${expenseCategoryDisplayName(child, lang)} - ${lang === 'en' ? 'sub' : 'فرعية'}` });
       }
     }
     return out;
-  }, [expenseCategoriesGrouped, lang]);
+  }, [expenseCategories, lang]);
 
-  const supplierPickerOptions = useMemo(
+  const supplierPickerOptions = useMemo<SupplierOption[]>(
     () =>
-      suppliers.map((s: any) => ({
-        value: s.id,
-        label: (lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || '',
-      })),
-    [suppliers, lang],
+      supplierOptions
+        .filter((supplier): supplier is ExpenseSupplierRef & { id: string } => Boolean(supplier.id))
+        .map((supplier) => ({ value: supplier.id, label: expenseSupplierDisplayName(supplier, lang) })),
+    [supplierOptions, lang],
   );
 
   const installmentOptions = useMemo(
     () =>
-      INSTALLMENT_INTERVALS.map((n: number) => ({
-        value: String(n),
-        label: `${n} ${lang === 'en' ? 'months' : 'أشهر'}`,
+      EXPENSE_INSTALLMENT_INTERVALS.map((months) => ({
+        value: String(months),
+        label: `${months} ${lang === 'en' ? 'months' : 'أشهر'}`,
       })),
     [lang],
   );
 
+  const suggestedPerPayment = suggestedExpenseLinePaymentAmount(form);
+
   const createMutation = useApiMutation({
-    mutationFn: (body: any) => createExpenseLine(body),
+    mutationFn: (body: ExpenseLineCreatePayload) => createExpenseLine(body),
     showErrorToast: false,
-    onSuccess: () => onSaved?.(),
-    onError: (err: any) => setError(err?.message || 'حدث خطأ'),
+    onSuccess: onSaved,
+    onError: (err: Error) => setError(err.message || t('saveFailed')),
   });
 
   const updateMutation = useApiMutation({
-    mutationFn: ({ id, body }: any) => updateExpenseLine(id, body, companyId),
+    mutationFn: ({ id, body }: { id: string; body: ExpenseLineUpdatePayload }) => updateExpenseLine(id, body, companyId),
     showErrorToast: false,
-    onSuccess: () => onSaved?.(),
-    onError: (err: any) => setError(err?.message || 'حدث خطأ'),
+    onSuccess: onSaved,
+    onError: (err: Error) => setError(err.message || t('saveFailed')),
   });
 
-  const applySuggestedReference = () => {
-    if (suggestedPerPayment == null) return;
-    setForm((p: any) => ({ ...p, referenceAmount: String(suggestedPerPayment) }));
+  const set = <K extends keyof ExpenseLineFormState>(key: K, value: ExpenseLineFormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError('');
-    if (!form.nameAr?.trim()) {
-      setError('اسم البند مطلوب');
+    const validationKey = validateExpenseLineForm(form);
+    if (validationKey) {
+      setError(t(validationKey));
       return;
     }
-    if (!form.categoryId) {
-      setError('الفئة مطلوبة');
-      return;
-    }
-    if (!form.supplierId) {
-      setError('المورد مطلوب');
-      return;
-    }
-    const isFixed = form.kind === 'fixed_expense';
-    const refParsed = form.referenceAmount?.trim() ? Number(form.referenceAmount) : null;
-    if (isFixed && form.referenceAmount?.trim() && (refParsed == null || Number.isNaN(refParsed) || refParsed < 0)) {
-      setError(t('validationInvalidAmount') || 'مبلغ غير صالح');
-      return;
-    }
-
-    const annualParsed = form.annualTotalAmount?.trim() ? Number(form.annualTotalAmount) : null;
-    const intervalParsed = form.installmentIntervalMonths ? parseInt(form.installmentIntervalMonths, 10) : null;
-    if (isFixed && annualParsed != null && !Number.isNaN(annualParsed) && annualParsed > 0) {
-      if (intervalParsed == null || Number.isNaN(intervalParsed) || 12 % intervalParsed !== 0) {
-        setError(t('validationInvalidAmount') || 'فترة الدفع غير صالحة للإجمالي السنوي');
-        return;
-      }
-    }
-    if (isFixed && intervalParsed != null && !Number.isNaN(intervalParsed) && 12 % intervalParsed !== 0) {
-      setError(t('validationInvalidAmount') || 'فترة الدفع يجب أن تقسم 12 بدون باقٍ (1،2،3،4،6،12)');
-      return;
-    }
-
     if (editing) {
-      updateMutation.mutate({
-        id: editing.id,
-        body: {
-          nameAr: form.nameAr.trim(),
-          nameEn: form.nameEn?.trim() || undefined,
-          kind: form.kind,
-          categoryId: form.categoryId,
-          supplierId: form.supplierId,
-          serviceNumber: form.serviceNumber?.trim() || undefined,
-          notes: form.notes?.trim() || undefined,
-          referenceAmount: isFixed ? (refParsed != null && refParsed >= 0 ? refParsed : null) : null,
-          allowPaymentAmountOverride: isFixed ? form.allowPaymentAmountOverride : true,
-          annualTotalAmount: isFixed && annualParsed != null && !Number.isNaN(annualParsed) && annualParsed > 0
-            ? annualParsed
-            : isFixed
-              ? null
-              : undefined,
-          installmentIntervalMonths:
-            isFixed && intervalParsed != null && !Number.isNaN(intervalParsed)
-              ? intervalParsed
-              : isFixed
-                ? null
-                : undefined,
-        },
-      });
+      const payload = buildExpenseLinePayload(form, companyId, editing);
+      updateMutation.mutate({ id: editing.id, body: payload });
     } else {
-      createMutation.mutate({
-        companyId,
-        nameAr: form.nameAr.trim(),
-        nameEn: form.nameEn?.trim() || undefined,
-        kind: form.kind,
-        categoryId: form.categoryId,
-        supplierId: form.supplierId,
-        serviceNumber: form.serviceNumber?.trim() || undefined,
-        notes: form.notes?.trim() || undefined,
-        referenceAmount: isFixed && refParsed != null && refParsed >= 0 ? refParsed : undefined,
-        allowPaymentAmountOverride: isFixed ? form.allowPaymentAmountOverride : true,
-        annualTotalAmount:
-          isFixed && annualParsed != null && !Number.isNaN(annualParsed) && annualParsed > 0 ? annualParsed : undefined,
-        installmentIntervalMonths:
-          isFixed && intervalParsed != null && !Number.isNaN(intervalParsed) ? intervalParsed : undefined,
-      });
+      const payload = buildExpenseLinePayload(form, companyId, null);
+      createMutation.mutate(payload);
     }
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const isFixed = form.kind === 'fixed_expense';
 
   const footer = (
     <>
-      <Button onClick={onClose}>إلغاء</Button>
+      <Button onClick={onClose} disabled={isPending}>{t('cancel')}</Button>
       <Button variant="primary" type="submit" form="expense-line-form-modal" disabled={isPending}>
-        {isPending ? 'جاري الحفظ...' : (editing ? 'تحديث' : 'حفظ')}
+        {isPending ? t('saving') : editing ? t('update') : t('save')}
       </Button>
     </>
   );
 
   return (
     <AdaptiveSheet
-      open={true}
+      open
       onClose={onClose}
-      title={editing ? 'تعديل بند مصروف' : 'إضافة بند مصروف'}
+      title={editing ? t('edit') : t('addExpenseLine')}
       size="md"
       side="start"
       className="expense-line-form-drawer"
       footer={footer}
     >
-      <form id="expense-line-form-modal" onSubmit={handleSubmit}>
-        {error && (
-          <div className="p-3 mb-4 rounded-lg text-[13px] bg-noorix-bg-muted border border-noorix-border text-noorix-red">
+      <form id="expense-line-form-modal" onSubmit={handleSubmit} className="flex flex-col gap-3">
+        {error ? (
+          <div className="p-3 rounded-lg text-[13px] bg-noorix-bg-muted border border-noorix-border text-noorix-red">
             {error}
           </div>
-        )}
+        ) : null}
 
         <Input
           type="text"
-          label="اسم البند (عربي) *"
+          label={`${t('expenseLineNameCol')} *`}
           value={form.nameAr}
-          onChange={(e: any) => setForm((p: any) => ({ ...p, nameAr: e.target.value }))}
-          placeholder="مثال: هاتف رقم 1، كهرباء الفرع 1"
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('nameAr', event.target.value)}
+          placeholder={lang === 'en' ? 'Example: branch electricity' : 'مثال: كهرباء الفرع'}
           required
         />
 
-        <SearchableOptionsPicker
-          label="النوع *"
-          value={form.kind}
-          onChange={(v) => setForm((p: any) => ({ ...p, kind: v }))}
-          options={expenseKindOptions}
-          aria-label="النوع"
+        <Input
+          type="text"
+          label={t('nameEnLabel')}
+          value={form.nameEn}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('nameEn', event.target.value)}
+          placeholder="Optional"
         />
 
-        {form.kind === 'fixed_expense' && (
+        <SearchableOptionsPicker
+          label={`${t('expenseLineKindCol')} *`}
+          value={form.kind}
+          onChange={(value) => set('kind', value === 'fixed_expense' ? 'fixed_expense' : 'expense')}
+          options={expenseKindOptions}
+          aria-label={t('expenseLineKindCol')}
+        />
+
+        {isFixed ? (
           <>
             <Input
               type="number"
@@ -271,7 +188,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
               step="0.01"
               min="0"
               value={form.annualTotalAmount}
-              onChange={(e: any) => setForm((p: any) => ({ ...p, annualTotalAmount: e.target.value }))}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('annualTotalAmount', event.target.value)}
               placeholder="120000"
               className="ltr"
             />
@@ -281,25 +198,25 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
               label={t('expenseLineInstallmentInterval')}
               allowEmpty
               emptyValue=""
-              emptyLabel="—"
+              emptyLabel="-"
               value={form.installmentIntervalMonths}
-              onChange={(v) => setForm((p: any) => ({ ...p, installmentIntervalMonths: v }))}
+              onChange={(value) => set('installmentIntervalMonths', value)}
               options={installmentOptions}
               aria-label={t('expenseLineInstallmentInterval')}
             />
 
-            {suggestedPerPayment != null && (
+            {suggestedPerPayment != null ? (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-noorix-border bg-noorix-bg-muted px-3 py-2 mb-2">
                 <span className="text-[12px] text-noorix-muted">
                   {t('expenseLineSuggestedPerPayment')}:{' '}
                   <span className="font-semibold text-noorix-text ltr">{fmt(suggestedPerPayment)}</span>{' '}
                   <span className="nx-sar">SR</span>
                 </span>
-                <Button type="button" size="sm" variant="ghost" onClick={applySuggestedReference}>
+                <Button type="button" size="sm" variant="ghost" onClick={() => set('referenceAmount', String(suggestedPerPayment))}>
                   {t('expenseLineApplySuggestedReference')}
                 </Button>
               </div>
-            )}
+            ) : null}
 
             <Input
               type="number"
@@ -307,7 +224,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
               step="0.01"
               min="0"
               value={form.referenceAmount}
-              onChange={(e: any) => setForm((p: any) => ({ ...p, referenceAmount: e.target.value }))}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('referenceAmount', event.target.value)}
               placeholder="30000"
               className="ltr"
             />
@@ -316,7 +233,7 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
               <Checkbox
                 className="mt-0.5 shrink-0"
                 checked={form.allowPaymentAmountOverride}
-                onChange={(e: any) => setForm((p: any) => ({ ...p, allowPaymentAmountOverride: e.target.checked }))}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('allowPaymentAmountOverride', event.target.checked)}
               />
               <span>
                 <span className="font-medium">{t('expenseLineAllowPaymentAmountOverride')}</span>
@@ -324,44 +241,44 @@ export default function ExpenseLineFormModal({ companyId, editing, onClose, onSa
               </span>
             </label>
           </>
-        )}
+        ) : null}
 
         <SearchableOptionsPicker
-          label="الفئة *"
+          label={`${t('category')} *`}
           allowEmpty
           emptyValue=""
-          emptyLabel="— اختر الفئة —"
+          emptyLabel={t('selectCategory')}
           value={form.categoryId}
-          onChange={(v) => setForm((p: any) => ({ ...p, categoryId: v }))}
+          onChange={(value) => set('categoryId', value)}
           options={categoryPickerOptions}
-          aria-label="الفئة"
+          aria-label={t('category')}
         />
 
         <SearchableOptionsPicker
-          label="المورد *"
+          label={`${t('supplier')} *`}
           allowEmpty
           emptyValue=""
-          emptyLabel="— اختر المورد —"
+          emptyLabel={t('selectSupplier')}
           value={form.supplierId}
-          onChange={(v) => setForm((p: any) => ({ ...p, supplierId: v }))}
+          onChange={(value) => set('supplierId', value)}
           options={supplierPickerOptions}
-          aria-label="المورد"
+          aria-label={t('supplier')}
         />
 
         <Input
           type="text"
-          label="رقم الخدمة / العداد"
+          label={t('expenseLineServiceNumberCol')}
           value={form.serviceNumber}
-          onChange={(e: any) => setForm((p: any) => ({ ...p, serviceNumber: e.target.value }))}
-          placeholder="اختياري"
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('serviceNumber', event.target.value)}
+          placeholder={t('optional')}
         />
 
         <Input
           multiline
-          label="ملاحظات"
+          label={t('notes')}
           value={form.notes}
-          onChange={(e: any) => setForm((p: any) => ({ ...p, notes: e.target.value }))}
-          placeholder={form.kind === 'fixed_expense' ? t('expenseLineNotesPlaceholderFixed') : 'اختياري'}
+          onChange={(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => set('notes', event.target.value)}
+          placeholder={isFixed ? t('expenseLineNotesPlaceholderFixed') : t('optional')}
           rows={3}
         />
       </form>

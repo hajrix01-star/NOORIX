@@ -71,7 +71,7 @@ export class ExpenseLineService {
       ...dateFilter,
     };
 
-    const [items, total] = await Promise.all([
+    const [items, total, aggregate] = await Promise.all([
       this.prisma.invoice.findMany({
         where,
         orderBy: { transactionDate: 'desc' },
@@ -80,6 +80,10 @@ export class ExpenseLineService {
         include: { supplier: true, vault: true },
       }),
       this.prisma.invoice.count({ where }),
+      this.prisma.invoice.aggregate({
+        where,
+        _sum: { netAmount: true, taxAmount: true, totalAmount: true },
+      }),
     ]);
 
     return {
@@ -88,6 +92,12 @@ export class ExpenseLineService {
       total,
       page,
       pageSize,
+      periodSummary: {
+        totalNet: Number(aggregate._sum.netAmount ?? 0),
+        totalTax: Number(aggregate._sum.taxAmount ?? 0),
+        totalAmount: Number(aggregate._sum.totalAmount ?? 0),
+        count: total,
+      },
     };
   }
 
