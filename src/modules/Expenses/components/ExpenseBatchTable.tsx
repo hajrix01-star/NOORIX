@@ -10,7 +10,7 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, DateField, Input, ScreenShell, cn, FmtNum, SmartTable, SearchableOptionsPicker } from '../../../ui';
+import { Button, Checkbox, DateField, Input, ScreenShell, cn, FmtNum, SmartTable, SearchableOptionsPicker, SummaryBar } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import type { ExpenseLineRecord } from '../../../types/api';
 import {
@@ -366,27 +366,21 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
         stripeMobileCards
       />
 
-      <div className="noorix-summary-bar noorix-summary-bar--4 mt-6">
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('rows')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--blue">{rows.length}</div>
-          <div className="mt-0.5 text-[11px] font-medium text-noorix-muted">
-            {summary.count} {t('expenseBatchRowsValidHint')}
-          </div>
-        </div>
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('expenseTaxBreakdownNet')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--green"><FmtNum n={summary.totalNet} /> SR</div>
-        </div>
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('expenseTaxBreakdownVat')}</div>
-          <div className="noorix-summary-bar__value noorix-summary-bar__value--amber"><FmtNum n={summary.totalTax} /> SR</div>
-        </div>
-        <div className="noorix-summary-bar__item">
-          <div className="noorix-summary-bar__label">{t('total')}</div>
-          <div className="noorix-summary-bar__value"><FmtNum n={summary.total} /> SR</div>
-        </div>
-      </div>
+      <SummaryBar
+        className="mt-6"
+        items={[
+          {
+            key: 'rows',
+            label: t('rows'),
+            value: rows.length,
+            tone: 'blue',
+            helper: `${summary.count} ${t('expenseBatchRowsValidHint')}`,
+          },
+          { key: 'net', label: t('expenseTaxBreakdownNet'), value: summary.totalNet, tone: 'green', currency: 'SR' },
+          { key: 'tax', label: t('expenseTaxBreakdownVat'), value: summary.totalTax, tone: 'amber', currency: 'SR' },
+          { key: 'total', label: t('total'), value: summary.total, currency: 'SR' },
+        ]}
+      />
       <Button
         variant="primary"
         size="md"

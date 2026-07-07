@@ -12,7 +12,7 @@ import VaultFormModal from './components/VaultFormModal';
 import VaultTransactionsModal from './components/VaultTransactionsModal';
 import VaultTransferModal from './components/VaultTransferModal';
 import { VaultReorderModal } from './components/VaultReorderModal';
-import { Button, Checkbox, ScreenShell, FmtNum } from '../../ui';
+import { Button, Checkbox, ScreenShell, SummaryBar } from '../../ui';
 import { vaultKeys } from '../../services/queryKeys';
 import type { VaultCreatePayload, VaultRecord, VaultUpdatePayload } from '../../types/api';
 import { buildTreasurySummary, splitVaultGroups } from './treasuryModels';
@@ -22,7 +22,7 @@ type SectionLabelProps = { label: string };
 type SummaryTile = {
   label: string;
   value: number;
-  tone: 'default' | 'positive' | 'negative';
+  tone: 'default' | 'green' | 'red';
   sign: string;
 };
 
@@ -140,10 +140,10 @@ export default function TreasuryScreen() {
     {
       label: t('totalBalance'),
       value: summary.totalBalance,
-      tone: summary.totalBalance < 0 ? 'negative' : 'default',
+      tone: summary.totalBalance < 0 ? 'red' : 'default',
       sign: summary.totalBalance < 0 ? '−' : '',
     },
-    { label: t('inbound'), value: summary.totalIn, tone: 'positive', sign: '' },
+    { label: t('inbound'), value: summary.totalIn, tone: 'green', sign: '' },
     { label: t('outbound'), value: summary.totalOut, tone: 'default', sign: '' },
   ];
 
@@ -196,29 +196,17 @@ export default function TreasuryScreen() {
       {hasCompany && !isLoading ? (
         <>
           {vaultsList.length > 0 ? (
-            <div className="noorix-surface-card grid gap-0 overflow-hidden p-0 [grid-template-columns:repeat(auto-fit,minmax(120px,1fr))]">
-              <div className="text-[11px] text-noorix-muted border-b border-noorix-border py-2 px-5 col-span-full">
-                {dateFilter?.label || t('allMonths')}
-              </div>
-              {summaryTiles.map(({ label, value, tone, sign }, index) => (
-                <div key={label} className={`text-center p-4 ${index < 2 ? 'border-r border-noorix-border' : ''}`}>
-                  <div className="text-[11px] text-noorix-muted mb-1.5 tracking-[0.03em]">{label}</div>
-                  <div
-                    dir="ltr"
-                    className={`font-extrabold text-[20px] nx-font-numbers ${
-                      tone === 'negative'
-                        ? 'text-noorix-red'
-                        : tone === 'positive'
-                          ? 'text-noorix-green'
-                          : 'text-noorix-text'
-                    }`}
-                  >
-                    {sign}<FmtNum n={Math.abs(value)} />
-                    <span className="nx-sar me-[3px]">SR</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <SummaryBar
+              caption={dateFilter?.label || t('allMonths')}
+              items={summaryTiles.map(({ label, value, tone, sign }) => ({
+                key: label,
+                label,
+                value: Math.abs(value),
+                tone,
+                prefix: sign,
+                currency: 'SR',
+              }))}
+            />
           ) : null}
 
           {salesChannels.length > 0 ? (

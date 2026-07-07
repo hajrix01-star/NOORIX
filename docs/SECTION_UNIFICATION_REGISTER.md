@@ -1233,7 +1233,7 @@ These files still preserve legacy API compatibility where some older endpoints a
 
 ## API Contracts Finalization
 
-Closed on 2026-07-07 as a governed strict API contract and mutation-envelope pass. Closure commit is pending local commit.
+Closed on 2026-07-07 as a governed strict API contract and mutation-envelope pass. Closure commit: `4e672126 finalize api contracts strict envelope`.
 
 ### Scope
 
@@ -1284,11 +1284,66 @@ These files are no longer allowed to hide compatibility with `any`. Mutations us
   - Loose `Promise<ApiParsedResult>` signatures: 0.
   - `useApiMutation` and API core generic defaults are typed without real `any`.
 
+## KPI / Summary Primitive Finalization
+
+Closed on 2026-07-07 as the first governed system-wide KPI and summary primitive pass. Closure commit is pending local commit.
+
+### Scope
+
+- Central summary primitive:
+  - `src/ui/SummaryBar.tsx`
+  - `src/ui/SummaryBar.test.tsx`
+  - `src/ui/index.ts`
+  - `src/index.css`
+- Central KPI primitive hardening:
+  - `src/ui/MetricCard.tsx`
+  - `src/ui/MetricCard.test.tsx`
+- Migrated summary surfaces:
+  - `src/modules/Purchases/components/BatchSummaryBar.tsx`
+  - `src/modules/Expenses/components/ExpenseBatchTable.tsx`
+  - `src/modules/Sales/components/SalesShiftEntryCard.tsx`
+  - `src/modules/Orders/components/OrderFormModal.tsx`
+  - `src/modules/Treasury/TreasuryScreen.tsx`
+- Governance:
+  - `scripts/check-kpi-summary-governance.mjs`
+  - `package.json` script `check:kpi-summary-governance`
+
+### Centralized
+
+- `SummaryBar` is now the single UI primitive for compact row-based summary bars.
+- Direct `noorix-summary-bar` markup is blocked outside `SummaryBar`.
+- `MetricCard.Spark` no longer accepts `any[]`; spark data is typed as display-safe primitive points.
+- Purchase, expense, sales, order form, and treasury summary bars now use the central primitive.
+- Sales draft summary labels now use translation keys instead of hardcoded Arabic labels.
+
+### Protected Exceptions
+
+- Full KPI cards remain on `MetricCard`, not `SummaryBar`.
+- Complex analytical cards, assistant cards, bank analysis cards, and print/export cards remain section-specific until a dedicated chart/card or print/export primitive is introduced.
+- `SummaryBar` is presentation-only; it does not own official accounting or tax calculations.
+
+### Final System Unification Candidates
+
+- Migrate remaining section-specific KPI card grids to shared grid helpers only where the existing `MetricCard` API is insufficient.
+- Promote chart loading/empty/error surfaces to a central chart-state primitive.
+- Move print/export cards and document summary blocks to the future print/export layout layer.
+
+### Closure Checks
+
+- 2026-07-07 KPI/Summary primitive closure:
+  - `tsc --noEmit` passed.
+  - `check:kpi-summary-governance` passed.
+  - `check-node-scripts` passed after adding KPI/Summary governance.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - Targeted UI and affected-section tests passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
 
-- Central financial KPI/card primitive for cards and summary bars.
 - Central chart state primitives for loading, empty, error, and no-data states.
 - Central print/export layout layer for financial documents that are safe to unify.
 - Central editable-grid standard for financial row-entry screens.

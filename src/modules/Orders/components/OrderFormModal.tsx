@@ -8,7 +8,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { ProductSearchInput, type ProductSearchItem } from '../../../components/common/ProductSearchInput';
-import { Button, DateField, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal } from '../../../ui';
+import { Button, DateField, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal, SummaryBar } from '../../../ui';
 import { useOrderSections } from '../../../hooks/useOrders';
 import type {
   CreateOrderLinePayload,
@@ -627,12 +627,11 @@ export function OrderFormModal({
           <Input multiline label={t('notes')} value={notes} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)} rows={2} placeholder={t('notesPlaceholder')} />
         </div>
 
-        <div className="noorix-summary-bar">
-          <div className="noorix-summary-bar__item">
-            <div className="noorix-summary-bar__label">{t('total')}</div>
-            <div className="noorix-summary-bar__value noorix-summary-bar__value--green"><FmtNum n={totalAmount} /> SR</div>
-          </div>
-        </div>
+        <SummaryBar
+          items={[
+            { key: 'total', label: t('total'), value: totalAmount.toNumber(), tone: 'green', currency: 'SR' },
+          ]}
+        />
       </AdaptiveSheet>
 
       {/* ─── مودال الحجم/الكمية/السعر ─── */}

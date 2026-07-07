@@ -64,6 +64,8 @@ export type { FloatingPanelProps   } from './FloatingPanel';
 export { default as RuntimeStyleBox } from './RuntimeStyleBox';
 export type { RuntimeStyleBoxProps } from './RuntimeStyleBox';
 export { default as MetricCard      } from './MetricCard';
+export { default as SummaryBar      } from './SummaryBar';
+export type { SummaryBarItem, SummaryBarProps, SummaryBarTone } from './SummaryBar';
 export { default as SimpleTable     } from './SimpleTable';
 export type { SimpleTableColumn, SimpleTableProps } from './SimpleTable';
 export { default as MatrixTable     } from './MatrixTable';
