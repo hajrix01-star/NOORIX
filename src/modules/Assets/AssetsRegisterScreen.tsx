@@ -23,7 +23,7 @@ import { AssetsWarrantyQueueTable } from './components/AssetsWarrantyQueueTable'
 import { AssetFormPanel } from './components/AssetFormPanel';
 import { AssetWarrantyPanel } from './components/AssetWarrantyPanel';
 import { ASSET_SECTION_TAB_IDS } from './types';
-import type { AssetRegisterListItem, PendingWarrantyInvoiceRow, SupplierOption } from './types';
+import type { AssetRegisterListItem, PendingWarrantyInvoiceRow } from './types';
 
 export default function AssetsRegisterScreen() {
   const { activeCompanyId } = useApp();
@@ -34,8 +34,12 @@ export default function AssetsRegisterScreen() {
   const queryClient = useQueryClient();
 
   const role = resolveUserRole(user?.role);
-  const canWrite = hasPermission(role, PERMISSIONS.EXPENSES_WRITE, user?.permissions);
-  const canDelete = hasPermission(role, PERMISSIONS.EXPENSES_DELETE, user?.permissions);
+  const canWrite =
+    hasPermission(role, PERMISSIONS.ASSETS_WRITE, user?.permissions) ||
+    hasPermission(role, PERMISSIONS.EXPENSES_WRITE, user?.permissions);
+  const canDelete =
+    hasPermission(role, PERMISSIONS.ASSETS_DELETE, user?.permissions) ||
+    hasPermission(role, PERMISSIONS.EXPENSES_DELETE, user?.permissions);
 
   const filters = useAssetsRegisterFilters();
   const { warrantyFilter, setWarrantyFilter, search, setSearch, debouncedQ, page, setPage, pageSize } = filters;
@@ -207,7 +211,7 @@ export default function AssetsRegisterScreen() {
       {sheetOpen ? (
         <AssetFormPanel
           companyId={companyId}
-          suppliers={suppliers as SupplierOption[]}
+          suppliers={suppliers}
           initial={editing}
           onClose={() => {
             setSheetOpen(false);

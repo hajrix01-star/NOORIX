@@ -1,20 +1,21 @@
 import { useApiQuery } from '../../../hooks/useApiQuery';
 import { getCompanyAssets, getPendingWarrantyInvoices } from '../../../services/api';
 import { assetKeys } from '../../../services/queryKeys';
-import { mapPendingList, mapRegisterListResponse, type RegisterListResponse } from '../utils/assetsRegisterMappers';
+import type { AssetRegisterPage, AssetWarrantyFilter, PendingWarrantyInvoiceRow } from '../../../types/api';
+import { normalizeAssetRegisterPage, normalizePendingWarrantyRows } from '../assetsRegisterModel';
 
 export function useAssetsRegisterData(
   companyId: string,
-  warrantyFilter: string,
+  warrantyFilter: AssetWarrantyFilter,
   debouncedQ: string,
   page: number,
   pageSize: number,
   loadingErrorLabel: string,
 ) {
-  const registerQuery = useApiQuery<RegisterListResponse | undefined>({
+  const registerQuery = useApiQuery<AssetRegisterPage | undefined>({
     queryKey: assetKeys.register(companyId, warrantyFilter, debouncedQ, page, pageSize),
     queryFn: () => getCompanyAssets(companyId, {
-        warrantyFilter: warrantyFilter === 'all' ? undefined : warrantyFilter,
+        warrantyFilter,
         q: debouncedQ || undefined,
         page,
         pageSize,
@@ -23,20 +24,20 @@ export function useAssetsRegisterData(
     fallbackMessage: loadingErrorLabel,
   });
 
-  const pendingQuery = useApiQuery<any>({
+  const pendingQuery = useApiQuery<PendingWarrantyInvoiceRow[] | undefined>({
     queryKey: assetKeys.pendingWarranty(companyId),
     queryFn: () => getPendingWarrantyInvoices(companyId),
     enabled: !!companyId,
     fallbackMessage: loadingErrorLabel,
   });
 
-  const { items, total, sumAll } = mapRegisterListResponse(registerQuery.data);
-  const pendingRows = mapPendingList(pendingQuery.data);
+  const registerPage = normalizeAssetRegisterPage(registerQuery.data);
+  const pendingRows = normalizePendingWarrantyRows(pendingQuery.data);
 
   return {
-    items,
-    total,
-    sumAll,
+    items: registerPage.items,
+    total: registerPage.total,
+    sumAll: registerPage.sumAcquisitionCostFiltered,
     isLoading: registerQuery.isLoading,
     isError: registerQuery.isError,
     error: registerQuery.error,

@@ -1,12 +1,14 @@
 import React from 'react';
 import { Button, FilterToolbar, Input, SearchableOptionsPicker } from '../../../ui';
+import type { AssetWarrantyFilter } from '../../../types/api';
+import { parseAssetWarrantyFilter } from '../assetsRegisterModel';
 
 export type AssetsRegisterFilterBarProps = {
   search: string;
   onSearchChange: (value: string) => void;
   onSearchApplied: () => void;
-  warrantyFilter: string;
-  onWarrantyFilterChange: (value: string) => void;
+  warrantyFilter: AssetWarrantyFilter;
+  onWarrantyFilterChange: (value: AssetWarrantyFilter) => void;
   onRefresh: () => void;
   t: (k: string) => string;
 };
@@ -45,7 +47,7 @@ export function AssetsRegisterFilterBar({
           size="sm"
           value={warrantyFilter}
           onChange={(value) => {
-            onWarrantyFilterChange(value);
+            onWarrantyFilterChange(parseAssetWarrantyFilter(value));
             onSearchApplied();
           }}
           options={[

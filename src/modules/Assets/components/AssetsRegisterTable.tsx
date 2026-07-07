@@ -3,7 +3,8 @@ import { SmartTable, Badge, KebabMenu } from '../../../ui';
 import { formatMoney } from '../../../utils/money';
 import type { AssetRegisterListItem } from '../types';
 import { formatAssetDate, getSupplierDisplayName } from '../utils/assetsRegisterMappers';
-import { useWarrantyBadgeMap, type WarrantyBadgeKey } from '../utils/assetsRegisterCalculations';
+import { useWarrantyBadgeMap } from '../utils/assetsRegisterCalculations';
+import { normalizeWarrantyStatus } from '../assetsRegisterModel';
 
 export type AssetsRegisterTableProps = {
   items: AssetRegisterListItem[];
@@ -101,7 +102,7 @@ export function AssetsRegisterTable({
         key: 'warrantyStatus',
         header: t('assetWarrantyFilter'),
         render: (_: unknown, row: AssetRegisterListItem) => {
-          const key = String(row.warrantyStatus ?? 'none') as WarrantyBadgeKey;
+          const key = normalizeWarrantyStatus(row.warrantyStatus);
           const b = warrantyBadgeMap[key] ?? warrantyBadgeMap.none;
           return (
             <Badge color={b.color} size="sm">
@@ -156,7 +157,7 @@ export function AssetsRegisterTable({
       {
         keys: ['nameAr', 'serialNumber', 'purchaseDate'],
         content: (
-          <span className="text-[12px] font-semibold text-noorix-muted">{t('assetTotalValue')}</span>
+          <span className="text-[12px] font-semibold text-noorix-muted">{t('total')}</span>
         ),
       },
       {
@@ -257,7 +258,7 @@ export function AssetsRegisterTable({
         </div>
       </div>
     ),
-    [t],
+    [t, lang],
   );
 
   return (

@@ -79,7 +79,7 @@ export class CompanyAssetsService {
       where.warrantyEndDate = { gte: today, lte: day90 };
     }
 
-    const [rows, total, sumRow] = await Promise.all([
+    const [rows, total, sumFilteredRow, sumAllRow] = await Promise.all([
       this.prisma.companyAsset.findMany({
         where,
         orderBy: [{ purchaseDate: 'desc' }, { createdAt: 'desc' }],
@@ -93,6 +93,10 @@ export class CompanyAssetsService {
       }),
       this.prisma.companyAsset.count({ where }),
       this.prisma.companyAsset.aggregate({
+        where,
+        _sum: { acquisitionCost: true },
+      }),
+      this.prisma.companyAsset.aggregate({
         where: { companyId },
         _sum: { acquisitionCost: true },
       }),
@@ -105,7 +109,8 @@ export class CompanyAssetsService {
       total,
       page,
       pageSize,
-      sumAcquisitionCostAll: sumRow._sum.acquisitionCost?.toString() ?? '0',
+      sumAcquisitionCostFiltered: sumFilteredRow._sum.acquisitionCost?.toString() ?? '0',
+      sumAcquisitionCostAll: sumAllRow._sum.acquisitionCost?.toString() ?? '0',
     };
   }
 
@@ -119,6 +124,7 @@ export class CompanyAssetsService {
         warrantyFollowUpDone: false,
       },
       orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
+      take: 200,
       include: {
         supplier: { select: { id: true, nameAr: true, nameEn: true } },
         expenseLine: {

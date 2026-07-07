@@ -73,6 +73,20 @@ export type {
   VaultWithTransactionsResult,
 } from './domains/vaults';
 export type {
+  AssetCompleteFromInvoicePayload,
+  AssetCreatePayload,
+  AssetInvoiceRef,
+  AssetRegisterItem,
+  AssetRegisterPage,
+  AssetSupplierRef,
+  AssetUpdatePayload,
+  AssetWarrantyFilter,
+  AssetWarrantyLine,
+  AssetWarrantyLinePayload,
+  AssetWarrantyStatus,
+  PendingWarrantyInvoiceRow,
+} from './domains/assets';
+export type {
   ExpenseBatchCreatePayload,
   ExpenseBatchItemPayload,
   ExpenseCategoryRef,

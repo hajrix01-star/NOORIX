@@ -1,10 +1,9 @@
-/**
- * مفاتيح React Query — الأصول الثابتة
- */
+import type { AssetWarrantyFilter } from '../../types/api';
+
 export const assetKeys = {
   register: (
     companyId: string,
-    warrantyFilter: unknown,
+    warrantyFilter: AssetWarrantyFilter,
     q: string,
     page: number,
     pageSize: number,

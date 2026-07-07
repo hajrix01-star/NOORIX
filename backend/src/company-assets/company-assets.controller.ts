@@ -13,6 +13,12 @@ import { CreateCompanyAssetDto } from './dto/create-company-asset.dto';
 import { UpdateCompanyAssetDto } from './dto/update-company-asset.dto';
 import { CompleteCompanyAssetFromInvoiceDto } from './dto/complete-from-invoice.dto';
 
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 @Controller('company-assets')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class CompanyAssetsController {
@@ -30,8 +36,8 @@ export class CompanyAssetsController {
     return this.companyAssetsService.findAll(requireCompanyId(companyId), {
       warrantyFilter,
       q,
-      page: page ? parseInt(page, 10) : 1,
-      pageSize: pageSize ? parseInt(pageSize, 10) : 50,
+      page: parsePositiveInt(page, 1),
+      pageSize: parsePositiveInt(pageSize, 50),
     });
   }
 
