@@ -1602,6 +1602,52 @@ Closed on 2026-07-08 as the governed official-number boundary pass. Closure comm
   - `check-node-scripts` passed after adding Official-number governance.
   - Existing protected exceptions were reviewed and documented as draft, model, wrapper, or print boundaries.
 
+## Query / Date Boundary Governance Finalization
+
+Closed on 2026-07-08 as the governed query/date serialization boundary pass. Closure commit is pending local commit.
+
+### Scope
+
+- System-wide query/date boundary governance:
+  - `scripts/check-query-date-governance.mjs`
+  - `package.json` script `check:query-date-governance`
+- One sales hook cleanup:
+  - `src/modules/Sales/hooks/useDailySalesScreen.ts`
+
+### Centralized
+
+- Sales search initialization now reads from the existing React Router `searchParams` source instead of rebuilding `window.location.search` with `new URLSearchParams`.
+- Raw URL query construction is now guarded; raw URLSearchParams must stay inside documented endpoint/navigation/drill-link boundaries:
+  - API endpoint query builders stay under `src/services/domains/apiEndpoints`
+  - tab/search navigation stays in central navigation hooks/models
+  - drill links stay in `src/utils/reportDrillLinks.ts`
+- Raw ISO timestamp serialization is now guarded; raw ISO timestamp serialization must stay inside documented date utility, metadata, export, or model boundaries:
+  - central date utilities stay under `src/utils/saudiDate.ts`
+  - metadata/export timestamps are documented explicitly
+  - payload midnight serialization must stay in documented payload boundaries until moved into endpoint/payload models
+
+### Protected Exceptions
+
+- `src/hooks/useTabSearchParam.ts` remains the central generic tab URL hook.
+- `src/modules/HR/hrScreenNavigation.ts` remains the HR section/tab URL model.
+- `src/modules/HajriTax/useHajriTaxScreen.ts` keeps protected deep-link cleanup until the Hajri detail URL model is extracted.
+- HR leave, residency, payroll-run, and quick-entry payload boundaries still own current `T00:00:00.000Z` serialization until those payload mappers are centralized.
+- Export/storage metadata timestamps remain allowed where they do not represent official reporting periods.
+
+### Final System Unification Candidates
+
+- Extract a shared URL state model for section detail deep links where repeated patterns appear.
+- Move HR midnight date payload serialization into typed API endpoint/payload builders.
+- Expand this governance to reject ad hoc query string concatenation if new patterns appear outside endpoint/navigation models.
+
+### Closure Checks
+
+- 2026-07-08 Query/date boundary governance closure:
+  - `tsc --noEmit` passed.
+  - `check:query-date-governance` passed.
+  - `check-node-scripts` passed after adding Query/date governance.
+  - Existing URL/date exceptions were reviewed and documented as navigation, endpoint, metadata, export, or payload boundaries.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:

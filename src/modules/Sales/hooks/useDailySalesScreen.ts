@@ -77,7 +77,7 @@ export function useDailySalesScreen() {
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingSummary, setEditingSummary] = useState<DailySalesTableRow | null>(null);
   const [listPage, setListPage] = useState(1);
-  const qInit = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '') : '';
+  const qInit = searchParams.get('q') || '';
   const [searchInput, setSearchInput] = useState(qInit);
   const debouncedQRaw = useDebouncedValue(searchInput.trim(), 300);
   const [sortKey, setSortKey] = useState('transactionDate');
