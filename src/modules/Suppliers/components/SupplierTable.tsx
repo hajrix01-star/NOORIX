@@ -1,46 +1,46 @@
-﻿/**
- * SupplierTable — جدول عرض الموردين مع تحديد متعدد وحذف جماعي.
- * Props: suppliers, flatCategories, onEdit, onDelete,
- *        selectedIds (Set), onSelectChange(id,bool), onSelectAll(bool),
- *        onBulkDelete
- */
-import React, { memo } from 'react';
+import React, { memo, type ChangeEvent, type CSSProperties } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { Badge, Button, Checkbox, SmartTable, KebabMenu } from '../../../ui';
+import type { SmartTableColumn } from '../../../ui/SmartTable/types';
+import type { SupplierCategoryRecord, SupplierRecord } from '../supplierTypes';
+import {
+  findSupplierCategory,
+  getSupplierCategoryName,
+  getSupplierName,
+  getSupplierSecondaryName,
+  getSupplierTypeBadgeMeta,
+} from '../supplierDisplayModel';
 
-const sName = (s: any, lang: any) => (lang === 'en' ? s?.nameEn || s?.nameAr : s?.nameAr || s?.nameEn) || '—';
-
-/* ── بادج نوع المورد ── */
-function TypeBadge({ type }: any) {
-  const colorMap: Record<string, string> = {
-    purchase:  'blue',
-    purchases: 'blue',
-    expense:   'amber',
-    expenses:  'amber',
-  };
-  const labelMap: Record<string, string> = {
-    purchase:  'categoryTypes',
-    purchases: 'categoryTypes',
-    expense:   'categoryTypeExpense',
-    expenses:  'categoryTypeExpense',
-  };
+function TypeBadge({ type }: { type: SupplierRecord['supplierType'] }) {
   const { t } = useTranslation();
-  const color = colorMap[String(type)] || 'gray';
-  const labelKey = labelMap[String(type)];
+  const meta = getSupplierTypeBadgeMeta(type);
   return (
-    <Badge color={color} size="sm">
-      {labelKey ? t(labelKey) : type}
+    <Badge color={meta.color} size="sm">
+      {t(meta.labelKey)}
     </Badge>
   );
 }
 
-/* ── checkbox مُنسَّق ── */
-function CB({ checked, indeterminate, onChange, ariaLabel }: any) {
+type SupplierCheckboxProps = {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: (checked: boolean) => void;
+  ariaLabel: string;
+};
+
+function SupplierCheckbox({
+  checked,
+  indeterminate = false,
+  onChange,
+  ariaLabel,
+}: SupplierCheckboxProps) {
   return (
     <Checkbox
       checked={checked}
-      ref={(el: any) => { if (el) el.indeterminate = !!indeterminate; }}
-      onChange={(e: any) => onChange(e.target.checked)}
+      ref={(element: HTMLInputElement | null) => {
+        if (element) element.indeterminate = indeterminate;
+      }}
+      onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.checked)}
       aria-label={ariaLabel}
       className="cursor-pointer"
       containerClassName="nx-checkbox nx-checkbox--hit-36 nx-checkbox--accent-green p-1"
@@ -49,13 +49,13 @@ function CB({ checked, indeterminate, onChange, ariaLabel }: any) {
 }
 
 export type SupplierTableProps = {
-  suppliers?: any[];
-  flatCategories?: any[];
-  onEdit?: (s: any) => void;
-  onOpenProfile?: (s: any) => void;
-  onDelete?: (s: any) => void;
-  selectedIds?: Set<any>;
-  onSelectChange?: (id: any, checked: boolean) => void;
+  suppliers?: SupplierRecord[];
+  flatCategories?: SupplierCategoryRecord[];
+  onEdit?: (supplier: SupplierRecord) => void;
+  onOpenProfile?: (supplier: SupplierRecord) => void;
+  onDelete?: (supplier: SupplierRecord) => void;
+  selectedIds?: Set<string>;
+  onSelectChange?: (id: string, checked: boolean) => void;
   onSelectAll?: (checked: boolean) => void;
   onBulkDelete?: () => void | Promise<void>;
 };
@@ -66,45 +66,44 @@ export const SupplierTable = memo(function SupplierTable({
   onEdit,
   onOpenProfile,
   onDelete,
-  selectedIds = new Set(),
+  selectedIds = new Set<string>(),
   onSelectChange,
   onSelectAll,
   onBulkDelete,
 }: SupplierTableProps) {
   const { t, lang } = useTranslation();
 
-  const allSelected  = suppliers.length > 0 && selectedIds.size === suppliers.length;
+  const allSelected = suppliers.length > 0 && selectedIds.size === suppliers.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
   const hasSelection = selectedIds.size > 0;
 
   if (suppliers.length === 0) {
     return (
       <div className="text-center text-noorix-muted p-5 rounded-xl border-2 border-dashed border-noorix-border">
-        <div className="mb-2 text-noorix-muted text-[20px]">—</div>
+        <div className="mb-2 text-noorix-muted text-[20px]">-</div>
         <p className="m-0 text-[13px]">{t('noSuppliers')}</p>
       </div>
     );
   }
 
-  const columns = [
+  const columns: SmartTableColumn<SupplierRecord>[] = [
     {
       key: 'select',
       shrink: true,
       width: 44,
       align: 'center',
       label: (
-        <CB
+        <SupplierCheckbox
           checked={allSelected}
           indeterminate={someSelected}
-          onChange={(v: any) => onSelectAll?.(v)}
+          onChange={(checked) => onSelectAll?.(checked)}
           ariaLabel="تحديد الكل"
         />
       ),
-      render: (_: any, row: any) => (
-        <CB
+      render: (_value, row) => (
+        <SupplierCheckbox
           checked={selectedIds.has(row.id)}
-          indeterminate={false}
-          onChange={(v: any) => onSelectChange?.(row.id, v)}
+          onChange={(checked) => onSelectChange?.(row.id, checked)}
           ariaLabel={`تحديد ${row.nameAr}`}
         />
       ),
@@ -113,7 +112,7 @@ export const SupplierTable = memo(function SupplierTable({
       key: 'nameAr',
       label: t('name'),
       minWidth: 160,
-      render: (_: any, row: any) => (
+      render: (_value, row) => (
         <Button
           type="button"
           variant="raw"
@@ -121,7 +120,7 @@ export const SupplierTable = memo(function SupplierTable({
           className="font-bold text-noorix-blue hover:underline"
           onClick={() => onOpenProfile?.(row)}
         >
-          {sName(row, lang)}
+          {getSupplierName(row, lang)}
         </Button>
       ),
     },
@@ -129,9 +128,9 @@ export const SupplierTable = memo(function SupplierTable({
       key: 'nameEn',
       label: t('nameEnCol'),
       minWidth: 140,
-      render: (_: any, row: any) => (
+      render: (_value, row) => (
         <span className="nx-cell-muted">
-          {lang === 'en' ? (row.nameAr || '—') : (row.nameEn || '—')}
+          {getSupplierSecondaryName(row, lang)}
         </span>
       ),
     },
@@ -142,7 +141,7 @@ export const SupplierTable = memo(function SupplierTable({
       align: 'center',
       shrink: true,
       minWidth: 145,
-      render: (v: any) => <span className="nx-cell-num whitespace-nowrap">{v || '—'}</span>,
+      render: (value) => <span className="nx-cell-num whitespace-nowrap">{String(value || '-')}</span>,
     },
     {
       key: 'phone',
@@ -150,24 +149,23 @@ export const SupplierTable = memo(function SupplierTable({
       align: 'center',
       shrink: true,
       minWidth: 110,
-      render: (v: any) => <span className="nx-cell-muted whitespace-nowrap">{v || '—'}</span>,
+      render: (value) => <span className="nx-cell-muted whitespace-nowrap">{String(value || '-')}</span>,
     },
     {
       key: 'supplierCategoryId',
       label: t('category'),
       align: 'center',
       shrink: true,
-      render: (_: any, row: any) => {
-        const cat  = flatCategories.find((c: any) => c.id === row.supplierCategoryId);
-        if (!cat) return <span className="nx-cell-muted">—</span>;
-        const icon    = cat?.icon || cat?.account?.icon || '';
-        const catName = lang === 'en' ? cat.nameEn || cat.nameAr : cat.nameAr || cat.nameEn;
+      render: (_value, row) => {
+        const category = findSupplierCategory(flatCategories, row);
+        if (!category) return <span className="nx-cell-muted">-</span>;
+        const icon = category.icon || category.account?.icon || '';
         return (
           <span className="flex items-center justify-center gap-1">
             {icon && <span className="text-[14px]">{icon}</span>}
-            <Badge color={cat.type === 'purchase' ? 'blue' : 'amber'} size="sm">
-              {catName}
-              {cat.account?.code && <span className="me-1 opacity-70">[{cat.account.code}]</span>}
+            <Badge color={category.type === 'purchase' ? 'blue' : 'amber'} size="sm">
+              {getSupplierCategoryName(category, lang)}
+              {category.account?.code && <span className="me-1 opacity-70">[{category.account.code}]</span>}
             </Badge>
           </span>
         );
@@ -178,9 +176,9 @@ export const SupplierTable = memo(function SupplierTable({
       label: t('taxRegisteredCol'),
       align: 'center',
       shrink: true,
-      render: (_: any, row: any) =>
+      render: (_value, row) =>
         row.isTaxRegistered == null ? (
-          <span className="nx-cell-muted text-[12px]">—</span>
+          <span className="nx-cell-muted text-[12px]">-</span>
         ) : row.isTaxRegistered ? (
           <Badge color="green" size="sm" title={t('taxRegisteredHint')}>{t('taxRegisteredBadgeYes')}</Badge>
         ) : (
@@ -192,7 +190,7 @@ export const SupplierTable = memo(function SupplierTable({
       label: t('type'),
       align: 'center',
       shrink: true,
-      render: (_: any, row: any) => <TypeBadge type={row.supplierType || 'purchases'} />,
+      render: (_value, row) => <TypeBadge type={row.supplierType || 'purchases'} />,
     },
     {
       key: 'actions',
@@ -200,12 +198,12 @@ export const SupplierTable = memo(function SupplierTable({
       align: 'center',
       shrink: true,
       width: '1%',
-      render: (_: any, row: any) => (
+      render: (_value, row) => (
         <KebabMenu
           ariaLabel={t('actions')}
           items={[
-            { key: 'edit',   label: t('edit'),   style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
-            { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' },   onClick: () => onDelete?.(row) },
+            { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
+            { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDelete?.(row) },
           ]}
         />
       ),
@@ -234,22 +232,19 @@ export const SupplierTable = memo(function SupplierTable({
       stickyActionColumn={false}
       tableMinWidth={860}
       innerPadding={0}
-      getRowStyle={(row: any) =>
+      getRowStyle={(row): CSSProperties | undefined =>
         selectedIds.has(row.id) ? { background: 'var(--noorix-green-4)' } : undefined
       }
-      renderCompactRow={(row: any) => {
-        const cat     = flatCategories.find((c: any) => c.id === row.supplierCategoryId);
-        const catName = cat ? (lang === 'en' ? cat.nameEn || cat.nameAr : cat.nameAr || cat.nameEn) : null;
+      renderCompactRow={(row) => {
+        const category = findSupplierCategory(flatCategories, row);
         const checked = selectedIds.has(row.id);
         return (
           <div className={`-my-[9px] -mx-[14px] py-[9px] px-[14px] ${checked ? 'bg-[var(--noorix-green-4)]' : 'bg-transparent'}`}>
-            {/* السطر الأول: checkbox + الاسم + نوع + حالة الضريبة */}
             <div className="nx-cr__line1">
-              <div onClick={(e) => e.stopPropagation()}>
-                <CB
+              <div onClick={(event) => event.stopPropagation()}>
+                <SupplierCheckbox
                   checked={checked}
-                  indeterminate={false}
-                  onChange={(v: any) => onSelectChange?.(row.id, v)}
+                  onChange={(nextChecked) => onSelectChange?.(row.id, nextChecked)}
                   ariaLabel={`تحديد ${row.nameAr}`}
                 />
               </div>
@@ -260,28 +255,27 @@ export const SupplierTable = memo(function SupplierTable({
                 className="nx-cr__name text-noorix-blue hover:underline"
                 onClick={() => onOpenProfile?.(row)}
               >
-                {sName(row, lang)}
+                {getSupplierName(row, lang)}
               </Button>
               <TypeBadge type={row.supplierType || 'purchases'} />
               {row.isTaxRegistered != null && (
                 row.isTaxRegistered
                   ? <Badge color="green" size="sm">{t('taxRegisteredBadgeYes')}</Badge>
-                  : <Badge color="gray"  size="sm">{t('taxRegisteredBadgeNo')}</Badge>
+                  : <Badge color="gray" size="sm">{t('taxRegisteredBadgeNo')}</Badge>
               )}
             </div>
-            {/* السطر الثاني: التصنيف + هاتف/رقم ضريبي + كباب */}
             <div className="nx-cr__line2">
               <div className="nx-cr__line2-start">
-                {catName && <span className="nx-cr__meta">{catName}</span>}
+                {category && <span className="nx-cr__meta">{getSupplierCategoryName(category, lang)}</span>}
                 {row.phone && <span className="nx-cr__meta">{row.phone}</span>}
                 {row.taxNumber && <span className="nx-cr__meta nx-cell-num">{row.taxNumber}</span>}
               </div>
-              <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
+              <div className="nx-cr__kebab" onClick={(event) => event.stopPropagation()}>
                 <KebabMenu
                   ariaLabel={t('actions')}
                   items={[
-                    { key: 'edit',   label: t('edit'),   style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
-                    { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' },   onClick: () => onDelete?.(row) },
+                    { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEdit?.(row) },
+                    { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDelete?.(row) },
                   ]}
                 />
               </div>

@@ -10,6 +10,7 @@ import { requireCompanyId } from '../common/utils/require-company-id';
 import { createSupplierSchema } from './dto/create-supplier.dto';
 import { updateSupplierSchema } from './dto/update-supplier.dto';
 import { SuppliersService }   from './suppliers.service';
+import { parseSuppliersListQuery } from './suppliers-query-contract.util';
 
 @Controller('suppliers')
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
@@ -25,11 +26,12 @@ export class SuppliersController {
     @Query('q')        q?:        string,
   ) {
     const resolvedCompanyId = requireCompanyId(companyId);
+    const query = parseSuppliersListQuery({ page, pageSize, q });
     return this.suppliersService.findAll(
       resolvedCompanyId,
-      page     ? parseInt(page, 10)     : 1,
-      pageSize ? parseInt(pageSize, 10) : 50,
-      q,
+      query.page,
+      query.pageSize,
+      query.q,
     );
   }
 

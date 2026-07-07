@@ -1,122 +1,55 @@
-﻿/**
- * SupplierImportExport — استيراد وتصدير الموردين عبر ملف CSV
- *
- * أعمدة التامبلت:
- *   A: الاسم بالعربي *  (إلزامي)
- *   B: الاسم بالإنجليزي
- *   C: الرقم الضريبي
- *   D: الهاتف
- *   E: نوع المورد      (purchases | expenses)
- */
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, type ChangeEvent } from 'react';
 import { Button, FileInput } from '../../../ui';
-import { getSaudiToday } from '../../../utils/saudiDate';
+import type { SupplierCreatePayload, SupplierRecord } from '../supplierTypes';
+import {
+  buildSupplierExportCsv,
+  buildSupplierExportFilename,
+  buildSupplierTemplateCsv,
+  importSupplierRows,
+  parseSupplierCsv,
+  type SupplierImportResult,
+} from '../supplierImportExportModel';
 
-/* ─── ثوابت ─────────────────────────────────────────────────────────── */
-const CSV_HEADERS_AR = ['الاسم بالعربي *', 'الاسم بالإنجليزي', 'الرقم الضريبي', 'الهاتف', 'نوع المورد (purchases/expenses)'];
-const CSV_HEADERS_EN = ['nameAr', 'nameEn', 'taxNumber', 'phone', 'supplierType'];
+export type SupplierImportExportProps = {
+  companyId: string;
+  suppliers?: SupplierRecord[];
+  onImport: (body: SupplierCreatePayload) => Promise<unknown>;
+};
 
-const SAMPLE_ROWS = [
-  ['مورد تجريبي أول', 'First Test Supplier', '3001234567890', '0501234567', 'purchases'],
-  ['مورد مصروفات', '', '', '', 'expenses'],
-];
-
-/* ─── أدوات CSV ─────────────────────────────────────────────────────── */
-function escapeCell(val: any) {
-  const s = String(val ?? '');
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"`
-    : s;
-}
-
-function buildCsv(rows: any) {
-  const lines = rows.map((r: any) => r.map(escapeCell).join(','));
-  return lines.join('\r\n');
-}
-
-function downloadCsv(content: any, filename: any) {
-  const bom = '\uFEFF'; // BOM لدعم Excel العربي
-  const blob = new Blob([bom + content], { type: 'text/csv;charset=utf-8;' });
+function downloadCsv(content: string, filename: string) {
+  const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
   URL.revokeObjectURL(url);
 }
 
-function parseCsv(text: any) {
-  // إزالة BOM
-  const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = clean.split('\n').filter((l: any) => l.trim());
-  if (lines.length < 2) return [];
-
-  // السطر الأول رؤوس — نتحقق إن كانت عربية أو إنجليزية
-  const headerLine = lines[0].toLowerCase();
-  const isArabicHeader = headerLine.includes('الاسم') || headerLine.includes('اسم');
-
-  const dataLines = isArabicHeader ? lines.slice(1) : lines; // إن لم تكن رؤوس نبدأ من 0
-
-  return dataLines.map((line: any) => {
-    // تحليل CSV بسيط مع دعم الخلايا بين علامات اقتباس
-    const cells = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') { inQ = !inQ; continue; }
-      if (ch === ',' && !inQ) { cells.push(cur.trim()); cur = ''; continue; }
-      cur += ch;
-    }
-    cells.push(cur.trim());
-
-    const nameAr     = cells[0] || '';
-    const nameEn     = cells[1] || '';
-    const taxNumber  = cells[2] || '';
-    const phone      = cells[3] || '';
-    const rawType    = (cells[4] || '').toLowerCase();
-    const supplierType = rawType.includes('expense') ? 'expenses' : 'purchases';
-
-    return { nameAr, nameEn, taxNumber, phone, supplierType };
-  }).filter((r: any) => r.nameAr.trim()); // تجاهل الصفوف الفارغة أو بدون اسم عربي
-}
-
-/* ─── المكون الرئيسي ────────────────────────────────────────────────── */
-export default function SupplierImportExport({ companyId, suppliers = [], onImport }: any) {
-  const fileRef = useRef<any>(null);
+export default function SupplierImportExport({
+  companyId,
+  suppliers = [],
+  onImport,
+}: SupplierImportExportProps) {
+  const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
-  const [result, setResult]       = useState<any>(null); // { success, failed, errors }
+  const [result, setResult] = useState<SupplierImportResult | null>(null);
 
-  /* تنزيل التامبلت */
   function handleDownloadTemplate() {
-    const rows = [CSV_HEADERS_AR, ...SAMPLE_ROWS];
-    downloadCsv(buildCsv(rows), 'نموذج_استيراد_الموردين.csv');
+    downloadCsv(buildSupplierTemplateCsv(), 'نموذج_استيراد_الموردين.csv');
   }
 
-  /* تصدير الموردين الحاليين */
   function handleExport() {
     if (!suppliers.length) return;
-    const rows = [
-      CSV_HEADERS_AR,
-      ...suppliers.map((s: any) => [
-        s.nameAr || '',
-        s.nameEn || '',
-        s.taxNumber || '',
-        s.phone || '',
-        s.supplierType || 'purchases',
-      ]),
-    ];
-    downloadCsv(buildCsv(rows), `الموردين_${getSaudiToday()}.csv`);
+    downloadCsv(buildSupplierExportCsv(suppliers), buildSupplierExportFilename());
   }
 
-  /* قراءة ملف الاستيراد */
-  async function handleFileChange(e: any) {
-    const file = e.target.files?.[0];
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     if (!file) return;
-    e.target.value = '';
+    event.target.value = '';
 
-    const text = await file.text();
-    const rows = parseCsv(text);
-
+    const rows = parseSupplierCsv(await file.text());
     if (!rows.length) {
       setResult({ success: 0, failed: 0, errors: ['لم يتم العثور على بيانات صالحة في الملف.'] });
       return;
@@ -124,26 +57,13 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
 
     setImporting(true);
     setResult(null);
-
-    let success = 0;
-    const errors = [];
-
-    for (const row of rows) {
-      try {
-        await onImport({ ...row, companyId });
-        success++;
-      } catch (err: any) {
-        errors.push(`"${row.nameAr}": ${err?.message || 'خطأ غير معروف'}`);
-      }
-    }
-
+    const nextResult = await importSupplierRows(rows, companyId, onImport);
     setImporting(false);
-    setResult({ success, failed: errors.length, errors });
+    setResult(nextResult);
   }
 
   return (
     <div className="grid gap-2.5">
-      {/* ── شريط الأدوات ── */}
       <div className="flex items-center flex-wrap gap-2 bg-noorix-bg-muted rounded-lg border border-noorix-border py-[10px] px-[14px]">
         <Button onClick={handleDownloadTemplate}>تنزيل النموذج</Button>
 
@@ -156,8 +76,10 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
           {importing ? 'جاري الاستيراد...' : 'استيراد CSV'}
         </Button>
         <FileInput
-          ref={fileRef} accept=".csv,text/csv"
-          className="hidden" onChange={handleFileChange}
+          ref={fileRef}
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={handleFileChange}
         />
 
         <Button
@@ -169,17 +91,16 @@ export default function SupplierImportExport({ companyId, suppliers = [], onImpo
         </Button>
       </div>
 
-      {/* ── نتيجة الاستيراد ── */}
       {result && (
         <div className={`py-[10px] px-[14px] rounded-[10px] text-[13px] border ${result.failed === 0 ? 'bg-[var(--noorix-green-7)] border-[var(--noorix-green-25)]' : 'bg-[var(--noorix-yellow-7)] border-[var(--noorix-yellow-35)]'}`}>
           <div className={`font-bold ${result.errors.length ? 'mb-1.5' : ''}`}>
             {result.failed === 0
               ? `تم استيراد ${result.success} مورد بنجاح`
-              : `تم استيراد ${result.success} بنجاح — فشل ${result.failed}`}
+              : `تم استيراد ${result.success} بنجاح - فشل ${result.failed}`}
           </div>
           {result.errors.length > 0 && (
             <ul className="m-0 text-[12px] max-h-[120px] overflow-y-auto ps-5 text-noorix-red list-disc">
-              {result.errors.map((e: any, i: any) => <li key={i}>{e}</li>)}
+              {result.errors.map((error) => <li key={error}>{error}</li>)}
             </ul>
           )}
           <Button

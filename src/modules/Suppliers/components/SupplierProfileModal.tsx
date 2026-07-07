@@ -1,59 +1,46 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Badge, Button, FmtNum, Modal, SmartTable } from '../../../ui';
+import type { SmartTableColumn } from '../../../ui/SmartTable/types';
 import { useInvoices } from '../../../hooks/useInvoices';
 import { fetchAllInvoicesForExport } from '../../../services/api';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { formatSaudiDateISO, getSaudiToday } from '../../../utils/saudiDate';
-import { buildPrintDefinitionTableHtml, buildPrintRecordsTableHtml } from '../../../utils/printTableHtml';
+import { formatSaudiDateISO } from '../../../utils/saudiDate';
 import { openPrintWindow } from '../../../utils/printUtils';
+import type { InvoiceListItem } from '../../../services/domains/apiEndpoints/invoice-list-response';
+import type {
+  SupplierCategoryRecord,
+  SupplierInvoiceRecord,
+  SupplierRecord,
+  SupplierProfileTotals,
+} from '../supplierTypes';
+import { findSupplierCategory, getSupplierCategoryName, getSupplierName } from '../supplierDisplayModel';
+import {
+  buildSupplierInvoicesPrintHtml,
+  buildSupplierProfilePrintHtml,
+  buildSupplierProfilePrintSubtitle,
+} from '../supplierProfilePrint';
 
 const PAGE_SIZE = 10;
 
-function esc(v: any) {
-  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function isSupplierInvoiceRecord(value: unknown): value is SupplierInvoiceRecord {
+  return Boolean(value && typeof value === 'object');
 }
 
-function supplierName(supplier: any, lang: string) {
-  return (lang === 'en' ? supplier?.nameEn || supplier?.nameAr : supplier?.nameAr || supplier?.nameEn) || '-';
+function normalizeSupplierInvoices(values: unknown[]) {
+  return values.filter(isSupplierInvoiceRecord);
 }
 
-function categoryName(category: any, lang: string) {
-  return category ? (lang === 'en' ? category.nameEn || category.nameAr : category.nameAr || category.nameEn) : '-';
-}
-
-function buildInvoicesTableHtml(invoices: any[], t: (key: string, ...args: any[]) => string) {
-  const netKey = t('net');
-  const taxKey = t('tax');
-  const totalKey = t('total');
-  return buildPrintRecordsTableHtml({
-    records: invoices.map((inv: any) => ({
-      [t('supplierInvoiceNumber')]: inv.supplierInvoiceNumber || inv.invoiceNumber || '-',
-      [t('documentNumber')]: inv.invoiceNumber || '-',
-      [t('type')]: inv.kind || '-',
-      [t('date')]: inv.transactionDate ? formatSaudiDateISO(inv.transactionDate) : '-',
-      [netKey]: `${fmt(Number(inv.netAmount || 0))} SR`,
-      [taxKey]: `${fmt(Number(inv.taxAmount || 0))} SR`,
-      [totalKey]: `${fmt(Number(inv.totalAmount || 0))} SR`,
-    })),
-    emptyMessage: t('noInvoicesInPeriod'),
-    numericKeys: [netKey, taxKey, totalKey],
-  });
-}
-
-function buildSupplierProfileDefinitionHtml(entries: Array<{ label: unknown; value: unknown }>) {
-  return buildPrintDefinitionTableHtml({
-    entries,
-    tableClassName: 'supplier-profile-print-table',
-    wrapperClassName: 'supplier-profile-print-table-wrap',
-  });
+function numericValue(value: unknown) {
+  const numeric = Number(value || 0);
+  return Number.isFinite(numeric) ? numeric : 0;
 }
 
 export type SupplierProfileModalProps = {
   open: boolean;
-  supplier: any;
+  supplier: SupplierRecord;
   companyId: string;
-  flatCategories?: any[];
+  flatCategories?: SupplierCategoryRecord[];
   onClose: () => void;
 };
 
@@ -67,10 +54,10 @@ export function SupplierProfileModal({
   const { t, lang } = useTranslation();
   const [page, setPage] = useState(1);
   const supplierId = supplier?.id || '';
-  const supplierLabel = supplierName(supplier, lang);
+  const supplierLabel = getSupplierName(supplier, lang);
   const category = useMemo(
-    () => flatCategories.find((c: any) => c.id === supplier?.supplierCategoryId),
-    [flatCategories, supplier?.supplierCategoryId],
+    () => findSupplierCategory(flatCategories, supplier),
+    [flatCategories, supplier],
   );
 
   const { items, total, sums, isLoading, isError, error } = useInvoices({
@@ -83,29 +70,29 @@ export function SupplierProfileModal({
     sortDir: 'desc',
   });
 
-  const latestInvoice = items?.[0];
-  const totals = sums?.all ?? { net: '0', tax: '0', total: '0', count: 0 };
+  const latestInvoice = items[0];
+  const totals: SupplierProfileTotals = sums.all;
 
   const loadAllInvoices = useCallback(
-    () =>
-      fetchAllInvoicesForExport({
+    async () =>
+      normalizeSupplierInvoices(await fetchAllInvoicesForExport({
         companyId,
         supplierId,
         includeCancelled: false,
         sortBy: 'transactionDate',
         sortDir: 'desc',
-      }),
+      })),
     [companyId, supplierId],
   );
 
   const handlePrintInvoices = useCallback(async () => {
-    const all = await loadAllInvoices();
+    const invoices = await loadAllInvoices();
     openPrintWindow({
       title: t('supplierProfileInvoicesPrintTitle'),
       companyName: supplierLabel,
-      subtitle: t('supplierProfileInvoicesSubtitle', String(all.length)),
+      subtitle: t('supplierProfileInvoicesSubtitle', String(invoices.length)),
       landscape: true,
-      body: buildInvoicesTableHtml(all, t),
+      body: buildSupplierInvoicesPrintHtml(invoices, t),
       htmlLang: lang === 'en' ? 'en' : 'ar',
       htmlDir: lang === 'en' ? 'ltr' : 'rtl',
       autoPrint: false,
@@ -113,60 +100,82 @@ export function SupplierProfileModal({
   }, [lang, loadAllInvoices, supplierLabel, t]);
 
   const handlePrintProfile = useCallback(async () => {
-    const all = await loadAllInvoices();
-    const sum = (key: string) => all.reduce((a: number, inv: any) => a + Number(inv[key] || 0), 0);
-    const profileHtml = `
-      <section>
-        <h2>${esc(t('supplierProfile'))}</h2>
-        ${buildSupplierProfileDefinitionHtml([
-          { label: t('name'), value: supplierLabel },
-          { label: t('category'), value: categoryName(category, lang) },
-          { label: t('taxNumber'), value: supplier?.taxNumber || '-' },
-          { label: t('phone'), value: supplier?.phone || '-' },
-          { label: t('taxRegisteredCol'), value: supplier?.isTaxRegistered ? t('taxRegisteredBadgeYes') : t('taxRegisteredBadgeNo') },
-        ])}
-        <h2>${esc(t('supplierProfileSummary'))}</h2>
-        ${buildSupplierProfileDefinitionHtml([
-          { label: t('supplierProfileInvoiceCount'), value: String(all.length) },
-          { label: t('net'), value: `${fmt(sum('netAmount'))} SR` },
-          { label: t('tax'), value: `${fmt(sum('taxAmount'))} SR` },
-          { label: t('total'), value: `${fmt(sum('totalAmount'))} SR` },
-        ])}
-        <h2>${esc(t('supplierProfileInvoicesTab'))}</h2>
-        ${buildInvoicesTableHtml(all, t)}
-      </section>`;
+    const invoices = await loadAllInvoices();
     openPrintWindow({
       title: t('supplierProfilePrintTitle'),
       companyName: supplierLabel,
-      subtitle: `${t('supplierProfile')} - ${getSaudiToday()}`,
-      body: profileHtml,
+      subtitle: buildSupplierProfilePrintSubtitle(t),
+      body: buildSupplierProfilePrintHtml({
+        supplier,
+        category,
+        invoices,
+        summary: {
+          count: total,
+          net: totals.net,
+          tax: totals.tax,
+          total: totals.total,
+        },
+        lang,
+        t,
+      }),
       htmlLang: lang === 'en' ? 'en' : 'ar',
       htmlDir: lang === 'en' ? 'ltr' : 'rtl',
       autoPrint: false,
     });
-  }, [category, lang, loadAllInvoices, supplier, supplierLabel, t]);
+  }, [category, lang, loadAllInvoices, supplier, supplierLabel, t, total, totals]);
 
-  const columns = useMemo(
+  const columns = useMemo<SmartTableColumn<InvoiceListItem>[]>(
     () => [
       {
         key: 'supplierInvoiceNumber',
         label: t('supplierInvoiceNumber'),
         minWidth: 130,
-        render: (_: any, row: any) => (
+        render: (_value, row) => (
           <span className="nx-cell-num nx-cell-bold">{row.supplierInvoiceNumber || row.invoiceNumber || '-'}</span>
         ),
       },
-      { key: 'invoiceNumber', label: t('documentNumber'), minWidth: 115, render: (v: any) => <span className="nx-cell-num nx-cell-muted">{v || '-'}</span> },
-      { key: 'kind', label: t('type'), minWidth: 110, render: (v: any) => <Badge color={v === 'purchase' ? 'blue' : 'amber'} size="sm">{String(v || '-')}</Badge> },
-      { key: 'transactionDate', label: t('date'), minWidth: 110, render: (v: any) => <span className="nx-cell-muted-sm">{v ? formatSaudiDateISO(v) : '-'}</span> },
-      { key: 'netAmount', label: t('net'), numeric: true, minWidth: 105, render: (v: any) => <FmtNum n={v} /> },
-      { key: 'taxAmount', label: t('tax'), numeric: true, minWidth: 105, render: (v: any) => <FmtNum n={v} /> },
-      { key: 'totalAmount', label: t('total'), numeric: true, minWidth: 115, render: (v: any) => <FmtNum n={v} className="font-bold" /> },
+      {
+        key: 'invoiceNumber',
+        label: t('documentNumber'),
+        minWidth: 115,
+        render: (value) => <span className="nx-cell-num nx-cell-muted">{String(value || '-')}</span>,
+      },
+      {
+        key: 'kind',
+        label: t('type'),
+        minWidth: 110,
+        render: (value) => <Badge color={value === 'purchase' ? 'blue' : 'amber'} size="sm">{String(value || '-')}</Badge>,
+      },
+      {
+        key: 'transactionDate',
+        label: t('date'),
+        minWidth: 110,
+        render: (value) => <span className="nx-cell-muted-sm">{value ? formatSaudiDateISO(value) : '-'}</span>,
+      },
+      {
+        key: 'netAmount',
+        label: t('net'),
+        numeric: true,
+        minWidth: 105,
+        render: (value) => <FmtNum n={numericValue(value)} />,
+      },
+      {
+        key: 'taxAmount',
+        label: t('tax'),
+        numeric: true,
+        minWidth: 105,
+        render: (value) => <FmtNum n={numericValue(value)} />,
+      },
+      {
+        key: 'totalAmount',
+        label: t('total'),
+        numeric: true,
+        minWidth: 115,
+        render: (value) => <FmtNum n={numericValue(value)} className="font-bold" />,
+      },
     ],
     [t],
   );
-
-  if (!supplier) return null;
 
   const summaryCards = [
     { label: t('supplierProfileInvoiceCount'), value: String(total || 0) },
@@ -181,20 +190,20 @@ export function SupplierProfileModal({
       onClose={onClose}
       title={`${t('supplierProfile')} - ${supplierLabel}`}
       size="full"
-      footer={
+      footer={(
         <>
           <Button size="sm" onClick={handlePrintProfile}>{t('supplierProfilePrint')}</Button>
           <Button size="sm" onClick={handlePrintInvoices}>{t('supplierProfilePrintInvoices')}</Button>
           <Button size="sm" variant="ghost" onClick={onClose}>{t('close')}</Button>
         </>
-      }
+      )}
     >
       <div className="space-y-4">
         <div className="grid gap-3 md:grid-cols-[1.2fr_2fr]">
           <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 p-4">
             <div className="text-[18px] font-extrabold text-noorix-text">{supplierLabel}</div>
             <div className="mt-3 grid gap-2 text-[13px]">
-              <div className="flex justify-between gap-3"><span className="text-noorix-muted">{t('category')}</span><strong>{categoryName(category, lang)}</strong></div>
+              <div className="flex justify-between gap-3"><span className="text-noorix-muted">{t('category')}</span><strong>{getSupplierCategoryName(category, lang)}</strong></div>
               <div className="flex justify-between gap-3"><span className="text-noorix-muted">{t('taxNumber')}</span><span className="nx-cell-num">{supplier.taxNumber || '-'}</span></div>
               <div className="flex justify-between gap-3"><span className="text-noorix-muted">{t('phone')}</span><span>{supplier.phone || '-'}</span></div>
               <div className="flex justify-between gap-3">

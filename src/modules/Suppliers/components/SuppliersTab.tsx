@@ -1,64 +1,103 @@
-﻿/**
- * Suppliers tab: list, add, edit, bulk delete, CSV import/export.
- */
-import React, { useState, memo, useCallback } from 'react';
+import React, { memo, useCallback, useState, type ChangeEvent } from 'react';
 import { useDebouncedValue } from '../../../ui';
-import { useSuppliers }        from '../../../hooks/useSuppliers';
-import { useCategories }       from '../../../hooks/useCategories';
-import { useTranslation }      from '../../../i18n/useTranslation';
+import { useSuppliers } from '../../../hooks/useSuppliers';
+import { useCategories } from '../../../hooks/useCategories';
+import { useTranslation } from '../../../i18n/useTranslation';
 import { useToast } from '../../../context/ToastContext';
-import { createSupplier, throwIfApiFailed }      from '../../../services/api';
-import { SupplierForm }        from './SupplierForm';
-import { SupplierTable }       from './SupplierTable';
-import { SupplierEditModal }   from './SupplierEditModal';
+import { SupplierForm } from './SupplierForm';
+import { SupplierTable } from './SupplierTable';
+import { SupplierEditModal } from './SupplierEditModal';
 import { SupplierProfileModal } from './SupplierProfileModal';
-import SupplierImportExport    from './SupplierImportExport';
+import SupplierImportExport from './SupplierImportExport';
 import { Button, Input, ScreenShell } from '../../../ui';
+import type {
+  SupplierCategoryRecord,
+  SupplierCreatePayload,
+  SupplierRecord,
+  SupplierUpdatePayload,
+} from '../supplierTypes';
 
-export type SuppliersTabProps = { companyId: any };
+export type SuppliersTabProps = { companyId: string };
+
+type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+function apiErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function toSupplierCategories(categories: unknown[]) {
+  return categories.filter((category): category is SupplierCategoryRecord =>
+    Boolean(category && typeof category === 'object'),
+  );
+}
 
 export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersTabProps) {
   const { t } = useTranslation();
-
-  const [showForm,        setShowForm]        = useState(false);
-  const [search,          setSearch]          = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState('');
   const debouncedQ = useDebouncedValue(search.trim(), 300);
-  const [editingSupplier, setEditingSupplier] = useState<any>(null);
-  const [profileSupplier, setProfileSupplier] = useState<any>(null);
-  const [selectedIds,     setSelectedIds]     = useState(new Set());
+  const [editingSupplier, setEditingSupplier] = useState<SupplierRecord | null>(null);
+  const [profileSupplier, setProfileSupplier] = useState<SupplierRecord | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { showToast } = useToast();
 
-  const { suppliers, isLoading, isError, error, create, update, remove } = useSuppliers(companyId, { pageSize: 500, q: debouncedQ || undefined });
+  const { suppliers, isLoading, isError, error, create, update, remove } = useSuppliers(companyId, {
+    pageSize: 500,
+    q: debouncedQ || undefined,
+  });
   const { flatCategories } = useCategories(companyId);
+  const supplierCategories = toSupplierCategories(flatCategories);
 
-  const notify = useCallback((message: any, type: any = 'success') => {
+  const notify = useCallback((message: string, type: ToastType = 'success') => {
     showToast(message, type);
   }, [showToast]);
 
-  function handleSave(body: any) {
-    if (!companyId) { notify(t('pleaseSelectCompanyFirst'), 'error'); return; }
+  function handleSave(body: SupplierCreatePayload) {
+    if (!companyId) {
+      notify(t('pleaseSelectCompanyFirst'), 'error');
+      return;
+    }
     create.mutate(body, {
-      onSuccess: () => { notify(t('supplierAdded')); setShowForm(false); },
-      onError:   (e: any) => notify(e?.message || t('addFailed'), 'error'),
+      onSuccess: () => {
+        notify(t('supplierAdded'));
+        setShowForm(false);
+      },
+      onError: (mutationError) => notify(apiErrorMessage(mutationError, t('addFailed')), 'error'),
     });
   }
 
-  function handleEditSave(body: any) {
+  function handleEditSave(body: SupplierUpdatePayload) {
     if (!editingSupplier?.id) return;
     update.mutate({ id: editingSupplier.id, body }, {
-      onSuccess: () => { notify(t('supplierUpdated')); setEditingSupplier(null); },
-      onError:   (e: any) => notify(e?.message || t('updateFailed'), 'error'),
+      onSuccess: () => {
+        notify(t('supplierUpdated'));
+        setEditingSupplier(null);
+      },
+      onError: (mutationError) => notify(apiErrorMessage(mutationError, t('updateFailed')), 'error'),
     });
   }
 
-  function handleDelete(supplier: any) {
+  function handleDelete(supplier: SupplierRecord) {
     if (!confirm(t('deleteSupplierConfirm', supplier.nameAr))) return;
     remove.mutate(supplier.id, {
       onSuccess: () => {
-        setSelectedIds((prev: any) => { const n = new Set(prev); n.delete(supplier.id); return n; });
+        setSelectedIds((previous) => {
+          const next = new Set(previous);
+          next.delete(supplier.id);
+          return next;
+        });
         notify(t('supplierDeleted'));
       },
-      onError: (e: any) => notify(e?.message || t('deleteFailed'), 'error'),
+      onError: (mutationError) => notify(apiErrorMessage(mutationError, t('deleteFailed')), 'error'),
+    });
+  }
+
+  async function removeSupplierById(id: string) {
+    await new Promise<void>((resolve, reject) => {
+      remove.mutate(id, {
+        onSuccess: () => resolve(),
+        onError: (mutationError) => reject(mutationError),
+      });
     });
   }
 
@@ -70,32 +109,31 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
     const ids = [...selectedIds];
     for (const id of ids) {
       try {
-        await new Promise((res: any, rej: any) =>
-          remove.mutate(id, { onSuccess: res, onError: rej }),
-        );
-        done++;
-      } catch (_: any) {}
+        await removeSupplierById(id);
+        done += 1;
+      } catch {
+        continue;
+      }
     }
     setSelectedIds(new Set());
     notify(t('suppliersBulkDeletedPartial', String(done), String(ids.length)));
   }
 
-  const handleSelectChange = useCallback((id: any, checked: any) => {
-    setSelectedIds((prev: any) => {
-      const n = new Set(prev);
-      checked ? n.add(id) : n.delete(id);
-      return n;
+  const handleSelectChange = useCallback((id: string, checked: boolean) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
     });
   }, []);
 
-  const handleSelectAll = useCallback((checked: any) => {
-    setSelectedIds(checked ? new Set(suppliers.map((s: any) => s.id)) : new Set());
+  const handleSelectAll = useCallback((checked: boolean) => {
+    setSelectedIds(checked ? new Set(suppliers.map((supplier) => supplier.id)) : new Set());
   }, [suppliers]);
 
-  async function handleImportOne(body: any) {
-    const res = await createSupplier(body);
-    throwIfApiFailed(res, t('addFailed'));
-    return res.data;
+  async function handleImportOne(body: SupplierCreatePayload) {
+    return create.mutateAsync(body);
   }
 
   return (
@@ -106,12 +144,12 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
           size="sm"
           className="suppliers-tab-search"
           value={search}
-          onChange={(e: any) => setSearch(e.target.value)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
           placeholder={t('searchByNameOrTax')}
         />
         <Button
           variant={showForm ? 'default' : 'primary'}
-          onClick={() => setShowForm((v: any) => !v)}
+          onClick={() => setShowForm((visible) => !visible)}
         >
           {showForm ? t('cancel') : t('addSupplier')}
         </Button>
@@ -126,7 +164,7 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
       {showForm && (
         <SupplierForm
           companyId={companyId}
-          flatCategories={flatCategories}
+          flatCategories={supplierCategories}
           onSave={handleSave}
           isSaving={create.isPending}
           onCancel={() => setShowForm(false)}
@@ -136,42 +174,43 @@ export const SuppliersTab = memo(function SuppliersTab({ companyId }: SuppliersT
       {isLoading
         ? <p className="text-noorix-muted text-[13px]">{t('loading')}</p>
         : isError
-        ? (
-          <div className="rounded-xl border border-noorix-red p-4 text-[13px] text-noorix-red bg-noorix-red/10">
-            <strong>{t('suppliersLoadFailedTitle')}</strong>
-            {error?.message && <p className="m-0 mt-1 text-[12px] opacity-80">{error.message}</p>}
-            <p className="m-0 mt-1 text-[12px] opacity-70">{t('suppliersLoadFailedHint')}</p>
-          </div>
-        )
-        : (
-          <SupplierTable
-            suppliers={suppliers}
-            flatCategories={flatCategories}
-            onEdit={(s: any) => setEditingSupplier(s)}
-            onOpenProfile={(s: any) => setProfileSupplier(s)}
-            onDelete={handleDelete}
-            selectedIds={selectedIds}
-            onSelectChange={handleSelectChange}
-            onSelectAll={handleSelectAll}
-            onBulkDelete={handleBulkDelete}
-          />
-        )
-      }
+          ? (
+            <div className="rounded-xl border border-noorix-red p-4 text-[13px] text-noorix-red bg-noorix-red/10">
+              <strong>{t('suppliersLoadFailedTitle')}</strong>
+              {error?.message && <p className="m-0 mt-1 text-[12px] opacity-80">{error.message}</p>}
+              <p className="m-0 mt-1 text-[12px] opacity-70">{t('suppliersLoadFailedHint')}</p>
+            </div>
+          )
+          : (
+            <SupplierTable
+              suppliers={suppliers}
+              flatCategories={supplierCategories}
+              onEdit={setEditingSupplier}
+              onOpenProfile={setProfileSupplier}
+              onDelete={handleDelete}
+              selectedIds={selectedIds}
+              onSelectChange={handleSelectChange}
+              onSelectAll={handleSelectAll}
+              onBulkDelete={handleBulkDelete}
+            />
+          )}
 
       <SupplierEditModal
         supplier={editingSupplier}
-        flatCategories={flatCategories}
+        flatCategories={supplierCategories}
         onSave={handleEditSave}
         onClose={() => setEditingSupplier(null)}
         isSaving={update.isPending}
       />
-      <SupplierProfileModal
-        open={!!profileSupplier}
-        supplier={profileSupplier}
-        companyId={companyId}
-        flatCategories={flatCategories}
-        onClose={() => setProfileSupplier(null)}
-      />
+      {profileSupplier && (
+        <SupplierProfileModal
+          open
+          supplier={profileSupplier}
+          companyId={companyId}
+          flatCategories={supplierCategories}
+          onClose={() => setProfileSupplier(null)}
+        />
+      )}
     </ScreenShell>
   );
 });
