@@ -13,6 +13,12 @@ import {
   type TaxVatReportQueryOptions,
   type VatPlanningRegistryQuery,
 } from './reports-query';
+import type {
+  VatPlanningRecord,
+  VatPlanningRegistryMetadata,
+  VatPlanningRegistryFilters,
+  VatPlanningUpsertPayload,
+} from '../../../types/api/domains/hajriTax';
 
 // ——— التقارير ———
 export async function getGeneralProfitLossReport(
@@ -60,16 +66,22 @@ export async function getVatPlanningList(
   year: string | number,
   quarter: string | number,
   companyId?: string,
-): Promise<ApiParsedResult> {
+): Promise<ApiParsedResult<VatPlanningRecord[]>> {
   return apiGet('/api/v1/vat-planning', vatPlanningListQuery(year, quarter, companyId));
 }
 
 /** جميع الإقرارات المحفوظة مع فلاتر اختيارية — REPORTS_READ */
-export async function getVatPlanningRegistry(filters: VatPlanningRegistryQuery = {}): Promise<ApiParsedResult> {
+export async function getVatPlanningRegistry(
+  filters: VatPlanningRegistryQuery & VatPlanningRegistryFilters = {},
+): Promise<ApiParsedResult<VatPlanningRecord[]>> {
   return apiGet('/api/v1/vat-planning/registry', vatPlanningRegistryQuery(filters));
 }
 
-export async function upsertVatPlanning(body: unknown): Promise<ApiParsedResult> {
+export async function getVatPlanningRegistryMetadata(): Promise<ApiParsedResult<VatPlanningRegistryMetadata>> {
+  return apiGet('/api/v1/vat-planning/registry/metadata');
+}
+
+export async function upsertVatPlanning(body: VatPlanningUpsertPayload): Promise<ApiParsedResult<VatPlanningRecord>> {
   return apiPut('/api/v1/vat-planning', body);
 }
 

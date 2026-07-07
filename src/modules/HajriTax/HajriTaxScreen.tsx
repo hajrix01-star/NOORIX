@@ -3,19 +3,20 @@
  * العرض فقط؛ المنطق في useHajriTaxScreen.
  */
 import React, { useCallback } from 'react';
-import { getRowValue, roundMoney2 } from '../../constants/taxDisclosure';
+import { getRowValue, roundMoney2, type TaxDisclosureField, type TaxDisclosureRowKey } from '../../constants/taxDisclosure';
 import { Button, FileTrigger, Input } from '../../ui';
 import HajriTaxDetailEditor from './HajriTaxDetailEditor';
 import HajriTaxRegistryList from './HajriTaxRegistryList';
 import HajriTaxNewDeclarationModal from './HajriTaxNewDeclarationModal';
 import HajriTaxBulkImportModal from './HajriTaxBulkImportModal';
 import { useHajriTaxScreen } from './useHajriTaxScreen';
+import type { HajriTaxCellEdit, VatPlanningRecord } from '../../types/api/domains/hajriTax';
 
 export default function HajriTaxScreen() {
   const s = useHajriTaxScreen();
 
   const renderEditableCell = useCallback(
-    (key: any, field: any) => {
+    (key: TaxDisclosureRowKey, field: TaxDisclosureField) => {
       const cellId = `${key}:${field}`;
       const raw = getRowValue(s.draftData, key, field);
       const n = Number(raw);
@@ -37,13 +38,13 @@ export default function HajriTaxScreen() {
             s.setCellEdit({ id: cellId, text: start });
           }}
           onBlur={() => {
-            s.setCellEdit((cur: any) => {
+            s.setCellEdit((cur: HajriTaxCellEdit | null) => {
               if (cur?.id !== cellId) return cur;
               s.updateRow(key, field, cur.text);
               return null;
             });
           }}
-          onChange={(e: any) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             if (s.detailReadOnly) return;
             const text = e.target.value;
             s.setCellEdit({ id: cellId, text });
@@ -153,8 +154,8 @@ export default function HajriTaxScreen() {
         filterCompanyId={s.regFilterCompany}
         setFilterCompanyId={s.setRegFilterCompany}
         onNewDeclaration={() => s.setShowNewDeclarationModal(true)}
-        onViewRow={(row: any) => s.openFromRegistryRow(row, 'view')}
-        onEditRow={(row: any) => s.openFromRegistryRow(row, 'edit')}
+        onViewRow={(row: VatPlanningRecord) => s.openFromRegistryRow(row, 'view')}
+        onEditRow={(row: VatPlanningRecord) => s.openFromRegistryRow(row, 'edit')}
         onRegistryFilingChange={s.handleRegistryFilingChange}
         filingBusyRowId={s.filingBusyRowId}
         jsonToolbar={jsonToolbar}

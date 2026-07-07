@@ -62,10 +62,10 @@
       "decision": "leave",
       "reason": "tax registry wide table; protected tax scope."
     },
-    "src/modules/HajriTax/useHajriTaxScreen.ts": {
+    "src/modules/HajriTax/useHajriTaxExports.ts": {
       "category": "tax-print",
       "decision": "leave",
-      "reason": "VAT print/export HTML strings; protected tax scope."
+      "reason": "VAT print/export HTML strings extracted from the screen; protected tax print scope."
     },
     "src/modules/Invoices/components/DayCloseReportBody.tsx": {
       "category": "print-financial",

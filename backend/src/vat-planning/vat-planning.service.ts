@@ -5,6 +5,16 @@ import { TenantContext } from '../common/tenant-context';
 import { isSuperAdmin } from '../auth/constants/permissions';
 import type { JwtUser } from '../auth/decorators/current-user.decorator';
 
+type VatPlanningLineValue = {
+  amount: number;
+  adjustment: number;
+  vat: number;
+};
+
+type VatPlanningPayload = Record<string, number | VatPlanningLineValue>;
+
+const DISCLOSURE_LINE_KEYS = ['standard_sales', 'standard_purchases'] as const;
+
 export type UpsertVatPlanningDto = {
   companyId: string;
   year: number;
@@ -46,6 +56,86 @@ export class VatPlanningService {
     return company.tenantId;
   }
 
+  private money(value: unknown): number {
+    const numericValue = Number(value ?? 0);
+    if (!Number.isFinite(numericValue)) return 0;
+    return Math.round(numericValue * 100) / 100;
+  }
+
+  private lineValue(value: unknown): VatPlanningLineValue {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return { amount: 0, adjustment: 0, vat: 0 };
+    }
+    const record = value as Record<string, unknown>;
+    return {
+      amount: this.money(record.amount),
+      adjustment: this.money(record.adjustment),
+      vat: this.money(record.vat),
+    };
+  }
+
+  private normalizePayload(payload: unknown): VatPlanningPayload {
+    const source = payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? payload as Record<string, unknown>
+      : {};
+    const next: VatPlanningPayload = {};
+    for (const key of DISCLOSURE_LINE_KEYS) {
+      next[key] = this.lineValue(source[key]);
+    }
+    const outputTotal = this.money(this.lineValue(next.standard_sales).vat);
+    const inputTotal = this.money(this.lineValue(next.standard_purchases).vat);
+    const netVat = this.money(outputTotal - inputTotal);
+    const priorAdjustments = this.money(source.prior_adjustments);
+    const balanceCarried = this.money(source.balance_carried);
+    next.vat_due = outputTotal;
+    next.vat_recoverable = inputTotal;
+    next.net_vat = netVat;
+    next.prior_adjustments = priorAdjustments;
+    next.balance_carried = balanceCarried;
+    next.net_payable_refund = this.money(netVat + priorAdjustments + balanceCarried);
+    return next;
+  }
+
+  private allowedCompanyFilter(user: JwtUser): Prisma.CompanyWhereInput {
+    const role = (user.role || '').toLowerCase();
+    if (isSuperAdmin(role)) return {};
+    const allowedIds = user.companyIds || [];
+    return allowedIds.length > 0 ? { id: { in: allowedIds } } : { id: { in: [] } };
+  }
+
+  private allowedVatPlanningFilter(user: JwtUser): Prisma.VatPlanningQuarterWhereInput {
+    const role = (user.role || '').toLowerCase();
+    if (isSuperAdmin(role)) return {};
+    const allowedIds = user.companyIds || [];
+    return allowedIds.length > 0 ? { companyId: { in: allowedIds } } : { companyId: { in: [] } };
+  }
+
+  async registryMetadata(user: JwtUser) {
+    const [companies, years] = await Promise.all([
+      this.prisma.company.findMany({
+        where: {
+          ...this.allowedCompanyFilter(user),
+          isArchived: false,
+        },
+        select: { id: true, nameAr: true, nameEn: true, taxNumber: true, isArchived: true },
+        orderBy: [{ nameAr: 'asc' }, { nameEn: 'asc' }],
+      }),
+      this.prisma.vatPlanningQuarter.groupBy({
+        by: ['year'],
+        where: this.allowedVatPlanningFilter(user),
+        orderBy: { year: 'desc' },
+      }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        companies,
+        years: years.map((row) => row.year).filter((year) => Number.isFinite(year) && year >= 2000),
+      },
+    };
+  }
+
   /**
    * سجلُّ الإقرارات المحفوظة — اختياري: سنة، ربع، شركة. مرتب: سنة ↓، ربع ↓، اسم الشركة.
    */
@@ -63,7 +153,7 @@ export class VatPlanningService {
       this.assertCompanyAccess(user, filters.companyId);
       where.companyId = filters.companyId;
     } else if (!isSuper) {
-      if (allowedIds.length === 0) return { success: true, data: [] as unknown[] };
+      if (allowedIds.length === 0) return { success: true, data: [] };
       where.companyId = { in: allowedIds };
     }
 
@@ -122,7 +212,7 @@ export class VatPlanningService {
       this.assertCompanyAccess(user, companyId);
       where.companyId = companyId;
     } else if (!isSuper) {
-      if (allowedIds.length === 0) return { success: true, data: [] as unknown[] };
+      if (allowedIds.length === 0) return { success: true, data: [] };
       where.companyId = { in: allowedIds };
     }
 
@@ -173,7 +263,7 @@ export class VatPlanningService {
       throw new BadRequestException('importedAt غير صالح.');
     }
 
-    const payload = dto.payload ?? {};
+    const payload = this.normalizePayload(dto.payload);
     const sourceSnapshot = dto.sourceSnapshot ?? undefined;
 
     const row = await this.prisma.vatPlanningQuarter.upsert({

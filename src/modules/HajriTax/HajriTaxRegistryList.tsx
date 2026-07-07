@@ -1,7 +1,7 @@
 /**
  * سجل الإقرارات الضريبية — فلاتر + جدول صفوف + إقرار جديد
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { Button, FilterToolbar, SearchableOptionsPicker } from '../../ui';
 import { fmt, fmtTax } from '../../utils/format';
 import { computeNetPayable } from '../../constants/taxDisclosure';
@@ -14,6 +14,34 @@ import {
   registryPurchasesAmount,
   registrySalesAmount,
 } from './hajriRegistryMetrics';
+import type {
+  HajriTaxCompanyRef,
+  HajriTaxLanguage,
+  HajriTaxTranslate,
+  VatPlanningRecord,
+} from '../../types/api/domains/hajriTax';
+
+type HajriTaxRegistryListProps = {
+  t: HajriTaxTranslate;
+  lang: HajriTaxLanguage;
+  companies: HajriTaxCompanyRef[];
+  filterYearOptions: number[];
+  currentYear: number;
+  registryRows: VatPlanningRecord[];
+  registryLoading: boolean;
+  filterYear: number | '';
+  setFilterYear: Dispatch<SetStateAction<number | ''>>;
+  filterQuarter: number | '';
+  setFilterQuarter: Dispatch<SetStateAction<number | ''>>;
+  filterCompanyId: string;
+  setFilterCompanyId: Dispatch<SetStateAction<string>>;
+  onNewDeclaration: () => void;
+  onViewRow: (row: VatPlanningRecord) => void;
+  onEditRow: (row: VatPlanningRecord) => void;
+  onRegistryFilingChange: (row: VatPlanningRecord, next: boolean) => void | Promise<void>;
+  filingBusyRowId: string | null;
+  jsonToolbar?: ReactNode;
+};
 
 export default function HajriTaxRegistryList({
   t,
@@ -36,7 +64,7 @@ export default function HajriTaxRegistryList({
   onRegistryFilingChange,
   filingBusyRowId,
   jsonToolbar,
-}: any) {
+}: HajriTaxRegistryListProps) {
   const yearOptions = useMemo(() => {
     if (Array.isArray(filterYearOptions) && filterYearOptions.length > 0) {
       return ['', ...filterYearOptions];
@@ -74,7 +102,7 @@ export default function HajriTaxRegistryList({
               emptyLabel={t('vatAllCompanies')}
               value={filterCompanyId}
               onChange={setFilterCompanyId}
-              options={companyFilterOptions.map((opt: any) => ({ value: opt.id, label: opt.label }))}
+              options={companyFilterOptions.map((opt) => ({ value: opt.id, label: opt.label }))}
               aria-label={t('vatFilterCompany')}
             />
           </div>
@@ -87,8 +115,8 @@ export default function HajriTaxRegistryList({
               value={filterYear === '' ? '' : String(filterYear)}
               onChange={(v) => setFilterYear(v === '' ? '' : Number(v))}
               options={yearOptions
-                .filter((y: any) => y !== '')
-                .map((y: any) => ({ value: String(y), label: String(y) }))}
+                .filter((y) => y !== '')
+                .map((y) => ({ value: String(y), label: String(y) }))}
               aria-label={t('reportYear')}
             />
           </div>
@@ -100,7 +128,7 @@ export default function HajriTaxRegistryList({
               emptyLabel={t('hajriTaxFilterAllQuarters')}
               value={filterQuarter === '' ? '' : String(filterQuarter)}
               onChange={(v) => setFilterQuarter(v === '' ? '' : Number(v))}
-              options={[1, 2, 3, 4].map((q: any) => ({
+              options={[1, 2, 3, 4].map((q) => ({
                 value: String(q),
                 label: lang === 'ar' ? `الربع ${q}` : `Q${q}`,
               }))}
@@ -165,7 +193,7 @@ export default function HajriTaxRegistryList({
                 </tr>
               </thead>
               <tbody>
-                {registryRows.map((row: any) => {
+                {registryRows.map((row) => {
                   const nm =
                     lang === 'en'
                       ? row.company?.nameEn || row.company?.nameAr
@@ -181,7 +209,7 @@ export default function HajriTaxRegistryList({
                   const submitted = isHajriDeclarationSubmitted(row);
                   return (
                     <tr key={row.id} className="hover:bg-[var(--noorix-blue-6)]/40">
-                      <td className="border-b border-noorix-border px-3 py-2.5 truncate" title={nm}>
+                      <td className="border-b border-noorix-border px-3 py-2.5 truncate" title={nm ?? undefined}>
                         {nm}
                       </td>
                       <td className="border-b border-noorix-border px-3 py-2.5 text-end nx-font-numbers">{row.year}</td>

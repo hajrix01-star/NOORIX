@@ -29,6 +29,7 @@
     "check:settings-governance": "node scripts/check-settings-governance.mjs",
     "check:suppliers-governance": "node scripts/check-suppliers-governance.mjs",
     "check:assets-governance": "node scripts/check-assets-governance.mjs",
+    "check:hajri-tax-governance": "node scripts/check-hajri-tax-governance.mjs",
     "check:expenses-governance": "node scripts/check-expenses-governance.mjs",
     "check:vaults-governance": "node scripts/check-vaults-governance.mjs",
     "check:orders-governance": "node scripts/check-orders-governance.mjs",

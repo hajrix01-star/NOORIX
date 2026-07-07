@@ -2,9 +2,70 @@
  * شكل إدخال الإقرار الضريبي التخطيطي — عمود رئيسي + شريط جانبي (ملخص + محاكي سداد)
  */
 import React, { useState, useEffect } from 'react';
-import { OUTPUT_ROWS, INPUT_ROWS, roundMoney2 } from '../../constants/taxDisclosure';
-import { fmtTax } from '../../utils/format';
+import {
+  OUTPUT_ROWS,
+  INPUT_ROWS,
+  roundMoney2,
+  type TaxDisclosureField,
+  type TaxDisclosureRowKey,
+} from '../../constants/taxDisclosure';
 import { Button, Checkbox, Input, FmtNum } from '../../ui';
+import HajriTaxDetailSidebar from './HajriTaxDetailSidebar';
+import HajriTaxDisclosureRows from './HajriTaxDisclosureRows';
+import type {
+  HajriTaxTranslate,
+  HajriTaxLanguage,
+  VatPlanningSourceSnapshot,
+} from '../../types/api/domains/hajriTax';
+
+type SummaryInlineEdit = {
+  id: string;
+  text: string;
+};
+
+type HajriTaxDetailEditorProps = {
+  t: HajriTaxTranslate;
+  lang: HajriTaxLanguage;
+  periodLabel: string;
+  companyName: string;
+  taxNumber: string;
+  closeDetail: () => void;
+  handleImportFromTaxReport: () => void | Promise<void>;
+  importingReport: boolean;
+  handleSaveDetail: () => void | Promise<void>;
+  savePending: boolean;
+  printDetail: () => void;
+  exportDetailExcel: () => void;
+  saveHint: string;
+  outputTotal: number;
+  inputTotal: number;
+  netPayableDraft: number;
+  netVat: number;
+  priorAdj: number;
+  balanceCarried: number;
+  paymentTargetStr: string;
+  setPaymentTargetStr: (value: string) => void;
+  notes: string;
+  setNotes: (value: string) => void;
+  sourceSnapshot: VatPlanningSourceSnapshot | null;
+  showSimulator: boolean;
+  setShowSimulator: (value: boolean) => void;
+  handleBalancePayment: () => void;
+  simulatorRequiredInputVat: number | null;
+  simulatorEstimatedBaseAt15: number | null;
+  simulatorInvalidTarget?: boolean;
+  paymentTargetParsed: number | null;
+  renderEditableCell: (key: TaxDisclosureRowKey, field: TaxDisclosureField) => React.ReactNode;
+  updateRow: (key: TaxDisclosureRowKey, field: TaxDisclosureField | null, value: string) => void;
+  salesAmountIncludesVat: boolean;
+  setSalesAmountIncludesVat: (value: boolean) => void;
+  readOnly?: boolean;
+  onSwitchToEdit: () => void;
+  filingSubmitted?: boolean;
+  onApproveFiling: () => void | Promise<void>;
+  onReopenFiling: () => void | Promise<void>;
+  filingActionPending?: boolean;
+};
 
 export default function HajriTaxDetailEditor({
   t,
@@ -48,55 +109,21 @@ export default function HajriTaxDetailEditor({
   onApproveFiling,
   onReopenFiling,
   filingActionPending = false,
-}: any) {
-  const dueNet = netPayableDraft >= 0;
-
+}: HajriTaxDetailEditorProps) {
   /** نفس منطق الجدول: كتابة حتى blur ثم تقريب */
-  const [summaryInline, setSummaryInline] = useState<any>(null);
+  const [summaryInline, setSummaryInline] = useState<SummaryInlineEdit | null>(null);
 
   useEffect(() => {
     setSummaryInline(null);
   }, [readOnly]);
 
-  const formatSummaryCommitted = (v: any) => {
+  const formatSummaryCommitted = (v: unknown) => {
     if (v === '' || v === null || v === undefined) return '';
     const x = Number(v);
     if (!Number.isFinite(x)) return '';
     if (Math.abs(roundMoney2(x)) < 0.0005) return '';
     return roundMoney2(x).toFixed(2);
   };
-
-  const renderSectionRows = (rows: any, sectionTotal: any, totalVatLabelKey: any = 'vatColumnVat') =>
-    rows.map((r: any) => {
-      const label = lang === 'ar' ? r.labelAr : r.labelEn;
-      if (r.isTotal) {
-        return (
-          <div
-            key={r.key}
-            className="flex flex-col gap-1 border-b border-noorix-border bg-[var(--noorix-navy-4)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <span className="font-bold text-[13px] text-noorix-text">{label}</span>
-            <div className="flex flex-wrap items-baseline gap-2 sm:gap-6">
-              <span className="text-[11px] text-noorix-muted">{t(totalVatLabelKey)}</span>
-              <span className="nx-font-numbers text-[16px] font-bold">
-                {fmtTax(sectionTotal)} <span className="nx-sar text-[13px]">SR</span>
-              </span>
-            </div>
-          </div>
-        );
-      }
-      return (
-        <div
-          key={r.key}
-          className="grid grid-cols-1 items-center gap-2 border-b border-noorix-border px-4 py-3 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_88px]"
-        >
-          <div className="min-w-0 text-[13px] leading-snug text-noorix-text">{label}</div>
-          <div className="min-w-0">{renderEditableCell(r.key, 'amount')}</div>
-          <div className="min-w-0">{renderEditableCell(r.key, 'vat')}</div>
-          <div className="min-w-0">{renderEditableCell(r.key, 'adjustment')}</div>
-        </div>
-      );
-    });
 
   return (
     <div className="space-y-5">
@@ -139,7 +166,7 @@ export default function HajriTaxDetailEditor({
               <Checkbox
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-noorix-border"
                 checked={salesAmountIncludesVat}
-                onChange={(e: any) => setSalesAmountIncludesVat(e.target.checked)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSalesAmountIncludesVat(e.target.checked)}
               />
               <span>
                 <span className="font-semibold">{t('taxImportSalesInclusiveLabel')}</span>
@@ -211,7 +238,13 @@ export default function HajriTaxDetailEditor({
               <div className="text-end">{t('vatColumnVat')}</div>
               <div className="text-center">{t('vatColumnAdjustment')}</div>
             </div>
-            {renderSectionRows(OUTPUT_ROWS, outputTotal)}
+            <HajriTaxDisclosureRows
+              rows={OUTPUT_ROWS}
+              sectionTotal={outputTotal}
+              lang={lang}
+              t={t}
+              renderEditableCell={renderEditableCell}
+            />
           </section>
 
           <section className="noorix-surface-card overflow-hidden p-0 shadow-sm">
@@ -224,7 +257,14 @@ export default function HajriTaxDetailEditor({
               <div className="text-end">{t('vatColumnRecoverable')}</div>
               <div className="text-center">{t('vatColumnAdjustment')}</div>
             </div>
-            {renderSectionRows(INPUT_ROWS, inputTotal, 'vatColumnRecoverable')}
+            <HajriTaxDisclosureRows
+              rows={INPUT_ROWS}
+              sectionTotal={inputTotal}
+              lang={lang}
+              t={t}
+              renderEditableCell={renderEditableCell}
+              totalVatLabelKey="vatColumnRecoverable"
+            />
           </section>
 
           <section className="noorix-surface-card p-4">
@@ -248,13 +288,13 @@ export default function HajriTaxDetailEditor({
                   });
                 }}
                 onBlur={() => {
-                  setSummaryInline((cur: any) => {
+                  setSummaryInline((cur) => {
                     if (cur?.id !== 'prior_adjustments') return cur;
                     updateRow('prior_adjustments', null, cur.text);
                     return null;
                   });
                 }}
-                onChange={(e: any) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   if (readOnly) return;
                   setSummaryInline({ id: 'prior_adjustments', text: e.target.value });
                 }}
@@ -278,13 +318,13 @@ export default function HajriTaxDetailEditor({
                   });
                 }}
                 onBlur={() => {
-                  setSummaryInline((cur: any) => {
+                  setSummaryInline((cur) => {
                     if (cur?.id !== 'balance_carried') return cur;
                     updateRow('balance_carried', null, cur.text);
                     return null;
                   });
                 }}
-                onChange={(e: any) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   if (readOnly) return;
                   setSummaryInline({ id: 'balance_carried', text: e.target.value });
                 }}
@@ -300,141 +340,28 @@ export default function HajriTaxDetailEditor({
           </section>
         </div>
 
-        <aside className="mt-6 space-y-4 xl:sticky xl:top-2 xl:mt-0 xl:w-[320px] xl:shrink-0">
-          <div>
-            <h3 className="mb-2 text-[14px] font-bold text-noorix-text">{t('vatSidebarSummary')}</h3>
-            <div className="space-y-3">
-              <div className="rounded-xl border border-noorix-blue/25 bg-[var(--noorix-blue-6)] px-4 py-3">
-                <div className="text-[12px] text-noorix-muted">{t('vatTotalOutputVat')}</div>
-                <div className="nx-font-numbers text-[18px] font-bold text-noorix-blue">
-                  {fmtTax(outputTotal)} <span className="nx-sar text-[13px]">SR</span>
-                </div>
-              </div>
-              <div className="rounded-xl border border-noorix-green/25 bg-[var(--noorix-green-6)] px-4 py-3">
-                <div className="text-[12px] text-noorix-muted">{t('vatTotalInputVat')}</div>
-                <div className="nx-font-numbers text-[18px] font-bold text-noorix-green">
-                  {fmtTax(inputTotal)} <span className="nx-sar text-[13px]">SR</span>
-                </div>
-              </div>
-              <div
-                className={`rounded-xl border px-4 py-4 ${
-                  dueNet
-                    ? 'border-[var(--noorix-accent-red)]/35 bg-[var(--noorix-red-6)]'
-                    : 'border-[var(--noorix-accent-green)]/35 bg-[var(--noorix-green-6)]'
-                }`}
-              >
-                <div className="text-[12px] font-medium text-noorix-muted">{t('vatNetVatPeriod')}</div>
-                <div
-                  className={`mt-1 nx-font-numbers text-[22px] font-extrabold ${dueNet ? 'text-[var(--noorix-accent-red)]' : 'text-[var(--noorix-accent-green)]'}`}
-                >
-                  <FmtNum n={netPayableDraft} tax /> <span className="nx-sar text-[15px]">SR</span>
-                </div>
-                <p className="mt-2 mb-0 text-[11px] text-noorix-muted">
-                  {dueNet ? t('vatAmountDueAuthority') : t('vatAmountRefundable')}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className={`rounded-xl border-2 border-amber-400/50 bg-[var(--noorix-surface)] p-4 shadow-sm ${readOnly ? 'opacity-80' : ''}`}>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="text-[14px] font-bold text-noorix-text">{t('vatSimulatorTitle')}</span>
-              {!readOnly ? (
-                <label className="flex cursor-pointer items-center gap-2 text-[12px] text-noorix-muted">
-                  <Checkbox
-                    className="h-4 w-4 rounded border-noorix-border"
-                    checked={showSimulator}
-                    onChange={(e: any) => setShowSimulator(e.target.checked)}
-                  />
-                  {t('vatSimulatorToggle')}
-                </label>
-              ) : null}
-            </div>
-            {showSimulator ? (
-              <div className="space-y-3">
-                <p className="m-0 text-[11px] leading-snug text-noorix-muted">{t('vatSimulatorHelpShort')}</p>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  readOnly={readOnly}
-                  label={t('vatSimulatorHint')}
-                  value={paymentTargetStr}
-                  onChange={(e: any) => setPaymentTargetStr(e.target.value)}
-                  placeholder=" "
-                />
-                {Number.isFinite(paymentTargetParsed) ? (
-                  simulatorInvalidTarget ? (
-                    <p className="m-0 text-[12px] font-medium text-amber-800 dark:text-amber-200">{t('vatSimulatorInvalidTarget')}</p>
-                  ) : (
-                    <div className="space-y-2 text-[12px] leading-relaxed text-noorix-muted">
-                      {simulatorRequiredInputVat != null ? (
-                        <p className="m-0">
-                          {t('vatSimulatorExplainInputVat', {
-                            inputVat: fmtTax(simulatorRequiredInputVat),
-                            target: fmtTax(paymentTargetParsed),
-                          })}
-                        </p>
-                      ) : null}
-                      {simulatorEstimatedBaseAt15 != null ? (
-                        <p className="m-0">
-                          {t('vatSimulatorExplainBase', { base: fmtTax(simulatorEstimatedBaseAt15) })}
-                        </p>
-                      ) : null}
-                    </div>
-                  )
-                ) : (
-                  <p className="m-0 text-[12px] text-noorix-muted">{t('vatSimulatorEnterTarget')}</p>
-                )}
-                {!readOnly ? (
-                  <Button
-                    type="button"
-                    variant="warning"
-                    size="sm"
-                    className="w-full"
-                    onClick={handleBalancePayment}
-                  >
-                    {t('vatSimulatorAutoFill')}
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted/40 px-3 py-2 text-[11px] leading-snug text-noorix-muted">
-            {t('vatPlanningDisclaimer')}
-          </div>
-
-          <Input
-            multiline
-            rows={3}
-            readOnly={readOnly}
-            label={t('vatNotes')}
-            value={notes}
-            onChange={(e: any) => setNotes(e.target.value)}
-          />
-
-          {!readOnly ? (
-            <Button
-              type="button"
-              variant="success"
-              size="lg"
-              className="w-full"
-              disabled={savePending}
-              onClick={handleSaveDetail}
-            >
-              {t('vatSaveDeclaration')}
-            </Button>
-          ) : null}
-
-          {sourceSnapshot ? (
-            <details className="rounded-lg border border-noorix-border bg-noorix-surface p-3 text-[12px]">
-              <summary className="cursor-pointer font-bold">{t('vatReferenceSnapshot')}</summary>
-              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap text-[11px]">
-                {JSON.stringify(sourceSnapshot, null, 2)}
-              </pre>
-            </details>
-          ) : null}
-        </aside>
+        <HajriTaxDetailSidebar
+          t={t}
+          lang={lang}
+          readOnly={readOnly}
+          outputTotal={outputTotal}
+          inputTotal={inputTotal}
+          netPayableDraft={netPayableDraft}
+          paymentTargetStr={paymentTargetStr}
+          setPaymentTargetStr={setPaymentTargetStr}
+          notes={notes}
+          setNotes={setNotes}
+          sourceSnapshot={sourceSnapshot}
+          showSimulator={showSimulator}
+          setShowSimulator={setShowSimulator}
+          handleBalancePayment={handleBalancePayment}
+          simulatorRequiredInputVat={simulatorRequiredInputVat}
+          simulatorEstimatedBaseAt15={simulatorEstimatedBaseAt15}
+          simulatorInvalidTarget={simulatorInvalidTarget}
+          paymentTargetParsed={paymentTargetParsed}
+          savePending={savePending}
+          handleSaveDetail={handleSaveDetail}
+        />
       </div>
     </div>
   );
