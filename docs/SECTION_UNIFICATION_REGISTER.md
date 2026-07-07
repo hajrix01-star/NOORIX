@@ -29,6 +29,7 @@ A section is considered closed only when all of the following are true:
 | Reports | `48dba7ea finalize reports section cleanup` | Closed | Centralized reports query contract, typed P&L/tax/bank/cost/detail boundaries, print/export/model split, strict reports governance across `src/modules/Reports`. |
 | Vaults | `bd73bc55 finalize vaults section cleanup` | Closed | Centralized vault API contracts, treasury display models, typed vault hooks/components, backend period totals, safe deletion guard, strict vaults governance. |
 | Expenses | `4046f04e finalize expenses section cleanup` | Closed | Centralized expense API contracts, frontend display/draft models, backend official payment summaries, fixed/variable payment guards, strict expenses governance. |
+| Assets Register | `4fae199e finalize assets register section cleanup` | Closed | Centralized asset API contracts, asset form/warranty models, backend filtered acquisition summaries, typed warranty queue, strict assets governance. |
 
 ## Invoices
 
@@ -785,6 +786,76 @@ Closed on 2026-07-07 with `4046f04e finalize expenses section cleanup`.
   - `check:date-control-governance` passed.
   - `check:responsive-governance` passed.
   - Strict expenses scan found no real `any`, `as any`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the expenses closure scope after cleanup. Remaining textual matches are documented false positives such as `RequireAnyPermission`, `as const`, and governance regex literals.
+
+## Assets Register
+
+Closed on 2026-07-07 with `4fae199e finalize assets register section cleanup`.
+
+### Scope
+
+- Frontend assets section:
+  - `src/modules/Assets`
+- Shared asset contracts and API boundary:
+  - `src/types/api/domains/assets.ts`
+  - `src/services/domains/apiEndpoints/company-assets.ts`
+  - `src/services/queryKeys/assets.ts`
+- Backend company assets boundary:
+  - `backend/src/company-assets`
+- Warranty queue integrations from purchases/expenses invoices:
+  - `warrantyFollowUp`
+  - `warrantyFollowUpDone`
+- Governance:
+  - `scripts/check-assets-governance.mjs`
+
+### Centralized
+
+- Asset API/domain contracts:
+  - `AssetRegisterItem`
+  - `AssetRegisterPage`
+  - `PendingWarrantyInvoiceRow`
+  - `AssetCreatePayload`
+  - `AssetUpdatePayload`
+  - `AssetCompleteFromInvoicePayload`
+  - `AssetWarrantyLinePayload`
+- Asset frontend display and draft models:
+  - `src/modules/Assets/assetsRegisterModel.ts`
+  - `src/modules/Assets/utils/assetsRegisterMappers.ts`
+- Asset form payloads, validation, warranty-line rows, supplier display names, invoice-kind labels, and response normalization are centralized in the assets model.
+- Backend asset list now exposes both filtered acquisition summary and all-company acquisition summary.
+- Pending warranty invoice queue is bounded for large datasets.
+
+### Accounting and Metrics Rules
+
+- Assets Register remains an operational asset and warranty register without depreciation.
+- Official acquisition cost values are backend-stored and backend-returned.
+- When completing an asset from an invoice, the default acquisition-cost draft uses the invoice `totalAmount`, preserving the system rule that financial figures are VAT-inclusive unless a contract says otherwise.
+- Frontend may prepare draft form payloads and display labels, but it does not calculate official posted accounting values.
+- Filtered table summaries represent the current server-side query, not the visible page.
+
+### Protected Exceptions
+
+- Assets route and backend permissions still accept legacy expense permissions as a compatibility bridge. This is documented and should be revisited during final permission unification.
+- Warranty-line draft rows remain frontend-owned because they are unsaved input rows, not official accounting records.
+- Asset cards/table mobile layouts remain section-owned until the final system visual/table pass.
+
+### Final System Unification Candidates
+
+- Review the legacy expense-permission fallback when all role migrations are complete.
+- Move asset export formatting into a future central financial/export layer if asset exports are expanded.
+- Revisit the pending warranty queue if it needs server-side pagination beyond the current bounded queue.
+
+### Closure Checks
+
+- 2026-07-07 Assets Register closure:
+  - `tsc --noEmit` passed.
+  - `vitest run src/modules/Assets/assetsRegisterModel.test.ts` passed: 1 file, 3 tests.
+  - `jest --config backend/jest.config.cjs company-assets.service.spec.ts` passed: 1 file, 2 tests.
+  - `check:assets-governance` passed.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - Strict assets scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the assets closure scope after cleanup. Remaining textual matches are documented false positives such as `RequireAnyPermission`, `as const`, export aliases, and governance regex literals.
 
 ## System-Wide Final Unification Backlog
 
