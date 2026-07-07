@@ -857,6 +857,86 @@ Closed on 2026-07-07 with `4fae199e finalize assets register section cleanup`.
   - `check:responsive-governance` passed.
   - Strict assets scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the assets closure scope after cleanup. Remaining textual matches are documented false positives such as `RequireAnyPermission`, `as const`, export aliases, and governance regex literals.
 
+## Orders
+
+Closed on 2026-07-07 with pending local commit `finalize orders section cleanup`.
+
+### Scope
+
+- Frontend orders section:
+  - `src/modules/Orders`
+- Shared orders hooks and API boundary:
+  - `src/hooks/useOrders.ts`
+  - `src/services/domains/apiEndpoints/orders.ts`
+  - `src/services/queryKeys/orders.ts`
+  - `src/types/api/domains/orders.ts`
+- Orders import/export helpers:
+  - `src/utils/ordersExport.ts`
+- Backend orders boundary:
+  - `backend/src/orders`
+- Governance:
+  - `scripts/check-orders-governance.mjs`
+
+### Centralized
+
+- Orders API/domain contracts:
+  - `OrderRecord`
+  - `OrderSummary`
+  - `OrderItemsReportRow`
+  - `OrderPurchaseHistoryRow`
+  - `OrderProduct`
+  - `OrderProductPayload`
+  - `OrderCategoryPayload`
+  - `StaffOrder`
+  - `StaffOrderPayload`
+  - `StaffSaleReport`
+  - `DigestHistoryDay`
+- Orders range official summary and cash-sales/cash-remaining metrics:
+  - `backend/src/orders/orders-month-summary.util.ts`
+  - `backend/src/orders/orders.service.ts`
+  - `src/hooks/useOrders.ts`
+  - `src/services/domains/apiEndpoints/orders.ts`
+- Orders item-report totals, sort/slice display rollups:
+  - `src/modules/Orders/utils/ordersReportModel.ts`
+- Order catalog form, filter, import/export, print, and weekly print models now use typed orders contracts.
+- Staff order basket, sent-order, digest, and sales-report models now use typed contracts without real `any`.
+- Direct browser confirms/prints in the orders section were replaced with section-owned confirmation and print/PDF flows.
+
+### Accounting and Metrics Rules
+
+- Official order totals, staff sales report totals, digest totals, range summaries, cash-sales totals, and cash-remaining metrics are backend-owned.
+- Frontend display rollups are limited to presentation-only item report totals, visible table totals, sorting, slicing, and draft input previews.
+- The summary card no longer owns official cash-remaining arithmetic inline; it displays values returned by the backend range summary endpoint.
+- Order entry and staff-order entry previews remain draft input views before save, not official posted accounting reports.
+- Pagination does not redefine official totals: period/report summaries represent the selected range/query, not only the visible page.
+
+### Protected Exceptions
+
+- Orders catalog print and weekly print remain section-specific until the future central print/export layout layer is introduced.
+- Product variant selection and draft line quantity editing remain frontend-owned because they are unsaved input flows.
+- Staff digest send estimated total remains a draft preview before backend send/creation.
+- `FmtNum` was widened to accept numeric display values returned as strings/Decimal-like values; it formats only and does not own official calculations.
+
+### Final System Unification Candidates
+
+- Promote repeated order/catalog print patterns into the future central print/export layout layer.
+- Revisit order summary cards when the central financial KPI/card primitive is adopted.
+- Consider a central confirmation modal primitive if more closed sections converge on the same pattern.
+- Keep future official order-period aggregation in backend contracts; frontend additions must remain presentation-only.
+
+### Closure Checks
+
+- 2026-07-07 Orders closure:
+  - `tsc --noEmit` passed.
+  - `vitest run src/modules/Orders src/utils/ordersExport.ts` passed: 6 files, 29 tests.
+  - `jest --config backend/jest.config.cjs orders` passed: 8 files, 24 tests.
+  - `check:orders-governance` passed.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - Strict orders scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, `FIXME`, `window.confirm`, or `window.print` across the orders closure scope after cleanup. Remaining textual matches are documented false positives such as `RequireAnyPermission` and governance regex literals.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
