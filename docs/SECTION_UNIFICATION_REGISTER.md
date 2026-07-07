@@ -937,6 +937,77 @@ Closed on 2026-07-07 with pending local commit `finalize orders section cleanup`
   - `check:responsive-governance` passed.
   - Strict orders scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, `FIXME`, `window.confirm`, or `window.print` across the orders closure scope after cleanup. Remaining textual matches are documented false positives such as `RequireAnyPermission` and governance regex literals.
 
+## Smart Chat
+
+Closed on 2026-07-07 with pending local commit `finalize chat section cleanup`.
+
+### Scope
+
+- Frontend Smart Chat section:
+  - `src/modules/SmartChat`
+- Smart Chat API and domain contract:
+  - `src/services/domains/apiEndpoints/chat.ts`
+  - `src/types/api/domains/chat.ts`
+- Backend Smart Chat boundary:
+  - `backend/src/chat`
+  - `backend/src/config/gemini.config.ts`
+- Governance:
+  - `scripts/check-chat-governance.mjs`
+
+### Centralized
+
+- Chat API request/response contract:
+  - `ChatQueryRequest`
+  - `ChatQueryResponse`
+  - `ChatProcessQueryMeta`
+  - `ChatResponseExtras`
+  - `ChatChartMonthCompare`
+  - `ChatChartFinanceRatios`
+- Chat endpoint wrapper moved out of the mixed connection/bank endpoint file into a dedicated chat endpoint file.
+- Local chat history storage is typed and guarded before messages are restored.
+- Gemini response parsing now uses a typed response shape and a single extractor instead of untyped response access.
+- Backend handler context is typed with real service dependencies.
+- Official chat financial metrics are centralized in `ChatFinancialMetricsService`.
+- Chat expense and finance-ratio handlers now use expense permissions for expense data instead of vault permissions.
+- Chat governance now prevents real `any`, suppression comments, direct browser confirm/print, misplaced chat endpoints, and local handler ownership of official financial aggregates.
+
+### Accounting and Metrics Rules
+
+- Official chat answers for sales, purchases, expenses, month comparison, and operating ratios are backend-owned.
+- Frontend Smart Chat does not calculate official financial, tax, or operational totals.
+- Frontend chart logic only maps backend-returned values into visual bars/segments; it may clamp visual segment width, but it does not redefine official percentages or amounts.
+- Annual chat figures come from the central P&L service through `ChatFinancialMetricsService`.
+- Period chat figures come from active ledger entries through `ChatFinancialMetricsService`, not from individual handlers.
+- Stored local chat history is display state only and does not become a source of official numbers.
+
+### Protected Exceptions
+
+- Smart Chat keeps section-specific message rendering and reply-chip behavior until a future system-wide assistant/message primitive exists.
+- Gemini open/general mode remains feature-flagged by backend config; official financial answers still route through backend handlers and services.
+- The in-memory chat rate limiter remains process-local for now; if deployment becomes multi-process or distributed, promote it to a shared rate-limit store.
+- Smart Chat expense picker remains section-adjacent to the expenses section because it directly opens expense-line flows.
+
+### Final System Unification Candidates
+
+- Promote Smart Chat report cards/charts into future central assistant-message primitives if another assistant/reporting surface appears.
+- Consider moving chat financial metric read models into a broader reporting facade if more sections need the same period-level ledger metric queries.
+- Revisit distributed chat rate limiting before multi-instance deployment.
+- Add central AI response safety/audit telemetry if Smart Chat usage becomes operationally critical.
+
+### Closure Checks
+
+- 2026-07-07 Smart Chat closure:
+  - `tsc --noEmit` passed.
+  - `vitest run src/modules/SmartChat` passed: 2 files, 4 tests.
+  - `jest --config backend/jest.config.cjs chat` targeted suite passed: 5 files, 66 tests.
+  - `check:chat-governance` passed.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - `check-node-scripts` passed after adding chat governance.
+  - Strict chat scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, `FIXME`, `window.confirm`, or `window.print` across the chat closure scope after cleanup.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
