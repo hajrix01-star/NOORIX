@@ -35,6 +35,7 @@ A section is considered closed only when all of the following are true:
 | Orders | `2614d598 finalize orders section cleanup` | Closed | Centralized orders contracts, import/export helpers, order report models, backend official range summaries, strict orders governance. |
 | Smart Chat | `93ffdf87 finalize chat section cleanup` | Closed | Centralized chat contracts/endpoints, backend-owned official financial metrics, typed chat frontend, strict chat governance. |
 | Hajri Tax | `c646dc07 finalize hajri tax section cleanup` | Closed | Centralized Hajri/VAT planning contracts, typed registry/editor/import flows, backend registry metadata endpoint, strict Hajri Tax governance. |
+| Login And Theme Preview | Pending local commit `finalize login and theme preview cleanup` | Technically closed | Centralized login identifier/session helpers, typed theme preview lab model, strict Login/Theme governance. |
 
 ## Invoices
 
@@ -1100,6 +1101,60 @@ Closed on 2026-07-07 with local commit `c646dc07 finalize hajri tax section clea
   - `check:responsive-governance` passed.
   - `check-node-scripts` passed after adding Hajri Tax governance.
   - Strict Hajri Tax scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the Hajri Tax closure scope after cleanup. Remaining textual matches are documented false positives such as `RequireAnyPermission` and governance regex literals.
+
+## Login And Theme Preview
+
+Technically closed on 2026-07-07 with pending local commit `finalize login and theme preview cleanup`.
+
+### Scope
+
+- Login:
+  - `src/modules/Login`
+  - `src/services/domains/apiEndpoints/connection-bank.ts`
+  - `backend/src/auth`
+- Theme Preview:
+  - `src/modules/themePreview`
+  - `src/utils/themePreviewAccess.ts`
+- Governance:
+  - `scripts/check-login-theme-governance.mjs`
+
+### Centralized
+
+- Login identifier normalization and login result helpers are centralized in `src/modules/Login/loginModel.ts`.
+- Login screen no longer owns raw identifier construction or untyped submit/change handlers.
+- Theme Preview lab tab metadata, demo tabs, and SmartTable columns/rows are centralized in `src/modules/themePreview/themePreviewModel.ts`.
+- Theme Preview continues to use the central UI primitives (`Button`, `Input`, `DateField`, `ScreenTabs`, `SmartTable`, `Modal`, `Badge`) instead of local table/control implementations.
+- Theme Preview access remains centralized in `src/utils/themePreviewAccess.ts`: development mode is allowed, production remains owner/super-admin only.
+
+### Accounting and Official Numbers
+
+- Login and Theme Preview do not own official financial, tax, operational, or accounting calculations.
+- Theme Preview numeric values are UI demonstration values only and are not connected to official reports.
+- Frontend Login only submits credentials and stores the authenticated session returned by the backend auth contract.
+
+### Protected Exceptions
+
+- Theme Preview remains a section-owned UI lab because it intentionally showcases multiple central UI primitives in one screen.
+- Theme Preview has no backend endpoint and no official data source; adding backend scope would be artificial.
+- Login branding display remains frontend-owned because it is presentation-only and sourced from centralized app branding helpers.
+
+### Final System Unification Candidates
+
+- If Theme Preview grows further, split large demo blocks into per-lab components after the system-wide UI primitive pass.
+- Consider moving auth endpoint functions out of the mixed connection/bank endpoint file when the remaining endpoint barrels are fully reorganized.
+
+### Closure Checks
+
+- 2026-07-07 Login and Theme Preview technical closure:
+  - `tsc --noEmit` passed.
+  - `vitest run src/modules/Login src/modules/themePreview` passed: 2 files, 5 tests.
+  - `check:login-theme-governance` passed.
+  - `check:table-governance` passed.
+  - `check:filter-governance` passed.
+  - `check:date-control-governance` passed.
+  - `check:responsive-governance` passed.
+  - `check-node-scripts` passed after adding Login/Theme governance.
+  - Strict Login/Theme scan found no real `any`, `as any`, `as never`, `as unknown`, `ts-ignore`, `ts-expect-error`, `eslint-disable`, `TODO`, or `FIXME` across the closure scope.
 
 ## System-Wide Final Unification Backlog
 
