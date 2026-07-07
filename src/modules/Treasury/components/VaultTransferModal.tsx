@@ -2,7 +2,7 @@
  * VaultTransferModal — تحويل نقد بين خزينتين عبر FinancialCore.processTransfer
  * (قيد transfer في الدفتر؛ بدون فاتورة؛ بدون أثر على P&L)
  */
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery } from '../../../hooks/useApiQuery';
@@ -16,17 +16,39 @@ import { roundMoney2 } from '../../../utils/moneyInput';
 import { fmt } from '../../../utils/format';
 import { useToast } from '../../../context/ToastContext';
 import { Button, DateField, Input, AdaptiveSheet } from '../../../ui';
+import type { VaultRecord, VaultTransferPayload, VaultTransferResult } from '../../../types/api';
 
-export default function VaultTransferModal({ companyId, onClose }: any) {
+type VaultTransferModalProps = {
+  companyId: string;
+  onClose: () => void;
+};
+
+function createTransferAttemptKey(companyId: string) {
+  const randomPart = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+  return `vtr-${companyId}-${randomPart}`;
+}
+
+function hasTransferData(res: { data?: VaultTransferResult } | VaultTransferResult): res is { data?: VaultTransferResult } {
+  return Object.prototype.hasOwnProperty.call(res, 'data');
+}
+
+function unwrapTransferResult(res: { data?: VaultTransferResult } | VaultTransferResult): VaultTransferResult {
+  return hasTransferData(res) ? (res.data ?? {}) : res;
+}
+
+export default function VaultTransferModal({ companyId, onClose }: VaultTransferModalProps) {
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const idempotencyKeyRef = useRef(createTransferAttemptKey(companyId));
 
   /**
    * جلب الخزائن بدون فلتر تاريخ حتى يعكس الرصيد المعروض الرصيد الكلي التراكمي.
    * التحويل لا يُرفض لنقص الرصيد (سياسة مقصودة — يُسمح بالرصيد السالب في الدفتر).
    */
-  const { data: rawVaults = [], isLoading: vaultsLoading } = useApiListQuery<any>({
+  const { data: rawVaults = [], isLoading: vaultsLoading } = useApiListQuery<VaultRecord>({
     queryKey: vaultKeys.list(companyId, false, '', ''),
     queryFn: () => getVaults(companyId, false, undefined, undefined),
     enabled: !!companyId,
@@ -34,7 +56,7 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
   });
 
   const selectableVaults = useMemo(
-    () => (rawVaults || []).filter((v: any) => v.isActive !== false && !v.isArchived),
+    () => (rawVaults || []).filter((v) => v.isActive !== false && !v.isArchived),
     [rawVaults],
   );
 
@@ -45,18 +67,18 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    const list = (rawVaults || []).filter((v: any) => v.isActive !== false && !v.isArchived);
+    const list = (rawVaults || []).filter((v) => v.isActive !== false && !v.isArchived);
     if (list.length < 2) return;
     setFromId(list[0].id);
     setToId(list[1].id);
   }, [rawVaults]);
 
   const transferMut = useApiMutation({
-    mutationFn: (payload: any) => createVaultTransfer(payload),
+    mutationFn: (payload: VaultTransferPayload) => createVaultTransfer(payload),
     successToast: false,
-    onSuccess: (res: any) => {
+    onSuccess: (res: { data?: VaultTransferResult } | VaultTransferResult) => {
       invalidateOnFinancialMutation(queryClient);
-      const data = res?.data ?? res;
+      const data = unwrapTransferResult(res);
       const ref = data?.referenceId ?? '';
       showToast(
         ref ? t('vaultTransferSuccessRef', ref) : t('vaultTransferSuccess'),
@@ -65,16 +87,15 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
       onClose?.();
     },
     showErrorToast: true,
-    errorToast: (err: any) => err?.message || t('saveFailed'),
+    errorToast: (err: Error) => err.message || t('saveFailed'),
   });
 
   const handleSubmit = useCallback(
-    (e: any) => {
+    (e: React.FormEvent<HTMLFormElement>) => {
       e?.preventDefault?.();
       const amt = roundMoney2(amount);
       if (!companyId || !fromId || !toId || fromId === toId) return;
       if (!amt || amt <= 0) return;
-      const idempotencyKey = `vtr-${companyId}-${fromId}-${toId}-${txDate}-${amt}-${Date.now()}`;
       transferMut.mutate({
         companyId,
         fromVaultId: fromId,
@@ -82,13 +103,13 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
         amount: String(amt),
         transactionDate: txDate,
         notes: notes.trim() || undefined,
-        idempotencyKey,
+        idempotencyKey: idempotencyKeyRef.current,
       });
     },
     [companyId, fromId, toId, amount, txDate, notes, transferMut],
   );
 
-  const fromVault = selectableVaults.find((v: any) => v.id === fromId);
+  const fromVault = selectableVaults.find((v) => v.id === fromId);
 
   return (
     <AdaptiveSheet
@@ -139,11 +160,11 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
           type="select"
           label={t('vaultTransferFrom')}
           value={fromId}
-          onChange={(e: any) => setFromId(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFromId(e.target.value)}
           required
         >
           <option value="">—</option>
-          {selectableVaults.map((v: any) => (
+          {selectableVaults.map((v) => (
             <option key={v.id} value={v.id}>
               {vaultDisplayName(v, lang)}
               {typeof v.balance === 'number' ? ` — ${fmt(v.balance)} SR` : ''}
@@ -162,11 +183,11 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
           type="select"
           label={t('vaultTransferTo')}
           value={toId}
-          onChange={(e: any) => setToId(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setToId(e.target.value)}
           required
         >
           <option value="">—</option>
-          {selectableVaults.map((v: any) => (
+          {selectableVaults.map((v) => (
             <option key={v.id} value={v.id} disabled={v.id === fromId}>
               {vaultDisplayName(v, lang)}
             </option>
@@ -179,7 +200,7 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
           min="0"
           label={t('amount')}
           value={amount}
-          onChange={(e: any) => setAmount(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
           placeholder="0"
           required
         />
@@ -190,7 +211,7 @@ export default function VaultTransferModal({ companyId, onClose }: any) {
           type="text"
           label={t('vaultTransferNotes')}
           value={notes}
-          onChange={(e: any) => setNotes(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setNotes(e.target.value)}
           multiline
           rows={2}
           placeholder={t('vaultTransferNotesPlaceholder')}

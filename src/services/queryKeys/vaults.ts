@@ -13,7 +13,7 @@ export const vaultKeys = {
   /** واجهات تعتمد 3-عناصر فقط (مثلاً SmartChat) */
   shortActive: (companyId: string) => ['vaults', companyId, false] as const,
 
-  transactions: (vaultId: unknown, companyId: string, startDate: unknown, endDate: unknown, page: number) =>
+  transactions: (vaultId: string, companyId: string, startDate: string, endDate: string, page: number) =>
     ['vault-transactions', vaultId, companyId, startDate, endDate, page] as const,
 
   paymentVaultsRoot: () => ['payment-vaults'] as const,

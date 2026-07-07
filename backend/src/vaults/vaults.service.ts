@@ -384,7 +384,14 @@ export class VaultsService {
     if (!vault) throw new NotFoundException('الخزنة غير موجودة');
 
     const ledgerCount = await this.prisma.ledgerEntry.count({
-      where: { companyId, vaultId: id },
+      where: {
+        companyId,
+        OR: [
+          { vaultId: id },
+          { debitAccountId: vault.accountId },
+          { creditAccountId: vault.accountId },
+        ],
+      },
     });
     if (ledgerCount > 0) {
       throw new BadRequestException(

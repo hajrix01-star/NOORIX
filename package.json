@@ -28,6 +28,7 @@
     "check:reports-governance": "node scripts/check-reports-governance.mjs",
     "check:settings-governance": "node scripts/check-settings-governance.mjs",
     "check:suppliers-governance": "node scripts/check-suppliers-governance.mjs",
+    "check:vaults-governance": "node scripts/check-vaults-governance.mjs",
     "check:owner-governance": "node scripts/check-owner-governance.mjs",
     "check:purchases-governance": "node scripts/check-purchases-governance.mjs",
     "check:sales-governance": "node scripts/check-sales-governance.mjs",

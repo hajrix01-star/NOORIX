@@ -60,6 +60,19 @@ export type {
   UpdateSalesSummaryBody,
 } from './domains/sales';
 export type {
+  UseVaultsParams,
+  VaultCreatePayload,
+  VaultRecord,
+  VaultTransactionRecord,
+  VaultTransactionsPage,
+  VaultTransactionViewRow,
+  VaultTransferPayload,
+  VaultTransferResult,
+  VaultType,
+  VaultUpdatePayload,
+  VaultWithTransactionsResult,
+} from './domains/vaults';
+export type {
   HrCompensationSnapshot,
   HrCompensationSnapshotsResult,
   HrDocumentUploadResult,
