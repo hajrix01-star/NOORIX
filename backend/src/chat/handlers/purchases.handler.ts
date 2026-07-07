@@ -1,4 +1,3 @@
-import Decimal from 'decimal.js';
 import { formatReportMoneyInteger } from '../../common/utils/report-display-format.util';
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { ChatHandler, ChatHandlerContext } from './types';
@@ -15,19 +14,8 @@ export const purchasesHandler: ChatHandler = {
     can(PERMISSIONS.VIEW_INVOICES),
   process: async (ctx) => {
     const { companyId, period } = ctx;
-    const { prisma, reportsService } = ctx;
-
     if (period) {
-      const agg = await prisma.ledgerEntry.aggregate({
-        where: {
-          companyId,
-          status: 'active',
-          transactionDate: { gte: period.start, lte: period.end },
-          debitAccount: { code: { startsWith: 'PUR' } },
-        },
-        _sum: { amount: true },
-      });
-      const total = new Decimal(agg._sum.amount ?? 0);
+      const total = await ctx.chatFinancialMetrics.sumPurchases(companyId, period.start, period.end);
       const amt = `${formatReportMoneyInteger(total)} SR`;
       const amtEn = `${formatReportMoneyInteger(total)} SAR`;
       return {
@@ -36,8 +24,7 @@ export const purchasesHandler: ChatHandler = {
       };
     }
 
-    const report = await reportsService.getGeneralProfitLoss(companyId, ctx.year);
-    const total = report?.cards?.purchases ?? '0';
+    const total = await ctx.chatFinancialMetrics.annualPurchases(companyId, ctx.year);
     const amt = `${formatReportMoneyInteger(total)} SR`;
     const amtEn = `${formatReportMoneyInteger(total)} SAR`;
     return {

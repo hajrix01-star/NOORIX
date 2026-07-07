@@ -3,6 +3,10 @@
  */
 import type { DashboardInsightsService } from '../../reporting/insights/dashboard-insights.service';
 import type { ReportingInsightsAggregatorService } from '../../reporting/insights/reporting-insights-aggregator.service';
+import type { TenantPrismaService } from '../../prisma/tenant-prisma.service';
+import type { ReportsService } from '../../reports/reports.service';
+import type { VaultsService } from '../../vaults/vaults.service';
+import type { ChatFinancialMetricsService } from '../chat-financial-metrics.service';
 import type { GeminiIntent } from '../gemini-types';
 
 export type { GeminiIntent } from '../gemini-types';
@@ -16,9 +20,10 @@ export type ChatHandlerContext = {
   month: number;
   period: { start: Date; end: Date; labelAr: string; labelEn: string } | null;
   can: (permission: string) => boolean;
-  prisma: any;
-  reportsService: any;
-  vaultsService: any;
+  prisma: TenantPrismaService;
+  reportsService: ReportsService;
+  vaultsService: VaultsService;
+  chatFinancialMetrics: ChatFinancialMetricsService;
   dashboardInsightsService: DashboardInsightsService;
   /** Extended insights (dashboard + purchase/supplier + expense); used by `dashboard_insights` Smart Chat handler. */
   reportingInsightsAggregatorService: ReportingInsightsAggregatorService;

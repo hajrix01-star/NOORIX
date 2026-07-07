@@ -1,4 +1,3 @@
-import Decimal from 'decimal.js';
 import { formatReportMoneyInteger } from '../../common/utils/report-display-format.util';
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { ChatHandler, ChatHandlerContext } from './types';
@@ -8,26 +7,16 @@ import { classifyDashboardInsightsQuery } from './dashboard-insights.handler';
 export const expensesHandler: ChatHandler = {
   priority: 12,
   intent: 'expenses',
-  matchesIntent: (intent, can) => intent === 'expenses' && can(PERMISSIONS.VIEW_VAULTS),
+  matchesIntent: (intent, can) =>
+    intent === 'expenses' && (can(PERMISSIONS.VIEW_EXPENSES) || can(PERMISSIONS.EXPENSES_READ)),
   canHandle: (q, can) =>
     classifyDashboardInsightsQuery(q) == null &&
     matches(q, ['مصروفات', 'مصاريف', 'المصروفات', 'expenses', 'كم صرفنا', 'إجمالي المصروفات']) &&
-    can(PERMISSIONS.VIEW_VAULTS),
+    (can(PERMISSIONS.VIEW_EXPENSES) || can(PERMISSIONS.EXPENSES_READ)),
   process: async (ctx) => {
     const { companyId, period } = ctx;
-    const { prisma, reportsService } = ctx;
-
     if (period) {
-      const agg = await prisma.ledgerEntry.aggregate({
-        where: {
-          companyId,
-          status: 'active',
-          transactionDate: { gte: period.start, lte: period.end },
-          debitAccount: { type: 'expense', code: { not: { startsWith: 'PUR' } } },
-        },
-        _sum: { amount: true },
-      });
-      const total = new Decimal(agg._sum.amount ?? 0);
+      const total = await ctx.chatFinancialMetrics.sumOperatingExpenses(companyId, period.start, period.end);
       const amt = `${formatReportMoneyInteger(total)} SR`;
       const amtEn = `${formatReportMoneyInteger(total)} SAR`;
       return {
@@ -36,8 +25,7 @@ export const expensesHandler: ChatHandler = {
       };
     }
 
-    const report = await reportsService.getGeneralProfitLoss(companyId, ctx.year);
-    const total = report?.cards?.expenses ?? '0';
+    const total = await ctx.chatFinancialMetrics.annualExpenses(companyId, ctx.year);
     const amt = `${formatReportMoneyInteger(total)} SR`;
     const amtEn = `${formatReportMoneyInteger(total)} SAR`;
     return {

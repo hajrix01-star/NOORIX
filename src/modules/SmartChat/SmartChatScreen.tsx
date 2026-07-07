@@ -125,9 +125,9 @@ export default function SmartChatScreen() {
   // chips متابعة سياقية بعد الرد (تُحسب من آخر سؤال)
   const replyChips = useMemo(() => {
     if (!activeCompanyId) return [];
-    const lastUser = [...displayedMessages].reverse().find((m) => m.role === 'user') as any;
+    const lastUser = [...displayedMessages].reverse().find((message) => message.role === 'user');
     if (!lastUser) return [];
-    const q: string = (lastUser.text || '').toLowerCase();
+    const q = lastUser.text.toLowerCase();
     if (q.includes('مبيعات اليوم') || q.includes('today')) {
       return [
         { label: isAr ? 'أمس' : 'Yesterday', text: isAr ? 'كم مبيعات أمس؟' : 'What are yesterday\'s sales?' },

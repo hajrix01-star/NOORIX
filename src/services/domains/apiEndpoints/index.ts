@@ -1,5 +1,6 @@
 // تقسيم هيكلي: إعادة تصدير مثل monolith (لا تغيير واجهة)
 export * from './connection-bank';
+export * from './chat';
 export * from './companies-ledger-roles';
 export * from './accounts-categories-expense';
 export * from './company-assets';

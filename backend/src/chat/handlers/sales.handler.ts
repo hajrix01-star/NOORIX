@@ -1,4 +1,3 @@
-import Decimal from 'decimal.js';
 import { formatReportMoneyInteger } from '../../common/utils/report-display-format.util';
 import { PERMISSIONS } from '../../auth/constants/permissions';
 import type { ChatHandler, ChatHandlerContext } from './types';
@@ -23,17 +22,7 @@ export const salesHandler: ChatHandler = {
 
     // فترة محددة
     if (period) {
-      const { prisma } = ctx;
-      const agg = await prisma.ledgerEntry.aggregate({
-        where: {
-          companyId,
-          status: 'active',
-          transactionDate: { gte: period.start, lte: period.end },
-          creditAccount: { type: 'revenue' },
-        },
-        _sum: { amount: true },
-      });
-      const total = new Decimal(agg._sum.amount ?? 0);
+      const total = await ctx.chatFinancialMetrics.sumRevenue(companyId, period.start, period.end);
       const amt = `${formatReportMoneyInteger(total)} SR`;
       const amtEn = `${formatReportMoneyInteger(total)} SAR`;
       return {
@@ -43,9 +32,7 @@ export const salesHandler: ChatHandler = {
     }
 
     // السنة
-    const { reportsService } = ctx;
-    const report = await reportsService.getGeneralProfitLoss(companyId, ctx.year);
-    const total = report?.cards?.sales ?? '0';
+    const total = await ctx.chatFinancialMetrics.annualSales(companyId, ctx.year);
     const amt = `${formatReportMoneyInteger(total)} SR`;
     const amtEn = `${formatReportMoneyInteger(total)} SAR`;
     return {

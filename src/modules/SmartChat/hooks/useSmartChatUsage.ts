@@ -17,7 +17,15 @@ function storageKey(companyId: string, userId: string) {
 function loadUsage(companyId: string, userId: string): Record<string, number> {
   try {
     const raw = localStorage.getItem(storageKey(companyId, userId));
-    return raw ? JSON.parse(raw) : {};
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, number] => {
+        const [, value] = entry;
+        return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+      }),
+    );
   } catch {
     return {};
   }

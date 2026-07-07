@@ -14,6 +14,7 @@ import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { ChatService } from './chat.service';
 import { GeminiService } from './gemini.service';
+import { ChatQueryDto } from './dto/chat-query.dto';
 
 /** Rate limit: 30 طلب/دقيقة لكل مستخدم */
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -65,7 +66,7 @@ export class ChatController {
   @Post('query')
   @RequirePermission('SMART_CHAT_READ')
   async query(
-    @Body() body: { query: string },
+    @Body() body: ChatQueryDto,
     @CompanyId() companyIdFromRequest: string,
     @CurrentUser() user: JwtUser,
   ) {
@@ -78,7 +79,7 @@ export class ChatController {
     }
     const result = await this.chatService.processQuery(
       companyId,
-      body.query || '',
+      body.query.trim(),
       user.role || '',
       user.permissions,
     );

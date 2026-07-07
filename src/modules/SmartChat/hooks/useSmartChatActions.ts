@@ -87,13 +87,14 @@ export function useSmartChatActions({
       try {
         const res = await chatQuery(q);
         if (res?.success && res?.data) {
+          const data = res.data;
           setMessages((prev) => [
             ...prev,
             {
               role: 'assistant',
-              textAr: res.data.answerAr,
-              textEn: res.data.answerEn,
-              ...(res.data.extras ? { extras: res.data.extras } : {}),
+              textAr: data.answerAr,
+              textEn: data.answerEn,
+              ...(data.extras ? { extras: data.extras } : {}),
             },
           ]);
         } else {

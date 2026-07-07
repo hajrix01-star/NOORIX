@@ -77,13 +77,6 @@ export async function changePassword(currentPassword: string, newPassword: strin
   return res;
 }
 
-/**
- * المحادثة الذكية — إرسال استعلام والحصول على إجابة.
- */
-export async function chatQuery(query: string): Promise<ApiParsedResult> {
-  return apiPost('/api/v1/chat/query', { query });
-}
-
 /** تحليل كشوف الحساب */
 export async function bankStatementUpload(body: unknown): Promise<ApiParsedResult> {
   return apiPost('/api/v1/bank-statements/upload', body, { timeout: 60000 });

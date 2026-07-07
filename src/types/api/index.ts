@@ -141,6 +141,15 @@ export type {
   ExpenseSupplierRef,
 } from './domains/expenses';
 export type {
+  ChatChartFinanceRatios,
+  ChatChartMonthCompare,
+  ChatIntentSource,
+  ChatProcessQueryMeta,
+  ChatQueryRequest,
+  ChatQueryResponse,
+  ChatResponseExtras,
+} from './domains/chat';
+export type {
   HrCompensationSnapshot,
   HrCompensationSnapshotsResult,
   HrDocumentUploadResult,
