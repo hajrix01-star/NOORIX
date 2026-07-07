@@ -1650,7 +1650,7 @@ Closed on 2026-07-08 with local commit `628c5629`.
 
 ## System Governance Consolidation Batch
 
-Closed on 2026-07-08 as the first system-governance umbrella pass. Closure commit awaits this batch commit.
+Closed on 2026-07-08 with local commit `46ffc33f`.
 
 ### Scope
 
@@ -1697,7 +1697,7 @@ Closed on 2026-07-08 as the first system-governance umbrella pass. Closure commi
 
 ## Print Table Conversion Batch 3
 
-Closed on 2026-07-08 as a safe print/export conversion batch. Closure commit awaits this batch commit.
+Closed on 2026-07-08 with local commit `dc058b32`.
 
 ### Scope
 
@@ -1741,7 +1741,7 @@ Closed on 2026-07-08 as a safe print/export conversion batch. Closure commit awa
 
 ## HR Protected Print Table Conversion
 
-Closed on 2026-07-08 as a safe HR print-table conversion batch. Closure commit awaits this batch commit.
+Closed on 2026-07-08 with local commit `6c1ec776`.
 
 ### Scope
 
@@ -1779,7 +1779,7 @@ Closed on 2026-07-08 as a safe HR print-table conversion batch. Closure commit a
 
 ## Hajri Tax Print Table Conversion
 
-Closed on 2026-07-08 as a safe tax print/export conversion batch. Closure commit awaits this batch commit.
+Closed on 2026-07-08 with local commit `896dce75`.
 
 ### Scope
 
@@ -1809,6 +1809,37 @@ Closed on 2026-07-08 as a safe tax print/export conversion batch. Closure commit
   - `check:hajri-tax-governance` passed.
   - `check:system-governance-consolidated` passed.
   - `git diff --check` passed.
+
+## System Final Closure Gate
+
+Closed on 2026-07-08 as the final stop condition for the current unification cycle. Closure commit awaits this gate commit.
+
+### Decision
+
+- The system is ready to stop the section-by-section cleanup loop.
+- Remaining exceptions are governed, documented, and protected by executable checks.
+- New cleanup batches should only start for a failing check, real bug, broken contract, or official-number violation.
+
+### Final Evidence
+
+- `tsc --noEmit` passed.
+- `check:system-governance-consolidated` passed.
+- `check:table-governance` passed.
+- `check-node-scripts` passed.
+- `git diff --check` passed.
+- `audit:large-files` completed and still reports existing architecture candidates, not closure blockers.
+- Manual tables remain at 36 tables across 23 files with no missing or stale registry reasons.
+
+### Protected Exceptions
+
+- Remaining manual tables are protected document, editable-grid, matrix, tax, financial, bank, purchase, or report surfaces.
+- Existing large files remain future architecture candidates.
+- Remaining protected shared/legacy boundaries stay guarded by governance scripts and registry files.
+
+### Stop Rule
+
+- Do not keep opening cleanup-only batches.
+- Future work should be feature-driven, blocker-driven, or check-failure-driven.
 
 ## System-Wide Final Unification Backlog
 
