@@ -12,6 +12,7 @@ import {
 } from './bankAnalysisConstants';
 import type {
   AnalysisCardId,
+  BankTransactionLite,
   BankStatementAnalysisCardsTabProps,
   PieDisplayMode,
 } from './bankAnalysisTab.types';
@@ -39,10 +40,10 @@ export default function BankStatementAnalysisCardsTab({
   showToast,
   onSaveTxCategory,
 }: BankStatementAnalysisCardsTabProps) {
-  const summaryByCategory = (summaryByCategoryIn ?? {}) as Record<string, BankCategoryAgg>;
+  const summaryByCategory: Record<string, BankCategoryAgg> = summaryByCategoryIn ?? {};
   const { t, lang } = useTranslation();
   const moneyLang = lang as MoneyLang;
-  const txs = useMemo(() => (statement?.transactions ?? []) as unknown[], [statement?.transactions]);
+  const txs = useMemo<readonly BankTransactionLite[]>(() => statement?.transactions ?? [], [statement?.transactions]);
   const [addOpen, setAddOpen] = useState(false);
   const [pieMode, setPieMode] = useState<PieDisplayMode>('combined');
   const [pieDrilldownCategory, setPieDrilldownCategory] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export default function BankStatementAnalysisCardsTab({
         return (
           <BankAnalysisCashFlowCard
             cardId={cardId}
-            dailyData={derived.dailyData as Array<Record<string, unknown>>}
+            dailyData={derived.dailyData}
             t={t}
             removeLabel={removeLabel}
             onRemoveCard={onRemoveCard}
@@ -73,7 +74,7 @@ export default function BankStatementAnalysisCardsTab({
         return (
           <BankAnalysisAlertsCard
             cardId={cardId}
-            alerts={derived.alerts as Array<{ txDate?: string; description?: string; debit?: unknown }>}
+            alerts={derived.alerts}
             t={t}
             removeLabel={removeLabel}
             onRemoveCard={onRemoveCard}

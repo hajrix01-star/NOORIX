@@ -28,7 +28,7 @@ import { MONTH_NAMES_AR, MONTH_NAMES_EN } from './profitLossPresentationModel';
 import { buildPlMonthStatementBody, plMonthStatementPrintCss } from './reportsPlMonthPrint';
 import { profitLossPdfExportExtraCss } from './reportsPlExportPdfCss';
 import { getSaudiNow } from '../../utils/saudiDate';
-import type { ReportPeriodMode } from './reportTypes';
+import type { PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
 
 export default function ReportsScreen() {
   const { activeCompanyId, companies } = useApp();
@@ -37,7 +37,7 @@ export default function ReportsScreen() {
   const [year, setYear] = useState(() => getSaudiNow().year);
   const [periodMode, setPeriodMode] = useState<ReportPeriodMode>('year');
   const [selectedMonth, setSelectedMonth] = useState(() => String(getSaudiNow().month));
-  const [detailState, setDetailState] = useState<any>(null);
+  const [detailState, setDetailState] = useState<ReportDetailState | null>(null);
   const [plDisplayLevel, setPlDisplayLevel] = useState<PlDisplayLevel>(2);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
     sales: false,
@@ -45,7 +45,7 @@ export default function ReportsScreen() {
     expenses: false,
   });
   const [rowSearch, setRowSearch] = useState('');
-  const company = companies?.find((item: any) => item.id === activeCompanyId);
+  const company = companies?.find((item) => item.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
 
   const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
@@ -73,12 +73,12 @@ export default function ReportsScreen() {
     return names[selectedMonthNumber - 1];
   }, [selectedMonthNumber, lang]);
 
-  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_: any, index: any) => currentYear - index), [currentYear]);
+  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear]);
 
   const isMobile = useIsNarrow700();
 
-  function toggleGroup(collapseKey: any) {
-    setCollapsedGroups((prev: any) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
+  function toggleGroup(collapseKey: string) {
+    setCollapsedGroups((prev) => ({ ...prev, [collapseKey]: !prev[collapseKey] }));
   }
 
   const { exportRows, plExportRowMeta } = useMemo(() => {
@@ -187,11 +187,11 @@ export default function ReportsScreen() {
       return;
     }
 
-    const head = `${EN_MONTHS.map((month: any) => `<th>${escPrintCell(month)}</th>`).join('')}<th>${escPrintCell(t('reportAnnualTotal'))}</th><th>${escPrintCell(t('reportSalesShareYear'))}</th>`;
+    const head = `${EN_MONTHS.map((month) => `<th>${escPrintCell(month)}</th>`).join('')}<th>${escPrintCell(t('reportAnnualTotal'))}</th><th>${escPrintCell(t('reportSalesShareYear'))}</th>`;
     const bodyRows = printRowsForDoc
-      .map((row: any) => {
+      .map((row: PlDisplayRow) => {
         const firstCell = escPrintCell(displayLabel(row, lang));
-        const monthsCells = (row.months ?? []).map((value: any) => `<td>${amountText(value)}</td>`).join('');
+        const monthsCells = (row.months ?? []).map((value) => `<td>${amountText(value)}</td>`).join('');
         return `<tr><td>${firstCell}</td>${monthsCells}<td>${amountText(row.total)}</td><td>${percentText(row.percentOfSalesYear)}</td></tr>`;
       })
       .join('');

@@ -8,10 +8,11 @@ import {
   getContextPercent,
   getRowTone,
 } from './reportHelpers';
+import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState } from './reportTypes';
 
 export type GeneralPlTableProps = {
-  report: any;
-  visibleRows: any[];
+  report: GeneralProfitLossReport;
+  visibleRows: PlDisplayRow[];
   collapsedGroups: Record<string, boolean>;
   toggleGroup: (key: string) => void;
   lang: string;
@@ -19,12 +20,7 @@ export type GeneralPlTableProps = {
   isMobile: boolean;
   selectedMonthNumber: number | null;
   monthNames: string[];
-  onOpenDetail: (payload: {
-    month: number | null;
-    groupKey: string;
-    itemKey: string | null;
-    showTrend?: boolean;
-  }) => void;
+  onOpenDetail: (payload: ReportDetailState) => void;
 };
 
 export default function GeneralPlTable({
@@ -49,7 +45,7 @@ export default function GeneralPlTable({
         <colgroup>
           <col className={isMobile ? 'w-[46%]' : isMonthlyMode ? 'w-[340px]' : 'w-[260px]'} />
           {isMonthlyMode && <col className={isMobile ? 'w-[27%]' : 'w-[210px]'} />}
-          {!isMobile && visibleMonthColumns.map((month: any) => <col key={month.index} className="w-[76px]" />)}
+          {!isMobile && visibleMonthColumns.map((month) => <col key={month.index} className="w-[76px]" />)}
           <col className={isMobile ? 'w-[27%]' : 'w-[138px]'} />
         </colgroup>
 
@@ -69,7 +65,7 @@ export default function GeneralPlTable({
               </th>
             )}
             {!isMobile &&
-              visibleMonthColumns.map((month: any) => (
+              visibleMonthColumns.map((month) => (
                 <th
                   key={month.index}
                   className="nx-pl-table__th nx-pl-table__th--month whitespace-nowrap text-center font-primary text-noorix-text"
@@ -84,7 +80,7 @@ export default function GeneralPlTable({
         </thead>
 
         <tbody>
-          {visibleRows.map((row: any) => {
+          {visibleRows.map((row) => {
             const isGroup = row.rowType === 'group';
             const isCategory = row.rowType === 'category';
             const isSummary = row.rowType === 'summary';
@@ -138,6 +134,7 @@ export default function GeneralPlTable({
                       type="button"
                       onClick={() =>
                         canOpenItem &&
+                        row.groupKey &&
                         onOpenDetail({
                           month: selectedMonthNumber,
                           groupKey: row.groupKey,
@@ -173,6 +170,7 @@ export default function GeneralPlTable({
                       type="button"
                       className="nx-pl-table__amount-btn block w-full cursor-pointer border-0 bg-transparent p-0 text-inherit"
                       onClick={() =>
+                        row.groupKey &&
                         onOpenDetail({
                           month: selectedMonthNumber,
                           groupKey: row.groupKey,
@@ -190,7 +188,7 @@ export default function GeneralPlTable({
                 )}
 
                 {!isMobile &&
-                  (row.months ?? []).map((value: any, index: number) => (
+                  (row.months ?? []).map((value, index) => (
                     <td
                       key={`${row.groupKey}-${index}`}
                       className="nx-pl-table__cell nx-pl-table__cell--month text-center nx-font-numbers"
@@ -204,6 +202,7 @@ export default function GeneralPlTable({
                           isSummary || isGroup ? 'font-extrabold' : isCategory ? 'font-bold' : 'font-semibold',
                         )}
                         onClick={() =>
+                          row.groupKey &&
                           onOpenDetail({
                             month: index + 1,
                             groupKey: row.groupKey,
@@ -263,7 +262,12 @@ function plIndentClass(depth: number, extra: number) {
   return 'nx-pl-indent-108';
 }
 
-function plAmountColorClass(row: any, rowTone: any, isSummary: boolean, value: unknown) {
+function plAmountColorClass(
+  row: PlDisplayRow,
+  rowTone: ReturnType<typeof getRowTone>,
+  isSummary: boolean,
+  value: unknown,
+) {
   if (isSummary) {
     return Number(value || 0) >= 0 ? 'text-noorix-blue' : 'text-noorix-red';
   }

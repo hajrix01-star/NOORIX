@@ -98,9 +98,9 @@ describe('dashboardAppSalesData', () => {
         { transactionDate: '2025-05-01', totalAmount: 500 },
       ],
       [
-        { periodKey: '2025-04', vaultId: 'app-jahez', type: 'app', nameAr: 'Ø¬Ø§Ù‡Ø²', nameEn: 'Jahez', amount: 250 },
-        { periodKey: '2025-04', vaultId: 'bank', type: 'bank', nameAr: 'Ø¨Ù†Ùƒ', nameEn: 'Bank', amount: 750 },
-        { periodKey: '2025-05', vaultId: 'app-jahez', type: 'app', nameAr: 'Ø¬Ø§Ù‡Ø²', nameEn: 'Jahez', amount: 100 },
+        { periodKey: '2025-04', vaultId: 'app-jahez', type: 'app', nameAr: '????', nameEn: 'Jahez', amount: 250 },
+        { periodKey: '2025-04', vaultId: 'bank', type: 'bank', nameAr: '???', nameEn: 'Bank', amount: 750 },
+        { periodKey: '2025-05', vaultId: 'app-jahez', type: 'app', nameAr: '????', nameEn: 'Jahez', amount: 100 },
       ],
       'ar',
       2025,

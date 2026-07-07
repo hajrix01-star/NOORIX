@@ -6,15 +6,22 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { toYmd } from '../../../utils/saudiDate';
 import { FmtNum, MetricCard } from '../../../ui';
+import type { BankReconciliationStats, BankStatementLite } from './bankAnalysisTab.types';
 
-export default function BankStatementSalesCompareTab({ statement, reconciliationStats, reconLoading }: any) {
+type BankStatementSalesCompareTabProps = {
+  statement: BankStatementLite | null | undefined;
+  reconciliationStats: BankReconciliationStats | null | undefined;
+  reconLoading: boolean;
+};
+
+export default function BankStatementSalesCompareTab({ statement, reconciliationStats, reconLoading }: BankStatementSalesCompareTabProps) {
   const { t } = useTranslation();
   const start = toYmd(statement?.startDate);
   const end = toYmd(statement?.endDate);
 
   const bankCredits = useMemo(() => {
     const txs = statement?.transactions || [];
-    return txs.reduce((s: any, tx: any) => s + (Number(tx.credit) || 0), 0);
+    return txs.reduce((sum, tx) => sum + (Number(tx.credit) || 0), 0);
   }, [statement]);
 
   if (!start || !end) {
@@ -23,9 +30,9 @@ export default function BankStatementSalesCompareTab({ statement, reconciliation
     );
   }
 
-  const expected = reconciliationStats?.expected_credits ?? 0;
-  const salesBank = reconciliationStats?.sales_bank_total ?? 0;
-  const cashDeposits = reconciliationStats?.cash_deposits_total ?? 0;
+  const expected = Number(reconciliationStats?.expected_credits) || 0;
+  const salesBank = Number(reconciliationStats?.sales_bank_total) || 0;
+  const cashDeposits = Number(reconciliationStats?.cash_deposits_total) || 0;
   const saleCount = reconciliationStats?.sale_invoice_count;
   const diff = bankCredits - expected;
 

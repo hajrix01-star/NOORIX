@@ -1,9 +1,10 @@
 import { Button } from '../../../ui';
 import Card from '../../../ui/Card';
 import type { CostAppsPlResult } from '../costAccountingAppsModel';
+import type Decimal from 'decimal.js';
 
 type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
-type FormatDecimalFn = (value: any) => string;
+type FormatDecimalFn = (value: Decimal) => string;
 
 export function CostAppsKpiCards({
   t,

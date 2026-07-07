@@ -12,6 +12,24 @@ import BankStatementReconciliationTab from './BankStatementReconciliationTab';
 import BankStatementSalesCompareTab from './BankStatementSalesCompareTab';
 import { exportBankStatementExcel, printBankStatement } from './bankStatementExportPrint';
 import { throwIfApiFailed } from '../../../services/api';
+import type { ApiParsedResult } from '../../../services/api';
+import type { BankCategoryLite, BankCreateCategoryBody } from './bankAnalysisTab.types';
+
+type BankStatementDetailViewProps = {
+  statementId: string;
+  companyId: string;
+  companyName?: string;
+  categories?: BankCategoryLite[];
+  onBack: () => void;
+  onDelete?: () => void;
+  createCategory: (body: BankCreateCategoryBody) => Promise<ApiParsedResult>;
+  showToast: (message: string, type?: string) => void;
+  onRefresh?: () => void;
+};
+
+function errorMessage(error: unknown, fallback = 'Error'): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function BankStatementDetailView({
   statementId,
@@ -23,7 +41,7 @@ export default function BankStatementDetailView({
   createCategory,
   showToast,
   onRefresh,
-}: any) {
+}: BankStatementDetailViewProps) {
   const { t } = useTranslation();
   const vm = useBankStatementView(statementId, companyId, t);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -90,8 +108,8 @@ export default function BankStatementDetailView({
       setNewCategoryName('');
       onRefresh?.();
       showToast(t('savedSuccessfully') || 'OK');
-    } catch (e: any) {
-      showToast(e?.message || 'Error', 'error');
+    } catch (error: unknown) {
+      showToast(errorMessage(error), 'error');
     }
   };
 
@@ -107,7 +125,7 @@ export default function BankStatementDetailView({
             onClick={() => {
               vm.reclassifyMutation.mutate(undefined, {
                 onSuccess: () => showToast?.(t('bankReclassifyDone') || 'تم إعادة التصنيف'),
-                onError: (e: any) => showToast?.(e?.message || 'Error', 'error'),
+                onError: (error: unknown) => showToast?.(errorMessage(error), 'error'),
               });
             }}
           >
@@ -124,8 +142,8 @@ export default function BankStatementDetailView({
                   columnTotals: vm.columnTotals,
                   summaryByCategory: vm.summaryByCategory,
                 });
-              } catch (e: any) {
-                showToast?.(e?.message || 'Error', 'error');
+              } catch (error: unknown) {
+                showToast?.(errorMessage(error), 'error');
               }
             }}
           >
@@ -181,7 +199,7 @@ export default function BankStatementDetailView({
               setActiveTab={vm.setActiveTab}
               categories={categories}
               showToast={showToast}
-              onSaveTxCategory={async (txId: any, categoryId: any) => {
+              onSaveTxCategory={async (txId: string, categoryId: string | null) => {
                 await vm.updateCategoryMutation.mutateAsync({ txId, categoryId });
                 await vm.refetch();
               }}

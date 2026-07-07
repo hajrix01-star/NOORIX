@@ -21,8 +21,7 @@ export default function HajriTaxScreen() {
       const n = Number(raw);
       const rounded = Number.isFinite(n) ? roundMoney2(n) : NaN;
       const isZero = !Number.isFinite(rounded) || rounded === 0;
-      const committed =
-        raw === '' || raw === null || raw === undefined || !Number.isFinite(n) || isZero ? '' : rounded.toFixed(2);
+      const committed = !Number.isFinite(n) || isZero ? '' : rounded.toFixed(2);
       const display = s.cellEdit?.id === cellId ? s.cellEdit.text : committed;
 
       return (
@@ -34,8 +33,7 @@ export default function HajriTaxScreen() {
           placeholder=" "
           onFocus={() => {
             if (s.detailReadOnly) return;
-            const start =
-              raw === '' || raw === null || raw === undefined || !Number.isFinite(n) || isZero ? '' : roundMoney2(n).toFixed(2);
+            const start = !Number.isFinite(n) || isZero ? '' : roundMoney2(n).toFixed(2);
             s.setCellEdit({ id: cellId, text: start });
           }}
           onBlur={() => {

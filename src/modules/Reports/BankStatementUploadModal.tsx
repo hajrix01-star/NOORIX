@@ -1,11 +1,9 @@
-﻿/**
- * BankStatementUploadModal — رفع ملف كشف مع سير العمل من 5 خطوات
- */
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementUpload } from '../../services/api';
-import { importBankStatementFile } from '../../utils/exportUtils';
 import { Button, AdaptiveSheet, FileTrigger } from '../../ui';
+import type { BankSheetData } from './bank/bankMappingAutoDetect';
+import type { BankStatementLite } from './bank/bankAnalysisTab.types';
 
 const STEPS = [
   { id: 'upload', labelKey: 'bankStatementStepUpload' },
@@ -13,21 +11,41 @@ const STEPS = [
   { id: 'analyze', labelKey: 'bankStatementStepAnalyze' },
   { id: 'process', labelKey: 'bankStatementStepProcess' },
   { id: 'save', labelKey: 'bankStatementStepSave' },
-];
+] as const;
 
-export default function BankStatementUploadModal({ companyId, onClose, onComplete, importFile, showToast }: any) {
+type BankStatementUploadModalProps = {
+  companyId: string;
+  onClose: () => void;
+  onComplete: (statement: BankStatementLite, raw: BankSheetData) => void;
+  importFile: (file: File) => Promise<{ raw: BankSheetData }>;
+  showToast: (message: string, type?: string) => void;
+};
+
+type UploadResult = BankStatementLite & { status?: string | null };
+
+function uploadErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'فشل الرفع';
+}
+
+function unwrapUploadResult(data: unknown): UploadResult | null {
+  if (!data || typeof data !== 'object') return null;
+  if ('data' in data && data.data && typeof data.data === 'object') return data.data as UploadResult;
+  return data as UploadResult;
+}
+
+export default function BankStatementUploadModal({ companyId, onClose, onComplete, importFile, showToast }: BankStatementUploadModalProps) {
   const { t } = useTranslation();
-  const fileInputRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [step, setStep] = useState(0);
-  const [file, setFile] = useState<any>(null);
-  const [raw, setRaw] = useState<any>(null);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<any>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [raw, setRaw] = useState<BankSheetData | null>(null);
+  const [result, setResult] = useState<UploadResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleSelectFile = async (selectedFile: any) => {
+  const handleSelectFile = async (selectedFile: File | null | undefined) => {
     if (!selectedFile) return;
-    const ext = (selectedFile.name || '').toLowerCase().split('.').pop();
+    const ext = (selectedFile.name || '').toLowerCase().split('.').pop() || '';
     if (!['xlsx', 'xls', 'csv'].includes(ext)) {
       showToast(t('bankStatementInvalidFormat') || 'صيغة غير مدعومة. استخدم Excel أو CSV.', 'error');
       return;
@@ -49,37 +67,37 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
       });
 
       if (!res?.success && res?.error) {
-        setError(res.error);
+        setError(String(res.error));
         return;
       }
       setStep(3);
       setStep(4);
-      const stmt = res?.data ?? res;
-      setResult(stmt);
-      onComplete(stmt, rows);
-    } catch (err: any) {
-      setError(err?.message || 'فشل الرفع');
+      const stmt = unwrapUploadResult(res?.data ?? res);
+      if (stmt) {
+        setResult(stmt);
+        onComplete(stmt, rows);
+      }
+    } catch (err: unknown) {
+      setError(uploadErrorMessage(err));
     }
   };
 
-  const handleDrop = (e: any) => {
-    e.preventDefault();
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
     setIsDragging(false);
-    const f = e.dataTransfer?.files?.[0];
-    if (f) handleSelectFile(f);
+    void handleSelectFile(event.dataTransfer.files?.[0]);
   };
 
-  const handleDragOver = (e: any) => {
-    e.preventDefault();
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
     setIsDragging(true);
   };
 
   const handleDragLeave = () => setIsDragging(false);
 
-  const handleInputChange = (e: any) => {
-    const f = e.target?.files?.[0];
-    if (f) handleSelectFile(f);
-    e.target.value = '';
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    void handleSelectFile(event.target.files?.[0]);
+    event.target.value = '';
   };
 
   return (
@@ -103,21 +121,18 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
         </>
       }
     >
-      {/* خطوات التقدم */}
       <div className="flex gap-1 mb-5">
-        {STEPS.map((s: any, i: any) => (
+        {STEPS.map((item, index) => (
           <div
-            key={s.id}
-            className={`flex-1 min-w-0 h-1 rounded-sm ${i <= step ? 'bg-noorix-blue' : 'bg-noorix-border'}`}
-            title={t(s.labelKey)}
+            key={item.id}
+            className={`flex-1 min-w-0 h-1 rounded-sm ${index <= step ? 'bg-noorix-blue' : 'bg-noorix-border'}`}
+            title={t(item.labelKey)}
           />
         ))}
       </div>
 
       {error && (
-        <div
-          className="p-3 mb-4 rounded-lg text-[13px] bg-[var(--noorix-red-10)] text-noorix-red"
-        >
+        <div className="p-3 mb-4 rounded-lg text-[13px] bg-[var(--noorix-red-10)] text-noorix-red">
           {error}
         </div>
       )}
@@ -133,12 +148,8 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
           }`}
         >
           <div className="mb-2 text-[36px]"></div>
-          <div className="text-[15px] font-semibold text-noorix-text">
-            {t('bankStatementDragDrop')}
-          </div>
-          <div className="text-[12px] text-noorix-muted mt-1">
-            Excel (.xlsx, .xls) أو CSV
-          </div>
+          <div className="text-[15px] font-semibold text-noorix-text">{t('bankStatementDragDrop')}</div>
+          <div className="text-[12px] text-noorix-muted mt-1">Excel (.xlsx, .xls) أو CSV</div>
           <FileTrigger
             ref={fileInputRef}
             accept=".xlsx,.xls,.csv"
@@ -157,14 +168,10 @@ export default function BankStatementUploadModal({ companyId, onClose, onComplet
                 {raw?.length ?? 0} صف • {step >= 4 ? t('bankStatementStepDone') : STEPS[step] && t(STEPS[step].labelKey)}
               </div>
             </div>
-            {step >= 4 && (
-              <span className="text-[14px] text-noorix-green">✓</span>
-            )}
+            {step >= 4 && <span className="text-[14px] text-noorix-green">✓</span>}
           </div>
           {result?.status === 'mapping' && (
-            <div
-            className="p-3 rounded-lg text-[13px] text-noorix-text bg-[var(--noorix-green-10)]"
-            >
+            <div className="p-3 rounded-lg text-[13px] text-noorix-text bg-[var(--noorix-green-10)]">
               {t('bankStatementMappingRequired')}
             </div>
           )}

@@ -12,6 +12,7 @@ import {
   getContextPercent,
   percentText,
 } from './reportHelpers';
+import type { GeneralProfitLossReport, PlDisplayRow } from './reportTypes';
 
 function esc(s: string) {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -25,13 +26,13 @@ function monthIdx0(m: number) {
   return m - 1;
 }
 
-function groupMonthAmount(report: any, key: string, m: number): string {
-  const g = report?.groups?.find((x: any) => x.key === key);
+function groupMonthAmount(report: GeneralProfitLossReport, key: string, m: number): string {
+  const g = report.groups.find((x) => x.key === key);
   return g?.months?.[monthIdx0(m)] ?? '0';
 }
 
-function summaryMonthAmount(report: any, key: string, m: number): string {
-  const s = report?.summaryRows?.find((x: any) => x.key === key);
+function summaryMonthAmount(report: GeneralProfitLossReport, key: string, m: number): string {
+  const s = report.summaryRows.find((x) => x.key === key);
   return s?.months?.[monthIdx0(m)] ?? '0';
 }
 
@@ -60,7 +61,7 @@ function densityClass(rowCount: number): string {
 
 type TFn = (key: string) => string;
 
-function buildExecutiveSummaryHtml(report: any, m: number, _lang: string, t: TFn): string {
+function buildExecutiveSummaryHtml(report: GeneralProfitLossReport, m: number, _lang: string, t: TFn): string {
   const sales = groupMonthAmount(report, 'sales', m);
   const pur = groupMonthAmount(report, 'purchases', m);
   const exp = groupMonthAmount(report, 'expenses', m);
@@ -294,7 +295,7 @@ table.pl-grid tbody tr.pl-row-detail:nth-child(even) td.pl-col-num { background:
 }
 
 export function buildPlMonthStatementBody(opts: {
-  report: any;
+  report: GeneralProfitLossReport;
   selectedMonthNumber: number;
   monthLabel: string;
   year: number;
@@ -307,7 +308,7 @@ export function buildPlMonthStatementBody(opts: {
   const { report, selectedMonthNumber, monthLabel, year, lang, t, amountColumnTitle, collapsedGroups } = opts;
   const printFlat = buildFlatRows(report, collapsedGroups);
   const printRows = buildVisibleRows(printFlat, collapsedGroups);
-  const hasDetailLines = printRows.some((row: any) => row.rowType === 'item' || row.rowType === 'category');
+  const hasDetailLines = printRows.some((row) => row.rowType === 'item' || row.rowType === 'category');
   const m = selectedMonthNumber;
   const n = printRows.length;
   const zoom = getPlMonthPrintZoom(n);
@@ -320,7 +321,7 @@ export function buildPlMonthStatementBody(opts: {
   </tr></thead>`;
 
   const bodyParts: string[] = ['<tbody>'];
-  printRows.forEach((row: any, i: number) => {
+  printRows.forEach((row: PlDisplayRow, i: number) => {
     if (row.rowType === 'group' && i > 0) {
       bodyParts.push('<tr class="pl-gap"><td colspan="3"></td></tr>');
     }

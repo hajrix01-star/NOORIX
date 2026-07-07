@@ -32,13 +32,19 @@ import { exportCostAppsReportExcel, printCostAppsReport } from './costAccounting
 import { useCostAccountingAppsImports } from './useCostAccountingAppsImports';
 import { useCostAccountingAppsSavedScenarios } from './useCostAccountingAppsSavedScenarios';
 
+type AppCompanyLite = {
+  id?: string | null;
+  nameAr?: string | null;
+  nameEn?: string | null;
+};
+
 export function useCostAccountingAppsScreen() {
   const { activeCompanyId, companies } = useApp();
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const company = companies?.find((c: any) => c.id === activeCompanyId);
+  const company = companies?.find((c: AppCompanyLite) => c.id === activeCompanyId);
   const companyName =
     lang === 'en' ? company?.nameEn || company?.nameAr || '' : company?.nameAr || company?.nameEn || '';
 

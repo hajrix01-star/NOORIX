@@ -1,9 +1,9 @@
 import React from 'react';
 import { Button, FmtNum, SimpleTable } from '../../../../../ui';
-import type { AnalysisCardId } from '../../bankAnalysisTab.types';
+import type { AnalysisCardId, BankTransactionLite } from '../../bankAnalysisTab.types';
 import { BankAnalysisCardShell } from './BankAnalysisCardShell';
 
-type AlertRow = { id: number; txDate?: string; description?: string; debit?: unknown };
+type AlertRow = BankTransactionLite & { rowId: number };
 
 export function BankAnalysisAlertsCard({
   cardId,
@@ -15,14 +15,14 @@ export function BankAnalysisAlertsCard({
   setActiveTab,
 }: {
   cardId: AnalysisCardId;
-  alerts: Array<{ txDate?: string; description?: string; debit?: unknown }>;
+  alerts: BankTransactionLite[];
   t: (k: string) => string;
   removeLabel: string;
   onRemoveCard: (id: AnalysisCardId) => void;
   setTypeFilter: (v: string) => void;
   setActiveTab: (tab: string) => void;
 }) {
-  const rows: AlertRow[] = alerts.map((tx, index) => ({ ...tx, id: index }));
+  const rows: AlertRow[] = alerts.map((tx, index) => ({ ...tx, rowId: index }));
 
   return (
     <BankAnalysisCardShell

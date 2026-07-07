@@ -9,7 +9,6 @@ import { Button, DateMonthScopePicker, FilterToolbar, Input } from '../../ui';
 import {
   amountText,
   percentText,
-  displayLabel,
   buildFlatRows,
   buildVisibleRows,
   buildCollapsedGroupsForLevel,
@@ -19,7 +18,15 @@ import {
   type PlDisplayLevel,
 } from './reportHelpers';
 import { MONTH_NAMES_AR, MONTH_NAMES_EN, getProfitLossCardRawValue } from './profitLossPresentationModel';
-import type { ReportPeriodMode } from './reportTypes';
+import type { PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
+import {
+  buildPrintableGeneralReportV2Html,
+  buildStatementRowsForV2 as buildStatementRowsForV2Model,
+  buildV2ExportRows as buildV2ExportRowsModel,
+  displayV2RowLabel as displayV2RowLabelModel,
+  groupToneClass as groupToneClassModel,
+  lineIndentClass as lineIndentClassModel,
+} from './generalReportV2Model';
 
 const GROUP_TONE_CLASSES: Record<string, string> = {
   sales: 'nx-gr2-score--sales',
@@ -35,7 +42,7 @@ function escHtml(value: unknown) {
   return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function groupToneClass(row: any) {
+function groupToneClass(row: PlDisplayRow) {
   if (row.rowType === 'groupTotal') return 'is-group-total';
   if (NEGATIVE_GROUPS.has(String(row.groupKey || row.key || ''))) return 'is-negative';
   if (row.rowType === 'summary' && Number(row.total || 0) < 0) return 'is-negative';
@@ -43,27 +50,27 @@ function groupToneClass(row: any) {
   return '';
 }
 
-function lineIndentClass(row: any) {
+function lineIndentClass(row: PlDisplayRow) {
   if (row.rowType === 'groupTotal' || row.rowType === 'summary') return 'nx-gr2-line--indent-total';
   const depth = Math.max(0, Math.min(4, Number(row.depth || 0)));
   return `nx-gr2-line--indent-${depth}`;
 }
 
-function displayV2RowLabel(row: any, lang: string) {
-  const label = displayLabel(row, lang);
+function displayV2RowLabel(row: PlDisplayRow, lang: string) {
+  const label = displayV2RowLabelModel(row, lang);
   if (row.rowType !== 'groupTotal') return label;
   return lang === 'en' ? `Total ${label}` : `مجموع ${label}`;
 }
 
-function buildStatementRowsForV2(rows: any[]) {
-  const result: any[] = [];
+function buildStatementRowsForV2(rows: PlDisplayRow[]) {
+  const result: PlDisplayRow[] = [];
   for (let index = 0; index < rows.length; index++) {
     const row = rows[index];
     if (row.rowType !== 'group') {
       if (row.rowType === 'summary') result.push(row);
       continue;
     }
-    const children: any[] = [];
+    const children: PlDisplayRow[] = [];
     let cursor = index + 1;
     while (cursor < rows.length && rows[cursor].rowType !== 'group' && rows[cursor].rowType !== 'summary') {
       children.push(rows[cursor]);
@@ -76,7 +83,7 @@ function buildStatementRowsForV2(rows: any[]) {
   return result;
 }
 
-function buildV2ExportRows(rows: any[], opts: {
+function buildV2ExportRows(rows: PlDisplayRow[], opts: {
   lang: string;
   t: (key: string) => string;
   selectedMonthNumber: number | null;
@@ -85,11 +92,11 @@ function buildV2ExportRows(rows: any[], opts: {
   monthLabels: string[];
 }) {
   const { lang, t, selectedMonthNumber, monthLabel, year, monthLabels } = opts;
-  return rows.map((row: any) => {
+  return rows.map((row) => {
     const indent = row.rowType === 'groupTotal' || row.rowType === 'summary' || row.rowType === 'group'
       ? ''
       : '  '.repeat((row.depth || 0) + 1);
-    const base: Record<string, unknown> = {
+    const base: Record<string, string> = {
       [t('reportItem')]: `${indent}${displayV2RowLabel(row, lang)}`,
     };
     if (selectedMonthNumber) {
@@ -113,7 +120,7 @@ export default function GeneralReportV2Screen() {
   const [year, setYear] = useState(currentYear);
   const [periodMode, setPeriodMode] = useState<ReportPeriodMode>('year');
   const [selectedMonth, setSelectedMonth] = useState(String(getSaudiNow().month));
-  const [detailState, setDetailState] = useState<any>(null);
+  const [detailState, setDetailState] = useState<ReportDetailState | null>(null);
   const [displayLevel, setDisplayLevel] = useState<PlDisplayLevel>(2);
   const [rowSearch, setRowSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
@@ -121,12 +128,12 @@ export default function GeneralReportV2Screen() {
     purchases: false,
     expenses: false,
   });
-  const company = companies?.find((item: any) => item.id === activeCompanyId);
+  const company = companies?.find((item) => item.id === activeCompanyId);
   const companyName = lang === 'en' ? (company?.nameEn || company?.nameAr || '') : (company?.nameAr || company?.nameEn || '');
   const selectedMonthNumber = periodMode === 'month' ? Number(selectedMonth) : null;
   const monthNames = lang === 'ar' ? MONTH_NAMES_AR : MONTH_NAMES_EN;
   const monthLabel = selectedMonthNumber ? monthNames[selectedMonthNumber - 1] : '';
-  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_: any, index: number) => currentYear - index), [currentYear]);
+  const yearOptions = useMemo(() => Array.from({ length: 6 }, (_, index) => currentYear - index), [currentYear]);
 
   const { data: report, isLoading, error, isFetching, isPlaceholderData } = useReportsGeneralProfitLoss({
     companyId: activeCompanyId,
@@ -140,7 +147,7 @@ export default function GeneralReportV2Screen() {
 
   const flatRows = useMemo(() => buildFlatRows(report, collapsedGroups), [report, collapsedGroups]);
   const visibleRowsBase = useMemo(() => buildVisibleRows(flatRows, collapsedGroups), [flatRows, collapsedGroups]);
-  const statementRowsBase = useMemo(() => buildStatementRowsForV2(visibleRowsBase), [visibleRowsBase]);
+  const statementRowsBase = useMemo(() => buildStatementRowsForV2Model(visibleRowsBase), [visibleRowsBase]);
   const visibleRows = useMemo(() => filterVisibleRowsByLabel(statementRowsBase, rowSearch, lang), [statementRowsBase, rowSearch, lang]);
 
   const kpis = useMemo(() => {
@@ -159,17 +166,27 @@ export default function GeneralReportV2Screen() {
     ];
   }, [monthLabel, report, selectedMonthNumber, t, year]);
 
-  const exportRows = useMemo(() => buildV2ExportRows(visibleRows, {
+  const exportRows = useMemo(() => buildV2ExportRowsModel(visibleRows, {
     lang,
     t,
     selectedMonthNumber,
     monthLabel,
     year,
-    monthLabels: report?.months?.map((month: any) => month.label) || monthNames,
+    monthLabels: report?.months?.map((month) => month.label) || monthNames,
   }), [lang, monthLabel, monthNames, report?.months, selectedMonthNumber, t, visibleRows, year]);
 
   function toggleGroup(key: string) {
     setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function openDetail(row: PlDisplayRow, month: number | null, showTrend: boolean) {
+    if (!row.groupKey) return;
+    setDetailState({
+      month,
+      groupKey: row.groupKey,
+      itemKey: row.itemKey,
+      showTrend,
+    });
   }
 
   function handleExportExcel() {
@@ -182,91 +199,23 @@ export default function GeneralReportV2Screen() {
       sheetName: lang === 'ar' ? 'قائمة الدخل' : 'Income statement',
       rtl: lang !== 'en',
       headerColor: '111827',
-      money2ColumnKeys: selectedMonthNumber ? [`${monthLabel} ${year}`] : [...(report?.months?.map((month: any) => month.label) || monthNames), t('reportAnnualTotal')],
+      money2ColumnKeys: selectedMonthNumber ? [`${monthLabel} ${year}`] : [...(report?.months?.map((month) => month.label) || monthNames), t('reportAnnualTotal')],
       moneyColumnFractionDigits: 0,
     });
   }
 
-  function buildPrintableReportHtml() {
-    if (!report) return;
-    const period = selectedMonthNumber ? `${monthLabel} ${year}` : String(year);
-    const monthHeaders = selectedMonthNumber
-      ? `<th>${escHtml(monthLabel)}</th>`
-      : (report.months || []).map((month: any) => `<th>${escHtml(month.label)}</th>`).join('');
-    const rows = visibleRows.map((row: any) => {
-      const rowTone = groupToneClass(row);
-      const amountClass = rowTone === 'is-negative' ? ' neg' : '';
-      const cells = selectedMonthNumber
-        ? `<td class="amt${amountClass}">${escHtml(amountText(getContextAmount(row, selectedMonthNumber)))}</td>`
-        : (row.months ?? []).map((value: any) => `<td class="amt${amountClass}">${escHtml(amountText(value))}</td>`).join('');
-      const total = selectedMonthNumber ? '' : `<td class="amt${amountClass}">${escHtml(amountText(row.total))}</td>`;
-      const pct = selectedMonthNumber ? getContextPercent(row, selectedMonthNumber) : row.percentOfSalesYear;
-      return `<tr class="${escHtml(row.rowType)} ${escHtml(rowTone)}">
-        <td class="label" style="padding-inline-start:${10 + (row.depth || 0) * 14}px">${escHtml(displayV2RowLabel(row, lang))}</td>
-        ${cells}
-        ${total}
-        <td class="pct">${escHtml(percentText(pct))}</td>
-      </tr>`;
-    }).join('');
-    return `<!DOCTYPE html>
-<html dir="${lang === 'en' ? 'ltr' : 'rtl'}" lang="${lang === 'en' ? 'en' : 'ar'}">
-<head>
-<meta charset="utf-8">
-<title>${escHtml(t('reportGeneralV2'))}</title>
-<style>
-@page { size: A4 ${selectedMonthNumber ? 'portrait' : 'landscape'}; margin: 10mm; }
-* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-body { margin: 0; background: #eef2f7; color: #0f172a; font-family: Cairo, Tahoma, Arial, sans-serif; }
-.toolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; background: #fff; border-bottom: 1px solid #d8e2ef; }
-.toolbar strong { font-size: 14px; }
-.toolbar button { border: 1px solid #b9c8da; background: #185fa5; color: #fff; border-radius: 6px; padding: 8px 16px; font-weight: 800; cursor: pointer; }
-.sheet { width: ${selectedMonthNumber ? '190mm' : '276mm'}; min-height: ${selectedMonthNumber ? '277mm' : '190mm'}; margin: 18px auto; background: #fff; border: 1px solid #d8e2ef; box-shadow: 0 14px 35px rgba(15,23,42,.12); padding: 14mm; }
-.head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; border-bottom: 3px solid #185fa5; padding-bottom: 12px; margin-bottom: 14px; }
-.head h1 { margin: 0; font-size: 22px; line-height: 1.2; font-weight: 900; }
-.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.meta span { border: 1px solid #d8e2ef; background: #f8fafc; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 800; color: #334155; }
-.brand { text-align: end; font-weight: 900; font-size: 18px; color: #0f172a; }
-table { width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 8px; }
-thead th { background: linear-gradient(180deg, #12385f 0%, #0f2746 100%); color: #fff; font-size: 11px; font-weight: 900; padding: 9px 8px; border-inline-end: 1px solid rgba(255,255,255,.14); }
-tbody td { padding: 8px; border-top: 1px solid #dbe5f0; border-inline-end: 1px solid #e7eef6; font-size: 11.5px; font-weight: 700; }
-tbody tr:nth-child(even) td { background: #f8fafc; }
-td.label { text-align: start; font-size: 12px; color: #172033; }
-td.amt, td.pct { text-align: center; direction: ltr; font-variant-numeric: tabular-nums; }
-td.neg, tr.is-negative td { color: #991b1b; }
-tr.groupTotal td { background: #eaf3ff !important; color: #0f3b68; font-weight: 900; border-top: 2px solid #9bc3ea; }
-tr.summary td { background: #eaf3ff !important; color: #0f3b68; font-size: 12px; font-weight: 900; border-top: 2px solid #9bc3ea; }
-tr.is-summary td.amt { color: #047857; }
-.footer { margin-top: 12px; text-align: center; color: #64748b; font-size: 10px; }
-@media print {
-  body { background: #fff; }
-  .toolbar { display: none; }
-  .sheet { width: auto; min-height: 0; margin: 0; padding: 0; border: 0; box-shadow: none; }
-}
-</style>
-</head>
-<body>
-<div class="toolbar"><strong>${escHtml(t('reportGeneralV2'))} - ${escHtml(period)}</strong><button onclick="window.print()">${escHtml(t('print'))}</button></div>
-<main class="sheet">
-  <header class="head">
-    <div>
-      <h1>${escHtml(t('reportGeneralV2'))}</h1>
-      <div class="meta"><span>${escHtml(period)}</span><span>${escHtml(t('reportAmountBasisGrossShort'))}</span></div>
-    </div>
-    <div class="brand">${escHtml(companyName || t('reports'))}</div>
-  </header>
-  <table>
-    <thead><tr><th>${escHtml(t('reportItem'))}</th>${monthHeaders}${selectedMonthNumber ? '' : `<th>${escHtml(t('reportAnnualTotal'))}</th>`}<th>%</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div class="footer">${escHtml(period)}</div>
-</main>
-</body>
-</html>`;
-  }
-
   function openPrintablePreview() {
-    const html = buildPrintableReportHtml();
-    if (!html) return;
+    if (!report) return;
+    const html = buildPrintableGeneralReportV2Html({
+      report,
+      visibleRows,
+      selectedMonthNumber,
+      monthLabel,
+      year,
+      lang,
+      t,
+      companyName,
+    });
     const win = window.open('', '_blank');
     if (!win) return;
     win.document.write(html);
@@ -359,12 +308,12 @@ tr.is-summary td.amt { color: #047857; }
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRows.map((row: any) => {
+                  {visibleRows.map((row: PlDisplayRow) => {
                     const canCollapse = row.rowType === 'group' || row.rowType === 'groupTotal' || row.rowType === 'category';
                     const collapseKey = row.rowType === 'group' || row.rowType === 'groupTotal' ? row.groupKey : row.collapseKey;
                     const amount = getContextAmount(row, selectedMonthNumber);
                     const pct = getContextPercent(row, selectedMonthNumber);
-                    const rowTone = groupToneClass(row);
+                    const rowTone = groupToneClassModel(row);
                     const rowType = row.originalRowType || row.rowType;
                     return (
                       <tr
@@ -378,23 +327,23 @@ tr.is-summary td.amt { color: #047857; }
                           <Button
                             variant="raw"
                             type="button"
-                            className={`nx-gr2-line ${lineIndentClass(row)}`}
-                            onClick={() => canCollapse ? toggleGroup(String(collapseKey)) : setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}
+                            className={`nx-gr2-line ${lineIndentClassModel(row)}`}
+                            onClick={() => canCollapse ? toggleGroup(String(collapseKey)) : openDetail(row, selectedMonthNumber, rowType === 'item')}
                           >
                             {canCollapse && <span>{collapsedGroups[String(collapseKey)] ? '+' : '-'}</span>}
-                            {displayV2RowLabel(row, lang)}
+                            {displayV2RowLabelModel(row, lang)}
                           </Button>
                         </td>
                         {selectedMonthNumber ? (
                           <td>
-                            <Button variant="raw" type="button" className="nx-gr2-money" onClick={() => setDetailState({ month: selectedMonthNumber, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}>
+                            <Button variant="raw" type="button" className="nx-gr2-money" onClick={() => openDetail(row, selectedMonthNumber, rowType === 'item')}>
                               {amountText(amount)}
                             </Button>
                           </td>
                         ) : (
-                          (row.months ?? []).map((value: any, index: number) => (
+                          (row.months ?? []).map((value, index) => (
                             <td key={index}>
-                              <Button variant="raw" type="button" className="nx-gr2-money" onClick={() => setDetailState({ month: index + 1, groupKey: row.groupKey, itemKey: row.itemKey, showTrend: rowType === 'item' })}>
+                              <Button variant="raw" type="button" className="nx-gr2-money" onClick={() => openDetail(row, index + 1, rowType === 'item')}>
                                 {amountText(value)}
                               </Button>
                             </td>

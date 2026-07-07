@@ -1,20 +1,56 @@
-/**
- * نموذج الإفصاح الضريبي السعودي — تعريفات وبنيات مشتركة بين تقرير الضرائب وسجل الضريبة التخطيطي.
- * لا تستورد من modules/.
- */
 import { TAX_RATE } from '@noorix/finance-core';
 import { roundMoney2 } from '../utils/moneyInput';
 
-/** صفوف المخرجات/المدخلات المعروضة في الواجهة — مختصرة للاستخدام الذي لا يفرّق هذه الفئات */
-export const OUTPUT_ROWS = [
+export type TaxDisclosureRowKey =
+  | 'standard_sales'
+  | 'standard_purchases'
+  | 'output_total'
+  | 'input_total'
+  | 'vat_due'
+  | 'vat_recoverable'
+  | 'net_vat'
+  | 'prior_adjustments'
+  | 'balance_carried'
+  | 'net_payable_refund';
+
+export type TaxDisclosureField = 'amount' | 'adjustment' | 'vat';
+
+export type TaxDisclosureLineRow = {
+  key: TaxDisclosureRowKey;
+  labelAr: string;
+  labelEn: string;
+  isTotal?: boolean;
+};
+
+export type TaxDisclosureSummaryRow = {
+  key: TaxDisclosureRowKey;
+  labelAr: string;
+  labelEn: string;
+  isFinal?: boolean;
+};
+
+export type TaxDisclosureRowValue = {
+  amount: number;
+  adjustment: number;
+  vat: number;
+};
+
+export type TaxDisclosureData = Record<string, number | TaxDisclosureRowValue>;
+
+type BulkFlatDisclosureRow = Partial<Record<
+  'sales_amount' | 'sales_vat' | 'purchases_amount' | 'purchases_vat' | 'sales_adj' | 'purchases_adj' | 'prior_adjustments' | 'balance_carried',
+  unknown
+>>;
+
+export const OUTPUT_ROWS: readonly TaxDisclosureLineRow[] = [
   { key: 'standard_sales', labelAr: 'مبيعات بالمعدل القياسي 15%', labelEn: 'Standard-rated sales 15%' },
   { key: 'output_total', labelAr: 'إجمالي مخرجات ضريبة القيمة المضافة', labelEn: 'Total output VAT', isTotal: true },
 ];
 
-export const INPUT_ROWS = [
+export const INPUT_ROWS: readonly TaxDisclosureLineRow[] = [
   {
     key: 'standard_purchases',
-    labelAr: 'مشتريات ومصروفات (ضريبة مسجّلة فقط)',
+    labelAr: 'مشتريات ومصروفات (ضريبة مسجلة فقط)',
     labelEn: 'Purchases & expenses (VAT recorded only)',
   },
   {
@@ -25,11 +61,11 @@ export const INPUT_ROWS = [
   },
 ];
 
-export const SUMMARY_ROWS = [
+export const SUMMARY_ROWS: readonly TaxDisclosureSummaryRow[] = [
   { key: 'vat_due', labelAr: 'إجمالي ضريبة القيمة المضافة المستحقة', labelEn: 'Total VAT due' },
   {
     key: 'vat_recoverable',
-    labelAr: 'إجمالي ضريبة المشتريات والمصروفات (مسجّلة)',
+    labelAr: 'إجمالي ضريبة المشتريات والمصروفات (مسجلة)',
     labelEn: 'Total purchase & expense VAT (recorded)',
   },
   { key: 'net_vat', labelAr: 'صافي ضريبة القيمة المضافة', labelEn: 'Net VAT' },
@@ -38,41 +74,42 @@ export const SUMMARY_ROWS = [
   { key: 'net_payable_refund', labelAr: 'صافي الضريبة المستحقة أو المطالب بها', labelEn: 'Net VAT payable or refundable', isFinal: true },
 ];
 
-export function defaultDisclosureData() {
-  const rows = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r: any) => !r.isTotal);
-  const obj: Record<string, any> = {};
-  rows.forEach((r: any) => {
-    obj[r.key] = { amount: 0, adjustment: 0, vat: 0 };
+export function defaultDisclosureData(): TaxDisclosureData {
+  const obj: TaxDisclosureData = {};
+  [...OUTPUT_ROWS, ...INPUT_ROWS].filter((row) => !row.isTotal).forEach((row) => {
+    obj[row.key] = { amount: 0, adjustment: 0, vat: 0 };
   });
-  SUMMARY_ROWS.forEach((r: any) => {
-    obj[r.key] = 0;
+  SUMMARY_ROWS.forEach((row) => {
+    obj[row.key] = 0;
   });
   return obj;
 }
 
-export function getRowValue(data: any, key: any, field: any) {
-  const v = data[key];
-  if (v && typeof v === 'object') return v[field] ?? 0;
-  return typeof v === 'number' ? v : 0;
+export function getRowValue(
+  data: TaxDisclosureData,
+  key: string,
+  field: TaxDisclosureField | null | undefined,
+): number {
+  const value = data[key];
+  if (isDisclosureRowValue(value)) return field ? Number(value[field] || 0) : 0;
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
-export function computeOutputTotal(data: any) {
-  let sum = 0;
-  OUTPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
-    sum += getRowValue(data, r.key, 'vat');
-  });
-  return sum;
+export function computeOutputTotal(data: TaxDisclosureData): number {
+  return OUTPUT_ROWS.filter((row) => !row.isTotal).reduce(
+    (sum, row) => sum + getRowValue(data, row.key, 'vat'),
+    0,
+  );
 }
 
-export function computeInputTotal(data: any) {
-  let sum = 0;
-  INPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
-    sum += getRowValue(data, r.key, 'vat');
-  });
-  return sum;
+export function computeInputTotal(data: TaxDisclosureData): number {
+  return INPUT_ROWS.filter((row) => !row.isTotal).reduce(
+    (sum, row) => sum + getRowValue(data, row.key, 'vat'),
+    0,
+  );
 }
 
-export function computeNetPayable(data: any) {
+export function computeNetPayable(data: TaxDisclosureData): number {
   const outputTotal = computeOutputTotal(data);
   const inputTotal = computeInputTotal(data);
   const netVat = outputTotal - inputTotal;
@@ -81,9 +118,8 @@ export function computeNetPayable(data: any) {
   return netVat + priorAdj + balanceCarried;
 }
 
-/** يحدّث حقول الملخص المشتقة (vat_due، net_vat، …) لتطابق الصفوف — مفيد قبل الحفظ والطباعة. */
-export function syncVatPlanningSummaryFields(data: any) {
-  const base = data && typeof data === 'object' ? { ...data } : defaultDisclosureData();
+export function syncVatPlanningSummaryFields(data: unknown): TaxDisclosureData {
+  const base = isDisclosureData(data) ? cloneDisclosureData(data) : defaultDisclosureData();
   const out = computeOutputTotal(base);
   const inn = computeInputTotal(base);
   const netV = roundMoney2(out - inn);
@@ -98,93 +134,71 @@ export function syncVatPlanningSummaryFields(data: any) {
   return base;
 }
 
-/** تقريب مالي إلى منزلتين عشريتين (عرض وتخزين الحقول الضريبية). */
 export { roundMoney2 };
 
-/** يطبّق منزلتين على كل المبالغ في نموذج الإفصاح بعد الاستيراد أو التعديل. */
-export function normalizeDisclosureDecimals(data: any) {
-  if (!data || typeof data !== 'object') return defaultDisclosureData();
-  const next = JSON.parse(JSON.stringify(data));
-  [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r: any) => !r.isTotal).forEach((r: any) => {
-    const k = r.key;
-    if (!next[k] || typeof next[k] !== 'object') {
-      next[k] = { amount: 0, adjustment: 0, vat: 0 };
-    }
-    next[k].amount = roundMoney2(next[k].amount);
-    next[k].vat = roundMoney2(next[k].vat);
-    next[k].adjustment = roundMoney2(next[k].adjustment);
+export function normalizeDisclosureDecimals(data: unknown): TaxDisclosureData {
+  if (!isDisclosureData(data)) return defaultDisclosureData();
+  const next = cloneDisclosureData(data);
+  [...OUTPUT_ROWS, ...INPUT_ROWS].filter((row) => !row.isTotal).forEach((row) => {
+    const current = toDisclosureRowValue(next[row.key]);
+    next[row.key] = {
+      amount: roundMoney2(current.amount),
+      adjustment: roundMoney2(current.adjustment),
+      vat: roundMoney2(current.vat),
+    };
   });
-  SUMMARY_ROWS.forEach((r: any) => {
-    next[r.key] = roundMoney2(next[r.key]);
+  SUMMARY_ROWS.forEach((row) => {
+    next[row.key] = roundMoney2(next[row.key]);
   });
   return next;
 }
 
-/**
- * دمج أرقام مستوردة من تقرير الضريبة في النظام (نفس شكل API tax-vat).
- */
-export function mergeImportedDisclosure(stored: any, imported: any) {
-  if (!imported || typeof imported !== 'object') {
-    return normalizeDisclosureDecimals(stored ? { ...stored } : defaultDisclosureData());
+export function mergeImportedDisclosure(stored: unknown, imported: unknown): TaxDisclosureData {
+  if (!isDisclosureData(imported)) {
+    return normalizeDisclosureDecimals(isDisclosureData(stored) ? stored : defaultDisclosureData());
   }
-  const next = { ...(stored || defaultDisclosureData()) };
-  const rowKeys = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((r: any) => !r.isTotal).map((r: any) => r.key);
+  const next = isDisclosureData(stored) ? cloneDisclosureData(stored) : defaultDisclosureData();
+  const importedRecord = imported as Record<string, unknown>;
+  const rowKeys = [...OUTPUT_ROWS, ...INPUT_ROWS].filter((row) => !row.isTotal).map((row) => row.key);
   for (const key of rowKeys) {
-    if (imported[key] && typeof imported[key] === 'object') {
-      next[key] = { ...(next[key] || { amount: 0, adjustment: 0, vat: 0 }), ...imported[key] };
+    if (isDisclosureRowValueLike(importedRecord[key])) {
+      next[key] = {
+        ...toDisclosureRowValue(next[key]),
+        ...toPartialDisclosureRowValue(importedRecord[key]),
+      };
     }
   }
   return normalizeDisclosureDecimals(next);
 }
 
-/**
- * ضبط مدخلات الضريبة (الخارج) لتتوافق مع صافي مستهدف = مبلغ الدفع المرغوب.
- * netPayable = output - input + prior + balance  →  input' = output + prior + balance - netPayableTarget
- */
 export function scaleInputVatForPaymentTarget(
-  data: any,
-  paymentTarget: any,
+  data: TaxDisclosureData,
+  paymentTarget: unknown,
   vatRateDecimal: number = TAX_RATE,
-) {
+): TaxDisclosureData {
   const target = Number(paymentTarget);
-  if (!Number.isFinite(target)) return normalizeDisclosureDecimals({ ...data });
+  if (!Number.isFinite(target)) return normalizeDisclosureDecimals(data);
 
   const outputTotal = computeOutputTotal(data);
   const priorAdj = getRowValue(data, 'prior_adjustments', 'amount');
   const balanceCarried = getRowValue(data, 'balance_carried', 'amount');
   const currentInput = computeInputTotal(data);
-
   const desiredInput = outputTotal + priorAdj + balanceCarried - target;
 
-  if (desiredInput < 0) {
-    const next = JSON.parse(JSON.stringify(data));
-    INPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
-      if (next[r.key] && typeof next[r.key] === 'object') {
-        next[r.key] = { ...next[r.key], vat: 0, amount: 0 };
-      }
-    });
-    return normalizeDisclosureDecimals(next);
-  }
-
-  if (desiredInput === 0) {
-    const next = JSON.parse(JSON.stringify(data));
-    INPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
-      if (next[r.key] && typeof next[r.key] === 'object') {
-        next[r.key] = { ...next[r.key], vat: 0, amount: 0 };
-      }
+  if (desiredInput <= 0) {
+    const next = cloneDisclosureData(data);
+    INPUT_ROWS.filter((row) => !row.isTotal).forEach((row) => {
+      next[row.key] = { ...toDisclosureRowValue(next[row.key]), vat: 0, amount: 0 };
     });
     return normalizeDisclosureDecimals(next);
   }
 
   if (currentInput <= 0) {
-    const next = JSON.parse(JSON.stringify(data));
+    const next = cloneDisclosureData(data);
     const stdKey = 'standard_purchases';
-    if (!next[stdKey] || typeof next[stdKey] !== 'object') {
-      next[stdKey] = { amount: 0, adjustment: 0, vat: 0 };
-    }
     const rate = vatRateDecimal > 0 ? vatRateDecimal : TAX_RATE;
     next[stdKey] = {
-      ...next[stdKey],
+      ...toDisclosureRowValue(next[stdKey]),
       vat: roundMoney2(desiredInput),
       amount: roundMoney2(desiredInput / rate),
     };
@@ -192,23 +206,24 @@ export function scaleInputVatForPaymentTarget(
   }
 
   const factor = desiredInput / currentInput;
-  const next = JSON.parse(JSON.stringify(data));
-  INPUT_ROWS.filter((r: any) => !r.isTotal).forEach((r: any) => {
-    const row = next[r.key];
-    if (!row || typeof row !== 'object') return;
+  const next = cloneDisclosureData(data);
+  INPUT_ROWS.filter((row) => !row.isTotal).forEach((rowDef) => {
+    const row = toDisclosureRowValue(next[rowDef.key]);
     const oldVat = Number(row.vat) || 0;
     const oldAmt = Number(row.amount) || 0;
     const newVat = oldVat * factor;
     const rate = vatRateDecimal > 0 ? vatRateDecimal : TAX_RATE;
-    row.vat = roundMoney2(newVat);
-    row.amount = oldAmt ? roundMoney2(oldAmt * factor) : roundMoney2(newVat / rate);
+    next[rowDef.key] = {
+      ...row,
+      vat: roundMoney2(newVat),
+      amount: oldAmt ? roundMoney2(oldAmt * factor) : roundMoney2(newVat / rate),
+    };
   });
 
   return normalizeDisclosureDecimals(next);
 }
 
-/** بناء payload إفصاح من صف استيراد Excel (أعمدة بالإنجليزية من القالب). */
-export function disclosureFromBulkFlatRow(vals: any) {
+export function disclosureFromBulkFlatRow(vals: BulkFlatDisclosureRow): TaxDisclosureData {
   const salesAmt = roundMoney2(vals.sales_amount ?? 0);
   const salesVat = roundMoney2(vals.sales_vat ?? 0);
   const purAmt = roundMoney2(vals.purchases_amount ?? 0);
@@ -232,6 +247,48 @@ export function disclosureFromBulkFlatRow(vals: any) {
   });
 }
 
-export function periodKeyFromQuarter(year: any, quarter: any) {
+export function periodKeyFromQuarter(year: string | number, quarter: string | number): string {
   return `${year}-Q${quarter}`;
+}
+
+function isDisclosureData(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isDisclosureRowValue(value: unknown): value is TaxDisclosureRowValue {
+  return !!value && typeof value === 'object' && ('amount' in value || 'adjustment' in value || 'vat' in value);
+}
+
+function isDisclosureRowValueLike(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function toDisclosureRowValue(value: unknown): TaxDisclosureRowValue {
+  if (!isDisclosureRowValue(value)) return { amount: 0, adjustment: 0, vat: 0 };
+  return {
+    amount: Number(value.amount || 0),
+    adjustment: Number(value.adjustment || 0),
+    vat: Number(value.vat || 0),
+  };
+}
+
+function toPartialDisclosureRowValue(value: unknown): Partial<TaxDisclosureRowValue> {
+  if (!isDisclosureRowValueLike(value)) return {};
+  return {
+    amount: Number(value.amount || 0),
+    adjustment: Number(value.adjustment || 0),
+    vat: Number(value.vat || 0),
+  };
+}
+
+function cloneDisclosureData(value: Record<string, unknown>): TaxDisclosureData {
+  const next: TaxDisclosureData = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (isDisclosureRowValue(raw)) {
+      next[key] = toDisclosureRowValue(raw);
+      continue;
+    }
+    next[key] = Number(raw || 0);
+  }
+  return next;
 }

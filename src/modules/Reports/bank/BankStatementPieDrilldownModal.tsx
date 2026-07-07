@@ -1,23 +1,37 @@
-﻿/**
- * نافذة تفاصيل فئة من مخطط الدائري — جدول عمليات + تغيير الفئة
- */
 import React, { useMemo, useState, useEffect } from 'react';
 import { fmt } from '../../../utils/format';
 import { getTxKey, FALLBACK_CATEGORIES } from './bankAnalysisUtils';
 import { Button, AdaptiveSheet, Input, FmtNum, SmartTable } from '../../../ui';
+import type { BankCategoryLite, BankCategoryOption, BankTransactionLite, TranslationFn } from './bankAnalysisTab.types';
+
+type BankStatementPieDrilldownModalProps = {
+  open: boolean;
+  onClose: () => void;
+  categoryName: string | null;
+  transactions: readonly BankTransactionLite[];
+  categories?: BankCategoryLite[];
+  uncategorizedLabel: string;
+  t: TranslationFn;
+  onSaveTxCategory: (txId: string, categoryId: string | null) => void | Promise<void>;
+  showToast: (message: string, type?: string) => void;
+};
+
+function errorMessage(error: unknown, fallback = 'Error'): string {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function BankStatementPieDrilldownModal({
   open,
   onClose,
   categoryName,
   transactions,
-  categories,
+  categories = [],
   uncategorizedLabel,
   t,
   onSaveTxCategory,
   showToast,
-}: any) {
-  const [editingTxId, setEditingTxId] = useState<any>(null);
+}: BankStatementPieDrilldownModalProps) {
+  const [editingTxId, setEditingTxId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState('');
 
   useEffect(() => {
@@ -28,27 +42,29 @@ export default function BankStatementPieDrilldownModal({
   }, [open]);
 
   const rows = useMemo(() => {
-    if (!categoryName || !transactions?.length) return [];
-    return transactions.filter((tx: any) => {
-      const n = tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel;
-      return n === categoryName;
+    if (!categoryName || !transactions.length) return [];
+    return transactions.filter((tx) => {
+      const name = tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel;
+      return name === categoryName;
     });
   }, [transactions, categoryName, uncategorizedLabel]);
 
-  const allCategoryOptions = useMemo(() => {
-    const fromDb = (categories || []).map((c: any) => ({ id: c.id, label: c.nameAr || c.nameEn }));
+  const allCategoryOptions = useMemo<BankCategoryOption[]>(() => {
+    const fromDb = categories
+      .filter((category): category is BankCategoryLite & { id: string } => typeof category.id === 'string' && !!category.id)
+      .map((category) => ({ id: category.id, label: category.nameAr || category.nameEn || category.id }));
     if (fromDb.length > 0) return fromDb;
-    return FALLBACK_CATEGORIES.map((name: any) => ({ id: name, label: name }));
+    return FALLBACK_CATEGORIES.map((name) => ({ id: name, label: name }));
   }, [categories]);
 
   const totals = useMemo(() => {
-    let d = 0;
-    let c = 0;
+    let debit = 0;
+    let credit = 0;
     for (const tx of rows) {
-      d += Number(tx.debit) || 0;
-      c += Number(tx.credit) || 0;
+      debit += Number(tx.debit) || 0;
+      credit += Number(tx.credit) || 0;
     }
-    return { debit: d, credit: c };
+    return { debit, credit };
   }, [rows]);
 
   return (
@@ -79,35 +95,51 @@ export default function BankStatementPieDrilldownModal({
       <div className="overflow-auto max-h-[min(60vh,540px)]">
         <SmartTable
           columns={[
-            { key: 'txDate', label: t('bankStatementDate'),
-              render: (v: any) => <span className="whitespace-nowrap text-noorix-muted text-[12px]">{v}</span> },
-            { key: 'description', label: t('bankStatementDescription'),
-              render: (v: any) => <div className="truncate text-noorix-text" title={v}>{v}</div> },
-            { key: 'debit', label: t('bankStatementColDebit'), numeric: true,
-              render: (v: any) => (
-                <span className={`nx-ltr ${Number(v) > 0 ? 'font-bold text-noorix-red' : 'font-normal text-noorix-muted'}`}>
-                  {Number(v) > 0 ? fmt(Number(v)) : '—'}
+            {
+              key: 'txDate',
+              label: t('bankStatementDate'),
+              render: (value) => <span className="whitespace-nowrap text-noorix-muted text-[12px]">{String(value || '')}</span>,
+            },
+            {
+              key: 'description',
+              label: t('bankStatementDescription'),
+              render: (value) => <div className="truncate text-noorix-text" title={String(value || '')}>{String(value || '')}</div>,
+            },
+            {
+              key: 'debit',
+              label: t('bankStatementColDebit'),
+              numeric: true,
+              render: (value) => (
+                <span className={`nx-ltr ${Number(value) > 0 ? 'font-bold text-noorix-red' : 'font-normal text-noorix-muted'}`}>
+                  {Number(value) > 0 ? fmt(Number(value)) : '—'}
                 </span>
-              ) },
-            { key: 'credit', label: t('bankStatementColCredit'), numeric: true,
-              render: (v: any) => (
-                <span className={`nx-ltr ${Number(v) > 0 ? 'font-bold text-noorix-green' : 'font-normal text-noorix-muted'}`}>
-                  {Number(v) > 0 ? fmt(Number(v)) : '—'}
+              ),
+            },
+            {
+              key: 'credit',
+              label: t('bankStatementColCredit'),
+              numeric: true,
+              render: (value) => (
+                <span className={`nx-ltr ${Number(value) > 0 ? 'font-bold text-noorix-green' : 'font-normal text-noorix-muted'}`}>
+                  {Number(value) > 0 ? fmt(Number(value)) : '—'}
                 </span>
-              ) },
-            { key: 'category', label: t('bankStatementCategories'),
-              render: (_: any, tx: any) => {
+              ),
+            },
+            {
+              key: 'category',
+              label: t('bankStatementCategories'),
+              render: (_value, tx) => {
                 const catId = tx.categoryId || '';
                 return editingTxId === tx.id ? (
                   <div className="flex flex-col gap-1.5">
                     <Input
                       type="select"
                       value={editingCategoryId}
-                      onChange={(e: any) => setEditingCategoryId(e.target.value)}
+                      onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setEditingCategoryId(event.target.value)}
                     >
                       <option value="">{uncategorizedLabel}</option>
-                      {allCategoryOptions.map((c: any) => (
-                        <option key={c.id} value={c.id}>{c.label}</option>
+                      {allCategoryOptions.map((category) => (
+                        <option key={category.id} value={category.id}>{category.label}</option>
                       ))}
                     </Input>
                     <div className="flex gap-1.5">
@@ -116,11 +148,12 @@ export default function BankStatementPieDrilldownModal({
                         size="sm"
                         onClick={async () => {
                           try {
+                            if (!tx.id) return;
                             await onSaveTxCategory(tx.id, editingCategoryId || null);
                             setEditingTxId(null);
-                            showToast?.(t('savedSuccessfully') || 'OK');
-                          } catch (e: any) {
-                            showToast?.(e?.message || 'Error', 'error');
+                            showToast(t('savedSuccessfully') || 'OK');
+                          } catch (error: unknown) {
+                            showToast(errorMessage(error), 'error');
                           }
                         }}
                       >
@@ -132,15 +165,16 @@ export default function BankStatementPieDrilldownModal({
                 ) : (
                   <Button
                     size="sm"
-                    onClick={() => { setEditingTxId(tx.id); setEditingCategoryId(catId); }}
+                    onClick={() => { setEditingTxId(tx.id || null); setEditingCategoryId(catId); }}
                   >
                     {tx.category?.nameAr || tx.category?.nameEn || uncategorizedLabel}
                   </Button>
                 );
-              } },
+              },
+            },
           ]}
           data={rows}
-          keyExtractor={(tx: any) => getTxKey(tx)}
+          keyExtractor={(tx) => getTxKey(tx)}
           emptyMessage={t('bankPieDrilldownEmpty')}
         />
       </div>

@@ -10,7 +10,20 @@ import { monthDateBounds, drillToSearchParams } from '../../utils/reportDrillLin
 import { Button } from '../../ui';
 import { PERIOD_INVOICE_KIND_ORDER, periodInvoiceKindLabel } from '../Dashboard/utils/periodInvoiceKindLabels';
 
-export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }: any) {
+type PeriodAnalyticsStripProps = {
+  companyId: string;
+  year: number;
+  month: number;
+  enabled?: boolean;
+};
+
+type PeriodKindRow = {
+  kind: string;
+  total: number;
+  count: number;
+};
+
+export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }: PeriodAnalyticsStripProps) {
   const { t, lang } = useTranslation();
   const navigate = useNavigate();
   const { from, to } = useMemo(() => monthDateBounds(year, month), [year, month]);
@@ -24,11 +37,16 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
 
   const byKindRows = useMemo(() => {
     const m = data?.totalsByKind || {};
-    return PERIOD_INVOICE_KIND_ORDER.filter((k: any) => m[k]?.invoiceCount > 0).map((k: any) => ({
-      kind: k,
-      total: Number(m[k]?.totalAmount || 0),
-      count: m[k]?.invoiceCount || 0,
-    }));
+    return PERIOD_INVOICE_KIND_ORDER
+      .map((kind): PeriodKindRow => {
+        const row = m[kind];
+        return {
+          kind,
+          total: Number(row?.totalAmount || 0),
+          count: Number(row?.invoiceCount || 0),
+        };
+      })
+      .filter((row) => row.count > 0);
   }, [data]);
 
   if (!enabled || !companyId) return null;
@@ -52,7 +70,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
             <div className="text-[12px] text-noorix-muted mb-2">{t('periodAnalyticsByKind')}</div>
             <div className="flex flex flex-col gap-1.5">
               {byKindRows.length === 0 && <span className="text-[12px] text-noorix-muted">—</span>}
-              {byKindRows.map((row: any) => (
+              {byKindRows.map((row) => (
                 <Button
                   key={row.kind}
                   onClick={() => {
@@ -76,7 +94,7 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
               {(!data.topSuppliers || data.topSuppliers.length === 0) && (
                 <span className="text-[12px] text-noorix-muted">—</span>
               )}
-              {(data.topSuppliers || []).map((s: any) => (
+              {(data.topSuppliers || []).map((s) => (
                 <Button
                   key={s.supplierId}
                   onClick={() =>
@@ -84,8 +102,8 @@ export default function PeriodAnalyticsStrip({ companyId, year, month, enabled }
                   }
                   className="flex items-center justify-between w-full text-[12px] text-start"
                 >
-                  <span className="font-semibold truncate max-w-[58%]" title={lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}>
-                    {lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn}
+                  <span className="font-semibold truncate max-w-[58%]" title={(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || ''}>
+                    {(lang === 'en' ? s.nameEn || s.nameAr : s.nameAr || s.nameEn) || '—'}
                   </span>
                   <span className="shrink-0 nx-font-numbers text-noorix-red">
                     {fmt(Number(s.totalAmount || 0), 0)} <small className="opacity-70">({s.invoiceCount})</small>

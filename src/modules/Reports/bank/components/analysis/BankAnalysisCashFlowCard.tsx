@@ -10,6 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import type { AnalysisCardId } from '../../bankAnalysisTab.types';
+import type { BankDailyChartPoint } from '../../bankAnalysisUtils';
 import { BankAnalysisCardShell } from './BankAnalysisCardShell';
 import { BankAnalysisDailyTooltip } from './BankAnalysisDailyTooltip';
 
@@ -21,7 +22,7 @@ export function BankAnalysisCashFlowCard({
   onRemoveCard,
 }: {
   cardId: AnalysisCardId;
-  dailyData: Array<Record<string, unknown>>;
+  dailyData: BankDailyChartPoint[];
   t: (k: string) => string;
   removeLabel: string;
   onRemoveCard: (id: AnalysisCardId) => void;

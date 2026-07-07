@@ -121,7 +121,7 @@ export async function bankStatementUpdateTxCategory(
   statementId: string,
   txId: string,
   companyId: string,
-  categoryId: string,
+  categoryId: string | null,
 ): Promise<ApiParsedResult> {
   return apiPatch(`/api/v1/bank-statements/${statementId}/transactions/${txId}/category`, { companyId, categoryId });
 }

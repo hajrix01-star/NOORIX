@@ -9,6 +9,7 @@ import { bankStatementTemplatesList, bankStatementTemplateSetActive, bankStateme
 import { Button, Modal } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { bankKeys } from '../../../services/queryKeys';
+import type { BankTemplate, BankTemplateColumn, TranslationFn } from './bankAnalysisTab.types';
 
 const COL_LABEL_KEYS: Record<string, string> = {
   date: 'bankTplColDate',
@@ -21,22 +22,40 @@ const COL_LABEL_KEYS: Record<string, string> = {
   amount: 'bankTplColAmount',
 };
 
-function columnsToBadges(columnsJson: any, t: any) {
+type TemplateColumnBadge = {
+  key: string;
+  label: string;
+  index: number;
+};
+
+type ToggleTemplateVariables = {
+  id: string;
+  isActive: boolean;
+};
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function columnsToBadges(columnsJson: Record<string, BankTemplateColumn> | null | undefined, t: TranslationFn): TemplateColumnBadge[] {
   if (!columnsJson || typeof columnsJson !== 'object') return [];
   return Object.entries(columnsJson)
-    .filter(([, val]: any) => val && typeof val.index === 'number' && val.index >= 0)
-    .map(([key, val]: any) => ({
+    .filter((entry): entry is [string, BankTemplateColumn & { index: number }] => {
+      const [, val] = entry;
+      return typeof val.index === 'number' && val.index >= 0;
+    })
+    .map(([key, val]) => ({
       key,
       label: t(COL_LABEL_KEYS[key] || key),
       index: val.index,
     }));
 }
 
-export default function BankStatementTemplatesPanel({ companyId }: any) {
-  const { t, lang } = useTranslation();
-  const [deleteId, setDeleteId] = useState<any>(null);
+export default function BankStatementTemplatesPanel({ companyId }: { companyId: string }) {
+  const { t } = useTranslation();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: list = [], isLoading, isError, error } = useApiListQuery<any>({
+  const { data: list = [], isLoading, isError, error } = useApiListQuery<BankTemplate>({
     queryKey: bankKeys.statementTemplates(companyId),
     queryFn: () => bankStatementTemplatesList(companyId),
     enabled: !!companyId,
@@ -44,21 +63,21 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
   });
 
   const toggleMut = useApiMutation({
-    mutationFn: async ({ id, isActive }: any) => bankStatementTemplateSetActive(companyId, id, isActive),
+    mutationFn: async ({ id, isActive }: ToggleTemplateVariables) => bankStatementTemplateSetActive(companyId, id, isActive),
     invalidateQueries: [bankKeys.statementTemplates(companyId)],
     successToast: () => t('bankTemplatesUpdated'),
-    errorToast: (e: any) => e?.message || t('apiRequestFailed'),
+    errorToast: (e: unknown) => errorMessage(e, t('apiRequestFailed')),
   });
 
   const deleteMut = useApiMutation({
-    mutationFn: async (id: any) => bankStatementTemplateDelete(companyId, id),
+    mutationFn: async (id: string) => bankStatementTemplateDelete(companyId, id),
     invalidateQueries: [bankKeys.statementTemplates(companyId)],
     successToast: () => t('bankTemplatesDeleted'),
-    errorToast: (e: any) => e?.message || t('apiRequestFailed'),
+    errorToast: (e: unknown) => errorMessage(e, t('apiRequestFailed')),
     onSuccess: () => { setDeleteId(null); },
   });
 
-  const sorted = useMemo(() => [...list].sort((a: any, b: any) => (b.isActive === a.isActive ? 0 : a.isActive ? -1 : 1)), [list]);
+  const sorted = useMemo(() => [...list].sort((a, b) => (b.isActive === a.isActive ? 0 : a.isActive ? -1 : 1)), [list]);
 
   if (!companyId) return null;
 
@@ -83,7 +102,7 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
       ) : null}
 
       <div className="grid gap-3">
-        {sorted.map((tpl: any) => {
+        {sorted.map((tpl) => {
           const cols = columnsToBadges(tpl.columnsJson, t);
           const lastUsed = tpl.lastUsedAt ? formatSaudiDate(tpl.lastUsedAt) : null;
           return (
@@ -121,7 +140,7 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
                     {cols.length > 0 ? (
                     <div className="flex items-center flex flex-wrap gap-1.5">
                       <span className="text-[12px] text-noorix-muted">{t('bankTemplatesColumns')}:</span>
-                      {cols.map((c: any) => (
+                      {cols.map((c) => (
                         <span
                           key={c.key}
                           className="text-[11px] py-px px-2 rounded-md bg-noorix-bg-muted border border-noorix-border"
@@ -157,7 +176,7 @@ export default function BankStatementTemplatesPanel({ companyId }: any) {
         footer={
           <>
             <Button variant="ghost" onClick={() => setDeleteId(null)}>{t('cancel')}</Button>
-            <Button variant="danger" disabled={deleteMut.isPending} onClick={() => deleteMut.mutate(deleteId)}>
+            <Button variant="danger" disabled={deleteMut.isPending || !deleteId} onClick={() => deleteId && deleteMut.mutate(deleteId)}>
               {deleteMut.isPending ? t('loading') : t('delete')}
             </Button>
           </>

@@ -5,12 +5,55 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
-import { getTxKey } from './bankAnalysisUtils';
-import { FALLBACK_CATEGORIES } from './bankAnalysisUtils';
+import { getTxKey, FALLBACK_CATEGORIES } from './bankAnalysisUtils';
 import { Button, Checkbox, FilterToolbar, Input, SearchableOptionsPicker, SmartTable , FmtNum } from '../../../ui';
+import type {
+  BankCategoryLite,
+  BankCategoryOption,
+  BankColumnTotals,
+  BankSortConfig,
+  BankStatementLite,
+  BankTransactionLite,
+} from './bankAnalysisTab.types';
+
+type PendingMutation = { isPending?: boolean };
+
+type BankStatementTransactionsFullTabProps = {
+  statement: BankStatementLite;
+  categories?: BankCategoryLite[];
+  filteredTransactions: BankTransactionLite[];
+  columnTotals: BankColumnTotals;
+  categoryNames: string[];
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (value: string) => void;
+  typeFilter: string;
+  setTypeFilter: (value: string) => void;
+  editingTxId: string | null;
+  setEditingTxId: (value: string | null) => void;
+  editingCategory: string;
+  setEditingCategory: (value: string) => void;
+  editingNoteId: string | null;
+  setEditingNoteId: (value: string | null) => void;
+  editingNote: string;
+  setEditingNote: (value: string) => void;
+  sortConfig: BankSortConfig;
+  handleSort: (key: string) => void;
+  selectedTxIds: Set<string>;
+  toggleTxSelection: (tx: BankTransactionLite) => void;
+  toggleAllFiltered: () => void;
+  handleCategoryChange: (txId: string, categoryId: string | null) => void;
+  handleNoteChange: (txId: string) => void;
+  updateCategoryMutation: PendingMutation;
+  updateNoteMutation: PendingMutation;
+  newCategoryName: string;
+  setNewCategoryName: (value: string) => void;
+  onCreateCategory: () => void;
+};
 
 export default function BankStatementTransactionsFullTab({
-  statement,
+  statement: _statement,
   categories,
   filteredTransactions,
   columnTotals,
@@ -41,19 +84,21 @@ export default function BankStatementTransactionsFullTab({
   newCategoryName,
   setNewCategoryName,
   onCreateCategory,
-}: any) {
+}: BankStatementTransactionsFullTabProps) {
   const { t } = useTranslation();
 
   /* التصنيفات: من القاعدة أولاً، ثم القواعد الافتراضية */
   const allCategoryOptions = React.useMemo(() => {
-    const fromDb = (categories || []).map((c: any) => ({ id: c.id, label: c.nameAr || c.nameEn }));
+    const fromDb: BankCategoryOption[] = (categories || [])
+      .filter((category): category is BankCategoryLite & { id: string } => typeof category.id === 'string' && !!category.id)
+      .map((category) => ({ id: category.id, label: category.nameAr || category.nameEn || category.id }));
     if (fromDb.length > 0) return fromDb;
-    return FALLBACK_CATEGORIES.map((name: any) => ({ id: name, label: name }));
+    return FALLBACK_CATEGORIES.map((name) => ({ id: name, label: name }));
   }, [categories]);
 
   const allSelected =
     filteredTransactions.length > 0 &&
-    filteredTransactions.every((tx: any) => selectedTxIds.has(getTxKey(tx)));
+    filteredTransactions.every((tx) => selectedTxIds.has(getTxKey(tx)));
 
   return (
     <div className="grid gap-3.5">
@@ -68,7 +113,7 @@ export default function BankStatementTransactionsFullTab({
             type="search"
             placeholder={t('bankSearchTransactions')}
             value={searchTerm}
-            onChange={(e: any) => setSearchTerm(e.target.value)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(event.target.value)}
             className="bank-transactions-search-input"
           />
         </div>
@@ -79,7 +124,7 @@ export default function BankStatementTransactionsFullTab({
           onChange={setCategoryFilter}
           options={[
             { value: 'all', label: t('bankFilterAllCategories') },
-            ...categoryNames.map((n: any) => ({ value: n, label: n })),
+            ...categoryNames.map((name) => ({ value: name, label: name })),
           ]}
           aria-label={t('bankFilterAllCategories')}
         />
@@ -118,7 +163,7 @@ export default function BankStatementTransactionsFullTab({
         </span>
         <Input
           value={newCategoryName}
-          onChange={(e: any) => setNewCategoryName(e.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNewCategoryName(event.target.value)}
           placeholder={t('bankStatementCategoryName')}
           className="bank-transactions-new-category-input"
         />
@@ -139,7 +184,7 @@ export default function BankStatementTransactionsFullTab({
                 onChange={toggleAllFiltered}
               />
             ),
-            render: (_: any, tx: any) => (
+            render: (_value, tx) => (
               <Checkbox
                 checked={selectedTxIds.has(getTxKey(tx))}
                 onChange={() => toggleTxSelection(tx)}
@@ -151,20 +196,20 @@ export default function BankStatementTransactionsFullTab({
             label: t('bankStatementDate'),
             shrink: true,
             sortable: true,
-            render: (v: any) => <span className="whitespace-nowrap text-noorix-muted text-[11px]">{v}</span>,
+            render: (value) => <span className="whitespace-nowrap text-noorix-muted text-[11px]">{String(value || '')}</span>,
           },
           {
             key: 'description',
             label: t('bankStatementDescription'),
             sortable: true,
-            render: (v: any) => (
-              <div className="max-w-[280px] truncate text-[12px]" title={v}>{v}</div>
+            render: (value) => (
+              <div className="max-w-[280px] truncate text-[12px]" title={String(value || '')}>{String(value || '')}</div>
             ),
           },
           {
             key: 'categoryId',
             label: t('bankStatementCategories'),
-            render: (catId: any, tx: any) =>
+            render: (catId, tx) =>
               editingTxId === tx.id ? (
                 <div className="flex flex-col gap-1">
                   <SearchableOptionsPicker
@@ -173,7 +218,7 @@ export default function BankStatementTransactionsFullTab({
                     emptyLabel={t('uncategorized')}
                     value={editingCategory}
                     onChange={setEditingCategory}
-                    options={allCategoryOptions.map((c: any) => ({ value: c.id, label: c.label }))}
+                    options={allCategoryOptions.map((category) => ({ value: category.id, label: category.label }))}
                     aria-label={t('bankStatementCategories')}
                   />
                   <div className="flex gap-1">
@@ -192,7 +237,7 @@ export default function BankStatementTransactionsFullTab({
                 <Button
                   size="sm"
                   className="text-start max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap block"
-                  onClick={() => { setEditingTxId(tx.id); setEditingCategory(catId || ''); }}
+                  onClick={() => { setEditingTxId(tx.id || null); setEditingCategory(String(catId || '')); }}
                 >
                   {tx.category?.nameAr || tx.category?.nameEn || t('uncategorized')}
                 </Button>
@@ -203,9 +248,9 @@ export default function BankStatementTransactionsFullTab({
             label: t('bankStatementColDebit'),
             sortable: true,
             numeric: true,
-            render: (v: any) => Number(v) > 0 ? (
+            render: (value) => Number(value) > 0 ? (
               <span className="nx-ltr inline-block font-bold text-noorix-red px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-red-7)]">
-                <FmtNum n={Number(v)} />
+                <FmtNum n={Number(value)} />
               </span>
             ) : <span className="text-noorix-muted">—</span>,
           },
@@ -214,9 +259,9 @@ export default function BankStatementTransactionsFullTab({
             label: t('bankStatementColCredit'),
             sortable: true,
             numeric: true,
-            render: (v: any) => Number(v) > 0 ? (
+            render: (value) => Number(value) > 0 ? (
               <span className="nx-ltr inline-block font-bold text-noorix-green px-2 py-[2px] rounded-[6px] text-[12px] bg-[var(--noorix-green-7)]">
-                <FmtNum n={Number(v)} />
+                <FmtNum n={Number(value)} />
               </span>
             ) : <span className="text-noorix-muted">—</span>,
           },
@@ -225,21 +270,21 @@ export default function BankStatementTransactionsFullTab({
             label: t('bankStatementBalance'),
             sortable: true,
             numeric: true,
-            render: (v: any) => (
+            render: (value) => (
               <span className="nx-ltr text-[12px] text-noorix-muted">
-                {v != null && Number(v) !== 0 ? fmt(Number(v)) : '—'}
+                {value != null && Number(value) !== 0 ? fmt(Number(value)) : '—'}
               </span>
             ),
           },
           {
             key: 'note',
             label: t('bankStatementAddNote'),
-            render: (v: any, tx: any) =>
+            render: (value, tx) =>
               editingNoteId === tx.id ? (
                 <div className="flex flex-col gap-1">
                   <Input
                     value={editingNote}
-                    onChange={(e: any) => setEditingNote(e.target.value)}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEditingNote(event.target.value)}
                     className="bank-transactions-note-input"
                   />
                   <div className="flex gap-1">
@@ -252,10 +297,10 @@ export default function BankStatementTransactionsFullTab({
               ) : (
                 <Button
                   size="sm"
-                  className={v ? 'text-noorix-blue' : 'text-noorix-muted'}
-                  onClick={() => { setEditingNoteId(tx.id); setEditingNote(v || ''); }}
+                  className={value ? 'text-noorix-blue' : 'text-noorix-muted'}
+                  onClick={() => { setEditingNoteId(tx.id || null); setEditingNote(String(value || '')); }}
                 >
-                  {v ? `${(v || '').slice(0, 20)}…` : '+ ملاحظة'}
+                  {value ? `${String(value).slice(0, 20)}…` : '+ ملاحظة'}
                 </Button>
               ),
           },
@@ -266,7 +311,7 @@ export default function BankStatementTransactionsFullTab({
         sortDir={sortConfig.direction}
         onSort={handleSort}
         emptyMessage="لا توجد عمليات تطابق الفلاتر المحددة."
-        getRowStyle={(tx: any) =>
+        getRowStyle={(tx) =>
           selectedTxIds.has(getTxKey(tx))
             ? { background: 'var(--noorix-blue-6)', transition: 'background 0.15s' }
             : undefined

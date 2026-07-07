@@ -59,6 +59,19 @@ export type CostAppsPlResult = {
   appShareOfGrossPct: Decimal;
 };
 
+export type SalesChannelSummary = {
+  transactionDate?: string | number | Date | null;
+  channels?: Array<{
+    amount?: string | number | Decimal | null;
+    vault?: unknown;
+  }> | null;
+};
+
+function salesChannelVaultType(vault: unknown): string {
+  if (!vault || typeof vault !== 'object' || !('type' in vault)) return '';
+  return String((vault as { type?: unknown }).type || '');
+}
+
 function d(v: string | number | Decimal): Decimal {
   try {
     return new Decimal(v ?? 0);
@@ -203,7 +216,7 @@ export function reverseGrossTotalForTargetProfit(params: {
 
 /** تجميع من ملخصات dashboard-pack (قنوات يومية) */
 export function aggregateSalesChannelsInRange(
-  summaries: readonly any[],
+  summaries: readonly SalesChannelSummary[],
   fromYmd: string,
   toYmd: string,
 ): { grossApp: Decimal; grossLocalCash: Decimal; grossLocalBank: Decimal; daysUsed: number } {
@@ -224,7 +237,7 @@ export function aggregateSalesChannelsInRange(
     for (const ch of s.channels || []) {
       const amt = new Decimal(ch?.amount ?? 0);
       if (amt.lte(0)) continue;
-      const typ = String(ch?.vault?.type || '');
+      const typ = salesChannelVaultType(ch?.vault);
       if (typ === 'app') {
         app = app.plus(amt);
         touched = true;

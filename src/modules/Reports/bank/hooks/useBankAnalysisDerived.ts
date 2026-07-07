@@ -8,15 +8,13 @@ import {
   type BankCategoryAgg,
 } from '../bankAnalysisUtils';
 import { estimateYAxisWidth, truncateLabel } from '../bankAnalysisHelpers';
-import type { BarRow, CategoryTableRow, PieDisplayMode, PieSliceRow } from '../bankAnalysisTab.types';
-
-type PosTerminal = { terminalId: string; count: number; total: number };
+import type { BarRow, BankTransactionLite, CategoryTableRow, PieDisplayMode, PieSliceRow } from '../bankAnalysisTab.types';
 
 /**
  * اشتقاق بيانات الرسوم والجداول — نفس الحسابات السابقة.
  */
 export function useBankAnalysisDerived(
-  txs: unknown[],
+  txs: readonly BankTransactionLite[],
   summaryByCategory: Record<string, BankCategoryAgg>,
   pieMode: PieDisplayMode,
   uncategorizedLabel: string,
@@ -24,9 +22,9 @@ export function useBankAnalysisDerived(
   const dailyData = useMemo(() => buildDailyChartData(txs), [txs]);
   const alerts = useMemo(() => topDebits(txs, 10), [txs]);
   const posCount = useMemo(() => countPosLikeTransactions(txs), [txs]);
-  const posTerminals = useMemo(() => extractPosTerminals(txs) as PosTerminal[], [txs]);
+  const posTerminals = useMemo(() => extractPosTerminals(txs), [txs]);
   const depositsByCategory = useMemo(
-    () => buildDepositsByCategory(txs, uncategorizedLabel) as Array<{ name: string; count: number; total: number }>,
+    () => buildDepositsByCategory(txs, uncategorizedLabel),
     [txs, uncategorizedLabel],
   );
 

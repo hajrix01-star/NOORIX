@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, DateMonthScopePicker, FilterToolbar, Input, MetricCard, cn } from '../../ui';
 import GeneralPlTable from './GeneralPlTable';
 import type { PlDisplayLevel } from './reportHelpers';
-import type { GeneralProfitLossReport, ReportPeriodMode } from './reportTypes';
+import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
 import { buildProfitLossKpiCards, getProfitLossMonthNames } from './profitLossPresentationModel';
 
 type ProfitLossReportWorkspaceProps = {
@@ -18,7 +18,7 @@ type ProfitLossReportWorkspaceProps = {
   periodMode: ReportPeriodMode;
   selectedMonth: string;
   selectedMonthNumber: number | null;
-  visibleRows: any[];
+  visibleRows: PlDisplayRow[];
   flatRowsCount: number;
   collapsedGroups: Record<string, boolean>;
   plDisplayLevel: PlDisplayLevel;
@@ -32,7 +32,7 @@ type ProfitLossReportWorkspaceProps = {
   onDisplayLevelChange: (level: PlDisplayLevel) => void;
   onRowSearchChange: (value: string) => void;
   onToggleGroup: (key: string) => void;
-  onOpenDetail: (payload: { month: number | null; groupKey: string; itemKey: string | null; showTrend?: boolean }) => void;
+  onOpenDetail: (payload: ReportDetailState) => void;
   onExportExcel: () => void;
   onExportPdf: () => void;
   onPrint: () => void;
@@ -201,7 +201,7 @@ export default function ProfitLossReportWorkspace({
                     className="nx-pl-row-search"
                     label={t('reportPlRowFilterPlaceholder')}
                     value={rowSearch}
-                    onChange={(event: any) => onRowSearchChange(event.target.value)}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => onRowSearchChange(event.target.value)}
                   />
                 </FilterToolbar>
               </div>
