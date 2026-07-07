@@ -12,6 +12,7 @@ import { Button } from '../../ui';
 import { vatKeys } from '../../services/queryKeys';
 import { useApiQueries } from '../../hooks/useApiQuery';
 import type { HajriTaxQuarter, VatPlanningRecord } from '../../types/api/domains/hajriTax';
+import { companyDisplayName } from './hajriRegistryMetrics';
 
 const QUARTER_LABEL_AR = {
   1: 'الربع الأول (يناير – مارس)',
@@ -54,8 +55,7 @@ export default function HajriTaxQuarterOverview() {
 
   const companyName = useMemo(() => {
     const c = companies?.find((x) => x.id === companyId);
-    if (!c) return '';
-    return lang === 'en' ? (c.nameEn || c.nameAr || c.name || '') : (c.nameAr || c.name || c.nameEn || '');
+    return companyDisplayName(c, lang);
   }, [companies, companyId, lang]);
 
   if (!companies?.length) {
@@ -79,7 +79,7 @@ export default function HajriTaxQuarterOverview() {
         <p className="text-[13px] font-semibold text-noorix-text mb-2">{t('vatFilterCompany')}</p>
         <div className="flex flex-wrap gap-2">
           {companies.map((c) => {
-            const nm = lang === 'en' ? (c.nameEn || c.nameAr || c.name) : (c.nameAr || c.name || c.nameEn);
+            const nm = companyDisplayName(c, lang);
             const active = companyId === c.id;
             return (
               <Button

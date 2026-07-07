@@ -4,23 +4,22 @@ import type {
   SupplierRecord,
   SupplierType,
 } from './supplierTypes';
+import { localizedDisplayName, localizedSecondaryDisplayName } from '../../utils/displayName';
 
 export function normalizeSupplierType(value: SupplierRecord['supplierType']): SupplierType {
   return value === 'expenses' || value === 'expense' ? 'expenses' : 'purchases';
 }
 
 export function getSupplierName(supplier: SupplierRecord | null | undefined, lang: SupplierLang) {
-  if (!supplier) return '-';
-  return (lang === 'en' ? supplier.nameEn || supplier.nameAr : supplier.nameAr || supplier.nameEn) || '-';
+  return localizedDisplayName(supplier, lang, '-');
 }
 
 export function getSupplierSecondaryName(supplier: SupplierRecord, lang: SupplierLang) {
-  return lang === 'en' ? supplier.nameAr || '-' : supplier.nameEn || '-';
+  return localizedSecondaryDisplayName(supplier, lang, '-');
 }
 
 export function getSupplierCategoryName(category: SupplierCategoryRecord | null | undefined, lang: SupplierLang) {
-  if (!category) return '-';
-  return (lang === 'en' ? category.nameEn || category.nameAr : category.nameAr || category.nameEn) || '-';
+  return localizedDisplayName(category, lang, '-');
 }
 
 export function findSupplierCategory(

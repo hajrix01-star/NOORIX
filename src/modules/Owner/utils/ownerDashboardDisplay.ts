@@ -1,6 +1,7 @@
 import type { OwnerCompanySeries } from '../types';
 import type { OwnerOverviewCompany } from '../../../types/api';
 import type { OwnerOverviewMetric } from '../../../types/api';
+import { localizedDisplayName } from '../../../utils/displayName';
 
 export const MONTH_NAMES_AR = [
   'يناير',
@@ -20,14 +21,11 @@ export const MONTH_NAMES_AR = [
 export const OWNER_METRICS: OwnerOverviewMetric[] = ['sales', 'purchases', 'expenses', 'netProfit'];
 
 export function ownerCompanyName(
-  company: { nameAr?: string | null; nameEn?: string | null } | undefined,
+  company: { name?: string | null; nameAr?: string | null; nameEn?: string | null } | undefined,
   lang: string,
   fallback: string,
 ) {
-  if (!company) return fallback;
-  return lang === 'ar'
-    ? company.nameAr || company.nameEn || fallback
-    : company.nameEn || company.nameAr || fallback;
+  return localizedDisplayName(company, lang, fallback);
 }
 
 export function buildOwnerCompanySeries(

@@ -11,6 +11,7 @@ import type {
   VatPlanningRecord,
   VatPlanningSourceSnapshot,
 } from '../../types/api/domains/hajriTax';
+import { localizedDisplayName } from '../../utils/displayName';
 
 export function registryPayload(row: VatPlanningRecord | null | undefined): TaxDisclosureData {
   return row?.payload && typeof row.payload === 'object' ? row.payload : defaultDisclosureData();
@@ -33,10 +34,7 @@ export function registryInputVat(payload: TaxDisclosureData): number {
 }
 
 export function companyDisplayName(company: HajriTaxCompanyRef | null | undefined, lang: HajriTaxLanguage): string {
-  if (!company) return '';
-  const ar = company.nameAr || company.name || company.nameEn || '';
-  const en = company.nameEn || company.name || company.nameAr || '';
-  return String(lang === 'en' ? en : ar).trim();
+  return localizedDisplayName(company, lang, '');
 }
 
 export function buildCompanyFilterSelectOptions(

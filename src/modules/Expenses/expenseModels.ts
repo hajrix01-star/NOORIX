@@ -16,6 +16,7 @@ import type {
 import { fmt, sumAmounts } from '../../utils/format';
 import { formatSaudiDate, getSaudiToday } from '../../utils/saudiDate';
 import { vaultDisplayName } from '../../utils/vaultDisplay';
+import { localizedDisplayName } from '../../utils/displayName';
 import {
   canExemptThisExpensePayment,
   isExpensePaymentTaxable,
@@ -94,23 +95,15 @@ export const EXPENSE_LINE_KINDS: ExpenseLineKind[] = ['expense', 'fixed_expense'
 export const EXPENSE_INSTALLMENT_INTERVALS = [1, 2, 3, 4, 6, 12];
 
 export function expenseLineDisplayName(line: Pick<ExpenseLineRecord, 'nameAr' | 'nameEn' | 'name'>, lang: ExpenseLang): string {
-  return lang === 'en'
-    ? line.nameEn || line.name || line.nameAr || ''
-    : line.nameAr || line.name || line.nameEn || '';
+  return localizedDisplayName(line, lang, '');
 }
 
 export function expenseSupplierDisplayName(supplier: ExpenseSupplierRef | null | undefined, lang: ExpenseLang): string {
-  if (!supplier) return '-';
-  return lang === 'en'
-    ? supplier.nameEn || supplier.name || supplier.nameAr || '-'
-    : supplier.nameAr || supplier.name || supplier.nameEn || '-';
+  return localizedDisplayName(supplier, lang, '-');
 }
 
 export function expenseCategoryDisplayName(category: ExpenseCategoryRef | null | undefined, lang: ExpenseLang): string {
-  if (!category) return '-';
-  return lang === 'en'
-    ? category.nameEn || category.nameAr || '-'
-    : category.nameAr || category.nameEn || '-';
+  return localizedDisplayName(category, lang, '-');
 }
 
 export function expenseLineKindLabel(kind: ExpenseLineKind | string | null | undefined, lang: ExpenseLang): string {

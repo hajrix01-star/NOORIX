@@ -1,29 +1,13 @@
-/**
- * عرض اسم الموظف حسب لغة الواجهة.
- * القاعدة: الحقل `name` في النظام هو الاسم الأساسي (عادة عربي)، `nameEn` اختياري.
- */
-export type EmployeeDisplayNameSource = object & {
-  name?: unknown;
-  nameAr?: unknown;
-  nameEn?: unknown;
-};
+import { localizedDisplayName, type DisplayLanguage, type LocalizedDisplaySource } from './displayName';
 
-export type EmployeeDisplayLanguage = 'ar' | 'en' | string | null | undefined;
+export type EmployeeDisplayNameSource = object & LocalizedDisplaySource;
+
+export type EmployeeDisplayLanguage = DisplayLanguage;
 
 export function employeeDisplayName(
   entity: EmployeeDisplayNameSource | null | undefined,
   lang: EmployeeDisplayLanguage,
-  fallback: string = '—',
+  fallback: string = '\u2014',
 ) {
-  if (entity == null) return fallback;
-  const name = String(entity.name ?? '').trim();
-  const nameAr = String(entity.nameAr ?? '').trim();
-  const nameEn = String(entity.nameEn ?? '').trim();
-  const primaryAr = nameAr || name;
-
-  if (lang === 'en') {
-    if (nameEn) return nameEn;
-    return primaryAr || fallback;
-  }
-  return primaryAr || nameEn || fallback;
+  return localizedDisplayName(entity, lang, fallback);
 }

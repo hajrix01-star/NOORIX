@@ -1,4 +1,5 @@
 import { getSaudiToday, toYmd } from '../../utils/saudiDate';
+import { localizedDisplayName } from '../../utils/displayName';
 import type {
   AssetCompleteFromInvoicePayload,
   AssetCreatePayload,
@@ -159,14 +160,11 @@ export function assetSupplierDisplayName(
   lang: AssetsLang,
   empty = '-',
 ): string {
-  if (!supplier) return empty;
-  return lang === 'en'
-    ? supplier.nameEn || supplier.nameAr || empty
-    : supplier.nameAr || supplier.nameEn || empty;
+  return localizedDisplayName(supplier, lang, empty);
 }
 
 export function assetDisplayName(asset: Pick<AssetRegisterItem, 'nameAr' | 'nameEn'>, lang: AssetsLang): string {
-  return lang === 'en' ? asset.nameEn || asset.nameAr : asset.nameAr || asset.nameEn || '';
+  return localizedDisplayName(asset, lang, '');
 }
 
 export function assetInvoiceKindLabel(kind: PendingWarrantyInvoiceRow['kind'] | undefined, t: AssetTranslationFn): string {
@@ -181,7 +179,7 @@ export function assetExpenseLineLabel(
   lang: AssetsLang,
 ): string {
   if (!line) return '';
-  return lang === 'en' ? line.nameEn || line.nameAr || '' : line.nameAr || line.nameEn || '';
+  return localizedDisplayName(line, lang, '');
 }
 
 export function normalizeAssetRegisterPage(data: AssetRegisterPage | undefined): AssetRegisterPage {

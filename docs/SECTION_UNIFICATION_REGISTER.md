@@ -1501,13 +1501,71 @@ Closed on 2026-07-08 as the governed editable-grid foundation hardening pass. Cl
   - `check:responsive-governance` passed.
   - Targeted UI, payroll, and purchase tests passed.
 
+## Display Name Foundation Finalization
+
+Closed on 2026-07-08 as the governed display-name foundation pass. Closure commit is pending local commit.
+
+### Scope
+
+- Central display-name utility:
+  - `src/utils/displayName.ts`
+  - `src/utils/displayName.test.ts`
+- Existing specialized display helpers now delegate to the central utility:
+  - `src/utils/vaultDisplay.ts`
+  - `src/utils/employeeDisplayName.ts`
+  - `src/modules/Suppliers/supplierDisplayModel.ts`
+  - `src/modules/Dashboard/utils/dashboardDisplayName.ts`
+  - `src/modules/Owner/utils/ownerDashboardDisplay.ts`
+  - `src/modules/Expenses/expenseModels.ts`
+  - `src/modules/Assets/assetsRegisterModel.ts`
+  - `src/modules/HajriTax/hajriRegistryMetrics.ts`
+- Governance:
+  - `scripts/check-display-name-governance.mjs`
+  - `package.json` script `check:display-name-governance`
+
+### Centralized
+
+- `localizedDisplayName` is now owned by `src/utils/displayName.ts`, not by the vault-specific helper.
+- The standard display order is documented and tested:
+  - Arabic: `nameAr`, then `name`, then `nameEn`
+  - English: `nameEn`, then `name`, then `nameAr`
+- `localizedSecondaryDisplayName` centralizes the opposite-language secondary label pattern.
+- Vault, employee, supplier, dashboard, owner, expense, asset, and Hajri Tax display helpers now use the shared helper.
+
+### Protected Exceptions
+
+- Search, import matching, deduplication keys, file slugs, and explicit Arabic/English document templates remain section-owned because they often need fixed-language semantics rather than UI-language display semantics.
+- Official accounting, tax, payroll, and operational numbers are untouched.
+- Backend persistence and sort order are untouched.
+
+### Final System Unification Candidates
+
+- Continue replacing local name fallbacks in Orders, Reports, Settings, SmartChat, and protected print documents where the context is display-only.
+- Add stricter governance against new direct `nameAr || nameEn` display fallbacks after the remaining protected files are migrated.
+- Consider a separate fixed-language document-name helper for bilingual HR/legal print documents.
+
+### Closure Checks
+
+- 2026-07-08 Display-name foundation closure:
+  - `tsc --noEmit` passed.
+  - `check:display-name-governance` passed.
+  - `check-node-scripts` passed after adding Display-name governance.
+  - `check:hr-governance` passed.
+  - `check:suppliers-governance` passed.
+  - `check:dashboard-governance` passed.
+  - `check:owner-governance` passed.
+  - `check:expenses-governance` passed.
+  - `check:assets-governance` passed.
+  - `check:hajri-tax-governance` passed.
+  - Targeted display-name and affected-section tests passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
 
 - Continue print/export conversion for protected financial document bodies one family at a time.
 - Continue editable-grid conversion for protected financial row-entry screens one family at a time.
-- Central name display helper adoption across all sections: `nameAr`, `nameEn`, `name`.
+- Continue display-name helper adoption across remaining display-only surfaces.
 - Central official-number rule: backend or shared domain model owns accounting values; frontend owns presentation only.
 - Expanded governance that prevents new local financial formulas, local date query serialization, raw filters, or section-specific card primitives once final system primitives exist.
 
