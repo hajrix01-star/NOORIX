@@ -1,7 +1,5 @@
-export function printCurrentInvoiceWindow() {
-  window.print();
-}
+import { printCurrentWindow, printCurrentWindowNextFrame } from '../../utils/printUtils';
 
-export function printCurrentInvoiceWindowNextFrame() {
-  requestAnimationFrame(() => printCurrentInvoiceWindow());
-}
+export const printCurrentInvoiceWindow = printCurrentWindow;
+
+export { printCurrentWindowNextFrame as printCurrentInvoiceWindowNextFrame };

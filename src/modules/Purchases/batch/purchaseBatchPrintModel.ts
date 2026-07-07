@@ -1,7 +1,5 @@
-export function printCurrentPurchaseBatchWindow() {
-  window.print();
-}
+import { printCurrentWindow, printCurrentWindowAfterDelay } from '../../../utils/printUtils';
 
-export function printCurrentPurchaseBatchWindowAfterDelay(delayMs = 300) {
-  return window.setTimeout(() => printCurrentPurchaseBatchWindow(), delayMs);
-}
+export const printCurrentPurchaseBatchWindow = printCurrentWindow;
+
+export const printCurrentPurchaseBatchWindowAfterDelay = printCurrentWindowAfterDelay;

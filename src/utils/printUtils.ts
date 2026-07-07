@@ -127,8 +127,20 @@ tfoot tr td { font-weight: 700; background: #f1f5f9; }
 `.trim();
 }
 
-function escHtml(v: any) {
+function escHtml(v: unknown) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+export function printCurrentWindow() {
+  window.print();
+}
+
+export function printCurrentWindowNextFrame() {
+  requestAnimationFrame(() => printCurrentWindow());
+}
+
+export function printCurrentWindowAfterDelay(delayMs = 300) {
+  return window.setTimeout(() => printCurrentWindow(), delayMs);
 }
 
 /**
@@ -174,7 +186,7 @@ export function openPrintWindow({
   htmlDir = 'rtl',
   htmlLang = 'ar',
   autoPrint = true,
-}: OpenPrintWindowOpts = {}) {
+}: OpenPrintWindowOpts = {}): Window | null {
   const headerHtml = companyName
     ? `<div class="print-header">
         ${logoUrl ? `<img src="${escHtml(logoUrl)}" alt="" />` : ''}
@@ -211,11 +223,18 @@ ${body}
 </html>`;
 
   const win = window.open('', '_blank');
-  if (!win) return;
+  if (!win) return null;
   win.document.write(html);
   win.document.close();
   if (autoPrint) {
-    win.onafterprint = () => { try { win.close(); } catch (_: any) {} };
+    win.onafterprint = () => {
+      try {
+        win.close();
+      } catch (_: unknown) {
+        // Browser print windows can already be closed by the user.
+      }
+    };
     win.onload = () => setTimeout(() => win.print(), 300);
   }
+  return win;
 }

@@ -1390,11 +1390,69 @@ Closed on 2026-07-08 as the first governed chart-state primitive pass. Closure c
   - `check:responsive-governance` passed.
   - Targeted UI, Dashboard, Owner, Reports, and affected chart tests passed.
 
+## Print / Export Foundation Finalization
+
+Closed on 2026-07-08 as the governed print/export foundation hardening pass. Closure commit is pending local commit.
+
+### Scope
+
+- Central print utility:
+  - `src/utils/printUtils.ts`
+  - `src/utils/printUtils.test.ts`
+- Current-window print adapters:
+  - `src/modules/Invoices/invoicePrintModel.ts`
+  - `src/modules/Purchases/batch/purchaseBatchPrintModel.ts`
+- Existing protected print table foundation remains in:
+  - `src/utils/printTableHtml.ts`
+  - `src/utils/pdfTableExport.ts`
+  - `src/utils/exportUtils.ts`
+- Governance:
+  - `scripts/check-print-export-governance.mjs`
+  - `package.json` script `check:print-export-governance`
+
+### Centralized
+
+- `printUtils` now owns current-window print scheduling through:
+  - `printCurrentWindow`
+  - `printCurrentWindowNextFrame`
+  - `printCurrentWindowAfterDelay`
+- Invoice print adapters delegate to the central print utility instead of owning `window.print()` or frame scheduling.
+- Purchase batch print adapters delegate to the central print utility instead of owning `window.print()` or delayed scheduling.
+- The central print utility no longer uses real `any`.
+- Print window HTML escaping and browser print scheduling are covered by a direct utility test.
+- Print/export governance now prevents reintroducing local browser print scheduling in the closed invoice and purchase adapter boundaries.
+- HR employee document print helper now returns the real central print window result instead of a local fake window stub.
+
+### Protected Exceptions
+
+- Financial report HTML bodies, HR document sheets, day-close print DOM, catalog order sheets, bank statement exports, and purchase batch print layout remain section-owned until each document layout has a dedicated conversion pass.
+- This pass did not move official totals, tax values, accounting values, or export row calculations.
+- `openPrintWindow` remains the shared browser print shell; section-specific body HTML remains owned by the section or its approved model.
+
+### Final System Unification Candidates
+
+- Convert additional safe print adapters to `printCurrentWindow` helpers when their section-specific behavior is confirmed.
+- Promote common export action feedback and filename normalization into a small central action helper after import/export utilities are audited.
+- Review protected financial document bodies one family at a time before converting any remaining manual print tables.
+
+### Closure Checks
+
+- 2026-07-08 Print/export foundation closure:
+  - `tsc --noEmit` passed.
+  - `check:print-export-governance` passed.
+  - `check-node-scripts` passed after adding Print/export governance.
+  - `check:invoices-governance` passed.
+  - `check:purchases-governance` passed.
+  - `check:hr-governance` passed.
+  - `check:table-governance` passed.
+  - `check:responsive-governance` passed.
+  - Targeted print utility, invoice, purchase, and HR tests passed.
+
 ## System-Wide Final Unification Backlog
 
 These items should wait until more sections are closed, unless a future section directly needs one of them:
 
-- Central print/export layout layer for financial documents that are safe to unify.
+- Continue print/export conversion for protected financial document bodies one family at a time.
 - Central editable-grid standard for financial row-entry screens.
 - Central name display helper adoption across all sections: `nameAr`, `nameEn`, `name`.
 - Central official-number rule: backend or shared domain model owns accounting values; frontend owns presentation only.
