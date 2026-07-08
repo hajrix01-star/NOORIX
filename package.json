@@ -59,6 +59,7 @@
     "check:service-footprint": "node scripts/check-heavy-service-footprint.mjs",
     "check:scripts": "node scripts/check-node-scripts.mjs",
     "test:financial": "npm run test:financial --prefix backend",
+    "acceptance:system": "npm run acceptance:system --prefix backend",
     "audit:large-files": "node scripts/audit-large-files.mjs"
   },
   "dependencies": {
