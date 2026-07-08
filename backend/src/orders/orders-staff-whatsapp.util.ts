@@ -66,7 +66,7 @@ export function buildSalesWhatsAppTextCombined(
       const unitPrice = resolveStaffItemUnitPrice(it);
       if (unitPrice.gt(0)) {
         const amount = staffItemLineAmount(it);
-        const variant = formatVariantLabel(it.size, it.packaging, it.unit);
+        const variant = formatVariantLabel(it.size ?? null, it.packaging ?? null, it.unit ?? null);
         const variantPart = variant ? ` (${variant})` : '';
         lines.push(
           `${prefix}• ${name}${variantPart}: ${fmtStaffWaMoney(q)} × ${fmtStaffWaMoney(unitPrice.toNumber())} = ${fmtStaffWaMoney(amount)} SR`,
@@ -123,6 +123,7 @@ export function buildStaffPurchaseWhatsAppText(
 
     for (const order of sec.orders) {
       for (const it of order.items || []) {
+        if (!it.productId) continue;
         const v = resolveStaffItemVariant(it.product, {
           size: it.size,
           packaging: it.packaging,

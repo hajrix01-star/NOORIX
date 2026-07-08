@@ -5,6 +5,10 @@ const INVOICE_YMD_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export class InvoiceListQueryDto {
   @IsOptional()
+  @IsString()
+  companyId?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ReportsService } from '../reports/reports.service';
 import { SalesService } from '../sales/sales.service';
 
@@ -30,7 +30,9 @@ export type DashboardSummaryDateRange = {
 @Injectable()
 export class ReportingFacade {
   constructor(
+    @Inject(ReportsService)
     private readonly reportsService: ReportingFacadeReportsReader,
+    @Inject(SalesService)
     private readonly salesService: ReportingFacadeSalesReader,
   ) {}
 

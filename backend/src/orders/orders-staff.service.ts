@@ -17,6 +17,12 @@ import { resolveProductSection } from './orders-staff-sections.util';
 import { buildStaffSalesReportModel } from './orders-staff-sales-report-builder.util';
 import { CreateStaffOrderDto, SendStaffDigestOptions, StaffOrderItemInput } from './orders-staff.types';
 
+type StaffOrderWithItems = Prisma.StaffOrderGetPayload<{
+  include: {
+    items: { include: { product: true } };
+  };
+}>;
+
 @Injectable()
 export class OrdersStaffService {
   constructor(
@@ -314,7 +320,7 @@ export class OrdersStaffService {
     });
 
     // تجميع بتاريخ اليوم (YYYY-MM-DD بناءً على sentAt)
-    type DigestHistoryOrder = Awaited<ReturnType<typeof this.prisma.staffOrder.findMany>>[number];
+    type DigestHistoryOrder = (typeof orders)[number];
     const byDate: Record<string, { date: string; sentAt: Date; sections: Record<string, DigestHistoryOrder[]> }> = {};
     for (const o of orders) {
       const d = o.sentAt ?? o.updatedAt;
@@ -385,7 +391,7 @@ export class OrdersStaffService {
   }
 
   /** تجميع بنود الطلبات المعلّقة لطلب مشتريات واحد */
-  private aggregateStaffOrdersToPurchaseLines(orders: Awaited<ReturnType<typeof this.prisma.staffOrder.findMany>>) {
+  private aggregateStaffOrdersToPurchaseLines(orders: readonly StaffOrderWithItems[]) {
     type Agg = {
       productId: string;
       name: string;

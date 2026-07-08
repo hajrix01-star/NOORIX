@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ReportingFacade, type DashboardSummaryDateRange } from '../reporting.facade';
 import { DashboardInsightsService } from './dashboard-insights.service';
 import { ExpenseInsightsService } from './expenses/expense-insights.service';
@@ -36,9 +36,13 @@ function dedupeKey(w: InsightItem): string {
 @Injectable()
 export class ReportingInsightsAggregatorService {
   constructor(
+    @Inject(ReportingFacade)
     private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>,
+    @Inject(DashboardInsightsService)
     private readonly dashboardInsightsService: Pick<DashboardInsightsService, 'buildDashboardInsights'>,
+    @Inject(PurchaseSupplierInsightsService)
     private readonly purchaseSupplierInsightsService: Pick<PurchaseSupplierInsightsService, 'buildPurchaseSupplierInsights'>,
+    @Inject(ExpenseInsightsService)
     private readonly expenseInsightsService: Pick<ExpenseInsightsService, 'buildExpenseInsights'>,
   ) {}
 

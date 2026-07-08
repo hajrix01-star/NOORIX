@@ -1,0 +1,5 @@
+ALTER TABLE "suppliers"
+ADD COLUMN IF NOT EXISTS "is_bookmarked" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE "suppliers"
+ADD COLUMN IF NOT EXISTS "is_tax_registered" BOOLEAN NOT NULL DEFAULT true;

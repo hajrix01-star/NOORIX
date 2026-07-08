@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ReportingFacade, type DashboardSummaryDateRange, type DashboardSummaryPayload } from '../../reporting.facade';
 import {
   ruleMissingSupplierBreakdown,
@@ -17,7 +17,10 @@ import { PURCHASE_SUPPLIER_INSIGHTS_SCHEMA_VERSION } from './purchase-supplier-i
  */
 @Injectable()
 export class PurchaseSupplierInsightsService {
-  constructor(private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>) {}
+  constructor(
+    @Inject(ReportingFacade)
+    private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>,
+  ) {}
 
   async buildPurchaseSupplierInsights(
     companyId: string,

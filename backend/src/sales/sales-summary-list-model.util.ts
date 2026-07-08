@@ -14,7 +14,7 @@ export type SalesListVaultRef = {
 
 export type SalesListChannelEntry = {
   vaultId?: string;
-  amount?: number | string | null;
+  amount?: number | string | { toString(): string } | null;
   vault?: SalesListVaultRef | null;
 };
 

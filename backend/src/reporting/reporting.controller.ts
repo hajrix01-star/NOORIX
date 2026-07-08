@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -28,8 +28,11 @@ type ReportingAuditLog = Pick<AuditLogService, 'log' | 'logUpdate'>;
 @UseGuards(AuthGuard('jwt'), CompanyAccessGuard, RolesGuard)
 export class ReportingController {
   constructor(
+    @Inject(DashboardInsightsService)
     private readonly dashboardInsightsService: ReportingInsightsReader,
+    @Inject(CompanyInsightThresholdSettingsService)
     private readonly companyInsightThresholdSettings: ReportingThresholdSettings,
+    @Inject(AuditLogService)
     private readonly auditLog: ReportingAuditLog,
   ) {}
 

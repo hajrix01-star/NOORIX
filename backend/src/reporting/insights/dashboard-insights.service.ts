@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ReportingFacade, type DashboardSummaryDateRange, type DashboardSummaryPayload } from '../reporting.facade';
 import { INSIGHTS_SCHEMA_VERSION } from './insights.types';
 import type { DashboardInsightsPayload, InsightItem } from './insights.types';
@@ -29,7 +29,9 @@ import { CompanyInsightThresholdSettingsService } from './company-insight-thresh
 @Injectable()
 export class DashboardInsightsService {
   constructor(
+    @Inject(ReportingFacade)
     private readonly reportingFacade: Pick<ReportingFacade, 'getDashboardSummary'>,
+    @Inject(CompanyInsightThresholdSettingsService)
     private readonly companyInsightThresholdSettings: Pick<CompanyInsightThresholdSettingsService, 'getResolvedThresholds'>,
   ) {}
 

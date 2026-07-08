@@ -122,6 +122,9 @@ export async function updateInvoiceInTransaction(
       );
     }
 
+    const oldValue = AuditLogService.invoiceToSnapshot(oldInvoice) as Prisma.InputJsonValue;
+    const newValue = AuditLogService.invoiceToSnapshot(newInvoice) as Prisma.InputJsonValue;
+
     await tx.auditLog.create({
       data: {
         tenantId,
@@ -130,8 +133,8 @@ export async function updateInvoiceInTransaction(
         action: 'update',
         entity: 'invoice',
         entityId: id,
-        oldValue: AuditLogService.invoiceToSnapshot(oldInvoice),
-        newValue: AuditLogService.invoiceToSnapshot(newInvoice),
+        oldValue,
+        newValue,
         createdAt: nowSaudi(),
       },
     });

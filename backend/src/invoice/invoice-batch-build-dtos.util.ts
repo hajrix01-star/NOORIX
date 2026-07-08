@@ -4,6 +4,13 @@ import type { OutflowDto } from '../financial-core/dto/financial-operation.dto';
 import type { CreateInvoiceBatchDto } from './dto/create-invoice-batch.dto';
 import { computeOutflowNetTaxFromTotal } from './invoice-outflow-tax.util';
 
+const OUTFLOW_KINDS = ['expense', 'salary', 'purchase', 'sale', 'fixed_expense', 'hr_expense', 'advance'] as const;
+type OutflowKind = (typeof OUTFLOW_KINDS)[number];
+
+function resolveOutflowKind(value: string): OutflowKind {
+  return OUTFLOW_KINDS.includes(value as OutflowKind) ? (value as OutflowKind) : 'expense';
+}
+
 function combineLineAndBatchNotes(lineNotes: string | undefined, batchNotesPart: string): string | undefined {
   const line = lineNotes?.trim() ?? '';
   if (!batchNotesPart) return line || undefined;
@@ -25,7 +32,7 @@ export async function buildOutflowDtosForInvoiceBatch(
   for (const item of validItems) {
     let supplierId = item.supplierId || undefined;
     let categoryId = item.categoryId || undefined;
-    let kind = item.kind;
+    let kind = resolveOutflowKind(item.kind);
     let debitAccountId = item.debitAccountId?.trim() || undefined;
 
     if (item.expenseLineId) {
@@ -36,7 +43,7 @@ export async function buildOutflowDtosForInvoiceBatch(
       if (line) {
         supplierId = line.supplierId;
         categoryId = line.categoryId;
-        kind = line.kind;
+        kind = resolveOutflowKind(line.kind);
         debitAccountId = debitAccountId || line.category?.accountId || undefined;
       }
     }

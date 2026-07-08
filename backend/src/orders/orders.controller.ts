@@ -17,6 +17,14 @@ import { CreateStaffOrderDto } from './orders-staff.types';
 
 type CurrentAuthUser = { sub?: string; userId?: string };
 
+function requireCurrentUserId(user: CurrentAuthUser): string {
+  const userId = user.sub ?? user.userId;
+  if (!userId) {
+    throw new BadRequestException('Authenticated user id is required.');
+  }
+  return userId;
+}
+
 function parseDaysQuery(days: string | undefined, fallback = 30): number {
   const parsed = Number.parseInt(String(days ?? ''), 10);
   if (!Number.isFinite(parsed)) return fallback;
@@ -74,7 +82,7 @@ export class OrdersController {
   @Get('staff/my')
   @RequirePermission('STAFF_ORDERS_SUBMIT')
   getMyStaffOrders(@CompanyId() companyId: string, @CurrentUser() user: CurrentAuthUser) {
-    return this.staffService.getMyStaffOrders(requireCompanyId(companyId), user.sub);
+    return this.staffService.getMyStaffOrders(requireCompanyId(companyId), requireCurrentUserId(user));
   }
 
   @Get('staff/sale-next-ref')
@@ -119,7 +127,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @CurrentUser() user: CurrentAuthUser,
   ) {
-    return this.staffService.createStaffOrder(user.sub ?? user.userId, { ...body, companyId: requireCompanyId(companyId) });
+    return this.staffService.createStaffOrder(requireCurrentUserId(user), { ...body, companyId: requireCompanyId(companyId) });
   }
 
   @Post('staff/send-digest')
@@ -152,7 +160,7 @@ export class OrdersController {
     @CurrentUser() user: CurrentAuthUser,
     @Body() body: Partial<CreateStaffOrderDto>,
   ) {
-    return this.staffService.updateStaffOrder(id, companyId, user.sub, body);
+    return this.staffService.updateStaffOrder(id, requireCompanyId(companyId), requireCurrentUserId(user), body);
   }
 
   @Post('staff/:id/resend')
@@ -163,7 +171,7 @@ export class OrdersController {
     @CurrentUser() user: CurrentAuthUser,
     @Body() body: { lang?: 'ar' | 'en' },
   ) {
-    return this.staffService.resendStaffSale(id, companyId, user.sub, body?.lang ?? 'ar');
+    return this.staffService.resendStaffSale(id, requireCompanyId(companyId), requireCurrentUserId(user), body?.lang ?? 'ar');
   }
 
   @Delete('staff/:id')
@@ -173,7 +181,7 @@ export class OrdersController {
     @CompanyId() companyId: string,
     @CurrentUser() user: CurrentAuthUser,
   ) {
-    return this.staffService.deleteStaffOrder(id, companyId, user.sub);
+    return this.staffService.deleteStaffOrder(id, requireCompanyId(companyId), requireCurrentUserId(user));
   }
 
   @Get()
