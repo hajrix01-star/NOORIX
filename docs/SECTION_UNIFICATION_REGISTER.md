@@ -1849,6 +1849,31 @@ These items should wait until more sections are closed, unless a future section 
 - Continue editable-grid conversion for protected financial row-entry screens one family at a time.
 - Continue display-name helper adoption across remaining display-only surfaces.
 
+## Accounting Core Boundary Governance
+
+Closed on 2026-07-08 as a system-wide guardrail in the accounting-boundary governance change set.
+
+### Rule
+
+- all official financial mutations must pass through FinancialCore or AccountingCore.
+- Direct invoice, ledger, or invoice-vault-allocation writes are blocked unless the file is a documented protected exception.
+- HR financial effects route through AccountingCore, which delegates to FinancialCore for invoice, ledger, allocation, and cancellation behavior.
+
+### Protected Exceptions
+
+- `backend/src/financial-core/*`: official source of truth for inflow, outflow, transfer, cancellation, ledger rebuild, and allocation writes.
+- `backend/src/accounting-core/accounting-core.service.ts`: HR accounting facade that delegates to FinancialCore.
+- `backend/src/invoice/invoice-update-in-transaction.util.ts`: invoice update facade that syncs/rebuilds ledger effects through FinancialCore.
+- `backend/src/invoice/invoice-attachment-ops.util.ts`: attachment metadata only, not official amounts.
+- `backend/src/hr/hr-payroll-advance-settlement.util.ts`: payroll advance settlement metadata and deduction-source linkage.
+- `backend/src/company-assets/company-assets.service.ts`: warranty follow-up metadata only.
+- `backend/src/backup/backup-logical-import-transaction.util.ts`: logical backup restore/import exception.
+
+### Closure Checks
+
+- `check:accounting-core-boundary-governance` protects the boundary.
+- `check:system-governance-consolidated` includes the boundary check.
+
 ## Open Decisions For Future Sections
 
 - Do not force visual unification before section cleanup is complete.

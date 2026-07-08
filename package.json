@@ -44,6 +44,7 @@
     "check:editable-grid-governance": "node scripts/check-editable-grid-governance.mjs",
     "check:display-name-governance": "node scripts/check-display-name-governance.mjs",
     "check:official-numbers-governance": "node scripts/check-official-numbers-governance.mjs",
+    "check:accounting-core-boundary-governance": "node scripts/check-accounting-core-boundary-governance.mjs",
     "check:query-date-governance": "node scripts/check-query-date-governance.mjs",
     "check:owner-governance": "node scripts/check-owner-governance.mjs",
     "check:purchases-governance": "node scripts/check-purchases-governance.mjs",
