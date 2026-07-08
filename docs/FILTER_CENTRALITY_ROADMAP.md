@@ -9,7 +9,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Area | Decision |
 | --- | --- |
 | Date period filters | Keep `src/ui/date/DateFilterBar` and `useDateFilter` as the official source. |
-| Date fields | Keep `DateField`, `DateRangeField`, and `DateMonthScopePicker` under `src/ui/date`. |
+| Date fields | Keep `DateField`, `DateRangeField`, `DateFilterBar`, `YearDateFilter`, `MonthDateFilter`, and `TransactionDatePicker` under `src/ui/date`. Legacy month/scope pickers are removed. |
 | Filter row layout | Use `src/ui/filters/FilterToolbar` as the official filter-row layout, including `variant="execution"` for invoice-style action/filter strips and `variant="bare"` when a domain-specific layout must preserve direct-child CSS. |
 | Searchable filter inputs | Use `src/ui/filters/SearchableOptionsPicker` as the official searchable single/multi select. |
 | Multi-select CSV values | Use `csvToFilterValues` and `filterValuesToCsv` for comma-separated filter query values. |
@@ -66,7 +66,7 @@ This roadmap keeps visual unification as the final step. The current phase is ab
 | Section | Current central surfaces | Remaining protected work |
 | --- | --- | --- |
 | Invoices | `SmartTable`, `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `DateField`, `Toolbar`, `invoicesListFilterModel`, `invoicesListQueryModel`, `invoicesListUrlModel`, `invoicesListImportExportModel`, `invoiceEditModel`, `invoiceViewModel`, `invoiceTableRowModel`, `invoiceExecutiveCardsModel`, `invoicesCashReportModel`, `dayCloseReportModel`, `invoice-list-query`, `InvoiceListQueryDto`, `InvoiceListQueryContract`, print table builders. | Closed for frontend/backend query centrality and screen/edit/report hardening pass started; visual harmonization waits for the final visual pass. |
-| Dashboard | `FilterToolbar`, `DateMonthScopePicker`, `SearchableOptionsPicker`, `SmartTable`, `Toolbar`, `dashboardPeriodModel`, `dashboard-period-query`, `DashboardPeriodQueryDto`, protected calendar print table builder. | Current section pass; keep calendar print generation protected and action bars centralized. |
+| Dashboard | `FilterToolbar`, `DateFilterBar`, `SearchableOptionsPicker`, `SmartTable`, `Toolbar`, `dashboardPeriodModel`, `dashboard-period-query`, `DashboardPeriodQueryDto`, protected calendar print table builder. | Current section pass; keep calendar print generation protected and action bars centralized. |
 | Purchases | `DateFilterBar`, `FilterToolbar`, `SearchableOptionsPicker`, `SmartTable`, `purchase-batch-query`, `PurchaseBatchSummariesQueryDto`, `PurchaseBatchSummariesQueryContract`. | Current section pass; editable batch-entry grid is protected until a dedicated table-editor design pass. |
 | Orders | Pending section pass. | Reuse invoice filter composition where behavior matches. |
 | HR | `SearchableOptionsPicker`, `DateField`, `hr-query`, `EmployeeListQueryDto`, `EmployeeListQueryContract`, `HrEmployeeQueryDto`, `HrYearQueryDto`, `HrLeavesQueryDto`, `HrResidenciesQueryDto`, `hr-query-contract`, `hrKeys`, `employeeKeys`, protected payroll/document/settlement tables. | Query centrality closed for employees, payroll runs, advances, compensation snapshots, leaves, leave salary settlements, residencies, documents, movements, allowances, and deductions. 2026-07-07 audit passed `typecheck`, `check:hr-governance`, and full frontend test suite; visual harmonization waits for the final visual pass. |

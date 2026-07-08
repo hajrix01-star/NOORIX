@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { SmartTableColumn } from './types';
+import type { SmartTableColumn, SmartTableColumnSize } from './types';
 
 type ColumnKind = NonNullable<SmartTableColumn['kind']>;
 
@@ -10,8 +10,22 @@ const KIND_DEFAULTS: Record<ColumnKind, Partial<SmartTableColumn>> = {
   money: { align: 'end', numeric: true, shrink: true, width: '12ch' },
   number: { align: 'end', numeric: true, shrink: true, width: '8ch' },
   status: { align: 'center', shrink: true, width: '9ch' },
-  actions: { align: 'center', shrink: true, width: '48px' },
+  actions: { align: 'center', shrink: true, width: '44px', maxWidth: '48px' },
   meta: { align: 'center', shrink: true, width: '10ch' },
+};
+
+const SIZE_DEFAULTS: Record<SmartTableColumnSize, Partial<SmartTableColumn>> = {
+  document: { align: 'center', shrink: true, width: '10ch', maxWidth: '12ch' },
+  name: { align: 'start', width: '22ch', minWidth: '18ch', maxWidth: '30ch' },
+  supplier: { align: 'start', width: '18ch', minWidth: '14ch', maxWidth: '24ch' },
+  date: { align: 'center', shrink: true, width: '10ch', maxWidth: '11ch' },
+  'money-sm': { align: 'end', numeric: true, shrink: true, width: '9ch', maxWidth: '10ch' },
+  'money-md': { align: 'end', numeric: true, shrink: true, width: '11ch', maxWidth: '12ch' },
+  'money-lg': { align: 'end', numeric: true, shrink: true, width: '13ch', maxWidth: '15ch' },
+  'serial-code': { align: 'center', shrink: true, width: '10ch', maxWidth: '13ch' },
+  'code-sm': { align: 'center', shrink: true, width: '7ch', maxWidth: '9ch' },
+  count: { align: 'center', numeric: true, shrink: true, width: '5ch', maxWidth: '6ch' },
+  tax: { align: 'end', numeric: true, shrink: true, width: '8ch', maxWidth: '9ch' },
 };
 
 export function inferColumnKind(col: SmartTableColumn): ColumnKind {
@@ -25,19 +39,38 @@ export function inferColumnKind(col: SmartTableColumn): ColumnKind {
   return 'text';
 }
 
+export function inferColumnSize(col: SmartTableColumn): SmartTableColumnSize | undefined {
+  if (col.size) return col.size;
+  if (/^(tax|taxAmount|vat|vatAmount)$/i.test(col.key)) return 'tax';
+  if (/^(net|netAmount|cost|acquisitionCost|price|unitPrice)$/i.test(col.key)) return 'money-sm';
+  if (/^(total|totalAmount|amount)$/i.test(col.key)) return 'money-md';
+  if (/^(name|nameAr|title|assetName)$/i.test(col.key)) return 'name';
+  if (/supplier/i.test(col.key)) return 'supplier';
+  if (/date|at$/i.test(col.key)) return 'date';
+  if (/^(index|rowIndex|rowNumber|count|daysToWarrantyEnd)$/i.test(col.key)) return 'count';
+  if (/^(serviceNumber)$/i.test(col.key)) return 'code-sm';
+  if (/serial/i.test(col.key)) return 'serial-code';
+  if (/invoiceNumber|documentNumber|runNumber|orderNumber|batchId|ref|code/i.test(col.key)) return 'document';
+  return undefined;
+}
+
 export function normalizeSmartColumn<TRow = any>(col: SmartTableColumn<TRow>): SmartTableColumn<TRow> {
   const kind = inferColumnKind(col);
   const defaults = KIND_DEFAULTS[kind];
+  const size = inferColumnSize(col);
+  const sizeDefaults = size ? SIZE_DEFAULTS[size] : {};
   return {
     ...defaults,
+    ...sizeDefaults,
     ...col,
     kind,
-    numeric: col.numeric ?? defaults.numeric,
-    align: col.align ?? defaults.align,
-    shrink: col.shrink ?? defaults.shrink,
-    width: col.width ?? defaults.width,
-    minWidth: col.minWidth ?? defaults.minWidth,
-    maxWidth: col.maxWidth ?? defaults.maxWidth,
+    size,
+    numeric: col.numeric ?? sizeDefaults.numeric ?? defaults.numeric,
+    align: col.align ?? sizeDefaults.align ?? defaults.align,
+    shrink: col.shrink ?? sizeDefaults.shrink ?? defaults.shrink,
+    width: col.width ?? sizeDefaults.width ?? defaults.width,
+    minWidth: col.minWidth ?? sizeDefaults.minWidth ?? defaults.minWidth,
+    maxWidth: col.maxWidth ?? sizeDefaults.maxWidth ?? defaults.maxWidth,
   };
 }
 

@@ -22,11 +22,8 @@ export default function OwnerDashboardScreen() {
   const { companies } = useApp();
   const filters = useOwnerDashboardFilters(companies);
   const {
-    currentYear,
+    dateFilter,
     year,
-    setYear,
-    selectedMonth,
-    setSelectedMonth,
     selectedMonthNum,
     chartGrain,
     setChartGrain,
@@ -76,11 +73,7 @@ export default function OwnerDashboardScreen() {
   return (
     <ScreenShell>
       <OwnerFilterBar
-        year={year}
-        setYear={setYear}
-        currentYear={currentYear}
-        selectedMonth={selectedMonth}
-        setSelectedMonth={setSelectedMonth}
+        dateFilter={dateFilter}
         onExportExcel={handleExportExcel}
         onExportPdf={handleExportPdf}
         companyList={companyList}

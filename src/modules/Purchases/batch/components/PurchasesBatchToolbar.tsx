@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, DateField, Input, SearchableOptionsPicker } from '../../../../ui';
+import { Button, Input, SearchableOptionsPicker, TransactionDatePicker } from '../../../../ui';
 import { vaultDisplayName } from '../../../../utils/vaultDisplay';
 import { BatchRow } from '../../components/BatchRow';
 import type {
@@ -92,7 +92,7 @@ export default function PurchasesBatchToolbar(props: PurchasesBatchToolbarProps)
           <label className="text-[12px] font-bold text-noorix-muted whitespace-nowrap" htmlFor="batch-purchase-date">
             {t('transactionDateLabel')}
           </label>
-          <DateField
+          <TransactionDatePicker
             id="batch-purchase-date"
             value={batchDate}
             onValueChange={onBatchDateChange}

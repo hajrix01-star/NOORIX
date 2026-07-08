@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   buildDashboardPeriodFilter,
   buildDashboardYearOptions,
+  deriveDashboardPeriodFromDateFilter,
   parseDashboardMonthValue,
 } from './dashboardPeriodModel';
+import type { DatePeriodState } from '../../utils/datePeriod';
 
 describe('dashboardPeriodModel', () => {
   it('builds descending year options from the current year', () => {
@@ -20,22 +22,53 @@ describe('dashboardPeriodModel', () => {
   });
 
   it('builds the shared dashboard period label', () => {
-    const monthNames = ['Jan', 'Feb', 'Mar'];
-
-    expect(buildDashboardPeriodFilter(2026, 2, monthNames)).toEqual({
+    expect(buildDashboardPeriodFilter(2026, 2, 'Feb 2026')).toEqual({
       year: 2026,
       selectedMonth: 2,
       label: 'Feb 2026',
     });
-    expect(buildDashboardPeriodFilter(2026, null, monthNames)).toEqual({
+    expect(buildDashboardPeriodFilter(2026, null, '2026')).toEqual({
       year: 2026,
       selectedMonth: null,
       label: '2026',
     });
-    expect(buildDashboardPeriodFilter(2026, 13, monthNames)).toEqual({
+    expect(buildDashboardPeriodFilter(2026, 13, '2026')).toEqual({
       year: 2026,
       selectedMonth: null,
       label: '2026',
+    });
+  });
+
+  it('derives dashboard year and month from the full central date filter', () => {
+    const state: DatePeriodState = {
+      mode: 'months',
+      selYear: 2026,
+      selMonth: 7,
+      selQuarter: 3,
+      selDay: '2026-07-08',
+      rangeStart: '2026-07-01',
+      rangeEnd: '2026-07-08',
+      monthRangeStartYear: 2026,
+      monthRangeStartMonth: 7,
+      monthRangeEndYear: 2026,
+      monthRangeEndMonth: 7,
+      yearRangeStart: 2026,
+      yearRangeEnd: 2026,
+    };
+
+    expect(deriveDashboardPeriodFromDateFilter(state, { year: 2026, month: 7 })).toEqual({
+      year: 2026,
+      selectedMonth: 7,
+    });
+
+    expect(deriveDashboardPeriodFromDateFilter({ ...state, mode: 'quarter', selQuarter: 3 }, { year: 2026, month: 7 })).toEqual({
+      year: 2026,
+      selectedMonth: null,
+    });
+
+    expect(deriveDashboardPeriodFromDateFilter({ ...state, mode: 'day', selDay: '2025-12-03' }, { year: 2026, month: 7 })).toEqual({
+      year: 2025,
+      selectedMonth: 12,
     });
   });
 });

@@ -1,10 +1,23 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 export type SmartTableDataMode = 'manual' | 'client';
+export type SmartTableColumnSize =
+  | 'document'
+  | 'name'
+  | 'supplier'
+  | 'date'
+  | 'money-sm'
+  | 'money-md'
+  | 'money-lg'
+  | 'serial-code'
+  | 'code-sm'
+  | 'count'
+  | 'tax';
 
 export type SmartTableColumn<TRow = any> = {
   key: string;
   kind?: 'id' | 'text' | 'date' | 'money' | 'number' | 'status' | 'actions' | 'meta';
+  size?: SmartTableColumnSize;
   label?: ReactNode;
   header?: ReactNode;
   align?: string;

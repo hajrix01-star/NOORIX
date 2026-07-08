@@ -20,12 +20,13 @@ import { importBankStatementFile } from '../../utils/exportUtils';
 import { fmt } from '../../utils/format';
 import { getSaudiNow, toYmd } from '../../utils/saudiDate';
 import { bankKeys } from '../../services/queryKeys';
-import { Button, Badge, DateMonthScopePicker, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, FilterToolbar, SearchableOptionsPicker, cn } from '../../ui';
+import { Button, Badge, Modal, Input, ScreenShell, ScreenTitle, ScreenTabs, MetricCard, FilterToolbar, SearchableOptionsPicker, cn } from '../../ui';
 import BankStatementUploadModal from './BankStatementUploadModal';
 import BankStatementMappingModal from './BankStatementMappingModal';
 import BankStatementDetailView from './bank/BankStatementDetailView';
 import BankStatementTemplatesPanel from './bank/BankStatementTemplatesPanel';
 import BankCategoryTreePanel from './bank/BankCategoryTreePanel';
+import ReportDateFilter from './ReportDateFilter';
 import type { BankCategoryLite, BankCreateCategoryBody, BankStatementLite } from './bank/bankAnalysisTab.types';
 import type { BankSheetData } from './bank/bankMappingAutoDetect';
 
@@ -153,7 +154,6 @@ export default function BankStatementAnalysisScreen() {
 
   const banks = [...new Set(statements.map((statement) => statement.bankName).filter((bankName): bankName is string => !!bankName))].sort();
   const filterMonthNumber = filterMonth ? Number(filterMonth.slice(5, 7)) : null;
-  const filterYears = [now.year + 1, now.year, now.year - 1, now.year - 2, now.year - 3];
   const setBankFilterYear = (nextYear: number) => {
     setFilterYear(nextYear);
     if (filterMonthNumber) {
@@ -291,13 +291,7 @@ export default function BankStatementAnalysisScreen() {
               {!listLoading && statements.length > 0 && (
                 <>
                   <FilterToolbar className="mb-4">
-                    <DateMonthScopePicker
-                      year={filterYear}
-                      years={filterYears}
-                      month={filterMonthNumber ? String(filterMonthNumber) : ''}
-                      allowAll
-                      allowYear={false}
-                      fallbackMonth={now.month}
+                    <ReportDateFilter
                       onYearChange={setBankFilterYear}
                       onMonthChange={setBankFilterMonth}
                     />

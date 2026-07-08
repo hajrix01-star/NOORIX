@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
-import { Button, DateField, EditableNumberCell, Input, FmtNum, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
+import { Button, TransactionDatePicker, EditableNumberCell, Input, FmtNum, Card, FormRow, SearchableOptionsPicker } from '../../../ui';
 import { splitTaxFromTotalAsNumbers, TAX_RATE } from '@noorix/finance-core';
 import { useBatchRowFieldIds } from './useBatchRowLogic';
 import { purchaseBatchDisplayName } from '../batch/purchaseBatchDisplayModel';
@@ -124,7 +124,7 @@ export function BatchEditInvoiceLine({
             {cancelled ? (
               <span className="nx-cell-muted text-[13px] nx-font-numbers">{inv.transactionDate || '-'}</span>
             ) : (
-              <DateField
+              <TransactionDatePicker
                 id={ids.invoiceDate}
                 size="sm"
                 value={inv.transactionDate}
@@ -213,7 +213,7 @@ export function BatchEditInvoiceLine({
         {cancelled ? (
           <span className="nx-cell-muted nx-font-numbers">{inv.transactionDate || '-'}</span>
         ) : (
-          <DateField
+          <TransactionDatePicker
             size="sm"
             value={inv.transactionDate}
             onValueChange={(value) => updateInv(i, 'transactionDate', value)}

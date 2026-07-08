@@ -33,10 +33,13 @@ describe('invoicesListTableModel', () => {
       'netAmount',
       'taxAmount',
       'totalAmount',
-      'transactionDate',
       'status',
       'actions',
     ]);
+    expect(cols.find((column) => column.key === 'invoiceNumber')?.size).toBe('document');
+    expect(cols.find((column) => column.key === 'taxAmount')?.size).toBe('tax');
+    expect(cols.find((column) => column.key === 'netAmount')?.size).toBe('money-sm');
+    expect(cols.find((column) => column.key === 'totalAmount')?.size).toBe('money-md');
   });
 
   it('buildInvoiceListFooterRow returns four row segments', () => {

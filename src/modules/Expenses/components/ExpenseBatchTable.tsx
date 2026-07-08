@@ -10,7 +10,7 @@ import { getSaudiToday } from '../../../utils/saudiDate';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, Checkbox, DateField, Input, ScreenShell, cn, FmtNum, SmartTable, SearchableOptionsPicker, SummaryBar } from '../../../ui';
+import { Button, Checkbox, TransactionDatePicker, Input, ScreenShell, cn, FmtNum, SmartTable, SearchableOptionsPicker, SummaryBar } from '../../../ui';
 import type { SmartTableColumn } from '../../../ui';
 import type { ExpenseLineRecord } from '../../../types/api';
 import {
@@ -207,9 +207,10 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
   };
 
   const columns: SmartTableColumn<ExpenseBatchViewRow>[] = [
-    { key: 'index', label: '#', shrink: true, width: '3%', align: 'center', render: (value) => <span className="nx-cell-muted">{String(value ?? '')}</span> },
+    { key: 'index', size: 'count', label: '#', shrink: true, width: '3%', align: 'center', render: (value) => <span className="nx-cell-muted">{String(value ?? '')}</span> },
     {
       key: 'expenseLineId',
+      size: 'name',
       label: t('expenseLineNameCol'),
       width: '17%',
       render: (_value, row) => (
@@ -225,10 +226,11 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
         />
       ),
     },
-    { key: 'categoryName', label: t('category'), width: '8%', render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
-    { key: 'supplierName', label: t('supplier'), width: '9%', render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
+    { key: 'categoryName', size: 'name', label: t('category'), width: '8%', render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
+    { key: 'supplierName', size: 'supplier', label: t('supplier'), width: '9%', render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
     {
       key: 'exemptThisPayment',
+      size: 'document',
       label: t('expenseBatchTaxExemptShort'),
       width: '5%',
       align: 'center',
@@ -248,6 +250,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
     },
     {
       key: 'supplierInvoiceNumber',
+      size: 'document',
       label: t('supplierInvoiceNumber'),
       width: '9%',
       render: (value, row) => (
@@ -262,6 +265,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
     },
     {
       key: 'totalInclusive',
+      size: 'money-md',
       label: t('total'),
       width: '8%',
       render: (value, row) => (
@@ -275,10 +279,11 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
         />
       ),
     },
-    { key: 'net', label: t('expenseTaxBreakdownNet'), numeric: true, width: '7%', align: 'center', render: (value) => <FmtNum n={Number(value)} className="nx-cell-num nx-cell-num--green" /> },
-    { key: 'tax', label: t('expenseTaxBreakdownVat'), numeric: true, width: '7%', align: 'center', render: (value) => <FmtNum n={Number(value)} className="nx-cell-num text-noorix-amber" /> },
+    { key: 'net', size: 'money-sm', label: t('expenseTaxBreakdownNet'), numeric: true, width: '7%', render: (value) => <FmtNum n={Number(value)} className="nx-cell-num nx-cell-num--green" /> },
+    { key: 'tax', size: 'tax', label: t('expenseTaxBreakdownVat'), numeric: true, width: '7%', render: (value) => <FmtNum n={Number(value)} className="nx-cell-num text-noorix-amber" /> },
     {
       key: 'notes',
+      size: 'name',
       label: t('notes'),
       width: '10%',
       render: (value, row) => (
@@ -293,6 +298,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
     },
     {
       key: 'warrantyFollowUp',
+      size: 'document',
       label: t('warrantyFollowUpCol'),
       width: '7%',
       align: 'center',
@@ -308,6 +314,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
     },
     {
       key: 'actions',
+      kind: 'actions',
       label: t('actions'),
       align: 'center',
       width: '8%',
@@ -330,7 +337,7 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
       <div className="mb-3 flex min-h-11 flex-col gap-3 border-b border-noorix-border pb-3 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between lg:gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="min-w-0 w-full sm:w-[min(100%,11rem)]">
-            <DateField label={t('date')} size="sm" className="w-full min-w-0 max-w-full" value={batchDate} onValueChange={setBatchDate} />
+            <TransactionDatePicker label={t('date')} size="sm" className="w-full min-w-0 max-w-full" value={batchDate} onValueChange={setBatchDate} />
           </div>
           <div className="min-w-0 w-full sm:w-[min(100%,14rem)] sm:max-w-xs">
             <SearchableOptionsPicker

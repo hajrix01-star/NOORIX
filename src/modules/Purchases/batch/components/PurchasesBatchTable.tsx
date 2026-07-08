@@ -366,7 +366,6 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
       columns={batchesColumns}
       data={filteredData}
       showRowNumbers
-      rowNumberWidth={40}
       tableId="purchases-batches"
       tableLayout="fixed"
       tableMinWidth={1100}

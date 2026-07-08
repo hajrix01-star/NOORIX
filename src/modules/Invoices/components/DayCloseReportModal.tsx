@@ -4,7 +4,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useApp } from '../../../context/AppContext';
 import { getInvoiceDayCloseReport, throwIfApiFailed } from '../../../services/api';
 import { getSaudiToday, toYmd } from '../../../utils/saudiDate';
-import { Button, Modal, DateField, Toolbar, cn } from '../../../ui';
+import { Button, Modal, DateRangeField, TransactionDatePicker, Toolbar, cn } from '../../../ui';
 import { useToast } from '../../../context/ToastContext';
 import { invoiceKeys } from '../../../services/queryKeys';
 import { buildDayCloseWhatsAppText, openDayCloseWhatsApp } from '../utils/dayCloseWhatsApp';
@@ -199,7 +199,7 @@ export default function DayCloseReportModal({
                 </h2>
                 <label className="flex items-center gap-3 text-[13px]">
                   <span className="text-noorix-muted">{t('date')}</span>
-                  <DateField
+                  <TransactionDatePicker
                     value={dateStr}
                     onValueChange={setDateStr}
                     className="rounded-lg py-1 px-2 border border-noorix-border"
@@ -223,22 +223,16 @@ export default function DayCloseReportModal({
             </Toolbar>
             <Toolbar className="gap-3 pt-1 border-t border-noorix-border border-dashed" align="end">
               <span className="text-[12px] font-bold text-noorix-text">{t('dayClosePrintRangeSection')}</span>
-              <label className="flex items-center gap-2 text-[13px]">
-                <span className="text-noorix-muted">{t('dayClosePrintRangeFrom')}</span>
-                <DateField
-                  value={rangeFrom}
-                  onValueChange={setRangeFrom}
-                  className="rounded-lg py-1 px-2 border border-noorix-border"
-                />
-              </label>
-              <label className="flex items-center gap-2 text-[13px]">
-                <span className="text-noorix-muted">{t('dayClosePrintRangeTo')}</span>
-                <DateField
-                  value={rangeTo}
-                  onValueChange={setRangeTo}
-                  className="rounded-lg py-1 px-2 border border-noorix-border"
-                />
-              </label>
+              <DateRangeField
+                startLabel={t('dayClosePrintRangeFrom')}
+                endLabel={t('dayClosePrintRangeTo')}
+                startValue={rangeFrom}
+                endValue={rangeTo}
+                minEnd={rangeFrom}
+                onStartChange={setRangeFrom}
+                onEndChange={setRangeTo}
+                size="sm"
+              />
               <Button size="sm" variant="primary" onClick={handlePrintRange} disabled={rangePrintLoading}>
                 {rangePrintLoading ? t('dayClosePrintRangeLoading') : t('dayClosePrintRange')}
               </Button>

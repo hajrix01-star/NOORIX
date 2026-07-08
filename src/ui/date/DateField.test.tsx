@@ -1,8 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppTestProviders, defaultAppTestContextValue } from '../../test/appTestProviders';
-import { DateField, DateFilterMonthPicker, DateMonthScopePicker, DateRangeField, getGregorianMonthNames } from './index';
+import { DateField, DateRangeField, getGregorianMonthNames } from './index';
 
 afterEach(() => {
   cleanup();
@@ -82,65 +81,10 @@ describe('Noorix date fields', () => {
     expect(onEndChange).toHaveBeenCalledWith('2026-07-06');
   });
 
-  it('keeps the month picker behavior behind the central date export', () => {
-    const onChange = vi.fn();
-    render(
-      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
-        <DateFilterMonthPicker year={2026} month={7} onChange={onChange} years={[2025, 2026]} />
-      </AppTestProviders>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Jan' }));
-
-    expect(onChange).toHaveBeenCalledWith({ year: 2026, month: 1 });
-  });
-
   it('centralizes Arabic Gregorian month labels without mojibake literals', () => {
     const months = getGregorianMonthNames('ar');
 
     expect(months).toHaveLength(12);
     expect(months.join(' ')).not.toContain('ظ');
-  });
-
-  it('centralizes all/month/year scope changes for screen filters', () => {
-    const onYearChange = vi.fn();
-    const onMonthChange = vi.fn();
-    function Harness() {
-      const [year, setYear] = useState(2026);
-      const [month, setMonth] = useState('');
-      return (
-        <DateMonthScopePicker
-          year={year}
-          years={[2025, 2026]}
-          month={month}
-          allowAll
-          allowYear={false}
-          fallbackMonth={7}
-          onYearChange={(value) => {
-            setYear(value);
-            onYearChange(value);
-          }}
-          onMonthChange={(value) => {
-            setMonth(value);
-            onMonthChange(value);
-          }}
-        />
-      );
-    }
-
-    render(
-      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
-        <Harness />
-      </AppTestProviders>,
-    );
-
-    fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2025' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
-    fireEvent.click(screen.getByRole('button', { name: 'All months' }));
-
-    expect(onYearChange).toHaveBeenCalledWith(2025);
-    expect(onMonthChange).toHaveBeenCalledWith('7');
-    expect(onMonthChange).toHaveBeenCalledWith('');
   });
 });

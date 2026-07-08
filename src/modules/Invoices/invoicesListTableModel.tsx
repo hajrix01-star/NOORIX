@@ -6,6 +6,7 @@ import { PAGE_SIZE } from './invoicesListScreenHelpers';
 import {
   asInvoiceTableNumber,
   asInvoiceTableText,
+  compactInvoiceDocumentNumber,
   formatInvoiceTableDate,
   getInvoiceTableAmountToneClass,
   getInvoiceTableDocumentToneClass,
@@ -67,6 +68,22 @@ function renderTextCell(value: unknown, className = 'nx-cell-ellipsis') {
   return (
     <span className={className} title={text}>
       {text}
+    </span>
+  );
+}
+
+function renderDocumentCell(row: InvoiceTableRow) {
+  const fullNumber = asInvoiceTableText(row.invoiceNumber);
+  const compactNumber = compactInvoiceDocumentNumber(row.invoiceNumber);
+  const date = formatInvoiceTableDate(row.transactionDate);
+  const title = date === getInvoiceTableEmptyValue() ? fullNumber : `${fullNumber} - ${date}`;
+
+  return (
+    <span className="flex min-w-0 flex-col items-center justify-center gap-0.5 leading-tight" title={title}>
+      <span className={cn('nx-cell-num max-w-full truncate font-bold', getInvoiceTableDocumentToneClass(row))}>
+        {compactNumber}
+      </span>
+      <span className="nx-cell-muted-sm whitespace-nowrap">{date}</span>
     </span>
   );
 }
@@ -148,19 +165,13 @@ export function buildInvoiceListColumns({
     {
       key: 'invoiceNumber',
       kind: 'id',
+      size: 'document',
       label: t('documentNumber'),
       align: 'center',
       shrink: true,
-      width: '14ch',
+      width: '10ch',
       sortable: true,
-      render: (value: unknown, row: InvoiceTableRow) => (
-        <span
-          className={cn('nx-cell-num nx-cell-ellipsis font-bold', getInvoiceTableDocumentToneClass(row))}
-          title={asInvoiceTableText(value)}
-        >
-          {asInvoiceTableText(value)}
-        </span>
-      ),
+      render: (_value: unknown, row: InvoiceTableRow) => renderDocumentCell(row),
     },
     {
       key: 'supplierInvoiceNumber',
@@ -215,6 +226,7 @@ export function buildInvoiceListColumns({
     {
       key: 'netAmount',
       kind: 'money',
+      size: 'money-sm',
       label: t('net'),
       align: 'center',
       numeric: true,
@@ -226,6 +238,7 @@ export function buildInvoiceListColumns({
     {
       key: 'taxAmount',
       kind: 'money',
+      size: 'tax',
       label: t('tax'),
       align: 'center',
       numeric: true,
@@ -236,6 +249,7 @@ export function buildInvoiceListColumns({
     {
       key: 'totalAmount',
       kind: 'money',
+      size: 'money-md',
       label: t('total'),
       align: 'center',
       numeric: true,
@@ -243,16 +257,6 @@ export function buildInvoiceListColumns({
       width: '11ch',
       sortable: true,
       render: (value: unknown) => <FmtNum n={asInvoiceTableNumber(value)} className="nx-cell-num nx-cell-bold" />,
-    },
-    {
-      key: 'transactionDate',
-      kind: 'date',
-      label: t('date'),
-      align: 'center',
-      sortable: true,
-      shrink: true,
-      width: '11ch',
-      render: (value: unknown) => <span className="nx-cell-muted-sm">{formatInvoiceTableDate(value)}</span>,
     },
     {
       key: 'status',
@@ -335,7 +339,9 @@ export function createInvoiceCompactRowRenderer({
     return (
       <div className="cursor-pointer" onClick={() => setViewingInvoice?.(row)}>
         <div className="nx-cr__line1">
-          <span className={`nx-cr__id ${amountToneClass}`}>{asInvoiceTableText(row.invoiceNumber)}</span>
+          <span className={`nx-cr__id ${amountToneClass}`} title={asInvoiceTableText(row.invoiceNumber)}>
+            {compactInvoiceDocumentNumber(row.invoiceNumber)}
+          </span>
           <Badge {...Badge.fromStatus(row.kind, KIND_MAP)} size="sm" />
           <span className="nx-cr__sub flex-1">{asInvoiceTableText(row.supplierName)}</span>
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />
@@ -396,7 +402,9 @@ export function createInvoiceListMobileCardRenderer({
   return (row: InvoiceTableRow) => (
     <div>
       <div className="nx-mc__header">
-        <span className="nx-cell-num nx-cell-accent text-[14px]">{asInvoiceTableText(row.invoiceNumber)}</span>
+        <span className="nx-cell-num nx-cell-accent text-[14px]" title={asInvoiceTableText(row.invoiceNumber)}>
+          {compactInvoiceDocumentNumber(row.invoiceNumber)}
+        </span>
         <div className="nx-mc__meta">
           <span className="nx-cell-muted-sm">{formatInvoiceTableDate(row.transactionDate)}</span>
           <Badge {...Badge.fromStatus(row.status, STATUS_MAP)} size="sm" />

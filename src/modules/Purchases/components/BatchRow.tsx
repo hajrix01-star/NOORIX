@@ -4,7 +4,7 @@
  * الحقول المشتركة: BatchRowParts + useBatchRowLogic
  */
 import React, { memo, useMemo } from 'react';
-import { Input, Button, Card, Checkbox, DateField, FileTrigger, FormRow, SearchableOptionsPicker, cn } from '../../../ui';
+import { Input, Button, Card, Checkbox, TransactionDatePicker, FileTrigger, FormRow, SearchableOptionsPicker, cn } from '../../../ui';
 import { useBatchRowLogic, useBatchRowFieldIds } from './useBatchRowLogic';
 import {
   BatchSupplierPickInner,
@@ -124,7 +124,7 @@ function BatchRowTable(props: BatchRowSharedProps) {
       </td>
 
       <td style={cp}>
-        <DateField
+        <TransactionDatePicker
           dir="ltr"
           value={row.invoiceDate}
           max={maxInvoiceDate || undefined}
@@ -350,7 +350,7 @@ function BatchRowStack(props: BatchRowSharedProps) {
 
         <BatchNetTaxReadonly net={net} tax={tax} variant="stack" t={t} />
 
-        <DateField
+        <TransactionDatePicker
           id={ids.invoiceDate}
           label={t('date')}
           size="sm"

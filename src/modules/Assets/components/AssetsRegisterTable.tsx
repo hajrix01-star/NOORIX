@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { SmartTable, Badge, KebabMenu } from '../../../ui';
+import { SmartTable, Badge, KebabMenu, type SmartTableColumn } from '../../../ui';
 import { formatMoney } from '../../../utils/money';
 import type { AssetRegisterListItem } from '../types';
 import { formatAssetDate, getSupplierDisplayName } from '../utils/assetsRegisterMappers';
@@ -43,20 +43,28 @@ export function AssetsRegisterTable({
 }: AssetsRegisterTableProps) {
   const warrantyBadgeMap = useWarrantyBadgeMap(t);
 
-  const columns = useMemo(
+  const columns = useMemo<SmartTableColumn<AssetRegisterListItem>[]>(
     () => [
       {
         key: 'nameAr',
+        size: 'name',
         header: t('assetName'),
         render: (_: unknown, row: AssetRegisterListItem) => (
           <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="font-semibold text-noorix-text truncate">{String(row.nameAr ?? '')}</span>
-            {row.nameEn ? <span className="text-[12px] text-noorix-muted truncate">{String(row.nameEn)}</span> : null}
+            <span className="font-semibold text-noorix-text truncate" title={String(row.nameAr ?? '')}>
+              {String(row.nameAr ?? '')}
+            </span>
+            {row.nameEn ? (
+              <span className="text-[12px] text-noorix-muted truncate" title={String(row.nameEn)}>
+                {String(row.nameEn)}
+              </span>
+            ) : null}
           </div>
         ),
       },
       {
         key: 'serialNumber',
+        size: 'serial-code',
         header: t('assetSerial'),
         render: (_: unknown, row: AssetRegisterListItem) => (
           <span className="text-[13px] ltr inline-block">{row.serialNumber || '—'}</span>
@@ -64,6 +72,7 @@ export function AssetsRegisterTable({
       },
       {
         key: 'purchaseDate',
+        size: 'date',
         header: t('assetPurchaseDate'),
         render: (_: unknown, row: AssetRegisterListItem) => (
           <span className="text-[13px] ltr">{formatAssetDate(row.purchaseDate)}</span>
@@ -71,6 +80,7 @@ export function AssetsRegisterTable({
       },
       {
         key: 'acquisitionCost',
+        size: 'money-sm',
         header: t('assetAcquisitionCost'),
         numeric: true,
         render: (_: unknown, row: AssetRegisterListItem) =>
@@ -84,15 +94,20 @@ export function AssetsRegisterTable({
       },
       {
         key: 'supplier',
+        size: 'supplier',
         header: t('assetSupplier'),
-        render: (_: unknown, row: AssetRegisterListItem) => (
-          <span className="text-[13px] truncate max-w-[140px] inline-block">
-            {getSupplierDisplayName(row.supplier, lang)}
-          </span>
-        ),
+        render: (_: unknown, row: AssetRegisterListItem) => {
+          const supplierName = getSupplierDisplayName(row.supplier, lang);
+          return (
+            <span className="text-[13px] truncate max-w-full inline-block" title={supplierName}>
+              {supplierName}
+            </span>
+          );
+        },
       },
       {
         key: 'warrantyEndDate',
+        size: 'date',
         header: t('assetWarrantyEnd'),
         render: (_: unknown, row: AssetRegisterListItem) => (
           <span className="text-[13px] ltr">{formatAssetDate(row.warrantyEndDate)}</span>
@@ -100,6 +115,7 @@ export function AssetsRegisterTable({
       },
       {
         key: 'warrantyStatus',
+        size: 'document',
         header: t('assetWarrantyFilter'),
         render: (_: unknown, row: AssetRegisterListItem) => {
           const key = normalizeWarrantyStatus(row.warrantyStatus);
@@ -113,6 +129,7 @@ export function AssetsRegisterTable({
       },
       {
         key: 'daysToWarrantyEnd',
+        size: 'count',
         header: t('assetDaysToEnd'),
         numeric: true,
         render: (_: unknown, row: AssetRegisterListItem) =>

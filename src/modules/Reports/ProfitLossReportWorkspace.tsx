@@ -1,9 +1,10 @@
 import React from 'react';
-import { Button, DateMonthScopePicker, FilterToolbar, Input, MetricCard, cn } from '../../ui';
+import { Button, FilterToolbar, Input, MetricCard, cn } from '../../ui';
 import GeneralPlTable from './GeneralPlTable';
 import type { PlDisplayLevel } from './reportHelpers';
 import type { GeneralProfitLossReport, PlDisplayRow, ReportDetailState, ReportPeriodMode } from './reportTypes';
 import { buildProfitLossKpiCards, getProfitLossMonthNames } from './profitLossPresentationModel';
+import ReportDateFilter from './ReportDateFilter';
 
 type ProfitLossReportWorkspaceProps = {
   activeCompanyId: string | number | null | undefined;
@@ -96,17 +97,10 @@ export default function ProfitLossReportWorkspace({
           </div>
 
           <FilterToolbar variant="bare" className="nx-pl-command-center__controls">
-            <DateMonthScopePicker
-              year={year}
-              years={yearOptions}
-              month={selectedMonth}
-              mode={periodMode}
-              allowAll={false}
-              allowYear
-              fallbackMonth={selectedMonthNumber || 1}
+            <ReportDateFilter
               onYearChange={onYearChange}
               onMonthChange={onSelectedMonthChange}
-              onModeChange={(value) => onPeriodModeChange(value as ReportPeriodMode)}
+              onModeChange={onPeriodModeChange}
             />
             <div className="nx-pl-actions">
               <Button size="sm" onClick={onExportExcel} disabled={!report}>

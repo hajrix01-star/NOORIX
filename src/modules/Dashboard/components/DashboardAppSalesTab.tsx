@@ -9,7 +9,6 @@ import { FilterToolbar, SearchableOptionsPicker, SmartTable, FmtNum, type SmartT
 import { LoadingState, EmptyState } from '../../../components/states';
 import {
   buildAppSalesTableFooter,
-  buildDashboardAppSalesModel,
   buildDashboardAppSalesModelFromMetrics,
   buildDashboardAppSalesYearSpanOptions,
   parseDashboardAppSalesYearSpan,
@@ -38,7 +37,7 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
   const yearEnd = year;
   const yearStart = yearEnd - yearsSpan + 1;
 
-  const { yearSummaries, metrics, isLoading } = useDashboardSalesPack({
+  const { metrics, isLoading } = useDashboardSalesPack({
     companyId: companyId || '',
     yearStart: `${yearStart}-01-01`,
     yearEnd: `${yearEnd}-12-31`,
@@ -51,11 +50,8 @@ export default function DashboardAppSalesTab({ companyId, year }: Props) {
   const salesMetrics = metrics ?? EMPTY_METRICS;
 
   const model = useMemo(
-    () =>
-      salesMetrics.yearDaily.length || salesMetrics.yearChannels.length
-        ? buildDashboardAppSalesModelFromMetrics(salesMetrics.yearDaily, salesMetrics.yearChannels, lang, yearEnd, yearsSpan)
-        : buildDashboardAppSalesModel(yearSummaries, lang, yearEnd, yearsSpan),
-    [salesMetrics.yearDaily, salesMetrics.yearChannels, yearSummaries, lang, yearEnd, yearsSpan],
+    () => buildDashboardAppSalesModelFromMetrics(salesMetrics.yearDaily, salesMetrics.yearChannels, lang, yearEnd, yearsSpan),
+    [salesMetrics.yearDaily, salesMetrics.yearChannels, lang, yearEnd, yearsSpan],
   );
 
   const periodLabel = useMemo(() => {

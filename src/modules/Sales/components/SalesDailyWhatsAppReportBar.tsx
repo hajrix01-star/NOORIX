@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { getSaudiToday, formatSaudiDate, formatSaudiWeekdayName } from '../../../utils/saudiDate';
 import { fetchAllSalesSummariesForExport } from '../../../services/api';
-import { Button, DateField } from '../../../ui';
+import { Button, TransactionDatePicker } from '../../../ui';
 import {
   aggregateSalesDayByShift,
   buildDailyShiftWhatsAppText,
@@ -77,7 +77,7 @@ export function SalesDailyWhatsAppReportBar({ companyId, companyName, disabled }
   return (
     <div className="noorix-surface-card flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-end print:hidden">
       <div className="flex-1 min-w-[min(100%,200px)] max-w-[220px]">
-        <DateField
+        <TransactionDatePicker
           label={t('salesDailyWaPickDay')}
           value={reportDate}
           onValueChange={setReportDate}

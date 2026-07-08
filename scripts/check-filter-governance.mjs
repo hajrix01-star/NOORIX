@@ -51,12 +51,8 @@ for (const file of walk(path.join(root, 'src'))) {
     if (/type=["']select["']/.test(text)) {
       failures.push(`${normalized} renders Input type="select"; use SearchableOptionsPicker for filter choices`);
     }
-    if (
-      text.includes('DateMonthScopePicker') &&
-      !text.includes('FilterToolbar') &&
-      !text.includes('HrTabToolbar')
-    ) {
-      failures.push(`${normalized} uses DateMonthScopePicker without a central filter toolbar`);
+    if (text.includes('DateMonthScopePicker') || text.includes('DateFilterMonthPicker')) {
+      failures.push(`${normalized} uses a legacy date filter; use DateFilterBar, YearDateFilter, or MonthDateFilter`);
     }
   }
 }

@@ -50,7 +50,7 @@ import {
   useOrderProducts,
   useOrderSections,
 } from '../../hooks/useOrders';
-import { Badge, Button, DateField, Input, cn } from '../../ui';
+import { Badge, Button, TransactionDatePicker, Input, cn } from '../../ui';
 import type { OrderProduct, OrderSection, StaffOrder } from '../../types/api';
 
 function createDraftLineId(productId: string): string {
@@ -433,7 +433,7 @@ export function StaffOrderPanel({
           </div>
           <div className="flex flex-col gap-2">
             {isSale && (
-              <DateField
+              <TransactionDatePicker
                 label={t('staffSaleDate')}
                 value={saleDate}
                 onValueChange={setSaleDate}

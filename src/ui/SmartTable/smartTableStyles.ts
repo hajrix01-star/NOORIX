@@ -2,7 +2,7 @@ import type React from 'react';
 import type { SmartTableProps } from './types';
 
 export const DEFAULT_INNER_PADDING = 8;
-export const DEFAULT_ROW_NUMBER_WIDTH = 40;
+export const DEFAULT_ROW_NUMBER_WIDTH = 34;
 
 export type SmartTableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
 
@@ -37,8 +37,23 @@ export function buildTableStyle({
   };
 }
 
+export function buildColumnStyle({
+  width,
+  minWidth,
+  maxWidth,
+}: {
+  width: number | string | undefined;
+  minWidth?: number | string;
+  maxWidth?: number | string;
+}): React.CSSProperties {
+  return {
+    width: cssLength(width),
+    minWidth: cssLength(minWidth),
+    maxWidth: cssLength(maxWidth),
+  };
+}
+
 export function buildRowNumberHeaderStyle({
-  cellPad,
   compact,
   rowNumW,
 }: {
@@ -47,14 +62,13 @@ export function buildRowNumberHeaderStyle({
   rowNumW: number | string;
 }): SmartTableCssVars {
   return {
-    '--nx-smart-cell-padding': cellPad.th,
+    '--nx-smart-cell-padding': compact ? '4px 6px' : '5px 8px',
     '--nx-smart-cell-font-size': cssLength(compact ? 11 : 12),
     '--nx-smart-row-number-width': cssLength(rowNumW),
   };
 }
 
 export function buildRowNumberCellStyle({
-  cellPad,
   cellFs,
   rowNumW,
 }: {
@@ -63,7 +77,7 @@ export function buildRowNumberCellStyle({
   rowNumW: number | string;
 }): SmartTableCssVars {
   return {
-    '--nx-smart-cell-padding': cellPad.td,
+    '--nx-smart-cell-padding': '4px 6px',
     '--nx-smart-cell-font-size': cssLength(cellFs),
     '--nx-smart-row-number-width': cssLength(rowNumW),
   };

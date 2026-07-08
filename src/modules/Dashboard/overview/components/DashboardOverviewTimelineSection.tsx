@@ -26,6 +26,19 @@ type SeriesRow = {
 
 type ChannelRow = { name: string; value: number; pct: string };
 
+const TIMELINE_CHART_MARGIN = { top: 4, right: 4, left: -10, bottom: 0 };
+const TIMELINE_GRID_DASH = '3 3';
+const TIMELINE_X_TICK = {
+  fontSize: 10,
+  fill: 'var(--noorix-text-muted)',
+  fontFamily: 'var(--noorix-font-primary)',
+};
+const TIMELINE_Y_TICK = {
+  fontSize: 10,
+  fill: 'var(--noorix-text-muted)',
+};
+const TIMELINE_BAR_RADIUS: [number, number, number, number] = [4, 4, 0, 0];
+
 type Props = {
   lang: string;
   timelineGrain: string;
@@ -165,20 +178,20 @@ export function DashboardOverviewTimelineSection({
           <ResponsiveContainer width="100%" height={240}>
             <BarChart
               data={performanceData}
-              margin={{ top: 4, right: 4, left: -10, bottom: 0 }}
+              margin={TIMELINE_CHART_MARGIN}
               barCategoryGap={timelineGrain === 'monthly' ? '22%' : '12%'}
               barGap={3}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--noorix-border)" opacity={0.6} vertical={false} />
+              <CartesianGrid strokeDasharray={TIMELINE_GRID_DASH} stroke="var(--noorix-border)" opacity={0.6} vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)', fontFamily: 'var(--noorix-font-primary)' }}
+                tick={TIMELINE_X_TICK}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 tickFormatter={(n: number) => formatCompactNumber(n, lang)}
-                tick={{ fontSize: 10, fill: 'var(--noorix-text-muted)' }}
+                tick={TIMELINE_Y_TICK}
                 axisLine={false}
                 tickLine={false}
                 width={46}
@@ -192,7 +205,7 @@ export function DashboardOverviewTimelineSection({
                     name={s.label}
                     fill={s.color}
                     fillOpacity={0.9}
-                    radius={[4, 4, 0, 0]}
+                    radius={TIMELINE_BAR_RADIUS}
                     maxBarSize={timelineGrain === 'monthly' ? 28 : 12}
                   />
                 ) : null,

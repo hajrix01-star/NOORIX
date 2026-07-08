@@ -64,13 +64,13 @@ export default function ExpenseLineDetailModal({
   const periodSummary = summarizeExpensePaymentsFromBackend(paymentsData?.periodSummary);
 
   const paymentColumns = useMemo<SmartTableColumn<ExpenseLinePaymentRecord>[]>(() => [
-    { key: 'invoiceNumber', label: t('documentNumber'), render: (_value, row) => <span className="nx-cell-num font-semibold">{row.invoiceNumber || '-'}</span> },
-    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), render: (_value, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '-'}</span> },
-    { key: 'transactionDate', label: t('date'), render: (value) => <span className="nx-cell-muted">{value ? formatSaudiDate(value) : '-'}</span> },
-    { key: 'coverage', label: t('expenseCoverageColumn'), render: (_value, row) => <span className="nx-cell-muted ltr">{formatExpenseCoverage(row)}</span> },
-    { key: 'totalAmount', label: t('amount'), render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num nx-cell-num--green font-semibold" /> },
-    { key: 'vaultName', label: t('invoiceVaultColumn'), render: (_value, row) => <span className="nx-cell-muted">{row.vaultName || row.vault?.nameAr || row.vault?.nameEn || '-'}</span> },
-    { key: 'notes', label: t('notes'), render: (value) => <span className="nx-cell-ellipsis">{String(value || '-')}</span> },
+    { key: 'invoiceNumber', size: 'document', label: t('documentNumber'), render: (_value, row) => <span className="nx-cell-num font-semibold">{row.invoiceNumber || '-'}</span> },
+    { key: 'supplierInvoiceNumber', size: 'document', label: t('supplierInvoiceNumber'), render: (_value, row) => <span className="nx-cell-num nx-cell-muted">{row.supplierInvoiceNumber || '-'}</span> },
+    { key: 'transactionDate', size: 'date', label: t('date'), render: (value) => <span className="nx-cell-muted">{value ? formatSaudiDate(value) : '-'}</span> },
+    { key: 'coverage', size: 'document', label: t('expenseCoverageColumn'), render: (_value, row) => <span className="nx-cell-muted ltr">{formatExpenseCoverage(row)}</span> },
+    { key: 'totalAmount', size: 'money-md', label: t('amount'), numeric: true, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num nx-cell-num--green font-semibold" /> },
+    { key: 'vaultName', size: 'name', label: t('invoiceVaultColumn'), render: (_value, row) => <span className="nx-cell-muted">{row.vaultName || row.vault?.nameAr || row.vault?.nameEn || '-'}</span> },
+    { key: 'notes', size: 'name', label: t('notes'), render: (value) => <span className="nx-cell-ellipsis">{String(value || '-')}</span> },
   ], [t]);
 
   const paymentExportData = useMemo(
@@ -152,7 +152,6 @@ export default function ExpenseLineDetailModal({
         columns={paymentColumns}
         data={payments}
         showRowNumbers
-        rowNumberWidth="1%"
         total={paymentsData?.total ?? 0}
         page={page}
         pageSize={paymentsData?.pageSize ?? 20}

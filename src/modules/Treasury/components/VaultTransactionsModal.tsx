@@ -274,7 +274,6 @@ export default function VaultTransactionsModal({
         columns={columns}
         data={items}
         showRowNumbers
-        rowNumberWidth="1%"
         total={data.total}
         page={page}
         pageSize={PAGE_SIZE}

@@ -5,7 +5,7 @@ import { useTaxReport } from '../../hooks/useReports';
 import { exportToExcel } from '../../utils/exportUtils';
 import { openPrintWindow } from '../../utils/printUtils';
 import { fmtTax } from '../../utils/format';
-import { Badge, Button, Checkbox, DateMonthScopePicker, FilterToolbar, FmtNum, Input, SearchableOptionsPicker } from '../../ui';
+import { Badge, Button, Checkbox, FilterToolbar, FmtNum, Input, SearchableOptionsPicker } from '../../ui';
 import {
   INPUT_ROWS,
   OUTPUT_ROWS,
@@ -25,6 +25,7 @@ import {
   updateTaxDisclosureRow,
   type TaxDraftSource,
 } from './taxReportTabModel';
+import ReportDateFilter from './ReportDateFilter';
 
 export default function TaxReportTab() {
   const { activeCompanyId, companies } = useApp();
@@ -144,16 +145,7 @@ export default function TaxReportTab() {
               <span className="mt-0.5 block text-noorix-muted">{t('taxImportSalesInclusiveHint')}</span>
             </span>
           </label>
-          <DateMonthScopePicker
-            year={year}
-            years={[currentYear, currentYear - 1, currentYear - 2]}
-            mode="year"
-            allowAll={false}
-            allowYear
-            allowMonth={false}
-            onYearChange={setYear}
-            onMonthChange={() => {}}
-          />
+          <ReportDateFilter onYearChange={setYear} />
           <div className="w-full min-w-0 sm:w-[min(100%,11rem)]">
             <SearchableOptionsPicker
               label={lang === 'ar' ? 'الفترة' : 'Period'}

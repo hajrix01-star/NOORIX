@@ -493,6 +493,7 @@ export default {
   roleCashier: { ar: 'كاشير', en: 'Cashier' },
   dateFilterAll: { ar: 'الكل', en: 'All' },
   dateFilterMonth: { ar: 'شهر', en: 'Month' },
+  dateFilterQuarter: { ar: 'ربع', en: 'Quarter' },
   dateFilterYear: { ar: 'السنة', en: 'Year' },
   dateFilterDay: { ar: 'يوم', en: 'Day' },
   dateFilterRange: { ar: 'نطاق', en: 'Range' },

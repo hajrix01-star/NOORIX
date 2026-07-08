@@ -9,7 +9,7 @@ import { expenseKeys } from '../../../services/queryKeys';
 import { fmt } from '../../../utils/format';
 import { vatRateDecimalFromCompany } from '../../../utils/vatRate';
 import { useApp } from '../../../context/AppContext';
-import { Button, AdaptiveSheet, Checkbox, DateField, FileTrigger, Input, SearchableOptionsPicker } from '../../../ui';
+import { Button, AdaptiveSheet, Checkbox, TransactionDatePicker, FileTrigger, Input, SearchableOptionsPicker } from '../../../ui';
 import {
   canExemptThisExpensePayment,
   isExpensePaymentTaxable,
@@ -303,7 +303,7 @@ export default function ExpenseFormModal({ companyId, onClose, onSaved }: Expens
           </div>
         ) : null}
 
-        <DateField
+        <TransactionDatePicker
           label={`${t('date')} *`}
           value={form.transactionDate}
           onValueChange={(value) => set('transactionDate', value)}

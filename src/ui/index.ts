@@ -12,8 +12,8 @@ import './ui.css';
 
 export { default as Button          } from './Button';
 export { default as Input           } from './Input';
-export { DateField, DateRangeField, DateFilterBar, DateFilterMonthPicker, DateMonthScopePicker, useDateFilter } from './date';
-export type { DateFieldProps, DateRangeFieldProps, DateFilterBarProps, DateFilterController, DateFilterMonthPickerProps, DateMonthScopeMode, DateMonthScopePickerProps } from './date';
+export { DateField, TransactionDatePicker, DateRangeField, DateFilterBar, YearDateFilter, MonthDateFilter, useDateFilter } from './date';
+export type { DateFieldProps, TransactionDatePickerProps, DateRangeFieldProps, DateFilterBarProps, YearDateFilterProps, MonthDateFilterProps, DateFilterController } from './date';
 export { default as Checkbox        } from './Checkbox';
 export { default as Radio           } from './Radio';
 export { default as FileInput       } from './FileInput';
@@ -81,6 +81,7 @@ export { FmtNum } from './FmtNum';
 export {
   default as SmartTable,
   type SmartTableColumn,
+  type SmartTableColumnSize,
   type SmartTableDataMode,
   type SmartTableFooterSegment,
   type SmartTableProps,

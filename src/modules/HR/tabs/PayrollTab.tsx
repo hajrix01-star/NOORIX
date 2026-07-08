@@ -21,7 +21,7 @@ import { PayrollRunDetailModal } from '../components/PayrollRunDetailModal';
 import { HRActionsCell } from '../components/HRActionsCell';
 import { useToast } from '../../../context/ToastContext';
 import { useApiMutation } from '../../../hooks/useApiMutation';
-import { Button, Badge, DateField, DateMonthScopePicker, Input, Modal, FmtNum, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, DateField, Input, Modal, FmtNum, KebabMenu, SmartTable, YearDateFilter } from '../../../ui';
 import { buildPayrollRunStatusMap } from '../../../constants/badgeMaps';
 import { canDeletePayrollRunRole, resolveUserRole } from '../../../constants/permissions';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -355,18 +355,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
     });
   }
 
-  const yearLeading = (
-    <DateMonthScopePicker
-      year={year}
-      years={[new Date().getFullYear(), new Date().getFullYear() - 1]}
-      mode="year"
-      allowAll={false}
-      allowYear
-      allowMonth={false}
-      onYearChange={setYear}
-      onMonthChange={() => {}}
-    />
-  );
+  const yearLeading = <YearDateFilter year={year} onYearChange={setYear} />;
 
   return (
     <HrFlatListTabShell
@@ -394,7 +383,6 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="1%"
           {...hrFlatSmartTableShellProps(embedded)}
           columns={columns}
           data={filteredData}

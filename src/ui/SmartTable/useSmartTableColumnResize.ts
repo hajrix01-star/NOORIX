@@ -1,5 +1,11 @@
 import { useCallback, useRef, useState } from 'react';
 
+const COLUMN_WIDTH_STORAGE_VERSION = 'v2';
+
+function columnWidthStorageKey(tableId: string) {
+  return `nx-col-widths:${COLUMN_WIDTH_STORAGE_VERSION}:${tableId}`;
+}
+
 export function useSmartTableColumnResize({
   dir,
   tableId,
@@ -11,7 +17,7 @@ export function useSmartTableColumnResize({
   const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
     if (!tableId) return {};
     try {
-      const saved = localStorage.getItem(`nx-col-widths:${tableId}`);
+      const saved = localStorage.getItem(columnWidthStorageKey(tableId));
       return saved ? (JSON.parse(saved) as Record<string, number>) : {};
     } catch {
       return {};
@@ -38,7 +44,7 @@ export function useSmartTableColumnResize({
       document.body.style.userSelect = '';
       if (tableId) {
         setColWidths((prev: any) => {
-          try { localStorage.setItem(`nx-col-widths:${tableId}`, JSON.stringify(prev)); } catch { /* noop */ }
+          try { localStorage.setItem(columnWidthStorageKey(tableId), JSON.stringify(prev)); } catch { /* noop */ }
           return prev;
         });
       }

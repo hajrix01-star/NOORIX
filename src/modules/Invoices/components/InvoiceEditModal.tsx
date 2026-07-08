@@ -13,7 +13,7 @@ import {
   throwIfApiFailed,
 } from '../../../services/api';
 import { vaultDisplayName } from '../../../utils/vaultDisplay';
-import { Button, Checkbox, DateField, FileTrigger, Input, AdaptiveSheet, SearchableOptionsPicker } from '../../../ui';
+import { Button, Checkbox, TransactionDatePicker, FileTrigger, Input, AdaptiveSheet, SearchableOptionsPicker } from '../../../ui';
 
 import {
   EMPTY_INVOICE_EDIT_FORM,
@@ -305,7 +305,7 @@ export function InvoiceEditModal({
           )}
         </div>
 
-        <DateField
+        <TransactionDatePicker
           label={t('transactionDateLabel')}
           value={form.transactionDate}
           onValueChange={(value) => updateField('transactionDate', value)}

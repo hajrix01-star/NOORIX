@@ -8,9 +8,13 @@ import { useApp } from '../../context/AppContext';
 import { CARD_STYLES, CARD_STYLE_KEY } from '../../constants/cardStyles';
 import type { CardStyleDefinition, CardStyleId } from '../../constants/cardStyles';
 import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
+import ThemeFiltersV2Tab from './ThemeFiltersV2Tab';
+import ThemeFiltersV3Tab from './ThemeFiltersV3Tab';
+import ThemeGlobalTableConceptTab from './ThemeGlobalTableConceptTab';
+import ThemeTableContainersTab from './ThemeTableContainersTab';
 import ThemeUILabTab, { ShadcnInspiredDateFilterSamples } from './ThemeUILabTab';
 
-type ThemePreviewTabId = 'filters' | 'cards' | 'uilab';
+type ThemePreviewTabId = 'filters' | 'filtersV2' | 'filtersV3' | 'cards' | 'tables' | 'globalTable' | 'uilab';
 
 type CardPreviewProps = CardStyleDefinition & {
   styleId: CardStyleId;
@@ -45,7 +49,7 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
   );
 }
 
-const THEME_PREVIEW_TAB_IDS: readonly ThemePreviewTabId[] = ['filters', 'cards', 'uilab'];
+const THEME_PREVIEW_TAB_IDS: readonly ThemePreviewTabId[] = ['filters', 'filtersV2', 'filtersV3', 'cards', 'tables', 'globalTable', 'uilab'];
 
 export default function ThemePreviewScreen() {
   const { t, lang } = useTranslation();
@@ -56,10 +60,14 @@ export default function ThemePreviewScreen() {
   const tabItems = useMemo(
     () => [
       { id: 'filters', label: t('themePreviewTabFilters') },
+      { id: 'filtersV2', label: lang === 'ar' ? 'فلاتر 2' : 'Filters 2' },
+      { id: 'filtersV3', label: lang === 'ar' ? 'فلتر مقترح 1' : 'Proposed Filter 1' },
       { id: 'cards', label: t('themePreviewTabCards') },
+      { id: 'tables', label: lang === 'ar' ? 'حاويات الجداول' : 'Table surfaces' },
+      { id: 'globalTable', label: lang === 'ar' ? 'ثيم جداول عالمي' : 'Global table theme' },
       { id: 'uilab', label: t('themePreviewTabUILab') },
     ],
-    [t],
+    [lang, t],
   );
 
   const handleSelect = (id: CardStyleId) => {
@@ -88,6 +96,8 @@ export default function ThemePreviewScreen() {
             <ShadcnInspiredDateFilterSamples t={t} />
           </div>
         )}
+        {activeTab === 'filtersV2' && <ThemeFiltersV2Tab />}
+        {activeTab === 'filtersV3' && <ThemeFiltersV3Tab />}
         {activeTab === 'cards' && (
           <div className="flex flex-col gap-5">
             <p className="text-[14px] text-noorix-muted m-0">{t('themePreviewCardsIntro')}</p>
@@ -116,6 +126,8 @@ export default function ThemePreviewScreen() {
             </div>
           </div>
         )}
+        {activeTab === 'tables' && <ThemeTableContainersTab />}
+        {activeTab === 'globalTable' && <ThemeGlobalTableConceptTab />}
         {activeTab === 'uilab' && <ThemeUILabTab />}
       </ScreenTabs>
     </ScreenShell>

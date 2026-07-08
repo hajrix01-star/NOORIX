@@ -17,7 +17,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | Date inputs | Use Noorix `DateField` instead of direct `Input type="date"` in safe screens |
 | Date ranges | Use Noorix `DateRangeField` for from/to pairs |
 | Period filters | Keep `DateFilterBar` behavior and migrate internals gradually |
-| Date filter import path | Use `src/ui/date` as the official home for `DateFilterBar`, `DateFilterMonthPicker`, and `useDateFilter` |
+| Date filter import path | Use `src/ui/date` as the official home for `DateFilterBar`, `YearDateFilter`, `MonthDateFilter`, `TransactionDatePicker`, and `useDateFilter` |
 | Date labels | Generate Gregorian month/weekday labels centrally via `src/ui/date/dateLocale.ts` |
 | Date governance | Block new direct `type="date"` usage outside documented exceptions |
 | Protected domains | Skip payroll, tax, bank, purchases, invoices, sales, expenses, treasury, and reports in this batch |
@@ -32,7 +32,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/DateRangeField.tsx` | Central from/to date wrapper with explicit end min boundary |
 | `src/ui/date/DateFilterBar.tsx` | Official Noorix period filter bar used by screens |
 | `src/ui/date/useDateFilter.ts` | Official period filter controller hook used by date-aware screens |
-| `src/ui/date/MonthPicker.tsx` | Central floating month picker behind the old `DateFilterMonthPicker` API |
+| `src/ui/date/MonthDateFilter.tsx` | Central month-only adapter powered by `DateFilterBar` |
 | `src/ui/date/PeriodCalendars.tsx` | Central month/year/day range calendars used by `DateFilterBar` |
 | `src/ui/date/DatePeriodControls.tsx` | Central period mode buttons, pending badge, and apply/reset actions |
 | `src/ui/date/useFloatingPopover.ts` | Central fixed-position popover behavior with outside-click and Escape handling |
@@ -42,7 +42,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 | `src/ui/date/DateField.test.tsx` | Unit coverage for emitted date values and range boundaries |
 | `src/ui/date/DateFilterBar.test.tsx` | Official behavior coverage for period filter month/day/year flows |
 | `src/ui/date/datePeriodDraft.test.ts` | Unit coverage for period mode-change behavior |
-| `src/ui/index.ts` | Exposes `DateField`, `DateRangeField`, `DateFilterBar`, `DateFilterMonthPicker`, and `useDateFilter` through the official UI kit |
+| `src/ui/index.ts` | Exposes `DateField`, `DateRangeField`, `DateFilterBar`, `YearDateFilter`, `MonthDateFilter`, `TransactionDatePicker`, and `useDateFilter` through the official UI kit |
 | `src/shared/components/DateFilterBar.tsx` | Backward-compatible shim only; new imports should use `src/ui/date` |
 | `src/hooks/useDateFilter.ts` | Backward-compatible hook shim only; new imports should use `src/ui/date` |
 | `src/hooks/useMediaQuery.ts` | Backward-compatible responsive shim only; new imports should use `src/ui` |
@@ -73,7 +73,7 @@ Improve daily user experience by centralizing repeated interactions without repl
 
 ## Next RFC
 
-Future work should extract a `CalendarPopover`, `MonthPicker`, and `YearPicker` from `DateFilterBar` only after this low-risk wrapper layer is stable.
+Future work should extract lower-level calendar primitives from `DateFilterBar` only after this centralized layer is stable.
 
 ## Test Cadence
 

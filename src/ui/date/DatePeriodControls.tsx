@@ -12,7 +12,7 @@ export type DatePeriodModeGroupProps = {
   mode: DatePeriodMode;
   options: DatePeriodModeOption[];
   ariaLabel: string;
-  onModeChange: (mode: DatePeriodMode) => void;
+  onModeChange: (mode: DatePeriodMode, trigger: HTMLButtonElement) => void;
 };
 
 export function DatePeriodModeGroup({
@@ -31,7 +31,7 @@ export function DatePeriodModeGroup({
           variant="raw"
           className={`ndfb-mode-btn${mode === item.id ? ' ndfb-mode-btn--active' : ''}`}
           aria-pressed={mode === item.id}
-          onClick={() => onModeChange(item.id)}
+          onClick={(event: React.MouseEvent<HTMLButtonElement>) => onModeChange(item.id, event.currentTarget)}
         >
           {item.label}
         </Button>

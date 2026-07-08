@@ -22,6 +22,7 @@ import { useSmartTableColumnVisibility } from './useSmartTableColumnVisibility';
 import {
   DEFAULT_INNER_PADDING,
   buildBodyCellStyle,
+  buildColumnStyle,
   buildFrameStyle,
   buildHeaderCellStyle,
   buildRowNumberCellStyle,
@@ -218,6 +219,28 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
             className="noorix-table nx-smart-table-vars w-full"
             style={tableStyle}
           >
+            <colgroup>
+              {showRowNumbers && (
+                <col style={buildColumnStyle({ width: rowNumW, minWidth: rowNumW, maxWidth: rowNumW })} />
+              )}
+              {visibleColumns.map((col: any) => {
+                const colWidth = colWidths[col.key] != null
+                  ? colWidths[col.key]
+                  : (col.width ?? (col.shrink === true ? '1%' : undefined));
+                return (
+                  <col
+                    key={col.key}
+                    data-column-kind={col.kind}
+                    data-column-size={col.size}
+                    style={buildColumnStyle({
+                      width: colWidth,
+                      minWidth: col.minWidth,
+                      maxWidth: colWidths[col.key] != null ? undefined : col.maxWidth,
+                    })}
+                  />
+                );
+              })}
+            </colgroup>
             <thead>
               <tr>
                 {showRowNumbers && (
@@ -247,6 +270,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                       )}
                       style={buildHeaderCellStyle({ col, effectiveWidth, resizableCol, shrink, cellPad, compact })}
                       data-column-kind={col.kind}
+                      data-column-size={col.size}
                       aria-sort={col.sortable ? columnState.ariaSort : undefined}
                       onClick={columnState.canSort ? () => tableEngine.toggleSort(col.key) : undefined}
                     >
@@ -323,6 +347,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                           cellFs,
                         })}
                         data-column-kind={col.kind}
+                        data-column-size={col.size}
                       >
                         {col.render ? col.render(value, row, i) : (value ?? '—')}
                       </td>

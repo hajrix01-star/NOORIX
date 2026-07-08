@@ -1,7 +1,6 @@
 import React from 'react';
 import { toYmd } from '../../../../../utils/saudiDate';
 import type { DashboardCalendarDay, DashboardSalesSummary } from '../../../../../types/api/domains/dashboard';
-import { toDashboardNumber } from '../../../utils/dashboardNumberModel';
 import CalendarDayDetailPanel from '../../CalendarDayDetailPanel';
 
 export interface DashboardCalendarSideDetailProps {
@@ -42,7 +41,7 @@ export default function DashboardCalendarSideDetail({
       onSaveNote={(note: string) => onSaveNote(selectedDay.dateStr, note)}
       onPrint={() => {
         const daySummaries = summaries.filter((summary) => toYmd(summary.transactionDate) === selectedDay.dateStr);
-        const totalAmount = daySummaries.reduce((sum, summary) => sum + toDashboardNumber(summary.totalAmount), 0);
+        const totalAmount = selectedDay.amount;
         const achieved = selectedDay.dayTarget != null && totalAmount >= selectedDay.dayTarget;
         onPrintDayDetails(selectedDay.dateStr, selectedDay.dayTarget, daySummaries, totalAmount, achieved);
       }}

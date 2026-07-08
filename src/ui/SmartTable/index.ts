@@ -1,5 +1,11 @@
 export { default } from './SmartTable';
-export type { SmartTableColumn, SmartTableDataMode, SmartTableFooterSegment, SmartTableProps } from './types';
+export type {
+  SmartTableColumn,
+  SmartTableColumnSize,
+  SmartTableDataMode,
+  SmartTableFooterSegment,
+  SmartTableProps,
+} from './types';
 export { useSmartTableEngine } from './tableEngine';
 export type {
   SmartTableEngineColumnState,

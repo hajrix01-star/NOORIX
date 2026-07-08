@@ -13,7 +13,6 @@ export function EmployeeProfilePayrollSection({ t, payrollItems, payrollRunStatu
       <SmartTable
         compact
         showRowNumbers
-        rowNumberWidth="1%"
         innerPadding={8}
         columns={[
           {

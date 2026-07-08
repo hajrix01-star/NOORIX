@@ -1,7 +1,7 @@
-﻿/**
- * DailySalesScreen — ملخص المبيعات اليومي
- * يعتمد على: useDailySalesScreen + SmartTable + utils/saudiDate, utils/format
- * يدعم: تصدير Excel، PDF، طباعة احترافية (اسم الشركة + شعار)
+/**
+ * DailySalesScreen � ???? ???????? ??????
+ * ????? ???: useDailySalesScreen + SmartTable + utils/saudiDate, utils/format
+ * ????: ????? Excel? PDF? ????? ???????? (??? ?????? + ????)
  */
 import React, { useMemo, useCallback } from 'react';
 import { formatSaudiDate } from '../../utils/saudiDate';
@@ -83,7 +83,7 @@ export default function DailySalesScreen() {
       render: (_: unknown, row: DailySalesTableRow) => (
         <div className="flex flex-col items-start gap-0.5">
           <span className="nx-cell-num nx-cell-accent">{row.summaryNumbersText || row.summaryNumber}</span>
-          {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} شفت</span> : null}
+          {row.summaries.length > 1 ? <span className="nx-cell-muted-sm">{row.summaries.length} ???</span> : null}
         </div>
       ) },
     { key: 'transactionDate', kind: 'date', label: t('transactionDate'), sortable: true, width: '13ch',
@@ -124,7 +124,7 @@ export default function DailySalesScreen() {
       <td colSpan={3} className="nx-tfoot-label">
         {t('totalSummaries', activeRowCount)}
         {displayedTotal > PAGE_SIZE ? (
-          <span className="nx-cell-muted-sm me-1.5"> (إجمالي الصفحة الحالية)</span>
+          <span className="nx-cell-muted-sm me-1.5"> (?????? ?????? ???????)</span>
         ) : null}
       </td>
       <td className="nx-tfoot-num nx-cell-num--blue">{totalCustomers.toLocaleString('en')}</td>
@@ -226,7 +226,7 @@ export default function DailySalesScreen() {
           createSummaryBatch={createSummaryBatch}
           onSuccess={(payload) => {
             const summary = Array.isArray(payload) ? payload[0] : payload;
-            showToast(`${t('summarySaved')} — ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success');
+            showToast(`${t('summarySaved')} � ${t('summaryNumber')}: ${summary?.summaryNumber || ''}`, 'success');
           }}
           onError={(msg: string) => showToast(msg || t('saveFailed'), 'error')}
           onClose={() => setShowEntryModal(false)}
@@ -269,7 +269,7 @@ export default function DailySalesScreen() {
               onClick={() => setShowImportExport(true)}
               disabled={!hasCompany}
             >
-              استيراد / تصدير
+              ??????? / ?????
             </Button>
           )}
           <Button variant="primary" size="sm" onClick={() => setShowEntryModal(true)} disabled={!hasCompany}>
@@ -324,18 +324,17 @@ export default function DailySalesScreen() {
           footerCells={footerCells}
           title={t('previousSummaries')}
           showRowNumbers
-          rowNumberWidth="1%"
           badge={
             <>
-              <span className="text-[12px] text-noorix-muted">— {dateFilter.label}</span>
+              <span className="text-[12px] text-noorix-muted">� {dateFilter.label}</span>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-noorix-blue text-[12px] font-semibold">
                 {t('summaryCount', displayedTotal)}
               </span>
               {salesFullHistory && (
                 <span className="flex flex-wrap gap-1.5 print:hidden">
-                  <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('exportExcel')}</Button>
-                  <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : 'طباعة / PDF'}</Button>
-                  <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '…' : t('print')}</Button>
+                  <Button size="sm" onClick={handleExportExcel} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '�' : t('exportExcel')}</Button>
+                  <Button size="sm" onClick={handleExportPdf} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '�' : '????? / PDF'}</Button>
+                  <Button size="sm" onClick={handlePrint} disabled={displayedTotal === 0 || exportBusy}>{exportBusy ? '�' : t('print')}</Button>
                 </span>
               )}
             </>

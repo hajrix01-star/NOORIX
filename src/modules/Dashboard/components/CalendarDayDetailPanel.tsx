@@ -8,7 +8,6 @@ import { Button, Input, FmtNum, SimpleTable } from '../../../ui';
 import type { SimpleTableColumn } from '../../../ui';
 import type { DashboardSalesSummary } from '../../../types/api/domains/dashboard';
 import { dashboardDisplayName } from '../utils/dashboardDisplayName';
-import { toDashboardNumber } from '../utils/dashboardNumberModel';
 
 type DashboardSalesSummaryRow = DashboardSalesSummary & Record<string, unknown>;
 
@@ -26,7 +25,7 @@ type CalendarDayDetailPanelProps = {
 
 export default function CalendarDayDetailPanel({
   dateStr,
-  dayAmount: _dayAmount,
+  dayAmount,
   dayTarget,
   summaries,
   companyId,
@@ -35,7 +34,6 @@ export default function CalendarDayDetailPanel({
   dayNote,
   onSaveNote,
 }: CalendarDayDetailPanelProps) {
-  void _dayAmount;
   const { t, lang } = useTranslation();
   const { companies } = useApp();
   const company = companies.find((item) => item.id === (companyId || summaries[0]?.companyId));
@@ -52,10 +50,7 @@ export default function CalendarDayDetailPanel({
     () => summaries.filter((summary) => toYmd(summary.transactionDate) === dateStr),
     [summaries, dateStr],
   );
-  const totalAmount = useMemo(
-    () => daySummaries.reduce((sum, summary) => sum + toDashboardNumber(summary.totalAmount), 0),
-    [daySummaries],
-  );
+  const totalAmount = dayAmount;
   const achieved = dayTarget != null && totalAmount >= dayTarget;
 
   const summaryColumns = useMemo<SimpleTableColumn<DashboardSalesSummaryRow>[]>(
@@ -91,7 +86,7 @@ export default function CalendarDayDetailPanel({
         numeric: true,
         render: (value) => (
           <span className="nx-cell-num font-semibold text-noorix-green">
-            <FmtNum n={toDashboardNumber(value)} />
+            <FmtNum n={Number(value || 0)} />
           </span>
         ),
       },

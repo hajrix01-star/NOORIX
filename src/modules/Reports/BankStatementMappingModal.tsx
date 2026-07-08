@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { useTranslation } from '../../i18n/useTranslation';
 import { bankStatementConfirmMapping, bankStatementGet, bankStatementSuggestHeaderMetadata } from '../../services/api';
-import { Button, AdaptiveSheet, DateField, Input } from '../../ui';
+import { Button, AdaptiveSheet, DateRangeField, Input } from '../../ui';
 import {
   autoDetectRows,
   autoDetectColumns,
@@ -310,8 +310,15 @@ export default function BankStatementMappingModal({ statement, companyId, onClos
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setBankName(event.target.value)}
             placeholder={t('bankMapBankPlaceholder')}
           />
-          <DateField label={t('bankMapPeriodFrom')} value={startDate} onValueChange={setStartDate} />
-          <DateField label={t('bankMapPeriodTo')} value={endDate} onValueChange={setEndDate} />
+          <DateRangeField
+            startLabel={t('bankMapPeriodFrom')}
+            endLabel={t('bankMapPeriodTo')}
+            startValue={startDate}
+            endValue={endDate}
+            minEnd={startDate}
+            onStartChange={setStartDate}
+            onEndChange={setEndDate}
+          />
         </div>
       </div>
 

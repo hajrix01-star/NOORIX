@@ -2,7 +2,7 @@
  * نموذج إضافة/تعديل أصل — AdaptiveSheet (لوحة جانبية).
  */
 import React, { useState } from 'react';
-import { Button, AdaptiveSheet, DateField, Input } from '../../../ui';
+import { Button, AdaptiveSheet, DateField, TransactionDatePicker, Input } from '../../../ui';
 import { SupplierSelect } from '../../../components/common/SupplierSelect';
 import { createCompanyAsset, throwIfApiFailed, updateCompanyAsset } from '../../../services/api';
 import type { AssetRegisterListItem, SupplierOption } from '../types';
@@ -121,7 +121,7 @@ export function AssetFormPanel({
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <DateField
+          <TransactionDatePicker
             label={t('assetPurchaseDate')}
             value={form.purchaseDate}
             onValueChange={(value) => setForm((p) => ({ ...p, purchaseDate: value }))}

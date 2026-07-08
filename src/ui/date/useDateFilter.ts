@@ -14,6 +14,7 @@ export function useDateFilter() {
   const [mode, setMode] = useState<DatePeriodMode>('months');
   const [selYear, setSelYear] = useState(now.year);
   const [selMonth, setSelMonth] = useState(now.month);
+  const [selQuarter, setSelQuarter] = useState(Math.ceil(now.month / 3));
   const [selDay, setSelDay] = useState(ymd(now.year, now.month, now.day));
   const [rangeStart, setRangeStart] = useState(ymd(now.year, now.month, 1));
   const [rangeEnd, setRangeEnd] = useState(ymd(now.year, now.month, now.day));
@@ -29,6 +30,7 @@ export function useDateFilter() {
       mode,
       selYear,
       selMonth,
+      selQuarter,
       selDay,
       rangeStart,
       rangeEnd,
@@ -43,6 +45,7 @@ export function useDateFilter() {
       mode,
       selYear,
       selMonth,
+      selQuarter,
       selDay,
       rangeStart,
       rangeEnd,
@@ -70,6 +73,7 @@ export function useDateFilter() {
     setMode('months');
     setSelYear(n.year);
     setSelMonth(n.month);
+    setSelQuarter(Math.ceil(n.month / 3));
     setSelDay(ymd(n.year, n.month, n.day));
     setRangeStart(ymd(n.year, n.month, 1));
     setRangeEnd(ymd(n.year, n.month, n.day));
@@ -81,37 +85,61 @@ export function useDateFilter() {
     setYearRangeEnd(n.year);
   }, []);
 
-  return {
-    mode,
-    setMode,
-    selYear,
-    setSelYear,
-    selMonth,
-    setSelMonth,
-    selDay,
-    setSelDay,
-    rangeStart,
-    setRangeStart,
-    rangeEnd,
-    setRangeEnd,
-    monthRangeStartYear,
-    setMonthRangeStartYear,
-    monthRangeStartMonth,
-    setMonthRangeStartMonth,
-    monthRangeEndYear,
-    setMonthRangeEndYear,
-    monthRangeEndMonth,
-    setMonthRangeEndMonth,
-    yearRangeStart,
-    setYearRangeStart,
-    yearRangeEnd,
-    setYearRangeEnd,
-    startDate,
-    endDate,
-    label,
-    reset,
-    state,
-  };
+  return useMemo(
+    () => ({
+      mode,
+      setMode,
+      selYear,
+      setSelYear,
+      selMonth,
+      setSelMonth,
+      selQuarter,
+      setSelQuarter,
+      selDay,
+      setSelDay,
+      rangeStart,
+      setRangeStart,
+      rangeEnd,
+      setRangeEnd,
+      monthRangeStartYear,
+      setMonthRangeStartYear,
+      monthRangeStartMonth,
+      setMonthRangeStartMonth,
+      monthRangeEndYear,
+      setMonthRangeEndYear,
+      monthRangeEndMonth,
+      setMonthRangeEndMonth,
+      yearRangeStart,
+      setYearRangeStart,
+      yearRangeEnd,
+      setYearRangeEnd,
+      startDate,
+      endDate,
+      label,
+      reset,
+      state,
+    }),
+    [
+      mode,
+      selYear,
+      selMonth,
+      selQuarter,
+      selDay,
+      rangeStart,
+      rangeEnd,
+      monthRangeStartYear,
+      monthRangeStartMonth,
+      monthRangeEndYear,
+      monthRangeEndMonth,
+      yearRangeStart,
+      yearRangeEnd,
+      startDate,
+      endDate,
+      label,
+      reset,
+      state,
+    ],
+  );
 }
 
 export type DateFilterController = ReturnType<typeof useDateFilter>;

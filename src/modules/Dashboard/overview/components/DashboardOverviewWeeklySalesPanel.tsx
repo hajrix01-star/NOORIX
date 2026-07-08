@@ -1,25 +1,15 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/useTranslation';
-import { FmtNum, SimpleTable, cn } from '../../../../ui';
-import { DateFilterMonthPicker } from '../../../../ui/date';
+import { Button, FmtNum, SearchableOptionsPicker, SimpleTable, cn, type SearchableOption, type SimpleTableColumn } from '../../../../ui';
+import type {
+  DashboardWeeklySalesComparisonData,
+  DashboardWeeklySalesComparisonRow,
+} from '../utils/dashboardWeeklySalesComparisonModel';
 
 const TH_CELL =
   'border border-noorix-border bg-[var(--noorix-table-header-bg)] px-1 py-1.5 text-center text-[9px] font-bold leading-tight text-white sm:px-2 sm:py-2.5 sm:text-xs';
 const TD_CELL =
   'border border-noorix-border px-1 py-1.5 text-center text-[10px] leading-tight sm:px-2 sm:py-2 sm:text-[13px]';
-
-export type WeeklySalesWeekRow = {
-  weekIndex: number;
-  dayStart: number;
-  dayEnd: number;
-  avgDailyCurrent: number;
-  avgDailyBaseline: number;
-  deltaPct: number | null;
-};
-
-export type WeeklySalesWeekData = {
-  rows: WeeklySalesWeekRow[];
-};
 
 type Props = {
   weeklyYearOptions: number[];
@@ -32,8 +22,13 @@ type Props = {
   onPanelMonthAChange: (m: number) => void;
   onPanelYearBChange: (y: number) => void;
   onPanelMonthBChange: (m: number) => void;
-  data: WeeklySalesWeekData | null;
+  data: DashboardWeeklySalesComparisonData | null;
   isLoading: boolean;
+};
+
+type MonthDraft = {
+  year: number;
+  month: number;
 };
 
 function MonthHeader({
@@ -94,6 +89,51 @@ function DeltaCell({ value }: { value: number | null }) {
   );
 }
 
+function MonthSelector({
+  title,
+  draft,
+  yearOptions,
+  monthOptions,
+  onChange,
+}: {
+  title: string;
+  draft: MonthDraft;
+  yearOptions: readonly number[];
+  monthOptions: ReadonlyArray<{ value: number; label: string }>;
+  onChange: (draft: MonthDraft) => void;
+}) {
+  const yearPickerOptions: SearchableOption[] = yearOptions.map((year) => ({
+    value: String(year),
+    label: String(year),
+  }));
+  const monthPickerOptions: SearchableOption[] = monthOptions.map((option) => ({
+    value: String(option.value),
+    label: option.label,
+  }));
+
+  return (
+    <div className="grid min-w-[min(100%,18rem)] grid-cols-2 gap-2 rounded-lg border border-noorix-border bg-noorix-surface p-2">
+      <div className="col-span-2 text-center text-[11px] font-semibold text-noorix-muted">
+        {title}
+      </div>
+      <SearchableOptionsPicker
+        size="sm"
+        aria-label={`${title} year`}
+        options={yearPickerOptions}
+        value={String(draft.year)}
+        onChange={(value) => onChange({ ...draft, year: Number(value) })}
+      />
+      <SearchableOptionsPicker
+        size="sm"
+        aria-label={`${title} month`}
+        options={monthPickerOptions}
+        value={String(draft.month)}
+        onChange={(value) => onChange({ ...draft, month: Number(value) })}
+      />
+    </div>
+  );
+}
+
 export function DashboardOverviewWeeklySalesPanel({
   weeklyYearOptions,
   weeklyMonthOptions,
@@ -111,6 +151,81 @@ export function DashboardOverviewWeeklySalesPanel({
   const { t } = useTranslation();
   const monthALabel = weeklyMonthOptions.find((option) => option.value === panelMonthA)?.label;
   const monthBLabel = weeklyMonthOptions.find((option) => option.value === panelMonthB)?.label;
+  const [draftA, setDraftA] = useState<MonthDraft>(() => ({ year: panelYearA, month: panelMonthA }));
+  const [draftB, setDraftB] = useState<MonthDraft>(() => ({ year: panelYearB, month: panelMonthB }));
+  const hasDraftChanges =
+    draftA.year !== panelYearA ||
+    draftA.month !== panelMonthA ||
+    draftB.year !== panelYearB ||
+    draftB.month !== panelMonthB;
+
+  useEffect(() => {
+    setDraftA({ year: panelYearA, month: panelMonthA });
+    setDraftB({ year: panelYearB, month: panelMonthB });
+  }, [panelMonthA, panelMonthB, panelYearA, panelYearB]);
+
+  const applyDraft = () => {
+    if (draftA.year !== panelYearA) onPanelYearAChange(draftA.year);
+    if (draftA.month !== panelMonthA) onPanelMonthAChange(draftA.month);
+    if (draftB.year !== panelYearB) onPanelYearBChange(draftB.year);
+    if (draftB.month !== panelMonthB) onPanelMonthBChange(draftB.month);
+  };
+
+  const columns = useMemo<SimpleTableColumn<DashboardWeeklySalesComparisonRow>[]>(
+    () => [
+      {
+        key: 'weekIndex',
+        label: t('dashboardWeeklySalesWeekCol'),
+        width: '24%',
+        headerClassName: TH_CELL,
+        cellClassName: cn(TD_CELL, 'font-medium text-noorix-text'),
+        render: (_value: unknown, row: DashboardWeeklySalesComparisonRow) => t('dashboardWeeklySalesWeekRange', {
+          n: row.weekIndex,
+          from: row.dayStart,
+          to: row.dayEnd,
+        }),
+      },
+      {
+        key: 'avgDailyCurrent',
+        label: (
+          <MonthHeader
+            title={t('dashboardWeeklySalesPeriodMainHeader')}
+            subtitle={t('dashboardWeeklySalesAvgDailyShort')}
+            monthLabel={monthALabel}
+            year={panelYearA}
+          />
+        ),
+        width: '28%',
+        headerClassName: cn(TH_CELL, 'align-bottom'),
+        cellClassName: TD_CELL,
+        render: (_value: unknown, row: DashboardWeeklySalesComparisonRow) => <MoneyCell value={row.avgDailyCurrent} />,
+      },
+      {
+        key: 'avgDailyBaseline',
+        label: (
+          <MonthHeader
+            title={t('dashboardWeeklySalesPeriodCompareHeader')}
+            subtitle={t('dashboardWeeklySalesAvgDailyShort')}
+            monthLabel={monthBLabel}
+            year={panelYearB}
+          />
+        ),
+        width: '28%',
+        headerClassName: cn(TH_CELL, 'align-bottom'),
+        cellClassName: TD_CELL,
+        render: (_value: unknown, row: DashboardWeeklySalesComparisonRow) => <MoneyCell value={row.avgDailyBaseline} />,
+      },
+      {
+        key: 'deltaPct',
+        label: t('dashboardWeeklySalesDelta'),
+        width: '20%',
+        headerClassName: TH_CELL,
+        cellClassName: TD_CELL,
+        render: (_value: unknown, row: DashboardWeeklySalesComparisonRow) => <DeltaCell value={row.deltaPct} />,
+      },
+    ],
+    [monthALabel, monthBLabel, panelYearA, panelYearB, t],
+  );
 
   return (
     <section className="noorix-surface-card min-w-0 overflow-hidden p-0" aria-label={t('dashboardWeeklySalesTitle')}>
@@ -125,31 +240,31 @@ export function DashboardOverviewWeeklySalesPanel({
       </div>
 
       <div className="p-3 sm:p-4">
-        <div className="mb-3 flex min-w-0 flex-col items-center justify-center gap-3 sm:flex-row">
-          <DateFilterMonthPicker
-            label={t('dashboardWeeklySalesPeriodMainHeader')}
-            ariaLabel={t('dashboardWeeklySalesPeriodAColumn')}
-            years={weeklyYearOptions}
-            year={panelYearA}
-            month={panelMonthA}
-            onChange={({ year, month }) => {
-              onPanelYearAChange(year);
-              onPanelMonthAChange(month);
-            }}
-            className="ndfb-month-picker--dashboard"
+        <div className="mb-3 flex min-w-0 flex-col items-center justify-center gap-3 xl:flex-row">
+          <MonthSelector
+            title={t('dashboardWeeklySalesPeriodMainHeader')}
+            draft={draftA}
+            yearOptions={weeklyYearOptions}
+            monthOptions={weeklyMonthOptions}
+            onChange={setDraftA}
           />
-          <DateFilterMonthPicker
-            label={t('dashboardWeeklySalesPeriodCompareHeader')}
-            ariaLabel={t('dashboardWeeklySalesPeriodBColumn')}
-            years={weeklyYearOptions}
-            year={panelYearB}
-            month={panelMonthB}
-            onChange={({ year, month }) => {
-              onPanelYearBChange(year);
-              onPanelMonthBChange(month);
-            }}
-            className="ndfb-month-picker--dashboard"
+          <MonthSelector
+            title={t('dashboardWeeklySalesPeriodCompareHeader')}
+            draft={draftB}
+            yearOptions={weeklyYearOptions}
+            monthOptions={weeklyMonthOptions}
+            onChange={setDraftB}
           />
+          <Button
+            type="button"
+            size="sm"
+            variant="primary"
+            onClick={applyDraft}
+            disabled={!hasDraftChanges}
+            className="min-w-24"
+          >
+            {t('dateFilterApply')}
+          </Button>
         </div>
 
         {isLoading || !data ? (
@@ -159,63 +274,12 @@ export function DashboardOverviewWeeklySalesPanel({
             ))}
           </div>
         ) : (
-          <SimpleTable<WeeklySalesWeekRow>
+          <SimpleTable<DashboardWeeklySalesComparisonRow>
             compact
             tableClassName="table-fixed overflow-hidden rounded-lg border border-noorix-border text-[10px]"
             frameClassName="border-0"
             cellPadding="6px 8px"
-            columns={[
-              {
-                key: 'weekIndex',
-                label: t('dashboardWeeklySalesWeekCol'),
-                width: '24%',
-                headerClassName: TH_CELL,
-                cellClassName: cn(TD_CELL, 'font-medium text-noorix-text'),
-                render: (_value, row) => t('dashboardWeeklySalesWeekRange', {
-                  n: row.weekIndex,
-                  from: row.dayStart,
-                  to: row.dayEnd,
-                }),
-              },
-              {
-                key: 'avgDailyCurrent',
-                label: (
-                  <MonthHeader
-                    title={t('dashboardWeeklySalesPeriodMainHeader')}
-                    subtitle={t('dashboardWeeklySalesAvgDailyShort')}
-                    monthLabel={monthALabel}
-                    year={panelYearA}
-                  />
-                ),
-                width: '28%',
-                headerClassName: cn(TH_CELL, 'align-bottom'),
-                cellClassName: TD_CELL,
-                render: (_value, row) => <MoneyCell value={row.avgDailyCurrent} />,
-              },
-              {
-                key: 'avgDailyBaseline',
-                label: (
-                  <MonthHeader
-                    title={t('dashboardWeeklySalesPeriodCompareHeader')}
-                    subtitle={t('dashboardWeeklySalesAvgDailyShort')}
-                    monthLabel={monthBLabel}
-                    year={panelYearB}
-                  />
-                ),
-                width: '28%',
-                headerClassName: cn(TH_CELL, 'align-bottom'),
-                cellClassName: TD_CELL,
-                render: (_value, row) => <MoneyCell value={row.avgDailyBaseline} />,
-              },
-              {
-                key: 'deltaPct',
-                label: t('dashboardWeeklySalesDelta'),
-                width: '20%',
-                headerClassName: TH_CELL,
-                cellClassName: TD_CELL,
-                render: (_value, row) => <DeltaCell value={row.deltaPct} />,
-              },
-            ]}
+            columns={columns}
             data={data.rows}
             getRowClassName={() => 'bg-[var(--noorix-surface-1)]'}
           />

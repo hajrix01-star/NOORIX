@@ -73,8 +73,8 @@ for (const requiredFile of requiredFiles) {
 const dashboardScreenPath = path.join(dashboardRoot, 'DashboardScreen.tsx');
 if (fs.existsSync(dashboardScreenPath)) {
   const dashboardScreenSource = fs.readFileSync(dashboardScreenPath, 'utf8');
-  if (!dashboardScreenSource.includes('FilterToolbar') || !dashboardScreenSource.includes('DateMonthScopePicker')) {
-    report(dashboardScreenPath, 'dashboard period filter must use FilterToolbar and DateMonthScopePicker.');
+  if (!dashboardScreenSource.includes('FilterToolbar') || !dashboardScreenSource.includes('DateFilterBar')) {
+    report(dashboardScreenPath, 'dashboard period filter must use FilterToolbar and DateFilterBar.');
   }
   if (!dashboardScreenSource.includes('./dashboardPeriodModel')) {
     report(dashboardScreenPath, 'dashboard screen must source period normalization from dashboardPeriodModel.');
@@ -89,6 +89,31 @@ if (fs.existsSync(appSalesTabPath)) {
   }
   if (/YEARS_SPAN_OPTIONS/.test(appSalesTabSource)) {
     report(appSalesTabPath, 'dashboard app sales tab must not define local year-span option constants.');
+  }
+  if (/yearSummaries/.test(appSalesTabSource) || /buildDashboardAppSalesModel\(/.test(appSalesTabSource)) {
+    report(appSalesTabPath, 'dashboard app sales must use backend metrics only; raw summary fallback is not allowed.');
+  }
+}
+
+const appSalesDataPath = path.join(dashboardRoot, 'utils', 'dashboardAppSalesData.ts');
+if (fs.existsSync(appSalesDataPath)) {
+  const appSalesDataSource = fs.readFileSync(appSalesDataPath, 'utf8');
+  if (/function\s+buildDashboardAppSalesModel\s*\(/.test(appSalesDataSource)) {
+    report(appSalesDataPath, 'dashboard app sales raw summary model was removed; use buildDashboardAppSalesModelFromMetrics only.');
+  }
+}
+
+const calendarSideDetailPath = path.join(
+  dashboardRoot,
+  'components',
+  'DashboardCalendarTab',
+  'components',
+  'DashboardCalendarSideDetail.tsx',
+);
+if (fs.existsSync(calendarSideDetailPath)) {
+  const calendarSideDetailSource = fs.readFileSync(calendarSideDetailPath, 'utf8');
+  if (/reduce\s*\([^)]*totalAmount/.test(calendarSideDetailSource) || /toDashboardNumber/.test(calendarSideDetailSource)) {
+    report(calendarSideDetailPath, 'calendar side detail must use the official selected day amount, not local total aggregation.');
   }
 }
 

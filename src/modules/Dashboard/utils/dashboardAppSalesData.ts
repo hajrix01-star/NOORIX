@@ -15,17 +15,6 @@ const MONTH_NAMES_EN = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
-export type AppSalesSummaryChannel = {
-  amount?: number | string | null;
-  vault?: { id?: string | null; type?: string | null; nameAr?: string | null; nameEn?: string | null } | null;
-};
-
-export type AppSalesSummaryRow = {
-  transactionDate?: string | Date | null;
-  totalAmount?: number | string | null;
-  channels?: AppSalesSummaryChannel[] | null;
-};
-
 export type AppSalesMetricDay = {
   transactionDate?: string | null;
   totalAmount?: number | string | null;
@@ -113,22 +102,6 @@ export function buildAppSalesTableFooter(model: DashboardAppSalesModel): AppSale
   };
 }
 
-function channelName(ch: AppSalesSummaryChannel, lang: string): string | null {
-  const v = ch.vault;
-  if (!v) return null;
-  const ar = v.nameAr?.trim();
-  const en = v.nameEn?.trim();
-  if (lang === 'en') return en || ar || null;
-  return ar || en || null;
-}
-
-function channelKey(ch: AppSalesSummaryChannel, lang: string): { id: string; name: string } | null {
-  const name = channelName(ch, lang);
-  if (!name) return null;
-  const id = ch.vault?.id?.trim() || name;
-  return { id, name };
-}
-
 function monthLabel(year: number, month: number, lang: string): string {
   const m = month - 1;
   if (lang === 'ar') return `${MONTH_NAMES_AR[m]} ${year}`;
@@ -155,102 +128,6 @@ export function listMonthKeys(yearEnd: number, yearsSpan: number): { year: numbe
     }
   }
   return out;
-}
-
-export function buildDashboardAppSalesModel(
-  summaries: AppSalesSummaryRow[],
-  lang: string,
-  yearEnd: number,
-  yearsSpan: number,
-): DashboardAppSalesModel {
-  const yearStart = yearEnd - yearsSpan + 1;
-  const monthKeys = listMonthKeys(yearEnd, yearsSpan);
-
-  const totals: Record<string, number> = {};
-  const apps: Record<string, number> = {};
-  const channelRows: Record<string, { name: string; amounts: Record<string, number> }> = {};
-
-  monthKeys.forEach(({ periodKey }) => {
-    totals[periodKey] = 0;
-    apps[periodKey] = 0;
-  });
-
-  (summaries || []).forEach((s) => {
-    const d = toYmd(s.transactionDate);
-    if (!d || d.length < 7) return;
-    const y = parseInt(d.slice(0, 4), 10);
-    const m = parseInt(d.slice(5, 7), 10);
-    if (y < yearStart || y > yearEnd || m < 1 || m > 12) return;
-
-    const periodKey = `${y}-${String(m).padStart(2, '0')}`;
-    const total = Number(s.totalAmount || 0);
-    totals[periodKey] = (totals[periodKey] || 0) + total;
-
-    (s.channels || []).forEach((ch) => {
-      const amt = Number(ch.amount || 0);
-      if (!Number.isFinite(amt) || amt === 0) return;
-      const isApp = ch.vault?.type === 'app';
-      if (isApp) apps[periodKey] = (apps[periodKey] || 0) + amt;
-
-      if (!isApp) return;
-      const key = channelKey(ch, lang);
-      if (!key) return;
-      if (!channelRows[key.id]) channelRows[key.id] = { name: key.name, amounts: {} };
-      channelRows[key.id].amounts[periodKey] = (channelRows[key.id].amounts[periodKey] || 0) + amt;
-    });
-  });
-
-  const monthSeries: AppSalesMonthPoint[] = monthKeys.map(({ year, month, periodKey }) => {
-    const total = totals[periodKey] || 0;
-    const app = apps[periodKey] || 0;
-    return {
-      year,
-      month,
-      periodKey,
-      label: monthLabel(year, month, lang),
-      shortLabel: monthShortLabel(year, month, lang, yearsSpan),
-      total,
-      app,
-      appPercent: total > 0 ? (app / total) * 100 : 0,
-    };
-  });
-
-  const periodTotal = monthSeries.reduce((s, p) => s + p.total, 0);
-  const periodApp = monthSeries.reduce((s, p) => s + p.app, 0);
-  const periodAppPercent = periodTotal > 0 ? (periodApp / periodTotal) * 100 : 0;
-
-  const channels: AppSalesChannelRow[] = Object.entries(channelRows)
-    .map(([id, row]) => {
-      const months: Record<string, { amount: number; percent: number }> = {};
-      let periodAmount = 0;
-      monthKeys.forEach(({ periodKey }) => {
-        const amount = row.amounts[periodKey] || 0;
-        const monthTotal = totals[periodKey] || 0;
-        months[periodKey] = {
-          amount,
-          percent: monthTotal > 0 ? (amount / monthTotal) * 100 : 0,
-        };
-        periodAmount += amount;
-      });
-      return {
-        id,
-        name: row.name,
-        periodAmount,
-        periodPercent: periodTotal > 0 ? (periodAmount / periodTotal) * 100 : 0,
-        months,
-      };
-    })
-    .filter((c) => c.periodAmount > 0)
-    .sort((a, b) => b.periodAmount - a.periodAmount);
-
-  return {
-    monthSeries,
-    channels,
-    periodTotal,
-    periodApp,
-    periodAppPercent,
-    hasData: periodTotal > 0,
-  };
 }
 
 export function buildDashboardAppSalesModelFromMetrics(

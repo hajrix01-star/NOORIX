@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppTestProviders, defaultAppTestContextValue } from '../../test/appTestProviders';
 import { getSaudiNow } from '../../utils/saudiDate';
-import { DateFilterBar, useDateFilter } from './index';
+import { DateFilterBar, MonthDateFilter, useDateFilter } from './index';
 
 const MONTH_NAMES_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -45,6 +45,10 @@ function renderConfigurableFilter() {
   );
 }
 
+function MonthFilterHarness({ onChange }: { onChange: (value: { year: number; month: number }) => void }) {
+  return <MonthDateFilter year={2026} month={7} onChange={onChange} />;
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -81,6 +85,30 @@ describe('DateFilterBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(screen.getByTestId('applied-label').textContent).not.toBe(appliedLabel);
+  });
+
+  it('closes the compact period popover when clicking outside', () => {
+    renderFilter();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+    expect(screen.getByRole('dialog', { name: 'Period' })).toBeTruthy();
+
+    fireEvent.mouseDown(document.body);
+
+    expect(screen.queryByRole('dialog', { name: 'Period' })).toBeNull();
+  });
+
+  it('applies all mode immediately without opening the old inline panel', () => {
+    renderFilter();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Day' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(screen.getByTestId('applied-label').textContent).not.toBe('All');
+
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+
+    expect(screen.getByTestId('applied-label').textContent).toBe('All');
+    expect(screen.queryByRole('dialog', { name: 'Period' })).toBeNull();
   });
 
   it('supports selecting a day range from the day calendar', () => {
@@ -120,6 +148,19 @@ describe('DateFilterBar', () => {
     expect(screen.queryByRole('button', { name: String(startYear) })).toBeNull();
   });
 
+  it('supports selecting a quarter through the central period filter', () => {
+    renderFilter();
+
+    const now = getSaudiNow();
+    fireEvent.click(screen.getByRole('button', { name: 'Quarter' }));
+    fireEvent.click(screen.getByRole('button', { name: String(now.year) }));
+    fireEvent.click(screen.getByRole('button', { name: 'Q3' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByTestId('applied-label').textContent).toBe(`Q3 ${now.year}`);
+    expect(screen.queryByRole('button', { name: 'Q3' })).toBeNull();
+  });
+
   it('can limit visible modes without creating a custom date filter', () => {
     renderConfigurableFilter();
 
@@ -145,5 +186,50 @@ describe('DateFilterBar', () => {
     expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
     expect(document.querySelector('.test-date-filter')).toBeTruthy();
     expect(document.querySelector('.ndfb-period-badge')).toBeNull();
+  });
+
+  it('lets the controlled month filter commit a user-selected month without snapping back to props first', () => {
+    const onChange = vi.fn();
+    render(
+      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+        <MonthFilterHarness onChange={onChange} />
+      </AppTestProviders>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Jan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(onChange).toHaveBeenCalledWith({ year: 2026, month: 1 });
+  });
+
+  it('renders the controlled month filter with a stable applied badge instead of a pending draft badge', () => {
+    render(
+      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+        <MonthFilterHarness onChange={() => {}} />
+      </AppTestProviders>,
+    );
+
+    expect(document.querySelector('.ndfb-period-badge--applied')?.textContent).toBe('Jul 2026');
+    expect(document.querySelector('.ndfb-period-badge--pending')).toBeNull();
+  });
+
+  it('does not emit duplicate controlled month changes for the same selected month', () => {
+    const onChange = vi.fn();
+    render(
+      <AppTestProviders appValue={{ ...defaultAppTestContextValue, language: 'en' }}>
+        <MonthFilterHarness onChange={onChange} />
+      </AppTestProviders>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Jan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Jan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith({ year: 2026, month: 1 });
   });
 });

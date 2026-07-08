@@ -1,22 +1,17 @@
 ﻿/**
  * DashboardScreen — لوحة التحكم الرئيسية
  */
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useTranslation } from '../../i18n/useTranslation';
-import { DateMonthScopePicker, FilterToolbar, ScreenTabs, ScreenShell } from '../../ui';
+import { DateFilterBar, FilterToolbar, ScreenTabs, ScreenShell, useDateFilter } from '../../ui';
 import DashboardOverviewTab from './overview/DashboardOverviewTab';
 import DashboardCalendarTab from './components/DashboardCalendarTab';
 import DashboardSpecialDaysTab from './components/DashboardSpecialDaysTab';
 import DashboardAppSalesTab from './components/DashboardAppSalesTab';
 import { getSaudiNow } from '../../utils/saudiDate';
-import { getGregorianMonthNames } from '../../ui/date';
-import {
-  buildDashboardPeriodFilter,
-  buildDashboardYearOptions,
-  parseDashboardMonthValue,
-} from './dashboardPeriodModel';
+import { buildDashboardPeriodFilter, deriveDashboardPeriodFromDateFilter } from './dashboardPeriodModel';
 
 const DASHBOARD_TABS = [
   { id: 'overview', labelKey: 'dashboardOverview', shortLabelKey: 'dashboardOverviewShort' },
@@ -27,19 +22,21 @@ const DASHBOARD_TABS = [
 const DASHBOARD_TAB_IDS = DASHBOARD_TABS.map((tab) => tab.id);
 
 export default function DashboardScreen() {
-  const { t, lang } = useTranslation();
+  const { t } = useTranslation();
   const { activeCompanyId } = useApp();
   const now = getSaudiNow();
   const [activeTab, setActiveTab] = useTabSearchParam(DASHBOARD_TAB_IDS, 'overview');
-  const [year, setYear]                   = useState(now.year);
-  const [selectedMonth, setSelectedMonth] = useState(String(now.month));
-  const selectedMonthNumber = useMemo(() => parseDashboardMonthValue(selectedMonth), [selectedMonth]);
-  const years = useMemo(() => buildDashboardYearOptions(now.year), [now.year]);
-  const monthNames = useMemo(() => getGregorianMonthNames(lang), [lang]);
+  const dashboardDateFilter = useDateFilter();
+  const dashboardPeriod = useMemo(
+    () => deriveDashboardPeriodFromDateFilter(dashboardDateFilter.state, now),
+    [dashboardDateFilter.state, now.year, now.month],
+  );
+  const year = dashboardPeriod.year;
+  const selectedMonthNumber = dashboardPeriod.selectedMonth;
 
   const filter = useMemo(
-    () => buildDashboardPeriodFilter(year, selectedMonthNumber, monthNames),
-    [monthNames, year, selectedMonthNumber],
+    () => buildDashboardPeriodFilter(year, selectedMonthNumber, dashboardDateFilter.label),
+    [dashboardDateFilter.label, year, selectedMonthNumber],
   );
 
   const dashboardTabItems = useMemo(
@@ -70,16 +67,7 @@ export default function DashboardScreen() {
           <p className="text-[13px] text-noorix-muted mt-1 m-0">{t('dashboardDesc')}</p>
         </div>
         <FilterToolbar className="max-w-full">
-          <DateMonthScopePicker
-            year={year}
-            years={years}
-            month={selectedMonth}
-            allowAll
-            allowYear={false}
-            fallbackMonth={now.month}
-            onYearChange={setYear}
-            onMonthChange={setSelectedMonth}
-          />
+          <DateFilterBar filter={dashboardDateFilter} />
         </FilterToolbar>
       </div>
 

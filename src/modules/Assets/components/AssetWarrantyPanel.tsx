@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, AdaptiveSheet, DateField, Input } from '../../../ui';
+import { Button, AdaptiveSheet, DateField, Input, TransactionDatePicker } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
 import { completeCompanyAssetFromInvoice, throwIfApiFailed } from '../../../services/api';
 import type { PendingWarrantyInvoiceRow } from '../types';
@@ -141,7 +141,11 @@ export function AssetWarrantyPanel({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <DateField label={t('assetPurchaseDate')} value={form.purchaseDate} onValueChange={(value) => set('purchaseDate', value)} />
+          <TransactionDatePicker
+            label={t('assetPurchaseDate')}
+            value={form.purchaseDate}
+            onValueChange={(value) => set('purchaseDate', value)}
+          />
           <Input type="number" label={t('assetAcquisitionCost')} value={form.acquisitionCost} onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('acquisitionCost', event.target.value)} className="ltr" />
         </div>
 

@@ -128,6 +128,7 @@ export default function ExpenseLineList({
   const columns = useMemo<SmartTableColumn<ExpenseLineTableRow>[]>(() => [
     {
       key: 'displayName',
+      size: 'name',
       label: t('expenseLineNameCol'),
       sortable: true,
       width: '22%',
@@ -149,6 +150,7 @@ export default function ExpenseLineList({
     },
     {
       key: 'kind',
+      size: 'document',
       label: t('expenseLineKindCol'),
       sortable: true,
       minWidth: '7.5em',
@@ -168,6 +170,7 @@ export default function ExpenseLineList({
     },
     {
       key: 'categoryName',
+      size: 'name',
       label: t('category'),
       sortable: true,
       width: '14%',
@@ -178,6 +181,7 @@ export default function ExpenseLineList({
     },
     {
       key: 'supplierName',
+      size: 'supplier',
       label: t('supplier'),
       sortable: true,
       width: '14%',
@@ -188,6 +192,7 @@ export default function ExpenseLineList({
     },
     {
       key: 'serviceNumber',
+      size: 'code-sm',
       label: t('expenseLineServiceNumberCol'),
       width: '1%',
       minWidth: '4.75em',
@@ -207,6 +212,7 @@ export default function ExpenseLineList({
     },
     {
       key: 'monthlyAmount',
+      size: 'money-sm',
       label: <span className="nx-expense-line-th-money" title={t('expenseLineListMonthlyAmount')}>{t('expenseLineMonthlyColShort')}</span>,
       shrink: true,
       cellClassName: 'nx-col-expense-money',
@@ -215,6 +221,7 @@ export default function ExpenseLineList({
     },
     {
       key: 'annualAmount',
+      size: 'money-md',
       label: <span className="nx-expense-line-th-money" title={t('expenseLineListAnnualAmount')}>{t('expenseLineAnnualColShort')}</span>,
       shrink: true,
       cellClassName: 'nx-col-expense-money',
@@ -223,6 +230,7 @@ export default function ExpenseLineList({
     },
     {
       key: 'actions',
+      kind: 'actions',
       label: t('actions'),
       minWidth: '3.25em',
       shrink: true,
@@ -321,7 +329,6 @@ export default function ExpenseLineList({
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="2.25em"
           innerPadding={8}
           columns={columns}
           data={tableData}

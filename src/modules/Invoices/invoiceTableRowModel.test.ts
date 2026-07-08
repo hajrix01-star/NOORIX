@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   asInvoiceTableText,
+  compactInvoiceDocumentNumber,
   getInvoiceTableAmountToneClass,
   getInvoiceTableVaultName,
   mapInvoiceTableVaultChips,
@@ -34,5 +35,12 @@ describe('invoiceTableRowModel', () => {
     expect(getInvoiceTableVaultName({ vault: { nameEn: 'Bank' } }, 'en')).toBe('Bank');
     expect(getInvoiceTableAmountToneClass({ kind: 'sale' })).toBe('text-[var(--color-nx-sales)]');
     expect(getInvoiceTableAmountToneClass({ kind: 'expense' })).toBe('text-[var(--color-nx-expenses)]');
+  });
+
+  it('compacts long document numbers for table display only', () => {
+    expect(compactInvoiceDocumentNumber('PUR-20260708-001')).toBe('PUR-001');
+    expect(compactInvoiceDocumentNumber('EXP-20260708-004')).toBe('EXP-004');
+    expect(compactInvoiceDocumentNumber('SHORT-1')).toBe('SHORT-1');
+    expect(compactInvoiceDocumentNumber('VERY-LONG-DOCUMENT-NUMBER')).toBe('VERY-L...MBER');
   });
 });

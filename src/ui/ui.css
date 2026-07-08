@@ -1290,15 +1290,18 @@
 /* ???????????????????????????????????????????????????????????
    18. Actions Cell Kebab — زر ? في عمود الإجراءات
    ??????????????????????????????????????????????????????????? */
-.nx-actions-kebab { width: 30px; height: 28px; min-width: 30px; min-height: 28px; border-radius: 4px; border: 1px solid transparent; background: transparent; color: var(--noorix-text-muted); display: inline-flex; align-items: center; justify-content: center; transition: background 120ms, color 120ms, border-color 120ms; padding: 0; }
+.nx-actions-kebab { width: 32px; height: 30px; min-width: 32px; min-height: 30px; border-radius: 8px; border: 1px solid var(--noorix-border); background: var(--noorix-bg-surface); color: var(--noorix-text-muted); display: inline-flex; align-items: center; justify-content: center; transition: background 120ms, color 120ms, border-color 120ms, box-shadow 120ms, transform 120ms; padding: 0; }
 
-.nx-actions-kebab:hover:not(:disabled) { background: var(--noorix-bg-muted); border-color: var(--noorix-border); color: var(--noorix-text); }
+.nx-actions-kebab:hover:not(:disabled) { background: var(--noorix-blue-6); border-color: var(--noorix-blue-20); color: var(--noorix-blue); box-shadow: 0 3px 10px rgba(37, 99, 235, 0.12); transform: translateY(-1px); }
 
 .nx-actions-kebab--open {
-  background: var(--noorix-bg-muted) !important;
-  border-color: var(--noorix-border) !important;
-  color: var(--noorix-text) !important;
+  background: var(--noorix-blue) !important;
+  border-color: var(--noorix-blue) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.22);
 }
+
+.nx-actions-icon { display: block; }
 
 .nx-actions-menu { position: fixed; z-index: var(--nx-z-menu); min-width: 150px; width: 176px; max-height: 220px; overflow-y: auto; padding: 6px; border-radius: 6px; background: var(--noorix-bg-surface); color: var(--noorix-text); border: 1px solid var(--noorix-border); box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18); }
 

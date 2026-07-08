@@ -1,19 +1,16 @@
 import React from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Button, ColorSwatch, DateMonthScopePicker, FilterToolbar, ScreenTitle, cn } from '../../../ui';
+import { Button, ColorSwatch, DateFilterBar, FilterToolbar, ScreenTitle, cn } from '../../../ui';
 import { useIsNarrow700 } from '../../../ui';
 import { SERIES_RECHARTS_COLORS } from '../../../constants/kpiCardTheme';
 import type { CompanyListItem } from '../../../context/appTypes';
 import { ownerCompanyName } from '../utils/ownerDashboardDisplay';
+import type { DateFilterController } from '../../../ui/date';
 
 const COLORS = SERIES_RECHARTS_COLORS;
 
 type OwnerFilterBarProps = {
-  year: number;
-  setYear: (year: number) => void;
-  currentYear: number;
-  selectedMonth: string;
-  setSelectedMonth: (value: string) => void;
+  dateFilter: DateFilterController;
   onExportExcel: () => void;
   onExportPdf: () => void;
   companyList: CompanyListItem[];
@@ -25,11 +22,7 @@ type OwnerFilterBarProps = {
 };
 
 export function OwnerFilterBar({
-  year,
-  setYear,
-  currentYear,
-  selectedMonth,
-  setSelectedMonth,
+  dateFilter,
   onExportExcel,
   onExportPdf,
   companyList,
@@ -41,7 +34,6 @@ export function OwnerFilterBar({
 }: OwnerFilterBarProps) {
   const { t, lang } = useTranslation();
   const isMobile = useIsNarrow700();
-  const years = [currentYear, currentYear - 1, currentYear - 2];
 
   return (
     <>
@@ -63,15 +55,7 @@ export function OwnerFilterBar({
             </>
           )}
         >
-          <DateMonthScopePicker
-            year={year}
-            years={years}
-            month={selectedMonth}
-            allowAll
-            allowYear={false}
-            onYearChange={setYear}
-            onMonthChange={setSelectedMonth}
-          />
+          <DateFilterBar filter={dateFilter} />
         </FilterToolbar>
       </div>
 

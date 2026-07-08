@@ -70,6 +70,20 @@ export function formatInvoiceTableDate(value?: unknown) {
     : EMPTY_INVOICE_TABLE_VALUE;
 }
 
+export function compactInvoiceDocumentNumber(value: unknown) {
+  const text = asInvoiceTableText(value);
+  if (text === EMPTY_INVOICE_TABLE_VALUE) return text;
+
+  const normalized = text.trim();
+  const parts = normalized.split('-').filter(Boolean);
+  if (parts.length >= 3 && /^\d{6,8}$/.test(parts[1])) {
+    return `${parts[0]}-${parts[parts.length - 1]}`;
+  }
+
+  if (normalized.length <= 14) return normalized;
+  return `${normalized.slice(0, 6)}...${normalized.slice(-4)}`;
+}
+
 export function getInvoiceTableAmountToneClass(row: InvoiceTableRow) {
   return row.kind === 'sale' ? 'text-[var(--color-nx-sales)]' : 'text-[var(--color-nx-expenses)]';
 }

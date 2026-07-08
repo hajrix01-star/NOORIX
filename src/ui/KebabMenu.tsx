@@ -1,15 +1,25 @@
 /**
- * KebabMenu — زر ⋮ + قائمة منسدلة عبر Portal (موضع ذكي RTL/LTR، إغلاق بالنقر خارج)
+ * KebabMenu — زر إجراءات موحد + قائمة منسدلة عبر Portal.
  */
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
 import Button from './Button';
 
-const KebabIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-    <circle cx="8" cy="4" r="1.5" />
-    <circle cx="8" cy="8" r="1.5" />
-    <circle cx="8" cy="12" r="1.5" />
+const ActionsMenuIcon = () => (
+  <svg className="nx-actions-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path
+      d="M3.25 4.25h9.5M3.25 8h9.5M3.25 11.75h5.25"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+    <path
+      d="M10.25 11.35l1.05 1.05 2-2"
+      stroke="currentColor"
+      strokeWidth="1.55"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -110,10 +120,11 @@ function KebabMenuInner({
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="true"
+        title={typeof ariaLabel === 'string' ? ariaLabel : undefined}
         onClick={() => setOpen((p: any) => !p)}
         className={`nx-actions-kebab${open ? ' nx-actions-kebab--open' : ''}`}
       >
-        <KebabIcon />
+        <ActionsMenuIcon />
       </Button>
       {menuContent && createPortal(menuContent, document.body)}
     </div>

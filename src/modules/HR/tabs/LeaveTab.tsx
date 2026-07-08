@@ -1,5 +1,5 @@
-﻿/**
- * LeaveTab — الإجازات (احترافي كامل)
+/**
+ * LeaveTab � ???????? (??????? ????)
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +23,7 @@ import { useApiMutation } from '../../../hooks/useApiMutation';
 import { useApiListQuery, useApiQuery } from '../../../hooks/useApiQuery';
 import { invalidateOnFinancialMutation } from '../../../utils/queryInvalidation';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
-import { Button, Badge, DateField, DateMonthScopePicker, Input, Modal, Spinner, KebabMenu, SmartTable } from '../../../ui';
+import { Button, Badge, DateField, Input, Modal, Spinner, KebabMenu, SmartTable, YearDateFilter } from '../../../ui';
 import { throwIfApiFailed } from '../../../services/api';
 import { employeeKeys, hrKeys } from '../../../services/queryKeys';
 import { hrFlatSmartTableShellProps } from '../hrWorkspaceLayout';
@@ -78,7 +78,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-/** اليوم (سعودي) ضمن فترة إجازة معتمدة — لعرض زر العودة */
+/** ????? (?????) ??? ???? ????? ?????? � ???? ?? ?????? */
 function canShowLeaveReturnRow(row: HrLeaveRow) {
   if (row.status !== 'approved') return false;
   const today = getSaudiToday();
@@ -92,7 +92,7 @@ function canShowSalarySettlement(row: HrLeaveRow) {
   return row.status === 'approved' && row.leaveType === 'annual' && !row.salarySettlement;
 }
 
-/** بعد حفظ إجازة من الـ modal: قوائم الإجازات/التسويات/الموظفين + إبطال الطبقة المالية */
+/** ??? ??? ????? ?? ??? modal: ????? ????????/????????/???????? + ????? ?????? ??????? */
 function invalidateAfterLeaveFormModalSuccess(queryClient: QueryClient, companyId: string, year: number) {
   if (!queryClient || !companyId) return;
   queryClient.invalidateQueries({ queryKey: hrKeys.leaves(companyId) });
@@ -123,7 +123,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const { data, isLoading, isError } = useApiListQuery<HrLeaveRow>({
     queryKey: hrKeys.leavesForYear(companyId, year),
     queryFn: () => getLeaves(companyId, undefined, year),
-    fallbackMessage: 'فشل تحميل الإجازات',
+    fallbackMessage: '??? ????? ????????',
     enabled: !!companyId,
   });
 
@@ -243,7 +243,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
-      render: (v: unknown) => <span className="font-semibold text-[13px]">{String(v || '—')}</span> },
+      render: (v: unknown) => <span className="font-semibold text-[13px]">{String(v || '�')}</span> },
     { key: 'leaveType', label: t('leaveType'), sortable: true, width: 130, minWidth: 120,
       render: (v: unknown) => (
         <span className="text-[13px]">{t(TYPE_MAP[v as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
@@ -254,7 +254,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     { key: 'endDate', label: t('endDate'), sortable: true, width: 120, minWidth: 115,
       render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span> },
     { key: 'daysCount', label: t('daysCount'), numeric: true, sortable: true, width: 90, minWidth: 85,
-      render: (v: unknown) => <span className="nx-cell-num">{String(v ?? '—')}</span> },
+      render: (v: unknown) => <span className="nx-cell-num">{String(v ?? '�')}</span> },
     { key: 'salarySettlement', label: t('leaveSalarySettlement'), width: 120, minWidth: 100,
       render: (_: unknown, row: HrLeaveRow) => (
         row.salarySettlement ? (
@@ -262,7 +262,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
             {t('leaveSalarySettledBadge')}
           </span>
         ) : (
-          <span className="text-noorix-muted text-[12px]">—</span>
+          <span className="text-noorix-muted text-[12px]">�</span>
         )
       ) },
     { key: 'actions', label: t('actions'), width: '5%', align: 'center',
@@ -283,19 +283,19 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   ], [t, deleteLeaveMutation]);
 
   const exportData = allFilteredData.map((r: HrLeaveRow & { employeeName?: string }) => ({
-    employeeName: r.employeeName || '—',
+    employeeName: r.employeeName || '�',
     leaveType: t(TYPE_MAP[r.leaveType as keyof typeof TYPE_MAP] || 'leaveOther'),
     startDate: formatSaudiDate(r.startDate),
     endDate: formatSaudiDate(r.endDate),
-    daysCount: r.daysCount ?? '—',
-    salarySettlement: r.salarySettlement ? t('leaveSalarySettledBadge') : '—',
+    daysCount: r.daysCount ?? '�',
+    salarySettlement: r.salarySettlement ? t('leaveSalarySettledBadge') : '�',
   }));
 
   const renderMobileCard = useCallback((row: HrLeaveRow & { employeeName?: string }) => {
     return (
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
-          <span className="font-bold text-[14px]">{String(row.employeeName || '—')}</span>
+          <span className="font-bold text-[14px]">{String(row.employeeName || '�')}</span>
         </div>
         <div className="text-[13px] text-noorix-muted mb-2 text-end">
           {t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}
@@ -314,7 +314,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           </div>
           <div>
             <div className="nx-mc__stat-label">{t('daysCount')}</div>
-            <div className="nx-mc__stat-value text-[14px] font-bold">{row.daysCount ?? '—'}</div>
+            <div className="nx-mc__stat-value text-[14px] font-bold">{row.daysCount ?? '�'}</div>
           </div>
         </div>
         {canShowLeaveReturnRow(row) && (
@@ -349,16 +349,16 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const renderCompactRow = useCallback((row: HrLeaveRow & { employeeName?: string }) => (
     <div>
       <div className="nx-cr__line1">
-        <span className="nx-cr__name">{String(row.employeeName || '—')}</span>
+        <span className="nx-cr__name">{String(row.employeeName || '�')}</span>
         <span className="nx-cr__sub">{t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
         {Boolean(row.salarySettlement) && <Badge color="green" size="sm">{t('leaveSalarySettledBadge')}</Badge>}
       </div>
       <div className="nx-cr__line2">
         <div className="nx-cr__line2-start">
-          <span className="nx-cr__meta ltr">{formatSaudiDate(row.startDate)} → {formatSaudiDate(row.endDate)}</span>
+          <span className="nx-cr__meta ltr">{formatSaudiDate(row.startDate)} ? {formatSaudiDate(row.endDate)}</span>
         </div>
         <div className="nx-cr__line2-end">
-          <span className="nx-cr__amount">{row.daysCount ?? '—'} {t('daysCount')}</span>
+          <span className="nx-cr__amount">{row.daysCount ?? '�'} {t('daysCount')}</span>
           <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
             <KebabMenu
               ariaLabel={t('actions')}
@@ -379,18 +379,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     </div>
   ), [t, deleteLeaveMutation, setReturnRow, setSettlementRow, setEditLeave, canShowLeaveReturnRow, canShowSalarySettlement]);
 
-  const yearLeading = (
-    <DateMonthScopePicker
-      year={year}
-      years={[new Date().getFullYear(), new Date().getFullYear() - 1]}
-      mode="year"
-      allowAll={false}
-      allowYear
-      allowMonth={false}
-      onYearChange={setYear}
-      onMonthChange={() => {}}
-    />
-  );
+  const yearLeading = <YearDateFilter year={year} onYearChange={setYear} />;
 
   return (
     <HrFlatListTabShell
@@ -420,7 +409,6 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="1%"
           {...hrFlatSmartTableShellProps(embedded)}
           columns={columns}
           data={filteredData}

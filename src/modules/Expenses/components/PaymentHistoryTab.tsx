@@ -126,13 +126,14 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
   }
 
   const columns = useMemo<SmartTableColumn<InvoiceListItem>[]>(() => [
-    { key: 'invoiceNumber', label: t('documentNumber'), minWidth: 110, render: (_value, row) => <span className="nx-cell-num nx-cell-bold text-[13px]">{row.invoiceNumber || '-'}</span> },
-    { key: 'supplierInvoiceNumber', label: t('supplierInvoiceNumber'), minWidth: 120, render: (_value, row) => <span className="nx-cell-num nx-cell-muted text-[13px]">{row.supplierInvoiceNumber || '-'}</span> },
-    { key: 'supplierName', label: t('supplier'), minWidth: 130, render: (_value, row) => <span className="text-[13px]">{lang === 'en' ? row.supplier?.nameEn || row.supplier?.nameAr || '-' : row.supplier?.nameAr || row.supplier?.nameEn || '-'}</span> },
-    { key: 'expenseLineName', label: t('expenseLineNameCol'), minWidth: 140, render: (_value, row) => <span className="text-[13px]">{readExpenseLineName(row, lang)}</span> },
-    { key: 'kind', label: t('expenseLineKindCol'), width: 110, minWidth: 100, render: (value) => <Badge {...Badge.fromStatus(value, kindBadgeMap)} size="sm" /> },
+    { key: 'invoiceNumber', size: 'document', label: t('documentNumber'), minWidth: 110, render: (_value, row) => <span className="nx-cell-num nx-cell-bold text-[13px]">{row.invoiceNumber || '-'}</span> },
+    { key: 'supplierInvoiceNumber', size: 'document', label: t('supplierInvoiceNumber'), minWidth: 120, render: (_value, row) => <span className="nx-cell-num nx-cell-muted text-[13px]">{row.supplierInvoiceNumber || '-'}</span> },
+    { key: 'supplierName', size: 'supplier', label: t('supplier'), minWidth: 130, render: (_value, row) => <span className="text-[13px]">{lang === 'en' ? row.supplier?.nameEn || row.supplier?.nameAr || '-' : row.supplier?.nameAr || row.supplier?.nameEn || '-'}</span> },
+    { key: 'expenseLineName', size: 'name', label: t('expenseLineNameCol'), minWidth: 140, render: (_value, row) => <span className="text-[13px]">{readExpenseLineName(row, lang)}</span> },
+    { key: 'kind', size: 'document', label: t('expenseLineKindCol'), width: 110, minWidth: 100, render: (value) => <Badge {...Badge.fromStatus(value, kindBadgeMap)} size="sm" /> },
     {
       key: 'attachment',
+      size: 'name',
       label: t('invoiceReceiptCol'),
       minWidth: 140,
       render: (_value, row) =>
@@ -161,10 +162,10 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
           <span className="nx-cell-muted-sm text-[13px]">-</span>
         ),
     },
-    { key: 'transactionDate', label: t('date'), minWidth: 110, render: (value) => <span className="nx-cell-muted-sm text-[13px]">{value ? formatSaudiDate(value) : '-'}</span> },
-    { key: 'netAmount', label: t('expenseTaxBreakdownNet'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num nx-cell-num--green text-[13px]" /> },
-    { key: 'taxAmount', label: t('expenseTaxBreakdownVat'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num text-noorix-amber text-[13px]" /> },
-    { key: 'totalAmount', label: t('total'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num font-bold text-[13px]" /> },
+    { key: 'transactionDate', size: 'date', label: t('date'), minWidth: 110, render: (value) => <span className="nx-cell-muted-sm text-[13px]">{value ? formatSaudiDate(value) : '-'}</span> },
+    { key: 'netAmount', size: 'money-sm', label: t('expenseTaxBreakdownNet'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num nx-cell-num--green text-[13px]" /> },
+    { key: 'taxAmount', size: 'tax', label: t('expenseTaxBreakdownVat'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num text-noorix-amber text-[13px]" /> },
+    { key: 'totalAmount', size: 'money-md', label: t('total'), numeric: true, minWidth: 100, render: (value) => <FmtNum n={Number(value || 0)} className="nx-cell-num font-bold text-[13px]" /> },
   ], [lang, kindBadgeMap, t, effectiveCompanyId, showToast]);
 
   if (isError) {
@@ -215,7 +216,6 @@ export default function PaymentHistoryTab({ companyId, dateFilter: externalDateF
       <SmartTable
         compact
         showRowNumbers
-        rowNumberWidth="1%"
         innerPadding={8}
         columns={columns}
         data={activeItems}

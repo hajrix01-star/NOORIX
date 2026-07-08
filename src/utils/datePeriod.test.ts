@@ -13,6 +13,7 @@ function state(overrides: Partial<DatePeriodState>): DatePeriodState {
     mode: 'month',
     selYear: 2026,
     selMonth: 6,
+    selQuarter: 2,
     selDay: '2026-06-30',
     rangeStart: '2026-06-01',
     rangeEnd: '2026-06-30',
@@ -64,6 +65,22 @@ describe('datePeriod', () => {
       startDate: '2025-01-01T00:00:00+03:00',
       endDate: '2025-12-31T23:59:59+03:00',
     });
+  });
+
+  it('resolves quarter to full quarter dates', () => {
+    expect(resolveDatePeriodRange(state({
+      mode: 'quarter',
+      selYear: 2026,
+      selQuarter: 3,
+    }), now)).toEqual({
+      startDate: '2026-07-01T00:00:00+03:00',
+      endDate: '2026-09-30T23:59:59+03:00',
+    });
+    expect(buildDatePeriodLabel(state({
+      mode: 'quarter',
+      selYear: 2026,
+      selQuarter: 3,
+    }), now)).toBe('Q3 2026');
   });
 
   it('resolves year mode as a selectable year range', () => {

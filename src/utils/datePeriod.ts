@@ -1,9 +1,10 @@
-export type DatePeriodMode = 'all' | 'day' | 'month' | 'months' | 'year' | 'range';
+export type DatePeriodMode = 'all' | 'day' | 'month' | 'months' | 'quarter' | 'year' | 'range';
 
 export type DatePeriodState = {
   mode: DatePeriodMode;
   selYear: number;
   selMonth: number;
+  selQuarter: number;
   selDay: string;
   rangeStart: string;
   rangeEnd: string;
@@ -84,6 +85,21 @@ export function normalizeYearSpan(startYear: number, endYear: number) {
     : { startYear: end, endYear: start };
 }
 
+export function normalizeQuarter(value: number) {
+  const quarter = Math.trunc(Number(value));
+  if (quarter < 1) return 1;
+  if (quarter > 4) return 4;
+  return quarter;
+}
+
+export function quarterStartMonth(quarter: number) {
+  return (normalizeQuarter(quarter) - 1) * 3 + 1;
+}
+
+export function quarterEndMonth(quarter: number) {
+  return quarterStartMonth(quarter) + 2;
+}
+
 export function listYearMonthsInRange(startDate: string, endDate: string) {
   const start = toYmdOnly(startDate);
   const end = toYmdOnly(endDate);
@@ -131,6 +147,16 @@ export function resolveDatePeriodRange(state: DatePeriodState, now: DatePeriodNo
     };
   }
 
+  if (state.mode === 'quarter') {
+    const quarter = normalizeQuarter(state.selQuarter || Math.ceil((state.selMonth || now.month) / 3));
+    const startMonth = quarterStartMonth(quarter);
+    const endMonth = quarterEndMonth(quarter);
+    return {
+      startDate: saudiDayStart(ymd(state.selYear, startMonth, 1)),
+      endDate: saudiDayEnd(ymd(state.selYear, endMonth, lastDayOfMonth(state.selYear, endMonth))),
+    };
+  }
+
   if (state.mode === 'months') {
     const span = normalizeMonthSpan(
       state.monthRangeStartYear,
@@ -175,12 +201,16 @@ function formatMonth(year: number, month: number) {
 }
 
 export function buildDatePeriodLabel(state: DatePeriodState, now: DatePeriodNow) {
-  if (state.mode === 'all') return '-';
+  if (state.mode === 'all') return 'All';
   if (state.mode === 'year') {
     const span = normalizeYearSpan(state.yearRangeStart || state.selYear, state.yearRangeEnd || state.selYear);
     return span.startYear === span.endYear ? String(span.startYear) : `${span.startYear} - ${span.endYear}`;
   }
   if (state.mode === 'month') return formatMonth(state.selYear, state.selMonth);
+  if (state.mode === 'quarter') {
+    const quarter = normalizeQuarter(state.selQuarter || Math.ceil((state.selMonth || now.month) / 3));
+    return `Q${quarter} ${state.selYear}`;
+  }
   if (state.mode === 'months') {
     const span = normalizeMonthSpan(
       state.monthRangeStartYear,

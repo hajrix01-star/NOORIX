@@ -44,7 +44,6 @@ export function EmployeeProfileDocumentsSection({
       <SmartTable
         compact
         showRowNumbers
-        rowNumberWidth="1%"
         innerPadding={8}
         columns={[
           {

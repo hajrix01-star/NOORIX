@@ -38,7 +38,10 @@ export default defineConfig({
           return out;
         }
         const isDev = process.env.NODE_ENV !== 'production';
-        const header = isDev ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
+        if (isDev) {
+          return out;
+        }
+        const header = 'Content-Security-Policy';
         let apiOrigin = '';
         const raw = process.env.VITE_API_URL;
         if (raw) {

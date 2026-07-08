@@ -8,7 +8,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { fmt } from '../../../utils/format';
 import { getSaudiToday, toDateInputYmd } from '../../../utils/saudiDate';
 import { ProductSearchInput, type ProductSearchItem } from '../../../components/common/ProductSearchInput';
-import { Button, DateField, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal, SummaryBar } from '../../../ui';
+import { Button, TransactionDatePicker, EditableNumberCell, Input, AdaptiveSheet, FmtNum, Modal, SummaryBar } from '../../../ui';
 import { useOrderSections } from '../../../hooks/useOrders';
 import type {
   CreateOrderLinePayload,
@@ -423,7 +423,7 @@ export function OrderFormModal({
           {/* التاريخ */}
           <div className="flex flex-col gap-1 min-w-[130px] flex-1">
             <label className="text-[11px] text-noorix-muted font-medium">{t('orderDate')} *</label>
-            <DateField value={orderDate} onValueChange={setOrderDate} />
+            <TransactionDatePicker value={orderDate} onValueChange={setOrderDate} />
           </div>
 
           {/* نوع الطلب — أزرار */}

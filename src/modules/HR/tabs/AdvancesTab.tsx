@@ -242,7 +242,6 @@ export default function AdvancesTab({ embedded }: AdvancesTabProps = {}) {
         <SmartTable
           compact
           showRowNumbers
-          rowNumberWidth="1%"
           {...hrFlatSmartTableShellProps(embedded)}
           columns={columns}
           data={groupedPageRows}

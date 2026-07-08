@@ -5,7 +5,7 @@ import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
 import { getSaudiNow } from '../../utils/saudiDate';
 import { exportToExcel } from '../../utils/exportUtils';
 import ReportsDetailModal from './ReportsDetailModal';
-import { Button, DateMonthScopePicker, FilterToolbar, Input } from '../../ui';
+import { Button, FilterToolbar, Input } from '../../ui';
 import {
   amountText,
   percentText,
@@ -27,6 +27,7 @@ import {
   groupToneClass as groupToneClassModel,
   lineIndentClass as lineIndentClassModel,
 } from './generalReportV2Model';
+import ReportDateFilter from './ReportDateFilter';
 
 const GROUP_TONE_CLASSES: Record<string, string> = {
   sales: 'nx-gr2-score--sales',
@@ -245,17 +246,10 @@ export default function GeneralReportV2Screen() {
           </div>
         </div>
         <FilterToolbar variant="bare" className="nx-gr2-controls">
-          <DateMonthScopePicker
-            year={year}
-            years={yearOptions}
-            month={selectedMonth}
-            mode={periodMode}
-            allowAll={false}
-            allowYear
-            fallbackMonth={selectedMonthNumber || 1}
+          <ReportDateFilter
             onYearChange={setYear}
             onMonthChange={setSelectedMonth}
-            onModeChange={(value) => setPeriodMode(value as ReportPeriodMode)}
+            onModeChange={setPeriodMode}
           />
           <div className="nx-gr2-actions">
             <Button variant="raw" type="button" onClick={handleExportExcel} disabled={!report}>{t('exportExcel')}</Button>
