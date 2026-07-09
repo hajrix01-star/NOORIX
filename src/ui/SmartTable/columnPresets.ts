@@ -16,8 +16,8 @@ const KIND_DEFAULTS: Record<ColumnKind, Partial<SmartTableColumn>> = {
 
 const SIZE_DEFAULTS: Record<SmartTableColumnSize, Partial<SmartTableColumn>> = {
   document: { align: 'center', shrink: true, width: '10ch', maxWidth: '12ch' },
-  name: { align: 'start', width: '22ch', minWidth: '18ch', maxWidth: '30ch' },
-  supplier: { align: 'start', width: '18ch', minWidth: '14ch', maxWidth: '24ch' },
+  name: { align: 'center', width: '22ch', minWidth: '18ch', maxWidth: '30ch' },
+  supplier: { align: 'center', width: '18ch', minWidth: '14ch', maxWidth: '24ch' },
   date: { align: 'center', shrink: true, width: '10ch', maxWidth: '11ch' },
   'money-sm': { align: 'center', numeric: true, shrink: true, width: '9ch', maxWidth: '10ch' },
   'money-md': { align: 'center', numeric: true, shrink: true, width: '11ch', maxWidth: '12ch' },

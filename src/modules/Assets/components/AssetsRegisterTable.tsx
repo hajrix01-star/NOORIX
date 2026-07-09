@@ -75,11 +75,12 @@ export function AssetsRegisterTable({
       {
         key: 'nameAr',
         size: 'name',
+        align: 'center',
         header: t('assetName'),
         render: (_: unknown, row: AssetRegisterListItem) => (
           <button
             type="button"
-            className="nx-asset-name-trigger"
+            className="nx-asset-name-trigger nx-asset-name-trigger--table"
             onClick={(event) => {
               event.stopPropagation();
               onOpenWarranty(row);
@@ -231,7 +232,7 @@ export function AssetsRegisterTable({
         <div className="nx-cr__line1">
           <button
             type="button"
-            className="nx-asset-name-trigger nx-asset-name-trigger--compact"
+            className="nx-asset-name-trigger nx-asset-name-trigger--compact nx-asset-name-trigger--table"
             onClick={(event) => {
               event.stopPropagation();
               onOpenWarranty(row);

@@ -132,7 +132,8 @@ export default function EmployeeProfileScreen() {
     Array.isArray(userPermissions) &&
     userPermissions.includes('EMPLOYEES_WRITE') &&
     userPermissions.includes('HR_WRITE');
-  const activeCompany = (companies as HrProfileCompanyRef[] | undefined)?.find((c) => c.id === companyId);
+  const companyRefs = (companies as HrProfileCompanyRef[] | undefined) ?? [];
+  const activeCompany = companyRefs.find((c) => c.id === companyId);
   const companyName = activeCompany?.nameAr || activeCompany?.name || '';
   const companyLogo = activeCompany?.logoUrl || '';
   const [showAdvance, setShowAdvance] = useState(false);
@@ -417,7 +418,10 @@ export default function EmployeeProfileScreen() {
     }
   };
 
-  if (isLoading || isCompensationSnapshotLoading) {
+  const isCompanySelectionPending = !companyId || (companyRefs.length > 0 && !activeCompany);
+  const isEmployeeProfileBootstrapping = !!id && isCompanySelectionPending;
+
+  if (isEmployeeProfileBootstrapping || isLoading || isCompensationSnapshotLoading) {
     return <EmployeeProfileLoading t={t} />;
   }
   if (error || !employee) {

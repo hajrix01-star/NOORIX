@@ -58,17 +58,17 @@ const routerBaseName = import.meta.env.BASE_URL === '/' ? undefined : import.met
 
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        {/* future flags تُقلّل تحذيرات React Router v7 وتحسّن الأداء */}
-        <BrowserRouter basename={routerBaseName} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <AuthProvider>
-            <ToastProvider>
+    <QueryClientProvider client={queryClient}>
+      {/* future flags تُقلّل تحذيرات React Router v7 وتحسّن الأداء */}
+      <BrowserRouter basename={routerBaseName} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AuthProvider>
+          <ToastProvider>
+            <ErrorBoundary>
               <App />
-            </ToastProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+            </ErrorBoundary>
+          </ToastProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   </React.StrictMode>
 );

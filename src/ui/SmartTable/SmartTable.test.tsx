@@ -345,9 +345,9 @@ describe('SmartTable', () => {
 
     const cells = Array.from(container.querySelectorAll('tbody td')) as HTMLElement[];
     expect(cells[0].getAttribute('data-column-size')).toBe('name');
-    expect(cells[0].style.getPropertyValue('--nx-smart-cell-align')).toBe('start');
+    expect(cells[0].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
     expect(cells[1].getAttribute('data-column-size')).toBe('supplier');
-    expect(cells[1].style.getPropertyValue('--nx-smart-cell-align')).toBe('start');
+    expect(cells[1].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
     expect(cells[2].getAttribute('data-column-size')).toBe('date');
     expect(cells[2].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
     expect(cells[3].getAttribute('data-column-size')).toBe('money-sm');

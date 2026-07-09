@@ -6344,6 +6344,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-inline-start: 1px solid var(--nx-table-body-col-line) !important;
   border-inline-end: 0 !important;
   color: var(--nx-table-foot-fg) !important;
+  text-align: center !important;
+  vertical-align: middle !important;
 }
 .noorix-table tfoot td:first-child {
   border-inline-start: 0 !important;
@@ -6354,7 +6356,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 }
 .noorix-table td[data-column-size="name"],
 .noorix-table td[data-column-size="supplier"] {
-  text-align: start !important;
+  text-align: center !important;
 }
 .noorix-table td[data-column-size="document"],
 .noorix-table td[data-column-size="date"],
@@ -6449,6 +6451,20 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   height: var(--nx-smart-cell-height, 42px) !important;
   padding: var(--nx-smart-cell-padding, 8px 12px) !important;
   text-align: var(--nx-smart-cell-align, center) !important;
+}
+.noorix-table :is(thead th, tbody td, tfoot td) > :is(div, span, button) {
+  text-align: center;
+}
+.noorix-table :is(thead th, tbody td, tfoot td) > :is(.flex, button, [class*="inline-flex"]) {
+  align-items: center !important;
+  justify-content: center;
+}
+.noorix-table :is(thead th, tbody td, tfoot td) .items-start {
+  align-items: center !important;
+}
+.noorix-table :is(thead th, tbody td, tfoot td) .text-start,
+.noorix-table :is(thead th, tbody td, tfoot td) .text-end {
+  text-align: center !important;
 }
 .noorix-table .nx-smart-row-number-cell {
   width: var(--nx-smart-row-number-width, 34px) !important;

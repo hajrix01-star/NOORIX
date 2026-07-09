@@ -2,6 +2,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -23,6 +24,25 @@ type ToastState = {
 };
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
+
+let warnedMissingToastProvider = false;
+
+const fallbackToastContext: ToastContextValue = {
+  showToast: (message: unknown, type: ToastType = 'info') => {
+    if (typeof console !== 'undefined' && !warnedMissingToastProvider) {
+      warnedMissingToastProvider = true;
+      console.warn('ToastProvider is not available; dispatching a fallback toast event.', { type });
+    }
+    if (typeof window !== 'undefined' && message != null && message !== '') {
+      window.dispatchEvent(
+        new CustomEvent('noorix:toast', {
+          detail: { message: String(message), type },
+        }),
+      );
+    }
+  },
+  dismiss: () => {},
+};
 
 /** تجاهل تكرار نفس الرسالة ونفس النوع خلال هذه المدة (يقلّل الوميض المزدوج). */
 const DEDUPE_MS = 2200;
@@ -51,6 +71,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ToastContextValue>(() => ({ showToast, dismiss }), [showToast, dismiss]);
 
+  useEffect(() => {
+    const handleFallbackToast = (event: Event) => {
+      const detail = (event as CustomEvent<{ message?: unknown; type?: ToastType }>).detail;
+      if (!detail?.message) return;
+      showToast(detail.message, detail.type);
+    };
+    window.addEventListener('noorix:toast', handleFallbackToast);
+    return () => window.removeEventListener('noorix:toast', handleFallbackToast);
+  }, [showToast]);
+
   return (
     <ToastContext.Provider value={value}>
       {children}
@@ -62,7 +92,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (ctx === undefined) {
-    throw new Error('useToast must be used within ToastProvider');
+    return fallbackToastContext;
   }
   return ctx;
 }

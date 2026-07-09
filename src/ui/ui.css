@@ -914,8 +914,8 @@
 .nx-cell-muted-sm { color: var(--noorix-text-muted); font-size: 12px; white-space: nowrap; }
 
 /* تذييل الجدول */
-.nx-tfoot-label { font-size: 13px !important; font-weight: 700; color: var(--noorix-text); text-align: end; }
-.nx-tfoot-num { font-family: var(--noorix-font-numbers); font-size: 14px !important; font-weight: 800 !important; text-align: end; }
+.nx-tfoot-label { font-size: 13px !important; font-weight: 700; color: var(--noorix-text); text-align: center; }
+.nx-tfoot-num { font-family: var(--noorix-font-numbers); font-size: 14px !important; font-weight: 800 !important; text-align: center; }
 
 
 /* ???????????????????????????????????????????????????????????
@@ -1566,6 +1566,27 @@
 
 [dir="rtl"] .nx-asset-name-trigger {
   align-items: flex-end;
+}
+
+.nx-asset-name-trigger--table,
+[dir="rtl"] .nx-asset-name-trigger--table {
+  align-items: center;
+  text-align: center;
+}
+
+.noorix-table .nx-asset-name-trigger--table {
+  width: 100%;
+}
+
+.nx-cr__line1 > .nx-asset-name-trigger--table {
+  flex: 1 1 0;
+  max-width: none;
+  min-width: 0;
+}
+
+.nx-cr__line1 > .nx-asset-name-trigger--table .nx-cr__name {
+  width: 100%;
+  text-align: center;
 }
 
 .nx-asset-name-trigger:hover .font-semibold,

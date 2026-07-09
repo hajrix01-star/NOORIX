@@ -11,8 +11,8 @@ import { useToast } from '../../context/ToastContext';
 import { useTabSearchParam } from '../../hooks/useTabSearchParam';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { hasPermission, resolveUserRole, PERMISSIONS } from '../../constants/permissions';
-import { EmptyState } from '../../components/states/EmptyState';
 import { ErrorState } from '../../components/states/ErrorState';
+import LoadingFallback from '../../components/LoadingFallback';
 import { Button, ScreenShell, ScreenTitle, ScreenTabs, Badge } from '../../ui';
 import { useAssetsRegisterFilters } from './hooks/useAssetsRegisterFilters';
 import { useAssetsRegisterData } from './hooks/useAssetsRegisterData';
@@ -26,12 +26,20 @@ import { AssetWarrantyDetailModal } from './components/AssetWarrantyDetailModal'
 import { ASSET_SECTION_TAB_IDS } from './types';
 import type { AssetRegisterListItem, PendingWarrantyInvoiceRow } from './types';
 
+type AssetCompanyRef = {
+  id?: string | null;
+};
+
 export default function AssetsRegisterScreen() {
-  const { activeCompanyId } = useApp();
+  const { activeCompanyId, companies } = useApp();
   const { t, lang } = useTranslation();
   const { showToast } = useToast();
   const { user } = useAuth();
   const companyId = activeCompanyId ?? '';
+  const companyRefs = (companies as AssetCompanyRef[] | undefined) ?? [];
+  const activeCompany = companyRefs.find((company) => company.id === companyId);
+  const isCompanySelectionPending = !companyId || (companyRefs.length > 0 && !activeCompany);
+  const queryCompanyId = isCompanySelectionPending ? '' : companyId;
   const queryClient = useQueryClient();
 
   const role = resolveUserRole(user?.role);
@@ -55,17 +63,17 @@ export default function AssetsRegisterScreen() {
     refetch,
     pendingRows,
     pendingLoading,
-  } = useAssetsRegisterData(companyId, warrantyFilter, debouncedQ, page, pageSize, t('loadingError'));
+  } = useAssetsRegisterData(queryCompanyId, warrantyFilter, debouncedQ, page, pageSize, t('loadingError'));
 
   const { handleDelete, invalidateAssets } = useAssetsRegisterActions({
-    companyId,
+    companyId: queryCompanyId,
     canDelete,
     queryClient,
     showToast,
     t,
   });
 
-  const { suppliers } = useSuppliers(companyId, { pageSize: 500 });
+  const { suppliers } = useSuppliers(queryCompanyId, { pageSize: 500 });
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<AssetRegisterListItem | null>(null);
@@ -127,12 +135,10 @@ export default function AssetsRegisterScreen() {
     setPendingInvoiceForComplete(row);
   }, []);
 
-  if (!companyId) {
+  if (isCompanySelectionPending) {
     return (
       <ScreenShell>
-        <EmptyState className="min-h-[120px] rounded-xl border border-noorix-border bg-noorix-surface py-8 px-4">
-          {t('activeCompany')}
-        </EmptyState>
+        <LoadingFallback />
       </ScreenShell>
     );
   }
