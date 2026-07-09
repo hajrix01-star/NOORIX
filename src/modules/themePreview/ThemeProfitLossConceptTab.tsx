@@ -149,6 +149,9 @@ export default function ThemeProfitLossConceptTab() {
       key: 'label',
       label: '',
       minWidth: 330,
+      align: 'start',
+      headerClassName: 'text-start',
+      cellClassName: 'text-start',
       render: (_value, row) => {
         const indent = row.level === 3 ? 'ps-10' : row.level === 2 ? 'ps-6' : 'ps-4';
         return (
@@ -175,10 +178,13 @@ export default function ThemeProfitLossConceptTab() {
       ),
       numeric: true,
       width: 150,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
       render: (_value, row) => {
         const current = scale(row.current, selectedPeriod.factor);
         return (
-          <span className={`font-black ${numberClass(current, row.kind)}`} dir="ltr">
+          <span className={`inline-block min-w-[112px] text-end font-black ${numberClass(current, row.kind)}`} dir="ltr">
             {formatMoney(current)}
           </span>
         );
@@ -194,10 +200,13 @@ export default function ThemeProfitLossConceptTab() {
       ),
       numeric: true,
       width: 150,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
       render: (_value, row) => {
         const previous = scale(row.previous, selectedPeriod.factor);
         return (
-          <span className={`font-black ${numberClass(previous, row.kind)}`} dir="ltr">
+          <span className={`inline-block min-w-[112px] text-end font-black ${numberClass(previous, row.kind)}`} dir="ltr">
             {formatMoney(previous)}
           </span>
         );
@@ -213,11 +222,14 @@ export default function ThemeProfitLossConceptTab() {
       ),
       numeric: true,
       width: 130,
+      align: 'end',
+      headerClassName: 'text-center',
+      cellClassName: 'text-end font-[var(--noorix-font-numbers)] tabular-nums',
       render: (_value, row) => {
         const current = scale(row.current, selectedPeriod.factor);
         const previous = scale(row.previous, selectedPeriod.factor);
         return (
-          <span className="font-black text-slate-500" dir="ltr">
+          <span className="inline-block min-w-[78px] text-end font-black text-slate-500" dir="ltr">
             {formatPercent(percent(current, previous), isArabic)}
           </span>
         );
