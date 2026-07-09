@@ -29,6 +29,34 @@ type ExportToExcelObjectArg = {
   rtl?: boolean;
 } & Record<string, unknown>;
 
+type SpreadsheetCell = string | number | Date | null | undefined;
+type SpreadsheetRow = SpreadsheetCell[];
+type ImportedObjectRow = Record<string, unknown>;
+
+function normalizeSpreadsheetCell(cell: unknown): SpreadsheetCell {
+  if (
+    cell == null ||
+    typeof cell === 'string' ||
+    typeof cell === 'number' ||
+    cell instanceof Date
+  ) {
+    return cell;
+  }
+  return String(cell);
+}
+
+function normalizeSpreadsheetRow(row: unknown): SpreadsheetRow {
+  return Array.isArray(row) ? row.map(normalizeSpreadsheetCell) : [];
+}
+
+function normalizeRowsToWidth(rows: SpreadsheetRow[], colCount: number): SpreadsheetRow[] {
+  return rows.map((row) => {
+    const arr = [...row];
+    while (arr.length < colCount) arr.push('');
+    return arr;
+  });
+}
+
 /**
  * exportToExcel — تصدير بيانات إلى Excel مع تنسيق احترافي
  *
@@ -114,8 +142,8 @@ export async function exportToExcel(
   const titleRow = title ? 1 : 0;
   const headerRowR = companyRow + titleRow;
 
-  const dataAoA = rowsInput.map((row: any) =>
-    dataKeys.map((k: any) => {
+  const dataAoA = rowsInput.map((row) =>
+    dataKeys.map((k) => {
       const v = row[k];
       if (v == null || v === '') return '';
       if (money2KeySet.has(k)) {
@@ -128,11 +156,11 @@ export async function exportToExcel(
       if (typeof v === 'number') return v;
       const s = String(v).replace(/,/g, '').trim();
       const n = Number(s);
-      return s !== '' && !isNaN(n) ? n : v;
+      return s !== '' && !isNaN(n) ? n : normalizeSpreadsheetCell(v);
     }),
   );
 
-  const aoa = [];
+  const aoa: SpreadsheetRow[] = [];
   if (companyName) aoa.push([companyName, ...Array(Math.max(0, headers.length - 1)).fill('')]);
   if (title) aoa.push([title, ...Array(Math.max(0, headers.length - 1)).fill('')]);
   aoa.push([...headers]);
@@ -173,7 +201,7 @@ export async function exportToExcel(
     }
   }
 
-  headers.forEach((h: any, ci: any) => {
+  headers.forEach((h, ci) => {
     const addr = XLSX.utils.encode_cell({ r: headerRowR, c: ci });
     if (!ws[addr]) ws[addr] = { v: h, t: 's' };
     ws[addr].s = {
@@ -236,8 +264,8 @@ export async function exportToExcel(
   }
 
   if (headers.length) {
-    ws['!cols'] = headers.map((label: any, ci: any) => {
-      const maxLen = dataAoA.reduce((m: any, row: any) => Math.max(m, String(row[ci] ?? '').length), String(label).length);
+    ws['!cols'] = headers.map((label, ci) => {
+      const maxLen = dataAoA.reduce((m, row) => Math.max(m, String(row[ci] ?? '').length), String(label).length);
       return { wch: Math.min(Math.max(maxLen + 2, 8), 52) };
     });
   }
@@ -263,33 +291,33 @@ export async function importFromExcel(file: File, opts: { headerRow?: number } =
   const { headerRow = 0 } = opts;
 
   if (headerRow > 0) {
-    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as unknown[][];
+    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as SpreadsheetRow[];
     if (!raw.length || raw.length <= headerRow) return [];
-    const headerRowData = raw[headerRow] as unknown[];
-    const headers = headerRowData.map((h: any, i: any) => String(h || '').trim() || `العمود_${i + 1}`);
-    return raw.slice(headerRow + 1).map((row: any) => {
-      const rowArr = row as unknown[];
-      const obj: Record<string, unknown> = {};
-      headers.forEach((h: any, i: any) => {
+    const headerRowData = raw[headerRow];
+    const headers = headerRowData.map((h, i) => String(h || '').trim() || `العمود_${i + 1}`);
+    return raw.slice(headerRow + 1).map((row) => {
+      const rowArr = row;
+      const obj: ImportedObjectRow = {};
+      headers.forEach((h, i) => {
         obj[h] = rowArr[i] ?? '';
       });
       return obj;
     });
   }
 
-  const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false }) as Record<string, unknown>[];
+  const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false }) as ImportedObjectRow[];
   if (rows.length && typeof rows[0] === 'object') {
     const keys = Object.keys(rows[0]);
-    const badKeys = keys.filter((k: any) => !k || k.startsWith('__') || /^[A-Z]+$/.test(k));
+    const badKeys = keys.filter((k) => !k || k.startsWith('__') || /^[A-Z]+$/.test(k));
     if (badKeys.length === keys.length && keys.length > 0) {
-      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as unknown[][];
+      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as SpreadsheetRow[];
       if (raw.length >= 2) {
-        const headerCells = raw[0] as unknown[];
-        const headers = headerCells.map((h: any, i: any) => String(h || '').trim() || `العمود_${i + 1}`);
-        return raw.slice(1).map((row: any) => {
-          const rowArr = row as unknown[];
-          const obj: Record<string, unknown> = {};
-          headers.forEach((h: any, i: any) => {
+        const headerCells = raw[0];
+        const headers = headerCells.map((h, i) => String(h || '').trim() || `العمود_${i + 1}`);
+        return raw.slice(1).map((row) => {
+          const rowArr = row;
+          const obj: ImportedObjectRow = {};
+          headers.forEach((h, i) => {
             obj[h] = rowArr[i] ?? '';
           });
           return obj;
@@ -308,24 +336,20 @@ export async function importExcelRaw(file: File) {
   const XLSX = await import('xlsx');
   const data = await file.arrayBuffer();
   const wb = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy-mm-dd' });
-  let bestRows: any[][] = [];
+  let bestRows: SpreadsheetRow[] = [];
   let maxDataRows = 0;
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    const rows = json.map((r: any) => (Array.isArray(r) ? r : []));
-    const dataRows = rows.filter((row: any) => row?.filter((c: any) => c !== '' && c != null).length >= 2);
+    const rows = json.map(normalizeSpreadsheetRow);
+    const dataRows = rows.filter((row) => row.filter((c) => c !== '' && c != null).length >= 2);
     if (dataRows.length > maxDataRows) {
       maxDataRows = dataRows.length;
       bestRows = rows;
     }
   }
-  const colCount = bestRows.length ? Math.max(...bestRows.map((r: any) => r.length)) : 0;
-  const normalized = bestRows.map((r: any) => {
-    const arr = [...r];
-    while (arr.length < colCount) arr.push('');
-    return arr;
-  });
+  const colCount = bestRows.length ? Math.max(...bestRows.map((r) => r.length)) : 0;
+  const normalized = normalizeRowsToWidth(bestRows, colCount);
   return { raw: normalized, colCount };
 }
 
@@ -338,7 +362,7 @@ export async function importBankStatementFile(file: File) {
   if (ext === 'csv') {
     const text = await file.text();
     const lines = text.split(/\r?\n/).filter(Boolean);
-    const raw = lines.map((line: any) => {
+    const raw = lines.map((line) => {
       const parts = [];
       let cur = '';
       let inQ = false;
@@ -353,12 +377,8 @@ export async function importBankStatementFile(file: File) {
       parts.push(String(cur).replace(/^"|"$/g, '').trim());
       return parts;
     });
-    const colCount = raw.length ? Math.max(...raw.map((r: any) => r.length)) : 0;
-    const normalized = raw.map((r: any) => {
-      const arr = [...r];
-      while (arr.length < colCount) arr.push('');
-      return arr;
-    });
+    const colCount = raw.length ? Math.max(...raw.map((r) => r.length)) : 0;
+    const normalized = normalizeRowsToWidth(raw, colCount);
     return { raw: normalized, colCount };
   }
   return importExcelRaw(file);
