@@ -10,11 +10,22 @@ import type { CardStyleDefinition, CardStyleId } from '../../constants/cardStyle
 import { ScreenShell, ScreenTitle, ScreenTabs } from '../../ui';
 import ThemeFiltersV2Tab from './ThemeFiltersV2Tab';
 import ThemeFiltersV3Tab from './ThemeFiltersV3Tab';
+import ThemeGeneralReportConceptTab from './ThemeGeneralReportConceptTab';
 import ThemeGlobalTableConceptTab from './ThemeGlobalTableConceptTab';
+import ThemeProfitLossConceptTab from './ThemeProfitLossConceptTab';
 import ThemeTableContainersTab from './ThemeTableContainersTab';
 import ThemeUILabTab, { ShadcnInspiredDateFilterSamples } from './ThemeUILabTab';
 
-type ThemePreviewTabId = 'filters' | 'filtersV2' | 'filtersV3' | 'cards' | 'tables' | 'globalTable' | 'uilab';
+type ThemePreviewTabId =
+  | 'filters'
+  | 'filtersV2'
+  | 'filtersV3'
+  | 'cards'
+  | 'tables'
+  | 'globalTable'
+  | 'generalReportConcept'
+  | 'profitLossConcept'
+  | 'uilab';
 
 type CardPreviewProps = CardStyleDefinition & {
   styleId: CardStyleId;
@@ -49,7 +60,17 @@ function CardPreview({ styleId, nameAr, nameEn, descAr, descEn, isSelected, onSe
   );
 }
 
-const THEME_PREVIEW_TAB_IDS: readonly ThemePreviewTabId[] = ['filters', 'filtersV2', 'filtersV3', 'cards', 'tables', 'globalTable', 'uilab'];
+const THEME_PREVIEW_TAB_IDS: readonly ThemePreviewTabId[] = [
+  'filters',
+  'filtersV2',
+  'filtersV3',
+  'cards',
+  'tables',
+  'globalTable',
+  'generalReportConcept',
+  'profitLossConcept',
+  'uilab',
+];
 
 export default function ThemePreviewScreen() {
   const { t, lang } = useTranslation();
@@ -65,6 +86,8 @@ export default function ThemePreviewScreen() {
       { id: 'cards', label: t('themePreviewTabCards') },
       { id: 'tables', label: lang === 'ar' ? 'حاويات الجداول' : 'Table surfaces' },
       { id: 'globalTable', label: lang === 'ar' ? 'ثيم جداول عالمي' : 'Global table theme' },
+      { id: 'generalReportConcept', label: lang === 'ar' ? 'تقرير عام تجريبي' : 'General report concept' },
+      { id: 'profitLossConcept', label: lang === 'ar' ? 'تقرير الربح والخسارة' : 'Profit and loss concept' },
       { id: 'uilab', label: t('themePreviewTabUILab') },
     ],
     [lang, t],
@@ -128,6 +151,8 @@ export default function ThemePreviewScreen() {
         )}
         {activeTab === 'tables' && <ThemeTableContainersTab />}
         {activeTab === 'globalTable' && <ThemeGlobalTableConceptTab />}
+        {activeTab === 'generalReportConcept' && <ThemeGeneralReportConceptTab />}
+        {activeTab === 'profitLossConcept' && <ThemeProfitLossConceptTab />}
         {activeTab === 'uilab' && <ThemeUILabTab />}
       </ScreenTabs>
     </ScreenShell>
