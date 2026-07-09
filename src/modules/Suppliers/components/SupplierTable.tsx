@@ -21,6 +21,39 @@ function TypeBadge({ type }: { type: SupplierRecord['supplierType'] }) {
   );
 }
 
+function SupplierNameCell({
+  supplier,
+  lang,
+  onOpenProfile,
+}: {
+  supplier: SupplierRecord;
+  lang: string;
+  onOpenProfile?: (supplier: SupplierRecord) => void;
+}) {
+  const primaryName = getSupplierName(supplier, lang);
+  const secondaryName = getSupplierSecondaryName(supplier, lang);
+  const showSecondary = secondaryName !== '-' && secondaryName !== primaryName;
+
+  return (
+    <div className="flex min-w-0 flex-col items-start gap-0.5">
+      <Button
+        type="button"
+        variant="raw"
+        size="auto"
+        className="max-w-full truncate text-start font-bold text-noorix-blue hover:underline"
+        onClick={() => onOpenProfile?.(supplier)}
+      >
+        {primaryName}
+      </Button>
+      {showSecondary && (
+        <span className="max-w-full truncate text-[12px] font-medium text-noorix-muted" title={secondaryName}>
+          {secondaryName}
+        </span>
+      )}
+    </div>
+  );
+}
+
 type SupplierCheckboxProps = {
   checked: boolean;
   indeterminate?: boolean;
@@ -89,9 +122,13 @@ export const SupplierTable = memo(function SupplierTable({
   const columns: SmartTableColumn<SupplierRecord>[] = [
     {
       key: 'select',
+      kind: 'meta',
       shrink: true,
-      width: 44,
+      width: 40,
+      minWidth: 40,
+      maxWidth: 40,
       align: 'center',
+      cellClassName: 'nx-selection-cell',
       label: (
         <SupplierCheckbox
           checked={allSelected}
@@ -110,28 +147,11 @@ export const SupplierTable = memo(function SupplierTable({
     },
     {
       key: 'nameAr',
-      label: t('name'),
-      minWidth: 160,
+      size: 'name',
+      label: t('supplierName'),
+      minWidth: 220,
       render: (_value, row) => (
-        <Button
-          type="button"
-          variant="raw"
-          size="auto"
-          className="font-bold text-noorix-blue hover:underline"
-          onClick={() => onOpenProfile?.(row)}
-        >
-          {getSupplierName(row, lang)}
-        </Button>
-      ),
-    },
-    {
-      key: 'nameEn',
-      label: t('nameEnCol'),
-      minWidth: 140,
-      render: (_value, row) => (
-        <span className="nx-cell-muted">
-          {getSupplierSecondaryName(row, lang)}
-        </span>
+        <SupplierNameCell supplier={row} lang={lang} onOpenProfile={onOpenProfile} />
       ),
     },
     {
@@ -142,14 +162,6 @@ export const SupplierTable = memo(function SupplierTable({
       shrink: true,
       minWidth: 145,
       render: (value) => <span className="nx-cell-num whitespace-nowrap">{String(value || '-')}</span>,
-    },
-    {
-      key: 'phone',
-      label: t('phone'),
-      align: 'center',
-      shrink: true,
-      minWidth: 110,
-      render: (value) => <span className="nx-cell-muted whitespace-nowrap">{String(value || '-')}</span>,
     },
     {
       key: 'supplierCategoryId',
@@ -195,9 +207,9 @@ export const SupplierTable = memo(function SupplierTable({
     {
       key: 'actions',
       label: t('actions'),
+      kind: 'actions',
       align: 'center',
       shrink: true,
-      width: '1%',
       render: (_value, row) => (
         <KebabMenu
           ariaLabel={t('actions')}
@@ -230,7 +242,7 @@ export const SupplierTable = memo(function SupplierTable({
       compact={false}
       tableLayout="auto"
       stickyActionColumn={false}
-      tableMinWidth={860}
+      tableMinWidth={760}
       innerPadding={0}
       getRowStyle={(row): CSSProperties | undefined =>
         selectedIds.has(row.id) ? { background: 'var(--noorix-green-4)' } : undefined
@@ -267,7 +279,6 @@ export const SupplierTable = memo(function SupplierTable({
             <div className="nx-cr__line2">
               <div className="nx-cr__line2-start">
                 {category && <span className="nx-cr__meta">{getSupplierCategoryName(category, lang)}</span>}
-                {row.phone && <span className="nx-cr__meta">{row.phone}</span>}
                 {row.taxNumber && <span className="nx-cr__meta nx-cell-num">{row.taxNumber}</span>}
               </div>
               <div className="nx-cr__kebab" onClick={(event) => event.stopPropagation()}>

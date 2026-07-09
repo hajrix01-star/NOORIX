@@ -86,7 +86,7 @@ export function EmployeeProfileResidencySection({
           {
             key: 'serviceCategory',
             label: t('hrServiceCategory'),
-            width: '18%',
+            size: 'supplier',
             render: (_v: unknown, row: ProfileResidencyRow) => (
               <Badge
                 color="blue"
@@ -98,7 +98,7 @@ export function EmployeeProfileResidencySection({
           {
             key: 'serviceDetail',
             label: t('hrServiceDetailColumn'),
-            width: '18%',
+            size: 'name',
             render: (_v: unknown, row: ProfileResidencyRow) => (
               <Button
                 variant="raw"
@@ -113,7 +113,7 @@ export function EmployeeProfileResidencySection({
           {
             key: 'secondary',
             label: t('hrServiceSecondaryColumn'),
-            width: '16%',
+            size: 'date',
             render: (_v: unknown, row: ProfileResidencyRow) => (
               <span className="nx-cell-muted-sm">{formatHrServiceSecondaryDate(row, t, formatSaudiDate)}</span>
             ),
@@ -121,7 +121,7 @@ export function EmployeeProfileResidencySection({
           {
             key: 'invoiceNumber',
             label: t('invoiceNumber'),
-            width: '14%',
+            size: 'document',
             render: (_v: unknown, row: ProfileResidencyRow) => (
               row.invoiceNumber ? (
                 <Button
@@ -140,14 +140,14 @@ export function EmployeeProfileResidencySection({
           {
             key: 'status',
             label: t('status'),
-            width: '14%',
+            kind: 'status',
             render: (v: unknown) => <Badge {...Badge.fromStatus(v, residencyProfileStatusMap)} size="sm" />,
           },
           ...(canEditService
             ? [{
                 key: 'actions',
                 label: t('actions'),
-                width: '10%',
+                kind: 'actions' as const,
                 align: 'center',
                 render: (_: unknown, row: ProfileResidencyRow) => (
                   <HRActionsCell

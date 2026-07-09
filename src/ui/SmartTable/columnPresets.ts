@@ -24,6 +24,7 @@ const SIZE_DEFAULTS: Record<SmartTableColumnSize, Partial<SmartTableColumn>> = {
   'money-lg': { align: 'end', numeric: true, shrink: true, width: '13ch', maxWidth: '15ch' },
   'serial-code': { align: 'center', shrink: true, width: '10ch', maxWidth: '13ch' },
   'code-sm': { align: 'center', shrink: true, width: '7ch', maxWidth: '9ch' },
+  duration: { align: 'center', shrink: true, width: '8ch', maxWidth: '10ch' },
   count: { align: 'center', numeric: true, shrink: true, width: '5ch', maxWidth: '6ch' },
   tax: { align: 'end', numeric: true, shrink: true, width: '8ch', maxWidth: '9ch' },
 };
@@ -49,6 +50,7 @@ export function inferColumnSize(col: SmartTableColumn): SmartTableColumnSize | u
   if (/date|at$/i.test(col.key)) return 'date';
   if (/^(index|rowIndex|rowNumber|count|daysToWarrantyEnd)$/i.test(col.key)) return 'count';
   if (/^(serviceNumber)$/i.test(col.key)) return 'code-sm';
+  if (/duration|months/i.test(col.key)) return 'duration';
   if (/serial/i.test(col.key)) return 'serial-code';
   if (/invoiceNumber|documentNumber|runNumber|orderNumber|batchId|ref|code/i.test(col.key)) return 'document';
   return undefined;

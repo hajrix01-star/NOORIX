@@ -6,6 +6,9 @@
  */
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { existsSync } from 'fs';
+import { unlink } from 'fs/promises';
+import type { Response } from 'express';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext }   from '../common/tenant-context';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -16,6 +19,13 @@ import { CreateBatchEmployeesDto } from './dto/create-batch-employees.dto';
 import { toMoneyDecimal2 } from '../common/utils/money-decimal';
 
 const DEFAULT_PREFIX = 'EMP';
+const EMPLOYEE_PHOTO_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+async function removeStoredEmployeePhoto(photoPath: string | null | undefined): Promise<void> {
+  if (!photoPath || !photoPath.includes('employee-photos')) return;
+  if (!existsSync(photoPath)) return;
+  await unlink(photoPath).catch(() => undefined);
+}
 
 @Injectable()
 export class EmployeesService {
@@ -55,6 +65,7 @@ export class EmployeesService {
     basicSalary: true, housingAllowance: true, transportAllowance: true, otherAllowance: true,
     workHours: true, workSchedule: true,
     iqamaNumber: true, joinDate: true, status: true, notes: true,
+    photoPath: true, photoMime: true, photoOriginalName: true,
     createdAt: true,
   } as const;
 
@@ -172,6 +183,92 @@ export class EmployeesService {
     });
     if (!emp) throw new NotFoundException(`الموظف ${id} غير موجود.`);
     return emp;
+  }
+
+  async downloadPhoto(id: string, companyId: string, res: Response): Promise<void> {
+    const employee = await this.prisma.employee.findFirst({
+      where: { id, companyId },
+      select: {
+        name: true,
+        photoPath: true,
+        photoMime: true,
+        photoOriginalName: true,
+      },
+    });
+    if (!employee) throw new NotFoundException(`Ø§Ù„Ù…ÙˆØ¸Ù ${id} ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.`);
+    if (!employee.photoPath || !existsSync(employee.photoPath)) {
+      throw new NotFoundException('Ù„Ø§ ØªÙˆØ¬Ø¯ ØµÙˆØ±Ø© Ù…Ø­ÙÙˆØ¸Ø© Ù„Ù‡Ø°Ø§ Ø§Ù„Ù…ÙˆØ¸Ù.');
+    }
+
+    const fileName = employee.photoOriginalName?.trim() || `${employee.name || 'employee'}-photo`;
+    res.setHeader('Content-Type', employee.photoMime || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    res.sendFile(employee.photoPath);
+  }
+
+  async updatePhoto(
+    id: string,
+    companyId: string,
+    file: Express.Multer.File | undefined,
+    userId?: string,
+  ) {
+    const existing = await this.prisma.employee.findFirst({ where: { id, companyId } });
+    if (!existing) {
+      await removeStoredEmployeePhoto(file?.path);
+      throw new NotFoundException(`Ø§Ù„Ù…ÙˆØ¸Ù ${id} ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.`);
+    }
+    if (!file?.path) throw new BadRequestException('ØµÙˆØ±Ø© Ø§Ù„Ù…ÙˆØ¸Ù Ù…Ø·Ù„ÙˆØ¨Ø©.');
+    if (!EMPLOYEE_PHOTO_MIMES.has(file.mimetype || '')) {
+      await removeStoredEmployeePhoto(file.path);
+      throw new BadRequestException('Ù†ÙˆØ¹ Ø§Ù„ØµÙˆØ±Ø© ØºÙŠØ± Ù…Ø³Ù…ÙˆØ­. Ø§Ø³ØªØ®Ø¯Ù… JPG Ø£Ùˆ PNG Ø£Ùˆ WEBP Ø£Ùˆ GIF.');
+    }
+
+    const updated = await this.prisma.employee.update({
+      where: { id },
+      data: {
+        photoPath: file.path,
+        photoMime: file.mimetype || null,
+        photoOriginalName: file.originalname || null,
+      },
+    });
+
+    await removeStoredEmployeePhoto(existing.photoPath);
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'update',
+      entity: 'employee',
+      entityId: id,
+      oldValue: { hasPhoto: !!existing.photoPath },
+      newValue: { hasPhoto: true },
+    });
+    return updated;
+  }
+
+  async deletePhoto(id: string, companyId: string, userId?: string) {
+    const existing = await this.prisma.employee.findFirst({ where: { id, companyId } });
+    if (!existing) throw new NotFoundException(`Ø§Ù„Ù…ÙˆØ¸Ù ${id} ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.`);
+
+    const updated = await this.prisma.employee.update({
+      where: { id },
+      data: {
+        photoPath: null,
+        photoMime: null,
+        photoOriginalName: null,
+      },
+    });
+
+    await removeStoredEmployeePhoto(existing.photoPath);
+    await this.audit.log({
+      companyId,
+      userId,
+      action: 'update',
+      entity: 'employee',
+      entityId: id,
+      oldValue: { hasPhoto: !!existing.photoPath },
+      newValue: { hasPhoto: false },
+    });
+    return updated;
   }
 
   async create(dto: CreateEmployeeDto, userId?: string) {

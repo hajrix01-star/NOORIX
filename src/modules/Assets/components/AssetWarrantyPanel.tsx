@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, AdaptiveSheet, DateField, Input, TransactionDatePicker } from '../../../ui';
 import { formatSaudiDate } from '../../../utils/saudiDate';
-import { completeCompanyAssetFromInvoice, throwIfApiFailed } from '../../../services/api';
+import {
+  completeCompanyAssetFromInvoice,
+  completeCompanyAssetFromInvoiceWithAttachment,
+  throwIfApiFailed,
+} from '../../../services/api';
 import type { PendingWarrantyInvoiceRow } from '../types';
 import {
   assetSupplierDisplayName,
@@ -39,6 +43,8 @@ export function AssetWarrantyPanel({
 }: AssetWarrantyPanelProps) {
   const [err, setErr] = useState('');
   const [form, setForm] = useState<AssetFormState>(() => initAssetFormFromInvoice(invoice, lang));
+  const [warrantyImage, setWarrantyImage] = useState<File | null>(null);
+  const [warrantyImagePreview, setWarrantyImagePreview] = useState('');
   const [lines, setLines] = useState<AssetWarrantyLineFormRow[]>(() => [
     createWarrantyLineRow(`${invoice.id}-0`),
   ]);
@@ -47,8 +53,20 @@ export function AssetWarrantyPanel({
     if (!invoice.id) return;
     setForm(initAssetFormFromInvoice(invoice, lang));
     setLines([createWarrantyLineRow(`${invoice.id}-0`)]);
+    setWarrantyImage(null);
+    setWarrantyImagePreview('');
     setErr('');
   }, [invoice, lang]);
+
+  useEffect(() => {
+    if (!warrantyImage) {
+      setWarrantyImagePreview('');
+      return undefined;
+    }
+    const url = URL.createObjectURL(warrantyImage);
+    setWarrantyImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [warrantyImage]);
 
   const supplierLabel = useMemo(
     () => assetSupplierDisplayName(invoice.supplier, lang),
@@ -67,7 +85,9 @@ export function AssetWarrantyPanel({
     setSaving(true);
     try {
       const body = buildAssetCompletePayload(form, companyId, invoice.id, lines);
-      const res = await completeCompanyAssetFromInvoice(body);
+      const res = warrantyImage
+        ? await completeCompanyAssetFromInvoiceWithAttachment(body, warrantyImage)
+        : await completeCompanyAssetFromInvoice(body);
       throwIfApiFailed(res, t('loadingError'));
       onSaved();
     } catch (error: unknown) {
@@ -95,6 +115,22 @@ export function AssetWarrantyPanel({
 
   const set = <K extends keyof AssetFormState>(key: K, value: AssetFormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const onWarrantyImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      setWarrantyImage(null);
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setWarrantyImage(null);
+      setErr(t('assetWarrantyImageTypeError'));
+      event.target.value = '';
+      return;
+    }
+    setErr('');
+    setWarrantyImage(file);
   };
 
   return (
@@ -158,6 +194,42 @@ export function AssetWarrantyPanel({
         </div>
 
         <p className="text-[11px] text-noorix-muted m-0">{t('assetWarrantyEndHint')}</p>
+        <div className="rounded-lg border border-noorix-border bg-noorix-bg-muted p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-[13px] font-semibold text-noorix-text">{t('assetWarrantyAttachment')}</div>
+              <p className="m-0 mt-0.5 text-[11px] text-noorix-muted">{t('assetWarrantyAttachmentHint')}</p>
+            </div>
+            <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-noorix-border bg-noorix-surface px-3 py-2 text-[12px] font-semibold text-noorix-text hover:border-noorix-primary">
+              {t('assetWarrantyChooseImage')}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="sr-only"
+                onChange={onWarrantyImageChange}
+              />
+            </label>
+          </div>
+          {warrantyImagePreview ? (
+            <div className="mt-3 flex items-center gap-3">
+              <img
+                src={warrantyImagePreview}
+                alt={t('assetWarrantyAttachment')}
+                className="h-20 w-28 rounded-lg border border-noorix-border object-cover"
+              />
+              <div className="min-w-0 text-[12px] text-noorix-muted">
+                <div className="truncate font-semibold text-noorix-text">{warrantyImage?.name}</div>
+                <button
+                  type="button"
+                  className="mt-1 text-noorix-red underline"
+                  onClick={() => setWarrantyImage(null)}
+                >
+                  {t('delete')}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
         <Input label={t('assetNotes')} value={form.notes} onChange={(event: React.ChangeEvent<HTMLInputElement>) => set('notes', event.target.value)} />
 
         <div className="border-t border-noorix-border pt-3 mt-1">

@@ -11,6 +11,7 @@ export type SmartTableColumnSize =
   | 'money-lg'
   | 'serial-code'
   | 'code-sm'
+  | 'duration'
   | 'count'
   | 'tax';
 
@@ -69,7 +70,6 @@ export type SmartTableProps<TRow = any> = {
   showRowNumbers?: boolean;
   innerPadding?: number | string;
   tableLayout?: CSSProperties['tableLayout'];
-  rowNumberWidth?: number | string;
   getRowClassName?: (row: TRow, index: number) => string | undefined;
   getRowStyle?: (row: TRow, index: number) => CSSProperties | undefined;
   isRowExpanded?: (row: TRow, index: number) => boolean;

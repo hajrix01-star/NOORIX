@@ -103,10 +103,47 @@ if (/Date\.now|Math\.random/.test(warrantyPanel)) {
 if (!warrantyPanel.includes('buildAssetCompletePayload')) {
   fail('src/modules/Assets/components/AssetWarrantyPanel.tsx', 'warranty panel must build payload through assetsRegisterModel');
 }
+if (!warrantyPanel.includes('completeCompanyAssetFromInvoiceWithAttachment')) {
+  fail('src/modules/Assets/components/AssetWarrantyPanel.tsx', 'warranty image upload must happen during warranty completion, not invoice entry');
+}
+
+const assetDetailModal = read('src/modules/Assets/components/AssetWarrantyDetailModal.tsx');
+if (!assetDetailModal.includes('getCompanyAssetWarrantyAttachmentObjectUrl')) {
+  fail('src/modules/Assets/components/AssetWarrantyDetailModal.tsx', 'warranty detail modal must display the saved backend warranty image');
+}
+
+const warrantyQueueTable = read('src/modules/Assets/components/AssetsWarrantyQueueTable.tsx');
+if (/SmartTable|KebabMenu|<table\b/.test(warrantyQueueTable)) {
+  fail('src/modules/Assets/components/AssetsWarrantyQueueTable.tsx', 'warranty queue must use the dedicated queue grid, not SmartTable/raw table/action menu layout');
+}
+for (const required of [
+  'nx-assets-warranty-queue__grid',
+  'role="table"',
+  'role="columnheader"',
+  'nx-assets-warranty-queue__button',
+  "t('warrantyQueueComplete')",
+]) {
+  if (!warrantyQueueTable.includes(required)) {
+    fail('src/modules/Assets/components/AssetsWarrantyQueueTable.tsx', `warranty queue grid contract is missing ${required}`);
+  }
+}
 
 const service = read('backend/src/company-assets/company-assets.service.ts');
 if (!service.includes('sumAcquisitionCostFiltered') || !service.includes('take: 200')) {
   fail('backend/src/company-assets/company-assets.service.ts', 'assets backend must expose filtered summary and limit pending warranty queue');
+}
+if (!service.includes('warrantyAttachmentPath') || !service.includes('ASSET_WARRANTY_ATTACHMENT_MIMES')) {
+  fail('backend/src/company-assets/company-assets.service.ts', 'assets backend must own warranty image storage and image-only validation');
+}
+
+const controller = read('backend/src/company-assets/company-assets.controller.ts');
+if (!controller.includes('complete-from-invoice-with-attachment') || !controller.includes('warranty-attachment')) {
+  fail('backend/src/company-assets/company-assets.controller.ts', 'assets controller must expose warranty completion/view attachment endpoints');
+}
+
+const schema = read('backend/prisma/schema.prisma');
+if (!schema.includes('warrantyAttachmentPath') || !schema.includes('warranty_attachment_path')) {
+  fail('backend/prisma/schema.prisma', 'CompanyAsset schema must store warranty attachment metadata');
 }
 
 if (failures.length) {

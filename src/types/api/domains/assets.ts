@@ -38,6 +38,9 @@ export type AssetRegisterItem = {
   warrantyMonths?: number | null;
   warrantyStartDate?: string | Date | null;
   warrantyEndDate?: string | Date | null;
+  hasWarrantyAttachment?: boolean;
+  warrantyAttachmentOriginalName?: string | null;
+  warrantyAttachmentMime?: string | null;
   warrantyStatus: AssetWarrantyStatus;
   daysToWarrantyEnd?: number | null;
   warrantyLinesCount?: number | null;

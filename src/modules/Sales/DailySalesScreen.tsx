@@ -95,7 +95,7 @@ export default function DailySalesScreen() {
           </span>
         </div>
       ) },
-    { key: 'channelsText', kind: 'text', label: t('salesChannels'), sortable: false, width: '38%',
+    { key: 'channelsText', kind: 'text', size: 'name', label: t('salesChannels'), sortable: false,
       render: (_: unknown, row: DailySalesTableRow) => <DailySalesChannelsChips channels={row.channels} lang={lang} /> },
     { key: 'customerCount', kind: 'number', label: t('customers'), numeric: true, sortable: true, width: '8ch',
       render: (v: unknown) => <span className="nx-cell-num nx-cell-num--blue">{(v as number) ?? 0}</span> },

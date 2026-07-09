@@ -131,10 +131,6 @@ export default function ExpenseLineList({
       size: 'name',
       label: t('expenseLineNameCol'),
       sortable: true,
-      width: '22%',
-      minWidth: '11em',
-      cellClassName: 'nx-col-expense-name',
-      align: 'start',
       render: (_value, row) => (
         <Button
           variant="raw"
@@ -153,10 +149,7 @@ export default function ExpenseLineList({
       size: 'document',
       label: t('expenseLineKindCol'),
       sortable: true,
-      minWidth: '7.5em',
       shrink: true,
-      cellClassName: 'nx-col-expense-kind',
-      align: 'center',
       render: (value) => {
         const { color } = Badge.fromStatus(value, kindBadgeMap);
         return (
@@ -173,10 +166,6 @@ export default function ExpenseLineList({
       size: 'name',
       label: t('category'),
       sortable: true,
-      width: '14%',
-      minWidth: '8.5em',
-      cellClassName: 'nx-col-expense-text',
-      align: 'start',
       render: (value) => <ExpenseLineTextCell value={String(value || '-')} />,
     },
     {
@@ -184,22 +173,13 @@ export default function ExpenseLineList({
       size: 'supplier',
       label: t('supplier'),
       sortable: true,
-      width: '14%',
-      minWidth: '8.5em',
-      cellClassName: 'nx-col-expense-text',
-      align: 'start',
       render: (value) => <ExpenseLineTextCell value={String(value || '-')} />,
     },
     {
       key: 'serviceNumber',
       size: 'code-sm',
       label: t('expenseLineServiceNumberCol'),
-      width: '1%',
-      minWidth: '4.75em',
-      maxWidth: '13ch',
       shrink: true,
-      cellClassName: 'nx-col-expense-service',
-      align: 'center',
       render: (value) => (
         <span
           dir="ltr"
@@ -215,7 +195,6 @@ export default function ExpenseLineList({
       size: 'money-sm',
       label: <span className="nx-expense-line-th-money" title={t('expenseLineListMonthlyAmount')}>{t('expenseLineMonthlyColShort')}</span>,
       shrink: true,
-      cellClassName: 'nx-col-expense-money',
       numeric: true,
       render: (_value, row) => <ExpenseLineMoneyCell amount={row.monthlyAmount} />,
     },
@@ -224,7 +203,6 @@ export default function ExpenseLineList({
       size: 'money-md',
       label: <span className="nx-expense-line-th-money" title={t('expenseLineListAnnualAmount')}>{t('expenseLineAnnualColShort')}</span>,
       shrink: true,
-      cellClassName: 'nx-col-expense-money',
       numeric: true,
       render: (_value, row) => <ExpenseLineMoneyCell amount={row.annualAmount} />,
     },
@@ -232,10 +210,7 @@ export default function ExpenseLineList({
       key: 'actions',
       kind: 'actions',
       label: t('actions'),
-      minWidth: '3.25em',
       shrink: true,
-      cellClassName: 'nx-col-expense-actions',
-      align: 'center',
       render: (_value, row) => (
         <div className="flex justify-center" onClick={(event) => event.stopPropagation()}>
           <KebabMenu
@@ -340,7 +315,6 @@ export default function ExpenseLineList({
           keyExtractor={(row) => row.id}
           getRowClassName={getRowClassName}
           tableId="expense-lines"
-          tableLayout="auto"
           tableMinWidth="62em"
           stickyActionColumn
         />

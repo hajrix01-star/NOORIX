@@ -96,7 +96,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         kind: 'id',
         label: t('batchId'),
         sortable: true,
-        width: '10%',
+        size: 'document',
         render: (value) => (
           <span className="font-bold nx-cell-ellipsis text-noorix-blue nx-font-numbers">
             {String(value ?? '')}
@@ -108,7 +108,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         kind: 'date',
         label: t('transactionDate'),
         sortable: true,
-        width: '8%',
+        size: 'date',
         render: (value) => (
           <span className="text-[12px] text-noorix-muted nx-font-numbers">
             {formatSaudiDate(String(value ?? ''))}
@@ -121,7 +121,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         label: t('invoicesColHeader'),
         numeric: true,
         sortable: true,
-        width: '6%',
+        size: 'count',
         render: (value, row) => {
           const count = typeof value === 'number' ? value : row.invoiceCount;
           if (count <= 0) {
@@ -144,7 +144,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         kind: 'text',
         label: t('supplier'),
         sortable: true,
-        width: '20%',
+        size: 'supplier',
         render: (value) => <span className="nx-cell-ellipsis block">{String(value || '-')}</span>,
       },
       {
@@ -152,7 +152,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         kind: 'text',
         label: t('vault'),
         sortable: true,
-        width: '13%',
+        size: 'supplier',
         render: (value) => <span className="nx-cell-ellipsis block">{String(value || '-')}</span>,
       },
       {
@@ -161,7 +161,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         label: t('net'),
         numeric: true,
         sortable: true,
-        width: '8%',
+        size: 'money-sm',
         render: (value) => <span className="text-noorix-green nx-font-numbers">{fmt(value)}</span>,
       },
       {
@@ -170,7 +170,7 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         label: t('tax'),
         numeric: true,
         sortable: true,
-        width: '7%',
+        size: 'tax',
         render: (value) => <span className="text-noorix-amber nx-font-numbers">{fmt(value)}</span>,
       },
       {
@@ -179,14 +179,13 @@ export default function PurchasesBatchTable(props: PurchasesBatchTableProps) {
         label: t('total'),
         numeric: true,
         sortable: true,
-        width: '8%',
+        size: 'money-md',
         render: (value) => <span className="font-bold nx-font-numbers">{fmt(value)}</span>,
       },
       {
         key: 'status',
         kind: 'status',
         label: t('statusLabel'),
-        width: '8%',
         render: (value) => <Badge {...Badge.fromStatus(value, statusBadgeMap)} size="sm" />,
       },
       {

@@ -176,7 +176,6 @@ export function DashboardOverviewWeeklySalesPanel({
       {
         key: 'weekIndex',
         label: t('dashboardWeeklySalesWeekCol'),
-        width: '24%',
         headerClassName: TH_CELL,
         cellClassName: cn(TD_CELL, 'font-medium text-noorix-text'),
         render: (_value: unknown, row: DashboardWeeklySalesComparisonRow) => t('dashboardWeeklySalesWeekRange', {
@@ -195,7 +194,6 @@ export function DashboardOverviewWeeklySalesPanel({
             year={panelYearA}
           />
         ),
-        width: '28%',
         headerClassName: cn(TH_CELL, 'align-bottom'),
         cellClassName: TD_CELL,
         render: (_value: unknown, row: DashboardWeeklySalesComparisonRow) => <MoneyCell value={row.avgDailyCurrent} />,
@@ -210,7 +208,6 @@ export function DashboardOverviewWeeklySalesPanel({
             year={panelYearB}
           />
         ),
-        width: '28%',
         headerClassName: cn(TH_CELL, 'align-bottom'),
         cellClassName: TD_CELL,
         render: (_value: unknown, row: DashboardWeeklySalesComparisonRow) => <MoneyCell value={row.avgDailyBaseline} />,
@@ -218,7 +215,6 @@ export function DashboardOverviewWeeklySalesPanel({
       {
         key: 'deltaPct',
         label: t('dashboardWeeklySalesDelta'),
-        width: '20%',
         headerClassName: TH_CELL,
         cellClassName: TD_CELL,
         render: (_value: unknown, row: DashboardWeeklySalesComparisonRow) => <DeltaCell value={row.deltaPct} />,

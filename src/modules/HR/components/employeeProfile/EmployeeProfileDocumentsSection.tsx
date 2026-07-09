@@ -49,7 +49,7 @@ export function EmployeeProfileDocumentsSection({
           {
             key: 'fileName',
             label: t('documentType') || 'المستند',
-            width: '75%',
+            size: 'name',
             render: (_v: unknown, row: ProfileDocumentRow) => (
               <span className="nx-cell-ellipsis" title={row.fileName || row.documentType || ''}>
                 {row.fileName || row.documentType || 'مستند'}
@@ -59,7 +59,7 @@ export function EmployeeProfileDocumentsSection({
           {
             key: 'actions',
             label: t('actions'),
-            width: '24%',
+            kind: 'actions',
             align: 'center',
             render: (_: unknown, row: ProfileDocumentRow) => (
               <Button size="sm" disabled={!row.id} onClick={() => row.id && onDownload(row.id)}>

@@ -22,6 +22,7 @@ import { AssetsRegisterTable } from './components/AssetsRegisterTable';
 import { AssetsWarrantyQueueTable } from './components/AssetsWarrantyQueueTable';
 import { AssetFormPanel } from './components/AssetFormPanel';
 import { AssetWarrantyPanel } from './components/AssetWarrantyPanel';
+import { AssetWarrantyDetailModal } from './components/AssetWarrantyDetailModal';
 import { ASSET_SECTION_TAB_IDS } from './types';
 import type { AssetRegisterListItem, PendingWarrantyInvoiceRow } from './types';
 
@@ -73,6 +74,7 @@ export default function AssetsRegisterScreen() {
   const [pendingInvoiceForComplete, setPendingInvoiceForComplete] = useState<PendingWarrantyInvoiceRow | null>(
     null,
   );
+  const [warrantyDetailAsset, setWarrantyDetailAsset] = useState<AssetRegisterListItem | null>(null);
   const [completeSaving, setCompleteSaving] = useState(false);
 
   const registerBannerError = assetSectionTab === 'register' && isError;
@@ -192,6 +194,7 @@ export default function AssetsRegisterScreen() {
               canDelete={canDelete}
               onEdit={openEdit}
               onDelete={handleDelete}
+              onOpenWarranty={setWarrantyDetailAsset}
             />
           </>
         )}
@@ -234,6 +237,16 @@ export default function AssetsRegisterScreen() {
           saving={completeSaving}
           setSaving={setCompleteSaving}
           canWrite={canWrite}
+          t={t}
+          lang={lang}
+        />
+      ) : null}
+
+      {warrantyDetailAsset ? (
+        <AssetWarrantyDetailModal
+          asset={warrantyDetailAsset}
+          companyId={companyId}
+          onClose={() => setWarrantyDetailAsset(null)}
           t={t}
           lang={lang}
         />

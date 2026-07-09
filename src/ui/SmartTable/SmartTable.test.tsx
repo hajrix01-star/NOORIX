@@ -246,16 +246,27 @@ describe('SmartTable', () => {
     expect(frame.style.getPropertyValue('--nx-smart-frame-padding')).toBe('8px');
   });
 
-  it('normalizes percentage row number widths to a readable fixed width', () => {
+  it('keeps row number widths on the unified fixed width', () => {
     const { container } = render(
-      <SmartTable columns={columns} data={rows} total={2} showRowNumbers rowNumberWidth="1%" />,
+      <SmartTable
+        columns={columns}
+        data={rows}
+        total={2}
+        showRowNumbers
+        footerRow={[{ keys: ['name', 'amount'], content: 'Total' }]}
+      />,
     );
 
     const rowNumberHeader = container.querySelector('thead th') as HTMLTableCellElement;
     const rowNumberCell = container.querySelector('tbody tr:first-child td') as HTMLTableCellElement;
+    const footerRowNumberCell = container.querySelector('tfoot td') as HTMLTableCellElement;
 
     expect(rowNumberHeader.style.getPropertyValue('--nx-smart-row-number-width')).toBe('34px');
     expect(rowNumberCell.style.getPropertyValue('--nx-smart-row-number-width')).toBe('34px');
+    expect(footerRowNumberCell.style.getPropertyValue('--nx-smart-row-number-width')).toBe('34px');
+    expect(rowNumberHeader.style.getPropertyValue('--nx-smart-cell-height')).toBe('38px');
+    expect(rowNumberCell.style.getPropertyValue('--nx-smart-cell-height')).toBe('42px');
+    expect(footerRowNumberCell.style.getPropertyValue('--nx-smart-cell-height')).toBe('42px');
     expect(rowNumberCell.style.getPropertyValue('--nx-smart-cell-padding')).toBe('4px 6px');
   });
 
@@ -296,6 +307,24 @@ describe('SmartTable', () => {
     expect(cols[7].getAttribute('data-column-kind')).toBe('actions');
     expect((cols[7] as HTMLElement).style.width).toBe('44px');
     expect((container.querySelector('th[data-column-size="tax"]') as HTMLElement).style.getPropertyValue('--nx-smart-cell-width')).toBe('8ch');
+  });
+
+  it('keeps shrink fallback widths aligned across colgroup, header, and body cells', () => {
+    const { container } = render(
+      <SmartTable
+        columns={[{ key: 'notes', label: 'Notes', shrink: true }]}
+        data={[{ id: '1', notes: 'Short note' }]}
+        total={1}
+      />,
+    );
+
+    const col = container.querySelector('col[data-column-kind="text"]') as HTMLTableColElement;
+    const header = container.querySelector('th[data-column-kind="text"]') as HTMLElement;
+    const cell = container.querySelector('td[data-column-kind="text"]') as HTMLElement;
+
+    expect(col.style.width).toBe('1%');
+    expect(header.style.getPropertyValue('--nx-smart-cell-width')).toBe('1%');
+    expect(cell.style.getPropertyValue('--nx-smart-cell-width')).toBe('1%');
   });
 
   it('applies the central alignment policy from normalized column sizes', () => {

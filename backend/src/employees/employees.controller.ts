@@ -1,6 +1,8 @@
 import {
-  Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards,
+  Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, UploadedFile, UseGuards, UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { CompanyId } from '../auth/decorators/company-id.decorator';
 import { AuthGuard }          from '@nestjs/passport';
 import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
@@ -76,6 +78,16 @@ export class EmployeesController {
     return this.svc.findOne(id, companyId);
   }
 
+  @Get(':id/photo')
+  @RequireAnyPermission('EMPLOYEES_READ', 'HR_READ')
+  downloadPhoto(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @Res() res: Response,
+  ) {
+    return this.svc.downloadPhoto(id, companyId, res);
+  }
+
   @Post()
   @RequireAnyPermission('EMPLOYEES_WRITE', 'CHAT_PRESET_ADD_EMPLOYEE')
   create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: JwtUser) {
@@ -97,6 +109,28 @@ export class EmployeesController {
     @CurrentUser()      user: JwtUser,
   ) {
     return this.svc.update(id, dto, companyId, user.sub);
+  }
+
+  @Post(':id/photo')
+  @RequirePermission('EMPLOYEES_WRITE')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadPhoto(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.svc.updatePhoto(id, companyId, file, user.sub);
+  }
+
+  @Delete(':id/photo')
+  @RequirePermission('EMPLOYEES_WRITE')
+  deletePhoto(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.svc.deletePhoto(id, companyId, user.sub);
   }
 
   @Patch(':id/terminate')

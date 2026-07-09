@@ -40,32 +40,32 @@ export function EmployeeProfileLeaveSection({
           {
             key: 'leaveType',
             label: t('leaveType'),
-            width: '16%',
+            size: 'supplier',
             render: (v: unknown) => t((TYPE_MAP as Record<string, string>)[String(v)] || 'leaveOther'),
           },
           {
             key: 'startDate',
             label: t('startDate'),
-            width: '16%',
+            size: 'date',
             render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span>,
           },
           {
             key: 'endDate',
             label: t('endDate'),
-            width: '16%',
+            size: 'date',
             render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span>,
           },
           {
             key: 'daysCount',
             label: t('daysCount'),
             numeric: true,
-            width: '10%',
+            size: 'count',
             render: (v: unknown) => <span className="nx-cell-num">{String(v ?? '—')}</span>,
           },
           {
             key: 'status',
             label: t('status'),
-            width: '14%',
+            kind: 'status',
             render: (v: unknown) => <Badge {...Badge.fromStatus(v, leaveProfileStatusMap)} size="sm" />,
           },
           ...(canEditHrLeave
@@ -73,7 +73,7 @@ export function EmployeeProfileLeaveSection({
                 {
                   key: 'actions',
                   label: t('actions'),
-                  width: '10%',
+                  kind: 'actions' as const,
                   align: 'center',
                   render: (_: unknown, row: ProfileLeaveRow) => (
                     <HRActionsCell row={row} type="leave" onEdit={() => onEditLeave(row)} />

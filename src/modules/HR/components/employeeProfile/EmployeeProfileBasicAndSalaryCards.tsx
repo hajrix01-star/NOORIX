@@ -3,18 +3,12 @@ import { employeeDisplayName } from '../../../../utils/employeeDisplayName';
 import { hrFmt } from '../../utils/hrFmt';
 import { Badge } from '../../../../ui';
 import { ProfileInfoRow } from './ProfileInfoRow';
-import { getInitials } from './employeeProfileModel';
+import { getInitials, type SalaryRow } from './employeeProfileModel';
 import type { HrEmployee } from '../../../../types/api';
 
 type TranslationFn = (key: string, ...args: unknown[]) => string;
 type EmployeeProfileEmployee = HrEmployee & {
   terminationDate?: string | null;
-};
-type SalaryRow = {
-  label: string;
-  amount: number;
-  strong?: boolean;
-  total?: boolean;
 };
 
 export function EmployeeProfileBasicInfoCard({
@@ -41,21 +35,15 @@ export function EmployeeProfileBasicInfoCard({
             </h2>
             <Badge {...Badge.fromStatus(employee.status, empStatusMap)} />
           </div>
-          <p className="text-noorix-muted text-[13px] m-0">{employee.jobTitle || '—'}</p>
+          <p className="text-noorix-muted text-[13px] m-0">{employee.jobTitle || '-'}</p>
         </div>
       </div>
       <div className="border-t border-noorix-border pt-1">
         <ProfileInfoRow label={t('employeeSerial')} value={employee.employeeSerial} />
         <ProfileInfoRow label={t('joinDate')} value={formatSaudiDate(employee.joinDate)} />
-        {employee.workHours ? (
-          <ProfileInfoRow label={t('workHours')} value={String(employee.workHours)} />
-        ) : null}
+        {employee.workHours ? <ProfileInfoRow label={t('workHours')} value={String(employee.workHours)} /> : null}
         {employee.status === 'terminated' && employee.terminationDate ? (
-          <ProfileInfoRow
-            label={t('terminationDate')}
-            value={formatSaudiDate(employee.terminationDate)}
-            accent
-          />
+          <ProfileInfoRow label={t('terminationDate')} value={formatSaudiDate(employee.terminationDate)} accent />
         ) : null}
       </div>
     </div>
@@ -82,9 +70,9 @@ export function EmployeeProfileSalaryCard({
       </div>
       <div className="border border-noorix-border rounded-xl overflow-hidden">
         {salaryRows
-          .filter((r) => !r.total)
-          .map((row, idx) => (
-            <div key={`${row.label}-${idx}`} className="employee-profile-salary-row">
+          .filter((row) => !row.total)
+          .map((row, index) => (
+            <div key={`${row.label}-${index}`} className="employee-profile-salary-row">
               <div
                 className={
                   row.strong

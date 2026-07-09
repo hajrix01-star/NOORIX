@@ -257,7 +257,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
       render: (v: unknown) => (
         <Badge {...Badge.fromStatus(residencyStatusKey(v), residencyStatusMap)} size="sm" />
       ) },
-    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
+    { key: 'actions', label: t('actions'), kind: 'actions' as const, align: 'center',
       render: (_: unknown, row: HrResidencyRow) => (
         <HRActionsCell
           row={row}

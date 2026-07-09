@@ -11,6 +11,7 @@ import { formatSaudiDate } from '../../../utils/saudiDate';
 import { hrFmt } from '../utils/hrFmt';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
 import { Badge, Button, AdaptiveSheet, Checkbox, SmartTable, Modal } from '../../../ui';
+import type { SmartTableColumn } from '../../../ui';
 import { openPrintWindow } from '../../../utils/printUtils';
 import { openPayrollRunEmployeeSlipsPrint } from '../utils/payrollRunSignatureSlipsPrint';
 import { payrollSalaryInvoiceListHref } from '../utils/payrollSalaryInvoiceHref';
@@ -203,20 +204,20 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
     });
   };
 
-  const columns = [
-    { key: 'employeeName', label: t('employeeName'), width: '18%', minWidth: 150, render: (_: unknown, row: PayrollRunLine) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
-    { key: 'advanceDates', label: t('payrollAdvanceDates'), width: '16%', minWidth: 120, render: (_: unknown, row: PayrollRunLine) => String(row.notes || '').replace('?????? ?????:', '').trim() || '—' },
-    { key: 'grossSalary', label: t('grossSalary'), numeric: true, width: '9%', minWidth: 84, render: (v: unknown) => hrFmt(v) },
-    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, width: '11%', minWidth: 96, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).beforeDeductions) },
-    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, width: '8%', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
-    { key: 'deductions', label: t('payrollDeductions'), numeric: true, width: '8%', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
-    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, width: '8%', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
-    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, width: '11%', minWidth: 96, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).totalDeductions) },
-    { key: 'netSalary', label: t('netSalary'), numeric: true, width: '11%', minWidth: 90, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).netSalary) },
+  const columns: SmartTableColumn<PayrollRunLine>[] = [
+    { key: 'employeeName', label: t('employeeName'), size: 'name', minWidth: 150, render: (_: unknown, row: PayrollRunLine) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
+    { key: 'advanceDates', label: t('payrollAdvanceDates'), size: 'date', minWidth: 120, render: (_: unknown, row: PayrollRunLine) => String(row.notes || '').replace('?????? ?????:', '').trim() || '—' },
+    { key: 'grossSalary', label: t('grossSalary'), numeric: true, size: 'money-sm', minWidth: 84, render: (v: unknown) => hrFmt(v) },
+    { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, size: 'money-md', minWidth: 96, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).beforeDeductions) },
+    { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, size: 'money-sm', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
+    { key: 'deductions', label: t('payrollDeductions'), numeric: true, size: 'money-sm', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
+    { key: 'advancesDeduct', label: t('payrollAdvances'), numeric: true, size: 'money-sm', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
+    { key: 'allDeductions', label: t('payrollTotalDeductionsAll'), numeric: true, size: 'money-md', minWidth: 96, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).totalDeductions) },
+    { key: 'netSalary', label: t('netSalary'), numeric: true, size: 'money-md', minWidth: 90, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).netSalary) },
     {
       key: 'employeeSignature',
       label: t('payrollEmployeeSignature'),
-      width: '12%',
+      size: 'document',
       minWidth: 110,
       render: () => (
         <span

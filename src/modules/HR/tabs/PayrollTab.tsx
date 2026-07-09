@@ -226,7 +226,7 @@ export default function PayrollTab({ embedded }: PayrollTabProps = {}) {
         )
       ),
     },
-    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
+    { key: 'actions', label: t('actions'), kind: 'actions' as const, align: 'center',
       render: (_: HrAny, row: HrAny) => {
         const st = String(row.status || '').toLowerCase();
         const canPay = st === 'completed' && !row.issuedInvoiceNumber;

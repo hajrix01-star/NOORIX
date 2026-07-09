@@ -207,12 +207,11 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
   };
 
   const columns: SmartTableColumn<ExpenseBatchViewRow>[] = [
-    { key: 'index', size: 'count', label: '#', shrink: true, width: '3%', align: 'center', render: (value) => <span className="nx-cell-muted">{String(value ?? '')}</span> },
+    { key: 'index', size: 'count', label: '#', shrink: true, render: (value) => <span className="nx-cell-muted">{String(value ?? '')}</span> },
     {
       key: 'expenseLineId',
       size: 'name',
       label: t('expenseLineNameCol'),
-      width: '17%',
       render: (_value, row) => (
         <SearchableOptionsPicker
           size="sm"
@@ -226,13 +225,12 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
         />
       ),
     },
-    { key: 'categoryName', size: 'name', label: t('category'), width: '8%', render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
-    { key: 'supplierName', size: 'supplier', label: t('supplier'), width: '9%', render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
+    { key: 'categoryName', size: 'name', label: t('category'), render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
+    { key: 'supplierName', size: 'supplier', label: t('supplier'), render: (value) => <span className="nx-cell-muted block min-w-0 truncate text-[13px]" title={String(value)}>{String(value)}</span> },
     {
       key: 'exemptThisPayment',
       size: 'document',
       label: t('expenseBatchTaxExemptShort'),
-      width: '5%',
       align: 'center',
       render: (_value, row) => {
         const line = expenseLines.find((item) => item.id === row.expenseLineId);
@@ -252,7 +250,6 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
       key: 'supplierInvoiceNumber',
       size: 'document',
       label: t('supplierInvoiceNumber'),
-      width: '9%',
       render: (value, row) => (
         <Input
           type="text"
@@ -267,7 +264,6 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
       key: 'totalInclusive',
       size: 'money-md',
       label: t('total'),
-      width: '8%',
       render: (value, row) => (
         <Input
           type="number"
@@ -279,13 +275,12 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
         />
       ),
     },
-    { key: 'net', size: 'money-sm', label: t('expenseTaxBreakdownNet'), numeric: true, width: '7%', render: (value) => <FmtNum n={Number(value)} className="nx-cell-num nx-cell-num--green" /> },
-    { key: 'tax', size: 'tax', label: t('expenseTaxBreakdownVat'), numeric: true, width: '7%', render: (value) => <FmtNum n={Number(value)} className="nx-cell-num text-noorix-amber" /> },
+    { key: 'net', size: 'money-sm', label: t('expenseTaxBreakdownNet'), numeric: true, render: (value) => <FmtNum n={Number(value)} className="nx-cell-num nx-cell-num--green" /> },
+    { key: 'tax', size: 'tax', label: t('expenseTaxBreakdownVat'), numeric: true, render: (value) => <FmtNum n={Number(value)} className="nx-cell-num text-noorix-amber" /> },
     {
       key: 'notes',
       size: 'name',
       label: t('notes'),
-      width: '10%',
       render: (value, row) => (
         <Input
           type="text"
@@ -300,7 +295,6 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
       key: 'warrantyFollowUp',
       size: 'document',
       label: t('warrantyFollowUpCol'),
-      width: '7%',
       align: 'center',
       render: (_value, row) => (
         <Checkbox
@@ -317,7 +311,6 @@ export default function ExpenseBatchTable({ companyId, onSaved, embedded }: Expe
       kind: 'actions',
       label: t('actions'),
       align: 'center',
-      width: '8%',
       render: (_value, row) => (
         <Button variant="danger" size="sm" onClick={() => removeRow(row.index - 1)}>{t('delete')}</Button>
       ),

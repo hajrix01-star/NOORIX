@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { SmartTable, Badge, KebabMenu, type SmartTableColumn } from '../../../ui';
 import { formatMoney } from '../../../utils/money';
 import type { AssetRegisterListItem } from '../types';
-import { formatAssetDate, getSupplierDisplayName } from '../utils/assetsRegisterMappers';
+import { formatAssetDate, formatWarrantyDuration, getSupplierDisplayName } from '../utils/assetsRegisterMappers';
 import { useWarrantyBadgeMap } from '../utils/assetsRegisterCalculations';
 import { normalizeWarrantyStatus } from '../assetsRegisterModel';
 
@@ -22,6 +22,7 @@ export type AssetsRegisterTableProps = {
   canDelete: boolean;
   onEdit: (row: AssetRegisterListItem) => void;
   onDelete: (row: AssetRegisterListItem) => void;
+  onOpenWarranty: (row: AssetRegisterListItem) => void;
 };
 
 export function AssetsRegisterTable({
@@ -40,8 +41,34 @@ export function AssetsRegisterTable({
   canDelete,
   onEdit,
   onDelete,
+  onOpenWarranty,
 }: AssetsRegisterTableProps) {
   const warrantyBadgeMap = useWarrantyBadgeMap(t);
+
+  const renderWarrantyTrigger = useCallback(
+    (row: AssetRegisterListItem) => {
+      const key = normalizeWarrantyStatus(row.warrantyStatus);
+      const b = warrantyBadgeMap[key] ?? warrantyBadgeMap.none;
+      return (
+        <button
+          type="button"
+          className="nx-asset-warranty-trigger"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenWarranty(row);
+          }}
+          title={t('assetWarrantyDetails')}
+          aria-label={t('assetWarrantyDetails')}
+        >
+          <Badge color={b.color} size="sm">
+            {b.label}
+          </Badge>
+          {row.hasWarrantyAttachment ? <span className="nx-asset-warranty-trigger__dot" /> : null}
+        </button>
+      );
+    },
+    [onOpenWarranty, t, warrantyBadgeMap],
+  );
 
   const columns = useMemo<SmartTableColumn<AssetRegisterListItem>[]>(
     () => [
@@ -50,7 +77,16 @@ export function AssetsRegisterTable({
         size: 'name',
         header: t('assetName'),
         render: (_: unknown, row: AssetRegisterListItem) => (
-          <div className="flex flex-col gap-0.5 min-w-0">
+          <button
+            type="button"
+            className="nx-asset-name-trigger"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenWarranty(row);
+            }}
+            title={t('assetWarrantyDetails')}
+            aria-label={t('assetWarrantyDetails')}
+          >
             <span className="font-semibold text-noorix-text truncate" title={String(row.nameAr ?? '')}>
               {String(row.nameAr ?? '')}
             </span>
@@ -59,7 +95,7 @@ export function AssetsRegisterTable({
                 {String(row.nameEn)}
               </span>
             ) : null}
-          </div>
+          </button>
         ),
       },
       {
@@ -117,15 +153,15 @@ export function AssetsRegisterTable({
         key: 'warrantyStatus',
         size: 'document',
         header: t('assetWarrantyFilter'),
-        render: (_: unknown, row: AssetRegisterListItem) => {
-          const key = normalizeWarrantyStatus(row.warrantyStatus);
-          const b = warrantyBadgeMap[key] ?? warrantyBadgeMap.none;
-          return (
-            <Badge color={b.color} size="sm">
-              {b.label}
-            </Badge>
-          );
-        },
+        render: (_: unknown, row: AssetRegisterListItem) => renderWarrantyTrigger(row),
+      },
+      {
+        key: 'warrantyMonths',
+        size: 'duration',
+        header: t('assetWarrantyDuration'),
+        render: (_: unknown, row: AssetRegisterListItem) => (
+          <span className="text-[13px] font-medium">{formatWarrantyDuration(row.warrantyMonths, lang)}</span>
+        ),
       },
       {
         key: 'daysToWarrantyEnd',
@@ -166,7 +202,7 @@ export function AssetsRegisterTable({
           ]
         : []),
     ],
-    [canDelete, canWrite, lang, onDelete, onEdit, t, warrantyBadgeMap],
+    [canDelete, canWrite, lang, onDelete, onEdit, renderWarrantyTrigger, t],
   );
 
   const footerRow = useMemo(
@@ -193,21 +229,25 @@ export function AssetsRegisterTable({
     (row: AssetRegisterListItem) => (
       <div>
         <div className="nx-cr__line1">
-          <span className="nx-cr__name">{String(row.nameAr ?? '')}</span>
+          <button
+            type="button"
+            className="nx-asset-name-trigger nx-asset-name-trigger--compact"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenWarranty(row);
+            }}
+            title={t('assetWarrantyDetails')}
+            aria-label={t('assetWarrantyDetails')}
+          >
+            <span className="nx-cr__name">{String(row.nameAr ?? '')}</span>
+          </button>
           {row.serialNumber && <span className="nx-cr__sub ltr">{String(row.serialNumber)}</span>}
-          <Badge
-            {...Badge.fromStatus(String(row.warrantyStatus ?? 'none'), {
-              none: { color: 'gray', label: t('assetWarrantyNone') },
-              active: { color: 'green', label: t('assetWarrantyActive') },
-              expiring: { color: 'amber', label: t('assetWarrantyExpiring') },
-              expired: { color: 'red', label: t('assetWarrantyExpired') },
-            })}
-            size="sm"
-          />
+          {renderWarrantyTrigger(row)}
         </div>
         <div className="nx-cr__line2">
           <div className="nx-cr__line2-start">
             <span className="nx-cr__meta ltr">{formatAssetDate(row.purchaseDate)}</span>
+            <span className="nx-cr__meta">{formatWarrantyDuration(row.warrantyMonths, lang)}</span>
             {row.warrantyEndDate ? <span className="nx-cr__meta ltr">→ {String(formatAssetDate(row.warrantyEndDate))}</span> : null}
           </div>
           <div className="nx-cr__line2-end">
@@ -229,7 +269,7 @@ export function AssetsRegisterTable({
         </div>
       </div>
     ),
-    [t, lang, canWrite, canDelete, onEdit, onDelete],
+    [t, lang, canWrite, canDelete, onEdit, onDelete, renderWarrantyTrigger],
   );
 
   const renderMobileCard = useCallback(
@@ -237,20 +277,23 @@ export function AssetsRegisterTable({
       <div className="flex flex-col gap-2 nx-mc__root">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="font-bold text-noorix-text">{String(row.nameAr ?? '')}</div>
+            <button
+              type="button"
+              className="nx-asset-name-trigger nx-asset-name-trigger--mobile"
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenWarranty(row);
+              }}
+              title={t('assetWarrantyDetails')}
+              aria-label={t('assetWarrantyDetails')}
+            >
+              <span className="font-bold text-noorix-text">{String(row.nameAr ?? '')}</span>
+            </button>
             {row.serialNumber ? (
               <div className="text-[12px] text-noorix-muted ltr">{String(row.serialNumber)}</div>
             ) : null}
           </div>
-          <Badge
-            {...Badge.fromStatus(String(row.warrantyStatus ?? 'none'), {
-              none: { color: 'gray', label: t('assetWarrantyNone') },
-              active: { color: 'green', label: t('assetWarrantyActive') },
-              expiring: { color: 'amber', label: t('assetWarrantyExpiring') },
-              expired: { color: 'red', label: t('assetWarrantyExpired') },
-            })}
-            size="sm"
-          />
+          {renderWarrantyTrigger(row)}
         </div>
         <div className="grid grid-cols-2 gap-2 text-[12px]">
           <div>
@@ -269,13 +312,17 @@ export function AssetsRegisterTable({
             </div>
           </div>
           <div>
+            <div className="text-noorix-muted">{t('assetWarrantyDuration')}</div>
+            <div className="font-medium">{formatWarrantyDuration(row.warrantyMonths, lang)}</div>
+          </div>
+          <div>
             <div className="text-noorix-muted">{t('assetDaysToEnd')}</div>
             <div className="ltr font-medium">{row.daysToWarrantyEnd ?? '—'}</div>
           </div>
         </div>
       </div>
     ),
-    [t, lang],
+    [t, lang, renderWarrantyTrigger],
   );
 
   return (

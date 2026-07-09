@@ -165,8 +165,8 @@ export function OrdersTab({
       {
         key: 'actions',
         label: t('actions'),
+        kind: 'actions',
         align: 'center',
-        width: '1%',
         shrink: true,
         render: (_value: unknown, o: OrderRecord) => (
           <KebabMenu

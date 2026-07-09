@@ -3,14 +3,16 @@ import type { SmartTableProps } from './types';
 
 export const DEFAULT_INNER_PADDING = 8;
 export const DEFAULT_ROW_NUMBER_WIDTH = 34;
+export const SMART_TABLE_HEADER_HEIGHT = 38;
+export const SMART_TABLE_BODY_HEIGHT = 42;
+export const SMART_TABLE_FOOTER_HEIGHT = 42;
+export const SMART_TABLE_ROW_NUMBER_PADDING = '4px 6px';
+export const SMART_TABLE_COMPACT_PADDING = '6px 12px';
+export const SMART_TABLE_RELAXED_HEADER_PADDING = '8px 14px';
+export const SMART_TABLE_RELAXED_BODY_PADDING = '8px 14px';
+export const SMART_TABLE_FOOTER_PADDING = '8px 12px';
 
 export type SmartTableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
-
-export function normalizeRowNumberWidth(width: SmartTableProps['rowNumberWidth']): number | string {
-  if (width == null || width === '') return DEFAULT_ROW_NUMBER_WIDTH;
-  if (typeof width === 'string' && width.trim().endsWith('%')) return DEFAULT_ROW_NUMBER_WIDTH;
-  return width;
-}
 
 export function cssLength(value: number | string | undefined): string | undefined {
   if (value == null || value === '') return undefined;
@@ -62,8 +64,9 @@ export function buildRowNumberHeaderStyle({
   rowNumW: number | string;
 }): SmartTableCssVars {
   return {
-    '--nx-smart-cell-padding': compact ? '4px 6px' : '5px 8px',
+    '--nx-smart-cell-padding': SMART_TABLE_ROW_NUMBER_PADDING,
     '--nx-smart-cell-font-size': cssLength(compact ? 11 : 12),
+    '--nx-smart-cell-height': cssLength(SMART_TABLE_HEADER_HEIGHT),
     '--nx-smart-row-number-width': cssLength(rowNumW),
   };
 }
@@ -77,8 +80,9 @@ export function buildRowNumberCellStyle({
   rowNumW: number | string;
 }): SmartTableCssVars {
   return {
-    '--nx-smart-cell-padding': '4px 6px',
+    '--nx-smart-cell-padding': SMART_TABLE_ROW_NUMBER_PADDING,
     '--nx-smart-cell-font-size': cssLength(cellFs),
+    '--nx-smart-cell-height': cssLength(SMART_TABLE_BODY_HEIGHT),
     '--nx-smart-row-number-width': cssLength(rowNumW),
   };
 }
@@ -101,6 +105,7 @@ export function buildHeaderCellStyle({
   return {
     '--nx-smart-cell-padding': cellPad.th,
     '--nx-smart-cell-font-size': cssLength(compact ? 12 : 13),
+    '--nx-smart-cell-height': cssLength(SMART_TABLE_HEADER_HEIGHT),
     '--nx-smart-cell-position': resizableCol ? 'relative' : undefined,
     '--nx-smart-cell-width': cssLength(effectiveWidth),
     '--nx-smart-cell-min-width': cssLength(col.minWidth),
@@ -132,12 +137,35 @@ export function buildBodyCellStyle({
   return {
     '--nx-smart-cell-padding': cellPad.td,
     '--nx-smart-cell-font-size': cssLength(cellFs),
+    '--nx-smart-cell-height': cssLength(SMART_TABLE_BODY_HEIGHT),
     '--nx-smart-cell-align': align,
     '--nx-smart-cell-font-family': family,
     '--nx-smart-cell-width': cssLength(tdEffectiveWidth),
     '--nx-smart-cell-min-width': cssLength(col.minWidth),
     '--nx-smart-cell-max-width': cssLength(col.maxWidth),
     '--nx-smart-cell-white-space': shrink ? 'nowrap' : undefined,
+  };
+}
+
+export function buildFooterCellStyle({
+  align = 'center',
+}: {
+  align?: React.CSSProperties['textAlign'];
+} = {}): SmartTableCssVars {
+  return {
+    '--nx-smart-cell-padding': SMART_TABLE_FOOTER_PADDING,
+    '--nx-smart-cell-font-size': cssLength(14),
+    '--nx-smart-cell-height': cssLength(SMART_TABLE_FOOTER_HEIGHT),
+    '--nx-smart-cell-align': align,
+  };
+}
+
+export function buildFooterRowNumberStyle(): SmartTableCssVars {
+  return {
+    '--nx-smart-cell-padding': SMART_TABLE_ROW_NUMBER_PADDING,
+    '--nx-smart-cell-font-size': cssLength(14),
+    '--nx-smart-cell-height': cssLength(SMART_TABLE_FOOTER_HEIGHT),
+    '--nx-smart-row-number-width': cssLength(DEFAULT_ROW_NUMBER_WIDTH),
   };
 }
 

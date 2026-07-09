@@ -265,7 +265,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           <span className="text-noorix-muted text-[12px]">—</span>
         )
       ) },
-    { key: 'actions', label: t('actions'), width: '5%', align: 'center',
+    { key: 'actions', label: t('actions'), kind: 'actions' as const, align: 'center',
       render: (_: unknown, row: HrLeaveRow) => (
         <HRActionsCell
           row={row}

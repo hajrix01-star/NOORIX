@@ -21,6 +21,9 @@ import { useSmartTableColumnResize } from './useSmartTableColumnResize';
 import { useSmartTableColumnVisibility } from './useSmartTableColumnVisibility';
 import {
   DEFAULT_INNER_PADDING,
+  SMART_TABLE_COMPACT_PADDING,
+  SMART_TABLE_RELAXED_BODY_PADDING,
+  SMART_TABLE_RELAXED_HEADER_PADDING,
   buildBodyCellStyle,
   buildColumnStyle,
   buildFrameStyle,
@@ -29,7 +32,7 @@ import {
   buildRowNumberHeaderStyle,
   buildRowStyle,
   buildTableStyle,
-  normalizeRowNumberWidth,
+  DEFAULT_ROW_NUMBER_WIDTH,
 } from './smartTableStyles';
 
 export { placeColVisPanel };
@@ -74,7 +77,6 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
     showRowNumbers = false,
     innerPadding = DEFAULT_INNER_PADDING,
     tableLayout,
-    rowNumberWidth,
     getRowClassName,
     getRowStyle,
     isRowExpanded,
@@ -136,8 +138,10 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const minW         = tableMinWidth === 0 || tableMinWidth === ''
     ? undefined
     : (tableMinWidth != null ? tableMinWidth : (isWideTable ? 1100 : undefined));
-  const cellPad      = compact ? { th: '6px 12px', td: '6px 12px' } : { th: '8px 14px', td: '8px 14px' };
-  const rowNumW      = normalizeRowNumberWidth(rowNumberWidth);
+  const cellPad      = compact
+    ? { th: SMART_TABLE_COMPACT_PADDING, td: SMART_TABLE_COMPACT_PADDING }
+    : { th: SMART_TABLE_RELAXED_HEADER_PADDING, td: SMART_TABLE_RELAXED_BODY_PADDING };
+  const rowNumW      = DEFAULT_ROW_NUMBER_WIDTH;
   const cellFs       = compact ? 14 : 15;
   const errMsg       = errorMessage ?? t('loadDataFailed');
   const emptyMsg     = emptyMessage ?? t('noDataInPeriod');
@@ -145,6 +149,11 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
   const tableStyle = buildTableStyle({ layout, minW, isWideTable });
   const rowNumberHeaderStyle = buildRowNumberHeaderStyle({ cellPad, compact, rowNumW });
   const rowNumberCellStyle = buildRowNumberCellStyle({ cellPad, cellFs, rowNumW });
+  const columnEffectiveWidth = (col: any) => (
+    colWidths[col.key] != null
+      ? colWidths[col.key]
+      : (col.width ?? (col.shrink === true ? '1%' : undefined))
+  );
   /** على الجوال مع بطاقات فقط: لا نعرض شريط إخفاء الأعمدة (يضيق المحتوى ويبدو كزر عائم) */
   const showTableHeaderRow = Boolean(
     title || badge || ((onSearchChange || effectiveFilteringMode === 'client') && showSearchInHeader) || (tableId && !showCards),
@@ -224,9 +233,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                 <col style={buildColumnStyle({ width: rowNumW, minWidth: rowNumW, maxWidth: rowNumW })} />
               )}
               {visibleColumns.map((col: any) => {
-                const colWidth = colWidths[col.key] != null
-                  ? colWidths[col.key]
-                  : (col.width ?? (col.shrink === true ? '1%' : undefined));
+                const colWidth = columnEffectiveWidth(col);
                 return (
                   <col
                     key={col.key}
@@ -254,9 +261,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                   // only apply it in fixed layout (where width is enforced) or when col.maxWidth bounds it
                   const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
                   const resizableCol = Boolean(tableId && col.key !== 'actions');
-                  const effectiveWidth = colWidths[col.key] != null
-                    ? colWidths[col.key]
-                    : (col.width ?? (shrink ? '1%' : undefined));
+                  const effectiveWidth = columnEffectiveWidth(col);
                   return (
                     <th
                       key={col.key}
@@ -325,7 +330,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
                     const shrink = col.shrink === true;
                     const actionSticky = col.key === 'actions' && stickyActionColumn;
                     const shouldTruncate = !col.numeric && col.key !== 'actions' && !shrink && (layout === 'fixed' || !!col.maxWidth);
-                    const tdEffectiveWidth = colWidths[col.key] != null ? colWidths[col.key] : col.width;
+                    const tdEffectiveWidth = columnEffectiveWidth(col);
                     return (
                       <td
                         key={col.key}
@@ -368,7 +373,7 @@ const SmartTable = memo(function SmartTable(props: SmartTablePropsBase) {
               <tfoot>
                 <tr>
                   {footerRow
-                    ? buildFooterCells({ footerRow, columns: visibleColumns, hiddenCols: new Set<string>(), showRowNumbers, rowNumberWidth: rowNumW, cellPad })
+                    ? buildFooterCells({ footerRow, columns: visibleColumns, hiddenCols: new Set<string>(), showRowNumbers })
                     : footerCells}
                 </tr>
               </tfoot>

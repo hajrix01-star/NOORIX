@@ -383,7 +383,6 @@ export const CategoriesManager = memo(function CategoriesManager({
         page={1}
         pageSize={50}
         showRowNumbers
-        rowNumberWidth="1%"
         isLoading={isLoading}
         emptyMessage={t('noCategories')}
       />

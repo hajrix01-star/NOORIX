@@ -1,7 +1,19 @@
 import { formatSaudiDate } from '../../../../utils/saudiDate';
 import { Button, KebabMenu, SmartTable } from '../../../../ui';
+import type { CareerTableRow } from './employeeProfileModel';
 
-type HrAny = ReturnType<typeof JSON.parse>;
+type TranslationFn = (key: string, ...args: unknown[]) => string;
+
+type EmployeeProfileCareerSectionProps = {
+  t: TranslationFn;
+  careerTableRows: CareerTableRow[];
+  canShowCareerActions: boolean;
+  canEditRaise: boolean;
+  onOpenPromotion: () => void;
+  onOpenRaise: () => void;
+  onEditRaise?: (row: CareerTableRow) => void;
+  onDeleteRaise?: (row: CareerTableRow) => void;
+};
 
 export function EmployeeProfileCareerSection({
   t,
@@ -12,7 +24,7 @@ export function EmployeeProfileCareerSection({
   onOpenRaise,
   onEditRaise,
   onDeleteRaise,
-}: HrAny) {
+}: EmployeeProfileCareerSectionProps) {
   const showActions = !!canEditRaise;
 
   return (
@@ -20,7 +32,7 @@ export function EmployeeProfileCareerSection({
       <div className="nx-section-header">
         <span className="nx-section-header__title">{t('careerRecordTitle')}</span>
         <div className="nx-section-header__actions flex flex-wrap items-center gap-2">
-          {canShowCareerActions && (
+          {canShowCareerActions ? (
             <>
               <Button size="sm" onClick={onOpenPromotion}>
                 {t('movementTypePromotion')}
@@ -29,7 +41,7 @@ export function EmployeeProfileCareerSection({
                 {t('movementTypeRaise')}
               </Button>
             </>
-          )}
+          ) : null}
         </div>
       </div>
       <SmartTable
@@ -40,32 +52,31 @@ export function EmployeeProfileCareerSection({
           {
             key: 'effectiveDate',
             label: t('careerEffectiveDate'),
-            width: showActions ? '12%' : '14%',
-            render: (v: HrAny) => <span className="nx-cell-muted-sm">{formatSaudiDate(v)}</span>,
+            size: 'date',
+            render: (value: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(value || ''))}</span>,
           },
           {
             key: 'typeLabel',
             label: t('movementTypeLabel'),
-            width: showActions ? '14%' : '16%',
-            render: (v: HrAny) => v,
+            kind: 'status',
           },
           {
             key: 'changeSummary',
             label: t('careerChangeSummary'),
-            width: showActions ? '28%' : '32%',
-            render: (v: HrAny) => (
-              <span className="nx-cell-ellipsis text-[13px]" title={v || ''}>
-                {v || '—'}
+            size: 'name',
+            render: (value: unknown) => (
+              <span className="nx-cell-ellipsis text-[13px]" title={String(value || '')}>
+                {String(value || '-')}
               </span>
             ),
           },
           {
             key: 'notes',
             label: t('invoiceNotesColumn'),
-            width: showActions ? '30%' : '36%',
-            render: (v: HrAny) => (
-              <span className="nx-cell-ellipsis" title={v || ''}>
-                {v || '—'}
+            size: 'name',
+            render: (value: unknown) => (
+              <span className="nx-cell-ellipsis" title={String(value || '')}>
+                {String(value || '-')}
               </span>
             ),
           },
@@ -74,29 +85,19 @@ export function EmployeeProfileCareerSection({
                 {
                   key: 'actions',
                   label: t('actions'),
-                  width: '10%',
+                  kind: 'actions' as const,
                   minWidth: 72,
-                  render: (_: unknown, row: { id?: string; movementType?: string }) =>
+                  render: (_: unknown, row: CareerTableRow) =>
                     row.movementType === 'raise' ? (
                       <KebabMenu
                         ariaLabel={t('actions')}
                         items={[
-                          {
-                            key: 'edit',
-                            label: t('edit'),
-                            style: { color: 'var(--noorix-accent-green)' },
-                            onClick: () => onEditRaise?.(row),
-                          },
-                          {
-                            key: 'delete',
-                            label: t('delete'),
-                            style: { color: 'var(--noorix-accent-red)' },
-                            onClick: () => onDeleteRaise?.(row),
-                          },
+                          { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEditRaise?.(row) },
+                          { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDeleteRaise?.(row) },
                         ]}
                       />
                     ) : (
-                      <span className="text-noorix-muted text-[12px]">—</span>
+                      <span className="text-noorix-muted text-[12px]">-</span>
                     ),
                 },
               ]
@@ -107,41 +108,31 @@ export function EmployeeProfileCareerSection({
         page={1}
         pageSize={50}
         emptyMessage={t('noDataInPeriod')}
-        renderCompactRow={(row: HrAny) => (
+        renderCompactRow={(row: CareerTableRow) => (
           <div>
             <div className="nx-cr__line1">
               <span className="nx-cr__name">{row.typeLabel}</span>
-              <span className="nx-cr__meta">{formatSaudiDate(row.effectiveDate)}</span>
+              <span className="nx-cr__meta">{formatSaudiDate(row.effectiveDate || '')}</span>
             </div>
             <div className="nx-cr__line2">
               <div className="nx-cr__line2-start">
-                <span className="nx-cr__sub">{row.changeSummary || '—'}</span>
+                <span className="nx-cr__sub">{row.changeSummary || '-'}</span>
               </div>
             </div>
           </div>
         )}
-        renderMobileCard={(row: HrAny) => (
+        renderMobileCard={(row: CareerTableRow) => (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.effectiveDate)}</span>
+              <span className="text-[12px] text-noorix-muted">{formatSaudiDate(row.effectiveDate || '')}</span>
               <div className="flex items-center gap-2">
                 <span className="text-[13px] font-semibold text-noorix-text">{row.typeLabel}</span>
                 {showActions && row.movementType === 'raise' ? (
                   <KebabMenu
                     ariaLabel={t('actions')}
                     items={[
-                      {
-                        key: 'edit',
-                        label: t('edit'),
-                        style: { color: 'var(--noorix-accent-green)' },
-                        onClick: () => onEditRaise?.(row),
-                      },
-                      {
-                        key: 'delete',
-                        label: t('delete'),
-                        style: { color: 'var(--noorix-accent-red)' },
-                        onClick: () => onDeleteRaise?.(row),
-                      },
+                      { key: 'edit', label: t('edit'), style: { color: 'var(--noorix-accent-green)' }, onClick: () => onEditRaise?.(row) },
+                      { key: 'delete', label: t('delete'), style: { color: 'var(--noorix-accent-red)' }, onClick: () => onDeleteRaise?.(row) },
                     ]}
                   />
                 ) : null}
@@ -149,11 +140,11 @@ export function EmployeeProfileCareerSection({
             </div>
             <div>
               <div className="nx-mc__stat-label">{t('careerChangeSummary')}</div>
-              <div className="text-[13px] text-noorix-text break-words">{row.changeSummary || '—'}</div>
+              <div className="text-[13px] text-noorix-text break-words">{row.changeSummary || '-'}</div>
             </div>
             <div>
               <div className="nx-mc__stat-label">{t('invoiceNotesColumn')}</div>
-              <div className="text-[12px] text-noorix-muted break-words">{row.notes || '—'}</div>
+              <div className="text-[12px] text-noorix-muted break-words">{row.notes || '-'}</div>
             </div>
           </div>
         )}

@@ -8,7 +8,16 @@ import type {
   AssetWarrantyFilter,
   PendingWarrantyInvoiceRow,
 } from '../../../types/api';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+import {
+  apiDelete,
+  apiGet,
+  apiPatch,
+  apiPost,
+  getApiBaseUrl,
+  getAuthHeaders,
+  parseResponse,
+  safeFetch,
+} from '../../core/apiHttp';
 
 export type GetCompanyAssetsParams = {
   warrantyFilter?: AssetWarrantyFilter;
@@ -64,4 +73,59 @@ export async function completeCompanyAssetFromInvoice(
   body: AssetCompleteFromInvoicePayload,
 ): Promise<ApiParsedResult<AssetRegisterItem>> {
   return apiPost('/api/v1/company-assets/complete-from-invoice', body);
+}
+
+export async function completeCompanyAssetFromInvoiceWithAttachment(
+  body: AssetCompleteFromInvoicePayload,
+  file: File,
+): Promise<ApiParsedResult<AssetRegisterItem>> {
+  const url = new URL('/api/v1/company-assets/complete-from-invoice-with-attachment', getApiBaseUrl());
+  const headers = getAuthHeaders();
+  delete headers['Content-Type'];
+  const buildBody = () => {
+    const formData = new FormData();
+    formData.append('payload', JSON.stringify(body));
+    formData.append('file', file);
+    return formData;
+  };
+  const doFetch = async () => {
+    const retryHeaders = getAuthHeaders();
+    delete retryHeaders['Content-Type'];
+    const retryRes = await safeFetch(url.toString(), {
+      method: 'POST',
+      headers: retryHeaders,
+      body: buildBody(),
+    }, 30000);
+    return parseResponse<AssetRegisterItem>(retryRes);
+  };
+  try {
+    const res = await safeFetch(url.toString(), {
+      method: 'POST',
+      headers,
+      body: buildBody(),
+    }, 30000);
+    return parseResponse<AssetRegisterItem>(res, doFetch);
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : 'Upload failed' };
+  }
+}
+
+export async function getCompanyAssetWarrantyAttachmentObjectUrl(
+  id: string,
+  companyId: string,
+): Promise<string> {
+  const url = new URL(`/api/v1/company-assets/${encodeURIComponent(id)}/warranty-attachment`, getApiBaseUrl());
+  url.searchParams.set('companyId', companyId);
+  const res = await safeFetch(url.toString(), {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  }, 30000);
+  if (!res.ok) {
+    const raw = await res.json().catch(() => ({}));
+    const message = Array.isArray(raw?.message)
+      ? raw.message.join(', ')
+      : raw?.message || raw?.error || 'Attachment unavailable';
+    throw new Error(String(message));
+  }
+  return URL.createObjectURL(await res.blob());
 }

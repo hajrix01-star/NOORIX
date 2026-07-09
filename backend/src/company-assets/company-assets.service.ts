@@ -3,6 +3,9 @@
  */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { existsSync } from 'fs';
+import { unlink } from 'fs/promises';
+import type { Response } from 'express';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TenantContext } from '../common/tenant-context';
 import { CreateCompanyAssetDto } from './dto/create-company-asset.dto';
@@ -19,9 +22,41 @@ import { createCompanyAssetWarrantyLinesTx } from './company-assets-warranty-lin
 
 export type { WarrantyFilter };
 
+const ASSET_WARRANTY_ATTACHMENT_MIMES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+]);
+
+function validateWarrantyAttachmentFile(file: Express.Multer.File | undefined) {
+  if (!file?.path) return null;
+  const mime = file.mimetype || '';
+  if (!ASSET_WARRANTY_ATTACHMENT_MIMES.has(mime)) {
+    return 'نوع الصورة غير مسموح. استخدم JPG أو PNG أو WEBP أو GIF.';
+  }
+  return null;
+}
+
 @Injectable()
 export class CompanyAssetsService {
   constructor(private readonly prisma: TenantPrismaService) {}
+
+  private readonly assetDetailInclude = {
+    supplier: { select: { id: true, nameAr: true, nameEn: true } },
+    invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
+    warrantyLines: { orderBy: { sortOrder: 'asc' } },
+    _count: { select: { warrantyLines: true } },
+  } satisfies Prisma.CompanyAssetInclude;
+
+  private async findFullAssetOrThrow(id: string, companyId: string) {
+    const full = await this.prisma.companyAsset.findFirst({
+      where: { id, companyId },
+      include: this.assetDetailInclude,
+    });
+    if (!full) throw new NotFoundException('الأصل غير موجود');
+    return full;
+  }
 
   private async assertSupplierCompany(supplierId: string | undefined, companyId: string): Promise<void> {
     if (!supplierId) return;
@@ -172,6 +207,29 @@ export class CompanyAssetsService {
     return mapCompanyAssetRow(row);
   }
 
+  async downloadWarrantyAttachment(id: string, companyId: string, res: Response): Promise<void> {
+    const asset = await this.prisma.companyAsset.findFirst({
+      where: { id, companyId },
+      select: {
+        warrantyAttachmentPath: true,
+        warrantyAttachmentOriginalName: true,
+        warrantyAttachmentMime: true,
+      },
+    });
+    const p = asset?.warrantyAttachmentPath?.trim();
+    if (!asset || !p) {
+      throw new NotFoundException('لا توجد صورة ضمان لهذا الأصل.');
+    }
+    if (!existsSync(p)) {
+      throw new NotFoundException('صورة الضمان غير موجودة على الخادم.');
+    }
+
+    const name = asset.warrantyAttachmentOriginalName?.trim() || 'warranty-image';
+    res.setHeader('Content-Type', asset.warrantyAttachmentMime || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(name)}`);
+    res.sendFile(p);
+  }
+
   async create(dto: CreateCompanyAssetDto) {
     const tenantId = TenantContext.getTenantId();
     const nameAr = dto.nameAr?.trim();
@@ -231,7 +289,16 @@ export class CompanyAssetsService {
     });
   }
 
-  async completeFromInvoice(dto: CompleteCompanyAssetFromInvoiceDto) {
+  async completeFromInvoice(
+    dto: CompleteCompanyAssetFromInvoiceDto,
+    warrantyAttachmentFile?: Express.Multer.File,
+  ) {
+    const attachmentError = validateWarrantyAttachmentFile(warrantyAttachmentFile);
+    if (attachmentError) {
+      if (warrantyAttachmentFile?.path) await unlink(warrantyAttachmentFile.path).catch(() => {});
+      throw new BadRequestException(attachmentError);
+    }
+
     const tenantId = TenantContext.getTenantId();
     const nameAr = dto.nameAr?.trim();
     if (!nameAr) throw new BadRequestException('اسم الأصل مطلوب');
@@ -271,44 +338,49 @@ export class CompanyAssetsService {
 
     const markDone = dto.markInvoiceDone !== false;
 
-    return this.prisma.$transaction(async (tx) => {
-      const asset = await tx.companyAsset.create({
-        data: {
-          tenantId,
-          companyId: dto.companyId,
-          nameAr,
-          nameEn: dto.nameEn?.trim() || null,
-          serialNumber: dto.serialNumber?.trim() || null,
-          location: dto.location?.trim() || null,
-          purchaseDate,
-          acquisitionCost: cost,
-          supplierId: inv.supplierId,
-          invoiceId: inv.id,
-          warrantyDescription: dto.warrantyDescription?.trim() || null,
-          warrantyMonths: w.warrantyMonths,
-          warrantyStartDate: w.warrantyStartDate,
-          warrantyEndDate: w.warrantyEndDate,
-          notes: dto.notes?.trim() || null,
-        },
-      });
-      await createCompanyAssetWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
-      if (markDone) {
-        await tx.invoice.update({
-          where: { id: inv.id },
-          data: { warrantyFollowUpDone: true },
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const asset = await tx.companyAsset.create({
+          data: {
+            tenantId,
+            companyId: dto.companyId,
+            nameAr,
+            nameEn: dto.nameEn?.trim() || null,
+            serialNumber: dto.serialNumber?.trim() || null,
+            location: dto.location?.trim() || null,
+            purchaseDate,
+            acquisitionCost: cost,
+            supplierId: inv.supplierId,
+            invoiceId: inv.id,
+            warrantyDescription: dto.warrantyDescription?.trim() || null,
+            warrantyMonths: w.warrantyMonths,
+            warrantyStartDate: w.warrantyStartDate,
+            warrantyEndDate: w.warrantyEndDate,
+            warrantyAttachmentPath: warrantyAttachmentFile?.path ?? null,
+            warrantyAttachmentOriginalName: warrantyAttachmentFile?.originalname
+              ? warrantyAttachmentFile.originalname.trim().slice(0, 240)
+              : null,
+            warrantyAttachmentMime: warrantyAttachmentFile?.mimetype ?? null,
+            notes: dto.notes?.trim() || null,
+          },
         });
-      }
-      const full = await tx.companyAsset.findFirstOrThrow({
-        where: { id: asset.id },
-        include: {
-          supplier: { select: { id: true, nameAr: true, nameEn: true } },
-          invoice: { select: { id: true, invoiceNumber: true, supplierInvoiceNumber: true } },
-          warrantyLines: { orderBy: { sortOrder: 'asc' } },
-          _count: { select: { warrantyLines: true } },
-        },
+        await createCompanyAssetWarrantyLinesTx(tx, tenantId, dto.companyId, asset.id, dto.warrantyLines);
+        if (markDone) {
+          await tx.invoice.update({
+            where: { id: inv.id },
+            data: { warrantyFollowUpDone: true },
+          });
+        }
+        const full = await tx.companyAsset.findFirstOrThrow({
+          where: { id: asset.id },
+          include: this.assetDetailInclude,
+        });
+        return mapCompanyAssetRow(full);
       });
-      return mapCompanyAssetRow(full);
-    });
+    } catch (error) {
+      if (warrantyAttachmentFile?.path) await unlink(warrantyAttachmentFile.path).catch(() => {});
+      throw error;
+    }
   }
 
   async update(id: string, companyId: string, dto: UpdateCompanyAssetDto) {

@@ -20,6 +20,9 @@ export type HrEmployee = {
   workHours?: string | null;
   workSchedule?: string | null;
   notes?: string | null;
+  photoPath?: string | null;
+  photoMime?: string | null;
+  photoOriginalName?: string | null;
   [key: string]: unknown;
 };
 

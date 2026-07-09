@@ -112,6 +112,17 @@ for (const filePath of uiBoundaryFiles) {
   if (/<table\b/.test(source)) report(filePath, 'raw JSX table is not allowed in suppliers UI components.');
 }
 
+const supplierTablePath = path.join(suppliersRoot, 'components', 'SupplierTable.tsx');
+const supplierTableSource = read(supplierTablePath);
+if (/key:\s*'nameEn'|key:\s*'phone'/.test(supplierTableSource)) {
+  report(supplierTablePath, 'supplier list must keep display compact: names are combined and phone is not a standalone table column.');
+}
+for (const required of ["key: 'select'", "width: 40", "minWidth: 40", "maxWidth: 40", "cellClassName: 'nx-selection-cell'"]) {
+  if (!supplierTableSource.includes(required)) {
+    report(supplierTablePath, `supplier selection column must stay compact and governed: ${required}`);
+  }
+}
+
 const importExportPath = path.join(suppliersRoot, 'components', 'SupplierImportExport.tsx');
 const importExportSource = read(importExportPath);
 if (!importExportSource.includes('../supplierImportExportModel')) {

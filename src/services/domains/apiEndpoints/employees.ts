@@ -1,5 +1,14 @@
 import type { ApiParsedResult, HrEmployee, HrEmployeeTab } from '../../../types/api';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../../core/apiHttp';
+import {
+  apiGet,
+  apiPost,
+  apiPatch,
+  apiDelete,
+  getApiBaseUrl,
+  getAuthHeaders,
+  parseResponse,
+  safeFetch,
+} from '../../core/apiHttp';
 import {
   buildEmployeesPagedApiQuery,
   buildHrApiQuery,
@@ -96,6 +105,63 @@ export async function updateEmployee(id: string, body: unknown, companyId: strin
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiPatch(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}`, companyQuery(companyId)), body);
 }
+export async function uploadEmployeePhoto(
+  id: string,
+  companyId: string,
+  file: File,
+): Promise<ApiParsedResult<HrEmployee>> {
+  if (!id || !companyId) return { success: false, error: 'Ù…Ø¹Ø±Ù Ø§Ù„Ù…ÙˆØ¸Ù ÙˆØ§Ù„Ø´Ø±ÙƒØ© Ù…Ø·Ù„ÙˆØ¨Ø§Ù†' };
+  const url = new URL(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/photo`, companyQuery(companyId)), getApiBaseUrl());
+  const headers = getAuthHeaders();
+  delete headers['Content-Type'];
+  const buildBody = () => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return formData;
+  };
+  const doFetch = async () => {
+    const retryHeaders = getAuthHeaders();
+    delete retryHeaders['Content-Type'];
+    const retryRes = await safeFetch(url.toString(), {
+      method: 'POST',
+      headers: retryHeaders,
+      body: buildBody(),
+    }, 30000);
+    return parseResponse<HrEmployee>(retryRes);
+  };
+  try {
+    const res = await safeFetch(url.toString(), {
+      method: 'POST',
+      headers,
+      body: buildBody(),
+    }, 30000);
+    return parseResponse<HrEmployee>(res, doFetch);
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : 'Upload failed' };
+  }
+}
+
+export async function deleteEmployeePhoto(id: string, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
+  if (!id || !companyId) return { success: false, error: 'Ù…Ø¹Ø±Ù Ø§Ù„Ù…ÙˆØ¸Ù ÙˆØ§Ù„Ø´Ø±ÙƒØ© Ù…Ø·Ù„ÙˆØ¨Ø§Ù†' };
+  return apiDelete(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/photo`, companyQuery(companyId)));
+}
+
+export async function getEmployeePhotoObjectUrl(id: string, companyId: string): Promise<string> {
+  const url = new URL(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/photo`, companyQuery(companyId)), getApiBaseUrl());
+  const res = await safeFetch(url.toString(), {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  }, 30000);
+  if (!res.ok) {
+    const raw = await res.json().catch(() => ({}));
+    const message = Array.isArray(raw?.message)
+      ? raw.message.join(', ')
+      : raw?.message || raw?.error || 'Employee photo unavailable';
+    throw new Error(String(message));
+  }
+  return URL.createObjectURL(await res.blob());
+}
+
 export async function terminateEmployee(id: string, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
   if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiPatch(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/terminate`, companyQuery(companyId)), {});
