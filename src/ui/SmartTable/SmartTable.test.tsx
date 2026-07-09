@@ -351,7 +351,7 @@ describe('SmartTable', () => {
     expect(cells[2].getAttribute('data-column-size')).toBe('date');
     expect(cells[2].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
     expect(cells[3].getAttribute('data-column-size')).toBe('money-sm');
-    expect(cells[3].style.getPropertyValue('--nx-smart-cell-align')).toBe('end');
+    expect(cells[3].style.getPropertyValue('--nx-smart-cell-align')).toBe('center');
   });
 
   it('removes hidden columns from the rendered table layout', () => {

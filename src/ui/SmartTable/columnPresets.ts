@@ -5,10 +5,10 @@ type ColumnKind = NonNullable<SmartTableColumn['kind']>;
 
 const KIND_DEFAULTS: Record<ColumnKind, Partial<SmartTableColumn>> = {
   id: { align: 'center', shrink: true, width: '10ch' },
-  text: { align: 'start', minWidth: '14ch' },
+  text: { align: 'center', minWidth: '14ch' },
   date: { align: 'center', shrink: true, width: '11ch' },
-  money: { align: 'end', numeric: true, shrink: true, width: '12ch' },
-  number: { align: 'end', numeric: true, shrink: true, width: '8ch' },
+  money: { align: 'center', numeric: true, shrink: true, width: '12ch' },
+  number: { align: 'center', numeric: true, shrink: true, width: '8ch' },
   status: { align: 'center', shrink: true, width: '9ch' },
   actions: { align: 'center', shrink: true, width: '44px', maxWidth: '48px' },
   meta: { align: 'center', shrink: true, width: '10ch' },
@@ -19,14 +19,14 @@ const SIZE_DEFAULTS: Record<SmartTableColumnSize, Partial<SmartTableColumn>> = {
   name: { align: 'start', width: '22ch', minWidth: '18ch', maxWidth: '30ch' },
   supplier: { align: 'start', width: '18ch', minWidth: '14ch', maxWidth: '24ch' },
   date: { align: 'center', shrink: true, width: '10ch', maxWidth: '11ch' },
-  'money-sm': { align: 'end', numeric: true, shrink: true, width: '9ch', maxWidth: '10ch' },
-  'money-md': { align: 'end', numeric: true, shrink: true, width: '11ch', maxWidth: '12ch' },
-  'money-lg': { align: 'end', numeric: true, shrink: true, width: '13ch', maxWidth: '15ch' },
+  'money-sm': { align: 'center', numeric: true, shrink: true, width: '9ch', maxWidth: '10ch' },
+  'money-md': { align: 'center', numeric: true, shrink: true, width: '11ch', maxWidth: '12ch' },
+  'money-lg': { align: 'center', numeric: true, shrink: true, width: '13ch', maxWidth: '15ch' },
   'serial-code': { align: 'center', shrink: true, width: '10ch', maxWidth: '13ch' },
   'code-sm': { align: 'center', shrink: true, width: '7ch', maxWidth: '9ch' },
   duration: { align: 'center', shrink: true, width: '8ch', maxWidth: '10ch' },
   count: { align: 'center', numeric: true, shrink: true, width: '5ch', maxWidth: '6ch' },
-  tax: { align: 'end', numeric: true, shrink: true, width: '8ch', maxWidth: '9ch' },
+  tax: { align: 'center', numeric: true, shrink: true, width: '8ch', maxWidth: '9ch' },
 };
 
 export function inferColumnKind<TRow extends SmartTableRow = SmartTableRow>(col: SmartTableColumn<TRow>): ColumnKind {

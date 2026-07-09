@@ -286,6 +286,7 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                     <th
                       key={col.key}
                       className={cn(
+                        'nx-smart-header-cell-vars',
                         col.cellClassName,
                         getColumnKindClass(col),
                         col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',
@@ -356,6 +357,7 @@ function SmartTableInner<TRow extends SmartTableRow = SmartTableRow>(props: Smar
                       <td
                         key={col.key}
                         className={cn(
+                          'nx-smart-body-cell-vars',
                           col.cellClassName,
                           getColumnKindClass(col),
                           col.key === 'actions' ? `noorix-actions-cell${actionSticky ? ` noorix-actions-sticky${compact ? ' noorix-actions-compact' : ''}` : (compact ? ' noorix-actions-compact' : '')}` : '',

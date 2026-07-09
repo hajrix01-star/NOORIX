@@ -3436,7 +3436,7 @@ select option {
 /* GLOBAL SMART ALIGNMENT: financial/number cells follow the central SmartTable alignment policy. */
 .noorix-table .noorix-numeric-cell,
 .noorix-table td[data-numeric="true"] {
-  text-align: var(--nx-smart-cell-align, end) !important;
+  text-align: var(--nx-smart-cell-align, center) !important;
   direction: ltr;
   unicode-bidi: isolate;
   font-family: var(--noorix-font-numbers) !important;
@@ -6328,6 +6328,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
   border-inline-start: 1px solid var(--nx-table-body-col-line) !important;
   border-inline-end: 0 !important;
   line-height: 1.45;
+  vertical-align: middle;
 }
 .noorix-table thead th:first-child,
 .noorix-table tbody td:first-child {
@@ -6366,7 +6367,7 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .noorix-table td[data-column-size="money-md"],
 .noorix-table td[data-column-size="money-lg"],
 .noorix-table td[data-column-size="tax"] {
-  text-align: var(--nx-smart-cell-align, end) !important;
+  text-align: var(--nx-smart-cell-align, center) !important;
   direction: ltr;
   unicode-bidi: isolate;
 }
@@ -6441,6 +6442,8 @@ body.noorix-page-smart-chat .noorix-smart-chat-root {
 .noorix-table tbody td.nx-smart-body-cell-vars {
   height: var(--nx-smart-cell-height, 42px) !important;
   padding: var(--nx-smart-cell-padding, 6px 12px) !important;
+  text-align: var(--nx-smart-cell-align, center) !important;
+  vertical-align: middle !important;
 }
 .noorix-table tfoot td.nx-smart-footer-cell-vars {
   height: var(--nx-smart-cell-height, 42px) !important;

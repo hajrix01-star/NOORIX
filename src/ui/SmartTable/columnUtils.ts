@@ -9,7 +9,6 @@ export function columnLabel<TRow extends SmartTableRow = SmartTableRow>(col: Sma
 }
 
 export function getAlign<TRow extends SmartTableRow = SmartTableRow>(col: SmartTableColumn<TRow> | null | undefined) {
-  if (col?.align) return (ALIGN_MAP as Record<string, string>)[String(col.align)] || 'start';
-  if (col?.numeric) return 'end';
-  return 'start';
+  if (col?.align) return (ALIGN_MAP as Record<string, string>)[String(col.align)] || 'center';
+  return 'center';
 }

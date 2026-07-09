@@ -276,14 +276,14 @@ export default function StaffListScreen({ embedded }: StaffListScreenProps) {
           {employeeDisplayName(row, lang)}
         </Button>
       ) },
-    { key: 'jobTitle', label: t('jobTitle'), sortable: true, width: 170,
-      render: (v: unknown) => <span className="nx-cell-muted">{String(v || '—')}</span> },
+    { key: 'jobTitle', label: t('jobTitle'), sortable: true, width: 170, align: 'center',
+      render: (v: unknown) => <span className="nx-cell-muted block text-center">{String(v || '—')}</span> },
     { key: 'joinDate', label: t('joinDate'), sortable: true, width: 125,
       render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span> },
-    { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140,
+    { key: 'totalSalary', label: t('totalSalary'), numeric: true, sortable: true, width: 140, align: 'center',
       render: (_: unknown, row: HrStaffTableRow) => (
         Number.isFinite(Number(row.totalSalary))
-          ? <FmtNum n={Number(row.totalSalary)} className="nx-cell-num text-[13px]" />
+          ? <FmtNum n={Number(row.totalSalary)} className="nx-cell-num block text-center text-[13px]" />
           : <span className="nx-cell-muted">—</span>
       ) },
     { key: 'status', label: t('status'), width: 110,
