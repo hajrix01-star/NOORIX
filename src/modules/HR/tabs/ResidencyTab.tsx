@@ -1,5 +1,5 @@
 /**
- * ResidencyTab — ???????? ?????? ?????? (???????? ?????? ?????? …)
+ * ResidencyTab â€” ???????? ?????? ?????? (???????? ?????? ?????? â€¦)
  */
 import React, { useState, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -203,11 +203,11 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           className="font-semibold text-[13px] text-start text-noorix-blue hover:underline cursor-pointer bg-transparent border-0 p-0"
           onClick={() => openServiceRow(row)}
         >
-          {String(v || '—')}
+          {String(v || 'â€”')}
         </Button>
       ) },
     { key: 'serviceLabel', label: t('hrServiceCategory'), sortable: true, width: 140, minWidth: 130,
-      render: (v: unknown) => <Badge color="blue" label={String(v || '—')} size="sm" /> },
+      render: (v: unknown) => <Badge color="blue" label={String(v || 'â€”')} size="sm" /> },
     { key: 'serviceDetail', label: t('hrServiceDetailColumn'), sortable: false, width: 140, minWidth: 120,
       render: (_v: unknown, row: HrResidencyRow) => (
         <span className="text-[12px] text-noorix-text">{formatHrServiceDetail(row, t)}</span>
@@ -250,7 +250,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         v != null && Number(v) > 0 ? (
           <span className="nx-cell-num">{fmt(Number(v))} <span className="nx-sar">SR</span></span>
         ) : (
-          <span className="text-noorix-muted">—</span>
+          <span className="text-noorix-muted">â€”</span>
         )
       ) },
     { key: 'status', label: t('status'), width: 100, minWidth: 90,
@@ -271,12 +271,12 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
   ], [t, residencyStatusMap, handleDelete, openServiceRow]);
 
   const exportData = allFilteredData.map((r: HrResidencyRow) => ({
-    employeeName: r.employeeName || '—',
+    employeeName: r.employeeName || 'â€”',
     service: r.serviceLabel,
-    iqamaOrRef: r.iqamaNumber || r.referenceLabel || '—',
+    iqamaOrRef: r.iqamaNumber || r.referenceLabel || 'â€”',
     expiryDate: r.expiryDate ? formatSaudiDate(r.expiryDate) : formatSaudiDate(r.transactionDate),
-    invoiceNumber: r.invoiceNumber || '—',
-    amount: r.invoiceAmount != null ? fmt(Number(r.invoiceAmount)) : '—',
+    invoiceNumber: r.invoiceNumber || 'â€”',
+    amount: r.invoiceAmount != null ? fmt(Number(r.invoiceAmount)) : 'â€”',
     status: (residencyStatusMap as Record<string, { label?: string }>)[String(residencyStatusKey(r.status))]?.label || r.status,
   }));
 
@@ -295,7 +295,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
           <Badge color="blue" label={row.serviceLabel} size="sm" />
         </div>
         <div className="text-[12px] text-noorix-muted mb-2 nx-font-numbers text-end">
-          {row.iqamaNumber || row.referenceLabel || '—'}
+          {row.iqamaNumber || row.referenceLabel || 'â€”'}
         </div>
         <div className="nx-mc__grid nx-mc__grid--2 mb-2.5">
           <div>
@@ -303,12 +303,12 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
             <div
               className={cn('nx-mc__stat-value text-[13px]', soon && 'text-noorix-amber font-bold')}
             >
-              {row.expiryDate ? formatSaudiDate(row.expiryDate) : '—'}
+              {row.expiryDate ? formatSaudiDate(row.expiryDate) : 'â€”'}
             </div>
           </div>
           <div>
             <div className="nx-mc__stat-label">{t('invoiceNumber')}</div>
-            <div className="nx-mc__stat-value text-[13px] ltr text-noorix-blue">{row.invoiceNumber || '—'}</div>
+            <div className="nx-mc__stat-value text-[13px] ltr text-noorix-blue">{row.invoiceNumber || 'â€”'}</div>
           </div>
         </div>
         <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
@@ -334,7 +334,7 @@ export default function ResidencyTab({ embedded }: ResidencyTabProps = {}) {
         </div>
         <div className="nx-cr__line2">
           <div className="nx-cr__line2-start">
-            <span className="nx-cr__meta ltr">{row.iqamaNumber || row.referenceLabel || '—'}</span>
+            <span className="nx-cr__meta ltr">{row.iqamaNumber || row.referenceLabel || 'â€”'}</span>
             <span className={cn('nx-cr__meta ltr', soon && 'text-noorix-amber')}>
               {row.expiryDate ? formatSaudiDate(row.expiryDate) : ''}
             </span>

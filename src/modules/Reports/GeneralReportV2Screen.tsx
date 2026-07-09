@@ -1,4 +1,4 @@
-﻿import React, { useLayoutEffect, useMemo, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useReportsGeneralProfitLoss } from '../../hooks/useReports';
@@ -173,7 +173,7 @@ export default function GeneralReportV2Screen() {
   }
 
   function formatChange(value: number | null) {
-    if (value == null || !Number.isFinite(value)) return lang === 'ar' ? 'ØºÙŠØ± Ù…Ù†Ø·Ù‚ÙŠ' : 'N/A';
+    if (value == null || !Number.isFinite(value)) return lang === 'ar' ? 'غير منطقي' : 'N/A';
     const rounded = Math.round(value * 10) / 10;
     return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString('en', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
   }
@@ -276,7 +276,7 @@ export default function GeneralReportV2Screen() {
         label: (
           <div className="grid gap-0.5 text-center">
             <span className="font-black text-white">%</span>
-            <span className="text-[11px] font-black text-white/75">{lang === 'ar' ? 'Ø§Ù„ØªØºÙŠØ±' : 'Change'}</span>
+            <span className="text-[11px] font-black text-white/75">{lang === 'ar' ? 'التغير' : 'Change'}</span>
           </div>
         ),
         numeric: true,
@@ -373,7 +373,7 @@ export default function GeneralReportV2Screen() {
       filename: `general-profit-loss-v2-${year}${selectedMonthNumber ? `-m${selectedMonthNumber}` : ''}.xlsx`,
       companyName: companyName || undefined,
       title: selectedMonthNumber ? `${t('reportIncomeStatementTitle')} - ${monthLabel} ${year}` : `${t('reportGeneralV2')} - ${year}`,
-      sheetName: lang === 'ar' ? 'Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¯Ø®Ù„' : 'Income statement',
+      sheetName: lang === 'ar' ? 'قائمة الدخل' : 'Income statement',
       rtl: lang !== 'en',
       headerColor: '111827',
       money2ColumnKeys: selectedMonthNumber ? [`${monthLabel} ${year}`] : [...(report?.months?.map((month) => month.label) || monthNames), t('reportAnnualTotal')],
@@ -429,7 +429,7 @@ export default function GeneralReportV2Screen() {
       <h1>${escHtml(t('reportGeneralV2'))}</h1>
       <div class="gr-v2-print-meta">
         <span>${escHtml(periodTitle)}</span>
-        ${compareEnabled ? `<span>${escHtml(isArabic ? 'Ù…Ù‚Ø§Ø±Ù†Ø© Ù…Ø¹' : 'Compared with')} ${escHtml(compareTitle)}</span>` : ''}
+        ${compareEnabled ? `<span>${escHtml(isArabic ? 'مقارنة مع' : 'Compared with')} ${escHtml(compareTitle)}</span>` : ''}
         <span>${escHtml(t('reportAmountBasisGrossShort'))}</span>
       </div>
     </div>
@@ -437,7 +437,7 @@ export default function GeneralReportV2Screen() {
   <section class="gr-v2-print-summary">
     <div><span>${escHtml(t('annualNetProfit'))}</span><strong>${escHtml(amountText(currentNetProfit))} SR</strong></div>
     <div><span>${escHtml(t('annualGrossProfit'))}</span><strong>${escHtml(amountText(currentGrossProfit))} SR</strong></div>
-    <div><span>${escHtml(isArabic ? 'Ù‡Ø§Ù…Ø´ Ø§Ù„Ø±Ø¨Ø­' : 'Profit margin')}</span><strong>${escHtml(percentText(currentMargin))}</strong></div>
+    <div><span>${escHtml(isArabic ? 'هامش الربح' : 'Profit margin')}</span><strong>${escHtml(percentText(currentMargin))}</strong></div>
   </section>
   <table class="gr-v2-print-table">
     <thead><tr>${headerCells.map((cell) => `<th>${escHtml(cell)}</th>`).join('')}</tr></thead>
@@ -611,11 +611,11 @@ export default function GeneralReportV2Screen() {
       <PrintPreviewModal
         open={!!printPreviewHtml}
         onClose={() => setPrintPreviewHtml('')}
-        title={lang === 'ar' ? 'Ù…Ø¹Ø§ÙŠÙ†Ø© Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©' : 'Print preview'}
+        title={lang === 'ar' ? 'معاينة الطباعة' : 'Print preview'}
         html={printPreviewHtml}
-        closeLabel={lang === 'ar' ? 'Ø¥ØºÙ„Ø§Ù‚' : 'Close'}
-        printLabel={lang === 'ar' ? 'Ø·Ø¨Ø§Ø¹Ø© / Ø­ÙØ¸ PDF' : 'Print / Save PDF'}
-        iframeTitle={lang === 'ar' ? 'Ù…Ø¹Ø§ÙŠÙ†Ø© Ø·Ø¨Ø§Ø¹Ø© Ø§Ù„ØªÙ‚Ø±ÙŠØ±' : 'Report print preview'}
+        closeLabel={lang === 'ar' ? 'إغلاق' : 'Close'}
+        printLabel={lang === 'ar' ? 'طباعة / حفظ PDF' : 'Print / Save PDF'}
+        iframeTitle={lang === 'ar' ? 'معاينة طباعة التقرير' : 'Report print preview'}
       />
 
       <section className="rounded-lg border border-noorix-border bg-white shadow-sm">
@@ -625,11 +625,11 @@ export default function GeneralReportV2Screen() {
         >
           <div className="flex flex-wrap items-center justify-center gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'Ø§Ù„ÙØªØ±Ø©' : 'Period'}</span>
+              <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'الفترة' : 'Period'}</span>
               <DateFilterBar filter={dateFilter} modes={['month', 'months', 'quarter', 'year']} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©' : 'Compare with'}</span>
+              <span className="text-[12px] font-black text-slate-500">{lang === 'ar' ? 'المقارنة' : 'Compare with'}</span>
               <DateFilterBar filter={compareFilter} modes={['all', 'month', 'months', 'quarter', 'year']} />
             </div>
           </div>
@@ -650,7 +650,7 @@ export default function GeneralReportV2Screen() {
               <MetricCard.Header label={t('annualNetProfit')} subLabel={dateFilter.label} />
               <MetricCard.Value value={currentNetProfit} currency="SR" color="var(--color-nx-net-profit)" />
               <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
-                {compareEnabled ? `${lang === 'ar' ? 'Ø§Ù„ØªØºÙŠØ±' : 'Change'} ${formatChange(percentChange(currentNetProfit, compareNetProfit))}` : (lang === 'ar' ? 'Ø¨Ø¯ÙˆÙ† Ù…Ù‚Ø§Ø±Ù†Ø©' : 'No comparison')}
+                {compareEnabled ? `${lang === 'ar' ? 'التغير' : 'Change'} ${formatChange(percentChange(currentNetProfit, compareNetProfit))}` : (lang === 'ar' ? 'بدون مقارنة' : 'No comparison')}
               </MetricCard.Footer>
             </MetricCard>
 
@@ -658,26 +658,26 @@ export default function GeneralReportV2Screen() {
               <MetricCard.Header label={t('annualGrossProfit')} subLabel={dateFilter.label} />
               <MetricCard.Value value={currentGrossProfit} currency="SR" color="var(--color-nx-profit)" />
               <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
-                {lang === 'ar' ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙØªØ±Ø© Ø§Ù„Ù…Ø­Ø¯Ø¯Ø©' : 'Selected period total'}
+                {lang === 'ar' ? 'إجمالي الفترة المحددة' : 'Selected period total'}
               </MetricCard.Footer>
             </MetricCard>
 
             <MetricCard color="var(--color-nx-sales)" className="min-h-[138px]">
-              <MetricCard.Header label={lang === 'ar' ? 'Ù‡Ø§Ù…Ø´ Ø§Ù„Ø±Ø¨Ø­' : 'Profit margin'} subLabel={dateFilter.label} />
+              <MetricCard.Header label={lang === 'ar' ? 'هامش الربح' : 'Profit margin'} subLabel={dateFilter.label} />
               <MetricCard.Value value={percentText(currentMargin)} color="var(--color-nx-sales)" />
               <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
-                {lang === 'ar' ? 'ØµØ§ÙÙŠ Ø§Ù„Ø±Ø¨Ø­ Ø¥Ù„Ù‰ Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª' : 'Net profit to revenue'}
+                {lang === 'ar' ? 'صافي الربح إلى الإيرادات' : 'Net profit to revenue'}
               </MetricCard.Footer>
             </MetricCard>
 
             <MetricCard color={compareEnabled ? 'var(--color-nx-profit)' : 'var(--noorix-border)'} className="min-h-[138px]">
-              <MetricCard.Header label={lang === 'ar' ? 'Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©' : 'Comparison'} subLabel={compareEnabled ? compareFilter.label : (lang === 'ar' ? 'Ù…Ø¹Ø·Ù„Ø©' : 'Off')} />
+              <MetricCard.Header label={lang === 'ar' ? 'المقارنة' : 'Comparison'} subLabel={compareEnabled ? compareFilter.label : (lang === 'ar' ? 'معطلة' : 'Off')} />
               <MetricCard.Value
-                value={compareEnabled ? formatChange(percentChange(currentNetProfit, compareNetProfit)) : (lang === 'ar' ? 'Ø¨Ø¯ÙˆÙ†' : 'Off')}
+                value={compareEnabled ? formatChange(percentChange(currentNetProfit, compareNetProfit)) : (lang === 'ar' ? 'بدون' : 'Off')}
                 color={compareEnabled ? 'var(--color-nx-profit)' : 'var(--noorix-muted)'}
               />
               <MetricCard.Footer className="mt-auto border-t border-noorix-border px-4 py-2 text-[11px] font-bold text-noorix-muted">
-                {compareEnabled ? `${lang === 'ar' ? 'Ù…Ù‚Ø§Ø±Ù†Ø© Ù…Ø¹' : 'Compared with'} ${compareFilter.label}` : (lang === 'ar' ? 'Ù„Ø§ ØªØ¸Ù‡Ø± Ø£Ø¹Ù…Ø¯Ø© Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©' : 'Comparison columns hidden')}
+                {compareEnabled ? `${lang === 'ar' ? 'مقارنة مع' : 'Compared with'} ${compareFilter.label}` : (lang === 'ar' ? 'لا تظهر أعمدة المقارنة' : 'Comparison columns hidden')}
               </MetricCard.Footer>
             </MetricCard>
           </div>
@@ -723,7 +723,7 @@ export default function GeneralReportV2Screen() {
             compact
             cellPadding="8px 14px"
             getRowClassName={(row) => tableRowClass(row)}
-            emptyMessage={lang === 'ar' ? 'Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª' : 'No data'}
+            emptyMessage={lang === 'ar' ? 'لا توجد بيانات' : 'No data'}
           />
         </section>
       )}

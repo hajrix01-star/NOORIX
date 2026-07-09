@@ -1,5 +1,5 @@
 /**
- * PayrollRunDetailModal � ??? ?????? ????? ?????? (???? ???????)
+ * PayrollRunDetailModal — عرض تفاصيل مسيرة الراتب (جدول احترافي)
  */
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
@@ -65,10 +65,10 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
     fallbackMessage: t('loadingError'),
   });
 
-  /** ??? ?? ???? ??? ?? return ???? � ????? ??? Hooks */
+  /** لا نخرج قبل هذا الموضع حتى لا يتغير ترتيب Hooks */
   const buildSlipLabels = useCallback(
     (runForPrint: PayrollRunDetail) => ({
-      windowTitle: `${t('payrollSlipBatchPrint')} � ${runForPrint.runNumber || ''}`,
+      windowTitle: `${t('payrollSlipBatchPrint')} — ${runForPrint.runNumber || ''}`,
       legalRefAr: getText('payrollSlipLegalRefAr', 'ar'),
       legalRefEn: getText('payrollSlipLegalRefEn', 'en'),
       docTitleAr: getText('payrollSlipDocTitle', 'ar'),
@@ -133,7 +133,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
     const monthLabel = formatSaudiDate(run.payrollMonth);
     const rowsHtml = items.map((row, idx) => {
       const employeeName = employeeDisplayName(row.employee || { name: row.employeeName }, lang);
-      const advanceDates = String(row.notes || '').replace('?????? ?????:', '').trim() || '�';
+      const advanceDates = String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—';
       const summary = computePayrollLineSummary(row);
       return `<tr>
         <td>${idx + 1}</td><td>${employeeName}</td><td>${advanceDates}</td>
@@ -162,8 +162,8 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
       body: `
         <div class="run-header">
           <div>
-            <p class="run-meta">???? ???????: ${run.runNumber}</p>
-            <p class="run-meta">?????: ${monthLabel}</p>
+            <p class="run-meta">رقم المسيرة: ${run.runNumber}</p>
+            <p class="run-meta">الفترة: ${monthLabel}</p>
           </div>
         </div>
         <table>
@@ -208,7 +208,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
 
   const columns: SmartTableColumn<PayrollRunLine>[] = [
     { key: 'employeeName', label: t('employeeName'), size: 'name', minWidth: 150, render: (_: unknown, row: PayrollRunLine) => employeeDisplayName(row.employee || { name: row.employeeName }, lang) },
-    { key: 'advanceDates', label: t('payrollAdvanceDates'), size: 'date', minWidth: 120, render: (_: unknown, row: PayrollRunLine) => String(row.notes || '').replace('?????? ?????:', '').trim() || '�' },
+    { key: 'advanceDates', label: t('payrollAdvanceDates'), size: 'date', minWidth: 120, render: (_: unknown, row: PayrollRunLine) => String(row.notes || '').replace('تواريخ السلف:', '').trim() || '—' },
     { key: 'grossSalary', label: t('grossSalary'), numeric: true, size: 'money-sm', minWidth: 84, render: (v: unknown) => hrFmt(v) },
     { key: 'beforeDeduction', label: t('payrollTotalBeforeDeductions'), numeric: true, size: 'money-md', minWidth: 96, render: (_: unknown, row: PayrollRunLine) => hrFmt(computePayrollLineSummary(row).beforeDeductions) },
     { key: 'allowancesAdd', label: t('payrollAllowances'), numeric: true, size: 'money-sm', minWidth: 76, render: (v: unknown) => hrFmt(v ?? 0) },
@@ -243,7 +243,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
     <AdaptiveSheet
       open={true}
       onClose={onClose}
-      title={run.runNumber || '�'}
+      title={run.runNumber || '—'}
       size="xl"
       side="start"
       className="payroll-run-detail-drawer"
@@ -251,13 +251,13 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
         <>
           <Button onClick={handlePrint}>{t('printPayroll')}</Button>
           <Button variant="default" onClick={handlePrintEmployeeSlips}>{t('payrollSlipBatchPrint')}</Button>
-          <Button variant="ghost" onClick={onClose}>{t('close') || '?????'}</Button>
+          <Button variant="ghost" onClick={onClose}>{t('close') || 'إغلاق'}</Button>
         </>
       }
     >
       <div className="mb-4">
         <p className="text-[13px] text-noorix-muted m-0 mb-2">
-          {formatSaudiDate(run.payrollMonth)} � {items.length} {t('employeesList')}
+          {formatSaudiDate(run.payrollMonth)} — {items.length} {t('employeesList')}
         </p>
         <Badge color={statusInfo.badgeColor}>{t(statusInfo.labelKey)}</Badge>
         {run.issuedSalaryInvoiceNumber ? (
@@ -296,7 +296,7 @@ export function PayrollRunDetailModal({ runId, companyId, companyName, companyNa
         onClose={() => setPrintPreview(null)}
         title={t('hrPrintPreview')}
         html={printPreview?.html || ''}
-        closeLabel={t('close') || '?????'}
+        closeLabel={t('close') || 'إغلاق'}
         printLabel={`${t('print')} / PDF`}
         iframeTitle={printPreview?.title || t('hrPrintPreview')}
       />

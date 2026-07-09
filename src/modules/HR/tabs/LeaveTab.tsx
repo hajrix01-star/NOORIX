@@ -1,5 +1,5 @@
 /**
- * LeaveTab � ???????? (??????? ????)
+ * LeaveTab — الإجازات (تصفية سنة)
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -78,7 +78,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-/** ????? (?????) ??? ???? ????? ?????? � ???? ?? ?????? */
+/** العودة من الإجازة تظهر داخل فترة الإجازة فقط */
 function canShowLeaveReturnRow(row: HrLeaveRow) {
   if (row.status !== 'approved') return false;
   const today = getSaudiToday();
@@ -92,7 +92,7 @@ function canShowSalarySettlement(row: HrLeaveRow) {
   return row.status === 'approved' && row.leaveType === 'annual' && !row.salarySettlement;
 }
 
-/** ??? ??? ????? ?? ??? modal: ????? ????????/????????/???????? + ????? ?????? ??????? */
+/** تحديث البيانات بعد نجاح نموذج الإجازة: الإجازات/التسويات/الموظفين + الأثر المالي */
 function invalidateAfterLeaveFormModalSuccess(queryClient: QueryClient, companyId: string, year: number) {
   if (!queryClient || !companyId) return;
   queryClient.invalidateQueries({ queryKey: hrKeys.leaves(companyId) });
@@ -123,7 +123,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const { data, isLoading, isError } = useApiListQuery<HrLeaveRow>({
     queryKey: hrKeys.leavesForYear(companyId, year),
     queryFn: () => getLeaves(companyId, undefined, year),
-    fallbackMessage: '??? ????? ????????',
+    fallbackMessage: 'فشل تحميل الإجازات',
     enabled: !!companyId,
   });
 
@@ -243,7 +243,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
 
   const columns = useMemo(() => [
     { key: 'employeeName', label: t('employeeName'), sortable: true, minWidth: 180,
-      render: (v: unknown) => <span className="font-semibold text-[13px]">{String(v || '�')}</span> },
+      render: (v: unknown) => <span className="font-semibold text-[13px]">{String(v || '—')}</span> },
     { key: 'leaveType', label: t('leaveType'), sortable: true, width: 130, minWidth: 120,
       render: (v: unknown) => (
         <span className="text-[13px]">{t(TYPE_MAP[v as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
@@ -254,7 +254,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
     { key: 'endDate', label: t('endDate'), sortable: true, width: 120, minWidth: 115,
       render: (v: unknown) => <span className="nx-cell-muted-sm">{formatSaudiDate(String(v || ''))}</span> },
     { key: 'daysCount', label: t('daysCount'), numeric: true, sortable: true, width: 90, minWidth: 85,
-      render: (v: unknown) => <span className="nx-cell-num">{String(v ?? '�')}</span> },
+      render: (v: unknown) => <span className="nx-cell-num">{String(v ?? '—')}</span> },
     { key: 'salarySettlement', label: t('leaveSalarySettlement'), width: 120, minWidth: 100,
       render: (_: unknown, row: HrLeaveRow) => (
         row.salarySettlement ? (
@@ -262,7 +262,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
             {t('leaveSalarySettledBadge')}
           </span>
         ) : (
-          <span className="text-noorix-muted text-[12px]">�</span>
+          <span className="text-noorix-muted text-[12px]">—</span>
         )
       ) },
     { key: 'actions', label: t('actions'), kind: 'actions' as const, align: 'center',
@@ -283,19 +283,19 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   ], [t, deleteLeaveMutation]);
 
   const exportData = allFilteredData.map((r: HrLeaveRow & { employeeName?: string }) => ({
-    employeeName: r.employeeName || '�',
+    employeeName: r.employeeName || '—',
     leaveType: t(TYPE_MAP[r.leaveType as keyof typeof TYPE_MAP] || 'leaveOther'),
     startDate: formatSaudiDate(r.startDate),
     endDate: formatSaudiDate(r.endDate),
-    daysCount: r.daysCount ?? '�',
-    salarySettlement: r.salarySettlement ? t('leaveSalarySettledBadge') : '�',
+    daysCount: r.daysCount ?? '—',
+    salarySettlement: r.salarySettlement ? t('leaveSalarySettledBadge') : '—',
   }));
 
   const renderMobileCard = useCallback((row: HrLeaveRow & { employeeName?: string }) => {
     return (
       <div>
         <div className="flex items-center justify-between flex flex-wrap mb-1">
-          <span className="font-bold text-[14px]">{String(row.employeeName || '�')}</span>
+          <span className="font-bold text-[14px]">{String(row.employeeName || '—')}</span>
         </div>
         <div className="text-[13px] text-noorix-muted mb-2 text-end">
           {t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}
@@ -314,7 +314,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           </div>
           <div>
             <div className="nx-mc__stat-label">{t('daysCount')}</div>
-            <div className="nx-mc__stat-value text-[14px] font-bold">{row.daysCount ?? '�'}</div>
+            <div className="nx-mc__stat-value text-[14px] font-bold">{row.daysCount ?? '—'}</div>
           </div>
         </div>
         {canShowLeaveReturnRow(row) && (
@@ -349,7 +349,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
   const renderCompactRow = useCallback((row: HrLeaveRow & { employeeName?: string }) => (
     <div>
       <div className="nx-cr__line1">
-        <span className="nx-cr__name">{String(row.employeeName || '�')}</span>
+        <span className="nx-cr__name">{String(row.employeeName || '—')}</span>
         <span className="nx-cr__sub">{t(TYPE_MAP[row.leaveType as keyof typeof TYPE_MAP] || 'leaveOther')}</span>
         {Boolean(row.salarySettlement) && <Badge color="green" size="sm">{t('leaveSalarySettledBadge')}</Badge>}
       </div>
@@ -358,7 +358,7 @@ export default function LeaveTab({ embedded }: LeaveTabProps = {}) {
           <span className="nx-cr__meta ltr">{formatSaudiDate(row.startDate)} ? {formatSaudiDate(row.endDate)}</span>
         </div>
         <div className="nx-cr__line2-end">
-          <span className="nx-cr__amount">{row.daysCount ?? '�'} {t('daysCount')}</span>
+          <span className="nx-cr__amount">{row.daysCount ?? '—'} {t('daysCount')}</span>
           <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
             <KebabMenu
               ariaLabel={t('actions')}

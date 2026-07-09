@@ -1,5 +1,5 @@
 /**
- * ??? ??? ???? (????) � ???? ??????? ???????? ???????? ?????? ?? ??????? ??????.
+ * تفاصيل كشف البنك — عرض التحليل والتصنيف والمطابقة والطباعة من التقرير البنكي.
  */
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -47,7 +47,7 @@ export default function BankStatementDetailView({
   const { t } = useTranslation();
   const { openPrintPreview, printPreviewModal } = usePrintPreview({
     title: t('bankPrint'),
-    closeLabel: t('close') || '?????',
+    closeLabel: t('close') || 'إغلاق',
     printLabel: `${t('print')} / PDF`,
   });
   const vm = useBankStatementView(statementId, companyId, t);
@@ -82,7 +82,7 @@ export default function BankStatementDetailView({
   if (vm.isLoading) {
     return (
       <div className="text-center text-noorix-muted p-12">
-        {t('loading')}�
+        {t('loading')}…
       </div>
     );
   }
@@ -123,21 +123,21 @@ export default function BankStatementDetailView({
   return (
     <div className="grid gap-5">
       {printPreviewModal}
-      {/* -- ??? ??????: ?? ?????? + ????? -- */}
+      {/* رأس الصفحة: زر الرجوع + الأدوات */}
       <div className="nx-page-header noorix-surface-card py-[14px] px-[18px]">
-        <Button size="sm" onClick={onBack}>? {t('bankBackToList')}</Button>
+          <Button size="sm" onClick={onBack}>← {t('bankBackToList')}</Button>
         <div className="nx-toolbar">
           <Button
             size="sm"
             disabled={vm.reclassifyMutation.isPending}
             onClick={() => {
               vm.reclassifyMutation.mutate(undefined, {
-                onSuccess: () => showToast?.(t('bankReclassifyDone') || '?? ????? ???????'),
+                onSuccess: () => showToast?.(t('bankReclassifyDone') || 'تمت إعادة التصنيف'),
                 onError: (error: unknown) => showToast?.(errorMessage(error), 'error'),
               });
             }}
           >
-            {vm.reclassifyMutation.isPending ? '? ' + t('loading') : t('bankReclassify')}
+            {vm.reclassifyMutation.isPending ? '… ' + t('loading') : t('bankReclassify')}
           </Button>
           <Button
             size="sm"

@@ -110,7 +110,7 @@ export async function uploadEmployeePhoto(
   companyId: string,
   file: File,
 ): Promise<ApiParsedResult<HrEmployee>> {
-  if (!id || !companyId) return { success: false, error: 'Ù…Ø¹Ø±Ù Ø§Ù„Ù…ÙˆØ¸Ù ÙˆØ§Ù„Ø´Ø±ÙƒØ© Ù…Ø·Ù„ÙˆØ¨Ø§Ù†' };
+  if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   const url = new URL(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/photo`, companyQuery(companyId)), getApiBaseUrl());
   const headers = getAuthHeaders();
   delete headers['Content-Type'];
@@ -142,7 +142,7 @@ export async function uploadEmployeePhoto(
 }
 
 export async function deleteEmployeePhoto(id: string, companyId: string): Promise<ApiParsedResult<HrEmployee>> {
-  if (!id || !companyId) return { success: false, error: 'Ù…Ø¹Ø±Ù Ø§Ù„Ù…ÙˆØ¸Ù ÙˆØ§Ù„Ø´Ø±ÙƒØ© Ù…Ø·Ù„ÙˆØ¨Ø§Ù†' };
+  if (!id || !companyId) return { success: false, error: 'معرف الموظف والشركة مطلوبان' };
   return apiDelete(withHrApiQuery(`/api/v1/employees/${encodeURIComponent(id)}/photo`, companyQuery(companyId)));
 }
 

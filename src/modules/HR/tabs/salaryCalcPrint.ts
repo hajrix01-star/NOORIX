@@ -1,4 +1,4 @@
-﻿import { getSaudiToday } from '../../../utils/saudiDate';
+import { getSaudiToday } from '../../../utils/saudiDate';
 import { buildPrintHtmlTable } from '../../../utils/printTableHtml';
 import { buildPrintDocumentHtml } from '../../../utils/printUtils';
 import { employeeDisplayName } from '../../../utils/employeeDisplayName';
@@ -125,21 +125,21 @@ export function buildSalaryCalcPrintHtml(model: SalaryCalcPrintModel): string {
       <div class="section">
         <div class="bi">
           <div class="box">
-            <div class="box-title">ØªÙØµÙŠÙ„ Ø§Ù„Ø³Ø§Ø¹Ø§Øª ÙˆØ§Ù„Ø£ÙˆÙØ± ØªØ§ÙŠÙ…</div>
-            ${row('Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ø¹Ù…Ù„ Ø§Ù„ÙŠÙˆÙ…ÙŠØ©', money(model.hours))}
-            ${row('Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø£ÙŠØ§Ù… Ø§Ù„Ø¹Ù…Ù„', money(model.workDays))}
-            ${row('Ø£ÙŠØ§Ù… Ø§Ù„Ø¹Ù…Ù„ Ø§Ù„Ø¹Ø§Ø¯ÙŠØ©', money(model.regularWorkDays))}
-            ${model.restDays > 0 ? row('Ø£ÙŠØ§Ù… Ø§Ù„Ø±Ø§Ø­Ø© Ø§Ù„Ù…Ø´ØºÙ„Ø©', money(model.restDays), 'amber') : ''}
-            ${row('Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ø£ÙˆÙØ± ØªØ§ÙŠÙ… Ø§Ù„ÙŠÙˆÙ…ÙŠØ©', money(model.overtimeHoursPerDay), 'amber')}
-            ${row('Ø³Ø§Ø¹Ø§Øª OT Ø§Ù„ÙŠÙˆÙ…ÙŠØ©', `${money(model.totalDailyOT)} Ø³Ø§Ø¹Ø©`, 'amber')}
-            ${model.restDays > 0 ? row('Ø³Ø§Ø¹Ø§Øª OT Ø£ÙŠØ§Ù… Ø§Ù„Ø±Ø§Ø­Ø©', `${money(model.totalRestOT)} Ø³Ø§Ø¹Ø©`, 'amber') : ''}
-            <div class="row row-hl"><span>Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø³Ø§Ø¹Ø§Øª OT</span><span class="num amber">${money(model.totalOT)} Ø³Ø§Ø¹Ø©</span></div>
-            ${row('Ø£Ø¬Ø± Ø§Ù„Ø³Ø§Ø¹Ø© Ø§Ù„ÙØ¹Ù„ÙŠ', `${money(model.actualHourlyRate)} SR`)}
-            ${row('Ø£Ø¬Ø± Ø§Ù„Ø³Ø§Ø¹Ø© Ø§Ù„Ø£Ø³Ø§Ø³ÙŠ', `${money(model.basicHourlyRate)} SR`)}
-            ${row('Ø£Ø¬Ø± Ø³Ø§Ø¹Ø© OT', `${money(model.overtimeHourlyRate)} SR`)}
-            ${model.totalDailyOT > 0 ? row('Ù‚ÙŠÙ…Ø© OT Ø§Ù„ÙŠÙˆÙ…ÙŠØ©', `${money(model.dailyOTValue)} SR`) : ''}
-            ${model.restDays > 0 ? row('Ù‚ÙŠÙ…Ø© OT Ø£ÙŠØ§Ù… Ø§Ù„Ø±Ø§Ø­Ø©', `${money(model.restOTValue)} SR`) : ''}
-            <div class="row row-hl"><span>Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø£ÙˆÙØ± ØªØ§ÙŠÙ…</span><span class="num">${money(model.totalOTValue)} SR</span></div>
+            <div class="box-title">تفصيل الساعات والأوفر تايم</div>
+            ${row('ساعات العمل اليومية', money(model.hours))}
+            ${row('إجمالي أيام العمل', money(model.workDays))}
+            ${row('أيام العمل العادية', money(model.regularWorkDays))}
+            ${model.restDays > 0 ? row('أيام الراحة المشغلة', money(model.restDays), 'amber') : ''}
+            ${row('ساعات الأوفر تايم اليومية', money(model.overtimeHoursPerDay), 'amber')}
+            ${row('ساعات OT اليومية', `${money(model.totalDailyOT)} ساعة`, 'amber')}
+            ${model.restDays > 0 ? row('ساعات OT أيام الراحة', `${money(model.totalRestOT)} ساعة`, 'amber') : ''}
+            <div class="row row-hl"><span>إجمالي ساعات OT</span><span class="num amber">${money(model.totalOT)} ساعة</span></div>
+            ${row('أجر الساعة الفعلي', `${money(model.actualHourlyRate)} SR`)}
+            ${row('أجر الساعة الأساسي', `${money(model.basicHourlyRate)} SR`)}
+            ${row('أجر ساعة OT', `${money(model.overtimeHourlyRate)} SR`)}
+            ${model.totalDailyOT > 0 ? row('قيمة OT اليومية', `${money(model.dailyOTValue)} SR`) : ''}
+            ${model.restDays > 0 ? row('قيمة OT أيام الراحة', `${money(model.restOTValue)} SR`) : ''}
+            <div class="row row-hl"><span>إجمالي الأوفر تايم</span><span class="num">${money(model.totalOTValue)} SR</span></div>
           </div>
           <div class="sep"></div>
           <div class="box en">
@@ -161,22 +161,22 @@ export function buildSalaryCalcPrintHtml(model: SalaryCalcPrintModel): string {
   const body = `
     <div class="doc">
       <div class="head">
-        <div style="font-weight:700;margin-top:6px">ØªÙ‚Ø±ÙŠØ± Ø­Ø§Ø³Ø¨Ø© Ø§Ù„Ø±ÙˆØ§ØªØ¨ / Salary Calculator Report</div>
+        <div style="font-weight:700;margin-top:6px">تقرير حاسبة الرواتب / Salary Calculator Report</div>
         <div style="font-size:12px;color:#64748b;margin-top:4px">Date: ${esc(getSaudiToday())}</div>
       </div>
 
       <div class="section">
         <div class="bi">
           <div class="box">
-            <div class="box-title">ØªÙØµÙŠÙ„ Ø§Ù„Ø±Ø§ØªØ¨</div>
-            ${row('Ø§Ù„Ù…ÙˆØ¸Ù', esc(employeeAr))}
-            ${row('Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø³ØªÙ‡Ø¯Ù', `${money(model.totalTarget)} SR`)}
-            ${row('Ø§Ù„Ø±Ø§ØªØ¨ Ø§Ù„Ø£Ø³Ø§Ø³ÙŠ', `${money(model.basic)} SR`)}
-            ${row('Ø§Ù„Ø¨Ø¯Ù„Ø§Øª', `${money(model.totalAllowances)} SR`)}
-            ${row('Ø§Ù„Ø£ÙˆÙØ± ØªØ§ÙŠÙ…', `${money(model.totalOTValue)} SR`, 'amber')}
-            <div class="row row-hl"><span>Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</span><span class="num">${money(model.calculatedTotal)} SR</span></div>
-            ${hasDeduction ? row(`Ø®ØµÙ… Ø§Ù„Ø¥Ø¬Ø§Ø²Ø© (${model.vacDays} ÙŠÙˆÙ…)`, `-${money(model.deduction)} SR`) : ''}
-            ${hasDeduction ? `<div class="row row-hl"><span>ØµØ§ÙÙŠ Ø§Ù„Ø±Ø§ØªØ¨</span><span class="num">${money(model.netSalary)} SR</span></div>` : ''}
+            <div class="box-title">تفصيل الراتب</div>
+            ${row('الموظف', esc(employeeAr))}
+            ${row('الإجمالي المستهدف', `${money(model.totalTarget)} SR`)}
+            ${row('الراتب الأساسي', `${money(model.basic)} SR`)}
+            ${row('البدلات', `${money(model.totalAllowances)} SR`)}
+            ${row('الأوفر تايم', `${money(model.totalOTValue)} SR`, 'amber')}
+            <div class="row row-hl"><span>الإجمالي</span><span class="num">${money(model.calculatedTotal)} SR</span></div>
+            ${hasDeduction ? row(`خصم الإجازة (${model.vacDays} يوم)`, `-${money(model.deduction)} SR`) : ''}
+            ${hasDeduction ? `<div class="row row-hl"><span>صافي الراتب</span><span class="num">${money(model.netSalary)} SR</span></div>` : ''}
           </div>
           <div class="sep"></div>
           <div class="box en">
@@ -198,7 +198,7 @@ export function buildSalaryCalcPrintHtml(model: SalaryCalcPrintModel): string {
       <div class="section">
         <div class="bi">
           <div class="box">
-            <div class="box-title">ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¨Ø¯Ù„Ø§Øª</div>
+            <div class="box-title">تفاصيل البدلات</div>
             ${allowanceTableAr}
           </div>
           <div class="sep"></div>
@@ -209,7 +209,7 @@ export function buildSalaryCalcPrintHtml(model: SalaryCalcPrintModel): string {
         </div>
       </div>
 
-      ${model.hasOT ? '<div class="section"><div class="warn">Ø§Ù„Ù…Ø§Ø¯Ø© 107: Ø£Ø¬Ø± Ø³Ø§Ø¹Ø© Ø§Ù„Ø£ÙˆÙØ± ØªØ§ÙŠÙ… = Ø§Ù„Ø£Ø¬Ø± Ø§Ù„ÙØ¹Ù„ÙŠ + 50% Ù…Ù† Ø§Ù„Ø£Ø¬Ø± Ø§Ù„Ø£Ø³Ø§Ø³ÙŠ Ù…Ù‚Ø³ÙˆÙ…Ù‹Ø§ Ø¹Ù„Ù‰ Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ø´Ù‡Ø± Ø§Ù„Ù‚ÙŠØ§Ø³ÙŠØ©. Art.107: OT hourly rate = actual wage plus 50% of basic wage.</div></div>' : ''}
+      ${model.hasOT ? '<div class="section"><div class="warn">المادة 107: أجر ساعة الأوفر تايم = الأجر الفعلي + 50% من الأجر الأساسي مقسومًا على ساعات الشهر القياسية. Art.107: OT hourly rate = actual wage plus 50% of basic wage.</div></div>' : ''}
     </div>
   `;
 

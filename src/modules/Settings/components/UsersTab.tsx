@@ -1,5 +1,5 @@
 /**
- * UsersTab — ????? ??????????
+ * UsersTab â€” ????? ??????????
  */
 import React, { useMemo, useState } from 'react';
 import { useApiMutation } from '../../../hooks/useApiMutation';
@@ -49,7 +49,7 @@ export default function UsersTab({ userRole: _userRole, activeCompanies = [] }: 
     invalidateQueries: [settingsKeys.users()],
     successToast: (res: CreateUserResult) => {
       const loginName = toLoginName(res?.data?.email || '');
-      return loginName && loginName !== '—' ? t('userAddedWithEmail', loginName) : t('userAdded');
+      return loginName && loginName !== 'â€”' ? t('userAddedWithEmail', loginName) : t('userAdded');
     },
     errorToast: (error: Error) => error.message || t('addFailed'),
     onSuccess: () => { setShowForm(false); },
@@ -190,7 +190,7 @@ export default function UsersTab({ userRole: _userRole, activeCompanies = [] }: 
           renderCompactRow={(row: SettingsUser) => (
             <div>
               <div className="nx-cr__line1">
-                <span className="nx-cr__name">{row.nameAr || row.nameEn || row.email || '—'}</span>
+                <span className="nx-cr__name">{row.nameAr || row.nameEn || row.email || 'â€”'}</span>
                 <span className="nx-cr__sub ltr">{toLoginName(row.email)}</span>
                 <Badge color={row.isActive ? 'green' : 'red'} size="sm">
                   {row.isActive ? t('active') : t('archived')}
@@ -198,7 +198,7 @@ export default function UsersTab({ userRole: _userRole, activeCompanies = [] }: 
               </div>
               <div className="nx-cr__line2">
                 <div className="nx-cr__line2-start">
-                  <span className="nx-cr__meta">{row.role?.nameAr || row.role?.name || '—'}</span>
+                  <span className="nx-cr__meta">{row.role?.nameAr || row.role?.name || 'â€”'}</span>
                 </div>
                 <div className="nx-cr__line2-end">
                   <div className="nx-cr__kebab" onClick={(e) => e.stopPropagation()}>
@@ -214,14 +214,14 @@ export default function UsersTab({ userRole: _userRole, activeCompanies = [] }: 
           renderMobileCard={(row: SettingsUser) => (
             <div className="grid gap-2 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
-                <span className="font-bold text-[14px] text-noorix-text min-w-0 break-words">{row.nameAr || row.nameEn || row.email || '—'}</span>
+                <span className="font-bold text-[14px] text-noorix-text min-w-0 break-words">{row.nameAr || row.nameEn || row.email || 'â€”'}</span>
                 <Badge color={row.isActive ? 'green' : 'red'} size="sm" className="shrink-0">
                   {row.isActive ? t('active') : t('archived')}
                 </Badge>
               </div>
               <div className="nx-cell-muted ltr text-right break-all">{toLoginName(row.email)}</div>
               <div className="flex items-center justify-between gap-2 min-w-0">
-                <span className="nx-cell-muted min-w-0 break-words">{row.role?.nameAr || row.role?.name || '—'}</span>
+                <span className="nx-cell-muted min-w-0 break-words">{row.role?.nameAr || row.role?.name || 'â€”'}</span>
                 <Button size="sm" className="shrink-0" onClick={() => openEdit(row)}>{t('edit')}</Button>
               </div>
             </div>

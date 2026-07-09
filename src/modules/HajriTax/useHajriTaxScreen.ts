@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useCallback, useRef, useEffect, type ChangeEvent } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect, type ChangeEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../../context/AppContext';
@@ -104,7 +104,7 @@ export function useHajriTaxScreen() {
   const [detailReadOnly, setDetailReadOnly] = useState(false);
   const [showNewDeclarationModal, setShowNewDeclarationModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
-  /** ØªØ­Ø±ÙŠØ± Ø­Ø± ÙÙŠ Ø®Ù„Ø§ÙŠØ§ Ø§Ù„Ø¬Ø¯ÙˆÙ„ â€” Ø§Ù„Ù†Øµ ÙŠÙØ·Ø¨Ù‘ÙŽÙ‚ Ø¹Ù„Ù‰ Ø§Ù„Ù…Ø³ÙˆØ¯Ø© Ø¹Ù†Ø¯ blur ÙÙ‚Ø· */
+  /** تحرير حر في خلايا الجدول — النص يُطبَّق على المسودة عند blur فقط */
   const [cellEdit, setCellEdit] = useState<HajriTaxCellEdit | null>(null);
 
   const [draftData, setDraftData] = useState<TaxDisclosureData>(() => defaultDisclosureData());
@@ -117,7 +117,7 @@ export function useHajriTaxScreen() {
   const [saveHint, setSaveHint] = useState('');
   const [showSimulator, setShowSimulator] = useState(true);
   const [importingReport, setImportingReport] = useState(false);
-  /** Ø§Ø³ØªÙŠØ±Ø§Ø¯ Ù…Ø¨ÙŠØ¹Ø§Øª Ø¨Ø¯ÙˆÙ† Ø¶Ø±ÙŠØ¨Ø© Ù…Ø³Ø¬Ù‘Ù„Ø©: Ø¥Ø°Ø§ ÙƒØ§Ù† ØµØ§ÙÙŠ Ø§Ù„ÙØ§ØªÙˆØ±Ø© Ø¥Ø¬Ù…Ø§Ù„ÙŠÙ‹Ø§ Ø´Ø§Ù…Ù„Ø§Ù‹ 15% ÙˆÙ„ÙŠØ³ Ø£Ø³Ø§Ø³Ù‹Ø§ Ø®Ø§Ø¶Ø¹Ù‹Ø§ */
+  /** استيراد مبيعات بدون ضريبة مسجّلة: إذا كان صافي الفاتورة إجماليًا شاملاً 15% وليس أساسًا خاضعًا */
   const [salesAmountIncludesVat, setSalesAmountIncludesVat] = useState(false);
 
   const registryData = useHajriTaxRegistryData({
@@ -144,7 +144,7 @@ export function useHajriTaxScreen() {
   const periodStr = `Q${quarter}`;
   const periodLabel = `${year}-${periodStr}`;
 
-  /** Ø¬Ù„Ø¨ Ø¥Ù‚Ø±Ø§Ø±Ø§Øª Ø§Ù„Ø±Ø¨Ø¹ Ø§Ù„Ù…Ø­Ø¯Ø¯ â€” Ù„Ù„Ø±Ø¨Ø· Ù…Ø¹ `resolveRecord` ÙˆØ±ÙˆØ§Ø¨Ø· ?edit=1 Ù…Ù† Ø¯ÙˆÙ† ÙØªØ­ Ø§Ù„ØªÙØ§ØµÙŠÙ„ Ø£ÙˆÙ„Ù‹Ø§ */
+  /** جلب إقرارات الربع المحدد — للربط مع `resolveRecord` وروابط ?edit=1 من دون فتح التفاصيل أولًا */
   const { data: apiRecords = [], isLoading: listLoading, refetch } = useVatPlanningList(
     year,
     quarter,
@@ -211,7 +211,7 @@ export function useHajriTaxScreen() {
         setYear(forcedPeriod.year);
         setQuarter(forcedPeriod.quarter);
         const res = await getVatPlanningList(forcedPeriod.year, forcedPeriod.quarter, companyId);
-        throwIfApiFailed(res, 'ÙØ´Ù„ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø³Ø¬Ù„');
+        throwIfApiFailed(res, 'فشل تحميل السجل');
         const arr = Array.isArray(res.data) ? res.data : [];
         rec = arr[0] || null;
       } else {
@@ -254,7 +254,7 @@ export function useHajriTaxScreen() {
       setRegFilterCompany(companyId);
       setDetailReadOnly(false);
       const res = await getVatPlanningList(y, q, companyId);
-      throwIfApiFailed(res, 'ÙØ´Ù„ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø³Ø¬Ù„');
+      throwIfApiFailed(res, 'فشل تحميل السجل');
       const rec = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
       if (rec) {
         setDraftData(clonePayload(rec.payload));
@@ -369,7 +369,7 @@ export function useHajriTaxScreen() {
       const res = await getTaxVatReport(detailCompanyId, year, periodStr, {
         salesAmountIncludesVat,
       });
-      throwIfApiFailed(res, 'ÙØ´Ù„ Ø§Ø³ØªÙŠØ±Ø§Ø¯ ØªÙ‚Ø±ÙŠØ± Ø§Ù„Ø¶Ø±ÙŠØ¨Ø©');
+      throwIfApiFailed(res, 'فشل استيراد تقرير الضريبة');
       const imported = res.data;
       setDraftData((prev) =>
         normalizeDisclosureDecimals(syncVatPlanningSummaryFields(mergeImportedDisclosure(prev, imported))),
@@ -509,7 +509,7 @@ export function useHajriTaxScreen() {
           notes: item.notes == null ? null : String(item.notes),
           sourceSnapshot: isJsonRecord(item.sourceSnapshot) ? { ...item.sourceSnapshot } : undefined,
         });
-        throwIfApiFailed(res, 'ÙØ´Ù„ Ø§Ø³ØªÙŠØ±Ø§Ø¯ Ø³Ø¬Ù„');
+        throwIfApiFailed(res, 'فشل استيراد سجل');
       }
       qc.invalidateQueries({ queryKey: vatKeys.root() });
       refetchRegistry();
