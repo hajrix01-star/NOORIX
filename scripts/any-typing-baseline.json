@@ -1,14 +1,5 @@
 {
   "version": 1,
   "description": "Explicit TypeScript any baseline. Counts exclude string literals, so business values like 'any' filters and translation text are not counted.",
-  "allowedCounts": {
-    "src/components/CategoriesManager.tsx": 9,
-    "src/components/AppHeader.tsx": 4,
-    "src/components/AppSidebar.tsx": 4,
-    "src/services/reportingInsightThresholdsApi.test.ts": 2,
-    "src/ui/ConnectedTabStrip.tsx": 1,
-    "src/ui/ScreenTabs.tsx": 1,
-    "src/ui/SmartTable/SmartTable.test.tsx": 1,
-    "src/ui/SmartTable/tableEngine.test.tsx": 1
-  }
+  "allowedCounts": {}
 }

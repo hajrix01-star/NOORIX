@@ -3,6 +3,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useSmartTableEngine } from './tableEngine';
 import type { SmartTableColumn } from './types';
 
+type SmartTableColumnMeta<TRow extends object> = {
+  noorixColumn?: SmartTableColumn<TRow>;
+};
+
 type Row = {
   id: string;
   name: string;
@@ -83,7 +87,7 @@ function EngineProbe({
         {String(engine.table.options.manualSorting)}:{String(engine.table.options.manualPagination)}:{String(engine.table.options.manualFiltering)}
       </span>
       <span data-testid="meta-column">
-        {(tableColumns[0].columnDef.meta as any)?.noorixColumn?.key}
+        {(tableColumns[0].columnDef.meta as SmartTableColumnMeta<Row> | undefined)?.noorixColumn?.key}
       </span>
       <span data-testid="public-columns">
         {engine.columns.map((col) => col.key).join(',')}

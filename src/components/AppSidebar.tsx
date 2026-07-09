@@ -55,6 +55,18 @@ const SIDEBAR_LINKS = [
   { to: '/theme-preview', labelKey: 'themePreview', icon: IconGrid, permission: 'VIEW_DASHBOARD' },
 ] as const;
 
+type SidebarLink = (typeof SIDEBAR_LINKS)[number];
+type SidebarChildLink = Extract<SidebarLink, { children: readonly unknown[] }>['children'][number];
+type SidebarReportsLink = Extract<SidebarLink, { children: readonly SidebarChildLink[] }>;
+
+function hasChildren(link: SidebarLink): link is SidebarReportsLink {
+  return 'children' in link;
+}
+
+function hasEnd(link: SidebarLink): link is SidebarLink & { end: true } {
+  return 'end' in link && link.end === true;
+}
+
 export type AppSidebarProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -76,7 +88,9 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
     return hasPermission(userRole, p, userPermissions);
   });
 
-  const isReportsExpanded = visibleLinks.some((l: any) => l.to === '/reports' && l.children?.some((c: any) => location.pathname.startsWith(c.to)));
+  const isReportsExpanded = visibleLinks.some((link) => (
+    link.to === '/reports' && hasChildren(link) && link.children.some((child) => location.pathname.startsWith(child.to))
+  ));
   const [reportsOpen, setReportsOpen] = useState(isReportsExpanded);
   useEffect(() => {
     if (isReportsExpanded) setReportsOpen(true);
@@ -143,8 +157,8 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
 
         <div className="app-sidebar__nav">
           <ul className="app-nav-list">
-            {visibleLinks.map((link: any) =>
-              link.children && link.to === '/reports' ? (
+            {visibleLinks.map((link: SidebarLink) =>
+              hasChildren(link) && link.to === '/reports' ? (
                 <li key={link.to} className="app-nav-item app-nav-item--has-children">
                   <Button
                     variant="ghost"
@@ -166,7 +180,7 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
                           if (Array.isArray(cp)) return hasAnyOfPermissions(userRole, cp, userPermissions);
                           return hasPermission(userRole, cp, userPermissions);
                         })
-                        .map((child: any) => (
+                        .map((child: SidebarChildLink) => (
                         <li key={child.to} className="app-nav-item">
                           <NavLink
                             to={child.to}
@@ -187,10 +201,10 @@ export default function AppSidebar({ isOpen, onClose, userRole, userPermissions 
                   )}
                 </li>
               ) : (
-                <li key={link.to + (link.end ? '-end' : '')} className="app-nav-item">
+                <li key={link.to + (hasEnd(link) ? '-end' : '')} className="app-nav-item">
                   <NavLink
                     to={link.to}
-                    end={link.end}
+                    end={hasEnd(link)}
                     className={navLinkClass}
                     onClick={onClose}
                     onPointerEnter={() => prefetchRouteChunk(link.to)}

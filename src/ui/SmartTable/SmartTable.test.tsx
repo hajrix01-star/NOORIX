@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import SmartTable from './SmartTable';
 import type { SmartTableColumn } from './types';
+import type { CSSProperties } from 'react';
 
 const mediaState = vi.hoisted(() => ({ isNarrow: false }));
 
@@ -22,6 +23,7 @@ vi.mock('../../hooks/useUiDir', () => ({
 }));
 
 type Row = { id: string; name: string; amount: number };
+type TestRowStyle = CSSProperties & { '--nx-test-row-tone'?: string };
 
 const columns: SmartTableColumn<Row>[] = [
   { key: 'name', label: 'Name', sortable: true },
@@ -389,7 +391,7 @@ describe('SmartTable', () => {
         data={rows}
         total={2}
         getRowClassName={(row) => (row.id === '1' ? 'is-first-row' : undefined)}
-        getRowStyle={(row) => (row.id === '1' ? { '--nx-test-row-tone': 'gold' } as any : undefined)}
+        getRowStyle={(row): TestRowStyle | undefined => (row.id === '1' ? { '--nx-test-row-tone': 'gold' } : undefined)}
         isRowExpanded={(row) => row.id === '1'}
         renderExpandedRow={(row) => <div>Expanded {row.name}</div>}
       />,

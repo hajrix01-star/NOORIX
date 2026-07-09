@@ -81,7 +81,7 @@ export default function ConnectedTabStrip({
           role="tablist"
           dir={uiDir}
         >
-          {items.map((item: any) => {
+          {items.map((item) => {
             const active = value === item.id;
             return (
               <Button
