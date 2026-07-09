@@ -1,29 +1,30 @@
 import { memo } from 'react';
 import type React from 'react';
 import { cn } from '../cn';
+import type { SmartTableRow } from './types';
 
 type EngineRow<TRow> = {
   original: TRow;
   index: number;
 };
 
-export type SmartTableResponsiveRowsProps<TRow = any> = {
+export type SmartTableResponsiveRowsProps<TRow extends SmartTableRow = SmartTableRow> = {
   rows: Array<EngineRow<TRow>>;
   dataLength: number;
   emptyMsg: string;
   rowKey: (row: TRow, index: number) => React.Key;
 };
 
-export type SmartTableCompactRowsProps<TRow = any> = SmartTableResponsiveRowsProps<TRow> & {
+export type SmartTableCompactRowsProps<TRow extends SmartTableRow = SmartTableRow> = SmartTableResponsiveRowsProps<TRow> & {
   renderCompactRow: (row: TRow, index: number) => React.ReactNode;
 };
 
-export type SmartTableMobileCardsProps<TRow = any> = SmartTableResponsiveRowsProps<TRow> & {
+export type SmartTableMobileCardsProps<TRow extends SmartTableRow = SmartTableRow> = SmartTableResponsiveRowsProps<TRow> & {
   renderMobileCard: (row: TRow, index: number) => React.ReactNode;
   stripeMobileCards: boolean;
 };
 
-export const SmartTableCompactRows = memo(function SmartTableCompactRows<TRow = any>({
+function SmartTableCompactRowsInner<TRow extends SmartTableRow = SmartTableRow>({
   rows,
   dataLength,
   emptyMsg,
@@ -49,9 +50,9 @@ export const SmartTableCompactRows = memo(function SmartTableCompactRows<TRow = 
       ))}
     </div>
   );
-});
+}
 
-export const SmartTableMobileCards = memo(function SmartTableMobileCards<TRow = any>({
+function SmartTableMobileCardsInner<TRow extends SmartTableRow = SmartTableRow>({
   rows,
   dataLength,
   emptyMsg,
@@ -80,4 +81,7 @@ export const SmartTableMobileCards = memo(function SmartTableMobileCards<TRow = 
       ))}
     </div>
   );
-});
+}
+
+export const SmartTableCompactRows = memo(SmartTableCompactRowsInner) as typeof SmartTableCompactRowsInner;
+export const SmartTableMobileCards = memo(SmartTableMobileCardsInner) as typeof SmartTableMobileCardsInner;

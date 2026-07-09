@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import type React from 'react';
 import Input from '../Input';
-import type { SmartTableColumn } from './types';
+import type { SmartTableColumn, SmartTableRow } from './types';
 import SmartTableColumnVisibility from './SmartTableColumnVisibility';
 
-export type SmartTableHeaderProps = {
+export type SmartTableHeaderProps<TRow extends SmartTableRow = SmartTableRow> = {
   title?: React.ReactNode;
   badge?: React.ReactNode;
   searchValue?: string;
@@ -12,14 +12,14 @@ export type SmartTableHeaderProps = {
   showSearchInHeader: boolean;
   tableId?: string;
   showColumnVisibility: boolean;
-  hideableCols: SmartTableColumn<any>[];
+  hideableCols: SmartTableColumn<TRow>[];
   hiddenCols: Set<string>;
   onToggleColumn: (key: string) => void;
   onResetColumns: () => void;
   t: (key: string, ...args: unknown[]) => string;
 };
 
-const SmartTableHeader = memo(function SmartTableHeader({
+function SmartTableHeaderInner<TRow extends SmartTableRow = SmartTableRow>({
   title,
   badge,
   searchValue,
@@ -32,7 +32,7 @@ const SmartTableHeader = memo(function SmartTableHeader({
   onToggleColumn,
   onResetColumns,
   t,
-}: SmartTableHeaderProps) {
+}: SmartTableHeaderProps<TRow>) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap px-4 py-2.5 border-b border-noorix-border">
       <div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-0">
@@ -44,7 +44,7 @@ const SmartTableHeader = memo(function SmartTableHeader({
           <Input
             type="search"
             value={searchValue ?? ''}
-            onChange={(e: any) => onSearchChange(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => onSearchChange(e.target.value)}
             placeholder={t('searchPlaceholder')}
             size="sm"
             className="noorix-table-search"
@@ -62,6 +62,8 @@ const SmartTableHeader = memo(function SmartTableHeader({
       </div>
     </div>
   );
-});
+}
+
+const SmartTableHeader = memo(SmartTableHeaderInner) as typeof SmartTableHeaderInner;
 
 export default SmartTableHeader;

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { SmartTableColumn, SmartTableColumnSize } from './types';
+import type { SmartTableColumn, SmartTableColumnSize, SmartTableRow } from './types';
 
 type ColumnKind = NonNullable<SmartTableColumn['kind']>;
 
@@ -29,7 +29,7 @@ const SIZE_DEFAULTS: Record<SmartTableColumnSize, Partial<SmartTableColumn>> = {
   tax: { align: 'end', numeric: true, shrink: true, width: '8ch', maxWidth: '9ch' },
 };
 
-export function inferColumnKind(col: SmartTableColumn): ColumnKind {
+export function inferColumnKind<TRow extends SmartTableRow = SmartTableRow>(col: SmartTableColumn<TRow>): ColumnKind {
   if (col.kind) return col.kind;
   if (col.key === 'actions') return 'actions';
   if (/amount|total|net|tax|balance|paid|remaining|salary|price|cost/i.test(col.key)) return 'money';
@@ -40,7 +40,7 @@ export function inferColumnKind(col: SmartTableColumn): ColumnKind {
   return 'text';
 }
 
-export function inferColumnSize(col: SmartTableColumn): SmartTableColumnSize | undefined {
+export function inferColumnSize<TRow extends SmartTableRow = SmartTableRow>(col: SmartTableColumn<TRow>): SmartTableColumnSize | undefined {
   if (col.size) return col.size;
   if (/^(tax|taxAmount|vat|vatAmount)$/i.test(col.key)) return 'tax';
   if (/^(net|netAmount|cost|acquisitionCost|price|unitPrice)$/i.test(col.key)) return 'money-sm';
@@ -56,7 +56,7 @@ export function inferColumnSize(col: SmartTableColumn): SmartTableColumnSize | u
   return undefined;
 }
 
-export function normalizeSmartColumn<TRow = any>(col: SmartTableColumn<TRow>): SmartTableColumn<TRow> {
+export function normalizeSmartColumn<TRow extends SmartTableRow = SmartTableRow>(col: SmartTableColumn<TRow>): SmartTableColumn<TRow> {
   const kind = inferColumnKind(col);
   const defaults = KIND_DEFAULTS[kind];
   const size = inferColumnSize(col);
@@ -76,11 +76,11 @@ export function normalizeSmartColumn<TRow = any>(col: SmartTableColumn<TRow>): S
   };
 }
 
-export function getColumnKindClass(col: SmartTableColumn): string {
+export function getColumnKindClass<TRow extends SmartTableRow = SmartTableRow>(col: SmartTableColumn<TRow>): string {
   return `nx-col-kind-${inferColumnKind(col)}`;
 }
 
-export function getColumnTextAlign(col: SmartTableColumn): CSSProperties['textAlign'] {
+export function getColumnTextAlign<TRow extends SmartTableRow = SmartTableRow>(col: SmartTableColumn<TRow>): CSSProperties['textAlign'] {
   const align = col.align || KIND_DEFAULTS[inferColumnKind(col)].align || 'start';
   if (align === 'start' || align === 'end' || align === 'left' || align === 'right' || align === 'center') {
     return align as CSSProperties['textAlign'];

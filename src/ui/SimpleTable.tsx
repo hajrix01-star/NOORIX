@@ -2,13 +2,14 @@ import React from 'react';
 import { cn } from './cn';
 
 type TableCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
+type SimpleTableRow = object;
 
 function cssLength(value: React.CSSProperties['width'] | undefined): string | number | undefined {
   if (value == null || value === '') return undefined;
   return typeof value === 'number' ? `${value}px` : value;
 }
 
-export type SimpleTableColumn<TRow = any> = {
+export type SimpleTableColumn<TRow extends SimpleTableRow = SimpleTableRow> = {
   key: string;
   label?: React.ReactNode;
   width?: React.CSSProperties['width'];
@@ -20,7 +21,7 @@ export type SimpleTableColumn<TRow = any> = {
   render?: (value: unknown, row: TRow, index: number) => React.ReactNode;
 };
 
-export type SimpleTableProps<TRow = any> = {
+export type SimpleTableProps<TRow extends SimpleTableRow = SimpleTableRow> = {
   columns: SimpleTableColumn<TRow>[];
   data?: TRow[];
   emptyMessage?: React.ReactNode;
@@ -37,7 +38,32 @@ export type SimpleTableProps<TRow = any> = {
   onRowClick?: (row: TRow, index: number) => void;
 };
 
-export default function SimpleTable<TRow extends Record<string, any> = any>({
+function readRowValue(row: object, key: string): unknown {
+  return (row as Record<string, unknown>)[key];
+}
+
+function renderRawCellValue(value: unknown): React.ReactNode {
+  if (value == null) return null;
+  if (
+    typeof value === 'string'
+    || typeof value === 'number'
+    || typeof value === 'boolean'
+    || React.isValidElement(value)
+  ) {
+    return value;
+  }
+  return String(value);
+}
+
+function rowFallbackKey(row: object, rowIndex: number): React.Key {
+  const id = readRowValue(row, 'id');
+  const key = readRowValue(row, 'key');
+  return typeof id === 'string' || typeof id === 'number'
+    ? id
+    : (typeof key === 'string' || typeof key === 'number' ? key : rowIndex);
+}
+
+export default function SimpleTable<TRow extends SimpleTableRow = SimpleTableRow>({
   columns,
   data = [],
   emptyMessage = '-',
@@ -109,7 +135,7 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
             ) : (
               data.map((row, rowIndex) => (
                 <tr
-                  key={row.id ?? row.key ?? rowIndex}
+                  key={rowFallbackKey(row, rowIndex)}
                   className={getRowClassName?.(row, rowIndex)}
                   style={getRowStyle?.(row, rowIndex)}
                   onClick={onRowClick ? () => onRowClick(row, rowIndex) : undefined}
@@ -129,7 +155,7 @@ export default function SimpleTable<TRow extends Record<string, any> = any>({
                       data-numeric={col.numeric ? 'true' : undefined}
                       style={cellStyle(col)}
                     >
-                      {col.render ? col.render(row[col.key], row, rowIndex) : row[col.key]}
+                      {col.render ? col.render(readRowValue(row, col.key), row, rowIndex) : renderRawCellValue(readRowValue(row, col.key))}
                     </td>
                   ))}
                 </tr>

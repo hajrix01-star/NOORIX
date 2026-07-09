@@ -226,7 +226,10 @@ export default function BankStatementTransactionsFullTab({
                       variant="primary"
                       size="sm"
                       disabled={updateCategoryMutation.isPending}
-                      onClick={() => handleCategoryChange(tx.id, editingCategory || null)}
+                      onClick={() => {
+                        if (!tx.id) return;
+                        handleCategoryChange(tx.id, editingCategory || null);
+                      }}
                     >
                       {t('save')}
                     </Button>
@@ -288,7 +291,15 @@ export default function BankStatementTransactionsFullTab({
                     className="bank-transactions-note-input"
                   />
                   <div className="flex gap-1">
-                    <Button variant="primary" size="sm" disabled={updateNoteMutation.isPending} onClick={() => handleNoteChange(tx.id)}>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={updateNoteMutation.isPending || !tx.id}
+                      onClick={() => {
+                        if (!tx.id) return;
+                        handleNoteChange(tx.id);
+                      }}
+                    >
                       {t('save')}
                     </Button>
                     <Button size="sm" onClick={() => { setEditingNoteId(null); setEditingNote(''); }}>{t('cancel')}</Button>

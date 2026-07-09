@@ -8,8 +8,8 @@ Status: governed baseline; new explicit TypeScript `any` is blocked unless the b
 
 | Metric | Count |
 |---|---:|
-| Explicit TypeScript `any` baseline | 138 |
-| Files with explicit `any` baseline | 25 |
+| Explicit TypeScript `any` baseline | 66 |
+| Files with explicit `any` baseline | 10 |
 
 ## Decision
 

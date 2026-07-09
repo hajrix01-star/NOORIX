@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { SmartTableColumn } from './types';
+import type { SmartTableColumn, SmartTableRow } from './types';
 
-export function useSmartTableColumnVisibility<TRow = any>({
+export function useSmartTableColumnVisibility<TRow extends SmartTableRow = SmartTableRow>({
   columns,
   tableId,
 }: {
@@ -37,12 +37,12 @@ export function useSmartTableColumnVisibility<TRow = any>({
   }, [tableId]);
 
   const visibleColumns = useMemo(
-    () => columns.filter((col: any) => !hiddenCols.has(col.key)),
+    () => columns.filter((col) => !hiddenCols.has(col.key)),
     [columns, hiddenCols],
   );
 
   const hideableCols = useMemo(
-    () => columns.filter((col: any) => col.key !== 'actions'),
+    () => columns.filter((col) => col.key !== 'actions'),
     [columns],
   );
 

@@ -11,13 +11,13 @@ import {
   type SortingState,
   type Table,
 } from '@tanstack/react-table';
-import type { SmartTableColumn } from './types';
+import type { SmartTableColumn, SmartTableRow } from './types';
 import { columnLabel } from './columnUtils';
 
 export type SmartTableEngineSortDir = 'asc' | 'desc' | string;
 export type SmartTableEngineMode = 'manual' | 'client';
 
-export type SmartTableEngineRow<TRow> = {
+export type SmartTableEngineRow<TRow extends SmartTableRow> = {
   id: string;
   index: number;
   original: TRow;
@@ -50,7 +50,7 @@ export type SmartTableEngineSearch = {
   setValue: (value: string) => void;
 };
 
-export type SmartTableEngineResult<TRow> = {
+export type SmartTableEngineResult<TRow extends SmartTableRow> = {
   table: Table<TRow>;
   rows: SmartTableEngineRow<TRow>[];
   columns: SmartTableColumn<TRow>[];
@@ -77,7 +77,11 @@ function cellMatchesQuery(value: unknown, query: string) {
   return String(value ?? '').toLowerCase().includes(query);
 }
 
-export function useSmartTableEngine<TRow extends Record<string, any>>({
+function readRowValue(row: object, key: string): unknown {
+  return (row as Record<string, unknown>)[key];
+}
+
+export function useSmartTableEngine<TRow extends SmartTableRow>({
   columns,
   data,
   sortKey,
@@ -153,7 +157,7 @@ export function useSmartTableEngine<TRow extends Record<string, any>>({
     () =>
       columns.map((col) => ({
         id: col.key,
-        accessorFn: (row) => row[col.key],
+        accessorFn: (row) => readRowValue(row, col.key),
         header: () => columnLabel(col),
         enableSorting: Boolean(col.sortable),
         enableGlobalFilter: col.key !== 'actions',

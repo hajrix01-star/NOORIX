@@ -1,5 +1,5 @@
 import type React from 'react';
-import type { SmartTableProps } from './types';
+import type { SmartTableColumn, SmartTableProps, SmartTableRow } from './types';
 
 export const DEFAULT_INNER_PADDING = 8;
 export const DEFAULT_ROW_NUMBER_WIDTH = 34;
@@ -87,7 +87,7 @@ export function buildRowNumberCellStyle({
   };
 }
 
-export function buildHeaderCellStyle({
+export function buildHeaderCellStyle<TRow extends SmartTableRow = SmartTableRow>({
   col,
   effectiveWidth,
   resizableCol,
@@ -95,8 +95,8 @@ export function buildHeaderCellStyle({
   cellPad,
   compact,
 }: {
-  col: any;
-  effectiveWidth: any;
+  col: SmartTableColumn<TRow>;
+  effectiveWidth: number | string | undefined;
   resizableCol: boolean;
   shrink: boolean;
   cellPad: { th: string; td: string };
@@ -117,7 +117,7 @@ export function buildHeaderCellStyle({
   };
 }
 
-export function buildBodyCellStyle({
+export function buildBodyCellStyle<TRow extends SmartTableRow = SmartTableRow>({
   col,
   tdEffectiveWidth,
   align,
@@ -126,8 +126,8 @@ export function buildBodyCellStyle({
   cellPad,
   cellFs,
 }: {
-  col: any;
-  tdEffectiveWidth: any;
+  col: SmartTableColumn<TRow>;
+  tdEffectiveWidth: number | string | undefined;
   align: React.CSSProperties['textAlign'];
   family: string | undefined;
   shrink: boolean;
@@ -169,14 +169,14 @@ export function buildFooterRowNumberStyle(): SmartTableCssVars {
   };
 }
 
-export function buildRowStyle({
+export function buildRowStyle<TRow extends SmartTableRow = SmartTableRow>({
   row,
   index,
   getRowStyle,
 }: {
-  row: any;
+  row: TRow;
   index: number;
-  getRowStyle?: SmartTableProps['getRowStyle'];
+  getRowStyle?: SmartTableProps<TRow>['getRowStyle'];
 }): SmartTableCssVars {
   return {
     '--nx-smart-row-bg': index % 2 === 1 ? 'var(--noorix-bg-page)' : 'transparent',

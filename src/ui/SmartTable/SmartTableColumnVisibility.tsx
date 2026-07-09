@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../cn';
-import type { SmartTableColumn } from './types';
+import type { SmartTableColumn, SmartTableRow } from './types';
 import { columnLabel } from './columnUtils';
 
 const COL_VIS_PANEL_MARGIN = 12;
@@ -11,7 +11,7 @@ const COL_VIS_PANEL_FALLBACK_H = 320;
 
 type SmartTableColumnVisibilityCssVars = React.CSSProperties & Record<`--${string}`, string | number | undefined>;
 
-export type SmartTableColumnVisibilityProps<TRow = any> = {
+export type SmartTableColumnVisibilityProps<TRow extends SmartTableRow = SmartTableRow> = {
   columns: SmartTableColumn<TRow>[];
   hiddenCols: Set<string>;
   onToggleColumn: (key: string) => void;
@@ -40,7 +40,7 @@ export function placeColVisPanel(btn: HTMLElement, panel: HTMLElement): { top: n
   return { top, left };
 }
 
-const SmartTableColumnVisibility = memo(function SmartTableColumnVisibility<TRow = any>({
+function SmartTableColumnVisibilityInner<TRow extends SmartTableRow = SmartTableRow>({
   columns,
   hiddenCols,
   onToggleColumn,
@@ -142,6 +142,8 @@ const SmartTableColumnVisibility = memo(function SmartTableColumnVisibility<TRow
       )}
     </div>
   );
-});
+}
+
+const SmartTableColumnVisibility = memo(SmartTableColumnVisibilityInner) as typeof SmartTableColumnVisibilityInner;
 
 export default SmartTableColumnVisibility;

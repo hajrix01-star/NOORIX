@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 
+export type SmartTableRow = object;
+
 export type SmartTableDataMode = 'manual' | 'client';
 export type SmartTableColumnSize =
   | 'document'
@@ -15,7 +17,7 @@ export type SmartTableColumnSize =
   | 'count'
   | 'tax';
 
-export type SmartTableColumn<TRow = any> = {
+export type SmartTableColumn<TRow extends SmartTableRow = SmartTableRow> = {
   key: string;
   kind?: 'id' | 'text' | 'date' | 'money' | 'number' | 'status' | 'actions' | 'meta';
   size?: SmartTableColumnSize;
@@ -38,7 +40,7 @@ export type SmartTableFooterSegment = {
   className?: string;
 };
 
-export type SmartTableProps<TRow = any> = {
+export type SmartTableProps<TRow extends SmartTableRow = SmartTableRow> = {
   columns?: SmartTableColumn<TRow>[];
   data?: TRow[];
   total?: number;

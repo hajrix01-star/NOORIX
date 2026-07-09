@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SmartTableColumn, SmartTableFooterSegment } from './types';
+import type { SmartTableColumn, SmartTableFooterSegment, SmartTableRow } from './types';
 import { columnLabel } from './columnUtils';
 import { buildFooterCellStyle, buildFooterRowNumberStyle } from './smartTableStyles';
 
@@ -10,14 +10,14 @@ export { columnLabel, getAlign } from './columnUtils';
 /**
  * يحوّل footerRow إلى خلايا <td> مدركة لإخفاء الأعمدة — نفس المنطق السابق.
  */
-export function buildFooterCells({
+export function buildFooterCells<TRow extends SmartTableRow = SmartTableRow>({
   footerRow,
   columns,
   hiddenCols,
   showRowNumbers,
 }: {
   footerRow: SmartTableFooterSegment[];
-  columns: SmartTableColumn[];
+  columns: SmartTableColumn<TRow>[];
   hiddenCols: Set<string>;
   showRowNumbers: boolean;
 }): React.ReactNode[] {
