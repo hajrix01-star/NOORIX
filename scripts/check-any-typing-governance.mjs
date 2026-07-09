@@ -36,6 +36,8 @@ function walk(dir, predicate, acc = []) {
 function stripStrings(source) {
   return source
     .replace(/(['"`])(?:\\.|(?!\1)[\s\S])*\1/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
     .replace(/\bexpect\s*\.\s*any\s*\(/g, 'expectAny(');
 }
 
@@ -43,7 +45,10 @@ function countExplicitAny(source) {
   return (stripStrings(source).match(/\bany\b/g) ?? []).length;
 }
 
-const sourceFiles = walk('src', (file) => /\.(tsx|ts)$/.test(file));
+const sourceFiles = [
+  ...walk('src', (file) => /\.(tsx|ts)$/.test(file)),
+  ...walk('backend/src', (file) => /\.ts$/.test(file)),
+];
 const currentCounts = {};
 for (const file of sourceFiles) {
   const count = countExplicitAny(read(file));

@@ -1,6 +1,14 @@
 import { BadRequestException } from '@nestjs/common';
 import { ReportsTaxVatService } from './reports-tax-vat.service';
-import type { TaxVatAggregateRow, TaxVatReportData } from '../tax-vat-core/tax-vat-core.service';
+import type { TaxVatAggregateRow, TaxVatCoreService, TaxVatReportData } from '../tax-vat-core/tax-vat-core.service';
+
+type ReportsTaxVatPrismaMock = {
+  company: {
+    findUnique: jest.Mock<Promise<{ vatRatePercent: number | null } | null>, [{ where: { id: string }; select: { vatRatePercent: true } }]>;
+  };
+  $queryRaw: jest.Mock<Promise<TaxVatAggregateRow[]>, [TemplateStringsArray, ...unknown[]]>;
+};
+type ReportsTaxVatCoreMock = Pick<TaxVatCoreService, 'computeDisclosureFromInvoiceAggregates'>;
 
 describe('ReportsTaxVatService', () => {
   const vatRows: TaxVatAggregateRow[] = [
@@ -20,16 +28,16 @@ describe('ReportsTaxVatService', () => {
   };
 
   it('delegates VAT disclosure calculation to TaxVatCoreService', async () => {
-    const prisma = {
+    const prisma: ReportsTaxVatPrismaMock = {
       company: {
         findUnique: jest.fn().mockResolvedValue({ vatRatePercent: 5 }),
       },
       $queryRaw: jest.fn().mockResolvedValue(vatRows),
     };
-    const taxVatCore = {
+    const taxVatCore: ReportsTaxVatCoreMock = {
       computeDisclosureFromInvoiceAggregates: jest.fn().mockReturnValue(coreResult),
     };
-    const service = new ReportsTaxVatService(prisma as any, taxVatCore as any);
+    const service = new ReportsTaxVatService(prisma, taxVatCore);
 
     const result = await service.getTaxVatReport('company-1', 2026, 'M6', true);
 
@@ -43,16 +51,16 @@ describe('ReportsTaxVatService', () => {
   });
 
   it('uses null VAT rate when company settings are missing', async () => {
-    const prisma = {
+    const prisma: ReportsTaxVatPrismaMock = {
       company: {
         findUnique: jest.fn().mockResolvedValue(null),
       },
       $queryRaw: jest.fn().mockResolvedValue(vatRows),
     };
-    const taxVatCore = {
+    const taxVatCore: ReportsTaxVatCoreMock = {
       computeDisclosureFromInvoiceAggregates: jest.fn().mockReturnValue(coreResult),
     };
-    const service = new ReportsTaxVatService(prisma as any, taxVatCore as any);
+    const service = new ReportsTaxVatService(prisma, taxVatCore);
 
     await service.getTaxVatReport('company-1', 2026, 'Q2', false);
 
@@ -60,16 +68,16 @@ describe('ReportsTaxVatService', () => {
   });
 
   it('rejects unsupported VAT report periods before querying', async () => {
-    const prisma = {
+    const prisma: ReportsTaxVatPrismaMock = {
       company: {
         findUnique: jest.fn(),
       },
       $queryRaw: jest.fn(),
     };
-    const taxVatCore = {
+    const taxVatCore: ReportsTaxVatCoreMock = {
       computeDisclosureFromInvoiceAggregates: jest.fn(),
     };
-    const service = new ReportsTaxVatService(prisma as any, taxVatCore as any);
+    const service = new ReportsTaxVatService(prisma, taxVatCore);
 
     await expect(service.getTaxVatReport('company-1', 2026, 'Y2026', false)).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.company.findUnique).not.toHaveBeenCalled();

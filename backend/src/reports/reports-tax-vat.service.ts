@@ -1,12 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { TaxVatCoreService, type TaxVatAggregateRow } from '../tax-vat-core/tax-vat-core.service';
+
+type ReportsTaxVatPrisma = {
+  company: {
+    findUnique(args: {
+      where: { id: string };
+      select: { vatRatePercent: true };
+    }): Promise<{ vatRatePercent: number | null } | null>;
+  };
+  $queryRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<TaxVatAggregateRow[]>;
+};
+type ReportsTaxVatCore = Pick<TaxVatCoreService, 'computeDisclosureFromInvoiceAggregates'>;
 
 @Injectable()
 export class ReportsTaxVatService {
   constructor(
-    private readonly prisma: TenantPrismaService,
-    private readonly taxVatCore: TaxVatCoreService,
+    private readonly prisma: ReportsTaxVatPrisma,
+    private readonly taxVatCore: ReportsTaxVatCore,
   ) {}
 
   /**
@@ -36,7 +46,7 @@ export class ReportsTaxVatService {
       where: { id: companyId },
       select: { vatRatePercent: true },
     });
-    const vatRows = await this.prisma.$queryRaw<TaxVatAggregateRow[]>`
+    const vatRows = await this.prisma.$queryRaw`
       SELECT
         kind,
         (tax_amount > 0) AS has_tax,

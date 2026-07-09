@@ -4,6 +4,32 @@ import { PrismaService } from './prisma/prisma.service';
 import { getGeminiApiKey, getGeminiModel, isGeminiAvailable } from './config/gemini.config';
 import { extractJson } from './common/utils/extract-json.util';
 
+type GeminiPart = {
+  text?: string;
+};
+
+type GeminiCandidate = {
+  finishReason?: string;
+  content?: {
+    parts?: GeminiPart[];
+  };
+};
+
+type GeminiGenerateContentResponse = {
+  candidates?: GeminiCandidate[];
+};
+
+function getGeminiFirstCandidate(data: unknown): GeminiCandidate | undefined {
+  if (!data || typeof data !== 'object') return undefined;
+  const { candidates } = data as GeminiGenerateContentResponse;
+  return Array.isArray(candidates) ? candidates[0] : undefined;
+}
+
+function getGeminiCandidateText(data: unknown): string | null {
+  const text = getGeminiFirstCandidate(data)?.content?.parts?.[0]?.text;
+  return typeof text === 'string' ? text : null;
+}
+
 @Injectable()
 export class AppService {
   constructor(private readonly prisma: PrismaService) {}
@@ -69,10 +95,10 @@ export class AppService {
         const text = await res.text();
         return { ok: false, error: `API ${res.status}: ${text.slice(0, 200)}` };
       }
-      const data = (await res.json()) as Record<string, unknown>;
-      const text = (data?.candidates as any)?.[0]?.content?.parts?.[0]?.text ?? null;
+      const data = await res.json();
+      const text = getGeminiCandidateText(data);
       if (!text) {
-        const blockReason = (data?.candidates as any)?.[0]?.finishReason;
+        const blockReason = getGeminiFirstCandidate(data)?.finishReason;
         return { ok: false, error: blockReason ? `حظر: ${blockReason}` : 'لا استجابة من Gemini' };
       }
       const parsed = extractJson<{ intent?: string }>(text);
@@ -91,8 +117,8 @@ export class AppService {
       if (!fallbackRes.ok) {
         return { ok: false, error: `لا JSON صالح. الاستجابة: ${String(text).slice(0, 150)}` };
       }
-      const fallbackData = (await fallbackRes.json()) as Record<string, unknown>;
-      const fallbackText = (fallbackData?.candidates as any)?.[0]?.content?.parts?.[0]?.text ?? null;
+      const fallbackData = await fallbackRes.json();
+      const fallbackText = getGeminiCandidateText(fallbackData);
       const fallbackParsed = fallbackText ? extractJson<{ intent?: string }>(fallbackText) : null;
       return fallbackParsed && typeof fallbackParsed === 'object'
         ? { ok: true, intent: String(fallbackParsed.intent ?? 'sales') }
